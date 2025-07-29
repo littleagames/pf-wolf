@@ -8,7 +8,8 @@ public static class GamePalette
         {
             R = (byte)(red * 255 / 63),
             G = (byte)(green * 255 / 63),
-            B = (byte)(blue * 255 / 63)
+            B = (byte)(blue * 255 / 63),
+            A = (byte)SDL.AlphaOpaque
         };
     }
 
