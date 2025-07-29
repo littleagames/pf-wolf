@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using PFWolf.Common;
+using System;
+using System.Runtime.InteropServices;
 
 namespace Engine
 {
@@ -9,7 +11,7 @@ namespace Engine
         public int ScreenHeight { get; }
         public int ScreenWidth { get; }
         bool Initialize();
-        void Draw(byte[] graphic, int x, int y, int width, int height, float scale);
+        void Draw(Graphic graphic, Vector2 position, Vector2 dimension);
         void Update();
         void ShutDown();
     }
@@ -22,12 +24,14 @@ namespace Engine
         private static IntPtr screenBufferPtr;
         private static IntPtr texturePtr;
 
+        private bool _isInitialized = false;
+
         public int ScreenPitch { get; private set; }
         public int BufferPitch { get; private set; }
         public int ScreenHeight { get; private set; }
         public int ScreenWidth { get; private set; }
 
-        private static uint[] ylookup;
+        private uint[] ylookup = [];
 
         public SDLVideoManager(int screenWidth, int screenHeight)
         {
@@ -51,6 +55,7 @@ namespace Engine
 
             SDL.SetRenderDrawBlendMode(rendererPtr, SDL.BlendMode.Blend);
             SDL.SetRenderVSync(rendererPtr, 1);
+            SDL.HideCursor();
 
             int bpp = -1;
             uint r = 0, g = 0, b = 0, a = 0;
@@ -76,11 +81,15 @@ namespace Engine
             for (int i = 0; i < ScreenHeight; i++)
                 ylookup[i] = (uint)(i * BufferPitch);
 
+            _isInitialized = true;
             return true;
         }
 
         public void Update()
         {
+            if (!_isInitialized)
+                throw new Exception("Video Manager is not initialized");
+
             UpdateScreen(screenBufferPtr);
         }
 
@@ -104,11 +113,10 @@ namespace Engine
             SDL.DestroyWindow(windowPtr);
         }
 
-        public void Draw(byte[] graphic, int x, int y, int width, int height, float scale)
+        public void Draw(Graphic graphic, Vector2 position, Vector2 dimension)
         {
-            int scaleFactor = (int)scale;
-            int i, j, sci, scj;
-            int m, n;
+            float scaleX = (float)graphic.Width / dimension.X;
+            float scaleY = (float)graphic.Height / dimension.Y;
 
             IntPtr dest = LockSurface(screenBufferPtr);
             if (dest == IntPtr.Zero) return;
@@ -116,25 +124,27 @@ namespace Engine
             {
                 byte* pixels = (byte*)dest;
 
-                for (j = 0, scj = 0; j < height; j++, scj += scaleFactor)
+                var startingX = Math.Max(position.X, 0);
+                var startingY = Math.Max(position.Y, 0);
+                var endingX = Math.Min(dimension.X, ScreenWidth);
+                var endingY = Math.Min(dimension.Y, ScreenHeight);
+
+                for (int y = startingY; y < endingY; y++)
                 {
-                    for (i = 0, sci = 0; i < width; i++, sci += scaleFactor)
+                    int srcY = (int)(y * scaleY);
+                    for (int x = startingX; x < endingX; x++)
                     {
-                        byte col = graphic[(j * width) + i];
-                        for (m = 0; m < scaleFactor; m++)
-                        {
-                            for (n = 0; n < scaleFactor; n++)
-                            {
-                                pixels[ylookup[scj + m + y] + sci + n + x] = col;
-                            }
-                        }
+                        int srcX = (int)(x * scaleX);
+                        byte col = graphic.Data[srcY*graphic.Width+srcX];
+                        pixels[ylookup[y] + x] = col;
                     }
                 }
             }
+
             UnlockSurface(screenBufferPtr);
         }
 
-        private IntPtr LockSurface(IntPtr surface)
+        private static IntPtr LockSurface(IntPtr surface)
         {
             var sdlSurface = Marshal.PtrToStructure<SDL.Surface>(surface);
             if (SDL.MustLock(sdlSurface))
@@ -145,7 +155,7 @@ namespace Engine
             return sdlSurface.Pixels;
         }
 
-        private void UnlockSurface(IntPtr surface)
+        private static void UnlockSurface(IntPtr surface)
         {
             var sdlSurface = Marshal.PtrToStructure<SDL.Surface>(surface);
             if (SDL.MustLock(sdlSurface))

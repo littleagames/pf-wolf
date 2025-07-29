@@ -1,11 +1,12 @@
-﻿namespace Engine;
+﻿using PFWolf.Common;
+
+namespace Engine;
 
 internal class Program
 {
 
     private readonly int ScreenWidth = 640;
     private readonly int ScreenHeight = 400;
-    private float Scale => ScreenWidth / 320.0f;
 
     private IVideoManager videoManager;
 
@@ -31,11 +32,10 @@ internal class Program
 
 
         bool quit = false;
-        SDL.Event e;
 
         while (!quit)
         {
-            while (SDL.PollEvent(out e))
+            while (SDL.PollEvent(out SDL.Event e))
             {
                 if (e.Type == (uint)SDL.EventType.Quit || e is { Type: (uint)SDL.EventType.KeyDown, Key.Key: SDL.Keycode.Escape })
                 {
@@ -45,7 +45,12 @@ internal class Program
             }
 
             // Render something here
-            videoManager.Draw(Signon.SignOn, 0, 0, 320, 200, Scale);
+            videoManager.Draw(new Graphic
+            {
+                Data = Signon.SignOn,
+                Width = 320,
+                Height = 200
+            }, new Vector2(0, 0), new Vector2(ScreenWidth, ScreenHeight));
             videoManager.Update();
         }
 
