@@ -115,8 +115,8 @@ namespace Engine
 
         public void Draw(Graphic graphic, Vector2 position, Vector2 dimension)
         {
-            float scaleX = (float)graphic.Width / dimension.X;
-            float scaleY = (float)graphic.Height / dimension.Y;
+            float scaleX = (float)graphic.Dimensions.X / dimension.X;
+            float scaleY = (float)graphic.Dimensions.Y / dimension.Y;
 
             IntPtr dest = LockSurface(screenBufferPtr);
             if (dest == IntPtr.Zero) return;

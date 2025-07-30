@@ -48,9 +48,18 @@ internal class Program
             videoManager.Draw(new Graphic
             {
                 Data = Signon.SignOn,
-                Width = 320,
-                Height = 200
-            }, new Vector2(0, 0), new Vector2(ScreenWidth, ScreenHeight));
+                Dimensions = new Vector2(320, 200)
+            },
+            // Transform
+                // Position (x,y)
+                // HasChanged: bool
+            // TODO: Turns into "offset: Vector2"
+            // TODO: Orientation: Top, TopLeft, Left, Center, etc
+            position: new Vector2(0, 0),
+            // Scaling = Scaling.FitToScreen
+            // Scaling.StretchToFit
+            // Scaling.??
+            dimension: new Vector2(ScreenWidth, ScreenHeight));
             videoManager.Update();
         }
 
