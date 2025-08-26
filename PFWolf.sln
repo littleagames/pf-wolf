@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PFWolf.SDK", "PFWolf.SDK\PF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine", "Engine\Engine.csproj", "{6290400E-5EEE-4336-8C8C-12A821C27B56}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileLoader", "FileLoader\FileLoader.csproj", "{62EE7221-9FA7-40B6-9C3F-832218DD0637}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{6290400E-5EEE-4336-8C8C-12A821C27B56}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6290400E-5EEE-4336-8C8C-12A821C27B56}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6290400E-5EEE-4336-8C8C-12A821C27B56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62EE7221-9FA7-40B6-9C3F-832218DD0637}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62EE7221-9FA7-40B6-9C3F-832218DD0637}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62EE7221-9FA7-40B6-9C3F-832218DD0637}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62EE7221-9FA7-40B6-9C3F-832218DD0637}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

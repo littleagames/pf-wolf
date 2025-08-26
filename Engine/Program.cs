@@ -4,19 +4,30 @@ namespace Engine;
 
 internal class Program
 {
-
-    private readonly int ScreenWidth = 640;
-    private readonly int ScreenHeight = 400;
+    private const string BaseDataDirectory = "D:\\projects\\Wolf3D\\PFWolf\\PFWolf-Assets";
+    private const string BasePfWolfPackageFile = "pfwolf.pk3";
+    private const int ScreenWidth = 640;
+    private const int ScreenHeight = 400;
 
     private IVideoManager videoManager;
+    private IAssetManager assetManager;
 
     internal Program()
     {
         videoManager = new SDLVideoManager(ScreenWidth, ScreenHeight);
+        assetManager = new AssetManager();
     }
 
     internal void Run()
     {
+        // TODO: Load in initialization config data
+        // This could be things like
+        // "last chosen base game pack"
+        // screen resolution? Or is that in the standard config?
+        //
+
+        assetManager.LoadPackage(BaseDataDirectory, BasePfWolfPackageFile);
+
         if (!SDL.Init(0))
         {
             SDL.LogError(SDL.LogCategory.Video, "Unable to initialize SDL main.");
@@ -32,6 +43,9 @@ internal class Program
 
 
         bool quit = false;
+        var startCounter = SDL.GetPerformanceCounter();
+        var frequency = SDL.GetPerformanceFrequency();
+        var fpsCounter = new FpsCounter();
 
         while (!quit)
         {
@@ -43,6 +57,10 @@ internal class Program
                 }
 
             }
+
+            // Calculate elapsed time
+            var currentCounter = SDL.GetPerformanceCounter();
+            var elapsed = (currentCounter - startCounter) / (double)frequency;
 
             // Render something here
             videoManager.Draw(new Graphic
@@ -60,6 +78,11 @@ internal class Program
             // Scaling.StretchToFit
             // Scaling.??
             dimension: new Vector2(ScreenWidth, ScreenHeight));
+            
+            fpsCounter.Update();
+            videoManager.DrawFps(fpsCounter.FPS);
+
+
             videoManager.Update();
         }
 

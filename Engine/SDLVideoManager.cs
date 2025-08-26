@@ -1,5 +1,4 @@
 ﻿using PFWolf.Common;
-using System;
 using System.Runtime.InteropServices;
 
 namespace Engine
@@ -12,6 +11,7 @@ namespace Engine
         public int ScreenWidth { get; }
         bool Initialize();
         void Draw(Graphic graphic, Vector2 position, Vector2 dimension);
+        void DrawFps(double fps);
         void Update();
         void ShutDown();
     }
@@ -47,7 +47,7 @@ namespace Engine
                 return false;
             }
 
-            if (!SDL.CreateWindowAndRenderer("PF Wolf", ScreenWidth, ScreenHeight, SDL.WindowFlags.OpenGL, out windowPtr, out rendererPtr))
+            if (!SDL.CreateWindowAndRenderer("PF Wolf", ScreenWidth, ScreenHeight, SDL.WindowFlags.OpenGL | SDL.WindowFlags.Fullscreen, out windowPtr, out rendererPtr))
             {
                 SDL.LogError(SDL.LogCategory.Video, "Unable to initialize window and/or renderer");
                 return false;
@@ -84,6 +84,11 @@ namespace Engine
             _isInitialized = true;
             return true;
         }
+        private double fps;
+        public void DrawFps(double fps)
+        {
+            this.fps = fps;
+        }
 
         public void Update()
         {
@@ -101,6 +106,10 @@ namespace Engine
 
             SDL.UpdateTexture(texturePtr, IntPtr.Zero, sdlScreen.Pixels, ScreenPitch);
             SDL.RenderTexture(rendererPtr, texturePtr, IntPtr.Zero, IntPtr.Zero);
+
+            SDL.SetRenderDrawColor(rendererPtr, 255, 255, 255, 255);
+            SDL.RenderDebugText(rendererPtr, 10, 10, $"FPS: {fps:N0}");
+
             SDL.RenderPresent(rendererPtr);
         }
 
@@ -113,10 +122,10 @@ namespace Engine
             SDL.DestroyWindow(windowPtr);
         }
 
-        public void Draw(Graphic graphic, Vector2 position, Vector2 dimension)
+        public void Draw(Graphic graphic, Vector2 position, Vector2 size)
         {
-            float scaleX = (float)graphic.Dimensions.X / dimension.X;
-            float scaleY = (float)graphic.Dimensions.Y / dimension.Y;
+            float scaleX = (float)graphic.Dimensions.X / size.X;
+            float scaleY = (float)graphic.Dimensions.Y / size.Y;
 
             IntPtr dest = LockSurface(screenBufferPtr);
             if (dest == IntPtr.Zero) return;
@@ -126,8 +135,8 @@ namespace Engine
 
                 var startingX = Math.Max(position.X, 0);
                 var startingY = Math.Max(position.Y, 0);
-                var endingX = Math.Min(dimension.X, ScreenWidth);
-                var endingY = Math.Min(dimension.Y, ScreenHeight);
+                var endingX = Math.Min(size.X, ScreenWidth);
+                var endingY = Math.Min(size.Y, ScreenHeight);
 
                 for (int y = startingY; y < endingY; y++)
                 {
@@ -135,7 +144,7 @@ namespace Engine
                     for (int x = startingX; x < endingX; x++)
                     {
                         int srcX = (int)(x * scaleX);
-                        byte col = graphic.Data[srcY*graphic.Width+srcX];
+                        byte col = graphic.Data[srcY* graphic.Dimensions.X + srcX];
                         pixels[ylookup[y] + x] = col;
                     }
                 }
