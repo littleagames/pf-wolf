@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CSharpFunctionalExtensions" Version="3.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\PFWolf.Common\PFWolf.Common.csproj" />
     <ProjectReference Include="..\PFWolf.SDK\PFWolf.SDK.csproj" />
   </ItemGroup>

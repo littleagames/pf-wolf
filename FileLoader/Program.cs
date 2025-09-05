@@ -1,4 +1,5 @@
-﻿using FileLoader;
+﻿using CSharpFunctionalExtensions;
+using FileLoader;
 using PFWolf.Common;
 using PFWolf.Common.Assets;
 using System.IO;
@@ -8,20 +9,22 @@ const string BaseDataDirectory = "D:\\projects\\Wolf3D\\PFWolf\\PFWolf-Assets";
 const string BasePfWolfPackageFile = "pfwolf.pk3";
 
 var pfWolfBasePk3Path = Path.Combine(BaseDataDirectory, BasePfWolfPackageFile);
-using ZipArchive archive = ZipFile.OpenRead(pfWolfBasePk3Path);
 
 var assets = new Dictionary<string, Asset>();
 
 // This parameter will be defined in the Engine args
 var gamePackArgs = args.FirstOrDefault(x => x.StartsWith("-gamepack=", StringComparison.InvariantCultureIgnoreCase))?.Split("-gamepack=");
-string? gamePack = null;
+string? selectedGamePack = null;
 if (gamePackArgs?.Length == 2)
 {
-    gamePack = gamePackArgs[1];
-    Console.WriteLine($"Game Pack specified: {gamePack}");
+    selectedGamePack = gamePackArgs[1];
+    Console.WriteLine($"Game Pack specified: {selectedGamePack}");
 }
 else
+{
     Console.WriteLine("No game pack specified, using default.");
+}
+
 var gamePackPaths = new List<string> {
     pfWolfBasePk3Path
 };
@@ -31,10 +34,19 @@ var pk3Paths = args.Where(x =>
     && Path.Exists(x)).ToList();
 
 gamePackPaths.AddRange(pk3Paths);
+gamePackPaths = gamePackPaths.Distinct().ToList();
 
-// TODO: Validate only 1 pfwolf.pk3 is used
+if (gamePackPaths.Count(x => x.EndsWith(BasePfWolfPackageFile, StringComparison.InvariantCultureIgnoreCase)) > 1)
+{
+    Console.WriteLine($"Error: More than one '{BasePfWolfPackageFile}' requested to be loaded.");
+    return;
+}
 
-new AssetLoader().LoadAvailableGamePacks(gamePackPaths);
+var assetLoader = new AssetLoader();
+using ZipArchive archive = ZipFile.OpenRead(pfWolfBasePk3Path);
+
+var result = assetLoader.LoadAvailableGamePacks(gamePackPaths, selectedGamePack);
+
 
 // TODO: Or this stuff is run in the launcher, and gives the player the option to pick a game pack
 
