@@ -3,6 +3,7 @@ using PFWolf.Common;
 using PFWolf.Common.Assets;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
@@ -60,13 +61,18 @@ internal class AssetLoader
                     _assets.Add(fileNameOnly, gamePackDefinition);
                 }
 
-                // TODO: Load "assetreferences" for all map definitions, and overwrite any pre-existing ones of the same name
+                //var mapDefinitionAsset = new MapDefinition(); // Only one, merge all data into this asset
+                // TODO: Load in all map definitions, with game packs overwriting previous values
                 foreach (var gamePack in gamePackDefinition.GamePacks.Values)
                 {
-                    if (string.IsNullOrEmpty(gamePack.MapDefinitions))
+                    if (gamePack.MapDefinitions.Count == 0)
                         continue;
 
-                    var mapDefinitions = archive.Entries.FirstOrDefault(x => x.FullName == gamePack.MapDefinitions);
+                    var mapDefinitions = archive.Entries
+                        .Where(x => x.Length > 0
+                        && gamePack.MapDefinitions.Any(md => GetAssetReadyName(md).IndexOf(GetAssetReadyName(x.FullName), StringComparison.InvariantCultureIgnoreCase) >= 0))
+                        .ToList();
+
                     // TODO: AssetReference<MapDefintions>
                     // Should have file path and entry path, as well as the Pk3AssetLoader
                     
@@ -96,6 +102,24 @@ internal class AssetLoader
 
         Console.WriteLine($"Assets: {_assets.Count}");
         return Result.Success();
+    }
+
+    private static string GetAssetReadyName(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+            return string.Empty;
+
+        var stripExtension = fullName.LastIndexOf(".");
+
+        if (stripExtension >= 0)
+            fullName = fullName.Substring(0, stripExtension);
+
+        return fullName.Replace('\\', '/').Trim().ToLowerInvariant();
+
+        //var path = Path.GetDirectoryName(fullName);
+        //var fileName = Path.GetFileNameWithoutExtension(fullName);
+        //var assetReadyPath = Path.Combine(path, fileName);
+        //return assetReadyPath;
     }
 
     public Result<T> Get<T>(string assetName) where T : Asset

@@ -7,7 +7,7 @@ public record GamePackDefinitions : Asset
     public GamePackDefinitions(string name, Stream data)
     {
         Name = name;
-        GamePacks = new YamlDataEntryLoader().Read<Dictionary<string, GamePackDefinitionDataModel>>(data);
+        GamePacks = YamlDataEntryLoader.Read<Dictionary<string, GamePackDefinitionDataModel>>(data);
         //Title = model.Name;
         //GamePalette = model.GamePalette;
         //StartingScene = model.StartingScene;
@@ -45,10 +45,10 @@ public record GamePackDefinitionDataModel
     /// <summary>
     /// Path to the asset that maps map plane values to walls, objects, floors/ceilings, etc
     /// </summary>
-    public string? MapDefinitions { get; init; }
+    public List<string> MapDefinitions { get; init; } = [];
 
     /// <summary>
     /// Path to the asset map that defines names of the asset within a game pack
     /// </summary>
-    public string? GamePackAssetMapping { get; init; }
+    public string? GamePackAssetReference { get; init; }
 }

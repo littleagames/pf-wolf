@@ -5,7 +5,7 @@ namespace PFWolf.Common.Loaders;
 
 internal class YamlDataEntryLoader
 {
-    public T Read<T>(Stream stream) where T : new()
+    public static T Read<T>(Stream stream) where T : new()
     {
         using var ms = new MemoryStream();
         stream.CopyTo(ms);
