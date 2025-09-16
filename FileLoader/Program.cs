@@ -1,5 +1,4 @@
 ﻿using CSharpFunctionalExtensions;
-using FileLoader;
 using PFWolf.Common;
 using PFWolf.Common.Assets;
 using System.IO;
@@ -42,10 +41,16 @@ if (gamePackPaths.Count(x => x.EndsWith(BasePfWolfPackageFile, StringComparison.
     return;
 }
 
-var assetLoader = new AssetLoader();
+var assetLoader = new AssetManager(gamePackPaths);
 using ZipArchive archive = ZipFile.OpenRead(pfWolfBasePk3Path);
 
-var result = assetLoader.LoadAvailableGamePacks(gamePackPaths, selectedGamePack);
+var result = assetLoader.LoadGamePacks(selectedGamePack);
+
+if (result.IsFailure)
+{
+    Console.WriteLine(result.Error);
+    return;
+}
 
 
 // TODO: Or this stuff is run in the launcher, and gives the player the option to pick a game pack

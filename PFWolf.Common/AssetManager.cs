@@ -1,17 +1,23 @@
-﻿using PFWolf.Common.Assets;
-using PFWolf.Common.Loaders;
+﻿using CSharpFunctionalExtensions;
+using PFWolf.Common.Assets;
 using System.IO.Compression;
+using filePath = System.String;
 
 namespace PFWolf.Common;
 
-public interface IAssetManager
+public class AssetManager
 {
-    Task LoadPackage(string directory, string fileName);
-}
+    private const string GamePackEntryName = "gamepacks/gamepack-info";
+    private const string MapDefinitionsName = "map-definitions";
 
-public class AssetManager : IAssetManager
-{
     private Dictionary<string, Asset> _assets = [];
+    private readonly Dictionary<string, filePath> pk3FilePaths;
+
+    public AssetManager(List<filePath> pk3FilePaths)
+    {
+        this.pk3FilePaths = pk3FilePaths.ToDictionary(x => Path.GetFileNameWithoutExtension(x), x => x);
+    }
+
 
     public Task LoadPackage(string directory, string fileName)
     {
@@ -88,5 +94,110 @@ public class AssetManager : IAssetManager
         }
 
         _assets.Add(asset.Name, asset);
+    }
+
+    public Result LoadGamePacks(Maybe<string> selectedGamePack)
+    {
+        if (selectedGamePack.HasNoValue)
+        {
+            // choose default gamepack
+            return Result.Failure("Cannot determine default game pack at this time.");
+        }
+
+        GamePackDefinitions? singletonGamePackInfo = new();
+        _assets.Add(singletonGamePackInfo.Name, singletonGamePackInfo);
+
+        Dictionary<string, MapDefinition> mapDefinitions = [];
+
+        foreach (var gamePackPath in this.pk3FilePaths)
+        {
+            using ZipArchive archive = ZipFile.OpenRead(gamePackPath.Value);
+            ZipArchiveEntry gamePackInfo;
+            try
+            {
+                gamePackInfo = archive.Entries.
+                    Single(entry => entry.Length > 0 && entry.IsEncrypted == false
+                    && entry.FullName.StartsWith(GamePackEntryName));
+            }
+            catch (InvalidOperationException e) when (e.Message.StartsWith("Sequence Contains No Elements", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return Result.Failure($"Error: No {GamePackEntryName} found in pack {gamePackPath.Key}.");
+            }
+            catch (InvalidOperationException e) when (e.Message.StartsWith("Sequence Contains More Than One Element", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return Result.Failure($"Error: More than 1 {GamePackEntryName} found in pack {gamePackPath.Key}.");
+            }
+
+            var gamePackName = Path.GetFileNameWithoutExtension(Path.GetFileName(gamePackInfo.FullName));
+
+            GamePackDefinitions gamePackDefinition;
+            
+            try 
+            {
+                gamePackDefinition = new GamePackDefinitions(gamePackInfo.Open());
+            }
+            catch (YamlDotNet.Core.YamlException ex)
+            {
+                return Result.Failure($"Error parsing game pack definitions from {gamePackPath.Key}: {ex.Message}");
+            }
+
+            singletonGamePackInfo.AddGamePacks(gamePackDefinition.GamePacks);
+
+            foreach (var pack in gamePackDefinition.GamePacks)
+            {
+                MapDefinition mapDefinition = null!;
+                foreach (var defs in pack.Value.MapDefinitions)
+                {
+                    var definitionEntry = archive.Entries.FirstOrDefault(x => GetAssetReadyName(x.FullName) == GetAssetReadyName(defs));
+                    if (definitionEntry == null)
+                        continue; // Not found
+
+                    if (mapDefinitions.TryGetValue(pack.Key, out var existingMapDefinition))
+                    {
+                        mapDefinition.Include(new MapDefinition(MapDefinitionsName, definitionEntry.Open()).Definitions);
+                        continue;
+                    }
+
+                    mapDefinition = new MapDefinition(MapDefinitionsName, definitionEntry.Open());
+                    mapDefinitions[pack.Key] = mapDefinition;
+                }
+            }
+        }
+
+        if (!singletonGamePackInfo.HasGamePack(selectedGamePack.Value, out GamePackDefinitionDataModel foundGamePack))
+        {
+            return Result.Failure($"Error: Specified game pack '{selectedGamePack.Value}' not found in loaded packages.");
+        }
+
+        foundGamePack.DetermineBasePack(singletonGamePackInfo.GamePacks, [selectedGamePack.Value]);
+
+        // TODO: Handle BasePack inheritance here
+
+        if (!mapDefinitions.TryGetValue(selectedGamePack.Value, out var selectedMapDefinition))
+        {
+            return Result.Failure($"Error: No map definitions found for selected game pack '{selectedGamePack.Value}'.");
+        }
+
+        // TODO: Add the map definitions to the assets
+
+        return Result.Success();
+    }
+
+    private static string GetAssetReadyName(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+            return string.Empty;
+
+        var stripExtension = fullName.LastIndexOf(".");
+
+        if (stripExtension >= 0)
+            fullName = fullName.Substring(0, stripExtension);
+
+        return fullName.Replace('\\', '/').Trim().ToLowerInvariant();
+
+        //var path = Path.GetDirectoryName(fullName);
+        //var fileName = Path.GetFileNameWithoutExtension(fullName);
+        //var assetReadyPath = Path.Combine(path, fileName);
+        //return assetReadyPath;
     }
 }

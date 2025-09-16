@@ -1,4 +1,5 @@
-﻿using PFWolf.Common;
+﻿using CSharpFunctionalExtensions;
+using PFWolf.Common;
 
 namespace Engine;
 
@@ -10,12 +11,47 @@ internal class Program
     private const int ScreenHeight = 400;
 
     private IVideoManager videoManager;
-    private IAssetManager assetManager;
+    private AssetManager assetManager;
 
-    internal Program()
+    private Maybe<string> selectedGamePack = Maybe<string>.None;
+
+    internal Program(string[] args)
     {
+        //
+
+        // This parameter will be defined in the Engine args
+        var gamePackArgs = args.FirstOrDefault(x => x.StartsWith("-gamepack=", StringComparison.InvariantCultureIgnoreCase))?.Split("-gamepack=");
+        if (gamePackArgs?.Length == 2)
+        {
+            selectedGamePack = gamePackArgs[1];
+            Console.WriteLine($"Game Pack specified: {selectedGamePack}");
+        }
+        else
+        {
+            Console.WriteLine("No game pack specified, using default.");
+        }
+
+        var pfWolfBasePk3Path = Path.Combine(BaseDataDirectory, BasePfWolfPackageFile);
+        var gamePackPaths = new List<string> {
+            pfWolfBasePk3Path
+        };
+
+        var pk3Paths = args.Where(x =>
+            x.EndsWith(".pk3", StringComparison.InvariantCultureIgnoreCase)
+            && Path.Exists(x)).ToList();
+
+        gamePackPaths.AddRange(pk3Paths);
+        gamePackPaths = gamePackPaths.Distinct().ToList();
+
+        if (gamePackPaths.Count(x => x.EndsWith(BasePfWolfPackageFile, StringComparison.InvariantCultureIgnoreCase)) > 1)
+        {
+            Console.WriteLine($"Error: More than one '{BasePfWolfPackageFile}' requested to be loaded.");
+            return;
+        }
+
+        //
         videoManager = new SDLVideoManager(ScreenWidth, ScreenHeight);
-        assetManager = new AssetManager();
+        assetManager = new AssetManager(gamePackPaths);
     }
 
     internal void Run()
@@ -25,8 +61,9 @@ internal class Program
         // "last chosen base game pack"
         // screen resolution? Or is that in the standard config?
         //
-
-        assetManager.LoadPackage(BaseDataDirectory, BasePfWolfPackageFile);
+        assetManager.LoadGamePacks(selectedGamePack);
+        
+        //await assetManager.LoadPackage(BaseDataDirectory, BasePfWolfPackageFile);
 
         if (!SDL.Init(0))
         {
@@ -93,7 +130,7 @@ internal class Program
     [STAThread]
     static int Main(string[] args)
     {
-        new Program().Run();
+        new Program(args).Run();
 
         return 0;
     }
