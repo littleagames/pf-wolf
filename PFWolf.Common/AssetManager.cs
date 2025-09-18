@@ -8,7 +8,6 @@ namespace PFWolf.Common;
 public class AssetManager
 {
     private const string GamePackEntryName = "gamepacks/gamepack-info";
-    private const string MapDefinitionsName = "map-definitions";
 
     private Dictionary<string, Asset> _assets = [];
     private readonly Dictionary<string, filePath> pk3FilePaths;
@@ -105,7 +104,7 @@ public class AssetManager
         }
 
         GamePackDefinitions? singletonGamePackInfo = new();
-        _assets.Add(singletonGamePackInfo.Name, singletonGamePackInfo);
+        AddAsset(singletonGamePackInfo);
 
         Dictionary<string, MapDefinition> mapDefinitions = [];
 
@@ -154,11 +153,11 @@ public class AssetManager
 
                     if (mapDefinitions.TryGetValue(pack.Key, out var existingMapDefinition))
                     {
-                        mapDefinition.Include(new MapDefinition(MapDefinitionsName, definitionEntry.Open()).Definitions);
+                        mapDefinition.Include(new MapDefinition(definitionEntry.Open()).Definitions);
                         continue;
                     }
 
-                    mapDefinition = new MapDefinition(MapDefinitionsName, definitionEntry.Open());
+                    mapDefinition = new MapDefinition(definitionEntry.Open());
                     mapDefinitions[pack.Key] = mapDefinition;
                 }
             }
@@ -170,16 +169,17 @@ public class AssetManager
         }
 
         foundGamePack.DetermineBasePack(singletonGamePackInfo.GamePacks, [selectedGamePack.Value]);
-
-        // TODO: Handle BasePack inheritance here
+        if (!mapDefinitions.ContainsKey(foundGamePack.Name) && !string.IsNullOrWhiteSpace(foundGamePack.BasePack))
+        {
+            mapDefinitions[foundGamePack.Name] = mapDefinitions[foundGamePack.BasePack];
+        }
 
         if (!mapDefinitions.TryGetValue(selectedGamePack.Value, out var selectedMapDefinition))
         {
             return Result.Failure($"Error: No map definitions found for selected game pack '{selectedGamePack.Value}'.");
         }
 
-        // TODO: Add the map definitions to the assets
-
+        AddAsset(selectedMapDefinition!);
         return Result.Success();
     }
 

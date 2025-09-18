@@ -4,9 +4,9 @@ namespace PFWolf.Common.Assets;
 
 public record MapDefinition : Asset
 {
-    public MapDefinition(string name, Stream data)
+    public MapDefinition(Stream data)
     {
-        Name = name;
+        Name = "map-definitions";
         Definitions = YamlDataEntryLoader.Read<MapDefinitionDataModel>(data);
     }
 
