@@ -118,11 +118,11 @@ public class AssetManager
                     Single(entry => entry.Length > 0 && entry.IsEncrypted == false
                     && entry.FullName.StartsWith(GamePackEntryName));
             }
-            catch (InvalidOperationException e) when (e.Message.StartsWith("Sequence Contains No Elements", StringComparison.InvariantCultureIgnoreCase))
+            catch (InvalidOperationException e) when (e.Message.StartsWith("Sequence contains no matching element", StringComparison.InvariantCultureIgnoreCase))
             {
                 return Result.Failure($"Error: No {GamePackEntryName} found in pack {gamePackPath.Key}.");
             }
-            catch (InvalidOperationException e) when (e.Message.StartsWith("Sequence Contains More Than One Element", StringComparison.InvariantCultureIgnoreCase))
+            catch (InvalidOperationException e) when (e.Message.StartsWith("Sequence contains more than one matching element", StringComparison.InvariantCultureIgnoreCase))
             {
                 return Result.Failure($"Error: More than 1 {GamePackEntryName} found in pack {gamePackPath.Key}.");
             }

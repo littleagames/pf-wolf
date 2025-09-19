@@ -29,17 +29,24 @@ public class AssetManagerTests
     public void LoadGamePacks_ReturnsFailure_WhenGamePackInfoNotFound()
     {
         // Arrange
+        //C:\Users\Drew\AppData\Local\Temp\tmpymaic4.tmp
         var tempFile = Path.GetTempFileName();
-        using (var zip = ZipFile.Open(tempFile, ZipArchiveMode.Create)) { }
-        var assetManager = new AssetManager(new List<string> { tempFile });
+        try
+        {
+            using (var zip = ZipFile.Open(tempFile, ZipArchiveMode.Update)) { }
+            var assetManager = new AssetManager(new List<string> { tempFile });
 
-        // Act
-        var result = assetManager.LoadGamePacks("testpack");
+            // Act
+            var result = assetManager.LoadGamePacks("testpack");
 
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.Contains("No gamepacks/gamepack-info found", result.Error);
-        File.Delete(tempFile);
+            // Assert
+            Assert.True(result.IsFailure);
+            Assert.Contains("No gamepacks/gamepack-info found", result.Error);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
     }
 
     [Fact]
@@ -47,20 +54,56 @@ public class AssetManagerTests
     {
         // Arrange
         var tempFile = Path.GetTempFileName();
-        using (var zip = ZipFile.Open(tempFile, ZipArchiveMode.Update))
+        try
         {
-            zip.CreateEntry("gamepacks/gamepack-info");
-            zip.CreateEntry("gamepacks/gamepack-info2");
+            using (var zip = ZipFile.Open(tempFile, ZipArchiveMode.Update))
+            {
+                var entry = zip.CreateEntry("gamepacks/gamepack-info");
+                using (var stream = entry.Open())
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.Write(@"wolf3d-apogee:
+    title: ""Wolfenstein 3D""
+    map-definitions:
+        - mapdefs/wolf3d/walls
+        - mapdefs/wolf3d/doors
+        - mapdefs/wolf3d/player
+        - mapdefs/wolf3d/decorations
+        - mapdefs/wolf3d/enemies
+    game-palette: wolfpal
+    starting-scene: ""wolf3d:GameLoopScene""
+    game-pack-asset-reference: gamepacks/wolf3d-apogee-map");
+                }
+                var entry2 = zip.CreateEntry("gamepacks/gamepack-info2");
+                using (var stream = entry2.Open())
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.Write(@"wolf3d-activision:
+    title: ""Wolfenstein 3D""
+    map-definitions:
+        - mapdefs/wolf3d/walls
+        - mapdefs/wolf3d/doors
+        - mapdefs/wolf3d/player
+        - mapdefs/wolf3d/decorations
+        - mapdefs/wolf3d/enemies
+    game-palette: wolfpal
+    starting-scene: ""wolf3d:GameLoopScene""
+    game-pack-asset-reference: gamepacks/wolf3d-activision-map");
+                }
+            }
+            var assetManager = new AssetManager(new List<string> { tempFile });
+
+            // Act
+            var result = assetManager.LoadGamePacks("testpack");
+
+            // Assert
+            Assert.True(result.IsFailure);
+            Assert.Contains("More than 1 gamepacks/gamepack-info found", result.Error);
         }
-        var assetManager = new AssetManager(new List<string> { tempFile });
-
-        // Act
-        var result = assetManager.LoadGamePacks("testpack");
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.Contains("More than 1 gamepacks/gamepack-info found", result.Error);
-        File.Delete(tempFile);
+        finally
+        {
+            File.Delete(tempFile);
+        }
     }
 
     [Fact]
@@ -68,21 +111,27 @@ public class AssetManagerTests
     {
         // Arrange
         var tempFile = Path.GetTempFileName();
-        using (var zip = ZipFile.Open(tempFile, ZipArchiveMode.Update))
+        try
         {
-            var entry = zip.CreateEntry("gamepacks/gamepack-info");
-            using var stream = entry.Open();
-            stream.Write(new byte[] { 0xFF, 0xFF, 0xFF }, 0, 3); // Invalid YAML
+            using (var zip = ZipFile.Open(tempFile, ZipArchiveMode.Update))
+            {
+                var entry = zip.CreateEntry("gamepacks/gamepack-info");
+                using var stream = entry.Open();
+                stream.Write(new byte[] { 0xFF, 0xFF, 0xFF }, 0, 3); // Invalid YAML
+            }
+            var assetManager = new AssetManager(new List<string> { tempFile });
+
+            // Act
+            var result = assetManager.LoadGamePacks("testpack");
+
+            // Assert
+            Assert.True(result.IsFailure);
+            Assert.Contains("Error parsing game pack definitions", result.Error);
         }
-        var assetManager = new AssetManager(new List<string> { tempFile });
-
-        // Act
-        var result = assetManager.LoadGamePacks("testpack");
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.Contains("Error parsing game pack definitions", result.Error);
-        File.Delete(tempFile);
+        finally
+        {
+            File.Delete(tempFile);
+        }
     }
 
     [Fact]
@@ -90,22 +139,28 @@ public class AssetManagerTests
     {
         // Arrange
         var tempFile = Path.GetTempFileName();
-        using (var zip = ZipFile.Open(tempFile, ZipArchiveMode.Update))
+        try
         {
-            var entry = zip.CreateEntry("gamepacks/gamepack-info");
-            using var stream = entry.Open();
-            using var writer = new StreamWriter(stream);
-            writer.Write("gamepacks: {}");
+            using (var zip = ZipFile.Open(tempFile, ZipArchiveMode.Update))
+            {
+                var entry = zip.CreateEntry("gamepacks/gamepack-info");
+                using var stream = entry.Open();
+                using var writer = new StreamWriter(stream);
+                writer.Write("gamepacks: {}");
+            }
+            var assetManager = new AssetManager(new List<string> { tempFile });
+
+            // Act
+            var result = assetManager.LoadGamePacks("notfoundpack");
+
+            // Assert
+            Assert.True(result.IsFailure);
+            Assert.Contains("not found in loaded packages", result.Error);
         }
-        var assetManager = new AssetManager(new List<string> { tempFile });
-
-        // Act
-        var result = assetManager.LoadGamePacks("notfoundpack");
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.Contains("not found in loaded packages", result.Error);
-        File.Delete(tempFile);
+        finally
+        {
+            File.Delete(tempFile);
+        }
     }
 
     // Additional tests for success scenarios would require more setup and possibly fakes/mocks for Asset, GamePackDefinitions, etc.
