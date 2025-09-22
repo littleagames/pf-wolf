@@ -4,7 +4,7 @@ namespace PFWolf.Common.Loaders;
 
 public class Pk3DataFileLoader
 {
-    public static byte[] Load(string filePath, string entryPath) // other data file loaders might have different parameters
+    public static byte[] Load(string filePath, string entryPath)
     {
         using ZipArchive archive = ZipFile.OpenRead(filePath);
         var entry = archive.GetEntry(entryPath);

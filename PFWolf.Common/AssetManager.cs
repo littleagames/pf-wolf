@@ -1,5 +1,6 @@
 ﻿using CSharpFunctionalExtensions;
 using PFWolf.Common.Assets;
+using PFWolf.Common.Loaders;
 using System.IO.Compression;
 using filePath = System.String;
 
@@ -18,81 +19,126 @@ public class AssetManager
     }
 
 
-    public Task LoadPackage(string directory, string fileName)
+    public async Task<Result> LoadPackage(string pk3FileFullPath)
     {
-        var pk3FileFullPath = Path.Combine(directory, fileName);
         using ZipArchive archive = ZipFile.OpenRead(pk3FileFullPath);
 
-        foreach (ZipArchiveEntry entry in archive.Entries)
+        foreach (ZipArchiveEntry entry in archive.Entries.Where(entry => entry.Length > 0 && entry.IsEncrypted == false))
         {
-            try
-            { 
-                if (entry.Length == 0)
-                    continue;
-
-                if (entry.FullName.StartsWith("palettes/"))
-                {
-                    if (entry.Length == 768) // 3 bytes per color, 256 colors
-                    {
-                       // AddAsset(new AssetReference<Palette>(entry.Name, pk3FileFullPath, AssetType.Palette, () => Pk3DataFileLoader.Load(pk3FileFullPath, entry.FullName))); 
-                        // pk3datafileloader(filepath, assetpathinfile, Pallette)
-                        // So in this case it will convert to Palette when loaded
-
-                        // This is an example of the asset loaded, but just in "Raw" data until it is mapped to a proper "Palette"
-                        //_assets.Add(new RawAsset<Palette>(entry.Name, entry.Open()));
-
-                        // This would straight be a common data model of palette
-                        //_assets.Add(new Palette
-                        //{
-                        //    Name = entry.Name
-                        //});
-                        // add "loading" strategy and path to assets (isLoaded=false)
-                        // this allows for loaded when needed
-                    }
-                    //assets.Add(new PaletteAsset
-                    //{
-                    //    Name = CleanName(entry.Name),
-                    //    RawData = rawData
-                    //});
-                    continue;
-                }
-            }
-            catch (Exception ex)
+            var assetName = GetAssetReadyName(entry.Name);
+            if (entry.FullName.StartsWith("actordefs/"))
             {
-                // Log the error, but continue processing other entries
-                Console.WriteLine($"Error processing entry {entry.FullName}: {ex.Message}");
+                AddReference(assetName, AssetType.ActorDefinition, () => new ActorDefinition());
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("fonts/"))
+            {
+                AddReference(assetName, AssetType.Font, () => new Font());
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("graphics/"))
+            {
+                AddReference(assetName, AssetType.Graphic, () => PngGraphicDataLoader.Load(Pk3DataFileLoader.Load(pk3FileFullPath, entry.FullName)));
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("maps/"))
+            {
+                AddReference(assetName, AssetType.Map, () => new Map());
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("menudefs/"))
+            {
+                AddReference(assetName, AssetType.MenuDefinitions, () => new MenuDefinition());
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("music/"))
+            {
+                AddReference(assetName, AssetType.Music, () => new ImfMusic());
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("palettes/"))
+            {
+                AddReference(assetName, AssetType.Palette, () => new Palette(assetName, Pk3DataFileLoader.Load(pk3FileFullPath, entry.FullName)));
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("scripts/"))
+            {
+                AddReference(assetName, AssetType.Script, () => new Script());
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("sounds/"))
+            {
+                AddReference(assetName, AssetType.Sound, () => new WavSound());
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("sprites/"))
+            {
+                AddReference(assetName, AssetType.Sprite, () => new Sprite());
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("text/"))
+            {
+                AddReference(assetName, AssetType.Text, () => new Text());
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("textures/"))
+            {
+                AddReference(assetName, AssetType.Texture, () => new Texture());
+                continue;
             }
         }
 
-        // How should I handle this?
-        // Should I use a <T> to use a specific FileLoader?
-        // Then maybe a gamepack will just call this method in the file loader, and just put all of the things in the asset manager
-        throw new NotImplementedException();
+        await Task.CompletedTask;
+        return Result.Success();
     }
 
-    public T Load<T>(string assetName) where T : Asset
+    public T Load<T>(string assetName, AssetType assetType) where T : Asset
     {
-        if (!_assets.TryGetValue(assetName, out var asset))
+        if (!_assets.TryGetValue(GetKey(assetName, assetType), out var asset))
         {
             throw new KeyNotFoundException($"Asset with name {assetName} not found.");
         }
 
-        if (asset is not T typedAsset)
+        if (asset is AssetReference<T>)
         {
-            throw new InvalidOperationException($"Asset with name {assetName} is not of type {typeof(T).Name}.");
+            var typedAsset = (AssetReference<T>)asset;
+            var loadedAsset = typedAsset.Load();
+            _assets[GetKey(loadedAsset)] = loadedAsset; // Replace reference with loaded asset
+            return loadedAsset;
         }
 
-        return Activator.CreateInstance<T>();
+        return (T)asset;
+    }
+
+    private void AddReference<T>(string assetName, AssetType assetType, Func<T> assetLoader) where T : Asset
+    {
+        AddAsset(new AssetReference<T>(assetName, assetType, assetLoader));
     }
 
     private void AddAsset(Asset asset)
     {
-        if (_assets.ContainsKey(asset.Name))
+        if (asset.Type == AssetType.Unknown)
+        {
+            throw new InvalidOperationException("Asset type cannot be Unknown.");
+        }
+
+        if (_assets.ContainsKey(GetKey(asset))) // and Add asset type
         {
             throw new InvalidOperationException($"Asset with name {asset.Name} already exists.");
         }
 
-        _assets.Add(asset.Name, asset);
+        _assets.Add(GetKey(asset), asset);
     }
 
     public Result LoadGamePacks(Maybe<string> selectedGamePack)
@@ -188,16 +234,16 @@ public class AssetManager
         if (string.IsNullOrWhiteSpace(fullName))
             return string.Empty;
 
-        var stripExtension = fullName.LastIndexOf(".");
+        var stripExtension = fullName.LastIndexOf('.');
 
         if (stripExtension >= 0)
             fullName = fullName.Substring(0, stripExtension);
 
         return fullName.Replace('\\', '/').Trim().ToLowerInvariant();
-
-        //var path = Path.GetDirectoryName(fullName);
-        //var fileName = Path.GetFileNameWithoutExtension(fullName);
-        //var assetReadyPath = Path.Combine(path, fileName);
-        //return assetReadyPath;
     }
+
+    private static string GetKey(Asset asset)
+        => GetKey(asset.Name, asset.Type);
+    private static string GetKey(string assetName, AssetType assetType)
+        => $"{assetType}:{assetName}";
 }

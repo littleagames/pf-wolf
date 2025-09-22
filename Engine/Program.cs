@@ -1,5 +1,6 @@
 ﻿using CSharpFunctionalExtensions;
 using PFWolf.Common;
+using PFWolf.Common.Assets;
 
 namespace Engine;
 

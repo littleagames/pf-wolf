@@ -5,11 +5,12 @@
 /// </summary>
 public record AssetReference<T> : Asset where T : Asset
 {
-    public string Path { get; init; } = null!;
+    public Func<T> Load { get; init; } = null!;
 
-    public AssetReference(string name, string path)
+    public AssetReference(string name, AssetType assetType, Func<T> load)
     {
         Name = name;
-        Path = path;
+        Type = assetType;
+        Load = load;
     }
 }

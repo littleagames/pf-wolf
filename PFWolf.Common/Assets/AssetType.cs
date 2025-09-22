@@ -3,6 +3,18 @@
 public enum AssetType
 {
     Unknown,
+    ActorDefinition,
+    Font,
+    GamePackDefinition,
     Graphic,
-    Palette
+    Map,
+    MapDefinition,
+    MenuDefinitions,
+    Music,
+    Palette,
+    Script,
+    Sound,
+    Sprite,
+    Text,
+    Texture
 }

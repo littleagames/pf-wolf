@@ -1,6 +1,7 @@
 ﻿using CSharpFunctionalExtensions;
 using PFWolf.Common;
 using PFWolf.Common.Assets;
+using PFWolf.Common.Loaders;
 using System.IO;
 using System.IO.Compression;
 
@@ -41,10 +42,9 @@ if (gamePackPaths.Count(x => x.EndsWith(BasePfWolfPackageFile, StringComparison.
     return;
 }
 
-var assetLoader = new AssetManager(gamePackPaths);
-using ZipArchive archive = ZipFile.OpenRead(pfWolfBasePk3Path);
+var assetManager = new AssetManager(gamePackPaths);
 
-var result = assetLoader.LoadGamePacks(selectedGamePack);
+var result = assetManager.LoadGamePacks(selectedGamePack);
 
 if (result.IsFailure)
 {
@@ -52,54 +52,12 @@ if (result.IsFailure)
     return;
 }
 
-
-// TODO: Or this stuff is run in the launcher, and gives the player the option to pick a game pack
-
-// TODO: AssetManager.PreLoad(types[]: [GamePackDefs, StartupConfig])
-// Types.All = Enum.GetValues<AssetType>
-foreach (ZipArchiveEntry entry in archive.Entries.Where(entry => entry.Length > 0 && entry.IsEncrypted == false))
+foreach (var path in gamePackPaths)
 {
-    Console.WriteLine(entry.FullName);
-    
-    if (entry.FullName.StartsWith("palettes/"))
-    {
-        var name = entry.Name;
-        var size = entry.Length;
-        var fileNameOnly = Path.GetFileNameWithoutExtension(Path.GetFileName(entry.FullName));
-        assets.Add(fileNameOnly, new AssetReference<Palette>(fileNameOnly, entry.FullName));
-        continue;
-    }
+    await assetManager.LoadPackage(path);
 }
 
-var palette = Load<Palette>("wolfpal");
-
-// TODO: Should load change the asset reference to a loaded asset in the dictionary?
-
-// TODO: Unload, return to an asset reference?
+var palette = assetManager.Load<Palette>("wolfpal", AssetType.Palette);
+var signon = assetManager.Load<Graphic>("wolf3d-signon", AssetType.Graphic);
 
 Console.ReadKey();
-
-Asset Load<T>(string name) where T : Asset
-{
-    if (!assets.TryGetValue(name, out var asset))
-    {
-        throw new KeyNotFoundException($"Asset with name '{name}' not found.");
-    }
-
-    if (asset is AssetReference<T> typedAsset)
-    {
-        // Simulate loading the palette from the entry
-        using var stream = archive.GetEntry(typedAsset.Path)?.Open();
-        if (stream == null)
-        {
-            throw new FileNotFoundException($"Asset file '{typedAsset.Path}' not found in archive.");
-        }
-
-        using var memoryStream = new MemoryStream();
-        stream.CopyTo(memoryStream);
-        var data = memoryStream.ToArray();
-        return new Palette(name, data);
-    }
-
-    throw new InvalidDataException($"Unhandled type {typeof(T).Name} as an Asset");
-}
