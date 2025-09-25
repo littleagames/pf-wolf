@@ -50,4 +50,6 @@ public struct PaletteColor
     public byte Green { get; set; } = 0;
     public byte Blue { get; set; } = 0;
     public byte Alpha { get; set; } = 255;
+    public readonly ulong ARGB => (uint)(Alpha << 32) | (byte)(Red << 16) | (byte)(Green << 8) | Blue;
+    public readonly uint RGB => (uint)(Red << 16) | (byte)(Green << 8) | Blue;
 }

@@ -57,7 +57,11 @@ foreach (var path in gamePackPaths)
     await assetManager.LoadPackage(path);
 }
 
+// Loading assets into memory
 var palette = assetManager.Load<Palette>("wolfpal", AssetType.Palette);
 var signon = assetManager.Load<Graphic>("wolf3d-signon", AssetType.Graphic);
+
+// TODO: Unload the assets when done
+// Returns the data back to an asset reference
 
 Console.ReadKey();

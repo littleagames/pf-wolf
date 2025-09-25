@@ -10,4 +10,6 @@ public struct Vector2
 
     public int X { get; init; }
     public int Y { get; init; }
+
+    public static Vector2 Zero => new(0, 0);
 }

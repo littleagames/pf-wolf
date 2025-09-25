@@ -7,5 +7,6 @@ public record Graphic : Asset
         Type = AssetType.Graphic;
     }
     public byte[] Data { get; set; } = [];
-    public Vector2 Dimensions { get; set; }
+    public Vector2 Dimensions { get; set; } = Vector2.Zero;
+    public Vector2 Offset { get; set; } = Vector2.Zero;
 }
