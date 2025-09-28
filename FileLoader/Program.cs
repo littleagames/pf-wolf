@@ -1,16 +1,10 @@
 ﻿using CSharpFunctionalExtensions;
 using PFWolf.Common;
-using PFWolf.Common.Assets;
-using PFWolf.Common.Loaders;
-using System.IO;
-using System.IO.Compression;
 
 const string BaseDataDirectory = "D:\\projects\\Wolf3D\\PFWolf\\PFWolf-Assets";
 const string BasePfWolfPackageFile = "pfwolf.pk3";
 
 var pfWolfBasePk3Path = Path.Combine(BaseDataDirectory, BasePfWolfPackageFile);
-
-var assets = new Dictionary<string, Asset>();
 
 // This parameter will be defined in the Engine args
 var gamePackArgs = args.FirstOrDefault(x => x.StartsWith("-gamepack=", StringComparison.InvariantCultureIgnoreCase))?.Split("-gamepack=");

@@ -34,9 +34,10 @@ namespace Engine
 
         private uint[] ylookup = [];
 
-        public SDLVideoManager(int screenWidth, int screenHeight)
+        public SDLVideoManager(int screenWidth, int screenHeight, Palette palette)
         {
             ScreenHeight = screenHeight;
+            this.palette = palette;
             ScreenWidth = screenWidth;
         }
 
@@ -67,7 +68,8 @@ namespace Engine
             screenBufferPtr = SDL.CreateSurface(ScreenWidth, ScreenHeight, SDL.GetPixelFormatForMasks(8, 0, 0, 0, 0));
 
             IntPtr palette = SDL.CreateSurfacePalette(screenBufferPtr);
-            SDL.SetPaletteColors(palette, GamePalette.BasePalette, 0, 256);
+            SDL.SetPaletteColors(palette, this.palette.ToSDLColors(), 0, 256);
+            //SDL.SetPaletteColors(palette, GamePalette.BasePalette, 0, 256);
 
             texturePtr = SDL.CreateTexture(rendererPtr, SDL.PixelFormat.ARGB8888, SDL.TextureAccess.Streaming, ScreenWidth, ScreenHeight);
 
@@ -86,6 +88,8 @@ namespace Engine
             return true;
         }
         private double fps;
+        private readonly Palette palette;
+
         public void DrawFps(double fps)
         {
             this.fps = fps;

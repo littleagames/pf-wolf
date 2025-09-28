@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Engine": {
+      "commandName": "Project",
+      "commandLineArgs": "-gamepack=pfwolf-tech-demo\r\nD:\\projects\\Wolf3D\\PFWolf\\PFWolf-Assets\\wolf-mod-pack-example.pk3"
+    }
+  }
+}

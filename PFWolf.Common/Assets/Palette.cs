@@ -21,6 +21,7 @@ public record Palette : Asset
                 Red = data[(i * 3)],
                 Green = data[(i * 3) + 1],
                 Blue = data[(i * 3) + 2],
+                Alpha = 255
             };
         }
 

@@ -151,6 +151,8 @@ public class PngGraphicDataLoader
             // parse text chunk
         }
 
+        
+
         // PNG to graphic data
         return new Graphic
         {
@@ -161,7 +163,8 @@ public class PngGraphicDataLoader
                 Y = height
             },
             Offset = offsetTopLeft,
-            Data = new byte[width*height] // TODO: Translate to index-based palette
+            //Data = indexedData,
+            Data = Enumerable.Repeat((byte)0x20, width*height).ToArray()// new byte[width*height] // TODO: Translate to index-based palette
         };
     }
     // Search for IDAT and IEND chunks in the byte array, ensuring IEND is after IDAT
@@ -182,5 +185,10 @@ public class PngGraphicDataLoader
                 return i;
         }
         return -1;
+    }
+
+    public static void MapPalette()
+    {
+        // TODO: Implement palette mapping logic
     }
 }
