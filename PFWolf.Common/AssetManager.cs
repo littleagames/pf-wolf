@@ -1,7 +1,9 @@
 ﻿using CSharpFunctionalExtensions;
 using PFWolf.Common.Assets;
 using PFWolf.Common.Loaders;
+using System.IO;
 using System.IO.Compression;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using filePath = System.String;
 
 namespace PFWolf.Common;
@@ -11,14 +13,37 @@ public class AssetManager
     private const string GamePackEntryName = "gamepacks/gamepack-info";
 
     private Dictionary<string, Asset> _assets = [];
+    private Dictionary<string, RawDataFilePack> _availableGamePacks = new Dictionary<string, RawDataFilePack>();
     private readonly Dictionary<string, filePath> pk3FilePaths;
+    private readonly string gameDirectory;
 
-    public AssetManager(List<filePath> pk3FilePaths)
+    public AssetManager(filePath gameDirectory, List<filePath> pk3FilePaths)
     {
         this.pk3FilePaths = pk3FilePaths.ToDictionary(x => Path.GetFileNameWithoutExtension(x), x => x);
+        this.gameDirectory = gameDirectory;
     }
 
+    /// <summary>
+    /// Adds raw game pack definitions to the available list.
+    /// These packs don't use the ZipArchive loading mechanism, and are expected to be loaded from raw files with loaders provided.
+    /// </summary>
+    /// <param name="gamePacks"></param>
+    /// <returns></returns>
+    public Result AddRawDataFilePackLoaders(List<RawDataFilePack> gamePacks)
+    {
+        foreach (var pack in gamePacks)
+        {
+            _availableGamePacks[pack.PackName] = pack;
+        }
 
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Load a PK3 package and register all assets
+    /// </summary>
+    /// <param name="pk3FileFullPath"></param>
+    /// <returns></returns>
     public async Task<Result> LoadPackage(string pk3FileFullPath)
     {
         using ZipArchive archive = ZipFile.OpenRead(pk3FileFullPath);
@@ -36,6 +61,20 @@ public class AssetManager
             {
                 AddReference(assetName, AssetType.Font, () => new Font());
                 continue;
+            }
+
+            // Get other data in the gamepacks/ directory that is not the gamepack-info asset
+            if (entry.FullName.StartsWith("gamepacks/") && !entry.Name.StartsWith("gamepack-info"))
+            {
+                try
+                {
+                    var assetDataReference = YamlDataEntryLoader.Read<GamePackAssetReference>(entry.Open());
+                    AddAsset(assetName, assetDataReference);
+                }
+                catch (YamlDotNet.Core.YamlException ex)
+                {
+                    return Result.Failure($"Error parsing game pack asset references from {entry.FullName}: {ex.Message}");
+                }
             }
 
             if (entry.FullName.StartsWith("graphics/"))
@@ -62,13 +101,13 @@ public class AssetManager
 
             if (entry.FullName.StartsWith("music/"))
             {
-                AddReference(assetName, AssetType.Music, () => new ImfMusic());
+                AddReference(assetName, AssetType.ImfMusic, () => new ImfMusic());
                 continue;
             }
 
             if (entry.FullName.StartsWith("palettes/"))
             {
-                AddReference(assetName, AssetType.Palette, () => new Palette(assetName, Pk3DataFileLoader.Load(pk3FileFullPath, entry.FullName)));
+                AddReference(assetName, AssetType.Palette, () => new Palette(Pk3DataFileLoader.Load(pk3FileFullPath, entry.FullName)));
                 continue;
             }
 
@@ -80,7 +119,7 @@ public class AssetManager
 
             if (entry.FullName.StartsWith("sounds/"))
             {
-                AddReference(assetName, AssetType.Sound, () => new WavSound());
+                AddReference(assetName, AssetType.DigitizedSound, () => new WavSound());
                 continue;
             }
 
@@ -107,9 +146,26 @@ public class AssetManager
         return Result.Success();
     }
 
+    /// <summary>
+    /// Loads an asset into memory, if already loaded, it simply returns the asset.
+    /// If the asset is a reference, it will load the asset using the provided loader function
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="assetName"></param>
+    /// <param name="assetType"></param>
+    /// <returns></returns>
+    /// <exception cref="KeyNotFoundException"></exception>
     public T Load<T>(string assetName, AssetType assetType) where T : Asset
     {
-        if (!_assets.TryGetValue(GetKey(assetName, assetType), out var asset))
+        if (string.IsNullOrWhiteSpace(assetName))
+        {
+            throw new ArgumentException($"Asset name cannot be empty. Asset Type: {assetType}", nameof(assetName));
+        }
+
+        var key = GetKey(assetName, assetType);
+
+        // TODO: Determine if this should just return null if not found, or throw
+        if (!_assets.TryGetValue(key, out var asset))
         {
             throw new KeyNotFoundException($"Asset with name {assetName} not found.");
         }
@@ -118,7 +174,7 @@ public class AssetManager
         {
             var typedAsset = (AssetReference<T>)asset;
             var loadedAsset = typedAsset.Load();
-            _assets[GetKey(loadedAsset)] = loadedAsset; // Replace reference with loaded asset
+            _assets[key] = loadedAsset; // Replace reference with loaded asset
             return loadedAsset;
         }
 
@@ -127,22 +183,23 @@ public class AssetManager
 
     private void AddReference<T>(string assetName, AssetType assetType, Func<T> assetLoader) where T : Asset
     {
-        AddAsset(new AssetReference<T>(assetName, assetType, assetLoader));
+        AddAsset(assetName, new AssetReference<T>(assetType, assetLoader));
     }
 
-    private void AddAsset(Asset asset)
+    private void AddAsset(string assetName, Asset asset, bool overwrite = true)
     {
-        if (asset.Type == AssetType.Unknown)
-        {
-            throw new InvalidOperationException("Asset type cannot be Unknown.");
-        }
+        var key = GetKey(assetName, asset.Type);
 
-        if (_assets.ContainsKey(GetKey(asset))) // and Add asset type
+        if (_assets.ContainsKey(key))
         {
-            throw new InvalidOperationException($"Asset with name {asset.Name} already exists.");
+            if (!overwrite)
+                return;
+            _assets[key] = asset;
         }
-
-        _assets.Add(GetKey(asset), asset);
+        else
+        {
+            _assets.Add(key, asset);
+        }
     }
 
     public Result LoadGamePacks(Maybe<string> selectedGamePack)
@@ -154,7 +211,7 @@ public class AssetManager
         }
 
         GamePackDefinitions? singletonGamePackInfo = new();
-        AddAsset(singletonGamePackInfo);
+        AddAsset("gamepack-info", singletonGamePackInfo);
 
         Dictionary<string, MapDefinition> mapDefinitions = [];
 
@@ -218,7 +275,8 @@ public class AssetManager
             return Result.Failure($"Error: Specified game pack '{selectedGamePack.Value}' not found in loaded packages.");
         }
 
-        foundGamePack.DetermineBasePack(singletonGamePackInfo.GamePacks, [selectedGamePack.Value]);
+        var containsBasePacks = new HashSet<filePath> { selectedGamePack.Value }; // TODO: Save this list outside, so it can be referenced elsewhere? or when loading raw files
+        foundGamePack.DetermineBasePack(singletonGamePackInfo.GamePacks, containsBasePacks);
         if (!mapDefinitions.ContainsKey(foundGamePack.Name) && !string.IsNullOrWhiteSpace(foundGamePack.BasePack))
         {
             mapDefinitions[foundGamePack.Name] = mapDefinitions[foundGamePack.BasePack];
@@ -229,7 +287,42 @@ public class AssetManager
             return Result.Failure($"Error: No map definitions found for selected game pack '{selectedGamePack.Value}'.");
         }
 
-        AddAsset(selectedMapDefinition!);
+        AddAsset("map-definitions", selectedMapDefinition!);
+
+        return Result.Success();
+    }
+
+    public Result LoadDataFilePack(Maybe<string> selectedGamePack)
+    {
+        if (selectedGamePack.HasNoValue)
+        {
+            // choose default gamepack
+            return Result.Failure("Cannot determine default game pack at this time.");
+        }
+
+        // TODO: Get asset GamePackDefinitions singleton
+        // Should this imply that LoadGamePacks has been called first?
+        var gamePackDefinitions = Load<GamePackDefinitions>("gamepack-info", AssetType.GamePackDefinition);
+        if (!gamePackDefinitions.HasGamePack(selectedGamePack.Value, out GamePackDefinitionDataModel foundGamePack))
+        {
+            return Result.Failure($"Error: Specified game pack '{selectedGamePack.Value}' not found in loaded packages.");
+        }
+
+        var containsBasePacks = new HashSet<filePath> { selectedGamePack.Value };
+        foundGamePack.DetermineBasePack(gamePackDefinitions.GamePacks, containsBasePacks);
+
+        foreach (var basePack in containsBasePacks) {
+            if (_availableGamePacks.TryGetValue(basePack, out var firstPack))
+            {
+                var assetReferenceMap = Load<GamePackAssetReference>(foundGamePack.GamePackAssetReference, AssetType.GamePackAssetReference);
+                var rawDataAssets = firstPack.LoadAssets(gameDirectory, assetReferenceMap: assetReferenceMap);
+                foreach (var dataAsset in rawDataAssets) {
+                    AddAsset(dataAsset.Key, dataAsset.Value, overwrite: false);
+                }
+                break;
+            }
+        }
+
         return Result.Success();
     }
 
@@ -246,8 +339,6 @@ public class AssetManager
         return fullName.Replace('\\', '/').Trim().ToLowerInvariant();
     }
 
-    private static string GetKey(Asset asset)
-        => GetKey(asset.Name, asset.Type);
     private static string GetKey(string assetName, AssetType assetType)
-        => $"{assetType}:{assetName}";
+        => $"{assetType}:{assetName}".ToLowerInvariant();
 }

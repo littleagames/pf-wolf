@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PFWolf.Common.Assets;
+﻿namespace PFWolf.Common.Assets;
 
 public record Map : Asset
 {
@@ -12,4 +6,8 @@ public record Map : Asset
     {
         Type = AssetType.Map;
     }
+
+    public int Width { get; init; }
+    public int Height { get; init; }
+    public int NumPlanes { get; init; }
 }

@@ -15,7 +15,7 @@ public class AssetManagerTests
     public void LoadGamePacks_ReturnsFailure_WhenSelectedGamePackIsNone()
     {
         // Arrange
-        var assetManager = new AssetManager(new List<string>());
+        var assetManager = new AssetManager(string.Empty, new List<string>());
 
         // Act
         var result = assetManager.LoadGamePacks(Maybe<string>.None);
@@ -34,7 +34,7 @@ public class AssetManagerTests
         try
         {
             using (var zip = ZipFile.Open(tempFile, ZipArchiveMode.Update)) { }
-            var assetManager = new AssetManager(new List<string> { tempFile });
+            var assetManager = new AssetManager(string.Empty, new List<string> { tempFile });
 
             // Act
             var result = assetManager.LoadGamePacks("testpack");
@@ -91,7 +91,7 @@ public class AssetManagerTests
     game-pack-asset-reference: gamepacks/wolf3d-activision-map");
                 }
             }
-            var assetManager = new AssetManager(new List<string> { tempFile });
+            var assetManager = new AssetManager(string.Empty, new List<string> { tempFile });
 
             // Act
             var result = assetManager.LoadGamePacks("testpack");
@@ -119,7 +119,7 @@ public class AssetManagerTests
                 using var stream = entry.Open();
                 stream.Write(new byte[] { 0xFF, 0xFF, 0xFF }, 0, 3); // Invalid YAML
             }
-            var assetManager = new AssetManager(new List<string> { tempFile });
+            var assetManager = new AssetManager(string.Empty, new List<string> { tempFile });
 
             // Act
             var result = assetManager.LoadGamePacks("testpack");
@@ -148,7 +148,7 @@ public class AssetManagerTests
                 using var writer = new StreamWriter(stream);
                 writer.Write("gamepacks: {}");
             }
-            var assetManager = new AssetManager(new List<string> { tempFile });
+            var assetManager = new AssetManager(string.Empty, new List<string> { tempFile });
 
             // Act
             var result = assetManager.LoadGamePacks("notfoundpack");

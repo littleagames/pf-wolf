@@ -36,7 +36,7 @@ if (gamePackPaths.Count(x => x.EndsWith(BasePfWolfPackageFile, StringComparison.
     return;
 }
 
-var assetManager = new AssetManager(gamePackPaths);
+var assetManager = new AssetManager(BaseDataDirectory, gamePackPaths);
 
 var result = assetManager.LoadGamePacks(selectedGamePack);
 

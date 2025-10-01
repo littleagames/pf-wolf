@@ -2,6 +2,7 @@
 using Engine;
 using PFWolf.Common;
 using PFWolf.Common.Assets;
+using System.Reflection;
 
 const string BaseDataDirectory = "D:\\projects\\Wolf3D\\PFWolf\\PFWolf-Assets";
 const string BasePfWolfPackageFile = "pfwolf.pk3";
@@ -40,7 +41,20 @@ if (gamePackPaths.Count(x => x.EndsWith(BasePfWolfPackageFile, StringComparison.
     return;
 }
 
-var assetManager = new AssetManager(gamePackPaths);
+var assetManager = new AssetManager(BaseDataDirectory, gamePackPaths);
+
+// TODO: These might be stored in the /scripts of the pk3
+// TODO: We could have the GamePack work from the SDK, and in the PK3, just like future mod packs, so it'll load them all in via the scripts assets
+
+// Use reflection to get all types with the base class GamePack and instantiate them in a list.
+List<RawDataFilePack> rawDataFilePacks = Assembly.GetAssembly(typeof(PFWolf.Common.RawDataFilePack))
+    .GetTypes()
+    .Where(t => t.IsClass && !t.IsAbstract && t.IsSubclassOf(typeof(RawDataFilePack)))
+    .Select(t => Activator.CreateInstance(t) as RawDataFilePack)
+    .Where(gp => gp != null)
+    .ToList();
+
+assetManager.AddRawDataFilePackLoaders(rawDataFilePacks);
 
 var result = assetManager.LoadGamePacks(selectedGamePack);
 
@@ -54,6 +68,12 @@ foreach (var path in gamePackPaths)
 {
     await assetManager.LoadPackage(path);
 }
+
+// Load in scripts from packs
+// When these are loaded, they will contain more game packs, load those in too
+
+var rawPackResult = assetManager.LoadDataFilePack(selectedGamePack);
+// TODO: Load base files, if the game pack inherits it
 
 var palette = assetManager.Load<Palette>("wolfpal", AssetType.Palette);
 IVideoManager videoManager = new SDLVideoManager(ScreenWidth, ScreenHeight, palette);

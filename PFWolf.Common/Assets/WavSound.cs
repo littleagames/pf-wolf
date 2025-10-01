@@ -10,6 +10,6 @@ public record WavSound : Asset
 {
     public WavSound()
     {
-        Type = AssetType.Sound;
+        Type = AssetType.DigitizedSound;
     }
 }

@@ -10,6 +10,6 @@ public record ImfMusic : Asset
 {
     public ImfMusic()
     {
-        Type = AssetType.Music;
+        Type = AssetType.ImfMusic;
     }
 }

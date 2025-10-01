@@ -6,7 +6,6 @@ public record MapDefinition : Asset
 {
     public MapDefinition(Stream data)
     {
-        Name = "map-definitions";
         Type = AssetType.MapDefinition;
         Definitions = YamlDataEntryLoader.Read<MapDefinitionDataModel>(data);
     }

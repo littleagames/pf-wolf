@@ -6,7 +6,6 @@ public record GamePackDefinitions : Asset
 {
     public GamePackDefinitions()
     {
-        Name = "gamepack-info";
         Type = AssetType.GamePackDefinition;
     }
 
@@ -70,7 +69,7 @@ public record GamePackDefinitionDataModel
     /// <summary>
     /// Path to the asset map that defines names of the asset within a game pack
     /// </summary>
-    public string? GamePackAssetReference { get; init; }
+    public string? GamePackAssetReference { get; private set; } = null;
 
     internal void DetermineBasePack(
         Dictionary<string, GamePackDefinitionDataModel> gamePacks,
@@ -119,6 +118,11 @@ public record GamePackDefinitionDataModel
         if (string.IsNullOrWhiteSpace(StartingScene))
         {
             StartingScene = basePack.StartingScene;
+        }
+
+        if (string.IsNullOrWhiteSpace(GamePackAssetReference))
+        {
+            this.GamePackAssetReference = basePack.GamePackAssetReference;
         }
     }
 }

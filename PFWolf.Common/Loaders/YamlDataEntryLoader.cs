@@ -14,6 +14,8 @@ internal class YamlDataEntryLoader
 
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(HyphenatedNamingConvention.Instance)
+            //.WithDuplicateKeyChecking()
+            .IgnoreUnmatchedProperties()
             .WithCaseInsensitivePropertyMatching()
             .Build();
 

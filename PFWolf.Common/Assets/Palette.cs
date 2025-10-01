@@ -3,9 +3,8 @@
 public record Palette : Asset
 {
     public PaletteColor[] Colors { get; set; } = [];
-    public Palette(string name, byte[] data)
+    public Palette(byte[] data)
     {
-        Name = name;
         Type = AssetType.Palette;
         Colors = new PaletteColor[256];
         if (data.Length != 768) // 256*3 bytes
