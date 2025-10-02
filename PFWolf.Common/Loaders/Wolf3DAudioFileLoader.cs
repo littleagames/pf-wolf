@@ -38,18 +38,30 @@ public class Wolf3DAudioFileLoader : BaseFileLoader
                 continue;
             }
 
-            var audioAssetName = $"{header.Namespace}:{GetReferencedName(assetReferenceMap.Audio, i)}";
-            audioAssets.Add(new KeyValuePair<string, Asset>(audioAssetName, new AssetReference<Audio>(header.Namespace, () => LoadAudioAsset())));
+            var audioAssetName = GetReferencedName(assetReferenceMap.Audio, i);
+            switch (header.Namespace.Name)
+            {
+                case nameof(PcSound):
+                    audioAssets.Add(new KeyValuePair<string, Asset>(audioAssetName, new AssetReference<PcSound>(() => LoadAudioAsset<PcSound>())));
+                    break;
+                case nameof(AdLibSound):
+                    audioAssets.Add(new KeyValuePair<string, Asset>(audioAssetName, new AssetReference<AdLibSound>(() => LoadAudioAsset<AdLibSound>())));
+                    break;
+                case nameof(DigitizedSound):
+                    audioAssets.Add(new KeyValuePair<string, Asset>(audioAssetName, new AssetReference<DigitizedSound>(() => LoadAudioAsset<DigitizedSound>())));
+                    break;
+                case nameof(ImfMusic):
+                    audioAssets.Add(new KeyValuePair<string, Asset>(audioAssetName, new AssetReference<ImfMusic>(() => LoadAudioAsset<ImfMusic>())));
+                    break;
+            }
         }
 
         return audioAssets;
     }
 
-    public Audio LoadAudioAsset()
+    public T LoadAudioAsset<T>()
     {
-        return new Audio
-        {
-        };
+        throw new NotImplementedException();
     }
 
     public List<AudioHeaderData> GetAudioHeaderList()
@@ -62,7 +74,7 @@ public class Wolf3DAudioFileLoader : BaseFileLoader
 
         var audioHeaders = new List<AudioHeaderData>(numLumps);
 
-        var segmentAssetType = new[] { AssetType.PcSound, AssetType.AdLibSound, AssetType.DigitizedSound, AssetType.ImfMusic };
+        var segmentAssetType = new[] { typeof(PcSound), typeof(AdLibSound), typeof(DigitizedSound), typeof(ImfMusic) };
         var audioFileStream = File.OpenRead(_audioDataFilePath);
         for (var index = 0; index < numLumps; index++)
         {
@@ -114,7 +126,7 @@ public class Wolf3DAudioFileLoader : BaseFileLoader
                 {
                     segmentStarts[3] = (uint)++i;
                     for (; i < numLumps; ++i)
-                        audioHeaders[i].Namespace = AssetType.ImfMusic;
+                        audioHeaders[i].Namespace = typeof(ImfMusic);
                     break;
                 }
             }
@@ -143,5 +155,5 @@ public class AudioHeaderData
     public int DataFilePosition { get; init; }
 
     public int Size { get; set; }
-    public AssetType Namespace { get; set; } = AssetType.Unknown;
+    public required Type Namespace { get; set; }
 }

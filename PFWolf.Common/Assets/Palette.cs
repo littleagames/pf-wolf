@@ -5,7 +5,6 @@ public record Palette : Asset
     public PaletteColor[] Colors { get; set; } = [];
     public Palette(byte[] data)
     {
-        Type = AssetType.Palette;
         Colors = new PaletteColor[256];
         if (data.Length != 768) // 256*3 bytes
         {

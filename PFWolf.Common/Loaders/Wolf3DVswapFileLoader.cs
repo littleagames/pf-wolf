@@ -105,13 +105,8 @@ public class Wolf3DVswapFileLoader : BaseFileLoader
             }
 
             //var data = _vswapData.Skip((int)headerInfo.PageOffsets[i]).Take(headerInfo.PageLengths[i]).ToArray();
-            var textureName = assetNameReferences.Walls[i] ?? $"WALL{i:D5}";
-            assets.Add(new KeyValuePair<string, Asset>(textureName, new AssetReference<Texture>(AssetType.Texture, () => LoadTextureLump(textureName))));
-                //{
-                
-                //AssetType = AssetType.Texture,
-                //RawData = data
-           // });
+            var textureName = GetReferenceName(assetNameReferences.Walls, i) ?? $"WALL{i:D2}";
+            assets.Add(new KeyValuePair<string, Asset>(textureName, new AssetReference<Texture>(() => LoadTextureLump(textureName))));
         }
 
         var s = 0;
@@ -180,8 +175,8 @@ public class Wolf3DVswapFileLoader : BaseFileLoader
             //     }
             // }
 
-            var spriteName = assetNameReferences.Sprites[s] ?? $"SPR{i:D5}";
-            assets.Add(new KeyValuePair<string, Asset>(spriteName, new AssetReference<Sprite>(AssetType.Sprite, () => LoadSpriteLump(spriteName))));
+            var spriteName = GetReferenceName(assetNameReferences.Sprites, s) ?? $"SPR{i:D2}";
+            assets.Add(new KeyValuePair<string, Asset>(spriteName, new AssetReference<Sprite>(() => LoadSpriteLump(spriteName))));
             //{
              //   Name = ,
                // Pixels = croppedBlock,
@@ -242,13 +237,16 @@ public class Wolf3DVswapFileLoader : BaseFileLoader
         //    //}
 
         //    //size = (size * 0xffff0000) | soundInfoPage[pIndex * 2 + 1];
-            
+
+        //var soundName = GetReferenceName(assetNameReferences.Sounds, i) ?? $"SND{i:D2}";
+        //assets.Add(new KeyValuePair<string, Asset>(soundName, new AssetReference<Sprite>(() => LoadSoundLump(soundName))));
+
         //    // assets.Add(new DigitizedSoundAsset
         //    // {
         //    //     Name = $"DIGI{i:D5}",
         //    //     RawData = soundData.ToArray()
         //    // });
-            
+
         //    //DigiList[i].length = size;
 
         //    // TODO: Add all of the pages to the "data" of the digisoundentry
@@ -258,6 +256,13 @@ public class Wolf3DVswapFileLoader : BaseFileLoader
         return assets;
     }
 
+    private string? GetReferenceName(List<string> assetNameReferences, int i)
+    {
+        if (i < 0 || i > assetNameReferences.Count)
+            return null;
+
+        return assetNameReferences[i];
+    }
     private Texture LoadTextureLump(string name)
     {
         throw new NotImplementedException();

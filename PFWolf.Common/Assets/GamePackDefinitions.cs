@@ -6,7 +6,6 @@ public record GamePackDefinitions : Asset
 {
     public GamePackDefinitions()
     {
-        Type = AssetType.GamePackDefinition;
     }
 
     public GamePackDefinitions(Stream data) : this()

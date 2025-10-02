@@ -1,4 +1,5 @@
-﻿using PFWolf.Common.Assets;
+﻿using CSharpFunctionalExtensions;
+using PFWolf.Common.Assets;
 using PFWolf.Common.Loaders;
 
 namespace PFWolf.Common;
@@ -16,22 +17,26 @@ public abstract class RawDataFilePack
 
     public abstract string PackDescription { get; }
 
-    // TODO: Introduce this when you add more game palettes into pfwolf.pk3
-    //public abstract string DefaultPaletteAssetName { get; }
-
     protected abstract List<DataPackFile> Files { get; }
     protected abstract List<DataPackFileLoader> FileLoaders { get; }
 
-    public string? FindHashByFile(string file)
+    public Result Validate(string directory)
     {
-        var result = Files.FirstOrDefault(x => x.File == file);
-        return result?.Md5;
-    }
+        foreach (var dataPackFile in Files)
+        {
+            var filePath = Path.Combine(directory, dataPackFile.File);
+            if (!File.Exists(filePath))
+                return Result.Failure($"File: {dataPackFile.File} is required, and not found.");
 
-    public string? FindFileByHash(string hash)
-    {
-        var result = Files.FirstOrDefault(x => x.Md5 == hash);
-        return result?.File;
+            using var stream = File.OpenRead(filePath);
+            using var md5 = System.Security.Cryptography.MD5.Create();
+            var hash = md5.ComputeHash(stream);
+            var fileMd5 = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+
+            if (!fileMd5.Equals(dataPackFile.Md5, StringComparison.InvariantCultureIgnoreCase))
+                return Result.Failure($"File: {dataPackFile.File} does not match the MD5 hash on the {GetType().Name} file loader.");
+        }
+        return Result.Success();
     }
 
     public bool Validate(List<string> files)
@@ -83,21 +88,21 @@ public abstract class RawDataFilePack
         }
     }
 
-    public Dictionary<string, Asset> LoadAssets(string directory, GamePackAssetReference assetReferenceMap)
+    public List<KeyValuePair<string, Asset>> LoadAssets(string directory, GamePackAssetReference assetReferenceMap)
     {
         foreach (var loader in FileLoaders.Where(x => !typeof(BaseFileLoader).IsAssignableFrom(x.FileLoader)))
         {
             throw new InvalidOperationException($"Invalid FileLoader specified: {loader.GetType().Name}");
         }
 
-        Dictionary<string, Asset> assets = new Dictionary<string, Asset>();
+        List<KeyValuePair<string, Asset>> assets = new List<KeyValuePair<string, Asset>>();
         foreach (var loader in FileLoaders)
         {
             var fileLoader = InstantiateLoader(directory, loader);
 
             var loadedAssets = fileLoader.Load(assetReferenceMap);
             foreach (var asset in loadedAssets)
-                assets.Add(asset.Key, asset.Value);
+                assets.Add(new KeyValuePair<string, Asset>(asset.Key, asset.Value));
         }
 
         return assets;

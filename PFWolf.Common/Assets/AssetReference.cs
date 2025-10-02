@@ -7,9 +7,8 @@ public record AssetReference<T> : Asset where T : Asset
 {
     public Func<T> Load { get; init; } = null!;
 
-    public AssetReference(AssetType assetType, Func<T> load)
+    public AssetReference(Func<T> load)
     {
-        Type = assetType;
         Load = load;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using PFWolf.Common.Assets;
 using PFWolf.Common.Extensions;
+using System;
 
 namespace PFWolf.Common.Loaders;
 
@@ -96,12 +97,20 @@ public class Wolf3DMapFileLoader : BaseFileLoader
             if (mapHeader.HeaderOffsets[i] == 0) // sparse map
                 continue;
 
-            var mapAssetName = $"{AssetType.Map}:{(assetNameReferences.Maps[i] ?? $"MAP{i:d2}")}";
-            var mapAsset = new AssetReference<Map>(AssetType.Map, () => LoadMapAsset(mapHeader, i, _gameMapsFilePath));
-            assets.Add(new KeyValuePair<string, Asset>(mapAssetName, mapAsset));
+            var assetName = GetReferenceName(assetNameReferences.Maps, i) ?? $"MAP{i:D2}";
+            var mapAsset = new AssetReference<Map>(() => LoadMapAsset(mapHeader, i, _gameMapsFilePath));
+            assets.Add(new KeyValuePair<string, Asset>(assetName, mapAsset));
         }
 
         return assets;
+    }
+
+    private string? GetReferenceName(List<string> assetNameReferences, int i)
+    {
+        if (i < 0 || i > assetNameReferences.Count)
+            return null;
+
+        return assetNameReferences[i];
     }
 
     public Map LoadMapAsset(MapHeader header, int index, string gameMapFilePath)

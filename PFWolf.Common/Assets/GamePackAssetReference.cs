@@ -6,7 +6,6 @@ public record GamePackAssetReference : Asset
 {
     public GamePackAssetReference()
     {
-        Type = AssetType.GamePackAssetReference;
     }
 
     #region VSWAP

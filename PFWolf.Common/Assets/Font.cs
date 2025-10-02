@@ -10,6 +10,5 @@ public record Font : Asset
 {
     public Font()
     {
-        Type = AssetType.Font;
     }
 }

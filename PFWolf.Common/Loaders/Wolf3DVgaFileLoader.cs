@@ -7,6 +7,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
     private readonly byte[] _dictionaryData;
     private readonly byte[] _headerData;
     private readonly string _vgaGraphFilePath;
+    private const string AssetMarker = "!ID!";
 
     //private readonly byte[] _graphicData;
 
@@ -59,40 +60,55 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
             // DEMOs
             // More ENDARTs
             
-      //  var segmentAssetType = new[] { AssetType.VgaPicData, AssetType.Font, AssetType.Graphic, AssetType.Unknown };
+        var segmentAssetType = new[] { typeof(PicData), typeof(Font), typeof(Graphic), typeof(VgaExtern) };
         uint[] segmentStarts = [0,0,0,0];
         uint currentSegment = 0;
 
         var lumps = new List<VgaLump>();
-        
+        var vgaFileStream = File.OpenRead(_vgaGraphFilePath);
+
         for (int index = 0; index < numChunks; index++)
         {
             var position = headerList[index];
             var compressedSize = headerList[index + 1] - position;
+            var assetType = segmentAssetType[currentSegment];
+            //Try to find!ID! tags
+            if (currentSegment < 3 && compressedSize >= 4)
+            {
+                var tagBytes = new byte[4];
+                vgaFileStream.Seek(position + compressedSize - sizeof(int), System.IO.SeekOrigin.Begin);
+                var bytesRead = vgaFileStream.Read(tagBytes);
+                if (bytesRead < 4)
+                    continue;
+                var tag = System.Text.Encoding.UTF8.GetString(tagBytes);
+                if (tag.Equals(AssetMarker))
+                {
+                    segmentStarts[++currentSegment] = (uint)index + 1;
+                    // Lump end contains a !ID! tag, remove it from the lump
+                    compressedSize -= 4;
+
+                    // TODO: Add "marker" to assets
+                }
+            }
+
             var assetName = GetReferenceName(assetNameReferences.Graphics, index) ?? $"VGA{index:D5}";
-            vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<Asset>(AssetType.Unknown, () => LoadVgaAsset(assetName))));
-       //     var assetType = segmentAssetType[currentSegment];
-            // Try to find !ID! tags
-            //if(currentSegment < 3 && compressedSize >= 4)
-            //{
-            //    var tagBytes = _graphicData.Skip(position + compressedSize - sizeof(int)).Take(sizeof(int)).ToArray();
-            //    var tag = System.Text.Encoding.UTF8.GetString(tagBytes);
-            //    if (tag.Equals(Asset.AssetMarker))
-            //    {
-            //        segmentStarts[++currentSegment] = (uint)index+1;
-            //        // Lump end contains a !ID! tag, remove it from the lump
-            //        compressedSize -= 4;
-                    
-            //        // TODO: Add "marker" to assets
-            //    }
-            //}
-            
-           // lumps.Add(new VgaLump
-           // {
-             //   Index = index,
-                //AssetType = assetType,
-               // CompressedData = _graphicData.Skip(position).Take(compressedSize).ToArray()
-           // });
+            switch (assetType.Name)
+            {
+                case nameof(PicData):
+                    vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<PicData>(() => LoadVgaAsset<PicData>(assetName))));
+                    break;
+                case nameof(Font):
+                    vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<Font>(() => LoadVgaAsset<Font>(assetName))));
+                    break;
+                case nameof(Graphic):
+                    vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<Graphic>(() => LoadVgaAsset<Graphic>(assetName))));
+                    break;
+                case nameof(VgaExtern):
+                    // TODO: Determine the extern type (palette, endscreen, demo, text, tile8)
+                    vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<VgaExtern>(() => LoadVgaAsset<VgaExtern>(assetName))));
+                    break;
+            }
+
         }
 
         //var numFonts = segmentStarts[2] - segmentStarts[1];
@@ -241,7 +257,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         return vgaAssets;
     }
 
-    public Asset LoadVgaAsset(string name)
+    public T LoadVgaAsset<T>(string name) where T : Asset
     {
         throw new NotImplementedException();
     }
@@ -325,7 +341,6 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
     {
         public string Name { get; init; } = null!;
         //public int Index { get; init; }
-        public AssetType AssetType { get; init; } = AssetType.Unknown;
         //public byte[] CompressedData { get; init; } = [];
     }
 }

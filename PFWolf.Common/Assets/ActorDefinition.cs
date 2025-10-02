@@ -4,6 +4,5 @@ public record ActorDefinition : Asset
 {
     public ActorDefinition()
     {
-        Type = AssetType.ActorDefinition;
     }
 }

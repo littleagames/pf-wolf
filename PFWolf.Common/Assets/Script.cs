@@ -10,6 +10,5 @@ public record Script : Asset
 {
     public Script()
     {
-        Type = AssetType.Script;
     }
 }

@@ -4,7 +4,6 @@ public record Map : Asset
 {
     public Map()
     {
-        Type = AssetType.Map;
     }
 
     public int Width { get; init; }

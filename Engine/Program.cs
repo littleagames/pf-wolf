@@ -73,9 +73,11 @@ foreach (var path in gamePackPaths)
 // When these are loaded, they will contain more game packs, load those in too
 
 var rawPackResult = assetManager.LoadDataFilePack(selectedGamePack);
-// TODO: Load base files, if the game pack inherits it
 
-var palette = assetManager.Load<Palette>("wolfpal", AssetType.Palette);
+var gstonea1 = assetManager.Load<Texture>("gstonea1"); // from pk3
+var gstonea2 = assetManager.Load<Texture>("gstonea2"); // from vswap
+
+var palette = assetManager.Load<Palette>("wolfpal");
 IVideoManager videoManager = new SDLVideoManager(ScreenWidth, ScreenHeight, palette);
 
 if (!SDL.Init(0))
@@ -96,7 +98,7 @@ var startCounter = SDL.GetPerformanceCounter();
 var frequency = SDL.GetPerformanceFrequency();
 var fpsCounter = new FpsCounter();
 
-var signon = assetManager.Load<Graphic>("wolf3d-signon", AssetType.Graphic);
+var signon = assetManager.Load<Graphic>("wolf3d-signon");
 //var signon = assetManager.Load<Graphic>("spear-signon", AssetType.Graphic);
 
 while (!quit)

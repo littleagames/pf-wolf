@@ -10,6 +10,5 @@ public record MenuDefinition : Asset
 {
     public MenuDefinition()
     {
-        Type = AssetType.MenuDefinitions;
     }
 }

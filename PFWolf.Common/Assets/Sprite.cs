@@ -13,6 +13,5 @@ public record Sprite : Asset
     public byte[] PixelData { get; set; } = Array.Empty<byte>();
     public Sprite()
     {
-        Type = AssetType.Sprite;
     }
 }
