@@ -74,8 +74,8 @@ foreach (var path in gamePackPaths)
 
 var rawPackResult = assetManager.LoadDataFilePack(selectedGamePack);
 
-var gstonea1 = assetManager.Load<Texture>("gstonea1"); // from pk3
-var gstonea2 = assetManager.Load<Texture>("gstonea2"); // from vswap
+//var gstonea1 = assetManager.Load<Texture>("gstonea1"); // from pk3
+//var gstonea2 = assetManager.Load<Texture>("gstonea2"); // from vswap
 
 var palette = assetManager.Load<Palette>("wolfpal");
 IVideoManager videoManager = new SDLVideoManager(ScreenWidth, ScreenHeight, palette);
@@ -98,8 +98,9 @@ var startCounter = SDL.GetPerformanceCounter();
 var frequency = SDL.GetPerformanceFrequency();
 var fpsCounter = new FpsCounter();
 
-var signon = assetManager.Load<Graphic>("wolf3d-signon");
+//var signon = assetManager.Load<Graphic>("wolf3d-signon");
 //var signon = assetManager.Load<Graphic>("spear-signon", AssetType.Graphic);
+var signon = assetManager.Load<Graphic>("title");
 
 while (!quit)
 {
@@ -132,7 +133,7 @@ while (!quit)
     // Scaling = Scaling.FitToScreen
     // Scaling.StretchToFit
     // Scaling.??
-    dimension: new Vector2(ScreenWidth, ScreenHeight));
+    dimension: new Dimension(ScreenWidth, ScreenHeight));
 
     fpsCounter.Update();
     videoManager.DrawFps(fpsCounter.FPS);

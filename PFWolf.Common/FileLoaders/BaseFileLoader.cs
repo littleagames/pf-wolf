@@ -1,6 +1,6 @@
 ﻿using PFWolf.Common.Assets;
 
-namespace PFWolf.Common.Loaders;
+namespace PFWolf.Common.FileLoaders;
 public abstract class BaseFileLoader
 {
     protected readonly string Directory;

@@ -1,6 +1,6 @@
 ﻿using CSharpFunctionalExtensions;
 using PFWolf.Common.Assets;
-using PFWolf.Common.Loaders;
+using PFWolf.Common.FileLoaders;
 
 namespace PFWolf.Common;
 

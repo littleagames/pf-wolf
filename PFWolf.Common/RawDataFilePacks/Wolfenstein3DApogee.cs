@@ -1,6 +1,6 @@
-﻿using PFWolf.Common.Loaders;
+﻿using PFWolf.Common.FileLoaders;
 
-namespace PFWolf.Common.GamePacks;
+namespace PFWolf.Common.RawDataFilePacks;
 
 public class Wolfenstein3DApogee : RawDataFilePack
 {

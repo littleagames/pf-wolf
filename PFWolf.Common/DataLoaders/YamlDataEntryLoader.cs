@@ -1,7 +1,7 @@
 ﻿using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace PFWolf.Common.Loaders;
+namespace PFWolf.Common.DataLoaders;
 
 internal class YamlDataEntryLoader
 {

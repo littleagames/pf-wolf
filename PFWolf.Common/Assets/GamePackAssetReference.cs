@@ -1,6 +1,4 @@
-﻿using PFWolf.Common.Loaders;
-
-namespace PFWolf.Common.Assets;
+﻿namespace PFWolf.Common.Assets;
 
 public record GamePackAssetReference : Asset
 {

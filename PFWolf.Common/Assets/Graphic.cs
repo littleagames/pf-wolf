@@ -6,6 +6,6 @@ public record Graphic : Asset
     {
     }
     public byte[] Data { get; set; } = [];
-    public Vector2 Dimensions { get; set; } = Vector2.Zero;
+    public Dimension Dimensions { get; set; } = Dimension.Zero;
     public Vector2 Offset { get; set; } = Vector2.Zero;
 }

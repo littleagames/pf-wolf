@@ -1,6 +1,6 @@
 ﻿using CSharpFunctionalExtensions;
 using PFWolf.Common.Assets;
-using PFWolf.Common.Loaders;
+using PFWolf.Common.DataLoaders;
 using System.IO.Compression;
 
 namespace PFWolf.Common;
@@ -80,7 +80,7 @@ public class AssetManager
                 // 2) Load asset reference to pack, and what type it is
                 // TODO: distinguish between PNG and other formats by using a "try load" for each data type of a graphic
                 // Then I can use this same loader for wolf3d file formats as well
-                AddReference(assetName, () => PngGraphicDataLoader.Load(Pk3DataFileLoader.Load(pk3FileFullPath, entry.FullName)));
+                AddReference(assetName, () => PngGraphicDataLoader.Load(Pk3EntryLoader.Load(pk3FileFullPath, entry.FullName)));
                 continue;
             }
 
@@ -104,7 +104,7 @@ public class AssetManager
 
             if (entry.FullName.StartsWith("palettes/"))
             {
-                AddReference(assetName, () => new Palette(Pk3DataFileLoader.Load(pk3FileFullPath, entry.FullName)));
+                AddReference(assetName, () => PaletteDataLoader.Load(Pk3EntryLoader.Load(pk3FileFullPath, entry.FullName)));
                 continue;
             }
 
@@ -135,7 +135,8 @@ public class AssetManager
 
             if (entry.FullName.StartsWith("textures/"))
             {
-                AddReference(assetName, () => new Texture());
+                // This gets the data from the PK3 loader, and then passes it to the texture file loader to determine type
+                AddReference(assetName, () => TextureDataLoader.Load(Pk3EntryLoader.Load(pk3FileFullPath, entry.FullName)));
                 continue;
             }
         }

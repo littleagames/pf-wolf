@@ -1,6 +1,10 @@
-﻿using PFWolf.Common.Assets;
+﻿using CSharpFunctionalExtensions;
+using PFWolf.Common.Assets;
+using PFWolf.Common.Compression;
+using PFWolf.Common.DataLoaders;
+using PFWolf.Common.Extensions;
 
-namespace PFWolf.Common.Loaders;
+namespace PFWolf.Common.FileLoaders;
 
 public class Wolf3DVgaFileLoader : BaseFileLoader
 {
@@ -24,9 +28,9 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
     
     public List<int> GetHeaderList()
     {
-        var graphicStartIndexes = new List<int>((_headerData.Length / 3));
+        var graphicStartIndexes = new List<int>(_headerData.Length / 3);
 
-        for (var i = 0; i < (_headerData.Length / 3); i++)
+        for (var i = 0; i < _headerData.Length / 3; i++)
         {
             // TODO: ReadLittleInt24(_headerData.Skip(i*sizeof(Int24).Take(sizeof(Int24).ToArray());
             // TODO: position += sizeof(Int24);
@@ -43,6 +47,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
     
     public override List<KeyValuePair<string, Asset>> Load(GamePackAssetReference assetNameReferences)
     {
+        var huffman = new HuffmanCompression(_dictionaryData);
         var headerList = GetHeaderList();
 
         var vgaAssets = new List<KeyValuePair<string, Asset>>();
@@ -64,8 +69,8 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         uint[] segmentStarts = [0,0,0,0];
         uint currentSegment = 0;
 
-        var lumps = new List<VgaLump>();
         var vgaFileStream = File.OpenRead(_vgaGraphFilePath);
+        var picDimensionData = new List<Dimension>();
 
         for (int index = 0; index < numChunks; index++)
         {
@@ -76,7 +81,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
             if (currentSegment < 3 && compressedSize >= 4)
             {
                 var tagBytes = new byte[4];
-                vgaFileStream.Seek(position + compressedSize - sizeof(int), System.IO.SeekOrigin.Begin);
+                vgaFileStream.Seek(position + compressedSize - sizeof(int), SeekOrigin.Begin);
                 var bytesRead = vgaFileStream.Read(tagBytes);
                 if (bytesRead < 4)
                     continue;
@@ -92,16 +97,54 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
             }
 
             var assetName = GetReferenceName(assetNameReferences.Graphics, index) ?? $"VGA{index:D5}";
+            //PicData? picData = null;
+            //var numPics = 0;
             switch (assetType.Name)
             {
                 case nameof(PicData):
-                    vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<PicData>(() => LoadVgaAsset<PicData>(assetName))));
+                    {
+                        var buffer = new byte[sizeof(int)];
+                        vgaFileStream.Seek(position, SeekOrigin.Begin);
+                        vgaFileStream.ReadExactly(buffer);
+                        // First 4 bytes is the struct data expanded length
+                        var expandedStructLength = BitConverter.ToInt32(buffer);
+
+                        var structBuffer = new byte[expandedStructLength];
+                        vgaFileStream.ReadExactly(structBuffer);
+                        var expandedStructData = huffman.Expand(structBuffer);
+
+                        //expandedStructData = expandedStructData.Take(expandedStructLength).ToArray();
+                        //var expectedPictableDataLength = numPics * 2 * sizeof(ushort);
+                        //if (expandedStructLength != expectedPictableDataLength)
+                        //{
+                        //    throw new Exception(
+                        //        $"Picture dimension data size mismatch, is {expandedStructLength}, expected {expectedPictableDataLength}");
+                        //}
+
+                        var picTableData = expandedStructData.ToUInt16Array();
+                        picDimensionData = ToDimensions(picTableData);
+                        //vgaAssets.Add(new StructPicAsset
+                        //{
+                        //    NumFonts = (int)numFonts,
+                        //    NumPics = (int)numPics,
+                        //    RawData = expandedStructData,
+                        //    Dimensions = ToDimensions(picTableData, (int)numPics)
+                        //});
+                    }
+                    // () => WolfRawGraphicDataLoader.Load(VgaFileData.Load(pk3FileFullPath, entry.FullName))
+                    //vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<PicData>(() => LoadVgaAsset<PicData>(assetName))));
                     break;
                 case nameof(Font):
                     vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<Font>(() => LoadVgaAsset<Font>(assetName))));
                     break;
                 case nameof(Graphic):
-                    vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<Graphic>(() => LoadVgaAsset<Graphic>(assetName))));
+                    var picNum = index - (int)(segmentStarts[2]);
+                    var dimensions = picDimensionData[picNum];
+                    vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<Graphic>(() => WolfRawGraphicDataLoader.Load(
+                        DecompressVgaLump(_vgaGraphFilePath, position, compressedSize, huffman, dimensions),
+                        picNum,
+                        dimensions,
+                        huffman))));
                     break;
                 case nameof(VgaExtern):
                     // TODO: Determine the extern type (palette, endscreen, demo, text, tile8)
@@ -114,7 +157,6 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         //var numFonts = segmentStarts[2] - segmentStarts[1];
         //var numPics = segmentStarts[3] - segmentStarts[2];
 
-        //var huffman = new HuffmanCompression(_dictionaryData);
         //const int StructPicIndex = 0;
         //for (var i = 0; i < lumps.Count; i++)
         //{
@@ -131,7 +173,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         //            throw new Exception(
         //                $"Picture dimension data size mismatch, is {expandedStructLength}, expected {expectedPictableDataLength}");
         //        }
-        
+
         //        var picTableData = Converters.ByteArrayToUInt16Array(expandedStructData);
         //        vgaAssets.Add(new StructPicAsset
         //        {
@@ -141,7 +183,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         //            Dimensions = ToDimensions(picTableData, (int)numPics)
         //        });
         //    }
-            
+
         //    // Fonts
         //    if (i >= segmentStarts[1] && i < segmentStarts[2])
         //    {
@@ -153,7 +195,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         //            name: GetReferenceName(i) ?? $"FONT{i:D5}",
         //            rawData: expandedData));
         //    }
-            
+
         //    // Graphics
         //    if (i >= segmentStarts[2] && i < segmentStarts[3])
         //    {
@@ -163,9 +205,9 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         //        {
         //            throw new IndexOutOfRangeException($"Pic number {picNum} is out of range.");
         //        }
-                
+
         //        var dimensions = structData.Dimensions[picNum];
-                
+
         //        var size = BitConverter.ToInt32(lumps[i].CompressedData.Take(sizeof(int)).ToArray());
         //        var compressedData = lumps[i].CompressedData.Skip(sizeof(int)).ToArray();
         //        var expandedData = huffman.Expand(compressedData); // TODO: 63999 for a 64000 image?
@@ -176,7 +218,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         //        }
         //        expandedData = expandedData.Take(size).ToArray();
         //        expandedData = DeplaneData(expandedData, dimensions);
-                
+
         //        vgaAssets.Add(new GraphicAsset
         //        {
         //            Name = GetReferenceName(i) ?? $"PIC{i:D5}",
@@ -184,12 +226,12 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         //            Dimensions = dimensions
         //        });
         //    }
-            
+
         //    // Externs
         //    if (i >= segmentStarts[3])
         //    {
         //        var paletteSize = 256 * 3 * sizeof(byte);
-                
+
         //        // Check if ENDSCREEN (4000 bytes?)
         //        // 80 x 25
         //        // ASCII, foreground, and background color (2 + 1 + 1 byte)
@@ -234,7 +276,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         //            });
         //            continue;
         //        }
-                
+
         //        var text = System.Text.Encoding.ASCII.GetString(expandedData);
         //        if (text.StartsWith("^P", StringComparison.CurrentCultureIgnoreCase)
         //            || text.EndsWith("^E", StringComparison.CurrentCultureIgnoreCase))
@@ -249,12 +291,33 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         //            });
         //            continue;
         //        }
-                
+
         //        // TODO: Tile8s
         //    }
         //}
-        
+
         return vgaAssets;
+    }
+
+    private MemoryStream DecompressVgaLump(string vgaGraphFilePath, int position, int compressedSize, HuffmanCompression huffman, Dimension dimensions)
+    {
+        using var vgaFileStream = File.OpenRead(vgaGraphFilePath);
+        vgaFileStream.Seek(position, SeekOrigin.Begin);
+        var compressedData = new byte[compressedSize];
+        var buffer = new byte[sizeof(int)];
+        vgaFileStream.ReadExactly(buffer, 0, sizeof(int));
+        var size = BitConverter.ToInt32(buffer);
+        var bytesRead = vgaFileStream.Read(compressedData, 0, compressedSize);
+
+        var expandedData = huffman.Expand(compressedData); // TODO: 63999 for a 64000 image?
+        if (expandedData.Length < size)
+        {
+            throw new Exception(
+                $"Huffman expand didn't fill the entire array: {expandedData.Length} (expanded) < {size} (size)");
+        }
+        expandedData = expandedData.Take(size).ToArray();
+        expandedData = DeplaneData(expandedData, dimensions);
+        return new MemoryStream(expandedData);
     }
 
     public T LoadVgaAsset<T>(string name) where T : Asset
@@ -262,7 +325,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         throw new NotImplementedException();
     }
 
-    private string? GetReferenceName(List<string> assetNameReferences, int i)
+    private static string? GetReferenceName(List<string> assetNameReferences, int i)
     {
         if (i < 0 || i > assetNameReferences.Count)
             return null;
@@ -270,10 +333,10 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         return assetNameReferences[i];
     }
     
-    private List<Vector2> ToDimensions(ushort[] picTableData, int numPics)
+    private static List<Dimension> ToDimensions(ushort[] picTableData)
     {
-        var dimensions = new List<Vector2>(numPics);
-        for (var i = 0; i < numPics; i++)
+        var dimensions = new List<Dimension>();
+        for (var i = 0; i < picTableData.Length/2-1; i++)
         {
             var width = picTableData[i*2];
             var height = picTableData[i*2+1];
@@ -281,20 +344,21 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
             // validation
             if (width <= 0 || width > 640 || height <= 0 || height > 400)
             {
-                throw new Exception($"Invalid file size: {width}x{height} for pic {i}");
+                break;
+                //throw new Exception($"Invalid file size: {width}x{height} for pic {i}");
             }
             
-            var dimension = new Vector2(width, height);
+            var dimension = new Dimension(width, height);
             dimensions.Add(dimension);
         }
         
         return dimensions;
     }
 
-    private byte[] DeplaneData(byte[] source, Vector2 dimensions)
+    private byte[] DeplaneData(byte[] source, Dimension dimensions)
     {
-        int width = dimensions.X;
-        int height = dimensions.Y;
+        int width = dimensions.Width;
+        int height = dimensions.Height;
         
         int x, y, plane;
         ushort size, pwidth;
@@ -324,7 +388,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
                 {
                     if (srcLineIndex >= srcline.Length)
                         continue;
-                    dest[(width * y) + ((x << 2) + plane)] = srcline[srcLineIndex++];
+                    dest[width * y + (x << 2) + plane] = srcline[srcLineIndex++];
                 }
             }
         }

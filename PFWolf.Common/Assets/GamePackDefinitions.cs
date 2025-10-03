@@ -1,4 +1,4 @@
-﻿using PFWolf.Common.Loaders;
+﻿using PFWolf.Common.DataLoaders;
 
 namespace PFWolf.Common.Assets;
 

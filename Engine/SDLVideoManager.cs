@@ -11,7 +11,7 @@ namespace Engine
         public int ScreenHeight { get; }
         public int ScreenWidth { get; }
         bool Initialize();
-        void Draw(Graphic graphic, Vector2 position, Vector2 dimension);
+        void Draw(Graphic graphic, Vector2 position, Dimension dimension);
         void DrawFps(double fps);
         void Update();
         void ShutDown();
@@ -49,7 +49,7 @@ namespace Engine
                 return false;
             }
 
-            if (!SDL.CreateWindowAndRenderer("PF Wolf", ScreenWidth, ScreenHeight, SDL.WindowFlags.OpenGL | SDL.WindowFlags.Fullscreen, out windowPtr, out rendererPtr))
+            if (!SDL.CreateWindowAndRenderer("PF Wolf", ScreenWidth, ScreenHeight, SDL.WindowFlags.OpenGL, out windowPtr, out rendererPtr))
             {
                 SDL.LogError(SDL.LogCategory.Video, "Unable to initialize window and/or renderer");
                 return false;
@@ -127,10 +127,10 @@ namespace Engine
             SDL.DestroyWindow(windowPtr);
         }
 
-        public void Draw(Graphic graphic, Vector2 position, Vector2 size)
+        public void Draw(Graphic graphic, Vector2 position, Dimension size)
         {
-            float scaleX = (float)graphic.Dimensions.X / size.X;
-            float scaleY = (float)graphic.Dimensions.Y / size.Y;
+            float scaleX = (float)graphic.Dimensions.Width / size.Width;
+            float scaleY = (float)graphic.Dimensions.Height / size.Height;
 
             IntPtr dest = LockSurface(screenBufferPtr);
             if (dest == IntPtr.Zero) return;
@@ -140,8 +140,8 @@ namespace Engine
 
                 var startingX = Math.Max(position.X, 0);
                 var startingY = Math.Max(position.Y, 0);
-                var endingX = Math.Min(size.X, ScreenWidth);
-                var endingY = Math.Min(size.Y, ScreenHeight);
+                var endingX = Math.Min(size.Width, ScreenWidth);
+                var endingY = Math.Min(size.Height, ScreenHeight);
 
                 for (int y = startingY; y < endingY; y++)
                 {
@@ -149,7 +149,7 @@ namespace Engine
                     for (int x = startingX; x < endingX; x++)
                     {
                         int srcX = (int)(x * scaleX);
-                        byte col = graphic.Data[srcY* graphic.Dimensions.X + srcX];
+                        byte col = graphic.Data[srcY* graphic.Dimensions.Width + srcX];
                         pixels[ylookup[y] + x] = col;
                     }
                 }

@@ -2,7 +2,7 @@
 using PFWolf.Common.Extensions;
 using System.IO;
 
-namespace PFWolf.Common.Loaders;
+namespace PFWolf.Common.FileLoaders;
 
 public class Wolf3DVswapFileLoader : BaseFileLoader
 {
@@ -23,7 +23,7 @@ public class Wolf3DVswapFileLoader : BaseFileLoader
 
         using var stream = File.OpenRead(_vswapFilePath);
 
-        var buffer = new byte[sizeof(UInt16)];
+        var buffer = new byte[sizeof(ushort)];
         stream.ReadExactly(buffer);//, position, sizeof(UInt16));
 
         var chunksInFile = BitConverter.ToUInt16(buffer);
@@ -37,19 +37,19 @@ public class Wolf3DVswapFileLoader : BaseFileLoader
         var soundStartIndex = BitConverter.ToUInt16(buffer);//, position);
         //position += sizeof(UInt16);
 
-        var bytesOfPageOffsets = new byte[sizeof(UInt32) * chunksInFile];
+        var bytesOfPageOffsets = new byte[sizeof(uint) * chunksInFile];
         stream.ReadExactly(bytesOfPageOffsets);//, position, bytesOfPageOffsets.Length);
         // TODO: Continue reading from stream
         var pageOffsets = bytesOfPageOffsets.ToArray().ToUInt32Array(chunksInFile + 1);
         //position += sizeof(UInt32) * chunksInFile;
 
-        var bytesOfPageLengths = new byte[sizeof(UInt16) * chunksInFile];
+        var bytesOfPageLengths = new byte[sizeof(ushort) * chunksInFile];
         stream.ReadExactly(bytesOfPageLengths);//, position, bytesOfPageLengths.Length);
 
         var pageLengths = bytesOfPageLengths.ToArray().ToUInt16Array(chunksInFile);
         //position += sizeof(UInt16) * chunksInFile;
 
-        var vswapLength = new System.IO.FileInfo(_vswapFilePath).Length;
+        var vswapLength = new FileInfo(_vswapFilePath).Length;
         var dataSize = (int)(vswapLength - pageOffsets.First());
 
         if (dataSize < 0)

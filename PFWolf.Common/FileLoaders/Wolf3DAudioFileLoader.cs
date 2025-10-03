@@ -1,7 +1,7 @@
 ﻿using PFWolf.Common.Assets;
 using PFWolf.Common.Extensions;
 
-namespace PFWolf.Common.Loaders;
+namespace PFWolf.Common.FileLoaders;
 
 public class Wolf3DAudioFileLoader : BaseFileLoader
 {
@@ -97,7 +97,7 @@ public class Wolf3DAudioFileLoader : BaseFileLoader
             {
                 var tagBytes = new byte[4];
                 var position = audioStarts[index] + size - 4;
-                audioFileStream.Seek(position, System.IO.SeekOrigin.Begin);
+                audioFileStream.Seek(position, SeekOrigin.Begin);
                 var bytesRead = 
                 audioFileStream.Read(tagBytes);
                 if (bytesRead < 4)

@@ -1,18 +1,20 @@
 ﻿using System.IO.Compression;
 
-namespace PFWolf.Common.Loaders;
+namespace PFWolf.Common.DataLoaders;
 
-public class Pk3DataFileLoader
+public class Pk3EntryLoader
 {
-    public static byte[] Load(string filePath, string entryPath)
+    public static MemoryStream Load(string filePath, string entryPath)
     {
         using ZipArchive archive = ZipFile.OpenRead(filePath);
         var entry = archive.GetEntry(entryPath);
         if (entry == null)
             throw new FileNotFoundException($"Entry {entryPath} not found in {filePath}");
+
+
         using var stream = entry.Open();
-        using var memoryStream = new MemoryStream();
-        stream.CopyTo(memoryStream);
-        return memoryStream.ToArray();
+        var ms = new MemoryStream();
+        stream.CopyTo(ms);
+        return ms;
     }
 }

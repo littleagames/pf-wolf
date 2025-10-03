@@ -2,7 +2,6 @@
 
 public record Texture : Asset
 {
-    public int Width { get; set; }
-    public int Height { get; set; }
+    public Dimension Dimensions { get; set; }
     public byte[] PixelData { get; set; } = [];
 }

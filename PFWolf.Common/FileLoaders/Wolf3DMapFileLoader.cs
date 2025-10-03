@@ -2,7 +2,7 @@
 using PFWolf.Common.Extensions;
 using System;
 
-namespace PFWolf.Common.Loaders;
+namespace PFWolf.Common.FileLoaders;
 
 public class Wolf3DMapFileLoader : BaseFileLoader
 {

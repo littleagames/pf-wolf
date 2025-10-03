@@ -2,7 +2,7 @@
 
 public record PicData : Asset
 {
-    public PicData()
-    {
-    }
+    public int NumFonts { get; set; }
+    public int NumPics { get; set; }
+    public List<Dimension> Dimensions { get; set; } = [];
 }

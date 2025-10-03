@@ -3,27 +3,8 @@
 public record Palette : Asset
 {
     public PaletteColor[] Colors { get; set; } = [];
-    public Palette(byte[] data)
+    public Palette()
     {
-        Colors = new PaletteColor[256];
-        if (data.Length != 768) // 256*3 bytes
-        {
-            throw new ArgumentException("Invalid SDL palette data");
-        }
-
-        var paletteColors = new PaletteColor[256];
-        for (int i = 0; i < 256; i++)
-        {
-            paletteColors[i] = new PaletteColor
-            {
-                Red = data[(i * 3)],
-                Green = data[(i * 3) + 1],
-                Blue = data[(i * 3) + 2],
-                Alpha = 255
-            };
-        }
-
-        Colors = paletteColors;
     }
 }
 

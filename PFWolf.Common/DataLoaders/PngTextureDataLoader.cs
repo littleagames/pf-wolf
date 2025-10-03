@@ -1,13 +1,15 @@
 ﻿using PFWolf.Common.Assets;
-using System;
 
-namespace PFWolf.Common.Loaders;
+namespace PFWolf.Common.DataLoaders;
 
-public class PngGraphicDataLoader
+public class PngTextureDataLoader
 {
-
-    public static Graphic Load(byte[] rawData)
+    public static Texture Load(Stream stream)
     {
+        using MemoryStream ms = new MemoryStream();
+        stream.CopyTo(ms);
+        var rawData = ms.ToArray();
+
         var pngPalette = new PaletteColor[256];
         var offsetTopLeft = new Vector2(0, 0);
 
@@ -63,11 +65,11 @@ public class PngGraphicDataLoader
         {
             throw new ArgumentException("Not a valid PNG");
         }
-        if (((1 << colorType) & 0x5D) == 0)
+        if ((1 << colorType & 0x5D) == 0)
         {
             throw new ArgumentException("Not a valid PNG");
         }
-        if (((1 << bitDepth) & 0x116) == 0)
+        if ((1 << bitDepth & 0x116) == 0)
         {
             throw new ArgumentException("Not a valid PNG");
         }
@@ -153,18 +155,17 @@ public class PngGraphicDataLoader
 
         
 
-        // PNG to graphic data
-        return new Graphic
+        // PNG to texture data
+        return new Texture
         {
             // Offset
-            Dimensions = new Vector2
+            Dimensions = new Dimension
             {
-                X = width,
-                Y = height
+                Width = width,
+                Height = height
             },
-            Offset = offsetTopLeft,
             //Data = indexedData,
-            Data = Enumerable.Repeat((byte)0x20, width*height).ToArray()// new byte[width*height] // TODO: Translate to index-based palette
+            PixelData = Enumerable.Repeat((byte)0x20, width*height).ToArray()// new byte[width*height] // TODO: Translate to index-based palette
         };
     }
     // Search for IDAT and IEND chunks in the byte array, ensuring IEND is after IDAT
