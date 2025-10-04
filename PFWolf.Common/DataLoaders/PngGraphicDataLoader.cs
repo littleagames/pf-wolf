@@ -5,11 +5,11 @@ namespace PFWolf.Common.DataLoaders;
 
 public class PngGraphicDataLoader
 {
-    public static Graphic Load(Stream stream)
+    public static Graphic Load(MemoryStream stream)
     {
-        using MemoryStream ms = new MemoryStream();
-        stream.CopyTo(ms);
-        var rawData = ms.ToArray();
+        //using MemoryStream ms = new MemoryStream();
+        //stream.CopyTo(ms);
+        var rawData = stream.ToArray();
 
         var pngPalette = new PaletteColor[256];
         var offsetTopLeft = new Vector2(0, 0);

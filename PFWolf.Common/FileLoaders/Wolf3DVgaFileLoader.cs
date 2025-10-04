@@ -113,7 +113,6 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
                         vgaFileStream.ReadExactly(structBuffer);
                         var expandedStructData = huffman.Expand(structBuffer);
 
-                        //expandedStructData = expandedStructData.Take(expandedStructLength).ToArray();
                         //var expectedPictableDataLength = numPics * 2 * sizeof(ushort);
                         //if (expandedStructLength != expectedPictableDataLength)
                         //{
@@ -194,37 +193,6 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         //        vgaAssets.Add(new FontAsset(
         //            name: GetReferenceName(i) ?? $"FONT{i:D5}",
         //            rawData: expandedData));
-        //    }
-
-        //    // Graphics
-        //    if (i >= segmentStarts[2] && i < segmentStarts[3])
-        //    {
-        //        var structData = ((StructPicAsset)vgaAssets[StructPicIndex]);
-        //        var picNum = i - (int)(segmentStarts[2]);
-        //        if (picNum < 0 || picNum >= structData.NumPics)
-        //        {
-        //            throw new IndexOutOfRangeException($"Pic number {picNum} is out of range.");
-        //        }
-
-        //        var dimensions = structData.Dimensions[picNum];
-
-        //        var size = BitConverter.ToInt32(lumps[i].CompressedData.Take(sizeof(int)).ToArray());
-        //        var compressedData = lumps[i].CompressedData.Skip(sizeof(int)).ToArray();
-        //        var expandedData = huffman.Expand(compressedData); // TODO: 63999 for a 64000 image?
-        //        if (expandedData.Length < size)
-        //        {
-        //            throw new Exception(
-        //                $"Huffman expand didn't fill the entire array: {expandedData.Length} (expanded) < {size} (size)");
-        //        }
-        //        expandedData = expandedData.Take(size).ToArray();
-        //        expandedData = DeplaneData(expandedData, dimensions);
-
-        //        vgaAssets.Add(new GraphicAsset
-        //        {
-        //            Name = GetReferenceName(i) ?? $"PIC{i:D5}",
-        //            RawData = expandedData, // TODO: DeplaneVGA? (4 byte blocks?)
-        //            Dimensions = dimensions
-        //        });
         //    }
 
         //    // Externs

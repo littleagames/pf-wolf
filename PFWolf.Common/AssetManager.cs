@@ -2,6 +2,7 @@
 using PFWolf.Common.Assets;
 using PFWolf.Common.DataLoaders;
 using System.IO.Compression;
+using YamlDotNet.Core.Tokens;
 
 namespace PFWolf.Common;
 
@@ -80,7 +81,7 @@ public class AssetManager
                 // 2) Load asset reference to pack, and what type it is
                 // TODO: distinguish between PNG and other formats by using a "try load" for each data type of a graphic
                 // Then I can use this same loader for wolf3d file formats as well
-                AddReference(assetName, () => PngGraphicDataLoader.Load(Pk3EntryLoader.Load(pk3FileFullPath, entry.FullName)));
+                AddReference(assetName, () => GraphicDataLoader.Load(Pk3EntryLoader.Load(pk3FileFullPath, entry.FullName)));
                 continue;
             }
 
@@ -180,6 +181,32 @@ public class AssetManager
         }
 
         return (T)asset;
+    }
+
+    public List<Asset> LoadAll()
+    {
+        var loadedAssets = new List<Asset>();
+        foreach (var asset in _assets)
+        {
+            var assetValue = asset.Value;
+            var assetType = assetValue.GetType();
+            if (assetType.IsGenericType && assetType.GetGenericTypeDefinition() == typeof(AssetReference<>))
+            {
+                // Use reflection to call Load() on AssetReference<T>
+                var loadMethod = assetType.GetProperty("Load")?.GetValue(assetValue) as Delegate;
+                if (loadMethod != null)
+                {
+                    var loadedAsset = loadMethod.DynamicInvoke();
+                    _assets[asset.Key] = (Asset)loadedAsset; // Replace reference with loaded asset
+                    loadedAssets.Add((Asset)loadedAsset);
+                }
+            }
+            else
+            {
+                loadedAssets.Add(assetValue);
+            }
+        }
+        return loadedAssets;
     }
 
     private void AddReference<T>(string assetName, Func<T> assetLoader) where T : Asset

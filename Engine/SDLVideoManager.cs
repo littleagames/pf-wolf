@@ -138,7 +138,7 @@ namespace Engine
             {
                 byte* pixels = (byte*)dest;
 
-                var startingX = Math.Max(position.X, 0);
+                var startingX = Math.Max(position.X, 0); // TODO: This is not starting the graphic at this position
                 var startingY = Math.Max(position.Y, 0);
                 var endingX = Math.Min(size.Width, ScreenWidth);
                 var endingY = Math.Min(size.Height, ScreenHeight);
