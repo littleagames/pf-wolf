@@ -138,18 +138,22 @@ namespace Engine
             {
                 byte* pixels = (byte*)dest;
 
-                var startingX = Math.Max(position.X, 0); // TODO: This is not starting the graphic at this position
-                var startingY = Math.Max(position.Y, 0);
-                var endingX = Math.Min(size.Width, ScreenWidth);
-                var endingY = Math.Min(size.Height, ScreenHeight);
+                int startingX = Math.Max(position.X, 0);
+                int startingY = Math.Max(position.Y, 0);
+                int endingX = Math.Min(position.X + size.Width, ScreenWidth);
+                int endingY = Math.Min(position.Y + size.Height, ScreenHeight);
 
                 for (int y = startingY; y < endingY; y++)
                 {
-                    int srcY = (int)(y * scaleY);
+                    int srcY = (int)((y - position.Y) * scaleY);
+                    if (srcY < 0 || srcY >= graphic.Dimensions.Height) continue;
+
                     for (int x = startingX; x < endingX; x++)
                     {
-                        int srcX = (int)(x * scaleX);
-                        byte col = graphic.Data[srcY* graphic.Dimensions.Width + srcX];
+                        int srcX = (int)((x - position.X) * scaleX);
+                        if (srcX < 0 || srcX >= graphic.Dimensions.Width) continue;
+
+                        byte col = graphic.Data[srcY * graphic.Dimensions.Width + srcX];
                         pixels[ylookup[y] + x] = col;
                     }
                 }

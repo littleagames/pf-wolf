@@ -145,7 +145,7 @@ while (!quit)
     // HasChanged: bool
     // TODO: Turns into "offset: Vector2"
     // TODO: Orientation: Top, TopLeft, Left, Center, etc
-    position: new Vector2(0, 40),
+    position: new Vector2(0, 320),
     // Scaling = Scaling.FitToScreen
     // Scaling.StretchToFit
     // Scaling.??
