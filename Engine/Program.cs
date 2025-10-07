@@ -101,9 +101,9 @@ var startCounter = SDL.GetPerformanceCounter();
 var frequency = SDL.GetPerformanceFrequency();
 var fpsCounter = new FpsCounter();
 
-//var signon = assetManager.Load<Graphic>("wolf3d-signon");
+var signon = assetManager.Load<Graphic>("wolf3d-signon");
 //var signon = assetManager.Load<Graphic>("spear-signon", AssetType.Graphic);
-var signon = assetManager.Load<Graphic>("title");
+//var signon = assetManager.Load<Graphic>("title");
 var sbar = assetManager.Load<Graphic>("statusbar");
 
 while (!quit)

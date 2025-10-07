@@ -81,7 +81,7 @@ public class AssetManager
                 // 2) Load asset reference to pack, and what type it is
                 // TODO: distinguish between PNG and other formats by using a "try load" for each data type of a graphic
                 // Then I can use this same loader for wolf3d file formats as well
-                AddReference(assetName, () => GraphicDataLoader.Load(Pk3EntryLoader.Load(pk3FileFullPath, entry.FullName)));
+                AddReference(assetName, () => GraphicDataLoader.Load(Pk3EntryLoader.Load(pk3FileFullPath, entry.FullName), sourcePalette: Load<Palette>("wolfpal")));
                 continue;
             }
 

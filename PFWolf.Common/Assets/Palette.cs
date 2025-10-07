@@ -6,6 +6,36 @@ public record Palette : Asset
     public Palette()
     {
     }
+
+    public void MakeRemap(PaletteColor[] palette, ref byte[] paletteMap, int paletteSize)
+    {
+        if (palette == null || paletteMap == null || paletteSize <= 0 || palette.Length < paletteSize || Colors == null || Colors.Length < paletteSize)
+            throw new ArgumentException("Invalid palette or paletteMap or paletteSize.");
+
+        for (int i = 0; i < paletteSize; i++)
+        {
+            int bestIndex = 0;
+            int bestDistance = int.MaxValue;
+            var src = palette[i];
+
+            for (int j = 0; j < Colors.Length; j++)
+            {
+                var dst = Colors[j];
+                int dr = src.Red - dst.Red;
+                int dg = src.Green - dst.Green;
+                int db = src.Blue - dst.Blue;
+                int da = src.Alpha - dst.Alpha;
+                int distance = dr * dr + dg * dg + db * db + da * da;
+
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestIndex = j;
+                }
+            }
+            paletteMap[i] = (byte)bestIndex;
+        }
+    }
 }
 
 public struct PaletteColor

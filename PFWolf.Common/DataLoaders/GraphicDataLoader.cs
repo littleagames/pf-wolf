@@ -4,7 +4,7 @@ namespace PFWolf.Common.DataLoaders;
 
 public class GraphicDataLoader
 {
-    public static Graphic Load(MemoryStream stream)
+    public static Graphic Load(MemoryStream stream, Palette sourcePalette)
     {
         // Read the first few bytes to determine the texture type
         byte[] header = new byte[4];
@@ -18,7 +18,7 @@ public class GraphicDataLoader
         }
         else if (header[0] == 0x89 && header[1] == 0x50) // PNG
         {
-            return PngGraphicDataLoader.Load(stream);
+            return PngGraphicDataLoader.Load(stream, sourcePalette);
         }
         else
         {
