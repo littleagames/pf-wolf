@@ -1,0 +1,41 @@
+doors:
+    '90':
+        East: DOOR1_2
+        West: DOOR1_2
+        North: SLOT1_1
+        South: SLOT1_1
+    '91':
+        North: DOOR1_1
+        South: DOOR1_1
+        East: SLOT1_2
+        West: SLOT1_2
+    '92':
+        East: DOOR3_2
+        West: DOOR3_2
+        North: SLOT1_1
+        South: SLOT1_1
+    '93':
+        North: DOOR3_1
+        South: DOOR3_1
+        East: SLOT1_2
+        West: SLOT1_2
+    '94':
+        East: DOOR3_2
+        West: DOOR3_2
+        North: SLOT1_1
+        South: SLOT1_1
+    '95':
+        North: DOOR3_1
+        South: DOOR3_1
+        East: SLOT1_2
+        West: SLOT1_2
+    '100':
+        East: DOOR2_1
+        West: DOOR2_1
+        North: SLOT1_1
+        South: SLOT1_1
+    '101':
+        North: DOOR2_2
+        South: DOOR2_2
+        East: SLOT1_2
+        West: SLOT1_2

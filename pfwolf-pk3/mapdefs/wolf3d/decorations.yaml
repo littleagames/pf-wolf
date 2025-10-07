@@ -1,0 +1,99 @@
+actors:
+    '23':
+        Actor: Puddle
+    '24':
+        Actor: OilDrum
+    '25':
+        Actor: TableWithChairs
+    '26':
+        Actor: FloorLamp
+    '27':
+        Actor: Chandelier
+    '28':
+        Actor: HangingSkeleton
+    '29':
+        Actor: DogFood
+    '30':
+        Actor: WhiteColumn
+    '31':
+        Actor: GreenPlant
+    '32':
+        Actor: Skeleton
+    '33':
+        Actor: Sink
+    '34':
+        Actor: BrownPlant
+    '35':
+        Actor: Vase
+    '36':
+        Actor: Table
+    '37':
+        Actor: CeilingLight
+    '38':
+        Actor: Utensils
+    '39':
+        Actor: Armor
+    '40':
+        Actor: EmptyCage
+    '41':
+        Actor: CageWithSkeleton
+    '42':
+        Actor: Bones
+    '43':
+        Actor: GoldKey
+    '44':
+        Actor: SilverKey
+    '45':
+        Actor: Bed
+    '46':
+        Actor: Basket
+    '47':
+        Actor: Food
+    '48':
+        Actor: FirstAidKit
+    '49':
+        Actor: Clip
+    '50':
+        Actor: MachineGun
+    '51':
+        Actor: GatlingGun
+    '52':
+        Actor: Cross
+    '53':
+        Actor: Chalice
+    '54':
+        Actor: ChestOfJewels
+    '55':
+        Actor: Crown
+    '56':
+        Actor: ExtraLife
+    '57':
+        Actor: BonesWithBlood
+    '58':
+        Actor: Barrel
+    '59':
+        Actor: WellWithWater
+    '60':
+        Actor: Well
+    '61':
+        Actor: PoolOfBlood
+    '62':
+        Actor: Flag
+    '63':
+        Actor: Aardwolf
+    '64':
+        Actor: Bones2
+    '65':
+        Actor: Bones3
+    '66':
+        Actor: Bones4
+    '67':
+        Actor: UtensilsBlue
+    '68':
+        Actor: Stove
+    '69':
+        Actor: Rack
+    '70':
+        Actor: Vine
+    '124':
+        Actor: DeadGuard

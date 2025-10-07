@@ -1,0 +1,10 @@
+{
+	"Food": {
+		"States": {
+			"Spawn": [{ 
+				"Frame": "FOODA",
+				"Tics": 0
+			}]
+		}
+	}
+}

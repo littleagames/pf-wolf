@@ -1,0 +1,246 @@
+walls:
+    '1':
+        North: GSTONEA1
+        South: GSTONEA1
+        East: GSTONEA2
+        West: GSTONEA2
+    '2':
+        North: GSTONEB1
+        South: GSTONEB1
+        East: GSTONEB2
+        West: GSTONEB2
+    '3':
+        North: GSTFLAG1
+        South: GSTFLAG1
+        East: GSTFLAG2
+        West: GSTFLAG2
+    '4':
+        North: GSTHTLR1
+        South: GSTHTLR1
+        East: GSTHTLR2
+        West: GSTHTLR2
+    '5':
+        North: BSTCELA1
+        South: BSTCELA1
+        East: BSTCELA2
+        West: BSTCELA2
+    '6':
+        North: GSTEAGL1
+        South: GSTEAGL1
+        East: GSTEAGL2
+        West: GSTEAGL2
+    '7':
+        North: BSTCELB1
+        South: BSTCELB1
+        East: BSTCELB2
+        West: BSTCELB2
+    '8':
+        North: BSTONEA1
+        South: BSTONEA1
+        East: BSTONEA2
+        West: BSTONEA2
+    '9':
+        North: BSTONEB1
+        South: BSTONEB1
+        East: BSTONEB2
+        West: BSTONEB2
+    '10':
+        North: WODEAGL1
+        South: WODEAGL1
+        East: WODEAGL2
+        West: WODEAGL2
+    '11':
+        North: WODHTLR1
+        South: WODHTLR1
+        East: WODHTLR2
+        West: WODHTLR2
+    '12':
+        North: WOOD1
+        South: WOOD1
+        East: WOOD2
+        West: WOOD2
+    '13':
+        North: FAKEDOR1
+        South: FAKEDOR1
+        East: FAKEDOR2
+        West: FAKEDOR2
+    '14':
+        North: METLSGN1
+        South: METLSGN1
+        East: METLSGN2
+        West: METLSGN2
+    '15':
+        North: METAL1
+        South: METAL1
+        East: METAL2
+        West: METAL2
+    '16':
+        North: SKY1
+        South: SKY1
+        East: SKY2
+        West: SKY2
+    '17':
+        North: BRICK1
+        South: BRICK1
+        East: BRICK2
+        West: BRICK2
+    '18':
+        North: BRIKWRT1
+        South: BRIKWRT1
+        East: BRIKWRT2
+        West: BRIKWRT2
+    '19':
+        North: PURPLE1
+        South: PURPLE1
+        East: PURPLE2
+        West: PURPLE2
+    '20':
+        North: BRIKEGL1
+        South: BRIKEGL1
+        East: BRIKEGL2
+        West: BRIKEGL2
+    '21':
+        North: ELEV1_1
+        South: ELEV1_1
+        East: ELEV1_2
+        West: ELEV1_2
+    '22':
+        North: ELEV2_1
+        South: ELEV2_1
+        East: ELEV2_2
+        West: ELEV2_2
+    '23':
+        North: WODCROS1
+        South: WODCROS1
+        East: WODCROS2
+        West: WODCROS2
+    '24':
+        North: GSTSLME1
+        South: GSTSLME1
+        East: GSTSLME2
+        West: GSTSLME2
+    '25':
+        North: PURPBLD1
+        South: PURPBLD1
+        East: PURPBLD2
+        West: PURPBLD2
+    '26':
+        North: GSTLSLM1
+        South: GSTLSLM1
+        East: GSTLSLM2
+        West: GSTLSLM2
+    '27':
+        North: GSTONEC1
+        South: GSTONEC1
+        East: GSTONEC2
+        West: GSTONEC2
+    '28':
+        North: GSTSIGN1
+        South: GSTSIGN1
+        East: GSTSIGN2
+        West: GSTSIGN2
+    '29':
+        North: CHIP1
+        South: CHIP1
+        East: CHIP2
+        West: CHIP2
+    '30':
+        North: CHPBLDA1
+        South: CHPBLDA1
+        East: CHPBLDA2
+        West: CHPBLDA2
+    '31':
+        North: CHPBLDB1
+        South: CHPBLDB1
+        East: CHPBLDB2
+        West: CHPBLDB2
+    '32':
+        North: CHPBLDC1
+        South: CHPBLDC1
+        East: CHPBLDC2
+        West: CHPBLDC2
+    '33':
+        North: GLASS1
+        South: GLASS1
+        East: GLASS2
+        West: GLASS2
+    '34':
+        North: BLUSKUL1
+        South: BLUSKUL1
+        East: BLUSKUL2
+        West: BLUSKUL2
+    '35':
+        North: GRYBRIK1
+        South: GRYBRIK1
+        East: GRYBRIK2
+        West: GRYBRIK2
+    '36':
+        North: BLUSWAS1
+        South: BLUSWAS1
+        East: BLUSWAS2
+        West: BLUSWAS2
+    '37':
+        North: GRYVENT1
+        South: GRYVENT1
+        East: GRYVENT2
+        West: GRYVENT2
+    '38':
+        North: BRIKODD1
+        South: BRIKODD1
+        East: BRIKODD2
+        West: BRIKODD2
+    '39':
+        North: GRYCRAK1
+        South: GRYCRAK1
+        East: GRYCRAK2
+        West: GRYCRAK2
+    '40':
+        North: BLUWALL1
+        South: BLUWALL1
+        East: BLUWALL2
+        West: BLUWALL2
+    '41':
+        North: BSTSIGN1
+        South: BSTSIGN1
+        East: BSTSIGN2
+        West: BSTSIGN2
+    '42':
+        North: MARB1_1
+        South: MARB1_1
+        East: MARB1_2
+        West: MARB1_2
+    '43':
+        North: GRYMAPS1
+        South: GRYMAPS1
+        East: GRYMAPS2
+        West: GRYMAPS2
+    '44':
+        North: BRNSTNA1
+        South: BRNSTNA1
+        East: BRNSTNA2
+        West: BRNSTNA2
+    '45':
+        North: BRNSTNB1
+        South: BRNSTNB1
+        East: BRNSTNB2
+        West: BRNSTNB2
+    '46':
+        North: MARB2_1
+        South: MARB2_1
+        East: MARB2_2
+        West: MARB2_2
+    '47':
+        North: MARB3_1
+        South: MARB3_1
+        East: MARB3_2
+        West: MARB3_2
+    '48':
+        North: PLASTER1
+        South: PLASTER1
+        East: PLASTER2
+        West: PLASTER2
+    '49':
+        North: GRYHTLR1
+        South: GRYHTLR1
+        East: GRYHTLR2
+        West: GRYHTLR2

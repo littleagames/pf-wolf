@@ -1,0 +1,41 @@
+player:
+    '19':
+        Actor: BJPlayer
+        Direction: North
+        Health: 100
+        Weapons:
+            - Knife
+            - Pistol
+        Ammo:
+            - 8
+    '20':
+        Actor: BJPlayer
+        Direction: EAST
+        Health: 100
+        Weapons:
+            - Knife
+            - Pistol
+        Ammo:
+            - 8
+    '21':
+        Actor: BJPlayer
+        Angle: 270
+        Health: 100
+        Weapons:
+            - Knife
+            - Pistol
+        Ammo:
+            - 8
+    '22':
+        Actor: BJPlayer
+        Angle: '180'
+        Health: 100
+        Weapons:
+            - Knife
+            - Pistol
+        Ammo:
+            - 8
+multi-player:
+    '18':
+        Actor: BJPlayer
+        Direction: North

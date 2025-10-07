@@ -1,0 +1,43 @@
+x: 76
+y: 55
+header:
+    y: '0'
+    horizontal: Centered
+    image: C_Options
+cursor-offset: -24
+menu-items:
+    -
+        name: New Game
+        short-key: N
+        action: NewGame
+		x: 0
+		y: 0
+		cursor-offset: -24
+    -
+        name: Options
+        short-key: O
+        action: Options
+    -
+        name: Load Game
+        short-key: L
+        action: LoadGame
+    -
+        name: Save Game
+        short-key: S
+        action: SaveGame
+    -
+        name: Read This!
+        short-key: R
+        action: ReadThis
+    -
+        name: View Scores
+        short-key: V
+        action: ViewScores
+    -
+        name: Back to Demo
+        short-key: D
+        action: BackToDemo
+    -
+        name: Quit
+        short-key: Q
+        action: QuitGame

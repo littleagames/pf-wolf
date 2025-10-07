@@ -1,0 +1,118 @@
+{
+	"Guard": {
+		"HitPoints": 25,
+		"SightSound": "guard_sight",
+		"DeathSound": ["guard_die1"],
+		"AttackSound": "guard_attack",
+		"PointsGiven": 100,
+		"States": {
+			"Spawn": [{
+				"Directional": true,
+				"Frame": "GARDA",
+				"Tics": 0,
+				"Think": "T_Stand"
+			}],
+			"Path":[{
+				"Directional": true,
+				"Frame": "GARDB",
+				"Tics": 20,
+				"Think": "T_Path"
+			},{
+				"Directional": true,
+				"Frame": "GARDB",
+				"Tics": 5
+			},{
+				"Directional": true,
+				"Frame": "GARDC",
+				"Tics": 15,
+				"Think": "T_Path"
+			},{
+				"Directional": true,
+				"Frame": "GARDD",
+				"Tics": 20,
+				"Think": "T_Path"
+			},{
+				"Directional": true,
+				"Frame": "GARDD",
+				"Tics": 5
+			},{
+				"Directional": true,
+				"Frame": "GARDE",
+				"Tics": 15,
+				"Think": "T_Path"
+			}],
+			"Chase":[{
+				"Directional": true,
+				"Frame": "GARDB",
+				"Tics": 10,
+				"Think": "T_Chase"
+			},{
+				"Directional": true,
+				"Frame": "GARDB",
+				"Tics": 3
+			},{
+				"Directional": true,
+				"Frame": "GARDC",
+				"Tics": 8,
+				"Think": "T_Chase"
+			},{
+				"Directional": true,
+				"Frame": "GARDD",
+				"Tics": 10,
+				"Think": "T_Chase"
+			},{
+				"Directional": true,
+				"Frame": "GARDD",
+				"Tics": 3
+			},{
+				"Directional": true,
+				"Frame": "GARDE",
+				"Tics": 8,
+				"Think": "T_Chase"
+			}],
+			"Attack": [{
+				"Directional": false,
+				"Frame": "GARDF",
+				"Tics": 20,
+				"Action": "A_FaceTarget"
+			},{
+				"Directional": false,
+				"Frame": "GARDG",
+				"Tics": 20,
+				"Action": "A_Shoot"
+			},{
+				"Directional": false,
+				"Frame": "GARDH",
+				"Tics": 20
+			}],
+			"Pain": [{
+				"Directional": false,
+				"Frame": "GRD_PAIN1",
+				"Tics": 10,
+				"Think": "T_Pain"
+			},{
+				"Directional": false,
+				"Frame": "GRD_PAIN1",
+				"Tics": 10
+			}],
+			"Death": [{
+				"Directional": false,
+				"Frame": "GRD_DIE1",
+				"Tics": 15,
+				"Action": "A_DeathScream"
+			},{
+				"Directional": false,
+				"Frame": "GRD_DIE2",
+				"Tics": 15
+			},{
+				"Directional": false,
+				"Frame": "GRD_DIE3",
+				"Tics": 15
+			},{
+				"Directional": false,
+				"Frame": "GARDN",
+				"Tics": 0
+			}]
+		}
+	}
+}

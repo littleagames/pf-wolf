@@ -1,0 +1,55 @@
+wolf3d-apogee:
+    title: "Wolfenstein 3D"
+    map-definitions:
+        - mapdefs/wolf3d/walls
+        - mapdefs/wolf3d/doors
+        - mapdefs/wolf3d/player
+        - mapdefs/wolf3d/decorations
+        - mapdefs/wolf3d/enemies
+    game-palette: wolfpal
+    starting-scene: "wolf3d:GameLoopScene"
+    game-pack-asset-reference: wolf3d-apogee-map
+wolf3d-activision:
+    title: "Wolfenstein 3D"
+    map-definitions:
+        - mapdefs/wolf3d/walls
+        - mapdefs/wolf3d/doors
+        - mapdefs/wolf3d/player
+        - mapdefs/wolf3d/decorations
+        - mapdefs/wolf3d/enemies
+    game-palette: wolfpal
+    starting-scene: "wolf3d:GameLoopScene"
+    game-pack-asset-reference: wolf3d-activision-map
+wolf3d-shareware:
+    title: "Wolfenstein 3D: Shareware"
+    map-definitions:
+        - mapdefs/wolf3d/walls
+        - mapdefs/wolf3d/doors
+        - mapdefs/wolf3d/player
+        - mapdefs/wolf3d/decorations
+        - mapdefs/wolf3d/enemies
+    game-palette: wolfpal
+    starting-scene: "wolf3d:GameLoopScene"
+    game-pack-asset-reference: wolf3d-shareware-map
+spear:
+    title: "Spear of Destiny"
+    map-definitions:
+        - mapdefs/spear/walls
+        - mapdefs/spear/doors
+        - mapdefs/spear/player
+        - mapdefs/spear/decorations
+        - mapdefs/spear/enemies
+    game-palette: spearpal
+    starting-scene: "spear:SignonScene"
+    game-pack-asset-reference: spear-map
+spear-demo:
+    title: "Spear of Destiny: Demo"
+    map-definitions:
+        - mapdefs/spear/walls
+        - mapdefs/spear/doors
+        - mapdefs/spear/player
+        - mapdefs/spear/decorations
+        - mapdefs/spear/enemies
+    game-palette: spearpal
+    starting-scene: "spear:SignonScene"
+    game-pack-asset-reference: spear-demo-map

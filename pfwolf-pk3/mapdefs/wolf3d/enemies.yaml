@@ -1,0 +1,249 @@
+actors:
+    '108':
+        Actor: Guard
+        State: Spawn
+        Direction: East
+        Skills:
+            - sk_baby
+            - sk_easy
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '109':
+        Actor: Guard
+        State: Spawn
+        Direction: North
+        Skills:
+            - sk_baby
+            - sk_easy
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '110':
+        Actor: Guard
+        State: Spawn
+        Direction: West
+        Skills:
+            - sk_baby
+            - sk_easy
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '111':
+        Actor: Guard
+        State: Spawn
+        Direction: South
+        Skills:
+            - sk_baby
+            - sk_easy
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '112':
+        Actor: Guard
+        State: Path
+        Direction: East
+        Skills:
+            - sk_baby
+            - sk_easy
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '113':
+        Actor: Guard
+        State: Path
+        Direction: North
+        Skills:
+            - sk_baby
+            - sk_easy
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '114':
+        Actor: Guard
+        State: Path
+        Direction: West
+        Skills:
+            - sk_baby
+            - sk_easy
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '115':
+        Actor: Guard
+        State: Path
+        Direction: South
+        Skills:
+            - sk_baby
+            - sk_easy
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '144':
+        Actor: Guard
+        State: Spawn
+        Direction: East
+        Skills:
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '145':
+        Actor: Guard
+        State: Spawn
+        Direction: North
+        Skills:
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '146':
+        Actor: Guard
+        State: Spawn
+        Direction: West
+        Skills:
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '147':
+        Actor: Guard
+        State: Spawn
+        Direction: South
+        Skills:
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '148':
+        Actor: Guard
+        State: Path
+        Direction: East
+        Skills:
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '149':
+        Actor: Guard
+        State: Path
+        Direction: North
+        Skills:
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '150':
+        Actor: Guard
+        State: Path
+        Direction: West
+        Skills:
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '151':
+        Actor: Guard
+        State: Path
+        Direction: South
+        Skills:
+            - sk_normal
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '180':
+        Actor: Guard
+        State: Spawn
+        Direction: East
+        Skills:
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '181':
+        Actor: Guard
+        State: Spawn
+        Direction: North
+        Skills:
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '182':
+        Actor: Guard
+        State: Spawn
+        Direction: West
+        Skills:
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '183':
+        Actor: Guard
+        State: Spawn
+        Direction: South
+        Skills:
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '184':
+        Actor: Guard
+        State: Path
+        Direction: East
+        Skills:
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '185':
+        Actor: Guard
+        State: Path
+        Direction: North
+        Skills:
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '186':
+        Actor: Guard
+        State: Path
+        Direction: West
+        Skills:
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE
+    '187':
+        Actor: Guard
+        State: Path
+        Direction: South
+        Skills:
+            - sk_hard
+        Flags:
+            - FL_BLOCKING
+            - FL_SHOOTABLE

@@ -1,0 +1,351 @@
+{
+    "Puddle": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "WATRA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "OilDrum": {
+        "Flags": [
+            "FL_BLOCKING"
+        ],
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "DRUMA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "TableWithChairs": {
+        "Flags": [
+            "FL_BLOCKING"
+        ],
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "TCHRA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "FloorLamp": {
+        "Flags": [
+            "FL_BLOCKING"
+        ],
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "FLMPA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Chandelier": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "CHANA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "HangingSkeleton": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "HANGA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "WhiteColumn": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "COLUA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "GreenPlant": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "PLNTA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Skeleton": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "SKELA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Sink": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "SINKA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "BrownPlant": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "BPNTA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Vase": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "VASEA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Table": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "TABLA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "CeilingLight": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "GLMPA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Utensils": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "POT1A",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Armor": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "ARMRA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "EmptyCage": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "CAG1A",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "CageWithSkeleton": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "CAG2A",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Bones": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "BON1A",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Bed": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "BUNKA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Basket": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "BASKA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Barrel": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "BARLA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "WellWithWater": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "WEL1A",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Well": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "WEL2A",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Flag": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "FLAGA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Aardwolf": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "AARD",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Bones2": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "BON2A",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Bones3": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "BON3A",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Bones4": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "BON4A",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "UtensilsBlue": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "POT2A",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Stove": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "STOVA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Rack": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "RACKA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "Vine": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "VINEA",
+                    "Tics": 0
+                }
+            ]
+        }
+    },
+    "DeadGuard": {
+        "States": {
+            "Spawn": [
+                {
+                    "Frame": "GARDN",
+                    "Tics": 0
+                }
+            ]
+        }
+    }
+}
