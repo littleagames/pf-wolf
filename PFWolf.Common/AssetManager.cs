@@ -15,6 +15,19 @@ public class AssetManager
     private readonly Dictionary<string, string> pk3FilePaths;
     private readonly string gameDirectory;
 
+    private InitializedGamePack? _selectedGamePack = null;
+
+    public InitializedGamePack SelectedGamePack
+    {
+        get
+        {
+            if (_selectedGamePack == null)
+                throw new InvalidOperationException($"Game pack not loaded yet.");
+
+            return _selectedGamePack;
+        }
+    }
+
     public AssetManager(string gameDirectory, List<string> pk3FilePaths)
     {
         this.pk3FilePaths = pk3FilePaths.ToDictionary(x => Path.GetFileNameWithoutExtension(x), x => x);
@@ -268,7 +281,7 @@ public class AssetManager
             
             try 
             {
-                gamePackDefinition = new GamePackDefinitions(gamePackInfo.Open());
+                gamePackDefinition = new GamePackDefinitions(gamePackInfo.Open(), gamePackPath.Value);
             }
             catch (YamlDotNet.Core.YamlException ex)
             {
@@ -276,44 +289,36 @@ public class AssetManager
             }
 
             singletonGamePackInfo.AddGamePacks(gamePackDefinition.GamePacks);
-
-            foreach (var pack in gamePackDefinition.GamePacks)
-            {
-                MapDefinition mapDefinition = null!;
-                foreach (var defs in pack.Value.MapDefinitions)
-                {
-                    var definitionEntry = archive.Entries.FirstOrDefault(x => GetAssetReadyName(x.FullName) == GetAssetReadyName(defs));
-                    if (definitionEntry == null)
-                        continue; // Not found
-
-                    if (mapDefinitions.TryGetValue(pack.Key, out var existingMapDefinition))
-                    {
-                        mapDefinition.Include(new MapDefinition(definitionEntry.Open()).Definitions);
-                        continue;
-                    }
-
-                    mapDefinition = new MapDefinition(definitionEntry.Open());
-                    mapDefinitions[pack.Key] = mapDefinition;
-                }
-            }
         }
 
-        if (!singletonGamePackInfo.HasGamePack(selectedGamePack.Value, out GamePackDefinitionDataModel foundGamePack))
+        if (!singletonGamePackInfo.HasGamePack(selectedGamePack.Value, out _selectedGamePack))
         {
             return Result.Failure($"Error: Specified game pack '{selectedGamePack.Value}' not found in loaded packages.");
         }
 
-        var containsBasePacks = new HashSet<string> { selectedGamePack.Value }; // TODO: Save this list outside, so it can be referenced elsewhere? or when loading raw files
-        foundGamePack.DetermineBasePack(singletonGamePackInfo.GamePacks, containsBasePacks);
-        if (!mapDefinitions.ContainsKey(foundGamePack.Name) && !string.IsNullOrWhiteSpace(foundGamePack.BasePack))
+        var selectedMapDefinition = new AssetReference<MapDefinition>(() =>
         {
-            mapDefinitions[foundGamePack.Name] = mapDefinitions[foundGamePack.BasePack];
-        }
+            MapDefinition mapDefinition = null!;
+            foreach (var pack in _selectedGamePack.MapDefinitions)
+            {
+                using ZipArchive archive = ZipFile.OpenRead(pack.Key);
+                var definitionEntry = archive.Entries.FirstOrDefault(x => GetAssetReadyName(x.FullName) == GetAssetReadyName(pack.Value));
+                if (definitionEntry == null)
+                    continue; // Not found
 
-        if (!mapDefinitions.TryGetValue(selectedGamePack.Value, out var selectedMapDefinition))
-        {
-            return Result.Failure($"Error: No map definitions found for selected game pack '{selectedGamePack.Value}'.");
-        }
+                if (mapDefinitions.TryGetValue(pack.Key, out var existingMapDefinition))
+                {
+                    mapDefinition.Include(new MapDefinition(definitionEntry.Open()).Definitions);
+                    continue;
+                }
+
+                mapDefinition = new MapDefinition(definitionEntry.Open());
+                mapDefinitions[pack.Key] = mapDefinition;
+            }
+
+            return mapDefinition;
+        });
+
 
         AddAsset("map-definitions", selectedMapDefinition!);
 
@@ -328,31 +333,50 @@ public class AssetManager
             return Result.Failure("Cannot determine default game pack at this time.");
         }
 
-        // TODO: Get asset GamePackDefinitions singleton
-        // Should this imply that LoadGamePacks has been called first?
-        var gamePackDefinitions = Load<GamePackDefinitions>("gamepack-info");//, AssetType.GamePackDefinition);
-        if (!gamePackDefinitions.HasGamePack(selectedGamePack.Value, out GamePackDefinitionDataModel foundGamePack))
+        var gamePackDefinitions = Load<GamePackDefinitions>("gamepack-info");
+        if (!gamePackDefinitions.HasGamePack(selectedGamePack.Value, out InitializedGamePack foundGamePack))
         {
             return Result.Failure($"Error: Specified game pack '{selectedGamePack.Value}' not found in loaded packages.");
         }
 
-        var containsBasePacks = new HashSet<string> { selectedGamePack.Value };
-        foundGamePack.DetermineBasePack(gamePackDefinitions.GamePacks, containsBasePacks);
+        var reference = _selectedGamePack?.GamePackAssetReference;
+        if (!string.IsNullOrWhiteSpace(reference))
+        {
+            var pack = _selectedGamePack.FindNameFromAssetReferenceMap(reference);
+            // TODO: Find which InitializedGamePack.Name matches with the Assetreferencemap, which allows us to load the RawDataFilePack
 
-        foreach (var basePack in containsBasePacks) {
-            if (_availableGamePacks.TryGetValue(basePack, out var firstPack))
+            var assetReferenceMap = Load<GamePackAssetReference>(reference);
+            if (_availableGamePacks.TryGetValue(pack, out var firstPack))
             {
-                var assetReferenceMap = Load<GamePackAssetReference>(foundGamePack.GamePackAssetReference);//, AssetType.GamePackAssetReference);
-                var result = firstPack.Validate(gameDirectory);
-                if (result.IsFailure)
-                    throw new InvalidDataException(result.Error);
                 var rawDataAssets = firstPack.LoadAssets(gameDirectory, assetReferenceMap: assetReferenceMap);
-                foreach (var dataAsset in rawDataAssets) {
+                foreach (var dataAsset in rawDataAssets)
+                {
                     AddAsset(dataAsset.Key, dataAsset.Value, overwrite: false);
                 }
-                break;
             }
         }
+
+        //var assetReference = foundGamePack.GetGamePackAssetReference(); // returns source and assetreference to load
+        // TODO: But this works up to the top, and I also need to the game pack's file path source
+        //foreach (var basePack in foundGamePack.Definition) {
+        //    if (_availableGamePacks.TryGetValue(basePack, out var firstPack))
+        //    {
+        //        if (string.IsNullOrWhiteSpace(foundGamePack.GamePackAssetReference))
+        //        {
+        //            // No specified asset reference
+        //            continue;
+        //        }
+        //        var assetReferenceMap = Load<GamePackAssetReference>(foundGamePack.GamePackAssetReference);
+        //        var result = firstPack.Validate(gameDirectory);
+        //        if (result.IsFailure)
+        //            throw new InvalidDataException(result.Error);
+        //        var rawDataAssets = firstPack.LoadAssets(gameDirectory, assetReferenceMap: assetReferenceMap);
+        //        foreach (var dataAsset in rawDataAssets) {
+        //            AddAsset(dataAsset.Key, dataAsset.Value, overwrite: false);
+        //        }
+        //        break;
+        //    }
+        //}
 
         return Result.Success();
     }

@@ -8,31 +8,35 @@ public record GamePackDefinitions : Asset
     {
     }
 
-    public GamePackDefinitions(Stream data) : this()
+    public GamePackDefinitions(Stream data, string pk3Path) : this()
     {
-        GamePacks = YamlDataEntryLoader.Read<Dictionary<string, GamePackDefinitionDataModel>>(data);
+        var packs = YamlDataEntryLoader.Read<Dictionary<string, GamePackDefinitionDataModel>>(data);
+        foreach (var pack in packs)
+        {
+            pack.Value.Name = pack.Key;
+        }
+        GamePacks = packs.ToDictionary(x => x.Key, x => (Source: pk3Path, Definition: x.Value));
     }
 
-    public Dictionary<string, GamePackDefinitionDataModel> GamePacks { get; } = [];
+    public Dictionary<string, (string Source, GamePackDefinitionDataModel Definition)> GamePacks { get; } = [];
 
-    internal void AddGamePacks(Dictionary<string, GamePackDefinitionDataModel> gamePacks)
+    internal void AddGamePacks(Dictionary<string, (string Source, GamePackDefinitionDataModel Definitions)> gamePacks)
     {
-        // todo: add or overwrite
         foreach (var gamePack in gamePacks)
         {
-            gamePack.Value.Name = gamePack.Key;
             GamePacks[gamePack.Key] = gamePack.Value;
         }
     }
 
-    internal bool HasGamePack(string gamePackName, out GamePackDefinitionDataModel foundGamePack)
+    internal bool HasGamePack(string gamePackName, out InitializedGamePack gamePack)
     {
-        if (GamePacks.TryGetValue(gamePackName, out foundGamePack!))
+        if (GamePacks.TryGetValue(gamePackName, out var foundGamePack))
         {
+            gamePack = new InitializedGamePack(gamePackName, GamePacks);
             return true;
         }
 
-        foundGamePack = null!;
+        gamePack = null!;
         return false;
     }
 }
@@ -69,59 +73,4 @@ public record GamePackDefinitionDataModel
     /// Path to the asset map that defines names of the asset within a game pack
     /// </summary>
     public string? GamePackAssetReference { get; private set; } = null;
-
-    internal void DetermineBasePack(
-        Dictionary<string, GamePackDefinitionDataModel> gamePacks,
-        HashSet<string>? visitedBasePacks = null)
-    {
-        if (string.IsNullOrWhiteSpace(BasePack))
-        {
-            return;
-        }
-
-        visitedBasePacks ??= new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
-
-        if (!visitedBasePacks.Add(BasePack!))
-        {
-            throw new InvalidDataException(
-                $"Circular base pack reference detected: '{Name}' -> '{BasePack}'. Chain: {string.Join(" -> ", visitedBasePacks)}");
-        }
-
-        if (BasePack.Equals(Name, StringComparison.InvariantCultureIgnoreCase))
-        {
-            throw new InvalidDataException($"'{Name}' contains base pack '{BasePack}' which is a circular reference to itself.");
-        }
-
-        if (!gamePacks.TryGetValue(BasePack, out var basePack))
-        {
-            throw new InvalidDataException($"'{Name}' contains base pack '{BasePack}' which was not defined in any gamepack-info");
-        }
-
-        // recursively determine base pack
-        if (!string.IsNullOrWhiteSpace(basePack.BasePack))
-        {
-            basePack.DetermineBasePack(gamePacks, visitedBasePacks);
-        }
-
-        if (basePack.MapDefinitions.Count > 0)
-        {
-            // add to beginning of list, so it is read first
-            MapDefinitions.InsertRange(0, basePack.MapDefinitions);
-        }
-
-        if (string.IsNullOrWhiteSpace(GamePalette))
-        {
-            GamePalette = basePack.GamePalette;
-        }
-
-        if (string.IsNullOrWhiteSpace(StartingScene))
-        {
-            StartingScene = basePack.StartingScene;
-        }
-
-        if (string.IsNullOrWhiteSpace(GamePackAssetReference))
-        {
-            this.GamePackAssetReference = basePack.GamePackAssetReference;
-        }
-    }
 }
