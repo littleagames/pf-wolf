@@ -2,7 +2,10 @@
 using Engine;
 using PFWolf.Common;
 using PFWolf.Common.Assets;
+using PFWolf.Common.Scenes;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
 
 const string BaseDataDirectory = "D:\\projects\\Wolf3D\\PFWolf\\PFWolf-Assets";
 const string BasePfWolfPackageFile = "pfwolf.pk3";
@@ -77,11 +80,18 @@ var rawPackResult = assetManager.LoadDataFilePack(selectedGamePack);
 //var gstonea1 = assetManager.Load<Texture>("gstonea1"); // from pk3
 //var gstonea2 = assetManager.Load<Texture>("gstonea2"); // from vswap
 
-var palette = assetManager.Load<Palette>(assetManager.SelectedGamePack.GamePalette);
+var defaultPalette = assetManager.SelectedGamePack.GamePalette;
+
+var palette = assetManager.Load<Palette>(defaultPalette!);
+var gameConfiguration = new GameConfigurationData
+{
+    ScreenResolution = new Dimension(ScreenWidth, ScreenHeight),
+    DefaultPalette = palette
+};
 
 //var assets = assetManager.LoadAll();
 
-IVideoManager videoManager = new SDLVideoManager(ScreenWidth, ScreenHeight, palette);
+SDLVideoManager videoManager = new SDLVideoManager(ScreenWidth, ScreenHeight, gameConfiguration);
 
 if (!SDL.Init(0))
 {
@@ -97,45 +107,61 @@ if (!videoManager.Initialize())
 }
 
 bool quit = false;
+bool toggleConsole = false;
 var startCounter = SDL.GetPerformanceCounter();
 var frequency = SDL.GetPerformanceFrequency();
 var fpsCounter = new FpsCounter();
 
 var signon = assetManager.Load<Graphic>("wolf3d-signon");
+StringBuilder textBuffer = new StringBuilder(256);
+SDLInputManager inputManager = new SDLInputManager();
+if (!inputManager.Initialize())
+{
+    SDL.Quit();
+    return;
+}
 
+Scene scene = new SignonScene();
+var sceneInitialized = false; // todo: scene manager handles this in a dictionary to manage scene states
+var changed = false;
 while (!quit)
 {
-    while (SDL.PollEvent(out SDL.Event e))
-    {
-        if (e.Type == (uint)SDL.EventType.Quit || e is { Type: (uint)SDL.EventType.KeyDown, Key.Key: SDL.Keycode.Escape })
-        {
-            quit = true;
-        }
+    if (sceneInitialized)
+        scene.Start();
 
+    inputManager.PollEvents();
+
+    if (inputManager.State.QuitPressed)
+    {
+        quit = true;
+        break;
     }
+
+    if (sceneInitialized)
+        scene.Update();
 
     // Calculate elapsed time
     var currentCounter = SDL.GetPerformanceCounter();
     var elapsed = (currentCounter - startCounter) / (double)frequency;
 
-    // Render something here
-    //videoManager.Draw(new Graphic
-    //{
-    //    Data = Signon.SignOn,
-    //    Dimensions = new Vector2(320, 200)
-    //},
-    videoManager.Draw(signon,
-    // Transform
-    // Position (x,y)
-    // HasChanged: bool
-    // TODO: Turns into "offset: Vector2"
-    // TODO: Orientation: Top, TopLeft, Left, Center, etc
-    position: new Vector2(0, 0),
-    // Scaling = Scaling.FitToScreen
-    // Scaling.StretchToFit
-    // Scaling.??
-    dimension: new Dimension(ScreenWidth, ScreenHeight));
 
+    if (!changed)
+    {
+        // Render something here
+        videoManager.Draw(signon,
+        // Transform
+        // Position (x,y)
+        // HasChanged: bool
+        // TODO: Turns into "offset: Vector2"
+        // TODO: Orientation: Top, TopLeft, Left, Center, etc
+        position: new Vector2(0, 0),
+        // Scaling = Scaling.FitToScreen
+        // Scaling.StretchToFit
+        // Scaling.??
+        size: new Dimension(ScreenWidth, ScreenHeight)); // parent.Width, parent.Height));
+
+        changed = true;
+    }
     //videoManager.Draw(sbar,
     //// Transform
     //// Position (x,y)
@@ -148,11 +174,30 @@ while (!quit)
     //// Scaling.??
     //dimension: new Dimension(ScreenWidth, 80));
     fpsCounter.Update();
+
+    // TODO: Make this optional via a debug mode
     videoManager.DrawFps(fpsCounter.FPS);
 
-
     videoManager.Update();
+
+    SDL.Delay(10);
 }
 
 videoManager.ShutDown();
 SDL.Quit();
+
+static string PtrToStringUTF8(nint ptr)
+{
+    if (ptr == 0)
+        return string.Empty;
+
+    // Get length up to null terminator
+    int len = 0;
+    while (Marshal.ReadByte(ptr, len) != 0)
+        len++;
+
+    // Copy bytes and decode as UTF-8
+    byte[] buffer = new byte[len];
+    Marshal.Copy(ptr, buffer, 0, len);
+    return Encoding.UTF8.GetString(buffer);
+}

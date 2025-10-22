@@ -94,7 +94,7 @@ public class AssetManager
                 // 2) Load asset reference to pack, and what type it is
                 // TODO: distinguish between PNG and other formats by using a "try load" for each data type of a graphic
                 // Then I can use this same loader for wolf3d file formats as well
-                AddReference(assetName, () => GraphicDataLoader.Load(Pk3EntryLoader.Load(pk3FileFullPath, entry.FullName), sourcePalette: Load<Palette>("wolfpal")));
+                AddReference(assetName, () => GraphicDataLoader.Load(Pk3EntryLoader.Open(pk3FileFullPath, entry.FullName), sourcePalette: Load<Palette>("wolfpal")));
                 continue;
             }
 
@@ -118,14 +118,24 @@ public class AssetManager
 
             if (entry.FullName.StartsWith("palettes/"))
             {
-                AddReference(assetName, () => PaletteDataLoader.Load(Pk3EntryLoader.Load(pk3FileFullPath, entry.FullName)));
+                AddReference(assetName, () => PaletteDataLoader.Load(Pk3EntryLoader.Open(pk3FileFullPath, entry.FullName)));
                 continue;
             }
 
             if (entry.FullName.StartsWith("scripts/"))
             {
+                if (entry.Name.EndsWith(".cs"))
+                {
+                    //scriptAssets.Add(new UnpackedScript// TODO: This should be an "unpacked script" object that's not associated to Asset
+                    //{
+                    //    ScriptName = assetName,
+                    //    RawData = Pk3EntryLoader.Load(entry),
+                    //    Location = entry.FullName
+                    //});
+                    continue;
+                }
                 // TODO: These need to be compiled/interpreted
-                AddReference(assetName, () => new Script());
+                //AddReference(assetName, () => new Script());
                 continue;
             }
 
@@ -150,7 +160,7 @@ public class AssetManager
             if (entry.FullName.StartsWith("textures/"))
             {
                 // This gets the data from the PK3 loader, and then passes it to the texture file loader to determine type
-                AddReference(assetName, () => TextureDataLoader.Load(Pk3EntryLoader.Load(pk3FileFullPath, entry.FullName)));
+                AddReference(assetName, () => TextureDataLoader.Load(Pk3EntryLoader.Open(pk3FileFullPath, entry.FullName)));
                 continue;
             }
         }

@@ -19,13 +19,16 @@ namespace Engine
 
     internal class SDLVideoManager : IVideoManager
     {
-        private static IntPtr windowPtr;
+        public IntPtr windowPtr;
         private static IntPtr rendererPtr;
         private static IntPtr screenPtr;
         private static IntPtr screenBufferPtr;
         private static IntPtr texturePtr;
 
         private bool _isInitialized = false;
+        private bool _hasChanged = false;
+        private double fps;
+        private readonly GameConfigurationData config;
 
         public int ScreenPitch { get; private set; }
         public int BufferPitch { get; private set; }
@@ -34,10 +37,10 @@ namespace Engine
 
         private uint[] ylookup = [];
 
-        public SDLVideoManager(int screenWidth, int screenHeight, Palette palette)
+        public SDLVideoManager(int screenWidth, int screenHeight, GameConfigurationData config)
         {
             ScreenHeight = screenHeight;
-            this.palette = palette;
+            this.config = config;
             ScreenWidth = screenWidth;
         }
 
@@ -68,7 +71,7 @@ namespace Engine
             screenBufferPtr = SDL.CreateSurface(ScreenWidth, ScreenHeight, SDL.GetPixelFormatForMasks(8, 0, 0, 0, 0));
 
             IntPtr palette = SDL.CreateSurfacePalette(screenBufferPtr);
-            SDL.SetPaletteColors(palette, this.palette.ToSDLColors(), 0, 256);
+            SDL.SetPaletteColors(palette, this.config.DefaultPalette.ToSDLColors(), 0, 256);
             //SDL.SetPaletteColors(palette, GamePalette.BasePalette, 0, 256);
 
             texturePtr = SDL.CreateTexture(rendererPtr, SDL.PixelFormat.ARGB8888, SDL.TextureAccess.Streaming, ScreenWidth, ScreenHeight);
@@ -87,8 +90,6 @@ namespace Engine
             _isInitialized = true;
             return true;
         }
-        private double fps;
-        private readonly Palette palette;
 
         public void DrawFps(double fps)
         {
