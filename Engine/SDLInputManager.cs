@@ -7,6 +7,8 @@ internal class SDLInputManager
 {
     public InputState State { get; } = new InputState();
 
+    public bool IsKeyPressed { get; private set; } = false;
+
     // TODO: Key mapping
         // Menu schema
         // In-Game schema
@@ -24,13 +26,16 @@ internal class SDLInputManager
                 case SDL.EventType.TextInput:
                     break;
                 case SDL.EventType.KeyUp:
+                    IsKeyPressed = !keyboardState.Contains(true);
                     break;
                 case SDL.EventType.KeyDown:
+                    IsKeyPressed = keyboardState.Contains(true);
                     if (e.Key.Key == SDL.Keycode.F12)
                     {
                         //var result = SDL.SetWindowMouseGrab(_windowPtr, true);
                         // TODO: Maybe an event that the video manager can listen to
                     }
+                    //State.KeyPressed.Add(e.Key.Key);
                     break;
                 case SDL.EventType.MouseButtonDown:
                     break;

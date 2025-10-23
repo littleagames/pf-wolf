@@ -128,20 +128,28 @@ namespace Engine
             SDL.DestroyWindow(windowPtr);
         }
 
+        public void DrawRectangle(int x, int y, int width, int height, byte color)
+        {
+            var scaleFactorX = (ScreenWidth / 320.0f);
+            var scaleFactorY = (ScreenHeight / 200.0f);
+            var data = new byte[width * height];
+            Array.Fill(data, color);
+            DrawData(data, new Vector2((int)(x*scaleFactorX), (int)(y*scaleFactorY)), new Dimension(width, height), new Dimension((int)(width*scaleFactorX), (int)(height*scaleFactorY)));
+        }
+
         public void Draw(Graphic graphic, Vector2 position, Dimension size)
         {
             DrawData(graphic.Data, position, graphic.Dimensions, size);
         }
 
         // TBD: Font positioning in the component vs methods
-        public void Draw(Font font, Vector2 position, string text, byte fontColor, byte backingColor)
+        public void Draw(Font font, Vector2 position, TextAlignment alignment, string text, byte fontColor, byte backingColor)
         {
             var scaleFactorX = (ScreenWidth / 320.0f);
             var scaleFactorY = (ScreenHeight / 200.0f);
 
-            // Left aligned
-            var printX = position.X;
-            var printY = position.Y;
+            var printX = CalcPrintX(font, text, alignment, position.X);
+            var printY = (int)(position.Y * scaleFactorY);
 
             foreach (char textChar in text)
             {
@@ -180,20 +188,44 @@ namespace Engine
 
         }
 
-        public void DrawCentered(Font font, int y, string text, byte fontColor, byte backingColor)
+        private int CalcPrintX(Font font, string text, TextAlignment alignment, int x)
         {
             var scaleFactorX = (ScreenWidth / 320.0f);
             var scaleFactorY = (ScreenHeight / 200.0f);
-            // Calculate total width
-            int totalWidth = 0;
-            foreach (char textChar in text)
+
+            switch (alignment)
             {
-                var asciiIndex = (int)textChar;
-                var fontChar = font.FontCharacters[asciiIndex];
-                totalWidth += (int)(fontChar.Width * scaleFactorY);
+                case TextAlignment.Left:
+                    return x;
+                case TextAlignment.Center:
+                    {
+                        // Calculate total width
+                        int totalWidth = 0;
+                        foreach (char textChar in text)
+                        {
+                            var asciiIndex = (int)textChar;
+                            var fontChar = font.FontCharacters[asciiIndex];
+                            totalWidth += (int)(fontChar.Width * scaleFactorY);
+                        }
+                        int startX = (ScreenWidth - totalWidth) / 2;
+                        return startX;
+                    }
+                case TextAlignment.Right:
+                    {
+                        // Calculate total width
+                        int totalWidth = 0;
+                        foreach (char textChar in text)
+                        {
+                            var asciiIndex = (int)textChar;
+                            var fontChar = font.FontCharacters[asciiIndex];
+                            totalWidth += (int)(fontChar.Width * scaleFactorY);
+                        }
+                        int startX = (x - totalWidth);
+                        return startX;
+                    }
             }
-            int startX = (ScreenWidth - totalWidth) / 2;
-            Draw(font, new Vector2(startX, (int)(y*scaleFactorY)), text, fontColor, backingColor);
+
+            return x;
         }
 
         private static IntPtr LockSurface(IntPtr surface)

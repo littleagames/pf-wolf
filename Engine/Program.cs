@@ -107,6 +107,7 @@ if (!videoManager.Initialize())
 }
 
 bool quit = false;
+bool signonWaitingForPressAKey = true;
 var startCounter = SDL.GetPerformanceCounter();
 var frequency = SDL.GetPerformanceFrequency();
 var fpsCounter = new FpsCounter();
@@ -123,7 +124,7 @@ if (!inputManager.Initialize())
 
 Scene scene = new SignonScene();
 var sceneInitialized = false; // todo: scene manager handles this in a dictionary to manage scene states
-var changed = false;
+var changed = true;
 while (!quit)
 {
     if (sceneInitialized)
@@ -145,7 +146,7 @@ while (!quit)
     var elapsed = (currentCounter - startCounter) / (double)frequency;
 
 
-    if (!changed)
+    if (changed)
     {
         // Render something here
         videoManager.Draw(signon,
@@ -160,10 +161,20 @@ while (!quit)
         // Scaling.??
         size: new Dimension(ScreenWidth, ScreenHeight)); // parent.Width, parent.Height));
 
-        changed = true;
+        if (signonWaitingForPressAKey)
+        {
+            videoManager.DrawRectangle(0, 189, 300, 11, 0x29);
+            videoManager.Draw(smallFont, new Vector2(0, 190), TextAlignment.Center, "Press A Key", 14, 4);
+        }
+        else
+        {
+            videoManager.DrawRectangle(0, 189, 300, 11, 0x29);
+            videoManager.Draw(smallFont, new Vector2(0, 190), TextAlignment.Center, "Working...", 10, 4);
+        }
+
+        changed = false;
     }
 
-    videoManager.DrawCentered(smallFont, 190, "Press A Key", 14, 4);
     //videoManager.Draw(smallFont, new Vector2(0, 190), "Press A Key", 14, 4);
     //videoManager.Draw(sbar,
     //// Transform
@@ -183,7 +194,12 @@ while (!quit)
 
     videoManager.Update();
 
-    SDL.Delay(10);
+    if (inputManager.IsKeyPressed && signonWaitingForPressAKey)
+    {
+        signonWaitingForPressAKey = false;
+        changed = true;
+    }
+    //SDL.Delay(10);
 }
 
 videoManager.ShutDown();
