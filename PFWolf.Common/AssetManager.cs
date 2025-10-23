@@ -70,7 +70,7 @@ public class AssetManager
 
             if (entry.FullName.StartsWith("fonts/"))
             {
-                AddReference(assetName, () => new Font());
+                AddReference(assetName, () => new Font(new List<FontCharacter>())); // TODO: The loader should figure out what type of font it is
                 continue;
             }
 

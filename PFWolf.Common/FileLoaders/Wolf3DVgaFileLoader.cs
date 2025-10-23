@@ -134,16 +134,22 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
                     //vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<PicData>(() => LoadVgaAsset<PicData>(assetName))));
                     break;
                 case nameof(Font):
-                    vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<Font>(() => LoadVgaAsset<Font>(assetName))));
+                    //vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<Font>(() => LoadVgaFont(assetName))));
+                    vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<Font>(() => WolfRawFontDataLoader.Load(
+                        DecompressVgaLump(_vgaGraphFilePath, position, compressedSize, huffman)
+                        ))));
+                    /*
+                var size = BitConverter.ToInt32(lumps[i].CompressedData.Take(sizeof(int)).ToArray());
+                var compressedData = lumps[i].CompressedData.Skip(sizeof(int)).ToArray();
+                var expandedData = huffman.Expand(compressedData);
+                expandedData = expandedData.Take(size).ToArray();*/
                     break;
                 case nameof(Graphic):
                     var picNum = index - (int)(segmentStarts[2]);
                     var dimensions = picDimensionData[picNum];
                     vgaAssets.Add(new KeyValuePair<string, Asset>(assetName, new AssetReference<Graphic>(() => WolfRawGraphicDataLoader.Load(
-                        DecompressVgaLump(_vgaGraphFilePath, position, compressedSize, huffman, dimensions),
-                        picNum,
-                        dimensions,
-                        huffman))));
+                        DecompressVgaLump(_vgaGraphFilePath, position, compressedSize, huffman),
+                        dimensions))));
                     break;
                 case nameof(VgaExtern):
                     // TODO: Determine the extern type (palette, endscreen, demo, text, tile8)
@@ -267,7 +273,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         return vgaAssets;
     }
 
-    private MemoryStream DecompressVgaLump(string vgaGraphFilePath, int position, int compressedSize, HuffmanCompression huffman, Dimension dimensions)
+    private MemoryStream DecompressVgaLump(string vgaGraphFilePath, int position, int compressedSize, HuffmanCompression huffman)
     {
         using var vgaFileStream = File.OpenRead(vgaGraphFilePath);
         vgaFileStream.Seek(position, SeekOrigin.Begin);
@@ -284,7 +290,7 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
                 $"Huffman expand didn't fill the entire array: {expandedData.Length} (expanded) < {size} (size)");
         }
         expandedData = expandedData.Take(size).ToArray();
-        expandedData = DeplaneData(expandedData, dimensions);
+
         return new MemoryStream(expandedData);
     }
 
@@ -321,52 +327,6 @@ public class Wolf3DVgaFileLoader : BaseFileLoader
         }
         
         return dimensions;
-    }
-
-    private byte[] DeplaneData(byte[] source, Dimension dimensions)
-    {
-        int width = dimensions.Width;
-        int height = dimensions.Height;
-        
-        int x, y, plane;
-        ushort size, pwidth;
-        byte[] temp, dest, srcline;
-
-        size = (ushort)(width * height);
-
-        if ((width & 3) != 0)
-            throw new Exception("DeplaneData: width not divisible by 4!");
-
-        temp = new byte[size];// SafeMalloc(size);
-
-        //
-        // munge pic into the temp buffer
-        //
-        srcline = source;
-        var srcLineIndex = 0;
-        pwidth = (ushort)(width >> 2); // width/4
-
-        for (plane = 0; plane < 4; plane++)
-        {
-            dest = temp;
-
-            for (y = 0; y < height; y++)
-            {
-                for (x = 0; x < pwidth; x++)
-                {
-                    if (srcLineIndex >= srcline.Length)
-                        continue;
-                    dest[width * y + (x << 2) + plane] = srcline[srcLineIndex++];
-                }
-            }
-        }
-
-        //
-        // copy the temp buffer back into the original source
-        //
-        //Array.Copy(temp, source, size);
-
-        return temp;
     }
 
     private record VgaLump : Asset

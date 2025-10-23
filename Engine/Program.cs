@@ -107,12 +107,12 @@ if (!videoManager.Initialize())
 }
 
 bool quit = false;
-bool toggleConsole = false;
 var startCounter = SDL.GetPerformanceCounter();
 var frequency = SDL.GetPerformanceFrequency();
 var fpsCounter = new FpsCounter();
 
 var signon = assetManager.Load<Graphic>("wolf3d-signon");
+var smallFont = assetManager.Load<Font>("SmallFont");
 StringBuilder textBuffer = new StringBuilder(256);
 SDLInputManager inputManager = new SDLInputManager();
 if (!inputManager.Initialize())
@@ -162,6 +162,9 @@ while (!quit)
 
         changed = true;
     }
+
+    videoManager.DrawCentered(smallFont, 190, "Press A Key", 14, 4);
+    //videoManager.Draw(smallFont, new Vector2(0, 190), "Press A Key", 14, 4);
     //videoManager.Draw(sbar,
     //// Transform
     //// Position (x,y)

@@ -130,37 +130,70 @@ namespace Engine
 
         public void Draw(Graphic graphic, Vector2 position, Dimension size)
         {
-            float scaleX = (float)graphic.Dimensions.Width / size.Width;
-            float scaleY = (float)graphic.Dimensions.Height / size.Height;
+            DrawData(graphic.Data, position, graphic.Dimensions, size);
+        }
 
-            IntPtr dest = LockSurface(screenBufferPtr);
-            if (dest == IntPtr.Zero) return;
-            unsafe
+        // TBD: Font positioning in the component vs methods
+        public void Draw(Font font, Vector2 position, string text, byte fontColor, byte backingColor)
+        {
+            var scaleFactorX = (ScreenWidth / 320.0f);
+            var scaleFactorY = (ScreenHeight / 200.0f);
+
+            // Left aligned
+            var printX = position.X;
+            var printY = position.Y;
+
+            foreach (char textChar in text)
             {
-                byte* pixels = (byte*)dest;
+                var asciiIndex = (int)textChar;
+                var fontChar = font.FontCharacters[asciiIndex];
 
-                int startingX = Math.Max(position.X, 0);
-                int startingY = Math.Max(position.Y, 0);
-                int endingX = Math.Min(position.X + size.Width, ScreenWidth);
-                int endingY = Math.Min(position.Y + size.Height, ScreenHeight);
-
-                for (int y = startingY; y < endingY; y++)
+                if (fontChar.Data.Length > 0)
                 {
-                    int srcY = (int)((y - position.Y) * scaleY);
-                    if (srcY < 0 || srcY >= graphic.Dimensions.Height) continue;
-
-                    for (int x = startingX; x < endingX; x++)
+                    var modifiedFontData = new byte[fontChar.Data.Length];
+                    for (var i = 0; i < fontChar.Data.Length; i++)
                     {
-                        int srcX = (int)((x - position.X) * scaleX);
-                        if (srcX < 0 || srcX >= graphic.Dimensions.Width) continue;
-
-                        byte col = graphic.Data[srcY * graphic.Dimensions.Width + srcX];
-                        pixels[ylookup[y] + x] = col;
+                        var fontFlag = fontChar.Data[i] > 0;
+                        modifiedFontData[i] = fontFlag ? fontColor : (byte)0xff;
                     }
+
+                    DrawData(modifiedFontData, new Vector2(printX, printY), new Dimension(fontChar.Width, fontChar.Height), new Dimension((int)(fontChar.Width*scaleFactorX), (int)(fontChar.Height*scaleFactorY)));
                 }
+
+                if (textChar == '\n')
+                {
+                    printX = position.X;
+                    printY = printY + fontChar.Height;
+                    continue;
+                }
+
+                printX += (int)(fontChar.Width*scaleFactorX);
             }
 
-            UnlockSurface(screenBufferPtr);
+            // TODO: Loop through each character in "text"
+            // Or I can build the text in byte array size
+            //      can send that once to MemToScreen
+
+            //MemToScreen(colorizedFont)
+
+            // get each character and print it to the byte[] pixels
+
+        }
+
+        public void DrawCentered(Font font, int y, string text, byte fontColor, byte backingColor)
+        {
+            var scaleFactorX = (ScreenWidth / 320.0f);
+            var scaleFactorY = (ScreenHeight / 200.0f);
+            // Calculate total width
+            int totalWidth = 0;
+            foreach (char textChar in text)
+            {
+                var asciiIndex = (int)textChar;
+                var fontChar = font.FontCharacters[asciiIndex];
+                totalWidth += (int)(fontChar.Width * scaleFactorY);
+            }
+            int startX = (ScreenWidth - totalWidth) / 2;
+            Draw(font, new Vector2(startX, (int)(y*scaleFactorY)), text, fontColor, backingColor);
         }
 
         private static IntPtr LockSurface(IntPtr surface)
@@ -181,6 +214,42 @@ namespace Engine
             {
                 SDL.UnlockSurface(surface);
             }
+        }
+        private void DrawData(byte[] data, Vector2 position, Dimension dimensions, Dimension size)
+        {
+            float scaleX = (float)dimensions.Width / size.Width;
+            float scaleY = (float)dimensions.Height / size.Height;
+
+            IntPtr dest = LockSurface(screenBufferPtr);
+            if (dest == IntPtr.Zero) return;
+            unsafe
+            {
+                byte* pixels = (byte*)dest;
+
+                int startingX = Math.Max(position.X, 0);
+                int startingY = Math.Max(position.Y, 0);
+                int endingX = Math.Min(position.X + size.Width, ScreenWidth);
+                int endingY = Math.Min(position.Y + size.Height, ScreenHeight);
+
+                for (int y = startingY; y < endingY; y++)
+                {
+                    int srcY = (int)((y - position.Y) * scaleY);
+                    if (srcY < 0 || srcY >= dimensions.Height) continue;
+
+                    for (int x = startingX; x < endingX; x++)
+                    {
+                        int srcX = (int)((x - position.X) * scaleX);
+                        if (srcX < 0 || srcX >= dimensions.Width) continue;
+
+                        byte col = data[srcY * dimensions.Width + srcX];
+                        if (col == 0xff)
+                            continue; // transparent
+                        pixels[ylookup[y] + x] = col;
+                    }
+                }
+            }
+
+            UnlockSurface(screenBufferPtr);
         }
     }
 }

@@ -1,41 +1,14 @@
 ﻿using PFWolf.Common.Assets;
-using PFWolf.Common.Compression;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PFWolf.Common.DataLoaders;
 
 internal class WolfRawGraphicDataLoader
 {
-    public static Graphic Load(MemoryStream stream, int picNum, Dimension dimensions, HuffmanCompression huffman)
+    public static Graphic Load(MemoryStream stream, Dimension dimensions)
     {
-       // using MemoryStream ms = new MemoryStream();
-       // stream.CopyTo(ms);
         var rawData = stream.ToArray();
-
-
-       // //var structData = ((StructPicAsset)vgaAssets[StructPicIndex]);
-       // //var picNum = i - (int)(segmentStarts[2]);
-       // //if (picNum < 0 || picNum >= structData.NumPics)
-       // //{
-       // //    throw new IndexOutOfRangeException($"Pic number {picNum} is out of range.");
-       // //}
-
-       //// var dimensions = structData.Dimensions[picNum];
-
-       // var size = BitConverter.ToInt32(rawData.Take(sizeof(int)).ToArray());
-       // var compressedData = rawData.Skip(sizeof(int)).ToArray();
-       // var expandedData = huffman.Expand(compressedData); // TODO: 63999 for a 64000 image?
-       // if (expandedData.Length < size)
-       // {
-       //     throw new Exception(
-       //         $"Huffman expand didn't fill the entire array: {expandedData.Length} (expanded) < {size} (size)");
-       // }
-       // expandedData = expandedData.Take(size).ToArray();
-       // expandedData = DeplaneData(expandedData, dimensions);
+        // For graphic
+        rawData = DeplaneData(rawData, dimensions);
 
         return new Graphic
         {
