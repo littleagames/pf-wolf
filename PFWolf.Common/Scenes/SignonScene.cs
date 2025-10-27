@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using PFWolf.Common.Components;
 
 namespace PFWolf.Common.Scenes;
 
 public class SignonScene : Scene
 {
+    private Text _pressAKeyText = null!;
+
     public override void Start()
     {
-        AddComponent("wolf3d-signon");
+        AddComponent(Graphic.Create("wolf3d-signon", Transform.Create(Vector2.Zero)));
+
+        _pressAKeyText = Text.Create("Press A Key", Transform.Create(Vector2.Zero), "smallfont", 14);
+        AddComponent(_pressAKeyText);
     }
 
     public override void Update()

@@ -1,8 +1,11 @@
 ﻿
 
-namespace PFWolf.Common
+namespace PFWolf.Common;
+
+public record Component
 {
-    public record Component
-    {
-    }
+}
+
+public record RenderComponent : Component
+{
 }
