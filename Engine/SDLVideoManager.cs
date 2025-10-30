@@ -4,20 +4,20 @@ using System.Runtime.InteropServices;
 
 namespace Engine
 {
-    internal interface IVideoManager
-    {
-        public int ScreenPitch { get; }
-        public int BufferPitch { get; }
-        public int ScreenHeight { get; }
-        public int ScreenWidth { get; }
-        bool Initialize();
-        void Draw(Graphic graphic, Vector2 position, Dimension dimension);
-        void DrawFps(double fps);
-        void Update();
-        void ShutDown();
-    }
+    //internal interface IVideoManager
+    //{
+    //    public int ScreenPitch { get; }
+    //    public int BufferPitch { get; }
+    //    public int ScreenHeight { get; }
+    //    public int ScreenWidth { get; }
+    //    bool Initialize();
+    //    void Draw(Graphic graphic, Vector2 position, Dimension dimension);
+    //    void DrawFps(double fps);
+    //    void Update();
+    //    void ShutDown();
+    //}
 
-    internal class SDLVideoManager : IVideoManager
+    internal class SDLVideoManager //: IVideoManager
     {
         public IntPtr windowPtr;
         private static IntPtr rendererPtr;
@@ -28,6 +28,7 @@ namespace Engine
         private bool _isInitialized = false;
         private bool _hasChanged = false;
         private double fps;
+        private readonly AssetManager assetManager;
         private readonly GameConfigurationData config;
 
         public int ScreenPitch { get; private set; }
@@ -37,11 +38,14 @@ namespace Engine
 
         private uint[] ylookup = [];
 
-        public SDLVideoManager(int screenWidth, int screenHeight, GameConfigurationData config)
+        public SDLVideoManager(
+            AssetManager assetManager,
+            GameConfigurationData config)
         {
-            ScreenHeight = screenHeight;
+            ScreenHeight = config.ScreenResolution.Height;
+            ScreenWidth = config.ScreenResolution.Width;
+            this.assetManager = assetManager;
             this.config = config;
-            ScreenWidth = screenWidth;
         }
 
         public bool Initialize()
@@ -282,6 +286,73 @@ namespace Engine
             }
 
             UnlockSurface(screenBufferPtr);
+        }
+
+        internal void DrawComponent(RenderComponent component)
+        {
+            if (component is PFWolf.Common.Components.Graphic graphic)
+            {
+                var asset = assetManager.Load<PFWolf.Common.Assets.Graphic>(graphic.AssetName);
+                var transform = graphic.Transform;
+
+                int srcW = asset.Dimensions.Width;
+                int srcH = asset.Dimensions.Height;
+
+                // Guard against invalid source dimensions
+                if (srcW > 0 && srcH > 0)
+                {
+                    // TODO: Handle PositionalAlignment
+                    // TODO: Handle Rotation
+                    // TODO: Avoid calculating size every frame if not changed
+                    switch (transform.BoundingBoxType)
+                    {
+                        case BoundingBoxType.ScaleToScreen:
+                            {
+                                float scaleX = ScreenWidth / (float)srcW;
+                                float scaleY = ScreenHeight / (float)srcH;
+                                float scale = Math.Min(scaleX, scaleY);
+                                int newW = Math.Max(1, (int)Math.Round(srcW * scale));
+                                int newH = Math.Max(1, (int)Math.Round(srcH * scale));
+                                transform.Size = new Dimension(newW, newH);
+                                break;
+                            }
+                        case BoundingBoxType.StretchToScreen:
+                            transform.Size = new Dimension(ScreenWidth, ScreenHeight);
+                            break;
+                        case BoundingBoxType.ScaleWidthToScreen:
+                            {
+                                float scale = ScreenWidth / (float)srcW;
+                                int newW = ScreenWidth;
+                                int newH = Math.Max(1, (int)Math.Round(srcH * scale));
+                                transform.Size = new Dimension(newW, newH);
+                                break;
+                            }
+                        case BoundingBoxType.ScaleHeightToScreen:
+                            {
+                                float scale = ScreenHeight / (float)srcH;
+                                int newH = ScreenHeight;
+                                int newW = Math.Max(1, (int)Math.Round(srcW * scale));
+                                transform.Size = new Dimension(newW, newH);
+                                break;
+                            }
+                        default:
+                            // leave transform.Size unchanged for unknown types
+                            break;
+                    }
+                }
+
+                DrawData(asset.Data, transform.Position, asset.Dimensions, transform.Size);
+                // _loadedAssets.Add(graphic.AssetName, asset);
+                // Store in graphic list (some can be reused, e.g. toggled buttons)
+            }
+            if (component is PFWolf.Common.Components.Text text)
+            {
+                var font = assetManager.Load<PFWolf.Common.Assets.Font>(text.Font);
+                var transform = text.Transform;
+                //DrawData(font.Data, transform.Position, font.Dimensions, transform.Size);
+                //_loadedAssets.Add(text.Font, font);
+                // Store in font list
+            }
         }
     }
 }

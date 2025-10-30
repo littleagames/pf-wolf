@@ -91,7 +91,7 @@ var gameConfiguration = new GameConfigurationData
 
 //var assets = assetManager.LoadAll();
 
-SDLVideoManager videoManager = new SDLVideoManager(ScreenWidth, ScreenHeight, gameConfiguration);
+SDLVideoManager videoManager = new SDLVideoManager(assetManager, gameConfiguration);
 
 if (!SDL.Init(0))
 {
@@ -107,7 +107,6 @@ if (!videoManager.Initialize())
 }
 
 bool quit = false;
-bool signonWaitingForPressAKey = true;
 var startCounter = SDL.GetPerformanceCounter();
 var frequency = SDL.GetPerformanceFrequency();
 var fpsCounter = new FpsCounter();
