@@ -121,7 +121,7 @@ if (!inputManager.Initialize())
     return;
 }
 
-SceneManager sceneManager = new SceneManager(videoManager, assetManager);
+SceneManager sceneManager = new SceneManager(videoManager, inputManager, assetManager);
 
 sceneManager.LoadScene("SignonScene");
 
@@ -141,46 +141,6 @@ while (!quit)
     var currentCounter = SDL.GetPerformanceCounter();
     var elapsed = (currentCounter - startCounter) / (double)frequency;
 
-    //if (changed)
-    //{
-    //    // Render something here
-    //    videoManager.Draw(signon,
-    //    // Transform
-    //    // Position (x,y)
-    //    // HasChanged: bool
-    //    // TODO: Turns into "offset: Vector2"
-    //    // TODO: Orientation: Top, TopLeft, Left, Center, etc
-    //    position: new Vector2(0, 0),
-    //    // Scaling = Scaling.FitToScreen
-    //    // Scaling.StretchToFit
-    //    // Scaling.??
-    //    size: new Dimension(ScreenWidth, ScreenHeight)); // parent.Width, parent.Height));
-
-    //    if (signonWaitingForPressAKey)
-    //    {
-    //        videoManager.DrawRectangle(0, 189, 300, 11, 0x29);
-    //        videoManager.Draw(smallFont, new Vector2(0, 190), TextAlignment.Center, "Press A Key", 14, 4);
-    //    }
-    //    else
-    //    {
-    //        videoManager.DrawRectangle(0, 189, 300, 11, 0x29);
-    //        videoManager.Draw(smallFont, new Vector2(0, 190), TextAlignment.Center, "Working...", 10, 4);
-    //    }
-
-    //    changed = false;
-    //}
-
-    //videoManager.Draw(sbar,
-    //// Transform
-    //// Position (x,y)
-    //// HasChanged: bool
-    //// TODO: Turns into "offset: Vector2"
-    //// TODO: Orientation: Top, TopLeft, Left, Center, etc
-    //position: new Vector2(0, 320),
-    //// Scaling = Scaling.FitToScreen
-    //// Scaling.StretchToFit
-    //// Scaling.??
-    //dimension: new Dimension(ScreenWidth, 80));
     fpsCounter.Update();
 
     // TODO: Make this optional via a debug mode

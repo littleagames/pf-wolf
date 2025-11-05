@@ -38,9 +38,28 @@ public enum PositionalAlignment
 
 public enum BoundingBoxType
 {
+    /// <summary>
+    /// Retains size, and uses pixel coordinates for location of asset
+    /// </summary>
     NoBounds,
+    /// <summary>
+    /// Scales with the resolution change of both width and height
+    /// </summary>
+    Scale,
+    /// <summary>
+    /// Scales with the screen size maxing at whatever border it touches first
+    /// </summary>
     ScaleToScreen,
+    /// <summary>
+    /// Stretches to fit the ScreenWidth and ScreenHeight
+    /// </summary>
     StretchToScreen,
+    /// <summary>
+    /// Scales by the width of the screen only
+    /// </summary>
     ScaleWidthToScreen,
+    /// <summary>
+    /// Scales to the height of the screen only
+    /// </summary>
     ScaleHeightToScreen
 }

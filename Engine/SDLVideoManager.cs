@@ -290,7 +290,13 @@ namespace Engine
 
         internal void DrawComponent(RenderComponent component)
         {
-            if (component is PFWolf.Common.Components.Graphic graphic)
+            if (component is PFWolf.Common.Components.Background background)
+            {
+                var data = new byte[ScreenWidth * ScreenHeight];
+                Array.Fill(data, background.Color);
+                DrawData(data, new Vector2(0, 0), new Dimension(ScreenWidth, ScreenHeight), new Dimension(ScreenWidth, ScreenHeight));
+            }
+            else if (component is PFWolf.Common.Components.Graphic graphic)
             {
                 var asset = assetManager.Load<PFWolf.Common.Assets.Graphic>(graphic.AssetName);
                 var transform = graphic.Transform;
@@ -306,6 +312,16 @@ namespace Engine
                     // TODO: Avoid calculating size every frame if not changed
                     switch (transform.BoundingBoxType)
                     {
+                        case BoundingBoxType.Scale:
+                            {
+                                float scaleX = ScreenWidth / (float)320;
+                                float scaleY = ScreenHeight / (float)200;
+                                int newW = Math.Max(1, (int)Math.Round(srcW * scaleX));
+                                int newH = Math.Max(1, (int)Math.Round(srcH * scaleY));
+                                transform.Size = new Dimension(newW, newH);
+                                break;
+                            }
+                            break;
                         case BoundingBoxType.ScaleToScreen:
                             {
                                 float scaleX = ScreenWidth / (float)srcW;
@@ -341,7 +357,10 @@ namespace Engine
                     }
                 }
 
-                DrawData(asset.Data, transform.Position, asset.Dimensions, transform.Size);
+                if (!graphic.Hidden)
+                {
+                    DrawData(asset.Data, transform.Position, asset.Dimensions, transform.Size);
+                }
                 // _loadedAssets.Add(graphic.AssetName, asset);
                 // Store in graphic list (some can be reused, e.g. toggled buttons)
             }
@@ -349,6 +368,10 @@ namespace Engine
             {
                 var font = assetManager.Load<PFWolf.Common.Assets.Font>(text.Font);
                 var transform = text.Transform;
+                if (!text.Hidden)
+                {
+                    Draw(font, transform.Position, text.Alignment, text.String, text.ForeColor, 0);
+                }
                 //DrawData(font.Data, transform.Position, font.Dimensions, transform.Size);
                 //_loadedAssets.Add(text.Font, font);
                 // Store in font list

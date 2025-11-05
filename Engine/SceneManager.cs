@@ -1,25 +1,45 @@
 ﻿using PFWolf.Common;
+using PFWolf.Common.Components;
 using PFWolf.Common.Scenes;
 
 namespace Engine;
 
 internal class SceneManager
 {
-    internal SceneManager(SDLVideoManager videoManager, AssetManager assetManager)
+    internal SceneManager(
+        SDLVideoManager videoManager,
+        SDLInputManager inputManager,
+        AssetManager assetManager)
     {
         this.videoManager = videoManager;
+        this.inputManager = inputManager;
         this.assetManager = assetManager;
     }
 
     private Scene? _currentScene = null;
     private readonly SDLVideoManager videoManager;
+    private readonly SDLInputManager inputManager;
     private readonly AssetManager assetManager;
 
     private Dictionary<string, Asset> _loadedAssets = new Dictionary<string, Asset>();
 
     public void LoadScene(string sceneName)
     {
-        _currentScene = new SignonScene();
+        // TODO: Pull this info from the Script "asset"
+        var type = sceneName switch
+        {
+            "SignonScene" => typeof(SignonScene),
+            "Pg13Scene" => typeof(Pg13Scene),
+            "TitleScene" => typeof(TitleScene),
+            _ => null
+        };
+
+        _currentScene = (Scene?)Activator.CreateInstance(type);
+        if (_currentScene is null)
+        {
+            throw new InvalidDataException($"Could not properly build the script for scene \"{sceneName}\"");
+        }
+
         _currentScene.Start();
 
         _currentScene.GetComponents(out var components);
@@ -28,19 +48,20 @@ internal class SceneManager
 
         foreach (var component in components)
         {
+            if (!component.Enabled) continue;
             if (component is RenderComponent renderComponent)
             {
                 if (renderComponent is PFWolf.Common.Components.Graphic graphic)
                 {
                     var asset = assetManager.Load<PFWolf.Common.Assets.Graphic>(graphic.AssetName);
 
-                    _loadedAssets.Add(graphic.AssetName, asset);
+                    //_loadedAssets.Add(graphic.AssetName, asset);
                     // Store in graphic list (some can be reused, e.g. toggled buttons)
                 }
                 if (renderComponent is PFWolf.Common.Components.Text text)
                 {
                     var font = assetManager.Load<PFWolf.Common.Assets.Font>(text.Font);
-                    _loadedAssets.Add(text.Font, font);
+                    //_loadedAssets.Add(text.Font, font);
                     // Store in font list
                 }
                 //videoManager.DrawComponent(renderComponent);
@@ -68,49 +89,23 @@ internal class SceneManager
             if (component is RenderComponent renderComponent)
             {
                 videoManager.DrawComponent(renderComponent);
-                //if (renderComponent is PFWolf.Common.Components.Graphic graphicComponent)
-                //{
-                //    if (_loadedAssets.TryGetValue(graphicComponent.AssetName, out var asset))
-                //    {
-                //        var graphicAsset = asset as PFWolf.Common.Assets.Graphic;
-                //        videoManager.Draw(graphicAsset, graphicComponent.Transform.Position, graphicComponent.Transform.Size);
-                //    }
-                //}
-                //if (renderComponent is PFWolf.Common.Components.Text textComponent)
-                //{
-                //}
+            }
+            else if (component is InputComponent inputComponent)
+            {
+                inputComponent.Update(inputManager.State);
             }
         }
 
-        //if (changed)
-        //{
-        //    // Render something here
-        //    videoManager.Draw(signon,
-        //    // Transform
-        //    // Position (x,y)
-        //    // HasChanged: bool
-        //    // TODO: Turns into "offset: Vector2"
-        //    // TODO: Orientation: Top, TopLeft, Left, Center, etc
-        //    position: new Vector2(0, 0),
-        //    // Scaling = Scaling.FitToScreen
-        //    // Scaling.StretchToFit
-        //    // Scaling.??
-        //    size: new Dimension(ScreenWidth, ScreenHeight)); // parent.Width, parent.Height));
+        if (_currentScene.IsCompleted)
+        {
+            var nextScene = _currentScene.NextScene;
+            if (nextScene is null)
+            {
+                throw new ArgumentException("No scene specified to in the 'nextScene'.");
+            }
 
-        //    if (signonWaitingForPressAKey)
-        //    {
-        //        videoManager.DrawRectangle(0, 189, 300, 11, 0x29);
-        //        videoManager.Draw(smallFont, new Vector2(0, 190), TextAlignment.Center, "Press A Key", 14, 4);
-        //    }
-        //    else
-        //    {
-        //        videoManager.DrawRectangle(0, 189, 300, 11, 0x29);
-        //        videoManager.Draw(smallFont, new Vector2(0, 190), TextAlignment.Center, "Working...", 10, 4);
-        //    }
-
-        //    //changed = false;
-        //}
-        // TODO: Update components
-        // TODO: Update video rendering (if anything changed)
+            UnloadScene();
+            LoadScene(nextScene);
+        }
     }
 }
