@@ -301,8 +301,17 @@ namespace Engine
         /// <returns></returns>
         public Transform CalculateTransform(Transform transform)
         {
-            var scaleFactorX = ScreenWidth / 320.0f;
+            var scaleFactorX = ScreenWidth / 320.0f; // Get these values based on aspect ratio too
             var scaleFactorY = ScreenHeight / 200.0f;
+            var position = transform.Position;
+
+            if (transform.Position.ScaleType == ScaleType.Relative)
+            {
+                position.Update(new Vector2(
+                    (int)(transform.Position.X * scaleFactorX),
+                    (int)(transform.Position.Y * scaleFactorY)
+                ));
+            }
 
             if (transform.SizeScaling == BoundingBoxType.StretchToScreen)
             {
@@ -328,10 +337,6 @@ namespace Engine
 
             if (transform.SizeScaling == BoundingBoxType.Scale)
             {
-                var position = transform.Position;
-                position.X = (int)(transform.Position.X * scaleFactorX);
-                position.Y = (int)(transform.Position.Y * scaleFactorY);
-
                 var size = new Dimension(
                     (int)(transform.Size.Width * scaleFactorX),
                     (int)(transform.Size.Height * scaleFactorY));
