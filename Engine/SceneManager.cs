@@ -25,12 +25,13 @@ internal class SceneManager
 
     public void LoadScene(string sceneName)
     {
-        // TODO: Pull this info from the Script "asset"
+        // TODO: Pull this info from the Script "asset".
         var type = sceneName switch
         {
             "SignonScene" => typeof(SignonScene),
             "Pg13Scene" => typeof(Pg13Scene),
             "TitleScene" => typeof(TitleScene),
+            "MainMenuScene" => typeof(MainMenuScene),
             _ => null
         };
 
@@ -55,6 +56,9 @@ internal class SceneManager
                 {
                     var asset = assetManager.Load<PFWolf.Common.Assets.Graphic>(graphic.AssetName);
 
+                    var graphicTransform = graphic.Transform;
+                    graphicTransform.Update(asset.Dimensions);
+                    //renderComponent.Transform.Update(graphicTransform);
                     //_loadedAssets.Add(graphic.AssetName, asset);
                     // Store in graphic list (some can be reused, e.g. toggled buttons)
                 }
@@ -63,7 +67,13 @@ internal class SceneManager
                     var font = assetManager.Load<PFWolf.Common.Assets.Font>(text.Font);
                     //_loadedAssets.Add(text.Font, font);
                     // Store in font list
+                    //renderComponent.Transform.Update(font.Dimensions);
+                    // TODO: Font size is not known here.
                 }
+
+                var updatedTransform = videoManager.CalculateTransform(renderComponent.Transform);
+                //renderComponent.Transform.Update(updatedTransform);
+
                 //videoManager.DrawComponent(renderComponent);
             }
         }

@@ -8,9 +8,8 @@ public class TitleScene : Scene
     {
         AddComponent(Graphic.Create("title", new Transform
         {
-            Position = Vector2.Zero,
-            PositionalAlignment = PositionalAlignment.TopLeft,
-            BoundingBoxType = BoundingBoxType.StretchToScreen
+            Position = Position.Zero,
+            SizeScaling = BoundingBoxType.StretchToScreen
         }));
     }
 

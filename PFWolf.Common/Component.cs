@@ -16,4 +16,5 @@ public record RenderComponent : Component
     /// Disables visual rendering of the component
     /// </summary>
     public bool Hidden { get; set; } = false;
+    public Transform Transform { get; init; }
 }

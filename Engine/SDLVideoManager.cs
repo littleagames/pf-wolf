@@ -138,16 +138,17 @@ namespace Engine
             var scaleFactorY = (ScreenHeight / 200.0f);
             var data = new byte[width * height];
             Array.Fill(data, color);
-            DrawData(data, new Vector2((int)(x*scaleFactorX), (int)(y*scaleFactorY)), new Dimension(width, height), new Dimension((int)(width*scaleFactorX), (int)(height*scaleFactorY)));
+            var position = new Position(new Vector2((int)(x * scaleFactorX), (int)(y * scaleFactorY)), AnchorPosition.TopLeft, ScaleType.Relative);
+            DrawData(data, position, new Dimension(width, height), new Dimension((int)(width*scaleFactorX), (int)(height*scaleFactorY)));
         }
 
-        public void Draw(Graphic graphic, Vector2 position, Dimension size)
+        public void Draw(Graphic graphic, Position position, Dimension size)
         {
             DrawData(graphic.Data, position, graphic.Dimensions, size);
         }
 
         // TBD: Font positioning in the component vs methods
-        public void Draw(Font font, Vector2 position, TextAlignment alignment, string text, byte fontColor, byte backingColor)
+        public void Draw(Font font, Position position, TextAlignment alignment, string text, byte fontColor, byte backingColor)
         {
             var scaleFactorX = (ScreenWidth / 320.0f);
             var scaleFactorY = (ScreenHeight / 200.0f);
@@ -169,7 +170,9 @@ namespace Engine
                         modifiedFontData[i] = fontFlag ? fontColor : (byte)0xff;
                     }
 
-                    DrawData(modifiedFontData, new Vector2(printX, printY), new Dimension(fontChar.Width, fontChar.Height), new Dimension((int)(fontChar.Width*scaleFactorX), (int)(fontChar.Height*scaleFactorY)));
+                    // TODO: Map textalign to position alignment
+                    var charPosition = new Position(new Vector2(printX, printY), AnchorPosition.TopLeft, ScaleType.Relative);
+                    DrawData(modifiedFontData, charPosition, new Dimension(fontChar.Width, fontChar.Height), new Dimension((int)(fontChar.Width*scaleFactorX), (int)(fontChar.Height*scaleFactorY)));
                 }
 
                 if (textChar == '\n')
@@ -251,8 +254,11 @@ namespace Engine
                 SDL.UnlockSurface(surface);
             }
         }
-        private void DrawData(byte[] data, Vector2 position, Dimension dimensions, Dimension size)
+        private void DrawData(byte[] data, Position position, Dimension dimensions, Dimension size)
         {
+            if (data.Length == 0)
+                return;
+
             float scaleX = (float)dimensions.Width / size.Width;
             float scaleY = (float)dimensions.Height / size.Height;
 
@@ -288,13 +294,94 @@ namespace Engine
             UnlockSurface(screenBufferPtr);
         }
 
+        /// <summary>
+        /// Takes an existing transform and updates values to accomodate the video layout.
+        /// </summary>
+        /// <param name="transform"></param>
+        /// <returns></returns>
+        public Transform CalculateTransform(Transform transform)
+        {
+            var scaleFactorX = ScreenWidth / 320.0f;
+            var scaleFactorY = ScreenHeight / 200.0f;
+
+            if (transform.SizeScaling == BoundingBoxType.StretchToScreen)
+            {
+                transform.Update(new Dimension(ScreenWidth, ScreenHeight));
+            }
+
+            if (transform.SizeScaling == BoundingBoxType.ScaleWidthToScreen)
+            {
+                transform.Update(new Dimension(ScreenWidth, (int)(transform.Size.Height * scaleFactorY)));
+            }
+
+            if (transform.Size == Dimension.Zero)
+            {
+                throw new Exception("Transform size is zero, cannot calculate bounding box size.");
+                // invalid data? What do?
+            }
+
+            if (transform.SizeScaling == BoundingBoxType.NoBounds)
+            {
+                // No changes needed
+                return transform;
+            }
+
+            if (transform.SizeScaling == BoundingBoxType.Scale)
+            {
+                var position = transform.Position;
+                position.X = (int)(transform.Position.X * scaleFactorX);
+                position.Y = (int)(transform.Position.Y * scaleFactorY);
+
+                var size = new Dimension(
+                    (int)(transform.Size.Width * scaleFactorX),
+                    (int)(transform.Size.Height * scaleFactorY));
+
+                transform.Update(position, size);
+                // TODO: Position needs a "Scale" option too
+                // Relative = 10, 10 is 10*scaleFactorX, 10*scaleFactorY
+                // Absolute = 10, 10 is always 10, 10
+                // TODO: Take size and scale by resolution factor
+
+            }
+
+            return transform;
+        }
+
         internal void DrawComponent(RenderComponent component)
         {
+            //if (component.Transform.HasChanged)
+            //{
+            //    CalculateTransform(component.Transform);
+            //    //component.Transform.Update(updatedTransform);
+            //}
+
             if (component is PFWolf.Common.Components.Background background)
             {
                 var data = new byte[ScreenWidth * ScreenHeight];
                 Array.Fill(data, background.Color);
-                DrawData(data, new Vector2(0, 0), new Dimension(ScreenWidth, ScreenHeight), new Dimension(ScreenWidth, ScreenHeight));
+                DrawData(data, Position.Zero, new Dimension(ScreenWidth, ScreenHeight), new Dimension(ScreenWidth, ScreenHeight));
+            }
+            else if (component is PFWolf.Common.Components.Rectangle rectangle)
+            {
+                var transform = rectangle.Transform;
+
+                int srcW = rectangle.OriginalSize.Width;
+                int srcH = rectangle.OriginalSize.Height;
+
+                // Guard against invalid source dimensions
+                if (srcW > 0 && srcH > 0)
+                {
+                    // TODO: Handle PositionalAlignment
+                    // TODO: Handle Rotation
+                    // TODO: Avoid calculating size every frame if not changed
+                   // transform.Update(CalculateBoundingBoxSize(rectangle.Size, transform.Size, transform.BoundingBoxType));
+                }
+
+                var data = new byte[transform.Size.Width * transform.Size.Height];
+                Array.Fill(data, rectangle.Color);
+                // TODO: Transform calculations here
+                // Maybe a place they are done one time?
+                DrawData(data, rectangle.Transform.Position, transform.Size, transform.Size);
             }
             else if (component is PFWolf.Common.Components.Graphic graphic)
             {
@@ -310,51 +397,7 @@ namespace Engine
                     // TODO: Handle PositionalAlignment
                     // TODO: Handle Rotation
                     // TODO: Avoid calculating size every frame if not changed
-                    switch (transform.BoundingBoxType)
-                    {
-                        case BoundingBoxType.Scale:
-                            {
-                                float scaleX = ScreenWidth / (float)320;
-                                float scaleY = ScreenHeight / (float)200;
-                                int newW = Math.Max(1, (int)Math.Round(srcW * scaleX));
-                                int newH = Math.Max(1, (int)Math.Round(srcH * scaleY));
-                                transform.Size = new Dimension(newW, newH);
-                                break;
-                            }
-                            break;
-                        case BoundingBoxType.ScaleToScreen:
-                            {
-                                float scaleX = ScreenWidth / (float)srcW;
-                                float scaleY = ScreenHeight / (float)srcH;
-                                float scale = Math.Min(scaleX, scaleY);
-                                int newW = Math.Max(1, (int)Math.Round(srcW * scale));
-                                int newH = Math.Max(1, (int)Math.Round(srcH * scale));
-                                transform.Size = new Dimension(newW, newH);
-                                break;
-                            }
-                        case BoundingBoxType.StretchToScreen:
-                            transform.Size = new Dimension(ScreenWidth, ScreenHeight);
-                            break;
-                        case BoundingBoxType.ScaleWidthToScreen:
-                            {
-                                float scale = ScreenWidth / (float)srcW;
-                                int newW = ScreenWidth;
-                                int newH = Math.Max(1, (int)Math.Round(srcH * scale));
-                                transform.Size = new Dimension(newW, newH);
-                                break;
-                            }
-                        case BoundingBoxType.ScaleHeightToScreen:
-                            {
-                                float scale = ScreenHeight / (float)srcH;
-                                int newH = ScreenHeight;
-                                int newW = Math.Max(1, (int)Math.Round(srcW * scale));
-                                transform.Size = new Dimension(newW, newH);
-                                break;
-                            }
-                        default:
-                            // leave transform.Size unchanged for unknown types
-                            break;
-                    }
+                   // transform.Update(CalculateBoundingBoxSize(asset.Dimensions, transform.Size, transform.BoundingBoxType));
                 }
 
                 if (!graphic.Hidden)
@@ -375,6 +418,56 @@ namespace Engine
                 //DrawData(font.Data, transform.Position, font.Dimensions, transform.Size);
                 //_loadedAssets.Add(text.Font, font);
                 // Store in font list
+            }
+        }
+
+        private Dimension CalculateBoundingBoxSize(Dimension src, Dimension currentSize, BoundingBoxType type)
+        {
+            int srcW = src.Width;
+            int srcH = src.Height;
+
+            // Guard against invalid source dimensions (caller already checks, but keep safe)
+            if (srcW <= 0 || srcH <= 0)
+                return currentSize;
+
+            switch (type)
+            {
+                case BoundingBoxType.Scale:
+                    {
+                        float scaleX = ScreenWidth / (float)320;
+                        float scaleY = ScreenHeight / (float)200;
+                        int newW = Math.Max(1, (int)Math.Round(srcW * scaleX));
+                        int newH = Math.Max(1, (int)Math.Round(srcH * scaleY));
+                        return new Dimension(newW, newH);
+                    }
+                case BoundingBoxType.ScaleToScreen:
+                    {
+                        float scaleX = ScreenWidth / (float)srcW;
+                        float scaleY = ScreenHeight / (float)srcH;
+                        float scale = Math.Min(scaleX, scaleY);
+                        int newW = Math.Max(1, (int)Math.Round(srcW * scale));
+                        int newH = Math.Max(1, (int)Math.Round(srcH * scale));
+                        return new Dimension(newW, newH);
+                    }
+                case BoundingBoxType.StretchToScreen:
+                    return new Dimension(ScreenWidth, ScreenHeight);
+                case BoundingBoxType.ScaleWidthToScreen:
+                    {
+                        float scale = ScreenWidth / (float)srcW;
+                        int newW = ScreenWidth;
+                        int newH = Math.Max(1, (int)Math.Round(srcH * scale));
+                        return new Dimension(newW, newH);
+                    }
+                case BoundingBoxType.ScaleHeightToScreen:
+                    {
+                        float scale = ScreenHeight / (float)srcH;
+                        int newH = ScreenHeight;
+                        int newW = Math.Max(1, (int)Math.Round(srcW * scale));
+                        return new Dimension(newW, newH);
+                    }
+                default:
+                    // leave transform.Size unchanged for unknown types
+                    return currentSize;
             }
         }
     }

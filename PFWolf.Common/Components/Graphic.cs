@@ -3,7 +3,6 @@
 public record Graphic : RenderComponent
 {
     public string AssetName { get; init; }
-    public Transform Transform { get; init; }
 
     public static Graphic Create(string asset, Transform transform)
     {

@@ -9,9 +9,11 @@ public class Pg13Scene : Scene
         AddComponent(Background.Create(0x82));
         AddComponent(Graphic.Create("pg13", new Transform
         {
-            Position = new Vector2(216*2, 110*2),
-            PositionalAlignment = PositionalAlignment.BottomRight,
-            BoundingBoxType = BoundingBoxType.Scale
+            Position = new Position(
+                new Vector2(216 * 2, 110 * 2),
+                AnchorPosition.BottomRight,
+                ScaleType.Relative),
+            SizeScaling = BoundingBoxType.Scale
         }));
     }
 

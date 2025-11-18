@@ -3,7 +3,6 @@
 public record Text : RenderComponent
 {
     public string String { get; init; }
-    public Transform Transform { get; init; }
     public TextAlignment Alignment { get; init; } = TextAlignment.Left;
     public string Font { get; init; }
     public byte ForeColor { get; private set; }
