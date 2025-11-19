@@ -132,21 +132,6 @@ namespace Engine
             SDL.DestroyWindow(windowPtr);
         }
 
-        public void DrawRectangle(int x, int y, int width, int height, byte color)
-        {
-            var scaleFactorX = (ScreenWidth / 320.0f);
-            var scaleFactorY = (ScreenHeight / 200.0f);
-            var data = new byte[width * height];
-            Array.Fill(data, color);
-            var position = new Position(new Vector2((int)(x * scaleFactorX), (int)(y * scaleFactorY)), AnchorPosition.TopLeft, ScaleType.Relative);
-            DrawData(data, position, new Dimension(width, height), new Dimension((int)(width*scaleFactorX), (int)(height*scaleFactorY)));
-        }
-
-        public void Draw(Graphic graphic, Position position, Dimension size)
-        {
-            DrawData(graphic.Data, position, graphic.Dimensions, size);
-        }
-
         // TBD: Font positioning in the component vs methods
         public void Draw(Font font, Position position, TextAlignment alignment, string text, byte fontColor, byte backingColor)
         {
@@ -309,7 +294,7 @@ namespace Engine
             {
                 position.Update(new Vector2(
                     (int)(transform.Position.X * scaleFactorX),
-                    (int)(transform.Position.Y * scaleFactorY)
+                    (int)(transform.Position.Y *  scaleFactorY)
                 ));
             }
 
@@ -354,6 +339,14 @@ namespace Engine
 
         internal void DrawComponent(RenderComponent component)
         {
+            if (component is PFWolf.Common.Components.Stripe stripe)
+            {
+                foreach (var child in stripe.Children)
+                {
+                    DrawComponent(child);
+                }
+            }
+
             //if (component.Transform.HasChanged)
             //{
             //    CalculateTransform(component.Transform);

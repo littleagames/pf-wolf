@@ -72,6 +72,15 @@ internal class SceneManager
                 }
 
                 var updatedTransform = videoManager.CalculateTransform(renderComponent.Transform);
+
+                if (renderComponent.Children.Count() > 0)
+                {
+                    foreach (var child in renderComponent.Children)
+                    {
+                        videoManager.CalculateTransform(child.Transform);
+
+                    }
+                }
                 //renderComponent.Transform.Update(updatedTransform);
 
                 //videoManager.DrawComponent(renderComponent);

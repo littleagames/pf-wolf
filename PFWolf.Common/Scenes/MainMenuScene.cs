@@ -8,8 +8,9 @@ public class MainMenuScene : Scene
     {
         AddComponent(Background.Create(0x29));
 
-        // Stripe
-        AddComponent(Rectangle.Create(0x00,
+        AddComponent(Stripe.Create(
+            backColor: 0x00,
+            stripeColor: 0x2c,
             Transform.ScaleWidth(
                 new Position(
                     new Vector2(0, 10),
@@ -17,14 +18,6 @@ public class MainMenuScene : Scene
                     ScaleType.Relative),
                 height: 24)
             ));
-        AddComponent(Rectangle.Create(0x2c,
-            Transform.ScaleWidth(
-                new Position(
-                    new Vector2(0, 32),
-                    AnchorPosition.TopLeft,
-                    ScaleType.Relative),
-                height: 1)));
-        // End Stripe
 
         AddComponent(Graphic.Create("c_options",
             new Transform

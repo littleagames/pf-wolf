@@ -16,5 +16,12 @@ public record RenderComponent : Component
     /// Disables visual rendering of the component
     /// </summary>
     public bool Hidden { get; set; } = false;
-    public Transform Transform { get; init; }
+    public Transform Transform { get; init; } = null!;
+
+    public List<RenderComponent> Children { get; init; } = new();
+
+    public void AddChildComponent(RenderComponent child)
+    {
+        Children.Add(child);
+    }
 }
