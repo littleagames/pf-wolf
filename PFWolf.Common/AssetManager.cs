@@ -417,4 +417,15 @@ public class AssetManager
         }
         return type.Name;
     }
+
+    public void AddTempAsset(string tempGraphicAssetName, Graphic fontGraphic)
+    {
+        // TODO: Add flagged as a "temp-asset" so the "ClearTempAssets()" will remove them
+        AddAsset(tempGraphicAssetName, fontGraphic, overwrite: true);
+    }
+
+    public void ClearTempAssets()
+    {
+        // TODO: Get all temp assets and unload them from memory
+    }
 }

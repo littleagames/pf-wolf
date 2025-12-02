@@ -35,7 +35,7 @@ public class TransformTests
         Assert.True(transform.HasChanged);
         //transform.ResetHasChangedFlag();
         // Change SizeScaling
-        transform.SizeScaling = BoundingBoxType.ScaleHeightToScreen;
+        transform.BoundingBox = BoundingBoxType.ScaleHeightToScreen;
         Assert.True(transform.HasChanged);
         //transform.ResetHasChangedFlag();
         // No change

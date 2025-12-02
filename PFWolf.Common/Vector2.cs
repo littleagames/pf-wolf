@@ -12,4 +12,6 @@ public struct Vector2
     public int Y { get; init; }
 
     public static Vector2 Zero => new(0, 0);
+
+    public override string ToString() => $"({X}, {Y})";
 }

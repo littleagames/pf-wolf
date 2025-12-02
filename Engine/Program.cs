@@ -123,7 +123,8 @@ if (!inputManager.Initialize())
 
 SceneManager sceneManager = new SceneManager(videoManager, inputManager, assetManager);
 
-sceneManager.LoadScene("MainMenuScene");
+sceneManager.LoadScene("SignonScene");
+//sceneManager.LoadScene("MainMenuScene");
 
 while (!quit)
 {

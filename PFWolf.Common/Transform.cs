@@ -2,44 +2,53 @@
 
 public record Position : IEquatable<Position>
 {
-    public int X { get; set; }
-    public int Y { get; set; }
-    public Vector2 CurrentPosition => new Vector2(X, Y);
-    public int OriginalX { get; }
-    public int OriginalY { get; }
-    public Vector2 OriginalPosition => new Vector2(OriginalX, OriginalY);
+    public Vector2 Origin { get; set; } = Vector2.Zero;
+    public Vector2 Offset { get; set; } = Vector2.Zero;
+
     public AnchorPosition Alignment { get; set; }
     public ScaleType ScaleType { get; set; }
 
     public Position()
     {
-        X = OriginalX = 0;
-        Y = OriginalY = 0;
+        Origin = Vector2.Zero;
+        Offset = Vector2.Zero;
         ScaleType = ScaleType.Relative;
         Alignment = AnchorPosition.TopLeft;
+    }
+
+    public Position(Position position)
+    {
+        Origin = new Vector2(position.Origin.X, position.Origin.Y);
+        Offset = new Vector2(position.Offset.X, position.Offset.Y);
+        ScaleType = position.ScaleType;
+        Alignment = position.Alignment;
     }
 
 
     public Position(Vector2 position)
     {
-        X = OriginalX = (int)position.X;
-        Y = OriginalY = (int)position.Y;
+        Origin = new Vector2(position.X, position.Y);
+        Offset = Vector2.Zero;
         ScaleType = ScaleType.Relative;
         Alignment = AnchorPosition.TopLeft;
     }
 
     public Position(Vector2 position, AnchorPosition alignment, ScaleType scaleType)
     {
-        X = OriginalX = (int)position.X;
-        Y = OriginalY = (int)position.Y;
+        Origin = new Vector2(position.X, position.Y);
+        Offset = Vector2.Zero;
         ScaleType = scaleType;
         Alignment = alignment;
     }
 
-    public void Update(Vector2 position)
+    public void SetOrigin(Vector2 origin)
     {
-        X = position.X;
-        Y = position.Y;
+        Origin = origin;
+    }
+
+    public void SetOffset(Vector2 offset)
+    {
+        Offset = offset;
     }
 
     public readonly static Position Zero = new Position();
@@ -55,9 +64,9 @@ public record Position : IEquatable<Position>
     //    obj is Position other && Equals(other);
 
     public override int GetHashCode() =>
-        HashCode.Combine(X, Y, Alignment, ScaleType);
+        HashCode.Combine(Origin.X, Origin.Y, Offset.X, Offset.Y, Alignment, ScaleType);
 
-    public override string ToString() => $"Position {{ X = {X}, Y = {Y}, Alignment = {Alignment}, ScaleType = {ScaleType} }}";
+    public override string ToString() => $"Position {{ Origin {Origin}, Offset {Offset}) Alignment = {Alignment}, ScaleType = {ScaleType} }}";
 
     //public static bool operator ==(Position left, Position right) => left.Equals(right);
     //public static bool operator !=(Position left, Position right) => !left.Equals(right);
@@ -70,6 +79,7 @@ public record Transform
     private double _rotation;
     private Dimension _size;
     private BoundingBoxType _boundingBoxType;
+    private AnchorPosition _boundingBoxAlignment;
     private bool _hasChanged;
 
     // Public properties with change tracking
@@ -112,7 +122,7 @@ public record Transform
         }
     }
 
-    public BoundingBoxType SizeScaling
+    public BoundingBoxType BoundingBox
     {
         get => _boundingBoxType;
         set
@@ -133,6 +143,19 @@ public record Transform
             bool value = _hasChanged;
             _hasChanged = false;
             return value;
+        }
+    }
+
+    public AnchorPosition BoundingBoxAlignment
+    {
+        get => _boundingBoxAlignment;
+        set
+        {
+            if (value != _boundingBoxAlignment)
+            {
+                _boundingBoxAlignment = value;
+                _hasChanged = true;
+            }
         }
     }
 
@@ -162,7 +185,7 @@ public record Transform
         BoundingBoxType boundingBoxType,
         Dimension size)
     {
-        _position = position;
+        _position = new Position(position);
         _rotation = 0.0;
         _size = size;
         _boundingBoxType = boundingBoxType;
@@ -182,6 +205,15 @@ public record Transform
         _hasChanged = false;
     }
 
+    public Transform(Transform transform)
+    {
+        _position = new Position(transform.Position);
+        _rotation = transform.Rotation;
+        _size = transform.Size;
+        _boundingBoxType = transform.BoundingBox;
+        _hasChanged = false;
+    }
+    
     public static Transform ScaleWidth(
         Position position,
         int height)
@@ -198,12 +230,12 @@ public record Transform
         Position = transform.Position;
         Rotation = transform.Rotation;
         Size = transform.Size;
-        SizeScaling = transform.SizeScaling;
+        BoundingBox = transform.BoundingBox;
     }
 
-    public void Update(Position position, Dimension size)
+    public void Update(Position newPosition, Dimension size)
     {
-        this.Position.Update(position.CurrentPosition);
+        this.Position.SetOrigin(newPosition.Origin);
         this.Size = size;
         //this._hasChanged = true;
     }
@@ -216,12 +248,8 @@ public record Transform
 
     public void Update(Position position)
     {
-        //this.Position.Update(position.CurrentPosition);
-        this.Position.X = position.X;
-        this.Position.Y = position.Y;
-        // TODO: This doesn't properly update
-            // I believe I don't know how to properly update a struct property in C#
-        //this._hasChanged = true;
+        // TODO: this.Position.Update(position);
+        this.Position.Origin = position.Origin;
     }
 }
 

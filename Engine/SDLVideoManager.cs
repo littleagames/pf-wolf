@@ -138,8 +138,8 @@ namespace Engine
             var scaleFactorX = (ScreenWidth / 320.0f);
             var scaleFactorY = (ScreenHeight / 200.0f);
 
-            var printX = CalcPrintX(font, text, alignment, position.X);
-            var printY = (int)(position.Y * scaleFactorY);
+            var printX = CalcPrintX(font, text, alignment, position.Origin.X);
+            var printY = (int)(position.Origin.Y * scaleFactorY);
 
             foreach (char textChar in text)
             {
@@ -162,7 +162,7 @@ namespace Engine
 
                 if (textChar == '\n')
                 {
-                    printX = position.X;
+                    printX = position.Origin.X;
                     printY = printY + fontChar.Height;
                     continue;
                 }
@@ -239,6 +239,7 @@ namespace Engine
                 SDL.UnlockSurface(surface);
             }
         }
+
         private void DrawData(byte[] data, Position position, Dimension dimensions, Dimension size)
         {
             if (data.Length == 0)
@@ -253,19 +254,22 @@ namespace Engine
             {
                 byte* pixels = (byte*)dest;
 
-                int startingX = Math.Max(position.X, 0);
-                int startingY = Math.Max(position.Y, 0);
-                int endingX = Math.Min(position.X + size.Width, ScreenWidth);
-                int endingY = Math.Min(position.Y + size.Height, ScreenHeight);
+                int rawX = position.Origin.X - position.Offset.X;
+                int rawY = position.Origin.Y - position.Offset.Y;
+
+                int startingX = Math.Max(rawX, 0);
+                int startingY = Math.Max(rawY, 0);
+                int endingX = Math.Min(rawX + size.Width, ScreenWidth);
+                int endingY = Math.Min(rawY + size.Height, ScreenHeight);
 
                 for (int y = startingY; y < endingY; y++)
                 {
-                    int srcY = (int)((y - position.Y) * scaleY);
+                    int srcY = (int)((y - rawY) * scaleY);
                     if (srcY < 0 || srcY >= dimensions.Height) continue;
 
                     for (int x = startingX; x < endingX; x++)
                     {
-                        int srcX = (int)((x - position.X) * scaleX);
+                        int srcX = (int)((x - rawX) * scaleX);
                         if (srcX < 0 || srcX >= dimensions.Width) continue;
 
                         byte col = data[srcY * dimensions.Width + srcX];
@@ -292,18 +296,67 @@ namespace Engine
 
             if (transform.Position.ScaleType == ScaleType.Relative)
             {
-                position.Update(new Vector2(
-                    (int)(transform.Position.X * scaleFactorX),
-                    (int)(transform.Position.Y *  scaleFactorY)
+                position.SetOrigin(new Vector2(
+                    (int)(transform.Position.Origin.X * scaleFactorX),
+                    (int)(transform.Position.Origin.Y * scaleFactorY)
                 ));
             }
 
-            if (transform.SizeScaling == BoundingBoxType.StretchToScreen)
+            switch (transform.Position.Alignment)
+            {
+                // TODO: Handle all alignment cases
+                case AnchorPosition.TopCenter:
+                    position.SetOffset(new Vector2(
+                        - (transform.Size.Width / 2),
+                        0
+                    ));
+                    break;
+                case AnchorPosition.TopRight:
+                    position.SetOffset(new Vector2(
+                        - transform.Size.Width,
+                        0
+                    ));
+                    break;
+                case AnchorPosition.Center:
+                    position.SetOffset(new Vector2(
+                        (transform.Size.Width / 2),
+                        (transform.Size.Height / 2)
+                    ));
+                    break;
+                case AnchorPosition.BottomCenter:
+                    position.SetOffset(new Vector2(
+                        (int)(transform.Size.Width * scaleFactorX / 2),
+                        (int)(transform.Size.Height * scaleFactorY)
+                    ));
+                    break;
+            }
+
+            switch (transform.BoundingBoxAlignment)
+            {
+                case AnchorPosition.TopCenter:
+                    position.SetOrigin(new Vector2((ScreenWidth / 2) + position.Origin.X, position.Origin.Y));
+                    break;
+                case AnchorPosition.BottomCenter:
+                    position.SetOrigin(new Vector2((ScreenWidth / 2) + position.Origin.X, ScreenHeight));
+                    break;
+            }
+
+            if (transform.BoundingBox == BoundingBoxType.ScaleToScreen)
+            {
+                float scaleX = ScreenWidth / (float)transform.Size.Width;
+                float scaleY = ScreenHeight / (float)transform.Size.Height;
+                float scale = Math.Min(scaleX, scaleY);
+                int newW = Math.Max(1, (int)Math.Round(transform.Size.Width * scale));
+                int newH = Math.Max(1, (int)Math.Round(transform.Size.Height * scale));
+                transform.Update(new Dimension(newW, newH));
+            }
+
+            if (transform.BoundingBox == BoundingBoxType.StretchToScreen)
             {
                 transform.Update(new Dimension(ScreenWidth, ScreenHeight));
             }
 
-            if (transform.SizeScaling == BoundingBoxType.ScaleWidthToScreen)
+            if (transform.BoundingBox == BoundingBoxType.ScaleWidthToScreen)
             {
                 transform.Update(new Dimension(ScreenWidth, (int)(transform.Size.Height * scaleFactorY)));
             }
@@ -314,13 +367,13 @@ namespace Engine
                 // invalid data? What do?
             }
 
-            if (transform.SizeScaling == BoundingBoxType.NoBounds)
+            if (transform.BoundingBox == BoundingBoxType.NoBounds)
             {
                 // No changes needed
                 return transform;
             }
 
-            if (transform.SizeScaling == BoundingBoxType.Scale)
+            if (transform.BoundingBox == BoundingBoxType.Scale)
             {
                 var size = new Dimension(
                     (int)(transform.Size.Width * scaleFactorX),
@@ -339,9 +392,9 @@ namespace Engine
 
         internal void DrawComponent(RenderComponent component)
         {
-            if (component is PFWolf.Common.Components.Stripe stripe)
+            if (component.Children.Count > 0)
             {
-                foreach (var child in stripe.Children)
+                foreach (var child in component.Children)
                 {
                     DrawComponent(child);
                 }
@@ -386,8 +439,8 @@ namespace Engine
                 var asset = assetManager.Load<PFWolf.Common.Assets.Graphic>(graphic.AssetName);
                 var transform = graphic.Transform;
 
-                int srcW = asset.Dimensions.Width;
-                int srcH = asset.Dimensions.Height;
+                int srcW = asset.Size.Width;
+                int srcH = asset.Size.Height;
 
                 // Guard against invalid source dimensions
                 if (srcW > 0 && srcH > 0)
@@ -400,22 +453,23 @@ namespace Engine
 
                 if (!graphic.Hidden)
                 {
-                    DrawData(asset.Data, transform.Position, asset.Dimensions, transform.Size);
+                    DrawData(asset.Data, transform.Position, asset.Size, transform.Size);
                 }
                 // _loadedAssets.Add(graphic.AssetName, asset);
                 // Store in graphic list (some can be reused, e.g. toggled buttons)
             }
-            if (component is PFWolf.Common.Components.Text text)
+            else if (component is PFWolf.Common.Components.Text text)
             {
-                var font = assetManager.Load<PFWolf.Common.Assets.Font>(text.Font);
-                var transform = text.Transform;
-                if (!text.Hidden)
+                if (!string.IsNullOrEmpty(text.TempGraphicAssetName))
                 {
-                    Draw(font, transform.Position, text.Alignment, text.String, text.ForeColor, 0);
+                    var fontGraphic = assetManager.Load<PFWolf.Common.Assets.Graphic>(text.TempGraphicAssetName);
+                    var transform = text.Transform;
+
+                    if (!text.Hidden)
+                    {
+                        DrawData(fontGraphic.Data, transform.Position, fontGraphic.Size, transform.Size);
+                    }
                 }
-                //DrawData(font.Data, transform.Position, font.Dimensions, transform.Size);
-                //_loadedAssets.Add(text.Font, font);
-                // Store in font list
             }
         }
 

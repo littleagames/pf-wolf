@@ -13,7 +13,7 @@ public class Pg13Scene : Scene
                 new Vector2(216 * 2, 110 * 2),
                 AnchorPosition.BottomRight,
                 ScaleType.Relative),
-            SizeScaling = BoundingBoxType.Scale
+            BoundingBox = BoundingBoxType.Scale
         }));
     }
 

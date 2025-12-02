@@ -16,14 +16,15 @@ public class SignonScene : Scene
         AddComponent(Graphic.Create("wolf3d-signon", new Transform
         {
             Position = Position.Zero,
-            SizeScaling = BoundingBoxType.ScaleToScreen
+            BoundingBox = BoundingBoxType.ScaleToScreen
         }));
 
         _pressAKeyText = Text.Create("Press A Key",
             new Transform
             {
-                Position = new Position(new Vector2(0, 190)),
-                SizeScaling = BoundingBoxType.NoBounds
+                Position = new Position(new Vector2(0, 0), AnchorPosition.BottomCenter, ScaleType.Relative),
+                BoundingBox = BoundingBoxType.Scale, // Scale
+                BoundingBoxAlignment = AnchorPosition.BottomCenter
             },
             TextAlignment.Center,
             "smallfont", YellowTextColor);
@@ -32,8 +33,9 @@ public class SignonScene : Scene
         _workingText = Text.Create("Working...",
             new Transform
             {
-                Position = new Position(new Vector2(0, 190)),
-                SizeScaling = BoundingBoxType.NoBounds
+                Position = new Position(new Vector2(0, 0), AnchorPosition.BottomCenter, ScaleType.Relative),
+                BoundingBox = BoundingBoxType.Scale, // Scale
+                BoundingBoxAlignment = AnchorPosition.BottomCenter
             },
             TextAlignment.Center,
             "smallfont", GreenTextColor);

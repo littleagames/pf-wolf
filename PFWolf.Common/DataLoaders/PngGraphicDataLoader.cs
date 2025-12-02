@@ -88,7 +88,7 @@ public class PngGraphicDataLoader
         return new Graphic
         {
             Data = indexedData,
-            Dimensions = new Dimension(width, height),
+            Size = new Dimension(width, height),
             Offset = offset
         };
     }

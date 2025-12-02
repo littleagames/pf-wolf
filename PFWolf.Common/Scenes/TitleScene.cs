@@ -9,7 +9,7 @@ public class TitleScene : Scene
         AddComponent(Graphic.Create("title", new Transform
         {
             Position = Position.Zero,
-            SizeScaling = BoundingBoxType.StretchToScreen
+            BoundingBox = BoundingBoxType.StretchToScreen
         }));
     }
 

@@ -57,18 +57,19 @@ internal class SceneManager
                     var asset = assetManager.Load<PFWolf.Common.Assets.Graphic>(graphic.AssetName);
 
                     var graphicTransform = graphic.Transform;
-                    graphicTransform.Update(asset.Dimensions);
-                    //renderComponent.Transform.Update(graphicTransform);
-                    //_loadedAssets.Add(graphic.AssetName, asset);
-                    // Store in graphic list (some can be reused, e.g. toggled buttons)
+                    graphicTransform.Update(asset.Size);
                 }
                 if (renderComponent is PFWolf.Common.Components.Text text)
                 {
                     var font = assetManager.Load<PFWolf.Common.Assets.Font>(text.Font);
-                    //_loadedAssets.Add(text.Font, font);
-                    // Store in font list
-                    //renderComponent.Transform.Update(font.Dimensions);
-                    // TODO: Font size is not known here.
+
+                    var textTransform = text.Transform;
+
+                    var fontGraphic = font.ToGraphic(text.String, text.ForeColor, maxBounds: new Dimension(640, 400)); // I'm thinking max gfx sizes would be 640x400. And any of these will just get clipped.
+                    text.TempGraphicAssetName = $"tmp-{Guid.NewGuid()}";
+                    assetManager.AddTempAsset(text.TempGraphicAssetName, fontGraphic);
+
+                    textTransform.Update(fontGraphic.Size);
                 }
 
                 var updatedTransform = videoManager.CalculateTransform(renderComponent.Transform);
@@ -78,12 +79,8 @@ internal class SceneManager
                     foreach (var child in renderComponent.Children)
                     {
                         videoManager.CalculateTransform(child.Transform);
-
                     }
                 }
-                //renderComponent.Transform.Update(updatedTransform);
-
-                //videoManager.DrawComponent(renderComponent);
             }
         }
         // TODO: Gather components into a flat, manageable structure that is easier to update/render

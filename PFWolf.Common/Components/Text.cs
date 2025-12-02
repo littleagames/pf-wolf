@@ -8,6 +8,8 @@ public record Text : RenderComponent
     public byte ForeColor { get; private set; }
     public byte BackColor { get; private set; }
 
+    public string? TempGraphicAssetName { get; set; } = null;
+
     protected Text(
         string text,
         Transform transform,

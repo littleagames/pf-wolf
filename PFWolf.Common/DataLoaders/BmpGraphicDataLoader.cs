@@ -34,7 +34,7 @@ internal class BmpGraphicDataLoader
         return new Graphic
         {
             Data = pixelData,
-            Dimensions = new Dimension(width, Math.Abs(height)),
+            Size = new Dimension(width, Math.Abs(height)),
             Offset = Vector2.Zero
         };
     }

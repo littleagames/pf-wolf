@@ -13,7 +13,7 @@ internal class WolfRawGraphicDataLoader
         return new Graphic
         {
             Data = rawData,
-            Dimensions = dimensions
+            Size = dimensions
         };
     }
 
