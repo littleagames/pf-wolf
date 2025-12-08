@@ -41,6 +41,19 @@ public record Position : IEquatable<Position>
         Alignment = alignment;
     }
 
+    public Position(Vector2 position, Vector2 offset, AnchorPosition alignment, ScaleType scaleType)
+    {
+        Origin = new Vector2(position.X, position.Y);
+        Offset = Vector2.Zero;
+        ScaleType = scaleType;
+        Alignment = alignment;
+    }
+
+    public void SetOrigin(int x, int y)
+    {
+        Origin = new Vector2(x,y);
+    }
+
     public void SetOrigin(Vector2 origin)
     {
         Origin = origin;
@@ -285,9 +298,13 @@ public enum BoundingBoxType
     /// </summary>
     NoBounds,
     /// <summary>
-    /// Scales with the resolution change of both width and height
+    /// Scales with the resolution but maintains its aspect ratio
     /// </summary>
     Scale,
+    /// <summary>
+    /// Scales with both vertical and horizontal and does not maintain aspect ratio
+    /// </summary>
+    Stretch,
     /// <summary>
     /// Scales with the screen size maxing at whatever border it touches first
     /// </summary>
