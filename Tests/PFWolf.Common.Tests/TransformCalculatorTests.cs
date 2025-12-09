@@ -113,6 +113,18 @@ public class TransformCalculatorTests
         TestDisplayName = "Absolute position top-left at 0,0 scales graphic from screen top-center")]
     [InlineData(640, 480, 0, 0, AnchorPosition.TopLeft, ScaleType.Absolute, 88, 64, AnchorPosition.TopCenter, 320, 0, 0, 0, 176, 128,
         TestDisplayName = "Non 4:3, absolute position top-left at 0,0 scales graphic from screen top-center")]
+    [InlineData(640, 400, 0, 0, AnchorPosition.TopLeft, ScaleType.Absolute, 88, 64, AnchorPosition.TopRight, 640, 0, 0, 0, 176, 128,
+        TestDisplayName = "Absolute position top-left at 0,0 scales graphic from screen top-right")]
+    [InlineData(640, 480, 0, 0, AnchorPosition.TopLeft, ScaleType.Absolute, 88, 64, AnchorPosition.TopRight, 640, 0, 0, 0, 176, 128,
+        TestDisplayName = "Non 4:3, absolute position top-left at 0,0 scales graphic from screen top-right")]
+    [InlineData(640, 400, 0, 0, AnchorPosition.TopLeft, ScaleType.Absolute, 88, 64, AnchorPosition.MiddleLeft, 0, 200, 0, 0, 176, 128,
+        TestDisplayName = "Absolute position top-left at 0,0 scales graphic from screen middle-left")]
+    [InlineData(640, 480, 0, 0, AnchorPosition.TopLeft, ScaleType.Absolute, 88, 64, AnchorPosition.MiddleLeft, 0, 240, 0, 0, 176, 128,
+        TestDisplayName = "Non 4:3, absolute position top-left at 0,0 scales graphic from screen middle-left")]
+    [InlineData(640, 400, 0, 0, AnchorPosition.TopLeft, ScaleType.Absolute, 88, 64, AnchorPosition.Center, 320, 200, 0, 0, 176, 128,
+        TestDisplayName = "Absolute position top-left at 0,0 scales graphic from screen center")]
+    [InlineData(640, 480, 0, 0, AnchorPosition.TopLeft, ScaleType.Absolute, 88, 64, AnchorPosition.Center, 320, 240, 0, 0, 176, 128,
+        TestDisplayName = "Non 4:3, absolute position top-left at 0,0 scales graphic from screen center")]
     public void Calculate_Transform_BoundingBox_Scales_Transform(
         int screenWidth,
         int screenHeight,
