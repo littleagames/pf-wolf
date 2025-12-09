@@ -119,6 +119,15 @@ public class TransformCalculator
             case AnchorPosition.MiddleRight:
                 position.SetOrigin(new Vector2((_screenWidth) - position.Origin.X, (_screenHeight / 2) + position.Origin.Y));
                 break;
+            case AnchorPosition.BottomLeft:
+                position.SetOrigin(new Vector2(position.Origin.X, (_screenHeight) + position.Origin.Y));
+                break;
+            case AnchorPosition.BottomCenter:
+                position.SetOrigin(new Vector2((_screenWidth / 2) - position.Origin.X, (_screenHeight ) + position.Origin.Y));
+                break;
+            case AnchorPosition.BottomRight:
+                position.SetOrigin(new Vector2((_screenWidth) - position.Origin.X, (_screenHeight) + position.Origin.Y));
+                break;
         }
 
 
