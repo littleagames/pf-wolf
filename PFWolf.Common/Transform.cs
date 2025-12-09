@@ -271,9 +271,9 @@ public enum AnchorPosition
     TopLeft,
     TopCenter,
     TopRight,
-    LeftCenter,
+    MiddleLeft,
     Center,
-    RightCenter,
+    MiddleRight,
     BottomLeft,
     BottomCenter,
     BottomRight
