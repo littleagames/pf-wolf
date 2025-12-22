@@ -17,7 +17,7 @@ public class TransformCalculator
     private static int GetNormalizedValue(Transform transform, Func<Transform, int> func, float scaleFactor)
     {
         int value = func(transform);
-        if (transform.Position.ScaleType == ScaleType.Relative)
+        if (transform.PositionType == PositionType.Relative)
         {
             return (int)(value * scaleFactor);
         }
@@ -32,101 +32,113 @@ public class TransformCalculator
     /// <returns></returns>
     public Transform CalculateTransform(Transform transform)
     {
+        return transform;
+
         var scaleFactorX = _screenWidth / 320.0f;
         var scaleFactorY = _screenHeight / 200.0f;
 
         var scale = Math.Min(scaleFactorX, scaleFactorY); // For maintaining aspect ratio
 
-        if (transform.BoundingBox == BoundingBoxType.Scale)
-        {
-            var size = new Dimension(
-                (int)(transform.Size.Width * scale),
-                (int)(transform.Size.Height * scale));
-            transform.Update(size);
-        }
+        //switch (transform.BoundingBox)
+        //{
+        //    case BoundingBoxType.Scale:
+        //        {
+        //            var size = new Dimension(
+        //                (int)(transform.Size.Width * scale),
+        //                (int)(transform.Size.Height * scale));
+        //            transform = transform.SetSize(size);
+        //        }
+        //        break;
+        //    case BoundingBoxType.Stretch:
+        //        {
+        //            var size = new Dimension(
+        //                (int)(transform.Size.Width * scaleFactorX),
+        //                (int)(transform.Size.Height * scaleFactorY));
+        //            transform.SetSize(size);
+        //        }
+        //        break;
+        //}
 
-        var position = transform.Position;
-
-        switch (transform.Position.Alignment)
+        switch (transform.AnchorPoint)
         {
-            case AnchorPosition.TopLeft:
+            case AnchorPoint.TopLeft:
                 // No change needed
                 break;
-            case AnchorPosition.TopCenter:
-                position.SetOffset(new Vector2(
+            case AnchorPoint.TopCenter:
+                transform.SetOffset(new Point(
                     - (GetNormalizedValue(transform, x => x.Size.Width, scaleFactorX) / 2),
                     0
                 ));
                 break;
-            case AnchorPosition.TopRight:
-                position.SetOffset(new Vector2(
+            case AnchorPoint.TopRight:
+                transform.SetOffset(new Point(
                     - (GetNormalizedValue(transform, x => x.Size.Width, scaleFactorX)),
                     0
                 ));
                 break;
-            case AnchorPosition.MiddleLeft:
-                position.SetOffset(new Vector2(
+            case AnchorPoint.MiddleLeft:
+                transform.SetOffset(new Point(
                     0,
                     -(GetNormalizedValue(transform, x => x.Size.Height, scaleFactorY) / 2)
                 ));
                 break;
-            case AnchorPosition.Center:
-                position.SetOffset(new Vector2(
+            case AnchorPoint.Center:
+                transform.SetOffset(new Point(
                     -(GetNormalizedValue(transform, x => x.Size.Width, scaleFactorX) / 2),
                     -(GetNormalizedValue(transform, x => x.Size.Height, scaleFactorY) / 2)
                 ));
                 break;
-            case AnchorPosition.MiddleRight:
-                position.SetOffset(new Vector2(
+            case AnchorPoint.MiddleRight:
+                transform.SetOffset(new Point(
                     -(GetNormalizedValue(transform, x => x.Size.Width, scaleFactorX)),
                     -(GetNormalizedValue(transform, x => x.Size.Height, scaleFactorY) / 2)
                 ));
                 break;
-            case AnchorPosition.BottomLeft:
-                position.SetOffset(new Vector2(
+            case AnchorPoint.BottomLeft:
+                transform.SetOffset(new Point(
                     0,
                     -(GetNormalizedValue(transform, x => x.Size.Height, scaleFactorY))
                 ));
                 break;
-            case AnchorPosition.BottomCenter:
-                position.SetOffset(new Vector2(
+            case AnchorPoint.BottomCenter:
+                transform.SetOffset(new Point(
                     -(GetNormalizedValue(transform, x => x.Size.Width, scaleFactorX) / 2),
                     -(GetNormalizedValue(transform, x => x.Size.Height, scaleFactorY))
                 ));
                 break;
-            case AnchorPosition.BottomRight:
-                position.SetOffset(new Vector2(
+            case AnchorPoint.BottomRight:
+                transform.SetOffset(new Point(
                     -(GetNormalizedValue(transform, x => x.Size.Width, scaleFactorX)),
                     -(GetNormalizedValue(transform, x => x.Size.Height, scaleFactorY))
                 ));
                 break;
         }
 
-        switch (transform.BoundingBoxAlignment)
+        switch (transform.ScreenAnchorPoint)
         {
-            case AnchorPosition.TopCenter:
-                position.SetOrigin(new Vector2((_screenWidth / 2) + position.Origin.X, position.Origin.Y));
+            case AnchorPoint.TopCenter:
+                transform.SetPosition((_screenWidth / 2) + transform.Position.X, transform.Position.Y);
                 break;
-            case AnchorPosition.TopRight:
-                position.SetOrigin(new Vector2(_screenWidth + position.Origin.X, position.Origin.Y));
+            case AnchorPoint.TopRight:
+                transform.SetPosition(_screenWidth + transform.Position.X, transform.Position.Y);
                 break;
-            case AnchorPosition.MiddleLeft:
-                position.SetOrigin(new Vector2(position.Origin.X, (_screenHeight / 2) + position.Origin.Y));
+            case AnchorPoint.MiddleLeft:
+                transform.SetPosition(transform.Position.X, (_screenHeight / 2) + transform.Position.Y);
                 break;
-            case AnchorPosition.Center:
-                position.SetOrigin(new Vector2((_screenWidth / 2) - position.Origin.X, (_screenHeight / 2) + position.Origin.Y));
+            case AnchorPoint.Center:
+                transform.SetPosition((_screenWidth / 2) + transform.Position.X, (_screenHeight / 2) + transform.Position.Y);
                 break;
-            case AnchorPosition.MiddleRight:
-                position.SetOrigin(new Vector2((_screenWidth) - position.Origin.X, (_screenHeight / 2) + position.Origin.Y));
+            case AnchorPoint.MiddleRight:
+                transform.SetPosition((_screenWidth) + transform.Position.X, (_screenHeight / 2) + transform.Position.Y);
                 break;
-            case AnchorPosition.BottomLeft:
-                position.SetOrigin(new Vector2(position.Origin.X, (_screenHeight) + position.Origin.Y));
+            case AnchorPoint.BottomLeft:
+                transform.SetPosition(transform.Position.X, (_screenHeight) + transform.Position.Y);
                 break;
-            case AnchorPosition.BottomCenter:
-                position.SetOrigin(new Vector2((_screenWidth / 2) - position.Origin.X, (_screenHeight ) + position.Origin.Y));
+            case AnchorPoint.BottomCenter:
+                transform.SetPosition((_screenWidth / 2) + transform.Position.X, (_screenHeight ) + transform.Position.Y);
                 break;
-            case AnchorPosition.BottomRight:
-                position.SetOrigin(new Vector2((_screenWidth) - position.Origin.X, (_screenHeight) + position.Origin.Y));
+            case AnchorPoint.BottomRight:
+                transform.SetPosition((_screenWidth) + transform.Position.X, (_screenHeight) + transform.Position.Y);
                 break;
         }
 

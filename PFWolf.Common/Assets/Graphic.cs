@@ -8,5 +8,5 @@ public record Graphic : Asset
 
     public byte[] Data { get; set; } = [];
     public Dimension Size { get; set; } = Dimension.Zero;
-    public Vector2 Offset { get; set; } = Vector2.Zero;
+    public Point Offset { get; set; } = Point.Zero;
 }

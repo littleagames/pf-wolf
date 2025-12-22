@@ -2,39 +2,55 @@
 
 public class TransformTests
 {
-    //[Fact] // TODO: Fix this in the future
-    public void Transform_HasChanged_Flag_Works_Correctly()
+    [Fact]
+    public void Transform_SetPosition_Doesnt_Modify_Previous_Transform()
     {
         // Arrange
-        var transform = new Transform(
-            new Vector2(100, 200),
-            AnchorPosition.TopLeft,
-            ScaleType.Relative,
-            BoundingBoxType.ScaleWidthToScreen);
-        // Initial state should have HasChanged as true due to constructor setting values
-        Assert.True(transform.HasChanged);
-        // Reset HasChanged flag
-       //// transform.ResetHasChangedFlag();
-        Assert.False(transform.HasChanged);
-        // Act & Assert
-        // Change Position
-        transform.Position = new Position(new Vector2(150, 250), AnchorPosition.TopLeft, ScaleType.Relative);
-        Assert.True(transform.HasChanged);
-       // transform.ResetHasChangedFlag();
-        // Change Rotation
-        transform.Rotation = 90.0;
-        Assert.True(transform.HasChanged);
-        //transform.ResetHasChangedFlag();
-        // Change Size
-        transform.Size = new Dimension(350, 450);
-        Assert.True(transform.HasChanged);
-        //transform.ResetHasChangedFlag();
-        // Change SizeScaling
-        transform.BoundingBox = BoundingBoxType.ScaleHeightToScreen;
-        Assert.True(transform.HasChanged);
-        //transform.ResetHasChangedFlag();
-        // No change
-        transform.Position = transform.Position;
-        Assert.False(transform.HasChanged);
+        var initialPosition = new Point(10, 20);
+        var initialSize = new Dimension(100, 32);
+        var transform = Transform.Create(
+            initialPosition,
+            PositionType.Relative,
+            initialSize,
+            AnchorPoint.TopLeft,
+            Common.BoundingBoxType.NoBounds,
+            AnchorPoint.TopLeft);
+
+        // Act
+        var newX = 30;
+        var newY = 40;
+        var updatedTransform = transform.Copy().SetPosition(newX, newY);
+
+        // Assert
+        Assert.Equal(initialPosition, transform.Position); // Should remain unchanged
+        Assert.Equal(newX, updatedTransform.Position.X);
+        Assert.Equal(newY, updatedTransform.Position.Y);
+        Assert.Equal(transform.Size, updatedTransform.Size); // Size should remain unchanged
+    }
+
+    [Fact]
+    public void Transform_SetSize_Doesnt_Modify_Previous_Transform()
+    {
+        // Arrange
+        var initialPosition = new Point(10, 20);
+        var initialSize = new Dimension(100, 32);
+        var transform = Transform.Create(
+            initialPosition,
+            PositionType.Relative,
+            initialSize,
+            AnchorPoint.TopLeft,
+            Common.BoundingBoxType.NoBounds,
+            AnchorPoint.TopLeft);
+
+        // Act
+        var newWidth = 130;
+        var newHeight = 40;
+        var updatedTransform = transform.Copy().SetSize(newWidth, newHeight);
+
+        // Assert
+        Assert.Equal(initialSize, transform.OriginalSize);
+        Assert.Equal(newWidth, updatedTransform.OriginalSize.Width);
+        Assert.Equal(newHeight, updatedTransform.OriginalSize.Height);
+        Assert.Equal(transform.Position, updatedTransform.Position); // Should remain unchanged
     }
 }

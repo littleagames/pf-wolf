@@ -14,20 +14,14 @@ public record Stripe : RenderComponent
         StripeColor = stripeColor;
         Transform = transform;
 
-        AddChildComponent(Rectangle.Create(backColor,
-            Transform.ScaleWidth(
-                new Position(
-                    new Vector2(0, 10),
-                    AnchorPosition.TopLeft,
-                    ScaleType.Relative),
-                height: 24)
-            ));
+        AddChildComponent(Rectangle.Create(backColor, transform));
+
         AddChildComponent(Rectangle.Create(stripeColor,
-            Transform.ScaleWidth(
-                new Position(
-                    new Vector2(0, 32),
-                    AnchorPosition.TopLeft,
-                    ScaleType.Relative),
+            transform.SetPosition(
+                x: transform.Position.X,
+                y: transform.Position.Y + transform.Size.Height - 1)
+            .SetSize(
+                width: transform.Size.Width,
                 height: 1)));
     }
 }

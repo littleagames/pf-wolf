@@ -57,7 +57,7 @@ internal class SceneManager
                     var asset = assetManager.Load<PFWolf.Common.Assets.Graphic>(graphic.AssetName);
 
                     var graphicTransform = graphic.Transform;
-                    graphicTransform.Update(asset.Size);
+                    graphicTransform.SetSize(asset.Size);
                 }
                 if (renderComponent is PFWolf.Common.Components.Text text)
                 {
@@ -69,7 +69,7 @@ internal class SceneManager
                     text.TempGraphicAssetName = $"tmp-{Guid.NewGuid()}";
                     assetManager.AddTempAsset(text.TempGraphicAssetName, fontGraphic);
 
-                    textTransform.Update(fontGraphic.Size);
+                    textTransform.SetSize(fontGraphic.Size);
                 }
 
                 var updatedTransform = videoManager.CalculateTransform(renderComponent.Transform);

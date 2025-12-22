@@ -14,43 +14,45 @@ public record Wolf3dBorderedWindow : RenderComponent
     {
         Transform = transform;
 
-        // TODO: Child components should inherit scaling from parent
-        // TODO: Child component transforms should transform relative to parent?
-
-        AddChildComponent(Rectangle.Create(backgroundColor, new Transform(transform)));
+        AddChildComponent(
+            Rectangle.Create(
+                backgroundColor,
+                transform));
 
         // Borders
-        AddChildComponent(Rectangle.Create(topColor,
-            new Transform(
-                transform.Position,
-                transform.BoundingBox,
-                new Dimension(transform.Size.Width, 1))
+        AddChildComponent(
+            Rectangle.Create(
+                topColor,
+                transform
+                    .SetSize(transform.Size.Width, 1)
             )); // top
-        AddChildComponent(Rectangle.Create(bottomColor,
-            new Transform(
-                    new Position(
-                        new Vector2(
-                        transform.Position.Origin.X,
-                        transform.Position.Origin.Y + transform.Size.Height),
-                        transform.Position.Alignment,
-                        transform.Position.ScaleType),
-                    transform.BoundingBox, new Dimension(transform.Size.Width, 1))
+        AddChildComponent(
+            Rectangle.Create(
+                bottomColor,
+                transform
+                .SetPosition(
+                    transform.Position.X,
+                    transform.Position.Y + transform.Size.Height)
+                .SetSize(
+                    width: transform.Size.Width,
+                    height: 1)
             )); // bottom
-        AddChildComponent(Rectangle.Create(leftColor,
-            new Transform(
-                transform.Position,
-                transform.BoundingBox,
-                new Dimension(1, transform.Size.Height))
+        AddChildComponent(
+            Rectangle.Create(
+                leftColor,
+                transform.SetSize(
+                    width: 1,
+                    height: transform.Size.Height)
             )); // left
-        AddChildComponent(Rectangle.Create(rightColor,
-            new Transform(
-                    new Position(
-                        new Vector2(
-                        transform.Position.Origin.X + transform.Size.Width,
-                        transform.Position.Origin.Y),
-                        transform.Position.Alignment,
-                        transform.Position.ScaleType),
-                    transform.BoundingBox, new Dimension(1, transform.Size.Height))
+        AddChildComponent(
+            Rectangle.Create(
+                rightColor,
+                transform.SetPosition(
+                    transform.Position.X + transform.Size.Width,
+                    transform.Position.Y)
+                .SetSize(
+                    width: 1,
+                    height: transform.Size.Height)
             )); // right
     }
 }

@@ -1,272 +1,233 @@
 ﻿namespace PFWolf.Common;
 
-public record Position : IEquatable<Position>
-{
-    public Vector2 Origin { get; set; } = Vector2.Zero;
-    public Vector2 Offset { get; set; } = Vector2.Zero;
-
-    public AnchorPosition Alignment { get; set; }
-    public ScaleType ScaleType { get; set; }
-
-    public Position()
-    {
-        Origin = Vector2.Zero;
-        Offset = Vector2.Zero;
-        ScaleType = ScaleType.Relative;
-        Alignment = AnchorPosition.TopLeft;
-    }
-
-    public Position(Position position)
-    {
-        Origin = new Vector2(position.Origin.X, position.Origin.Y);
-        Offset = new Vector2(position.Offset.X, position.Offset.Y);
-        ScaleType = position.ScaleType;
-        Alignment = position.Alignment;
-    }
-
-
-    public Position(Vector2 position)
-    {
-        Origin = new Vector2(position.X, position.Y);
-        Offset = Vector2.Zero;
-        ScaleType = ScaleType.Relative;
-        Alignment = AnchorPosition.TopLeft;
-    }
-
-    public Position(Vector2 position, AnchorPosition alignment, ScaleType scaleType)
-    {
-        Origin = new Vector2(position.X, position.Y);
-        Offset = Vector2.Zero;
-        ScaleType = scaleType;
-        Alignment = alignment;
-    }
-
-    public Position(Vector2 position, Vector2 offset, AnchorPosition alignment, ScaleType scaleType)
-    {
-        Origin = new Vector2(position.X, position.Y);
-        Offset = Vector2.Zero;
-        ScaleType = scaleType;
-        Alignment = alignment;
-    }
-
-    public void SetOrigin(int x, int y)
-    {
-        Origin = new Vector2(x,y);
-    }
-
-    public void SetOrigin(Vector2 origin)
-    {
-        Origin = origin;
-    }
-
-    public void SetOffset(Vector2 offset)
-    {
-        Offset = offset;
-    }
-
-    public readonly static Position Zero = new Position();
-
-    //public override bool Equals(Position other) =>
-    //    other is not null &&
-    //    X == other.X
-    //    && Y == other.Y
-    //    && Alignment == other.Alignment
-    //    && ScaleType == other.ScaleType;
-
-    //public override bool Equals(object? obj) =>
-    //    obj is Position other && Equals(other);
-
-    public override int GetHashCode() =>
-        HashCode.Combine(Origin.X, Origin.Y, Offset.X, Offset.Y, Alignment, ScaleType);
-
-    public override string ToString() => $"Position {{ Origin {Origin}, Offset {Offset}) Alignment = {Alignment}, ScaleType = {ScaleType} }}";
-
-    //public static bool operator ==(Position left, Position right) => left.Equals(right);
-    //public static bool operator !=(Position left, Position right) => !left.Equals(right);
-}
-
 public record Transform
 {
-    // Backing fields
-    private Position _position;
-    private double _rotation;
-    private Dimension _size;
-    private BoundingBoxType _boundingBoxType;
-    private AnchorPosition _boundingBoxAlignment;
-    private bool _hasChanged;
+    /// <summary>
+    /// X/Y coordinates of the transform's top-left corner from the parent (screen)
+    /// </summary>
+    public Point Position { get; private set; } = Point.Zero;
 
-    // Public properties with change tracking
-    public Position Position
+    /// <summary>
+    /// Location on the transform rectangle where the position offset begins (0,0)
+    /// </summary>
+    public AnchorPoint AnchorPoint { get; private set; } = AnchorPoint.TopLeft;
+
+    /// <summary>
+    /// The X/Y coordinates of the transform's anchor point
+    /// </summary>
+    public Point Offset { get; private set; } = Point.Zero;
+
+    /// <summary>
+    /// Degrees of rotation at the anchor point.
+    /// </summary>
+    public float Rotation { get; set; }
+
+    /// <summary>
+    /// Handles how the position scales with the parent
+    /// </summary>
+    public PositionType PositionType { get; private set; } = PositionType.Relative;
+
+    /// <summary>
+    /// Actual size of the transform
+    /// </summary>
+    public Dimension OriginalSize { get; private set; } = Dimension.Zero;
+
+    private Dimension screenSize = new();
+
+    /// <summary>
+    /// Scaled size of the transform
+    /// </summary>
+    public Dimension Size => CalculateSize();
+
+    /// <summary>
+    /// The scale of the transform based on the bounding box type
+    /// </summary>
+    public Vector2 Scale { get; set; } = Vector2.One;
+
+    /// <summary>
+    /// The type of image scaling or stretching
+    /// </summary>
+    public BoundingBoxType BoundingBox { get; set; } = BoundingBoxType.NoBounds;
+
+    /// <summary>
+    /// Anchor setting where the Position X/Y is at 0,0 
+    /// </summary>
+    public AnchorPoint ScreenAnchorPoint { get; set; } = AnchorPoint.TopLeft;
+
+    public Transform Copy()
+        => Common.Transform.Create(
+                new Point(this.Position.X, this.Position.Y),
+                this.PositionType,
+                new Dimension(this.OriginalSize.Width, this.OriginalSize.Height),
+                this.AnchorPoint,
+                this.BoundingBox,
+                this.ScreenAnchorPoint
+            );
+
+    public Transform SetScreenSize(int screenWidth, int screenHeight)
     {
-        get => _position;
-        set
+        screenSize = new(screenWidth, screenHeight);
+        if (PositionType == PositionType.Relative)
         {
-            if (!value.Equals(_position))
-            {
-                _position = value;
-                _hasChanged = true;
-            }
+            Scale = new Vector2(screenWidth / 320.0f, screenHeight / 200.0f);
         }
-    }
-
-    public double Rotation
-    {
-        get => _rotation;
-        set
-        {
-            if (value != _rotation)
-            {
-                _rotation = value;
-                _hasChanged = true;
-            }
-        }
-    }
-
-    public Dimension Size
-    {
-        get => _size;
-        set
-        {
-            if (!value.Equals(_size))
-            {
-                _size = value;
-                _hasChanged = true;
-            }
-        }
-    }
-
-    public BoundingBoxType BoundingBox
-    {
-        get => _boundingBoxType;
-        set
-        {
-            if (value != _boundingBoxType)
-            {
-                _boundingBoxType = value;
-                _hasChanged = true;
-            }
-        }
-    }
-
-    // Reading HasChanged returns the current value and resets the flag to false.
-    public bool HasChanged
-    {
-        get
-        {
-            bool value = _hasChanged;
-            _hasChanged = false;
-            return value;
-        }
-    }
-
-    public AnchorPosition BoundingBoxAlignment
-    {
-        get => _boundingBoxAlignment;
-        set
-        {
-            if (value != _boundingBoxAlignment)
-            {
-                _boundingBoxAlignment = value;
-                _hasChanged = true;
-            }
-        }
-    }
-
-    // Constructors assign backing fields directly so HasChanged remains false.
-    public Transform()
-    {
-        _position = new();
-        _rotation = 0.0;
-        _size = new Dimension(0, 0);
-        _boundingBoxType = BoundingBoxType.NoBounds;
-        _hasChanged = false;
-    }
-
-    public Transform(
-        Position position,
-        BoundingBoxType boundingBoxType = BoundingBoxType.NoBounds
-        )
-    {
-        _position = position;
-        _rotation = 0.0;
-        _size = Dimension.Zero;
-        _boundingBoxType = boundingBoxType;
-        _hasChanged = false;
-    }
-    public Transform(
-        Position position,
-        BoundingBoxType boundingBoxType,
-        Dimension size)
-    {
-        _position = new Position(position);
-        _rotation = 0.0;
-        _size = size;
-        _boundingBoxType = boundingBoxType;
-        _hasChanged = false;
-    }
-
-    public Transform(
-        Vector2 position,
-        AnchorPosition anchorPosition,
-        ScaleType positionScaling,
-        BoundingBoxType boundingBoxType = BoundingBoxType.NoBounds)
-    {
-        _position = new(position, anchorPosition, positionScaling);
-        _rotation = 0.0;
-        _size = Dimension.Zero;
-        _boundingBoxType = boundingBoxType;
-        _hasChanged = false;
-    }
-
-    public Transform(Transform transform)
-    {
-        _position = new Position(transform.Position);
-        _rotation = transform.Rotation;
-        _size = transform.Size;
-        _boundingBoxType = transform.BoundingBox;
-        _hasChanged = false;
+        return this;
     }
     
-    public static Transform ScaleWidth(
-        Position position,
-        int height)
+    public Point GetNormalizedPosition()
     {
-        return new Transform(
-            position,
-            BoundingBoxType.ScaleWidthToScreen,
-            size: new Dimension(0, height));
+        //return with scale if relative
+        return this.Position * this.Scale;
     }
 
-    public void Update(Transform transform)
+    public Transform SetPosition(int x, int y)
     {
-        // Assign via properties so setters perform equality checks and set _hasChanged if needed.
-        Position = transform.Position;
-        Rotation = transform.Rotation;
-        Size = transform.Size;
-        BoundingBox = transform.BoundingBox;
+        return this with
+        {
+            Position = new Point(x, y)
+        };
     }
 
-    public void Update(Position newPosition, Dimension size)
+    public Transform SetPosition(Point newPosition) => SetPosition(newPosition.X, newPosition.Y);
+
+    public Transform SetOffset(int x, int y)
     {
-        this.Position.SetOrigin(newPosition.Origin);
-        this.Size = size;
-        //this._hasChanged = true;
+        return this with
+        {
+            Offset = new Point(x, y)
+        };
     }
 
-    public void Update(Dimension size)
+    public Transform SetOffset(Point newPosition) => SetOffset(newPosition.X, newPosition.Y);
+
+    public Transform SetSize(int width, int height)
     {
-        this.Size = size;
-        //this._hasChanged = true;
+        OriginalSize = new Dimension(width, height);
+        return this;
+    }
+    public Transform SetSize(Dimension newSize) => SetSize(newSize.Width, newSize.Height);
+
+    public static Transform Create(
+        Point position,
+        PositionType positionType,
+        Dimension size,
+        AnchorPoint anchorPoint,
+        BoundingBoxType boundingBox,
+        AnchorPoint screenAnchorPoint
+    )
+    {
+        return new Transform
+        {
+            Position = position,
+            PositionType = positionType,
+            OriginalSize = size,
+            AnchorPoint = anchorPoint,
+            BoundingBox = boundingBox,
+            ScreenAnchorPoint = screenAnchorPoint
+        };
     }
 
-    public void Update(Position position)
+    public static Transform ScaleToWidth(
+        int y,
+        int height,
+        PositionType positionType,
+        VerticalAnchorPoint anchorPoint)
     {
-        // TODO: this.Position.Update(position);
-        this.Position.Origin = position.Origin;
+        return new Transform
+        {
+            Position = new Point(0, y),
+            PositionType = positionType,
+            AnchorPoint = anchorPoint.ToAnchorPoint(),
+            BoundingBox = BoundingBoxType.ScaleWidthToScreen,
+            ScreenAnchorPoint = AnchorPoint.TopLeft,
+            Rotation = 0.0f,
+            Offset = Point.Zero,
+            OriginalSize = new Dimension(0, height), // Width is unknown at this time
+            Scale = new Vector2(1.0f, 1.0f)
+        };
+    }
+
+    public static Transform ScaleToHeight(
+        int x,
+        int width,
+        PositionType positionType,
+        HorizontalAnchorPoint anchorPoint)
+    {
+        return new Transform
+        {
+            Position = new Point(x, 0),
+            PositionType = positionType,
+            AnchorPoint = anchorPoint.ToAnchorPoint(),
+            BoundingBox = BoundingBoxType.ScaleHeightToScreen,
+            ScreenAnchorPoint = AnchorPoint.TopLeft,
+            Rotation = 0.0f,
+            Offset = Point.Zero,
+            OriginalSize = new Dimension(width, 0), // Width is unknown at this time
+            Scale = new Vector2(1.0f, 1.0f)
+        };
+    }
+
+    public static Transform StretchToScreen()
+        => new Transform
+        {
+            Position = Point.Zero,
+            PositionType = PositionType.Absolute,
+            AnchorPoint = AnchorPoint.TopLeft,
+            BoundingBox = BoundingBoxType.StretchToScreen,
+            ScreenAnchorPoint = AnchorPoint.TopLeft,
+            Rotation = 0.0f,
+            Offset = Point.Zero,
+            OriginalSize = Dimension.Zero, // Unknown size at this time
+            Scale = new Vector2(1.0f, 1.0f)
+        };
+
+    public static Transform Centered(int x, PositionType positionType, VerticalAnchorPoint anchorPoint, BoundingBoxType boundingBox)
+        => new Transform
+        {
+            Position = new Point(x, 0),
+            PositionType = positionType,
+            AnchorPoint = AnchorPoint.TopCenter,
+            BoundingBox = boundingBox,
+            ScreenAnchorPoint = AnchorPoint.TopCenter,
+            Rotation = 0.0f,
+            Offset = Point.Zero,
+            OriginalSize = Dimension.Zero, // Unknown size at this time
+            Scale = new Vector2(1.0f, 1.0f)
+        };
+
+    private Dimension CalculateSize()
+    {
+        switch (BoundingBox)
+        {
+            case BoundingBoxType.Scale:
+                return new Dimension(
+                    (int)(OriginalSize.Width * Scale.Min),
+                    (int)(OriginalSize.Height * Scale.Min));
+            case BoundingBoxType.Stretch:
+                return new Dimension(
+                    (int)(OriginalSize.Width * Scale.X),
+                    (int)(OriginalSize.Height * Scale.Y));
+        }
+
+        return Size;
     }
 }
 
-public enum AnchorPosition
+public enum VerticalAnchorPoint
+{
+    Top,
+    Middle,
+    Bottom
+}
+
+public enum HorizontalAnchorPoint
+{
+    Left,
+    Center,
+    Right
+}
+
+public enum AnchorPoint
 {
     TopLeft,
     TopCenter,
@@ -279,14 +240,14 @@ public enum AnchorPosition
     BottomRight
 }
 
-public enum ScaleType
+public enum PositionType
 {
     /// <summary>
-    /// Takes the value as a base relative to screen size
+    /// Sets the position origin from a scaled value of the base bounding box (as 320x200)
     /// </summary>
     Relative,
     /// <summary>
-    /// Takes the value as the exact pixel position
+    /// Sets the position origin to exact pixel values of the bounding box
     /// </summary>
     Absolute
 }

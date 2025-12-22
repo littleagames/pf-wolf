@@ -13,34 +13,34 @@ public class SignonScene : Scene
 
     public override void Start()
     {
-        AddComponent(Graphic.Create("wolf3d-signon", new Transform
-        {
-            Position = Position.Zero,
-            BoundingBox = BoundingBoxType.ScaleToScreen
-        }));
+        //AddComponent(Graphic.Create("wolf3d-signon", new Transform
+        //{
+        //    Position = Position.Zero,
+        //    BoundingBox = BoundingBoxType.ScaleToScreen
+        //}));
 
-        _pressAKeyText = Text.Create("Press A Key",
-            new Transform
-            {
-                Position = new Position(new Vector2(0, 0), AnchorPosition.BottomCenter, ScaleType.Relative),
-                BoundingBox = BoundingBoxType.Scale, // Scale
-                BoundingBoxAlignment = AnchorPosition.BottomCenter
-            },
-            TextAlignment.Center,
-            "smallfont", YellowTextColor);
-        AddComponent(_pressAKeyText);
+        //_pressAKeyText = Text.Create("Press A Key",
+        //    new Transform
+        //    {
+        //        Position = new Position(new Point(0, 0), AnchorPoint.BottomCenter, PositionType.Relative),
+        //        BoundingBox = BoundingBoxType.Scale, // Scale
+        //        ScreenAnchorPoint = AnchorPoint.BottomCenter
+        //    },
+        //    TextAlignment.Center,
+        //    "smallfont", YellowTextColor);
+        //AddComponent(_pressAKeyText);
 
-        _workingText = Text.Create("Working...",
-            new Transform
-            {
-                Position = new Position(new Vector2(0, 0), AnchorPosition.BottomCenter, ScaleType.Relative),
-                BoundingBox = BoundingBoxType.Scale, // Scale
-                BoundingBoxAlignment = AnchorPosition.BottomCenter
-            },
-            TextAlignment.Center,
-            "smallfont", GreenTextColor);
-        _workingText.Hidden = true;
-        AddComponent(_workingText);
+        //_workingText = Text.Create("Working...",
+        //    new Transform
+        //    {
+        //        Position = new Position(new Point(0, 0), AnchorPoint.BottomCenter, PositionType.Relative),
+        //        BoundingBox = BoundingBoxType.Scale, // Scale
+        //        ScreenAnchorPoint = AnchorPoint.BottomCenter
+        //    },
+        //    TextAlignment.Center,
+        //    "smallfont", GreenTextColor);
+        //_workingText.Hidden = true;
+        //AddComponent(_workingText);
     }
 
     public override void Update()

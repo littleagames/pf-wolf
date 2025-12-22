@@ -6,11 +6,11 @@ public class TitleScene : Scene
 {
     public override void Start()
     {
-        AddComponent(Graphic.Create("title", new Transform
-        {
-            Position = Position.Zero,
-            BoundingBox = BoundingBoxType.StretchToScreen
-        }));
+        //AddComponent(Graphic.Create("title", new Transform
+        //{
+        //    Position = Position.Zero,
+        //    BoundingBox = BoundingBoxType.StretchToScreen
+        //}));
     }
 
     public override void Update()

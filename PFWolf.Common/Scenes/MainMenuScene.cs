@@ -18,52 +18,49 @@ public class MainMenuScene : Scene
         AddComponent(Stripe.Create(
             backColor: 0x00,
             stripeColor: 0x2c,
-            Transform.ScaleWidth(
-                new Position(
-                    new Vector2(0, 10),
-                    AnchorPosition.TopLeft,
-                    ScaleType.Relative),
-                height: 24)
+            Transform.ScaleToWidth(
+                y: 10,
+                height: 24,
+                PositionType.Relative,
+                VerticalAnchorPoint.Top)
             ));
 
         AddComponent(Graphic.Create("c_options",
-            new Transform
-            (
-                new Position (
-                    new Vector2(84, 0),
-                    AnchorPosition.TopCenter,
-                    ScaleType.Relative),
+            Transform.Centered(
+                x: 84,
+                PositionType.Relative,
+                VerticalAnchorPoint.Top,
                 BoundingBoxType.Scale)
             ));
 
-        AddComponent(Wolf3dBorderedWindow.Create(
-            new Transform(
-                new Position(
-                    new Vector2(MenuX - 8, MenuY - 3),
-                    AnchorPosition.TopLeft,
-                    ScaleType.Relative),
-                BoundingBoxType.Scale,
-                new Dimension(MenuWidth, MenuHeight)),
-            backgroundColor: 0x2d,
-            topLeftBorderColor: 0x2b,
-            bottomRightBorderColor: 0x23));
+        //AddComponent(Wolf3dBorderedWindow.Create(
+        //    new Transform(
+        //        new Position(
+        //            new Point(MenuX - 8, MenuY - 3),
+        //            AnchorPoint.TopLeft,
+        //            PositionType.Relative),
+        //        BoundingBoxType.Scale,
+        //        new Dimension(MenuWidth, MenuHeight)),
+        //    backgroundColor: 0x2d,
+        //    topLeftBorderColor: 0x2b,
+        //    bottomRightBorderColor: 0x23));
 
-        AddComponent(Graphic.Create("c_mouselback", 
-            new Transform(
-                new Position(   // TODO: Position "bottom center" of screen
-                    new Vector2(0, 184),
-                    AnchorPosition.TopCenter,
-                    ScaleType.Relative),
-                BoundingBoxType.Scale)));
+        //AddComponent(Graphic.Create("c_mouselback", 
+        //    new Transform(
+        //        new Position(   // TODO: Position "bottom center" of screen
+        //            new Point(0, 184),
+        //            AnchorPoint.TopCenter,
+        //            PositionType.Relative),
+        //        BoundingBoxType.Scale)));
 
-        AddComponent(Text.Create(
-            "New Game",
-            new Transform(new Position(new Vector2(MenuX, MenuY), AnchorPosition.TopLeft, ScaleType.Relative), BoundingBoxType.Scale),
-            TextAlignment.Left,
-            "largefont",
-            0x13 // active
+        //AddComponent(Text.Create(
+        //    "New Game",
+        //    new Transform(new Position(new Point(MenuX, MenuY), AnchorPoint.TopLeft, PositionType.Relative), BoundingBoxType.Scale),
+        //    TextAlignment.Left,
+        //    "largefont",
+        //    0x13 // active
             
-            ));
+        //    ));
     }
 
     public override void Update()

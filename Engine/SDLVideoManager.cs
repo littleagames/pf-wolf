@@ -133,52 +133,52 @@ namespace Engine
         }
 
         // TBD: Font positioning in the component vs methods
-        public void Draw(Font font, Position position, TextAlignment alignment, string text, byte fontColor, byte backingColor)
-        {
-            var scaleFactorX = (ScreenWidth / 320.0f);
-            var scaleFactorY = (ScreenHeight / 200.0f);
+        //public void Draw(Font font, Position position, TextAlignment alignment, string text, byte fontColor, byte backingColor)
+        //{
+        //    var scaleFactorX = (ScreenWidth / 320.0f);
+        //    var scaleFactorY = (ScreenHeight / 200.0f);
 
-            var printX = CalcPrintX(font, text, alignment, position.Origin.X);
-            var printY = (int)(position.Origin.Y * scaleFactorY);
+        //    var printX = CalcPrintX(font, text, alignment, position.Origin.X);
+        //    var printY = (int)(position.Origin.Y * scaleFactorY);
 
-            foreach (char textChar in text)
-            {
-                var asciiIndex = (int)textChar;
-                var fontChar = font.FontCharacters[asciiIndex];
+        //    foreach (char textChar in text)
+        //    {
+        //        var asciiIndex = (int)textChar;
+        //        var fontChar = font.FontCharacters[asciiIndex];
 
-                if (fontChar.Data.Length > 0)
-                {
-                    var modifiedFontData = new byte[fontChar.Data.Length];
-                    for (var i = 0; i < fontChar.Data.Length; i++)
-                    {
-                        var fontFlag = fontChar.Data[i] > 0;
-                        modifiedFontData[i] = fontFlag ? fontColor : (byte)0xff;
-                    }
+        //        if (fontChar.Data.Length > 0)
+        //        {
+        //            var modifiedFontData = new byte[fontChar.Data.Length];
+        //            for (var i = 0; i < fontChar.Data.Length; i++)
+        //            {
+        //                var fontFlag = fontChar.Data[i] > 0;
+        //                modifiedFontData[i] = fontFlag ? fontColor : (byte)0xff;
+        //            }
 
-                    // TODO: Map textalign to position alignment
-                    var charPosition = new Position(new Vector2(printX, printY), AnchorPosition.TopLeft, ScaleType.Relative);
-                    DrawData(modifiedFontData, charPosition, new Dimension(fontChar.Width, fontChar.Height), new Dimension((int)(fontChar.Width*scaleFactorX), (int)(fontChar.Height*scaleFactorY)));
-                }
+        //            // TODO: Map textalign to position alignment
+        //            var charPosition = new Position(new Point(printX, printY), AnchorPoint.TopLeft, PositionType.Relative);
+        //            DrawData(modifiedFontData, charPosition, new Dimension(fontChar.Width, fontChar.Height), new Dimension((int)(fontChar.Width*scaleFactorX), (int)(fontChar.Height*scaleFactorY)));
+        //        }
 
-                if (textChar == '\n')
-                {
-                    printX = position.Origin.X;
-                    printY = printY + fontChar.Height;
-                    continue;
-                }
+        //        if (textChar == '\n')
+        //        {
+        //            printX = position.Origin.X;
+        //            printY = printY + fontChar.Height;
+        //            continue;
+        //        }
 
-                printX += (int)(fontChar.Width*scaleFactorX);
-            }
+        //        printX += (int)(fontChar.Width*scaleFactorX);
+        //    }
 
-            // TODO: Loop through each character in "text"
-            // Or I can build the text in byte array size
-            //      can send that once to MemToScreen
+        //    // TODO: Loop through each character in "text"
+        //    // Or I can build the text in byte array size
+        //    //      can send that once to MemToScreen
 
-            //MemToScreen(colorizedFont)
+        //    //MemToScreen(colorizedFont)
 
-            // get each character and print it to the byte[] pixels
+        //    // get each character and print it to the byte[] pixels
 
-        }
+        //}
 
         private int CalcPrintX(Font font, string text, TextAlignment alignment, int x)
         {
@@ -240,13 +240,13 @@ namespace Engine
             }
         }
 
-        private void DrawData(byte[] data, Position position, Dimension dimensions, Dimension size)
+        private void DrawData(byte[] data, Transform transform)
         {
             if (data.Length == 0)
                 return;
 
-            float scaleX = (float)dimensions.Width / size.Width;
-            float scaleY = (float)dimensions.Height / size.Height;
+            //float scaleX = (float)dimensions.Width / size.Width;
+            //float scaleY = (float)dimensions.Height / size.Height;
 
             IntPtr dest = LockSurface(screenBufferPtr);
             if (dest == IntPtr.Zero) return;
@@ -254,25 +254,25 @@ namespace Engine
             {
                 byte* pixels = (byte*)dest;
 
-                int rawX = position.Origin.X - position.Offset.X;
-                int rawY = position.Origin.Y - position.Offset.Y;
+                int rawX = transform.Position.X - transform.Offset.X;
+                int rawY = transform.Position.Y - transform.Offset.Y;
 
                 int startingX = Math.Max(rawX, 0);
                 int startingY = Math.Max(rawY, 0);
-                int endingX = Math.Min(rawX + size.Width, ScreenWidth);
-                int endingY = Math.Min(rawY + size.Height, ScreenHeight);
+                int endingX = Math.Min(rawX + transform.Size.Width, ScreenWidth);
+                int endingY = Math.Min(rawY + transform.Size.Height, ScreenHeight);
 
                 for (int y = startingY; y < endingY; y++)
                 {
-                    int srcY = (int)((y - rawY) * scaleY);
-                    if (srcY < 0 || srcY >= dimensions.Height) continue;
+                    int srcY = (int)((y - rawY) * transform.Scale.Y);
+                    if (srcY < 0 || srcY >= transform.OriginalSize.Height) continue;
 
                     for (int x = startingX; x < endingX; x++)
                     {
-                        int srcX = (int)((x - rawX) * scaleX);
-                        if (srcX < 0 || srcX >= dimensions.Width) continue;
+                        int srcX = (int)((x - rawX) * transform.Scale.X);
+                        if (srcX < 0 || srcX >= transform.OriginalSize.Width) continue;
 
-                        byte col = data[srcY * dimensions.Width + srcX];
+                        byte col = data[srcY * transform.OriginalSize.Width + srcX];
                         if (col == 0xff)
                             continue; // transparent
                         pixels[ylookup[y] + x] = col;
@@ -313,14 +313,14 @@ namespace Engine
             {
                 var data = new byte[ScreenWidth * ScreenHeight];
                 Array.Fill(data, background.Color);
-                DrawData(data, Position.Zero, new Dimension(ScreenWidth, ScreenHeight), new Dimension(ScreenWidth, ScreenHeight));
+                DrawData(data, background.Transform);
             }
             else if (component is PFWolf.Common.Components.Rectangle rectangle)
             {
                 var transform = rectangle.Transform;
 
-                int srcW = rectangle.OriginalSize.Width;
-                int srcH = rectangle.OriginalSize.Height;
+                int srcW = transform.OriginalSize.Width;
+                int srcH = transform.OriginalSize.Height;
 
                 // Guard against invalid source dimensions
                 if (srcW > 0 && srcH > 0)
@@ -335,7 +335,7 @@ namespace Engine
                 Array.Fill(data, rectangle.Color);
                 // TODO: Transform calculations here
                 // Maybe a place they are done one time?
-                DrawData(data, rectangle.Transform.Position, transform.Size, transform.Size);
+                DrawData(data, rectangle.Transform);
             }
             else if (component is PFWolf.Common.Components.Graphic graphic)
             {
@@ -356,7 +356,7 @@ namespace Engine
 
                 if (!graphic.Hidden)
                 {
-                    DrawData(asset.Data, transform.Position, asset.Size, transform.Size);
+                    DrawData(asset.Data, transform/*.Position, asset.Size, transform.Size*/);
                 }
                 // _loadedAssets.Add(graphic.AssetName, asset);
                 // Store in graphic list (some can be reused, e.g. toggled buttons)
@@ -370,7 +370,7 @@ namespace Engine
 
                     if (!text.Hidden)
                     {
-                        DrawData(fontGraphic.Data, transform.Position, fontGraphic.Size, transform.Size);
+                        DrawData(fontGraphic.Data, transform/*.Position, fontGraphic.Size, transform.Size*/);
                     }
                 }
             }

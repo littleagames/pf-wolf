@@ -110,7 +110,7 @@ public record Font : Asset
         {
             Data = graphicData,
             Size = new Dimension { Width = largestLineWidth, Height = textHeight },
-            Offset = new Vector2(0, 0)
+            Offset = new Point(0, 0)
         };
     }
 }

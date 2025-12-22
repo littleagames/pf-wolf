@@ -57,7 +57,7 @@ public class PngGraphicDataLoader
         });
 
         // Try to extract grAb chunk (offset)
-        Vector2 offset = Vector2.Zero;
+        Point offset = Point.Zero;
         stream.Position = 8; // Skip PNG signature
         while (stream.Position < stream.Length)
         {
@@ -74,7 +74,7 @@ public class PngGraphicDataLoader
                 {
                     int x = (grAbBuf[0] << 24) | (grAbBuf[1] << 16) | (grAbBuf[2] << 8) | grAbBuf[3];
                     int y = (grAbBuf[4] << 24) | (grAbBuf[5] << 16) | (grAbBuf[6] << 8) | grAbBuf[7];
-                    offset = new Vector2(x, y);
+                    offset = new Point(x, y);
                 }
                 stream.Position += 4; // Skip CRC
                 break;

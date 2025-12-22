@@ -11,7 +11,7 @@ public class PngTextureDataLoader
         var rawData = ms.ToArray();
 
         var pngPalette = new PaletteColor[256];
-        var offsetTopLeft = new Vector2(0, 0);
+        var offsetTopLeft = new Point(0, 0);
 
         bool isAlphaTexture = false;
         bool isMasked = false;
@@ -110,7 +110,7 @@ public class PngTextureDataLoader
                     y = 0;
                 }
 
-                offsetTopLeft = new Vector2(x, y);
+                offsetTopLeft = new Point(x, y);
             }
         }
 
