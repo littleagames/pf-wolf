@@ -2,7 +2,7 @@
 
 public class TransformTests
 {
-    [Fact]
+    [Test]
     public void Transform_SetPosition_Doesnt_Modify_Previous_Transform()
     {
         // Arrange
@@ -22,13 +22,13 @@ public class TransformTests
         var updatedTransform = transform.Copy().SetPosition(newX, newY);
 
         // Assert
-        Assert.Equal(initialPosition, transform.Position); // Should remain unchanged
-        Assert.Equal(newX, updatedTransform.Position.X);
-        Assert.Equal(newY, updatedTransform.Position.Y);
-        Assert.Equal(transform.Size, updatedTransform.Size); // Size should remain unchanged
+        Assert.That(transform.Position, Is.EqualTo(initialPosition)); // Should remain unchanged
+        Assert.That(updatedTransform.Position.X, Is.EqualTo(newX));
+        Assert.That(updatedTransform.Position.Y, Is.EqualTo(newY));
+        Assert.That(updatedTransform.CalculatedSize, Is.EqualTo(transform.CalculatedSize)); // Size should remain unchanged
     }
 
-    [Fact]
+    [Test]
     public void Transform_SetSize_Doesnt_Modify_Previous_Transform()
     {
         // Arrange
@@ -48,9 +48,9 @@ public class TransformTests
         var updatedTransform = transform.Copy().SetSize(newWidth, newHeight);
 
         // Assert
-        Assert.Equal(initialSize, transform.OriginalSize);
-        Assert.Equal(newWidth, updatedTransform.OriginalSize.Width);
-        Assert.Equal(newHeight, updatedTransform.OriginalSize.Height);
-        Assert.Equal(transform.Position, updatedTransform.Position); // Should remain unchanged
+        Assert.That(transform.OriginalSize, Is.EqualTo(initialSize));
+        Assert.That(updatedTransform.OriginalSize.Width, Is.EqualTo(newWidth));
+        Assert.That(updatedTransform.OriginalSize.Height, Is.EqualTo(newHeight));
+        Assert.That(updatedTransform.Position, Is.EqualTo(transform.Position)); // Should remain unchanged
     }
 }

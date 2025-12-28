@@ -35,11 +35,6 @@ public record Transform
     private Dimension screenSize = new();
 
     /// <summary>
-    /// Scaled size of the transform
-    /// </summary>
-    public Dimension Size => CalculateSize();
-
-    /// <summary>
     /// The scale of the transform based on the bounding box type
     /// </summary>
     public Vector2 Scale { get; set; } = Vector2.One;
@@ -67,18 +62,22 @@ public record Transform
     public Transform SetScreenSize(int screenWidth, int screenHeight)
     {
         screenSize = new(screenWidth, screenHeight);
-        if (PositionType == PositionType.Relative)
+        if (PositionType == PositionType.Relative) // TODO: If scale is already set, should this override it? No, I don't think it should
         {
             Scale = new Vector2(screenWidth / 320.0f, screenHeight / 200.0f);
         }
+
         return this;
     }
-    
-    public Point GetNormalizedPosition()
-    {
-        //return with scale if relative
-        return this.Position * this.Scale;
-    }
+
+    /// <summary>
+    /// Gets the position calculated
+    /// </summary>
+    public Point CalcuatedPosition => CalculatePosition();
+
+    public Point CalculatedOffset => CalculateOffset();
+
+    public Dimension CalculatedSize => CalculateSize();
 
     public Transform SetPosition(int x, int y)
     {
@@ -195,6 +194,90 @@ public record Transform
             Scale = new Vector2(1.0f, 1.0f)
         };
 
+    private Point CalculatePosition()
+    {
+        // Get the position, scale it, then adjust for anchor point, include the offset as well
+        var normalizedPosition = Position * Scale;
+
+        // TODO: This is calculated offset (will need offset + this, as you could have an offset, but if the anchor is topcenter, you can offset 0,0 to 10, 10 from the center)
+        // Will need this calculated value and the calculated position
+        switch (ScreenAnchorPoint)
+        {
+            case AnchorPoint.TopCenter:
+                return new Point(screenSize.Width / 2, 0) + normalizedPosition;
+            case AnchorPoint.TopRight:
+                return new Point(screenSize.Width, 0) + normalizedPosition;
+            case AnchorPoint.MiddleLeft:
+                return new Point(0, screenSize.Height / 2) + normalizedPosition;
+            case AnchorPoint.Center:
+                return new Point(
+                    screenSize.Width / 2,
+                    screenSize.Height / 2
+                ) + normalizedPosition;
+            case AnchorPoint.MiddleRight:
+                return new Point(
+                    screenSize.Width,
+                    screenSize.Height / 2
+                ) + normalizedPosition;
+            case AnchorPoint.BottomLeft:
+                return new Point(0,
+                    screenSize.Height
+                ) + normalizedPosition;
+            case AnchorPoint.BottomCenter:
+                return new Point(
+                    screenSize.Width / 2,
+                    screenSize.Height
+                ) +normalizedPosition;
+            case AnchorPoint.BottomRight:
+                return new Point(
+                    screenSize.Width,
+                    screenSize.Height
+                ) + normalizedPosition;
+        }
+
+        return normalizedPosition;
+    }
+
+    public Point CalculateOffset()
+    {
+        var normalizedOffset = this.Offset * this.Scale;
+        switch (AnchorPoint)
+        {
+            case AnchorPoint.TopCenter:
+                return new Point(CalculatedSize.Width / 2, 0) + normalizedOffset;
+            case AnchorPoint.TopRight:
+                return new Point(CalculatedSize.Width, 0) + normalizedOffset;
+            case AnchorPoint.MiddleLeft:
+                return new Point(0, CalculatedSize.Height / 2) + normalizedOffset;
+            case AnchorPoint.Center:
+                return new Point(
+                    CalculatedSize.Width / 2,
+                    CalculatedSize.Height / 2
+                ) + normalizedOffset;
+            case AnchorPoint.MiddleRight:
+                return new Point(
+                    CalculatedSize.Width,
+                    CalculatedSize.Height / 2
+                ) + normalizedOffset;
+            case AnchorPoint.BottomLeft:
+                return new Point(0,
+                    CalculatedSize.Height
+                ) + normalizedOffset;
+            case AnchorPoint.BottomCenter:
+                return new Point(
+                    CalculatedSize.Width / 2,
+                    CalculatedSize.Height
+                ) + normalizedOffset;
+            case AnchorPoint.BottomRight:
+                return new Point(
+                    CalculatedSize.Width,
+                    CalculatedSize.Height
+                ) + normalizedOffset;
+        }
+
+        return normalizedOffset;
+    }
+
     private Dimension CalculateSize()
     {
         switch (BoundingBox)
@@ -209,7 +292,7 @@ public record Transform
                     (int)(OriginalSize.Height * Scale.Y));
         }
 
-        return Size;
+        return OriginalSize;
     }
 }
 

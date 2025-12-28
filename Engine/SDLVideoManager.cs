@@ -259,8 +259,8 @@ namespace Engine
 
                 int startingX = Math.Max(rawX, 0);
                 int startingY = Math.Max(rawY, 0);
-                int endingX = Math.Min(rawX + transform.Size.Width, ScreenWidth);
-                int endingY = Math.Min(rawY + transform.Size.Height, ScreenHeight);
+                int endingX = Math.Min(rawX + transform.OriginalSize.Width, ScreenWidth);
+                int endingY = Math.Min(rawY + transform.OriginalSize.Height, ScreenHeight);
 
                 for (int y = startingY; y < endingY; y++)
                 {
@@ -331,7 +331,7 @@ namespace Engine
                    // transform.Update(CalculateBoundingBoxSize(rectangle.Size, transform.Size, transform.BoundingBoxType));
                 }
 
-                var data = new byte[transform.Size.Width * transform.Size.Height];
+                var data = new byte[transform.OriginalSize.Width * transform.OriginalSize.Height];
                 Array.Fill(data, rectangle.Color);
                 // TODO: Transform calculations here
                 // Maybe a place they are done one time?

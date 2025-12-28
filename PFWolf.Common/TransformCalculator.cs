@@ -66,50 +66,50 @@ public class TransformCalculator
                 break;
             case AnchorPoint.TopCenter:
                 transform.SetOffset(new Point(
-                    - (GetNormalizedValue(transform, x => x.Size.Width, scaleFactorX) / 2),
+                    - (GetNormalizedValue(transform, x => x.CalculatedSize.Width, scaleFactorX) / 2),
                     0
                 ));
                 break;
             case AnchorPoint.TopRight:
                 transform.SetOffset(new Point(
-                    - (GetNormalizedValue(transform, x => x.Size.Width, scaleFactorX)),
+                    - (GetNormalizedValue(transform, x => x.CalculatedSize.Width, scaleFactorX)),
                     0
                 ));
                 break;
             case AnchorPoint.MiddleLeft:
                 transform.SetOffset(new Point(
                     0,
-                    -(GetNormalizedValue(transform, x => x.Size.Height, scaleFactorY) / 2)
+                    -(GetNormalizedValue(transform, x => x.CalculatedSize.Height, scaleFactorY) / 2)
                 ));
                 break;
             case AnchorPoint.Center:
                 transform.SetOffset(new Point(
-                    -(GetNormalizedValue(transform, x => x.Size.Width, scaleFactorX) / 2),
-                    -(GetNormalizedValue(transform, x => x.Size.Height, scaleFactorY) / 2)
+                    -(GetNormalizedValue(transform, x => x.CalculatedSize.Width, scaleFactorX) / 2),
+                    -(GetNormalizedValue(transform, x => x.CalculatedSize.Height, scaleFactorY) / 2)
                 ));
                 break;
             case AnchorPoint.MiddleRight:
                 transform.SetOffset(new Point(
-                    -(GetNormalizedValue(transform, x => x.Size.Width, scaleFactorX)),
-                    -(GetNormalizedValue(transform, x => x.Size.Height, scaleFactorY) / 2)
+                    -(GetNormalizedValue(transform, x => x.CalculatedSize.Width, scaleFactorX)),
+                    -(GetNormalizedValue(transform, x => x.CalculatedSize.Height, scaleFactorY) / 2)
                 ));
                 break;
             case AnchorPoint.BottomLeft:
                 transform.SetOffset(new Point(
                     0,
-                    -(GetNormalizedValue(transform, x => x.Size.Height, scaleFactorY))
+                    -(GetNormalizedValue(transform, x => x.CalculatedSize.Height, scaleFactorY))
                 ));
                 break;
             case AnchorPoint.BottomCenter:
                 transform.SetOffset(new Point(
-                    -(GetNormalizedValue(transform, x => x.Size.Width, scaleFactorX) / 2),
-                    -(GetNormalizedValue(transform, x => x.Size.Height, scaleFactorY))
+                    -(GetNormalizedValue(transform, x => x.CalculatedSize.Width, scaleFactorX) / 2),
+                    -(GetNormalizedValue(transform, x => x.CalculatedSize.Height, scaleFactorY))
                 ));
                 break;
             case AnchorPoint.BottomRight:
                 transform.SetOffset(new Point(
-                    -(GetNormalizedValue(transform, x => x.Size.Width, scaleFactorX)),
-                    -(GetNormalizedValue(transform, x => x.Size.Height, scaleFactorY))
+                    -(GetNormalizedValue(transform, x => x.CalculatedSize.Width, scaleFactorX)),
+                    -(GetNormalizedValue(transform, x => x.CalculatedSize.Height, scaleFactorY))
                 ));
                 break;
         }

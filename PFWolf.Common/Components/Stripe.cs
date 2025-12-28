@@ -19,9 +19,9 @@ public record Stripe : RenderComponent
         AddChildComponent(Rectangle.Create(stripeColor,
             transform.SetPosition(
                 x: transform.Position.X,
-                y: transform.Position.Y + transform.Size.Height - 1)
+                y: transform.Position.Y + transform.OriginalSize.Height - 1)
             .SetSize(
-                width: transform.Size.Width,
+                width: transform.OriginalSize.Width,
                 height: 1)));
     }
 }

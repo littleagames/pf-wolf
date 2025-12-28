@@ -24,7 +24,7 @@ public record Wolf3dBorderedWindow : RenderComponent
             Rectangle.Create(
                 topColor,
                 transform
-                    .SetSize(transform.Size.Width, 1)
+                    .SetSize(transform.OriginalSize.Width, 1)
             )); // top
         AddChildComponent(
             Rectangle.Create(
@@ -32,9 +32,9 @@ public record Wolf3dBorderedWindow : RenderComponent
                 transform
                 .SetPosition(
                     transform.Position.X,
-                    transform.Position.Y + transform.Size.Height)
+                    transform.Position.Y + transform.OriginalSize.Height)
                 .SetSize(
-                    width: transform.Size.Width,
+                    width: transform.OriginalSize.Width,
                     height: 1)
             )); // bottom
         AddChildComponent(
@@ -42,17 +42,17 @@ public record Wolf3dBorderedWindow : RenderComponent
                 leftColor,
                 transform.SetSize(
                     width: 1,
-                    height: transform.Size.Height)
+                    height: transform.OriginalSize.Height)
             )); // left
         AddChildComponent(
             Rectangle.Create(
                 rightColor,
                 transform.SetPosition(
-                    transform.Position.X + transform.Size.Width,
+                    transform.Position.X + transform.OriginalSize.Width,
                     transform.Position.Y)
                 .SetSize(
                     width: 1,
-                    height: transform.Size.Height)
+                    height: transform.OriginalSize.Height)
             )); // right
     }
 }

@@ -4,14 +4,14 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using CSharpFunctionalExtensions;
+using NUnit.Framework.Legacy;
 using PFWolf.Common;
 using PFWolf.Common.Assets;
-using Xunit;
 
 namespace PFWolf.Common.Tests;
 public class AssetManagerTests
 {
-    [Fact]
+    [Test]
     public void LoadGamePacks_ReturnsFailure_WhenSelectedGamePackIsNone()
     {
         // Arrange
@@ -21,11 +21,11 @@ public class AssetManagerTests
         var result = assetManager.LoadGamePacks(Maybe<string>.None);
 
         // Assert
-        Assert.True(result.IsFailure);
-        Assert.Equal("Cannot determine default game pack at this time.", result.Error);
+        Assert.That(result.IsFailure, Is.True);
+        Assert.That(result.Error, Is.EqualTo("Cannot determine default game pack at this time."));
     }
 
-    [Fact]
+    [Test]
     public void LoadGamePacks_ReturnsFailure_WhenGamePackInfoNotFound()
     {
         // Arrange
@@ -40,8 +40,8 @@ public class AssetManagerTests
             var result = assetManager.LoadGamePacks("testpack");
 
             // Assert
-            Assert.True(result.IsFailure);
-            Assert.Contains("No gamepacks/gamepack-info found", result.Error);
+            Assert.That(result.IsFailure, Is.True);
+            StringAssert.Contains("No gamepacks/gamepack-info found", result.Error);
         }
         finally
         {
@@ -49,7 +49,7 @@ public class AssetManagerTests
         }
     }
 
-    [Fact]
+    [Test]
     public void LoadGamePacks_ReturnsFailure_WhenMultipleGamePackInfoFound()
     {
         // Arrange
@@ -97,8 +97,8 @@ public class AssetManagerTests
             var result = assetManager.LoadGamePacks("testpack");
 
             // Assert
-            Assert.True(result.IsFailure);
-            Assert.Contains("More than 1 gamepacks/gamepack-info found", result.Error);
+            Assert.That(result.IsFailure, Is.True);
+            StringAssert.Contains("More than 1 gamepacks/gamepack-info found", result.Error);
         }
         finally
         {
@@ -106,7 +106,7 @@ public class AssetManagerTests
         }
     }
 
-    [Fact]
+    [Test]
     public void LoadGamePacks_ReturnsFailure_WhenYamlExceptionThrown()
     {
         // Arrange
@@ -125,8 +125,8 @@ public class AssetManagerTests
             var result = assetManager.LoadGamePacks("testpack");
 
             // Assert
-            Assert.True(result.IsFailure);
-            Assert.Contains("Error parsing game pack definitions", result.Error);
+            Assert.That(result.IsFailure, Is.True);
+            StringAssert.Contains("Error parsing game pack definitions", result.Error);
         }
         finally
         {
@@ -134,7 +134,7 @@ public class AssetManagerTests
         }
     }
 
-    [Fact]
+    [Test]
     public void LoadGamePacks_ReturnsFailure_WhenGamePackNotFound()
     {
         // Arrange
@@ -154,8 +154,8 @@ public class AssetManagerTests
             var result = assetManager.LoadGamePacks("notfoundpack");
 
             // Assert
-            Assert.True(result.IsFailure);
-            Assert.Contains("not found in loaded packages", result.Error);
+            Assert.That(result.IsFailure, Is.True);
+            StringAssert.Contains("not found in loaded packages", result.Error);
         }
         finally
         {
