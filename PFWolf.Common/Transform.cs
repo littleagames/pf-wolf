@@ -62,10 +62,12 @@ public record Transform
     public Transform SetScreenSize(int screenWidth, int screenHeight)
     {
         screenSize = new(screenWidth, screenHeight);
-        if (PositionType == PositionType.Relative) // TODO: If scale is already set, should this override it? No, I don't think it should
-        {
+        //if (BoundingBox == BoundingBoxType.Scale)
+        //if (PositionType == PositionType.Relative) // TODO: If scale is already set, should this override it? No, I don't think it should
+        //{
+        // TODO: If scale is already set, this should be ignored
             Scale = new Vector2(screenWidth / 320.0f, screenHeight / 200.0f);
-        }
+        //}
 
         return this;
     }
@@ -197,7 +199,7 @@ public record Transform
     private Point CalculatePosition()
     {
         // Get the position, scale it, then adjust for anchor point, include the offset as well
-        var normalizedPosition = Position * Scale;
+        var normalizedPosition = Position * (PositionType == PositionType.Relative ? Scale : Vector2.One);
 
         // TODO: This is calculated offset (will need offset + this, as you could have an offset, but if the anchor is topcenter, you can offset 0,0 to 10, 10 from the center)
         // Will need this calculated value and the calculated position
@@ -227,7 +229,7 @@ public record Transform
                 return new Point(
                     screenSize.Width / 2,
                     screenSize.Height
-                ) +normalizedPosition;
+                ) + normalizedPosition;
             case AnchorPoint.BottomRight:
                 return new Point(
                     screenSize.Width,
