@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36301.6
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11312.210
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PFWolf.Common", "PFWolf.Common\PFWolf.Common.csproj", "{65F38596-C18F-4D94-A3F8-83E0BBAB34E9}"
 EndProject
@@ -12,6 +12,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileLoader", "FileLoader\FileLoader.csproj", "{62EE7221-9FA7-40B6-9C3F-832218DD0637}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PFWolf.Common.Tests", "Tests\PFWolf.Common.Tests\PFWolf.Common.Tests.csproj", "{C332DE8A-B3DD-4E55-8AB0-0C2E373320EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wolf3D", "Prototypes\Wolf3D\Wolf3D.csproj", "{9DC22A72-362A-48DF-A5A6-6D1648899743}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SDL2-CS", "SDL2-CS\SDL2-CS.csproj", "{AEC2B833-A758-7746-6472-C5394F5E3413}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Prototypes", "Prototypes", "{7A07F16A-634E-466E-A461-8D422439ED02}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SDL2-Test", "SDL2-Test\SDL2-Test.csproj", "{9100267D-D944-457E-A80B-40B7249E738C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,9 +47,26 @@ Global
 		{C332DE8A-B3DD-4E55-8AB0-0C2E373320EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C332DE8A-B3DD-4E55-8AB0-0C2E373320EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C332DE8A-B3DD-4E55-8AB0-0C2E373320EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DC22A72-362A-48DF-A5A6-6D1648899743}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DC22A72-362A-48DF-A5A6-6D1648899743}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DC22A72-362A-48DF-A5A6-6D1648899743}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DC22A72-362A-48DF-A5A6-6D1648899743}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AEC2B833-A758-7746-6472-C5394F5E3413}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AEC2B833-A758-7746-6472-C5394F5E3413}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AEC2B833-A758-7746-6472-C5394F5E3413}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AEC2B833-A758-7746-6472-C5394F5E3413}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9100267D-D944-457E-A80B-40B7249E738C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9100267D-D944-457E-A80B-40B7249E738C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9100267D-D944-457E-A80B-40B7249E738C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9100267D-D944-457E-A80B-40B7249E738C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9DC22A72-362A-48DF-A5A6-6D1648899743} = {7A07F16A-634E-466E-A461-8D422439ED02}
+		{AEC2B833-A758-7746-6472-C5394F5E3413} = {7A07F16A-634E-466E-A461-8D422439ED02}
+		{9100267D-D944-457E-A80B-40B7249E738C} = {7A07F16A-634E-466E-A461-8D422439ED02}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F41D8678-E36B-4518-BA22-5323AADF965E}

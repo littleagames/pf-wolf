@@ -52,7 +52,6 @@ public class TransformCalculatorTests
         int expectedOffsetY)
     {
         // Arrange
-        //var calculator = new TransformCalculator(screenWidth, screenHeight);
 
         // Act
         var transform = Transform.Create(
@@ -63,9 +62,6 @@ public class TransformCalculatorTests
             BoundingBoxType.NoBounds,
             screenAnchorPoint: AnchorPoint.TopLeft
         );
-
-        // Act
-        //var transform = calculator.CalculateTransform(sutTransform);
 
         // Assert
         Assert.That(transform, Is.Not.Null, "Transform should not be null");
