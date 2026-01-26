@@ -2805,7 +2805,11 @@ internal partial class Program
         US_Print(text);
         VW_UpdateScreen();
     }
-    
+
+    internal static void FreeMusic()
+    {
+        //UNCACHEAUDIOCHUNK(STARTMUSIC + lastmusic);
+    }
     internal static string IN_GetScanName(int scan)
     {
         return ScanNames[scan];

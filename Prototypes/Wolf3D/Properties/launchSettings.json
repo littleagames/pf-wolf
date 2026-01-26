@@ -2,7 +2,7 @@
   "profiles": {
     "Wolf3D": {
       "commandName": "Project",
-      "commandLineArgs": "--windowed"
+      "commandLineArgs": "--windowed --nowait"
     }
   }
 }
