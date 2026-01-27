@@ -1,4 +1,6 @@
-﻿using static SDL2.SDL;
+﻿using System;
+using System.Data;
+using static SDL2.SDL;
 
 namespace Wolf3D;
 
@@ -7,6 +9,24 @@ internal partial class Program
     static bool madenoise; // true when shooting or screaming
 
     static byte playstate;
+
+    static int lastmusicchunk = 0;
+
+    internal static int DebugOk;
+
+    internal static objstruct[] objlist = new objstruct[MAXACTORS];
+    internal static objstruct player, lastobj, objfreelist;
+
+    internal static byte singlestep, godmode, noclip, ammocheat, mapreveal;
+    internal static int extravbls;
+
+    internal static byte[,] tilemap = new byte[MAPSIZE, MAPSIZE]; // wall values only
+    internal static bool[,] spotvis = new bool[MAPSIZE ,MAPSIZE];
+    internal static objstruct[,] actorat = new objstruct[MAPSIZE, MAPSIZE];
+
+    internal static ushort mapwidth, mapheight;
+    internal static uint tics;
+
     //
     // control info
     //
@@ -22,7 +42,10 @@ internal partial class Program
     };
 
     static int viewsize;
+    static bool[] buttonheld = new bool[(int)buttontypes.NUMBUTTONS];
+
     static bool demorecord, demoplayback;
+    static byte[] demoData;
     static int demoptr, lastdemoptr;
 
 
@@ -140,26 +163,541 @@ internal partial class Program
         if (demoplayback)
             IN_StartAck();
 
-        //do
-        //{
-        //    PollControls();
+        do
+        {
+            PollControls();
 
-        //    //
-        //    // actor thinking
-        //    //
-        //    madenoise = false;
-        //    MoveDoors();
-        //    MovePWalls();
-        //}
-        //while (playstate == 0 && !startgame);
+            //
+            // actor thinking
+            //
+            madenoise = false;
+            MoveDoors();
+            MovePWalls();
 
-        //if (playstate != (byte)playstatetypes.ex_died)
-        //    FinishPaletteShifts();
+            // TODO: This
+            //for (obj = player; obj = obj.next)
+                DoActor(player);
+
+            UpdatePaletteShifts();
+
+            ThreeDRefresh();
+
+            gamestate.TimeCount += (int)tics;
+
+            UpdateSoundLoc();      // JAB
+            if (screenfaded)
+                VW_FadeIn();
+
+            CheckKeys();
+
+            //
+            // debug aids
+            //
+            if (singlestep != 0)
+            {
+                VW_WaitVBL(singlestep);
+                lasttimecount = (int)GetTimeCount();
+            }
+            if (extravbls != 0)
+                VW_WaitVBL((uint)extravbls);
+
+            if (demoplayback)
+            {
+                if (IN_CheckAck())
+                {
+                    IN_ClearKeysDown();
+                    playstate = (byte)playstatetypes.ex_abort;
+                }
+            }
+        }
+        while (playstate == 0 && !startgame);
+
+        if (playstate != (byte)playstatetypes.ex_died)
+            FinishPaletteShifts();
     }
 
+    internal static void DoActor(objstruct ob)
+    {
+        //if (ob.active == 0 && ob.areanumber < NUMAREAS && !areabyplayer[ob.areanumber])
+        //    return;
+
+        //if (!(ob.flags & (FL_NONMARK | FL_NEVERMARK)))
+        //    actorat[ob.tilex,ob.tiley] = null;
+
+
+        ob.state.think?.Invoke(ob);
+    }
+
+    internal static void CheckKeys()
+    {
+        int scan;
+
+        if (screenfaded || demoplayback)    // don't do anything with a faded screen
+            return;
+
+        scan = LastScan;
+
+
+        //
+        // SECRET CHEAT CODE: 'MLI'
+        //
+        if (Keyboard[(int)ScanCodes.sc_M] && Keyboard[(int)ScanCodes.sc_L] && Keyboard[(int)ScanCodes.sc_I])
+        {
+            gamestate.health = 100;
+            gamestate.ammo = 99;
+            gamestate.keys = 3;
+            gamestate.score = 0;
+            gamestate.TimeCount += (int)42000L;
+            GiveWeapon((int)weapontypes.wp_chaingun);
+            DrawWeapon();
+            DrawHealth();
+            DrawKeys();
+            DrawAmmo();
+            DrawScore();
+
+            ClearMemory();
+            ClearSplitVWB();
+
+            Message(STR_CHEATER1 + "\n" +
+                     STR_CHEATER2 + "\n\n" +
+                     STR_CHEATER3 + "\n" +
+                     STR_CHEATER4 + "\n" +
+                     STR_CHEATER5);
+
+            IN_ClearKeysDown();
+            IN_Ack();
+
+            if (viewsize < 17)
+                DrawPlayBorder();
+        }
+
+        //
+        // OPEN UP DEBUG KEYS
+        //
+        if (Keyboard[(int)ScanCodes.sc_BackSpace] && Keyboard[(int)ScanCodes.sc_LShift] && Keyboard[(int)ScanCodes.sc_Alt] && param_debugmode)
+        {
+            ClearMemory();
+            ClearSplitVWB();
+
+            Message("Debugging keys are\nnow available!");
+            IN_ClearKeysDown();
+            IN_Ack();
+
+            DrawPlayBorderSides();
+            DebugOk = 1;
+        }
+
+        //
+        // TRYING THE KEEN CHEAT CODE!
+        //
+        if (Keyboard[(int)ScanCodes.sc_B] && Keyboard[(int)ScanCodes.sc_A] && Keyboard[(int)ScanCodes.sc_T])
+        {
+            ClearMemory();
+            ClearSplitVWB();
+
+            Message("Commander Keen is also\n" +
+                        "available from Apogee, but\n" +
+                        "then, you already know\n" +
+                        "that - right, Cheatmeister?!");
+
+            IN_ClearKeysDown();
+            IN_Ack();
+
+            if (viewsize < 18)
+                DrawPlayBorder();
+        }
+
+        //
+        // pause key weirdness can't be checked as a scan code
+        //
+        if (buttonstate[(int)buttontypes.bt_pause]) Paused = true;
+        if (Paused)
+        {
+            int lastoffs = StopMusic();
+            VWB_DrawPic(16 * 8, 80 - 2 * 8, (int)graphicnums.PAUSEDPIC);
+            VW_UpdateScreen();
+            IN_Ack();
+            Paused = false;
+            ContinueMusic(lastoffs);
+            IN_CenterMouse();
+            lasttimecount = (int)GetTimeCount();
+            return;
+        }
+        if (scan == (int)ScanCodes.sc_F10 ||
+            scan == (int)ScanCodes.sc_F9 || scan == (int)ScanCodes.sc_F7 || scan == (int)ScanCodes.sc_F8)     // pop up quit dialog
+        {
+            ClearMemory();
+            ClearSplitVWB();
+            US_ControlPanel(scan);
+
+            DrawPlayBorderSides();
+
+            SETFONTCOLOR(0, 15);
+            IN_ClearKeysDown();
+            return;
+        }
+
+        if ((scan >= (int)ScanCodes.sc_F1 && scan <= (int)ScanCodes.sc_F9) || scan == (int)ScanCodes.sc_Escape || buttonstate[(int)buttontypes.bt_esc])
+        {
+            int lastoffs = StopMusic();
+            ClearMemory();
+            VW_FadeOut();
+
+            US_ControlPanel(buttonstate[(int)buttontypes.bt_esc] ? (int)ScanCodes.sc_Escape : scan);
+
+            SETFONTCOLOR(0, 15);
+            IN_ClearKeysDown();
+            VW_FadeOut();
+            if (viewsize != 21)
+                DrawPlayScreen();
+            if (!startgame && !loadedgame)
+                ContinueMusic(lastoffs);
+            if (loadedgame)
+                playstate = (byte)playstatetypes.ex_abort;
+            lasttimecount = (int)GetTimeCount();
+            IN_CenterMouse();
+            return;
+        }
+
+        //
+        // TAB-? debug keys
+        //
+        if (Keyboard[(int)ScanCodes.sc_Tab] && DebugOk != 0)
+        {
+            fontnumber = 0;
+            SETFONTCOLOR(0, 15);
+            if (DebugKeys() != 0 && viewsize < 20)
+            {
+                DrawPlayBorder();       // dont let the blue borders flash
+                IN_CenterMouse();
+
+                lasttimecount = (int)GetTimeCount();
+            }
+            return;
+        }
+    }
+
+    internal static void PollControls()
+    {
+        int max, min, i;
+        byte buttonbits;
+
+        IN_ProcessEvents();
+
+        //
+        // get timing info for last frame
+        //
+        if (demoplayback || demorecord)   // demo recording and playback needs to be constant
+        {
+            // wait up to DEMOTICS Wolf tics
+            uint curtime = SDL_GetTicks();
+            lasttimecount += DEMOTICS;
+            int timediff = (int)((lasttimecount * 100) / 7 - curtime);
+            if (timediff > 0)
+                SDL_Delay((uint)timediff);
+
+            if (timediff < -2 * DEMOTICS)       // more than 2-times DEMOTICS behind?
+                lasttimecount = (int)((curtime * 7) / 100);    // yes, set to current timecount
+
+            tics = DEMOTICS;
+        }
+        else
+            CalcTics();
+
+        controlx = 0;
+        controly = 0;
+        Array.Copy(buttonstate, buttonheld, buttonstate.Length);
+        Array.Fill(buttonstate, false);
+
+        if (demoplayback)
+        {
+            //
+            // read commands from demo buffer
+            //
+            buttonbits = demoData[demoptr++];
+            for (i = 0; i < (int)buttontypes.NUMBUTTONS; i++)
+            {
+                buttonstate[i] = (buttonbits & 1) != 0;
+                buttonbits >>= 1;
+            }
+
+            controlx = demoData[demoptr++];
+            controly = demoData[demoptr++];
+
+            if (demoptr == lastdemoptr)
+                playstate = (byte)playstatetypes.ex_completed;   // demo is done
+
+            controlx *= (int)tics;
+            controly *= (int)tics;
+
+            return;
+        }
+
+
+        //
+        // get button states
+        //
+        PollKeyboardButtons();
+
+        if (mouseenabled != 0 && GrabInput)
+            PollMouseButtons();
+
+        if (joystickenabled != 0)
+            PollJoystickButtons();
+
+        //
+        // get movements
+        //
+        PollKeyboardMove();
+
+        if (mouseenabled != 0 && GrabInput)
+            PollMouseMove();
+
+        if (joystickenabled != 0)
+            PollJoystickMove();
+
+        //
+        // bound movement to a maximum
+        //
+        max = (int)(100 * tics);
+        min = -max;
+        if (controlx > max)
+            controlx = max;
+        else if (controlx < min)
+            controlx = min;
+
+        if (controly > max)
+            controly = max;
+        else if (controly < min)
+            controly = min;
+
+        if (demorecord)
+        {
+            //
+            // save info out to demo buffer
+            //
+            controlx /= (int)tics;
+            controly /= (int)tics;
+
+            buttonbits = 0;
+
+            // TODO: Support 32-bit buttonbits
+            for (i = (int)buttontypes.NUMBUTTONS - 1; i >= 0; i--)
+            {
+                buttonbits <<= 1;
+                if (buttonstate[i])
+                    buttonbits |= 1;
+            }
+
+            demoData[demoptr++] = buttonbits;
+            demoData[demoptr++] = (byte)controlx; // these might be wrong
+            demoData[demoptr++] = (byte)controly;// these might need 4 bytes
+
+            if (demoptr >= lastdemoptr - 8)
+                playstate = (byte)playstatetypes.ex_completed;
+            else
+            {
+                controlx *= (int)tics;
+                controly *= (int)tics;
+            }
+        }
+    }
+
+    internal static void UpdatePaletteShifts()
+    {
+        int red, white;
+
+        if (bonuscount != 0)
+        {
+            white = bonuscount / WHITETICS + 1;
+            if (white > NUMWHITESHIFTS)
+                white = NUMWHITESHIFTS;
+            bonuscount -= (int)tics;
+            if (bonuscount < 0)
+                bonuscount = 0;
+        }
+        else
+            white = 0;
+
+
+        if (damagecount != 0)
+        {
+            red = damagecount / 10 + 1;
+            if (red > NUMREDSHIFTS)
+                red = NUMREDSHIFTS;
+
+            damagecount -= (int)tics;
+            if (damagecount < 0)
+                damagecount = 0;
+        }
+        else
+            red = 0;
+
+        if (red != 0)
+        {
+            SDL_Color[] flat = new SDL_Color[256];
+            Array.Copy(redshifts, red - 1, flat, 0, 256);
+            VL_SetPalette(flat, false);
+            palshifted = true;
+        }
+        else if (white != 0)
+        {
+            SDL_Color[] flat = new SDL_Color[256];
+            Array.Copy(whiteshifts, white - 1, flat, 0, 256);
+            VL_SetPalette(flat, false);
+            palshifted = true;
+        }
+        else if (palshifted)
+        {
+            VL_SetPalette(gamepal, false);        // back to normal
+            palshifted = false;
+        }
+    }
+
+    internal static void FinishPaletteShifts()
+    {
+        if (palshifted)
+        {
+            palshifted = false;
+            VL_SetPalette(gamepal, true);
+        }
+    }
     internal static void ClearPaletteShifts()
     {
         bonuscount = damagecount = 0;
         palshifted = false;
+    }
+
+    /*
+=============================================================================
+
+                               USER CONTROL
+
+=============================================================================
+*/
+
+    /*
+    ===================
+    =
+    = PollKeyboardButtons
+    =
+    ===================
+    */
+
+    internal static void PollKeyboardButtons()
+    {
+        int i;
+
+        for (i = 0; i < (int)buttontypes.NUMBUTTONS; i++)
+            if (Keyboard[buttonscan[i]])
+                buttonstate[i] = true;
+    }
+
+    /*
+    ===================
+    =
+    = PollMouseButtons
+    =
+    ===================
+    */
+
+    internal static void PollMouseButtons()
+    {
+        int buttons = IN_MouseButtons();
+
+        if ((buttons & 1) != 0)
+            buttonstate[buttonmouse[0]] = true;
+        if ((buttons & 2) != 0)
+            buttonstate[buttonmouse[1]] = true;
+        if ((buttons & 4) != 0)
+            buttonstate[buttonmouse[2]] = true;
+    }
+
+
+    /*
+    ===================
+    =
+    = PollJoystickButtons
+    =
+    ===================
+    */
+
+    internal static void PollJoystickButtons()
+    {
+        int i, val, buttons = IN_JoyButtons();
+
+        for (i = 0, val = 1; i < JoyNumButtons; i++, val <<= 1)
+        {
+            if ((buttons & val) != 0)
+                buttonstate[buttonjoy[i]] = true;
+        }
+    }
+
+    /*
+    ===================
+    =
+    = PollKeyboardMove
+    =
+    ===================
+    */
+
+    internal static void PollKeyboardMove()
+    {
+        int delta = (int)(buttonstate[(int)buttontypes.bt_run] ? RUNMOVE * tics : BASEMOVE * tics);
+
+        if (Keyboard[dirscan[(int)controldirs.di_north]])
+            controly -= delta;
+        if (Keyboard[dirscan[(int)controldirs.di_south]])
+            controly += delta;
+        if (Keyboard[dirscan[(int)controldirs.di_west]])
+            controlx -= delta;
+        if (Keyboard[dirscan[(int)controldirs.di_east]])
+            controlx += delta;
+    }
+
+
+    /*
+    ===================
+    =
+    = PollMouseMove
+    =
+    ===================
+    */
+
+    internal static void PollMouseMove()
+    {
+        int mousexmove, mouseymove;
+
+        SDL_GetRelativeMouseState(out mousexmove, out mouseymove);
+
+        controlx += mousexmove * 10 / (13 - mouseadjustment);
+        controly += mouseymove * 20 / (13 - mouseadjustment);
+    }
+
+
+    /*
+    ===================
+    =
+    = PollJoystickMove
+    =
+    ===================
+    */
+
+    internal static void PollJoystickMove()
+    {
+        int joyx, joyy;
+
+        IN_GetJoyDelta(out joyx, out joyy);
+
+        int delta = (int)(buttonstate[(int)buttontypes.bt_run] ? RUNMOVE * tics : BASEMOVE * tics);
+
+        if (joyx > 64 || buttonstate[(int)buttontypes.bt_turnright])
+            controlx += delta;
+        else if (joyx < -64 || buttonstate[(int)buttontypes.bt_turnleft])
+            controlx -= delta;
+        if (joyy > 64 || buttonstate[(int)buttontypes.bt_movebackward])
+            controly += delta;
+        else if (joyy < -64 || buttonstate[(int)buttontypes.bt_moveforward])
+            controly -= delta;
     }
 }

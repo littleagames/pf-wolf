@@ -16,4 +16,19 @@ internal partial class Program
     static byte pwalldir;
     static byte pwalltile;
     static int[][] dirs =[[0,-1],[1,0],[0,1],[-1,0]];
+
+    internal static void MoveDoors()
+    {
+        // TODO:
+    }
+
+    internal static void MovePWalls()
+    {
+        // TODO:
+    }
+
+    internal static void InitAreas()
+    {
+        // TODO:
+    }
 }

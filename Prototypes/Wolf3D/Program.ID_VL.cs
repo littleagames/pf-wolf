@@ -203,6 +203,21 @@ internal partial class Program
         return Marshal.PtrToStructure<SDL.SDL_Surface>(surface);
     }
 
+    internal static SDL.SDL_PixelFormat GetSurfaceFormat(IntPtr surface)
+    {
+        if (surface == IntPtr.Zero)
+            return new SDL_PixelFormat();
+
+        // Marshal the native SDL_Surface to read its 'format' pointer
+        SDL.SDL_Surface surf = Marshal.PtrToStructure<SDL.SDL_Surface>(surface);
+        IntPtr formatPtr = surf.format;
+        if (formatPtr == IntPtr.Zero)
+            return new SDL_PixelFormat();
+
+        // Marshal the native SDL_PixelFormat to read its 'palette' pointer
+        return Marshal.PtrToStructure<SDL.SDL_PixelFormat>(formatPtr);
+    }
+
     internal static IntPtr GetSurfaceFormatPalette(IntPtr surface)
     {
         if (surface == IntPtr.Zero)

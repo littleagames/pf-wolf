@@ -54,6 +54,10 @@ internal partial class Program
 
     static int endextern = (int)graphicnums.T_ENDART1;
     static int helpextern = (int)graphicnums.T_HELPART;
+
+    internal static string helpfilename = "HELPART.";
+    internal static string endfilename = "ENDART1.";
+
     internal static void HelpScreens()
     {
         int artnum;
@@ -63,6 +67,25 @@ internal partial class Program
         text = new string(System.Text.Encoding.ASCII.GetString(grsegs[artnum]).ToCharArray());
         ShowArticle(text);
         VW_FadeOut();
+
+        FreeMusic();
+    }
+
+    internal static void EndText()
+    {
+        int artnum;
+        string text;
+        ClearMemory();
+
+        artnum = endextern + gamestate.episode;
+        text = new string(System.Text.Encoding.ASCII.GetString(grsegs[artnum]).ToCharArray());
+
+        ShowArticle(text);
+
+        VW_FadeOut();
+        SETFONTCOLOR(0, 15);
+        IN_ClearKeysDown();
+        IN_CenterMouse();
 
         FreeMusic();
     }

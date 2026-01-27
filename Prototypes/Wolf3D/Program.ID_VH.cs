@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -27,6 +28,15 @@ internal struct fontstruct
 
 internal partial class Program
 {
+    internal static int WHITE = 15;			// graphics mode independant colors
+    internal static int BLACK		= 0;
+    internal static int FIRSTCOLOR	= 1;
+    internal static int SECONDCOLOR	= 12;
+    internal static int F_WHITE		= 15;
+    internal static int F_BLACK		= 0;
+    internal static int F_FIRSTCOLOR= 1;
+    internal static int F_SECONDCOLOR = 12;
+
     static pictabletype[] pictable;
     static int px, py;
     static byte fontcolor, backcolor;
@@ -243,4 +253,113 @@ internal partial class Program
 
     internal static void VW_FadeIn() => VL_FadeIn(0, 255, gamepal, 30);
     internal static void VW_FadeOut() => VL_FadeOut(0, 255, 0, 0, 0, 30);
+
+    internal static bool FizzleFade(IntPtr source, int x1, int y1, uint width, uint height, uint frames, bool abortable)
+    {
+        uint x=0, y=0, p, frame, pixperframe;
+        int rndval;
+
+        rndval = 1;
+        pixperframe = width * height / frames;
+
+        IN_StartAck();
+
+        frame = GetTimeCount();
+        IntPtr srcptr = VL_LockSurface(source);
+        if (srcptr == IntPtr.Zero) return false;
+
+        while (true)
+        {
+            IN_ProcessEvents();
+
+            if (abortable && IN_CheckAck())
+            {
+                VL_UnlockSurface(source);
+                VH_UpdateScreen(source);
+                return true;
+            }
+
+            IntPtr destptr = VL_LockSurface(screen);
+
+            if (destptr == IntPtr.Zero)
+                Quit($"Unable to lock dest surface: {SDL.SDL_GetError()}\n");
+
+            var scrn_surface = GetSurface(screen);
+            var src_surface = GetSurface(source);
+
+            for (p = 0; p < pixperframe; p++)
+            {
+                //
+                // seperate random value into x/y pair
+                //
+                x = (uint)(rndval >> (int)rndbits_y);
+                y = (uint)(rndval & ((1 << (int)rndbits_y) - 1));
+
+                //
+                // advance to next random element
+                //
+                rndval = (int)((rndval >> 1) ^ ((rndval & 1) != 0 ? 0 : rndmask));
+
+                if (x >= width || y >= height)
+                    p--;                         // not into the view area; get a new pair
+                else
+                {
+                    unsafe
+                    {
+                        byte* src = (byte*)srcptr;
+                        byte* dest = (byte*)destptr;
+                        //
+                        // copy one pixel
+                        //
+                        if (screenBits == 8)
+                        {
+                            dest[((y1 + y) * scrn_surface.pitch + x1 + x)] =
+                                src[((y1 + y) * src_surface.pitch + x1 + x)];
+                            //*(destptr + (y1 + y) * scrn_surface.pitch + x1 + x)
+                            //   = *(srcptr + (y1 + y) * src_surface.pitch + x1 + x);
+                        }
+                        else
+                        {
+                            var screen_format = GetSurfaceFormat(screen);
+                            var scrnBpp = screen_format.BytesPerPixel;
+                            byte col = src[(y1 + y) * src_surface.pitch + x1 + x];//*(srcptr + (y1 + y) * src_surface.pitch + x1 + x);
+                            uint fullcol = SDL.SDL_MapRGBA(scrn_surface.format, curpal[col].r, curpal[col].g, curpal[col].b, 255);//SDL_ALPHA_OPAQUE);
+
+                            // saving "fullcol" into a full bpp of the dest
+                            //memcpy (dest, src, count)
+                            var fullColBytes = BitConverter.GetBytes(fullcol);
+                            for (var b = 0; b < scrnBpp; b++)
+                            {
+                                dest[(y1 + y) * scrn_surface.pitch + (x1 + x) * scrnBpp + b] = fullColBytes[b];
+                            }
+                            //memcpy(dest + (y1 + y) * scrn_surface.pitch + (x1 + x) * scrnBpp, fullcol, scrnBpp);
+                        }
+                    }
+                }
+
+                if (rndval == 1)
+                {
+                    //
+                    // entire sequence has been completed
+                    //
+                    VL_UnlockSurface(screenBuffer);
+                    VL_UnlockSurface(screen);
+                    VH_UpdateScreen(screenBuffer);
+
+                    return false;
+                }
+            }
+
+            VL_UnlockSurface(screen);
+
+            SDL.SDL_UpdateTexture(texture, IntPtr.Zero, scrn_surface.pixels, (int)screenPitch);
+            SDL.SDL_RenderCopy(renderer, texture, IntPtr.Zero, IntPtr.Zero);
+            SDL.SDL_RenderPresent(renderer);
+
+            frame++;
+            Delay((int)(frame - GetTimeCount()));        // don't go too fast
+        }
+
+        return false;
+    }
 }

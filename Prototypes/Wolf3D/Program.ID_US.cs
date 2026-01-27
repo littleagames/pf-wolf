@@ -161,6 +161,11 @@ internal partial class Program
         }
     }
 
+    internal static void US_PrintSigned (int n)
+    {
+        US_Print(n.ToString());
+    }
+
     internal static void US_CPrint(string sorg)
     {
         if (sorg == null)

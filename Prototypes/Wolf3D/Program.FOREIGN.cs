@@ -73,10 +73,34 @@ internal partial class Program
 
     internal const string STR_TOTALTIME = "total time";
 
+    internal const string STR_RATKILL = "kill    %";
+    internal const string STR_RATSECRET = "secret    %";
+    internal const string STR_RATTREASURE = "treasure    %";
+
+    internal const string STR_BONUS = "bonus";
+    internal const string STR_TIME = "time";
+    internal const string STR_PAR = " par";
+
+    internal const string STR_RAT2KILL = "kill ratio    %";
+    internal const string STR_RAT2SECRET = "secret ratio    %";
+internal const string STR_RAT2TREASURE = "treasure ratio    %";
+
+    internal const string STR_DEFEATED = "defeated!";
+
+    internal const string STR_CHEATER1 = "You now have 100% Health,";
+    internal const string STR_CHEATER2 = "99 Ammo and both Keys!";
+    internal const string STR_CHEATER3 = "Note that you have basically";
+    internal const string STR_CHEATER4 = "eliminated your chances of";
+    internal const string STR_CHEATER5 = "getting a high score!";
+
+    internal const string STR_NOSPACE1 = "There is not enough space";
+    internal const string STR_NOSPACE2 = "on your disk to Save Game!";
+
     internal const string STR_SAVECHT1 = "Your Save Game file is,";
     internal const string STR_SAVECHT2 = "shall we say, \"corrupted\".";
     internal const string STR_SAVECHT3 = "But I'll let you go on and";
     internal const string STR_SAVECHT4 = "play anyway....";
+
     internal const string STR_SEEAGAIN = "Let's see that again!";
 
     internal const string ENDSTR1 = "Dost thou wish to\nleave with such hasty\nabandon?";

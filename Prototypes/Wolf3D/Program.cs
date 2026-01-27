@@ -56,15 +56,6 @@ internal partial class Program
     internal static bool param_goodtimes = false;
     internal static bool param_ignorenumchunks = false;
 
-    // wl_play globals
-
-    internal static bool singlestep, godmode, noclip, ammocheat, mapreveal;
-    internal static int extravbls;
-
-    // wl_text
-    internal static string helpfilename = "HELPART.";
-    internal static string endfilename = "ENDART1.";
-
     private static void Main(string[] args)
     {
         CheckParameters(args);
