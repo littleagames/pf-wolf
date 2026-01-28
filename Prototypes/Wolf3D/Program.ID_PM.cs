@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Wolf3D;
+﻿namespace Wolf3D;
 
 internal partial class Program
 {
@@ -144,6 +140,14 @@ internal partial class Program
     internal static void PM_Shutdown()
     {
 
+    }
+
+    internal static byte[] PM_GetPage(int page)
+    {
+        if (page < 0 || page >= ChunksInFile)
+            Quit($"PM_GetPage: Invalid page request: {page}");
+
+        return PMPages[page];
     }
 
     static void CA_CannotOpen(string text)

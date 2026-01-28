@@ -31,4 +31,9 @@ internal partial class Program
     {
         // TODO:
     }
+
+    internal const int DOORWIDTH = 0x7800;
+    internal const int OPENTICS = 300;
+
+    internal static doorobj_t[] doorobjlist = new doorobj_t[MAXDOORS];
 }

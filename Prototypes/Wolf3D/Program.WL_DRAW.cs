@@ -43,7 +43,7 @@ internal partial class Program
     internal static short[] pixelangle;
     internal static int[] finetangent = new int[FINEANGLES / 4];
     internal static int[] sintable = new int[ANGLES + ANGLES / 4];
-    internal static int[] costable = sintable[(ANGLES/4) ..]; // same as sintable, just offset by ANGLES/4
+    internal static int[] costable => sintable[(ANGLES/4) ..]; // same as sintable, just offset by ANGLES/4
 
     //
     // refresh variables
@@ -105,6 +105,35 @@ internal partial class Program
             tics = MAXTICS;
     }
 
+    internal static short CalcHeight()
+    {
+        short height;
+        int gx, gy, gxt, gyt, nx;
+
+
+        //
+        // translate point to view centered coordinates
+        //
+        gx = xintercept - viewx;
+        gy = yintercept - viewy;
+
+        //
+        // calculate nx
+        //
+        gxt = FixedMul(gx, viewcos);
+        gyt = FixedMul(gy, viewsin);
+        nx = gxt - gyt;
+
+        //
+        // calculate perspective ratio
+        //
+        if (nx < MINDIST)
+            nx = (int)MINDIST;             // don't let divide overflow
+
+        height = (short)(heightnumerator / (nx >> 8));
+        return height;
+    }
+
     internal static void Setup3DView()
     {
         viewangle = player.angle;
@@ -123,6 +152,164 @@ internal partial class Program
         xpartialup = (uint)(xpartialdown ^ (TILEGLOBAL - 1));
         ypartialdown = (uint)(viewy & (TILEGLOBAL - 1));
         ypartialup = (uint)(ypartialdown ^ (TILEGLOBAL - 1));
+    }
+
+    //==========================================================================
+
+    /*
+    ===================
+    =
+    = ScalePost
+    =
+    ===================
+    */
+    internal static void ScalePost()
+    {
+        int ywcount, yoffs, yw, yd, yendoffs;
+        byte col;
+
+        ywcount = yd = wallheight[postx] >> 3;
+        if (yd <= 0) yd = 100;
+
+        yoffs = (int)((centery - ywcount) * bufferPitch);
+        if (yoffs < 0) yoffs = 0;
+        yoffs += postx;
+
+        yendoffs = centery + ywcount - 1;
+        yw = TEXTURESIZE - 1;
+
+        while (yendoffs >= viewheight)
+        {
+            ywcount -= TEXTURESIZE / 2;
+            while (ywcount <= 0)
+            {
+                ywcount += yd;
+                yw--;
+            }
+            yendoffs--;
+        }
+        if (yw < 0) return;
+
+        col = postsource[yw];
+        yendoffs = (int)(yendoffs * bufferPitch + postx);
+        while (yoffs <= yendoffs)
+        {
+            unsafe
+            {
+                byte* dest = (byte*)vbufPtr + screenofs;
+                dest[yendoffs] = col; // get the surface pixels
+            }
+            ywcount -= TEXTURESIZE / 2;
+            if (ywcount <= 0)
+            {
+                do
+                {
+                    ywcount += yd;
+                    yw--;
+                }
+                while (ywcount <= 0);
+                if (yw < 0) break;
+                col = postsource[yw];
+            }
+            yendoffs -= (int)bufferPitch;
+        }
+    }
+
+
+    /*
+    ====================
+    =
+    = HitVertWall
+    =
+    = tilehit bit 7 is 0, because it's not a door tile
+    = if bit 6 is 1 and the adjacent tile is a door tile, use door side pic
+    =
+    ====================
+    */
+
+    internal static void HitVertWall()
+    {
+        int wallpic;
+        int texture;
+
+        texture = ((yintercept - texdelta) >> FIXED2TEXSHIFT) & TEXTUREMASK;
+
+        if (xtilestep == -1)
+        {
+            texture = TEXTUREMASK - texture;
+            xintercept += (int)TILEGLOBAL;
+        }
+        wallheight[pixx] = CalcHeight();
+        postx = pixx;
+
+        if ((tilehit & BIT_WALL) != 0)
+        {
+            //
+            // check for adjacent doors
+            //
+            if ((tilemap[xtile - xtilestep, yinttile] & BIT_DOOR) != 0)
+                wallpic = DOORWALL + 3;
+            else
+                wallpic = vertwall[tilehit & ~BIT_WALL];
+        }
+        else
+            wallpic = vertwall[tilehit];
+
+        postsource = PM_GetPage(wallpic).Skip(texture).ToArray();
+        ScalePost();
+    }
+
+    /*
+    ====================
+    =
+    = HitHorizWall
+    =
+    = tilehit bit 7 is 0, because it's not a door tile
+    = if bit 6 is 1 and the adjacent tile is a door tile, use door side pic
+    =
+    ====================
+    */
+
+    internal static void HitHorizWall()
+    {
+        int wallpic;
+        int texture;
+
+        texture = ((xintercept - texdelta) >> FIXED2TEXSHIFT) & TEXTUREMASK;
+
+        if (ytilestep == -1)
+            yintercept += (int)TILEGLOBAL;
+        else
+            texture = TEXTUREMASK - texture;
+
+        wallheight[pixx] = CalcHeight();
+        postx = pixx;
+
+        if ((tilehit & BIT_WALL) != 0)
+        {
+            //
+            // check for adjacent doors
+            //
+            if ((tilemap[xinttile, ytile - ytilestep] & BIT_DOOR) != 0)
+                wallpic = DOORWALL + 2;
+            else
+                wallpic = horizwall[tilehit & ~BIT_WALL];
+        }
+        else
+            wallpic = horizwall[tilehit];
+
+        postsource = PM_GetPage(wallpic).Skip(texture).ToArray();
+        ScalePost();
+    }
+
+    internal static void HitVertDoor()
+    {
+
+    }
+
+    internal static void HitHorizDoor()
+    {
+
     }
 
     internal static byte[] vgaCeiling =
@@ -156,10 +343,279 @@ internal partial class Program
         }
     }
 
-    internal static void WallRefresh()
+
+    private static void WallRefresh()//double midAngle, short focaltx, short focalty)
     {
-        // TODO:
+        short angle;
+        int xstep = 0, ystep = 0;
+        uint xpartial = 0, ypartial = 0;
+
+        for (pixx = 0; pixx < viewwidth; pixx++)
+        {
+            angle = (short)(midangle + pixelangle[pixx]);
+
+            if (angle < 0) // -90 - -1 degree arc
+                angle += ANG360; // -90 is the same as 270
+            if (angle >= ANG360) // 360-449 degree arc
+                angle -= ANG360; // -449 is the same as 89
+
+            //
+            // setup xstep/ystep based on angle
+            //
+            if (angle < ANG90) // 0-89 degree arc
+            {
+                xtilestep = 1;
+                ytilestep = -1;
+                xstep = finetangent[ANG90 - 1 - angle];
+                ystep = -finetangent[angle];
+                xpartial = (uint)xpartialup;
+                ypartial = (uint)ypartialdown;
+            }
+            else if (angle < ANG180) // 90-179 degree arc
+            {
+                xtilestep = -1;
+                ytilestep = -1;
+                xstep = -finetangent[angle - ANG90];
+                ystep = -finetangent[ANG180 - 1 - angle];
+                xpartial = (uint)xpartialdown;
+                ypartial = (uint)ypartialdown;
+            }
+            else if (angle < ANG270) // 180-269 degree arc
+            {
+                xtilestep = -1;
+                ytilestep = 1;
+                xstep = -finetangent[ANG270 - 1 - angle];
+                ystep = finetangent[angle - ANG180];
+                xpartial = (uint)xpartialdown;
+                ypartial = (uint)ypartialup;
+            }
+            else if (angle < ANG360) // 270-359 degree arc
+            {
+                xtilestep = 1;
+                ytilestep = 1;
+                xstep = finetangent[angle - ANG270];
+                ystep = finetangent[ANG360 - 1 - angle];
+                xpartial = (uint)xpartialup;
+                ypartial = (uint)ypartialup;
+            }
+
+            //
+            // initialise variables for intersection testing
+            //
+            yintercept = FixedMul(ystep, (int)xpartial) + viewy;
+            yinttile = yintercept >> (int)TILESHIFT;
+            xtile = (short)(focaltx + xtilestep);
+
+            xintercept = FixedMul(xstep, (int)ypartial) + viewx;
+            xinttile = xintercept >> (int)TILESHIFT;
+            ytile = (short)(focalty + ytilestep);
+
+            texdelta = 0;
+
+            //
+            // trace along this angle until we hit a wall
+            //
+            // CORE LOOP!
+            //
+            var tileFound = false;
+            while (!tileFound)
+            {
+                //
+                // check intersections with vertical walls
+                //
+                if ((xtile - xtilestep) == xinttile && (ytile - ytilestep) == yinttile)
+                    yinttile = ytile;
+
+                if ((ytilestep == -1 && yinttile <= ytile) || (ytilestep == 1 && yinttile >= ytile))
+                    tileFound = horizentry(xstep);
+
+                if (tileFound) break;
+
+                //tileFound = vertentry(ystep);
+
+                //
+                // check intersections with horizontal walls
+                //
+                if ((xtile - xtilestep) == xinttile && (ytile - ytilestep) == yinttile)
+                    xinttile = xtile;
+
+                if ((xtilestep == -1 && xinttile <= xtile) || (xtilestep == 1 && xinttile >= xtile))
+                    tileFound = vertentry(ystep);
+            }
+        }
     }
+
+    private static bool vertentry(int ystep)
+    {
+        int yinttemp;
+        // #ifdef REVEALMAP
+        //             mapseen[xtile][yinttile] = true;
+        // #endif
+       // tilehit2 = _map.TilePlane[yinttile][xtile];
+       // tilehit = _map.PlaneIds[0][yinttile, xtile]; // tilemap[xtile][yinttile];
+        tilehit = tilemap[xtile, yinttile];
+
+        if (tilehit != 0)
+        {
+            if ((tilehit & BIT_DOOR) != 0)
+            {
+                //
+                // hit a vertical door, so find which coordinate the door would be
+                // intersected at, and check to see if the door is open past that point
+                //
+                var door = doorobjlist[tilehit & ~BIT_DOOR];
+
+                if (door.action == (byte)dooractiontypes.dr_open)
+                {
+                    passvert(ystep); // door is open, continue tracing
+                    return false;
+                }
+
+                yinttemp = yintercept + (ystep >> 1);    // add halfstep to current intercept position
+
+                //
+                // midpoint is outside tile, so it hit the side of the wall before a door
+                //
+                if (yinttemp >> TILESHIFT != yinttile)
+                {
+                    passvert(ystep);
+                    return false;
+                }
+
+                if (door.action != (byte)dooractiontypes.dr_closed)
+                {
+                    //
+                    // the trace hit the door plane at pixel position yintercept, see if the door is
+                    // closed that much
+                    //
+                    if ((ushort)yinttemp < door.position)
+                    {
+                        passvert(ystep);
+                        return false;
+                    }
+                }
+
+                yintercept = yinttemp;
+                xintercept = (int)((xtile << (int)TILESHIFT) + (TILEGLOBAL / 2));
+
+                HitVertDoor();
+            }
+            else if (tilehit == BIT_WALL)
+            {
+                // TODO:
+            }
+            else
+            {
+                xintercept = xtile << (int)TILESHIFT;
+
+                HitVertWall();
+            }
+
+            return true;
+        }
+
+        //
+        // mark the tile as visible and setup for next step
+        //
+        spotvis[xtile, yinttile] = true;
+        passvert(ystep);
+        return false;
+    }
+
+    private static void passvert(int ystep)
+    {
+        spotvis[xtile, yinttile] = true;
+        xtile += xtilestep;
+        yintercept += ystep;
+        yinttile = yintercept >> (int)TILESHIFT;
+    }
+
+    private static bool horizentry(int xstep)
+    {
+        int xinttemp;
+        // #ifdef REVEALMAP
+        //             mapseen[xinttile][ytile] = true;
+        // #endif
+        // TODO: Turn tilehit into a Wall vs Door MapComponent check
+        //tilehit2 = _map.TilePlane[ytile][xinttile];
+        //tilehit = _map.PlaneIds[0][ytile, xinttile];//tilemap[xinttile][ytile];
+        tilehit = tilemap[xinttile, ytile];
+
+        if (tilehit != 0)
+        {
+            if ((tilehit & BIT_DOOR) != 0)
+            {
+                //
+                // hit a horizontal door, so find which coordinate the door would be
+                // intersected at, and check to see if the door is open past that point
+                //
+                var door = doorobjlist[tilehit & ~BIT_DOOR];
+
+                if (door.action == (byte)dooractiontypes.dr_open)
+                {
+                    passhoriz(xstep); // door is open, continue tracing
+                    return false;
+                }
+
+                xinttemp = xintercept + (xstep >> 1);    // add half step to current intercept position
+
+                //
+                // midpoint is outside tile, so it hit the side of the wall before a door
+                //
+                if ((xinttemp >> TILESHIFT) != xinttile)
+                {
+                    passhoriz(xstep);
+                    return false;
+                }
+
+                if (door.action != (byte)dooractiontypes.dr_closed)
+                {
+                    //
+                    // the trace hit the door plane at pixel position xintercept, see if the door is
+                    // closed that much
+                    //
+                    if ((ushort)xinttemp < door.position)
+                    {
+                        passhoriz(xstep);
+                        return false;
+                    }
+                }
+
+                xintercept = xinttemp;
+                yintercept = (int)((ytile << (int)TILESHIFT) + (TILEGLOBAL / 2));
+
+                HitHorizDoor();
+            }
+            else if (tilehit == BIT_WALL)
+            {
+                // TODO: Moving pushwalls
+            }
+            else
+            {
+                yintercept = ytile << (int)TILESHIFT;
+
+                HitHorizWall();
+            }
+
+            return true;
+        }
+
+        //
+        // mark the tile as visible and setup for next step
+        //
+        spotvis[xinttile, ytile] = true;
+        passhoriz(xstep);
+        return false;
+    }
+
+    private static void passhoriz(int xstep)
+    {
+        spotvis[xinttile, ytile] = true;
+        ytile += ytilestep;
+        xintercept += xstep;
+        xinttile = xintercept >> (int)TILESHIFT;
+    }
+
 
     internal static void DrawScaleds()
     {

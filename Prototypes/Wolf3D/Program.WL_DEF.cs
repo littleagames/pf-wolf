@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wolf3D;
 
@@ -196,6 +197,20 @@ internal struct gametype
     public int killx, killy;
     public byte victoryflag;            // set during victory animations
 }
+internal enum dooractiontypes
+{
+    dr_open, dr_closed, dr_opening, dr_closing,
+};
+
+internal struct doorobj_t
+{
+    public byte tilex, tiley;
+    public byte vertical; // boolean
+    public byte locknum;
+    public byte action;
+    public short ticcount;
+    public ushort position;            // leading edge of door (0 = closed, 0xffff = fully open)
+}
 
 internal struct objstruct
 {
@@ -290,7 +305,7 @@ internal partial class Program
     internal const int BIT_DOOR = (1 << (WALLSHIFT + 1));
     internal const int BIT_ALLTILES = (1 << (WALLSHIFT + 2));
 
-    internal readonly int DOORWALL = PMSpriteStart - 8;
+    internal static readonly int DOORWALL = PMSpriteStart - 8;
 
     internal const int MAXACTORS = 150;
     internal const int MAXSTATS = 400;
@@ -332,7 +347,7 @@ internal partial class Program
     internal const float M_PI = PI;
     internal const long GLOBAL1 = (1L << 16);
     internal const long TILEGLOBAL = GLOBAL1;
-    internal const long TILESHIFT = 16L;
+    internal const int TILESHIFT = 16;
     internal const int UNSIGNEDSHIFT = 8;
 
     internal const int ANGLES = 360;
