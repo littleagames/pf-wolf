@@ -212,7 +212,7 @@ internal struct doorobj_t
     public ushort position;            // leading edge of door (0 = closed, 0xffff = fully open)
 }
 
-internal struct objstruct
+internal class objstruct
 {
     public byte active;
     public short ticcount;
@@ -244,17 +244,22 @@ internal struct objstruct
     //
     // WARNING: DO NOT ADD ANY MEMBERS AFTER THESE!!!
     */
-    //objtype next,prev;
+    objstruct next,prev;
+
+    public objstruct()
+    {
+        active = (byte)activetypes.ac_no;
+    }
 }
 
-internal struct statestruct
+internal class statestruct
 {
     public byte rotate; // boolean
     public short shapenum;           // a shapenum of -1 means get from ob->temp1
     public short tictime;
     public Action<objstruct>? think;
     public Action<objstruct>? action;
-    //struct statestruct *next;
+    public statestruct next;
 
     public statestruct(
         byte rotate,
@@ -428,5 +433,5 @@ internal partial class Program
     internal static int JOYSCALE = 2;
 
     internal static int MAPSPOT(int x, int y, int plane) => (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]);
-    internal static bool ISPOINTER(objstruct x) => true; // TODO: How to? actorat was a list of pointers, vs just the objects themselves
+    internal static bool ISPOINTER(objstruct x) => false; // TODO: How to? actorat was a list of pointers, vs just the objects themselves
 }

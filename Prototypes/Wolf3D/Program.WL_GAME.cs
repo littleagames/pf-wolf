@@ -395,7 +395,7 @@ internal partial class Program
         //
         // spawn doors
         //
-        //InitActorList();                       // start spawning things with a clean slate
+        InitActorList();                       // start spawning things with a clean slate
         //InitDoorList();
         //InitStaticList();
 
@@ -491,8 +491,8 @@ internal partial class Program
         //
         if (LastAttacker != null)
         {
-            dx = LastAttacker.Value.x - player.x;
-            dy = player.y - LastAttacker.Value.y;
+            dx = LastAttacker.x - player.x;
+            dy = player.y - LastAttacker.y;
 
             fangle = (float)Math.Atan2((float)dy, (float)dx);     // returns -pi to pi
             if (fangle < 0)

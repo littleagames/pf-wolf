@@ -173,7 +173,6 @@ internal partial class Program
                 ob.angle -= ANGLES;
             if (ob.angle < 0)
                 ob.angle += ANGLES;
-
         }
 
         //

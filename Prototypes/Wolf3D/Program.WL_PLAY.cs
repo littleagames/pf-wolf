@@ -216,6 +216,14 @@ internal partial class Program
             FinishPaletteShifts();
     }
 
+    internal static void InitActorList()
+    {
+        //
+        // give the player the first free spots
+        //
+        player = new objstruct();
+    }
+
     internal static void DoActor(objstruct ob)
     {
         //if (ob.active == 0 && ob.areanumber < NUMAREAS && !areabyplayer[ob.areanumber])
