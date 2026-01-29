@@ -202,7 +202,7 @@ internal enum dooractiontypes
     dr_open, dr_closed, dr_opening, dr_closing,
 };
 
-internal struct doorobj_t
+internal class doorobj_t
 {
     public byte tilex, tiley;
     public byte vertical; // boolean
@@ -310,7 +310,7 @@ internal partial class Program
     internal const int BIT_DOOR = (1 << (WALLSHIFT + 1));
     internal const int BIT_ALLTILES = (1 << (WALLSHIFT + 2));
 
-    internal static readonly int DOORWALL = PMSpriteStart - 8;
+    internal static int DOORWALL => PMSpriteStart - 8;
 
     internal const int MAXACTORS = 150;
     internal const int MAXSTATS = 400;
@@ -433,5 +433,9 @@ internal partial class Program
     internal static int JOYSCALE = 2;
 
     internal static int MAPSPOT(int x, int y, int plane) => (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]);
-    internal static bool ISPOINTER(objstruct x) => false; // TODO: How to? actorat was a list of pointers, vs just the objects themselves
+    internal static void SetMapSpot(int x, int y, int plane, ushort value)
+    {
+        (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]) = value;
+    }
+    internal static bool ISPOINTER(objstruct? x) => x != null; // TODO: How to? actorat was a list of pointers, vs just the objects themselves
 }

@@ -22,7 +22,7 @@ internal partial class Program
 
     internal static byte[,] tilemap = new byte[MAPSIZE, MAPSIZE]; // wall values only
     internal static bool[,] spotvis = new bool[MAPSIZE ,MAPSIZE];
-    internal static objstruct[,] actorat = new objstruct[MAPSIZE, MAPSIZE];
+    internal static objstruct?[,] actorat = new objstruct?[MAPSIZE, MAPSIZE];
 
     internal static ushort mapwidth, mapheight;
     internal static uint tics;

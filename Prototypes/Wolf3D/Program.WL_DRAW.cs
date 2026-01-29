@@ -304,12 +304,72 @@ internal partial class Program
 
     internal static void HitVertDoor()
     {
+        int doorpage = 0;
+        int doornum;
+        int texture;
 
+        doornum = tilehit & ~BIT_DOOR;
+        texture = ((yintercept - doorobjlist[doornum].position) >> FIXED2TEXSHIFT) & TEXTUREMASK;
+
+        wallheight[pixx] = CalcHeight();
+        postx = pixx;
+
+        switch ((doortypes)doorobjlist[doornum].locknum)
+        {
+            case doortypes.dr_normal:
+                doorpage = DOORWALL + 1;
+                break;
+
+            case doortypes.dr_lock1:
+            case doortypes.dr_lock2:
+            case doortypes.dr_lock3:
+            case doortypes.dr_lock4:
+                doorpage = DOORWALL + 7;
+                break;
+
+            case doortypes.dr_elevator:
+                doorpage = DOORWALL + 5;
+                break;
+        }
+
+        postsource = PM_GetPage(doorpage).Skip(texture).ToArray();// + texture;
+
+        ScalePost();
     }
 
     internal static void HitHorizDoor()
     {
+        int doorpage = 0;
+        int doornum;
+        int texture;
 
+        doornum = tilehit & ~BIT_DOOR;
+        texture = ((xintercept - doorobjlist[doornum].position) >> FIXED2TEXSHIFT) & TEXTUREMASK;
+
+        wallheight[pixx] = CalcHeight();
+        postx = pixx;
+
+        switch ((doortypes)doorobjlist[doornum].locknum)
+        {
+            case doortypes.dr_normal:
+                doorpage = DOORWALL;
+                break;
+
+            case doortypes.dr_lock1:
+            case doortypes.dr_lock2:
+            case doortypes.dr_lock3:
+            case doortypes.dr_lock4:
+                doorpage = DOORWALL + 6;
+                break;
+
+            case doortypes.dr_elevator:
+                doorpage = DOORWALL + 4;
+                break;
+            }
+
+        postsource = PM_GetPage(doorpage).Skip(texture).ToArray();// + texture;
+
+        ScalePost();
     }
 
     internal static byte[] vgaCeiling =

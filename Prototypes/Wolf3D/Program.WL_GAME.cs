@@ -396,7 +396,7 @@ internal partial class Program
         // spawn doors
         //
         InitActorList();                       // start spawning things with a clean slate
-        //InitDoorList();
+        InitDoorList();
         //InitStaticList();
 
 
@@ -416,7 +416,7 @@ internal partial class Program
                         case 96:
                         case 98:
                         case 100:
-                            //SpawnDoor(x, y, 1, (tile - 90) / 2);
+                            SpawnDoor(x, y, true, (tile - 90) / 2);
                             break;
                         case 91:
                         case 93:
@@ -424,7 +424,7 @@ internal partial class Program
                         case 97:
                         case 99:
                         case 101:
-                            //SpawnDoor(x, y, 0, (tile - 91) / 2);
+                            SpawnDoor(x, y, false, (tile - 91) / 2);
                             break;
                     }
                 }
