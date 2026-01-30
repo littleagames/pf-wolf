@@ -225,7 +225,7 @@ internal partial class Program
     internal static bool TryMove(objstruct ob)
     {
         int xl, yl, xh, yh, x, y;
-        objstruct check;
+        objstruct? check;
         int deltax, deltay;
 
         xl = (int)((ob.x - PLAYERSIZE) >> (int)TILESHIFT);
@@ -244,34 +244,33 @@ internal partial class Program
             for (x = xl; x <= xh; x++)
             {
                 check = actorat[x,y];
-                // TODO: Cannot do null checks, or pointer checks on actorat
-                // May need to make actorat an address
-                if (/*check != null && */!ISPOINTER(check))
-                {
-                    if (tilemap[x,y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
-                    {
-                        switch (pwalldir)
-                        {
-                            case (byte)controldirs.di_north:
-                                if (ob.y - PUSHWALLMINDIST <= (pwally << (int)TILESHIFT) + ((63 - pwallpos) << 10))
-                                    return false;
-                                break;
-                            case (byte)controldirs.di_west:
-                                if (ob.x - PUSHWALLMINDIST <= (pwallx << (int)TILESHIFT) + ((63 - pwallpos) << 10))
-                                    return false;
-                                break;
-                            case (byte)controldirs.di_east:
-                                if (ob.x + PUSHWALLMINDIST >= (pwallx << (int)TILESHIFT) + (pwallpos << 10))
-                                    return false;
-                                break;
-                            case (byte)controldirs.di_south:
-                                if (ob.y + PUSHWALLMINDIST >= (pwally << (int)TILESHIFT) + (pwallpos << 10))
-                                    return false;
-                                break;
-                        }
-                    }
-                    else return false;
-                }
+                // ISPOINTER is checking if it is a wall
+                //if (check != null && !ISPOINTER(check))
+                //{
+                //    if (tilemap[x,y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
+                //    {
+                //        switch (pwalldir)
+                //        {
+                //            case (byte)controldirs.di_north:
+                //                if (ob.y - PUSHWALLMINDIST <= (pwally << (int)TILESHIFT) + ((63 - pwallpos) << 10))
+                //                    return false;
+                //                break;
+                //            case (byte)controldirs.di_west:
+                //                if (ob.x - PUSHWALLMINDIST <= (pwallx << (int)TILESHIFT) + ((63 - pwallpos) << 10))
+                //                    return false;
+                //                break;
+                //            case (byte)controldirs.di_east:
+                //                if (ob.x + PUSHWALLMINDIST >= (pwallx << (int)TILESHIFT) + (pwallpos << 10))
+                //                    return false;
+                //                break;
+                //            case (byte)controldirs.di_south:
+                //                if (ob.y + PUSHWALLMINDIST >= (pwally << (int)TILESHIFT) + (pwallpos << 10))
+                //                    return false;
+                //                break;
+                //        }
+                //    }
+                //    else return false;
+                //}
             }
         }
 
@@ -348,6 +347,16 @@ internal partial class Program
         SpawnBJVictory();
         gamestate.victoryflag = 1; // true
     }
+
+
+    internal static void GetBonus(statobj_t check)
+    {
+        if (playstate == (byte)playstatetypes.ex_died)   // ADDEDFIX 31 - Chris
+            return;
+
+        // TODO:
+    }
+
 
     static void StatusDrawPic (uint x, uint y, uint picnum)
     {

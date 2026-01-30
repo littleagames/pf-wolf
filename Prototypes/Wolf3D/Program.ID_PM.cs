@@ -142,6 +142,9 @@ internal partial class Program
 
     }
 
+    internal static byte[] PM_GetSpritePage(int v) => PM_GetPage(PMSpriteStart + v);
+    internal static byte[] PM_GetSoundPage(int v) => PM_GetPage(PMSoundStart + v);
+
     internal static byte[] PM_GetPage(int page)
     {
         if (page < 0 || page >= ChunksInFile)

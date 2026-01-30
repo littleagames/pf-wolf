@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using System;
+using System.Data;
 using System.Runtime.InteropServices;
 
 namespace Wolf3D;
@@ -27,7 +28,7 @@ internal partial class Program
     static int vbuf; // pointer index
     static IntPtr vbufPtr = IntPtr.Zero;
 
-    //static visobj_t[] vislist = new visobj_t[MAXVISABLE];
+    static visobj_t[] vislist = new visobj_t[MAXVISABLE];
 
     static int lasttimecount;
     static int frameon;
@@ -805,11 +806,198 @@ internal partial class Program
         xintercept += xstep;
         xinttile = xintercept >> (int)TILESHIFT;
     }
+    /*
+========================
+=
+= TransformTile
+=
+= Takes paramaters:
+=   tx,ty               : tile the object is centered in
+=
+= globals:
+=   viewx,viewy         : point of view
+=   viewcos,viewsin     : sin/cos of viewangle
+=   scale               : conversion from global value to screen value
+=
+= sets:
+=   screenx,transx,transy,screenheight: projected edge location and size
+=
+= Returns true if the tile is withing getting distance
+=
+========================
+*/
 
+    internal static bool TransformTile(int tx, int ty, ref short dispx, ref short dispheight)
+    {
+        int gx, gy, gxt, gyt, nx, ny;
+
+        //
+        // translate point to view centered coordinates
+        //
+        gx = ((int)tx << TILESHIFT) + 0x8000 - viewx;
+        gy = ((int)ty << TILESHIFT) + 0x8000 - viewy;
+
+        //
+        // calculate newx
+        //
+        gxt = FixedMul(gx, viewcos);
+        gyt = FixedMul(gy, viewsin);
+        nx = gxt - gyt - 0x2000;            // 0x2000 is size of object
+
+        //
+        // calculate newy
+        //
+        gxt = FixedMul(gx, viewsin);
+        gyt = FixedMul(gy, viewcos);
+        ny = gyt + gxt;
+
+
+        //
+        // calculate height / perspective ratio
+        //
+        if (nx < MINDIST)                 // too close, don't overflow the divide
+            dispheight = 0;
+        else
+        {
+            dispx = (short)(centerx + ny * scale / nx);
+            dispheight = (short)(heightnumerator / (nx >> 8));
+        }
+
+        //
+        // see if it should be grabbed
+        //
+        if (nx < TILEGLOBAL && ny > -TILEGLOBAL / 2 && ny < TILEGLOBAL / 2)
+            return true;
+        else
+            return false;
+    }
 
     internal static void DrawScaleds()
     {
-        // TODO:
+        int i, least, numvisable, height;
+        byte[] visspot;
+        int statptr;
+        objstruct obj;
+        int farthest = -1;
+        int visptr, visstep;
+
+        visptr = 0;
+
+        //
+        // place static objects
+        //
+        for (statptr = 0; statptr != laststatobj; statptr++)
+        {
+            visobj_t visptr_val = new visobj_t();
+            statobj_t statptr_val = statobjlist[statptr];
+            if ((visptr_val.shapenum = statptr_val.shapenum) == -1)
+                continue;                                               // object has been deleted
+
+            if (!spotvis[statptr_val.tilex, statptr_val.tiley])
+                continue;                                               // not visable
+
+            if (TransformTile(statptr_val.tilex, statptr_val.tiley,
+                ref visptr_val.viewx, ref visptr_val.viewheight) && (statptr_val.flags & (int)objflags.FL_BONUS) != 0)
+            {
+                GetBonus(statptr_val);
+                if (statptr_val.shapenum == -1)
+                    continue;                                           // object has been taken
+            }
+
+            if (visptr_val.viewheight == 0)
+                continue;                                               // to close to the object
+
+            if (visptr < (MAXVISABLE - 1))    // don't let it overflow
+            {
+                visptr_val.tilex = statptr_val.tilex;
+                visptr_val.tiley = statptr_val.tiley;
+                visptr_val.flags = statptr_val.flags;
+                vislist[visptr] = visptr_val;
+                visptr++;
+            }
+        }
+
+        ////
+        //// place active objects
+        ////
+        //for (obj = player.next; obj; obj = obj.next)
+        //{
+        //    if ((visptr_val.shapenum = obj.state.shapenum) == 0)
+        //        continue;                                               // no shape
+
+        //    visspot = (byte*)&spotvis[obj.tilex, obj.tiley];
+
+        //    //
+        //    // could be in any of the nine surrounding tiles
+        //    //
+        //    if (*visspot
+        //        || (*(visspot - 1))
+        //        || (*(visspot + 1))
+        //        || (*(visspot - (MAPSIZE + 1)))
+        //        || (*(visspot - (MAPSIZE)))
+        //        || (*(visspot - (MAPSIZE - 1)))
+        //        || (*(visspot + (MAPSIZE + 1)))
+        //        || (*(visspot + (MAPSIZE)))
+        //        || (*(visspot + (MAPSIZE - 1))))
+        //    {
+        //        obj->active = ac_yes;
+        //        TransformActor(obj);
+        //        if (!obj->viewheight)
+        //            continue;                                               // too close or far away
+
+        //        visptr->viewx = obj->viewx;
+        //        visptr->viewheight = obj->viewheight;
+        //        if (visptr->shapenum == -1)
+        //            visptr->shapenum = obj->temp1;  // special shape
+
+        //        if (obj->state->rotate)
+        //            visptr->shapenum += CalcRotate(obj);
+
+        //        if (visptr < &vislist[MAXVISABLE - 1])    // don't let it overflow
+        //        {
+        //            visptr->tilex = obj->x >> TILESHIFT;
+        //            visptr->tiley = obj->y >> TILESHIFT;
+        //            visptr->flags = obj->flags;
+        //            visptr++;
+        //        }
+        //        obj->flags |= FL_VISABLE;
+        //    }
+        //    else
+        //        obj->flags &= ~FL_VISABLE;
+        //}
+
+        //
+        // draw from back to front
+        //
+        numvisable = (int)(visptr);
+
+        if (numvisable == 0)
+            return;                                                                 // no visable objects
+
+        for (i = 0; i < numvisable; i++)
+        {
+            least = 32000;
+            for (visstep = 0; visstep < visptr; visstep++)
+            {
+                visobj_t visstep_val = vislist[visstep];
+                height = visstep_val.viewheight;
+                if (height < least)
+                {
+                    least = height;
+                    farthest = visstep;
+                }
+            }
+            //
+            // draw farthest
+            //
+            if (farthest != -1)
+            {
+                visobj_t farthest_obj = vislist[farthest];
+                ScaleShape(farthest_obj);
+
+                farthest_obj.viewheight = 32000;
+            }
+        }
     }
 
     internal static void DrawPlayerWeapon()
