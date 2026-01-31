@@ -44,7 +44,7 @@ internal partial class Program
                 var destIndex = ylookup[startpix] + x;
                 unsafe
                 {
-                    byte* dest = (byte*)vbufPtr;// + destIndex;
+                    byte* dest = (byte*)vbufPtr + screenofs;// + destIndex;
                     while (startpix < endpix)
                     {
                         dest[destIndex] = (byte)color;
@@ -112,6 +112,48 @@ internal partial class Program
 
                     ScaleLine((short)x1, (short)toppix, fracstep, linesrc, linecmds);
                 }
+
+                x1++;
+            }
+        }
+    }
+
+    internal static void SimpleScaleShape (int dispx, int shapenum, int dispheight)
+    {
+        int i;
+        compshape_t shape;
+        byte[] linesrc, linecmds;
+        int height, toppix;
+        int x1, x2, xcenter;
+        int frac, fracstep;
+
+        height = dispheight >> 1;
+
+        linesrc = PM_GetSpritePage(shapenum);
+        shape = new compshape_t(linesrc);
+        fracstep = FixedDiv(height, TEXTURESIZE / 2);
+        frac = shape.leftpix * fracstep;
+
+        xcenter = dispx - height;
+        toppix = centery - height;
+
+        x2 = (frac >> FRACBITS) + xcenter;
+
+        for (i = shape.leftpix; i <= shape.rightpix; i++)
+        {
+            //
+            // calculate edges of the shape
+            //
+            x1 = x2;
+
+            frac += fracstep;
+            x2 = (frac >> FRACBITS) + xcenter;
+
+            while (x1 < x2)
+            {
+                linecmds = linesrc.Skip(shape.dataofs[i - shape.leftpix]).ToArray(); // this needs to get a subset of data
+
+                ScaleLine((short)x1, (short)toppix, fracstep, linesrc, linecmds);
 
                 x1++;
             }

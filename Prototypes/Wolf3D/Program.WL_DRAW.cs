@@ -92,11 +92,11 @@ internal partial class Program
             lasttimecount = (int)GetTimeCount();    // if the game was paused a LONG time
 
         uint curtime = SDL.SDL_GetTicks();
-        tics = (uint)((curtime * 7) / 100 - lasttimecount);
+        tics = (uint)((curtime * 7) / 100 - lasttimecount); // TODO: Rounding?
         if (tics == 0)
         {
             // wait until end of current tic
-            SDL.SDL_Delay((uint)(((lasttimecount + 1) * 100) / 7 - curtime));
+            SDL.SDL_Delay((uint)(((lasttimecount + 1) * 100) / 7 - curtime)); // TODO: Rounding error?
             tics = 1;
         }
 
@@ -1000,9 +1000,31 @@ internal partial class Program
         }
     }
 
+    static int[] weaponscale = {
+        (int)spritenums.SPR_KNIFEREADY,
+        (int)spritenums.SPR_PISTOLREADY,
+        (int)spritenums.SPR_MACHINEGUNREADY,
+        (int)spritenums.SPR_CHAINREADY
+    };
+
     internal static void DrawPlayerWeapon()
     {
-        // TODO:
+        int shapenum;
+        if (gamestate.victoryflag != 0)
+        {
+            //if (player.state == s_deathcam && (GetTimeCount() & 32))
+            //    SimpleScaleShape(viewwidth / 2, (int)spritenums.SPR_DEATHCAM, viewheight + 1);
+            return;
+        }
+
+        if (gamestate.weapon != -1)
+        {
+            shapenum = weaponscale[gamestate.weapon] + gamestate.weaponframe;
+            SimpleScaleShape(viewwidth / 2, shapenum, viewheight + 1);
+        }
+
+        if (demorecord || demoplayback)
+            SimpleScaleShape(viewwidth / 2, (int)spritenums.SPR_DEMO, viewheight + 1);
     }
 
     internal static void ThreeDRefresh()

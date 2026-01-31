@@ -544,14 +544,16 @@ internal partial class Program
         if (red != 0)
         {
             SDL_Color[] flat = new SDL_Color[256];
-            Array.Copy(redshifts, red - 1, flat, 0, 256);
+            for (int i = 0; i < 256; i++)
+                flat[i] = redshifts[red - 1, i];
             VL_SetPalette(flat, false);
             palshifted = true;
         }
         else if (white != 0)
         {
             SDL_Color[] flat = new SDL_Color[256];
-            Array.Copy(whiteshifts, white - 1, flat, 0, 256);
+            for (int i = 0; i < 256; i++)
+                flat[i] = whiteshifts[white - 1, i];
             VL_SetPalette(flat, false);
             palshifted = true;
         }
@@ -574,6 +576,16 @@ internal partial class Program
     {
         bonuscount = damagecount = 0;
         palshifted = false;
+    }
+
+    internal static void StartBonusFlash()
+    {
+        bonuscount = NUMWHITESHIFTS * WHITETICS;    // white shift palette
+    }
+
+    internal static void StartDamageFlash(int damage)
+    {
+        damagecount += damage;
     }
 
     /*

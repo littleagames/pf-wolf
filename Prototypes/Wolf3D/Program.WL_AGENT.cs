@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Runtime.ConstrainedExecution;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wolf3D;
 
@@ -354,7 +355,109 @@ internal partial class Program
         if (playstate == (byte)playstatetypes.ex_died)   // ADDEDFIX 31 - Chris
             return;
 
-        // TODO:
+        switch ((wl_stat_types)check.itemnumber)
+        {
+            case wl_stat_types.bo_firstaid:
+                if (gamestate.health == 100)
+                    return;
+
+                SD_PlaySound((int)soundnames.HEALTH2SND);
+                HealSelf(25);
+                break;
+
+            case wl_stat_types.bo_key1:
+            case wl_stat_types.bo_key2:
+            case wl_stat_types.bo_key3:
+            case wl_stat_types.bo_key4:
+                GiveKey(check.itemnumber - (int)wl_stat_types.bo_key1);
+                SD_PlaySound((int)soundnames.GETKEYSND);
+                break;
+
+            case wl_stat_types.bo_cross:
+                SD_PlaySound((int)soundnames.BONUS1SND);
+                GivePoints(100);
+                gamestate.treasurecount++;
+                break;
+            case wl_stat_types.bo_chalice:
+                SD_PlaySound((int)soundnames.BONUS2SND);
+                GivePoints(500);
+                gamestate.treasurecount++;
+                break;
+            case wl_stat_types.bo_bible:
+                SD_PlaySound((int)soundnames.BONUS3SND);
+                GivePoints(1000);
+                gamestate.treasurecount++;
+                break;
+            case wl_stat_types.bo_crown:
+                SD_PlaySound((int)soundnames.BONUS4SND);
+                GivePoints(5000);
+                gamestate.treasurecount++;
+                break;
+
+            case wl_stat_types.bo_clip:
+                if (gamestate.ammo == 99)
+                    return;
+
+                SD_PlaySound((int)soundnames.GETAMMOSND);
+                GiveAmmo(8);
+                break;
+            case wl_stat_types.bo_clip2:
+                if (gamestate.ammo == 99)
+                    return;
+
+                SD_PlaySound((int)soundnames.GETAMMOSND);
+                GiveAmmo(4);
+                break;
+
+            case wl_stat_types.bo_machinegun:
+                SD_PlaySound((int)soundnames.GETMACHINESND);
+                GiveWeapon((int)weapontypes.wp_machinegun);
+                break;
+            case wl_stat_types.bo_chaingun:
+                SD_PlaySound((int)soundnames.GETGATLINGSND);
+                facetimes = 38;
+                GiveWeapon((int)weapontypes.wp_chaingun);
+
+                if (viewsize != 21)
+                    StatusDrawFace((int)graphicnums.GOTGATLINGPIC);
+                facecount = 0;
+                break;
+
+            case wl_stat_types.bo_fullheal:
+                SD_PlaySound((int)soundnames.BONUS1UPSND);
+                HealSelf(99);
+                GiveAmmo(25);
+                GiveExtraMan();
+                gamestate.treasurecount++;
+                break;
+
+            case wl_stat_types.bo_food:
+                if (gamestate.health == 100)
+                    return;
+
+                SD_PlaySound((int)soundnames.HEALTH1SND);
+                HealSelf(10);
+                break;
+
+            case wl_stat_types.bo_alpo:
+                if (gamestate.health == 100)
+                    return;
+
+                SD_PlaySound((int)soundnames.HEALTH1SND);
+                HealSelf(4);
+                break;
+
+            case wl_stat_types.bo_gibs:
+                if (gamestate.health > 10)
+                    return;
+
+                SD_PlaySound((int)soundnames.SLURPIESND);
+                HealSelf(1);
+                break;
+        }
+
+        StartBonusFlash();
+        check.shapenum = -1;                   // remove from list
     }
 
 
@@ -487,6 +590,16 @@ internal partial class Program
         LatchNumber(21, 16, 3, gamestate.health);
     }
 
+    internal static void HealSelf(int points)
+    {
+        gamestate.health += (short)points;
+        if (gamestate.health > 100)
+            gamestate.health = 100;
+
+        DrawHealth();
+        DrawFace();
+    }
+
     static void DrawKeys()
     {
         if (viewsize == 21 && ingame) return;
@@ -499,6 +612,12 @@ internal partial class Program
             StatusDrawPic(30, 20, (int)graphicnums.SILVERKEYPIC);
         else
             StatusDrawPic(30, 20, (int)graphicnums.NOKEYPIC);
+    }
+
+    static void GiveKey(int key)
+    {
+        gamestate.keys |= (short)(1 << key);
+        DrawKeys();
     }
 
     static void DrawLevel()
@@ -581,12 +700,88 @@ internal partial class Program
 
     internal static void Cmd_Use()
     {
-        // TODO:
+        int checkx, checky, doornum, dir;
+        bool elevatorok;
+
+        //
+        // find which cardinal direction the player is facing
+        //
+        if (player.angle < ANGLES / 8 || player.angle > 7 * ANGLES / 8)
+        {
+            checkx = player.tilex + 1;
+            checky = player.tiley;
+            dir = (int)controldirs.di_east;
+            elevatorok = true;
+        }
+        else if (player.angle < 3 * ANGLES / 8)
+        {
+            checkx = player.tilex;
+            checky = player.tiley - 1;
+            dir = (int)controldirs.di_north;
+            elevatorok = false;
+        }
+        else if (player.angle < 5 * ANGLES / 8)
+        {
+            checkx = player.tilex - 1;
+            checky = player.tiley;
+            dir = (int)controldirs.di_west;
+            elevatorok = true;
+        }
+        else
+        {
+            checkx = player.tilex;
+            checky = player.tiley + 1;
+            dir = (int)controldirs.di_south;
+            elevatorok = false;
+        }
+
+        doornum = tilemap[checkx, checky];
+        if (MAPSPOT(checkx, checky, 1) == PUSHABLETILE)
+        {
+            //
+            // pushable wall
+            //
+
+            PushWall(checkx, checky, dir);
+            return;
+        }
+        if (!buttonheld[(int)buttontypes.bt_use] && doornum == ELEVATORTILE && elevatorok)
+        {
+            //
+            // use elevator
+            //
+            buttonheld[(int)buttontypes.bt_use] = true;
+
+            tilemap[checkx, checky]++;              // flip switch
+            if (MAPSPOT(player.tilex, player.tiley, 0) == ALTELEVATORTILE)
+                playstate = (byte)playstatetypes.ex_secretlevel;
+            else
+                playstate = (byte)playstatetypes.ex_completed;
+            SD_PlaySound((int)soundnames.LEVELDONESND);
+            SD_WaitSoundDone();
+        }
+        else if (!buttonheld[(int)buttontypes.bt_use] && (doornum & BIT_DOOR) != 0)
+        {
+            buttonheld[(int)buttontypes.bt_use] = true;
+            OperateDoor(doornum & ~BIT_DOOR);
+        }
+        else
+            SD_PlaySound((int)soundnames.DONOTHINGSND);
     }
 
     internal static void Cmd_Fire()
     {
-        // TODO:
+        buttonheld[(int)buttontypes.bt_attack] = true;
+
+        gamestate.weaponframe = 0;
+
+        player.state = s_attack;
+
+        gamestate.attackframe = 0;
+        gamestate.attackcount =
+            attackinfo[gamestate.weapon, gamestate.attackframe].tics;
+        gamestate.weaponframe =
+            attackinfo[gamestate.weapon, gamestate.attackframe].frame;
     }
 
     //===========================================================================

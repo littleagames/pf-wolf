@@ -205,7 +205,7 @@ internal struct gametype
     public byte victoryflag;            // set during victory animations
 }
 
-internal class compshape_t
+internal struct compshape_t
 {
     public ushort leftpix, rightpix;
     public ushort[] dataofs;
