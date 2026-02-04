@@ -872,10 +872,80 @@ internal partial class Program
             return false;
     }
 
+    internal static int CalcRotate(objstruct ob)
+    {
+        int angle, viewangle;
+
+        // this isn't exactly correct, as it should vary by a trig value,
+        // but it is close enough with only eight rotations
+
+        viewangle = (int)(player.angle + (centerx - ob.viewx) / (8 * viewwidth / 320.0));
+
+        if (ob.obclass == (int)classtypes.rocketobj || ob.obclass == (int)classtypes.hrocketobj)
+            angle = (viewangle - 180) - ob.angle;
+        else
+            angle = (viewangle - 180) - dirangle[ob.dir];
+
+        angle += ANGLES / 16;
+        while (angle >= ANGLES)
+            angle -= ANGLES;
+        while (angle < 0)
+            angle += ANGLES;
+
+        if (ob.state.rotate == 2)             // 2 rotation pain frame
+            return 0;               // pain with shooting frame bugfix
+
+        return angle / (ANGLES / 8);
+    }
+
+    internal static void TransformActor(objstruct ob)
+    {
+        int gx, gy, gxt, gyt, nx, ny;
+
+        //
+        // translate point to view centered coordinates
+        //
+        gx = ob.x - viewx;
+        gy = ob.y - viewy;
+
+        //
+        // calculate newx
+        //
+        gxt = FixedMul(gx, viewcos);
+        gyt = FixedMul(gy, viewsin);
+        nx = gxt - gyt - ACTORSIZE;         // fudge the shape forward a bit, because
+                                            // the midpoint could put parts of the shape
+                                            // into an adjacent wall
+
+        //
+        // calculate newy
+        //
+        gxt = FixedMul(gx, viewsin);
+        gyt = FixedMul(gy, viewcos);
+        ny = gyt + gxt;
+
+        //
+        // calculate perspective ratio
+        //
+        ob.transx = nx;
+
+        if (nx < MINDIST)                 // too close, don't overflow the divide
+        {
+            ob.viewheight = 0;
+            return;
+        }
+
+        ob.viewx = (short)(centerx + ny * scale / nx);
+
+        //
+        // calculate height (heightnumerator/(nx>>8))
+        //
+        ob.viewheight = (ushort)(heightnumerator / (nx >> 8));
+    }
+
     internal static void DrawScaleds()
     {
         int i, least, numvisable, height;
-        byte[] visspot;
         int statptr;
         objstruct obj;
         int farthest = -1;
@@ -917,54 +987,55 @@ internal partial class Program
             }
         }
 
-        ////
-        //// place active objects
-        ////
-        //for (obj = player.next; obj; obj = obj.next)
-        //{
-        //    if ((visptr_val.shapenum = obj.state.shapenum) == 0)
-        //        continue;                                               // no shape
+        //
+        // place active objects
+        //
+        for (int? o = player.next; o != null; o = obj.next)
+        {
+            obj = objlist[o.Value];
+            visobj_t visptr_val = new visobj_t();
+            if ((visptr_val.shapenum = obj.state.shapenum) == 0)
+                continue;                                               // no shape
 
-        //    visspot = (byte*)&spotvis[obj.tilex, obj.tiley];
+            //
+            // could be in any of the nine surrounding tiles
+            //
+            if (spotvis[obj.tilex, obj.tiley]//*visspot
+                || spotvis[obj.tilex-1, obj.tiley]//(*(visspot - 1))
+                || spotvis[obj.tilex+1, obj.tiley]//(*(visspot + 1))
+                || spotvis[obj.tilex, obj.tiley-1]//(*(visspot - (MAPSIZE + 1)))
+                || spotvis[obj.tilex-1, obj.tiley - 1]//(*(visspot - (MAPSIZE)))
+                || spotvis[obj.tilex+1, obj.tiley - 1]//(*(visspot - (MAPSIZE - 1)))
+                || spotvis[obj.tilex, obj.tiley+1]//(*(visspot + (MAPSIZE + 1)))
+                || spotvis[obj.tilex-1, obj.tiley+1]//(*(visspot + (MAPSIZE)))
+                || spotvis[obj.tilex+1, obj.tiley+1])//(*(visspot + (MAPSIZE - 1))))
+            {
+                obj.active = (byte)activetypes.ac_yes;
+                TransformActor(obj);
+                if (obj.viewheight == 0)
+                    continue;                                               // too close or far away
 
-        //    //
-        //    // could be in any of the nine surrounding tiles
-        //    //
-        //    if (*visspot
-        //        || (*(visspot - 1))
-        //        || (*(visspot + 1))
-        //        || (*(visspot - (MAPSIZE + 1)))
-        //        || (*(visspot - (MAPSIZE)))
-        //        || (*(visspot - (MAPSIZE - 1)))
-        //        || (*(visspot + (MAPSIZE + 1)))
-        //        || (*(visspot + (MAPSIZE)))
-        //        || (*(visspot + (MAPSIZE - 1))))
-        //    {
-        //        obj->active = ac_yes;
-        //        TransformActor(obj);
-        //        if (!obj->viewheight)
-        //            continue;                                               // too close or far away
+                visptr_val.viewx = obj.viewx;
+                visptr_val.viewheight = (short)obj.viewheight;
+                if (visptr_val.shapenum == -1)
+                    visptr_val.shapenum = obj.temp1;  // special shape
 
-        //        visptr->viewx = obj->viewx;
-        //        visptr->viewheight = obj->viewheight;
-        //        if (visptr->shapenum == -1)
-        //            visptr->shapenum = obj->temp1;  // special shape
+                if (obj.state.rotate != 0)
+                    visptr_val.shapenum += (short)CalcRotate(obj);
 
-        //        if (obj->state->rotate)
-        //            visptr->shapenum += CalcRotate(obj);
-
-        //        if (visptr < &vislist[MAXVISABLE - 1])    // don't let it overflow
-        //        {
-        //            visptr->tilex = obj->x >> TILESHIFT;
-        //            visptr->tiley = obj->y >> TILESHIFT;
-        //            visptr->flags = obj->flags;
-        //            visptr++;
-        //        }
-        //        obj->flags |= FL_VISABLE;
-        //    }
-        //    else
-        //        obj->flags &= ~FL_VISABLE;
-        //}
+                if (visptr < MAXVISABLE - 1)    // don't let it overflow
+                {
+                    visptr_val.tilex = (byte)(obj.x >> TILESHIFT);
+                    visptr_val.tiley = (byte)(obj.y >> TILESHIFT);
+                    visptr_val.flags = obj.flags;
+                    vislist[visptr] = visptr_val;
+                    visptr++;
+                }
+                obj.flags |= (uint)objflags.FL_VISABLE;
+            }
+            else
+                obj.flags &= ~(uint)objflags.FL_VISABLE;
+        }
 
         //
         // draw from back to front

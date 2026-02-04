@@ -126,7 +126,7 @@ internal partial class Program
         switch ((wl_stat_types)statinfo[type].type)
         {
             case wl_stat_types.block:
-                //actorat[tilex][tiley] = (objtype*)BIT_WALL;          // consider it a blocking tile
+                actorat[tilex, tiley] = BIT_WALL;          // consider it a blocking tile
                 goto case wl_stat_types.none;
             case wl_stat_types.none:
                 newstatobj.flags = 0;
@@ -237,7 +237,7 @@ internal partial class Program
         doorobjlist[lastdoorobj] = doorobj;
 
         // TODO: "door actor"
-        //actorat[tilex,tiley] = (objtype*)(uintptr_t)(doornum | BIT_DOOR);   // consider it a solid wall
+        actorat[tilex,tiley] = (doornum | BIT_DOOR);   // consider it a solid wall
 
         //
         // make the door tile a special tile, and mark the adjacent tiles
@@ -276,6 +276,7 @@ internal partial class Program
     {
         int tilex, tiley, area;
         objstruct? check = null;
+        int checkIndex;
 
         //
         // don't close on anything solid
@@ -283,7 +284,7 @@ internal partial class Program
         tilex = doorobjlist[door].tilex;
         tiley = doorobjlist[door].tiley;
 
-        if (actorat[tilex, tiley] != null)
+        if (actorat[tilex, tiley] != 0)
             return;
 
         if (player.tilex == tilex && player.tiley == tiley)
@@ -298,11 +299,13 @@ internal partial class Program
                 if (((player.x - MINDIST) >> TILESHIFT) == tilex)
                     return;
             }
-            check = actorat[tilex - 1, tiley];
-            if (ISPOINTER(check) && ((check.x + MINDIST) >> TILESHIFT) == tilex)
+            checkIndex = actorat[tilex - 1, tiley];
+            check = objlist[checkIndex];
+            if (ISPOINTER(checkIndex) && ((check.x + MINDIST) >> TILESHIFT) == tilex)
                 return;
-            check = actorat[tilex + 1, tiley];
-            if (ISPOINTER(check) && ((check.x - MINDIST) >> TILESHIFT) == tilex)
+            checkIndex = actorat[tilex + 1, tiley];
+            check = objlist[checkIndex];
+            if (ISPOINTER(checkIndex) && ((check.x - MINDIST) >> TILESHIFT) == tilex)
                 return;
         }
         else
@@ -314,11 +317,13 @@ internal partial class Program
                 if (((player.y - MINDIST) >> TILESHIFT) == tiley)
                     return;
             }
-            check = actorat[tilex, tiley - 1];
-            if (ISPOINTER(check) && ((check.y + MINDIST) >> TILESHIFT) == tiley)
+            checkIndex = actorat[tilex, tiley - 1];
+            check = objlist[checkIndex];
+            if (ISPOINTER(checkIndex) && ((check.y + MINDIST) >> TILESHIFT) == tiley)
                 return;
-            check = actorat[tilex, tiley + 1];
-            if (ISPOINTER(check) && ((check.y - MINDIST) >> TILESHIFT) == tiley)
+            checkIndex = actorat[tilex, tiley + 1];
+            check = objlist[checkIndex];
+            if (ISPOINTER(checkIndex) && ((check.y - MINDIST) >> TILESHIFT) == tiley)
                 return;
         }
 
@@ -337,7 +342,7 @@ internal partial class Program
         //
         // make the door space solid
         //
-        //actorat[tilex][tiley] = (objtype*)(uintptr_t)(door | BIT_DOOR);
+        actorat[tilex, tiley] = (door | BIT_DOOR);
     }
 
     internal static void OperateDoor(int door)
@@ -429,7 +434,7 @@ internal partial class Program
             position = 0xffff;
             doorobjlist[door].ticcount = 0;
             doorobjlist[door].action = (byte)dooractiontypes.dr_open;
-            actorat[doorobjlist[door].tilex, doorobjlist[door].tiley] = null;
+            actorat[doorobjlist[door].tilex, doorobjlist[door].tiley] = 0;
         }
 
         doorobjlist[door].position = (ushort)position;
@@ -552,13 +557,13 @@ internal partial class Program
         dx = dirs[dir][0];
         dy = dirs[dir][1];
 
-        if (actorat[checkx + dx, checky + dy] != null)
+        if (actorat[checkx + dx, checky + dy] != 0)
         {
             SD_PlaySound((int)soundnames.NOWAYSND);
             return;
         }
         // TODO:
-        //actorat[checkx + dx, checky + dy] = (objtype*)(uintptr_t)(tilemap[checkx + dx][checky + dy] = oldtile);
+        actorat[checkx + dx, checky + dy] = (tilemap[checkx + dx, checky + dy] = (byte)oldtile);
 
         gamestate.secretcount++;
         pwallx = (ushort)checkx;
@@ -595,7 +600,7 @@ internal partial class Program
             // the tile can now be walked into
             //
             tilemap[pwallx, pwally] = 0;
-            actorat[pwallx, pwally] = null;
+            actorat[pwallx, pwally] = 0;
             SetMapSpot(pwallx, pwally, 0, (ushort)(player.areanumber + AREATILE));    // TODO: this is unnecessary, and makes a mess of mapsegs
 
             int dx = dirs[pwalldir][0], dy = dirs[pwalldir][1];
@@ -622,15 +627,15 @@ internal partial class Program
                 pwallx += (ushort)dx;
                 pwally += (ushort)dy;
 
-                if (actorat[pwallx + dx, pwally + dy] != null
+                if (actorat[pwallx + dx, pwally + dy] != 0
                     || (xl <= pwallx + dx && pwallx + dx <= xh && yl <= pwally + dy && pwally + dy <= yh))
                 {
                     pwallstate = 0;
                     tilemap[pwallx, pwally] = (byte)oldtile;
                     return;
                 }
-                // TODO: actorat is used as the collision detection layer too, need a better solution
-                //actorat[pwallx + dx, pwally + dy] = (objtype*)(uintptr_t)(tilemap[pwallx + dx][pwally + dy] = oldtile);
+
+                actorat[pwallx + dx, pwally + dy] = (tilemap[pwallx + dx, pwally + dy] = (byte)oldtile);
                 tilemap[pwallx + dx, pwally + dy] = BIT_WALL;
             }
         }

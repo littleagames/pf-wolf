@@ -263,7 +263,7 @@ internal class objstruct
     public byte active;
     public short ticcount;
     public byte obclass;
-    public statestruct state;
+    public statestruct? state;
 
     public uint flags;              // FL_SHOOTABLE, etc
 
@@ -290,7 +290,7 @@ internal class objstruct
     //
     // WARNING: DO NOT ADD ANY MEMBERS AFTER THESE!!!
     */
-    objstruct next,prev;
+    public int? next,prev;
 
     public objstruct()
     {
@@ -305,20 +305,22 @@ internal class statestruct
     public short tictime;
     public Action<objstruct>? think;
     public Action<objstruct>? action;
-    public statestruct next;
+    public statestruct? next;
 
     public statestruct(
         byte rotate,
         short shapenum, 
         short tictime,
         Action<objstruct>? think,
-        Action<objstruct>? action)
+        Action<objstruct>? action,
+        statestruct? next)
     {
         this.rotate = rotate;
         this.shapenum = shapenum;
         this.tictime = tictime;
         this.think = think;
         this.action = action;
+        this.next = next;
     }
 }
 
@@ -720,5 +722,6 @@ internal partial class Program
     {
         (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]) = value;
     }
-    internal static bool ISPOINTER(objstruct? x) => x != null; // TODO: How to? actorat was a list of pointers, vs just the objects themselves
+    //internal static bool ISPOINTER(objstruct? x) => x != null; // TODO: How to? actorat was a list of pointers, vs just the objects themselves
+    internal static bool ISPOINTER(int objstructIndex) => (objstructIndex & 0xffff) != 0;
 }

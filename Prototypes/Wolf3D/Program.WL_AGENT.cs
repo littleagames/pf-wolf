@@ -49,8 +49,8 @@ internal partial class Program
     =============================================================================
     */
 
-    internal static statestruct s_player = new (0/*false*/, 0, 0, T_Player, null/*, null*/);
-    internal static statestruct s_attack = new (0/*false*/, 0, 0, T_Attack, null/*, null*/);
+    internal static statestruct s_player = new(0/*false*/, 0, 0, T_Player, null, null);
+    internal static statestruct s_attack = new (0/*false*/, 0, 0, T_Attack, null, null);
 
     internal struct atkinf
     {
@@ -227,6 +227,7 @@ internal partial class Program
     {
         int xl, yl, xh, yh, x, y;
         objstruct? check;
+        int checkIndex;
         int deltax, deltay;
 
         xl = (int)((ob.x - PLAYERSIZE) >> (int)TILESHIFT);
@@ -244,34 +245,35 @@ internal partial class Program
         {
             for (x = xl; x <= xh; x++)
             {
-                check = actorat[x,y];
+                checkIndex = actorat[x,y];
+                check = objlist[checkIndex];
                 // ISPOINTER is checking if it is a wall
-                //if (check != null && !ISPOINTER(check))
-                //{
-                //    if (tilemap[x,y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
-                //    {
-                //        switch (pwalldir)
-                //        {
-                //            case (byte)controldirs.di_north:
-                //                if (ob.y - PUSHWALLMINDIST <= (pwally << (int)TILESHIFT) + ((63 - pwallpos) << 10))
-                //                    return false;
-                //                break;
-                //            case (byte)controldirs.di_west:
-                //                if (ob.x - PUSHWALLMINDIST <= (pwallx << (int)TILESHIFT) + ((63 - pwallpos) << 10))
-                //                    return false;
-                //                break;
-                //            case (byte)controldirs.di_east:
-                //                if (ob.x + PUSHWALLMINDIST >= (pwallx << (int)TILESHIFT) + (pwallpos << 10))
-                //                    return false;
-                //                break;
-                //            case (byte)controldirs.di_south:
-                //                if (ob.y + PUSHWALLMINDIST >= (pwally << (int)TILESHIFT) + (pwallpos << 10))
-                //                    return false;
-                //                break;
-                //        }
-                //    }
-                //    else return false;
-                //}
+                if (check != null && !ISPOINTER(checkIndex))
+                {
+                    if (tilemap[x, y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
+                    {
+                        switch (pwalldir)
+                        {
+                            case (byte)controldirs.di_north:
+                                if (ob.y - PUSHWALLMINDIST <= (pwally << (int)TILESHIFT) + ((63 - pwallpos) << 10))
+                                    return false;
+                                break;
+                            case (byte)controldirs.di_west:
+                                if (ob.x - PUSHWALLMINDIST <= (pwallx << (int)TILESHIFT) + ((63 - pwallpos) << 10))
+                                    return false;
+                                break;
+                            case (byte)controldirs.di_east:
+                                if (ob.x + PUSHWALLMINDIST >= (pwallx << (int)TILESHIFT) + (pwallpos << 10))
+                                    return false;
+                                break;
+                            case (byte)controldirs.di_south:
+                                if (ob.y + PUSHWALLMINDIST >= (pwally << (int)TILESHIFT) + (pwallpos << 10))
+                                    return false;
+                                break;
+                        }
+                    }
+                    else return false;
+                }
             }
         }
 
@@ -291,8 +293,9 @@ internal partial class Program
         {
             for (x = xl; x <= xh; x++)
             {
-                check = actorat[x,y];
-                if (ISPOINTER(check) && !check.Equals(player) && (check.flags & (int)objflags.FL_SHOOTABLE) != 0)
+                checkIndex = actorat[x,y];
+                check = objlist[checkIndex];
+                if (ISPOINTER(checkIndex) && !check.Equals(player) && (check.flags & (int)objflags.FL_SHOOTABLE) != 0)
                 {
                     deltax = ob.x - check.x;
                     if (deltax < -MINACTORDIST || deltax > MINACTORDIST)

@@ -90,6 +90,306 @@ internal partial class Program
                     case 72:
                         SpawnStatic(x, y, tile - 23);
                         break;
+
+                    //
+                    // P wall
+                    //
+                    case 98:
+                        if (!loadedgame)
+                            gamestate.secrettotal++;
+                        break;
+                    //
+                    // guard
+                    //
+                    case 180:
+                    case 181:
+                    case 182:
+                    case 183:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                            break;
+                        tile -= 36;
+                        goto case 144;
+                    case 144:
+                    case 145:
+                    case 146:
+                    case 147:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                            break;
+                        tile -= 36;
+                        goto case 108;
+                    case 108:
+                    case 109:
+                    case 110:
+                    case 111:
+                        SpawnStand((int)enemytypes.en_guard, x, y, tile - 108);
+                        break;
+
+
+                    case 184:
+                    case 185:
+                    case 186:
+                    case 187:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                            break;
+                        tile -= 36;
+                        goto case 148;
+                    case 148:
+                    case 149:
+                    case 150:
+                    case 151:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                            break;
+                        tile -= 36;
+                        goto case 112;
+                    case 112:
+                    case 113:
+                    case 114:
+                    case 115:
+                        SpawnPatrol((int)enemytypes.en_guard, x, y, tile - 112);
+                        break;
+
+                    case 124:
+                        SpawnDeadGuard(x, y);
+                        break;
+                    //
+                    // officer
+                    //
+                    case 188:
+                    case 189:
+                    case 190:
+                    case 191:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                            break;
+                        tile -= 36;
+                        goto case 152;
+                    case 152:
+                    case 153:
+                    case 154:
+                    case 155:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                            break;
+                        tile -= 36;
+                        goto case 116;
+                    case 116:
+                    case 117:
+                    case 118:
+                    case 119:
+                        SpawnStand((int)enemytypes.en_officer, x, y, tile - 116);
+                        break;
+
+
+                    case 192:
+                    case 193:
+                    case 194:
+                    case 195:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                            break;
+                        tile -= 36;
+                        goto case 156;
+                    case 156:
+                    case 157:
+                    case 158:
+                    case 159:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                            break;
+                        tile -= 36;
+                        goto case 120;
+                    case 120:
+                    case 121:
+                    case 122:
+                    case 123:
+                        SpawnPatrol((int)enemytypes.en_officer, x, y, tile - 120);
+                        break;
+
+
+                    //
+                    // ss
+                    //
+                    case 198:
+                    case 199:
+                    case 200:
+                    case 201:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                            break;
+                        tile -= 36;
+                        goto case 162;
+                    case 162:
+                    case 163:
+                    case 164:
+                    case 165:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                            break;
+                        tile -= 36;
+                        goto case 126;
+                    case 126:
+                    case 127:
+                    case 128:
+                    case 129:
+                        SpawnStand((int)enemytypes.en_ss, x, y, tile - 126);
+                        break;
+
+
+                    case 202:
+                    case 203:
+                    case 204:
+                    case 205:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                            break;
+                        tile -= 36;
+                        goto case 166;
+                    case 166:
+                    case 167:
+                    case 168:
+                    case 169:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                            break;
+                        tile -= 36;
+                        goto case 130;
+                    case 130:
+                    case 131:
+                    case 132:
+                    case 133:
+                        SpawnPatrol((int)enemytypes.en_ss, x, y, tile - 130);
+                        break;
+
+                    //
+                    // dogs
+                    //
+                    case 206:
+                    case 207:
+                    case 208:
+                    case 209:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                            break;
+                        tile -= 36;
+                        goto case 170;
+                    case 170:
+                    case 171:
+                    case 172:
+                    case 173:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                            break;
+                        tile -= 36;
+                        goto case 134;
+                    case 134:
+                    case 135:
+                    case 136:
+                    case 137:
+                        SpawnStand((int)enemytypes.en_dog, x, y, tile - 134);
+                        break;
+
+
+                    case 210:
+                    case 211:
+                    case 212:
+                    case 213:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                            break;
+                        tile -= 36;
+                        goto case 174;
+                    case 174:
+                    case 175:
+                    case 176:
+                    case 177:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                            break;
+                        tile -= 36;
+                        goto case 138;
+                    case 138:
+                    case 139:
+                    case 140:
+                    case 141:
+                        SpawnPatrol((int)enemytypes.en_dog, x, y, tile - 138);
+                        break;
+
+                    //
+                    // boss
+                    //
+                    case 214:
+                        SpawnBoss(x, y);
+                        break;
+                    case 197:
+                        SpawnGretel(x, y);
+                        break;
+                    case 215:
+                        SpawnGift(x, y);
+                        break;
+                    case 179:
+                        SpawnFat(x, y);
+                        break;
+                    case 196:
+                        SpawnSchabbs(x, y);
+                        break;
+                    case 160:
+                        SpawnFakeHitler(x, y);
+                        break;
+                    case 178:
+                        SpawnHitler(x, y);
+                        break;
+                    //
+                    // mutants
+                    //
+                    case 252:
+                    case 253:
+                    case 254:
+                    case 255:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                            break;
+                        tile -= 18;
+                        goto case 234;
+                    case 234:
+                    case 235:
+                    case 236:
+                    case 237:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                            break;
+                        tile -= 18;
+                        goto case 216;
+                    case 216:
+                    case 217:
+                    case 218:
+                    case 219:
+                        SpawnStand((int)enemytypes.en_mutant, x, y, tile - 216);
+                        break;
+
+                    case 256:
+                    case 257:
+                    case 258:
+                    case 259:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                            break;
+                        tile -= 18;
+                        goto case 238;
+                    case 238:
+                    case 239:
+                    case 240:
+                    case 241:
+                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                            break;
+                        tile -= 18;
+                        goto case 220;
+                    case 220:
+                    case 221:
+                    case 222:
+                    case 223:
+                        SpawnPatrol((int)enemytypes.en_mutant, x, y, tile - 220);
+                        break;
+
+                    //
+                    // ghosts
+                    //
+                    case 224:
+                        SpawnGhosts((int)enemytypes.en_blinky, x, y);
+                        break;
+                    case 225:
+                        SpawnGhosts((int)enemytypes.en_clyde, x, y);
+                        break;
+                    case 226:
+                        SpawnGhosts((int)enemytypes.en_pinky, x, y);
+                        break;
+                    case 227:
+                        SpawnGhosts((int)enemytypes.en_inky, x, y);
+                        break;
                 }
             }
         }
@@ -429,7 +729,7 @@ internal partial class Program
         mapheight = mapheaderseg[mapnum].height;
 
         tilemap = new byte[MAPSIZE, MAPSIZE];
-        actorat = new objstruct[MAPSIZE, MAPSIZE];
+        actorat = new int[MAPSIZE, MAPSIZE];
 
         for (y = 0; y < mapheight; y++)
         {
@@ -440,13 +740,13 @@ internal partial class Program
                 {
                     // solid wall
                     tilemap[x,y] = (byte)tile;
-                    //actorat[x,y] = (objtype*)(uintptr_t)tile; // TODO: Later
+                    actorat[x,y] = tile;
                 }
                 else
                 {
                     // area floor
                     tilemap[x,y] = 0;
-                    //actorat[x,y] = 0; // TODO: Later
+                    actorat[x,y] = 0;
                 }
             }
         }
