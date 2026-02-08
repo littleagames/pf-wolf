@@ -1109,10 +1109,12 @@ internal partial class Program
         // Fill the span with the value
         data.Fill(false);
 
-
-        if (tilemap[player.tilex, player.tiley] == 0 ||
+        if (!((demorecord || demoplayback)))
+        {
+            if (tilemap[player.tilex, player.tiley] == 0 ||
              (tilemap[player.tilex, player.tiley] & BIT_DOOR) != 0)
-            spotvis[player.tilex, player.tiley] = true;       // Detect all sprites over player fix
+                spotvis[player.tilex, player.tiley] = true;       // Detect all sprites over player fix
+        }
 
 
         vbuf = 0;

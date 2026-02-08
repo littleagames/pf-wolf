@@ -24,7 +24,7 @@ internal partial class Program
 
     internal static byte[,] tilemap = new byte[MAPSIZE, MAPSIZE]; // wall values only
     internal static bool[,] spotvis = new bool[MAPSIZE ,MAPSIZE];
-    internal static int[,] actorat = new int[MAPSIZE, MAPSIZE];
+    internal static int?[,] actorat = new int?[MAPSIZE, MAPSIZE];
 
     internal static ushort mapwidth, mapheight;
     internal static uint tics;
@@ -176,7 +176,6 @@ internal partial class Program
             MoveDoors();
             MovePWalls();
 
-            //obj = player;
             for (int? i = 0; i != null; i = obj.next)
             {
                 obj = objlist[i.Value];
@@ -285,8 +284,8 @@ internal partial class Program
         if (ob.active == 0 && ob.areanumber < NUMAREAS && areabyplayer[ob.areanumber] == 0)
             return;
         
-        if ((ob.flags & ((int)objflags.FL_NONMARK | (int)objflags.FL_NEVERMARK)) == 0)
-            actorat[ob.tilex,ob.tiley] = 0;
+        if ((ob.flags & (int)(objflags.FL_NONMARK | objflags.FL_NEVERMARK)) == 0)
+            actorat[ob.tilex,ob.tiley] = null;
 
 
         //
@@ -332,8 +331,12 @@ internal partial class Program
                     return;
                 }
             }
-
-            ob.state = ob.state?.next;
+            if (ob.state != null
+                && !string.IsNullOrEmpty(ob.state?.next)
+                && enemy_states.TryGetValue(ob.state.next, out var newState))
+            {
+                ob.state = newState;
+            }
 
             if (ob.state == null)
             {

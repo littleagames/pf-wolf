@@ -227,7 +227,6 @@ internal partial class Program
     {
         int xl, yl, xh, yh, x, y;
         objstruct? check;
-        int checkIndex;
         int deltax, deltay;
 
         xl = (int)((ob.x - PLAYERSIZE) >> (int)TILESHIFT);
@@ -245,10 +244,9 @@ internal partial class Program
         {
             for (x = xl; x <= xh; x++)
             {
-                checkIndex = actorat[x,y];
-                check = objlist[checkIndex];
+                check = GetActorAt(x, y);
                 // ISPOINTER is checking if it is a wall
-                if (check != null && !ISPOINTER(checkIndex))
+                if (check == null) // if actorat is not a pointer (meaning a wall or door)
                 {
                     if (tilemap[x, y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
                     {
@@ -293,9 +291,8 @@ internal partial class Program
         {
             for (x = xl; x <= xh; x++)
             {
-                checkIndex = actorat[x,y];
-                check = objlist[checkIndex];
-                if (ISPOINTER(checkIndex) && !check.Equals(player) && (check.flags & (int)objflags.FL_SHOOTABLE) != 0)
+                check = GetActorAt(x, y);
+                if (check != null && !check.Equals(player) && (check.flags & (int)objflags.FL_SHOOTABLE) != 0)
                 {
                     deltax = ob.x - check.x;
                     if (deltax < -MINACTORDIST || deltax > MINACTORDIST)
@@ -591,6 +588,39 @@ internal partial class Program
     {
         if (viewsize == 21 && ingame) return;
         LatchNumber(21, 16, 3, gamestate.health);
+    }
+
+    /*
+    ===============
+    =
+    = TakeDamage
+    =
+    ===============
+    */
+
+    internal static void TakeDamage(int points, objstruct attacker)
+    {
+        LastAttacker = attacker;
+
+        if (gamestate.victoryflag != 0)
+            return;
+        if (gamestate.difficulty == (short)difficultytypes.gd_baby)
+            points >>= 2;
+
+        if (godmode == 0)
+            gamestate.health -= (short)points;
+
+        if (gamestate.health <= 0)
+        {
+            gamestate.health = 0;
+            playstate = (byte)playstatetypes.ex_died;
+        }
+
+        if (godmode != 2)
+            StartDamageFlash(points);
+
+        DrawHealth();
+        DrawFace();
     }
 
     internal static void HealSelf(int points)
@@ -924,12 +954,115 @@ internal partial class Program
 
     internal static void KnifeAttack(objstruct ob)
     {
+        objstruct? check, closest;
+        int dist;
 
+        SD_PlaySound(((int)soundnames.ATKKNIFESND));
+        // actually fire
+        dist = 0x7fffffff;
+        closest = null;
+        for (int? i = 0; i != null; i = ob.next)
+        {
+            check = objlist[i.Value];
+            if (check == null) continue;
+
+            if ((check.flags & (uint)objflags.FL_SHOOTABLE) != 0 && ((check.flags & (uint)objflags.FL_VISABLE) != 0)
+                && Math.Abs(check.viewx - centerx) < shootdelta)
+            {
+                if (check.transx < dist)
+                {
+                    dist = check.transx;
+                    closest = check;
+                }
+            }
+        }
+
+        if (closest == null || dist > 0x18000L)
+        {
+            // missed
+            return;
+        }
+
+        // hit something
+        DamageActor(closest, (uint)(US_RndT() >> 4));
     }
 
     internal static void GunAttack(objstruct ob)
     {
+        objstruct? check,closest,oldclosest;
+        int damage;
+        int dx, dy, dist;
+        long viewdist;
 
+        switch ((weapontypes)gamestate.weapon)
+        {
+            case weapontypes.wp_pistol:
+                SD_PlaySound((int)soundnames.ATKPISTOLSND);
+                break;
+            case weapontypes.wp_machinegun:
+                SD_PlaySound((int)soundnames.ATKMACHINEGUNSND);
+                break;
+            case weapontypes.wp_chaingun:
+                SD_PlaySound((int)soundnames.ATKGATLINGSND);
+                break;
+        }
+
+        madenoise = true;
+
+        //
+        // find potential targets
+        //
+        viewdist = 0x7fffffffL;
+        closest = null;
+
+        while (true)
+        {
+            oldclosest = closest;
+
+            for (int? i = ob.next; i != null; i = check?.next)
+            //for (check = ob->next; check; check = check->next)
+            {
+                check = objlist[i.Value];
+                if (check == null) continue;
+                if ((check.flags & (uint)objflags.FL_SHOOTABLE) != 0 && ((check.flags & (uint)objflags.FL_VISABLE) != 0)
+                    && Math.Abs(check.viewx - centerx) < shootdelta)
+                {
+                    if (check.transx < viewdist)
+                    {
+                        viewdist = check.transx;
+                        closest = check;
+                    }
+                }
+            }
+
+            if (closest == oldclosest)
+                return;                                         // no more targets, all missed
+
+            //
+            // trace a line from player to enemey
+            //
+            if (CheckLine(closest))
+                break;
+        }
+
+        //
+        // hit something
+        //
+        dx = Math.Abs(closest.tilex - player.tilex);
+        dy = Math.Abs(closest.tiley - player.tiley);
+        dist = dx > dy ? dx : dy;
+        if (dist < 2)
+            damage = US_RndT() / 4;
+        else if (dist < 4)
+            damage = US_RndT() / 6;
+        else
+        {
+            if ((US_RndT() / 12) < dist)           // missed
+                return;
+            damage = US_RndT() / 6;
+        }
+
+        DamageActor(closest, (uint)damage);
     }
 
     internal static void VictorySpin()

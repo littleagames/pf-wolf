@@ -168,6 +168,53 @@ internal partial class Program
             Quit("Too many static objects!\n");
     }
 
+    internal static void PlaceItemType(int itemtype, int tilex, int tiley)
+    {
+        int type;
+        statobj_t spot = null!;
+
+        //
+        // find the item number
+        //
+        for (type = 0; ; type++)
+        {
+            if (statinfo[type].picnum == -1)                    // end of list
+                Quit("PlaceItemType: couldn't find type!");
+            if (statinfo[type].type == itemtype)
+                break;
+        }
+
+        //
+        // find a spot in statobjlist to put it in
+        //
+        for (int i = 0; i < laststatobj; i++)
+            //spot = statobjlist[0]; ; spot++)
+        {
+            spot = statobjlist[i];
+            if (i == laststatobj)
+            {
+                if (spot != null && spot == statobjlist[MAXSTATS - 1])
+                    return;                                     // no free spots
+                spot = new statobj_t();
+                laststatobj++;                                  // space at end
+                break;
+            }
+
+            if (spot.shapenum == -1)                           // -1 is a free spot
+                break;
+        }
+
+        //
+        // place it
+        //
+        spot.shapenum = statinfo[type].picnum;
+        spot.tilex = (byte)tilex;
+        spot.tiley = (byte)tiley;
+        spot.flags = (uint)objflags.FL_BONUS | statinfo[type].specialFlags;
+        spot.itemnumber = (byte)statinfo[type].type;
+        statobjlist[laststatobj] = spot;
+    }
+
     internal const int DOORWIDTH = 0x7800;
     internal const int OPENTICS = 300;
 
@@ -276,7 +323,6 @@ internal partial class Program
     {
         int tilex, tiley, area;
         objstruct? check = null;
-        int checkIndex;
 
         //
         // don't close on anything solid
@@ -284,7 +330,7 @@ internal partial class Program
         tilex = doorobjlist[door].tilex;
         tiley = doorobjlist[door].tiley;
 
-        if (actorat[tilex, tiley] != 0)
+        if (actorat[tilex, tiley] == null)
             return;
 
         if (player.tilex == tilex && player.tiley == tiley)
@@ -299,13 +345,11 @@ internal partial class Program
                 if (((player.x - MINDIST) >> TILESHIFT) == tilex)
                     return;
             }
-            checkIndex = actorat[tilex - 1, tiley];
-            check = objlist[checkIndex];
-            if (ISPOINTER(checkIndex) && ((check.x + MINDIST) >> TILESHIFT) == tilex)
+            check = GetActorAt(tilex - 1, tiley);
+            if (check != null && ((check.x + MINDIST) >> TILESHIFT) == tilex)
                 return;
-            checkIndex = actorat[tilex + 1, tiley];
-            check = objlist[checkIndex];
-            if (ISPOINTER(checkIndex) && ((check.x - MINDIST) >> TILESHIFT) == tilex)
+            check = GetActorAt(tilex + 1, tiley);
+            if (check != null && ((check.x - MINDIST) >> TILESHIFT) == tilex)
                 return;
         }
         else
@@ -317,13 +361,13 @@ internal partial class Program
                 if (((player.y - MINDIST) >> TILESHIFT) == tiley)
                     return;
             }
-            checkIndex = actorat[tilex, tiley - 1];
-            check = objlist[checkIndex];
-            if (ISPOINTER(checkIndex) && ((check.y + MINDIST) >> TILESHIFT) == tiley)
+
+            check = GetActorAt(tilex, tiley - 1);
+            if (check != null && ((check.y + MINDIST) >> TILESHIFT) == tiley)
                 return;
-            checkIndex = actorat[tilex, tiley + 1];
-            check = objlist[checkIndex];
-            if (ISPOINTER(checkIndex) && ((check.y - MINDIST) >> TILESHIFT) == tiley)
+
+            check = GetActorAt(tilex, tiley + 1);
+            if (check != null && ((check.y - MINDIST) >> TILESHIFT) == tiley)
                 return;
         }
 
@@ -557,7 +601,7 @@ internal partial class Program
         dx = dirs[dir][0];
         dy = dirs[dir][1];
 
-        if (actorat[checkx + dx, checky + dy] != 0)
+        if ((actorat[checkx + dx, checky + dy] ?? 0) != 0)
         {
             SD_PlaySound((int)soundnames.NOWAYSND);
             return;

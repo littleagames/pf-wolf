@@ -305,7 +305,7 @@ internal class statestruct
     public short tictime;
     public Action<objstruct>? think;
     public Action<objstruct>? action;
-    public statestruct? next;
+    public string? next;
 
     public statestruct(
         byte rotate,
@@ -313,7 +313,7 @@ internal class statestruct
         short tictime,
         Action<objstruct>? think,
         Action<objstruct>? action,
-        statestruct? next)
+        string? next)
     {
         this.rotate = rotate;
         this.shapenum = shapenum;
@@ -340,6 +340,14 @@ internal enum playstatetypes
 
 internal partial class Program
 {
+    /*
+    =============================================================================
+
+                                MACROS
+
+    =============================================================================
+    */
+
     internal const string YESBUTTONNAME = "Y";
     internal const string NOBUTTONNAME = "N";
 
@@ -686,6 +694,9 @@ internal partial class Program
 
     internal static void ClearMemory() => SD_StopDigitized();
 
+    // JAB
+    internal static void PlaySoundLocActor(int s, objstruct ob) => PlaySoundLocGlobal(s, ob.x, ob.y);
+
 
     /*
     =============================================================================
@@ -710,18 +721,45 @@ internal partial class Program
     =============================================================================
     */
 
-    internal static int BASEMOVE  = 35;
-    internal static int RUNMOVE   = 70;
-    internal static int BASETURN  = 35;
-    internal static int RUNTURN = 70;
+    internal const int BASEMOVE  = 35;
+    internal const int RUNMOVE   = 70;
+    internal const int BASETURN  = 35;
+    internal const int RUNTURN = 70;
 
-    internal static int JOYSCALE = 2;
+    internal const int JOYSCALE = 2;
+
+    internal static objstruct? GetActorAt(int tilex, int tiley)
+    {
+        int? checkIndex = actorat[tilex + 1, tiley];
+        if (checkIndex == null)
+        {
+            return null;
+        }
+
+        objstruct check = objlist[checkIndex.Value];
+        return check;
+    }
 
     internal static int MAPSPOT(int x, int y, int plane) => (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]);
     internal static void SetMapSpot(int x, int y, int plane, ushort value)
     {
         (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]) = value;
     }
+
+    internal static bool VALIDAREA(int x) => (x) >= AREATILE && (x) < (AREATILE + NUMAREAS);
+
     //internal static bool ISPOINTER(objstruct? x) => x != null; // TODO: How to? actorat was a list of pointers, vs just the objects themselves
     internal static bool ISPOINTER(int objstructIndex) => (objstructIndex & 0xffff) != 0;
+
+
+    /*
+    =============================================================================
+
+                                 WL_STATE DEFINITIONS
+
+    =============================================================================
+    */
+    internal const int TURNTICS = 10;
+    internal const int SPDPATROL = 512;
+    internal const int SPDDOG = 1500;
 }

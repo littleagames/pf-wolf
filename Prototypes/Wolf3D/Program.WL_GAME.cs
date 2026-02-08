@@ -14,6 +14,32 @@ internal partial class Program
     //
     private static int[] ElevatorBackTo = { 1, 1, 7, 3, 5, 3 };
 
+/*
+==========================
+=
+= SetSoundLocGlobal - Sets up globalsoundx & globalsoundy and then calls
+=       UpdateSoundLoc() to transform that into relative channel volumes. Those
+=       values are then passed to the Sound Manager so that they'll be used for
+=       the next sound played (if possible).
+=
+= JAB
+=
+==========================
+*/
+internal static void PlaySoundLocGlobal(int s, int gx, int gy)
+{
+    //SetSoundLoc(gx, gy);
+    //SD_PositionSound(leftchannel, rightchannel);
+
+    //int channel = SD_PlaySound(s);
+    //if(channel)
+    //{
+    //    channelSoundPos[channel - 1].globalsoundx = gx;
+    //    channelSoundPos[channel - 1].globalsoundy = gy;
+    //    channelSoundPos[channel - 1].valid = 1;
+    //}
+}
+
     internal static void ScanInfoPlane()
     {
         int x, y;
@@ -729,7 +755,7 @@ internal partial class Program
         mapheight = mapheaderseg[mapnum].height;
 
         tilemap = new byte[MAPSIZE, MAPSIZE];
-        actorat = new int[MAPSIZE, MAPSIZE];
+        actorat = new int?[MAPSIZE, MAPSIZE];
 
         for (y = 0; y < mapheight; y++)
         {
