@@ -1083,8 +1083,8 @@ internal partial class Program
         int shapenum;
         if (gamestate.victoryflag != 0)
         {
-            //if (player.state == s_deathcam && (GetTimeCount() & 32))
-            //    SimpleScaleShape(viewwidth / 2, (int)spritenums.SPR_DEATHCAM, viewheight + 1);
+            if (player.state == s_deathcam && (GetTimeCount() & 32) != 0)
+                SimpleScaleShape(viewwidth / 2, (int)spritenums.SPR_DEATHCAM, viewheight + 1);
             return;
         }
 

@@ -854,25 +854,25 @@ internal partial class Program
             case (int)ScanCodes.sc_F1:
                 HelpScreens();
                 goto finishup;
-                //case (int)ScanCodes.sc_F2:
-                //    CP_SaveGame(0);
-                //    goto finishup;
+            case (int)ScanCodes.sc_F2:
+                CP_SaveGame(0);
+                goto finishup;
 
-                //case (int)ScanCodes.sc_F3:
-                //    CP_LoadGame(0);
-                //    goto finishup;
+            case (int)ScanCodes.sc_F3:
+                CP_LoadGame(0);
+                goto finishup;
 
-                //case (int)ScanCodes.sc_F4:
-                //    CP_Sound(0);
-                //    goto finishup;
+            case (int)ScanCodes.sc_F4:
+                CP_Sound(0);
+                goto finishup;
 
-                //case (int)ScanCodes.sc_F5:
-                //    CP_ChangeView(0);
-                //    goto finishup;
+            case (int)ScanCodes.sc_F5:
+                CP_ChangeView(0);
+                goto finishup;
 
-                //case (int)ScanCodes.sc_F6:
-                //    CP_Control(0);
-                //    goto finishup;
+            case (int)ScanCodes.sc_F6:
+                CP_Control(0);
+                goto finishup;
 
             finishup:
                 CleanupControlPanel();
@@ -2397,9 +2397,9 @@ internal partial class Program
     //
     // FIXUP GUN CURSOR OVERDRAW SHIT
     //
+    internal static int fixup_lastwhich = -1;
     internal static void FixupCustom(int w)
     {
-        int lastwhich = -1; // TODO: This might need to retain its value
         int y = CST_Y + 26 + w * 13;
 
 
@@ -2424,15 +2424,15 @@ internal partial class Program
         }
 
 
-        if (lastwhich >= 0)
+        if (fixup_lastwhich >= 0)
         {
-            y = CST_Y + 26 + lastwhich * 13;
+            y = CST_Y + 26 + fixup_lastwhich * 13;
             VWB_Hlin(7, 32, y - 1, DEACTIVE);
             VWB_Hlin(7, 32, y + 12, BORD2COLOR);
             VWB_Hlin(7, 32, y - 2, BORDCOLOR);
             VWB_Hlin(7, 32, y + 13, BORDCOLOR);
-            if (lastwhich != w)
-                switch (lastwhich)
+            if (fixup_lastwhich != w)
+                switch (fixup_lastwhich)
                 {
                     case 0:
                         DrawCustMouse(0);
@@ -2449,7 +2449,7 @@ internal partial class Program
                 }
         }
 
-        lastwhich = w;
+        fixup_lastwhich = w;
     }
 
 

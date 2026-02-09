@@ -458,7 +458,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                 fizzlein = true;
             }
 
-            //        DrawLevel ();                     // ADDEDFIX 5 - moved up  Chris Chokan
+            DrawLevel ();                     // ADDEDFIX 5 - moved up  Chris Chokan
 
             PlayLoop();
             StopMusic();

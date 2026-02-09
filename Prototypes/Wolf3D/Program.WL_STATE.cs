@@ -684,81 +684,81 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
-            //case classtypes.officerobj:
-            //    PlaySoundLocActor((int)soundnames.SPIONSND, ob);
-            //    NewState(ob, s_ofcchase1);
-            //    ob.speed *= 5;                 // go faster when chasing player
-            //    break;
+            case classtypes.officerobj:
+                PlaySoundLocActor((int)soundnames.SPIONSND, ob);
+                NewState(ob, s_ofcchase1);
+                ob.speed *= 5;                 // go faster when chasing player
+                break;
 
-            //case classtypes.mutantobj:
-            //    NewState(ob, s_mutchase1);
-            //    ob.speed *= 3;                 // go faster when chasing player
-            //    break;
+            case classtypes.mutantobj:
+                NewState(ob, s_mutchase1);
+                ob.speed *= 3;                 // go faster when chasing player
+                break;
 
-            //case classtypes.ssobj:
-            //    PlaySoundLocActor((int)soundnames.SCHUTZADSND, ob);
-            //    NewState(ob, s_sschase1);
-            //    ob.speed *= 4;                 // go faster when chasing player
-            //    break;
+            case classtypes.ssobj:
+                PlaySoundLocActor((int)soundnames.SCHUTZADSND, ob);
+                NewState(ob, s_sschase1);
+                ob.speed *= 4;                 // go faster when chasing player
+                break;
 
-            //case classtypes.dogobj:
-            //    PlaySoundLocActor((int)soundnames.DOGBARKSND, ob);
-            //    NewState(ob, s_dogchase1);
-            //    ob.speed *= 2;                 // go faster when chasing player
-            //    break;
+            case classtypes.dogobj:
+                PlaySoundLocActor((int)soundnames.DOGBARKSND, ob);
+                NewState(ob, s_dogchase1);
+                ob.speed *= 2;                 // go faster when chasing player
+                break;
 
-            //case classtypes.bossobj:
-            //    SD_PlaySound((int)soundnames.GUTENTAGSND);
-            //    NewState(ob, s_bosschase1);
-            //    ob.speed = SPDPATROL * 3;        // go faster when chasing player
-            //    break;
-                
-            //case classtypes.gretelobj:
-            //    SD_PlaySound((int)soundnames.KEINSND);
-            //    NewState(ob, s_gretelchase1);
-            //    ob.speed *= 3;                 // go faster when chasing player
-            //    break;
+            case classtypes.bossobj:
+                SD_PlaySound((int)soundnames.GUTENTAGSND);
+                NewState(ob, s_bosschase1);
+                ob.speed = SPDPATROL * 3;        // go faster when chasing player
+                break;
 
-            //case classtypes.giftobj:
-            //    SD_PlaySound((int)soundnames.EINESND);
-            //    NewState(ob, s_giftchase1);
-            //    ob.speed *= 3;                 // go faster when chasing player
-            //    break;
+            case classtypes.gretelobj:
+                SD_PlaySound((int)soundnames.KEINSND);
+                NewState(ob, s_gretelchase1);
+                ob.speed *= 3;                 // go faster when chasing player
+                break;
 
-            //case classtypes.fatobj:
-            //    SD_PlaySound((int)soundnames.ERLAUBENSND);
-            //    NewState(ob, s_fatchase1);
-            //    ob.speed *= 3;                 // go faster when chasing player
-            //    break;
+            case classtypes.giftobj:
+                SD_PlaySound((int)soundnames.EINESND);
+                NewState(ob, s_giftchase1);
+                ob.speed *= 3;                 // go faster when chasing player
+                break;
 
-            //case classtypes.schabbobj:
-            //    SD_PlaySound((int)soundnames.SCHABBSHASND);
-            //    NewState(ob, s_schabbchase1);
-            //    ob.speed *= 3;                 // go faster when chasing player
-            //    break;
+            case classtypes.fatobj:
+                SD_PlaySound((int)soundnames.ERLAUBENSND);
+                NewState(ob, s_fatchase1);
+                ob.speed *= 3;                 // go faster when chasing player
+                break;
 
-            //case classtypes.fakeobj:
-            //    SD_PlaySound((int)soundnames.TOT_HUNDSND);
-            //    NewState(ob, s_fakechase1);
-            //    ob.speed *= 3;                 // go faster when chasing player
-            //    break;
+            case classtypes.schabbobj:
+                SD_PlaySound((int)soundnames.SCHABBSHASND);
+                NewState(ob, s_schabbchase1);
+                ob.speed *= 3;                 // go faster when chasing player
+                break;
 
-            //case classtypes.mechahitlerobj:
-            //    SD_PlaySound((int)soundnames.DIESND);
-            //    NewState(ob, s_mechachase1);
-            //    ob.speed *= 3;                 // go faster when chasing player
-            //    break;
+            case classtypes.fakeobj:
+                SD_PlaySound((int)soundnames.TOT_HUNDSND);
+                NewState(ob, s_fakechase1);
+                ob.speed *= 3;                 // go faster when chasing player
+                break;
 
-            //case classtypes.realhitlerobj:
-            //    SD_PlaySound((int)soundnames.DIESND);
-            //    NewState(ob, s_hitlerchase1);
-            //    ob.speed *= 5;                 // go faster when chasing player
-            //    break;
+            case classtypes.mechahitlerobj:
+                SD_PlaySound((int)soundnames.DIESND);
+                NewState(ob, s_mechachase1);
+                ob.speed *= 3;                 // go faster when chasing player
+                break;
 
-            //case classtypes.ghostobj:
-            //    NewState(ob, s_blinkychase1);
-            //    ob.speed *= 2;                 // go faster when chasing player
-            //    break;
+            case classtypes.realhitlerobj:
+                SD_PlaySound((int)soundnames.DIESND);
+                NewState(ob, s_hitlerchase1);
+                ob.speed *= 5;                 // go faster when chasing player
+                break;
+
+            case classtypes.ghostobj:
+                NewState(ob, s_blinkychase1);
+                ob.speed *= 2;                 // go faster when chasing player
+                break;
         }
 
         if (ob.distance < 0)
@@ -1092,78 +1092,78 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 PlaceItemType((int)wl_stat_types.bo_clip2, tilex, tiley);
                 break;
 
-            //case officerobj:
-            //    GivePoints(400);
-            //    NewState(ob, &s_ofcdie1);
-            //    PlaceItemType(bo_clip2, tilex, tiley);
-            //    break;
+            case classtypes.officerobj:
+                GivePoints(400);
+                NewState(ob, s_ofcdie1);
+                PlaceItemType((int)wl_stat_types.bo_clip2, tilex, tiley);
+                break;
 
-            //case mutantobj:
-            //    GivePoints(700);
-            //    NewState(ob, &s_mutdie1);
-            //    PlaceItemType(bo_clip2, tilex, tiley);
-            //    break;
+            case classtypes.mutantobj:
+                GivePoints(700);
+                NewState(ob, s_mutdie1);
+                PlaceItemType((int)wl_stat_types.bo_clip2, tilex, tiley);
+                break;
 
-            //case ssobj:
-            //    GivePoints(500);
-            //    NewState(ob, &s_ssdie1);
-            //    if (gamestate.bestweapon < wp_machinegun)
-            //        PlaceItemType(bo_machinegun, tilex, tiley);
-            //    else
-            //        PlaceItemType(bo_clip2, tilex, tiley);
-            //    break;
+            case classtypes.ssobj:
+                GivePoints(500);
+                NewState(ob, s_ssdie1);
+                if (gamestate.bestweapon < (short)weapontypes.wp_machinegun)
+                    PlaceItemType((int)wl_stat_types.bo_machinegun, tilex, tiley);
+                else
+                    PlaceItemType((int)wl_stat_types.bo_clip2, tilex, tiley);
+                break;
 
-            //case dogobj:
-            //    GivePoints(200);
-            //    NewState(ob, &s_dogdie1);
-            //    break;
-            //case bossobj:
-            //    GivePoints(5000);
-            //    NewState(ob, &s_bossdie1);
-            //    PlaceItemType(bo_key1, tilex, tiley);
-            //    break;
+            case classtypes.dogobj:
+                GivePoints(200);
+                NewState(ob, s_dogdie1);
+                break;
+            case classtypes.bossobj:
+                GivePoints(5000);
+                NewState(ob, s_bossdie1);
+                PlaceItemType((int)wl_stat_types.bo_key1, tilex, tiley);
+                break;
 
-            //case gretelobj:
-            //    GivePoints(5000);
-            //    NewState(ob, &s_greteldie1);
-            //    PlaceItemType(bo_key1, tilex, tiley);
-            //    break;
+            case classtypes.gretelobj:
+                GivePoints(5000);
+                NewState(ob, s_greteldie1);
+                PlaceItemType((int)wl_stat_types.bo_key1, tilex, tiley);
+                break;
 
-            //case giftobj:
-            //    GivePoints(5000);
-            //    gamestate.killx = player->x;
-            //    gamestate.killy = player->y;
-            //    NewState(ob, &s_giftdie1);
-            //    break;
+            case classtypes.giftobj:
+                GivePoints(5000);
+                gamestate.killx = player.x;
+                gamestate.killy = player.y;
+                NewState(ob, s_giftdie1);
+                break;
 
-            //case fatobj:
-            //    GivePoints(5000);
-            //    gamestate.killx = player->x;
-            //    gamestate.killy = player->y;
-            //    NewState(ob, &s_fatdie1);
-            //    break;
+            case classtypes.fatobj:
+                GivePoints(5000);
+                gamestate.killx = player.x;
+                gamestate.killy = player.y;
+                NewState(ob, s_fatdie1);
+                break;
 
-            //case schabbobj:
-            //    GivePoints(5000);
-            //    gamestate.killx = player->x;
-            //    gamestate.killy = player->y;
-            //    NewState(ob, &s_schabbdie1);
-            //    break;
-            //case fakeobj:
-            //    GivePoints(2000);
-            //    NewState(ob, &s_fakedie1);
-            //    break;
+            case classtypes.schabbobj:
+                GivePoints(5000);
+                gamestate.killx = player.x;
+                gamestate.killy = player.y;
+                NewState(ob, s_schabbdie1);
+                break;
+            case classtypes.fakeobj:
+                GivePoints(2000);
+                NewState(ob, s_fakedie1);
+                break;
 
-            //case mechahitlerobj:
-            //    GivePoints(5000);
-            //    NewState(ob, &s_mechadie1);
-            //    break;
-            //case realhitlerobj:
-            //    GivePoints(5000);
-            //    gamestate.killx = player->x;
-            //    gamestate.killy = player->y;
-            //    NewState(ob, &s_hitlerdie1);
-            //    break;
+            case classtypes.mechahitlerobj:
+                GivePoints(5000);
+                NewState(ob, s_mechadie1);
+                break;
+            case classtypes.realhitlerobj:
+                GivePoints(5000);
+                gamestate.killx = player.x;
+                gamestate.killy = player.y;
+                NewState(ob, s_hitlerdie1);
+                break;
         }
 
         gamestate.killcount++;
@@ -1200,27 +1200,27 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                         NewState(ob, s_grdpain1);
                     break;
 
-                //case officerobj:
-                //    if (ob->hitpoints & 1)
-                //        NewState(ob, &s_ofcpain);
-                //    else
-                //        NewState(ob, &s_ofcpain1);
-                //    break;
+                case classtypes.officerobj:
+                    if ((ob.hitpoints & 1) != 0)
+                        NewState(ob, s_ofcpain);
+                    else
+                        NewState(ob, s_ofcpain1);
+                    break;
 
-                //case mutantobj:
-                //    if (ob->hitpoints & 1)
-                //        NewState(ob, &s_mutpain);
-                //    else
-                //        NewState(ob, &s_mutpain1);
-                //    break;
+                case classtypes.mutantobj:
+                    if ((ob.hitpoints & 1) != 0)
+                        NewState(ob, s_mutpain);
+                    else
+                        NewState(ob, s_mutpain1);
+                    break;
 
-                //case ssobj:
-                //    if (ob->hitpoints & 1)
-                //        NewState(ob, &s_sspain);
-                //    else
-                //        NewState(ob, &s_sspain1);
+                case classtypes.ssobj:
+                    if ((ob.hitpoints & 1) != 0)
+                        NewState(ob, s_sspain);
+                    else
+                        NewState(ob, s_sspain1);
 
-                //    break;
+                    break;
             }
         }
     }

@@ -538,9 +538,9 @@ internal partial class Program
         }
         else
         {
-            //if (LastAttacker && LastAttacker->obclass == needleobj)
-            //    StatusDrawFace(MUTANTBJPIC);
-            //else
+            if (LastAttacker != null && LastAttacker.obclass == (byte)classtypes.needleobj)
+                StatusDrawFace((int)graphicnums.MUTANTBJPIC);
+            else
                 StatusDrawFace((uint)graphicnums.FACE8APIC);
         }
     }
