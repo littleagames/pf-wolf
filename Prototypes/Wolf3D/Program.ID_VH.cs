@@ -119,6 +119,10 @@ internal partial class Program
 
     internal static void VW_Hlin(int x, int z, int y, int c) => VL_Hlin(x, y, (z) - (x) + 1, c);
     internal static void VW_Vlin(int y, int z, int x, int c) => VL_Vlin(x, y, (z) - (y) + 1, c);
+    internal static void VWB_DrawTile8(int x, int y, int tile)
+    {
+        VL_MemToScreen(grsegs[STARTTILE8].Skip(tile * 64).ToArray(), 8, 8, x, y);
+    }
 
     internal static void VWB_DrawPic(int x, int y, int chunknum)
     {

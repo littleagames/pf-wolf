@@ -2,6 +2,16 @@
 
 namespace Wolf3D;
 
+internal struct Point
+{
+    public int x, y;
+}
+
+internal struct Rect
+{
+    public Point ul, lr;
+}
+
 internal class visobj_t
 {
     public byte tilex, tiley;

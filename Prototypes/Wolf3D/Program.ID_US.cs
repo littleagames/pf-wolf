@@ -193,6 +193,32 @@ internal partial class Program
         }
     }
 
+    internal static void USL_PrintInCenter(string s, Rect r)
+    {
+        ushort w, h,
+                rw, rh;
+
+        USL_MeasureString(s, out w, out h);
+        rw = (ushort)(r.lr.x - r.ul.x);
+        rh = (ushort)(r.lr.y - r.ul.y);
+
+        px = r.ul.x + ((rw - w) / 2);
+        py = r.ul.y + ((rh - h) / 2);
+        USL_DrawString(s);
+    }
+
+    internal static void US_PrintCentered(string s)
+    {
+        Rect r = new Rect();
+
+        r.ul.x = WindowX;
+        r.ul.y = WindowY;
+        r.lr.x = r.ul.x + WindowW;
+        r.lr.y = r.ul.y + WindowH;
+
+        USL_PrintInCenter(s, r);
+    }
+
     internal static void US_CPrintLine(string s)
     {
         ushort w, h;
@@ -506,6 +532,48 @@ internal partial class Program
         if (i < 0) i = numChars - 1;
         else if (i >= numChars) i = 0;
         return charSet[i];
+    }
+
+    internal static void US_ClearWindow()
+    {
+        VWB_Bar(WindowX, WindowY, WindowW, WindowH, WHITE);
+        PrintX = WindowX;
+        PrintY = WindowY;
+    }
+
+    internal static void US_DrawWindow(ushort x, ushort y, ushort w, ushort h)
+    {
+        ushort i,
+                sx, sy, sw, sh;
+
+        WindowX = (ushort)(x * 8);
+        WindowY = (ushort)(y * 8);
+        WindowW = (ushort)(w * 8);
+        WindowH = (ushort)(h * 8);
+
+        PrintX = WindowX;
+        PrintY = WindowY;
+
+        sx = (ushort)((x - 1) * 8);
+        sy = (ushort)((y - 1) * 8);
+        sw = (ushort)((w + 1) * 8);
+        sh = (ushort)((h + 1) * 8);
+
+        US_ClearWindow();
+
+        VWB_DrawTile8(sx, sy, 0);
+        VWB_DrawTile8(sx, sy + sh, 5);
+        for (i = (ushort)(sx + 8); i <= sx + sw - 8; i += 8) {
+            VWB_DrawTile8(i, sy, 1);
+            VWB_DrawTile8(i, sy + sh, 6);
+        }
+        VWB_DrawTile8(i, sy, 2);
+        VWB_DrawTile8(i, sy + sh, 7);
+
+        for (i = (ushort)(sy + 8); i <= sy + sh - 8; i += 8) {
+            VWB_DrawTile8(sx, i, 3);
+            VWB_DrawTile8(sx + sw, i, 4);
+        }
     }
 
     private static bool _xoricursor_status = false;

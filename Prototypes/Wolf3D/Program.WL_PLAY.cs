@@ -680,6 +680,14 @@ internal partial class Program
         }
     }
 
+    internal const int MAXX = 320;
+    internal const int MAXY = 160;
+
+    internal static void CenterWindow(ushort w, ushort h)
+    {
+        US_DrawWindow((ushort)(((MAXX / 8) - w) / 2), (ushort)(((MAXY / 8) - h) / 2), w, h);
+    }
+
     internal static void UpdatePaletteShifts()
     {
         int red, white;
