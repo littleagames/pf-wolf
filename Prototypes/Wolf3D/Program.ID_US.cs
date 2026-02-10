@@ -233,16 +233,15 @@ internal partial class Program
         PrintY += h;
     }
 
-    internal static bool US_LineInput(int x, int y, string buf, string def, bool escok, int maxchars, int maxwidth)
+    internal static bool US_LineInput(int x, int y, ref string buf, string def, bool escok, int maxchars, int maxwidth)
     {
         bool redraw,
                     cursorvis, cursormoved,
                     done, result = false, checkkey;
         int sc;
-        string text;
-        StringBuilder s = new StringBuilder();
-        string olds = "";
-        int cursor;//, len;
+        string s, olds;
+        //char[] s = new char[MaxString], olds = new char[MaxString];
+        int cursor, len;
         ushort i,
                     w, h,
                     temp;
@@ -251,11 +250,9 @@ internal partial class Program
         byte lastdir = (byte)Direction.dir_None;
 
         if (!string.IsNullOrEmpty(def))
-        {
-            s = new StringBuilder(def);
-        }
+            s = def;
         else
-            s = new StringBuilder();
+            s = "";
 
         olds = "";
         cursor = s.Length;
@@ -273,7 +270,7 @@ internal partial class Program
             ReadAnyControl(out ci);
 
             if (cursorvis)
-                USL_XORICursor(x, y, s.ToString(), (ushort)cursor);
+                USL_XORICursor(x, y, new string(s), (ushort)cursor);
 
             sc = LastScan;
             LastScan = (int)ScanCodes.sc_None;
@@ -297,8 +294,9 @@ internal partial class Program
                         if (cursor != 0)
                         {
                             // Remove trailing whitespace if cursor is at end of string
-                            if (s[cursor] == ' ' && s[cursor + 1] == 0)
-                                s = s.Remove(cursor, 1);
+                            //if (s[cursor] == ' ' && s[cursor + 1] == 0)
+                            //    s[cursor] = (char)0;
+                            s = s.TrimEnd();
                             cursor--;
                         }
                         cursormoved = true;
@@ -309,11 +307,13 @@ internal partial class Program
 
                         if (s.Length == cursor)
                         {
-                            USL_MeasureString(s.ToString(), out w, out h);
+                            USL_MeasureString(new string(s), out w, out h);
                             if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
                                 break;
 
-                            s.Append(' ');
+                            s += ' ';
+                            //s[cursor] = ' ';
+                            //s[cursor + 1] = (char)0;
                         }
                         cursor++;
                         cursormoved = true;
@@ -323,11 +323,13 @@ internal partial class Program
                     case (byte)Direction.dir_North:
                         if (s.Length == cursor)
                         {
-                            USL_MeasureString(s.ToString(), out w, out h);
+                            USL_MeasureString(new string(s), out w, out h);
                             if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
                                 break;
+                            //s[cursor + 1] = (char)0;
                         }
-                        s[cursor] = USL_RotateChar(s[cursor], 1);
+                        //s[cursor]
+                        s = s.Substring(0, s.Length - 1) + USL_RotateChar(s[cursor], 1);
                         redraw = true;
                         checkkey = false;
                         break;
@@ -335,12 +337,13 @@ internal partial class Program
                     case (byte)Direction.dir_South:
                         if (s.Length == cursor)
                         {
-                            USL_MeasureString(s.ToString(), out w, out h);
+                            USL_MeasureString(new string(s), out w, out h);
                             if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
                                 break;
-                            //s[cursor + 1] = 0; // add a char?
+                            //s[cursor + 1] = (char)0; // add a char?
                         }
-                        s[cursor] = USL_RotateChar(s[cursor], -1);
+                        //s[cursor] =
+                        s = s.Substring(0, s.Length - 1) + USL_RotateChar(s[cursor], -1);
                         redraw = true;
                         checkkey = false;
                         break;
@@ -351,7 +354,7 @@ internal partial class Program
             {
                 if (ci.button0 != 0)             // acts as return
                 {
-                    buf = s + " "; //snprintf(buf, maxchars + 1, "%s", s);
+                    buf = s; //snprintf(buf, maxchars + 1, "%s", s);
                     done = true;
                     result = true;
                     checkkey = false;
@@ -367,8 +370,11 @@ internal partial class Program
                     lastbuttontime = curtime;
                     if (cursor != 0)
                     {
-                        s.Remove(cursor, 1);
-                        //len = s.Length - 1 strlen(&s[--cursor]) + 1;
+                        s = s.Substring(0, cursor - 1) + s.Substring(cursor, s.Length - cursor);
+                        // TODO: split? or substrings
+                        // Need to shift all elements ahead of cursor -1?
+                        // String.Remove(index);
+                        //len = new string(s).Length + (--cursor) + 1;
                         //memmove(&s[cursor], &s[cursor + 1], len);
                         redraw = true;
                     }
@@ -399,8 +405,9 @@ internal partial class Program
                             //
                             // delete trailing whitespace
                             //
-                            while (cursor >= 0 && s[cursor] == ' ' && s[cursor + 1] == '\0')
-                                s[cursor--] = '\0';
+                            s.TrimEnd();
+                            //while (cursor >= 0 && s[cursor] == ' ' && s[cursor + 1] == '\0')
+                            //    s[cursor--] = '\0';
 
                             cursor = 0;
                         }
@@ -412,7 +419,7 @@ internal partial class Program
                         break;
 
                     case (byte)ScanCodes.sc_Return:
-                        buf += " "; // snprintf(buf, maxchars + 1, "%s", s);
+                        buf = s;
                         done = true;
                         result = true;
                         break;
@@ -427,7 +434,8 @@ internal partial class Program
                     case (byte)ScanCodes.sc_BackSpace:
                         if (cursor != 0)
                         {
-                            s.Remove(cursor, 1);
+                            s = s.Substring(0, cursor - 1) + s.Substring(cursor, s.Length - cursor);
+                            //s.Remove(cursor, 1);
                             //len = strlen(&s[--cursor]) + 1;
                             //memmove(&s[cursor], &s[cursor + 1], len);
                             redraw = true;
@@ -438,7 +446,8 @@ internal partial class Program
                     case (byte)ScanCodes.sc_Delete:
                         if (s[cursor] != 0)
                         {
-                            s.Remove(cursor, 1);
+                            s = s.Substring(0, cursor) + s.Substring(cursor + 1, s.Length - cursor + 1);
+                            //s.Remove(cursor, 1);
                             //len = strlen(&s[cursor]) + 1;
                             //memmove(&s[cursor], &s[cursor + 1], len);
                             redraw = true;
@@ -447,21 +456,25 @@ internal partial class Program
                         break;
                 }
 
-                // TODO: What does this do? Does it clean the string of non- "print" chars?
                 //for (text = textinput; *text; text++)
-                //{
-                //    //len = (int)strlen(s);
-                //    USL_MeasureString(s.ToString(), out w, out h);
+                for(int t = 0; t < textinput.Length && textinput[t] != '\0'; t++)
+                {
+                    char txt = textinput[t];
+                    //len = (int)strlen(s);
+                    USL_MeasureString(new string(s), out w, out h);
 
-                //    if (isprint(*text) && (s.Length < MaxString - 1) && ((maxchars == 0) || (s.Length < maxchars))
-                //        && ((maxwidth == 0) || (w < maxwidth)))
-                //    {
-                //        for (i = (ushort)(s.Length + 1); i > cursor; i--)
-                //            s[i] = s[i - 1];
-                //        s[cursor++] = *text;
-                //        redraw = true;
-                //    }
-                //}
+                    if (!char.IsControl(txt) && (s.Length < MaxString - 1) && ((maxchars == 0) || (s.Length < maxchars))
+                        && ((maxwidth == 0) || (w < maxwidth)))
+                    {
+                        //for (i = (ushort)(s.Length + 1); i > cursor; i--)
+                        //    s = s.Substring(0, i - 1) + s.Substring(i, s.Length - i); 
+                        //s[i] = s[i - 1];
+                        //s.Append(txt);
+                        s += txt;
+                        cursor++;
+                        redraw = true;
+                    }
+                }
 
                 IN_ClearTextInput();
             }
@@ -472,13 +485,13 @@ internal partial class Program
                 py = y;
                 temp = fontcolor;
                 fontcolor = backcolor;
-                USL_DrawString(olds);
+                USL_DrawString(new string(olds));
                 fontcolor = (byte)temp;
-                olds = s.ToString();
+                olds = s;
 
                 px = x;
                 py = y;
-                USL_DrawString(s.ToString());
+                USL_DrawString(new string(s));
 
                 redraw = false;
             }
@@ -498,18 +511,18 @@ internal partial class Program
             }
             else SDL.SDL_Delay(5);
             if (cursorvis)
-                USL_XORICursor(x, y, s.ToString(), (ushort)cursor);
+                USL_XORICursor(x, y, new string(s), (ushort)cursor);
 
             VW_UpdateScreen();
         }
 
         if (cursorvis)
-            USL_XORICursor(x, y, s.ToString(), (ushort)cursor);
+            USL_XORICursor(x, y, new string(s), (ushort)cursor);
         if (!result)
         {
             px = x;
             py = y;
-            USL_DrawString(olds);
+            USL_DrawString(new string (olds));
         }
         VW_UpdateScreen();
 

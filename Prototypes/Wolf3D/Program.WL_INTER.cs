@@ -145,7 +145,9 @@ internal partial class Program
             PrintX = 4 * 8;
             backcolor = BORDCOLOR;
             fontcolor = 15;
-            US_LineInput(PrintX, PrintY, new string(Scores[n].name), "", true, MaxHighName, 100);
+            string str = new string(Scores[n].name);
+            US_LineInput(PrintX, PrintY, ref str, "", true, MaxHighName, 100);
+            Scores[n].name = str.ToCharArray();
         }
         else
         {

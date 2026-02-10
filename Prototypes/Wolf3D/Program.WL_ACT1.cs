@@ -265,6 +265,7 @@ internal partial class Program
                 areaconnect[i, j] = 0;
             }
 
+        lastdoorobj = 0;
         //lastdoorobj = &doorobjlist[0]; (will this just be a List<T>.Length?
         doornum = 0;
     }

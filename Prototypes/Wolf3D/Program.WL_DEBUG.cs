@@ -15,7 +15,7 @@ internal partial class Program
             US_Print(" Border color (0-56): ");
             VW_UpdateScreen();
             string str = "";
-            esc = !US_LineInput(px, py, str, "", true, 2, 0);
+            esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
             if (!esc)
             {
                 level = Convert.ToInt32(str);
@@ -126,7 +126,7 @@ internal partial class Program
             US_Print("  Give Key (1-4): ");
             VW_UpdateScreen();
             string str = "";
-            esc = !US_LineInput(px, py, str, "", true, 1, 0);
+            esc = !US_LineInput(px, py, ref str, "", true, 1, 0);
             if (!esc)
             {
                 level = Convert.ToInt32(str);
@@ -213,7 +213,7 @@ internal partial class Program
             US_Print(" Slow Motion steps (default 14): ");
             VW_UpdateScreen();
             string str = "";
-            esc = !US_LineInput(px, py, str, "", true, 2, 0);
+            esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
             if (!esc)
             {
                 level = Convert.ToInt32(str);
@@ -234,7 +234,7 @@ internal partial class Program
             US_Print("  Add how many extra VBLs(0-8): ");
             VW_UpdateScreen();
             string str = "";
-            esc = !US_LineInput(px, py, str, "", true, 1, 0);
+            esc = !US_LineInput(px, py, ref str, "", true, 1, 0);
             if (!esc)
             {
                 level = Convert.ToInt32(str);
@@ -250,7 +250,7 @@ internal partial class Program
             US_Print("  Warp to which level(1-10): ");
             VW_UpdateScreen();
             string str = "";
-            esc = !US_LineInput(px, py, str, "", true, 2, 0);
+            esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
             if (!esc)
             {
                 level = Convert.ToInt32(str);

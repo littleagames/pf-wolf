@@ -756,7 +756,21 @@ internal partial class Program
 
     internal static void SetupControlPanel()
     {
+        //
+        // CACHE SOUNDS
+        //
+        SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+        fontnumber = 1;
+        WindowH = 200;
+        if (screenHeight % 200 != 0)
+            VL_ClearScreen(0);
 
+        if (!ingame)
+            CA_LoadAllSounds();
+        else
+            MainMenu[(int)menuitems.savegame].active = 1;
+
+        IN_CenterMouse();
     }
     ////////////////////////////////////////////////////////////////////
     //
@@ -1754,10 +1768,12 @@ internal partial class Program
                              LSM_W - LSItems.indent - 16, 10, BKGDCOLOR);
                 VW_UpdateScreen();
 
+                string str = new string(input);
                 if (US_LineInput
-                    (LSM_X + LSItems.indent + 2, LSM_Y + which * 13 + 1, new string(input), new string(input), true, 31,
+                    (LSM_X + LSItems.indent + 2, LSM_Y + which * 13 + 1, ref str, new string(input), true, 31,
                      LSM_W - LSItems.indent - 30))
                 {
+                    input = str.ToCharArray();
                     SaveGamesAvail[which] = 1;
                     SaveGameNames[which] = input;
 
