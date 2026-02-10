@@ -6,7 +6,6 @@ internal partial class Program
     {
         bool esc;
         int level;
-        int? spot;
 
         if (Keyboard[(int)ScanCodes.sc_B])             // B = border color
         {
@@ -60,7 +59,7 @@ internal partial class Program
 
         if (Keyboard[(int)ScanCodes.sc_F])             // F = facing spot
         {
-            spot = actorat[player.tilex, player.tiley];
+            uint spot = actorat[player.tilex, player.tiley];
 
             CenterWindow(15, 9);
             US_Print($"X: {player.x} ({(player.x % TILEGLOBAL)})\n");
@@ -72,8 +71,7 @@ internal partial class Program
             US_Print($"2: {spot}");
             US_Print($"f 1: {player.areanumber}");
             US_Print($" 2: {MAPSPOT(player.tilex, player.tiley, 1)}");
-            //snprintf(str, sizeof(str), , !ISPOINTER(spot) ? spotvis[player.tilex, player.tiley] : spot.flags);
-            //US_Print($" 3: {}");
+            US_Print($" 3: {(!ISPOINTER(spot, out var spotObj) ? (spotvis[player.tilex, player.tiley] ? 1 : 0) : spotObj.flags)}");
 
             VW_UpdateScreen();
             IN_Ack();

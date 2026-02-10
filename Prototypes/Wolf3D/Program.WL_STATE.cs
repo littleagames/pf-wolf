@@ -42,7 +42,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         newobj.y = (int)((tiley << TILESHIFT) + TILEGLOBAL / 2);
         newobj.dir = (int)objdirtypes.nodir;
 
-        actorat[tilex, tiley] = MAXACTORS - objfreelist;
+        actorat[tilex, tiley] = (uint)((MAXACTORS - objfreelist) | 0xffff); // TODO: Might be the wrong value
         newobj.areanumber = (byte)(MAPSPOT((int)tilex, (int)tiley, 0) - AREATILE);
 
         return newobj;
@@ -201,19 +201,22 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 case objdirtypes.north:
                     if (ob.obclass == (byte)classtypes.dogobj || ob.obclass == (byte)classtypes.fakeobj)
                     {
-                        CHECKDIAG(ob.tilex, ob.tiley - 1);
+                        if (!CHECKDIAG(ob.tilex, ob.tiley - 1))
+                            return false;
                     }
                     else
                     {
-                        CHECKSIDE(ob.tilex, ob.tiley - 1);
+                        int r = CHECKSIDE(ob, ob.tilex, ob.tiley - 1);
+                        if (r == 0) return false;
+                        if (r == 1) return true;
                     }
                     ob.tiley--;
                     break;
 
                 case objdirtypes.northeast:
-                    CHECKDIAG(ob.tilex + 1, ob.tiley - 1);
-                    CHECKDIAG(ob.tilex + 1, ob.tiley);
-                    CHECKDIAG(ob.tilex, ob.tiley - 1);
+                    if (!CHECKDIAG(ob.tilex + 1, ob.tiley - 1)) return false;
+                    if (!CHECKDIAG(ob.tilex + 1, ob.tiley)) return false;
+                    if (!CHECKDIAG(ob.tilex, ob.tiley - 1)) return false;
                     ob.tilex++;
                     ob.tiley--;
                     break;
@@ -221,19 +224,21 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 case objdirtypes.east:
                     if (ob.obclass == (byte)classtypes.dogobj || ob.obclass == (byte)classtypes.fakeobj)
                     {
-                        CHECKDIAG(ob.tilex + 1, ob.tiley);
+                        if (!CHECKDIAG(ob.tilex + 1, ob.tiley)) return false;
                     }
                     else
                     {
-                        CHECKSIDE(ob.tilex + 1, ob.tiley);
+                        int r = CHECKSIDE(ob, ob.tilex + 1, ob.tiley);
+                        if (r == 0) return false;
+                        if (r == 1) return true;
                     }
                     ob.tilex++;
                     break;
 
                 case objdirtypes.southeast:
-                    CHECKDIAG(ob.tilex + 1, ob.tiley + 1);
-                    CHECKDIAG(ob.tilex + 1, ob.tiley);
-                    CHECKDIAG(ob.tilex, ob.tiley + 1);
+                    if (!CHECKDIAG(ob.tilex + 1, ob.tiley + 1)) return false;
+                    if (!CHECKDIAG(ob.tilex + 1, ob.tiley)) return false;
+                    if (!CHECKDIAG(ob.tilex, ob.tiley + 1)) return false;
                     ob.tilex++;
                     ob.tiley++;
                     break;
@@ -241,19 +246,21 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 case objdirtypes.south:
                     if (ob.obclass == (byte)classtypes.dogobj || ob.obclass == (byte)classtypes.fakeobj)
                     {
-                        CHECKDIAG(ob.tilex, ob.tiley + 1);
+                        if (!CHECKDIAG(ob.tilex, ob.tiley + 1)) return false;
                     }
                     else
                     {
-                        CHECKSIDE(ob.tilex, ob.tiley + 1);
+                        int r = CHECKSIDE(ob, ob.tilex, ob.tiley + 1);
+                        if (r == 0) return false;
+                        if (r == 1) return true;
                     }
                     ob.tiley++;
                     break;
 
                 case objdirtypes.southwest:
-                    CHECKDIAG(ob.tilex - 1, ob.tiley + 1);
-                    CHECKDIAG(ob.tilex - 1, ob.tiley);
-                    CHECKDIAG(ob.tilex, ob.tiley + 1);
+                    if (!CHECKDIAG(ob.tilex - 1, ob.tiley + 1)) return false;
+                    if (!CHECKDIAG(ob.tilex - 1, ob.tiley)) return false;
+                    if (!CHECKDIAG(ob.tilex, ob.tiley + 1)) return false;
                     ob.tilex--;
                     ob.tiley++;
                     break;
@@ -261,19 +268,21 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 case objdirtypes.west:
                     if (ob.obclass == (byte)classtypes.dogobj || ob.obclass == (byte)classtypes.fakeobj)
                     {
-                        CHECKDIAG(ob.tilex - 1, ob.tiley);
+                        if (!CHECKDIAG(ob.tilex - 1, ob.tiley)) return false;
                     }
                     else
                     {
-                        CHECKSIDE(ob.tilex - 1, ob.tiley);
+                        int r = CHECKSIDE(ob, ob.tilex - 1, ob.tiley);
+                        if (r == 0) return false;
+                        if (r == 1) return true;
                     }
                     ob.tilex--;
                     break;
 
                 case objdirtypes.northwest:
-                    CHECKDIAG(ob.tilex - 1, ob.tiley - 1);
-                    CHECKDIAG(ob.tilex - 1, ob.tiley);
-                    CHECKDIAG(ob.tilex, ob.tiley - 1);
+                    if (!CHECKDIAG(ob.tilex - 1, ob.tiley - 1)) return false;
+                    if (!CHECKDIAG(ob.tilex - 1, ob.tiley)) return false;
+                    if (!CHECKDIAG(ob.tilex, ob.tiley - 1)) return false;
                     ob.tilex--;
                     ob.tiley--;
                     break;
@@ -294,53 +303,49 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
     internal static bool CHECKDIAG(int x, int y)
     {
-        var temp = GetActorAt(x, y);
-        if (temp != null)
+        uint temp = actorat[x, y];
+        if (temp != 0 && ISPOINTER(temp, out var check))
         { 
-            //  if (temp< BIT_ALLTILES) // TODO: Need to have objstruct of wall or door
-            //      return false;
-            if ((temp.flags & (int)objflags.FL_SHOOTABLE) != 0)
-                return false;
-        }
-
-        return true;
-    }
-    internal static bool CHECKSIDE(int x,int y)
-    {
-        var temp = GetActorAt(x, y);
-        if (temp != null)
-        {                                                  
-            //if (tempIndex<BIT_DOOR)                             
-            //    return false;                              
-            //if (temp<BIT_ALLTILES)      // TODO: Need to have objstruct of wall or door                    
-            //{
-            //    DOORCHECK(x, y);
-            //}
-            if ((temp.flags & (int)objflags.FL_SHOOTABLE) != 0)
+              if (temp < BIT_ALLTILES)
+                  return false;
+            if ((check.flags & (int)objflags.FL_SHOOTABLE) != 0)
                 return false;
         }
 
         return true;
     }
 
-    internal static bool DOORCHECK()
+    internal static int CHECKSIDE(objstruct ob, int x, int y)
     {
-        //if(DEMOCOND_ORIG)                        
-        //     doornum = temp&63;                   
-        //else                                     
-        //{                                        
-        //    doornum = (int) temp &~BIT_DOOR;     
-        //    if (ob->obclass != ghostobj          
-        //        && ob->obclass != spectreobj)    
-        //    {                                    
-        //        OpenDoor(doornum);               
-        //        ob->distance = -doornum - 1;     
-        //        return true;                     
-        //    }                                    
-        //}
+        uint temp = actorat[x, y];
+        if (temp != 0 && ISPOINTER(temp, out var check))
+        {
+            if (temp < BIT_DOOR)
+                return 0;
+            if (temp < BIT_ALLTILES)
+            {
+                if ((demorecord || demoplayback))
+                    doornum = (short)(temp & 63);
+                else
+                {
+                    doornum = (short)(temp & ~BIT_DOOR);
+                    if (ob.obclass != (byte)classtypes.ghostobj
+                        && ob.obclass != (byte)classtypes.spectreobj)
+                    {
+                        OpenDoor(doornum);
+                        ob.distance = -doornum - 1;
+                        return 1;
+                    }
+                }
+            }
 
-        return false;
+            if ((check.flags & (int)objflags.FL_SHOOTABLE) != 0)
+                return 0;
+        }
+
+        return 2; // continue;
     }
+
 
     /*
     =============================================================================
@@ -1168,7 +1173,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
         gamestate.killcount++;
         ob.flags &= ~(uint)objflags.FL_SHOOTABLE;
-        actorat[ob.tilex, ob.tiley] = null;
+        actorat[ob.tilex, ob.tiley] = 0;
         ob.flags |= (uint)objflags.FL_NONMARK;
     }
 

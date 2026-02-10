@@ -738,18 +738,6 @@ internal partial class Program
 
     internal const int JOYSCALE = 2;
 
-    internal static objstruct? GetActorAt(int tilex, int tiley)
-    {
-        int? checkIndex = actorat[tilex + 1, tiley];
-        if (checkIndex == null)
-        {
-            return null;
-        }
-
-        objstruct check = objlist[checkIndex.Value];
-        return check;
-    }
-
     internal static int MAPSPOT(int x, int y, int plane) => (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]);
     internal static void SetMapSpot(int x, int y, int plane, ushort value)
     {
@@ -758,8 +746,19 @@ internal partial class Program
 
     internal static bool VALIDAREA(int x) => (x) >= AREATILE && (x) < (AREATILE + NUMAREAS);
 
-    //internal static bool ISPOINTER(objstruct? x) => x != null; // TODO: How to? actorat was a list of pointers, vs just the objects themselves
-    internal static bool ISPOINTER(int objstructIndex) => (objstructIndex & 0xffff) != 0;
+    internal static bool ISPOINTER(uint objstructIndex, out objstruct check)
+    {
+        uint checkIndex = (uint)(objstructIndex & ~0xffff); // might be the wrong value to strip
+        if (checkIndex != 0)
+        {
+            check = objlist[objstructIndex];
+            return true;
+        }
+
+        check = null!;
+        return false;
+    }
+
 
 
     /*

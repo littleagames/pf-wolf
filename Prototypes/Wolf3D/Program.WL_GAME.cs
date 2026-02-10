@@ -755,7 +755,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         mapheight = mapheaderseg[mapnum].height;
 
         tilemap = new byte[MAPSIZE, MAPSIZE];
-        actorat = new int?[MAPSIZE, MAPSIZE];
+        actorat = new uint[MAPSIZE, MAPSIZE];
 
         for (y = 0; y < mapheight; y++)
         {
@@ -766,7 +766,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                 {
                     // solid wall
                     tilemap[x,y] = (byte)tile;
-                    actorat[x,y] = tile;
+                    actorat[x,y] = (uint)tile;
                 }
                 else
                 {

@@ -24,7 +24,7 @@ internal partial class Program
 
     internal static byte[,] tilemap = new byte[MAPSIZE, MAPSIZE]; // wall values only
     internal static bool[,] spotvis = new bool[MAPSIZE ,MAPSIZE];
-    internal static int?[,] actorat = new int?[MAPSIZE, MAPSIZE];
+    internal static uint[,] actorat = new uint[MAPSIZE, MAPSIZE];
 
     internal static ushort mapwidth, mapheight;
     internal static uint tics;
@@ -285,7 +285,7 @@ internal partial class Program
             return;
         
         if ((ob.flags & (int)(objflags.FL_NONMARK | objflags.FL_NEVERMARK)) == 0)
-            actorat[ob.tilex,ob.tiley] = null;
+            actorat[ob.tilex,ob.tiley] = 0;
 
 
         //
@@ -311,7 +311,7 @@ internal partial class Program
             if ((ob.flags & (int)objflags.FL_NONMARK) != 0 && actorat[ob.tilex, ob.tiley] != 0)
                 return;
 
-            actorat[ob.tilex, ob.tiley] = objlistIndex;
+            actorat[ob.tilex, ob.tiley] = (uint)(objlistIndex | 0xffff);
             return;
         }
 
@@ -373,7 +373,7 @@ internal partial class Program
         if ((ob.flags & (int)objflags.FL_NONMARK) != 0 && actorat[ob.tilex, ob.tiley] != 0)
             return;
 
-        actorat[ob.tilex, ob.tiley] = objlistIndex;
+        actorat[ob.tilex, ob.tiley] = (uint)(objlistIndex | 0xffff);
     }
 
     internal static void RemoveObj(objstruct gone, int objlistIndex)

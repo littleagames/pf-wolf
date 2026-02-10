@@ -226,6 +226,7 @@ internal partial class Program
     internal static bool TryMove(objstruct ob)
     {
         int xl, yl, xh, yh, x, y;
+        uint checkIndex;
         objstruct? check;
         int deltax, deltay;
 
@@ -244,9 +245,8 @@ internal partial class Program
         {
             for (x = xl; x <= xh; x++)
             {
-                check = GetActorAt(x, y);
-                // ISPOINTER is checking if it is a wall
-                if (check == null) // if actorat is not a pointer (meaning a wall or door)
+                checkIndex = actorat[x, y];
+                if (checkIndex != 0 && !ISPOINTER(checkIndex, out check))
                 {
                     if (tilemap[x, y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
                     {
@@ -291,8 +291,9 @@ internal partial class Program
         {
             for (x = xl; x <= xh; x++)
             {
-                check = GetActorAt(x, y);
-                if (check != null && !check.Equals(player) && (check.flags & (int)objflags.FL_SHOOTABLE) != 0)
+                checkIndex = actorat[x, y];
+                // TODO: !check.Equals(player) might not operate correctly obclass != playerobj
+                if (ISPOINTER(checkIndex, out check) && !check.Equals(player) && (check.flags & (int)objflags.FL_SHOOTABLE) != 0)
                 {
                     deltax = ob.x - check.x;
                     if (deltax < -MINACTORDIST || deltax > MINACTORDIST)

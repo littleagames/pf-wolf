@@ -285,7 +285,7 @@ internal partial class Program
         doorobjlist[lastdoorobj] = doorobj;
 
         // TODO: "door actor"
-        actorat[tilex,tiley] = (doornum | BIT_DOOR);   // consider it a solid wall
+        actorat[tilex,tiley] = (uint)(doornum | BIT_DOOR);   // consider it a solid wall
 
         //
         // make the door tile a special tile, and mark the adjacent tiles
@@ -323,6 +323,7 @@ internal partial class Program
     internal static void CloseDoor(int door)
     {
         int tilex, tiley, area;
+        uint checkIndex;
         objstruct? check = null;
 
         //
@@ -331,7 +332,7 @@ internal partial class Program
         tilex = doorobjlist[door].tilex;
         tiley = doorobjlist[door].tiley;
 
-        if (actorat[tilex, tiley] == null)
+        if (actorat[tilex, tiley] > 0)
             return;
 
         if (player.tilex == tilex && player.tiley == tiley)
@@ -346,11 +347,11 @@ internal partial class Program
                 if (((player.x - MINDIST) >> TILESHIFT) == tilex)
                     return;
             }
-            check = GetActorAt(tilex - 1, tiley);
-            if (check != null && ((check.x + MINDIST) >> TILESHIFT) == tilex)
+            checkIndex = actorat[tilex - 1, tiley];
+            if (ISPOINTER(checkIndex, out check) && ((check.x + MINDIST) >> TILESHIFT) == tilex)
                 return;
-            check = GetActorAt(tilex + 1, tiley);
-            if (check != null && ((check.x - MINDIST) >> TILESHIFT) == tilex)
+            checkIndex = actorat[tilex + 1, tiley];
+            if (ISPOINTER(checkIndex, out check) && ((check.x - MINDIST) >> TILESHIFT) == tilex)
                 return;
         }
         else
@@ -363,12 +364,12 @@ internal partial class Program
                     return;
             }
 
-            check = GetActorAt(tilex, tiley - 1);
-            if (check != null && ((check.y + MINDIST) >> TILESHIFT) == tiley)
+            checkIndex = actorat[tilex, tiley - 1];
+            if (ISPOINTER(checkIndex, out check) && ((check.y + MINDIST) >> TILESHIFT) == tiley)
                 return;
 
-            check = GetActorAt(tilex, tiley + 1);
-            if (check != null && ((check.y - MINDIST) >> TILESHIFT) == tiley)
+            checkIndex = actorat[tilex, tiley + 1];
+            if (ISPOINTER(checkIndex, out check) && ((check.y - MINDIST) >> TILESHIFT) == tiley)
                 return;
         }
 
@@ -387,7 +388,7 @@ internal partial class Program
         //
         // make the door space solid
         //
-        actorat[tilex, tiley] = (door | BIT_DOOR);
+        actorat[tilex, tiley] = (uint)(door | BIT_DOOR);
     }
 
     internal static void OperateDoor(int door)
@@ -494,8 +495,8 @@ internal partial class Program
         tilex = doorobjlist[door].tilex;
         tiley = doorobjlist[door].tiley;
 
-        if (/*((int)(uintptr_t)actorat[tilex][tiley] != (door | BIT_DOOR))
-            ||*/ (player.tilex == tilex && player.tiley == tiley))
+        if ((actorat[tilex, tiley] != (door | BIT_DOOR))
+            || (player.tilex == tilex && player.tiley == tiley))
         {                       // something got inside the door
             OpenDoor(door);
             return;
@@ -602,12 +603,11 @@ internal partial class Program
         dx = dirs[dir][0];
         dy = dirs[dir][1];
 
-        if ((actorat[checkx + dx, checky + dy] ?? 0) != 0)
+        if (actorat[checkx + dx, checky + dy] != 0)
         {
             SD_PlaySound((int)soundnames.NOWAYSND);
             return;
         }
-        // TODO:
         actorat[checkx + dx, checky + dy] = (tilemap[checkx + dx, checky + dy] = (byte)oldtile);
 
         gamestate.secretcount++;
