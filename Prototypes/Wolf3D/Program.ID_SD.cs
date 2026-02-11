@@ -22,6 +22,12 @@ internal enum SDSMode
     SoundBlaster
 }
 
+internal struct digiinfo
+{
+    public uint startpage;
+    public uint length;
+}
+
 internal partial class Program
 {
     internal const int TickBase = 70;     // 70Hz per tick - used as a base for timer 0
@@ -47,7 +53,7 @@ internal partial class Program
     private static int LeftPosition;
     private static int RightPosition;
     private static ushort NumDigi;
-    // private static digiinfo[] DigiList
+    private static digiinfo[] DigiList;
     private static bool DigiPlaying;
 
     // PC Sound variables
@@ -58,10 +64,68 @@ internal partial class Program
 
     internal static void SD_Startup()
     {
+        int i;
+        int chunksize;
 
         if (SD_Started)
             return;
 
+        //
+        // use a custom size audiobuffer or the largest power
+        // of 2 <= the value calculated based on the samplerate
+        //
+        if (param_audiobuffer != DEFAULT_AUDIO_BUFFER_SIZE)
+            chunksize = param_audiobuffer;
+        else
+        {
+            if (param_samplerate == 0 || param_samplerate > 44100)
+                Quit("Divide by zero caused by invalid samplerate!");
+
+            chunksize = 1 << (int)Math.Log2(param_audiobuffer / (44100 / param_samplerate));
+        }
+
+        // TODO:
+        //if (Mix_OpenAudioDevice(param_samplerate, AUDIO_S16, 2, chunksize, NULL, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE))
+        //{
+        //    snprintf(str, sizeof(str), "Unable to open audio device: %s\n", Mix_GetError());
+        //    Error(str);
+        //    return;
+        //}
+
+        //Mix_QuerySpec(&param_samplerate, NULL, NULL);
+
+        //Mix_ReserveChannels(2);  // reserve player and boss weapon channels
+        //Mix_GroupChannels(2, MIX_CHANNELS - 1, 1); // group remaining channels
+
+        //// Init music
+
+        //samplesPerMusicTick = param_samplerate / 700;    // SDL_t0FastAsmService played at 700Hz
+
+        //if (YM3812Init(1, 3579545, param_samplerate))
+        //{
+        //    printf("Unable to create virtual OPL!!\n");
+        //}
+
+        //for (i = 1; i < 0xf6; i++)
+        //    YM3812Write(oplChip, i, 0);
+
+        //YM3812Write(oplChip, 1, 0x20); // Set WSE=1
+        //                               //    YM3812Write(0,8,0); // Set CSM=0 & SEL=0		 // already set in for statement
+
+        //Mix_HookMusic(SDL_IMFMusicPlayer, 0);
+        //Mix_ChannelFinished(SD_ChannelFinished);
+        //AdLibPresent = true;
+        //SoundBlasterPresent = true;
+
+        //alTimeCount = 0;
+
+        //// Add PC speaker sound mixer
+        //Mix_SetPostMix(SDL_PCMixCallback, NULL);
+
+        SD_SetSoundMode((byte)SDMode.Off);
+        SD_SetMusicMode((byte)SMMode.Off);
+
+        SDL_SetupDigi();
         SD_Started = true;
     }
 
@@ -85,6 +149,14 @@ internal partial class Program
     internal static void SD_PrepareSound(int which)
     {
 
+    }
+
+    internal static int SD_PlayDigitized(ushort which, int leftpos, int rightpos)
+    {
+        if (DigiMode == 0)
+            return 0;
+
+        return 0;
     }
 
     internal static void SD_MusicOn()
@@ -146,5 +218,14 @@ internal partial class Program
         {
             SDL.SDL_Delay(5);
         }
+    }
+
+    internal static void SDL_SetupDigi()
+    {
+        // TODO: read in ushort chunks
+        byte[] soundInfoData = PM_GetPage(ChunksInFile - 1);
+        //ushort soundInfoPage = PM_GetPage(ChunksInFile - 1);
+        NumDigi = 0;// (word)PM_GetPageSize(ChunksInFile - 1) / 4;
+        DigiList = new digiinfo[NumDigi];
     }
 }

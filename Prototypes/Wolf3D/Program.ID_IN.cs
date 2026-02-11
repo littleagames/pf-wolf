@@ -25,6 +25,12 @@ internal partial class Program
 {
     internal const int TEXTINPUTSIZE = SDL.SDL_TEXTINPUTEVENT_TEXT_SIZE;
 
+    internal static void IN_ClearKey(int code)
+    {
+        Keyboard[code] = false;
+        if (code == LastScan) LastScan = (int)ScanCodes.sc_None;
+    }
+
     internal enum ScanCodes
     {
         sc_None = SDL.SDL_Scancode.SDL_SCANCODE_UNKNOWN,

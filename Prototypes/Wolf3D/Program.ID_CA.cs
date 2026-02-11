@@ -397,14 +397,18 @@ Please check whether you are using the right executable!
         {
             width = height = 8;
             for (i = 0; i < NUMTILE8; i++)
-                VL_DePlaneVGA(grsegs[chunk], (i * (width * height)), width, height);
+            {
+                var offset = i * (width * height);
+                var dest = VL_DePlaneVGA(grsegs[chunk].Skip(offset).ToArray(), width, height);
+                Buffer.BlockCopy(dest, 0, grsegs[chunk], offset, width * height);
+            }
         }
         else
         {
             width = pictable[chunk - STARTPICS].width;
             height = pictable[chunk - STARTPICS].height;
 
-            VL_DePlaneVGA(grsegs[chunk], 0, width, height);
+            grsegs[chunk] = VL_DePlaneVGA(grsegs[chunk], width, height);
         }
     }
 

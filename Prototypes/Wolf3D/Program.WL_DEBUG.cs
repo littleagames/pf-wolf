@@ -1,4 +1,5 @@
-﻿namespace Wolf3D;
+﻿using SDL2;
+namespace Wolf3D;
 
 internal partial class Program
 {
@@ -275,21 +276,339 @@ internal partial class Program
 
     internal static void CountObjects()
     {
+        int i, total, count, active, inactive, doors;
+        objstruct obj;
 
+        CenterWindow(17, 7);
+        active = inactive = count = doors = 0;
+
+        US_Print("Total statics :");
+        total = laststatobj;
+        US_Print(total.ToString());
+
+        US_Print($"\nlaststatobj={laststatobj}");
+
+        US_Print("\nIn use statics:");
+        for (i = 0; i < total; i++)
+        {
+            if (statobjlist[i].shapenum != -1)
+                count++;
+            else
+                doors++;        //debug
+        }
+        US_Print(count.ToString());
+
+        US_Print("\nDoors         :");
+        US_Print(doornum.ToString());
+
+        for (int? o = player.next; o != null; o = obj.next)
+        {
+            obj = objlist[o.Value];
+            if (obj.active != 0)
+                active++;
+            else
+                inactive++;
+        }
+
+        US_Print("\nTotal actors  :");
+        US_Print((active + inactive).ToString());
+
+        US_Print("\nActive actors :");
+        US_Print(active.ToString());
+
+        VW_UpdateScreen();
+        IN_Ack();
     }
 
     internal static void PictureGrabber()
     {
+        int i;
+        string fname = "WSHOT000.BMP";
 
+        for (i = 0; i < 1000; i++)
+        {
+            fname = $"WSHOT{i:000}.BMP";
+            if (!File.Exists(fname))
+                break;
+        }
+
+        // overwrites WSHOT999.BMP if all wshot files exist
+
+        SDL.SDL_SaveBMP(screenBuffer, fname);
+
+        CenterWindow(18, 2);
+        US_PrintCentered("Screenshot taken");
+        VW_UpdateScreen();
+        IN_Ack();
     }
 
     internal static void BasicOverhead()
     {
 
+        int x, y;
+        int zoom, temp;
+        int offx, offy;
+        uint tile;
+        int color = 0;
+
+        zoom = 128 / MAPSIZE;
+        offx = 160;
+        offy = (160 - (MAPSIZE * zoom)) / 2;
+
+        //
+        // right side (raw)
+        //
+        for (y = 0; y < mapheight; y++)
+        {
+            for (x = 0; x < mapwidth; x++)
+                VWB_Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, (byte)actorat[x, y]);
+        }
+
+        //
+        // left side (filtered)
+        //
+        offx -= 128;
+
+        for (y = 0; y < mapheight; y++)
+        {
+            for (x = 0; x < mapwidth; x++)
+            {
+                tile = actorat[x, y];
+
+                if (ISPOINTER(tile, out var check) && (check.flags & (uint)objflags.FL_SHOOTABLE) != 0)
+                    color = 72;
+                else if (tile==0 || ISPOINTER(tile, out check))
+                {
+                    if (spotvis[x, y])
+                        color = 111;
+                    else
+                        color = 0;      // nothing
+                }
+                else if (MAPSPOT(x, y, 1) == PUSHABLETILE)
+                    color = 171;
+                else if (tile == BIT_WALL)
+                    color = 158;
+                else if (tile < BIT_DOOR)
+                    color = 154;
+                else if (tile < BIT_ALLTILES)
+                    color = 146;
+
+                VWB_Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, color);
+            }
+        }
+
+        VWB_Bar((player.tilex * zoom) + offx, (player.tiley * zoom) + offy, zoom, zoom, 15);
+
+        VW_UpdateScreen();
+        IN_Ack();
     }
 
     internal static void ShapeTest()
     {
+        bool done;
+        int scan;
+        int i, j, k, x;
+        int v2;
+        int oldviewheight;
+        uint l;
+        byte v;
+        byte[] addr;
+        int sound;
 
+        CenterWindow(20, 16);
+        VW_UpdateScreen();
+
+        i = 0;
+        done = false;
+
+        while (!done)
+        {
+            US_ClearWindow();
+            sound = -1;
+
+            US_Print(" Page #");
+            US_PrintSigned(i);
+
+            if (i < PMSpriteStart)
+                US_Print(" (Wall)");
+            else if (i < PMSoundStart)
+                US_Print(" (Sprite)");
+            else if (i == ChunksInFile - 1)
+                US_Print(" (Sound Info)");
+            else
+                US_Print(" (Sound)");
+
+            US_Print("\n Address: ");
+            addr = PM_GetPage(i);
+            //snprintf(str, sizeof(str), "0x%010X", (uintptr_t)addr);
+            US_Print(i.ToString());
+
+            if (addr != null && addr.Length > 0)
+            {
+                if (i < PMSpriteStart)
+                {
+                    //
+                    // draw the wall
+                    //
+                    vbufPtr = VL_LockSurface(screenBuffer);
+
+                    if (vbufPtr == IntPtr.Zero)
+                        Quit("ShapeTest: Unable to create surface for walls!");
+
+                    postx = (screenWidth / 2) - ((TEXTURESIZE / 2) * scaleFactor);
+                    postsource = addr;
+
+                    centery = (short)(screenHeight / 2);
+                    oldviewheight = viewheight;
+                    viewheight = 0x7fff;            // quick hack to skip clipping
+
+                    for (x = 0, j = 0; x < TEXTURESIZE * scaleFactor; x++, j++, postx++)
+                    {
+                        wallheight[postx] = (short)(256 * scaleFactor);
+                        ScalePost();
+
+                        if (j == scaleFactor)
+                        {
+                            j = 0;
+                            postsource = postsource.Skip(TEXTURESIZE).ToArray();
+                        }
+                    }
+
+                    viewheight = oldviewheight;
+                    centery = (short)(viewheight / 2);
+
+                    VL_UnlockSurface(screenBuffer);
+                    vbufPtr = IntPtr.Zero;
+                }
+                else if (i < PMSoundStart)
+                {
+                    //
+                    // draw the sprite
+                    //
+                    vbufPtr = VL_LockSurface(screenBuffer);
+
+                    if (vbufPtr == IntPtr.Zero)
+                        Quit("ShapeTest: Unable to create surface for sprites!");
+
+                    centery = (short)(screenHeight / 2);
+                    oldviewheight = viewheight;
+                    viewheight = 0x7fff;            // quick hack to skip clipping
+
+                    SimpleScaleShape(screenWidth / 2, i - PMSpriteStart, 64 * scaleFactor);
+
+                    viewheight = oldviewheight;
+                    centery = (short)(viewheight / 2);
+
+                    VL_UnlockSurface(screenBuffer);
+                    vbufPtr = IntPtr.Zero;
+                }
+                else if (i == ChunksInFile - 1)
+                {
+                    //
+                    // display sound info
+                    //
+                    US_Print("\n\n Number of sounds: ");
+                    US_Print(NumDigi.ToString());
+
+                    for (l = (uint)(j = 0); j < NumDigi; j++)
+                        l += DigiList[j].length;
+
+                    US_Print("\n Total bytes: ");
+                    US_Print(l.ToString());
+                    US_Print("\n Total pages: ");
+                    US_Print((ChunksInFile - PMSoundStart - 1).ToString());
+                }
+                else
+                {
+                    //
+                    // display sounds
+                    //
+                    for (j = 0; j < NumDigi; j++)
+                    {
+                        if (j == NumDigi - 1)
+                            k = ChunksInFile - 1;    // don't let it overflow
+                        else
+                            k = (int)DigiList[j + 1].startpage;
+
+                        if (i >= PMSoundStart + DigiList[j].startpage && i < PMSoundStart + k)
+                            break;
+                    }
+
+                    if (j < NumDigi)
+                    {
+                        sound = j;
+
+                        US_Print("\n Sound #");
+                        US_PrintSigned(j);
+                        US_Print("\n Segment #");
+                        US_PrintSigned((int)(i - PMSoundStart - DigiList[j].startpage));
+                    }
+
+                    for (j = 0; j < pageLengths[i]; j += 32)
+                    {
+                        v = addr[j];
+                        v2 = v;
+                        v2 -= 128;
+                        v2 /= 4;
+
+                        if (v2 < 0)
+                            VWB_Vlin(WindowY + WindowH - 32 + v2,
+                                      WindowY + WindowH - 32,
+                                      WindowX + 8 + (j / 32), BLACK);
+                        else
+                            VWB_Vlin(WindowY + WindowH - 32,
+                                      WindowY + WindowH - 32 + v2,
+                                      WindowX + 8 + (j / 32), BLACK);
+                    }
+                }
+            }
+
+            VW_UpdateScreen();
+
+            IN_Ack();
+            scan = LastScan;
+
+            IN_ClearKey(scan);
+
+            switch ((ScanCodes)scan)
+            {
+                case ScanCodes.sc_LeftArrow:
+                    if (i != 0)
+                        i--;
+                    break;
+
+                case ScanCodes.sc_RightArrow:
+                    if (++i >= ChunksInFile)
+                        i--;
+                    break;
+
+                case ScanCodes.sc_W:      // Walls
+                    i = 0;
+                    break;
+
+                case ScanCodes.sc_S:      // Sprites
+                    i = PMSpriteStart;
+                    break;
+
+                case ScanCodes.sc_D:      // Digitized
+                    i = PMSoundStart;
+                    break;
+
+                case ScanCodes.sc_I:      // Digitized info
+                    i = ChunksInFile - 1;
+                    break;
+
+                case ScanCodes.sc_P:
+                    if (sound != -1)
+                        SD_PlayDigitized((ushort)sound, 8, 8);
+                    break;
+
+                case ScanCodes.sc_Escape:
+                    done = true;
+                    break;
+            }
+        }
+
+        SD_StopDigitized();
     }
 }

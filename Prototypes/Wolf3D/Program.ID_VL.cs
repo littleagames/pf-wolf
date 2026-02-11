@@ -385,7 +385,7 @@ internal partial class Program
 
 
 
-    internal static void VL_DePlaneVGA(byte[] source, int sourceIndex, int width, int height)
+    internal static byte[] VL_DePlaneVGA(byte[] source, int width, int height)
     {
         int x, y, plane;
         ushort size, pwidth;
@@ -395,7 +395,7 @@ internal partial class Program
         if ((width & 3) != 0)
         {
             Quit("DePlaneVGA: width not divisible by 4!");
-            return;
+            return source;
         }
 
         var temp = new byte[size];
@@ -422,6 +422,7 @@ internal partial class Program
         //
         // copy the temp buffer back into the original source
         //
-        Array.Copy(temp, source, size);
+        return temp;
+        //Array.Copy(temp, source, size);
     }
 }
