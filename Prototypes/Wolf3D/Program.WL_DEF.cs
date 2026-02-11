@@ -263,7 +263,7 @@ internal class doorobj_t
     public byte tilex, tiley;
     public byte vertical; // boolean
     public byte locknum;
-    public byte action;
+    public dooractiontypes action;
     public short ticcount;
     public ushort position;            // leading edge of door (0 = closed, 0xffff = fully open)
 }
@@ -272,7 +272,7 @@ internal class objstruct
 {
     public byte active;
     public short ticcount;
-    public byte obclass;
+    public classtypes obclass;
     public statestruct? state;
 
     public uint flags;              // FL_SHOOTABLE, etc
@@ -748,10 +748,10 @@ internal partial class Program
 
     internal static bool ISPOINTER(uint objstructIndex, out objstruct check)
     {
-        uint checkIndex = (uint)(objstructIndex & ~0xffff); // might be the wrong value to strip
-        if (checkIndex != 0)
+        int checkIndex = (int)(objstructIndex - 0xffff); // might be the wrong value to strip
+        if (checkIndex >= 0)
         {
-            check = objlist[objstructIndex];
+            check = objlist[checkIndex];
             return true;
         }
 

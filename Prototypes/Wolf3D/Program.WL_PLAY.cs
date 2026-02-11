@@ -311,7 +311,7 @@ internal partial class Program
             if ((ob.flags & (int)objflags.FL_NONMARK) != 0 && actorat[ob.tilex, ob.tiley] != 0)
                 return;
 
-            actorat[ob.tilex, ob.tiley] = (uint)(objlistIndex | 0xffff);
+            actorat[ob.tilex, ob.tiley] = (uint)((objlistIndex + 0xffff));
             return;
         }
 
@@ -373,7 +373,7 @@ internal partial class Program
         if ((ob.flags & (int)objflags.FL_NONMARK) != 0 && actorat[ob.tilex, ob.tiley] != 0)
             return;
 
-        actorat[ob.tilex, ob.tiley] = (uint)(objlistIndex | 0xffff);
+        actorat[ob.tilex, ob.tiley] = (uint)((objlistIndex + 0xffff));
     }
 
     internal static void RemoveObj(objstruct gone, int objlistIndex)

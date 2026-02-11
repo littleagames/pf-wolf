@@ -281,7 +281,7 @@ internal partial class Program
         doorobj.tiley = (byte)tiley;
         doorobj.vertical = (byte)(vertical ? 1 : 0);
         doorobj.locknum = (byte)locknum;
-        doorobj.action = (byte)dooractiontypes.dr_closed;
+        doorobj.action = dooractiontypes.dr_closed;
         doorobjlist[lastdoorobj] = doorobj;
 
         // TODO: "door actor"
@@ -317,7 +317,7 @@ internal partial class Program
         if (doorobjlist[door].action == (byte)dooractiontypes.dr_open)
             doorobjlist[door].ticcount = 0;         // reset open time
         else
-            doorobjlist[door].action = (byte)dooractiontypes.dr_opening;  // start it opening
+            doorobjlist[door].action = dooractiontypes.dr_opening;  // start it opening
     }
 
     internal static void CloseDoor(int door)
@@ -384,7 +384,7 @@ internal partial class Program
             //PlaySoundLocTile(CLOSEDOORSND, doorobjlist[door].tilex, doorobjlist[door].tiley); // JAB
         }
 
-        doorobjlist[door].action = (byte)dooractiontypes.dr_closing;
+        doorobjlist[door].action = dooractiontypes.dr_closing;
         //
         // make the door space solid
         //
@@ -406,7 +406,7 @@ internal partial class Program
             }
         }
 
-        switch ((dooractiontypes)doorobjlist[door].action)
+        switch (doorobjlist[door].action)
         {
             case dooractiontypes.dr_closed:
             case dooractiontypes.dr_closing:
@@ -515,7 +515,7 @@ internal partial class Program
             //
             position = 0;
 
-            doorobjlist[door].action = (byte)dooractiontypes.dr_closed;
+            doorobjlist[door].action = dooractiontypes.dr_closed;
 
             var door_tilex = doorobjlist[door].tilex;
             var door_tiley = doorobjlist[door].tiley;
@@ -556,7 +556,7 @@ internal partial class Program
 
         for (door = 0; door < doornum; door++)
         {
-            switch ((dooractiontypes)doorobjlist[door].action)
+            switch (doorobjlist[door].action)
             {
                 case dooractiontypes.dr_open:
                     DoorOpen(door);

@@ -293,7 +293,7 @@ internal partial class Program
             {
                 checkIndex = actorat[x, y];
                 // TODO: !check.Equals(player) might not operate correctly obclass != playerobj
-                if (ISPOINTER(checkIndex, out check) && !check.Equals(player) && (check.flags & (int)objflags.FL_SHOOTABLE) != 0)
+                if (ISPOINTER(checkIndex, out check) && /*!check.Equals(player)*/check.obclass != classtypes.playerobj && (check.flags & (int)objflags.FL_SHOOTABLE) != 0)
                 {
                     deltax = ob.x - check.x;
                     if (deltax < -MINACTORDIST || deltax > MINACTORDIST)
@@ -539,7 +539,7 @@ internal partial class Program
         }
         else
         {
-            if (LastAttacker != null && LastAttacker.obclass == (byte)classtypes.needleobj)
+            if (LastAttacker != null && LastAttacker.obclass == classtypes.needleobj)
                 StatusDrawFace((int)graphicnums.MUTANTBJPIC);
             else
                 StatusDrawFace((uint)graphicnums.FACE8APIC);
@@ -734,7 +734,7 @@ internal partial class Program
 
     internal static void Cmd_Use()
     {
-        int checkx, checky, doornum, dir;
+        int checkx, checky, cmdtile, dir;
         bool elevatorok;
 
         //
@@ -769,7 +769,7 @@ internal partial class Program
             elevatorok = false;
         }
 
-        doornum = tilemap[checkx, checky];
+        cmdtile = tilemap[checkx, checky];
         if (MAPSPOT(checkx, checky, 1) == PUSHABLETILE)
         {
             //
@@ -779,7 +779,7 @@ internal partial class Program
             PushWall(checkx, checky, dir);
             return;
         }
-        if (!buttonheld[(int)buttontypes.bt_use] && doornum == ELEVATORTILE && elevatorok)
+        if (!buttonheld[(int)buttontypes.bt_use] && cmdtile == ELEVATORTILE && elevatorok)
         {
             //
             // use elevator
@@ -794,10 +794,10 @@ internal partial class Program
             SD_PlaySound((int)soundnames.LEVELDONESND);
             SD_WaitSoundDone();
         }
-        else if (!buttonheld[(int)buttontypes.bt_use] && (doornum & BIT_DOOR) != 0)
+        else if (!buttonheld[(int)buttontypes.bt_use] && (cmdtile & BIT_DOOR) != 0)
         {
             buttonheld[(int)buttontypes.bt_use] = true;
-            OperateDoor(doornum & ~BIT_DOOR);
+            OperateDoor(cmdtile & ~BIT_DOOR);
         }
         else
             SD_PlaySound((int)soundnames.DONOTHINGSND);
@@ -1094,7 +1094,7 @@ internal partial class Program
 
     internal static void SpawnPlayer(int tilex, int tiley, int dir)
     {
-        player.obclass = (byte)classtypes.playerobj;
+        player.obclass = classtypes.playerobj;
         player.active = (byte)activetypes.ac_yes;
         player.tilex = (byte)tilex;
         player.tiley = (byte)tiley;

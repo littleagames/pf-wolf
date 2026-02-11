@@ -188,7 +188,7 @@ internal partial class Program
         newobj.tiley = ob.tiley;
         newobj.x = ob.x;
         newobj.y = ob.y;
-        newobj.obclass = (byte)classtypes.inertobj;
+        newobj.obclass = classtypes.inertobj;
         newobj.active = (byte)activetypes.ac_yes;
 
         newobj.flags = (uint)objflags.FL_NEVERMARK;
@@ -751,7 +751,7 @@ internal partial class Program
         newobj.tiley = ob.tiley;
         newobj.x = ob.x;
         newobj.y = ob.y;
-        newobj.obclass = (byte)classtypes.needleobj;
+        newobj.obclass = classtypes.needleobj;
         newobj.dir = (byte)objdirtypes.nodir;
         newobj.angle = (short)iangle;
         newobj.speed = (int)0x2000L;
@@ -892,7 +892,7 @@ internal partial class Program
         newobj.tiley = ob.tiley;
         newobj.x = ob.x;
         newobj.y = ob.y;
-        newobj.obclass = (byte)classtypes.rocketobj;
+        newobj.obclass = classtypes.rocketobj;
         newobj.dir = (byte)objdirtypes.nodir;
         newobj.angle = (short)iangle;
         newobj.speed = (int)0x2000L;
@@ -1130,7 +1130,7 @@ internal partial class Program
         newobj = SpawnNewObj(player.tilex, (uint)(player.tiley + 1), s_bjrun1);
         newobj.x = player.x;
         newobj.y = player.y;
-        newobj.obclass = (byte)classtypes.bjobj;
+        newobj.obclass = classtypes.bjobj;
         newobj.dir = (byte)objdirtypes.north;
         newobj.temp1 = 6;                      // tiles to run forward
     }
@@ -1564,7 +1564,7 @@ internal partial class Program
             newobj.flags |= (uint)objflags.FL_AMBUSH;
         }
 
-        newobj.obclass = (byte)(classtypes.guardobj + which);
+        newobj.obclass = (classtypes.guardobj + which);
         newobj.hitpoints = starthitpoints[gamestate.difficulty, which];
         newobj.dir = (byte)(dir * 2);
         newobj.flags |= (uint)objflags.FL_SHOOTABLE;
@@ -1612,7 +1612,7 @@ internal partial class Program
                 break;
         }
 
-        newobj.obclass = (byte)(classtypes.guardobj + which);
+        newobj.obclass = (classtypes.guardobj + which);
         newobj.dir = (byte)(dir * 2);
         newobj.hitpoints = starthitpoints[gamestate.difficulty, which];
         newobj.distance = (int)TILEGLOBAL;
@@ -1643,8 +1643,12 @@ internal partial class Program
     internal static void SpawnDeadGuard(int tilex, int tiley)
     {
         objstruct newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_grddie4);
-        newobj.flags |= (uint)objflags.FL_NONMARK; // walk through moving enemy fix
-        newobj.obclass = (byte)classtypes.inertobj;
+        if (!(demorecord || demoplayback))
+        {
+            newobj.flags |= (uint)objflags.FL_NONMARK; // walk through moving enemy fix
+        }
+
+        newobj.obclass = classtypes.inertobj;
     }
 
     internal static void SpawnBoss(int tilex, int tiley)
@@ -1654,7 +1658,7 @@ internal partial class Program
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_bossstand);
         newobj.speed = SPDPATROL;
 
-        newobj.obclass = (byte)classtypes.bossobj;
+        newobj.obclass = classtypes.bossobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_boss];
         newobj.dir = (byte)objdirtypes.nodir;
         newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
@@ -1669,7 +1673,7 @@ internal partial class Program
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_gretelstand);
         newobj.speed = SPDPATROL;
 
-        newobj.obclass = (byte)classtypes.gretelobj;
+        newobj.obclass = classtypes.gretelobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_gretel];
         newobj.dir = (byte)objdirtypes.nodir;
         newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
@@ -1684,7 +1688,7 @@ internal partial class Program
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_fakestand);
         newobj.speed = SPDPATROL;
 
-        newobj.obclass = (byte)classtypes.fakeobj;
+        newobj.obclass = classtypes.fakeobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_fake];
         newobj.dir = (byte)objdirtypes.nodir;
         newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
@@ -1699,7 +1703,7 @@ internal partial class Program
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_mechastand);
         newobj.speed = SPDPATROL;
 
-        newobj.obclass = (byte)classtypes.mechahitlerobj;
+        newobj.obclass = classtypes.mechahitlerobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_hitler];
         newobj.dir = (byte)objdirtypes.nodir;
         newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
@@ -1723,7 +1727,7 @@ internal partial class Program
         newobj.flags = ob.flags | (uint)objflags.FL_SHOOTABLE;
         newobj.flags &= ~(uint)objflags.FL_NONMARK;   // hitler stuck with nodir fix
 
-        newobj.obclass = (byte)classtypes.realhitlerobj;
+        newobj.obclass = classtypes.realhitlerobj;
         newobj.hitpoints = hitpoints[gamestate.difficulty];
 
         if (!loadedgame)               // Count real hitler for correct kill ratios
@@ -1771,7 +1775,7 @@ internal partial class Program
         newobj.y = ob.y;
         newobj.dir = (byte)objdirtypes.nodir;
         newobj.angle = (short)iangle;
-        newobj.obclass = (byte)classtypes.fireobj;
+        newobj.obclass = classtypes.fireobj;
         newobj.speed = (int)0x1200L;
         newobj.flags = (uint)objflags.FL_NEVERMARK;
         newobj.active = (byte)activetypes.ac_yes;
@@ -1846,7 +1850,7 @@ internal partial class Program
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_giftstand);
         newobj.speed = SPDPATROL;
 
-        newobj.obclass = (byte)classtypes.giftobj;
+        newobj.obclass = classtypes.giftobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_gift];
         newobj.dir = (byte)objdirtypes.nodir;
         newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
@@ -1874,7 +1878,7 @@ internal partial class Program
                 break;
         }
 
-        newobj.obclass = (byte)classtypes.ghostobj;
+        newobj.obclass = classtypes.ghostobj;
         newobj.speed = SPDDOG;
 
         newobj.dir = (byte)objdirtypes.east;
@@ -1899,7 +1903,7 @@ internal partial class Program
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_schabbstand);
         newobj.speed = SPDPATROL;
 
-        newobj.obclass = (byte)classtypes.schabbobj;
+        newobj.obclass = classtypes.schabbobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_schabbs];
         newobj.dir = (byte)objdirtypes.nodir;
         newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
@@ -1919,7 +1923,7 @@ internal partial class Program
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_fatstand);
         newobj.speed = SPDPATROL;
 
-        newobj.obclass = (byte)classtypes.fatobj;
+        newobj.obclass = classtypes.fatobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_fat];
         newobj.dir = (byte)objdirtypes.nodir;
         newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
@@ -1949,6 +1953,14 @@ internal partial class Program
             dy = Math.Abs(ob.tiley - player.tiley);
             dist = dx > dy ? dx : dy;
 
+            if ((demorecord || demoplayback))
+            {
+                if (dist ==0 || (dist == 1 && ob.distance < 0x4000))
+                    chance = 300;
+                else
+                    chance = (int)((tics << 4) / dist);
+            }
+            else
             {
                 if (dist != 0)
                     chance = (int)((tics << 4) / dist);
@@ -1972,7 +1984,7 @@ internal partial class Program
                 //
                 // go into attack frame
                 //
-                switch ((classtypes)ob.obclass)
+                switch (ob.obclass)
                 {
                     case classtypes.guardobj:
                         NewState(ob, s_grdshoot1);
@@ -2029,7 +2041,7 @@ internal partial class Program
                 if (doorobjlist[-ob.distance - 1].action != (byte)dooractiontypes.dr_open)
                     return;
                 ob.distance = (int)TILEGLOBAL;      // go ahead, the door is now open
-                if (!((demorecord || demoplayback)))
+                if ((!(demorecord || demoplayback)))
                 {
                     TryWalk(ob);
                 }
@@ -2203,7 +2215,7 @@ internal partial class Program
             dy = Math.Abs(ob.tiley - player.tiley);
             dist = dx > dy ? dx : dy;
 
-            if (ob.obclass == (byte)classtypes.ssobj || ob.obclass == (byte)classtypes.bossobj)
+            if (ob.obclass == classtypes.ssobj || ob.obclass == classtypes.bossobj)
                 dist = dist * 2 / 3;                                        // ss are better shots
 
             if (thrustspeed >= RUNSPEED)
