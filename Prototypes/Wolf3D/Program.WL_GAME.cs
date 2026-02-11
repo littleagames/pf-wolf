@@ -554,13 +554,12 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         int[] dems = { (int)graphicnums.T_DEMO0, (int)graphicnums.T_DEMO1, (int)graphicnums.T_DEMO2, (int)graphicnums.T_DEMO3 };
 
         demoptr = 0;
-        var demoData = grsegs[dems[demonumber]];
+        demoData = grsegs[dems[demonumber]];
 
         NewGame(1, 0);
         gamestate.mapon = demoData[demoptr++];
         gamestate.difficulty = (short)difficultytypes.gd_hard;
         length = BitConverter.ToInt16(demoData, demoptr);
-        demoptr += sizeof(short);
 
         demoptr += 3;
         lastdemoptr = demoptr - 4 + length;

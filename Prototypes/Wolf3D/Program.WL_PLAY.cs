@@ -598,8 +598,8 @@ internal partial class Program
                 buttonbits >>= 1;
             }
 
-            controlx = demoData[demoptr++];
-            controly = demoData[demoptr++];
+            controlx = (sbyte)demoData[demoptr++];
+            controly = (sbyte)demoData[demoptr++];
 
             if (demoptr == lastdemoptr)
                 playstate = (byte)playstatetypes.ex_completed;   // demo is done

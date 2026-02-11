@@ -962,7 +962,7 @@ internal partial class Program
         // actually fire
         dist = 0x7fffffff;
         closest = null;
-        for (int? i = 0; i != null; i = ob.next)
+        for (int? i = ob.next; i != null; i = check?.next)
         {
             check = objlist[i.Value];
             if (check == null) continue;
