@@ -838,16 +838,16 @@ See Options.txt for help";
                 joystickenabled = br.ReadByte();
                 _ = br.ReadByte(); // joypad enabled placeholder
                 _ = br.ReadByte(); // joystick progressive placeholder
-                _ = br.ReadByte(); // joystick port placeholder
+                _ = br.ReadInt32(); // joystick port placeholder
 
                 for (int i = 0; i < dirscan.Length; i++)
-                    dirscan[i] = br.ReadByte();
+                    dirscan[i] = br.ReadInt32();
                 for (int i = 0; i < buttonscan.Length; i++)
-                    buttonscan[i] = br.ReadByte();
+                    buttonscan[i] = br.ReadInt32();
                 for (int i = 0; i < buttonmouse.Length; i++)
-                    buttonmouse[i] = br.ReadByte();
+                    buttonmouse[i] = br.ReadInt32();
                 for (int i = 0; i < buttonjoy.Length; i++)
-                    buttonjoy[i] = br.ReadByte();
+                    buttonjoy[i] = br.ReadInt32();
 
                 viewsize = br.ReadInt32();
                 mouseadjustment = br.ReadInt32();
