@@ -112,9 +112,9 @@ internal partial class Program
     {
         ushort i, j;
         int n;
-        HighScore myscore;
+        HighScore myscore = new HighScore();
 
-        myscore.name = "".ToCharArray();
+        myscore.name = "";
         myscore.score = score;
         myscore.episode = (ushort)gamestate.episode;
         myscore.completed = other;
@@ -147,7 +147,7 @@ internal partial class Program
             fontcolor = 15;
             string str = new string(Scores[n].name);
             US_LineInput(PrintX, PrintY, ref str, "", true, MaxHighName, 100);
-            Scores[n].name = str.ToCharArray();
+            Scores[n].name = str;
         }
         else
         {

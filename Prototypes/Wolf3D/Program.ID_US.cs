@@ -1,20 +1,38 @@
 ﻿using SDL2;
 using System.Runtime.InteropServices;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using static Wolf3D.Program;
 
 namespace Wolf3D;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-struct HighScore
+internal class HighScore
 {
-    public char[] name;
+    public string name;
     public int score;
     public ushort completed, episode;
 
     public HighScore()
     {
-        name = new char[Program.MaxHighName + 1];
+        name = "";
+    }
+
+    internal void Read(BinaryReader br)
+    {
+        name = new string(br.ReadChars(MaxHighName + 1));
+        score = br.ReadInt32();
+        completed = br.ReadUInt16();
+        episode = br.ReadUInt16();
+    }
+
+    internal void Write(BinaryWriter bw)
+    {
+        var len = MaxHighName + 1;
+        bw.Write(name.ToFixedArray(len), 0, len);
+        bw.Write(score);
+        bw.Write(completed);
+        bw.Write(episode);
     }
 }
 
@@ -42,13 +60,13 @@ internal partial class Program
     internal static SaveGame[] Games = new SaveGame[MaxSaveGames];
     internal static HighScore[] Scores = new HighScore[MaxScores]
     {
-        new HighScore {name = "id software-'92".ToCharArray(), score = 10000,completed = 1},
-        new HighScore {name = "Adrian Carmack".ToCharArray(), score = 10000,completed = 1},
-        new HighScore {name = "John Carmack".ToCharArray(), score = 10000,completed = 1},
-        new HighScore {name = "Kevin Cloud".ToCharArray(), score = 10000,completed = 1},
-        new HighScore {name = "Tom Hall".ToCharArray(), score = 10000,completed = 1},
-        new HighScore {name = "John Romero".ToCharArray(), score = 10000,completed = 1},
-        new HighScore {name = "Jay Wilbur".ToCharArray(), score = 10000,completed = 1},
+        new HighScore {name = "id software-'92", score = 10000,completed = 1},
+        new HighScore {name = "Adrian Carmack", score = 10000,completed = 1},
+        new HighScore {name = "John Carmack", score = 10000,completed = 1},
+        new HighScore {name = "Kevin Cloud", score = 10000,completed = 1},
+        new HighScore {name = "Tom Hall", score = 10000,completed = 1},
+        new HighScore {name = "John Romero", score = 10000,completed = 1},
+        new HighScore {name = "Jay Wilbur", score = 10000,completed = 1},
     };
 
     internal const int MaxX = 320;

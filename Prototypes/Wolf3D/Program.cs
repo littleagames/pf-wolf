@@ -5,21 +5,27 @@ namespace Wolf3D;
 
 internal partial class Program
 {
-    /* wl_main LOCAL CONSTANTS */
+/*
+=============================================================================
+
+                             LOCAL CONSTANTS
+
+=============================================================================
+*/
     const long FOCALLENGTH = (0x5700L);               // in global coordinates
     const int VIEWGLOBAL = 0x10000;               // globals visable flush to wall
 
     const int VIEWWIDTH = 256;                   // size of view window
     const int VIEWHEIGHT = 144;
 
-    /* wl_def GLOBALS */
-    internal const int DEFAULT_AUDIO_BUFFER_SIZE = 2048;
+    /*
+    =============================================================================
 
-    /* wl_game */
-    internal static string demoname = "DEMO?.";
+                                GLOBAL VARIABLES
 
-    /* wl_main GLOBAL VARIABLES*/
-    char[] str = new char[80];
+    =============================================================================
+    */
+
     static readonly int[] dirangle = {0,ANGLES/8,2*ANGLES/8,3*ANGLES/8,4*ANGLES/8,
                        5*ANGLES/8,6*ANGLES/8,7*ANGLES/8,ANGLES};
 
@@ -44,6 +50,9 @@ internal partial class Program
     internal static string configdir = string.Empty;
     internal static string configname = "config.";
 
+    //
+    // Command line parameter variables
+    //
     internal static bool param_debugmode = false;
     internal static bool param_nowait = false;
     internal static int param_difficulty = 1;           // default is "normal"
@@ -790,9 +799,6 @@ See Options.txt for help";
 
     internal static void ReadConfig()
     {
-
-        SetDefaultConfig();
-        return;
         byte sd, sm, sds;
         string configpath;
 
@@ -806,77 +812,85 @@ See Options.txt for help";
             SetDefaultConfig();
             return;
         }
-
-        using (FileStream fs = File.OpenRead(configpath))
-        using (BinaryReader br = new BinaryReader(fs))
+        try
         {
-            //
-            // valid config file
-            //
-            ushort tmp = br.ReadUInt16();
-            if (tmp != 0xfefa)
+            using (FileStream fs = File.OpenRead(configpath))
+            using (BinaryReader br = new BinaryReader(fs))
             {
-                SetDefaultConfig();
-                return;
+                //
+                // valid config file
+                //
+                ushort tmp = br.ReadUInt16();
+                if (tmp != 0xfefa)
+                {
+                    SetDefaultConfig();
+                    return;
+                }
+
+                foreach (var s in Scores)
+                    s.Read(br);
+
+                sd = br.ReadByte();
+                sm = br.ReadByte();
+                sds = br.ReadByte();
+
+                mouseenabled = br.ReadByte();
+                joystickenabled = br.ReadByte();
+                _ = br.ReadByte(); // joypad enabled placeholder
+                _ = br.ReadByte(); // joystick progressive placeholder
+                _ = br.ReadByte(); // joystick port placeholder
+
+                for (int i = 0; i < dirscan.Length; i++)
+                    dirscan[i] = br.ReadByte();
+                for (int i = 0; i < buttonscan.Length; i++)
+                    buttonscan[i] = br.ReadByte();
+                for (int i = 0; i < buttonmouse.Length; i++)
+                    buttonmouse[i] = br.ReadByte();
+                for (int i = 0; i < buttonjoy.Length; i++)
+                    buttonjoy[i] = br.ReadByte();
+
+                viewsize = br.ReadInt32();
+                mouseadjustment = br.ReadInt32();
+
+                if ((sd == (byte)SDMode.AdLib || sm == (byte)SMMode.AdLib) && !AdLibPresent
+                    && !SoundBlasterPresent)
+                {
+                    sd = (byte)SDMode.PC;
+                    sm = (byte)SMMode.Off;
+                }
+
+                if ((sds == (byte)SDSMode.SoundBlaster) && !SoundBlasterPresent)
+                    sds = (byte)SDSMode.Off;
+
+                // make sure values are correct
+                if (mouseenabled > 0) mouseenabled = 1; // true
+                if (joystickenabled > 0) joystickenabled = 1; // true
+
+                if (!MousePresent)
+                    mouseenabled = 0; // false
+                if (!IN_JoyPresent())
+                    joystickenabled = 0; // false
+
+                if (mouseadjustment < 0) mouseadjustment = 0;
+                else if (mouseadjustment > 9) mouseadjustment = 9;
+
+                if (viewsize < 4) viewsize = 4;
+                else if (viewsize > 21) viewsize = 21;
+
+                // Set "Read This" back to standard active
+                MainMenu[6].active = 1;
+                MainItems.curpos = 0;
+
+
+                SD_SetMusicMode(sm);
+                SD_SetSoundMode(sd);
+                SD_SetDigiDevice(sds);
             }
-
-            var sizeofscores = System.Runtime.InteropServices.Marshal.SizeOf<HighScore>();
-            StructHelpers.BytesToStructArray<HighScore>(br.ReadBytes(sizeofscores * Scores.Length));
-            sd = br.ReadByte();
-            sm = br.ReadByte();
-            sds = br.ReadByte();
-
-            mouseenabled = br.ReadByte();
-            joystickenabled = br.ReadByte();
-            _ = br.ReadByte(); // joypad enabled placeholder
-            _ = br.ReadByte(); // joystick progressive placeholder
-            _ = br.ReadByte(); // joystick port placeholder
-
-            for (int i = 0; i < dirscan.Length; i++)
-                dirscan[i] = br.ReadByte();
-            for (int i = 0; i < buttonscan.Length; i++)
-                buttonscan[i] = br.ReadByte();
-            for (int i = 0; i < buttonmouse.Length; i++)
-                buttonmouse[i] = br.ReadByte();
-            for (int i = 0; i < buttonjoy.Length; i++)
-                buttonjoy[i] = br.ReadByte();
-
-            viewsize = br.ReadInt32();
-            mouseadjustment = br.ReadInt32();
-
-            if ((sd == (byte)SDMode.AdLib || sm == (byte)SMMode.AdLib) && !AdLibPresent
-                && !SoundBlasterPresent)
-            {
-                sd = (byte)SDMode.PC;
-                sm = (byte)SMMode.Off;
-            }
-
-            if ((sds == (byte)SDSMode.SoundBlaster) && !SoundBlasterPresent)
-                sds = (byte)SDSMode.Off;
-
-            // make sure values are correct
-            if (mouseenabled > 0) mouseenabled = 1; // true
-            if (joystickenabled > 0) joystickenabled = 1; // true
-
-            if (!MousePresent)
-                mouseenabled = 0; // false
-            if (!IN_JoyPresent())
-                joystickenabled = 0; // false
-
-            if (mouseadjustment<0) mouseadjustment = 0;
-            else if (mouseadjustment>9) mouseadjustment = 9;
-
-            if (viewsize<4) viewsize = 4;
-            else if (viewsize>21) viewsize = 21;
-
-            // Set "Read This" back to standard active
-            MainMenu[6].active = 1;
-            MainItems.curpos = 0;
-
-
-            SD_SetMusicMode(sm);
-            SD_SetSoundMode(sd);
-            SD_SetDigiDevice(sds);
+        }
+        catch (Exception e)
+        {
+            File.Delete(configpath);
+            SetDefaultConfig();
         }
     }
 
@@ -915,7 +929,6 @@ See Options.txt for help";
 
     internal static void WriteConfig()
     {
-        return;
         string configpath = string.Empty;
 
         if (configdir != string.Empty)
@@ -928,7 +941,8 @@ See Options.txt for help";
         {
             ushort tmp = 0xfefa;
             bw.Write(tmp);
-            bw.Write(Scores.StructArrayToBytes());
+            foreach (var s in Scores)
+                s.Write(bw);
 
             bw.Write(SoundMode);
             bw.Write(MusicMode);
@@ -938,7 +952,7 @@ See Options.txt for help";
             bw.Write(joystickenabled);
             bw.Write((byte)0); // joypad placeholder
             bw.Write((byte)0); // joystick-progressive placeholder
-            bw.Write((byte)0); // joystick port placeholder
+            bw.Write((int)0); // joystick port placeholder
 
             for(int i = 0; i < dirscan.Length; i++)
                 bw.Write(dirscan[i]);

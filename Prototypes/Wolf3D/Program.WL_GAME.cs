@@ -583,6 +583,12 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         ClearMemory();
     }
 
+    internal static string demoname = "DEMO?.";
+    internal const int MAXDEMOSIZE = 8192;
+    internal static void StartDemoRecord(int levelnumber)
+    {
+        // TODO:
+    }
     internal static void RecordDemo()
     {
         // TODO:
