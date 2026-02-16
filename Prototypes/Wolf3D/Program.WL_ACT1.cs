@@ -277,14 +277,13 @@ internal partial class Program
 
         var doorobj = new doorobj_t();
         doorobj.position = 0;              // doors start out fully closed
-        doorobj.tilex = (byte)tilex;
-        doorobj.tiley = (byte)tiley;
-        doorobj.vertical = (byte)(vertical ? 1 : 0);
-        doorobj.locknum = (byte)locknum;
+        doorobj.tilex = (sbyte)tilex;
+        doorobj.tiley = (sbyte)tiley;
+        doorobj.vertical = vertical;
+        doorobj.locknum = (sbyte)locknum;
         doorobj.action = dooractiontypes.dr_closed;
         doorobjlist[lastdoorobj] = doorobj;
 
-        // TODO: "door actor"
         actorat[tilex,tiley] = (uint)(doornum | BIT_DOOR);   // consider it a solid wall
 
         //
@@ -338,7 +337,7 @@ internal partial class Program
         if (player.tilex == tilex && player.tiley == tiley)
             return;
 
-        if (doorobjlist[door].vertical != 0)
+        if (doorobjlist[door].vertical)
         {
             if (player.tiley == tiley)
             {
@@ -440,7 +439,7 @@ internal partial class Program
             var door_tilex = doorobjlist[door].tilex;
             var door_tiley = doorobjlist[door].tiley;
 
-            if (doorobjlist[door].vertical != 0)
+            if (doorobjlist[door].vertical)
             {
                 area1 = (uint)MAPSPOT(door_tilex + 1, door_tiley, 0);
                 area2 = (uint)MAPSPOT(door_tilex - 1, door_tiley, 0);
@@ -520,7 +519,7 @@ internal partial class Program
             var door_tilex = doorobjlist[door].tilex;
             var door_tiley = doorobjlist[door].tiley;
 
-            if (doorobjlist[door].vertical != 0)
+            if (doorobjlist[door].vertical)
             {
                 area1 = (uint)MAPSPOT(door_tilex + 1, door_tiley, 0);
                 area2 = (uint)MAPSPOT(door_tilex - 1, door_tiley, 0);

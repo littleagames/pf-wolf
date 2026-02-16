@@ -50,7 +50,15 @@ internal partial class Program
     */
 
     internal static statestruct s_player = new(0/*false*/, 0, 0, T_Player, null, null);
-    internal static statestruct s_attack = new (0/*false*/, 0, 0, T_Attack, null, null);
+    internal static statestruct s_attack = new(0/*false*/, 0, 0, T_Attack, null, null);
+
+    internal static Dictionary<string, statestruct> PlayerStateDict = new()
+    {
+        { "s_player", s_player },
+        { "s_attack", s_attack }
+    };
+
+    internal static List<statestruct> PlayerStateList => PlayerStateDict.Values.ToList();
 
     internal struct atkinf
     {
@@ -225,16 +233,16 @@ internal partial class Program
 
     internal static bool TryMove(objstruct ob)
     {
-        int xl, yl, xh, yh, x, y;
+        uint xl, yl, xh, yh, x, y;
         uint checkIndex;
         objstruct? check;
         int deltax, deltay;
 
-        xl = (int)((ob.x - PLAYERSIZE) >> (int)TILESHIFT);
-        yl = (int)((ob.y - PLAYERSIZE) >> (int)TILESHIFT);
+        xl = (uint)((ob.x - PLAYERSIZE) >> (int)TILESHIFT);
+        yl = (uint)((ob.y - PLAYERSIZE) >> (int)TILESHIFT);
 
-        xh = (int)((ob.x + PLAYERSIZE) >> (int)TILESHIFT);
-        yh = (int)((ob.y + PLAYERSIZE) >> (int)TILESHIFT);
+        xh = (uint)((ob.x + PLAYERSIZE) >> (int)TILESHIFT);
+        yh = (uint)((ob.y + PLAYERSIZE) >> (int)TILESHIFT);
 
         const long PUSHWALLMINDIST = PLAYERSIZE;
 
@@ -1095,7 +1103,7 @@ internal partial class Program
     internal static void SpawnPlayer(int tilex, int tiley, int dir)
     {
         player.obclass = classtypes.playerobj;
-        player.active = (byte)activetypes.ac_yes;
+        player.active = activetypes.ac_yes;
         player.tilex = (byte)tilex;
         player.tiley = (byte)tiley;
         player.areanumber = (byte)(MAPSPOT(tilex, tiley, 0) - AREATILE);

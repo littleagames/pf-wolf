@@ -242,17 +242,17 @@ internal partial class Program
     internal static int StartGame;
     internal static int SoundStatus = 1;
     internal static int pickquick;
-    internal static char[][] SaveGameNames = new char[10][] {
-        new char[MaxGameName],
-        new char[MaxGameName],
-        new char[MaxGameName],
-        new char[MaxGameName],
-        new char[MaxGameName],
-        new char[MaxGameName],
-        new char[MaxGameName],
-        new char[MaxGameName],
-        new char[MaxGameName],
-        new char[MaxGameName],
+    internal static string[] SaveGameNames = new string[10] {
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
     };
 
     internal static string SaveName = "savegam?.";
@@ -273,10 +273,10 @@ internal partial class Program
                 SaveGamesAvail[i] = 1;
 
                 using (FileStream fs = File.OpenRead(savepath))
-                using (BinaryReader br = new(fs))
-                {
-                    SaveGameNames[i] = br.ReadChars(MaxGameName);
-                }
+                    using (BinaryReader br = new(fs))
+                    {
+                        SaveGameNames[i] = new string(br.ReadChars(MaxGameName));
+                    }
             }
         }
     }
@@ -1580,9 +1580,9 @@ internal partial class Program
             if (which >= 0 && SaveGamesAvail[which] != 0)
             {
                 ShootSnd();
-                name.Replace('?', (char)(which + '0'));
+                name = name.Replace('?', (char)(which + '0'));
 
-                if (string.IsNullOrEmpty(configdir))
+                if (!string.IsNullOrEmpty(configdir))
                     loadpath = $"{configdir}/{name}";
                 else
                     loadpath = $"{name}";
@@ -1700,7 +1700,7 @@ internal partial class Program
         int which, exit = 0;
         string name;
         string savepath;
-        char[] input = new char[32];
+        string input = "";
 
         name = SaveName;
         //
@@ -1724,7 +1724,7 @@ internal partial class Program
                     using (BinaryWriter bw = new BinaryWriter(fs))
                     {
                         input = SaveGameNames[which];
-                        bw.Write(input, 0, 32);
+                        bw.Write(input.ToFixedArray(32), 0, 32);
                         bw.Seek(32, SeekOrigin.Begin);
                         SaveTheGame(bw, 0, 0);
                     }
@@ -1760,7 +1760,7 @@ internal partial class Program
                 ShootSnd();
 
                 SaveGameNames[which] = input;
-                name.Replace('?', (char)(which + '0'));
+                name = name.Replace('?', (char)(which + '0'));
 
                 fontnumber = 0;
                 if (SaveGamesAvail[which] == 0)
@@ -1768,12 +1768,10 @@ internal partial class Program
                              LSM_W - LSItems.indent - 16, 10, BKGDCOLOR);
                 VW_UpdateScreen();
 
-                string str = new string(input);
                 if (US_LineInput
-                    (LSM_X + LSItems.indent + 2, LSM_Y + which * 13 + 1, ref str, new string(input), true, 31,
+                    (LSM_X + LSItems.indent + 2, LSM_Y + which * 13 + 1, ref input, input, true, 31,
                      LSM_W - LSItems.indent - 30))
                 {
-                    input = str.ToCharArray();
                     SaveGamesAvail[which] = 1;
                     SaveGameNames[which] = input;
 
@@ -1782,11 +1780,13 @@ internal partial class Program
                     else
                         savepath = $"{name}";
 
-                    File.Delete(savepath);
-                    using (FileStream fs = File.OpenRead(savepath))
+                    if (File.Exists(savepath))
+                        File.Delete(savepath);
+
+                    using (FileStream fs = File.OpenWrite(savepath))
                     using (BinaryWriter bw = new BinaryWriter(fs))
                     {
-                        bw.Write(input, 0, 32);
+                        bw.Write(input.ToFixedArray(32), 0, 32);
                         bw.Seek(32, SeekOrigin.Begin);
 
                         DrawLSAction(1);
@@ -2830,4 +2830,40 @@ internal partial class Program
     {
         return ScanNames[scan];
     }
+
+    internal static void IntroScreen()
+    {
+        const byte MAINCOLOR = 0x6c;
+        const byte EMSCOLOR = 0x6c; // 0x4f
+        const byte XMSCOLOR = 0x6c; // 0x7f
+
+        const byte FILLCOLOR = 14;
+
+        int i;
+        for (i = 0; i < 10; i++)
+            VWB_Bar(49, 163 - 8 * i, 6, 5, MAINCOLOR - i);
+        for (i = 0; i < 10; i++)
+            VWB_Bar(89, 163 - 8 * i, 6, 5, EMSCOLOR - i);
+        for (i = 0; i < 10; i++)
+            VWB_Bar(129, 163 - 8 * i, 6, 5, XMSCOLOR - i);
+
+        //
+        // FILL BOXES
+        //
+        if (MousePresent)
+            VWB_Bar(164, 82, 12, 2, FILLCOLOR);
+
+        if (IN_JoyPresent())
+            VWB_Bar(164, 105, 12, 2, FILLCOLOR);
+
+        if (AdLibPresent && !SoundBlasterPresent)
+            VWB_Bar(164, 128, 12, 2, FILLCOLOR);
+
+        if (SoundBlasterPresent)
+            VWB_Bar(164, 151, 12, 2, FILLCOLOR);
+
+        //    if (SoundSourcePresent)
+        //        VWB_Bar (164, 174, 12, 2, FILLCOLOR);
+    }
+
 }

@@ -1143,7 +1143,7 @@ internal partial class Program
                 || spotvis[obj.tilex-1, obj.tiley+1]//(*(visspot + (MAPSIZE)))
                 || spotvis[obj.tilex+1, obj.tiley+1])//(*(visspot + (MAPSIZE - 1))))
             {
-                obj.active = (byte)activetypes.ac_yes;
+                obj.active = activetypes.ac_yes;
                 TransformActor(obj);
                 if (obj.viewheight == 0)
                     continue;                                               // too close or far away

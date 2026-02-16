@@ -1,12 +1,9 @@
-﻿using System;
-using System.Data;
-
-namespace Wolf3D;
+﻿namespace Wolf3D;
 
 internal partial class Program
 {
     static bool ingame, fizzlein;
-    static gametype gamestate;
+    static gametype gamestate = new gametype();
     static byte bordercol = VIEWCOLOR; // color of the Change View/Ingame border
 
     //

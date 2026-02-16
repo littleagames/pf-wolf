@@ -194,7 +194,7 @@ enum enemytypes
 //
 //---------------
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-internal struct gametype
+internal class gametype
 {
     public short difficulty;
     public short mapon;
@@ -213,6 +213,73 @@ internal struct gametype
     public int TimeCount;
     public int killx, killy;
     public byte victoryflag;            // set during victory animations
+
+    public void Read(BinaryReader br)
+    {
+        difficulty = br.ReadInt16();
+        mapon = br.ReadInt16();
+        oldscore = br.ReadInt32();
+        score = br.ReadInt32();
+        nextextra = br.ReadInt32();
+        lives = br.ReadInt16();
+        health = br.ReadInt16();
+        ammo = br.ReadInt16();
+        keys = br.ReadInt16();
+        bestweapon = br.ReadInt16();
+        weapon = br.ReadInt16();
+        chosenweapon = br.ReadInt16();
+        faceframe = br.ReadInt16();
+        attackframe = br.ReadInt16();
+        attackcount = br.ReadInt16();
+        weaponframe = br.ReadInt16();
+        episode = br.ReadInt16();
+        secretcount = br.ReadInt16();
+        treasurecount = br.ReadInt16();
+        killcount = br.ReadInt16();
+        secrettotal = br.ReadInt16();
+        treasuretotal = br.ReadInt16();
+        killtotal = br.ReadInt16();
+        TimeCount = br.ReadInt32();
+        killx = br.ReadInt32();
+        killy = br.ReadInt32();
+        victoryflag = br.ReadByte();
+    }
+
+    public byte[] AsBytes()
+    {
+        using var ms = new MemoryStream();
+        using var bw = new BinaryWriter(ms);
+        {
+            bw.Write(difficulty);
+            bw.Write(mapon);
+            bw.Write(oldscore);
+            bw.Write(score);
+            bw.Write(nextextra);
+            bw.Write(lives);
+            bw.Write(health);
+            bw.Write(ammo);
+            bw.Write(keys);
+            bw.Write(bestweapon);
+            bw.Write(weapon);
+            bw.Write(chosenweapon);
+            bw.Write(faceframe);
+            bw.Write(attackframe);
+            bw.Write(attackcount);
+            bw.Write(weaponframe);
+            bw.Write(episode);
+            bw.Write(secretcount);
+            bw.Write(treasurecount);
+            bw.Write(killcount);
+            bw.Write(secrettotal);
+            bw.Write(treasuretotal);
+            bw.Write(killtotal);
+            bw.Write(TimeCount);
+            bw.Write(killx);
+            bw.Write(killy);
+            bw.Write(victoryflag);
+            return ms.ToArray();
+        }
+    }
 }
 
 internal struct compshape_t
@@ -251,6 +318,29 @@ internal class statobj_t
     public short shapenum;           // if shapenum == -1 the obj has been removed
     public uint flags;
     public byte itemnumber;
+
+    public void Read(BinaryReader br)
+    {
+        tilex = br.ReadByte();
+        tiley = br.ReadByte();
+        shapenum = br.ReadInt16();
+        flags = br.ReadUInt32();
+        itemnumber = br.ReadByte();
+    }
+
+    public byte[] AsBytes()
+    {
+        var ms = new MemoryStream();
+        var bw = new BinaryWriter(ms);
+        {
+            bw.Write(tilex);
+            bw.Write(tiley);
+            bw.Write(shapenum);
+            bw.Write(flags);
+            bw.Write(itemnumber);
+            return ms.ToArray();
+        }
+    }
 }
 
 internal enum dooractiontypes
@@ -260,17 +350,44 @@ internal enum dooractiontypes
 
 internal class doorobj_t
 {
-    public byte tilex, tiley;
-    public byte vertical; // boolean
-    public byte locknum;
+    public sbyte tilex, tiley;
+    public bool vertical;
+    public sbyte locknum;
     public dooractiontypes action;
     public short ticcount;
     public ushort position;            // leading edge of door (0 = closed, 0xffff = fully open)
+
+    public void Read(BinaryReader br)
+    {
+        tilex = br.ReadSByte();
+        tiley = br.ReadSByte();
+        vertical = Convert.ToBoolean(br.ReadByte());
+        locknum = br.ReadSByte();
+        action = (dooractiontypes)br.ReadSByte();
+        ticcount = br.ReadInt16();
+        position = br.ReadUInt16();
+    }
+
+    public byte[] AsBytes()
+    {
+        var ms = new MemoryStream();
+        var bw = new BinaryWriter(ms);
+        {
+            bw.Write(tilex);
+            bw.Write(tiley);
+            bw.Write((byte)(vertical ? 1 : 0));
+            bw.Write(locknum);
+            bw.Write((sbyte)action);
+            bw.Write(ticcount);
+            bw.Write(position);
+            return ms.ToArray();
+        }
+    }
 }
 
 internal class objstruct
 {
-    public byte active;
+    public activetypes active;
     public short ticcount;
     public classtypes obclass;
     public statestruct? state;
@@ -305,6 +422,93 @@ internal class objstruct
     public objstruct()
     {
         active = (byte)activetypes.ac_no;
+    }
+
+    public int Read(BinaryReader br)
+    {
+        active = (activetypes)br.ReadSByte();
+        ticcount = br.ReadInt16();
+        obclass = (classtypes)br.ReadInt16();
+        int stateOffset = br.ReadInt32();
+        flags = br.ReadUInt32();
+        distance = br.ReadInt32();
+        dir = br.ReadByte();
+        x = br.ReadInt32();
+        y = br.ReadInt32();
+        tilex = br.ReadByte();
+        tiley = br.ReadByte();
+        areanumber = br.ReadByte();
+        viewx = br.ReadInt16();
+        viewheight = br.ReadUInt16();
+        transx = br.ReadInt32();
+        angle = br.ReadInt16();
+        hitpoints = br.ReadInt16();
+        speed = br.ReadInt32();
+        temp1 = br.ReadInt16();
+        temp2 = br.ReadInt16();
+        hidden = br.ReadByte() != 0;
+        int nextVal = br.ReadInt32();
+        next = nextVal != 0 ? nextVal : null;
+        int prevVal = br.ReadInt32();
+        prev = prevVal != 0 ? prevVal : null;
+
+        return stateOffset;
+    }
+
+    public void Copy(objstruct source)
+    {
+        active = source.active;
+        ticcount = source.ticcount;
+        obclass = source.obclass;
+        flags = source.flags;
+        distance = source.distance;
+        dir = source.dir;
+        x = source.x;
+        y = source.y;
+        tilex = source.tilex;
+        tiley = source.tiley;
+        areanumber = source.areanumber;
+        viewx = source.viewx;
+        viewheight = source.viewheight;
+        transx = source.transx;
+        angle = source.angle;
+        hitpoints = source.hitpoints;
+        speed = source.speed;
+        temp1 = source.temp1;
+        temp2 = source.temp2;
+        hidden = source.hidden;
+    }
+
+    public byte[] AsBytes(int stateOffset)
+    {
+        using var ms = new MemoryStream();
+        using var bw = new BinaryWriter(ms);
+        {
+            bw.Write((sbyte)active);
+            bw.Write(ticcount);
+            bw.Write((short)obclass);
+            bw.Write(stateOffset);
+            bw.Write(flags);
+            bw.Write(distance);
+            bw.Write(dir);
+            bw.Write(x);
+            bw.Write(y);
+            bw.Write(tilex);
+            bw.Write(tiley);
+            bw.Write(areanumber);
+            bw.Write(viewx);
+            bw.Write(viewheight);
+            bw.Write(transx);
+            bw.Write(angle);
+            bw.Write(hitpoints);
+            bw.Write(speed);
+            bw.Write(temp1);
+            bw.Write(temp2);
+            bw.Write(hidden);
+            bw.Write(next ?? 0);
+            bw.Write(prev ?? 0);
+            return ms.ToArray();
+        }
     }
 }
 
@@ -719,10 +923,31 @@ internal partial class Program
     */
 
 
-    internal struct LRstruct
+    internal class LRstruct
     {
         public short kill, secret, treasure;
         public int time;
+
+        public void Read(BinaryReader br)
+        {
+            kill = br.ReadInt16();
+            secret = br.ReadInt16();
+            treasure = br.ReadInt16();
+            time = br.ReadInt32();
+        }
+
+        public byte[] AsBytes()
+        {
+            using var ms = new MemoryStream();
+            using var bw = new BinaryWriter(ms);
+            {
+                bw.Write(kill);
+                bw.Write(secret);
+                bw.Write(treasure);
+                bw.Write(time);
+                return ms.ToArray();
+            }
+        }
     }
 
     /*

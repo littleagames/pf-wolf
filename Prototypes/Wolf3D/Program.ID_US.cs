@@ -388,7 +388,8 @@ internal partial class Program
                     lastbuttontime = curtime;
                     if (cursor != 0)
                     {
-                        s = s.Substring(0, cursor - 1) + s.Substring(cursor, s.Length - cursor);
+                        s = s.Remove(--cursor, 1);
+                        //s = s.Substring(0, cursor - 1) + s.Substring(cursor, s.Length - cursor);
                         // TODO: split? or substrings
                         // Need to shift all elements ahead of cursor -1?
                         // String.Remove(index);
@@ -452,7 +453,8 @@ internal partial class Program
                     case (byte)ScanCodes.sc_BackSpace:
                         if (cursor != 0)
                         {
-                            s = s.Substring(0, cursor - 1) + s.Substring(cursor, s.Length - cursor);
+                            //s = s.Substring(0, Math.Max(0, cursor - 1)) + s.Substring(cursor, s.Length - cursor);
+                            s = s.Remove(--cursor, 1);
                             //s.Remove(cursor, 1);
                             //len = strlen(&s[--cursor]) + 1;
                             //memmove(&s[cursor], &s[cursor + 1], len);
@@ -465,6 +467,7 @@ internal partial class Program
                         if (s[cursor] != 0)
                         {
                             s = s.Substring(0, cursor) + s.Substring(cursor + 1, s.Length - cursor + 1);
+                            s = s.Remove(cursor, 1);
                             //s.Remove(cursor, 1);
                             //len = strlen(&s[cursor]) + 1;
                             //memmove(&s[cursor], &s[cursor + 1], len);

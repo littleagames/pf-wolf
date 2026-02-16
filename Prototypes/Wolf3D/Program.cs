@@ -762,41 +762,6 @@ See Options.txt for help";
         Environment.Exit(returnCode);
     }
 
-    internal static void IntroScreen()
-    {
-        const byte MAINCOLOR = 0x6c;
-        const byte EMSCOLOR = 0x6c; // 0x4f
-        const byte XMSCOLOR = 0x6c; // 0x7f
-
-        const byte FILLCOLOR = 14;
-
-        int i;
-        for (i = 0; i < 10; i++)
-            VWB_Bar(49, 163 - 8 * i, 6, 5, MAINCOLOR - i);
-        for (i = 0; i < 10; i++)
-            VWB_Bar(89, 163 - 8 * i, 6, 5, EMSCOLOR - i);
-        for (i = 0; i < 10; i++)
-            VWB_Bar(129, 163 - 8 * i, 6, 5, XMSCOLOR - i);
-
-        //
-        // FILL BOXES
-        //
-        if (MousePresent)
-            VWB_Bar(164, 82, 12, 2, FILLCOLOR);
-
-        if (IN_JoyPresent())
-            VWB_Bar(164, 105, 12, 2, FILLCOLOR);
-
-        if (AdLibPresent && !SoundBlasterPresent)
-            VWB_Bar(164, 128, 12, 2, FILLCOLOR);
-
-        if (SoundBlasterPresent)
-            VWB_Bar(164, 151, 12, 2, FILLCOLOR);
-
-        //    if (SoundSourcePresent)
-        //        VWB_Bar (164, 174, 12, 2, FILLCOLOR);
-    }
-
     internal static void ReadConfig()
     {
         byte sd, sm, sds;
@@ -973,17 +938,151 @@ See Options.txt for help";
 
     internal static bool LoadTheGame(BinaryReader br, int x, int y)
     {
-        int checksum = 0, oldchecksum = -1; // temp "break" to display this fallback
+        int i, j;
+        uint actnum = 0;
+        ushort laststatobjnum;
+        ushort map, tile;
+        int checksum, oldchecksum;
+
+        checksum = 0;
+
+        DiskFlopAnim(x, y);
+        gamestate.Read(br);
+        checksum = DoChecksum(gamestate.AsBytes(), checksum);
+
+        DiskFlopAnim(x, y);
+        var levelRatioData = new List<byte>();
+        foreach (var lr in LevelRatios)
+        {
+            lr.Read(br);
+            levelRatioData.AddRange(lr.AsBytes());
+        }
+
+        checksum = DoChecksum(levelRatioData.ToArray(), checksum);
+
+        DiskFlopAnim(x, y);
+        SetupGameLevel();
+
+        DiskFlopAnim(x, y);
+        tilemap = br.ReadBytes(tilemap.Length).ToFixedArray(MAPSIZE, MAPSIZE);
+        checksum = DoChecksum(tilemap, checksum);
         DiskFlopAnim(x, y);
 
+        for (i = 0; i < mapwidth; i++)
+            for (j = 0; j < mapheight; j++)
+            {
+                actnum = br.ReadUInt32();
+                checksum = DoChecksum(actnum, checksum);
+                actorat[i, j] = actnum;
+            }
 
+        areaconnect = br.ReadBytes(NUMAREAS*NUMAREAS).ToFixedArray(NUMAREAS, NUMAREAS);
+        areabyplayer = br.ReadBytes(NUMAREAS);
+
+        DiskFlopAnim(x, y);
+        InitActorList();
+
+        while (true)
+        {
+            objstruct nullobj = new();
+            int stateOffset = nullobj.Read(br);
+            if (nullobj.active == activetypes.ac_badobject)
+                break;
+
+            if (nullobj.obclass == classtypes.playerobj)
+            {
+                player.Copy(nullobj);
+                player.state = PlayerStateList[stateOffset];
+            }
+            else
+            {
+                objstruct newobj;
+                newobj = GetNewActor();
+                newobj.state = EnemyStateList[stateOffset];
+                newobj.Copy(nullobj);
+            }
+        }
+
+        DiskFlopAnim(x, y);
+        laststatobjnum = br.ReadUInt16();
+        laststatobj = laststatobjnum;
+        checksum = DoChecksum(laststatobjnum, checksum);
+
+        DiskFlopAnim(x, y);
+
+        for (var statptr = 0; statptr != laststatobj; statptr++)
+        {
+            statobj_t statobj = new();
+            statobj.Read(br);
+            statobjlist[statptr] = statobj;
+            checksum = DoChecksum(statobj.AsBytes(), checksum);
+        }
+        DiskFlopAnim(x, y);
+        for (int doorIndex = 0; doorIndex < lastdoorobj; doorIndex++)
+        {
+            doorobj_t door = new();
+            door.Read(br);
+            doorobjlist[doorIndex] = door;
+            checksum = DoChecksum(door.AsBytes(), checksum);
+        }
+
+        DiskFlopAnim(x, y);
+        pwallstate = br.ReadUInt16();
+        checksum = DoChecksum(pwallstate, checksum);
+        pwalltile = br.ReadByte();
+        checksum = DoChecksum(pwalltile, checksum);
+        pwallx = br.ReadUInt16();
+        checksum = DoChecksum(pwallx, checksum);
+        pwally = br.ReadUInt16();
+        checksum = DoChecksum(pwally, checksum);
+        pwalldir = br.ReadByte();
+        checksum = DoChecksum(pwalldir, checksum);
+        pwallpos = br.ReadUInt16();
+        checksum = DoChecksum(pwallpos, checksum);
+
+        if (gamestate.secretcount != 0)
+        {
+            //
+            // assign valid floorcodes under moved pushwalls
+            //
+            map = 0;
+
+            for (y = 0; y<mapheight; y++)
+            {
+                for (x = 0; x<mapwidth; x++)
+                {
+                    tile = mapsegs[0][y*mapwidth + x];
+
+                    if (MAPSPOT(x, y,1) == PUSHABLETILE && tilemap[x, y] == 0 && !VALIDAREA(tile))
+                    {
+                        if (VALIDAREA(MAPSPOT(x + 1, y, 0)))
+                            tile = (ushort)MAPSPOT(x + 1, y, 0);
+                        if (VALIDAREA(MAPSPOT(x, y - 1, 0)))
+                            tile = (ushort)MAPSPOT(x, y - 1, 0);
+                        if (VALIDAREA(MAPSPOT(x, y + 1, 0)))
+                            tile = (ushort)MAPSPOT(x, y + 1, 0);
+                        if (VALIDAREA(MAPSPOT(x - 1, y, 0)))
+                            tile = (ushort)MAPSPOT(x - 1, y, 0);
+
+                        SetMapSpot(x, y,1, 0);
+                    }
+
+                    map++;
+                }
+            }
+        }
+
+        Thrust(0, 0);    // set player->areanumber to the floortile you're standing on
+
+        oldchecksum = br.ReadInt32();
+        lastgamemusicoffset = br.ReadInt32();
 
         if (lastgamemusicoffset < 0)
             lastgamemusicoffset = 0;
 
         if (oldchecksum != checksum)
         {
-            Message(@$"{STR_SAVECHT1}\n{STR_SAVECHT2}\n{STR_SAVECHT3}\n{STR_SAVECHT4}");
+            Message($"{STR_SAVECHT1}\n{STR_SAVECHT2}\n{STR_SAVECHT3}\n{STR_SAVECHT4}");
 
             IN_ClearKeysDown();
             IN_Ack();
@@ -1001,9 +1100,110 @@ See Options.txt for help";
 
     internal static bool SaveTheGame(BinaryWriter bw, int x, int y)
     {
-        int checksum = 0;
+        int i, j;
+        int checksum;
+        ushort laststatobjnum;
+        objstruct ob;
+        objstruct nullobj = new();
+
+        checksum = 0;
+
         DiskFlopAnim(x, y);
-        // TODO:
+        var gamestateData = gamestate.AsBytes();
+        bw.Write(gamestateData);
+        checksum = DoChecksum(gamestateData, checksum);
+
+        DiskFlopAnim(x, y);
+        var levelRatioData = new List<byte>();
+        foreach (var lr in LevelRatios)
+        {
+            var lrData = lr.AsBytes();
+            bw.Write(lrData);
+            levelRatioData.AddRange(lrData);
+        }
+        checksum = DoChecksum(levelRatioData.ToArray(), checksum);
+
+        DiskFlopAnim(x, y);
+        bw.Write(tilemap);
+        checksum = DoChecksum(tilemap, checksum);
+        DiskFlopAnim(x, y);
+
+        for (i = 0; i < mapwidth; i++)
+        {
+            for (j = 0; j < mapheight; j++)
+            {
+                var obIndex = actorat[i, j];
+                bw.Write(obIndex);
+                checksum = DoChecksum(obIndex, checksum);
+            }
+        }
+
+        bw.Write(areaconnect);
+        bw.Write(areabyplayer);
+
+        DiskFlopAnim(x, y);
+        for (int? o = 0; o != null; o = ob.next)
+        {
+            ob = objlist[o.Value];
+            if (ob == null)
+                continue;
+            int stateOffset = 0;
+            if (ob == player)
+                stateOffset = PlayerStateList.IndexOf(ob.state);
+            else
+                stateOffset = EnemyStateList.IndexOf(ob.state);
+            bw.Write(ob.AsBytes(stateOffset));
+        }
+
+        nullobj.active = activetypes.ac_badobject;          // end of file marker
+        DiskFlopAnim(x, y);
+        bw.Write(nullobj.AsBytes(stateOffset: 0));
+
+        DiskFlopAnim(x, y);
+        laststatobjnum = (ushort)(laststatobj);
+        bw.Write(laststatobjnum);
+        checksum = DoChecksum(laststatobjnum, checksum);
+
+        DiskFlopAnim(x, y);
+        for (var statptr = 0; statptr != laststatobj; statptr++)
+        {
+            statobj_t statptr_val = statobjlist[statptr];
+            var statptrData = statptr_val.AsBytes();
+            bw.Write(statptrData);
+            checksum = DoChecksum(statptrData, checksum);
+        }
+
+        DiskFlopAnim(x, y);
+        for (int doorIndex = 0; doorIndex < lastdoorobj; doorIndex++)
+        {
+            doorobj_t door = doorobjlist[doorIndex];
+            var doorData = door.AsBytes();
+            bw.Write(doorData);
+            checksum = DoChecksum(doorData, checksum);
+        }
+
+        DiskFlopAnim(x, y);
+        bw.Write(pwallstate);
+        checksum = DoChecksum(pwallstate, checksum);
+        bw.Write(pwalltile);
+        checksum = DoChecksum(pwalltile, checksum);
+        bw.Write(pwallx);
+        checksum = DoChecksum(pwallx, checksum);
+        bw.Write(pwally);
+        checksum = DoChecksum(pwally, checksum);
+
+        bw.Write(pwalldir);
+        checksum = DoChecksum(pwalldir, checksum);
+        bw.Write(pwallpos);
+        checksum = DoChecksum(pwallpos, checksum);
+
+        //
+        // write out checksum
+        //
+        bw.Write(checksum);
+
+        bw.Write(lastgamemusicoffset);
+
         return true;
     }
 
@@ -1018,10 +1218,43 @@ See Options.txt for help";
         which ^= 1;
     }
 
-    internal static int DoChecksum()
+    internal static int DoChecksum(int source, int checksum)
     {
-        // TODO:
-        return 0;
+        // Should return same value, as checksum requires 2 bytes
+        return DoChecksum(BitConverter.GetBytes(source), checksum);
+    }
+    internal static int DoChecksum(uint source, int checksum)
+    {
+        // Should return same value, as checksum requires 2 bytes
+        return DoChecksum(BitConverter.GetBytes(source), checksum);
+    }
+
+    internal static int DoChecksum(ushort source, int checksum)
+    {
+        // Should return same value, as checksum requires 2 bytes
+        return DoChecksum(BitConverter.GetBytes(source), checksum);
+    }
+
+    internal static int DoChecksum(byte[,] source, int checksum)
+    {
+        return DoChecksum(source.Flatten(), checksum);
+    }
+
+    internal static int DoChecksum(byte source, int checksum)
+    {
+        // Should return same value, as checksum requires 2 bytes
+        return DoChecksum([source], checksum);
+    }
+
+    internal static int DoChecksum(byte[] source, int checksum)
+    {
+        uint i;
+        int size = source.Length;
+
+        for (i = 0; i < size - 1; i++)
+            checksum += source[i] ^ source[i + 1];
+
+        return checksum;
     }
 
     internal static void DoJukebox()

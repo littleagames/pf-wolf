@@ -189,7 +189,7 @@ internal partial class Program
         newobj.x = ob.x;
         newobj.y = ob.y;
         newobj.obclass = classtypes.inertobj;
-        newobj.active = (byte)activetypes.ac_yes;
+        newobj.active = activetypes.ac_yes;
 
         newobj.flags = (uint)objflags.FL_NEVERMARK;
     }
@@ -757,7 +757,7 @@ internal partial class Program
         newobj.speed = (int)0x2000L;
 
         newobj.flags = (uint)objflags.FL_NEVERMARK;
-        newobj.active = (byte)activetypes.ac_yes;
+        newobj.active = activetypes.ac_yes;
 
         PlaySoundLocActor((int)soundnames.SCHABBSTHROWSND, newobj);
     }
@@ -897,7 +897,7 @@ internal partial class Program
         newobj.angle = (short)iangle;
         newobj.speed = (int)0x2000L;
         newobj.flags = (uint)objflags.FL_NEVERMARK;
-        newobj.active = (byte)activetypes.ac_yes;
+        newobj.active = activetypes.ac_yes;
 
         PlaySoundLocActor((int)soundnames.MISSILEFIRESND, newobj);
     }
@@ -1125,7 +1125,7 @@ internal partial class Program
 
     internal static void SpawnBJVictory()
     {
-        objstruct newobj = null;
+        objstruct newobj;
 
         newobj = SpawnNewObj(player.tilex, (uint)(player.tiley + 1), s_bjrun1);
         newobj.x = player.x;
@@ -1509,6 +1509,8 @@ internal partial class Program
         { "s_bjjump4",s_bjjump4},
     };
 
+    internal static List<statestruct> EnemyStateList => enemy_states.Values.ToList();
+
     internal static void SpawnStand(int which, int tilex, int tiley, int dir)
     {
         objstruct? newobj = null;
@@ -1617,7 +1619,7 @@ internal partial class Program
         newobj.hitpoints = starthitpoints[gamestate.difficulty, which];
         newobj.distance = (int)TILEGLOBAL;
         newobj.flags |= (uint)objflags.FL_SHOOTABLE;
-        newobj.active = (byte)activetypes.ac_yes;
+        newobj.active = activetypes.ac_yes;
 
         //actorat[newobj.tilex, newobj.tiley] = -1;           // don't use original spot
 
@@ -1778,7 +1780,7 @@ internal partial class Program
         newobj.obclass = classtypes.fireobj;
         newobj.speed = (int)0x1200L;
         newobj.flags = (uint)objflags.FL_NEVERMARK;
-        newobj.active = (byte)activetypes.ac_yes;
+        newobj.active = activetypes.ac_yes;
 
         PlaySoundLocActor((int)soundnames.FLAMETHROWERSND, newobj);
     }

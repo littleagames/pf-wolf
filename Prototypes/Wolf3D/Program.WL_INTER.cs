@@ -1,11 +1,10 @@
 ﻿using SDL2;
-using System;
 
 namespace Wolf3D;
 
 internal partial class Program
 {
-    internal static LRstruct[] LevelRatios = new LRstruct[LRpack];
+    internal static LRstruct[] LevelRatios = Enumerable.Range(0, LRpack).Select(x => new LRstruct()).ToArray();// new LRstruct[LRpack];
     internal static int lastBreathTime = 0;
 
     internal static void NonShareware()
