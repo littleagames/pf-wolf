@@ -83,7 +83,7 @@ internal partial class Program
 
     internal const string STR_RAT2KILL = "kill ratio    %";
     internal const string STR_RAT2SECRET = "secret ratio    %";
-internal const string STR_RAT2TREASURE = "treasure ratio    %";
+    internal const string STR_RAT2TREASURE = "treasure ratio    %";
 
     internal const string STR_DEFEATED = "defeated!";
 
@@ -103,13 +103,26 @@ internal const string STR_RAT2TREASURE = "treasure ratio    %";
 
     internal const string STR_SEEAGAIN = "Let's see that again!";
 
+
+//#ifdef SPEAR
+    //internal const string ENDSTR1 = $"Heroes don't quit, but\ngo ahead and press {YESBUTTONNAME}\nif you aren't one.";
+    //internal const string ENDSTR2 = $"Press {YESBUTTONNAME} to quit,\nor press {NOBUTTONNAME} to enjoy\nmore violent diversion.";
+    //internal const string ENDSTR3 = $"Depressing the {YESBUTTONNAME} key means\nyou must return to the\nhumdrum workday world.";
+    //internal const string ENDSTR4 = $"Hey, quit or play,\n{YESBUTTONNAME} or {NOBUTTONNAME}:\nit's your choice.";
+    //internal const string ENDSTR5 = "Sure you don't want to\nwaste a few more\nproductive hours?";
+    //internal const string ENDSTR6 = $"I think you had better\nplay some more. Please\npress {NOBUTTONNAME}...please?";
+    //internal const string ENDSTR7 = $"If you are tough, press {NOBUTTONNAME}.\nIf not, press {YESBUTTONNAME} daintily.";
+    //internal const string ENDSTR8 = $"I'm thinkin' that\nyou might wanna press {NOBUTTONNAME}\nto play more. You do it.";
+    //internal const string ENDSTR9 = $"Sure. Fine. Quit.\nSee if we care.\nGet it over with.\nPress {YESBUTTONNAME}.";
+//#else
     internal const string ENDSTR1 = "Dost thou wish to\nleave with such hasty\nabandon?";
     internal const string ENDSTR2 = "Chickening out...\nalready?";
-    internal const string ENDSTR3 = $"Press \" {NOBUTTONNAME} \" for more carnage.\nPress \" {YESBUTTONNAME} \" to be a weenie.";
+    internal const string ENDSTR3 = $"Press {NOBUTTONNAME} for more carnage.\nPress {YESBUTTONNAME} to be a weenie.";
     internal const string ENDSTR4 = "So, you think you can\nquit this easily, huh?";
-    internal const string ENDSTR5 = $"Press \" {NOBUTTONNAME} \" to save the world.\nPress \" {YESBUTTONNAME} \" to abandon it in\nits hour of need.";
-    internal const string ENDSTR6 = $"Press \" {NOBUTTONNAME} \" if you are brave.\nPress \" {YESBUTTONNAME} \" to cower in shame.";
-    internal const string ENDSTR7 = $"Heroes, press \" {NOBUTTONNAME} \".\nWimps, press \" {YESBUTTONNAME} \".";
-    internal const string ENDSTR8 = $"You are at an intersection.\nA sign says, 'Press \" {YESBUTTONNAME} \" to quit.'\n>";
-    internal const string ENDSTR9 = $"For guns and glory, press \" {NOBUTTONNAME} \".\nFor work and worry, press \" {YESBUTTONNAME} \".";
+    internal const string ENDSTR5 = $"Press {NOBUTTONNAME} to save the world.\nPress {YESBUTTONNAME} to abandon it in\nits hour of need.";
+    internal const string ENDSTR6 = $"Press {NOBUTTONNAME} if you are brave.\nPress {YESBUTTONNAME} to cower in shame.";
+    internal const string ENDSTR7 = $"Heroes, press \" {NOBUTTONNAME} \".\nWimps, press {YESBUTTONNAME}.";
+    internal const string ENDSTR8 = $"You are at an intersection.\nA sign says, 'Press {YESBUTTONNAME} to quit.'\n>";
+    internal const string ENDSTR9 = $"For guns and glory, press {NOBUTTONNAME}.\nFor work and worry, press {YESBUTTONNAME}.";
+//#endif
 }

@@ -1296,6 +1296,7 @@ See Options.txt for help";
         start = ((SDL.SDL_GetTicks() / 10) % 3) * 6;
 
         CA_LoadAllSounds();
+
         fontnumber = 1;
         ClearMScreen();
         VWB_DrawPic(112, 184, (int)graphicnums.C_MOUSELBACKPIC);
