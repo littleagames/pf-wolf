@@ -86,8 +86,9 @@ internal partial class Program
     private static void CheckParameters(string[] args)
     {
         var header =
-@"Wolf4SDL v2.0
-Ported by Chaos-Software, additions by the community
+@"Wolf4CSharp v0.1
+C# Port by Little A Games (TreeSapThief)
+Original Port by Chaos-Software, additions by the community
 Original Wolfenstein 3D by id Software
 Usage: Wolf4SDL [options]
 See Options.txt for help";
@@ -136,8 +137,8 @@ See Options.txt for help";
                 }
                 else
                 {
-                    short.TryParse(args[++i], out screenWidth);
-                    short.TryParse(args[++i], out screenHeight);
+                    screenWidth = short.Parse(args[++i]);
+                    screenHeight = short.Parse(args[++i]);
                     int factor = screenWidth / 320;
                     if ((screenWidth % 320) != 0 || (screenHeight != 200 * factor && screenHeight != 240 * factor))
                         error = "Screen size must be a multiple of 320x200 or 320x240!";
@@ -151,8 +152,8 @@ See Options.txt for help";
                 }
                 else
                 {
-                    short.TryParse(args[++i], out screenWidth);
-                    short.TryParse(args[++i], out screenHeight);
+                    screenWidth = short.Parse(args[++i]);
+                    screenHeight = short.Parse(args[++i]);
                     if (screenWidth < 320)
                         error = "Screen width must be at least 320!";
                     if (screenHeight < 200)
@@ -362,13 +363,9 @@ See Options.txt for help";
         if (param_joystickindex > 0 && (param_joystickindex < -1 || param_joystickindex > numJoysticks))
         {
             if (numJoysticks == 0)
-            {
                 Console.WriteLine("No joysticks are available to SDL!");
-            }
             else
-            {
                 Console.WriteLine($"The joystick index must be between -1 and {numJoysticks - 1}!");
-            }
             Environment.Exit(1);
         }
 
@@ -406,6 +403,7 @@ See Options.txt for help";
             // draw intro screen stuff
             //
             IntroScreen();
+
         //
         // load in and lock down some basic chunks
         //
@@ -445,13 +443,22 @@ See Options.txt for help";
 
     private static void FinishSignon()
     {
+        // TODO: Spear of Destiny support
+        //if (Game == "SPEAR")
+        //{
+        //    VW_UpdateScreen();
+
+        //    if (!param_nowait)
+        //        VW_WaitVBL(3 * 70);
+        //}
+        //else {}
         VW_Bar(0, 189, 300, 11, VL_GetPixel(0, 0));
         WindowX = 0;
         WindowW = 320;
         PrintY = 190;
 
         SETFONTCOLOR(14, 4);
-        US_CPrint("Press a key");
+        US_CPrint("Press a key"); // "Oprima una tecla"
 
         VW_UpdateScreen();
 
@@ -463,7 +470,7 @@ See Options.txt for help";
         PrintY = 190;
         SETFONTCOLOR(10, 4);
 
-        US_CPrint("Working...");
+        US_CPrint("Working..."); // "pensando..."
 
         VW_UpdateScreen();
 
@@ -566,12 +573,6 @@ See Options.txt for help";
                 }
             }
         }
-    }
-
-    private static void EnableEndGameMenuItem()
-    {
-        MainMenu[(int)menuitems.viewscores].routine = null;
-        MainMenu[(int)menuitems.viewscores].text = STR_EG;
     }
 
     internal static void NewGame(int difficulty, int episode)
@@ -742,6 +743,7 @@ See Options.txt for help";
             pixelangle[halfview + i] = (short)-intang;
         }
     }
+
     private static void Error(string errorStr)
     {
         SDL2.SDL.SDL_ShowSimpleMessageBox(SDL2.SDL.SDL_MessageBoxFlags.SDL_MESSAGEBOX_ERROR, "Wolf4SDL", errorStr, IntPtr.Zero);
@@ -1207,15 +1209,15 @@ See Options.txt for help";
         return true;
     }
 
+    static byte diskflopanim_which = 0;
     internal static void DiskFlopAnim(int x, int y)
     {
-        byte which = 0;
         if (x == 0 && y == 0)
             return;
 
-        VWB_DrawPic(x, y, (int)graphicnums.C_DISKLOADING1PIC + which);
+        VWB_DrawPic(x, y, (int)graphicnums.C_DISKLOADING1PIC + diskflopanim_which);
         VW_UpdateScreen();
-        which ^= 1;
+        diskflopanim_which ^= 1;
     }
 
     internal static int DoChecksum(int source, int checksum)
@@ -1336,7 +1338,7 @@ See Options.txt for help";
 
     internal static void ShutdownId()
     {
-        US_Shutdown();
+        US_Shutdown(); // This line is completely useless...
         SD_Shutdown();
         PM_Shutdown();
         IN_Shutdown();
@@ -1344,7 +1346,7 @@ See Options.txt for help";
         CA_Shutdown();
     }
     
-    const float radtoint = (float)(FINEANGLES / 2 / PI);
+    const float radtoint = FINEANGLES / 2 / PI;
     internal static void BuildTables()
     {
 
@@ -1355,7 +1357,7 @@ See Options.txt for help";
         int i;
         for (i = 0; i < FINEANGLES / 8; i++)
         {
-            double tang = Math.Tan((i + 0.5f) / radtoint);
+            double tang = Math.Tan((i + 0.5d) / radtoint);
             finetangent[i] = (int)(tang * GLOBAL1);
             finetangent[FINEANGLES / 4 - 1 - i] = (int)((1 / tang) * GLOBAL1);
         }
@@ -1377,6 +1379,7 @@ See Options.txt for help";
         sintable[ANGLEQUAD] = 65536;
         sintable[3 * ANGLEQUAD] = -65536;
 
+        //defined(USE_STARSKY) || defined(USE_RAIN) || defined(USE_SNOW)
         //Init3DPoints();
     }
 

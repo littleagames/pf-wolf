@@ -281,6 +281,12 @@ internal partial class Program
         }
     }
 
+    private static void EnableEndGameMenuItem()
+    {
+        MainMenu[(int)menuitems.viewscores].routine = null;
+        MainMenu[(int)menuitems.viewscores].text = STR_EG;
+    }
+
     internal static void ClearMScreen()
     {
         VWB_Bar(0, 0, 320, 200, BORDCOLOR);
