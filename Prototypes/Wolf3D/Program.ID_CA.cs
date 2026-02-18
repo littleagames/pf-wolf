@@ -277,11 +277,7 @@ Please check whether you are using the right executable!
             return;
         }
 
-        if (data.Length / sizeof(int) != audiostarts.Length)
-        {
-            Quit($"Unable to open {fname}. Data size {data.Length/sizeof(int)} does not match {audiostarts.Length}");
-            return;
-        }
+        audiostarts = new int[data.Length / sizeof(int)];
 
         Buffer.BlockCopy(data, 0, audiostarts, 0, data.Length);
 

@@ -124,8 +124,13 @@ internal partial class Program
         key_None = sc_None,
     }
 
-    // GLOBAL VARIABLES
+/*
+ =============================================================================
 
+                     GLOBAL VARIABLES
+
+ =============================================================================
+ */
     //
     // configuration variables
     //
@@ -134,7 +139,6 @@ internal partial class Program
 
     internal static bool[] Keyboard = new bool[(int)ScanCodes.sc_Last];
     internal static char[] textinput = new char[TEXTINPUTSIZE];
-    //textinput
     internal static bool Paused;
     internal static int LastScan;
 
@@ -144,9 +148,16 @@ internal partial class Program
 
     static bool GrabInput = false;
 
-    // LOCAL VARIABLES
+    /*
+    =============================================================================
+
+                        LOCAL VARIABLES
+
+    =============================================================================
+    */
 
     static bool IN_Started;
+
     static byte[] DirTable =        // Quick lookup for total direction
     {
         (byte)Direction.dir_NorthWest,  (byte)Direction.dir_North,  (byte)Direction.dir_NorthEast,
@@ -347,7 +358,6 @@ internal partial class Program
     {
         while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
         {
-            Console.WriteLine($"Event {e.type} called");
             IN_HandleEvent(e);
         }
     }
@@ -531,6 +541,8 @@ internal partial class Program
 
     static void IN_WaitEvent()
     {
+        // BUG: This eats any KEYDOWN/UP events
+
         //if (SDL.SDL_WaitEvent(out var e) == 0)
         //    Quit($"Error waiting for event: {SDL.SDL_GetError()}\n");
     }

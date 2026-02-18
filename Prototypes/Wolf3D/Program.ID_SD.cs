@@ -82,6 +82,8 @@ internal struct AdLibSound
 
     public AdLibSound()
     {
+        common = new();
+        inst = new();
         data = new sbyte[1];
     }
 }
