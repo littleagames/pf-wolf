@@ -28,8 +28,97 @@ internal struct digiinfo
     public uint length;
 }
 
+internal struct SoundCommon
+{
+    public uint length;
+    public ushort priority;
+}
+
+internal struct Instrument
+{
+    public sbyte mChar, cChar, mScale, cScale, mAttack, cAttack, mSus, cSus, mWave, cWave, nConn,
+
+    //These are only for Muse - these bytes are really unused
+    voice, mode;
+    public sbyte[] unused;
+    public Instrument()
+    {
+        unused = new sbyte[3];
+    }
+}
+
+internal struct PCSound
+{
+    public SoundCommon common;
+    public sbyte[] data;
+    public PCSound()
+    {
+        data = new sbyte[1];
+    }
+}
+
+internal struct MusicGroup
+{
+    public ushort length;
+    public ushort[] values;
+    public MusicGroup()
+    {
+        values = new ushort[1];
+    }
+}
+
+internal struct globalsoundpos
+{
+    public int valid;
+    public int globalsoundx, globalsoundy;
+}
+
+internal struct AdLibSound
+{
+    public SoundCommon common;
+    public Instrument inst;
+    public sbyte block;
+    public sbyte[] data;
+
+    public AdLibSound()
+    {
+        data = new sbyte[1];
+    }
+}
+
 internal partial class Program
 {
+    //id_sd.h
+    internal const int ORIG_SOUNDCOMMON_SIZE = 6;
+    internal const int ORIG_INSTRUMENT_SIZE = 16;
+    internal const int pcTimer = 0x42;
+    internal const int pcTAccess = 0x43;
+    internal const int pcSpeaker = 0x61;
+
+    internal const int pcSpkBits = 3;
+
+    //      Register addresses
+    // Operator stuff
+    internal const int alChar = 0x20;
+    internal const int alScale = 0x40;
+    internal const int alAttack = 0x60;
+    internal const int alSus = 0x80;
+    internal const int alWave = 0xe0;
+    // Channel stuff
+    internal const int alFreqL = 0xa0;
+    internal const int alFreqH = 0xb0;
+    internal const int alFeedCon = 0xc0;
+    // Global stuff
+    internal const int alEffects = 0xbd;
+
+    //
+    //      Sequencing stuff
+    //
+    internal const int sqMaxTracks = 10;
+
+    internal static int ORIG_ADLIBSOUND_SIZE = (ORIG_SOUNDCOMMON_SIZE + ORIG_INSTRUMENT_SIZE + 2);
+
+
     internal const int TickBase = 70;     // 70Hz per tick - used as a base for timer 0
 
     // Global variables

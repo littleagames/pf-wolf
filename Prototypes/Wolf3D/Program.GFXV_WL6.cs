@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Wolf3D;
+﻿namespace Wolf3D;
 
 internal enum graphicnums
 {

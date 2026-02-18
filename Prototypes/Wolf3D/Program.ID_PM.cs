@@ -155,6 +155,6 @@ internal partial class Program
 
     static void CA_CannotOpen(string text)
     {
-        Quit($"Can't open {text}");
+        Quit($"Can't open {text}!");
     }
 }
