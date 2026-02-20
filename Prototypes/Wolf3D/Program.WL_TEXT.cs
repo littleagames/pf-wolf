@@ -281,11 +281,6 @@ internal partial class Program
         VWB_DrawPic(picx & ~7, picy, picnum);
     }
 
-    private static void Delay(int wolfticks)
-    {
-        if (wolfticks > 0)
-            SDL.SDL_Delay((uint)((wolfticks * 100) / 7));
-    }
     /*
 =====================
 =

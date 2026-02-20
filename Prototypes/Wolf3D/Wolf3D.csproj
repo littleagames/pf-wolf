@@ -7,9 +7,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
-	<ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SDL2-CS-master\SDL2-CS.csproj" />
+  </ItemGroup>
+
+	<!--<ItemGroup>
 		<PackageReference Include="ppy.SDL2-CS" Version="1.0.82" />
-	</ItemGroup>
+	</ItemGroup>-->
 </Project>

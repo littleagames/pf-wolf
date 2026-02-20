@@ -911,6 +911,7 @@ internal partial class Program
     internal static void ClearMemory() => SD_StopDigitized();
 
     // JAB
+    internal static void PlaySoundLocTile(int s, int tx, int ty) => PlaySoundLocGlobal(s, (int)((tx << TILESHIFT) + (TILEGLOBAL / 2)), (int)((ty << TILESHIFT) + (TILEGLOBAL / 2)));
     internal static void PlaySoundLocActor(int s, objstruct ob) => PlaySoundLocGlobal(s, ob.x, ob.y);
 
 

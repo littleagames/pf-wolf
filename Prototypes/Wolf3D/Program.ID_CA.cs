@@ -10,9 +10,9 @@ internal partial class Program
     internal const int MAPPLANES = 3;
     internal static void UNCACHEAUDIOCHUNK(int chunk)
     {
-        if (audiosegs[chunk]?.Length >0) 
+        if (audiosegs[chunk] != null) 
         { 
-            audiosegs[chunk] = [];
+            audiosegs[chunk] = null!;
         }
     }
 
@@ -53,7 +53,7 @@ internal partial class Program
 
     static UInt16[][] mapsegs = new ushort[MAPPLANES][];
     static maptype[] mapheaderseg = new maptype[NUMMAPS];
-    static byte[][] audiosegs = new byte[NUMSNDCHUNKS][];
+    static Sound[] audiosegs = new Sound[NUMSNDCHUNKS];
     static byte[][] grsegs = new byte[NUMCHUNKS][];
 
     internal static string extension = string.Empty;
@@ -683,15 +683,13 @@ Please check whether you are using the right executable!
         int pos = audiostarts[chunk];
         int size = audiostarts[chunk + 1] - pos;
 
-        if (audiosegs[chunk]?.Length > 0)
+        if (audiosegs[chunk] != null)
             return size;                        // already in memory
 
-        audiosegs[chunk] = new byte[size];
-        using (BinaryReader br = new BinaryReader(audiofile))
-        {
-            audiofile.Seek(pos, SeekOrigin.Begin);
-            audiosegs[chunk] = br.ReadBytes(size);
-        }
+        //audiosegs[chunk] = new byte[size];
+        BinaryReader br = new BinaryReader(audiofile);
+        audiofile.Seek(pos, SeekOrigin.Begin);
+        audiosegs[chunk] = new PCSound(br.ReadBytes(size));
 
         return size;
     }
@@ -700,39 +698,38 @@ Please check whether you are using the right executable!
     {
         int pos = audiostarts[chunk];
         int size = audiostarts[chunk + 1] - pos;
-        if (audiosegs[chunk]?.Length > 0)
+        if (audiosegs[chunk] != null)
             return;
 
-        using (BinaryReader br = new BinaryReader(audiofile))
-        {
-            audiofile.Seek(pos, SeekOrigin.Begin);
-            byte[] bufferseg = new byte[ORIG_ADLIBSOUND_SIZE - 1];
-            bufferseg = br.ReadBytes(ORIG_ADLIBSOUND_SIZE - 1);
+        BinaryReader br = new BinaryReader(audiofile);
+        audiofile.Seek(pos, SeekOrigin.Begin);
+        //byte[] bufferseg = new byte[ORIG_ADLIBSOUND_SIZE - 1];
+        //bufferseg = br.ReadBytes(ORIG_ADLIBSOUND_SIZE - 1);
 
-            AdLibSound sound = new AdLibSound();// [size]; //size + sizeof(*sound) - ORIG_ADLIBSOUND_SIZE
-            sound.common.length = br.ReadUInt32();
-            sound.common.priority = br.ReadUInt16();
+        AdLibSound sound = new AdLibSound();// [size]; //size + sizeof(*sound) - ORIG_ADLIBSOUND_SIZE
+        sound.common.length = br.ReadUInt32();
+        sound.common.priority = br.ReadUInt16();
 
-            sound.inst.mChar = br.ReadSByte();
-            sound.inst.cChar = br.ReadSByte();
-            sound.inst.mScale = br.ReadSByte();
-            sound.inst.cScale = br.ReadSByte();
-            sound.inst.mAttack = br.ReadSByte();
-            sound.inst.cAttack = br.ReadSByte();
-            sound.inst.mSus = br.ReadSByte();
-            sound.inst.cSus = br.ReadSByte();
-            sound.inst.mWave = br.ReadSByte();
-            sound.inst.cWave = br.ReadSByte();
-            sound.inst.nConn = br.ReadSByte();
-            sound.inst.voice = br.ReadSByte();
-            sound.inst.mode = br.ReadSByte();
-            sound.inst.unused[0] = br.ReadSByte();
-            sound.inst.unused[1] = br.ReadSByte();
-            sound.inst.unused[2] = br.ReadSByte();
-            sound.block = br.ReadSByte();
-            sound.data = br.ReadBytes(size - ORIG_ADLIBSOUND_SIZE + 1).Select(x => (sbyte)x).ToArray();
+        sound.inst.mChar = br.ReadSByte();
+        sound.inst.cChar = br.ReadSByte();
+        sound.inst.mScale = br.ReadSByte();
+        sound.inst.cScale = br.ReadSByte();
+        sound.inst.mAttack = br.ReadSByte();
+        sound.inst.cAttack = br.ReadSByte();
+        sound.inst.mSus = br.ReadSByte();
+        sound.inst.cSus = br.ReadSByte();
+        sound.inst.mWave = br.ReadSByte();
+        sound.inst.cWave = br.ReadSByte();
+        sound.inst.nConn = br.ReadSByte();
+        sound.inst.voice = br.ReadSByte();
+        sound.inst.mode = br.ReadSByte();
+        sound.inst.unused[0] = br.ReadSByte();
+        sound.inst.unused[1] = br.ReadSByte();
+        sound.inst.unused[2] = br.ReadSByte();
+        sound.block = br.ReadSByte();
 
-            //audiosegs[chunk] = sound; // TODO: This could be of various class types, may need to do this differently
-        }
+        sound.data = br.ReadBytes(size - ORIG_ADLIBSOUND_SIZE + 1).Select(x => (sbyte)x).ToArray();
+
+        audiosegs[chunk] = sound;// new byte[0];// sound; // TODO: This could be of various class types, may need to do this differently
     }
 }

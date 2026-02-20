@@ -82,13 +82,18 @@ internal partial class Program
             // allocate page pointers (copies per-page)
             PMPages = new byte[ChunksInFile + 1][];
 
+            //
+            // load pages and initialize PMPages pointers
+            //
             long pagePos = 0;
 
             for (int i = 0; i < ChunksInFile; i++)
             {
-                // pad for alignment for sprite/sound ranges or last chunk
                 if ((i >= PMSpriteStart && i < PMSoundStart) || i == ChunksInFile - 1)
                 {
+                    //
+                    // pad with zeros to make it 2-byte aligned
+                    //
                     if ((pagePos & 1L) != 0L)
                     {
                         PMPageData[pagePos++] = 0;
@@ -97,16 +102,17 @@ internal partial class Program
                     }
                 }
 
-                // default: sparse page => empty array
                 PMPages[i] = Array.Empty<byte>();
 
                 if (pageOffsets[i] == 0)
                 {
-                    // sparse page, nothing to read, do not advance pagePos
-                    continue;
+                    continue; // sparse page
                 }
 
-                // determine pagesize
+                //
+                // use specified page length when next page is sparse
+                // otherwise, calculate size from the offset difference between this and the next page
+                //
                 uint pagesize;
                 if (pageOffsets[i + 1] == 0)
                 {
@@ -139,11 +145,22 @@ internal partial class Program
 
     internal static void PM_Shutdown()
     {
-
+        // Do nothing, GC does it
     }
 
     internal static byte[] PM_GetSpritePage(int v) => PM_GetPage(PMSpriteStart + v);
-    internal static byte[] PM_GetSoundPage(int v) => PM_GetPage(PMSoundStart + v);
+    internal static byte[] PM_GetSoundPage(int v, int size)
+    {
+        List<byte> data = new List<byte>();
+        var v1 = 0;
+        while (data.Count < size)
+        {
+            data.AddRange(PM_GetPage(PMSoundStart + v+v1));
+            v1++;
+        }
+
+        return data.ToArray();
+    }
 
     internal static byte[] PM_GetPage(int page)
     {
@@ -151,6 +168,19 @@ internal partial class Program
             Quit($"PM_GetPage: Invalid page request: {page}");
 
         return PMPages[page];
+    }
+
+    internal static uint PM_GetPageSize(int page)
+    {
+        if (page < 0 || page >= ChunksInFile)
+            Quit($"PM_GetPageSize: Invalid page request: {page}");
+
+        return (uint)(PMPages[page].Length); // (uint32_t)(PMPages[page + 1] - PMPages[page]); // pointer addresses
+    }
+
+    internal static int PM_GetPageEnd()
+    {
+        return PMPages.Sum(arr => arr.Length);
     }
 
     static void CA_CannotOpen(string text)

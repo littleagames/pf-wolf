@@ -1,10 +1,10 @@
 ﻿using SDL2;
-using System;
 
 // Initilizes SDL.
-if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
+if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_AUDIO) < 0)
 {
     Console.WriteLine($"There was an issue initilizing SDL. {SDL.SDL_GetError()}");
+    return;
 }
 
 // Create a new window given a title, size, and passes it a flag indicating it should be shown.
@@ -13,6 +13,7 @@ var window = SDL.SDL_CreateWindow("SDL .NET 6 Tutorial", SDL.SDL_WINDOWPOS_UNDEF
 if (window == IntPtr.Zero)
 {
     Console.WriteLine($"There was an issue creating the window. {SDL.SDL_GetError()}");
+    return;
 }
 
 // Creates a new SDL hardware renderer using the default graphics device with VSYNC enabled.
@@ -24,6 +25,13 @@ var renderer = SDL.SDL_CreateRenderer(window,
 if (renderer == IntPtr.Zero)
 {
     Console.WriteLine($"There was an issue creating the renderer. {SDL.SDL_GetError()}");
+    return;
+}
+
+if (SDL_mixer.Mix_OpenAudio(44100, SDL_mixer.MIX_DEFAULT_FORMAT, 2, 4096) == -1)
+{
+    Console.WriteLine($"There was an issue creating the window. {SDL_mixer.Mix_GetError()}");
+    return;
 }
 
 //// Initilizes SDL_image for use with png files.
@@ -45,6 +53,13 @@ while (running)
         {
             case SDL.SDL_EventType.SDL_QUIT:
                 running = false;
+                break;
+            case SDL.SDL_EventType.SDL_KEYDOWN:
+                {
+                    IntPtr ptr = SDL_mixer.Mix_LoadWAV("C:\\Users\\drewm\\Downloads\\Sound - 2.wav");
+                    if (ptr != IntPtr.Zero)
+                        SDL_mixer.Mix_PlayChannel(0, ptr, 0);
+                }
                 break;
         }
     }

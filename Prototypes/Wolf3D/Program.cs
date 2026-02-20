@@ -766,7 +766,9 @@ See Options.txt for help";
 
     internal static void ReadConfig()
     {
-        byte sd, sm, sds;
+        SDMode sd;
+        byte sm;
+        SDSMode sds;
         string configpath;
 
         if (!string.IsNullOrEmpty(configdir))
@@ -797,9 +799,9 @@ See Options.txt for help";
                 foreach (var s in Scores)
                     s.Read(br);
 
-                sd = br.ReadByte();
+                sd = (SDMode)br.ReadByte();
                 sm = br.ReadByte();
-                sds = br.ReadByte();
+                sds = (SDSMode)br.ReadByte();
 
                 mouseenabled = br.ReadByte();
                 joystickenabled = br.ReadByte();
@@ -819,14 +821,14 @@ See Options.txt for help";
                 viewsize = br.ReadInt32();
                 mouseadjustment = br.ReadInt32();
 
-                if ((sd == (byte)SDMode.AdLib || sm == (byte)SMMode.AdLib) && !AdLibPresent
+                if ((sd == SDMode.AdLib || sm == (byte)SMMode.AdLib) && !AdLibPresent
                     && !SoundBlasterPresent)
                 {
-                    sd = (byte)SDMode.PC;
+                    sd = SDMode.PC;
                     sm = (byte)SMMode.Off;
                 }
 
-                if ((sds == (byte)SDSMode.SoundBlaster) && !SoundBlasterPresent)
+                if ((sds == SDSMode.SoundBlaster) && !SoundBlasterPresent)
                     sds = (byte)SDSMode.Off;
 
                 // make sure values are correct
@@ -863,22 +865,24 @@ See Options.txt for help";
 
     private static void SetDefaultConfig()
     {
-        byte sd, sm, sds;
+        SDMode sd;
+        byte sm;
+        SDSMode sds;
         if (SoundBlasterPresent || AdLibPresent)
         {
-            sd = (byte)SDMode.AdLib;
+            sd = SDMode.AdLib;
             sm = (byte)SMMode.AdLib;
         }
         else
         {
-            sd = (byte)SDMode.PC;
+            sd = SDMode.PC;
             sm = (byte)SMMode.Off;
         }
 
         if (SoundBlasterPresent)
-            sds = (byte)SDSMode.SoundBlaster;
+            sds = SDSMode.SoundBlaster;
         else
-            sds = (byte)SDSMode.Off;
+            sds = SDSMode.Off;
 
         if (MousePresent)
             mouseenabled = 1;// true;
@@ -913,7 +917,7 @@ See Options.txt for help";
 
             bw.Write(SoundMode);
             bw.Write(MusicMode);
-            bw.Write(DigiMode);
+            bw.Write((byte)DigiMode);
 
             bw.Write(mouseenabled);
             bw.Write(joystickenabled);

@@ -1263,7 +1263,7 @@ internal partial class Program
                     if (SoundMode != (byte)SDMode.PC)
                     {
                         SD_WaitSoundDone();
-                        SD_SetSoundMode((byte)SDMode.PC);
+                        SD_SetSoundMode(SDMode.PC);
                         CA_LoadAllSounds();
                         DrawSoundMenu();
                         ShootSnd();
@@ -1273,7 +1273,7 @@ internal partial class Program
                     if (SoundMode != (byte)SDMode.AdLib)
                     {
                         SD_WaitSoundDone();
-                        SD_SetSoundMode((byte)SDMode.AdLib);
+                        SD_SetSoundMode(SDMode.AdLib);
                         CA_LoadAllSounds();
                         DrawSoundMenu();
                         ShootSnd();
@@ -1299,9 +1299,9 @@ internal partial class Program
                                     }*/
                     break;
                 case 7:
-                    if (DigiMode != (byte)SDSMode.SoundBlaster)
+                    if (DigiMode != SDSMode.SoundBlaster)
                     {
-                        SD_SetDigiDevice((byte)SDSMode.SoundBlaster);
+                        SD_SetDigiDevice(SDSMode.SoundBlaster);
                         DrawSoundMenu();
                         ShootSnd();
                     }
@@ -1397,7 +1397,7 @@ internal partial class Program
                     // DIGITIZED SOUND
                     //
                     case 5:
-                        if (DigiMode == (byte)SDSMode.Off)
+                        if (DigiMode == SDSMode.Off)
                             on = 1;
                         break;
                     case 6:
@@ -1405,7 +1405,7 @@ internal partial class Program
                         //                        on = 1;
                         break;
                     case 7:
-                        if (DigiMode == (byte)SDSMode.SoundBlaster)
+                        if (DigiMode == SDSMode.SoundBlaster)
                             on = 1;
                         break;
 
