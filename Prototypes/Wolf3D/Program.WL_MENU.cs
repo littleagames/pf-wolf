@@ -1252,15 +1252,15 @@ internal partial class Program
                 // SOUND EFFECTS
                 //
                 case 0:
-                    if (SoundMode != (byte)SDMode.Off)
+                    if (SoundMode != SDMode.Off)
                     {
                         SD_WaitSoundDone();
-                        SD_SetSoundMode((byte)SDMode.Off);
+                        SD_SetSoundMode(SDMode.Off);
                         DrawSoundMenu();
                     }
                     break;
                 case 1:
-                    if (SoundMode != (byte)SDMode.PC)
+                    if (SoundMode != SDMode.PC)
                     {
                         SD_WaitSoundDone();
                         SD_SetSoundMode(SDMode.PC);
@@ -1270,7 +1270,7 @@ internal partial class Program
                     }
                     break;
                 case 2:
-                    if (SoundMode != (byte)SDMode.AdLib)
+                    if (SoundMode != SDMode.AdLib)
                     {
                         SD_WaitSoundDone();
                         SD_SetSoundMode(SDMode.AdLib);
@@ -1311,17 +1311,17 @@ internal partial class Program
                 // MUSIC
                 //
                 case 10:
-                    if (MusicMode != (byte)SMMode.Off)
+                    if (MusicMode != SMMode.Off)
                     {
-                        SD_SetMusicMode((byte)SMMode.Off);
+                        SD_SetMusicMode(SMMode.Off);
                         DrawSoundMenu();
                         ShootSnd();
                     }
                     break;
                 case 11:
-                    if (MusicMode != (byte)SMMode.AdLib)
+                    if (MusicMode != SMMode.AdLib)
                     {
-                        SD_SetMusicMode((byte)SMMode.AdLib);
+                        SD_SetMusicMode(SMMode.AdLib);
                         DrawSoundMenu();
                         ShootSnd();
                         StartCPMusic(MENUSONG);
@@ -1381,15 +1381,15 @@ internal partial class Program
                     // SOUND EFFECTS
                     //
                     case 0:
-                        if (SoundMode == (byte)SDMode.Off)
+                        if (SoundMode == SDMode.Off)
                             on = 1;
                         break;
                     case 1:
-                        if (SoundMode == (byte)SDMode.PC)
+                        if (SoundMode == SDMode.PC)
                             on = 1;
                         break;
                     case 2:
-                        if (SoundMode == (byte)SDMode.AdLib)
+                        if (SoundMode == SDMode.AdLib)
                             on = 1;
                         break;
 
@@ -1413,11 +1413,11 @@ internal partial class Program
                     // MUSIC
                     //
                     case 10:
-                        if (MusicMode == (byte)SMMode.Off)
+                        if (MusicMode == SMMode.Off)
                             on = 1;
                         break;
                     case 11:
-                        if (MusicMode == (byte)SMMode.AdLib)
+                        if (MusicMode == SMMode.AdLib)
                             on = 1;
                         break;
                 }

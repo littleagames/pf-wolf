@@ -767,7 +767,7 @@ See Options.txt for help";
     internal static void ReadConfig()
     {
         SDMode sd;
-        byte sm;
+        SMMode sm;
         SDSMode sds;
         string configpath;
 
@@ -800,7 +800,7 @@ See Options.txt for help";
                     s.Read(br);
 
                 sd = (SDMode)br.ReadByte();
-                sm = br.ReadByte();
+                sm = (SMMode)br.ReadByte();
                 sds = (SDSMode)br.ReadByte();
 
                 mouseenabled = br.ReadByte();
@@ -821,15 +821,15 @@ See Options.txt for help";
                 viewsize = br.ReadInt32();
                 mouseadjustment = br.ReadInt32();
 
-                if ((sd == SDMode.AdLib || sm == (byte)SMMode.AdLib) && !AdLibPresent
+                if ((sd == SDMode.AdLib || sm == SMMode.AdLib) && !AdLibPresent
                     && !SoundBlasterPresent)
                 {
                     sd = SDMode.PC;
-                    sm = (byte)SMMode.Off;
+                    sm = SMMode.Off;
                 }
 
                 if ((sds == SDSMode.SoundBlaster) && !SoundBlasterPresent)
-                    sds = (byte)SDSMode.Off;
+                    sds = SDSMode.Off;
 
                 // make sure values are correct
                 if (mouseenabled > 0) mouseenabled = 1; // true
@@ -866,17 +866,17 @@ See Options.txt for help";
     private static void SetDefaultConfig()
     {
         SDMode sd;
-        byte sm;
+        SMMode sm;
         SDSMode sds;
         if (SoundBlasterPresent || AdLibPresent)
         {
             sd = SDMode.AdLib;
-            sm = (byte)SMMode.AdLib;
+            sm = SMMode.AdLib;
         }
         else
         {
             sd = SDMode.PC;
-            sm = (byte)SMMode.Off;
+            sm = SMMode.Off;
         }
 
         if (SoundBlasterPresent)
@@ -915,8 +915,8 @@ See Options.txt for help";
             foreach (var s in Scores)
                 s.Write(bw);
 
-            bw.Write(SoundMode);
-            bw.Write(MusicMode);
+            bw.Write((byte)SoundMode);
+            bw.Write((byte)MusicMode);
             bw.Write((byte)DigiMode);
 
             bw.Write(mouseenabled);

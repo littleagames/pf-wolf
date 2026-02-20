@@ -1,6 +1,4 @@
 ﻿using SDL2;
-using System.Collections;
-using System.Data.SqlTypes;
 using System.Runtime.InteropServices;
 using static SDL2.SDL;
 using static SDL2.SDL_mixer;
@@ -260,8 +258,8 @@ internal partial class Program
     internal static bool AdLibPresent,
         SoundBlasterPresent, SBProPresent,
         SoundPositioned;
-    internal static sbyte SoundMode;
-    internal static sbyte MusicMode;
+    internal static SDMode SoundMode;
+    internal static SMMode MusicMode;
     internal static SDSMode DigiMode;
     internal static int SoundTable;// byte[][] SoundTable;
 
@@ -298,7 +296,7 @@ internal partial class Program
     // Sequencer variables
     internal static volatile bool sqActive;
     internal static ushort[] sqHack;
-    internal static ushort[] sqHackPtr;
+    internal static int sqHackPtr;
     internal static int sqHackLen;
     internal static int sqHackSeqLen;
     internal static uint sqHackTime;
@@ -576,19 +574,19 @@ internal partial class Program
         ispos = nextsoundpos;
         nextsoundpos = false;
 
-        if (sound == -1 || (DigiMode == (byte)SDSMode.Off && SoundMode == (byte)SDMode.Off))
+        if (sound == -1 || (DigiMode == SDSMode.Off && SoundMode == SDMode.Off))
             return 0;
 
         //var sData = SoundTable[sound]; // TODO: This might need a better way to get soundtable data
         var soundSeg = audiosegs[sound + SoundTable];
         s = soundSeg.common;//new SoundCommon(sData);// (SoundCommon*)SoundTable[sound];
 
-        if ((SoundMode != (byte)SDMode.Off) && soundSeg == null)
+        if ((SoundMode != SDMode.Off) && soundSeg == null)
             Quit("SD_PlaySound() - Uncached sound");
 
-        if ((DigiMode != (byte)SDSMode.Off) && (DigiMap[sound] != -1))
+        if ((DigiMode != SDSMode.Off) && (DigiMap[sound] != -1))
         {
-            if ((DigiMode == SDSMode.PC) && (SoundMode == (byte)SDMode.PC))
+            if ((DigiMode == SDSMode.PC) && (SoundMode == SDMode.PC))
             {
                 if (s.priority < SoundPriority)
                     return 0;
@@ -649,13 +647,45 @@ internal partial class Program
 
     internal static void SD_StopSound()
     {
-        // TODO:
+        if (DigiPlaying)
+            SD_StopDigitized();
+
+        switch (SoundMode)
+        {
+            case SDMode.PC:
+                SDL_PCStopSound();
+                break;
+            case SDMode.AdLib:
+                SDL_ALStopSound();
+                break;
+
+            default:
+                break;
+        }
+
+        SoundPositioned = false;
+
+        SDL_SoundFinished();
     }
 
     internal static void SD_Shutdown()
     {
+        int i;
+
         if (!SD_Started)
             return;
+
+        SD_MusicOff();
+        SD_StopSound();
+
+        for (i = 0; i < STARTMUSIC - STARTDIGISOUNDS; i++)
+        {
+            if (SoundChunks[i] != IntPtr.Zero)
+                Mix_FreeChunk(SoundChunks[i]);
+        }
+
+        DigiList = [];
+
         SD_Started = false;
     }
 
@@ -670,9 +700,6 @@ internal partial class Program
         int size = (int)DigiList[which].length;
 
         byte[] origsamples = PM_GetSoundPage(page, size);
-        //if ((origsamples + size) >= PM_GetPageEnd())
-        //if (origsamples.Length >= size)
-        //    Quit($"SD_PrepareSound({which}): Sound reaches out of page file!");
 
         int destsamples = (int)((float)size * (float)param_samplerate
             / (float)ORIGSAMPLERATE);
@@ -730,6 +757,7 @@ internal partial class Program
         SoundChunks[which] = Mix_LoadWAV_RW(temp, 1);
         pinnedArray.Free();
     }
+
     internal static short GetSample(float csample, byte[] samples, int size)
     {
         float s0 = 0, s1 = 0, s2 = 0;
@@ -807,18 +835,139 @@ internal partial class Program
 
     internal static void SD_MusicOn()
     {
-        
+        sqActive = true;
     }
 
-    internal static void SD_MusicOff()
+    internal static int SD_MusicOff()
     {
+        ushort i;
+
+        sqActive = false;
+        switch (MusicMode)
+        {
+            case SMMode.AdLib:
+                alOut(alEffects, 0);
+                for (i = 0; i < sqMaxTracks; i++)
+                    alOut(alFreqH + i + 1, 0);
+                break;
+
+            default:
+                break;
+        }
+
+        return (int)0;// (sqHackPtr - sqHack);
     }
 
-    static bool SD_SetMusicMode(byte mode)
+    internal static void SD_StartMusic(int chunk)
+    {
+        SD_MusicOff();
+
+        if (MusicMode == SMMode.AdLib)
+        {
+            int chunkLen = CA_CacheAudioChunk(chunk);
+            //sqHack = audiosegs[chunk];     // alignment is correct
+            //if (*sqHack == 0) sqHackLen = sqHackSeqLen = chunkLen;
+            //else sqHackLen = sqHackSeqLen = *sqHack++;
+            sqHackPtr = 0;// sqHack;
+            sqHackTime = 0;
+            alTimeCount = 0;
+            SD_MusicOn();
+        }
+    }
+
+    internal static void SD_ContinueMusic(int chunk, int startoffs)
+    {
+
+        int i;
+
+        SD_MusicOff();
+
+        if (MusicMode == SMMode.AdLib)
+        {
+            int chunkLen = CA_CacheAudioChunk(chunk);
+            //sqHack = (word*)(void*)audiosegs[chunk];     // alignment is correct
+            //if (*sqHack == 0) sqHackLen = sqHackSeqLen = chunkLen;
+            //else sqHackLen = sqHackSeqLen = *sqHack++;
+           // sqHackPtr = sqHack;
+
+            if (startoffs >= sqHackLen)
+            {
+                startoffs = 0;
+            }
+
+            // fast forward to correct position
+            // (needed to reconstruct the instruments)
+
+            for (i = 0; i < startoffs; i += 2)
+            {
+                byte reg = 0;// *(byte*)sqHackPtr;
+                byte val = 0;// *(((byte*)sqHackPtr) + 1);
+                if (reg >= 0xb1 && reg <= 0xb8) val &= 0xdf;           // disable play note flag
+                else if (reg == 0xbd) val &= 0xe0;                     // disable drum flags
+
+                alOut(reg, val);
+                sqHackPtr += 2;
+                sqHackLen -= 4;
+            }
+            sqHackTime = 0;
+            alTimeCount = 0;
+
+            SD_MusicOn();
+        }
+    }
+
+    internal static void SD_FadeOutMusic()
+    {
+        switch (MusicMode)
+        {
+            case SMMode.AdLib:
+                // DEBUG - quick hack to turn the music off
+                SD_MusicOff();
+                break;
+
+            default:
+                break;
+        }
+    }
+    internal static bool SD_MusicPlaying()
+    {
+        bool result;
+
+        switch (MusicMode)
+        {
+            case SMMode.AdLib:
+                result = sqActive;
+                break;
+            default:
+                result = false;
+                break;
+        }
+
+        return (result);
+    }
+    static bool SD_SetMusicMode(SMMode mode)
     {
         bool result = false;
 
-        return result;
+        SD_FadeOutMusic();
+        while (SD_MusicPlaying())
+            SDL_Delay(5);
+
+        switch (mode)
+        {
+            case SMMode.Off:
+                result = true;
+                break;
+            case SMMode.AdLib:
+                if (AdLibPresent)
+                    result = true;
+                break;
+        }
+
+        if (result)
+            MusicMode = mode;
+
+        return (result);
     }
     static bool SD_SetSoundMode(SDMode mode)
     {
@@ -849,13 +998,14 @@ internal partial class Program
                 Quit($"SD_SetSoundMode: Invalid sound mode {mode}");
                 return false;
         }
-        // TODO: SoundTable?
-        SoundTable = tableoffset;// audiosegs.Skip(tableoffset).ToArray(); // Shift the "soundtable" offset...
 
-        if (result && (mode != (SDMode)SoundMode))
+        // Instead of a byte[][] reference, let's just offset where the sounds start, for now.
+        SoundTable = tableoffset;
+
+        if (result && (mode != SoundMode))
         {
             SDL_ShutDevice();
-            SoundMode = (sbyte)mode;
+            SoundMode = mode;
             SDL_StartDevice();
         }
 
@@ -937,7 +1087,25 @@ internal partial class Program
 
     static void SD_StopDigitized()
     {
-        // TODO:
+        DigiPlaying = false;
+        DigiNumber = 0;
+        DigiPriority = 0;
+        SoundPositioned = false;
+        if ((DigiMode == SDSMode.PC) && (SoundMode == SDMode.PC))
+            SDL_SoundFinished();
+
+        switch (DigiMode)
+        {
+            case SDSMode.PC:
+                SDL_PCStopSound();
+                break;
+            case SDSMode.SoundBlaster:
+                Mix_HaltChannel(-1);
+                break;
+
+            default:
+                break;
+        }
     }
 
     static int SD_SoundPlaying()
@@ -971,7 +1139,6 @@ internal partial class Program
     internal static void SDL_ALStopSound()
     {
         alSound = [];
-
         alOut(alFreqH + 0, 0);
     }
 

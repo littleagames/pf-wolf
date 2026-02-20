@@ -730,6 +730,6 @@ Please check whether you are using the right executable!
 
         sound.data = br.ReadBytes(size - ORIG_ADLIBSOUND_SIZE + 1).Select(x => (sbyte)x).ToArray();
 
-        audiosegs[chunk] = sound;// new byte[0];// sound; // TODO: This could be of various class types, may need to do this differently
+        audiosegs[chunk] = sound;
     }
 }
