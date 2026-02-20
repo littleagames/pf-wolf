@@ -711,7 +711,7 @@ internal partial class Program
         // alignment is correct, as wavebuffer comes from malloc
         // and sizeof(headchunk) % 4 == 0 and sizeof(wavechunk) % 4 == 0
         short[] newsamples = new short[(wavebuffer.Length + headchunk.size_of
-            + wavechunk.size_of)];
+            + wavechunk.size_of) / sizeof(short)];
         float cursample = 0.0F;
         float samplestep = (float)ORIGSAMPLERATE / (float)param_samplerate;
         for (i = 0; i < destsamples; i++, cursample += samplestep)
@@ -719,7 +719,13 @@ internal partial class Program
             newsamples[i] = GetSample((float)size * (float)i / (float)destsamples,
                 origsamples, size);
         }
-        File.WriteAllBytes($"C:\\Users\\drewm\\Downloads\\WolfTest\\Sound-{which+542}_1.wav", wavebuffer);
+
+        Buffer.BlockCopy(
+            src: newsamples,
+            srcOffset: 0,
+            dst: wavebuffer,
+            dstOffset: headData.Length + dheadData.Length,
+            count: wavebuffer.Length - (headData.Length + dheadData.Length));
         IntPtr temp = SDL_RWFromMem(pointer, wavebuffer.Length);
         SoundChunks[which] = Mix_LoadWAV_RW(temp, 1);
         pinnedArray.Free();
