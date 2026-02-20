@@ -427,7 +427,7 @@ internal partial class Program
             sound = -1;
 
             US_Print(" Page #");
-            US_PrintSigned(i);
+            US_Print(i.ToString());
 
             if (i < PMSpriteStart)
                 US_Print(" (Wall)");
@@ -539,9 +539,9 @@ internal partial class Program
                         sound = j;
 
                         US_Print("\n Sound #");
-                        US_PrintSigned(j);
+                        US_Print(j.ToString());
                         US_Print("\n Segment #");
-                        US_PrintSigned((int)(i - PMSoundStart - DigiList[j].startpage));
+                        US_Print(((int)(i - PMSoundStart - DigiList[j].startpage)).ToString());
                     }
 
                     for (j = 0; j < pageLengths[i]; j += 32)

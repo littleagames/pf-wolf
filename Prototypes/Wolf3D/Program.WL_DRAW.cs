@@ -1297,7 +1297,7 @@ internal partial class Program
                 SETFONTCOLOR(7, 127);
                 PrintX = 4; PrintY = 1;
                 VWB_Bar(0, 0, 50, 10, bordercol);
-                US_PrintSigned(fps);
+                US_Print(fps.ToString());
                 US_Print(" fps");
             }
             VW_UpdateScreen();

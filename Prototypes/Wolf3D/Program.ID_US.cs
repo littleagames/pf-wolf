@@ -1,12 +1,8 @@
 ﻿using SDL2;
-using System.Runtime.InteropServices;
-using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using static Wolf3D.Program;
 
 namespace Wolf3D;
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
 internal class HighScore
 {
     public string name;
@@ -50,6 +46,12 @@ struct SaveGame
     }
 }
 
+// Record used to save & restore screen windows
+struct WindowRec
+{
+    public int x, y, w, h, px, py;
+}
+
 internal partial class Program
 {
     internal static ushort PrintX, PrintY;
@@ -81,6 +83,12 @@ internal partial class Program
     internal const int MaxSaveGames = 6;
 
     internal const int MaxString = 128;
+
+    internal static void US_HomeWindow()
+    {
+        PrintX = WindowX;
+        PrintY = WindowY;
+    }
 
     static int rndindex = 0;
 
@@ -177,11 +185,6 @@ internal partial class Program
                 PrintX += w;
             }
         }
-    }
-
-    internal static void US_PrintSigned (int n)
-    {
-        US_Print(n.ToString());
     }
 
     internal static void US_CPrint(string sorg)
@@ -608,6 +611,16 @@ internal partial class Program
             VWB_DrawTile8(sx, i, 3);
             VWB_DrawTile8(sx + sw, i, 4);
         }
+    }
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //	US_CenterWindow() - Generates a window of a given width & height in the
+    //		middle of the screen
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    internal static void US_CenterWindow(ushort w, ushort h)
+    {
+        US_DrawWindow((ushort)(((MaxX / 8) - w) / 2), (ushort)(((MaxY / 8) - h) / 2), w, h);
     }
 
     private static bool _xoricursor_status = false;
