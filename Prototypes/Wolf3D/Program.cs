@@ -1347,7 +1347,7 @@ See Options.txt for help";
         SD_Shutdown();
         PM_Shutdown();
         IN_Shutdown();
-        VW_Shutdown();
+        VL_Shutdown();
         CA_Shutdown();
     }
     

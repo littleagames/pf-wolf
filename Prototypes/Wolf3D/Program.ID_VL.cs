@@ -24,6 +24,7 @@ internal partial class Program
     internal static IntPtr texture;
 
     internal static int scaleFactor;
+
     internal static bool screenfaded;
     internal static uint bordercolor;
 
@@ -104,6 +105,19 @@ internal partial class Program
             ylookup[i] = (uint)(i * bufferPitch);
     }
 
+    internal static void VL_ConvertPalette(byte[] srcpal, SDL.SDL_Color[] destpal, int numColors)
+    {
+        int i, s = 0;
+
+        for (i = 0; i < numColors; i++)
+        {
+            destpal[i].r = (byte)(srcpal[s++] * 255 / 63);
+            destpal[i].g = (byte)(srcpal[s++] * 255 / 63);
+            destpal[i].b = (byte)(srcpal[s++] * 255 / 63);
+            destpal[i].a = 255;// SDL.SDL_ALPHA_OPAQUE;
+        }
+    }
+
     internal static void VL_MemToScreen(byte[] source, int width, int height, int x, int y)
         => VL_MemToScreenScaledCoord(source, width, height, scaleFactor * x, scaleFactor * y);
 
@@ -124,6 +138,38 @@ internal partial class Program
                 for (i = 0, sci = 0; i < width; i++, sci += scaleFactor)
                 {
                     byte col = source[(j * width) + i];
+                    for (m = 0; m < scaleFactor; m++)
+                    {
+                        for (n = 0; n < scaleFactor; n++)
+                        {
+                            dest[ylookup[scj + m + desty] + sci + n + destx] = col;
+                        }
+                    }
+                }
+            }
+        }
+
+        VL_UnlockSurface(screenBuffer);
+    }
+
+    internal static void VL_MemToScreenScaledCoord2(byte[] source, int origwidth, int srcx, int srcy,
+                                int destx, int desty, int width, int height)
+    {
+        int i, j, sci, scj;
+        int m, n;
+
+        IntPtr destPtr = VL_LockSurface(screenBuffer);
+        if (destPtr == IntPtr.Zero) return;
+
+        unsafe
+        {
+            byte* dest = (byte*)destPtr;
+
+            for (j = 0, scj = 0; j < height; j++, scj += scaleFactor)
+            {
+                for (i = 0, sci = 0; i < width; i++, sci += scaleFactor)
+                {
+                    byte col = source[((j + srcy) * origwidth) + (i + srcx)];
                     for (m = 0; m < scaleFactor; m++)
                     {
                         for (n = 0; n < scaleFactor; n++)
@@ -306,8 +352,7 @@ internal partial class Program
 
     internal static void VL_FadeOut(int start, int end, int red, int green, int blue, int steps)
     {
-        int i, j, orig, delta;
-        SDL.SDL_Color[] origPtr, newPtr;
+        int i, j;
 
         red = red * 255 / 63;
         green = green * 255 / 63;
@@ -354,7 +399,10 @@ internal partial class Program
         screenfaded = true;
     }
 
-    internal static void VW_Shutdown() => VL_Shutdown();
+    internal static void VL_Bar(int x, int y, int width, int height, int color)
+    {
+        VL_BarScaledCoord(scaleFactor * x, scaleFactor * y, scaleFactor * width, scaleFactor * height, color);
+    }
 
     internal static void VL_Shutdown()
     {

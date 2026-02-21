@@ -65,10 +65,6 @@ internal partial class Program
 
     internal static void VWB_Bar(int x, int y, int width, int height, int color) => VW_Bar(x, y, width, height, color);
     internal static void VW_Bar(int x, int y, int width, int height, int color) => VL_Bar(x, y, width, height, color);
-    internal static void VL_Bar(int x, int y, int width, int height, int color)
-    {
-        VL_BarScaledCoord(scaleFactor * x, scaleFactor * y, scaleFactor * width, scaleFactor * height, color);
-    }
     internal static void VWB_BarScaledCoord(int scx, int scy, int scwidth, int scheight, int color) => VL_BarScaledCoord(scx, scy, scwidth, scheight, color);
     internal static void VL_BarScaledCoord(int scx, int scy, int scwidth, int scheight, int color)
     {
