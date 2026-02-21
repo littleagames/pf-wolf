@@ -614,7 +614,11 @@ internal partial class Program
 
     internal const float HEIGHTRATIO = 0.50f;
 
+#if !SPEAR
     internal const int LRpack = 8; // # of levels to store in endgame
+#else
+    internal const int LRpack = 20;
+#endif
 
     internal const long PLAYERSIZE = MINDIST;// player radius
     internal const long MINACTORDIST = 0x10000L;// minimum dist from player center
@@ -661,7 +665,9 @@ internal partial class Program
     internal enum spritenums
     {
         SPR_DEMO,
+#if !APOGEE_1_0
         SPR_DEATHCAM,
+#endif
         //
         // static sprites
         //
@@ -683,6 +689,9 @@ internal partial class Program
         SPR_STAT_40, SPR_STAT_41, SPR_STAT_42, SPR_STAT_43,
         SPR_STAT_44, SPR_STAT_45, SPR_STAT_46, SPR_STAT_47,
 
+#if SPEAR
+        SPR_STAT_48, SPR_STAT_49, SPR_STAT_50, SPR_STAT_51,
+#endif
         //
         // guard
         //
@@ -795,6 +804,7 @@ internal partial class Program
 
         SPR_OFC_SHOOT1, SPR_OFC_SHOOT2, SPR_OFC_SHOOT3,
 
+# if !SPEAR
         //
         // ghosts
         //
@@ -848,6 +858,7 @@ internal partial class Program
         SPR_GIFT_SHOOT1, SPR_GIFT_SHOOT2,
 
         SPR_GIFT_DIE1, SPR_GIFT_DIE2, SPR_GIFT_DIE3, SPR_GIFT_DEAD,
+#endif
         //
         // Rocket, smoke and small explosion
         //
@@ -857,6 +868,20 @@ internal partial class Program
         SPR_SMOKE_1, SPR_SMOKE_2, SPR_SMOKE_3, SPR_SMOKE_4,
         SPR_BOOM_1, SPR_BOOM_2, SPR_BOOM_3,
 
+        //
+        // Angel of Death's DeathSparks(tm)
+        //
+# if SPEAR
+        SPR_HROCKET_1, SPR_HROCKET_2, SPR_HROCKET_3, SPR_HROCKET_4,
+        SPR_HROCKET_5, SPR_HROCKET_6, SPR_HROCKET_7, SPR_HROCKET_8,
+
+        SPR_HSMOKE_1, SPR_HSMOKE_2, SPR_HSMOKE_3, SPR_HSMOKE_4,
+        SPR_HBOOM_1, SPR_HBOOM_2, SPR_HBOOM_3,
+
+        SPR_SPARK1, SPR_SPARK2, SPR_SPARK3, SPR_SPARK4,
+#endif
+
+#if !SPEAR
         //
         // gretel
         //
@@ -876,9 +901,71 @@ internal partial class Program
         //
         // bj
         //
-        SPR_BJ_W1, SPR_BJ_W2, SPR_BJ_W3, SPR_BJ_W4,
+# if APOGEE_1_0
+        SPR_BJ_W1 = 360,
+#elif APOGEE_1_1 && UPLOAD
+    SPR_BJ_W1=406,
+#else
+        SPR_BJ_W1,
+#endif
+        SPR_BJ_W2, SPR_BJ_W3, SPR_BJ_W4,
         SPR_BJ_JUMP1, SPR_BJ_JUMP2, SPR_BJ_JUMP3, SPR_BJ_JUMP4,
 
+#else
+//
+// THESE ARE FOR 'SPEAR OF DESTINY'
+//
+
+//
+// Trans Grosse
+//
+    SPR_TRANS_W1,SPR_TRANS_W2,SPR_TRANS_W3,SPR_TRANS_W4,
+    SPR_TRANS_SHOOT1,SPR_TRANS_SHOOT2,SPR_TRANS_SHOOT3,SPR_TRANS_DEAD,
+
+    SPR_TRANS_DIE1,SPR_TRANS_DIE2,SPR_TRANS_DIE3,
+
+//
+// Wilhelm
+//
+    SPR_WILL_W1,SPR_WILL_W2,SPR_WILL_W3,SPR_WILL_W4,
+    SPR_WILL_SHOOT1,SPR_WILL_SHOOT2,SPR_WILL_SHOOT3,SPR_WILL_SHOOT4,
+
+    SPR_WILL_DIE1,SPR_WILL_DIE2,SPR_WILL_DIE3,SPR_WILL_DEAD,
+
+//
+// UberMutant
+//
+    SPR_UBER_W1,SPR_UBER_W2,SPR_UBER_W3,SPR_UBER_W4,
+    SPR_UBER_SHOOT1,SPR_UBER_SHOOT2,SPR_UBER_SHOOT3,SPR_UBER_SHOOT4,
+
+    SPR_UBER_DIE1,SPR_UBER_DIE2,SPR_UBER_DIE3,SPR_UBER_DIE4,
+    SPR_UBER_DEAD,
+
+//
+// Death Knight
+//
+    SPR_DEATH_W1,SPR_DEATH_W2,SPR_DEATH_W3,SPR_DEATH_W4,
+    SPR_DEATH_SHOOT1,SPR_DEATH_SHOOT2,SPR_DEATH_SHOOT3,SPR_DEATH_SHOOT4,
+
+    SPR_DEATH_DIE1,SPR_DEATH_DIE2,SPR_DEATH_DIE3,SPR_DEATH_DIE4,
+    SPR_DEATH_DIE5,SPR_DEATH_DIE6,SPR_DEATH_DEAD,
+
+//
+// Ghost
+//
+    SPR_SPECTRE_W1,SPR_SPECTRE_W2,SPR_SPECTRE_W3,SPR_SPECTRE_W4,
+    SPR_SPECTRE_F1,SPR_SPECTRE_F2,SPR_SPECTRE_F3,SPR_SPECTRE_F4,
+
+//
+// Angel of Death
+//
+    SPR_ANGEL_W1,SPR_ANGEL_W2,SPR_ANGEL_W3,SPR_ANGEL_W4,
+    SPR_ANGEL_SHOOT1,SPR_ANGEL_SHOOT2,SPR_ANGEL_TIRED1,SPR_ANGEL_TIRED2,
+
+    SPR_ANGEL_DIE1,SPR_ANGEL_DIE2,SPR_ANGEL_DIE3,SPR_ANGEL_DIE4,
+    SPR_ANGEL_DIE5,SPR_ANGEL_DIE6,SPR_ANGEL_DIE7,SPR_ANGEL_DEAD,
+
+#endif
         //
         // player attack frames
         //
@@ -905,7 +992,28 @@ internal partial class Program
         FL_FIRSTATTACK = 0x00000020,
         FL_AMBUSH = 0x00000040,
         FL_NONMARK = 0x00000080,
-        FL_FULLBRIGHT = 0x00000100
+        FL_FULLBRIGHT = 0x00000100,
+#if USE_DIR3DSPR
+        // you can choose one of the following values in wl_act1.cpp
+        // to make a static sprite a directional 3d sprite
+        // (see example at the end of the statinfo array)
+        FL_DIR_HORIZ_MID = 0x00000200,
+        FL_DIR_HORIZ_FW = 0x00000400,
+        FL_DIR_HORIZ_BW = 0x00000600,
+        FL_DIR_VERT_MID = 0x00000a00,
+        FL_DIR_VERT_FW = 0x00000c00,
+        FL_DIR_VERT_BW = 0x00000e00,
+
+        // these values are just used to improve readability of code
+        FL_DIR_NONE = 0x00000000,
+        FL_DIR_POS_MID = 0x00000200,
+        FL_DIR_POS_FW = 0x00000400,
+        FL_DIR_POS_BW = 0x00000600,
+        FL_DIR_POS_MASK = 0x00000600,
+        FL_DIR_VERT_FLAG = 0x00000800,
+        FL_DIR_MASK = 0x00000e00,
+#endif
+        // next free bit is   0x00001000
     }
 
     internal static void ClearMemory() => SD_StopDigitized();
@@ -1000,3 +1108,24 @@ internal partial class Program
     internal const int SPDPATROL = 512;
     internal const int SPDDOG = 1500;
 }
+
+/*
+=============================================================================
+
+                           FEATURE DEFINITIONS
+
+=============================================================================
+*/
+
+#if USE_FEATUREFLAGS
+    // The currently available feature flags
+    internal const int FF_STARSKY      = 0x0001;
+    internal const int FF_PARALLAXSKY  = 0x0002;
+    internal const int FF_CLOUDSKY     = 0x0004;
+    internal const int FF_RAIN         = 0x0010;
+        internal const int FF_SNOW         = 0x0020;
+    static ushort GetFeatureFlags ()
+    {
+        return ffDataTopRight;
+    }
+#endif

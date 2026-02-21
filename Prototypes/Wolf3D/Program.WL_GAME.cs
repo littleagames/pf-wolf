@@ -1,15 +1,34 @@
-﻿namespace Wolf3D;
+﻿using static System.Runtime.InteropServices.JavaScript.JSType;
+
+namespace Wolf3D;
 
 internal partial class Program
 {
+    /*
+=============================================================================
+
+                             GLOBAL VARIABLES
+
+=============================================================================
+*/
     static bool ingame, fizzlein;
     static gametype gamestate = new gametype();
     static byte bordercol = VIEWCOLOR; // color of the Change View/Ingame border
+# if SPEAR
+    internal static int spearx, speary;
+    internal static uint spearangle;
+    internal static bool spearflag;
+#endif
+
+#if USE_FEATUREFLAGS
+    internal static int ffDataTopLeft, ffDataTopRight, ffDataBottomLeft, ffDataBottomRight;
+#endif
 
     //
     // ELEVATOR BACK MAPS - REMEMBER (-1)!!
     //
     private static int[] ElevatorBackTo = { 1, 1, 7, 3, 5, 3 };
+
     //===========================================================================
 
 
