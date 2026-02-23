@@ -1130,10 +1130,10 @@ internal partial class Program
 
     static void SD_WaitSoundDone()
     {
-        while (SD_SoundPlaying() != 0)
-        {
-            SDL.SDL_Delay(5);
-        }
+        //while (SD_SoundPlaying() != 0)
+        //{
+        //    SDL.SDL_Delay(5);
+        //}
     }
 
     internal static void SDL_ALStopSound()

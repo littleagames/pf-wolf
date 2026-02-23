@@ -20,7 +20,11 @@ internal enum menuitems
     loadgame,
     savegame,
     changeview,
+#if !GOODTIMES
+#if !SPEAR
     readthis,
+#endif
+#endif
     viewscores,
     backtodemo,
     quit
@@ -28,7 +32,7 @@ internal enum menuitems
 
 internal partial class Program
 {
-    internal const int STARTITEM = (int)menuitems.readthis;
+    internal const menuitems STARTITEM = menuitems.readthis;
 
     // ENDSTRx constants are defined in foreign.h
     static string[] endStrings = [
@@ -46,7 +50,11 @@ internal partial class Program
     internal const int MENU_X = 76;
     internal const int MENU_Y = 55;
     internal const int MENU_W = 178;
+#if !SPEAR
     internal const int MENU_H = 13 * 10 + 6;
+#else
+    internal const int MENU_H = 13 * 9 + 6;
+#endif
 
     internal const int SM_X = 48;
     internal const int SM_W = 250;
@@ -82,11 +90,20 @@ internal partial class Program
     internal const int CST_Y = 48;
     internal const int CST_START = 60;
     internal const int CST_SPC = 60;
+
+#if SPEAR
+    internal const byte BORDCOLOR = 0x29;
+    internal const byte BORD2COLOR = 0x23;
+    internal const byte DEACTIVE = 0x2b;
+    internal const byte BKGDCOLOR = 0x2d;
+#else
+
     internal const byte BORDCOLOR = 0x29;
     internal const byte BORD2COLOR = 0x23;
     internal const byte DEACTIVE = 0x2b;
     internal const byte BKGDCOLOR = 0x2d;
     internal const byte STRIPE = 0x2c;
+#endif
 
     internal const byte READCOLOR = 0x4a;
     internal const byte READHCOLOR = 0x47;
@@ -94,8 +111,12 @@ internal partial class Program
     internal const byte TEXTCOLOR = 0x17;
     internal const byte HIGHLIGHT = 0x13;
 
-    internal static int MENUSONG => (int)musicnames.WONDERIN_MUS;
-    internal static int INTROSONG => (int)musicnames.NAZI_NOR_MUS;
+    internal static musicnames MENUSONG => musicnames.WONDERIN_MUS;
+#if SPEAR
+    internal static musicnames INTROSONG => musicnames.XTOWER2_MUS;
+#else
+    internal static musicnames INTROSONG => musicnames.NAZI_NOR_MUS;
+#endif
 
     internal static int SENSITIVE = 60;
 
@@ -107,7 +128,9 @@ internal partial class Program
         new(1, STR_LG, CP_LoadGame),
         new(0, STR_SG, CP_SaveGame),
         new(1, STR_CV, CP_ChangeView),
+#if !GOODTIMES || !SPEAR
         new(2, "Read This", CP_ReadThis),
+#endif
         new(1, STR_VS, CP_ViewScores),
         new(1, STR_BD, null),
         new(1, STR_QT, null),
@@ -213,7 +236,7 @@ internal partial class Program
         new (1,"Wolfpack", null)
     };
 
-    internal static CP_iteminfo MainItems = new(MENU_X, MENU_Y, (short)MainMenu.Length, STARTITEM, 24);
+    internal static CP_iteminfo MainItems = new(MENU_X, MENU_Y, (short)MainMenu.Length, (short)STARTITEM, 24);
     internal static CP_iteminfo SndItems = new(SM_X, SM_Y1, (short)SndMenu.Length, 0, 52);
     internal static CP_iteminfo LSItems = new(LSM_X, LSM_Y, (short)LSMenu.Length, 0, 24);
     internal static CP_iteminfo CtlItems = new(CTL_X, CTL_Y, (short)CtlMenu.Length, -1, 56);
@@ -312,7 +335,11 @@ internal partial class Program
         VWB_Vlin(y, y + h, x + w, color1);
     }
 
+#if SPEAR
+    internal static void MenuFadeOut() => VL_FadeOut(0, 255, 0, 0, 51, 10);
+#else
     internal static void MenuFadeOut() => VL_FadeOut(0, 255, 43, 0, 0, 10);
+#endif
     internal static void MenuFadeIn() => VL_FadeIn(0, 255, gamepal, 10);
 
     internal static void DrawMenu(CP_iteminfo item_i, CP_itemtype[] items)
@@ -342,16 +369,24 @@ internal partial class Program
         }
     }
 
-    internal static int StartCPMusic(int song)
+    static int lastmusic;
+    internal static int StartCPMusic(musicnames song)
     {
-        // TODO:
-        return 0;
+        int lastoffs;
+
+        lastmusic = (int)song;
+        lastoffs = SD_MusicOff();
+        UNCACHEAUDIOCHUNK(STARTMUSIC + lastmusic);
+
+        SD_StartMusic((int)(STARTMUSIC + song));
+        return lastoffs;
     }
 
+
+    internal static int redrawitem = 1, lastitem = -1;
     internal static int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine)
     {
         char key;
-        int redrawitem = 1, lastitem = -1;
         int i, x, y, basey, exit, which, shape;
         int lastBlinkTime, timer;
         ControlInfo ci;
@@ -1625,7 +1660,7 @@ internal partial class Program
     internal static void DrawLoadSaveScreen(int loadsave)
     {
         const int DISKX = 100;
-        const int DISKY = 100;
+        const int DISKY = 0;
 
         int i;
 
@@ -1927,7 +1962,11 @@ internal partial class Program
     {
         fontnumber = 0;
 
-        StartCPMusic((int)musicnames.ROSTER_MUS);
+#if SPEAR
+        StartCPMusic(musicnames.XAWARD_MUS);
+#else
+        StartCPMusic(musicnames.ROSTER_MUS);
+#endif
 
         DrawHighScores();
         VW_UpdateScreen();
@@ -1936,7 +1975,7 @@ internal partial class Program
 
         IN_Ack();
 
-        StartCPMusic((int)MENUSONG);
+        StartCPMusic(MENUSONG);
         MenuFadeOut();
 
         return 0;
@@ -1987,10 +2026,10 @@ internal partial class Program
         {
             SDL.SDL_Delay(5);
             ReadAnyControl(out ci);
-            switch (ci.dir)
+            switch ((Direction)ci.dir)
             {
-                case (byte)Direction.dir_North:
-                case (byte)Direction.dir_West:
+                case Direction.dir_North:
+                case Direction.dir_West:
                     if (mouseadjustment != 0)
                     {
                         mouseadjustment--;
@@ -2004,8 +2043,8 @@ internal partial class Program
                     }
                     break;
 
-                case (byte)Direction.dir_South:
-                case (byte)Direction.dir_East:
+                case Direction.dir_South:
+                case Direction.dir_East:
                     if (mouseadjustment < 9)
                     {
                         mouseadjustment++;
@@ -2362,9 +2401,9 @@ internal partial class Program
             //
             // MOVE TO ANOTHER SPOT?
             //
-            switch (ci.dir)
+            switch ((Direction)ci.dir)
             {
-                case (byte)Direction.dir_West:
+                case Direction.dir_West:
                     do
                     {
                         which--;
@@ -2383,7 +2422,7 @@ internal partial class Program
                     IN_ClearKeysDown();
                     break;
 
-                case (byte)Direction.dir_East:
+                case Direction.dir_East:
                     do
                     {
                         which++;
@@ -2401,8 +2440,8 @@ internal partial class Program
                     while (ci.dir != (byte)Direction.dir_None);
                     IN_ClearKeysDown();
                     break;
-                case (byte)Direction.dir_North:
-                case (byte)Direction.dir_South:
+                case Direction.dir_North:
+                case Direction.dir_South:
                     exit = 1;
                     break;
             }
@@ -2830,8 +2869,9 @@ internal partial class Program
 
     internal static void FreeMusic()
     {
-        //UNCACHEAUDIOCHUNK(STARTMUSIC + lastmusic);
+        UNCACHEAUDIOCHUNK(STARTMUSIC + lastmusic);
     }
+
     internal static string IN_GetScanName(int scan)
     {
         return ScanNames[scan];
@@ -2872,4 +2912,66 @@ internal partial class Program
         //        VWB_Bar (164, 174, 12, 2, FILLCOLOR);
     }
 
+    internal static void CheckForEpisodes()
+    {
+        if (configdir != string.Empty)
+        {
+            if (!Directory.Exists(configdir))
+            {
+                try
+                {
+                    DirectoryInfo di = Directory.CreateDirectory(configdir);
+                }
+                catch (IOException e)
+                {
+                    Quit($"The configuration directory \"{configdir}\" could not be created.");
+                }
+            }
+        }
+
+        if (File.Exists("vswap.wl6"))
+        {
+            extension = "wl6";
+            NewEmenu[2].active =
+            NewEmenu[4].active =
+            NewEmenu[6].active =
+            NewEmenu[8].active =
+            NewEmenu[10].active = 1;
+            EpisodeSelect[1] =
+            EpisodeSelect[2] =
+            EpisodeSelect[3] =
+            EpisodeSelect[4] =
+            EpisodeSelect[5] = 1;
+        }
+        else
+        {
+
+            if (File.Exists("vswap.wl3"))
+            {
+                extension = "wl3";
+                NewEmenu[2].active =
+                NewEmenu[4].active = 1;
+                EpisodeSelect[1] =
+                EpisodeSelect[2] = 1;
+            }
+            else
+            {
+
+                if (File.Exists("vswap.wl1"))
+                {
+                    extension = "wl1";
+                }
+                else
+                {
+                    Quit("NO WOLFENSTEIN 3-D DATA FILES to be found!");
+                }
+            }
+        }
+
+        helpfilename += extension;
+        endfilename += extension;
+        configname += extension;
+        SaveName += extension;
+        demoname += extension;
+    }
 }

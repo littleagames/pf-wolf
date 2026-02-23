@@ -130,7 +130,7 @@ internal partial class Program
                 break;
             }
         }
-        StartCPMusic((int)musicnames.ROSTER_MUS);
+        StartCPMusic(musicnames.ROSTER_MUS);
         DrawHighScores();
 
         VW_FadeIn();
@@ -332,7 +332,7 @@ internal partial class Program
         if (bordercol != VIEWCOLOR)
             DrawStatusBorder(VIEWCOLOR);
 
-        StartCPMusic((int)musicnames.ENDLEVEL_MUS);
+        StartCPMusic(musicnames.ENDLEVEL_MUS);
 
         //
         // do the intermission
@@ -615,7 +615,7 @@ internal partial class Program
         const int TIMEX = 14;
         const int TIMEY = 8;
 
-        StartCPMusic((int)musicnames.URAHERO_MUS);
+        StartCPMusic(musicnames.URAHERO_MUS);
         ClearSplitVWB();
 
         VWB_Bar(0, 0, 320, screenHeight / scaleFactor - STATUSLINES + 1, VIEWCOLOR);

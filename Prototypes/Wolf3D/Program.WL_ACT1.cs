@@ -1,9 +1,4 @@
-﻿using System;
-using System.Data;
-using Wolf3D;
-using static Wolf3D.Program;
-
-namespace Wolf3D;
+﻿namespace Wolf3D;
 
 internal partial class Program
 {
@@ -168,6 +163,17 @@ internal partial class Program
             Quit("Too many static objects!\n");
     }
 
+    /*
+    ===============
+    =
+    = PlaceItemType
+    =
+    = Called during game play to drop actors' items.  It finds the proper
+    = item number based on the item type (bo_???).  If there are no free item
+    = spots, nothing is done.
+    =
+    ===============
+    */
     internal static void PlaceItemType(int itemtype, int tilex, int tiley)
     {
         int type;
@@ -215,6 +221,31 @@ internal partial class Program
         statobjlist[laststatobj] = spot;
     }
 
+    /*
+    =============================================================================
+
+                                      DOORS
+
+    doorobjlist[] holds most of the information for the doors
+
+    door->position holds the amount the door is open, ranging from 0 to 0xffff
+            this is directly accessed by AsmRefresh during rendering
+
+    The number of doors is limited to 64 because a spot in tilemap holds the
+            door number in the low 6 bits, with the high bit meaning a door center
+            and bit 6 meaning a door side tile
+
+    Open doors conect two areas, so sounds will travel between them and sight
+            will be checked when the player is in a connected area.
+
+    Areaconnect is incremented/decremented by each door. If >0 they connect
+
+    Every time a door opens or closes the areabyplayer matrix gets recalculated.
+            An area is true if it connects with the player's current spor.
+
+    =============================================================================
+    */
+
     internal const int DOORWIDTH = 0x7800;
     internal const int OPENTICS = 300;
 
@@ -227,6 +258,16 @@ internal partial class Program
     internal static byte[] areabyplayer = new byte[NUMAREAS];
 
 
+
+    /*
+    ==============
+    =
+    = ConnectAreas
+    =
+    = Scans outward from playerarea, marking all connected areas
+    =
+    ==============
+    */
     internal static void RecursiveConnect(int areanumber)
     {
         int i;
@@ -255,6 +296,13 @@ internal partial class Program
             areabyplayer[player.areanumber] = 1; // true
     }
 
+    /*
+    ===============
+    =
+    = InitDoorList
+    =
+    ===============
+    */
     internal static void InitDoorList()
     {
         Array.Fill(areabyplayer, (byte)0);
@@ -266,10 +314,16 @@ internal partial class Program
             }
 
         lastdoorobj = 0;
-        //lastdoorobj = &doorobjlist[0]; (will this just be a List<T>.Length?
         doornum = 0;
     }
 
+    /*
+    ===============
+    =
+    = SpawnDoor
+    =
+    ===============
+    */
     internal static void SpawnDoor(int tilex, int tiley, bool vertical, int locknum)
     {
         if (doornum == MAXDOORS)
@@ -311,6 +365,15 @@ internal partial class Program
         lastdoorobj++;
     }
 
+    //===========================================================================
+
+    /*
+    =====================
+    =
+    = OpenDoor
+    =
+    =====================
+    */
     internal static void OpenDoor(int door)
     {
         if (doorobjlist[door].action == (byte)dooractiontypes.dr_open)
@@ -318,6 +381,14 @@ internal partial class Program
         else
             doorobjlist[door].action = dooractiontypes.dr_opening;  // start it opening
     }
+
+    /*
+    =====================
+    =
+    = CloseDoor
+    =
+    =====================
+    */
 
     internal static void CloseDoor(int door)
     {
@@ -390,6 +461,16 @@ internal partial class Program
         actorat[tilex, tiley] = (uint)(door | BIT_DOOR);
     }
 
+    /*
+    =====================
+    =
+    = OperateDoor
+    =
+    = The player wants to change the door's direction
+    =
+    =====================
+    */
+
     internal static void OperateDoor(int door)
     {
         int locknum;
@@ -418,11 +499,32 @@ internal partial class Program
         }
     }
 
+
+    //===========================================================================
+
+    /*
+    ===============
+    =
+    = DoorOpen
+    =
+    = Close the door after three seconds
+    =
+    ===============
+    */
+
     internal static void DoorOpen(int door)
     {
         if ((doorobjlist[door].ticcount += (short)tics) >= OPENTICS)
             CloseDoor(door);
     }
+
+    /*
+    ===============
+    =
+    = DoorOpening
+    =
+    ===============
+    */
 
     internal static void DoorOpening(int door)
     {
@@ -485,6 +587,14 @@ internal partial class Program
         doorobjlist[door].position = (ushort)position;
     }
 
+    /*
+    ===============
+    =
+    = DoorClosing
+    =
+    ===============
+    */
+
     internal static void DoorClosing(int door)
     {
         uint area1, area2;
@@ -546,6 +656,16 @@ internal partial class Program
         doorobjlist[door].position = (ushort)position;
     }
 
+
+    /*
+    =====================
+    =
+    = MoveDoors
+    =
+    = Called from PlayLoop
+    =
+    =====================
+    */
     internal static void MoveDoors()
     {
         int door;
@@ -588,6 +708,13 @@ internal partial class Program
     static byte pwalltile;
     static int[][] dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
+    /*
+    ===============
+    =
+    = PushWall
+    =
+    ===============
+    */
     internal static void PushWall(int checkx, int checky, int dir)
     {
         int oldtile, dx, dy;
@@ -623,6 +750,14 @@ internal partial class Program
 
         SD_PlaySound((int)soundnames.PUSHWALLSND);
     }
+
+    /*
+    =================
+    =
+    = MovePWalls
+    =
+    =================
+    */
 
     internal static void MovePWalls()
     {

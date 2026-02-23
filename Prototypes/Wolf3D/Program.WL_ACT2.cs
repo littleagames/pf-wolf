@@ -1,5 +1,5 @@
 ﻿using System.Data;
-using static Wolf3D.Program;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wolf3D;
 
@@ -158,11 +158,6 @@ internal partial class Program
     internal static statestruct s_boom2 = new(0, (short)spritenums.SPR_BOOM_2, 6, null, null, "s_boom3" );
     internal static statestruct s_boom3 = new(0, (short)spritenums.SPR_BOOM_3, 6, null, null, null);
 
-    internal static void T_Projectile(objstruct ob)
-    {
-        // TODO:
-    }
-
     /*
     =================
     =
@@ -193,7 +188,120 @@ internal partial class Program
 
         newobj.flags = (uint)objflags.FL_NEVERMARK;
     }
-    
+
+
+    /*
+    ===================
+    =
+    = ProjectileTryMove
+    =
+    = returns true if move ok
+    ===================
+    */
+
+    internal const int PROJSIZE = 0x2000;
+
+    internal static bool ProjectileTryMove(objstruct ob)
+    {
+        int xl, yl, xh, yh, x, y;
+        uint? check;
+
+        xl = (ob.x - PROJSIZE) >> TILESHIFT;
+        yl = (ob.y - PROJSIZE) >> TILESHIFT;
+
+        xh = (ob.x + PROJSIZE) >> TILESHIFT;
+        yh = (ob.y + PROJSIZE) >> TILESHIFT;
+
+        //
+        // check for solid walls
+        //
+        for (y = yl; y <= yh; y++)
+            for (x = xl; x <= xh; x++)
+            {
+                check = actorat[x, y];
+                if (check.HasValue && !ISPOINTER(check.Value, out _))
+                    return false;
+            }
+
+        return true;
+    }
+
+    /*
+    =================
+    =
+    = T_Projectile
+    =
+    =================
+    */
+
+    internal static void T_Projectile(objstruct ob)
+    {
+        long deltax, deltay;
+        int damage = 0;
+        int speed;
+
+        speed = (int)(ob.speed * tics);
+
+        deltax = FixedMul(speed, costable[ob.angle]);
+        deltay = -FixedMul(speed, sintable[ob.angle]);
+
+        if (deltax > 0x10000L)
+            deltax = 0x10000L;
+        if (deltay > 0x10000L)
+            deltay = 0x10000L;
+
+        ob.x += (int)deltax;
+        ob.y += (int)deltay;
+
+        deltax = Math.Abs(ob.x - player.x);
+        deltay = Math.Abs(ob.y - player.y);
+
+        if (!ProjectileTryMove(ob))
+        {
+            if (ob.obclass == classtypes.rocketobj)
+            {
+                PlaySoundLocActor((int)soundnames.MISSILEHITSND, ob);
+                ob.state = s_boom1;
+            }
+#if SPEAR
+            else if (ob->obclass == hrocketobj)
+            {
+                PlaySoundLocActor(MISSILEHITSND, ob);
+                ob->state = &s_hboom1;
+            }
+#endif
+            else
+                ob.state = null;               // mark for removal
+
+            return;
+        }
+
+        if (deltax < PROJECTILESIZE && deltay < PROJECTILESIZE)
+        {       // hit the player
+            switch (ob.obclass)
+            {
+                case classtypes.needleobj:
+                    damage = (US_RndT() >> 3) + 20;
+                    break;
+                case classtypes.rocketobj:
+                case classtypes.hrocketobj:
+                case classtypes.sparkobj:
+                    damage = (US_RndT() >> 3) + 30;
+                    break;
+                case classtypes.fireobj:
+                    damage = (US_RndT() >> 3);
+                    break;
+            }
+
+            TakeDamage(damage, ob);
+            ob.state = null;               // mark for removal
+            return;
+        }
+
+        ob.tilex = (byte)(ob.x >> TILESHIFT);
+        ob.tiley = (byte)(ob.y >> TILESHIFT);
+    }
+
     /*
     =============================================================================
 
@@ -1702,6 +1810,11 @@ internal partial class Program
     {
         objstruct newobj = null!;
 
+        if (DigiMode != SDSMode.Off)
+            s_hitlerdie2.tictime = 140;
+        else
+            s_hitlerdie2.tictime = 5;
+
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_mechastand);
         newobj.speed = SPDPATROL;
 
@@ -1844,10 +1957,10 @@ internal partial class Program
     {
         objstruct newobj = null!;
 
-        //if (DigiMode != sds_Off)
-        //    s_giftdie2.tictime = 140;
-        //else
-        //    s_giftdie2.tictime = 5;
+        if (DigiMode != SDSMode.Off)
+            s_giftdie2.tictime = 140;
+        else
+            s_giftdie2.tictime = 5;
 
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_giftstand);
         newobj.speed = SPDPATROL;
@@ -1897,10 +2010,10 @@ internal partial class Program
     {
         objstruct newobj = null!;
 
-        //if (DigiMode != sds_Off)
-        //    s_giftdie2.tictime = 140;
-        //else
-        //    s_giftdie2.tictime = 5;
+        if (DigiMode != SDSMode.Off)
+            s_giftdie2.tictime = 140;
+        else
+            s_giftdie2.tictime = 5;
 
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_schabbstand);
         newobj.speed = SPDPATROL;
@@ -1917,10 +2030,10 @@ internal partial class Program
     {
         objstruct newobj = null!;
 
-        //if (DigiMode != sds_Off)
-        //    s_giftdie2.tictime = 140;
-        //else
-        //    s_giftdie2.tictime = 5;
+        if (DigiMode != SDSMode.Off)
+            s_giftdie2.tictime = 140;
+        else
+            s_giftdie2.tictime = 5;
 
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_fatstand);
         newobj.speed = SPDPATROL;
@@ -1938,6 +2051,21 @@ internal partial class Program
         SightPlayer(ob);
     }
 
+    /*
+    ============================================================================
+
+    CHASE
+
+    ============================================================================
+    */
+
+    /*
+    =================
+    =
+    = T_Chase
+    =
+    =================
+    */
     internal static void T_Chase(objstruct ob)
     {
         int move, target;
@@ -2201,6 +2329,24 @@ internal partial class Program
         }
     }
 
+    /*
+    =============================================================================
+
+                                        FIGHT
+
+    =============================================================================
+    */
+
+
+    /*
+    ===============
+    =
+    = T_Shoot
+    =
+    = Try to damage the player, based on skill level and player's speed
+    =
+    ===============
+    */
     internal static void T_Shoot(objstruct ob)
     {
         int dx, dy, dist;
@@ -2250,7 +2396,7 @@ internal partial class Program
             }
         }
 
-        switch ((classtypes)ob.obclass)
+        switch (ob.obclass)
         {
             case classtypes.ssobj:
                 PlaySoundLocActor((int)soundnames.SSFIRESND, ob);
@@ -2280,7 +2426,7 @@ internal partial class Program
     {
         if (gamestate.mapon == 9 && US_RndT() == 0)
         {
-            switch ((classtypes)ob.obclass)
+            switch (ob.obclass)
             {
                 case classtypes.mutantobj:
                 case classtypes.guardobj:
@@ -2292,7 +2438,7 @@ internal partial class Program
             }
         }
 
-        switch ((classtypes)ob.obclass)
+        switch (ob.obclass)
         {
             case classtypes.mutantobj:
                 PlaySoundLocActor((int)soundnames.AHHHGSND, ob);
@@ -2375,8 +2521,147 @@ internal partial class Program
             ob.dir = (byte)objdirtypes.nodir;
     }
 
+    //===========================================================================
+
+
+    /*
+    ===============
+    =
+    = CheckPosition
+    =
+    ===============
+    */
+    internal static bool CheckPosition(objstruct ob)
+    {
+        int x, y, xl, yl, xh, yh;
+        uint? check;
+
+        xl = (int)((ob.x - PLAYERSIZE) >> TILESHIFT);
+        yl = (int)((ob.y - PLAYERSIZE) >> TILESHIFT);
+
+        xh = (int)((ob.x + PLAYERSIZE) >> TILESHIFT);
+        yh = (int)((ob.y + PLAYERSIZE) >> TILESHIFT);
+
+        //
+        // check for solid walls
+        //
+        for (y = yl; y <= yh; y++)
+        {
+            for (x = xl; x <= xh; x++)
+            {
+                check = actorat[x, y];
+                if (check.HasValue && !ISPOINTER(check.Value, out _))
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    /*
+    ===============
+    =
+    = A_StartDeathCam
+    =
+    ===============
+    */
 
     internal static void A_StartDeathCam(objstruct ob)
     {
+        int dx, dy;
+        float fangle;
+        int xmove, ymove;
+        int dist;
+
+        FinishPaletteShifts();
+
+        VW_WaitVBL(100);
+
+        if (gamestate.victoryflag != 0)
+        {
+            playstate = (byte)playstatetypes.ex_victorious;                              // exit castle tile
+            return;
+        }
+
+        gamestate.victoryflag = 1;
+        uint fadeheight = (uint)(viewsize != 21 ? screenHeight - scaleFactor * STATUSLINES : screenHeight);
+        VL_BarScaledCoord(0, 0, screenWidth, (int)fadeheight, bordercol);
+        FizzleFade(screenBuffer, 0, 0, (uint)screenWidth, fadeheight, 70, false);
+
+        if (bordercol != VIEWCOLOR)
+        {
+            fontnumber = 1;
+            SETFONTCOLOR(15, bordercol);
+            PrintX = 68; PrintY = 45;
+            US_Print(STR_SEEAGAIN);
+        }
+        else
+        {
+            Write(0, 7, STR_SEEAGAIN);
+        }
+
+        VW_UpdateScreen();
+
+        IN_UserInput(300);
+
+        //
+        // line angle up exactly
+        //
+        NewState(player, s_deathcam);
+
+        player.x = gamestate.killx;
+        player.y = gamestate.killy;
+
+        dx = ob.x - player.x;
+        dy = player.y - ob.y;
+
+        fangle = (float)Math.Atan2((float)dy, (float)dx);          // returns -pi to pi
+        if (fangle < 0)
+            fangle = (float)(M_PI * 2 + fangle);
+
+        player.angle = (short)(fangle / (M_PI * 2) * ANGLES);
+
+        //
+        // try to position as close as possible without being in a wall
+        //
+        dist = 0x14000;
+        do
+        {
+            xmove = FixedMul(dist, costable[player.angle]);
+            ymove = -FixedMul(dist, sintable[player.angle]);
+
+            player.x = ob.x - xmove;
+            player.y = ob.y - ymove;
+            dist += 0x1000;
+
+        } while (!CheckPosition(player));
+        plux = (ushort)(player.x >> UNSIGNEDSHIFT);                      // scale to fit in unsigned
+        pluy = (ushort)(player.y >> UNSIGNEDSHIFT);
+        player.tilex = (byte)(player.x >> TILESHIFT);         // scale to tile values
+        player.tiley = (byte)(player.y >> TILESHIFT);
+
+        //
+        // go back to the game
+        //
+
+        DrawPlayBorder();
+
+        fizzlein = true;
+
+        switch (ob.obclass)
+        {
+            case classtypes.schabbobj:
+                NewState(ob, s_schabbdeathcam);
+                break;
+            case classtypes.realhitlerobj:
+                NewState(ob, s_hitlerdeathcam);
+                break;
+            case classtypes.giftobj:
+                NewState(ob, s_giftdeathcam);
+                break;
+            case classtypes.fatobj:
+                NewState(ob, s_fatdeathcam);
+                break;
+        }
     }
 }

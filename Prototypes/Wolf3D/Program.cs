@@ -286,69 +286,6 @@ See Options.txt for help";
         }
     }
 
-    private static void CheckForEpisodes()
-    {
-        if (configdir != string.Empty)
-        {
-            if (!Directory.Exists(configdir))
-            {
-                try
-                {
-                    DirectoryInfo di = Directory.CreateDirectory(configdir);
-                }
-                catch (IOException e)
-                {
-                    Quit($"The configuration directory \"{configdir}\" could not be created.");
-                }
-            }
-        }
-
-        if (File.Exists("vswap.wl6"))
-        {
-            extension = "wl6";
-            NewEmenu[2].active =
-            NewEmenu[4].active =
-            NewEmenu[6].active =
-            NewEmenu[8].active =
-            NewEmenu[10].active = 1;
-            EpisodeSelect[1] =
-            EpisodeSelect[2] =
-            EpisodeSelect[3] =
-            EpisodeSelect[4] =
-            EpisodeSelect[5] = 1;
-        }
-        else
-        {
-
-            if (File.Exists("vswap.wl3"))
-            {
-                extension = "wl3";
-                NewEmenu[2].active =
-                NewEmenu[4].active = 1;
-                EpisodeSelect[1] =
-                EpisodeSelect[2] = 1;
-            }
-            else
-            {
-
-                if (File.Exists("vswap.wl1"))
-                {
-                    extension = "wl1";
-                }
-                else
-                {
-                    Quit("NO WOLFENSTEIN 3-D DATA FILES to be found!");
-                }
-            }
-        }
-
-        helpfilename += extension;
-        endfilename += extension;
-        configname += extension;
-        SaveName += extension;
-        demoname += extension;
-    }
-
     private static void InitGame()
     {
         bool didjukebox = false;
@@ -1329,7 +1266,7 @@ See Options.txt for help";
                 if (lastsong >= 0)
                     MusicMenu[start + lastsong].active = 1;
 
-                StartCPMusic((int)songs[start + which]);
+                StartCPMusic((musicnames)songs[start + which]);
                 MusicMenu[start + which].active = 2;
                 DrawMenu(MusicItems, MusicMenu/*[start]*/);
                 VW_UpdateScreen();
