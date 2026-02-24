@@ -16,7 +16,7 @@ internal partial class Program
             VW_UpdateScreen();
             string str = "";
             esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
-            if (!esc)
+            if (!esc && !string.IsNullOrEmpty(str))
             {
                 level = Convert.ToInt32(str);
                 if (level >= 0 && level <= 99)
@@ -126,7 +126,7 @@ internal partial class Program
             VW_UpdateScreen();
             string str = "";
             esc = !US_LineInput(px, py, ref str, "", true, 1, 0);
-            if (!esc)
+            if (!esc && !string.IsNullOrEmpty(str))
             {
                 level = Convert.ToInt32(str);
                 if (level > 0 && level < 5)
@@ -213,7 +213,7 @@ internal partial class Program
             VW_UpdateScreen();
             string str = "";
             esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
-            if (!esc)
+            if (!esc && !string.IsNullOrEmpty(str))
             {
                 level = Convert.ToInt32(str);
                 if (level >= 0 && level <= 50)
@@ -234,7 +234,7 @@ internal partial class Program
             VW_UpdateScreen();
             string str = "";
             esc = !US_LineInput(px, py, ref str, "", true, 1, 0);
-            if (!esc)
+            if (!esc && !string.IsNullOrEmpty(str))
             {
                 level = Convert.ToInt32(str);
                 if (level >= 0 && level <= 8)
@@ -250,7 +250,7 @@ internal partial class Program
             VW_UpdateScreen();
             string str = "";
             esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
-            if (!esc)
+            if (!esc && !string.IsNullOrEmpty(str))
             {
                 level = Convert.ToInt32(str);
                 if (level > 0 && level < 11)
@@ -277,7 +277,6 @@ internal partial class Program
     internal static void CountObjects()
     {
         int i, total, count, active, inactive, doors;
-        //objstruct obj;
 
         CenterWindow(17, 7);
         active = inactive = count = doors = 0;
@@ -302,7 +301,6 @@ internal partial class Program
         US_Print(doornum.ToString());
 
         foreach (var obj in objlist2)
-        //for (int? o = player.next; o != null; o = obj.next)
         {
             if (obj.obclass == classtypes.playerobj)
                 continue;
