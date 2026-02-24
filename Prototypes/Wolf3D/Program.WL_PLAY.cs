@@ -1,6 +1,4 @@
-﻿using System;
-using System.Data;
-using static SDL2.SDL;
+﻿using static SDL2.SDL;
 
 namespace Wolf3D;
 
@@ -8,7 +6,7 @@ internal partial class Program
 {
     static bool madenoise; // true when shooting or screaming
 
-    static byte playstate;
+    static playstatetypes playstate;
 
     static int lastmusicchunk = 0;
 
@@ -177,11 +175,8 @@ internal partial class Program
             MoveDoors();
             MovePWalls();
 
-            //for (int? i = 0; i != null; i = obj.next)
-            //foreach (var actor in objlist2)
             for (LinkedListNode<objstruct>? actor = objlist2.First; actor != null; actor = actor.Next)
             {
-                //obj = objlist[i.Value];
                 DoActor(actor.Value);
             }
 
@@ -213,13 +208,13 @@ internal partial class Program
                 if (IN_CheckAck())
                 {
                     IN_ClearKeysDown();
-                    playstate = (byte)playstatetypes.ex_abort;
+                    playstate = playstatetypes.ex_abort;
                 }
             }
         }
         while (playstate == 0 && !startgame);
 
-        if (playstate != (byte)playstatetypes.ex_died)
+        if (playstate != playstatetypes.ex_died)
             FinishPaletteShifts();
     }
 
@@ -535,7 +530,7 @@ internal partial class Program
             if (!startgame && !loadedgame)
                 ContinueMusic(lastoffs);
             if (loadedgame)
-                playstate = (byte)playstatetypes.ex_abort;
+                playstate = playstatetypes.ex_abort;
             lasttimecount = (int)GetTimeCount();
             IN_CenterMouse();
             return;
@@ -607,7 +602,7 @@ internal partial class Program
             controly = (sbyte)demoData[demoptr++];
 
             if (demoptr == lastdemoptr)
-                playstate = (byte)playstatetypes.ex_completed;   // demo is done
+                playstate = playstatetypes.ex_completed;   // demo is done
 
             controlx *= (int)tics;
             controly *= (int)tics;
@@ -676,7 +671,7 @@ internal partial class Program
             demoData[demoptr++] = (byte)controly;// these might need 4 bytes
 
             if (demoptr >= lastdemoptr - 8)
-                playstate = (byte)playstatetypes.ex_completed;
+                playstate = playstatetypes.ex_completed;
             else
             {
                 controlx *= (int)tics;

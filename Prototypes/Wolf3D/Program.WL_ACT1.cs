@@ -714,7 +714,7 @@ internal partial class Program
     =
     ===============
     */
-    internal static void PushWall(int checkx, int checky, int dir)
+    internal static void PushWall(int checkx, int checky, controldirs dir)
     {
         int oldtile, dx, dy;
 
@@ -725,8 +725,8 @@ internal partial class Program
         if (oldtile == 0)
             return;
 
-        dx = dirs[dir][0];
-        dy = dirs[dir][1];
+        dx = dirs[(int)dir][0];
+        dy = dirs[(int)dir][1];
 
         if (actorat[checkx + dx, checky + dy] != null)
         {

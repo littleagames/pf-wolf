@@ -56,7 +56,7 @@ internal partial class Program
             return 1;
         }
         if (Keyboard[(int)ScanCodes.sc_E])             // E = quit level
-            playstate = (byte)playstatetypes.ex_completed;
+            playstate = playstatetypes.ex_completed;
 
         if (Keyboard[(int)ScanCodes.sc_F])             // F = facing spot
         {
@@ -256,7 +256,7 @@ internal partial class Program
                 if (level > 0 && level < 11)
                 {
                     gamestate.mapon = (short)(level - 1);
-                    playstate = (byte)playstatetypes.ex_warped;
+                    playstate = playstatetypes.ex_warped;
                 }
             }
             return 1;

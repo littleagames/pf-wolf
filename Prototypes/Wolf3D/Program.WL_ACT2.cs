@@ -1221,7 +1221,7 @@ internal partial class Program
 
     internal static void T_BJDone(objstruct ob)
     {
-        playstate = (byte)playstatetypes.ex_victorious;                              // exit castle tile
+        playstate = playstatetypes.ex_victorious;                              // exit castle tile
     }
 
 
@@ -2573,7 +2573,7 @@ internal partial class Program
 
         if (gamestate.victoryflag)
         {
-            playstate = (byte)playstatetypes.ex_victorious;                              // exit castle tile
+            playstate = playstatetypes.ex_victorious;                              // exit castle tile
             return;
         }
 

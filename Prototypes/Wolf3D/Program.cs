@@ -485,7 +485,7 @@ See Options.txt for help";
                 // demo
                 //
                 PlayDemo(LastDemo++ % 4);
-                if (playstate == (byte)playstatetypes.ex_abort)
+                if (playstate == playstatetypes.ex_abort)
                     break;
                 VW_FadeOut();
                 if (screenHeight % 200 != 0)

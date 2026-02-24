@@ -229,7 +229,6 @@ internal partial class Program
     internal static bool TryMove(objstruct ob)
     {
         uint xl, yl, xh, yh, x, y;
-        //uint checkIndex;
         Actor? check;
         int deltax, deltay;
 
@@ -356,7 +355,7 @@ internal partial class Program
 
     internal static void GetBonus(statobj_t check)
     {
-        if (playstate == (byte)playstatetypes.ex_died)   // ADDEDFIX 31 - Chris
+        if (playstate == playstatetypes.ex_died)   // ADDEDFIX 31 - Chris
             return;
 
         switch ((wl_stat_types)check.itemnumber)
@@ -617,7 +616,7 @@ internal partial class Program
         if (gamestate.health <= 0)
         {
             gamestate.health = 0;
-            playstate = (byte)playstatetypes.ex_died;
+            playstate = playstatetypes.ex_died;
         }
 
         if (godmode != 2)
@@ -737,7 +736,8 @@ internal partial class Program
 
     internal static void Cmd_Use()
     {
-        int checkx, checky, cmdtile, dir;
+        int checkx, checky, cmdtile;
+        controldirs dir;
         bool elevatorok;
 
         //
@@ -747,28 +747,28 @@ internal partial class Program
         {
             checkx = player.tilex + 1;
             checky = player.tiley;
-            dir = (int)controldirs.di_east;
+            dir = controldirs.di_east;
             elevatorok = true;
         }
         else if (player.angle < 3 * ANGLES / 8)
         {
             checkx = player.tilex;
             checky = player.tiley - 1;
-            dir = (int)controldirs.di_north;
+            dir = controldirs.di_north;
             elevatorok = false;
         }
         else if (player.angle < 5 * ANGLES / 8)
         {
             checkx = player.tilex - 1;
             checky = player.tiley;
-            dir = (int)controldirs.di_west;
+            dir = controldirs.di_west;
             elevatorok = true;
         }
         else
         {
             checkx = player.tilex;
             checky = player.tiley + 1;
-            dir = (int)controldirs.di_south;
+            dir = controldirs.di_south;
             elevatorok = false;
         }
 
@@ -791,9 +791,9 @@ internal partial class Program
 
             tilemap[checkx, checky]++;              // flip switch
             if (MAPSPOT(player.tilex, player.tiley, 0) == ALTELEVATORTILE)
-                playstate = (byte)playstatetypes.ex_secretlevel;
+                playstate = playstatetypes.ex_secretlevel;
             else
-                playstate = (byte)playstatetypes.ex_completed;
+                playstate = playstatetypes.ex_completed;
             SD_PlaySound((int)soundnames.LEVELDONESND);
             SD_WaitSoundDone();
         }
@@ -881,8 +881,8 @@ internal partial class Program
 
         plux = (ushort)(player.x >> UNSIGNEDSHIFT);                     // scale to fit in unsigned
         pluy = (ushort)(player.y >> UNSIGNEDSHIFT);
-        player.tilex = (byte)(player.x >> (int)TILESHIFT);                // scale to tile values
-        player.tiley = (byte)(player.y >> (int)TILESHIFT);
+        player.tilex = (byte)(player.x >> TILESHIFT);                // scale to tile values
+        player.tiley = (byte)(player.y >> TILESHIFT);
 
         //
         // change frame and fire
@@ -897,7 +897,7 @@ internal partial class Program
                     ob.state = s_player;
                     if (gamestate.ammo == 0)
                     {
-                        gamestate.weapon = (short)weapontypes.wp_knife;
+                        gamestate.weapon = weapontypes.wp_knife;
                         DrawWeapon();
                     }
                     else
@@ -966,9 +966,7 @@ internal partial class Program
         dist = 0x7fffffff;
         closest = null;
         foreach (var actor in objlist2)
-        //for (int? i = ob.next; i != null; i = check?.next)
         {
-            //check = objlist[i.Value];
             if (actor == null) continue;
 
             if (actor.flags.HasFlag(objflags.FL_SHOOTABLE) && actor.flags.HasFlag(objflags.FL_VISABLE)
@@ -999,7 +997,7 @@ internal partial class Program
         int dx, dy, dist;
         long viewdist;
 
-        switch ((weapontypes)gamestate.weapon)
+        switch (gamestate.weapon)
         {
             case weapontypes.wp_pistol:
                 SD_PlaySound((int)soundnames.ATKPISTOLSND);
@@ -1025,10 +1023,7 @@ internal partial class Program
             oldclosest = closest;
 
             foreach (var check in objlist2)
-            //for (int? i = ob.next; i != null; i = check?.next)
-            //for (check = ob->next; check; check = check->next)
             {
-                //check = objlist[i.Value];
                 if (check == null) continue;
                 if (check.flags.HasFlag(objflags.FL_SHOOTABLE) && check.flags.HasFlag(objflags.FL_VISABLE)
                     && Math.Abs(check.viewx - centerx) < shootdelta)

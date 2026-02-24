@@ -1009,7 +1009,7 @@ internal partial class Program
                 WindowH = 160;
                 if (Confirm(ENDGAMESTR) != 0)
                 {
-                    playstate = (byte)playstatetypes.ex_died;
+                    playstate = playstatetypes.ex_died;
                     LastAttacker = null;
                     pickquick = gamestate.lives = 0;
                 }
@@ -1048,7 +1048,7 @@ internal partial class Program
                         ContinueMusic(lastgamemusicoffset);
 
                     if (loadedgame)
-                        playstate = (byte)playstatetypes.ex_abort;
+                        playstate = playstatetypes.ex_abort;
                     lasttimecount = (int)GetTimeCount();
 
                     IN_CenterMouse();
@@ -1089,7 +1089,7 @@ internal partial class Program
                         ContinueMusic(lastgamemusicoffset);
 
                     if (loadedgame)
-                        playstate = (byte)playstatetypes.ex_abort;
+                        playstate = playstatetypes.ex_abort;
 
                     lasttimecount = (int)GetTimeCount();
 
@@ -1990,7 +1990,7 @@ internal partial class Program
         if (res == 0) return 0;
 
         pickquick = gamestate.lives = 0;
-        playstate = (byte)playstatetypes.ex_died;
+        playstate = playstatetypes.ex_died;
         LastAttacker = null;
 
         MainMenu[(int)menuitems.savegame].active = 0;

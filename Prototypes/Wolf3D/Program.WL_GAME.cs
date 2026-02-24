@@ -1,4 +1,6 @@
-﻿namespace Wolf3D;
+﻿using SDL2;
+
+namespace Wolf3D;
 
 internal partial class Program
 {
@@ -574,7 +576,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
             StopMusic();
             ingame = false;
 
-            if (demorecord && playstate != (byte)playstatetypes.ex_warped)
+            if (demorecord && playstate != playstatetypes.ex_warped)
                 FinishDemoRecord();
 
             if (startgame || loadedgame)
@@ -589,8 +591,8 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
 
             switch (playstate)
             {
-                case (byte)playstatetypes.ex_completed:
-                case (byte)playstatetypes.ex_secretlevel:
+                case playstatetypes.ex_completed:
+                case playstatetypes.ex_secretlevel:
                     if (viewsize == 21) DrawPlayScreen();
                     gamestate.keys = 0;
                     DrawKeys();
@@ -610,7 +612,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                         //
                         // GOING TO SECRET LEVEL
                         //
-                        if (playstate == (byte)playstatetypes.ex_secretlevel)
+                        if (playstate == playstatetypes.ex_secretlevel)
                             gamestate.mapon = 9;
                         else
                             //
@@ -619,7 +621,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                             gamestate.mapon++;
                     break;
 
-                case (byte)playstatetypes.ex_died:
+                case playstatetypes.ex_died:
                     Died();
                     died = true;                    // don't "get psyched!"
 
@@ -636,7 +638,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
                     return;
 
-                case (byte)playstatetypes.ex_victorious:
+                case playstatetypes.ex_victorious:
                     if (viewsize == 21) DrawPlayScreen();
                     VW_FadeOut();
                     ClearMemory();
@@ -1108,15 +1110,20 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
     {
         int i;
 
-        // TODO:
-        //for (i = 0; i < MIX_CHANNELS; i++)
-        //{
-        //    if (channelSoundPos[i].valid)
-        //    {
-        //        SetSoundLoc(channelSoundPos[i].globalsoundx,
-        //            channelSoundPos[i].globalsoundy);
-        //        SD_SetPosition(i, leftchannel, rightchannel);
-        //    }
-        //}
+        /*    if (SoundPositioned)
+            {
+                SetSoundLoc(globalsoundx,globalsoundy);
+                SD_SetPosition(leftchannel,rightchannel);
+            }*/
+
+        for (i = 0; i < SDL_mixer.MIX_CHANNELS; i++)
+        {
+            if (channelSoundPos[i].valid != 0)
+            {
+                SetSoundLoc(channelSoundPos[i].globalsoundx,
+                    channelSoundPos[i].globalsoundy);
+                SD_SetPosition(i, leftchannel, rightchannel);
+            }
+        }
     }
 }
