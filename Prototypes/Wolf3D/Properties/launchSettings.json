@@ -2,7 +2,7 @@
   "profiles": {
     "Wolf3D": {
       "commandName": "Project",
-      "commandLineArgs": "--windowed --res 640 400 --goobers --nowait --tedlevel 00"
+      "commandLineArgs": "--windowed --res 640 400 --goobers"
     }
   }
 }

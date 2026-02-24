@@ -857,13 +857,13 @@ internal partial class Program
         return (int)0;// (sqHackPtr - sqHack);
     }
 
-    internal static void SD_StartMusic(int chunk)
+    internal static void SD_StartMusic(musicnames chunk)
     {
         SD_MusicOff();
 
         if (MusicMode == SMMode.AdLib)
         {
-            int chunkLen = CA_CacheAudioChunk(chunk);
+            int chunkLen = CA_CacheAudioChunk((int)chunk);
             //sqHack = audiosegs[chunk];     // alignment is correct
             //if (*sqHack == 0) sqHackLen = sqHackSeqLen = chunkLen;
             //else sqHackLen = sqHackSeqLen = *sqHack++;
@@ -876,7 +876,6 @@ internal partial class Program
 
     internal static void SD_ContinueMusic(int chunk, int startoffs)
     {
-
         int i;
 
         SD_MusicOff();

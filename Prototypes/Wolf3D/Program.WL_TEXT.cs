@@ -1,10 +1,22 @@
 ﻿using SDL2;
-using System;
 
 namespace Wolf3D;
 
 internal partial class Program
 {
+    /*
+    =============================================================================
+
+    TEXT FORMATTING COMMANDS
+    ------------------------
+    ^C<hex digit>           Change text color
+    ^E[enter]               End of layout (all pages)
+    ^G<y>,<x>,<pic>[enter]  Draw a graphic and push margins
+    ^P[enter]               start new page, must be the first chars in a layout
+    ^L<x>,<y>[ENTER]        Locate to a specific spot, x in pixels, y in lines
+
+    =============================================================================
+    */
 
     /*
     =============================================================================
@@ -195,6 +207,19 @@ internal partial class Program
                 return;
         } while (true);
     }
+
+    //===========================================================================
+
+
+    /*
+    =====================
+    =
+    = CacheLayout
+    =
+    = Scans an entire layout file (until a ^E), counting pages
+    =
+    =====================
+    */
 
     private static void CacheLayout()
     {

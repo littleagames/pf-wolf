@@ -23,7 +23,7 @@ internal partial class Program
     internal const byte LSHADE_NORMAL = 0;
     internal const byte LSHADE_FOG = 5;
 
-    internal shadedef_t[] shadeDefs =
+    internal static shadedef_t[] shadeDefs =
     {
         new shadedef_t(0,0,0, LSHADE_NOSHADING),
         new shadedef_t(0,0,0, LSHADE_NORMAL),
@@ -98,7 +98,10 @@ internal partial class Program
 
         LSHADE_flag = fog;
 
-        // TODO: shadetable might need to be initialized here
+        for (shade = 0; shade < SHADE_COUNT; shade++)
+        {
+            shadetable[shade] = new byte[256];
+        }
 
         for (i = 0; i < 256; i++, palPtr++)
         {
@@ -142,7 +145,7 @@ internal partial class Program
         }
     }
 
-    void InitLevelShadeTable()
+    internal static void InitLevelShadeTable()
     {
         shadedef_t shadeDef = shadeDefs[GetShadeDefID()];
 
@@ -152,7 +155,7 @@ internal partial class Program
             GenerateShadeTable(shadeDef.destRed, shadeDef.destGreen, shadeDef.destBlue, gamepal, shadeDef.fogStrength);
     }
 
-    byte[] GetShade(int scale, uint flags)
+    internal static byte[] GetShade(int scale, uint flags)
     {
         int shade;
 

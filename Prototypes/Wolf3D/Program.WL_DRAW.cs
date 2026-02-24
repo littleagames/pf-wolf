@@ -1,6 +1,4 @@
 ﻿using SDL2;
-using System;
-using System.Data;
 using System.Runtime.InteropServices;
 
 namespace Wolf3D;
@@ -32,9 +30,13 @@ internal partial class Program
 
     static int lasttimecount;
     static int frameon;
-    static bool fpscounter = true;
+    static bool fpscounter = false;
 
     static int fps_frames = 0, fps_time = 0, fps = 0;
+
+#if USE_FLOORCEILINGTEXT || USE_CLOUDSKY
+    short[] spanstart;
+#endif
 
     internal static short[] wallheight;
 
@@ -772,9 +774,6 @@ internal partial class Program
         // #ifdef REVEALMAP
         //             mapseen[xinttile][ytile] = true;
         // #endif
-        // TODO: Turn tilehit into a Wall vs Door MapComponent check
-        //tilehit2 = _map.TilePlane[ytile][xinttile];
-        //tilehit = _map.PlaneIds[0][ytile, xinttile];//tilemap[xinttile][ytile];
         tilehit = tilemap[xinttile, ytile];
 
         if (tilehit != 0)
@@ -1123,7 +1122,6 @@ internal partial class Program
     {
         int i, least, numvisable, height;
         int statptr;
-        //objstruct obj;
         int farthest = -1;
         int visptr, visstep;
 
@@ -1166,11 +1164,10 @@ internal partial class Program
         //
         // place active objects
         //
-        foreach(var actor in objlist2)
-        //for (int? o = player.next; o != null; o = obj.next)
+        foreach(var obj in objlist2)
         {
-            if (actor is not objstruct obj)
-                return;
+            if (obj is null)
+                continue;
 
             if (obj.obclass == classtypes.playerobj)
                 continue;
@@ -1340,19 +1337,19 @@ internal partial class Program
         }
         else
         {
-            //if (fpscounter)
+            if (fpscounter)
             {
                 fontnumber = 0;
                 SETFONTCOLOR(7, 127);
                 PrintX = 4; PrintY = 1;
-                VWB_Bar(0, 0, 320, 10, bordercol);
+                VWB_Bar(0, 0, 40, 10, bordercol);
                 US_Print(fps.ToString());
                 US_Print(" fps");
             }
             VW_UpdateScreen();
         }
 
-        //if (fpscounter)
+        if (fpscounter)
         {
             fps_frames++;
             fps_time += (int)tics;

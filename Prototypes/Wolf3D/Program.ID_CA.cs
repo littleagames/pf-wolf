@@ -676,8 +676,6 @@ Please check whether you are using the right executable!
         }
     }
 
-    internal static void CA_LoadFile(string filename, ref byte[] data) { throw new NotImplementedException(); }
-
     internal static int CA_CacheAudioChunk (int chunk)
     {
         int pos = audiostarts[chunk];

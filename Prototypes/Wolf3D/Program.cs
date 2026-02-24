@@ -60,7 +60,7 @@ internal partial class Program
     internal static int param_joystickindex = 0;
     internal static int param_audiobuffer = DEFAULT_AUDIO_BUFFER_SIZE;
     internal static int param_joystickhat = -1;
-    internal static int param_samplerate = 44100;
+    internal static int param_samplerate = 7042;
     internal static int param_mission = 0;
     internal static bool param_goodtimes = false;
     internal static bool param_ignorenumchunks = false;
@@ -681,11 +681,6 @@ See Options.txt for help";
         }
     }
 
-    private static void Error(string errorStr)
-    {
-        SDL2.SDL.SDL_ShowSimpleMessageBox(SDL2.SDL.SDL_MessageBoxFlags.SDL_MESSAGEBOX_ERROR, "Wolf4SDL", errorStr, IntPtr.Zero);
-    }
-
     private static void Quit(string errorStr)
     {
         var returnCode = errorStr.Length > 0 ? 1 : 0;
@@ -884,7 +879,7 @@ See Options.txt for help";
         int i, j;
         uint actnum = 0;
         ushort laststatobjnum;
-        ushort map, tile;
+        ushort tile;
         int checksum, oldchecksum;
 
         checksum = 0;
@@ -989,7 +984,6 @@ See Options.txt for help";
             //
             // assign valid floorcodes under moved pushwalls
             //
-            map = 0;
 
             for (y = 0; y<mapheight; y++)
             {
@@ -1011,7 +1005,6 @@ See Options.txt for help";
                         SetMapSpot(x, y,1, 0);
                     }
 
-                    map++;
                 }
             }
         }

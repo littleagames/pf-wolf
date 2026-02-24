@@ -63,6 +63,7 @@ internal partial class Program
         VWB_DrawPic(4 * 8, 68, graphicnums.C_NAMEPIC);
         VWB_DrawPic(20 * 8, 68, graphicnums.C_LEVELPIC);
         VWB_DrawPic(28 * 8, 68, graphicnums.C_SCOREPIC);
+        //VWB_DrawPic(35 * 8, 68, graphicnums.C_CODEPIC);
 
         fontnumber = 0;
         SETFONTCOLOR(15, 0x29);
@@ -686,9 +687,9 @@ internal partial class Program
             PrintX = 30 * 8 - 3;
             PrintY = TIMEY * 8 + 8;
             PrintX += 4;
-            var a = (((min / 10) ^ (min % 10)) ^ 0xa) + 'A';
-            var b = (int)((((sec / 10) ^ (sec % 10)) ^ 0xa) + 'A');
-            var c = (tempstr[0] ^ tempstr[1]) + 'A';
+            char a = (char)((((min / 10) ^ (min % 10)) ^ 0xa) + 'A');
+            char b = (char)((((sec / 10) ^ (sec % 10)) ^ 0xa) + 'A');
+            char c = (char)((tempstr[0] ^ tempstr[1]) + 'A');
             tempstr = $"{a}{b}{c}";
             US_Print(tempstr);
         }
@@ -712,20 +713,20 @@ internal partial class Program
     //
     // Breathe Mr. BJ!!!
     //
+    private static int bj_which = 0, bj_max = 10;
     internal static void BJ_Breathe()
     {
-        int which = 0, max = 10; // static!!!
         graphicnums[] pics = { graphicnums.L_GUYPIC, graphicnums.L_GUY2PIC };
 
         SDL.SDL_Delay(5);
 
-        if ((int)GetTimeCount() - lastBreathTime > max)
+        if ((int)GetTimeCount() - lastBreathTime > bj_max)
         {
-            which ^= 1;
-            VWB_DrawPic(0, 16, pics[which]);
+            bj_which ^= 1;
+            VWB_DrawPic(0, 16, pics[bj_which]);
             VW_UpdateScreen();
             lastBreathTime = (int)GetTimeCount();
-            max = 35;
+            bj_max = 35;
         }
     }
 

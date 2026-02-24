@@ -74,7 +74,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         newx = ob.x;
         newy = ob.y;
 
-        switch ((objdirtypes)ob.dir)
+        switch (ob.dir)
         {
             case objdirtypes.north:
                 newy -= move;
@@ -151,7 +151,6 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
     internal static bool TryWalk(objstruct ob)
     {
         int doornumtile = -1;
-        //uintptr_t temp;
 
         if (ob.obclass == classtypes.inertobj)
         {
@@ -196,7 +195,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         }
         else
         {
-            switch ((objdirtypes)ob.dir)
+            switch (ob.dir)
             {
                 case objdirtypes.north:
                     if (ob.obclass == classtypes.dogobj || ob.obclass == classtypes.fakeobj)
@@ -519,7 +518,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
     ================
     */
 
-    internal const long MINSIGHT = 0x18000l;
+    internal const long MINSIGHT = 0x18000L;
 
     internal static bool CheckSight(objstruct ob)
     {
@@ -544,7 +543,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         //
         // see if they are looking in the right direction
         //
-        switch ((objdirtypes)ob.dir)
+        switch (ob.dir)
         {
             case objdirtypes.north:
                 if (deltay > 0)
@@ -630,7 +629,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             }
 
 
-            switch ((classtypes)ob.obclass)
+            switch (ob.obclass)
             {
                 case classtypes.guardobj:
                     ob.temp2 = (short)(1 + US_RndT() / 4);
@@ -689,7 +688,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         //
         // react to the player
         //
-        switch ((classtypes)ob.obclass)
+        switch (ob.obclass)
         {
             case classtypes.guardobj:
                 PlaySoundLocActor((int)soundnames.HALTSND, ob);
@@ -1097,7 +1096,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         tilex = ob.x >> TILESHIFT;         // drop item on center
         tiley = ob.y >> TILESHIFT;
 
-        switch ((classtypes)ob.obclass)
+        switch (ob.obclass)
         {
             case classtypes.guardobj:
                 GivePoints(100);

@@ -121,7 +121,7 @@ internal partial class Program
         sc_Alt = sc_LAlt,
         sc_Control = sc_LControl,
         sc_Enter = sc_Return,
-        key_None = sc_None,
+        key_None = sc_None
     }
 
 /*

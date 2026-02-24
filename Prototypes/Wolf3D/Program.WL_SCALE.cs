@@ -2,6 +2,31 @@
 
 internal partial class Program
 {
+    /*
+    =============================================================================
+
+                                  SPRITE DRAWING ROUTINES
+
+    =============================================================================
+    */
+
+
+    /*
+    ===================
+    =
+    = ScaleLine
+    =
+    = Reconstruct a sprite and draw it
+    =
+    = each vertical line of the shape has a pointer to segment data:
+    = 	end of segment pixel*2 (0 terminates line)
+    = 	top of virtual line with segment in proper place
+    =	start of segment pixel*2
+    =	<repeat>
+    =
+    ===================
+    */
+
     internal static void ScaleLine(short x, short toppix, int fracstep, byte[] linesrc, byte[] linecmds)
     {
         int src;
@@ -58,6 +83,15 @@ internal partial class Program
         }
     }
 
+    /*
+    ===================
+    =
+    = ScaleShape
+    =
+    = Draws a compiled shape at [height] pixels high
+    =
+    ===================
+    */
     internal static void ScaleShape(visobj_t sprite)
     {
         int i;
@@ -118,6 +152,17 @@ internal partial class Program
         }
     }
 
+    /*
+    ===================
+    =
+    = SimpleScaleShape
+    =
+    = NO CLIPPING, height in pixels
+    =
+    = Draws a compiled shape at [height] pixels high
+    =
+    ===================
+    */
     internal static void SimpleScaleShape (int dispx, int shapenum, int dispheight)
     {
         int i;

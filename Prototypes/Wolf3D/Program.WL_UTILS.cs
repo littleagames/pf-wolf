@@ -15,4 +15,9 @@ internal partial class Program
 
         return (int) c;
     }
+
+    private static void Error(string errorStr)
+    {
+        SDL2.SDL.SDL_ShowSimpleMessageBox(SDL2.SDL.SDL_MessageBoxFlags.SDL_MESSAGEBOX_ERROR, "Wolf4SDL", errorStr, IntPtr.Zero);
+    }
 }

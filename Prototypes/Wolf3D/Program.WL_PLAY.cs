@@ -8,15 +8,12 @@ internal partial class Program
 
     static playstatetypes playstate;
 
-    static int lastmusicchunk = 0;
+    static musicnames lastmusicchunk = 0;
 
     internal static int DebugOk;
 
     internal static LinkedList<objstruct> objlist2 = new LinkedList<objstruct>();
-    //internal static objstruct[] objlist = new objstruct[MAXACTORS];
     internal static objstruct player;
-    //internal static int? lastobj = null;
-    //internal static int objfreelist;
 
     internal static byte singlestep, godmode, noclip, ammocheat, mapreveal;
     internal static int extravbls;
@@ -31,7 +28,7 @@ internal partial class Program
     //
     // control info
     //
-    internal static byte /*int8_t boolean*/ mouseenabled, joystickenabled;
+    internal static bool mouseenabled, joystickenabled;
     internal static int[] dirscan = new int[4] { (int)ScanCodes.sc_UpArrow, (int)ScanCodes.sc_RightArrow, (int)ScanCodes.sc_DownArrow, (int)ScanCodes.sc_LeftArrow };
     internal static int[] buttonscan = new int[(int)buttontypes.NUMBUTTONS] { (int)ScanCodes.sc_Control, (int)ScanCodes.sc_Alt, (int)ScanCodes.sc_LShift, (int)ScanCodes.sc_Space, (int)ScanCodes.sc_1, (int)ScanCodes.sc_2, (int)ScanCodes.sc_3, (int)ScanCodes.sc_4, 0,0,0,0,0,0,0,0,0,0 };
     internal static int[] buttonmouse = new int[4] { (int)buttontypes.bt_attack, (int)buttontypes.bt_strafe, (int)buttontypes.bt_use, (int)buttontypes.bt_nobutton };
@@ -57,6 +54,110 @@ internal partial class Program
     static bool[] buttonstate = new bool[(int)buttontypes.NUMBUTTONS];
 
     static int lastgamemusicoffset = 0;
+
+    /*
+    =============================================================================
+
+                                                     LOCAL VARIABLES
+
+    =============================================================================
+    */
+
+    //
+    // LIST OF SONGS FOR EACH VERSION
+    //
+    internal static musicnames[] songs = new[] {
+        
+    //
+    // Episode One
+    //
+    musicnames.GETTHEM_MUS,
+    musicnames.SEARCHN_MUS,
+    musicnames.POW_MUS,
+    musicnames.SUSPENSE_MUS,
+    musicnames.GETTHEM_MUS,
+    musicnames.SEARCHN_MUS,
+    musicnames.POW_MUS,
+    musicnames.SUSPENSE_MUS,
+
+    musicnames.WARMARCH_MUS,               // Boss level
+    musicnames.CORNER_MUS,                 // Secret level
+
+    //
+    // Episode Two
+    //
+    musicnames.NAZI_OMI_MUS,
+    musicnames.PREGNANT_MUS,
+    musicnames.GOINGAFT_MUS,
+    musicnames.HEADACHE_MUS,
+    musicnames.NAZI_OMI_MUS,
+    musicnames.PREGNANT_MUS,
+    musicnames.HEADACHE_MUS,
+    musicnames.GOINGAFT_MUS,
+
+    musicnames.WARMARCH_MUS,               // Boss level
+    musicnames.DUNGEON_MUS,                // Secret level
+
+    //
+    // Episode Three
+    //
+    musicnames.INTROCW3_MUS,
+    musicnames.NAZI_RAP_MUS,
+    musicnames.TWELFTH_MUS,
+    musicnames.ZEROHOUR_MUS,
+    musicnames.INTROCW3_MUS,
+    musicnames.NAZI_RAP_MUS,
+    musicnames.TWELFTH_MUS,
+    musicnames.ZEROHOUR_MUS,
+
+    musicnames.ULTIMATE_MUS,               // Boss level
+    musicnames.PACMAN_MUS,                 // Secret level
+
+    //
+    // Episode Four
+    //
+    musicnames.GETTHEM_MUS,
+    musicnames.SEARCHN_MUS,
+    musicnames.POW_MUS,
+    musicnames.SUSPENSE_MUS,
+    musicnames.GETTHEM_MUS,
+    musicnames.SEARCHN_MUS,
+    musicnames.POW_MUS,
+    musicnames.SUSPENSE_MUS,
+
+    musicnames.WARMARCH_MUS,               // Boss level
+    musicnames.CORNER_MUS,                 // Secret level
+
+    //
+    // Episode Five
+    //
+    musicnames.NAZI_OMI_MUS,
+    musicnames.PREGNANT_MUS,
+    musicnames.GOINGAFT_MUS,
+    musicnames.HEADACHE_MUS,
+    musicnames.NAZI_OMI_MUS,
+    musicnames.PREGNANT_MUS,
+    musicnames.HEADACHE_MUS,
+    musicnames.GOINGAFT_MUS,
+
+    musicnames.WARMARCH_MUS,               // Boss level
+    musicnames.DUNGEON_MUS,                // Secret level
+
+    //
+    // Episode Six
+    //
+    musicnames.INTROCW3_MUS,
+    musicnames.NAZI_RAP_MUS,
+    musicnames.TWELFTH_MUS,
+    musicnames.ZEROHOUR_MUS,
+    musicnames.INTROCW3_MUS,
+    musicnames.NAZI_RAP_MUS,
+    musicnames.TWELFTH_MUS,
+    musicnames.ZEROHOUR_MUS,
+
+    musicnames.ULTIMATE_MUS,               // Boss level
+    musicnames.FUNKYOU_MUS                 // Secret level
+};
 
     private const int NUMREDSHIFTS = 6;
     private const int REDSTEPS = 8;
@@ -131,18 +232,25 @@ internal partial class Program
 
     internal static void StartMusic()
     {
-        // TODO:
+        SD_MusicOff();
+        lastmusicchunk = songs[gamestate.mapon + gamestate.episode * 10];
+        SD_StartMusic(STARTMUSIC + lastmusicchunk);
     }
 
     internal static void ContinueMusic(int offs)
     {
-        // TODO:
+        SD_MusicOff();
+        lastmusicchunk = songs[gamestate.mapon + gamestate.episode * 10];
+        SD_ContinueMusic((int)(STARTMUSIC + lastmusicchunk), offs);
     }
 
     internal static int StopMusic()
     {
-        // TODO:
-        return 0;
+        int lastoffs = SD_MusicOff();
+
+        UNCACHEAUDIOCHUNK((int)(STARTMUSIC + lastmusicchunk));
+
+        return lastoffs;
     }
 
     static int funnyticount;
@@ -218,34 +326,9 @@ internal partial class Program
             FinishPaletteShifts();
     }
 
-    //internal static int objcount;
     internal static void InitActorList()
     {
         objlist2 = new LinkedList<objstruct>();
-        //int i;
-
-        //
-        // init the actor lists
-        //
-        //for (i = 0; i < MAXACTORS - 1; i++)
-        //{
-        //    objlist[i] = new objstruct
-        //    {
-        //        prev = i + 1,
-        //        next = null
-        //    };
-        //}
-
-        //objlist[MAXACTORS - 1] = new objstruct
-        //{
-        //    prev = null,
-        //    next = null
-        //};
-
-        //objfreelist = 0;
-        //lastobj = null;
-
-        //objcount = 0;
 
         //
         // give the player the first free spots
@@ -257,24 +340,8 @@ internal partial class Program
     {
         objstruct? newobj = new();
         objlist2.AddLast(newobj);
-        //if (objfreelist >= MAXACTORS)
-        //    Quit("GetNewActor: No free spots in objlist!");
-        //int newobjIndex = objfreelist;
-        //newobj = objlist[newobjIndex];
-        //objfreelist = newobj.prev ?? -1;
-
-        // TODO: This prev/next isn't setting right
-        //if (lastobj != null && objlist[lastobj.Value] != null)
-        //{
-        //    objlist[lastobj.Value].next = newobjIndex;     // newobj->next is allready NULL from memset
-        //}
-
-        //newobj.prev = lastobj;
 
         newobj.active = (byte)activetypes.ac_no;
-        //lastobj = newobjIndex;
-
-        //objcount++;
         return newobj;
     }
 
@@ -386,23 +453,6 @@ internal partial class Program
         // fix the next object's back link
         //
         objlist2.Remove(gone);
-        //if (objlistIndex == lastobj)
-        //    lastobj = gone.prev;
-        //else
-        //    objlist[(int)gone.next!].prev = gone.prev;
-
-        //
-        // fix the previous object's forward link
-        //
-       // objlist[(int)gone.prev!].next = gone.next;
-
-        //
-        // add it back in to the free list
-        //
-        //gone.prev = objfreelist;
-        //objfreelist = objlistIndex;
-
-        //objcount--;
     }
 
     internal static void CheckKeys()
@@ -616,10 +666,10 @@ internal partial class Program
         //
         PollKeyboardButtons();
 
-        if (mouseenabled != 0 && GrabInput)
+        if (mouseenabled && GrabInput)
             PollMouseButtons();
 
-        if (joystickenabled != 0)
+        if (joystickenabled)
             PollJoystickButtons();
 
         //
@@ -627,10 +677,10 @@ internal partial class Program
         //
         PollKeyboardMove();
 
-        if (mouseenabled != 0 && GrabInput)
+        if (mouseenabled && GrabInput)
             PollMouseMove();
 
-        if (joystickenabled != 0)
+        if (joystickenabled)
             PollJoystickMove();
 
         //

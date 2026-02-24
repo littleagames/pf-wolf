@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using System.Reflection.Emit;
 
 namespace Wolf3D;
 
@@ -663,10 +664,23 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
     internal static void PlayDemo(int demonumber)
     {
         short length;
-        int[] dems = { (int)graphicnums.T_DEMO0, (int)graphicnums.T_DEMO1, (int)graphicnums.T_DEMO2, (int)graphicnums.T_DEMO3 };
+        graphicnums[] dems = { graphicnums.T_DEMO0, graphicnums.T_DEMO1, graphicnums.T_DEMO2, graphicnums.T_DEMO3 };
 
-        demoptr = 0;
-        demoData = grsegs[dems[demonumber]];
+        if (false)
+        {
+            demoData = grsegs[(int)dems[demonumber]];
+            demoptr = 0;
+        }
+        else
+        {
+
+            var demoFileName = demoname.Replace('?', (char)('0' + demonumber));
+            if (!File.Exists(demoFileName))
+                return;
+
+            demoData = File.ReadAllBytes(demoFileName);
+            demoptr = 0;
+        }
 
         NewGame(difficultytypes.gd_easy, episode: 0);
         gamestate.mapon = demoData[demoptr++];
@@ -699,11 +713,14 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
     internal const int MAXDEMOSIZE = 8192;
     internal static void StartDemoRecord(int levelnumber)
     {
-        // TODO:
-    }
-    internal static void RecordDemo()
-    {
-        // TODO:
+        demoData = new byte[MAXDEMOSIZE];
+        demoptr = 0;
+        lastdemoptr = MAXDEMOSIZE;
+
+        Buffer.BlockCopy(BitConverter.GetBytes(levelnumber), 0, demoData, demoptr, sizeof(int));
+        demoptr += sizeof(int); // += 4, leave space for length
+        demorecord = true;
+
     }
 
     internal static void FinishDemoRecord()
@@ -711,9 +728,98 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         int length, level;
 
         demorecord = false;
-        // TODO:
+
+        length = demoptr;
+
+        demoptr++;
+        demoData[demoptr] = (byte)length;
+        demoData[demoptr + 1] = (byte)(length >> 8);
+        demoData[demoptr + 2] = 0;
+
+        VW_FadeIn();
+        CenterWindow(24, 3);
+        PrintY += 6;
+        fontnumber = 0;
+        SETFONTCOLOR(0, 15);
+        US_Print(" Demo number (0-9): ");
+        VW_UpdateScreen();
+
+        string str = "";
+        if (US_LineInput(px, py, ref str, "", true, 1, 0))
+        {
+            if (string.IsNullOrEmpty(str))
+                return;
+
+            level = Convert.ToInt32(str);
+            if (level >= 0 && level <= 9)
+            {
+                var demoFileName = demoname.Replace('?', (char)('0' + level));
+                CA_WriteFile(demoFileName, demoData, length);
+            }
+        }
+
+        demoData = [];
     }
-    
+
+    //==========================================================================
+
+    /*
+    ==================
+    =
+    = RecordDemo
+    =
+    = Fades the screen out, then starts a demo.  Exits with the screen faded
+    =
+    ==================
+    */
+    internal static void RecordDemo()
+    {
+        int level, maps;
+        CenterWindow(26, 3);
+        PrintY += 6;
+        fontnumber = 0;
+        SETFONTCOLOR(0, 15);
+        US_Print("  Demo which level(1-60): "); maps = 60;
+        VW_UpdateScreen();
+        VW_FadeIn();
+        string str = "";
+        var esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
+        if (esc || string.IsNullOrEmpty(str))
+            return;
+
+        level = Convert.ToInt32(str);
+        level--;
+
+        if (level >= maps || level < 0)
+            return;
+
+        VW_FadeOut();
+        NewGame(difficultytypes.gd_hard, level / 10);
+        gamestate.mapon = (short)(level % 10);
+        StartDemoRecord(level);
+
+        DrawPlayScreen();
+        VW_FadeIn();
+
+        startgame = false;
+        demorecord = true;
+
+        SetupGameLevel();
+        StartMusic();
+
+        fizzlein = true;
+
+        PlayLoop();
+
+        demoplayback = false;
+
+        StopMusic();
+        VW_FadeOut();
+        ClearMemory();
+
+        FinishDemoRecord();
+    }
+
     internal static void DrawPlayScreen()
     {
         VWB_DrawPicScaledCoord((screenWidth - scaleFactor * 320) / 2, screenHeight - scaleFactor * STATUSLINES, (int)graphicnums.STATUSBARPIC);
@@ -727,6 +833,29 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         DrawKeys();
         DrawWeapon();
         DrawScore();
+    }
+
+    internal static void ShowActStatus()
+    {
+        // Draw status bar without borders
+        byte[] source = grsegs[(int)graphicnums.STATUSBARPIC];
+        graphicnums picnum = graphicnums.STATUSBARPIC - STARTPICS;
+        int width = pictable[(int)picnum].width;
+        int height = pictable[(int)picnum].height;
+        int destx = (screenWidth - scaleFactor * 320) / 2 + 9 * scaleFactor;
+        int desty = screenHeight - (height - 4) * scaleFactor;
+        VL_MemToScreenScaledCoord2(source, width, 9, 4, destx, desty, width - 18, height - 7);
+
+        ingame = false;
+        DrawFace();
+        DrawHealth();
+        DrawLives();
+        DrawLevel();
+        DrawAmmo();
+        DrawKeys();
+        DrawWeapon();
+        DrawScore();
+        ingame = true;
     }
 
     internal static void DrawPlayBorder()
@@ -871,6 +1000,16 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         mapwidth = mapheaderseg[mapnum].width;
         mapheight = mapheaderseg[mapnum].height;
 
+#if USE_FEATUREFLAGS
+    const int MXX = MAPSIZE - 1;
+    
+    // Read feature flags data from map corners and overwrite corners with adjacent tiles
+    ffDataTopLeft     = MAPSPOT(0,   0,   0); MAPSPOT(0,   0,   0) = MAPSPOT(1,       0,       0);
+    ffDataTopRight    = MAPSPOT(MXX, 0,   0); MAPSPOT(MXX, 0,   0) = MAPSPOT(MXX,     1,       0);
+    ffDataBottomRight = MAPSPOT(MXX, MXX, 0); MAPSPOT(MXX, MXX, 0) = MAPSPOT(MXX - 1, MXX,     0);
+    ffDataBottomLeft  = MAPSPOT(0,   MXX, 0); MAPSPOT(0,   MXX, 0) = MAPSPOT(0,       MXX - 1, 0);
+#endif
+
         tilemap = new byte[MAPSIZE, MAPSIZE];
         actorat = new Actor?[MAPSIZE, MAPSIZE];
 
@@ -941,30 +1080,40 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         //
         // take out the ambush markers
         //
-        //for (y = 0; y < mapheight; y++)
-        //{
-        //    for (x = 0; x < mapwidth; x++)
-        //    {
-        //        var tile = MAPSPOT(x, y, 0);
+        for (y = 0; y < mapheight; y++)
+        {
+            for (x = 0; x < mapwidth; x++)
+            {
+                var tile = MAPSPOT(x, y, 0);
 
-        //        if (tile == AMBUSHTILE)
-        //        {
-        //            if (VALIDAREA(*(map + 1)))
-        //                tile = *map;
-        //            if (VALIDAREA(*(map - mapwidth)))
-        //                tile = *(map - mapwidth);
-        //            if (VALIDAREA(*(map + mapwidth)))
-        //                tile = *(map + mapwidth);
-        //            if (VALIDAREA(*(map - 1)))
-        //                tile = *(map - 1);
+                if (tile == AMBUSHTILE)
+                {
+                    if (VALIDAREA(MAPSPOT(x + 1, y, 0)))
+                        tile = (ushort)MAPSPOT(x + 1, y, 0);
+                    if (VALIDAREA(MAPSPOT(x, y - 1, 0)))
+                        tile = (ushort)MAPSPOT(x, y - 1, 0);
+                    if (VALIDAREA(MAPSPOT(x, y + 1, 0)))
+                        tile = (ushort)MAPSPOT(x, y + 1, 0);
+                    if (VALIDAREA(MAPSPOT(x - 1, y, 0)))
+                        tile = (ushort)MAPSPOT(x - 1, y, 0);
 
-        //            *map = tile;
-        //        }
+                    SetMapSpot(x, y, 1, 0);
+                }
+            }
+        }
 
-        //        map++;
-        //    }
-        //}
+        InitLevelShadeTable();
 
+        //
+        // load floor/ceiling textures
+        //
+#if USE_FLOORCEILINGTEXT && !USE_MULTIFLATS
+        GetFlatTextures();
+#endif
+
+#if USE_PARALLAX
+    SetParallaxStartTexture();
+#endif
         //
         // have the caching manager load and purge stuff to make sure all marks
         // are in memory
