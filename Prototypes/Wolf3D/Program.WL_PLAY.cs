@@ -430,7 +430,7 @@ internal partial class Program
             gamestate.keys = 3;
             gamestate.score = 0;
             gamestate.TimeCount += (int)42000L;
-            GiveWeapon((int)weapontypes.wp_chaingun);
+            GiveWeapon(weapontypes.wp_chaingun);
             DrawWeapon();
             DrawHealth();
             DrawKeys();
@@ -496,7 +496,7 @@ internal partial class Program
         if (Paused)
         {
             int lastoffs = StopMusic();
-            VWB_DrawPic(16 * 8, 80 - 2 * 8, (int)graphicnums.PAUSEDPIC);
+            VWB_DrawPic(16 * 8, 80 - 2 * 8, graphicnums.PAUSEDPIC);
             VW_UpdateScreen();
             IN_Ack();
             Paused = false;

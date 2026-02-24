@@ -387,7 +387,8 @@ internal partial class Program
     internal static int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine)
     {
         char key;
-        int i, x, y, basey, exit, which, shape;
+        int i, x, y, basey, exit, which;
+        graphicnums shape;
         int lastBlinkTime, timer;
         ControlInfo ci;
 
@@ -396,7 +397,7 @@ internal partial class Program
         basey = item_i.y - 2;
         y = basey + which * 13;
 
-        VWB_DrawPic(x, y, (int)graphicnums.C_CURSOR1PIC);
+        VWB_DrawPic(x, y, graphicnums.C_CURSOR1PIC);
         SetTextColor(items[which], true);
         if (redrawitem != 0)
         {
@@ -411,7 +412,7 @@ internal partial class Program
 
         VW_UpdateScreen();
 
-        shape = (int)graphicnums.C_CURSOR1PIC;
+        shape = graphicnums.C_CURSOR1PIC;
         timer = 8;
         exit = 0;
         lastBlinkTime = (int)GetTimeCount();
@@ -426,14 +427,14 @@ internal partial class Program
             if ((int)GetTimeCount() - lastBlinkTime > timer)
             {
                 lastBlinkTime = (int)GetTimeCount();
-                if (shape == (int)graphicnums.C_CURSOR1PIC)
+                if (shape == graphicnums.C_CURSOR1PIC)
                 {
-                    shape = (int)graphicnums.C_CURSOR2PIC;
+                    shape = graphicnums.C_CURSOR2PIC;
                     timer = 8;
                 }
                 else
                 {
-                    shape = (int)graphicnums.C_CURSOR1PIC;
+                    shape = graphicnums.C_CURSOR1PIC;
                     timer = 70;
                 }
 
@@ -633,7 +634,7 @@ internal partial class Program
     //
     internal static void DrawHalfStep(int x, int y)
     {
-        VWB_DrawPic(x, y, (int)graphicnums.C_CURSOR1PIC);
+        VWB_DrawPic(x, y, graphicnums.C_CURSOR1PIC);
         VW_UpdateScreen();
         SD_PlaySound((int)soundnames.MOVEGUN1SND);
         SDL.SDL_Delay(8 * 100 / 7);
@@ -643,7 +644,7 @@ internal partial class Program
     {
         VWB_Bar(x - 1, y, 25, 16, BKGDCOLOR);
         y = basey + which * 13;
-        VWB_DrawPic(x, y, (int)graphicnums.C_CURSOR1PIC);
+        VWB_DrawPic(x, y, graphicnums.C_CURSOR1PIC);
         SetTextColor(items[which], true);
 
         PrintX = (ushort)(item_i.x + item_i.indent);
@@ -1126,9 +1127,9 @@ internal partial class Program
     {
         ClearMScreen();
 
-        VWB_DrawPic(112, 184, (int)graphicnums.C_MOUSELBACKPIC);
+        VWB_DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
         DrawStripes(10);
-        VWB_DrawPic(84, 0, (int)graphicnums.C_OPTIONSPIC);
+        VWB_DrawPic(84, 0, graphicnums.C_OPTIONSPIC);
 
         DrawWindow(MENU_X - 8, MENU_Y - 3, MENU_W, MENU_H, BKGDCOLOR);
         //
@@ -1209,7 +1210,7 @@ internal partial class Program
         }
 
         ShootSnd();
-        NewGame(which, episode);
+        NewGame((difficultytypes)which, episode);
         StartGame = 1;
         MenuFadeOut();
 
@@ -1226,7 +1227,7 @@ internal partial class Program
     {
         int i;
         ClearMScreen();
-        VWB_DrawPic(112, 184, (int)graphicnums.C_MOUSELBACKPIC);
+        VWB_DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
 
         DrawWindow(NE_X - 4, NE_Y - 4, NE_W + 8, NE_H + 8, BKGDCOLOR);
         SETFONTCOLOR(READHCOLOR, BKGDCOLOR);
@@ -1237,7 +1238,7 @@ internal partial class Program
         DrawMenu(NewEitems, NewEmenu);
 
         for (i = 0; i < 6; i++)
-            VWB_DrawPic(NE_X + 32, NE_Y + i * 26, (int)graphicnums.C_EPISODE1PIC + i);
+            VWB_DrawPic(NE_X + 32, NE_Y + i * 26, graphicnums.C_EPISODE1PIC + i);
 
         VW_UpdateScreen();
         MenuFadeIn();
@@ -1247,7 +1248,7 @@ internal partial class Program
     internal static void DrawNewGame()
     {
         ClearMScreen();
-        VWB_DrawPic(112, 184, (int)graphicnums.C_MOUSELBACKPIC);
+        VWB_DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
 
         SETFONTCOLOR(READHCOLOR, BKGDCOLOR);
         PrintX = NM_X + 20;
@@ -1264,7 +1265,7 @@ internal partial class Program
 
     internal static void DrawNewGameDiff(int w)
     {
-        VWB_DrawPic(NM_X + 185, NM_Y + 7, w + (int)graphicnums.C_BABYMODEPIC);
+        VWB_DrawPic(NM_X + 185, NM_Y + 7, w + graphicnums.C_BABYMODEPIC);
     }
 
     internal static int CP_Sound(int _)
@@ -1379,7 +1380,7 @@ internal partial class Program
         // DRAW SOUND MENU
         //
         ClearMScreen();
-        VWB_DrawPic(112, 184, (int)graphicnums.C_MOUSELBACKPIC);
+        VWB_DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
 
         DrawWindow(SM_X - 8, SM_Y1 - 3, SM_W, SM_H1, BKGDCOLOR);
         DrawWindow(SM_X - 8, SM_Y2 - 3, SM_W, SM_H2, BKGDCOLOR);
@@ -1400,9 +1401,9 @@ internal partial class Program
             SndMenu[5].active = 0;
 
         DrawMenu(SndItems, SndMenu);
-        VWB_DrawPic(100, SM_Y1 - 20, (int)graphicnums.C_FXTITLEPIC);
-        VWB_DrawPic(100, SM_Y2 - 20, (int)graphicnums.C_DIGITITLEPIC);
-        VWB_DrawPic(100, SM_Y3 - 20, (int)graphicnums.C_MUSICTITLEPIC);
+        VWB_DrawPic(100, SM_Y1 - 20, graphicnums.C_FXTITLEPIC);
+        VWB_DrawPic(100, SM_Y2 - 20, graphicnums.C_DIGITITLEPIC);
+        VWB_DrawPic(100, SM_Y3 - 20, graphicnums.C_MUSICTITLEPIC);
         for (i = 0; i < SndItems.amount; i++)
             if (SndMenu[i].text != string.Empty)
             {
@@ -1458,9 +1459,9 @@ internal partial class Program
                 }
 
                 if (on != 0)
-                    VWB_DrawPic(SM_X + 24, SM_Y1 + i * 13 + 2, (int)graphicnums.C_SELECTEDPIC);
+                    VWB_DrawPic(SM_X + 24, SM_Y1 + i * 13 + 2, graphicnums.C_SELECTEDPIC);
                 else
-                    VWB_DrawPic(SM_X + 24, SM_Y1 + i * 13 + 2, (int)graphicnums.C_NOTSELECTEDPIC);
+                    VWB_DrawPic(SM_X + 24, SM_Y1 + i * 13 + 2, graphicnums.C_NOTSELECTEDPIC);
             }
 
         DrawMenuGun(SndItems);
@@ -1515,8 +1516,8 @@ internal partial class Program
         int i, x, y;
         ClearMScreen();
         DrawStripes(10);
-        VWB_DrawPic(80, 0, (int)graphicnums.C_CONTROLPIC);
-        VWB_DrawPic(112, 184, (int)graphicnums.C_MOUSELBACKPIC);
+        VWB_DrawPic(80, 0, graphicnums.C_CONTROLPIC);
+        VWB_DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
         DrawWindow(CTL_X - 8, CTL_Y - 5, CTL_W, CTL_H, BKGDCOLOR);
         WindowX = 0;
         WindowW = 320;
@@ -1539,15 +1540,15 @@ internal partial class Program
         x = CTL_X + CtlItems.indent - 24;
         y = CTL_Y + 3;
         if (mouseenabled != 0)
-            VWB_DrawPic(x, y, (int)graphicnums.C_SELECTEDPIC);
+            VWB_DrawPic(x, y, graphicnums.C_SELECTEDPIC);
         else
-            VWB_DrawPic(x, y, (int)graphicnums.C_NOTSELECTEDPIC);
+            VWB_DrawPic(x, y, graphicnums.C_NOTSELECTEDPIC);
 
         y = CTL_Y + 29;
         if (joystickenabled != 0)
-            VWB_DrawPic(x, y, (int)graphicnums.C_SELECTEDPIC);
+            VWB_DrawPic(x, y, graphicnums.C_SELECTEDPIC);
         else
-            VWB_DrawPic(x, y, (int)graphicnums.C_NOTSELECTEDPIC);
+            VWB_DrawPic(x, y, graphicnums.C_NOTSELECTEDPIC);
 
         //
         // PICK FIRST AVAILABLE SPOT
@@ -1667,14 +1668,14 @@ internal partial class Program
 
         ClearMScreen();
         fontnumber = 1;
-        VWB_DrawPic(112, 184, (int)graphicnums.C_MOUSELBACKPIC);
+        VWB_DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
         DrawWindow(LSM_X - 10, LSM_Y - 5, LSM_W, LSM_H, BKGDCOLOR);
         DrawStripes(10);
 
         if (loadsave == 0)
-            VWB_DrawPic(60, 0, (int)graphicnums.C_LOADGAMEPIC);
+            VWB_DrawPic(60, 0, graphicnums.C_LOADGAMEPIC);
         else
-            VWB_DrawPic(60, 0, (int)graphicnums.C_SAVEGAMEPIC);
+            VWB_DrawPic(60, 0, graphicnums.C_SAVEGAMEPIC);
 
         for (i = 0; i < 10; i++)
             PrintLSEntry(i, TEXTCOLOR);
@@ -1721,7 +1722,7 @@ internal partial class Program
     {
         DrawWindow(LSA_X, LSA_Y, LSA_W, LSA_H, TEXTCOLOR);
         DrawOutline(LSA_X, LSA_Y, LSA_W, LSA_H, 0, HIGHLIGHT);
-        VWB_DrawPic(LSA_X + 8, LSA_Y + 5, (int)graphicnums.C_DISKLOADING1PIC);
+        VWB_DrawPic(LSA_X + 8, LSA_Y + 5, graphicnums.C_DISKLOADING1PIC);
 
         fontnumber = 1;
         SETFONTCOLOR(0, TEXTCOLOR);
@@ -2084,7 +2085,7 @@ internal partial class Program
     internal static void DrawMouseSens()
     {
         ClearMScreen();
-        VWB_DrawPic(112, 184, (int)graphicnums.C_MOUSELBACKPIC);
+        VWB_DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
         DrawWindow(10, 80, 300, 30, BKGDCOLOR);
         WindowX = 0;
         WindowW = 320;
@@ -2525,9 +2526,9 @@ internal partial class Program
         ClearMScreen();
         WindowX = 0;
         WindowW = 320;
-        VWB_DrawPic(112, 184, (int)graphicnums.C_MOUSELBACKPIC);
+        VWB_DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
         DrawStripes(10);
-        VWB_DrawPic(80, 0, (int)graphicnums.C_CUSTOMIZEPIC);
+        VWB_DrawPic(80, 0, graphicnums.C_CUSTOMIZEPIC);
 
         //
         // MOUSE
@@ -2753,14 +2754,14 @@ internal partial class Program
 
         x = iteminfo.x;
         y = iteminfo.y + iteminfo.curpos * 13 - 2;
-        VWB_DrawPic(x, y, (int)graphicnums.C_CURSOR1PIC);
+        VWB_DrawPic(x, y, graphicnums.C_CURSOR1PIC);
     }
 
     internal static int Confirm(string text)
     {
 
         int xit = 0, x, y, tick = 0, lastBlinkTime;
-        int[] whichsnd = [(int)soundnames.ESCPRESSEDSND, (int)soundnames.SHOOTSND];
+        soundnames[] whichsnd = [soundnames.ESCPRESSEDSND, soundnames.SHOOTSND];
         ControlInfo ci;
 
         Message(text);
@@ -2807,7 +2808,7 @@ internal partial class Program
         IN_ClearKeysDown();
         WaitKeyUp();
 
-        SD_PlaySound(whichsnd[xit]);
+        SD_PlaySound((int)whichsnd[xit]);
 
         return xit;
     }

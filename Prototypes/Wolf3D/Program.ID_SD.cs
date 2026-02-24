@@ -1109,6 +1109,9 @@ internal partial class Program
 
     static int SD_SoundPlaying()
     {
+        // TODO: Override the sound check until implemented
+        return 0;
+
         int result = 0;
 
         switch (SoundMode)

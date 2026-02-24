@@ -1263,16 +1263,16 @@ internal partial class Program
     internal static void DrawPlayerWeapon()
     {
         int shapenum;
-        if (gamestate.victoryflag != 0)
+        if (gamestate.victoryflag)
         {
             if (player.state == s_deathcam && (GetTimeCount() & 32) != 0)
                 SimpleScaleShape(viewwidth / 2, (int)spritenums.SPR_DEATHCAM, viewheight + 1);
             return;
         }
 
-        if (gamestate.weapon != -1)
+        if (gamestate.weapon != weapontypes.wp_none)
         {
-            shapenum = weaponscale[gamestate.weapon] + gamestate.weaponframe;
+            shapenum = weaponscale[(int)gamestate.weapon] + gamestate.weaponframe;
             SimpleScaleShape(viewwidth / 2, shapenum, viewheight + 1);
         }
 
@@ -1346,14 +1346,13 @@ internal partial class Program
                 SETFONTCOLOR(7, 127);
                 PrintX = 4; PrintY = 1;
                 VWB_Bar(0, 0, 320, 10, bordercol);
-                US_Print($"{pwalltile}: ({pwallx},{pwally}) - {pwalldir}, {pwallpos}, {pwallstate}");
-                //US_Print(fps.ToString());
-                //US_Print(" fps");
+                US_Print(fps.ToString());
+                US_Print(" fps");
             }
             VW_UpdateScreen();
         }
 
-        if (fpscounter)
+        //if (fpscounter)
         {
             fps_frames++;
             fps_time += (int)tics;

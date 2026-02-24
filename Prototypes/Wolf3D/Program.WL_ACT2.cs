@@ -1669,7 +1669,7 @@ internal partial class Program
         }
 
         newobj.obclass = (classtypes.guardobj + which);
-        newobj.hitpoints = starthitpoints[gamestate.difficulty, which];
+        newobj.hitpoints = starthitpoints[(int)gamestate.difficulty, which];
         newobj.dir = (objdirtypes)(dir * 2);
         newobj.flags |= objflags.FL_SHOOTABLE;
     }
@@ -1718,7 +1718,7 @@ internal partial class Program
 
         newobj.obclass = (classtypes.guardobj + which);
         newobj.dir = (objdirtypes)(dir * 2);
-        newobj.hitpoints = starthitpoints[gamestate.difficulty, which];
+        newobj.hitpoints = starthitpoints[(int)gamestate.difficulty, which];
         newobj.distance = (int)TILEGLOBAL;
         newobj.flags |= objflags.FL_SHOOTABLE;
         newobj.active = activetypes.ac_yes;
@@ -1763,7 +1763,7 @@ internal partial class Program
         newobj.speed = SPDPATROL;
 
         newobj.obclass = classtypes.bossobj;
-        newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_boss];
+        newobj.hitpoints = starthitpoints[(int)gamestate.difficulty, (short)enemytypes.en_boss];
         newobj.dir = objdirtypes.nodir;
         newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
@@ -1778,7 +1778,7 @@ internal partial class Program
         newobj.speed = SPDPATROL;
 
         newobj.obclass = classtypes.gretelobj;
-        newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_gretel];
+        newobj.hitpoints = starthitpoints[(int)gamestate.difficulty, (short)enemytypes.en_gretel];
         newobj.dir = objdirtypes.nodir;
         newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
@@ -1793,7 +1793,7 @@ internal partial class Program
         newobj.speed = SPDPATROL;
 
         newobj.obclass = classtypes.fakeobj;
-        newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_fake];
+        newobj.hitpoints = starthitpoints[(int)gamestate.difficulty, (short)enemytypes.en_fake];
         newobj.dir = objdirtypes.nodir;
         newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
@@ -1813,7 +1813,7 @@ internal partial class Program
         newobj.speed = SPDPATROL;
 
         newobj.obclass = classtypes.mechahitlerobj;
-        newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_hitler];
+        newobj.hitpoints = starthitpoints[(int)gamestate.difficulty, (short)enemytypes.en_hitler];
         newobj.dir = objdirtypes.nodir;
         newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
@@ -1837,7 +1837,7 @@ internal partial class Program
         newobj.flags &= ~objflags.FL_NONMARK;   // hitler stuck with nodir fix
 
         newobj.obclass = classtypes.realhitlerobj;
-        newobj.hitpoints = hitpoints[gamestate.difficulty];
+        newobj.hitpoints = hitpoints[(int)gamestate.difficulty];
 
         if (!loadedgame)               // Count real hitler for correct kill ratios
             gamestate.killtotal++;
@@ -1960,7 +1960,7 @@ internal partial class Program
         newobj.speed = SPDPATROL;
 
         newobj.obclass = classtypes.giftobj;
-        newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_gift];
+        newobj.hitpoints = starthitpoints[(int)gamestate.difficulty, (short)enemytypes.en_gift];
         newobj.dir = objdirtypes.nodir;
         newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
@@ -2013,7 +2013,7 @@ internal partial class Program
         newobj.speed = SPDPATROL;
 
         newobj.obclass = classtypes.schabbobj;
-        newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_schabbs];
+        newobj.hitpoints = starthitpoints[(int)gamestate.difficulty, (short)enemytypes.en_schabbs];
         newobj.dir = objdirtypes.nodir;
         newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
@@ -2033,7 +2033,7 @@ internal partial class Program
         newobj.speed = SPDPATROL;
 
         newobj.obclass = classtypes.fatobj;
-        newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_fat];
+        newobj.hitpoints = starthitpoints[(int)gamestate.difficulty, (short)enemytypes.en_fat];
         newobj.dir = objdirtypes.nodir;
         newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
@@ -2066,7 +2066,7 @@ internal partial class Program
         int dx, dy, dist, chance;
         bool dodge;
 
-        if (gamestate.victoryflag != 0)
+        if (gamestate.victoryflag)
             return;
 
         dodge = false;
@@ -2571,13 +2571,13 @@ internal partial class Program
 
         VW_WaitVBL(100);
 
-        if (gamestate.victoryflag != 0)
+        if (gamestate.victoryflag)
         {
             playstate = (byte)playstatetypes.ex_victorious;                              // exit castle tile
             return;
         }
 
-        gamestate.victoryflag = 1;
+        gamestate.victoryflag = true;
         uint fadeheight = (uint)(viewsize != 21 ? screenHeight - scaleFactor * STATUSLINES : screenHeight);
         VL_BarScaledCoord(0, 0, screenWidth, (int)fadeheight, bordercol);
         FizzleFade(screenBuffer, 0, 0, (uint)screenWidth, fadeheight, 70, false);

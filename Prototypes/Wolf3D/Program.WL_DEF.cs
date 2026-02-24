@@ -49,6 +49,7 @@ internal enum buttontypes
 
 internal enum weapontypes
 {
+    wp_none = -1,
     wp_knife,
     wp_pistol,
     wp_machinegun,
@@ -197,14 +198,14 @@ enum enemytypes
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 internal class gametype
 {
-    public short difficulty;
+    public difficultytypes difficulty;
     public short mapon;
     public int oldscore, score, nextextra;
     public short lives;
     public short health;
     public short ammo;
     public short keys;
-    public short bestweapon, weapon, chosenweapon;
+    public weapontypes bestweapon, weapon, chosenweapon;
 
     public short faceframe;
     public short attackframe, attackcount, weaponframe;
@@ -213,11 +214,11 @@ internal class gametype
                 secrettotal, treasuretotal, killtotal;
     public int TimeCount;
     public int killx, killy;
-    public byte victoryflag;            // set during victory animations
+    public bool victoryflag;            // set during victory animations
 
     public void Read(BinaryReader br)
     {
-        difficulty = br.ReadInt16();
+        difficulty = (difficultytypes)br.ReadInt16();
         mapon = br.ReadInt16();
         oldscore = br.ReadInt32();
         score = br.ReadInt32();
@@ -226,9 +227,9 @@ internal class gametype
         health = br.ReadInt16();
         ammo = br.ReadInt16();
         keys = br.ReadInt16();
-        bestweapon = br.ReadInt16();
-        weapon = br.ReadInt16();
-        chosenweapon = br.ReadInt16();
+        bestweapon = (weapontypes)br.ReadInt16();
+        weapon = (weapontypes)br.ReadInt16();
+        chosenweapon = (weapontypes)br.ReadInt16();
         faceframe = br.ReadInt16();
         attackframe = br.ReadInt16();
         attackcount = br.ReadInt16();
@@ -243,7 +244,7 @@ internal class gametype
         TimeCount = br.ReadInt32();
         killx = br.ReadInt32();
         killy = br.ReadInt32();
-        victoryflag = br.ReadByte();
+        victoryflag = br.ReadByte() > 0;
     }
 
     public byte[] AsBytes()
@@ -251,7 +252,7 @@ internal class gametype
         using var ms = new MemoryStream();
         using var bw = new BinaryWriter(ms);
         {
-            bw.Write(difficulty);
+            bw.Write((byte)difficulty);
             bw.Write(mapon);
             bw.Write(oldscore);
             bw.Write(score);
@@ -260,9 +261,9 @@ internal class gametype
             bw.Write(health);
             bw.Write(ammo);
             bw.Write(keys);
-            bw.Write(bestweapon);
-            bw.Write(weapon);
-            bw.Write(chosenweapon);
+            bw.Write((byte)bestweapon);
+            bw.Write((byte)weapon);
+            bw.Write((byte)chosenweapon);
             bw.Write(faceframe);
             bw.Write(attackframe);
             bw.Write(attackcount);
@@ -277,7 +278,7 @@ internal class gametype
             bw.Write(TimeCount);
             bw.Write(killx);
             bw.Write(killy);
-            bw.Write(victoryflag);
+            bw.Write((byte)(victoryflag ? 1 : 0));
             return ms.ToArray();
         }
     }

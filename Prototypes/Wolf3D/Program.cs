@@ -55,7 +55,7 @@ internal partial class Program
     //
     internal static bool param_debugmode = false;
     internal static bool param_nowait = false;
-    internal static int param_difficulty = 1;           // default is "normal"
+    internal static difficultytypes param_difficulty = difficultytypes.gd_easy; // default is "normal"
     internal static int param_tedlevel = -1;            // default is not to start a level
     internal static int param_joystickindex = 0;
     internal static int param_audiobuffer = DEFAULT_AUDIO_BUFFER_SIZE;
@@ -100,13 +100,13 @@ See Options.txt for help";
             if (IfArg(args[i], "--goobers"))
                 param_debugmode = true;
             else if (IfArg(args[i], "--baby"))
-                param_difficulty = 0;
+                param_difficulty = difficultytypes.gd_baby;
             else if (IfArg(args[i], "--easy"))
-                param_difficulty = 1;
+                param_difficulty = difficultytypes.gd_easy;
             else if (IfArg(args[i], "--medium"))
-                param_difficulty = 2;
+                param_difficulty = difficultytypes.gd_medium;
             else if (IfArg(args[i], "--hard"))
-                param_difficulty = 3;
+                param_difficulty = difficultytypes.gd_hard;
             else if (IfArg(args[i], "--nowait"))
                 param_nowait = true;
             else if (IfArg(args[i], "--tedlevel"))
@@ -453,7 +453,7 @@ See Options.txt for help";
                 //
                 // title page
                 //
-                VWB_DrawPic(0, 0, (int)graphicnums.TITLEPIC);
+                VWB_DrawPic(0, 0, graphicnums.TITLEPIC);
                 VW_UpdateScreen();
                 VW_FadeIn();
 
@@ -464,7 +464,7 @@ See Options.txt for help";
                 //
                 // credits page
                 //
-                VWB_DrawPic(0, 0, (int)graphicnums.CREDITSPIC);
+                VWB_DrawPic(0, 0, graphicnums.CREDITSPIC);
                 VW_UpdateScreen();
                 VW_FadeIn();
                 if (IN_UserInput(TickBase * 10))
@@ -512,11 +512,11 @@ See Options.txt for help";
         }
     }
 
-    internal static void NewGame(int difficulty, int episode)
+    internal static void NewGame(difficultytypes difficulty, int episode)
     {
         gamestate = new gametype();
-        gamestate.difficulty = (short)difficulty;
-        gamestate.weapon = gamestate.bestweapon = gamestate.chosenweapon = (int)weapontypes.wp_pistol;
+        gamestate.difficulty = difficulty;
+        gamestate.weapon = gamestate.bestweapon = gamestate.chosenweapon = weapontypes.wp_pistol;
 
         gamestate.health = 100;
         gamestate.ammo = STARTAMMO;
@@ -1035,7 +1035,7 @@ See Options.txt for help";
             gamestate.lives = 1;
             gamestate.weapon =
             gamestate.chosenweapon =
-            gamestate.bestweapon = (int)weapontypes.wp_pistol;
+            gamestate.bestweapon = weapontypes.wp_pistol;
             gamestate.ammo = 8;
         }
 
@@ -1158,7 +1158,7 @@ See Options.txt for help";
         if (x == 0 && y == 0)
             return;
 
-        VWB_DrawPic(x, y, (int)graphicnums.C_DISKLOADING1PIC + diskflopanim_which);
+        VWB_DrawPic(x, y, graphicnums.C_DISKLOADING1PIC + diskflopanim_which);
         VW_UpdateScreen();
         diskflopanim_which ^= 1;
     }
@@ -1242,7 +1242,7 @@ See Options.txt for help";
 
         fontnumber = 1;
         ClearMScreen();
-        VWB_DrawPic(112, 184, (int)graphicnums.C_MOUSELBACKPIC);
+        VWB_DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
         DrawStripes(10);
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
 

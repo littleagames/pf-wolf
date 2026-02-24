@@ -120,9 +120,9 @@ internal partial class Program
         VL_MemToScreen(grsegs[STARTTILE8].Skip(tile * 64).ToArray(), 8, 8, x, y);
     }
 
-    internal static void VWB_DrawPic(int x, int y, int chunknum)
+    internal static void VWB_DrawPic(int x, int y, graphicnums chunknum)
     {
-        int picnum = chunknum - STARTPICS;
+        int picnum = (int)(chunknum - STARTPICS);
         int width, height;
 
         x &= ~7;
@@ -130,7 +130,7 @@ internal partial class Program
         width = pictable[picnum].width;
         height = pictable[picnum].height;
 
-        VL_MemToScreen(grsegs[chunknum], width, height, x, y);
+        VL_MemToScreen(grsegs[(int)chunknum], width, height, x, y);
     }
 
     internal static void VWB_DrawPicScaledCoord(int scx, int scy, int chunknum)

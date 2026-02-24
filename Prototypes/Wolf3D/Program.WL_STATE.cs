@@ -1120,7 +1120,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             case classtypes.ssobj:
                 GivePoints(500);
                 NewState(ob, s_ssdie1);
-                if (gamestate.bestweapon < (short)weapontypes.wp_machinegun)
+                if (gamestate.bestweapon < weapontypes.wp_machinegun)
                     PlaceItemType((int)wl_stat_types.bo_machinegun, tilex, tiley);
                 else
                     PlaceItemType((int)wl_stat_types.bo_clip2, tilex, tiley);

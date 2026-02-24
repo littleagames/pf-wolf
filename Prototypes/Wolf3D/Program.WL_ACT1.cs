@@ -669,7 +669,7 @@ internal partial class Program
     {
         int door;
 
-        if (gamestate.victoryflag != 0)              // don't move door during victory sequence
+        if (gamestate.victoryflag)              // don't move door during victory sequence
             return;
 
         for (door = 0; door < doornum; door++)

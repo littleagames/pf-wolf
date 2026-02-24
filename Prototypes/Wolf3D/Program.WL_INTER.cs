@@ -42,7 +42,7 @@ internal partial class Program
         VW_FadeOut();
         VWB_Bar(0, 0, 320, 200, 0x82);     // background
 
-        VWB_DrawPic(216, 110, (int)graphicnums.PG13PIC);
+        VWB_DrawPic(216, 110, graphicnums.PG13PIC);
         VW_UpdateScreen();
 
         VW_FadeIn();
@@ -58,11 +58,11 @@ internal partial class Program
         ClearMScreen();
         DrawStripes(10);
 
-        VWB_DrawPic(48, 0, (int)graphicnums.HIGHSCORESPIC);
+        VWB_DrawPic(48, 0, graphicnums.HIGHSCORESPIC);
 
-        VWB_DrawPic(4 * 8, 68, (int)graphicnums.C_NAMEPIC);
-        VWB_DrawPic(20 * 8, 68, (int)graphicnums.C_LEVELPIC);
-        VWB_DrawPic(28 * 8, 68, (int)graphicnums.C_SCOREPIC);
+        VWB_DrawPic(4 * 8, 68, graphicnums.C_NAMEPIC);
+        VWB_DrawPic(20 * 8, 68, graphicnums.C_LEVELPIC);
+        VWB_DrawPic(28 * 8, 68, graphicnums.C_SCOREPIC);
 
         fontnumber = 0;
         SETFONTCOLOR(15, 0x29);
@@ -339,7 +339,7 @@ internal partial class Program
         //
         IN_ClearKeysDown();
         IN_StartAck();
-        VWB_DrawPic(0, 16, (int)graphicnums.L_GUYPIC);
+        VWB_DrawPic(0, 16, graphicnums.L_GUYPIC);
         if (gamestate.mapon < LRpack)
         {
             Write(14, 2, "floor\ncompleted");
@@ -365,15 +365,15 @@ internal partial class Program
             min = sec / 60;
             sec %= 60;
             i = 26 * 8;
-            VWB_DrawPic(i, 10 * 8, (int)graphicnums.L_NUM0PIC + (min / 10));
+            VWB_DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (min / 10));
             i += 2 * 8;
-            VWB_DrawPic(i, 10 * 8, (int)graphicnums.L_NUM0PIC + (min % 10));
+            VWB_DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (min % 10));
             i += 2 * 8;
             Write(i / 8, 10, ":");
             i += 1 * 8;
-            VWB_DrawPic(i, 10 * 8, (int)graphicnums.L_NUM0PIC + (sec / 10));
+            VWB_DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (sec / 10));
             i += 2 * 8;
-            VWB_DrawPic(i, 10 * 8, (int)graphicnums.L_NUM0PIC + (sec % 10));
+            VWB_DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (sec % 10));
 
             VW_UpdateScreen();
             VW_FadeIn();
@@ -631,7 +631,7 @@ internal partial class Program
         Write(RATIOX + 4, RATIOY + 2, STR_RATSECRET);
         Write(RATIOX, RATIOY + 4, STR_RATTREASURE);
 
-        VWB_DrawPic(8, 4, (int)graphicnums.L_BJWINSPIC);
+        VWB_DrawPic(8, 4, graphicnums.L_BJWINSPIC);
 
         for (kr = sr = tr = sec = i = 0; i < LRpack; i++)
         {
@@ -652,15 +652,15 @@ internal partial class Program
             min = sec = 99;
 
         i = TIMEX * 8 + 1;
-        VWB_DrawPic(i, TIMEY * 8, (int)graphicnums.L_NUM0PIC + (min / 10));
+        VWB_DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (min / 10));
         i += 2 * 8;
-        VWB_DrawPic(i, TIMEY * 8, (int)graphicnums.L_NUM0PIC + (min % 10));
+        VWB_DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (min % 10));
         i += 2 * 8;
         Write(i / 8, TIMEY, ":");
         i += 1 * 8;
-        VWB_DrawPic(i, TIMEY * 8, (int)graphicnums.L_NUM0PIC + (sec / 10));
+        VWB_DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (sec / 10));
         i += 2 * 8;
-        VWB_DrawPic(i, TIMEY * 8, (int)graphicnums.L_NUM0PIC + (sec % 10));
+        VWB_DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (sec % 10));
         VW_UpdateScreen();
 
         tempstr = kr.ToString();
@@ -678,9 +678,9 @@ internal partial class Program
         //
         // TOTAL TIME VERIFICATION CODE
         //
-        if (gamestate.difficulty >= (short)difficultytypes.gd_medium)
+        if (gamestate.difficulty >= difficultytypes.gd_medium)
         {
-            VWB_DrawPic(30 * 8, TIMEY * 8, (int)graphicnums.C_TIMECODEPIC);
+            VWB_DrawPic(30 * 8, TIMEY * 8, graphicnums.C_TIMECODEPIC);
             fontnumber = 0;
             fontcolor = READHCOLOR;
             PrintX = 30 * 8 - 3;
@@ -715,7 +715,7 @@ internal partial class Program
     internal static void BJ_Breathe()
     {
         int which = 0, max = 10; // static!!!
-        int[] pics = { (int)graphicnums.L_GUYPIC, (int)graphicnums.L_GUY2PIC };
+        graphicnums[] pics = { graphicnums.L_GUYPIC, graphicnums.L_GUY2PIC };
 
         SDL.SDL_Delay(5);
 
@@ -731,11 +731,11 @@ internal partial class Program
 
     internal static void Write(int x, int y, string text)
     {
-        int[] alpha = { (int)graphicnums.L_NUM0PIC, (int)graphicnums.L_NUM1PIC, (int)graphicnums.L_NUM2PIC, (int)graphicnums.L_NUM3PIC, (int)graphicnums.L_NUM4PIC, (int)graphicnums.L_NUM5PIC,
-            (int)graphicnums.L_NUM6PIC, (int)graphicnums.L_NUM7PIC, (int)graphicnums.L_NUM8PIC, (int)graphicnums.L_NUM9PIC,(int)graphicnums. L_COLONPIC, 0, 0, 0, 0, 0, 0, (int)graphicnums.L_APIC, (int)graphicnums.L_BPIC,
-            (int)graphicnums.L_CPIC, (int)graphicnums.L_DPIC, (int)graphicnums.L_EPIC, (int)graphicnums.L_FPIC, (int)graphicnums.L_GPIC, (int)graphicnums.L_HPIC, (int)graphicnums.L_IPIC, (int)graphicnums.L_JPIC, (int)graphicnums.L_KPIC,
-            (int)graphicnums.L_LPIC, (int)graphicnums.L_MPIC, (int)graphicnums.L_NPIC, (int)graphicnums.L_OPIC, (int)graphicnums.L_PPIC, (int)graphicnums.L_QPIC, (int)graphicnums.L_RPIC, (int)graphicnums.L_SPIC, (int)graphicnums.L_TPIC,
-            (int)graphicnums.L_UPIC, (int)graphicnums.L_VPIC, (int)graphicnums.L_WPIC, (int)graphicnums.L_XPIC, (int)graphicnums.L_YPIC, (int)graphicnums.L_ZPIC
+        graphicnums[] alpha = { graphicnums.L_NUM0PIC, graphicnums.L_NUM1PIC, graphicnums.L_NUM2PIC, graphicnums.L_NUM3PIC, graphicnums.L_NUM4PIC, graphicnums.L_NUM5PIC,
+            graphicnums.L_NUM6PIC, graphicnums.L_NUM7PIC, graphicnums.L_NUM8PIC, graphicnums.L_NUM9PIC, graphicnums. L_COLONPIC, 0, 0, 0, 0, 0, 0, graphicnums.L_APIC, graphicnums.L_BPIC,
+            graphicnums.L_CPIC, graphicnums.L_DPIC, graphicnums.L_EPIC, graphicnums.L_FPIC, graphicnums.L_GPIC, graphicnums.L_HPIC, graphicnums.L_IPIC, graphicnums.L_JPIC, graphicnums.L_KPIC,
+            graphicnums.L_LPIC, graphicnums.L_MPIC, graphicnums.L_NPIC, graphicnums.L_OPIC, graphicnums.L_PPIC, graphicnums.L_QPIC, graphicnums.L_RPIC, graphicnums.L_SPIC, graphicnums.L_TPIC,
+            graphicnums.L_UPIC, graphicnums.L_VPIC, graphicnums.L_WPIC, graphicnums.L_XPIC, graphicnums.L_YPIC, graphicnums.L_ZPIC
         };
 
         int i, ox, nx, ny, len = text.Length;
@@ -762,23 +762,23 @@ internal partial class Program
                 switch (text[i])
                 {
                     case '!':
-                        VWB_DrawPic(nx, ny, (int)graphicnums.L_EXPOINTPIC);
+                        VWB_DrawPic(nx, ny, graphicnums.L_EXPOINTPIC);
                         nx += 8;
                         continue;
                     case '\'':
-                        VWB_DrawPic(nx, ny, (int)graphicnums.L_APOSTROPHEPIC);
+                        VWB_DrawPic(nx, ny, graphicnums.L_APOSTROPHEPIC);
                         nx += 8;
                         continue;
                 case ' ':
                         break;
 
                     case ':':
-                        VWB_DrawPic(nx, ny, (int)graphicnums.L_COLONPIC);
+                        VWB_DrawPic(nx, ny, graphicnums.L_COLONPIC);
                         nx += 8;
                         continue;
 
                     case '%':
-                        VWB_DrawPic(nx, ny, (int)graphicnums.L_PERCENTPIC);
+                        VWB_DrawPic(nx, ny, graphicnums.L_PERCENTPIC);
                         break;
 
                     default:

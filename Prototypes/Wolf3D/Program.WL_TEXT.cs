@@ -47,23 +47,23 @@ internal partial class Program
 
     static int picx;
     static int picy;
-    static int picnum;
+    static graphicnums picnum;
     static int picdelay;
     static bool layoutdone;
 
-    static int endextern = (int)graphicnums.T_ENDART1;
-    static int helpextern = (int)graphicnums.T_HELPART;
+    static graphicnums endextern = graphicnums.T_ENDART1;
+    static graphicnums helpextern = graphicnums.T_HELPART;
 
     internal static string helpfilename = "HELPART.";
     internal static string endfilename = "ENDART1.";
 
     internal static void HelpScreens()
     {
-        int artnum;
+        graphicnums artnum;
         //string text;
         artnum = helpextern;
         //text = (char*)grsegs[artnum];
-        text = new string(System.Text.Encoding.ASCII.GetString(grsegs[artnum]).ToCharArray());
+        text = new string(System.Text.Encoding.ASCII.GetString(grsegs[(int)artnum]).ToCharArray());
         ShowArticle(text);
         VW_FadeOut();
 
@@ -72,12 +72,12 @@ internal partial class Program
 
     internal static void EndText()
     {
-        int artnum;
+        graphicnums artnum;
         string text;
         ClearMemory();
 
         artnum = endextern + gamestate.episode;
-        text = new string(System.Text.Encoding.ASCII.GetString(grsegs[artnum]).ToCharArray());
+        text = new string(System.Text.Encoding.ASCII.GetString(grsegs[(int)artnum]).ToCharArray());
 
         ShowArticle(text);
 
@@ -236,7 +236,7 @@ internal partial class Program
     {
         picy = ParseNumber();
         picx = ParseNumber();
-        picnum = ParseNumber();
+        picnum = (graphicnums)ParseNumber();
         RipToEOL();
     }
 
@@ -245,7 +245,7 @@ internal partial class Program
     {
         picy = ParseNumber();
         picx = ParseNumber();
-        picnum = ParseNumber();
+        picnum = (graphicnums)ParseNumber();
         picdelay = ParseNumber();
         RipToEOL();
     }
@@ -352,10 +352,10 @@ internal partial class Program
         // clear the screen
         //
         VWB_Bar(0, 0, 320, 200, BACKCOLOR);
-        VWB_DrawPic(0, 0, (int)graphicnums.H_TOPWINDOWPIC);
-        VWB_DrawPic(0, 8, (int)graphicnums.H_LEFTWINDOWPIC);
-        VWB_DrawPic(312, 8, (int)graphicnums.H_RIGHTWINDOWPIC);
-        VWB_DrawPic(8, 176, (int)graphicnums.H_BOTTOMINFOPIC);
+        VWB_DrawPic(0, 0, graphicnums.H_TOPWINDOWPIC);
+        VWB_DrawPic(0, 8, graphicnums.H_LEFTWINDOWPIC);
+        VWB_DrawPic(312, 8, graphicnums.H_RIGHTWINDOWPIC);
+        VWB_DrawPic(8, 176, graphicnums.H_BOTTOMINFOPIC);
 
 
         for (i = 0; i < TEXTROWS; i++)
@@ -489,8 +489,8 @@ internal partial class Program
             case 'G':               // ^Gyyy,xxx,ppp draws graphic
                 ParsePicCommand();
                 VWB_DrawPic(picx & ~7, picy, picnum);
-                picwidth = pictable[picnum - STARTPICS].width;
-                picheight = pictable[picnum - STARTPICS].height;
+                picwidth = pictable[(int)picnum - STARTPICS].width;
+                picheight = pictable[(int)picnum - STARTPICS].height;
                 //
                 // adjust margins
                 //

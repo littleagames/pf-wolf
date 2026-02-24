@@ -241,7 +241,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 181:
                     case 182:
                     case 183:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                        if (gamestate.difficulty < difficultytypes.gd_hard)
                             break;
                         tile -= 36;
                         goto case 144;
@@ -249,7 +249,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 145:
                     case 146:
                     case 147:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                        if (gamestate.difficulty < difficultytypes.gd_medium)
                             break;
                         tile -= 36;
                         goto case 108;
@@ -265,7 +265,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 185:
                     case 186:
                     case 187:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                        if (gamestate.difficulty < difficultytypes.gd_hard)
                             break;
                         tile -= 36;
                         goto case 148;
@@ -273,7 +273,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 149:
                     case 150:
                     case 151:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                        if (gamestate.difficulty < difficultytypes.gd_medium)
                             break;
                         tile -= 36;
                         goto case 112;
@@ -294,7 +294,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 189:
                     case 190:
                     case 191:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                        if (gamestate.difficulty < difficultytypes.gd_hard)
                             break;
                         tile -= 36;
                         goto case 152;
@@ -302,7 +302,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 153:
                     case 154:
                     case 155:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                        if (gamestate.difficulty < difficultytypes.gd_medium)
                             break;
                         tile -= 36;
                         goto case 116;
@@ -318,7 +318,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 193:
                     case 194:
                     case 195:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                        if (gamestate.difficulty < difficultytypes.gd_hard)
                             break;
                         tile -= 36;
                         goto case 156;
@@ -326,7 +326,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 157:
                     case 158:
                     case 159:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                        if (gamestate.difficulty < difficultytypes.gd_medium)
                             break;
                         tile -= 36;
                         goto case 120;
@@ -345,7 +345,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 199:
                     case 200:
                     case 201:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                        if (gamestate.difficulty < difficultytypes.gd_hard)
                             break;
                         tile -= 36;
                         goto case 162;
@@ -353,7 +353,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 163:
                     case 164:
                     case 165:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                        if (gamestate.difficulty < difficultytypes.gd_medium)
                             break;
                         tile -= 36;
                         goto case 126;
@@ -369,7 +369,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 203:
                     case 204:
                     case 205:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                        if (gamestate.difficulty < difficultytypes.gd_hard)
                             break;
                         tile -= 36;
                         goto case 166;
@@ -377,7 +377,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 167:
                     case 168:
                     case 169:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                        if (gamestate.difficulty < difficultytypes.gd_medium)
                             break;
                         tile -= 36;
                         goto case 130;
@@ -395,7 +395,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 207:
                     case 208:
                     case 209:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                        if (gamestate.difficulty < difficultytypes.gd_hard)
                             break;
                         tile -= 36;
                         goto case 170;
@@ -403,7 +403,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 171:
                     case 172:
                     case 173:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                        if (gamestate.difficulty < difficultytypes.gd_medium)
                             break;
                         tile -= 36;
                         goto case 134;
@@ -419,7 +419,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 211:
                     case 212:
                     case 213:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                        if (gamestate.difficulty < difficultytypes.gd_hard)
                             break;
                         tile -= 36;
                         goto case 174;
@@ -427,7 +427,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 175:
                     case 176:
                     case 177:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                        if (gamestate.difficulty < difficultytypes.gd_medium)
                             break;
                         tile -= 36;
                         goto case 138;
@@ -469,7 +469,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 253:
                     case 254:
                     case 255:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                        if (gamestate.difficulty < difficultytypes.gd_hard)
                             break;
                         tile -= 18;
                         goto case 234;
@@ -477,7 +477,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 235:
                     case 236:
                     case 237:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                        if (gamestate.difficulty < difficultytypes.gd_medium)
                             break;
                         tile -= 18;
                         goto case 216;
@@ -492,7 +492,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 257:
                     case 258:
                     case 259:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_hard)
+                        if (gamestate.difficulty < difficultytypes.gd_hard)
                             break;
                         tile -= 18;
                         goto case 238;
@@ -500,7 +500,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     case 239:
                     case 240:
                     case 241:
-                        if (gamestate.difficulty < (short)difficultytypes.gd_medium)
+                        if (gamestate.difficulty < difficultytypes.gd_medium)
                             break;
                         tile -= 18;
                         goto case 220;
@@ -666,9 +666,9 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         demoptr = 0;
         demoData = grsegs[dems[demonumber]];
 
-        NewGame(1, 0);
+        NewGame(difficultytypes.gd_easy, episode: 0);
         gamestate.mapon = demoData[demoptr++];
-        gamestate.difficulty = (short)difficultytypes.gd_hard;
+        gamestate.difficulty = difficultytypes.gd_hard;
         length = BitConverter.ToInt16(demoData, demoptr);
 
         demoptr += 3;
@@ -983,7 +983,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
             VW_FadeIn();
         }
 
-        gamestate.weapon = -1;                     // take away weapon
+        gamestate.weapon = weapontypes.wp_none;                     // take away weapon
         SD_PlaySound((int)soundnames.PLAYERDEATHSND);
 
         //
@@ -1085,7 +1085,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         {
             gamestate.health = 100;
             gamestate.weapon = gamestate.bestweapon
-                = gamestate.chosenweapon = (int)weapontypes.wp_pistol;
+                = gamestate.chosenweapon = weapontypes.wp_pistol;
             gamestate.ammo = STARTAMMO;
             gamestate.keys = 0;
             pwallstate = pwallpos = 0;

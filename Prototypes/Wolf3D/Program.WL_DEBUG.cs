@@ -109,7 +109,7 @@ internal partial class Program
             VW_UpdateScreen();
             GivePoints(100000);
             HealSelf(99);
-            if (gamestate.bestweapon < (short)weapontypes.wp_chaingun)
+            if (gamestate.bestweapon < weapontypes.wp_chaingun)
                 GiveWeapon(gamestate.bestweapon + 1);
             gamestate.ammo += 50;
             if (gamestate.ammo > 99)

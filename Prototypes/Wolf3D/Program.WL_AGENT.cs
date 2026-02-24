@@ -69,15 +69,15 @@ internal partial class Program
 
     internal static atkinf[,] attackinfo =
     {
-        { new atkinf(6,0,1), new atkinf(6,2,2), new atkinf(6,0,3), new atkinf(6,-1,4) },
-        { new atkinf(6,0,1), new atkinf(6,1,2), new atkinf(6,0,3), new atkinf(6,-1,4) },
-        { new atkinf(6,0,1), new atkinf(6,1,2), new atkinf(6,3,3), new atkinf(6,-1,4) },
-        { new atkinf(6,0,1), new atkinf(6,1,2), new atkinf(6,4,3), new atkinf(6,-1,4) },
+        { new(6,0,1), new (6,2,2), new (6,0,3), new (6,-1,4) },
+        { new(6,0,1), new (6,1,2), new (6,0,3), new (6,-1,4) },
+        { new(6,0,1), new (6,1,2), new (6,3,3), new (6,-1,4) },
+        { new(6,0,1), new (6,1,2), new (6,4,3), new (6,-1,4) },
     };
 
     internal static void CheckWeaponChange()
     {
-        int i, newWeapon = -1;
+        weapontypes i, newWeapon = weapontypes.wp_none;
 
         if (gamestate.ammo == 0)            // must use knife with no ammo
             return;
@@ -93,9 +93,9 @@ internal partial class Program
         }
         else
         {
-            for (i = (int)weapontypes.wp_knife; i <= gamestate.bestweapon; i++)
+            for (i = weapontypes.wp_knife; i <= gamestate.bestweapon; i++)
             {
-                if (buttonstate[(int)buttontypes.bt_readyknife + i - (int)weapontypes.wp_knife])
+                if (buttonstate[(int)buttontypes.bt_readyknife + i - weapontypes.wp_knife])
                 {
                     newWeapon = i;
                     break;
@@ -103,9 +103,9 @@ internal partial class Program
             }
         }
 
-        if (newWeapon != -1)
+        if (newWeapon != weapontypes.wp_none)
         {
-            gamestate.weapon = gamestate.chosenweapon = (short)newWeapon;
+            gamestate.weapon = gamestate.chosenweapon = newWeapon;
             DrawWeapon();
         }
     }
@@ -350,7 +350,7 @@ internal partial class Program
     internal static void VictoryTile()
     {
         SpawnBJVictory();
-        gamestate.victoryflag = 1; // true
+        gamestate.victoryflag = true;
     }
 
 
@@ -415,15 +415,15 @@ internal partial class Program
 
             case wl_stat_types.bo_machinegun:
                 SD_PlaySound((int)soundnames.GETMACHINESND);
-                GiveWeapon((int)weapontypes.wp_machinegun);
+                GiveWeapon(weapontypes.wp_machinegun);
                 break;
             case wl_stat_types.bo_chaingun:
                 SD_PlaySound((int)soundnames.GETGATLINGSND);
                 facetimes = 38;
-                GiveWeapon((int)weapontypes.wp_chaingun);
+                GiveWeapon(weapontypes.wp_chaingun);
 
                 if (viewsize != 21)
-                    StatusDrawFace((int)graphicnums.GOTGATLINGPIC);
+                    StatusDrawFace(graphicnums.GOTGATLINGPIC);
                 facecount = 0;
                 break;
 
@@ -465,13 +465,13 @@ internal partial class Program
     }
 
 
-    static void StatusDrawPic (uint x, uint y, uint picnum)
+    static void StatusDrawPic (uint x, uint y, graphicnums picnum)
     {
         VWB_DrawPicScaledCoord((int)(((screenWidth - scaleFactor * 320) / 16 + scaleFactor * x) * 8),
             (int)(screenHeight - scaleFactor * (STATUSLINES - y)), (int)picnum);
     }
 
-    static void StatusDrawFace(uint picnum)
+    static void StatusDrawFace(graphicnums picnum)
     {
         StatusDrawPic(17, 4, picnum);
     }
@@ -486,7 +486,7 @@ internal partial class Program
         length = (uint)str.Length;
         while (length < width)
         {
-            StatusDrawPic((uint)x, (uint)y, (int)graphicnums.N_BLANKPIC);
+            StatusDrawPic((uint)x, (uint)y, graphicnums.N_BLANKPIC);
             x++;
             width--;
         }
@@ -495,7 +495,7 @@ internal partial class Program
 
         while (c < length)
         {
-            StatusDrawPic((uint)x, (uint)y, (uint)(str[(int)c] - '0' + (int)graphicnums.N_0PIC));
+            StatusDrawPic((uint)x, (uint)y, (graphicnums)(str[(int)c] - '0' + (int)graphicnums.N_0PIC));
             x++;
             c++;
         }
@@ -535,17 +535,17 @@ internal partial class Program
     {
         if (viewsize == 21 && ingame) return;
         if (SD_SoundPlaying() == (int)soundnames.GETGATLINGSND)
-            StatusDrawFace((uint)graphicnums.GOTGATLINGPIC);
+            StatusDrawFace(graphicnums.GOTGATLINGPIC);
         else if (gamestate.health != 0)
         {
-            StatusDrawFace((uint)((uint)graphicnums.FACE1APIC + 3 * ((100 - gamestate.health) / 16) + gamestate.faceframe));
+            StatusDrawFace((graphicnums.FACE1APIC + 3 * ((100 - gamestate.health) / 16) + gamestate.faceframe));
         }
         else
         {
             if (LastAttacker != null && LastAttacker.obclass == classtypes.needleobj)
-                StatusDrawFace((int)graphicnums.MUTANTBJPIC);
+                StatusDrawFace(graphicnums.MUTANTBJPIC);
             else
-                StatusDrawFace((uint)graphicnums.FACE8APIC);
+                StatusDrawFace(graphicnums.FACE8APIC);
         }
     }
 
@@ -606,9 +606,9 @@ internal partial class Program
     {
         LastAttacker = attacker;
 
-        if (gamestate.victoryflag != 0)
+        if (gamestate.victoryflag)
             return;
-        if (gamestate.difficulty == (short)difficultytypes.gd_baby)
+        if (gamestate.difficulty == difficultytypes.gd_baby)
             points >>= 2;
 
         if (godmode == 0)
@@ -641,14 +641,14 @@ internal partial class Program
     {
         if (viewsize == 21 && ingame) return;
         if ((gamestate.keys & 1) != 0)
-            StatusDrawPic(30, 4, (int)graphicnums.GOLDKEYPIC);
+            StatusDrawPic(30, 4, graphicnums.GOLDKEYPIC);
         else
-            StatusDrawPic(30, 4, (int)graphicnums.NOKEYPIC);
+            StatusDrawPic(30, 4, graphicnums.NOKEYPIC);
 
         if ((gamestate.keys & 2) != 0)
-            StatusDrawPic(30, 20, (int)graphicnums.SILVERKEYPIC);
+            StatusDrawPic(30, 20, graphicnums.SILVERKEYPIC);
         else
-            StatusDrawPic(30, 20, (int)graphicnums.NOKEYPIC);
+            StatusDrawPic(30, 20, graphicnums.NOKEYPIC);
     }
 
     static void GiveKey(int key)
@@ -713,7 +713,7 @@ internal partial class Program
     static void DrawWeapon()
     {
         if (viewsize == 21 && ingame) return;
-        StatusDrawPic(32, 8, (uint)(graphicnums.KNIFEPIC + gamestate.weapon));
+        StatusDrawPic(32, 8, (graphicnums.KNIFEPIC + (int)gamestate.weapon));
     }
 /*
 ==================
@@ -723,13 +723,13 @@ internal partial class Program
 ==================
 */
 
-    internal static void GiveWeapon(int weapon)
+    internal static void GiveWeapon(weapontypes weapon)
     {
         GiveAmmo(6);
 
         if (gamestate.bestweapon < weapon)
             gamestate.bestweapon = gamestate.weapon
-            = gamestate.chosenweapon = (short)weapon;
+            = gamestate.chosenweapon = weapon;
 
         DrawWeapon();
     }
@@ -816,9 +816,9 @@ internal partial class Program
 
         gamestate.attackframe = 0;
         gamestate.attackcount =
-            attackinfo[gamestate.weapon, gamestate.attackframe].tics;
+            attackinfo[(int)gamestate.weapon, gamestate.attackframe].tics;
         gamestate.weaponframe =
-            attackinfo[gamestate.weapon, gamestate.attackframe].frame;
+            attackinfo[(int)gamestate.weapon, gamestate.attackframe].frame;
     }
 
     //===========================================================================
@@ -832,7 +832,7 @@ internal partial class Program
     */
     internal static void T_Player(objstruct ob)
     {
-        if (gamestate.victoryflag != 0)              // watching the BJ actor
+        if (gamestate.victoryflag)              // watching the BJ actor
         {
             VictorySpin();
             return;
@@ -848,7 +848,7 @@ internal partial class Program
             Cmd_Fire();
 
         ControlMovement(ob);
-        if (gamestate.victoryflag != 0)              // watching the BJ actor
+        if (gamestate.victoryflag)              // watching the BJ actor
             return;
 
         plux = (ushort)(player.x >> UNSIGNEDSHIFT);                     // scale to fit in unsigned
@@ -862,7 +862,7 @@ internal partial class Program
         atkinf cur;
         UpdateFace();
 
-        if (gamestate.victoryflag != 0)              // watching the BJ actor
+        if (gamestate.victoryflag)              // watching the BJ actor
         {
             VictorySpin();
             return;
@@ -876,7 +876,7 @@ internal partial class Program
             buttonstate[(int)buttontypes.bt_attack] = false;
 
         ControlMovement(ob);
-        if (gamestate.victoryflag != 0)              // watching the BJ actor
+        if (gamestate.victoryflag)              // watching the BJ actor
             return;
 
         plux = (ushort)(player.x >> UNSIGNEDSHIFT);                     // scale to fit in unsigned
@@ -890,7 +890,7 @@ internal partial class Program
         gamestate.attackcount -= (short)tics;
         while (gamestate.attackcount <= 0)
         {
-            cur = attackinfo[gamestate.weapon,gamestate.attackframe];
+            cur = attackinfo[(int)gamestate.weapon, gamestate.attackframe];
             switch (cur.attack)
             {
                 case -1:
@@ -952,7 +952,7 @@ internal partial class Program
             gamestate.attackcount += cur.tics;
             gamestate.attackframe++;
             gamestate.weaponframe =
-                attackinfo[gamestate.weapon, gamestate.attackframe].frame;
+                attackinfo[(int)gamestate.weapon, gamestate.attackframe].frame;
         }
     }
 
