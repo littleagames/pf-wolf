@@ -1,6 +1,4 @@
-﻿using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace Wolf3D;
+﻿namespace Wolf3D;
 
 internal partial class Program
 {

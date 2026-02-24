@@ -1,6 +1,5 @@
 ﻿using SDL2;
 using System;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wolf3D;
 

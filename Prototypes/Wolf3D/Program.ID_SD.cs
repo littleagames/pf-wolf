@@ -2,7 +2,6 @@
 using System.Runtime.InteropServices;
 using static SDL2.SDL;
 using static SDL2.SDL_mixer;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wolf3D;
 
