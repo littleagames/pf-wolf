@@ -378,7 +378,7 @@ internal partial class Program
         lastoffs = SD_MusicOff();
         UNCACHEAUDIOCHUNK(STARTMUSIC + lastmusic);
 
-        SD_StartMusic((int)(STARTMUSIC + song));
+        SD_StartMusic(STARTMUSIC + song);
         return lastoffs;
     }
 
@@ -716,7 +716,7 @@ internal partial class Program
     {
         int mouseactive = 0;
         IN_ReadControl(out ci);
-        if (mouseenabled != 0 && GrabInput)
+        if (mouseenabled && GrabInput)
         {
             int mousex, mousey, buttons;
 
@@ -770,7 +770,7 @@ internal partial class Program
             }
         }
 
-        if (joystickenabled != 0 && mouseactive == 0)
+        if (joystickenabled && mouseactive == 0)
         {
             int jx, jy, jb;
 
@@ -1482,7 +1482,7 @@ internal partial class Program
             switch ((CtlOptions)which)
             {
                 case CtlOptions.CTL_MOUSEENABLE:
-                    mouseenabled ^= 1;
+                    mouseenabled ^= true;
                     IN_CenterMouse();
                     DrawCtlScreen();
                     CusItems.curpos = -1;
@@ -1490,7 +1490,7 @@ internal partial class Program
                     break;
 
                 case CtlOptions.CTL_JOYENABLE:
-                    joystickenabled ^= 1;
+                    joystickenabled ^= true;
                     DrawCtlScreen();
                     CusItems.curpos = -1;
                     ShootSnd();
@@ -1531,7 +1531,7 @@ internal partial class Program
             CtlMenu[(int)CtlOptions.CTL_MOUSESENS].active = CtlMenu[(int)CtlOptions.CTL_MOUSEENABLE].active = 1;
         }
 
-        CtlMenu[(int)CtlOptions.CTL_MOUSESENS].active = mouseenabled;
+        CtlMenu[(int)CtlOptions.CTL_MOUSESENS].active = (short)(mouseenabled ? 1 : 0);
 
 
         DrawMenu(CtlItems, CtlMenu);
@@ -1539,13 +1539,13 @@ internal partial class Program
 
         x = CTL_X + CtlItems.indent - 24;
         y = CTL_Y + 3;
-        if (mouseenabled != 0)
+        if (mouseenabled)
             VWB_DrawPic(x, y, graphicnums.C_SELECTEDPIC);
         else
             VWB_DrawPic(x, y, graphicnums.C_NOTSELECTEDPIC);
 
         y = CTL_Y + 29;
-        if (joystickenabled != 0)
+        if (joystickenabled)
             VWB_DrawPic(x, y, graphicnums.C_SELECTEDPIC);
         else
             VWB_DrawPic(x, y, graphicnums.C_NOTSELECTEDPIC);
@@ -2648,7 +2648,7 @@ internal partial class Program
             color = HIGHLIGHT;
         SETFONTCOLOR((byte)color, BKGDCOLOR);
 
-        if (mouseenabled == 0)
+        if (!mouseenabled)
         {
             SETFONTCOLOR(DEACTIVE, BKGDCOLOR);
             CusMenu[0].active = 0;
@@ -2685,7 +2685,7 @@ internal partial class Program
             color = HIGHLIGHT;
         SETFONTCOLOR((byte)color, BKGDCOLOR);
 
-        if (joystickenabled == 0)
+        if (!joystickenabled)
         {
             SETFONTCOLOR(DEACTIVE, BKGDCOLOR);
             CusMenu[3].active = 0;

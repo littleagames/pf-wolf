@@ -735,8 +735,8 @@ See Options.txt for help";
                 sm = (SMMode)br.ReadByte();
                 sds = (SDSMode)br.ReadByte();
 
-                mouseenabled = br.ReadByte();
-                joystickenabled = br.ReadByte();
+                mouseenabled = (br.ReadByte() != 0) ? true : false;
+                joystickenabled = (br.ReadByte() != 0) ? true : false;
                 _ = br.ReadByte(); // joypad enabled placeholder
                 _ = br.ReadByte(); // joystick progressive placeholder
                 _ = br.ReadInt32(); // joystick port placeholder
@@ -764,13 +764,13 @@ See Options.txt for help";
                     sds = SDSMode.Off;
 
                 // make sure values are correct
-                if (mouseenabled > 0) mouseenabled = 1; // true
-                if (joystickenabled > 0) joystickenabled = 1; // true
+                if (mouseenabled) mouseenabled = true; // true
+                if (joystickenabled) joystickenabled = true; // true
 
                 if (!MousePresent)
-                    mouseenabled = 0; // false
+                    mouseenabled = false; // false
                 if (!IN_JoyPresent())
-                    joystickenabled = 0; // false
+                    joystickenabled = false; // false
 
                 if (mouseadjustment < 0) mouseadjustment = 0;
                 else if (mouseadjustment > 9) mouseadjustment = 9;
@@ -817,10 +817,10 @@ See Options.txt for help";
             sds = SDSMode.Off;
 
         if (MousePresent)
-            mouseenabled = 1;// true;
+            mouseenabled = true;
 
         if (IN_JoyPresent())
-            joystickenabled = 1;// true;
+            joystickenabled = true;
 
         viewsize = 19;
         mouseadjustment = 5;

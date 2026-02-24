@@ -1,6 +1,6 @@
 ﻿namespace Wolf3D;
 
-internal struct CP_itemtype
+internal class CP_itemtype
 {
     public CP_itemtype(short active, string text, Func<int, int>? routine)
     {
@@ -14,7 +14,7 @@ internal struct CP_itemtype
     public Func<int, int>? routine;
 }
 
-internal struct CP_iteminfo
+internal class CP_iteminfo
 {
     public short x, y, amount, curpos, indent;
     public CP_iteminfo(short x, short y, short amount, short curpos, short indent)

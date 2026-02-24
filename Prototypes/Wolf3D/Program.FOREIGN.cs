@@ -5,7 +5,7 @@ internal partial class Program
     internal const string QUITSTR = $"Are you sure you want\nto quit this great game?";
     internal const string CURGAME = $"You are currently in\na game. Continuing will\nerase old game. Ok?";
     internal const string GAMESVD = $"There's already a game\nsaved at this position.\n      Overwrite?";
-    internal const string ENDGAMESTR = @$"Are you sure you want\nto end the game you\nare playing? (""{YESBUTTONNAME}"" or ""{NOBUTTONNAME}""):";
+    internal const string ENDGAMESTR = $"Are you sure you want\nto end the game you\nare playing? ({YESBUTTONNAME} or {NOBUTTONNAME}):";
 
     internal const string STR_NG = "New Game";
     internal const string STR_SD = "Sound";
