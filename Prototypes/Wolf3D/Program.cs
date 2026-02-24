@@ -916,7 +916,8 @@ See Options.txt for help";
             {
                 actnum = br.ReadUInt32();
                 checksum = DoChecksum(actnum, checksum);
-                actorat[i, j] = actnum;
+                throw new NotImplementedException("actorat needs revisiting");
+                //actorat[i, j] = null;// actnum; // TODO: Get object again
             }
 
         areaconnect = br.ReadBytes(NUMAREAS*NUMAREAS).ToFixedArray(NUMAREAS, NUMAREAS);
@@ -978,8 +979,8 @@ See Options.txt for help";
         checksum = DoChecksum(pwallx, checksum);
         pwally = br.ReadUInt16();
         checksum = DoChecksum(pwally, checksum);
-        pwalldir = br.ReadByte();
-        checksum = DoChecksum(pwalldir, checksum);
+        pwalldir = (controldirs)br.ReadByte();
+        checksum = DoChecksum((byte)pwalldir, checksum);
         pwallpos = br.ReadUInt16();
         checksum = DoChecksum(pwallpos, checksum);
 
@@ -1046,7 +1047,7 @@ See Options.txt for help";
         int i, j;
         int checksum;
         ushort laststatobjnum;
-        objstruct ob;
+        //objstruct ob;
         objstruct nullobj = new();
 
         checksum = 0;
@@ -1076,8 +1077,8 @@ See Options.txt for help";
             for (j = 0; j < mapheight; j++)
             {
                 var obIndex = actorat[i, j];
-                bw.Write(obIndex);
-                checksum = DoChecksum(obIndex, checksum);
+                bw.Write((int)(obIndex?.GetHashCode() ?? 0));
+                checksum = DoChecksum((int)(obIndex?.GetHashCode() ?? 0), checksum);
             }
         }
 
@@ -1085,9 +1086,10 @@ See Options.txt for help";
         bw.Write(areabyplayer);
 
         DiskFlopAnim(x, y);
-        for (int? o = 0; o != null; o = ob.next)
+        foreach (var ob in objlist2)
+        //for (int? o = 0; o != null; o = ob.next)
         {
-            ob = objlist[o.Value];
+            //ob = objlist[o.Value];
             if (ob == null)
                 continue;
             int stateOffset = 0;
@@ -1135,8 +1137,8 @@ See Options.txt for help";
         bw.Write(pwally);
         checksum = DoChecksum(pwally, checksum);
 
-        bw.Write(pwalldir);
-        checksum = DoChecksum(pwalldir, checksum);
+        bw.Write((byte)pwalldir);
+        checksum = DoChecksum((byte)pwalldir, checksum);
         bw.Write(pwallpos);
         checksum = DoChecksum(pwallpos, checksum);
 

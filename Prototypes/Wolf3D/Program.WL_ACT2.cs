@@ -186,7 +186,7 @@ internal partial class Program
         newobj.obclass = classtypes.inertobj;
         newobj.active = activetypes.ac_yes;
 
-        newobj.flags = (uint)objflags.FL_NEVERMARK;
+        newobj.flags = objflags.FL_NEVERMARK;
     }
 
 
@@ -204,7 +204,7 @@ internal partial class Program
     internal static bool ProjectileTryMove(objstruct ob)
     {
         int xl, yl, xh, yh, x, y;
-        uint? check;
+        Actor? check;
 
         xl = (ob.x - PROJSIZE) >> TILESHIFT;
         yl = (ob.y - PROJSIZE) >> TILESHIFT;
@@ -219,7 +219,7 @@ internal partial class Program
             for (x = xl; x <= xh; x++)
             {
                 check = actorat[x, y];
-                if (check.HasValue && !ISPOINTER(check.Value, out _))
+                if (check != null && check is not objstruct)
                     return false;
             }
 
@@ -370,10 +370,10 @@ internal partial class Program
     {
         int move;
 
-        if (ob.dir == (byte)objdirtypes.nodir)
+        if (ob.dir == objdirtypes.nodir)
         {
             SelectChaseDir(ob);
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
 
@@ -401,7 +401,7 @@ internal partial class Program
 
             SelectChaseDir(ob);
 
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
     }
@@ -768,7 +768,7 @@ internal partial class Program
         if (CheckLine(ob))                                              // got a shot at player?
         {
             ob.hidden = false;
-            if (US_RndT() < (tics << 3) && objfreelist != 0)
+            if (US_RndT() < (tics << 3))
             {
                 //
                 // go into attack frame
@@ -781,13 +781,13 @@ internal partial class Program
         else
             ob.hidden = true;
 
-        if (ob.dir == (byte)objdirtypes.nodir)
+        if (ob.dir == objdirtypes.nodir)
         {
             if (dodge)
                 SelectDodgeDir(ob);
             else
                 SelectChaseDir(ob);
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
 
@@ -832,26 +832,21 @@ internal partial class Program
             else
                 SelectChaseDir(ob);
 
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
     }
 
     internal static void T_SchabbThrow(objstruct ob)
     {
-        objstruct newobj = null;
-        int deltax, deltay;
-        float angle;
-        int iangle;
-
-        deltax = player.x - ob.x;
-        deltay = ob.y - player.y;
-        angle = (float)Math.Atan2((float)deltay, (float)deltax);
+        var deltax = player.x - ob.x;
+        var deltay = ob.y - player.y;
+        var angle = (float)Math.Atan2((float)deltay, (float)deltax);
         if (angle < 0)
             angle = (float)(M_PI * 2 + angle);
-        iangle = (int)(angle / (M_PI * 2) * ANGLES);
+        var iangle = (int)(angle / (M_PI * 2) * ANGLES);
 
-        newobj = GetNewActor();
+        var newobj = GetNewActor();
         newobj.state = s_needle1;
         newobj.ticcount = 1;
 
@@ -860,11 +855,11 @@ internal partial class Program
         newobj.x = ob.x;
         newobj.y = ob.y;
         newobj.obclass = classtypes.needleobj;
-        newobj.dir = (byte)objdirtypes.nodir;
+        newobj.dir = objdirtypes.nodir;
         newobj.angle = (short)iangle;
         newobj.speed = (int)0x2000L;
 
-        newobj.flags = (uint)objflags.FL_NEVERMARK;
+        newobj.flags = objflags.FL_NEVERMARK;
         newobj.active = activetypes.ac_yes;
 
         PlaySoundLocActor((int)soundnames.SCHABBSTHROWSND, newobj);
@@ -909,7 +904,7 @@ internal partial class Program
         if (CheckLine(ob))                                              // got a shot at player?
         {
             ob.hidden = false;
-            if (US_RndT() < (tics << 3) && objfreelist != 0)
+            if (US_RndT() < (tics << 3))
             {
                 //
                 // go into attack frame
@@ -922,13 +917,13 @@ internal partial class Program
         else
             ob.hidden = true;
 
-        if (ob.dir == (byte)objdirtypes.nodir)
+        if (ob.dir == objdirtypes.nodir)
         {
             if (dodge)
                 SelectDodgeDir(ob);
             else
                 SelectChaseDir(ob);
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
 
@@ -973,7 +968,7 @@ internal partial class Program
             else
                 SelectChaseDir(ob);
 
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
     }
@@ -1001,10 +996,10 @@ internal partial class Program
         newobj.x = ob.x;
         newobj.y = ob.y;
         newobj.obclass = classtypes.rocketobj;
-        newobj.dir = (byte)objdirtypes.nodir;
+        newobj.dir = objdirtypes.nodir;
         newobj.angle = (short)iangle;
         newobj.speed = (int)0x2000L;
-        newobj.flags = (uint)objflags.FL_NEVERMARK;
+        newobj.flags = objflags.FL_NEVERMARK;
         newobj.active = activetypes.ac_yes;
 
         PlaySoundLocActor((int)soundnames.MISSILEFIRESND, newobj);
@@ -1054,7 +1049,7 @@ internal partial class Program
         if (CheckLine(ob))                                              // got a shot at player?
         {
             ob.hidden = false;
-            if (US_RndT() < (tics << 3) && objfreelist != 0)
+            if (US_RndT() < (tics << 3))
             {
                 //
                 // go into attack frame
@@ -1067,13 +1062,13 @@ internal partial class Program
         else
             ob.hidden = true;
 
-        if (ob.dir == (byte)objdirtypes.nodir)
+        if (ob.dir == objdirtypes.nodir)
         {
             if (dodge)
                 SelectDodgeDir(ob);
             else
                 SelectChaseDir(ob);
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
 
@@ -1118,7 +1113,7 @@ internal partial class Program
             else
                 SelectChaseDir(ob);
 
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
     }
@@ -1239,7 +1234,7 @@ internal partial class Program
         newobj.x = player.x;
         newobj.y = player.y;
         newobj.obclass = classtypes.bjobj;
-        newobj.dir = (byte)objdirtypes.north;
+        newobj.dir = objdirtypes.north;
         newobj.temp1 = 6;                      // tiles to run forward
     }
 
@@ -1671,13 +1666,13 @@ internal partial class Program
             SetMapSpot(tilex, tiley, 0, (ushort)tile);
             newobj.areanumber = (byte)(tile - AREATILE);
 
-            newobj.flags |= (uint)objflags.FL_AMBUSH;
+            newobj.flags |= objflags.FL_AMBUSH;
         }
 
         newobj.obclass = (classtypes.guardobj + which);
         newobj.hitpoints = starthitpoints[gamestate.difficulty, which];
-        newobj.dir = (byte)(dir * 2);
-        newobj.flags |= (uint)objflags.FL_SHOOTABLE;
+        newobj.dir = (objdirtypes)(dir * 2);
+        newobj.flags |= objflags.FL_SHOOTABLE;
     }
 
     internal static void SpawnPatrol(int which, int tilex, int tiley, int dir)
@@ -1723,10 +1718,10 @@ internal partial class Program
         }
 
         newobj.obclass = (classtypes.guardobj + which);
-        newobj.dir = (byte)(dir * 2);
+        newobj.dir = (objdirtypes)(dir * 2);
         newobj.hitpoints = starthitpoints[gamestate.difficulty, which];
         newobj.distance = (int)TILEGLOBAL;
-        newobj.flags |= (uint)objflags.FL_SHOOTABLE;
+        newobj.flags |= objflags.FL_SHOOTABLE;
         newobj.active = activetypes.ac_yes;
 
         //actorat[newobj.tilex, newobj.tiley] = -1;           // don't use original spot
@@ -1755,7 +1750,7 @@ internal partial class Program
         objstruct newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_grddie4);
         if (!(demorecord || demoplayback))
         {
-            newobj.flags |= (uint)objflags.FL_NONMARK; // walk through moving enemy fix
+            newobj.flags |= objflags.FL_NONMARK; // walk through moving enemy fix
         }
 
         newobj.obclass = classtypes.inertobj;
@@ -1770,8 +1765,8 @@ internal partial class Program
 
         newobj.obclass = classtypes.bossobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_boss];
-        newobj.dir = (byte)objdirtypes.nodir;
-        newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
+        newobj.dir = objdirtypes.nodir;
+        newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
             gamestate.killtotal++;
     }
@@ -1785,8 +1780,8 @@ internal partial class Program
 
         newobj.obclass = classtypes.gretelobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_gretel];
-        newobj.dir = (byte)objdirtypes.nodir;
-        newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
+        newobj.dir = objdirtypes.nodir;
+        newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
             gamestate.killtotal++;
     }
@@ -1800,8 +1795,8 @@ internal partial class Program
 
         newobj.obclass = classtypes.fakeobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_fake];
-        newobj.dir = (byte)objdirtypes.nodir;
-        newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
+        newobj.dir = objdirtypes.nodir;
+        newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
             gamestate.killtotal++;
     }
@@ -1820,8 +1815,8 @@ internal partial class Program
 
         newobj.obclass = classtypes.mechahitlerobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_hitler];
-        newobj.dir = (byte)objdirtypes.nodir;
-        newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
+        newobj.dir = objdirtypes.nodir;
+        newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
             gamestate.killtotal++;
     }
@@ -1839,8 +1834,8 @@ internal partial class Program
 
         newobj.distance = ob.distance;
         newobj.dir = ob.dir;
-        newobj.flags = ob.flags | (uint)objflags.FL_SHOOTABLE;
-        newobj.flags &= ~(uint)objflags.FL_NONMARK;   // hitler stuck with nodir fix
+        newobj.flags = ob.flags | objflags.FL_SHOOTABLE;
+        newobj.flags &= ~objflags.FL_NONMARK;   // hitler stuck with nodir fix
 
         newobj.obclass = classtypes.realhitlerobj;
         newobj.hitpoints = hitpoints[gamestate.difficulty];
@@ -1867,11 +1862,11 @@ internal partial class Program
         float angle;
         int iangle;
 
-        if (objfreelist == MAXACTORS)       // stop shooting if over MAXACTORS
-        {
-            NewState(ob, s_fakechase1);
-            return;
-        }
+        //if (objfreelist == MAXACTORS)       // stop shooting if over MAXACTORS
+        //{
+        //    NewState(ob, s_fakechase1);
+        //    return;
+        //}
 
         deltax = player.x - ob.x;
         deltay = ob.y - player.y;
@@ -1888,11 +1883,11 @@ internal partial class Program
         newobj.tiley = ob.tiley;
         newobj.x = ob.x;
         newobj.y = ob.y;
-        newobj.dir = (byte)objdirtypes.nodir;
+        newobj.dir = objdirtypes.nodir;
         newobj.angle = (short)iangle;
         newobj.obclass = classtypes.fireobj;
         newobj.speed = (int)0x1200L;
-        newobj.flags = (uint)objflags.FL_NEVERMARK;
+        newobj.flags = objflags.FL_NEVERMARK;
         newobj.active = activetypes.ac_yes;
 
         PlaySoundLocActor((int)soundnames.FLAMETHROWERSND, newobj);
@@ -1905,7 +1900,7 @@ internal partial class Program
         if (CheckLine(ob))                      // got a shot at player?
         {
             ob.hidden = false;
-            if (US_RndT() < (tics << 1) && objfreelist != 0)
+            if (US_RndT() < (tics << 1))
             {
                 //
                 // go into attack frame
@@ -1917,10 +1912,10 @@ internal partial class Program
         else
             ob.hidden = true;
 
-        if (ob.dir == (byte)objdirtypes.nodir)
+        if (ob.dir == objdirtypes.nodir)
         {
             SelectDodgeDir(ob);
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
 
@@ -1948,7 +1943,7 @@ internal partial class Program
 
             SelectDodgeDir(ob);
 
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
     }
@@ -1967,8 +1962,8 @@ internal partial class Program
 
         newobj.obclass = classtypes.giftobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_gift];
-        newobj.dir = (byte)objdirtypes.nodir;
-        newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
+        newobj.dir = objdirtypes.nodir;
+        newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
             gamestate.killtotal++;
     }
@@ -1996,8 +1991,8 @@ internal partial class Program
         newobj.obclass = classtypes.ghostobj;
         newobj.speed = SPDDOG;
 
-        newobj.dir = (byte)objdirtypes.east;
-        newobj.flags |= (uint)objflags.FL_AMBUSH;
+        newobj.dir = objdirtypes.east;
+        newobj.flags |= objflags.FL_AMBUSH;
         if (!loadedgame)
         {
             gamestate.killtotal++;
@@ -2020,8 +2015,8 @@ internal partial class Program
 
         newobj.obclass = classtypes.schabbobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_schabbs];
-        newobj.dir = (byte)objdirtypes.nodir;
-        newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
+        newobj.dir = objdirtypes.nodir;
+        newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
             gamestate.killtotal++;
     }
@@ -2040,8 +2035,8 @@ internal partial class Program
 
         newobj.obclass = classtypes.fatobj;
         newobj.hitpoints = starthitpoints[gamestate.difficulty, (short)enemytypes.en_fat];
-        newobj.dir = (byte)objdirtypes.nodir;
-        newobj.flags |= (uint)objflags.FL_SHOOTABLE | (uint)objflags.FL_AMBUSH;
+        newobj.dir = objdirtypes.nodir;
+        newobj.flags |= objflags.FL_SHOOTABLE | objflags.FL_AMBUSH;
         if (!loadedgame)
             gamestate.killtotal++;
     }
@@ -2148,13 +2143,13 @@ internal partial class Program
         else
             ob.hidden = true;
 
-        if (ob.dir == (byte)objdirtypes.nodir)
+        if (ob.dir == objdirtypes.nodir)
         {
             if (dodge)
                 SelectDodgeDir(ob);
             else
                 SelectChaseDir(ob);
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
 
@@ -2200,7 +2195,7 @@ internal partial class Program
             else
                 SelectChaseDir(ob);
 
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
     }
@@ -2219,10 +2214,10 @@ internal partial class Program
         int dx, dy;
 
 
-        if (ob.dir == (byte)objdirtypes.nodir)
+        if (ob.dir == objdirtypes.nodir)
         {
             SelectDodgeDir(ob);
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
 
@@ -2270,7 +2265,7 @@ internal partial class Program
 
             SelectDodgeDir(ob);
 
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                                 // object is blocked in
         }
     }
@@ -2282,10 +2277,10 @@ internal partial class Program
         if (SightPlayer(ob))
             return;
 
-        if (ob.dir == (byte)objdirtypes.nodir)
+        if (ob.dir == objdirtypes.nodir)
         {
             SelectPathDir(ob);
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                 // all movement is blocked
         }
 
@@ -2324,7 +2319,7 @@ internal partial class Program
 
             SelectPathDir(ob);
 
-            if (ob.dir == (byte)objdirtypes.nodir)
+            if (ob.dir == objdirtypes.nodir)
                 return;                                 // all movement is blocked
         }
     }
@@ -2368,14 +2363,14 @@ internal partial class Program
 
             if (thrustspeed >= RUNSPEED)
             {
-                if ((ob.flags & (uint)objflags.FL_VISABLE) != 0)
+                if (ob.flags.HasFlag(objflags.FL_VISABLE))
                     hitchance = 160 - dist * 16;                // player can see to dodge
                 else
                     hitchance = 160 - dist * 8;
             }
             else
             {
-                if ((ob.flags & (uint)objflags.FL_VISABLE) != 0)
+                if (ob.flags.HasFlag(objflags.FL_VISABLE))
                     hitchance = 256 - dist * 16;                // player can see to dodge
                 else
                     hitchance = 256 - dist * 8;
@@ -2512,13 +2507,13 @@ internal partial class Program
         if (spot < 8)
         {
             // new direction
-            ob.dir = (byte)spot;
+            ob.dir = (objdirtypes)spot;
         }
 
         ob.distance = (int)TILEGLOBAL;
 
         if (!TryWalk(ob))
-            ob.dir = (byte)objdirtypes.nodir;
+            ob.dir = objdirtypes.nodir;
     }
 
     //===========================================================================
@@ -2534,7 +2529,7 @@ internal partial class Program
     internal static bool CheckPosition(objstruct ob)
     {
         int x, y, xl, yl, xh, yh;
-        uint? check;
+        Actor? check;
 
         xl = (int)((ob.x - PLAYERSIZE) >> TILESHIFT);
         yl = (int)((ob.y - PLAYERSIZE) >> TILESHIFT);
@@ -2550,7 +2545,7 @@ internal partial class Program
             for (x = xl; x <= xh; x++)
             {
                 check = actorat[x, y];
-                if (check.HasValue && !ISPOINTER(check.Value, out _))
+                if (check != null && check is not objstruct)
                     return false;
             }
         }

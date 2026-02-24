@@ -40,9 +40,9 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         newobj.tiley = (byte)tiley;
         newobj.x = (int)((tilex << TILESHIFT) + TILEGLOBAL / 2);
         newobj.y = (int)((tiley << TILESHIFT) + TILEGLOBAL / 2);
-        newobj.dir = (int)objdirtypes.nodir;
+        newobj.dir = objdirtypes.nodir;
 
-        actorat[tilex, tiley] = (uint)((MAXACTORS - objfreelist) | 0xffff); // TODO: Might be the wrong value
+        actorat[tilex, tiley] = newobj;// (uint)((MAXACTORS - objfreelist) | 0xffff); // TODO: Might be the wrong value
         newobj.areanumber = (byte)(MAPSPOT((int)tilex, (int)tiley, 0) - AREATILE);
 
         return newobj;
@@ -310,12 +310,12 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
     internal static bool CHECKDIAG(int x, int y)
     {
-        uint temp = actorat[x, y];
-        if (temp != 0)
+        Actor? temp = actorat[x, y];
+        if (temp != null)
         { 
-              if (temp < BIT_ALLTILES)
+              if (temp is not objstruct)
                   return false;
-            if (ISPOINTER(temp, out var check) && (check.flags & (int)objflags.FL_SHOOTABLE) != 0)
+            if (temp is objstruct check && check.flags.HasFlag(objflags.FL_SHOOTABLE))
                 return false;
         }
 
@@ -324,19 +324,19 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
     internal static int CHECKSIDE(objstruct ob, int x, int y, ref int doornumtile)
     {
-        uint temp = actorat[x, y];
-        if (temp != 0)
+        Actor? temp = actorat[x, y];
+        if (temp != null)
         {
-            if (temp < BIT_DOOR)
+            if (temp is Wall)
                 return 0;
-            if (temp < BIT_ALLTILES)
+            if (temp is Door door)
             {
                 // DOORCHECK
                 if ((demorecord || demoplayback))
-                    doornumtile = (short)(temp & 63);
+                    doornumtile = (short)door.door;//(temp & 63);
                 else
                 {
-                    doornumtile = (short)(temp & ~BIT_DOOR);
+                    doornumtile = (short)door.door;//(temp & ~BIT_DOOR);
                     if (ob.obclass != classtypes.ghostobj
                         && ob.obclass != classtypes.spectreobj)
                     {
@@ -347,7 +347,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 }
             }
 
-            if (ISPOINTER(temp, out var check) && (check.flags & (int)objflags.FL_SHOOTABLE) != 0)
+            if (temp is objstruct check && check.flags.HasFlag(objflags.FL_SHOOTABLE))
                 return 0;
         }
 
@@ -599,7 +599,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
     internal static bool SightPlayer(objstruct ob)
     {
-        if ((ob.flags & (int)objflags.FL_ATTACKMODE) != 0)
+        if (ob.flags.HasFlag(objflags.FL_ATTACKMODE))
             Quit("An actor in ATTACKMODE called SightPlayer!");
 
         if (ob.temp2 != 0)
@@ -617,11 +617,11 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             if (ob.areanumber < NUMAREAS && areabyplayer[ob.areanumber] == 0)
                 return false;
 
-            if ((ob.flags & (int)objflags.FL_AMBUSH) != 0)
+            if (ob.flags.HasFlag(objflags.FL_AMBUSH))
             {
                 if (!CheckSight(ob))
                     return false;
-                ob.flags &= ~(uint)objflags.FL_AMBUSH;
+                ob.flags &= ~objflags.FL_AMBUSH;
             }
             else
             {
@@ -777,7 +777,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         if (ob.distance < 0)
             ob.distance = 0;       // ignore the door opening command
 
-        ob.flags |= (uint)(objflags.FL_ATTACKMODE | objflags.FL_FIRSTATTACK);
+        ob.flags |= (objflags.FL_ATTACKMODE | objflags.FL_FIRSTATTACK);
     }
 
 
@@ -808,21 +808,21 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
     {
         int deltax, deltay, i;
         uint absdx, absdy;
-        byte[] dirtry = new byte[5];
-        byte tdir;
+        objdirtypes[] dirtry = new objdirtypes[5];
+        objdirtypes tdir;
         objdirtypes turnaround;
 
-        if ((ob.flags & (uint)objflags.FL_FIRSTATTACK) != 0)
+        if (ob.flags.HasFlag(objflags.FL_FIRSTATTACK))
         {
             //
             // turning around is only ok the very first time after noticing the
             // player
             //
             turnaround = objdirtypes.nodir;
-            ob.flags &= ~(uint)objflags.FL_FIRSTATTACK;
+            ob.flags &= ~objflags.FL_FIRSTATTACK;
         }
         else
-            turnaround = opposite[ob.dir];
+            turnaround = opposite[(byte)ob.dir];
 
         deltax = player.tilex - ob.tilex;
         deltay = player.tiley - ob.tiley;
@@ -835,24 +835,24 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
         if (deltax > 0)
         {
-            dirtry[1] = (byte)objdirtypes.east;
-            dirtry[3] = (byte)objdirtypes.west;
+            dirtry[1] = objdirtypes.east;
+            dirtry[3] = objdirtypes.west;
         }
         else
         {
-            dirtry[1] = (byte)objdirtypes.west;
-            dirtry[3] = (byte)objdirtypes.east;
+            dirtry[1] = objdirtypes.west;
+            dirtry[3] = objdirtypes.east;
         }
 
         if (deltay > 0)
         {
-            dirtry[2] = (byte)objdirtypes.south;
-            dirtry[4] = (byte)objdirtypes.north;
+            dirtry[2] = objdirtypes.south;
+            dirtry[4] = objdirtypes.north;
         }
         else
         {
-            dirtry[2] = (byte)objdirtypes.north;
-            dirtry[4] = (byte)objdirtypes.south;
+            dirtry[2] = objdirtypes.north;
+            dirtry[4] = objdirtypes.south;
         }
 
         //
@@ -881,14 +881,14 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             dirtry[4] = tdir;
         }
 
-        dirtry[0] = (byte)diagonal[dirtry[1], dirtry[2]];
+        dirtry[0] = diagonal[(byte)dirtry[1], (byte)dirtry[2]];
 
         //
         // try the directions util one works
         //
         for (i = 0; i < 5; i++)
         {
-            if (dirtry[i] == (byte)objdirtypes.nodir || dirtry[i] == (byte)turnaround)
+            if (dirtry[i] == objdirtypes.nodir || dirtry[i] == turnaround)
                 continue;
 
             ob.dir = dirtry[i];
@@ -901,13 +901,13 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         //
         if (turnaround != objdirtypes.nodir)
         {
-            ob.dir = (byte)turnaround;
+            ob.dir = turnaround;
 
             if (TryWalk(ob))
                 return;
         }
 
-        ob.dir = (byte)objdirtypes.nodir;
+        ob.dir = objdirtypes.nodir;
     }
 
 
@@ -924,28 +924,28 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
     internal static void SelectChaseDir(objstruct ob)
     {
         int deltax, deltay;
-        byte[] d = new byte[3];
-        byte tdir, olddir;
+        objdirtypes[] d = new objdirtypes[3];
+        objdirtypes tdir, olddir;
         objdirtypes turnaround;
 
 
         olddir = ob.dir;
-        turnaround = opposite[olddir];
+        turnaround = opposite[(byte)olddir];
 
         deltax = player.tilex - ob.tilex;
         deltay = player.tiley - ob.tiley;
 
-        d[1] = (byte)objdirtypes.nodir;
-        d[2] = (byte)objdirtypes.nodir;
+        d[1] = objdirtypes.nodir;
+        d[2] = objdirtypes.nodir;
 
         if (deltax > 0)
-            d[1] = (byte)objdirtypes.east;
+            d[1] = objdirtypes.east;
         else if (deltax < 0)
-            d[1] = (byte)objdirtypes.west;
+            d[1] = objdirtypes.west;
         if (deltay > 0)
-            d[2] = (byte)objdirtypes.south;
+            d[2] = objdirtypes.south;
         else if (deltay < 0)
-            d[2] = (byte)objdirtypes.north;
+            d[2] = objdirtypes.north;
 
         if (Math.Abs(deltay) > Math.Abs(deltax))
         {
@@ -954,20 +954,20 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             d[2] = tdir;
         }
 
-        if (d[1] == (byte)turnaround)
-            d[1] = (byte)objdirtypes.nodir;
-        if (d[2] == (byte)turnaround)
-            d[2] = (byte)objdirtypes.nodir;
+        if (d[1] == turnaround)
+            d[1] = objdirtypes.nodir;
+        if (d[2] == turnaround)
+            d[2] = objdirtypes.nodir;
 
 
-        if (d[1] != (byte)objdirtypes.nodir)
+        if (d[1] != objdirtypes.nodir)
         {
             ob.dir = d[1];
                 if (TryWalk(ob))
                 return;     /*either moved forward or attacked*/
         }
 
-        if (d[2] != (byte)objdirtypes.nodir)
+        if (d[2] != objdirtypes.nodir)
         {
             ob.dir = d[2];
             if (TryWalk(ob))
@@ -976,7 +976,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
         /* there is no direct path to the player, so pick another direction */
 
-        if (olddir != (byte)objdirtypes.nodir)
+        if (olddir != objdirtypes.nodir)
         {
             ob.dir = olddir;
             if (TryWalk(ob))
@@ -985,9 +985,9 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
         if (US_RndT() > 128)      /*randomly determine direction of search*/
         {
-            for (tdir = (byte)objdirtypes.north; tdir <= (byte)objdirtypes.west; tdir++)
+            for (tdir = objdirtypes.north; tdir <= objdirtypes.west; tdir++)
             {
-                if (tdir != (byte)turnaround)
+                if (tdir != turnaround)
                 {
                     ob.dir = tdir;
                     if (TryWalk(ob))
@@ -997,9 +997,9 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         }
         else
         {
-            for (tdir = (byte)objdirtypes.west; tdir >= (byte)objdirtypes.north; tdir--)
+            for (tdir = objdirtypes.west; tdir >= objdirtypes.north; tdir--)
             {
-                if (tdir != (byte)turnaround)
+                if (tdir != turnaround)
                 {
                     ob.dir = tdir;
                     if (TryWalk(ob))
@@ -1010,15 +1010,15 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
         if (turnaround != objdirtypes.nodir)
         {
-            ob.dir = (byte)turnaround;
-            if (ob.dir != (byte)objdirtypes.nodir)
+            ob.dir = turnaround;
+            if (ob.dir != objdirtypes.nodir)
             {
                 if (TryWalk(ob))
                     return;
             }
         }
 
-        ob.dir = (byte)objdirtypes.nodir;                // can't move
+        ob.dir = objdirtypes.nodir;                // can't move
     }
 
 
@@ -1035,21 +1035,21 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
     internal static void SelectRunDir(objstruct ob)
     {
         int deltax, deltay;
-        byte[] d = new byte[3];
-        byte tdir;
+        objdirtypes[] d = new objdirtypes[3];
+        objdirtypes tdir;
 
 
         deltax = player.tilex - ob.tilex;
         deltay = player.tiley - ob.tiley;
 
         if (deltax < 0)
-            d[1] = (byte)objdirtypes.east;
+            d[1] = objdirtypes.east;
         else
-            d[1] = (byte)objdirtypes.west;
+            d[1] = objdirtypes.west;
         if (deltay < 0)
-            d[2] = (byte)objdirtypes.south;
+            d[2] = objdirtypes.south;
         else
-            d[2] = (byte)objdirtypes.north;
+            d[2] = objdirtypes.north;
 
         if (Math.Abs(deltay) > Math.Abs(deltax))
         {
@@ -1070,7 +1070,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
         if (US_RndT() > 128)      /*randomly determine direction of search*/
         {
-            for (tdir = (byte)objdirtypes.north; tdir <= (byte)objdirtypes.west; tdir++)
+            for (tdir = objdirtypes.north; tdir <= objdirtypes.west; tdir++)
             {
                 ob.dir = tdir;
                 if (TryWalk(ob))
@@ -1079,7 +1079,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         }
         else
         {
-            for (tdir = (byte)objdirtypes.west; tdir >= (byte)objdirtypes.north; tdir--)
+            for (tdir = objdirtypes.west; tdir >= objdirtypes.north; tdir--)
             {
                 ob.dir = tdir;
                 if (TryWalk(ob))
@@ -1087,7 +1087,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             }
         }
 
-        ob.dir = (byte)objdirtypes.nodir;                // can't move
+        ob.dir = objdirtypes.nodir;                // can't move
     }
 
     internal static void KillActor(objstruct ob)
@@ -1180,9 +1180,9 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         }
 
         gamestate.killcount++;
-        ob.flags &= ~(uint)objflags.FL_SHOOTABLE;
-        actorat[ob.tilex, ob.tiley] = 0;
-        ob.flags |= (uint)objflags.FL_NONMARK;
+        ob.flags &= ~objflags.FL_SHOOTABLE;
+        actorat[ob.tilex, ob.tiley] = null;
+        ob.flags |= objflags.FL_NONMARK;
     }
 
     internal static void DamageActor(objstruct ob, uint damage)
@@ -1192,7 +1192,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         //
         // do double damage if shooting a non attack mode actor
         //
-        if ((ob.flags & (uint)objflags.FL_ATTACKMODE) == 0)
+        if ((ob.flags & objflags.FL_ATTACKMODE) == 0)
             damage <<= 1;
 
         ob.hitpoints -= (short)damage;
@@ -1201,7 +1201,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             KillActor(ob);
         else
         {
-            if ((ob.flags & (uint)objflags.FL_ATTACKMODE) == 0)
+            if (!ob.flags.HasFlag(objflags.FL_ATTACKMODE))
                 FirstSighting(ob);             // put into combat mode
 
             switch ((classtypes)ob.obclass)                // dogs only have one hit point

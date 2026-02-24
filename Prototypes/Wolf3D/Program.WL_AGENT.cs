@@ -229,8 +229,8 @@ internal partial class Program
     internal static bool TryMove(objstruct ob)
     {
         uint xl, yl, xh, yh, x, y;
-        uint checkIndex;
-        objstruct? check;
+        //uint checkIndex;
+        Actor? check;
         int deltax, deltay;
 
         xl = (uint)((ob.x - PLAYERSIZE) >> (int)TILESHIFT);
@@ -248,26 +248,26 @@ internal partial class Program
         {
             for (x = xl; x <= xh; x++)
             {
-                checkIndex = actorat[x, y];
-                if (checkIndex != 0 && !ISPOINTER(checkIndex, out check))
+                check = actorat[x, y];
+                if (check != null && !ISPOINTER(check))
                 {
                     if (tilemap[x, y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
                     {
                         switch (pwalldir)
                         {
-                            case (byte)controldirs.di_north:
+                            case controldirs.di_north:
                                 if (ob.y - PUSHWALLMINDIST <= (pwally << (int)TILESHIFT) + ((63 - pwallpos) << 10))
                                     return false;
                                 break;
-                            case (byte)controldirs.di_west:
+                            case controldirs.di_west:
                                 if (ob.x - PUSHWALLMINDIST <= (pwallx << (int)TILESHIFT) + ((63 - pwallpos) << 10))
                                     return false;
                                 break;
-                            case (byte)controldirs.di_east:
+                            case controldirs.di_east:
                                 if (ob.x + PUSHWALLMINDIST >= (pwallx << (int)TILESHIFT) + (pwallpos << 10))
                                     return false;
                                 break;
-                            case (byte)controldirs.di_south:
+                            case controldirs.di_south:
                                 if (ob.y + PUSHWALLMINDIST >= (pwally << (int)TILESHIFT) + (pwallpos << 10))
                                     return false;
                                 break;
@@ -294,9 +294,9 @@ internal partial class Program
         {
             for (x = xl; x <= xh; x++)
             {
-                checkIndex = actorat[x, y];
+                check = actorat[x, y];
                 // TODO: !check.Equals(player) might not operate correctly obclass != playerobj
-                if (ISPOINTER(checkIndex, out check) && /*!check.Equals(player)*/check.obclass != classtypes.playerobj && (check.flags & (int)objflags.FL_SHOOTABLE) != 0)
+                if (check is objstruct actor && actor.obclass != classtypes.playerobj && actor.flags.HasFlag(objflags.FL_SHOOTABLE))
                 {
                     deltax = ob.x - check.x;
                     if (deltax < -MINACTORDIST || deltax > MINACTORDIST)
@@ -958,25 +958,26 @@ internal partial class Program
 
     internal static void KnifeAttack(objstruct ob)
     {
-        objstruct? check, closest;
+        objstruct? closest;
         int dist;
 
         SD_PlaySound(((int)soundnames.ATKKNIFESND));
         // actually fire
         dist = 0x7fffffff;
         closest = null;
-        for (int? i = ob.next; i != null; i = check?.next)
+        foreach (var actor in objlist2)
+        //for (int? i = ob.next; i != null; i = check?.next)
         {
-            check = objlist[i.Value];
-            if (check == null) continue;
+            //check = objlist[i.Value];
+            if (actor == null) continue;
 
-            if ((check.flags & (uint)objflags.FL_SHOOTABLE) != 0 && ((check.flags & (uint)objflags.FL_VISABLE) != 0)
-                && Math.Abs(check.viewx - centerx) < shootdelta)
+            if (actor.flags.HasFlag(objflags.FL_SHOOTABLE) && actor.flags.HasFlag(objflags.FL_VISABLE)
+                && Math.Abs(actor.viewx - centerx) < shootdelta)
             {
-                if (check.transx < dist)
+                if (actor.transx < dist)
                 {
-                    dist = check.transx;
-                    closest = check;
+                    dist = actor.transx;
+                    closest = actor;
                 }
             }
         }
@@ -993,7 +994,7 @@ internal partial class Program
 
     internal static void GunAttack(objstruct ob)
     {
-        objstruct? check,closest,oldclosest;
+        objstruct? closest,oldclosest;
         int damage;
         int dx, dy, dist;
         long viewdist;
@@ -1023,12 +1024,13 @@ internal partial class Program
         {
             oldclosest = closest;
 
-            for (int? i = ob.next; i != null; i = check?.next)
+            foreach (var check in objlist2)
+            //for (int? i = ob.next; i != null; i = check?.next)
             //for (check = ob->next; check; check = check->next)
             {
-                check = objlist[i.Value];
+                //check = objlist[i.Value];
                 if (check == null) continue;
-                if ((check.flags & (uint)objflags.FL_SHOOTABLE) != 0 && ((check.flags & (uint)objflags.FL_VISABLE) != 0)
+                if (check.flags.HasFlag(objflags.FL_SHOOTABLE) && check.flags.HasFlag(objflags.FL_VISABLE)
                     && Math.Abs(check.viewx - centerx) < shootdelta)
                 {
                     if (check.transx < viewdist)
@@ -1108,7 +1110,7 @@ internal partial class Program
         player.angle = (short)((1 - dir) * 90);
         if (player.angle < 0)
             player.angle += ANGLES;
-        player.flags = (int)objflags.FL_NEVERMARK;
+        player.flags = objflags.FL_NEVERMARK;
         Thrust(0, 0);                           // set some variables
 
         InitAreas();

@@ -9,7 +9,7 @@ internal partial class Program
     {
         public short picnum;
         public short type;
-        public uint specialFlags;    // they are ORed to the statobj_t flags
+        public objflags specialFlags;    // they are ORed to the statobj_t flags
 
         public statinfo_t(short picnum)
         {
@@ -22,7 +22,7 @@ internal partial class Program
             this.type = type;
         }
 
-        public statinfo_t(short picnum, short type, uint specialFlags)
+        public statinfo_t(short picnum, short type, objflags specialFlags)
         {
             this.picnum = picnum;
             this.type = type;
@@ -35,8 +35,8 @@ internal partial class Program
         new statinfo_t((short)spritenums.SPR_STAT_0),                           // puddle          spr1v
         new statinfo_t((short)spritenums.SPR_STAT_1,(short)wl_stat_types.block),                     // Green Barrel    "
         new statinfo_t((short)spritenums.SPR_STAT_2,(short)wl_stat_types.block),                     // Table/chairs    "
-        new statinfo_t((short)spritenums.SPR_STAT_3,(short)wl_stat_types.block,(uint)objflags.FL_FULLBRIGHT),       // Floor lamp      "
-        new statinfo_t((short)spritenums.SPR_STAT_4,(short)wl_stat_types.none,(uint)objflags.FL_FULLBRIGHT),        // Chandelier      "
+        new statinfo_t((short)spritenums.SPR_STAT_3,(short)wl_stat_types.block,objflags.FL_FULLBRIGHT),       // Floor lamp      "
+        new statinfo_t((short)spritenums.SPR_STAT_4,(short)wl_stat_types.none,objflags.FL_FULLBRIGHT),        // Chandelier      "
         new statinfo_t((short)spritenums.SPR_STAT_5,(short)wl_stat_types.block),                     // Hanged man      "
         new statinfo_t((short)spritenums.SPR_STAT_6,(short)wl_stat_types.bo_alpo),                   // Bad food        "
         new statinfo_t((short)spritenums.SPR_STAT_7,(short)wl_stat_types.block),                     // Red pillar      "
@@ -49,7 +49,7 @@ internal partial class Program
         new statinfo_t((short)spritenums.SPR_STAT_11,(short)wl_stat_types.block),                    // Potted plant    "
         new statinfo_t((short)spritenums.SPR_STAT_12,(short)wl_stat_types.block),                    // Urn             "
         new statinfo_t((short)spritenums.SPR_STAT_13,(short)wl_stat_types.block),                    // Bare table      "
-        new statinfo_t((short)spritenums.SPR_STAT_14,(short)wl_stat_types.none,(uint)objflags.FL_FULLBRIGHT),       // Ceiling light   "
+        new statinfo_t((short)spritenums.SPR_STAT_14,(short)wl_stat_types.none,objflags.FL_FULLBRIGHT),       // Ceiling light   "
         new statinfo_t((short)spritenums.SPR_STAT_15),                          // Kitchen stuff   "
         //
         // NEW PAGE
@@ -77,7 +77,7 @@ internal partial class Program
         // NEW PAGE
         //
         new statinfo_t((short)spritenums.SPR_STAT_32,(short)wl_stat_types.bo_crown),                 // crown           spr5v
-        new statinfo_t((short)spritenums.SPR_STAT_33,(short)wl_stat_types.bo_fullheal,(uint)objflags.FL_FULLBRIGHT),// one up          "
+        new statinfo_t((short)spritenums.SPR_STAT_33,(short)wl_stat_types.bo_fullheal,objflags.FL_FULLBRIGHT),// one up          "
         new statinfo_t((short)spritenums.SPR_STAT_34,(short)wl_stat_types.bo_gibs),                  // gibs            "
         new statinfo_t((short)spritenums.SPR_STAT_35,(short)wl_stat_types.block),                    // barrel          "
         new statinfo_t((short)spritenums.SPR_STAT_36,(short)wl_stat_types.block),                    // well            "
@@ -121,7 +121,7 @@ internal partial class Program
         switch ((wl_stat_types)statinfo[type].type)
         {
             case wl_stat_types.block:
-                actorat[tilex, tiley] = BIT_WALL;          // consider it a blocking tile
+                actorat[tilex, tiley] = new BlockingActor();// BIT_WALL;          // consider it a blocking tile
                 goto case wl_stat_types.none;
             case wl_stat_types.none:
                 newstatobj.flags = 0;
@@ -150,7 +150,7 @@ internal partial class Program
             case wl_stat_types.bo_alpo:
             case wl_stat_types.bo_gibs:
             case wl_stat_types.bo_spear:
-                newstatobj.flags = (uint)objflags.FL_BONUS;
+                newstatobj.flags = objflags.FL_BONUS;
                 break;
         }
 
@@ -216,7 +216,7 @@ internal partial class Program
         spot.shapenum = statinfo[type].picnum;
         spot.tilex = (byte)tilex;
         spot.tiley = (byte)tiley;
-        spot.flags = (uint)objflags.FL_BONUS | statinfo[type].specialFlags;
+        spot.flags = objflags.FL_BONUS | statinfo[type].specialFlags;
         spot.itemnumber = (byte)statinfo[type].type;
         statobjlist[laststatobj] = spot;
     }
@@ -338,7 +338,7 @@ internal partial class Program
         doorobj.action = dooractiontypes.dr_closed;
         doorobjlist[lastdoorobj] = doorobj;
 
-        actorat[tilex,tiley] = (uint)(doornum | BIT_DOOR);   // consider it a solid wall
+        actorat[tilex, tiley] = new Door(doornum);// (uint)(doornum | BIT_DOOR);   // consider it a solid wall
 
         //
         // make the door tile a special tile, and mark the adjacent tiles
@@ -393,8 +393,7 @@ internal partial class Program
     internal static void CloseDoor(int door)
     {
         int tilex, tiley, area;
-        uint checkIndex;
-        objstruct? check = null;
+        Actor? check = null;
 
         //
         // don't close on anything solid
@@ -402,7 +401,7 @@ internal partial class Program
         tilex = doorobjlist[door].tilex;
         tiley = doorobjlist[door].tiley;
 
-        if (actorat[tilex, tiley] > 0)
+        if (actorat[tilex, tiley] is Actor)
             return;
 
         if (player.tilex == tilex && player.tiley == tiley)
@@ -417,11 +416,11 @@ internal partial class Program
                 if (((player.x - MINDIST) >> TILESHIFT) == tilex)
                     return;
             }
-            checkIndex = actorat[tilex - 1, tiley];
-            if (ISPOINTER(checkIndex, out check) && ((check.x + MINDIST) >> TILESHIFT) == tilex)
+            check = actorat[tilex - 1, tiley];
+            if (ISPOINTER(check) && ((check.x + MINDIST) >> TILESHIFT) == tilex)
                 return;
-            checkIndex = actorat[tilex + 1, tiley];
-            if (ISPOINTER(checkIndex, out check) && ((check.x - MINDIST) >> TILESHIFT) == tilex)
+            check = actorat[tilex + 1, tiley];
+            if (ISPOINTER(check) && ((check.x - MINDIST) >> TILESHIFT) == tilex)
                 return;
         }
         else
@@ -434,12 +433,12 @@ internal partial class Program
                     return;
             }
 
-            checkIndex = actorat[tilex, tiley - 1];
-            if (ISPOINTER(checkIndex, out check) && ((check.y + MINDIST) >> TILESHIFT) == tiley)
+            check = actorat[tilex, tiley - 1];
+            if (ISPOINTER(check) && ((check.y + MINDIST) >> TILESHIFT) == tiley)
                 return;
 
-            checkIndex = actorat[tilex, tiley + 1];
-            if (ISPOINTER(checkIndex, out check) && ((check.y - MINDIST) >> TILESHIFT) == tiley)
+            check = actorat[tilex, tiley + 1];
+            if (ISPOINTER(check) && ((check.y - MINDIST) >> TILESHIFT) == tiley)
                 return;
         }
 
@@ -458,7 +457,7 @@ internal partial class Program
         //
         // make the door space solid
         //
-        actorat[tilex, tiley] = (uint)(door | BIT_DOOR);
+        actorat[tilex, tiley] = new Door(door);// (uint)(door | BIT_DOOR);
     }
 
     /*
@@ -581,7 +580,7 @@ internal partial class Program
             position = 0xffff;
             doorobjlist[door].ticcount = 0;
             doorobjlist[door].action = (byte)dooractiontypes.dr_open;
-            actorat[doorobjlist[door].tilex, doorobjlist[door].tiley] = 0;
+            actorat[doorobjlist[door].tilex, doorobjlist[door].tiley] = null;
         }
 
         doorobjlist[door].position = (ushort)position;
@@ -604,7 +603,7 @@ internal partial class Program
         tilex = doorobjlist[door].tilex;
         tiley = doorobjlist[door].tiley;
 
-        if ((actorat[tilex, tiley] != (door | BIT_DOOR))
+        if ((actorat[tilex, tiley] is not Door)//!= (door | BIT_DOOR))
             || (player.tilex == tilex && player.tiley == tiley))
         {                       // something got inside the door
             OpenDoor(door);
@@ -704,7 +703,7 @@ internal partial class Program
     static ushort pwallstate;
     static ushort pwallpos;                  // amount a pushable wall has been moved (0-63)
     static ushort pwallx, pwally;
-    static byte pwalldir;
+    static controldirs pwalldir;
     static byte pwalltile;
     static int[][] dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
@@ -729,17 +728,19 @@ internal partial class Program
         dx = dirs[dir][0];
         dy = dirs[dir][1];
 
-        if (actorat[checkx + dx, checky + dy] != 0)
+        if (actorat[checkx + dx, checky + dy] != null)
         {
             SD_PlaySound((int)soundnames.NOWAYSND);
             return;
         }
-        actorat[checkx + dx, checky + dy] = (tilemap[checkx + dx, checky + dy] = (byte)oldtile);
+
+        tilemap[checkx + dx, checky + dy] = (byte)oldtile;
+        actorat[checkx + dx, checky + dy] = new Wall(oldtile);
 
         gamestate.secretcount++;
         pwallx = (ushort)checkx;
         pwally = (ushort)checky;
-        pwalldir = (byte)dir;
+        pwalldir = (controldirs)dir;
         pwallstate = 1;
         pwallpos = 0;
         pwalltile = tilemap[pwallx, pwally];
@@ -779,10 +780,10 @@ internal partial class Program
             // the tile can now be walked into
             //
             tilemap[pwallx, pwally] = 0;
-            actorat[pwallx, pwally] = 0;
+            actorat[pwallx, pwally] = null;
             SetMapSpot(pwallx, pwally, 0, (ushort)(player.areanumber + AREATILE));    // TODO: this is unnecessary, and makes a mess of mapsegs
 
-            int dx = dirs[pwalldir][0], dy = dirs[pwalldir][1];
+            int dx = dirs[(byte)pwalldir][0], dy = dirs[(byte)pwalldir][1];
             //
             // see if it should be pushed farther
             //
@@ -806,7 +807,7 @@ internal partial class Program
                 pwallx += (ushort)dx;
                 pwally += (ushort)dy;
 
-                if (actorat[pwallx + dx, pwally + dy] != 0
+                if (actorat[pwallx + dx, pwally + dy] != null
                     || (xl <= pwallx + dx && pwallx + dx <= xh && yl <= pwally + dy && pwally + dy <= yh))
                 {
                     pwallstate = 0;
@@ -814,7 +815,8 @@ internal partial class Program
                     return;
                 }
 
-                actorat[pwallx + dx, pwally + dy] = (tilemap[pwallx + dx, pwally + dy] = (byte)oldtile);
+                tilemap[pwallx + dx, pwally + dy] = (byte)oldtile;
+                actorat[pwallx + dx, pwally + dy] = new Wall(oldtile); // the double-assign here is something of pointers, might not be useful here anymore
                 tilemap[pwallx + dx, pwally + dy] = BIT_WALL;
             }
         }

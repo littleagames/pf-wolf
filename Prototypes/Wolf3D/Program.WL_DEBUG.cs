@@ -60,7 +60,7 @@ internal partial class Program
 
         if (Keyboard[(int)ScanCodes.sc_F])             // F = facing spot
         {
-            uint spot = actorat[player.tilex, player.tiley];
+            Actor? spot = actorat[player.tilex, player.tiley];
 
             CenterWindow(15, 9);
             US_Print($"X: {player.x} ({(player.x % TILEGLOBAL)})\n");
@@ -72,7 +72,7 @@ internal partial class Program
             US_Print($"2: {spot}");
             US_Print($"f 1: {player.areanumber}");
             US_Print($" 2: {MAPSPOT(player.tilex, player.tiley, 1)}");
-            US_Print($" 3: {(!ISPOINTER(spot, out var spotObj) ? (spotvis[player.tilex, player.tiley] ? 1 : 0) : spotObj.flags)}");
+            US_Print($" 3: {(spot is objstruct spotObj ? spotObj.flags : (spotvis[player.tilex, player.tiley] ? 1 : 0))}");
 
             VW_UpdateScreen();
             IN_Ack();
@@ -277,7 +277,7 @@ internal partial class Program
     internal static void CountObjects()
     {
         int i, total, count, active, inactive, doors;
-        objstruct obj;
+        //objstruct obj;
 
         CenterWindow(17, 7);
         active = inactive = count = doors = 0;
@@ -301,9 +301,12 @@ internal partial class Program
         US_Print("\nDoors         :");
         US_Print(doornum.ToString());
 
-        for (int? o = player.next; o != null; o = obj.next)
+        foreach (var obj in objlist2)
+        //for (int? o = player.next; o != null; o = obj.next)
         {
-            obj = objlist[o.Value];
+            if (obj.obclass == classtypes.playerobj)
+                continue;
+            //obj = objlist[o.Value];
             if (obj.active != 0)
                 active++;
             else
@@ -348,7 +351,7 @@ internal partial class Program
         int x, y;
         int zoom, temp;
         int offx, offy;
-        uint tile;
+        Actor? tile;
         int color = 0;
 
         zoom = 128 / MAPSIZE;
@@ -361,7 +364,7 @@ internal partial class Program
         for (y = 0; y < mapheight; y++)
         {
             for (x = 0; x < mapwidth; x++)
-                VWB_Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, (byte)actorat[x, y]);
+                VWB_Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, actorat[x, y]?.GetHashCode() ?? -1);
         }
 
         //
@@ -375,9 +378,9 @@ internal partial class Program
             {
                 tile = actorat[x, y];
 
-                if (ISPOINTER(tile, out var check) && (check.flags & (uint)objflags.FL_SHOOTABLE) != 0)
+                if (tile is objstruct check && check.flags.HasFlag(objflags.FL_SHOOTABLE))
                     color = 72;
-                else if (tile==0 || ISPOINTER(tile, out check))
+                else if (tile is null)
                 {
                     if (spotvis[x, y])
                         color = 111;
@@ -386,11 +389,11 @@ internal partial class Program
                 }
                 else if (MAPSPOT(x, y, 1) == PUSHABLETILE)
                     color = 171;
-                else if (tile == BIT_WALL)
+                else if (tile is BlockingActor)
                     color = 158;
-                else if (tile < BIT_DOOR)
+                else if (tile is Wall)
                     color = 154;
-                else if (tile < BIT_ALLTILES)
+                else if (tile is Door)
                     color = 146;
 
                 VWB_Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, color);

@@ -1112,7 +1112,7 @@ internal partial class Program
     {
         int result = 0;
 
-        switch ((SDMode)SoundMode)
+        switch (SoundMode)
         {
             case SDMode.PC:
                 result = pcSound?.Length != 0 ? 1 : 0;

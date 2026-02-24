@@ -14,17 +14,18 @@ internal partial class Program
 
     internal static int DebugOk;
 
-    internal static objstruct[] objlist = new objstruct[MAXACTORS];
+    internal static LinkedList<objstruct> objlist2 = new LinkedList<objstruct>();
+    //internal static objstruct[] objlist = new objstruct[MAXACTORS];
     internal static objstruct player;
-    internal static int? lastobj = null;
-    internal static int objfreelist;
+    //internal static int? lastobj = null;
+    //internal static int objfreelist;
 
     internal static byte singlestep, godmode, noclip, ammocheat, mapreveal;
     internal static int extravbls;
 
     internal static byte[,] tilemap = new byte[MAPSIZE, MAPSIZE]; // wall values only
     internal static bool[,] spotvis = new bool[MAPSIZE ,MAPSIZE];
-    internal static uint[,] actorat = new uint[MAPSIZE, MAPSIZE];
+    internal static Actor?[,] actorat = new Actor?[MAPSIZE, MAPSIZE];
 
     internal static ushort mapwidth, mapheight;
     internal static uint tics;
@@ -176,10 +177,12 @@ internal partial class Program
             MoveDoors();
             MovePWalls();
 
-            for (int? i = 0; i != null; i = obj.next)
+            //for (int? i = 0; i != null; i = obj.next)
+            //foreach (var actor in objlist2)
+            for (LinkedListNode<objstruct>? actor = objlist2.First; actor != null; actor = actor.Next)
             {
-                obj = objlist[i.Value];
-                DoActor(obj, i.Value);
+                //obj = objlist[i.Value];
+                DoActor(actor.Value);
             }
 
             UpdatePaletteShifts();
@@ -220,33 +223,34 @@ internal partial class Program
             FinishPaletteShifts();
     }
 
-    internal static int objcount;
+    //internal static int objcount;
     internal static void InitActorList()
     {
-        int i;
+        objlist2 = new LinkedList<objstruct>();
+        //int i;
 
         //
         // init the actor lists
         //
-        for (i = 0; i < MAXACTORS - 1; i++)
-        {
-            objlist[i] = new objstruct
-            {
-                prev = i + 1,
-                next = null
-            };
-        }
+        //for (i = 0; i < MAXACTORS - 1; i++)
+        //{
+        //    objlist[i] = new objstruct
+        //    {
+        //        prev = i + 1,
+        //        next = null
+        //    };
+        //}
 
-        objlist[MAXACTORS - 1] = new objstruct
-        {
-            prev = null,
-            next = null
-        };
+        //objlist[MAXACTORS - 1] = new objstruct
+        //{
+        //    prev = null,
+        //    next = null
+        //};
 
-        objfreelist = 0;
-        lastobj = null;
+        //objfreelist = 0;
+        //lastobj = null;
 
-        objcount = 0;
+        //objcount = 0;
 
         //
         // give the player the first free spots
@@ -256,36 +260,36 @@ internal partial class Program
 
     internal static objstruct GetNewActor()
     {
-        objstruct? newobj = null;
-        if (objfreelist >= MAXACTORS)
-            Quit("GetNewActor: No free spots in objlist!");
-        int newobjIndex = objfreelist;
-        newobj = objlist[newobjIndex];
-        objfreelist = newobj.prev ?? -1;
+        objstruct? newobj = new();
+        objlist2.AddLast(newobj);
+        //if (objfreelist >= MAXACTORS)
+        //    Quit("GetNewActor: No free spots in objlist!");
+        //int newobjIndex = objfreelist;
+        //newobj = objlist[newobjIndex];
+        //objfreelist = newobj.prev ?? -1;
 
         // TODO: This prev/next isn't setting right
-        if (lastobj != null && objlist[lastobj.Value] != null)
-        {
-            objlist[lastobj.Value].next = newobjIndex;     // newobj->next is allready NULL from memset
-        }
+        //if (lastobj != null && objlist[lastobj.Value] != null)
+        //{
+        //    objlist[lastobj.Value].next = newobjIndex;     // newobj->next is allready NULL from memset
+        //}
 
-        newobj.prev = lastobj;
+        //newobj.prev = lastobj;
 
         newobj.active = (byte)activetypes.ac_no;
-        lastobj = newobjIndex;
+        //lastobj = newobjIndex;
 
-        objcount++;
+        //objcount++;
         return newobj;
     }
 
-    internal static void DoActor(objstruct ob, int objlistIndex)
+    internal static void DoActor(objstruct ob)
     {
-        Action<objstruct>? think;
         if (ob.active == 0 && ob.areanumber < NUMAREAS && areabyplayer[ob.areanumber] == 0)
             return;
         
-        if ((ob.flags & (int)(objflags.FL_NONMARK | objflags.FL_NEVERMARK)) == 0)
-            actorat[ob.tilex,ob.tiley] = 0;
+        if (!ob.flags.HasFlag(objflags.FL_NONMARK) && !ob.flags.HasFlag(objflags.FL_NEVERMARK))
+            actorat[ob.tilex,ob.tiley] = null;
 
 
         //
@@ -294,24 +298,24 @@ internal partial class Program
 
         if (ob.ticcount == 0)
         {
-            think = ob.state.think;
-            if (think != null)
+            var think2 = ob.state?.think;
+            if (think2 != null)
             {
-                think(ob);
+                think2.Invoke(ob);
                 if (ob.state == null)
                 {
-                    RemoveObj(ob, objlistIndex);
+                    RemoveObj(ob);
                     return;
                 }
             }
 
-            if ((ob.flags & (int)objflags.FL_NEVERMARK) != 0)
+            if (ob.flags.HasFlag(objflags.FL_NEVERMARK))
                 return;
 
-            if ((ob.flags & (int)objflags.FL_NONMARK) != 0 && actorat[ob.tilex, ob.tiley] != 0)
+            if (ob.flags.HasFlag(objflags.FL_NONMARK) && actorat[ob.tilex, ob.tiley] != null)
                 return;
 
-            actorat[ob.tilex, ob.tiley] = (uint)((objlistIndex + 0xffff));
+            actorat[ob.tilex, ob.tiley] = ob;
             return;
         }
 
@@ -321,13 +325,13 @@ internal partial class Program
         ob.ticcount -= (short)tics;
         while (ob.ticcount <= 0)
         {
-            think = ob.state.action;        // end of state action
-            if (think != null)
+            var action = ob.state?.action;        // end of state action
+            if (action != null)
             {
-                think(ob);
+                action.Invoke(ob);
                 if (ob.state == null)
                 {
-                    RemoveObj(ob, objlistIndex);
+                    RemoveObj(ob);
                     return;
                 }
             }
@@ -340,7 +344,7 @@ internal partial class Program
 
             if (ob.state == null)
             {
-                RemoveObj(ob, objlistIndex);
+                RemoveObj(ob);
                 return;
             }
 
@@ -356,29 +360,29 @@ internal partial class Program
         //
         // think
         //
-        think = ob.state.think;
+        var think = ob.state?.think;
         if (think != null)
         {
             think.Invoke(ob);
             if (ob.state == null)
             {
-                RemoveObj(ob, objlistIndex);
+                RemoveObj(ob);
                 return;
             }
         }
 
-        if ((ob.flags & (int)objflags.FL_NEVERMARK) != 0)
+        if (ob.flags.HasFlag(objflags.FL_NEVERMARK))
             return;
 
-        if ((ob.flags & (int)objflags.FL_NONMARK) != 0 && actorat[ob.tilex, ob.tiley] != 0)
+        if (ob.flags.HasFlag(objflags.FL_NONMARK) && actorat[ob.tilex, ob.tiley] != null)
             return;
 
-        actorat[ob.tilex, ob.tiley] = (uint)((objlistIndex + 0xffff));
+        actorat[ob.tilex, ob.tiley] = ob;// (uint)((objlistIndex + 0xffff));
     }
 
-    internal static void RemoveObj(objstruct gone, int objlistIndex)
+    internal static void RemoveObj(objstruct gone)
     {
-        if (gone == player)
+        if (gone.obclass == classtypes.playerobj)
             Quit("RemoveObj: Tried to remove the player!");
 
         gone.state = null;
@@ -386,23 +390,24 @@ internal partial class Program
         //
         // fix the next object's back link
         //
-        if (objlistIndex == lastobj)
-            lastobj = gone.prev ?? 0;
-        else
-            objlist[(int)gone.next!].prev = gone.prev;
+        objlist2.Remove(gone);
+        //if (objlistIndex == lastobj)
+        //    lastobj = gone.prev;
+        //else
+        //    objlist[(int)gone.next!].prev = gone.prev;
 
         //
         // fix the previous object's forward link
         //
-        objlist[(int)gone.prev!].next = gone.next;
+       // objlist[(int)gone.prev!].next = gone.next;
 
         //
         // add it back in to the free list
         //
-        gone.prev = objfreelist;
-        objfreelist = objlistIndex;
+        //gone.prev = objfreelist;
+        //objfreelist = objlistIndex;
 
-        objcount--;
+        //objcount--;
     }
 
     internal static void CheckKeys()

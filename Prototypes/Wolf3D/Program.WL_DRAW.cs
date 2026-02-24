@@ -409,7 +409,9 @@ internal partial class Program
     {
         short angle;
         int xstep = 0, ystep = 0;
+        int xinttemp = 0, yinttemp = 0;                            // holds temporary intercept position
         uint xpartial = 0, ypartial = 0;
+        int pwallposnorm=0, pwallposinv=0, pwallposi=0;           // holds modified pwallpos
 
         for (pixx = 0; pixx < viewwidth; pixx++)
         {
@@ -474,6 +476,54 @@ internal partial class Program
             texdelta = 0;
 
             //
+            // special treatment when player is in back tile of pushwall
+            //
+            if (tilemap[focaltx, focalty] == BIT_WALL)
+            {
+                if ((pwalldir == controldirs.di_east && xtilestep == 1) || (pwalldir == controldirs.di_west && xtilestep == -1))
+                {
+                    yinttemp = yintercept - ((ystep * (64 - pwallpos)) >> 6);
+
+                    //
+                    //  trace hit vertical pushwall back?
+                    //
+                    if (yinttemp >> TILESHIFT == focalty)
+                    {
+                        if (pwalldir == controldirs.di_east)
+                            xintercept = (focaltx << TILESHIFT) + (pwallpos << 10);
+                        else
+                            xintercept = (int)(((focaltx << TILESHIFT) - TILEGLOBAL) + ((64 - pwallpos) << 10));
+
+                        yintercept = yinttemp;
+                        yinttile = yintercept >> TILESHIFT;
+                        tilehit = pwalltile;
+                        HitVertWall();
+                        continue;
+                    }
+                }
+                else if ((pwalldir == controldirs.di_south && ytilestep == 1) || (pwalldir == controldirs.di_north && ytilestep == -1))
+                {
+                    xinttemp = xintercept - ((xstep * (64 - pwallpos)) >> 6);
+
+                    //
+                    // trace hit horizontal pushwall back?
+                    //
+                    if (xinttemp >> TILESHIFT == focaltx)
+                    {
+                        if (pwalldir == controldirs.di_south)
+                            yintercept = (focalty << TILESHIFT) + (pwallpos << 10);
+                        else
+                            yintercept = (int)(((focalty << TILESHIFT) - TILEGLOBAL) + ((64 - pwallpos) << 10));
+
+                        xintercept = xinttemp;
+                        xinttile = xintercept >> TILESHIFT;
+                        tilehit = pwalltile;
+                        HitHorizWall();
+                        continue;
+                    }
+                }
+            }
+            //
             // trace along this angle until we hit a wall
             //
             // CORE LOOP!
@@ -488,7 +538,7 @@ internal partial class Program
                     yinttile = ytile;
 
                 if ((ytilestep == -1 && yinttile <= ytile) || (ytilestep == 1 && yinttile >= ytile))
-                    tileFound = horizentry(xstep,ystep);
+                    tileFound = horizentry(xstep,ystep, xinttemp, ref pwallposnorm, ref pwallposinv, ref pwallposi);
 
                 if (tileFound) break;
 
@@ -501,16 +551,13 @@ internal partial class Program
                     xinttile = xtile;
 
                 if ((xtilestep == -1 && xinttile <= xtile) || (xtilestep == 1 && xinttile >= xtile))
-                    tileFound = vertentry(ystep, xstep);
+                    tileFound = vertentry(ystep, xstep, yinttemp, ref pwallposnorm, ref pwallposinv, ref pwallposi);           // holds modified pwallpos);
             }
         }
     }
 
-    private static bool vertentry(int ystep, int xstep)
+    private static bool vertentry(int ystep, int xstep,int yinttemp, ref int pwallposnorm, ref int pwallposinv, ref int pwallposi)
     {
-        int pwallposnorm, pwallposinv, pwallposi;           // holds modified pwallpos
-
-        int yinttemp;
         // #ifdef REVEALMAP
         //             mapseen[xtile][yinttile] = true;
         // #endif
@@ -526,7 +573,7 @@ internal partial class Program
                 //
                 var door = doorobjlist[tilehit & ~BIT_DOOR];
 
-                if (door.action == (byte)dooractiontypes.dr_open)
+                if (door.action == dooractiontypes.dr_open)
                 {
                     passvert(ystep); // door is open, continue tracing
                     return false;
@@ -566,9 +613,9 @@ internal partial class Program
                 //
                 // hit a sliding vertical wall
                 //
-                if (pwalldir == (byte)controldirs.di_west || pwalldir == (byte)controldirs.di_east)
+                if (pwalldir == controldirs.di_west || pwalldir == controldirs.di_east)
                 {
-                    if (pwalldir == (byte)controldirs.di_west)
+                    if (pwalldir == controldirs.di_west)
                     {
                         pwallposnorm = 64 - pwallpos;
                         pwallposinv = pwallpos;
@@ -579,8 +626,8 @@ internal partial class Program
                         pwallposinv = 64 - pwallpos;
                     }
 
-                    if ((pwalldir == (byte)controldirs.di_east && xtile == pwallx && yinttile == pwally)
-                     || (pwalldir == (byte)controldirs.di_west && !(xtile == pwallx && yinttile == pwally)))
+                    if ((pwalldir == controldirs.di_east && xtile == pwallx && yinttile == pwally)
+                     || (pwalldir == controldirs.di_west && !(xtile == pwallx && yinttile == pwally)))
                     {
                         yinttemp = yintercept + ((ystep * pwallposnorm) >> 6);
 
@@ -617,18 +664,18 @@ internal partial class Program
                 }
                 else
                 {
-                    if (pwalldir == (byte)controldirs.di_north)
+                    if (pwalldir == controldirs.di_north)
                         pwallposi = 64 - pwallpos;
                     else
                         pwallposi = pwallpos;
 
-                    if ((pwalldir == (byte)controldirs.di_south && (ushort)yintercept < (pwallposi << 10))
-                     || (pwalldir == (byte)controldirs.di_north && (ushort)yintercept > (pwallposi << 10)))
+                    if ((pwalldir == controldirs.di_south && (ushort)yintercept < (pwallposi << 10))
+                     || (pwalldir == controldirs.di_north && (ushort)yintercept > (pwallposi << 10)))
                     {
                         if (xtile == pwallx && yinttile == pwally)
                         {
-                            if ((pwalldir == (byte)controldirs.di_south && (int)((ushort)yintercept) + ystep < (pwallposi << 10))
-                             || (pwalldir == (byte)controldirs.di_north && (int)((ushort)yintercept) + ystep > (pwallposi << 10)))
+                            if ((pwalldir == controldirs.di_south && (int)((ushort)yintercept) + ystep < (pwallposi << 10))
+                             || (pwalldir == controldirs.di_north && (int)((ushort)yintercept) + ystep > (pwallposi << 10)))
                             {
                                 //goto passvert;
                                 passvert(ystep);
@@ -638,7 +685,7 @@ internal partial class Program
                             //
                             // set up a horizontal intercept position
                             //
-                            if (pwalldir == (byte)controldirs.di_south)
+                            if (pwalldir == controldirs.di_south)
                                 yintercept = (yinttile << TILESHIFT) + (pwallposi << 10);
                             else
                                 yintercept = (int)(((yinttile << TILESHIFT) - TILEGLOBAL) + (pwallposi << 10));
@@ -670,8 +717,8 @@ internal partial class Program
                         }
                         else
                         {
-                            if ((pwalldir == (byte)controldirs.di_south && (int)((ushort)yintercept) + ystep > (pwallposi << 10))
-                             || (pwalldir == (byte)controldirs.di_north && (int)((ushort)yintercept) + ystep < (pwallposi << 10)))
+                            if ((pwalldir == controldirs.di_south && ((ushort)yintercept) + ystep > (pwallposi << 10))
+                             || (pwalldir == controldirs.di_north && ((ushort)yintercept) + ystep < (pwallposi << 10)))
                             {
                                 //goto passvert;
                                 passvert(ystep);
@@ -681,7 +728,7 @@ internal partial class Program
                             //
                             // set up a horizontal intercept position
                             //
-                            if (pwalldir == (byte)controldirs.di_south)
+                            if (pwalldir == controldirs.di_south)
                                 yintercept = (yinttile << TILESHIFT) - ((64 - pwallpos) << 10);
                             else
                                 yintercept = (yinttile << TILESHIFT) + ((64 - pwallpos) << 10);
@@ -697,7 +744,7 @@ internal partial class Program
             }
             else
             {
-                xintercept = xtile << (int)TILESHIFT;
+                xintercept = (xtile << TILESHIFT);
 
                 HitVertWall();
             }
@@ -708,7 +755,6 @@ internal partial class Program
         //
         // mark the tile as visible and setup for next step
         //
-        spotvis[xtile, yinttile] = true;
         passvert(ystep);
         return false;
     }
@@ -721,10 +767,8 @@ internal partial class Program
         yinttile = yintercept >> (int)TILESHIFT;
     }
 
-    private static bool horizentry(int xstep,int ystep)
+    private static bool horizentry(int xstep,int ystep, int xinttemp, ref int pwallposnorm, ref int pwallposinv, ref int pwallposi)
     {
-        int pwallposnorm, pwallposinv, pwallposi;           // holds modified pwallpos
-        int xinttemp;
         // #ifdef REVEALMAP
         //             mapseen[xinttile][ytile] = true;
         // #endif
@@ -783,9 +827,9 @@ internal partial class Program
                 //
                 // hit a sliding horizontal wall
                 //
-                if (pwalldir == (byte)controldirs.di_north || pwalldir == (byte)controldirs.di_south)
+                if (pwalldir == controldirs.di_north || pwalldir == controldirs.di_south)
                 {
-                    if (pwalldir == (byte)controldirs.di_north)
+                    if (pwalldir == controldirs.di_north)
                     {
                         pwallposnorm = 64 - pwallpos;
                         pwallposinv = pwallpos;
@@ -796,8 +840,8 @@ internal partial class Program
                         pwallposinv = 64 - pwallpos;
                     }
 
-                    if ((pwalldir == (byte)controldirs.di_south && xinttile == pwallx && ytile == pwally)
-                     || (pwalldir == (byte)controldirs.di_north && !(xinttile == pwallx && ytile == pwally)))
+                    if ((pwalldir == controldirs.di_south && xinttile == pwallx && ytile == pwally)
+                     || (pwalldir == controldirs.di_north && !(xinttile == pwallx && ytile == pwally)))
                     {
                         xinttemp = xintercept + ((xstep * pwallposnorm) >> 6);
 
@@ -834,18 +878,18 @@ internal partial class Program
                 }
                 else
                 {
-                    if (pwalldir == (byte)controldirs.di_west)
+                    if (pwalldir == controldirs.di_west)
                         pwallposi = 64 - pwallpos;
                     else
                         pwallposi = pwallpos;
 
-                    if ((pwalldir == (byte)controldirs.di_east && (ushort)xintercept < (pwallposi << 10))
-                     || (pwalldir == (byte)controldirs.di_west && (ushort)xintercept > (pwallposi << 10)))
+                    if ((pwalldir == controldirs.di_east && (ushort)xintercept < (pwallposi << 10))
+                     || (pwalldir == controldirs.di_west && (ushort)xintercept > (pwallposi << 10)))
                     {
                         if (xinttile == pwallx && ytile == pwally)
                         {
-                            if ((pwalldir == (byte)controldirs.di_east && (int)(xintercept) + xstep < (pwallposi << 10))
-                             || (pwalldir == (byte)controldirs.di_west && (int)(xintercept) + xstep > (pwallposi << 10)))
+                            if ((pwalldir == controldirs.di_east && (xintercept) + xstep < (pwallposi << 10))
+                             || (pwalldir == controldirs.di_west && (xintercept) + xstep > (pwallposi << 10)))
 
                             {
                                 passhoriz(xstep);
@@ -858,7 +902,7 @@ internal partial class Program
                             yintercept -= (ystep * (64 - pwallpos)) >> 6;
                             yinttile = yintercept >> TILESHIFT;
 
-                            if (pwalldir == (byte)controldirs.di_east)
+                            if (pwalldir == controldirs.di_east)
                                 xintercept = (xinttile << TILESHIFT) + (pwallposi << 10);
                             else
                                 xintercept = (int)(((xinttile << TILESHIFT) - TILEGLOBAL) + (pwallposi << 10));
@@ -888,8 +932,8 @@ internal partial class Program
                         }
                         else
                         {
-                            if ((pwalldir == (byte)controldirs.di_east && (int)(xintercept) + xstep > (pwallposi << 10))
-                             || (pwalldir == (byte)controldirs.di_west && (int)(xintercept) + xstep < (pwallposi << 10)))
+                            if ((pwalldir == controldirs.di_east && (xintercept) + xstep > (pwallposi << 10))
+                             || (pwalldir == controldirs.di_west && (xintercept) + xstep < (pwallposi << 10)))
 
                             {
                                 passhoriz(xstep);
@@ -902,7 +946,7 @@ internal partial class Program
                             yintercept -= (ystep * pwallpos) >> 6;
                             yinttile = yintercept >> TILESHIFT;
 
-                            if (pwalldir == (byte)controldirs.di_east)
+                            if (pwalldir == controldirs.di_east)
                                 xintercept = (xinttile << TILESHIFT) - ((64 - pwallpos) << 10);
                             else
                                 xintercept = (xinttile << TILESHIFT) + ((64 - pwallpos) << 10);
@@ -916,7 +960,7 @@ internal partial class Program
             }
             else
             {
-                yintercept = ytile << (int)TILESHIFT;
+                yintercept = ytile << TILESHIFT;
 
                 HitHorizWall();
             }
@@ -927,7 +971,6 @@ internal partial class Program
         //
         // mark the tile as visible and setup for next step
         //
-        spotvis[xinttile, ytile] = true;
         passhoriz(xstep);
         return false;
     }
@@ -1017,7 +1060,7 @@ internal partial class Program
         if (ob.obclass == classtypes.rocketobj || ob.obclass == classtypes.hrocketobj)
             angle = (viewangle - 180) - ob.angle;
         else
-            angle = (viewangle - 180) - dirangle[ob.dir];
+            angle = (viewangle - 180) - dirangle[(byte)ob.dir];
 
         angle += ANGLES / 16;
         while (angle >= ANGLES)
@@ -1080,7 +1123,7 @@ internal partial class Program
     {
         int i, least, numvisable, height;
         int statptr;
-        objstruct obj;
+        //objstruct obj;
         int farthest = -1;
         int visptr, visstep;
 
@@ -1100,7 +1143,7 @@ internal partial class Program
                 continue;                                               // not visable
 
             if (TransformTile(statptr_val.tilex, statptr_val.tiley,
-                ref visptr_val.viewx, ref visptr_val.viewheight) && (statptr_val.flags & (int)objflags.FL_BONUS) != 0)
+                ref visptr_val.viewx, ref visptr_val.viewheight) && statptr_val.flags.HasFlag(objflags.FL_BONUS))
             {
                 GetBonus(statptr_val);
                 if (statptr_val.shapenum == -1)
@@ -1123,9 +1166,15 @@ internal partial class Program
         //
         // place active objects
         //
-        for (int? o = player.next; o != null; o = obj.next)
+        foreach(var actor in objlist2)
+        //for (int? o = player.next; o != null; o = obj.next)
         {
-            obj = objlist[o.Value];
+            if (actor is not objstruct obj)
+                return;
+
+            if (obj.obclass == classtypes.playerobj)
+                continue;
+            //obj = objlist[o.Value];
             visobj_t visptr_val = new visobj_t();
             if ((visptr_val.shapenum = obj.state.shapenum) == 0)
                 continue;                                               // no shape
@@ -1164,10 +1213,10 @@ internal partial class Program
                     vislist[visptr] = visptr_val;
                     visptr++;
                 }
-                obj.flags |= (uint)objflags.FL_VISABLE;
+                obj.flags |= objflags.FL_VISABLE;
             }
             else
-                obj.flags &= ~(uint)objflags.FL_VISABLE;
+                obj.flags &= ~objflags.FL_VISABLE;
         }
 
         //
@@ -1291,14 +1340,15 @@ internal partial class Program
         }
         else
         {
-            if (fpscounter)
+            //if (fpscounter)
             {
                 fontnumber = 0;
                 SETFONTCOLOR(7, 127);
                 PrintX = 4; PrintY = 1;
-                VWB_Bar(0, 0, 50, 10, bordercol);
-                US_Print(fps.ToString());
-                US_Print(" fps");
+                VWB_Bar(0, 0, 320, 10, bordercol);
+                US_Print($"{pwalltile}: ({pwallx},{pwally}) - {pwalldir}, {pwallpos}, {pwallstate}");
+                //US_Print(fps.ToString());
+                //US_Print(" fps");
             }
             VW_UpdateScreen();
         }

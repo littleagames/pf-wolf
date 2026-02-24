@@ -309,9 +309,9 @@ internal partial class Program
                 }
                 lastdirmovetime = curtime;
 
-                switch (ci.dir)
+                switch ((Direction)ci.dir)
                 {
-                    case (byte)Direction.dir_West:
+                    case Direction.dir_West:
                         if (cursor != 0)
                         {
                             // Remove trailing whitespace if cursor is at end of string
@@ -323,7 +323,7 @@ internal partial class Program
                         cursormoved = true;
                         checkkey = false;
                         break;
-                    case (byte)Direction.dir_East:
+                    case Direction.dir_East:
                         if (cursor >= MaxString - 1) break;
 
                         if (s.Length == cursor)
@@ -341,32 +341,38 @@ internal partial class Program
                         checkkey = false;
                         break;
 
-                    case (byte)Direction.dir_North:
-                        if (s.Length == cursor)
+                    case Direction.dir_North:
                         {
-                            USL_MeasureString(new string(s), out w, out h);
-                            if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
-                                break;
-                            //s[cursor + 1] = (char)0;
+                            if (string.IsNullOrEmpty(s) || s[cursor] == 0)
+                            {
+                                USL_MeasureString(new string(s), out w, out h);
+                                if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
+                                    break;
+                                s += ' ';
+                            }
+                            var cs = s.ToCharArray();
+                            cs[cursor] = USL_RotateChar(s[cursor], 1);
+                            s = new string(cs);
                         }
-                        //s[cursor]
-                        s = s.Substring(0, s.Length - 1) + USL_RotateChar(s[cursor], 1);
                         redraw = true;
                         checkkey = false;
                         break;
 
-                    case (byte)Direction.dir_South:
-                        if (s.Length == cursor)
+                    case Direction.dir_South:
                         {
-                            USL_MeasureString(new string(s), out w, out h);
-                            if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
-                                break;
-                            //s[cursor + 1] = (char)0; // add a char?
+                            if (string.IsNullOrEmpty(s) || s[cursor] == 0)
+                            {
+                                USL_MeasureString(new string(s), out w, out h);
+                                if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
+                                    break;
+                                s += ' ';
+                            }
+                            var cs = s.ToCharArray();
+                            cs[cursor] = USL_RotateChar(s[cursor], -1);
+                            s = new string(cs);
+                            redraw = true;
+                            checkkey = false;
                         }
-                        //s[cursor] =
-                        s = s.Substring(0, s.Length - 1) + USL_RotateChar(s[cursor], -1);
-                        redraw = true;
-                        checkkey = false;
                         break;
                 }
             }

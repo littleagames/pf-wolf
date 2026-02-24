@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using static Wolf3D.Program;
 
 namespace Wolf3D;
 
@@ -18,7 +19,7 @@ internal class visobj_t
     public short viewx;
     public short viewheight;
     public short shapenum;
-    public uint flags;
+    public objflags flags;
 }
 
 internal enum buttontypes
@@ -316,7 +317,7 @@ internal class statobj_t
 {
     public byte tilex, tiley;
     public short shapenum;           // if shapenum == -1 the obj has been removed
-    public uint flags;
+    public objflags flags;
     public byte itemnumber;
 
     public void Read(BinaryReader br)
@@ -324,7 +325,7 @@ internal class statobj_t
         tilex = br.ReadByte();
         tiley = br.ReadByte();
         shapenum = br.ReadInt16();
-        flags = br.ReadUInt32();
+        flags = (objflags)br.ReadUInt32();
         itemnumber = br.ReadByte();
     }
 
@@ -336,7 +337,7 @@ internal class statobj_t
             bw.Write(tilex);
             bw.Write(tiley);
             bw.Write(shapenum);
-            bw.Write(flags);
+            bw.Write((uint)flags);
             bw.Write(itemnumber);
             return ms.ToArray();
         }
@@ -385,19 +386,57 @@ internal class doorobj_t
     }
 }
 
-internal class objstruct
+internal abstract class Actor
+{
+    // TBD: Use for actorat
+    public int x, y;
+}
+
+internal class BlockingActor: Actor
+{
+}
+
+internal class Wall: Actor
+{
+    public Wall()
+    {
+        wall = -1;
+    }
+    public Wall(int wall)
+    {
+        this.wall = wall;
+    }
+
+    public int wall;
+}
+
+internal class Door: Actor
+{
+    public Door()
+    {
+        this.door = -1;
+    }
+
+    public Door(int doornum)
+    {
+        this.door = doornum;
+    }
+
+    public int door;
+}
+
+internal class objstruct : Actor
 {
     public activetypes active;
     public short ticcount;
     public classtypes obclass;
     public statestruct? state;
 
-    public uint flags;              // FL_SHOOTABLE, etc
+    public objflags flags;              // FL_SHOOTABLE, etc
 
     public int distance;           // if negative, wait for that door to open
-    public byte dir;
+    public objdirtypes dir;
 
-    public int x, y;
 
     public byte tilex, tiley;
     public byte areanumber;
@@ -430,9 +469,9 @@ internal class objstruct
         ticcount = br.ReadInt16();
         obclass = (classtypes)br.ReadInt16();
         int stateOffset = br.ReadInt32();
-        flags = br.ReadUInt32();
+        flags = (objflags)br.ReadUInt32();
         distance = br.ReadInt32();
-        dir = br.ReadByte();
+        dir = (objdirtypes)br.ReadByte();
         x = br.ReadInt32();
         y = br.ReadInt32();
         tilex = br.ReadByte();
@@ -488,9 +527,9 @@ internal class objstruct
             bw.Write(ticcount);
             bw.Write((short)obclass);
             bw.Write(stateOffset);
-            bw.Write(flags);
+            bw.Write((uint)flags);
             bw.Write(distance);
-            bw.Write(dir);
+            bw.Write((byte)dir);
             bw.Write(x);
             bw.Write(y);
             bw.Write(tilex);
@@ -982,6 +1021,7 @@ internal partial class Program
         SPR_CHAINATK4,
     }
 
+    [Flags]
     internal enum objflags
     {
         FL_SHOOTABLE = 0x00000001,
@@ -1082,17 +1122,18 @@ internal partial class Program
 
     internal static bool VALIDAREA(int x) => (x) >= AREATILE && (x) < (AREATILE + NUMAREAS);
 
-    internal static bool ISPOINTER(uint objstructIndex, out objstruct check)
+    internal static bool ISPOINTER(Actor? check)
     {
-        int checkIndex = (int)(objstructIndex - 0xffff); // might be the wrong value to strip
-        if (checkIndex >= 0)
-        {
-            check = objlist[checkIndex];
-            return true;
-        }
+        return check is objstruct;
+        //int checkIndex = (int)(objstructIndex - 0xffff); // might be the wrong value to strip
+        //if (checkIndex >= 0)
+        //{
+        //    check = objlist[checkIndex];
+        //    return true;
+        //}
 
-        check = null!;
-        return false;
+        //check = null!;
+        //return false;
     }
 
 
