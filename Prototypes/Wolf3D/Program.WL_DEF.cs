@@ -18,7 +18,7 @@ internal class visobj_t
     public byte tilex, tiley;
     public short viewx;
     public short viewheight;
-    public short shapenum;
+    public spritenums shapenum;
     public objflags flags;
 }
 
@@ -317,17 +317,17 @@ internal struct compshape_t
 internal class statobj_t
 {
     public byte tilex, tiley;
-    public short shapenum;           // if shapenum == -1 the obj has been removed
+    public spritenums shapenum;           // if shapenum == -1 the obj has been removed
     public objflags flags;
-    public byte itemnumber;
+    public wl_stat_types itemnumber;
 
     public void Read(BinaryReader br)
     {
         tilex = br.ReadByte();
         tiley = br.ReadByte();
-        shapenum = br.ReadInt16();
+        shapenum = (spritenums)br.ReadInt16();
         flags = (objflags)br.ReadUInt32();
-        itemnumber = br.ReadByte();
+        itemnumber = (wl_stat_types)br.ReadByte();
     }
 
     public byte[] AsBytes()
@@ -337,9 +337,9 @@ internal class statobj_t
         {
             bw.Write(tilex);
             bw.Write(tiley);
-            bw.Write(shapenum);
+            bw.Write((short)shapenum);
             bw.Write((uint)flags);
-            bw.Write(itemnumber);
+            bw.Write((byte)itemnumber);
             return ms.ToArray();
         }
     }
@@ -555,7 +555,7 @@ internal class objstruct : Actor
 internal class statestruct
 {
     public byte rotate; // boolean
-    public short shapenum;           // a shapenum of -1 means get from ob->temp1
+    public spritenums shapenum;           // a shapenum of -1 means get from ob->temp1
     public short tictime;
     public Action<objstruct>? think;
     public Action<objstruct>? action;
@@ -563,7 +563,7 @@ internal class statestruct
 
     public statestruct(
         byte rotate,
-        short shapenum, 
+        spritenums shapenum, 
         short tictime,
         Action<objstruct>? think,
         Action<objstruct>? action,
@@ -704,6 +704,7 @@ internal partial class Program
 
     internal enum spritenums
     {
+        none = -1,
         SPR_DEMO,
 #if !APOGEE_1_0
         SPR_DEATHCAM,

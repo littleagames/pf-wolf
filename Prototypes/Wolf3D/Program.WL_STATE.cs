@@ -332,10 +332,10 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             {
                 // DOORCHECK
                 if ((demorecord || demoplayback))
-                    doornumtile = (short)door.door;//(temp & 63);
+                    doornumtile = door.door;//(temp & 63);
                 else
                 {
-                    doornumtile = (short)door.door;//(temp & ~BIT_DOOR);
+                    doornumtile = door.door;//(temp & ~BIT_DOOR);
                     if (ob.obclass != classtypes.ghostobj
                         && ob.obclass != classtypes.spectreobj)
                     {
@@ -1101,28 +1101,28 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             case classtypes.guardobj:
                 GivePoints(100);
                 NewState(ob, s_grddie1);
-                PlaceItemType((int)wl_stat_types.bo_clip2, tilex, tiley);
+                PlaceItemType(wl_stat_types.bo_clip2, tilex, tiley);
                 break;
 
             case classtypes.officerobj:
                 GivePoints(400);
                 NewState(ob, s_ofcdie1);
-                PlaceItemType((int)wl_stat_types.bo_clip2, tilex, tiley);
+                PlaceItemType(wl_stat_types.bo_clip2, tilex, tiley);
                 break;
 
             case classtypes.mutantobj:
                 GivePoints(700);
                 NewState(ob, s_mutdie1);
-                PlaceItemType((int)wl_stat_types.bo_clip2, tilex, tiley);
+                PlaceItemType(wl_stat_types.bo_clip2, tilex, tiley);
                 break;
 
             case classtypes.ssobj:
                 GivePoints(500);
                 NewState(ob, s_ssdie1);
                 if (gamestate.bestweapon < weapontypes.wp_machinegun)
-                    PlaceItemType((int)wl_stat_types.bo_machinegun, tilex, tiley);
+                    PlaceItemType(wl_stat_types.bo_machinegun, tilex, tiley);
                 else
-                    PlaceItemType((int)wl_stat_types.bo_clip2, tilex, tiley);
+                    PlaceItemType(wl_stat_types.bo_clip2, tilex, tiley);
                 break;
 
             case classtypes.dogobj:
@@ -1132,13 +1132,13 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             case classtypes.bossobj:
                 GivePoints(5000);
                 NewState(ob, s_bossdie1);
-                PlaceItemType((int)wl_stat_types.bo_key1, tilex, tiley);
+                PlaceItemType(wl_stat_types.bo_key1, tilex, tiley);
                 break;
 
             case classtypes.gretelobj:
                 GivePoints(5000);
                 NewState(ob, s_greteldie1);
-                PlaceItemType((int)wl_stat_types.bo_key1, tilex, tiley);
+                PlaceItemType(wl_stat_types.bo_key1, tilex, tiley);
                 break;
 
             case classtypes.giftobj:

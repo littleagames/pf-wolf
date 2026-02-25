@@ -163,7 +163,7 @@ internal partial class Program
     =
     ===================
     */
-    internal static void SimpleScaleShape (int dispx, int shapenum, int dispheight)
+    internal static void SimpleScaleShape (int dispx, spritenums shapenum, int dispheight)
     {
         int i;
         compshape_t shape;

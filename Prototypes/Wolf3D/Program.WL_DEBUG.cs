@@ -290,7 +290,7 @@ internal partial class Program
         US_Print("\nIn use statics:");
         for (i = 0; i < total; i++)
         {
-            if (statobjlist[i].shapenum != -1)
+            if (statobjlist[i].shapenum != spritenums.none)
                 count++;
             else
                 doors++;        //debug
@@ -495,7 +495,7 @@ internal partial class Program
                     oldviewheight = viewheight;
                     viewheight = 0x7fff;            // quick hack to skip clipping
 
-                    SimpleScaleShape(screenWidth / 2, i - PMSpriteStart, 64 * scaleFactor);
+                    SimpleScaleShape(screenWidth / 2, (spritenums)i - PMSpriteStart, 64 * scaleFactor);
 
                     viewheight = oldviewheight;
                     centery = (short)(viewheight / 2);

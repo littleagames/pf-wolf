@@ -1134,7 +1134,7 @@ internal partial class Program
         {
             visobj_t visptr_val = new visobj_t();
             statobj_t statptr_val = statobjlist[statptr];
-            if ((visptr_val.shapenum = statptr_val.shapenum) == -1)
+            if ((visptr_val.shapenum = statptr_val.shapenum) == spritenums.none)
                 continue;                                               // object has been deleted
 
             if (!spotvis[statptr_val.tilex, statptr_val.tiley])
@@ -1144,7 +1144,7 @@ internal partial class Program
                 ref visptr_val.viewx, ref visptr_val.viewheight) && statptr_val.flags.HasFlag(objflags.FL_BONUS))
             {
                 GetBonus(statptr_val);
-                if (statptr_val.shapenum == -1)
+                if (statptr_val.shapenum == spritenums.none)
                     continue;                                           // object has been taken
             }
 
@@ -1196,8 +1196,8 @@ internal partial class Program
 
                 visptr_val.viewx = obj.viewx;
                 visptr_val.viewheight = (short)obj.viewheight;
-                if (visptr_val.shapenum == -1)
-                    visptr_val.shapenum = obj.temp1;  // special shape
+                if (visptr_val.shapenum == spritenums.none)
+                    visptr_val.shapenum = (spritenums)obj.temp1;  // special shape
 
                 if (obj.state.rotate != 0)
                     visptr_val.shapenum += (short)CalcRotate(obj);
@@ -1250,20 +1250,20 @@ internal partial class Program
         }
     }
 
-    static int[] weaponscale = {
-        (int)spritenums.SPR_KNIFEREADY,
-        (int)spritenums.SPR_PISTOLREADY,
-        (int)spritenums.SPR_MACHINEGUNREADY,
-        (int)spritenums.SPR_CHAINREADY
+    static spritenums[] weaponscale = {
+        spritenums.SPR_KNIFEREADY,
+        spritenums.SPR_PISTOLREADY,
+        spritenums.SPR_MACHINEGUNREADY,
+        spritenums.SPR_CHAINREADY
     };
 
     internal static void DrawPlayerWeapon()
     {
-        int shapenum;
+        spritenums shapenum;
         if (gamestate.victoryflag)
         {
             if (player.state == s_deathcam && (GetTimeCount() & 32) != 0)
-                SimpleScaleShape(viewwidth / 2, (int)spritenums.SPR_DEATHCAM, viewheight + 1);
+                SimpleScaleShape(viewwidth / 2, spritenums.SPR_DEATHCAM, viewheight + 1);
             return;
         }
 

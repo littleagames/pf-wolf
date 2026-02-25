@@ -372,7 +372,7 @@ internal partial class Program
             case wl_stat_types.bo_key2:
             case wl_stat_types.bo_key3:
             case wl_stat_types.bo_key4:
-                GiveKey(check.itemnumber - (int)wl_stat_types.bo_key1);
+                GiveKey(check.itemnumber - wl_stat_types.bo_key1);
                 SD_PlaySound((int)soundnames.GETKEYSND);
                 break;
 
@@ -460,7 +460,7 @@ internal partial class Program
         }
 
         StartBonusFlash();
-        check.shapenum = -1;                   // remove from list
+        check.shapenum = spritenums.none;                   // remove from list
     }
 
 

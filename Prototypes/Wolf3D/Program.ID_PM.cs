@@ -148,7 +148,7 @@ internal partial class Program
         // Do nothing, GC does it
     }
 
-    internal static byte[] PM_GetSpritePage(int v) => PM_GetPage(PMSpriteStart + v);
+    internal static byte[] PM_GetSpritePage(spritenums v) => PM_GetPage(PMSpriteStart + (int)v);
     internal static byte[] PM_GetSoundPage(int v, int size)
     {
         List<byte> data = new List<byte>();
