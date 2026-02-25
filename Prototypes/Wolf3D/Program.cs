@@ -60,7 +60,7 @@ internal partial class Program
     internal static int param_joystickindex = 0;
     internal static int param_audiobuffer = DEFAULT_AUDIO_BUFFER_SIZE;
     internal static int param_joystickhat = -1;
-    internal static int param_samplerate = 7042;
+    internal static int param_samplerate = 44100;
     internal static int param_mission = 0;
     internal static bool param_goodtimes = false;
     internal static bool param_ignorenumchunks = false;
@@ -527,73 +527,86 @@ See Options.txt for help";
         startgame = true;
     }
 
+    private record digimap
+    {
+        public digimap(soundnames sound, int index, int channel)
+        {
+            this.sound = sound;
+            this.index = index;
+            this.channel = channel;
+        }
+
+        public soundnames sound;
+        public int index;
+        public int channel;
+    }
+
     static void InitDigiMap()
     {
-        for (int i = 0; i != (int)soundnames.LASTSOUND; i += 3)
+        for (int i = 0; i < wolfdigimap.Length; i++)
         {
             var map = wolfdigimap[i];
-            DigiMap[wolfdigimap[i]] = wolfdigimap[i + 1];
-            DigiChannel[wolfdigimap[i + 1]] = wolfdigimap[i + 2];
-            SD_PrepareSound(wolfdigimap[i + 1]);
+            DigiMap[(int)map.sound] = map.index;
+            DigiChannel[map.index] = map.channel;
+            SD_PrepareSound(map.index);
         }
     }
 
 
-    static int[] wolfdigimap =
+    static digimap[] wolfdigimap =
     {
-        (int)soundnames.HALTSND,                0,  -1,
-        (int)soundnames.DOGBARKSND,             1,  -1,
-        (int)soundnames.CLOSEDOORSND,           2,  -1,
-        (int)soundnames.OPENDOORSND,            3,  -1,
-        (int)soundnames.ATKMACHINEGUNSND,       4,   0,
-        (int)soundnames.ATKPISTOLSND,           5,   0,
-        (int)soundnames.ATKGATLINGSND,          6,   0,
-        (int)soundnames.SCHUTZADSND,            7,  -1,
-        (int)soundnames.GUTENTAGSND,            8,  -1,
-        (int)soundnames.MUTTISND,               9,  -1,
-        (int)soundnames.BOSSFIRESND,            10,  1,
-        (int)soundnames.SSFIRESND,              11, -1,
-        (int)soundnames.DEATHSCREAM1SND,        12, -1,
-        (int)soundnames.DEATHSCREAM2SND,        13, -1,
-        (int)soundnames.DEATHSCREAM3SND,        13, -1,
-        (int)soundnames.TAKEDAMAGESND,          14, -1,
-        (int)soundnames.PUSHWALLSND,            15, -1,
+        new (soundnames.HALTSND,                0,  -1),
+        new (soundnames.DOGBARKSND,             1,  -1),
+        new (soundnames.CLOSEDOORSND,           2,  -1),
+        new (soundnames.OPENDOORSND,            3,  -1),
+        new (soundnames.ATKMACHINEGUNSND,       4,   0),
+        new (soundnames.ATKPISTOLSND,           5,   0),
+        new (soundnames.ATKGATLINGSND,          6,   0),
+        new (soundnames.SCHUTZADSND,            7,  -1),
+        new (soundnames.GUTENTAGSND,            8,  -1),
+        new (soundnames.MUTTISND,               9,  -1),
+        new (soundnames.BOSSFIRESND,            10,  1),
+        new (soundnames.SSFIRESND,              11, -1),
+        new (soundnames.DEATHSCREAM1SND,        12, -1),
+        new (soundnames.DEATHSCREAM2SND,        13, -1),
+        new (soundnames.DEATHSCREAM3SND,        13, -1),
+        new (soundnames.TAKEDAMAGESND,          14, -1),
+        new (soundnames.PUSHWALLSND,            15, -1),
 
-        (int)soundnames.LEBENSND,               20, -1,
-        (int)soundnames.NAZIFIRESND,            21, -1,
-        (int)soundnames.SLURPIESND,             22, -1,
+        new (soundnames.LEBENSND,               20, -1),
+        new (soundnames.NAZIFIRESND,            21, -1),
+        new (soundnames.SLURPIESND,             22, -1),
 
-        (int)soundnames.YEAHSND,                32, -1,
+        new (soundnames.YEAHSND,                32, -1),
         // These are in all other episodes
-        (int)soundnames.DOGDEATHSND,            16, -1,
-        (int)soundnames.AHHHGSND,               17, -1,
-        (int)soundnames.DIESND,                 18, -1,
-        (int)soundnames.EVASND,                 19, -1,
+        new (soundnames.DOGDEATHSND,            16, -1),
+        new (soundnames.AHHHGSND,               17, -1),
+        new (soundnames.DIESND,                 18, -1),
+        new (soundnames.EVASND,                 19, -1),
 
-        (int)soundnames.TOT_HUNDSND,            23, -1,
-        (int)soundnames.MEINGOTTSND,            24, -1,
-        (int)soundnames.SCHABBSHASND,           25, -1,
-        (int)soundnames.HITLERHASND,            26, -1,
-        (int)soundnames.SPIONSND,               27, -1,
-        (int)soundnames.NEINSOVASSND,           28, -1,
-        (int)soundnames.DOGATTACKSND,           29, -1,
-        (int)soundnames.LEVELDONESND,           30, -1,
-        (int)soundnames.MECHSTEPSND,            31, -1,
+        new (soundnames.TOT_HUNDSND,            23, -1),
+        new (soundnames.MEINGOTTSND,            24, -1),
+        new (soundnames.SCHABBSHASND,           25, -1),
+        new (soundnames.HITLERHASND,            26, -1),
+        new (soundnames.SPIONSND,               27, -1),
+        new (soundnames.NEINSOVASSND,           28, -1),
+        new (soundnames.DOGATTACKSND,           29, -1),
+        new (soundnames.LEVELDONESND,           30, -1),
+        new (soundnames.MECHSTEPSND,            31, -1),
 
-        (int)soundnames.SCHEISTSND,             33, -1,
-        (int)soundnames.DEATHSCREAM4SND,        34, -1,         // AIIEEE
-        (int)soundnames.DEATHSCREAM5SND,        35, -1,         // DEE-DEE
-        (int)soundnames.DONNERSND,              36, -1,         // EPISODE 4 BOSS DIE
-        (int)soundnames.EINESND,                37, -1,         // EPISODE 4 BOSS SIGHTING
-        (int)soundnames.ERLAUBENSND,            38, -1,         // EPISODE 6 BOSS SIGHTING
-        (int)soundnames.DEATHSCREAM6SND,        39, -1,         // FART
-        (int)soundnames.DEATHSCREAM7SND,        40, -1,         // GASP
-        (int)soundnames.DEATHSCREAM8SND,        41, -1,         // GUH-BOY!
-        (int)soundnames.DEATHSCREAM9SND,        42, -1,         // AH GEEZ!
-        (int)soundnames.KEINSND,                43, -1,         // EPISODE 5 BOSS SIGHTING
-        (int)soundnames.MEINSND,                44, -1,         // EPISODE 6 BOSS DIE
-        (int)soundnames.ROSESND,                45, -1,         // EPISODE 5 BOSS DIE
-        (int)soundnames.LASTSOUND
+        new (soundnames.SCHEISTSND,             33, -1),
+        new (soundnames.DEATHSCREAM4SND,        34, -1),         // AIIEEE
+        new (soundnames.DEATHSCREAM5SND,        35, -1),         // DEE-DEE
+        new (soundnames.DONNERSND,              36, -1),         // EPISODE 4 BOSS DIE
+        new (soundnames.EINESND,                37, -1),         // EPISODE 4 BOSS SIGHTING
+        new (soundnames.ERLAUBENSND,            38, -1),         // EPISODE 6 BOSS SIGHTING
+        new (soundnames.DEATHSCREAM6SND,        39, -1),         // FART
+        new (soundnames.DEATHSCREAM7SND,        40, -1),         // GASP
+        new (soundnames.DEATHSCREAM8SND,        41, -1),         // GUH-BOY!
+        new (soundnames.DEATHSCREAM9SND,        42, -1),         // AH GEEZ!
+        new (soundnames.KEINSND,                43, -1),         // EPISODE 5 BOSS SIGHTING
+        new (soundnames.MEINSND,                44, -1),         // EPISODE 6 BOSS DIE
+        new (soundnames.ROSESND,                45, -1),         // EPISODE 5 BOSS DIE
     };
 
     internal static void NewViewSize(int width)
