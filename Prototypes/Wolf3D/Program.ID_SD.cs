@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using static SDL2.SDL;
 using static SDL2.SDL_mixer;
@@ -62,16 +63,16 @@ internal struct Instrument
 
 internal class PCSound : Sound
 {
-    public sbyte[] data;
+    public byte[] data;
     public PCSound()
     {
-        data = new sbyte[1];
+        data = new byte[1];
     }
 
     public PCSound(byte[] data)
     {
         common = new SoundCommon(data);
-        this.data = new sbyte[common.length]; // data length - sizeof(soundcommon)??
+        this.data = new byte[common.length]; // data length - sizeof(soundcommon)??
         Buffer.BlockCopy(data, 6, this.data, 0, (int)common.length);
     }
 }
@@ -101,13 +102,13 @@ internal class AdLibSound : Sound
 {
     public Instrument inst;
     public sbyte block;
-    public sbyte[] data;
+    public byte[] data;
 
     public AdLibSound()
     {
         common = new();
         inst = new();
-        data = new sbyte[1];
+        data = new byte[1];
     }
 
     public AdLibSound(byte[] data)
@@ -129,7 +130,7 @@ internal class AdLibSound : Sound
             voice = (sbyte)data[17],
             mode = (sbyte)data[18]
         };
-        this.data = new sbyte[common.length - 12]; // data length - sizeof(soundcommon) - sizeof(instrument) - block and unused bytes
+        this.data = new byte[common.length - 12]; // data length - sizeof(soundcommon) - sizeof(instrument) - block and unused bytes
     }
 }
 
@@ -281,12 +282,13 @@ internal partial class Program
 
 
     // PC Sound variables
-    internal static volatile sbyte pcLastSample;
-    internal static volatile sbyte[] pcSound;
+    internal static volatile byte pcLastSample;
+    internal static volatile byte[] pcSound;
+    internal static volatile int pcSoundPtr;
     internal static uint pcLengthLeft;
 
     // AdLib variables
-    internal static volatile sbyte[] alSound;
+    internal static volatile byte[] alSound;
     internal static sbyte alBlock;
     internal static uint alLengthLeft;
     internal static uint alTimeCount;
@@ -330,9 +332,10 @@ internal partial class Program
     ///////////////////////////////////////////////////////////////////////////
     internal static void SDL_PCPlaySound(PCSound sound)
     {
-        pcLastSample = (sbyte)-1;
+        pcLastSample = unchecked((byte)-1);
         pcLengthLeft = sound.common.length;
         pcSound = sound.data;
+        pcSoundPtr = 0;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -343,6 +346,7 @@ internal partial class Program
     internal static void SDL_PCStopSound()
     {
         pcSound = [];
+        pcSoundPtr = 0;
     }
 
 
@@ -354,6 +358,7 @@ internal partial class Program
     internal static void SDL_ShutPC()
     {
         pcSound = [];
+        pcSoundPtr = 0;
     }
 
     internal const int SQUARE_WAVE_AMP = 0x2000;
@@ -361,108 +366,111 @@ internal partial class Program
     static int current_remaining = 0;
     static int current_freq = 0;
     static int phase_offset = 0;
-    internal static void SDL_PCMixCallback(byte[] udata, byte[] stream, int len)
+    private static void SDL_PCMixCallback(nint udata, nint stream, int len)
     {
-        // TODO: After I get sdl_mixer package working
-        //short leftPtr;
-        //short rightPtr;
-        //short this_value;
-        //int i;
-        //int nsamples;
+        unsafe {
+        short* leftptr;
+        short* rightptr;
+        short this_value;
+        int i;
+        int nsamples;
 
-        //// Number of samples is quadrupled, because of 16-bit and stereo
+        // Number of samples is quadrupled, because of 16-bit and stereo
 
-        //nsamples = len / 4;
+        nsamples = len / 4;
 
-        //leftptr = (Sint16*)stream;
-        //rightptr = ((Sint16*)stream) + 1;
+        leftptr = (short*)stream;
+        rightptr = ((short*)stream) + 1;
 
-        //// Fill the output buffer
+        // Fill the output buffer
 
-        //for (i = 0; i < nsamples; ++i)
-        //{
-        //    // Has this sound expired? If so, retrieve the next frequency
+        for (i = 0; i < nsamples; ++i)
+        {
+            // Has this sound expired? If so, retrieve the next frequency
 
-        //    while (current_remaining == 0)
-        //    {
-        //        phase_offset = 0;
+            while (current_remaining == 0)
+            {
+                phase_offset = 0;
 
-        //        // Get the next frequency to play
+                // Get the next frequency to play
 
-        //        if (pcSound)
-        //        {
-        //            // The PC speaker sample rate is 140Hz (see SDL_t0SlowAsmService)
-        //            current_remaining = param_samplerate / 140;
+                if (pcSound != null && pcSound.Length > 0 && pcSoundPtr < pcSound.Length)
+                {
+                    // The PC speaker sample rate is 140Hz (see SDL_t0SlowAsmService)
+                    current_remaining = param_samplerate / 140;
 
-        //            if (*pcSound != pcLastSample)
-        //            {
-        //                pcLastSample = *pcSound;
+                    if (pcSound[pcSoundPtr] != pcLastSample)
+                    {
+                        pcLastSample = pcSound[pcSoundPtr];
+                        Console.WriteLine($"{current_remaining}: pcLastSample: {pcLastSample}");
 
-        //                if (pcLastSample)
-        //                    // The PC PIC counts down at 1.193180MHz
-        //                    // So pwm_freq = counter_freq / reload_value
-        //                    // reload_value = pcLastSample * 60 (see SDL_DoFX)
-        //                    current_freq = 1193180 / (pcLastSample * 60);
-        //                else
-        //                    current_freq = 0;
+                    if (pcLastSample != 0)
+                            // The PC PIC counts down at 1.193180MHz
+                            // So pwm_freq = counter_freq / reload_value
+                            // reload_value = pcLastSample * 60 (see SDL_DoFX)
+                            current_freq = 1193180 / (pcLastSample * 60);
+                        else
+                            current_freq = 0;
+                        Console.WriteLine($"{current_remaining}: current_freq: {current_freq}");
 
-        //            }
-        //            pcSound++;
-        //            pcLengthLeft--;
-        //            if (!pcLengthLeft)
-        //            {
-        //                pcSound = 0;
-        //                SoundNumber = 0;
-        //                SoundPriority = 0;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            current_freq = 0;
-        //            current_remaining = 1;
-        //        }
-        //    }
+                    }
+                    pcSoundPtr++;
+                    pcLengthLeft--;
+                    Console.WriteLine($"lenLeft: {pcLengthLeft}");
+                    if (pcLengthLeft <= 0)
+                    {
+                        pcSound = [];
+                        pcSoundPtr = 0;
+                        SoundNumber = 0;
+                        SoundPriority = 0;
+                    }
+                }
+                else
+                {
+                    current_freq = 0;
+                    current_remaining = 1;
+                }
+            }
 
-        //    // Set the value for this sample.
+            // Set the value for this sample.
 
-        //    if (current_freq == 0)
-        //    {
-        //        // Silence
+            if (current_freq == 0)
+            {
+                // Silence
 
-        //        this_value = 0;
-        //    }
-        //    else
-        //    {
-        //        int frac;
+                this_value = 0;
+            }
+            else
+            {
+                int frac;
 
-        //        // Determine whether we are at a peak or trough in the current
-        //        // sound.  Multiply by 2 so that frac % 2 will give 0 or 1
-        //        // depending on whether we are at a peak or trough.
+                // Determine whether we are at a peak or trough in the current
+                // sound.  Multiply by 2 so that frac % 2 will give 0 or 1
+                // depending on whether we are at a peak or trough.
 
-        //        frac = (phase_offset * current_freq * 2) / param_samplerate;
+                frac = (phase_offset * current_freq * 2) / param_samplerate;
 
-        //        if ((frac % 2) == 0)
-        //        {
-        //            this_value = SQUARE_WAVE_AMP;
-        //        }
-        //        else
-        //        {
-        //            this_value = -SQUARE_WAVE_AMP;
-        //        }
+                if ((frac % 2) == 0)
+                {
+                    this_value = SQUARE_WAVE_AMP;
+                }
+                else
+                {
+                    this_value = -SQUARE_WAVE_AMP;
+                }
 
-        //        ++phase_offset;
-        //    }
+                ++phase_offset;
+            }
 
-        //    --current_remaining;
+            --current_remaining;
 
-        //    // Use the same value for the left and right channels.
+                *leftptr += this_value;
+                *rightptr += this_value;
 
-        //    *leftptr += this_value;
-        //    *rightptr += this_value;
-
-        //    leftptr += 2;
-        //    rightptr += 2;
-        //}
+                leftptr += 2;
+                rightptr += 2;
+            }
+        }
     }
 
     internal static void SD_Startup()
@@ -487,8 +495,9 @@ internal partial class Program
             chunksize = 1 << (int)Math.Log2(param_audiobuffer / (44100 / param_samplerate));
         }
 
-        //if (SDL_mixer.Mix_OpenAudioDevice(param_samplerate, SDL.AUDIO_S16, 2, chunksize, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE))
-        if (SDL_mixer.Mix_OpenAudio(frequency: param_samplerate, format: SDL.AUDIO_S16, channels: 2, chunksize) != 0)//, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE))
+        //if (SDL.SDL_OpenAudioDevice(param_samplerate, AUDIO_S16, chunksize, IntPtr.Zero, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE))
+        if (SDL_mixer.Mix_OpenAudioDevice(param_samplerate, SDL.AUDIO_S16, 2, chunksize, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE) != 0)
+        //if (SDL_mixer.Mix_OpenAudio(frequency: param_samplerate, format: SDL.AUDIO_S16, channels: 2, chunksize) != 0)//, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE))
         {
             Error($"Unable to open audio device: {SDL_mixer.Mix_GetError()}\n");
             return;
@@ -529,11 +538,6 @@ internal partial class Program
 
         SDL_SetupDigi();
         SD_Started = true;
-    }
-
-    private static void SDL_PCMixCallback(nint udata, nint stream, int len)
-    {
-        //throw new NotImplementedException();
     }
 
     private static void SD_ChannelFinished(int channel)
@@ -614,7 +618,7 @@ internal partial class Program
             return 1;
         }
 
-        if (SoundMode == (byte)SDMode.Off)
+        if (SoundMode == SDMode.Off)
             return 0;
 
         if (s.length == 0)
@@ -622,7 +626,7 @@ internal partial class Program
         if (s.priority < SoundPriority)
             return 0;
 
-        switch ((SDMode)SoundMode)
+        switch (SoundMode)
         {
             case SDMode.PC:
                 SDL_PCPlaySound((PCSound)soundSeg);
@@ -1011,7 +1015,7 @@ internal partial class Program
     }
     internal static void SDL_StartDevice()
     {
-        switch ((SDMode)SoundMode)
+        switch (SoundMode)
         {
             case SDMode.AdLib:
                 SDL_StartAL();
@@ -1171,7 +1175,7 @@ internal partial class Program
         SDL_ALStopSound();
 
         alLengthLeft = sound.common.length;
-        sbyte[] data = sound.data;
+        byte[] data = sound.data;
         alBlock = (sbyte)(((sound.block & 7) << 2) | 0x20);
         var inst = sound.inst;
 

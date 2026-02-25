@@ -171,7 +171,10 @@ namespace SDL2
 			int chunksize
 		);
 
-		[DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int Mix_OpenAudioDevice(int frequency, ushort format, int channels, int chunksize, IntPtr device, uint allowed_changes);
+
+        [DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int Mix_AllocateChannels(int numchans);
 
 		[DllImport(nativeLibName, CallingConvention = CallingConvention.Cdecl)]

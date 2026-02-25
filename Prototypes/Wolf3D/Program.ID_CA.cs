@@ -726,7 +726,7 @@ Please check whether you are using the right executable!
         sound.inst.unused[2] = br.ReadSByte();
         sound.block = br.ReadSByte();
 
-        sound.data = br.ReadBytes(size - ORIG_ADLIBSOUND_SIZE + 1).Select(x => (sbyte)x).ToArray();
+        sound.data = br.ReadBytes(size - ORIG_ADLIBSOUND_SIZE + 1).ToArray();
 
         audiosegs[chunk] = sound;
     }
