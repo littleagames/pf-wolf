@@ -679,20 +679,20 @@ internal partial class Program
         //
         // TOTAL TIME VERIFICATION CODE
         //
-        if (gamestate.difficulty >= difficultytypes.gd_medium)
-        {
-            VWB_DrawPic(30 * 8, TIMEY * 8, graphicnums.C_TIMECODEPIC);
-            fontnumber = 0;
-            fontcolor = READHCOLOR;
-            PrintX = 30 * 8 - 3;
-            PrintY = TIMEY * 8 + 8;
-            PrintX += 4;
-            char a = (char)((((min / 10) ^ (min % 10)) ^ 0xa) + 'A');
-            char b = (char)((((sec / 10) ^ (sec % 10)) ^ 0xa) + 'A');
-            char c = (char)((tempstr[0] ^ tempstr[1]) + 'A');
-            tempstr = $"{a}{b}{c}";
-            US_Print(tempstr);
-        }
+        //if (gamestate.difficulty >= difficultytypes.gd_medium)
+        //{
+        //    VWB_DrawPic(30 * 8, TIMEY * 8, graphicnums.C_TIMECODEPIC);
+        //    fontnumber = 0;
+        //    fontcolor = READHCOLOR;
+        //    PrintX = 30 * 8 - 3;
+        //    PrintY = TIMEY * 8 + 8;
+        //    PrintX += 4;
+        //    char a = (char)((((min / 10) ^ (min % 10)) ^ 0xa) + 'A');
+        //    char b = (char)((((sec / 10) ^ (sec % 10)) ^ 0xa) + 'A');
+        //    char c = (char)((tempstr[0] ^ tempstr[1]) + 'A');
+        //    tempstr = $"{a}{b}{c}";
+        //    US_Print(tempstr);
+        //}
 
         fontnumber = 1;
 

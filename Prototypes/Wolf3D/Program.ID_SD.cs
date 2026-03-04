@@ -1,6 +1,8 @@
 ﻿using SDL2;
-using System.Reflection;
 using System.Runtime.InteropServices;
+using Wolf3D.AudioPlayers;
+using Wolf3D.OPL;
+using Wolf3D.OPL.Woody;
 using static SDL2.SDL;
 using static SDL2.SDL_mixer;
 
@@ -77,6 +79,15 @@ internal class PCSound : Sound
     }
 }
 
+internal class ImfMusic : Sound
+{
+    public byte[] data;
+    public ImfMusic(byte[] data)
+    {
+        this.data = data;
+    }
+}
+
 internal struct MusicGroup
 {
     public ushort length;
@@ -136,6 +147,9 @@ internal class AdLibSound : Sound
 
 internal partial class Program
 {
+    private static IMusicPlayer _player;// = new ImfPlayer(new WoodyEmulatorOpl(OPL.OplType.Opl2));
+    private static float _imfRefreshRateHz;// = _player.RefreshRate;    // SDL_t0FastAsmService played at 700Hz
+
     //id_sd.h
     internal static int alOut(int n, int b) => 0; // TODO:
     //internal static int alOut(int n, int b) => YM3812Write(oplChip, n, b);
@@ -402,7 +416,6 @@ internal partial class Program
                     if (pcSound[pcSoundPtr] != pcLastSample)
                     {
                         pcLastSample = pcSound[pcSoundPtr];
-                        Console.WriteLine($"{current_remaining}: pcLastSample: {pcLastSample}");
 
                     if (pcLastSample != 0)
                             // The PC PIC counts down at 1.193180MHz
@@ -411,12 +424,10 @@ internal partial class Program
                             current_freq = 1193180 / (pcLastSample * 60);
                         else
                             current_freq = 0;
-                        Console.WriteLine($"{current_remaining}: current_freq: {current_freq}");
 
                     }
                     pcSoundPtr++;
                     pcLengthLeft--;
-                    Console.WriteLine($"lenLeft: {pcLengthLeft}");
                     if (pcLengthLeft <= 0)
                     {
                         pcSound = [];
@@ -521,8 +532,11 @@ internal partial class Program
         //    YM3812Write(oplChip, i, 0);
 
         //YM3812Write(oplChip, 1, 0x20); // Set WSE=1
-                                       //    YM3812Write(0,8,0); // Set CSM=0 & SEL=0		 // already set in for statement
-                                       
+        //    YM3812Write(0,8,0); // Set CSM=0 & SEL=0		 // already set in for statement
+        var opl = new WoodyEmulatorOpl(OplType.Opl2);
+        opl.Init(param_samplerate);
+
+        _player = new ImfPlayer(opl);
         SDL_mixer.Mix_HookMusic(SDL_IMFMusicPlayer, 0);
         SDL_mixer.Mix_ChannelFinished(SD_ChannelFinished);
         AdLibPresent = true;
@@ -533,8 +547,8 @@ internal partial class Program
         // Add PC speaker sound mixer
         SDL_mixer.Mix_SetPostMix(SDL_PCMixCallback, IntPtr.Zero);
 
-        SD_SetSoundMode((byte)SDMode.Off);
-        SD_SetMusicMode((byte)SMMode.Off);
+        SD_SetSoundMode(SDMode.Off);
+        SD_SetMusicMode(SMMode.Off);
 
         SDL_SetupDigi();
         SD_Started = true;
@@ -547,7 +561,92 @@ internal partial class Program
 
     private static void SDL_IMFMusicPlayer(nint udata, nint stream, int len)
     {
-        //throw new NotImplementedException();
+        int stereolen = len >> 1;
+        int sampleslen = stereolen >> 1;
+        unsafe
+        {
+            short* stream16 = (short*)stream;
+
+            while (true)
+            {
+                if (numreadysamples != 0)
+                {
+                    if (numreadysamples < sampleslen)
+                    {
+                        var data = new short[numreadysamples * 2];
+                        _player.Opl.ReadBuffer(data, 0, numreadysamples * 2);
+                        // TODO: assign to stream16
+                        stream16 += numreadysamples * 2;
+                        fixed (short* dataPtr = data)
+                        {
+                            System.Buffer.MemoryCopy(dataPtr, stream16, data.Length, data.Length);
+                        }
+                        sampleslen -= numreadysamples;
+                    }
+                    else
+                    {
+                        var data = new short[sampleslen];
+                        _player.Opl.ReadBuffer(data, 0, sampleslen);
+                        fixed (short* dataPtr = data)
+                        {
+                            System.Buffer.MemoryCopy(dataPtr, stream16, data.Length, data.Length);
+                        }
+                        numreadysamples -= sampleslen;
+                        return;
+                    }
+                }
+                //soundTimeCounter--;
+                //if (soundTimeCounter == 0)
+                //{
+                //    soundTimeCounter = 5;
+                //    if (curAlSound != alSound)
+                //    {
+                //        curAlSound = curAlSoundPtr = alSound;
+                //        curAlLengthLeft = alLengthLeft;
+                //    }
+                //    if (curAlSound != 0)
+                //    {
+                //        if (*curAlSoundPtr)
+                //        {
+                //            alOut(alFreqL, *curAlSoundPtr);
+                //            alOut(alFreqH, alBlock);
+                //        }
+                //        else alOut(alFreqH, 0);
+                //        curAlSoundPtr++;
+                //        curAlLengthLeft--;
+                //        if (!curAlLengthLeft)
+                //        {
+                //            curAlSound = alSound = 0;
+                //            SoundNumber = 0;
+                //            SoundPriority = 0;
+                //            alOut(alFreqH, 0);
+                //        }
+                //    }
+                //}
+                if (sqActive)
+                {
+                    if (sqHackTime <= alTimeCount)
+                    {
+                        // TODO: _player.Load is not called here, need to set the _data
+                        var playing = _player.Update();
+                        if (!playing)
+                        {
+                            _player.Restart();
+                            alTimeCount = 0;
+                            sqHackTime = 0;
+                            continue;
+                        }
+
+                        uint time = (uint)Math.Round((_imfRefreshRateHz / _player.RefreshRate)); // or midpoint round
+                        sqHackTime = (alTimeCount + time);
+                    }
+
+                    alTimeCount++;
+                }
+
+                numreadysamples = samplesPerMusicTick;
+            }
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -867,7 +966,13 @@ internal partial class Program
 
         if (MusicMode == SMMode.AdLib)
         {
-            int chunkLen = CA_CacheAudioChunk((int)chunk);
+            int chunkLen = CA_CacheMusicChunk(chunk);
+            using (var ms = new MemoryStream(((ImfMusic)audiosegs[(int)chunk]).data))
+            {
+                _player.Load(ms);
+                _imfRefreshRateHz = _player.RefreshRate;
+            }
+            
             //sqHack = audiosegs[chunk];     // alignment is correct
             //if (*sqHack == 0) sqHackLen = sqHackSeqLen = chunkLen;
             //else sqHackLen = sqHackSeqLen = *sqHack++;

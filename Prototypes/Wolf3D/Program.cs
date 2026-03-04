@@ -890,7 +890,6 @@ See Options.txt for help";
     internal static bool LoadTheGame(BinaryReader br, int x, int y)
     {
         int i, j;
-        uint actnum = 0;
         ushort laststatobjnum;
         ushort tile;
         int checksum, oldchecksum;
@@ -922,10 +921,9 @@ See Options.txt for help";
         for (i = 0; i < mapwidth; i++)
             for (j = 0; j < mapheight; j++)
             {
-                actnum = br.ReadUInt32();
-                checksum = DoChecksum(actnum, checksum);
-                throw new NotImplementedException("actorat needs revisiting");
-                //actorat[i, j] = null;// actnum; // TODO: Get object again
+                int objHashCode = br.ReadInt32();
+                checksum = DoChecksum(objHashCode, checksum);
+                actorat[i, j] = objlist2.FirstOrDefault(x => x.GetHashCode() == objHashCode);
             }
 
         areaconnect = br.ReadBytes(NUMAREAS*NUMAREAS).ToFixedArray(NUMAREAS, NUMAREAS);
@@ -1082,9 +1080,13 @@ See Options.txt for help";
         {
             for (j = 0; j < mapheight; j++)
             {
-                var obIndex = actorat[i, j];
-                bw.Write((int)(obIndex?.GetHashCode() ?? 0));
-                checksum = DoChecksum((int)(obIndex?.GetHashCode() ?? 0), checksum);
+                var actor = actorat[i, j];
+                if (actor is objstruct obj)
+                {
+                    LinkedListNode<objstruct>? objIndex = objlist2.Find(obj);
+                }
+                bw.Write((actor?.GetHashCode() ?? 0));
+                checksum = DoChecksum((actor?.GetHashCode() ?? 0), checksum);
             }
         }
 
@@ -1212,28 +1214,28 @@ See Options.txt for help";
     {
         int which, lastsong = -1;
         uint start;
-        uint[] songs =
+        musicnames[] songs =
         {
-            (uint)musicnames.GETTHEM_MUS,
-            (uint)musicnames.SEARCHN_MUS,
-            (uint)musicnames.POW_MUS,
-            (uint)musicnames.SUSPENSE_MUS,
-            (uint)musicnames.WARMARCH_MUS,
-            (uint)musicnames.CORNER_MUS,
+            musicnames.GETTHEM_MUS,
+            musicnames.SEARCHN_MUS,
+            musicnames.POW_MUS,
+            musicnames.SUSPENSE_MUS,
+            musicnames.WARMARCH_MUS,
+            musicnames.CORNER_MUS,
 
-            (uint)musicnames.NAZI_OMI_MUS,
-            (uint)musicnames.PREGNANT_MUS,
-            (uint)musicnames.GOINGAFT_MUS,
-            (uint)musicnames.HEADACHE_MUS,
-            (uint)musicnames.DUNGEON_MUS,
-            (uint)musicnames.ULTIMATE_MUS,
+            musicnames.NAZI_OMI_MUS,
+            musicnames.PREGNANT_MUS,
+            musicnames.GOINGAFT_MUS,
+            musicnames.HEADACHE_MUS,
+            musicnames.DUNGEON_MUS,
+            musicnames.ULTIMATE_MUS,
 
-            (uint)musicnames.INTROCW3_MUS,
-            (uint)musicnames.NAZI_RAP_MUS,
-            (uint)musicnames.TWELFTH_MUS,
-            (uint)musicnames.ZEROHOUR_MUS,
-            (uint)musicnames.ULTIMATE_MUS,
-            (uint)musicnames.PACMAN_MUS
+            musicnames.INTROCW3_MUS,
+            musicnames.NAZI_RAP_MUS,
+            musicnames.TWELFTH_MUS,
+            musicnames.ZEROHOUR_MUS,
+            musicnames.ULTIMATE_MUS,
+            musicnames.PACMAN_MUS
         };
 
         IN_ClearKeysDown();
@@ -1274,7 +1276,7 @@ See Options.txt for help";
                 if (lastsong >= 0)
                     MusicMenu[start + lastsong].active = 1;
 
-                StartCPMusic((musicnames)songs[start + which]);
+                StartCPMusic(songs[start + which]);
                 MusicMenu[start + which].active = 2;
                 DrawMenu(MusicItems, MusicMenu/*[start]*/);
                 VW_UpdateScreen();

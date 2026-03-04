@@ -666,7 +666,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         short length;
         graphicnums[] dems = { graphicnums.T_DEMO0, graphicnums.T_DEMO1, graphicnums.T_DEMO2, graphicnums.T_DEMO3 };
 
-        if (false)
+        if (true)
         {
             demoData = grsegs[(int)dems[demonumber]];
             demoptr = 0;

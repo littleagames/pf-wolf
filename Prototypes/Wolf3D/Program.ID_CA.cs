@@ -691,6 +691,21 @@ Please check whether you are using the right executable!
 
         return size;
     }
+    internal static int CA_CacheMusicChunk(musicnames chunk)
+    {
+        int pos = audiostarts[(int)chunk];
+        int size = audiostarts[(int)chunk + 1] - pos;
+
+        if (audiosegs[(int)chunk] != null)
+            return size;                        // already in memory
+
+        //audiosegs[chunk] = new byte[size];
+        BinaryReader br = new BinaryReader(audiofile);
+        audiofile.Seek(pos, SeekOrigin.Begin);
+        audiosegs[(int)chunk] = new ImfMusic(br.ReadBytes(size));
+
+        return size;
+    }
 
     internal static void CA_CacheAdlibSoundChunk(int chunk)
     {
