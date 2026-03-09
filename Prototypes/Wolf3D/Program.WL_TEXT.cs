@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Managers;
 
 namespace Wolf3D;
 
@@ -77,7 +78,7 @@ internal partial class Program
         //text = (char*)grsegs[artnum];
         text = new string(System.Text.Encoding.ASCII.GetString(grsegs[(int)artnum]).ToCharArray());
         ShowArticle(text);
-        VW_FadeOut();
+        _videoManager.FadeOut();
 
         FreeMusic();
     }
@@ -93,7 +94,7 @@ internal partial class Program
 
         ShowArticle(text);
 
-        VW_FadeOut();
+        _videoManager.FadeOut();
         SETFONTCOLOR(0, 15);
         IN_ClearKeysDown();
         IN_CenterMouse();
@@ -110,7 +111,7 @@ internal partial class Program
         text = article;
         oldfontnumber = (uint)fontnumber;
         fontnumber = 0;
-        VWB_Bar(0, 0, 320, 200, BACKCOLOR);
+        _videoManager.Bar(0, 0, 320, 200, BACKCOLOR);
         CacheLayout();
 
         newpage = true;
@@ -121,10 +122,10 @@ internal partial class Program
             {
                 newpage = false;
                 PageLayout(true);
-                VW_UpdateScreen();
+                _videoManager.Update();
                 if (firstpage)
                 {
-                    VL_FadeIn(0, 255, gamepal, 10);
+                    _videoManager.FadeIn(10);
                     firstpage = false;
                 }
             }
@@ -292,12 +293,12 @@ internal partial class Program
         //
         // update the screen, and wait for time delay
         //
-        VW_UpdateScreen();
+        _videoManager.Update();
 
         //
         // wait for time
         //
-        Delay(picdelay);
+        GameEngineManager.Delay(picdelay);
 
         //
         // draw pic
@@ -376,7 +377,7 @@ internal partial class Program
         //
         // clear the screen
         //
-        VWB_Bar(0, 0, 320, 200, BACKCOLOR);
+        _videoManager.Bar(0, 0, 320, 200, BACKCOLOR);
         VWB_DrawPic(0, 0, graphicnums.H_TOPWINDOWPIC);
         VWB_DrawPic(0, 8, graphicnums.H_LEFTWINDOWPIC);
         VWB_DrawPic(312, 8, graphicnums.H_RIGHTWINDOWPIC);
@@ -438,7 +439,7 @@ internal partial class Program
             py = 183;
             fontcolor = 0x4f;                          //12^BACKCOLOR;
 
-            VWB_DrawPropString(str);
+            _videoManager.DrawPropString(px, py, str, fontcolor, grsegs[STARTFONT + fontnumber]);
         }
 
         fontcolor = (byte)oldfontcolor;
@@ -465,7 +466,7 @@ internal partial class Program
                 picx = ParseNumber();
                 picwidth = ParseNumber();
                 picheight = ParseNumber();
-                VWB_Bar(picx, picy, picwidth, picheight, BACKCOLOR);
+                _videoManager.Bar(picx, picy, picwidth, picheight, BACKCOLOR);
                 RipToEOL();
                 break;
             case ';':               // comment
@@ -612,7 +613,7 @@ internal partial class Program
         // print it
         //
         newpos = (ushort)(px + wwidth);
-        VWB_DrawPropString(new string(wword));
+        _videoManager.DrawPropString(px, py, new string(wword), fontcolor, grsegs[STARTFONT + fontnumber]);
         px = newpos;
 
         //

@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Managers;
 
 namespace Wolf3D;
 
@@ -312,35 +313,35 @@ internal partial class Program
 
     internal static void ClearMScreen()
     {
-        VWB_Bar(0, 0, 320, 200, BORDCOLOR);
+        _videoManager.Bar(0, 0, 320, 200, BORDCOLOR);
     }
 
     internal static void DrawStripes(int y)
     {
-        VWB_Bar(0, y, 320, 24, 0);
-        VWB_Hlin(0, 319, y + 22, STRIPE);
+        _videoManager.Bar(0, y, 320, 24, 0);
+        _videoManager.HorizontalLine(0, 319, y + 22, STRIPE);
     }
 
     internal static void DrawWindow(int x, int y, int w, int h, int wcolor)
     {
-        VWB_Bar(x, y, w, h, wcolor);
+        _videoManager.Bar(x, y, w, h, wcolor);
         DrawOutline(x, y, w, h, BORD2COLOR, DEACTIVE);
     }
 
     internal static void DrawOutline(int x, int y, int w, int h, int color1, int color2)
     {
-        VWB_Hlin(x, x + w, y, color2);
-        VWB_Vlin(y, y + h, x, color2);
-        VWB_Hlin(x, x + w, y + h, color1);
-        VWB_Vlin(y, y + h, x + w, color1);
+        _videoManager.HorizontalLine(x, x + w, y, color2);
+        _videoManager.VerticalLine(y, y + h, x, color2);
+        _videoManager.HorizontalLine(x, x + w, y + h, color1);
+        _videoManager.VerticalLine(y, y + h, x + w, color1);
     }
 
 #if SPEAR
     internal static void MenuFadeOut() => VL_FadeOut(0, 255, 0, 0, 51, 10);
 #else
-    internal static void MenuFadeOut() => VL_FadeOut(0, 255, 43, 0, 0, 10);
+    internal static void MenuFadeOut() => _videoManager.FadeOut(0, 255, 43, 0, 0, 10);
 #endif
-    internal static void MenuFadeIn() => VL_FadeIn(0, 255, gamepal, 10);
+    internal static void MenuFadeIn() => _videoManager.FadeIn(10);
 
     internal static void DrawMenu(CP_iteminfo item_i, CP_itemtype[] items)
     {
@@ -410,12 +411,12 @@ internal partial class Program
         //
         routine?.Invoke(which);
 
-        VW_UpdateScreen();
+        _videoManager.Update();
 
         shape = graphicnums.C_CURSOR1PIC;
         timer = 8;
         exit = 0;
-        lastBlinkTime = (int)GetTimeCount();
+        lastBlinkTime = (int)GameEngineManager.GetTimeCount();
         IN_ClearKeysDown();
         IN_ClearTextInput();
 
@@ -424,9 +425,9 @@ internal partial class Program
             //
             // CHANGE GUN SHAPE
             //
-            if ((int)GetTimeCount() - lastBlinkTime > timer)
+            if ((int)GameEngineManager.GetTimeCount() - lastBlinkTime > timer)
             {
-                lastBlinkTime = (int)GetTimeCount();
+                lastBlinkTime = (int)GameEngineManager.GetTimeCount();
                 if (shape == graphicnums.C_CURSOR1PIC)
                 {
                     shape = graphicnums.C_CURSOR2PIC;
@@ -440,7 +441,7 @@ internal partial class Program
 
                 VWB_DrawPic(x, y, shape);
                 routine?.Invoke(which);
-                VW_UpdateScreen();
+                _videoManager.Update();
             }
             else
                 SDL.SDL_Delay(5);
@@ -581,7 +582,7 @@ internal partial class Program
         //
         if (lastitem != which)
         {
-            VWB_Bar(x - 1, y, 25, 16, BKGDCOLOR);
+            _videoManager.Bar(x - 1, y, 25, 16, BKGDCOLOR);
             PrintX = (ushort)(item_i.x + item_i.indent);
             PrintY = (ushort)(item_i.y + which * 13);
             US_Print(items[which].text);
@@ -591,7 +592,7 @@ internal partial class Program
             redrawitem = 0;
 
         routine?.Invoke(which);
-        VW_UpdateScreen();
+        _videoManager.Update();
 
         item_i.curpos = (short)which;
 
@@ -620,13 +621,13 @@ internal partial class Program
 
     internal static void EraseGun(CP_iteminfo item_i, CP_itemtype[] items, int x, int y, int which)
     {
-        VWB_Bar(x - 1, y, 25, 16, BKGDCOLOR);
+        _videoManager.Bar(x - 1, y, 25, 16, BKGDCOLOR);
         SetTextColor(items[which], false);
 
         PrintX = (ushort)(item_i.x + item_i.indent);
         PrintY = (ushort)(item_i.y + which * 13);
         US_Print(items[which].text);
-        VW_UpdateScreen();
+        _videoManager.Update();
     }
 
     //
@@ -635,14 +636,14 @@ internal partial class Program
     internal static void DrawHalfStep(int x, int y)
     {
         VWB_DrawPic(x, y, graphicnums.C_CURSOR1PIC);
-        VW_UpdateScreen();
+        _videoManager.Update();
         SD_PlaySound((int)soundnames.MOVEGUN1SND);
         SDL.SDL_Delay(8 * 100 / 7);
     }
 
     internal static void DrawGun(CP_iteminfo item_i, CP_itemtype[] items, int x, ref int y, int which, int basey, Action<int>? routine)
     {
-        VWB_Bar(x - 1, y, 25, 16, BKGDCOLOR);
+        _videoManager.Bar(x - 1, y, 25, 16, BKGDCOLOR);
         y = basey + which * 13;
         VWB_DrawPic(x, y, graphicnums.C_CURSOR1PIC);
         SetTextColor(items[which], true);
@@ -655,7 +656,7 @@ internal partial class Program
         // CALL CUSTOM ROUTINE IF IT IS NEEDED
         //
         routine?.Invoke(which);
-        VW_UpdateScreen();
+        _videoManager.Update();
         SD_PlaySound((int)soundnames.MOVEGUN2SND);
     }
 
@@ -701,14 +702,14 @@ internal partial class Program
     {
         ControlInfo ci;
 
-        int startTime = (int)GetTimeCount();
+        int startTime = (int)GameEngineManager.GetTimeCount();
 
         do
         {
             SDL.SDL_Delay(5);
             ReadAnyControl(out ci);
         }
-        while ((int)GetTimeCount() - startTime < count && ci.dir != (byte)Direction.dir_None);
+        while ((int)GameEngineManager.GetTimeCount() - startTime < count && ci.dir != (byte)Direction.dir_None);
     }
 
     static int totalMousex = 0, totalMousey = 0;
@@ -804,8 +805,8 @@ internal partial class Program
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
         fontnumber = 1;
         WindowH = 200;
-        if (screenHeight % 200 != 0)
-            VL_ClearScreen(0);
+        if (_videoManager.screenHeight % 200 != 0)
+            _videoManager.ClearScreen(0);
 
         if (!ingame)
             CA_LoadAllSounds();
@@ -964,7 +965,7 @@ internal partial class Program
                     StartGame = 1;
                     if (!ingame)
                         StartCPMusic(INTROSONG);
-                    VL_FadeOut(0, 255, 0, 0, 0, 10);
+                    _videoManager.FadeOut(0, 255, 0, 0, 0, 10);
                     break;
 
                 case -1:
@@ -1031,16 +1032,16 @@ internal partial class Program
                 }
                 else
                 {
-                    VW_FadeOut();
-                    if (screenHeight % 200 != 0)
-                        VL_ClearScreen(0);
+                    _videoManager.FadeOut();
+                    if (_videoManager.screenHeight % 200 != 0)
+                        _videoManager.ClearScreen(0);
 
                     lastgamemusicoffset = StartCPMusic(MENUSONG);
                     pickquick = CP_SaveGame(0);
 
                     SETFONTCOLOR(0, 15);
                     IN_ClearKeysDown();
-                    VW_FadeOut();
+                    _videoManager.FadeOut();
                     if (viewsize != 21)
                         DrawPlayScreen();
 
@@ -1049,7 +1050,7 @@ internal partial class Program
 
                     if (loadedgame)
                         playstate = playstatetypes.ex_abort;
-                    lasttimecount = (int)GetTimeCount();
+                    lasttimecount = (int)GameEngineManager.GetTimeCount();
 
                     IN_CenterMouse();
                 }
@@ -1072,16 +1073,16 @@ internal partial class Program
                 }
                 else
                 {
-                    VW_FadeOut();
-                    if (screenHeight % 200 != 0)
-                        VL_ClearScreen(0);
+                    _videoManager.FadeOut();
+                    if (_videoManager.screenHeight % 200 != 0)
+                        _videoManager.ClearScreen(0);
 
                     lastgamemusicoffset = StartCPMusic(MENUSONG);
                     pickquick = CP_LoadGame(0);    // loads lastgamemusicoffs
 
                     SETFONTCOLOR(0, 15);
                     IN_ClearKeysDown();
-                    VW_FadeOut();
+                    _videoManager.FadeOut();
                     if (viewsize != 21)
                         DrawPlayScreen();
 
@@ -1091,7 +1092,7 @@ internal partial class Program
                     if (loadedgame)
                         playstate = playstatetypes.ex_abort;
 
-                    lasttimecount = (int)GetTimeCount();
+                    lasttimecount = (int)GameEngineManager.GetTimeCount();
 
                     IN_CenterMouse();
                 }
@@ -1106,7 +1107,7 @@ internal partial class Program
                 WindowH = 160;
                 if (Confirm(endStrings[(US_RndT() & 0x7) + (US_RndT() & 1)]) != 0)
                 {
-                    VW_UpdateScreen();
+                    _videoManager.Update();
                     SD_MusicOff();
                     SD_StopSound();
                     MenuFadeOut();
@@ -1147,7 +1148,7 @@ internal partial class Program
         }
 
         DrawMenu(MainItems, MainMenu);
-        VW_UpdateScreen();
+        _videoManager.Update();
     }
 
     internal static int CP_NewGame(int _)
@@ -1240,7 +1241,7 @@ internal partial class Program
         for (i = 0; i < 6; i++)
             VWB_DrawPic(NE_X + 32, NE_Y + i * 26, graphicnums.C_EPISODE1PIC + i);
 
-        VW_UpdateScreen();
+        _videoManager.Update();
         MenuFadeIn();
         WaitKeyUp();
     }
@@ -1258,7 +1259,7 @@ internal partial class Program
 
         DrawMenu(NewItems, NewMenu);
         DrawNewGameDiff(NewItems.curpos);
-        VW_UpdateScreen();
+        _videoManager.Update();
         MenuFadeIn();
         WaitKeyUp();
     }
@@ -1465,7 +1466,7 @@ internal partial class Program
             }
 
         DrawMenuGun(SndItems);
-        VW_UpdateScreen();
+        _videoManager.Update();
     }
 
     internal static int CP_Control(int _)
@@ -1566,7 +1567,7 @@ internal partial class Program
         }
 
         DrawMenuGun(CtlItems);
-        VW_UpdateScreen();
+        _videoManager.Update();
     }
 
     internal static int CP_LoadGame(int quick)
@@ -1681,7 +1682,7 @@ internal partial class Program
             PrintLSEntry(i, TEXTCOLOR);
 
         DrawMenu(LSItems, LSMenu);
-        VW_UpdateScreen();
+        _videoManager.Update();
         MenuFadeIn();
         WaitKeyUp();
     }
@@ -1734,7 +1735,7 @@ internal partial class Program
         else
             US_Print(STR_SAVING + "...");
 
-        VW_UpdateScreen();
+        _videoManager.Update();
     }
 
     internal static int CP_SaveGame(int quick)
@@ -1795,7 +1796,7 @@ internal partial class Program
                     {
                         DrawLoadSaveScreen(1);
                         PrintLSEntry(which, HIGHLIGHT);
-                        VW_UpdateScreen();
+                        _videoManager.Update();
                     }
                 }
 
@@ -1806,9 +1807,9 @@ internal partial class Program
 
                 fontnumber = 0;
                 if (SaveGamesAvail[which] == 0)
-                    VWB_Bar(LSM_X + LSItems.indent + 1, LSM_Y + which * 13 + 1,
+                    _videoManager.Bar(LSM_X + LSItems.indent + 1, LSM_Y + which * 13 + 1,
                              LSM_W - LSItems.indent - 16, 10, BKGDCOLOR);
-                VW_UpdateScreen();
+                _videoManager.Update();
 
                 if (US_LineInput
                     (LSM_X + LSItems.indent + 2, LSM_Y + which * 13 + 1, ref input, input, true, 31,
@@ -1839,10 +1840,10 @@ internal partial class Program
                 }
                 else
                 {
-                    VWB_Bar(LSM_X + LSItems.indent + 1, LSM_Y + which * 13 + 1,
+                    _videoManager.Bar(LSM_X + LSItems.indent + 1, LSM_Y + which * 13 + 1,
                              LSM_W - LSItems.indent - 16, 10, BKGDCOLOR);
                     PrintLSEntry(which, HIGHLIGHT);
-                    VW_UpdateScreen();
+                    _videoManager.Update();
                     SD_PlaySound((int)soundnames.ESCPRESSEDSND);
                     continue;
                 }
@@ -1885,7 +1886,7 @@ internal partial class Program
                         newview = 4;
                     if (newview >= 19) DrawChangeView(newview);
                     else ShowViewSize(newview);
-                    VW_UpdateScreen();
+                    _videoManager.Update();
                     SD_PlaySound((int)soundnames.HITWALLSND);
                     TicDelay(10);
                     break;
@@ -1899,7 +1900,7 @@ internal partial class Program
                         DrawChangeView(newview);
                     }
                     else ShowViewSize(newview);
-                    VW_UpdateScreen();
+                    _videoManager.Update();
                     SD_PlaySound((int)soundnames.HITWALLSND);
                     TicDelay(10);
                     break;
@@ -1911,8 +1912,8 @@ internal partial class Program
             {
                 SD_PlaySound((int)soundnames.ESCPRESSEDSND);
                 MenuFadeOut();
-                if (screenHeight % 200 != 0)
-                    VL_ClearScreen(0);
+                if (_videoManager.screenHeight % 200 != 0)
+                    _videoManager.ClearScreen(0);
                 return 0;
             }
         }
@@ -1927,20 +1928,20 @@ internal partial class Program
 
         ShootSnd();
         MenuFadeOut();
-        if (screenHeight % 200 != 0)
-            VL_ClearScreen(0);
+        if (_videoManager.screenHeight % 200 != 0)
+            _videoManager.ClearScreen(0);
 
         return 0;
     }
 
     internal static void DrawChangeView(int view)
     {
-        int rescaledHeight = screenHeight / scaleFactor;
-        if (view != 21) VWB_Bar(0, rescaledHeight - 40, 320, 40, bordercol);
+        int rescaledHeight = _videoManager.screenHeight / _videoManager.scaleFactor;
+        if (view != 21) _videoManager.Bar(0, rescaledHeight - 40, 320, 40, bordercol);
 
         ShowViewSize(view);
 
-        PrintY = (ushort)((screenHeight / scaleFactor) - 39);
+        PrintY = (ushort)((_videoManager.screenHeight / _videoManager.scaleFactor) - 39);
         WindowX = 0;
         WindowY = 320;                                  // TODO: Check this!
         SETFONTCOLOR(HIGHLIGHT, BKGDCOLOR);
@@ -1948,7 +1949,7 @@ internal partial class Program
         US_CPrint(STR_SIZE1 +"\n");
         US_CPrint(STR_SIZE2 +"\n");
         US_CPrint(STR_SIZE3);
-        VW_UpdateScreen();
+        _videoManager.Update();
     }
 
     internal static int CP_ReadThis(int _)
@@ -1970,7 +1971,7 @@ internal partial class Program
 #endif
 
         DrawHighScores();
-        VW_UpdateScreen();
+        _videoManager.Update();
         MenuFadeIn();
         fontnumber = 1;
 
@@ -2003,7 +2004,7 @@ internal partial class Program
     {
         if (Confirm(endStrings[US_RndT() & 0x7 + (US_RndT() & 1)]) != 0)
         {
-            VW_UpdateScreen();
+            _videoManager.Update();
             SD_MusicOff();
             SD_StopSound();
             MenuFadeOut();
@@ -2034,11 +2035,11 @@ internal partial class Program
                     if (mouseadjustment != 0)
                     {
                         mouseadjustment--;
-                        VWB_Bar(60, 97, 200, 10, TEXTCOLOR);
+                        _videoManager.Bar(60, 97, 200, 10, TEXTCOLOR);
                         DrawOutline(60, 97, 200, 10, 0, HIGHLIGHT);
                         DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, 0, READCOLOR);
-                        VWB_Bar(61 + 20 * mouseadjustment, 98, 19, 9, READHCOLOR);
-                        VW_UpdateScreen();
+                        _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, READHCOLOR);
+                        _videoManager.Update();
                         SD_PlaySound((int)soundnames.MOVEGUN1SND);
                         TicDelay(20);
                     }
@@ -2049,11 +2050,11 @@ internal partial class Program
                     if (mouseadjustment < 9)
                     {
                         mouseadjustment++;
-                        VWB_Bar(60, 97, 200, 10, TEXTCOLOR);
+                        _videoManager.Bar(60, 97, 200, 10, TEXTCOLOR);
                         DrawOutline(60, 97, 200, 10, 0, HIGHLIGHT);
                         DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, 0, READCOLOR);
-                        VWB_Bar(61 + 20 * mouseadjustment, 98, 19, 9, READHCOLOR);
-                        VW_UpdateScreen();
+                        _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, READHCOLOR);
+                        _videoManager.Update();
                         SD_PlaySound((int)soundnames.MOVEGUN1SND);
                         TicDelay(20);
                     }
@@ -2100,12 +2101,12 @@ internal partial class Program
         PrintX = 269;
         US_Print(STR_FAST);
 
-        VWB_Bar(60, 97, 200, 10, TEXTCOLOR);
+        _videoManager.Bar(60, 97, 200, 10, TEXTCOLOR);
         DrawOutline(60, 97, 200, 10, 0, HIGHLIGHT);
         DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, 0, READCOLOR);
-        VWB_Bar(61 + 20 * mouseadjustment, 98, 19, 9, READHCOLOR);
+        _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, READHCOLOR);
 
-        VW_UpdateScreen();
+        _videoManager.Update();
         MenuFadeIn();
     }
 
@@ -2239,7 +2240,7 @@ internal partial class Program
                 PrintRtn(which);
                 PrintX = (ushort)x;
                 SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
-                VW_UpdateScreen();
+                _videoManager.Update();
                 WaitKeyUp();
                 redraw = 0;
             }
@@ -2260,7 +2261,7 @@ internal partial class Program
             if ((type != CustomCtlOptions.KEYBOARDBTNS && type != CustomCtlOptions.KEYBOARDMOVE) && (ci.button0  | ci.button1 | ci.button2 | ci.button3) != 0 ||
                 ((type == CustomCtlOptions.KEYBOARDBTNS || type == CustomCtlOptions.KEYBOARDMOVE) && LastScan == (int)ScanCodes.sc_Enter))
             {
-                lastFlashTime = (int)GetTimeCount();
+                lastFlashTime = (int)GameEngineManager.GetTimeCount();
                 tick = picked = 0;
                 SETFONTCOLOR(0, TEXTCOLOR);
 
@@ -2274,12 +2275,12 @@ internal partial class Program
                     //
                     // FLASH CURSOR
                     //
-                    if (GetTimeCount() - lastFlashTime > 10)
+                    if (GameEngineManager.GetTimeCount() - lastFlashTime > 10)
                     {
                         switch (tick)
                         {
                             case 0:
-                                VWB_Bar(x, PrintY + 1, CST_SPC - 2, 10, TEXTCOLOR);
+                                _videoManager.Bar(x, PrintY + 1, CST_SPC - 2, 10, TEXTCOLOR);
                                 break;
                             case 1:
                                 PrintX = (ushort)x;
@@ -2288,8 +2289,8 @@ internal partial class Program
                                 break;
                         }
                         tick ^= 1;
-                        lastFlashTime = (int)GetTimeCount();
-                        VW_UpdateScreen();
+                        lastFlashTime = (int)GameEngineManager.GetTimeCount();
+                        _videoManager.Update();
                     }
                     else SDL.SDL_Delay(5);
 
@@ -2465,10 +2466,10 @@ internal partial class Program
         int y = CST_Y + 26 + w * 13;
 
 
-        VWB_Hlin(7, 32, y - 1, DEACTIVE);
-        VWB_Hlin(7, 32, y + 12, BORD2COLOR);
-        VWB_Hlin(7, 32, y - 2, BORDCOLOR);
-        VWB_Hlin(7, 32, y + 13, BORDCOLOR);
+        _videoManager.HorizontalLine(7, 32, y - 1, DEACTIVE);
+        _videoManager.HorizontalLine(7, 32, y + 12, BORD2COLOR);
+        _videoManager.HorizontalLine(7, 32, y - 2, BORDCOLOR);
+        _videoManager.HorizontalLine(7, 32, y + 13, BORDCOLOR);
         switch (w)
         {
             case 0:
@@ -2489,10 +2490,10 @@ internal partial class Program
         if (fixup_lastwhich >= 0)
         {
             y = CST_Y + 26 + fixup_lastwhich * 13;
-            VWB_Hlin(7, 32, y - 1, DEACTIVE);
-            VWB_Hlin(7, 32, y + 12, BORD2COLOR);
-            VWB_Hlin(7, 32, y - 2, BORDCOLOR);
-            VWB_Hlin(7, 32, y + 13, BORDCOLOR);
+            _videoManager.HorizontalLine(7, 32, y - 1, DEACTIVE);
+            _videoManager.HorizontalLine(7, 32, y + 12, BORD2COLOR);
+            _videoManager.HorizontalLine(7, 32, y - 2, BORDCOLOR);
+            _videoManager.HorizontalLine(7, 32, y + 13, BORDCOLOR);
             if (fixup_lastwhich != w)
                 switch (fixup_lastwhich)
                 {
@@ -2620,7 +2621,7 @@ internal partial class Program
                 }
 
 
-        VW_UpdateScreen();
+        _videoManager.Update();
         MenuFadeIn();
     }
 
@@ -2773,18 +2774,18 @@ internal partial class Program
         //
         x = PrintX;
         y = PrintY;
-        lastBlinkTime = (int)GetTimeCount();
+        lastBlinkTime = (int)GameEngineManager.GetTimeCount();
 
         do
         {
             ReadAnyControl(out ci);
 
-            if (GetTimeCount() - lastBlinkTime >= 10)
+            if (GameEngineManager.GetTimeCount() - lastBlinkTime >= 10)
             {
                 switch (tick)
                 {
                     case 0:
-                        VWB_Bar(x, y, 8, 13, TEXTCOLOR);
+                        _videoManager.Bar(x, y, 8, 13, TEXTCOLOR);
                         break;
                     case 1:
                         PrintX = (ushort)x;
@@ -2792,9 +2793,9 @@ internal partial class Program
                         US_Print("_");
                         break;
                 }
-                VW_UpdateScreen();
+                _videoManager.Update();
                 tick ^= 1;
-                lastBlinkTime = (int)GetTimeCount();
+                lastBlinkTime = (int)GameEngineManager.GetTimeCount();
             }
             else SDL.SDL_Delay(5);
         }
@@ -2865,7 +2866,7 @@ internal partial class Program
         DrawOutline(WindowX - 5, PrintY - 5, mw + 10, h + 10, 0, HIGHLIGHT);
         SETFONTCOLOR(0, TEXTCOLOR);
         US_Print(text);
-        VW_UpdateScreen();
+        _videoManager.Update();
     }
 
     internal static void FreeMusic()
@@ -2888,29 +2889,29 @@ internal partial class Program
 
         int i;
         for (i = 0; i < 10; i++)
-            VWB_Bar(49, 163 - 8 * i, 6, 5, MAINCOLOR - i);
+            _videoManager.Bar(49, 163 - 8 * i, 6, 5, MAINCOLOR - i);
         for (i = 0; i < 10; i++)
-            VWB_Bar(89, 163 - 8 * i, 6, 5, EMSCOLOR - i);
+            _videoManager.Bar(89, 163 - 8 * i, 6, 5, EMSCOLOR - i);
         for (i = 0; i < 10; i++)
-            VWB_Bar(129, 163 - 8 * i, 6, 5, XMSCOLOR - i);
+            _videoManager.Bar(129, 163 - 8 * i, 6, 5, XMSCOLOR - i);
 
         //
         // FILL BOXES
         //
         if (MousePresent)
-            VWB_Bar(164, 82, 12, 2, FILLCOLOR);
+            _videoManager.Bar(164, 82, 12, 2, FILLCOLOR);
 
         if (IN_JoyPresent())
-            VWB_Bar(164, 105, 12, 2, FILLCOLOR);
+            _videoManager.Bar(164, 105, 12, 2, FILLCOLOR);
 
         if (AdLibPresent && !SoundBlasterPresent)
-            VWB_Bar(164, 128, 12, 2, FILLCOLOR);
+            _videoManager.Bar(164, 128, 12, 2, FILLCOLOR);
 
         if (SoundBlasterPresent)
-            VWB_Bar(164, 151, 12, 2, FILLCOLOR);
+            _videoManager.Bar(164, 151, 12, 2, FILLCOLOR);
 
         //    if (SoundSourcePresent)
-        //        VWB_Bar (164, 174, 12, 2, FILLCOLOR);
+        //        _videoManager.Bar (164, 174, 12, 2, FILLCOLOR);
     }
 
     internal static void CheckForEpisodes()

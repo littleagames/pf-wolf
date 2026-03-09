@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Managers;
 
 namespace Wolf3D;
 
@@ -9,7 +10,7 @@ internal partial class Program
 
     internal static void NonShareware()
     {
-        VW_FadeOut();
+        _videoManager.FadeOut();
 
         ClearMScreen();
         DrawStripes(10);
@@ -32,23 +33,23 @@ internal partial class Program
 
         US_Print("        Id Software\n");
 
-        VW_UpdateScreen();
-        VW_FadeIn();
+        _videoManager.Update();
+        _videoManager.FadeIn();
         IN_Ack();
     }
 
     internal static void PG13()
     {
-        VW_FadeOut();
-        VWB_Bar(0, 0, 320, 200, 0x82);     // background
+        _videoManager.FadeOut();
+        _videoManager.Bar(0, 0, 320, 200, 0x82);     // background
 
         VWB_DrawPic(216, 110, graphicnums.PG13PIC);
-        VW_UpdateScreen();
+        _videoManager.Update();
 
-        VW_FadeIn();
+        _videoManager.FadeIn();
         IN_UserInput(TickBase * 7);
 
-        VW_FadeOut();
+        _videoManager.FadeOut();
     }
 
     internal static void DrawHighScores()
@@ -105,7 +106,7 @@ internal partial class Program
             US_Print(buffer);
         }
 
-        VW_UpdateScreen();
+        _videoManager.Update();
     }
 
     internal static void CheckHighScore(int score, ushort other)
@@ -134,7 +135,7 @@ internal partial class Program
         StartCPMusic(musicnames.ROSTER_MUS);
         DrawHighScores();
 
-        VW_FadeIn();
+        _videoManager.FadeIn();
 
         if (n != -1)
         {
@@ -166,20 +167,20 @@ internal partial class Program
 
     internal static bool PreloadUpdate(uint current, uint total)
     {
-        uint w = (uint)(WindowW - scaleFactor * 10);
+        uint w = (uint)(WindowW - _videoManager.scaleFactor * 10);
 
-        VWB_BarScaledCoord(WindowX + scaleFactor * 5, WindowY + WindowH - scaleFactor * 3,
-            (int)w, scaleFactor * 2, BLACK);
+        _videoManager.BarScaledCoord(WindowX + _videoManager.scaleFactor * 5, WindowY + WindowH - _videoManager.scaleFactor * 3,
+            (int)w, _videoManager.scaleFactor * 2, BLACK);
         w = (uint)((int)w * current / total);
         if (w != 0)
         {
-            VWB_BarScaledCoord(WindowX + scaleFactor * 5, WindowY + WindowH - scaleFactor * 3,
-                (int)w, scaleFactor * 2, 0x37);       //SECONDCOLOR);
-            VWB_BarScaledCoord(WindowX + scaleFactor * 5, WindowY + WindowH - scaleFactor * 3,
-                (int)(w - scaleFactor * 1), scaleFactor * 1, 0x32);
+            _videoManager.BarScaledCoord(WindowX + _videoManager.scaleFactor * 5, WindowY + WindowH - _videoManager.scaleFactor * 3,
+                (int)w, _videoManager.scaleFactor * 2, 0x37);       //SECONDCOLOR);
+            _videoManager.BarScaledCoord(WindowX + _videoManager.scaleFactor * 5, WindowY + WindowH - _videoManager.scaleFactor * 3,
+                (int)(w - _videoManager.scaleFactor * 1), _videoManager.scaleFactor * 1, 0x32);
 
         }
-        VW_UpdateScreen();
+        _videoManager.Update();
         //      if (LastScan == sc_Escape)
         //      {
         //              IN_ClearKeysDown();
@@ -194,25 +195,25 @@ internal partial class Program
         DrawLevel();
         ClearSplitVWB();           // set up for double buffering in split screen
 
-        VWB_BarScaledCoord(0, 0, screenWidth, screenHeight - scaleFactor * (STATUSLINES - 1), bordercol);
-        VWB_DrawPicScaledCoord(((screenWidth - scaleFactor * 224) / 16) * 8,
-            (screenHeight - scaleFactor * (STATUSLINES + 48)) / 2, (int)graphicnums.GETPSYCHEDPIC);
+        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 1), bordercol);
+        VWB_DrawPicScaledCoord(((_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 16) * 8,
+            (_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2, (int)graphicnums.GETPSYCHEDPIC);
 
-        WindowX = (ushort)((screenWidth - scaleFactor * 224) / 2);
-        WindowY = (ushort)((screenHeight - scaleFactor * (STATUSLINES + 48)) / 2);
-        WindowW = (ushort)(scaleFactor * 28 * 8);
-        WindowH = (ushort)(scaleFactor * 48);
+        WindowX = (ushort)((_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 2);
+        WindowY = (ushort)((_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2);
+        WindowW = (ushort)(_videoManager.scaleFactor * 28 * 8);
+        WindowH = (ushort)(_videoManager.scaleFactor * 48);
 
-        VW_UpdateScreen();
-        VW_FadeIn();
+        _videoManager.Update();
+        _videoManager.FadeIn();
 
         //      PM_Preload (PreloadUpdate);
         PreloadUpdate(10, 10);
         IN_UserInput(70);
-        VW_FadeOut();
+        _videoManager.FadeOut();
 
         DrawPlayBorder();
-        VW_UpdateScreen();
+        _videoManager.Update();
     }
 
     internal struct times
@@ -328,7 +329,7 @@ internal partial class Program
     };
 
         ClearSplitVWB();           // set up for double buffering in split screen
-        VWB_Bar(0, 0, 320, screenHeight / scaleFactor - STATUSLINES + 1, VIEWCOLOR);
+        _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, VIEWCOLOR);
 
         if (bordercol != VIEWCOLOR)
             DrawStatusBorder(VIEWCOLOR);
@@ -376,8 +377,8 @@ internal partial class Program
             i += 2 * 8;
             VWB_DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (sec % 10));
 
-            VW_UpdateScreen();
-            VW_FadeIn();
+            _videoManager.Update();
+            _videoManager.FadeIn();
 
 
             //
@@ -405,14 +406,14 @@ internal partial class Program
                     Write(x, 7, tempstr);
                     if ((i % (PAR_AMOUNT / 10)) == 0)
                         SD_PlaySound((int)soundnames.ENDBONUS1SND);
-                    VW_UpdateScreen();
+                    _videoManager.Update();
                     while (SD_SoundPlaying() != 0)
                         BJ_Breathe();
                     if (IN_CheckAck())
                         goto done;
                 }
 
-                VW_UpdateScreen();
+                _videoManager.Update();
 
                 SD_PlaySound((int)soundnames.ENDBONUS2SND);
                 while (SD_SoundPlaying() != 0)
@@ -431,7 +432,7 @@ internal partial class Program
                 Write(x, 14, tempstr);
                 if ((i % 10) == 0)
                     SD_PlaySound((int)soundnames.ENDBONUS1SND);
-                VW_UpdateScreen();
+                _videoManager.Update();
                 while (SD_SoundPlaying() != 0)
                     BJ_Breathe();
 
@@ -446,7 +447,7 @@ internal partial class Program
                 tempstr = bonus.ToString();
                 x = (RATIOXX - 1) - tempstr.Length * 2;
                 Write(x, 7, tempstr);
-                VW_UpdateScreen();
+                _videoManager.Update();
                 SD_PlaySound((int)soundnames.PERCENT100SND);
             }
             else if (ratio == 0)
@@ -458,7 +459,7 @@ internal partial class Program
             else
                 SD_PlaySound((int)soundnames.ENDBONUS2SND);
 
-            VW_UpdateScreen();
+            _videoManager.Update();
             while (SD_SoundPlaying() != 0)
                 BJ_Breathe();
 
@@ -473,7 +474,7 @@ internal partial class Program
                 Write(x, 16, tempstr);
                 if ((i % 10) == 0)
                     SD_PlaySound((int)soundnames.ENDBONUS1SND);
-                VW_UpdateScreen();
+                _videoManager.Update();
                 while (SD_SoundPlaying() != 0)
                     BJ_Breathe();
 
@@ -488,7 +489,7 @@ internal partial class Program
                 tempstr = bonus.ToString();
                 x = (RATIOXX - 1) - tempstr.Length * 2;
                 Write(x, 7, tempstr);
-                VW_UpdateScreen();
+                _videoManager.Update();
                 SD_PlaySound((int)soundnames.PERCENT100SND);
             }
             else if (ratio == 0)
@@ -499,7 +500,7 @@ internal partial class Program
             }
             else
                 SD_PlaySound((int)soundnames.ENDBONUS2SND);
-            VW_UpdateScreen();
+            _videoManager.Update();
             while (SD_SoundPlaying() != 0)
                 BJ_Breathe();
 
@@ -514,7 +515,7 @@ internal partial class Program
                 Write(x, 18, tempstr);
                 if ((i % 10) == 0)
                     SD_PlaySound((int)soundnames.ENDBONUS1SND);
-                VW_UpdateScreen();
+                _videoManager.Update();
                 while (SD_SoundPlaying() != 0)
                     BJ_Breathe();
                 if (IN_CheckAck())
@@ -528,7 +529,7 @@ internal partial class Program
                 tempstr = bonus.ToString();
                 x = (RATIOXX - 1) - tempstr.Length * 2;
                 Write(x, 7, tempstr);
-                VW_UpdateScreen();
+                _videoManager.Update();
                 SD_PlaySound((int)soundnames.PERCENT100SND);
             }
             else if (ratio == 0)
@@ -539,7 +540,7 @@ internal partial class Program
             }
             else
                 SD_PlaySound((int)soundnames.ENDBONUS2SND);
-            VW_UpdateScreen();
+            _videoManager.Update();
             while (SD_SoundPlaying() != 0)
                 BJ_Breathe();
 
@@ -583,17 +584,17 @@ internal partial class Program
             Write(14, 4, "secret floor\n completed!");
             Write(10, 16, "15000 bonus!");
 
-            VW_UpdateScreen();
-            VW_FadeIn();
+            _videoManager.Update();
+            _videoManager.FadeIn();
 
             GivePoints(15000);
         }
 
 
         DrawScore();
-        VW_UpdateScreen();
+        _videoManager.Update();
 
-        lastBreathTime = (int)GetTimeCount();
+        lastBreathTime = (int)GameEngineManager.GetTimeCount();
         IN_StartAck();
         while (!IN_CheckAck())
             BJ_Breathe();
@@ -602,7 +603,7 @@ internal partial class Program
         // done
         //
 
-        VW_FadeOut();
+        _videoManager.FadeOut();
         DrawPlayBorder();
     }
 
@@ -619,7 +620,7 @@ internal partial class Program
         StartCPMusic(musicnames.URAHERO_MUS);
         ClearSplitVWB();
 
-        VWB_Bar(0, 0, 320, screenHeight / scaleFactor - STATUSLINES + 1, VIEWCOLOR);
+        _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, VIEWCOLOR);
         if (bordercol != VIEWCOLOR)
             DrawStatusBorder(VIEWCOLOR);
         Write(18, 2, STR_YOUWIN);
@@ -662,7 +663,7 @@ internal partial class Program
         VWB_DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (sec / 10));
         i += 2 * 8;
         VWB_DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (sec % 10));
-        VW_UpdateScreen();
+        _videoManager.Update();
 
         tempstr = kr.ToString();
         x = RATIOX + 24 - tempstr.Length * 2;
@@ -696,14 +697,14 @@ internal partial class Program
 
         fontnumber = 1;
 
-        VW_UpdateScreen();
-        VW_FadeIn();
+        _videoManager.Update();
+        _videoManager.FadeIn();
 
         IN_Ack();
 
-        VW_FadeOut();
-        if (screenHeight % 200 != 0)
-            VL_ClearScreen(0);
+        _videoManager.FadeOut();
+        if (_videoManager.screenHeight % 200 != 0)
+            _videoManager.ClearScreen(0);
 
         MainMenu[(int)menuitems.savegame].active = 0;  // ADDEDFIX 3 - Tricob
 
@@ -720,12 +721,12 @@ internal partial class Program
 
         SDL.SDL_Delay(5);
 
-        if ((int)GetTimeCount() - lastBreathTime > bj_max)
+        if ((int)GameEngineManager.GetTimeCount() - lastBreathTime > bj_max)
         {
             bj_which ^= 1;
             VWB_DrawPic(0, 16, pics[bj_which]);
-            VW_UpdateScreen();
-            lastBreathTime = (int)GetTimeCount();
+            _videoManager.Update();
+            lastBreathTime = (int)GameEngineManager.GetTimeCount();
             bj_max = 35;
         }
     }

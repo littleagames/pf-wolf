@@ -459,15 +459,15 @@ internal partial class Program
                 break;
         }
 
-        StartBonusFlash();
+        _videoManager.StartBonusFlash();
         check.shapenum = spritenums.none;                   // remove from list
     }
 
 
     static void StatusDrawPic (uint x, uint y, graphicnums picnum)
     {
-        VWB_DrawPicScaledCoord((int)(((screenWidth - scaleFactor * 320) / 16 + scaleFactor * x) * 8),
-            (int)(screenHeight - scaleFactor * (STATUSLINES - y)), (int)picnum);
+        VWB_DrawPicScaledCoord((int)(((_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 16 + _videoManager.scaleFactor * x) * 8),
+            (int)(_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - y)), (int)picnum);
     }
 
     static void StatusDrawFace(graphicnums picnum)
@@ -620,7 +620,7 @@ internal partial class Program
         }
 
         if (godmode != 2)
-            StartDamageFlash(points);
+            _videoManager.StartDamageFlash(points);
 
         DrawHealth();
         DrawFace();

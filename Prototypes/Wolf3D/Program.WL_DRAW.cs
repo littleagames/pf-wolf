@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using System.Runtime.InteropServices;
+using Wolf3D.Managers;
 
 namespace Wolf3D;
 
@@ -90,8 +91,8 @@ internal partial class Program
         //
         // calculate tics since last refresh for adaptive timing
         //
-        if (lasttimecount > (int)GetTimeCount())
-            lasttimecount = (int)GetTimeCount();    // if the game was paused a LONG time
+        if (lasttimecount > (int)GameEngineManager.GetTimeCount())
+            lasttimecount = (int)GameEngineManager.GetTimeCount();    // if the game was paused a LONG time
 
         uint curtime = SDL.SDL_GetTicks();
         tics = (uint)((curtime * 7) / 100 - lasttimecount); // TODO: Rounding?
@@ -174,7 +175,7 @@ internal partial class Program
         ywcount = yd = wallheight[postx] >> 3;
         if (yd <= 0) yd = 100;
 
-        yoffs = (int)((centery - ywcount) * bufferPitch);
+        yoffs = (int)((centery - ywcount) * _videoManager.bufferPitch);
         if (yoffs < 0) yoffs = 0;
         yoffs += postx;
 
@@ -194,7 +195,7 @@ internal partial class Program
         if (yw < 0) return;
 
         col = postsource[yw];
-        yendoffs = (int)(yendoffs * bufferPitch + postx);
+        yendoffs = (int)(yendoffs * _videoManager.bufferPitch + postx);
         while (yoffs <= yendoffs)
         {
             unsafe
@@ -214,7 +215,7 @@ internal partial class Program
                 if (yw < 0) break;
                 col = postsource[yw];
             }
-            yendoffs -= (int)bufferPitch;
+            yendoffs -= (int)_videoManager.bufferPitch;
         }
     }
 
@@ -394,12 +395,12 @@ internal partial class Program
         unsafe
         {
             byte* dest = (byte*)vbufPtr;// + destIndex;
-            for (y = 0; y < centery; y++, destIndex += (int)bufferPitch)
+            for (y = 0; y < centery; y++, destIndex += (int)_videoManager.bufferPitch)
                 for(var v = 0; v < viewwidth; v++)
                     dest[destIndex+v] = ceiling;
                     //Array.Fill(dest, ceiling, destIndex, viewwidth);
 
-            for (; y < viewheight; y++, destIndex += (int)bufferPitch)
+            for (; y < viewheight; y++, destIndex += (int)_videoManager.bufferPitch)
                 for (var v = 0; v < viewwidth; v++)
                     dest[destIndex + v] = 0x19;
                     //Array.Fill(dest, 0x19, destIndex, viewwidth);
@@ -1262,7 +1263,7 @@ internal partial class Program
         spritenums shapenum;
         if (gamestate.victoryflag)
         {
-            if (player.state == s_deathcam && (GetTimeCount() & 32) != 0)
+            if (player.state == s_deathcam && (GameEngineManager.GetTimeCount() & 32) != 0)
                 SimpleScaleShape(viewwidth / 2, spritenums.SPR_DEATHCAM, viewheight + 1);
             return;
         }
@@ -1297,7 +1298,7 @@ internal partial class Program
 
 
         vbuf = 0;
-        vbufPtr = VL_LockSurface(screenBuffer);
+        vbufPtr = _videoManager.LockSurface();
         if (vbufPtr == IntPtr.Zero) return;
 
         vbuf += (int)screenofs;
@@ -1318,10 +1319,10 @@ internal partial class Program
 
         DrawPlayerWeapon();    // draw player's hands
 
-        //if (Keyboard[(int)ScanCodes.sc_Tab] && viewsize == 21 && gamestate.weapon != -1)
-        //    ShowActStatus();
+        if (Keyboard[(int)ScanCodes.sc_Tab] && viewsize == 21 && gamestate.weapon != weapontypes.wp_none)
+            ShowActStatus();
 
-        VL_UnlockSurface(screenBuffer);
+        _videoManager.UnlockSurface();
         vbuf = 0;
 
         //
@@ -1330,10 +1331,10 @@ internal partial class Program
 
         if (fizzlein)
         {
-            FizzleFade(screenBuffer, 0, 0, (uint)screenWidth, (uint)screenHeight, 20, false);
+            _videoManager.FizzleFade(0, 0, (uint)_videoManager.screenWidth, (uint)_videoManager.screenHeight, 20, false);
             fizzlein = false;
 
-            lasttimecount = (int)GetTimeCount();          // don't make a big tic count
+            lasttimecount = (int)GameEngineManager.GetTimeCount();          // don't make a big tic count
         }
         else
         {
@@ -1342,11 +1343,11 @@ internal partial class Program
                 fontnumber = 0;
                 SETFONTCOLOR(7, 127);
                 PrintX = 4; PrintY = 1;
-                VWB_Bar(0, 0, 40, 10, bordercol);
+                _videoManager.Bar(0, 0, 40, 10, bordercol);
                 US_Print(fps.ToString());
                 US_Print(" fps");
             }
-            VW_UpdateScreen();
+            _videoManager.Update();
         }
 
         if (fpscounter)

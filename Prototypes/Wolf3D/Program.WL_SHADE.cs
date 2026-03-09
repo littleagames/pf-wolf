@@ -1,4 +1,5 @@
-﻿using static SDL2.SDL;
+﻿using Wolf3D.Entities;
+using static SDL2.SDL;
 
 namespace Wolf3D;
 
@@ -90,18 +91,14 @@ internal partial class Program
     // (use gray for fogging, black for standard shading)
     //
     internal static void GenerateShadeTable(byte destRed, byte destGreen, byte destBlue,
-                             SDL_Color[] palette, int fog)
+                             GamePalette gamePalette, int fog)
     {
         int i, shade;
         double curRed, curGreen, curBlue, redStep, greenStep, blueStep;
         int palPtr = 0;
+        var palette = gamePalette.Colors;
 
         LSHADE_flag = fog;
-
-        for (shade = 0; shade < SHADE_COUNT; shade++)
-        {
-            shadetable[shade] = new byte[256];
-        }
 
         for (i = 0; i < 256; i++, palPtr++)
         {
@@ -149,10 +146,15 @@ internal partial class Program
     {
         shadedef_t shadeDef = shadeDefs[GetShadeDefID()];
 
-        if (shadeDef.fogStrength == LSHADE_NOSHADING)
-            NoShading();
-        else
-            GenerateShadeTable(shadeDef.destRed, shadeDef.destGreen, shadeDef.destBlue, gamepal, shadeDef.fogStrength);
+        for (byte shade = 0; shade < SHADE_COUNT; shade++)
+        {
+            shadetable[shade] = new byte[256];
+        }
+
+        //  if (shadeDef.fogStrength == LSHADE_NOSHADING)
+        NoShading();
+       // else
+         //   GenerateShadeTable(shadeDef.destRed, shadeDef.destGreen, shadeDef.destBlue, gamepal, shadeDef.fogStrength);
     }
 
     internal static byte[] GetShade(int scale, uint flags)

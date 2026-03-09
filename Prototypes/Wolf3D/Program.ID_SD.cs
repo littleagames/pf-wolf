@@ -183,7 +183,6 @@ internal partial class Program
     //      Sequencing stuff
     //
     internal const int sqMaxTracks = 10;
-    internal static uint GetTimeCount() => ((SDL.SDL_GetTicks() * 7) / 100);
 
     // id_sd.c
     internal const int ORIGSAMPLERATE = 7042;
@@ -325,13 +324,6 @@ internal partial class Program
     private static uint curAlLengthLeft = 0;
     private static int soundTimeCounter = 5;
     private static int samplesPerMusicTick;
-
-
-    private static void Delay(int wolfticks)
-    {
-        if (wolfticks > 0)
-            SDL.SDL_Delay((uint)((wolfticks * 100) / 7));
-    }
 
     private static void SDL_SoundFinished()
     {

@@ -1,17 +1,19 @@
-﻿using SDL2;
-using System.Text;
+﻿using CommandLine;
+using SDL2;
+using Wolf3D.Configuration;
+using Wolf3D.Managers;
 
 namespace Wolf3D;
 
 internal partial class Program
 {
-/*
-=============================================================================
+    /*
+    =============================================================================
 
-                             LOCAL CONSTANTS
+                                 LOCAL CONSTANTS
 
-=============================================================================
-*/
+    =============================================================================
+    */
     const long FOCALLENGTH = (0x5700L);               // in global coordinates
     const int VIEWGLOBAL = 0x10000;               // globals visable flush to wall
 
@@ -67,7 +69,14 @@ internal partial class Program
 
     private static void Main(string[] args)
     {
-        CheckParameters(args);
+        var gameParams = Parser.Default.ParseArguments<GameParams>(args); // Move into gamemanager, add unit tests
+        // TODO: gameParams, handle errors?
+
+        var gameEngineManager = new GameEngineManager();
+
+        gameEngineManager.Init(gameParams.Value);
+
+        //CheckParameters(args); // Remove
 
         CheckForEpisodes();
 
@@ -77,12 +86,13 @@ internal partial class Program
 
         Quit("Demo loop exited???");
     }
-
+    /*
     private static bool IfArg(string arg, string match)
     {
         return string.Equals(arg, match, StringComparison.OrdinalIgnoreCase);
     }
 
+    
     private static void CheckParameters(string[] args)
     {
         var header =
@@ -236,7 +246,7 @@ See Options.txt for help";
             {
                 if (++i >= args.Length)
                 {
-                    error = "The audiobuffer option is missing the size argument!";
+                    error = "The mission option is missing the mission argument!";
                 }
                 else
                 {
@@ -285,16 +295,19 @@ See Options.txt for help";
             Environment.Exit(1);
         }
     }
-
+    */
+    private static VideoManager _videoManager = new();
     private static void InitGame()
     {
         bool didjukebox = false;
-        if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_AUDIO | SDL.SDL_INIT_JOYSTICK) < 0)
+        _videoManager.Init();
+
+        if (SDL.SDL_InitSubSystem(SDL.SDL_INIT_AUDIO | SDL.SDL_INIT_JOYSTICK) < 0)
         {
             Quit($"Could not initialize SDL: {SDL.SDL_GetError()}");
         }
 
-        AppDomain.CurrentDomain.ProcessExit += (s, e) => SDL.SDL_Quit();
+        //AppDomain.CurrentDomain.ProcessExit += (s, e) => SDL.SDL_Quit();
 
         int numJoysticks = SDL.SDL_NumJoysticks();
         if (param_joystickindex > 0 && (param_joystickindex < -1 || param_joystickindex > numJoysticks))
@@ -308,9 +321,8 @@ See Options.txt for help";
 
         SignonScreen();
 
-        VW_UpdateScreen();
+        _videoManager.Update();
 
-        VH_Startup();
         IN_Startup();
         PM_Startup();
         SD_Startup();
@@ -352,7 +364,7 @@ See Options.txt for help";
         //
         // initialize variables
         //
-        InitRedShifts();
+        _videoManager.InitRedShifts();
 
         if (!didjukebox)
             FinishSignon();
@@ -375,7 +387,7 @@ See Options.txt for help";
     private static void SignonScreen()
     {
         VL_SetVGAPlaneMode();
-        VL_MemToScreen(Signon.signon, 320, 200, 0, 0);
+        _videoManager.MemToScreen(Signon.signon, 320, 200, 0, 0);
     }
 
     private static void FinishSignon()
@@ -383,13 +395,13 @@ See Options.txt for help";
         // TODO: Spear of Destiny support
         //if (Game == "SPEAR")
         //{
-        //    VW_UpdateScreen();
+        //    _videoManager.Update();
 
         //    if (!param_nowait)
         //        VW_WaitVBL(3 * 70);
         //}
         //else {}
-        VW_Bar(0, 189, 300, 11, VL_GetPixel(0, 0));
+        _videoManager.Bar(0, 189, 300, 11, _videoManager.GetPixel(0, 0));
         WindowX = 0;
         WindowW = 320;
         PrintY = 190;
@@ -397,19 +409,19 @@ See Options.txt for help";
         SETFONTCOLOR(14, 4);
         US_CPrint("Press a key"); // "Oprima una tecla"
 
-        VW_UpdateScreen();
+        _videoManager.Update();
 
         if (!param_nowait)
             IN_Ack();
 
-        VW_Bar(0, 189, 300, 11, VL_GetPixel(0, 0));
+        _videoManager.Bar(0, 189, 300, 11, _videoManager.GetPixel(0, 0));
 
         PrintY = 190;
         SETFONTCOLOR(10, 4);
 
         US_CPrint("Working..."); // "pensando..."
 
-        VW_UpdateScreen();
+        _videoManager.Update();
 
         SETFONTCOLOR(0, 15);
     }
@@ -454,29 +466,29 @@ See Options.txt for help";
                 // title page
                 //
                 VWB_DrawPic(0, 0, graphicnums.TITLEPIC);
-                VW_UpdateScreen();
-                VW_FadeIn();
+                _videoManager.Update();
+                _videoManager.FadeIn();
 
                 if (IN_UserInput(TickBase * 15))
                     break;
-                VW_FadeOut();
+                _videoManager.FadeOut();
 
                 //
                 // credits page
                 //
                 VWB_DrawPic(0, 0, graphicnums.CREDITSPIC);
-                VW_UpdateScreen();
-                VW_FadeIn();
+                _videoManager.Update();
+                _videoManager.FadeIn();
                 if (IN_UserInput(TickBase * 10))
                     break;
-                VW_FadeOut();
+                _videoManager.FadeOut();
 
                 //
                 // high scores
                 //
                 DrawHighScores();
-                VW_UpdateScreen();
-                VW_FadeIn();
+                _videoManager.Update();
+                _videoManager.FadeIn();
 
                 if (IN_UserInput(TickBase * 10))
                     break;
@@ -487,13 +499,13 @@ See Options.txt for help";
                 PlayDemo(LastDemo++ % 4);
                 if (playstate == playstatetypes.ex_abort)
                     break;
-                VW_FadeOut();
-                if (screenHeight % 200 != 0)
-                    VL_ClearScreen(0);
+                _videoManager.FadeOut();
+                if (_videoManager.screenHeight % 200 != 0)
+                    _videoManager.ClearScreen(0x00); // 0x00 = Black
                 StartCPMusic(INTROSONG);
             }
 
-            VW_FadeOut();
+            _videoManager.FadeOut();
 
             if (Keyboard[(int)ScanCodes.sc_Tab] && param_debugmode)
                 RecordDemo();
@@ -505,7 +517,7 @@ See Options.txt for help";
                 GameLoop();
                 if (!param_nowait)
                 {
-                    VW_FadeOut();
+                    _videoManager.FadeOut();
                     StartCPMusic(INTROSONG);
                 }
             }
@@ -613,11 +625,11 @@ See Options.txt for help";
     {
         viewsize = width;
         if (viewsize == 21)
-            SetViewSize((uint)screenWidth, (uint)screenHeight);
+            SetViewSize((uint)_videoManager.screenWidth, (uint)_videoManager.screenHeight);
         else if (viewsize == 20)
-            SetViewSize((uint)screenWidth, (uint)(screenHeight - scaleFactor * STATUSLINES));
+            SetViewSize((uint)_videoManager.screenWidth, (uint)(_videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES));
         else
-            SetViewSize((uint)(width * 16 * screenWidth / 320), (uint)(width * 16 * HEIGHTRATIO * screenHeight / 200));
+            SetViewSize((uint)(width * 16 * _videoManager.screenWidth / 320), (uint)(width * 16 * HEIGHTRATIO * _videoManager.screenHeight / 200));
     }
 
     internal static bool SetViewSize(uint width, uint height)
@@ -627,13 +639,13 @@ See Options.txt for help";
         centerx = (short)(viewwidth / 2 - 1);
         centery = (short)(viewheight / 2);
         shootdelta = viewwidth / 10;
-        if (viewheight == screenHeight)
+        if (viewheight == _videoManager.screenHeight)
             viewscreenx = viewscreeny = (int)(screenofs = 0);
         else
         {
-            viewscreenx = (screenWidth - viewwidth) / 2;
-            viewscreeny = (screenHeight - scaleFactor * STATUSLINES - viewheight) / 2;
-            screenofs = (uint)(viewscreeny * screenWidth + viewscreenx);
+            viewscreenx = (_videoManager.screenWidth - viewwidth) / 2;
+            viewscreeny = (_videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES - viewheight) / 2;
+            screenofs = (uint)(viewscreeny * _videoManager.screenWidth + viewscreenx);
         }
 
         //
@@ -1167,7 +1179,7 @@ See Options.txt for help";
             return;
 
         VWB_DrawPic(x, y, graphicnums.C_DISKLOADING1PIC + diskflopanim_which);
-        VW_UpdateScreen();
+        _videoManager.Update();
         diskflopanim_which ^= 1;
     }
 
@@ -1265,7 +1277,7 @@ See Options.txt for help";
         US_CPrint("Robert's Jukebox");
 
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
-        VW_UpdateScreen();
+        _videoManager.Update();
         MenuFadeIn();
 
         do
@@ -1279,7 +1291,7 @@ See Options.txt for help";
                 StartCPMusic(songs[start + which]);
                 MusicMenu[start + which].active = 2;
                 DrawMenu(MusicItems, MusicMenu/*[start]*/);
-                VW_UpdateScreen();
+                _videoManager.Update();
                 lastsong = which;
             }
         } while (which >= 0);
@@ -1294,7 +1306,6 @@ See Options.txt for help";
         SD_Shutdown();
         PM_Shutdown();
         IN_Shutdown();
-        VL_Shutdown();
         CA_Shutdown();
     }
     
@@ -1344,20 +1355,20 @@ See Options.txt for help";
 
         if (width == 21)
         {
-            viewwidth = screenWidth;
-            viewheight = screenHeight;
-            VWB_BarScaledCoord(0, 0, screenWidth, screenHeight, 0);
+            viewwidth = _videoManager.screenWidth;
+            viewheight = _videoManager.screenHeight;
+            _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight, 0);
         }
         else if (width == 20)
         {
-            viewwidth = screenWidth;
-            viewheight = screenHeight - scaleFactor * STATUSLINES;
+            viewwidth = _videoManager.screenWidth;
+            viewheight = _videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES;
             DrawPlayBorder();
         }
         else
         {
-            viewwidth = width * 16 * screenWidth / 320;
-            viewheight = (int)(width * 16 * HEIGHTRATIO * screenHeight / 200);
+            viewwidth = width * 16 * _videoManager.screenWidth / 320;
+            viewheight = (int)(width * 16 * HEIGHTRATIO * _videoManager.screenHeight / 200);
             DrawPlayBorder();
         }
 

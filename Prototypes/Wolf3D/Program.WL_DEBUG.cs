@@ -13,7 +13,7 @@ internal partial class Program
             CenterWindow(20, 3);
             PrintY += 6;
             US_Print(" Border color (0-56): ");
-            VW_UpdateScreen();
+            _videoManager.Update();
             string str = "";
             esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
             if (!esc && !string.IsNullOrEmpty(str))
@@ -50,7 +50,7 @@ internal partial class Program
                 US_PrintCentered("Darkone's FPS Counter OFF");
             else
                 US_PrintCentered("Darkone's FPS Counter ON");
-            VW_UpdateScreen();
+            _videoManager.Update();
             IN_Ack();
             fpscounter ^= fpscounter;
             return 1;
@@ -74,7 +74,7 @@ internal partial class Program
             US_Print($" 2: {MAPSPOT(player.tilex, player.tiley, 1)}");
             US_Print($" 3: {(spot is objstruct spotObj ? spotObj.flags : (spotvis[player.tilex, player.tiley] ? 1 : 0))}");
 
-            VW_UpdateScreen();
+            _videoManager.Update();
             IN_Ack();
             return 1;
         }
@@ -89,7 +89,7 @@ internal partial class Program
             else if (godmode == 2)
                 US_PrintCentered("God mode OFF");
 
-            VW_UpdateScreen();
+            _videoManager.Update();
             IN_Ack();
             if (godmode != 2)
                 godmode++;
@@ -106,7 +106,7 @@ internal partial class Program
         {
             CenterWindow(12, 3);
             US_PrintCentered("Free items!");
-            VW_UpdateScreen();
+            _videoManager.Update();
             GivePoints(100000);
             HealSelf(99);
             if (gamestate.bestweapon < weapontypes.wp_chaingun)
@@ -123,7 +123,7 @@ internal partial class Program
             CenterWindow(16, 3);
             PrintY += 6;
             US_Print("  Give Key (1-4): ");
-            VW_UpdateScreen();
+            _videoManager.Update();
             string str = "";
             esc = !US_LineInput(px, py, ref str, "", true, 1, 0);
             if (!esc && !string.IsNullOrEmpty(str))
@@ -168,7 +168,7 @@ internal partial class Program
                     US_Print((LevelRatios[x].treasure).ToString());
                     US_Print("%\n");
                 }
-                VW_UpdateScreen();
+                _videoManager.Update();
                 IN_Ack();
                 if (end == 10 && gamestate.mapon > 9)
                 {
@@ -189,7 +189,7 @@ internal partial class Program
                 US_PrintCentered("No clipping ON");
             else
                 US_PrintCentered("No clipping OFF");
-            VW_UpdateScreen();
+            _videoManager.Update();
             IN_Ack();
             return 1;
         }
@@ -210,7 +210,7 @@ internal partial class Program
             CenterWindow(30, 3);
             PrintY += 6;
             US_Print(" Slow Motion steps (default 14): ");
-            VW_UpdateScreen();
+            _videoManager.Update();
             string str = "";
             esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
             if (!esc && !string.IsNullOrEmpty(str))
@@ -231,7 +231,7 @@ internal partial class Program
             CenterWindow(30, 3);
             PrintY += 6;
             US_Print("  Add how many extra VBLs(0-8): ");
-            VW_UpdateScreen();
+            _videoManager.Update();
             string str = "";
             esc = !US_LineInput(px, py, ref str, "", true, 1, 0);
             if (!esc && !string.IsNullOrEmpty(str))
@@ -247,7 +247,7 @@ internal partial class Program
             CenterWindow(26, 3);
             PrintY += 6;
             US_Print("  Warp to which level(1-10): ");
-            VW_UpdateScreen();
+            _videoManager.Update();
             string str = "";
             esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
             if (!esc && !string.IsNullOrEmpty(str))
@@ -265,7 +265,7 @@ internal partial class Program
         {
             CenterWindow(12, 3);
             US_PrintCentered("Extra stuff!");
-            VW_UpdateScreen();
+            _videoManager.Update();
             // DEBUG: put stuff here
             IN_Ack();
             return 1;
@@ -317,7 +317,7 @@ internal partial class Program
         US_Print("\nActive actors :");
         US_Print(active.ToString());
 
-        VW_UpdateScreen();
+        _videoManager.Update();
         IN_Ack();
     }
 
@@ -335,11 +335,11 @@ internal partial class Program
 
         // overwrites WSHOT999.BMP if all wshot files exist
 
-        SDL.SDL_SaveBMP(screenBuffer, fname);
+        _videoManager.SaveScreenShot(fname);
 
         CenterWindow(18, 2);
         US_PrintCentered("Screenshot taken");
-        VW_UpdateScreen();
+        _videoManager.Update();
         IN_Ack();
     }
 
@@ -362,7 +362,7 @@ internal partial class Program
         for (y = 0; y < mapheight; y++)
         {
             for (x = 0; x < mapwidth; x++)
-                VWB_Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, actorat[x, y]?.GetHashCode() ?? -1);
+                _videoManager.Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, actorat[x, y]?.GetHashCode() ?? -1);
         }
 
         //
@@ -394,13 +394,13 @@ internal partial class Program
                 else if (tile is Door)
                     color = 146;
 
-                VWB_Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, color);
+                _videoManager.Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, color);
             }
         }
 
-        VWB_Bar((player.tilex * zoom) + offx, (player.tiley * zoom) + offy, zoom, zoom, 15);
+        _videoManager.Bar((player.tilex * zoom) + offx, (player.tiley * zoom) + offy, zoom, zoom, 15);
 
-        VW_UpdateScreen();
+        _videoManager.Update();
         IN_Ack();
     }
 
@@ -417,7 +417,7 @@ internal partial class Program
         int sound;
 
         CenterWindow(20, 16);
-        VW_UpdateScreen();
+        _videoManager.Update();
 
         i = 0;
         done = false;
@@ -451,24 +451,24 @@ internal partial class Program
                     //
                     // draw the wall
                     //
-                    vbufPtr = VL_LockSurface(screenBuffer);
+                    vbufPtr = _videoManager.LockSurface();
 
                     if (vbufPtr == IntPtr.Zero)
                         Quit("ShapeTest: Unable to create surface for walls!");
 
-                    postx = (screenWidth / 2) - ((TEXTURESIZE / 2) * scaleFactor);
+                    postx = (_videoManager.screenWidth / 2) - ((TEXTURESIZE / 2) * _videoManager.scaleFactor);
                     postsource = addr;
 
-                    centery = (short)(screenHeight / 2);
+                    centery = (short)(_videoManager.screenHeight / 2);
                     oldviewheight = viewheight;
                     viewheight = 0x7fff;            // quick hack to skip clipping
 
-                    for (x = 0, j = 0; x < TEXTURESIZE * scaleFactor; x++, j++, postx++)
+                    for (x = 0, j = 0; x < TEXTURESIZE * _videoManager.scaleFactor; x++, j++, postx++)
                     {
-                        wallheight[postx] = (short)(256 * scaleFactor);
+                        wallheight[postx] = (short)(256 * _videoManager.scaleFactor);
                         ScalePost();
 
-                        if (j == scaleFactor)
+                        if (j == _videoManager.scaleFactor)
                         {
                             j = 0;
                             postsource = postsource.Skip(TEXTURESIZE).ToArray();
@@ -478,7 +478,7 @@ internal partial class Program
                     viewheight = oldviewheight;
                     centery = (short)(viewheight / 2);
 
-                    VL_UnlockSurface(screenBuffer);
+                    _videoManager.UnlockSurface();
                     vbufPtr = IntPtr.Zero;
                 }
                 else if (i < PMSoundStart)
@@ -486,21 +486,21 @@ internal partial class Program
                     //
                     // draw the sprite
                     //
-                    vbufPtr = VL_LockSurface(screenBuffer);
+                    vbufPtr = _videoManager.LockSurface();
 
                     if (vbufPtr == IntPtr.Zero)
                         Quit("ShapeTest: Unable to create surface for sprites!");
 
-                    centery = (short)(screenHeight / 2);
+                    centery = (short)(_videoManager.screenHeight / 2);
                     oldviewheight = viewheight;
                     viewheight = 0x7fff;            // quick hack to skip clipping
 
-                    SimpleScaleShape(screenWidth / 2, (spritenums)i - PMSpriteStart, 64 * scaleFactor);
+                    SimpleScaleShape(_videoManager.screenWidth / 2, (spritenums)i - PMSpriteStart, 64 * _videoManager.scaleFactor);
 
                     viewheight = oldviewheight;
                     centery = (short)(viewheight / 2);
 
-                    VL_UnlockSurface(screenBuffer);
+                    _videoManager.UnlockSurface();
                     vbufPtr = IntPtr.Zero;
                 }
                 else if (i == ChunksInFile - 1)
@@ -553,18 +553,18 @@ internal partial class Program
                         v2 /= 4;
 
                         if (v2 < 0)
-                            VWB_Vlin(WindowY + WindowH - 32 + v2,
+                            _videoManager.VerticalLine(WindowY + WindowH - 32 + v2,
                                       WindowY + WindowH - 32,
                                       WindowX + 8 + (j / 32), BLACK);
                         else
-                            VWB_Vlin(WindowY + WindowH - 32,
+                            _videoManager.VerticalLine(WindowY + WindowH - 32,
                                       WindowY + WindowH - 32 + v2,
                                       WindowX + 8 + (j / 32), BLACK);
                     }
                 }
             }
 
-            VW_UpdateScreen();
+            _videoManager.Update();
 
             IN_Ack();
             scan = LastScan;

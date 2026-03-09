@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Managers;
 using static Wolf3D.Program;
 
 namespace Wolf3D;
@@ -142,7 +143,7 @@ internal partial class Program
 
 
     internal static void USL_MeasureString(string s, out ushort w, out ushort h) => VW_MeasurePropString(s, out w, out h);
-    internal static void USL_DrawString(string s) => VWB_DrawPropString(s);
+    internal static void USL_DrawString(string s) => _videoManager.DrawPropString(px, py, s, fontcolor, grsegs[STARTFONT + fontnumber]);
     internal static void US_Print(string sorg)
     {
         ushort w, h;
@@ -281,7 +282,7 @@ internal partial class Program
         cursormoved = redraw = true;
 
         cursorvis = done = false;
-        lasttime = lastdirtime = lastdirmovetime = GetTimeCount();
+        lasttime = lastdirtime = lastdirmovetime = GameEngineManager.GetTimeCount();
         lastbuttontime = lasttime + TickBase / 4;   // 250 ms => first button press accepted after 500 ms
         LastScan = (int)ScanCodes.sc_None;
 
@@ -297,7 +298,7 @@ internal partial class Program
             LastScan = (int)ScanCodes.sc_None;
 
             checkkey = true;
-            curtime = GetTimeCount();
+            curtime = GameEngineManager.GetTimeCount();
 
             // After each direction change accept the next change after 250 ms and then everz 125 ms
             if (ci.dir != lastdir || (curtime - lastdirtime > TickBase / 4 && curtime - lastdirmovetime > TickBase / 8))
@@ -543,7 +544,7 @@ internal partial class Program
             if (cursorvis)
                 USL_XORICursor(x, y, new string(s), (ushort)cursor);
 
-            VW_UpdateScreen();
+            _videoManager.Update();
         }
 
         if (cursorvis)
@@ -554,7 +555,7 @@ internal partial class Program
             py = y;
             USL_DrawString(new string (olds));
         }
-        VW_UpdateScreen();
+        _videoManager.Update();
 
         IN_ClearKeysDown();
         return result;
@@ -579,7 +580,7 @@ internal partial class Program
 
     internal static void US_ClearWindow()
     {
-        VWB_Bar(WindowX, WindowY, WindowW, WindowH, WHITE);
+        _videoManager.Bar(WindowX, WindowY, WindowW, WindowH, WHITE);
         PrintX = WindowX;
         PrintY = WindowY;
     }

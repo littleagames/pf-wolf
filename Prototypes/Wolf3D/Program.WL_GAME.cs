@@ -124,7 +124,7 @@ internal partial class Program
     //    US_PrintSigned(leftchannel);
     //    US_Print(",");
     //    US_PrintSigned(rightchannel);
-    //    VW_UpdateScreen();
+    //    _videoManager.Update();
     //#endif
     }
 /*
@@ -541,7 +541,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
 
         ClearMemory();
         SETFONTCOLOR(0, 15);
-        VW_FadeOut();
+        _videoManager.FadeOut();
         DrawPlayScreen();
         died = false;
         do
@@ -584,7 +584,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
             {
                 ClearMemory();
                 SETFONTCOLOR(0, 15);
-                VW_FadeOut();
+                _videoManager.FadeOut();
                 DrawPlayScreen();
                 died = false;
                 continue;
@@ -597,7 +597,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     if (viewsize == 21) DrawPlayScreen();
                     gamestate.keys = 0;
                     DrawKeys();
-                    VW_FadeOut();
+                    _videoManager.FadeOut();
 
                     ClearMemory();
 
@@ -629,9 +629,9 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     if (gamestate.lives > -1)
                         break;                          // more lives left
 
-                    VW_FadeOut();
-                    if (screenHeight % 200 != 0)
-                        VL_ClearScreen(0);
+                    _videoManager.FadeOut();
+                    if (_videoManager.screenHeight % 200 != 0)
+                        _videoManager.ClearScreen(0);
                     ClearMemory();
 
                     CheckHighScore(gamestate.score, (ushort)(gamestate.mapon + 1));
@@ -641,7 +641,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
 
                 case playstatetypes.ex_victorious:
                     if (viewsize == 21) DrawPlayScreen();
-                    VW_FadeOut();
+                    _videoManager.FadeOut();
                     ClearMemory();
 
                     Victory();
@@ -690,7 +690,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         demoptr += 3;
         lastdemoptr = demoptr - 4 + length;
 
-        VW_FadeOut();
+        _videoManager.FadeOut();
 
         SETFONTCOLOR(0, 15);
         DrawPlayScreen();
@@ -736,13 +736,13 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         demoData[demoptr + 1] = (byte)(length >> 8);
         demoData[demoptr + 2] = 0;
 
-        VW_FadeIn();
+        _videoManager.FadeIn();
         CenterWindow(24, 3);
         PrintY += 6;
         fontnumber = 0;
         SETFONTCOLOR(0, 15);
         US_Print(" Demo number (0-9): ");
-        VW_UpdateScreen();
+        _videoManager.Update();
 
         string str = "";
         if (US_LineInput(px, py, ref str, "", true, 1, 0))
@@ -780,8 +780,8 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         fontnumber = 0;
         SETFONTCOLOR(0, 15);
         US_Print("  Demo which level(1-60): "); maps = 60;
-        VW_UpdateScreen();
-        VW_FadeIn();
+        _videoManager.Update();
+        _videoManager.FadeIn();
         string str = "";
         var esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
         if (esc || string.IsNullOrEmpty(str))
@@ -793,13 +793,13 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         if (level >= maps || level < 0)
             return;
 
-        VW_FadeOut();
+        _videoManager.FadeOut();
         NewGame(difficultytypes.gd_hard, level / 10);
         gamestate.mapon = (short)(level % 10);
         StartDemoRecord(level);
 
         DrawPlayScreen();
-        VW_FadeIn();
+        _videoManager.FadeIn();
 
         startgame = false;
         demorecord = true;
@@ -814,7 +814,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         demoplayback = false;
 
         StopMusic();
-        VW_FadeOut();
+        _videoManager.FadeOut();
         ClearMemory();
 
         FinishDemoRecord();
@@ -822,7 +822,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
 
     internal static void DrawPlayScreen()
     {
-        VWB_DrawPicScaledCoord((screenWidth - scaleFactor * 320) / 2, screenHeight - scaleFactor * STATUSLINES, (int)graphicnums.STATUSBARPIC);
+        VWB_DrawPicScaledCoord((_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 2, _videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES, (int)graphicnums.STATUSBARPIC);
         DrawPlayBorder();
 
         DrawFace();
@@ -842,9 +842,9 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         graphicnums picnum = graphicnums.STATUSBARPIC - STARTPICS;
         int width = pictable[(int)picnum].width;
         int height = pictable[(int)picnum].height;
-        int destx = (screenWidth - scaleFactor * 320) / 2 + 9 * scaleFactor;
-        int desty = screenHeight - (height - 4) * scaleFactor;
-        VL_MemToScreenScaledCoord2(source, width, 9, 4, destx, desty, width - 18, height - 7);
+        int destx = (_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 2 + 9 * _videoManager.scaleFactor;
+        int desty = _videoManager.screenHeight - (height - 4) * _videoManager.scaleFactor;
+        _videoManager.MemToScreenScaledCoord2(source, width, 9, 4, destx, desty, width - 18, height - 7);
 
         ingame = false;
         DrawFace();
@@ -860,40 +860,40 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
 
     internal static void DrawPlayBorder()
     {
-        int px = scaleFactor;
+        int px = _videoManager.scaleFactor;
 
         if (bordercol != VIEWCOLOR)
             DrawStatusBorder(bordercol);
         else
         {
-            int statusborderw = (screenWidth - px * 320) / 2;
-            VWB_BarScaledCoord(0, screenHeight - px * STATUSLINES,
+            int statusborderw = (_videoManager.screenWidth - px * 320) / 2;
+            _videoManager.BarScaledCoord(0, _videoManager.screenHeight - px * STATUSLINES,
                 statusborderw + px * 8, px * STATUSLINES, bordercol);
-            VWB_BarScaledCoord(screenWidth - statusborderw - px * 8, screenHeight - px * STATUSLINES,
+            _videoManager.BarScaledCoord(_videoManager.screenWidth - statusborderw - px * 8, _videoManager.screenHeight - px * STATUSLINES,
                 statusborderw + px * 8, px * STATUSLINES, bordercol);
         }
 
-        if (viewheight == screenHeight) return;
+        if (viewheight == _videoManager.screenHeight) return;
 
-        VWB_BarScaledCoord(0, 0, screenWidth, screenHeight - px * STATUSLINES, bordercol);
+        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight - px * STATUSLINES, bordercol);
 
-        int xl = screenWidth / 2 - viewwidth / 2;
-        int yl = (screenHeight - px * STATUSLINES - viewheight) / 2;
-        VWB_BarScaledCoord(xl, yl, viewwidth, viewheight, 0);
+        int xl = _videoManager.screenWidth / 2 - viewwidth / 2;
+        int yl = (_videoManager.screenHeight - px * STATUSLINES - viewheight) / 2;
+        _videoManager.BarScaledCoord(xl, yl, viewwidth, viewheight, 0);
 
         if (xl != 0)
         {
             // Paint game view border lines
-            VWB_BarScaledCoord(xl - px, yl - px, viewwidth + px, px, 0);                      // upper border
-            VWB_BarScaledCoord(xl, yl + viewheight, viewwidth + px, px, bordercol - 2);       // lower border
-            VWB_BarScaledCoord(xl - px, yl - px, px, viewheight + px, 0);                     // left border
-            VWB_BarScaledCoord(xl + viewwidth, yl - px, px, viewheight + 2 * px, bordercol - 2);  // right border
-            VWB_BarScaledCoord(xl - px, yl + viewheight, px, px, bordercol - 3);              // lower left highlight
+            _videoManager.BarScaledCoord(xl - px, yl - px, viewwidth + px, px, 0);                      // upper border
+            _videoManager.BarScaledCoord(xl, yl + viewheight, viewwidth + px, px, bordercol - 2);       // lower border
+            _videoManager.BarScaledCoord(xl - px, yl - px, px, viewheight + px, 0);                     // left border
+            _videoManager.BarScaledCoord(xl + viewwidth, yl - px, px, viewheight + 2 * px, bordercol - 2);  // right border
+            _videoManager.BarScaledCoord(xl - px, yl + viewheight, px, px, bordercol - 3);              // lower left highlight
         }
         else
         {
             // Just paint a lower border line
-            VWB_BarScaledCoord(0, yl + viewheight, viewwidth, px, bordercol - 2);       // lower border
+            _videoManager.BarScaledCoord(0, yl + viewheight, viewwidth, px, bordercol - 2);       // lower border
         }
     }
 
@@ -901,11 +901,11 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
     {
         if (viewsize == 21) return;
 
-        int sw = screenWidth;
-        int sh = screenHeight;
+        int sw = _videoManager.screenWidth;
+        int sh = _videoManager.screenHeight;
         int vw = viewwidth;
         int vh = viewheight;
-        int px = scaleFactor; // size of one "pixel"
+        int px = _videoManager.scaleFactor; // size of one "pixel"
 
         int h = sh - px * STATUSLINES;
         int xl = sw / 2 - vw / 2;
@@ -913,53 +913,53 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
 
         if (xl != 0)
         {
-            VWB_BarScaledCoord(0, 0, xl - px, h, bordercol);                 // left side
-            VWB_BarScaledCoord(xl + vw + px, 0, xl - px * 2, h, bordercol);                 // right side
+            _videoManager.BarScaledCoord(0, 0, xl - px, h, bordercol);                 // left side
+            _videoManager.BarScaledCoord(xl + vw + px, 0, xl - px * 2, h, bordercol);                 // right side
         }
 
         if (yl != 0)
         {
-            VWB_BarScaledCoord(0, 0, sw, yl - px, bordercol);                    // upper side
-            VWB_BarScaledCoord(0, yl + vh + px, sw, yl - px, bordercol);                    // lower side
+            _videoManager.BarScaledCoord(0, 0, sw, yl - px, bordercol);                    // upper side
+            _videoManager.BarScaledCoord(0, yl + vh + px, sw, yl - px, bordercol);                    // lower side
         }
 
         if (xl != 0)
         {
             // Paint game view border lines
-            VWB_BarScaledCoord(xl - px, yl - px, vw + px, px, 0);                      // upper border
-            VWB_BarScaledCoord(xl, yl + vh, vw + px, px, bordercol - 2);          // lower border
-            VWB_BarScaledCoord(xl - px, yl - px, px, vh + px, 0);                      // left border
-            VWB_BarScaledCoord(xl + vw, yl - px, px, vh + px * 2, bordercol - 2);          // right border
-            VWB_BarScaledCoord(xl - px, yl + vh, px, px, bordercol - 3);          // lower left highlight
+            _videoManager.BarScaledCoord(xl - px, yl - px, vw + px, px, 0);                      // upper border
+            _videoManager.BarScaledCoord(xl, yl + vh, vw + px, px, bordercol - 2);          // lower border
+            _videoManager.BarScaledCoord(xl - px, yl - px, px, vh + px, 0);                      // left border
+            _videoManager.BarScaledCoord(xl + vw, yl - px, px, vh + px * 2, bordercol - 2);          // right border
+            _videoManager.BarScaledCoord(xl - px, yl + vh, px, px, bordercol - 3);          // lower left highlight
         }
         else
         {
             // Just paint a lower border line
-            VWB_BarScaledCoord(0, yl + vh, vw, px, bordercol - 2);       // lower border
+            _videoManager.BarScaledCoord(0, yl + vh, vw, px, bordercol - 2);       // lower border
         }
     }
 
     internal static void DrawStatusBorder(byte color)
     {
-        int statusborderw = (screenWidth - scaleFactor * 320) / 2;
+        int statusborderw = (_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 2;
 
-        VWB_BarScaledCoord(0, 0, screenWidth, screenHeight - scaleFactor * (STATUSLINES - 3), color);
-        VWB_BarScaledCoord(0, screenHeight - scaleFactor * (STATUSLINES - 3),
-            statusborderw + scaleFactor * 8, scaleFactor * (STATUSLINES - 4), color);
-        VWB_BarScaledCoord(0, screenHeight - scaleFactor * 2, screenWidth, scaleFactor * 2, color);
-        VWB_BarScaledCoord(screenWidth - statusborderw - scaleFactor * 8, screenHeight - scaleFactor * (STATUSLINES - 3),
-            statusborderw + scaleFactor * 8, scaleFactor * (STATUSLINES - 4), color);
+        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 3), color);
+        _videoManager.BarScaledCoord(0, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 3),
+            statusborderw + _videoManager.scaleFactor * 8, _videoManager.scaleFactor * (STATUSLINES - 4), color);
+        _videoManager.BarScaledCoord(0, _videoManager.screenHeight - _videoManager.scaleFactor * 2, _videoManager.screenWidth, _videoManager.scaleFactor * 2, color);
+        _videoManager.BarScaledCoord(_videoManager.screenWidth - statusborderw - _videoManager.scaleFactor * 8, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 3),
+            statusborderw + _videoManager.scaleFactor * 8, _videoManager.scaleFactor * (STATUSLINES - 4), color);
 
-        VWB_BarScaledCoord(statusborderw + scaleFactor * 9, screenHeight - scaleFactor * 3,
-            scaleFactor * 97, scaleFactor * 1, color - 1);
-        VWB_BarScaledCoord(statusborderw + scaleFactor * 106, screenHeight - scaleFactor * 3,
-            scaleFactor * 161, scaleFactor * 1, color - 2);
-        VWB_BarScaledCoord(statusborderw + scaleFactor * 267, screenHeight - scaleFactor * 3,
-            scaleFactor * 44, scaleFactor * 1, color - 3);
-        VWB_BarScaledCoord(screenWidth - statusborderw - scaleFactor * 9, screenHeight - scaleFactor * (STATUSLINES - 4),
-            scaleFactor * 1, scaleFactor * 20, color - 2);
-        VWB_BarScaledCoord(screenWidth - statusborderw - scaleFactor * 9, screenHeight - scaleFactor * (STATUSLINES / 2 - 4),
-            scaleFactor * 1, scaleFactor * 14, color - 3);
+        _videoManager.BarScaledCoord(statusborderw + _videoManager.scaleFactor * 9, _videoManager.screenHeight - _videoManager.scaleFactor * 3,
+            _videoManager.scaleFactor * 97, _videoManager.scaleFactor * 1, color - 1);
+        _videoManager.BarScaledCoord(statusborderw + _videoManager.scaleFactor * 106, _videoManager.screenHeight - _videoManager.scaleFactor * 3,
+            _videoManager.scaleFactor * 161, _videoManager.scaleFactor * 1, color - 2);
+        _videoManager.BarScaledCoord(statusborderw + _videoManager.scaleFactor * 267, _videoManager.screenHeight - _videoManager.scaleFactor * 3,
+            _videoManager.scaleFactor * 44, _videoManager.scaleFactor * 1, color - 3);
+        _videoManager.BarScaledCoord(_videoManager.screenWidth - statusborderw - _videoManager.scaleFactor * 9, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 4),
+           _videoManager.scaleFactor * 1, _videoManager.scaleFactor * 20, color - 2);
+        _videoManager.BarScaledCoord(_videoManager.screenWidth - statusborderw - _videoManager.scaleFactor * 9, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES / 2 - 4),
+            _videoManager.scaleFactor * 1, _videoManager.scaleFactor * 14, color - 3);
     }
 
     internal static void SetupGameLevel()
@@ -1128,10 +1128,10 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         int dx, dy;
         int iangle, curangle, clockwise, counter, change;
 
-        if (screenfaded)
+        if (_videoManager.screenfaded)
         {
             ThreeDRefresh();
-            VW_FadeIn();
+            _videoManager.FadeIn();
         }
 
         gamestate.weapon = weapontypes.wp_none;                     // take away weapon
@@ -1218,13 +1218,13 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         //
         // fade to red
         //
-        FinishPaletteShifts();
+        _videoManager.FinishPaletteShifts();
 
-        VL_BarScaledCoord(viewscreenx, viewscreeny, viewwidth, viewheight, 4);
+        _videoManager.BarScaledCoord(viewscreenx, viewscreeny, viewwidth, viewheight, 4);
 
         IN_ClearKeysDown();
 
-        FizzleFade(screenBuffer, viewscreenx, viewscreeny, (uint)viewwidth, (uint)viewheight, 70, false);
+        _videoManager.FizzleFade(viewscreenx, viewscreeny, (uint)viewwidth, (uint)viewheight, 70, false);
 
         IN_UserInput(100);
         SD_WaitSoundDone();

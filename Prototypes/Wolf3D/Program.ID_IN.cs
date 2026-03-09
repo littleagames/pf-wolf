@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using System.Runtime.InteropServices;
+using Wolf3D.Managers;
 
 namespace Wolf3D;
 
@@ -193,11 +194,11 @@ internal partial class Program
 
         SDL.SDL_EventState(SDL.SDL_EventType.SDL_MOUSEMOTION, SDL.SDL_IGNORE);
 
-        if (fullscreen || forcegrabmouse)
+        if (_videoManager.fullscreen || forcegrabmouse)
         {
             GrabInput = true;
 
-            IN_SetWindowGrab(window);
+            _videoManager.SetWindowGrab(GrabInput);
         }
 
         // I didn't find a wayto ask libSDL whether a mouse is present, yet...
@@ -342,18 +343,6 @@ internal partial class Program
         return res;
     }
 
-    internal static void IN_SetWindowGrab(IntPtr window)
-    {
-
-        if (SDL.SDL_ShowCursor((!GrabInput ? 1 : 0)) < 0)
-            Quit($"Unable to {(GrabInput ? "show" : "hide")} cursor: {SDL.SDL_GetError()}");
-
-        SDL.SDL_SetWindowGrab(window, GrabInput ? SDL.SDL_bool.SDL_TRUE : SDL.SDL_bool.SDL_FALSE);
-
-        if (SDL.SDL_SetRelativeMouseMode(GrabInput ? SDL.SDL_bool.SDL_TRUE : SDL.SDL_bool.SDL_FALSE) > 0)
-            Quit($"Unable to set relative mode for mouse: {SDL.SDL_GetError()}");
-    }
-
     internal static void IN_ProcessEvents()
     {
         while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
@@ -379,7 +368,7 @@ internal partial class Program
                 {
                     GrabInput = !GrabInput;
 
-                    IN_SetWindowGrab(window);
+                    _videoManager.SetWindowGrab(GrabInput);
 
                     return;
                 }
@@ -468,7 +457,7 @@ internal partial class Program
 
     internal static bool IN_UserInput(uint delay)
     {
-        uint lasttime = GetTimeCount();
+        uint lasttime = GameEngineManager.GetTimeCount();
         IN_StartAck();
 
         do
@@ -479,7 +468,7 @@ internal partial class Program
                 return true;
 
             SDL.SDL_Delay(5);
-        } while (GetTimeCount() - lasttime < delay);
+        } while (GameEngineManager.GetTimeCount() - lasttime < delay);
 
         return false;
     }
@@ -547,7 +536,7 @@ internal partial class Program
         //    Quit($"Error waiting for event: {SDL.SDL_GetError()}\n");
     }
 
-    static bool IN_CheckAck()
+    public static bool IN_CheckAck()
     {
         int i;
 
@@ -595,6 +584,6 @@ internal partial class Program
     internal static void IN_CenterMouse()
     {
         if (MousePresent && GrabInput)
-            SDL.SDL_WarpMouseInWindow(window, screenWidth / 2, screenHeight / 2);
+            _videoManager.CenterMouse();
     }
 }

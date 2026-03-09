@@ -66,14 +66,14 @@ internal partial class Program
 
                 color = linesrc[src];
 
-                var destIndex = ylookup[startpix] + x;
+                var destIndex = _videoManager.ylookup[startpix] + x;
                 unsafe
                 {
                     byte* dest = (byte*)vbufPtr + screenofs;// + destIndex;
                     while (startpix < endpix)
                     {
                         dest[destIndex] = (byte)color;
-                        destIndex += bufferPitch;
+                        destIndex += _videoManager.bufferPitch;
                         startpix++;
                     }
                 }

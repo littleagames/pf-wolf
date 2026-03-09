@@ -2567,7 +2567,7 @@ internal partial class Program
         int xmove, ymove;
         int dist;
 
-        FinishPaletteShifts();
+        _videoManager.FinishPaletteShifts();
 
         VW_WaitVBL(100);
 
@@ -2578,9 +2578,9 @@ internal partial class Program
         }
 
         gamestate.victoryflag = true;
-        uint fadeheight = (uint)(viewsize != 21 ? screenHeight - scaleFactor * STATUSLINES : screenHeight);
-        VL_BarScaledCoord(0, 0, screenWidth, (int)fadeheight, bordercol);
-        FizzleFade(screenBuffer, 0, 0, (uint)screenWidth, fadeheight, 70, false);
+        uint fadeheight = (uint)(viewsize != 21 ? _videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES : _videoManager.screenHeight);
+        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, (int)fadeheight, bordercol);
+        _videoManager.FizzleFade(0, 0, (uint)_videoManager.screenWidth, fadeheight, 70, false);
 
         if (bordercol != VIEWCOLOR)
         {
@@ -2594,7 +2594,7 @@ internal partial class Program
             Write(0, 7, STR_SEEAGAIN);
         }
 
-        VW_UpdateScreen();
+        _videoManager.Update();
 
         IN_UserInput(300);
 

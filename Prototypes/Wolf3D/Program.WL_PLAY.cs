@@ -1,4 +1,5 @@
-﻿using static SDL2.SDL;
+﻿using Wolf3D.Managers;
+using static SDL2.SDL;
 
 namespace Wolf3D;
 
@@ -159,77 +160,6 @@ internal partial class Program
     musicnames.FUNKYOU_MUS                 // Secret level
 };
 
-    private const int NUMREDSHIFTS = 6;
-    private const int REDSTEPS = 8;
-
-    private const int NUMWHITESHIFTS = 3;
-    private const int WHITESTEPS = 20;
-    private const int WHITETICS = 6;
-
-    private static SDL_Color[,] redshifts = new SDL_Color[NUMREDSHIFTS, 256];
-    private static SDL_Color[,] whiteshifts = new SDL_Color[NUMWHITESHIFTS, 256];
-
-    static int damagecount, bonuscount;
-    static bool palshifted; // boolean
-
-    private static byte ClampToByte(int v) => (byte)(v < 0 ? 0 : (v > 255 ? 255 : v));
-    internal static void InitRedShifts()
-    {
-        // Fade through intermediate red shift frames
-        for (int i = 1; i <= NUMREDSHIFTS; i++)
-        {
-            int ri = i - 1;
-            for (int j = 0; j < 256; j++)
-            {
-                var basec = gamepal[j];
-
-                int delta = 256 - basec.r;
-                int newR = basec.r + delta * i / REDSTEPS;
-
-                delta = -basec.g;
-                int newG = basec.g + delta * i / REDSTEPS;
-
-                delta = -basec.b;
-                int newB = basec.b + delta * i / REDSTEPS;
-
-                redshifts[ri, j] = new SDL_Color
-                {
-                    r = ClampToByte(newR),
-                    g = ClampToByte(newG),
-                    b = ClampToByte(newB),
-                    a = 255 //SDL_ALPHA_OPAQUE
-                };
-            }
-        }
-
-        // Prepare white shift palettes
-        for (int i = 1; i <= NUMWHITESHIFTS; i++)
-        {
-            int wi = i - 1;
-            for (int j = 0; j < 256; j++)
-            {
-                var basec = gamepal[j];
-
-                int delta = 256 - basec.r;
-                int newR = basec.r + delta * i / WHITESTEPS;
-
-                delta = 248 - basec.g;
-                int newG = basec.g + delta * i / WHITESTEPS;
-
-                delta = 0 - basec.b;
-                int newB = basec.b + delta * i / WHITESTEPS;
-
-                whiteshifts[wi, j] = new SDL_Color
-                {
-                    r = ClampToByte(newR),
-                    g = ClampToByte(newG),
-                    b = ClampToByte(newB),
-                    a = 255 //SDL_ALPHA_OPAQUE
-                };
-            }
-        }
-    }
-
     internal static void StartMusic()
     {
         SD_MusicOff();
@@ -259,13 +189,13 @@ internal partial class Program
     {
         objstruct obj;
         playstate = (byte)playstatetypes.ex_stillplaying;
-        lasttimecount = (int)GetTimeCount();
+        lasttimecount = (int)GameEngineManager.GetTimeCount();
         frameon = 0;
         anglefrac = 0;
         facecount = 0;
         funnyticount = 0;
         buttonstate = new bool[(int)buttontypes.NUMBUTTONS];
-        ClearPaletteShifts();
+        _videoManager.ClearPaletteShifts();
 
         IN_CenterMouse();
 
@@ -288,15 +218,15 @@ internal partial class Program
                 DoActor(actor.Value);
             }
 
-            UpdatePaletteShifts();
+            _videoManager.UpdatePaletteShifts(tics);
 
             ThreeDRefresh();
 
             gamestate.TimeCount += (int)tics;
 
             UpdateSoundLoc();      // JAB
-            if (screenfaded)
-                VW_FadeIn();
+            if (_videoManager.screenfaded)
+                _videoManager.FadeIn();
 
             CheckKeys();
 
@@ -306,7 +236,7 @@ internal partial class Program
             if (singlestep != 0)
             {
                 VW_WaitVBL(singlestep);
-                lasttimecount = (int)GetTimeCount();
+                lasttimecount = (int)GameEngineManager.GetTimeCount();
             }
             if (extravbls != 0)
                 VW_WaitVBL((uint)extravbls);
@@ -323,7 +253,7 @@ internal partial class Program
         while (playstate == 0 && !startgame);
 
         if (playstate != playstatetypes.ex_died)
-            FinishPaletteShifts();
+            _videoManager.FinishPaletteShifts();
     }
 
     internal static void InitActorList()
@@ -459,7 +389,7 @@ internal partial class Program
     {
         int scan;
 
-        if (screenfaded || demoplayback)    // don't do anything with a faded screen
+        if (_videoManager.screenfaded || demoplayback)    // don't do anything with a faded screen
             return;
 
         scan = LastScan;
@@ -542,12 +472,12 @@ internal partial class Program
         {
             int lastoffs = StopMusic();
             VWB_DrawPic(16 * 8, 80 - 2 * 8, graphicnums.PAUSEDPIC);
-            VW_UpdateScreen();
+            _videoManager.Update();
             IN_Ack();
             Paused = false;
             ContinueMusic(lastoffs);
             IN_CenterMouse();
-            lasttimecount = (int)GetTimeCount();
+            lasttimecount = (int)GameEngineManager.GetTimeCount();
             return;
         }
         if (scan == (int)ScanCodes.sc_F10 ||
@@ -568,20 +498,20 @@ internal partial class Program
         {
             int lastoffs = StopMusic();
             ClearMemory();
-            VW_FadeOut();
+            _videoManager.FadeOut();
 
             US_ControlPanel(buttonstate[(int)buttontypes.bt_esc] ? (int)ScanCodes.sc_Escape : scan);
 
             SETFONTCOLOR(0, 15);
             IN_ClearKeysDown();
-            VW_FadeOut();
+            _videoManager.FadeOut();
             if (viewsize != 21)
                 DrawPlayScreen();
             if (!startgame && !loadedgame)
                 ContinueMusic(lastoffs);
             if (loadedgame)
                 playstate = playstatetypes.ex_abort;
-            lasttimecount = (int)GetTimeCount();
+            lasttimecount = (int)GameEngineManager.GetTimeCount();
             IN_CenterMouse();
             return;
         }
@@ -598,7 +528,7 @@ internal partial class Program
                 DrawPlayBorder();       // dont let the blue borders flash
                 IN_CenterMouse();
 
-                lasttimecount = (int)GetTimeCount();
+                lasttimecount = (int)GameEngineManager.GetTimeCount();
             }
             return;
         }
@@ -738,84 +668,7 @@ internal partial class Program
         US_DrawWindow((ushort)(((MAXX / 8) - w) / 2), (ushort)(((MAXY / 8) - h) / 2), w, h);
     }
 
-    internal static void UpdatePaletteShifts()
-    {
-        int red, white;
-
-        if (bonuscount != 0)
-        {
-            white = bonuscount / WHITETICS + 1;
-            if (white > NUMWHITESHIFTS)
-                white = NUMWHITESHIFTS;
-            bonuscount -= (int)tics;
-            if (bonuscount < 0)
-                bonuscount = 0;
-        }
-        else
-            white = 0;
-
-
-        if (damagecount != 0)
-        {
-            red = damagecount / 10 + 1;
-            if (red > NUMREDSHIFTS)
-                red = NUMREDSHIFTS;
-
-            damagecount -= (int)tics;
-            if (damagecount < 0)
-                damagecount = 0;
-        }
-        else
-            red = 0;
-
-        if (red != 0)
-        {
-            SDL_Color[] flat = new SDL_Color[256];
-            for (int i = 0; i < 256; i++)
-                flat[i] = redshifts[red - 1, i];
-            VL_SetPalette(flat, false);
-            palshifted = true;
-        }
-        else if (white != 0)
-        {
-            SDL_Color[] flat = new SDL_Color[256];
-            for (int i = 0; i < 256; i++)
-                flat[i] = whiteshifts[white - 1, i];
-            VL_SetPalette(flat, false);
-            palshifted = true;
-        }
-        else if (palshifted)
-        {
-            VL_SetPalette(gamepal, false);        // back to normal
-            palshifted = false;
-        }
-    }
-
-    internal static void FinishPaletteShifts()
-    {
-        if (palshifted)
-        {
-            palshifted = false;
-            VL_SetPalette(gamepal, true);
-        }
-    }
-    internal static void ClearPaletteShifts()
-    {
-        bonuscount = damagecount = 0;
-        palshifted = false;
-    }
-
-    internal static void StartBonusFlash()
-    {
-        bonuscount = NUMWHITESHIFTS * WHITETICS;    // white shift palette
-    }
-
-    internal static void StartDamageFlash(int damage)
-    {
-        damagecount += damage;
-    }
-
-    /*
+/*
 =============================================================================
 
                                USER CONTROL
