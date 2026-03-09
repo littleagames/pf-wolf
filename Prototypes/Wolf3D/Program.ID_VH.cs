@@ -1,7 +1,4 @@
-﻿using SDL2;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using Wolf3D.Managers;
+﻿using System.Runtime.InteropServices;
 
 namespace Wolf3D;
 
@@ -41,6 +38,47 @@ internal partial class Program
     static int px, py;
     static byte fontcolor, backcolor;
     static int fontnumber;
+
+    internal static byte[] VL_DePlaneVGA(byte[] source, int width, int height)
+    {
+        int x, y, plane;
+        ushort size, pwidth;
+
+        size = (ushort)(width * height);
+
+        if ((width & 3) != 0)
+        {
+            Quit("DePlaneVGA: width not divisible by 4!");
+            return source;
+        }
+
+        var temp = new byte[size];
+
+        //
+        // munge pic into the temp buffer
+        //
+
+        var srcline = 0;
+        pwidth = (ushort)(width >> 2);
+
+        for (plane = 0; plane < 4; plane++)
+        {
+            var destIndex = 0;
+            for (y = 0; y < height; y++)
+            {
+                for (x = 0; x < pwidth; x++)
+                    temp[destIndex + ((x << 2) + plane)] = source[srcline++];
+
+                destIndex += width;
+            }
+        }
+
+        //
+        // copy the temp buffer back into the original source
+        //
+        return temp;
+        //Array.Copy(temp, source, size);
+    }
 
     internal static void SETFONTCOLOR(byte f, byte b)
     {

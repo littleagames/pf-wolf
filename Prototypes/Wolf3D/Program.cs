@@ -301,6 +301,9 @@ See Options.txt for help";
     {
         bool didjukebox = false;
         _videoManager.Init();
+        
+        pixelangle = new short[_videoManager.screenWidth];
+        wallheight = new short[_videoManager.screenWidth];
 
         if (SDL.SDL_InitSubSystem(SDL.SDL_INIT_AUDIO | SDL.SDL_INIT_JOYSTICK) < 0)
         {
@@ -386,7 +389,6 @@ See Options.txt for help";
 
     private static void SignonScreen()
     {
-        VL_SetVGAPlaneMode();
         _videoManager.MemToScreen(Signon.signon, 320, 200, 0, 0);
     }
 
