@@ -444,7 +444,7 @@ internal partial class Program
                 _videoManager.Update();
             }
             else
-                SDL.SDL_Delay(5);
+                GameEngineManager.DelayMs(5);
 
             CheckPause();
 
@@ -638,7 +638,7 @@ internal partial class Program
         VWB_DrawPic(x, y, graphicnums.C_CURSOR1PIC);
         _videoManager.Update();
         SD_PlaySound((int)soundnames.MOVEGUN1SND);
-        SDL.SDL_Delay(8 * 100 / 7);
+        GameEngineManager.DelayMs(8 * 100 / 7);
     }
 
     internal static void DrawGun(CP_iteminfo item_i, CP_itemtype[] items, int x, ref int y, int which, int basey, Action<int>? routine)
@@ -675,7 +675,7 @@ internal partial class Program
             }
 
             SoundStatus ^= 1;
-            VW_WaitVBL(3);
+            GameEngineManager.WaitVBL(3);
             IN_ClearKeysDown();
             Paused = false;
         }
@@ -706,7 +706,7 @@ internal partial class Program
 
         do
         {
-            SDL.SDL_Delay(5);
+            GameEngineManager.DelayMs(5);
             ReadAnyControl(out ci);
         }
         while ((int)GameEngineManager.GetTimeCount() - startTime < count && ci.dir != (byte)Direction.dir_None);
@@ -1875,7 +1875,7 @@ internal partial class Program
         do
         {
             CheckPause();
-            SDL.SDL_Delay(5);
+            GameEngineManager.DelayMs(5);
             ReadAnyControl(out ci);
             switch (ci.dir)
             {
@@ -2026,7 +2026,7 @@ internal partial class Program
         DrawMouseSens();
         do
         {
-            SDL.SDL_Delay(5);
+            GameEngineManager.DelayMs(5);
             ReadAnyControl(out ci);
             switch ((Direction)ci.dir)
             {
@@ -2245,7 +2245,7 @@ internal partial class Program
                 redraw = 0;
             }
 
-            SDL.SDL_Delay(5);
+            GameEngineManager.DelayMs(5);
             ReadAnyControl(out ci);
 
             if (type == CustomCtlOptions.MOUSE || type == CustomCtlOptions.JOYSTICK)
@@ -2292,7 +2292,7 @@ internal partial class Program
                         lastFlashTime = (int)GameEngineManager.GetTimeCount();
                         _videoManager.Update();
                     }
-                    else SDL.SDL_Delay(5);
+                    else GameEngineManager.DelayMs(5);
 
                     //
                     // WHICH TYPE OF INPUT DO WE PROCESS?
@@ -2418,7 +2418,7 @@ internal partial class Program
                     do
                     {
                         ReadAnyControl(out ci);
-                        SDL.SDL_Delay(5);
+                        GameEngineManager.DelayMs(5);
                     }
                     while (ci.dir != (byte)Direction.dir_None);
                     IN_ClearKeysDown();
@@ -2437,7 +2437,7 @@ internal partial class Program
                     do
                     {
                         ReadAnyControl(out ci);
-                        SDL.SDL_Delay(5);
+                        GameEngineManager.DelayMs(5);
                     }
                     while (ci.dir != (byte)Direction.dir_None);
                     IN_ClearKeysDown();
@@ -2797,7 +2797,7 @@ internal partial class Program
                 tick ^= 1;
                 lastBlinkTime = (int)GameEngineManager.GetTimeCount();
             }
-            else SDL.SDL_Delay(5);
+            else GameEngineManager.DelayMs(5);
         }
         while (!Keyboard[(int)ScanCodes.sc_Y] && !Keyboard[(int)ScanCodes.sc_N] && !Keyboard[(int)ScanCodes.sc_Escape] && ci.button0 == 0 && ci.button1 == 0);
 

@@ -235,11 +235,11 @@ internal partial class Program
             //
             if (singlestep != 0)
             {
-                VW_WaitVBL(singlestep);
+                GameEngineManager.WaitVBL(singlestep);
                 lasttimecount = (int)GameEngineManager.GetTimeCount();
             }
             if (extravbls != 0)
-                VW_WaitVBL((uint)extravbls);
+                GameEngineManager.WaitVBL((uint)extravbls);
 
             if (demoplayback)
             {
@@ -551,7 +551,7 @@ internal partial class Program
             lasttimecount += DEMOTICS;
             int timediff = (int)((lasttimecount * 100) / 7 - curtime);
             if (timediff > 0)
-                SDL_Delay((uint)timediff);
+                GameEngineManager.DelayMs((uint)timediff);
 
             if (timediff < -2 * DEMOTICS)       // more than 2-times DEMOTICS behind?
                 lasttimecount = (int)((curtime * 7) / 100);    // yes, set to current timecount

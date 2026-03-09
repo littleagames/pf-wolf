@@ -441,7 +441,7 @@ internal partial class Program
             }
             if (ratio >= 100)
             {
-                VW_WaitVBL(VBLWAIT);
+                GameEngineManager.WaitVBL(VBLWAIT);
                 SD_StopSound();
                 bonus += PERCENT100AMT;
                 tempstr = bonus.ToString();
@@ -452,7 +452,7 @@ internal partial class Program
             }
             else if (ratio == 0)
             {
-                VW_WaitVBL(VBLWAIT);
+                GameEngineManager.WaitVBL(VBLWAIT);
                 SD_StopSound();
                 SD_PlaySound((int)soundnames.NOBONUSSND);
             }
@@ -483,7 +483,7 @@ internal partial class Program
             }
             if (ratio >= 100)
             {
-                VW_WaitVBL(VBLWAIT);
+                GameEngineManager.WaitVBL(VBLWAIT);
                 SD_StopSound();
                 bonus += PERCENT100AMT;
                 tempstr = bonus.ToString();
@@ -494,7 +494,7 @@ internal partial class Program
             }
             else if (ratio == 0)
             {
-                VW_WaitVBL(VBLWAIT);
+                GameEngineManager.WaitVBL(VBLWAIT);
                 SD_StopSound();
                 SD_PlaySound((int)soundnames.NOBONUSSND);
             }
@@ -523,7 +523,7 @@ internal partial class Program
             }
             if (ratio >= 100)
             {
-                VW_WaitVBL(VBLWAIT);
+                GameEngineManager.WaitVBL(VBLWAIT);
                 SD_StopSound();
                 bonus += PERCENT100AMT;
                 tempstr = bonus.ToString();
@@ -534,7 +534,7 @@ internal partial class Program
             }
             else if (ratio == 0)
             {
-                VW_WaitVBL(VBLWAIT);
+                GameEngineManager.WaitVBL(VBLWAIT);
                 SD_StopSound();
                 SD_PlaySound((int)soundnames.NOBONUSSND);
             }
@@ -719,7 +719,7 @@ internal partial class Program
     {
         graphicnums[] pics = { graphicnums.L_GUYPIC, graphicnums.L_GUY2PIC };
 
-        SDL.SDL_Delay(5);
+        GameEngineManager.DelayMs(5);
 
         if ((int)GameEngineManager.GetTimeCount() - lastBreathTime > bj_max)
         {

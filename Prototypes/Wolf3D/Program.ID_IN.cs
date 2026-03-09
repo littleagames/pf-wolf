@@ -467,7 +467,7 @@ internal partial class Program
             if (IN_CheckAck())
                 return true;
 
-            SDL.SDL_Delay(5);
+            GameEngineManager.DelayMs(5);
         } while (GameEngineManager.GetTimeCount() - lasttime < delay);
 
         return false;

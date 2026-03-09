@@ -492,7 +492,7 @@ internal class VideoManager
             SDL.SDL_RenderPresent(renderer);
 
             frame++;
-            GameEngineManager.Delay((int)(frame - GameEngineManager.GetTimeCount()));        // don't go too fast
+            GameEngineManager.DelayTics((int)(frame - GameEngineManager.GetTimeCount()));        // don't go too fast
         }
 
         return false;
@@ -847,6 +847,18 @@ internal class VideoManager
         }
     }
 
+    internal static void ConvertPalette(byte[] srcpal, ref SDL.SDL_Color[] destpal, int numColors)
+    {
+        int i, s = 0;
+
+        for (i = 0; i < numColors; i++)
+        {
+            destpal[i].r = (byte)(srcpal[s++] * 255 / 63);
+            destpal[i].g = (byte)(srcpal[s++] * 255 / 63);
+            destpal[i].b = (byte)(srcpal[s++] * 255 / 63);
+            destpal[i].a = 255;// SDL.SDL_ALPHA_OPAQUE;
+        }
+    }
     private void FillPalette(int red, int green, int blue)
     {
         int i;

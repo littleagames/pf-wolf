@@ -37,11 +37,17 @@ internal class GameEngineManager
 
     internal static uint GetTimeCount() => ((SDL.SDL_GetTicks() * 7) / 100);
 
-    internal static void Delay(int wolfticks)
+    internal static void DelayTics(int wolfticks)
     {
         if (wolfticks > 0)
             SDL.SDL_Delay((uint)((wolfticks * 100) / 7));
     }
 
-    internal static void WaitVBL(uint a) => SDL.SDL_Delay((a) * 8);
+    internal static void DelayMs(uint millis)
+    {
+        if (millis > 0)
+            SDL.SDL_Delay(millis);
+    }
+
+    internal static void WaitVBL(uint a) => DelayMs((a) * 8);
 }

@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using Wolf3D.Managers;
 
 namespace Wolf3D;
 
@@ -2569,7 +2570,7 @@ internal partial class Program
 
         _videoManager.FinishPaletteShifts();
 
-        VW_WaitVBL(100);
+        GameEngineManager.WaitVBL(100);
 
         if (gamestate.victoryflag)
         {

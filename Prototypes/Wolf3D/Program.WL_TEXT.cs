@@ -129,7 +129,7 @@ internal partial class Program
                     firstpage = false;
                 }
             }
-            SDL.SDL_Delay(5);
+            GameEngineManager.DelayMs(5);
 
             LastScan = 0;
             ReadAnyControl(out ci);
@@ -298,7 +298,7 @@ internal partial class Program
         //
         // wait for time
         //
-        GameEngineManager.Delay(picdelay);
+        GameEngineManager.DelayTics(picdelay);
 
         //
         // draw pic

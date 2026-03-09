@@ -540,7 +540,7 @@ internal partial class Program
 
                 cursorvis ^= true;
             }
-            else SDL.SDL_Delay(5);
+            else GameEngineManager.DelayMs(5);
             if (cursorvis)
                 USL_XORICursor(x, y, new string(s), (ushort)cursor);
 

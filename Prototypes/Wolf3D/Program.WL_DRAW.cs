@@ -99,7 +99,7 @@ internal partial class Program
         if (tics == 0)
         {
             // wait until end of current tic
-            SDL.SDL_Delay((uint)(((lasttimecount + 1) * 100) / 7 - curtime)); // TODO: Rounding error?
+            GameEngineManager.DelayMs((uint)(((lasttimecount + 1) * 100) / 7 - curtime)); // TODO: Rounding error?
             tics = 1;
         }
 

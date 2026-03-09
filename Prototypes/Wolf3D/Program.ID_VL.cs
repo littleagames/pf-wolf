@@ -1,31 +1,14 @@
-﻿using SDL2;
-namespace Wolf3D;
+﻿namespace Wolf3D;
 
 internal partial class Program
 {
     internal static uint bordercolor;
-
-    internal static void VW_WaitVBL(uint a) => VL_WaitVBL(a);
-    internal static void VL_WaitVBL(uint a) => SDL.SDL_Delay((a) * 8);
 
     [Obsolete("These will be initialized elsewhere")]
     internal static void VL_SetVGAPlaneMode()
     {
         pixelangle = new short[_videoManager.screenWidth];
         wallheight = new short[_videoManager.screenWidth];
-    }
-
-    internal static void VL_ConvertPalette(byte[] srcpal, SDL.SDL_Color[] destpal, int numColors)
-    {
-        int i, s = 0;
-
-        for (i = 0; i < numColors; i++)
-        {
-            destpal[i].r = (byte)(srcpal[s++] * 255 / 63);
-            destpal[i].g = (byte)(srcpal[s++] * 255 / 63);
-            destpal[i].b = (byte)(srcpal[s++] * 255 / 63);
-            destpal[i].a = 255;// SDL.SDL_ALPHA_OPAQUE;
-        }
     }
 
     internal static byte[] VL_DePlaneVGA(byte[] source, int width, int height)

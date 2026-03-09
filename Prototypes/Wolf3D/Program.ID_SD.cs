@@ -1,6 +1,7 @@
 ﻿using SDL2;
 using System.Runtime.InteropServices;
 using Wolf3D.AudioPlayers;
+using Wolf3D.Managers;
 using Wolf3D.OPL;
 using Wolf3D.OPL.Woody;
 using static SDL2.SDL;
@@ -1050,7 +1051,7 @@ internal partial class Program
 
         SD_FadeOutMusic();
         while (SD_MusicPlaying())
-            SDL_Delay(5);
+            GameEngineManager.DelayMs(5);
 
         switch (mode)
         {
@@ -1234,7 +1235,7 @@ internal partial class Program
     {
         //while (SD_SoundPlaying() != 0)
         //{
-        //    SDL.SDL_Delay(5);
+        //    GameEngineManager.DelayMs(5);
         //}
     }
 
