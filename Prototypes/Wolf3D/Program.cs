@@ -7,6 +7,17 @@ namespace Wolf3D;
 
 internal partial class Program
 {
+    private static VideoManager _videoManager;
+    private static InputManager _inputManager;
+    private static GameEngineManager _gameEngineManager;
+
+    public Program()
+    {
+        _videoManager = new(_inputManager);
+        _inputManager = new(_gameEngineManager, _videoManager);
+        _gameEngineManager = new(_videoManager, _inputManager);
+    }
+
     /*
     =============================================================================
 
@@ -46,11 +57,7 @@ internal partial class Program
 
     static bool startgame;
     static bool loadedgame;
-    static int mouseadjustment;
-
-    internal const int CONFIG_DIR_SIZE = 256;
-    internal static string configdir = string.Empty;
-    internal static string configname = "config.";
+    internal static int mouseadjustment;
 
     //
     // Command line parameter variables
@@ -59,9 +66,8 @@ internal partial class Program
     internal static bool param_nowait = false;
     internal static difficultytypes param_difficulty = difficultytypes.gd_easy; // default is "normal"
     internal static int param_tedlevel = -1;            // default is not to start a level
-    internal static int param_joystickindex = 0;
+    
     internal static int param_audiobuffer = DEFAULT_AUDIO_BUFFER_SIZE;
-    internal static int param_joystickhat = -1;
     internal static int param_samplerate = 44100;
     internal static int param_mission = 0;
     internal static bool param_goodtimes = false;
@@ -71,10 +77,8 @@ internal partial class Program
     {
         var gameParams = Parser.Default.ParseArguments<GameParams>(args); // Move into gamemanager, add unit tests
         // TODO: gameParams, handle errors?
-
-        var gameEngineManager = new GameEngineManager();
-
-        gameEngineManager.Init(gameParams.Value);
+        new Program();
+        _gameEngineManager.Init(gameParams.Value);
 
         //CheckParameters(args); // Remove
 
@@ -84,249 +88,30 @@ internal partial class Program
 
         DemoLoop();
 
-        Quit("Demo loop exited???");
-    }
-    /*
-    private static bool IfArg(string arg, string match)
-    {
-        return string.Equals(arg, match, StringComparison.OrdinalIgnoreCase);
+        _gameEngineManager.Quit("Demo loop exited???");
     }
 
-    
-    private static void CheckParameters(string[] args)
-    {
-        var header =
-@"Wolf4CSharp v0.1
-C# Port by Little A Games (TreeSapThief)
-Original Port by Chaos-Software, additions by the community
-Original Wolfenstein 3D by id Software
-Usage: Wolf4SDL [options]
-See Options.txt for help";
-
-        var error = string.Empty;
-
-        for(int i = 0; i < args.Length; i++)
-        {
-            if (IfArg(args[i], "--goobers"))
-                param_debugmode = true;
-            else if (IfArg(args[i], "--baby"))
-                param_difficulty = difficultytypes.gd_baby;
-            else if (IfArg(args[i], "--easy"))
-                param_difficulty = difficultytypes.gd_easy;
-            else if (IfArg(args[i], "--medium"))
-                param_difficulty = difficultytypes.gd_medium;
-            else if (IfArg(args[i], "--hard"))
-                param_difficulty = difficultytypes.gd_hard;
-            else if (IfArg(args[i], "--nowait"))
-                param_nowait = true;
-            else if (IfArg(args[i], "--tedlevel"))
-            {
-                if (++i >= args.Length)
-                {
-                    error = "The tedlevel option is missing the level argument!";
-                }
-                else if (int.TryParse(args[i], out int level))
-                {
-                    param_tedlevel = level;
-                }
-            }
-            else if (IfArg(args[i], "--windowed"))
-            {
-                fullscreen = false;
-            }
-            else if (IfArg(args[i], "--windowed-mouse"))
-            {
-                fullscreen = false;
-                forcegrabmouse = true;
-            }
-            else if (IfArg(args[i], "--res"))
-            {
-                if (i + 2 >= args.Length)
-                {
-                    error = "The res option needs the width and/or the height argument!";
-                }
-                else
-                {
-                    screenWidth = short.Parse(args[++i]);
-                    screenHeight = short.Parse(args[++i]);
-                    int factor = screenWidth / 320;
-                    if ((screenWidth % 320) != 0 || (screenHeight != 200 * factor && screenHeight != 240 * factor))
-                        error = "Screen size must be a multiple of 320x200 or 320x240!";
-                }
-            }
-            else if (IfArg(args[i], "--resf"))
-            {
-                if (i + 2 >= args.Length)
-                {
-                    error = "The res option needs the width and/or the height argument!";
-                }
-                else
-                {
-                    screenWidth = short.Parse(args[++i]);
-                    screenHeight = short.Parse(args[++i]);
-                    if (screenWidth < 320)
-                        error = "Screen width must be at least 320!";
-                    if (screenHeight < 200)
-                        error = "Screen height must be at least 200!";
-                }
-            }
-            else if (IfArg(args[i], "--bits"))
-            {
-                if (++i >= args.Length)
-                {
-                    error = "The bits option is missing the color depth argument!";
-                }
-                else
-                {
-                    int.TryParse(args[i], out screenBits);
-                    if (screenBits > 32 || (screenBits & 7) != 0)
-                        error = "Screen color depth must be 8, 16, 24, or 32!";
-                }
-            }
-            else if (IfArg(args[i], "--extravbls"))
-            {
-                if (++i >= args.Length)
-                {
-                    error = "The extravbls option is missing the vbls argument!";
-                }
-                else
-                {
-                    int.TryParse(args[i], out extravbls);
-                    if (extravbls < 0)
-                        error = "The extravbls option must be 0 or higher!";
-                }
-            }
-            else if (IfArg(args[i], "--joystick"))
-            {
-                if (++i >= args.Length)
-                {
-                    error = "The joystick option is missing the index argument!";
-                }
-                else
-                {
-                    int.TryParse(args[i], out param_joystickindex); // index is checked in InitGame
-                }
-            }
-            else if (IfArg(args[i], "--joystickhat"))
-            {
-                if (++i >= args.Length)
-                {
-                    error = "The joystickhat option is missing the index argument!";
-                }
-                else
-                {
-                    int.TryParse(args[i], out param_joystickhat);
-                }
-            }
-            else if (IfArg(args[i], "--samplerate"))
-            {
-                if (++i >= args.Length)
-                {
-                    error = "The samplerate option is missing the rate argument!";
-                }
-                else
-                {
-                    int.TryParse(args[i], out param_samplerate);
-                    if (param_samplerate < 7042 || param_samplerate > 44100)
-                        error = "The samplerate must be between 7042 and 44100!";
-                }
-            }
-            else if (IfArg(args[i], "--audiobuffer"))
-            {
-                if (++i >= args.Length)
-                {
-                    error = "The audiobuffer option is missing the size argument!";
-                }
-                else
-                {
-                    int.TryParse(args[i], out param_audiobuffer);
-                }
-            }
-            else if (IfArg(args[i], "--mission"))
-            {
-                if (++i >= args.Length)
-                {
-                    error = "The mission option is missing the mission argument!";
-                }
-                else
-                {
-                    int.TryParse(args[i], out param_mission);
-                    if (param_mission < 0 || param_mission > 3)
-                        error = "The mission option must be between 0 and 3!";
-                }
-            }
-            else if (IfArg(args[i], "--configdir"))
-            {
-                if (++i >= args.Length)
-                {
-                    error = "The configdir option is missing the dir argument!";
-                }
-                else
-                {
-                    var len = args[i].Length;
-                    if (len + 2 > CONFIG_DIR_SIZE)
-                        error = "The config directory is too long!";
-                    else
-                    {
-                        if (args[i][len] != '/' && args[i][len] != '\\')
-                            configdir = args[i] + "/";
-                        else
-                            configdir = args[i];
-                    }
-                }
-            }
-            else if (IfArg(args[i], "--goodtimes"))
-                param_goodtimes = true;
-            else if (IfArg(args[i], "--ignorenumchunks"))
-                param_ignorenumchunks = true;
-            else
-            {
-                error = "Invalid parameter(s).";
-            }
-        }
-
-        if (error.Length > 0)
-        {
-            StringBuilder helpStr = new StringBuilder();
-            helpStr.Append(header);
-            helpStr.Append(error);
-
-            Error(helpStr.ToString());
-            Environment.Exit(1);
-        }
-    }
-    */
-    private static VideoManager _videoManager = new();
     private static void InitGame()
     {
         bool didjukebox = false;
         _videoManager.Init();
+        _inputManager.Init();
         
         pixelangle = new short[_videoManager.screenWidth];
         wallheight = new short[_videoManager.screenWidth];
 
-        if (SDL.SDL_InitSubSystem(SDL.SDL_INIT_AUDIO | SDL.SDL_INIT_JOYSTICK) < 0)
+        // TODO: Move to AudioManager
+        if (SDL.SDL_InitSubSystem(SDL.SDL_INIT_AUDIO) < 0)
         {
-            Quit($"Could not initialize SDL: {SDL.SDL_GetError()}");
+            _gameEngineManager.Quit($"Could not initialize SDL: {SDL.SDL_GetError()}");
         }
 
         //AppDomain.CurrentDomain.ProcessExit += (s, e) => SDL.SDL_Quit();
-
-        int numJoysticks = SDL.SDL_NumJoysticks();
-        if (param_joystickindex > 0 && (param_joystickindex < -1 || param_joystickindex > numJoysticks))
-        {
-            if (numJoysticks == 0)
-                Console.WriteLine("No joysticks are available to SDL!");
-            else
-                Console.WriteLine($"The joystick index must be between -1 and {numJoysticks - 1}!");
-            Environment.Exit(1);
-        }
 
         SignonScreen();
 
         _videoManager.Update();
 
-        IN_Startup();
         PM_Startup();
         SD_Startup();
         CA_Startup();
@@ -337,7 +122,7 @@ See Options.txt for help";
         //
         InitDigiMap();
 
-        ReadConfig();
+        _gameEngineManager.ReadConfig();
 
         SetupSaveGames();
 
@@ -345,7 +130,7 @@ See Options.txt for help";
         // HOLDING DOWN 'M' KEY?
         //
 
-        if (Keyboard[(int)ScanCodes.sc_M])
+        if (_inputManager.IsKeyDown(ScanCodes.sc_M))
         {
             DoJukebox();
             didjukebox = true;
@@ -414,7 +199,7 @@ See Options.txt for help";
         _videoManager.Update();
 
         if (!param_nowait)
-            IN_Ack();
+            _inputManager.Ack();
 
         _videoManager.Bar(0, 189, 300, 11, _videoManager.GetPixel(0, 0));
 
@@ -445,7 +230,7 @@ See Options.txt for help";
             gamestate.mapon = (short)(param_tedlevel % 10);
 
             GameLoop();
-            Quit("");
+            _gameEngineManager.Quit("");
             return;
         }
 
@@ -471,7 +256,7 @@ See Options.txt for help";
                 _videoManager.Update();
                 _videoManager.FadeIn();
 
-                if (IN_UserInput(TickBase * 15))
+                if (_inputManager.UserInput(TickBase * 15))
                     break;
                 _videoManager.FadeOut();
 
@@ -481,7 +266,7 @@ See Options.txt for help";
                 VWB_DrawPic(0, 0, graphicnums.CREDITSPIC);
                 _videoManager.Update();
                 _videoManager.FadeIn();
-                if (IN_UserInput(TickBase * 10))
+                if (_inputManager.UserInput(TickBase * 10))
                     break;
                 _videoManager.FadeOut();
 
@@ -492,7 +277,7 @@ See Options.txt for help";
                 _videoManager.Update();
                 _videoManager.FadeIn();
 
-                if (IN_UserInput(TickBase * 10))
+                if (_inputManager.UserInput(TickBase * 10))
                     break;
 
                 //
@@ -509,7 +294,7 @@ See Options.txt for help";
 
             _videoManager.FadeOut();
 
-            if (Keyboard[(int)ScanCodes.sc_Tab] && param_debugmode)
+            if (_inputManager.IsKeyDown(ScanCodes.sc_Tab) && param_debugmode)
                 RecordDemo();
             else
                 US_ControlPanel(0);
@@ -708,199 +493,6 @@ See Options.txt for help";
         }
     }
 
-    private static void Quit(string errorStr)
-    {
-        var returnCode = errorStr.Length > 0 ? 1 : 0;
-
-        if (returnCode == 0)
-            WriteConfig();
-
-        ShutdownId();
-
-        if (returnCode != 0)
-            Error(errorStr);
-
-        Environment.Exit(returnCode);
-    }
-
-    internal static void ReadConfig()
-    {
-        SDMode sd;
-        SMMode sm;
-        SDSMode sds;
-        string configpath;
-
-        if (!string.IsNullOrEmpty(configdir))
-            configpath = $"{configdir}/{configname}";
-        else
-            configpath = configname;
-
-        if (!File.Exists(configpath))
-        {
-            SetDefaultConfig();
-            return;
-        }
-        try
-        {
-            using (FileStream fs = File.OpenRead(configpath))
-            using (BinaryReader br = new BinaryReader(fs))
-            {
-                //
-                // valid config file
-                //
-                ushort tmp = br.ReadUInt16();
-                if (tmp != 0xfefa)
-                {
-                    SetDefaultConfig();
-                    return;
-                }
-
-                foreach (var s in Scores)
-                    s.Read(br);
-
-                sd = (SDMode)br.ReadByte();
-                sm = (SMMode)br.ReadByte();
-                sds = (SDSMode)br.ReadByte();
-
-                mouseenabled = (br.ReadByte() != 0) ? true : false;
-                joystickenabled = (br.ReadByte() != 0) ? true : false;
-                _ = br.ReadByte(); // joypad enabled placeholder
-                _ = br.ReadByte(); // joystick progressive placeholder
-                _ = br.ReadInt32(); // joystick port placeholder
-
-                for (int i = 0; i < dirscan.Length; i++)
-                    dirscan[i] = br.ReadInt32();
-                for (int i = 0; i < buttonscan.Length; i++)
-                    buttonscan[i] = br.ReadInt32();
-                for (int i = 0; i < buttonmouse.Length; i++)
-                    buttonmouse[i] = br.ReadInt32();
-                for (int i = 0; i < buttonjoy.Length; i++)
-                    buttonjoy[i] = br.ReadInt32();
-
-                viewsize = br.ReadInt32();
-                mouseadjustment = br.ReadInt32();
-
-                if ((sd == SDMode.AdLib || sm == SMMode.AdLib) && !AdLibPresent
-                    && !SoundBlasterPresent)
-                {
-                    sd = SDMode.PC;
-                    sm = SMMode.Off;
-                }
-
-                if ((sds == SDSMode.SoundBlaster) && !SoundBlasterPresent)
-                    sds = SDSMode.Off;
-
-                // make sure values are correct
-                if (mouseenabled) mouseenabled = true; // true
-                if (joystickenabled) joystickenabled = true; // true
-
-                if (!MousePresent)
-                    mouseenabled = false; // false
-                if (!IN_JoyPresent())
-                    joystickenabled = false; // false
-
-                if (mouseadjustment < 0) mouseadjustment = 0;
-                else if (mouseadjustment > 9) mouseadjustment = 9;
-
-                if (viewsize < 4) viewsize = 4;
-                else if (viewsize > 21) viewsize = 21;
-
-                // Set "Read This" back to standard active
-                MainMenu[6].active = 1;
-                MainItems.curpos = 0;
-
-
-                SD_SetMusicMode(sm);
-                SD_SetSoundMode(sd);
-                SD_SetDigiDevice(sds);
-            }
-        }
-        catch (Exception e)
-        {
-            File.Delete(configpath);
-            SetDefaultConfig();
-        }
-    }
-
-    private static void SetDefaultConfig()
-    {
-        SDMode sd;
-        SMMode sm;
-        SDSMode sds;
-        if (SoundBlasterPresent || AdLibPresent)
-        {
-            sd = SDMode.AdLib;
-            sm = SMMode.AdLib;
-        }
-        else
-        {
-            sd = SDMode.PC;
-            sm = SMMode.Off;
-        }
-
-        if (SoundBlasterPresent)
-            sds = SDSMode.SoundBlaster;
-        else
-            sds = SDSMode.Off;
-
-        if (MousePresent)
-            mouseenabled = true;
-
-        if (IN_JoyPresent())
-            joystickenabled = true;
-
-        viewsize = 19;
-        mouseadjustment = 5;
-
-        SD_SetMusicMode(sm);
-        SD_SetSoundMode(sd);
-        SD_SetDigiDevice(sds);
-    }
-
-    internal static void WriteConfig()
-    {
-        string configpath = string.Empty;
-
-        if (configdir != string.Empty)
-            configpath = $"{configdir}/{configname}";
-        else
-            configpath = configname;
-
-        using (FileStream fs = File.OpenWrite(configpath))
-        using (BinaryWriter bw = new BinaryWriter(fs))
-        {
-            ushort tmp = 0xfefa;
-            bw.Write(tmp);
-            foreach (var s in Scores)
-                s.Write(bw);
-
-            bw.Write((byte)SoundMode);
-            bw.Write((byte)MusicMode);
-            bw.Write((byte)DigiMode);
-
-            bw.Write(mouseenabled);
-            bw.Write(joystickenabled);
-            bw.Write((byte)0); // joypad placeholder
-            bw.Write((byte)0); // joystick-progressive placeholder
-            bw.Write((int)0); // joystick port placeholder
-
-            for(int i = 0; i < dirscan.Length; i++)
-                bw.Write(dirscan[i]);
-
-            for (int i = 0; i < buttonscan.Length; i++)
-                bw.Write(buttonscan[i]);
-
-            for (int i = 0; i < buttonmouse.Length; i++)
-                bw.Write(buttonmouse[i]);
-
-            for (int i = 0; i < buttonjoy.Length; i++)
-                bw.Write(buttonjoy[i]);
-
-            bw.Write(viewsize);
-            bw.Write(mouseadjustment);
-        }
-    }
-
     internal static bool LoadTheGame(BinaryReader br, int x, int y)
     {
         int i, j;
@@ -1046,8 +638,8 @@ See Options.txt for help";
         {
             Message($"{STR_SAVECHT1}\n{STR_SAVECHT2}\n{STR_SAVECHT3}\n{STR_SAVECHT4}");
 
-            IN_ClearKeysDown();
-            IN_Ack();
+            _inputManager.ClearKeysDown();
+            _inputManager.Ack();
 
             gamestate.oldscore = gamestate.score = 0;
             gamestate.lives = 1;
@@ -1252,7 +844,7 @@ See Options.txt for help";
             musicnames.PACMAN_MUS
         };
 
-        IN_ClearKeysDown();
+        _inputManager.ClearKeysDown();
         if (!AdLibPresent && !SoundBlasterPresent)
             return;
 
@@ -1299,16 +891,7 @@ See Options.txt for help";
         } while (which >= 0);
 
         MenuFadeOut();
-        IN_ClearKeysDown();
-    }
-
-    internal static void ShutdownId()
-    {
-        US_Shutdown(); // This line is completely useless...
-        SD_Shutdown();
-        PM_Shutdown();
-        IN_Shutdown();
-        CA_Shutdown();
+        _inputManager.ClearKeysDown();
     }
     
     const float radtoint = FINEANGLES / 2 / PI;

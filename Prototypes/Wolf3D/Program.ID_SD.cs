@@ -494,7 +494,7 @@ internal partial class Program
         else
         {
             if (param_samplerate == 0 || param_samplerate > 44100)
-                Quit("Divide by zero caused by invalid samplerate!");
+                _gameEngineManager.Quit("Divide by zero caused by invalid samplerate!");
 
             chunksize = 1 << (int)Math.Log2(param_audiobuffer / (44100 / param_samplerate));
         }
@@ -503,7 +503,7 @@ internal partial class Program
         if (SDL_mixer.Mix_OpenAudioDevice(param_samplerate, SDL.AUDIO_S16, 2, chunksize, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE) != 0)
         //if (SDL_mixer.Mix_OpenAudio(frequency: param_samplerate, format: SDL.AUDIO_S16, channels: 2, chunksize) != 0)//, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE))
         {
-            Error($"Unable to open audio device: {SDL_mixer.Mix_GetError()}\n");
+            _gameEngineManager.Error($"Unable to open audio device: {SDL_mixer.Mix_GetError()}\n");
             return;
         }
 
@@ -677,7 +677,7 @@ internal partial class Program
         s = soundSeg.common;//new SoundCommon(sData);// (SoundCommon*)SoundTable[sound];
 
         if ((SoundMode != SDMode.Off) && soundSeg == null)
-            Quit("SD_PlaySound() - Uncached sound");
+            _gameEngineManager.Quit("SD_PlaySound() - Uncached sound");
 
         if ((DigiMode != SDSMode.Off) && (DigiMap[sound] != -1))
         {
@@ -714,7 +714,7 @@ internal partial class Program
             return 0;
 
         if (s.length == 0)
-            Quit("SD_PlaySound() - Zero length sound");
+            _gameEngineManager.Quit("SD_PlaySound() - Zero length sound");
         if (s.priority < SoundPriority)
             return 0;
 
@@ -789,7 +789,7 @@ internal partial class Program
         int i;
 
         if (DigiList?.Length == 0)
-            Quit($"SD_PrepareSound({which}): DigiList not initialized!");
+            _gameEngineManager.Quit($"SD_PrepareSound({which}): DigiList not initialized!");
 
         int page = (int)DigiList[which].startpage;
         int size = (int)DigiList[which].length;
@@ -885,7 +885,7 @@ internal partial class Program
     {
         if ((leftpos < 0) || (leftpos > 15) || (rightpos < 0) || (rightpos > 15)
                 || ((leftpos == 15) && (rightpos == 15)))
-            Quit("SD_SetPosition: Illegal position");
+            _gameEngineManager.Quit("SD_SetPosition: Illegal position");
 
         switch (DigiMode)
         {
@@ -905,7 +905,7 @@ internal partial class Program
             return 0;
 
         if (which >= NumDigi)
-            Quit($"SD_PlayDigitized: bad sound number {which}");
+            _gameEngineManager.Quit($"SD_PlayDigitized: bad sound number {which}");
 
         int channel = SD_GetChannelForDigi(which);
         SD_SetPosition(channel, leftpos, rightpos);
@@ -1045,7 +1045,7 @@ internal partial class Program
 
         return (result);
     }
-    static bool SD_SetMusicMode(SMMode mode)
+    internal static bool SD_SetMusicMode(SMMode mode)
     {
         bool result = false;
 
@@ -1069,7 +1069,7 @@ internal partial class Program
 
         return (result);
     }
-    static bool SD_SetSoundMode(SDMode mode)
+    internal static bool SD_SetSoundMode(SDMode mode)
     {
         bool result = false;
         ushort tableoffset;
@@ -1095,7 +1095,7 @@ internal partial class Program
                     result = true;
                 break;
             default:
-                Quit($"SD_SetSoundMode: Invalid sound mode {mode}");
+                _gameEngineManager.Quit($"SD_SetSoundMode: Invalid sound mode {mode}");
                 return false;
         }
 
@@ -1158,7 +1158,7 @@ internal partial class Program
         SDL_AlSetFXInst(alZeroInst);
     }
 
-    static void SD_SetDigiDevice(SDSMode mode)
+    internal static void SD_SetDigiDevice(SDSMode mode)
     {
         bool devicenotpresent;
 
@@ -1279,7 +1279,7 @@ internal partial class Program
 
         if ((inst.mSus | inst.cSus) == 0)
         {
-            Quit("SDL_ALPlaySound() - Bad instrument");
+            _gameEngineManager.Quit("SDL_ALPlaySound() - Bad instrument");
         }
 
         SDL_AlSetFXInst(inst);

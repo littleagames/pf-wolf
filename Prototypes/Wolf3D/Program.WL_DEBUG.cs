@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Managers;
 namespace Wolf3D;
 
 internal partial class Program
@@ -8,7 +9,7 @@ internal partial class Program
         bool esc;
         int level;
 
-        if (Keyboard[(int)ScanCodes.sc_B])             // B = border color
+        if (_inputManager.IsKeyDown(ScanCodes.sc_B))             // B = border color
         {
             CenterWindow(20, 3);
             PrintY += 6;
@@ -38,12 +39,12 @@ internal partial class Program
             }
             return 1;
         }
-        if (Keyboard[(int)ScanCodes.sc_C])             // C = count objects
+        if (_inputManager.IsKeyDown(ScanCodes.sc_C))             // C = count objects
         {
             CountObjects();
             return 1;
         }
-        if (Keyboard[(int)ScanCodes.sc_D])             // D = Darkone's FPS counter
+        if (_inputManager.IsKeyDown(ScanCodes.sc_D))             // D = Darkone's FPS counter
         {
             CenterWindow(22, 2);
             if (fpscounter)
@@ -51,14 +52,14 @@ internal partial class Program
             else
                 US_PrintCentered("Darkone's FPS Counter ON");
             _videoManager.Update();
-            IN_Ack();
+            _inputManager.Ack();
             fpscounter ^= fpscounter;
             return 1;
         }
-        if (Keyboard[(int)ScanCodes.sc_E])             // E = quit level
+        if (_inputManager.IsKeyDown(ScanCodes.sc_E))             // E = quit level
             playstate = playstatetypes.ex_completed;
 
-        if (Keyboard[(int)ScanCodes.sc_F])             // F = facing spot
+        if (_inputManager.IsKeyDown(ScanCodes.sc_F))             // F = facing spot
         {
             Actor? spot = actorat[player.tilex, player.tiley];
 
@@ -75,11 +76,11 @@ internal partial class Program
             US_Print($" 3: {(spot is objstruct spotObj ? spotObj.flags : (spotvis[player.tilex, player.tiley] ? 1 : 0))}");
 
             _videoManager.Update();
-            IN_Ack();
+            _inputManager.Ack();
             return 1;
         }
 
-        if (Keyboard[(int)ScanCodes.sc_G])             // G = god mode
+        if (_inputManager.IsKeyDown(ScanCodes.sc_G))             // G = god mode
         {
             CenterWindow(12, 2);
             if (godmode == 0)
@@ -90,19 +91,19 @@ internal partial class Program
                 US_PrintCentered("God mode OFF");
 
             _videoManager.Update();
-            IN_Ack();
+            _inputManager.Ack();
             if (godmode != 2)
                 godmode++;
             else
                 godmode = 0;
             return 1;
         }
-        if (Keyboard[(int)ScanCodes.sc_H])             // H = hurt self
+        if (_inputManager.IsKeyDown(ScanCodes.sc_H))             // H = hurt self
         {
-            IN_ClearKeysDown();
+            _inputManager.ClearKeysDown();
             TakeDamage(16, null);
         }
-        else if (Keyboard[(int)ScanCodes.sc_I])        // I = item cheat
+        else if (_inputManager.IsKeyDown(ScanCodes.sc_I))        // I = item cheat
         {
             CenterWindow(12, 3);
             US_PrintCentered("Free items!");
@@ -115,10 +116,10 @@ internal partial class Program
             if (gamestate.ammo > 99)
                 gamestate.ammo = 99;
             DrawAmmo();
-            IN_Ack();
+            _inputManager.Ack();
             return 1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_K])        // K = give keys
+        else if (_inputManager.IsKeyDown(ScanCodes.sc_K))        // K = give keys
         {
             CenterWindow(16, 3);
             PrintY += 6;
@@ -134,7 +135,7 @@ internal partial class Program
             }
             return 1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_L])        // L = level ratios
+        else if (_inputManager.IsKeyDown(ScanCodes.sc_L))        // L = level ratios
         {
             byte x, start, end = LRpack;
 
@@ -169,7 +170,7 @@ internal partial class Program
                     US_Print("%\n");
                 }
                 _videoManager.Update();
-                IN_Ack();
+                _inputManager.Ack();
                 if (end == 10 && gamestate.mapon > 9)
                 {
                     start = 10; end = 20;
@@ -181,7 +182,7 @@ internal partial class Program
 
             return 1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_N])        // N = no clip
+        else if (_inputManager.IsKeyDown(ScanCodes.sc_N))        // N = no clip
         {
             noclip ^= 1;
             CenterWindow(18, 3);
@@ -190,22 +191,22 @@ internal partial class Program
             else
                 US_PrintCentered("No clipping OFF");
             _videoManager.Update();
-            IN_Ack();
+            _inputManager.Ack();
             return 1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_O])        // O = basic overhead
+        else if (_inputManager.IsKeyDown(ScanCodes.sc_O))        // O = basic overhead
         {
             BasicOverhead();
             return 1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_P])         // P = Ripper's picture grabber
+        else if (_inputManager.IsKeyDown(ScanCodes.sc_P))         // P = Ripper's picture grabber
         {
             PictureGrabber();
             return 1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_Q])        // Q = fast quit
-            Quit("");
-        else if (Keyboard[(int)ScanCodes.sc_S])        // S = slow motion
+        else if (_inputManager.IsKeyDown(ScanCodes.sc_Q))        // Q = fast quit
+            _gameEngineManager.Quit("");
+        else if (_inputManager.IsKeyDown(ScanCodes.sc_S))        // S = slow motion
         {
             CenterWindow(30, 3);
             PrintY += 6;
@@ -221,12 +222,12 @@ internal partial class Program
             }
             return 1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_T])        // T = shape test
+        else if (_inputManager.IsKeyDown(ScanCodes.sc_T))        // T = shape test
         {
             ShapeTest();
             return 1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_V])        // V = extra VBLs
+        else if (_inputManager.IsKeyDown(ScanCodes.sc_V))        // V = extra VBLs
         {
             CenterWindow(30, 3);
             PrintY += 6;
@@ -242,7 +243,7 @@ internal partial class Program
             }
             return 1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_W])        // W = warp to level
+        else if (_inputManager.IsKeyDown(ScanCodes.sc_W))        // W = warp to level
         {
             CenterWindow(26, 3);
             PrintY += 6;
@@ -261,13 +262,13 @@ internal partial class Program
             }
             return 1;
         }
-        else if (Keyboard[(int)ScanCodes.sc_X])        // X = item cheat
+        else if (_inputManager.IsKeyDown(ScanCodes.sc_X))        // X = item cheat
         {
             CenterWindow(12, 3);
             US_PrintCentered("Extra stuff!");
             _videoManager.Update();
             // DEBUG: put stuff here
-            IN_Ack();
+            _inputManager.Ack();
             return 1;
         }
 
@@ -318,7 +319,7 @@ internal partial class Program
         US_Print(active.ToString());
 
         _videoManager.Update();
-        IN_Ack();
+        _inputManager.Ack();
     }
 
     internal static void PictureGrabber()
@@ -340,7 +341,7 @@ internal partial class Program
         CenterWindow(18, 2);
         US_PrintCentered("Screenshot taken");
         _videoManager.Update();
-        IN_Ack();
+        _inputManager.Ack();
     }
 
     internal static void BasicOverhead()
@@ -401,13 +402,13 @@ internal partial class Program
         _videoManager.Bar((player.tilex * zoom) + offx, (player.tiley * zoom) + offy, zoom, zoom, 15);
 
         _videoManager.Update();
-        IN_Ack();
+        _inputManager.Ack();
     }
 
     internal static void ShapeTest()
     {
         bool done;
-        int scan;
+        ScanCodes scan;
         int i, j, k, x;
         int v2;
         int oldviewheight;
@@ -454,7 +455,7 @@ internal partial class Program
                     vbufPtr = _videoManager.LockSurface();
 
                     if (vbufPtr == IntPtr.Zero)
-                        Quit("ShapeTest: Unable to create surface for walls!");
+                        _gameEngineManager.Quit("ShapeTest: Unable to create surface for walls!");
 
                     postx = (_videoManager.screenWidth / 2) - ((TEXTURESIZE / 2) * _videoManager.scaleFactor);
                     postsource = addr;
@@ -489,7 +490,7 @@ internal partial class Program
                     vbufPtr = _videoManager.LockSurface();
 
                     if (vbufPtr == IntPtr.Zero)
-                        Quit("ShapeTest: Unable to create surface for sprites!");
+                        _gameEngineManager.Quit("ShapeTest: Unable to create surface for sprites!");
 
                     centery = (short)(_videoManager.screenHeight / 2);
                     oldviewheight = viewheight;
@@ -566,10 +567,10 @@ internal partial class Program
 
             _videoManager.Update();
 
-            IN_Ack();
-            scan = LastScan;
+            _inputManager.Ack();
+            scan = _inputManager.GetLastKeyPressed();
 
-            IN_ClearKey(scan);
+            _inputManager.ClearKey(scan);
 
             switch ((ScanCodes)scan)
             {

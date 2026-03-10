@@ -109,7 +109,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 return;
 
             default:
-                Quit("MoveObj: bad dir!");
+                _gameEngineManager.Quit("MoveObj: bad dir!");
                 break;
         }
 
@@ -290,7 +290,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                     return false;
 
                 default:
-                    Quit("Walk: Bad dir");
+                    _gameEngineManager.Quit("Walk: Bad dir");
                     break;
             }
         }
@@ -599,7 +599,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
     internal static bool SightPlayer(objstruct ob)
     {
         if (ob.flags.HasFlag(objflags.FL_ATTACKMODE))
-            Quit("An actor in ATTACKMODE called SightPlayer!");
+            _gameEngineManager.Quit("An actor in ATTACKMODE called SightPlayer!");
 
         if (ob.temp2 != 0)
         {

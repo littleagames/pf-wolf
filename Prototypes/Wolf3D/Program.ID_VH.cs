@@ -48,7 +48,7 @@ internal partial class Program
 
         if ((width & 3) != 0)
         {
-            Quit("DePlaneVGA: width not divisible by 4!");
+            _gameEngineManager.Quit("DePlaneVGA: width not divisible by 4!");
             return source;
         }
 

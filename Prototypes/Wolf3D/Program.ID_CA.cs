@@ -201,7 +201,7 @@ internal partial class Program
             int expectedsize = grstarts.Length;
 
             if (!param_ignorenumchunks && headersize / 3 != expectedsize)
-                Quit($@"Wolf4SDL was not compiled for these data files:
+                _gameEngineManager.Quit($@"Wolf4SDL was not compiled for these data files:
 {fname} contains a wrong number of offsets ({headersize / 3} instead of {expectedsize})!
         
 Please check whether you are using the right executable!        
@@ -273,7 +273,7 @@ Please check whether you are using the right executable!
         var data = File.ReadAllBytes(fname);
         if (data.Length == 0 )
         {
-            Quit($"Unable to open {fname}. Data empty.");
+            _gameEngineManager.Quit($"Unable to open {fname}. Data empty.");
             return;
         }
 
@@ -345,7 +345,7 @@ Please check whether you are using the right executable!
     {
         if (length == 0 || source.Length == 0)
         {
-            Quit("CAL_HuffExpand: length or dest is null!");
+            _gameEngineManager.Quit("CAL_HuffExpand: length or dest is null!");
             return [];
         }
 
@@ -511,7 +511,7 @@ Please check whether you are using the right executable!
     {
         int pos, compressed;
         if (mapheaderseg[mapnum].width != MAPSIZE || mapheaderseg[mapnum].height != MAPSIZE)
-            Quit($"CA_CacheMap: Map not {MAPSIZE}*{MAPSIZE}!");
+            _gameEngineManager.Quit($"CA_CacheMap: Map not {MAPSIZE}*{MAPSIZE}!");
 
         string fname = $"{mfilename}{extension}";
 
@@ -671,7 +671,7 @@ Please check whether you are using the right executable!
         }
         catch (IOException ioEx)
         {
-            Quit($"Error writing file {filename}: {ioEx.Message}");
+            _gameEngineManager.Quit($"Error writing file {filename}: {ioEx.Message}");
             return;
         }
     }

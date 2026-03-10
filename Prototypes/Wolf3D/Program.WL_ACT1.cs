@@ -160,7 +160,7 @@ internal partial class Program
         laststatobj++;
 
         if (laststatobj == (MAXSTATS - 1))
-            Quit("Too many static objects!\n");
+            _gameEngineManager.Quit("Too many static objects!\n");
     }
 
     /*
@@ -185,7 +185,7 @@ internal partial class Program
         for (type = 0; ; type++)
         {
             if (statinfo[type].picnum == spritenums.none)                    // end of list
-                Quit("PlaceItemType: couldn't find type!");
+                _gameEngineManager.Quit("PlaceItemType: couldn't find type!");
             if (statinfo[type].type == itemtype)
                 break;
         }
@@ -327,7 +327,7 @@ internal partial class Program
     internal static void SpawnDoor(int tilex, int tiley, bool vertical, int locknum)
     {
         if (doornum == MAXDOORS)
-            Quit("64+ doors on level!");
+            _gameEngineManager.Quit("64+ doors on level!");
 
         var doorobj = new doorobj_t();
         doorobj.position = 0;              // doors start out fully closed

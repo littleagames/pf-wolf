@@ -81,12 +81,12 @@ internal partial class Program
 
         if (gamestate.ammo == 0)            // must use knife with no ammo
             return;
-        if (buttonstate[(int)buttontypes.bt_nextweapon] && !buttonheld[(int)buttontypes.bt_nextweapon])
+        if (_inputManager.IsButtonPressed(buttontypes.bt_nextweapon) && !_inputManager.IsButtonHeld(buttontypes.bt_nextweapon))
         {
             newWeapon = gamestate.weapon + 1;
             if (newWeapon > gamestate.bestweapon) newWeapon = 0;
         }
-        else if (buttonstate[(int)buttontypes.bt_prevweapon] && !buttonheld[(int)buttontypes.bt_prevweapon])
+        else if (_inputManager.IsButtonPressed(buttontypes.bt_prevweapon) && !_inputManager.IsButtonHeld(buttontypes.bt_prevweapon))
         {
             newWeapon = gamestate.weapon - 1;
             if (newWeapon < 0) newWeapon = gamestate.bestweapon;
@@ -95,7 +95,7 @@ internal partial class Program
         {
             for (i = weapontypes.wp_knife; i <= gamestate.bestweapon; i++)
             {
-                if (buttonstate[(int)buttontypes.bt_readyknife + i - weapontypes.wp_knife])
+                if (_inputManager.IsButtonPressed((buttontypes)((int)buttontypes.bt_readyknife + i - weapontypes.wp_knife)))
                 {
                     newWeapon = i;
                     break;
@@ -117,23 +117,23 @@ internal partial class Program
 
         thrustspeed = 0;
 
-        if (buttonstate[(int)buttontypes.bt_strafeleft])
+        if (_inputManager.IsButtonPressed(buttontypes.bt_strafeleft))
         {
             angle = ob.angle + ANGLES / 4;
             if (angle >= ANGLES)
                 angle -= ANGLES;
-            if (buttonstate[(int)buttontypes.bt_run])
+            if (_inputManager.IsButtonPressed(buttontypes.bt_run))
                 Thrust(angle, (int)(RUNMOVE * MOVESCALE * tics));
             else
                 Thrust(angle, (int)(BASEMOVE * MOVESCALE * tics));
         }
 
-        if (buttonstate[(int)buttontypes.bt_straferight])
+        if (_inputManager.IsButtonPressed(buttontypes.bt_straferight))
         {
             angle = ob.angle - ANGLES / 4;
             if (angle < 0)
                 angle += ANGLES;
-            if (buttonstate[(int)buttontypes.bt_run])
+            if (_inputManager.IsButtonPressed(buttontypes.bt_run))
                 Thrust(angle, (int)(RUNMOVE * MOVESCALE * tics));
             else
                 Thrust(angle, (int)(BASEMOVE * MOVESCALE * tics));
@@ -142,7 +142,7 @@ internal partial class Program
         //
         // side to side move
         //
-        if (buttonstate[(int)buttontypes.bt_strafe])
+        if (_inputManager.IsButtonPressed(buttontypes.bt_strafe))
         {
             //
             // strafing
@@ -782,12 +782,12 @@ internal partial class Program
             PushWall(checkx, checky, dir);
             return;
         }
-        if (!buttonheld[(int)buttontypes.bt_use] && cmdtile == ELEVATORTILE && elevatorok)
+        if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && cmdtile == ELEVATORTILE && elevatorok)
         {
             //
             // use elevator
             //
-            buttonheld[(int)buttontypes.bt_use] = true;
+            _inputManager.SetButtonHeld(buttontypes.bt_use, true);
 
             tilemap[checkx, checky]++;              // flip switch
             if (MAPSPOT(player.tilex, player.tiley, 0) == ALTELEVATORTILE)
@@ -797,9 +797,9 @@ internal partial class Program
             SD_PlaySound((int)soundnames.LEVELDONESND);
             SD_WaitSoundDone();
         }
-        else if (!buttonheld[(int)buttontypes.bt_use] && (cmdtile & BIT_DOOR) != 0)
+        else if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) != 0)
         {
-            buttonheld[(int)buttontypes.bt_use] = true;
+            _inputManager.SetButtonHeld(buttontypes.bt_use, true);
             OperateDoor(cmdtile & ~BIT_DOOR);
         }
         else
@@ -808,7 +808,7 @@ internal partial class Program
 
     internal static void Cmd_Fire()
     {
-        buttonheld[(int)buttontypes.bt_attack] = true;
+        _inputManager.SetButtonHeld(buttontypes.bt_attack, true);
 
         gamestate.weaponframe = 0;
 
@@ -841,10 +841,10 @@ internal partial class Program
         UpdateFace();
         CheckWeaponChange();
 
-        if (buttonstate[(int)buttontypes.bt_use])
+        if (_inputManager.IsButtonPressed(buttontypes.bt_use))
             Cmd_Use();
 
-        if (buttonstate[(int)buttontypes.bt_attack] && !buttonheld[(int)buttontypes.bt_attack])
+        if (_inputManager.IsButtonPressed(buttontypes.bt_attack) && !_inputManager.IsButtonHeld(buttontypes.bt_attack))
             Cmd_Fire();
 
         ControlMovement(ob);
@@ -869,11 +869,11 @@ internal partial class Program
         }
 
 
-        if (buttonstate[(int)buttontypes.bt_use] && !buttonheld[(int)buttontypes.bt_use])
-            buttonstate[(int)buttontypes.bt_use] = false;
+        if (_inputManager.IsButtonPressed(buttontypes.bt_use) && !_inputManager.IsButtonHeld(buttontypes.bt_use))
+            _inputManager.SetButtonPressed(buttontypes.bt_use, false);
 
-        if (buttonstate[(int)buttontypes.bt_attack] && !buttonheld[(int)buttontypes.bt_attack])
-            buttonstate[(int)buttontypes.bt_attack] = false;
+        if (_inputManager.IsButtonPressed(buttontypes.bt_attack) && !_inputManager.IsButtonHeld(buttontypes.bt_attack))
+            _inputManager.SetButtonPressed(buttontypes.bt_attack, false);
 
         ControlMovement(ob);
         if (gamestate.victoryflag)              // watching the BJ actor
@@ -914,7 +914,7 @@ internal partial class Program
                 case 4:
                     if (gamestate.ammo == 0)
                         break;
-                    if (buttonstate[(int)buttontypes.bt_attack])
+                    if (_inputManager.IsButtonPressed(buttontypes.bt_attack))
                         gamestate.attackframe -= 2;
                     // case passthrough is not a thing in C#, repeating case 1 code
                     if (gamestate.ammo == 0)
@@ -944,7 +944,7 @@ internal partial class Program
                     break;
 
                 case 3:
-                    if (gamestate.ammo != 0 && buttonstate[(int)buttontypes.bt_attack])
+                    if (gamestate.ammo != 0 && _inputManager.IsButtonPressed(buttontypes.bt_attack))
                         gamestate.attackframe -= 2;
                     break;
             }

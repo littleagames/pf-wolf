@@ -52,6 +52,11 @@ internal class VideoManager
     static uint rndbits_y;
     static uint rndmask;
 
+    public VideoManager(InputManager inputManager)
+    {
+        this.inputManager = inputManager;
+    }
+
     public void Init()
     {
         if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
@@ -74,7 +79,7 @@ internal class VideoManager
         rndmask = rndmasks[rndbits - 17];
     }
 
-    ~VideoManager()
+    public void Shutdown()
     {
         if (texture != IntPtr.Zero) SDL.SDL_DestroyTexture(texture);
         if (screenBuffer != IntPtr.Zero) SDL.SDL_FreeSurface(screenBuffer);
@@ -397,7 +402,7 @@ internal class VideoManager
         rndval = 1;
         pixperframe = width * height / frames;
 
-        Program.IN_StartAck();
+        inputManager.StartAck();
 
         frame = GameEngineManager.GetTimeCount();
         IntPtr srcptr = LockSurface(source);
@@ -405,9 +410,9 @@ internal class VideoManager
 
         while (true)
         {
-            Program.IN_ProcessEvents();
+            inputManager.ProcessEvents();
 
-            if (abortable && Program.IN_CheckAck())
+            if (abortable && inputManager.CheckAck())
             {
                 UnlockSurface(source);
                 Update(source);
@@ -570,6 +575,7 @@ internal class VideoManager
 
     int damagecount, bonuscount;
     bool palshifted;
+    private InputManager inputManager;
 
     private static byte ClampToByte(int v) => (byte)(v < 0 ? 0 : (v > 255 ? 255 : v));
 

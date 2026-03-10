@@ -248,7 +248,7 @@ internal partial class Program
         USL_MeasureString(s, out w, out h);
 
         if (w > WindowW)
-            Quit("US_CPrintLine() - String exceeds width");
+            _gameEngineManager.Quit("US_CPrintLine() - String exceeds width");
         px = WindowX + ((WindowW - w) / 2);
         py = PrintY;
         USL_DrawString(s);
@@ -260,7 +260,7 @@ internal partial class Program
         bool redraw,
                     cursorvis, cursormoved,
                     done, result = false, checkkey;
-        int sc;
+        ScanCodes sc;
         string s, olds;
         //char[] s = new char[MaxString], olds = new char[MaxString];
         int cursor, len;
@@ -269,7 +269,7 @@ internal partial class Program
                     temp;
         uint curtime, lasttime, lastdirtime, lastbuttontime, lastdirmovetime;
         ControlInfo ci;
-        byte lastdir = (byte)Direction.dir_None;
+        Direction lastdir = Direction.dir_None;
 
         if (!string.IsNullOrEmpty(def))
             s = def;
@@ -284,9 +284,9 @@ internal partial class Program
         cursorvis = done = false;
         lasttime = lastdirtime = lastdirmovetime = GameEngineManager.GetTimeCount();
         lastbuttontime = lasttime + TickBase / 4;   // 250 ms => first button press accepted after 500 ms
-        LastScan = (int)ScanCodes.sc_None;
+        _inputManager.ClearLastKey();
 
-        IN_ClearTextInput();
+        _inputManager.ClearTextInput();
         while (!done)
         {
             ReadAnyControl(out ci);
@@ -294,8 +294,8 @@ internal partial class Program
             if (cursorvis)
                 USL_XORICursor(x, y, new string(s), (ushort)cursor);
 
-            sc = LastScan;
-            LastScan = (int)ScanCodes.sc_None;
+            sc = _inputManager.GetLastKeyPressed();
+            _inputManager.ClearLastKey();
 
             checkkey = true;
             curtime = GameEngineManager.GetTimeCount();
@@ -380,20 +380,20 @@ internal partial class Program
 
             if ((int)(curtime - lastbuttontime) > TickBase / 4)   // 250 ms
             {
-                if (ci.button0 != 0)             // acts as return
+                if (ci.button0)             // acts as return
                 {
                     buf = s; //snprintf(buf, maxchars + 1, "%s", s);
                     done = true;
                     result = true;
                     checkkey = false;
                 }
-                if (ci.button1 != 0 && escok)    // acts as escape
+                if (ci.button1 && escok)    // acts as escape
                 {
                     done = true;
                     result = false;
                     checkkey = false;
                 }
-                if (ci.button2 != 0)             // acts as backspace
+                if (ci.button2)             // acts as backspace
                 {
                     lastbuttontime = curtime;
                     if (cursor != 0)
@@ -416,17 +416,17 @@ internal partial class Program
             {
                 switch (sc)
                 {
-                    case (byte)ScanCodes.sc_LeftArrow:
+                    case ScanCodes.sc_LeftArrow:
                         if (cursor != 0)
                             cursor--;
                         cursormoved = true;
                         break;
-                    case (byte)ScanCodes.sc_RightArrow:
+                    case ScanCodes.sc_RightArrow:
                         if (s[cursor] != 0)
                             cursor++;
                         cursormoved = true;
                         break;
-                    case (byte)ScanCodes.sc_Home:
+                    case ScanCodes.sc_Home:
                         if (cursor > 0)
                         {
                             cursor--;
@@ -442,17 +442,17 @@ internal partial class Program
                         }
                         cursormoved = true;
                         break;
-                    case (byte)ScanCodes.sc_End:
+                    case ScanCodes.sc_End:
                         cursor = s.Length;
                         cursormoved = true;
                         break;
 
-                    case (byte)ScanCodes.sc_Return:
+                    case ScanCodes.sc_Return:
                         buf = s;
                         done = true;
                         result = true;
                         break;
-                    case (byte)ScanCodes.sc_Escape:
+                    case ScanCodes.sc_Escape:
                         if (escok)
                         {
                             done = true;
@@ -460,7 +460,7 @@ internal partial class Program
                         }
                         break;
 
-                    case (byte)ScanCodes.sc_BackSpace:
+                    case ScanCodes.sc_BackSpace:
                         if (cursor != 0)
                         {
                             //s = s.Substring(0, Math.Max(0, cursor - 1)) + s.Substring(cursor, s.Length - cursor);
@@ -473,7 +473,7 @@ internal partial class Program
                         cursormoved = true;
                         break;
 
-                    case (byte)ScanCodes.sc_Delete:
+                    case ScanCodes.sc_Delete:
                         if (s[cursor] != 0)
                         {
                             s = s.Substring(0, cursor) + s.Substring(cursor + 1, s.Length - cursor + 1);
@@ -486,9 +486,9 @@ internal partial class Program
                         cursormoved = true;
                         break;
                 }
-
+                var textinput = _inputManager.GetTextInput();
                 //for (text = textinput; *text; text++)
-                for(int t = 0; t < textinput.Length && textinput[t] != '\0'; t++)
+                for (int t = 0; t < textinput.Length && textinput[t] != '\0'; t++)
                 {
                     char txt = textinput[t];
                     //len = (int)strlen(s);
@@ -507,7 +507,7 @@ internal partial class Program
                     }
                 }
 
-                IN_ClearTextInput();
+                _inputManager.ClearTextInput();
             }
 
             if (redraw)
@@ -557,7 +557,7 @@ internal partial class Program
         }
         _videoManager.Update();
 
-        IN_ClearKeysDown();
+        _inputManager.ClearKeysDown();
         return result;
     }
     internal static char USL_RotateChar(char ch, int dir)

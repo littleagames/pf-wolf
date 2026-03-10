@@ -35,7 +35,7 @@ internal partial class Program
 
         _videoManager.Update();
         _videoManager.FadeIn();
-        IN_Ack();
+        _inputManager.Ack();
     }
 
     internal static void PG13()
@@ -47,7 +47,7 @@ internal partial class Program
         _videoManager.Update();
 
         _videoManager.FadeIn();
-        IN_UserInput(TickBase * 7);
+        _inputManager.UserInput(TickBase * 7);
 
         _videoManager.FadeOut();
     }
@@ -152,8 +152,8 @@ internal partial class Program
         }
         else
         {
-            IN_ClearKeysDown();
-            IN_UserInput(500);
+            _inputManager.ClearKeysDown();
+            _inputManager.UserInput(500);
         }
     }
 
@@ -183,7 +183,7 @@ internal partial class Program
         _videoManager.Update();
         //      if (LastScan == sc_Escape)
         //      {
-        //              IN_ClearKeysDown();
+        //              _inputManager.ClearKeysDown();
         //              return(true);
         //      }
         //      else
@@ -209,7 +209,7 @@ internal partial class Program
 
         //      PM_Preload (PreloadUpdate);
         PreloadUpdate(10, 10);
-        IN_UserInput(70);
+        _inputManager.UserInput(70);
         _videoManager.FadeOut();
 
         DrawPlayBorder();
@@ -339,8 +339,8 @@ internal partial class Program
         //
         // do the intermission
         //
-        IN_ClearKeysDown();
-        IN_StartAck();
+        _inputManager.ClearKeysDown();
+        _inputManager.StartAck();
         VWB_DrawPic(0, 16, graphicnums.L_GUYPIC);
         if (gamestate.mapon < LRpack)
         {
@@ -409,7 +409,7 @@ internal partial class Program
                     _videoManager.Update();
                     while (SD_SoundPlaying() != 0)
                         BJ_Breathe();
-                    if (IN_CheckAck())
+                    if (_inputManager.CheckAck())
                         goto done;
                 }
 
@@ -436,7 +436,7 @@ internal partial class Program
                 while (SD_SoundPlaying() != 0)
                     BJ_Breathe();
 
-                if (IN_CheckAck())
+                if (_inputManager.CheckAck())
                     goto done;
             }
             if (ratio >= 100)
@@ -478,7 +478,7 @@ internal partial class Program
                 while (SD_SoundPlaying() != 0)
                     BJ_Breathe();
 
-                if (IN_CheckAck())
+                if (_inputManager.CheckAck())
                     goto done;
             }
             if (ratio >= 100)
@@ -518,7 +518,7 @@ internal partial class Program
                 _videoManager.Update();
                 while (SD_SoundPlaying() != 0)
                     BJ_Breathe();
-                if (IN_CheckAck())
+                if (_inputManager.CheckAck())
                     goto done;
             }
             if (ratio >= 100)
@@ -595,8 +595,8 @@ internal partial class Program
         _videoManager.Update();
 
         lastBreathTime = (int)GameEngineManager.GetTimeCount();
-        IN_StartAck();
-        while (!IN_CheckAck())
+        _inputManager.StartAck();
+        while (!_inputManager.CheckAck())
             BJ_Breathe();
 
         //
@@ -700,7 +700,7 @@ internal partial class Program
         _videoManager.Update();
         _videoManager.FadeIn();
 
-        IN_Ack();
+        _inputManager.Ack();
 
         _videoManager.FadeOut();
         if (_videoManager.screenHeight % 200 != 0)

@@ -45,7 +45,7 @@ internal partial class Program
             long datasize = filesize - (long)pageOffsets[0];
 
             if (datasize < 0)
-                Quit($"PM_Startup: The page file \"{fname}\" is too large!");
+                _gameEngineManager.Quit($"PM_Startup: The page file \"{fname}\" is too large!");
 
             // terminator offset
             pageOffsets[ChunksInFile] = (uint)filesize;
@@ -57,7 +57,7 @@ internal partial class Program
                     continue; // sparse page
 
                 if (pageOffsets[i] < pageOffsets[0] || pageOffsets[i] >= (uint)filesize)
-                    Quit($"PM_Startup: Illegal page offset for page {i}: {pageOffsets[i]} (filesize: {filesize})");
+                    _gameEngineManager.Quit($"PM_Startup: Illegal page offset for page {i}: {pageOffsets[i]} (filesize: {filesize})");
             }
 
             // calculate padding for alignment between sprite and sound pages
@@ -128,7 +128,7 @@ internal partial class Program
                 int toRead = (int)pagesize;
                 byte[] buffer = br.ReadBytes(toRead);
                 if (buffer.Length != toRead)
-                    Quit($"PM_Startup: Failed to read full page {i} (expected {toRead}, got {buffer.Length})");
+                    _gameEngineManager.Quit($"PM_Startup: Failed to read full page {i} (expected {toRead}, got {buffer.Length})");
 
                 // copy into contiguous buffer and per-page array
                 Buffer.BlockCopy(buffer, 0, PMPageData, (int)pagePos, toRead);
@@ -165,7 +165,7 @@ internal partial class Program
     internal static byte[] PM_GetPage(int page)
     {
         if (page < 0 || page >= ChunksInFile)
-            Quit($"PM_GetPage: Invalid page request: {page}");
+            _gameEngineManager.Quit($"PM_GetPage: Invalid page request: {page}");
 
         return PMPages[page];
     }
@@ -173,7 +173,7 @@ internal partial class Program
     internal static uint PM_GetPageSize(int page)
     {
         if (page < 0 || page >= ChunksInFile)
-            Quit($"PM_GetPageSize: Invalid page request: {page}");
+            _gameEngineManager.Quit($"PM_GetPageSize: Invalid page request: {page}");
 
         return (uint)(PMPages[page].Length); // (uint32_t)(PMPages[page + 1] - PMPages[page]); // pointer addresses
     }
@@ -185,6 +185,6 @@ internal partial class Program
 
     static void CA_CannotOpen(string text)
     {
-        Quit($"Can't open {text}!");
+        _gameEngineManager.Quit($"Can't open {text}!");
     }
 }

@@ -2311,7 +2311,7 @@ internal partial class Program
             }
 
             if (ob.tilex > MAPSIZE || ob.tiley > MAPSIZE)
-                Quit($"T_Path hit a wall at {ob.tilex},{ob.tiley}, dir {ob.dir}");
+                _gameEngineManager.Quit($"T_Path hit a wall at {ob.tilex},{ob.tiley}, dir {ob.dir}");
 
             ob.x = (int)((ob.tilex << TILESHIFT) + TILEGLOBAL / 2);
             ob.y = (int)((ob.tiley << TILESHIFT) + TILEGLOBAL / 2);
@@ -2597,7 +2597,7 @@ internal partial class Program
 
         _videoManager.Update();
 
-        IN_UserInput(300);
+        _inputManager.UserInput(300);
 
         //
         // line angle up exactly

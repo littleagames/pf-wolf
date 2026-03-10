@@ -96,8 +96,8 @@ internal partial class Program
 
         _videoManager.FadeOut();
         SETFONTCOLOR(0, 15);
-        IN_ClearKeysDown();
-        IN_CenterMouse();
+        _inputManager.ClearKeysDown();
+        _inputManager.CenterMouse();
 
         FreeMusic();
     }
@@ -131,30 +131,31 @@ internal partial class Program
             }
             GameEngineManager.DelayMs(5);
 
-            LastScan = 0;
+            _inputManager.ClearLastKey();
             ReadAnyControl(out ci);
-            byte dir = ci.dir;
+            Direction dir = ci.dir;
             switch (dir)
             {
-                case (byte)Direction.dir_North:
-                case (byte)Direction.dir_South:
+                case Direction.dir_North:
+                case Direction.dir_South:
                     break;
 
                 default:
-                    if (ci.button0 != 0) dir = (byte)Direction.dir_South;
-                    switch (LastScan)
+                    if (ci.button0)
+                        dir = Direction.dir_South;
+                    switch (_inputManager.GetLastKeyPressed())
                     {
-                        case (int)ScanCodes.sc_UpArrow:
-                        case (int)ScanCodes.sc_PgUp:
-                        case (int)ScanCodes.sc_LeftArrow:
-                            dir = (byte)Direction.dir_North;
+                        case ScanCodes.sc_UpArrow:
+                        case ScanCodes.sc_PgUp:
+                        case ScanCodes.sc_LeftArrow:
+                            dir = Direction.dir_North;
                             break;
 
-                        case (int)ScanCodes.sc_Enter:
-                        case (int)ScanCodes.sc_DownArrow:
-                        case (int)ScanCodes.sc_PgDn:
-                        case (int)ScanCodes.sc_RightArrow:
-                            dir = (byte)Direction.dir_South;
+                        case ScanCodes.sc_Enter:
+                        case ScanCodes.sc_DownArrow:
+                        case ScanCodes.sc_PgDn:
+                        case ScanCodes.sc_RightArrow:
+                            dir = Direction.dir_South;
                             break;
                     }
                     break;
@@ -162,8 +163,8 @@ internal partial class Program
 
             switch (dir)
             {
-                case (byte)Direction.dir_North:
-                case (byte)Direction.dir_West:
+                case Direction.dir_North:
+                case Direction.dir_West:
                     if (pagenum > 1)
                     {
                         BackPage();
@@ -173,8 +174,8 @@ internal partial class Program
                     TicDelay(20);
                     break;
 
-                case (byte)Direction.dir_South:
-                case (byte)Direction.dir_East:
+                case Direction.dir_South:
+                case Direction.dir_East:
                     if (pagenum < numpages)
                     {
                         newpage = true;
@@ -182,9 +183,9 @@ internal partial class Program
                     TicDelay(20);
                     break;
             }
-        } while (LastScan != (int)ScanCodes.sc_Escape && ci.button1 == 0);
+        } while (_inputManager.GetLastKeyPressed() != ScanCodes.sc_Escape && !ci.button1);
 
-        IN_ClearKeysDown();
+        _inputManager.ClearKeysDown();
         fontnumber = (int)oldfontnumber;
     }
 
@@ -255,7 +256,7 @@ internal partial class Program
 
         } while (textIndex < bombpoint);
 
-        Quit("CacheLayout: No ^E to terminate file!");
+        _gameEngineManager.Quit("CacheLayout: No ^E to terminate file!");
     }
 
     private static void ParsePicCommand()
@@ -402,7 +403,7 @@ internal partial class Program
             textIndex++;
 
         if (text[textIndex] != '^' || Char.ToUpper(text[++textIndex]) != 'P')
-            Quit("PageLayout: Text not headed with ^P");
+            _gameEngineManager.Quit("PageLayout: Text not headed with ^P");
 
         while (text[textIndex++] != '\n')
             ;
@@ -593,7 +594,7 @@ internal partial class Program
         {
             wword[wordindex] = text[textIndex++];
             if (++wordindex == WORDLIMIT)
-                Quit("PageLayout: Word limit exceeded");
+                _gameEngineManager.Quit("PageLayout: Word limit exceeded");
         }
         wword[wordindex] = (char)0;            // stick a null at end for C
 

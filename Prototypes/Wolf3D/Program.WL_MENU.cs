@@ -287,9 +287,10 @@ internal partial class Program
         for (int i = 0; i < 10; i++)
         {
             var name = SaveName.Replace('?', (char)('0' + i));
-            if (!string.IsNullOrEmpty(configdir))
-                savepath = $"{configdir}/{name}";
-            else
+            // TODO: Set up "Saves" folder
+           // if (!string.IsNullOrEmpty(configdir))
+           //     savepath = $"{configdir}/{name}";
+           // else
                 savepath = $"{name}";
 
             if (File.Exists(savepath))
@@ -417,8 +418,8 @@ internal partial class Program
         timer = 8;
         exit = 0;
         lastBlinkTime = (int)GameEngineManager.GetTimeCount();
-        IN_ClearKeysDown();
-        IN_ClearTextInput();
+        _inputManager.ClearKeysDown();
+        _inputManager.ClearTextInput();
 
         do
         {
@@ -452,9 +453,9 @@ internal partial class Program
             // SEE IF ANY KEYS ARE PRESSED FOR INITIAL CHAR FINDING
             //
 
-            key = textinput[0];
+            key = _inputManager.GetTextInput()[0];
 
-            IN_ClearTextInput();
+            _inputManager.ClearTextInput();
 
             if (key != 0)
             {
@@ -470,7 +471,7 @@ internal partial class Program
                         which = i;
                         DrawGun(item_i, items, x, ref y, which, basey, routine);
                         ok = 1;
-                        IN_ClearKeysDown();
+                        _inputManager.ClearKeysDown();
                         break;
                     }
 
@@ -485,7 +486,7 @@ internal partial class Program
                             EraseGun(item_i, items, x, y, which);
                             which = i;
                             DrawGun(item_i, items, x, ref y, which, basey, routine);
-                            IN_ClearKeysDown();
+                            _inputManager.ClearKeysDown();
                             break;
                         }
                 }
@@ -567,15 +568,15 @@ internal partial class Program
                     break;
             }
 
-            if (ci.button0 != 0 || Keyboard[(int)ScanCodes.sc_Space] || Keyboard[(int)ScanCodes.sc_Enter])
+            if (ci.button0 || _inputManager.IsKeyDown(ScanCodes.sc_Space) || _inputManager.IsKeyDown(ScanCodes.sc_Enter))
                 exit = 1;
 
-            if (ci.button1 != 0 && !Keyboard[(int)ScanCodes.sc_Alt] || Keyboard[(int)ScanCodes.sc_Escape])
+            if (ci.button1 && !_inputManager.IsKeyDown(ScanCodes.sc_Alt) || _inputManager.IsKeyDown(ScanCodes.sc_Escape))
                 exit = 2;
 
         }
         while (exit == 0);
-        IN_ClearKeysDown();
+        _inputManager.ClearKeysDown();
 
         //
         // ERASE EVERYTHING
@@ -662,7 +663,7 @@ internal partial class Program
 
     internal static void CheckPause()
     {
-        if (Paused)
+        if (_gameEngineManager.IsPaused())
         {
             switch (SoundStatus)
             {
@@ -676,8 +677,8 @@ internal partial class Program
 
             SoundStatus ^= 1;
             GameEngineManager.WaitVBL(3);
-            IN_ClearKeysDown();
-            Paused = false;
+            _inputManager.ClearKeysDown();
+            _gameEngineManager.SetPaused(false);
         }
     }
 
@@ -709,15 +710,15 @@ internal partial class Program
             GameEngineManager.DelayMs(5);
             ReadAnyControl(out ci);
         }
-        while ((int)GameEngineManager.GetTimeCount() - startTime < count && ci.dir != (byte)Direction.dir_None);
+        while ((int)GameEngineManager.GetTimeCount() - startTime < count && ci.dir != Direction.dir_None);
     }
 
     static int totalMousex = 0, totalMousey = 0;
     internal static void ReadAnyControl(out ControlInfo ci)
     {
         int mouseactive = 0;
-        IN_ReadControl(out ci);
-        if (mouseenabled && GrabInput)
+        _inputManager.ReadControl(out ci);
+        if (mouseenabled && _inputManager.IsMouseInputGrabbed())
         {
             int mousex, mousey, buttons;
 
@@ -735,23 +736,23 @@ internal partial class Program
 
             if (totalMousey < -SENSITIVE)
             {
-                ci.dir = (int)Direction.dir_North;
+                ci.dir = Direction.dir_North;
                 mouseactive = 1;
             }
             else if (totalMousey > SENSITIVE)
             {
-                ci.dir = (byte)Direction.dir_South;
+                ci.dir = Direction.dir_South;
                 mouseactive = 1;
             }
 
             if (totalMousex < -SENSITIVE)
             {
-                ci.dir = (byte)Direction.dir_West;
+                ci.dir = Direction.dir_West;
                 mouseactive = 1;
             }
             else if (totalMousex > SENSITIVE)
             {
-                ci.dir = (byte)Direction.dir_East;
+                ci.dir = Direction.dir_East;
                 mouseactive = 1;
             }
 
@@ -763,10 +764,10 @@ internal partial class Program
 
             if (buttons != 0)
             {
-                ci.button0 = (byte)(buttons & 1);
-                ci.button1 = (byte)(buttons & 2);
-                ci.button2 = (byte)(buttons & 4);
-                ci.button3 = 0;
+                ci.button0 = (buttons & 1) != 0;
+                ci.button1 = (buttons & 2) != 0;
+                ci.button2 = (buttons & 4) != 0;
+                ci.button3 = false;
                 mouseactive = 1;
             }
         }
@@ -775,24 +776,24 @@ internal partial class Program
         {
             int jx, jy, jb;
 
-            IN_GetJoyDelta(out jx, out jy);
+            _inputManager.GetJoyDelta(out jx, out jy);
             if (jy < -SENSITIVE)
-                ci.dir = (byte)Direction.dir_North;
+                ci.dir = Direction.dir_North;
             else if (jy > SENSITIVE)
-                ci.dir = (byte)Direction.dir_South;
+                ci.dir = Direction.dir_South;
 
             if (jx < -SENSITIVE)
-                ci.dir = (byte)Direction.dir_West;
+                ci.dir = Direction.dir_West;
             else if (jx > SENSITIVE)
-                ci.dir = (byte)Direction.dir_East;
+                ci.dir = Direction.dir_East;
 
-            jb = IN_JoyButtons();
+            jb = _inputManager.JoyButtons();
             if (jb != 0)
             {
-                ci.button0 = (byte)(jb & 1);
-                ci.button1 = (byte)(jb & 2);
-                ci.button2 = (byte)(jb & 4);
-                ci.button3 = (byte)(jb & 8);
+                ci.button0 = (jb & 1) != 0;
+                ci.button1 = (jb & 2) != 0;
+                ci.button2 = (jb & 4) != 0;
+                ci.button3 = (jb & 8) != 0;
             }
         }
     }
@@ -813,83 +814,10 @@ internal partial class Program
         else
             MainMenu[(int)menuitems.savegame].active = 1;
 
-        IN_CenterMouse();
+        _inputManager.CenterMouse();
     }
-    ////////////////////////////////////////////////////////////////////
-    //
-    // INPUT MANAGER SCANCODE TABLES
-    //
-    ////////////////////////////////////////////////////////////////////
 
-    internal static string[] ScanNames =
-    {
-    "?","?","?","?","A","B","C","D",
-    "E","F","G","H","I","J","K","L",
-    "M","N","O","P","Q","R","S","T",
-    "U","V","W","X","Y","Z","1","2",
-    "3","4","5","6","7","8","9","0",
-    "Return","Esc","BkSp","Tab","Space","-","=","[",
-    "]","#","?",";","'","`",",",".",
-    "/","CapsLk","F1","F2","F3","F4","F5","F6",
-    "F7","F8","F9","F10","F11","F12","PrtSc",
-    "ScrlLk","Pause","Ins","Home","PgUp","Delete","End","PgDn",
-    "Right","Left","Down","Up","NumLk","KP /","KP *","KP -",
-    "KP +","Enter","KP 1","KP 2","KP 3","KP 4","KP 5","KP 6",
-    "KP 7","KP 8","KP 9","KP 0","KP .","\\","?","?",
-    "?","F13","F14","F15","F16","F17","F18","F19",
-    "F20","F21","F22","F23","F24","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","Return",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","Ctrl","Shift","Alt","?","RCtrl","RShft","RAlt",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?","?","?","?","?","?","?","?",
-    "?"
-};
-    internal static void US_ControlPanel(int scancode)
+    internal static void US_ControlPanel(ScanCodes scancode)
     {
         int which;
 
@@ -908,26 +836,26 @@ internal partial class Program
         //
         switch (scancode)
         {
-            case (int)ScanCodes.sc_F1:
+            case ScanCodes.sc_F1:
                 HelpScreens();
                 goto finishup;
-            case (int)ScanCodes.sc_F2:
+            case ScanCodes.sc_F2:
                 CP_SaveGame(0);
                 goto finishup;
 
-            case (int)ScanCodes.sc_F3:
+            case ScanCodes.sc_F3:
                 CP_LoadGame(0);
                 goto finishup;
 
-            case (int)ScanCodes.sc_F4:
+            case ScanCodes.sc_F4:
                 CP_Sound(0);
                 goto finishup;
 
-            case (int)ScanCodes.sc_F5:
+            case ScanCodes.sc_F5:
                 CP_ChangeView(0);
                 goto finishup;
 
-            case (int)ScanCodes.sc_F6:
+            case ScanCodes.sc_F6:
                 CP_Control(0);
                 goto finishup;
 
@@ -999,14 +927,14 @@ internal partial class Program
             EnableEndGameMenuItem();
     }
 
-    internal static int CP_CheckQuick(int scancode)
+    internal static int CP_CheckQuick(ScanCodes scancode)
     {
         switch (scancode)
         {
             //
             // END GAME
             //
-            case (int)ScanCodes.sc_F7:
+            case ScanCodes.sc_F7:
                 WindowH = 160;
                 if (Confirm(ENDGAMESTR) != 0)
                 {
@@ -1022,7 +950,7 @@ internal partial class Program
             //
             // QUICKSAVE
             //
-            case (int)ScanCodes.sc_F8:
+            case ScanCodes.sc_F8:
                 if (SaveGamesAvail[LSItems.curpos] != 0 && pickquick != 0)
                 {
                     fontnumber = 1;
@@ -1040,7 +968,7 @@ internal partial class Program
                     pickquick = CP_SaveGame(0);
 
                     SETFONTCOLOR(0, 15);
-                    IN_ClearKeysDown();
+                    _inputManager.ClearKeysDown();
                     _videoManager.FadeOut();
                     if (viewsize != 21)
                         DrawPlayScreen();
@@ -1052,14 +980,14 @@ internal partial class Program
                         playstate = playstatetypes.ex_abort;
                     lasttimecount = (int)GameEngineManager.GetTimeCount();
 
-                    IN_CenterMouse();
+                    _inputManager.CenterMouse();
                 }
                 return 1;
 
             //
             // QUICKLOAD
             //
-            case (int)ScanCodes.sc_F9:
+            case ScanCodes.sc_F9:
                 if (SaveGamesAvail[LSItems.curpos] != 0 && pickquick != 0)
                 {
                     fontnumber = 1;
@@ -1081,7 +1009,7 @@ internal partial class Program
                     pickquick = CP_LoadGame(0);    // loads lastgamemusicoffs
 
                     SETFONTCOLOR(0, 15);
-                    IN_ClearKeysDown();
+                    _inputManager.ClearKeysDown();
                     _videoManager.FadeOut();
                     if (viewsize != 21)
                         DrawPlayScreen();
@@ -1094,14 +1022,14 @@ internal partial class Program
 
                     lasttimecount = (int)GameEngineManager.GetTimeCount();
 
-                    IN_CenterMouse();
+                    _inputManager.CenterMouse();
                 }
                 return 1;
 
             //
             // QUIT
             //
-            case (int)ScanCodes.sc_F10:
+            case ScanCodes.sc_F10:
                 WindowX = WindowY = 0;
                 WindowW = 320;
                 WindowH = 160;
@@ -1112,7 +1040,7 @@ internal partial class Program
                     SD_StopSound();
                     MenuFadeOut();
 
-                    Quit("");
+                    _gameEngineManager.Quit("");
                 }
 
                 DrawPlayBorder();
@@ -1173,8 +1101,8 @@ internal partial class Program
                                  "from the Options menu to\n" +
                                  "find out how to order this\n" +
                                  "episode from Apogee.");
-                        IN_ClearKeysDown();
-                        IN_Ack();
+                        _inputManager.ClearKeysDown();
+                        _inputManager.Ack();
                         DrawNewEpisode();
                         which = 0;
                     }
@@ -1484,7 +1412,7 @@ internal partial class Program
             {
                 case CtlOptions.CTL_MOUSEENABLE:
                     mouseenabled ^= true;
-                    IN_CenterMouse();
+                    _inputManager.CenterMouse();
                     DrawCtlScreen();
                     CusItems.curpos = -1;
                     ShootSnd();
@@ -1524,10 +1452,10 @@ internal partial class Program
         WindowW = 320;
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
 
-        if (IN_JoyPresent())
+        if (_inputManager.JoyPresent())
             CtlMenu[(int)CtlOptions.CTL_JOYENABLE].active = 1;
 
-        if (MousePresent)
+        if (_inputManager.IsMousePresent())
         {
             CtlMenu[(int)CtlOptions.CTL_MOUSESENS].active = CtlMenu[(int)CtlOptions.CTL_MOUSEENABLE].active = 1;
         }
@@ -1588,9 +1516,9 @@ internal partial class Program
             {
                 name.Replace('?', (char)(which + '0'));
 
-                if (string.IsNullOrEmpty(configdir))
-                    loadpath = $"{configdir}/{name}";
-                else
+                //if (string.IsNullOrEmpty(configdir))
+                //    loadpath = $"{configdir}/{name}";
+                //else
                     loadpath = $"{name}";
 
                 using (FileStream fs = File.OpenRead(loadpath))
@@ -1625,9 +1553,9 @@ internal partial class Program
                 ShootSnd();
                 name = name.Replace('?', (char)(which + '0'));
 
-                if (!string.IsNullOrEmpty(configdir))
-                    loadpath = $"{configdir}/{name}";
-                else
+                //if (!string.IsNullOrEmpty(configdir))
+                //    loadpath = $"{configdir}/{name}";
+                //else
                     loadpath = $"{name}";
 
                 using (FileStream fs = File.OpenRead(loadpath))
@@ -1757,9 +1685,9 @@ internal partial class Program
             {
                 name.Replace('?', (char)(which + '0'));
 
-                if (!string.IsNullOrEmpty(configdir))
-                    savepath = $"{configdir}/{name}";
-                else
+                //if (!string.IsNullOrEmpty(configdir))
+                //    savepath = $"{configdir}/{name}";
+                //else
                     savepath = $"{name}";
 
                 File.Delete(savepath);
@@ -1818,9 +1746,9 @@ internal partial class Program
                     SaveGamesAvail[which] = 1;
                     SaveGameNames[which] = input;
 
-                    if (!string.IsNullOrEmpty(configdir))
-                        savepath = $"{configdir}/{name}";
-                    else
+                    //if (!string.IsNullOrEmpty(configdir))
+                    //    savepath = $"{configdir}/{name}";
+                    //else
                         savepath = $"{name}";
 
                     if (File.Exists(savepath))
@@ -1879,8 +1807,8 @@ internal partial class Program
             ReadAnyControl(out ci);
             switch (ci.dir)
             {
-                case (byte)Direction.dir_South:
-                case (byte)Direction.dir_West:
+                case Direction.dir_South:
+                case Direction.dir_West:
                     newview--;
                     if (newview < 4)
                         newview = 4;
@@ -1891,8 +1819,8 @@ internal partial class Program
                     TicDelay(10);
                     break;
 
-                case (byte)Direction.dir_North:
-                case (byte)Direction.dir_East:
+                case Direction.dir_North:
+                case Direction.dir_East:
                     newview++;
                     if (newview >= 21)
                     {
@@ -1906,9 +1834,9 @@ internal partial class Program
                     break;
             }
 
-            if (ci.button0 != 0 || Keyboard[(int)ScanCodes.sc_Enter])
+            if (ci.button0 || _inputManager.IsKeyDown(ScanCodes.sc_Enter))
                 exit = 1;
-            else if (ci.button1 != 0 || Keyboard[(int)ScanCodes.sc_Escape])
+            else if (ci.button1 || _inputManager.IsKeyDown(ScanCodes.sc_Escape))
             {
                 SD_PlaySound((int)soundnames.ESCPRESSEDSND);
                 MenuFadeOut();
@@ -1975,7 +1903,7 @@ internal partial class Program
         MenuFadeIn();
         fontnumber = 1;
 
-        IN_Ack();
+        _inputManager.Ack();
 
         StartCPMusic(MENUSONG);
         MenuFadeOut();
@@ -2008,7 +1936,7 @@ internal partial class Program
             SD_MusicOff();
             SD_StopSound();
             MenuFadeOut();
-            Quit("");
+            _gameEngineManager.Quit("");
             return 0;
         }
 
@@ -2028,7 +1956,7 @@ internal partial class Program
         {
             GameEngineManager.DelayMs(5);
             ReadAnyControl(out ci);
-            switch ((Direction)ci.dir)
+            switch (ci.dir)
             {
                 case Direction.dir_North:
                 case Direction.dir_West:
@@ -2061,9 +1989,9 @@ internal partial class Program
                     break;
             }
 
-            if (ci.button0 != 0 || Keyboard[(int)ScanCodes.sc_Space] || Keyboard[(int)ScanCodes.sc_Enter])
+            if (ci.button0 || _inputManager.IsKeyDown(ScanCodes.sc_Space) || _inputManager.IsKeyDown(ScanCodes.sc_Enter))
                 exit = 1;
-            else if (ci.button1 != 0 || Keyboard[(int)ScanCodes.sc_Escape])
+            else if (ci.button1 || _inputManager.IsKeyDown(ScanCodes.sc_Escape))
                 exit = 2;
 
         }
@@ -2213,7 +2141,7 @@ internal partial class Program
 
         ShootSnd();
         PrintY = (ushort)(CST_Y + 13 * index);
-        IN_ClearKeysDown();
+        _inputManager.ClearKeysDown();
         exit = 0;
         redraw = 1;
         //
@@ -2249,24 +2177,24 @@ internal partial class Program
             ReadAnyControl(out ci);
 
             if (type == CustomCtlOptions.MOUSE || type == CustomCtlOptions.JOYSTICK)
-                if (Keyboard[(int)ScanCodes.sc_Enter] || Keyboard[(int)ScanCodes.sc_Control] || Keyboard[(int)ScanCodes.sc_Alt])
+                if (_inputManager.IsKeyDown(ScanCodes.sc_Enter) || _inputManager.IsKeyDown(ScanCodes.sc_Control) || _inputManager.IsKeyDown(ScanCodes.sc_Alt))
                 {
-                    IN_ClearKeysDown();
-                    ci.button0 = ci.button1 = 0;
+                    _inputManager.ClearKeysDown();
+                    ci.button0 = ci.button1 = false;
                 }
 
             //
             // CHANGE BUTTON VALUE?
             //
-            if ((type != CustomCtlOptions.KEYBOARDBTNS && type != CustomCtlOptions.KEYBOARDMOVE) && (ci.button0  | ci.button1 | ci.button2 | ci.button3) != 0 ||
-                ((type == CustomCtlOptions.KEYBOARDBTNS || type == CustomCtlOptions.KEYBOARDMOVE) && LastScan == (int)ScanCodes.sc_Enter))
+            if ((type != CustomCtlOptions.KEYBOARDBTNS && type != CustomCtlOptions.KEYBOARDMOVE) && (ci.button0 || ci.button1 || ci.button2 || ci.button3) ||
+                ((type == CustomCtlOptions.KEYBOARDBTNS || type == CustomCtlOptions.KEYBOARDMOVE) && _inputManager.GetLastKeyPressed() == ScanCodes.sc_Enter))
             {
                 lastFlashTime = (int)GameEngineManager.GetTimeCount();
                 tick = picked = 0;
                 SETFONTCOLOR(0, TEXTCOLOR);
 
                 if (type == CustomCtlOptions.KEYBOARDBTNS || type == CustomCtlOptions.KEYBOARDMOVE)
-                    IN_ClearKeysDown();
+                    _inputManager.ClearKeysDown();
 
                 while (true)
                 {
@@ -2300,7 +2228,7 @@ internal partial class Program
                     switch (type)
                     {
                         case CustomCtlOptions.MOUSE:
-                            button = IN_MouseButtons();
+                            button = _inputManager.MouseButtons();
                             switch (button)
                             {
                                 case 1:
@@ -2317,62 +2245,62 @@ internal partial class Program
                             if (result != 0)
                             {
                                 for (z = 0; z < 4; z++)
-                                    if (order[which] == buttonmouse[z])
+                                    if (order[which] == (byte)buttonmouse[z])
                                     {
-                                        buttonmouse[z] = (int)buttontypes.bt_nobutton;
+                                        buttonmouse[z] = buttontypes.bt_nobutton;
                                         break;
                                     }
 
-                                buttonmouse[result - 1] = order[which];
+                                buttonmouse[result - 1] = (buttontypes)order[which];
                                 picked = 1;
                                 SD_PlaySound((int)soundnames.SHOOTDOORSND);
                             }
                             break;
 
                         case CustomCtlOptions.JOYSTICK:
-                            if (ci.button0 != 0)
+                            if (ci.button0)
                                 result = 1;
-                            else if (ci.button1 != 0)
+                            else if (ci.button1)
                                 result = 2;
-                            else if (ci.button2 != 0)
+                            else if (ci.button2)
                                 result = 3;
-                            else if (ci.button3 != 0)
+                            else if (ci.button3)
                                 result = 4;
 
                             if (result != 0)
                             {
                                 for (z = 0; z < 4; z++)
                                 {
-                                    if (order[which] == buttonjoy[z])
+                                    if (order[which] == (byte)buttonjoy[z])
                                     {
-                                        buttonjoy[z] = (int)buttontypes.bt_nobutton;
+                                        buttonjoy[z] = buttontypes.bt_nobutton;
                                         break;
                                     }
                                 }
 
-                                buttonjoy[result - 1] = order[which];
+                                buttonjoy[result - 1] = (buttontypes)order[which];
                                 picked = 1;
                                 SD_PlaySound((int)soundnames.SHOOTDOORSND);
                             }
                             break;
 
                         case CustomCtlOptions.KEYBOARDBTNS:
-                            if (LastScan != 0 && LastScan != (int)ScanCodes.sc_Escape)
+                            if (_inputManager.GetLastKeyPressed() != 0 && _inputManager.GetLastKeyPressed() != ScanCodes.sc_Escape)
                             {
-                                buttonscan[order[which]] = LastScan;
+                                buttonscan[order[which]] = _inputManager.GetLastKeyPressed();
                                 picked = 1;
                                 ShootSnd();
-                                IN_ClearKeysDown();
+                                _inputManager.ClearKeysDown();
                             }
                             break;
 
                         case CustomCtlOptions.KEYBOARDMOVE:
-                            if (LastScan != 0 && LastScan != (int)ScanCodes.sc_Escape)
+                            if (_inputManager.GetLastKeyPressed() != 0 && _inputManager.GetLastKeyPressed() != ScanCodes.sc_Escape)
                             {
-                                dirscan[moveorder[which]] = LastScan;
+                                dirscan[moveorder[which]] = _inputManager.GetLastKeyPressed();
                                 picked = 1;
                                 ShootSnd();
-                                IN_ClearKeysDown();
+                                _inputManager.ClearKeysDown();
                             }
                             break;
                     }
@@ -2380,7 +2308,7 @@ internal partial class Program
                     //
                     // EXIT INPUT?
                     //
-                    if (Keyboard[(int)ScanCodes.sc_Escape] || type != CustomCtlOptions.JOYSTICK && ci.button1 != 0)
+                    if (_inputManager.IsKeyDown(ScanCodes.sc_Escape) || type != CustomCtlOptions.JOYSTICK && ci.button1)
                     {
                         picked = 1;
                         SD_PlaySound((int)soundnames.ESCPRESSEDSND);
@@ -2397,13 +2325,13 @@ internal partial class Program
                 continue;
             }
 
-            if (ci.button1 != 0 || Keyboard[(int)ScanCodes.sc_Escape])
+            if (ci.button1 || _inputManager.IsKeyDown(ScanCodes.sc_Escape))
                 exit = 1;
 
             //
             // MOVE TO ANOTHER SPOT?
             //
-            switch ((Direction)ci.dir)
+            switch (ci.dir)
             {
                 case Direction.dir_West:
                     do
@@ -2420,8 +2348,8 @@ internal partial class Program
                         ReadAnyControl(out ci);
                         GameEngineManager.DelayMs(5);
                     }
-                    while (ci.dir != (byte)Direction.dir_None);
-                    IN_ClearKeysDown();
+                    while (ci.dir != Direction.dir_None);
+                    _inputManager.ClearKeysDown();
                     break;
 
                 case Direction.dir_East:
@@ -2439,8 +2367,8 @@ internal partial class Program
                         ReadAnyControl(out ci);
                         GameEngineManager.DelayMs(5);
                     }
-                    while (ci.dir != (byte)Direction.dir_None);
-                    IN_ClearKeysDown();
+                    while (ci.dir != Direction.dir_None);
+                    _inputManager.ClearKeysDown();
                     break;
                 case Direction.dir_North:
                 case Direction.dir_South:
@@ -2631,7 +2559,7 @@ internal partial class Program
         int j;
 
         for (j = 0; j < 4; j++)
-            if (order[i] == buttonmouse[j])
+            if (order[i] == (byte)buttonmouse[j])
             {
                 PrintX = (ushort)(CST_START + CST_SPC * i);
                 US_Print(mbarray[j]);
@@ -2668,7 +2596,7 @@ internal partial class Program
 
         for (j = 0; j < 4; j++)
         {
-            if (order[i] == buttonjoy[j])
+            if (order[i] == (byte)buttonjoy[j])
             {
                 PrintX = (ushort)(CST_START + CST_SPC * i);
                 US_Print(mbarray[j]);
@@ -2704,7 +2632,7 @@ internal partial class Program
     PrintCustKeybd(int i)
     {
         PrintX = (ushort)(CST_START + CST_SPC * i);
-        US_Print(IN_GetScanName(buttonscan[order[i]]));
+        US_Print(_inputManager.GetScanName(buttonscan[order[i]]));
     }
 
     internal static void
@@ -2727,7 +2655,7 @@ internal partial class Program
     PrintCustKeys(int i)
     {
         PrintX = (ushort)(CST_START + CST_SPC * i);
-        US_Print(IN_GetScanName(dirscan[moveorder[i]]));
+        US_Print(_inputManager.GetScanName(dirscan[moveorder[i]]));
     }
 
     internal static void DrawCustKeys(int hilight)
@@ -2766,7 +2694,7 @@ internal partial class Program
         ControlInfo ci;
 
         Message(text);
-        IN_ClearKeysDown();
+        _inputManager.ClearKeysDown();
         WaitKeyUp();
 
         //
@@ -2799,14 +2727,14 @@ internal partial class Program
             }
             else GameEngineManager.DelayMs(5);
         }
-        while (!Keyboard[(int)ScanCodes.sc_Y] && !Keyboard[(int)ScanCodes.sc_N] && !Keyboard[(int)ScanCodes.sc_Escape] && ci.button0 == 0 && ci.button1 == 0);
+        while (!_inputManager.IsKeyDown(ScanCodes.sc_Y) && !_inputManager.IsKeyDown(ScanCodes.sc_N) && !_inputManager.IsKeyDown(ScanCodes.sc_Escape) && !ci.button0 && !ci.button1);
 
-        if (Keyboard[(int)ScanCodes.sc_Y] || ci.button0 != 0)
+        if (_inputManager.IsKeyDown(ScanCodes.sc_Y) || ci.button0)
         {
             xit = 1;
             ShootSnd();
         }
-        IN_ClearKeysDown();
+        _inputManager.ClearKeysDown();
         WaitKeyUp();
 
         SD_PlaySound((int)whichsnd[xit]);
@@ -2822,15 +2750,15 @@ internal partial class Program
         {
             ReadAnyControl(out ci);
             keyPressed =
-               ci.button0 != 0 ||
-               ci.button1 != 0 ||
-               ci.button2 != 0 ||
-               ci.button3 != 0 ||
-               Keyboard[(int)ScanCodes.sc_Space] ||
-               Keyboard[(int)ScanCodes.sc_Enter] ||
-               Keyboard[(int)ScanCodes.sc_Escape];
+               ci.button0 ||
+               ci.button1 ||
+               ci.button2 ||
+               ci.button3 ||
+               _inputManager.IsKeyDown(ScanCodes.sc_Space) ||
+               _inputManager.IsKeyDown(ScanCodes.sc_Enter) ||
+               _inputManager.IsKeyDown(ScanCodes.sc_Escape);
 
-            IN_WaitAndProcessEvents();
+            _inputManager.WaitAndProcessEvents();
         }
     }
 
@@ -2874,11 +2802,6 @@ internal partial class Program
         UNCACHEAUDIOCHUNK(STARTMUSIC + lastmusic);
     }
 
-    internal static string IN_GetScanName(int scan)
-    {
-        return ScanNames[scan];
-    }
-
     internal static void IntroScreen()
     {
         const byte MAINCOLOR = 0x6c;
@@ -2898,10 +2821,10 @@ internal partial class Program
         //
         // FILL BOXES
         //
-        if (MousePresent)
+        if (_inputManager.IsMousePresent())
             _videoManager.Bar(164, 82, 12, 2, FILLCOLOR);
 
-        if (IN_JoyPresent())
+        if (_inputManager.JoyPresent())
             _videoManager.Bar(164, 105, 12, 2, FILLCOLOR);
 
         if (AdLibPresent && !SoundBlasterPresent)
@@ -2916,7 +2839,7 @@ internal partial class Program
 
     internal static void CheckForEpisodes()
     {
-        if (configdir != string.Empty)
+        /*if (configdir != string.Empty)
         {
             if (!Directory.Exists(configdir))
             {
@@ -2926,10 +2849,12 @@ internal partial class Program
                 }
                 catch (IOException e)
                 {
-                    Quit($"The configuration directory \"{configdir}\" could not be created.");
+                    _gameEngineManager.Quit($"The configuration directory \"{configdir}\" could not be created.");
                 }
             }
-        }
+        }*/
+
+        // TODO: Create all directories? Or do it when the need arises?
 
         if (File.Exists("vswap.wl6"))
         {
@@ -2965,14 +2890,13 @@ internal partial class Program
                 }
                 else
                 {
-                    Quit("NO WOLFENSTEIN 3-D DATA FILES to be found!");
+                    _gameEngineManager.Quit("NO WOLFENSTEIN 3-D DATA FILES to be found!");
                 }
             }
         }
 
         helpfilename += extension;
         endfilename += extension;
-        configname += extension;
         SaveName += extension;
         demoname += extension;
     }

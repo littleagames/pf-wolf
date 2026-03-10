@@ -30,18 +30,17 @@ internal partial class Program
     // control info
     //
     internal static bool mouseenabled, joystickenabled;
-    internal static int[] dirscan = new int[4] { (int)ScanCodes.sc_UpArrow, (int)ScanCodes.sc_RightArrow, (int)ScanCodes.sc_DownArrow, (int)ScanCodes.sc_LeftArrow };
-    internal static int[] buttonscan = new int[(int)buttontypes.NUMBUTTONS] { (int)ScanCodes.sc_Control, (int)ScanCodes.sc_Alt, (int)ScanCodes.sc_LShift, (int)ScanCodes.sc_Space, (int)ScanCodes.sc_1, (int)ScanCodes.sc_2, (int)ScanCodes.sc_3, (int)ScanCodes.sc_4, 0,0,0,0,0,0,0,0,0,0 };
-    internal static int[] buttonmouse = new int[4] { (int)buttontypes.bt_attack, (int)buttontypes.bt_strafe, (int)buttontypes.bt_use, (int)buttontypes.bt_nobutton };
-    internal static int[] buttonjoy = new int[32] {
-        (int)buttontypes.bt_attack, (int)buttontypes.bt_strafe, (int)buttontypes.bt_use, (int)buttontypes.bt_run, (int)buttontypes.bt_strafeleft, (int)buttontypes.bt_straferight, (int)buttontypes.bt_esc, (int)buttontypes.bt_pause,
-        (int)buttontypes.bt_prevweapon, (int)buttontypes.bt_nextweapon, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton,
-        (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton,
-        (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton, (int)buttontypes.bt_nobutton
+    internal static ScanCodes[] dirscan = new ScanCodes[4] { ScanCodes.sc_UpArrow, ScanCodes.sc_RightArrow, ScanCodes.sc_DownArrow, ScanCodes.sc_LeftArrow };
+    internal static ScanCodes[] buttonscan = new ScanCodes[(int)buttontypes.NUMBUTTONS] { ScanCodes.sc_Control, ScanCodes.sc_Alt, ScanCodes.sc_LShift, ScanCodes.sc_Space, ScanCodes.sc_1, ScanCodes.sc_2, ScanCodes.sc_3, ScanCodes.sc_4, 0,0,0,0,0,0,0,0,0,0 };
+    internal static buttontypes[] buttonmouse = new buttontypes[4] { buttontypes.bt_attack, buttontypes.bt_strafe, buttontypes.bt_use, buttontypes.bt_nobutton };
+    internal static buttontypes[] buttonjoy = new buttontypes[32] {
+        buttontypes.bt_attack, buttontypes.bt_strafe, buttontypes.bt_use, buttontypes.bt_run, buttontypes.bt_strafeleft, buttontypes.bt_straferight, buttontypes.bt_esc, buttontypes.bt_pause,
+        buttontypes.bt_prevweapon, buttontypes.bt_nextweapon, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton,
+        buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton,
+        buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton
     };
 
-    static int viewsize;
-    static bool[] buttonheld = new bool[(int)buttontypes.NUMBUTTONS];
+    internal static int viewsize;
 
     static bool demorecord, demoplayback;
     static byte[] demoData;
@@ -52,7 +51,6 @@ internal partial class Program
     // current user input
     //
     static int controlx, controly;         // range from -100 to 100 per tic
-    static bool[] buttonstate = new bool[(int)buttontypes.NUMBUTTONS];
 
     static int lastgamemusicoffset = 0;
 
@@ -188,19 +186,19 @@ internal partial class Program
     internal static void PlayLoop()
     {
         objstruct obj;
-        playstate = (byte)playstatetypes.ex_stillplaying;
+        playstate = playstatetypes.ex_stillplaying;
         lasttimecount = (int)GameEngineManager.GetTimeCount();
         frameon = 0;
         anglefrac = 0;
         facecount = 0;
         funnyticount = 0;
-        buttonstate = new bool[(int)buttontypes.NUMBUTTONS];
+        _inputManager.InitButtonState();
         _videoManager.ClearPaletteShifts();
 
-        IN_CenterMouse();
+        _inputManager.CenterMouse();
 
         if (demoplayback)
-            IN_StartAck();
+            _inputManager.StartAck();
 
         do
         {
@@ -243,9 +241,9 @@ internal partial class Program
 
             if (demoplayback)
             {
-                if (IN_CheckAck())
+                if (_inputManager.CheckAck())
                 {
-                    IN_ClearKeysDown();
+                    _inputManager.ClearKeysDown();
                     playstate = playstatetypes.ex_abort;
                 }
             }
@@ -375,7 +373,7 @@ internal partial class Program
     internal static void RemoveObj(objstruct gone)
     {
         if (gone.obclass == classtypes.playerobj)
-            Quit("RemoveObj: Tried to remove the player!");
+            _gameEngineManager.Quit("RemoveObj: Tried to remove the player!");
 
         gone.state = null;
 
@@ -387,18 +385,18 @@ internal partial class Program
 
     internal static void CheckKeys()
     {
-        int scan;
+        ScanCodes scan;
 
         if (_videoManager.screenfaded || demoplayback)    // don't do anything with a faded screen
             return;
 
-        scan = LastScan;
+        scan = _inputManager.GetLastKeyPressed();
 
 
         //
         // SECRET CHEAT CODE: 'MLI'
         //
-        if (Keyboard[(int)ScanCodes.sc_M] && Keyboard[(int)ScanCodes.sc_L] && Keyboard[(int)ScanCodes.sc_I])
+        if (_inputManager.IsKeyDown(ScanCodes.sc_M) && _inputManager.IsKeyDown(ScanCodes.sc_L) && _inputManager.IsKeyDown(ScanCodes.sc_I))
         {
             gamestate.health = 100;
             gamestate.ammo = 99;
@@ -421,8 +419,8 @@ internal partial class Program
                      STR_CHEATER4 + "\n" +
                      STR_CHEATER5);
 
-            IN_ClearKeysDown();
-            IN_Ack();
+            _inputManager.ClearKeysDown();
+            _inputManager.Ack();
 
             if (viewsize < 17)
                 DrawPlayBorder();
@@ -431,14 +429,14 @@ internal partial class Program
         //
         // OPEN UP DEBUG KEYS
         //
-        if (Keyboard[(int)ScanCodes.sc_BackSpace] && Keyboard[(int)ScanCodes.sc_LShift] && Keyboard[(int)ScanCodes.sc_Alt] && param_debugmode)
+        if (_inputManager.IsKeyDown(ScanCodes.sc_BackSpace) && _inputManager.IsKeyDown(ScanCodes.sc_LShift) && _inputManager.IsKeyDown(ScanCodes.sc_Alt) && param_debugmode)
         {
             ClearMemory();
             ClearSplitVWB();
 
             Message("Debugging keys are\nnow available!");
-            IN_ClearKeysDown();
-            IN_Ack();
+            _inputManager.ClearKeysDown();
+            _inputManager.Ack();
 
             DrawPlayBorderSides();
             DebugOk = 1;
@@ -447,7 +445,7 @@ internal partial class Program
         //
         // TRYING THE KEEN CHEAT CODE!
         //
-        if (Keyboard[(int)ScanCodes.sc_B] && Keyboard[(int)ScanCodes.sc_A] && Keyboard[(int)ScanCodes.sc_T])
+        if (_inputManager.IsKeyDown(ScanCodes.sc_B) && _inputManager.IsKeyDown(ScanCodes.sc_A) && _inputManager.IsKeyDown(ScanCodes.sc_T))
         {
             ClearMemory();
             ClearSplitVWB();
@@ -457,8 +455,8 @@ internal partial class Program
                         "then, you already know\n" +
                         "that - right, Cheatmeister?!");
 
-            IN_ClearKeysDown();
-            IN_Ack();
+            _inputManager.ClearKeysDown();
+            _inputManager.Ack();
 
             if (viewsize < 18)
                 DrawPlayBorder();
@@ -467,21 +465,22 @@ internal partial class Program
         //
         // pause key weirdness can't be checked as a scan code
         //
-        if (buttonstate[(int)buttontypes.bt_pause]) Paused = true;
-        if (Paused)
+        if (_inputManager.IsButtonPressed(buttontypes.bt_pause))
+            _gameEngineManager.SetPaused(true);
+        if (_gameEngineManager.IsPaused())
         {
             int lastoffs = StopMusic();
             VWB_DrawPic(16 * 8, 80 - 2 * 8, graphicnums.PAUSEDPIC);
             _videoManager.Update();
-            IN_Ack();
-            Paused = false;
+            _inputManager.Ack();
+            _gameEngineManager.SetPaused(false);
             ContinueMusic(lastoffs);
-            IN_CenterMouse();
+            _inputManager.CenterMouse();
             lasttimecount = (int)GameEngineManager.GetTimeCount();
             return;
         }
-        if (scan == (int)ScanCodes.sc_F10 ||
-            scan == (int)ScanCodes.sc_F9 || scan == (int)ScanCodes.sc_F7 || scan == (int)ScanCodes.sc_F8)     // pop up quit dialog
+        if (scan == ScanCodes.sc_F10 ||
+            scan == ScanCodes.sc_F9 || scan == ScanCodes.sc_F7 || scan == ScanCodes.sc_F8)     // pop up quit dialog
         {
             ClearMemory();
             ClearSplitVWB();
@@ -490,20 +489,20 @@ internal partial class Program
             DrawPlayBorderSides();
 
             SETFONTCOLOR(0, 15);
-            IN_ClearKeysDown();
+            _inputManager.ClearKeysDown();
             return;
         }
 
-        if ((scan >= (int)ScanCodes.sc_F1 && scan <= (int)ScanCodes.sc_F9) || scan == (int)ScanCodes.sc_Escape || buttonstate[(int)buttontypes.bt_esc])
+        if ((scan >= ScanCodes.sc_F1 && scan <= ScanCodes.sc_F9) || scan == ScanCodes.sc_Escape || _inputManager.IsButtonPressed(buttontypes.bt_esc))
         {
             int lastoffs = StopMusic();
             ClearMemory();
             _videoManager.FadeOut();
 
-            US_ControlPanel(buttonstate[(int)buttontypes.bt_esc] ? (int)ScanCodes.sc_Escape : scan);
+            US_ControlPanel(_inputManager.IsButtonPressed(buttontypes.bt_esc) ? ScanCodes.sc_Escape : scan);
 
             SETFONTCOLOR(0, 15);
-            IN_ClearKeysDown();
+            _inputManager.ClearKeysDown();
             _videoManager.FadeOut();
             if (viewsize != 21)
                 DrawPlayScreen();
@@ -512,21 +511,21 @@ internal partial class Program
             if (loadedgame)
                 playstate = playstatetypes.ex_abort;
             lasttimecount = (int)GameEngineManager.GetTimeCount();
-            IN_CenterMouse();
+            _inputManager.CenterMouse();
             return;
         }
 
         //
         // TAB-? debug keys
         //
-        if (Keyboard[(int)ScanCodes.sc_Tab] && DebugOk != 0)
+        if (_inputManager.IsKeyDown(ScanCodes.sc_Tab) && DebugOk != 0)
         {
             fontnumber = 0;
             SETFONTCOLOR(0, 15);
             if (DebugKeys() != 0 && viewsize < 20)
             {
                 DrawPlayBorder();       // dont let the blue borders flash
-                IN_CenterMouse();
+                _inputManager.CenterMouse();
 
                 lasttimecount = (int)GameEngineManager.GetTimeCount();
             }
@@ -539,7 +538,7 @@ internal partial class Program
         int max, min, i;
         byte buttonbits;
 
-        IN_ProcessEvents();
+        _inputManager.ProcessEvents();
 
         //
         // get timing info for last frame
@@ -563,8 +562,7 @@ internal partial class Program
 
         controlx = 0;
         controly = 0;
-        Array.Copy(buttonstate, buttonheld, buttonstate.Length);
-        Array.Fill(buttonstate, false);
+        _inputManager.ProcessButtons();
 
         if (demoplayback)
         {
@@ -574,7 +572,7 @@ internal partial class Program
             buttonbits = demoData[demoptr++];
             for (i = 0; i < (int)buttontypes.NUMBUTTONS; i++)
             {
-                buttonstate[i] = (buttonbits & 1) != 0;
+                _inputManager.SetButtonPressed((buttontypes)i, (buttonbits & 1) != 0);
                 buttonbits >>= 1;
             }
 
@@ -596,7 +594,7 @@ internal partial class Program
         //
         PollKeyboardButtons();
 
-        if (mouseenabled && GrabInput)
+        if (mouseenabled && _inputManager.IsMouseInputGrabbed())
             PollMouseButtons();
 
         if (joystickenabled)
@@ -607,7 +605,7 @@ internal partial class Program
         //
         PollKeyboardMove();
 
-        if (mouseenabled && GrabInput)
+        if (mouseenabled && _inputManager.IsMouseInputGrabbed())
             PollMouseMove();
 
         if (joystickenabled)
@@ -642,7 +640,7 @@ internal partial class Program
             for (i = (int)buttontypes.NUMBUTTONS - 1; i >= 0; i--)
             {
                 buttonbits <<= 1;
-                if (buttonstate[i])
+                if (_inputManager.IsButtonPressed((buttontypes)i))
                     buttonbits |= 1;
             }
 
@@ -689,8 +687,8 @@ internal partial class Program
         int i;
 
         for (i = 0; i < (int)buttontypes.NUMBUTTONS; i++)
-            if (Keyboard[buttonscan[i]])
-                buttonstate[i] = true;
+            if (_inputManager.IsKeyDown((ScanCodes)buttonscan[i]))
+                _inputManager.SetButtonPressed((buttontypes)i, true);
     }
 
     /*
@@ -703,14 +701,14 @@ internal partial class Program
 
     internal static void PollMouseButtons()
     {
-        int buttons = IN_MouseButtons();
+        int buttons = _inputManager.MouseButtons();
 
         if ((buttons & 1) != 0)
-            buttonstate[buttonmouse[0]] = true;
+            _inputManager.SetButtonPressed((buttontypes)buttonmouse[0], true);
         if ((buttons & 2) != 0)
-            buttonstate[buttonmouse[1]] = true;
+            _inputManager.SetButtonPressed((buttontypes)buttonmouse[1], true);
         if ((buttons & 4) != 0)
-            buttonstate[buttonmouse[2]] = true;
+            _inputManager.SetButtonPressed((buttontypes)buttonmouse[2], true);
     }
 
 
@@ -724,12 +722,12 @@ internal partial class Program
 
     internal static void PollJoystickButtons()
     {
-        int i, val, buttons = IN_JoyButtons();
+        int i, val, buttons = _inputManager.JoyButtons();
 
-        for (i = 0, val = 1; i < JoyNumButtons; i++, val <<= 1)
+        for (i = 0, val = 1; i < _inputManager.JoyNumButtons; i++, val <<= 1)
         {
             if ((buttons & val) != 0)
-                buttonstate[buttonjoy[i]] = true;
+                _inputManager.SetButtonPressed((buttontypes)buttonjoy[i], true);
         }
     }
 
@@ -743,15 +741,15 @@ internal partial class Program
 
     internal static void PollKeyboardMove()
     {
-        int delta = (int)(buttonstate[(int)buttontypes.bt_run] ? RUNMOVE * tics : BASEMOVE * tics);
+        int delta = (int)(_inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE * tics : BASEMOVE * tics);
 
-        if (Keyboard[dirscan[(int)controldirs.di_north]])
+        if (_inputManager.IsKeyDown(dirscan[(int)controldirs.di_north]))
             controly -= delta;
-        if (Keyboard[dirscan[(int)controldirs.di_south]])
+        if (_inputManager.IsKeyDown(dirscan[(int)controldirs.di_south]))
             controly += delta;
-        if (Keyboard[dirscan[(int)controldirs.di_west]])
+        if (_inputManager.IsKeyDown(dirscan[(int)controldirs.di_west]))
             controlx -= delta;
-        if (Keyboard[dirscan[(int)controldirs.di_east]])
+        if (_inputManager.IsKeyDown(dirscan[(int)controldirs.di_east]))
             controlx += delta;
     }
 
@@ -787,17 +785,17 @@ internal partial class Program
     {
         int joyx, joyy;
 
-        IN_GetJoyDelta(out joyx, out joyy);
+        _inputManager.GetJoyDelta(out joyx, out joyy);
 
-        int delta = (int)(buttonstate[(int)buttontypes.bt_run] ? RUNMOVE * tics : BASEMOVE * tics);
+        int delta = (int)(_inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE * tics : BASEMOVE * tics);
 
-        if (joyx > 64 || buttonstate[(int)buttontypes.bt_turnright])
+        if (joyx > 64 || _inputManager.IsButtonPressed(buttontypes.bt_turnright))
             controlx += delta;
-        else if (joyx < -64 || buttonstate[(int)buttontypes.bt_turnleft])
+        else if (joyx < -64 || _inputManager.IsButtonPressed(buttontypes.bt_turnleft))
             controlx -= delta;
-        if (joyy > 64 || buttonstate[(int)buttontypes.bt_movebackward])
+        if (joyy > 64 || _inputManager.IsButtonPressed(buttontypes.bt_movebackward))
             controly += delta;
-        else if (joyy < -64 || buttonstate[(int)buttontypes.bt_moveforward])
+        else if (joyy < -64 || _inputManager.IsButtonPressed(buttontypes.bt_moveforward))
             controly -= delta;
     }
 }

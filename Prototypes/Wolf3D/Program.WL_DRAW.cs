@@ -1319,7 +1319,7 @@ internal partial class Program
 
         DrawPlayerWeapon();    // draw player's hands
 
-        if (Keyboard[(int)ScanCodes.sc_Tab] && viewsize == 21 && gamestate.weapon != weapontypes.wp_none)
+        if (_inputManager.IsKeyDown(ScanCodes.sc_Tab) && viewsize == 21 && gamestate.weapon != weapontypes.wp_none)
             ShowActStatus();
 
         _videoManager.UnlockSurface();

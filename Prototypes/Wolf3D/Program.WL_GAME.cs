@@ -1222,11 +1222,11 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
 
         _videoManager.BarScaledCoord(viewscreenx, viewscreeny, viewwidth, viewheight, 4);
 
-        IN_ClearKeysDown();
+        _inputManager.ClearKeysDown();
 
         _videoManager.FizzleFade(viewscreenx, viewscreeny, (uint)viewwidth, (uint)viewheight, 70, false);
 
-        IN_UserInput(100);
+        _inputManager.UserInput(100);
         SD_WaitSoundDone();
         ClearMemory();
 
