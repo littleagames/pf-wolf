@@ -349,6 +349,7 @@ internal class VideoManager
         if (destPtr == IntPtr.Zero)
             return;
 
+        // TODO: Combine fontstruct and data
         //byte[] data = grsegs[STARTFONT + fontnumber];
         font = FontHelper.GetFont(data);
 

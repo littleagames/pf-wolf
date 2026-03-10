@@ -157,7 +157,7 @@ internal enum graphicnums
     ENUMEND
 }
 
-internal partial class Program
+internal static class GraphicConstants
 {
     internal const int README_LUMP_START = 3;
     internal const int README_LUMP_END = 9;

@@ -43,7 +43,7 @@ internal partial class Program
         _videoManager.FadeOut();
         _videoManager.Bar(0, 0, 320, 200, 0x82);     // background
 
-        VWB_DrawPic(216, 110, graphicnums.PG13PIC);
+        _graphicManager.DrawPic(216, 110, graphicnums.PG13PIC);
         _videoManager.Update();
 
         _videoManager.FadeIn();
@@ -59,12 +59,12 @@ internal partial class Program
         ClearMScreen();
         DrawStripes(10);
 
-        VWB_DrawPic(48, 0, graphicnums.HIGHSCORESPIC);
+        _graphicManager.DrawPic(48, 0, graphicnums.HIGHSCORESPIC);
 
-        VWB_DrawPic(4 * 8, 68, graphicnums.C_NAMEPIC);
-        VWB_DrawPic(20 * 8, 68, graphicnums.C_LEVELPIC);
-        VWB_DrawPic(28 * 8, 68, graphicnums.C_SCOREPIC);
-        //VWB_DrawPic(35 * 8, 68, graphicnums.C_CODEPIC);
+        _graphicManager.DrawPic(4 * 8, 68, graphicnums.C_NAMEPIC);
+        _graphicManager.DrawPic(20 * 8, 68, graphicnums.C_LEVELPIC);
+        _graphicManager.DrawPic(28 * 8, 68, graphicnums.C_SCOREPIC);
+        //_graphicManager.DrawPic(35 * 8, 68, graphicnums.C_CODEPIC);
 
         fontnumber = 0;
         SETFONTCOLOR(15, 0x29);
@@ -196,7 +196,7 @@ internal partial class Program
         ClearSplitVWB();           // set up for double buffering in split screen
 
         _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 1), bordercol);
-        VWB_DrawPicScaledCoord(((_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 16) * 8,
+        _graphicManager.DrawPicScaledCoord(((_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 16) * 8,
             (_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2, (int)graphicnums.GETPSYCHEDPIC);
 
         WindowX = (ushort)((_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 2);
@@ -341,7 +341,7 @@ internal partial class Program
         //
         _inputManager.ClearKeysDown();
         _inputManager.StartAck();
-        VWB_DrawPic(0, 16, graphicnums.L_GUYPIC);
+        _graphicManager.DrawPic(0, 16, graphicnums.L_GUYPIC);
         if (gamestate.mapon < LRpack)
         {
             Write(14, 2, "floor\ncompleted");
@@ -367,15 +367,15 @@ internal partial class Program
             min = sec / 60;
             sec %= 60;
             i = 26 * 8;
-            VWB_DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (min / 10));
+            _graphicManager.DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (min / 10));
             i += 2 * 8;
-            VWB_DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (min % 10));
+            _graphicManager.DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (min % 10));
             i += 2 * 8;
             Write(i / 8, 10, ":");
             i += 1 * 8;
-            VWB_DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (sec / 10));
+            _graphicManager.DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (sec / 10));
             i += 2 * 8;
-            VWB_DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (sec % 10));
+            _graphicManager.DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (sec % 10));
 
             _videoManager.Update();
             _videoManager.FadeIn();
@@ -633,7 +633,7 @@ internal partial class Program
         Write(RATIOX + 4, RATIOY + 2, STR_RATSECRET);
         Write(RATIOX, RATIOY + 4, STR_RATTREASURE);
 
-        VWB_DrawPic(8, 4, graphicnums.L_BJWINSPIC);
+        _graphicManager.DrawPic(8, 4, graphicnums.L_BJWINSPIC);
 
         for (kr = sr = tr = sec = i = 0; i < LRpack; i++)
         {
@@ -654,15 +654,15 @@ internal partial class Program
             min = sec = 99;
 
         i = TIMEX * 8 + 1;
-        VWB_DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (min / 10));
+        _graphicManager.DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (min / 10));
         i += 2 * 8;
-        VWB_DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (min % 10));
+        _graphicManager.DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (min % 10));
         i += 2 * 8;
         Write(i / 8, TIMEY, ":");
         i += 1 * 8;
-        VWB_DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (sec / 10));
+        _graphicManager.DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (sec / 10));
         i += 2 * 8;
-        VWB_DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (sec % 10));
+        _graphicManager.DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (sec % 10));
         _videoManager.Update();
 
         tempstr = kr.ToString();
@@ -682,7 +682,7 @@ internal partial class Program
         //
         //if (gamestate.difficulty >= difficultytypes.gd_medium)
         //{
-        //    VWB_DrawPic(30 * 8, TIMEY * 8, graphicnums.C_TIMECODEPIC);
+        //    _graphicManager.DrawPic(30 * 8, TIMEY * 8, graphicnums.C_TIMECODEPIC);
         //    fontnumber = 0;
         //    fontcolor = READHCOLOR;
         //    PrintX = 30 * 8 - 3;
@@ -724,7 +724,7 @@ internal partial class Program
         if ((int)GameEngineManager.GetTimeCount() - lastBreathTime > bj_max)
         {
             bj_which ^= 1;
-            VWB_DrawPic(0, 16, pics[bj_which]);
+            _graphicManager.DrawPic(0, 16, pics[bj_which]);
             _videoManager.Update();
             lastBreathTime = (int)GameEngineManager.GetTimeCount();
             bj_max = 35;
@@ -764,27 +764,27 @@ internal partial class Program
                 switch (text[i])
                 {
                     case '!':
-                        VWB_DrawPic(nx, ny, graphicnums.L_EXPOINTPIC);
+                        _graphicManager.DrawPic(nx, ny, graphicnums.L_EXPOINTPIC);
                         nx += 8;
                         continue;
                     case '\'':
-                        VWB_DrawPic(nx, ny, graphicnums.L_APOSTROPHEPIC);
+                        _graphicManager.DrawPic(nx, ny, graphicnums.L_APOSTROPHEPIC);
                         nx += 8;
                         continue;
                 case ' ':
                         break;
 
                     case ':':
-                        VWB_DrawPic(nx, ny, graphicnums.L_COLONPIC);
+                        _graphicManager.DrawPic(nx, ny, graphicnums.L_COLONPIC);
                         nx += 8;
                         continue;
 
                     case '%':
-                        VWB_DrawPic(nx, ny, graphicnums.L_PERCENTPIC);
+                        _graphicManager.DrawPic(nx, ny, graphicnums.L_PERCENTPIC);
                         break;
 
                     default:
-                        VWB_DrawPic(nx, ny, alpha[ch]);
+                        _graphicManager.DrawPic(nx, ny, alpha[ch]);
                         break;
                 }
                 nx += 16;

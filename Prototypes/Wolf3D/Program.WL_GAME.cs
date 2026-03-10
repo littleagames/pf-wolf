@@ -664,11 +664,9 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
     internal static void PlayDemo(int demonumber)
     {
         short length;
-        graphicnums[] dems = { graphicnums.T_DEMO0, graphicnums.T_DEMO1, graphicnums.T_DEMO2, graphicnums.T_DEMO3 };
-
         if (true)
         {
-            demoData = grsegs[(int)dems[demonumber]];
+            demoData = _graphicManager.GetDemo(demonumber);
             demoptr = 0;
         }
         else
@@ -822,7 +820,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
 
     internal static void DrawPlayScreen()
     {
-        VWB_DrawPicScaledCoord((_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 2, _videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES, (int)graphicnums.STATUSBARPIC);
+        _graphicManager.DrawPicScaledCoord((_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 2, _videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES, (int)graphicnums.STATUSBARPIC);
         DrawPlayBorder();
 
         DrawFace();
@@ -838,13 +836,13 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
     internal static void ShowActStatus()
     {
         // Draw status bar without borders
-        byte[] source = grsegs[(int)graphicnums.STATUSBARPIC];
-        graphicnums picnum = graphicnums.STATUSBARPIC - STARTPICS;
-        int width = pictable[(int)picnum].width;
-        int height = pictable[(int)picnum].height;
-        int destx = (_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 2 + 9 * _videoManager.scaleFactor;
-        int desty = _videoManager.screenHeight - (height - 4) * _videoManager.scaleFactor;
-        _videoManager.MemToScreenScaledCoord2(source, width, 9, 4, destx, desty, width - 18, height - 7);
+        //byte[] source = grsegs[(int)graphicnums.STATUSBARPIC];
+        //graphicnums picnum = graphicnums.STATUSBARPIC - STARTPICS;
+        //int width = pictable[(int)picnum].width;
+        //int height = pictable[(int)picnum].height;
+        //int destx = (_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 2 + 9 * _videoManager.scaleFactor;
+        //int desty = _videoManager.screenHeight - (height - 4) * _videoManager.scaleFactor;
+        //_videoManager.MemToScreenScaledCoord2(source, width, 9, 4, destx, desty, width - 18, height - 7);
 
         ingame = false;
         DrawFace();

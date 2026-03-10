@@ -466,7 +466,7 @@ internal partial class Program
 
     static void StatusDrawPic (uint x, uint y, graphicnums picnum)
     {
-        VWB_DrawPicScaledCoord((int)(((_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 16 + _videoManager.scaleFactor * x) * 8),
+        _graphicManager.DrawPicScaledCoord((int)(((_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 16 + _videoManager.scaleFactor * x) * 8),
             (int)(_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - y)), (int)picnum);
     }
 

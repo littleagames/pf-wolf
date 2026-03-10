@@ -73,10 +73,8 @@ internal partial class Program
     internal static void HelpScreens()
     {
         graphicnums artnum;
-        //string text;
         artnum = helpextern;
-        //text = (char*)grsegs[artnum];
-        text = new string(System.Text.Encoding.ASCII.GetString(grsegs[(int)artnum]).ToCharArray());
+        text = _graphicManager.GetText(artnum);
         ShowArticle(text);
         _videoManager.FadeOut();
 
@@ -90,7 +88,7 @@ internal partial class Program
         ClearMemory();
 
         artnum = endextern + gamestate.episode;
-        text = new string(System.Text.Encoding.ASCII.GetString(grsegs[(int)artnum]).ToCharArray());
+        text = _graphicManager.GetText(artnum);
 
         ShowArticle(text);
 
@@ -304,7 +302,7 @@ internal partial class Program
         //
         // draw pic
         //
-        VWB_DrawPic(picx & ~7, picy, picnum);
+        _graphicManager.DrawPic(picx & ~7, picy, picnum);
     }
 
     /*
@@ -379,10 +377,10 @@ internal partial class Program
         // clear the screen
         //
         _videoManager.Bar(0, 0, 320, 200, BACKCOLOR);
-        VWB_DrawPic(0, 0, graphicnums.H_TOPWINDOWPIC);
-        VWB_DrawPic(0, 8, graphicnums.H_LEFTWINDOWPIC);
-        VWB_DrawPic(312, 8, graphicnums.H_RIGHTWINDOWPIC);
-        VWB_DrawPic(8, 176, graphicnums.H_BOTTOMINFOPIC);
+        _graphicManager.DrawPic(0, 0, graphicnums.H_TOPWINDOWPIC);
+        _graphicManager.DrawPic(0, 8, graphicnums.H_LEFTWINDOWPIC);
+        _graphicManager.DrawPic(312, 8, graphicnums.H_RIGHTWINDOWPIC);
+        _graphicManager.DrawPic(8, 176, graphicnums.H_BOTTOMINFOPIC);
 
 
         for (i = 0; i < TEXTROWS; i++)
@@ -440,7 +438,7 @@ internal partial class Program
             py = 183;
             fontcolor = 0x4f;                          //12^BACKCOLOR;
 
-            _videoManager.DrawPropString(px, py, str, fontcolor, grsegs[STARTFONT + fontnumber]);
+            _graphicManager.DrawPropString(px, py, str, fontcolor, fontnumber);
         }
 
         fontcolor = (byte)oldfontcolor;
@@ -515,9 +513,10 @@ internal partial class Program
 
             case 'G':               // ^Gyyy,xxx,ppp draws graphic
                 ParsePicCommand();
-                VWB_DrawPic(picx & ~7, picy, picnum);
-                picwidth = pictable[(int)picnum - STARTPICS].width;
-                picheight = pictable[(int)picnum - STARTPICS].height;
+                _graphicManager.DrawPic(picx & ~7, picy, picnum);
+                var picData = _graphicManager.GetPic(picnum);
+                picwidth = picData.width;
+                picheight = picData.height;
                 //
                 // adjust margins
                 //
@@ -601,7 +600,7 @@ internal partial class Program
         //
         // see if it fits on this line
         //
-        VW_MeasurePropString(new string(wword), out wwidth, out wheight);
+        _graphicManager.MeasurePropString(new string(wword), fontnumber, out wwidth, out wheight);
 
         while (px + wwidth > (int)rightmargin[rowon])
         {
@@ -614,7 +613,7 @@ internal partial class Program
         // print it
         //
         newpos = (ushort)(px + wwidth);
-        _videoManager.DrawPropString(px, py, new string(wword), fontcolor, grsegs[STARTFONT + fontnumber]);
+        _graphicManager.DrawPropString(px, py, new string(wword), fontcolor, fontnumber);
         px = newpos;
 
         //

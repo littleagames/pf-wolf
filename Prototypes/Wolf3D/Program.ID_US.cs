@@ -142,8 +142,8 @@ internal partial class Program
     }
 
 
-    internal static void USL_MeasureString(string s, out ushort w, out ushort h) => VW_MeasurePropString(s, out w, out h);
-    internal static void USL_DrawString(string s) => _videoManager.DrawPropString(px, py, s, fontcolor, grsegs[STARTFONT + fontnumber]);
+    internal static void USL_MeasureString(string s, out ushort w, out ushort h) => _graphicManager.MeasurePropString(s, fontnumber, out w, out h);
+    internal static void USL_DrawString(string s) => _graphicManager.DrawPropString(px, py, s, fontcolor, fontnumber);
     internal static void US_Print(string sorg)
     {
         ushort w, h;
@@ -605,18 +605,18 @@ internal partial class Program
 
         US_ClearWindow();
 
-        VWB_DrawTile8(sx, sy, 0);
-        VWB_DrawTile8(sx, sy + sh, 5);
+        _graphicManager.DrawTile8(sx, sy, 0);
+        _graphicManager.DrawTile8(sx, sy + sh, 5);
         for (i = (ushort)(sx + 8); i <= sx + sw - 8; i += 8) {
-            VWB_DrawTile8(i, sy, 1);
-            VWB_DrawTile8(i, sy + sh, 6);
+            _graphicManager.DrawTile8(i, sy, 1);
+            _graphicManager.DrawTile8(i, sy + sh, 6);
         }
-        VWB_DrawTile8(i, sy, 2);
-        VWB_DrawTile8(i, sy + sh, 7);
+        _graphicManager.DrawTile8(i, sy, 2);
+        _graphicManager.DrawTile8(i, sy + sh, 7);
 
         for (i = (ushort)(sy + 8); i <= sy + sh - 8; i += 8) {
-            VWB_DrawTile8(sx, i, 3);
-            VWB_DrawTile8(sx + sw, i, 4);
+            _graphicManager.DrawTile8(sx, i, 3);
+            _graphicManager.DrawTile8(sx + sw, i, 4);
         }
     }
     ///////////////////////////////////////////////////////////////////////////

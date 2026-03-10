@@ -10,12 +10,14 @@ internal partial class Program
     private static VideoManager _videoManager;
     private static InputManager _inputManager;
     private static GameEngineManager _gameEngineManager;
+    private static GraphicManager _graphicManager;
 
     public Program()
     {
         _videoManager = new(_inputManager);
         _inputManager = new(_gameEngineManager, _videoManager);
         _gameEngineManager = new(_videoManager, _inputManager);
+        _graphicManager = new(_videoManager);
     }
 
     /*
@@ -114,6 +116,7 @@ internal partial class Program
 
         PM_Startup();
         SD_Startup();
+        _graphicManager.Init(extension, param_ignorenumchunks);
         CA_Startup();
         US_Startup();
 
@@ -252,7 +255,7 @@ internal partial class Program
                 //
                 // title page
                 //
-                VWB_DrawPic(0, 0, graphicnums.TITLEPIC);
+                _graphicManager.DrawPic(0, 0, graphicnums.TITLEPIC);
                 _videoManager.Update();
                 _videoManager.FadeIn();
 
@@ -263,7 +266,7 @@ internal partial class Program
                 //
                 // credits page
                 //
-                VWB_DrawPic(0, 0, graphicnums.CREDITSPIC);
+                _graphicManager.DrawPic(0, 0, graphicnums.CREDITSPIC);
                 _videoManager.Update();
                 _videoManager.FadeIn();
                 if (_inputManager.UserInput(TickBase * 10))
@@ -772,7 +775,7 @@ internal partial class Program
         if (x == 0 && y == 0)
             return;
 
-        VWB_DrawPic(x, y, graphicnums.C_DISKLOADING1PIC + diskflopanim_which);
+        _graphicManager.DrawPic(x, y, graphicnums.C_DISKLOADING1PIC + diskflopanim_which);
         _videoManager.Update();
         diskflopanim_which ^= 1;
     }
@@ -856,7 +859,7 @@ internal partial class Program
 
         fontnumber = 1;
         ClearMScreen();
-        VWB_DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
+        _graphicManager.DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
         DrawStripes(10);
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
 

@@ -1,4 +1,6 @@
-﻿namespace Wolf3D;
+﻿using Wolf3D.Managers;
+
+namespace Wolf3D;
 
 internal static class FontHelper
 {

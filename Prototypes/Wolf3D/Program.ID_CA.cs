@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
-
-namespace Wolf3D;
+﻿namespace Wolf3D;
 
 internal partial class Program
 {
@@ -32,13 +29,6 @@ internal partial class Program
         }
     }
 
-    // id_ca.c
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    internal struct huffnode
-    {
-        public ushort bit0, bit1; // 0-255 is a character, > is a pointer to a node
-    }
-
     struct mapfiletype
     {
         public UInt16 RLEWtag;
@@ -54,37 +44,29 @@ internal partial class Program
     static UInt16[][] mapsegs = new ushort[MAPPLANES][];
     static maptype[] mapheaderseg = new maptype[NUMMAPS];
     static Sound[] audiosegs = new Sound[NUMSNDCHUNKS];
-    static byte[][] grsegs = new byte[NUMCHUNKS][];
 
     internal static string extension = string.Empty;
     internal static string graphext = string.Empty;
     internal static string audioext = string.Empty;
-    internal const string gheadname = "vgahead.";
-    internal const string gfilename = "vgagraph.";
-    internal const string gdictname = "vgadict.";
     internal const string mheadname = "maphead.";
     internal const string mfilename = "gamemaps."; // maptemp.
     internal const string aheadname = "audiohed.";
     internal const string afilename = "audiot.";
 
 
-    internal static int[] grstarts = new int[NUMCHUNKS + 1];
     internal static int[] audiostarts;
 
-    internal static huffnode[] grhuffman = new huffnode[255];
 
     internal static FileStream audiofile = null!;
 
-    static int chunkcomplen, chunkexplen;
 
-    static sbyte oldsoundmode;
+    static SDMode oldsoundmode;
 
     static mapfiletype tinf;
 
     static void CA_Startup()
     {
         CAL_SetupMapFile();
-        CAL_SetupGrFile();
         CAL_SetupAudioFile();
     }
 
@@ -163,98 +145,6 @@ internal partial class Program
             mapsegs[i] = new ushort[MAPAREA];
     }
 
-    internal static void CAL_SetupGrFile()
-    {
-        var fname = $"{gdictname}{extension}";
-        if (!File.Exists(fname))
-        {
-            CA_CannotOpen(fname);
-            return;
-        }
-
-        using (FileStream fs =  File.OpenRead(fname))
-            using (BinaryReader br = new BinaryReader(fs))
-        {
-            for(int i = 0; i < 255; i++)
-            {
-                grhuffman[i].bit0 = br.ReadUInt16();
-                grhuffman[i].bit1 = br.ReadUInt16();
-            }
-        }
-
-        //
-        // load the data offsets from ???head.ext
-        //
-        fname = $"{gheadname}{extension}";
-
-        if (!File.Exists(fname))
-        {
-            CA_CannotOpen(fname);
-            return;
-        }
-
-        using (FileStream fs = File.OpenRead(fname))
-        using (BinaryReader br = new BinaryReader(fs))
-        {
-            long headersize = fs.Length;
-
-            int expectedsize = grstarts.Length;
-
-            if (!param_ignorenumchunks && headersize / 3 != expectedsize)
-                _gameEngineManager.Quit($@"Wolf4SDL was not compiled for these data files:
-{fname} contains a wrong number of offsets ({headersize / 3} instead of {expectedsize})!
-        
-Please check whether you are using the right executable!        
-(For mod developers: perhaps you forgot to update NUMCHUNKS?)");
-
-            byte[] data = new byte[grstarts.Length * sizeof(int) * 3];
-            data = br.ReadBytes(data.Length);
-
-            for (int i = 0,  dOffs = 0; i < grstarts.Length; i++, dOffs += 3)
-            {
-                int val = data[0+dOffs] | (data[1+dOffs] << 8) | (data[2+dOffs] << 16);
-                grstarts[i] = (val == 0x00FFFFFF ? -1 : val);
-            }
-        }
-
-        //
-        // Open the graphics file
-        //
-        fname = $"{gfilename}{extension}";
-
-        if (!File.Exists(fname))
-        {
-            CA_CannotOpen(fname);
-            return;
-        }
-
-        using (FileStream fs = File.OpenRead(fname))
-        using (BinaryReader br = new BinaryReader(fs))
-        {
-            pictable = new pictabletype[NUMPICS];
-            CAL_GetGrChunkLength(fs, br, STRUCTPIC);
-            byte[] compseg = new byte[chunkcomplen];
-            compseg = br.ReadBytes(chunkcomplen);
-            var dest = CAL_HuffExpand(compseg, NUMPICS * sizeof(ushort)*2, grhuffman);
-            pictable = StructHelpers.BytesToStructArray<pictabletype>(dest);
-
-            CA_CacheGrChunks(fs, br);
-        }
-    }
-
-    internal static void CAL_GetGrChunkLength(FileStream fs, BinaryReader br, int chunk)
-    {
-        fs.Seek(GRFILEPOS(chunk), SeekOrigin.Begin);
-        chunkexplen = br.ReadInt32();
-        chunkcomplen = GRFILEPOS(chunk + 1) - GRFILEPOS(chunk) - 4;
-    }
-
-    static int GRFILEPOS(int idx)
-    {
-        Debug.Assert(idx < grstarts.Length);
-        return grstarts[idx];
-    }
-
 
     internal static void CAL_SetupAudioFile()
     {
@@ -298,7 +188,7 @@ Please check whether you are using the right executable!
     {
         uint start = 0, i;
 
-        if (oldsoundmode != (sbyte)SDMode.Off)
+        if (oldsoundmode != SDMode.Off)
         {
             switch ((SDMode)oldsoundmode)
             {
@@ -314,9 +204,9 @@ Please check whether you are using the right executable!
                 UNCACHEAUDIOCHUNK((int)start);
         }
 
-        oldsoundmode = (sbyte)SoundMode;
+        oldsoundmode = SoundMode;
 
-        switch ((SDMode)SoundMode)
+        switch (SoundMode)
         {
             case SDMode.Off:
                 start = STARTADLIBSOUNDS;   // needed for priorities...
@@ -338,172 +228,6 @@ Please check whether you are using the right executable!
         {
             for (i = 0; i < NUMSOUNDS; i++, start++)
                 CA_CacheAudioChunk((int)start);
-        }
-    }
-
-    internal static byte[] CAL_HuffExpand(byte[] source, int length, huffnode[] hufftable)
-    {
-        if (length == 0 || source.Length == 0)
-        {
-            _gameEngineManager.Quit("CAL_HuffExpand: length or dest is null!");
-            return [];
-        }
-
-        byte[] dest = new byte[length];
-
-        var headptr = 254; // head node is always node 254
-
-        int written = 0;
-
-        var end = length;
-
-        var sourceIndex = 0;
-        var destIndex = 0;
-
-        byte val = source[sourceIndex++];
-
-        byte mask = 1;
-
-        ushort nodeval;
-        var huffptr = headptr;
-        while (true)
-        {
-            if ((val & mask) == 0)
-                nodeval = hufftable[huffptr].bit0;
-            else
-                nodeval = hufftable[huffptr].bit1;
-
-            if (mask == 0x80)
-            {
-                val = source[sourceIndex++];
-                mask = 1;
-            }
-            else
-                mask <<= 1;
-
-            if (nodeval < 256)
-            {
-                dest[destIndex++] = (byte)nodeval;
-                written++;
-                huffptr = headptr;
-                if (destIndex >= end) break;
-            }
-            else
-            {
-                huffptr = (nodeval - 256);
-            }
-        }
-
-        return dest;
-    }
-
-    internal static void CA_CacheGrChunks(FileStream fs, BinaryReader br)
-    {
-        int pos, compressed;
-        byte[] bufferseg;
-        int[] source;
-        int chunk, next;
-        int sourceIndex = 0;
-
-        for (chunk = STRUCTPIC + 1; chunk < NUMCHUNKS; chunk++)
-        {
-            if (grsegs[chunk]?.Length > 0)
-                continue; // already in memory
-
-            //
-            // load the chunk info a buffer
-            //
-            pos = GRFILEPOS(chunk);
-
-            if (pos < 0) // $FFFFFFFF start is a sparse tile
-                continue;
-
-            next = chunk + 1;
-
-            while (GRFILEPOS(next) == -1) // skip past any sparse tiles
-                next++;
-
-            compressed = GRFILEPOS(next) - pos;
-
-            fs.Seek(pos, SeekOrigin.Begin);
-            bufferseg = new byte[compressed];
-            //sourceIndex = buffersegIndex; // Or just set index = 0;
-
-            for (int i = 0; i < bufferseg.Length; i++)
-            {
-                bufferseg[i] = br.ReadByte();
-            }
-
-            CAL_ExpandGrChunk(chunk, bufferseg);
-
-            if (chunk >= STARTPICS && chunk < STARTEXTERNS)
-                CAL_DeplaneGrChunk(chunk);
-        }
-    }
-
-    internal static void CAL_ExpandGrChunk(int chunk, byte[] source)
-    {
-        int expanded;
-        var sourceIndex = 0;
-
-        if (chunk >= STARTTILE8 && chunk < STARTEXTERNS)
-        {
-            //
-            // expanded sizes of tile8/16/32 are implicit
-            //
-            const int BLOCK = 64;
-            const int MASKBLOCK = 128;
-
-            if (chunk < STARTTILE8M)          // tile 8s are all in one chunk!
-                expanded = BLOCK * NUMTILE8;
-            else if (chunk < STARTTILE16)
-                expanded = MASKBLOCK * NUMTILE8M;
-            else if (chunk < STARTTILE16M)    // all other tiles are one/chunk
-                expanded = BLOCK * 4;
-            else if (chunk < STARTTILE32)
-                expanded = MASKBLOCK * 4;
-            else if (chunk < STARTTILE32M)
-                expanded = BLOCK * 16;
-            else
-                expanded = MASKBLOCK * 16;
-        }
-        else
-        {
-            //
-            // everything else has an explicit size longword
-            //
-            expanded = BitConverter.ToInt32(source, sourceIndex);
-            sourceIndex += sizeof(int);
-        }
-
-        //
-        // allocate final space and decompress it
-        //
-        grsegs[chunk] = new byte[expanded];
-        grsegs[chunk] = CAL_HuffExpand (source.Skip(sourceIndex).ToArray(), expanded, grhuffman);
-    }
-
-    internal static void CAL_DeplaneGrChunk(int chunk)
-    {
-        int i;
-        short width, height;
-
-        if (chunk == STARTTILE8)
-        {
-            width = height = 8;
-            for (i = 0; i < NUMTILE8; i++)
-            {
-                var offset = i * (width * height);
-                var dest = VL_DePlaneVGA(grsegs[chunk].Skip(offset).ToArray(), width, height);
-                Buffer.BlockCopy(dest, 0, grsegs[chunk], offset, width * height);
-            }
-        }
-        else
-        {
-            width = pictable[chunk - STARTPICS].width;
-            height = pictable[chunk - STARTPICS].height;
-
-            grsegs[chunk] = VL_DePlaneVGA(grsegs[chunk], width, height);
         }
     }
 
