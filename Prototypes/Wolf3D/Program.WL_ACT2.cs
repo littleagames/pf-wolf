@@ -218,7 +218,7 @@ internal partial class Program
         for (y = yl; y <= yh; y++)
             for (x = xl; x <= xh; x++)
             {
-                check = actorat[x, y];
+                check = _mapManager.actorat[x, y];
                 if (check != null && check is not objstruct)
                     return false;
             }
@@ -1651,20 +1651,20 @@ internal partial class Program
         }
 
 
-        tile = MAPSPOT(tilex, tiley, 0);
-        if (tile == AMBUSHTILE)
+        tile = _mapManager.MAPSPOT(tilex, tiley, 0);
+        if (tile == MapConstants.AMBUSHTILE)
         {
-            if (VALIDAREA(MAPSPOT(tilex + 1, tiley, 0)))
-                tile = MAPSPOT(tilex + 1, tiley, 0);
-            if (VALIDAREA(MAPSPOT(tilex, tiley - 1, 0)))
-                tile = MAPSPOT(tilex, tiley - 1, 0);
-            if (VALIDAREA(MAPSPOT(tilex, tiley + 1, 0)))
-                tile = MAPSPOT(tilex, tiley + 1, 0);
-            if (VALIDAREA(MAPSPOT(tilex - 1, tiley, 0)))
-                tile = MAPSPOT(tilex - 1, tiley, 0);
+            if (MapManager.VALIDAREA(_mapManager.MAPSPOT(tilex + 1, tiley, 0)))
+                tile = _mapManager.MAPSPOT(tilex + 1, tiley, 0);
+            if (MapManager.VALIDAREA(_mapManager.MAPSPOT(tilex, tiley - 1, 0)))
+                tile = _mapManager.MAPSPOT(tilex, tiley - 1, 0);
+            if (MapManager.VALIDAREA(_mapManager.MAPSPOT(tilex, tiley + 1, 0)))
+                tile = _mapManager.MAPSPOT(tilex, tiley + 1, 0);
+            if (MapManager.VALIDAREA(_mapManager.MAPSPOT(tilex - 1, tiley, 0)))
+                tile = _mapManager.MAPSPOT(tilex - 1, tiley, 0);
 
-            SetMapSpot(tilex, tiley, 0, (ushort)tile);
-            newobj.areanumber = (byte)(tile - AREATILE);
+            _mapManager.SetMapSpot(tilex, tiley, 0, (ushort)tile);
+            newobj.areanumber = (byte)(tile - MapConstants.AREATILE);
 
             newobj.flags |= objflags.FL_AMBUSH;
         }
@@ -1846,7 +1846,7 @@ internal partial class Program
 
     internal static void A_MechaSound(objstruct ob)
     {
-        if (ob.areanumber >= NUMAREAS || areabyplayer[ob.areanumber] != 0)
+        if (ob.areanumber >= MapConstants.NUMAREAS || areabyplayer[ob.areanumber] != 0)
             PlaySoundLocActor((int)soundnames.MECHSTEPSND, ob);
     }
 
@@ -2310,7 +2310,7 @@ internal partial class Program
                 break;
             }
 
-            if (ob.tilex > MAPSIZE || ob.tiley > MAPSIZE)
+            if (ob.tilex > MapManager.MAPSIZE || ob.tiley > MapManager.MAPSIZE)
                 _gameEngineManager.Quit($"T_Path hit a wall at {ob.tilex},{ob.tiley}, dir {ob.dir}");
 
             ob.x = (int)((ob.tilex << TILESHIFT) + TILEGLOBAL / 2);
@@ -2349,7 +2349,7 @@ internal partial class Program
 
         hitchance = 128;
 
-        if (ob.areanumber < NUMAREAS && areabyplayer[ob.areanumber] == 0)
+        if (ob.areanumber < MapConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
             return;
 
         if (CheckLine(ob))                    // player is not behind a wall
@@ -2502,7 +2502,7 @@ internal partial class Program
     {
         uint spot;
 
-        spot = (uint)(MAPSPOT(ob.tilex, ob.tiley, 1) - ICONARROWS);
+        spot = (uint)(_mapManager.MAPSPOT(ob.tilex, ob.tiley, 1) - MapConstants.ICONARROWS);
 
         if (spot < 8)
         {
@@ -2544,7 +2544,7 @@ internal partial class Program
         {
             for (x = xl; x <= xh; x++)
             {
-                check = actorat[x, y];
+                check = _mapManager.actorat[x, y];
                 if (check != null && check is not objstruct)
                     return false;
             }

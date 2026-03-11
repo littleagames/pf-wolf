@@ -1,5 +1,5 @@
 ﻿using SDL2;
-using System.Reflection.Emit;
+using Wolf3D.Managers;
 
 namespace Wolf3D;
 
@@ -157,11 +157,11 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
     {
         int x, y;
         int tile;
-        for (y = 0; y < mapheight; y++)
+        for (y = 0; y < _mapManager.mapheight; y++)
         {
-            for (x = 0; x < mapwidth; x++)
+            for (x = 0; x < _mapManager.mapwidth; x++)
             {
-                tile = MAPSPOT(x, y, 1);
+                tile = _mapManager.MAPSPOT(x, y, 1);
                 switch (tile)
                 {
                     case 19:
@@ -962,9 +962,6 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
 
     internal static void SetupGameLevel()
     {
-        int x, y;
-        int mapnum;
-
         if (!loadedgame)
         {
             gamestate.TimeCount =
@@ -991,45 +988,8 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         //
         // load the level
         //
-        mapnum = gamestate.mapon + 10 * gamestate.episode;
-
-        CA_CacheMap(mapnum);
-
-        mapwidth = mapheaderseg[mapnum].width;
-        mapheight = mapheaderseg[mapnum].height;
-
-#if USE_FEATUREFLAGS
-    const int MXX = MAPSIZE - 1;
-    
-    // Read feature flags data from map corners and overwrite corners with adjacent tiles
-    ffDataTopLeft     = MAPSPOT(0,   0,   0); MAPSPOT(0,   0,   0) = MAPSPOT(1,       0,       0);
-    ffDataTopRight    = MAPSPOT(MXX, 0,   0); MAPSPOT(MXX, 0,   0) = MAPSPOT(MXX,     1,       0);
-    ffDataBottomRight = MAPSPOT(MXX, MXX, 0); MAPSPOT(MXX, MXX, 0) = MAPSPOT(MXX - 1, MXX,     0);
-    ffDataBottomLeft  = MAPSPOT(0,   MXX, 0); MAPSPOT(0,   MXX, 0) = MAPSPOT(0,       MXX - 1, 0);
-#endif
-
-        tilemap = new byte[MAPSIZE, MAPSIZE];
-        actorat = new Actor?[MAPSIZE, MAPSIZE];
-
-        for (y = 0; y < mapheight; y++)
-        {
-            for (x = 0; x < mapwidth; x++)
-            {
-                int tile = MAPSPOT(x, y, 0);
-                if (tile < AMBUSHTILE)
-                {
-                    // solid wall
-                    tilemap[x,y] = (byte)tile;
-                    actorat[x, y] = new Wall(tile);// (uint)tile;
-                }
-                else
-                {
-                    // area floor
-                    tilemap[x,y] = 0;
-                    actorat[x,y] = null;
-                }
-            }
-        }
+        int mapnum = gamestate.mapon + 10 * gamestate.episode;
+        _mapManager.LoadMap(mapnum);
 
         //
         // spawn doors
@@ -1039,11 +999,12 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         InitStaticList();
 
 
-        for (y = 0; y < mapheight; y++)
+        int x, y;
+        for (y = 0; y < _mapManager.mapheight; y++)
         {
-            for (x = 0; x < mapwidth; x++)
+            for (x = 0; x < _mapManager.mapwidth; x++)
             {
-                int tile = MAPSPOT(x, y, 0);
+                int tile = _mapManager.MAPSPOT(x, y, 0);
                 if (tile >= 90 && tile <= 101)
                 {
                     // door
@@ -1078,24 +1039,24 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         //
         // take out the ambush markers
         //
-        for (y = 0; y < mapheight; y++)
+        for (y = 0; y < _mapManager.mapheight; y++)
         {
-            for (x = 0; x < mapwidth; x++)
+            for (x = 0; x < _mapManager.mapwidth; x++)
             {
-                var tile = MAPSPOT(x, y, 0);
+                var tile = _mapManager.MAPSPOT(x, y, 0);
 
-                if (tile == AMBUSHTILE)
+                if (tile == MapConstants.AMBUSHTILE)
                 {
-                    if (VALIDAREA(MAPSPOT(x + 1, y, 0)))
-                        tile = (ushort)MAPSPOT(x + 1, y, 0);
-                    if (VALIDAREA(MAPSPOT(x, y - 1, 0)))
-                        tile = (ushort)MAPSPOT(x, y - 1, 0);
-                    if (VALIDAREA(MAPSPOT(x, y + 1, 0)))
-                        tile = (ushort)MAPSPOT(x, y + 1, 0);
-                    if (VALIDAREA(MAPSPOT(x - 1, y, 0)))
-                        tile = (ushort)MAPSPOT(x - 1, y, 0);
+                    if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x + 1, y, 0)))
+                        tile = (ushort)_mapManager.MAPSPOT(x + 1, y, 0);
+                    if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x, y - 1, 0)))
+                        tile = (ushort)_mapManager.MAPSPOT(x, y - 1, 0);
+                    if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x, y + 1, 0)))
+                        tile = (ushort)_mapManager.MAPSPOT(x, y + 1, 0);
+                    if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x - 1, y, 0)))
+                        tile = (ushort)_mapManager.MAPSPOT(x - 1, y, 0);
 
-                    SetMapSpot(x, y, 1, 0);
+                    _mapManager.SetMapSpot(x, y, 1, 0);
                 }
             }
         }

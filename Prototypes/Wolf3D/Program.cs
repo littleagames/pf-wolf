@@ -11,6 +11,7 @@ internal partial class Program
     private static InputManager _inputManager;
     private static GameEngineManager _gameEngineManager;
     private static GraphicManager _graphicManager;
+    private static MapManager _mapManager;
 
     public Program()
     {
@@ -18,6 +19,7 @@ internal partial class Program
         _inputManager = new(_gameEngineManager, _videoManager);
         _gameEngineManager = new(_videoManager, _inputManager);
         _graphicManager = new(_videoManager);
+        _mapManager = new();
     }
 
     /*
@@ -117,6 +119,7 @@ internal partial class Program
         PM_Startup();
         SD_Startup();
         _graphicManager.Init(extension, param_ignorenumchunks);
+        _mapManager.Init(extension);
         CA_Startup();
         US_Startup();
 
@@ -523,20 +526,20 @@ internal partial class Program
         SetupGameLevel();
 
         DiskFlopAnim(x, y);
-        tilemap = br.ReadBytes(tilemap.Length).ToFixedArray(MAPSIZE, MAPSIZE);
-        checksum = DoChecksum(tilemap, checksum);
+        _mapManager.tilemap = br.ReadBytes(_mapManager.tilemap.Length).ToFixedArray(MapManager.MAPSIZE, MapManager.MAPSIZE);
+        checksum = DoChecksum(_mapManager.tilemap, checksum);
         DiskFlopAnim(x, y);
 
-        for (i = 0; i < mapwidth; i++)
-            for (j = 0; j < mapheight; j++)
+        for (i = 0; i < _mapManager.mapwidth; i++)
+            for (j = 0; j < _mapManager.mapheight; j++)
             {
                 int objHashCode = br.ReadInt32();
                 checksum = DoChecksum(objHashCode, checksum);
-                actorat[i, j] = objlist2.FirstOrDefault(x => x.GetHashCode() == objHashCode);
+                _mapManager.actorat[i, j] = objlist2.FirstOrDefault(x => x.GetHashCode() == objHashCode);
             }
 
-        areaconnect = br.ReadBytes(NUMAREAS*NUMAREAS).ToFixedArray(NUMAREAS, NUMAREAS);
-        areabyplayer = br.ReadBytes(NUMAREAS);
+        areaconnect = br.ReadBytes(MapConstants.NUMAREAS* MapConstants.NUMAREAS).ToFixedArray(MapConstants.NUMAREAS, MapConstants.NUMAREAS);
+        areabyplayer = br.ReadBytes(MapConstants.NUMAREAS);
 
         DiskFlopAnim(x, y);
         InitActorList();
@@ -605,26 +608,25 @@ internal partial class Program
             // assign valid floorcodes under moved pushwalls
             //
 
-            for (y = 0; y<mapheight; y++)
+            for (y = 0; y<_mapManager.mapheight; y++)
             {
-                for (x = 0; x<mapwidth; x++)
+                for (x = 0; x<_mapManager.mapwidth; x++)
                 {
-                    tile = mapsegs[0][y*mapwidth + x];
+                    tile = _mapManager.GetTile(x, y, 0);
 
-                    if (MAPSPOT(x, y,1) == PUSHABLETILE && tilemap[x, y] == 0 && !VALIDAREA(tile))
+                    if (_mapManager.MAPSPOT(x, y,1) == MapConstants.PUSHABLETILE && _mapManager.tilemap[x, y] == 0 && !MapManager.VALIDAREA(tile))
                     {
-                        if (VALIDAREA(MAPSPOT(x + 1, y, 0)))
-                            tile = (ushort)MAPSPOT(x + 1, y, 0);
-                        if (VALIDAREA(MAPSPOT(x, y - 1, 0)))
-                            tile = (ushort)MAPSPOT(x, y - 1, 0);
-                        if (VALIDAREA(MAPSPOT(x, y + 1, 0)))
-                            tile = (ushort)MAPSPOT(x, y + 1, 0);
-                        if (VALIDAREA(MAPSPOT(x - 1, y, 0)))
-                            tile = (ushort)MAPSPOT(x - 1, y, 0);
+                        if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x + 1, y, 0)))
+                            tile = (ushort)_mapManager.MAPSPOT(x + 1, y, 0);
+                        if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x, y - 1, 0)))
+                            tile = (ushort)_mapManager.MAPSPOT(x, y - 1, 0);
+                        if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x, y + 1, 0)))
+                            tile = (ushort)_mapManager.MAPSPOT(x, y + 1, 0);
+                        if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x - 1, y, 0)))
+                            tile = (ushort)_mapManager.MAPSPOT(x - 1, y, 0);
 
-                        SetMapSpot(x, y,1, 0);
+                        _mapManager.SetMapSpot(x, y,1, 0);
                     }
-
                 }
             }
         }
@@ -681,15 +683,15 @@ internal partial class Program
         checksum = DoChecksum(levelRatioData.ToArray(), checksum);
 
         DiskFlopAnim(x, y);
-        bw.Write(tilemap);
-        checksum = DoChecksum(tilemap, checksum);
+        bw.Write(_mapManager.tilemap);
+        checksum = DoChecksum(_mapManager.tilemap, checksum);
         DiskFlopAnim(x, y);
 
-        for (i = 0; i < mapwidth; i++)
+        for (i = 0; i < _mapManager.mapwidth; i++)
         {
-            for (j = 0; j < mapheight; j++)
+            for (j = 0; j < _mapManager.mapheight; j++)
             {
-                var actor = actorat[i, j];
+                var actor = _mapManager.actorat[i, j];
                 if (actor is objstruct obj)
                 {
                     LinkedListNode<objstruct>? objIndex = objlist2.Find(obj);

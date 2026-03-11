@@ -251,7 +251,7 @@ internal partial class Program
             //
             // check for adjacent doors
             //
-            if ((tilemap[xtile - xtilestep, yinttile] & BIT_DOOR) != 0)
+            if ((_mapManager.tilemap[xtile - xtilestep, yinttile] & BIT_DOOR) != 0)
                 wallpic = DOORWALL + 3;
             else
                 wallpic = vertwall[tilehit & ~BIT_WALL];
@@ -294,7 +294,7 @@ internal partial class Program
             //
             // check for adjacent doors
             //
-            if ((tilemap[xinttile, ytile - ytilestep] & BIT_DOOR) != 0)
+            if ((_mapManager.tilemap[xinttile, ytile - ytilestep] & BIT_DOOR) != 0)
                 wallpic = DOORWALL + 2;
             else
                 wallpic = horizwall[tilehit & ~BIT_WALL];
@@ -481,7 +481,7 @@ internal partial class Program
             //
             // special treatment when player is in back tile of pushwall
             //
-            if (tilemap[focaltx, focalty] == BIT_WALL)
+            if (_mapManager.tilemap[focaltx, focalty] == BIT_WALL)
             {
                 if ((pwalldir == controldirs.di_east && xtilestep == 1) || (pwalldir == controldirs.di_west && xtilestep == -1))
                 {
@@ -564,7 +564,7 @@ internal partial class Program
         // #ifdef REVEALMAP
         //             mapseen[xtile][yinttile] = true;
         // #endif
-        tilehit = tilemap[xtile, yinttile];
+        tilehit = _mapManager.tilemap[xtile, yinttile];
 
         if (tilehit != 0)
         {
@@ -764,7 +764,7 @@ internal partial class Program
 
     private static void passvert(int ystep)
     {
-        spotvis[xtile, yinttile] = true;
+        _mapManager.spotvis[xtile, yinttile] = true;
         xtile += xtilestep;
         yintercept += ystep;
         yinttile = yintercept >> (int)TILESHIFT;
@@ -775,7 +775,7 @@ internal partial class Program
         // #ifdef REVEALMAP
         //             mapseen[xinttile][ytile] = true;
         // #endif
-        tilehit = tilemap[xinttile, ytile];
+        tilehit = _mapManager.tilemap[xinttile, ytile];
 
         if (tilehit != 0)
         {
@@ -977,7 +977,7 @@ internal partial class Program
 
     private static void passhoriz(int xstep)
     {
-        spotvis[xinttile, ytile] = true;
+        _mapManager.spotvis[xinttile, ytile] = true;
         ytile += ytilestep;
         xintercept += xstep;
         xinttile = xintercept >> (int)TILESHIFT;
@@ -1138,7 +1138,7 @@ internal partial class Program
             if ((visptr_val.shapenum = statptr_val.shapenum) == spritenums.none)
                 continue;                                               // object has been deleted
 
-            if (!spotvis[statptr_val.tilex, statptr_val.tiley])
+            if (!_mapManager.spotvis[statptr_val.tilex, statptr_val.tiley])
                 continue;                                               // not visable
 
             if (TransformTile(statptr_val.tilex, statptr_val.tiley,
@@ -1180,15 +1180,15 @@ internal partial class Program
             //
             // could be in any of the nine surrounding tiles
             //
-            if (spotvis[obj.tilex, obj.tiley]//*visspot
-                || spotvis[obj.tilex-1, obj.tiley]//(*(visspot - 1))
-                || spotvis[obj.tilex+1, obj.tiley]//(*(visspot + 1))
-                || spotvis[obj.tilex, obj.tiley-1]//(*(visspot - (MAPSIZE + 1)))
-                || spotvis[obj.tilex-1, obj.tiley - 1]//(*(visspot - (MAPSIZE)))
-                || spotvis[obj.tilex+1, obj.tiley - 1]//(*(visspot - (MAPSIZE - 1)))
-                || spotvis[obj.tilex, obj.tiley+1]//(*(visspot + (MAPSIZE + 1)))
-                || spotvis[obj.tilex-1, obj.tiley+1]//(*(visspot + (MAPSIZE)))
-                || spotvis[obj.tilex+1, obj.tiley+1])//(*(visspot + (MAPSIZE - 1))))
+            if (_mapManager.spotvis[obj.tilex, obj.tiley]//*visspot
+                || _mapManager.spotvis[obj.tilex-1, obj.tiley]//(*(visspot - 1))
+                || _mapManager. spotvis[obj.tilex+1, obj.tiley]//(*(visspot + 1))
+                || _mapManager.spotvis[obj.tilex, obj.tiley-1]//(*(visspot - (MAPSIZE + 1)))
+                || _mapManager.spotvis[obj.tilex-1, obj.tiley - 1]//(*(visspot - (MAPSIZE)))
+                || _mapManager.spotvis[obj.tilex+1, obj.tiley - 1]//(*(visspot - (MAPSIZE - 1)))
+                || _mapManager.spotvis[obj.tilex, obj.tiley+1]//(*(visspot + (MAPSIZE + 1)))
+                || _mapManager.spotvis[obj.tilex-1, obj.tiley+1]//(*(visspot + (MAPSIZE)))
+                || _mapManager.spotvis[obj.tilex+1, obj.tiley+1])//(*(visspot + (MAPSIZE - 1))))
             {
                 obj.active = activetypes.ac_yes;
                 TransformActor(obj);
@@ -1282,8 +1282,8 @@ internal partial class Program
     {
         // Create a Span<T> from the multidimensional array's data reference
         Span<bool> data = MemoryMarshal.CreateSpan(
-            ref spotvis[0, 0], // Reference to the first element
-            spotvis.Length     // Total number of elements
+            ref _mapManager.spotvis[0, 0], // Reference to the first element
+            _mapManager.spotvis.Length     // Total number of elements
         );
 
         // Fill the span with the value
@@ -1291,9 +1291,9 @@ internal partial class Program
 
         if (!((demorecord || demoplayback)))
         {
-            if (tilemap[player.tilex, player.tiley] == 0 ||
-             (tilemap[player.tilex, player.tiley] & BIT_DOOR) != 0)
-                spotvis[player.tilex, player.tiley] = true;       // Detect all sprites over player fix
+            if (_mapManager.tilemap[player.tilex, player.tiley] == 0 ||
+             (_mapManager.tilemap[player.tilex, player.tiley] & BIT_DOOR) != 0)
+                _mapManager.spotvis[player.tilex, player.tiley] = true;       // Detect all sprites over player fix
         }
 
 

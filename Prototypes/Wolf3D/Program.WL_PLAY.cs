@@ -18,12 +18,6 @@ internal partial class Program
 
     internal static byte singlestep, godmode, noclip, ammocheat, mapreveal;
     internal static int extravbls;
-
-    internal static byte[,] tilemap = new byte[MAPSIZE, MAPSIZE]; // wall values only
-    internal static bool[,] spotvis = new bool[MAPSIZE ,MAPSIZE];
-    internal static Actor?[,] actorat = new Actor?[MAPSIZE, MAPSIZE];
-
-    internal static ushort mapwidth, mapheight;
     internal static uint tics;
 
     //
@@ -275,11 +269,11 @@ internal partial class Program
 
     internal static void DoActor(objstruct ob)
     {
-        if (ob.active == 0 && ob.areanumber < NUMAREAS && areabyplayer[ob.areanumber] == 0)
+        if (ob.active == 0 && ob.areanumber < MapConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
             return;
         
         if (!ob.flags.HasFlag(objflags.FL_NONMARK) && !ob.flags.HasFlag(objflags.FL_NEVERMARK))
-            actorat[ob.tilex,ob.tiley] = null;
+            _mapManager.actorat[ob.tilex,ob.tiley] = null;
 
 
         //
@@ -302,10 +296,10 @@ internal partial class Program
             if (ob.flags.HasFlag(objflags.FL_NEVERMARK))
                 return;
 
-            if (ob.flags.HasFlag(objflags.FL_NONMARK) && actorat[ob.tilex, ob.tiley] != null)
+            if (ob.flags.HasFlag(objflags.FL_NONMARK) && _mapManager.actorat[ob.tilex, ob.tiley] != null)
                 return;
 
-            actorat[ob.tilex, ob.tiley] = ob;
+            _mapManager.actorat[ob.tilex, ob.tiley] = ob;
             return;
         }
 
@@ -364,10 +358,10 @@ internal partial class Program
         if (ob.flags.HasFlag(objflags.FL_NEVERMARK))
             return;
 
-        if (ob.flags.HasFlag(objflags.FL_NONMARK) && actorat[ob.tilex, ob.tiley] != null)
+        if (ob.flags.HasFlag(objflags.FL_NONMARK) && _mapManager.actorat[ob.tilex, ob.tiley] != null)
             return;
 
-        actorat[ob.tilex, ob.tiley] = ob;// (uint)((objlistIndex + 0xffff));
+        _mapManager.actorat[ob.tilex, ob.tiley] = ob;// (uint)((objlistIndex + 0xffff));
     }
 
     internal static void RemoveObj(objstruct gone)

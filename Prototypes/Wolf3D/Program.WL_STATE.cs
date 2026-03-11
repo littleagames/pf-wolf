@@ -1,4 +1,6 @@
-﻿namespace Wolf3D;
+﻿using Wolf3D.Managers;
+
+namespace Wolf3D;
 
 internal partial class Program
 {
@@ -42,8 +44,8 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         newobj.y = (int)((tiley << TILESHIFT) + TILEGLOBAL / 2);
         newobj.dir = objdirtypes.nodir;
 
-        actorat[tilex, tiley] = newobj;// (uint)((MAXACTORS - objfreelist) | 0xffff); // TODO: Might be the wrong value
-        newobj.areanumber = (byte)(MAPSPOT((int)tilex, (int)tiley, 0) - AREATILE);
+        _mapManager.actorat[tilex, tiley] = newobj;// (uint)((MAXACTORS - objfreelist) | 0xffff); // TODO: Might be the wrong value
+        newobj.areanumber = (byte)(_mapManager.MAPSPOT((int)tilex, (int)tiley, 0) - MapConstants.AREATILE);
 
         return newobj;
 
@@ -116,7 +118,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         //
         // check to make sure it's not on top of player
         //
-        if (ob.areanumber >= NUMAREAS || areabyplayer[ob.areanumber] != 0)
+        if (ob.areanumber >= MapConstants.NUMAREAS || areabyplayer[ob.areanumber] != 0)
         {
             deltax = Math.Abs(newx - player.x);
             deltay = Math.Abs(newy - player.y);
@@ -132,7 +134,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 // where he gets stuck, but not exploit it by moving further into
                 // the guard and effectively no-clipping through them...
                 //
-                if (!ob.hidden || !spotvis[player.tilex, player.tiley])
+                if (!ob.hidden || !_mapManager.spotvis[player.tilex, player.tiley])
                 {
                     if (ob.obclass == classtypes.ghostobj || ob.obclass == classtypes.spectreobj)
                         TakeDamage((int)(tics * 2), ob);
@@ -302,14 +304,14 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             return true;
         }
 
-        ob.areanumber = (byte)(MAPSPOT(ob.tilex, ob.tiley, 0) - AREATILE);
+        ob.areanumber = (byte)(_mapManager.MAPSPOT(ob.tilex, ob.tiley, 0) - MapConstants.AREATILE);
         ob.distance = (int)TILEGLOBAL;
         return true;
     }
 
     internal static bool CHECKDIAG(int x, int y)
     {
-        Actor? temp = actorat[x, y];
+        Actor? temp = _mapManager.actorat[x, y];
         if (temp != null)
         { 
               if (temp is not objstruct)
@@ -323,7 +325,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
     internal static int CHECKSIDE(objstruct ob, int x, int y, ref int doornumtile)
     {
-        Actor? temp = actorat[x, y];
+        Actor? temp = _mapManager.actorat[x, y];
         if (temp != null)
         {
             if (temp is Wall)
@@ -426,7 +428,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 y = yfrac >> 8;
                 yfrac += ystep;
 
-                value = (uint)tilemap[x, y];
+                value = (uint)_mapManager.tilemap[x, y];
                 x += xstep;
 
                 if (value == 0)
@@ -480,7 +482,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 x = xfrac >> 8;
                 xfrac += xstep;
 
-                value = (uint)tilemap[x, y];
+                value = (uint)_mapManager.tilemap[x, y];
                 y += ystep;
 
                 if (value == 0)
@@ -527,7 +529,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         //
         // don't bother tracing a line if the area isn't connected to the player's
         //
-        if (ob.areanumber < NUMAREAS && areabyplayer[ob.areanumber] == 0)
+        if (ob.areanumber < MapConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
             return false;
 
         //
@@ -613,7 +615,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         }
         else
         {
-            if (ob.areanumber < NUMAREAS && areabyplayer[ob.areanumber] == 0)
+            if (ob.areanumber < MapConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
                 return false;
 
             if (ob.flags.HasFlag(objflags.FL_AMBUSH))
@@ -1180,7 +1182,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
         gamestate.killcount++;
         ob.flags &= ~objflags.FL_SHOOTABLE;
-        actorat[ob.tilex, ob.tiley] = null;
+        _mapManager.actorat[ob.tilex, ob.tiley] = null;
         ob.flags |= objflags.FL_NONMARK;
     }
 

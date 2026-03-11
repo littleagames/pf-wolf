@@ -61,7 +61,7 @@ internal partial class Program
 
         if (_inputManager.IsKeyDown(ScanCodes.sc_F))             // F = facing spot
         {
-            Actor? spot = actorat[player.tilex, player.tiley];
+            Actor? spot = _mapManager.actorat[player.tilex, player.tiley];
 
             CenterWindow(15, 9);
             US_Print($"X: {player.x} ({(player.x % TILEGLOBAL)})\n");
@@ -69,11 +69,11 @@ internal partial class Program
             US_Print($"A: {player.angle}\n");
             US_Print($"TileX: {player.tilex}\n");
             US_Print($"TileY: {player.tiley}\n");
-            US_Print($"1: {tilemap[player.tilex, player.tiley]}");
+            US_Print($"1: {_mapManager.tilemap[player.tilex, player.tiley]}");
             US_Print($"2: {spot}");
             US_Print($"f 1: {player.areanumber}");
-            US_Print($" 2: {MAPSPOT(player.tilex, player.tiley, 1)}");
-            US_Print($" 3: {(spot is objstruct spotObj ? spotObj.flags : (spotvis[player.tilex, player.tiley] ? 1 : 0))}");
+            US_Print($" 2: {_mapManager.MAPSPOT(player.tilex, player.tiley, 1)}");
+            US_Print($" 3: {(spot is objstruct spotObj ? spotObj.flags : (_mapManager.spotvis[player.tilex, player.tiley] ? 1 : 0))}");
 
             _videoManager.Update();
             _inputManager.Ack();
@@ -353,17 +353,17 @@ internal partial class Program
         Actor? tile;
         int color = 0;
 
-        zoom = 128 / MAPSIZE;
+        zoom = 128 / MapManager.MAPSIZE;
         offx = 160;
-        offy = (160 - (MAPSIZE * zoom)) / 2;
+        offy = (160 - (MapManager.MAPSIZE * zoom)) / 2;
 
         //
         // right side (raw)
         //
-        for (y = 0; y < mapheight; y++)
+        for (y = 0; y < _mapManager.mapheight; y++)
         {
-            for (x = 0; x < mapwidth; x++)
-                _videoManager.Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, actorat[x, y]?.GetHashCode() ?? -1);
+            for (x = 0; x < _mapManager.mapwidth; x++)
+                _videoManager.Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, _mapManager.actorat[x, y]?.GetHashCode() ?? -1);
         }
 
         //
@@ -371,22 +371,22 @@ internal partial class Program
         //
         offx -= 128;
 
-        for (y = 0; y < mapheight; y++)
+        for (y = 0; y < _mapManager.mapheight; y++)
         {
-            for (x = 0; x < mapwidth; x++)
+            for (x = 0; x < _mapManager.mapwidth; x++)
             {
-                tile = actorat[x, y];
+                tile = _mapManager.actorat[x, y];
 
                 if (tile is objstruct check && check.flags.HasFlag(objflags.FL_SHOOTABLE))
                     color = 72;
                 else if (tile is null)
                 {
-                    if (spotvis[x, y])
+                    if (_mapManager.spotvis[x, y])
                         color = 111;
                     else
                         color = 0;      // nothing
                 }
-                else if (MAPSPOT(x, y, 1) == PUSHABLETILE)
+                else if (_mapManager.MAPSPOT(x, y, 1) == MapConstants.PUSHABLETILE)
                     color = 171;
                 else if (tile is BlockingActor)
                     color = 158;

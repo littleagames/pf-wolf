@@ -1,4 +1,6 @@
-﻿namespace Wolf3D;
+﻿using Wolf3D.Managers;
+
+namespace Wolf3D;
 
 internal partial class Program
 {
@@ -220,9 +222,9 @@ internal partial class Program
         player.tilex = (byte)(player.x >> (int)TILESHIFT);                // scale to tile values
         player.tiley = (byte)(player.y >> (int)TILESHIFT);
 
-        player.areanumber = (byte)(MAPSPOT(player.tilex, player.tiley, 0) - AREATILE);
+        player.areanumber = (byte)(_mapManager.MAPSPOT(player.tilex, player.tiley, 0) - MapConstants.AREATILE);
 
-        if (MAPSPOT(player.tilex, player.tiley, 1) == EXITTILE)
+        if (_mapManager.MAPSPOT(player.tilex, player.tiley, 1) == MapConstants.EXITTILE)
             VictoryTile();
     }
 
@@ -247,10 +249,10 @@ internal partial class Program
         {
             for (x = xl; x <= xh; x++)
             {
-                check = actorat[x, y];
-                if (check != null && !ISPOINTER(check))
+                check = _mapManager.actorat[x, y];
+                if (check != null && !MapManager.ISPOINTER(check))
                 {
-                    if (tilemap[x, y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
+                    if (_mapManager.tilemap[x, y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
                     {
                         switch (pwalldir)
                         {
@@ -282,18 +284,18 @@ internal partial class Program
         //
         if (yl > 0)
             yl--;
-        if (yh < MAPSIZE - 1)
+        if (yh < MapManager.MAPSIZE - 1)
             yh++;
         if (xl > 0)
             xl--;
-        if (xh < MAPSIZE - 1)
+        if (xh < MapManager.MAPSIZE - 1)
             xh++;
 
         for (y = yl; y <= yh; y++)
         {
             for (x = xl; x <= xh; x++)
             {
-                check = actorat[x, y];
+                check = _mapManager.actorat[x, y];
                 // TODO: !check.Equals(player) might not operate correctly obclass != playerobj
                 if (check is objstruct actor && actor.obclass != classtypes.playerobj && actor.flags.HasFlag(objflags.FL_SHOOTABLE))
                 {
@@ -325,8 +327,8 @@ internal partial class Program
             return;
 
         if (noclip != 0 && ob.x > 2 * TILEGLOBAL && ob.y > 2 * TILEGLOBAL
-            && ob.x < (((int)(mapwidth - 1)) << (int)TILESHIFT)
-            && ob.y < (((int)(mapheight - 1)) << (int)TILESHIFT))
+            && ob.x < (((int)(_mapManager.mapwidth - 1)) << (int)TILESHIFT)
+            && ob.y < (((int)(_mapManager.mapheight - 1)) << (int)TILESHIFT))
             return;         // walk through walls
 
         if (SD_SoundPlaying() == 0)
@@ -772,8 +774,8 @@ internal partial class Program
             elevatorok = false;
         }
 
-        cmdtile = tilemap[checkx, checky];
-        if (MAPSPOT(checkx, checky, 1) == PUSHABLETILE)
+        cmdtile = _mapManager.tilemap[checkx, checky];
+        if (_mapManager.MAPSPOT(checkx, checky, 1) == MapConstants.PUSHABLETILE)
         {
             //
             // pushable wall
@@ -782,15 +784,15 @@ internal partial class Program
             PushWall(checkx, checky, dir);
             return;
         }
-        if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && cmdtile == ELEVATORTILE && elevatorok)
+        if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && cmdtile == MapConstants.ELEVATORTILE && elevatorok)
         {
             //
             // use elevator
             //
             _inputManager.SetButtonHeld(buttontypes.bt_use, true);
 
-            tilemap[checkx, checky]++;              // flip switch
-            if (MAPSPOT(player.tilex, player.tiley, 0) == ALTELEVATORTILE)
+            _mapManager.tilemap[checkx, checky]++;              // flip switch
+            if (_mapManager.MAPSPOT(player.tilex, player.tiley, 0) == MapConstants.ALTELEVATORTILE)
                 playstate = playstatetypes.ex_secretlevel;
             else
                 playstate = playstatetypes.ex_completed;
@@ -1098,7 +1100,7 @@ internal partial class Program
         player.active = activetypes.ac_yes;
         player.tilex = (byte)tilex;
         player.tiley = (byte)tiley;
-        player.areanumber = (byte)(MAPSPOT(tilex, tiley, 0) - AREATILE);
+        player.areanumber = (byte)(_mapManager.MAPSPOT(tilex, tiley, 0) - MapConstants.AREATILE);
         player.x = (tilex << (int)TILESHIFT) + (int)TILEGLOBAL / 2;
         player.y = (tiley << (int)TILESHIFT) + (int)TILEGLOBAL / 2;
         player.state = s_player;

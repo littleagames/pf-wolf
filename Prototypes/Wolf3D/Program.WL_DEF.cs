@@ -630,19 +630,6 @@ internal partial class Program
     internal const int MAXWALLTILES = 64;
     internal const int MAXVISABLE = 250;
 
-    //
-    // tile constants
-    //
-
-    internal const int ICONARROWS = 90;
-    internal const int PUSHABLETILE = 98;
-    internal const int EXITTILE = 99;          // at end of castle
-    internal const int AREATILE = 107;         // first of NUMAREAS floor tiles
-    internal const int NUMAREAS = 37;
-    internal const int ELEVATORTILE = 21;
-    internal const int AMBUSHTILE = 106;
-    internal const int ALTELEVATORTILE = 107;
-
     internal const int NUMBERCHARS = 9;
 
 
@@ -684,10 +671,6 @@ internal partial class Program
     internal const int VANG360 = VANG90 * 4;
 
     internal const long MINDIST = 0x5800L;
-
-    internal const int MAPSHIFT = 6;
-    internal const int MAPSIZE = (1 << MAPSHIFT);
-    internal const int MAPAREA = MAPSIZE * MAPSIZE;
 
     internal const int TEXTURESHIFT = 6;
     internal const int FIXED2TEXSHIFT = (TEXTURESHIFT == 8) ? 0 : (TEXTURESHIFT == 7 ? 2 : 4);
@@ -1116,27 +1099,7 @@ internal partial class Program
 
     internal const int JOYSCALE = 2;
 
-    internal static int MAPSPOT(int x, int y, int plane) => (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]);
-    internal static void SetMapSpot(int x, int y, int plane, ushort value)
-    {
-        (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]) = value;
-    }
 
-    internal static bool VALIDAREA(int x) => (x) >= AREATILE && (x) < (AREATILE + NUMAREAS);
-
-    internal static bool ISPOINTER(Actor? check)
-    {
-        return check is objstruct;
-        //int checkIndex = (int)(objstructIndex - 0xffff); // might be the wrong value to strip
-        //if (checkIndex >= 0)
-        //{
-        //    check = objlist[checkIndex];
-        //    return true;
-        //}
-
-        //check = null!;
-        //return false;
-    }
 
 
 
