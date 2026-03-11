@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Wolf3D.Mappers;
 
 namespace Wolf3D.Managers;
 
@@ -90,6 +91,28 @@ internal class GraphicManager
     public pictabletype GetPic(graphicnums chunknum)
     {
         return pictable[(int)chunknum - GraphicConstants.STARTPICS];
+    }
+
+    public void DrawPic(string graphicName, int x, int y)
+    {
+        if (string.IsNullOrEmpty(graphicName))
+            return;
+        string? foundKey = null;
+        if (graphicName.ToLowerInvariant() == "signon".ToLowerInvariant())
+        {
+            // TODO: Convert to "Graphic"
+            pictabletype t = new();
+            t.width = 320;
+            t.height = 200;
+            videoManager.MemToScreen(Signon.signon, t.width, t.height, x, y);
+        }
+        else if ((foundKey = GraphicsMap.GraphicIndexMap.Keys.FirstOrDefault(x => x.ToLowerInvariant().Equals(graphicName.ToLowerInvariant()))) != null)
+        {
+            if (GraphicsMap.GraphicIndexMap.TryGetValue(foundKey, out var foundchunk))
+            {
+                DrawPic(x,y,foundchunk);
+            }
+        }
     }
 
     public void DrawPic(int x, int y, graphicnums chunknum)

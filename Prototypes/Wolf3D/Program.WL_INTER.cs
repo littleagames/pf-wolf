@@ -43,7 +43,7 @@ internal partial class Program
         _videoManager.FadeOut();
         _videoManager.Bar(0, 0, 320, 200, 0x82);     // background
 
-        _graphicManager.DrawPic(216, 110, graphicnums.PG13PIC);
+        _graphicManager.DrawPic("pg13", 216, 110);
         _videoManager.Update();
 
         _videoManager.FadeIn();
@@ -59,11 +59,11 @@ internal partial class Program
         ClearMScreen();
         DrawStripes(10);
 
-        _graphicManager.DrawPic(48, 0, graphicnums.HIGHSCORESPIC);
+        _graphicManager.DrawPic("highscores", 48, 0);
 
-        _graphicManager.DrawPic(4 * 8, 68, graphicnums.C_NAMEPIC);
-        _graphicManager.DrawPic(20 * 8, 68, graphicnums.C_LEVELPIC);
-        _graphicManager.DrawPic(28 * 8, 68, graphicnums.C_SCOREPIC);
+        _graphicManager.DrawPic("c_name", 4 * 8, 68);
+        _graphicManager.DrawPic("c_level", 20 * 8, 68);
+        _graphicManager.DrawPic("c_score", 28 * 8, 68);
         //_graphicManager.DrawPic(35 * 8, 68, graphicnums.C_CODEPIC);
 
         fontnumber = 0;
@@ -341,7 +341,7 @@ internal partial class Program
         //
         _inputManager.ClearKeysDown();
         _inputManager.StartAck();
-        _graphicManager.DrawPic(0, 16, graphicnums.L_GUYPIC);
+        _graphicManager.DrawPic("l_guy", 0, 16);
         if (gamestate.mapon < LRpack)
         {
             Write(14, 2, "floor\ncompleted");
@@ -633,7 +633,7 @@ internal partial class Program
         Write(RATIOX + 4, RATIOY + 2, STR_RATSECRET);
         Write(RATIOX, RATIOY + 4, STR_RATTREASURE);
 
-        _graphicManager.DrawPic(8, 4, graphicnums.L_BJWINSPIC);
+        _graphicManager.DrawPic("l_bjwins", 8, 4);
 
         for (kr = sr = tr = sec = i = 0; i < LRpack; i++)
         {
@@ -717,14 +717,14 @@ internal partial class Program
     private static int bj_which = 0, bj_max = 10;
     internal static void BJ_Breathe()
     {
-        graphicnums[] pics = { graphicnums.L_GUYPIC, graphicnums.L_GUY2PIC };
+        string[] pics = { "l_guy", "l_guy2" };
 
         GameEngineManager.DelayMs(5);
 
         if ((int)GameEngineManager.GetTimeCount() - lastBreathTime > bj_max)
         {
             bj_which ^= 1;
-            _graphicManager.DrawPic(0, 16, pics[bj_which]);
+            _graphicManager.DrawPic(pics[bj_which], 0, 16);
             _videoManager.Update();
             lastBreathTime = (int)GameEngineManager.GetTimeCount();
             bj_max = 35;
@@ -733,11 +733,12 @@ internal partial class Program
 
     internal static void Write(int x, int y, string text)
     {
-        graphicnums[] alpha = { graphicnums.L_NUM0PIC, graphicnums.L_NUM1PIC, graphicnums.L_NUM2PIC, graphicnums.L_NUM3PIC, graphicnums.L_NUM4PIC, graphicnums.L_NUM5PIC,
-            graphicnums.L_NUM6PIC, graphicnums.L_NUM7PIC, graphicnums.L_NUM8PIC, graphicnums.L_NUM9PIC, graphicnums. L_COLONPIC, 0, 0, 0, 0, 0, 0, graphicnums.L_APIC, graphicnums.L_BPIC,
-            graphicnums.L_CPIC, graphicnums.L_DPIC, graphicnums.L_EPIC, graphicnums.L_FPIC, graphicnums.L_GPIC, graphicnums.L_HPIC, graphicnums.L_IPIC, graphicnums.L_JPIC, graphicnums.L_KPIC,
-            graphicnums.L_LPIC, graphicnums.L_MPIC, graphicnums.L_NPIC, graphicnums.L_OPIC, graphicnums.L_PPIC, graphicnums.L_QPIC, graphicnums.L_RPIC, graphicnums.L_SPIC, graphicnums.L_TPIC,
-            graphicnums.L_UPIC, graphicnums.L_VPIC, graphicnums.L_WPIC, graphicnums.L_XPIC, graphicnums.L_YPIC, graphicnums.L_ZPIC
+        // TODO: This would be a good ASCII text map in the pk3, which allows for easy graphic pickings
+        string[] alpha = { "l_num0", "l_num1", "l_num2", "l_num3", "l_num4", "l_num5",
+            "l_num6", "l_num7", "l_num8", "l_num9", "l_colon", "", "", "", "", "", "", "l_a", "l_b",
+            "l_c", "l_d", "l_e", "l_f", "l_g", "l_h", "l_i", "l_j", "l_k",
+            "l_l", "l_m", "l_n", "l_o", "l_p", "l_q", "l_r", "l_s", "l_t",
+            "l_u", "l_v", "l_w", "l_x", "l_y", "l_z"
         };
 
         int i, ox, nx, ny, len = text.Length;
@@ -764,27 +765,27 @@ internal partial class Program
                 switch (text[i])
                 {
                     case '!':
-                        _graphicManager.DrawPic(nx, ny, graphicnums.L_EXPOINTPIC);
+                        _graphicManager.DrawPic("l_exclamationpoint", nx, ny);
                         nx += 8;
                         continue;
                     case '\'':
-                        _graphicManager.DrawPic(nx, ny, graphicnums.L_APOSTROPHEPIC);
+                        _graphicManager.DrawPic("l_apostrophe", nx, ny);
                         nx += 8;
                         continue;
                 case ' ':
                         break;
 
                     case ':':
-                        _graphicManager.DrawPic(nx, ny, graphicnums.L_COLONPIC);
+                        _graphicManager.DrawPic("l_colon", nx, ny);
                         nx += 8;
                         continue;
 
                     case '%':
-                        _graphicManager.DrawPic(nx, ny, graphicnums.L_PERCENTPIC);
+                        _graphicManager.DrawPic("l_percent", nx, ny);
                         break;
 
                     default:
-                        _graphicManager.DrawPic(nx, ny, alpha[ch]);
+                        _graphicManager.DrawPic(alpha[ch], nx, ny);
                         break;
                 }
                 nx += 16;

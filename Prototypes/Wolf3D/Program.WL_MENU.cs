@@ -390,7 +390,7 @@ internal partial class Program
     {
         char key;
         int i, x, y, basey, exit, which;
-        graphicnums shape;
+        string shape;
         int lastBlinkTime, timer;
         ControlInfo ci;
 
@@ -399,7 +399,7 @@ internal partial class Program
         basey = item_i.y - 2;
         y = basey + which * 13;
 
-        _graphicManager.DrawPic(x, y, graphicnums.C_CURSOR1PIC);
+        _graphicManager.DrawPic("c_cursor1", x, y);
         SetTextColor(items[which], true);
         if (redrawitem != 0)
         {
@@ -414,7 +414,7 @@ internal partial class Program
 
         _videoManager.Update();
 
-        shape = graphicnums.C_CURSOR1PIC;
+        shape = "c_cursor1";
         timer = 8;
         exit = 0;
         lastBlinkTime = (int)GameEngineManager.GetTimeCount();
@@ -429,18 +429,18 @@ internal partial class Program
             if ((int)GameEngineManager.GetTimeCount() - lastBlinkTime > timer)
             {
                 lastBlinkTime = (int)GameEngineManager.GetTimeCount();
-                if (shape == graphicnums.C_CURSOR1PIC)
+                if (shape == "c_cursor1")
                 {
-                    shape = graphicnums.C_CURSOR2PIC;
+                    shape = "c_cursor2";
                     timer = 8;
                 }
                 else
                 {
-                    shape = graphicnums.C_CURSOR1PIC;
+                    shape = "c_cursor1";
                     timer = 70;
                 }
 
-                _graphicManager.DrawPic(x, y, shape);
+                _graphicManager.DrawPic(shape, x, y);
                 routine?.Invoke(which);
                 _videoManager.Update();
             }
@@ -636,7 +636,7 @@ internal partial class Program
     //
     internal static void DrawHalfStep(int x, int y)
     {
-        _graphicManager.DrawPic(x, y, graphicnums.C_CURSOR1PIC);
+        _graphicManager.DrawPic("c_cursor1", x, y);
         _videoManager.Update();
         SD_PlaySound((int)soundnames.MOVEGUN1SND);
         GameEngineManager.DelayMs(8 * 100 / 7);
@@ -646,7 +646,7 @@ internal partial class Program
     {
         _videoManager.Bar(x - 1, y, 25, 16, BKGDCOLOR);
         y = basey + which * 13;
-        _graphicManager.DrawPic(x, y, graphicnums.C_CURSOR1PIC);
+        _graphicManager.DrawPic("c_cursor1", x, y);
         SetTextColor(items[which], true);
 
         PrintX = (ushort)(item_i.x + item_i.indent);
@@ -1056,9 +1056,9 @@ internal partial class Program
     {
         ClearMScreen();
 
-        _graphicManager.DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
+        _graphicManager.DrawPic("c_mouselback", 112, 184);
         DrawStripes(10);
-        _graphicManager.DrawPic(84, 0, graphicnums.C_OPTIONSPIC);
+        _graphicManager.DrawPic("c_options", 84, 0);
 
         DrawWindow(MENU_X - 8, MENU_Y - 3, MENU_W, MENU_H, BKGDCOLOR);
         //
@@ -1156,7 +1156,7 @@ internal partial class Program
     {
         int i;
         ClearMScreen();
-        _graphicManager.DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
+        _graphicManager.DrawPic("c_mouselback", 112, 184);
 
         DrawWindow(NE_X - 4, NE_Y - 4, NE_W + 8, NE_H + 8, BKGDCOLOR);
         SETFONTCOLOR(READHCOLOR, BKGDCOLOR);
@@ -1166,8 +1166,9 @@ internal partial class Program
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
         DrawMenu(NewEitems, NewEmenu);
 
-        for (i = 0; i < 6; i++)
-            _graphicManager.DrawPic(NE_X + 32, NE_Y + i * 26, graphicnums.C_EPISODE1PIC + i);
+        string[] episodePics = new[] { "c_episode1", "c_episode2", "c_episode3", "c_episode4", "c_episode5", "c_episode6" };
+        for (i = 0; i < episodePics.Length; i++)
+            _graphicManager.DrawPic(episodePics[i], NE_X + 32, NE_Y + i * 26);
 
         _videoManager.Update();
         MenuFadeIn();
@@ -1177,7 +1178,7 @@ internal partial class Program
     internal static void DrawNewGame()
     {
         ClearMScreen();
-        _graphicManager.DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
+        _graphicManager.DrawPic("c_mouselback", 112, 184);
 
         SETFONTCOLOR(READHCOLOR, BKGDCOLOR);
         PrintX = NM_X + 20;
@@ -1194,7 +1195,8 @@ internal partial class Program
 
     internal static void DrawNewGameDiff(int w)
     {
-        _graphicManager.DrawPic(NM_X + 185, NM_Y + 7, w + graphicnums.C_BABYMODEPIC);
+        string[] diffPics = new[] { "c_babymode", "c_easy", "c_normal", "c_hard" };
+        _graphicManager.DrawPic(diffPics[w], NM_X + 185, NM_Y + 7);
     }
 
     internal static int CP_Sound(int _)
@@ -1309,7 +1311,7 @@ internal partial class Program
         // DRAW SOUND MENU
         //
         ClearMScreen();
-        _graphicManager.DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
+        _graphicManager.DrawPic("c_mouselback", 112, 184);
 
         DrawWindow(SM_X - 8, SM_Y1 - 3, SM_W, SM_H1, BKGDCOLOR);
         DrawWindow(SM_X - 8, SM_Y2 - 3, SM_W, SM_H2, BKGDCOLOR);

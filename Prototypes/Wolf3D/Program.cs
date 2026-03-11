@@ -180,7 +180,7 @@ internal partial class Program
 
     private static void SignonScreen()
     {
-        _videoManager.MemToScreen(Signon.signon, 320, 200, 0, 0);
+        _graphicManager.DrawPic("signon", 0, 0);
     }
 
     private static void FinishSignon()
@@ -258,7 +258,7 @@ internal partial class Program
                 //
                 // title page
                 //
-                _graphicManager.DrawPic(0, 0, graphicnums.TITLEPIC);
+                _graphicManager.DrawPic("title", 0, 0);
                 _videoManager.Update();
                 _videoManager.FadeIn();
 
@@ -269,7 +269,7 @@ internal partial class Program
                 //
                 // credits page
                 //
-                _graphicManager.DrawPic(0, 0, graphicnums.CREDITSPIC);
+                _graphicManager.DrawPic("credits", 0, 0);
                 _videoManager.Update();
                 _videoManager.FadeIn();
                 if (_inputManager.UserInput(TickBase * 10))
@@ -861,7 +861,7 @@ internal partial class Program
 
         fontnumber = 1;
         ClearMScreen();
-        _graphicManager.DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
+        _graphicManager.DrawPic("c_mouselback", 112, 184);
         DrawStripes(10);
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
 
