@@ -106,9 +106,9 @@ internal class GraphicManager
             t.height = 200;
             videoManager.MemToScreen(Signon.signon, t.width, t.height, x, y);
         }
-        else if ((foundKey = GraphicsMap.GraphicIndexMap.Keys.FirstOrDefault(x => x.ToLowerInvariant().Equals(graphicName.ToLowerInvariant()))) != null)
+        else if ((foundKey = GraphicsMappings.GraphicIndexMap.Keys.FirstOrDefault(x => x.ToLowerInvariant().Equals(graphicName.ToLowerInvariant()))) != null)
         {
-            if (GraphicsMap.GraphicIndexMap.TryGetValue(foundKey, out var foundchunk))
+            if (GraphicsMappings.GraphicIndexMap.TryGetValue(foundKey, out var foundchunk))
             {
                 DrawPic(x,y,foundchunk);
             }

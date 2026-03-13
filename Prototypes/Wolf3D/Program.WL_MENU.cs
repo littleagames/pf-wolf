@@ -1,5 +1,7 @@
 ﻿using SDL2;
 using Wolf3D.Managers;
+using Wolf3D.Mappers;
+using System.Linq;
 
 namespace Wolf3D;
 
@@ -178,13 +180,13 @@ internal partial class Program
         new(3, "Episode 6\nConfrontation", null),
     };
 
-    internal static CP_itemtype[] NewMenu =
-    {
-        new (1, STR_DADDY, null),
-        new (1, STR_HURTME, null),
-        new (1, STR_BRINGEM, null),
-        new (1, STR_DEATH, null)
-    };
+    internal static CP_itemtype[] NewMenu = MapInfoMappings.GameInfo.Skills.Values.Select(s => new CP_itemtype(1, s.Name, null)).ToArray();// =
+    //{
+    //    new (1, STR_DADDY, null),
+    //    new (1, STR_HURTME, null),
+    //    new (1, STR_BRINGEM, null),
+    //    new (1, STR_DEATH, null)
+    //};
 
     internal static CP_itemtype[] LSMenu =
     {
@@ -1195,8 +1197,8 @@ internal partial class Program
 
     internal static void DrawNewGameDiff(int w)
     {
-        string[] diffPics = new[] { "c_babymode", "c_easy", "c_normal", "c_hard" };
-        _graphicManager.DrawPic(diffPics[w], NM_X + 185, NM_Y + 7);
+        MapInfoMappings.SkillInfo[] skills = MapInfoMappings.GameInfo.Skills.Values.ToArray();
+        _graphicManager.DrawPic(skills[w].PicName, NM_X + 185, NM_Y + 7);
     }
 
     internal static int CP_Sound(int _)
@@ -1332,9 +1334,9 @@ internal partial class Program
             SndMenu[5].active = 0;
 
         DrawMenu(SndItems, SndMenu);
-        _graphicManager.DrawPic(100, SM_Y1 - 20, graphicnums.C_FXTITLEPIC);
-        _graphicManager.DrawPic(100, SM_Y2 - 20, graphicnums.C_DIGITITLEPIC);
-        _graphicManager.DrawPic(100, SM_Y3 - 20, graphicnums.C_MUSICTITLEPIC);
+        _graphicManager.DrawPic("c_fxtitle", 100, SM_Y1 - 20);
+        _graphicManager.DrawPic("c_digititle", 100, SM_Y2 - 20);
+        _graphicManager.DrawPic("c_musictitle", 100, SM_Y3 - 20);
         for (i = 0; i < SndItems.amount; i++)
             if (SndMenu[i].text != string.Empty)
             {
@@ -1390,9 +1392,9 @@ internal partial class Program
                 }
 
                 if (on != 0)
-                    _graphicManager.DrawPic(SM_X + 24, SM_Y1 + i * 13 + 2, graphicnums.C_SELECTEDPIC);
+                    _graphicManager.DrawPic("c_selected", SM_X + 24, SM_Y1 + i * 13 + 2);
                 else
-                    _graphicManager.DrawPic(SM_X + 24, SM_Y1 + i * 13 + 2, graphicnums.C_NOTSELECTEDPIC);
+                    _graphicManager.DrawPic("c_notselected", SM_X + 24, SM_Y1 + i * 13 + 2);
             }
 
         DrawMenuGun(SndItems);
@@ -1447,8 +1449,8 @@ internal partial class Program
         int i, x, y;
         ClearMScreen();
         DrawStripes(10);
-        _graphicManager.DrawPic(80, 0, graphicnums.C_CONTROLPIC);
-        _graphicManager.DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
+        _graphicManager.DrawPic("c_control", 80, 0);
+        _graphicManager.DrawPic("c_mouselback", 112, 184);
         DrawWindow(CTL_X - 8, CTL_Y - 5, CTL_W, CTL_H, BKGDCOLOR);
         WindowX = 0;
         WindowW = 320;
@@ -1471,15 +1473,15 @@ internal partial class Program
         x = CTL_X + CtlItems.indent - 24;
         y = CTL_Y + 3;
         if (mouseenabled)
-            _graphicManager.DrawPic(x, y, graphicnums.C_SELECTEDPIC);
+            _graphicManager.DrawPic("c_selected", x, y);
         else
-            _graphicManager.DrawPic(x, y, graphicnums.C_NOTSELECTEDPIC);
+            _graphicManager.DrawPic("c_notselected", x, y);
 
         y = CTL_Y + 29;
         if (joystickenabled)
-            _graphicManager.DrawPic(x, y, graphicnums.C_SELECTEDPIC);
+            _graphicManager.DrawPic("c_selected", x, y);
         else
-            _graphicManager.DrawPic(x, y, graphicnums.C_NOTSELECTEDPIC);
+            _graphicManager.DrawPic("c_notselected", x, y);
 
         //
         // PICK FIRST AVAILABLE SPOT
@@ -1599,14 +1601,14 @@ internal partial class Program
 
         ClearMScreen();
         fontnumber = 1;
-        _graphicManager.DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
+        _graphicManager.DrawPic("c_mouselback",112, 184);
         DrawWindow(LSM_X - 10, LSM_Y - 5, LSM_W, LSM_H, BKGDCOLOR);
         DrawStripes(10);
 
         if (loadsave == 0)
-            _graphicManager.DrawPic(60, 0, graphicnums.C_LOADGAMEPIC);
+            _graphicManager.DrawPic("c_loadgame", 60, 0);
         else
-            _graphicManager.DrawPic(60, 0, graphicnums.C_SAVEGAMEPIC);
+            _graphicManager.DrawPic("c_savegame", 60, 0);
 
         for (i = 0; i < 10; i++)
             PrintLSEntry(i, TEXTCOLOR);
@@ -1653,7 +1655,7 @@ internal partial class Program
     {
         DrawWindow(LSA_X, LSA_Y, LSA_W, LSA_H, TEXTCOLOR);
         DrawOutline(LSA_X, LSA_Y, LSA_W, LSA_H, 0, HIGHLIGHT);
-        _graphicManager.DrawPic(LSA_X + 8, LSA_Y + 5, graphicnums.C_DISKLOADING1PIC);
+        _graphicManager.DrawPic("c_diskloading1", LSA_X + 8, LSA_Y + 5);
 
         fontnumber = 1;
         SETFONTCOLOR(0, TEXTCOLOR);
@@ -2016,7 +2018,7 @@ internal partial class Program
     internal static void DrawMouseSens()
     {
         ClearMScreen();
-        _graphicManager.DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
+        _graphicManager.DrawPic("c_mouselback", 112, 184);
         DrawWindow(10, 80, 300, 30, BKGDCOLOR);
         WindowX = 0;
         WindowW = 320;
@@ -2457,9 +2459,9 @@ internal partial class Program
         ClearMScreen();
         WindowX = 0;
         WindowW = 320;
-        _graphicManager.DrawPic(112, 184, graphicnums.C_MOUSELBACKPIC);
+        _graphicManager.DrawPic("c_mouselback", 112, 184);
         DrawStripes(10);
-        _graphicManager.DrawPic(80, 0, graphicnums.C_CUSTOMIZEPIC);
+        _graphicManager.DrawPic("c_customize", 80, 0);
 
         //
         // MOUSE
@@ -2685,7 +2687,7 @@ internal partial class Program
 
         x = iteminfo.x;
         y = iteminfo.y + iteminfo.curpos * 13 - 2;
-        _graphicManager.DrawPic(x, y, graphicnums.C_CURSOR1PIC);
+        _graphicManager.DrawPic("c_cursor1", x, y);
     }
 
     internal static int Confirm(string text)

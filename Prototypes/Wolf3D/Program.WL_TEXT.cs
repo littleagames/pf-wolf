@@ -377,10 +377,10 @@ internal partial class Program
         // clear the screen
         //
         _videoManager.Bar(0, 0, 320, 200, BACKCOLOR);
-        _graphicManager.DrawPic(0, 0, graphicnums.H_TOPWINDOWPIC);
-        _graphicManager.DrawPic(0, 8, graphicnums.H_LEFTWINDOWPIC);
-        _graphicManager.DrawPic(312, 8, graphicnums.H_RIGHTWINDOWPIC);
-        _graphicManager.DrawPic(8, 176, graphicnums.H_BOTTOMINFOPIC);
+        _graphicManager.DrawPic("h_topwindow", 0, 0);
+        _graphicManager.DrawPic("h_leftwindow", 0, 8);
+        _graphicManager.DrawPic("h_rightwindow", 312, 8);
+        _graphicManager.DrawPic("h_bottominfo", 8, 176);
 
 
         for (i = 0; i < TEXTROWS; i++)

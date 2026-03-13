@@ -233,6 +233,7 @@ internal partial class Program
         }
     }
 
+    private static string[] numpics = new[] { "l_num0", "l_num1", "l_num2", "l_num3", "l_num4", "l_num5", "l_num6", "l_num7", "l_num8", "l_num9" };
     internal static void LevelCompleted()
     {
         const int VBLWAIT = 30;
@@ -367,15 +368,15 @@ internal partial class Program
             min = sec / 60;
             sec %= 60;
             i = 26 * 8;
-            _graphicManager.DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (min / 10));
+            _graphicManager.DrawPic(numpics[(min / 10)], i, 10 * 8);
             i += 2 * 8;
-            _graphicManager.DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (min % 10));
+            _graphicManager.DrawPic(numpics[(min % 10)], i, 10 * 8);
             i += 2 * 8;
             Write(i / 8, 10, ":");
             i += 1 * 8;
-            _graphicManager.DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (sec / 10));
+            _graphicManager.DrawPic(numpics[(sec / 10)], i, 10 * 8);
             i += 2 * 8;
-            _graphicManager.DrawPic(i, 10 * 8, graphicnums.L_NUM0PIC + (sec % 10));
+            _graphicManager.DrawPic(numpics[(sec % 10)], i, 10 * 8);
 
             _videoManager.Update();
             _videoManager.FadeIn();
@@ -654,15 +655,15 @@ internal partial class Program
             min = sec = 99;
 
         i = TIMEX * 8 + 1;
-        _graphicManager.DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (min / 10));
+        _graphicManager.DrawPic(numpics[(min / 10)], i, TIMEY * 8);
         i += 2 * 8;
-        _graphicManager.DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (min % 10));
+        _graphicManager.DrawPic(numpics[(min % 10)], i, TIMEY * 8);
         i += 2 * 8;
         Write(i / 8, TIMEY, ":");
         i += 1 * 8;
-        _graphicManager.DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (sec / 10));
+        _graphicManager.DrawPic(numpics[(sec / 10)], i, TIMEY * 8);
         i += 2 * 8;
-        _graphicManager.DrawPic(i, TIMEY * 8, graphicnums.L_NUM0PIC + (sec % 10));
+        _graphicManager.DrawPic(numpics[(sec % 10)], i, TIMEY * 8);
         _videoManager.Update();
 
         tempstr = kr.ToString();

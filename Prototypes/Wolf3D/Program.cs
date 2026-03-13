@@ -777,7 +777,9 @@ internal partial class Program
         if (x == 0 && y == 0)
             return;
 
-        _graphicManager.DrawPic(x, y, graphicnums.C_DISKLOADING1PIC + diskflopanim_which);
+        string[] diskpics = new[] { "c_diskloading1", "c_diskloading2" };
+
+        _graphicManager.DrawPic(diskpics[diskflopanim_which], x, y);
         _videoManager.Update();
         diskflopanim_which ^= 1;
     }

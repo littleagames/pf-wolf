@@ -464,7 +464,7 @@ internal partial class Program
         if (_gameEngineManager.IsPaused())
         {
             int lastoffs = StopMusic();
-            _graphicManager.DrawPic(16 * 8, 80 - 2 * 8, graphicnums.PAUSEDPIC);
+            _graphicManager.DrawPic("paused", 16 * 8, 80 - 2 * 8);
             _videoManager.Update();
             _inputManager.Ack();
             _gameEngineManager.SetPaused(false);

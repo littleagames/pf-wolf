@@ -1,6 +1,6 @@
 ﻿namespace Wolf3D.Mappers;
 
-internal static class GraphicsMap
+internal static class GraphicsMappings
 {
     public static Dictionary<string, graphicnums> GraphicIndexMap = new Dictionary<string, graphicnums>()
         {
