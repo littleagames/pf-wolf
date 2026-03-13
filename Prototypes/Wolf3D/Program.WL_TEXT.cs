@@ -87,7 +87,7 @@ internal partial class Program
         string text;
         ClearMemory();
 
-        artnum = endextern + gamestate.episode;
+        artnum = endextern + gamestate.cluster;
         text = _graphicManager.GetText(artnum);
 
         ShowArticle(text);

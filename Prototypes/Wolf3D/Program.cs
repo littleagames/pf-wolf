@@ -2,6 +2,7 @@
 using SDL2;
 using Wolf3D.Configuration;
 using Wolf3D.Managers;
+using Wolf3D.Mappers;
 
 namespace Wolf3D;
 
@@ -66,10 +67,7 @@ internal partial class Program
     //
     // Command line parameter variables
     //
-    internal static bool param_debugmode = false;
     internal static bool param_nowait = false;
-    internal static difficultytypes param_difficulty = difficultytypes.gd_easy; // default is "normal"
-    internal static int param_tedlevel = -1;            // default is not to start a level
     
     internal static int param_audiobuffer = DEFAULT_AUDIO_BUFFER_SIZE;
     internal static int param_samplerate = 44100;
@@ -224,23 +222,6 @@ internal partial class Program
         int LastDemo = 0;
 
         //
-        // check for launch from ted
-        //
-        if (param_tedlevel != -1)
-        {
-            param_nowait = true;
-            EnableEndGameMenuItem();
-            NewGame(param_difficulty, 0);
-
-            gamestate.episode = (short)(param_tedlevel / 10);
-            gamestate.mapon = (short)(param_tedlevel % 10);
-
-            GameLoop();
-            _gameEngineManager.Quit("");
-            return;
-        }
-
-        //
         // main game cycle
         //
         if (!param_nowait)
@@ -300,7 +281,7 @@ internal partial class Program
 
             _videoManager.FadeOut();
 
-            if (_inputManager.IsKeyDown(ScanCodes.sc_Tab) && param_debugmode)
+            if (_inputManager.IsKeyDown(ScanCodes.sc_Tab))
                 RecordDemo();
             else
                 US_ControlPanel(0);
@@ -317,7 +298,7 @@ internal partial class Program
         }
     }
 
-    internal static void NewGame(difficultytypes difficulty, int episode)
+    internal static void NewGame(difficultytypes difficulty, MapInfoMappings.EpisodeInfo epInfo, MapInfoMappings.MapInfo mapInfo)
     {
         gamestate = new gametype();
         gamestate.difficulty = difficulty;
@@ -327,7 +308,8 @@ internal partial class Program
         gamestate.ammo = STARTAMMO;
         gamestate.lives = 3;
         gamestate.nextextra = EXTRAPOINTS;
-        gamestate.episode = (short)episode;
+        gamestate.cluster = mapInfo.Cluster;
+        gamestate.mapon = epInfo.StartMap;
 
         startgame = true;
     }

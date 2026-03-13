@@ -1,4 +1,5 @@
 ﻿using Wolf3D.Managers;
+using Wolf3D.Mappers;
 
 namespace Wolf3D.Managers;
 
@@ -83,8 +84,9 @@ internal class MapManager
         return mapsegs[0][y * mapwidth + x];
     }
 
-    public void LoadMap(int mapnum)
+    public void LoadMap(string mapName)
     {
+        var mapnum = MapInfoMappings.MapAssetToIndex[mapName];
         CacheMap(mapnum);
         var mapheader = mapheaderseg[mapnum];
 

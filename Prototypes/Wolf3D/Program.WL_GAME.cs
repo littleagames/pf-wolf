@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using Wolf3D.Managers;
+using Wolf3D.Mappers;
 
 namespace Wolf3D;
 
@@ -604,22 +605,16 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     LevelCompleted();              // do the intermission
                     if (viewsize == 21) DrawPlayScreen();
                     gamestate.oldscore = gamestate.score;
-                    //
-                    // COMING BACK FROM SECRET LEVEL
-                    //
-                    if (gamestate.mapon == 9)
-                        gamestate.mapon = (short)ElevatorBackTo[gamestate.episode];    // back from secret
+
+                    var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
+                    if (playstate == playstatetypes.ex_secretlevel)
+                    {
+                        gamestate.mapon = mapInfo.SecretNext ?? mapInfo.Next; // Falls back if no secretnext defined
+                    }
                     else
-                        //
-                        // GOING TO SECRET LEVEL
-                        //
-                        if (playstate == playstatetypes.ex_secretlevel)
-                            gamestate.mapon = 9;
-                        else
-                            //
-                            // GOING TO NEXT LEVEL
-                            //
-                            gamestate.mapon++;
+                    {
+                        gamestate.mapon = mapInfo.Next;
+                    }
                     break;
 
                 case playstatetypes.ex_died:
@@ -634,7 +629,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                         _videoManager.ClearScreen(0);
                     ClearMemory();
 
-                    CheckHighScore(gamestate.score, (ushort)(gamestate.mapon + 1));
+                    CheckHighScore(gamestate.score, (ushort)(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1));
                     MainMenu[(int)menuitems.viewscores].text = STR_VS;
                     MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
                     return;
@@ -648,7 +643,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
 
                     ClearMemory();
 
-                    CheckHighScore(gamestate.score, (ushort)(gamestate.mapon + 1));
+                    CheckHighScore(gamestate.score, (ushort)(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1));
                     MainMenu[(int)menuitems.viewscores].text = STR_VS;
                     MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
                     return;
@@ -680,9 +675,8 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
             demoptr = 0;
         }
 
-        NewGame(difficultytypes.gd_easy, episode: 0);
-        gamestate.mapon = demoData[demoptr++];
-        gamestate.difficulty = difficultytypes.gd_hard;
+        throw new NotImplementedException("Need to rewrite demo storage to save mapon as string data");
+        //NewGame(difficultytypes.gd_hard, cluster: 0, mapon: demoData[demoptr++]); // TODO: Allow demo to set difficulty too
         length = BitConverter.ToInt16(demoData, demoptr);
 
         demoptr += 3;
@@ -792,8 +786,9 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
             return;
 
         _videoManager.FadeOut();
-        NewGame(difficultytypes.gd_hard, level / 10);
-        gamestate.mapon = (short)(level % 10);
+        //NewGame(difficultytypes.gd_hard, level / 10);
+        //gamestate.mapon = (short)(level % 10);
+        throw new NotImplementedException("Need to rewrite demo storage to save mapon as string data");
         StartDemoRecord(level);
 
         DrawPlayScreen();
@@ -988,8 +983,8 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         //
         // load the level
         //
-        int mapnum = gamestate.mapon + 10 * gamestate.episode;
-        _mapManager.LoadMap(mapnum);
+        //int mapnum = gamestate.mapon + 10 * gamestate.cluster;
+        _mapManager.LoadMap(gamestate.mapon);
 
         //
         // spawn doors

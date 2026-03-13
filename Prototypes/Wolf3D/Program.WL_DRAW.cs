@@ -1,6 +1,7 @@
 ﻿using SDL2;
 using System.Runtime.InteropServices;
 using Wolf3D.Managers;
+using Wolf3D.Mappers;
 
 namespace Wolf3D;
 
@@ -389,7 +390,13 @@ internal partial class Program
 
     internal static void VGAClearScreen()
     {
-        byte ceiling = vgaCeiling[(gamestate.episode * 10) + gamestate.mapon];
+        var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
+
+        string ceiling = mapInfo.CeilingColor ?? MapInfoMappings.GameInfo.DefaultMap.CeilingColor;
+        byte ceilingColor = _videoManager.ParseColor(ceiling);
+        string floor = mapInfo.FloorColor ?? MapInfoMappings.GameInfo.DefaultMap.FloorColor;
+        byte floorColor = _videoManager.ParseColor(floor);
+
         var destIndex = vbuf;
         int y;
         unsafe
@@ -397,12 +404,12 @@ internal partial class Program
             byte* dest = (byte*)vbufPtr;// + destIndex;
             for (y = 0; y < centery; y++, destIndex += (int)_videoManager.bufferPitch)
                 for(var v = 0; v < viewwidth; v++)
-                    dest[destIndex+v] = ceiling;
+                    dest[destIndex+v] = ceilingColor;
                     //Array.Fill(dest, ceiling, destIndex, viewwidth);
 
             for (; y < viewheight; y++, destIndex += (int)_videoManager.bufferPitch)
                 for (var v = 0; v < viewwidth; v++)
-                    dest[destIndex + v] = 0x19;
+                    dest[destIndex + v] = floorColor;
                     //Array.Fill(dest, 0x19, destIndex, viewwidth);
         }
     }

@@ -165,28 +165,15 @@ internal partial class Program
         new (1, STR_CUSTOM, CustomControls),
     };
 
-    internal static CP_itemtype[] NewEmenu =
+    internal static CP_itemtype[] NewEmenu = MapInfoMappings.GameInfo.Episodes.Values.SelectMany(ep =>
+    new CP_itemtype[]
     {
-        new(1, "Episode 1\nEscape from Wolfenstein", null),
-        new(0, "", null),
-        new(3, "Episode 2\nOperation: Eisenfaust", null),
-        new(0, "", null),
-        new(3, "Episode 3\nDie, Fuhrer, Die!", null),
-        new(0, "", null),
-        new(3, "Episode 4\nA Dark Secret", null),
-        new(0, "", null),
-        new(3, "Episode 5\nTrail of the Madman", null),
-        new(0, "", null),
-        new(3, "Episode 6\nConfrontation", null),
-    };
+        new CP_itemtype(1, ep.Name, null, ep),
+        new CP_itemtype(0, "", null)
+    }).SkipLast(1)
+        .ToArray();
 
-    internal static CP_itemtype[] NewMenu = MapInfoMappings.GameInfo.Skills.Values.Select(s => new CP_itemtype(1, s.Name, null)).ToArray();// =
-    //{
-    //    new (1, STR_DADDY, null),
-    //    new (1, STR_HURTME, null),
-    //    new (1, STR_BRINGEM, null),
-    //    new (1, STR_DEATH, null)
-    //};
+    internal static CP_itemtype[] NewMenu = MapInfoMappings.GameInfo.Skills.Values.Select(s => new CP_itemtype(1, s.Name, null)).ToArray();
 
     internal static CP_itemtype[] LSMenu =
     {
@@ -388,6 +375,7 @@ internal partial class Program
 
 
     internal static int redrawitem = 1, lastitem = -1;
+
     internal static int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine)
     {
         char key;
@@ -1083,7 +1071,9 @@ internal partial class Program
 
     internal static int CP_NewGame(int _)
     {
-        int which, episode = 0;
+        int which;
+        MapInfoMappings.MapInfo? mapInfo = null;
+        MapInfoMappings.EpisodeInfo? episodeInfo = null;
     firstpart:
         DrawNewEpisode();
         do
@@ -1096,13 +1086,12 @@ internal partial class Program
                     return 0;
 
                 default:
-                    if (EpisodeSelect[which / 2] == 0)
+                    episodeInfo = (MapInfoMappings.EpisodeInfo?)NewEmenu[which].data;
+
+                    if (episodeInfo == null)
                     {
                         SD_PlaySound((int)soundnames.NOWAYSND);
-                        Message("Please select \"Read This!\"\n" +
-                                 "from the Options menu to\n" +
-                                 "find out how to order this\n" +
-                                 "episode from Apogee.");
+                        Message("Episode unavailable!");
                         _inputManager.ClearKeysDown();
                         _inputManager.Ack();
                         DrawNewEpisode();
@@ -1110,7 +1099,15 @@ internal partial class Program
                     }
                     else
                     {
-                        episode = which / 2;
+                        if (!MapInfoMappings.GameInfo.Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
+                        {
+                            SD_PlaySound((int)soundnames.NOWAYSND);
+                            Message($"Starting Map \"{episodeInfo.StartMap}\" unavailable!");
+                            _inputManager.ClearKeysDown();
+                            _inputManager.Ack();
+                            DrawNewEpisode();
+                            which = 0;
+                        }
                         which = 1;
                     }
                     break;
@@ -1141,7 +1138,8 @@ internal partial class Program
         }
 
         ShootSnd();
-        NewGame((difficultytypes)which, episode);
+
+        NewGame((difficultytypes)which, episodeInfo, mapInfo);
         StartGame = 1;
         MenuFadeOut();
 
@@ -2862,6 +2860,8 @@ internal partial class Program
         if (File.Exists("vswap.wl6"))
         {
             extension = "wl6";
+
+            // TODO: This will be defined in the GameInfo
             NewEmenu[2].active =
             NewEmenu[4].active =
             NewEmenu[6].active =

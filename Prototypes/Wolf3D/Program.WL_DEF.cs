@@ -199,7 +199,7 @@ enum enemytypes
 internal class gametype
 {
     public difficultytypes difficulty;
-    public short mapon;
+    public string mapon;
     public int oldscore, score, nextextra;
     public short lives;
     public short health;
@@ -210,7 +210,7 @@ internal class gametype
     public short faceframe;
     public short attackframe, attackcount, weaponframe;
 
-    public short episode, secretcount, treasurecount, killcount,
+    public short cluster, secretcount, treasurecount, killcount,
                 secrettotal, treasuretotal, killtotal;
     public int TimeCount;
     public int killx, killy;
@@ -219,7 +219,7 @@ internal class gametype
     public void Read(BinaryReader br)
     {
         difficulty = (difficultytypes)br.ReadInt16();
-        mapon = br.ReadInt16();
+        mapon = br.ReadString();
         oldscore = br.ReadInt32();
         score = br.ReadInt32();
         nextextra = br.ReadInt32();
@@ -234,7 +234,7 @@ internal class gametype
         attackframe = br.ReadInt16();
         attackcount = br.ReadInt16();
         weaponframe = br.ReadInt16();
-        episode = br.ReadInt16();
+        cluster = br.ReadInt16();
         secretcount = br.ReadInt16();
         treasurecount = br.ReadInt16();
         killcount = br.ReadInt16();
@@ -268,7 +268,7 @@ internal class gametype
             bw.Write(attackframe);
             bw.Write(attackcount);
             bw.Write(weaponframe);
-            bw.Write(episode);
+            bw.Write(cluster);
             bw.Write(secretcount);
             bw.Write(treasurecount);
             bw.Write(killcount);

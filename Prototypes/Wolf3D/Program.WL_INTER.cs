@@ -1,5 +1,7 @@
 ﻿using SDL2;
+using Wolf3D.Extensions;
 using Wolf3D.Managers;
+using Wolf3D.Mappers;
 
 namespace Wolf3D;
 
@@ -117,7 +119,7 @@ internal partial class Program
 
         myscore.name = "";
         myscore.score = score;
-        myscore.episode = (ushort)gamestate.episode;
+        myscore.episode = (ushort)gamestate.cluster;
         myscore.completed = other;
 
         for (i = 0, n = -1; i < MaxScores; i++)
@@ -216,23 +218,6 @@ internal partial class Program
         _videoManager.Update();
     }
 
-    internal struct times
-    {
-        public float time;
-        public char[] timestr;
-
-        public times()
-        {
-            timestr = new char[6];
-        }
-
-        public times(float time, string timestr)
-        {
-            this.time = time;
-            this.timestr = timestr.ToCharArray();
-        }
-    }
-
     private static string[] numpics = new[] { "l_num0", "l_num1", "l_num2", "l_num3", "l_num4", "l_num5", "l_num6", "l_num7", "l_num8", "l_num9" };
     internal static void LevelCompleted()
     {
@@ -243,91 +228,6 @@ internal partial class Program
         int x, i, min, sec, ratio, kr, sr, tr;
         string tempstr = "";
         int bonus, timeleft = 0;
-        times[] parTimes = {
-        //
-        // Episode One Par Times
-        //
-        new (1.5f, "01:30"),
-        new (2, "02:00"),
-        new (2, "02:00"),
-        new (3.5f, "03:30"),
-        new (3, "03:00"),
-        new (3, "03:00"),
-        new (2.5f, "02:30"),
-        new (2.5f, "02:30"),
-        new (0, "??:??"),           // Boss level
-        new (0, "??:??"),           // Secret level
-
-        //
-        // Episode Two Par Times
-        //
-        new (1.5f, "01:30"),
-        new (3.5f, "03:30"),
-        new (3, "03:00"),
-        new (2, "02:00"),
-        new (4, "04:00"),
-        new (6, "06:00"),
-        new (1, "01:00"),
-        new (3, "03:00"),
-        new (0, "??:??"),
-        new(0, "??:??"),
-
-        //
-        // Episode Three Par Times
-        //
-        new (1.5f, "01:30"),
-        new (1.5f, "01:30"),
-        new (2.5f, "02:30"),
-        new (2.5f, "02:30"),
-        new (3.5f, "03:30"),
-        new (2.5f, "02:30"),
-        new (2, "02:00"),
-        new (6, "06:00"),
-        new (0, "??:??"),
-        new (0, "??:??"),
-
-        //
-        // Episode Four Par Times
-        //
-        new (2, "02:00"),
-        new (2, "02:00"),
-        new (1.5f, "01:30"),
-        new (1, "01:00"),
-        new (4.5f, "04:30"),
-        new (3.5f, "03:30"),
-        new (2, "02:00"),
-        new (4.5f, "04:30"),
-        new (0, "??:??"),
-        new(0, "??:??"),
-
-        //
-        // Episode Five Par Times
-        //
-        new (2.5f, "02:30"),
-        new (1.5f, "01:30"),
-        new (2.5f, "02:30"),
-        new (2.5f, "02:30"),
-        new (4, "04:00"),
-        new (3, "03:00"),
-        new (4.5f, "04:30"),
-        new (3.5f, "03:30"),
-        new (0, "??:??"),
-        new (0, "??:??"),
-
-        //
-        // Episode Six Par Times
-        //
-        new (6.5f, "06:30"),
-        new (4, "04:00"),
-        new (4.5f, "04:30"),
-        new (6, "06:00"),
-        new (5, "05:00"),
-        new (5.5f, "05:30"),
-        new (5.5f, "05:30"),
-        new (8.5f, "08:30"),
-        new (0, "??:??"),
-        new(0, "??:??")
-    };
 
         ClearSplitVWB();           // set up for double buffering in split screen
         _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, VIEWCOLOR);
@@ -343,7 +243,9 @@ internal partial class Program
         _inputManager.ClearKeysDown();
         _inputManager.StartAck();
         _graphicManager.DrawPic("l_guy", 0, 16);
-        if (gamestate.mapon < LRpack)
+
+        var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
+        //if (gamestate.mapon < LRpack)
         {
             Write(14, 2, "floor\ncompleted");
             Write(14, 7, STR_BONUS + "     0");
@@ -352,8 +254,8 @@ internal partial class Program
             Write(9, 14, STR_RAT2KILL);
             Write(5, 16, STR_RAT2SECRET);
             Write(1, 18, STR_RAT2TREASURE);
-            Write(26, 2, (gamestate.mapon + 1).ToString());
-            Write(26, 12, new string(parTimes[gamestate.episode * 10 + gamestate.mapon].timestr));
+            Write(26, 2, (mapInfo.FloorNumber).ToString());
+            Write(26, 12, int.SecondsAsTime(mapInfo.ParTime));
             //
             // PRINT TIME
             //
@@ -361,9 +263,8 @@ internal partial class Program
 
             if (sec > 99 * 60)      // 99 minutes max
                 sec = 99 * 60;
-
-            if (gamestate.TimeCount < parTimes[gamestate.episode * 10 + gamestate.mapon].time * 4200)
-                timeleft = (int)((parTimes[gamestate.episode * 10 + gamestate.mapon].time * 4200) / 70 - sec);
+            if (gamestate.TimeCount < mapInfo.ParTime * 70)
+                timeleft = mapInfo.ParTime - sec;
 
             min = sec / 60;
             sec %= 60;
@@ -575,21 +476,25 @@ internal partial class Program
             //
             // SAVE RATIO INFORMATION FOR ENDGAME
             //
-            LevelRatios[gamestate.mapon].kill = (short)kr;
-            LevelRatios[gamestate.mapon].secret = (short)sr;
-            LevelRatios[gamestate.mapon].treasure = (short)tr;
-            LevelRatios[gamestate.mapon].time = min * 60 + sec;
-        }
-        else
-        {
-            Write(14, 4, "secret floor\n completed!");
-            Write(10, 16, "15000 bonus!");
+            // TODO: Store this via "cluster"
+            var mapon = MapInfoMappings.MapAssetToIndex[gamestate.mapon];
+            LevelRatios[mapon].kill = (short)kr;
+            LevelRatios[mapon].secret = (short)sr;
+            LevelRatios[mapon].treasure = (short)tr;
+            LevelRatios[mapon].time = min * 60 + sec;
 
-            _videoManager.Update();
-            _videoManager.FadeIn();
-
-            GivePoints(15000);
+            // TODO This should be set up as different LevelCompleted "screens"???
         }
+        //else
+        //{
+        //    Write(14, 4, "secret floor\n completed!");
+        //    Write(10, 16, "15000 bonus!");
+
+        //    _videoManager.Update();
+        //    _videoManager.FadeIn();
+
+        //    GivePoints(15000);
+        //}
 
 
         DrawScore();

@@ -1,4 +1,5 @@
 ﻿using Wolf3D.Managers;
+using Wolf3D.Mappers;
 
 namespace Wolf3D;
 
@@ -660,8 +661,9 @@ internal partial class Program
 
     static void DrawLevel()
     {
+        var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
         if (viewsize == 21 && ingame) return;
-        LatchNumber(2, 16, 2, gamestate.mapon + 1);
+        LatchNumber(2, 16, 2, mapInfo.FloorNumber);
     }
 
     static void DrawLives()

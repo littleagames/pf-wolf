@@ -45,11 +45,6 @@ internal partial class Program
     internal const string STR_SENS = "Mouse Sensitivity";
     internal const string STR_CUSTOM = "Customize controls";
 
-    internal const string STR_DADDY = "Can I play, Daddy?";
-    internal const string STR_HURTME = "Don't hurt me.";
-    internal const string STR_BRINGEM = "Bring 'em on!";
-    internal const string STR_DEATH = "I am Death incarnate!";
-
     internal const string STR_MOUSEADJ = "Adjust Mouse Sensitivity";
     internal const string STR_SLOW = "Slow";
     internal const string STR_FAST = "Fast";

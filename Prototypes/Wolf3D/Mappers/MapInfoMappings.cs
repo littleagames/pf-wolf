@@ -228,9 +228,10 @@ internal static class MapInfoMappings
                 "MAP01",
                 new()
                 {
+                    //Current = "MAP01",
                     Next = "MAP02",
                     SecretNext = "MAP10",
-                    FloorNumber = 1,
+                    FloorNumber = 88,
                     ParTime = 90,
                     Music = "GetThem",
                     Cluster = 1
@@ -976,12 +977,13 @@ internal static class MapInfoMappings
 
     public record MapInfo
     {
+        //public string Current { get; set; }
         public string Next { get; init; } = null!;
         public string? SecretNext { get; init; } = null;
         public int FloorNumber { get; init; }
         public int ParTime { get; init; } = 0;
         public string Music { get; init; } = null!;
-        public int Cluster { get; init; }
+        public short Cluster { get; init; }
 
         public string? FloorColor { get; init; } = null;
         public string? CeilingColor { get; init; } = null;

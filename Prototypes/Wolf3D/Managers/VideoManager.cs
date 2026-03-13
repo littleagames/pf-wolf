@@ -893,4 +893,12 @@ internal class VideoManager
         }
         return n;
     }
+
+    internal byte ParseColor(string colorValue)
+    {
+        // TODO: Check if #000000, so that'll be RGB
+            // Which then needs to "find closest" on 256 color palette
+        // TODO: Check if "0x00", so that'll be HEX
+        return 0x19;
+    }
 }

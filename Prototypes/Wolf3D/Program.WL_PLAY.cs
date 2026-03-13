@@ -1,4 +1,5 @@
 ﻿using Wolf3D.Managers;
+using Wolf3D.Mappers;
 using static SDL2.SDL;
 
 namespace Wolf3D;
@@ -56,113 +57,19 @@ internal partial class Program
     =============================================================================
     */
 
-    //
-    // LIST OF SONGS FOR EACH VERSION
-    //
-    internal static musicnames[] songs = new[] {
-        
-    //
-    // Episode One
-    //
-    musicnames.GETTHEM_MUS,
-    musicnames.SEARCHN_MUS,
-    musicnames.POW_MUS,
-    musicnames.SUSPENSE_MUS,
-    musicnames.GETTHEM_MUS,
-    musicnames.SEARCHN_MUS,
-    musicnames.POW_MUS,
-    musicnames.SUSPENSE_MUS,
-
-    musicnames.WARMARCH_MUS,               // Boss level
-    musicnames.CORNER_MUS,                 // Secret level
-
-    //
-    // Episode Two
-    //
-    musicnames.NAZI_OMI_MUS,
-    musicnames.PREGNANT_MUS,
-    musicnames.GOINGAFT_MUS,
-    musicnames.HEADACHE_MUS,
-    musicnames.NAZI_OMI_MUS,
-    musicnames.PREGNANT_MUS,
-    musicnames.HEADACHE_MUS,
-    musicnames.GOINGAFT_MUS,
-
-    musicnames.WARMARCH_MUS,               // Boss level
-    musicnames.DUNGEON_MUS,                // Secret level
-
-    //
-    // Episode Three
-    //
-    musicnames.INTROCW3_MUS,
-    musicnames.NAZI_RAP_MUS,
-    musicnames.TWELFTH_MUS,
-    musicnames.ZEROHOUR_MUS,
-    musicnames.INTROCW3_MUS,
-    musicnames.NAZI_RAP_MUS,
-    musicnames.TWELFTH_MUS,
-    musicnames.ZEROHOUR_MUS,
-
-    musicnames.ULTIMATE_MUS,               // Boss level
-    musicnames.PACMAN_MUS,                 // Secret level
-
-    //
-    // Episode Four
-    //
-    musicnames.GETTHEM_MUS,
-    musicnames.SEARCHN_MUS,
-    musicnames.POW_MUS,
-    musicnames.SUSPENSE_MUS,
-    musicnames.GETTHEM_MUS,
-    musicnames.SEARCHN_MUS,
-    musicnames.POW_MUS,
-    musicnames.SUSPENSE_MUS,
-
-    musicnames.WARMARCH_MUS,               // Boss level
-    musicnames.CORNER_MUS,                 // Secret level
-
-    //
-    // Episode Five
-    //
-    musicnames.NAZI_OMI_MUS,
-    musicnames.PREGNANT_MUS,
-    musicnames.GOINGAFT_MUS,
-    musicnames.HEADACHE_MUS,
-    musicnames.NAZI_OMI_MUS,
-    musicnames.PREGNANT_MUS,
-    musicnames.HEADACHE_MUS,
-    musicnames.GOINGAFT_MUS,
-
-    musicnames.WARMARCH_MUS,               // Boss level
-    musicnames.DUNGEON_MUS,                // Secret level
-
-    //
-    // Episode Six
-    //
-    musicnames.INTROCW3_MUS,
-    musicnames.NAZI_RAP_MUS,
-    musicnames.TWELFTH_MUS,
-    musicnames.ZEROHOUR_MUS,
-    musicnames.INTROCW3_MUS,
-    musicnames.NAZI_RAP_MUS,
-    musicnames.TWELFTH_MUS,
-    musicnames.ZEROHOUR_MUS,
-
-    musicnames.ULTIMATE_MUS,               // Boss level
-    musicnames.FUNKYOU_MUS                 // Secret level
-};
-
     internal static void StartMusic()
     {
         SD_MusicOff();
-        lastmusicchunk = songs[gamestate.mapon + gamestate.episode * 10];
+        var song = MapInfoMappings.GameInfo.Maps[gamestate.mapon].Music;
+        lastmusicchunk = AudioMappings.MusicAssetToIndex[song];
         SD_StartMusic(STARTMUSIC + lastmusicchunk);
     }
 
     internal static void ContinueMusic(int offs)
     {
         SD_MusicOff();
-        lastmusicchunk = songs[gamestate.mapon + gamestate.episode * 10];
+        var song = MapInfoMappings.GameInfo.Maps[gamestate.mapon].Music;
+        lastmusicchunk = AudioMappings.MusicAssetToIndex[song];
         SD_ContinueMusic((int)(STARTMUSIC + lastmusicchunk), offs);
     }
 
@@ -423,7 +330,7 @@ internal partial class Program
         //
         // OPEN UP DEBUG KEYS
         //
-        if (_inputManager.IsKeyDown(ScanCodes.sc_BackSpace) && _inputManager.IsKeyDown(ScanCodes.sc_LShift) && _inputManager.IsKeyDown(ScanCodes.sc_Alt) && param_debugmode)
+        if (_inputManager.IsKeyDown(ScanCodes.sc_BackSpace) && _inputManager.IsKeyDown(ScanCodes.sc_LShift) && _inputManager.IsKeyDown(ScanCodes.sc_Alt))
         {
             ClearMemory();
             ClearSplitVWB();

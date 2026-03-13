@@ -38,18 +38,17 @@ internal partial class Program
 
     internal static int GetShadeDefID()
     {
-        int shadeID;
-
-        switch (gamestate.episode * 10 + gamestate.mapon)
-        {
-            case 0: shadeID = 4; break;
-            case 1:
-            case 2:
-            case 6: shadeID = 1; break;
-            case 3: shadeID = 0; break;
-            case 5: shadeID = 2; break;
-            default: shadeID = 3; break;
-        }
+        int shadeID = 0;
+        //switch (gamestate.cluster * 10 + gamestate.mapon)
+        //{
+        //    case 0: shadeID = 4; break;
+        //    case 1:
+        //    case 2:
+        //    case 6: shadeID = 1; break;
+        //    case 3: shadeID = 0; break;
+        //    case 5: shadeID = 2; break;
+        //    default: shadeID = 3; break;
+        //}
 
         //assert(shadeID >= 0 && shadeID < lengthof(shadeDefs));
 

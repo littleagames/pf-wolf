@@ -2419,19 +2419,20 @@ internal partial class Program
 
     internal static void A_DeathScream(objstruct ob)
     {
-        if (gamestate.mapon == 9 && US_RndT() == 0)
-        {
-            switch (ob.obclass)
-            {
-                case classtypes.mutantobj:
-                case classtypes.guardobj:
-                case classtypes.officerobj:
-                case classtypes.ssobj:
-                case classtypes.dogobj:
-                    PlaySoundLocActor((int)soundnames.DEATHSCREAM6SND, ob);
-                    return;
-            }
-        }
+        // TODO: mapinfo requires a flag like ecwolf's "secretdeathsounds"
+        //if (gamestate.mapon == 9 && US_RndT() == 0)
+        //{
+        //    switch (ob.obclass)
+        //    {
+        //        case classtypes.mutantobj:
+        //        case classtypes.guardobj:
+        //        case classtypes.officerobj:
+        //        case classtypes.ssobj:
+        //        case classtypes.dogobj:
+        //            PlaySoundLocActor((int)soundnames.DEATHSCREAM6SND, ob);
+        //            return;
+        //    }
+        //}
 
         switch (ob.obclass)
         {
