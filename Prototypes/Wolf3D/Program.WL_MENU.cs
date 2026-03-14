@@ -250,7 +250,6 @@ internal partial class Program
         0x6b
     };
 
-    internal static int[] EpisodeSelect = { 1, 0, 0, 0, 0, 0 };
     internal static int[] SaveGamesAvail = new int[10] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     internal static int StartGame;
     internal static int SoundStatus = 1;
@@ -2867,11 +2866,6 @@ internal partial class Program
             NewEmenu[6].active =
             NewEmenu[8].active =
             NewEmenu[10].active = 1;
-            EpisodeSelect[1] =
-            EpisodeSelect[2] =
-            EpisodeSelect[3] =
-            EpisodeSelect[4] =
-            EpisodeSelect[5] = 1;
         }
         else
         {
@@ -2881,8 +2875,6 @@ internal partial class Program
                 extension = "wl3";
                 NewEmenu[2].active =
                 NewEmenu[4].active = 1;
-                EpisodeSelect[1] =
-                EpisodeSelect[2] = 1;
             }
             else
             {
@@ -2898,8 +2890,6 @@ internal partial class Program
             }
         }
 
-        helpfilename += extension;
-        endfilename += extension;
         SaveName += extension;
         demoname += extension;
     }

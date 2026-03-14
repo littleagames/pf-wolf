@@ -425,7 +425,7 @@ internal partial class Program
                 GiveWeapon(weapontypes.wp_chaingun);
 
                 if (viewsize != 21)
-                    StatusDrawFace(graphicnums.GOTGATLINGPIC);
+                    StatusDrawFace("gotgatling");
                 facecount = 0;
                 break;
 
@@ -467,15 +467,17 @@ internal partial class Program
     }
 
 
-    static void StatusDrawPic (uint x, uint y, graphicnums picnum)
+    static void StatusDrawPic (string picName, uint x, uint y)
     {
-        _graphicManager.DrawPicScaledCoord((int)(((_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 16 + _videoManager.scaleFactor * x) * 8),
-            (int)(_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - y)), (int)picnum);
+        _graphicManager.DrawPic(
+            picName,
+            (int)x*8, // TODO: Allow more flexibility than 8s
+            (int)(200 - (STATUSLINES - y)));
     }
 
-    static void StatusDrawFace(graphicnums picnum)
+    static void StatusDrawFace(string picName)
     {
-        StatusDrawPic(17, 4, picnum);
+        StatusDrawPic(picName, 17, 4);
     }
 
     static void LatchNumber(int x, int y, uint width, int number)
@@ -488,7 +490,7 @@ internal partial class Program
         length = (uint)str.Length;
         while (length < width)
         {
-            StatusDrawPic((uint)x, (uint)y, graphicnums.N_BLANKPIC);
+            StatusDrawPic("n_blank", (uint)x, (uint)y);
             x++;
             width--;
         }
@@ -497,7 +499,9 @@ internal partial class Program
 
         while (c < length)
         {
-            StatusDrawPic((uint)x, (uint)y, (graphicnums)(str[(int)c] - '0' + (int)graphicnums.N_0PIC));
+            string[] numberPic = ["n_0", "n_1", "n_2", "n_3", "n_4", "n_5", "n_6", "n_7", "n_8", "n_9"];
+            var digitIndex = (int)(str[(int)c] - '0');
+            StatusDrawPic(numberPic[digitIndex], (uint)x, (uint)y);
             x++;
             c++;
         }
@@ -537,17 +541,20 @@ internal partial class Program
     {
         if (viewsize == 21 && ingame) return;
         if (SD_SoundPlaying() == (int)soundnames.GETGATLINGSND)
-            StatusDrawFace(graphicnums.GOTGATLINGPIC);
+            StatusDrawFace("gotgatling");
         else if (gamestate.health != 0)
         {
-            StatusDrawFace((graphicnums.FACE1APIC + 3 * ((100 - gamestate.health) / 16) + gamestate.faceframe));
+            int tier = ((100 - gamestate.health) / 16) + 1;
+            char animationFrame = (char)('a' + gamestate.faceframe);
+            string facePic = $"face{tier}{animationFrame}";
+            StatusDrawFace(facePic);
         }
         else
         {
             if (LastAttacker != null && LastAttacker.obclass == classtypes.needleobj)
-                StatusDrawFace(graphicnums.MUTANTBJPIC);
+                StatusDrawFace("mutantbj");
             else
-                StatusDrawFace(graphicnums.FACE8APIC);
+                StatusDrawFace("face8a");
         }
     }
 
@@ -643,14 +650,14 @@ internal partial class Program
     {
         if (viewsize == 21 && ingame) return;
         if ((gamestate.keys & 1) != 0)
-            StatusDrawPic(30, 4, graphicnums.GOLDKEYPIC);
+            StatusDrawPic("goldkey", 30, 4);
         else
-            StatusDrawPic(30, 4, graphicnums.NOKEYPIC);
+            StatusDrawPic("nokey", 30, 4);
 
         if ((gamestate.keys & 2) != 0)
-            StatusDrawPic(30, 20, graphicnums.SILVERKEYPIC);
+            StatusDrawPic("silverkey", 30, 20);
         else
-            StatusDrawPic(30, 20, graphicnums.NOKEYPIC);
+            StatusDrawPic("nokey", 30, 20);
     }
 
     static void GiveKey(int key)
@@ -716,7 +723,9 @@ internal partial class Program
     static void DrawWeapon()
     {
         if (viewsize == 21 && ingame) return;
-        StatusDrawPic(32, 8, (graphicnums.KNIFEPIC + (int)gamestate.weapon));
+
+        string[] weaponPic = ["knife", "gun", "machinegun", "gatlinggun"];
+        StatusDrawPic(weaponPic[(int)gamestate.weapon], 32, 8);
     }
 /*
 ==================

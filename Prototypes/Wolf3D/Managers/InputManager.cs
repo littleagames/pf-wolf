@@ -97,6 +97,10 @@ public enum ScanCodes
 
 internal class InputManager
 {
+    internal static event EventHandler<bool>? MouseGrabbed;
+    internal static event EventHandler? Quit;
+    internal static event EventHandler<bool>? Pause;
+
     private string[] ScanNames =
     {
         "?","?","?","?","A","B","C","D",
@@ -171,20 +175,14 @@ internal class InputManager
         return ScanNames[(int)scan];
     }
 
-    public InputManager(
-        GameEngineManager gameEngineManager,
-        VideoManager videoManager)
+    public InputManager()
     {
-        this.gameEngineManager = gameEngineManager;
-        this.videoManager = videoManager;
     }
 
     private int param_joystickindex = 0;
     private int param_joystickhat = -1;
 
     private const int TEXTINPUTSIZE = SDL.SDL_TEXTINPUTEVENT_TEXT_SIZE;
-    private readonly GameEngineManager gameEngineManager;
-    private readonly VideoManager videoManager;
 
     internal void ClearKey(ScanCodes code)
     {
@@ -242,7 +240,7 @@ internal class InputManager
     };
 
 
-    internal void Init()
+    internal void Init(bool fullscreen)
     {
         if (Started)
             return;
@@ -274,11 +272,12 @@ internal class InputManager
 
         SDL.SDL_EventState(SDL.SDL_EventType.SDL_MOUSEMOTION, SDL.SDL_IGNORE);
 
-        if (videoManager.fullscreen || forcegrabmouse)
+        if (fullscreen || forcegrabmouse)
         {
             GrabInput = true;
 
-            videoManager.SetWindowGrab(GrabInput);
+            MouseGrabbed?.Invoke(this, GrabInput);
+            //SetWindowGrab(GrabInput);
         }
 
         int numJoysticks = SDL.SDL_NumJoysticks();
@@ -506,7 +505,7 @@ internal class InputManager
         switch (e.type)
         {
             case SDL.SDL_EventType.SDL_QUIT:
-                gameEngineManager.Quit("");
+                Quit?.Invoke(this, EventArgs.Empty);
                 break;
 
             case SDL.SDL_EventType.SDL_KEYDOWN:
@@ -514,24 +513,18 @@ internal class InputManager
                 {
                     GrabInput = !GrabInput;
 
-                    videoManager.SetWindowGrab(GrabInput);
+                    MouseGrabbed?.Invoke(this, GrabInput);
 
                     return;
                 }
 
                 LastScan = MapKey(key);
 
-                if (Keyboard[(int)ScanCodes.sc_Alt])
-                {
-                    if (LastScan == ScanCodes.sc_F4)
-                        gameEngineManager.Quit(string.Empty);
-                }
-
                 if (LastScan < ScanCodes.sc_Last)
                     Keyboard[(int)LastScan] = true;
 
                 if (LastScan == ScanCodes.sc_Pause)
-                    gameEngineManager.SetPaused(true);
+                    Pause?.Invoke(this, true);
                 break;
 
             case SDL.SDL_EventType.SDL_KEYUP:
@@ -730,6 +723,7 @@ internal class InputManager
     internal void CenterMouse()
     {
         if (MousePresent && GrabInput)
-            videoManager.CenterMouse();
+            Console.WriteLine("Center mouse");
+          //  SDL.SDL_WarpMouseInWindow(window, screenWidth / 2, screenHeight / 2);
     }
 }

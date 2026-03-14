@@ -198,8 +198,11 @@ internal partial class Program
         ClearSplitVWB();           // set up for double buffering in split screen
 
         _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 1), bordercol);
-        _graphicManager.DrawPicScaledCoord(((_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 16) * 8,
-            (_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2, (int)graphicnums.GETPSYCHEDPIC);
+
+        // TODO: This may have just been centered in the viewport area
+        //    ((_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 16) * 8,
+        //    (_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2,
+        _graphicManager.DrawPic("getpsyched", (320 - 224) / 2, (200 - STATUSLINES - 48) / 2);
 
         WindowX = (ushort)((_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 2);
         WindowY = (ushort)((_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2);

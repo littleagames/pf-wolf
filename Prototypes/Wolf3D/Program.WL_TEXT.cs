@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using Wolf3D.Managers;
+using Wolf3D.Mappers;
 
 namespace Wolf3D;
 
@@ -64,17 +65,13 @@ internal partial class Program
     static int picdelay;
     static bool layoutdone;
 
-    static graphicnums endextern = graphicnums.T_ENDART1;
-    static graphicnums helpextern = graphicnums.T_HELPART;
-
-    internal static string helpfilename = "HELPART.";
-    internal static string endfilename = "ENDART1.";
-
     internal static void HelpScreens()
     {
-        graphicnums artnum;
-        artnum = helpextern;
-        text = _graphicManager.GetText(artnum);
+        text = _graphicManager.GetText("HELPART");
+        if (string.IsNullOrEmpty(text))
+        {
+            return;
+        }
         ShowArticle(text);
         _videoManager.FadeOut();
 
@@ -83,12 +80,18 @@ internal partial class Program
 
     internal static void EndText()
     {
-        graphicnums artnum;
-        string text;
         ClearMemory();
 
-        artnum = endextern + gamestate.cluster;
-        text = _graphicManager.GetText(artnum);
+        if (!MapInfoMappings.GameInfo.Clusters.TryGetValue(gamestate.cluster, out var clusterInfo))
+        {
+            return;
+        }
+
+        string text = _graphicManager.GetText(clusterInfo.EndText);
+        if (string.IsNullOrEmpty(text))
+        {
+            return;
+        }
 
         ShowArticle(text);
 

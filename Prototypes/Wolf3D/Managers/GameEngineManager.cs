@@ -20,6 +20,8 @@ internal class GameEngineManager
     {
         this.videoManager = videoManager;
         this.inputManager = inputManager;
+        InputManager.Quit += Quit;
+        InputManager.Pause += SetPaused;
     }
 
     /// <summary>
@@ -244,7 +246,11 @@ internal class GameEngineManager
     }
 
     internal static void WaitVBL(uint a) => DelayMs((a) * 8);
-
+    
+    public void Quit(object? sender, EventArgs e)
+    {
+        Quit("");
+    }
     public void Quit(string errorStr)
     {
         var returnCode = errorStr.Length > 0 ? 1 : 0;
@@ -265,6 +271,10 @@ internal class GameEngineManager
     }
 
     public bool IsPaused() => Paused;
+
+    public void SetPaused(object? sender, bool paused)
+        => SetPaused(paused);
+
     public void SetPaused(bool paused) => Paused = paused;
 
     public void Shutdown()

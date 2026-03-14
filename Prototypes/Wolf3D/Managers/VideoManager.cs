@@ -52,9 +52,9 @@ internal class VideoManager
     static uint rndbits_y;
     static uint rndmask;
 
-    public VideoManager(InputManager inputManager)
+    public VideoManager()
     {
-        this.inputManager = inputManager;
+        InputManager.MouseGrabbed += SetWindowGrab;
     }
 
     public void Init()
@@ -403,7 +403,7 @@ internal class VideoManager
         rndval = 1;
         pixperframe = width * height / frames;
 
-        inputManager.StartAck();
+        //inputManager.StartAck();
 
         frame = GameEngineManager.GetTimeCount();
         IntPtr srcptr = LockSurface(source);
@@ -411,14 +411,14 @@ internal class VideoManager
 
         while (true)
         {
-            inputManager.ProcessEvents();
+            //inputManager.ProcessEvents();
 
-            if (abortable && inputManager.CheckAck())
-            {
-                UnlockSurface(source);
-                Update(source);
-                return true;
-            }
+            //if (abortable && inputManager.CheckAck())
+            //{
+            //    UnlockSurface(source);
+            //    Update(source);
+            //    return true;
+            //}
 
             IntPtr destptr = LockSurface(screen);
 
@@ -552,7 +552,7 @@ internal class VideoManager
         SDL.SDL_WarpMouseInWindow(window, screenWidth / 2, screenHeight / 2);
     }
 
-    internal void SetWindowGrab(bool grabInput)
+    internal void SetWindowGrab(object? sender, bool grabInput)
     {
 
         if (SDL.SDL_ShowCursor(!grabInput ? 1 : 0) < 0)
@@ -576,7 +576,6 @@ internal class VideoManager
 
     int damagecount, bonuscount;
     bool palshifted;
-    private InputManager inputManager;
 
     private static byte ClampToByte(int v) => (byte)(v < 0 ? 0 : (v > 255 ? 255 : v));
 

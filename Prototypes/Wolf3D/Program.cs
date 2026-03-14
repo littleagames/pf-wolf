@@ -3,6 +3,8 @@ using SDL2;
 using Wolf3D.Configuration;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace Wolf3D;
 
@@ -16,11 +18,28 @@ internal partial class Program
 
     public Program()
     {
-        _videoManager = new(_inputManager);
-        _inputManager = new(_gameEngineManager, _videoManager);
-        _gameEngineManager = new(_videoManager, _inputManager);
-        _graphicManager = new(_videoManager);
-        _mapManager = new();
+        var services = new ServiceCollection();
+        services.AddSingleton<GameEngineManager>();
+        services.AddSingleton<VideoManager>();
+        services.AddSingleton<InputManager>();
+        services.AddSingleton<GraphicManager>();
+        services.AddSingleton<MapManager>();
+
+        // Build the service provider
+        var serviceProvider = services.BuildServiceProvider();
+
+        _gameEngineManager = serviceProvider.GetRequiredService<GameEngineManager>();
+        _videoManager = serviceProvider.GetRequiredService<VideoManager>();
+        _inputManager = serviceProvider.GetRequiredService<InputManager>();
+        _graphicManager = serviceProvider.GetRequiredService<GraphicManager>();
+        _mapManager = serviceProvider.GetRequiredService<MapManager>();
+
+        // TODO: Remove circular dependencies here
+        //_videoManager = new();
+        //_mapManager = new();
+        //_gameEngineManager = new(_videoManager, _inputManager);
+        //_inputManager = new();
+        //_graphicManager = new(_videoManager);
     }
 
     /*
@@ -97,7 +116,7 @@ internal partial class Program
     {
         bool didjukebox = false;
         _videoManager.Init();
-        _inputManager.Init();
+        _inputManager.Init(_videoManager.fullscreen);
         
         pixelangle = new short[_videoManager.screenWidth];
         wallheight = new short[_videoManager.screenWidth];

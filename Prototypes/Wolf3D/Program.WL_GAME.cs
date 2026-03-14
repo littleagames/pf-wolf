@@ -815,7 +815,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
 
     internal static void DrawPlayScreen()
     {
-        _graphicManager.DrawPicScaledCoord((_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 2, _videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES, (int)graphicnums.STATUSBARPIC);
+        _graphicManager.DrawPic("statusbar", 0, 200 - STATUSLINES); // TODO: Orientation: Bottom/Centered
         DrawPlayBorder();
 
         DrawFace();

@@ -228,10 +228,9 @@ internal static class MapInfoMappings
                 "MAP01",
                 new()
                 {
-                    //Current = "MAP01",
                     Next = "MAP02",
                     SecretNext = "MAP10",
-                    FloorNumber = 88,
+                    FloorNumber = 1,
                     ParTime = 90,
                     Music = "GetThem",
                     Cluster = 1
@@ -264,7 +263,7 @@ internal static class MapInfoMappings
                 new()
                 {
                     Next = "MAP05",
-                    FloorNumber = 5,
+                    FloorNumber = 4,
                     ParTime = 210,
                     Music = "Suspense",
                     Cluster = 1
@@ -307,7 +306,7 @@ internal static class MapInfoMappings
                 "MAP08",
                 new()
                 {
-                    Next = "MAP08",
+                    Next = "MAP09",
                     FloorNumber = 8,
                     ParTime = 150,
                     Music = "Suspense",

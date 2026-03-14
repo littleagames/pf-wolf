@@ -72,15 +72,24 @@ internal class GraphicManager
 
     public byte[] GetDemo(int demonumber)
     {
-        graphicnums[] dems = { graphicnums.T_DEMO0, graphicnums.T_DEMO1, graphicnums.T_DEMO2, graphicnums.T_DEMO3 };
-        return grsegs[(int)dems[demonumber]];
+        string[] dems = { "demo0", "demo1", "demo2", "demo3" };
+        return grsegs[(int)GraphicsMappings.GraphicIndexMap[dems[demonumber]]];
     }
 
-    public string GetText(graphicnums artnum)
+    public string GetText(string textName)
     {
-        return new string(
-            System.Text.Encoding.ASCII.GetString(
-                grsegs[(int)artnum]).ToCharArray());
+        string? foundKey;
+        if ((foundKey = GraphicsMappings.GraphicIndexMap.Keys.FirstOrDefault(x => x.ToLowerInvariant().Equals(textName.ToLowerInvariant()))) != null)
+        {
+            if (GraphicsMappings.GraphicIndexMap.TryGetValue(foundKey, out var foundchunk))
+            {
+                return new string(
+                    System.Text.Encoding.ASCII.GetString(
+                        grsegs[(int)foundchunk]).ToCharArray());
+            }
+        }
+
+        return "";
     }
 
     public void DrawTile8(int x, int y, int tile)
