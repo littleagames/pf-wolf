@@ -60,7 +60,7 @@ internal partial class Program
     internal static void StartMusic()
     {
         SD_MusicOff();
-        var song = MapInfoMappings.GameInfo.Maps[gamestate.mapon].Music;
+        var song = _assetManager.GetGameInfo().Maps[gamestate.mapon].Music;
         lastmusicchunk = AudioMappings.MusicAssetToIndex[song];
         SD_StartMusic(STARTMUSIC + lastmusicchunk);
     }
@@ -68,7 +68,7 @@ internal partial class Program
     internal static void ContinueMusic(int offs)
     {
         SD_MusicOff();
-        var song = MapInfoMappings.GameInfo.Maps[gamestate.mapon].Music;
+        var song = _assetManager.GetGameInfo().Maps[gamestate.mapon].Music;
         lastmusicchunk = AudioMappings.MusicAssetToIndex[song];
         SD_ContinueMusic((int)(STARTMUSIC + lastmusicchunk), offs);
     }

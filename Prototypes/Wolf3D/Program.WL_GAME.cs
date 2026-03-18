@@ -606,7 +606,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     if (viewsize == 21) DrawPlayScreen();
                     gamestate.oldscore = gamestate.score;
 
-                    var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
+                    var mapInfo = _assetManager.GetGameInfo().Maps[gamestate.mapon];
                     if (playstate == playstatetypes.ex_secretlevel)
                     {
                         gamestate.mapon = mapInfo.SecretNext ?? mapInfo.Next; // Falls back if no secretnext defined

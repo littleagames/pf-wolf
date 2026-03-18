@@ -165,15 +165,10 @@ internal partial class Program
         new (1, STR_CUSTOM, CustomControls),
     };
 
-    internal static CP_itemtype[] NewEmenu = MapInfoMappings.GameInfo.Episodes.Values.SelectMany(ep =>
-    new CP_itemtype[]
-    {
-        new CP_itemtype(1, ep.Name, null, ep),
-        new CP_itemtype(0, "", null)
-    }).SkipLast(1)
-        .ToArray();
+    // TODO: Need to initialize menus after _assetManager is set
+    internal static CP_itemtype[] NewEmenu = [];
 
-    internal static CP_itemtype[] NewMenu = MapInfoMappings.GameInfo.Skills.Values.Select(s => new CP_itemtype(1, s.Name, null)).ToArray();
+    internal static CP_itemtype[] NewMenu = [];
 
     internal static CP_itemtype[] LSMenu =
     {
@@ -1043,13 +1038,19 @@ internal partial class Program
 
     internal static void DrawMainMenu()
     {
-        ClearMScreen();
+        var mainMenu = _assetManager.GetMenu("main_menu");
+        
+        foreach (var menuComponent in mainMenu.Components)
+        {
+            _graphicManager.DrawComponent(menuComponent);
+        }
+        //ClearMScreen();
 
-        _graphicManager.DrawPic("c_mouselback", 112, 184);
-        DrawStripes(10);
-        _graphicManager.DrawPic("c_options", 84, 0);
+        //_graphicManager.DrawPic("c_mouselback", 112, 184);
+        //DrawStripes(10);
+        //_graphicManager.DrawPic("c_options", 84, 0);
 
-        DrawWindow(MENU_X - 8, MENU_Y - 3, MENU_W, MENU_H, BKGDCOLOR);
+        //DrawWindow(MENU_X - 8, MENU_Y - 3, MENU_W, MENU_H, BKGDCOLOR);
         //
         // CHANGE "GAME" AND "DEMO"
         //
@@ -1071,8 +1072,8 @@ internal partial class Program
     internal static int CP_NewGame(int _)
     {
         int which;
-        MapInfoMappings.MapInfo? mapInfo = null;
-        MapInfoMappings.EpisodeInfo? episodeInfo = null;
+        MapInfo? mapInfo = null;
+        EpisodeInfo? episodeInfo = null;
     firstpart:
         DrawNewEpisode();
         do
@@ -1085,7 +1086,7 @@ internal partial class Program
                     return 0;
 
                 default:
-                    episodeInfo = (MapInfoMappings.EpisodeInfo?)NewEmenu[which].data;
+                    episodeInfo = (EpisodeInfo?)NewEmenu[which].data;
 
                     if (episodeInfo == null)
                     {
@@ -1098,7 +1099,7 @@ internal partial class Program
                     }
                     else
                     {
-                        if (!MapInfoMappings.GameInfo.Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
+                        if (!_assetManager.GetGameInfo().Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
                         {
                             SD_PlaySound((int)soundnames.NOWAYSND);
                             Message($"Starting Map \"{episodeInfo.StartMap}\" unavailable!");
@@ -1194,7 +1195,7 @@ internal partial class Program
 
     internal static void DrawNewGameDiff(int w)
     {
-        MapInfoMappings.SkillInfo[] skills = MapInfoMappings.GameInfo.Skills.Values.ToArray();
+        SkillInfo[] skills = _assetManager.GetGameInfo().Skills.Values.ToArray();
         _graphicManager.DrawPic(skills[w].PicName, NM_X + 185, NM_Y + 7);
     }
 
@@ -2839,6 +2840,8 @@ internal partial class Program
 
     internal static void CheckForEpisodes()
     {
+        NewMenu = _assetManager.GetGameInfo().Skills.Values.Select(s => new CP_itemtype(1, s.Name, null)).ToArray();
+        NewEitems.amount = (short) NewMenu.Length;
         /*if (configdir != string.Empty)
         {
             if (!Directory.Exists(configdir))
@@ -2859,13 +2862,14 @@ internal partial class Program
         if (File.Exists("vswap.wl6"))
         {
             extension = "wl6";
-
-            // TODO: This will be defined in the GameInfo
-            NewEmenu[2].active =
-            NewEmenu[4].active =
-            NewEmenu[6].active =
-            NewEmenu[8].active =
-            NewEmenu[10].active = 1;
+            NewEmenu = _assetManager.GetGameInfo().Episodes.Values.SelectMany(ep =>
+                new CP_itemtype[]
+                {
+                    new CP_itemtype(1, ep.Name, null, ep),
+                    new CP_itemtype(0, "", null)
+                }).SkipLast(1)
+                .ToArray();
+            NewEitems.amount = (short)NewEmenu.Length;
         }
         else
         {

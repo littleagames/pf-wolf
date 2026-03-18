@@ -1,5 +1,8 @@
 ﻿using System.Diagnostics;
+using System.Drawing;
+using Wolf3D.Entities;
 using Wolf3D.Mappers;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wolf3D.Managers;
 
@@ -100,6 +103,62 @@ internal class GraphicManager
     public pictabletype GetPic(graphicnums chunknum)
     {
         return pictable[(int)chunknum - GraphicConstants.STARTPICS];
+    }
+
+    public void DrawComponent(MenuComponent component)
+    {
+        if (component is Background bkgd)
+        {
+            videoManager.Bar(0, 0, 320, 200, bkgd.Color);
+        }
+        else if (component is Graphic gfx)
+        {
+            if (string.IsNullOrEmpty(gfx.Asset))
+                return;
+
+            string? foundKey = null;
+            if ((foundKey = GraphicsMappings.GraphicIndexMap.Keys.FirstOrDefault(x => x.ToLowerInvariant().Equals(gfx.Asset.ToLowerInvariant()))) != null)
+            {
+                if (GraphicsMappings.GraphicIndexMap.TryGetValue(foundKey, out var foundchunk))
+                {
+                    int picnum = (int)(foundchunk - GraphicConstants.STARTPICS);
+                    int width, height;
+
+                    width = pictable[picnum].width;
+                    height = pictable[picnum].height;
+
+                    if (gfx.OrientationX == HorizontalOrientation.Center)
+                        gfx.X = 160 - width / 2;
+                    else if (gfx.OrientationX == HorizontalOrientation.Right)
+                        gfx.X = 320 - width;
+
+                    if (gfx.OrientationY == VerticalOrientation.Center)
+                        gfx.Y = 100 - height / 2;
+                    if (gfx.OrientationY == VerticalOrientation.Bottom)
+                        gfx.Y = 200 - height;
+
+                    DrawPic(gfx.X, gfx.Y, foundchunk);
+                }
+            }
+        }
+        else if (component is Stripe stripe)
+        {
+            videoManager.Bar(0, stripe.Y, 320, 24, stripe.BackingColor);
+            videoManager.HorizontalLine(0, 319, stripe.Y + 22, stripe.LineColor);
+        }
+        else if (component is Window window)
+        {
+            videoManager.Bar(window.X, window.Y, window.Width, window.Height, 0x2d);
+            DrawOutline(window.X, window.Y, window.Width, window.Height, 0x23, 0x2b);
+        }
+    }
+
+    private void DrawOutline(int x, int y, int w, int h, int color1, int color2)
+    {
+        videoManager.HorizontalLine(x, x + w, y, color2);
+        videoManager.VerticalLine(y, y + h, x, color2);
+        videoManager.HorizontalLine(x, x + w, y + h, color1);
+        videoManager.VerticalLine(y, y + h, x + w, color1);
     }
 
     public void DrawPic(string graphicName, int x, int y)

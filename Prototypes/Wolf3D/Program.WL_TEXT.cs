@@ -82,7 +82,7 @@ internal partial class Program
     {
         ClearMemory();
 
-        if (!MapInfoMappings.GameInfo.Clusters.TryGetValue(gamestate.cluster, out var clusterInfo))
+        if (!_assetManager.GetGameInfo().Clusters.TryGetValue(gamestate.cluster, out var clusterInfo))
         {
             return;
         }

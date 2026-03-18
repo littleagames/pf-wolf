@@ -15,6 +15,7 @@ internal partial class Program
     private static GameEngineManager _gameEngineManager;
     private static GraphicManager _graphicManager;
     private static MapManager _mapManager;
+    private static AssetManager _assetManager;
 
     public Program()
     {
@@ -24,6 +25,7 @@ internal partial class Program
         services.AddSingleton<InputManager>();
         services.AddSingleton<GraphicManager>();
         services.AddSingleton<MapManager>();
+        services.AddSingleton<AssetManager>();
 
         // Build the service provider
         var serviceProvider = services.BuildServiceProvider();
@@ -33,6 +35,7 @@ internal partial class Program
         _inputManager = serviceProvider.GetRequiredService<InputManager>();
         _graphicManager = serviceProvider.GetRequiredService<GraphicManager>();
         _mapManager = serviceProvider.GetRequiredService<MapManager>();
+        _assetManager = serviceProvider.GetRequiredService<AssetManager>();
 
         // TODO: Remove circular dependencies here
         //_videoManager = new();
@@ -317,7 +320,7 @@ internal partial class Program
         }
     }
 
-    internal static void NewGame(difficultytypes difficulty, MapInfoMappings.EpisodeInfo epInfo, MapInfoMappings.MapInfo mapInfo)
+    internal static void NewGame(difficultytypes difficulty, EpisodeInfo epInfo, MapInfo mapInfo)
     {
         gamestate = new gametype();
         gamestate.difficulty = difficulty;

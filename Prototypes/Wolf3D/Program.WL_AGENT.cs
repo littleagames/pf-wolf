@@ -668,7 +668,8 @@ internal partial class Program
 
     static void DrawLevel()
     {
-        var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
+        var mapInfo = _assetManager.GetGameInfo().Maps[gamestate.mapon];
+        //var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
         if (viewsize == 21 && ingame) return;
         LatchNumber(2, 16, 2, mapInfo.FloorNumber);
     }

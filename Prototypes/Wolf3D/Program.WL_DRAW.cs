@@ -390,11 +390,12 @@ internal partial class Program
 
     internal static void VGAClearScreen()
     {
-        var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
+        var gameInfo = _assetManager.GetGameInfo();
+        var mapInfo = gameInfo.Maps[gamestate.mapon];
 
-        string ceiling = mapInfo.CeilingColor ?? MapInfoMappings.GameInfo.DefaultMap.CeilingColor;
+        string ceiling = mapInfo.CeilingColor ?? gameInfo.DefaultMap.CeilingColor;
         byte ceilingColor = _videoManager.ParseColor(ceiling);
-        string floor = mapInfo.FloorColor ?? MapInfoMappings.GameInfo.DefaultMap.FloorColor;
+        string floor = mapInfo.FloorColor ?? gameInfo.DefaultMap.FloorColor;
         byte floorColor = _videoManager.ParseColor(floor);
 
         var destIndex = vbuf;

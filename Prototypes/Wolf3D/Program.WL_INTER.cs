@@ -247,7 +247,7 @@ internal partial class Program
         _inputManager.StartAck();
         _graphicManager.DrawPic("l_guy", 0, 16);
 
-        var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
+        var mapInfo = _assetManager.GetGameInfo().Maps[gamestate.mapon];
         //if (gamestate.mapon < LRpack)
         {
             Write(14, 2, "floor\ncompleted");
