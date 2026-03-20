@@ -630,8 +630,9 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     ClearMemory();
 
                     CheckHighScore(gamestate.score, (ushort)(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1));
-                    MainMenu[(int)menuitems.viewscores].text = STR_VS;
-                    MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
+                    throw new NotImplementedException("Menu system should listen to game events");
+                    //MainMenu[(int)menuitems.viewscores].text = STR_VS;
+                    //MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
                     return;
 
                 case playstatetypes.ex_victorious:
@@ -644,8 +645,9 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     ClearMemory();
 
                     CheckHighScore(gamestate.score, (ushort)(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1));
-                    MainMenu[(int)menuitems.viewscores].text = STR_VS;
-                    MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
+                    throw new NotImplementedException("Menu system should listen to game events");
+                    //MainMenu[(int)menuitems.viewscores].text = STR_VS;
+                    //MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
                     return;
 
                 default:

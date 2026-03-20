@@ -129,8 +129,9 @@ internal class GameEngineManager
                 else if (Program.viewsize > 21) Program.viewsize = 21;
 
                 // Set "Read This" back to standard active
-                Program.MainMenu[6].active = 1;
-                Program.MainItems.curpos = 0;
+                throw new NotImplementedException("Menu system should listen to game events");
+                //Program.MainMenu[6].active = 1;
+                //Program.MainItems.curpos = 0;
 
 
                 Program.SD_SetMusicMode(sm);

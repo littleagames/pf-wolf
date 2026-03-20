@@ -15,28 +15,8 @@ internal struct CustomCtrls
     }
 };
 
-internal enum menuitems
-{
-    newgame,
-    soundmenu,
-    control,
-    loadgame,
-    savegame,
-    changeview,
-#if !GOODTIMES
-#if !SPEAR
-    readthis,
-#endif
-#endif
-    viewscores,
-    backtodemo,
-    quit
-}
-
 internal partial class Program
 {
-    internal const menuitems STARTITEM = menuitems.readthis;
-
     // ENDSTRx constants are defined in foreign.h
     static string[] endStrings = [
         ENDSTR1,
@@ -123,21 +103,21 @@ internal partial class Program
 
     internal static int SENSITIVE = 60;
 
-    internal static CP_itemtype[] MainMenu =
-    {
-        new(1, STR_NG, CP_NewGame),
-        new(1, STR_SD, CP_Sound),
-        new(1, STR_CL, CP_Control),
-        new(1, STR_LG, CP_LoadGame),
-        new(0, STR_SG, CP_SaveGame),
-        new(1, STR_CV, CP_ChangeView),
-#if !GOODTIMES || !SPEAR
-        new(2, "Read This", CP_ReadThis),
-#endif
-        new(1, STR_VS, CP_ViewScores),
-        new(1, STR_BD, null),
-        new(1, STR_QT, null),
-    };
+//    internal static CP_itemtype[] MainMenu =
+//    {
+//        new(1, STR_NG, CP_NewGame),
+//        new(1, STR_SD, CP_Sound),
+//        new(1, STR_CL, CP_Control),
+//        new(1, STR_LG, CP_LoadGame),
+//        new(0, STR_SG, CP_SaveGame),
+//        new(1, STR_CV, CP_ChangeView),
+//#if !GOODTIMES || !SPEAR
+//        new(2, "Read This", CP_ReadThis),
+//#endif
+//        new(1, STR_VS, CP_ViewScores),
+//        new(1, STR_BD, null),
+//        new(1, STR_QT, null),
+//    };
 
     internal static CP_itemtype[] SndMenu =
     {
@@ -221,7 +201,7 @@ internal partial class Program
         new (1,"Wolfpack", null)
     };
 
-    internal static CP_iteminfo MainItems = new(MENU_X, MENU_Y, (short)MainMenu.Length, (short)STARTITEM, 24);
+    //internal static CP_iteminfo MainItems = new(MENU_X, MENU_Y, (short)MainMenu.Length, (short)STARTITEM, 24);
     internal static CP_iteminfo SndItems = new(SM_X, SM_Y1, (short)SndMenu.Length, 0, 52);
     internal static CP_iteminfo LSItems = new(LSM_X, LSM_Y, (short)LSMenu.Length, 0, 24);
     internal static CP_iteminfo CtlItems = new(CTL_X, CTL_Y, (short)CtlMenu.Length, -1, 56);
@@ -291,8 +271,9 @@ internal partial class Program
 
     private static void EnableEndGameMenuItem()
     {
-        MainMenu[(int)menuitems.viewscores].routine = null;
-        MainMenu[(int)menuitems.viewscores].text = STR_EG;
+        throw new NotImplementedException("This needs to be re-addressed for a new menu system");
+        //MainMenu[(int)menuitems.viewscores].routine = null;
+        //MainMenu[(int)menuitems.viewscores].text = STR_EG;
     }
 
     internal static void ClearMScreen()
@@ -462,7 +443,7 @@ internal partial class Program
                 //
                 // DIDN'T FIND A MATCH FIRST TIME THRU. CHECK AGAIN.
                 //
-                if (ok != 0)
+                if (ok == 0)
                 {
                     for (i = 0; i < which; i++)
                         if (items[i].active != 0 && (items[i]).text[0] == key)
@@ -796,7 +777,8 @@ internal partial class Program
         if (!ingame)
             CA_LoadAllSounds();
         else
-            MainMenu[(int)menuitems.savegame].active = 1;
+            throw new NotImplementedException("Will need to re-address in a new menu system");
+            //MainMenu[(int)menuitems.savegame].active = 1;
 
         _inputManager.CenterMouse();
     }
@@ -804,6 +786,7 @@ internal partial class Program
     internal static void US_ControlPanel(ScanCodes scancode)
     {
         int which;
+        var mainMenu = _assetManager.GetMenu("main-menu");
 
         if (ingame)
         {
@@ -848,7 +831,13 @@ internal partial class Program
                 return;
         }
 
-        DrawMainMenu();
+        mainMenu.Draw(_graphicManager);// _graphicManager, _videoManager);
+
+        _videoManager.Update();
+        /*
+         // DRAW
+         */
+        //DrawMainMenu();
         MenuFadeIn();
         StartGame = 0;
 
@@ -857,46 +846,47 @@ internal partial class Program
         //
         do
         {
-            which = HandleMenu(MainItems, MainMenu, null);
+            which = mainMenu.Handle(_graphicManager, _videoManager, _inputManager);
+            //HandleMenu(MainItems, MainMenu, null);
             switch (which)
             {
-                case (int)menuitems.viewscores:
-                    if (MainMenu[(int)menuitems.viewscores].routine == null)
-                    {
-                        if (CP_EndGame(0) != 0)
-                            StartGame = 1;
-                    }
-                    else
-                    {
-                        DrawMainMenu();
-                        MenuFadeIn();
-                    }
-                    break;
+            //    case (int)menuitems.viewscores:
+            //        if (MainMenu[(int)menuitems.viewscores].routine == null)
+            //        {
+            //            if (CP_EndGame(0) != 0)
+            //                StartGame = 1;
+            //        }
+            //        else
+            //        {
+            //            DrawMainMenu();
+            //            MenuFadeIn();
+            //        }
+            //        break;
 
-                case (int)menuitems.backtodemo:
-                    StartGame = 1;
-                    if (!ingame)
-                        StartCPMusic(INTROSONG);
-                    _videoManager.FadeOut(0, 255, 0, 0, 0, 10);
-                    break;
+            //    case (int)menuitems.backtodemo:
+            //        StartGame = 1;
+            //        if (!ingame)
+            //            StartCPMusic(INTROSONG);
+            //        _videoManager.FadeOut(0, 255, 0, 0, 0, 10);
+            //        break;
 
                 case -1:
-                case (int)menuitems.quit:
+            //    case (int)menuitems.quit:
                     CP_Quit(0);
                     break;
 
-                default:
-                    if (StartGame == 0)
-                    {
-                        DrawMainMenu();
-                        MenuFadeIn();
-                    }
-                    break;
+            default:
+                if (StartGame == 0)
+                {
+                    //mainMenu.Draw(_graphicManager);
+                    MenuFadeIn();
+                }
+                break;
+                }
+                //
+                // "EXIT OPTIONS" OR "NEW GAME" EXITS
+                //
             }
-            //
-            // "EXIT OPTIONS" OR "NEW GAME" EXITS
-            //
-        }
         while (StartGame == 0);
 
         //
@@ -929,7 +919,8 @@ internal partial class Program
 
                 WindowH = 200;
                 fontnumber = 0;
-                MainMenu[(int)menuitems.savegame].active = 0;
+                throw new NotImplementedException("Menu system should listen to game events");
+                //MainMenu[(int)menuitems.savegame].active = 0;
                 return 1;
             //
             // QUICKSAVE
@@ -1036,39 +1027,6 @@ internal partial class Program
         return 0;
     }
 
-    internal static void DrawMainMenu()
-    {
-        var mainMenu = _assetManager.GetMenu("main_menu");
-        
-        foreach (var menuComponent in mainMenu.Components)
-        {
-            _graphicManager.DrawComponent(menuComponent);
-        }
-        //ClearMScreen();
-
-        //_graphicManager.DrawPic("c_mouselback", 112, 184);
-        //DrawStripes(10);
-        //_graphicManager.DrawPic("c_options", 84, 0);
-
-        //DrawWindow(MENU_X - 8, MENU_Y - 3, MENU_W, MENU_H, BKGDCOLOR);
-        //
-        // CHANGE "GAME" AND "DEMO"
-        //
-        if (ingame)
-        {
-            MainMenu[(int)menuitems.backtodemo].text = STR_BG;
-            MainMenu[(int)menuitems.backtodemo].active = 2;
-        }
-        else
-        {
-            MainMenu[(int)menuitems.backtodemo].text = STR_BD;
-            MainMenu[(int)menuitems.backtodemo].active = 1;
-        }
-
-        DrawMenu(MainItems, MainMenu);
-        _videoManager.Update();
-    }
-
     internal static int CP_NewGame(int _)
     {
         int which;
@@ -1146,7 +1104,8 @@ internal partial class Program
         //
         // CHANGE "READ THIS!" TO NORMAL COLOR
         //
-        MainMenu[(int)menuitems.readthis].active = 1;
+        throw new NotImplementedException("Menu system should listen to game events");
+        //MainMenu[(int)menuitems.readthis].active = 1;
         pickquick = 0;
 
         return 0;
@@ -1576,7 +1535,8 @@ internal partial class Program
                 //
                 // CHANGE "READ THIS!" TO NORMAL COLOR
                 //
-                MainMenu[(int)menuitems.readthis].active = 1;
+                throw new NotImplementedException("Menu system should listen to game events");
+                //MainMenu[(int)menuitems.readthis].active = 1;
                 exit = 1;
                 break;
             }
@@ -1917,16 +1877,18 @@ internal partial class Program
     {
         int res = Confirm(ENDGAMESTR);
 
-        DrawMainMenu();
+        throw new NotImplementedException("The draw shouldn't be handled here");
+        //DrawMainMenu();
         if (res == 0) return 0;
 
         pickquick = gamestate.lives = 0;
         playstate = playstatetypes.ex_died;
         LastAttacker = null;
 
-        MainMenu[(int)menuitems.savegame].active = 0;
-        MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
-        MainMenu[(int)menuitems.viewscores].text = STR_VS;
+        throw new NotImplementedException("Menu system should listen to game events");
+        //MainMenu[(int)menuitems.savegame].active = 0;
+        //MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
+        //MainMenu[(int)menuitems.viewscores].text = STR_VS;
         return 1;
     }
 
@@ -1942,7 +1904,8 @@ internal partial class Program
             return 0;
         }
 
-        DrawMainMenu();
+        throw new NotImplementedException("The draw shouldn't be handled here");
+        //DrawMainMenu();
         return 0;
     }
 

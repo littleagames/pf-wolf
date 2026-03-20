@@ -615,7 +615,8 @@ internal partial class Program
         if (_videoManager.screenHeight % 200 != 0)
             _videoManager.ClearScreen(0);
 
-        MainMenu[(int)menuitems.savegame].active = 0;  // ADDEDFIX 3 - Tricob
+        throw new NotImplementedException("Menu system should listen to game events");
+        //MainMenu[(int)menuitems.savegame].active = 0;  // ADDEDFIX 3 - Tricob
 
         EndText();
     }

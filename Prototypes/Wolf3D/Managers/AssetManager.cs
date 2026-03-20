@@ -871,9 +871,16 @@ internal class AssetManager
                 new Graphic("c_options", HorizontalOrientation.Center, 0)
             ],
             MenuItems = [
-                new MenuSwitcher("New Game", 1, "CP_NewGame"),
-                new MenuSwitcher("Sound", 1, "CP_Sound"),
-                new MenuSwitcher("Control", 1, "CP_Control")
+                new MenuSwitcher("New Game", true, "CP_NewGame"),
+                new MenuSwitcher("Sound", true, "CP_Sound"),
+                new MenuSwitcher("Control", true, "CP_Control"),
+                new MenuSwitcher("Load Game", true, "CP_LoadGame"),
+                new MenuSwitcher("Save Game", true, "CP_SaveGame"),
+                new MenuSwitcher("Change View", true, "CP_ChangeView"),
+                new MenuSwitcher("Read This!", true, "CP_ReadThis"),
+                new MenuSwitcher("View Scores", true, "CP_ViewScores"),
+                new MenuSwitcher("Back To Demo", true, "CP_DemoOrPlayGame"),
+                new MenuSwitcher("Quit", true, "CP_Quit"),
             ]
         };
     }
