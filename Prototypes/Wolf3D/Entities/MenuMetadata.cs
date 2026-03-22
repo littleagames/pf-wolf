@@ -25,6 +25,7 @@ internal class MenuMetadata
     public List<MenuComponent> Components { get; set; } = new();
 
     public List<MenuItem> MenuItems { get; set; } = new();
+    public int Indent { get; internal set; }
 }
 
 internal abstract record MenuComponent
@@ -140,17 +141,37 @@ internal enum VerticalOrientation
 internal abstract record MenuItem
 {
     public string Text { get; set; } = null!;
-    public int Active { get; set; }
+    public bool IsEnabled { get; set; }
 }
 
 internal record MenuSwitcher : MenuItem
 {
-    public MenuSwitcher(string text, int active, string action)
+    public MenuSwitcher(string text, bool isEnabled, string action)
     {
         Text = text;
-        Active = active;
+        IsEnabled = isEnabled;
         Action = action;
     }
 
     public string? Action { get; init; } = null;
+}
+
+internal record ToggleMenuItem : MenuItem
+{
+    public bool State { get; set; } = false;
+    public ToggleMenuItem(string text, bool isEnabled, bool defaultState)
+    {
+        Text = text;
+        IsEnabled = isEnabled;
+        State = defaultState;
+    }
+}
+
+internal record BlankMenuItem : MenuItem
+{
+    public BlankMenuItem()
+    {
+        Text = "";
+        IsEnabled = false;
+    }
 }

@@ -856,25 +856,96 @@ internal class AssetManager
     }
 
     [Obsolete("Temporary endpoint until the asset types are implemented")]
-    public MenuMetadata GetMenu(string name)
+    public MenuMetadata? GetMenu(string name)
     {
-        return new MenuMetadata
-        {
-            Music = "Wondering",
-            Type = "wolf3d-menu",
-            Position = new Vector2(76, 55),
-            Components = [
-                new Background(0x29),
-                new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
-                new Stripe(10),
-                new Window(68, 52, 178, 136, "wolf3d-theme"),
-                new Graphic("c_options", HorizontalOrientation.Center, 0)
-            ],
-            MenuItems = [
-                new MenuSwitcher("New Game", 1, "CP_NewGame"),
-                new MenuSwitcher("Sound", 1, "CP_Sound"),
-                new MenuSwitcher("Control", 1, "CP_Control")
-            ]
-        };
+        var normalizedName = name.ToLowerInvariant();
+        if (normalizedName.Equals("main-menu"))
+            return new MenuMetadata
+            {
+                Music = "Wondering",
+                Type = "wolf3d-menu",
+                Position = new Vector2(76, 55),
+                Indent = 24,
+                Components = [
+                    new Background(0x29),
+                    new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
+                    new Stripe(10),
+                    new Window(68, 52, 178, 136, "wolf3d-theme"),
+                    new Graphic("c_options", HorizontalOrientation.Center, 0)
+                ],
+                MenuItems = [
+                    new MenuSwitcher("New Game", true, "CP_NewGame"),
+                    new MenuSwitcher("Sound", true, "CP_Sound"),
+                    new MenuSwitcher("Control", true, "CP_Control"),
+                    new MenuSwitcher("Load Game", true, "CP_LoadGame"),
+                    new MenuSwitcher("Save Game", true, "CP_SaveGame"),
+                    new MenuSwitcher("Change View", true, "CP_ChangeView"),
+                    new MenuSwitcher("Read This!", true, "CP_ReadThis"),
+                    new MenuSwitcher("View Scores", true, "CP_ViewScoresOrEndGame"),
+                    new MenuSwitcher("Back To Demo", true, "CP_DemoOrPlayGame"),
+                    new MenuSwitcher("Quit", true, "CP_Quit"), // MenuConfirm
+                ]
+            };
+
+        if (normalizedName.Equals("sound"))
+            return new MenuMetadata
+            {
+                Music = "Wondering",
+                Type = "wolf3d-menu",
+                Position = new Vector2(48, 20),
+                Indent = 52,
+                Components = [
+                    new Background(0x29),
+                    new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
+                    new Window(40, 17, 250, 45, "wolf3d-theme"),
+                    new Window(40, 82, 250, 45, "wolf3d-theme"),
+                    new Window(40, 147, 250, 32, "wolf3d-theme"),
+                    new Graphic("c_fxtitle", 100, 0),
+                    new Graphic("c_digititle", 100, 65),
+                    new Graphic("c_musictitle", 100, 130)
+                ],
+                MenuItems = [
+                    new ToggleMenuItem("None", true, false),
+                    new ToggleMenuItem("PC Speaker", true, false),
+                    new ToggleMenuItem("AdLib/Sound Blaster", true, false),
+                    // gap of 2
+                    new BlankMenuItem(),
+                    new BlankMenuItem(),
+                    new ToggleMenuItem("None", true, false),
+                    new ToggleMenuItem("Disney Sound Source", false, false),
+                    new ToggleMenuItem("Sound Blaster", true, false),
+                    // gap of 2
+                    new BlankMenuItem(),
+                    new BlankMenuItem(),
+                    new ToggleMenuItem("None", true, false),
+                    new ToggleMenuItem("AdLib/Sound Blaster", true, false),
+                ]
+            };
+
+
+        if (normalizedName.Equals("control"))
+            return new MenuMetadata
+            {
+                // TODO:
+            };
+
+        if (normalizedName.Equals("game-options"))
+            return new MenuMetadata
+            {
+                Music = "Wondering",
+                Type = "wolf3d-menu",
+                Position = new Vector2(48, 20),
+                Indent = 52,
+                Components = [
+                    new Background(0x29),
+                    new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
+                ],
+                MenuItems = [
+                    new ToggleMenuItem("Unlimited Pushwall Limit", true, false),
+                    new ToggleMenuItem("Fake Hitler Fireballs", true, false),
+                ]
+            };
+
+        return null;
     }
 }

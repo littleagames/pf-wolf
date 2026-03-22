@@ -2,6 +2,7 @@
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
 using System.Linq;
+using Wolf3D.Entities;
 
 namespace Wolf3D;
 
@@ -49,15 +50,6 @@ internal partial class Program
         ENDSTR8,
         ENDSTR9
     ];
-
-    internal const int MENU_X = 76;
-    internal const int MENU_Y = 55;
-    internal const int MENU_W = 178;
-#if !SPEAR
-    internal const int MENU_H = 13 * 10 + 6;
-#else
-    internal const int MENU_H = 13 * 9 + 6;
-#endif
 
     internal const int SM_X = 48;
     internal const int SM_W = 250;
@@ -123,38 +115,8 @@ internal partial class Program
 
     internal static int SENSITIVE = 60;
 
-    internal static CP_itemtype[] MainMenu =
-    {
-        new(1, STR_NG, CP_NewGame),
-        new(1, STR_SD, CP_Sound),
-        new(1, STR_CL, CP_Control),
-        new(1, STR_LG, CP_LoadGame),
-        new(0, STR_SG, CP_SaveGame),
-        new(1, STR_CV, CP_ChangeView),
-#if !GOODTIMES || !SPEAR
-        new(2, "Read This", CP_ReadThis),
-#endif
-        new(1, STR_VS, CP_ViewScores),
-        new(1, STR_BD, null),
-        new(1, STR_QT, null),
-    };
-
-    internal static CP_itemtype[] SndMenu =
-    {
-        new(1, STR_NONE, null),
-        new(1, STR_PC, null),
-        new(1, STR_ALSB, null),
-        new(0, "", null),
-        new(0, "", null),
-        new(1, STR_NONE, null),
-        new(0, STR_DISNEY, null),
-        new(1, STR_SB, null),
-        new(0, "", null),
-        new(0, "", null),
-        new(1, STR_NONE, null),
-        new(1, STR_ALSB, null)
-    };
-
+    internal static CP_itemtype[] MainMenu = [];
+    internal static CP_itemtype[] SndMenu = [];
     internal enum CtlOptions { CTL_MOUSEENABLE, CTL_MOUSESENS, CTL_JOYENABLE, CTL_CUSTOMIZE };
 
     internal static CP_itemtype[] CtlMenu =
@@ -165,9 +127,7 @@ internal partial class Program
         new (1, STR_CUSTOM, CustomControls),
     };
 
-    // TODO: Need to initialize menus after _assetManager is set
     internal static CP_itemtype[] NewEmenu = [];
-
     internal static CP_itemtype[] NewMenu = [];
 
     internal static CP_itemtype[] LSMenu =
@@ -221,8 +181,8 @@ internal partial class Program
         new (1,"Wolfpack", null)
     };
 
-    internal static CP_iteminfo MainItems = new(MENU_X, MENU_Y, (short)MainMenu.Length, (short)STARTITEM, 24);
-    internal static CP_iteminfo SndItems = new(SM_X, SM_Y1, (short)SndMenu.Length, 0, 52);
+    internal static CP_iteminfo MainItems;
+    internal static CP_iteminfo SndItems;
     internal static CP_iteminfo LSItems = new(LSM_X, LSM_Y, (short)LSMenu.Length, 0, 24);
     internal static CP_iteminfo CtlItems = new(CTL_X, CTL_Y, (short)CtlMenu.Length, -1, 56);
     internal static CP_iteminfo CusItems = new(8, CST_Y + 13 * 2, (short)CusMenu.Length, -1, 0);
@@ -480,7 +440,7 @@ internal partial class Program
             // GET INPUT
             //
             ReadAnyControl(out ci);
-            switch ((Direction)ci.dir)
+            switch (ci.dir)
             {
                 ////////////////////////////////////////////////
                 //
@@ -1038,19 +998,13 @@ internal partial class Program
 
     internal static void DrawMainMenu()
     {
-        var mainMenu = _assetManager.GetMenu("main_menu");
+        var mainMenu = _assetManager.GetMenu("main-menu");
         
         foreach (var menuComponent in mainMenu.Components)
         {
             _graphicManager.DrawComponent(menuComponent);
         }
-        //ClearMScreen();
 
-        //_graphicManager.DrawPic("c_mouselback", 112, 184);
-        //DrawStripes(10);
-        //_graphicManager.DrawPic("c_options", 84, 0);
-
-        //DrawWindow(MENU_X - 8, MENU_Y - 3, MENU_W, MENU_H, BKGDCOLOR);
         //
         // CHANGE "GAME" AND "DEMO"
         //
@@ -1310,12 +1264,12 @@ internal partial class Program
         //
         // DRAW SOUND MENU
         //
-        ClearMScreen();
-        _graphicManager.DrawPic("c_mouselback", 112, 184);
+        var soundMenu = _assetManager.GetMenu("sound");
 
-        DrawWindow(SM_X - 8, SM_Y1 - 3, SM_W, SM_H1, BKGDCOLOR);
-        DrawWindow(SM_X - 8, SM_Y2 - 3, SM_W, SM_H2, BKGDCOLOR);
-        DrawWindow(SM_X - 8, SM_Y3 - 3, SM_W, SM_H3, BKGDCOLOR);
+        foreach (var menuComponent in soundMenu.Components)
+        {
+            _graphicManager.DrawComponent(menuComponent);
+        }
 
         //
         // IF NO ADLIB, NON-CHOOSENESS!
@@ -1332,9 +1286,6 @@ internal partial class Program
             SndMenu[5].active = 0;
 
         DrawMenu(SndItems, SndMenu);
-        _graphicManager.DrawPic("c_fxtitle", 100, SM_Y1 - 20);
-        _graphicManager.DrawPic("c_digititle", 100, SM_Y2 - 20);
-        _graphicManager.DrawPic("c_musictitle", 100, SM_Y3 - 20);
         for (i = 0; i < SndItems.amount; i++)
             if (SndMenu[i].text != string.Empty)
             {
@@ -2896,5 +2847,58 @@ internal partial class Program
 
         SaveName += extension;
         demoname += extension;
+
+        var menuAsset = _assetManager.GetMenu("main-menu");
+        MainMenu = menuAsset.MenuItems.Select(mi =>
+                new CP_itemtype((short)(mi.IsEnabled ? 1 : 0), mi.Text, MapFunction(mi as MenuSwitcher)))
+                .ToArray();
+        MainItems = new CP_iteminfo(
+            (short)menuAsset.Position.X, 
+            (short)menuAsset.Position.Y, 
+            amount: (short)MainMenu.Length, 
+            curpos: 0, 
+            indent: 24);
+
+        menuAsset = _assetManager.GetMenu("sound");
+        SndMenu = menuAsset.MenuItems.Select(mi =>
+                new CP_itemtype((short)(mi.IsEnabled ? 1 : 0), mi.Text, MapFunction(mi as MenuSwitcher)))
+                .ToArray();
+        SndItems = new CP_iteminfo(
+            (short)menuAsset.Position.X,
+            (short)menuAsset.Position.Y,
+            amount: (short)SndMenu.Length,
+            curpos: 0,
+            indent: (short)menuAsset.Indent);
+    }
+
+    private static Func<int, int>? MapFunction(MenuSwitcher? mi)
+    {
+        // This list will be built with attributes or scripting on the pk3
+        List<Func<int, int>> avaiableFunctions = 
+            [
+            CP_NewGame,
+            CP_Sound,
+            CP_Control,
+            CP_LoadGame,
+            CP_SaveGame,
+            CP_ChangeView,
+            CP_ReadThis,
+            CP_ViewScores,
+            CP_EndGame,
+            CP_Quit,
+            MouseSensitivity,
+            CustomControls
+        ];
+
+        var funcDict = avaiableFunctions.ToDictionary(f => f.Method.Name, f => f);
+
+        if (mi == null 
+            || string.IsNullOrEmpty(mi.Action)
+            || !funcDict.TryGetValue(mi.Action, out var func))
+        {
+            return null;
+        }
+
+        return func;
     }
 }
