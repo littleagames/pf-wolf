@@ -175,3 +175,9 @@ internal record BlankMenuItem : MenuItem
         IsEnabled = false;
     }
 }
+
+internal record MultiChoiceMenuItem<T> : MenuItem
+{
+    public List<T> Options { get; set; } = [];
+    public T SelectedOption { get; set; } = default!;
+}

@@ -1,7 +1,6 @@
 ﻿using SDL2;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
-using System.Linq;
 using Wolf3D.Entities;
 
 namespace Wolf3D;
@@ -119,14 +118,7 @@ internal partial class Program
     internal static CP_itemtype[] SndMenu = [];
     internal enum CtlOptions { CTL_MOUSEENABLE, CTL_MOUSESENS, CTL_JOYENABLE, CTL_CUSTOMIZE };
 
-    internal static CP_itemtype[] CtlMenu =
-    {
-        new (0, STR_MOUSEEN, null),
-        new (0, STR_SENS, MouseSensitivity),
-        new (0, STR_JOYEN, null),
-        new (1, STR_CUSTOM, CustomControls),
-    };
-
+    internal static CP_itemtype[] CtlMenu = [];
     internal static CP_itemtype[] NewEmenu = [];
     internal static CP_itemtype[] NewMenu = [];
 
@@ -184,7 +176,7 @@ internal partial class Program
     internal static CP_iteminfo MainItems;
     internal static CP_iteminfo SndItems;
     internal static CP_iteminfo LSItems = new(LSM_X, LSM_Y, (short)LSMenu.Length, 0, 24);
-    internal static CP_iteminfo CtlItems = new(CTL_X, CTL_Y, (short)CtlMenu.Length, -1, 56);
+    internal static CP_iteminfo CtlItems;
     internal static CP_iteminfo CusItems = new(8, CST_Y + 13 * 2, (short)CusMenu.Length, -1, 0);
     internal static CP_iteminfo NewEitems = new(NE_X, NE_Y, (short)NewEmenu.Length, 0, 88);
     internal static CP_iteminfo NewItems = new(NM_X, NM_Y, (short)NewMenu.Length, 2, 24);
@@ -1396,11 +1388,13 @@ internal partial class Program
     internal static void DrawCtlScreen()
     {
         int i, x, y;
-        ClearMScreen();
-        DrawStripes(10);
-        _graphicManager.DrawPic("c_control", 80, 0);
-        _graphicManager.DrawPic("c_mouselback", 112, 184);
-        DrawWindow(CTL_X - 8, CTL_Y - 5, CTL_W, CTL_H, BKGDCOLOR);
+        var assetMenu = _assetManager.GetMenu("control");
+
+        foreach (var menuComponent in assetMenu.Components)
+        {
+            _graphicManager.DrawComponent(menuComponent);
+        }
+
         WindowX = 0;
         WindowW = 320;
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
@@ -2868,6 +2862,17 @@ internal partial class Program
             (short)menuAsset.Position.Y,
             amount: (short)SndMenu.Length,
             curpos: 0,
+            indent: (short)menuAsset.Indent);
+
+        menuAsset = _assetManager.GetMenu("control");
+        CtlMenu = menuAsset.MenuItems.Select(mi =>
+                new CP_itemtype((short)(mi.IsEnabled ? 1 : 0), mi.Text, MapFunction(mi as MenuSwitcher)))
+                .ToArray();
+        CtlItems = new CP_iteminfo(
+            (short)menuAsset.Position.X,
+            (short)menuAsset.Position.Y,
+            amount: (short)CtlMenu.Length,
+            curpos: -1,
             indent: (short)menuAsset.Indent);
     }
 

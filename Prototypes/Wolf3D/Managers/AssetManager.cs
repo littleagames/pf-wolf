@@ -926,7 +926,23 @@ internal class AssetManager
         if (normalizedName.Equals("control"))
             return new MenuMetadata
             {
-                // TODO:
+                Music = "Wondering",
+                Type = "wolf3d-menu",
+                Position = new Vector2(24, 86),
+                Indent = 56,
+                Components = [
+                    new Background(0x29),
+                    new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
+                    new Stripe(10),
+                    new Window(16, 81, 284, 60, "wolf3d-theme"),
+                    new Graphic("c_options", HorizontalOrientation.Center, 0)
+                ],
+                MenuItems = [
+                    new ToggleMenuItem("Mouse Enabled", false, false),
+                    new MenuSwitcher("Mouse Sensitivity", false, "MouseSensitivity"),
+                    new ToggleMenuItem("Joystick Enabled", false, false),
+                    new MenuSwitcher("Customize controls", true, "CustomControls")
+                ]
             };
 
         if (normalizedName.Equals("game-options"))
