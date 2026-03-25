@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Xml.Linq;
 using Wolf3D.Entities;
 using Wolf3D.Mappers;
 
@@ -964,4 +965,32 @@ internal class AssetManager
 
         return null;
     }
+
+    //[Obsolete("Temporary endpoint until the asset types are implemented")]
+    //public ThemeMetadata? GetTheme(string theme)
+    //{
+    //    var normalizedTheme = theme.ToLowerInvariant();
+    //    if (normalizedTheme.Equals("wolf3d-theme"))
+    //        return new ThemeMetadata
+    //        {
+    //            Colors = new Dictionary<string, Color>
+    //            {
+    //                // Other red
+    //                // { "DarkRed", Color.FromByteRGB("137 0 0") }, // 0x29
+
+    //                { "BORDCOLOR", Color.FromByteRGB("137 0 0") },// 0x29
+    //                { "BORD2COLOR", Color.FromByteRGB("214 0 0") }, //0x23
+    //                { "DEACTIVE", Color.FromByteRGB("113 0 0") }, // 0x2b
+    //                { "BKGDCOLOR", Color.FromByteRGB("89 0 0") }, // 0x2d 
+    //                { "STRIPE", Color.FromByteRGB("101 0 0") }, // 0x2c
+    //                { "READCOLOR", Color.FromByteRGB("182 174 0") }, // 0x4a
+    //                { "READHCOLOR", Color.FromByteRGB("255 246 0") }, // 0x47
+    //                { "VIEWCOLOR", Color.FromByteRGB("0 64 64") }, // 0x7f
+    //                { "TEXTCOLOR", Color.FromByteRGB("141 141 141") }, // 0x17
+    //                { "HIGHLIGHT", Color.FromByteRGB("194 194 194") } // 0x13
+    //            }
+    //        };
+
+    //    return null;
+    //}
 }
