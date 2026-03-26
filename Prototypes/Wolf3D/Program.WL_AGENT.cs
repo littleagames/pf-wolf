@@ -507,7 +507,7 @@ internal partial class Program
         }
     }
 
-    static void DrawAmmo()
+    internal static void DrawAmmo()
     {
         if (viewsize == 21 && ingame) return;
         LatchNumber(27, 16, 2, gamestate.ammo);
@@ -646,7 +646,7 @@ internal partial class Program
         DrawFace();
     }
 
-    static void DrawKeys()
+    internal static void DrawKeys()
     {
         if (viewsize == 21 && ingame) return;
         if ((gamestate.keys & 1) != 0)
@@ -660,7 +660,7 @@ internal partial class Program
             StatusDrawPic("nokey", 30, 20);
     }
 
-    static void GiveKey(int key)
+    internal static void GiveKey(int key)
     {
         gamestate.keys |= (short)(1 << key);
         DrawKeys();
@@ -710,7 +710,7 @@ internal partial class Program
     ===============
     */
 
-    static void GivePoints(int points)
+    internal static void GivePoints(int points)
     {
         gamestate.score += points;
         while (gamestate.score >= gamestate.nextextra)
@@ -721,7 +721,7 @@ internal partial class Program
         DrawScore();
     }
 
-    static void DrawWeapon()
+    internal static void DrawWeapon()
     {
         if (viewsize == 21 && ingame) return;
 

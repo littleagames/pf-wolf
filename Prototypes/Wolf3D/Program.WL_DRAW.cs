@@ -1,7 +1,6 @@
 ﻿using SDL2;
 using System.Runtime.InteropServices;
 using Wolf3D.Managers;
-using Wolf3D.Mappers;
 
 namespace Wolf3D;
 

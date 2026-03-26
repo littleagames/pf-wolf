@@ -14,8 +14,9 @@ internal partial class Program
     private static InputManager _inputManager;
     private static GameEngineManager _gameEngineManager;
     private static GraphicManager _graphicManager;
-    private static MapManager _mapManager;
+    internal static MapManager _mapManager;
     private static AssetManager _assetManager;
+    internal static CommandManager _commandManager;
 
     public Program()
     {
@@ -26,6 +27,7 @@ internal partial class Program
         services.AddSingleton<GraphicManager>();
         services.AddSingleton<MapManager>();
         services.AddSingleton<AssetManager>();
+        services.AddSingleton<CommandManager>();
 
         // Build the service provider
         var serviceProvider = services.BuildServiceProvider();
@@ -36,6 +38,7 @@ internal partial class Program
         _graphicManager = serviceProvider.GetRequiredService<GraphicManager>();
         _mapManager = serviceProvider.GetRequiredService<MapManager>();
         _assetManager = serviceProvider.GetRequiredService<AssetManager>();
+        _commandManager = serviceProvider.GetRequiredService<CommandManager>();
 
         // TODO: Remove circular dependencies here
         //_videoManager = new();

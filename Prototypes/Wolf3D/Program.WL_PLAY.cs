@@ -284,6 +284,7 @@ internal partial class Program
         objlist2.Remove(gone);
     }
 
+    private static bool console_enabled = false;
     internal static void CheckKeys()
     {
         ScanCodes scan;
@@ -432,6 +433,64 @@ internal partial class Program
             }
             return;
         }
+
+        if (_inputManager.IsKeyDown(ScanCodes.sc_Tilde))
+        {
+            fontnumber = 0;
+            console_enabled = true;
+            _inputManager.ClearKeysDown();
+
+            _inputManager.GetTextInput();
+            return;
+
+            // Console drops down and takes input until the user hits tilde again
+        }
+        
+        while (console_enabled)
+        {
+            // Backdrop
+            _videoManager.Bar(0, 0, 320, 80, 0x00);
+            PrintX = 4;
+            PrintY = 70;
+            SETFONTCOLOR(15, 0);
+            _graphicManager.DrawPropString(4, 70, ">", 15, 0);
+            _videoManager.Update();
+
+            string str = "";
+
+            if (US_LineInput(16, 70, ref str, "", true, 28, 0))
+            {
+                if (string.IsNullOrEmpty(str))
+                    return;
+
+                // add command to console "log"
+                // Process command
+                var resp = _commandManager.Execute(str);
+                Console.WriteLine(resp);
+            }
+            else
+            {
+                console_enabled = false;
+                DrawPlayBorderSides();
+            }
+
+            if (_inputManager.IsKeyDown(ScanCodes.sc_Tilde))
+            {
+                console_enabled = false;
+                DrawPlayBorderSides();
+            }
+        }
+
+        //if (console_enabled)
+        //{
+        //    string? input = _inputManager.GetTextInput().ToString();
+        //    if (!string.IsNullOrEmpty(input))
+        //    {
+        //        Console.WriteLine($"Console input: {input}");
+        //        // Process console commands here
+        //    }
+        //    return;
+        //}
     }
 
     internal static void PollControls()

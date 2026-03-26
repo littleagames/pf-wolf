@@ -89,6 +89,7 @@ public enum ScanCodes
     sc_X = SDL.SDL_Scancode.SDL_SCANCODE_X,
     sc_Y = SDL.SDL_Scancode.SDL_SCANCODE_Y,
     sc_Z = SDL.SDL_Scancode.SDL_SCANCODE_Z,
+    sc_Tilde = SDL.SDL_Scancode.SDL_SCANCODE_GRAVE,
     sc_Alt = sc_LAlt,
     sc_Control = sc_LControl,
     sc_Enter = sc_Return,
