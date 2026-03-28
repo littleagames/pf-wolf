@@ -47,8 +47,8 @@ internal partial class Program
     =============================================================================
     */
 
-    internal static statestruct s_player = new(0/*false*/, 0, 0, T_Player, null, null);
-    internal static statestruct s_attack = new(0/*false*/, 0, 0, T_Attack, null, null);
+    internal static statestruct s_player = new(0/*false*/, "", 0, T_Player, null, null);
+    internal static statestruct s_attack = new(0/*false*/, "", 0, T_Attack, null, null);
 
     internal static Dictionary<string, statestruct> PlayerStateDict = new()
     {
@@ -463,7 +463,7 @@ internal partial class Program
         }
 
         _videoManager.StartBonusFlash();
-        check.shapenum = spritenums.none;                   // remove from list
+        check.shapenum = "";                   // remove from list
     }
 
 

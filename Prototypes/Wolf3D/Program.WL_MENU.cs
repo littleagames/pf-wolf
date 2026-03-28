@@ -2786,7 +2786,7 @@ internal partial class Program
     internal static void CheckForEpisodes()
     {
         NewMenu = _assetManager.GetGameInfo().Skills.Values.Select(s => new CP_itemtype(1, s.Name, null)).ToArray();
-        NewEitems.amount = (short) NewMenu.Length;
+        NewItems.amount = (short) NewMenu.Length;
         /*if (configdir != string.Empty)
         {
             if (!Directory.Exists(configdir))

@@ -1079,7 +1079,7 @@ internal partial class Program
         if (ob.state.rotate == 2)             // 2 rotation pain frame
             return 0;               // pain with shooting frame bugfix
 
-        return angle / (ANGLES / 8);
+        return (angle / (ANGLES / 8))+1;
     }
 
     internal static void TransformActor(objstruct ob)
@@ -1143,7 +1143,7 @@ internal partial class Program
         {
             visobj_t visptr_val = new visobj_t();
             statobj_t statptr_val = statobjlist[statptr];
-            if ((visptr_val.shapenum = statptr_val.shapenum) == spritenums.none)
+            if ((visptr_val.shapenum = statptr_val.shapenum) == "")
                 continue;                                               // object has been deleted
 
             if (!_mapManager.spotvis[statptr_val.tilex, statptr_val.tiley])
@@ -1153,7 +1153,7 @@ internal partial class Program
                 ref visptr_val.viewx, ref visptr_val.viewheight) && statptr_val.flags.HasFlag(objflags.FL_BONUS))
             {
                 GetBonus(statptr_val);
-                if (statptr_val.shapenum == spritenums.none)
+                if (statptr_val.shapenum == "")
                     continue;                                           // object has been taken
             }
 
@@ -1182,7 +1182,7 @@ internal partial class Program
                 continue;
             //obj = objlist[o.Value];
             visobj_t visptr_val = new visobj_t();
-            if ((visptr_val.shapenum = obj.state.shapenum) == 0)
+            if ((visptr_val.shapenum = obj.state.shapenum) == "")
                 continue;                                               // no shape
 
             //
@@ -1205,12 +1205,14 @@ internal partial class Program
 
                 visptr_val.viewx = obj.viewx;
                 visptr_val.viewheight = (short)obj.viewheight;
-                if (visptr_val.shapenum == spritenums.none)
-                    visptr_val.shapenum = (spritenums)obj.temp1;  // special shape
+                if (visptr_val.shapenum == "")
+                    throw new NotImplementedException("Value stored in temp1. What uses this?");
+                //visptr_val.shapenum = (spritenums)obj.temp1;  // special shape
 
                 if (obj.state.rotate != 0)
-                    visptr_val.shapenum += (short)CalcRotate(obj);
-
+                    visptr_val.shapenum += $"{CalcRotate(obj)}";
+                else
+                    visptr_val.shapenum += "0";
                 if (visptr < MAXVISABLE - 1)    // don't let it overflow
                 {
                     visptr_val.tilex = (byte)(obj.x >> TILESHIFT);
@@ -1259,31 +1261,31 @@ internal partial class Program
         }
     }
 
-    static spritenums[] weaponscale = {
-        spritenums.SPR_KNIFEREADY,
-        spritenums.SPR_PISTOLREADY,
-        spritenums.SPR_MACHINEGUNREADY,
-        spritenums.SPR_CHAINREADY
+    static string[][] weaponscale = {
+        ["KNIFA0", "KNIFB0", "KNIFC0", "KNIFD0", "KNIFE0"],
+        ["PISGA0", "PISGB0", "PISGC0", "PISGD0", "PISGE0"],
+        ["MCHGA0", "MCHGB0", "MCHGC0", "MCHGD0", "MCHGE0"],
+        ["CHGGA0", "CHGGB0", "CHGGC0", "CHGGD0", "CHGGE0"]
     };
 
     internal static void DrawPlayerWeapon()
     {
-        spritenums shapenum;
+        string shapenum;
         if (gamestate.victoryflag)
         {
             if (player.state == s_deathcam && (GameEngineManager.GetTimeCount() & 32) != 0)
-                SimpleScaleShape(viewwidth / 2, spritenums.SPR_DEATHCAM, viewheight + 1);
+                SimpleScaleShape(viewwidth / 2, "DCAMA0", viewheight + 1);
             return;
         }
 
         if (gamestate.weapon != weapontypes.wp_none)
         {
-            shapenum = weaponscale[(int)gamestate.weapon] + gamestate.weaponframe;
+            shapenum = weaponscale[(int)gamestate.weapon][gamestate.weaponframe];
             SimpleScaleShape(viewwidth / 2, shapenum, viewheight + 1);
         }
 
         if (demorecord || demoplayback)
-            SimpleScaleShape(viewwidth / 2, (int)spritenums.SPR_DEMO, viewheight + 1);
+            SimpleScaleShape(viewwidth / 2, "DEMOA0", viewheight + 1);
     }
 
     internal static void ThreeDRefresh()

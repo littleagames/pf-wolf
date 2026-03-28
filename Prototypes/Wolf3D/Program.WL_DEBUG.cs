@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using Wolf3D.Managers;
+using Wolf3D.Mappers;
 namespace Wolf3D;
 
 internal partial class Program
@@ -293,7 +294,7 @@ internal partial class Program
         US_Print("\nIn use statics:");
         for (i = 0; i < total; i++)
         {
-            if (statobjlist[i].shapenum != spritenums.none)
+            if (statobjlist[i].shapenum != "")
                 count++;
             else
                 doors++;        //debug
@@ -445,7 +446,7 @@ internal partial class Program
             US_Print("\n Address: ");
             addr = PM_GetPage(i);
             //snprintf(str, sizeof(str), "0x%010X", (uintptr_t)addr);
-            US_Print(i.ToString());
+            US_Print(SpriteMappings.NameIndexMap[i]);
 
             if (addr != null && addr.Length > 0)
             {
@@ -498,7 +499,7 @@ internal partial class Program
                     oldviewheight = viewheight;
                     viewheight = 0x7fff;            // quick hack to skip clipping
 
-                    SimpleScaleShape(_videoManager.screenWidth / 2, (spritenums)i - PMSpriteStart, 64 * _videoManager.scaleFactor);
+                    SimpleScaleShape(_videoManager.screenWidth / 2, SpriteMappings.NameIndexMap[i - PMSpriteStart], 64 * _videoManager.scaleFactor);
 
                     viewheight = oldviewheight;
                     centery = (short)(viewheight / 2);

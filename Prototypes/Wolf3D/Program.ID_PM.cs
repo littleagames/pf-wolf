@@ -1,4 +1,6 @@
-﻿namespace Wolf3D;
+﻿using Wolf3D.Mappers;
+
+namespace Wolf3D;
 
 internal partial class Program
 {
@@ -148,7 +150,7 @@ internal partial class Program
         // Do nothing, GC does it
     }
 
-    internal static byte[] PM_GetSpritePage(spritenums v) => PM_GetPage(PMSpriteStart + (int)v);
+    internal static byte[] PM_GetSpritePage(string v) => PM_GetPage(PMSpriteStart + SpriteMappings.NameIndexMap.IndexOf(v));
     internal static byte[] PM_GetSoundPage(int v, int size)
     {
         List<byte> data = new List<byte>();

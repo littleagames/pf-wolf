@@ -148,15 +148,15 @@ internal partial class Program
     };
 
 
-    internal static statestruct s_rocket = new (1,spritenums.SPR_ROCKET_1, 3, T_Projectile, A_Smoke, "s_rocket" );
-    internal static statestruct s_smoke1 = new(0, spritenums.SPR_SMOKE_1, 3, null, null, "s_smoke2" );
-    internal static statestruct s_smoke2 = new(0, spritenums.SPR_SMOKE_2, 3, null, null, "s_smoke3" );
-    internal static statestruct s_smoke3 = new(0, spritenums.SPR_SMOKE_3, 3, null, null, "s_smoke4" );
-    internal static statestruct s_smoke4 = new(0, spritenums.SPR_SMOKE_4, 3, null, null, null );
+    internal static statestruct s_rocket = new (1, "ROCKA1", 3, T_Projectile, A_Smoke, "s_rocket" );
+    internal static statestruct s_smoke1 = new(0, "SMOKA0", 3, null, null, "s_smoke2" );
+    internal static statestruct s_smoke2 = new(0, "SMOKB0", 3, null, null, "s_smoke3" );
+    internal static statestruct s_smoke3 = new(0, "SMOKC0", 3, null, null, "s_smoke4" );
+    internal static statestruct s_smoke4 = new(0, "SMOKD0", 3, null, null, null );
 
-    internal static statestruct s_boom1 = new(0, spritenums.SPR_BOOM_1, 6, null, null, "s_boom2" );
-    internal static statestruct s_boom2 = new(0, spritenums.SPR_BOOM_2, 6, null, null, "s_boom3" );
-    internal static statestruct s_boom3 = new(0, spritenums.SPR_BOOM_3, 6, null, null, null);
+    internal static statestruct s_boom1 = new(0, "BOOMA0", 6, null, null, "s_boom2" );
+    internal static statestruct s_boom2 = new(0, "BOOMB0", 6, null, null, "s_boom3" );
+    internal static statestruct s_boom3 = new(0, "BOOMC0", 6, null, null, null);
 
     /*
     =================
@@ -315,48 +315,48 @@ internal partial class Program
     //
 
 
-    internal static statestruct s_grdstand = new statestruct(1, spritenums.SPR_GRD_S_1, 0, T_Stand, null, "s_grdstand");
+    internal static statestruct s_grdstand = new statestruct(1, "GARDA", 0, T_Stand, null, "s_grdstand");
 
-    internal static statestruct s_grdpath1 = new statestruct(1, spritenums.SPR_GRD_W1_1, 20, T_Path, null, "s_grdpath1s");
-    internal static statestruct s_grdpath1s = new statestruct(1, spritenums.SPR_GRD_W1_1, 5, null, null, "s_grdpath2");
-    internal static statestruct s_grdpath2 = new statestruct(1, spritenums.SPR_GRD_W2_1, 15, T_Path, null, "s_grdpath3");
-    internal static statestruct s_grdpath3 = new statestruct(1, spritenums.SPR_GRD_W3_1, 20, T_Path, null, "s_grdpath3s");
-    internal static statestruct s_grdpath3s = new statestruct(1, spritenums.SPR_GRD_W3_1, 5, null, null, "s_grdpath4");
-    internal static statestruct s_grdpath4 = new statestruct(1, spritenums.SPR_GRD_W4_1, 15, T_Path, null, "s_grdpath1");
+    internal static statestruct s_grdpath1 = new statestruct(1, "GARDB", 20, T_Path, null, "s_grdpath1s");
+    internal static statestruct s_grdpath1s = new statestruct(1, "GARDB", 5, null, null, "s_grdpath2");
+    internal static statestruct s_grdpath2 = new statestruct(1, "GARDC", 15, T_Path, null, "s_grdpath3");
+    internal static statestruct s_grdpath3 = new statestruct(1, "GARDD", 20, T_Path, null, "s_grdpath3s");
+    internal static statestruct s_grdpath3s = new statestruct(1, "GARDD", 5, null, null, "s_grdpath4");
+    internal static statestruct s_grdpath4 = new statestruct(1, "GARDE", 15, T_Path, null, "s_grdpath1");
     
-    internal static statestruct s_grdpain =  new statestruct( 2, spritenums.SPR_GRD_PAIN_1, 10, null, null, "s_grdchase1" );
-    internal static statestruct s_grdpain1 = new statestruct(2, spritenums.SPR_GRD_PAIN_2, 10, null, null, "s_grdchase1" );
+    internal static statestruct s_grdpain =  new statestruct(2, "GARDI", 10, null, null, "s_grdchase1" );
+    internal static statestruct s_grdpain1 = new statestruct(2, "GARDJ", 10, null, null, "s_grdchase1" );
 
-    internal static statestruct s_grdshoot1 = new statestruct(0, spritenums.SPR_GRD_SHOOT1, 20, null, null, "s_grdshoot2" );
-    internal static statestruct s_grdshoot2 = new statestruct(0, spritenums.SPR_GRD_SHOOT2, 20, null, T_Shoot, "s_grdshoot3" );
-    internal static statestruct s_grdshoot3 = new statestruct(0, spritenums.SPR_GRD_SHOOT3, 20, null, null, "s_grdchase1" );
+    internal static statestruct s_grdshoot1 = new statestruct(0, "GARDF", 20, null, null, "s_grdshoot2" );
+    internal static statestruct s_grdshoot2 = new statestruct(0, "GARDG", 20, null, T_Shoot, "s_grdshoot3" );
+    internal static statestruct s_grdshoot3 = new statestruct(0, "GARDH", 20, null, null, "s_grdchase1" );
 
-    internal static statestruct s_grdchase1 =  new statestruct( 1, spritenums.SPR_GRD_W1_1, 10, T_Chase, null, "s_grdchase1s" );
-    internal static statestruct s_grdchase1s = new statestruct( 1, spritenums.SPR_GRD_W1_1, 3, null, null, "s_grdchase2" );
-    internal static statestruct s_grdchase2 =  new statestruct( 1, spritenums.SPR_GRD_W2_1, 8, T_Chase, null, "s_grdchase3" );
-    internal static statestruct s_grdchase3 =  new statestruct( 1, spritenums.SPR_GRD_W3_1, 10, T_Chase, null, "s_grdchase3s" );
-    internal static statestruct s_grdchase3s = new statestruct( 1, spritenums.SPR_GRD_W3_1, 3, null, null, "s_grdchase4" );
-    internal static statestruct s_grdchase4 = new statestruct( 1, spritenums.SPR_GRD_W4_1, 8, T_Chase, null, "s_grdchase1" );
+    internal static statestruct s_grdchase1 =  new statestruct(1, "GARDB", 10, T_Chase, null, "s_grdchase1s" );
+    internal static statestruct s_grdchase1s = new statestruct(1, "GARDB", 3, null, null, "s_grdchase2" );
+    internal static statestruct s_grdchase2 =  new statestruct(1, "GARDC", 8, T_Chase, null, "s_grdchase3" );
+    internal static statestruct s_grdchase3 =  new statestruct(1, "GARDD", 10, T_Chase, null, "s_grdchase3s" );
+    internal static statestruct s_grdchase3s = new statestruct(1, "GARDD", 3, null, null, "s_grdchase4" );
+    internal static statestruct s_grdchase4 =  new statestruct(1, "GARDE", 8, T_Chase, null, "s_grdchase1" );
 
-    internal static statestruct s_grddie1 =  new statestruct(0, spritenums.SPR_GRD_DIE_1, 15, null, A_DeathScream, "s_grddie2" );
-    internal static statestruct s_grddie2 =  new statestruct(0, spritenums.SPR_GRD_DIE_2, 15, null, null, "s_grddie3" );
-    internal static statestruct s_grddie3 = new statestruct(0, spritenums.SPR_GRD_DIE_3, 15, null, null, "s_grddie4" );
-    internal static statestruct s_grddie4 = new statestruct(0, spritenums.SPR_GRD_DEAD, 0, null, null, "s_grddie4");
+    internal static statestruct s_grddie1 =  new statestruct(0, "GARDK", 15, null, A_DeathScream, "s_grddie2" );
+    internal static statestruct s_grddie2 =  new statestruct(0, "GARDL", 15, null, null, "s_grddie3" );
+    internal static statestruct s_grddie3 = new statestruct(0, "GARDM", 15, null, null, "s_grddie4" );
+    internal static statestruct s_grddie4 = new statestruct(0, "GARDN", 0, null, null, "s_grddie4");
 
     //
     // ghosts
     //
-    internal static statestruct s_blinkychase1 = new (0, spritenums.SPR_BLINKY_W1, 10, T_Ghosts, null, "s_blinkychase2" );
-    internal static statestruct s_blinkychase2 = new (0, spritenums.SPR_BLINKY_W2, 10, T_Ghosts, null, "s_blinkychase1" );
+    internal static statestruct s_blinkychase1 = new (0, "BLKYA", 10, T_Ghosts, null, "s_blinkychase2" );
+    internal static statestruct s_blinkychase2 = new (0, "BLKYB", 10, T_Ghosts, null, "s_blinkychase1" );
 
-    internal static statestruct s_inkychase1 =  new (0, spritenums.SPR_INKY_W1, 10, T_Ghosts, null, "s_inkychase2" );
-    internal static statestruct s_inkychase2 = new(0, spritenums.SPR_INKY_W2, 10, T_Ghosts, null, "s_inkychase1" );
+    internal static statestruct s_inkychase1 =  new (0, "INKYA", 10, T_Ghosts, null, "s_inkychase2" );
+    internal static statestruct s_inkychase2 = new(0, "INKYB", 10, T_Ghosts, null, "s_inkychase1" );
 
-    internal static statestruct s_pinkychase1 = new (0, spritenums.SPR_PINKY_W1, 10, T_Ghosts, null, "s_pinkychase2" );
-    internal static statestruct s_pinkychase2 = new(0, spritenums.SPR_PINKY_W2, 10, T_Ghosts, null, "s_pinkychase1" );
+    internal static statestruct s_pinkychase1 = new (0, "PNKYA", 10, T_Ghosts, null, "s_pinkychase2" );
+    internal static statestruct s_pinkychase2 = new(0, "PNKYB", 10, T_Ghosts, null, "s_pinkychase1" );
 
-    internal static statestruct s_clydechase1 = new (0, spritenums.SPR_CLYDE_W1, 10, T_Ghosts, null, "s_clydechase2" );
-    internal static statestruct s_clydechase2 = new(0, spritenums.SPR_CLYDE_W2, 10, T_Ghosts, null, "s_clydechase1" );
+    internal static statestruct s_clydechase1 = new (0, "CLYDA", 10, T_Ghosts, null, "s_clydechase2" );
+    internal static statestruct s_clydechase2 = new(0, "CLYDB", 10, T_Ghosts, null, "s_clydechase1" );
 
     /*
     =================
@@ -407,30 +407,30 @@ internal partial class Program
     }
 
 
-    internal static statestruct s_dogpath1 = new(1, spritenums.SPR_DOG_W1_1, 20, T_Path, null, "s_dogpath1s" );
-    internal static statestruct s_dogpath1s = new(1, spritenums.SPR_DOG_W1_1, 5, null, null, "s_dogpath2" );
-    internal static statestruct s_dogpath2 = new(1, spritenums.SPR_DOG_W2_1, 15, T_Path, null, "s_dogpath3" );
-    internal static statestruct s_dogpath3 = new(1, spritenums.SPR_DOG_W3_1, 20, T_Path, null, "s_dogpath3s" );
-    internal static statestruct s_dogpath3s = new(1, spritenums.SPR_DOG_W3_1, 5, null, null, "s_dogpath4" );
-    internal static statestruct s_dogpath4 = new(1, spritenums.SPR_DOG_W4_1, 15, T_Path, null, "s_dogpath1" );
+    internal static statestruct s_dogpath1 = new(1, "DOGYA", 20, T_Path, null, "s_dogpath1s" );
+    internal static statestruct s_dogpath1s = new(1, "DOGYA", 5, null, null, "s_dogpath2" );
+    internal static statestruct s_dogpath2 = new(1, "DOGYB", 15, T_Path, null, "s_dogpath3" );
+    internal static statestruct s_dogpath3 = new(1, "DOGYC", 20, T_Path, null, "s_dogpath3s" );
+    internal static statestruct s_dogpath3s = new(1, "DOGYC", 5, null, null, "s_dogpath4" );
+    internal static statestruct s_dogpath4 = new(1, "DOGYD", 15, T_Path, null, "s_dogpath1" );
 
-    internal static statestruct s_dogjump1 = new(0, spritenums.SPR_DOG_JUMP1, 10, null, null, "s_dogjump2" );
-    internal static statestruct s_dogjump2 = new(0, spritenums.SPR_DOG_JUMP2, 10, null, T_Bite, "s_dogjump3" );
-    internal static statestruct s_dogjump3 = new(0, spritenums.SPR_DOG_JUMP3, 10, null, null, "s_dogjump4" );
-    internal static statestruct s_dogjump4 = new(0, spritenums.SPR_DOG_JUMP1, 10, null, null, "s_dogjump5" );
-    internal static statestruct s_dogjump5 = new(0, spritenums.SPR_DOG_W1_1, 10, null, null, "s_dogchase1" );
+    internal static statestruct s_dogjump1 = new(0, "DOGYE", 10, null, null, "s_dogjump2" );
+    internal static statestruct s_dogjump2 = new(0, "DOGYF", 10, null, T_Bite, "s_dogjump3" );
+    internal static statestruct s_dogjump3 = new(0, "DOGYG", 10, null, null, "s_dogjump4" );
+    internal static statestruct s_dogjump4 = new(0, "DOGYE", 10, null, null, "s_dogjump5" );
+    internal static statestruct s_dogjump5 = new(1, "DOGYA", 10, null, null, "s_dogchase1" );
 
-    internal static statestruct s_dogchase1 = new(1, spritenums.SPR_DOG_W1_1, 10, T_DogChase, null, "s_dogchase1s" );
-    internal static statestruct s_dogchase1s = new(1, spritenums.SPR_DOG_W1_1, 3, null, null, "s_dogchase2" );
-    internal static statestruct s_dogchase2 = new(1, spritenums.SPR_DOG_W2_1, 8, T_DogChase, null, "s_dogchase3" );
-    internal static statestruct s_dogchase3 = new(1, spritenums.SPR_DOG_W3_1, 10, T_DogChase, null, "s_dogchase3s" );
-    internal static statestruct s_dogchase3s = new(1, spritenums.SPR_DOG_W3_1, 3, null, null, "s_dogchase4" );
-    internal static statestruct s_dogchase4 = new(1, spritenums.SPR_DOG_W4_1, 8, T_DogChase, null, "s_dogchase1" );
+    internal static statestruct s_dogchase1 = new(1, "DOGYA", 10, T_DogChase, null, "s_dogchase1s" );
+    internal static statestruct s_dogchase1s = new(1, "DOGYA", 3, null, null, "s_dogchase2" );
+    internal static statestruct s_dogchase2 = new(1, "DOGYB", 8, T_DogChase, null, "s_dogchase3" );
+    internal static statestruct s_dogchase3 = new(1, "DOGYC", 10, T_DogChase, null, "s_dogchase3s" );
+    internal static statestruct s_dogchase3s = new(1, "DOGYC", 3, null, null, "s_dogchase4" );
+    internal static statestruct s_dogchase4 = new(1, "DOGYD", 8, T_DogChase, null, "s_dogchase1" );
 
-    internal static statestruct s_dogdie1 = new(0, spritenums.SPR_DOG_DIE_1, 15, null, A_DeathScream, "s_dogdie2" );
-    internal static statestruct s_dogdie2 = new(0, spritenums.SPR_DOG_DIE_2, 15, null, null, "s_dogdie3" );
-    internal static statestruct s_dogdie3 = new(0, spritenums.SPR_DOG_DIE_3, 15, null, null, "s_dogdead" );
-    internal static statestruct s_dogdead = new(0, spritenums.SPR_DOG_DEAD, 15, null, null, "s_dogdead" );
+    internal static statestruct s_dogdie1 = new(0, "DOGYH", 15, null, A_DeathScream, "s_dogdie2" );
+    internal static statestruct s_dogdie2 = new(0, "DOGYI", 15, null, null, "s_dogdie3" );
+    internal static statestruct s_dogdie3 = new(0, "DOGYJ", 15, null, null, "s_dogdead" );
+    internal static statestruct s_dogdead = new(0, "DOGYK", 15, null, null, "s_dogdead" );
 
 
     /*
@@ -473,161 +473,161 @@ internal partial class Program
     // officers
     //
 
-    internal static statestruct s_ofcstand = new (1, spritenums.SPR_OFC_S_1, 0, T_Stand, null, "s_ofcstand" );
+    internal static statestruct s_ofcstand = new (1, "OFFIA", 0, T_Stand, null, "s_ofcstand" );
 
-    internal static statestruct s_ofcpath1 = new(1, spritenums.SPR_OFC_W1_1, 20, T_Path, null, "s_ofcpath1s");
-    internal static statestruct s_ofcpath1s = new(1, spritenums.SPR_OFC_W1_1, 5, null, null, "s_ofcpath2");
-    internal static statestruct s_ofcpath2 = new(1, spritenums.SPR_OFC_W2_1, 15, T_Path, null, "s_ofcpath3");
-    internal static statestruct s_ofcpath3 = new(1, spritenums.SPR_OFC_W3_1, 20, T_Path, null, "s_ofcpath3s");
-    internal static statestruct s_ofcpath3s = new(1, spritenums.SPR_OFC_W3_1, 5, null, null, "s_ofcpath4");
-    internal static statestruct s_ofcpath4 = new(1, spritenums.SPR_OFC_W4_1, 15, T_Path, null, "s_ofcpath1");
+    internal static statestruct s_ofcpath1 = new(1, "OFFIB", 20, T_Path, null, "s_ofcpath1s");
+    internal static statestruct s_ofcpath1s = new(1, "OFFIB", 5, null, null, "s_ofcpath2");
+    internal static statestruct s_ofcpath2 = new(1, "OFFIC", 15, T_Path, null, "s_ofcpath3");
+    internal static statestruct s_ofcpath3 = new(1, "OFFID", 20, T_Path, null, "s_ofcpath3s");
+    internal static statestruct s_ofcpath3s = new(1, "OFFID", 5, null, null, "s_ofcpath4");
+    internal static statestruct s_ofcpath4 = new(1, "OFFIE", 15, T_Path, null, "s_ofcpath1");
 
-    internal static statestruct s_ofcpain = new(2, spritenums.SPR_OFC_PAIN_1, 10, null, null, "s_ofcchase1");
-    internal static statestruct s_ofcpain1 = new(2, spritenums.SPR_OFC_PAIN_2, 10, null, null, "s_ofcchase1");
+    internal static statestruct s_ofcpain = new(2, "OFFII", 10, null, null, "s_ofcchase1");
+    internal static statestruct s_ofcpain1 = new(2, "OFFIJ", 10, null, null, "s_ofcchase1");
 
-    internal static statestruct s_ofcshoot1 = new(0, spritenums.SPR_OFC_SHOOT1, 6, null, null, "s_ofcshoot2");
-    internal static statestruct s_ofcshoot2 = new(0, spritenums.SPR_OFC_SHOOT2, 20, null, T_Shoot, "s_ofcshoot3");
-    internal static statestruct s_ofcshoot3 = new(0, spritenums.SPR_OFC_SHOOT3, 10, null, null, "s_ofcchase1");
+    internal static statestruct s_ofcshoot1 = new(0, "OFFIF", 6, null, null, "s_ofcshoot2");
+    internal static statestruct s_ofcshoot2 = new(0, "OFFIG", 20, null, T_Shoot, "s_ofcshoot3");
+    internal static statestruct s_ofcshoot3 = new(0, "OFFIH", 10, null, null, "s_ofcchase1");
 
-    internal static statestruct s_ofcchase1 = new(1, spritenums.SPR_OFC_W1_1, 10, T_Chase, null, "s_ofcchase1s");
-    internal static statestruct s_ofcchase1s = new(1, spritenums.SPR_OFC_W1_1, 3, null, null, "s_ofcchase2");
-    internal static statestruct s_ofcchase2 = new(1, spritenums.SPR_OFC_W2_1, 8, T_Chase, null, "s_ofcchase3");
-    internal static statestruct s_ofcchase3 = new(1, spritenums.SPR_OFC_W3_1, 10, T_Chase, null, "s_ofcchase3s");
-    internal static statestruct s_ofcchase3s = new(1, spritenums.SPR_OFC_W3_1, 3, null, null, "s_ofcchase4");
-    internal static statestruct s_ofcchase4 = new(1, spritenums.SPR_OFC_W4_1, 8, T_Chase, null, "s_ofcchase1");
+    internal static statestruct s_ofcchase1 = new(1, "OFFIB", 10, T_Chase, null, "s_ofcchase1s");
+    internal static statestruct s_ofcchase1s = new(1, "OFFIB", 3, null, null, "s_ofcchase2");
+    internal static statestruct s_ofcchase2 = new(1, "OFFIC", 8, T_Chase, null, "s_ofcchase3");
+    internal static statestruct s_ofcchase3 = new(1, "OFFID", 10, T_Chase, null, "s_ofcchase3s");
+    internal static statestruct s_ofcchase3s = new(1, "OFFID", 3, null, null, "s_ofcchase4");
+    internal static statestruct s_ofcchase4 = new(1, "OFFIE", 8, T_Chase, null, "s_ofcchase1");
 
-    internal static statestruct s_ofcdie1 = new(0, spritenums.SPR_OFC_DIE_1, 11, null, A_DeathScream, "s_ofcdie2");
-    internal static statestruct s_ofcdie2 = new(0, spritenums.SPR_OFC_DIE_2, 11, null, null, "s_ofcdie3");
-    internal static statestruct s_ofcdie3 = new(0, spritenums.SPR_OFC_DIE_3, 11, null, null, "s_ofcdie4");
-    internal static statestruct s_ofcdie4 = new(0, spritenums.SPR_OFC_DIE_4, 11, null, null, "s_ofcdie5");
-    internal static statestruct s_ofcdie5 = new(0, spritenums.SPR_OFC_DEAD, 0, null, null, "s_ofcdie5");
+    internal static statestruct s_ofcdie1 = new(0, "OFFIK", 11, null, A_DeathScream, "s_ofcdie2");
+    internal static statestruct s_ofcdie2 = new(0, "OFFIL", 11, null, null, "s_ofcdie3");
+    internal static statestruct s_ofcdie3 = new(0, "OFFIM", 11, null, null, "s_ofcdie4");
+    internal static statestruct s_ofcdie4 = new(0, "OFFIN", 11, null, null, "s_ofcdie5");
+    internal static statestruct s_ofcdie5 = new(0, "OFFIO", 0, null, null, "s_ofcdie5");
 
 
     //
     // mutant
     //
 
-    internal static statestruct s_mutstand = new(1, spritenums.SPR_MUT_S_1, 0, T_Stand, null, "s_mutstand" );
+    internal static statestruct s_mutstand = new(1, "MTNTA", 0, T_Stand, null, "s_mutstand" );
 
-    internal static statestruct s_mutpath1 = new(1, spritenums.SPR_MUT_W1_1, 20, T_Path, null, "s_mutpath1s" );
-    internal static statestruct s_mutpath1s = new(1, spritenums.SPR_MUT_W1_1, 5, null, null, "s_mutpath2" );
-    internal static statestruct s_mutpath2 = new(1, spritenums.SPR_MUT_W2_1, 15, T_Path, null, "s_mutpath3" );
-    internal static statestruct s_mutpath3 = new(1, spritenums.SPR_MUT_W3_1, 20, T_Path, null, "s_mutpath3s" );
-    internal static statestruct s_mutpath3s = new(1, spritenums.SPR_MUT_W3_1, 5, null, null, "s_mutpath4" );
-    internal static statestruct s_mutpath4 = new(1, spritenums.SPR_MUT_W4_1, 15, T_Path, null, "s_mutpath1" );
+    internal static statestruct s_mutpath1 = new(1, "MTNTB", 20, T_Path, null, "s_mutpath1s" );
+    internal static statestruct s_mutpath1s = new(1, "MTNTB", 5, null, null, "s_mutpath2" );
+    internal static statestruct s_mutpath2 = new(1, "MTNTC", 15, T_Path, null, "s_mutpath3" );
+    internal static statestruct s_mutpath3 = new(1, "MTNTD", 20, T_Path, null, "s_mutpath3s" );
+    internal static statestruct s_mutpath3s = new(1, "MTNTD", 5, null, null, "s_mutpath4" );
+    internal static statestruct s_mutpath4 = new(1, "MTNTE", 15, T_Path, null, "s_mutpath1" );
 
-    internal static statestruct s_mutpain = new(2, spritenums.SPR_MUT_PAIN_1, 10, null, null, "s_mutchase1" );
-    internal static statestruct s_mutpain1 = new(2, spritenums.SPR_MUT_PAIN_2, 10, null, null, "s_mutchase1" );
+    internal static statestruct s_mutpain = new(2, "MTNTJ", 10, null, null, "s_mutchase1" );
+    internal static statestruct s_mutpain1 = new(2, "MTNTK", 10, null, null, "s_mutchase1" );
 
-    internal static statestruct s_mutshoot1 = new(0, spritenums.SPR_MUT_SHOOT1, 6, null, T_Shoot, "s_mutshoot2" );
-    internal static statestruct s_mutshoot2 = new(0, spritenums.SPR_MUT_SHOOT2, 20, null, null, "s_mutshoot3" );
-    internal static statestruct s_mutshoot3 = new(0, spritenums.SPR_MUT_SHOOT3, 10, null, T_Shoot, "s_mutshoot4" );
-    internal static statestruct s_mutshoot4 = new(0, spritenums.SPR_MUT_SHOOT4, 20, null, null, "s_mutchase1" );
+    internal static statestruct s_mutshoot1 = new(0, "MTNTF", 6, null, T_Shoot, "s_mutshoot2" );
+    internal static statestruct s_mutshoot2 = new(0, "MTNTG", 20, null, null, "s_mutshoot3" );
+    internal static statestruct s_mutshoot3 = new(0, "MTNTH", 10, null, T_Shoot, "s_mutshoot4" );
+    internal static statestruct s_mutshoot4 = new(0, "MTNTI", 20, null, null, "s_mutchase1" );
 
-    internal static statestruct s_mutchase1 = new(1, spritenums.SPR_MUT_W1_1, 10, T_Chase, null, "s_mutchase1s" );
-    internal static statestruct s_mutchase1s = new(1, spritenums.SPR_MUT_W1_1, 3, null, null, "s_mutchase2" );
-    internal static statestruct s_mutchase2 = new(1, spritenums.SPR_MUT_W2_1, 8, T_Chase, null, "s_mutchase3" );
-    internal static statestruct s_mutchase3 = new(1, spritenums.SPR_MUT_W3_1, 10, T_Chase, null, "s_mutchase3s" );
-    internal static statestruct s_mutchase3s = new(1, spritenums.SPR_MUT_W3_1, 3, null, null, "s_mutchase4" );
-    internal static statestruct s_mutchase4 = new(1, spritenums.SPR_MUT_W4_1, 8, T_Chase, null, "s_mutchase1" );
+    internal static statestruct s_mutchase1 = new(1, "MTNTB", 10, T_Chase, null, "s_mutchase1s" );
+    internal static statestruct s_mutchase1s = new(1, "MTNTB", 3, null, null, "s_mutchase2" );
+    internal static statestruct s_mutchase2 = new(1, "MTNTC", 8, T_Chase, null, "s_mutchase3" );
+    internal static statestruct s_mutchase3 = new(1, "MTNTD", 10, T_Chase, null, "s_mutchase3s" );
+    internal static statestruct s_mutchase3s = new(1, "MTNTD", 3, null, null, "s_mutchase4" );
+    internal static statestruct s_mutchase4 = new(1, "MTNTE", 8, T_Chase, null, "s_mutchase1" );
 
-    internal static statestruct s_mutdie1 = new(0, spritenums.SPR_MUT_DIE_1, 7, null, A_DeathScream, "s_mutdie2" );
-    internal static statestruct s_mutdie2 = new(0, spritenums.SPR_MUT_DIE_2, 7, null, null, "s_mutdie3" );
-    internal static statestruct s_mutdie3 = new(0, spritenums.SPR_MUT_DIE_3, 7, null, null, "s_mutdie4" );
-    internal static statestruct s_mutdie4 = new(0, spritenums.SPR_MUT_DIE_4, 7, null, null, "s_mutdie5" );
-    internal static statestruct s_mutdie5 = new(0, spritenums.SPR_MUT_DEAD, 0, null, null, "s_mutdie5" );
+    internal static statestruct s_mutdie1 = new(0, "MTNTL", 7, null, A_DeathScream, "s_mutdie2" );
+    internal static statestruct s_mutdie2 = new(0, "MTNTM", 7, null, null, "s_mutdie3" );
+    internal static statestruct s_mutdie3 = new(0, "MTNTN", 7, null, null, "s_mutdie4" );
+    internal static statestruct s_mutdie4 = new(0, "MTNTO", 7, null, null, "s_mutdie5" );
+    internal static statestruct s_mutdie5 = new(0, "MTNTP", 0, null, null, "s_mutdie5" );
 
     //
     // SS
     //
 
-    internal static statestruct s_ssstand = new(1, spritenums.SPR_SS_S_1, 0, T_Stand, null, "s_ssstand" );
+    internal static statestruct s_ssstand = new(1, "SSWVW", 0, T_Stand, null, "s_ssstand" );
 
-    internal static statestruct s_sspath1 = new(1, spritenums.SPR_SS_W1_1, 20, T_Path, null, "s_sspath1s" );
-    internal static statestruct s_sspath1s = new(1, spritenums.SPR_SS_W1_1, 5, null, null, "s_sspath2" );
-    internal static statestruct s_sspath2 = new(1, spritenums.SPR_SS_W2_1, 15, T_Path, null, "s_sspath3" );
-    internal static statestruct s_sspath3 = new(1, spritenums.SPR_SS_W3_1, 20, T_Path, null, "s_sspath3s" );
-    internal static statestruct s_sspath3s = new(1, spritenums.SPR_SS_W3_1, 5, null, null, "s_sspath4" );
-    internal static statestruct s_sspath4 = new(1, spritenums.SPR_SS_W4_1, 15, T_Path, null, "s_sspath1" );
+    internal static statestruct s_sspath1 = new(1, "SSWVA", 20, T_Path, null, "s_sspath1s" );
+    internal static statestruct s_sspath1s = new(1, "SSWVA", 5, null, null, "s_sspath2" );
+    internal static statestruct s_sspath2 = new(1, "SSWVB", 15, T_Path, null, "s_sspath3" );
+    internal static statestruct s_sspath3 = new(1, "SSWVC", 20, T_Path, null, "s_sspath3s" );
+    internal static statestruct s_sspath3s = new(1, "SSWVC", 5, null, null, "s_sspath4" );
+    internal static statestruct s_sspath4 = new(1, "SSWVD", 15, T_Path, null, "s_sspath1" );
 
-    internal static statestruct s_sspain = new(2, spritenums.SPR_SS_PAIN_1, 10, null, null, "s_sschase1" );
-    internal static statestruct s_sspain1 = new(2, spritenums.SPR_SS_PAIN_2, 10, null, null, "s_sschase1" );
+    internal static statestruct s_sspain = new(2, "SSWVI", 10, null, null, "s_sschase1" );
+    internal static statestruct s_sspain1 = new(2, "SSWVH", 10, null, null, "s_sschase1" );
 
-    internal static statestruct s_ssshoot1 = new(0, spritenums.SPR_SS_SHOOT1, 20, null, null, "s_ssshoot2" );
-    internal static statestruct s_ssshoot2 = new(0, spritenums.SPR_SS_SHOOT2, 20, null, T_Shoot, "s_ssshoot3" );
-    internal static statestruct s_ssshoot3 = new(0, spritenums.SPR_SS_SHOOT3, 10, null, null, "s_ssshoot4" );
-    internal static statestruct s_ssshoot4 = new(0, spritenums.SPR_SS_SHOOT2, 10, null, T_Shoot, "s_ssshoot5" );
-    internal static statestruct s_ssshoot5 = new(0, spritenums.SPR_SS_SHOOT3, 10, null, null, "s_ssshoot6" );
-    internal static statestruct s_ssshoot6 = new(0, spritenums.SPR_SS_SHOOT2, 10, null, T_Shoot, "s_ssshoot7" );
-    internal static statestruct s_ssshoot7 = new(0, spritenums.SPR_SS_SHOOT3, 10, null, null, "s_ssshoot8" );
-    internal static statestruct s_ssshoot8 = new(0, spritenums.SPR_SS_SHOOT2, 10, null, T_Shoot, "s_ssshoot9" );
-    internal static statestruct s_ssshoot9 = new(0, spritenums.SPR_SS_SHOOT3, 10, null, null, "s_sschase1" );
+    internal static statestruct s_ssshoot1 = new(0, "SSWVE", 20, null, null, "s_ssshoot2" );
+    internal static statestruct s_ssshoot2 = new(0, "SSWVF", 20, null, T_Shoot, "s_ssshoot3" );
+    internal static statestruct s_ssshoot3 = new(0, "SSWVG", 10, null, null, "s_ssshoot4" );
+    internal static statestruct s_ssshoot4 = new(0, "SSWVF", 10, null, T_Shoot, "s_ssshoot5" );
+    internal static statestruct s_ssshoot5 = new(0, "SSWVG", 10, null, null, "s_ssshoot6" );
+    internal static statestruct s_ssshoot6 = new(0, "SSWVF", 10, null, T_Shoot, "s_ssshoot7" );
+    internal static statestruct s_ssshoot7 = new(0, "SSWVG", 10, null, null, "s_ssshoot8" );
+    internal static statestruct s_ssshoot8 = new(0, "SSWVF", 10, null, T_Shoot, "s_ssshoot9" );
+    internal static statestruct s_ssshoot9 = new(0, "SSWVG", 10, null, null, "s_sschase1" );
 
-    internal static statestruct s_sschase1 = new(1, spritenums.SPR_SS_W1_1, 10, T_Chase, null, "s_sschase1s" );
-    internal static statestruct s_sschase1s = new(1, spritenums.SPR_SS_W1_1, 3, null, null, "s_sschase2" );
-    internal static statestruct s_sschase2 = new(1, spritenums.SPR_SS_W2_1, 8, T_Chase, null, "s_sschase3" );
-    internal static statestruct s_sschase3 = new(1, spritenums.SPR_SS_W3_1, 10, T_Chase, null, "s_sschase3s" );
-    internal static statestruct s_sschase3s = new(1, spritenums.SPR_SS_W3_1, 3, null, null, "s_sschase4" );
-    internal static statestruct s_sschase4 = new(1, spritenums.SPR_SS_W4_1, 8, T_Chase, null, "s_sschase1" );
+    internal static statestruct s_sschase1 = new(1, "SSWVA", 10, T_Chase, null, "s_sschase1s" );
+    internal static statestruct s_sschase1s = new(1, "SSWVA", 3, null, null, "s_sschase2" );
+    internal static statestruct s_sschase2 = new(1, "SSWVB", 8, T_Chase, null, "s_sschase3" );
+    internal static statestruct s_sschase3 = new(1, "SSWVC", 10, T_Chase, null, "s_sschase3s" );
+    internal static statestruct s_sschase3s = new(1, "SSWVC", 3, null, null, "s_sschase4" );
+    internal static statestruct s_sschase4 = new(1, "SSWVD", 8, T_Chase, null, "s_sschase1" );
 
-    internal static statestruct s_ssdie1 = new(0, spritenums.SPR_SS_DIE_1, 15, null, A_DeathScream, "s_ssdie2" );
-    internal static statestruct s_ssdie2 = new(0, spritenums.SPR_SS_DIE_2, 15, null, null, "s_ssdie3" );
-    internal static statestruct s_ssdie3 = new(0, spritenums.SPR_SS_DIE_3, 15, null, null, "s_ssdie4" );
-    internal static statestruct s_ssdie4 = new(0, spritenums.SPR_SS_DEAD, 0, null, null, "s_ssdie4" );
+    internal static statestruct s_ssdie1 = new(0, "SSWVJ", 15, null, A_DeathScream, "s_ssdie2" );
+    internal static statestruct s_ssdie2 = new(0, "SSWVK", 15, null, null, "s_ssdie3" );
+    internal static statestruct s_ssdie3 = new(0, "SSWVL", 15, null, null, "s_ssdie4" );
+    internal static statestruct s_ssdie4 = new(0, "SSWVM", 0, null, null, "s_ssdie4" );
 
     //
     // hans
     //
 
-    internal static statestruct s_bossstand = new(0, spritenums.SPR_BOSS_W1, 0, T_Stand, null, "s_bossstand" );
+    internal static statestruct s_bossstand = new(0, "HANSA", 0, T_Stand, null, "s_bossstand" );
 
-    internal static statestruct s_bosschase1 = new(0, spritenums.SPR_BOSS_W1, 10, T_Chase, null, "s_bosschase1s" );
-    internal static statestruct s_bosschase1s = new(0, spritenums.SPR_BOSS_W1, 3, null, null, "s_bosschase2" );
-    internal static statestruct s_bosschase2 = new(0, spritenums.SPR_BOSS_W2, 8, T_Chase, null, "s_bosschase3" );
-    internal static statestruct s_bosschase3 = new(0, spritenums.SPR_BOSS_W3, 10, T_Chase, null, "s_bosschase3s" );
-    internal static statestruct s_bosschase3s = new(0, spritenums.SPR_BOSS_W3, 3, null, null, "s_bosschase4" );
-    internal static statestruct s_bosschase4 = new(0, spritenums.SPR_BOSS_W4, 8, T_Chase, null, "s_bosschase1" );
+    internal static statestruct s_bosschase1 = new(0, "HANSA", 10, T_Chase, null, "s_bosschase1s" );
+    internal static statestruct s_bosschase1s = new(0, "HANSA", 3, null, null, "s_bosschase2" );
+    internal static statestruct s_bosschase2 = new(0, "HANSB", 8, T_Chase, null, "s_bosschase3" );
+    internal static statestruct s_bosschase3 = new(0, "HANSC", 10, T_Chase, null, "s_bosschase3s" );
+    internal static statestruct s_bosschase3s = new(0, "HANSC", 3, null, null, "s_bosschase4" );
+    internal static statestruct s_bosschase4 = new(0, "HANSD", 8, T_Chase, null, "s_bosschase1" );
 
-    internal static statestruct s_bossdie1 = new(0, spritenums.SPR_BOSS_DIE1, 15, null, A_DeathScream, "s_bossdie2" );
-    internal static statestruct s_bossdie2 = new(0, spritenums.SPR_BOSS_DIE2, 15, null, null, "s_bossdie3" );
-    internal static statestruct s_bossdie3 = new(0, spritenums.SPR_BOSS_DIE3, 15, null, null, "s_bossdie4" );
-    internal static statestruct s_bossdie4 = new(0, spritenums.SPR_BOSS_DEAD, 0, null, null, "s_bossdie4" );
+    internal static statestruct s_bossdie1 = new(0, "HANSH", 15, null, A_DeathScream, "s_bossdie2" );
+    internal static statestruct s_bossdie2 = new(0, "HANSI", 15, null, null, "s_bossdie3" );
+    internal static statestruct s_bossdie3 = new(0, "HANSJ", 15, null, null, "s_bossdie4" );
+    internal static statestruct s_bossdie4 = new(0, "HANSK", 0, null, null, "s_bossdie4" );
 
-    internal static statestruct s_bossshoot1 = new(0, spritenums.SPR_BOSS_SHOOT1, 30, null, null, "s_bossshoot2" );
-    internal static statestruct s_bossshoot2 = new(0, spritenums.SPR_BOSS_SHOOT2, 10, null, T_Shoot, "s_bossshoot3" );
-    internal static statestruct s_bossshoot3 = new(0, spritenums.SPR_BOSS_SHOOT3, 10, null, T_Shoot, "s_bossshoot4" );
-    internal static statestruct s_bossshoot4 = new(0, spritenums.SPR_BOSS_SHOOT2, 10, null, T_Shoot, "s_bossshoot5" );
-    internal static statestruct s_bossshoot5 = new(0, spritenums.SPR_BOSS_SHOOT3, 10, null, T_Shoot, "s_bossshoot6" );
-    internal static statestruct s_bossshoot6 = new(0, spritenums.SPR_BOSS_SHOOT2, 10, null, T_Shoot, "s_bossshoot7" );
-    internal static statestruct s_bossshoot7 = new(0, spritenums.SPR_BOSS_SHOOT3, 10, null, T_Shoot, "s_bossshoot8" );
-    internal static statestruct s_bossshoot8 = new(0, spritenums.SPR_BOSS_SHOOT1, 10, null, null, "s_bosschase1" );
+    internal static statestruct s_bossshoot1 = new(0, "HANSE", 30, null, null, "s_bossshoot2" );
+    internal static statestruct s_bossshoot2 = new(0, "HANSF", 10, null, T_Shoot, "s_bossshoot3" );
+    internal static statestruct s_bossshoot3 = new(0, "HANSG", 10, null, T_Shoot, "s_bossshoot4" );
+    internal static statestruct s_bossshoot4 = new(0, "HANSF", 10, null, T_Shoot, "s_bossshoot5" );
+    internal static statestruct s_bossshoot5 = new(0, "HANSG", 10, null, T_Shoot, "s_bossshoot6" );
+    internal static statestruct s_bossshoot6 = new(0, "HANSF", 10, null, T_Shoot, "s_bossshoot7" );
+    internal static statestruct s_bossshoot7 = new(0, "HANSG", 10, null, T_Shoot, "s_bossshoot8" );
+    internal static statestruct s_bossshoot8 = new(0, "HANSE", 10, null, null, "s_bosschase1" );
 
 
     //
     // gretel
     //
-    internal static statestruct s_gretelstand = new(0, spritenums.SPR_GRETEL_W1, 0, T_Stand, null, "s_gretelstand" );
+    internal static statestruct s_gretelstand = new(0, "GRETA", 0, T_Stand, null, "s_gretelstand" );
 
-    internal static statestruct s_gretelchase1 = new(0, spritenums.SPR_GRETEL_W1, 10, T_Chase, null, "s_gretelchase1s" );
-    internal static statestruct s_gretelchase1s = new(0, spritenums.SPR_GRETEL_W1, 3, null, null, "s_gretelchase2" );
-    internal static statestruct s_gretelchase2 = new(0, spritenums.SPR_GRETEL_W2, 8, T_Chase, null, "s_gretelchase3" );
-    internal static statestruct s_gretelchase3 = new(0, spritenums.SPR_GRETEL_W3, 10, T_Chase, null, "s_gretelchase3s" );
-    internal static statestruct s_gretelchase3s = new(0, spritenums.SPR_GRETEL_W3, 3, null, null, "s_gretelchase4" );
-    internal static statestruct s_gretelchase4 = new(0, spritenums.SPR_GRETEL_W4, 8, T_Chase, null, "s_gretelchase1" );
+    internal static statestruct s_gretelchase1 = new(0, "GRETA", 10, T_Chase, null, "s_gretelchase1s" );
+    internal static statestruct s_gretelchase1s = new(0, "GRETA", 3, null, null, "s_gretelchase2" );
+    internal static statestruct s_gretelchase2 = new(0, "GRETB", 8, T_Chase, null, "s_gretelchase3" );
+    internal static statestruct s_gretelchase3 = new(0, "GRETC", 10, T_Chase, null, "s_gretelchase3s" );
+    internal static statestruct s_gretelchase3s = new(0, "GRETC", 3, null, null, "s_gretelchase4" );
+    internal static statestruct s_gretelchase4 = new(0, "GRETD", 8, T_Chase, null, "s_gretelchase1" );
 
-    internal static statestruct s_greteldie1 = new(0, spritenums.SPR_GRETEL_DIE1, 15, null, A_DeathScream, "s_greteldie2" );
-    internal static statestruct s_greteldie2 = new(0, spritenums.SPR_GRETEL_DIE2, 15, null, null, "s_greteldie3" );
-    internal static statestruct s_greteldie3 = new(0, spritenums.SPR_GRETEL_DIE3, 15, null, null, "s_greteldie4" );
-    internal static statestruct s_greteldie4 = new(0, spritenums.SPR_GRETEL_DEAD, 0, null, null, "s_greteldie4" );
+    internal static statestruct s_greteldie1 = new(0, "GRETH", 15, null, A_DeathScream, "s_greteldie2" );
+    internal static statestruct s_greteldie2 = new(0, "GRETI", 15, null, null, "s_greteldie3" );
+    internal static statestruct s_greteldie3 = new(0, "GRETJ", 15, null, null, "s_greteldie4" );
+    internal static statestruct s_greteldie4 = new(0, "GRETK", 0, null, null, "s_greteldie4" );
 
-    internal static statestruct s_gretelshoot1 = new(0, spritenums.SPR_GRETEL_SHOOT1, 30, null, null, "s_gretelshoot2" );
-    internal static statestruct s_gretelshoot2 = new(0, spritenums.SPR_GRETEL_SHOOT2, 10, null, T_Shoot, "s_gretelshoot3" );
-    internal static statestruct s_gretelshoot3 = new(0, spritenums.SPR_GRETEL_SHOOT3, 10, null, T_Shoot, "s_gretelshoot4" );
-    internal static statestruct s_gretelshoot4 = new(0, spritenums.SPR_GRETEL_SHOOT2, 10, null, T_Shoot, "s_gretelshoot5" );
-    internal static statestruct s_gretelshoot5 = new(0, spritenums.SPR_GRETEL_SHOOT3, 10, null, T_Shoot, "s_gretelshoot6" );
-    internal static statestruct s_gretelshoot6 = new(0, spritenums.SPR_GRETEL_SHOOT2, 10, null, T_Shoot, "s_gretelshoot7" );
-    internal static statestruct s_gretelshoot7 = new(0, spritenums.SPR_GRETEL_SHOOT3, 10, null, T_Shoot, "s_gretelshoot8" );
-    internal static statestruct s_gretelshoot8 = new(0, spritenums.SPR_GRETEL_SHOOT1, 10, null, null, "s_gretelchase1" );
+    internal static statestruct s_gretelshoot1 = new(0, "GRETE", 30, null, null, "s_gretelshoot2" );
+    internal static statestruct s_gretelshoot2 = new(0, "GRETF", 10, null, T_Shoot, "s_gretelshoot3" );
+    internal static statestruct s_gretelshoot3 = new(0, "GRETG", 10, null, T_Shoot, "s_gretelshoot4" );
+    internal static statestruct s_gretelshoot4 = new(0, "GRETF", 10, null, T_Shoot, "s_gretelshoot5" );
+    internal static statestruct s_gretelshoot5 = new(0, "GRETG", 10, null, T_Shoot, "s_gretelshoot6" );
+    internal static statestruct s_gretelshoot6 = new(0, "GRETF", 10, null, T_Shoot, "s_gretelshoot7" );
+    internal static statestruct s_gretelshoot7 = new(0, "GRETG", 10, null, T_Shoot, "s_gretelshoot8" );
+    internal static statestruct s_gretelshoot8 = new(0, "GRETE", 10, null, null, "s_gretelchase1" );
 
 
     /*
@@ -643,115 +643,115 @@ internal partial class Program
     // fake
     //
 
-    internal static statestruct s_fakestand = new (0, spritenums.SPR_FAKE_W1, 0, T_Stand, null, "s_fakestand" );
+    internal static statestruct s_fakestand = new (0, "FAKEA", 0, T_Stand, null, "s_fakestand" );
 
-    internal static statestruct s_fakechase1 = new(0, spritenums.SPR_FAKE_W1, 10, T_Fake, null, "s_fakechase1s" );
-    internal static statestruct s_fakechase1s = new(0, spritenums.SPR_FAKE_W1, 3, null, null, "s_fakechase2" );
-    internal static statestruct s_fakechase2 = new(0, spritenums.SPR_FAKE_W2, 8, T_Fake, null, "s_fakechase3" );
-    internal static statestruct s_fakechase3 = new(0, spritenums.SPR_FAKE_W3, 10, T_Fake, null, "s_fakechase3s" );
-    internal static statestruct s_fakechase3s = new(0, spritenums.SPR_FAKE_W3, 3, null, null, "s_fakechase4" );
-    internal static statestruct s_fakechase4 = new(0, spritenums.SPR_FAKE_W4, 8, T_Fake, null, "s_fakechase1" );
+    internal static statestruct s_fakechase1 = new(0, "FAKEA", 10, T_Fake, null, "s_fakechase1s" );
+    internal static statestruct s_fakechase1s = new(0, "FAKEA", 3, null, null, "s_fakechase2" );
+    internal static statestruct s_fakechase2 = new(0, "FAKEB", 8, T_Fake, null, "s_fakechase3" );
+    internal static statestruct s_fakechase3 = new(0, "FAKEC", 10, T_Fake, null, "s_fakechase3s" );
+    internal static statestruct s_fakechase3s = new(0, "FAKEC", 3, null, null, "s_fakechase4" );
+    internal static statestruct s_fakechase4 = new(0, "FAKED", 8, T_Fake, null, "s_fakechase1" );
 
-    internal static statestruct s_fakedie1 = new (0, spritenums.SPR_FAKE_DIE1, 10, null, A_DeathScream, "s_fakedie2" );
-    internal static statestruct s_fakedie2 = new (0, spritenums.SPR_FAKE_DIE2, 10, null, null, "s_fakedie3" );
-    internal static statestruct s_fakedie3 = new (0, spritenums.SPR_FAKE_DIE3, 10, null, null, "s_fakedie4" );
-    internal static statestruct s_fakedie4 = new (0, spritenums.SPR_FAKE_DIE4, 10, null, null, "s_fakedie5" );
-    internal static statestruct s_fakedie5 = new (0, spritenums.SPR_FAKE_DIE5, 10, null, null, "s_fakedie6" );
-    internal static statestruct s_fakedie6 = new(0, spritenums.SPR_FAKE_DEAD, 0, null, null, "s_fakedie6" );
+    internal static statestruct s_fakedie1 = new (0, "FAKEF", 10, null, A_DeathScream, "s_fakedie2" );
+    internal static statestruct s_fakedie2 = new (0, "FAKEG", 10, null, null, "s_fakedie3" );
+    internal static statestruct s_fakedie3 = new (0, "FAKEH", 10, null, null, "s_fakedie4" );
+    internal static statestruct s_fakedie4 = new (0, "FAKEI", 10, null, null, "s_fakedie5" );
+    internal static statestruct s_fakedie5 = new (0, "FAKEJ", 10, null, null, "s_fakedie6" );
+    internal static statestruct s_fakedie6 = new(0, "FAKEK", 0, null, null, "s_fakedie6" );
 
-    internal static statestruct s_fakeshoot1 = new (0, spritenums.SPR_FAKE_SHOOT, 8, null, T_FakeFire, "s_fakeshoot2" );
-    internal static statestruct s_fakeshoot2 = new (0, spritenums.SPR_FAKE_SHOOT, 8, null, T_FakeFire, "s_fakeshoot3" );
-    internal static statestruct s_fakeshoot3 = new (0, spritenums.SPR_FAKE_SHOOT, 8, null, T_FakeFire, "s_fakeshoot4" );
-    internal static statestruct s_fakeshoot4 = new (0, spritenums.SPR_FAKE_SHOOT, 8, null, T_FakeFire, "s_fakeshoot5" );
-    internal static statestruct s_fakeshoot5 = new (0, spritenums.SPR_FAKE_SHOOT, 8, null, T_FakeFire, "s_fakeshoot6" );
-    internal static statestruct s_fakeshoot6 = new (0, spritenums.SPR_FAKE_SHOOT, 8, null, T_FakeFire, "s_fakeshoot7" );
-    internal static statestruct s_fakeshoot7 = new (0, spritenums.SPR_FAKE_SHOOT, 8, null, T_FakeFire, "s_fakeshoot8" );
-    internal static statestruct s_fakeshoot8 = new (0, spritenums.SPR_FAKE_SHOOT, 8, null, T_FakeFire, "s_fakeshoot9" );
-    internal static statestruct s_fakeshoot9 = new(0, spritenums.SPR_FAKE_SHOOT, 8, null, null, "s_fakechase1" );
+    internal static statestruct s_fakeshoot1 = new (0, "FAKEE", 8, null, T_FakeFire, "s_fakeshoot2" );
+    internal static statestruct s_fakeshoot2 = new (0, "FAKEE", 8, null, T_FakeFire, "s_fakeshoot3" );
+    internal static statestruct s_fakeshoot3 = new (0, "FAKEE", 8, null, T_FakeFire, "s_fakeshoot4" );
+    internal static statestruct s_fakeshoot4 = new (0, "FAKEE", 8, null, T_FakeFire, "s_fakeshoot5" );
+    internal static statestruct s_fakeshoot5 = new (0, "FAKEE", 8, null, T_FakeFire, "s_fakeshoot6" );
+    internal static statestruct s_fakeshoot6 = new (0, "FAKEE", 8, null, T_FakeFire, "s_fakeshoot7" );
+    internal static statestruct s_fakeshoot7 = new (0, "FAKEE", 8, null, T_FakeFire, "s_fakeshoot8" );
+    internal static statestruct s_fakeshoot8 = new (0, "FAKEE", 8, null, T_FakeFire, "s_fakeshoot9" );
+    internal static statestruct s_fakeshoot9 = new(0, "FAKEE", 8, null, null, "s_fakechase1" );
 
-    internal static statestruct s_fire1 = new(0, spritenums.SPR_FIRE1, 6, T_Projectile, null, "s_fire2" );
-    internal static statestruct s_fire2 = new (0, spritenums.SPR_FIRE2, 6, T_Projectile, null, "s_fire1" );
+    internal static statestruct s_fire1 = new(0, "FIREA", 6, T_Projectile, null, "s_fire2" );
+    internal static statestruct s_fire2 = new (0, "FIREB", 6, T_Projectile, null, "s_fire1" );
 
     //
     // hitler
     //
-    internal static statestruct s_mechastand = new(0, spritenums.SPR_MECHA_W1, 0, T_Stand, null, "s_mechastand" );
+    internal static statestruct s_mechastand = new(0, "MECHA", 0, T_Stand, null, "s_mechastand" );
 
-    internal static statestruct s_mechachase1 = new(0, spritenums.SPR_MECHA_W1, 10, T_Chase, A_MechaSound, "s_mechachase1s" );
-    internal static statestruct s_mechachase1s = new(0, spritenums.SPR_MECHA_W1, 6, null, null, "s_mechachase2" );
-    internal static statestruct s_mechachase2 = new(0, spritenums.SPR_MECHA_W2, 8, T_Chase, null, "s_mechachase3" );
-    internal static statestruct s_mechachase3 = new(0, spritenums.SPR_MECHA_W3, 10, T_Chase, A_MechaSound, "s_mechachase3s" );
-    internal static statestruct s_mechachase3s = new(0, spritenums.SPR_MECHA_W3, 6, null, null, "s_mechachase4" );
-    internal static statestruct s_mechachase4 = new(0, spritenums.SPR_MECHA_W4, 8, T_Chase, null, "s_mechachase1" );
+    internal static statestruct s_mechachase1 = new(0, "MECHA", 10, T_Chase, A_MechaSound, "s_mechachase1s" );
+    internal static statestruct s_mechachase1s = new(0, "MECHA", 6, null, null, "s_mechachase2" );
+    internal static statestruct s_mechachase2 = new(0, "MECHB", 8, T_Chase, null, "s_mechachase3" );
+    internal static statestruct s_mechachase3 = new(0, "MECHC", 10, T_Chase, A_MechaSound, "s_mechachase3s" );
+    internal static statestruct s_mechachase3s = new(0, "MECHC", 6, null, null, "s_mechachase4" );
+    internal static statestruct s_mechachase4 = new(0, "MECHD", 8, T_Chase, null, "s_mechachase1" );
 
-    internal static statestruct s_mechadie1 = new(0, spritenums.SPR_MECHA_DIE1, 10, null, A_DeathScream, "s_mechadie2" );
-    internal static statestruct s_mechadie2 = new (0, spritenums.SPR_MECHA_DIE2, 10, null, null, "s_mechadie3" );
-    internal static statestruct s_mechadie3 = new (0, spritenums.SPR_MECHA_DIE3, 10, null, A_HitlerMorph, "s_mechadie4" );
-    internal static statestruct s_mechadie4 = new (0, spritenums.SPR_MECHA_DEAD, 0, null, null, "s_mechadie4" );
+    internal static statestruct s_mechadie1 = new(0, "MECHH", 10, null, A_DeathScream, "s_mechadie2" );
+    internal static statestruct s_mechadie2 = new (0, "MECHI", 10, null, null, "s_mechadie3" );
+    internal static statestruct s_mechadie3 = new (0, "MECHJ", 10, null, A_HitlerMorph, "s_mechadie4" );
+    internal static statestruct s_mechadie4 = new (0, "MECHK", 0, null, null, "s_mechadie4" );
 
-    internal static statestruct s_mechashoot1 = new(0, spritenums.SPR_MECHA_SHOOT1, 30, null, null, "s_mechashoot2" );
-    internal static statestruct s_mechashoot2 = new (0, spritenums.SPR_MECHA_SHOOT2, 10, null, T_Shoot, "s_mechashoot3" );
-    internal static statestruct s_mechashoot3 = new (0, spritenums.SPR_MECHA_SHOOT3, 10, null, T_Shoot, "s_mechashoot4" );
-    internal static statestruct s_mechashoot4 = new (0, spritenums.SPR_MECHA_SHOOT2, 10, null, T_Shoot, "s_mechashoot5" );
-    internal static statestruct s_mechashoot5 = new (0, spritenums.SPR_MECHA_SHOOT3, 10, null, T_Shoot, "s_mechashoot6" );
-    internal static statestruct s_mechashoot6 = new (0, spritenums.SPR_MECHA_SHOOT2, 10, null, T_Shoot, "s_mechachase1" );
+    internal static statestruct s_mechashoot1 = new(0, "MECHE", 30, null, null, "s_mechashoot2" );
+    internal static statestruct s_mechashoot2 = new (0, "MECHF", 10, null, T_Shoot, "s_mechashoot3" );
+    internal static statestruct s_mechashoot3 = new (0, "MECHG", 10, null, T_Shoot, "s_mechashoot4" );
+    internal static statestruct s_mechashoot4 = new (0, "MECHF", 10, null, T_Shoot, "s_mechashoot5" );
+    internal static statestruct s_mechashoot5 = new (0, "MECHG", 10, null, T_Shoot, "s_mechashoot6" );
+    internal static statestruct s_mechashoot6 = new (0, "MECHF", 10, null, T_Shoot, "s_mechachase1" );
 
 
-    internal static statestruct s_hitlerchase1 = new(0, spritenums.SPR_HITLER_W1, 6, T_Chase, null, "s_hitlerchase1s" );
-    internal static statestruct s_hitlerchase1s = new(0, spritenums.SPR_HITLER_W1, 4, null, null, "s_hitlerchase2" );
-    internal static statestruct s_hitlerchase2 = new(0, spritenums.SPR_HITLER_W2, 2, T_Chase, null, "s_hitlerchase3" );
-    internal static statestruct s_hitlerchase3 = new(0, spritenums.SPR_HITLER_W3, 6, T_Chase, null, "s_hitlerchase3s" );
-    internal static statestruct s_hitlerchase3s = new(0, spritenums.SPR_HITLER_W3, 4, null, null, "s_hitlerchase4" );
-    internal static statestruct s_hitlerchase4 = new(0, spritenums.SPR_HITLER_W4, 2, T_Chase, null, "s_hitlerchase1" );
+    internal static statestruct s_hitlerchase1 = new(0, "HTLRA", 6, T_Chase, null, "s_hitlerchase1s" );
+    internal static statestruct s_hitlerchase1s = new(0, "HTLRA", 4, null, null, "s_hitlerchase2" );
+    internal static statestruct s_hitlerchase2 = new(0, "HTLRB", 2, T_Chase, null, "s_hitlerchase3" );
+    internal static statestruct s_hitlerchase3 = new(0, "HTLRC", 6, T_Chase, null, "s_hitlerchase3s" );
+    internal static statestruct s_hitlerchase3s = new(0, "HTLRC", 4, null, null, "s_hitlerchase4" );
+    internal static statestruct s_hitlerchase4 = new(0, "HTLRD", 2, T_Chase, null, "s_hitlerchase1" );
 
-    internal static statestruct s_hitlerdeathcam = new(0, spritenums.SPR_HITLER_W1, 10, null, null, "s_hitlerdie1" );
+    internal static statestruct s_hitlerdeathcam = new(0, "HTLRA", 10, null, null, "s_hitlerdie1" );
 
-    internal static statestruct s_hitlerdie1 = new(0, spritenums.SPR_HITLER_W1, 1, null, A_DeathScream, "s_hitlerdie2" );
-    internal static statestruct s_hitlerdie2 = new (0, spritenums.SPR_HITLER_W1, 10, null, null, "s_hitlerdie3" );
-    internal static statestruct s_hitlerdie3 = new (0, spritenums.SPR_HITLER_DIE1, 10, null, A_Slurpie, "s_hitlerdie4" );
-    internal static statestruct s_hitlerdie4 = new (0, spritenums.SPR_HITLER_DIE2, 10, null, null, "s_hitlerdie5" );
-    internal static statestruct s_hitlerdie5 = new (0, spritenums.SPR_HITLER_DIE3, 10, null, null, "s_hitlerdie6" );
-    internal static statestruct s_hitlerdie6 = new (0, spritenums.SPR_HITLER_DIE4, 10, null, null, "s_hitlerdie7" );
-    internal static statestruct s_hitlerdie7 = new (0, spritenums.SPR_HITLER_DIE5, 10, null, null, "s_hitlerdie8" );
-    internal static statestruct s_hitlerdie8 = new (0, spritenums.SPR_HITLER_DIE6, 10, null, null, "s_hitlerdie9" );
-    internal static statestruct s_hitlerdie9 = new (0, spritenums.SPR_HITLER_DIE7, 10, null, null, "s_hitlerdie10" );
-    internal static statestruct s_hitlerdie10 = new(0, spritenums.SPR_HITLER_DEAD, 20, null, A_StartDeathCam, "s_hitlerdie10" );
+    internal static statestruct s_hitlerdie1 = new(0, "HTLRA", 1, null, A_DeathScream, "s_hitlerdie2" );
+    internal static statestruct s_hitlerdie2 = new (0, "HTLRA", 10, null, null, "s_hitlerdie3" );
+    internal static statestruct s_hitlerdie3 = new (0, "HTLRH", 10, null, A_Slurpie, "s_hitlerdie4" );
+    internal static statestruct s_hitlerdie4 = new (0, "HTLRI", 10, null, null, "s_hitlerdie5" );
+    internal static statestruct s_hitlerdie5 = new (0, "HTLRJ", 10, null, null, "s_hitlerdie6" );
+    internal static statestruct s_hitlerdie6 = new (0, "HTLRK", 10, null, null, "s_hitlerdie7" );
+    internal static statestruct s_hitlerdie7 = new (0, "HTLRL", 10, null, null, "s_hitlerdie8" );
+    internal static statestruct s_hitlerdie8 = new (0, "HTLRM", 10, null, null, "s_hitlerdie9" );
+    internal static statestruct s_hitlerdie9 = new (0, "HTLRN", 10, null, null, "s_hitlerdie10" );
+    internal static statestruct s_hitlerdie10 = new(0, "HTLRO", 20, null, A_StartDeathCam, "s_hitlerdie10" );
 
-    internal static statestruct s_hitlershoot1 = new(0, spritenums.SPR_HITLER_SHOOT1, 30, null, null, "s_hitlershoot2" );
-    internal static statestruct s_hitlershoot2 = new (0, spritenums.SPR_HITLER_SHOOT2, 10, null, T_Shoot, "s_hitlershoot3" );
-    internal static statestruct s_hitlershoot3 = new (0, spritenums.SPR_HITLER_SHOOT3, 10, null, T_Shoot, "s_hitlershoot4" );
-    internal static statestruct s_hitlershoot4 = new (0, spritenums.SPR_HITLER_SHOOT2, 10, null, T_Shoot, "s_hitlershoot5" );
-    internal static statestruct s_hitlershoot5 = new (0, spritenums.SPR_HITLER_SHOOT3, 10, null, T_Shoot, "s_hitlershoot6" );
-    internal static statestruct s_hitlershoot6 = new (0, spritenums.SPR_HITLER_SHOOT2, 10, null, T_Shoot, "s_hitlerchase1" );
+    internal static statestruct s_hitlershoot1 = new(0, "HTLRE", 30, null, null, "s_hitlershoot2" );
+    internal static statestruct s_hitlershoot2 = new (0, "HTLRF", 10, null, T_Shoot, "s_hitlershoot3" );
+    internal static statestruct s_hitlershoot3 = new (0, "HTLRG", 10, null, T_Shoot, "s_hitlershoot4" );
+    internal static statestruct s_hitlershoot4 = new (0, "HTLRF", 10, null, T_Shoot, "s_hitlershoot5" );
+    internal static statestruct s_hitlershoot5 = new (0, "HTLRG", 10, null, T_Shoot, "s_hitlershoot6" );
+    internal static statestruct s_hitlershoot6 = new (0, "HTLRF", 10, null, T_Shoot, "s_hitlerchase1" );
 
     //
     // schabb
     //
-    internal static statestruct s_schabbstand = new(0, spritenums.SPR_SCHABB_W1, 0, T_Stand, null, "s_schabbstand" );
+    internal static statestruct s_schabbstand = new(0, "SHABA", 0, T_Stand, null, "s_schabbstand" );
 
-    internal static statestruct s_schabbchase1 = new(0, spritenums.SPR_SCHABB_W1, 10, T_Schabb, null, "s_schabbchase1s" );
-    internal static statestruct s_schabbchase1s = new(0, spritenums.SPR_SCHABB_W1, 3, null, null, "s_schabbchase2" );
-    internal static statestruct s_schabbchase2 = new(0, spritenums.SPR_SCHABB_W2, 8, T_Schabb, null, "s_schabbchase3" );
-    internal static statestruct s_schabbchase3 = new(0, spritenums.SPR_SCHABB_W3, 10, T_Schabb, null, "s_schabbchase3s" );
-    internal static statestruct s_schabbchase3s = new(0, spritenums.SPR_SCHABB_W3, 3, null, null, "s_schabbchase4" );
-    internal static statestruct s_schabbchase4 = new(0, spritenums.SPR_SCHABB_W4, 8, T_Schabb, null, "s_schabbchase1" );
+    internal static statestruct s_schabbchase1 = new(0, "SHABA", 10, T_Schabb, null, "s_schabbchase1s" );
+    internal static statestruct s_schabbchase1s = new(0, "SHABA", 3, null, null, "s_schabbchase2" );
+    internal static statestruct s_schabbchase2 = new(0, "SHABB", 8, T_Schabb, null, "s_schabbchase3" );
+    internal static statestruct s_schabbchase3 = new(0, "SHABC", 10, T_Schabb, null, "s_schabbchase3s" );
+    internal static statestruct s_schabbchase3s = new(0, "SHABC", 3, null, null, "s_schabbchase4" );
+    internal static statestruct s_schabbchase4 = new(0, "SHABD", 8, T_Schabb, null, "s_schabbchase1" );
 
-    internal static statestruct s_schabbdeathcam = new(0, spritenums.SPR_SCHABB_W1, 1, null, null, "s_schabbdie1" );
+    internal static statestruct s_schabbdeathcam = new(0, "SHABA", 1, null, null, "s_schabbdie1" );
 
-    internal static statestruct s_schabbdie1 = new(0, spritenums.SPR_SCHABB_W1, 10, null, A_DeathScream, "s_schabbdie2" );
-    internal static statestruct s_schabbdie2 = new (0, spritenums.SPR_SCHABB_W1, 10, null, null, "s_schabbdie3" );
-    internal static statestruct s_schabbdie3 = new (0, spritenums.SPR_SCHABB_DIE1, 10, null, null, "s_schabbdie4" );
-    internal static statestruct s_schabbdie4 = new (0, spritenums.SPR_SCHABB_DIE2, 10, null, null, "s_schabbdie5" );
-    internal static statestruct s_schabbdie5 = new (0, spritenums.SPR_SCHABB_DIE3, 10, null, null, "s_schabbdie6" );
-    internal static statestruct s_schabbdie6 = new (0, spritenums.SPR_SCHABB_DEAD, 20, null, A_StartDeathCam, "s_schabbdie6" );
+    internal static statestruct s_schabbdie1 = new(0, "SHABA", 10, null, A_DeathScream, "s_schabbdie2" );
+    internal static statestruct s_schabbdie2 = new (0, "SHABA", 10, null, null, "s_schabbdie3" );
+    internal static statestruct s_schabbdie3 = new (0, "SHABG", 10, null, null, "s_schabbdie4" );
+    internal static statestruct s_schabbdie4 = new (0, "SHABH", 10, null, null, "s_schabbdie5" );
+    internal static statestruct s_schabbdie5 = new (0, "SHABI", 10, null, null, "s_schabbdie6" );
+    internal static statestruct s_schabbdie6 = new (0, "SHABJ", 20, null, A_StartDeathCam, "s_schabbdie6" );
 
-    internal static statestruct s_schabbshoot1 = new(0, spritenums.SPR_SCHABB_SHOOT1, 30, null, null, "s_schabbshoot2" );
-    internal static statestruct s_schabbshoot2 = new (0, spritenums.SPR_SCHABB_SHOOT2, 10, null, T_SchabbThrow, "s_schabbchase1" );
+    internal static statestruct s_schabbshoot1 = new(0, "SHABE", 30, null, null, "s_schabbshoot2" );
+    internal static statestruct s_schabbshoot2 = new (0, "SHABF", 10, null, T_SchabbThrow, "s_schabbchase1" );
 
-    internal static statestruct s_needle1 = new(0, spritenums.SPR_HYPO1, 6, T_Projectile, null, "s_needle2" );
-    internal static statestruct s_needle2 = new (0, spritenums.SPR_HYPO2, 6, T_Projectile, null, "s_needle3" );
-    internal static statestruct s_needle3 = new (0, spritenums.SPR_HYPO3, 6, T_Projectile, null, "s_needle4" );
-    internal static statestruct s_needle4 = new (0, spritenums.SPR_HYPO4, 6, T_Projectile, null, "s_needle1" );
+    internal static statestruct s_needle1 = new(0, "HYPOA", 6, T_Projectile, null, "s_needle2" );
+    internal static statestruct s_needle2 = new (0, "HYPOB", 6, T_Projectile, null, "s_needle3" );
+    internal static statestruct s_needle3 = new (0, "HYPOC", 6, T_Projectile, null, "s_needle4" );
+    internal static statestruct s_needle4 = new (0, "HYPOD", 6, T_Projectile, null, "s_needle1" );
 
     internal static void T_Schabb(objstruct ob)
     {
@@ -869,26 +869,26 @@ internal partial class Program
     // gift
     //
 
-    internal static statestruct s_giftstand = new(0, spritenums.SPR_GIFT_W1, 0, T_Stand, null, "s_giftstand" );
+    internal static statestruct s_giftstand = new(0, "GIFTA", 0, T_Stand, null, "s_giftstand" );
 
-    internal static statestruct s_giftchase1 = new(0, spritenums.SPR_GIFT_W1, 10, T_Gift, null, "s_giftchase1s" );
-    internal static statestruct s_giftchase1s = new(0, spritenums.SPR_GIFT_W1, 3, null, null, "s_giftchase2" );
-    internal static statestruct s_giftchase2 = new(0, spritenums.SPR_GIFT_W2, 8, T_Gift, null, "s_giftchase3" );
-    internal static statestruct s_giftchase3 = new(0, spritenums.SPR_GIFT_W3, 10, T_Gift, null, "s_giftchase3s" );
-    internal static statestruct s_giftchase3s = new(0, spritenums.SPR_GIFT_W3, 3, null, null, "s_giftchase4" );
-    internal static statestruct s_giftchase4 = new(0, spritenums.SPR_GIFT_W4, 8, T_Gift, null, "s_giftchase1" );
+    internal static statestruct s_giftchase1 = new(0, "GIFTA", 10, T_Gift, null, "s_giftchase1s" );
+    internal static statestruct s_giftchase1s = new(0, "GIFTA", 3, null, null, "s_giftchase2" );
+    internal static statestruct s_giftchase2 = new(0, "GIFTB", 8, T_Gift, null, "s_giftchase3" );
+    internal static statestruct s_giftchase3 = new(0, "GIFTC", 10, T_Gift, null, "s_giftchase3s" );
+    internal static statestruct s_giftchase3s = new(0, "GIFTC", 3, null, null, "s_giftchase4" );
+    internal static statestruct s_giftchase4 = new(0, "GIFTD", 8, T_Gift, null, "s_giftchase1" );
 
-    internal static statestruct s_giftdeathcam = new(0, spritenums.SPR_GIFT_W1, 1, null, null, "s_giftdie1" );
+    internal static statestruct s_giftdeathcam = new(0, "GIFTA", 1, null, null, "s_giftdie1" );
 
-    internal static statestruct s_giftdie1 = new(0, spritenums.SPR_GIFT_W1, 1, null, A_DeathScream, "s_giftdie2" );
-    internal static statestruct s_giftdie2 = new (0, spritenums.SPR_GIFT_W1, 10, null, null, "s_giftdie3" );
-    internal static statestruct s_giftdie3 = new (0, spritenums.SPR_GIFT_DIE1, 10, null, null, "s_giftdie4" );
-    internal static statestruct s_giftdie4 = new (0, spritenums.SPR_GIFT_DIE2, 10, null, null, "s_giftdie5" );
-    internal static statestruct s_giftdie5 = new (0, spritenums.SPR_GIFT_DIE3, 10, null, null, "s_giftdie6" );
-    internal static statestruct s_giftdie6 = new (0, spritenums.SPR_GIFT_DEAD, 20, null, A_StartDeathCam, "s_giftdie6" );
+    internal static statestruct s_giftdie1 = new(0, "GIFTA", 1, null, A_DeathScream, "s_giftdie2" );
+    internal static statestruct s_giftdie2 = new (0, "GIFTA", 10, null, null, "s_giftdie3" );
+    internal static statestruct s_giftdie3 = new (0, "GIFTG", 10, null, null, "s_giftdie4" );
+    internal static statestruct s_giftdie4 = new (0, "GIFTH", 10, null, null, "s_giftdie5" );
+    internal static statestruct s_giftdie5 = new (0, "GIFTI", 10, null, null, "s_giftdie6" );
+    internal static statestruct s_giftdie6 = new (0, "GIFTJ", 20, null, A_StartDeathCam, "s_giftdie6" );
 
-    internal static statestruct s_giftshoot1 = new(0, spritenums.SPR_GIFT_SHOOT1, 30, null, null, "s_giftshoot2" );
-    internal static statestruct s_giftshoot2 = new (0, spritenums.SPR_GIFT_SHOOT2, 10, null, T_GiftThrow, "s_giftchase1" );
+    internal static statestruct s_giftshoot1 = new(0, "GIFTE", 30, null, null, "s_giftshoot2" );
+    internal static statestruct s_giftshoot2 = new (0, "GIFTF", 10, null, T_GiftThrow, "s_giftchase1" );
 
     internal static void T_Gift(objstruct ob)
     {
@@ -1010,30 +1010,30 @@ internal partial class Program
     //
 
 
-    internal static statestruct s_fatstand = new(0, spritenums.SPR_FAT_W1, 0, T_Stand, null, "s_fatstand" );
+    internal static statestruct s_fatstand = new(0, "FATFA", 0, T_Stand, null, "s_fatstand" );
 
-    internal static statestruct s_fatchase1 = new(0, spritenums.SPR_FAT_W1, 10, T_Fat, null, "s_fatchase1s" );
-    internal static statestruct s_fatchase1s = new(0, spritenums.SPR_FAT_W1, 3, null, null, "s_fatchase2" );
-    internal static statestruct s_fatchase2 = new(0, spritenums.SPR_FAT_W2, 8, T_Fat, null, "s_fatchase3" );
-    internal static statestruct s_fatchase3 = new(0, spritenums.SPR_FAT_W3, 10, T_Fat, null, "s_fatchase3s" );
-    internal static statestruct s_fatchase3s = new(0, spritenums.SPR_FAT_W3, 3, null, null, "s_fatchase4" );
-    internal static statestruct s_fatchase4 = new(0, spritenums.SPR_FAT_W4, 8, T_Fat, null, "s_fatchase1" );
+    internal static statestruct s_fatchase1 = new(0, "FATFA", 10, T_Fat, null, "s_fatchase1s" );
+    internal static statestruct s_fatchase1s = new(0, "FATFA", 3, null, null, "s_fatchase2" );
+    internal static statestruct s_fatchase2 = new(0, "FATFB", 8, T_Fat, null, "s_fatchase3" );
+    internal static statestruct s_fatchase3 = new(0, "FATFC", 10, T_Fat, null, "s_fatchase3s" );
+    internal static statestruct s_fatchase3s = new(0, "FATFC", 3, null, null, "s_fatchase4" );
+    internal static statestruct s_fatchase4 = new(0, "FATFD", 8, T_Fat, null, "s_fatchase1" );
 
-    internal static statestruct s_fatdeathcam = new(0, spritenums.SPR_FAT_W1, 1, null, null, "s_fatdie1" );
+    internal static statestruct s_fatdeathcam = new(0, "FATFA", 1, null, null, "s_fatdie1" );
 
-    internal static statestruct s_fatdie1 = new (0, spritenums.SPR_FAT_W1, 1, null, A_DeathScream, "s_fatdie2" );
-    internal static statestruct s_fatdie2 = new (0, spritenums.SPR_FAT_W1, 10, null, null, "s_fatdie3" );
-    internal static statestruct s_fatdie3 = new (0, spritenums.SPR_FAT_DIE1, 10, null, null, "s_fatdie4" );
-    internal static statestruct s_fatdie4 = new (0, spritenums.SPR_FAT_DIE2, 10, null, null, "s_fatdie5" );
-    internal static statestruct s_fatdie5 = new (0, spritenums.SPR_FAT_DIE3, 10, null, null, "s_fatdie6" );
-    internal static statestruct s_fatdie6 = new (0, spritenums.SPR_FAT_DEAD, 20, null, A_StartDeathCam, "s_fatdie6" );
+    internal static statestruct s_fatdie1 = new (0, "FATFA", 1, null, A_DeathScream, "s_fatdie2" );
+    internal static statestruct s_fatdie2 = new (0, "FATFA", 10, null, null, "s_fatdie3" );
+    internal static statestruct s_fatdie3 = new (0, "FATFI", 10, null, null, "s_fatdie4" );
+    internal static statestruct s_fatdie4 = new (0, "FATFJ", 10, null, null, "s_fatdie5" );
+    internal static statestruct s_fatdie5 = new (0, "FATFK", 10, null, null, "s_fatdie6" );
+    internal static statestruct s_fatdie6 = new (0, "FATFL", 20, null, A_StartDeathCam, "s_fatdie6" );
 
-    internal static statestruct s_fatshoot1 = new (0, spritenums.SPR_FAT_SHOOT1, 30, null, null, "s_fatshoot2" );
-    internal static statestruct s_fatshoot2 = new (0, spritenums.SPR_FAT_SHOOT2, 10, null, T_GiftThrow, "s_fatshoot3" );
-    internal static statestruct s_fatshoot3 = new (0, spritenums.SPR_FAT_SHOOT3, 10, null, T_Shoot, "s_fatshoot4" );
-    internal static statestruct s_fatshoot4 = new (0, spritenums.SPR_FAT_SHOOT4, 10, null, T_Shoot, "s_fatshoot5" );
-    internal static statestruct s_fatshoot5 = new (0, spritenums.SPR_FAT_SHOOT3, 10, null, T_Shoot, "s_fatshoot6" );
-    internal static statestruct s_fatshoot6 = new (0, spritenums.SPR_FAT_SHOOT4, 10, null, T_Shoot, "s_fatchase1" );
+    internal static statestruct s_fatshoot1 = new (0, "FATFE", 30, null, null, "s_fatshoot2" );
+    internal static statestruct s_fatshoot2 = new (0, "FATFF", 10, null, T_GiftThrow, "s_fatshoot3" );
+    internal static statestruct s_fatshoot3 = new (0, "FATFG", 10, null, T_Shoot, "s_fatshoot4" );
+    internal static statestruct s_fatshoot4 = new (0, "FATFH", 10, null, T_Shoot, "s_fatshoot5" );
+    internal static statestruct s_fatshoot5 = new (0, "FATFG", 10, null, T_Shoot, "s_fatshoot6" );
+    internal static statestruct s_fatshoot6 = new (0, "FATFH", 10, null, T_Shoot, "s_fatchase1" );
 
     internal static void T_Fat(objstruct ob)
     {
@@ -1130,19 +1130,19 @@ internal partial class Program
     //
     // BJ victory
     //
-    internal static statestruct s_bjrun1 =  new statestruct(0, spritenums.SPR_BJ_W1, 12, T_BJRun, null, "s_bjrun1s" );
-    internal static statestruct s_bjrun1s = new statestruct(0, spritenums.SPR_BJ_W1, 3, null, null, "s_bjrun2" );
-    internal static statestruct s_bjrun2 =  new statestruct(0, spritenums.SPR_BJ_W2, 8, T_BJRun, null, "s_bjrun3" );
-    internal static statestruct s_bjrun3 =  new statestruct(0, spritenums.SPR_BJ_W3, 12, T_BJRun, null, "s_bjrun3s" );
-    internal static statestruct s_bjrun3s = new statestruct(0, spritenums.SPR_BJ_W3, 3, null, null, "s_bjrun4" );
-    internal static statestruct s_bjrun4 =  new statestruct(0, spritenums.SPR_BJ_W4, 8, T_BJRun, null, "s_bjrun1" );
-    internal static statestruct s_bjjump1 = new statestruct(0, spritenums.SPR_BJ_JUMP1, 14, T_BJJump, null, "s_bjjump2" );
-    internal static statestruct s_bjjump2 = new statestruct(0, spritenums.SPR_BJ_JUMP2, 14, T_BJJump, T_BJYell, "s_bjjump3" );
-    internal static statestruct s_bjjump3 = new statestruct(0, spritenums.SPR_BJ_JUMP3, 14, T_BJJump, null, "s_bjjump4" );
-    internal static statestruct s_bjjump4 = new statestruct(0, spritenums.SPR_BJ_JUMP4, 300, null, T_BJDone, "s_bjjump4" );
+    internal static statestruct s_bjrun1 =  new statestruct(0, "BLAZA0", 12, T_BJRun, null, "s_bjrun1s" );
+    internal static statestruct s_bjrun1s = new statestruct(0, "BLAZA0", 3, null, null, "s_bjrun2" );
+    internal static statestruct s_bjrun2 =  new statestruct(0, "BLAZB0", 8, T_BJRun, null, "s_bjrun3" );
+    internal static statestruct s_bjrun3 =  new statestruct(0, "BLAZC0", 12, T_BJRun, null, "s_bjrun3s" );
+    internal static statestruct s_bjrun3s = new statestruct(0, "BLAZC0", 3, null, null, "s_bjrun4" );
+    internal static statestruct s_bjrun4 =  new statestruct(0, "BLAZD0", 8, T_BJRun, null, "s_bjrun1" );
+    internal static statestruct s_bjjump1 = new statestruct(0, "BLAZE0", 14, T_BJJump, null, "s_bjjump2" );
+    internal static statestruct s_bjjump2 = new statestruct(0, "BLAZF0", 14, T_BJJump, T_BJYell, "s_bjjump3" );
+    internal static statestruct s_bjjump3 = new statestruct(0, "BLAZG0", 14, T_BJJump, null, "s_bjjump4" );
+    internal static statestruct s_bjjump4 = new statestruct(0, "BLAZH0", 300, null, T_BJDone, "s_bjjump4" );
 
 
-    internal static statestruct s_deathcam = new statestruct( 0, 0, 0, null, null, null );
+    internal static statestruct s_deathcam = new statestruct( 0, "DCAMA0", 0, null, null, null );
 
     /*
     ===============

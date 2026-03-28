@@ -9,22 +9,22 @@ internal partial class Program
 
     internal struct statinfo_t
     {
-        public spritenums picnum;
+        public string picnum;
         public wl_stat_types type;
         public objflags specialFlags;    // they are ORed to the statobj_t flags
 
-        public statinfo_t(spritenums picnum)
+        public statinfo_t(string picnum)
         {
             this.picnum = picnum;
         }
 
-        public statinfo_t(spritenums picnum, wl_stat_types type)
+        public statinfo_t(string picnum, wl_stat_types type)
         {
             this.picnum = picnum;
             this.type = type;
         }
 
-        public statinfo_t(spritenums picnum, wl_stat_types type, objflags specialFlags)
+        public statinfo_t(string picnum, wl_stat_types type, objflags specialFlags)
         {
             this.picnum = picnum;
             this.type = type;
@@ -34,77 +34,77 @@ internal partial class Program
 
     internal static statinfo_t[] statinfo =
     {
-        new(spritenums.SPR_STAT_0),                           // puddle          spr1v
-        new(spritenums.SPR_STAT_1,wl_stat_types.block),                     // Green Barrel    "
-        new(spritenums.SPR_STAT_2,wl_stat_types.block),                     // Table/chairs    "
-        new(spritenums.SPR_STAT_3,wl_stat_types.block,objflags.FL_FULLBRIGHT),       // Floor lamp      "
-        new(spritenums.SPR_STAT_4,wl_stat_types.none,objflags.FL_FULLBRIGHT),        // Chandelier      "
-        new(spritenums.SPR_STAT_5,wl_stat_types.block),                     // Hanged man      "
-        new(spritenums.SPR_STAT_6,wl_stat_types.bo_alpo),                   // Bad food        "
-        new(spritenums.SPR_STAT_7,wl_stat_types.block),                     // Red pillar      "
+        new("WATRA0"),                           // puddle          spr1v
+        new("DRUMA0", wl_stat_types.block),                     // Green Barrel    "
+        new("TCHRA0", wl_stat_types.block),                     // Table/chairs    "
+        new("FLMPA0", wl_stat_types.block,objflags.FL_FULLBRIGHT),       // Floor lamp      "
+        new("CHANA0", wl_stat_types.none,objflags.FL_FULLBRIGHT),        // Chandelier      "
+        new("HANGA0", wl_stat_types.block),                     // Hanged man      "
+        new("ALPOA0", wl_stat_types.bo_alpo),                   // Bad food        "
+        new("COLUA0", wl_stat_types.block),                     // Red pillar      "
         //
         // NEW PAGE
         //
-        new(spritenums.SPR_STAT_8,wl_stat_types.block),                     // Tree            spr2v
-        new(spritenums.SPR_STAT_9),                           // Skeleton flat   "
-        new(spritenums.SPR_STAT_10,wl_stat_types.block),                    // Sink            " (SOD:gibs)
-        new(spritenums.SPR_STAT_11,wl_stat_types.block),                    // Potted plant    "
-        new(spritenums.SPR_STAT_12,wl_stat_types.block),                    // Urn             "
-        new(spritenums.SPR_STAT_13,wl_stat_types.block),                    // Bare table      "
-        new(spritenums.SPR_STAT_14,wl_stat_types.none,objflags.FL_FULLBRIGHT),       // Ceiling light   "
-        new(spritenums.SPR_STAT_15),                          // Kitchen stuff   "
+        new("PLNTA0",wl_stat_types.block),                     // Tree            spr2v
+        new("SKELA0"),                           // Skeleton flat   "
+        new("SINKA0",wl_stat_types.block),                    // Sink            " (SOD:gibs)
+        new("BPNTA0",wl_stat_types.block),                    // Potted plant    "
+        new("VASEA0",wl_stat_types.block),                    // Urn             "
+        new("TABLA0",wl_stat_types.block),                    // Bare table      "
+        new("GLMPA0",wl_stat_types.none,objflags.FL_FULLBRIGHT),       // Ceiling light   "
+        new("POT1A0"),                          // Kitchen stuff   "
         //
         // NEW PAGE
         //
-        new(spritenums.SPR_STAT_16, wl_stat_types.block),                    // suit of armor   spr3v
-        new(spritenums.SPR_STAT_17, wl_stat_types.block),                    // Hanging cage    "
-        new(spritenums.SPR_STAT_18, wl_stat_types.block),                    // SkeletoninCage  "
-        new(spritenums.SPR_STAT_19),                          // Skeleton relax  "
-        new(spritenums.SPR_STAT_20, wl_stat_types.bo_key1),                  // Key 1           "
-        new(spritenums.SPR_STAT_21, wl_stat_types.bo_key2),                  // Key 2           "
-        new(spritenums.SPR_STAT_22, wl_stat_types.block),                    // stuff             (SOD:gibs)
-        new(spritenums.SPR_STAT_23),                          // stuff
+        new("ARMRA0", wl_stat_types.block),                    // suit of armor   spr3v
+        new("CAG1A0", wl_stat_types.block),                    // Hanging cage    "
+        new("CAG2A0", wl_stat_types.block),                    // SkeletoninCage  "
+        new("BON1A0"),                          // Skeleton relax  "
+        new("GKEYA0", wl_stat_types.bo_key1),                  // Key 1           "
+        new("SKEYA0", wl_stat_types.bo_key2),                  // Key 2           "
+        new("BUNKA0", wl_stat_types.block),                    // stuff             (SOD:gibs)
+        new("BASKA0"),                          // stuff
         //
         // NEW PAGE
         //
-        new(spritenums.SPR_STAT_24,wl_stat_types.bo_food),                  // Good food       spr4v
-        new(spritenums.SPR_STAT_25,wl_stat_types.bo_firstaid),              // First aid       "
-        new(spritenums.SPR_STAT_26,wl_stat_types.bo_clip),                  // Clip            "
-        new(spritenums.SPR_STAT_27,wl_stat_types.bo_machinegun),            // Machine gun     "
-        new(spritenums.SPR_STAT_28,wl_stat_types.bo_chaingun),              // Gatling gun     "
-        new(spritenums.SPR_STAT_29,wl_stat_types.bo_cross),                 // Cross           "
-        new(spritenums.SPR_STAT_30,wl_stat_types.bo_chalice),               // Chalice         "
-        new(spritenums.SPR_STAT_31,wl_stat_types.bo_bible),                 // Bible           "
+        new("FOODA0",wl_stat_types.bo_food),                  // Good food       spr4v
+        new("MEDIA0",wl_stat_types.bo_firstaid),              // First aid       "
+        new("CLIPA0",wl_stat_types.bo_clip),                  // Clip            "
+        new("MGUNA0",wl_stat_types.bo_machinegun),            // Machine gun     "
+        new("CGUNA0",wl_stat_types.bo_chaingun),              // Gatling gun     "
+        new("CROSA0",wl_stat_types.bo_cross),                 // Cross           "
+        new("CHALA0",wl_stat_types.bo_chalice),               // Chalice         "
+        new("JEWLA0",wl_stat_types.bo_bible),                 // Bible           "
         //
         // NEW PAGE
         //
-        new(spritenums.SPR_STAT_32,wl_stat_types.bo_crown),                 // crown           spr5v
-        new(spritenums.SPR_STAT_33,wl_stat_types.bo_fullheal,objflags.FL_FULLBRIGHT),// one up          "
-        new(spritenums.SPR_STAT_34,wl_stat_types.bo_gibs),                  // gibs            "
-        new(spritenums.SPR_STAT_35,wl_stat_types.block),                    // barrel          "
-        new(spritenums.SPR_STAT_36,wl_stat_types.block),                    // well            "
-        new(spritenums.SPR_STAT_37,wl_stat_types.block),                    // Empty well      "
-        new(spritenums.SPR_STAT_38,wl_stat_types.bo_gibs),                  // Gibs 2          "
-        new(spritenums.SPR_STAT_39,wl_stat_types.block),                    // flag            "
+        new("CRWNA0",wl_stat_types.bo_crown),                 // crown           spr5v
+        new("ONUPA0",wl_stat_types.bo_fullheal,objflags.FL_FULLBRIGHT),// one up          "
+        new("GIBSA0",wl_stat_types.bo_gibs),                  // gibs            "
+        new("BARLA0",wl_stat_types.block),                    // barrel          "
+        new("WEL1A0",wl_stat_types.block),                    // well            "
+        new("WEL2A0",wl_stat_types.block),                    // Empty well      "
+        new("BLUDA0",wl_stat_types.bo_gibs),                  // Gibs 2          "
+        new("FLAGA0",wl_stat_types.block),                    // flag            "
         //
         // NEW PAGE
         //
-        new(spritenums.SPR_STAT_40, wl_stat_types.block),                    // Call Apogee          spr7v
+        new("AARDA0", wl_stat_types.block),                    // Call Apogee          spr7v
         //
         // NEW PAGE
         //
-        new(spritenums.SPR_STAT_41),                          // junk            "
-        new(spritenums.SPR_STAT_42),                          // junk            "
-        new(spritenums.SPR_STAT_43),                          // junk            "
-        new(spritenums.SPR_STAT_44),                          // pots            "
-        new(spritenums.SPR_STAT_45,wl_stat_types.block),                    // stove           " (SOD:gibs)
-        new(spritenums.SPR_STAT_46,wl_stat_types.block),                    // spears          " (SOD:gibs)
-        new(spritenums.SPR_STAT_47),                          // vines           "
+        new("BON2A0"),                          // junk            "
+        new("BON3A0"),                          // junk            "
+        new("BON4A0"),                          // junk            "
+        new("POT2A0"),                          // pots            "
+        new("STOVA0",wl_stat_types.block),                    // stove           " (SOD:gibs)
+        new("RACKA0",wl_stat_types.block),                    // spears          " (SOD:gibs)
+        new("VINEA0"),                          // vines           "
         //
         // NEW PAGE
         //
-        new(spritenums.SPR_STAT_26,wl_stat_types.bo_clip2),                 // Clip     
-        new statinfo_t(spritenums.none)                                   // terminator
+        new("CLIPA0",wl_stat_types.bo_clip2),                 // Clip     
+        new statinfo_t("")                                   // terminator
     };
 
     internal static void InitStaticList()
@@ -186,7 +186,7 @@ internal partial class Program
         //
         for (type = 0; ; type++)
         {
-            if (statinfo[type].picnum == spritenums.none)                    // end of list
+            if (statinfo[type].picnum == "")                    // end of list
                 _gameEngineManager.Quit("PlaceItemType: couldn't find type!");
             if (statinfo[type].type == itemtype)
                 break;
@@ -209,7 +209,7 @@ internal partial class Program
                 break;
             }
 
-            if (spot.shapenum == spritenums.none)                           // -1 is a free spot
+            if (spot.shapenum == "")                           // -1 is a free spot
                 break;
         }
 
