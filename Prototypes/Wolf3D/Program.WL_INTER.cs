@@ -221,7 +221,7 @@ internal partial class Program
         _videoManager.Update();
     }
 
-    private static string[] numpics = new[] { "l_num0", "l_num1", "l_num2", "l_num3", "l_num4", "l_num5", "l_num6", "l_num7", "l_num8", "l_num9" };
+    private static string[] numpics = new[] { "FONTL048", "FONTL049", "FONTL050", "FONTL051", "FONTL052", "FONTL053", "FONTL054", "FONTL055", "FONTL056", "FONTL057" };
     internal static void LevelCompleted()
     {
         const int VBLWAIT = 30;
@@ -542,7 +542,7 @@ internal partial class Program
         Write(RATIOX + 4, RATIOY + 2, STR_RATSECRET);
         Write(RATIOX, RATIOY + 4, STR_RATTREASURE);
 
-        _graphicManager.DrawPic("l_bjwins", 8, 4);
+        _graphicManager.DrawPic("L_BJWINS", 8, 4);
 
         for (kr = sr = tr = sec = i = 0; i < LRpack; i++)
         {
@@ -626,7 +626,7 @@ internal partial class Program
     private static int bj_which = 0, bj_max = 10;
     internal static void BJ_Breathe()
     {
-        string[] pics = { "l_guy", "l_guy2" };
+        string[] pics = { "L_Guy", "L_GUY2" };
 
         GameEngineManager.DelayMs(5);
 
@@ -643,11 +643,11 @@ internal partial class Program
     internal static void Write(int x, int y, string text)
     {
         // TODO: This would be a good ASCII text map in the pk3, which allows for easy graphic pickings
-        string[] alpha = { "l_num0", "l_num1", "l_num2", "l_num3", "l_num4", "l_num5",
-            "l_num6", "l_num7", "l_num8", "l_num9", "l_colon", "", "", "", "", "", "", "l_a", "l_b",
-            "l_c", "l_d", "l_e", "l_f", "l_g", "l_h", "l_i", "l_j", "l_k",
-            "l_l", "l_m", "l_n", "l_o", "l_p", "l_q", "l_r", "l_s", "l_t",
-            "l_u", "l_v", "l_w", "l_x", "l_y", "l_z"
+        string[] alpha = { "FONTL048", "FONTL049", "FONTL050", "FONTL051", "FONTL052", "FONTL053",
+            "FONTL054", "FONTL055", "FONTL056", "FONTL057", "FONTL058", "", "", "", "", "", "", "FONTL065", "FONTL066",
+            "FONTL067", "FONTL068", "FONTL069", "FONTL070", "FONTL071", "FONTL072", "FONTL073", "FONTL074", "FONTL075",
+            "FONTL076", "FONTL077", "FONTL078", "FONTL079", "FONTL080", "FONTL081", "FONTL082", "FONTL083", "FONTL084",
+            "FONTL085", "FONTL086", "FONTL087", "FONTL088", "FONTL089", "FONTL090"
         };
 
         int i, ox, nx, ny, len = text.Length;
@@ -674,23 +674,23 @@ internal partial class Program
                 switch (text[i])
                 {
                     case '!':
-                        _graphicManager.DrawPic("l_exclamationpoint", nx, ny);
+                        _graphicManager.DrawPic("FONTL033", nx, ny);
                         nx += 8;
                         continue;
                     case '\'':
-                        _graphicManager.DrawPic("l_apostrophe", nx, ny);
+                        _graphicManager.DrawPic("FONTL039", nx, ny);
                         nx += 8;
                         continue;
                 case ' ':
                         break;
 
                     case ':':
-                        _graphicManager.DrawPic("l_colon", nx, ny);
+                        _graphicManager.DrawPic("FONTL058", nx, ny);
                         nx += 8;
                         continue;
 
                     case '%':
-                        _graphicManager.DrawPic("l_percent", nx, ny);
+                        _graphicManager.DrawPic("FONTL037", nx, ny);
                         break;
 
                     default:

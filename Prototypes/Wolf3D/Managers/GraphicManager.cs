@@ -1,8 +1,6 @@
 ﻿using System.Diagnostics;
-using System.Drawing;
 using Wolf3D.Entities;
 using Wolf3D.Mappers;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wolf3D.Managers;
 
@@ -76,15 +74,16 @@ internal class GraphicManager
     public byte[] GetDemo(int demonumber)
     {
         string[] dems = { "demo0", "demo1", "demo2", "demo3" };
-        return grsegs[(int)GraphicsMappings.GraphicIndexMap[dems[demonumber]]];
+        return grsegs[GraphicsMappings.GraphicKeys.IndexOf(dems[demonumber])];
     }
 
     public string GetText(string textName)
     {
-        string? foundKey;
-        if ((foundKey = GraphicsMappings.GraphicIndexMap.Keys.FirstOrDefault(x => x.ToLowerInvariant().Equals(textName.ToLowerInvariant()))) != null)
+        string? foundKey = GraphicsMappings.GraphicKeys.FirstOrDefault(x => x.ToLowerInvariant().Equals(textName.ToLowerInvariant()));
+        if (foundKey != null)
         {
-            if (GraphicsMappings.GraphicIndexMap.TryGetValue(foundKey, out var foundchunk))
+            var foundchunk = GraphicsMappings.GraphicKeys.IndexOf(foundKey);
+            if (foundchunk != -1)
             {
                 return new string(
                     System.Text.Encoding.ASCII.GetString(
@@ -100,8 +99,10 @@ internal class GraphicManager
         videoManager.MemToScreen(grsegs[GraphicConstants.STARTTILE8].Skip(tile * 64).ToArray(), 8, 8, x, y);
     }
 
-    public pictabletype GetPic(graphicnums chunknum)
+    [Obsolete("This should evntually come with the picture's Graphic component.")]
+    public pictabletype GetPicMetadata(string picName)
     {
+        var chunknum = GraphicsMappings.GraphicKeys.IndexOf(picName);
         return pictable[(int)chunknum - GraphicConstants.STARTPICS];
     }
 
@@ -116,10 +117,11 @@ internal class GraphicManager
             if (string.IsNullOrEmpty(gfx.Asset))
                 return;
 
-            string? foundKey = null;
-            if ((foundKey = GraphicsMappings.GraphicIndexMap.Keys.FirstOrDefault(x => x.ToLowerInvariant().Equals(gfx.Asset.ToLowerInvariant()))) != null)
+            string? foundKey = GraphicsMappings.GraphicKeys.FirstOrDefault(x => x.ToLowerInvariant().Equals(gfx.Asset.ToLowerInvariant()));
+            if (foundKey != null)
             {
-                if (GraphicsMappings.GraphicIndexMap.TryGetValue(foundKey, out var foundchunk))
+                var foundchunk = GraphicsMappings.GraphicKeys.IndexOf(foundKey);
+                if (foundchunk != -1)
                 {
                     int picnum = (int)(foundchunk - GraphicConstants.STARTPICS);
                     int width, height;
@@ -165,7 +167,6 @@ internal class GraphicManager
     {
         if (string.IsNullOrEmpty(graphicName))
             return;
-        string? foundKey = null;
         if (graphicName.ToLowerInvariant() == "signon".ToLowerInvariant())
         {
             // TODO: Convert to "Graphic"
@@ -173,17 +174,21 @@ internal class GraphicManager
             t.width = 320;
             t.height = 200;
             videoManager.MemToScreen(Signon.signon, t.width, t.height, x, y);
+            return;
         }
-        else if ((foundKey = GraphicsMappings.GraphicIndexMap.Keys.FirstOrDefault(x => x.ToLowerInvariant().Equals(graphicName.ToLowerInvariant()))) != null)
+
+        string? foundKey = GraphicsMappings.GraphicKeys.FirstOrDefault(x => x.ToLowerInvariant().Equals(graphicName.ToLowerInvariant()));
+        if (foundKey != null)
         {
-            if (GraphicsMappings.GraphicIndexMap.TryGetValue(foundKey, out var foundchunk))
+            var foundchunk = GraphicsMappings.GraphicKeys.IndexOf(foundKey);
+            if (foundchunk != -1)
             {
                 DrawPic(x,y,foundchunk);
             }
         }
     }
 
-    public void DrawPic(int x, int y, graphicnums chunknum)
+    private void DrawPic(int x, int y, int chunknum)
     {
         int picnum = (int)(chunknum - GraphicConstants.STARTPICS);
         int width, height;

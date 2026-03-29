@@ -490,7 +490,8 @@ internal partial class Program
         length = (uint)str.Length;
         while (length < width)
         {
-            StatusDrawPic("n_blank", (uint)x, (uint)y);
+            // TODO: 032 is "space"
+            StatusDrawPic("FONTN032", (uint)x, (uint)y);
             x++;
             width--;
         }
@@ -499,7 +500,8 @@ internal partial class Program
 
         while (c < length)
         {
-            string[] numberPic = ["n_0", "n_1", "n_2", "n_3", "n_4", "n_5", "n_6", "n_7", "n_8", "n_9"];
+            // TODO: "FONTN" + ascii value (if exists)
+            string[] numberPic = ["FONTN048", "FONTN049", "FONTN050", "FONTN051", "FONTN052", "FONTN053", "FONTN054", "FONTN055", "FONTN056", "FONTN057"];
             var digitIndex = (int)(str[(int)c] - '0');
             StatusDrawPic(numberPic[digitIndex], (uint)x, (uint)y);
             x++;

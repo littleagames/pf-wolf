@@ -61,7 +61,7 @@ internal partial class Program
 
     static int picx;
     static int picy;
-    static graphicnums picnum;
+    static string? picName;
     static int picdelay;
     static bool layoutdone;
 
@@ -264,7 +264,7 @@ internal partial class Program
     {
         picy = ParseNumber();
         picx = ParseNumber();
-        picnum = (graphicnums)ParseNumber();
+        GraphicsMappings.ArtExternMap.TryGetValue(ParseNumber(), out picName);
         RipToEOL();
     }
 
@@ -273,7 +273,7 @@ internal partial class Program
     {
         picy = ParseNumber();
         picx = ParseNumber();
-        picnum = (graphicnums)ParseNumber();
+        GraphicsMappings.ArtExternMap.TryGetValue(ParseNumber(), out picName);
         picdelay = ParseNumber();
         RipToEOL();
     }
@@ -305,7 +305,7 @@ internal partial class Program
         //
         // draw pic
         //
-        _graphicManager.DrawPic(picx & ~7, picy, picnum);
+        _graphicManager.DrawPic(picName, picx & ~7, picy);
     }
 
     /*
@@ -516,8 +516,8 @@ internal partial class Program
 
             case 'G':               // ^Gyyy,xxx,ppp draws graphic
                 ParsePicCommand();
-                _graphicManager.DrawPic(picx & ~7, picy, picnum);
-                var picData = _graphicManager.GetPic(picnum);
+                _graphicManager.DrawPic(picName, picx & ~7, picy);
+                var picData = _graphicManager.GetPicMetadata(picName);
                 picwidth = picData.width;
                 picheight = picData.height;
                 //
