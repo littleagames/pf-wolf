@@ -103,6 +103,12 @@ internal class GraphicManager
     public pictabletype GetPicMetadata(string picName)
     {
         var chunknum = GraphicsMappings.GraphicKeys.IndexOf(picName);
+        if (chunknum < 0 || chunknum - GraphicConstants.STARTPICS >= pictable.Length)
+        {
+            return new();
+            //throw new PfWolfGraphicException($"GetPicMetadata: No metadata found for picture name '{picName}'!");
+        }
+
         return pictable[(int)chunknum - GraphicConstants.STARTPICS];
     }
 

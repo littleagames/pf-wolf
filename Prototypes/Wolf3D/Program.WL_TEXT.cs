@@ -518,8 +518,11 @@ internal partial class Program
                 ParsePicCommand();
                 _graphicManager.DrawPic(picName, picx & ~7, picy);
                 var picData = _graphicManager.GetPicMetadata(picName);
+
                 picwidth = picData.width;
                 picheight = picData.height;
+                if (picwidth == 0 || picheight == 0) return;
+
                 //
                 // adjust margins
                 //
