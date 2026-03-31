@@ -7,7 +7,7 @@ namespace Wolf3D;
 
 internal partial class Program
 {
-    internal static LRstruct[] LevelRatios = Enumerable.Range(0, LRpack).Select(x => new LRstruct()).ToArray();// new LRstruct[LRpack];
+    internal static LRstruct[] LevelRatios = Enumerable.Range(0, MapManager.NUMMAPS).Select(x => new LRstruct()).ToArray();// new LRstruct[LRpack];
     internal static int lastBreathTime = 0;
 
     internal static void NonShareware()
@@ -545,7 +545,7 @@ internal partial class Program
         Write(RATIOX, RATIOY + 4, "$STR_RATTREASURE".ToLanguageText(language));
 
         _graphicManager.DrawPic("L_BJWINS", 8, 4);
-
+        const int LRpack = 8;
         for (kr = sr = tr = sec = i = 0; i < LRpack; i++)
         {
             sec += LevelRatios[i].time;

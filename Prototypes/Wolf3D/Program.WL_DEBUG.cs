@@ -247,23 +247,26 @@ internal partial class Program
         }
         else if (_inputManager.IsKeyDown(ScanCodes.sc_W))        // W = warp to level
         {
-            throw new NotImplementedException("This will be replaced with console 'map MAP01'");
-            //CenterWindow(26, 3);
-            //PrintY += 6;
-            //US_Print("  Warp to which level(1-10): ");
-            //_videoManager.Update();
-            //string str = "";
-            //esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
-            //if (!esc && !string.IsNullOrEmpty(str))
-            //{
-            //    level = Convert.ToInt32(str);
-            //    if (level > 0 && level < 11)
-            //    {
-            //        gamestate.mapon = (short)(level - 1);
-            //        playstate = playstatetypes.ex_warped;
-            //    }
-            //}
-            //return 1;
+            var gameInfo = _assetManager.GetGameInfo();
+            CenterWindow(26, 3);
+            PrintY += 6;
+            US_Print("  Warp to which level (MAP##): ");
+            _videoManager.Update();
+            string str = "";
+            esc = !US_LineInput(px, py, ref str, "", true, 5, 0);
+            if (!esc && !string.IsNullOrEmpty(str))
+            {
+                if (!gameInfo.Maps.ContainsKey(str))
+                {
+                    Console.WriteLine("Invalid map");
+                }
+                else
+                {
+                    gamestate.mapon = str;
+                    playstate = playstatetypes.ex_warped;
+                }
+            }
+            return 1;
         }
         else if (_inputManager.IsKeyDown(ScanCodes.sc_X))        // X = item cheat
         {

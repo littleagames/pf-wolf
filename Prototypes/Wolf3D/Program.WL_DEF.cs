@@ -641,12 +641,6 @@ internal partial class Program
 
     internal const float HEIGHTRATIO = 0.50f;
 
-#if !SPEAR
-    internal const int LRpack = 8; // # of levels to store in endgame
-#else
-    internal const int LRpack = 20;
-#endif
-
     internal const long PLAYERSIZE = MINDIST;// player radius
     internal const long MINACTORDIST = 0x10000L;// minimum dist from player center
                                                 // to any actor center

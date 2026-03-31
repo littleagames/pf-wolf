@@ -961,8 +961,7 @@ internal partial class Program
                 WindowX = WindowY = 0;
                 WindowW = 320;
                 WindowH = 160;
-                string endStr = gameInfo.EndStrings[(US_RndT() & (gameInfo.EndStrings.Count - 1)) + (US_RndT() & 1)]
-                    .ToLanguageText(language);
+                string endStr = gameInfo.EndStrings[(US_RndT() & (gameInfo.EndStrings.Count - 2)) + (US_RndT() & 1)];
                 if (Confirm(endStr) != 0)
                 {
                     _videoManager.Update();
@@ -1880,10 +1879,8 @@ internal partial class Program
     internal static int CP_Quit(int _)
     {
         var gameInfo = _assetManager.GetGameInfo();
-        var language = _assetManager.GetText("en-us");
 
-        string endStr = gameInfo.EndStrings[(US_RndT() & (gameInfo.EndStrings.Count - 1)) + (US_RndT() & 1)]
-            .ToLanguageText(language);
+        string endStr = gameInfo.EndStrings[(US_RndT() & (gameInfo.EndStrings.Count - 2)) + (US_RndT() & 1)];
         if (Confirm(endStr) != 0)
         {
             _videoManager.Update();
