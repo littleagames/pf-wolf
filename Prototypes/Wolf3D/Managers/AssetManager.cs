@@ -53,7 +53,7 @@ internal class AssetManager
                     }
                 },
             },
-                    Episodes = new()
+            Episodes = new()
             {
                 {
                     "EP01", new()
@@ -110,7 +110,7 @@ internal class AssetManager
                     }
                 },
             },
-                    Clusters = new()
+            Clusters = new()
             {
                 {
                     1,
@@ -155,7 +155,7 @@ internal class AssetManager
                     }
                 }
             },
-                    Maps = new()
+            Maps = new()
             {
                 // Episode 1
                 {
@@ -852,7 +852,18 @@ internal class AssetManager
                         Cluster = 6
                     }
                 },
-            }
+            },
+            EndStrings = [
+                "$ENDSTR1",
+                "$ENDSTR2",
+                "$ENDSTR3",
+                "$ENDSTR4",
+                "$ENDSTR5",
+                "$ENDSTR6",
+                "$ENDSTR7",
+                "$ENDSTR8",
+                "$ENDSTR9"
+            ]
         };
     }
 
@@ -875,16 +886,16 @@ internal class AssetManager
                     new Graphic("c_options", HorizontalOrientation.Center, 0)
                 ],
                 MenuItems = [
-                    new MenuSwitcher("New Game", true, "CP_NewGame"),
-                    new MenuSwitcher("Sound", true, "CP_Sound"),
-                    new MenuSwitcher("Control", true, "CP_Control"),
-                    new MenuSwitcher("Load Game", true, "CP_LoadGame"),
-                    new MenuSwitcher("Save Game", true, "CP_SaveGame"),
-                    new MenuSwitcher("Change View", true, "CP_ChangeView"),
-                    new MenuSwitcher("Read This!", true, "CP_ReadThis"),
-                    new MenuSwitcher("View Scores", true, "CP_ViewScoresOrEndGame"),
-                    new MenuSwitcher("Back To Demo", true, "CP_DemoOrPlayGame"),
-                    new MenuSwitcher("Quit", true, "CP_Quit"), // MenuConfirm
+                    new MenuSwitcher("$MENU_NEWGAME", true, "CP_NewGame"),
+                    new MenuSwitcher("$MENU_SOUND", true, "CP_Sound"),
+                    new MenuSwitcher("$MENU_CONTROL", true, "CP_Control"),
+                    new MenuSwitcher("$MENU_LOADGAME", true, "CP_LoadGame"),
+                    new MenuSwitcher("$MENU_SAVEGAME", true, "CP_SaveGame"),
+                    new MenuSwitcher("$MENU_CHANGEVIEW", true, "CP_ChangeView"),
+                    new MenuSwitcher("$MENU_READTHIS", true, "CP_ReadThis"),
+                    new MenuSwitcher("$MENU_VIEWSCORES", true, "CP_ViewScoresOrEndGame"),
+                    new MenuSwitcher("$MENU_BACKTODEMO", true, "CP_DemoOrPlayGame"),
+                    new MenuSwitcher("$MENU_QUIT", true, "CP_Quit"), // MenuConfirm
                 ]
             };
 
@@ -993,4 +1004,131 @@ internal class AssetManager
 
     //    return null;
     //}
+
+    public LanguageMetadata? GetText(string language)
+    {
+        var normalizedName = language.ToLowerInvariant();
+        if (normalizedName == "en-us")
+            return new LanguageMetadata
+            {
+                TextStrings = new Dictionary<string, string>
+                {
+                    { "$CURGAME", "You are currently in\na game. Continuing will\nerase old game. Ok?" },
+                    { "$GAMESVD", "There's already a game\nsaved at this position.\n      Overwrite?" },
+                    { "$ENDGAMESTR", "Are you sure you want\nto end the game you\nare playing? ($YESBUTTONNAME or $NOBUTTONNAME):" },
+                    { "$MENU_NEWGAME", "New Game" },
+                    { "$MENU_SOUND", "Sound" },
+                    { "$MENU_CONTROL", "Control" },
+                    { "$MENU_LOADGAME", "Load Game" },
+                    { "$MENU_SAVEGAME", "Save Game" },
+                    { "$MENU_CHANGEVIEW", "Change View" },
+                    { "$MENU_READTHIS", "Read This!" },
+                    { "$MENU_VIEWSCORES", "View Scores" },
+                    { "$MENU_ENDGAME", "End Game" },
+                    { "$MENU_BACKTODEMO", "Back to Demo" },
+                    { "$MENU_BACKTOGAME", "Back to Game" },
+                    { "$MENU_QUIT", "Quit" },
+                    { "$STR_LOADING", "Loading"},
+                    { "$STR_SAVING", "Saving"},
+
+                    { "$STR_LGC", "Load Game called\n\""},
+                    { "$STR_EMPTY", "empty"},
+                    { "$STR_CALIB", "Calibrate"},
+                    { "$STR_JOYST", "Joystick"},
+                    { "$STR_MOVEJOY", "Move joystick to\nupper left and\npress button 0\n"},
+                    { "$STR_MOVEJOY2", "Move joystick to\nlower right and\npress button 1\n"},
+                    { "$STR_ESCEXIT", "ESC to exit"},
+
+                    { "$STR_NONE", "None"},
+                    { "$STR_PC", "PC Speaker"},
+                    { "$STR_ALSB", "AdLib/Sound Blaster"},
+                    { "$STR_DISNEY", "Disney Sound Source"},
+                    { "$STR_SB", "Sound Blaster"},
+
+                    { "$STR_MOUSEEN", "Mouse Enabled"},
+                    { "$STR_JOYEN", "Joystick Enabled"},
+                    { "$STR_PORT2", "Use joystick port 2"},
+                    { "$STR_GAMEPAD", "Gravis GamePad Enabled"},
+                    { "$STR_SENS", "Mouse Sensitivity"},
+                    { "$STR_CUSTOM", "Customize controls"},
+
+                    { "$STR_MOUSEADJ", "Adjust Mouse Sensitivity"},
+                    { "$STR_SLOW", "Slow"},
+                    { "$STR_FAST", "Fast"},
+
+                    { "$STR_CRUN", "Run"},
+                    { "$STR_COPEN", "Open"},
+                    { "$STR_CFIRE", "Fire"},
+                    { "$STR_CSTRAFE", "Strafe"},
+
+                    { "$STR_LEFT", "Left"},
+                    { "$STR_RIGHT", "Right"},
+                    { "$STR_FRWD", "Frwd"},
+                    { "$STR_BKWD", "Bkwrd"},
+                    { "$STR_THINK", "Thinking"},
+
+                    { "$STR_SIZE1", "Use arrows to size"},
+                    { "$STR_SIZE2", "ENTER to accept"},
+                    { "$STR_SIZE3", "ESC to cancel"},
+
+                    { "$STR_YOUWIN", "you win!"},
+
+                    { "$STR_TOTALTIME", "total time"},
+
+                    { "$STR_RATKILL", "kill    %"},
+                    { "$STR_RATSECRET", "secret    %"},
+                    { "$STR_RATTREASURE", "treasure    %"},
+
+                    { "$STR_BONUS", "bonus"},
+                    { "$STR_TIME", "time"},
+                    { "$STR_PAR", " par"},
+
+                    { "$STR_RAT2KILL", "kill ratio    %"},
+                    { "$STR_RAT2SECRET", "secret ratio    %"},
+                    { "$STR_RAT2TREASURE", "treasure ratio    %"},
+
+                    { "$STR_DEFEATED", "defeated!"},
+
+                    { "$STR_CHEATER1", "You now have 100% Health,"},
+                    { "$STR_CHEATER2", "99 Ammo and both Keys!"},
+                    { "$STR_CHEATER3", "Note that you have basically"},
+                    { "$STR_CHEATER4", "eliminated your chances of"},
+                    { "$STR_CHEATER5", "getting a high score!"},
+
+                    { "$STR_NOSPACE1", "There is not enough space"},
+                    { "$STR_NOSPACE2", "on your disk to Save Game!"},
+
+                    { "$STR_SAVECHT1", "Your Save Game file is,"},
+                    { "$STR_SAVECHT2", "shall we say, \"corrupted\"."},
+                    { "$STR_SAVECHT3", "But I'll let you go on and"},
+                    { "$STR_SAVECHT4", "play anyway...."},
+
+                    { "$STR_SEEAGAIN", "Let's see that again!"},
+
+                    // Wolfenstein 3D
+                    { "$ENDSTR1", "Dost thou wish to\nleave with such hasty\nabandon?" },
+                    { "$ENDSTR2", "Chickening out...\nalready?" },
+                    { "$ENDSTR3", "Press {NOBUTTONNAME} for more carnage.\nPress {YESBUTTONNAME} to be a weenie." },
+                    { "$ENDSTR4", "So, you think you can\nquit this easily, huh?" },
+                    { "$ENDSTR5", "Press {NOBUTTONNAME} to save the world.\nPress {YESBUTTONNAME} to abandon it in\nits hour of need." },
+                    { "$ENDSTR6", "Press {NOBUTTONNAME} if you are brave.\nPress {YESBUTTONNAME} to cower in shame." },
+                    { "$ENDSTR7", "Heroes, press \" {NOBUTTONNAME} \".\nWimps, press {YESBUTTONNAME}." },
+                    { "$ENDSTR8", "You are at an intersection.\nA sign says, 'Press {YESBUTTONNAME} to quit.'\n>" },
+                    { "$ENDSTR9", "For guns and glory, press {NOBUTTONNAME}.\nFor work and worry, press {YESBUTTONNAME}." },
+
+                    // Spear of Destiny
+                    { "$ENDSTR10", "Heroes don't quit, but\ngo ahead and press {YESBUTTONNAME}\nif you aren't one." },
+                    { "$ENDSTR11", "Press {YESBUTTONNAME} to quit,\nor press {NOBUTTONNAME} to enjoy\nmore violent diversion." },
+                    { "$ENDSTR12", "Depressing the {YESBUTTONNAME} key means\nyou must return to the\nhumdrum workday world." },
+                    { "$ENDSTR13", "Hey, quit or play,\n{YESBUTTONNAME} or {NOBUTTONNAME}:\nit's your choice." },
+                    { "$ENDSTR14", "Sure you don't want to\nwaste a few more\nproductive hours?" },
+                    { "$ENDSTR15", "I think you had better\nplay some more. Please\npress {NOBUTTONNAME}...please?" },
+                    { "$ENDSTR16", "If you are tough, press {NOBUTTONNAME}.\nIf not, press {YESBUTTONNAME} daintily." },
+                    { "$ENDSTR17", "I'm thinkin' that\nyou might wanna press {NOBUTTONNAME}\nto play more. You do it." },
+                    { "$ENDSTR18", "Sure. Fine. Quit.\nSee if we care.\nGet it over with.\nPress {YESBUTTONNAME}." },
+                }
+            };
+
+        return null;
+    }
 }

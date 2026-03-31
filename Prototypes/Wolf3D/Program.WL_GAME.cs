@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Extensions;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
 
@@ -538,6 +539,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
 
     internal static void GameLoop()
     {
+        var language = _assetManager.GetText("en-us");
         bool died;
 
         ClearMemory();
@@ -630,7 +632,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     ClearMemory();
 
                     CheckHighScore(gamestate.score, (ushort)(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1));
-                    MainMenu[(int)menuitems.viewscores].text = STR_VS;
+                    MainMenu[(int)menuitems.viewscores].text = "$MENU_VIEWSCORES".ToLanguageText(language);
                     MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
                     return;
 
@@ -644,7 +646,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
                     ClearMemory();
 
                     CheckHighScore(gamestate.score, (ushort)(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1));
-                    MainMenu[(int)menuitems.viewscores].text = STR_VS;
+                    MainMenu[(int)menuitems.viewscores].text = "$MENU_VIEWSCORES".ToLanguageText(language);
                     MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
                     return;
 

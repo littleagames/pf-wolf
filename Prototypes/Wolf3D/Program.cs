@@ -5,6 +5,7 @@ using Wolf3D.Managers;
 using Wolf3D.Mappers;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using Wolf3D.Extensions;
 
 namespace Wolf3D;
 
@@ -505,6 +506,7 @@ internal partial class Program
 
     internal static bool LoadTheGame(BinaryReader br, int x, int y)
     {
+        var language = _assetManager.GetText("en-us");
         int i, j;
         ushort laststatobjnum;
         ushort tile;
@@ -645,7 +647,7 @@ internal partial class Program
 
         if (oldchecksum != checksum)
         {
-            Message($"{STR_SAVECHT1}\n{STR_SAVECHT2}\n{STR_SAVECHT3}\n{STR_SAVECHT4}");
+            Message($"{"$STR_SAVECHT1".ToLanguageText(language)}\n{"$STR_SAVECHT2".ToLanguageText(language)}\n{"$STR_SAVECHT3".ToLanguageText(language)}\n{"$STR_SAVECHT4".ToLanguageText(language)}");
 
             _inputManager.ClearKeysDown();
             _inputManager.Ack();

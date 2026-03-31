@@ -1,4 +1,5 @@
-﻿using Wolf3D.Managers;
+﻿using Wolf3D.Extensions;
+using Wolf3D.Managers;
 using Wolf3D.Mappers;
 using static SDL2.SDL;
 
@@ -286,6 +287,7 @@ internal partial class Program
 
     internal static void CheckKeys()
     {
+        var language = _assetManager.GetText("en-us");
         ScanCodes scan;
 
         if (_videoManager.screenfaded || demoplayback)    // don't do anything with a faded screen
@@ -314,11 +316,11 @@ internal partial class Program
             ClearMemory();
             ClearSplitVWB();
 
-            Message(STR_CHEATER1 + "\n" +
-                     STR_CHEATER2 + "\n\n" +
-                     STR_CHEATER3 + "\n" +
-                     STR_CHEATER4 + "\n" +
-                     STR_CHEATER5);
+            Message("$STR_CHEATER1".ToLanguageText(language) + "\n" +
+                    "$STR_CHEATER2".ToLanguageText(language) + "\n\n" +
+                    "$STR_CHEATER3".ToLanguageText(language) + "\n" +
+                    "$STR_CHEATER4".ToLanguageText(language) + "\n" +
+                    "$STR_CHEATER5".ToLanguageText(language));
 
             _inputManager.ClearKeysDown();
             _inputManager.Ack();

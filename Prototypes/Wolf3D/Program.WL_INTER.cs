@@ -224,6 +224,7 @@ internal partial class Program
     private static string[] numpics = new[] { "FONTL048", "FONTL049", "FONTL050", "FONTL051", "FONTL052", "FONTL053", "FONTL054", "FONTL055", "FONTL056", "FONTL057" };
     internal static void LevelCompleted()
     {
+        var language = _assetManager.GetText("en-us");
         const int VBLWAIT = 30;
         const int PAR_AMOUNT = 500;
         const int PERCENT100AMT = 10000;
@@ -251,12 +252,12 @@ internal partial class Program
         //if (gamestate.mapon < LRpack)
         {
             Write(14, 2, "floor\ncompleted");
-            Write(14, 7, STR_BONUS + "     0");
-            Write(16, 10, STR_TIME);
-            Write(16, 12, STR_PAR);
-            Write(9, 14, STR_RAT2KILL);
-            Write(5, 16, STR_RAT2SECRET);
-            Write(1, 18, STR_RAT2TREASURE);
+            Write(14, 7, "$STR_BONUS".ToLanguageText(language) + "     0");
+            Write(16, 10, "$STR_TIME".ToLanguageText(language));
+            Write(16, 12, "$STR_PAR".ToLanguageText(language));
+            Write(9, 14, "$STR_RAT2KILL".ToLanguageText(language));
+            Write(5, 16, "$STR_RAT2SECRET".ToLanguageText(language));
+            Write(1, 18, "$STR_RAT2TREASURE".ToLanguageText(language));
             Write(26, 2, (mapInfo.FloorNumber).ToString());
             Write(26, 12, int.SecondsAsTime(mapInfo.ParTime));
             //
@@ -518,6 +519,7 @@ internal partial class Program
 
     internal static void Victory()
     {
+        var language = _assetManager.GetText("en-us");
         int sec;
         int i, min, kr, sr, tr, x;
         string tempstr;
@@ -532,15 +534,15 @@ internal partial class Program
         _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, VIEWCOLOR);
         if (bordercol != VIEWCOLOR)
             DrawStatusBorder(VIEWCOLOR);
-        Write(18, 2, STR_YOUWIN);
+        Write(18, 2, "$STR_YOUWIN".ToLanguageText(language));
 
-        Write(TIMEX, TIMEY - 2, STR_TOTALTIME);
+        Write(TIMEX, TIMEY - 2, "$STR_TOTALTIME".ToLanguageText(language));
 
         Write(12, RATIOY - 2, "averages");
 
-        Write(RATIOX + 8, RATIOY, STR_RATKILL);
-        Write(RATIOX + 4, RATIOY + 2, STR_RATSECRET);
-        Write(RATIOX, RATIOY + 4, STR_RATTREASURE);
+        Write(RATIOX + 8, RATIOY, "$STR_RATKILL".ToLanguageText(language));
+        Write(RATIOX + 4, RATIOY + 2, "$STR_RATSECRET".ToLanguageText(language));
+        Write(RATIOX, RATIOY + 4, "$STR_RATTREASURE".ToLanguageText(language));
 
         _graphicManager.DrawPic("L_BJWINS", 8, 4);
 

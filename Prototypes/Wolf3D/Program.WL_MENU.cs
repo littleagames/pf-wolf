@@ -1,7 +1,9 @@
-﻿using SDL2;
+﻿using CommandLine;
+using SDL2;
+using Wolf3D.Entities;
+using Wolf3D.Extensions;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
-using Wolf3D.Entities;
 
 namespace Wolf3D;
 
@@ -36,19 +38,6 @@ internal enum menuitems
 internal partial class Program
 {
     internal const menuitems STARTITEM = menuitems.readthis;
-
-    // ENDSTRx constants are defined in foreign.h
-    static string[] endStrings = [
-        ENDSTR1,
-        ENDSTR2,
-        ENDSTR3,
-        ENDSTR4,
-        ENDSTR5,
-        ENDSTR6,
-        ENDSTR7,
-        ENDSTR8,
-        ENDSTR9
-    ];
 
     internal const int SM_X = 48;
     internal const int SM_W = 250;
@@ -243,8 +232,9 @@ internal partial class Program
 
     private static void EnableEndGameMenuItem()
     {
+        var language = _assetManager.GetText("en-us");
         MainMenu[(int)menuitems.viewscores].routine = null;
-        MainMenu[(int)menuitems.viewscores].text = STR_EG;
+        MainMenu[(int)menuitems.viewscores].text = "$MENU_ENDGAME".ToLanguageText(language);
     }
 
     internal static void ClearMScreen()
@@ -865,6 +855,8 @@ internal partial class Program
 
     internal static int CP_CheckQuick(ScanCodes scancode)
     {
+        var gameInfo = _assetManager.GetGameInfo();
+        var language = _assetManager.GetText("en-us");
         switch (scancode)
         {
             //
@@ -872,7 +864,7 @@ internal partial class Program
             //
             case ScanCodes.sc_F7:
                 WindowH = 160;
-                if (Confirm(ENDGAMESTR) != 0)
+                if (Confirm("$ENDGAMESTR".ToLanguageText(language)) != 0)
                 {
                     playstate = playstatetypes.ex_died;
                     LastAttacker = null;
@@ -890,7 +882,7 @@ internal partial class Program
                 if (SaveGamesAvail[LSItems.curpos] != 0 && pickquick != 0)
                 {
                     fontnumber = 1;
-                    Message(STR_SAVING + "...");
+                    Message("$STR_SAVING".ToLanguageText(language) + "...");
                     CP_SaveGame(1);
                     fontnumber = 0;
                 }
@@ -928,7 +920,7 @@ internal partial class Program
                 {
                     fontnumber = 1;
 
-                    var str = $"{STR_LGC} {SaveGameNames[LSItems.curpos]}\"?";
+                    var str = $"{"$STR_LGC".ToLanguageText(language)} {SaveGameNames[LSItems.curpos]}\"?";
 
                     if (Confirm(str) != 0)
                         CP_LoadGame(1);
@@ -969,7 +961,9 @@ internal partial class Program
                 WindowX = WindowY = 0;
                 WindowW = 320;
                 WindowH = 160;
-                if (Confirm(endStrings[(US_RndT() & 0x7) + (US_RndT() & 1)]) != 0)
+                string endStr = gameInfo.EndStrings[(US_RndT() & (gameInfo.EndStrings.Count - 1)) + (US_RndT() & 1)]
+                    .ToLanguageText(language);
+                if (Confirm(endStr) != 0)
                 {
                     _videoManager.Update();
                     SD_MusicOff();
@@ -991,7 +985,8 @@ internal partial class Program
     internal static void DrawMainMenu()
     {
         var mainMenu = _assetManager.GetMenu("main-menu");
-        
+        var language = _assetManager.GetText("en-us");
+
         foreach (var menuComponent in mainMenu.Components)
         {
             _graphicManager.DrawComponent(menuComponent);
@@ -1002,12 +997,12 @@ internal partial class Program
         //
         if (ingame)
         {
-            MainMenu[(int)menuitems.backtodemo].text = STR_BG;
+            MainMenu[(int)menuitems.backtodemo].text = "$MENU_BACKTOGAME".ToLanguageText(language);
             MainMenu[(int)menuitems.backtodemo].active = 2;
         }
         else
         {
-            MainMenu[(int)menuitems.backtodemo].text = STR_BD;
+            MainMenu[(int)menuitems.backtodemo].text = "$MENU_BACKTODEMO".ToLanguageText(language);
             MainMenu[(int)menuitems.backtodemo].active = 1;
         }
 
@@ -1017,6 +1012,7 @@ internal partial class Program
 
     internal static int CP_NewGame(int _)
     {
+        var language = _assetManager.GetText("en-us");
         int which;
         MapInfo? mapInfo = null;
         EpisodeInfo? episodeInfo = null;
@@ -1068,7 +1064,7 @@ internal partial class Program
         // ALREADY IN A GAME?
         //
         if (ingame)
-            if (Confirm(CURGAME) == 0)
+            if (Confirm($"CURGAME".ToLanguageText(language)) == 0)
             {
                 MenuFadeOut();
                 return 0;
@@ -1574,6 +1570,7 @@ internal partial class Program
 
     internal static void PrintLSEntry(int w, int color)
     {
+        var language = _assetManager.GetText("en-us");
         SETFONTCOLOR((byte)color, BKGDCOLOR);
         DrawOutline(LSM_X + LSItems.indent, LSM_Y + w * 13, LSM_W - LSItems.indent - 15, 11, color,
                      color);
@@ -1584,7 +1581,7 @@ internal partial class Program
         if (SaveGamesAvail[w] != 0)
             US_Print(new string(SaveGameNames[w]));
         else
-            US_Print($"      - {STR_EMPTY} -");
+            US_Print($"      - {"$STR_EMPTY".ToLanguageText(language)} -");
 
         fontnumber = 1;
     }
@@ -1596,6 +1593,7 @@ internal partial class Program
 
     internal static void DrawLSAction(int which)
     {
+        var language = _assetManager.GetText("en-us");
         DrawWindow(LSA_X, LSA_Y, LSA_W, LSA_H, TEXTCOLOR);
         DrawOutline(LSA_X, LSA_Y, LSA_W, LSA_H, 0, HIGHLIGHT);
         _graphicManager.DrawPic("c_diskloading1", LSA_X + 8, LSA_Y + 5);
@@ -1606,15 +1604,16 @@ internal partial class Program
         PrintY = LSA_Y + 13;
 
         if (which == 0)
-            US_Print(STR_LOADING + "...");
+            US_Print("$STR_LOADING".ToLanguageText(language) + "...");
         else
-            US_Print(STR_SAVING + "...");
+            US_Print("$STR_SAVING".ToLanguageText(language) + "...");
 
         _videoManager.Update();
     }
 
     internal static int CP_SaveGame(int quick)
     {
+        var language = _assetManager.GetText("en-us");
         int which, exit = 0;
         string name;
         string savepath;
@@ -1662,7 +1661,7 @@ internal partial class Program
                 //
                 if (SaveGamesAvail[which] != 0)
                 {
-                    if (Confirm(GAMESVD) == 0)
+                    if (Confirm("$GAMESVD".ToLanguageText(language)) == 0)
                     {
                         DrawLoadSaveScreen(1);
                         continue;
@@ -1737,6 +1736,7 @@ internal partial class Program
 
     internal static int CP_ChangeView(int _)
     {
+        var language = _assetManager.GetText("en-us");
         int exit = 0, oldview, newview;
         ControlInfo ci;
 
@@ -1797,7 +1797,7 @@ internal partial class Program
         if (oldview != newview)
         {
             SD_PlaySound((int)soundnames.SHOOTSND);
-            Message(STR_THINK + "...");
+            Message("$STR_THINK".ToLanguageText(language) + "...");
             NewViewSize(newview);
         }
 
@@ -1811,6 +1811,7 @@ internal partial class Program
 
     internal static void DrawChangeView(int view)
     {
+        var language = _assetManager.GetText("en-us");
         int rescaledHeight = _videoManager.screenHeight / _videoManager.scaleFactor;
         if (view != 21) _videoManager.Bar(0, rescaledHeight - 40, 320, 40, bordercol);
 
@@ -1821,9 +1822,9 @@ internal partial class Program
         WindowY = 320;                                  // TODO: Check this!
         SETFONTCOLOR(HIGHLIGHT, BKGDCOLOR);
 
-        US_CPrint(STR_SIZE1 +"\n");
-        US_CPrint(STR_SIZE2 +"\n");
-        US_CPrint(STR_SIZE3);
+        US_CPrint("$STR_SIZE1".ToLanguageText(language) +"\n");
+        US_CPrint("$STR_SIZE2".ToLanguageText(language) +"\n");
+        US_CPrint("$STR_SIZE3".ToLanguageText(language));
         _videoManager.Update();
     }
 
@@ -1860,7 +1861,8 @@ internal partial class Program
 
     internal static int CP_EndGame(int _)
     {
-        int res = Confirm(ENDGAMESTR);
+        var language = _assetManager.GetText("en-us");
+        int res = Confirm("$ENDGAMESTR".ToLanguageText(language));
 
         DrawMainMenu();
         if (res == 0) return 0;
@@ -1871,13 +1873,18 @@ internal partial class Program
 
         MainMenu[(int)menuitems.savegame].active = 0;
         MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
-        MainMenu[(int)menuitems.viewscores].text = STR_VS;
+        MainMenu[(int)menuitems.viewscores].text = "$MENU_VIEWSCORES".ToLanguageText(language);
         return 1;
     }
 
     internal static int CP_Quit(int _)
     {
-        if (Confirm(endStrings[US_RndT() & 0x7 + (US_RndT() & 1)]) != 0)
+        var gameInfo = _assetManager.GetGameInfo();
+        var language = _assetManager.GetText("en-us");
+
+        string endStr = gameInfo.EndStrings[(US_RndT() & (gameInfo.EndStrings.Count - 1)) + (US_RndT() & 1)]
+            .ToLanguageText(language);
+        if (Confirm(endStr) != 0)
         {
             _videoManager.Update();
             SD_MusicOff();
@@ -1960,6 +1967,7 @@ internal partial class Program
 
     internal static void DrawMouseSens()
     {
+        var language = _assetManager.GetText("en-us");
         ClearMScreen();
         _graphicManager.DrawPic("c_mouselback", 112, 184);
         DrawWindow(10, 80, 300, 30, BKGDCOLOR);
@@ -1967,14 +1975,14 @@ internal partial class Program
         WindowW = 320;
         PrintY = 82;
         SETFONTCOLOR(READCOLOR, BKGDCOLOR);
-        US_CPrint(STR_MOUSEADJ);
+        US_CPrint("$STR_MOUSEADJ".ToLanguageText(language));
 
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
         PrintX = 14;
         PrintY = 95;
-        US_Print(STR_SLOW);
+        US_Print("$STR_SLOW".ToLanguageText(language));
         PrintX = 269;
-        US_Print(STR_FAST);
+        US_Print("$STR_FAST".ToLanguageText(language));
 
         _videoManager.Bar(60, 97, 200, 10, TEXTCOLOR);
         DrawOutline(60, 97, 200, 10, 0, HIGHLIGHT);
@@ -2398,6 +2406,7 @@ internal partial class Program
 
     internal static void DrawCustomScreen()
     {
+        var language = _assetManager.GetText("en-us");
         int i;
         ClearMScreen();
         WindowX = 0;
@@ -2418,13 +2427,13 @@ internal partial class Program
 
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
         PrintX = CST_START;
-        US_Print(STR_CRUN);
+        US_Print("$STR_CRUN".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 1;
-        US_Print(STR_COPEN);
+        US_Print("$STR_COPEN".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 2;
-        US_Print(STR_CFIRE);
+        US_Print("$STR_CFIRE".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 3;
-        US_Print(STR_CSTRAFE + "\n");
+        US_Print("$STR_CSTRAFE".ToLanguageText(language) + "\n");
 
         DrawWindow(5, PrintY - 1, 310, 13, BKGDCOLOR);
         DrawCustMouse(0);
@@ -2438,13 +2447,13 @@ internal partial class Program
         US_CPrint("Joystick/Gravis GamePad\n");
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
         PrintX = CST_START;
-        US_Print(STR_CRUN);
+        US_Print("$STR_CRUN".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 1;
-        US_Print(STR_COPEN);
+        US_Print("$STR_COPEN".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 2;
-        US_Print(STR_CFIRE);
+        US_Print("$STR_CFIRE".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 3;
-        US_Print(STR_CSTRAFE + "\n");
+        US_Print("$STR_CSTRAFE".ToLanguageText(language) + "\n");
         DrawWindow(5, PrintY - 1, 310, 13, BKGDCOLOR);
         DrawCustJoy(0);
         US_Print("\n");
@@ -2458,13 +2467,13 @@ internal partial class Program
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
 
         PrintX = CST_START;
-        US_Print(STR_CRUN);
+        US_Print("$STR_CRUN".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 1;
-        US_Print(STR_COPEN);
+        US_Print("$STR_COPEN".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 2;
-        US_Print(STR_CFIRE);
+        US_Print("$STR_CFIRE".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 3;
-        US_Print(STR_CSTRAFE + "\n");
+        US_Print("$STR_CSTRAFE".ToLanguageText(language) + "\n");
         DrawWindow(5, PrintY - 1, 310, 13, BKGDCOLOR);
         DrawCustKeybd(0);
         US_Print("\n");
@@ -2475,13 +2484,13 @@ internal partial class Program
         //
         SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
         PrintX = CST_START;
-        US_Print(STR_LEFT);
+        US_Print("$STR_LEFT".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 1;
-        US_Print(STR_RIGHT);
+        US_Print("$STR_RIGHT".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 2;
-        US_Print(STR_FRWD);
+        US_Print("$STR_FRWD".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 3;
-        US_Print(STR_BKWD +"\n");
+        US_Print("$STR_BKWD".ToLanguageText(language) +"\n");
         DrawWindow(5, PrintY - 1, 310, 13, BKGDCOLOR);
         DrawCustKeys(0);
         //
@@ -2635,12 +2644,12 @@ internal partial class Program
 
     internal static int Confirm(string text)
     {
-
+        var language = _assetManager.GetText("en-us");
         int xit = 0, x, y, tick = 0, lastBlinkTime;
         soundnames[] whichsnd = [soundnames.ESCPRESSEDSND, soundnames.SHOOTSND];
         ControlInfo ci;
 
-        Message(text);
+        Message(text.ToLanguageText(language));
         _inputManager.ClearKeysDown();
         WaitKeyUp();
 
@@ -2843,8 +2852,9 @@ internal partial class Program
         demoname += extension;
 
         var menuAsset = _assetManager.GetMenu("main-menu");
+        var language = _assetManager.GetText("en-us");
         MainMenu = menuAsset.MenuItems.Select(mi =>
-                new CP_itemtype((short)(mi.IsEnabled ? 1 : 0), mi.Text, MapFunction(mi as MenuSwitcher)))
+                new CP_itemtype((short)(mi.IsEnabled ? 1 : 0), mi.Text.ToLanguageText(language), MapFunction(mi as MenuSwitcher)))
                 .ToArray();
         MainItems = new CP_iteminfo(
             (short)menuAsset.Position.X, 
@@ -2855,7 +2865,7 @@ internal partial class Program
 
         menuAsset = _assetManager.GetMenu("sound");
         SndMenu = menuAsset.MenuItems.Select(mi =>
-                new CP_itemtype((short)(mi.IsEnabled ? 1 : 0), mi.Text, MapFunction(mi as MenuSwitcher)))
+                new CP_itemtype((short)(mi.IsEnabled ? 1 : 0), mi.Text.ToLanguageText(language), MapFunction(mi as MenuSwitcher)))
                 .ToArray();
         SndItems = new CP_iteminfo(
             (short)menuAsset.Position.X,
@@ -2866,7 +2876,7 @@ internal partial class Program
 
         menuAsset = _assetManager.GetMenu("control");
         CtlMenu = menuAsset.MenuItems.Select(mi =>
-                new CP_itemtype((short)(mi.IsEnabled ? 1 : 0), mi.Text, MapFunction(mi as MenuSwitcher)))
+                new CP_itemtype((short)(mi.IsEnabled ? 1 : 0), mi.Text.ToLanguageText(language), MapFunction(mi as MenuSwitcher)))
                 .ToArray();
         CtlItems = new CP_iteminfo(
             (short)menuAsset.Position.X,

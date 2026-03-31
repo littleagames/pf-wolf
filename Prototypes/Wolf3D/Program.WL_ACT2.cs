@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using Wolf3D.Extensions;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
@@ -2564,6 +2565,7 @@ internal partial class Program
 
     internal static void A_StartDeathCam(objstruct ob)
     {
+        var language = _assetManager.GetText("en-us");
         int dx, dy;
         float fangle;
         int xmove, ymove;
@@ -2589,11 +2591,11 @@ internal partial class Program
             fontnumber = 1;
             SETFONTCOLOR(15, bordercol);
             PrintX = 68; PrintY = 45;
-            US_Print(STR_SEEAGAIN);
+            US_Print("$STR_SEEAGAIN".ToLanguageText(language));
         }
         else
         {
-            Write(0, 7, STR_SEEAGAIN);
+            Write(0, 7, "$STR_SEEAGAIN".ToLanguageText(language));
         }
 
         _videoManager.Update();

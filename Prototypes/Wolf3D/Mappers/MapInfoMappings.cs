@@ -7,6 +7,7 @@ internal record GameInfoMetadata
     public Dictionary<string, EpisodeInfo> Episodes { get; init; } = [];
     public Dictionary<int, ClusterInfo> Clusters { get; init; } = [];
     public Dictionary<string, MapInfo> Maps { get; init; } = [];
+    public List<string> EndStrings { get; init; } = [];
 }
 
 internal record DefaultMapInfo
