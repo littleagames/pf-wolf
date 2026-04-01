@@ -166,18 +166,18 @@ internal partial class Program
 
         return size;
     }
-    internal static int CA_CacheMusicChunk(musicnames chunk)
+    internal static int CA_CacheMusicChunk(int chunk)
     {
-        int pos = audiostarts[(int)chunk];
-        int size = audiostarts[(int)chunk + 1] - pos;
+        int pos = audiostarts[chunk];
+        int size = audiostarts[chunk + 1] - pos;
 
-        if (audiosegs[(int)chunk] != null)
+        if (audiosegs[chunk] != null)
             return size;                        // already in memory
 
         //audiosegs[chunk] = new byte[size];
         BinaryReader br = new BinaryReader(audiofile);
         audiofile.Seek(pos, SeekOrigin.Begin);
-        audiosegs[(int)chunk] = new ImfMusic(br.ReadBytes(size));
+        audiosegs[chunk] = new ImfMusic(br.ReadBytes(size));
 
         return size;
     }

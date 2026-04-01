@@ -94,11 +94,11 @@ internal partial class Program
     internal const byte TEXTCOLOR = 0x17;
     internal const byte HIGHLIGHT = 0x13;
 
-    internal static musicnames MENUSONG => musicnames.WONDERIN_MUS;
+    internal static string MENUSONG => "Wondering";
 #if SPEAR
-    internal static musicnames INTROSONG => musicnames.XTOWER2_MUS;
+    internal static string INTROSONG => musicnames.XTOWER2_MUS;
 #else
-    internal static musicnames INTROSONG => musicnames.NAZI_NOR_MUS;
+    internal static string INTROSONG => "HorstWesselLied";
 #endif
 
     internal static int SENSITIVE = 60;
@@ -296,14 +296,17 @@ internal partial class Program
         }
     }
 
-    static int lastmusic;
-    internal static int StartCPMusic(musicnames song)
+    static string lastmusic;
+    internal static int StartCPMusic(string song)
     {
         int lastoffs;
 
-        lastmusic = (int)song;
+        lastmusic = song;
         lastoffs = SD_MusicOff();
-        UNCACHEAUDIOCHUNK(STARTMUSIC + lastmusic);
+        int chunk = AudioMappings.MusicKeys.IndexOf(song);
+        if (chunk == -1)
+            return lastoffs;
+        UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
 
         SD_StartMusic(STARTMUSIC + song);
         return lastoffs;
@@ -1829,7 +1832,7 @@ internal partial class Program
 
     internal static int CP_ReadThis(int _)
     {
-        StartCPMusic((int)musicnames.CORNER_MUS);
+        StartCPMusic("Corner");
         HelpScreens();
         StartCPMusic(MENUSONG);
         return 1;
@@ -1842,7 +1845,7 @@ internal partial class Program
 #if SPEAR
         StartCPMusic(musicnames.XAWARD_MUS);
 #else
-        StartCPMusic(musicnames.ROSTER_MUS);
+        StartCPMusic("Roster");
 #endif
 
         DrawHighScores();
@@ -2751,7 +2754,10 @@ internal partial class Program
 
     internal static void FreeMusic()
     {
-        UNCACHEAUDIOCHUNK(STARTMUSIC + lastmusic);
+        int chunk = AudioMappings.MusicKeys.IndexOf(lastmusic);
+        if (chunk == -1)
+            return;
+        UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
     }
 
     internal static void IntroScreen()

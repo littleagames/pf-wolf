@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using Wolf3D.AudioPlayers;
 using Wolf3D.Managers;
+using Wolf3D.Mappers;
 using Wolf3D.OPL;
 using Wolf3D.OPL.Woody;
 using static SDL2.SDL;
@@ -953,13 +954,17 @@ internal partial class Program
         return (int)0;// (sqHackPtr - sqHack);
     }
 
-    internal static void SD_StartMusic(musicnames chunk)
+    internal static void SD_StartMusic(string song)
     {
+        int chunk = AudioMappings.MusicKeys.IndexOf(song);
+        if (chunk == -1)
+            return;
+
         SD_MusicOff();
 
         if (MusicMode == SMMode.AdLib)
         {
-            int chunkLen = CA_CacheMusicChunk(chunk);
+            int chunkLen = CA_CacheMusicChunk(STARTMUSIC + chunk);
             using (var ms = new MemoryStream(((ImfMusic)audiosegs[(int)chunk]).data))
             {
                 _player.Load(ms);
@@ -976,7 +981,7 @@ internal partial class Program
         }
     }
 
-    internal static void SD_ContinueMusic(int chunk, int startoffs)
+    internal static void SD_ContinueMusic(string song, int startoffs)
     {
         int i;
 
@@ -984,7 +989,10 @@ internal partial class Program
 
         if (MusicMode == SMMode.AdLib)
         {
-            int chunkLen = CA_CacheAudioChunk(chunk);
+            int chunk = AudioMappings.MusicKeys.IndexOf(song);
+            if (chunk == -1)
+                return;
+            int chunkLen = CA_CacheAudioChunk(STARTMUSIC + chunk);
             //sqHack = (word*)(void*)audiosegs[chunk];     // alignment is correct
             //if (*sqHack == 0) sqHackLen = sqHackSeqLen = chunkLen;
             //else sqHackLen = sqHackSeqLen = *sqHack++;

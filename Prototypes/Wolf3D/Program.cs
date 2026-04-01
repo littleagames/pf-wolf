@@ -833,28 +833,28 @@ internal partial class Program
     {
         int which, lastsong = -1;
         uint start;
-        musicnames[] songs =
+        string[] songs =
         {
-            musicnames.GETTHEM_MUS,
-            musicnames.SEARCHN_MUS,
-            musicnames.POW_MUS,
-            musicnames.SUSPENSE_MUS,
-            musicnames.WARMARCH_MUS,
-            musicnames.CORNER_MUS,
+            "GetThem",
+            "Searching",
+            "PrisonerOfWar",
+            "Suspense",
+            "MarchToWar",
+            "Corner",
 
-            musicnames.NAZI_OMI_MUS,
-            musicnames.PREGNANT_MUS,
-            musicnames.GOINGAFT_MUS,
-            musicnames.HEADACHE_MUS,
-            musicnames.DUNGEON_MUS,
-            musicnames.ULTIMATE_MUS,
+            "NaziAnthem",
+            "Lurking",
+            "GoingAfterHitler",
+            "PoundingHeadache",
+            "Dungeons",
+            "Ultimate",
 
-            musicnames.INTROCW3_MUS,
-            musicnames.NAZI_RAP_MUS,
-            musicnames.TWELFTH_MUS,
-            musicnames.ZEROHOUR_MUS,
-            musicnames.ULTIMATE_MUS,
-            musicnames.PACMAN_MUS
+            "KillTheSOB",
+            "NaziRap",
+            "TheTwelfthHour",
+            "ZeroHour",
+            "VictoryMarch",
+            "PacMan"
         };
 
         _inputManager.ClearKeysDown();

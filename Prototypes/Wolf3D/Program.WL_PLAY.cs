@@ -11,7 +11,7 @@ internal partial class Program
 
     static playstatetypes playstate;
 
-    static musicnames lastmusicchunk = 0;
+    static string lastmusicchunk = "";
 
     internal static int DebugOk;
 
@@ -62,23 +62,27 @@ internal partial class Program
     {
         SD_MusicOff();
         var song = _assetManager.GetGameInfo().Maps[gamestate.mapon].Music;
-        lastmusicchunk = AudioMappings.MusicAssetToIndex[song];
-        SD_StartMusic(STARTMUSIC + lastmusicchunk);
+        lastmusicchunk = song;
+        SD_StartMusic(lastmusicchunk);
     }
 
     internal static void ContinueMusic(int offs)
     {
         SD_MusicOff();
         var song = _assetManager.GetGameInfo().Maps[gamestate.mapon].Music;
-        lastmusicchunk = AudioMappings.MusicAssetToIndex[song];
-        SD_ContinueMusic((int)(STARTMUSIC + lastmusicchunk), offs);
+        lastmusicchunk = song;
+        SD_ContinueMusic(lastmusicchunk, offs);
     }
 
     internal static int StopMusic()
     {
         int lastoffs = SD_MusicOff();
 
-        UNCACHEAUDIOCHUNK((int)(STARTMUSIC + lastmusicchunk));
+        int chunk = AudioMappings.MusicKeys.IndexOf(lastmusicchunk);
+        if (chunk == -1)
+            return 0;
+
+        UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
 
         return lastoffs;
     }

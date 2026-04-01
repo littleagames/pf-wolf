@@ -134,7 +134,7 @@ internal partial class Program
                 break;
             }
         }
-        StartCPMusic(musicnames.ROSTER_MUS);
+        StartCPMusic("Roster");
         DrawHighScores();
 
         _videoManager.FadeIn();
@@ -239,7 +239,7 @@ internal partial class Program
         if (bordercol != VIEWCOLOR)
             DrawStatusBorder(VIEWCOLOR);
 
-        StartCPMusic(musicnames.ENDLEVEL_MUS);
+        StartCPMusic("EndLevel");
 
         //
         // do the intermission
@@ -528,7 +528,7 @@ internal partial class Program
         const int TIMEX = 14;
         const int TIMEY = 8;
 
-        StartCPMusic(musicnames.URAHERO_MUS);
+        StartCPMusic("YoureAHero");
         ClearSplitVWB();
 
         _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, VIEWCOLOR);
