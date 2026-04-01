@@ -92,7 +92,7 @@ internal partial class Program
                     start = STARTPCSOUNDS;
                     break;
                 case SDMode.AdLib:
-                    start = STARTADLIBSOUNDS;
+                    start = (uint)STARTADLIBSOUNDS;
                     break;
             }
 
@@ -105,13 +105,13 @@ internal partial class Program
         switch (SoundMode)
         {
             case SDMode.Off:
-                start = STARTADLIBSOUNDS;   // needed for priorities...
+                start = (uint)STARTADLIBSOUNDS;   // needed for priorities...
                 break;
             case SDMode.PC:
                 start = STARTPCSOUNDS;
                 break;
             case SDMode.AdLib:
-                start = STARTADLIBSOUNDS;
+                start = (uint)STARTADLIBSOUNDS;
                 break;
         }
 

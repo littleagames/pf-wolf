@@ -332,8 +332,8 @@ internal partial class Program
             && ob.y < (((int)(_mapManager.mapheight - 1)) << (int)TILESHIFT))
             return;         // walk through walls
 
-        if (SD_SoundPlaying() == 0)
-            SD_PlaySound((int)soundnames.HITWALLSND);
+        if (SD_SoundPlaying() == "")
+            SD_PlaySound("HITWALLSND");
 
         ob.x = basex + xmove;
         ob.y = basey;
@@ -367,7 +367,7 @@ internal partial class Program
                 if (gamestate.health == 100)
                     return;
 
-                SD_PlaySound((int)soundnames.HEALTH2SND);
+                SD_PlaySound("HEALTH2SND");
                 HealSelf(25);
                 break;
 
@@ -376,26 +376,26 @@ internal partial class Program
             case wl_stat_types.bo_key3:
             case wl_stat_types.bo_key4:
                 GiveKey(check.itemnumber - wl_stat_types.bo_key1);
-                SD_PlaySound((int)soundnames.GETKEYSND);
+                SD_PlaySound("GETKEYSND");
                 break;
 
             case wl_stat_types.bo_cross:
-                SD_PlaySound((int)soundnames.BONUS1SND);
+                SD_PlaySound("BONUS1SND");
                 GivePoints(100);
                 gamestate.treasurecount++;
                 break;
             case wl_stat_types.bo_chalice:
-                SD_PlaySound((int)soundnames.BONUS2SND);
+                SD_PlaySound("BONUS2SND");
                 GivePoints(500);
                 gamestate.treasurecount++;
                 break;
             case wl_stat_types.bo_bible:
-                SD_PlaySound((int)soundnames.BONUS3SND);
+                SD_PlaySound("BONUS3SND");
                 GivePoints(1000);
                 gamestate.treasurecount++;
                 break;
             case wl_stat_types.bo_crown:
-                SD_PlaySound((int)soundnames.BONUS4SND);
+                SD_PlaySound("BONUS4SND");
                 GivePoints(5000);
                 gamestate.treasurecount++;
                 break;
@@ -404,23 +404,23 @@ internal partial class Program
                 if (gamestate.ammo == 99)
                     return;
 
-                SD_PlaySound((int)soundnames.GETAMMOSND);
+                SD_PlaySound("GETAMMOSND");
                 GiveAmmo(8);
                 break;
             case wl_stat_types.bo_clip2:
                 if (gamestate.ammo == 99)
                     return;
 
-                SD_PlaySound((int)soundnames.GETAMMOSND);
+                SD_PlaySound("GETAMMOSND");
                 GiveAmmo(4);
                 break;
 
             case wl_stat_types.bo_machinegun:
-                SD_PlaySound((int)soundnames.GETMACHINESND);
+                SD_PlaySound("GETMACHINESND");
                 GiveWeapon(weapontypes.wp_machinegun);
                 break;
             case wl_stat_types.bo_chaingun:
-                SD_PlaySound((int)soundnames.GETGATLINGSND);
+                SD_PlaySound("GETGATLINGSND");
                 facetimes = 38;
                 GiveWeapon(weapontypes.wp_chaingun);
 
@@ -430,7 +430,7 @@ internal partial class Program
                 break;
 
             case wl_stat_types.bo_fullheal:
-                SD_PlaySound((int)soundnames.BONUS1UPSND);
+                SD_PlaySound("BONUS1UPSND");
                 HealSelf(99);
                 GiveAmmo(25);
                 GiveExtraMan();
@@ -441,7 +441,7 @@ internal partial class Program
                 if (gamestate.health == 100)
                     return;
 
-                SD_PlaySound((int)soundnames.HEALTH1SND);
+                SD_PlaySound("HEALTH1SND");
                 HealSelf(10);
                 break;
 
@@ -449,7 +449,7 @@ internal partial class Program
                 if (gamestate.health == 100)
                     return;
 
-                SD_PlaySound((int)soundnames.HEALTH1SND);
+                SD_PlaySound("HEALTH1SND");
                 HealSelf(4);
                 break;
 
@@ -457,7 +457,7 @@ internal partial class Program
                 if (gamestate.health > 10)
                     return;
 
-                SD_PlaySound((int)soundnames.SLURPIESND);
+                SD_PlaySound("SLURPIESND");
                 HealSelf(1);
                 break;
         }
@@ -542,7 +542,7 @@ internal partial class Program
     static void DrawFace()
     {
         if (viewsize == 21 && ingame) return;
-        if (SD_SoundPlaying() == (int)soundnames.GETGATLINGSND)
+        if (SD_SoundPlaying() == "GETGATLINGSND")
             StatusDrawFace("gotgatling");
         else if (gamestate.health != 0)
         {
@@ -584,7 +584,7 @@ internal partial class Program
                 return;
             }
         }
-        else if (SD_SoundPlaying() == (int)soundnames.GETGATLINGSND)
+        else if (SD_SoundPlaying() == "GETGATLINGSND")
             return;
 
         facecount += (int)tics;
@@ -695,7 +695,7 @@ internal partial class Program
         if (gamestate.lives < 9)
             gamestate.lives++;
         DrawLives();
-        SD_PlaySound((int)soundnames.BONUS1UPSND);
+        SD_PlaySound("BONUS1UPSND");
     }
 
     static void DrawScore()
@@ -810,7 +810,7 @@ internal partial class Program
                 playstate = playstatetypes.ex_secretlevel;
             else
                 playstate = playstatetypes.ex_completed;
-            SD_PlaySound((int)soundnames.LEVELDONESND);
+            SD_PlaySound("LEVELDONESND");
             SD_WaitSoundDone();
         }
         else if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) != 0)
@@ -819,7 +819,7 @@ internal partial class Program
             OperateDoor(cmdtile & ~BIT_DOOR);
         }
         else
-            SD_PlaySound((int)soundnames.DONOTHINGSND);
+            SD_PlaySound("DONOTHINGSND");
     }
 
     internal static void Cmd_Fire()
@@ -977,7 +977,7 @@ internal partial class Program
         objstruct? closest;
         int dist;
 
-        SD_PlaySound(((int)soundnames.ATKKNIFESND));
+        SD_PlaySound(("ATKKNIFESND"));
         // actually fire
         dist = 0x7fffffff;
         closest = null;
@@ -1016,13 +1016,13 @@ internal partial class Program
         switch (gamestate.weapon)
         {
             case weapontypes.wp_pistol:
-                SD_PlaySound((int)soundnames.ATKPISTOLSND);
+                SD_PlaySound("ATKPISTOLSND");
                 break;
             case weapontypes.wp_machinegun:
-                SD_PlaySound((int)soundnames.ATKMACHINEGUNSND);
+                SD_PlaySound("ATKMACHINEGUNSND");
                 break;
             case weapontypes.wp_chaingun:
-                SD_PlaySound((int)soundnames.ATKGATLINGSND);
+                SD_PlaySound("ATKGATLINGSND");
                 break;
         }
 

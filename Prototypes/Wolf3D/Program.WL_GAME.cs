@@ -141,7 +141,7 @@ internal partial class Program
 =
 ==========================
 */
-internal static void PlaySoundLocGlobal(int s, int gx, int gy)
+internal static void PlaySoundLocGlobal(string s, int gx, int gy)
     {
         SetSoundLoc(gx, gy);
         SD_PositionSound(leftchannel, rightchannel);
@@ -1091,7 +1091,7 @@ internal static void PlaySoundLocGlobal(int s, int gx, int gy)
         }
 
         gamestate.weapon = weapontypes.wp_none;                     // take away weapon
-        SD_PlaySound((int)soundnames.PLAYERDEATHSND);
+        SD_PlaySound("PLAYERDEATHSND");
 
         //
         // swing around to face attacker

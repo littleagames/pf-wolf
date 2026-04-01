@@ -452,7 +452,7 @@ internal partial class Program
 
         if (areabyplayer[area] != 0)
         {
-            PlaySoundLocTile((int)soundnames.CLOSEDOORSND, doorobjlist[door].tilex, doorobjlist[door].tiley); // JAB
+            PlaySoundLocTile("CLOSEDOORSND", doorobjlist[door].tilex, doorobjlist[door].tiley); // JAB
         }
 
         doorobjlist[door].action = dooractiontypes.dr_closing;
@@ -482,7 +482,7 @@ internal partial class Program
             if ((gamestate.keys & (1 << (locknum - (int)doortypes.dr_lock1) ) ) == 0)
         {
                 if (doorobjlist[door].position == 0)
-                    SD_PlaySound((int)soundnames.NOWAYSND);  // ADDEDFIX 9       // locked
+                    SD_PlaySound("NOWAYSND");  // ADDEDFIX 9       // locked
                 return;
             }
         }
@@ -565,7 +565,7 @@ internal partial class Program
 
                 if (areabyplayer[area1] != 0)
                 {
-                    PlaySoundLocTile((int)soundnames.OPENDOORSND, doorobjlist[door].tilex, doorobjlist[door].tiley);  // JAB
+                    PlaySoundLocTile("OPENDOORSND", doorobjlist[door].tilex, doorobjlist[door].tiley);  // JAB
                 }
             }
         }
@@ -732,7 +732,7 @@ internal partial class Program
 
         if (_mapManager.actorat[checkx + dx, checky + dy] != null)
         {
-            SD_PlaySound((int)soundnames.NOWAYSND);
+            SD_PlaySound("NOWAYSND");
             return;
         }
 
@@ -751,7 +751,7 @@ internal partial class Program
         _mapManager.SetMapSpot(pwallx, pwally, 1,  0);   // remove P tile info
         _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)_mapManager.MAPSPOT(player.tilex, player.tiley, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
 
-        SD_PlaySound((int)soundnames.PUSHWALLSND);
+        SD_PlaySound("PUSHWALLSND");
     }
 
     /*

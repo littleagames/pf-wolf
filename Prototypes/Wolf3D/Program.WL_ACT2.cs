@@ -261,13 +261,13 @@ internal partial class Program
         {
             if (ob.obclass == classtypes.rocketobj)
             {
-                PlaySoundLocActor((int)soundnames.MISSILEHITSND, ob);
+                PlaySoundLocActor("MISSILEHITSND", ob);
                 ob.state = s_boom1;
             }
 #if SPEAR
             else if (ob->obclass == hrocketobj)
             {
-                PlaySoundLocActor(MISSILEHITSND, ob);
+                PlaySoundLocActor(MISSILEHITSND", ob);
                 ob->state = &s_hboom1;
             }
 #endif
@@ -446,7 +446,7 @@ internal partial class Program
     {
         int dx, dy;
 
-        PlaySoundLocActor((int)soundnames.DOGATTACKSND, ob);     // JAB
+        PlaySoundLocActor("DOGATTACKSND", ob);     // JAB
 
         dx = player.x - ob.x;
         if (dx < 0)
@@ -863,7 +863,7 @@ internal partial class Program
         newobj.flags = objflags.FL_NEVERMARK;
         newobj.active = activetypes.ac_yes;
 
-        PlaySoundLocActor((int)soundnames.SCHABBSTHROWSND, newobj);
+        PlaySoundLocActor("SCHABBSTHROWSND", newobj);
     }
 
     //
@@ -1003,7 +1003,7 @@ internal partial class Program
         newobj.flags = objflags.FL_NEVERMARK;
         newobj.active = activetypes.ac_yes;
 
-        PlaySoundLocActor((int)soundnames.MISSILEFIRESND, newobj);
+        PlaySoundLocActor("MISSILEFIRESND", newobj);
     }
 
     //
@@ -1209,7 +1209,7 @@ internal partial class Program
 
     internal static void T_BJYell(objstruct ob)
     {
-        PlaySoundLocActor((int)soundnames.YEAHSND, ob);  // JAB
+        PlaySoundLocActor("YEAHSND", ob);  // JAB
     }
 
 
@@ -1848,12 +1848,12 @@ internal partial class Program
     internal static void A_MechaSound(objstruct ob)
     {
         if (ob.areanumber >= MapConstants.NUMAREAS || areabyplayer[ob.areanumber] != 0)
-            PlaySoundLocActor((int)soundnames.MECHSTEPSND, ob);
+            PlaySoundLocActor("MECHSTEPSND", ob);
     }
 
     internal static void A_Slurpie(objstruct ob)
     {
-        SD_PlaySound((int)soundnames.SLURPIESND);
+        SD_PlaySound("SLURPIESND");
     }
 
     internal static void T_FakeFire(objstruct ob)
@@ -1891,7 +1891,7 @@ internal partial class Program
         newobj.flags = objflags.FL_NEVERMARK;
         newobj.active = activetypes.ac_yes;
 
-        PlaySoundLocActor((int)soundnames.FLAMETHROWERSND, newobj);
+        PlaySoundLocActor("FLAMETHROWERSND", newobj);
     }
 
     internal static void T_Fake(objstruct ob)
@@ -2395,25 +2395,25 @@ internal partial class Program
         switch (ob.obclass)
         {
             case classtypes.ssobj:
-                PlaySoundLocActor((int)soundnames.SSFIRESND, ob);
+                PlaySoundLocActor("SSFIRESND", ob);
                 break;
             case classtypes.giftobj:
             case classtypes.fatobj:
-                PlaySoundLocActor((int)soundnames.MISSILEFIRESND, ob);
+                PlaySoundLocActor("MISSILEFIRESND", ob);
                 break;
             case classtypes.mechahitlerobj:
             case classtypes.realhitlerobj:
             case classtypes.bossobj:
-                PlaySoundLocActor((int)soundnames.BOSSFIRESND, ob);
+                PlaySoundLocActor("BOSSFIRESND", ob);
                 break;
             case classtypes.schabbobj:
-                PlaySoundLocActor((int)soundnames.SCHABBSTHROWSND, ob);
+                PlaySoundLocActor("SCHABBSTHROWSND", ob);
                 break;
             case classtypes.fakeobj:
-                PlaySoundLocActor((int)soundnames.FLAMETHROWERSND, ob);
+                PlaySoundLocActor("FLAMETHROWERSND", ob);
                 break;
             default:
-                PlaySoundLocActor((int)soundnames.NAZIFIRESND, ob);
+                PlaySoundLocActor("NAZIFIRESND", ob);
                 break;
         }
     }
@@ -2430,7 +2430,7 @@ internal partial class Program
         //        case classtypes.officerobj:
         //        case classtypes.ssobj:
         //        case classtypes.dogobj:
-        //            PlaySoundLocActor((int)soundnames.DEATHSCREAM6SND, ob);
+        //            PlaySoundLocActor("DEATHSCREAM6SND", ob);
         //            return;
         //    }
         //}
@@ -2438,55 +2438,55 @@ internal partial class Program
         switch (ob.obclass)
         {
             case classtypes.mutantobj:
-                PlaySoundLocActor((int)soundnames.AHHHGSND, ob);
+                PlaySoundLocActor("AHHHGSND", ob);
                 break;
 
             case classtypes.guardobj:
                 {
-                    soundnames[] sounds ={  soundnames.DEATHSCREAM1SND,
-                                            soundnames.DEATHSCREAM2SND,
-                                            soundnames.DEATHSCREAM3SND,
-                                            soundnames.DEATHSCREAM4SND,
-                                            soundnames.DEATHSCREAM5SND,
-                                            soundnames.DEATHSCREAM7SND,
-                                            soundnames.DEATHSCREAM8SND,
-                                            soundnames.DEATHSCREAM9SND
+                    string[] sounds ={  "DEATHSCREAM1SND",
+                                            "DEATHSCREAM2SND",
+                                            "DEATHSCREAM3SND",
+                                            "DEATHSCREAM4SND",
+                                            "DEATHSCREAM5SND",
+                                            "DEATHSCREAM7SND",
+                                            "DEATHSCREAM8SND",
+                                            "DEATHSCREAM9SND"
                                 };
-                    PlaySoundLocActor((int)sounds[US_RndT() % 8], ob);
+                    PlaySoundLocActor(sounds[US_RndT() % 8], ob);
                     break;
                 }
             case classtypes.officerobj:
-                PlaySoundLocActor((int)soundnames.NEINSOVASSND, ob);
+                PlaySoundLocActor("NEINSOVASSND", ob);
                 break;
             case classtypes.ssobj:
-                PlaySoundLocActor((int)soundnames.LEBENSND, ob); // JAB
+                PlaySoundLocActor("LEBENSND", ob); // JAB
                 break;
             case classtypes.dogobj:
-                PlaySoundLocActor((int)soundnames.DOGDEATHSND, ob);      // JAB
+                PlaySoundLocActor("DOGDEATHSND", ob);      // JAB
                 break;
             case classtypes.bossobj:
-                SD_PlaySound((int)soundnames.MUTTISND);                         // JAB
+                SD_PlaySound("MUTTISND");                         // JAB
                 break;
             case classtypes.schabbobj:
-                SD_PlaySound((int)soundnames.MEINGOTTSND);
+                SD_PlaySound("MEINGOTTSND");
                 break;
             case classtypes.fakeobj:
-                SD_PlaySound((int)soundnames.HITLERHASND);
+                SD_PlaySound("HITLERHASND");
                 break;
             case classtypes.mechahitlerobj:
-                SD_PlaySound((int)soundnames.SCHEISTSND);
+                SD_PlaySound("SCHEISTSND");
                 break;
             case classtypes.realhitlerobj:
-                SD_PlaySound((int)soundnames.EVASND);
+                SD_PlaySound("EVASND");
                 break;
             case classtypes.gretelobj:
-                SD_PlaySound((int)soundnames.MEINSND);
+                SD_PlaySound("MEINSND");
                 break;
             case classtypes.giftobj:
-                SD_PlaySound((int)soundnames.DONNERSND);
+                SD_PlaySound("DONNERSND");
                 break;
             case classtypes.fatobj:
-                SD_PlaySound((int)soundnames.ROSESND);
+                SD_PlaySound("ROSESND");
                 break;
 
         }

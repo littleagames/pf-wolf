@@ -278,7 +278,7 @@ internal partial class Program
     internal static SDSMode DigiMode;
     internal static int SoundTable;// byte[][] SoundTable;
 
-    static int[] DigiMap = new int[(int)soundnames.LASTSOUND];
+    static int[] DigiMap = new int[AudioMappings.SoundKeys.Count];
     static int[] DigiChannel = new int[STARTMUSIC - STARTDIGISOUNDS];
 
     // Internal variables
@@ -656,7 +656,7 @@ internal partial class Program
         nextsoundpos = true;
     }
 
-    internal static int SD_PlaySound(int sound)
+    internal static int SD_PlaySound(string sound)
     {
         bool ispos;
         SoundCommon s;
@@ -670,17 +670,18 @@ internal partial class Program
         ispos = nextsoundpos;
         nextsoundpos = false;
 
-        if (sound == -1 || (DigiMode == SDSMode.Off && SoundMode == SDMode.Off))
+        var soundIndex = AudioMappings.SoundKeys.IndexOf(sound);
+        if (soundIndex == -1 || (DigiMode == SDSMode.Off && SoundMode == SDMode.Off))
             return 0;
 
         //var sData = SoundTable[sound]; // TODO: This might need a better way to get soundtable data
-        var soundSeg = audiosegs[sound + SoundTable];
+        var soundSeg = audiosegs[soundIndex + SoundTable];
         s = soundSeg.common;//new SoundCommon(sData);// (SoundCommon*)SoundTable[sound];
 
         if ((SoundMode != SDMode.Off) && soundSeg == null)
             _gameEngineManager.Quit("SD_PlaySound() - Uncached sound");
 
-        if ((DigiMode != SDSMode.Off) && (DigiMap[sound] != -1))
+        if ((DigiMode != SDSMode.Off) && (DigiMap[soundIndex] != -1))
         {
             if ((DigiMode == SDSMode.PC) && (SoundMode == SDMode.PC))
             {
@@ -689,9 +690,9 @@ internal partial class Program
 
                 SDL_PCStopSound();
 
-                SD_PlayDigitized((ushort)DigiMap[sound], lp, rp);
+                SD_PlayDigitized((ushort)DigiMap[soundIndex], lp, rp);
                 SoundPositioned = ispos;
-                SoundNumber = sound;
+                SoundNumber = soundIndex;
                 SoundPriority = s.priority;
             }
             else
@@ -701,9 +702,9 @@ internal partial class Program
 //                    return (false);
 //#endif
 
-                int channel = SD_PlayDigitized((ushort)DigiMap[sound], lp, rp);
+                int channel = SD_PlayDigitized((ushort)DigiMap[soundIndex], lp, rp);
                 SoundPositioned = ispos;
-                DigiNumber = sound;
+                DigiNumber = soundIndex;
                 DigiPriority = s.priority;
                 return channel + 1;
             }
@@ -735,7 +736,7 @@ internal partial class Program
                 break;
         }
 
-        SoundNumber = sound;
+        SoundNumber = soundIndex;
         SoundPriority = s.priority;
 
         return 0;
@@ -965,13 +966,13 @@ internal partial class Program
         if (MusicMode == SMMode.AdLib)
         {
             int chunkLen = CA_CacheMusicChunk(STARTMUSIC + chunk);
-            using (var ms = new MemoryStream(((ImfMusic)audiosegs[(int)chunk]).data))
+            using (var ms = new MemoryStream(((ImfMusic)audiosegs[STARTMUSIC + chunk]).data))
             {
                 _player.Load(ms);
                 _imfRefreshRateHz = _player.RefreshRate;
             }
-            
-            //sqHack = audiosegs[chunk];     // alignment is correct
+
+            //sqHack = audiosegs[STARTMUSIC + chunk];     // alignment is correct
             //if (*sqHack == 0) sqHackLen = sqHackSeqLen = chunkLen;
             //else sqHackLen = sqHackSeqLen = *sqHack++;
             sqHackPtr = 0;// sqHack;
@@ -993,10 +994,10 @@ internal partial class Program
             if (chunk == -1)
                 return;
             int chunkLen = CA_CacheAudioChunk(STARTMUSIC + chunk);
-            //sqHack = (word*)(void*)audiosegs[chunk];     // alignment is correct
+            //sqHack = (word*)(void*)audiosegs[STARTMUSIC + chunk];     // alignment is correct
             //if (*sqHack == 0) sqHackLen = sqHackSeqLen = chunkLen;
             //else sqHackLen = sqHackSeqLen = *sqHack++;
-           // sqHackPtr = sqHack;
+            // sqHackPtr = sqHack;
 
             if (startoffs >= sqHackLen)
             {
@@ -1090,7 +1091,7 @@ internal partial class Program
         switch (mode)
         {
             case SDMode.Off:
-                tableoffset = STARTADLIBSOUNDS;
+                tableoffset = (ushort)STARTADLIBSOUNDS;
                 result = true;
                 break;
             case SDMode.PC:
@@ -1098,7 +1099,7 @@ internal partial class Program
                 result = true;
                 break;
             case SDMode.AdLib:
-                tableoffset = STARTADLIBSOUNDS;
+                tableoffset = (ushort)STARTADLIBSOUNDS;
                 if (AdLibPresent)
                     result = true;
                 break;
@@ -1216,25 +1217,25 @@ internal partial class Program
         }
     }
 
-    static int SD_SoundPlaying()
+    static string SD_SoundPlaying()
     {
         // TODO: Override the sound check until implemented
-        return 0;
+        return "";
 
-        int result = 0;
+        string result = "";
 
-        switch (SoundMode)
-        {
-            case SDMode.PC:
-                result = pcSound?.Length != 0 ? 1 : 0;
-                break;
-            case SDMode.AdLib:
-                result = alSound?.Length != 0 ? 1 : 0;
-                break;
+        //switch (SoundMode)
+        //{
+        //    case SDMode.PC:
+        //        result = pcSound?.Length != 0 ? 1 : 0;
+        //        break;
+        //    case SDMode.AdLib:
+        //        result = alSound?.Length != 0 ? 1 : 0;
+        //        break;
 
-            default:
-                break;
-        }
+        //    default:
+        //        break;
+        //}
 
         return result; // sound index being played
     }
@@ -1344,7 +1345,7 @@ internal partial class Program
             DigiList[i].length = (uint)size;
         }
 
-        for (i = 0; i < (byte)soundnames.LASTSOUND; i++)
+        for (i = 0; i < AudioMappings.SoundKeys.Count; i++)
         {
             DigiMap[i] = -1;
             DigiChannel[i] = -1;

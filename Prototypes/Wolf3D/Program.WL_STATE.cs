@@ -693,13 +693,13 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         switch (ob.obclass)
         {
             case classtypes.guardobj:
-                PlaySoundLocActor((int)soundnames.HALTSND, ob);
+                PlaySoundLocActor("HALTSND", ob);
                 NewState(ob, s_grdchase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.officerobj:
-                PlaySoundLocActor((int)soundnames.SPIONSND, ob);
+                PlaySoundLocActor("SPIONSND", ob);
                 NewState(ob, s_ofcchase1);
                 ob.speed *= 5;                 // go faster when chasing player
                 break;
@@ -710,61 +710,61 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 break;
 
             case classtypes.ssobj:
-                PlaySoundLocActor((int)soundnames.SCHUTZADSND, ob);
+                PlaySoundLocActor("SCHUTZADSND", ob);
                 NewState(ob, s_sschase1);
                 ob.speed *= 4;                 // go faster when chasing player
                 break;
 
             case classtypes.dogobj:
-                PlaySoundLocActor((int)soundnames.DOGBARKSND, ob);
+                PlaySoundLocActor("DOGBARKSND", ob);
                 NewState(ob, s_dogchase1);
                 ob.speed *= 2;                 // go faster when chasing player
                 break;
 
             case classtypes.bossobj:
-                SD_PlaySound((int)soundnames.GUTENTAGSND);
+                SD_PlaySound("GUTENTAGSND");
                 NewState(ob, s_bosschase1);
                 ob.speed = SPDPATROL * 3;        // go faster when chasing player
                 break;
 
             case classtypes.gretelobj:
-                SD_PlaySound((int)soundnames.KEINSND);
+                SD_PlaySound("KEINSND");
                 NewState(ob, s_gretelchase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.giftobj:
-                SD_PlaySound((int)soundnames.EINESND);
+                SD_PlaySound("EINESND");
                 NewState(ob, s_giftchase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.fatobj:
-                SD_PlaySound((int)soundnames.ERLAUBENSND);
+                SD_PlaySound("ERLAUBENSND");
                 NewState(ob, s_fatchase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.schabbobj:
-                SD_PlaySound((int)soundnames.SCHABBSHASND);
+                SD_PlaySound("SCHABBSHASND");
                 NewState(ob, s_schabbchase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.fakeobj:
-                SD_PlaySound((int)soundnames.TOT_HUNDSND);
+                SD_PlaySound("TOT_HUNDSND");
                 NewState(ob, s_fakechase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.mechahitlerobj:
-                SD_PlaySound((int)soundnames.DIESND);
+                SD_PlaySound("DIESND");
                 NewState(ob, s_mechachase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.realhitlerobj:
-                SD_PlaySound((int)soundnames.DIESND);
+                SD_PlaySound("DIESND");
                 NewState(ob, s_hitlerchase1);
                 ob.speed *= 5;                 // go faster when chasing player
                 break;
