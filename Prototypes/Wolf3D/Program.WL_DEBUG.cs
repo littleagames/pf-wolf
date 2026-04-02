@@ -30,9 +30,9 @@ internal partial class Program
                         else level -= 26;
                     }
 
-                    bordercol = (byte)(level * 4 + 3);
+                    bordercol = "VIEWCOLOR";//(byte)(level * 4 + 3);
 
-                    if (bordercol == VIEWCOLOR)
+                    if (bordercol == "VIEWCOLOR")
                         DrawStatusBorder(bordercol);
 
                     return 1;
@@ -357,7 +357,7 @@ internal partial class Program
         int zoom, temp;
         int offx, offy;
         Actor? tile;
-        int color = 0;
+        string color = "Black";
 
         zoom = 128 / MapManager.MAPSIZE;
         offx = 160;
@@ -369,7 +369,11 @@ internal partial class Program
         for (y = 0; y < _mapManager.mapheight; y++)
         {
             for (x = 0; x < _mapManager.mapwidth; x++)
-                _videoManager.Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, _mapManager.actorat[x, y]?.GetHashCode() ?? -1);
+            {
+                if (_mapManager.actorat[x, y] is Wall) color = "Grey";
+                if (_mapManager.actorat[x, y] is Door) color = "White";
+                _videoManager.Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, color);
+            }
         }
 
         //
@@ -384,28 +388,28 @@ internal partial class Program
                 tile = _mapManager.actorat[x, y];
 
                 if (tile is objstruct check && check.flags.HasFlag(objflags.FL_SHOOTABLE))
-                    color = 72;
+                    color = "Yellow";
                 else if (tile is null)
                 {
                     if (_mapManager.spotvis[x, y])
-                        color = 111;
+                        color = "Dark Green";
                     else
-                        color = 0;      // nothing
+                        color = "Black";      // nothing
                 }
                 else if (_mapManager.MAPSPOT(x, y, 1) == MapConstants.PUSHABLETILE)
-                    color = 171;
+                    color = "Purple";
                 else if (tile is BlockingActor)
-                    color = 158;
+                    color = "Dark Blue";
                 else if (tile is Wall)
-                    color = 154;
+                    color = "Navy";
                 else if (tile is Door)
-                    color = 146;
+                    color = "Blue";
 
                 _videoManager.Bar((x * zoom) + offx, (y * zoom) + offy, zoom, zoom, color);
             }
         }
 
-        _videoManager.Bar((player.tilex * zoom) + offx, (player.tiley * zoom) + offy, zoom, zoom, 15);
+        _videoManager.Bar((player.tilex * zoom) + offx, (player.tiley * zoom) + offy, zoom, zoom, "White");
 
         _videoManager.Update();
         _inputManager.Ack();
@@ -562,11 +566,11 @@ internal partial class Program
                         if (v2 < 0)
                             _videoManager.VerticalLine(WindowY + WindowH - 32 + v2,
                                       WindowY + WindowH - 32,
-                                      WindowX + 8 + (j / 32), BLACK);
+                                      WindowX + 8 + (j / 32), "Black");
                         else
                             _videoManager.VerticalLine(WindowY + WindowH - 32,
                                       WindowY + WindowH - 32 + v2,
-                                      WindowX + 8 + (j / 32), BLACK);
+                                      WindowX + 8 + (j / 32), "Black");
                     }
                 }
             }

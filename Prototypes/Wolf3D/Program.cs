@@ -119,7 +119,9 @@ internal partial class Program
     private static void InitGame()
     {
         bool didjukebox = false;
-        _videoManager.Init();
+        var theme = _assetManager.GetColors("wolf3d-theme");
+        // var palette = _assetManager.GetPalette("wolfpal");
+        _videoManager.Init(theme!);
         _inputManager.Init(_videoManager.fullscreen);
         
         pixelangle = new short[_videoManager.screenWidth];
@@ -215,12 +217,12 @@ internal partial class Program
         //        VW_WaitVBL(3 * 70);
         //}
         //else {}
-        _videoManager.Bar(0, 189, 300, 11, _videoManager.GetPixel(0, 0));
+        _videoManager.Bar(0, 189, 300, 11, "Maroon");
         WindowX = 0;
         WindowW = 320;
         PrintY = 190;
 
-        SETFONTCOLOR(14, 4);
+        SETFONTCOLOR("Bright Yellow", "Maroon");
         US_CPrint("Press a key"); // "Oprima una tecla"
 
         _videoManager.Update();
@@ -228,16 +230,16 @@ internal partial class Program
         if (!param_nowait)
             _inputManager.Ack();
 
-        _videoManager.Bar(0, 189, 300, 11, _videoManager.GetPixel(0, 0));
+        _videoManager.Bar(0, 189, 300, 11, "Maroon");
 
         PrintY = 190;
-        SETFONTCOLOR(10, 4);
+        SETFONTCOLOR("Lime", "Maroon");
 
         US_CPrint("Working..."); // "pensando..."
 
         _videoManager.Update();
 
-        SETFONTCOLOR(0, 15);
+        SETFONTCOLOR("Black", "White");
     }
 
     private static void DemoLoop()
@@ -876,19 +878,19 @@ internal partial class Program
         ClearMScreen();
         _graphicManager.DrawPic("c_mouselback", 112, 184);
         DrawStripes(10);
-        SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
 
-        DrawWindow(CTL_X - 2, CTL_Y - 6, 280, 13 * 7, BKGDCOLOR);
+        DrawWindow(CTL_X - 2, CTL_Y - 6, 280, 13 * 7, "BKGDCOLOR");
 
         DrawMenu(MusicItems, MusicMenu/*[start]*/);
 
-        SETFONTCOLOR(READHCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("READHCOLOR", "BKGDCOLOR");
         PrintY = 15;
         WindowX = 0;
         WindowY = 320;
         US_CPrint("Robert's Jukebox");
 
-        SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         _videoManager.Update();
         MenuFadeIn();
 
@@ -960,7 +962,7 @@ internal partial class Program
         {
             viewwidth = _videoManager.screenWidth;
             viewheight = _videoManager.screenHeight;
-            _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight, 0);
+            _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight, "Black");
         }
         else if (width == 20)
         {

@@ -1351,7 +1351,7 @@ internal partial class Program
             if (fpscounter)
             {
                 fontnumber = 0;
-                SETFONTCOLOR(7, 127);
+                SETFONTCOLOR("Grey", "VIEWCOLOR");
                 PrintX = 4; PrintY = 1;
                 _videoManager.Bar(0, 0, 40, 10, bordercol);
                 US_Print(fps.ToString());

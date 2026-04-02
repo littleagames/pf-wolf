@@ -74,26 +74,6 @@ internal partial class Program
     internal const int CST_START = 60;
     internal const int CST_SPC = 60;
 
-#if SPEAR
-    internal const byte BORDCOLOR = 0x29;
-    internal const byte BORD2COLOR = 0x23;
-    internal const byte DEACTIVE = 0x2b;
-    internal const byte BKGDCOLOR = 0x2d;
-#else
-
-    internal const byte BORDCOLOR = 0x29;
-    internal const byte BORD2COLOR = 0x23;
-    internal const byte DEACTIVE = 0x2b;
-    internal const byte BKGDCOLOR = 0x2d;
-    internal const byte STRIPE = 0x2c;
-#endif
-
-    internal const byte READCOLOR = 0x4a;
-    internal const byte READHCOLOR = 0x47;
-    internal const byte VIEWCOLOR = 0x7f;
-    internal const byte TEXTCOLOR = 0x17;
-    internal const byte HIGHLIGHT = 0x13;
-
     internal static string MENUSONG => "Wondering";
 #if SPEAR
     internal static string INTROSONG => musicnames.XTOWER2_MUS;
@@ -170,20 +150,20 @@ internal partial class Program
     internal static CP_iteminfo NewEitems = new(NE_X, NE_Y, (short)NewEmenu.Length, 0, 88);
     internal static CP_iteminfo NewItems = new(NM_X, NM_Y, (short)NewMenu.Length, 2, 24);
     internal static CP_iteminfo MusicItems = new(CTL_X, CTL_Y, 6, 0, 32);
-    static int[] color_hlite =
+    static string[] color_hlite =
     {
-        DEACTIVE,
-        HIGHLIGHT,
-        READHCOLOR,
-        0x67
+        "DEACTIVE",
+        "HIGHLIGHT",
+        "READHCOLOR",
+        "Green" // 4 165 0 (used for disabled episodes)
     };
 
-    static int[] color_norml =
+    static string[] color_norml =
     {
-        DEACTIVE,
-        TEXTCOLOR,
-        READCOLOR,
-        0x6b
+        "DEACTIVE",
+        "TEXTCOLOR",
+        "READCOLOR",
+        "DarkGreen" // 4 113 0 (used for disabled episodes)
     };
 
     internal static int[] SaveGamesAvail = new int[10] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -239,22 +219,22 @@ internal partial class Program
 
     internal static void ClearMScreen()
     {
-        _videoManager.Bar(0, 0, 320, 200, BORDCOLOR);
+        _videoManager.Bar(0, 0, 320, 200, "BORDCOLOR");
     }
 
     internal static void DrawStripes(int y)
     {
-        _videoManager.Bar(0, y, 320, 24, 0);
-        _videoManager.HorizontalLine(0, 319, y + 22, STRIPE);
+        _videoManager.Bar(0, y, 320, 24, "Black");
+        _videoManager.HorizontalLine(0, 319, y + 22, "STRIPE");
     }
 
-    internal static void DrawWindow(int x, int y, int w, int h, int wcolor)
+    internal static void DrawWindow(int x, int y, int w, int h, string wcolor)
     {
         _videoManager.Bar(x, y, w, h, wcolor);
-        DrawOutline(x, y, w, h, BORD2COLOR, DEACTIVE);
+        DrawOutline(x, y, w, h, "BORD2COLOR", "DEACTIVE");
     }
 
-    internal static void DrawOutline(int x, int y, int w, int h, int color1, int color2)
+    internal static void DrawOutline(int x, int y, int w, int h, string color1, string color2)
     {
         _videoManager.HorizontalLine(x, x + w, y, color2);
         _videoManager.VerticalLine(y, y + h, x, color2);
@@ -287,9 +267,9 @@ internal partial class Program
                 US_Print((items[i]).text);
             else
             {
-                SETFONTCOLOR(DEACTIVE, BKGDCOLOR);
+                SETFONTCOLOR("DEACTIVE", "BKGDCOLOR");
                 US_Print((items[i]).text);
-                SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+                SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
             }
 
             US_Print("\n");
@@ -512,7 +492,7 @@ internal partial class Program
         //
         if (lastitem != which)
         {
-            _videoManager.Bar(x - 1, y, 25, 16, BKGDCOLOR);
+            _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
             PrintX = (ushort)(item_i.x + item_i.indent);
             PrintY = (ushort)(item_i.y + which * 13);
             US_Print(items[which].text);
@@ -551,7 +531,7 @@ internal partial class Program
 
     internal static void EraseGun(CP_iteminfo item_i, CP_itemtype[] items, int x, int y, int which)
     {
-        _videoManager.Bar(x - 1, y, 25, 16, BKGDCOLOR);
+        _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
         SetTextColor(items[which], false);
 
         PrintX = (ushort)(item_i.x + item_i.indent);
@@ -573,7 +553,7 @@ internal partial class Program
 
     internal static void DrawGun(CP_iteminfo item_i, CP_itemtype[] items, int x, ref int y, int which, int basey, Action<int>? routine)
     {
-        _videoManager.Bar(x - 1, y, 25, 16, BKGDCOLOR);
+        _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
         y = basey + which * 13;
         _graphicManager.DrawPic("c_cursor1", x, y);
         SetTextColor(items[which], true);
@@ -615,11 +595,11 @@ internal partial class Program
     {
         if (hlight)
         {
-            SETFONTCOLOR((byte)color_hlite[items.active], BKGDCOLOR);
+            SETFONTCOLOR(color_hlite[items.active], "BKGDCOLOR");
         }
         else
         {
-            SETFONTCOLOR((byte)color_norml[items.active], BKGDCOLOR);
+            SETFONTCOLOR(color_norml[items.active], "BKGDCOLOR");
         }
     }
 
@@ -732,7 +712,7 @@ internal partial class Program
         //
         // CACHE SOUNDS
         //
-        SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         fontnumber = 1;
         WindowH = 200;
         if (_videoManager.screenHeight % 200 != 0)
@@ -898,7 +878,7 @@ internal partial class Program
                     lastgamemusicoffset = StartCPMusic(MENUSONG);
                     pickquick = CP_SaveGame(0);
 
-                    SETFONTCOLOR(0, 15);
+                    SETFONTCOLOR("Black", "White");
                     _inputManager.ClearKeysDown();
                     _videoManager.FadeOut();
                     if (viewsize != 21)
@@ -939,7 +919,7 @@ internal partial class Program
                     lastgamemusicoffset = StartCPMusic(MENUSONG);
                     pickquick = CP_LoadGame(0);    // loads lastgamemusicoffs
 
-                    SETFONTCOLOR(0, 15);
+                    SETFONTCOLOR("Black", "White");
                     _inputManager.ClearKeysDown();
                     _videoManager.FadeOut();
                     if (viewsize != 21)
@@ -1102,12 +1082,12 @@ internal partial class Program
         ClearMScreen();
         _graphicManager.DrawPic("c_mouselback", 112, 184);
 
-        DrawWindow(NE_X - 4, NE_Y - 4, NE_W + 8, NE_H + 8, BKGDCOLOR);
-        SETFONTCOLOR(READHCOLOR, BKGDCOLOR);
+        DrawWindow(NE_X - 4, NE_Y - 4, NE_W + 8, NE_H + 8, "BKGDCOLOR");
+        SETFONTCOLOR("READHCOLOR", "BKGDCOLOR");
         PrintY = 2;
         WindowX = 0;
         US_CPrint("Which episode to play?");
-        SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         DrawMenu(NewEitems, NewEmenu);
 
         string[] episodePics = new[] { "c_episode1", "c_episode2", "c_episode3", "c_episode4", "c_episode5", "c_episode6" };
@@ -1124,11 +1104,11 @@ internal partial class Program
         ClearMScreen();
         _graphicManager.DrawPic("c_mouselback", 112, 184);
 
-        SETFONTCOLOR(READHCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("READHCOLOR", "BKGDCOLOR");
         PrintX = NM_X + 20;
         PrintY = NM_Y - 32;
         US_Print("How tough are you?");
-        DrawWindow(NM_X - 5, NM_Y - 10, NM_W, NM_H, BKGDCOLOR);
+        DrawWindow(NM_X - 5, NM_Y - 10, NM_W, NM_H, "BKGDCOLOR");
 
         DrawMenu(NewItems, NewMenu);
         DrawNewGameDiff(NewItems.curpos);
@@ -1395,7 +1375,7 @@ internal partial class Program
 
         WindowX = 0;
         WindowW = 320;
-        SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
 
         if (_inputManager.JoyPresent())
             CtlMenu[(int)CtlOptions.CTL_JOYENABLE].active = 1;
@@ -1543,7 +1523,7 @@ internal partial class Program
         ClearMScreen();
         fontnumber = 1;
         _graphicManager.DrawPic("c_mouselback",112, 184);
-        DrawWindow(LSM_X - 10, LSM_Y - 5, LSM_W, LSM_H, BKGDCOLOR);
+        DrawWindow(LSM_X - 10, LSM_Y - 5, LSM_W, LSM_H, "BKGDCOLOR");
         DrawStripes(10);
 
         if (loadsave == 0)
@@ -1552,7 +1532,7 @@ internal partial class Program
             _graphicManager.DrawPic("c_savegame", 60, 0);
 
         for (i = 0; i < 10; i++)
-            PrintLSEntry(i, TEXTCOLOR);
+            PrintLSEntry(i, "TEXTCOLOR");
 
         DrawMenu(LSItems, LSMenu);
         _videoManager.Update();
@@ -1564,16 +1544,16 @@ internal partial class Program
     {
         int lastgameon = 0;
 
-        PrintLSEntry(lastgameon, TEXTCOLOR);
-        PrintLSEntry(w, HIGHLIGHT);
+        PrintLSEntry(lastgameon, "TEXTCOLOR");
+        PrintLSEntry(w, "HIGHLIGHT");
 
         lastgameon = w;
     }
 
-    internal static void PrintLSEntry(int w, int color)
+    internal static void PrintLSEntry(int w, string color)
     {
         var language = _assetManager.GetText("en-us");
-        SETFONTCOLOR((byte)color, BKGDCOLOR);
+        SETFONTCOLOR(color, "BKGDCOLOR");
         DrawOutline(LSM_X + LSItems.indent, LSM_Y + w * 13, LSM_W - LSItems.indent - 15, 11, color,
                      color);
         PrintX = (ushort)(LSM_X + LSItems.indent + 2);
@@ -1596,12 +1576,12 @@ internal partial class Program
     internal static void DrawLSAction(int which)
     {
         var language = _assetManager.GetText("en-us");
-        DrawWindow(LSA_X, LSA_Y, LSA_W, LSA_H, TEXTCOLOR);
-        DrawOutline(LSA_X, LSA_Y, LSA_W, LSA_H, 0, HIGHLIGHT);
+        DrawWindow(LSA_X, LSA_Y, LSA_W, LSA_H, "TEXTCOLOR");
+        DrawOutline(LSA_X, LSA_Y, LSA_W, LSA_H, "Black", "HIGHLIGHT");
         _graphicManager.DrawPic("c_diskloading1", LSA_X + 8, LSA_Y + 5);
 
         fontnumber = 1;
-        SETFONTCOLOR(0, TEXTCOLOR);
+        SETFONTCOLOR("Black", "TEXTCOLOR");
         PrintX = LSA_X + 46;
         PrintY = LSA_Y + 13;
 
@@ -1671,7 +1651,7 @@ internal partial class Program
                     else
                     {
                         DrawLoadSaveScreen(1);
-                        PrintLSEntry(which, HIGHLIGHT);
+                        PrintLSEntry(which, "HIGHLIGHT");
                         _videoManager.Update();
                     }
                 }
@@ -1684,7 +1664,7 @@ internal partial class Program
                 fontnumber = 0;
                 if (SaveGamesAvail[which] == 0)
                     _videoManager.Bar(LSM_X + LSItems.indent + 1, LSM_Y + which * 13 + 1,
-                             LSM_W - LSItems.indent - 16, 10, BKGDCOLOR);
+                             LSM_W - LSItems.indent - 16, 10, "BKGDCOLOR");
                 _videoManager.Update();
 
                 if (US_LineInput
@@ -1717,8 +1697,8 @@ internal partial class Program
                 else
                 {
                     _videoManager.Bar(LSM_X + LSItems.indent + 1, LSM_Y + which * 13 + 1,
-                             LSM_W - LSItems.indent - 16, 10, BKGDCOLOR);
-                    PrintLSEntry(which, HIGHLIGHT);
+                             LSM_W - LSItems.indent - 16, 10, "BKGDCOLOR");
+                    PrintLSEntry(which, "HIGHLIGHT");
                     _videoManager.Update();
                     SD_PlaySound("ESCPRESSEDSND");
                     continue;
@@ -1822,7 +1802,7 @@ internal partial class Program
         PrintY = (ushort)((_videoManager.screenHeight / _videoManager.scaleFactor) - 39);
         WindowX = 0;
         WindowY = 320;                                  // TODO: Check this!
-        SETFONTCOLOR(HIGHLIGHT, BKGDCOLOR);
+        SETFONTCOLOR("HIGHLIGHT", "BKGDCOLOR");
 
         US_CPrint("$STR_SIZE1".ToLanguageText(language) +"\n");
         US_CPrint("$STR_SIZE2".ToLanguageText(language) +"\n");
@@ -1917,10 +1897,10 @@ internal partial class Program
                     if (mouseadjustment != 0)
                     {
                         mouseadjustment--;
-                        _videoManager.Bar(60, 97, 200, 10, TEXTCOLOR);
-                        DrawOutline(60, 97, 200, 10, 0, HIGHLIGHT);
-                        DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, 0, READCOLOR);
-                        _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, READHCOLOR);
+                        _videoManager.Bar(60, 97, 200, 10, "TEXTCOLOR");
+                        DrawOutline(60, 97, 200, 10, "Black", "HIGHLIGHT");
+                        DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, "Black", "READCOLOR");
+                        _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, "READHCOLOR");
                         _videoManager.Update();
                         SD_PlaySound("MOVEGUN1SND");
                         TicDelay(20);
@@ -1932,10 +1912,10 @@ internal partial class Program
                     if (mouseadjustment < 9)
                     {
                         mouseadjustment++;
-                        _videoManager.Bar(60, 97, 200, 10, TEXTCOLOR);
-                        DrawOutline(60, 97, 200, 10, 0, HIGHLIGHT);
-                        DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, 0, READCOLOR);
-                        _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, READHCOLOR);
+                        _videoManager.Bar(60, 97, 200, 10, "TEXTCOLOR");
+                        DrawOutline(60, 97, 200, 10, "Black", "HIGHLIGHT");
+                        DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, "Black", "READCOLOR");
+                        _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, "READHCOLOR");
                         _videoManager.Update();
                         SD_PlaySound("MOVEGUN1SND");
                         TicDelay(20);
@@ -1970,24 +1950,24 @@ internal partial class Program
         var language = _assetManager.GetText("en-us");
         ClearMScreen();
         _graphicManager.DrawPic("c_mouselback", 112, 184);
-        DrawWindow(10, 80, 300, 30, BKGDCOLOR);
+        DrawWindow(10, 80, 300, 30, "BKGDCOLOR");
         WindowX = 0;
         WindowW = 320;
         PrintY = 82;
-        SETFONTCOLOR(READCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("READCOLOR", "BKGDCOLOR");
         US_CPrint("$STR_MOUSEADJ".ToLanguageText(language));
 
-        SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         PrintX = 14;
         PrintY = 95;
         US_Print("$STR_SLOW".ToLanguageText(language));
         PrintX = 269;
         US_Print("$STR_FAST".ToLanguageText(language));
 
-        _videoManager.Bar(60, 97, 200, 10, TEXTCOLOR);
-        DrawOutline(60, 97, 200, 10, 0, HIGHLIGHT);
-        DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, 0, READCOLOR);
-        _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, READHCOLOR);
+        _videoManager.Bar(60, 97, 200, 10, "TEXTCOLOR");
+        DrawOutline(60, 97, 200, 10, "Black", "HIGHLIGHT");
+        DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, "Black", "READCOLOR");
+        _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, "READHCOLOR");
 
         _videoManager.Update();
         MenuFadeIn();
@@ -2114,15 +2094,15 @@ internal partial class Program
             if (redraw != 0)
             {
                 x = CST_START + CST_SPC * which;
-                DrawWindow(5, PrintY - 1, 310, 13, BKGDCOLOR);
+                DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
 
                 DrawRtn(1);
-                DrawWindow(x - 2, PrintY, CST_SPC, 11, TEXTCOLOR);
-                DrawOutline(x - 2, PrintY, CST_SPC, 11, 0, HIGHLIGHT);
-                SETFONTCOLOR(0, TEXTCOLOR);
+                DrawWindow(x - 2, PrintY, CST_SPC, 11, "TEXTCOLOR");
+                DrawOutline(x - 2, PrintY, CST_SPC, 11, "Black", "HIGHLIGHT");
+                SETFONTCOLOR("Black", "TEXTCOLOR");
                 PrintRtn(which);
                 PrintX = (ushort)x;
-                SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+                SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
                 _videoManager.Update();
                 WaitKeyUp();
                 redraw = 0;
@@ -2146,7 +2126,7 @@ internal partial class Program
             {
                 lastFlashTime = (int)GameEngineManager.GetTimeCount();
                 tick = picked = 0;
-                SETFONTCOLOR(0, TEXTCOLOR);
+                SETFONTCOLOR("Black", "TEXTCOLOR");
 
                 if (type == CustomCtlOptions.KEYBOARDBTNS || type == CustomCtlOptions.KEYBOARDMOVE)
                     _inputManager.ClearKeysDown();
@@ -2163,7 +2143,7 @@ internal partial class Program
                         switch (tick)
                         {
                             case 0:
-                                _videoManager.Bar(x, PrintY + 1, CST_SPC - 2, 10, TEXTCOLOR);
+                                _videoManager.Bar(x, PrintY + 1, CST_SPC - 2, 10, "TEXTCOLOR");
                                 break;
                             case 1:
                                 PrintX = (ushort)x;
@@ -2274,7 +2254,7 @@ internal partial class Program
                     ReadAnyControl(out ci);
                 }
 
-                SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+                SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
                 redraw = 1;
                 WaitKeyUp();
                 continue;
@@ -2335,7 +2315,7 @@ internal partial class Program
 
         SD_PlaySound("ESCPRESSEDSND");
         WaitKeyUp();
-        DrawWindow(5, PrintY - 1, 310, 13, BKGDCOLOR);
+        DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
     }
 
 
@@ -2349,10 +2329,10 @@ internal partial class Program
         int y = CST_Y + 26 + w * 13;
 
 
-        _videoManager.HorizontalLine(7, 32, y - 1, DEACTIVE);
-        _videoManager.HorizontalLine(7, 32, y + 12, BORD2COLOR);
-        _videoManager.HorizontalLine(7, 32, y - 2, BORDCOLOR);
-        _videoManager.HorizontalLine(7, 32, y + 13, BORDCOLOR);
+        _videoManager.HorizontalLine(7, 32, y - 1, "DEACTIVE");
+        _videoManager.HorizontalLine(7, 32, y + 12, "BORD2COLOR");
+        _videoManager.HorizontalLine(7, 32, y - 2, "BORDCOLOR");
+        _videoManager.HorizontalLine(7, 32, y + 13, "BORDCOLOR");
         switch (w)
         {
             case 0:
@@ -2373,10 +2353,10 @@ internal partial class Program
         if (fixup_lastwhich >= 0)
         {
             y = CST_Y + 26 + fixup_lastwhich * 13;
-            _videoManager.HorizontalLine(7, 32, y - 1, DEACTIVE);
-            _videoManager.HorizontalLine(7, 32, y + 12, BORD2COLOR);
-            _videoManager.HorizontalLine(7, 32, y - 2, BORDCOLOR);
-            _videoManager.HorizontalLine(7, 32, y + 13, BORDCOLOR);
+            _videoManager.HorizontalLine(7, 32, y - 1, "DEACTIVE");
+            _videoManager.HorizontalLine(7, 32, y + 12, "BORD2COLOR");
+            _videoManager.HorizontalLine(7, 32, y - 2, "BORDCOLOR");
+            _videoManager.HorizontalLine(7, 32, y + 13, "BORDCOLOR");
             if (fixup_lastwhich != w)
                 switch (fixup_lastwhich)
                 {
@@ -2418,14 +2398,14 @@ internal partial class Program
         //
         // MOUSE
         //
-        SETFONTCOLOR(READCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("READCOLOR", "BKGDCOLOR");
         WindowX = 0;
         WindowW = 320;
 
         PrintY = CST_Y;
         US_CPrint("Mouse\n");
 
-        SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         PrintX = CST_START;
         US_Print("$STR_CRUN".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 1;
@@ -2435,7 +2415,7 @@ internal partial class Program
         PrintX = CST_START + CST_SPC * 3;
         US_Print("$STR_CSTRAFE".ToLanguageText(language) + "\n");
 
-        DrawWindow(5, PrintY - 1, 310, 13, BKGDCOLOR);
+        DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
         DrawCustMouse(0);
         US_Print("\n");
 
@@ -2443,9 +2423,9 @@ internal partial class Program
         //
         // JOYSTICK/PAD
         //
-        SETFONTCOLOR(READCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("READCOLOR", "BKGDCOLOR");
         US_CPrint("Joystick/Gravis GamePad\n");
-        SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         PrintX = CST_START;
         US_Print("$STR_CRUN".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 1;
@@ -2454,7 +2434,7 @@ internal partial class Program
         US_Print("$STR_CFIRE".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 3;
         US_Print("$STR_CSTRAFE".ToLanguageText(language) + "\n");
-        DrawWindow(5, PrintY - 1, 310, 13, BKGDCOLOR);
+        DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
         DrawCustJoy(0);
         US_Print("\n");
 
@@ -2462,9 +2442,9 @@ internal partial class Program
         //
         // KEYBOARD
         //
-        SETFONTCOLOR(READCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("READCOLOR", "BKGDCOLOR");
         US_CPrint("Keyboard\n");
-        SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
 
         PrintX = CST_START;
         US_Print("$STR_CRUN".ToLanguageText(language));
@@ -2474,7 +2454,7 @@ internal partial class Program
         US_Print("$STR_CFIRE".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 3;
         US_Print("$STR_CSTRAFE".ToLanguageText(language) + "\n");
-        DrawWindow(5, PrintY - 1, 310, 13, BKGDCOLOR);
+        DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
         DrawCustKeybd(0);
         US_Print("\n");
 
@@ -2482,7 +2462,7 @@ internal partial class Program
         //
         // KEYBOARD MOVE KEYS
         //
-        SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         PrintX = CST_START;
         US_Print("$STR_LEFT".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 1;
@@ -2491,7 +2471,7 @@ internal partial class Program
         US_Print("$STR_FRWD".ToLanguageText(language));
         PrintX = CST_START + CST_SPC * 3;
         US_Print("$STR_BKWD".ToLanguageText(language) +"\n");
-        DrawWindow(5, PrintY - 1, 310, 13, BKGDCOLOR);
+        DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
         DrawCustKeys(0);
         //
         // PICK STARTING POINT IN MENU
@@ -2525,17 +2505,18 @@ internal partial class Program
 
     internal static void DrawCustMouse(int hilight)
     {
-        int i, color;
+        int i;
+        string color;
 
 
-        color = TEXTCOLOR;
+        color = "TEXTCOLOR";
         if (hilight != 0)
-            color = HIGHLIGHT;
-        SETFONTCOLOR((byte)color, BKGDCOLOR);
+            color = "HIGHLIGHT";
+        SETFONTCOLOR(color, "BKGDCOLOR");
 
         if (!mouseenabled)
         {
-            SETFONTCOLOR(DEACTIVE, BKGDCOLOR);
+            SETFONTCOLOR("DEACTIVE", "BKGDCOLOR");
             CusMenu[0].active = 0;
         }
         else
@@ -2563,16 +2544,17 @@ internal partial class Program
 
     internal static void DrawCustJoy(int hilight)
     {
-        int i, color;
+        int i;
+        string color;
 
-        color = TEXTCOLOR;
+        color = "TEXTCOLOR";
         if (hilight != 0)
-            color = HIGHLIGHT;
-        SETFONTCOLOR((byte)color, BKGDCOLOR);
+            color = "HIGHLIGHT";
+        SETFONTCOLOR(color, "BKGDCOLOR");
 
         if (!joystickenabled)
         {
-            SETFONTCOLOR(DEACTIVE, BKGDCOLOR);
+            SETFONTCOLOR("DEACTIVE", "BKGDCOLOR");
             CusMenu[3].active = 0;
         }
         else
@@ -2594,13 +2576,14 @@ internal partial class Program
     internal static void
     DrawCustKeybd(int hilight)
     {
-        int i, color;
+        int i;
+        string color;
 
 
-        color = TEXTCOLOR;
+        color = "TEXTCOLOR";
         if (hilight != 0)
-            color = HIGHLIGHT;
-        SETFONTCOLOR((byte)color, BKGDCOLOR);
+            color = "HIGHLIGHT";
+        SETFONTCOLOR(color, "BKGDCOLOR");
 
         PrintY = CST_Y + 13 * 8;
         for (i = 0; i < 4; i++)
@@ -2616,13 +2599,14 @@ internal partial class Program
 
     internal static void DrawCustKeys(int hilight)
     {
-        int i, color;
+        int i;
+        string color;
 
 
-        color = TEXTCOLOR;
+        color = "TEXTCOLOR";
         if (hilight != 0)
-            color = HIGHLIGHT;
-        SETFONTCOLOR((byte)color, BKGDCOLOR);
+            color = "HIGHLIGHT";
+        SETFONTCOLOR(color, "BKGDCOLOR");
 
         PrintY = CST_Y + 13 * 10;
         for (i = 0; i < 4; i++)
@@ -2669,7 +2653,7 @@ internal partial class Program
                 switch (tick)
                 {
                     case 0:
-                        _videoManager.Bar(x, y, 8, 13, TEXTCOLOR);
+                        _videoManager.Bar(x, y, 8, 13, "TEXTCOLOR");
                         break;
                     case 1:
                         PrintX = (ushort)x;
@@ -2745,9 +2729,9 @@ internal partial class Program
         PrintY = (ushort)((WindowH / 2) - (h / 2));
         PrintX = WindowX = (ushort)(160 - (mw / 2));
 
-        DrawWindow(WindowX - 5, PrintY - 5, mw + 10, h + 10, TEXTCOLOR);
-        DrawOutline(WindowX - 5, PrintY - 5, mw + 10, h + 10, 0, HIGHLIGHT);
-        SETFONTCOLOR(0, TEXTCOLOR);
+        DrawWindow(WindowX - 5, PrintY - 5, mw + 10, h + 10, "TEXTCOLOR");
+        DrawOutline(WindowX - 5, PrintY - 5, mw + 10, h + 10, "Black", "HIGHLIGHT");
+        SETFONTCOLOR("Black", "TEXTCOLOR");
         US_Print(text);
         _videoManager.Update();
     }
@@ -2762,34 +2746,34 @@ internal partial class Program
 
     internal static void IntroScreen()
     {
-        const byte MAINCOLOR = 0x6c;
-        const byte EMSCOLOR = 0x6c; // 0x4f
-        const byte XMSCOLOR = 0x6c; // 0x7f
+        //const byte MAINCOLOR = 0x6c;
+        //const byte EMSCOLOR = 0x6c; // 0x4f
+        //const byte XMSCOLOR = 0x6c; // 0x7f
 
         const byte FILLCOLOR = 14;
 
         int i;
-        for (i = 0; i < 10; i++)
-            _videoManager.Bar(49, 163 - 8 * i, 6, 5, MAINCOLOR - i);
-        for (i = 0; i < 10; i++)
-            _videoManager.Bar(89, 163 - 8 * i, 6, 5, EMSCOLOR - i);
-        for (i = 0; i < 10; i++)
-            _videoManager.Bar(129, 163 - 8 * i, 6, 5, XMSCOLOR - i);
+        //for (i = 0; i < 10; i++)
+        //    _videoManager.Bar(49, 163 - 8 * i, 6, 5, MAINCOLOR - i);
+        //for (i = 0; i < 10; i++)
+        //    _videoManager.Bar(89, 163 - 8 * i, 6, 5, EMSCOLOR - i);
+        //for (i = 0; i < 10; i++)
+        //    _videoManager.Bar(129, 163 - 8 * i, 6, 5, XMSCOLOR - i);
 
         //
         // FILL BOXES
         //
         if (_inputManager.IsMousePresent())
-            _videoManager.Bar(164, 82, 12, 2, FILLCOLOR);
+            _videoManager.Bar(164, 82, 12, 2, "FILLCOLOR");
 
         if (_inputManager.JoyPresent())
-            _videoManager.Bar(164, 105, 12, 2, FILLCOLOR);
+            _videoManager.Bar(164, 105, 12, 2, "FILLCOLOR");
 
         if (AdLibPresent && !SoundBlasterPresent)
-            _videoManager.Bar(164, 128, 12, 2, FILLCOLOR);
+            _videoManager.Bar(164, 128, 12, 2, "FILLCOLOR");
 
         if (SoundBlasterPresent)
-            _videoManager.Bar(164, 151, 12, 2, FILLCOLOR);
+            _videoManager.Bar(164, 151, 12, 2, "FILLCOLOR");
 
         //    if (SoundSourcePresent)
         //        _videoManager.Bar (164, 174, 12, 2, FILLCOLOR);

@@ -34,8 +34,9 @@ internal class VideoManager
     internal SDL.SDL_Color[] palette2 = new SDL.SDL_Color[256];
     internal SDL.SDL_Color[] curpal = new SDL.SDL_Color[256];
 
-    [Obsolete("Will pull from PK3 in future")]
-    internal SDL.SDL_Color[] gamepal = GamePal.wolfpal;
+    [Obsolete("Will be 32-bit in the future, and this will only be used to map legacy data to 32bit. This will move to a graphic/asset manager")]
+    private SDL.SDL_Color[] gamepal { get; set; }
+    private ColorMetadata? Theme { get; set; }
 
     static readonly UInt32[] rndmasks = {
                     // n    XNOR from (starting at 1, not 0 as usual)
@@ -57,12 +58,15 @@ internal class VideoManager
         InputManager.MouseGrabbed += SetWindowGrab;
     }
 
-    public void Init()
+    public void Init(ColorMetadata theme)
     {
         if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
         {
             throw new PfWolfVideoException("Could not initialize SDL: {error}", SDL.SDL_GetError());
         }
+
+        gamepal = GamePal.wolfpal;
+        this.Theme = theme;
 
         InitializeSDLVideo();
 
@@ -154,7 +158,7 @@ internal class VideoManager
         UnlockSurface(screenBuffer);
     }
 
-    public void HorizontalLine(int x1, int x2, int y, int color)
+    public void HorizontalLine(int x1, int x2, int y, string color)
     {
         if (scaleFactor == 1)
             HorizontalLine(x1, y, x2 - x1 + 1, color);
@@ -162,8 +166,9 @@ internal class VideoManager
             Bar(x1, y, x2 - x1 + 1, 1, color);
     }
 
-    public void HorizontalLine(Vector2 position, int width, int color)
+    public void HorizontalLine(Vector2 position, int width, string color)
     {
+        this.Theme.Colors256.TryGetValue(color, out byte col);
         Debug.Assert(position.X >= 0 && position.X + width <= screenWidth
             && position.Y >= 0 && position.Y < screenHeight,
             "VL_Hlin: Destination rectangle out of bounds!");
@@ -175,13 +180,13 @@ internal class VideoManager
             dest += ylookup[(int)position.Y] + (int)position.X;
             for (int i = 0; i < width; i++)
             {
-                dest[i] = (byte)color;
+                dest[i] = col;
             }
         }
         UnlockSurface(screenBuffer);
     }
 
-    public void VerticalLine(int y1, int y2, int x, int color)
+    public void VerticalLine(int y1, int y2, int x, string color)
     {
         if (scaleFactor == 1)
             VerticalLine(x, y1, y2 - y1 + 1, color);
@@ -211,15 +216,16 @@ internal class VideoManager
         UnlockSurface(screenBuffer);
     }
 
-    public void Bar(int x, int y, int width, int height, int color)
+    public void Bar(int x, int y, int width, int height, string color)
         => BarScaledCoord(scaleFactor * x, scaleFactor * y, scaleFactor * width, scaleFactor * height, color);
 
-    public void BarScaledCoord(int scx, int scy, int scwidth, int scheight, int color)
+    public void BarScaledCoord(int scx, int scy, int scwidth, int scheight, string color)
     {
         Debug.Assert(scx >= 0 && scx + scwidth <= screenWidth
             && scy >= 0 && scy + scheight <= screenHeight,
             "VL_BarScaledCoord: Destination rectangle out of bounds!");
 
+        this.Theme.Colors256.TryGetValue(color, out byte col);
         IntPtr destPtr = LockSurface(screenBuffer);
         if (destPtr == IntPtr.Zero) return;
 
@@ -235,7 +241,7 @@ internal class VideoManager
                 // memset equivalent: set scwidth bytes to (byte)color
                 for (int i = 0; i < scwidth; i++)
                 {
-                    dest[i] = (byte)color;
+                    dest[i] = col;
                 }
 
                 dest += bufferPitch;
@@ -336,7 +342,7 @@ internal class VideoManager
     }
 
 
-    internal void DrawPropString(int px, int py, string text, byte fontcolor, byte[] data)
+    internal void DrawPropString(int px, int py, string text, string fontcolor, byte[] data)
     {
         fontstruct font;
         int width, step, height;
@@ -354,6 +360,8 @@ internal class VideoManager
         font = FontHelper.GetFont(data);
 
         height = font.height;
+
+        this.Theme.Colors256.TryGetValue(fontcolor, out byte col);
 
         unsafe
         {
@@ -373,7 +381,7 @@ internal class VideoManager
                         {
                             for (sy = 0; sy < scaleFactor; sy++)
                                 for (sx = 0; sx < scaleFactor; sx++)
-                                    dest[ylookup[scaleFactor * i + sy] + sx] = fontcolor;
+                                    dest[ylookup[scaleFactor * i + sy] + sx] = col;
                         }
                     }
 

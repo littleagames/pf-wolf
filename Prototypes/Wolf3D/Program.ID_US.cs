@@ -265,8 +265,8 @@ internal partial class Program
         //char[] s = new char[MaxString], olds = new char[MaxString];
         int cursor, len;
         ushort i,
-                    w, h,
-                    temp;
+                    w, h;
+        string temp;
         uint curtime, lasttime, lastdirtime, lastbuttontime, lastdirmovetime;
         ControlInfo ci;
         Direction lastdir = Direction.dir_None;
@@ -517,7 +517,7 @@ internal partial class Program
                 temp = fontcolor;
                 fontcolor = backcolor;
                 USL_DrawString(new string(olds));
-                fontcolor = (byte)temp;
+                fontcolor = temp;
                 olds = s;
 
                 px = x;
@@ -580,7 +580,7 @@ internal partial class Program
 
     internal static void US_ClearWindow()
     {
-        _videoManager.Bar(WindowX, WindowY, WindowW, WindowH, WHITE);
+        _videoManager.Bar(WindowX, WindowY, WindowW, WindowH, "White");
         PrintX = WindowX;
         PrintY = WindowY;
     }
@@ -634,7 +634,7 @@ internal partial class Program
     internal static void USL_XORICursor(int x, int y, string s, ushort cursor)
     {
         string buf;
-        int temp;
+        string temp;
         ushort w, h;
 
         buf = s;
@@ -650,7 +650,7 @@ internal partial class Program
             temp = fontcolor;
             fontcolor = backcolor;
             USL_DrawString("\x80");
-            fontcolor = (byte)temp;
+            fontcolor = temp;
         }
     }
 

@@ -19,13 +19,13 @@ internal partial class Program
 
         fontnumber = 1;
 
-        SETFONTCOLOR(READHCOLOR, BKGDCOLOR);
+        SETFONTCOLOR("READHCOLOR", "BKGDCOLOR");
         PrintX = 110;
         PrintY = 15;
 
         US_Print("Attention");
 
-        SETFONTCOLOR(HIGHLIGHT, BKGDCOLOR);
+        SETFONTCOLOR("HIGHLIGHT", "BKGDCOLOR");
         WindowX = PrintX = 40;
         PrintY = 60;
 
@@ -43,7 +43,7 @@ internal partial class Program
     internal static void PG13()
     {
         _videoManager.FadeOut();
-        _videoManager.Bar(0, 0, 320, 200, 0x82);     // background
+        _videoManager.Bar(0, 0, 320, 200, "Light Blue");     // background
 
         _graphicManager.DrawPic("pg13", 216, 110);
         _videoManager.Update();
@@ -69,7 +69,7 @@ internal partial class Program
         //_graphicManager.DrawPic(35 * 8, 68, graphicnums.C_CODEPIC);
 
         fontnumber = 0;
-        SETFONTCOLOR(15, 0x29);
+        SETFONTCOLOR("White", "BORDCOLOR");
 
 
         for (i = 0; i < MaxScores; i++)
@@ -146,8 +146,8 @@ internal partial class Program
             //
             PrintY = (ushort)(76 + (16 * n));
             PrintX = 4 * 8;
-            backcolor = BORDCOLOR;
-            fontcolor = 15;
+            backcolor = "BORDCOLOR";
+            fontcolor = "White";
             string str = new string(Scores[n].name);
             US_LineInput(PrintX, PrintY, ref str, "", true, MaxHighName, 100);
             Scores[n].name = str;
@@ -172,14 +172,14 @@ internal partial class Program
         uint w = (uint)(WindowW - _videoManager.scaleFactor * 10);
 
         _videoManager.BarScaledCoord(WindowX + _videoManager.scaleFactor * 5, WindowY + WindowH - _videoManager.scaleFactor * 3,
-            (int)w, _videoManager.scaleFactor * 2, BLACK);
+            (int)w, _videoManager.scaleFactor * 2, "Black");
         w = (uint)((int)w * current / total);
         if (w != 0)
         {
             _videoManager.BarScaledCoord(WindowX + _videoManager.scaleFactor * 5, WindowY + WindowH - _videoManager.scaleFactor * 3,
-                (int)w, _videoManager.scaleFactor * 2, 0x37);       //SECONDCOLOR);
+                (int)w, _videoManager.scaleFactor * 2, "SECONDCOLOR");       //SECONDCOLOR 0x37);
             _videoManager.BarScaledCoord(WindowX + _videoManager.scaleFactor * 5, WindowY + WindowH - _videoManager.scaleFactor * 3,
-                (int)(w - _videoManager.scaleFactor * 1), _videoManager.scaleFactor * 1, 0x32);
+                (int)(w - _videoManager.scaleFactor * 1), _videoManager.scaleFactor * 1, "FIRSTCOLOR"); // 0x32
 
         }
         _videoManager.Update();
@@ -234,10 +234,10 @@ internal partial class Program
         int bonus, timeleft = 0;
 
         ClearSplitVWB();           // set up for double buffering in split screen
-        _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, VIEWCOLOR);
+        _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, "VIEWCOLOR");
 
-        if (bordercol != VIEWCOLOR)
-            DrawStatusBorder(VIEWCOLOR);
+        if (bordercol != "VIEWCOLOR")
+            DrawStatusBorder("VIEWCOLOR");
 
         StartCPMusic("EndLevel");
 
@@ -531,9 +531,9 @@ internal partial class Program
         StartCPMusic("YoureAHero");
         ClearSplitVWB();
 
-        _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, VIEWCOLOR);
-        if (bordercol != VIEWCOLOR)
-            DrawStatusBorder(VIEWCOLOR);
+        _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, "VIEWCOLOR");
+        if (bordercol != "VIEWCOLOR")
+            DrawStatusBorder("VIEWCOLOR");
         Write(18, 2, "$STR_YOUWIN".ToLanguageText(language));
 
         Write(TIMEX, TIMEY - 2, "$STR_TOTALTIME".ToLanguageText(language));

@@ -35,9 +35,9 @@ internal abstract record MenuComponent
 
 internal record Background : MenuComponent
 {
-    public byte Color { get; set; }
+    public string Color { get; set; }
 
-    public Background(byte color)
+    public Background(string color)
     {
         Color = color;    
     }
@@ -107,16 +107,16 @@ internal record Graphic : MenuComponent
 internal record Stripe : MenuComponent
 {
     public int Y { get; set; }
-    public byte BackingColor { get; set; }
-    public byte LineColor { get; set; }
+    public string BackingColor { get; set; }
+    public string LineColor { get; set; }
     public Stripe(int y)
     {
         Y = y;
-        BackingColor = 0x00;
-        LineColor = 0x2c;
+        BackingColor = "Black";
+        LineColor = "STRIPE";
     }
 
-    public Stripe(int y, byte backingColor, byte lineColor)
+    public Stripe(int y, string backingColor, string lineColor)
     {
         Y = y;
         BackingColor = backingColor;

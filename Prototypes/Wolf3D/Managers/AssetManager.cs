@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using System.Xml.Linq;
 using Wolf3D.Entities;
 using Wolf3D.Mappers;
 
@@ -879,7 +878,7 @@ internal class AssetManager
                 Position = new Vector2(76, 55),
                 Indent = 24,
                 Components = [
-                    new Background(0x29),
+                    new Background("BORDCOLOR"),
                     new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
                     new Stripe(10),
                     new Window(68, 52, 178, 136, "wolf3d-theme"),
@@ -907,7 +906,7 @@ internal class AssetManager
                 Position = new Vector2(48, 20),
                 Indent = 52,
                 Components = [
-                    new Background(0x29),
+                    new Background("BORDCOLOR"),
                     new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
                     new Window(40, 17, 250, 45, "wolf3d-theme"),
                     new Window(40, 82, 250, 45, "wolf3d-theme"),
@@ -943,7 +942,7 @@ internal class AssetManager
                 Position = new Vector2(24, 86),
                 Indent = 56,
                 Components = [
-                    new Background(0x29),
+                    new Background("BORDCOLOR"),
                     new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
                     new Stripe(10),
                     new Window(16, 81, 284, 60, "wolf3d-theme"),
@@ -965,7 +964,7 @@ internal class AssetManager
                 Position = new Vector2(48, 20),
                 Indent = 52,
                 Components = [
-                    new Background(0x29),
+                    new Background("BORDCOLOR"),
                     new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
                 ],
                 MenuItems = [
@@ -977,33 +976,117 @@ internal class AssetManager
         return null;
     }
 
-    //[Obsolete("Temporary endpoint until the asset types are implemented")]
-    //public ThemeMetadata? GetTheme(string theme)
-    //{
-    //    var normalizedTheme = theme.ToLowerInvariant();
-    //    if (normalizedTheme.Equals("wolf3d-theme"))
-    //        return new ThemeMetadata
-    //        {
-    //            Colors = new Dictionary<string, Color>
-    //            {
-    //                // Other red
-    //                // { "DarkRed", Color.FromByteRGB("137 0 0") }, // 0x29
+    public ColorMetadata? GetColors(string theme)
+    {
+        var normalizedTheme = theme.ToLowerInvariant();
+        if (normalizedTheme.Equals("wolf3d-theme"))
+            return new ColorMetadata
+            {
+                Colors256 = new Dictionary<string, byte>
+                {
+                    { "BORDCOLOR", 0x29 },
+                    { "BORD2COLOR", 0x23 },
+                    { "DEACTIVE", 0x2b },
+                    { "BKGDCOLOR", 0x2d },
+                    { "STRIPE", 0x2c },
+                    { "READCOLOR", 0x4a },
+                    { "READHCOLOR", 0x47 },
+                    { "VIEWCOLOR", 0x7f },
+                    { "TEXTCOLOR", 0x17 },
+                    { "HIGHLIGHT", 0x13 },
+                    { "Black", 0x00 },
+                    { "White", 0x0f },
+                    { "Grey", 0x17 },
+                    { "Green", 0x67 },
+                    { "DarkGreen", 0x6b },
+                    { "Yellow", 0x48 },
+                    { "Purple", 0xab },
+                    { "Dark Blue", 0x9e },
+                    { "Navy", 0x9a },
+                    { "Blue", 0x92 },
+                    { "Maroon", 0x04 },
+                    { "Light Blue", 0x82 },
+                    { "FIRSTCOLOR", 0x32 },
+                    { "SECONDCOLOR", 0x37 },
+                    { "Lime", 0x0a },
+                    { "Bright Yellow", 0x0e },
+                    { "Dark Yellow", 0x4f }
+                },
+                Colors = new Dictionary<string, Color>
+                {
+                    { "BORDCOLOR", Color.FromByteRGB("137 0 0") },// 0x29
+                    { "BORD2COLOR", Color.FromByteRGB("214 0 0") }, //0x23
+                    { "DEACTIVE", Color.FromByteRGB("113 0 0") }, // 0x2b
+                    { "BKGDCOLOR", Color.FromByteRGB("89 0 0") }, // 0x2d 
+                    { "STRIPE", Color.FromByteRGB("101 0 0") }, // 0x2c
+                    { "READCOLOR", Color.FromByteRGB("182 174 0") }, // 0x4a
+                    { "READHCOLOR", Color.FromByteRGB("255 246 0") }, // 0x47
+                    { "VIEWCOLOR", Color.FromByteRGB("0 64 64") }, // 0x7f
+                    { "TEXTCOLOR", Color.FromByteRGB("141 141 141") }, // 0x17
+                    { "HIGHLIGHT", Color.FromByteRGB("194 194 194") }, // 0x13
+                    { "Black", Color.FromByteRGB("0 0 0") }, // 0x00
+                    { "White", Color.FromByteRGB("255 255 255") }, // 0x0f
+                    { "Grey", Color.FromByteRGB("141 141 141") },
+                    { "Green", Color.FromByteRGB("4 165 0") }, // 0x67
+                    { "DarkGreen", Color.FromByteRGB("4 113 0") }, // 0x6b
+                    { "Yellow", Color.FromByteRGB("230 218 0") },
+                    { "Purple", Color.FromByteRGB("97 0 157") },
+                    { "Dark Blue", Color.FromByteRGB("0 0 76") },
+                    { "Navy", Color.FromByteRGB("0 0 125") },
+                    { "Blue", Color.FromByteRGB("0 0 226") },
+                    { "Maroon", Color.FromByteRGB("170 0 0") },
+                    { "Light Blue", Color.FromByteRGB("32 170 255") },
+                    { "FIRSTCOLOR", Color.FromByteRGB("255 157 157") },
+                    { "SECONDCOLOR", Color.FromByteRGB("255 0 0") },
+                    { "Lime", Color.FromByteRGB("85 255 85") },
+                    { "Bright Yellow", Color.FromByteRGB("255 255 85") },
+                    { "Dark Yellow", Color.FromByteRGB("64 64 0") },
+                }
+            };
+        if (normalizedTheme.Equals("spear-theme"))
+            return new ColorMetadata
+            {
+                Colors256 = new Dictionary<string, byte>
+                {
+                    { "BORDCOLOR", 0x99 },
+                    { "BORD2COLOR", 0x93 },
+                    { "DEACTIVE", 0x9b },
+                    { "BKGDCOLOR", 0x9d },
+                    { "STRIPE", 0x9c },
+                    { "READCOLOR", 0x4a },
+                    { "READHCOLOR", 0x47 },
+                    { "VIEWCOLOR", 0x7f },
+                    { "TEXTCOLOR", 0x17 },
+                    { "HIGHLIGHT", 0x13 },
+                    { "Black", 0x00 },
+                    { "White", 0x0f },
+                    { "Grey", 0x17 },
+                    { "Green", 0x67 },
+                    { "DarkGreen", 0x6b },
+                    { "Yellow", 0x48 },
+                },
+                Colors = new Dictionary<string, Color>
+                {
+                    { "BORDCOLOR", Color.FromByteRGB("0 0 137") },// 0x99
+                    { "BORD2COLOR", Color.FromByteRGB("0 0 214") }, //0x93
+                    { "DEACTIVE", Color.FromByteRGB("0 0 113") }, // 0x9b
+                    { "BKGDCOLOR", Color.FromByteRGB("0 0 89") }, // 0x9d 
+                    { "STRIPE", Color.FromByteRGB("0 0 101") }, // 0x9c
+                    { "READCOLOR", Color.FromByteRGB("182 174 0") }, // 0x4a
+                    { "READHCOLOR", Color.FromByteRGB("255 246 0") }, // 0x47
+                    { "VIEWCOLOR", Color.FromByteRGB("0 64 64") }, // 0x7f
+                    { "TEXTCOLOR", Color.FromByteRGB("141 141 141") }, // 0x17
+                    { "HIGHLIGHT", Color.FromByteRGB("194 194 194") }, // 0x13
+                    { "Black", Color.FromByteRGB("0 0 0") }, // 0x00
+                    { "White", Color.FromByteRGB("255 255 255") }, // 0x0f
+                    { "Grey", Color.FromByteRGB("141 141 141") },
+                    { "Green", Color.FromByteRGB("4 165 0") }, // 0x67
+                    { "DarkGreen", Color.FromByteRGB("4 113 0") }, // 0x6b
+                }
+            };
 
-    //                { "BORDCOLOR", Color.FromByteRGB("137 0 0") },// 0x29
-    //                { "BORD2COLOR", Color.FromByteRGB("214 0 0") }, //0x23
-    //                { "DEACTIVE", Color.FromByteRGB("113 0 0") }, // 0x2b
-    //                { "BKGDCOLOR", Color.FromByteRGB("89 0 0") }, // 0x2d 
-    //                { "STRIPE", Color.FromByteRGB("101 0 0") }, // 0x2c
-    //                { "READCOLOR", Color.FromByteRGB("182 174 0") }, // 0x4a
-    //                { "READHCOLOR", Color.FromByteRGB("255 246 0") }, // 0x47
-    //                { "VIEWCOLOR", Color.FromByteRGB("0 64 64") }, // 0x7f
-    //                { "TEXTCOLOR", Color.FromByteRGB("141 141 141") }, // 0x17
-    //                { "HIGHLIGHT", Color.FromByteRGB("194 194 194") } // 0x13
-    //            }
-    //        };
-
-    //    return null;
-    //}
+        return null;
+    }
 
     public LanguageMetadata? GetText(string language)
     {

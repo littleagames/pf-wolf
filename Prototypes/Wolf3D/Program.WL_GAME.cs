@@ -16,7 +16,7 @@ internal partial class Program
 */
     static bool ingame, fizzlein;
     static gametype gamestate = new gametype();
-    static byte bordercol = VIEWCOLOR; // color of the Change View/Ingame border
+    static string bordercol = "VIEWCOLOR"; // color of the Change View/Ingame border
 # if SPEAR
     internal static int spearx, speary;
     internal static uint spearangle;
@@ -543,7 +543,7 @@ internal static void PlaySoundLocGlobal(string s, int gx, int gy)
         bool died;
 
         ClearMemory();
-        SETFONTCOLOR(0, 15);
+        SETFONTCOLOR("Black", "White");
         _videoManager.FadeOut();
         DrawPlayScreen();
         died = false;
@@ -586,7 +586,7 @@ internal static void PlaySoundLocGlobal(string s, int gx, int gy)
             if (startgame || loadedgame)
             {
                 ClearMemory();
-                SETFONTCOLOR(0, 15);
+                SETFONTCOLOR("Black", "White");
                 _videoManager.FadeOut();
                 DrawPlayScreen();
                 died = false;
@@ -686,7 +686,7 @@ internal static void PlaySoundLocGlobal(string s, int gx, int gy)
 
         _videoManager.FadeOut();
 
-        SETFONTCOLOR(0, 15);
+        SETFONTCOLOR("Black", "White");
         DrawPlayScreen();
 
         startgame = false;
@@ -734,7 +734,7 @@ internal static void PlaySoundLocGlobal(string s, int gx, int gy)
         CenterWindow(24, 3);
         PrintY += 6;
         fontnumber = 0;
-        SETFONTCOLOR(0, 15);
+        SETFONTCOLOR("Black", "White");
         US_Print(" Demo number (0-9): ");
         _videoManager.Update();
 
@@ -772,7 +772,7 @@ internal static void PlaySoundLocGlobal(string s, int gx, int gy)
         CenterWindow(26, 3);
         PrintY += 6;
         fontnumber = 0;
-        SETFONTCOLOR(0, 15);
+        SETFONTCOLOR("Black", "White");
         US_Print("  Demo which level(1-60): "); maps = 60;
         _videoManager.Update();
         _videoManager.FadeIn();
@@ -857,7 +857,7 @@ internal static void PlaySoundLocGlobal(string s, int gx, int gy)
     {
         int px = _videoManager.scaleFactor;
 
-        if (bordercol != VIEWCOLOR)
+        if (bordercol != "VIEWCOLOR")
             DrawStatusBorder(bordercol);
         else
         {
@@ -874,21 +874,21 @@ internal static void PlaySoundLocGlobal(string s, int gx, int gy)
 
         int xl = _videoManager.screenWidth / 2 - viewwidth / 2;
         int yl = (_videoManager.screenHeight - px * STATUSLINES - viewheight) / 2;
-        _videoManager.BarScaledCoord(xl, yl, viewwidth, viewheight, 0);
+        _videoManager.BarScaledCoord(xl, yl, viewwidth, viewheight, "Black");
 
         if (xl != 0)
         {
             // Paint game view border lines
-            _videoManager.BarScaledCoord(xl - px, yl - px, viewwidth + px, px, 0);                      // upper border
-            _videoManager.BarScaledCoord(xl, yl + viewheight, viewwidth + px, px, bordercol - 2);       // lower border
-            _videoManager.BarScaledCoord(xl - px, yl - px, px, viewheight + px, 0);                     // left border
-            _videoManager.BarScaledCoord(xl + viewwidth, yl - px, px, viewheight + 2 * px, bordercol - 2);  // right border
-            _videoManager.BarScaledCoord(xl - px, yl + viewheight, px, px, bordercol - 3);              // lower left highlight
+            _videoManager.BarScaledCoord(xl - px, yl - px, viewwidth + px, px, "Black");                      // upper border
+            _videoManager.BarScaledCoord(xl, yl + viewheight, viewwidth + px, px, bordercol);// - 2);       // lower border
+            _videoManager.BarScaledCoord(xl - px, yl - px, px, viewheight + px, "Black");                     // left border
+            _videoManager.BarScaledCoord(xl + viewwidth, yl - px, px, viewheight + 2 * px, bordercol);// - 2);  // right border
+            _videoManager.BarScaledCoord(xl - px, yl + viewheight, px, px, bordercol);// - 3);              // lower left highlight
         }
         else
         {
             // Just paint a lower border line
-            _videoManager.BarScaledCoord(0, yl + viewheight, viewwidth, px, bordercol - 2);       // lower border
+            _videoManager.BarScaledCoord(0, yl + viewheight, viewwidth, px, bordercol);// - 2);       // lower border
         }
     }
 
@@ -921,20 +921,20 @@ internal static void PlaySoundLocGlobal(string s, int gx, int gy)
         if (xl != 0)
         {
             // Paint game view border lines
-            _videoManager.BarScaledCoord(xl - px, yl - px, vw + px, px, 0);                      // upper border
-            _videoManager.BarScaledCoord(xl, yl + vh, vw + px, px, bordercol - 2);          // lower border
-            _videoManager.BarScaledCoord(xl - px, yl - px, px, vh + px, 0);                      // left border
-            _videoManager.BarScaledCoord(xl + vw, yl - px, px, vh + px * 2, bordercol - 2);          // right border
-            _videoManager.BarScaledCoord(xl - px, yl + vh, px, px, bordercol - 3);          // lower left highlight
+            _videoManager.BarScaledCoord(xl - px, yl - px, vw + px, px, "Black");                      // upper border
+            _videoManager.BarScaledCoord(xl, yl + vh, vw + px, px, bordercol);// - 2);          // lower border
+            _videoManager.BarScaledCoord(xl - px, yl - px, px, vh + px, "Black");                      // left border
+            _videoManager.BarScaledCoord(xl + vw, yl - px, px, vh + px * 2, bordercol);// - 2);          // right border
+            _videoManager.BarScaledCoord(xl - px, yl + vh, px, px, bordercol);// - 3);          // lower left highlight
         }
         else
         {
             // Just paint a lower border line
-            _videoManager.BarScaledCoord(0, yl + vh, vw, px, bordercol - 2);       // lower border
+            _videoManager.BarScaledCoord(0, yl + vh, vw, px, bordercol);// - 2);       // lower border
         }
     }
 
-    internal static void DrawStatusBorder(byte color)
+    internal static void DrawStatusBorder(string color)
     {
         int statusborderw = (_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 2;
 
@@ -946,15 +946,15 @@ internal static void PlaySoundLocGlobal(string s, int gx, int gy)
             statusborderw + _videoManager.scaleFactor * 8, _videoManager.scaleFactor * (STATUSLINES - 4), color);
 
         _videoManager.BarScaledCoord(statusborderw + _videoManager.scaleFactor * 9, _videoManager.screenHeight - _videoManager.scaleFactor * 3,
-            _videoManager.scaleFactor * 97, _videoManager.scaleFactor * 1, color - 1);
+            _videoManager.scaleFactor * 97, _videoManager.scaleFactor * 1, color);// - 1);
         _videoManager.BarScaledCoord(statusborderw + _videoManager.scaleFactor * 106, _videoManager.screenHeight - _videoManager.scaleFactor * 3,
-            _videoManager.scaleFactor * 161, _videoManager.scaleFactor * 1, color - 2);
+            _videoManager.scaleFactor * 161, _videoManager.scaleFactor * 1, color);// - 2);
         _videoManager.BarScaledCoord(statusborderw + _videoManager.scaleFactor * 267, _videoManager.screenHeight - _videoManager.scaleFactor * 3,
-            _videoManager.scaleFactor * 44, _videoManager.scaleFactor * 1, color - 3);
+            _videoManager.scaleFactor * 44, _videoManager.scaleFactor * 1, color);// - 3);
         _videoManager.BarScaledCoord(_videoManager.screenWidth - statusborderw - _videoManager.scaleFactor * 9, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 4),
-           _videoManager.scaleFactor * 1, _videoManager.scaleFactor * 20, color - 2);
+           _videoManager.scaleFactor * 1, _videoManager.scaleFactor * 20, color);// - 2);
         _videoManager.BarScaledCoord(_videoManager.screenWidth - statusborderw - _videoManager.scaleFactor * 9, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES / 2 - 4),
-            _videoManager.scaleFactor * 1, _videoManager.scaleFactor * 14, color - 3);
+            _videoManager.scaleFactor * 1, _videoManager.scaleFactor * 14, color);// - 3);
     }
 
     internal static void SetupGameLevel()
@@ -1176,7 +1176,7 @@ internal static void PlaySoundLocGlobal(string s, int gx, int gy)
         //
         _videoManager.FinishPaletteShifts();
 
-        _videoManager.BarScaledCoord(viewscreenx, viewscreeny, viewwidth, viewheight, 4);
+        _videoManager.BarScaledCoord(viewscreenx, viewscreeny, viewwidth, viewheight, "Maroon");
 
         _inputManager.ClearKeysDown();
 

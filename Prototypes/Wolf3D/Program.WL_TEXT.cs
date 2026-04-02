@@ -96,7 +96,7 @@ internal partial class Program
         ShowArticle(text);
 
         _videoManager.FadeOut();
-        SETFONTCOLOR(0, 15);
+        SETFONTCOLOR("Black", "White");
         _inputManager.ClearKeysDown();
         _inputManager.CenterMouse();
 
@@ -112,7 +112,7 @@ internal partial class Program
         text = article;
         oldfontnumber = (uint)fontnumber;
         fontnumber = 0;
-        _videoManager.Bar(0, 0, 320, 200, BACKCOLOR);
+        _videoManager.Bar(0, 0, 320, 200, "BACKCOLOR");
         CacheLayout();
 
         newpage = true;
@@ -369,17 +369,18 @@ internal partial class Program
 
     private static void PageLayout(bool shownumber)
     {
-        int i, oldfontcolor;
+        int i;
+        string oldfontcolor;
         char ch;
 
         oldfontcolor = fontcolor;
 
-        fontcolor = 0;
+        fontcolor = "Black";
 
         //
         // clear the screen
         //
-        _videoManager.Bar(0, 0, 320, 200, BACKCOLOR);
+        _videoManager.Bar(0, 0, 320, 200, "BACKCOLOR");
         _graphicManager.DrawPic("h_topwindow", 0, 0);
         _graphicManager.DrawPic("h_leftwindow", 0, 8);
         _graphicManager.DrawPic("h_rightwindow", 312, 8);
@@ -439,12 +440,12 @@ internal partial class Program
             var str = $"pg {pagenum} of {numpages}";
             px = 213;
             py = 183;
-            fontcolor = 0x4f;                          //12^BACKCOLOR;
+            fontcolor = "Dark Yellow";                          //12^BACKCOLOR;
 
             _graphicManager.DrawPropString(px, py, str, fontcolor, fontnumber);
         }
 
-        fontcolor = (byte)oldfontcolor;
+        fontcolor = oldfontcolor;
     }
 
 
@@ -468,7 +469,7 @@ internal partial class Program
                 picx = ParseNumber();
                 picwidth = ParseNumber();
                 picheight = ParseNumber();
-                _videoManager.Bar(picx, picy, picwidth, picheight, BACKCOLOR);
+                _videoManager.Bar(picx, picy, picwidth, picheight, "BACKCOLOR");
                 RipToEOL();
                 break;
             case ';':               // comment
@@ -482,17 +483,19 @@ internal partial class Program
 
             case 'C':               // ^c<hex digit> changes text color
                 i = Char.ToUpper(text[++textIndex]);
-                if (i >= '0' && i <= '9')
-                    fontcolor = (byte)(i - '0');
-                else if (i >= 'A' && i <= 'F')
-                    fontcolor = (byte)(i - 'A' + 10);
+                
+                //if (i >= '0' && i <= '9')
+                //    fontcolor = (byte)(i - '0');
+                //else if (i >= 'A' && i <= 'F')
+                //    fontcolor = (byte)(i - 'A' + 10);
 
-                fontcolor *= 16;
-                i = Char.ToUpper(text[++textIndex]);
-                if (i >= '0' && i <= '9')
-                    fontcolor += (byte)(i - '0');
-                else if (i >= 'A' && i <= 'F')
-                    fontcolor += (byte)(i - 'A' + 10);
+                //fontcolor *= 16;
+                //i = Char.ToUpper(text[++textIndex]);
+                //if (i >= '0' && i <= '9')
+                //    fontcolor += (byte)(i - '0');
+                //else if (i >= 'A' && i <= 'F')
+                //    fontcolor += (byte)(i - 'A' + 10);
+                fontcolor = "Black"; // TODO: Map readme colors to actual colors
                 textIndex++;
                 break;
 

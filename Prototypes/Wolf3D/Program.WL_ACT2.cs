@@ -2586,10 +2586,10 @@ internal partial class Program
         _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, (int)fadeheight, bordercol);
         _videoManager.FizzleFade(0, 0, (uint)_videoManager.screenWidth, fadeheight, 70, false);
 
-        if (bordercol != VIEWCOLOR)
+        if (bordercol != "VIEWCOLOR")
         {
             fontnumber = 1;
-            SETFONTCOLOR(15, bordercol);
+            SETFONTCOLOR("White", bordercol);
             PrintX = 68; PrintY = 45;
             US_Print("$STR_SEEAGAIN".ToLanguageText(language));
         }

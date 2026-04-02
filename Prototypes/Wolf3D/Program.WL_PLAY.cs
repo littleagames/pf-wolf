@@ -395,7 +395,7 @@ internal partial class Program
 
             DrawPlayBorderSides();
 
-            SETFONTCOLOR(0, 15);
+            SETFONTCOLOR("Black", "White");
             _inputManager.ClearKeysDown();
             return;
         }
@@ -408,7 +408,7 @@ internal partial class Program
 
             US_ControlPanel(_inputManager.IsButtonPressed(buttontypes.bt_esc) ? ScanCodes.sc_Escape : scan);
 
-            SETFONTCOLOR(0, 15);
+            SETFONTCOLOR("Black", "White");
             _inputManager.ClearKeysDown();
             _videoManager.FadeOut();
             if (viewsize != 21)
@@ -428,7 +428,7 @@ internal partial class Program
         if (_inputManager.IsKeyDown(ScanCodes.sc_Tab) && DebugOk != 0)
         {
             fontnumber = 0;
-            SETFONTCOLOR(0, 15);
+            SETFONTCOLOR("Black", "White");
             if (DebugKeys() != 0 && viewsize < 20)
             {
                 DrawPlayBorder();       // dont let the blue borders flash

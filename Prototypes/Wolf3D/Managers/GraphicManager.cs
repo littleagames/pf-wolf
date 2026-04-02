@@ -66,7 +66,7 @@ internal class GraphicManager
         throw new NotImplementedException("Once the string-valued data extraction is implemented.");
     }
 
-    public void DrawPropString(int px, int py, string s, byte fontcolor, int fontnumber)
+    public void DrawPropString(int px, int py, string s, string fontcolor, int fontnumber)
     {
         videoManager.DrawPropString(px, py, s, fontcolor, grsegs[GraphicConstants.STARTFONT + fontnumber]);
     }
@@ -156,12 +156,12 @@ internal class GraphicManager
         }
         else if (component is Window window)
         {
-            videoManager.Bar(window.X, window.Y, window.Width, window.Height, 0x2d);
-            DrawOutline(window.X, window.Y, window.Width, window.Height, 0x23, 0x2b);
+            videoManager.Bar(window.X, window.Y, window.Width, window.Height, "BKGDCOLOR");
+            DrawOutline(window.X, window.Y, window.Width, window.Height, "BORD2COLOR", "DEACTIVE");
         }
     }
 
-    private void DrawOutline(int x, int y, int w, int h, int color1, int color2)
+    private void DrawOutline(int x, int y, int w, int h, string color1, string color2)
     {
         videoManager.HorizontalLine(x, x + w, y, color2);
         videoManager.VerticalLine(y, y + h, x, color2);
