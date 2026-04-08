@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using Wolf3D.Entities;
+using Wolf3D.Entities.Actors;
 using Wolf3D.Mappers;
 
 namespace Wolf3D.Managers;
@@ -970,6 +971,7 @@ internal class AssetManager
                 MenuItems = [
                     new ToggleMenuItem("Unlimited Pushwall Limit", true, false),
                     new ToggleMenuItem("Fake Hitler Fireballs", true, false),
+                    new ToggleMenuItem("Weapon Pickup Progression", true, false),
                 ]
             };
 
@@ -1213,5 +1215,1795 @@ internal class AssetManager
             };
 
         return null;
+    }
+
+    public MapActorMetadata GetMapActors(string map)
+    {
+        // Default for all maps, but can be defined per map if needed
+        return new MapActorMetadata
+        {
+            // Tiles
+                // tile
+                // trigger
+                // zones
+            Things = new Dictionary<int, ActorSpawnData>
+            {
+                { 23, new ActorSpawnData("Puddle", 0, 0, 0) }, //oldnum, class, angles, patrol, minskill
+                { 24, new ActorSpawnData("GreenBarrel", 0, 0, 0) },
+	            { 25, new ActorSpawnData("TableWithChairs",   0, 0, 0) },
+	            { 26, new ActorSpawnData("FloorLamp",         0, 0, 0) },
+	            { 27, new ActorSpawnData("Chandelier",        0, 0, 0) },
+	            { 28, new ActorSpawnData("HangedMan",         0, 0, 0) },
+	            { 29, new ActorSpawnData("DogFood",           0, 0, 0) },
+	            { 30, new ActorSpawnData("WhitePillar",       0, 0, 0) },
+	            { 31, new ActorSpawnData("GreenPlant",        0, 0, 0) },
+	            { 32, new ActorSpawnData("SkeletonFlat",      0, 0, 0) },
+	            { 33, new ActorSpawnData("Sink",              0, 0, 0) },
+	            { 34, new ActorSpawnData("BrownPlant",        0, 0, 0) },
+	            { 35, new ActorSpawnData("Vase",              0, 0, 0) },
+	            { 36, new ActorSpawnData("BareTable",         0, 0, 0) },
+	            { 37, new ActorSpawnData("CeilingLight",      0, 0, 0) },
+	            { 38, new ActorSpawnData("KitchenStuff",      0, 0, 0) },
+	            { 39, new ActorSpawnData("SuitOfArmor",       0, 0, 0) },
+	            { 40, new ActorSpawnData("HangingCage",       0, 0, 0) },
+	            { 41, new ActorSpawnData("SkeletonCage",      0, 0, 0) },
+	            { 42, new ActorSpawnData("Bones1",            0, 0, 0) },
+	            { 43, new ActorSpawnData("GoldKey",           0, 0, 0) },
+	            { 44, new ActorSpawnData("SilverKey",         0, 0, 0) },
+	            { 45, new ActorSpawnData("BunkBed",           0, 0, 0) },
+	            { 46, new ActorSpawnData("Basket",            0, 0, 0) },
+	            { 47, new ActorSpawnData("Food",              0, 0, 0) },
+	            { 48, new ActorSpawnData("Medikit",           0, 0, 0) },
+	            { 49, new ActorSpawnData("Clip",              0, 0, 0) },
+	            { 50, new ActorSpawnData("MachineGun",        0, 0, 0) },
+	            { 51, new ActorSpawnData("GatlingGunUpgrade", 0, 0, 0) },
+	            { 52, new ActorSpawnData("Cross",             0, 0, 0) },
+	            { 53, new ActorSpawnData("Chalice",           0, 0, 0) },
+	            { 54, new ActorSpawnData("ChestofJewels",     0, 0, 0) },
+	            { 55, new ActorSpawnData("Crown",             0, 0, 0) },
+	            { 56, new ActorSpawnData("OneUp",             0, 0, 0) },
+	            { 57, new ActorSpawnData("Gibs",              0, 0, 0) },
+	            { 58, new ActorSpawnData("Barrel",            0, 0, 0) },
+	            { 59, new ActorSpawnData("Well",              0, 0, 0) },
+	            { 60, new ActorSpawnData("EmptyWell",         0, 0, 0) },
+	            { 61, new ActorSpawnData("Blood",             0, 0, 0) },
+	            { 62, new ActorSpawnData("Flag",              0, 0, 0) },
+	            { 63, new ActorSpawnData("CallApogee",        0, 0, 0) },
+	            { 64, new ActorSpawnData("Bones2",            0, 0, 0) },
+	            { 65, new ActorSpawnData("Bones3",            0, 0, 0) },
+	            { 66, new ActorSpawnData("Bones4",            0, 0, 0) },
+	            { 67, new ActorSpawnData("Pots",              0, 0, 0) },
+	            { 68, new ActorSpawnData("Stove",             0, 0, 0) },
+	            { 69, new ActorSpawnData("Spears",            0, 0, 0) },
+	            { 70, new ActorSpawnData("Vines",             0, 0, 0) },
+            }
+        };
+    }
+
+    public ActorMetadata GetActorMetadata()
+    {
+        try
+        {
+            var data = new ActorMetadata();
+            data.AddActors(GetDecorations());
+            data.AddActors(GetActors());
+            return data;
+        }
+        catch (Exception e)
+        {
+            Console.Write(e);
+            throw;
+        }
+    }
+
+    private Dictionary<string, ActorData> GetDecorations()
+    {
+        return new Dictionary<string, ActorData>
+        {
+            {
+                "Puddle",
+                new ActorData
+                {
+                    Id = 33,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "WATR",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Puddle2",
+                new ActorData
+                {
+                    Id = 105,
+                    Parent = "Puddle",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "WTR2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "GreenBarrel",
+                new ActorData
+                {
+                    Id = 34,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "DRUM",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "HorizontalGreenBarrel",
+                new ActorData
+                {
+                    Id = 106,
+                    Parent = "GreenBarrel",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "HDRM",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "TableWithChairs",
+                new ActorData
+                {
+                    Id = 35,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "TCHR",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "TableWithChairs2",
+                new ActorData
+                {
+                    Id = 107,
+                    Parent = "TableWithChairs",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "TCR2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "FloorLamp",
+                new ActorData
+                {
+                    Id = 36,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "FLMP",
+                                Frames = ["A"],
+                                Modifiers = ["bright"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "TallFloorLamp",
+                new ActorData
+                {
+                    Id = 108,
+                    Parent = "FloorLamp",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "LMP2",
+                                Frames = ["A"],
+                                Modifiers = ["bright"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Chandelier",
+                new ActorData
+                {
+                    Id = 37,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "CHAN",
+                                Frames = ["A"],
+                                Modifiers = ["bright"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Chandelier2",
+                new ActorData
+                {
+                    Id = 109,
+                    Parent = "Chandelier",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "CHN2",
+                                Frames = ["A"],
+                                Modifiers = ["bright"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "HangedMan",
+                new ActorData
+                {
+                    Id = 38,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "HANG",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "HangedMan2",
+                new ActorData
+                {
+                    Id = 110,
+                    Parent = "HangedMan",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "HNG2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "WhitePillar",
+                new ActorData
+                {
+                    Id = 40,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "COLU",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "CrackedPillar",
+                new ActorData
+                {
+                    Id = 112,
+                    Parent = "WhitePillar",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "COL3",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "GreenPlant",
+                new ActorData
+                {
+                    Id = 41,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "PLNT",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "GreenPlant2",
+                new ActorData
+                {
+                    Id = 113,
+                    Parent = "GreenPlant",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "PNT2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "SkeletonFlat",
+                new ActorData
+                {
+                    Id = 42,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "SKEL",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "SkeletonFlat2",
+                new ActorData
+                {
+                    Id = 114,
+                    Parent = "SkeletonFlat",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "SKL2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Sink",
+                new ActorData
+                {
+                    Id = 43,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "SINK",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "BrownPlant",
+                new ActorData
+                {
+                    Id = 44,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BPNT",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "BrownPlant2",
+                new ActorData
+                {
+                    Id = 115,
+                    Parent = "BrownPlant",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BPL2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Vase",
+                new ActorData
+                {
+                    Id = 45,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "VASE",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Vase2",
+                new ActorData
+                {
+                    Id = 116,
+                    Parent = "Vase",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "VAS2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "BareTable",
+                new ActorData
+                {
+                    Id = 46,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "TABL",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "MetalTable",
+                new ActorData
+                {
+                    Id = 117,
+                    Parent = "BareTable",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "MTBL",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "CeilingLight",
+                new ActorData
+                {
+                    Id = 47,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "GLMP",
+                                Frames = ["A"],
+                                Modifiers = ["bright"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "CeilingLight2",
+                new ActorData
+                {
+                    Id = 118,
+                    Parent = "CeilingLight",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "GLP2",
+                                Frames = ["A"],
+                                Modifiers = ["bright"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "RedCeilingLight",
+                new ActorData
+                {
+                    Id = 85,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "RLMP",
+                                Frames = ["A"],
+                                Modifiers = ["bright"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "KitchenStuff",
+                new ActorData
+                {
+                    Id = 48,
+                    Radius = 32,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "POT1",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "SuitOfArmor",
+                new ActorData
+                {
+                    Id = 49,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "ARMR",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "SuitOfArmor2",
+                new ActorData
+                {
+                    Id = 120,
+                    Parent = "SuitOfArmor",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "ARM2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "HangingCage",
+                new ActorData
+                {
+                    Id = 50,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "CAG1",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "HangingCage2",
+                new ActorData
+                {
+                    Id = 121,
+                    Parent = "HangingCage",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "CAG6",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "SkeletonCage",
+                new ActorData
+                {
+                    Id = 51,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "CAG2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "BrokenCage",
+                new ActorData
+                {
+                    Id = 122,
+                    Parent = "SkeletonCage",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "CAG7",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Bones1",
+                new ActorData
+                {
+                    Id = 52,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BON1",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Bones5",
+                new ActorData
+                {
+                    Id = 123,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BON5",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "BunkBed",
+                new ActorData
+                {
+                    Id = 55,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BUNK",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Basket",
+                new ActorData
+                {
+                    Id = 56,
+                    Radius = 32,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BASK",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "DeadRat",
+                new ActorData
+                {
+                    Id = 125,
+                    Parent = "Basket",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "DRAT",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Barrel",
+                new ActorData
+                {
+                    Id = 68,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BARL",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "HorizontalBarrel",
+                new ActorData
+                {
+                    Id = 151,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BON1",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Well",
+                new ActorData
+                {
+                    Id = 69,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "WEL1",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Well2",
+                new ActorData
+                {
+                    Id = 152,
+                    Parent = "Well",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "WEL4",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "EmptyWell",
+                new ActorData
+                {
+                    Id = 70,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "WEL2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "EmptyWell2",
+                new ActorData
+                {
+                    Id = 153,
+                    Parent = "EmptyWell",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "WEL5",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Flag",
+                new ActorData
+                {
+                    Id = 72,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "FLAG",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "TeslaCoil",
+                new ActorData
+                {
+                    Id = 127,
+                    Parent = "Flag",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "COIL",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "CallApogee",
+                new ActorData
+                {
+                    Id = 73,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "AARD",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Bones2",
+                new ActorData
+                {
+                    Id = 74,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BON2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Bones6",
+                new ActorData
+                {
+                    Id = 69,
+                    Parent = "Bones2",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BON6",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Bones3",
+                new ActorData
+                {
+                    Id = 75,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BON3",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "BareLightBulb",
+                new ActorData
+                {
+                    Id = 130,
+                    Parent = "Bones3",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BULB",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Bones4",
+                new ActorData
+                {
+                    Id = 76,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BON4",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "GreenSlime",
+                new ActorData
+                {
+                    Id = 131,
+                    Parent = "Bones4",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "SLIM",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Pots",
+                new ActorData
+                {
+                    Id = 77,
+                    Radius = 32,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "POT2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Stove",
+                new ActorData
+                {
+                    Id = 78,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "STOV",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Spears",
+                new ActorData
+                {
+                    Id = 79,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "RACK",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Vines",
+                new ActorData
+                {
+                    Id = 80,
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "VINE",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Bubbles",
+                new ActorData
+                {
+                    Id = 135,
+                    Parent = "Vines",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BUBL",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "TruckRear",
+                new ActorData
+                {
+                    Id = 91,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "TRUK",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "BJWasHere",
+                new ActorData
+                {
+                    Id = 137,
+                    Parent = "TruckRear",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "BJWH",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "CageWithSkulls",
+                new ActorData
+                {
+                    Id = 84,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "CAG4",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "CageWithRat",
+                new ActorData
+                {
+                    Id = 124,
+                    Parent = "CageWithSkulls",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "CAG8",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "CageWithGore",
+                new ActorData
+                {
+                    Id = 83,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "CAG3",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "CageWithGore2",
+                new ActorData
+                {
+                    Id = 119,
+                    Parent = "CageWithGore",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "CAG5",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "Skewer",
+                new ActorData
+                {
+                    Id = 82,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "SKWR",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "SkullPile",
+                new ActorData
+                {
+                    Id = 150,
+                    Parent = "Skewer",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "SKPI",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "CowCarcass",
+                new ActorData
+                {
+                    Id = 86,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "COWC",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "ChemicalTable",
+                new ActorData
+                {
+                    Id = 132,
+                    Parent = "CowCarcass",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "CHEM",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "WellWithBlood",
+                new ActorData
+                {
+                    Id = 87,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "WEL3",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "NuclearBarrel",
+                new ActorData
+                {
+                    Id = 133,
+                    Parent = "WellWithBlood",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "NUKE",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "SatanStatue",
+                new ActorData
+                {
+                    Id = 88,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "STAT",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "BlueColumn",
+                new ActorData
+                {
+                    Id = 78,
+                    Parent = "SatanStatue",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "COL4",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "BrownColumn",
+                new ActorData
+                {
+                    Id = 89,
+                    Radius = 32,
+                    Flags = ["SOLID"],
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "COL2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+            {
+                "DevilStatue",
+                new ActorData
+                {
+                    Id = 136,
+                    Parent = "BrownColumn",
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [new ActorStatesData
+                            {
+                                Sprite = "STT2",
+                                Frames = ["A"],
+                                TicsPerFrame = -1
+                            }]
+                        }
+                    }
+                }
+            },
+        };
+    }
+
+    private Dictionary<string, ActorData> GetActors()
+    {
+        return new Dictionary<string, ActorData>
+        {
+            {
+                "WolfensteinMonster",
+                new ActorData
+                {
+                    Id = 11,
+                    Properties = new Dictionary<string, object>
+                    {
+                        { "missilefrequency", 0.08 },
+                        { "minmissilechance", 256 },
+                        { "height", 64 },
+                        { "radius", 42 },
+                        { "painchance", 256 },
+                        { "meleerange", 42 },
+                    },
+                    Flags = ["MONSTER", "ALWAYSFAST", "RANDOMIZE", "OLDRANDOMCHASE"],
+                    Parent = "WolfensteinMonster"
+                }
+            },
+            {
+                "Guard",
+                new ActorData
+                {
+                    Id = 11,
+                    Parent = "WolfensteinMonster",
+                    Properties = new Dictionary<string, object>
+                    {
+                        { "points", 100 },
+                    },
+                    States = new Dictionary<string, List<StateData>>
+                    {
+                        {
+                            "Spawn", [
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["A"],
+                                    TicsPerFrame = -1,
+                                    Action = "",
+                                    Think = "A_Look"
+                                },
+                                new StopStateData()
+                            ]
+                        },
+                        {
+                            "Path", [
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["B"],
+                                    TicsPerFrame = 10,
+                                    Action = "",
+                                    Think = "A_Chase"
+                                },
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["B"],
+                                    TicsPerFrame = 2.5f,
+                                    Action = "",
+                                    Think = ""
+                                },
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["C"],
+                                    TicsPerFrame = 7.5f,
+                                    Action = "",
+                                    Think = "A_Chase"
+                                },
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["D"],
+                                    TicsPerFrame = 10,
+                                    Action = "",
+                                    Think = "A_Chase"
+                                },
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["D"],
+                                    TicsPerFrame = 2.5f,
+                                    Action = "",
+                                    Think = ""
+                                },
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["E"],
+                                    TicsPerFrame = 7.5f,
+                                    Action = "",
+                                    Think = "A_Chase"
+                                },
+                                new LoopStateData()
+                            ]
+                        },
+                        {
+                            "Chase", [
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["B"],
+                                    TicsPerFrame = 5,
+                                    Action = "",
+                                    Think = "A_Chase"
+                                },
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["B"],
+                                    TicsPerFrame = 1.5f,
+                                    Action = "",
+                                    Think = ""
+                                },
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["C"],
+                                    TicsPerFrame = 4f,
+                                    Action = "",
+                                    Think = "A_Chase"
+                                },
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["D"],
+                                    TicsPerFrame = 5,
+                                    Action = "",
+                                    Think = "A_Chase"
+                                },
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["D"],
+                                    TicsPerFrame = 1.5f,
+                                    Action = "",
+                                    Think = ""
+                                },
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["E"],
+                                    TicsPerFrame = 4f,
+                                    Action = "",
+                                    Think = "A_Chase"
+                                },
+                                new LoopStateData()
+                            ]
+                        },
+                        {
+                            "Attack", [
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["F", "G"],
+                                    TicsPerFrame = 10,
+                                    Action = "A_FaceTarget",
+                                    Think = ""
+                                },
+                                new ActorStatesData
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["H"],
+                                    TicsPerFrame = 10,
+                                    Modifiers = [ "BRIGHT" ],
+                                    Action = "A_WolfAttack",
+                                    Think = ""
+                                },
+                                new GoToStateData("Chase")
+                            ]
+                        },
+                        {
+                            "Pain", [
+                                new ActorStatesData()
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["I"],
+                                    TicsPerFrame = 5,
+                                    Action = "A_JumpIf(health & 1, 1)",
+                                    Think = ""
+                                },
+                                new GoToStateData("Chase"),
+                                new ActorStatesData()
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["J"],
+                                    TicsPerFrame = 5,
+                                    Action = "",
+                                    Think = ""
+                                },
+                                new GoToStateData("Chase")
+                            ]
+                        },
+                        {
+                            "Death", [
+                                new ActorStatesData()
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["K"],
+                                    TicsPerFrame = 7.5f,
+                                    Action = "A_Fall",
+                                    Think = ""
+                                },
+                                new ActorStatesData()
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["L"],
+                                    TicsPerFrame = 7.5f,
+                                    Action = "A_Scream",
+                                    Think = ""
+                                },
+                                new ActorStatesData()
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["M"],
+                                    TicsPerFrame = 7.5f
+                                },
+                                new ActorStatesData()
+                                {
+                                    Sprite = "GARD",
+                                    Frames = ["N"],
+                                    TicsPerFrame = -1
+                                },
+                                new StopStateData()
+                            ]
+                        }
+                    }
+                }
+            },
+        };
     }
 }

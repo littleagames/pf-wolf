@@ -229,7 +229,7 @@ internal static void PlaySoundLocGlobal(string s, int gx, int gy)
                     case 70:
                     case 71:
                     case 72:
-                        SpawnStatic(x, y, tile - 23);
+                        SpawnStatic(x, y, tile);
                         break;
 
                     //
