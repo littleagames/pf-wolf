@@ -1,0 +1,40 @@
+Clip:
+  id: 59
+  states:
+    Spawn:
+      - sprite: CLIP
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    - "inventory.amount": 8
+    - "inventory.maxamount": 99
+    - "ammo.backpackamount": 20
+    - "ammo.backpackboostamount": 100
+    - "ammo.backpackmaxamount": 299
+ClipBox:
+  id: 90
+  parent: Clip
+  states:
+    Spawn:
+      - sprite: AMMO
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    - "inventory.pickupsound": "misc/ammobox_pkup"
+    - "inventory.amount": 25
+BlueClip:
+  id: 139
+  parent: Clip
+  states:
+    Spawn:
+      - sprite: CLP2
+        frames: [A]
+        tics-per-frame: -1
+ClipBox2:
+  id: 140
+  parent: ClipBox
+  states:
+    Spawn:
+      - sprite: AMO2
+        frames: [A]
+        tics-per-frame: -1

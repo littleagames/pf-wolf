@@ -2,16 +2,16 @@
 
 internal class ActorSpawnData
 {
-    public ActorSpawnData(string actor, int angles, int patrol, int minSkill)
-    {
-        Actor = actor;
-        Angles = angles;
-        Patrol = patrol;
-        MinSkill = minSkill;
-    }
+    //public ActorSpawnData(string actor, int angles, int patrol, int minSkill)
+    //{
+    //    Actor = actor;
+    //    Angles = angles;
+    //    Patrol = patrol;
+    //    MinSkill = minSkill;
+    //}
 
-    public string Actor { get; }
-    public int Angles { get; }
-    public int Patrol { get; }
-    public int MinSkill { get; }
+    public string Class { get; set; }
+    public int Angles { get; set; }
+    public int Patrol { get; set; }
+    public int MinSkill { get; set; }
 }

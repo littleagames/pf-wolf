@@ -1,0 +1,75 @@
+Cross:  
+  id: 62
+  parent: "ScoreItem"
+  states:
+    Spawn:
+      - sprite: CROS
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    - "inventory.amount": 100
+    - "inventory.pickupsound": "treasure/cross/pickup"
+Radio:
+  id: 146
+  parent: "Cross"
+  states:
+    Spawn:
+      - sprite: RDIO
+        frames: [A]
+        tics-per-frame: -1
+Chalice:
+  id: 63
+  parent: "ScoreItem"
+  states:
+    Spawn:
+      - sprite: CHAL
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    - "inventory.amount": 500
+    - "inventory.pickupsound": "treasure/chalice/pickup"
+Plutonium:
+  id: 147
+  parent: "Chalice"
+  states:
+    Spawn:
+      - sprite: PLUT
+        frames: [A]
+        tics-per-frame: -1
+ChestOfJewels:
+  id: 64
+  parent: "ScoreItem"
+  states:
+    Spawn:
+      - sprite: JEWL
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    - "inventory.amount": 1000
+    - "inventory.pickupsound": "treasure/bible/pickup"
+ControlPanel:
+  id: 148
+  parent: "ChestOfJewels"
+  states:
+    - sprite: CPNL
+      frames: [A]
+      tics-per-frame: -1
+Crown:
+  id: 65
+  parent: "ScoreItem"
+  states:
+    - sprite: CRWN
+      frames: [A]
+      tics-per-frame: -1
+  properties:
+    - "inventory.amount": 5000
+    - "inventory.pickupsound": "treasure/crown/pickup"
+Bomb:
+  id: 149
+  parent: "Crown"
+  states:
+    Spawn:
+      - sprite: BOMB
+        frames: [A]
+        tics-per-frame: -1
+  

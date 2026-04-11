@@ -121,7 +121,7 @@ internal partial class Program
         if (!data.Things.TryGetValue(type, out var actorSpawnData))
             return;
 
-        if (!actors.Actors.TryGetValue(actorSpawnData.Actor, out var actor))
+        if (!actors.Actors.TryGetValue(actorSpawnData.Class, out var actor))
             return;
 
         if (!actor.States.TryGetValue("Spawn", out var spawnState))

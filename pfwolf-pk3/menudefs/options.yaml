@@ -1,0 +1,46 @@
+options:
+  position: 76 55
+  type: wolf3d-menu
+  music: "Wondering"
+  components:
+    -
+      type: Window
+      theme: wolf3d-theme
+      x: 68
+      y: 52
+      w: 178
+      h: 136
+    -
+      type: Graphic
+      asset: c_option
+      y: 0
+      orientation-x: center
+    -
+      type: Stripes
+      y: 10
+    -
+      type: Graphic
+      asset: c_mouselback
+      y: 184
+      orientation-x: center
+  menu-items:
+    -
+      text: "Sounds"
+      active: active 
+      action: CP_Sounds
+      key: S
+    - 
+      text: "Controls"
+      active: active
+      action: CP_Controls
+      key: C
+    - 
+      text: "Game Settings"
+      active: active
+      action: CP_Controls
+      key: C
+    - 
+      text: "Video"
+      active: active
+      action: CP_Video
+      key: V

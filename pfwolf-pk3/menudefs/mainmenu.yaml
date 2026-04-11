@@ -1,43 +1,76 @@
-x: 76
-y: 55
-header:
-    y: '0'
-    horizontal: Centered
-    image: C_Options
-cursor-offset: -24
-menu-items:
+main-menu:
+  position: 76 55
+  type: wolf3d-menu
+  music: "Wondering"
+  components:
     -
-        name: New Game
-        short-key: N
-        action: NewGame
-		x: 0
-		y: 0
-		cursor-offset: -24
+      type: Window
+      theme: wolf3d-theme
+      x: 68
+      y: 52
+      w: 178
+      h: 136
     -
-        name: Options
-        short-key: O
-        action: Options
+      type: Graphic
+      asset: c_option
+      y: 0
+      orientation-x: center
     -
-        name: Load Game
-        short-key: L
-        action: LoadGame
+      type: Stripes
+      y: 10
     -
-        name: Save Game
-        short-key: S
-        action: SaveGame
+      type: Graphic
+      asset: c_mouselback
+      y: 184
+      orientation-x: center
+  menu-items:
     -
-        name: Read This!
-        short-key: R
-        action: ReadThis
-    -
-        name: View Scores
-        short-key: V
-        action: ViewScores
-    -
-        name: Back to Demo
-        short-key: D
-        action: BackToDemo
-    -
-        name: Quit
-        short-key: Q
-        action: QuitGame
+      text: "$MENU_NEWGAME"
+      active: active 
+      action: CP_NewGame
+      key: N
+    - 
+      text: "$MENU_SOUND"
+      active: active
+      action: CP_Options
+      key: O
+    - 
+      text: "$MENU_CONTROL"
+      active: active
+      action: CP_Control
+      key: C
+    - 
+      text: "$MENU_LOADGAME"
+      active: active
+      action: CP_LoadGame
+      key: L
+    - 
+      text: "$MENU_SAVEGAME"
+      active: active
+      action: CP_SaveGame
+      key: S
+    - 
+      text: "$MENU_CHANGEVIEW"
+      active: active
+      action: CP_ChangeView
+      key: V
+    - 
+      text: "$MENU_READTHIS"
+      active: active
+      action: CP_ReadThis
+      key: R
+    - 
+      text: "$MENU_VIEWSCORES"
+      active: active
+      action: CP_ViewScores
+      key: V
+    - 
+      text: "$MENU_BACKTODEMO"
+      active: active
+      action: CP_BackToDemo
+      key: B
+    - 
+      text: "$MENU_QUIT"
+      active: active
+      action: Quit
+      key: Q

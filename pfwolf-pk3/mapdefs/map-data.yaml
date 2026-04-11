@@ -1,0 +1,241 @@
+things:
+  23:
+    class: Puddle
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  24:
+    class: GreenBarrel
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  25:
+    class: TableWithChairs
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  26:
+    class: FloorLamp
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  27:
+    class: Chandelier
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  28:
+    class: HangedMan
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  29:
+    class: DogFood
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  30:
+    class: WhitePillar
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  31:
+    class: GreenPlant
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  32:
+    class: SkeletonFlat
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  33:
+    class: Sink
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  34:
+    class: BrownPlant
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  35:
+    class: Vase
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  36:
+    class: BareTable
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  37:
+    class: CeilingLight
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  38:
+    class: KitchenStuff
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  39:
+    class: SuitOfArmor
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  40:
+    class: HangingCage
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  41:
+    class: SkeletonCage
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  42:
+    class: Bones1
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  43:
+    class: GoldKey
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  44:
+    class: SilverKey
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  45:
+    class: BunkBed
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  46:
+    class: Basket
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  47:
+    class: Food
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  48:
+    class: Medikit
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  49:
+    class: Clip
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  50:
+    class: MachineGun
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  51:
+    class: GatlingGunUpgrade
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  52:
+    class: Cross
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  53:
+    class: Chalice
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  54:
+    class: ChestofJewels
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  55:
+    class: Crown
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  56:
+    class: OneUp
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  57:
+    class: Gibs
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  58:
+    class: Barrel
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  59:
+    class: Well
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  60:
+    class: EmptyWell
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  61:
+    class: Blood
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  62:
+    class: Flag
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  63:
+    class: CallApogee
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  64:
+    class: Bones2
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  65:
+    class: Bones3
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  66:
+    class: Bones4
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  67:
+    class: Pots
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  68:
+    class: Stove
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  69:
+    class: Spears
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  70:
+    class: Vines
+    angles: 0
+    patrol: 0
+    min-skill: 0
