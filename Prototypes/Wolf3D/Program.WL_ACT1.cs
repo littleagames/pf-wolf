@@ -1,116 +1,20 @@
-﻿using Wolf3D.Entities.Actors;
+﻿using PFWolf.Common;
+using System.Numerics;
+using Wolf3D.Entities.Actors;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
 
 internal partial class Program
 {
-    internal static statobj_t[] statobjlist = new statobj_t[MAXSTATS];
-    internal static int laststatobj;
-
-    internal struct statinfo_t
-    {
-        public string picnum;
-        public wl_stat_types type;
-        public objflags specialFlags;    // they are ORed to the statobj_t flags
-
-        public statinfo_t(string picnum)
-        {
-            this.picnum = picnum;
-        }
-
-        public statinfo_t(string picnum, wl_stat_types type)
-        {
-            this.picnum = picnum;
-            this.type = type;
-        }
-
-        public statinfo_t(string picnum, wl_stat_types type, objflags specialFlags)
-        {
-            this.picnum = picnum;
-            this.type = type;
-            this.specialFlags = specialFlags;
-        }
-    }
-
-    //internal static statinfo_t[] statinfo =
-    //{
-    //    new("WATRA0"),                           // puddle          spr1v
-    //    new("DRUMA0", wl_stat_types.block),                     // Green Barrel    "
-    //    new("TCHRA0", wl_stat_types.block),                     // Table/chairs    "
-    //    new("FLMPA0", wl_stat_types.block,objflags.FL_FULLBRIGHT),       // Floor lamp      "
-    //    new("CHANA0", wl_stat_types.none,objflags.FL_FULLBRIGHT),        // Chandelier      "
-    //    new("HANGA0", wl_stat_types.block),                     // Hanged man      "
-    //    new("ALPOA0", wl_stat_types.bo_alpo),                   // Bad food        "
-    //    new("COLUA0", wl_stat_types.block),                     // Red pillar      "
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("PLNTA0",wl_stat_types.block),                     // Tree            spr2v
-    //    new("SKELA0"),                           // Skeleton flat   "
-    //    new("SINKA0",wl_stat_types.block),                    // Sink            " (SOD:gibs)
-    //    new("BPNTA0",wl_stat_types.block),                    // Potted plant    "
-    //    new("VASEA0",wl_stat_types.block),                    // Urn             "
-    //    new("TABLA0",wl_stat_types.block),                    // Bare table      "
-    //    new("GLMPA0",wl_stat_types.none,objflags.FL_FULLBRIGHT),       // Ceiling light   "
-    //    new("POT1A0"),                          // Kitchen stuff   "
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("ARMRA0", wl_stat_types.block),                    // suit of armor   spr3v
-    //    new("CAG1A0", wl_stat_types.block),                    // Hanging cage    "
-    //    new("CAG2A0", wl_stat_types.block),                    // SkeletoninCage  "
-    //    new("BON1A0"),                          // Skeleton relax  "
-    //    new("GKEYA0", wl_stat_types.bo_key1),                  // Key 1           "
-    //    new("SKEYA0", wl_stat_types.bo_key2),                  // Key 2           "
-    //    new("BUNKA0", wl_stat_types.block),                    // stuff             (SOD:gibs)
-    //    new("BASKA0"),                          // stuff
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("FOODA0",wl_stat_types.bo_food),                  // Good food       spr4v
-    //    new("MEDIA0",wl_stat_types.bo_firstaid),              // First aid       "
-    //    new("CLIPA0",wl_stat_types.bo_clip),                  // Clip            "
-    //    new("MGUNA0",wl_stat_types.bo_machinegun),            // Machine gun     "
-    //    new("CGUNA0",wl_stat_types.bo_chaingun),              // Gatling gun     "
-    //    new("CROSA0",wl_stat_types.bo_cross),                 // Cross           "
-    //    new("CHALA0",wl_stat_types.bo_chalice),               // Chalice         "
-    //    new("JEWLA0",wl_stat_types.bo_bible),                 // Bible           "
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("CRWNA0",wl_stat_types.bo_crown),                 // crown           spr5v
-    //    new("ONUPA0",wl_stat_types.bo_fullheal,objflags.FL_FULLBRIGHT),// one up          "
-    //    new("GIBSA0",wl_stat_types.bo_gibs),                  // gibs            "
-    //    new("BARLA0",wl_stat_types.block),                    // barrel          "
-    //    new("WEL1A0",wl_stat_types.block),                    // well            "
-    //    new("WEL2A0",wl_stat_types.block),                    // Empty well      "
-    //    new("BLUDA0",wl_stat_types.bo_gibs),                  // Gibs 2          "
-    //    new("FLAGA0",wl_stat_types.block),                    // flag            "
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("AARDA0", wl_stat_types.block),                    // Call Apogee          spr7v
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("BON2A0"),                          // junk            "
-    //    new("BON3A0"),                          // junk            "
-    //    new("BON4A0"),                          // junk            "
-    //    new("POT2A0"),                          // pots            "
-    //    new("STOVA0",wl_stat_types.block),                    // stove           " (SOD:gibs)
-    //    new("RACKA0",wl_stat_types.block),                    // spears          " (SOD:gibs)
-    //    new("VINEA0"),                          // vines           "
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("CLIPA0",wl_stat_types.bo_clip2),                 // Clip     
-    //    new statinfo_t("")                                   // terminator
-    //};
+    //internal static statobj_t[] statobjlist = new statobj_t[MAXSTATS];
+    //internal static int laststatobj;
+    internal static List<Actor> staticObjectsList = new List<Actor>();
 
     internal static void InitStaticList()
     {
-        laststatobj = 0;
+        //laststatobj = 0;
+        staticObjectsList = new List<Actor>();
     }
 
     internal static void SpawnStatic(int tilex, int tiley, int type)
@@ -118,71 +22,69 @@ internal partial class Program
         // Temporary way to spawn objects
         var data = _assetManager.GetMapActors("");
         var actors = _assetManager.GetActorMetadata();
+        
+        // Find "Thing" associated to the Object map ID
+            // TODO: This needs to be stored in a map manager objects list
         if (!data.Things.TryGetValue(type, out var actorSpawnData))
             return;
 
-        if (!actors.Actors.TryGetValue(actorSpawnData.Class, out var actor))
+        // Find the actor
+        if (!actors.Actors.TryGetValue(actorSpawnData.Class, out ActorData? actorData))
             return;
 
-        if (!actor.States.TryGetValue("Spawn", out var spawnState))
+        // TODO: Save this actorData into an actor and states
+        var actor = new
+        {
+            Tilex = (byte)tilex,
+            Tiley = (byte)tiley,
+            Active = true,
+            Class = actorSpawnData.Class,
+            CurrentState = "Spawn",
+            CurrentStateFrame = "A", // First one in actor data?
+            Direction = objdirtypes.nodir,
+            Flags = SOLID | BONUS
+        };
+
+        // All actors require a "Spawn" state
+        if (!actorData.States.TryGetValue("Spawn", out var spawnState))
             return;
+
         var firstSpawnFrame = spawnState.First() as ActorStatesData;
         // To get what was "statinfo"
 
-        var newstatobj = new statobj_t();
-        newstatobj.shapenum = firstSpawnFrame.Sprite + firstSpawnFrame.Frames.First() + "0"; // e.g. DRUMA0
-        newstatobj.tilex = (byte)tilex;
-        newstatobj.tiley = (byte)tiley;
+        Actor actor;
+        //var newstatobj = new statobj_t();
+        //newstatobj.shapenum = firstSpawnFrame.Sprite + firstSpawnFrame.Frames.First() + "0"; // e.g. DRUMA0
+        //newstatobj.tilex = (byte)tilex;
+        //newstatobj.tiley = (byte)tiley;
         //newstatobj.itemnumber = statinfo[type].type; // TODO: bonus items
 
-        if (actor.Flags.Any(x => x == "SOLID"))
+        if (actorData.Flags.Contains("SOLID"))
             _mapManager.actorat[tilex, tiley] = new BlockingActor();// BIT_WALL;          // consider it a blocking tile
+        else if (actorData.Flags.Contains("BONUS"))
+            actor = new InventoryActor();
+        //    newstatobj.flags = objflags.FL_BONUS;
         else
-            newstatobj.flags = 0;
+            actor = new StaticActor();
+            //newstatobj.flags = 0;
 
-        //switch (statinfo[type].type)
-        //{
-        //    case wl_stat_types.block:
-        //        _mapManager.actorat[tilex, tiley] = new BlockingActor();// BIT_WALL;          // consider it a blocking tile
-        //        goto case wl_stat_types.none;
-        //    case wl_stat_types.none:
-        //        newstatobj.flags = 0;
-        //        break;
-
-        //    case wl_stat_types.bo_cross:
-        //    case wl_stat_types.bo_chalice:
-        //    case wl_stat_types.bo_bible:
-        //    case wl_stat_types.bo_crown:
-        //    case wl_stat_types.bo_fullheal:
-        //        if (!loadedgame)
-        //            gamestate.treasuretotal++;
-        //        goto case wl_stat_types.bo_firstaid;
-
-        //    case wl_stat_types.bo_firstaid:
-        //    case wl_stat_types.bo_key1:
-        //    case wl_stat_types.bo_key2:
-        //    case wl_stat_types.bo_key3:
-        //    case wl_stat_types.bo_key4:
-        //    case wl_stat_types.bo_clip:
-        //    case wl_stat_types.bo_clip2:
-        //    case wl_stat_types.bo_25clip:
-        //    case wl_stat_types.bo_machinegun:
-        //    case wl_stat_types.bo_chaingun:
-        //    case wl_stat_types.bo_food:
-        //    case wl_stat_types.bo_alpo:
-        //    case wl_stat_types.bo_gibs:
-        //    case wl_stat_types.bo_spear:
-        //        newstatobj.flags = objflags.FL_BONUS;
-        //        break;
-        //}
+        if (actorData.Flags.Contains("COUNTITEM"))
+            if (!loadedgame)
+                gamestate.treasuretotal++;
 
         //newstatobj.flags |= statinfo[type].specialFlags;
-        statobjlist[laststatobj] = newstatobj;
+        //statobjlist[laststatobj] = newstatobj;
 
-        laststatobj++;
+        staticObjectsList.Add(new InventoryActor
+        {
+            x = tilex,
+            y = tiley
+        });
 
-        if (laststatobj == (MAXSTATS - 1))
-            _gameEngineManager.Quit("Too many static objects!\n");
+        //laststatobj++;
+
+        //if (laststatobj == (MAXSTATS - 1))
+          //  _gameEngineManager.Quit("Too many static objects!\n");
     }
 
     /*
@@ -196,10 +98,10 @@ internal partial class Program
     =
     ===============
     */
-    internal static void PlaceItemType(wl_stat_types itemtype, int tilex, int tiley)
+    internal static void PlaceItemType(string item, int tilex, int tiley)
     {
         int type;
-        statobj_t spot = null!;
+        //statobj_t spot = null!;
 
         //
         // find the item number
@@ -211,35 +113,35 @@ internal partial class Program
         //    if (statinfo[type].type == itemtype)
         //        break;
         //}
-        throw new NotImplementedException("Not quite ready for this in the new system yet.");
+        //throw new NotImplementedException("Not quite ready for this in the new system yet.");
 
         //
         // find a spot in statobjlist to put it in
         //
-        for (int i = 0; ; i++)
-            //spot = statobjlist[0]; ; spot++)
-        {
-            spot = statobjlist[i];
-            if (i == laststatobj)
-            {
-                if (spot != null && spot == statobjlist[MAXSTATS - 1])
-                    return;                                     // no free spots
-                spot = new statobj_t();
-                statobjlist[laststatobj] = spot;
-                laststatobj++;                                  // space at end
-                break;
-            }
+        //for (int i = 0; ; i++)
+        //    //spot = statobjlist[0]; ; spot++)
+        //{
+        //    spot = statobjlist[i];
+        //    if (i == laststatobj)
+        //    {
+        //        if (spot != null && spot == statobjlist[MAXSTATS - 1])
+        //            return;                                     // no free spots
+        //        spot = new statobj_t();
+        //        statobjlist[laststatobj] = spot;
+        //        laststatobj++;                                  // space at end
+        //        break;
+        //    }
 
-            if (spot.shapenum == "")                           // -1 is a free spot
-                break;
-        }
+        //    if (spot.shapenum == "")                           // -1 is a free spot
+        //        break;
+        //}
 
         //
         // place it
         //
         //spot.shapenum = statinfo[type].picnum;
-        spot.tilex = (byte)tilex;
-        spot.tiley = (byte)tiley;
+       // spot.tilex = (byte)tilex;
+        //spot.tiley = (byte)tiley;
         //spot.flags = objflags.FL_BONUS | statinfo[type].specialFlags;
         //spot.itemnumber = statinfo[type].type;
     }

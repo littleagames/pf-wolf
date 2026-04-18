@@ -283,49 +283,49 @@ internal partial class Program
 
     internal static void CountObjects()
     {
-        int i, total, count, active, inactive, doors;
+        //int i, total, count, active, inactive, doors;
 
-        CenterWindow(17, 7);
-        active = inactive = count = doors = 0;
+        //CenterWindow(17, 7);
+        //active = inactive = count = doors = 0;
 
-        US_Print("Total statics :");
-        total = laststatobj;
-        US_Print(total.ToString());
+        //US_Print("Total statics :");
+        //total = laststatobj;
+        //US_Print(total.ToString());
 
-        US_Print($"\nlaststatobj={laststatobj}");
+        //US_Print($"\nlaststatobj={laststatobj}");
 
-        US_Print("\nIn use statics:");
-        for (i = 0; i < total; i++)
-        {
-            if (statobjlist[i].shapenum != "")
-                count++;
-            else
-                doors++;        //debug
-        }
-        US_Print(count.ToString());
+        //US_Print("\nIn use statics:");
+        //for (i = 0; i < total; i++)
+        //{
+        //    if (statobjlist[i].shapenum != "")
+        //        count++;
+        //    else
+        //        doors++;        //debug
+        //}
+        //US_Print(count.ToString());
 
-        US_Print("\nDoors         :");
-        US_Print(doornum.ToString());
+        //US_Print("\nDoors         :");
+        //US_Print(doornum.ToString());
 
-        foreach (var obj in objlist2)
-        {
-            if (obj.obclass == classtypes.playerobj)
-                continue;
-            //obj = objlist[o.Value];
-            if (obj.active != 0)
-                active++;
-            else
-                inactive++;
-        }
+        //foreach (var obj in objlist2)
+        //{
+        //    if (obj.obclass == classtypes.playerobj)
+        //        continue;
+        //    //obj = objlist[o.Value];
+        //    if (obj.active != 0)
+        //        active++;
+        //    else
+        //        inactive++;
+        //}
 
-        US_Print("\nTotal actors  :");
-        US_Print((active + inactive).ToString());
+        //US_Print("\nTotal actors  :");
+        //US_Print((active + inactive).ToString());
 
-        US_Print("\nActive actors :");
-        US_Print(active.ToString());
+        //US_Print("\nActive actors :");
+        //US_Print(active.ToString());
 
-        _videoManager.Update();
-        _inputManager.Ack();
+       // _videoManager.Update();
+        //_inputManager.Ack();
     }
 
     internal static void PictureGrabber()

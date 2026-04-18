@@ -30,5 +30,6 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <Content Remove="..\..\pfwolf-pk3\actordefs\wolf3d\ammo.json" />
+	  <Content Remove="..\..\pfwolf-pk3\actordefs\wolf3d\decorations.json" />
 	</ItemGroup>
 </Project>

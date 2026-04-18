@@ -580,18 +580,18 @@ internal partial class Program
 
         DiskFlopAnim(x, y);
         laststatobjnum = br.ReadUInt16();
-        laststatobj = laststatobjnum;
+        //laststatobj = laststatobjnum;
         checksum = DoChecksum(laststatobjnum, checksum);
 
         DiskFlopAnim(x, y);
 
-        for (var statptr = 0; statptr != laststatobj; statptr++)
-        {
-            statobj_t statobj = new();
-            statobj.Read(br);
-            statobjlist[statptr] = statobj;
-            checksum = DoChecksum(statobj.AsBytes(), checksum);
-        }
+        //for (var statptr = 0; statptr != laststatobj; statptr++)
+        //{
+        //    statobj_t statobj = new();
+        //    statobj.Read(br);
+        //    statobjlist[statptr] = statobj;
+        //    checksum = DoChecksum(statobj.AsBytes(), checksum);
+        //}
         DiskFlopAnim(x, y);
         for (int doorIndex = 0; doorIndex < lastdoorobj; doorIndex++)
         {
@@ -737,18 +737,18 @@ internal partial class Program
         bw.Write(nullobj.AsBytes(stateOffset: 0));
 
         DiskFlopAnim(x, y);
-        laststatobjnum = (ushort)(laststatobj);
-        bw.Write(laststatobjnum);
-        checksum = DoChecksum(laststatobjnum, checksum);
+       // laststatobjnum = (ushort)(laststatobj);
+        //bw.Write(laststatobjnum);
+        //checksum = DoChecksum(laststatobjnum, checksum);
 
         DiskFlopAnim(x, y);
-        for (var statptr = 0; statptr != laststatobj; statptr++)
-        {
-            statobj_t statptr_val = statobjlist[statptr];
-            var statptrData = statptr_val.AsBytes();
-            bw.Write(statptrData);
-            checksum = DoChecksum(statptrData, checksum);
-        }
+        //for (var statptr = 0; statptr != laststatobj; statptr++)
+        //{
+        //    statobj_t statptr_val = statobjlist[statptr];
+        //    var statptrData = statptr_val.AsBytes();
+        //    bw.Write(statptrData);
+        //    checksum = DoChecksum(statptrData, checksum);
+        //}
 
         DiskFlopAnim(x, y);
         for (int doorIndex = 0; doorIndex < lastdoorobj; doorIndex++)

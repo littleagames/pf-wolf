@@ -1139,36 +1139,36 @@ internal partial class Program
         //
         // place static objects
         //
-        for (statptr = 0; statptr != laststatobj; statptr++)
-        {
-            visobj_t visptr_val = new visobj_t();
-            statobj_t statptr_val = statobjlist[statptr];
-            if ((visptr_val.shapenum = statptr_val.shapenum) == "")
-                continue;                                               // object has been deleted
+        //for (statptr = 0; statptr != laststatobj; statptr++)
+        //{
+        //    visobj_t visptr_val = new visobj_t();
+        //    statobj_t statptr_val = statobjlist[statptr];
+        //    if ((visptr_val.shapenum = statptr_val.shapenum) == "")
+        //        continue;                                               // object has been deleted
 
-            if (!_mapManager.spotvis[statptr_val.tilex, statptr_val.tiley])
-                continue;                                               // not visable
+        //    if (!_mapManager.spotvis[statptr_val.tilex, statptr_val.tiley])
+        //        continue;                                               // not visable
 
-            if (TransformTile(statptr_val.tilex, statptr_val.tiley,
-                ref visptr_val.viewx, ref visptr_val.viewheight) && statptr_val.flags.HasFlag(objflags.FL_BONUS))
-            {
-                GetBonus(statptr_val);
-                if (statptr_val.shapenum == "")
-                    continue;                                           // object has been taken
-            }
+        //    if (TransformTile(statptr_val.tilex, statptr_val.tiley,
+        //        ref visptr_val.viewx, ref visptr_val.viewheight) && statptr_val.flags.HasFlag(objflags.FL_BONUS))
+        //    {
+        //        GetBonus(statptr_val);
+        //        if (statptr_val.shapenum == "")
+        //            continue;                                           // object has been taken
+        //    }
 
-            if (visptr_val.viewheight == 0)
-                continue;                                               // to close to the object
+        //    if (visptr_val.viewheight == 0)
+        //        continue;                                               // to close to the object
 
-            if (visptr < (MAXVISABLE - 1))    // don't let it overflow
-            {
-                visptr_val.tilex = statptr_val.tilex;
-                visptr_val.tiley = statptr_val.tiley;
-                visptr_val.flags = statptr_val.flags;
-                vislist[visptr] = visptr_val;
-                visptr++;
-            }
-        }
+        //    if (visptr < (MAXVISABLE - 1))    // don't let it overflow
+        //    {
+        //        visptr_val.tilex = statptr_val.tilex;
+        //        visptr_val.tiley = statptr_val.tiley;
+        //        visptr_val.flags = statptr_val.flags;
+        //        vislist[visptr] = visptr_val;
+        //        visptr++;
+        //    }
+        //}
 
         //
         // place active objects

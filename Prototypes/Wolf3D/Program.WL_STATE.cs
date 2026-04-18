@@ -1103,28 +1103,28 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             case classtypes.guardobj:
                 GivePoints(100);
                 NewState(ob, s_grddie1);
-                PlaceItemType(wl_stat_types.bo_clip2, tilex, tiley);
+                PlaceItemType("Clip", tilex, tiley);
                 break;
 
             case classtypes.officerobj:
                 GivePoints(400);
                 NewState(ob, s_ofcdie1);
-                PlaceItemType(wl_stat_types.bo_clip2, tilex, tiley);
+                PlaceItemType("Clip", tilex, tiley);
                 break;
 
             case classtypes.mutantobj:
                 GivePoints(700);
                 NewState(ob, s_mutdie1);
-                PlaceItemType(wl_stat_types.bo_clip2, tilex, tiley);
+                PlaceItemType("Clip", tilex, tiley);
                 break;
 
             case classtypes.ssobj:
                 GivePoints(500);
                 NewState(ob, s_ssdie1);
                 if (gamestate.bestweapon < weapontypes.wp_machinegun)
-                    PlaceItemType(wl_stat_types.bo_machinegun, tilex, tiley);
+                    PlaceItemType("MachineGun", tilex, tiley);
                 else
-                    PlaceItemType(wl_stat_types.bo_clip2, tilex, tiley);
+                    PlaceItemType("Clip", tilex, tiley);
                 break;
 
             case classtypes.dogobj:
@@ -1134,13 +1134,13 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             case classtypes.bossobj:
                 GivePoints(5000);
                 NewState(ob, s_bossdie1);
-                PlaceItemType(wl_stat_types.bo_key1, tilex, tiley);
+                PlaceItemType("GoldKey", tilex, tiley);
                 break;
 
             case classtypes.gretelobj:
                 GivePoints(5000);
                 NewState(ob, s_greteldie1);
-                PlaceItemType(wl_stat_types.bo_key1, tilex, tiley);
+                PlaceItemType("GoldKey", tilex, tiley);
                 break;
 
             case classtypes.giftobj:

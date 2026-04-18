@@ -124,31 +124,6 @@ internal enum classtypes
     sparkobj,
 }
 
-enum wl_stat_types
-{
-    none,
-    block,
-    bo_gibs,
-    bo_alpo,
-    bo_firstaid,
-    bo_key1,
-    bo_key2,
-    bo_key3,
-    bo_key4,
-    bo_cross,
-    bo_chalice,
-    bo_bible,
-    bo_crown,
-    bo_clip,
-    bo_clip2,
-    bo_machinegun,
-    bo_chaingun,
-    bo_food,
-    bo_fullheal,
-    bo_25clip,
-    bo_spear,
-}
-
 enum objdirtypes
 {
     east,
@@ -314,36 +289,36 @@ internal struct compshape_t
 }
 
 
-internal class statobj_t
-{
-    public byte tilex, tiley;
-    public string shapenum;           // if shapenum == -1 the obj has been removed
-    public objflags flags;
-    public wl_stat_types itemnumber;
+//internal class statobj_t
+//{
+//    public byte tilex, tiley;
+//    public string shapenum;           // if shapenum == -1 the obj has been removed
+//    public objflags flags;
+//    //public wl_stat_types itemnumber;
 
-    public void Read(BinaryReader br)
-    {
-        tilex = br.ReadByte();
-        tiley = br.ReadByte();
-        shapenum = br.ReadString();
-        flags = (objflags)br.ReadUInt32();
-        itemnumber = (wl_stat_types)br.ReadByte();
-    }
+//    public void Read(BinaryReader br)
+//    {
+//        tilex = br.ReadByte();
+//        tiley = br.ReadByte();
+//        shapenum = br.ReadString();
+//        flags = (objflags)br.ReadUInt32();
+//        //itemnumber = (wl_stat_types)br.ReadByte();
+//    }
 
-    public byte[] AsBytes()
-    {
-        var ms = new MemoryStream();
-        var bw = new BinaryWriter(ms);
-        {
-            bw.Write(tilex);
-            bw.Write(tiley);
-            bw.Write(shapenum);
-            bw.Write((uint)flags);
-            bw.Write((byte)itemnumber);
-            return ms.ToArray();
-        }
-    }
-}
+//    public byte[] AsBytes()
+//    {
+//        var ms = new MemoryStream();
+//        var bw = new BinaryWriter(ms);
+//        {
+//            bw.Write(tilex);
+//            bw.Write(tiley);
+//            bw.Write(shapenum);
+//            bw.Write((uint)flags);
+//           // bw.Write((byte)itemnumber);
+//            return ms.ToArray();
+//        }
+//    }
+//}
 
 internal enum dooractiontypes
 {
@@ -387,17 +362,26 @@ internal class doorobj_t
     }
 }
 
-internal abstract class Actor
+internal abstract record Actor
 {
     // TBD: Use for actorat
     public int x, y;
 }
 
-internal class BlockingActor: Actor
+internal record StaticActor : Actor
 {
 }
 
-internal class Wall: Actor
+internal record BlockingActor : Actor
+{
+}
+
+internal record InventoryActor : Actor
+{
+}
+
+
+internal record Wall : Actor
 {
     public Wall()
     {
@@ -411,7 +395,7 @@ internal class Wall: Actor
     public int wall;
 }
 
-internal class Door: Actor
+internal record Door : Actor
 {
     public Door()
     {
@@ -426,7 +410,7 @@ internal class Door: Actor
     public int door;
 }
 
-internal class objstruct : Actor
+internal record objstruct : Actor
 {
     public activetypes active;
     public short ticcount;

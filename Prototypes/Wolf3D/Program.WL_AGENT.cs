@@ -356,12 +356,12 @@ internal partial class Program
     }
 
 
-    internal static void GetBonus(statobj_t check)
+    internal static void GetBonus(InventoryActor check)
     {
         if (playstate == playstatetypes.ex_died)   // ADDEDFIX 31 - Chris
             return;
 
-        switch ((wl_stat_types)check.itemnumber)
+        /*switch ((wl_stat_types)check.itemnumber)
         {
             case wl_stat_types.bo_firstaid:
                 if (gamestate.health == 100)
@@ -460,10 +460,11 @@ internal partial class Program
                 SD_PlaySound("SLURPIESND");
                 HealSelf(1);
                 break;
-        }
+        }*/
 
         _videoManager.StartBonusFlash();
-        check.shapenum = "";                   // remove from list
+        //RemoveActor(check);
+        //check.shapenum = "";                   // remove from list
     }
 
 
