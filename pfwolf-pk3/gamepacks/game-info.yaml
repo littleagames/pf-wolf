@@ -33,7 +33,7 @@ episodes:
     key: O
   EP03:
     name: "Episode 3\nDie, Fuhrer, Die!"
-    start-map: MAP11
+    start-map: MAP21
     pic-name: C_EPISODE3
     key: D
   EP04:

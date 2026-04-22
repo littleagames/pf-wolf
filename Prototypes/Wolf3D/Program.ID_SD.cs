@@ -67,7 +67,6 @@ internal struct Instrument
 
 internal class PCSound : Sound
 {
-    public byte[] data;
     public PCSound()
     {
         data = new byte[1];
@@ -83,7 +82,6 @@ internal class PCSound : Sound
 
 internal class ImfMusic : Sound
 {
-    public byte[] data;
     public ImfMusic(byte[] data)
     {
         this.data = data;
@@ -109,50 +107,52 @@ internal struct globalsoundpos
 internal abstract class Sound
 {
     public SoundCommon common;
+    public byte[] data;
 }
 
 internal class AdLibSound : Sound
 {
-    public Instrument inst;
-    public sbyte block;
-    public byte[] data;
+    //public Instrument inst;
+    //public sbyte block;
 
-    public AdLibSound()
-    {
-        common = new();
-        inst = new();
-        data = new byte[1];
-    }
+    //public AdLibSound()
+    //{
+     //   common = new();
+      //  inst = new();
+        //data = new byte[1];
+    //}
 
     public AdLibSound(byte[] data)
     {
-        common = new SoundCommon(data);
-        inst = new Instrument
-        {
-            mChar = (sbyte)data[6],
-            cChar = (sbyte)data[7],
-            mScale = (sbyte)data[8],
-            cScale = (sbyte)data[9],
-            mAttack = (sbyte)data[10],
-            cAttack = (sbyte)data[11],
-            mSus = (sbyte)data[12],
-            cSus = (sbyte)data[13],
-            mWave = (sbyte)data[14],
-            cWave = (sbyte)data[15],
-            nConn = (sbyte)data[16],
-            voice = (sbyte)data[17],
-            mode = (sbyte)data[18]
-        };
-        this.data = new byte[common.length - 12]; // data length - sizeof(soundcommon) - sizeof(instrument) - block and unused bytes
+        //  common = new SoundCommon(data);
+        // inst = new Instrument
+        //{
+        //    mChar = (sbyte)data[6],
+        //    cChar = (sbyte)data[7],
+        //    mScale = (sbyte)data[8],
+        //    cScale = (sbyte)data[9],
+        //    mAttack = (sbyte)data[10],
+        //    cAttack = (sbyte)data[11],
+        //    mSus = (sbyte)data[12],
+        //    cSus = (sbyte)data[13],
+        //    mWave = (sbyte)data[14],
+        //    cWave = (sbyte)data[15],
+        //    nConn = (sbyte)data[16],
+        //    voice = (sbyte)data[17],
+        //    mode = (sbyte)data[18]
+        //};
+        this.data = data;// new byte[common.length - 12]; // data length - sizeof(soundcommon) - sizeof(instrument) - block and unused bytes
     }
 }
 
 internal partial class Program
 {
-    private static IMusicPlayer _player;// = new ImfPlayer(new WoodyEmulatorOpl(OPL.OplType.Opl2));
+    private static ImfPlayer _imfPlayer;// = new ImfPlayer(new WoodyEmulatorOpl(OPL.OplType.Opl2));
+    private static IdAdlPlayer _adlPlayer;// = new IdAdlPlayer(new WoodyEmulatorOpl(OPL.OplType.Opl2));
     private static float _imfRefreshRateHz;// = _player.RefreshRate;    // SDL_t0FastAsmService played at 700Hz
 
     //id_sd.h
+    [Obsolete("Replace this with a player update")]
     internal static int alOut(int n, int b) => 0; // TODO:
     //internal static int alOut(int n, int b) => YM3812Write(oplChip, n, b);
 
@@ -303,11 +303,11 @@ internal partial class Program
     internal static uint pcLengthLeft;
 
     // AdLib variables
-    internal static volatile byte[] alSound;
-    internal static sbyte alBlock;
-    internal static uint alLengthLeft;
+    //internal static volatile byte[] alSound;
+    //internal static sbyte alBlock;
+    //internal static uint alLengthLeft;
     internal static uint alTimeCount;
-    internal static Instrument alZeroInst;
+    //internal static Instrument alZeroInst;
 
     // Sequencer variables
     internal static volatile bool sqActive;
@@ -321,9 +321,9 @@ internal partial class Program
 
 
     private static int numreadysamples = 0;
-    private static byte[] curAlSound = [];
-    private static byte[] curAlSoundPtr = [];
-    private static uint curAlLengthLeft = 0;
+    //private static byte[] curAlSound = [];
+    //private static int curAlSoundPtr = 0;
+    //private static uint curAlLengthLeft = 0;
     private static int soundTimeCounter = 5;
     private static int samplesPerMusicTick;
 
@@ -514,8 +514,17 @@ internal partial class Program
         SDL_mixer.Mix_GroupChannels(2, SDL_mixer.MIX_CHANNELS - 1, 1); // group remaining channels
 
         // Init music
+        var imfOpl = new WoodyEmulatorOpl(OplType.Opl2);
+        imfOpl.Init(param_samplerate);
 
-        samplesPerMusicTick = param_samplerate / 700;    // SDL_t0FastAsmService played at 700Hz
+        _imfPlayer = new ImfPlayer(imfOpl);
+        _imfRefreshRateHz = _imfPlayer.RefreshRate;
+
+        var adlOpl = new WoodyEmulatorOpl(OplType.Opl2);
+        adlOpl.Init(param_samplerate);
+        _adlPlayer = new IdAdlPlayer(adlOpl);
+
+        samplesPerMusicTick = (int)(param_samplerate / _imfPlayer.RefreshRate);    // SDL_t0FastAsmService played at 700Hz
 
         //if (YM3812Init(1, 3579545, param_samplerate))
         //{
@@ -527,10 +536,7 @@ internal partial class Program
 
         //YM3812Write(oplChip, 1, 0x20); // Set WSE=1
         //    YM3812Write(0,8,0); // Set CSM=0 & SEL=0		 // already set in for statement
-        var opl = new WoodyEmulatorOpl(OplType.Opl2);
-        opl.Init(param_samplerate);
 
-        _player = new ImfPlayer(opl);
         SDL_mixer.Mix_HookMusic(SDL_IMFMusicPlayer, 0);
         SDL_mixer.Mix_ChannelFinished(SD_ChannelFinished);
         AdLibPresent = true;
@@ -553,92 +559,196 @@ internal partial class Program
         channelSoundPos[channel].valid = 0;
     }
 
-    private static void SDL_IMFMusicPlayer(nint udata, nint stream, int len)
+    //private static void SDL_IMFMusicPlayer(nint udata, nint stream, int len)
+    //{
+    //    int stereolen = len >> 1;
+    //    int sampleslen = stereolen >> 1;
+    //    unsafe
+    //    {
+    //        short* stream16 = (short*)stream;
+
+    //        while (true)
+    //        {
+    //            if (numreadysamples != 0)
+    //            {
+    //                if (numreadysamples < sampleslen)
+    //                {
+    //                    var data = new short[numreadysamples * 2];
+    //                    _imfPlayer.Opl.ReadBuffer(data, 0, numreadysamples * 2);
+    //                    // TODO: assign to stream16
+    //                    fixed (short* dataPtr = data)
+    //                    {
+    //                        System.Buffer.MemoryCopy(dataPtr, stream16, data.Length, data.Length);
+    //                    }
+
+    //                    stream16 += numreadysamples * 2;
+    //                    sampleslen -= numreadysamples;
+    //                }
+    //                else
+    //                {
+    //                    var data = new short[sampleslen];
+    //                    _imfPlayer.Opl.ReadBuffer(data, 0, sampleslen);
+    //                    fixed (short* dataPtr = data)
+    //                    {
+    //                        System.Buffer.MemoryCopy(dataPtr, stream16, data.Length, data.Length);
+    //                    }
+    //                    numreadysamples -= sampleslen;
+    //                    return;
+    //                }
+    //            }
+    //            //soundTimeCounter--;
+    //            //if (soundTimeCounter == 0)
+    //            //{
+    //            //    soundTimeCounter = 5;
+    //            //    if (curAlSound != alSound)
+    //            //    {
+    //            //        curAlSound = curAlSoundPtr = alSound;
+    //            //        curAlLengthLeft = alLengthLeft;
+    //            //    }
+    //            //    if (curAlSound != 0)
+    //            //    {
+    //            //        if (*curAlSoundPtr)
+    //            //        {
+    //            //            alOut(alFreqL, *curAlSoundPtr);
+    //            //            alOut(alFreqH, alBlock);
+    //            //        }
+    //            //        else alOut(alFreqH, 0);
+    //            //        curAlSoundPtr++;
+    //            //        curAlLengthLeft--;
+    //            //        if (!curAlLengthLeft)
+    //            //        {
+    //            //            curAlSound = alSound = 0;
+    //            //            SoundNumber = 0;
+    //            //            SoundPriority = 0;
+    //            //            alOut(alFreqH, 0);
+    //            //        }
+    //            //    }
+    //            //}
+    //            if (sqActive)
+    //            {
+    //                if (sqHackTime <= alTimeCount)
+    //                {
+    //                    // TODO: _player.Load is not called here, need to set the _data
+    //                    var playing = _imfPlayer.Update();
+    //                    if (!playing)
+    //                    {
+    //                        _imfPlayer.Restart();
+    //                        alTimeCount = 0;
+    //                        sqHackTime = 0;
+    //                        continue;
+    //                    }
+
+    //                    uint time = (uint)Math.Round((_imfRefreshRateHz / _imfPlayer.RefreshRate)); // or midpoint round
+    //                    sqHackTime = (alTimeCount + time);
+    //                }
+
+    //                alTimeCount++;
+    //            }
+
+    //            numreadysamples = samplesPerMusicTick;
+    //        }
+    //    }
+    //}
+    internal static void SDL_IMFMusicPlayer(nint udata, nint stream, int len)
     {
-        int stereolen = len >> 1;
-        int sampleslen = stereolen >> 1;
+        // len = bytes to fill; stereo 16-bit -> 4 bytes per frame
+        int framesToFill = len / 4;
         unsafe
         {
-            short* stream16 = (short*)stream;
+            short* dst = (short*)stream; // destination pointer in shorts (interleaved stereo)
+            int framesRemaining = framesToFill;
 
-            while (true)
+            while (framesRemaining > 0)
             {
-                if (numreadysamples != 0)
+                // Ensure we have a chunk of ready samples to copy
+                if (numreadysamples == 0)
                 {
-                    if (numreadysamples < sampleslen)
+                    soundTimeCounter--;
+                    if (soundTimeCounter == 0)
                     {
-                        var data = new short[numreadysamples * 2];
-                        _player.Opl.ReadBuffer(data, 0, numreadysamples * 2);
-                        // TODO: assign to stream16
-                        stream16 += numreadysamples * 2;
-                        fixed (short* dataPtr = data)
+                        soundTimeCounter = 5; // paces the sound at 140hz
+                        //if (curAlSound != alSound)
+                        //{
+                        //    curAlSound = alSound;
+                        //    curAlSoundPtr = 0;
+                        //    curAlLengthLeft = alLengthLeft;
+                        //}
+                        //if (curAlSound?.Length > 0)
+                        //{
+                        //    if (curAlSoundPtr > 0)
+                        //    {
+                        if (!_adlPlayer.Update())
                         {
-                            System.Buffer.MemoryCopy(dataPtr, stream16, data.Length, data.Length);
+                            SoundNumber = 0;
+                            SoundPriority = 0;
                         }
-                        sampleslen -= numreadysamples;
-                    }
-                    else
-                    {
-                        var data = new short[sampleslen];
-                        _player.Opl.ReadBuffer(data, 0, sampleslen);
-                        fixed (short* dataPtr = data)
-                        {
-                            System.Buffer.MemoryCopy(dataPtr, stream16, data.Length, data.Length);
-                        }
-                        numreadysamples -= sampleslen;
-                        return;
-                    }
-                }
-                //soundTimeCounter--;
-                //if (soundTimeCounter == 0)
-                //{
-                //    soundTimeCounter = 5;
-                //    if (curAlSound != alSound)
-                //    {
-                //        curAlSound = curAlSoundPtr = alSound;
-                //        curAlLengthLeft = alLengthLeft;
-                //    }
-                //    if (curAlSound != 0)
-                //    {
-                //        if (*curAlSoundPtr)
-                //        {
-                //            alOut(alFreqL, *curAlSoundPtr);
-                //            alOut(alFreqH, alBlock);
-                //        }
-                //        else alOut(alFreqH, 0);
-                //        curAlSoundPtr++;
-                //        curAlLengthLeft--;
-                //        if (!curAlLengthLeft)
-                //        {
-                //            curAlSound = alSound = 0;
-                //            SoundNumber = 0;
-                //            SoundPriority = 0;
-                //            alOut(alFreqH, 0);
-                //        }
-                //    }
-                //}
-                if (sqActive)
-                {
-                    if (sqHackTime <= alTimeCount)
-                    {
-                        // TODO: _player.Load is not called here, need to set the _data
-                        var playing = _player.Update();
-                        if (!playing)
-                        {
-                            _player.Restart();
-                            alTimeCount = 0;
-                            sqHackTime = 0;
-                            continue;
-                        }
-
-                        uint time = (uint)Math.Round((_imfRefreshRateHz / _player.RefreshRate)); // or midpoint round
-                        sqHackTime = (alTimeCount + time);
+                        //alOut(alFreqL, *curAlSoundPtr);
+                        //alOut(alFreqH, alBlock);
+                        //    }
+                        //else alOut(alFreqH, 0);
+                        //    curAlSoundPtr++;
+                        //    curAlLengthLeft--;
+                        //    if (curAlLengthLeft <= 0)
+                        //    {
+                        //        curAlSound = [];
+                        // alSound = [];
+                        //        SoundNumber = 0;
+                        //        SoundPriority = 0;
+                        //alOut(alFreqH, 0);
+                        //    }
+                        //}
                     }
 
-                    alTimeCount++;
+                    // Sequencer / player bookkeeping copied from original logic
+                    if (sqActive)
+                    {
+                        if (sqHackTime <= alTimeCount)
+                        {
+                            var playing = _imfPlayer.Update();
+                            if (!playing)
+                            {
+                                _imfPlayer.Restart();
+                                alTimeCount = 0;
+                                sqHackTime = 0;
+                                continue;
+                            }
+
+                            uint time = (uint)Math.Round((_imfRefreshRateHz / _imfPlayer.RefreshRate));
+                            sqHackTime = (alTimeCount + time);
+                        }
+                        alTimeCount++;
+                    }
+
+                    numreadysamples = samplesPerMusicTick;
                 }
 
-                numreadysamples = samplesPerMusicTick;
+                int takeFrames = Math.Min(numreadysamples, framesRemaining);
+                int takeSamples = takeFrames * 2; // shorts (left+right)
+
+                // ReadBuffer fills short[] with interleaved stereo samples
+                // Read from both OPL instances and mix
+                short[] imfBuffer = new short[takeSamples];
+                short[] adlBuffer = new short[takeSamples];
+
+                _imfPlayer.Opl.ReadBuffer(imfBuffer, 0, imfBuffer.Length);
+                _adlPlayer.Opl.ReadBuffer(adlBuffer, 0, adlBuffer.Length);
+
+                // Mix both buffers into destination
+                fixed (short* imfPtr = imfBuffer, adlPtr = adlBuffer)
+                {
+                    for (int i = 0; i < takeSamples; i++)
+                    {
+                        // Simple mix: average both sources to prevent clipping
+                        int mixed = (imfPtr[i] + adlPtr[i]) / 2;
+                        // Clamp to short range
+                        dst[i] = (short)Math.Clamp(mixed, short.MinValue, short.MaxValue);
+                    }
+                }
+
+                // advance destination pointer by number of shorts copied
+                dst += takeSamples;
+                framesRemaining -= takeFrames;
+                numreadysamples -= takeFrames;
             }
         }
     }
@@ -676,7 +786,7 @@ internal partial class Program
 
         //var sData = SoundTable[sound]; // TODO: This might need a better way to get soundtable data
         var soundSeg = audiosegs[soundIndex + SoundTable];
-        s = soundSeg.common;//new SoundCommon(sData);// (SoundCommon*)SoundTable[sound];
+        s = new SoundCommon(soundSeg.data);// (SoundCommon*)SoundTable[sound];
 
         if ((SoundMode != SDMode.Off) && soundSeg == null)
             _gameEngineManager.Quit("SD_PlaySound() - Uncached sound");
@@ -726,8 +836,8 @@ internal partial class Program
                 SDL_PCPlaySound((PCSound)soundSeg);
                 break;
             case SDMode.AdLib:
-                curAlSound = [];
-                alSound = [];                // Tricob
+                //curAlSound = [];
+                //alSound = [];                // Tricob
                 alOut(alFreqH, 0);
                 SDL_ALPlaySound((AdLibSound)soundSeg);
                 break;
@@ -968,8 +1078,8 @@ internal partial class Program
             int chunkLen = CA_CacheMusicChunk(STARTMUSIC + chunk);
             using (var ms = new MemoryStream(((ImfMusic)audiosegs[STARTMUSIC + chunk]).data))
             {
-                _player.Load(ms);
-                _imfRefreshRateHz = _player.RefreshRate;
+                _imfPlayer.Load(ms);
+                _imfRefreshRateHz = _imfPlayer.RefreshRate;
             }
 
             //sqHack = audiosegs[STARTMUSIC + chunk];     // alignment is correct
@@ -1139,7 +1249,7 @@ internal partial class Program
     internal static void SDL_StartAL()
     {
         alOut(alEffects, 0);
-        SDL_AlSetFXInst(alZeroInst);
+        //SDL_AlSetFXInst(alZeroInst);
     }
 
     internal static void SDL_ShutDevice()
@@ -1161,10 +1271,10 @@ internal partial class Program
 
     internal static void SDL_ShutAL()
     {
-        alSound = [];
+        //alSound = [];
         alOut(alEffects, 0);
         alOut(alFreqH + 0, 0);
-        SDL_AlSetFXInst(alZeroInst);
+        //SDL_AlSetFXInst(alZeroInst);
     }
 
     internal static void SD_SetDigiDevice(SDSMode mode)
@@ -1250,49 +1360,54 @@ internal partial class Program
 
     internal static void SDL_ALStopSound()
     {
-        alSound = [];
+        //alSound = [];
         alOut(alFreqH + 0, 0);
     }
 
-    internal static void SDL_AlSetFXInst(Instrument inst)
-    {
-        sbyte c, m;
+    // TODO: Part of the IdAdlPlayer "SetInstrument"
+    //internal static void SDL_AlSetFXInst(Instrument inst)
+    //{
+    //    sbyte c, m;
 
-        m = 0;      // modulator cell for channel 0
-        c = 3;      // carrier cell for channel 0
+    //    m = 0;      // modulator cell for channel 0
+    //    c = 3;      // carrier cell for channel 0
 
-        alOut(m + alChar, inst.mChar);
-        alOut(m + alScale, inst.mScale);
-        alOut(m + alAttack, inst.mAttack);
-        alOut(m + alSus, inst.mSus);
-        alOut(m + alWave, inst.mWave);
-        alOut(c + alChar, inst.cChar);
-        alOut(c + alScale, inst.cScale);
-        alOut(c + alAttack, inst.cAttack);
-        alOut(c + alSus, inst.cSus);
-        alOut(c + alWave, inst.cWave);
+    //    alOut(m + alChar, inst.mChar);
+    //    alOut(m + alScale, inst.mScale);
+    //    alOut(m + alAttack, inst.mAttack);
+    //    alOut(m + alSus, inst.mSus);
+    //    alOut(m + alWave, inst.mWave);
+    //    alOut(c + alChar, inst.cChar);
+    //    alOut(c + alScale, inst.cScale);
+    //    alOut(c + alAttack, inst.cAttack);
+    //    alOut(c + alSus, inst.cSus);
+    //    alOut(c + alWave, inst.cWave);
 
-        // Note: Switch commenting on these lines for old MUSE compatibility
-        //    alOutInIRQ(alFeedCon,inst->nConn);
-        alOut(alFeedCon, 0);
-    }
+    //    // Note: Switch commenting on these lines for old MUSE compatibility
+    //    //    alOutInIRQ(alFeedCon,inst->nConn);
+    //    alOut(alFeedCon, 0);
+    //}
 
     internal static void SDL_ALPlaySound(AdLibSound sound)
     {
         SDL_ALStopSound();
 
-        alLengthLeft = sound.common.length;
-        byte[] data = sound.data;
-        alBlock = (sbyte)(((sound.block & 7) << 2) | 0x20);
-        var inst = sound.inst;
-
-        if ((inst.mSus | inst.cSus) == 0)
+        using (var ms = new MemoryStream(sound.data))
         {
-            _gameEngineManager.Quit("SDL_ALPlaySound() - Bad instrument");
+            _adlPlayer.Load(ms);
         }
 
-        SDL_AlSetFXInst(inst);
-        alSound = data;
+       // alLengthLeft = sound.common.length;
+        //alBlock = (sbyte)(((sound.block & 7) << 2) | 0x20);
+        //var inst = sound.inst;
+
+        //if ((inst.mSus | inst.cSus) == 0)
+        //{
+        //    _gameEngineManager.Quit("SDL_ALPlaySound() - Bad instrument");
+        //}
+
+       // SDL_AlSetFXInst(inst);
+       // alSound = sound.data;
     }
 
     internal static void SDL_SetupDigi()

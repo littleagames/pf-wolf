@@ -211,7 +211,7 @@ internal partial class Program
         //    if (statinfo[type].type == itemtype)
         //        break;
         //}
-        throw new NotImplementedException("Not quite ready for this in the new system yet.");
+        return;// throw new NotImplementedException("Not quite ready for this in the new system yet.");
 
         //
         // find a spot in statobjlist to put it in

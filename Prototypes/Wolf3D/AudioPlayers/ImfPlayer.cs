@@ -41,7 +41,7 @@ public class ImfPlayer : IMusicPlayer
 
     public IOpl Opl { get; }
 
-    public float RefreshRate { get; set; }
+    public float RefreshRate { get; set; } = 700.0f;
 
     struct Sdata
     {

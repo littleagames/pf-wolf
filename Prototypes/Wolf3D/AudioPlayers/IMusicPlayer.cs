@@ -28,8 +28,6 @@ public interface IMusicPlayer
 {
     IOpl Opl { get; }
     float RefreshRate { get; }
-
-    bool Load(string path);
     bool Load(Stream stream);
     bool Update();
     bool Restart();
