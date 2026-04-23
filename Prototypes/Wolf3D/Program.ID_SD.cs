@@ -559,96 +559,6 @@ internal partial class Program
         channelSoundPos[channel].valid = 0;
     }
 
-    //private static void SDL_IMFMusicPlayer(nint udata, nint stream, int len)
-    //{
-    //    int stereolen = len >> 1;
-    //    int sampleslen = stereolen >> 1;
-    //    unsafe
-    //    {
-    //        short* stream16 = (short*)stream;
-
-    //        while (true)
-    //        {
-    //            if (numreadysamples != 0)
-    //            {
-    //                if (numreadysamples < sampleslen)
-    //                {
-    //                    var data = new short[numreadysamples * 2];
-    //                    _imfPlayer.Opl.ReadBuffer(data, 0, numreadysamples * 2);
-    //                    // TODO: assign to stream16
-    //                    fixed (short* dataPtr = data)
-    //                    {
-    //                        System.Buffer.MemoryCopy(dataPtr, stream16, data.Length, data.Length);
-    //                    }
-
-    //                    stream16 += numreadysamples * 2;
-    //                    sampleslen -= numreadysamples;
-    //                }
-    //                else
-    //                {
-    //                    var data = new short[sampleslen];
-    //                    _imfPlayer.Opl.ReadBuffer(data, 0, sampleslen);
-    //                    fixed (short* dataPtr = data)
-    //                    {
-    //                        System.Buffer.MemoryCopy(dataPtr, stream16, data.Length, data.Length);
-    //                    }
-    //                    numreadysamples -= sampleslen;
-    //                    return;
-    //                }
-    //            }
-    //            //soundTimeCounter--;
-    //            //if (soundTimeCounter == 0)
-    //            //{
-    //            //    soundTimeCounter = 5;
-    //            //    if (curAlSound != alSound)
-    //            //    {
-    //            //        curAlSound = curAlSoundPtr = alSound;
-    //            //        curAlLengthLeft = alLengthLeft;
-    //            //    }
-    //            //    if (curAlSound != 0)
-    //            //    {
-    //            //        if (*curAlSoundPtr)
-    //            //        {
-    //            //            alOut(alFreqL, *curAlSoundPtr);
-    //            //            alOut(alFreqH, alBlock);
-    //            //        }
-    //            //        else alOut(alFreqH, 0);
-    //            //        curAlSoundPtr++;
-    //            //        curAlLengthLeft--;
-    //            //        if (!curAlLengthLeft)
-    //            //        {
-    //            //            curAlSound = alSound = 0;
-    //            //            SoundNumber = 0;
-    //            //            SoundPriority = 0;
-    //            //            alOut(alFreqH, 0);
-    //            //        }
-    //            //    }
-    //            //}
-    //            if (sqActive)
-    //            {
-    //                if (sqHackTime <= alTimeCount)
-    //                {
-    //                    // TODO: _player.Load is not called here, need to set the _data
-    //                    var playing = _imfPlayer.Update();
-    //                    if (!playing)
-    //                    {
-    //                        _imfPlayer.Restart();
-    //                        alTimeCount = 0;
-    //                        sqHackTime = 0;
-    //                        continue;
-    //                    }
-
-    //                    uint time = (uint)Math.Round((_imfRefreshRateHz / _imfPlayer.RefreshRate)); // or midpoint round
-    //                    sqHackTime = (alTimeCount + time);
-    //                }
-
-    //                alTimeCount++;
-    //            }
-
-    //            numreadysamples = samplesPerMusicTick;
-    //        }
-    //    }
-    //}
     internal static void SDL_IMFMusicPlayer(nint udata, nint stream, int len)
     {
         // len = bytes to fill; stereo 16-bit -> 4 bytes per frame
@@ -667,36 +577,11 @@ internal partial class Program
                     if (soundTimeCounter == 0)
                     {
                         soundTimeCounter = 5; // paces the sound at 140hz
-                        //if (curAlSound != alSound)
-                        //{
-                        //    curAlSound = alSound;
-                        //    curAlSoundPtr = 0;
-                        //    curAlLengthLeft = alLengthLeft;
-                        //}
-                        //if (curAlSound?.Length > 0)
-                        //{
-                        //    if (curAlSoundPtr > 0)
-                        //    {
                         if (!_adlPlayer.Update())
                         {
                             SoundNumber = 0;
                             SoundPriority = 0;
                         }
-                        //alOut(alFreqL, *curAlSoundPtr);
-                        //alOut(alFreqH, alBlock);
-                        //    }
-                        //else alOut(alFreqH, 0);
-                        //    curAlSoundPtr++;
-                        //    curAlLengthLeft--;
-                        //    if (curAlLengthLeft <= 0)
-                        //    {
-                        //        curAlSound = [];
-                        // alSound = [];
-                        //        SoundNumber = 0;
-                        //        SoundPriority = 0;
-                        //alOut(alFreqH, 0);
-                        //    }
-                        //}
                     }
 
                     // Sequencer / player bookkeeping copied from original logic
@@ -786,7 +671,10 @@ internal partial class Program
 
         //var sData = SoundTable[sound]; // TODO: This might need a better way to get soundtable data
         var soundSeg = audiosegs[soundIndex + SoundTable];
-        s = new SoundCommon(soundSeg.data);// (SoundCommon*)SoundTable[sound];
+        if (soundSeg is PCSound)
+            s = soundSeg.common;
+        else
+            s = new SoundCommon(soundSeg.data);// (SoundCommon*)SoundTable[sound];
 
         if ((SoundMode != SDMode.Off) && soundSeg == null)
             _gameEngineManager.Quit("SD_PlaySound() - Uncached sound");
