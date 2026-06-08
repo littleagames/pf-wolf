@@ -1,6 +1,8 @@
 ﻿using System.Numerics;
+using Wolf3D.Assets.Sounds;
 using Wolf3D.Entities;
 using Wolf3D.Entities.Actors;
+using Wolf3D.Loaders;
 using Wolf3D.Mappers;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -404,6 +406,25 @@ internal class AssetManager
             throw;
         }
     }
+    public Wolf3dDigitizedAudio? GetSound(string name)
+    {
+        var vswapLoader = new Wolf3DVswapFileLoader("vswap", "wl6");
+        var assets = vswapLoader.GetAssets();
+        if (assets.TryGetValue(name, out var asset))
+            return asset as Wolf3dDigitizedAudio;
+
+        return null;
+    }
+
+    public Wolf3dImfAudio? GetImf(string name)
+    {
+        var audioLoader = new Wolf3dAudioFileLoader("audiot", "wl6", "audiohed", "wl6");
+        var assets = audioLoader.GetAssets();
+        if (assets.TryGetValue(name, out var asset))
+            return asset as Wolf3dImfAudio;
+        return null;
+    }
+
     private Dictionary<string, ActorData> _decorations = new Dictionary<string, ActorData>();
     private Dictionary<string, ActorData> GetDecorations()
     {

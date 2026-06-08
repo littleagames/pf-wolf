@@ -605,8 +605,6 @@ internal partial class Program
     internal const string YESBUTTONNAME = "Y";
     internal const string NOBUTTONNAME = "N";
 
-    internal const int DEFAULT_AUDIO_BUFFER_SIZE = 2048;
-
     /*
     =============================================================================
 

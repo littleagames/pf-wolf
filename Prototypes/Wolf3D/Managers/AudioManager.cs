@@ -1,14 +1,13 @@
 ﻿using SDL2;
 using System.Runtime.InteropServices;
 using Wolf3D.AudioPlayers;
-using Wolf3D.Managers;
 using Wolf3D.Mappers;
 using Wolf3D.OPL;
 using Wolf3D.OPL.Woody;
 using static SDL2.SDL;
 using static SDL2.SDL_mixer;
 
-namespace Wolf3D;
+namespace Wolf3D.Managers;
 
 internal enum SDMode
 {
@@ -28,12 +27,6 @@ internal enum SDSMode
     Off,
     PC,
     SoundBlaster
-}
-
-internal struct digiinfo
-{
-    public uint startpage;
-    public uint length;
 }
 
 internal struct SoundCommon
@@ -117,9 +110,9 @@ internal class AdLibSound : Sound
 
     //public AdLibSound()
     //{
-     //   common = new();
-      //  inst = new();
-        //data = new byte[1];
+    //   common = new();
+    //  inst = new();
+    //data = new byte[1];
     //}
 
     public AdLibSound(byte[] data)
@@ -145,16 +138,23 @@ internal class AdLibSound : Sound
     }
 }
 
-internal partial class Program
+internal class AudioManager
 {
-    private static ImfPlayer _imfPlayer;// = new ImfPlayer(new WoodyEmulatorOpl(OPL.OplType.Opl2));
-    private static IdAdlPlayer _adlPlayer;// = new IdAdlPlayer(new WoodyEmulatorOpl(OPL.OplType.Opl2));
-    private static float _imfRefreshRateHz;// = _player.RefreshRate;    // SDL_t0FastAsmService played at 700Hz
+    internal const int STARTPCSOUNDS = 0;
+    internal static int STARTADLIBSOUNDS = AudioMappings.SoundKeys.Count;
+    internal static int STARTDIGISOUNDS = (2 * AudioMappings.SoundKeys.Count);
+    internal static int STARTMUSIC = (3 * AudioMappings.SoundKeys.Count);
 
-    //id_sd.h
-    [Obsolete("Replace this with a player update")]
-    internal static int alOut(int n, int b) => 0; // TODO:
-    //internal static int alOut(int n, int b) => YM3812Write(oplChip, n, b);
+    internal static int NUMSOUNDS = AudioMappings.SoundKeys.Count;
+    internal static int NUMSNDCHUNKS = (STARTMUSIC + AudioMappings.MusicKeys.Count);
+
+    public const int DefaultAudioBufferSize = 2048;
+    public const int DefaultSampleRate = 44100;
+
+    private int _sampleRate;
+    private ImfPlayer _imfPlayer;// = new ImfPlayer(new WoodyEmulatorOpl(OPL.OplType.Opl2));
+    private IdAdlPlayer _adlPlayer;// = new IdAdlPlayer(new WoodyEmulatorOpl(OPL.OplType.Opl2));
+    private float _imfRefreshRateHz;// = _player.RefreshRate;    // SDL_t0FastAsmService played at 700Hz
 
     internal const int TickBase = 70;     // 70Hz per tick - used as a base for timer 0
 
@@ -209,13 +209,13 @@ internal partial class Program
             fmt_ = new byte[4];
         }
 
-        public static int size_of => 
+        public static int size_of =>
             4 * sizeof(byte)
-            + sizeof(uint) 
-            + 4 * sizeof(byte) 
-            + 4 * sizeof(byte) 
-            + sizeof(uint) 
-            + sizeof(ushort) * 2 
+            + sizeof(uint)
+            + 4 * sizeof(byte)
+            + 4 * sizeof(byte)
+            + sizeof(uint)
+            + sizeof(ushort) * 2
             + sizeof(uint) * 2
             + sizeof(ushort) * 2;
         public byte[] AsBytes()
@@ -249,7 +249,7 @@ internal partial class Program
         }
 
         public static int size_of =>
-            4 * sizeof(byte) 
+            4 * sizeof(byte)
             + sizeof(uint);
 
         public byte[] AsBytes()
@@ -264,221 +264,77 @@ internal partial class Program
         }
     }
 
-    internal static IntPtr[] SoundChunks = new IntPtr[STARTMUSIC - STARTDIGISOUNDS];
+    internal Dictionary<string, IntPtr> SoundChunks = new Dictionary<string, IntPtr>(); //new IntPtr[STARTMUSIC - STARTDIGISOUNDS];
 
-    internal static globalsoundpos[] channelSoundPos = new globalsoundpos[SDL_mixer.MIX_CHANNELS];
+    internal globalsoundpos[] channelSoundPos = new globalsoundpos[SDL_mixer.MIX_CHANNELS];
 
 
     // Global variables
-    internal static bool AdLibPresent,
+    internal bool AdLibPresent,
         SoundBlasterPresent, SBProPresent,
         SoundPositioned;
-    internal static SDMode SoundMode;
-    internal static SMMode MusicMode;
-    internal static SDSMode DigiMode;
-    internal static int SoundTable;// byte[][] SoundTable;
+    internal SDMode SoundMode;
+    internal SMMode MusicMode;
+    internal SDSMode DigiMode;
+    internal int SoundTable;// byte[][] SoundTable;
 
-    static int[] DigiMap = new int[AudioMappings.SoundKeys.Count];
-    static int[] DigiChannel = new int[STARTMUSIC - STARTDIGISOUNDS];
+    int[] DigiMap = new int[AudioMappings.SoundKeys.Count];
+    int[] DigiChannel = new int[STARTMUSIC - STARTDIGISOUNDS];
 
     // Internal variables
-    private static bool SD_Started;
-    private static bool nextsoundpos;
-    private static int SoundNumber;
-    private static int DigiNumber;
-    private static ushort SoundPriority;
-    private static ushort DigiPriority;
-    private static int LeftPosition;
-    private static int RightPosition;
+    private bool SD_Started;
+    private bool nextsoundpos;
+    private int SoundNumber;
+    private int DigiNumber;
+    private ushort SoundPriority;
+    private ushort DigiPriority;
+    private int LeftPosition;
+    private int RightPosition;
 
-    private static ushort NumDigi;
-    private static digiinfo[] DigiList;
-    private static bool DigiPlaying;
+    private ushort NumDigi;
+    //private digiinfo[] DigiList;
+    private bool DigiPlaying;
 
 
     // PC Sound variables
-    internal static volatile byte pcLastSample;
-    internal static volatile byte[] pcSound;
-    internal static volatile int pcSoundPtr;
-    internal static uint pcLengthLeft;
+    internal volatile byte pcLastSample;
+    internal volatile byte[] pcSound;
+    internal volatile int pcSoundPtr;
+    internal uint pcLengthLeft;
 
     // AdLib variables
     //internal static volatile byte[] alSound;
     //internal static sbyte alBlock;
     //internal static uint alLengthLeft;
-    internal static uint alTimeCount;
+    internal uint alTimeCount;
     //internal static Instrument alZeroInst;
 
     // Sequencer variables
-    internal static volatile bool sqActive;
-    internal static ushort[] sqHack;
-    internal static int sqHackPtr;
-    internal static int sqHackLen;
-    internal static int sqHackSeqLen;
-    internal static uint sqHackTime;
+    internal volatile bool sqActive;
+    internal ushort[] sqHack;
+    internal int sqHackPtr;
+    internal int sqHackLen;
+    internal int sqHackSeqLen;
+    internal uint sqHackTime;
 
     private const int oplChip = 0;
 
 
-    private static int numreadysamples = 0;
+    private int numreadysamples = 0;
     //private static byte[] curAlSound = [];
     //private static int curAlSoundPtr = 0;
     //private static uint curAlLengthLeft = 0;
-    private static int soundTimeCounter = 5;
-    private static int samplesPerMusicTick;
+    private int soundTimeCounter = 5;
+    private int samplesPerMusicTick;
 
-    private static void SDL_SoundFinished()
+    private Sound[] audiosegs = new Sound[NUMSNDCHUNKS];
+
+    public AudioManager(AssetManager assetManager)
     {
-        SoundNumber = 0;
-        SoundPriority = 0;
+        this.assetManager = assetManager;
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    //
-    //      SDL_PCPlaySound() - Plays the specified sound on the PC speaker
-    //
-    ///////////////////////////////////////////////////////////////////////////
-    internal static void SDL_PCPlaySound(PCSound sound)
-    {
-        pcLastSample = unchecked((byte)-1);
-        pcLengthLeft = sound.common.length;
-        pcSound = sound.data;
-        pcSoundPtr = 0;
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    //
-    //      SDL_PCStopSound() - Stops the current sound playing on the PC Speaker
-    //
-    ///////////////////////////////////////////////////////////////////////////
-    internal static void SDL_PCStopSound()
-    {
-        pcSound = [];
-        pcSoundPtr = 0;
-    }
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    //
-    //      SDL_ShutPC() - Turns off the pc speaker
-    //
-    ///////////////////////////////////////////////////////////////////////////
-    internal static void SDL_ShutPC()
-    {
-        pcSound = [];
-        pcSoundPtr = 0;
-    }
-
-    internal const int SQUARE_WAVE_AMP = 0x2000;
-
-    static int current_remaining = 0;
-    static int current_freq = 0;
-    static int phase_offset = 0;
-    private static void SDL_PCMixCallback(nint udata, nint stream, int len)
-    {
-        unsafe {
-        short* leftptr;
-        short* rightptr;
-        short this_value;
-        int i;
-        int nsamples;
-
-        // Number of samples is quadrupled, because of 16-bit and stereo
-
-        nsamples = len / 4;
-
-        leftptr = (short*)stream;
-        rightptr = ((short*)stream) + 1;
-
-        // Fill the output buffer
-
-        for (i = 0; i < nsamples; ++i)
-        {
-            // Has this sound expired? If so, retrieve the next frequency
-
-            while (current_remaining == 0)
-            {
-                phase_offset = 0;
-
-                // Get the next frequency to play
-
-                if (pcSound != null && pcSound.Length > 0 && pcSoundPtr < pcSound.Length)
-                {
-                    // The PC speaker sample rate is 140Hz (see SDL_t0SlowAsmService)
-                    current_remaining = param_samplerate / 140;
-
-                    if (pcSound[pcSoundPtr] != pcLastSample)
-                    {
-                        pcLastSample = pcSound[pcSoundPtr];
-
-                    if (pcLastSample != 0)
-                            // The PC PIC counts down at 1.193180MHz
-                            // So pwm_freq = counter_freq / reload_value
-                            // reload_value = pcLastSample * 60 (see SDL_DoFX)
-                            current_freq = 1193180 / (pcLastSample * 60);
-                        else
-                            current_freq = 0;
-
-                    }
-                    pcSoundPtr++;
-                    pcLengthLeft--;
-                    if (pcLengthLeft <= 0)
-                    {
-                        pcSound = [];
-                        pcSoundPtr = 0;
-                        SoundNumber = 0;
-                        SoundPriority = 0;
-                    }
-                }
-                else
-                {
-                    current_freq = 0;
-                    current_remaining = 1;
-                }
-            }
-
-            // Set the value for this sample.
-
-            if (current_freq == 0)
-            {
-                // Silence
-
-                this_value = 0;
-            }
-            else
-            {
-                int frac;
-
-                // Determine whether we are at a peak or trough in the current
-                // sound.  Multiply by 2 so that frac % 2 will give 0 or 1
-                // depending on whether we are at a peak or trough.
-
-                frac = (phase_offset * current_freq * 2) / param_samplerate;
-
-                if ((frac % 2) == 0)
-                {
-                    this_value = SQUARE_WAVE_AMP;
-                }
-                else
-                {
-                    this_value = -SQUARE_WAVE_AMP;
-                }
-
-                ++phase_offset;
-            }
-
-            --current_remaining;
-
-                *leftptr += this_value;
-                *rightptr += this_value;
-
-                leftptr += 2;
-                rightptr += 2;
-            }
-        }
-    }
-
-    internal static void SD_Startup()
+    internal void Init(int audioBufferSize, int sampleRate)
     {
         int i;
         int chunksize;
@@ -490,52 +346,38 @@ internal partial class Program
         // use a custom size audiobuffer or the largest power
         // of 2 <= the value calculated based on the samplerate
         //
-        if (param_audiobuffer != DEFAULT_AUDIO_BUFFER_SIZE)
-            chunksize = param_audiobuffer;
+        if (audioBufferSize != DefaultAudioBufferSize)
+            chunksize = audioBufferSize;
         else
         {
-            if (param_samplerate == 0 || param_samplerate > 44100)
-                _gameEngineManager.Quit("Divide by zero caused by invalid samplerate!");
+            if (sampleRate == 0 || sampleRate > 44100)
+                throw new PfWolfAudioException("Divide by zero caused by invalid samplerate!");
 
-            chunksize = 1 << (int)Math.Log2(param_audiobuffer / (44100 / param_samplerate));
+            chunksize = 1 << (int)Math.Log2(audioBufferSize / (44100 / sampleRate));
         }
 
-        //if (SDL.SDL_OpenAudioDevice(param_samplerate, AUDIO_S16, chunksize, IntPtr.Zero, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE))
-        if (SDL_mixer.Mix_OpenAudioDevice(param_samplerate, SDL.AUDIO_S16, 2, chunksize, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE) != 0)
-        //if (SDL_mixer.Mix_OpenAudio(frequency: param_samplerate, format: SDL.AUDIO_S16, channels: 2, chunksize) != 0)//, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE))
+        if (SDL_mixer.Mix_OpenAudioDevice(sampleRate, SDL.AUDIO_S16, 2, chunksize, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE) != 0)
         {
-            _gameEngineManager.Error($"Unable to open audio device: {SDL_mixer.Mix_GetError()}\n");
-            return;
+            throw new PfWolfAudioException("Unable to open audio device: {error}", SDL_mixer.Mix_GetError());
         }
 
-        SDL_mixer.Mix_QuerySpec(out param_samplerate, out ushort format, out int channels);
+        SDL_mixer.Mix_QuerySpec(out sampleRate, out ushort format, out int channels);
 
         SDL_mixer.Mix_ReserveChannels(2);  // reserve player and boss weapon channels
         SDL_mixer.Mix_GroupChannels(2, SDL_mixer.MIX_CHANNELS - 1, 1); // group remaining channels
 
         // Init music
         var imfOpl = new WoodyEmulatorOpl(OplType.Opl2);
-        imfOpl.Init(param_samplerate);
+        imfOpl.Init(sampleRate);
 
         _imfPlayer = new ImfPlayer(imfOpl);
         _imfRefreshRateHz = _imfPlayer.RefreshRate;
 
         var adlOpl = new WoodyEmulatorOpl(OplType.Opl2);
-        adlOpl.Init(param_samplerate);
+        adlOpl.Init(sampleRate);
         _adlPlayer = new IdAdlPlayer(adlOpl);
 
-        samplesPerMusicTick = (int)(param_samplerate / _imfPlayer.RefreshRate);    // SDL_t0FastAsmService played at 700Hz
-
-        //if (YM3812Init(1, 3579545, param_samplerate))
-        //{
-        //    Console.WriteLine("Unable to create virtual OPL!!");
-        //}
-
-        //for (i = 1; i < 0xf6; i++)
-        //    YM3812Write(oplChip, i, 0);
-
-        //YM3812Write(oplChip, 1, 0x20); // Set WSE=1
-        //    YM3812Write(0,8,0); // Set CSM=0 & SEL=0		 // already set in for statement
+        samplesPerMusicTick = (int)(sampleRate / _imfPlayer.RefreshRate);    // SDL_t0FastAsmService played at 700Hz
 
         SDL_mixer.Mix_HookMusic(SDL_IMFMusicPlayer, 0);
         SDL_mixer.Mix_ChannelFinished(SD_ChannelFinished);
@@ -554,12 +396,164 @@ internal partial class Program
         SD_Started = true;
     }
 
-    private static void SD_ChannelFinished(int channel)
+    private void SDL_SoundFinished()
+    {
+        SoundNumber = 0;
+        SoundPriority = 0;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //      SDL_PCPlaySound() - Plays the specified sound on the PC speaker
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    internal void SDL_PCPlaySound(PCSound sound)
+    {
+        pcLastSample = unchecked((byte)-1);
+        pcLengthLeft = sound.common.length;
+        pcSound = sound.data;
+        pcSoundPtr = 0;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //      SDL_PCStopSound() - Stops the current sound playing on the PC Speaker
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    internal void SDL_PCStopSound()
+    {
+        pcSound = [];
+        pcSoundPtr = 0;
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    //      SDL_ShutPC() - Turns off the pc speaker
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    internal void SDL_ShutPC()
+    {
+        pcSound = [];
+        pcSoundPtr = 0;
+    }
+
+    internal const int SQUARE_WAVE_AMP = 0x2000;
+    private readonly AssetManager assetManager;
+    private int current_remaining = 0;
+    private int current_freq = 0;
+    private int phase_offset = 0;
+    private void SDL_PCMixCallback(nint udata, nint stream, int len)
+    {
+        unsafe
+        {
+            short* leftptr;
+            short* rightptr;
+            short this_value;
+            int i;
+            int nsamples;
+
+            // Number of samples is quadrupled, because of 16-bit and stereo
+
+            nsamples = len / 4;
+
+            leftptr = (short*)stream;
+            rightptr = ((short*)stream) + 1;
+
+            // Fill the output buffer
+
+            for (i = 0; i < nsamples; ++i)
+            {
+                // Has this sound expired? If so, retrieve the next frequency
+
+                while (current_remaining == 0)
+                {
+                    phase_offset = 0;
+
+                    // Get the next frequency to play
+
+                    if (pcSound != null && pcSound.Length > 0 && pcSoundPtr < pcSound.Length)
+                    {
+                        // The PC speaker sample rate is 140Hz (see SDL_t0SlowAsmService)
+                        current_remaining = _sampleRate / 140;
+
+                        if (pcSound[pcSoundPtr] != pcLastSample)
+                        {
+                            pcLastSample = pcSound[pcSoundPtr];
+
+                            if (pcLastSample != 0)
+                                // The PC PIC counts down at 1.193180MHz
+                                // So pwm_freq = counter_freq / reload_value
+                                // reload_value = pcLastSample * 60 (see SDL_DoFX)
+                                current_freq = 1193180 / (pcLastSample * 60);
+                            else
+                                current_freq = 0;
+
+                        }
+                        pcSoundPtr++;
+                        pcLengthLeft--;
+                        if (pcLengthLeft <= 0)
+                        {
+                            pcSound = [];
+                            pcSoundPtr = 0;
+                            SoundNumber = 0;
+                            SoundPriority = 0;
+                        }
+                    }
+                    else
+                    {
+                        current_freq = 0;
+                        current_remaining = 1;
+                    }
+                }
+
+                // Set the value for this sample.
+
+                if (current_freq == 0)
+                {
+                    // Silence
+
+                    this_value = 0;
+                }
+                else
+                {
+                    int frac;
+
+                    // Determine whether we are at a peak or trough in the current
+                    // sound.  Multiply by 2 so that frac % 2 will give 0 or 1
+                    // depending on whether we are at a peak or trough.
+
+                    frac = (phase_offset * current_freq * 2) / _sampleRate;
+
+                    if ((frac % 2) == 0)
+                    {
+                        this_value = SQUARE_WAVE_AMP;
+                    }
+                    else
+                    {
+                        this_value = -SQUARE_WAVE_AMP;
+                    }
+
+                    ++phase_offset;
+                }
+
+                --current_remaining;
+
+                *leftptr += this_value;
+                *rightptr += this_value;
+
+                leftptr += 2;
+                rightptr += 2;
+            }
+        }
+    }
+
+    private void SD_ChannelFinished(int channel)
     {
         channelSoundPos[channel].valid = 0;
     }
 
-    internal static void SDL_IMFMusicPlayer(nint udata, nint stream, int len)
+    internal void SDL_IMFMusicPlayer(nint udata, nint stream, int len)
     {
         // len = bytes to fill; stereo 16-bit -> 4 bytes per frame
         int framesToFill = len / 4;
@@ -644,14 +638,14 @@ internal partial class Program
     //              sound to be played. Each channel ranges from 0 to 15.
     //
     ///////////////////////////////////////////////////////////////////////////
-    internal static void SD_PositionSound(int leftvol,int rightvol)
+    internal void SD_PositionSound(int leftvol, int rightvol)
     {
         LeftPosition = leftvol;
         RightPosition = rightvol;
         nextsoundpos = true;
     }
 
-    internal static int SD_PlaySound(string sound)
+    internal int SD_PlaySound(string sound)
     {
         bool ispos;
         SoundCommon s;
@@ -677,7 +671,7 @@ internal partial class Program
             s = new SoundCommon(soundSeg.data);// (SoundCommon*)SoundTable[sound];
 
         if ((SoundMode != SDMode.Off) && soundSeg == null)
-            _gameEngineManager.Quit("SD_PlaySound() - Uncached sound");
+            throw new PfWolfAudioException("SD_PlaySound() - Uncached sound");
 
         if ((DigiMode != SDSMode.Off) && (DigiMap[soundIndex] != -1))
         {
@@ -688,19 +682,19 @@ internal partial class Program
 
                 SDL_PCStopSound();
 
-                SD_PlayDigitized((ushort)DigiMap[soundIndex], lp, rp);
+                SD_PlayDigitized(sound, lp, rp);
                 SoundPositioned = ispos;
                 SoundNumber = soundIndex;
                 SoundPriority = s.priority;
             }
             else
             {
-//# ifdef NOTYET
-//                if (s->priority < DigiPriority)
-//                    return (false);
-//#endif
+                //# ifdef NOTYET
+                //                if (s->priority < DigiPriority)
+                //                    return (false);
+                //#endif
 
-                int channel = SD_PlayDigitized((ushort)DigiMap[soundIndex], lp, rp);
+                int channel = SD_PlayDigitized(sound, lp, rp);
                 SoundPositioned = ispos;
                 DigiNumber = soundIndex;
                 DigiPriority = s.priority;
@@ -714,7 +708,7 @@ internal partial class Program
             return 0;
 
         if (s.length == 0)
-            _gameEngineManager.Quit("SD_PlaySound() - Zero length sound");
+            throw new PfWolfAudioException("SD_PlaySound() - Zero length sound");
         if (s.priority < SoundPriority)
             return 0;
 
@@ -726,7 +720,7 @@ internal partial class Program
             case SDMode.AdLib:
                 //curAlSound = [];
                 //alSound = [];                // Tricob
-                alOut(alFreqH, 0);
+                //alOut(alFreqH, 0);
                 SDL_ALPlaySound((AdLibSound)soundSeg);
                 break;
 
@@ -740,7 +734,7 @@ internal partial class Program
         return 0;
     }
 
-    internal static void SD_StopSound()
+    internal void SD_StopSound()
     {
         if (DigiPlaying)
             SD_StopDigitized();
@@ -763,7 +757,7 @@ internal partial class Program
         SDL_SoundFinished();
     }
 
-    internal static void SD_Shutdown()
+    internal void SD_Shutdown()
     {
         int i;
 
@@ -773,104 +767,35 @@ internal partial class Program
         SD_MusicOff();
         SD_StopSound();
 
-        for (i = 0; i < STARTMUSIC - STARTDIGISOUNDS; i++)
-        {
-            if (SoundChunks[i] != IntPtr.Zero)
-                Mix_FreeChunk(SoundChunks[i]);
-        }
+        // TODO: Free all sound chunks in Dictionary
+        //for (i = 0; i < STARTMUSIC - STARTDIGISOUNDS; i++)
+        //{
+        //    if (SoundChunks[i] != IntPtr.Zero)
+        //        Mix_FreeChunk(SoundChunks[i]);
+        //}
 
-        DigiList = [];
+        //DigiList = [];
 
         SD_Started = false;
     }
 
-    internal static void SD_PrepareSound(int which)
+    internal void SD_PrepareSound(string which)
     {
-        int i;
+        //if (DigiList?.Length == 0)
+         //   throw new PfWolfAudioException("SD_PrepareSound({which}): DigiList not initialized!", which.ToString());
 
-        if (DigiList?.Length == 0)
-            _gameEngineManager.Quit($"SD_PrepareSound({which}): DigiList not initialized!");
-
-        int page = (int)DigiList[which].startpage;
-        int size = (int)DigiList[which].length;
-
-        byte[] origsamples = PM_GetSoundPage(page, size);
-
-        int destsamples = (int)((float)size * (float)param_samplerate
-            / (float)ORIGSAMPLERATE);
-
-        byte[] wavebuffer = new byte[headchunk.size_of + wavechunk.size_of + destsamples * 2];     // dest are 16-bit samples
+        var soundAsset = assetManager.GetSound(which);
+        byte[] wavebuffer = soundAsset.ToRawWav(_sampleRate);
 
         GCHandle pinnedArray = GCHandle.Alloc(wavebuffer, GCHandleType.Pinned);
         IntPtr pointer = pinnedArray.AddrOfPinnedObject();
 
-        headchunk head = new headchunk{
-            RIFF = [(byte)'R', (byte)'I', (byte)'F', (byte)'F'],
-            filelenminus8 = 0,
-            WAVE = [(byte)'W', (byte)'A', (byte)'V', (byte)'E'],
-            fmt_ = [(byte)'f', (byte)'m', (byte)'t', (byte)' '],
-            formatlen = 0x10,
-            val0x0001 = 0x0001,
-            channels = 1,
-            samplerate = (uint)param_samplerate,
-            bytespersec = (uint) (param_samplerate*2),
-            bytespersample = 2,
-            bitspersample = 16
-        };
-
-        wavechunk dhead = new wavechunk
-        { 
-            chunkid = [(byte)'d', (byte)'a', (byte)'t', (byte)'a' ],
-            chunklength = (uint)(destsamples * 2)
-        };
-        head.filelenminus8 = (uint)(headchunk.size_of + destsamples * 2);  // (sizeof(dhead)-8 = 0)
-
-        var headData = head.AsBytes();
-        Buffer.BlockCopy(headData, 0, wavebuffer, 0, headData.Length);
-        var dheadData = dhead.AsBytes();
-        Buffer.BlockCopy(dheadData, 0, wavebuffer, headData.Length, dheadData.Length);
-
-        // alignment is correct, as wavebuffer comes from malloc
-        // and sizeof(headchunk) % 4 == 0 and sizeof(wavechunk) % 4 == 0
-        short[] newsamples = new short[(wavebuffer.Length + headchunk.size_of
-            + wavechunk.size_of) / sizeof(short)];
-        float cursample = 0.0F;
-        float samplestep = (float)ORIGSAMPLERATE / (float)param_samplerate;
-        for (i = 0; i < destsamples; i++, cursample += samplestep)
-        {
-            newsamples[i] = GetSample((float)size * (float)i / (float)destsamples,
-                origsamples, size);
-        }
-
-        Buffer.BlockCopy(
-            src: newsamples,
-            srcOffset: 0,
-            dst: wavebuffer,
-            dstOffset: headData.Length + dheadData.Length,
-            count: wavebuffer.Length - (headData.Length + dheadData.Length));
         IntPtr temp = SDL_RWFromMem(pointer, wavebuffer.Length);
         SoundChunks[which] = Mix_LoadWAV_RW(temp, 1);
         pinnedArray.Free();
     }
 
-    internal static short GetSample(float csample, byte[] samples, int size)
-    {
-        float s0 = 0, s1 = 0, s2 = 0;
-        int cursample = (int)csample;
-        float sf = csample - (float)cursample;
-
-        if (cursample - 1 >= 0) s0 = (float)(samples[cursample - 1] - 128);
-        s1 = (float)(samples[cursample] - 128);
-        if (cursample + 1 < size) s2 = (float)(samples[cursample + 1] - 128);
-
-        float val = s0 * sf * (sf - 1) / 2 - s1 * (sf * sf - 1) + s2 * (sf + 1) * sf / 2;
-        int intval = (int)(val * 256);
-        if (intval < -32768) intval = -32768;
-        else if (intval > 32767) intval = 32767;
-        return (short)intval;
-    }
-
-    internal static int SD_GetChannelForDigi(int which)
+    internal int SD_GetChannelForDigi(int which)
     {
         if (DigiChannel[which] != -1) return DigiChannel[which];
 
@@ -881,11 +806,11 @@ internal partial class Program
         return channel;
     }
 
-    internal static void SD_SetPosition(int channel, int leftpos, int rightpos)
+    internal void SD_SetPosition(int channel, int leftpos, int rightpos)
     {
         if ((leftpos < 0) || (leftpos > 15) || (rightpos < 0) || (rightpos > 15)
                 || ((leftpos == 15) && (rightpos == 15)))
-            _gameEngineManager.Quit("SD_SetPosition: Illegal position");
+            throw new PfWolfAudioException("SD_SetPosition: Illegal position");
 
         switch (DigiMode)
         {
@@ -899,15 +824,15 @@ internal partial class Program
         }
     }
 
-    internal static int SD_PlayDigitized(ushort which, int leftpos, int rightpos)
+    internal int SD_PlayDigitized(string which, int leftpos, int rightpos)
     {
         if (DigiMode == SDSMode.Off)
             return 0;
 
-        if (which >= NumDigi)
-            _gameEngineManager.Quit($"SD_PlayDigitized: bad sound number {which}");
+        //if (which >= NumDigi)
+        //    throw new PfWolfAudioException($"SD_PlayDigitized: bad sound number {which}");
 
-        int channel = SD_GetChannelForDigi(which);
+        int channel = SD_GetChannelForDigi(0);// which); // TODO: Get channel info for digitized sound
         SD_SetPosition(channel, leftpos, rightpos);
 
         DigiPlaying = true;
@@ -921,19 +846,18 @@ internal partial class Program
 
         if (Mix_PlayChannel(channel, sample, 0) == -1)
         {
-            Console.WriteLine($"Unable to play sound: {Mix_GetError()}");
-            return 0;
+            throw new PfWolfAudioException("Unable to play sound {error}", Mix_GetError());
         }
 
         return channel;
     }
 
-    internal static void SD_MusicOn()
+    internal void SD_MusicOn()
     {
         sqActive = true;
     }
 
-    internal static int SD_MusicOff()
+    internal int SD_MusicOff()
     {
         ushort i;
 
@@ -941,9 +865,9 @@ internal partial class Program
         switch (MusicMode)
         {
             case SMMode.AdLib:
-                alOut(alEffects, 0);
-                for (i = 0; i < sqMaxTracks; i++)
-                    alOut(alFreqH + i + 1, 0);
+                //alOut(alEffects, 0);
+                //for (i = 0; i < sqMaxTracks; i++)
+                //    alOut(alFreqH + i + 1, 0);
                 break;
 
             default:
@@ -953,7 +877,7 @@ internal partial class Program
         return (int)0;// (sqHackPtr - sqHack);
     }
 
-    internal static void SD_StartMusic(string song)
+    internal void SD_StartMusic(string song)
     {
         int chunk = AudioMappings.MusicKeys.IndexOf(song);
         if (chunk == -1)
@@ -963,7 +887,8 @@ internal partial class Program
 
         if (MusicMode == SMMode.AdLib)
         {
-            int chunkLen = CA_CacheMusicChunk(STARTMUSIC + chunk);
+            var imfChunk = assetManager.GetImf(song);// CA_CacheMusicChunk(STARTMUSIC + chunk); // TODO: AssetManager.Load()
+            int chunkLen = imfChunk.Size;
             using (var ms = new MemoryStream(((ImfMusic)audiosegs[STARTMUSIC + chunk]).data))
             {
                 _imfPlayer.Load(ms);
@@ -980,7 +905,7 @@ internal partial class Program
         }
     }
 
-    internal static void SD_ContinueMusic(string song, int startoffs)
+    internal void SD_ContinueMusic(string song, int startoffs)
     {
         int i;
 
@@ -991,7 +916,8 @@ internal partial class Program
             int chunk = AudioMappings.MusicKeys.IndexOf(song);
             if (chunk == -1)
                 return;
-            int chunkLen = CA_CacheAudioChunk(STARTMUSIC + chunk);
+            var imfChunk = assetManager.GetImf(song);// CA_CacheMusicChunk(STARTMUSIC + chunk); // TODO: AssetManager.Load()
+            int chunkLen = imfChunk.Size;
             //sqHack = (word*)(void*)audiosegs[STARTMUSIC + chunk];     // alignment is correct
             //if (*sqHack == 0) sqHackLen = sqHackSeqLen = chunkLen;
             //else sqHackLen = sqHackSeqLen = *sqHack++;
@@ -1012,7 +938,7 @@ internal partial class Program
                 if (reg >= 0xb1 && reg <= 0xb8) val &= 0xdf;           // disable play note flag
                 else if (reg == 0xbd) val &= 0xe0;                     // disable drum flags
 
-                alOut(reg, val);
+                //alOut(reg, val);
                 sqHackPtr += 2;
                 sqHackLen -= 4;
             }
@@ -1023,7 +949,7 @@ internal partial class Program
         }
     }
 
-    internal static void SD_FadeOutMusic()
+    internal void SD_FadeOutMusic()
     {
         switch (MusicMode)
         {
@@ -1036,7 +962,7 @@ internal partial class Program
                 break;
         }
     }
-    internal static bool SD_MusicPlaying()
+    internal bool SD_MusicPlaying()
     {
         bool result;
 
@@ -1052,7 +978,7 @@ internal partial class Program
 
         return (result);
     }
-    internal static bool SD_SetMusicMode(SMMode mode)
+    internal bool SD_SetMusicMode(SMMode mode)
     {
         bool result = false;
 
@@ -1076,7 +1002,7 @@ internal partial class Program
 
         return (result);
     }
-    internal static bool SD_SetSoundMode(SDMode mode)
+    internal bool SD_SetSoundMode(SDMode mode)
     {
         bool result = false;
         ushort tableoffset;
@@ -1102,8 +1028,7 @@ internal partial class Program
                     result = true;
                 break;
             default:
-                _gameEngineManager.Quit($"SD_SetSoundMode: Invalid sound mode {mode}");
-                return false;
+                throw new PfWolfAudioException("SD_SetSoundMode: Invalid sound mode {mode}", mode.ToString());
         }
 
         // Instead of a byte[][] reference, let's just offset where the sounds start, for now.
@@ -1118,7 +1043,7 @@ internal partial class Program
 
         return (result);
     }
-    internal static void SDL_StartDevice()
+    internal void SDL_StartDevice()
     {
         switch (SoundMode)
         {
@@ -1134,13 +1059,13 @@ internal partial class Program
         SoundPriority = 0;
     }
 
-    internal static void SDL_StartAL()
+    internal void SDL_StartAL()
     {
-        alOut(alEffects, 0);
+        //alOut(alEffects, 0);
         //SDL_AlSetFXInst(alZeroInst);
     }
 
-    internal static void SDL_ShutDevice()
+    internal void SDL_ShutDevice()
     {
         switch ((SDMode)SoundMode)
         {
@@ -1157,15 +1082,15 @@ internal partial class Program
         SoundMode = (sbyte)SDMode.Off;
     }
 
-    internal static void SDL_ShutAL()
+    internal void SDL_ShutAL()
     {
         //alSound = [];
-        alOut(alEffects, 0);
-        alOut(alFreqH + 0, 0);
+        //alOut(alEffects, 0);
+        //alOut(alFreqH + 0, 0);
         //SDL_AlSetFXInst(alZeroInst);
     }
 
-    internal static void SD_SetDigiDevice(SDSMode mode)
+    internal void SD_SetDigiDevice(SDSMode mode)
     {
         bool devicenotpresent;
 
@@ -1192,7 +1117,7 @@ internal partial class Program
         }
     }
 
-    static void SD_StopDigitized()
+    void SD_StopDigitized()
     {
         DigiPlaying = false;
         DigiNumber = 0;
@@ -1238,7 +1163,7 @@ internal partial class Program
         return result; // sound index being played
     }
 
-    static void SD_WaitSoundDone()
+    internal void SD_WaitSoundDone()
     {
         //while (SD_SoundPlaying() != 0)
         //{
@@ -1246,10 +1171,10 @@ internal partial class Program
         //}
     }
 
-    internal static void SDL_ALStopSound()
+    internal void SDL_ALStopSound()
     {
         //alSound = [];
-        alOut(alFreqH + 0, 0);
+        //alOut(alFreqH + 0, 0);
     }
 
     // TODO: Part of the IdAdlPlayer "SetInstrument"
@@ -1276,7 +1201,7 @@ internal partial class Program
     //    alOut(alFeedCon, 0);
     //}
 
-    internal static void SDL_ALPlaySound(AdLibSound sound)
+    internal void SDL_ALPlaySound(AdLibSound sound)
     {
         SDL_ALStopSound();
 
@@ -1285,7 +1210,7 @@ internal partial class Program
             _adlPlayer.Load(ms);
         }
 
-       // alLengthLeft = sound.common.length;
+        // alLengthLeft = sound.common.length;
         //alBlock = (sbyte)(((sound.block & 7) << 2) | 0x20);
         //var inst = sound.inst;
 
@@ -1294,61 +1219,16 @@ internal partial class Program
         //    _gameEngineManager.Quit("SDL_ALPlaySound() - Bad instrument");
         //}
 
-       // SDL_AlSetFXInst(inst);
-       // alSound = sound.data;
+        // SDL_AlSetFXInst(inst);
+        // alSound = sound.data;
     }
 
-    internal static void SDL_SetupDigi()
+    internal void SDL_SetupDigi()
     {
-        // TODO: read in ushort chunks
-        byte[] soundInfoData = PM_GetPage(ChunksInFile - 1);
-        ushort[] soundInfoPage = new ushort[soundInfoData.Length / 2];
-        Buffer.BlockCopy(soundInfoData, 0, soundInfoPage, 0, soundInfoData.Length);
+        // TODO: Move this to a "raw file loader"
 
-        NumDigi = (ushort)(PM_GetPageSize(ChunksInFile - 1) / 4);
 
-        DigiList = new digiinfo[NumDigi];
-        int i, page;
-
-        for (i = 0; i < NumDigi; i++)
-        {
-            // Calculate the size of the digi from the sizes of the pages between
-            // the start page and the start page of the next sound
-
-            DigiList[i].startpage = soundInfoPage[i * 2];
-            if ((int)DigiList[i].startpage >= ChunksInFile - 1)
-            {
-                NumDigi = (ushort)i;
-                break;
-            }
-
-            int lastPage;
-            if (i < NumDigi - 1)
-            {
-                lastPage = soundInfoPage[i * 2 + 2];
-                if (lastPage == 0 || lastPage + PMSoundStart > ChunksInFile - 1) lastPage = ChunksInFile - 1;
-                else lastPage += PMSoundStart;
-            }
-            else lastPage = ChunksInFile - 1;
-
-            int size = 0;
-            for (page = (int)(PMSoundStart + DigiList[i].startpage); page < lastPage; page++)
-                size += (int)PM_GetPageSize(page);
-
-            // Don't include padding of sound info page, if padding was added
-            if (lastPage == ChunksInFile - 1 && PMSoundInfoPagePadded) size--;
-
-            // Patch lower 16-bit of size with size from sound info page.
-            // The original VSWAP contains padding which is included in the page size,
-            // but not included in the 16-bit size. So we use the more precise value.
-            if ((size & 0xffff0000) != 0 && (size & 0xffff) < soundInfoPage[i * 2 + 1])
-                size -= 0x10000;
-            size = (int)((size & 0xffff0000) | soundInfoPage[i * 2 + 1]);
-
-            DigiList[i].length = (uint)size;
-        }
-
-        for (i = 0; i < AudioMappings.SoundKeys.Count; i++)
+        for (int i = 0; i < AudioMappings.SoundKeys.Count; i++)
         {
             DigiMap[i] = -1;
             DigiChannel[i] = -1;

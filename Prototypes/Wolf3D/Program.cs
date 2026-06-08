@@ -92,8 +92,8 @@ internal partial class Program
     //
     internal static bool param_nowait = false;
     
-    internal static int param_audiobuffer = DEFAULT_AUDIO_BUFFER_SIZE;
-    internal static int param_samplerate = 44100;
+    internal static int param_audiobuffer = AudioManager.DefaultAudioBufferSize;
+    internal static int param_samplerate = AudioManager.DefaultSampleRate;
     internal static int param_mission = 0;
     internal static bool param_goodtimes = false;
     internal static bool param_ignorenumchunks = false;
