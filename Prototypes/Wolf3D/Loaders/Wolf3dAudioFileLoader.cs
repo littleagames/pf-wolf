@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Wolf3D.Assets;
+using Wolf3D.Assets.Sounds;
+using Wolf3D.Managers;
 
 namespace Wolf3D.Loaders;
 
 internal class Wolf3dAudioFileLoader
 {
     internal int[] audiostarts;
+    private Sound[] audiosegs;// = new Sound[NUMSNDCHUNKS];
 
     public Wolf3dAudioFileLoader(
         string dataFileName,
@@ -44,7 +48,14 @@ internal class Wolf3dAudioFileLoader
                 int size = audiostarts[i + 1] - pos;
                 fs.Seek(pos, SeekOrigin.Begin);
                 var data = br.ReadBytes(size);
+                // TODO: Store
             }
         }
+    }
+
+    public Dictionary<string, Asset> GetAssets()
+    {
+        // TODO: Return list of Sound objects created from the audio data read in the constructor
+        return [];
     }
 }

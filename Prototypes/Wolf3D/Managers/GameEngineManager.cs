@@ -13,15 +13,18 @@ internal class GameEngineManager
 {
     private readonly VideoManager videoManager;
     private readonly InputManager inputManager;
+    private readonly AudioManager audioManager;
 
     public GameEngineManager(
         VideoManager videoManager,
-        InputManager inputManager)
+        InputManager inputManager,
+        AudioManager audioManager)
     {
         this.videoManager = videoManager;
         this.inputManager = inputManager;
         InputManager.Quit += Quit;
         InputManager.Pause += SetPaused;
+        this.audioManager = audioManager;
     }
 
     /// <summary>
@@ -103,15 +106,16 @@ internal class GameEngineManager
                 Program.viewsize = br.ReadInt32();
                 Program.mouseadjustment = br.ReadInt32();
 
-                if ((sd == SDMode.AdLib || sm == SMMode.AdLib) && !Program.AdLibPresent
-                    && !Program.SoundBlasterPresent)
-                {
-                    sd = SDMode.PC;
-                    sm = SMMode.Off;
-                }
+                // AdLibPresent and SoundBlasterPresent are always true, so this is effectively a no-op
+                //if ((sd == SDMode.AdLib || sm == SMMode.AdLib) && !Program.AdLibPresent
+                //    && !Program.SoundBlasterPresent)
+                //{
+                //    sd = SDMode.PC;
+                //    sm = SMMode.Off;
+                //}
 
-                if ((sds == SDSMode.SoundBlaster) && !Program.SoundBlasterPresent)
-                    sds = SDSMode.Off;
+                //if ((sds == SDSMode.SoundBlaster) && !Program.SoundBlasterPresent)
+                //    sds = SDSMode.Off;
 
                 // make sure values are correct
                 if (Program.mouseenabled) Program.mouseenabled = true; // true
@@ -131,11 +135,10 @@ internal class GameEngineManager
                 // Set "Read This" back to standard active
                 Program.MainMenu[6].active = 1;
                 Program.MainItems.curpos = 0;
-
-
-                Program.SD_SetMusicMode(sm);
-                Program.SD_SetSoundMode(sd);
-                Program.SD_SetDigiDevice(sds);
+                
+                audioManager.SetMusicMode(sm);
+                audioManager.SetSoundMode(sd);
+                audioManager.SetDigiDevice(sds);
             }
         }
         catch (Exception e)
@@ -150,21 +153,22 @@ internal class GameEngineManager
         SDMode sd;
         SMMode sm;
         SDSMode sds;
-        if (Program.SoundBlasterPresent || Program.AdLibPresent)
-        {
+        //if (Program.SoundBlasterPresent || Program.AdLibPresent)
+        //{
             sd = SDMode.AdLib;
             sm = SMMode.AdLib;
-        }
-        else
-        {
-            sd = SDMode.PC;
-            sm = SMMode.Off;
-        }
+        //}
+        //else
+        //{
+        //    sd = SDMode.PC;
+        //    sm = SMMode.Off;
+        //}
 
-        if (Program.SoundBlasterPresent)
+        // always true
+        //if (Program.SoundBlasterPresent)
             sds = SDSMode.SoundBlaster;
-        else
-            sds = SDSMode.Off;
+        //else
+        //    sds = SDSMode.Off;
 
         if (inputManager.IsMousePresent())
             Program.mouseenabled = true;
@@ -175,9 +179,9 @@ internal class GameEngineManager
         Program.viewsize = 19;
         Program.mouseadjustment = 5;
 
-        Program.SD_SetMusicMode(sm);
-        Program.SD_SetSoundMode(sd);
-        Program.SD_SetDigiDevice(sds);
+        audioManager.SetMusicMode(sm);
+        audioManager.SetSoundMode(sd);
+        audioManager.SetDigiDevice(sds);
     }
 
     internal void WriteConfig()
@@ -197,9 +201,9 @@ internal class GameEngineManager
             foreach (var s in Program.Scores)
                 s.Write(bw);
 
-            bw.Write((byte)Program.SoundMode);
-            bw.Write((byte)Program.MusicMode);
-            bw.Write((byte)Program.DigiMode);
+            bw.Write((byte)audioManager.SoundMode);
+            bw.Write((byte)audioManager.MusicMode);
+            bw.Write((byte)audioManager.DigiMode);
 
             bw.Write(Program.mouseenabled);
             bw.Write(Program.joystickenabled);

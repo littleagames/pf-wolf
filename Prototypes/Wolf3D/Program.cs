@@ -12,6 +12,7 @@ namespace Wolf3D;
 internal partial class Program
 {
     private static VideoManager _videoManager;
+    private static AudioManager _audioManager;
     private static InputManager _inputManager;
     private static GameEngineManager _gameEngineManager;
     private static GraphicManager _graphicManager;
@@ -23,6 +24,7 @@ internal partial class Program
         var services = new ServiceCollection();
         services.AddSingleton<GameEngineManager>();
         services.AddSingleton<VideoManager>();
+        services.AddSingleton<AudioManager>();
         services.AddSingleton<InputManager>();
         services.AddSingleton<GraphicManager>();
         services.AddSingleton<MapManager>();
@@ -33,6 +35,7 @@ internal partial class Program
 
         _gameEngineManager = serviceProvider.GetRequiredService<GameEngineManager>();
         _videoManager = serviceProvider.GetRequiredService<VideoManager>();
+        _audioManager = serviceProvider.GetRequiredService<AudioManager>();
         _inputManager = serviceProvider.GetRequiredService<InputManager>();
         _graphicManager = serviceProvider.GetRequiredService<GraphicManager>();
         _mapManager = serviceProvider.GetRequiredService<MapManager>();
@@ -140,7 +143,7 @@ internal partial class Program
         _videoManager.Update();
 
         PM_Startup();
-        SD_Startup();
+        _audioManager.Init(param_audiobuffer, param_samplerate);
         _graphicManager.Init(extension, param_ignorenumchunks);
         _mapManager.Init(extension);
         CA_Startup();
@@ -865,8 +868,8 @@ internal partial class Program
         };
 
         _inputManager.ClearKeysDown();
-        if (!AdLibPresent && !SoundBlasterPresent)
-            return;
+        //if (!AdLibPresent && !SoundBlasterPresent)
+        //    return;
 
         MenuFadeOut();
 

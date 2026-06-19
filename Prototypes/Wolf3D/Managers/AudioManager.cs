@@ -25,7 +25,6 @@ internal enum SMMode
 internal enum SDSMode
 {
     Off,
-    PC,
     SoundBlaster
 }
 
@@ -268,14 +267,17 @@ internal class AudioManager
 
     internal globalsoundpos[] channelSoundPos = new globalsoundpos[SDL_mixer.MIX_CHANNELS];
 
+    public bool PCSoundEnabled => SoundMode == SDMode.PC;
+    public bool AdLibSoundEnabled => SoundMode == SDMode.AdLib;
+    public bool DigiSoundEnabled => DigiMode == SDSMode.SoundBlaster;
 
     // Global variables
     internal bool AdLibPresent,
         SoundBlasterPresent, SBProPresent,
         SoundPositioned;
-    internal SDMode SoundMode;
-    internal SMMode MusicMode;
-    internal SDSMode DigiMode;
+    public SDMode SoundMode { get; private set; }
+    public SMMode MusicMode { get; private set; }
+    public SDSMode DigiMode { get; private set; }
     internal int SoundTable;// byte[][] SoundTable;
 
     int[] DigiMap = new int[AudioMappings.SoundKeys.Count];
@@ -327,7 +329,7 @@ internal class AudioManager
     private int soundTimeCounter = 5;
     private int samplesPerMusicTick;
 
-    private Sound[] audiosegs = new Sound[NUMSNDCHUNKS];
+    //private Sound[] audiosegs = new Sound[NUMSNDCHUNKS];
 
     public AudioManager(AssetManager assetManager)
     {
@@ -389,8 +391,8 @@ internal class AudioManager
         // Add PC speaker sound mixer
         SDL_mixer.Mix_SetPostMix(SDL_PCMixCallback, IntPtr.Zero);
 
-        SD_SetSoundMode(SDMode.Off);
-        SD_SetMusicMode(SMMode.Off);
+        SetSoundMode(SDMode.Off);
+        SetMusicMode(SMMode.Off);
 
         SDL_SetupDigi();
         SD_Started = true;
@@ -663,31 +665,33 @@ internal class AudioManager
         if (soundIndex == -1 || (DigiMode == SDSMode.Off && SoundMode == SDMode.Off))
             return 0;
 
-        //var sData = SoundTable[sound]; // TODO: This might need a better way to get soundtable data
-        var soundSeg = audiosegs[soundIndex + SoundTable];
-        if (soundSeg is PCSound)
-            s = soundSeg.common;
-        else
-            s = new SoundCommon(soundSeg.data);// (SoundCommon*)SoundTable[sound];
-
-        if ((SoundMode != SDMode.Off) && soundSeg == null)
+        var digiSound = assetManager.GetSound(sound);
+        if ((SoundMode != SDMode.Off) && digiSound == null)
             throw new PfWolfAudioException("SD_PlaySound() - Uncached sound");
+
+        // TODO: Handle PC Sound, AdLib, or Digi
+        //var sData = SoundTable[sound]; // TODO: This might need a better way to get soundtable data
+        // var soundSeg = audiosegs[soundIndex + SoundTable];
+        // if (soundSeg is PCSound)
+        //     s = soundSeg.common;
+        // else
+        s = new SoundCommon(digiSound.RawData);// (SoundCommon*)SoundTable[sound];
 
         if ((DigiMode != SDSMode.Off) && (DigiMap[soundIndex] != -1))
         {
-            if ((DigiMode == SDSMode.PC) && (SoundMode == SDMode.PC))
-            {
-                if (s.priority < SoundPriority)
-                    return 0;
+            //if ((DigiMode == SDSMode.PC) && (SoundMode == SDMode.PC))
+            //{
+            //    if (s.priority < SoundPriority)
+            //        return 0;
 
-                SDL_PCStopSound();
+            //    SDL_PCStopSound();
 
-                SD_PlayDigitized(sound, lp, rp);
-                SoundPositioned = ispos;
-                SoundNumber = soundIndex;
-                SoundPriority = s.priority;
-            }
-            else
+            //    SD_PlayDigitized(sound, lp, rp);
+            //    SoundPositioned = ispos;
+            //    SoundNumber = soundIndex;
+            //    SoundPriority = s.priority;
+            //}
+            //else
             {
                 //# ifdef NOTYET
                 //                if (s->priority < DigiPriority)
@@ -715,13 +719,13 @@ internal class AudioManager
         switch (SoundMode)
         {
             case SDMode.PC:
-                SDL_PCPlaySound((PCSound)soundSeg);
+                //SDL_PCPlaySound((PCSound)soundSeg);
                 break;
             case SDMode.AdLib:
                 //curAlSound = [];
                 //alSound = [];                // Tricob
                 //alOut(alFreqH, 0);
-                SDL_ALPlaySound((AdLibSound)soundSeg);
+               // SDL_ALPlaySound((AdLibSound)soundSeg);
                 break;
 
             default:
@@ -889,7 +893,7 @@ internal class AudioManager
         {
             var imfChunk = assetManager.GetImf(song);// CA_CacheMusicChunk(STARTMUSIC + chunk); // TODO: AssetManager.Load()
             int chunkLen = imfChunk.Size;
-            using (var ms = new MemoryStream(((ImfMusic)audiosegs[STARTMUSIC + chunk]).data))
+            using (var ms = new MemoryStream(imfChunk.RawData))
             {
                 _imfPlayer.Load(ms);
                 _imfRefreshRateHz = _imfPlayer.RefreshRate;
@@ -978,7 +982,7 @@ internal class AudioManager
 
         return (result);
     }
-    internal bool SD_SetMusicMode(SMMode mode)
+    public bool SetMusicMode(SMMode mode)
     {
         bool result = false;
 
@@ -1002,7 +1006,7 @@ internal class AudioManager
 
         return (result);
     }
-    internal bool SD_SetSoundMode(SDMode mode)
+    public bool SetSoundMode(SDMode mode)
     {
         bool result = false;
         ushort tableoffset;
@@ -1090,7 +1094,7 @@ internal class AudioManager
         //SDL_AlSetFXInst(alZeroInst);
     }
 
-    internal void SD_SetDigiDevice(SDSMode mode)
+    public void SetDigiDevice(SDSMode mode)
     {
         bool devicenotpresent;
 
@@ -1123,14 +1127,14 @@ internal class AudioManager
         DigiNumber = 0;
         DigiPriority = 0;
         SoundPositioned = false;
-        if ((DigiMode == SDSMode.PC) && (SoundMode == SDMode.PC))
-            SDL_SoundFinished();
+        //if ((DigiMode == SDSMode.PC) && (SoundMode == SDMode.PC))
+        //    SDL_SoundFinished();
 
         switch (DigiMode)
         {
-            case SDSMode.PC:
-                SDL_PCStopSound();
-                break;
+            //case SDSMode.PC:
+            //    SDL_PCStopSound();
+            //    break;
             case SDSMode.SoundBlaster:
                 Mix_HaltChannel(-1);
                 break;

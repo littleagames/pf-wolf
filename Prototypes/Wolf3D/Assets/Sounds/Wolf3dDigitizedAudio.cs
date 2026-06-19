@@ -2,7 +2,7 @@
 
 namespace Wolf3D.Assets.Sounds;
 
-public record Wolf3dDigitizedAudio : Asset
+internal record Wolf3dDigitizedAudio : Asset
 {
 
     public int OriginalSampleRate { get; set; } = 7042;
