@@ -282,13 +282,13 @@ internal partial class Program
         int lastoffs;
 
         lastmusic = song;
-        lastoffs = SD_MusicOff();
+        lastoffs = _audioManager.SD_MusicOff();
         int chunk = AudioMappings.MusicKeys.IndexOf(song);
         if (chunk == -1)
             return lastoffs;
-        UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
+       // UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
 
-        SD_StartMusic(song);
+        _audioManager.SD_StartMusic(song);
         return lastoffs;
     }
 
@@ -522,7 +522,7 @@ internal partial class Program
                 return which;
 
             case 2:
-                SD_PlaySound("ESCPRESSEDSND");
+                _audioManager.SD_PlaySound("ESCPRESSEDSND");
                 return -1;
         }
 
@@ -547,7 +547,7 @@ internal partial class Program
     {
         _graphicManager.DrawPic("c_cursor1", x, y);
         _videoManager.Update();
-        SD_PlaySound("MOVEGUN1SND");
+        _audioManager.SD_PlaySound("MOVEGUN1SND");
         GameEngineManager.DelayMs(8 * 100 / 7);
     }
 
@@ -567,7 +567,7 @@ internal partial class Program
         //
         routine?.Invoke(which);
         _videoManager.Update();
-        SD_PlaySound("MOVEGUN2SND");
+        _audioManager.SD_PlaySound("MOVEGUN2SND");
     }
 
     internal static void CheckPause()
@@ -577,10 +577,10 @@ internal partial class Program
             switch (SoundStatus)
             {
                 case 0:
-                    SD_MusicOn();
+                    _audioManager.SD_MusicOn();
                     break;
                 case 1:
-                    SD_MusicOff();
+                    _audioManager.SD_MusicOff();
                     break;
             }
 
@@ -605,7 +605,7 @@ internal partial class Program
 
     internal static void ShootSnd()
     {
-        SD_PlaySound("SHOOTSND");
+        _audioManager.SD_PlaySound("SHOOTSND");
     }
 
     internal static void TicDelay(int count)
@@ -948,8 +948,8 @@ internal partial class Program
                 if (Confirm(endStr) != 0)
                 {
                     _videoManager.Update();
-                    SD_MusicOff();
-                    SD_StopSound();
+                    _audioManager.SD_MusicOff();
+                    _audioManager.SD_StopSound();
                     MenuFadeOut();
 
                     _gameEngineManager.Quit("");
@@ -1014,7 +1014,7 @@ internal partial class Program
 
                     if (episodeInfo == null)
                     {
-                        SD_PlaySound("NOWAYSND");
+                        _audioManager.SD_PlaySound("NOWAYSND");
                         Message("Episode unavailable!");
                         _inputManager.ClearKeysDown();
                         _inputManager.Ack();
@@ -1025,7 +1025,7 @@ internal partial class Program
                     {
                         if (!_assetManager.GetGameInfo().Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
                         {
-                            SD_PlaySound("NOWAYSND");
+                            _audioManager.SD_PlaySound("NOWAYSND");
                             Message($"Starting Map \"{episodeInfo.StartMap}\" unavailable!");
                             _inputManager.ClearKeysDown();
                             _inputManager.Ack();
@@ -1145,16 +1145,16 @@ internal partial class Program
                 case 0:
                     if (SoundMode != SDMode.Off)
                     {
-                        SD_WaitSoundDone();
-                        SD_SetSoundMode(SDMode.Off);
+                        _audioManager.SD_WaitSoundDone();
+                        _audioManager.SD_SetSoundMode(SDMode.Off);
                         DrawSoundMenu();
                     }
                     break;
                 case 1:
                     if (SoundMode != SDMode.PC)
                     {
-                        SD_WaitSoundDone();
-                        SD_SetSoundMode(SDMode.PC);
+                        _audioManager.SD_WaitSoundDone();
+                        _audioManager.SD_SetSoundMode(SDMode.PC);
                         CA_LoadAllSounds();
                         DrawSoundMenu();
                         ShootSnd();
@@ -1163,8 +1163,8 @@ internal partial class Program
                 case 2:
                     if (SoundMode != SDMode.AdLib)
                     {
-                        SD_WaitSoundDone();
-                        SD_SetSoundMode(SDMode.AdLib);
+                        _audioManager.SD_WaitSoundDone();
+                        _audioManager.SD_SetSoundMode(SDMode.AdLib);
                         CA_LoadAllSounds();
                         DrawSoundMenu();
                         ShootSnd();
@@ -1700,7 +1700,7 @@ internal partial class Program
                              LSM_W - LSItems.indent - 16, 10, "BKGDCOLOR");
                     PrintLSEntry(which, "HIGHLIGHT");
                     _videoManager.Update();
-                    SD_PlaySound("ESCPRESSEDSND");
+                    _audioManager.SD_PlaySound("ESCPRESSEDSND");
                     continue;
                 }
 
@@ -1744,7 +1744,7 @@ internal partial class Program
                     if (newview >= 19) DrawChangeView(newview);
                     else ShowViewSize(newview);
                     _videoManager.Update();
-                    SD_PlaySound("HITWALLSND");
+                    _audioManager.SD_PlaySound("HITWALLSND");
                     TicDelay(10);
                     break;
 
@@ -1758,7 +1758,7 @@ internal partial class Program
                     }
                     else ShowViewSize(newview);
                     _videoManager.Update();
-                    SD_PlaySound("HITWALLSND");
+                    _audioManager.SD_PlaySound("HITWALLSND");
                     TicDelay(10);
                     break;
             }
@@ -1767,7 +1767,7 @@ internal partial class Program
                 exit = 1;
             else if (ci.button1 || _inputManager.IsKeyDown(ScanCodes.sc_Escape))
             {
-                SD_PlaySound("ESCPRESSEDSND");
+                _audioManager.SD_PlaySound("ESCPRESSEDSND");
                 MenuFadeOut();
                 if (_videoManager.screenHeight % 200 != 0)
                     _videoManager.ClearScreen(0);
@@ -1778,7 +1778,7 @@ internal partial class Program
 
         if (oldview != newview)
         {
-            SD_PlaySound("SHOOTSND");
+            _audioManager.SD_PlaySound("SHOOTSND");
             Message("$STR_THINK".ToLanguageText(language) + "...");
             NewViewSize(newview);
         }
@@ -1867,8 +1867,8 @@ internal partial class Program
         if (Confirm(endStr) != 0)
         {
             _videoManager.Update();
-            SD_MusicOff();
-            SD_StopSound();
+            _audioManager.SD_MusicOff();
+            _audioManager.SD_StopSound();
             MenuFadeOut();
             _gameEngineManager.Quit("");
             return 0;
@@ -1902,7 +1902,7 @@ internal partial class Program
                         DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, "Black", "READCOLOR");
                         _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, "READHCOLOR");
                         _videoManager.Update();
-                        SD_PlaySound("MOVEGUN1SND");
+                        _audioManager.SD_PlaySound("MOVEGUN1SND");
                         TicDelay(20);
                     }
                     break;
@@ -1917,7 +1917,7 @@ internal partial class Program
                         DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, "Black", "READCOLOR");
                         _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, "READHCOLOR");
                         _videoManager.Update();
-                        SD_PlaySound("MOVEGUN1SND");
+                        _audioManager.SD_PlaySound("MOVEGUN1SND");
                         TicDelay(20);
                     }
                     break;
@@ -1934,10 +1934,10 @@ internal partial class Program
         if (exit == 2)
         {
             mouseadjustment = oldMA;
-            SD_PlaySound("ESCPRESSEDSND");
+            _audioManager.SD_PlaySound("ESCPRESSEDSND");
         }
         else
-            SD_PlaySound("SHOOTSND");
+            _audioManager.SD_PlaySound("SHOOTSND");
 
         WaitKeyUp();
         MenuFadeOut();
@@ -2148,7 +2148,7 @@ internal partial class Program
                             case 1:
                                 PrintX = (ushort)x;
                                 US_Print("?");
-                                SD_PlaySound("HITWALLSND");
+                                _audioManager.SD_PlaySound("HITWALLSND");
                                 break;
                         }
                         tick ^= 1;
@@ -2188,7 +2188,7 @@ internal partial class Program
 
                                 buttonmouse[result - 1] = (buttontypes)order[which];
                                 picked = 1;
-                                SD_PlaySound("SHOOTDOORSND");
+                                _audioManager.SD_PlaySound("SHOOTDOORSND");
                             }
                             break;
 
@@ -2215,7 +2215,7 @@ internal partial class Program
 
                                 buttonjoy[result - 1] = (buttontypes)order[which];
                                 picked = 1;
-                                SD_PlaySound("SHOOTDOORSND");
+                                _audioManager.SD_PlaySound("SHOOTDOORSND");
                             }
                             break;
 
@@ -2246,7 +2246,7 @@ internal partial class Program
                     if (_inputManager.IsKeyDown(ScanCodes.sc_Escape) || type != CustomCtlOptions.JOYSTICK && ci.button1)
                     {
                         picked = 1;
-                        SD_PlaySound("ESCPRESSEDSND");
+                        _audioManager.SD_PlaySound("ESCPRESSEDSND");
                     }
 
                     if (picked != 0) break;
@@ -2277,7 +2277,7 @@ internal partial class Program
                     }
                     while (cust.allowed[which] == 0);
                     redraw = 1;
-                    SD_PlaySound("MOVEGUN1SND");
+                    _audioManager.SD_PlaySound("MOVEGUN1SND");
                     do
                     {
                         ReadAnyControl(out ci);
@@ -2296,7 +2296,7 @@ internal partial class Program
                     }
                     while (cust.allowed[which] == 0);
                     redraw = 1;
-                    SD_PlaySound("MOVEGUN1SND");
+                    _audioManager.SD_PlaySound("MOVEGUN1SND");
                     do
                     {
                         ReadAnyControl(out ci);
@@ -2313,7 +2313,7 @@ internal partial class Program
         }
         while (exit == 0);
 
-        SD_PlaySound("ESCPRESSEDSND");
+        _audioManager.SD_PlaySound("ESCPRESSEDSND");
         WaitKeyUp();
         DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
     }
@@ -2677,7 +2677,7 @@ internal partial class Program
         _inputManager.ClearKeysDown();
         WaitKeyUp();
 
-        SD_PlaySound(whichsnd[xit]);
+        _audioManager.SD_PlaySound(whichsnd[xit]);
 
         return xit;
     }
@@ -2741,7 +2741,7 @@ internal partial class Program
         int chunk = AudioMappings.MusicKeys.IndexOf(lastmusic);
         if (chunk == -1)
             return;
-        UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
+        //UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
     }
 
     internal static void IntroScreen()
@@ -2799,7 +2799,7 @@ internal partial class Program
         }*/
 
         // TODO: Create all directories? Or do it when the need arises?
-
+        string extension = "";
         if (File.Exists("vswap.wl6"))
         {
             extension = "wl6";

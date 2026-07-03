@@ -311,9 +311,9 @@ internal partial class Program
                     x = 36 - tempstr.Length * 2;
                     Write(x, 7, tempstr);
                     if ((i % (PAR_AMOUNT / 10)) == 0)
-                        SD_PlaySound("ENDBONUS1SND");
+                        _audioManager.SD_PlaySound("ENDBONUS1SND");
                     _videoManager.Update();
-                    while (SD_SoundPlaying() != "")
+                    while (_audioManager.SD_SoundPlaying() != "")
                         BJ_Breathe();
                     if (_inputManager.CheckAck())
                         goto done;
@@ -321,8 +321,8 @@ internal partial class Program
 
                 _videoManager.Update();
 
-                SD_PlaySound("ENDBONUS2SND");
-                while (SD_SoundPlaying() != "")
+                _audioManager.SD_PlaySound("ENDBONUS2SND");
+                while (_audioManager.SD_SoundPlaying() != "")
                     BJ_Breathe();
             }
 
@@ -337,9 +337,9 @@ internal partial class Program
                 x = RATIOXX - tempstr.Length * 2;
                 Write(x, 14, tempstr);
                 if ((i % 10) == 0)
-                    SD_PlaySound("ENDBONUS1SND");
+                    _audioManager.SD_PlaySound("ENDBONUS1SND");
                 _videoManager.Update();
-                while (SD_SoundPlaying() != "")
+                while (_audioManager.SD_SoundPlaying() != "")
                     BJ_Breathe();
 
                 if (_inputManager.CheckAck())
@@ -348,25 +348,25 @@ internal partial class Program
             if (ratio >= 100)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
-                SD_StopSound();
+                _audioManager.SD_StopSound();
                 bonus += PERCENT100AMT;
                 tempstr = bonus.ToString();
                 x = (RATIOXX - 1) - tempstr.Length * 2;
                 Write(x, 7, tempstr);
                 _videoManager.Update();
-                SD_PlaySound("PERCENT100SND");
+                _audioManager.SD_PlaySound("PERCENT100SND");
             }
             else if (ratio == 0)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
-                SD_StopSound();
-                SD_PlaySound("NOBONUSSND");
+                _audioManager.SD_StopSound();
+                _audioManager.SD_PlaySound("NOBONUSSND");
             }
             else
-                SD_PlaySound("ENDBONUS2SND");
+                _audioManager.SD_PlaySound("ENDBONUS2SND");
 
             _videoManager.Update();
-            while (SD_SoundPlaying() != "")
+            while (_audioManager.SD_SoundPlaying() != "")
                 BJ_Breathe();
 
             //
@@ -379,9 +379,9 @@ internal partial class Program
                 x = RATIOXX - tempstr.Length * 2;
                 Write(x, 16, tempstr);
                 if ((i % 10) == 0)
-                    SD_PlaySound("ENDBONUS1SND");
+                    _audioManager.SD_PlaySound("ENDBONUS1SND");
                 _videoManager.Update();
-                while (SD_SoundPlaying() != "")
+                while (_audioManager.SD_SoundPlaying() != "")
                     BJ_Breathe();
 
                 if (_inputManager.CheckAck())
@@ -390,24 +390,24 @@ internal partial class Program
             if (ratio >= 100)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
-                SD_StopSound();
+                _audioManager.SD_StopSound();
                 bonus += PERCENT100AMT;
                 tempstr = bonus.ToString();
                 x = (RATIOXX - 1) - tempstr.Length * 2;
                 Write(x, 7, tempstr);
                 _videoManager.Update();
-                SD_PlaySound("PERCENT100SND");
+                _audioManager.SD_PlaySound("PERCENT100SND");
             }
             else if (ratio == 0)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
-                SD_StopSound();
-                SD_PlaySound("NOBONUSSND");
+                _audioManager.SD_StopSound();
+                _audioManager.SD_PlaySound("NOBONUSSND");
             }
             else
-                SD_PlaySound("ENDBONUS2SND");
+                _audioManager.SD_PlaySound("ENDBONUS2SND");
             _videoManager.Update();
-            while (SD_SoundPlaying() != "")
+            while (_audioManager.SD_SoundPlaying() != "")
                 BJ_Breathe();
 
             //
@@ -420,9 +420,9 @@ internal partial class Program
                 x = RATIOXX - tempstr.Length * 2;
                 Write(x, 18, tempstr);
                 if ((i % 10) == 0)
-                    SD_PlaySound("ENDBONUS1SND");
+                    _audioManager.SD_PlaySound("ENDBONUS1SND");
                 _videoManager.Update();
-                while (SD_SoundPlaying() != "")
+                while (_audioManager.SD_SoundPlaying() != "")
                     BJ_Breathe();
                 if (_inputManager.CheckAck())
                     goto done;
@@ -430,24 +430,24 @@ internal partial class Program
             if (ratio >= 100)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
-                SD_StopSound();
+                _audioManager.SD_StopSound();
                 bonus += PERCENT100AMT;
                 tempstr = bonus.ToString();
                 x = (RATIOXX - 1) - tempstr.Length * 2;
                 Write(x, 7, tempstr);
                 _videoManager.Update();
-                SD_PlaySound("PERCENT100SND");
+                _audioManager.SD_PlaySound("PERCENT100SND");
             }
             else if (ratio == 0)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
-                SD_StopSound();
-                SD_PlaySound("NOBONUSSND");
+                _audioManager.SD_StopSound();
+                _audioManager.SD_PlaySound("NOBONUSSND");
             }
             else
-                SD_PlaySound("ENDBONUS2SND");
+                _audioManager.SD_PlaySound("ENDBONUS2SND");
             _videoManager.Update();
-            while (SD_SoundPlaying() != "")
+            while (_audioManager.SD_SoundPlaying() != "")
                 BJ_Breathe();
 
 

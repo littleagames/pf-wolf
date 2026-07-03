@@ -143,6 +143,7 @@ internal partial class Program
         _videoManager.Update();
 
         PM_Startup();
+        var extension = "wl6";
         _audioManager.Init(param_audiobuffer, param_samplerate);
         _graphicManager.Init(extension, param_ignorenumchunks);
         _mapManager.Init(extension);
@@ -361,14 +362,14 @@ internal partial class Program
         for (int i = 0; i < wolfdigimap.Length; i++)
         {
             var map = wolfdigimap[i];
-            var mapIndex = AudioMappings.SoundKeys.IndexOf(map.sound);
+           // var mapIndex = AudioMappings.SoundKeys.IndexOf(map.sound);
             
             // Prevent outside of array exceptions
-            if (mapIndex >= 0 || mapIndex < DigiMap.Length)
-                DigiMap[mapIndex] = map.index;
+           // if (mapIndex >= 0 || mapIndex < DigiMap.Length)
+           //     DigiMap[mapIndex] = map.index;
 
-            DigiChannel[map.index] = map.channel;
-            SD_PrepareSound(map.index);
+           // DigiChannel[map.index] = map.channel;
+            _audioManager.SD_PrepareSound(map.sound);
         }
     }
 
@@ -875,7 +876,7 @@ internal partial class Program
 
         start = ((SDL.SDL_GetTicks() / 10) % 3) * 6;
 
-        CA_LoadAllSounds();
+        //CA_LoadAllSounds();
 
         fontnumber = 1;
         ClearMScreen();

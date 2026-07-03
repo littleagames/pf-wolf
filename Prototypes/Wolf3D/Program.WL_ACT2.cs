@@ -1853,7 +1853,7 @@ internal partial class Program
 
     internal static void A_Slurpie(objstruct ob)
     {
-        SD_PlaySound("SLURPIESND");
+        _audioManager.SD_PlaySound("SLURPIESND");
     }
 
     internal static void T_FakeFire(objstruct ob)
@@ -2465,28 +2465,28 @@ internal partial class Program
                 PlaySoundLocActor("DOGDEATHSND", ob);      // JAB
                 break;
             case classtypes.bossobj:
-                SD_PlaySound("MUTTISND");                         // JAB
+                _audioManager.SD_PlaySound("MUTTISND");                         // JAB
                 break;
             case classtypes.schabbobj:
-                SD_PlaySound("MEINGOTTSND");
+                _audioManager.SD_PlaySound("MEINGOTTSND");
                 break;
             case classtypes.fakeobj:
-                SD_PlaySound("HITLERHASND");
+                _audioManager.SD_PlaySound("HITLERHASND");
                 break;
             case classtypes.mechahitlerobj:
-                SD_PlaySound("SCHEISTSND");
+                _audioManager.SD_PlaySound("SCHEISTSND");
                 break;
             case classtypes.realhitlerobj:
-                SD_PlaySound("EVASND");
+                _audioManager.SD_PlaySound("EVASND");
                 break;
             case classtypes.gretelobj:
-                SD_PlaySound("MEINSND");
+                _audioManager.SD_PlaySound("MEINSND");
                 break;
             case classtypes.giftobj:
-                SD_PlaySound("DONNERSND");
+                _audioManager.SD_PlaySound("DONNERSND");
                 break;
             case classtypes.fatobj:
-                SD_PlaySound("ROSESND");
+                _audioManager.SD_PlaySound("ROSESND");
                 break;
 
         }

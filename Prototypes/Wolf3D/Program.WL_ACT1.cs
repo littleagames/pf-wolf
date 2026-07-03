@@ -503,7 +503,7 @@ internal partial class Program
             if ((gamestate.keys & (1 << (locknum - (int)doortypes.dr_lock1) ) ) == 0)
         {
                 if (doorobjlist[door].position == 0)
-                    SD_PlaySound("NOWAYSND");  // ADDEDFIX 9       // locked
+                    _audioManager.SD_PlaySound("NOWAYSND");  // ADDEDFIX 9       // locked
                 return;
             }
         }
@@ -753,7 +753,7 @@ internal partial class Program
 
         if (_mapManager.actorat[checkx + dx, checky + dy] != null)
         {
-            SD_PlaySound("NOWAYSND");
+            _audioManager.SD_PlaySound("NOWAYSND");
             return;
         }
 
@@ -772,7 +772,7 @@ internal partial class Program
         _mapManager.SetMapSpot(pwallx, pwally, 1,  0);   // remove P tile info
         _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)_mapManager.MAPSPOT(player.tilex, player.tiley, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
 
-        SD_PlaySound("PUSHWALLSND");
+        _audioManager.SD_PlaySound("PUSHWALLSND");
     }
 
     /*

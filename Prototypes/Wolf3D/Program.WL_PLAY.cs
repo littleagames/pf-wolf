@@ -60,29 +60,29 @@ internal partial class Program
 
     internal static void StartMusic()
     {
-        SD_MusicOff();
+        _audioManager.SD_MusicOff();
         var song = _assetManager.GetGameInfo().Maps[gamestate.mapon].Music;
         lastmusicchunk = song;
-        SD_StartMusic(lastmusicchunk);
+        _audioManager.SD_StartMusic(lastmusicchunk);
     }
 
     internal static void ContinueMusic(int offs)
     {
-        SD_MusicOff();
+        _audioManager.SD_MusicOff();
         var song = _assetManager.GetGameInfo().Maps[gamestate.mapon].Music;
         lastmusicchunk = song;
-        SD_ContinueMusic(lastmusicchunk, offs);
+        _audioManager.SD_ContinueMusic(lastmusicchunk, offs);
     }
 
     internal static int StopMusic()
     {
-        int lastoffs = SD_MusicOff();
+        int lastoffs = _audioManager.SD_MusicOff();
 
         int chunk = AudioMappings.MusicKeys.IndexOf(lastmusicchunk);
         if (chunk == -1)
             return 0;
 
-        UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
+        //UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
 
         return lastoffs;
     }
