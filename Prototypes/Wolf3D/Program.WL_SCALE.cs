@@ -43,7 +43,7 @@ internal partial class Program
 
             frac = start* fracstep;
 
-            endpix = (frac >> FRACBITS) + toppix;
+            endpix = (frac >> MathUtils.FRACBITS) + toppix;
 
             for (src = top + start; start != end; start++, src++)
             {
@@ -53,7 +53,7 @@ internal partial class Program
                     break;                          // off the bottom of the view area
 
                 frac += fracstep;
-                endpix = (frac >> FRACBITS) + toppix;
+                endpix = (frac >> MathUtils.FRACBITS) + toppix;
 
                 if (endpix< 0)
                     continue;                       // not into the view area
@@ -106,15 +106,15 @@ internal partial class Program
         if (height == 0)
             return;                 // too close or far away
 
-        linesrc = PM_GetSpritePage(sprite.shapenum);
+        linesrc = _assetManager.GetSprite(sprite.shapenum).RawData;
         shape = new compshape_t(linesrc);// (compshape_t*)linesrc; // this needs to build the struct from the byte[], and get the table data afterwards
-        fracstep = FixedDiv(height, TEXTURESIZE / 2);
+        fracstep = MathUtils.FixedDiv(height, TEXTURESIZE / 2);
         frac = shape.leftpix * fracstep;
 
         xcenter = sprite.viewx - height;
         toppix = centery - height;
 
-        x2 = (frac >> FRACBITS) + xcenter;
+        x2 = (frac >> MathUtils.FRACBITS) + xcenter;
 
         for (i = shape.leftpix; i <= shape.rightpix; i++)
         {
@@ -127,7 +127,7 @@ internal partial class Program
                 break;                // off the right side of the view area
 
             frac += fracstep;
-            x2 = (frac >> FRACBITS) + xcenter;
+            x2 = (frac >> MathUtils.FRACBITS) + xcenter;
 
             if (x2 < 0)
                 continue;             // not into the view area
@@ -174,15 +174,15 @@ internal partial class Program
 
         height = dispheight >> 1;
 
-        linesrc = PM_GetSpritePage(shapenum);
+        linesrc = _assetManager.GetSprite(shapenum).RawData;
         shape = new compshape_t(linesrc);
-        fracstep = FixedDiv(height, TEXTURESIZE / 2);
+        fracstep = MathUtils.FixedDiv(height, TEXTURESIZE / 2);
         frac = shape.leftpix * fracstep;
 
         xcenter = dispx - height;
         toppix = centery - height;
 
-        x2 = (frac >> FRACBITS) + xcenter;
+        x2 = (frac >> MathUtils.FRACBITS) + xcenter;
 
         for (i = shape.leftpix; i <= shape.rightpix; i++)
         {
@@ -192,7 +192,7 @@ internal partial class Program
             x1 = x2;
 
             frac += fracstep;
-            x2 = (frac >> FRACBITS) + xcenter;
+            x2 = (frac >> MathUtils.FRACBITS) + xcenter;
 
             while (x1 < x2)
             {

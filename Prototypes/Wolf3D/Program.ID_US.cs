@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Constants;
 using Wolf3D.Managers;
 using static Wolf3D.Program;
 
@@ -283,7 +284,7 @@ internal partial class Program
 
         cursorvis = done = false;
         lasttime = lastdirtime = lastdirmovetime = GameEngineManager.GetTimeCount();
-        lastbuttontime = lasttime + TickBase / 4;   // 250 ms => first button press accepted after 500 ms
+        lastbuttontime = lasttime + Timing.TickBase / 4;   // 250 ms => first button press accepted after 500 ms
         _inputManager.ClearLastKey();
 
         _inputManager.ClearTextInput();
@@ -301,7 +302,7 @@ internal partial class Program
             curtime = GameEngineManager.GetTimeCount();
 
             // After each direction change accept the next change after 250 ms and then everz 125 ms
-            if (ci.dir != lastdir || (curtime - lastdirtime > TickBase / 4 && curtime - lastdirmovetime > TickBase / 8))
+            if (ci.dir != lastdir || (curtime - lastdirtime > Timing.TickBase / 4 && curtime - lastdirmovetime > Timing.TickBase / 8))
             {
                 if (ci.dir != lastdir)
                 {
@@ -378,7 +379,7 @@ internal partial class Program
                 }
             }
 
-            if ((int)(curtime - lastbuttontime) > TickBase / 4)   // 250 ms
+            if ((int)(curtime - lastbuttontime) > Timing.TickBase / 4)   // 250 ms
             {
                 if (ci.button0)             // acts as return
                 {
@@ -530,11 +531,11 @@ internal partial class Program
             if (cursormoved)
             {
                 cursorvis = false;
-                lasttime = curtime - TickBase;
+                lasttime = curtime - Timing.TickBase;
 
                 cursormoved = false;
             }
-            if (curtime - lasttime > TickBase / 2)    // 500 ms
+            if (curtime - lasttime > Timing.TickBase / 2)    // 500 ms
             {
                 lasttime = curtime;
 

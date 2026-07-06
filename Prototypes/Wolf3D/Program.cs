@@ -6,6 +6,7 @@ using Wolf3D.Mappers;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using Wolf3D.Extensions;
+using Wolf3D.Constants;
 
 namespace Wolf3D;
 
@@ -272,7 +273,7 @@ internal partial class Program
                 _videoManager.Update();
                 _videoManager.FadeIn();
 
-                if (_inputManager.UserInput(TickBase * 15))
+                if (_inputManager.UserInput(Timing.TickBase * 15))
                     break;
                 _videoManager.FadeOut();
 
@@ -282,7 +283,7 @@ internal partial class Program
                 _graphicManager.DrawPic("credits", 0, 0);
                 _videoManager.Update();
                 _videoManager.FadeIn();
-                if (_inputManager.UserInput(TickBase * 10))
+                if (_inputManager.UserInput(Timing.TickBase * 10))
                     break;
                 _videoManager.FadeOut();
 
@@ -293,7 +294,7 @@ internal partial class Program
                 _videoManager.Update();
                 _videoManager.FadeIn();
 
-                if (_inputManager.UserInput(TickBase * 10))
+                if (_inputManager.UserInput(Timing.TickBase * 10))
                     break;
 
                 //
@@ -498,7 +499,7 @@ internal partial class Program
         // divide heightnumerator by a posts distance to get the posts height for
         // the heightbuffer.  The pixel height is height>>2
         //
-        heightnumerator = (int)((TILEGLOBAL * scale) >> 6);
+        heightnumerator = (int)((MapConstants.TILEGLOBAL * scale) >> 6);
 
         //
         // calculate the angle offset from view angle of each pixel's ray
@@ -555,8 +556,8 @@ internal partial class Program
                 _mapManager.actorat[i, j] = objlist2.FirstOrDefault(x => x.GetHashCode() == objHashCode);
             }
 
-        areaconnect = br.ReadBytes(MapConstants.NUMAREAS* MapConstants.NUMAREAS).ToFixedArray(MapConstants.NUMAREAS, MapConstants.NUMAREAS);
-        areabyplayer = br.ReadBytes(MapConstants.NUMAREAS);
+        areaconnect = br.ReadBytes(MapDataConstants.NUMAREAS* MapDataConstants.NUMAREAS).ToFixedArray(MapDataConstants.NUMAREAS, MapDataConstants.NUMAREAS);
+        areabyplayer = br.ReadBytes(MapDataConstants.NUMAREAS);
 
         DiskFlopAnim(x, y);
         InitActorList();
@@ -631,7 +632,7 @@ internal partial class Program
                 {
                     tile = _mapManager.GetTile(x, y, 0);
 
-                    if (_mapManager.MAPSPOT(x, y,1) == MapConstants.PUSHABLETILE && _mapManager.tilemap[x, y] == 0 && !MapManager.VALIDAREA(tile))
+                    if (_mapManager.MAPSPOT(x, y,1) == MapDataConstants.PUSHABLETILE && _mapManager.tilemap[x, y] == 0 && !MapManager.VALIDAREA(tile))
                     {
                         if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x + 1, y, 0)))
                             tile = (ushort)_mapManager.MAPSPOT(x + 1, y, 0);
@@ -930,8 +931,8 @@ internal partial class Program
         for (i = 0; i < FINEANGLES / 8; i++)
         {
             double tang = Math.Tan((i + 0.5d) / radtoint);
-            finetangent[i] = (int)(tang * GLOBAL1);
-            finetangent[FINEANGLES / 4 - 1 - i] = (int)((1 / tang) * GLOBAL1);
+            finetangent[i] = (int)(tang * MapConstants.GLOBAL1);
+            finetangent[FINEANGLES / 4 - 1 - i] = (int)((1 / tang) * MapConstants.GLOBAL1);
         }
 
         //
@@ -943,7 +944,7 @@ internal partial class Program
         float anglestep = (float)(PI / 2 / ANGLEQUAD);
         for (i = 0; i < ANGLEQUAD; i++)
         {
-            int value= (int)(GLOBAL1 * Math.Sin(angle));
+            int value= (int)(MapConstants.GLOBAL1 * Math.Sin(angle));
             sintable[i] = sintable[i + ANGLES] = sintable[ANGLES / 2 - i] = value;
             sintable[ANGLES - i] = sintable[ANGLES / 2 + i] = -value;
             angle += anglestep;

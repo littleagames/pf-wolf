@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Constants;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
 namespace Wolf3D;
@@ -65,8 +66,8 @@ internal partial class Program
             Actor? spot = _mapManager.actorat[player.tilex, player.tiley];
 
             CenterWindow(15, 9);
-            US_Print($"X: {player.x} ({(player.x % TILEGLOBAL)})\n");
-            US_Print($"Y: {player.y} ({(player.y % TILEGLOBAL)})\n");
+            US_Print($"X: {player.x} ({(player.x % MapConstants.TILEGLOBAL)})\n");
+            US_Print($"Y: {player.y} ({(player.y % MapConstants.TILEGLOBAL)})\n");
             US_Print($"A: {player.angle}\n");
             US_Print($"TileX: {player.tilex}\n");
             US_Print($"TileY: {player.tiley}\n");
@@ -396,7 +397,7 @@ internal partial class Program
                     else
                         color = "Black";      // nothing
                 }
-                else if (_mapManager.MAPSPOT(x, y, 1) == MapConstants.PUSHABLETILE)
+                else if (_mapManager.MAPSPOT(x, y, 1) == MapDataConstants.PUSHABLETILE)
                     color = "Purple";
                 else if (tile is BlockingActor)
                     color = "Dark Blue";
@@ -417,210 +418,210 @@ internal partial class Program
 
     internal static void ShapeTest()
     {
-        bool done;
-        ScanCodes scan;
-        int i, j, k, x;
-        int v2;
-        int oldviewheight;
-        uint l;
-        byte v;
-        byte[] addr;
-        int sound;
+        //bool done;
+        //ScanCodes scan;
+        //int i, j, k, x;
+        //int v2;
+        //int oldviewheight;
+        //uint l;
+        //byte v;
+        //byte[] addr;
+        //int sound;
 
-        CenterWindow(20, 16);
-        _videoManager.Update();
+        //CenterWindow(20, 16);
+        //_videoManager.Update();
 
-        i = 0;
-        done = false;
+        //i = 0;
+        //done = false;
 
-        while (!done)
-        {
-            US_ClearWindow();
-            sound = -1;
+        //while (!done)
+        //{
+        //    US_ClearWindow();
+        //    sound = -1;
 
-            US_Print(" Page #");
-            US_Print(i.ToString());
+        //    US_Print(" Page #");
+        //    US_Print(i.ToString());
 
-            if (i < PMSpriteStart)
-                US_Print(" (Wall)");
-            else if (i < PMSoundStart)
-                US_Print(" (Sprite)");
-            else if (i == ChunksInFile - 1)
-                US_Print(" (Sound Info)");
-            else
-                US_Print(" (Sound)");
+        //    if (i < PMSpriteStart)
+        //        US_Print(" (Wall)");
+        //    else if (i < PMSoundStart)
+        //        US_Print(" (Sprite)");
+        //    else if (i == ChunksInFile - 1)
+        //        US_Print(" (Sound Info)");
+        //    else
+        //        US_Print(" (Sound)");
 
-            US_Print("\n Address: ");
-            addr = PM_GetPage(i);
-            //snprintf(str, sizeof(str), "0x%010X", (uintptr_t)addr);
-            US_Print(SpriteMappings.NameIndexMap[i]);
+        //    US_Print("\n Address: ");
+        //    addr = PM_GetPage(i);
+        //    //snprintf(str, sizeof(str), "0x%010X", (uintptr_t)addr);
+        //    US_Print(SpriteMappings.NameIndexMap[i]);
 
-            if (addr != null && addr.Length > 0)
-            {
-                if (i < PMSpriteStart)
-                {
-                    //
-                    // draw the wall
-                    //
-                    vbufPtr = _videoManager.LockSurface();
+        //    if (addr != null && addr.Length > 0)
+        //    {
+        //        if (i < PMSpriteStart)
+        //        {
+        //            //
+        //            // draw the wall
+        //            //
+        //            vbufPtr = _videoManager.LockSurface();
 
-                    if (vbufPtr == IntPtr.Zero)
-                        _gameEngineManager.Quit("ShapeTest: Unable to create surface for walls!");
+        //            if (vbufPtr == IntPtr.Zero)
+        //                _gameEngineManager.Quit("ShapeTest: Unable to create surface for walls!");
 
-                    postx = (_videoManager.screenWidth / 2) - ((TEXTURESIZE / 2) * _videoManager.scaleFactor);
-                    postsource = addr;
+        //            postx = (_videoManager.screenWidth / 2) - ((TEXTURESIZE / 2) * _videoManager.scaleFactor);
+        //            postsource = addr;
 
-                    centery = (short)(_videoManager.screenHeight / 2);
-                    oldviewheight = viewheight;
-                    viewheight = 0x7fff;            // quick hack to skip clipping
+        //            centery = (short)(_videoManager.screenHeight / 2);
+        //            oldviewheight = viewheight;
+        //            viewheight = 0x7fff;            // quick hack to skip clipping
 
-                    for (x = 0, j = 0; x < TEXTURESIZE * _videoManager.scaleFactor; x++, j++, postx++)
-                    {
-                        wallheight[postx] = (short)(256 * _videoManager.scaleFactor);
-                        ScalePost();
+        //            for (x = 0, j = 0; x < TEXTURESIZE * _videoManager.scaleFactor; x++, j++, postx++)
+        //            {
+        //                wallheight[postx] = (short)(256 * _videoManager.scaleFactor);
+        //                ScalePost();
 
-                        if (j == _videoManager.scaleFactor)
-                        {
-                            j = 0;
-                            postsource = postsource.Skip(TEXTURESIZE).ToArray();
-                        }
-                    }
+        //                if (j == _videoManager.scaleFactor)
+        //                {
+        //                    j = 0;
+        //                    postsource = postsource.Skip(TEXTURESIZE).ToArray();
+        //                }
+        //            }
 
-                    viewheight = oldviewheight;
-                    centery = (short)(viewheight / 2);
+        //            viewheight = oldviewheight;
+        //            centery = (short)(viewheight / 2);
 
-                    _videoManager.UnlockSurface();
-                    vbufPtr = IntPtr.Zero;
-                }
-                else if (i < PMSoundStart)
-                {
-                    //
-                    // draw the sprite
-                    //
-                    vbufPtr = _videoManager.LockSurface();
+        //            _videoManager.UnlockSurface();
+        //            vbufPtr = IntPtr.Zero;
+        //        }
+        //        else if (i < PMSoundStart)
+        //        {
+        //            //
+        //            // draw the sprite
+        //            //
+        //            vbufPtr = _videoManager.LockSurface();
 
-                    if (vbufPtr == IntPtr.Zero)
-                        _gameEngineManager.Quit("ShapeTest: Unable to create surface for sprites!");
+        //            if (vbufPtr == IntPtr.Zero)
+        //                _gameEngineManager.Quit("ShapeTest: Unable to create surface for sprites!");
 
-                    centery = (short)(_videoManager.screenHeight / 2);
-                    oldviewheight = viewheight;
-                    viewheight = 0x7fff;            // quick hack to skip clipping
+        //            centery = (short)(_videoManager.screenHeight / 2);
+        //            oldviewheight = viewheight;
+        //            viewheight = 0x7fff;            // quick hack to skip clipping
 
-                    SimpleScaleShape(_videoManager.screenWidth / 2, SpriteMappings.NameIndexMap[i - PMSpriteStart], 64 * _videoManager.scaleFactor);
+        //            SimpleScaleShape(_videoManager.screenWidth / 2, SpriteMappings.NameIndexMap[i - PMSpriteStart], 64 * _videoManager.scaleFactor);
 
-                    viewheight = oldviewheight;
-                    centery = (short)(viewheight / 2);
+        //            viewheight = oldviewheight;
+        //            centery = (short)(viewheight / 2);
 
-                    _videoManager.UnlockSurface();
-                    vbufPtr = IntPtr.Zero;
-                }
-                else if (i == ChunksInFile - 1)
-                {
-                    //
-                    // display sound info
-                    //
-                    US_Print("\n\n Number of sounds: ");
-                    US_Print(NumDigi.ToString());
+        //            _videoManager.UnlockSurface();
+        //            vbufPtr = IntPtr.Zero;
+        //        }
+        //        else if (i == ChunksInFile - 1)
+        //        {
+        //            //
+        //            // display sound info
+        //            //
+        //            US_Print("\n\n Number of sounds: ");
+        //            US_Print(NumDigi.ToString());
 
-                    for (l = (uint)(j = 0); j < NumDigi; j++)
-                        l += DigiList[j].length;
+        //            for (l = (uint)(j = 0); j < NumDigi; j++)
+        //                l += DigiList[j].length;
 
-                    US_Print("\n Total bytes: ");
-                    US_Print(l.ToString());
-                    US_Print("\n Total pages: ");
-                    US_Print((ChunksInFile - PMSoundStart - 1).ToString());
-                }
-                else
-                {
-                    //
-                    // display sounds
-                    //
-                    for (j = 0; j < NumDigi; j++)
-                    {
-                        if (j == NumDigi - 1)
-                            k = ChunksInFile - 1;    // don't let it overflow
-                        else
-                            k = (int)DigiList[j + 1].startpage;
+        //            US_Print("\n Total bytes: ");
+        //            US_Print(l.ToString());
+        //            US_Print("\n Total pages: ");
+        //            US_Print((ChunksInFile - PMSoundStart - 1).ToString());
+        //        }
+        //        else
+        //        {
+        //            //
+        //            // display sounds
+        //            //
+        //            for (j = 0; j < NumDigi; j++)
+        //            {
+        //                if (j == NumDigi - 1)
+        //                    k = ChunksInFile - 1;    // don't let it overflow
+        //                else
+        //                    k = (int)DigiList[j + 1].startpage;
 
-                        if (i >= PMSoundStart + DigiList[j].startpage && i < PMSoundStart + k)
-                            break;
-                    }
+        //                if (i >= PMSoundStart + DigiList[j].startpage && i < PMSoundStart + k)
+        //                    break;
+        //            }
 
-                    if (j < NumDigi)
-                    {
-                        sound = j;
+        //            if (j < NumDigi)
+        //            {
+        //                sound = j;
 
-                        US_Print("\n Sound #");
-                        US_Print(j.ToString());
-                        US_Print("\n Segment #");
-                        US_Print(((int)(i - PMSoundStart - DigiList[j].startpage)).ToString());
-                    }
+        //                US_Print("\n Sound #");
+        //                US_Print(j.ToString());
+        //                US_Print("\n Segment #");
+        //                US_Print(((int)(i - PMSoundStart - DigiList[j].startpage)).ToString());
+        //            }
 
-                    for (j = 0; j < pageLengths[i]; j += 32)
-                    {
-                        v = addr[j];
-                        v2 = v;
-                        v2 -= 128;
-                        v2 /= 4;
+        //            for (j = 0; j < pageLengths[i]; j += 32)
+        //            {
+        //                v = addr[j];
+        //                v2 = v;
+        //                v2 -= 128;
+        //                v2 /= 4;
 
-                        if (v2 < 0)
-                            _videoManager.VerticalLine(WindowY + WindowH - 32 + v2,
-                                      WindowY + WindowH - 32,
-                                      WindowX + 8 + (j / 32), "Black");
-                        else
-                            _videoManager.VerticalLine(WindowY + WindowH - 32,
-                                      WindowY + WindowH - 32 + v2,
-                                      WindowX + 8 + (j / 32), "Black");
-                    }
-                }
-            }
+        //                if (v2 < 0)
+        //                    _videoManager.VerticalLine(WindowY + WindowH - 32 + v2,
+        //                              WindowY + WindowH - 32,
+        //                              WindowX + 8 + (j / 32), "Black");
+        //                else
+        //                    _videoManager.VerticalLine(WindowY + WindowH - 32,
+        //                              WindowY + WindowH - 32 + v2,
+        //                              WindowX + 8 + (j / 32), "Black");
+        //            }
+        //        }
+        //    }
 
-            _videoManager.Update();
+        //    _videoManager.Update();
 
-            _inputManager.Ack();
-            scan = _inputManager.GetLastKeyPressed();
+        //    _inputManager.Ack();
+        //    scan = _inputManager.GetLastKeyPressed();
 
-            _inputManager.ClearKey(scan);
+        //    _inputManager.ClearKey(scan);
 
-            switch ((ScanCodes)scan)
-            {
-                case ScanCodes.sc_LeftArrow:
-                    if (i != 0)
-                        i--;
-                    break;
+        //    switch ((ScanCodes)scan)
+        //    {
+        //        case ScanCodes.sc_LeftArrow:
+        //            if (i != 0)
+        //                i--;
+        //            break;
 
-                case ScanCodes.sc_RightArrow:
-                    if (++i >= ChunksInFile)
-                        i--;
-                    break;
+        //        case ScanCodes.sc_RightArrow:
+        //            if (++i >= ChunksInFile)
+        //                i--;
+        //            break;
 
-                case ScanCodes.sc_W:      // Walls
-                    i = 0;
-                    break;
+        //        case ScanCodes.sc_W:      // Walls
+        //            i = 0;
+        //            break;
 
-                case ScanCodes.sc_S:      // Sprites
-                    i = PMSpriteStart;
-                    break;
+        //        case ScanCodes.sc_S:      // Sprites
+        //            i = PMSpriteStart;
+        //            break;
 
-                case ScanCodes.sc_D:      // Digitized
-                    i = PMSoundStart;
-                    break;
+        //        case ScanCodes.sc_D:      // Digitized
+        //            i = PMSoundStart;
+        //            break;
 
-                case ScanCodes.sc_I:      // Digitized info
-                    i = ChunksInFile - 1;
-                    break;
+        //        case ScanCodes.sc_I:      // Digitized info
+        //            i = ChunksInFile - 1;
+        //            break;
 
-                case ScanCodes.sc_P:
-                    if (sound != -1)
-                        SD_PlayDigitized((ushort)sound, 8, 8);
-                    break;
+        //        case ScanCodes.sc_P:
+        //            if (sound != -1)
+        //                _audioManager.SD_PlayDigitized((ushort)sound, 8, 8);
+        //            break;
 
-                case ScanCodes.sc_Escape:
-                    done = true;
-                    break;
-            }
-        }
+        //        case ScanCodes.sc_Escape:
+        //            done = true;
+        //            break;
+        //    }
+        //}
 
-        SD_StopDigitized();
+        //_audioManager.SD_StopDigitized();
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Wolf3D.Assets;
+using Wolf3D.Assets.Sounds;
+using Wolf3D.Mappers;
 
 namespace Wolf3D.Loaders;
 
@@ -161,12 +163,14 @@ internal class Wolf3DVswapFileLoader
         for (int i = 0; i < PMSpriteStart; i++)
         {
             byte[] textureData = PM_GetPage(i);
+            assets.Add(TextureMappings.NameIndexMap[i], new TextureAsset { RawData = textureData });
             // Use SDL_SetupSprite to get sprite data
         }
 
         for (int i = PMSpriteStart; i < PMSoundStart; i++)
         {
             byte[] spriteData = PM_GetPage(i);
+            assets.Add(SpriteMappings.NameIndexMap[i-PMSpriteStart], new SpriteAsset { RawData = spriteData });
             // Use SDL_SetupSprite to get sprite data
         }
         // Use SDL_SetupDigi to get sound data
@@ -217,9 +221,10 @@ internal class Wolf3DVswapFileLoader
             digiList[i].length = (uint)size;
         }
 
-        for (int i = PMSoundStart; i < ChunksInFile - 1; i++)
+        for (int i = 0; i < digiList.Length - 1; i++)
         {
             byte[] soundData = PM_GetSoundPage(digiList[i].startpage, digiList[i].length);
+            assets.Add(DigitizedSoundMappings.NameIndexMap[i], new Wolf3dDigitizedAudio { RawData = soundData });
             // Use SDL_SetupSprite to get sprite data
         }
 

@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Constants;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
@@ -49,7 +50,7 @@ internal partial class Program
         _videoManager.Update();
 
         _videoManager.FadeIn();
-        _inputManager.UserInput(TickBase * 7);
+        _inputManager.UserInput(Timing.TickBase * 7);
 
         _videoManager.FadeOut();
     }

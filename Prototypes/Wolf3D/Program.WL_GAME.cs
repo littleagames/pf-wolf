@@ -922,7 +922,7 @@ internal partial class Program
             {
                 var tile = _mapManager.MAPSPOT(x, y, 0);
 
-                if (tile == MapConstants.AMBUSHTILE)
+                if (tile == MapDataConstants.AMBUSHTILE)
                 {
                     if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x + 1, y, 0)))
                         tile = (ushort)_mapManager.MAPSPOT(x + 1, y, 0);
@@ -954,7 +954,7 @@ internal partial class Program
         // have the caching manager load and purge stuff to make sure all marks
         // are in memory
         //
-        CA_LoadAllSounds();
+        //CA_LoadAllSounds();
     }
 
     internal const int DEATHROTATE = 2;

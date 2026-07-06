@@ -128,7 +128,7 @@ internal partial class Program
 
             gamestate.TimeCount += (int)tics;
 
-            UpdateSoundLoc();      // JAB
+            _audioManager.UpdateSoundLoc(viewx, viewy, viewsin, viewcos);      // JAB
             if (_videoManager.screenfaded)
                 _videoManager.FadeIn();
 
@@ -181,7 +181,7 @@ internal partial class Program
 
     internal static void DoActor(objstruct ob)
     {
-        if (ob.active == 0 && ob.areanumber < MapConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
+        if (ob.active == 0 && ob.areanumber < MapDataConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
             return;
         
         if (!ob.flags.HasFlag(objflags.FL_NONMARK) && !ob.flags.HasFlag(objflags.FL_NEVERMARK))

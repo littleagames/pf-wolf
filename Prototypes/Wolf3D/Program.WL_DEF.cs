@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using Wolf3D.Constants;
 using static Wolf3D.Program;
 
 namespace Wolf3D;
@@ -620,8 +621,6 @@ internal partial class Program
     internal const int BIT_DOOR = (1 << (WALLSHIFT + 1));
     internal const int BIT_ALLTILES = (1 << (WALLSHIFT + 2));
 
-    internal static int DOORWALL => PMSpriteStart - 8;
-
     internal const int MAXACTORS = 150;
     internal const int MAXSTATS = 400;
     internal const int MAXDOORS = 64;
@@ -645,9 +644,6 @@ internal partial class Program
 
     internal const float PI = 3.141592657f;
     internal const float M_PI = PI;
-    internal const long GLOBAL1 = (1L << 16);
-    internal const long TILEGLOBAL = GLOBAL1;
-    internal const int TILESHIFT = 16;
     internal const int UNSIGNEDSHIFT = 8;
 
     internal const int ANGLES = 360;
@@ -712,11 +708,16 @@ internal partial class Program
         // next free bit is   0x00001000
     }
 
-    internal static void ClearMemory() => SD_StopDigitized();
+    internal static void ClearMemory() => _audioManager.SD_StopDigitized();
 
     // JAB
-    internal static void PlaySoundLocTile(string s, int tx, int ty) => PlaySoundLocGlobal(s, (int)((tx << TILESHIFT) + (TILEGLOBAL / 2)), (int)((ty << TILESHIFT) + (TILEGLOBAL / 2)));
-    internal static void PlaySoundLocActor(string s, objstruct ob) => PlaySoundLocGlobal(s, ob.x, ob.y);
+    internal static void PlaySoundLocTile(string s, int tx, int ty) => _audioManager.PlaySoundLocGlobal(
+        s, 
+        (int)((tx << MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2)), 
+        (int)((ty << MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2)),
+        viewx,viewy,viewsin,viewcos);
+    internal static void PlaySoundLocActor(string s, objstruct ob) => _audioManager.PlaySoundLocGlobal(s, ob.x, ob.y,
+        viewx, viewy, viewsin, viewcos);
 
 
     /*

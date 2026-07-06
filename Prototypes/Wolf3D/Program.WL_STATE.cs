@@ -1,4 +1,5 @@
-﻿using Wolf3D.Managers;
+﻿using Wolf3D.Constants;
+using Wolf3D.Managers;
 
 namespace Wolf3D;
 
@@ -40,12 +41,12 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
 
         newobj.tilex = (byte)tilex;
         newobj.tiley = (byte)tiley;
-        newobj.x = (int)((tilex << TILESHIFT) + TILEGLOBAL / 2);
-        newobj.y = (int)((tiley << TILESHIFT) + TILEGLOBAL / 2);
+        newobj.x = (int)((tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+        newobj.y = (int)((tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
         newobj.dir = objdirtypes.nodir;
 
         _mapManager.actorat[tilex, tiley] = newobj;// (uint)((MAXACTORS - objfreelist) | 0xffff); // TODO: Might be the wrong value
-        newobj.areanumber = (byte)(_mapManager.MAPSPOT((int)tilex, (int)tiley, 0) - MapConstants.AREATILE);
+        newobj.areanumber = (byte)(_mapManager.MAPSPOT((int)tilex, (int)tiley, 0) - MapDataConstants.AREATILE);
 
         return newobj;
 
@@ -118,7 +119,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         //
         // check to make sure it's not on top of player
         //
-        if (ob.areanumber >= MapConstants.NUMAREAS || areabyplayer[ob.areanumber] != 0)
+        if (ob.areanumber >= MapDataConstants.NUMAREAS || areabyplayer[ob.areanumber] != 0)
         {
             deltax = Math.Abs(newx - player.x);
             deltay = Math.Abs(newy - player.y);
@@ -304,8 +305,8 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
             return true;
         }
 
-        ob.areanumber = (byte)(_mapManager.MAPSPOT(ob.tilex, ob.tiley, 0) - MapConstants.AREATILE);
-        ob.distance = (int)TILEGLOBAL;
+        ob.areanumber = (byte)(_mapManager.MAPSPOT(ob.tilex, ob.tiley, 0) - MapDataConstants.AREATILE);
+        ob.distance = (int)MapConstants.TILEGLOBAL;
         return true;
     }
 
@@ -529,7 +530,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         //
         // don't bother tracing a line if the area isn't connected to the player's
         //
-        if (ob.areanumber < MapConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
+        if (ob.areanumber < MapDataConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
             return false;
 
         //
@@ -615,7 +616,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         }
         else
         {
-            if (ob.areanumber < MapConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
+            if (ob.areanumber < MapDataConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
                 return false;
 
             if (ob.flags.HasFlag(objflags.FL_AMBUSH))
@@ -1095,8 +1096,8 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
     {
         int tilex, tiley;
 
-        tilex = ob.x >> TILESHIFT;         // drop item on center
-        tiley = ob.y >> TILESHIFT;
+        tilex = ob.x >> (int)MapConstants.TILESHIFT;         // drop item on center
+        tiley = ob.y >> (int)MapConstants.TILESHIFT;
 
         switch (ob.obclass)
         {

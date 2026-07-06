@@ -1,9 +1,8 @@
-﻿using Wolf3D.Managers;
-using Wolf3D.Mappers;
+﻿using Wolf3D.Mappers;
 
 namespace Wolf3D.Managers;
 
-public class MapConstants
+public class MapDataConstants
 {
     public const int ICONARROWS = 90;
     public const int PUSHABLETILE = 98;
@@ -112,7 +111,7 @@ internal class MapManager
             for (int x = 0; x < mapwidth; x++)
             {
                 int tile = MAPSPOT(x, y, 0);
-                if (tile < MapConstants.AMBUSHTILE)
+                if (tile < MapDataConstants.AMBUSHTILE)
                 {
                     // solid wall
                     tilemap[x, y] = (byte)tile;
@@ -128,7 +127,7 @@ internal class MapManager
         }
     }
 
-    internal static bool VALIDAREA(int x) => (x) >= MapConstants.AREATILE && (x) < (MapConstants.AREATILE + MapConstants.NUMAREAS);
+    internal static bool VALIDAREA(int x) => (x) >= MapDataConstants.AREATILE && (x) < (MapDataConstants.AREATILE + MapDataConstants.NUMAREAS);
 
     internal static bool ISPOINTER(Actor? check)
     {

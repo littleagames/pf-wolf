@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using System.Runtime.InteropServices;
+using Wolf3D.Constants;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
 
@@ -125,8 +126,8 @@ internal partial class Program
         //
         // calculate nx
         //
-        gxt = FixedMul(gx, viewcos);
-        gyt = FixedMul(gy, viewsin);
+        gxt = MathUtils.FixedMul(gx, viewcos);
+        gyt = MathUtils.FixedMul(gy, viewsin);
         nx = gxt - gyt;
 
         //
@@ -147,16 +148,16 @@ internal partial class Program
         viewsin = sintable[viewangle];
         viewcos = costable[viewangle];
 
-        viewx = player.x - FixedMul(focallength, viewcos);
-        viewy = player.y + FixedMul(focallength, viewsin);
+        viewx = player.x - MathUtils.FixedMul(focallength, viewcos);
+        viewy = player.y + MathUtils.FixedMul(focallength, viewsin);
 
-        focaltx = (short)(viewx >> (int)TILESHIFT);
-        focalty = (short)(viewy >> (int)TILESHIFT);
+        focaltx = (short)(viewx >> (int)MapConstants.TILESHIFT);
+        focalty = (short)(viewy >> (int)MapConstants.TILESHIFT);
 
-        xpartialdown = (uint)(viewx & (TILEGLOBAL - 1));
-        xpartialup = (uint)(xpartialdown ^ (TILEGLOBAL - 1));
-        ypartialdown = (uint)(viewy & (TILEGLOBAL - 1));
-        ypartialup = (uint)(ypartialdown ^ (TILEGLOBAL - 1));
+        xpartialdown = (uint)(viewx & (MapConstants.TILEGLOBAL - 1));
+        xpartialup = (uint)(xpartialdown ^ (MapConstants.TILEGLOBAL - 1));
+        ypartialdown = (uint)(viewy & (MapConstants.TILEGLOBAL - 1));
+        ypartialup = (uint)(ypartialdown ^ (MapConstants.TILEGLOBAL - 1));
     }
 
     //==========================================================================
@@ -234,7 +235,7 @@ internal partial class Program
 
     internal static void HitVertWall()
     {
-        int wallpic;
+        string wallpic;
         int texture;
 
         texture = ((yintercept - texdelta) >> FIXED2TEXSHIFT) & TEXTUREMASK;
@@ -242,7 +243,7 @@ internal partial class Program
         if (xtilestep == -1)
         {
             texture = TEXTUREMASK - texture;
-            xintercept += (int)TILEGLOBAL;
+            xintercept += (int)MapConstants.TILEGLOBAL;
         }
         wallheight[pixx] = CalcHeight();
         postx = pixx;
@@ -253,14 +254,15 @@ internal partial class Program
             // check for adjacent doors
             //
             if ((_mapManager.tilemap[xtile - xtilestep, yinttile] & BIT_DOOR) != 0)
-                wallpic = DOORWALL + 3;
+                wallpic = "SLOT1_2";// DOORWALL + 3;
             else
-                wallpic = vertwall[tilehit & ~BIT_WALL];
+                wallpic = TextureMappings.NameIndexMap[vertwall[tilehit & ~BIT_WALL]];
         }
         else
-            wallpic = vertwall[tilehit];
+            wallpic = TextureMappings.NameIndexMap[vertwall[tilehit]];
 
-        postsource = PM_GetPage(wallpic).Skip(texture).ToArray();
+        postsource = _assetManager.GetTexture(wallpic).RawData.Skip(texture).ToArray();
+        //postsource = PM_GetPage(wallpic).Skip(texture).ToArray();
         ScalePost();
     }
 
@@ -277,13 +279,13 @@ internal partial class Program
 
     internal static void HitHorizWall()
     {
-        int wallpic;
+        string wallpic;
         int texture;
 
         texture = ((xintercept - texdelta) >> FIXED2TEXSHIFT) & TEXTUREMASK;
 
         if (ytilestep == -1)
-            yintercept += (int)TILEGLOBAL;
+            yintercept += (int)MapConstants.TILEGLOBAL;
         else
             texture = TEXTUREMASK - texture;
 
@@ -296,20 +298,20 @@ internal partial class Program
             // check for adjacent doors
             //
             if ((_mapManager.tilemap[xinttile, ytile - ytilestep] & BIT_DOOR) != 0)
-                wallpic = DOORWALL + 2;
+                wallpic = "SLOT1_1";// DOORWALL + 2;
             else
-                wallpic = horizwall[tilehit & ~BIT_WALL];
+                wallpic = TextureMappings.NameIndexMap[horizwall[tilehit & ~BIT_WALL]];
         }
         else
-            wallpic = horizwall[tilehit];
+            wallpic = TextureMappings.NameIndexMap[horizwall[tilehit]];
 
-        postsource = PM_GetPage(wallpic).Skip(texture).ToArray();
+        postsource = _assetManager.GetTexture(wallpic).RawData.Skip(texture).ToArray();
         ScalePost();
     }
 
     internal static void HitVertDoor()
     {
-        int doorpage = 0;
+        string doorpage = "";
         int doornumtile;
         int texture;
 
@@ -322,29 +324,29 @@ internal partial class Program
         switch ((doortypes)doorobjlist[doornumtile].locknum)
         {
             case doortypes.dr_normal:
-                doorpage = DOORWALL + 1;
+                doorpage = "DOOR_1_2"; // DOORWALL + 1;
                 break;
 
             case doortypes.dr_lock1:
             case doortypes.dr_lock2:
             case doortypes.dr_lock3:
             case doortypes.dr_lock4:
-                doorpage = DOORWALL + 7;
+                doorpage = "DOOR3_2"; // "DOORWALL + 7;
                 break;
 
             case doortypes.dr_elevator:
-                doorpage = DOORWALL + 5;
+                doorpage = "DOOR2_2"; //DOORWALL + 5;
                 break;
         }
 
-        postsource = PM_GetPage(doorpage).Skip(texture).ToArray();// + texture;
+        postsource = _assetManager.GetTexture(doorpage).RawData.Skip(texture).ToArray();
 
         ScalePost();
     }
 
     internal static void HitHorizDoor()
     {
-        int doorpage = 0;
+        string doorpage = "";
         int doornumtile;
         int texture;
 
@@ -357,22 +359,23 @@ internal partial class Program
         switch ((doortypes)doorobjlist[doornumtile].locknum)
         {
             case doortypes.dr_normal:
-                doorpage = DOORWALL;
+                doorpage = "DOOR1_1"; // DOORWALL
                 break;
 
             case doortypes.dr_lock1:
             case doortypes.dr_lock2:
             case doortypes.dr_lock3:
             case doortypes.dr_lock4:
-                doorpage = DOORWALL + 6;
+                doorpage = "DOOR3_1"; // DOORWALL + 6;
                 break;
 
             case doortypes.dr_elevator:
-                doorpage = DOORWALL + 4;
+                doorpage = "DOOR2_1";// DOORWALL + 4;
                 break;
             }
 
-        postsource = PM_GetPage(doorpage).Skip(texture).ToArray();// + texture;
+        postsource = _assetManager.GetTexture(doorpage).RawData.Skip(texture).ToArray();
+        //postsource = PM_GetPage(doorpage).Skip(texture).ToArray();// + texture;
 
         ScalePost();
     }
@@ -476,12 +479,12 @@ internal partial class Program
             //
             // initialise variables for intersection testing
             //
-            yintercept = FixedMul(ystep, (int)xpartial) + viewy;
-            yinttile = yintercept >> (int)TILESHIFT;
+            yintercept = MathUtils.FixedMul(ystep, (int)xpartial) + viewy;
+            yinttile = yintercept >> (int)MapConstants.TILESHIFT;
             xtile = (short)(focaltx + xtilestep);
 
-            xintercept = FixedMul(xstep, (int)ypartial) + viewx;
-            xinttile = xintercept >> (int)TILESHIFT;
+            xintercept = MathUtils.FixedMul(xstep, (int)ypartial) + viewx;
+            xinttile = xintercept >> (int)MapConstants.TILESHIFT;
             ytile = (short)(focalty + ytilestep);
 
             texdelta = 0;
@@ -498,15 +501,15 @@ internal partial class Program
                     //
                     //  trace hit vertical pushwall back?
                     //
-                    if (yinttemp >> TILESHIFT == focalty)
+                    if (yinttemp >> MapConstants.TILESHIFT == focalty)
                     {
                         if (pwalldir == controldirs.di_east)
-                            xintercept = (focaltx << TILESHIFT) + (pwallpos << 10);
+                            xintercept = (focaltx << MapConstants.TILESHIFT) + (pwallpos << 10);
                         else
-                            xintercept = (int)(((focaltx << TILESHIFT) - TILEGLOBAL) + ((64 - pwallpos) << 10));
+                            xintercept = (int)(((focaltx << MapConstants.TILESHIFT) - MapConstants.TILEGLOBAL) + ((64 - pwallpos) << 10));
 
                         yintercept = yinttemp;
-                        yinttile = yintercept >> TILESHIFT;
+                        yinttile = yintercept >> MapConstants.TILESHIFT;
                         tilehit = pwalltile;
                         HitVertWall();
                         continue;
@@ -519,15 +522,15 @@ internal partial class Program
                     //
                     // trace hit horizontal pushwall back?
                     //
-                    if (xinttemp >> TILESHIFT == focaltx)
+                    if (xinttemp >> MapConstants.TILESHIFT == focaltx)
                     {
                         if (pwalldir == controldirs.di_south)
-                            yintercept = (focalty << TILESHIFT) + (pwallpos << 10);
+                            yintercept = (focalty << MapConstants.TILESHIFT) + (pwallpos << 10);
                         else
-                            yintercept = (int)(((focalty << TILESHIFT) - TILEGLOBAL) + ((64 - pwallpos) << 10));
+                            yintercept = (int)(((focalty << MapConstants.TILESHIFT) - MapConstants.TILEGLOBAL) + ((64 - pwallpos) << 10));
 
                         xintercept = xinttemp;
-                        xinttile = xintercept >> TILESHIFT;
+                        xinttile = xintercept >> MapConstants.TILESHIFT;
                         tilehit = pwalltile;
                         HitHorizWall();
                         continue;
@@ -595,7 +598,7 @@ internal partial class Program
                 //
                 // midpoint is outside tile, so it hit the side of the wall before a door
                 //
-                if (yinttemp >> TILESHIFT != yinttile)
+                if (yinttemp >> MapConstants.TILESHIFT != yinttile)
                 {
                     passvert(ystep);
                     return false;
@@ -615,7 +618,7 @@ internal partial class Program
                 }
 
                 yintercept = yinttemp;
-                xintercept = (int)((xtile << (int)TILESHIFT) + (TILEGLOBAL / 2));
+                xintercept = (int)((xtile << (int)MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2));
 
                 HitVertDoor();
             }
@@ -642,15 +645,15 @@ internal partial class Program
                     {
                         yinttemp = yintercept + ((ystep * pwallposnorm) >> 6);
 
-                        if (yinttemp >> TILESHIFT != yinttile)
+                        if (yinttemp >> MapConstants.TILESHIFT != yinttile)
                         {
                             passvert(ystep);
                             return false;
                         }
 
                         yintercept = yinttemp;
-                        xintercept = (int)(((xtile << TILESHIFT) + TILEGLOBAL) - (pwallposinv << 10));
-                        yinttile = yintercept >> TILESHIFT;
+                        xintercept = (int)(((xtile << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL) - (pwallposinv << 10));
+                        yinttile = yintercept >> MapConstants.TILESHIFT;
                         tilehit = pwalltile;
 
                         HitVertWall();
@@ -659,15 +662,15 @@ internal partial class Program
                     {
                         yinttemp = yintercept + ((ystep * pwallposinv) >> 6);
 
-                        if (yinttemp >> TILESHIFT != yinttile)
+                        if (yinttemp >> MapConstants.TILESHIFT != yinttile)
                         {
                             passvert(ystep);
                             return false;
                         }
 
                         yintercept = yinttemp;
-                        xintercept = (xtile << TILESHIFT) -(pwallposinv << 10);
-                        yinttile = yintercept >> TILESHIFT;
+                        xintercept = (xtile << MapConstants.TILESHIFT) -(pwallposinv << 10);
+                        yinttile = yintercept >> MapConstants.TILESHIFT;
                         tilehit = pwalltile;
 
                         HitVertWall();
@@ -697,12 +700,12 @@ internal partial class Program
                             // set up a horizontal intercept position
                             //
                             if (pwalldir == controldirs.di_south)
-                                yintercept = (yinttile << TILESHIFT) + (pwallposi << 10);
+                                yintercept = (yinttile << MapConstants.TILESHIFT) + (pwallposi << 10);
                             else
-                                yintercept = (int)(((yinttile << TILESHIFT) - TILEGLOBAL) + (pwallposi << 10));
+                                yintercept = (int)(((yinttile << MapConstants.TILESHIFT) - MapConstants.TILEGLOBAL) + (pwallposi << 10));
 
                             xintercept -= (xstep * (64 - pwallpos)) >> 6;
-                            xinttile = xintercept >> TILESHIFT;
+                            xinttile = xintercept >> MapConstants.TILESHIFT;
                             tilehit = pwalltile;
 
                             HitHorizWall();
@@ -710,7 +713,7 @@ internal partial class Program
                         else
                         {
                             texdelta = (ushort)(pwallposi << 10);
-                            xintercept = xtile << TILESHIFT;
+                            xintercept = xtile << MapConstants.TILESHIFT;
                             tilehit = pwalltile;
 
                             HitVertWall();
@@ -721,7 +724,7 @@ internal partial class Program
                         if (xtile == pwallx && yinttile == pwally)
                         {
                             texdelta = (ushort)(pwallposi << 10);
-                            xintercept = xtile << TILESHIFT;
+                            xintercept = xtile << MapConstants.TILESHIFT;
                             tilehit = pwalltile;
 
                             HitVertWall();
@@ -740,12 +743,12 @@ internal partial class Program
                             // set up a horizontal intercept position
                             //
                             if (pwalldir == controldirs.di_south)
-                                yintercept = (yinttile << TILESHIFT) - ((64 - pwallpos) << 10);
+                                yintercept = (yinttile << MapConstants.TILESHIFT) - ((64 - pwallpos) << 10);
                             else
-                                yintercept = (yinttile << TILESHIFT) + ((64 - pwallpos) << 10);
+                                yintercept = (yinttile << MapConstants.TILESHIFT) + ((64 - pwallpos) << 10);
 
                             xintercept -= (xstep * pwallpos) >> 6;
-                            xinttile = xintercept >> TILESHIFT;
+                            xinttile = xintercept >> MapConstants.TILESHIFT;
                             tilehit = pwalltile;
 
                             HitHorizWall();
@@ -755,7 +758,7 @@ internal partial class Program
             }
             else
             {
-                xintercept = (xtile << TILESHIFT);
+                xintercept = (xtile << MapConstants.TILESHIFT);
 
                 HitVertWall();
             }
@@ -775,7 +778,7 @@ internal partial class Program
         _mapManager.spotvis[xtile, yinttile] = true;
         xtile += xtilestep;
         yintercept += ystep;
-        yinttile = yintercept >> (int)TILESHIFT;
+        yinttile = yintercept >> (int)MapConstants.TILESHIFT;
     }
 
     private static bool horizentry(int xstep,int ystep, int xinttemp, ref int pwallposnorm, ref int pwallposinv, ref int pwallposi)
@@ -806,7 +809,7 @@ internal partial class Program
                 //
                 // midpoint is outside tile, so it hit the side of the wall before a door
                 //
-                if ((xinttemp >> TILESHIFT) != xinttile)
+                if ((xinttemp >> MapConstants.TILESHIFT) != xinttile)
                 {
                     passhoriz(xstep);
                     return false;
@@ -826,7 +829,7 @@ internal partial class Program
                 }
 
                 xintercept = xinttemp;
-                yintercept = (int)((ytile << (int)TILESHIFT) + (TILEGLOBAL / 2));
+                yintercept = (int)((ytile << (int)MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2));
 
                 HitHorizDoor();
             }
@@ -853,15 +856,15 @@ internal partial class Program
                     {
                         xinttemp = xintercept + ((xstep * pwallposnorm) >> 6);
 
-                        if (xinttemp >> TILESHIFT != xinttile)
+                        if (xinttemp >> MapConstants.TILESHIFT != xinttile)
                         {
                             passhoriz(xstep);
                             return false;
                         }
 
                         xintercept = xinttemp;
-                        yintercept = (int)(((ytile << TILESHIFT) +TILEGLOBAL) -(pwallposinv << 10));
-                        xinttile = xintercept >> TILESHIFT;
+                        yintercept = (int)(((ytile << MapConstants.TILESHIFT) +MapConstants.TILEGLOBAL) -(pwallposinv << 10));
+                        xinttile = xintercept >> MapConstants.TILESHIFT;
                         tilehit = pwalltile;
 
                         HitHorizWall();
@@ -870,15 +873,15 @@ internal partial class Program
                     {
                         xinttemp = xintercept + ((xstep * pwallposinv) >> 6);
 
-                        if (xinttemp >> TILESHIFT != xinttile)
+                        if (xinttemp >> MapConstants.TILESHIFT != xinttile)
                         {
                             passhoriz(xstep);
                             return false;
                         }
 
                         xintercept = xinttemp;
-                        yintercept = (ytile << TILESHIFT) -(pwallposinv << 10);
-                        xinttile = xintercept >> TILESHIFT;
+                        yintercept = (ytile << MapConstants.TILESHIFT) -(pwallposinv << 10);
+                        xinttile = xintercept >> MapConstants.TILESHIFT;
                         tilehit = pwalltile;
 
                         HitHorizWall();
@@ -908,12 +911,12 @@ internal partial class Program
                             // set up a vertical intercept position
                             //
                             yintercept -= (ystep * (64 - pwallpos)) >> 6;
-                            yinttile = yintercept >> TILESHIFT;
+                            yinttile = yintercept >> MapConstants.TILESHIFT;
 
                             if (pwalldir == controldirs.di_east)
-                                xintercept = (xinttile << TILESHIFT) + (pwallposi << 10);
+                                xintercept = (xinttile << MapConstants.TILESHIFT) + (pwallposi << 10);
                             else
-                                xintercept = (int)(((xinttile << TILESHIFT) - TILEGLOBAL) + (pwallposi << 10));
+                                xintercept = (int)(((xinttile << MapConstants.TILESHIFT) - MapConstants.TILEGLOBAL) + (pwallposi << 10));
 
                             tilehit = pwalltile;
 
@@ -922,7 +925,7 @@ internal partial class Program
                         else
                         {
                             texdelta = (ushort)(pwallposi << 10);
-                            yintercept = ytile << TILESHIFT;
+                            yintercept = ytile << MapConstants.TILESHIFT;
                             tilehit = pwalltile;
 
                             HitHorizWall();
@@ -933,7 +936,7 @@ internal partial class Program
                         if (xinttile == pwallx && ytile == pwally)
                         {
                             texdelta = (ushort)(pwallposi << 10);
-                            yintercept = ytile << TILESHIFT;
+                            yintercept = ytile << MapConstants.TILESHIFT;
                             tilehit = pwalltile;
 
                             HitHorizWall();
@@ -952,12 +955,12 @@ internal partial class Program
                             // set up a vertical intercept position
                             //
                             yintercept -= (ystep * pwallpos) >> 6;
-                            yinttile = yintercept >> TILESHIFT;
+                            yinttile = yintercept >> MapConstants.TILESHIFT;
 
                             if (pwalldir == controldirs.di_east)
-                                xintercept = (xinttile << TILESHIFT) - ((64 - pwallpos) << 10);
+                                xintercept = (xinttile << MapConstants.TILESHIFT) - ((64 - pwallpos) << 10);
                             else
-                                xintercept = (xinttile << TILESHIFT) + ((64 - pwallpos) << 10);
+                                xintercept = (xinttile << MapConstants.TILESHIFT) + ((64 - pwallpos) << 10);
 
                             tilehit = pwalltile;
 
@@ -968,7 +971,7 @@ internal partial class Program
             }
             else
             {
-                yintercept = ytile << TILESHIFT;
+                yintercept = ytile << MapConstants.TILESHIFT;
 
                 HitHorizWall();
             }
@@ -988,7 +991,7 @@ internal partial class Program
         _mapManager.spotvis[xinttile, ytile] = true;
         ytile += ytilestep;
         xintercept += xstep;
-        xinttile = xintercept >> (int)TILESHIFT;
+        xinttile = xintercept >> (int)MapConstants.TILESHIFT;
     }
     /*
 ========================
@@ -1018,21 +1021,21 @@ internal partial class Program
         //
         // translate point to view centered coordinates
         //
-        gx = ((int)tx << TILESHIFT) + 0x8000 - viewx;
-        gy = ((int)ty << TILESHIFT) + 0x8000 - viewy;
+        gx = ((int)tx << MapConstants.TILESHIFT) + 0x8000 - viewx;
+        gy = ((int)ty << MapConstants.TILESHIFT) + 0x8000 - viewy;
 
         //
         // calculate newx
         //
-        gxt = FixedMul(gx, viewcos);
-        gyt = FixedMul(gy, viewsin);
+        gxt = MathUtils.FixedMul(gx, viewcos);
+        gyt = MathUtils.FixedMul(gy, viewsin);
         nx = gxt - gyt - 0x2000;            // 0x2000 is size of object
 
         //
         // calculate newy
         //
-        gxt = FixedMul(gx, viewsin);
-        gyt = FixedMul(gy, viewcos);
+        gxt = MathUtils.FixedMul(gx, viewsin);
+        gyt = MathUtils.FixedMul(gy, viewcos);
         ny = gyt + gxt;
 
 
@@ -1050,7 +1053,7 @@ internal partial class Program
         //
         // see if it should be grabbed
         //
-        if (nx < TILEGLOBAL && ny > -TILEGLOBAL / 2 && ny < TILEGLOBAL / 2)
+        if (nx < MapConstants.TILEGLOBAL && ny > -MapConstants.TILEGLOBAL / 2 && ny < MapConstants.TILEGLOBAL / 2)
             return true;
         else
             return false;
@@ -1095,8 +1098,8 @@ internal partial class Program
         //
         // calculate newx
         //
-        gxt = FixedMul(gx, viewcos);
-        gyt = FixedMul(gy, viewsin);
+        gxt = MathUtils.FixedMul(gx, viewcos);
+        gyt = MathUtils.FixedMul(gy, viewsin);
         nx = gxt - gyt - ACTORSIZE;         // fudge the shape forward a bit, because
                                             // the midpoint could put parts of the shape
                                             // into an adjacent wall
@@ -1104,8 +1107,8 @@ internal partial class Program
         //
         // calculate newy
         //
-        gxt = FixedMul(gx, viewsin);
-        gyt = FixedMul(gy, viewcos);
+        gxt = MathUtils.FixedMul(gx, viewsin);
+        gyt = MathUtils.FixedMul(gy, viewcos);
         ny = gyt + gxt;
 
         //
@@ -1215,8 +1218,8 @@ internal partial class Program
                     visptr_val.shapenum += "0";
                 if (visptr < MAXVISABLE - 1)    // don't let it overflow
                 {
-                    visptr_val.tilex = (byte)(obj.x >> TILESHIFT);
-                    visptr_val.tiley = (byte)(obj.y >> TILESHIFT);
+                    visptr_val.tilex = (byte)(obj.x >> MapConstants.TILESHIFT);
+                    visptr_val.tiley = (byte)(obj.y >> MapConstants.TILESHIFT);
                     visptr_val.flags = obj.flags;
                     vislist[visptr] = visptr_val;
                     visptr++;

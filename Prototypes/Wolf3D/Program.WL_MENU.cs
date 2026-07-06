@@ -719,7 +719,7 @@ internal partial class Program
             _videoManager.ClearScreen(0);
 
         if (!ingame)
-            CA_LoadAllSounds();
+        { }// CA_LoadAllSounds();
         else
             MainMenu[(int)menuitems.savegame].active = 1;
 
@@ -1143,29 +1143,29 @@ internal partial class Program
                 // SOUND EFFECTS
                 //
                 case 0:
-                    if (SoundMode != SDMode.Off)
+                    if (_audioManager.SoundMode != SDMode.Off)
                     {
                         _audioManager.SD_WaitSoundDone();
-                        _audioManager.SD_SetSoundMode(SDMode.Off);
+                        _audioManager.SetSoundMode(SDMode.Off);
                         DrawSoundMenu();
                     }
                     break;
                 case 1:
-                    if (SoundMode != SDMode.PC)
+                    if (_audioManager.SoundMode != SDMode.PC)
                     {
                         _audioManager.SD_WaitSoundDone();
-                        _audioManager.SD_SetSoundMode(SDMode.PC);
-                        CA_LoadAllSounds();
+                        _audioManager.SetSoundMode(SDMode.PC);
+                        //CA_LoadAllSounds();
                         DrawSoundMenu();
                         ShootSnd();
                     }
                     break;
                 case 2:
-                    if (SoundMode != SDMode.AdLib)
+                    if (_audioManager.SoundMode != SDMode.AdLib)
                     {
                         _audioManager.SD_WaitSoundDone();
-                        _audioManager.SD_SetSoundMode(SDMode.AdLib);
-                        CA_LoadAllSounds();
+                        _audioManager.SetSoundMode(SDMode.AdLib);
+                        //CA_LoadAllSounds();
                         DrawSoundMenu();
                         ShootSnd();
                     }
@@ -1175,9 +1175,9 @@ internal partial class Program
                 // DIGITIZED SOUND
                 //
                 case 5:
-                    if (DigiMode != (byte)SDSMode.Off)
+                    if (_audioManager.DigiMode != (byte)SDSMode.Off)
                     {
-                        SD_SetDigiDevice((byte)SDSMode.Off);
+                        _audioManager.SetDigiDevice((byte)SDSMode.Off);
                         DrawSoundMenu();
                     }
                     break;
@@ -1190,9 +1190,9 @@ internal partial class Program
                                     }*/
                     break;
                 case 7:
-                    if (DigiMode != SDSMode.SoundBlaster)
+                    if (_audioManager.DigiMode != SDSMode.SoundBlaster)
                     {
-                        SD_SetDigiDevice(SDSMode.SoundBlaster);
+                        _audioManager.SetDigiDevice(SDSMode.SoundBlaster);
                         DrawSoundMenu();
                         ShootSnd();
                     }
@@ -1202,17 +1202,17 @@ internal partial class Program
                 // MUSIC
                 //
                 case 10:
-                    if (MusicMode != SMMode.Off)
+                    if (_audioManager.MusicMode != SMMode.Off)
                     {
-                        SD_SetMusicMode(SMMode.Off);
+                        _audioManager.SetMusicMode(SMMode.Off);
                         DrawSoundMenu();
                         ShootSnd();
                     }
                     break;
                 case 11:
-                    if (MusicMode != SMMode.AdLib)
+                    if (_audioManager.MusicMode != SMMode.AdLib)
                     {
-                        SD_SetMusicMode(SMMode.AdLib);
+                        _audioManager.SetMusicMode(SMMode.AdLib);
                         DrawSoundMenu();
                         ShootSnd();
                         StartCPMusic(MENUSONG);
@@ -1244,15 +1244,15 @@ internal partial class Program
         //
         // IF NO ADLIB, NON-CHOOSENESS!
         //
-        if (!AdLibPresent && !SoundBlasterPresent)
+        if (!_audioManager.AdLibPresent && !_audioManager.SoundBlasterPresent)
         {
             SndMenu[2].active = SndMenu[10].active = SndMenu[11].active = 0;
         }
 
-        if (!SoundBlasterPresent)
+        if (!_audioManager.SoundBlasterPresent)
             SndMenu[7].active = 0;
 
-        if (!SoundBlasterPresent)
+        if (!_audioManager.SoundBlasterPresent)
             SndMenu[5].active = 0;
 
         DrawMenu(SndItems, SndMenu);
@@ -1269,15 +1269,15 @@ internal partial class Program
                     // SOUND EFFECTS
                     //
                     case 0:
-                        if (SoundMode == SDMode.Off)
+                        if (_audioManager.SoundMode == SDMode.Off)
                             on = 1;
                         break;
                     case 1:
-                        if (SoundMode == SDMode.PC)
+                        if (_audioManager.SoundMode == SDMode.PC)
                             on = 1;
                         break;
                     case 2:
-                        if (SoundMode == SDMode.AdLib)
+                        if (_audioManager.SoundMode == SDMode.AdLib)
                             on = 1;
                         break;
 
@@ -1285,7 +1285,7 @@ internal partial class Program
                     // DIGITIZED SOUND
                     //
                     case 5:
-                        if (DigiMode == SDSMode.Off)
+                        if (_audioManager.DigiMode == SDSMode.Off)
                             on = 1;
                         break;
                     case 6:
@@ -1293,7 +1293,7 @@ internal partial class Program
                         //                        on = 1;
                         break;
                     case 7:
-                        if (DigiMode == SDSMode.SoundBlaster)
+                        if (_audioManager.DigiMode == SDSMode.SoundBlaster)
                             on = 1;
                         break;
 
@@ -1301,11 +1301,11 @@ internal partial class Program
                     // MUSIC
                     //
                     case 10:
-                        if (MusicMode == SMMode.Off)
+                        if (_audioManager.MusicMode == SMMode.Off)
                             on = 1;
                         break;
                     case 11:
-                        if (MusicMode == SMMode.AdLib)
+                        if (_audioManager.MusicMode == SMMode.AdLib)
                             on = 1;
                         break;
                 }
@@ -2769,10 +2769,10 @@ internal partial class Program
         if (_inputManager.JoyPresent())
             _videoManager.Bar(164, 105, 12, 2, "FILLCOLOR");
 
-        if (AdLibPresent && !SoundBlasterPresent)
+        if (_audioManager.AdLibPresent && !_audioManager.SoundBlasterPresent)
             _videoManager.Bar(164, 128, 12, 2, "FILLCOLOR");
 
-        if (SoundBlasterPresent)
+        if (_audioManager.SoundBlasterPresent)
             _videoManager.Bar(164, 151, 12, 2, "FILLCOLOR");
 
         //    if (SoundSourcePresent)

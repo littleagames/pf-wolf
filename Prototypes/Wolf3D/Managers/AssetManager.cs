@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Wolf3D.Assets;
 using Wolf3D.Assets.Sounds;
 using Wolf3D.Entities;
 using Wolf3D.Entities.Actors;
@@ -675,5 +676,15 @@ internal class AssetManager
                 },
             };
         */
+    }
+
+    internal TextureAsset GetTexture(string asset)
+    {
+        throw new NotImplementedException();
+    }
+
+    internal SpriteAsset GetSprite(string shapenum)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -1,4 +1,5 @@
-﻿using Wolf3D.Managers;
+﻿using Wolf3D.Constants;
+using Wolf3D.Managers;
 using Wolf3D.Mappers;
 
 namespace Wolf3D;
@@ -213,19 +214,19 @@ internal partial class Program
 
         xmove = //DEMOCHOOSE_ORIG_SDL(
                  //   FixedByFracOrig(speed, costable[angle]),
-                    FixedMul(speed, costable[angle]);
+                    MathUtils.FixedMul(speed, costable[angle]);
         ymove =// DEMOCHOOSE_ORIG_SDL(
                  //   -FixedByFracOrig(speed, sintable[angle]),
-                    -FixedMul(speed, sintable[angle]);
+                    -MathUtils.FixedMul(speed, sintable[angle]);
 
         ClipMove(player, xmove, ymove);
 
-        player.tilex = (byte)(player.x >> (int)TILESHIFT);                // scale to tile values
-        player.tiley = (byte)(player.y >> (int)TILESHIFT);
+        player.tilex = (byte)(player.x >> (int)MapConstants.TILESHIFT);                // scale to tile values
+        player.tiley = (byte)(player.y >> (int)MapConstants.TILESHIFT);
 
-        player.areanumber = (byte)(_mapManager.MAPSPOT(player.tilex, player.tiley, 0) - MapConstants.AREATILE);
+        player.areanumber = (byte)(_mapManager.MAPSPOT(player.tilex, player.tiley, 0) - MapDataConstants.AREATILE);
 
-        if (_mapManager.MAPSPOT(player.tilex, player.tiley, 1) == MapConstants.EXITTILE)
+        if (_mapManager.MAPSPOT(player.tilex, player.tiley, 1) == MapDataConstants.EXITTILE)
             VictoryTile();
     }
 
@@ -235,11 +236,11 @@ internal partial class Program
         Actor? check;
         int deltax, deltay;
 
-        xl = (uint)((ob.x - PLAYERSIZE) >> (int)TILESHIFT);
-        yl = (uint)((ob.y - PLAYERSIZE) >> (int)TILESHIFT);
+        xl = (uint)((ob.x - PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
+        yl = (uint)((ob.y - PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
 
-        xh = (uint)((ob.x + PLAYERSIZE) >> (int)TILESHIFT);
-        yh = (uint)((ob.y + PLAYERSIZE) >> (int)TILESHIFT);
+        xh = (uint)((ob.x + PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
+        yh = (uint)((ob.y + PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
 
         const long PUSHWALLMINDIST = PLAYERSIZE;
 
@@ -258,19 +259,19 @@ internal partial class Program
                         switch (pwalldir)
                         {
                             case controldirs.di_north:
-                                if (ob.y - PUSHWALLMINDIST <= (pwally << (int)TILESHIFT) + ((63 - pwallpos) << 10))
+                                if (ob.y - PUSHWALLMINDIST <= (pwally << (int)MapConstants.TILESHIFT) + ((63 - pwallpos) << 10))
                                     return false;
                                 break;
                             case controldirs.di_west:
-                                if (ob.x - PUSHWALLMINDIST <= (pwallx << (int)TILESHIFT) + ((63 - pwallpos) << 10))
+                                if (ob.x - PUSHWALLMINDIST <= (pwallx << (int)MapConstants.TILESHIFT) + ((63 - pwallpos) << 10))
                                     return false;
                                 break;
                             case controldirs.di_east:
-                                if (ob.x + PUSHWALLMINDIST >= (pwallx << (int)TILESHIFT) + (pwallpos << 10))
+                                if (ob.x + PUSHWALLMINDIST >= (pwallx << (int)MapConstants.TILESHIFT) + (pwallpos << 10))
                                     return false;
                                 break;
                             case controldirs.di_south:
-                                if (ob.y + PUSHWALLMINDIST >= (pwally << (int)TILESHIFT) + (pwallpos << 10))
+                                if (ob.y + PUSHWALLMINDIST >= (pwally << (int)MapConstants.TILESHIFT) + (pwallpos << 10))
                                     return false;
                                 break;
                         }
@@ -327,9 +328,9 @@ internal partial class Program
         if (TryMove(ob))
             return;
 
-        if (noclip != 0 && ob.x > 2 * TILEGLOBAL && ob.y > 2 * TILEGLOBAL
-            && ob.x < (((int)(_mapManager.mapwidth - 1)) << (int)TILESHIFT)
-            && ob.y < (((int)(_mapManager.mapheight - 1)) << (int)TILESHIFT))
+        if (noclip != 0 && ob.x > 2 * MapConstants.TILEGLOBAL && ob.y > 2 * MapConstants.TILEGLOBAL
+            && ob.x < (((int)(_mapManager.mapwidth - 1)) << (int)MapConstants.TILESHIFT)
+            && ob.y < (((int)(_mapManager.mapheight - 1)) << (int)MapConstants.TILESHIFT))
             return;         // walk through walls
 
         if (_audioManager.SD_SoundPlaying() == "")
@@ -789,7 +790,7 @@ internal partial class Program
         }
 
         cmdtile = _mapManager.tilemap[checkx, checky];
-        if (_mapManager.MAPSPOT(checkx, checky, 1) == MapConstants.PUSHABLETILE)
+        if (_mapManager.MAPSPOT(checkx, checky, 1) == MapDataConstants.PUSHABLETILE)
         {
             //
             // pushable wall
@@ -798,7 +799,7 @@ internal partial class Program
             PushWall(checkx, checky, dir);
             return;
         }
-        if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && cmdtile == MapConstants.ELEVATORTILE && elevatorok)
+        if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && cmdtile == MapDataConstants.ELEVATORTILE && elevatorok)
         {
             //
             // use elevator
@@ -806,7 +807,7 @@ internal partial class Program
             _inputManager.SetButtonHeld(buttontypes.bt_use, true);
 
             _mapManager.tilemap[checkx, checky]++;              // flip switch
-            if (_mapManager.MAPSPOT(player.tilex, player.tiley, 0) == MapConstants.ALTELEVATORTILE)
+            if (_mapManager.MAPSPOT(player.tilex, player.tiley, 0) == MapDataConstants.ALTELEVATORTILE)
                 playstate = playstatetypes.ex_secretlevel;
             else
                 playstate = playstatetypes.ex_completed;
@@ -869,8 +870,8 @@ internal partial class Program
 
         plux = (ushort)(player.x >> UNSIGNEDSHIFT);                     // scale to fit in unsigned
         pluy = (ushort)(player.y >> UNSIGNEDSHIFT);
-        player.tilex = (byte)(player.x >> (int)TILESHIFT);                // scale to tile values
-        player.tiley = (byte)(player.y >> (int)TILESHIFT);
+        player.tilex = (byte)(player.x >> (int)MapConstants.TILESHIFT);                // scale to tile values
+        player.tiley = (byte)(player.y >> (int)MapConstants.TILESHIFT);
     }
 
     internal static void T_Attack(objstruct ob)
@@ -897,8 +898,8 @@ internal partial class Program
 
         plux = (ushort)(player.x >> UNSIGNEDSHIFT);                     // scale to fit in unsigned
         pluy = (ushort)(player.y >> UNSIGNEDSHIFT);
-        player.tilex = (byte)(player.x >> TILESHIFT);                // scale to tile values
-        player.tiley = (byte)(player.y >> TILESHIFT);
+        player.tilex = (byte)(player.x >> (int)MapConstants.TILESHIFT);                // scale to tile values
+        player.tiley = (byte)(player.y >> (int)MapConstants.TILESHIFT);
 
         //
         // change frame and fire
@@ -1098,7 +1099,7 @@ internal partial class Program
                 player.angle = 270;
         }
 
-        desty = ((player.tiley - 5) << (int)TILESHIFT) - 0x3000;
+        desty = ((player.tiley - 5) << (int)MapConstants.TILESHIFT) - 0x3000;
 
         if (player.y > desty)
         {
@@ -1114,9 +1115,9 @@ internal partial class Program
         player.active = activetypes.ac_yes;
         player.tilex = (byte)tilex;
         player.tiley = (byte)tiley;
-        player.areanumber = (byte)(_mapManager.MAPSPOT(tilex, tiley, 0) - MapConstants.AREATILE);
-        player.x = (tilex << (int)TILESHIFT) + (int)TILEGLOBAL / 2;
-        player.y = (tiley << (int)TILESHIFT) + (int)TILEGLOBAL / 2;
+        player.areanumber = (byte)(_mapManager.MAPSPOT(tilex, tiley, 0) - MapDataConstants.AREATILE);
+        player.x = (tilex << (int)MapConstants.TILESHIFT) + (int)MapConstants.TILEGLOBAL / 2;
+        player.y = (tiley << (int)MapConstants.TILESHIFT) + (int)MapConstants.TILEGLOBAL / 2;
         player.state = s_player;
         player.angle = (short)((1 - dir) * 90);
         if (player.angle < 0)

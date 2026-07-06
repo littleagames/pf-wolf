@@ -1,6 +1,6 @@
 ﻿namespace Wolf3D;
 
-internal partial class Program
+internal static class MathUtils
 {
     internal const int FRACBITS = 16;
 

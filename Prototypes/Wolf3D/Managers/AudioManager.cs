@@ -1,6 +1,7 @@
 ﻿using SDL2;
 using System.Runtime.InteropServices;
 using Wolf3D.AudioPlayers;
+using Wolf3D.Constants;
 using Wolf3D.Mappers;
 using Wolf3D.OPL;
 using Wolf3D.OPL.Woody;
@@ -154,8 +155,6 @@ internal class AudioManager
     private ImfPlayer _imfPlayer;// = new ImfPlayer(new WoodyEmulatorOpl(OPL.OplType.Opl2));
     private IdAdlPlayer _adlPlayer;// = new IdAdlPlayer(new WoodyEmulatorOpl(OPL.OplType.Opl2));
     private float _imfRefreshRateHz;// = _player.RefreshRate;    // SDL_t0FastAsmService played at 700Hz
-
-    internal const int TickBase = 70;     // 70Hz per tick - used as a base for timer 0
 
     internal const int ORIG_SOUNDCOMMON_SIZE = 6;
     internal const int ORIG_INSTRUMENT_SIZE = 16;
@@ -338,6 +337,8 @@ internal class AudioManager
 
     internal void Init(int audioBufferSize, int sampleRate)
     {
+        _sampleRate = sampleRate;
+
         int i;
         int chunksize;
 
@@ -1121,7 +1122,7 @@ internal class AudioManager
         }
     }
 
-    void SD_StopDigitized()
+    public void SD_StopDigitized()
     {
         DigiPlaying = false;
         DigiNumber = 0;
@@ -1259,9 +1260,11 @@ internal class AudioManager
     =
     ==========================
     */
-    public void PlaySoundLocGlobal(string s, int gx, int gy)
+    public void PlaySoundLocGlobal(string s, int gx, int gy,
+        int viewx, int viewy, int viewsin, int viewcos)
     {
-        SetSoundLoc(gx, gy);
+        SetSoundLoc(gx, gy,
+                    viewx, viewy, viewsin, viewcos);
         SD_PositionSound(leftchannel, rightchannel);
 
         int channel = SD_PlaySound(s);
@@ -1274,7 +1277,8 @@ internal class AudioManager
     }
 
 
-    internal void UpdateSoundLoc()
+    internal void UpdateSoundLoc(
+        int viewx, int viewy, int viewsin, int viewcos)
     {
         int i;
 
@@ -1289,7 +1293,8 @@ internal class AudioManager
             if (channelSoundPos[i].valid != 0)
             {
                 SetSoundLoc(channelSoundPos[i].globalsoundx,
-                    channelSoundPos[i].globalsoundy);
+                    channelSoundPos[i].globalsoundy,
+                    viewx,viewy,viewsin,viewcos);
                 SD_SetPosition(i, leftchannel, rightchannel);
             }
         }
@@ -1343,7 +1348,8 @@ internal class AudioManager
         { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8}
     };
 
-    internal void SetSoundLoc(int gx, int gy)
+    internal void SetSoundLoc(int gx, int gy,
+        int viewx, int viewy, int viewsin, int viewcos)
     {
         int xt, yt;
         int x, y;
@@ -1357,16 +1363,16 @@ internal class AudioManager
         //
         // calculate newx
         //
-        xt = FixedMul(gx, viewcos);
-        yt = FixedMul(gy, viewsin);
-        x = (xt - yt) >> TILESHIFT;
+        xt = MathUtils.FixedMul(gx, viewcos);
+        yt = MathUtils.FixedMul(gy, viewsin);
+        x = (xt - yt) >> MapConstants.TILESHIFT;
 
         //
         // calculate newy
         //
-        xt = FixedMul(gx, viewsin);
-        yt = FixedMul(gy, viewcos);
-        y = (yt + xt) >> TILESHIFT;
+        xt = MathUtils.FixedMul(gx, viewsin);
+        yt = MathUtils.FixedMul(gy, viewcos);
+        y = (yt + xt) >> MapConstants.TILESHIFT;
 
         if (y >= ATABLEMAX)
             y = ATABLEMAX - 1;
@@ -1378,6 +1384,7 @@ internal class AudioManager
             x = ATABLEMAX - 1;
         leftchannel = lefttable[x, y + ATABLEMAX];
         rightchannel = righttable[x, y + ATABLEMAX];
+        //_audioManager.SetChannels(leftchannel,rightchannel); // TODO:
 
         //#if 0
         //    CenterWindow(8,1);

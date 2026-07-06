@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using Wolf3D.Constants;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
 
@@ -207,11 +208,11 @@ internal partial class Program
         int xl, yl, xh, yh, x, y;
         Actor? check;
 
-        xl = (ob.x - PROJSIZE) >> TILESHIFT;
-        yl = (ob.y - PROJSIZE) >> TILESHIFT;
+        xl = (ob.x - PROJSIZE) >> MapConstants.TILESHIFT;
+        yl = (ob.y - PROJSIZE) >> MapConstants.TILESHIFT;
 
-        xh = (ob.x + PROJSIZE) >> TILESHIFT;
-        yh = (ob.y + PROJSIZE) >> TILESHIFT;
+        xh = (ob.x + PROJSIZE) >> MapConstants.TILESHIFT;
+        yh = (ob.y + PROJSIZE) >> MapConstants.TILESHIFT;
 
         //
         // check for solid walls
@@ -243,8 +244,8 @@ internal partial class Program
 
         speed = (int)(ob.speed * tics);
 
-        deltax = FixedMul(speed, costable[ob.angle]);
-        deltay = -FixedMul(speed, sintable[ob.angle]);
+        deltax = MathUtils.FixedMul(speed, costable[ob.angle]);
+        deltay = -MathUtils.FixedMul(speed, sintable[ob.angle]);
 
         if (deltax > 0x10000L)
             deltax = 0x10000L;
@@ -299,8 +300,8 @@ internal partial class Program
             return;
         }
 
-        ob.tilex = (byte)(ob.x >> TILESHIFT);
-        ob.tiley = (byte)(ob.y >> TILESHIFT);
+        ob.tilex = (byte)(ob.x >> MapConstants.TILESHIFT);
+        ob.tiley = (byte)(ob.y >> MapConstants.TILESHIFT);
     }
 
     /*
@@ -395,8 +396,8 @@ internal partial class Program
             //
             // fix position to account for round off during moving
             //
-            ob.x = (int)((ob.tilex << TILESHIFT) + TILEGLOBAL / 2);
-            ob.y = (int)((ob.tiley << TILESHIFT) + TILEGLOBAL / 2);
+            ob.x = (int)((ob.tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+            ob.y = (int)((ob.tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
 
             move -= ob.distance;
 
@@ -451,13 +452,13 @@ internal partial class Program
         dx = player.x - ob.x;
         if (dx < 0)
             dx = -dx;
-        dx -= (int)TILEGLOBAL;
+        dx -= (int)MapConstants.TILEGLOBAL;
         if (dx <= MINACTORDIST)
         {
             dy = player.y - ob.y;
             if (dy < 0)
                 dy = -dy;
-            dy -= (int)TILEGLOBAL;
+            dy -= (int)MapConstants.TILEGLOBAL;
             if (dy <= MINACTORDIST)
             {
                 if (US_RndT() < 180)
@@ -804,7 +805,7 @@ internal partial class Program
                 OpenDoor(-ob.distance - 1);
                 if (doorobjlist[-ob.distance - 1].action != (byte)dooractiontypes.dr_open)
                     return;
-                ob.distance = (int)TILEGLOBAL;      // go ahead, the door is now open
+                ob.distance = (int)MapConstants.TILEGLOBAL;      // go ahead, the door is now open
                 TryWalk(ob);
             }
 
@@ -821,8 +822,8 @@ internal partial class Program
             //
             // fix position to account for round off during moving
             //
-            ob.x = (int)((ob.tilex << TILESHIFT) + TILEGLOBAL / 2);
-            ob.y = (int)((ob.tiley << TILESHIFT) + TILEGLOBAL / 2);
+            ob.x = (int)((ob.tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+            ob.y = (int)((ob.tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
 
             move -= ob.distance;
 
@@ -940,7 +941,7 @@ internal partial class Program
                 OpenDoor(-ob.distance - 1);
                 if (doorobjlist[-ob.distance - 1].action != (byte)dooractiontypes.dr_open)
                     return;
-                ob.distance = (int)TILEGLOBAL;      // go ahead, the door is now open
+                ob.distance = (int)MapConstants.TILEGLOBAL;      // go ahead, the door is now open
                 TryWalk(ob);
             }
 
@@ -957,8 +958,8 @@ internal partial class Program
             //
             // fix position to account for round off during moving
             //
-            ob.x = (int)((ob.tilex << TILESHIFT) + TILEGLOBAL / 2);
-            ob.y = (int)((ob.tiley << TILESHIFT) + TILEGLOBAL / 2);
+            ob.x = (int)((ob.tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+            ob.y = (int)((ob.tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
 
             move -= ob.distance;
 
@@ -1085,7 +1086,7 @@ internal partial class Program
                 OpenDoor(-ob.distance - 1);
                 if (doorobjlist[-ob.distance - 1].action != (byte)dooractiontypes.dr_open)
                     return;
-                ob.distance = (int)TILEGLOBAL;      // go ahead, the door is now open
+                ob.distance = (int)MapConstants.TILEGLOBAL;      // go ahead, the door is now open
                 TryWalk(ob);
             }
 
@@ -1102,8 +1103,8 @@ internal partial class Program
             //
             // fix position to account for round off during moving
             //
-            ob.x = (int)((ob.tilex << TILESHIFT) + TILEGLOBAL / 2);
-            ob.y = (int)((ob.tiley << TILESHIFT) + TILEGLOBAL / 2);
+            ob.x = (int)((ob.tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+            ob.y = (int)((ob.tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
 
             move -= ob.distance;
 
@@ -1168,8 +1169,8 @@ internal partial class Program
             }
 
 
-            ob.x = (int)((ob.tilex << TILESHIFT) + TILEGLOBAL / 2);
-            ob.y = (int)((ob.tiley << TILESHIFT) + TILEGLOBAL / 2);
+            ob.x = (int)((ob.tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+            ob.y = (int)((ob.tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
             move -= ob.distance;
 
             SelectPathDir(ob);
@@ -1653,7 +1654,7 @@ internal partial class Program
 
 
         tile = _mapManager.MAPSPOT(tilex, tiley, 0);
-        if (tile == MapConstants.AMBUSHTILE)
+        if (tile == MapDataConstants.AMBUSHTILE)
         {
             if (MapManager.VALIDAREA(_mapManager.MAPSPOT(tilex + 1, tiley, 0)))
                 tile = _mapManager.MAPSPOT(tilex + 1, tiley, 0);
@@ -1665,7 +1666,7 @@ internal partial class Program
                 tile = _mapManager.MAPSPOT(tilex - 1, tiley, 0);
 
             _mapManager.SetMapSpot(tilex, tiley, 0, (ushort)tile);
-            newobj.areanumber = (byte)(tile - MapConstants.AREATILE);
+            newobj.areanumber = (byte)(tile - MapDataConstants.AREATILE);
 
             newobj.flags |= objflags.FL_AMBUSH;
         }
@@ -1721,7 +1722,7 @@ internal partial class Program
         newobj.obclass = (classtypes.guardobj + which);
         newobj.dir = (objdirtypes)(dir * 2);
         newobj.hitpoints = starthitpoints[(int)gamestate.difficulty, which];
-        newobj.distance = (int)TILEGLOBAL;
+        newobj.distance = (int)MapConstants.TILEGLOBAL;
         newobj.flags |= objflags.FL_SHOOTABLE;
         newobj.active = activetypes.ac_yes;
 
@@ -1806,7 +1807,7 @@ internal partial class Program
     {
         objstruct newobj = null!;
 
-        if (DigiMode != SDSMode.Off)
+        if (_audioManager.DigiMode != SDSMode.Off)
             s_hitlerdie2.tictime = 140;
         else
             s_hitlerdie2.tictime = 5;
@@ -1847,7 +1848,7 @@ internal partial class Program
 
     internal static void A_MechaSound(objstruct ob)
     {
-        if (ob.areanumber >= MapConstants.NUMAREAS || areabyplayer[ob.areanumber] != 0)
+        if (ob.areanumber >= MapDataConstants.NUMAREAS || areabyplayer[ob.areanumber] != 0)
             PlaySoundLocActor("MECHSTEPSND", ob);
     }
 
@@ -1937,8 +1938,8 @@ internal partial class Program
             //
             // fix position to account for round off during moving
             //
-            ob.x = (int)((ob.tilex << TILESHIFT) + TILEGLOBAL / 2);
-            ob.y = (int)((ob.tiley << TILESHIFT) + TILEGLOBAL / 2);
+            ob.x = (int)((ob.tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+            ob.y = (int)((ob.tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
 
             move -= ob.distance;
 
@@ -1953,7 +1954,7 @@ internal partial class Program
     {
         objstruct newobj = null!;
 
-        if (DigiMode != SDSMode.Off)
+        if (_audioManager.DigiMode != SDSMode.Off)
             s_giftdie2.tictime = 140;
         else
             s_giftdie2.tictime = 5;
@@ -2006,7 +2007,7 @@ internal partial class Program
     {
         objstruct newobj = null!;
 
-        if (DigiMode != SDSMode.Off)
+        if (_audioManager.DigiMode != SDSMode.Off)
             s_giftdie2.tictime = 140;
         else
             s_giftdie2.tictime = 5;
@@ -2026,7 +2027,7 @@ internal partial class Program
     {
         objstruct newobj = null!;
 
-        if (DigiMode != SDSMode.Off)
+        if (_audioManager.DigiMode != SDSMode.Off)
             s_giftdie2.tictime = 140;
         else
             s_giftdie2.tictime = 5;
@@ -2166,7 +2167,7 @@ internal partial class Program
                 OpenDoor(-ob.distance - 1);
                 if (doorobjlist[-ob.distance - 1].action != (byte)dooractiontypes.dr_open)
                     return;
-                ob.distance = (int)TILEGLOBAL;      // go ahead, the door is now open
+                ob.distance = (int)MapConstants.TILEGLOBAL;      // go ahead, the door is now open
                 if ((!(demorecord || demoplayback)))
                 {
                     TryWalk(ob);
@@ -2186,8 +2187,8 @@ internal partial class Program
             //
             // fix position to account for round off during moving
             //
-            ob.x = (int)((ob.tilex << TILESHIFT) + TILEGLOBAL / 2);
-            ob.y = (int)((ob.tiley << TILESHIFT) + TILEGLOBAL / 2);
+            ob.x = (int)((ob.tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+            ob.y = (int)((ob.tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
 
             move -= ob.distance;
 
@@ -2259,8 +2260,8 @@ internal partial class Program
             //
             // fix position to account for round off during moving
             //
-            ob.x = (int)((ob.tilex << TILESHIFT) + TILEGLOBAL / 2);
-            ob.y = (int)((ob.tiley << TILESHIFT) + TILEGLOBAL / 2);
+            ob.x = (int)((ob.tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+            ob.y = (int)((ob.tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
 
             move -= ob.distance;
 
@@ -2298,7 +2299,7 @@ internal partial class Program
                 OpenDoor(-ob.distance - 1);
                 if (doorobjlist[-ob.distance - 1].action != (byte)dooractiontypes.dr_open)
                     return;
-                ob.distance = (int)TILEGLOBAL;      // go ahead, the door is now open
+                ob.distance = (int)MapConstants.TILEGLOBAL;      // go ahead, the door is now open
                 if (!((demorecord || demoplayback)))
                 {
                     TryWalk(ob);
@@ -2314,8 +2315,8 @@ internal partial class Program
             if (ob.tilex > MapManager.MAPSIZE || ob.tiley > MapManager.MAPSIZE)
                 _gameEngineManager.Quit($"T_Path hit a wall at {ob.tilex},{ob.tiley}, dir {ob.dir}");
 
-            ob.x = (int)((ob.tilex << TILESHIFT) + TILEGLOBAL / 2);
-            ob.y = (int)((ob.tiley << TILESHIFT) + TILEGLOBAL / 2);
+            ob.x = (int)((ob.tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+            ob.y = (int)((ob.tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
             move -= ob.distance;
 
             SelectPathDir(ob);
@@ -2350,7 +2351,7 @@ internal partial class Program
 
         hitchance = 128;
 
-        if (ob.areanumber < MapConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
+        if (ob.areanumber < MapDataConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
             return;
 
         if (CheckLine(ob))                    // player is not behind a wall
@@ -2504,7 +2505,7 @@ internal partial class Program
     {
         uint spot;
 
-        spot = (uint)(_mapManager.MAPSPOT(ob.tilex, ob.tiley, 1) - MapConstants.ICONARROWS);
+        spot = (uint)(_mapManager.MAPSPOT(ob.tilex, ob.tiley, 1) - MapDataConstants.ICONARROWS);
 
         if (spot < 8)
         {
@@ -2512,7 +2513,7 @@ internal partial class Program
             ob.dir = (objdirtypes)spot;
         }
 
-        ob.distance = (int)TILEGLOBAL;
+        ob.distance = (int)MapConstants.TILEGLOBAL;
 
         if (!TryWalk(ob))
             ob.dir = objdirtypes.nodir;
@@ -2533,11 +2534,11 @@ internal partial class Program
         int x, y, xl, yl, xh, yh;
         Actor? check;
 
-        xl = (int)((ob.x - PLAYERSIZE) >> TILESHIFT);
-        yl = (int)((ob.y - PLAYERSIZE) >> TILESHIFT);
+        xl = (int)((ob.x - PLAYERSIZE) >> MapConstants.TILESHIFT);
+        yl = (int)((ob.y - PLAYERSIZE) >> MapConstants.TILESHIFT);
 
-        xh = (int)((ob.x + PLAYERSIZE) >> TILESHIFT);
-        yh = (int)((ob.y + PLAYERSIZE) >> TILESHIFT);
+        xh = (int)((ob.x + PLAYERSIZE) >> MapConstants.TILESHIFT);
+        yh = (int)((ob.y + PLAYERSIZE) >> MapConstants.TILESHIFT);
 
         //
         // check for solid walls
@@ -2625,8 +2626,8 @@ internal partial class Program
         dist = 0x14000;
         do
         {
-            xmove = FixedMul(dist, costable[player.angle]);
-            ymove = -FixedMul(dist, sintable[player.angle]);
+            xmove = MathUtils.FixedMul(dist, costable[player.angle]);
+            ymove = -MathUtils.FixedMul(dist, sintable[player.angle]);
 
             player.x = ob.x - xmove;
             player.y = ob.y - ymove;
@@ -2635,8 +2636,8 @@ internal partial class Program
         } while (!CheckPosition(player));
         plux = (ushort)(player.x >> UNSIGNEDSHIFT);                      // scale to fit in unsigned
         pluy = (ushort)(player.y >> UNSIGNEDSHIFT);
-        player.tilex = (byte)(player.x >> TILESHIFT);         // scale to tile values
-        player.tiley = (byte)(player.y >> TILESHIFT);
+        player.tilex = (byte)(player.x >> MapConstants.TILESHIFT);         // scale to tile values
+        player.tiley = (byte)(player.y >> MapConstants.TILESHIFT);
 
         //
         // go back to the game
