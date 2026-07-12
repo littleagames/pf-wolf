@@ -221,11 +221,10 @@ internal class Wolf3DVswapFileLoader
             digiList[i].length = (uint)size;
         }
 
-        for (int i = 0; i < digiList.Length - 1; i++)
+        for (int i = 0; i < digiList.Length; i++)
         {
             byte[] soundData = PM_GetSoundPage(digiList[i].startpage, digiList[i].length);
             assets.Add(DigitizedSoundMappings.NameIndexMap[i], new Wolf3dDigitizedAudio { RawData = soundData });
-            // Use SDL_SetupSprite to get sprite data
         }
 
         return assets;
