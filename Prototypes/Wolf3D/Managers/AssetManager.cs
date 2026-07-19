@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Xml.Linq;
 using Wolf3D.Assets;
 using Wolf3D.Assets.Sounds;
 using Wolf3D.Entities;
@@ -12,6 +13,8 @@ namespace Wolf3D.Managers;
 
 internal class AssetManager
 {
+    Dictionary<string, Asset> _assets = new Dictionary<string, Asset>();
+
     [Obsolete("Temporary endpoint until the asset types are implemented")]
     public GameInfoMetadata GetGameInfo()
     {
@@ -409,8 +412,18 @@ internal class AssetManager
     }
     public Wolf3dDigitizedAudio? GetSound(string name)
     {
+        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
+            return foundAsset as Wolf3dDigitizedAudio;
+
         var vswapLoader = new Wolf3DVswapFileLoader("vswap", "wl6");
         var assets = vswapLoader.GetAssets();
+
+        foreach (var kvp in assets)
+        {
+            if (!_assets.ContainsKey(kvp.Key))
+                _assets[kvp.Key] = kvp.Value;
+        }
+
         if (assets.TryGetValue(name, out var asset))
             return asset as Wolf3dDigitizedAudio;
 
@@ -419,10 +432,21 @@ internal class AssetManager
 
     public Wolf3dImfAudio? GetImf(string name)
     {
+        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
+            return foundAsset as Wolf3dImfAudio;
+
         var audioLoader = new Wolf3dAudioFileLoader("audiot", "wl6", "audiohed", "wl6");
         var assets = audioLoader.GetAssets();
+
+        foreach (var kvp in assets)
+        {
+            if (!_assets.ContainsKey(kvp.Key))
+                _assets[kvp.Key] = kvp.Value;
+        }
+
         if (assets.TryGetValue(name, out var asset))
             return asset as Wolf3dImfAudio;
+
         return null;
     }
 
@@ -678,13 +702,44 @@ internal class AssetManager
         */
     }
 
-    internal TextureAsset GetTexture(string asset)
+    internal TextureAsset? GetTexture(string name)
     {
-        throw new NotImplementedException();
+        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
+            return foundAsset as TextureAsset;
+
+        var vswapLoader = new Wolf3DVswapFileLoader("vswap", "wl6");
+        var assets = vswapLoader.GetAssets();
+
+        foreach (var kvp in assets)
+        {
+            if (!_assets.ContainsKey(kvp.Key))
+                _assets[kvp.Key] = kvp.Value;
+        }
+
+        if (assets.TryGetValue(name, out var asset))
+            return asset as TextureAsset;
+
+        return null;
     }
 
-    internal SpriteAsset GetSprite(string shapenum)
+    internal SpriteAsset? GetSprite(string name)
     {
-        throw new NotImplementedException();
+        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
+            return foundAsset as SpriteAsset;
+
+        var vswapLoader = new Wolf3DVswapFileLoader("vswap", "wl6");
+        var assets = vswapLoader.GetAssets();
+        
+        foreach (var kvp in assets)
+        {
+            if (!_assets.ContainsKey(kvp.Key))
+                _assets[kvp.Key] = kvp.Value;
+        }
+
+        if (assets.TryGetValue(name, out var asset))
+            return asset as SpriteAsset;
+
+
+        return null;
     }
 }

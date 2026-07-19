@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using System.Runtime.InteropServices;
+using Wolf3D.Assets.Sounds;
 using Wolf3D.AudioPlayers;
 using Wolf3D.Constants;
 using Wolf3D.Mappers;
@@ -58,28 +59,28 @@ internal struct Instrument
     }
 }
 
-internal class PCSound : Sound
-{
-    public PCSound()
-    {
-        data = new byte[1];
-    }
+//internal class PCSound : Sound
+//{
+//    public PCSound()
+//    {
+//        data = new byte[1];
+//    }
 
-    public PCSound(byte[] data)
-    {
-        common = new SoundCommon(data);
-        this.data = new byte[common.length]; // data length - sizeof(soundcommon)??
-        Buffer.BlockCopy(data, 6, this.data, 0, (int)common.length);
-    }
-}
+//    public PCSound(byte[] data)
+//    {
+//        common = new SoundCommon(data);
+//        this.data = new byte[common.length]; // data length - sizeof(soundcommon)??
+//        Buffer.BlockCopy(data, 6, this.data, 0, (int)common.length);
+//    }
+//}
 
-internal class ImfMusic : Sound
-{
-    public ImfMusic(byte[] data)
-    {
-        this.data = data;
-    }
-}
+//internal class ImfMusic : Sound
+//{
+//    public ImfMusic(byte[] data)
+//    {
+//        this.data = data;
+//    }
+//}
 
 internal struct MusicGroup
 {
@@ -97,46 +98,46 @@ internal struct globalsoundpos
     public int globalsoundx, globalsoundy;
 }
 
-internal abstract class Sound
-{
-    public SoundCommon common;
-    public byte[] data;
-}
+//internal abstract class Sound
+//{
+//    public SoundCommon common;
+//    public byte[] data;
+//}
 
-internal class AdLibSound : Sound
-{
-    //public Instrument inst;
-    //public sbyte block;
+//internal class AdLibSound : Sound
+//{
+//    //public Instrument inst;
+//    //public sbyte block;
 
-    //public AdLibSound()
-    //{
-    //   common = new();
-    //  inst = new();
-    //data = new byte[1];
-    //}
+//    //public AdLibSound()
+//    //{
+//    //   common = new();
+//    //  inst = new();
+//    //data = new byte[1];
+//    //}
 
-    public AdLibSound(byte[] data)
-    {
-        //  common = new SoundCommon(data);
-        // inst = new Instrument
-        //{
-        //    mChar = (sbyte)data[6],
-        //    cChar = (sbyte)data[7],
-        //    mScale = (sbyte)data[8],
-        //    cScale = (sbyte)data[9],
-        //    mAttack = (sbyte)data[10],
-        //    cAttack = (sbyte)data[11],
-        //    mSus = (sbyte)data[12],
-        //    cSus = (sbyte)data[13],
-        //    mWave = (sbyte)data[14],
-        //    cWave = (sbyte)data[15],
-        //    nConn = (sbyte)data[16],
-        //    voice = (sbyte)data[17],
-        //    mode = (sbyte)data[18]
-        //};
-        this.data = data;// new byte[common.length - 12]; // data length - sizeof(soundcommon) - sizeof(instrument) - block and unused bytes
-    }
-}
+//    public AdLibSound(byte[] data)
+//    {
+//        //  common = new SoundCommon(data);
+//        // inst = new Instrument
+//        //{
+//        //    mChar = (sbyte)data[6],
+//        //    cChar = (sbyte)data[7],
+//        //    mScale = (sbyte)data[8],
+//        //    cScale = (sbyte)data[9],
+//        //    mAttack = (sbyte)data[10],
+//        //    cAttack = (sbyte)data[11],
+//        //    mSus = (sbyte)data[12],
+//        //    cSus = (sbyte)data[13],
+//        //    mWave = (sbyte)data[14],
+//        //    cWave = (sbyte)data[15],
+//        //    nConn = (sbyte)data[16],
+//        //    voice = (sbyte)data[17],
+//        //    mode = (sbyte)data[18]
+//        //};
+//        this.data = data;// new byte[common.length - 12]; // data length - sizeof(soundcommon) - sizeof(instrument) - block and unused bytes
+//    }
+//}
 
 internal class AudioManager
 {
@@ -359,15 +360,15 @@ internal class AudioManager
             chunksize = 1 << (int)Math.Log2(audioBufferSize / (44100 / sampleRate));
         }
 
-        if (SDL_mixer.Mix_OpenAudioDevice(sampleRate, SDL.AUDIO_S16, 2, chunksize, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE) != 0)
-        {
-            throw new PfWolfAudioException("Unable to open audio device: {error}", SDL_mixer.Mix_GetError());
-        }
+       // if (SDL_mixer.Mix_OpenAudioDevice(sampleRate, SDL.AUDIO_S16, 2, chunksize, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE) != 0)
+       // {
+        //    throw new PfWolfAudioException("Unable to open audio device: {error}", SDL_mixer.Mix_GetError());
+        //}
 
-        SDL_mixer.Mix_QuerySpec(out sampleRate, out ushort format, out int channels);
+       // SDL_mixer.Mix_QuerySpec(out sampleRate, out ushort format, out int channels);
 
-        SDL_mixer.Mix_ReserveChannels(2);  // reserve player and boss weapon channels
-        SDL_mixer.Mix_GroupChannels(2, SDL_mixer.MIX_CHANNELS - 1, 1); // group remaining channels
+       // SDL_mixer.Mix_ReserveChannels(2);  // reserve player and boss weapon channels
+       // SDL_mixer.Mix_GroupChannels(2, SDL_mixer.MIX_CHANNELS - 1, 1); // group remaining channels
 
         // Init music
         var imfOpl = new WoodyEmulatorOpl(OplType.Opl2);
@@ -382,15 +383,15 @@ internal class AudioManager
 
         samplesPerMusicTick = (int)(sampleRate / _imfPlayer.RefreshRate);    // SDL_t0FastAsmService played at 700Hz
 
-        SDL_mixer.Mix_HookMusic(SDL_IMFMusicPlayer, 0);
-        SDL_mixer.Mix_ChannelFinished(SD_ChannelFinished);
+        //SDL_mixer.Mix_HookMusic(SDL_IMFMusicPlayer, 0);
+        //SDL_mixer.Mix_ChannelFinished(SD_ChannelFinished);
         AdLibPresent = true;
         SoundBlasterPresent = true;
 
         alTimeCount = 0;
 
         // Add PC speaker sound mixer
-        SDL_mixer.Mix_SetPostMix(SDL_PCMixCallback, IntPtr.Zero);
+       // SDL_mixer.Mix_SetPostMix(SDL_PCMixCallback, IntPtr.Zero);
 
         SetSoundMode(SDMode.Off);
         SetMusicMode(SMMode.Off);
@@ -410,11 +411,11 @@ internal class AudioManager
     //      SDL_PCPlaySound() - Plays the specified sound on the PC speaker
     //
     ///////////////////////////////////////////////////////////////////////////
-    internal void SDL_PCPlaySound(PCSound sound)
+    internal void SDL_PCPlaySound(PcSound sound)
     {
         pcLastSample = unchecked((byte)-1);
-        pcLengthLeft = sound.common.length;
-        pcSound = sound.data;
+        pcLengthLeft = sound.Common.Length;
+        pcSound = sound.Data;
         pcSoundPtr = 0;
     }
 
@@ -668,7 +669,12 @@ internal class AudioManager
 
         var digiSound = assetManager.GetSound(sound);
         if ((SoundMode != SDMode.Off) && digiSound == null)
-            throw new PfWolfAudioException("SD_PlaySound() - Uncached sound");
+        {
+            Console.WriteLine($"{nameof(SD_PlaySound)}({sound}) - Sound not found.");
+            return 0;
+            //throw new PfWolfAudioException("SD_PlaySound({sound}) - Uncached sound", sound);
+        }
+
 
         // TODO: Handle PC Sound, AdLib, or Digi
         //var sData = SoundTable[sound]; // TODO: This might need a better way to get soundtable data
@@ -790,6 +796,12 @@ internal class AudioManager
          //   throw new PfWolfAudioException("SD_PrepareSound({which}): DigiList not initialized!", which.ToString());
 
         var soundAsset = assetManager.GetSound(which);
+        if (soundAsset == null)
+        {
+            Console.WriteLine($"{nameof(SD_PrepareSound)}({which}) - Sound asset not found.");
+            return;
+        }
+
         byte[] wavebuffer = soundAsset.ToRawWav(_sampleRate);
 
         GCHandle pinnedArray = GCHandle.Alloc(wavebuffer, GCHandleType.Pinned);
@@ -893,6 +905,12 @@ internal class AudioManager
         if (MusicMode == SMMode.AdLib)
         {
             var imfChunk = assetManager.GetImf(song);// CA_CacheMusicChunk(STARTMUSIC + chunk); // TODO: AssetManager.Load()
+            if (imfChunk == null || imfChunk.Size == 0)
+            {
+                Console.WriteLine($"IMF Music Asset {song} not found.");
+                return;
+            }
+
             int chunkLen = imfChunk.Size;
             using (var ms = new MemoryStream(imfChunk.RawData))
             {
@@ -1210,7 +1228,7 @@ internal class AudioManager
     {
         SDL_ALStopSound();
 
-        using (var ms = new MemoryStream(sound.data))
+        using (var ms = new MemoryStream(sound.RawData))
         {
             _adlPlayer.Load(ms);
         }
