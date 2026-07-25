@@ -141,13 +141,13 @@ internal struct globalsoundpos
 
 internal class AudioManager
 {
-    internal const int STARTPCSOUNDS = 0;
-    internal static int STARTADLIBSOUNDS = AudioMappings.SoundKeys.Count;
-    internal static int STARTDIGISOUNDS = (2 * AudioMappings.SoundKeys.Count);
-    internal static int STARTMUSIC = (3 * AudioMappings.SoundKeys.Count);
+  //  internal const int STARTPCSOUNDS = 0;
+  //  internal static int STARTADLIBSOUNDS = AudioMappings.AudioTKeys.Count;
+  //  internal static int STARTDIGISOUNDS = (2 * AudioMappings.AudioTKeys.Count);
+  //  internal static int STARTMUSIC = (3 * AudioMappings.AudioTKeys.Count);
 
-    internal static int NUMSOUNDS = AudioMappings.SoundKeys.Count;
-    internal static int NUMSNDCHUNKS = (STARTMUSIC + AudioMappings.MusicKeys.Count);
+   // internal static int NUMSOUNDS = AudioMappings.AudioTKeys.Count;
+    //internal static int NUMSNDCHUNKS = (STARTMUSIC + AudioMappings.MusicKeys.Count);
 
     public const int DefaultAudioBufferSize = 2048;
     public const int DefaultSampleRate = 44100;
@@ -278,10 +278,10 @@ internal class AudioManager
     public SDMode SoundMode { get; private set; }
     public SMMode MusicMode { get; private set; }
     public SDSMode DigiMode { get; private set; }
-    internal int SoundTable;// byte[][] SoundTable;
+    //internal int SoundTable;// byte[][] SoundTable;
 
-    int[] DigiMap = new int[AudioMappings.SoundKeys.Count];
-    int[] DigiChannel = new int[STARTMUSIC - STARTDIGISOUNDS];
+    int[] DigiMap = new int[AudioMappings.AudioTKeys.Count];
+    List<int> DigiChannel = new List<int>(); // new int[STARTMUSIC - STARTDIGISOUNDS];
 
     // Internal variables
     private bool SD_Started;
@@ -663,7 +663,7 @@ internal class AudioManager
         ispos = nextsoundpos;
         nextsoundpos = false;
 
-        var soundIndex = AudioMappings.SoundKeys.IndexOf(sound);
+        var soundIndex = AudioMappings.AudioTKeys.IndexOf(sound);
         if (soundIndex == -1 || (DigiMode == SDSMode.Off && SoundMode == SDMode.Off))
             return 0;
 
@@ -1028,7 +1028,7 @@ internal class AudioManager
     public bool SetSoundMode(SDMode mode)
     {
         bool result = false;
-        ushort tableoffset;
+        //ushort tableoffset;
 
         SD_StopSound();
 
@@ -1038,15 +1038,15 @@ internal class AudioManager
         switch (mode)
         {
             case SDMode.Off:
-                tableoffset = (ushort)STARTADLIBSOUNDS;
+          //      tableoffset = (ushort)STARTADLIBSOUNDS;
                 result = true;
                 break;
             case SDMode.PC:
-                tableoffset = STARTPCSOUNDS;
+            //    tableoffset = STARTPCSOUNDS;
                 result = true;
                 break;
             case SDMode.AdLib:
-                tableoffset = (ushort)STARTADLIBSOUNDS;
+              //  tableoffset = (ushort)STARTADLIBSOUNDS;
                 if (AdLibPresent)
                     result = true;
                 break;
@@ -1055,7 +1055,7 @@ internal class AudioManager
         }
 
         // Instead of a byte[][] reference, let's just offset where the sounds start, for now.
-        SoundTable = tableoffset;
+     //   SoundTable = tableoffset;
 
         if (result && (mode != SoundMode))
         {
@@ -1251,10 +1251,10 @@ internal class AudioManager
         // TODO: Move this to a "raw file loader"
 
 
-        for (int i = 0; i < AudioMappings.SoundKeys.Count; i++)
+        for (int i = 0; i < AudioMappings.AudioTKeys.Count; i++)
         {
             DigiMap[i] = -1;
-            DigiChannel[i] = -1;
+            DigiChannel.Add(-1);// = -1;
         }
     }
 
