@@ -44,7 +44,7 @@ internal class Wolf3dAudioFileLoader
         using (FileStream fs = File.OpenRead(fname))
         using (BinaryReader br = new BinaryReader(fs))
         {
-            for (int i = 0; i < audiostarts.Length-1; i++)
+            for (int i = 0, assetIndex = 0; i < audiostarts.Length-1; i++)
             {
                 var currentType = i / AudioMappings.SoundMappingKeys.Count;
                 int pos = audiostarts[i];
@@ -56,28 +56,27 @@ internal class Wolf3dAudioFileLoader
 
                 var data = br.ReadBytes(size);
                 const string tag = "!ID!";
-                var key = AudioMappings.AudioTKeys[i];
-                if (string.IsNullOrEmpty(key))
+                var key = AudioMappings.AudioTKeys[assetIndex].ToLowerInvariant();
+                if (string.IsNullOrEmpty(key)) // key is empty and size is 4, that is a divider for the music
                     continue;
 
                 switch (currentType)
                 {
                     case 0:
-                        assets.Add(key.ToLowerInvariant(), new PcSound(data));
+                        assets.Add(key, new PcSound(data));
                         break;
                     case 1:
-                        assets.Add(AudioMappings.AudioTKeys[i].ToLowerInvariant(), new AdLibSound { RawData = data });
+                        assets.Add(key, new AdLibSound { RawData = data });
                         break;
                     case 2:
-                        assets.Add(AudioMappings.AudioTKeys[i].ToLowerInvariant(), new Wolf3dDigitizedAudio { RawData = data });
+                        assets.Add(key, new Wolf3dDigitizedAudio { RawData = data });
                         break;
                     case 3:
-                        assets.Add(AudioMappings.AudioTKeys[i].ToLowerInvariant(), new Wolf3dImfAudio { RawData = data });
+                        assets.Add(key, new Wolf3dImfAudio { RawData = data });
                         break;
                 }
-                // TODO: Store
-                // ahould be stored pc, adlib, digi, imf
-                // or do i need to validate the data?
+
+                assetIndex++;
             }
         }
     }
