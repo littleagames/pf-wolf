@@ -58,30 +58,6 @@ internal struct Instrument
         unused = new sbyte[3];
     }
 }
-
-//internal class PCSound : Sound
-//{
-//    public PCSound()
-//    {
-//        data = new byte[1];
-//    }
-
-//    public PCSound(byte[] data)
-//    {
-//        common = new SoundCommon(data);
-//        this.data = new byte[common.length]; // data length - sizeof(soundcommon)??
-//        Buffer.BlockCopy(data, 6, this.data, 0, (int)common.length);
-//    }
-//}
-
-//internal class ImfMusic : Sound
-//{
-//    public ImfMusic(byte[] data)
-//    {
-//        this.data = data;
-//    }
-//}
-
 internal struct MusicGroup
 {
     public ushort length;
@@ -98,57 +74,8 @@ internal struct globalsoundpos
     public int globalsoundx, globalsoundy;
 }
 
-//internal abstract class Sound
-//{
-//    public SoundCommon common;
-//    public byte[] data;
-//}
-
-//internal class AdLibSound : Sound
-//{
-//    //public Instrument inst;
-//    //public sbyte block;
-
-//    //public AdLibSound()
-//    //{
-//    //   common = new();
-//    //  inst = new();
-//    //data = new byte[1];
-//    //}
-
-//    public AdLibSound(byte[] data)
-//    {
-//        //  common = new SoundCommon(data);
-//        // inst = new Instrument
-//        //{
-//        //    mChar = (sbyte)data[6],
-//        //    cChar = (sbyte)data[7],
-//        //    mScale = (sbyte)data[8],
-//        //    cScale = (sbyte)data[9],
-//        //    mAttack = (sbyte)data[10],
-//        //    cAttack = (sbyte)data[11],
-//        //    mSus = (sbyte)data[12],
-//        //    cSus = (sbyte)data[13],
-//        //    mWave = (sbyte)data[14],
-//        //    cWave = (sbyte)data[15],
-//        //    nConn = (sbyte)data[16],
-//        //    voice = (sbyte)data[17],
-//        //    mode = (sbyte)data[18]
-//        //};
-//        this.data = data;// new byte[common.length - 12]; // data length - sizeof(soundcommon) - sizeof(instrument) - block and unused bytes
-//    }
-//}
-
 internal class AudioManager
 {
-  //  internal const int STARTPCSOUNDS = 0;
-  //  internal static int STARTADLIBSOUNDS = AudioMappings.AudioTKeys.Count;
-  //  internal static int STARTDIGISOUNDS = (2 * AudioMappings.AudioTKeys.Count);
-  //  internal static int STARTMUSIC = (3 * AudioMappings.AudioTKeys.Count);
-
-   // internal static int NUMSOUNDS = AudioMappings.AudioTKeys.Count;
-    //internal static int NUMSNDCHUNKS = (STARTMUSIC + AudioMappings.MusicKeys.Count);
-
     public const int DefaultAudioBufferSize = 2048;
     public const int DefaultSampleRate = 44100;
 
@@ -360,15 +287,15 @@ internal class AudioManager
             chunksize = 1 << (int)Math.Log2(audioBufferSize / (44100 / sampleRate));
         }
 
-       // if (SDL_mixer.Mix_OpenAudioDevice(sampleRate, SDL.AUDIO_S16, 2, chunksize, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE) != 0)
-       // {
-        //    throw new PfWolfAudioException("Unable to open audio device: {error}", SDL_mixer.Mix_GetError());
-        //}
+        if (SDL_mixer.Mix_OpenAudioDevice(sampleRate, SDL.AUDIO_S16, 2, chunksize, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE) != 0)
+        {
+            throw new PfWolfAudioException("Unable to open audio device: {error}", SDL_mixer.Mix_GetError());
+        }
 
-       // SDL_mixer.Mix_QuerySpec(out sampleRate, out ushort format, out int channels);
+        SDL_mixer.Mix_QuerySpec(out sampleRate, out ushort format, out int channels);
 
-       // SDL_mixer.Mix_ReserveChannels(2);  // reserve player and boss weapon channels
-       // SDL_mixer.Mix_GroupChannels(2, SDL_mixer.MIX_CHANNELS - 1, 1); // group remaining channels
+        SDL_mixer.Mix_ReserveChannels(2);  // reserve player and boss weapon channels
+        SDL_mixer.Mix_GroupChannels(2, SDL_mixer.MIX_CHANNELS - 1, 1); // group remaining channels
 
         // Init music
         var imfOpl = new WoodyEmulatorOpl(OplType.Opl2);
@@ -383,15 +310,15 @@ internal class AudioManager
 
         samplesPerMusicTick = (int)(sampleRate / _imfPlayer.RefreshRate);    // SDL_t0FastAsmService played at 700Hz
 
-        //SDL_mixer.Mix_HookMusic(SDL_IMFMusicPlayer, 0);
-        //SDL_mixer.Mix_ChannelFinished(SD_ChannelFinished);
+        SDL_mixer.Mix_HookMusic(SDL_IMFMusicPlayer, 0);
+        SDL_mixer.Mix_ChannelFinished(SD_ChannelFinished);
         AdLibPresent = true;
         SoundBlasterPresent = true;
 
         alTimeCount = 0;
 
         // Add PC speaker sound mixer
-       // SDL_mixer.Mix_SetPostMix(SDL_PCMixCallback, IntPtr.Zero);
+        SDL_mixer.Mix_SetPostMix(SDL_PCMixCallback, IntPtr.Zero);
 
         SetSoundMode(SDMode.Off);
         SetMusicMode(SMMode.Off);
@@ -792,24 +719,31 @@ internal class AudioManager
 
     internal void SD_PrepareSound(string which)
     {
-        //if (DigiList?.Length == 0)
-         //   throw new PfWolfAudioException("SD_PrepareSound({which}): DigiList not initialized!", which.ToString());
-
-        var soundAsset = assetManager.GetSound(which);
-        if (soundAsset == null)
+        try
         {
-            Console.WriteLine($"{nameof(SD_PrepareSound)}({which}) - Sound asset not found.");
-            return;
+            //if (DigiList?.Length == 0)
+            //   throw new PfWolfAudioException("SD_PrepareSound({which}): DigiList not initialized!", which.ToString());
+
+            var soundAsset = assetManager.GetSound(which);
+            if (soundAsset == null)
+            {
+                Console.WriteLine($"{nameof(SD_PrepareSound)}({which}) - Sound asset not found.");
+                return;
+            }
+
+            byte[] wavebuffer = soundAsset.ToRawWav(_sampleRate);
+            
+            GCHandle pinnedArray = GCHandle.Alloc(wavebuffer, GCHandleType.Pinned);
+            IntPtr pointer = pinnedArray.AddrOfPinnedObject();
+
+            IntPtr temp = SDL_RWFromMem(pointer, wavebuffer.Length);
+            SoundChunks[which] = Mix_LoadWAV_RW(temp, 1);
+            pinnedArray.Free();
         }
-
-        byte[] wavebuffer = soundAsset.ToRawWav(_sampleRate);
-
-        GCHandle pinnedArray = GCHandle.Alloc(wavebuffer, GCHandleType.Pinned);
-        IntPtr pointer = pinnedArray.AddrOfPinnedObject();
-
-        IntPtr temp = SDL_RWFromMem(pointer, wavebuffer.Length);
-        SoundChunks[which] = Mix_LoadWAV_RW(temp, 1);
-        pinnedArray.Free();
+        catch (Exception e)
+        {
+            Console.WriteLine(e.ToString());
+        }
     }
 
     internal int SD_GetChannelForDigi(int which)
@@ -896,15 +830,15 @@ internal class AudioManager
 
     internal void SD_StartMusic(string song)
     {
-        int chunk = AudioMappings.MusicKeys.IndexOf(song);
-        if (chunk == -1)
-            return;
+        //int chunk = AudioMappings.MusicKeys.IndexOf(song);
+        //if (chunk == -1)
+        //    return;
 
         SD_MusicOff();
 
         if (MusicMode == SMMode.AdLib)
         {
-            var imfChunk = assetManager.GetImf(song);// CA_CacheMusicChunk(STARTMUSIC + chunk); // TODO: AssetManager.Load()
+            var imfChunk = assetManager.GetImf(song);
             if (imfChunk == null || imfChunk.Size == 0)
             {
                 Console.WriteLine($"IMF Music Asset {song} not found.");
@@ -936,10 +870,15 @@ internal class AudioManager
 
         if (MusicMode == SMMode.AdLib)
         {
-            int chunk = AudioMappings.MusicKeys.IndexOf(song);
-            if (chunk == -1)
+          //  int chunk = AudioMappings.MusicKeys.IndexOf(song);
+          //  if (chunk == -1)
+          //      return;
+            var imfChunk = assetManager.GetImf(song);
+            if (imfChunk == null || imfChunk.Size == 0)
+            {
+                Console.WriteLine($"IMF Music Asset {song} not found.");
                 return;
-            var imfChunk = assetManager.GetImf(song);// CA_CacheMusicChunk(STARTMUSIC + chunk); // TODO: AssetManager.Load()
+            }
             int chunkLen = imfChunk.Size;
             //sqHack = (word*)(void*)audiosegs[STARTMUSIC + chunk];     // alignment is correct
             //if (*sqHack == 0) sqHackLen = sqHackSeqLen = chunkLen;

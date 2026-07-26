@@ -276,17 +276,11 @@ internal partial class Program
         }
     }
 
-    static string lastmusic;
     internal static int StartCPMusic(string song)
     {
         int lastoffs;
 
-        lastmusic = song;
         lastoffs = _audioManager.SD_MusicOff();
-        int chunk = AudioMappings.MusicKeys.IndexOf(song);
-        if (chunk == -1)
-            return lastoffs;
-       // UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
 
         _audioManager.SD_StartMusic(song);
         return lastoffs;
@@ -2738,9 +2732,6 @@ internal partial class Program
 
     internal static void FreeMusic()
     {
-        int chunk = AudioMappings.MusicKeys.IndexOf(lastmusic);
-        if (chunk == -1)
-            return;
         //UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
     }
 
