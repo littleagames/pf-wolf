@@ -248,7 +248,7 @@ internal class Wolf3DVswapFileLoader
             v1++;
         }
 
-        return data.ToArray();
+        return data.Take((int)size).ToArray();
     }
     private uint PM_GetPageSize(int page)
     {

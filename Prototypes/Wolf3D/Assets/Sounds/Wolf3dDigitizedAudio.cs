@@ -13,7 +13,7 @@ internal record Wolf3dDigitizedAudio : Asset
             throw new PfWolfAudioException("Target sample rate must be greater than or equal to the original sample rate.");
         int i;
 
-        int destsamples = (int)((float)Size * (float)targetSampleRate
+        int destsamples = (int)((float)Size * (float)targetSampleRate // This "Size" is the data size, not the length used (There's garbage at the end of the block)
             / (float)OriginalSampleRate);
 
         byte[] wavebuffer = new byte[headchunk.size_of + wavechunk.size_of + destsamples * 2];     // dest are 16-bit samples

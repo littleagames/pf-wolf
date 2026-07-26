@@ -257,6 +257,9 @@ internal class AudioManager
     private int samplesPerMusicTick;
 
     //private Sound[] audiosegs = new Sound[NUMSNDCHUNKS];
+    private MixFuncDelegate _musicCallback;
+    private MixFuncDelegate _postMixCallback;
+    private ChannelFinishedDelegate _channelFinishedCallback;
 
     public AudioManager(AssetManager assetManager)
     {
@@ -310,15 +313,18 @@ internal class AudioManager
 
         samplesPerMusicTick = (int)(sampleRate / _imfPlayer.RefreshRate);    // SDL_t0FastAsmService played at 700Hz
 
-        SDL_mixer.Mix_HookMusic(SDL_IMFMusicPlayer, 0);
-        SDL_mixer.Mix_ChannelFinished(SD_ChannelFinished);
+        _musicCallback = SDL_IMFMusicPlayer;
+        SDL_mixer.Mix_HookMusic(_musicCallback, 0);
+        _channelFinishedCallback = SD_ChannelFinished;
+        SDL_mixer.Mix_ChannelFinished(_channelFinishedCallback);
         AdLibPresent = true;
         SoundBlasterPresent = true;
 
         alTimeCount = 0;
 
         // Add PC speaker sound mixer
-        SDL_mixer.Mix_SetPostMix(SDL_PCMixCallback, IntPtr.Zero);
+        _postMixCallback = SDL_PCMixCallback;
+        SDL_mixer.Mix_SetPostMix(_postMixCallback, IntPtr.Zero);
 
         SetSoundMode(SDMode.Off);
         SetMusicMode(SMMode.Off);
