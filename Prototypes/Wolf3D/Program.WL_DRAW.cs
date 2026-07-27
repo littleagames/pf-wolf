@@ -324,7 +324,7 @@ internal partial class Program
         switch ((doortypes)doorobjlist[doornumtile].locknum)
         {
             case doortypes.dr_normal:
-                doorpage = "DOOR_1_2"; // DOORWALL + 1;
+                doorpage = "DOOR1_2"; // DOORWALL + 1;
                 break;
 
             case doortypes.dr_lock1:

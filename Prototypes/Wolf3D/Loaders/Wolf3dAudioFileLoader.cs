@@ -52,13 +52,26 @@ internal class Wolf3dAudioFileLoader
                 fs.Seek(pos, SeekOrigin.Begin);
 
                 if (size == 0)
+                {
+                    assetIndex++;
                     continue;
+                }
 
                 var data = br.ReadBytes(size);
                 const string tag = "!ID!";
                 var key = AudioMappings.AudioTKeys[assetIndex].ToLowerInvariant();
-                if (string.IsNullOrEmpty(key)) // key is empty and size is 4, that is a divider for the music
+                var tagBytes = Encoding.ASCII.GetBytes(tag);
+                if (size == tagBytes.Length && data.SequenceEqual(tagBytes))
+                {
+                    assetIndex++;
                     continue;
+                }
+
+                if (string.IsNullOrEmpty(key))
+                {
+                    assetIndex++;
+                    continue;
+                }
 
                 switch (currentType)
                 {

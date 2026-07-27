@@ -424,7 +424,7 @@ internal class AssetManager
                 _assets[kvp.Key] = kvp.Value;
         }
 
-        if (assets.TryGetValue(name, out var asset))
+        if (assets.TryGetValue(name.ToLowerInvariant(), out var asset))
             return asset as Wolf3dDigitizedAudio;
 
         return null;
@@ -444,7 +444,7 @@ internal class AssetManager
                 _assets[kvp.Key] = kvp.Value;
         }
 
-        if (assets.TryGetValue(name, out var asset))
+        if (assets.TryGetValue(name.ToLowerInvariant(), out var asset))
             return asset as Wolf3dImfAudio;
 
         return null;
@@ -716,7 +716,7 @@ internal class AssetManager
                 _assets[kvp.Key] = kvp.Value;
         }
 
-        if (assets.TryGetValue(name, out var asset))
+        if (assets.TryGetValue(name.ToLowerInvariant(), out var asset))
             return asset as TextureAsset;
 
         return null;
@@ -736,7 +736,7 @@ internal class AssetManager
                 _assets[kvp.Key] = kvp.Value;
         }
 
-        if (assets.TryGetValue(name, out var asset))
+        if (assets.TryGetValue(name.ToLowerInvariant(), out var asset))
             return asset as SpriteAsset;
 
 
