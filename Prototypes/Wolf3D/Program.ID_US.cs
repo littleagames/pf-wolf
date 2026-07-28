@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using Wolf3D.Constants;
+using Wolf3D.Entities;
 using Wolf3D.Managers;
 using static Wolf3D.Program;
 
@@ -57,7 +58,10 @@ struct WindowRec
 internal partial class Program
 {
     internal static ushort PrintX, PrintY;
-    internal static ushort WindowX, WindowY, WindowW, WindowH;
+    internal static ushort WindowX { get; set; }
+    internal static ushort WindowY { get; set; }
+    internal static ushort WindowW { get; set; }
+    internal static ushort WindowH { get; set; }
 
     static bool US_Started;
 
