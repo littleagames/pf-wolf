@@ -1277,7 +1277,7 @@ internal partial class Program
         if (gamestate.victoryflag)
         {
             if (player.state == s_deathcam && (GameEngineManager.GetTimeCount() & 32) != 0)
-                SimpleScaleShape(viewwidth / 2, "DCAMA0", viewheight + 1);
+                SimpleScaleShape(viewwidth / 2, "DCAMA", viewheight + 1);
             return;
         }
 
@@ -1288,7 +1288,7 @@ internal partial class Program
         }
 
         if (demorecord || demoplayback)
-            SimpleScaleShape(viewwidth / 2, "DEMOA0", viewheight + 1);
+            SimpleScaleShape(viewwidth / 2, "DEMOA", viewheight + 1);
     }
 
     internal static void ThreeDRefresh()

@@ -34,81 +34,6 @@ internal partial class Program
         }
     }
 
-    //internal static statinfo_t[] statinfo =
-    //{
-    //    new("WATRA0"),                           // puddle          spr1v
-    //    new("DRUMA0", wl_stat_types.block),                     // Green Barrel    "
-    //    new("TCHRA0", wl_stat_types.block),                     // Table/chairs    "
-    //    new("FLMPA0", wl_stat_types.block,objflags.FL_FULLBRIGHT),       // Floor lamp      "
-    //    new("CHANA0", wl_stat_types.none,objflags.FL_FULLBRIGHT),        // Chandelier      "
-    //    new("HANGA0", wl_stat_types.block),                     // Hanged man      "
-    //    new("ALPOA0", wl_stat_types.bo_alpo),                   // Bad food        "
-    //    new("COLUA0", wl_stat_types.block),                     // Red pillar      "
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("PLNTA0",wl_stat_types.block),                     // Tree            spr2v
-    //    new("SKELA0"),                           // Skeleton flat   "
-    //    new("SINKA0",wl_stat_types.block),                    // Sink            " (SOD:gibs)
-    //    new("BPNTA0",wl_stat_types.block),                    // Potted plant    "
-    //    new("VASEA0",wl_stat_types.block),                    // Urn             "
-    //    new("TABLA0",wl_stat_types.block),                    // Bare table      "
-    //    new("GLMPA0",wl_stat_types.none,objflags.FL_FULLBRIGHT),       // Ceiling light   "
-    //    new("POT1A0"),                          // Kitchen stuff   "
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("ARMRA0", wl_stat_types.block),                    // suit of armor   spr3v
-    //    new("CAG1A0", wl_stat_types.block),                    // Hanging cage    "
-    //    new("CAG2A0", wl_stat_types.block),                    // SkeletoninCage  "
-    //    new("BON1A0"),                          // Skeleton relax  "
-    //    new("GKEYA0", wl_stat_types.bo_key1),                  // Key 1           "
-    //    new("SKEYA0", wl_stat_types.bo_key2),                  // Key 2           "
-    //    new("BUNKA0", wl_stat_types.block),                    // stuff             (SOD:gibs)
-    //    new("BASKA0"),                          // stuff
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("FOODA0",wl_stat_types.bo_food),                  // Good food       spr4v
-    //    new("MEDIA0",wl_stat_types.bo_firstaid),              // First aid       "
-    //    new("CLIPA0",wl_stat_types.bo_clip),                  // Clip            "
-    //    new("MGUNA0",wl_stat_types.bo_machinegun),            // Machine gun     "
-    //    new("CGUNA0",wl_stat_types.bo_chaingun),              // Gatling gun     "
-    //    new("CROSA0",wl_stat_types.bo_cross),                 // Cross           "
-    //    new("CHALA0",wl_stat_types.bo_chalice),               // Chalice         "
-    //    new("JEWLA0",wl_stat_types.bo_bible),                 // Bible           "
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("CRWNA0",wl_stat_types.bo_crown),                 // crown           spr5v
-    //    new("ONUPA0",wl_stat_types.bo_fullheal,objflags.FL_FULLBRIGHT),// one up          "
-    //    new("GIBSA0",wl_stat_types.bo_gibs),                  // gibs            "
-    //    new("BARLA0",wl_stat_types.block),                    // barrel          "
-    //    new("WEL1A0",wl_stat_types.block),                    // well            "
-    //    new("WEL2A0",wl_stat_types.block),                    // Empty well      "
-    //    new("BLUDA0",wl_stat_types.bo_gibs),                  // Gibs 2          "
-    //    new("FLAGA0",wl_stat_types.block),                    // flag            "
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("AARDA0", wl_stat_types.block),                    // Call Apogee          spr7v
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("BON2A0"),                          // junk            "
-    //    new("BON3A0"),                          // junk            "
-    //    new("BON4A0"),                          // junk            "
-    //    new("POT2A0"),                          // pots            "
-    //    new("STOVA0",wl_stat_types.block),                    // stove           " (SOD:gibs)
-    //    new("RACKA0",wl_stat_types.block),                    // spears          " (SOD:gibs)
-    //    new("VINEA0"),                          // vines           "
-    //    //
-    //    // NEW PAGE
-    //    //
-    //    new("CLIPA0",wl_stat_types.bo_clip2),                 // Clip     
-    //    new statinfo_t("")                                   // terminator
-    //};
-
     internal static void InitStaticList()
     {
         laststatobj = 0;
@@ -474,7 +399,7 @@ internal partial class Program
 
         if (areabyplayer[area] != 0)
         {
-            PlaySoundLocTile("CLOSEDOORSND", doorobjlist[door].tilex, doorobjlist[door].tiley); // JAB
+            PlaySoundLocTile("CLOSEDOOR", doorobjlist[door].tilex, doorobjlist[door].tiley); // JAB
         }
 
         doorobjlist[door].action = dooractiontypes.dr_closing;
@@ -587,7 +512,7 @@ internal partial class Program
 
                 if (areabyplayer[area1] != 0)
                 {
-                    PlaySoundLocTile("OPENDOORSND", doorobjlist[door].tilex, doorobjlist[door].tiley);  // JAB
+                    PlaySoundLocTile("OPENDOOR", doorobjlist[door].tilex, doorobjlist[door].tiley);  // JAB
                 }
             }
         }

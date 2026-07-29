@@ -312,7 +312,7 @@ internal partial class Program
                     x = 36 - tempstr.Length * 2;
                     Write(x, 7, tempstr);
                     if ((i % (PAR_AMOUNT / 10)) == 0)
-                        _audioManager.SD_PlaySound("ENDBONUS1SND");
+                        _audioManager.SD_PlaySound("ENDBONUS1");
                     _videoManager.Update();
                     while (_audioManager.SD_SoundPlaying() != "")
                         BJ_Breathe();
@@ -322,7 +322,7 @@ internal partial class Program
 
                 _videoManager.Update();
 
-                _audioManager.SD_PlaySound("ENDBONUS2SND");
+                _audioManager.SD_PlaySound("ENDBONUS2");
                 while (_audioManager.SD_SoundPlaying() != "")
                     BJ_Breathe();
             }
@@ -338,7 +338,7 @@ internal partial class Program
                 x = RATIOXX - tempstr.Length * 2;
                 Write(x, 14, tempstr);
                 if ((i % 10) == 0)
-                    _audioManager.SD_PlaySound("ENDBONUS1SND");
+                    _audioManager.SD_PlaySound("ENDBONUS1");
                 _videoManager.Update();
                 while (_audioManager.SD_SoundPlaying() != "")
                     BJ_Breathe();
@@ -355,16 +355,16 @@ internal partial class Program
                 x = (RATIOXX - 1) - tempstr.Length * 2;
                 Write(x, 7, tempstr);
                 _videoManager.Update();
-                _audioManager.SD_PlaySound("PERCENT100SND");
+                _audioManager.SD_PlaySound("PERCENT100");
             }
             else if (ratio == 0)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
                 _audioManager.SD_StopSound();
-                _audioManager.SD_PlaySound("NOBONUSSND");
+                _audioManager.SD_PlaySound("NOBONUS");
             }
             else
-                _audioManager.SD_PlaySound("ENDBONUS2SND");
+                _audioManager.SD_PlaySound("ENDBONUS2");
 
             _videoManager.Update();
             while (_audioManager.SD_SoundPlaying() != "")
@@ -380,7 +380,7 @@ internal partial class Program
                 x = RATIOXX - tempstr.Length * 2;
                 Write(x, 16, tempstr);
                 if ((i % 10) == 0)
-                    _audioManager.SD_PlaySound("ENDBONUS1SND");
+                    _audioManager.SD_PlaySound("ENDBONUS1");
                 _videoManager.Update();
                 while (_audioManager.SD_SoundPlaying() != "")
                     BJ_Breathe();
@@ -397,16 +397,16 @@ internal partial class Program
                 x = (RATIOXX - 1) - tempstr.Length * 2;
                 Write(x, 7, tempstr);
                 _videoManager.Update();
-                _audioManager.SD_PlaySound("PERCENT100SND");
+                _audioManager.SD_PlaySound("PERCENT100");
             }
             else if (ratio == 0)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
                 _audioManager.SD_StopSound();
-                _audioManager.SD_PlaySound("NOBONUSSND");
+                _audioManager.SD_PlaySound("NOBONUS");
             }
             else
-                _audioManager.SD_PlaySound("ENDBONUS2SND");
+                _audioManager.SD_PlaySound("ENDBONUS2");
             _videoManager.Update();
             while (_audioManager.SD_SoundPlaying() != "")
                 BJ_Breathe();
@@ -421,7 +421,7 @@ internal partial class Program
                 x = RATIOXX - tempstr.Length * 2;
                 Write(x, 18, tempstr);
                 if ((i % 10) == 0)
-                    _audioManager.SD_PlaySound("ENDBONUS1SND");
+                    _audioManager.SD_PlaySound("ENDBONUS1");
                 _videoManager.Update();
                 while (_audioManager.SD_SoundPlaying() != "")
                     BJ_Breathe();
@@ -437,16 +437,16 @@ internal partial class Program
                 x = (RATIOXX - 1) - tempstr.Length * 2;
                 Write(x, 7, tempstr);
                 _videoManager.Update();
-                _audioManager.SD_PlaySound("PERCENT100SND");
+                _audioManager.SD_PlaySound("PERCENT100");
             }
             else if (ratio == 0)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
                 _audioManager.SD_StopSound();
-                _audioManager.SD_PlaySound("NOBONUSSND");
+                _audioManager.SD_PlaySound("NOBONUS");
             }
             else
-                _audioManager.SD_PlaySound("ENDBONUS2SND");
+                _audioManager.SD_PlaySound("ENDBONUS2");
             _videoManager.Update();
             while (_audioManager.SD_SoundPlaying() != "")
                 BJ_Breathe();

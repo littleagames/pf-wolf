@@ -360,76 +360,12 @@ internal partial class Program
 
     static void InitDigiMap()
     {
-        for (int i = 0; i < wolfdigimap.Length; i++)
+        foreach (var sound in DigitizedSoundMappings.NameIndexMap)
         {
-            var map = wolfdigimap[i];
-           // var mapIndex = AudioMappings.SoundKeys.IndexOf(map.sound);
-            
-            // Prevent outside of array exceptions
-           // if (mapIndex >= 0 || mapIndex < DigiMap.Length)
-           //     DigiMap[mapIndex] = map.index;
-
-           // DigiChannel[map.index] = map.channel;
-            _audioManager.SD_PrepareSound(map.sound);
+            _audioManager.SD_PrepareSound(sound);
         }
     }
 
-
-    static digimap[] wolfdigimap =
-    {
-        new ("HALTSND",                0,  -1),
-        new ("DOGBARKSND",             1,  -1),
-        new ("CLOSEDOORSND",           2,  -1),
-        new ("OPENDOORSND",            3,  -1),
-        new ("ATKMACHINEGUNSND",       4,   0),
-        new ("ATKPISTOLSND",           5,   0),
-        new ("ATKGATLINGSND",          6,   0),
-        new ("SCHUTZADSND",            7,  -1),
-        new ("GUTENTAGSND",            8,  -1),
-        new ("MUTTISND",               9,  -1),
-        new ("BOSSFIRESND",            10,  1),
-        new ("SSFIRESND",              11, -1),
-        new ("DEATHSCREAM1SND",        12, -1),
-        new ("DEATHSCREAM2SND",        13, -1),
-        new ("DEATHSCREAM3SND",        13, -1),
-        new ("TAKEDAMAGESND",          14, -1),
-        new ("PUSHWALLSND",            15, -1),
-
-        new ("LEBENSND",               20, -1),
-        new ("NAZIFIRESND",            21, -1),
-        new ("SLURPIESND",             22, -1),
-
-        new ("YEAHSND",                32, -1),
-        // Thall other episodes
-        new ("DOGDEATHSND",            16, -1),
-        new ("AHHHGSND",               17, -1),
-        new ("DIESND",                 18, -1),
-        new ("EVASND",                 19, -1),
-
-        new ("TOT_HUNDSND",            23, -1),
-        new ("MEINGOTTSND",            24, -1),
-        new ("SCHABBSHASND",           25, -1),
-        new ("HITLERHASND",            26, -1),
-        new ("SPIONSND",               27, -1),
-        new ("NEINSOVASSND",           28, -1),
-        new ("DOGATTACKSND",           29, -1),
-        new ("LEVELDONESND",           30, -1),
-        new ("MECHSTEPSND",            31, -1),
-
-        new ("SCHEISTSND",             33, -1),
-        new ("DEATHSCREAM4SND",        34, -1),         // AIIEEE
-        new ("DEATHSCREAM5SND",        35, -1),         // DEE-DEE
-        new ("DONNERSND",              36, -1),         // EPISODE 4 BOSS DIE
-        new ("EINESND",                37, -1),         // EPISODE 4 BOSS SIGHTING
-        new ("ERLAUBENSND",            38, -1),         // EPISODE 6 BOSS SIGHTING
-        new ("DEATHSCREAM6SND",        39, -1),         // FART
-        new ("DEATHSCREAM7SND",        40, -1),         // GASP
-        new ("DEATHSCREAM8SND",        41, -1),         // GUH-BOY!
-        new ("DEATHSCREAM9SND",        42, -1),         // AH GEEZ!
-        new ("KEINSND",                43, -1),         // EPISODE 5 BOSS SIGHTING
-        new ("MEINSND",                44, -1),         // EPISODE 6 BOSS DIE
-        new ("ROSESND",                45, -1),         // EPISODE 5 BOSS DIE
-    };
 
     internal static void NewViewSize(int width)
     {

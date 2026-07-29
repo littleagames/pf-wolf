@@ -150,15 +150,15 @@ internal partial class Program
     };
 
 
-    internal static statestruct s_rocket = new (1, "ROCKA1", 3, T_Projectile, A_Smoke, "s_rocket" );
-    internal static statestruct s_smoke1 = new(0, "SMOKA0", 3, null, null, "s_smoke2" );
-    internal static statestruct s_smoke2 = new(0, "SMOKB0", 3, null, null, "s_smoke3" );
-    internal static statestruct s_smoke3 = new(0, "SMOKC0", 3, null, null, "s_smoke4" );
-    internal static statestruct s_smoke4 = new(0, "SMOKD0", 3, null, null, null );
+    internal static statestruct s_rocket = new (1, "ROCKA", 3, T_Projectile, A_Smoke, "s_rocket" );
+    internal static statestruct s_smoke1 = new(0, "SMOKA", 3, null, null, "s_smoke2" );
+    internal static statestruct s_smoke2 = new(0, "SMOKB", 3, null, null, "s_smoke3" );
+    internal static statestruct s_smoke3 = new(0, "SMOKC", 3, null, null, "s_smoke4" );
+    internal static statestruct s_smoke4 = new(0, "SMOKD", 3, null, null, null );
 
-    internal static statestruct s_boom1 = new(0, "BOOMA0", 6, null, null, "s_boom2" );
-    internal static statestruct s_boom2 = new(0, "BOOMB0", 6, null, null, "s_boom3" );
-    internal static statestruct s_boom3 = new(0, "BOOMC0", 6, null, null, null);
+    internal static statestruct s_boom1 = new(0, "BOOMA", 6, null, null, "s_boom2" );
+    internal static statestruct s_boom2 = new(0, "BOOMB", 6, null, null, "s_boom3" );
+    internal static statestruct s_boom3 = new(0, "BOOMC", 6, null, null, null);
 
     /*
     =================
@@ -262,13 +262,13 @@ internal partial class Program
         {
             if (ob.obclass == classtypes.rocketobj)
             {
-                PlaySoundLocActor("MISSILEHITSND", ob);
+                PlaySoundLocActor("MISSILEHIT", ob);
                 ob.state = s_boom1;
             }
 #if SPEAR
             else if (ob->obclass == hrocketobj)
             {
-                PlaySoundLocActor(MISSILEHITSND", ob);
+                PlaySoundLocActor(MISSILEHIT", ob);
                 ob->state = &s_hboom1;
             }
 #endif
@@ -447,7 +447,7 @@ internal partial class Program
     {
         int dx, dy;
 
-        PlaySoundLocActor("DOGATTACKSND", ob);     // JAB
+        PlaySoundLocActor("DOGATTACK", ob);     // JAB
 
         dx = player.x - ob.x;
         if (dx < 0)
@@ -864,7 +864,7 @@ internal partial class Program
         newobj.flags = objflags.FL_NEVERMARK;
         newobj.active = activetypes.ac_yes;
 
-        PlaySoundLocActor("SCHABBSTHROWSND", newobj);
+        PlaySoundLocActor("SCHABBSTHROW", newobj);
     }
 
     //
@@ -1004,7 +1004,7 @@ internal partial class Program
         newobj.flags = objflags.FL_NEVERMARK;
         newobj.active = activetypes.ac_yes;
 
-        PlaySoundLocActor("MISSILEFIRESND", newobj);
+        PlaySoundLocActor("MISSILEFIRE", newobj);
     }
 
     //
@@ -1132,19 +1132,19 @@ internal partial class Program
     //
     // BJ victory
     //
-    internal static statestruct s_bjrun1 =  new statestruct(0, "BLAZA0", 12, T_BJRun, null, "s_bjrun1s" );
-    internal static statestruct s_bjrun1s = new statestruct(0, "BLAZA0", 3, null, null, "s_bjrun2" );
-    internal static statestruct s_bjrun2 =  new statestruct(0, "BLAZB0", 8, T_BJRun, null, "s_bjrun3" );
-    internal static statestruct s_bjrun3 =  new statestruct(0, "BLAZC0", 12, T_BJRun, null, "s_bjrun3s" );
-    internal static statestruct s_bjrun3s = new statestruct(0, "BLAZC0", 3, null, null, "s_bjrun4" );
-    internal static statestruct s_bjrun4 =  new statestruct(0, "BLAZD0", 8, T_BJRun, null, "s_bjrun1" );
-    internal static statestruct s_bjjump1 = new statestruct(0, "BLAZE0", 14, T_BJJump, null, "s_bjjump2" );
-    internal static statestruct s_bjjump2 = new statestruct(0, "BLAZF0", 14, T_BJJump, T_BJYell, "s_bjjump3" );
-    internal static statestruct s_bjjump3 = new statestruct(0, "BLAZG0", 14, T_BJJump, null, "s_bjjump4" );
-    internal static statestruct s_bjjump4 = new statestruct(0, "BLAZH0", 300, null, T_BJDone, "s_bjjump4" );
+    internal static statestruct s_bjrun1 =  new statestruct(0, "BLAZA", 12, T_BJRun, null, "s_bjrun1s" );
+    internal static statestruct s_bjrun1s = new statestruct(0, "BLAZA", 3, null, null, "s_bjrun2" );
+    internal static statestruct s_bjrun2 =  new statestruct(0, "BLAZB", 8, T_BJRun, null, "s_bjrun3" );
+    internal static statestruct s_bjrun3 =  new statestruct(0, "BLAZC", 12, T_BJRun, null, "s_bjrun3s" );
+    internal static statestruct s_bjrun3s = new statestruct(0, "BLAZC", 3, null, null, "s_bjrun4" );
+    internal static statestruct s_bjrun4 =  new statestruct(0, "BLAZD", 8, T_BJRun, null, "s_bjrun1" );
+    internal static statestruct s_bjjump1 = new statestruct(0, "BLAZE", 14, T_BJJump, null, "s_bjjump2" );
+    internal static statestruct s_bjjump2 = new statestruct(0, "BLAZF", 14, T_BJJump, T_BJYell, "s_bjjump3" );
+    internal static statestruct s_bjjump3 = new statestruct(0, "BLAZG", 14, T_BJJump, null, "s_bjjump4" );
+    internal static statestruct s_bjjump4 = new statestruct(0, "BLAZH", 300, null, T_BJDone, "s_bjjump4" );
 
 
-    internal static statestruct s_deathcam = new statestruct( 0, "DCAMA0", 0, null, null, null );
+    internal static statestruct s_deathcam = new statestruct( 0, "DCAMA", 0, null, null, null );
 
     /*
     ===============
@@ -1210,7 +1210,7 @@ internal partial class Program
 
     internal static void T_BJYell(objstruct ob)
     {
-        PlaySoundLocActor("YEAHSND", ob);  // JAB
+        PlaySoundLocActor("YEAH", ob);  // JAB
     }
 
 
@@ -1892,7 +1892,7 @@ internal partial class Program
         newobj.flags = objflags.FL_NEVERMARK;
         newobj.active = activetypes.ac_yes;
 
-        PlaySoundLocActor("FLAMETHROWERSND", newobj);
+        PlaySoundLocActor("FLAMETHROWER", newobj);
     }
 
     internal static void T_Fake(objstruct ob)
@@ -2396,25 +2396,25 @@ internal partial class Program
         switch (ob.obclass)
         {
             case classtypes.ssobj:
-                PlaySoundLocActor("SSFIRESND", ob);
+                PlaySoundLocActor("SSFIRE", ob);
                 break;
             case classtypes.giftobj:
             case classtypes.fatobj:
-                PlaySoundLocActor("MISSILEFIRESND", ob);
+                PlaySoundLocActor("MISSILEFIRE", ob);
                 break;
             case classtypes.mechahitlerobj:
             case classtypes.realhitlerobj:
             case classtypes.bossobj:
-                PlaySoundLocActor("BOSSFIRESND", ob);
+                PlaySoundLocActor("BOSSFIRE", ob);
                 break;
             case classtypes.schabbobj:
-                PlaySoundLocActor("SCHABBSTHROWSND", ob);
+                PlaySoundLocActor("SCHABBSTHROW", ob);
                 break;
             case classtypes.fakeobj:
-                PlaySoundLocActor("FLAMETHROWERSND", ob);
+                PlaySoundLocActor("FLAMETHROWER", ob);
                 break;
             default:
-                PlaySoundLocActor("NAZIFIRESND", ob);
+                PlaySoundLocActor("NAZIFIRE", ob);
                 break;
         }
     }
@@ -2439,7 +2439,7 @@ internal partial class Program
         switch (ob.obclass)
         {
             case classtypes.mutantobj:
-                PlaySoundLocActor("AHHHGSND", ob);
+                PlaySoundLocActor("AHHHG", ob);
                 break;
 
             case classtypes.guardobj:
@@ -2478,16 +2478,16 @@ internal partial class Program
                 _audioManager.SD_PlaySound("SCHEIST");
                 break;
             case classtypes.realhitlerobj:
-                _audioManager.SD_PlaySound("EVASND");
+                _audioManager.SD_PlaySound("EVA");
                 break;
             case classtypes.gretelobj:
-                _audioManager.SD_PlaySound("MEINSND");
+                _audioManager.SD_PlaySound("MEIN");
                 break;
             case classtypes.giftobj:
-                _audioManager.SD_PlaySound("DONNERSND");
+                _audioManager.SD_PlaySound("DONNER");
                 break;
             case classtypes.fatobj:
-                _audioManager.SD_PlaySound("ROSESND");
+                _audioManager.SD_PlaySound("ROSE");
                 break;
 
         }
