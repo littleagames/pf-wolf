@@ -27,6 +27,7 @@ internal enum SMMode
 internal enum SDSMode
 {
     Off,
+    PC,
     SoundBlaster
 }
 
@@ -207,14 +208,14 @@ internal class AudioManager
     public SDSMode DigiMode { get; private set; }
     //internal int SoundTable;// byte[][] SoundTable;
 
-    int[] DigiMap = new int[AudioMappings.AudioTKeys.Count];
+    //int[] DigiMap = new int[AudioMappings.AudioTKeys.Count];
     List<int> DigiChannel = new List<int>(); // new int[STARTMUSIC - STARTDIGISOUNDS];
 
     // Internal variables
     private bool SD_Started;
     private bool nextsoundpos;
-    private int SoundNumber;
-    private int DigiNumber;
+    private string SoundNumber;
+    private string DigiNumber;
     private ushort SoundPriority;
     private ushort DigiPriority;
     private int LeftPosition;
@@ -335,7 +336,7 @@ internal class AudioManager
 
     private void SDL_SoundFinished()
     {
-        SoundNumber = 0;
+        SoundNumber = "";
         SoundPriority = 0;
     }
 
@@ -433,7 +434,7 @@ internal class AudioManager
                         {
                             pcSound = [];
                             pcSoundPtr = 0;
-                            SoundNumber = 0;
+                            SoundNumber = "";
                             SoundPriority = 0;
                         }
                     }
@@ -510,7 +511,7 @@ internal class AudioManager
                         soundTimeCounter = 5; // paces the sound at 140hz
                         if (!_adlPlayer.Update())
                         {
-                            SoundNumber = 0;
+                            SoundNumber = "";
                             SoundPriority = 0;
                         }
                     }
@@ -584,8 +585,10 @@ internal class AudioManager
 
     internal int SD_PlaySound(string sound)
     {
+        if (DigiMode == SDSMode.Off && SoundMode == SDMode.Off)
+            return 0;
+
         bool ispos;
-        SoundCommon s;
         int lp, rp;
 
         lp = LeftPosition;
@@ -596,12 +599,14 @@ internal class AudioManager
         ispos = nextsoundpos;
         nextsoundpos = false;
 
-        var soundIndex = AudioMappings.AudioTKeys.IndexOf(sound);
-        if (soundIndex == -1 || (DigiMode == SDSMode.Off && SoundMode == SDMode.Off))
+        if (!AudioMappings.SoundMappingKeys.TryGetValue(sound.ToLowerInvariant(), out var soundProfile))
             return 0;
 
-        var digiSound = assetManager.GetSound(sound);
-        if ((SoundMode != SDMode.Off) && digiSound == null)
+        var digiSound = assetManager.GetDigitizedSound(soundProfile.Digitized);
+        var adLibSound = assetManager.GetAdLib(soundProfile.AdLib);
+        var pcSound = assetManager.GetPcSound(soundProfile.PC);
+
+        if (digiSound == null && adLibSound == null && pcSound == null)
         {
             Console.WriteLine($"{nameof(SD_PlaySound)}({sound}) - Sound not found.");
             return 0;
@@ -615,33 +620,35 @@ internal class AudioManager
         // if (soundSeg is PCSound)
         //     s = soundSeg.common;
         // else
-        s = new SoundCommon(digiSound.RawData);// (SoundCommon*)SoundTable[sound];
+        //s = new SoundCommon(digiSound.RawData);// (SoundCommon*)SoundTable[sound];
 
-        if ((DigiMode != SDSMode.Off) && (DigiMap[soundIndex] != -1))
+        if ((DigiMode != SDSMode.Off) && digiSound != null)
         {
-            //if ((DigiMode == SDSMode.PC) && (SoundMode == SDMode.PC))
-            //{
-            //    if (s.priority < SoundPriority)
-            //        return 0;
+            if ((DigiMode == SDSMode.PC) && (SoundMode == SDMode.PC) && pcSound != null)
+            {
+                var common = pcSound.Common;
+                if (common.Priority < SoundPriority)
+                    return 0;
 
-            //    SDL_PCStopSound();
+                SDL_PCStopSound();
 
-            //    SD_PlayDigitized(sound, lp, rp);
-            //    SoundPositioned = ispos;
-            //    SoundNumber = soundIndex;
-            //    SoundPriority = s.priority;
-            //}
-            //else
+                SD_PlayDigitized(sound, lp, rp);
+                SoundPositioned = ispos;
+                SoundNumber = sound;
+                SoundPriority = common.Priority;
+            }
+            else
             {
                 //# ifdef NOTYET
                 //                if (s->priority < DigiPriority)
                 //                    return (false);
                 //#endif
 
-                int channel = SD_PlayDigitized(sound, lp, rp);
+                var common = adLibSound.Common;
+                int channel = SD_PlayDigitized(soundProfile.Digitized, lp, rp);
                 SoundPositioned = ispos;
-                DigiNumber = soundIndex;
-                DigiPriority = s.priority;
+                DigiNumber = soundProfile.Digitized;
+                DigiPriority = common.Priority;
                 return channel + 1;
             }
 
@@ -651,29 +658,30 @@ internal class AudioManager
         if (SoundMode == SDMode.Off)
             return 0;
 
-        if (s.length == 0)
+        var s = adLibSound.Common;
+        if (s.Length == 0)
             throw new PfWolfAudioException("SD_PlaySound() - Zero length sound");
-        if (s.priority < SoundPriority)
+        if (s.Priority < SoundPriority)
             return 0;
 
         switch (SoundMode)
         {
             case SDMode.PC:
-                //SDL_PCPlaySound((PCSound)soundSeg);
+                SDL_PCPlaySound(pcSound);
                 break;
             case SDMode.AdLib:
                 //curAlSound = [];
                 //alSound = [];                // Tricob
                 //alOut(alFreqH, 0);
-               // SDL_ALPlaySound((AdLibSound)soundSeg);
+                SDL_ALPlaySound(adLibSound);
                 break;
 
             default:
                 break;
         }
 
-        SoundNumber = soundIndex;
-        SoundPriority = s.priority;
+        SoundNumber = sound;
+        SoundPriority = s.Priority;
 
         return 0;
     }
@@ -730,7 +738,7 @@ internal class AudioManager
             //if (DigiList?.Length == 0)
             //   throw new PfWolfAudioException("SD_PrepareSound({which}): DigiList not initialized!", which.ToString());
 
-            var soundAsset = assetManager.GetSound(which);
+            var soundAsset = assetManager.GetDigitizedSound(which);
             if (soundAsset == null)
             {
                 Console.WriteLine($"{nameof(SD_PrepareSound)}({which}) - Sound asset not found.");
@@ -1023,7 +1031,7 @@ internal class AudioManager
                 break;
         }
 
-        SoundNumber = 0;
+        SoundNumber = "";
         SoundPriority = 0;
     }
 
@@ -1088,7 +1096,7 @@ internal class AudioManager
     public void SD_StopDigitized()
     {
         DigiPlaying = false;
-        DigiNumber = 0;
+        DigiNumber = "";
         DigiPriority = 0;
         SoundPositioned = false;
         //if ((DigiMode == SDSMode.PC) && (SoundMode == SDMode.PC))
@@ -1198,7 +1206,7 @@ internal class AudioManager
 
         for (int i = 0; i < AudioMappings.AudioTKeys.Count; i++)
         {
-            DigiMap[i] = -1;
+            //DigiMap[i] = -1;
             DigiChannel.Add(-1);// = -1;
         }
     }

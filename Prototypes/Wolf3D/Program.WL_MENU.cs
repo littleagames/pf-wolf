@@ -561,7 +561,7 @@ internal partial class Program
         //
         routine?.Invoke(which);
         _videoManager.Update();
-        _audioManager.SD_PlaySound("MOVEGUN2SND");
+        _audioManager.SD_PlaySound("MOVEGUN2");
     }
 
     internal static void CheckPause()
@@ -599,7 +599,7 @@ internal partial class Program
 
     internal static void ShootSnd()
     {
-        _audioManager.SD_PlaySound("SHOOTSND");
+        _audioManager.SD_PlaySound("shoot");
     }
 
     internal static void TicDelay(int count)
@@ -1896,7 +1896,7 @@ internal partial class Program
                         DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, "Black", "READCOLOR");
                         _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, "READHCOLOR");
                         _videoManager.Update();
-                        _audioManager.SD_PlaySound("MOVEGUN1SND");
+                        _audioManager.SD_PlaySound("MOVEGUN1");
                         TicDelay(20);
                     }
                     break;

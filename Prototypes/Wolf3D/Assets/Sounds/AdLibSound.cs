@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Wolf3D.Assets.Sounds;
+﻿namespace Wolf3D.Assets.Sounds;
 
 internal record AdLibSound : Asset
 {
+    public SoundCommon Common => new SoundCommon(RawData);
 }

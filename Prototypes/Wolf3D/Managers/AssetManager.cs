@@ -416,8 +416,52 @@ internal class AssetManager
             throw;
         }
     }
-    public Wolf3dDigitizedAudio? GetSound(string name)
+
+    public PcSound? GetPcSound(string name)
     {
+        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
+            return foundAsset as PcSound;
+
+        var audioLoader = new Wolf3dAudioFileLoader("audiot", "wl6", "audiohed", "wl6");
+        var assets = audioLoader.GetAssets();
+
+        foreach (var kvp in assets)
+        {
+            if (!_assets.ContainsKey(kvp.Key))
+                _assets[kvp.Key] = kvp.Value;
+        }
+
+        if (assets.TryGetValue(name.ToLowerInvariant(), out var asset))
+            return asset as PcSound;
+
+        return null;
+    }
+
+    public AdLibSound? GetAdLib(string name)
+    {
+        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
+            return foundAsset as AdLibSound;
+
+        var audioLoader = new Wolf3dAudioFileLoader("audiot", "wl6", "audiohed", "wl6");
+        var assets = audioLoader.GetAssets();
+
+        foreach (var kvp in assets)
+        {
+            if (!_assets.ContainsKey(kvp.Key))
+                _assets[kvp.Key] = kvp.Value;
+        }
+
+        if (assets.TryGetValue(name.ToLowerInvariant(), out var asset))
+            return asset as AdLibSound;
+
+        return null;
+    }
+
+    public Wolf3dDigitizedAudio? GetDigitizedSound(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+
         if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
             return foundAsset as Wolf3dDigitizedAudio;
 
