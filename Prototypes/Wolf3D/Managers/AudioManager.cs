@@ -1,4 +1,5 @@
-﻿using SDL2;
+﻿using OpenAL;
+using SDL2;
 using System.Runtime.InteropServices;
 using Wolf3D.Assets.Sounds;
 using Wolf3D.AudioPlayers;
@@ -6,8 +7,7 @@ using Wolf3D.Constants;
 using Wolf3D.Mappers;
 using Wolf3D.OPL;
 using Wolf3D.OPL.Woody;
-using static SDL2.SDL;
-using static SDL2.SDL_mixer;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wolf3D.Managers;
 
@@ -193,7 +193,7 @@ internal class AudioManager
 
     internal Dictionary<string, IntPtr> SoundChunks = new Dictionary<string, IntPtr>(); //new IntPtr[STARTMUSIC - STARTDIGISOUNDS];
 
-    internal globalsoundpos[] channelSoundPos = new globalsoundpos[SDL_mixer.MIX_CHANNELS];
+    internal globalsoundpos[] channelSoundPos = new globalsoundpos[16];// SDL_mixer.MIX_CHANNELS];
 
     public bool PCSoundEnabled => SoundMode == SDMode.PC;
     public bool AdLibSoundEnabled => SoundMode == SDMode.AdLib;
@@ -258,15 +258,14 @@ internal class AudioManager
     private int samplesPerMusicTick;
 
     //private Sound[] audiosegs = new Sound[NUMSNDCHUNKS];
-    private MixFuncDelegate _musicCallback;
-    private MixFuncDelegate _postMixCallback;
-    private ChannelFinishedDelegate _channelFinishedCallback;
 
     public AudioManager(AssetManager assetManager)
     {
         this.assetManager = assetManager;
     }
 
+    private IntPtr _device;
+    private IntPtr _context;
     internal void Init(int audioBufferSize, int sampleRate)
     {
         _sampleRate = sampleRate;
@@ -291,15 +290,21 @@ internal class AudioManager
             chunksize = 1 << (int)Math.Log2(audioBufferSize / (44100 / sampleRate));
         }
 
-        if (SDL_mixer.Mix_OpenAudioDevice(sampleRate, SDL.AUDIO_S16, 2, chunksize, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE) != 0)
-        {
-            throw new PfWolfAudioException("Unable to open audio device: {error}", SDL_mixer.Mix_GetError());
-        }
 
-        SDL_mixer.Mix_QuerySpec(out sampleRate, out ushort format, out int channels);
+        _device = Alc.OpenDevice(null);
+        _context = Alc.CreateContext(_device, null);
+        Console.WriteLine(Alc.GetString(IntPtr.Zero, Alc.AllDevicesSpecifier));
+        Alc.MakeContextCurrent(_context);
 
-        SDL_mixer.Mix_ReserveChannels(2);  // reserve player and boss weapon channels
-        SDL_mixer.Mix_GroupChannels(2, SDL_mixer.MIX_CHANNELS - 1, 1); // group remaining channels
+        //if (SDL_mixer.Mix_OpenAudioDevice(sampleRate, SDL.AUDIO_S16, 2, chunksize, IntPtr.Zero, SDL.SDL_AUDIO_ALLOW_FREQUENCY_CHANGE) != 0)
+        //{
+        //    throw new PfWolfAudioException("Unable to open audio device: {error}", SDL_mixer.Mix_GetError());
+        //}
+
+        //SDL_mixer.Mix_QuerySpec(out sampleRate, out ushort format, out int channels);
+
+        //SDL_mixer.Mix_ReserveChannels(2);  // reserve player and boss weapon channels
+        //SDL_mixer.Mix_GroupChannels(2, SDL_mixer.MIX_CHANNELS - 1, 1); // group remaining channels
 
         // Init music
         var imfOpl = new WoodyEmulatorOpl(OplType.Opl2);
@@ -314,18 +319,18 @@ internal class AudioManager
 
         samplesPerMusicTick = (int)(sampleRate / _imfPlayer.RefreshRate);    // SDL_t0FastAsmService played at 700Hz
 
-        _musicCallback = SDL_IMFMusicPlayer;
-        SDL_mixer.Mix_HookMusic(_musicCallback, 0);
-        _channelFinishedCallback = SD_ChannelFinished;
-        SDL_mixer.Mix_ChannelFinished(_channelFinishedCallback);
+        //_musicCallback = SDL_IMFMusicPlayer;
+        //SDL_mixer.Mix_HookMusic(_musicCallback, 0);
+        //_channelFinishedCallback = SD_ChannelFinished;
+        //SDL_mixer.Mix_ChannelFinished(_channelFinishedCallback);
         AdLibPresent = true;
         SoundBlasterPresent = true;
 
         alTimeCount = 0;
 
         // Add PC speaker sound mixer
-        _postMixCallback = SDL_PCMixCallback;
-        SDL_mixer.Mix_SetPostMix(_postMixCallback, IntPtr.Zero);
+        //_postMixCallback = SDL_PCMixCallback;
+        //SDL_mixer.Mix_SetPostMix(_postMixCallback, IntPtr.Zero);
 
         SetSoundMode(SDMode.Off);
         SetMusicMode(SMMode.Off);
@@ -738,21 +743,22 @@ internal class AudioManager
             //if (DigiList?.Length == 0)
             //   throw new PfWolfAudioException("SD_PrepareSound({which}): DigiList not initialized!", which.ToString());
 
-            var soundAsset = assetManager.GetDigitizedSound(which);
-            if (soundAsset == null)
-            {
-                Console.WriteLine($"{nameof(SD_PrepareSound)}({which}) - Sound asset not found.");
-                return;
-            }
+            //var soundAsset = assetManager.GetDigitizedSound(which);
+            //if (soundAsset == null)
+            //{
+            //    Console.WriteLine($"{nameof(SD_PrepareSound)}({which}) - Sound asset not found.");
+            //    return;
+            //}
 
-            byte[] wavebuffer = soundAsset.ToRawWav(_sampleRate);
-            
-            GCHandle pinnedArray = GCHandle.Alloc(wavebuffer, GCHandleType.Pinned);
-            IntPtr pointer = pinnedArray.AddrOfPinnedObject();
+            //byte[] wavebuffer = soundAsset.ToRawWav(_sampleRate);
+            //Al.GenBuffer(out uint buffer);
+            //Al.BufferData(id, Al.FormatMono16, pData, numSamples * 2, _rate);
+            //GCHandle pinnedArray = GCHandle.Alloc(wavebuffer, GCHandleType.Pinned);
+            //IntPtr pointer = pinnedArray.AddrOfPinnedObject();
 
-            IntPtr temp = SDL_RWFromMem(pointer, wavebuffer.Length);
-            SoundChunks[which] = Mix_LoadWAV_RW(temp, 1);
-            pinnedArray.Free();
+            //IntPtr temp = SDL_RWFromMem(pointer, wavebuffer.Length);
+            //SoundChunks[which] = Mix_LoadWAV_RW(temp, 1);
+            //pinnedArray.Free();
         }
         catch (Exception e)
         {
@@ -764,11 +770,12 @@ internal class AudioManager
     {
         if (DigiChannel[which] != -1) return DigiChannel[which];
 
-        int channel = Mix_GroupAvailable(1);
-        if (channel == -1) channel = Mix_GroupOldest(1);
-        if (channel == -1)           // All sounds stopped in the meantime?
-            return Mix_GroupAvailable(1);
-        return channel;
+        //int channel = Mix_GroupAvailable(1);
+        //if (channel == -1) channel = Mix_GroupOldest(1);
+        //if (channel == -1)           // All sounds stopped in the meantime?
+        //    return Mix_GroupAvailable(1);
+        //return channel;
+        return -1;
     }
 
     internal void SD_SetPosition(int channel, int leftpos, int rightpos)
@@ -781,7 +788,7 @@ internal class AudioManager
         {
             case SDSMode.SoundBlaster:
                 //            SDL_PositionSBP(leftpos,rightpos);
-                Mix_SetPanning(channel, (byte)(255 - (leftpos * 28)), (byte)(255 - (rightpos * 28)));
+                //Mix_SetPanning(channel, (byte)(255 - (leftpos * 28)), (byte)(255 - (rightpos * 28)));
                 break;
 
             default:
@@ -791,30 +798,55 @@ internal class AudioManager
 
     internal int SD_PlayDigitized(string which, int leftpos, int rightpos)
     {
+
         if (DigiMode == SDSMode.Off)
             return 0;
 
+        var soundAsset = assetManager.GetDigitizedSound(which);
+        if (soundAsset == null)
+            return 0;
+
+        // Move this to PrepareSound and cache the buffer for reuse
+        Al.GenBuffer(out uint buffer);
+        Al.GenSource(out uint source);
+        var soundData = soundAsset.ToRawWav(_sampleRate);
+        unsafe
+        {
+            fixed (byte* pData = soundData)
+            {
+                Al.BufferData(buffer, Al.FormatMono16, pData, soundData.Length, _sampleRate);
+            }
+        }
+        // end
+
+        Al.SourceQueueBuffers(source, 1, [buffer]);
+        Al.SourcePlay(source);
+        /*
+         TODO:
+            - Store the active source handles in a list/dictionary so OpenAL can keep playing them
+            - Implement cleanup for finished sources
+            - Check for OpenAL errors with Al.GetError()
+         */
         //if (which >= NumDigi)
         //    throw new PfWolfAudioException($"SD_PlayDigitized: bad sound number {which}");
 
-        int channel = SD_GetChannelForDigi(0);// which); // TODO: Get channel info for digitized sound
-        SD_SetPosition(channel, leftpos, rightpos);
+        //int channel = SD_GetChannelForDigi(0);// which); // TODO: Get channel info for digitized sound
+        //SD_SetPosition(channel, leftpos, rightpos);
 
         DigiPlaying = true;
 
-        IntPtr sample = SoundChunks[which];
-        if (sample == IntPtr.Zero)
-        {
-            Console.WriteLine($"SoundChunks[{which}] is NULL!");
+        //IntPtr sample = SoundChunks[which];
+        //if (sample == IntPtr.Zero)
+        //{
+        //    Console.WriteLine($"SoundChunks[{which}] is NULL!");
             return 0;
-        }
+        //}
+        //if (Mix_PlayChannel(channel, sample, 0) == -1)
+        //{
+        //    throw new PfWolfAudioException("Unable to play sound {error}", Mix_GetError());
+        //}
 
-        if (Mix_PlayChannel(channel, sample, 0) == -1)
-        {
-            throw new PfWolfAudioException("Unable to play sound {error}", Mix_GetError());
-        }
-
-        return channel;
+        //return channel;
     }
 
     public void SD_MusicOn()
@@ -1108,7 +1140,7 @@ internal class AudioManager
             //    SDL_PCStopSound();
             //    break;
             case SDSMode.SoundBlaster:
-                Mix_HaltChannel(-1);
+                //Mix_HaltChannel(-1);
                 break;
 
             default:
@@ -1259,7 +1291,7 @@ internal class AudioManager
                 SD_SetPosition(leftchannel,rightchannel);
             }*/
 
-        for (i = 0; i < SDL_mixer.MIX_CHANNELS; i++)
+        for (i = 0; i < 16;/* SDL_mixer.MIX_CHANNELS;*/ i++)
         {
             if (channelSoundPos[i].valid != 0)
             {
