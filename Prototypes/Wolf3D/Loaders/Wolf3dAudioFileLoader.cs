@@ -85,7 +85,7 @@ internal class Wolf3dAudioFileLoader
                         assets.Add(key, new Wolf3dDigitizedAudio { RawData = data });
                         break;
                     case 3:
-                        assets.Add(key, new Wolf3dImfAudio { RawData = data });
+                        assets.Add(key, new Wolf3dImfAudio(data));
                         break;
                 }
 

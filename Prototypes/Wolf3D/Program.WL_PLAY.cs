@@ -60,7 +60,7 @@ internal partial class Program
 
     internal static void StartMusic()
     {
-        _audioManager.SetPaused(true);
+        //_audioManager.SetPaused(true);
         var song = _assetManager.GetGameInfo().Maps[gamestate.mapon].Music;
         lastmusicchunk = song;
         _audioManager.PlayMusic(lastmusicchunk);
@@ -68,16 +68,16 @@ internal partial class Program
 
     internal static void ContinueMusic(int offs)
     {
-        _audioManager.SetPaused(true);
+        //_audioManager.SetPaused(true);
         var song = _assetManager.GetGameInfo().Maps[gamestate.mapon].Music;
         lastmusicchunk = song;
-        _audioManager.SetPaused(false);// lastmusicchunk, offs);
+        //_audioManager.SetPaused(false);// lastmusicchunk, offs);
     }
 
     internal static int StopMusic()
     {
         //int lastoffs = 
-            _audioManager.SetPaused(true);
+            //_audioManager.SetPaused(true);
 
         int chunk = AudioMappings.MusicKeys.IndexOf(lastmusicchunk);
         if (chunk == -1)

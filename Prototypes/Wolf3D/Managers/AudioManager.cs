@@ -1,4 +1,5 @@
-﻿using OpenTK.Audio.OpenAL;
+﻿using NukedOPL3Sharp;
+using OpenTK.Audio.OpenAL;
 using SDL2;
 using Wolf3D.Assets.Sounds;
 using Wolf3D.Mappers;
@@ -18,9 +19,10 @@ internal class AudioManager
     private readonly ALDevice _device;
     private readonly ALContext _context;
 
-    private readonly Dictionary<string, int> _buffers = new();
+    private readonly Dictionary<string, int> _buffers = [];
     private readonly IReadOnlyList<Wolf3dImfAudio> _musicTracks;
-    private readonly Dictionary<int, int> _musicBuffers = [];
+    private readonly Dictionary<string, int> _musicBuffers = [];
+    private readonly Dictionary<string, Task<short[]>> _musicRenderTasks = [];
 
     // Available sound channels
     private int _nextSource;
@@ -28,7 +30,7 @@ internal class AudioManager
 
     private readonly int _musicSource;
     private readonly Lazy<AssetManager> _assetManager;
-    private int _requestedMusicTrack = -1;
+    private string _requestedMusicTrack = "";
     private int _musicRequestId;
     private double _musicFade;
     private bool _isPaused;
@@ -157,6 +159,107 @@ internal class AudioManager
         var imfTrack = assetManager.GetImf(name);
         if (imfTrack == null)
             return;
+
+        _requestedMusicTrack = name;
+        var requestId = ++_musicRequestId;
+        AL.SourceStop(_musicSource);
+        if (_musicBuffers.TryGetValue(name, out var buffer))
+        {
+            StartMusic(name, buffer);
+            return;
+        }
+
+        if (!_musicRenderTasks.TryGetValue(name, out var renderTask))
+        {
+           // Logger.Instance.Info($"Rendering music track {name} in the background.");
+            renderTask = Task.Run(() => RenderMusic(imfTrack));
+            _musicRenderTasks.Add(name, renderTask);
+        }
+        _ = FinishMusicRenderingAsync(name, requestId, renderTask);
+    }
+
+    private void StartMusic(string name, int buffer)
+    {
+        AL.Source(_musicSource, ALSourcei.Buffer, buffer);
+        AL.Source(_musicSource, ALSourcef.Gain, MusicGain * (float)(1.0 - _musicFade));
+        if (!_isPaused)
+            AL.SourcePlay(_musicSource);
+       // Logger.Instance.Info($"Playing music track {name}.");
+    }
+
+    private static short[] RenderMusic(Wolf3dImfAudio track)
+    {
+        var framesPerTick = MusicSampleRate / MusicTicksPerSecond;
+        var frameCount = checked(track.Commands.Sum(command => command.Delay) * framesPerTick);
+        if (frameCount == 0)
+            throw new InvalidDataException("The IMF music sequence contains no timed samples.");
+        var samples = new short[checked(frameCount * 2)];
+        var chip = new Opl3Chip();
+        chip.Reset(MusicSampleRate);
+        chip.WriteRegister(0x01, 0x20);
+        var destination = 0;
+        foreach (var command in track.Commands)
+        {
+            chip.WriteRegister(command.Register, command.Value);
+            var sampleCount = command.Delay * framesPerTick * 2;
+            if (sampleCount == 0)
+                continue;
+            chip.GenerateStream(samples.AsSpan(destination, sampleCount));
+            destination += sampleCount;
+        }
+        ApplyMusicGain(samples);
+        return samples;
+    }
+
+    private static int CreateMusicBuffer(short[] samples)
+    {
+        var buffer = AL.GenBuffer();
+        AL.BufferData(buffer, ALFormat.Stereo16, samples, MusicSampleRate);
+        return buffer;
+    }
+
+    private static void ApplyMusicGain(Span<short> samples)
+    {
+        for (var index = 0; index < samples.Length; index++)
+        {
+            var amplified = samples[index] * MusicSampleGain;
+            samples[index] = (short)Math.Clamp(amplified, short.MinValue, short.MaxValue);
+        }
+    }
+
+    private async Task FinishMusicRenderingAsync(string trackNumber, int requestId, Task<short[]> renderTask)
+    {
+        try
+        {
+            var samples = await renderTask.ConfigureAwait(false);
+
+            var thread = new Thread(new ThreadStart(() => {
+
+
+            if (_isDisposed || _musicRequestId != requestId)
+                    return;
+                if (!_musicBuffers.TryGetValue(trackNumber, out var buffer))
+                {
+                    buffer = CreateMusicBuffer(samples);
+                    _musicBuffers.Add(trackNumber, buffer);
+                    _musicRenderTasks.Remove(trackNumber);
+                }
+                StartMusic(trackNumber, buffer);
+            }))
+            {
+                IsBackground = true
+            };
+            thread.Start();
+        }
+        catch (Exception exception)
+        {
+            //Logger.Instance.Warn($"Music track {trackNumber} could not be rendered: {exception.Message}");
+        }
+    }
+
+    private void AudioPlayerThread()
+    {
+
     }
 
     public void StopMusic()
@@ -174,7 +277,7 @@ internal class AudioManager
         _isPaused = isPaused;
         if (isPaused)
             AL.SourcePause(_musicSource);
-        else if (_requestedMusicTrack >= 0 && _musicBuffers.ContainsKey(_requestedMusicTrack))
+        else if (!string.IsNullOrEmpty(_requestedMusicTrack) && _musicBuffers.ContainsKey(_requestedMusicTrack))
             AL.SourcePlay(_musicSource);
     }
 
