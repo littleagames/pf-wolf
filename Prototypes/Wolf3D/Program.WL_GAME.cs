@@ -971,7 +971,7 @@ internal partial class Program
         }
 
         gamestate.weapon = weapontypes.wp_none;                     // take away weapon
-        _audioManager.SD_PlaySound("PLAYERDEATH");
+        _audioManager.Play("PLAYERDEATH");
 
         //
         // swing around to face attacker
@@ -1063,7 +1063,7 @@ internal partial class Program
         _videoManager.FizzleFade(viewscreenx, viewscreeny, (uint)viewwidth, (uint)viewheight, 70, false);
 
         _inputManager.UserInput(100);
-        _audioManager.SD_WaitSoundDone();
+        _audioManager.WaitSoundDone();
         ClearMemory();
 
         gamestate.lives--;

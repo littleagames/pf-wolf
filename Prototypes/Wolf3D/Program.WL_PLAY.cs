@@ -60,23 +60,24 @@ internal partial class Program
 
     internal static void StartMusic()
     {
-        _audioManager.SD_MusicOff();
+        _audioManager.SetPaused(true);
         var song = _assetManager.GetGameInfo().Maps[gamestate.mapon].Music;
         lastmusicchunk = song;
-        _audioManager.SD_StartMusic(lastmusicchunk);
+        _audioManager.PlayMusic(lastmusicchunk);
     }
 
     internal static void ContinueMusic(int offs)
     {
-        _audioManager.SD_MusicOff();
+        _audioManager.SetPaused(true);
         var song = _assetManager.GetGameInfo().Maps[gamestate.mapon].Music;
         lastmusicchunk = song;
-        _audioManager.SD_ContinueMusic(lastmusicchunk, offs);
+        _audioManager.SetPaused(false);// lastmusicchunk, offs);
     }
 
     internal static int StopMusic()
     {
-        int lastoffs = _audioManager.SD_MusicOff();
+        //int lastoffs = 
+            _audioManager.SetPaused(true);
 
         int chunk = AudioMappings.MusicKeys.IndexOf(lastmusicchunk);
         if (chunk == -1)
@@ -84,7 +85,7 @@ internal partial class Program
 
         //UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
 
-        return lastoffs;
+        return 0;//lastoffs;
     }
 
     static int funnyticount;
@@ -128,7 +129,7 @@ internal partial class Program
 
             gamestate.TimeCount += (int)tics;
 
-            _audioManager.UpdateSoundLoc(viewx, viewy, viewsin, viewcos);      // JAB
+            //_audioManager.UpdateSoundLoc(viewx, viewy, viewsin, viewcos);      // JAB
             if (_videoManager.screenfaded)
                 _videoManager.FadeIn();
 

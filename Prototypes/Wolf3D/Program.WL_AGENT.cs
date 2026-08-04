@@ -333,8 +333,8 @@ internal partial class Program
             && ob.y < (((int)(_mapManager.mapheight - 1)) << (int)MapConstants.TILESHIFT))
             return;         // walk through walls
 
-        if (_audioManager.SD_SoundPlaying() == "")
-            _audioManager.SD_PlaySound("HITWALL");
+        if (!_audioManager.IsAnySoundPlaying())
+            _audioManager.Play("HITWALL");
 
         ob.x = basex + xmove;
         ob.y = basey;
@@ -368,7 +368,7 @@ internal partial class Program
                 if (gamestate.health == 100)
                     return;
 
-                _audioManager.SD_PlaySound("HEALTH2");
+                _audioManager.Play("HEALTH2");
                 HealSelf(25);
                 break;
 
@@ -377,26 +377,26 @@ internal partial class Program
             case wl_stat_types.bo_key3:
             case wl_stat_types.bo_key4:
                 GiveKey(check.itemnumber - wl_stat_types.bo_key1);
-                _audioManager.SD_PlaySound("GETKEY");
+                _audioManager.Play("GETKEY");
                 break;
 
             case wl_stat_types.bo_cross:
-                _audioManager.SD_PlaySound("BONUS1");
+                _audioManager.Play("BONUS1");
                 GivePoints(100);
                 gamestate.treasurecount++;
                 break;
             case wl_stat_types.bo_chalice:
-                _audioManager.SD_PlaySound("BONUS2");
+                _audioManager.Play("BONUS2");
                 GivePoints(500);
                 gamestate.treasurecount++;
                 break;
             case wl_stat_types.bo_bible:
-                _audioManager.SD_PlaySound("BONUS3");
+                _audioManager.Play("BONUS3");
                 GivePoints(1000);
                 gamestate.treasurecount++;
                 break;
             case wl_stat_types.bo_crown:
-                _audioManager.SD_PlaySound("BONUS4");
+                _audioManager.Play("BONUS4");
                 GivePoints(5000);
                 gamestate.treasurecount++;
                 break;
@@ -405,23 +405,23 @@ internal partial class Program
                 if (gamestate.ammo == 99)
                     return;
 
-                _audioManager.SD_PlaySound("GETAMMO");
+                _audioManager.Play("GETAMMO");
                 GiveAmmo(8);
                 break;
             case wl_stat_types.bo_clip2:
                 if (gamestate.ammo == 99)
                     return;
 
-                _audioManager.SD_PlaySound("GETAMMO");
+                _audioManager.Play("GETAMMO");
                 GiveAmmo(4);
                 break;
 
             case wl_stat_types.bo_machinegun:
-                _audioManager.SD_PlaySound("GETMACHINE");
+                _audioManager.Play("GETMACHINE");
                 GiveWeapon(weapontypes.wp_machinegun);
                 break;
             case wl_stat_types.bo_chaingun:
-                _audioManager.SD_PlaySound("GETGATLING");
+                _audioManager.Play("GETGATLING");
                 facetimes = 38;
                 GiveWeapon(weapontypes.wp_chaingun);
 
@@ -431,7 +431,7 @@ internal partial class Program
                 break;
 
             case wl_stat_types.bo_fullheal:
-                _audioManager.SD_PlaySound("BONUS1UP");
+                _audioManager.Play("BONUS1UP");
                 HealSelf(99);
                 GiveAmmo(25);
                 GiveExtraMan();
@@ -442,7 +442,7 @@ internal partial class Program
                 if (gamestate.health == 100)
                     return;
 
-                _audioManager.SD_PlaySound("HEALTH1");
+                _audioManager.Play("HEALTH1");
                 HealSelf(10);
                 break;
 
@@ -450,7 +450,7 @@ internal partial class Program
                 if (gamestate.health == 100)
                     return;
 
-                _audioManager.SD_PlaySound("HEALTH1");
+                _audioManager.Play("HEALTH1");
                 HealSelf(4);
                 break;
 
@@ -458,7 +458,7 @@ internal partial class Program
                 if (gamestate.health > 10)
                     return;
 
-                _audioManager.SD_PlaySound("SLURPIE");
+                _audioManager.Play("SLURPIE");
                 HealSelf(1);
                 break;
         }
@@ -543,7 +543,7 @@ internal partial class Program
     static void DrawFace()
     {
         if (viewsize == 21 && ingame) return;
-        if (_audioManager.SD_SoundPlaying() == "GETGATLING")
+        if (_audioManager.IsPlaying("GETGATLING"))
             StatusDrawFace("gotgatling");
         else if (gamestate.health != 0)
         {
@@ -585,7 +585,7 @@ internal partial class Program
                 return;
             }
         }
-        else if (_audioManager.SD_SoundPlaying() == "GETGATLING")
+        else if (_audioManager.IsPlaying("GETGATLING"))
             return;
 
         facecount += (int)tics;
@@ -696,7 +696,7 @@ internal partial class Program
         if (gamestate.lives < 9)
             gamestate.lives++;
         DrawLives();
-        _audioManager.SD_PlaySound("BONUS1UP");
+        _audioManager.Play("BONUS1UP");
     }
 
     static void DrawScore()
@@ -811,8 +811,8 @@ internal partial class Program
                 playstate = playstatetypes.ex_secretlevel;
             else
                 playstate = playstatetypes.ex_completed;
-            _audioManager.SD_PlaySound("LEVELDONE");
-            _audioManager.SD_WaitSoundDone();
+            _audioManager.Play("LEVELDONE");
+            _audioManager.WaitSoundDone();
         }
         else if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) != 0)
         {
@@ -820,7 +820,7 @@ internal partial class Program
             OperateDoor(cmdtile & ~BIT_DOOR);
         }
         else
-            _audioManager.SD_PlaySound("DONOTHING");
+            _audioManager.Play("DONOTHING");
     }
 
     internal static void Cmd_Fire()
@@ -978,7 +978,7 @@ internal partial class Program
         objstruct? closest;
         int dist;
 
-        _audioManager.SD_PlaySound("ATKKNIFE");
+        _audioManager.Play("ATKKNIFE");
         // actually fire
         dist = 0x7fffffff;
         closest = null;
@@ -1017,13 +1017,13 @@ internal partial class Program
         switch (gamestate.weapon)
         {
             case weapontypes.wp_pistol:
-                _audioManager.SD_PlaySound("ATKPISTOL");
+                _audioManager.Play("ATKPISTOL");
                 break;
             case weapontypes.wp_machinegun:
-                _audioManager.SD_PlaySound("ATKMACHINEGUN");
+                _audioManager.Play("ATKMACHINEGUN");
                 break;
             case weapontypes.wp_chaingun:
-                _audioManager.SD_PlaySound("ATKGATLING");
+                _audioManager.Play("ATKGATLING");
                 break;
         }
 

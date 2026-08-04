@@ -51,9 +51,9 @@ internal class GameEngineManager
 
     internal void ReadConfig()
     {
-        SDMode sd;
-        SMMode sm;
-        SDSMode sds;
+        //SDMode sd;
+        //SMMode sm;
+        //SDSMode sds;
         string configpath;
 
         if (!string.IsNullOrEmpty(configdir))
@@ -84,9 +84,12 @@ internal class GameEngineManager
                 foreach (var s in Program.Scores)
                     s.Read(br);
 
-                sd = (SDMode)br.ReadByte();
-                sm = (SMMode)br.ReadByte();
-                sds = (SDSMode)br.ReadByte();
+                br.ReadByte();
+                br.ReadByte();
+                br.ReadByte();
+                //sd = (SDMode)br.ReadByte();
+                //sm = (SMMode)br.ReadByte();
+                //sds = (SDSMode)br.ReadByte();
 
                 Program.mouseenabled = (br.ReadByte() != 0) ? true : false;
                 Program.joystickenabled = (br.ReadByte() != 0) ? true : false;
@@ -136,9 +139,9 @@ internal class GameEngineManager
                 Program.MainMenu[6].active = 1;
                 Program.MainItems.curpos = 0;
                 
-                audioManager.SetMusicMode(sm);
-                audioManager.SetSoundMode(sd);
-                audioManager.SetDigiDevice(sds);
+                //audioManager.SetMusicMode(sm);
+                //audioManager.SetSoundMode(sd);
+                //audioManager.SetDigiDevice(sds);
             }
         }
         catch (Exception e)
@@ -150,13 +153,13 @@ internal class GameEngineManager
 
     private void SetDefaultConfig()
     {
-        SDMode sd;
-        SMMode sm;
-        SDSMode sds;
+        //SDMode sd;
+        //SMMode sm;
+        //SDSMode sds;
         //if (Program.SoundBlasterPresent || Program.AdLibPresent)
         //{
-            sd = SDMode.AdLib;
-            sm = SMMode.AdLib;
+            //sd = SDMode.AdLib;
+            //sm = SMMode.AdLib;
         //}
         //else
         //{
@@ -166,7 +169,7 @@ internal class GameEngineManager
 
         // always true
         //if (Program.SoundBlasterPresent)
-            sds = SDSMode.SoundBlaster;
+            //sds = SDSMode.SoundBlaster;
         //else
         //    sds = SDSMode.Off;
 
@@ -179,9 +182,9 @@ internal class GameEngineManager
         Program.viewsize = 19;
         Program.mouseadjustment = 5;
 
-        audioManager.SetMusicMode(sm);
-        audioManager.SetSoundMode(sd);
-        audioManager.SetDigiDevice(sds);
+        //audioManager.SetMusicMode(sm);
+        //audioManager.SetSoundMode(sd);
+        //audioManager.SetDigiDevice(sds);
     }
 
     internal void WriteConfig()
@@ -201,9 +204,9 @@ internal class GameEngineManager
             foreach (var s in Program.Scores)
                 s.Write(bw);
 
-            bw.Write((byte)audioManager.SoundMode);
-            bw.Write((byte)audioManager.MusicMode);
-            bw.Write((byte)audioManager.DigiMode);
+            bw.Write((byte)0);//audioManager.SoundMode);
+            bw.Write((byte)0);//audioManager.MusicMode);
+            bw.Write((byte)0);//audioManager.DigiMode);
 
             bw.Write(Program.mouseenabled);
             bw.Write(Program.joystickenabled);
@@ -285,6 +288,7 @@ internal class GameEngineManager
     {
         videoManager.Shutdown();
         inputManager.Shutdown();
+        audioManager.Shutdown();
 
         //US_Shutdown(); // This line is completely useless...
         //SD_Shutdown();

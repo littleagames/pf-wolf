@@ -1807,10 +1807,10 @@ internal partial class Program
     {
         objstruct newobj = null!;
 
-        if (_audioManager.DigiMode != SDSMode.Off)
+        //if (_audioManager.DigiMode != SDSMode.Off)
             s_hitlerdie2.tictime = 140;
-        else
-            s_hitlerdie2.tictime = 5;
+        //else
+       //     s_hitlerdie2.tictime = 5;
 
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_mechastand);
         newobj.speed = SPDPATROL;
@@ -1854,7 +1854,7 @@ internal partial class Program
 
     internal static void A_Slurpie(objstruct ob)
     {
-        _audioManager.SD_PlaySound("SLURPIE");
+        _audioManager.Play("SLURPIE");
     }
 
     internal static void T_FakeFire(objstruct ob)
@@ -1954,10 +1954,10 @@ internal partial class Program
     {
         objstruct newobj = null!;
 
-        if (_audioManager.DigiMode != SDSMode.Off)
+       // if (_audioManager.DigiMode != SDSMode.Off)
             s_giftdie2.tictime = 140;
-        else
-            s_giftdie2.tictime = 5;
+        //else
+        //    s_giftdie2.tictime = 5;
 
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_giftstand);
         newobj.speed = SPDPATROL;
@@ -2007,10 +2007,10 @@ internal partial class Program
     {
         objstruct newobj = null!;
 
-        if (_audioManager.DigiMode != SDSMode.Off)
+        //if (_audioManager.DigiMode != SDSMode.Off)
             s_giftdie2.tictime = 140;
-        else
-            s_giftdie2.tictime = 5;
+        //else
+        //    s_giftdie2.tictime = 5;
 
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_schabbstand);
         newobj.speed = SPDPATROL;
@@ -2027,10 +2027,10 @@ internal partial class Program
     {
         objstruct newobj = null!;
 
-        if (_audioManager.DigiMode != SDSMode.Off)
+       // if (_audioManager.DigiMode != SDSMode.Off)
             s_giftdie2.tictime = 140;
-        else
-            s_giftdie2.tictime = 5;
+       // else
+       //     s_giftdie2.tictime = 5;
 
         newobj = SpawnNewObj((uint)tilex, (uint)tiley, s_fatstand);
         newobj.speed = SPDPATROL;
@@ -2466,28 +2466,28 @@ internal partial class Program
                 PlaySoundLocActor("DOGDEATH", ob);      // JAB
                 break;
             case classtypes.bossobj:
-                _audioManager.SD_PlaySound("MUTTI");                         // JAB
+                _audioManager.Play("MUTTI");                         // JAB
                 break;
             case classtypes.schabbobj:
-                _audioManager.SD_PlaySound("MEINGOTT");
+                _audioManager.Play("MEINGOTT");
                 break;
             case classtypes.fakeobj:
-                _audioManager.SD_PlaySound("HITLERHA");
+                _audioManager.Play("HITLERHA");
                 break;
             case classtypes.mechahitlerobj:
-                _audioManager.SD_PlaySound("SCHEIST");
+                _audioManager.Play("SCHEIST");
                 break;
             case classtypes.realhitlerobj:
-                _audioManager.SD_PlaySound("EVA");
+                _audioManager.Play("EVA");
                 break;
             case classtypes.gretelobj:
-                _audioManager.SD_PlaySound("MEIN");
+                _audioManager.Play("MEIN");
                 break;
             case classtypes.giftobj:
-                _audioManager.SD_PlaySound("DONNER");
+                _audioManager.Play("DONNER");
                 break;
             case classtypes.fatobj:
-                _audioManager.SD_PlaySound("ROSE");
+                _audioManager.Play("ROSE");
                 break;
 
         }

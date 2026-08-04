@@ -723,49 +723,49 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 break;
 
             case classtypes.bossobj:
-                _audioManager.SD_PlaySound("GUTENTAG");
+                _audioManager.Play("GUTENTAG");
                 NewState(ob, s_bosschase1);
                 ob.speed = SPDPATROL * 3;        // go faster when chasing player
                 break;
 
             case classtypes.gretelobj:
-                _audioManager.SD_PlaySound("KEIN");
+                _audioManager.Play("KEIN");
                 NewState(ob, s_gretelchase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.giftobj:
-                _audioManager.SD_PlaySound("EINE");
+                _audioManager.Play("EINE");
                 NewState(ob, s_giftchase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.fatobj:
-                _audioManager.SD_PlaySound("ERLAUBEN");
+                _audioManager.Play("ERLAUBEN");
                 NewState(ob, s_fatchase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.schabbobj:
-                _audioManager.SD_PlaySound("SCHABBSHA");
+                _audioManager.Play("SCHABBSHA");
                 NewState(ob, s_schabbchase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.fakeobj:
-                _audioManager.SD_PlaySound("TOT_HUND");
+                _audioManager.Play("TOT_HUND");
                 NewState(ob, s_fakechase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.mechahitlerobj:
-                _audioManager.SD_PlaySound("DIE");
+                _audioManager.Play("DIE");
                 NewState(ob, s_mechachase1);
                 ob.speed *= 3;                 // go faster when chasing player
                 break;
 
             case classtypes.realhitlerobj:
-                _audioManager.SD_PlaySound("DIE");
+                _audioManager.Play("DIE");
                 NewState(ob, s_hitlerchase1);
                 ob.speed *= 5;                 // go faster when chasing player
                 break;

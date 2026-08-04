@@ -708,16 +708,16 @@ internal partial class Program
         // next free bit is   0x00001000
     }
 
-    internal static void ClearMemory() => _audioManager.SD_StopDigitized();
+    internal static void ClearMemory() => _audioManager.StopAll();
 
     // JAB
-    internal static void PlaySoundLocTile(string s, int tx, int ty) => _audioManager.PlaySoundLocGlobal(
-        s, 
-        (int)((tx << MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2)), 
-        (int)((ty << MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2)),
-        viewx,viewy,viewsin,viewcos);
-    internal static void PlaySoundLocActor(string s, objstruct ob) => _audioManager.PlaySoundLocGlobal(s, ob.x, ob.y,
-        viewx, viewy, viewsin, viewcos);
+    internal static void PlaySoundLocTile(string s, int tx, int ty) => _audioManager.Play(s);// SoundLocGlobal(
+    //    s, 
+    //    (int)((tx << MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2)), 
+    //    (int)((ty << MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2)),
+    //    viewx,viewy,viewsin,viewcos);
+    internal static void PlaySoundLocActor(string s, objstruct ob) => _audioManager.Play(s);//PlaySoundLocGlobal(s, ob.x, ob.y,
+     //   viewx, viewy, viewsin, viewcos);
 
 
     /*

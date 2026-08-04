@@ -1,12 +1,13 @@
 ﻿using CommandLine;
+using Microsoft.Extensions.DependencyInjection;
 using SDL2;
+using System;
 using Wolf3D.Configuration;
+using Wolf3D.Constants;
+using Wolf3D.DependencyInjection;
+using Wolf3D.Extensions;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using Wolf3D.Extensions;
-using Wolf3D.Constants;
 
 namespace Wolf3D;
 
@@ -23,6 +24,7 @@ internal partial class Program
     public Program()
     {
         var services = new ServiceCollection();
+        services.AddTransient(typeof(Lazy<>), typeof(Lazier<>));
         services.AddSingleton<GameEngineManager>();
         services.AddSingleton<VideoManager>();
         services.AddSingleton<AudioManager>();
@@ -33,6 +35,10 @@ internal partial class Program
 
         // Build the service provider
         var serviceProvider = services.BuildServiceProvider();
+
+        //_audioManager = new AudioManager(
+       //     new Lazy<AssetManager>(
+       //         () => serviceProvider.GetRequiredService<AssetManager>()));
 
         _gameEngineManager = serviceProvider.GetRequiredService<GameEngineManager>();
         _videoManager = serviceProvider.GetRequiredService<VideoManager>();
@@ -96,8 +102,8 @@ internal partial class Program
     //
     internal static bool param_nowait = false;
     
-    internal static int param_audiobuffer = AudioManager.DefaultAudioBufferSize;
-    internal static int param_samplerate = AudioManager.DefaultSampleRate;
+    //internal static int param_audiobuffer = AudioManager.DefaultAudioBufferSize;
+    //internal static int param_samplerate = AudioManager.DefaultSampleRate;
     internal static int param_mission = 0;
     internal static bool param_goodtimes = false;
     internal static bool param_ignorenumchunks = false;
@@ -145,7 +151,7 @@ internal partial class Program
 
         PM_Startup();
         var extension = "wl6";
-        _audioManager.Init(param_audiobuffer, param_samplerate);
+        //_audioManager.Init(param_audiobuffer, param_samplerate);
         _graphicManager.Init(extension, param_ignorenumchunks);
         _mapManager.Init(extension);
         CA_Startup();
@@ -360,10 +366,10 @@ internal partial class Program
 
     static void InitDigiMap()
     {
-        foreach (var sound in DigitizedSoundMappings.NameIndexMap)
-        {
-            _audioManager.SD_PrepareSound(sound);
-        }
+      //  foreach (var sound in DigitizedSoundMappings.NameIndexMap)
+      //  {
+         //   _audioManager.SD_PrepareSound(sound);
+     //   }
     }
 
 

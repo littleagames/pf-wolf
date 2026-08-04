@@ -1,7 +1,79 @@
-﻿using static Wolf3D.Managers.AudioManager;
+﻿namespace Wolf3D.Assets.Sounds;
 
-namespace Wolf3D.Assets.Sounds;
+internal struct headchunk
+{
+    public byte[] RIFF;
+    public uint filelenminus8;
+    public byte[] WAVE;
+    public byte[] fmt_;
+    public uint formatlen;
+    public ushort val0x0001;
+    public ushort channels;
+    public uint samplerate;
+    public uint bytespersec;
+    public ushort bytespersample;
+    public ushort bitspersample;
+    public headchunk()
+    {
+        RIFF = new byte[4];
+        WAVE = new byte[4];
+        fmt_ = new byte[4];
+    }
 
+    public static int size_of =>
+        4 * sizeof(byte)
+        + sizeof(uint)
+        + 4 * sizeof(byte)
+        + 4 * sizeof(byte)
+        + sizeof(uint)
+        + sizeof(ushort) * 2
+        + sizeof(uint) * 2
+        + sizeof(ushort) * 2;
+    public byte[] AsBytes()
+    {
+        using var ms = new MemoryStream();
+        using var bw = new BinaryWriter(ms);
+        {
+            bw.Write(RIFF);
+            bw.Write(filelenminus8);
+            bw.Write(WAVE);
+            bw.Write(fmt_);
+            bw.Write(formatlen);
+            bw.Write(val0x0001);
+            bw.Write(channels);
+            bw.Write(samplerate);
+            bw.Write(bytespersec);
+            bw.Write(bytespersample);
+            bw.Write(bitspersample);
+            return ms.ToArray();
+        }
+    }
+}
+
+internal class wavechunk
+{
+    public byte[] chunkid;
+    public uint chunklength;
+    public wavechunk()
+    {
+        chunkid = new byte[4];
+    }
+
+    public static int size_of =>
+        4 * sizeof(byte)
+        + sizeof(uint);
+
+    public byte[] AsBytes()
+    {
+        using var ms = new MemoryStream();
+        using var bw = new BinaryWriter(ms);
+        {
+            bw.Write(chunkid);
+            bw.Write(chunklength);
+            return ms.ToArray();
+        }
+    }
+}
 internal record Wolf3dDigitizedAudio : Asset
 {
 
@@ -50,7 +122,7 @@ internal record Wolf3dDigitizedAudio : Asset
         short[] newsamples = new short[(wavebuffer.Length + headchunk.size_of
             + wavechunk.size_of) / sizeof(short)];
         float cursample = 0.0F;
-        float samplestep = (float)ORIGSAMPLERATE / (float)targetSampleRate;
+        float samplestep = (float)OriginalSampleRate / (float)targetSampleRate;
         for (i = 0; i < destsamples; i++, cursample += samplestep)
         {
             newsamples[i] = GetSample((float)Size * (float)i / (float)destsamples,
