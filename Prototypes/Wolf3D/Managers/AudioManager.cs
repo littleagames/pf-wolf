@@ -102,8 +102,21 @@ internal class AudioManager
             AL.SourcePlay(source);
             return;
         }
-        // TODO: Support adlib and pc sound playback
-        //var pcSound = assetManager.GetPcSound(soundProfile.PC);
+
+        var pcSound = assetManager.GetPcSound(soundProfile.PC);
+        if (pcSound != null)
+        {
+            if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
+            {
+                buffer = CreateBuffer(pcSound);
+                _buffers[name.ToLowerInvariant()] = buffer;
+            }
+
+            AL.SourceStop(source);
+            AL.Source(source, ALSourcei.Buffer, buffer);
+            AL.SourcePlay(source);
+            return;
+        }
     }
 
     public void Stop(string name)
@@ -319,6 +332,13 @@ internal class AudioManager
         return buffer;
     }
     private static int CreateBuffer(AdLibSound sound)
+    {
+        var buffer = AL.GenBuffer();
+        var data = sound.ToMono8();
+        AL.BufferData(buffer, ALFormat.Mono8, data, 44100);
+        return buffer;
+    }
+    private static int CreateBuffer(PcSound sound)
     {
         var buffer = AL.GenBuffer();
         var data = sound.ToMono8();

@@ -1,5 +1,4 @@
 ﻿using NukedOPL3Sharp;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wolf3D.Assets.Sounds;
 
@@ -12,8 +11,6 @@ internal record AdLibSound : Asset
 
     private const int AdLibSampleRate = 44100;
     private const int SoundTicksPerSecond = 140;
-
-    public SoundCommon Common => new SoundCommon(RawData);
 
     public byte[] ToMono8()
     {
