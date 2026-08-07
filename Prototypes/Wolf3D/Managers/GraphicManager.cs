@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Wolf3D.Assets;
 using Wolf3D.Entities;
 using Wolf3D.Mappers;
 
@@ -8,19 +9,6 @@ internal struct pictabletype
 {
     public short width;
     public short height;
-}
-
-internal struct fontstruct
-{
-    public short height;
-    public short[] location;
-    public byte[] width;
-
-    public fontstruct()
-    {
-        location = new short[256];
-        width = new byte[256];
-    }
 }
 
 internal class GraphicManager
@@ -47,23 +35,15 @@ internal class GraphicManager
     private const string gdictname = "vgadict.";
     private readonly VideoManager videoManager;
 
-    private bool ignorenumchunks = false;
-
-    public void Init(string extension, bool ignorenumchunks)
+    public void Init(string extension)
     {
-        this.ignorenumchunks = ignorenumchunks;
         CAL_SetupGrFile(extension);
     }
 
-    public fontstruct GetFont(int fontnumber)
+    public FontAsset GetFont(int fontnumber)
     {
         var data = grsegs[GraphicConstants.STARTFONT + fontnumber];
-        return FontHelper.GetFont(data);
-    }
-
-    public fontstruct GetFont(string fontName)
-    {
-        throw new NotImplementedException("Once the string-valued data extraction is implemented.");
+        return new FontAsset(data);
     }
 
     public void DrawPropString(int px, int py, string s, string fontcolor, int fontnumber)
@@ -223,19 +203,19 @@ internal class GraphicManager
         var data = grsegs[GraphicConstants.STARTFONT + fontnumber];
 
         int dataIndex = 0;
-        fontstruct font = FontHelper.GetFont(data);
+        FontAsset font = new FontAsset(data);
         // ignoring the rest of the data (we don't need it here)
         MeasureString(text, out width, out height, font);
     }
 
-    public void MeasureString(string text, out ushort width, out ushort height, fontstruct font)
+    public void MeasureString(string text, out ushort width, out ushort height, FontAsset font)
     {
         width = 0;
         int i;
-        height = (ushort)font.height;
+        height = (ushort)font.Height;
         for (i = 0; i < text.Length; i++)
         {
-            width += font.width[text[i]]; // proportional width
+            width += font.Width[text[i]]; // proportional width
         }
     }
 
@@ -274,7 +254,7 @@ internal class GraphicManager
 
             int expectedsize = grstarts.Length;
 
-            if (!ignorenumchunks && headersize / 3 != expectedsize)
+            if (headersize / 3 != expectedsize)
                 throw new PfWolfGraphicException($@"Wolf4SDL was not compiled for these data files:
 {fname} contains a wrong number of offsets ({headersize / 3} instead of {expectedsize})!
         

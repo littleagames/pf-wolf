@@ -106,7 +106,6 @@ internal partial class Program
     //internal static int param_samplerate = AudioManager.DefaultSampleRate;
     internal static int param_mission = 0;
     internal static bool param_goodtimes = false;
-    internal static bool param_ignorenumchunks = false;
 
     private static void Main(string[] args)
     {
@@ -149,12 +148,10 @@ internal partial class Program
 
         _videoManager.Update();
 
-        PM_Startup();
         var extension = "wl6";
         //_audioManager.Init(param_audiobuffer, param_samplerate);
-        _graphicManager.Init(extension, param_ignorenumchunks);
+        _graphicManager.Init(extension);
         _mapManager.Init(extension);
-        CA_Startup();
         US_Startup();
 
         //

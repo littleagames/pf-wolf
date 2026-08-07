@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 using Wolf3D.Assets;
 using Wolf3D.Assets.Sounds;
-using Wolf3D.Managers;
 using Wolf3D.Mappers;
-using YamlDotNet.Core.Tokens;
 
 namespace Wolf3D.Loaders;
 
 internal class Wolf3dAudioFileLoader
 {
     internal int[] audiostarts;
-    //private Sound[] audiosegs;// = new Sound[NUMSNDCHUNKS];
     private Dictionary<string, Asset> assets = new Dictionary<string, Asset>();
 
     public Wolf3dAudioFileLoader(
@@ -46,7 +41,7 @@ internal class Wolf3dAudioFileLoader
         {
             for (int i = 0, assetIndex = 0; i < audiostarts.Length-1; i++)
             {
-                var currentType = i / AudioMappings.SoundMappingKeys.Count;
+                var currentType = i / AudioMappings.SoundMappingKeys.Count; // Determine this count value based on the file alone
                 int pos = audiostarts[i];
                 int size = audiostarts[i + 1] - pos;
                 fs.Seek(pos, SeekOrigin.Begin);

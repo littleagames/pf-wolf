@@ -15,6 +15,13 @@ internal class AssetManager
 {
     Dictionary<string, Asset> _assets = new Dictionary<string, Asset>();
 
+    public T? Find<T>(string name) where T : Asset
+    {
+        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
+            return foundAsset as T;
+        return null;
+    }
+
     [Obsolete("Temporary endpoint until the asset types are implemented")]
     public GameInfoMetadata GetGameInfo()
     {
@@ -791,5 +798,10 @@ internal class AssetManager
 
 
         return null;
+    }
+
+    internal FontAsset GetFont(string name)
+    {
+        throw new NotImplementedException();
     }
 }

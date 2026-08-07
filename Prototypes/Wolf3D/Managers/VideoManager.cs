@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using Wolf3D.Assets;
 using Wolf3D.Entities;
 using static SDL2.SDL;
 
@@ -344,7 +345,7 @@ internal class VideoManager
 
     internal void DrawPropString(int px, int py, string text, string fontcolor, byte[] data)
     {
-        fontstruct font;
+        FontAsset font;
         int width, step, height;
         byte[] source;
 
@@ -357,9 +358,9 @@ internal class VideoManager
 
         // TODO: Combine fontstruct and data
         //byte[] data = grsegs[STARTFONT + fontnumber];
-        font = FontHelper.GetFont(data);
+        font = new FontAsset(data);
 
-        height = font.height;
+        height = font.Height;
 
         this.Theme.Colors256.TryGetValue(fontcolor, out byte col);
 
@@ -370,8 +371,8 @@ internal class VideoManager
 
             foreach (char ch in text.ToCharArray())
             {
-                width = step = font.width[ch];
-                int locIndex = font.location[ch];
+                width = step = font.Width[ch];
+                int locIndex = font.Location[ch];
 
                 while (width-- != 0)
                 {

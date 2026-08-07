@@ -334,7 +334,7 @@ internal partial class Program
             return;         // walk through walls
 
         if (!_audioManager.IsAnySoundPlaying())
-            _audioManager.Play("HITWALL");
+             _audioManager.Play("HITWALL");
 
         ob.x = basex + xmove;
         ob.y = basey;
@@ -820,7 +820,7 @@ internal partial class Program
             OperateDoor(cmdtile & ~BIT_DOOR);
         }
         else
-            _audioManager.Play("DONOTHING");
+        { }// _audioManager.Play("DONOTHING");
     }
 
     internal static void Cmd_Fire()

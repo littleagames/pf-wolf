@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using SDL2;
+using Wolf3D.Assets;
 using Wolf3D.Entities;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
@@ -2702,8 +2703,8 @@ internal partial class Program
         int h = 0, w = 0, mw = 0, i, len = text.Length;
 
         fontnumber = 1;
-        fontstruct font = _graphicManager.GetFont(fontnumber);
-        h = font.height;
+        FontAsset font = _graphicManager.GetFont(fontnumber);
+        h = font.Height;
 
         for (i = 0; i < len; i++)
         {
@@ -2712,10 +2713,10 @@ internal partial class Program
                 if (w > mw)
                     mw = w;
                 w = 0;
-                h += font.height;
+                h += font.Height;
             }
             else
-                w += font.width[(byte)text[i]];
+                w += font.Width[(byte)text[i]];
         }
 
         if (w + 10 > mw)

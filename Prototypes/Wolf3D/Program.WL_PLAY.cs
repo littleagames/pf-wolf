@@ -76,16 +76,8 @@ internal partial class Program
 
     internal static int StopMusic()
     {
-        //int lastoffs = 
-            //_audioManager.SetPaused(true);
-
-        int chunk = AudioMappings.MusicKeys.IndexOf(lastmusicchunk);
-        if (chunk == -1)
-            return 0;
-
-        //UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
-
-        return 0;//lastoffs;
+        _audioManager.SetPaused(true);
+        return 0;
     }
 
     static int funnyticount;

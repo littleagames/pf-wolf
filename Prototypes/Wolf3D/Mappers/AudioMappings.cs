@@ -96,7 +96,7 @@ internal static class AudioMappings
         { "missilehit", new ("", "ADMISSILEHIT", "PCMISSILEHIT") }
     };
 
-    public static List<string> MusicKeys = new() {
+    private static readonly List<string> MusicKeys = [
         "Corner",
         "Dungeon",
         "MarchToWar",
@@ -124,7 +124,7 @@ internal static class AudioMappings
         "YoureAHero",
         "VictoryMarch",
         "PacMan"
-    };
+    ];
 
     public static List<string> AudioTKeys => SoundMappingKeys.Values.Select(x => x.PC)
         .Concat(SoundMappingKeys.Values.Select(x => x.AdLib)
