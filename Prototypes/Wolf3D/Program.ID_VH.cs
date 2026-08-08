@@ -5,7 +5,7 @@ internal partial class Program
 {
     static int px, py;
     static string fontcolor, backcolor;
-    static int fontnumber;
+    static string fontnumber;
 
     internal static void SETFONTCOLOR(string f, string b)
     {

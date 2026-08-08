@@ -15,10 +15,49 @@ internal class AssetManager
 {
     Dictionary<string, Asset> _assets = new Dictionary<string, Asset>();
 
+    public void Load()
+    {
+        // TODO: PK3 loading here
+        _assets.Add("signon", new GraphicAsset(Signon.signon, 320, 200));
+
+        Dictionary<string, Asset> assets = new();
+
+        var audioLoader = new Wolf3dAudioFileLoader("audiot", "wl6", "audiohed", "wl6");
+        assets = audioLoader.GetAssets();
+
+        foreach (var kvp in assets)
+        {
+            if (!_assets.ContainsKey(kvp.Key))
+                _assets[kvp.Key] = kvp.Value;
+        }
+
+        // TODO: Map data
+
+        var vgaGraphicLoader = new Wolf3dVgaFileLoader("vgahead", "vgagraph", "vgadict", "wl6");
+        assets = vgaGraphicLoader.GetAssets();
+
+        foreach (var kvp in assets)
+        {
+            if (!_assets.ContainsKey(kvp.Key))
+                _assets[kvp.Key] = kvp.Value;
+        }
+
+        var vswapLoader = new Wolf3DVswapFileLoader("vswap", "wl6");
+        assets = vswapLoader.GetAssets();
+
+        foreach (var kvp in assets)
+        {
+            if (!_assets.ContainsKey(kvp.Key))
+                _assets[kvp.Key] = kvp.Value;
+        }
+    }
+
     public T? Find<T>(string name) where T : Asset
     {
         if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
             return foundAsset as T;
+
+
         return null;
     }
 
@@ -424,89 +463,6 @@ internal class AssetManager
         }
     }
 
-    public PcSound? GetPcSound(string name)
-    {
-        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
-            return foundAsset as PcSound;
-
-        var audioLoader = new Wolf3dAudioFileLoader("audiot", "wl6", "audiohed", "wl6");
-        var assets = audioLoader.GetAssets();
-
-        foreach (var kvp in assets)
-        {
-            if (!_assets.ContainsKey(kvp.Key))
-                _assets[kvp.Key] = kvp.Value;
-        }
-
-        if (assets.TryGetValue(name.ToLowerInvariant(), out var asset))
-            return asset as PcSound;
-
-        return null;
-    }
-
-    public AdLibSound? GetAdLib(string name)
-    {
-        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
-            return foundAsset as AdLibSound;
-
-        var audioLoader = new Wolf3dAudioFileLoader("audiot", "wl6", "audiohed", "wl6");
-        var assets = audioLoader.GetAssets();
-
-        foreach (var kvp in assets)
-        {
-            if (!_assets.ContainsKey(kvp.Key))
-                _assets[kvp.Key] = kvp.Value;
-        }
-
-        if (assets.TryGetValue(name.ToLowerInvariant(), out var asset))
-            return asset as AdLibSound;
-
-        return null;
-    }
-
-    public Wolf3dDigitizedAudio? GetDigitizedSound(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            return null;
-
-        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
-            return foundAsset as Wolf3dDigitizedAudio;
-
-        var vswapLoader = new Wolf3DVswapFileLoader("vswap", "wl6");
-        var assets = vswapLoader.GetAssets();
-
-        foreach (var kvp in assets)
-        {
-            if (!_assets.ContainsKey(kvp.Key))
-                _assets[kvp.Key] = kvp.Value;
-        }
-
-        if (assets.TryGetValue(name.ToLowerInvariant(), out var asset))
-            return asset as Wolf3dDigitizedAudio;
-
-        return null;
-    }
-
-    public Wolf3dImfAudio? GetImf(string name)
-    {
-        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
-            return foundAsset as Wolf3dImfAudio;
-
-        var audioLoader = new Wolf3dAudioFileLoader("audiot", "wl6", "audiohed", "wl6");
-        var assets = audioLoader.GetAssets();
-
-        foreach (var kvp in assets)
-        {
-            if (!_assets.ContainsKey(kvp.Key))
-                _assets[kvp.Key] = kvp.Value;
-        }
-
-        if (assets.TryGetValue(name.ToLowerInvariant(), out var asset))
-            return asset as Wolf3dImfAudio;
-
-        return null;
-    }
-
     private Dictionary<string, ActorData> _decorations = new Dictionary<string, ActorData>();
     private Dictionary<string, ActorData> GetDecorations()
     {
@@ -757,51 +713,5 @@ internal class AssetManager
                 },
             };
         */
-    }
-
-    internal TextureAsset? GetTexture(string name)
-    {
-        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
-            return foundAsset as TextureAsset;
-
-        var vswapLoader = new Wolf3DVswapFileLoader("vswap", "wl6");
-        var assets = vswapLoader.GetAssets();
-
-        foreach (var kvp in assets)
-        {
-            if (!_assets.ContainsKey(kvp.Key))
-                _assets[kvp.Key] = kvp.Value;
-        }
-
-        if (assets.TryGetValue(name.ToLowerInvariant(), out var asset))
-            return asset as TextureAsset;
-
-        return null;
-    }
-
-    internal SpriteAsset? GetSprite(string name)
-    {
-        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
-            return foundAsset as SpriteAsset;
-
-        var vswapLoader = new Wolf3DVswapFileLoader("vswap", "wl6");
-        var assets = vswapLoader.GetAssets();
-        
-        foreach (var kvp in assets)
-        {
-            if (!_assets.ContainsKey(kvp.Key))
-                _assets[kvp.Key] = kvp.Value;
-        }
-
-        if (assets.TryGetValue(name.ToLowerInvariant(), out var asset))
-            return asset as SpriteAsset;
-
-
-        return null;
-    }
-
-    internal FontAsset GetFont(string name)
-    {
-        throw new NotImplementedException();
     }
 }

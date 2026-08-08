@@ -101,9 +101,6 @@ internal partial class Program
     // Command line parameter variables
     //
     internal static bool param_nowait = false;
-    
-    //internal static int param_audiobuffer = AudioManager.DefaultAudioBufferSize;
-    //internal static int param_samplerate = AudioManager.DefaultSampleRate;
     internal static int param_mission = 0;
     internal static bool param_goodtimes = false;
 
@@ -113,6 +110,7 @@ internal partial class Program
         // TODO: gameParams, handle errors?
         new Program();
         _gameEngineManager.Init(gameParams.Value);
+        _assetManager.Load();
 
         //CheckParameters(args); // Remove
 
@@ -149,8 +147,7 @@ internal partial class Program
         _videoManager.Update();
 
         var extension = "wl6";
-        //_audioManager.Init(param_audiobuffer, param_samplerate);
-        _graphicManager.Init(extension);
+        _graphicManager.Init();
         _mapManager.Init(extension);
         US_Startup();
 
@@ -231,6 +228,7 @@ internal partial class Program
         PrintY = 190;
 
         SETFONTCOLOR("Bright Yellow", "Maroon");
+        fontnumber = "SmallFont";
         US_CPrint("Press a key"); // "Oprima una tecla"
 
         _videoManager.Update();
@@ -818,7 +816,7 @@ internal partial class Program
 
         //CA_LoadAllSounds();
 
-        fontnumber = 1;
+        fontnumber = "LargeFont";
         ClearMScreen();
         _graphicManager.DrawPic("c_mouselback", 112, 184);
         DrawStripes(10);

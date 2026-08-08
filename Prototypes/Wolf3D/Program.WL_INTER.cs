@@ -18,7 +18,7 @@ internal partial class Program
         ClearMScreen();
         DrawStripes(10);
 
-        fontnumber = 1;
+        fontnumber = "LargeFont";
 
         SETFONTCOLOR("READHCOLOR", "BKGDCOLOR");
         PrintX = 110;
@@ -69,7 +69,7 @@ internal partial class Program
         _graphicManager.DrawPic("c_score", 28 * 8, 68);
         //_graphicManager.DrawPic(35 * 8, 68, graphicnums.C_CODEPIC);
 
-        fontnumber = 0;
+        fontnumber = "SmallFont";
         SETFONTCOLOR("White", "BORDCOLOR");
 
 
@@ -595,7 +595,7 @@ internal partial class Program
         //if (gamestate.difficulty >= difficultytypes.gd_medium)
         //{
         //    _graphicManager.DrawPic(30 * 8, TIMEY * 8, graphicnums.C_TIMECODEPIC);
-        //    fontnumber = 0;
+        //    fontnumber = "SmallFont";
         //    fontcolor = READHCOLOR;
         //    PrintX = 30 * 8 - 3;
         //    PrintY = TIMEY * 8 + 8;
@@ -607,7 +607,7 @@ internal partial class Program
         //    US_Print(tempstr);
         //}
 
-        fontnumber = 1;
+        fontnumber = "LargeFont";
 
         _videoManager.Update();
         _videoManager.FadeIn();

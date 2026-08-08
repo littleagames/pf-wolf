@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Assets;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
 
@@ -67,7 +68,10 @@ internal partial class Program
 
     internal static void HelpScreens()
     {
-        text = _graphicManager.GetText("HELPART");
+        var textAsset = _assetManager.Find<TextAsset>("HELPART");
+        if (textAsset == null)
+            return;
+        var text = textAsset.ToText();
         if (string.IsNullOrEmpty(text))
         {
             return;
@@ -87,7 +91,10 @@ internal partial class Program
             return;
         }
 
-        string text = _graphicManager.GetText(clusterInfo.EndText);
+        var textAsset = _assetManager.Find<TextAsset>(clusterInfo.EndText);
+        if (textAsset == null)
+            return;
+        var text = textAsset.ToText();
         if (string.IsNullOrEmpty(text))
         {
             return;
@@ -105,13 +112,13 @@ internal partial class Program
 
     internal static void ShowArticle(string article)
     {
-        uint oldfontnumber;
+        string oldfontnumber;
         bool newpage, firstpage;
         ControlInfo ci;
 
         text = article;
-        oldfontnumber = (uint)fontnumber;
-        fontnumber = 0;
+        oldfontnumber = new string(fontnumber);
+        fontnumber = "SmallFont";
         _videoManager.Bar(0, 0, 320, 200, "BACKCOLOR");
         CacheLayout();
 
@@ -187,7 +194,7 @@ internal partial class Program
         } while (_inputManager.GetLastKeyPressed() != ScanCodes.sc_Escape && !ci.button1);
 
         _inputManager.ClearKeysDown();
-        fontnumber = (int)oldfontnumber;
+        fontnumber = new string(oldfontnumber);
     }
 
     /*
@@ -520,10 +527,12 @@ internal partial class Program
             case 'G':               // ^Gyyy,xxx,ppp draws graphic
                 ParsePicCommand();
                 _graphicManager.DrawPic(picName, picx & ~7, picy);
-                var picData = _graphicManager.GetPicMetadata(picName);
+                var graphicAsset = _assetManager.Find<GraphicAsset>(picName);
+                if (graphicAsset == null)
+                    return;
 
-                picwidth = picData.width;
-                picheight = picData.height;
+                picwidth = graphicAsset.Width;
+                picheight = graphicAsset.Height;
                 if (picwidth == 0 || picheight == 0) return;
 
                 //

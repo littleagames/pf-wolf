@@ -343,9 +343,8 @@ internal class VideoManager
     }
 
 
-    internal void DrawPropString(int px, int py, string text, string fontcolor, byte[] data)
+    internal void DrawPropString(int px, int py, string text, string fontcolor, FontAsset font)
     {
-        FontAsset font;
         int width, step, height;
         byte[] source;
 
@@ -355,10 +354,6 @@ internal class VideoManager
         IntPtr destPtr = LockSurface(screenBuffer);
         if (destPtr == IntPtr.Zero)
             return;
-
-        // TODO: Combine fontstruct and data
-        //byte[] data = grsegs[STARTFONT + fontnumber];
-        font = new FontAsset(data);
 
         height = font.Height;
 
@@ -378,7 +373,7 @@ internal class VideoManager
                 {
                     for (i = 0; i < height; i++)
                     {
-                        if (data[locIndex + (i * step)] != 0)
+                        if (font.RawData[locIndex + (i * step)] != 0)
                         {
                             for (sy = 0; sy < scaleFactor; sy++)
                                 for (sx = 0; sx < scaleFactor; sx++)

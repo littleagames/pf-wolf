@@ -74,7 +74,7 @@ internal class AudioManager
         // Get next available sound channel
         var source = _sources[_nextSource++ % _sources.Length];
 
-        var digiSound = assetManager.GetDigitizedSound(soundProfile.Digitized);
+        var digiSound = assetManager.Find<Wolf3dDigitizedAudio>(soundProfile.Digitized);
         if (digiSound != null)
         {
             if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
@@ -89,7 +89,7 @@ internal class AudioManager
             return;
         }
 
-        var adLibSound = assetManager.GetAdLib(soundProfile.AdLib);
+        var adLibSound = assetManager.Find<AdLibSound>(soundProfile.AdLib);
         if (adLibSound != null)
         {
             if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
@@ -104,7 +104,7 @@ internal class AudioManager
             return;
         }
 
-        var pcSound = assetManager.GetPcSound(soundProfile.PC);
+        var pcSound = assetManager.Find<PcSound>(soundProfile.PC);
         if (pcSound != null)
         {
             if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
@@ -183,7 +183,7 @@ internal class AudioManager
     public void PlayMusic(string name)
     {
         var assetManager = _assetManager.Value;
-        var imfTrack = assetManager.GetImf(name);
+        var imfTrack = assetManager.Find<Wolf3dImfAudio>(name);
         if (imfTrack == null)
             return;
 

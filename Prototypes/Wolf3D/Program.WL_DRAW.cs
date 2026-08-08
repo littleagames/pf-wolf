@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using System.Runtime.InteropServices;
+using Wolf3D.Assets;
 using Wolf3D.Constants;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
@@ -261,8 +262,10 @@ internal partial class Program
         else
             wallpic = TextureMappings.NameIndexMap[vertwall[tilehit]];
 
-        postsource = _assetManager.GetTexture(wallpic).RawData.Skip(texture).ToArray();
-        //postsource = PM_GetPage(wallpic).Skip(texture).ToArray();
+        var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
+        if (textureAsset == null)
+            return;
+        postsource = textureAsset.RawData.Skip(texture).ToArray();
         ScalePost();
     }
 
@@ -305,7 +308,11 @@ internal partial class Program
         else
             wallpic = TextureMappings.NameIndexMap[horizwall[tilehit]];
 
-        postsource = _assetManager.GetTexture(wallpic).RawData.Skip(texture).ToArray();
+        var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
+        if (textureAsset == null)
+            return;
+        
+        postsource = textureAsset.RawData.Skip(texture).ToArray();
         ScalePost();
     }
 
@@ -339,7 +346,10 @@ internal partial class Program
                 break;
         }
 
-        postsource = _assetManager.GetTexture(doorpage).RawData.Skip(texture).ToArray();
+        var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
+        if (doorTextureAsset == null)
+            return;
+        postsource = doorTextureAsset.RawData.Skip(texture).ToArray();
 
         ScalePost();
     }
@@ -374,7 +384,10 @@ internal partial class Program
                 break;
             }
 
-        postsource = _assetManager.GetTexture(doorpage).RawData.Skip(texture).ToArray();
+        var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
+        if (doorTextureAsset == null)
+            return;
+        postsource = doorTextureAsset.RawData.Skip(texture).ToArray();
         //postsource = PM_GetPage(doorpage).Skip(texture).ToArray();// + texture;
 
         ScalePost();
@@ -1353,7 +1366,7 @@ internal partial class Program
         {
             if (fpscounter)
             {
-                fontnumber = 0;
+                fontnumber = "SmallFont";
                 SETFONTCOLOR("Grey", "VIEWCOLOR");
                 PrintX = 4; PrintY = 1;
                 _videoManager.Bar(0, 0, 40, 10, bordercol);

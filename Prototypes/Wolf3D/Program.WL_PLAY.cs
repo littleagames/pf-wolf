@@ -420,7 +420,7 @@ internal partial class Program
         //
         if (_inputManager.IsKeyDown(ScanCodes.sc_Tab) && DebugOk != 0)
         {
-            fontnumber = 0;
+            fontnumber = "SmallFont";
             SETFONTCOLOR("Black", "White");
             if (DebugKeys() != 0 && viewsize < 20)
             {

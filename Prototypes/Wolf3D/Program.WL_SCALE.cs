@@ -1,4 +1,6 @@
-﻿namespace Wolf3D;
+﻿using Wolf3D.Assets;
+
+namespace Wolf3D;
 
 internal partial class Program
 {
@@ -106,7 +108,11 @@ internal partial class Program
         if (height == 0)
             return;                 // too close or far away
 
-        linesrc = _assetManager.GetSprite(sprite.shapenum).RawData;
+        var spriteAsset = _assetManager.Find<SpriteAsset>(sprite.shapenum);
+        if (spriteAsset == null)
+            return;
+
+        linesrc = spriteAsset.RawData;
         shape = new compshape_t(linesrc);// (compshape_t*)linesrc; // this needs to build the struct from the byte[], and get the table data afterwards
         fracstep = MathUtils.FixedDiv(height, TEXTURESIZE / 2);
         frac = shape.leftpix * fracstep;
@@ -174,7 +180,11 @@ internal partial class Program
 
         height = dispheight >> 1;
 
-        linesrc = _assetManager.GetSprite(shapenum).RawData;
+        var spriteAsset = _assetManager.Find<SpriteAsset>(shapenum);
+        if (spriteAsset == null)
+            return;
+
+        linesrc = spriteAsset.RawData;
         shape = new compshape_t(linesrc);
         fracstep = MathUtils.FixedDiv(height, TEXTURESIZE / 2);
         frac = shape.leftpix * fracstep;

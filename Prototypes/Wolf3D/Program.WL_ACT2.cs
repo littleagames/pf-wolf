@@ -2589,7 +2589,7 @@ internal partial class Program
 
         if (bordercol != "VIEWCOLOR")
         {
-            fontnumber = 1;
+            fontnumber = "LargeFont";
             SETFONTCOLOR("White", bordercol);
             PrintX = 68; PrintY = 45;
             US_Print("$STR_SEEAGAIN".ToLanguageText(language));

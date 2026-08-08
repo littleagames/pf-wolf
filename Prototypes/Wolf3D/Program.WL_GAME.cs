@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Assets;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
@@ -543,7 +544,11 @@ internal partial class Program
         short length;
         if (true)
         {
-            demoData = _graphicManager.GetDemo(demonumber);
+            var demoAsset = _assetManager.Find<DemoAsset>($"demo{demonumber}");
+            if (demoAsset == null)
+                return;
+
+            demoData = demoAsset.RawData;// _graphicManager.GetDemo(demonumber);
             demoptr = 0;
         }
         else
@@ -613,7 +618,7 @@ internal partial class Program
         _videoManager.FadeIn();
         CenterWindow(24, 3);
         PrintY += 6;
-        fontnumber = 0;
+        fontnumber = "SmallFont";
         SETFONTCOLOR("Black", "White");
         US_Print(" Demo number (0-9): ");
         _videoManager.Update();
@@ -651,7 +656,7 @@ internal partial class Program
         int level, maps;
         CenterWindow(26, 3);
         PrintY += 6;
-        fontnumber = 0;
+        fontnumber = "SmallFont";
         SETFONTCOLOR("Black", "White");
         US_Print("  Demo which level(1-60): "); maps = 60;
         _videoManager.Update();

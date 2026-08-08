@@ -709,7 +709,7 @@ internal partial class Program
         // CACHE SOUNDS
         //
         SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-        fontnumber = 1;
+        fontnumber = "LargeFont";
         WindowH = 200;
         if (_videoManager.screenHeight % 200 != 0)
             _videoManager.ClearScreen(0);
@@ -851,7 +851,7 @@ internal partial class Program
                 }
 
                 WindowH = 200;
-                fontnumber = 0;
+                fontnumber = "SmallFont";
                 MainMenu[(int)menuitems.savegame].active = 0;
                 return 1;
             //
@@ -860,10 +860,10 @@ internal partial class Program
             case ScanCodes.sc_F8:
                 if (SaveGamesAvail[LSItems.curpos] != 0 && pickquick != 0)
                 {
-                    fontnumber = 1;
+                    fontnumber = "LargeFont";
                     Message("$STR_SAVING".ToLanguageText(language) + "...");
                     CP_SaveGame(1);
-                    fontnumber = 0;
+                    fontnumber = "SmallFont";
                 }
                 else
                 {
@@ -897,14 +897,14 @@ internal partial class Program
             case ScanCodes.sc_F9:
                 if (SaveGamesAvail[LSItems.curpos] != 0 && pickquick != 0)
                 {
-                    fontnumber = 1;
+                    fontnumber = "LargeFont";
 
                     var str = $"{"$STR_LGC".ToLanguageText(language)} {SaveGameNames[LSItems.curpos]}\"?";
 
                     if (Confirm(str) != 0)
                         CP_LoadGame(1);
 
-                    fontnumber = 0;
+                    fontnumber = "SmallFont";
                 }
                 else
                 {
@@ -953,7 +953,7 @@ internal partial class Program
 
                 DrawPlayBorder();
                 WindowH = 200;
-                fontnumber = 0;
+                fontnumber = "SmallFont";
                 return 1;
         }
 
@@ -1517,7 +1517,7 @@ internal partial class Program
 
 
         ClearMScreen();
-        fontnumber = 1;
+        fontnumber = "LargeFont";
         _graphicManager.DrawPic("c_mouselback",112, 184);
         DrawWindow(LSM_X - 10, LSM_Y - 5, LSM_W, LSM_H, "BKGDCOLOR");
         DrawStripes(10);
@@ -1554,14 +1554,14 @@ internal partial class Program
                      color);
         PrintX = (ushort)(LSM_X + LSItems.indent + 2);
         PrintY = (ushort)(LSM_Y + w * 13 + 1);
-        fontnumber = 0;
+        fontnumber = "SmallFont";
 
         if (SaveGamesAvail[w] != 0)
             US_Print(new string(SaveGameNames[w]));
         else
             US_Print($"      - {"$STR_EMPTY".ToLanguageText(language)} -");
 
-        fontnumber = 1;
+        fontnumber = "LargeFont";
     }
 
     internal const int LSA_X = 96;
@@ -1576,7 +1576,7 @@ internal partial class Program
         DrawOutline(LSA_X, LSA_Y, LSA_W, LSA_H, "Black", "HIGHLIGHT");
         _graphicManager.DrawPic("c_diskloading1", LSA_X + 8, LSA_Y + 5);
 
-        fontnumber = 1;
+        fontnumber = "LargeFont";
         SETFONTCOLOR("Black", "TEXTCOLOR");
         PrintX = LSA_X + 46;
         PrintY = LSA_Y + 13;
@@ -1657,7 +1657,7 @@ internal partial class Program
                 SaveGameNames[which] = input;
                 name = name.Replace('?', (char)(which + '0'));
 
-                fontnumber = 0;
+                fontnumber = "SmallFont";
                 if (SaveGamesAvail[which] == 0)
                     _videoManager.Bar(LSM_X + LSItems.indent + 1, LSM_Y + which * 13 + 1,
                              LSM_W - LSItems.indent - 16, 10, "BKGDCOLOR");
@@ -1700,7 +1700,7 @@ internal partial class Program
                     continue;
                 }
 
-                fontnumber = 1;
+                fontnumber = "LargeFont";
                 break;
             }
 
@@ -1816,7 +1816,7 @@ internal partial class Program
 
     internal static int CP_ViewScores(int _)
     {
-        fontnumber = 0;
+        fontnumber = "SmallFont";
 
 #if SPEAR
         StartCPMusic(musicnames.XAWARD_MUS);
@@ -1827,7 +1827,7 @@ internal partial class Program
         DrawHighScores();
         _videoManager.Update();
         MenuFadeIn();
-        fontnumber = 1;
+        fontnumber = "LargeFont";
 
         _inputManager.Ack();
 
@@ -2610,7 +2610,7 @@ internal partial class Program
     }
     internal static void CleanupControlPanel()
     {
-        fontnumber = 0;
+        fontnumber = "SmallFont";
     }
 
     internal static void DrawMenuGun(CP_iteminfo iteminfo)
@@ -2702,8 +2702,9 @@ internal partial class Program
     {
         int h = 0, w = 0, mw = 0, i, len = text.Length;
 
-        fontnumber = 1;
-        FontAsset font = _graphicManager.GetFont(fontnumber);
+        fontnumber = "LargeFont";
+        FontAsset font = _assetManager.Find<FontAsset>(fontnumber);
+        if (font == null) return;
         h = font.Height;
 
         for (i = 0; i < len; i++)
