@@ -4,7 +4,7 @@ using Wolf3D.Mappers;
 
 namespace Wolf3D.Loaders;
 
-internal class Wolf3d2VswapFileLoader
+internal class Wolf3dVswapFileLoader
 {
     private struct digiinfo
     {
@@ -22,7 +22,7 @@ internal class Wolf3d2VswapFileLoader
     private byte[] PMPageData;
     private byte[][] PMPages;
 
-    public Wolf3d2VswapFileLoader(string fileName, string extension)
+    public Wolf3dVswapFileLoader(string fileName, string extension)
     {
         string fname = $"{fileName}.{extension}";
 

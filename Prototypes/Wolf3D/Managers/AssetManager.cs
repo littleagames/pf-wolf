@@ -42,7 +42,7 @@ internal class AssetManager
                 _assets[kvp.Key] = kvp.Value;
         }
 
-        var vswapLoader = new Wolf3d2VswapFileLoader("vswap", "wl6");
+        var vswapLoader = new Wolf3dVswapFileLoader("vswap", "wl6");
         assets = vswapLoader.GetAssets();
 
         foreach (var kvp in assets)
