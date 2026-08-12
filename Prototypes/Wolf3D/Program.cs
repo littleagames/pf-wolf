@@ -204,7 +204,7 @@ internal partial class Program
 
     private static void SignonScreen()
     {
-        _graphicManager.DrawPic("wolf3d-signon", 0, 0);
+        _graphicManager.DrawPic("wolf3d-signon", 0, 0); // TODO: Pull this value from a gamepack configuration
     }
 
     private static void FinishSignon()

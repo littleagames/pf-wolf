@@ -24,7 +24,14 @@ internal class PfWolfPk3Loader
                 // 2) Load asset reference to pack, and what type it is
                 // TODO: distinguish between PNG and other formats by using a "try load" for each data type of a graphic
                 // Then I can use this same loader for wolf3d file formats as well
-                //AddReference(assetName, () => GraphicDataLoader.Load(Pk3EntryLoader.Open(pk3FileFullPath, entry.FullName), sourcePalette: Load<Palette>("wolfpal")));
+                try
+                {
+                    AddReference(assetName, () => GraphicDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName), sourcePalette: Load<Palette>("wolfpal")));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error loading asset '{assetName}': {e.Message}");
+                }
                 continue;
             }
 
@@ -76,22 +83,30 @@ internal class PfWolfPk3Loader
         var loadedAssets = new Dictionary<string, Asset>();
         foreach (var asset in _assets)
         {
-            var assetValue = asset.Value;
-            var assetType = assetValue.GetType();
-            if (assetType.IsGenericType && assetType.GetGenericTypeDefinition() == typeof(AssetReference<>))
+            try
             {
-                // Use reflection to call Load() on AssetReference<T>
-                var loadMethod = assetType.GetProperty("Load")?.GetValue(assetValue) as Delegate;
-                if (loadMethod != null)
+                var assetValue = asset.Value;
+                var assetType = assetValue.GetType();
+                if (assetType.IsGenericType && assetType.GetGenericTypeDefinition() == typeof(AssetReference<>))
                 {
-                    var loadedAsset = loadMethod.DynamicInvoke();
-                    _assets[asset.Key] = (Asset)loadedAsset; // Replace reference with loaded asset
-                    loadedAssets.Add(asset.Key, (Asset)loadedAsset);
+                    // Use reflection to call Load() on AssetReference<T>
+                    var loadMethod = assetType.GetProperty("Load")?.GetValue(assetValue) as Delegate;
+                    if (loadMethod != null)
+                    {
+                        var loadedAsset = loadMethod.DynamicInvoke();
+                        _assets[asset.Key] = (Asset)loadedAsset; // Replace reference with loaded asset
+                        loadedAssets.Add(asset.Key, (Asset)loadedAsset);
+                    }
+                }
+                else
+                {
+                    loadedAssets.Add(asset.Key, assetValue);
                 }
             }
-            else
+            catch (Exception e)
             {
-                loadedAssets.Add(asset.Key, assetValue);
+                Console.WriteLine($"Error loading asset '{asset.Key}': {e.Message}");
+                continue;
             }
         }
 
