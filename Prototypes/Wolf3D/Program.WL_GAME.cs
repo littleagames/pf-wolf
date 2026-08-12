@@ -588,7 +588,7 @@ internal partial class Program
         ClearMemory();
     }
 
-    internal static string demoname = "DEMO?.";
+    internal static string demoname = "DEMO?.dmo";
     internal const int MAXDEMOSIZE = 8192;
     internal static void StartDemoRecord(int levelnumber)
     {

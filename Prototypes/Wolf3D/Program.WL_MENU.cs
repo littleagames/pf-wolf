@@ -184,7 +184,7 @@ internal partial class Program
         "",
     };
 
-    internal static string SaveName = "savegam?.";
+    internal static string SaveName = "savegam?.dat";
 
     internal static void SetupSaveGames()
     {
@@ -2793,10 +2793,8 @@ internal partial class Program
         }*/
 
         // TODO: Create all directories? Or do it when the need arises?
-        string extension = "";
         if (File.Exists("vswap.wl6"))
         {
-            extension = "wl6";
             NewEmenu = _assetManager.GetGameInfo().Episodes.Values.SelectMany(ep =>
                 new CP_itemtype[]
                 {
@@ -2811,7 +2809,6 @@ internal partial class Program
 
             if (File.Exists("vswap.wl3"))
             {
-                extension = "wl3";
                 NewEmenu[2].active =
                 NewEmenu[4].active = 1;
             }
@@ -2820,7 +2817,6 @@ internal partial class Program
 
                 if (File.Exists("vswap.wl1"))
                 {
-                    extension = "wl1";
                 }
                 else
                 {
@@ -2828,9 +2824,6 @@ internal partial class Program
                 }
             }
         }
-
-        SaveName += extension;
-        demoname += extension;
 
         var menuAsset = _assetManager.GetMenu("main-menu");
         var language = _assetManager.GetText("en-us");
