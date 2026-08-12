@@ -17,10 +17,16 @@ internal class AssetManager
 
     public void Load()
     {
-        // TODO: PK3 loading here
-        _assets.Add("signon", new GraphicAsset(Signon.signon, 320, 200));
-
         Dictionary<string, Asset> assets = new();
+        // TODO: PK3 loading here
+        var pfWolfBasePk3Loader = new PfWolfPk3Loader("pfwolf.pk3");
+        assets = pfWolfBasePk3Loader.GetAssets();
+
+        foreach (var kvp in assets)
+        {
+            if (!_assets.ContainsKey(kvp.Key))
+                _assets[kvp.Key] = kvp.Value;
+        }
 
         var audioLoader = new Wolf3dAudioFileLoader("audiot", "wl6", "audiohed", "wl6");
         assets = audioLoader.GetAssets();

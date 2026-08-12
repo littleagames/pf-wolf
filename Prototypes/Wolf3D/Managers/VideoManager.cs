@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using Wolf3D.Assets;
 using Wolf3D.Entities;
+using Wolf3D.Extensions;
 using static SDL2.SDL;
 
 namespace Wolf3D.Managers;
@@ -51,11 +52,13 @@ internal class VideoManager
     0x00e10000,     // 24   24,23,22,17
     0x01200000,     // 25   25,22      (this is enough for 8191x4095)
 };
+    private readonly Lazy<AssetManager> _assetManager;
     static uint rndbits_y;
     static uint rndmask;
 
-    public VideoManager()
+    public VideoManager(Lazy<AssetManager> assetManager)
     {
+        _assetManager = assetManager;
         InputManager.MouseGrabbed += SetWindowGrab;
     }
 
@@ -66,7 +69,11 @@ internal class VideoManager
             throw new PfWolfVideoException("Could not initialize SDL: {error}", SDL.SDL_GetError());
         }
 
-        gamepal = GamePal.wolfpal;
+        var pal = _assetManager.Value.Find<Palette>("wolfpal");
+        if (pal == null)
+            throw new PfWolfVideoException("Could not find wolfpal palette in asset manager.");
+
+        gamepal = pal.ToSDLColors();
         this.Theme = theme;
 
         InitializeSDLVideo();

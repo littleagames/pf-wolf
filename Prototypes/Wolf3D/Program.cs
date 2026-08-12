@@ -127,7 +127,6 @@ internal partial class Program
     {
         bool didjukebox = false;
         var theme = _assetManager.GetColors("wolf3d-theme");
-        // var palette = _assetManager.GetPalette("wolfpal");
         _videoManager.Init(theme!);
         _inputManager.Init(_videoManager.fullscreen);
         
@@ -205,7 +204,7 @@ internal partial class Program
 
     private static void SignonScreen()
     {
-        _graphicManager.DrawPic("signon", 0, 0);
+        _graphicManager.DrawPic("wolf3d-signon", 0, 0);
     }
 
     private static void FinishSignon()
