@@ -31,7 +31,14 @@ internal class AssetManager
                 _assets[kvp.Key] = kvp.Value;
         }
 
-        // TODO: Map data
+        var mapLoader = new Wolf3dMapFileLoader("maphead", "gamemaps", "wl6");
+        assets = mapLoader.GetAssets();
+
+        foreach (var kvp in assets)
+        {
+            if (!_assets.ContainsKey(kvp.Key))
+                _assets[kvp.Key] = kvp.Value;
+        }
 
         var vgaGraphicLoader = new Wolf3dVgaFileLoader("vgahead", "vgagraph", "vgadict", "wl6");
         assets = vgaGraphicLoader.GetAssets();

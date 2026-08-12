@@ -146,9 +146,6 @@ internal partial class Program
 
         _videoManager.Update();
 
-        var extension = "wl6";
-        _graphicManager.Init();
-        _mapManager.Init(extension);
         US_Startup();
 
         //

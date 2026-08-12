@@ -18,10 +18,6 @@ internal class GraphicManager
     private readonly VideoManager videoManager;
     private readonly Lazy<AssetManager> assetManager;
 
-    public void Init()
-    {
-    }
-
     public void DrawPropString(int px, int py, string s, string fontcolor, string fontName)
     {
         var fontAsset = assetManager.Value.Find<FontAsset>(fontName);
