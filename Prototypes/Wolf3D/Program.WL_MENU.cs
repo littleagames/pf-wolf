@@ -834,7 +834,9 @@ internal partial class Program
 
     internal static int CP_CheckQuick(ScanCodes scancode)
     {
-        var gameInfo = _assetManager.GetGameInfo();
+        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        if (gameInfo == null)
+            return 1;
         var language = _assetManager.GetText("en-us");
         switch (scancode)
         {
@@ -1019,7 +1021,10 @@ internal partial class Program
                     }
                     else
                     {
-                        if (!_assetManager.GetGameInfo().Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
+                        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+                        if (gameInfo == null)
+                            return 1;
+                        if (!gameInfo.Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
                         {
                             _audioManager.Play("NOWAY");
                             Message($"Starting Map \"{episodeInfo.StartMap}\" unavailable!");
@@ -1115,7 +1120,10 @@ internal partial class Program
 
     internal static void DrawNewGameDiff(int w)
     {
-        SkillInfo[] skills = _assetManager.GetGameInfo().Skills.Values.ToArray();
+        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        if (gameInfo == null)
+            return;
+        SkillInfo[] skills = gameInfo.Skills.Values.ToArray();
         _graphicManager.DrawPic(skills[w].PicName, NM_X + 185, NM_Y + 7);
     }
 
@@ -1857,7 +1865,9 @@ internal partial class Program
 
     internal static int CP_Quit(int _)
     {
-        var gameInfo = _assetManager.GetGameInfo();
+        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        if (gameInfo == null)
+            return 1;
 
         string endStr = gameInfo.EndStrings[(US_RndT() & (gameInfo.EndStrings.Count - 2)) + (US_RndT() & 1)];
         if (Confirm(endStr) != 0)
@@ -2775,7 +2785,10 @@ internal partial class Program
 
     internal static void CheckForEpisodes()
     {
-        NewMenu = _assetManager.GetGameInfo().Skills.Values.Select(s => new CP_itemtype(1, s.Name, null)).ToArray();
+        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        if (gameInfo == null)
+            return;
+        NewMenu = gameInfo.Skills.Values.Select(s => new CP_itemtype(1, s.Name, null)).ToArray();
         NewItems.amount = (short) NewMenu.Length;
         /*if (configdir != string.Empty)
         {
@@ -2795,7 +2808,7 @@ internal partial class Program
         // TODO: Create all directories? Or do it when the need arises?
         if (File.Exists("vswap.wl6"))
         {
-            NewEmenu = _assetManager.GetGameInfo().Episodes.Values.SelectMany(ep =>
+            NewEmenu = gameInfo.Episodes.Values.SelectMany(ep =>
                 new CP_itemtype[]
                 {
                     new CP_itemtype(1, ep.Name, null, ep),
@@ -2828,18 +2841,18 @@ internal partial class Program
         var menuAsset = _assetManager.GetMenu("main-menu");
         var language = _assetManager.GetText("en-us");
         MainMenu = menuAsset.MenuItems.Select(mi =>
-                new CP_itemtype((short)(mi.IsEnabled ? 1 : 0), mi.Text.ToLanguageText(language), MapFunction(mi as MenuSwitcher)))
+                new CP_itemtype((short)(mi.Enabled ? 1 : 0), mi.Text.ToLanguageText(language), MapFunction(mi as MenuSwitcher)))
                 .ToArray();
         MainItems = new CP_iteminfo(
             (short)menuAsset.Position.X, 
             (short)menuAsset.Position.Y, 
             amount: (short)MainMenu.Length, 
             curpos: 0, 
-            indent: 24);
+            indent: (short)menuAsset.Indent);
 
         menuAsset = _assetManager.GetMenu("sound");
         SndMenu = menuAsset.MenuItems.Select(mi =>
-                new CP_itemtype((short)(mi.IsEnabled ? 1 : 0), mi.Text.ToLanguageText(language), MapFunction(mi as MenuSwitcher)))
+                new CP_itemtype((short)(mi.Enabled ? 1 : 0), mi.Text.ToLanguageText(language), MapFunction(mi as MenuSwitcher)))
                 .ToArray();
         SndItems = new CP_iteminfo(
             (short)menuAsset.Position.X,
@@ -2850,7 +2863,7 @@ internal partial class Program
 
         menuAsset = _assetManager.GetMenu("control");
         CtlMenu = menuAsset.MenuItems.Select(mi =>
-                new CP_itemtype((short)(mi.IsEnabled ? 1 : 0), mi.Text.ToLanguageText(language), MapFunction(mi as MenuSwitcher)))
+                new CP_itemtype((short)(mi.Enabled ? 1 : 0), mi.Text.ToLanguageText(language), MapFunction(mi as MenuSwitcher)))
                 .ToArray();
         CtlItems = new CP_iteminfo(
             (short)menuAsset.Position.X,

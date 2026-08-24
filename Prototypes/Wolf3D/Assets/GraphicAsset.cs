@@ -11,4 +11,9 @@ internal record GraphicAsset : Asset
 
     public short Width { get; init; }
     public short Height { get; init; }
+
+    public override void Merge(Asset other)
+    {
+        // For now, do nothing
+    }
 }

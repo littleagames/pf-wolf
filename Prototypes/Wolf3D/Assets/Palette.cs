@@ -36,6 +36,11 @@ internal record Palette : Asset
             paletteMap[i] = (byte)bestIndex;
         }
     }
+
+    public override void Merge(Asset other)
+    {
+        // For now, do nothing
+    }
 }
 
 public struct PaletteColor

@@ -10,4 +10,9 @@ internal record Tile8Asset : Asset
     {
         RawData = data;
     }
+
+    public override void Merge(Asset other)
+    {
+        // For now, do nothing
+    }
 }

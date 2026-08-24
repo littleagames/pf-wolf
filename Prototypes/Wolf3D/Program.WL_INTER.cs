@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Assets;
 using Wolf3D.Constants;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
@@ -249,7 +250,10 @@ internal partial class Program
         _inputManager.StartAck();
         _graphicManager.DrawPic("l_guy", 0, 16);
 
-        var mapInfo = _assetManager.GetGameInfo().Maps[gamestate.mapon];
+        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        if (gameInfo == null)
+            return;
+        var mapInfo = gameInfo.Maps[gamestate.mapon];
         //if (gamestate.mapon < LRpack)
         {
             Write(14, 2, "floor\ncompleted");

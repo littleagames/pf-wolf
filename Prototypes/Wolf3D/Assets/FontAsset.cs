@@ -26,4 +26,9 @@ internal record FontAsset : Asset
     public short Height { get; init; }
     public short[] Location { get; init; } = new short[256];
     public byte[] Width { get; init; } = new byte[256];
+
+    public override void Merge(Asset other)
+    {
+        // For now, do nothing
+    }
 }

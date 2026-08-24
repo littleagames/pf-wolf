@@ -489,7 +489,10 @@ internal partial class Program
                     if (viewsize == 21) DrawPlayScreen();
                     gamestate.oldscore = gamestate.score;
 
-                    var mapInfo = _assetManager.GetGameInfo().Maps[gamestate.mapon];
+                    var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+                    if (gameInfo == null)
+                        continue;
+                    var mapInfo = gameInfo.Maps[gamestate.mapon];
                     if (playstate == playstatetypes.ex_secretlevel)
                     {
                         gamestate.mapon = mapInfo.SecretNext ?? mapInfo.Next; // Falls back if no secretnext defined

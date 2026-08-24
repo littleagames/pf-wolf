@@ -19,11 +19,6 @@
 		<PackageReference Include="OpenTK.Audio.OpenAL" Version="4.8.2" />
 		<PackageReference Include="NukedOPL3Sharp" Version="1.2.1" />
 	</ItemGroup>
-
-  <!--<ItemGroup>
-    <ProjectReference Include="..\SDL2-CS-master\SDL2-CS.csproj" />
-  </ItemGroup>-->
-
 	<ItemGroup>
 		<PackageReference Include="ppy.SDL2-CS" Version="1.0.82" />
 	</ItemGroup>
@@ -34,6 +29,11 @@
 		</Content>
 	</ItemGroup>
 	<ItemGroup>
-	  <Content Remove="..\..\pfwolf-pk3\actordefs\wolf3d\ammo.json" />
+	  <Folder Include="Models\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Update="pfwolf.pk3">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 </Project>

@@ -25,5 +25,12 @@ internal record Wolf3dImfAudio : Asset
 
         Commands = commands;
     }
+
+
+    public override void Merge(Asset other)
+    {
+        // For now, do nothing
+    }
+
     public readonly record struct WolfensteinMusicCommand(byte Register, byte Value, ushort Delay);
 }

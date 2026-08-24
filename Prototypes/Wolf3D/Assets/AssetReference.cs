@@ -11,4 +11,9 @@ internal record AssetReference<T> : Asset where T : Asset
     {
         Load = load;
     }
+
+    public override void Merge(Asset other)
+    {
+        // For now, do nothing
+    }
 }

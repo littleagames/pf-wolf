@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO.Compression;
-using System.Text;
+﻿using System.IO.Compression;
 using Wolf3D.Assets;
+using Wolf3D.Entities.Actors;
 
 namespace Wolf3D.Loaders;
 
@@ -18,6 +16,55 @@ internal class PfWolfPk3Loader
         foreach (ZipArchiveEntry entry in archive.Entries.Where(entry => entry.Length > 0 && entry.IsEncrypted == false))
         {
             var assetName = GetAssetReadyName(entry.Name);
+            if (entry.FullName.StartsWith("gamepacks/gamepack-info"))
+            {
+                // TODO: Identify this one as a unique, there should only be one of these
+                try
+                {
+                    //Dictionary<string, GamePack>
+                    var data = YamlDataEntryLoader.Read<Dictionary<string, GamePack>>(entry.Open());
+                    AddAsset("gamepack-info", new GamePackInfoAsset(data));
+                    continue;
+                }   
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error parsing YAML from '{entry.FullName}': {ex.GetType().Name}");
+                    Console.WriteLine($"Message: {ex.Message}");
+                    if (ex.InnerException != null)
+                        Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                    throw;
+                }
+            }
+            if (entry.FullName.StartsWith("gamepacks/wolf3d-game-info"))
+            {
+                var data = YamlDataEntryLoader.Read<GameInfoAsset>(entry.Open());
+                AddAsset("game-info", data);
+                continue;
+            }
+            else if (entry.FullName.StartsWith("gamepacks/spear-game-info"))
+            {
+                var data = YamlDataEntryLoader.Read<GameInfoAsset>(entry.Open());
+                AddAsset("game-info", data);
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("menudefs/"))
+            {
+                var data = YamlDataEntryLoader.Read<MenuAsset>(entry.Open());
+                AddAsset(assetName, data);
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("mapdefs/"))
+            {
+                // TODO: Get the folder after mapdefs to determine the mapdef type (Wolf3d, spear), if there's a second folder, then its map01, map02
+                // If there is no folders, then it is the base/default
+                var uniqueName = GetPackUniqueAssetName(entry.FullName);
+                var data = YamlDataEntryLoader.Read<MapActorMetadata>(entry.Open());
+                MergeAsset(uniqueName, data.ToAsset());
+                continue;
+            }
+
             if (entry.FullName.StartsWith("graphics/"))
             {
                 // 1) Validate file is a valid graphic to load
@@ -52,20 +99,29 @@ internal class PfWolfPk3Loader
     {
         var key = GetKey(assetName, GetAssetTypeName(asset));
 
-        if (_assets.ContainsKey(key))
+        if (!_assets.TryAdd(key, asset))
         {
             if (!overwrite)
                 return;
             _assets[key] = asset;
         }
-        else
+    }
+
+    private void MergeAsset(string assetName, Asset asset, bool overwrite = true)
+    {
+        var key = GetKey(assetName, GetAssetTypeName(asset));
+
+        if (_assets.TryGetValue(key, out var existingAsset))
         {
-            _assets.Add(key, asset);
+            existingAsset.Merge(asset);
+            return;
         }
+
+        AddAsset(assetName, asset);
     }
 
     private static string GetKey(string assetName, string assetType)
-        => assetName.ToLowerInvariant(); //$"{assetType}:{assetName}".ToLowerInvariant();
+        => $"{assetType}:{assetName}".ToLowerInvariant();
 
     private static string GetAssetTypeName(Asset asset)
     {
@@ -163,4 +219,10 @@ internal class PfWolfPk3Loader
         return fullName.Replace('\\', '/').Trim().ToLowerInvariant();
     }
 
+    public static string GetPackUniqueAssetName(string fullname)
+    {
+        var directory = Path.GetDirectoryName(fullname) ?? "";
+        var parts = directory.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return string.Join("/", parts.Skip(1).Append(parts[0]));
+    }
 }

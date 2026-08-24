@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using SDL2;
 using System;
+using Wolf3D.Assets;
 using Wolf3D.Configuration;
 using Wolf3D.Constants;
 using Wolf3D.DependencyInjection;
@@ -133,12 +134,6 @@ internal partial class Program
         pixelangle = new short[_videoManager.screenWidth];
         wallheight = new short[_videoManager.screenWidth];
 
-        // TODO: Move to AudioManager
-        if (SDL.SDL_InitSubSystem(SDL.SDL_INIT_AUDIO) < 0)
-        {
-            _gameEngineManager.Quit($"Could not initialize SDL: {SDL.SDL_GetError()}");
-        }
-
         //AppDomain.CurrentDomain.ProcessExit += (s, e) => SDL.SDL_Quit();
 
         SignonScreen();
@@ -209,38 +204,41 @@ internal partial class Program
 
     private static void FinishSignon()
     {
-        // TODO: Spear of Destiny support
-        //if (Game == "SPEAR")
-        //{
-        //    _videoManager.Update();
+        if (_gameEngineManager.GameType == GameType.SpearOfDestiny)
+        {
+            // TODO: In the future, the signon screen will not be different for SPEAR, and this conditional will not be required
+            // The hope is that the Signon will show the stats of loading chunks, what settings are configured, etc
+            // The graphic may change, but the logic and "Console" viewport should remain the same`
+            _videoManager.Update();
 
-        //    if (!param_nowait)
-        //        VW_WaitVBL(3 * 70);
-        //}
-        //else {}
-        _videoManager.Bar(0, 189, 300, 11, "Maroon");
-        WindowX = 0;
-        WindowW = 320;
-        PrintY = 190;
+            if (!param_nowait)
+                GameEngineManager.WaitVBL(3 * 70);
+        }
+        else
+        {
+            _videoManager.Bar(0, 189, 300, 11, "Maroon");
+            WindowX = 0;
+            WindowW = 320;
+            PrintY = 190;
 
-        SETFONTCOLOR("Bright Yellow", "Maroon");
-        fontnumber = "SmallFont";
-        US_CPrint("Press a key"); // "Oprima una tecla"
+            SETFONTCOLOR("Bright Yellow", "Maroon");
+            fontnumber = "SmallFont";
+            US_CPrint("Press a key"); // "Oprima una tecla"
 
-        _videoManager.Update();
+            _videoManager.Update();
 
-        if (!param_nowait)
-            _inputManager.Ack();
+            if (!param_nowait)
+                _inputManager.Ack();
 
-        _videoManager.Bar(0, 189, 300, 11, "Maroon");
+            _videoManager.Bar(0, 189, 300, 11, "Maroon");
 
-        PrintY = 190;
-        SETFONTCOLOR("Lime", "Maroon");
+            PrintY = 190;
+            SETFONTCOLOR("Lime", "Maroon");
 
-        US_CPrint("Working..."); // "pensando..."
+            US_CPrint("Working..."); // "pensando..."
 
-        _videoManager.Update();
-
+            _videoManager.Update();
+        }
         SETFONTCOLOR("Black", "White");
     }
 

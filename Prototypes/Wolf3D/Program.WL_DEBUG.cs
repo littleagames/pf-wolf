@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Assets;
 using Wolf3D.Constants;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
@@ -248,7 +249,10 @@ internal partial class Program
         }
         else if (_inputManager.IsKeyDown(ScanCodes.sc_W))        // W = warp to level
         {
-            var gameInfo = _assetManager.GetGameInfo();
+            var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+            if (gameInfo == null)
+                return 1;
+
             CenterWindow(26, 3);
             PrintY += 6;
             US_Print("  Warp to which level (MAP##): ");

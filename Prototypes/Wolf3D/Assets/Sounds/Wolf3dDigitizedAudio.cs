@@ -139,7 +139,12 @@ internal record Wolf3dDigitizedAudio : Asset
         return wavebuffer;
     }
 
-    private short GetSample(float csample, byte[] samples, int size)
+    public override void Merge(Asset other)
+    {
+        // For now, do nothing
+    }
+
+    private static short GetSample(float csample, byte[] samples, int size)
     {
         float s0 = 0, s1 = 0, s2 = 0;
         int cursample = (int)csample;

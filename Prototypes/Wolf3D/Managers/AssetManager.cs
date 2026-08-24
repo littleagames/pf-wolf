@@ -1,11 +1,8 @@
-﻿using System.Numerics;
-using System.Xml.Linq;
+﻿using System.Xml.Linq;
 using Wolf3D.Assets;
-using Wolf3D.Assets.Sounds;
 using Wolf3D.Entities;
 using Wolf3D.Entities.Actors;
 using Wolf3D.Loaders;
-using Wolf3D.Mappers;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -18,7 +15,6 @@ internal class AssetManager
     public void Load()
     {
         Dictionary<string, Asset> assets = new();
-        // TODO: PK3 loading here
         var pfWolfBasePk3Loader = new PfWolfPk3Loader("pfwolf.pk3");
         assets = pfWolfBasePk3Loader.GetAssets();
 
@@ -33,8 +29,10 @@ internal class AssetManager
 
         foreach (var kvp in assets)
         {
-            if (!_assets.ContainsKey(kvp.Key))
-                _assets[kvp.Key] = kvp.Value;
+            string assetType = kvp.Value.GetType().Name;
+            var key = GetKey(kvp.Key, assetType);
+            if (!_assets.ContainsKey(key))
+                _assets[key] = kvp.Value;
         }
 
         var mapLoader = new Wolf3dMapFileLoader("maphead", "gamemaps", "wl6");
@@ -42,8 +40,10 @@ internal class AssetManager
 
         foreach (var kvp in assets)
         {
-            if (!_assets.ContainsKey(kvp.Key))
-                _assets[kvp.Key] = kvp.Value;
+            string assetType = kvp.Value.GetType().Name;
+            var key = GetKey(kvp.Key, assetType);
+            if (!_assets.ContainsKey(key))
+                _assets[key] = kvp.Value;
         }
 
         var vgaGraphicLoader = new Wolf3dVgaFileLoader("vgahead", "vgagraph", "vgadict", "wl6");
@@ -51,8 +51,10 @@ internal class AssetManager
 
         foreach (var kvp in assets)
         {
-            if (!_assets.ContainsKey(kvp.Key))
-                _assets[kvp.Key] = kvp.Value;
+            string assetType = kvp.Value.GetType().Name;
+            var key = GetKey(kvp.Key, assetType);
+            if (!_assets.ContainsKey(key))
+                _assets[key] = kvp.Value;
         }
 
         var vswapLoader = new Wolf3dVswapFileLoader("vswap", "wl6");
@@ -60,14 +62,25 @@ internal class AssetManager
 
         foreach (var kvp in assets)
         {
-            if (!_assets.ContainsKey(kvp.Key))
-                _assets[kvp.Key] = kvp.Value;
+            string assetType = kvp.Value.GetType().Name;
+            var key = GetKey(kvp.Key, assetType);
+            if (!_assets.ContainsKey(key))
+                _assets[key] = kvp.Value;
         }
     }
 
-    public T? Find<T>(string name) where T : Asset
+    public T? Find<T>(string assetName) where T : Asset
     {
-        if (_assets.TryGetValue(name.ToLowerInvariant(), out var foundAsset))
+        string assetType = typeof(T).Name;
+
+        if (string.IsNullOrWhiteSpace(assetName))
+        {
+            throw new ArgumentException($"Asset name cannot be empty. Asset Type: {assetType}", nameof(assetName));
+        }
+
+        var key = GetKey(assetName, assetType);
+
+        if (_assets.TryGetValue(key, out var foundAsset))
             return foundAsset as T;
 
 
@@ -75,132 +88,38 @@ internal class AssetManager
     }
 
     [Obsolete("Temporary endpoint until the asset types are implemented")]
-    public GameInfoMetadata GetGameInfo()
-    {
-        var yaml = File.ReadAllText(Path.Combine("D:\\projects\\Wolf3D\\PFWolf\\pf-wolf\\pfwolf-pk3\\gamepacks", "game-info.yaml"));
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(HyphenatedNamingConvention.Instance)
-            .Build();
-        return deserializer.Deserialize<GameInfoMetadata>(yaml);
-    }
-
-    [Obsolete("Temporary endpoint until the asset types are implemented")]
     public MenuMetadata? GetMenu(string name)
     {
         var normalizedName = name.ToLowerInvariant();
-        //var yaml = File.ReadAllText(Path.Combine("D:\\projects\\Wolf3D\\PFWolf\\pf-wolf\\pfwolf-pk3\\menudefs", $"{normalizedName}.yaml"));
-        //var deserializer = new DeserializerBuilder()
-        //    .WithNamingConvention(HyphenatedNamingConvention.Instance)
-        //    .Build();
-        //return deserializer.Deserialize<MenuMetadata>(yaml);
+        var asset = Find<MenuAsset>(normalizedName);
+        if (asset != null)
+        {
+            // TODO: MenuManager?
+            return MenuMetadata.BuildFromAsset(asset);
+        }
 
-        if (normalizedName.Equals("main-menu"))
-            return new MenuMetadata
-            {
-                Music = "Wondering",
-                Type = "wolf3d-menu",
-                Position = new Vector2(76, 55),
-                Indent = 24,
-                Components = [
-                    new Background("BORDCOLOR"),
-                    new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
-                    new Stripe(10),
-                    new Window(68, 52, 178, 136, "wolf3d-theme"),
-                    new Graphic("c_options", HorizontalOrientation.Center, 0)
-                ],
-                MenuItems = [
-                    new MenuSwitcher("$MENU_NEWGAME", true, "CP_NewGame"),
-                    new MenuSwitcher("$MENU_SOUND", true, "CP_Sound"),
-                    new MenuSwitcher("$MENU_CONTROL", true, "CP_Control"),
-                    new MenuSwitcher("$MENU_LOADGAME", true, "CP_LoadGame"),
-                    new MenuSwitcher("$MENU_SAVEGAME", true, "CP_SaveGame"),
-                    new MenuSwitcher("$MENU_CHANGEVIEW", true, "CP_ChangeView"),
-                    new MenuSwitcher("$MENU_READTHIS", true, "CP_ReadThis"),
-                    new MenuSwitcher("$MENU_VIEWSCORES", true, "CP_ViewScoresOrEndGame"),
-                    new MenuSwitcher("$MENU_BACKTODEMO", true, "CP_DemoOrPlayGame"),
-                    new MenuSwitcher("$MENU_QUIT", true, "CP_Quit"), // MenuConfirm
-                ]
-            };
-
-        if (normalizedName.Equals("sound"))
-            return new MenuMetadata
-            {
-                Music = "Wondering",
-                Type = "wolf3d-menu",
-                Position = new Vector2(48, 20),
-                Indent = 52,
-                Components = [
-                    new Background("BORDCOLOR"),
-                    new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
-                    new Window(40, 17, 250, 45, "wolf3d-theme"),
-                    new Window(40, 82, 250, 45, "wolf3d-theme"),
-                    new Window(40, 147, 250, 32, "wolf3d-theme"),
-                    new Graphic("c_fxtitle", 100, 0),
-                    new Graphic("c_digititle", 100, 65),
-                    new Graphic("c_musictitle", 100, 130)
-                ],
-                MenuItems = [
-                    new ToggleMenuItem("None", true, false),
-                    new ToggleMenuItem("PC Speaker", true, false),
-                    new ToggleMenuItem("AdLib/Sound Blaster", true, false),
-                    // gap of 2
-                    new BlankMenuItem(),
-                    new BlankMenuItem(),
-                    new ToggleMenuItem("None", true, false),
-                    new ToggleMenuItem("Disney Sound Source", false, false),
-                    new ToggleMenuItem("Sound Blaster", true, false),
-                    // gap of 2
-                    new BlankMenuItem(),
-                    new BlankMenuItem(),
-                    new ToggleMenuItem("None", true, false),
-                    new ToggleMenuItem("AdLib/Sound Blaster", true, false),
-                ]
-            };
-
-
-        if (normalizedName.Equals("control"))
-            return new MenuMetadata
-            {
-                Music = "Wondering",
-                Type = "wolf3d-menu",
-                Position = new Vector2(24, 86),
-                Indent = 56,
-                Components = [
-                    new Background("BORDCOLOR"),
-                    new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
-                    new Stripe(10),
-                    new Window(16, 81, 284, 60, "wolf3d-theme"),
-                    new Graphic("c_options", HorizontalOrientation.Center, 0)
-                ],
-                MenuItems = [
-                    new ToggleMenuItem("Mouse Enabled", false, false),
-                    new MenuSwitcher("Mouse Sensitivity", false, "MouseSensitivity"),
-                    new ToggleMenuItem("Joystick Enabled", false, false),
-                    new MenuSwitcher("Customize controls", true, "CustomControls")
-                ]
-            };
-
-        if (normalizedName.Equals("game-options"))
-            return new MenuMetadata
-            {
-                Music = "Wondering",
-                Type = "wolf3d-menu",
-                Position = new Vector2(48, 20),
-                Indent = 52,
-                Components = [
-                    new Background("BORDCOLOR"),
-                    new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
-                ],
-                MenuItems = [
-                    new ToggleMenuItem("Unlimited Pushwall Limit", true, false),
-                    new ToggleMenuItem("Fake Hitler Fireballs", true, false),
-                    new ToggleMenuItem("Weapon Pickup Progression", true, false),
-                ]
-            };
+        //if (normalizedName.Equals("game-options"))
+        //    return new MenuMetadata
+        //    {
+        //        Music = "Wondering",
+        //        Type = "wolf3d-menu",
+        //        Position = new Vector2(48, 20),
+        //        Indent = 52,
+        //        Components = [
+        //            new Background("BORDCOLOR"),
+        //            new Graphic("c_mouselback", HorizontalOrientation.Center, 184),
+        //        ],
+        //        MenuItems = [
+        //            new ToggleMenuItem("Unlimited Pushwall Limit", true, false),
+        //            new ToggleMenuItem("Fake Hitler Fireballs", true, false),
+        //            new ToggleMenuItem("Weapon Pickup Progression", true, false),
+        //        ]
+        //    };
 
         return null;
     }
 
+    [Obsolete]
     public ColorMetadata? GetColors(string theme)
     {
         var normalizedTheme = theme.ToLowerInvariant();
@@ -313,6 +232,7 @@ internal class AssetManager
         return null;
     }
 
+    [Obsolete]
     public LanguageMetadata? GetText(string language)
     {
         var normalizedName = language.ToLowerInvariant();
@@ -446,20 +366,31 @@ internal class AssetManager
         return null;
     }
 
+    [Obsolete]
     private MapActorMetadata _mapData = new();
+
+    [Obsolete]
     public MapActorMetadata GetMapActors(string map)
     {
-        if (_mapData.Things.Count > 0)
-            return _mapData;
+        var normalizedName = map.ToLowerInvariant();
+        var asset = Find<MapObjectTranslationAsset>(normalizedName);
+        if (asset != null)
+        {
+            // TODO: MenuManager?
+            return MapActorMetadata.BuildFromAsset(asset);
+        }
+        //if (_mapData.Things.Count > 0)
+        //    return _mapData;
 
-        var yaml = File.ReadAllText(Path.Combine("D:\\projects\\Wolf3D\\PFWolf\\pf-wolf\\pfwolf-pk3\\mapdefs\\", "map-data.yaml"));
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(HyphenatedNamingConvention.Instance)
-            .Build();
-        _mapData = deserializer.Deserialize<MapActorMetadata>(yaml);
-        return _mapData;
+        //var yaml = File.ReadAllText(Path.Combine("D:\\projects\\Wolf3D\\PFWolf\\pf-wolf\\pfwolf-pk3\\mapdefs\\", "map-data.yaml"));
+        //var deserializer = new DeserializerBuilder()
+        //    .WithNamingConvention(HyphenatedNamingConvention.Instance)
+        //    .Build();
+        //_mapData = deserializer.Deserialize<MapActorMetadata>(yaml);
+        //return _mapData;
     }
 
+    [Obsolete]
     public ActorMetadata GetActorMetadata()
     {
         try
@@ -476,7 +407,10 @@ internal class AssetManager
         }
     }
 
+    [Obsolete]
     private Dictionary<string, ActorData> _decorations = new Dictionary<string, ActorData>();
+
+    [Obsolete]
     private Dictionary<string, ActorData> GetDecorations()
     {
         if (_decorations.Count > 0)
@@ -489,6 +423,8 @@ internal class AssetManager
         _decorations = deserializer.Deserialize<Dictionary<string, ActorData>>(yaml);
         return _decorations;
     }
+
+    [Obsolete]
     private Dictionary<string, ActorData> GetActors()
     {
         return new Dictionary<string, ActorData>();
@@ -727,4 +663,6 @@ internal class AssetManager
             };
         */
     }
+    private static string GetKey(string assetName, string assetType)
+        => $"{assetType}:{assetName}".ToLowerInvariant();
 }

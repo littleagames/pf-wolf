@@ -43,10 +43,10 @@ internal class GraphicManager
         }
         else if (component is Graphic gfx)
         {
-            if (string.IsNullOrEmpty(gfx.Asset))
+            if (string.IsNullOrEmpty(gfx.Name))
                 return;
 
-            var gfxAsset = assetManager.Value.Find<GraphicAsset>(gfx.Asset);
+            var gfxAsset = assetManager.Value.Find<GraphicAsset>(gfx.Name);
             if (gfxAsset == null)
                 return;
 
@@ -62,14 +62,14 @@ internal class GraphicManager
                     //width = pictable[picnum].width;
                     //height = pictable[picnum].height;
 
-                    if (gfx.OrientationX == HorizontalOrientation.Center)
+                    if (gfx.HorizontalOrientation == HorizontalOrientation.Center)
                         gfx.X = 160 - gfxAsset.Width / 2;
-                    else if (gfx.OrientationX == HorizontalOrientation.Right)
+                    else if (gfx.HorizontalOrientation == HorizontalOrientation.Right)
                         gfx.X = 320 - gfxAsset.Width;
 
-                    if (gfx.OrientationY == VerticalOrientation.Center)
+                    if (gfx.VerticalOrientation == VerticalOrientation.Center)
                         gfx.Y = 100 - gfxAsset.Height / 2;
-                    if (gfx.OrientationY == VerticalOrientation.Bottom)
+                    if (gfx.VerticalOrientation == VerticalOrientation.Bottom)
                         gfx.Y = 200 - gfxAsset.Height;
 
                     DrawPic(gfx.X, gfx.Y, gfxAsset);

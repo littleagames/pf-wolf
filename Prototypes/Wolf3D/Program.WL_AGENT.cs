@@ -1,4 +1,5 @@
-﻿using Wolf3D.Constants;
+﻿using Wolf3D.Assets;
+using Wolf3D.Constants;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
 
@@ -671,7 +672,12 @@ internal partial class Program
 
     static void DrawLevel()
     {
-        var mapInfo = _assetManager.GetGameInfo().Maps[gamestate.mapon];
+        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        if (gameInfo == null)
+        {
+            return;
+        }
+        var mapInfo = gameInfo.Maps[gamestate.mapon];
         //var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
         if (viewsize == 21 && ingame) return;
         LatchNumber(2, 16, 2, mapInfo.FloorNumber);

@@ -86,7 +86,10 @@ internal partial class Program
     {
         ClearMemory();
 
-        if (!_assetManager.GetGameInfo().Clusters.TryGetValue(gamestate.cluster, out var clusterInfo))
+        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        if (gameInfo == null)
+            return;
+        if (!gameInfo.Clusters.TryGetValue(gamestate.cluster, out var clusterInfo))
         {
             return;
         }

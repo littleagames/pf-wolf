@@ -1,4 +1,5 @@
-﻿using Wolf3D.Extensions;
+﻿using Wolf3D.Assets;
+using Wolf3D.Extensions;
 using Wolf3D.Managers;
 using Wolf3D.Mappers;
 using static SDL2.SDL;
@@ -61,7 +62,10 @@ internal partial class Program
     internal static void StartMusic()
     {
         //_audioManager.SetPaused(true);
-        var song = _assetManager.GetGameInfo().Maps[gamestate.mapon].Music;
+        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        if (gameInfo == null)
+            return;
+        var song = gameInfo.Maps[gamestate.mapon].Music;
         lastmusicchunk = song;
         _audioManager.PlayMusic(lastmusicchunk);
     }
@@ -69,7 +73,10 @@ internal partial class Program
     internal static void ContinueMusic(int offs)
     {
         //_audioManager.SetPaused(true);
-        var song = _assetManager.GetGameInfo().Maps[gamestate.mapon].Music;
+        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        if (gameInfo == null)
+            return;
+        var song = gameInfo.Maps[gamestate.mapon].Music;
         lastmusicchunk = song;
         //_audioManager.SetPaused(false);// lastmusicchunk, offs);
     }

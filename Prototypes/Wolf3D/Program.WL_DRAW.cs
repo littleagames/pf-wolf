@@ -406,7 +406,10 @@ internal partial class Program
 
     internal static void VGAClearScreen()
     {
-        var gameInfo = _assetManager.GetGameInfo();
+        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        if (gameInfo == null)
+            return;
+
         var mapInfo = gameInfo.Maps[gamestate.mapon];
 
         string ceiling = mapInfo.CeilingColor ?? gameInfo.DefaultMap.CeilingColor;

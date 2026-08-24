@@ -6,5 +6,10 @@ namespace Wolf3D.Assets
 {
     internal record TextureAsset : Asset
     {
+
+        public override void Merge(Asset other)
+        {
+            // For now, do nothing
+        }
     }
 }

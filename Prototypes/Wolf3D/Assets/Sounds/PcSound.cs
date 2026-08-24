@@ -71,6 +71,12 @@ internal record PcSound : Asset
         return ConvertToMono8(stereoSamples);
     }
 
+
+    public override void Merge(Asset other)
+    {
+        // For now, do nothing
+    }
+
     private static byte[] ConvertToMono8(ReadOnlySpan<short> stereo)
     {
         var mono = new byte[stereo.Length / 2];
