@@ -88,14 +88,14 @@ internal class Wolf3dMapFileLoader
         }
     }
 
-    public Dictionary<string, Asset> GetAssets()
+    public Dictionary<string, Asset> GetAssets(List<string> dataMap)
     {
-        var keys = MapInfoMappings.MapAssetToIndex.Keys.ToList();
         var assets = new Dictionary<string, Asset>();
-        for(int i = 0;i < MapManager.NUMMAPS;i++)
+        for(int i = 0; i < dataMap.Count; i++)
         {
-            assets.Add(keys[i].ToLowerInvariant(), CacheMap(i));
+            assets.Add(dataMap[i].ToLowerInvariant(), CacheMap(i));
         }
+
         return assets;
     }
 

@@ -463,11 +463,11 @@ internal partial class Program
 
         DiskFlopAnim(x, y);
         var levelRatioData = new List<byte>();
-        foreach (var lr in LevelRatios)
-        {
-            lr.Read(br);
-            levelRatioData.AddRange(lr.AsBytes());
-        }
+        //foreach (var lr in LevelRatios)
+        //{
+        //    lr.Read(br);
+        //    levelRatioData.AddRange(lr.AsBytes());
+        //}
 
         checksum = DoChecksum(levelRatioData.ToArray(), checksum);
 
@@ -623,12 +623,12 @@ internal partial class Program
 
         DiskFlopAnim(x, y);
         var levelRatioData = new List<byte>();
-        foreach (var lr in LevelRatios)
-        {
-            var lrData = lr.AsBytes();
-            bw.Write(lrData);
-            levelRatioData.AddRange(lrData);
-        }
+        //foreach (var lr in LevelRatios)
+        //{
+        //    var lrData = lr.AsBytes();
+        //    bw.Write(lrData);
+        //    levelRatioData.AddRange(lrData);
+        //}
         checksum = DoChecksum(levelRatioData.ToArray(), checksum);
 
         DiskFlopAnim(x, y);

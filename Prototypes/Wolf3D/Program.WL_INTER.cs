@@ -9,7 +9,7 @@ namespace Wolf3D;
 
 internal partial class Program
 {
-    internal static LRstruct[] LevelRatios = Enumerable.Range(0, MapManager.NUMMAPS).Select(x => new LRstruct()).ToArray();// new LRstruct[LRpack];
+    internal static Dictionary<string, LRstruct> LevelRatios = new Dictionary<string, LRstruct>();
     internal static int lastBreathTime = 0;
 
     internal static void NonShareware()
@@ -486,11 +486,10 @@ internal partial class Program
             // SAVE RATIO INFORMATION FOR ENDGAME
             //
             // TODO: Store this via "cluster"
-            var mapon = MapInfoMappings.MapAssetToIndex[gamestate.mapon];
-            LevelRatios[mapon].kill = (short)kr;
-            LevelRatios[mapon].secret = (short)sr;
-            LevelRatios[mapon].treasure = (short)tr;
-            LevelRatios[mapon].time = min * 60 + sec;
+            LevelRatios[gamestate.mapon].kill = (short)kr;
+            LevelRatios[gamestate.mapon].secret = (short)sr;
+            LevelRatios[gamestate.mapon].treasure = (short)tr;
+            LevelRatios[gamestate.mapon].time = min * 60 + sec;
 
             // TODO This should be set up as different LevelCompleted "screens"???
         }
@@ -550,18 +549,22 @@ internal partial class Program
         Write(RATIOX, RATIOY + 4, "$STR_RATTREASURE".ToLanguageText(language));
 
         _graphicManager.DrawPic("L_BJWINS", 8, 4);
-        const int LRpack = 8;
-        for (kr = sr = tr = sec = i = 0; i < LRpack; i++)
-        {
-            sec += LevelRatios[i].time;
-            kr += LevelRatios[i].kill;
-            sr += LevelRatios[i].secret;
-            tr += LevelRatios[i].treasure;
-        }
+        // TODO: Gather data via each cluster
+        //for (kr = sr = tr = sec = i = 0; i < LRpack; i++)
+        //{
+        //    sec += LevelRatios[i].time;
+        //    kr += LevelRatios[i].kill;
+        //    sr += LevelRatios[i].secret;
+        //    tr += LevelRatios[i].treasure;
+        //}
 
-        kr /= LRpack;
-        sr /= LRpack;
-        tr /= LRpack;
+        //kr /= LRpack;
+        //sr /= LRpack;
+        //tr /= LRpack;
+        sec = 0; // TODO: Gather data via each cluster
+        kr = 0;
+        tr = 0;
+        sr = 0;
 
         min = sec / 60;
         sec %= 60;

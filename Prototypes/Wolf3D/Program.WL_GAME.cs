@@ -515,7 +515,7 @@ internal partial class Program
                         _videoManager.ClearScreen(0);
                     ClearMemory();
 
-                    CheckHighScore(gamestate.score, (ushort)(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1));
+                    CheckHighScore(gamestate.score, (ushort)/*(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1)*/1); // TODO: Redo this to support map names
                     MainMenu[(int)menuitems.viewscores].text = "$MENU_VIEWSCORES".ToLanguageText(language);
                     MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
                     return;
@@ -529,7 +529,7 @@ internal partial class Program
 
                     ClearMemory();
 
-                    CheckHighScore(gamestate.score, (ushort)(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1));
+                    CheckHighScore(gamestate.score, (ushort)/*(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1)*/1); // TODO: Redo this to support map names
                     MainMenu[(int)menuitems.viewscores].text = "$MENU_VIEWSCORES".ToLanguageText(language);
                     MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
                     return;

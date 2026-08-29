@@ -23,12 +23,6 @@
 		<PackageReference Include="ppy.SDL2-CS" Version="1.0.82" />
 	</ItemGroup>
 	<ItemGroup>
-		<Content Include="..\..\pfwolf-pk3\**\*">
-			<Link>pk3\%(RecursiveDir)%(FileName)%(Extension)</Link>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
-	</ItemGroup>
-	<ItemGroup>
 	  <Folder Include="Models\" />
 	</ItemGroup>
 	<ItemGroup>

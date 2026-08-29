@@ -33,6 +33,8 @@ internal class AssetManager
                 _assets[kvp.Key] = kvp.Value;
         }
 
+        var rawDataMap = Find<RawDataMapAsset>("wolf3d/raw-data-map");
+
         var audioLoader = new Wolf3dAudioFileLoader("audiot", "wl6", "audiohed", "wl6");
         assets = audioLoader.GetAssets();
 
@@ -45,7 +47,7 @@ internal class AssetManager
         }
 
         var mapLoader = new Wolf3dMapFileLoader("maphead", "gamemaps", "wl6");
-        assets = mapLoader.GetAssets();
+        assets = mapLoader.GetAssets(rawDataMap?.Maps ?? []);
 
         foreach (var kvp in assets)
         {

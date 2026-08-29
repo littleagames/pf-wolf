@@ -2785,7 +2785,7 @@ internal partial class Program
 
     internal static void CheckForEpisodes()
     {
-        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
         if (gameInfo == null)
             return;
         NewMenu = gameInfo.Skills.Values.Select(s => new CP_itemtype(1, s.Name, null)).ToArray();

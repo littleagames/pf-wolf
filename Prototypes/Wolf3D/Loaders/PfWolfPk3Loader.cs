@@ -37,27 +37,18 @@ internal class PfWolfPk3Loader
             }
             if (entry.FullName.StartsWith("gamepacks/") && entry.FullName.Contains("game-info"))
             {
-                var uniqueName = GetPackUniqueAssetName(entry.FullName);
+                var uniqueName = GetAssetReadyName(entry.FullName, ignoreFirstDirectory: true);
                 var data = YamlDataEntryLoader.Read<GameInfoAsset>(entry.Open());
                 AddAsset(uniqueName, data);
                 continue;
             }
             if (entry.FullName.StartsWith("gamepacks/") && entry.FullName.Contains("raw-data-map"))
             {
-                var uniqueName = GetPackUniqueAssetName(entry.FullName);
-                // TODO: Create assets for RawDataMapAsset
-                //var data = YamlDataEntryLoader.Read<GameInfoAsset>(entry.Open());
-                //AddAsset(uniqueName, data);
+                var uniqueName = GetAssetReadyName(entry.FullName, ignoreFirstDirectory: true);
+                var data = YamlDataEntryLoader.Read<RawDataMapAsset>(entry.Open());
+                MergeAsset(uniqueName, data);
                 continue;
             }
-            //else if (entry.FullName.StartsWith("gamepacks/spear-game-info"))
-            //{
-            //    var uniqueName = GetPackUniqueAssetName(entry.FullName);
-            //    var data = YamlDataEntryLoader.Read<GameInfoAsset>(entry.Open());
-            //    AddAsset(uniqueName, data);
-            //    continue;
-            //}
-
             if (entry.FullName.StartsWith("menudefs/"))
             {
                 var data = YamlDataEntryLoader.Read<MenuAsset>(entry.Open());
@@ -216,7 +207,7 @@ internal class PfWolfPk3Loader
         return (T)asset;
     }
 
-    private static string GetAssetReadyName(string fullName)
+    private static string GetAssetReadyName(string fullName, bool ignoreFirstDirectory = false)
     {
         if (string.IsNullOrWhiteSpace(fullName))
             return string.Empty;
@@ -226,7 +217,16 @@ internal class PfWolfPk3Loader
         if (stripExtension >= 0)
             fullName = fullName.Substring(0, stripExtension);
 
-        return fullName.Replace('\\', '/').Trim().ToLowerInvariant();
+        var fullAssetName = fullName.Replace('\\', '/').Trim().ToLowerInvariant();
+        if (ignoreFirstDirectory)
+        {
+            var parts = fullAssetName.Split('/');
+            if (parts.Length > 1)
+            {
+                fullAssetName = string.Join("/", parts.Skip(1));
+            }
+        }
+        return fullAssetName;
     }
 
     public static string GetPackUniqueAssetName(string fullname)
