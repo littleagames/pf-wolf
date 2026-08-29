@@ -118,4 +118,13 @@ internal class MapManager
     {
         (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]) = value;
     }
+
+    internal MapObjectTranslationAsset GetMapData()
+    {
+        //var mapSpecific = assetManager.Value.Find<MapObjectTranslationAsset>("map01/mapdefs");
+        var gameInfo = assetManager.Value.Find<MapObjectTranslationAsset>("wolf3d/mapdefs");
+        if (gameInfo == null)
+            throw new Exception("Map data not found");
+        return gameInfo;
+    }
 }

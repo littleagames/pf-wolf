@@ -834,9 +834,7 @@ internal partial class Program
 
     internal static int CP_CheckQuick(ScanCodes scancode)
     {
-        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
-        if (gameInfo == null)
-            return 1;
+        var gameInfo = _gameEngineManager.GetGameInfo();
         var language = _assetManager.GetText("en-us");
         switch (scancode)
         {
@@ -1021,9 +1019,7 @@ internal partial class Program
                     }
                     else
                     {
-                        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
-                        if (gameInfo == null)
-                            return 1;
+                        var gameInfo = _gameEngineManager.GetGameInfo();
                         if (!gameInfo.Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
                         {
                             _audioManager.Play("NOWAY");
@@ -1120,9 +1116,7 @@ internal partial class Program
 
     internal static void DrawNewGameDiff(int w)
     {
-        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
-        if (gameInfo == null)
-            return;
+        var gameInfo = _gameEngineManager.GetGameInfo();
         SkillInfo[] skills = gameInfo.Skills.Values.ToArray();
         _graphicManager.DrawPic(skills[w].PicName, NM_X + 185, NM_Y + 7);
     }
@@ -1865,10 +1859,7 @@ internal partial class Program
 
     internal static int CP_Quit(int _)
     {
-        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
-        if (gameInfo == null)
-            return 1;
-
+        var gameInfo = _gameEngineManager.GetGameInfo();
         string endStr = gameInfo.EndStrings[(US_RndT() & (gameInfo.EndStrings.Count - 2)) + (US_RndT() & 1)];
         if (Confirm(endStr) != 0)
         {
@@ -2785,9 +2776,7 @@ internal partial class Program
 
     internal static void CheckForEpisodes()
     {
-        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
-        if (gameInfo == null)
-            return;
+        var gameInfo = _gameEngineManager.GetGameInfo();
         NewMenu = gameInfo.Skills.Values.Select(s => new CP_itemtype(1, s.Name, null)).ToArray();
         NewItems.amount = (short) NewMenu.Length;
         /*if (configdir != string.Empty)

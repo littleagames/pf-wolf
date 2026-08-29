@@ -250,9 +250,7 @@ internal partial class Program
         _inputManager.StartAck();
         _graphicManager.DrawPic("l_guy", 0, 16);
 
-        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
-        if (gameInfo == null)
-            return;
+        var gameInfo = _gameEngineManager.GetGameInfo();
         var mapInfo = gameInfo.Maps[gamestate.mapon];
         //if (gamestate.mapon < LRpack)
         {

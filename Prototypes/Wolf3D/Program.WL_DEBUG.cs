@@ -249,9 +249,7 @@ internal partial class Program
         }
         else if (_inputManager.IsKeyDown(ScanCodes.sc_W))        // W = warp to level
         {
-            var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
-            if (gameInfo == null)
-                return 1;
+            var gameInfo = _gameEngineManager.GetGameInfo();
 
             CenterWindow(26, 3);
             PrintY += 6;

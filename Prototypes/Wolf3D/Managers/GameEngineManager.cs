@@ -1,4 +1,6 @@
 ﻿using SDL2;
+using System.ComponentModel;
+using Wolf3D.Assets;
 using Wolf3D.Configuration;
 
 namespace Wolf3D.Managers;
@@ -6,25 +8,31 @@ namespace Wolf3D.Managers;
 
 internal enum GameType
 {
+    [Description("wolf3d")]
     Wolf3D,
+    [Description("spear")]
     SpearOfDestiny
 }
+
 internal class GameEngineManager
 {
     private readonly VideoManager videoManager;
     private readonly InputManager inputManager;
     private readonly AudioManager audioManager;
+    private readonly Lazy<AssetManager> assetManager;
 
     public GameEngineManager(
         VideoManager videoManager,
         InputManager inputManager,
-        AudioManager audioManager)
+        AudioManager audioManager,
+        Lazy<AssetManager> assetManager)
     {
         this.videoManager = videoManager;
         this.inputManager = inputManager;
         InputManager.Quit += Quit;
         InputManager.Pause += SetPaused;
         this.audioManager = audioManager;
+        this.assetManager = assetManager;
     }
 
     /// <summary>
@@ -47,6 +55,15 @@ internal class GameEngineManager
     {
         ReadConfigData(args);
         GameType = GameType.Wolf3D; // TODO: Pull from config or PK3 in future
+    }
+
+    public GameInfoAsset GetGameInfo()
+    {
+        string gameInfoKey = string.Join("/", this.GameType.ToString(), "game-info");
+        var gameInfo = assetManager.Value.Find<GameInfoAsset>(gameInfoKey);
+        if (gameInfo == null)
+            throw new Exception("Game info not found");
+        return gameInfo;
     }
 
     internal void ReadConfig()

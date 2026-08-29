@@ -406,10 +406,7 @@ internal partial class Program
 
     internal static void VGAClearScreen()
     {
-        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
-        if (gameInfo == null)
-            return;
-
+        var gameInfo = _gameEngineManager.GetGameInfo();
         var mapInfo = gameInfo.Maps[gamestate.mapon];
 
         string ceiling = mapInfo.CeilingColor ?? gameInfo.DefaultMap.CeilingColor;

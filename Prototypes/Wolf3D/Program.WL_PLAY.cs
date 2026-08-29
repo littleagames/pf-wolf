@@ -62,9 +62,7 @@ internal partial class Program
     internal static void StartMusic()
     {
         //_audioManager.SetPaused(true);
-        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
-        if (gameInfo == null)
-            return;
+        var gameInfo = _gameEngineManager.GetGameInfo();
         var song = gameInfo.Maps[gamestate.mapon].Music;
         lastmusicchunk = song;
         _audioManager.PlayMusic(lastmusicchunk);
@@ -73,9 +71,7 @@ internal partial class Program
     internal static void ContinueMusic(int offs)
     {
         //_audioManager.SetPaused(true);
-        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
-        if (gameInfo == null)
-            return;
+        var gameInfo = _gameEngineManager.GetGameInfo();
         var song = gameInfo.Maps[gamestate.mapon].Music;
         lastmusicchunk = song;
         //_audioManager.SetPaused(false);// lastmusicchunk, offs);

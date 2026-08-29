@@ -489,9 +489,7 @@ internal partial class Program
                     if (viewsize == 21) DrawPlayScreen();
                     gamestate.oldscore = gamestate.score;
 
-                    var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
-                    if (gameInfo == null)
-                        continue;
+                    var gameInfo = _gameEngineManager.GetGameInfo();
                     var mapInfo = gameInfo.Maps[gamestate.mapon];
                     if (playstate == playstatetypes.ex_secretlevel)
                     {

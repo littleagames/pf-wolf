@@ -672,11 +672,7 @@ internal partial class Program
 
     static void DrawLevel()
     {
-        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
-        if (gameInfo == null)
-        {
-            return;
-        }
+        var gameInfo = _gameEngineManager.GetGameInfo();
         var mapInfo = gameInfo.Maps[gamestate.mapon];
         //var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
         if (viewsize == 21 && ingame) return;
