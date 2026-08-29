@@ -35,18 +35,28 @@ internal class PfWolfPk3Loader
                     throw;
                 }
             }
-            if (entry.FullName.StartsWith("gamepacks/wolf3d-game-info"))
+            if (entry.FullName.StartsWith("gamepacks/") && entry.FullName.Contains("game-info"))
             {
+                var uniqueName = GetPackUniqueAssetName(entry.FullName);
                 var data = YamlDataEntryLoader.Read<GameInfoAsset>(entry.Open());
-                AddAsset("game-info", data);
+                AddAsset(uniqueName, data);
                 continue;
             }
-            else if (entry.FullName.StartsWith("gamepacks/spear-game-info"))
+            if (entry.FullName.StartsWith("gamepacks/") && entry.FullName.Contains("raw-data-map"))
             {
-                var data = YamlDataEntryLoader.Read<GameInfoAsset>(entry.Open());
-                AddAsset("game-info", data);
+                var uniqueName = GetPackUniqueAssetName(entry.FullName);
+                // TODO: Create assets for RawDataMapAsset
+                //var data = YamlDataEntryLoader.Read<GameInfoAsset>(entry.Open());
+                //AddAsset(uniqueName, data);
                 continue;
             }
+            //else if (entry.FullName.StartsWith("gamepacks/spear-game-info"))
+            //{
+            //    var uniqueName = GetPackUniqueAssetName(entry.FullName);
+            //    var data = YamlDataEntryLoader.Read<GameInfoAsset>(entry.Open());
+            //    AddAsset(uniqueName, data);
+            //    continue;
+            //}
 
             if (entry.FullName.StartsWith("menudefs/"))
             {
@@ -60,8 +70,8 @@ internal class PfWolfPk3Loader
                 // TODO: Get the folder after mapdefs to determine the mapdef type (Wolf3d, spear), if there's a second folder, then its map01, map02
                 // If there is no folders, then it is the base/default
                 var uniqueName = GetPackUniqueAssetName(entry.FullName);
-                var data = YamlDataEntryLoader.Read<MapActorMetadata>(entry.Open());
-                MergeAsset(uniqueName, data.ToAsset());
+                var data = YamlDataEntryLoader.Read<MapObjectTranslationAsset>(entry.Open());
+                MergeAsset(uniqueName, data);
                 continue;
             }
 

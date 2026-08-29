@@ -1,5 +1,4 @@
-﻿using System.Xml.Linq;
-using Wolf3D.Assets;
+﻿using Wolf3D.Assets;
 using Wolf3D.Entities;
 using Wolf3D.Entities.Actors;
 using Wolf3D.Loaders;
@@ -11,6 +10,16 @@ namespace Wolf3D.Managers;
 internal class AssetManager
 {
     Dictionary<string, Asset> _assets = new Dictionary<string, Asset>();
+    private bool strict = false;
+
+    /// <summary>
+    /// Sets whether you must specify if an asset exists, and will hard fail, or just quietly continue
+    /// </summary>
+    /// <param name="strict">If true, the application will prevent further process if the asset does not exist</param>
+    public void SetStrictAssets(bool strict)
+    {
+        this.strict = strict;
+    }
 
     public void Load()
     {
@@ -75,7 +84,12 @@ internal class AssetManager
 
         if (string.IsNullOrWhiteSpace(assetName))
         {
-            throw new ArgumentException($"Asset name cannot be empty. Asset Type: {assetType}", nameof(assetName));
+            if (strict)
+            {
+                throw new ArgumentException($"Asset name cannot be empty. Asset Type: {assetType}", nameof(assetName));
+            }
+
+            return null;
         }
 
         var key = GetKey(assetName, assetType);
@@ -364,30 +378,6 @@ internal class AssetManager
             };
 
         return null;
-    }
-
-    [Obsolete]
-    private MapActorMetadata _mapData = new();
-
-    [Obsolete]
-    public MapActorMetadata GetMapActors(string map)
-    {
-        var normalizedName = map.ToLowerInvariant();
-        var asset = Find<MapObjectTranslationAsset>(normalizedName);
-        if (asset != null)
-        {
-            // TODO: MenuManager?
-            return MapActorMetadata.BuildFromAsset(asset);
-        }
-        //if (_mapData.Things.Count > 0)
-        //    return _mapData;
-
-        //var yaml = File.ReadAllText(Path.Combine("D:\\projects\\Wolf3D\\PFWolf\\pf-wolf\\pfwolf-pk3\\mapdefs\\", "map-data.yaml"));
-        //var deserializer = new DeserializerBuilder()
-        //    .WithNamingConvention(HyphenatedNamingConvention.Instance)
-        //    .Build();
-        //_mapData = deserializer.Deserialize<MapActorMetadata>(yaml);
-        //return _mapData;
     }
 
     [Obsolete]

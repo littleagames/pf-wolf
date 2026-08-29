@@ -1,4 +1,5 @@
-﻿using Wolf3D.Constants;
+﻿using Wolf3D.Assets;
+using Wolf3D.Constants;
 using Wolf3D.Entities.Actors;
 using Wolf3D.Managers;
 
@@ -42,7 +43,9 @@ internal partial class Program
     internal static void SpawnStatic(int tilex, int tiley, int type)
     {
         // Temporary way to spawn objects
-        var data = _assetManager.GetMapActors("");
+        var data = _assetManager.Find<MapObjectTranslationAsset>("wolf3d/mapdefs"); // TODO: This is not the best way to do this.
+        if (data == null) return;
+
         var actors = _assetManager.GetActorMetadata();
         if (!data.Things.TryGetValue(type, out var actorSpawnData))
             return;

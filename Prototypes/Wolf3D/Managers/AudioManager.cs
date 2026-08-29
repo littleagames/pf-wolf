@@ -73,7 +73,7 @@ internal class AudioManager
         var assetManager = _assetManager.Value;
         // Get next available sound channel
         var source = _sources[_nextSource++ % _sources.Length];
-
+        
         var digiSound = assetManager.Find<Wolf3dDigitizedAudio>(soundProfile.Digitized);
         if (digiSound != null)
         {
