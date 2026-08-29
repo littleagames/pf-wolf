@@ -406,7 +406,7 @@ internal partial class Program
 
     internal static void VGAClearScreen()
     {
-        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
         if (gameInfo == null)
             return;
 

@@ -834,7 +834,7 @@ internal partial class Program
 
     internal static int CP_CheckQuick(ScanCodes scancode)
     {
-        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
         if (gameInfo == null)
             return 1;
         var language = _assetManager.GetText("en-us");
@@ -1021,7 +1021,7 @@ internal partial class Program
                     }
                     else
                     {
-                        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+                        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
                         if (gameInfo == null)
                             return 1;
                         if (!gameInfo.Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
@@ -1120,7 +1120,7 @@ internal partial class Program
 
     internal static void DrawNewGameDiff(int w)
     {
-        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
         if (gameInfo == null)
             return;
         SkillInfo[] skills = gameInfo.Skills.Values.ToArray();
@@ -1865,7 +1865,7 @@ internal partial class Program
 
     internal static int CP_Quit(int _)
     {
-        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
         if (gameInfo == null)
             return 1;
 

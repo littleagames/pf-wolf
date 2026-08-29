@@ -672,7 +672,7 @@ internal partial class Program
 
     static void DrawLevel()
     {
-        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
         if (gameInfo == null)
         {
             return;

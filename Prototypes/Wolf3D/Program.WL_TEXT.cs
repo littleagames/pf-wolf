@@ -86,7 +86,7 @@ internal partial class Program
     {
         ClearMemory();
 
-        var gameInfo = _assetManager.Find<GameInfoAsset>("game-info");
+        var gameInfo = _assetManager.Find<GameInfoAsset>("wolf3d/game-info");
         if (gameInfo == null)
             return;
         if (!gameInfo.Clusters.TryGetValue(gamestate.cluster, out var clusterInfo))
