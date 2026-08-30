@@ -248,19 +248,29 @@ internal partial class Program
         }
         wallheight[pixx] = CalcHeight();
         postx = pixx;
-
+        var mapDefs = _mapManager.GetMapData();
+        MapTextureTranslation? mapTexture = MapTextureTranslation.None;
         if ((tilehit & BIT_WALL) != 0)
         {
             //
             // check for adjacent doors
             //
             if ((_mapManager.tilemap[xtile - xtilestep, yinttile] & BIT_DOOR) != 0)
-                wallpic = "SLOT1_2";// DOORWALL + 3;
+            {
+                mapDefs?.Doors.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
+                wallpic = (mapTexture ?? MapTextureTranslation.None).East; //SLOT1_2
+            }
             else
-                wallpic = TextureMappings.NameIndexMap[vertwall[tilehit & ~BIT_WALL]];
+            {
+                mapDefs?.Doors.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
+                wallpic = (mapTexture ?? MapTextureTranslation.None).North;
+            }
         }
         else
-            wallpic = TextureMappings.NameIndexMap[vertwall[tilehit]];
+        {
+            mapDefs?.Walls.TryGetValue(tilehit, out mapTexture);
+            wallpic = (mapTexture ?? MapTextureTranslation.None).North;
+        }
 
         var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
         if (textureAsset == null)
@@ -295,18 +305,30 @@ internal partial class Program
         wallheight[pixx] = CalcHeight();
         postx = pixx;
 
+        var mapDefs = _mapManager.GetMapData();
+        MapTextureTranslation? mapTexture = MapTextureTranslation.None;
+
         if ((tilehit & BIT_WALL) != 0)
         {
             //
             // check for adjacent doors
             //
             if ((_mapManager.tilemap[xinttile, ytile - ytilestep] & BIT_DOOR) != 0)
-                wallpic = "SLOT1_1";// DOORWALL + 2;
+            {
+                mapDefs?.Doors.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
+                wallpic = (mapTexture ?? MapTextureTranslation.None).North; //SLOT1_1
+            }
             else
-                wallpic = TextureMappings.NameIndexMap[horizwall[tilehit & ~BIT_WALL]];
+            {
+                mapDefs?.Doors.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
+                wallpic = (mapTexture ?? MapTextureTranslation.None).East;
+            }
         }
         else
-            wallpic = TextureMappings.NameIndexMap[horizwall[tilehit]];
+        {
+            mapDefs?.Walls.TryGetValue(tilehit, out mapTexture);
+            wallpic = (mapTexture ?? MapTextureTranslation.None).East;
+        }
 
         var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
         if (textureAsset == null)
