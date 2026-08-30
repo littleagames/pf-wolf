@@ -318,7 +318,7 @@ Please check whether you are using the right executable!
         return dest;
     }
 
-    public Dictionary<string, Asset> GetAssets()
+    public Dictionary<string, Asset> GetAssets(List<string> dataMap)
     {
         var assets = new Dictionary<string, Asset>();
         int i = 1; // skip STRUCTPIC
@@ -327,7 +327,7 @@ Please check whether you are using the right executable!
         {
             var data = grsegs[GraphicConstants.STARTFONT + h];
             var asset = new FontAsset(data);
-            assets[GraphicsMappings.GraphicKeys[i].ToLowerInvariant()] = asset;
+            assets[dataMap[i].ToLowerInvariant()] = asset;
         }
 
         // graphic chunks
@@ -335,13 +335,13 @@ Please check whether you are using the right executable!
         {
             var data = grsegs[GraphicConstants.STARTPICS + j];
             var asset = new GraphicAsset(data, pictable[j].width, pictable[j].height);
-            assets[GraphicsMappings.GraphicKeys[i].ToLowerInvariant()] = asset;
+            assets[dataMap[i].ToLowerInvariant()] = asset;
         }
 
         // Tile8
         var tile8Data = grsegs[GraphicConstants.STARTTILE8];
         var tile8Asset = new Tile8Asset(tile8Data);
-        assets[GraphicsMappings.GraphicKeys[i].ToLowerInvariant()] = tile8Asset;
+        assets[dataMap[i].ToLowerInvariant()] = tile8Asset;
         i++;
 
         // Screens
@@ -350,14 +350,14 @@ Please check whether you are using the right executable!
         // Extern "text"
         var helpTextData = grsegs[i];
         var helpTextAsset = new TextAsset(helpTextData);
-        assets[GraphicsMappings.GraphicKeys[i].ToLowerInvariant()] = helpTextAsset;
+        assets[dataMap[i].ToLowerInvariant()] = helpTextAsset;
         i++;
 
         // Extern Demos
         for (int k = 0; k < 4; k++, i++) {
             var data = grsegs[i];
             var asset = new DemoAsset(data);
-            assets[GraphicsMappings.GraphicKeys[i].ToLowerInvariant()] = asset;
+            assets[dataMap[i].ToLowerInvariant()] = asset;
         }
 
         // Extern "text" again
@@ -365,7 +365,7 @@ Please check whether you are using the right executable!
         {
             var data = grsegs[i];
             var asset = new TextAsset(helpTextData);
-            assets[GraphicsMappings.GraphicKeys[i].ToLowerInvariant()] = asset;
+            assets[dataMap[i].ToLowerInvariant()] = asset;
         }
             return assets;
     }

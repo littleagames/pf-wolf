@@ -58,7 +58,7 @@ internal class AssetManager
         }
 
         var vgaGraphicLoader = new Wolf3dVgaFileLoader("vgahead", "vgagraph", "vgadict", "wl6");
-        assets = vgaGraphicLoader.GetAssets();
+        assets = vgaGraphicLoader.GetAssets(rawDataMap?.Graphics ?? []);
 
         foreach (var kvp in assets)
         {
@@ -69,7 +69,7 @@ internal class AssetManager
         }
 
         var vswapLoader = new Wolf3dVswapFileLoader("vswap", "wl6");
-        assets = vswapLoader.GetAssets();
+        assets = vswapLoader.GetAssets(rawDataMap?.Walls ?? [], rawDataMap?.Sprites ?? [], rawDataMap?.DigitizedAudio ?? []);
 
         foreach (var kvp in assets)
         {

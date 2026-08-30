@@ -153,7 +153,7 @@ internal class Wolf3dVswapFileLoader
         }
     }
 
-    public Dictionary<string, Asset> GetAssets()
+    public Dictionary<string, Asset> GetAssets(List<string> textures, List<string> sprites, List<string> digitizedAudio)
     {
         var assets = new Dictionary<string, Asset>();
         // 1) Get wall texture mapping
@@ -163,14 +163,14 @@ internal class Wolf3dVswapFileLoader
         for (int i = 0; i < PMSpriteStart; i++)
         {
             byte[] textureData = PM_GetPage(i);
-            assets.Add(TextureMappings.NameIndexMap[i].ToLowerInvariant(), new TextureAsset { RawData = textureData });
+            assets.Add(textures[i].ToLowerInvariant(), new TextureAsset { RawData = textureData });
             // Use SDL_SetupSprite to get sprite data
         }
 
         for (int i = PMSpriteStart; i < PMSoundStart; i++)
         {
             byte[] spriteData = PM_GetPage(i);
-            assets.Add(SpriteMappings.NameIndexMap[i-PMSpriteStart].ToLowerInvariant(), new SpriteAsset { RawData = spriteData });
+            assets.Add(sprites[i-PMSpriteStart].ToLowerInvariant(), new SpriteAsset { RawData = spriteData });
             // Use SDL_SetupSprite to get sprite data
         }
         // Use SDL_SetupDigi to get sound data
@@ -224,7 +224,7 @@ internal class Wolf3dVswapFileLoader
         for (int i = 0; i < digiList.Length; i++)
         {
             byte[] soundData = PM_GetSoundPage(digiList[i].startpage, digiList[i].length);
-            assets.Add(DigitizedSoundMappings.NameIndexMap[i].ToLowerInvariant(), new Wolf3dDigitizedAudio { RawData = soundData });
+            assets.Add(digitizedAudio[i].ToLowerInvariant(), new Wolf3dDigitizedAudio { RawData = soundData });
         }
 
         return assets;
@@ -262,9 +262,4 @@ internal class Wolf3dVswapFileLoader
     {
         return PMPages.Sum(arr => arr.Length);
     }
-    // TODO: Load
-    // TODO: Distribute these raw data the asset manager
-    // TODO: Convert these raw files into usable assets (wav files)
-
-    // TODO: Lazy load the data?
 }
