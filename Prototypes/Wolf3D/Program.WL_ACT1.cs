@@ -276,7 +276,7 @@ internal partial class Program
     =
     ===============
     */
-    internal static void SpawnDoor(int tilex, int tiley, bool vertical, int locknum)
+    internal static void SpawnDoor(int tilex, int tiley, bool vertical, int locknum, MapTextureTranslation doorXlat)
     {
         if (doornum == MAXDOORS)
             _gameEngineManager.Quit("64+ doors on level!");
@@ -288,6 +288,7 @@ internal partial class Program
         doorobj.vertical = vertical;
         doorobj.locknum = (sbyte)locknum;
         doorobj.action = dooractiontypes.dr_closed;
+        doorobj.xlat = doorXlat;
         doorobjlist[lastdoorobj] = doorobj;
 
         _mapManager.actorat[tilex, tiley] = new Door(doornum);// (uint)(doornum | BIT_DOOR);   // consider it a solid wall

@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using Wolf3D.Assets;
 using Wolf3D.Constants;
 using static Wolf3D.Program;
 
@@ -361,6 +362,7 @@ internal class doorobj_t
     public dooractiontypes action;
     public short ticcount;
     public ushort position;            // leading edge of door (0 = closed, 0xffff = fully open)
+    public MapTextureTranslation xlat = MapTextureTranslation.None;
 
     public void Read(BinaryReader br)
     {

@@ -255,14 +255,15 @@ internal partial class Program
             //
             // check for adjacent doors
             //
-            if ((_mapManager.tilemap[xtile - xtilestep, yinttile] & BIT_DOOR) != 0)
+            var doortile = _mapManager.tilemap[xtile - xtilestep, yinttile];
+            if ((doortile & BIT_DOOR) != 0)
             {
-                mapDefs?.Doors.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
-                wallpic = (mapTexture ?? MapTextureTranslation.None).East; //SLOT1_2
+                var door = doorobjlist[doortile & ~BIT_DOOR];
+                wallpic = door.xlat.East; // West
             }
             else
             {
-                mapDefs?.Doors.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
+                mapDefs?.Walls.TryGetValue((tilehit & ~BIT_WALL), out mapTexture); // BUG: Wrong value
                 wallpic = (mapTexture ?? MapTextureTranslation.None).North;
             }
         }
@@ -313,14 +314,15 @@ internal partial class Program
             //
             // check for adjacent doors
             //
-            if ((_mapManager.tilemap[xinttile, ytile - ytilestep] & BIT_DOOR) != 0)
+            var doortile = _mapManager.tilemap[xinttile, ytile - ytilestep];
+            if ((doortile & BIT_DOOR) != 0)
             {
-                mapDefs?.Doors.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
-                wallpic = (mapTexture ?? MapTextureTranslation.None).North; //SLOT1_1
+                var door = doorobjlist[doortile & ~BIT_DOOR];
+                wallpic = door.xlat.North; // South
             }
             else
             {
-                mapDefs?.Doors.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
+                mapDefs?.Walls.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
                 wallpic = (mapTexture ?? MapTextureTranslation.None).East;
             }
         }
@@ -350,23 +352,25 @@ internal partial class Program
         wallheight[pixx] = CalcHeight();
         postx = pixx;
 
-        switch ((doortypes)doorobjlist[doornumtile].locknum)
-        {
-            case doortypes.dr_normal:
-                doorpage = "DOOR1_2"; // DOORWALL + 1;
-                break;
+        var door = doorobjlist[doornumtile];
+        doorpage = door.xlat.East; // West
+        //switch ((doortypes)doorobjlist[doornumtile].locknum)
+        //{
+        //    case doortypes.dr_normal:
+        //        doorpage = "DOOR1_2"; // DOORWALL + 1;
+        //        break;
 
-            case doortypes.dr_lock1:
-            case doortypes.dr_lock2:
-            case doortypes.dr_lock3:
-            case doortypes.dr_lock4:
-                doorpage = "DOOR3_2"; // "DOORWALL + 7;
-                break;
+        //    case doortypes.dr_lock1:
+        //    case doortypes.dr_lock2:
+        //    case doortypes.dr_lock3:
+        //    case doortypes.dr_lock4:
+        //        doorpage = "DOOR3_2"; // "DOORWALL + 7;
+        //        break;
 
-            case doortypes.dr_elevator:
-                doorpage = "DOOR2_2"; //DOORWALL + 5;
-                break;
-        }
+        //    case doortypes.dr_elevator:
+        //        doorpage = "DOOR2_2"; //DOORWALL + 5;
+        //        break;
+        //}
 
         var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
         if (doorTextureAsset == null)
@@ -388,24 +392,26 @@ internal partial class Program
         wallheight[pixx] = CalcHeight();
         postx = pixx;
 
-        switch ((doortypes)doorobjlist[doornumtile].locknum)
-        {
-            case doortypes.dr_normal:
-                doorpage = "DOOR1_1"; // DOORWALL
-                break;
+        var door = doorobjlist[doornumtile];
 
-            case doortypes.dr_lock1:
-            case doortypes.dr_lock2:
-            case doortypes.dr_lock3:
-            case doortypes.dr_lock4:
-                doorpage = "DOOR3_1"; // DOORWALL + 6;
-                break;
+        //switch ((doortypes)door.locknum)
+        //{
+        //    case doortypes.dr_normal:
+        //        doorpage = door.xlat.North;// "DOOR1_1"; // DOORWALL
+        //        break;
 
-            case doortypes.dr_elevator:
-                doorpage = "DOOR2_1";// DOORWALL + 4;
-                break;
-            }
+        //    case doortypes.dr_lock1:
+        //    case doortypes.dr_lock2:
+        //    case doortypes.dr_lock3:
+        //    case doortypes.dr_lock4:
+        //        doorpage = door.xlat.North;// "DOOR3_1"; // DOORWALL + 6;
+        //        break;
 
+        //    case doortypes.dr_elevator:
+        //        doorpage = "DOOR2_1";// DOORWALL + 4;
+        //        break;
+        //    }
+        doorpage = door.xlat.North; // South
         var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
         if (doorTextureAsset == null)
             return;

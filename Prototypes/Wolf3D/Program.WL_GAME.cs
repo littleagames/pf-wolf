@@ -890,6 +890,8 @@ internal partial class Program
                 int tile = _mapManager.MAPSPOT(x, y, 0);
                 if (tile >= 90 && tile <= 101)
                 {
+                    var mapDef = _mapManager.GetMapData();
+                    mapDef.Doors.TryGetValue(tile, out var doorXlat);
                     // door
                     switch (tile)
                     {
@@ -899,7 +901,7 @@ internal partial class Program
                         case 96:
                         case 98:
                         case 100:
-                            SpawnDoor(x, y, true, (tile - 90) / 2);
+                            SpawnDoor(x, y, true, (tile - 90) / 2, doorXlat ?? MapTextureTranslation.None);
                             break;
                         case 91:
                         case 93:
@@ -907,7 +909,7 @@ internal partial class Program
                         case 97:
                         case 99:
                         case 101:
-                            SpawnDoor(x, y, false, (tile - 91) / 2);
+                            SpawnDoor(x, y, false, (tile - 91) / 2, doorXlat ?? MapTextureTranslation.None);
                             break;
                     }
                 }

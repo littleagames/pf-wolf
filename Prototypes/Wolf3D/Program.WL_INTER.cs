@@ -484,10 +484,14 @@ internal partial class Program
             // SAVE RATIO INFORMATION FOR ENDGAME
             //
             // TODO: Store this via "cluster"
-            LevelRatios[gamestate.mapon].kill = (short)kr;
-            LevelRatios[gamestate.mapon].secret = (short)sr;
-            LevelRatios[gamestate.mapon].treasure = (short)tr;
-            LevelRatios[gamestate.mapon].time = min * 60 + sec;
+            LevelRatios.TryAdd(gamestate.mapon,
+                new LRstruct
+            {
+                kill = (short)kr,
+                secret = (short)sr,
+                treasure = (short)tr,
+                time = min * 60 + sec
+            });
 
             // TODO This should be set up as different LevelCompleted "screens"???
         }
