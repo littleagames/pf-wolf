@@ -1,6 +1,5 @@
 ﻿using Wolf3D.Assets;
 using Wolf3D.Entities;
-using Wolf3D.Mappers;
 
 namespace Wolf3D.Managers;
 

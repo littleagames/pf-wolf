@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using Wolf3D.Assets;
-using Wolf3D.Mappers;
 
 namespace Wolf3D.Loaders;
 

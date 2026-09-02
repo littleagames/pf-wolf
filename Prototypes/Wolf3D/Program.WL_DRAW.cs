@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using Wolf3D.Assets;
 using Wolf3D.Constants;
 using Wolf3D.Managers;
-using Wolf3D.Mappers;
 
 namespace Wolf3D;
 

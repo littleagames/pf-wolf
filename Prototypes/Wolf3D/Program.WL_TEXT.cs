@@ -1,7 +1,5 @@
-﻿using SDL2;
-using Wolf3D.Assets;
+﻿using Wolf3D.Assets;
 using Wolf3D.Managers;
-using Wolf3D.Mappers;
 
 namespace Wolf3D;
 
@@ -272,7 +270,8 @@ internal partial class Program
     {
         picy = ParseNumber();
         picx = ParseNumber();
-        GraphicsMappings.ArtExternMap.TryGetValue(ParseNumber(), out picName);
+        var alias = _assetManager.Find<AliasAsset>("wolf3d/alias");
+        alias.ArtExtern.TryGetValue(ParseNumber(), out picName);
         RipToEOL();
     }
 
@@ -281,7 +280,8 @@ internal partial class Program
     {
         picy = ParseNumber();
         picx = ParseNumber();
-        GraphicsMappings.ArtExternMap.TryGetValue(ParseNumber(), out picName);
+        var alias = _assetManager.Find<AliasAsset>("wolf3d/alias");
+        alias.ArtExtern.TryGetValue(ParseNumber(), out picName);
         picdelay = ParseNumber();
         RipToEOL();
     }

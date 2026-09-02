@@ -1,5 +1,6 @@
 ﻿using System.IO.Compression;
 using Wolf3D.Assets;
+using Wolf3D.Assets.Sounds;
 using Wolf3D.Entities.Actors;
 
 namespace Wolf3D.Loaders;
@@ -34,6 +35,13 @@ internal class PfWolfPk3Loader
                         Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
                     throw;
                 }
+            }
+            if (entry.FullName.StartsWith("gamepacks/") && entry.FullName.Contains("alias"))
+            {
+                var uniqueName = GetAssetReadyName(entry.FullName, ignoreFirstDirectory: true);
+                var data = YamlDataEntryLoader.Read<AliasAsset>(entry.Open());
+                AddAsset(uniqueName, data);
+                continue;
             }
             if (entry.FullName.StartsWith("gamepacks/") && entry.FullName.Contains("game-info"))
             {
@@ -86,6 +94,13 @@ internal class PfWolfPk3Loader
             if (entry.FullName.StartsWith("palettes/"))
             {
                 AddReference(assetName, () => PaletteDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName)));
+                continue;
+            }
+
+            if (entry.FullName.StartsWith("sounds/") && entry.FullName.Contains("sound-seq"))
+            {
+                var data = YamlDataEntryLoader.Read<SoundSequenceAsset>(entry.Open());
+                AddAsset(assetName, data);
                 continue;
             }
         }

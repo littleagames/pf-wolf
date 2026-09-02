@@ -1,4 +1,5 @@
 ﻿using Wolf3D.Assets;
+using Wolf3D.Assets.Sounds;
 using Wolf3D.Entities;
 using Wolf3D.Entities.Actors;
 using Wolf3D.Loaders;
@@ -36,7 +37,7 @@ internal class AssetManager
         var rawDataMap = Find<RawDataMapAsset>("wolf3d/raw-data-map");
 
         var audioLoader = new Wolf3dAudioFileLoader("audiot", "wl6", "audiohed", "wl6");
-        assets = audioLoader.GetAssets();
+        assets = audioLoader.GetAssets(rawDataMap?.Audio ?? [], rawDataMap?.Music ?? []);
 
         foreach (var kvp in assets)
         {

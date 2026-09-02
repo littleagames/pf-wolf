@@ -1,7 +1,5 @@
-﻿using Wolf3D.Assets;
-using Wolf3D.Extensions;
+﻿using Wolf3D.Extensions;
 using Wolf3D.Managers;
-using Wolf3D.Mappers;
 using static SDL2.SDL;
 
 namespace Wolf3D;

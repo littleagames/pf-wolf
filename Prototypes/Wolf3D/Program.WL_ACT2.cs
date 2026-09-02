@@ -1849,12 +1849,12 @@ internal partial class Program
     internal static void A_MechaSound(objstruct ob)
     {
         if (ob.areanumber >= MapDataConstants.NUMAREAS || areabyplayer[ob.areanumber] != 0)
-            PlaySoundLocActor("MECHSTEP", ob);
+            PlaySoundLocActor("hitler/active", ob);
     }
 
     internal static void A_Slurpie(objstruct ob)
     {
-        _audioManager.Play("SLURPIE");
+        _audioManager.Play("misc/slurpie");
     }
 
     internal static void T_FakeFire(objstruct ob)
@@ -2439,55 +2439,43 @@ internal partial class Program
         switch (ob.obclass)
         {
             case classtypes.mutantobj:
-                PlaySoundLocActor("AHHHG", ob);
+                PlaySoundLocActor("mutant/death", ob);
                 break;
-
             case classtypes.guardobj:
-                {
-                    string[] sounds ={  "DEATHSCREAM1",
-                                            "DEATHSCREAM2",
-                                            "DEATHSCREAM3",
-                                            "DEATHSCREAM4",
-                                            "DEATHSCREAM5",
-                                            "DEATHSCREAM7",
-                                            "DEATHSCREAM8",
-                                            "DEATHSCREAM9"
-                                };
-                    PlaySoundLocActor(sounds[US_RndT() % 8], ob);
-                    break;
-                }
+                PlaySoundLocActor("guard/death", ob);
+                break;
             case classtypes.officerobj:
-                PlaySoundLocActor("NEINSOVAS", ob);
+                PlaySoundLocActor("officer/death", ob);
                 break;
             case classtypes.ssobj:
-                PlaySoundLocActor("LEBEN", ob); // JAB
+                PlaySoundLocActor("wolfss/death", ob); // JAB
                 break;
             case classtypes.dogobj:
-                PlaySoundLocActor("DOGDEATH", ob);      // JAB
+                PlaySoundLocActor("dog/death", ob);      // JAB
                 break;
             case classtypes.bossobj:
-                _audioManager.Play("MUTTI");                         // JAB
+                _audioManager.Play("hans/death");                         // JAB
                 break;
             case classtypes.schabbobj:
-                _audioManager.Play("MEINGOTT");
+                _audioManager.Play("schabbs/death");
                 break;
             case classtypes.fakeobj:
-                _audioManager.Play("HITLERHA");
+                _audioManager.Play("fake/death");
                 break;
             case classtypes.mechahitlerobj:
-                _audioManager.Play("SCHEIST");
+                _audioManager.Play("hitler/mechadeath");
                 break;
             case classtypes.realhitlerobj:
-                _audioManager.Play("EVA");
+                _audioManager.Play("hitler/death");
                 break;
             case classtypes.gretelobj:
-                _audioManager.Play("MEIN");
+                _audioManager.Play("gretel/death");
                 break;
             case classtypes.giftobj:
-                _audioManager.Play("DONNER");
+                _audioManager.Play("gift/death");
                 break;
             case classtypes.fatobj:
-                _audioManager.Play("ROSE");
+                _audioManager.Play("fat/death");
                 break;
 
         }

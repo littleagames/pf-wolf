@@ -2,7 +2,6 @@
 using OpenTK.Audio.OpenAL;
 using SDL2;
 using Wolf3D.Assets.Sounds;
-using Wolf3D.Mappers;
 
 namespace Wolf3D.Managers;
 
@@ -66,58 +65,80 @@ internal class AudioManager
 
     public void Play(string name)
     {
-        // TODO: Move this to asset manager
-        if (!AudioMappings.SoundMappingKeys.TryGetValue(name.ToLowerInvariant(), out var soundProfile))
+        var assetManager = _assetManager.Value;
+        var soundSeq = assetManager.Find<SoundSequenceAsset>("sound-seq");
+        if (soundSeq == null)
+            // not found
             return;
 
-        var assetManager = _assetManager.Value;
+        if (!soundSeq.SoundInfo.TryGetValue(name, out var soundProfile))
+        {
+            // not found
+            return;
+        }
+
+        if (soundProfile == null)
+            return;
+
         // Get next available sound channel
         var source = _sources[_nextSource++ % _sources.Length];
-        
-        var digiSound = assetManager.Find<Wolf3dDigitizedAudio>(soundProfile.Digitized);
-        if (digiSound != null)
-        {
-            if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
-            {
-                buffer = CreateBuffer(digiSound);
-                _buffers[name.ToLowerInvariant()] = buffer;
-            }
 
-            AL.SourceStop(source);
-            AL.Source(source, ALSourcei.Buffer, buffer);
-            AL.SourcePlay(source);
-            return;
+        if (!string.IsNullOrWhiteSpace(soundProfile.Digitized))
+        {
+            var digiSound = assetManager.Find<Wolf3dDigitizedAudio>(soundProfile.Digitized);
+            if (digiSound != null)
+            {
+                if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
+                {
+                    buffer = CreateBuffer(digiSound);
+                    _buffers[name.ToLowerInvariant()] = buffer;
+                }
+
+                AL.SourceStop(source);
+                AL.Source(source, ALSourcei.Buffer, buffer);
+                AL.SourcePlay(source);
+                return;
+            }
         }
 
-        var adLibSound = assetManager.Find<AdLibSound>(soundProfile.AdLib);
-        if (adLibSound != null)
+        if (!string.IsNullOrWhiteSpace(soundProfile.AdLib))
         {
-            if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
+            var adLibSound = assetManager.Find<AdLibSound>(soundProfile.AdLib);
+            if (adLibSound != null)
             {
-                buffer = CreateBuffer(adLibSound);
-                _buffers[name.ToLowerInvariant()] = buffer;
-            }
+                if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
+                {
+                    buffer = CreateBuffer(adLibSound);
+                    _buffers[name.ToLowerInvariant()] = buffer;
+                }
 
-            AL.SourceStop(source);
-            AL.Source(source, ALSourcei.Buffer, buffer);
-            AL.SourcePlay(source);
-            return;
+                AL.SourceStop(source);
+                AL.Source(source, ALSourcei.Buffer, buffer);
+                AL.SourcePlay(source);
+                return;
+            }
         }
 
-        var pcSound = assetManager.Find<PcSound>(soundProfile.PC);
-        if (pcSound != null)
-        {
-            if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
-            {
-                buffer = CreateBuffer(pcSound);
-                _buffers[name.ToLowerInvariant()] = buffer;
-            }
 
-            AL.SourceStop(source);
-            AL.Source(source, ALSourcei.Buffer, buffer);
-            AL.SourcePlay(source);
-            return;
+        if (!string.IsNullOrWhiteSpace(soundProfile.PC))
+        {
+            var pcSound = assetManager.Find<PcSound>(soundProfile.PC);
+            if (pcSound != null)
+            {
+                if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
+                {
+                    buffer = CreateBuffer(pcSound);
+                    _buffers[name.ToLowerInvariant()] = buffer;
+                }
+
+                AL.SourceStop(source);
+                AL.Source(source, ALSourcei.Buffer, buffer);
+                AL.SourcePlay(source);
+                return;
+            }
         }
+
+        // Sound not found
     }
 
     public void Stop(string name)

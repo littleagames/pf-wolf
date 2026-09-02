@@ -1,13 +1,15 @@
 ﻿using System.Text;
+using System.Xml.Linq;
 using Wolf3D.Assets;
 using Wolf3D.Assets.Sounds;
-using Wolf3D.Mappers;
 
 namespace Wolf3D.Loaders;
 
 internal class Wolf3dAudioFileLoader
 {
     internal int[] audiostarts;
+    private readonly string audioDataFileName;
+
     private Dictionary<string, Asset> assets = new Dictionary<string, Asset>();
 
     public Wolf3dAudioFileLoader(
@@ -16,16 +18,16 @@ internal class Wolf3dAudioFileLoader
         string headerFileName,
         string headerExtension)
     {
-        string fname = $"{dataFileName}.{dataExtension}";
-        string hname = $"{headerFileName}.{headerExtension}";
+        audioDataFileName = $"{dataFileName}.{dataExtension}";
+        var audioHeaderFileName = $"{headerFileName}.{headerExtension}";
 
-        if (!File.Exists(fname))
-            throw new FileNotFoundException("File not found", fname);
+        if (!File.Exists(audioDataFileName))
+            throw new FileNotFoundException("File not found", audioDataFileName);
 
-        if (!File.Exists(hname))
-            throw new FileNotFoundException("File not found", hname);
+        if (!File.Exists(audioHeaderFileName))
+            throw new FileNotFoundException("File not found", audioHeaderFileName);
 
-        using (FileStream fs = File.OpenRead(hname))
+        using (FileStream fs = File.OpenRead(audioHeaderFileName))
         using (BinaryReader br = new BinaryReader(fs))
         {
             var count = fs.Length / sizeof(int);
@@ -35,63 +37,63 @@ internal class Wolf3dAudioFileLoader
                 audiostarts[i] = br.ReadInt32();
             }
         }
+    }
 
-        using (FileStream fs = File.OpenRead(fname))
+    public Dictionary<string, Asset> GetAssets(List<string> audioDataMap, List<string> musicDataMap)
+    {
+
+        if (!File.Exists(audioDataFileName))
+            throw new FileNotFoundException("File not found", audioDataFileName);
+
+        using (FileStream fs = File.OpenRead(audioDataFileName))
         using (BinaryReader br = new BinaryReader(fs))
         {
-            for (int i = 0, assetIndex = 0; i < audiostarts.Length-1; i++)
+            int block = 0;
+            for (int i = 0, assetIndex = 0; i < audiostarts.Length - 1; i++, assetIndex++)
             {
-                var currentType = i / AudioMappings.SoundMappingKeys.Count; // Determine this count value based on the file alone
+                //var currentType = i / AudioMappings.SoundMappingKeys.Count; // Determine this count value based on the file alone
                 int pos = audiostarts[i];
                 int size = audiostarts[i + 1] - pos;
                 fs.Seek(pos, SeekOrigin.Begin);
 
                 if (size == 0)
                 {
-                    assetIndex++;
                     continue;
                 }
 
                 var data = br.ReadBytes(size);
                 const string tag = "!ID!";
-                var key = AudioMappings.AudioTKeys[assetIndex].ToLowerInvariant();
                 var tagBytes = Encoding.ASCII.GetBytes(tag);
                 if (size == tagBytes.Length && data.SequenceEqual(tagBytes))
                 {
-                    assetIndex++;
+                    block++;
+                    assetIndex = -1;
                     continue;
                 }
 
-                if (string.IsNullOrEmpty(key))
+                if (block == 0) // audio block
                 {
-                    assetIndex++;
-                    continue;
+                    var key = audioDataMap[assetIndex].ToLowerInvariant();
+                    switch (key.Substring(0, 2).ToLowerInvariant())
+                    {
+                        case "pc":
+                            assets.Add(key, new PcSound(data));
+                            break;
+                        case "al":
+                            assets.Add(key, new AdLibSound(data));
+                            break;
+                        case "ds":
+                            assets.Add(key, new Wolf3dDigitizedAudio { RawData = data });
+                            break;
+                    }
                 }
-
-                switch (currentType)
+                else if (block == 1) // Music block
                 {
-                    case 0:
-                        assets.Add(key, new PcSound(data));
-                        break;
-                    case 1:
-                        assets.Add(key, new AdLibSound(data));
-                        break;
-                    case 2:
-                        assets.Add(key, new Wolf3dDigitizedAudio { RawData = data });
-                        break;
-                    case 3:
-                        assets.Add(key, new Wolf3dImfAudio(data));
-                        break;
+                    var key = musicDataMap[assetIndex].ToLowerInvariant();
+                    assets.Add(key, new Wolf3dImfAudio(data));
                 }
-
-                assetIndex++;
             }
         }
-    }
-
-    public Dictionary<string, Asset> GetAssets()
-    {
-        // TODO: Return list of Sound objects created from the audio data read in the constructor
         return assets;
     }
 }

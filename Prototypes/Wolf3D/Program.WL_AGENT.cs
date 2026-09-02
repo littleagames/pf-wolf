@@ -1,7 +1,5 @@
-﻿using Wolf3D.Assets;
-using Wolf3D.Constants;
+﻿using Wolf3D.Constants;
 using Wolf3D.Managers;
-using Wolf3D.Mappers;
 
 namespace Wolf3D;
 
@@ -363,7 +361,7 @@ internal partial class Program
         if (playstate == playstatetypes.ex_died)   // ADDEDFIX 31 - Chris
             return;
 
-        switch ((wl_stat_types)check.itemnumber)
+        switch (check.itemnumber)
         {
             case wl_stat_types.bo_firstaid:
                 if (gamestate.health == 100)
@@ -378,26 +376,26 @@ internal partial class Program
             case wl_stat_types.bo_key3:
             case wl_stat_types.bo_key4:
                 GiveKey(check.itemnumber - wl_stat_types.bo_key1);
-                _audioManager.Play("GETKEY");
+                _audioManager.Play("misc/k_pkup");
                 break;
 
             case wl_stat_types.bo_cross:
-                _audioManager.Play("BONUS1");
+                _audioManager.Play("treasure/cross/pickup");
                 GivePoints(100);
                 gamestate.treasurecount++;
                 break;
             case wl_stat_types.bo_chalice:
-                _audioManager.Play("BONUS2");
+                _audioManager.Play("treasure/chalice/pickup");
                 GivePoints(500);
                 gamestate.treasurecount++;
                 break;
             case wl_stat_types.bo_bible:
-                _audioManager.Play("BONUS3");
+                _audioManager.Play("treasure/bible/pickup");
                 GivePoints(1000);
                 gamestate.treasurecount++;
                 break;
             case wl_stat_types.bo_crown:
-                _audioManager.Play("BONUS4");
+                _audioManager.Play("treasure/crown/pickup");
                 GivePoints(5000);
                 gamestate.treasurecount++;
                 break;
@@ -980,7 +978,7 @@ internal partial class Program
         objstruct? closest;
         int dist;
 
-        _audioManager.Play("ATKKNIFE");
+        _audioManager.Play("weapon/knife/attack");
         // actually fire
         dist = 0x7fffffff;
         closest = null;
@@ -1019,13 +1017,13 @@ internal partial class Program
         switch (gamestate.weapon)
         {
             case weapontypes.wp_pistol:
-                _audioManager.Play("ATKPISTOL");
+                _audioManager.Play("weapon/pistol/attack");
                 break;
             case weapontypes.wp_machinegun:
-                _audioManager.Play("ATKMACHINEGUN");
+                _audioManager.Play("weapon/machine/attack");
                 break;
             case weapontypes.wp_chaingun:
-                _audioManager.Play("ATKGATLING");
+                _audioManager.Play("weapon/gatling/attack");
                 break;
         }
 

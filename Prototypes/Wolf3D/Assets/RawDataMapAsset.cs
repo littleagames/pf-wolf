@@ -6,6 +6,7 @@ internal record RawDataMapAsset : Asset
     public List<string> Sprites { get; set; } = [];
     public List<string> DigitizedAudio { get; set; } = [];
     public List<string> Audio { get; set; } = [];
+    public List<string> Music { get; set; } = [];
     public List<string> Graphics { get; set; } = [];
     public List<string> Maps { get; set; } = [];
     public override void Merge(Asset other)
@@ -25,6 +26,8 @@ internal record RawDataMapAsset : Asset
             DigitizedAudio = other.DigitizedAudio;
         if (other.Audio.Count > 0)
             Audio = other.Audio;
+        if (other.Music.Count > 0)
+            Music = other.Music;
         if (other.Graphics.Count > 0)
             Graphics = other.Graphics;
         if (other.Maps.Count > 0)

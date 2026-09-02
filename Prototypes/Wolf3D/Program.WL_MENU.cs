@@ -4,7 +4,6 @@ using Wolf3D.Assets;
 using Wolf3D.Entities;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
-using Wolf3D.Mappers;
 
 namespace Wolf3D;
 
@@ -518,7 +517,7 @@ internal partial class Program
                 return which;
 
             case 2:
-                _audioManager.Play("ESCPRESSED");
+                _audioManager.Play("menu/escape");
                 return -1;
         }
 
@@ -601,7 +600,7 @@ internal partial class Program
 
     internal static void ShootSnd()
     {
-        _audioManager.Play("shoot");
+        _audioManager.Play("menu/activate"); // TODO: "shoot" is something else now
     }
 
     internal static void TicDelay(int count)
@@ -1010,7 +1009,7 @@ internal partial class Program
 
                     if (episodeInfo == null)
                     {
-                        _audioManager.Play("NOWAY");
+                        _audioManager.Play("player/usefail");
                         Message("Episode unavailable!");
                         _inputManager.ClearKeysDown();
                         _inputManager.Ack();
@@ -1022,7 +1021,7 @@ internal partial class Program
                         var gameInfo = _gameEngineManager.GetGameInfo();
                         if (!gameInfo.Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
                         {
-                            _audioManager.Play("NOWAY");
+                            _audioManager.Play("player/usefail");
                             Message($"Starting Map \"{episodeInfo.StartMap}\" unavailable!");
                             _inputManager.ClearKeysDown();
                             _inputManager.Ack();
@@ -1698,7 +1697,7 @@ internal partial class Program
                              LSM_W - LSItems.indent - 16, 10, "BKGDCOLOR");
                     PrintLSEntry(which, "HIGHLIGHT");
                     _videoManager.Update();
-                    _audioManager.Play("ESCPRESSED");
+                    _audioManager.Play("menu/escape");
                     continue;
                 }
 
@@ -1765,7 +1764,7 @@ internal partial class Program
                 exit = 1;
             else if (ci.button1 || _inputManager.IsKeyDown(ScanCodes.sc_Escape))
             {
-                _audioManager.Play("ESCPRESSED");
+                _audioManager.Play("menu/escape");
                 MenuFadeOut();
                 if (_videoManager.screenHeight % 200 != 0)
                     _videoManager.ClearScreen(0);
@@ -1776,7 +1775,7 @@ internal partial class Program
 
         if (oldview != newview)
         {
-            _audioManager.Play("SHOOT");
+            _audioManager.Play("menu/activate");
             Message("$STR_THINK".ToLanguageText(language) + "...");
             NewViewSize(newview);
         }
@@ -1931,10 +1930,10 @@ internal partial class Program
         if (exit == 2)
         {
             mouseadjustment = oldMA;
-            _audioManager.Play("ESCPRESSED");
+            _audioManager.Play("menu/escape");
         }
         else
-            _audioManager.Play("SHOOT");
+            _audioManager.Play("menu/activate");
 
         WaitKeyUp();
         MenuFadeOut();
@@ -2243,7 +2242,7 @@ internal partial class Program
                     if (_inputManager.IsKeyDown(ScanCodes.sc_Escape) || type != CustomCtlOptions.JOYSTICK && ci.button1)
                     {
                         picked = 1;
-                        _audioManager.Play("ESCPRESSED");
+                        _audioManager.Play("menu/escape");
                     }
 
                     if (picked != 0) break;
@@ -2310,7 +2309,7 @@ internal partial class Program
         }
         while (exit == 0);
 
-        _audioManager.Play("ESCPRESSED");
+        _audioManager.Play("menu/escape");
         WaitKeyUp();
         DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
     }
@@ -2627,7 +2626,7 @@ internal partial class Program
     {
         var language = _assetManager.GetText("en-us");
         int xit = 0, x, y, tick = 0, lastBlinkTime;
-        string[] whichsnd = ["ESCPRESSED", "SHOOT"];
+        string[] whichsnd = ["menu/escape", "menu/activate"];
         ControlInfo ci;
 
         Message(text.ToLanguageText(language));
