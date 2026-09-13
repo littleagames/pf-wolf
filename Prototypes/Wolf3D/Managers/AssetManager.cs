@@ -388,9 +388,11 @@ internal class AssetManager
     {
         try
         {
+            var actors = Find<ActorTranslationAsset>("wolf3d/actordefs");
             var data = new ActorMetadata();
-            data.AddActors(GetDecorations());
-            //data.AddActors(GetActors());
+            if (actors != null)
+                data.AddActors(actors.Actors);
+
             return data;
         }
         catch (Exception e)
@@ -398,23 +400,6 @@ internal class AssetManager
             Console.Write(e);
             throw;
         }
-    }
-
-    [Obsolete]
-    private Dictionary<string, ActorData> _decorations = new Dictionary<string, ActorData>();
-
-    [Obsolete]
-    private Dictionary<string, ActorData> GetDecorations()
-    {
-        if (_decorations.Count > 0)
-            return _decorations;
-
-        var yaml = File.ReadAllText(Path.Combine("D:\\projects\\Wolf3D\\PFWolf\\pf-wolf\\pfwolf-pk3\\actordefs\\wolf3d", "decorations.yaml"));
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(HyphenatedNamingConvention.Instance)
-            .Build();
-        _decorations = deserializer.Deserialize<Dictionary<string, ActorData>>(yaml);
-        return _decorations;
     }
 
     [Obsolete]

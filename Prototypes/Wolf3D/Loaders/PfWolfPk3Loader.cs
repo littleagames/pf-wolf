@@ -57,6 +57,17 @@ internal class PfWolfPk3Loader
                 MergeAsset(uniqueName, data);
                 continue;
             }
+
+            if (entry.FullName.StartsWith("actordefs/"))
+            {
+                // TODO: Move "native.yaml" to parent directory
+                // Perhaps only load in the "wolf3d/" actordefs if that gamepack is loaded.
+                var uniqueName = GetPackUniqueAssetName(entry.FullName);
+                var data = YamlDataEntryLoader.Read<Dictionary<string, ActorData>>(entry.Open());
+                MergeAsset(uniqueName, new ActorTranslationAsset(data));
+                continue;
+            }
+
             if (entry.FullName.StartsWith("menudefs/"))
             {
                 var data = YamlDataEntryLoader.Read<MenuAsset>(entry.Open());

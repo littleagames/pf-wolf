@@ -24,10 +24,10 @@ internal class YamlDataEntryLoader
             var deserializedValue = deserializer.Deserialize<T>(encoded);
             return deserializedValue;
         }
-        catch (YamlDotNet.Core.SyntaxErrorException ex)
+        catch (YamlDotNet.Core.YamlException ex)
         {
             // Log full YAML content and exception details for diagnosis
-            Console.WriteLine($"YamlDotNet.SyntaxErrorException: {ex.Message}");
+            Console.WriteLine($"YamlDotNet.{ex.GetType().Name}: {ex.Message}");
             Console.WriteLine($"Exception details:");
             Console.WriteLine($"  Start: Line {ex.Start.Line}, Column {ex.Start.Column}");
             Console.WriteLine($"  End: Line {ex.End.Line}, Column {ex.End.Column}");

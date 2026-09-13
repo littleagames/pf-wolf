@@ -361,105 +361,55 @@ internal partial class Program
         if (playstate == playstatetypes.ex_died)   // ADDEDFIX 31 - Chris
             return;
 
-        switch (check.itemnumber)
+        if (string.IsNullOrWhiteSpace(check.item_class))
+            return;
+
+        var actors = _assetManager.GetActorMetadata();
+        if (!actors.Actors.TryGetValue(check.item_class, out var actor))
+            return;
+        var builtActor = actors.BuildActor(check.item_class, actor); // TODO: Should this just create objects?
+
+        if (builtActor.Properties.Count == 0)
+            return;
+
+        // TODO: This will be passed to an InventoryManager(Actor player, [inventory.* properties]
+        if (builtActor.Properties.TryGetValue("inventory.amount", out var amount))
         {
-            case wl_stat_types.bo_firstaid:
-                if (gamestate.health == 100)
-                    return;
+            switch (builtActor.GetType().Name)
+            {
+                case nameof(Entities.Actors.Health):
+                    HealSelf(Convert.ToInt32(amount));
+                    break;
+                case nameof(Entities.Actors.Ammo):
+                    GiveAmmo(Convert.ToInt32(amount));
+                    break;
+                case nameof(Entities.Actors.Key):
+                    GiveKey(Convert.ToInt32(amount));
+                    break;
+                case nameof(Entities.Actors.ScoreItem):
+                    gamestate.treasurecount++;
+                    GivePoints(Convert.ToInt32(amount));
+                    break;
+            }
+        }
 
-                _audioManager.Play("HEALTH2");
-                HealSelf(25);
-                break;
+        if (builtActor is Entities.Actors.Weapon)
+        {
+            // TODO: The MachineGun should be a defined type built off actor
+            switch (check.item_class.ToLowerInvariant())
+            {
+                case "machinegun":
+                    GiveWeapon(weapontypes.wp_machinegun);
+                    break;
+                case "gatlinggun":
+                    GiveWeapon(weapontypes.wp_chaingun);
+                    break;
+            }
+        }
 
-            case wl_stat_types.bo_key1:
-            case wl_stat_types.bo_key2:
-            case wl_stat_types.bo_key3:
-            case wl_stat_types.bo_key4:
-                GiveKey(check.itemnumber - wl_stat_types.bo_key1);
-                _audioManager.Play("misc/k_pkup");
-                break;
-
-            case wl_stat_types.bo_cross:
-                _audioManager.Play("treasure/cross/pickup");
-                GivePoints(100);
-                gamestate.treasurecount++;
-                break;
-            case wl_stat_types.bo_chalice:
-                _audioManager.Play("treasure/chalice/pickup");
-                GivePoints(500);
-                gamestate.treasurecount++;
-                break;
-            case wl_stat_types.bo_bible:
-                _audioManager.Play("treasure/bible/pickup");
-                GivePoints(1000);
-                gamestate.treasurecount++;
-                break;
-            case wl_stat_types.bo_crown:
-                _audioManager.Play("treasure/crown/pickup");
-                GivePoints(5000);
-                gamestate.treasurecount++;
-                break;
-
-            case wl_stat_types.bo_clip:
-                if (gamestate.ammo == 99)
-                    return;
-
-                _audioManager.Play("GETAMMO");
-                GiveAmmo(8);
-                break;
-            case wl_stat_types.bo_clip2:
-                if (gamestate.ammo == 99)
-                    return;
-
-                _audioManager.Play("GETAMMO");
-                GiveAmmo(4);
-                break;
-
-            case wl_stat_types.bo_machinegun:
-                _audioManager.Play("GETMACHINE");
-                GiveWeapon(weapontypes.wp_machinegun);
-                break;
-            case wl_stat_types.bo_chaingun:
-                _audioManager.Play("GETGATLING");
-                facetimes = 38;
-                GiveWeapon(weapontypes.wp_chaingun);
-
-                if (viewsize != 21)
-                    StatusDrawFace("gotgatling");
-                facecount = 0;
-                break;
-
-            case wl_stat_types.bo_fullheal:
-                _audioManager.Play("BONUS1UP");
-                HealSelf(99);
-                GiveAmmo(25);
-                GiveExtraMan();
-                gamestate.treasurecount++;
-                break;
-
-            case wl_stat_types.bo_food:
-                if (gamestate.health == 100)
-                    return;
-
-                _audioManager.Play("HEALTH1");
-                HealSelf(10);
-                break;
-
-            case wl_stat_types.bo_alpo:
-                if (gamestate.health == 100)
-                    return;
-
-                _audioManager.Play("HEALTH1");
-                HealSelf(4);
-                break;
-
-            case wl_stat_types.bo_gibs:
-                if (gamestate.health > 10)
-                    return;
-
-                _audioManager.Play("SLURPIE");
-                HealSelf(1);
-                break;
+        if (builtActor.Properties.TryGetValue("inventory.pickupsound", out var pickupSound))
+        {
+            _audioManager.Play(pickupSound?.ToString() ?? "");
         }
 
         _videoManager.StartBonusFlash();

@@ -10,30 +10,30 @@ internal partial class Program
     internal static statobj_t[] statobjlist = new statobj_t[MAXSTATS];
     internal static int laststatobj;
 
-    internal struct statinfo_t
-    {
-        public string picnum;
-        public wl_stat_types type;
-        public objflags specialFlags;    // they are ORed to the statobj_t flags
+    //internal struct statinfo_t
+    //{
+    //    public string picnum;
+    //    //public wl_stat_types type;
+    //    public objflags specialFlags;    // they are ORed to the statobj_t flags
 
-        public statinfo_t(string picnum)
-        {
-            this.picnum = picnum;
-        }
+    //    public statinfo_t(string picnum)
+    //    {
+    //        this.picnum = picnum;
+    //    }
 
-        public statinfo_t(string picnum, wl_stat_types type)
-        {
-            this.picnum = picnum;
-            this.type = type;
-        }
+    //    public statinfo_t(string picnum, wl_stat_types type)
+    //    {
+    //        this.picnum = picnum;
+    //        this.type = type;
+    //    }
 
-        public statinfo_t(string picnum, wl_stat_types type, objflags specialFlags)
-        {
-            this.picnum = picnum;
-            this.type = type;
-            this.specialFlags = specialFlags;
-        }
-    }
+    //    public statinfo_t(string picnum, wl_stat_types type, objflags specialFlags)
+    //    {
+    //        this.picnum = picnum;
+    //        this.type = type;
+    //        this.specialFlags = specialFlags;
+    //    }
+    //}
 
     internal static void InitStaticList()
     {
@@ -52,60 +52,36 @@ internal partial class Program
 
         if (!actors.Actors.TryGetValue(actorSpawnData.Class, out var actor))
             return;
+        var builtActor = actors.BuildActor(actorSpawnData.Class, actor); // TODO: Should this just create objects?
 
-        if (!actor.States.TryGetValue("Spawn", out var spawnState))
+        if (!builtActor.States.TryGetValue("Spawn", out var spawnState))
             return;
+
         var firstSpawnFrame = spawnState.First() as ActorStatesData;
-        // To get what was "statinfo"
 
         var newstatobj = new statobj_t();
         newstatobj.shapenum = firstSpawnFrame.Sprite + firstSpawnFrame.Frames.First() + "0"; // e.g. DRUMA0
         newstatobj.tilex = (byte)tilex;
         newstatobj.tiley = (byte)tiley;
-        //newstatobj.itemnumber = statinfo[type].type; // TODO: bonus items
+        newstatobj.item_class = actorSpawnData.Class;
 
-        if (actor.Flags.Any(x => x == "SOLID"))
+        if (builtActor.Flags.Any(f => f.Equals("SOLID", StringComparison.OrdinalIgnoreCase)))
             _mapManager.actorat[tilex, tiley] = new BlockingActor();// BIT_WALL;          // consider it a blocking tile
         else
             newstatobj.flags = 0;
 
-        //switch (statinfo[type].type)
-        //{
-        //    case wl_stat_types.block:
-        //        _mapManager.actorat[tilex, tiley] = new BlockingActor();// BIT_WALL;          // consider it a blocking tile
-        //        goto case wl_stat_types.none;
-        //    case wl_stat_types.none:
-        //        newstatobj.flags = 0;
-        //        break;
+        if (builtActor.Flags.Any(f => f.Equals("COUNTITEM", StringComparison.OrdinalIgnoreCase)))
+        {
+            if (!loadedgame)
+                gamestate.treasuretotal++;
+            newstatobj.flags = objflags.FL_BONUS;
+        }
 
-        //    case wl_stat_types.bo_cross:
-        //    case wl_stat_types.bo_chalice:
-        //    case wl_stat_types.bo_bible:
-        //    case wl_stat_types.bo_crown:
-        //    case wl_stat_types.bo_fullheal:
-        //        if (!loadedgame)
-        //            gamestate.treasuretotal++;
-        //        goto case wl_stat_types.bo_firstaid;
+        if (builtActor.Properties.Keys.Any(x => x.StartsWith("inventory")))
+        {
+            newstatobj.flags = objflags.FL_BONUS;
+        }
 
-        //    case wl_stat_types.bo_firstaid:
-        //    case wl_stat_types.bo_key1:
-        //    case wl_stat_types.bo_key2:
-        //    case wl_stat_types.bo_key3:
-        //    case wl_stat_types.bo_key4:
-        //    case wl_stat_types.bo_clip:
-        //    case wl_stat_types.bo_clip2:
-        //    case wl_stat_types.bo_25clip:
-        //    case wl_stat_types.bo_machinegun:
-        //    case wl_stat_types.bo_chaingun:
-        //    case wl_stat_types.bo_food:
-        //    case wl_stat_types.bo_alpo:
-        //    case wl_stat_types.bo_gibs:
-        //    case wl_stat_types.bo_spear:
-        //        newstatobj.flags = objflags.FL_BONUS;
-        //        break;
-        //}
-
-        //newstatobj.flags |= statinfo[type].specialFlags;
         statobjlist[laststatobj] = newstatobj;
 
         laststatobj++;
@@ -125,52 +101,53 @@ internal partial class Program
     =
     ===============
     */
-    internal static void PlaceItemType(wl_stat_types itemtype, int tilex, int tiley)
+    internal static void PlaceItemType(string item_class, int tilex, int tiley)
     {
-        int type;
-        statobj_t spot = null!;
+        //
+        // find the item
+        //
+        var actors = _assetManager.GetActorMetadata();
+        if (!actors.Actors.TryGetValue(item_class, out var actor))
+            return;
 
-        //
-        // find the item number
-        //
-        //for (type = 0; ; type++)
-        //{
-        //    if (statinfo[type].picnum == "")                    // end of list
-        //        _gameEngineManager.Quit("PlaceItemType: couldn't find type!");
-        //    if (statinfo[type].type == itemtype)
-        //        break;
-        //}
-        return;// throw new NotImplementedException("Not quite ready for this in the new system yet.");
+        var builtActor = actors.BuildActor(item_class, actor);
+        if (!builtActor.States.TryGetValue("Spawn", out var spawnState))
+            return;
+
+        var firstSpawnFrame = spawnState.First();
 
         //
         // find a spot in statobjlist to put it in
         //
-        for (int i = 0; ; i++)
-            //spot = statobjlist[0]; ; spot++)
+        statobj_t spot = null!;
+        int i;
+        for (i = 0; i < laststatobj; i++)
         {
-            spot = statobjlist[i];
-            if (i == laststatobj)
+            if (statobjlist[i].shapenum == "")                  // a free spot
             {
-                if (spot != null && spot == statobjlist[MAXSTATS - 1])
-                    return;                                     // no free spots
-                spot = new statobj_t();
-                statobjlist[laststatobj] = spot;
-                laststatobj++;                                  // space at end
+                spot = statobjlist[i];
                 break;
             }
+        }
 
-            if (spot.shapenum == "")                           // -1 is a free spot
-                break;
+        if (i == laststatobj)
+        {
+            if (laststatobj >= MAXSTATS - 1)
+                return;                                          // no free spots
+
+            spot = new statobj_t();
+            statobjlist[laststatobj] = spot;
+            laststatobj++;                                       // space at end
         }
 
         //
         // place it
         //
-        //spot.shapenum = statinfo[type].picnum;
+        spot.shapenum = firstSpawnFrame.Sprite + firstSpawnFrame.Frames.First() + "0"; // e.g. CLIPA0
         spot.tilex = (byte)tilex;
         spot.tiley = (byte)tiley;
-        //spot.flags = objflags.FL_BONUS | statinfo[type].specialFlags;
-        //spot.itemnumber = statinfo[type].type;
+        spot.item_class = item_class;
+        spot.flags = objflags.FL_BONUS;
     }
 
     /*

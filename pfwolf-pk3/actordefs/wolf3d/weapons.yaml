@@ -1,0 +1,321 @@
+WolfWeapon:
+  parent: "Weapon"
+  properties:
+    - "weapon.ammotype1": "Clip"
+    - "weapon.ammouse1": 1
+    - "weapon.ammogive1": 6
+    - "weapon.yadjust": 19
+  flags: [WEAPON.NOGRIN, WEAPON.DONTBOB]
+  states:
+    Select:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_Raise
+        next-state: Select
+    Deselect:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_Lower
+        next-state: Deselect
+
+Knife:
+  parent: "WolfWeapon"
+  properties:
+    - "inventory.icon": "KNIFE"
+    - "weapon.ammouse1": 0
+    - "weapon.selectionorder": 3700
+    - "attacksound": "weapon/knife/attack"
+  flags: [WEAPON.NOAUTOFIRE, WEAPON.NOALERT]
+  states:
+    Ready:
+      - sprite: KNIF
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: KNIF
+        frames: [B, C]
+        tics-per-frame: 3
+      - sprite: KNIF
+        frames: [D]
+        tics-per-frame: 3
+        action: "A_CustomPunch(random(0,15), true, CPF_ALWAYSPLAYSOUND)"
+      - sprite: KNIF
+        frames: [E]
+        tics-per-frame: 3
+        next-state: Ready
+
+Knife2:
+  parent: "Knife"
+  properties:
+    - "weapon.selectionorder": 3690
+  states:
+    Ready:
+      - sprite: KNF2
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: KNF2
+        frames: [B, C]
+        tics-per-frame: 3
+      - sprite: KNF2
+        frames: [D]
+        tics-per-frame: 3
+        action: "A_CustomPunch(random(0,15), true, CPF_ALWAYSPLAYSOUND)"
+      - sprite: KNF2
+        frames: [E]
+        tics-per-frame: 3
+        next-state: Ready
+
+Pistol:
+  parent: "WolfWeapon"
+  properties:
+    - "inventory.icon": "PISTOL"
+    - "weapon.selectionorder": 1900
+    - "attacksound": "weapon/pistol/attack"
+  flags: [WEAPON.NOAUTOFIRE]
+  states:
+    Ready:
+      - sprite: PISG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: PISG
+        frames: [B]
+        tics-per-frame: 3
+      - sprite: PISG
+        frames: [C]
+        tics-per-frame: 3
+        modifiers: [bright]
+      - sprite: PISG
+        frames: [D]
+        tics-per-frame: 3
+        action: A_GunAttack
+      - sprite: PISG
+        frames: [E]
+        tics-per-frame: 3
+        next-state: Ready
+
+BluePistol:
+  parent: "Pistol"
+  properties:
+    - "attacksound": "weapon/bluepistol/attack"
+    - "weapon.selectionorder": 1890
+  states:
+    Ready:
+      - sprite: BPSG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: BPSG
+        frames: [B]
+        tics-per-frame: 3
+      - sprite: BPSG
+        frames: [C]
+        tics-per-frame: 3
+        modifiers: [bright]
+      - sprite: BPSG
+        frames: [D]
+        tics-per-frame: 3
+        action: A_GunAttack
+      - sprite: BPSG
+        frames: [E]
+        tics-per-frame: 3
+        next-state: Ready
+
+MachineGun:
+  id: 60
+  parent: "WolfWeapon"
+  properties:
+    - "attacksound": "weapon/machine/attack"
+    - "inventory.icon": "MACHGUN"
+    - "inventory.pickupsound": "weapon/machine/pickup"
+    - "weapon.selectionorder": 1300
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: MGUN
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: MCHG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: MCHG
+        frames: [B]
+        tics-per-frame: 3
+    Hold:
+      - sprite: MCHG
+        frames: [C]
+        tics-per-frame: 3
+        modifiers: [bright]
+      - sprite: MCHG
+        frames: [D]
+        tics-per-frame: 3
+        action: A_GunAttack
+      - sprite: MCHG
+        frames: [E]
+        tics-per-frame: 3
+        action: A_ReFire
+        next-state: Ready
+
+BlueAK47:
+  id: 141
+  parent: "MachineGun"
+  properties:
+    - "attacksound": "weapon/blueak47/attack"
+    - "inventory.pickupsound": "weapon/blueak47/pickup"
+    - "weapon.selectionorder": 1290
+  states:
+    Spawn:
+      - sprite: BAKP
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: BAKG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: BAKG
+        frames: [B]
+        tics-per-frame: 3
+    Hold:
+      - sprite: BAKG
+        frames: [C]
+        tics-per-frame: 3
+        modifiers: [bright]
+      - sprite: BAKG
+        frames: [D]
+        tics-per-frame: 3
+        action: A_GunAttack
+      - sprite: BAKG
+        frames: [E]
+        tics-per-frame: 3
+        action: A_ReFire
+        next-state: Ready
+
+GatlingGun:
+  parent: "WolfWeapon"
+  properties:
+    - "attacksound": "weapon/gatling/attack"
+    - "inventory.icon": "GATLGUN"
+    - "inventory.pickupsound": "weapon/gatling/pickup"
+    - "weapon.selectionorder": 700
+  flags: [WEAPON.ALWAYSGRIN, INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: CGUN
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: CHGG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: CHGG
+        frames: [B]
+        tics-per-frame: 3
+    Hold:
+      - sprite: CHGG
+        frames: [C]
+        tics-per-frame: 3
+        modifiers: [bright]
+      - sprite: CHGG
+        frames: [D]
+        tics-per-frame: 3
+        modifiers: [bright]
+        action: A_GunAttack
+      - sprite: CHGG
+        frames: [D]
+        tics-per-frame: 0
+        modifiers: [bright]
+        action: A_GunAttack
+      - sprite: CHGG
+        frames: [E]
+        tics-per-frame: 3
+        action: A_ReFire
+        next-state: Ready
+
+BlueGatlingGun:
+  parent: "GatlingGun"
+  properties:
+    - "attacksound": "weapon/bluegatling/attack"
+    - "inventory.pickupsound": "weapon/bluegatling/pickup"
+    - "weapon.selectionorder": 690
+  states:
+    Spawn:
+      - sprite: BGUN
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: BGTG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: BGTG
+        frames: [B]
+        tics-per-frame: 3
+    Hold:
+      - sprite: BGTG
+        frames: [C]
+        tics-per-frame: 3
+        modifiers: [bright]
+      - sprite: BGTG
+        frames: [D]
+        tics-per-frame: 3
+        modifiers: [bright]
+        action: A_GunAttack
+      - sprite: BGTG
+        frames: [D]
+        tics-per-frame: 0
+        modifiers: [bright]
+        action: A_GunAttack
+      - sprite: BGTG
+        frames: [E]
+        tics-per-frame: 3
+        action: A_ReFire
+        next-state: Ready
+
+GatlingGunUpgrade:
+  id: 61
+  parent: "WeaponGiver"
+  properties:
+    - "inventory.pickupsound": "weapon/gatling/pickup"
+    - "weapon.ammogive1": 6
+    - "dropitem": [GatlingGun, MachineGun]
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: CGUN
+        frames: [A]
+        tics-per-frame: -1
+
+BlueGatlingGunUpgrade:
+  id: 156
+  parent: "GatlingGunUpgrade"
+  properties:
+    - "inventory.pickupsound": "weapon/bluegatling/pickup"
+    - "dropitem": [BlueGatlingGun, BlueAK47]
+  states:
+    Spawn:
+      - sprite: BGUN
+        frames: [A]
+        tics-per-frame: -1
