@@ -17,6 +17,7 @@ internal class YamlDataEntryLoader
             //.WithDuplicateKeyChecking()
             .IgnoreUnmatchedProperties()
             .WithCaseInsensitivePropertyMatching()
+            .WithNodeDeserializer(new StateDataNodeDeserializer(), s => s.OnTop())
             .Build();
 
         try

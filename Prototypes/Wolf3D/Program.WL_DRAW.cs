@@ -1202,10 +1202,10 @@ internal partial class Program
 
             visobj_t visptr_val = new visobj_t();
             //statobj_t statptr_val = statobjlist[statptr];
-            if (!actor.States.TryGetValue("Spawn", out var spawnState))
+            if (actor.CurrentState == null)
                 continue;
 
-            visptr_val.shapenum = spawnState.First().GetFrame(objdirtypes.nodir);
+            visptr_val.shapenum = actor.CurrentState.GetShapeName(objdirtypes.nodir);
 
             if (!_mapManager.spotvis[(int)actor.Position.X, (int)actor.Position.Y])
                 continue;                                               // not visable

@@ -35,7 +35,7 @@ internal record ActorTranslationAsset : Asset
 
 internal class ActorData
 {
-    public Dictionary<string, List<ActorStatesData>> States { get; internal set; } = [];
+    public Dictionary<string, List<StateData>> States { get; internal set; } = [];
     public int Radius { get; internal set; }
     public HashSet<string> Flags { get; internal set; } = [];
     public string Parent { get; internal set; }
@@ -45,6 +45,8 @@ internal class ActorData
 internal class ActorMetadata
 {
     public Dictionary<string, ActorData> Actors { get; internal set; } = [];
+
+    private readonly Dictionary<string, Dictionary<string, ActorStateFrame>> _resolvedStatesCache = [];
 
     internal void AddActors(Dictionary<string, ActorData> dictionary)
     {
@@ -122,7 +124,21 @@ internal class ActorMetadata
         actorInstance.Flags = actor.Flags;
         actorInstance.States = actor.States;
 
+        var resolvedStates = GetResolvedStates(name, actor);
+        resolvedStates.TryGetValue("Spawn", out var spawnState);
+        actorInstance.CurrentState = spawnState;
+
         return actorInstance;
+    }
+
+    private Dictionary<string, ActorStateFrame> GetResolvedStates(string name, ActorData actor)
+    {
+        if (_resolvedStatesCache.TryGetValue(name, out var cached))
+            return cached;
+
+        var resolved = ActorStateResolver.Resolve(actor.States);
+        _resolvedStatesCache[name] = resolved;
+        return resolved;
     }
 
     private static void MergeActorProperties(ActorData source, ActorData target)
@@ -159,6 +175,7 @@ internal class ActorStatesData : StateData
     public List<string> Modifiers { get; internal set; } = [];
     public string Action { get; internal set; }
     public string Think { get; internal set; }
+    public string? NextState { get; internal set; }
 
     public string GetFrame(objdirtypes dir)
     {

@@ -118,6 +118,9 @@ internal partial class Program
                 DoActor(actor.Value);
             }
 
+            // Runs side-by-side with the objlist2 loop above while actors migrate to _mapManager._actors.
+            _mapManager.DoActors();
+
             _videoManager.UpdatePaletteShifts(tics);
 
             ThreeDRefresh();

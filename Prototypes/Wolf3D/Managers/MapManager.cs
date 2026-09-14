@@ -176,4 +176,17 @@ internal class MapManager
     {
         return _actors;
     }
+
+    internal void DoActors()
+    {
+        for (var actor = _actors.First; actor != null; actor = actor.Next)
+        {
+            DoActor(actor.Value);
+        }
+    }
+
+    internal void DoActor(Entities.Actors.Actor ob)
+    {
+        // TODO: mirror Program.DoActor's think/state logic as actors migrate from objlist2 to _actors.
+    }
 }
