@@ -318,36 +318,36 @@ internal struct compshape_t
 }
 
 
-internal class statobj_t
-{
-    public byte tilex, tiley;
-    public string shapenum;           // if shapenum == -1 the obj has been removed
-    public objflags flags;
-    public string item_class;
+//internal class statobj_t
+//{
+//    public byte tilex, tiley;
+//    public string shapenum;           // if shapenum == -1 the obj has been removed
+//    public objflags flags;
+//    public string item_class;
 
-    public void Read(BinaryReader br)
-    {
-        tilex = br.ReadByte();
-        tiley = br.ReadByte();
-        shapenum = br.ReadString();
-        flags = (objflags)br.ReadUInt32();
-        //itemnumber = (wl_stat_types)br.ReadByte();
-    }
+//    public void Read(BinaryReader br)
+//    {
+//        tilex = br.ReadByte();
+//        tiley = br.ReadByte();
+//        shapenum = br.ReadString();
+//        flags = (objflags)br.ReadUInt32();
+//        //itemnumber = (wl_stat_types)br.ReadByte();
+//    }
 
-    public byte[] AsBytes()
-    {
-        var ms = new MemoryStream();
-        var bw = new BinaryWriter(ms);
-        {
-            bw.Write(tilex);
-            bw.Write(tiley);
-            bw.Write(shapenum);
-            bw.Write((uint)flags);
-            //bw.Write((byte)itemnumber);
-            return ms.ToArray();
-        }
-    }
-}
+//    public byte[] AsBytes()
+//    {
+//        var ms = new MemoryStream();
+//        var bw = new BinaryWriter(ms);
+//        {
+//            bw.Write(tilex);
+//            bw.Write(tiley);
+//            bw.Write(shapenum);
+//            bw.Write((uint)flags);
+//            //bw.Write((byte)itemnumber);
+//            return ms.ToArray();
+//        }
+//    }
+//}
 
 internal enum dooractiontypes
 {

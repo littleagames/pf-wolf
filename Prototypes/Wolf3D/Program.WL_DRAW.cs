@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using Wolf3D.Assets;
 using Wolf3D.Constants;
+using Wolf3D.Entities.Actors;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
@@ -1182,21 +1183,38 @@ internal partial class Program
         //
         // place static objects
         //
-        for (statptr = 0; statptr != laststatobj; statptr++)
+        //for (statptr = 0; statptr != laststatobj; statptr++)
+        var actorList = _mapManager.GetActors();
+
+        // Manual node walk instead of foreach: GetBonus() can remove the current
+        // actor from _actors (picked-up inventory), which invalidates a foreach
+        // enumerator on the next MoveNext(). Grabbing the next node before running
+        // any code that might remove the current one keeps traversal safe, since
+        // removing a LinkedList node doesn't touch its neighbors' Next/Previous.
+        var node = actorList.First;
+        while (node != null)
         {
-            visobj_t visptr_val = new visobj_t();
-            statobj_t statptr_val = statobjlist[statptr];
-            if ((visptr_val.shapenum = statptr_val.shapenum) == "")
+            var actor = node.Value;
+            node = node.Next;
+
+            if (actor == null)
                 continue;                                               // object has been deleted
 
-            if (!_mapManager.spotvis[statptr_val.tilex, statptr_val.tiley])
+            visobj_t visptr_val = new visobj_t();
+            //statobj_t statptr_val = statobjlist[statptr];
+            if (!actor.States.TryGetValue("Spawn", out var spawnState))
+                continue;
+
+            visptr_val.shapenum = spawnState.First().GetFrame(objdirtypes.nodir);
+
+            if (!_mapManager.spotvis[(int)actor.Position.X, (int)actor.Position.Y])
                 continue;                                               // not visable
 
-            if (TransformTile(statptr_val.tilex, statptr_val.tiley,
-                ref visptr_val.viewx, ref visptr_val.viewheight) && statptr_val.flags.HasFlag(objflags.FL_BONUS))
+            if (TransformTile((int)actor.Position.X, (int)actor.Position.Y,
+                ref visptr_val.viewx, ref visptr_val.viewheight) && actor is Inventory inventory)
             {
-                GetBonus(statptr_val);
-                if (statptr_val.shapenum == "")
+                GetBonus(inventory);
+                if (actorList.Contains(actor) == false)
                     continue;                                           // object has been taken
             }
 
@@ -1205,9 +1223,9 @@ internal partial class Program
 
             if (visptr < (MAXVISABLE - 1))    // don't let it overflow
             {
-                visptr_val.tilex = statptr_val.tilex;
-                visptr_val.tiley = statptr_val.tiley;
-                visptr_val.flags = statptr_val.flags;
+                visptr_val.tilex = (byte)actor.Position.X;
+                visptr_val.tiley = (byte)actor.Position.Y;
+                //visptr_val.flags = actor.Flags;
                 vislist[visptr] = visptr_val;
                 visptr++;
             }

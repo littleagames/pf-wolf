@@ -43,6 +43,7 @@ internal class MapManager
     private UInt16[][] mapsegs = new ushort[MAPPLANES][];
     private maptype[] mapheaderseg = new maptype[NUMMAPS];
 
+    private readonly LinkedList<Entities.Actors.Actor> _actors = new();
 
     public MapManager(Lazy<AssetManager> assetManager)
     {
@@ -83,6 +84,8 @@ internal class MapManager
         spotvis = new bool[MAPSIZE, MAPSIZE];
         actorat = new Actor?[MAPSIZE, MAPSIZE];
 
+        var data = GetMapData();
+
         for (int y = 0; y < mapheight; y++)
         {
             for (int x = 0; x < mapwidth; x++)
@@ -100,8 +103,45 @@ internal class MapManager
                     tilemap[x, y] = 0;
                     actorat[x, y] = null;
                 }
+
+                // TODO: SpawnDoor
+
+                int objtile = MAPSPOT(x, y, 1);
+                if (data.Things.TryGetValue(objtile, out var thingXlat))
+                {
+                    SpawnThing(x, y, thingXlat.Class);
+                    continue;
+                }
             }
         }
+    }
+
+    public void SpawnThing(int tilex, int tiley, string className)
+    {
+        var actorMetaData = assetManager.Value.GetActorMetadata();
+
+        if (!actorMetaData.Actors.TryGetValue(className, out var actor))
+            return;
+        var builtActor = actorMetaData.CreateActor(className, actor); // TODO: Should this just create objects?
+        if (builtActor == null)
+            return;
+
+        builtActor.SetPosition(tilex, tiley);
+
+        //builtActor.flags = 0;
+        if (builtActor.Flags.Any(f => f.Equals("COUNTITEM", StringComparison.OrdinalIgnoreCase)))
+        {
+            // TODO: GameManager? MapManager? who handles this?
+           // if (!loadedgame)
+           //     gamestate.treasuretotal++;
+           // newstatobj.flags = objflags.FL_BONUS;
+        }
+
+        //if (builtActor.Properties.Keys.Any(x => x.StartsWith("inventory")))
+        //{
+        //    newstatobj.flags = objflags.FL_BONUS;
+        //}
+        _actors.AddLast(builtActor);
     }
 
     internal static bool VALIDAREA(int x) => (x) >= MapDataConstants.AREATILE && (x) < (MapDataConstants.AREATILE + MapDataConstants.NUMAREAS);
@@ -125,5 +165,15 @@ internal class MapManager
         if (gameInfo == null)
             throw new Exception("Map data not found");
         return gameInfo;
+    }
+
+    internal void RemoveActor(Entities.Actors.Inventory builtActor)
+    {
+        _actors.Remove(builtActor);
+    }
+
+    internal LinkedList<Entities.Actors.Actor> GetActors()
+    {
+        return _actors;
     }
 }

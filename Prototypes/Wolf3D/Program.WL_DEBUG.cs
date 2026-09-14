@@ -289,21 +289,21 @@ internal partial class Program
         CenterWindow(17, 7);
         active = inactive = count = doors = 0;
 
-        US_Print("Total statics :");
-        total = laststatobj;
-        US_Print(total.ToString());
+        //US_Print("Total statics :");
+        //total = laststatobj;
+        //US_Print(total.ToString());
 
-        US_Print($"\nlaststatobj={laststatobj}");
+        //US_Print($"\nlaststatobj={laststatobj}");
 
-        US_Print("\nIn use statics:");
-        for (i = 0; i < total; i++)
-        {
-            if (statobjlist[i].shapenum != "")
-                count++;
-            else
-                doors++;        //debug
-        }
-        US_Print(count.ToString());
+        //US_Print("\nIn use statics:");
+        //for (i = 0; i < total; i++)
+        //{
+        //    if (statobjlist[i].shapenum != "")
+        //        count++;
+        //    else
+        //        doors++;        //debug
+        //}
+        //US_Print(count.ToString());
 
         US_Print("\nDoors         :");
         US_Print(doornum.ToString());

@@ -1,4 +1,5 @@
-﻿using Wolf3D.Extensions;
+﻿using Wolf3D.Entities.Actors;
+using Wolf3D.Extensions;
 using Wolf3D.Managers;
 using static SDL2.SDL;
 
@@ -14,6 +15,7 @@ internal partial class Program
 
     internal static int DebugOk;
 
+    [Obsolete("Moving to the MapManager._actors")]
     internal static LinkedList<objstruct> objlist2 = new LinkedList<objstruct>();
     internal static objstruct player;
 

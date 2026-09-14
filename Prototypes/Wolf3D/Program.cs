@@ -450,7 +450,7 @@ internal partial class Program
     {
         var language = _assetManager.GetText("en-us");
         int i, j;
-        ushort laststatobjnum;
+        //ushort laststatobjnum;
         ushort tile;
         int checksum, oldchecksum;
 
@@ -514,19 +514,19 @@ internal partial class Program
         }
 
         DiskFlopAnim(x, y);
-        laststatobjnum = br.ReadUInt16();
-        laststatobj = laststatobjnum;
-        checksum = DoChecksum(laststatobjnum, checksum);
+        //laststatobjnum = br.ReadUInt16();
+        //laststatobj = laststatobjnum;
+        //checksum = DoChecksum(laststatobjnum, checksum);
 
         DiskFlopAnim(x, y);
 
-        for (var statptr = 0; statptr != laststatobj; statptr++)
-        {
-            statobj_t statobj = new();
-            statobj.Read(br);
-            statobjlist[statptr] = statobj;
-            checksum = DoChecksum(statobj.AsBytes(), checksum);
-        }
+        //for (var statptr = 0; statptr != laststatobj; statptr++)
+        //{
+        //    statobj_t statobj = new();
+        //    statobj.Read(br);
+        //    statobjlist[statptr] = statobj;
+        //    checksum = DoChecksum(statobj.AsBytes(), checksum);
+        //}
         DiskFlopAnim(x, y);
         for (int doorIndex = 0; doorIndex < lastdoorobj; doorIndex++)
         {
@@ -609,7 +609,7 @@ internal partial class Program
     {
         int i, j;
         int checksum;
-        ushort laststatobjnum;
+        //ushort laststatobjnum;
         //objstruct ob;
         objstruct nullobj = new();
 
@@ -672,18 +672,18 @@ internal partial class Program
         bw.Write(nullobj.AsBytes(stateOffset: 0));
 
         DiskFlopAnim(x, y);
-        laststatobjnum = (ushort)(laststatobj);
-        bw.Write(laststatobjnum);
-        checksum = DoChecksum(laststatobjnum, checksum);
+        //laststatobjnum = (ushort)(laststatobj);
+        //bw.Write(laststatobjnum);
+        //checksum = DoChecksum(laststatobjnum, checksum);
 
         DiskFlopAnim(x, y);
-        for (var statptr = 0; statptr != laststatobj; statptr++)
-        {
-            statobj_t statptr_val = statobjlist[statptr];
-            var statptrData = statptr_val.AsBytes();
-            bw.Write(statptrData);
-            checksum = DoChecksum(statptrData, checksum);
-        }
+        //for (var statptr = 0; statptr != laststatobj; statptr++)
+        //{
+        //    statobj_t statptr_val = statobjlist[statptr];
+        //    var statptrData = statptr_val.AsBytes();
+        //    bw.Write(statptrData);
+        //    checksum = DoChecksum(statptrData, checksum);
+        //}
 
         DiskFlopAnim(x, y);
         for (int doorIndex = 0; doorIndex < lastdoorobj; doorIndex++)

@@ -1,5 +1,8 @@
-﻿using Wolf3D.Constants;
+﻿using Wolf3D.Assets;
+using Wolf3D.Constants;
+using Wolf3D.Entities.Actors;
 using Wolf3D.Managers;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wolf3D;
 
@@ -356,18 +359,18 @@ internal partial class Program
     }
 
 
-    internal static void GetBonus(statobj_t check)
+    internal static void GetBonus(Inventory builtActor)
     {
         if (playstate == playstatetypes.ex_died)   // ADDEDFIX 31 - Chris
             return;
 
-        if (string.IsNullOrWhiteSpace(check.item_class))
-            return;
+        //if (string.IsNullOrWhiteSpace(check.item_class))
+        //    return;
 
-        var actors = _assetManager.GetActorMetadata();
-        if (!actors.Actors.TryGetValue(check.item_class, out var actor))
-            return;
-        var builtActor = actors.BuildActor(check.item_class, actor); // TODO: Should this just create objects?
+        //var actors = _assetManager.GetActorMetadata();
+        //if (!actors.Actors.TryGetValue(check.item_class, out var actor))
+        //    return;
+        //var builtActor = actors.BuildActor(check.item_class, actor); // TODO: Should this just create objects?
 
         if (builtActor.Properties.Count == 0)
             return;
@@ -393,19 +396,19 @@ internal partial class Program
             }
         }
 
-        if (builtActor is Entities.Actors.Weapon)
-        {
-            // TODO: The MachineGun should be a defined type built off actor
-            switch (check.item_class.ToLowerInvariant())
-            {
-                case "machinegun":
-                    GiveWeapon(weapontypes.wp_machinegun);
-                    break;
-                case "gatlinggun":
-                    GiveWeapon(weapontypes.wp_chaingun);
-                    break;
-            }
-        }
+        //if (builtActor is Entities.Actors.Weapon)
+        //{
+        //    // TODO: The MachineGun should be a defined type built off actor
+        //    switch (check.item_class.ToLowerInvariant())
+        //    {
+        //        case "machinegun":
+        //            GiveWeapon(weapontypes.wp_machinegun);
+        //            break;
+        //        case "gatlinggun":
+        //            GiveWeapon(weapontypes.wp_chaingun);
+        //            break;
+        //    }
+        //}
 
         if (builtActor.Properties.TryGetValue("inventory.pickupsound", out var pickupSound))
         {
@@ -413,7 +416,8 @@ internal partial class Program
         }
 
         _videoManager.StartBonusFlash();
-        check.shapenum = "";                   // remove from list
+        //check.shapenum = "";                   // remove from list
+        _mapManager.RemoveActor(builtActor);
     }
 
 

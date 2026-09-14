@@ -1,95 +1,11 @@
 ﻿using Wolf3D.Assets;
 using Wolf3D.Constants;
-using Wolf3D.Entities.Actors;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
 
 internal partial class Program
 {
-    internal static statobj_t[] statobjlist = new statobj_t[MAXSTATS];
-    internal static int laststatobj;
-
-    //internal struct statinfo_t
-    //{
-    //    public string picnum;
-    //    //public wl_stat_types type;
-    //    public objflags specialFlags;    // they are ORed to the statobj_t flags
-
-    //    public statinfo_t(string picnum)
-    //    {
-    //        this.picnum = picnum;
-    //    }
-
-    //    public statinfo_t(string picnum, wl_stat_types type)
-    //    {
-    //        this.picnum = picnum;
-    //        this.type = type;
-    //    }
-
-    //    public statinfo_t(string picnum, wl_stat_types type, objflags specialFlags)
-    //    {
-    //        this.picnum = picnum;
-    //        this.type = type;
-    //        this.specialFlags = specialFlags;
-    //    }
-    //}
-
-    internal static void InitStaticList()
-    {
-        laststatobj = 0;
-    }
-
-    internal static void SpawnStatic(int tilex, int tiley, int type)
-    {
-        // Temporary way to spawn objects
-        var data = _mapManager.GetMapData(); //_assetManager.Find<MapObjectTranslationAsset>("wolf3d/mapdefs"); // TODO: This is not the best way to do this.
-        //if (data == null) return;
-
-        var actors = _assetManager.GetActorMetadata();
-        if (!data.Things.TryGetValue(type, out var actorSpawnData))
-            return;
-
-        if (!actors.Actors.TryGetValue(actorSpawnData.Class, out var actor))
-            return;
-        var builtActor = actors.BuildActor(actorSpawnData.Class, actor); // TODO: Should this just create objects?
-
-        if (!builtActor.States.TryGetValue("Spawn", out var spawnState))
-            return;
-
-        var firstSpawnFrame = spawnState.First() as ActorStatesData;
-
-        var newstatobj = new statobj_t();
-        newstatobj.shapenum = firstSpawnFrame.Sprite + firstSpawnFrame.Frames.First() + "0"; // e.g. DRUMA0
-        newstatobj.tilex = (byte)tilex;
-        newstatobj.tiley = (byte)tiley;
-        newstatobj.item_class = actorSpawnData.Class;
-
-        if (builtActor.Flags.Any(f => f.Equals("SOLID", StringComparison.OrdinalIgnoreCase)))
-            _mapManager.actorat[tilex, tiley] = new BlockingActor();// BIT_WALL;          // consider it a blocking tile
-        else
-            newstatobj.flags = 0;
-
-        if (builtActor.Flags.Any(f => f.Equals("COUNTITEM", StringComparison.OrdinalIgnoreCase)))
-        {
-            if (!loadedgame)
-                gamestate.treasuretotal++;
-            newstatobj.flags = objflags.FL_BONUS;
-        }
-
-        if (builtActor.Properties.Keys.Any(x => x.StartsWith("inventory")))
-        {
-            newstatobj.flags = objflags.FL_BONUS;
-        }
-
-        statobjlist[laststatobj] = newstatobj;
-
-        laststatobj++;
-
-        if (laststatobj == (MAXSTATS - 1))
-            _gameEngineManager.Quit("Too many static objects!\n");
-    }
-
     /*
     ===============
     =
@@ -103,51 +19,7 @@ internal partial class Program
     */
     internal static void PlaceItemType(string item_class, int tilex, int tiley)
     {
-        //
-        // find the item
-        //
-        var actors = _assetManager.GetActorMetadata();
-        if (!actors.Actors.TryGetValue(item_class, out var actor))
-            return;
-
-        var builtActor = actors.BuildActor(item_class, actor);
-        if (!builtActor.States.TryGetValue("Spawn", out var spawnState))
-            return;
-
-        var firstSpawnFrame = spawnState.First();
-
-        //
-        // find a spot in statobjlist to put it in
-        //
-        statobj_t spot = null!;
-        int i;
-        for (i = 0; i < laststatobj; i++)
-        {
-            if (statobjlist[i].shapenum == "")                  // a free spot
-            {
-                spot = statobjlist[i];
-                break;
-            }
-        }
-
-        if (i == laststatobj)
-        {
-            if (laststatobj >= MAXSTATS - 1)
-                return;                                          // no free spots
-
-            spot = new statobj_t();
-            statobjlist[laststatobj] = spot;
-            laststatobj++;                                       // space at end
-        }
-
-        //
-        // place it
-        //
-        spot.shapenum = firstSpawnFrame.Sprite + firstSpawnFrame.Frames.First() + "0"; // e.g. CLIPA0
-        spot.tilex = (byte)tilex;
-        spot.tiley = (byte)tiley;
-        spot.item_class = item_class;
-        spot.flags = objflags.FL_BONUS;
+        _mapManager.SpawnThing(tilex, tiley, item_class);
     }
 
     /*

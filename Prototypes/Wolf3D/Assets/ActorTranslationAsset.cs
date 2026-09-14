@@ -54,7 +54,7 @@ internal class ActorMetadata
         }
     }
 
-    internal Entities.Actors.Actor BuildActor(string name, ActorData actor)
+    internal Entities.Actors.Actor CreateActor(string name, ActorData actor)
     {
         var actorType = Type.GetType($"Entities.Actors.{name}");
         if (!string.IsNullOrWhiteSpace(actor.Parent))
@@ -116,6 +116,7 @@ internal class ActorMetadata
         }
 
         var actorInstance = (Entities.Actors.Actor)Activator.CreateInstance(actorType)!;
+        actorInstance.Name = name;
         actorInstance.Properties = actor.Properties;
         actorInstance.Radius = actor.Radius;
         actorInstance.Flags = actor.Flags;
@@ -153,11 +154,22 @@ internal abstract class StateData
 internal class ActorStatesData : StateData
 {
     public string Sprite { get; internal set; }
-    public List<string> Frames { get; internal set; }
+    public List<string> Frames { get; internal set; } = [];
     public float TicsPerFrame { get; internal set; }
-    public List<string> Modifiers { get; internal set; }
+    public List<string> Modifiers { get; internal set; } = [];
     public string Action { get; internal set; }
     public string Think { get; internal set; }
+
+    public string GetFrame(objdirtypes dir)
+    {
+        var frame = 0;
+        if (dir == objdirtypes.nodir)
+            frame = 0;
+        else
+            frame = (int)dir;
+
+        return $"{Sprite}{Frames.First()}{frame}"; // e.g. DRUMA0
+    }
 }
 
 internal class StopStateData : StateData
