@@ -128,6 +128,10 @@ internal class ActorMetadata
         actorInstance.ResolvedStates = resolvedStates;
         resolvedStates.TryGetValue("Spawn", out var spawnState);
         actorInstance.CurrentState = spawnState;
+        // Mirrors legacy NewState (Program.WL_STATE.cs): entering a state arms TicCount from
+        // its TicTime, so DoActor's tic countdown starts correctly instead of sitting at 0
+        // (which means "hold forever" -- only correct for a genuinely single-frame Spawn).
+        actorInstance.TicCount = spawnState?.TicTime ?? 0;
 
         return actorInstance;
     }

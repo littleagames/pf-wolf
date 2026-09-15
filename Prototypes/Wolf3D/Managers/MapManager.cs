@@ -177,16 +177,46 @@ internal class MapManager
         return _actors;
     }
 
-    internal void DoActors()
+    internal void DoActors(uint tics)
     {
         for (var actor = _actors.First; actor != null; actor = actor.Next)
         {
-            DoActor(actor.Value);
+            DoActor(actor.Value, tics);
         }
     }
 
-    internal void DoActor(Entities.Actors.Actor ob)
+    internal void DoActor(Entities.Actors.Actor ob, uint tics)
     {
-        // TODO: mirror Program.DoActor's think/state logic as actors migrate from objlist2 to _actors.
+        var state = ob.CurrentState;
+        if (state == null)
+            return;
+
+        // Mirrors Program.DoActor (Program.WL_PLAY.cs): a frame with TicTime == 0 holds forever
+        // -- once TicCount sticks at 0, only Think runs each tic, Next is never consulted again.
+        if (ob.TicCount == 0)
+        {
+            Entities.Actors.ActorActionRegistry.Invoke(state.Think, ob);
+            return;
+        }
+
+        ob.TicCount -= (short)tics;
+        while (ob.TicCount <= 0)
+        {
+            Entities.Actors.ActorActionRegistry.Invoke(state.Action, ob);
+
+            state = state.Next;
+            if (state == null)
+                return; // the resolver never leaves Next null in practice; defensive only.
+            ob.CurrentState = state;
+
+            if (state.TicTime == 0)
+            {
+                ob.TicCount = 0;
+                break;
+            }
+            ob.TicCount += state.TicTime;
+        }
+
+        Entities.Actors.ActorActionRegistry.Invoke(state.Think, ob);
     }
 }

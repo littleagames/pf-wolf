@@ -119,7 +119,7 @@ internal partial class Program
             }
 
             // Runs side-by-side with the objlist2 loop above while actors migrate to _mapManager._actors.
-            _mapManager.DoActors();
+            _mapManager.DoActors(tics);
 
             _videoManager.UpdatePaletteShifts(tics);
 
