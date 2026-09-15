@@ -378,23 +378,10 @@ internal partial class Program
         // TODO: This will be passed to an InventoryManager(Actor player, [inventory.* properties]
         if (builtActor.Properties.TryGetValue("inventory.amount", out var amount))
         {
-            switch (builtActor.GetType().Name)
-            {
-                case nameof(Entities.Actors.Health):
-                    HealSelf(Convert.ToInt32(amount));
-                    break;
-                case nameof(Entities.Actors.Ammo):
-                    GiveAmmo(Convert.ToInt32(amount));
-                    break;
-                case nameof(Entities.Actors.Key):
-                    GiveKey(Convert.ToInt32(amount));
-                    break;
-                case nameof(Entities.Actors.ScoreItem):
-                    gamestate.treasurecount++;
-                    GivePoints(Convert.ToInt32(amount));
-                    break;
-            }
+            ApplyInventoryAmount(builtActor, Convert.ToInt32(amount));
         }
+
+        builtActor.RunState("Pickup");
 
         //if (builtActor is Entities.Actors.Weapon)
         //{
@@ -418,6 +405,64 @@ internal partial class Program
         _videoManager.StartBonusFlash();
         //check.shapenum = "";                   // remove from list
         _mapManager.RemoveActor(builtActor);
+    }
+
+    internal static void ApplyInventoryAmount(Inventory item, int amount)
+    {
+        switch (item.GetType().Name)
+        {
+            case nameof(Entities.Actors.Health):
+                HealSelf(amount);
+                break;
+            case nameof(Entities.Actors.Ammo):
+                GiveAmmo(amount);
+                break;
+            case nameof(Entities.Actors.Key):
+                GiveKey(amount);
+                break;
+            case nameof(Entities.Actors.ScoreItem):
+                gamestate.treasurecount++;
+                GivePoints(amount);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Registers the C# handlers for the actor-state `action:` names authored in actordefs
+    /// YAML. Called once at startup (see Main). Names with no handler here (e.g. the weapon
+    /// Ready/Fire actions) are simply logged and skipped by ActorActionRegistry when hit.
+    /// </summary>
+    internal static void RegisterActorActions()
+    {
+        ActorActionRegistry.Register("A_GiveExtraMan", (Entities.Actors.Actor _) => GiveExtraMan());
+        ActorActionRegistry.Register("A_GiveInventory", GiveInventoryAction);
+    }
+
+    private static void GiveInventoryAction(Entities.Actors.Actor actor, string[] args)
+    {
+        if (args.Length == 0)
+            return;
+
+        var itemName = args[0];
+        var actorMetadata = _assetManager.GetActorMetadata();
+        if (!actorMetadata.Actors.TryGetValue(itemName, out var itemData))
+        {
+            Console.WriteLine($"A_GiveInventory: unknown actor '{itemName}'.");
+            return;
+        }
+
+        if (actorMetadata.CreateActor(itemName, itemData) is not Inventory item)
+            return;
+
+        int amount;
+        if (args.Length > 1 && int.TryParse(args[1], out var explicitAmount))
+            amount = explicitAmount;
+        else if (item.Properties.TryGetValue("inventory.amount", out var defaultAmount))
+            amount = Convert.ToInt32(defaultAmount);
+        else
+            return;
+
+        ApplyInventoryAmount(item, amount);
     }
 
 

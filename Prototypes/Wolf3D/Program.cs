@@ -111,6 +111,7 @@ internal partial class Program
         new Program();
         _gameEngineManager.Init(gameParams.Value);
         _assetManager.Load();
+        RegisterActorActions();
 
         //CheckParameters(args); // Remove
 

@@ -125,6 +125,7 @@ internal class ActorMetadata
         actorInstance.States = actor.States;
 
         var resolvedStates = GetResolvedStates(name, actor);
+        actorInstance.ResolvedStates = resolvedStates;
         resolvedStates.TryGetValue("Spawn", out var spawnState);
         actorInstance.CurrentState = spawnState;
 

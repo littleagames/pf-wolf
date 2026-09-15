@@ -7,6 +7,7 @@ namespace Wolf3D.Entities.Actors;
 internal record Actor : Thinker
 {
     public Dictionary<string, List<StateData>> States { get; internal set; } = [];
+    public Dictionary<string, ActorStateFrame> ResolvedStates { get; internal set; } = [];
     public ActorStateFrame? CurrentState { get; internal set; }
     public int Radius { get; internal set; }
     public HashSet<string> Flags { get; internal set; } = [];
@@ -32,5 +33,23 @@ internal record Actor : Thinker
     internal void SetPosition(int tilex, int tiley)
     {
         Position = new Vector2(tilex, tiley);
+    }
+
+    /// <summary>
+    /// Walks a named state's resolved frame chain once, firing each frame's Action along the
+    /// way -- for event-triggered states like "Pickup" that aren't ticked by DoActor, rather
+    /// than looped/held like "Spawn". Stops as soon as a frame repeats (self-loop/terminal).
+    /// </summary>
+    internal void RunState(string stateName)
+    {
+        if (!ResolvedStates.TryGetValue(stateName, out var frame))
+            return;
+
+        var visited = new HashSet<ActorStateFrame>();
+        while (frame != null && visited.Add(frame))
+        {
+            ActorActionRegistry.Invoke(frame.Action, this);
+            frame = frame.Next;
+        }
     }
 }
