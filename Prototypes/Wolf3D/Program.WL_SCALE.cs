@@ -1,4 +1,4 @@
-﻿using Wolf3D.Assets;
+using Wolf3D.Assets;
 
 namespace Wolf3D;
 
@@ -16,72 +16,61 @@ internal partial class Program
     /*
     ===================
     =
-    = ScaleLine
+    = ScaleColumn
     =
-    = Reconstruct a sprite and draw it
-    =
-    = each vertical line of the shape has a pointer to segment data:
-    = 	end of segment pixel*2 (0 terminates line)
-    = 	top of virtual line with segment in proper place
-    =	start of segment pixel*2
-    =	<repeat>
+    = Draws one column of a sprite's indexed bitmap, scaling its rows onto
+    = the screen column at x. Rows whose OpacityMask entry is 0 are skipped.
     =
     ===================
     */
 
-    internal static void ScaleLine(short x, short toppix, int fracstep, byte[] linesrc, byte[] linecmds)
+    internal static void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column)
     {
-        int src;
-        int color;
-        int start, end, top;
-        int startpix, endpix;
-        int frac;
-        int linecmdsIndex = 0;
+        int height = sprite.Height;
+        int width = sprite.Width;
+        byte[] indices = sprite.RawData;
+        byte[] mask = sprite.OpacityMask;
 
-        for (end = BitConverter.ToInt16(linecmds.Skip(linecmdsIndex).ToArray()) >> 1; end != 0; end = BitConverter.ToInt16(linecmds.Skip(linecmdsIndex).ToArray()) >> 1)
+        int frac = 0;
+        int startpix;
+        int endpix = toppix;
+
+        for (int row = 0; row < height; row++)
         {
-            top = BitConverter.ToInt16(linecmds.Skip(linecmdsIndex+2).ToArray());
-            start = BitConverter.ToInt16(linecmds.Skip(linecmdsIndex+4).ToArray()) >> 1;
+            startpix = endpix;
 
-            frac = start* fracstep;
+            if (startpix >= viewheight)
+                break;                          // off the bottom of the view area
 
+            frac += fracstep;
             endpix = (frac >> MathUtils.FRACBITS) + toppix;
 
-            for (src = top + start; start != end; start++, src++)
+            if (endpix < 0)
+                continue;                       // not into the view area
+
+            if (startpix < 0)
+                startpix = 0;                   // clip upper boundary
+
+            if (endpix > viewheight)
+                endpix = viewheight;            // clip lower boundary
+
+            int srcIndex = row * width + column;
+            if (mask[srcIndex] == 0)
+                continue;                       // transparent pixel
+
+            byte color = indices[srcIndex];
+
+            var destIndex = _videoManager.ylookup[startpix] + x;
+            unsafe
             {
-                startpix = endpix;
-
-                if (startpix >= viewheight)
-                    break;                          // off the bottom of the view area
-
-                frac += fracstep;
-                endpix = (frac >> MathUtils.FRACBITS) + toppix;
-
-                if (endpix< 0)
-                    continue;                       // not into the view area
-
-                if (startpix< 0)
-                    startpix = 0;                   // clip upper boundary
-
-                if (endpix > viewheight)
-                    endpix = viewheight;            // clip lower boundary
-
-                color = linesrc[src];
-
-                var destIndex = _videoManager.ylookup[startpix] + x;
-                unsafe
+                byte* dest = (byte*)vbufPtr + screenofs;
+                while (startpix < endpix)
                 {
-                    byte* dest = (byte*)vbufPtr + screenofs;// + destIndex;
-                    while (startpix < endpix)
-                    {
-                        dest[destIndex] = (byte)color;
-                        destIndex += _videoManager.bufferPitch;
-                        startpix++;
-                    }
+                    dest[destIndex] = color;
+                    destIndex += _videoManager.bufferPitch;
+                    startpix++;
                 }
             }
-
-            linecmdsIndex += 6;                          // next segment list
         }
     }
 
@@ -90,18 +79,15 @@ internal partial class Program
     =
     = ScaleShape
     =
-    = Draws a compiled shape at [height] pixels high
+    = Draws a sprite's indexed bitmap at [height] pixels high
     =
     ===================
     */
     internal static void ScaleShape(visobj_t sprite)
     {
-        int i;
-        compshape_t shape;
-        byte[] linesrc, linecmds;
         int height, toppix;
         int x1, x2, xcenter;
-        int       frac, fracstep;
+        int frac, fracstep;
 
         height = sprite.viewheight >> 3;        // low three bits are fractional
 
@@ -112,17 +98,15 @@ internal partial class Program
         if (spriteAsset == null)
             return;
 
-        linesrc = spriteAsset.RawData;
-        shape = new compshape_t(linesrc);// (compshape_t*)linesrc; // this needs to build the struct from the byte[], and get the table data afterwards
         fracstep = MathUtils.FixedDiv(height, TEXTURESIZE / 2);
-        frac = shape.leftpix * fracstep;
+        frac = 0;
 
         xcenter = sprite.viewx - height;
         toppix = centery - height;
 
-        x2 = (frac >> MathUtils.FRACBITS) + xcenter;
+        x2 = xcenter;
 
-        for (i = shape.leftpix; i <= shape.rightpix; i++)
+        for (int i = 0; i < spriteAsset.Width; i++)
         {
             //
             // calculate edges of the shape
@@ -148,9 +132,7 @@ internal partial class Program
             {
                 if (wallheight[x1] < sprite.viewheight)
                 {
-                    linecmds = linesrc.Skip(shape.dataofs[i - shape.leftpix]).ToArray(); // this needs to get a subset of data
-
-                    ScaleLine((short)x1, (short)toppix, fracstep, linesrc, linecmds);
+                    ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i);
                 }
 
                 x1++;
@@ -165,15 +147,12 @@ internal partial class Program
     =
     = NO CLIPPING, height in pixels
     =
-    = Draws a compiled shape at [height] pixels high
+    = Draws a sprite's indexed bitmap at [height] pixels high
     =
     ===================
     */
     internal static void SimpleScaleShape (int dispx, string shapenum, int dispheight)
     {
-        int i;
-        compshape_t shape;
-        byte[] linesrc, linecmds;
         int height, toppix;
         int x1, x2, xcenter;
         int frac, fracstep;
@@ -184,17 +163,15 @@ internal partial class Program
         if (spriteAsset == null)
             return;
 
-        linesrc = spriteAsset.RawData;
-        shape = new compshape_t(linesrc);
         fracstep = MathUtils.FixedDiv(height, TEXTURESIZE / 2);
-        frac = shape.leftpix * fracstep;
+        frac = 0;
 
         xcenter = dispx - height;
         toppix = centery - height;
 
-        x2 = (frac >> MathUtils.FRACBITS) + xcenter;
+        x2 = xcenter;
 
-        for (i = shape.leftpix; i <= shape.rightpix; i++)
+        for (int i = 0; i < spriteAsset.Width; i++)
         {
             //
             // calculate edges of the shape
@@ -206,9 +183,7 @@ internal partial class Program
 
             while (x1 < x2)
             {
-                linecmds = linesrc.Skip(shape.dataofs[i - shape.leftpix]).ToArray(); // this needs to get a subset of data
-
-                ScaleLine((short)x1, (short)toppix, fracstep, linesrc, linecmds);
+                ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i);
 
                 x1++;
             }

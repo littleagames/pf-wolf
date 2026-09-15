@@ -114,6 +114,12 @@ internal class PfWolfPk3Loader
                 AddAsset(assetName, data);
                 continue;
             }
+
+            if (entry.FullName.StartsWith("sprites/"))
+            {
+                AddReference(assetName, () => PngSpriteDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName), sourcePalette: Load<Palette>("wolfpal")));
+                continue;
+            }
         }
     }
 

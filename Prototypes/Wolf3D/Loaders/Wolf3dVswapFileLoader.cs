@@ -169,7 +169,7 @@ internal class Wolf3dVswapFileLoader
         for (int i = PMSpriteStart; i < PMSoundStart; i++)
         {
             byte[] spriteData = PM_GetPage(i);
-            assets.Add(sprites[i-PMSpriteStart].ToLowerInvariant(), new SpriteAsset { RawData = spriteData });
+            assets.Add(sprites[i-PMSpriteStart].ToLowerInvariant(), Wolf3dCompiledSpriteConverter.Convert(spriteData));
             // Use SDL_SetupSprite to get sprite data
         }
         // Use SDL_SetupDigi to get sound data
