@@ -1,4 +1,6 @@
 ﻿using Wolf3D.Assets;
+using Wolf3D.Constants;
+using objflags = Wolf3D.Program.objflags;
 
 namespace Wolf3D.Managers;
 
@@ -45,6 +47,22 @@ internal class MapManager
 
     private readonly LinkedList<Entities.Actors.Actor> _actors = new();
 
+    // The unique story bosses (actordefs/wolf3d/bosses.yaml): always spawned ambush-ready and
+    // stationary regardless of the floor tile beneath them, unlike the rank-and-file grunts.
+    private static readonly HashSet<string> BossActorNames = new(StringComparer.Ordinal)
+    {
+        "Hans", "Gretel", "Schabbs", "Gift", "Fat", "FakeHitler", "MechaHitler", "RealHitler"
+    };
+
+    // The Pac-Man bonus-level ghosts (actordefs/wolf3d/ghosts.yaml): never shootable/killable,
+    // matching SpawnGhosts never assigning hitpoints in the legacy source.
+    private static readonly HashSet<string> GhostActorNames = new(StringComparer.Ordinal)
+    {
+        "Blinky", "Clyde", "Pinky", "Inky"
+    };
+
+    private int _difficulty;
+
     public MapManager(Lazy<AssetManager> assetManager)
     {
         this.assetManager = assetManager;
@@ -60,8 +78,10 @@ internal class MapManager
         return mapsegs[0][y * mapwidth + x];
     }
 
-    public void LoadMap(string mapName)
+    public void LoadMap(string mapName, int difficulty)
     {
+        _difficulty = difficulty;
+
         var mapAsset = assetManager.Value.Find<MapAsset>(mapName);
         if (mapAsset == null)
             throw new Exception($"Map not found {mapName}");
@@ -109,24 +129,104 @@ internal class MapManager
                 int objtile = MAPSPOT(x, y, 1);
                 if (data.Things.TryGetValue(objtile, out var thingXlat))
                 {
-                    SpawnThing(x, y, thingXlat.Class);
+                    SpawnThing(x, y, thingXlat);
                     continue;
                 }
             }
         }
     }
 
-    public void SpawnThing(int tilex, int tiley, string className)
+    public void SpawnThing(int tilex, int tiley, string className) =>
+        SpawnThing(tilex, tiley, new MapActorTranslation { Class = className });
+
+    public void SpawnThing(int tilex, int tiley, MapActorTranslation thing)
     {
+        // MinSkill gates enemy availability by difficulty (Program.WL_GAME.cs's old
+        // ScanInfoPlane checked `gamestate.difficulty < difficultytypes.gd_medium/gd_hard`
+        // per tile-number range); always 0 for decorations/pickups, so this is a no-op there.
+        if (thing.MinSkill > _difficulty)
+            return;
+
         var actorMetaData = assetManager.Value.GetActorMetadata();
 
-        if (!actorMetaData.Actors.TryGetValue(className, out var actor))
+        if (!actorMetaData.Actors.TryGetValue(thing.Class, out var actor))
             return;
-        var builtActor = actorMetaData.CreateActor(className, actor); // TODO: Should this just create objects?
+        var builtActor = actorMetaData.CreateActor(thing.Class, actor); // TODO: Should this just create objects?
         if (builtActor == null)
             return;
 
         builtActor.SetPosition(tilex, tiley);
+
+        // SpawnNewObj (Program.WL_STATE.cs) always set areanumber from the spawn tile for
+        // every actor, not just ones on an ambush tile -- without this, AreaNumber sits at
+        // its byte default (0, a real area index, not an "unset" sentinel) until the actor
+        // first moves through TryWalk, which recomputes it correctly. Until then, anything
+        // gated on AreaNumber (SightPlayer's areabyplayer connectivity check, T_Shoot/
+        // CheckSight's area check) reads the wrong area, e.g. a stationary/ambushed actor
+        // that never patrols would never notice the player if area 0 isn't connected.
+        builtActor.AreaNumber = (byte)(MAPSPOT(tilex, tiley, 0) - MapDataConstants.AREATILE);
+
+        // Angles: 0=east, 90=north, 180=west, 270=south (Program.WL_GAME.cs's
+        // `(objdirtypes)(dir * 2)`, dir 0..3 over east/north/west/south).
+        builtActor.Dir = (thing.Angles / 90) switch
+        {
+            1 => objdirtypes.north,
+            2 => objdirtypes.west,
+            3 => objdirtypes.south,
+            _ => objdirtypes.east,
+        };
+
+        // Patrol selects the initial resolved state (mirrors SpawnStand vs SpawnPatrol):
+        // "Path" for patrolling grunts, otherwise whatever CreateActor already set ("Spawn").
+        if (thing.Patrol != 0 && builtActor.ResolvedStates.TryGetValue("Path", out var pathState))
+        {
+            builtActor.CurrentState = pathState;
+            builtActor.TicCount = pathState.TicTime;
+            builtActor.Distance = (int)MapConstants.TILEGLOBAL;
+        }
+
+        var isBoss = BossActorNames.Contains(thing.Class);
+        var isGhost = GhostActorNames.Contains(thing.Class);
+
+        if (isGhost)
+        {
+            builtActor.Speed = ReadIntProperty(builtActor, "speed", Program.SPDDOG);
+            builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
+        }
+        else if (isBoss || builtActor.Properties.ContainsKey("health") || builtActor.Properties.Keys.Any(k => k.StartsWith("health.", StringComparison.Ordinal)))
+        {
+            // A grunt or boss enemy (has scaled health), as opposed to a plain decoration/pickup.
+            builtActor.Hitpoints = GetScaledHealth(builtActor);
+            builtActor.Speed = ReadIntProperty(builtActor, "speed", Program.SPDPATROL);
+            builtActor.RuntimeFlags |= objflags.FL_SHOOTABLE;
+
+            if (isBoss)
+            {
+                builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
+            }
+            else
+            {
+                // Grunts only ambush if placed directly on an ambush floor tile (SpawnStand
+                // in Program.WL_ACT2.cs), unlike bosses which are always ambush-ready.
+                var floorTile = MAPSPOT(tilex, tiley, 0);
+                if (floorTile == MapDataConstants.AMBUSHTILE)
+                {
+                    if (VALIDAREA(MAPSPOT(tilex + 1, tiley, 0)))
+                        floorTile = MAPSPOT(tilex + 1, tiley, 0);
+                    if (VALIDAREA(MAPSPOT(tilex, tiley - 1, 0)))
+                        floorTile = MAPSPOT(tilex, tiley - 1, 0);
+                    if (VALIDAREA(MAPSPOT(tilex, tiley + 1, 0)))
+                        floorTile = MAPSPOT(tilex, tiley + 1, 0);
+                    if (VALIDAREA(MAPSPOT(tilex - 1, tiley, 0)))
+                        floorTile = MAPSPOT(tilex - 1, tiley, 0);
+
+                    SetMapSpot(tilex, tiley, 0, (ushort)floorTile);
+                    builtActor.AreaNumber = (byte)(floorTile - MapDataConstants.AREATILE);
+
+                    builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
+                }
+            }
+        }
 
         //builtActor.flags = 0;
         if (builtActor.Flags.Any(f => f.Equals("COUNTITEM", StringComparison.OrdinalIgnoreCase)))
@@ -142,6 +242,57 @@ internal class MapManager
         //    newstatobj.flags = objflags.FL_BONUS;
         //}
         _actors.AddLast(builtActor);
+    }
+
+    private static int ReadIntProperty(Entities.Actors.Actor actor, string key, int fallback) =>
+        actor.Properties.TryGetValue(key, out var value) ? Convert.ToInt32(value) : fallback;
+
+    // Runtime enemy-to-enemy morph (A_HitlerMorph, Program.EnemyAI.cs): spawns a new enemy
+    // already in its Chase state at the dying source actor's exact position/facing, rather
+    // than going through the tile/mapdefs-driven SpawnThing path.
+    internal Entities.Actors.Actor? SpawnMorphedEnemy(string className, Entities.Actors.Actor source)
+    {
+        var actorMetaData = assetManager.Value.GetActorMetadata();
+        if (!actorMetaData.Actors.TryGetValue(className, out var actor))
+            return null;
+
+        var builtActor = actorMetaData.CreateActor(className, actor);
+        if (builtActor == null)
+            return null;
+
+        builtActor.SetPosition(source.TileX, source.TileY);
+        builtActor.X = source.X;
+        builtActor.Y = source.Y;
+        builtActor.Distance = source.Distance;
+        builtActor.Dir = source.Dir;
+        builtActor.AreaNumber = source.AreaNumber;
+        // Hitler stuck-with-nodir fix (Program.WL_ACT2.cs's A_HitlerMorph): the morphed
+        // actor must remain markable even if the dying source had FL_NONMARK set.
+        builtActor.RuntimeFlags = (source.RuntimeFlags & ~objflags.FL_NONMARK) | objflags.FL_SHOOTABLE;
+        builtActor.Hitpoints = GetScaledHealth(builtActor);
+
+        if (builtActor.ResolvedStates.TryGetValue("Chase", out var chaseState))
+        {
+            builtActor.CurrentState = chaseState;
+            builtActor.TicCount = chaseState.TicTime;
+        }
+
+        _actors.AddLast(builtActor);
+        return builtActor;
+    }
+
+    private static readonly string[] DifficultyHealthKeys = ["health.baby", "health.easy", "health.normal", "health.hard"];
+
+    // Difficulty-scaled health: "health.baby"/"health.easy"/"health.normal"/"health.hard" for
+    // enemies whose hitpoints vary by skill (Program.WL_ACT2.cs's starthitpoints table), or a
+    // flat "health" for the rest. _difficulty is difficultytypes' ordinal (0=baby..3=hard).
+    private short GetScaledHealth(Entities.Actors.Actor actor)
+    {
+        var key = DifficultyHealthKeys[Math.Clamp(_difficulty, 0, 3)];
+        if (actor.Properties.TryGetValue(key, out var scaled))
+            return (short)Convert.ToInt32(scaled);
+
+        return actor.Properties.TryGetValue("health", out var flat) ? (short)Convert.ToInt32(flat) : (short)0;
     }
 
     internal static bool VALIDAREA(int x) => (x) >= MapDataConstants.AREATILE && (x) < (MapDataConstants.AREATILE + MapDataConstants.NUMAREAS);

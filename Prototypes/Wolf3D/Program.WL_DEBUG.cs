@@ -102,7 +102,7 @@ internal partial class Program
         if (_inputManager.IsKeyDown(ScanCodes.sc_H))             // H = hurt self
         {
             _inputManager.ClearKeysDown();
-            TakeDamage(16, null);
+            TakeDamage(16, (objstruct)null!);
         }
         else if (_inputManager.IsKeyDown(ScanCodes.sc_I))        // I = item cheat
         {

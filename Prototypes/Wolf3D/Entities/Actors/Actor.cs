@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using Wolf3D;
 using Wolf3D.Assets;
+using Wolf3D.Constants;
 
 namespace Wolf3D.Entities.Actors;
 
@@ -30,9 +31,41 @@ internal record Actor : Thinker
     public bool Hidden { get; internal set; }
     public byte AreaNumber { get; internal set; }
 
+    // Sub-tile fixed-point world position and its containing tile, mirroring objstruct's
+    // x/y and tilex/tiley (Program.WL_DEF.cs) -- kept as separate mutable fields because
+    // legacy movement code (MoveObj/TryWalk) updates TileX/TileY the instant a move toward
+    // a new tile begins, while X/Y trail behind and approach the new tile center gradually.
+    public int X { get; internal set; }
+    public int Y { get; internal set; }
+    public byte TileX { get; internal set; }
+    public byte TileY { get; internal set; }
+
+    // Runtime combat/AI bookkeeping (FL_SHOOTABLE, FL_AMBUSH, FL_ATTACKMODE, etc. --
+    // Program.WL_DEF.cs's objflags), distinct from the static, YAML-declared `Flags` above.
+    public Program.objflags RuntimeFlags { get; internal set; }
+
+    // Screen-space hit-testing data, recomputed every frame in Program.WL_DRAW.cs's
+    // DrawScaleds (mirrors objstruct's viewx/transx, set there by TransformActor) so
+    // Program.WL_AGENT.cs's GunAttack/KnifeAttack can find the closest shootable actor
+    // under the crosshair regardless of which actor system it belongs to.
+    public short ViewX { get; internal set; }
+    public int TransX { get; internal set; } = int.MaxValue;
+    public ushort ViewHeight { get; internal set; }
+
     internal void SetPosition(int tilex, int tiley)
     {
         Position = new Vector2(tilex, tiley);
+        TileX = (byte)tilex;
+        TileY = (byte)tiley;
+        X = (int)((tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+        Y = (int)((tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
+    }
+
+    // Keeps the tile-snapped Position (used by the static-object render/visibility path)
+    // in sync whenever AI movement code updates the fixed-point X/Y or TileX/TileY directly.
+    internal void SyncPosition()
+    {
+        Position = new Vector2(TileX, TileY);
     }
 
     /// <summary>

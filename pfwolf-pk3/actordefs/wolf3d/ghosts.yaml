@@ -27,6 +27,7 @@ Blinky:
         tics-per-frame: 10
         think: T_Ghosts
   properties:
+    "speed": 1500
     "seesound": "ghost/sight"
     "deathsound": "ghost/death"
 
@@ -42,6 +43,7 @@ Inky:
         tics-per-frame: 10
         think: T_Ghosts
   properties:
+    "speed": 1500
     "seesound": "ghost/sight"
     "deathsound": "ghost/death"
 
@@ -57,6 +59,7 @@ Pinky:
         tics-per-frame: 10
         think: T_Ghosts
   properties:
+    "speed": 1500
     "seesound": "ghost/sight"
     "deathsound": "ghost/death"
 
@@ -72,5 +75,6 @@ Clyde:
         tics-per-frame: 10
         think: T_Ghosts
   properties:
+    "speed": 1500
     "seesound": "ghost/sight"
     "deathsound": "ghost/death"

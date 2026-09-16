@@ -1171,6 +1171,55 @@ internal partial class Program
         ob.viewheight = (ushort)(heightnumerator / (nx >> 8));
     }
 
+    // New-actor-system counterpart of TransformActor(objstruct), computing the same
+    // screen-space hit-testing/scale data (ViewX/TransX/ViewHeight) from the fixed-point
+    // X/Y that Program.EnemyAI.cs's movement code maintains, so enemies driven by the new
+    // Actor type can be both rendered and shot at exactly like legacy objstruct actors.
+    internal static void TransformActor(Entities.Actors.Actor ob)
+    {
+        var gx = ob.X - viewx;
+        var gy = ob.Y - viewy;
+
+        var gxt = MathUtils.FixedMul(gx, viewcos);
+        var gyt = MathUtils.FixedMul(gy, viewsin);
+        var nx = gxt - gyt - ACTORSIZE;
+
+        gxt = MathUtils.FixedMul(gx, viewsin);
+        gyt = MathUtils.FixedMul(gy, viewcos);
+        var ny = gyt + gxt;
+
+        ob.TransX = nx;
+
+        if (nx < MINDIST)
+        {
+            ob.ViewHeight = 0;
+            return;
+        }
+
+        ob.ViewX = (short)(centerx + ny * scale / nx);
+        ob.ViewHeight = (ushort)(heightnumerator / (nx >> 8));
+    }
+
+    // Rotation-aware sprite variants only exist for the "Spawn"/"Path"/"Chase" state groups
+    // in the actordefs authored so far (8-directional walk-cycle sprites); "Attack"/"Pain"/
+    // "Death"/"DeathCam" are single front-facing views, matching legacy statestruct.rotate
+    // being false for those groups. There's no per-frame "rotate" flag in the new schema
+    // (the engine is meant to infer it from how many sprite variants actually exist), but
+    // no such lookup exists yet -- this state-group name check is a stand-in until it does.
+    internal static bool IsDirectionalState(string? stateName) => stateName is "Spawn" or "Path" or "Chase";
+
+    internal static int CalcRotate(Entities.Actors.Actor ob)
+    {
+        var viewangle = (int)(player.angle + (centerx - ob.ViewX) / (8 * viewwidth / 320.0));
+        var angle = (viewangle - 180) - dirangle[(byte)ob.Dir];
+
+        angle += ANGLES / 16;
+        while (angle >= ANGLES) angle -= ANGLES;
+        while (angle < 0) angle += ANGLES;
+
+        return (angle / (ANGLES / 8)) + 1;
+    }
+
     internal static void DrawScaleds()
     {
         int i, least, numvisable, height;
@@ -1204,6 +1253,52 @@ internal partial class Program
             //statobj_t statptr_val = statobjlist[statptr];
             if (actor.CurrentState == null)
                 continue;
+
+            // Enemies (Program.EnemyAI.cs) move between tiles and need 8-way rotation, so
+            // they're transformed like legacy "active objects" (TransformActor/CalcRotate,
+            // fixed-point X/Y, checked against all 9 surrounding spotvis tiles) instead of
+            // the tile-snapped, always-front-facing path decorations/pickups use below.
+            if (actor.ResolvedStates.ContainsKey("Chase"))
+            {
+                var atx = actor.TileX;
+                var aty = actor.TileY;
+                if (!(_mapManager.spotvis[atx, aty]
+                    || _mapManager.spotvis[atx - 1, aty]
+                    || _mapManager.spotvis[atx + 1, aty]
+                    || _mapManager.spotvis[atx, aty - 1]
+                    || _mapManager.spotvis[atx - 1, aty - 1]
+                    || _mapManager.spotvis[atx + 1, aty - 1]
+                    || _mapManager.spotvis[atx, aty + 1]
+                    || _mapManager.spotvis[atx - 1, aty + 1]
+                    || _mapManager.spotvis[atx + 1, aty + 1]))
+                {
+                    actor.RuntimeFlags &= ~objflags.FL_VISABLE;
+                    continue;
+                }
+
+                TransformActor(actor);
+                if (actor.ViewHeight == 0)
+                {
+                    actor.RuntimeFlags &= ~objflags.FL_VISABLE;
+                    continue;
+                }
+
+                actor.RuntimeFlags |= objflags.FL_VISABLE;
+
+                var rotationDigit = IsDirectionalState(actor.CurrentState.StateName) ? CalcRotate(actor) : 0;
+                visptr_val.shapenum = $"{actor.CurrentState.Sprite}{actor.CurrentState.FrameLetter}{rotationDigit}";
+                visptr_val.viewx = actor.ViewX;
+                visptr_val.viewheight = (short)actor.ViewHeight;
+
+                if (visptr < MAXVISABLE - 1)
+                {
+                    visptr_val.tilex = atx;
+                    visptr_val.tiley = aty;
+                    vislist[visptr] = visptr_val;
+                    visptr++;
+                }
+                continue;
+            }
 
             visptr_val.shapenum = actor.CurrentState.GetShapeName(objdirtypes.nodir);
 

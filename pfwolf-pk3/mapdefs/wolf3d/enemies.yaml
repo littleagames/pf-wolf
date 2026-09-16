@@ -1,249 +1,184 @@
-actors:
-    '108':
-        Actor: Guard
-        State: Spawn
-        Direction: East
-        Skills:
-            - sk_baby
-            - sk_easy
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '109':
-        Actor: Guard
-        State: Spawn
-        Direction: North
-        Skills:
-            - sk_baby
-            - sk_easy
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '110':
-        Actor: Guard
-        State: Spawn
-        Direction: West
-        Skills:
-            - sk_baby
-            - sk_easy
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '111':
-        Actor: Guard
-        State: Spawn
-        Direction: South
-        Skills:
-            - sk_baby
-            - sk_easy
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '112':
-        Actor: Guard
-        State: Path
-        Direction: East
-        Skills:
-            - sk_baby
-            - sk_easy
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '113':
-        Actor: Guard
-        State: Path
-        Direction: North
-        Skills:
-            - sk_baby
-            - sk_easy
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '114':
-        Actor: Guard
-        State: Path
-        Direction: West
-        Skills:
-            - sk_baby
-            - sk_easy
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '115':
-        Actor: Guard
-        State: Path
-        Direction: South
-        Skills:
-            - sk_baby
-            - sk_easy
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '144':
-        Actor: Guard
-        State: Spawn
-        Direction: East
-        Skills:
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '145':
-        Actor: Guard
-        State: Spawn
-        Direction: North
-        Skills:
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '146':
-        Actor: Guard
-        State: Spawn
-        Direction: West
-        Skills:
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '147':
-        Actor: Guard
-        State: Spawn
-        Direction: South
-        Skills:
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '148':
-        Actor: Guard
-        State: Path
-        Direction: East
-        Skills:
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '149':
-        Actor: Guard
-        State: Path
-        Direction: North
-        Skills:
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '150':
-        Actor: Guard
-        State: Path
-        Direction: West
-        Skills:
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '151':
-        Actor: Guard
-        State: Path
-        Direction: South
-        Skills:
-            - sk_normal
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '180':
-        Actor: Guard
-        State: Spawn
-        Direction: East
-        Skills:
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '181':
-        Actor: Guard
-        State: Spawn
-        Direction: North
-        Skills:
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '182':
-        Actor: Guard
-        State: Spawn
-        Direction: West
-        Skills:
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '183':
-        Actor: Guard
-        State: Spawn
-        Direction: South
-        Skills:
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '184':
-        Actor: Guard
-        State: Path
-        Direction: East
-        Skills:
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '185':
-        Actor: Guard
-        State: Path
-        Direction: North
-        Skills:
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '186':
-        Actor: Guard
-        State: Path
-        Direction: West
-        Skills:
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
-    '187':
-        Actor: Guard
-        State: Path
-        Direction: South
-        Skills:
-            - sk_hard
-        Flags:
-            - FL_BLOCKING
-            - FL_SHOOTABLE
+# Enemy map-object numbers, converted from the ScanInfoPlane switch in
+# Program.WL_GAME.cs to the same things:/class:/angles:/patrol:/min-skill: schema
+# MapActorTranslation actually deserializes (matching decorations.yaml -- this file
+# previously used a different actors:/Actor:/State:/Direction:/Skills:/Flags: shape
+# that the loader never consumed, so enemies never actually spawned through it).
+#
+# angles: 0=east, 90=north, 180=west, 270=south (dir index * 90, matching
+# `(objdirtypes)(dir * 2)` for dir 0..3 over east/north/west/south).
+# patrol: 0 spawns into the actor's "Spawn" (stand-still) state, 1 into "Path".
+# min-skill: difficultytypes' ordinal (0=baby, 1=easy, 2=medium, 3=hard) -- each
+# grunt has three tile numbers per direction/state, unlocking at baby, medium, and
+# hard, exactly mirroring ScanInfoPlane's "if difficulty < gd_medium/gd_hard: skip"
+# checks before falling through to the base tile's spawn call.
+#
+# Bosses and ghosts are single, direction-less tiles (angles always 0, patrol
+# always 0); bosses are always ambush-ready regardless of angles/patrol/min-skill
+# (SpawnBoss et al. in Program.WL_ACT2.cs), and ghosts have no skill gating in the
+# original switch at all.
+things:
+  # ---------------------------------------------------------------------
+  # Guard (actordefs/wolf3d/guards.yaml)
+  # ---------------------------------------------------------------------
+  108: { class: Guard, angles: 0,   patrol: 0, min-skill: 0 }
+  109: { class: Guard, angles: 90,  patrol: 0, min-skill: 0 }
+  110: { class: Guard, angles: 180, patrol: 0, min-skill: 0 }
+  111: { class: Guard, angles: 270, patrol: 0, min-skill: 0 }
+  112: { class: Guard, angles: 0,   patrol: 1, min-skill: 0 }
+  113: { class: Guard, angles: 90,  patrol: 1, min-skill: 0 }
+  114: { class: Guard, angles: 180, patrol: 1, min-skill: 0 }
+  115: { class: Guard, angles: 270, patrol: 1, min-skill: 0 }
+  144: { class: Guard, angles: 0,   patrol: 0, min-skill: 2 }
+  145: { class: Guard, angles: 90,  patrol: 0, min-skill: 2 }
+  146: { class: Guard, angles: 180, patrol: 0, min-skill: 2 }
+  147: { class: Guard, angles: 270, patrol: 0, min-skill: 2 }
+  148: { class: Guard, angles: 0,   patrol: 1, min-skill: 2 }
+  149: { class: Guard, angles: 90,  patrol: 1, min-skill: 2 }
+  150: { class: Guard, angles: 180, patrol: 1, min-skill: 2 }
+  151: { class: Guard, angles: 270, patrol: 1, min-skill: 2 }
+  180: { class: Guard, angles: 0,   patrol: 0, min-skill: 3 }
+  181: { class: Guard, angles: 90,  patrol: 0, min-skill: 3 }
+  182: { class: Guard, angles: 180, patrol: 0, min-skill: 3 }
+  183: { class: Guard, angles: 270, patrol: 0, min-skill: 3 }
+  184: { class: Guard, angles: 0,   patrol: 1, min-skill: 3 }
+  185: { class: Guard, angles: 90,  patrol: 1, min-skill: 3 }
+  186: { class: Guard, angles: 180, patrol: 1, min-skill: 3 }
+  187: { class: Guard, angles: 270, patrol: 1, min-skill: 3 }
+
+  # Pre-placed dead-guard corpse decoration (SpawnDeadGuard).
+  124: { class: DeadGuard, angles: 0, patrol: 0, min-skill: 0 }
+
+  # ---------------------------------------------------------------------
+  # Officer (actordefs/wolf3d/guards.yaml)
+  # ---------------------------------------------------------------------
+  116: { class: Officer, angles: 0,   patrol: 0, min-skill: 0 }
+  117: { class: Officer, angles: 90,  patrol: 0, min-skill: 0 }
+  118: { class: Officer, angles: 180, patrol: 0, min-skill: 0 }
+  119: { class: Officer, angles: 270, patrol: 0, min-skill: 0 }
+  120: { class: Officer, angles: 0,   patrol: 1, min-skill: 0 }
+  121: { class: Officer, angles: 90,  patrol: 1, min-skill: 0 }
+  122: { class: Officer, angles: 180, patrol: 1, min-skill: 0 }
+  123: { class: Officer, angles: 270, patrol: 1, min-skill: 0 }
+  152: { class: Officer, angles: 0,   patrol: 0, min-skill: 2 }
+  153: { class: Officer, angles: 90,  patrol: 0, min-skill: 2 }
+  154: { class: Officer, angles: 180, patrol: 0, min-skill: 2 }
+  155: { class: Officer, angles: 270, patrol: 0, min-skill: 2 }
+  156: { class: Officer, angles: 0,   patrol: 1, min-skill: 2 }
+  157: { class: Officer, angles: 90,  patrol: 1, min-skill: 2 }
+  158: { class: Officer, angles: 180, patrol: 1, min-skill: 2 }
+  159: { class: Officer, angles: 270, patrol: 1, min-skill: 2 }
+  188: { class: Officer, angles: 0,   patrol: 0, min-skill: 3 }
+  189: { class: Officer, angles: 90,  patrol: 0, min-skill: 3 }
+  190: { class: Officer, angles: 180, patrol: 0, min-skill: 3 }
+  191: { class: Officer, angles: 270, patrol: 0, min-skill: 3 }
+  192: { class: Officer, angles: 0,   patrol: 1, min-skill: 3 }
+  193: { class: Officer, angles: 90,  patrol: 1, min-skill: 3 }
+  194: { class: Officer, angles: 180, patrol: 1, min-skill: 3 }
+  195: { class: Officer, angles: 270, patrol: 1, min-skill: 3 }
+
+  # ---------------------------------------------------------------------
+  # SS (actordefs/wolf3d/guards.yaml)
+  # ---------------------------------------------------------------------
+  126: { class: SS, angles: 0,   patrol: 0, min-skill: 0 }
+  127: { class: SS, angles: 90,  patrol: 0, min-skill: 0 }
+  128: { class: SS, angles: 180, patrol: 0, min-skill: 0 }
+  129: { class: SS, angles: 270, patrol: 0, min-skill: 0 }
+  130: { class: SS, angles: 0,   patrol: 1, min-skill: 0 }
+  131: { class: SS, angles: 90,  patrol: 1, min-skill: 0 }
+  132: { class: SS, angles: 180, patrol: 1, min-skill: 0 }
+  133: { class: SS, angles: 270, patrol: 1, min-skill: 0 }
+  162: { class: SS, angles: 0,   patrol: 0, min-skill: 2 }
+  163: { class: SS, angles: 90,  patrol: 0, min-skill: 2 }
+  164: { class: SS, angles: 180, patrol: 0, min-skill: 2 }
+  165: { class: SS, angles: 270, patrol: 0, min-skill: 2 }
+  166: { class: SS, angles: 0,   patrol: 1, min-skill: 2 }
+  167: { class: SS, angles: 90,  patrol: 1, min-skill: 2 }
+  168: { class: SS, angles: 180, patrol: 1, min-skill: 2 }
+  169: { class: SS, angles: 270, patrol: 1, min-skill: 2 }
+  198: { class: SS, angles: 0,   patrol: 0, min-skill: 3 }
+  199: { class: SS, angles: 90,  patrol: 0, min-skill: 3 }
+  200: { class: SS, angles: 180, patrol: 0, min-skill: 3 }
+  201: { class: SS, angles: 270, patrol: 0, min-skill: 3 }
+  202: { class: SS, angles: 0,   patrol: 1, min-skill: 3 }
+  203: { class: SS, angles: 90,  patrol: 1, min-skill: 3 }
+  204: { class: SS, angles: 180, patrol: 1, min-skill: 3 }
+  205: { class: SS, angles: 270, patrol: 1, min-skill: 3 }
+
+  # ---------------------------------------------------------------------
+  # Dog (actordefs/wolf3d/guards.yaml)
+  # ---------------------------------------------------------------------
+  134: { class: Dog, angles: 0,   patrol: 0, min-skill: 0 }
+  135: { class: Dog, angles: 90,  patrol: 0, min-skill: 0 }
+  136: { class: Dog, angles: 180, patrol: 0, min-skill: 0 }
+  137: { class: Dog, angles: 270, patrol: 0, min-skill: 0 }
+  138: { class: Dog, angles: 0,   patrol: 1, min-skill: 0 }
+  139: { class: Dog, angles: 90,  patrol: 1, min-skill: 0 }
+  140: { class: Dog, angles: 180, patrol: 1, min-skill: 0 }
+  141: { class: Dog, angles: 270, patrol: 1, min-skill: 0 }
+  170: { class: Dog, angles: 0,   patrol: 0, min-skill: 2 }
+  171: { class: Dog, angles: 90,  patrol: 0, min-skill: 2 }
+  172: { class: Dog, angles: 180, patrol: 0, min-skill: 2 }
+  173: { class: Dog, angles: 270, patrol: 0, min-skill: 2 }
+  174: { class: Dog, angles: 0,   patrol: 1, min-skill: 2 }
+  175: { class: Dog, angles: 90,  patrol: 1, min-skill: 2 }
+  176: { class: Dog, angles: 180, patrol: 1, min-skill: 2 }
+  177: { class: Dog, angles: 270, patrol: 1, min-skill: 2 }
+  206: { class: Dog, angles: 0,   patrol: 0, min-skill: 3 }
+  207: { class: Dog, angles: 90,  patrol: 0, min-skill: 3 }
+  208: { class: Dog, angles: 180, patrol: 0, min-skill: 3 }
+  209: { class: Dog, angles: 270, patrol: 0, min-skill: 3 }
+  210: { class: Dog, angles: 0,   patrol: 1, min-skill: 3 }
+  211: { class: Dog, angles: 90,  patrol: 1, min-skill: 3 }
+  212: { class: Dog, angles: 180, patrol: 1, min-skill: 3 }
+  213: { class: Dog, angles: 270, patrol: 1, min-skill: 3 }
+
+  # ---------------------------------------------------------------------
+  # Mutant (actordefs/wolf3d/guards.yaml) -- 18-tile step between skill
+  # unlocks instead of 36, matching ScanInfoPlane's mutant cases exactly.
+  # ---------------------------------------------------------------------
+  216: { class: Mutant, angles: 0,   patrol: 0, min-skill: 0 }
+  217: { class: Mutant, angles: 90,  patrol: 0, min-skill: 0 }
+  218: { class: Mutant, angles: 180, patrol: 0, min-skill: 0 }
+  219: { class: Mutant, angles: 270, patrol: 0, min-skill: 0 }
+  220: { class: Mutant, angles: 0,   patrol: 1, min-skill: 0 }
+  221: { class: Mutant, angles: 90,  patrol: 1, min-skill: 0 }
+  222: { class: Mutant, angles: 180, patrol: 1, min-skill: 0 }
+  223: { class: Mutant, angles: 270, patrol: 1, min-skill: 0 }
+  234: { class: Mutant, angles: 0,   patrol: 0, min-skill: 2 }
+  235: { class: Mutant, angles: 90,  patrol: 0, min-skill: 2 }
+  236: { class: Mutant, angles: 180, patrol: 0, min-skill: 2 }
+  237: { class: Mutant, angles: 270, patrol: 0, min-skill: 2 }
+  238: { class: Mutant, angles: 0,   patrol: 1, min-skill: 2 }
+  239: { class: Mutant, angles: 90,  patrol: 1, min-skill: 2 }
+  240: { class: Mutant, angles: 180, patrol: 1, min-skill: 2 }
+  241: { class: Mutant, angles: 270, patrol: 1, min-skill: 2 }
+  252: { class: Mutant, angles: 0,   patrol: 0, min-skill: 3 }
+  253: { class: Mutant, angles: 90,  patrol: 0, min-skill: 3 }
+  254: { class: Mutant, angles: 180, patrol: 0, min-skill: 3 }
+  255: { class: Mutant, angles: 270, patrol: 0, min-skill: 3 }
+  256: { class: Mutant, angles: 0,   patrol: 1, min-skill: 3 }
+  257: { class: Mutant, angles: 90,  patrol: 1, min-skill: 3 }
+  258: { class: Mutant, angles: 180, patrol: 1, min-skill: 3 }
+  259: { class: Mutant, angles: 270, patrol: 1, min-skill: 3 }
+
+  # ---------------------------------------------------------------------
+  # Bosses (actordefs/wolf3d/bosses.yaml) -- single tile each, no
+  # direction/skill variation. Always ambush-ready regardless of
+  # angles/patrol/min-skill (handled in MapManager.SpawnThing by name).
+  # ---------------------------------------------------------------------
+  214: { class: Hans,        angles: 0, patrol: 0, min-skill: 0 }
+  197: { class: Gretel,      angles: 0, patrol: 0, min-skill: 0 }
+  215: { class: Gift,        angles: 0, patrol: 0, min-skill: 0 }
+  179: { class: Fat,         angles: 0, patrol: 0, min-skill: 0 }
+  196: { class: Schabbs,     angles: 0, patrol: 0, min-skill: 0 }
+  160: { class: FakeHitler,  angles: 0, patrol: 0, min-skill: 0 }
+  178: { class: MechaHitler, angles: 0, patrol: 0, min-skill: 0 }
+
+  # ---------------------------------------------------------------------
+  # Ghosts (actordefs/wolf3d/ghosts.yaml) -- no skill gating in the
+  # original switch at all.
+  # ---------------------------------------------------------------------
+  224: { class: Blinky, angles: 0, patrol: 0, min-skill: 0 }
+  225: { class: Clyde,  angles: 0, patrol: 0, min-skill: 0 }
+  226: { class: Pinky,  angles: 0, patrol: 0, min-skill: 0 }
+  227: { class: Inky,   angles: 0, patrol: 0, min-skill: 0 }

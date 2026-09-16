@@ -722,6 +722,7 @@ internal partial class Program
     //    viewx,viewy,viewsin,viewcos);
     internal static void PlaySoundLocActor(string s, objstruct ob) => _audioManager.Play(s);//PlaySoundLocGlobal(s, ob.x, ob.y,
      //   viewx, viewy, viewsin, viewcos);
+    internal static void PlaySoundLocActor(string s, Entities.Actors.Actor ob) => _audioManager.Play(s);
 
 
     /*

@@ -436,6 +436,27 @@ internal partial class Program
     {
         ActorActionRegistry.Register("A_GiveExtraMan", (Entities.Actors.Actor _) => GiveExtraMan());
         ActorActionRegistry.Register("A_GiveInventory", GiveInventoryAction);
+
+        // Enemy AI (Program.EnemyAI.cs), ported from Program.WL_STATE.cs / Program.WL_ACT2.cs.
+        ActorActionRegistry.Register("T_Stand", T_Stand);
+        ActorActionRegistry.Register("T_Path", T_Path);
+        ActorActionRegistry.Register("T_Chase", T_Chase);
+        ActorActionRegistry.Register("T_DogChase", T_DogChase);
+        ActorActionRegistry.Register("T_Bite", T_Bite);
+        ActorActionRegistry.Register("T_Ghosts", T_Ghosts);
+        ActorActionRegistry.Register("T_Schabb", T_Schabb);
+        ActorActionRegistry.Register("T_SchabbThrow", T_SchabbThrow);
+        ActorActionRegistry.Register("T_Gift", T_Gift);
+        ActorActionRegistry.Register("T_GiftThrow", T_GiftThrow);
+        ActorActionRegistry.Register("T_Fat", T_Fat);
+        ActorActionRegistry.Register("T_Fake", T_Fake);
+        ActorActionRegistry.Register("T_FakeFire", T_FakeFire);
+        ActorActionRegistry.Register("T_Shoot", T_Shoot);
+        ActorActionRegistry.Register("A_DeathScream", A_DeathScream);
+        ActorActionRegistry.Register("A_MechaSound", A_MechaSound);
+        ActorActionRegistry.Register("A_Slurpie", A_Slurpie);
+        ActorActionRegistry.Register("A_HitlerMorph", A_HitlerMorph);
+        ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
     }
 
     private static void GiveInventoryAction(Entities.Actors.Actor actor, string[] args)
@@ -615,7 +636,17 @@ internal partial class Program
     internal static void TakeDamage(int points, objstruct attacker)
     {
         LastAttacker = attacker;
+        ApplyDamageToPlayer(points);
+    }
 
+    // Enemy-side overload for the new Entities.Actors.Actor type (Program.EnemyAI.cs).
+    // LastAttacker stays objstruct-typed (Program.WL_GAME.cs's damage-flash direction and
+    // Program.WL_AGENT.cs's needleobj check both key off it) -- neither applies to attacks
+    // from the new actor system yet, so it's simply left unset here rather than widened.
+    internal static void TakeDamage(int points, Entities.Actors.Actor attacker) => ApplyDamageToPlayer(points);
+
+    private static void ApplyDamageToPlayer(int points)
+    {
         if (gamestate.victoryflag)
             return;
         if (gamestate.difficulty == difficultytypes.gd_baby)
@@ -972,46 +1003,43 @@ internal partial class Program
         }
     }
 
-    internal static void KnifeAttack(objstruct ob)
+    // The player's targets are now exclusively the new Entities.Actors.Actor enemies
+    // (Program.EnemyAI.cs) -- nothing left in objlist2 (player, projectiles, the
+    // BJ-victory actor) is ever FL_SHOOTABLE now that enemies are gone from it, so
+    // GunAttack/KnifeAttack no longer need to scan it at all.
+    private static List<Entities.Actors.Actor> FindShootCandidates()
     {
-        objstruct? closest;
-        int dist;
+        var candidates = new List<Entities.Actors.Actor>();
 
-        _audioManager.Play("weapon/knife/attack");
-        // actually fire
-        dist = 0x7fffffff;
-        closest = null;
-        foreach (var actor in objlist2)
+        foreach (var actor in _mapManager.GetActors())
         {
-            if (actor == null) continue;
-
-            if (actor.flags.HasFlag(objflags.FL_SHOOTABLE) && actor.flags.HasFlag(objflags.FL_VISABLE)
-                && Math.Abs(actor.viewx - centerx) < shootdelta)
+            if (actor == null || !actor.ResolvedStates.ContainsKey("Chase")) continue;
+            if (actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) && actor.RuntimeFlags.HasFlag(objflags.FL_VISABLE)
+                && Math.Abs(actor.ViewX - centerx) < shootdelta)
             {
-                if (actor.transx < dist)
-                {
-                    dist = actor.transx;
-                    closest = actor;
-                }
+                candidates.Add(actor);
             }
         }
 
-        if (closest == null || dist > 0x18000L)
-        {
-            // missed
-            return;
-        }
+        candidates.Sort((a, b) => a.TransX.CompareTo(b.TransX));
+        return candidates;
+    }
 
-        // hit something
+    internal static void KnifeAttack(objstruct ob)
+    {
+        _audioManager.Play("weapon/knife/attack");
+
+        var closest = FindShootCandidates().FirstOrDefault(c => c.TransX <= 0x18000L);
+        if (closest == null)
+            return; // missed
+
         DamageActor(closest, (uint)(US_RndT() >> 4));
     }
 
     internal static void GunAttack(objstruct ob)
     {
-        objstruct? closest,oldclosest;
         int damage;
         int dx, dy, dist;
-        long viewdist;
 
         switch (gamestate.weapon)
         {
@@ -1029,44 +1057,22 @@ internal partial class Program
         madenoise = true;
 
         //
-        // find potential targets
+        // find the closest potential target, and confirm a clear line to it
+        // (the legacy version of this re-scanned in a loop, but since nothing marks a
+        // failed candidate as excluded, re-scanning always finds the same actor again --
+        // it only ever gives the single closest actor one shot at passing CheckLine)
         //
-        viewdist = 0x7fffffffL;
-        closest = null;
-
-        while (true)
-        {
-            oldclosest = closest;
-
-            foreach (var check in objlist2)
-            {
-                if (check == null) continue;
-                if (check.flags.HasFlag(objflags.FL_SHOOTABLE) && check.flags.HasFlag(objflags.FL_VISABLE)
-                    && Math.Abs(check.viewx - centerx) < shootdelta)
-                {
-                    if (check.transx < viewdist)
-                    {
-                        viewdist = check.transx;
-                        closest = check;
-                    }
-                }
-            }
-
-            if (closest == oldclosest)
-                return;                                         // no more targets, all missed
-
-            //
-            // trace a line from player to enemey
-            //
-            if (CheckLine(closest))
-                break;
-        }
+        var closest = FindShootCandidates().FirstOrDefault();
+        if (closest == null)
+            return; // no targets, missed
+        if (!CheckLine(closest))
+            return;
 
         //
         // hit something
         //
-        dx = Math.Abs(closest.tilex - player.tilex);
-        dy = Math.Abs(closest.tiley - player.tiley);
+        dx = Math.Abs(closest.TileX - player.tilex);
+        dy = Math.Abs(closest.TileY - player.tiley);
         dist = dx > dy ? dx : dy;
         if (dist < 2)
             damage = US_RndT() / 4;

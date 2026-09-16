@@ -511,7 +511,7 @@ Fat:
     "monster.chasespeedmultiplier": 3
     "points": 5000
     "seesound": "fat/sight" # inferred, was "ERLAUBEN"
-    "attacksound": "guard/attack" # T_Shoot falls through to the generic soldier gunfire cue; no dedicated fat/attack sound exists
+    "attacksound": "missile/fire" # T_Shoot's switch cases Fat alongside Gift, both play "MISSILEFIRE" (not the generic soldier gunfire cue)
     "deathsound": "fat/death"
     # No dropitem -- KillActor has no PlaceItemType call for fatobj.
     # Sets gamestate.killx/killy to the player's position on death.
