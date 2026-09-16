@@ -1,5 +1,4 @@
-Cross:  
-  id: 62
+Cross:
   parent: "ScoreItem"
   states:
     Spawn:
@@ -7,10 +6,9 @@ Cross:
         frames: [A]
         tics-per-frame: -1
   properties:
-    - "inventory.amount": 100
-    - "inventory.pickupsound": "treasure/cross/pickup"
+    "inventory.amount": 100
+    "inventory.pickupsound": "treasure/cross/pickup"
 Radio:
-  id: 146
   parent: "Cross"
   states:
     Spawn:
@@ -18,7 +16,6 @@ Radio:
         frames: [A]
         tics-per-frame: -1
 Chalice:
-  id: 63
   parent: "ScoreItem"
   states:
     Spawn:
@@ -26,10 +23,9 @@ Chalice:
         frames: [A]
         tics-per-frame: -1
   properties:
-    - "inventory.amount": 500
-    - "inventory.pickupsound": "treasure/chalice/pickup"
+    "inventory.amount": 500
+    "inventory.pickupsound": "treasure/chalice/pickup"
 Plutonium:
-  id: 147
   parent: "Chalice"
   states:
     Spawn:
@@ -37,7 +33,6 @@ Plutonium:
         frames: [A]
         tics-per-frame: -1
 ChestOfJewels:
-  id: 64
   parent: "ScoreItem"
   states:
     Spawn:
@@ -45,27 +40,26 @@ ChestOfJewels:
         frames: [A]
         tics-per-frame: -1
   properties:
-    - "inventory.amount": 1000
-    - "inventory.pickupsound": "treasure/bible/pickup"
+    "inventory.amount": 1000
+    "inventory.pickupsound": "treasure/bible/pickup"
 ControlPanel:
-  id: 148
   parent: "ChestOfJewels"
   states:
-    - sprite: CPNL
-      frames: [A]
-      tics-per-frame: -1
+    Spawn:
+      - sprite: CPNL
+        frames: [A]
+        tics-per-frame: -1
 Crown:
-  id: 65
   parent: "ScoreItem"
   states:
-    - sprite: CRWN
-      frames: [A]
-      tics-per-frame: -1
+    Spawn:
+      - sprite: CRWN
+        frames: [A]
+        tics-per-frame: -1
   properties:
-    - "inventory.amount": 5000
-    - "inventory.pickupsound": "treasure/crown/pickup"
+    "inventory.amount": 5000
+    "inventory.pickupsound": "treasure/crown/pickup"
 Bomb:
-  id: 149
   parent: "Crown"
   states:
     Spawn:

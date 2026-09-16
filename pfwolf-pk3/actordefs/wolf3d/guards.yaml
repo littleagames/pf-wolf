@@ -1,0 +1,624 @@
+# =============================================================================
+# DRAFT - converted from Program.WL_ACT2.cs and Program.WL_STATE.cs
+#
+# Standard rank-and-file enemies: Guard, Officer, SS, Mutant, Dog. These are
+# the enemies that can be placed on patrol (a "Path" state) as well as
+# standing still ("Spawn"), and are spawned per-tile via mapdefs/wolf3d/
+# enemies.yaml (which picks the Actor, State, facing Direction, and which
+# Skills it appears on). The unique story bosses live in
+# actordefs/wolf3d/bosses.yaml, the Pac-Man-bonus-level ghosts live in
+# actordefs/wolf3d/ghosts.yaml, and the projectile/FX actors live in
+# actordefs/wolf3d/projectiles.yaml.
+#
+# This mirrors the actordefs/wolf3d/{decorations,ammo,weapons}.yaml schema
+# (states: sprite/frames/tics-per-frame/think/action/next-state, plus a flat
+# properties list). No "id" fields are set here because these actors aren't
+# spawned directly by map-object number the way decorations are -- see
+# mapdefs/wolf3d/enemies.yaml for that. Every actor here defines a "Spawn"
+# group (= the original T_Stand/"stand still until noticed" state, required
+# because the engine's CreateActor always initializes CurrentState from the
+# "Spawn" group) and a "Path" group, matching the "State: Spawn" / "State:
+# Path" values already used in mapdefs/wolf3d/enemies.yaml.
+#
+# Judgment calls made during this conversion (please double check):
+#
+# 1. Sounds: PlaySoundLocActor()/_audioManager.Play() calls in the source
+#    still use old raw Wolf3D sound identifiers (e.g. "HALT", "SPION",
+#    "SSFIRE", "NAZIFIRE") that were never renamed to the new path-style
+#    names used everywhere else (sounds/sound-seq.yaml). A few call sites
+#    (A_DeathScream, SS's death sound) *have* already been updated to
+#    path-style names, which is what let me infer the rest by
+#    cross-referencing sounds/sound-seq.yaml's digitized/adlib/pc entries
+#    (e.g. "HALT" is the guard's alert shout -> guard/sight, DSGRDSIT).
+#    These inferred names are marked "# inferred" below -- please verify
+#    against actual Wolf3D sound lore before relying on them.
+# 2. `rotate` in the C# statestruct is 1 for Spawn/Path/Chase (8-directional
+#    sprites) and 0 or 2 for Attack/Pain/Death (single/front-facing sprite).
+#    Not represented here -- the engine determines this from how many
+#    rotation variants exist for a given sprite name, so no flag is needed.
+# 3. Health that's identical across all 4 skill levels is written as a
+#    single `health` property. Mutant's health varies by skill, so it's
+#    broken out as `health.baby` / `health.easy` / `health.normal` /
+#    `health.hard` (Wolf3D's four difficulties, in order) since there's no
+#    established single-property convention for skill-scaled health yet.
+# 4. `monster.chasespeedmultiplier` captures the `ob.speed *=` factor
+#    FirstSighting applies once an enemy notices the player (source speed
+#    is the `speed` property below, i.e. SPDPATROL=512 or SPDDOG=1500).
+# 5. Reaction delay (how many tics an enemy waits after first spotting the
+#    player before acting, from SightPlayer) and other pure-behavior details
+#    that don't fit the properties schema are left as comments rather than
+#    invented property keys.
+# 6. SS drop either a MachineGun or a Clip depending on the player's current
+#    best weapon (KillActor) -- only `dropitem: Clip` is captured below;
+#    the conditional MachineGun drop is called out in a comment.
+# =============================================================================
+
+# -----------------------------------------------------------------------
+# Guard (classtypes.guardobj / enemytypes.en_guard)
+# -----------------------------------------------------------------------
+Guard:
+  states:
+    Spawn: # s_grdstand / T_Stand
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Path: # s_grdpath1..4 / T_Path
+      - sprite: GARD
+        frames: [B]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: GARD
+        frames: [B]
+        tics-per-frame: 5
+      - sprite: GARD
+        frames: [C]
+        tics-per-frame: 15
+        think: T_Path
+      - sprite: GARD
+        frames: [D]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: GARD
+        frames: [D]
+        tics-per-frame: 5
+      - sprite: GARD
+        frames: [E]
+        tics-per-frame: 15
+        think: T_Path
+    # Pain has two variants (s_grdpain / s_grdpain1); DamageActor picks
+    # between them based on hitpoints odd/even. Both just fall into Chase.
+    Pain:
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Chase
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Chase
+    Attack: # s_grdshoot1..3 / T_Shoot
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 20
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 20
+        action: T_Shoot
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 20
+        next-state: Chase
+    Chase: # s_grdchase1..4 / T_Chase
+      - sprite: GARD
+        frames: [B]
+        tics-per-frame: 10
+        think: T_Chase
+      - sprite: GARD
+        frames: [B]
+        tics-per-frame: 3
+      - sprite: GARD
+        frames: [C]
+        tics-per-frame: 8
+        think: T_Chase
+      - sprite: GARD
+        frames: [D]
+        tics-per-frame: 10
+        think: T_Chase
+      - sprite: GARD
+        frames: [D]
+        tics-per-frame: 3
+      - sprite: GARD
+        frames: [E]
+        tics-per-frame: 8
+        think: T_Chase
+    Death: # s_grddie1..4 / A_DeathScream
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 15
+        action: A_DeathScream
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 15
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 15
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    "health": 25
+    "speed": 512
+    "monster.chasespeedmultiplier": 3
+    "points": 100
+    "seesound": "guard/sight" # inferred, was "HALT"
+    "attacksound": "guard/attack" # was "NAZIFIRE" (generic soldier gunfire)
+    "deathsound": "guard/death"
+    "dropitem": "Clip"
+    # Reaction delay after first sighting: 1 + random()/4 tics.
+
+# -----------------------------------------------------------------------
+# Officer (classtypes.officerobj / enemytypes.en_officer)
+# -----------------------------------------------------------------------
+Officer:
+  states:
+    Spawn: # s_ofcstand / T_Stand
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Path: # s_ofcpath1..4 / T_Path
+      - sprite: OFFI
+        frames: [B]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: OFFI
+        frames: [B]
+        tics-per-frame: 5
+      - sprite: OFFI
+        frames: [C]
+        tics-per-frame: 15
+        think: T_Path
+      - sprite: OFFI
+        frames: [D]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: OFFI
+        frames: [D]
+        tics-per-frame: 5
+      - sprite: OFFI
+        frames: [E]
+        tics-per-frame: 15
+        think: T_Path
+    Pain: # s_ofcpain / s_ofcpain1
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Chase
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Chase
+    Attack: # s_ofcshoot1..3 / T_Shoot
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: 6
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: 20
+        action: T_Shoot
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Chase
+    Chase: # s_ofcchase1..4 / T_Chase
+      - sprite: OFFI
+        frames: [B]
+        tics-per-frame: 10
+        think: T_Chase
+      - sprite: OFFI
+        frames: [B]
+        tics-per-frame: 3
+      - sprite: OFFI
+        frames: [C]
+        tics-per-frame: 8
+        think: T_Chase
+      - sprite: OFFI
+        frames: [D]
+        tics-per-frame: 10
+        think: T_Chase
+      - sprite: OFFI
+        frames: [D]
+        tics-per-frame: 3
+      - sprite: OFFI
+        frames: [E]
+        tics-per-frame: 8
+        think: T_Chase
+    Death: # s_ofcdie1..5 / A_DeathScream
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: 11
+        action: A_DeathScream
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: 11
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: 11
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: 11
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    "health": 50
+    "speed": 512
+    "monster.chasespeedmultiplier": 5
+    "points": 400
+    "seesound": "officer/sight" # inferred, was "SPION"
+    "attacksound": "officer/attack" # was "NAZIFIRE" (generic soldier gunfire)
+    "deathsound": "officer/death"
+    "dropitem": "Clip"
+    # Reaction delay after first sighting: fixed 2 tics.
+
+# -----------------------------------------------------------------------
+# SS (classtypes.ssobj / enemytypes.en_ss)
+# -----------------------------------------------------------------------
+SS:
+  states:
+    Spawn: # s_ssstand / T_Stand
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Path: # s_sspath1..4 / T_Path
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 5
+      - sprite: SSWV
+        frames: [B]
+        tics-per-frame: 15
+        think: T_Path
+      - sprite: SSWV
+        frames: [C]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: SSWV
+        frames: [C]
+        tics-per-frame: 5
+      - sprite: SSWV
+        frames: [D]
+        tics-per-frame: 15
+        think: T_Path
+    Pain: # s_sspain / s_sspain1
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Chase
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Chase
+    # SS unload a long 9-frame burst (s_ssshoot1..9) instead of one shot.
+    Attack:
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 20
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 20
+        action: T_Shoot
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 10
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 10
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 10
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Chase
+    Chase: # s_sschase1..4 / T_Chase
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 10
+        think: T_Chase
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 3
+      - sprite: SSWV
+        frames: [B]
+        tics-per-frame: 8
+        think: T_Chase
+      - sprite: SSWV
+        frames: [C]
+        tics-per-frame: 10
+        think: T_Chase
+      - sprite: SSWV
+        frames: [C]
+        tics-per-frame: 3
+      - sprite: SSWV
+        frames: [D]
+        tics-per-frame: 8
+        think: T_Chase
+    Death: # s_ssdie1..4 / A_DeathScream
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 15
+        action: A_DeathScream
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 15
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: 15
+      - sprite: SSWV
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    "health": 100
+    "speed": 512
+    "monster.chasespeedmultiplier": 4
+    "points": 500
+    "seesound": "wolfss/sight" # inferred, was "SCHUTZAD"
+    "attacksound": "wolfss/attack" # was "SSFIRE"
+    "deathsound": "wolfss/death"
+    "dropitem": "Clip"
+    # SS are better shots: T_Shoot halves their effective distance penalty
+    # (dist = dist * 2 / 3) when rolling to hit the player.
+    "monster.sharpshooter": true
+    # KillActor drops a MachineGun instead of a Clip if the player's
+    # bestweapon is below wp_machinegun -- not represented by a single
+    # `dropitem` value.
+    # Reaction delay after first sighting: 1 + random()/6 tics.
+
+# -----------------------------------------------------------------------
+# Mutant (classtypes.mutantobj / enemytypes.en_mutant)
+# -----------------------------------------------------------------------
+Mutant:
+  states:
+    Spawn: # s_mutstand / T_Stand
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Path: # s_mutpath1..4 / T_Path
+      - sprite: MTNT
+        frames: [B]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: MTNT
+        frames: [B]
+        tics-per-frame: 5
+      - sprite: MTNT
+        frames: [C]
+        tics-per-frame: 15
+        think: T_Path
+      - sprite: MTNT
+        frames: [D]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: MTNT
+        frames: [D]
+        tics-per-frame: 5
+      - sprite: MTNT
+        frames: [E]
+        tics-per-frame: 15
+        think: T_Path
+    Pain: # s_mutpain / s_mutpain1
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Chase
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Chase
+    # Mutant fires twice in one attack cycle (s_mutshoot1..4).
+    Attack:
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: 6
+        action: T_Shoot
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: 20
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: 20
+        next-state: Chase
+    Chase: # s_mutchase1..4 / T_Chase
+      - sprite: MTNT
+        frames: [B]
+        tics-per-frame: 10
+        think: T_Chase
+      - sprite: MTNT
+        frames: [B]
+        tics-per-frame: 3
+      - sprite: MTNT
+        frames: [C]
+        tics-per-frame: 8
+        think: T_Chase
+      - sprite: MTNT
+        frames: [D]
+        tics-per-frame: 10
+        think: T_Chase
+      - sprite: MTNT
+        frames: [D]
+        tics-per-frame: 3
+      - sprite: MTNT
+        frames: [E]
+        tics-per-frame: 8
+        think: T_Chase
+    Death: # s_mutdie1..5 / A_DeathScream
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: 7
+        action: A_DeathScream
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: 7
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: 7
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: 7
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    "health.baby": 45
+    "health.easy": 55
+    "health.normal": 55
+    "health.hard": 65
+    "speed": 512
+    "monster.chasespeedmultiplier": 3
+    "points": 700
+    "attacksound": "mutant/attack" # was "NAZIFIRE" (generic soldier gunfire); no seesound in source
+    "deathsound": "mutant/death"
+    "dropitem": "Clip"
+    # Reaction delay after first sighting: 1 + random()/6 tics.
+
+# -----------------------------------------------------------------------
+# Dog (classtypes.dogobj / enemytypes.en_dog)
+# Dogs are never placed via SpawnStand in the source (no "Can I play,
+# daddy?" idle guard dogs) -- only SpawnPatrol is used -- but a Spawn
+# group is still defined here since the engine requires one to exist.
+# -----------------------------------------------------------------------
+Dog:
+  states:
+    Spawn: # reuses the first Path frame; dogs have no dedicated stand pose
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Path: # s_dogpath1..4 / T_Path
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 5
+      - sprite: DOGY
+        frames: [B]
+        tics-per-frame: 15
+        think: T_Path
+      - sprite: DOGY
+        frames: [C]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: DOGY
+        frames: [C]
+        tics-per-frame: 5
+      - sprite: DOGY
+        frames: [D]
+        tics-per-frame: 15
+        think: T_Path
+    # No Pain state -- dogs have 1 hitpoint, so any hit is fatal.
+    # Attack is a lunge-and-bite instead of a ranged shot (s_dogjump1..5).
+    Attack:
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 10
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 10
+        action: T_Bite
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 10
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 10
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 10
+        next-state: Chase
+    Chase: # s_dogchase1..4 / T_DogChase (lunges into Attack at bite range)
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 10
+        think: T_DogChase
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 3
+      - sprite: DOGY
+        frames: [B]
+        tics-per-frame: 8
+        think: T_DogChase
+      - sprite: DOGY
+        frames: [C]
+        tics-per-frame: 10
+        think: T_DogChase
+      - sprite: DOGY
+        frames: [C]
+        tics-per-frame: 3
+      - sprite: DOGY
+        frames: [D]
+        tics-per-frame: 8
+        think: T_DogChase
+    Death: # s_dogdie1..3 + s_dogdead / A_DeathScream
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 15
+        action: A_DeathScream
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 15
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 15
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    "health": 1
+    "speed": 1500
+    "monster.chasespeedmultiplier": 2
+    "points": 200
+    "seesound": "dog/sight" # inferred, was "DOGBARK"
+    "attacksound": "dog/attack" # T_Bite plays "DOGATTACK"
+    "deathsound": "dog/death"
+    # No dropitem -- KillActor has no case for dogobj.
+    # Attack is melee only: T_Bite deals random()>>4 damage (chance 180/256)
+    # when within MINACTORDIST of the player.
+    # Reaction delay after first sighting: 1 + random()/8 tics.
+
+# -----------------------------------------------------------------------
+# DeadGuard -- pre-placed corpse decoration (mapdefs/wolf3d/decorations.yaml
+# object 124), not a live enemy. SpawnDeadGuard (Program.WL_ACT2.cs) spawns
+# this directly into s_grddie4, Guard's held final death frame, as an
+# inertobj: static, non-blocking, no AI, never shootable/killable again.
+# -----------------------------------------------------------------------
+DeadGuard:
+  states:
+    Spawn:
+      - sprite: GARD
+        frames: [N]
+        tics-per-frame: -1

@@ -1,7 +1,141 @@
-Food:
-  id: 47
+DogFood: 
+  parent: Health
   states:
-    - Spawn:
+    Spawn:
+      - sprite: ALPO
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    "inventory.amount": 4
+    "inventory.pickupsound": "misc/dogfood_pkup"
+
+DogFood2: 
+  parent: DogFood
+  states:
+    Spawn:
+      - sprite: ALP2
+        frames: [A]
+        tics-per-frame: -1
+      
+Food:
+  parent: Health
+  states:
+    Spawn:
       - sprite: FOOD
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    "inventory.amount": 10
+
+Food2:
+  parent: Food
+  states:
+    Spawn:
+      - sprite: FOD2
+        frames: [A]
+        tics-per-frame: -1
+      
+Medikit:
+  parent: Health
+  states:
+    Spawn:
+      - sprite: MEDI
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+      "inventory.amount": 25
+      "inventory.pickupsound": "misc/medkit_pkup"
+
+Medikit2:
+  parent: Medikit
+  states:
+    Spawn:
+      - sprite: MED2
+        frames: [A]
+        tics-per-frame: -1
+
+OneUpHealth:
+  parent: Health
+  properties:
+    "inventory.amount": 99
+
+OneUp:
+  parent: CustomInventory
+  properties:
+    "inventory.pickupsound": "misc/1up"
+  flags:
+    - COUNTITEM
+    - INVENTORY.ALWAYSPICKUP
+    - bright
+  states:
+    Spawn:
+      - sprite: ONUP
+        frames: [A]
+        tics-per-frame: -1
+    Pickup:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_GiveExtraMan
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_GiveInventory("Clip", 25)
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_GiveInventory("OneUpHealth")
+
+OneUpPill:
+  parent: OneUp
+  states:
+    Spawn:
+      - sprite: PILL
+        frames: [A]
+        tics-per-frame: -1
+  flags:
+    - bright
+
+Blood:
+  parent: Health
+  properties:
+    inventory.amount: 1
+    inventory.maxamount: 11
+    inventory.pickupsound: "misc/slurpie"
+  states:
+    Spawn:
+      - sprite: BLUD
+        frames: [A]
+        tics-per-frame: -1
+
+Blood2:
+  parent: Blood
+  properties:
+    inventory.pickupsound: "misc/slurpie2"
+  states:
+    Spawn:
+      - sprite: BLD2
+        frames: [A]
+        tics-per-frame: -1
+
+Gibs:
+  parent: Health
+  properties:
+    inventory.amount: 1
+    inventory.maxamount: 11
+    inventory.pickupsound: "misc/slurpie"
+  states:
+    Spawn:
+      - sprite: GIBS
+        frames: [A]
+        tics-per-frame: -1
+
+Gibs2:
+  parent: Gibs
+  properties:
+    inventory.pickupsound: "misc/slurpie2"
+  states:
+    Spawn:
+      - sprite: GIB2
         frames: [A]
         tics-per-frame: -1

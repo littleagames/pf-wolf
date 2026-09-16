@@ -1,10 +1,10 @@
 WolfWeapon:
   parent: "Weapon"
   properties:
-    - "weapon.ammotype1": "Clip"
-    - "weapon.ammouse1": 1
-    - "weapon.ammogive1": 6
-    - "weapon.yadjust": 19
+    "weapon.ammotype1": "Clip"
+    "weapon.ammouse1": 1
+    "weapon.ammogive1": 6
+    "weapon.yadjust": 19
   flags: [WEAPON.NOGRIN, WEAPON.DONTBOB]
   states:
     Select:
@@ -23,10 +23,10 @@ WolfWeapon:
 Knife:
   parent: "WolfWeapon"
   properties:
-    - "inventory.icon": "KNIFE"
-    - "weapon.ammouse1": 0
-    - "weapon.selectionorder": 3700
-    - "attacksound": "weapon/knife/attack"
+    "inventory.icon": "KNIFE"
+    "weapon.ammouse1": 0
+    "weapon.selectionorder": 3700
+    "attacksound": "weapon/knife/attack"
   flags: [WEAPON.NOAUTOFIRE, WEAPON.NOALERT]
   states:
     Ready:
@@ -51,7 +51,7 @@ Knife:
 Knife2:
   parent: "Knife"
   properties:
-    - "weapon.selectionorder": 3690
+    "weapon.selectionorder": 3690
   states:
     Ready:
       - sprite: KNF2
@@ -75,9 +75,9 @@ Knife2:
 Pistol:
   parent: "WolfWeapon"
   properties:
-    - "inventory.icon": "PISTOL"
-    - "weapon.selectionorder": 1900
-    - "attacksound": "weapon/pistol/attack"
+    "inventory.icon": "PISTOL"
+    "weapon.selectionorder": 1900
+    "attacksound": "weapon/pistol/attack"
   flags: [WEAPON.NOAUTOFIRE]
   states:
     Ready:
@@ -106,8 +106,8 @@ Pistol:
 BluePistol:
   parent: "Pistol"
   properties:
-    - "attacksound": "weapon/bluepistol/attack"
-    - "weapon.selectionorder": 1890
+    "attacksound": "weapon/bluepistol/attack"
+    "weapon.selectionorder": 1890
   states:
     Ready:
       - sprite: BPSG
@@ -133,13 +133,12 @@ BluePistol:
         next-state: Ready
 
 MachineGun:
-  id: 60
   parent: "WolfWeapon"
   properties:
-    - "attacksound": "weapon/machine/attack"
-    - "inventory.icon": "MACHGUN"
-    - "inventory.pickupsound": "weapon/machine/pickup"
-    - "weapon.selectionorder": 1300
+    "attacksound": "weapon/machine/attack"
+    "inventory.icon": "MACHGUN"
+    "inventory.pickupsound": "weapon/machine/pickup"
+    "weapon.selectionorder": 1300
   flags: [INVENTORY.ALWAYSPICKUP]
   states:
     Spawn:
@@ -175,9 +174,9 @@ BlueAK47:
   id: 141
   parent: "MachineGun"
   properties:
-    - "attacksound": "weapon/blueak47/attack"
-    - "inventory.pickupsound": "weapon/blueak47/pickup"
-    - "weapon.selectionorder": 1290
+    "attacksound": "weapon/blueak47/attack"
+    "inventory.pickupsound": "weapon/blueak47/pickup"
+    "weapon.selectionorder": 1290
   states:
     Spawn:
       - sprite: BAKP
@@ -211,10 +210,10 @@ BlueAK47:
 GatlingGun:
   parent: "WolfWeapon"
   properties:
-    - "attacksound": "weapon/gatling/attack"
-    - "inventory.icon": "GATLGUN"
-    - "inventory.pickupsound": "weapon/gatling/pickup"
-    - "weapon.selectionorder": 700
+    "attacksound": "weapon/gatling/attack"
+    "inventory.icon": "GATLGUN"
+    "inventory.pickupsound": "weapon/gatling/pickup"
+    "weapon.selectionorder": 700
   flags: [WEAPON.ALWAYSGRIN, INVENTORY.ALWAYSPICKUP]
   states:
     Spawn:
@@ -255,9 +254,9 @@ GatlingGun:
 BlueGatlingGun:
   parent: "GatlingGun"
   properties:
-    - "attacksound": "weapon/bluegatling/attack"
-    - "inventory.pickupsound": "weapon/bluegatling/pickup"
-    - "weapon.selectionorder": 690
+    "attacksound": "weapon/bluegatling/attack"
+    "inventory.pickupsound": "weapon/bluegatling/pickup"
+    "weapon.selectionorder": 690
   states:
     Spawn:
       - sprite: BGUN
@@ -295,12 +294,17 @@ BlueGatlingGun:
         next-state: Ready
 
 GatlingGunUpgrade:
-  id: 61
+  # No embedded id -- resolved via mapdefs/wolf3d/decorations.yaml object 51
+  # instead, which correctly points here rather than at plain "GatlingGun":
+  # classic Wolf3D pickup behavior for the floor chaingun is to only grant
+  # the actual chaingun if the player already has the machine gun,
+  # otherwise it grants the machine gun, which is exactly what this
+  # "WeaponGiver" actor's dropitem list below does.
   parent: "WeaponGiver"
   properties:
-    - "inventory.pickupsound": "weapon/gatling/pickup"
-    - "weapon.ammogive1": 6
-    - "dropitem": [GatlingGun, MachineGun]
+    "inventory.pickupsound": "weapon/gatling/pickup"
+    "weapon.ammogive1": 6
+    "dropitem": [GatlingGun, MachineGun]
   flags: [INVENTORY.ALWAYSPICKUP]
   states:
     Spawn:
@@ -312,8 +316,8 @@ BlueGatlingGunUpgrade:
   id: 156
   parent: "GatlingGunUpgrade"
   properties:
-    - "inventory.pickupsound": "weapon/bluegatling/pickup"
-    - "dropitem": [BlueGatlingGun, BlueAK47]
+    "inventory.pickupsound": "weapon/bluegatling/pickup"
+    "dropitem": [BlueGatlingGun, BlueAK47]
   states:
     Spawn:
       - sprite: BGUN

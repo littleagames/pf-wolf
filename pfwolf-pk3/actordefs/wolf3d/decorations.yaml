@@ -1,5 +1,4 @@
 Puddle:
-  id: 33
   states:
     Spawn:
       - sprite: WATR
@@ -7,7 +6,6 @@ Puddle:
         tics-per-frame: -1
 
 Puddle2:
-  id: 105
   parent: Puddle
   states:
     Spawn:
@@ -16,7 +14,6 @@ Puddle2:
         tics-per-frame: -1
 
 GreenBarrel:
-  id: 34
   radius: 32
   flags: [SOLID]
   states:
@@ -26,7 +23,6 @@ GreenBarrel:
         tics-per-frame: -1
 
 HorizontalGreenBarrel:
-  id: 106
   parent: GreenBarrel
   states:
     Spawn:
@@ -35,7 +31,6 @@ HorizontalGreenBarrel:
         tics-per-frame: -1
 
 TableWithChairs:
-  id: 35
   radius: 32
   flags: [SOLID]
   states:
@@ -45,7 +40,6 @@ TableWithChairs:
         tics-per-frame: -1
 
 TableWithChairs2:
-  id: 107
   parent: TableWithChairs
   states:
     Spawn:
@@ -54,7 +48,6 @@ TableWithChairs2:
         tics-per-frame: -1
 
 FloorLamp:
-  id: 36
   radius: 32
   flags: [SOLID]
   states:
@@ -65,7 +58,6 @@ FloorLamp:
         tics-per-frame: -1
 
 TallFloorLamp:
-  id: 108
   parent: FloorLamp
   states:
     Spawn:
@@ -75,7 +67,6 @@ TallFloorLamp:
         tics-per-frame: -1
 
 Chandelier:
-  id: 37
   states:
     Spawn:
       - sprite: CHAN
@@ -84,7 +75,6 @@ Chandelier:
         tics-per-frame: -1
 
 Chandelier2:
-  id: 109
   parent: Chandelier
   states:
     Spawn:
@@ -94,7 +84,6 @@ Chandelier2:
         tics-per-frame: -1
 
 HangedMan:
-  id: 38
   radius: 32
   flags: [SOLID]
   states:
@@ -113,7 +102,6 @@ HangedMan2:
         tics-per-frame: -1
 
 WhitePillar:
-  id: 40
   radius: 32
   flags: [SOLID]
   states:
@@ -123,7 +111,6 @@ WhitePillar:
         tics-per-frame: -1
 
 CrackedPillar:
-  id: 112
   parent: WhitePillar
   states:
     Spawn:
@@ -132,7 +119,6 @@ CrackedPillar:
         tics-per-frame: -1
 
 GreenPlant:
-  id: 41
   radius: 32
   flags: [SOLID]
   states:
@@ -142,7 +128,6 @@ GreenPlant:
         tics-per-frame: -1
 
 GreenPlant2:
-  id: 113
   parent: GreenPlant
   states:
     Spawn:
@@ -151,7 +136,6 @@ GreenPlant2:
         tics-per-frame: -1
 
 SkeletonFlat:
-  id: 42
   states:
     Spawn:
       - sprite: SKEL
@@ -159,7 +143,6 @@ SkeletonFlat:
         tics-per-frame: -1
 
 SkeletonFlat2:
-  id: 114
   parent: SkeletonFlat
   states:
     Spawn:
@@ -168,7 +151,6 @@ SkeletonFlat2:
         tics-per-frame: -1
 
 Sink:
-  id: 43
   radius: 32
   flags: [SOLID]
   states:
@@ -178,7 +160,6 @@ Sink:
         tics-per-frame: -1
 
 BrownPlant:
-  id: 44
   radius: 32
   flags: [SOLID]
   states:
@@ -188,7 +169,6 @@ BrownPlant:
         tics-per-frame: -1
 
 BrownPlant2:
-  id: 115
   parent: BrownPlant
   states:
     Spawn:
@@ -197,7 +177,6 @@ BrownPlant2:
         tics-per-frame: -1
 
 Vase:
-  id: 45
   radius: 32
   flags: [SOLID]
   states:
@@ -207,7 +186,6 @@ Vase:
         tics-per-frame: -1
 
 Vase2:
-  id: 116
   parent: Vase
   states:
     Spawn:
@@ -216,7 +194,6 @@ Vase2:
         tics-per-frame: -1
 
 BareTable:
-  id: 46
   radius: 32
   flags: [SOLID]
   states:
@@ -226,7 +203,6 @@ BareTable:
         tics-per-frame: -1
 
 MetalTable:
-  id: 117
   parent: BareTable
   states:
     Spawn:
@@ -235,16 +211,14 @@ MetalTable:
         tics-per-frame: -1
 
 CeilingLight:
-  id: 47
   states:
     Spawn:
       - sprite: GLMP
-        frames: [A]
+        frames: [A,B]
         modifiers: [bright]
-        tics-per-frame: -1
+        tics-per-frame: 10
 
 CeilingLight2:
-  id: 118
   parent: CeilingLight
   states:
     Spawn:
@@ -254,7 +228,6 @@ CeilingLight2:
         tics-per-frame: -1
 
 RedCeilingLight:
-  id: 85
   states:
     Spawn:
       - sprite: RLMP
@@ -263,7 +236,6 @@ RedCeilingLight:
         tics-per-frame: -1
 
 KitchenStuff:
-  id: 48
   radius: 32
   states:
     Spawn:
@@ -272,7 +244,6 @@ KitchenStuff:
         tics-per-frame: -1
 
 SuitOfArmor:
-  id: 49
   radius: 32
   flags: [SOLID]
   states:
@@ -282,7 +253,6 @@ SuitOfArmor:
         tics-per-frame: -1
 
 SuitOfArmor2:
-  id: 120
   parent: SuitOfArmor
   states:
     Spawn:
@@ -291,7 +261,6 @@ SuitOfArmor2:
         tics-per-frame: -1
 
 HangingCage:
-  id: 50
   radius: 32
   flags: [SOLID]
   states:
@@ -301,7 +270,6 @@ HangingCage:
         tics-per-frame: -1
 
 HangingCage2:
-  id: 121
   parent: HangingCage
   states:
     Spawn:
@@ -310,7 +278,6 @@ HangingCage2:
         tics-per-frame: -1
 
 SkeletonCage:
-  id: 51
   radius: 32
   flags: [SOLID]
   states:
@@ -320,7 +287,6 @@ SkeletonCage:
         tics-per-frame: -1
 
 BrokenCage:
-  id: 122
   parent: SkeletonCage
   states:
     Spawn:
@@ -329,7 +295,6 @@ BrokenCage:
         tics-per-frame: -1
 
 Bones1:
-  id: 52
   states:
     Spawn:
       - sprite: BON1
@@ -337,7 +302,6 @@ Bones1:
         tics-per-frame: -1
 
 Bones5:
-  id: 123
   states:
     Spawn:
       - sprite: BON5
@@ -345,7 +309,6 @@ Bones5:
         tics-per-frame: -1
 
 BunkBed:
-  id: 55
   radius: 32
   flags: [SOLID]
   states:
@@ -355,7 +318,6 @@ BunkBed:
         tics-per-frame: -1
 
 Basket:
-  id: 56
   radius: 32
   states:
     Spawn:
@@ -364,7 +326,6 @@ Basket:
         tics-per-frame: -1
 
 DeadRat:
-  id: 125
   parent: Basket
   states:
     Spawn:
@@ -373,7 +334,6 @@ DeadRat:
         tics-per-frame: -1
 
 Barrel:
-  id: 68
   radius: 32
   flags: [SOLID]
   states:
@@ -383,7 +343,6 @@ Barrel:
         tics-per-frame: -1
 
 HorizontalBarrel:
-  id: 151
   states:
     Spawn:
       - sprite: BON1
@@ -391,7 +350,6 @@ HorizontalBarrel:
         tics-per-frame: -1
 
 Well:
-  id: 69
   radius: 32
   flags: [SOLID]
   states:
@@ -401,7 +359,6 @@ Well:
         tics-per-frame: -1
 
 Well2:
-  id: 152
   parent: Well
   states:
     Spawn:
@@ -410,7 +367,6 @@ Well2:
         tics-per-frame: -1
 
 EmptyWell:
-  id: 70
   radius: 32
   flags: [SOLID]
   states:
@@ -420,7 +376,6 @@ EmptyWell:
         tics-per-frame: -1
 
 EmptyWell2:
-  id: 153
   parent: EmptyWell
   states:
     Spawn:
@@ -429,7 +384,6 @@ EmptyWell2:
         tics-per-frame: -1
 
 Flag:
-  id: 72
   radius: 32
   flags: [SOLID]
   states:
@@ -439,7 +393,6 @@ Flag:
         tics-per-frame: -1
 
 TeslaCoil:
-  id: 127
   parent: Flag
   states:
     Spawn:
@@ -448,7 +401,6 @@ TeslaCoil:
         tics-per-frame: -1
 
 CallApogee:
-  id: 73
   radius: 32
   flags: [SOLID]
   states:
@@ -458,7 +410,6 @@ CallApogee:
         tics-per-frame: -1
 
 Bones2:
-  id: 74
   states:
     Spawn:
       - sprite: BON2
@@ -466,7 +417,6 @@ Bones2:
         tics-per-frame: -1
 
 Bones6:
-  id: 69
   parent: Bones2
   states:
     Spawn:
@@ -475,7 +425,6 @@ Bones6:
         tics-per-frame: -1
 
 Bones3:
-  id: 75
   states:
     Spawn:
       - sprite: BON3
@@ -483,7 +432,6 @@ Bones3:
         tics-per-frame: -1
 
 BareLightBulb:
-  id: 130
   parent: Bones3
   states:
     Spawn:
@@ -492,7 +440,6 @@ BareLightBulb:
         tics-per-frame: -1
 
 Bones4:
-  id: 76
   states:
     Spawn:
       - sprite: BON4
@@ -500,7 +447,6 @@ Bones4:
         tics-per-frame: -1
 
 GreenSlime:
-  id: 131
   parent: Bones4
   states:
     Spawn:
@@ -509,7 +455,6 @@ GreenSlime:
         tics-per-frame: -1
 
 Pots:
-  id: 77
   radius: 32
   states:
     Spawn:
@@ -518,7 +463,6 @@ Pots:
         tics-per-frame: -1
 
 Stove:
-  id: 78
   radius: 32
   flags: [SOLID]
   states:
@@ -528,7 +472,6 @@ Stove:
         tics-per-frame: -1
 
 Spears:
-  id: 79
   radius: 32
   flags: [SOLID]
   states:
@@ -538,7 +481,6 @@ Spears:
         tics-per-frame: -1
 
 Vines:
-  id: 80
   states:
     Spawn:
       - sprite: VINE
@@ -546,7 +488,6 @@ Vines:
         tics-per-frame: -1
 
 Bubbles:
-  id: 135
   parent: Vines
   states:
     Spawn:
@@ -555,7 +496,6 @@ Bubbles:
         tics-per-frame: -1
 
 TruckRear:
-  id: 91
   radius: 32
   flags: [SOLID]
   states:
@@ -565,7 +505,6 @@ TruckRear:
         tics-per-frame: -1
 
 BJWasHere:
-  id: 137
   parent: TruckRear
   states:
     Spawn:
@@ -574,7 +513,6 @@ BJWasHere:
         tics-per-frame: -1
 
 CageWithSkulls:
-  id: 84
   radius: 32
   flags: [SOLID]
   states:
@@ -584,7 +522,6 @@ CageWithSkulls:
         tics-per-frame: -1
 
 CageWithRat:
-  id: 124
   parent: CageWithSkulls
   states:
     Spawn:
@@ -593,7 +530,6 @@ CageWithRat:
         tics-per-frame: -1
 
 CageWithGore:
-  id: 83
   radius: 32
   flags: [SOLID]
   states:
@@ -603,7 +539,6 @@ CageWithGore:
         tics-per-frame: -1
 
 CageWithGore2:
-  id: 119
   parent: CageWithGore
   states:
     Spawn:
@@ -612,7 +547,6 @@ CageWithGore2:
         tics-per-frame: -1
 
 Skewer:
-  id: 82
   radius: 32
   flags: [SOLID]
   states:
@@ -622,7 +556,6 @@ Skewer:
         tics-per-frame: -1
 
 SkullPile:
-  id: 150
   parent: Skewer
   states:
     Spawn:
@@ -631,7 +564,6 @@ SkullPile:
         tics-per-frame: -1
 
 CowCarcass:
-  id: 86
   radius: 32
   flags: [SOLID]
   states:
@@ -641,7 +573,6 @@ CowCarcass:
         tics-per-frame: -1
 
 ChemicalTable:
-  id: 132
   parent: CowCarcass
   states:
     Spawn:
@@ -650,7 +581,6 @@ ChemicalTable:
         tics-per-frame: -1
 
 WellWithBlood:
-  id: 87
   radius: 32
   flags: [SOLID]
   states:
@@ -660,7 +590,6 @@ WellWithBlood:
         tics-per-frame: -1
 
 NuclearBarrel:
-  id: 133
   parent: WellWithBlood
   states:
     Spawn:
@@ -669,7 +598,6 @@ NuclearBarrel:
         tics-per-frame: -1
 
 SatanStatue:
-  id: 88
   radius: 32
   flags: [SOLID]
   states:
@@ -679,7 +607,6 @@ SatanStatue:
         tics-per-frame: -1
 
 BlueColumn:
-  id: 78
   parent: SatanStatue
   states:
     Spawn:
@@ -688,7 +615,6 @@ BlueColumn:
         tics-per-frame: -1
 
 BrownColumn:
-  id: 89
   radius: 32
   flags: [SOLID]
   states:
@@ -698,7 +624,6 @@ BrownColumn:
         tics-per-frame: -1
 
 DevilStatue:
-  id: 136
   parent: BrownColumn
   states:
     Spawn:
