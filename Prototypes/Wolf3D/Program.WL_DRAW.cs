@@ -1200,13 +1200,22 @@ internal partial class Program
         ob.ViewHeight = (ushort)(heightnumerator / (nx >> 8));
     }
 
-    // Rotation-aware sprite variants only exist for the "Spawn"/"Path"/"Chase" state groups
-    // in the actordefs authored so far (8-directional walk-cycle sprites); "Attack"/"Pain"/
-    // "Death"/"DeathCam" are single front-facing views, matching legacy statestruct.rotate
-    // being false for those groups. There's no per-frame "rotate" flag in the new schema
-    // (the engine is meant to infer it from how many sprite variants actually exist), but
-    // no such lookup exists yet -- this state-group name check is a stand-in until it does.
-    internal static bool IsDirectionalState(string? stateName) => stateName is "Spawn" or "Path" or "Chase";
+    private static readonly Dictionary<string, bool> _directionalSpriteCache = [];
+
+    // There's no per-frame "rotate" flag in the actordefs schema -- the engine infers it
+    // from how many sprite variants actually exist. Walk-cycle sprites (e.g. GARDB1..B8)
+    // have 8-directional rotation frames; bosses like Hans only have a single front-facing
+    // frame per letter (HANSA0, HANSB0, ...) with no "1" rotation, so they default to 0.
+    internal static bool HasDirectionalSprites(string sprite, string frameLetter)
+    {
+        var cacheKey = $"{sprite}{frameLetter}";
+        if (_directionalSpriteCache.TryGetValue(cacheKey, out var cached))
+            return cached;
+
+        var hasRotations = _assetManager.Exists<SpriteAsset>($"{sprite}{frameLetter}1");
+        _directionalSpriteCache[cacheKey] = hasRotations;
+        return hasRotations;
+    }
 
     internal static int CalcRotate(Entities.Actors.Actor ob)
     {
@@ -1285,7 +1294,9 @@ internal partial class Program
 
                 actor.RuntimeFlags |= objflags.FL_VISABLE;
 
-                var rotationDigit = IsDirectionalState(actor.CurrentState.StateName) ? CalcRotate(actor) : 0;
+                var rotationDigit = HasDirectionalSprites(actor.CurrentState.Sprite, actor.CurrentState.FrameLetter)
+                    ? CalcRotate(actor)
+                    : 0;
                 visptr_val.shapenum = $"{actor.CurrentState.Sprite}{actor.CurrentState.FrameLetter}{rotationDigit}";
                 visptr_val.viewx = actor.ViewX;
                 visptr_val.viewheight = (short)actor.ViewHeight;

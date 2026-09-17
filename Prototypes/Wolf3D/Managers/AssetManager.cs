@@ -81,6 +81,14 @@ internal class AssetManager
         }
     }
 
+    public bool Exists<T>(string assetName) where T : Asset
+    {
+        if (string.IsNullOrWhiteSpace(assetName))
+            return false;
+
+        return _assets.ContainsKey(GetKey(assetName, typeof(T).Name));
+    }
+
     public T? Find<T>(string assetName) where T : Asset
     {
         string assetType = typeof(T).Name;

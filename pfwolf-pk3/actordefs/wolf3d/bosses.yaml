@@ -63,34 +63,34 @@ Hans:
     # No Pain state -- Hans never flinches.
     Attack: # s_bossshoot1..8, a long volley / T_Shoot
       - sprite: HANS
-        frames: [A]
+        frames: [E]
         tics-per-frame: 30
       - sprite: HANS
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: HANS
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: HANS
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: HANS
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: HANS
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: HANS
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: HANS
-        frames: [A]
+        frames: [E]
         tics-per-frame: 10
         next-state: Chase
     Chase: # s_bosschase1..4 / T_Chase
@@ -118,17 +118,17 @@ Hans:
         think: T_Chase
     Death: # s_bossdie1..4 / A_DeathScream
       - sprite: HANS
-        frames: [A]
+        frames: [H]
         tics-per-frame: 15
         action: A_DeathScream
       - sprite: HANS
-        frames: [A]
+        frames: [I]
         tics-per-frame: 15
       - sprite: HANS
-        frames: [A]
+        frames: [J]
         tics-per-frame: 15
       - sprite: HANS
-        frames: [A]
+        frames: [K]
         tics-per-frame: -1
   properties:
     "health.baby": 850
@@ -160,34 +160,34 @@ Gretel:
     # No Pain state.
     Attack: # s_gretelshoot1..8 / T_Shoot
       - sprite: GRET
-        frames: [A]
+        frames: [E]
         tics-per-frame: 30
       - sprite: GRET
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: GRET
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: GRET
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: GRET
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: GRET
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: GRET
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: GRET
-        frames: [A]
+        frames: [E]
         tics-per-frame: 10
         next-state: Chase
     Chase: # s_gretelchase1..4 / T_Chase
@@ -215,17 +215,17 @@ Gretel:
         think: T_Chase
     Death: # s_greteldie1..4 / A_DeathScream
       - sprite: GRET
-        frames: [A]
+        frames: [H]
         tics-per-frame: 15
         action: A_DeathScream
       - sprite: GRET
-        frames: [A]
+        frames: [I]
         tics-per-frame: 15
       - sprite: GRET
-        frames: [A]
+        frames: [J]
         tics-per-frame: 15
       - sprite: GRET
-        frames: [A]
+        frames: [K]
         tics-per-frame: -1
   properties:
     "health.baby": 850
@@ -256,10 +256,10 @@ Schabbs:
     # No Pain state.
     Attack: # s_schabbshoot1..2 / T_SchabbThrow
       - sprite: SHAB
-        frames: [A]
+        frames: [E]
         tics-per-frame: 30
       - sprite: SHAB
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_SchabbThrow
         next-state: Chase
@@ -302,16 +302,16 @@ Schabbs:
         frames: [A]
         tics-per-frame: 10
       - sprite: SHAB
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
       - sprite: SHAB
-        frames: [A]
+        frames: [H]
         tics-per-frame: 10
       - sprite: SHAB
-        frames: [A]
+        frames: [I]
         tics-per-frame: 10
       - sprite: SHAB
-        frames: [A]
+        frames: [J]
         tics-per-frame: 20
         action: A_StartDeathCam
   properties:
@@ -344,10 +344,10 @@ Gift:
     # No Pain state.
     Attack: # s_giftshoot1..2 / T_GiftThrow
       - sprite: GIFT
-        frames: [A]
+        frames: [E]
         tics-per-frame: 30
       - sprite: GIFT
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_GiftThrow
         next-state: Chase
@@ -388,16 +388,16 @@ Gift:
         frames: [A]
         tics-per-frame: 10
       - sprite: GIFT
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
       - sprite: GIFT
-        frames: [A]
+        frames: [H]
         tics-per-frame: 10
       - sprite: GIFT
-        frames: [A]
+        frames: [I]
         tics-per-frame: 10
       - sprite: GIFT
-        frames: [A]
+        frames: [J]
         tics-per-frame: 20
         action: A_StartDeathCam
   properties:
@@ -430,26 +430,26 @@ Fat:
     # No Pain state.
     Attack: # s_fatshoot1..6 / T_GiftThrow then T_Shoot
       - sprite: FATF
-        frames: [A]
+        frames: [E]
         tics-per-frame: 30
       - sprite: FATF
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_GiftThrow
       - sprite: FATF
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: FATF
-        frames: [A]
+        frames: [H]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: FATF
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: FATF
-        frames: [A]
+        frames: [H]
         tics-per-frame: 10
         action: T_Shoot
         next-state: Chase
@@ -490,16 +490,16 @@ Fat:
         frames: [A]
         tics-per-frame: 10
       - sprite: FATF
-        frames: [A]
+        frames: [I]
         tics-per-frame: 10
       - sprite: FATF
-        frames: [A]
+        frames: [J]
         tics-per-frame: 10
       - sprite: FATF
-        frames: [A]
+        frames: [K]
         tics-per-frame: 10
       - sprite: FATF
-        frames: [A]
+        frames: [L]
         tics-per-frame: 20
         action: A_StartDeathCam
   properties:
@@ -534,39 +534,39 @@ FakeHitler:
     # projectile spawned per frame.
     Attack:
       - sprite: FAKE
-        frames: [A]
+        frames: [E]
         tics-per-frame: 8
         action: T_FakeFire
       - sprite: FAKE
-        frames: [A]
+        frames: [E]
         tics-per-frame: 8
         action: T_FakeFire
       - sprite: FAKE
-        frames: [A]
+        frames: [E]
         tics-per-frame: 8
         action: T_FakeFire
       - sprite: FAKE
-        frames: [A]
+        frames: [E]
         tics-per-frame: 8
         action: T_FakeFire
       - sprite: FAKE
-        frames: [A]
+        frames: [E]
         tics-per-frame: 8
         action: T_FakeFire
       - sprite: FAKE
-        frames: [A]
+        frames: [E]
         tics-per-frame: 8
         action: T_FakeFire
       - sprite: FAKE
-        frames: [A]
+        frames: [E]
         tics-per-frame: 8
         action: T_FakeFire
       - sprite: FAKE
-        frames: [A]
+        frames: [E]
         tics-per-frame: 8
         action: T_FakeFire
       - sprite: FAKE
-        frames: [A]
+        frames: [E]
         tics-per-frame: 8
         next-state: Chase
     Chase: # s_fakechase1..4 / T_Fake (dodges, no direct pursuit)
@@ -594,23 +594,23 @@ FakeHitler:
         think: T_Fake
     Death: # s_fakedie1..6 / A_DeathScream
       - sprite: FAKE
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: A_DeathScream
       - sprite: FAKE
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
       - sprite: FAKE
-        frames: [A]
+        frames: [H]
         tics-per-frame: 10
       - sprite: FAKE
-        frames: [A]
+        frames: [I]
         tics-per-frame: 10
       - sprite: FAKE
-        frames: [A]
+        frames: [J]
         tics-per-frame: 10
       - sprite: FAKE
-        frames: [A]
+        frames: [K]
         tics-per-frame: -1
   properties:
     "health.baby": 200
@@ -641,27 +641,28 @@ MechaHitler:
     # No Pain state.
     Attack: # s_mechashoot1..6 / T_Shoot
       - sprite: MECH
-        frames: [A]
+        frames: [E]
         tics-per-frame: 30
       - sprite: MECH
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: MECH
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: MECH
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: MECH
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: MECH
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
+        action: T_Shoot
         next-state: Chase
     # A_MechaSound plays an ambient servo/stomp loop on frames 1 and 3
     # whenever Mecha Hitler is in an area the player can hear.
@@ -692,18 +693,18 @@ MechaHitler:
         think: T_Chase
     Death: # s_mechadie1..4 / A_DeathScream, A_HitlerMorph
       - sprite: MECH
-        frames: [A]
+        frames: [H]
         tics-per-frame: 10
         action: A_DeathScream
       - sprite: MECH
-        frames: [A]
+        frames: [I]
         tics-per-frame: 10
       - sprite: MECH
-        frames: [A]
+        frames: [J]
         tics-per-frame: 10
         action: A_HitlerMorph
       - sprite: MECH
-        frames: [A]
+        frames: [K]
         tics-per-frame: -1
   properties:
     "health.baby": 800
@@ -740,27 +741,28 @@ RealHitler:
     # No Pain state.
     Attack: # s_hitlershoot1..6 / T_Shoot
       - sprite: HTLR
-        frames: [A]
+        frames: [E]
         tics-per-frame: 30
       - sprite: HTLR
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: HTLR
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: HTLR
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: HTLR
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: HTLR
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
+        action: T_Shoot
         next-state: Chase
     Chase: # s_hitlerchase1..4 / T_Chase -- notably faster tics than other bosses
       - sprite: HTLR
@@ -801,29 +803,29 @@ RealHitler:
         frames: [A]
         tics-per-frame: 10
       - sprite: HTLR
-        frames: [A]
+        frames: [H]
         tics-per-frame: 10
         action: A_Slurpie
       - sprite: HTLR
-        frames: [A]
+        frames: [I]
         tics-per-frame: 10
       - sprite: HTLR
-        frames: [A]
+        frames: [J]
         tics-per-frame: 10
       - sprite: HTLR
-        frames: [A]
+        frames: [K]
         tics-per-frame: 10
       - sprite: HTLR
-        frames: [A]
+        frames: [L]
         tics-per-frame: 10
       - sprite: HTLR
-        frames: [A]
+        frames: [M]
         tics-per-frame: 10
       - sprite: HTLR
-        frames: [A]
+        frames: [N]
         tics-per-frame: 10
       - sprite: HTLR
-        frames: [A]
+        frames: [O]
         tics-per-frame: 20
         action: A_StartDeathCam
   properties:

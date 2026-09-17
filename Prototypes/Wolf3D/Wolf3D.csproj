@@ -25,6 +25,12 @@
 	<ItemGroup>
 	  <Folder Include="Models\" />
 	</ItemGroup>
+	<ItemGroup>
+		<Content Include="..\..\pfwolf-pk3\**\*">
+			<Link>pk3\%(RecursiveDir)%(FileName)%(Extension)</Link>
+			<CopyToOutputDirectory>DoNotCopy</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
 
 	<PropertyGroup>
 		<PfWolfPk3SourceDir>$(MSBuildProjectDirectory)\..\..\pfwolf-pk3\</PfWolfPk3SourceDir>
