@@ -383,19 +383,10 @@ internal partial class Program
 
         builtActor.RunState("Pickup");
 
-        //if (builtActor is Entities.Actors.Weapon)
-        //{
-        //    // TODO: The MachineGun should be a defined type built off actor
-        //    switch (check.item_class.ToLowerInvariant())
-        //    {
-        //        case "machinegun":
-        //            GiveWeapon(weapontypes.wp_machinegun);
-        //            break;
-        //        case "gatlinggun":
-        //            GiveWeapon(weapontypes.wp_chaingun);
-        //            break;
-        //    }
-        //}
+        if (builtActor is Entities.Actors.Weapon && WeaponPickupTypes.TryGetValue(builtActor.Name, out var pickedUpWeapon))
+        {
+            GiveWeapon(pickedUpWeapon);
+        }
 
         if (builtActor.Properties.TryGetValue("inventory.pickupsound", out var pickupSound))
         {
@@ -779,6 +770,19 @@ internal partial class Program
 
         DrawWeapon();
     }
+
+    // Maps a Weapon actor's yaml class name (Actor.Name, set in ActorMetadata.CreateActor)
+    // to the weapontypes slot it grants on pickup. "Blue" variants are reskins of the same
+    // slot (Spear of Destiny), not separate weapons.
+    private static readonly Dictionary<string, weapontypes> WeaponPickupTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Pistol"] = weapontypes.wp_pistol,
+        ["BluePistol"] = weapontypes.wp_pistol,
+        ["MachineGun"] = weapontypes.wp_machinegun,
+        ["BlueAK47"] = weapontypes.wp_machinegun,
+        ["GatlingGun"] = weapontypes.wp_chaingun,
+        ["BlueGatlingGun"] = weapontypes.wp_chaingun,
+    };
 
 
     internal static void Cmd_Use()
