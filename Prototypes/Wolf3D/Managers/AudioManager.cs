@@ -349,7 +349,7 @@ internal class AudioManager
     private static int CreateBuffer(Wolf3dDigitizedAudio sound)
     {
         var buffer = AL.GenBuffer();
-        var data = sound.ToRawWav(44100);
+        var data = sound.ToPcm16(44100);
         AL.BufferData(buffer, ALFormat.Mono16, data, 44100);
         return buffer;
     }

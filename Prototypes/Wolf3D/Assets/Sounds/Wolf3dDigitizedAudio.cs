@@ -79,14 +79,27 @@ internal record Wolf3dDigitizedAudio : Asset
 
     public int OriginalSampleRate { get; set; } = 7042;
 
-    public byte[] ToRawWav(int targetSampleRate)
+    public short[] ToPcm16(int targetSampleRate)
     {
         if (targetSampleRate < OriginalSampleRate)
             throw new PfWolfAudioException("Target sample rate must be greater than or equal to the original sample rate.");
-        int i;
 
-        int destsamples = (int)((float)Size * (float)targetSampleRate // This "Size" is the data size, not the length used (There's garbage at the end of the block)
-            / (float)OriginalSampleRate);
+        int destsamples = (int)((float)Size * (float)targetSampleRate / (float)OriginalSampleRate);
+
+        short[] newsamples = new short[destsamples];
+        for (int i = 0; i < destsamples; i++)
+        {
+            newsamples[i] = GetSample((float)Size * (float)i / (float)destsamples,
+                RawData, Size);
+        }
+
+        return newsamples;
+    }
+
+    public byte[] ToRawWav(int targetSampleRate)
+    {
+        short[] newsamples = ToPcm16(targetSampleRate);
+        int destsamples = newsamples.Length;
 
         byte[] wavebuffer = new byte[headchunk.size_of + wavechunk.size_of + destsamples * 2];     // dest are 16-bit samples
 
@@ -117,24 +130,12 @@ internal record Wolf3dDigitizedAudio : Asset
         var dheadData = dhead.AsBytes();
         Buffer.BlockCopy(dheadData, 0, wavebuffer, headData.Length, dheadData.Length);
 
-        // alignment is correct, as wavebuffer comes from malloc
-        // and sizeof(headchunk) % 4 == 0 and sizeof(wavechunk) % 4 == 0
-        short[] newsamples = new short[(wavebuffer.Length + headchunk.size_of
-            + wavechunk.size_of) / sizeof(short)];
-        float cursample = 0.0F;
-        float samplestep = (float)OriginalSampleRate / (float)targetSampleRate;
-        for (i = 0; i < destsamples; i++, cursample += samplestep)
-        {
-            newsamples[i] = GetSample((float)Size * (float)i / (float)destsamples,
-                RawData, Size);
-        }
-
         Buffer.BlockCopy(
             src: newsamples,
             srcOffset: 0,
             dst: wavebuffer,
             dstOffset: headData.Length + dheadData.Length,
-            count: wavebuffer.Length - (headData.Length + dheadData.Length));
+            count: destsamples * 2);
 
         return wavebuffer;
     }
@@ -146,13 +147,16 @@ internal record Wolf3dDigitizedAudio : Asset
 
     private static short GetSample(float csample, byte[] samples, int size)
     {
-        float s0 = 0, s1 = 0, s2 = 0;
         int cursample = (int)csample;
         float sf = csample - (float)cursample;
 
-        if (cursample - 1 >= 0) s0 = (float)(samples[cursample - 1] - 128);
-        s1 = (float)(samples[cursample] - 128);
-        if (cursample + 1 < size) s2 = (float)(samples[cursample + 1] - 128);
+        // At the edges of the buffer there is no neighboring sample to interpolate
+        // against. Holding the edge sample's own value (rather than defaulting to 0,
+        // i.e. digital silence) keeps the curve flat instead of snapping toward
+        // silence, which otherwise produces an audible pop at the start/end of playback.
+        float s1 = (float)(samples[cursample] - 128);
+        float s0 = cursample - 1 >= 0 ? (float)(samples[cursample - 1] - 128) : s1;
+        float s2 = cursample + 1 < size ? (float)(samples[cursample + 1] - 128) : s1;
 
         float val = s0 * sf * (sf - 1) / 2 - s1 * (sf * sf - 1) + s2 * (sf + 1) * sf / 2;
         int intval = (int)(val * 256);
