@@ -25,9 +25,18 @@
 	<ItemGroup>
 	  <Folder Include="Models\" />
 	</ItemGroup>
+
+	<PropertyGroup>
+		<PfWolfPk3SourceDir>$(MSBuildProjectDirectory)\..\..\pfwolf-pk3\</PfWolfPk3SourceDir>
+	</PropertyGroup>
 	<ItemGroup>
-	  <None Update="pfwolf.pk3">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
+		<PfWolfPk3SourceFiles Include="$(PfWolfPk3SourceDir)**\*.*" />
 	</ItemGroup>
+
+	<Target Name="BuildPfWolfPk3" BeforeTargets="Build" Inputs="@(PfWolfPk3SourceFiles)" Outputs="$(TargetDir)pfwolf.pk3">
+		<ZipDirectory SourceDirectory="$(PfWolfPk3SourceDir)" DestinationFile="$(TargetDir)pfwolf.pk3" Overwrite="true" />
+		<ItemGroup>
+			<FileWrites Include="$(TargetDir)pfwolf.pk3" />
+		</ItemGroup>
+	</Target>
 </Project>
