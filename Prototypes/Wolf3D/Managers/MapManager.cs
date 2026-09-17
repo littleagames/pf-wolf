@@ -88,7 +88,13 @@ internal class MapManager
 
         mapwidth = mapAsset.Width;
         mapheight = mapAsset.Height;
-        mapsegs = mapAsset.MapData;
+        // Clone each plane: SpawnDoor and other setup code mutate mapsegs in place
+        // (e.g. SetMapSpot), and mapAsset is a cached singleton reused for every
+        // load of this level, so writing through the original array would
+        // permanently corrupt the cached map data (doors would vanish on replay).
+        mapsegs = new ushort[mapAsset.MapData.Length][];
+        for (int i = 0; i < mapAsset.MapData.Length; i++)
+            mapsegs[i] = (ushort[])mapAsset.MapData[i].Clone();
 
 #if USE_FEATUREFLAGS
     const int MXX = MAPSIZE - 1;
