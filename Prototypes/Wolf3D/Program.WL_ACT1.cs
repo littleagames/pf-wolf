@@ -252,7 +252,7 @@ internal partial class Program
 
         if (areabyplayer[area] != 0)
         {
-            PlaySoundLocTile("CLOSEDOOR", doorobjlist[door].tilex, doorobjlist[door].tiley); // JAB
+            PlaySoundLocTile("doors/close", doorobjlist[door].tilex, doorobjlist[door].tiley); // JAB
         }
 
         doorobjlist[door].action = dooractiontypes.dr_closing;
@@ -365,7 +365,7 @@ internal partial class Program
 
                 if (areabyplayer[area1] != 0)
                 {
-                    PlaySoundLocTile("OPENDOOR", doorobjlist[door].tilex, doorobjlist[door].tiley);  // JAB
+                    PlaySoundLocTile("doors/open", doorobjlist[door].tilex, doorobjlist[door].tiley);  // JAB
                 }
             }
         }

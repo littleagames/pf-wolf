@@ -542,7 +542,7 @@ internal partial class Program
     {
         _graphicManager.DrawPic("c_cursor1", x, y);
         _videoManager.Update();
-        _audioManager.Play("MOVEGUN1");
+        _audioManager.Play("menu/move1");
         GameEngineManager.DelayMs(8 * 100 / 7);
     }
 
@@ -562,7 +562,7 @@ internal partial class Program
         //
         routine?.Invoke(which);
         _videoManager.Update();
-        _audioManager.Play("MOVEGUN2");
+        _audioManager.Play("menu/move2");
     }
 
     internal static void CheckPause()
@@ -1741,7 +1741,7 @@ internal partial class Program
                     if (newview >= 19) DrawChangeView(newview);
                     else ShowViewSize(newview);
                     _videoManager.Update();
-                    _audioManager.Play("HITWALL");
+                    _audioManager.Play("world/hitwall");
                     TicDelay(10);
                     break;
 
@@ -1755,7 +1755,7 @@ internal partial class Program
                     }
                     else ShowViewSize(newview);
                     _videoManager.Update();
-                    _audioManager.Play("HITWALL");
+                    _audioManager.Play("world/hitwall");
                     TicDelay(10);
                     break;
             }
@@ -1898,7 +1898,7 @@ internal partial class Program
                         DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, "Black", "READCOLOR");
                         _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, "READHCOLOR");
                         _videoManager.Update();
-                        _audioManager.Play("MOVEGUN1");
+                        _audioManager.Play("menu/move1");
                         TicDelay(20);
                     }
                     break;
@@ -1913,7 +1913,7 @@ internal partial class Program
                         DrawOutline(60 + 20 * mouseadjustment, 97, 20, 10, "Black", "READCOLOR");
                         _videoManager.Bar(61 + 20 * mouseadjustment, 98, 19, 9, "READHCOLOR");
                         _videoManager.Update();
-                        _audioManager.Play("MOVEGUN1");
+                        _audioManager.Play("menu/move1");
                         TicDelay(20);
                     }
                     break;
@@ -2144,7 +2144,7 @@ internal partial class Program
                             case 1:
                                 PrintX = (ushort)x;
                                 US_Print("?");
-                                _audioManager.Play("HITWALL");
+                                _audioManager.Play("world/hitwall");
                                 break;
                         }
                         tick ^= 1;
@@ -2184,7 +2184,7 @@ internal partial class Program
 
                                 buttonmouse[result - 1] = (buttontypes)order[which];
                                 picked = 1;
-                                _audioManager.Play("SHOOTDOOR");
+                                ShootSnd();
                             }
                             break;
 
@@ -2211,7 +2211,7 @@ internal partial class Program
 
                                 buttonjoy[result - 1] = (buttontypes)order[which];
                                 picked = 1;
-                                _audioManager.Play("SHOOTDOOR");
+                                ShootSnd();
                             }
                             break;
 
@@ -2273,7 +2273,7 @@ internal partial class Program
                     }
                     while (cust.allowed[which] == 0);
                     redraw = 1;
-                    _audioManager.Play("MOVEGUN1");
+                    _audioManager.Play("menu/move1");
                     do
                     {
                         ReadAnyControl(out ci);
@@ -2292,7 +2292,7 @@ internal partial class Program
                     }
                     while (cust.allowed[which] == 0);
                     redraw = 1;
-                    _audioManager.Play("MOVEGUN1");
+                    _audioManager.Play("menu/move1");
                     do
                     {
                         ReadAnyControl(out ci);

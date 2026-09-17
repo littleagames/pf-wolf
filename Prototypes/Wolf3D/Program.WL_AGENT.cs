@@ -336,7 +336,7 @@ internal partial class Program
             return;         // walk through walls
 
         if (!_audioManager.IsAnySoundPlaying())
-             _audioManager.Play("HITWALL");
+             _audioManager.Play("world/hitwall");
 
         ob.x = basex + xmove;
         ob.y = basey;
@@ -717,7 +717,7 @@ internal partial class Program
         if (gamestate.lives < 9)
             gamestate.lives++;
         DrawLives();
-        _audioManager.Play("BONUS1UP");
+        _audioManager.Play("misc/1up");
     }
 
     static void DrawScore()
@@ -845,7 +845,7 @@ internal partial class Program
                 playstate = playstatetypes.ex_secretlevel;
             else
                 playstate = playstatetypes.ex_completed;
-            _audioManager.Play("LEVELDONE");
+            _audioManager.Play("switches/elevbutn");
             _audioManager.WaitSoundDone();
         }
         else if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) != 0)

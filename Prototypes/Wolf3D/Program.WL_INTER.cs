@@ -313,7 +313,7 @@ internal partial class Program
                     x = 36 - tempstr.Length * 2;
                     Write(x, 7, tempstr);
                     if ((i % (PAR_AMOUNT / 10)) == 0)
-                        _audioManager.Play("ENDBONUS1");
+                        _audioManager.Play("misc/end_bonus1");
                     _videoManager.Update();
                     while (_audioManager.IsAnySoundPlaying())
                         BJ_Breathe();
@@ -323,7 +323,7 @@ internal partial class Program
 
                 _videoManager.Update();
 
-                _audioManager.Play("ENDBONUS2");
+                _audioManager.Play("misc/end_bonus2");
                 while (_audioManager.IsAnySoundPlaying())
                     BJ_Breathe();
             }
@@ -339,7 +339,7 @@ internal partial class Program
                 x = RATIOXX - tempstr.Length * 2;
                 Write(x, 14, tempstr);
                 if ((i % 10) == 0)
-                    _audioManager.Play("ENDBONUS1");
+                    _audioManager.Play("misc/end_bonus1");
                 _videoManager.Update();
                 while (_audioManager.IsAnySoundPlaying())
                     BJ_Breathe();
@@ -356,16 +356,16 @@ internal partial class Program
                 x = (RATIOXX - 1) - tempstr.Length * 2;
                 Write(x, 7, tempstr);
                 _videoManager.Update();
-                _audioManager.Play("PERCENT100");
+                _audioManager.Play("misc/100percent");
             }
             else if (ratio == 0)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
                 _audioManager.StopAll();
-                _audioManager.Play("NOBONUS");
+                _audioManager.Play("misc/no_bonus");
             }
             else
-                _audioManager.Play("ENDBONUS2");
+                _audioManager.Play("misc/end_bonus2");
 
             _videoManager.Update();
             while (_audioManager.IsAnySoundPlaying())
@@ -381,7 +381,7 @@ internal partial class Program
                 x = RATIOXX - tempstr.Length * 2;
                 Write(x, 16, tempstr);
                 if ((i % 10) == 0)
-                    _audioManager.Play("ENDBONUS1");
+                    _audioManager.Play("misc/end_bonus1");
                 _videoManager.Update();
                 while (_audioManager.IsAnySoundPlaying())
                     BJ_Breathe();
@@ -398,16 +398,16 @@ internal partial class Program
                 x = (RATIOXX - 1) - tempstr.Length * 2;
                 Write(x, 7, tempstr);
                 _videoManager.Update();
-                _audioManager.Play("PERCENT100");
+                _audioManager.Play("misc/100percent");
             }
             else if (ratio == 0)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
                 _audioManager.StopAll();
-                _audioManager.Play("NOBONUS");
+                _audioManager.Play("misc/no_bonus");
             }
             else
-                _audioManager.Play("ENDBONUS2");
+                _audioManager.Play("misc/end_bonus2");
             _videoManager.Update();
             while (_audioManager.IsAnySoundPlaying())
                 BJ_Breathe();
@@ -422,7 +422,7 @@ internal partial class Program
                 x = RATIOXX - tempstr.Length * 2;
                 Write(x, 18, tempstr);
                 if ((i % 10) == 0)
-                    _audioManager.Play("ENDBONUS1");
+                    _audioManager.Play("misc/end_bonus1");
                 _videoManager.Update();
                 while (_audioManager.IsAnySoundPlaying())
                     BJ_Breathe();
@@ -438,16 +438,16 @@ internal partial class Program
                 x = (RATIOXX - 1) - tempstr.Length * 2;
                 Write(x, 7, tempstr);
                 _videoManager.Update();
-                _audioManager.Play("PERCENT100");
+                _audioManager.Play("misc/100percent");
             }
             else if (ratio == 0)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
                 _audioManager.StopAll();
-                _audioManager.Play("NOBONUS");
+                _audioManager.Play("misc/no_bonus");
             }
             else
-                _audioManager.Play("ENDBONUS2");
+                _audioManager.Play("misc/end_bonus2");
             _videoManager.Update();
             while (_audioManager.IsAnySoundPlaying())
                 BJ_Breathe();

@@ -92,6 +92,7 @@ internal class AssetManager
                 throw new ArgumentException($"Asset name cannot be empty. Asset Type: {assetType}", nameof(assetName));
             }
 
+            Console.WriteLine($"Asset name cannot be empty. Asset Type: {assetType}");
             return null;
         }
 
@@ -100,7 +101,7 @@ internal class AssetManager
         if (_assets.TryGetValue(key, out var foundAsset))
             return foundAsset as T;
 
-
+        Console.WriteLine($"Asset not found: {assetName} (Type: {assetType})");
         return null;
     }
 

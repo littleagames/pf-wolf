@@ -154,13 +154,13 @@ internal partial class Program
         {
             if (ob.obclass == classtypes.rocketobj)
             {
-                PlaySoundLocActor("MISSILEHIT", ob);
+                PlaySoundLocActor("missile/hit", ob);
                 ob.state = s_boom1;
             }
 #if SPEAR
             else if (ob->obclass == hrocketobj)
             {
-                PlaySoundLocActor(MISSILEHIT", ob);
+                PlaySoundLocActor(missile/hit", ob);
                 ob->state = &s_hboom1;
             }
 #endif
@@ -286,7 +286,7 @@ internal partial class Program
 
     internal static void T_BJYell(objstruct ob)
     {
-        PlaySoundLocActor("YEAH", ob);  // JAB
+        PlaySoundLocActor("misc/yeah", ob);  // JAB
     }
 
 

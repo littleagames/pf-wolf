@@ -71,10 +71,26 @@ internal class AudioManager
             // not found
             return;
 
-        if (!soundSeq.SoundInfo.TryGetValue(name, out var soundProfile))
+        SoundProfile soundProfile = null;
+        for (var indirection = 0; indirection < 8; indirection++)
         {
-            // not found
-            return;
+            if (!soundSeq.SoundInfo.TryGetValue(name, out soundProfile) || soundProfile == null)
+                // not found
+                return;
+
+            if (soundProfile.Random.Count > 0)
+            {
+                name = soundProfile.Random[Program.US_RndT() % soundProfile.Random.Count];
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(soundProfile.Alias))
+            {
+                name = soundProfile.Alias;
+                continue;
+            }
+
+            break;
         }
 
         if (soundProfile == null)
