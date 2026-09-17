@@ -778,26 +778,26 @@ internal partial class Program
         uint start;
         string[] songs =
         {
-            "GetThem",
-            "Searching",
-            "PrisonerOfWar",
-            "Suspense",
-            "MarchToWar",
-            "Corner",
+            "GETTHEM",
+            "SEARCHN",
+            "POW",
+            "SUSPENSE",
+            "WARMARCH",
+            "CORNER",
 
-            "NaziAnthem",
-            "Lurking",
-            "GoingAfterHitler",
-            "PoundingHeadache",
-            "Dungeons",
-            "Ultimate",
+            "NAZI_OMI",
+            "PREGNANT",
+            "GOINGAFT",
+            "HEADACHE",
+            "DUNGEON",
+            "ULTIMATE",
 
-            "KillTheSOB",
-            "NaziRap",
-            "TheTwelfthHour",
-            "ZeroHour",
-            "VictoryMarch",
-            "PacMan"
+            "INTROCW3",
+            "NAZIRAP",
+            "TWELFTH",
+            "ZEROHOUR",
+            "VICMARCH",
+            "PACMAN"
         };
 
         _inputManager.ClearKeysDown();

@@ -15,13 +15,16 @@ internal class AudioManager
     private const float MusicSampleGain = 3.0f;
     private const float MusicGain = 0.75f;
 
+    // Streaming playback: how much audio (in frames) each queued OpenAL buffer holds,
+    // how many buffers to prime before starting playback, and the max look-ahead depth.
+    private const int MusicStreamFramesPerChunk = MusicSampleRate / 10; // 100ms per buffer
+    private const int MusicStreamPrimedBuffers = 2;
+    private const int MusicStreamQueueDepth = 6;
+
     private readonly ALDevice _device;
     private readonly ALContext _context;
 
     private readonly Dictionary<string, int> _buffers = [];
-    private readonly IReadOnlyList<Wolf3dImfAudio> _musicTracks;
-    private readonly Dictionary<string, int> _musicBuffers = [];
-    private readonly Dictionary<string, Task<short[]>> _musicRenderTasks = [];
 
     // Available sound channels
     private int _nextSource;
@@ -30,8 +33,8 @@ internal class AudioManager
     private readonly int _musicSource;
     private readonly Lazy<AssetManager> _assetManager;
     private string _requestedMusicTrack = "";
-    private int _musicRequestId;
-    private double _musicFade;
+    private Thread? _musicStreamThread;
+    private CancellationTokenSource? _musicStreamCts;
     private bool _isPaused;
     private bool _isDisposed;
 
@@ -50,7 +53,6 @@ internal class AudioManager
         _sources = AL.GenSources(SourceCount);
         _musicSource = AL.GenSource();
         AL.Source(_musicSource, ALSourceb.SourceRelative, true);
-        AL.Source(_musicSource, ALSourceb.Looping, true);
         foreach (var source in _sources)
         {
             AL.Source(source, ALSourceb.SourceRelative, true);
@@ -224,62 +226,126 @@ internal class AudioManager
         if (imfTrack == null)
             return;
 
+        StopMusicStream();
+
         _requestedMusicTrack = name;
-        var requestId = ++_musicRequestId;
-        AL.SourceStop(_musicSource);
-        if (_musicBuffers.TryGetValue(name, out var buffer))
-        {
-            StartMusic(name, buffer);
+        AL.Source(_musicSource, ALSourcef.Gain, MusicGain);
+
+        var cts = new CancellationTokenSource();
+        _musicStreamCts = cts;
+        _musicStreamThread = new Thread(() => StreamMusic(imfTrack, cts.Token)) { IsBackground = true, Name = "MusicStream" };
+        _musicStreamThread.Start();
+    }
+
+    // Synthesizes the IMF track a small chunk at a time and feeds it to the music source as
+    // queued OpenAL buffers, so playback can start after the first couple of chunks instead of
+    // waiting for the whole (often minutes-long) track to be rendered up front.
+    private void StreamMusic(Wolf3dImfAudio track, CancellationToken token)
+    {
+        var commands = track.Commands;
+        if (commands.Count == 0 || commands.Sum(command => command.Delay) == 0)
             return;
-        }
 
-        if (!_musicRenderTasks.TryGetValue(name, out var renderTask))
-        {
-           // Logger.Instance.Info($"Rendering music track {name} in the background.");
-            renderTask = Task.Run(() => RenderMusic(imfTrack));
-            _musicRenderTasks.Add(name, renderTask);
-        }
-        _ = FinishMusicRenderingAsync(name, requestId, renderTask);
-    }
-
-    private void StartMusic(string name, int buffer)
-    {
-        AL.Source(_musicSource, ALSourcei.Buffer, buffer);
-        AL.Source(_musicSource, ALSourcef.Gain, MusicGain * (float)(1.0 - _musicFade));
-        if (!_isPaused)
-            AL.SourcePlay(_musicSource);
-       // Logger.Instance.Info($"Playing music track {name}.");
-    }
-
-    private static short[] RenderMusic(Wolf3dImfAudio track)
-    {
-        var framesPerTick = MusicSampleRate / MusicTicksPerSecond;
-        var frameCount = checked(track.Commands.Sum(command => command.Delay) * framesPerTick);
-        if (frameCount == 0)
-            throw new InvalidDataException("The IMF music sequence contains no timed samples.");
-        var samples = new short[checked(frameCount * 2)];
         var chip = new Opl3Chip();
         chip.Reset(MusicSampleRate);
         chip.WriteRegister(0x01, 0x20);
-        var destination = 0;
-        foreach (var command in track.Commands)
+
+        const int framesPerTick = MusicSampleRate / MusicTicksPerSecond;
+        var commandIndex = 0;
+        var framesRemainingInCommand = 0;
+        var buffersPrimed = 0;
+
+        while (!token.IsCancellationRequested)
         {
-            chip.WriteRegister(command.Register, command.Value);
-            var sampleCount = command.Delay * framesPerTick * 2;
-            if (sampleCount == 0)
-                continue;
-            chip.GenerateStream(samples.AsSpan(destination, sampleCount));
-            destination += sampleCount;
+            var chunk = new short[MusicStreamFramesPerChunk * 2];
+            var framesWritten = 0;
+
+            while (framesWritten < MusicStreamFramesPerChunk)
+            {
+                while (framesRemainingInCommand == 0)
+                {
+                    var command = commands[commandIndex];
+                    chip.WriteRegister(command.Register, command.Value);
+                    framesRemainingInCommand = command.Delay * framesPerTick;
+                    commandIndex++;
+                    if (commandIndex >= commands.Count)
+                        commandIndex = 0; // loop the track
+                }
+
+                var framesToGenerate = Math.Min(framesRemainingInCommand, MusicStreamFramesPerChunk - framesWritten);
+                chip.GenerateStream(chunk.AsSpan(framesWritten * 2, framesToGenerate * 2));
+                framesWritten += framesToGenerate;
+                framesRemainingInCommand -= framesToGenerate;
+            }
+
+            if (token.IsCancellationRequested)
+                return;
+
+            ApplyMusicGain(chunk);
+
+            var bufferId = AL.GenBuffer();
+            AL.BufferData(bufferId, ALFormat.Stereo16, chunk, MusicSampleRate);
+            AL.SourceQueueBuffers(_musicSource, 1, [bufferId]);
+
+            // Before the source has actually started playing, a Stopped/Initial source reports
+            // every queued buffer as immediately "processed" (nothing is consuming them yet), so
+            // reclaiming here would delete our own priming buffers before SourcePlay ever runs.
+            if (IsMusicSourceActive())
+                ReclaimProcessedMusicBuffers();
+
+            if (buffersPrimed < MusicStreamPrimedBuffers)
+            {
+                buffersPrimed++;
+                if (buffersPrimed == MusicStreamPrimedBuffers && !_isPaused)
+                    AL.SourcePlay(_musicSource);
+            }
+
+            while (!token.IsCancellationRequested)
+            {
+                AL.GetSource(_musicSource, ALGetSourcei.BuffersQueued, out var queuedCount);
+                if (queuedCount < MusicStreamQueueDepth)
+                    break;
+                Thread.Sleep(20);
+                if (IsMusicSourceActive())
+                    ReclaimProcessedMusicBuffers();
+            }
         }
-        ApplyMusicGain(samples);
-        return samples;
     }
 
-    private static int CreateMusicBuffer(short[] samples)
+    private bool IsMusicSourceActive()
     {
-        var buffer = AL.GenBuffer();
-        AL.BufferData(buffer, ALFormat.Stereo16, samples, MusicSampleRate);
-        return buffer;
+        AL.GetSource(_musicSource, ALGetSourcei.SourceState, out var stateInt);
+        var state = (ALSourceState)stateInt;
+        return state is ALSourceState.Playing or ALSourceState.Paused;
+    }
+
+    private void ReclaimProcessedMusicBuffers()
+    {
+        AL.GetSource(_musicSource, ALGetSourcei.BuffersProcessed, out var processed);
+        if (processed <= 0)
+            return;
+        var processedBuffers = new int[processed];
+        AL.SourceUnqueueBuffers(_musicSource, processed, processedBuffers);
+        AL.DeleteBuffers(processedBuffers);
+    }
+
+    // Stops and joins the streaming thread, then drains any buffers still queued on the music
+    // source, so the next PlayMusic/Shutdown starts from a clean slate.
+    private void StopMusicStream()
+    {
+        _musicStreamCts?.Cancel();
+        _musicStreamThread?.Join();
+        _musicStreamCts?.Dispose();
+        _musicStreamCts = null;
+        _musicStreamThread = null;
+
+        AL.SourceStop(_musicSource);
+        AL.GetSource(_musicSource, ALGetSourcei.BuffersQueued, out var queued);
+        if (queued <= 0)
+            return;
+        var queuedBuffers = new int[queued];
+        AL.SourceUnqueueBuffers(_musicSource, queued, queuedBuffers);
+        AL.DeleteBuffers(queuedBuffers);
     }
 
     private static void ApplyMusicGain(Span<short> samples)
@@ -291,44 +357,10 @@ internal class AudioManager
         }
     }
 
-    private async Task FinishMusicRenderingAsync(string trackNumber, int requestId, Task<short[]> renderTask)
-    {
-        try
-        {
-            var samples = await renderTask.ConfigureAwait(false);
-
-            var thread = new Thread(new ThreadStart(() => {
-
-
-            if (_isDisposed || _musicRequestId != requestId)
-                    return;
-                if (!_musicBuffers.TryGetValue(trackNumber, out var buffer))
-                {
-                    buffer = CreateMusicBuffer(samples);
-                    _musicBuffers.Add(trackNumber, buffer);
-                    _musicRenderTasks.Remove(trackNumber);
-                }
-                StartMusic(trackNumber, buffer);
-            }))
-            {
-                IsBackground = true
-            };
-            thread.Start();
-        }
-        catch (Exception exception)
-        {
-            //Logger.Instance.Warn($"Music track {trackNumber} could not be rendered: {exception.Message}");
-        }
-    }
-
-    private void AudioPlayerThread()
-    {
-
-    }
-
     public void StopMusic()
     {
-        AL.SourceStop(_musicSource);
+        StopMusicStream();
+        _requestedMusicTrack = "";
     }
 
     /// <summary>
@@ -341,7 +373,7 @@ internal class AudioManager
         _isPaused = isPaused;
         if (isPaused)
             AL.SourcePause(_musicSource);
-        else if (!string.IsNullOrEmpty(_requestedMusicTrack) && _musicBuffers.ContainsKey(_requestedMusicTrack))
+        else if (!string.IsNullOrEmpty(_requestedMusicTrack) && _musicStreamThread is { IsAlive: true })
             AL.SourcePlay(_musicSource);
     }
 
@@ -350,13 +382,13 @@ internal class AudioManager
         if (_isDisposed)
             return;
         _isDisposed = true;
+        StopMusicStream();
         AL.SourceStop(_musicSource);
         foreach (var source in _sources)
             AL.SourceStop(source);
         AL.DeleteSource(_musicSource);
         AL.DeleteSources(_sources);
         AL.DeleteBuffers(_buffers.Values.ToArray());
-        AL.DeleteBuffers(_musicBuffers.Values.ToArray());
         ALC.MakeContextCurrent(ALContext.Null);
         ALC.DestroyContext(_context);
         ALC.CloseDevice(_device);

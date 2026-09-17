@@ -74,11 +74,11 @@ internal partial class Program
     internal const int CST_START = 60;
     internal const int CST_SPC = 60;
 
-    internal static string MENUSONG => "Wondering";
+    internal static string MENUSONG => "WONDERIN";
 #if SPEAR
     internal static string INTROSONG => musicnames.XTOWER2_MUS;
 #else
-    internal static string INTROSONG => "HorstWesselLied";
+    internal static string INTROSONG => "NAZI_NOR";
 #endif
 
     internal static int SENSITIVE = 60;
@@ -1809,7 +1809,7 @@ internal partial class Program
 
     internal static int CP_ReadThis(int _)
     {
-        StartCPMusic("Corner");
+        StartCPMusic("CORNER");
         HelpScreens();
         StartCPMusic(MENUSONG);
         return 1;
@@ -1822,7 +1822,7 @@ internal partial class Program
 #if SPEAR
         StartCPMusic(musicnames.XAWARD_MUS);
 #else
-        StartCPMusic("Roster");
+        StartCPMusic("ROSTER");
 #endif
 
         DrawHighScores();
