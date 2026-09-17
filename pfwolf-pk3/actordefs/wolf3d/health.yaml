@@ -35,7 +35,7 @@ Food2:
         frames: [A]
         tics-per-frame: -1
       
-Medikit:
+FirstAidKit:
   parent: Health
   states:
     Spawn:
@@ -46,20 +46,20 @@ Medikit:
       "inventory.amount": 25
       "inventory.pickupsound": "misc/medkit_pkup"
 
-Medikit2:
-  parent: Medikit
+FirstAidKit2:
+  parent: FirstAidKit
   states:
     Spawn:
       - sprite: MED2
         frames: [A]
         tics-per-frame: -1
 
-OneUpHealth:
+ExtraLifeHealth:
   parent: Health
   properties:
     "inventory.amount": 99
 
-OneUp:
+ExtraLife:
   parent: CustomInventory
   properties:
     "inventory.pickupsound": "misc/1up"
@@ -84,10 +84,10 @@ OneUp:
       - sprite: TNT1
         frames: [A]
         tics-per-frame: 0
-        action: A_GiveInventory("OneUpHealth")
+        action: A_GiveInventory("ExtraLifeHealth")
 
-OneUpPill:
-  parent: OneUp
+ExtraLifePill:
+  parent: ExtraLife
   states:
     Spawn:
       - sprite: PILL
@@ -96,7 +96,7 @@ OneUpPill:
   flags:
     - bright
 
-Blood:
+PoolOfBlood:
   parent: Health
   properties:
     inventory.amount: 1
@@ -108,8 +108,8 @@ Blood:
         frames: [A]
         tics-per-frame: -1
 
-Blood2:
-  parent: Blood
+PoolOfBlood2:
+  parent: PoolOfBlood
   properties:
     inventory.pickupsound: "misc/slurpie2"
   states:

@@ -5,7 +5,7 @@ things:
     patrol: 0
     min-skill: 0
   24:
-    class: GreenBarrel
+    class: OilDrum
     angles: 0
     patrol: 0
     min-skill: 0
@@ -25,7 +25,7 @@ things:
     patrol: 0
     min-skill: 0
   28:
-    class: HangedMan
+    class: HangingSkeleton
     angles: 0
     patrol: 0
     min-skill: 0
@@ -35,7 +35,7 @@ things:
     patrol: 0
     min-skill: 0
   30:
-    class: WhitePillar
+    class: WhiteColumn
     angles: 0
     patrol: 0
     min-skill: 0
@@ -45,7 +45,7 @@ things:
     patrol: 0
     min-skill: 0
   32:
-    class: SkeletonFlat
+    class: Skeleton
     angles: 0
     patrol: 0
     min-skill: 0
@@ -65,7 +65,7 @@ things:
     patrol: 0
     min-skill: 0
   36:
-    class: BareTable
+    class: Table
     angles: 0
     patrol: 0
     min-skill: 0
@@ -75,27 +75,27 @@ things:
     patrol: 0
     min-skill: 0
   38:
-    class: KitchenStuff
+    class: Utensils
     angles: 0
     patrol: 0
     min-skill: 0
   39:
-    class: SuitOfArmor
+    class: Armor
     angles: 0
     patrol: 0
     min-skill: 0
   40:
-    class: HangingCage
+    class: EmptyCage
     angles: 0
     patrol: 0
     min-skill: 0
   41:
-    class: SkeletonCage
+    class: CageWithSkeleton
     angles: 0
     patrol: 0
     min-skill: 0
   42:
-    class: Bones1
+    class: Bones
     angles: 0
     patrol: 0
     min-skill: 0
@@ -110,7 +110,7 @@ things:
     patrol: 0
     min-skill: 0
   45:
-    class: BunkBed
+    class: Bed
     angles: 0
     patrol: 0
     min-skill: 0
@@ -125,7 +125,7 @@ things:
     patrol: 0
     min-skill: 0
   48:
-    class: Medikit
+    class: FirstAidKit
     angles: 0
     patrol: 0
     min-skill: 0
@@ -165,7 +165,7 @@ things:
     patrol: 0
     min-skill: 0
   56:
-    class: OneUp
+    class: ExtraLife
     angles: 0
     patrol: 0
     min-skill: 0
@@ -180,17 +180,17 @@ things:
     patrol: 0
     min-skill: 0
   59:
-    class: Well
+    class: WellWithWater
     angles: 0
     patrol: 0
     min-skill: 0
   60:
-    class: EmptyWell
+    class: Well
     angles: 0
     patrol: 0
     min-skill: 0
   61:
-    class: Blood
+    class: PoolOfBlood
     angles: 0
     patrol: 0
     min-skill: 0
@@ -200,7 +200,7 @@ things:
     patrol: 0
     min-skill: 0
   63:
-    class: CallApogee
+    class: Aardwolf
     angles: 0
     patrol: 0
     min-skill: 0
@@ -220,7 +220,7 @@ things:
     patrol: 0
     min-skill: 0
   67:
-    class: Pots
+    class: UtensilsBlue
     angles: 0
     patrol: 0
     min-skill: 0
@@ -230,12 +230,12 @@ things:
     patrol: 0
     min-skill: 0
   69:
-    class: Spears
+    class: Rack
     angles: 0
     patrol: 0
     min-skill: 0
   70:
-    class: Vines
+    class: Vine
     angles: 0
     patrol: 0
     min-skill: 0

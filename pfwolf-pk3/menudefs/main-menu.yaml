@@ -1,0 +1,96 @@
+music: "Wondering"
+type: "wolf3d-menu"
+position:
+  x: 76
+  y: 55
+indent: 24
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "Center"
+      - y: 184
+  -
+    type: "Stripe"
+    params:
+      - lines: 10
+  -
+    type: "Window"
+    params:
+      - x: 68
+      - y: 52
+      - width: 178
+      - height: 136
+      - theme: "wolf3d-theme"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_options"
+      - horizontal-orientation: "Center"
+      - y: 0
+menu-items:
+  -
+      type: "MenuSwitcher"
+      text: "$MENU_NEWGAME"
+      short-key: N
+      enabled: true
+      action: "CP_NewGame"
+  -
+      type: "MenuSwitcher"
+      text: "$MENU_SOUND"
+      short-key: S
+      enabled: true
+      action: "CP_Sound"
+  -
+      type: "MenuSwitcher"
+      text: "$MENU_CONTROL"
+      short-key: C
+      enabled: true
+      action: "CP_Control"
+  -
+      type: "MenuSwitcher"
+      text: "$MENU_LOADGAME"
+      short-key: L
+      enabled: true
+      action: "CP_LoadGame"
+  -
+      type: "MenuSwitcher"
+      text: "$MENU_SAVEGAME"
+      short-key: S
+      enabled: true
+      action: "CP_SaveGame"
+  -
+      type: "MenuSwitcher"
+      text: "$MENU_CHANGEVIEW"
+      short-key: C
+      enabled: true
+      action: "CP_ChangeView"
+  -
+      type: "MenuSwitcher"
+      text: "$MENU_READTHIS"
+      short-key: R
+      enabled: true
+      action: "CP_ReadThis"
+  -
+      type: "MenuSwitcher"
+      text: "$MENU_VIEWSCORES"
+      short-key: V
+      enabled: true
+      action: "CP_ViewScoresOrEndGame"
+  -
+      type: "MenuSwitcher"
+      text: "$MENU_BACKTODEMO"
+      short-key: B
+      enabled: true
+      action: "CP_DemoOrPlayGame"
+  -
+      type: "MenuSwitcher"
+      text: "$MENU_QUIT"
+      short-key: Q
+      enabled: true
+      action: "CP_Quit"

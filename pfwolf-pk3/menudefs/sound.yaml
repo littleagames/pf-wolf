@@ -1,0 +1,103 @@
+music: "Wondering"
+type: "wolf3d-menu"
+position:
+  x: 48
+  y: 20
+indent: 52
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Window"
+    params:
+      - x: 40
+      - y: 17
+      - width: 250
+      - height: 45
+      - theme: "wolf3d-theme"
+  -
+    type: "Window"
+    params:
+      - x: 40
+      - y: 82
+      - width: 250
+      - height: 45
+      - theme: "wolf3d-theme"
+  -
+    type: "Window"
+    params:
+      - x: 40
+      - y: 147
+      - width: 250
+      - height: 32
+      - theme: "wolf3d-theme"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_fxtitle"
+      - x: 100
+      - y: 0
+  -
+    type: "Graphic"
+    params:
+      - name: "c_digititle"
+      - x: 100
+      - y: 65
+  -
+    type: "Graphic"
+    params:
+      - name: "c_musictitle"
+      - x: 100
+      - y: 130
+menu-items:
+  # Sound FX
+  -
+      type: "ToggleMenuItem"
+      text: "None"
+      enabled: true
+  -
+      type: "ToggleMenuItem"
+      text: "PC Speaker"
+      enabled: true
+  -
+      type: "ToggleMenuItem"
+      text: "AdLib/Sound Blaster"
+      enabled: true
+  # Digi FX, gap of 2
+  -
+      type: "BlankMenuItem"
+  -
+      type: "BlankMenuItem"
+  -
+      type: "ToggleMenuItem"
+      text: "None"
+      enabled: true
+  -
+      type: "ToggleMenuItem"
+      text: "Disney Sound Source"
+      enabled: false
+  -
+      type: "ToggleMenuItem"
+      text: "Sound Blaster"
+      enabled: true
+  # Music, gap of 2
+  -
+      type: "BlankMenuItem"
+  -
+      type: "BlankMenuItem"
+  -
+      type: "ToggleMenuItem"
+      text: "None"
+      enabled: true
+  -
+      type: "ToggleMenuItem"
+      text: "AdLib/Sound Blaster"
+      enabled: true

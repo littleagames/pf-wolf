@@ -294,12 +294,6 @@ BlueGatlingGun:
         next-state: Ready
 
 GatlingGunUpgrade:
-  # No embedded id -- resolved via mapdefs/wolf3d/decorations.yaml object 51
-  # instead, which correctly points here rather than at plain "GatlingGun":
-  # classic Wolf3D pickup behavior for the floor chaingun is to only grant
-  # the actual chaingun if the player already has the machine gun,
-  # otherwise it grants the machine gun, which is exactly what this
-  # "WeaponGiver" actor's dropitem list below does.
   parent: "WeaponGiver"
   properties:
     "inventory.pickupsound": "weapon/gatling/pickup"

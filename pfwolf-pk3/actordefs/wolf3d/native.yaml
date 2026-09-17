@@ -29,6 +29,26 @@ Key:
     "inventory.pickupsound": "misc/k_pkup"
     "inventory.interhubamount": 0
     
+
+GoldKey:
+  parent: Key
+  properties:
+    "inventory.amount": 0
+  states:
+    Spawn:
+      - sprite: GKEY
+        frames: [A]
+        tics-per-frame: -1
+
+SilverKey:
+  parent: Key
+  properties:
+    "inventory.amount": 1
+  states:
+    Spawn:
+      - sprite: SKEY
+        frames: [A]
+        tics-per-frame: -1
 ScoreItem:
   parent: Inventory
   flags: [COUNTITEM]
@@ -47,3 +67,9 @@ Weapon:
     weapon.bobspeed: 1.0
     weapon.bobstyle: "Normal"
     weapon.yadjust: 0
+
+WeaponGiver:
+  parent: Weapon
+  properties:
+    weapon.ammogive1: -1
+    weapon.ammogive2: -1

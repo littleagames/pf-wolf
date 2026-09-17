@@ -1,0 +1,54 @@
+music: "Wondering"
+type: "wolf3d-menu"
+position:
+  x: 24
+  y: 86
+indent: 56
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Stripe"
+    params:
+      - lines: 10
+  -
+    type: "Window"
+    params:
+      - x: 16
+      - y: 81
+      - width: 284
+      - height: 60
+      - theme: "wolf3d-theme"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_control"
+      - horizontal-orientation: "center"
+      - y: 0
+menu-items:
+  -
+      type: "ToggleMenuItem"
+      text: "Mouse Enabled"
+      enabled: false
+  -
+      type: "MenuSwitcher"
+      text: "Mouse Sensitivity"
+      enabled: false
+      action: "MouseSensitivity"
+  -
+      type: "ToggleMenuItem"
+      text: "Joystick Enabled"
+      enabled: false
+  -
+      type: "MenuSwitcher"
+      text: "Customize controls"
+      enabled: true
+      action: "CustomControls"

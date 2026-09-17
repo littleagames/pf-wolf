@@ -1,0 +1,1971 @@
+sound-info:
+  doors/open:
+    digitized: DSDROPN
+    adlib: ALDROPN
+    pc: PCDROPN
+  doors/close:
+    digitized: DSDRCLS
+    adlib: ALDRCLS
+    pc: PCDRCLS
+
+  doors/metal_open:
+    digitized: DSMDROPN
+    adlib: ALDROPN
+    pc: PCDROPN
+  doors/metal_close:
+    digitized: DSMDRCLS
+    adlib: ALDRCLS
+    pc: PCDRCLS
+
+  world/hitwall:
+    digitized: DSHITWAL
+    adlib: ALHITWAL
+    pc: PCHITWAL
+  world/pushwall:
+    digitized: DSPSHWAL
+    adlib: ALPSHWAL
+    pc: PCPSHWAL
+  world/pushwall_heavy:
+    digitized: DSLPHWAL
+    adlib: ALPSHWAL
+    pc: PCPSHWAL
+
+  switches/normbutn:
+    digitized: DSSWITCH
+    adlib: ALSWITCH
+    pc: PCSWITCH
+  switches/exitbutn:
+    alias: switches/normbutn
+  switches/elevbutn:
+    digitized: DSPLATFM
+    adlib: ALSWITCH
+    pc: PCSWITCH
+
+  misc/1up:
+    digitized: DSBNS1UP
+    adlib: ALBNS1UP
+    pc: PCBNS1UP
+  misc/do_nothing:
+    digitized: DSNOTIN
+    adlib: ALNOTHIN
+    pc: PCNOTHIN
+  misc/ammo_pkup:
+    digitized: DSAMMOUP
+    adlib: ALAMMOUP
+    pc: PCAMMOUP
+  misc/ammobox_pkup:
+    digitized: DSAMBXUP
+    adlib: ALAMBXUP
+    pc: PCAMBXUP
+  misc/health_pkup:
+    digitized: DSFOODUP
+    adlib: ALFOODUP
+    pc: PCFOODUP
+  misc/medkit_pkup:
+    digitized: DSMEDIUP
+    adlib: ALMEDIUP
+    pc: PCMEDIUP
+  misc/k_pkup:
+    digitized: DSGETKEY
+    adlib: ALGETKEY
+    pc: PCGETKEY
+  misc/end_bonus1:
+    digitized: DSENDBN1
+    adlib: ALENDBN1
+    pc: PCENDBN1
+  misc/end_bonus2:
+    digitized: DSENDBN2
+    adlib: ALENDBN2
+    pc: PCENDBN2
+  misc/no_bonus:
+    digitized: DSNOBNS
+    adlib: ALNOBNS
+    pc: PCNOBNS
+  misc/100percent:
+    digitized: DSPRC100
+    adlib: ALPRC100
+    pc: PCPRC100
+  misc/slurpie:
+    digitized: DSSLURPE
+    adlib: ALSLURPE
+    pc: PCSLURPE
+  misc/slurpie2:
+    digitized: DSLSLURP
+    adlib: ALSLURPE
+    pc: PCSLURPE
+  misc/yeah:
+    digitized: DSYEAH
+    adlib: ALYEAH
+    pc: PCYEAH
+  misc/fart:
+    digitized: DSFART
+    adlib: ALFART
+    pc: PCFART
+  misc/crash:
+    digitized: DSCRASH
+    adlib: ALFART
+    pc: PCFART
+  misc/dogfood_pkup:
+    alias: misc/health_pkup
+
+  # Compatibility
+  misc/ammo_pickup:
+    alias: misc/ammo_pkup
+  misc/ammobox_pickup:
+    alias: misc/ammobox_pkup
+  misc/health_pickup:
+    alias: misc/health_pkup
+  misc/medkit_pickup:
+    alias: misc/medkit_pkup
+
+  treasure/cross/pickup:
+    digitized: DSBONUS1
+    adlib: ALBONUS1
+    pc: PCBONUS1
+  treasure/chalice/pickup:
+    digitized: DSBONUS2
+    adlib: ALBONUS2
+    pc: PCBONUS2
+  treasure/bible/pickup:
+    digitized: DSBONUS3
+    adlib: ALBONUS3
+    pc: PCBONUS3
+  treasure/crown/pickup:
+    digitized: DSBONUS4
+    adlib: ALBONUS4
+    pc: PCBONUS4
+
+  menu/activate:
+    digitized: DSSELECT
+    adlib: ALSELECT
+    pc: PCSELECT
+  menu/escape:
+    digitized: DSESCPRS
+    adlib: ALESCPRS
+    pc: PCESCPRS
+  menu/move1:
+    digitized: DSMVGUN1
+    adlib: ALMVGUN1
+    pc: PCMVGUN1
+  menu/move2:
+    digitized: DSMVGUN2
+    adlib: ALMVGUN2
+    pc: PCMVGUN2
+
+  player/death:
+    digitized: DSPLDETH
+    adlib: ALPLDETH
+    pc: PCPLDETH
+  player/usefail:
+    digitized: DSNOWAY
+    adlib: ALNOWAY
+    pc: PCNOWAY
+
+  weapon/knife/attack:
+    digitized: DSKNFSWG
+    adlib: ALKNFSWG
+    pc: PCKNFSWG
+
+  weapon/pistol/attack:
+    digitized: DSPISTOL
+    adlib: ALPISTOL
+    pc: PCPISTOL
+
+  weapon/bluepistol/attack:
+    digitized: DSBLUEPS
+    adlib: ALPISTOL
+    pc: PCPISTOL
+
+  weapon/machine/attack:
+    digitized: DSMGUN
+    adlib: ALMGUN
+    pc: PCMGUN
+  weapon/machine/pickup:
+    digitized: DSMGUNUP
+    adlib: ALMGUNUP
+    pc: PCMGUNUP
+  misc/w_pkup:
+    alias: weapon/machine/pickup
+
+  weapon/blueak47/attack:
+    digitized: DSAK47
+    adlib: ALMGUN
+    pc: PCMGUN
+  weapon/blueak47/pickup:
+    digitized: DSMGUNUP
+    adlib: ALMGUNUP
+    pc: PCMGUNUP
+
+  weapon/gatling/attack:
+    digitized: DSCGUN
+    adlib: ALCGUN
+    pc: PCCGUN
+  weapon/gatling/pickup:
+    digitized: DSCGUNUP
+    adlib: ALCGUNUP
+    pc: PCCGUNUP
+
+  weapon/bluegatling/attack:
+    digitized: DSBGTGUN
+    adlib: ALCGUN
+    pc: PCCGUN
+  weapon/bluegatling/pickup:
+    digitized: DSGTGNUP
+    adlib: ALCGUNUP
+    pc: PCCGUNUP
+
+  guard/attack:
+    digitized: DSGRDFIR
+    adlib: ALGRDFIR
+    pc: PCGRDFIR
+  guard/sight:
+    digitized: DSGRDSIT
+    adlib: ALGRDSIT
+    pc: PCGRDSIT
+  guard/death1:
+    digitized: DSGDDTH1
+    adlib: ALGDDTH1
+    pc: PCGDDTH1
+  guard/death2:
+    digitized: DSGDDTH2
+    adlib: ALGDDTH2
+    pc: PCGDDTH2
+  guard/death3:
+    digitized: DSGDDTH2
+    adlib: ALGDDTH3
+    pc: PCGDDTH3
+    # Intentionally play the 2nd sound with digital
+  guard/death4:
+    digitized: DSGDDTH4
+    adlib: ALGDDTH4
+    pc: PCGDDTH4
+  guard/death5:
+    digitized: DSGDDTH5
+    adlib: ALGDDTH5
+    pc: PCGDDTH5
+  guard/death6:
+    digitized: DSGDDTH6
+    adlib: ALGDDTH6
+    pc: PCGDDTH6
+  guard/death7:
+    digitized: DSGDDTH7
+    adlib: ALGDDTH7
+    pc: PCGDDTH7
+  guard/death8:
+    digitized: DSGDDTH8
+    adlib: ALGDDTH8
+    pc: PCGDDTH8
+  guard/death:
+    random:
+      - guard/death1
+      - guard/death2
+      - guard/death3
+      - guard/death4
+      - guard/death5
+      - guard/death6
+      - guard/death7
+      - guard/death8
+  # Guards have a 1/256 chance of farting on death in map 10 of wolfenstein and the secret levels of SOD
+  # We're using two random sounds here since otherwise I would have to have an array of 256 of these to get the same net result
+  guard/fart16:
+    # 1 / 16
+    random:
+      - misc/fart
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+  guard/fart:
+    # 1 / 256
+    random:
+      - guard/fart16
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+      - guard/death
+
+  greenguard/attack:
+    digitized: DSGGDFIR
+    adlib: ALGRDFIR
+    pc: PCGRDFIR
+  greenguard/sight:
+    digitized: DSGGDSIT
+    adlib: ALGRDSIT
+    pc: PCGRDSIT
+  greenguard/death1:
+    digitized: DSGGDTH1
+    adlib: ALGDDTH1
+    pc: PCGDDTH1
+  greenguard/death2:
+    digitized: DSGGDTH2
+    adlib: ALGDDTH2
+    pc: PCGDDTH2
+  greenguard/death3:
+    digitized: DSGGDTH2
+    adlib: ALGDDTH3
+    pc: PCGDDTH3
+    # Intentionally play the 2nd sound with digital
+  greenguard/death4:
+    digitized: DSGGDTH4
+    adlib: ALGDDTH4
+    pc: PCGDDTH4
+  greenguard/death5:
+    digitized: DSGGDTH5
+    adlib: ALGDDTH5
+    pc: PCGDDTH5
+  greenguard/death6:
+    digitized: DSGGDTH6
+    adlib: ALGDDTH6
+    pc: PCGDDTH6
+  greenguard/death7:
+    digitized: DSGGDTH7
+    adlib: ALGDDTH7
+    pc: PCGDDTH7
+  greenguard/death8:
+    digitized: DSGGDTH8
+    adlib: ALGDDTH8
+    pc: PCGDDTH8
+  greenguard/death:
+    random:
+      - greenguard/death1
+      - greenguard/death2
+      - greenguard/death3
+      - greenguard/death4
+      - greenguard/death5
+      - greenguard/death6
+      - greenguard/death7
+      - greenguard/death8
+  greenguard/crash16:
+    random:
+      - misc/crash
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+  greenguard/crash:
+    random:
+      - greenguard/crash16
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+      - greenguard/death
+
+  dog/sight:
+    digitized: DSDOGSIT
+    adlib: ALDOGSIT
+    pc: PCDOGSIT
+  dog/attack:
+    digitized: DSDOGATK
+    adlib: ALDOGATK
+    pc: PCDOGATK
+  dog/death:
+    digitized: DSDOGDTH
+    adlib: ALDOGDTH
+    pc: PCDOGDTH
+  dog/fart16:
+    random:
+      - misc/fart
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+  dog/fart:
+    random:
+      - misc/fart16
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+      - dog/death
+
+  doberman/sight:
+    digitized: DSDOBSIT
+    adlib: ALDOGSIT
+    pc: PCDOGSIT
+  doberman/attack:
+    digitized: DSDOBATK
+    adlib: ALDOGATK
+    pc: PCDOGATK
+  doberman/death:
+    digitized: DSDOBDTH
+    adlib: ALDOGDTH
+    pc: PCDOGDTH
+  doberman/crash16:
+    random:
+      - misc/crash
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+  doberman/crash:
+    random:
+      - misc/crash16
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+      - doberman/death
+
+  wolfss/attack:
+    digitized: DSSSFIRE
+    adlib: ALSSFIRE
+    pc: PCSSFIRE
+    # This is not the same as Doom 2 since it used the shotgun sound
+  wolfss/death:
+    digitized: DSSSDTH
+    adlib: ALSSDTH
+    pc: PCSSDTH
+  wolfss/sight:
+    digitized: DSSSSIT
+    adlib: ALSSSIT
+    pc: PCSSSIT
+  wolfss/fart16:
+    random:
+      - misc/fart
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+  wolfss/fart:
+    random:
+      - wolfss/fart16
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+      - wolfss/death
+
+  ss/attack:
+    digitized: DSLSSFRE
+    adlib: ALSSFIRE
+    pc: PCSSFIRE
+  ss/death:
+    digitized: DSLSSDTH
+    adlib: ALSSDTH
+    pc: PCSSDTH
+  ss/sight:
+    digitized: DSLSSSIT
+    adlib: ALSSSIT
+    pc: PCSSSIT
+  ss/crash16:
+    random:
+      - misc/crash
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+  ss/crash:
+    random:
+      - ss/crash16
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+      - ss/death
+
+  mutant/attack:
+    digitized: DSGRDFIR
+    adlib: ALGRDFIR
+    pc: PCGRDFIR
+  mutant/death:
+    digitized: DSMUTDTH
+    adlib: ALMUTDTH
+    pc: PCMUTDTH
+  mutant/fart16:
+    random:
+      - misc/fart
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+  mutant/fart:
+    random:
+      - misc/fart16
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+      - mutant/death
+
+  bat/attack:
+    digitized: DSGRDFIR
+    adlib: ALGRDFIR
+    pc: PCGRDFIR
+  bat/death:
+    digitized: DSBATDTH
+    adlib: ALMUTDTH
+    pc: PCMUTDTH
+  bat/crash16:
+    random:
+      - misc/crash
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+  bat/crash:
+    random:
+      - misc/crash16
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+      - bat/death
+
+  officer/sight:
+    digitized: DSOFFSIT
+    adlib: ALOFFSIT
+    pc: PCOFFSIT
+  officer/attack:
+    digitized: DSGRDFIR
+    adlib: ALGRDFIR
+    pc: PCGRDFIR
+  officer/death:
+    digitized: DSOFFDTH
+    adlib: ALOFFDTH
+    pc: PCOFFDTH
+  officer/fart16:
+    random:
+      - misc/fart
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+  officer/fart:
+    random:
+      - officer/fart16
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+      - officer/death
+
+  lostofficer/sight:
+    digitized: DSOF2SIT
+    adlib: ALOFFSIT
+    pc: PCOFFSIT
+  lostofficer/attack:
+    digitized: DSGGDFIR
+    adlib: ALGRDFIR
+    pc: PCGRDFIR
+  lostofficer/death:
+    digitized: DSOF2DTH
+    adlib: ALOFFDTH
+    pc: PCOFFDTH
+  lostofficer/crash16:
+    random:
+      - misc/crash
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+  lostofficer/crash:
+    random:
+      - lostofficer/crash16
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+      - lostofficer/death
+
+  hans/attack:
+    digitized: DSBOSSFR
+    adlib: ALBOSSFR
+    pc: PCBOSSFR
+  hans/sight:
+    digitized: DSHANSIT
+    adlib: ALHANSIT
+    pc: PCHANSIT
+  hans/death:
+    digitized: DSHANDTH
+    adlib: ALHANDTH
+    pc: PCHANDTH
+
+  schabbs/sight:
+    digitized: DSSCBSIT
+    adlib: ALSCBSIT
+    pc: PCSCBSIT
+  schabbs/death:
+    digitized: DSSCBDTH
+    adlib: ALSCBDTH
+    pc: PCSCBDTH
+  schabbs/throw:
+    digitized: DSSCBATK
+    adlib: ALSCBATK
+    pc: PCSCBATK
+
+  fake/sight:
+    digitized: DSFAKSIT
+    adlib: ALFAKSIT
+    pc: PCFAKSIT
+  fake/attack:
+    digitized: DSFAKFIR
+    adlib: ALFAKFIR
+    pc: PCFAKFIR
+  fake/death:
+    digitized: DSFAKDTH
+    adlib: ALFAKDTH
+    pc: PCFAKDTH
+
+  hitler/attack:
+    digitized: DSBOSSFR
+    adlib: ALBOSSFR
+    pc: PCBOSSFR
+  hitler/active:
+    digitized: DSMCHSTP
+    adlib: ALMCHSTP
+    pc: PCMCHSTP
+  hitler/sight:
+    digitized: DSHITSIT
+    adlib: ALHITSIT
+    pc: PCHITSIT
+  hitler/death:
+    digitized: DSHITDTH
+    adlib: ALHITDTH
+    pc: PCHITDTH
+  hitler/mechadeath:
+    digitized: DSHITSHI
+    adlib: ALHITSHI
+    pc: PCHITSHI
+
+  gift/sight:
+    digitized: DSOTOSIT
+    adlib: ALOTOSIT
+    pc: PCOTOSIT
+  gift/death:
+    digitized: DSOTODTH
+    adlib: ALOTODTH
+    pc: PCOTODTH
+
+  gretel/attack:
+    digitized: DSGRDFIR
+    adlib: ALGRDFIR
+    pc: PCGRDFIR
+  gretel/sight:
+    digitized: DSGRTSIT
+    adlib: ALGRTSIT
+    pc: PCGRTSIT
+  gretel/death:
+    digitized: DSGRTDTH
+    adlib: ALGRTDTH
+    pc: PCGRTDTH
+
+  fat/sight:
+    digitized: DSFATSIT
+    adlib: ALFATSIT
+    pc: PCFATSIT
+  fat/death:
+    digitized: DSFATDTH
+    adlib: ALFATDTH
+    pc: PCFATDTH
+
+  missile/fire:
+    digitized: DSRLAUNC
+    adlib: ALRLAUNC
+    pc: PCRLAUNC
+  missile/hit:
+    digitized: DSBAREXP
+    adlib: ALBAREXP
+    pc: PCBAREXP
+
+  trans/attack:
+    digitized: DSBOSSFR
+    adlib: ALBOSSFR
+    pc: PCBOSSFR
+  trans/sight:
+    digitized: DSTRASIT
+    adlib: ALTRASIT
+    pc: PCTRASIT
+  trans/death:
+    digitized: DSTRADTH
+    adlib: ALTRADTH
+    pc: PCTRADTH
+
+  will/attack:
+    digitized: DSBOSSFR
+    adlib: ALBOSSFR
+    pc: PCBOSSFR
+  will/sight:
+    digitized: DSWILSIT
+    adlib: ALWILSIT
+    pc: PCWILSIT
+  will/death:
+    digitized: DSWILDTH
+    adlib: ALWILDTH
+    pc: PCWILDTH
+
+  uber/attack:
+    digitized: DSBOSSFR
+    adlib: ALBOSSFR
+    pc: PCBOSSFR
+  uber/death:
+    digitized: DSUBRDTH
+    adlib: ALUBRDTH
+    pc: PCUBRDTH
+
+  knight/attack:
+    digitized: DSBOSSFR
+    adlib: ALBOSSFR
+    pc: PCBOSSFR
+  knight/missile:
+    digitized: DSKNTATK
+    adlib: ALKNTATK
+    pc: PCKNTATK
+  knight/sight:
+    digitized: DSKNTSIT
+    adlib: ALKNTSIT
+    pc: PCKNTSIT
+  knight/death:
+    digitized: DSKNTDTH
+    adlib: ALKNTDTH
+    pc: PCKNTDTH
+
+  angel/breath:
+    digitized: DSAGLACT
+    adlib: ALAGLACT
+    pc: PCAGLACT
+  angel/sight:
+    digitized: DSAGLSIT
+    adlib: ALAGLSIT
+    pc: PCAGLSIT
+  angel/death:
+    digitized: DSAGLDTH
+    adlib: ALAGLDTH
+    pc: PCAGLDTH
+  angel/attack:
+    digitized: DSAGLATK
+    adlib: ALAGLATK
+    pc: PCAGLATK
+
+  subwilly/attack:
+    digitized: DSLBSSFR
+    adlib: ALBOSSFR
+    pc: PCBOSSFR
+  subwilly/sight:
+    digitized: DSSUBSIT
+    adlib: ALTRASIT
+    pc: PCTRASIT
+  subwilly/death:
+    digitized: DSSUBDTH
+    adlib: ALTRADTH
+    pc: PCTRADTH
+
+  professor/attack:
+    digitized: DSLBSSFR
+    adlib: ALBOSSFR
+    pc: PCBOSSFR
+  professor/sight:
+    digitized: DSPRFSIT
+    adlib: ALWILSIT
+    pc: PCWILSIT
+  professor/death:
+    digitized: DSPRFDTH
+    adlib: ALWILDTH
+    pc: PCWILDTH
+
+  theaxe/attack:
+    digitized: DSLBSSFR
+    adlib: ALBOSSFR
+    pc: PCBOSSFR
+  theaxe/death:
+    digitized: DSAXEDTH
+    adlib: ALUBRDTH
+    pc: PCUBRDTH
+
+  robot/attack:
+    digitized: DSLBSSFR
+    adlib: ALBOSSFR
+    pc: PCBOSSFR
+  robot/sight:
+    digitized: DSROBSIT
+    adlib: ALKNTSIT
+    pc: PCKNTSIT
+  robot/death:
+    digitized: DSROBDTH
+    adlib: ALKNTDTH
+    pc: PCKNTDTH
+
+  devil/breath:
+    alias: angel/breath
+  devil/attack:
+    alias: angel/attack
+  devil/sight:
+    digitized: DSDVLSIT
+    adlib: ALAGLSIT
+    pc: PCAGLSIT
+  devil/death:
+    digitized: DSDVLDTH
+    adlib: ALAGLDTH
+    pc: PCAGLDTH
+
+  ghost/sight:
+    digitized: DSGHTSIT
+    adlib: ALGHTSIT
+    pc: PCGHTSIT
+  ghost/death:
+    digitized: DSGHTDTH
+    adlib: ALGHTDTH
+    pc: PCGHTDTH
+
+  treasure/spear/pickup:
+    digitized: DSSPEAR
+    adlib: ALSPEAR
+    pc: PCSPEAR
+  treasure/spear2/pickup:
+    digitized: DSSPEAR2
+    adlib: ALSPEAR
+    pc: PCSPEAR
+
+
+  # ------ Macintosh Wolfenstein 3D ------
+
+  misc/thud:
+    digitized: DSTHUD
+
+  weapon/flame/pickup:
+    digitized: DSYEAH
+  flame/fire:
+    digitized: DSFLAME
+  flame/hit:
+    digitized: DSBAREXP
+
+  weapon/launcher/pickup:
+    digitized: DSYEAH
+
+  macgeneric/sight1:
+    digitized: DSENSIT1
+  macgeneric/sight2:
+    digitized: DSENSIT2
+  macgeneric/sight3:
+    digitized: DSENSIT3
+  macgeneric/sight4:
+    digitized: DSENSIT4
+  macgeneric/death1:
+    digitized: DSENDTH1
+  macgeneric/death2:
+    digitized: DSENDTH2
+  macgeneric/attack:
+    digitized: DSPISTOL
+  macgeneric/pain:
+    digitized: DSENPAIN
+  macgeneric/sight:
+    random:
+      - macgeneric/sight1
+      - macgeneric/sight2
+      - macgeneric/sight3
+      - macgeneric/sight4
+  macgeneric/death:
+    random:
+      - macgeneric/death1
+      - macgeneric/death2
+
+  macguard/sight:
+    alias: macgeneric/sight
+  macguard/attack:
+    alias: macgeneric/attack
+  macguard/pain:
+    alias: macgeneric/pain
+  macguard/death:
+    alias: macgeneric/death
+
+  macdog/sight:
+    digitized: DSDOGATK
+  macdog/attack:
+    digitized: DSDOGATK
+  macdog/death:
+    digitized: DSDOGDTH
+
+  macofficer/sight:
+    alias: macgeneric/sight
+  macofficer/attack:
+    alias: macgeneric/attack
+  macofficer/pain:
+    alias: macgeneric/pain
+  macofficer/death:
+    alias: macgeneric/death
+
+  macss/sight:
+    alias: macgeneric/sight
+  macss/attack:
+    alias: macgeneric/attack
+  macss/pain:
+    alias: macgeneric/pain
+  macss/death:
+    alias: macgeneric/death
+
+  macmutant/attack:
+    alias: macgeneric/attack
+  macmutant/pain:
+    alias: macgeneric/pain
+  macmutant/death:
+    alias: macgeneric/death
+
+  machans/sight:
+    alias: hans/sight
+  machans/attack:
+    alias: hans/attack
+  machans/death:
+    alias: macgeneric/death
+
+  macschabbs/sight:
+    alias: schabbs/sight
+  macschabbs/death:
+    alias: macgeneric/death
+
+  mactrans/sight:
+    alias: hans/sight
+  mactrans/attack:
+    alias: trans/attack
+  mactrans/death:
+    alias: macgeneric/death
+
+  macuber/sight:
+    digitized: DSDOGATK
+  macuber/attack:
+    alias: uber/attack
+  macuber/death:
+    alias: macgeneric/death
+
+  macknight/sight:
+    alias: knight/sight
+  macknight/attack:
+    alias: knight/attack
+  macknight/death:
+    alias: macgeneric/death
+
+  machitler/sight:
+    alias: hitler/sight
+  machitler/active:
+    alias: hitler/active
+  machitler/attack:
+    alias: hitler/attack
+  machitler/mechadeath:
+    alias: hitler/mechadeath
+  machitler/death:
+    alias: macgeneric/death
+
+  # --- $ifmacwolf3d ---
+  misc/ammobox_pkup:
+    alias: misc/ammo_pkup
+  misc/w_pkup:
+    alias: misc/ammo_pkup
+  weapon/machine/pickup:
+    alias: misc/w_pkup
+  misc/health_pkup:
+    alias: misc/medkit_pkup
+  misc/dogfood_pkup:
+    digitized: DSDOGATK
+  weapon/gatling/pickup:
+    digitized: DSYEAH
+
+  player/pain1:
+    digitized: DSPLPAIN
+  player/pain2:
+    digitized: DSPLAAI2
+  player/pain:
+    random:
+      - player/pain1
+      - player/pain2
+  # --- $endif ---
+
+  # ------ Super 3D Noah's Ark ------
+
+  misc/i_pkup:
+    digitized: DSITEMUP
+    adlib: ALITEMUP
+    pc: PCITEMUP
+
+  # --- $ifnoah ---
+  # Kill hitwall sound in Noah's Ark
+  world/hitwall:
+    digitized: null
+
+  misc/100percent:
+    digitized: DSENDBN2
+    adlib: ALENDBN2
+    pc: PCENDBN2
+  misc/w_pkup:
+    alias: misc/i_pkup
+  misc/ammo_pkup:
+    alias: misc/i_pkup
+  misc/health_pkup:
+    alias: misc/i_pkup
+  misc/medkit_pkup:
+    alias: misc/i_pkup
+  misc/map_pkup:
+    alias: misc/k_pkup
+
+  # Defined here since vanilla Wolf3D didn't use it.
+  player/pain:
+    digitized: DSPLPAIN
+    adlib: ALPLPAIN
+    pc: PCPLPAIN
+  # --- $endif ---
+
+  world/pushwall_ark:
+    digitized: DSARKPSH
+    adlib: ALARKPSH
+    pc: PCARKPSHW
+
+  weapon/handfeed/attack:
+    digitized: DSHDFEED
+    adlib: ALHDFEED
+    pc: PCHDFEED
+  weapon/smallfeedluancher/attack:
+    digitized: DSSMFEED
+    adlib: ALSMFEED
+    pc: PCSMFEED
+  weapon/largefeedlauncher/attack:
+    digitized: DSLGFEED
+    adlib: ALLGFEED
+    pc: PCLGFEED
+  weapon/superfeeder5000/attack:
+    digitized: DSSPFEED
+    adlib: ALSPFEED
+    pc: PCSPFEED
+
+  cantaloupe/fire:
+    digitized: DSTHROW
+    adlib: ALTHROW
+    pc: PCTHROW
+  cantaloupe/hit:
+    digitized: DSSPLAT
+    adlib: ALSPLAT
+    pc: PCSPLAT
+  watermelon/fire:
+    digitized: DSMELON
+    adlib: ALMELON
+    pc: PCMELON
+  watermelon/hit:
+    digitized: DSMSPLAT
+    adlib: ALMSPLAT
+    pc: PCMSPLAT
+
+  sheep/sight:
+    digitized: DSSHPSIT
+    adlib: ALSHPSIT
+    pc: PCSHPSIT
+  sheep/attack:
+    digitized: DSSPIT
+    adlib: ALSPIT
+    pc: PCSPIT
+  sheep/death:
+    digitized: DSSLEEP
+    adlib: ALSLEEP
+    pc: PCSLEEP
+
+  ostrich/sight:
+    digitized: DSOSTSIT
+    adlib: ALOSTSIT
+    pc: PCOSTSIT
+  ostrich/attack:
+    digitized: DSSPIT
+    adlib: ALSPIT
+    pc: PCSPIT
+  ostrich/death:
+    digitized: DSSLEEP
+    adlib: ALSLEEP
+    pc: PCSLEEP
+
+  antelope/sight:
+    digitized: DSATLSIT
+    adlib: ALATLSIT
+    pc: PCATLSIT
+  antelope/attack:
+    digitized: DSSPIT
+    adlib: ALSPIT
+    pc: PCSPIT
+  antelope/death:
+    digitized: DSSLEEP
+    adlib: ALSLEEP
+    pc: PCSLEEP
+
+  goat/sight:
+    digitized: DSGOTSIT
+    adlib: ALGOTSIT
+    pc: PCGOTSIT
+  goat/attack:
+    digitized: DSGOTATK
+    adlib: ALGOTATK
+    pc: PCGOTATK
+  goat/death:
+    digitized: DSSLEEP
+    adlib: ALSLEEP
+    pc: PCSLEEP
+
+  oxen/sight:
+    digitized: DSOXNSIT
+    adlib: ALOXNSIT
+    pc: PCOXNSIT
+  oxen/attack:
+    digitized: DSSPIT
+    adlib: ALSPIT
+    pc: PCSPIT
+  oxen/death:
+    digitized: DSSLEEP
+    adlib: ALSLEEP
+    pc: PCSLEEP
+
+  carl/sight:
+    digitized: DSCRLSIT
+    adlib: ALCRLSIT
+    pc: PCCRLSIT
+  carl/attack:
+    digitized: DSSPIT
+    adlib: ALSPIT
+    pc: PCSPIT
+  carl/death:
+    digitized: DSSLEEP
+    adlib: ALSLEEP
+    pc: PCSLEEP
+
+  coconut/fire:
+    digitized: DSTHROW
+    adlib: ALTHROW
+    pc: PCTHROW
+  coconut/hit:
+    digitized: DSSPLAT
+    adlib: ALSPLAT
+    pc: PCSPLAT
+
+  melvin/sight:
+    digitized: DSMLVSIT
+    adlib: ALMLVSIT
+    pc: PCMLVSIT
+  melvin/death:
+    digitized: DSSLEEP
+    adlib: ALSLEEP
+    pc: PCSLEEP
+
+  ginny/sight:
+    digitized: DSGNYSIT
+    adlib: ALGNYSIT
+    pc: PCGNYSIT
+  ginny/attack:
+    digitized: DSSPIT
+    adlib: ALSPIT
+    pc: PCSPIT
+  ginny/death:
+    digitized: DSSLEEP
+    adlib: ALSLEEP
+    pc: PCSLEEP
+
+  kerry/sight:
+    digitized: DSKRYSIT
+    adlib: ALKRYSIT
+    pc: PCKRYSIT
+  kerry/death:
+    digitized: DSSLEEP
+    adlib: ALSLEEP
+    pc: PCSLEEP
+
+  ernie/sight:
+    digitized: DSERNSIT
+    adlib: ALERNSIT
+    pc: PCERNSIT
+  ernie/attack:
+    digitized: DSSPIT
+    adlib: ALSPIT
+    pc: PCSPIT
+  ernie/death:
+    digitized: DSSLEEP
+    adlib: ALSLEEP
+    pc: PCSLEEP
+
+  burt/sight:
+    digitized: DSBRTSIT
+    adlib: ALBRTSIT
+    pc: PCBRTSIT
+  burt/active:
+    digitized: DSBRTSTP
+    adlib: ALBRTSTP
+    pc: PCBRTSTP
+  burt/attack:
+    digitized: DSSPIT
+    adlib: ALSPIT
+    pc: PCSPIT
+  burt/death:
+    digitized: DSSLEEP
+    adlib: ALSLEEP
+    pc: PCSLEEP
+
+  quiz/correct:
+    digitized: DSENDBN2
+    adlib: ALENDBN2
+    pc: PCENDBN2
+  quiz/incorrect:
+    digitized: DSNOBNS
+    adlib: ALNOBNS
+    pc: PCNOBNS
+
+  # ------ Blake Stone ------
+
+  # --- $ifblake ---
+  misc/health_pkup:
+    digitized: DSHEAL1
+    adlib: ALHEAL1
+    pc: PCHEAL1
+  # --- $endif ---
+
+  doors/heavy_open:
+    digitized: DSDR2OPN
+    adlib: ALDR2OPN
+    pc: PCDR2OPN
+  doors/heavy_close:
+    digitized: DSDR2CLS
+    adlib: ALDR2CLS
+    pc: PCDR2CLS
+
+  weapon/autochargepistol/attack:
+    digitized: DSFIRAUT
+    adlib: ALFIRAUT
+    pc: PCFIRAUT
+  weapon/slowfireprotector/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+  weapon/slowfireprotector/pickup:
+    digitized: DSGETPIS
+    adlib: ALGETPIS
+    pc: PCGETPIS
+  weapon/rapidassaultweapon/attack:
+    digitized: DSBRIFLE
+    adlib: ALBRIFLE
+    pc: PCBRIFLE
+  weapon/rapidassaultweapon/pickup:
+    digitized: DSGETRIF
+    adlib: ALGETRIF
+    pc: PCGETRIF
+  weapon/dualneutrondisruptor/attack:
+    digitized: DSIONCAN
+    adlib: ALIONCAN
+    pc: PCIONCAN
+  weapon/dualneutrondisruptor/pickup:
+    digitized: DSGETION
+    adlib: ALGETION
+    pc: PCGETION
+  weapon/plasmadischargeunit/pickup:
+    digitized: DSGETCAN
+    adlib: ALGETCAN
+    pc: PCGETCAN
+  weapon/antiplasmacannon/pickup:
+    digitized: DSGETCAN
+    adlib: ALGETCAN
+    pc: PCGETCAN
+
+  treasure/moneybag/pickup:
+    digitized: DSBONUS1
+    adlib: ALBONUS1
+    pc: PCBONUS1
+  treasure/loot/pickup:
+    digitized: DSBONUS2
+    adlib: ALBONUS2
+    pc: PCBONUS2
+  treasure/goldbars/pickup:
+    digitized: DSBONUS3
+    adlib: ALBONUS3
+    pc: PCBONUS3
+  treasure/xylanorb/pickup:
+    digitized: DSBONUS4
+    adlib: ALBONUS4
+    pc: PCBONUS4
+
+  misc/coin_pickup:
+    digitized: DSCONCES
+    adlib: ALCONCES
+    pc: PCCONCES
+  misc/radar_pickup:
+    digitized: DSGETRDR
+    adlib: ALGETRDR
+    pc: PCGETRDR
+
+  misc/blake/explosion1:
+    digitized: DSEXPLO1
+    adlib: ALEXPLO1
+    pc: PCEXPLO1
+  misc/blake/explosion2:
+    digitized: DSEXPLO2
+    adlib: ALEXPLO2
+    pc: PCEXPLO2
+
+  misc/plasmadetonator/pickup:
+    digitized: DSGETDET
+    adlib: ALGETDET
+    pc: PCGETDET
+  misc/plasmadetonator/explosion:
+    random:
+      - misc/blake/explosion1
+      - misc/blake/explosion2
+
+  plasmagrenade/fire:
+    digitized: DSGRENAD
+    adlib: ALGRENAD
+    pc: PCGRENAD
+  plasmagrenade/hit:
+    random:
+      - misc/blake/explosion1
+      - misc/blake/explosion2
+
+  antiplasmashot/fire:
+    digitized: DSIONCAN
+    adlib: ALIONCAN
+    pc: PCIONCAN
+  antiplasmashot/hit:
+    random:
+      - misc/blake/explosion1
+      - misc/blake/explosion2
+
+  rentacop/sight:
+    digitized: DSRNTSIT
+    adlib: ALRNTSIT
+    pc: PCRNTSIT
+  sectorguard/sight:
+    digitized: DSSECSIT
+    adlib: ALRNTSIT
+    pc: PCRNTSIT
+  rentacop/death1:
+    digitized: DSRNTDT1
+    adlib: ALRNTDT1
+    pc: PCRNTDT1
+  sectorguard/death1:
+    digitized: DSSECDT1
+    adlib: ALRNTDT1
+    pc: PCRNTDT1
+  rentacop/death2:
+    digitized: DSRNTDT2
+    adlib: ALRNTDT2
+    pc: PCRNTDT2
+  sectorguard/death2:
+    digitized: DSSECDT2
+    adlib: ALRNTDT2
+    pc: PCRNTDT2
+  rentacop/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+  sectorguard/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+  rentacop/death:
+    random:
+      - rentacop/death1
+      - rentacop/death2
+  sectorguard/death:
+    random:
+      - sectorguard/death1
+      - sectorguard/death2
+
+  proguard/sight:
+    digitized: DSPROSIT
+    adlib: ALPROSIT
+    pc: PCPROSIT
+  techwarrior/sight:
+    digitized: DSTCWSIT
+    adlib: ALPROSIT
+    pc: PCPROSIT
+  proguard/death1:
+    digitized: DSPRODT1
+    adlib: ALPRODT1
+    pc: PCPRODT1
+  techwarrior/death1:
+    digitized: DSTCWDT1
+    adlib: ALPRODT1
+    pc: PCPRODT1
+  proguard/death2:
+    digitized: DSPRODT2
+    adlib: ALPRODT2
+    pc: PCPRODT2
+  techwarrior/death2:
+    digitized: DSTCWDT2
+    adlib: ALPRODT2
+    pc: PCPRODT2
+  proguard/attack:
+    digitized: DSBRIFLE
+    adlib: ALBRIFLE
+    pc: PCBRIFLE
+  techwarrior/attack:
+    digitized: DSBRIFLE
+    adlib: ALBRIFLE
+    pc: PCBRIFLE
+  proguard/death:
+    random:
+      - proguard/death1
+      - proguard/death2
+  techwarrior/death:
+    random:
+      - techwarrior/death1
+      - techwarrior/death2
+
+  startrooper/sight:
+    digitized: DSSWTSIT
+    adlib: ALSWTSIT
+    pc: PCSWTSIT
+  alienprotector/sight:
+    digitized: DSAPTSIT
+    adlib: ALSWTSIT
+    pc: PCSWTSIT
+  startrooper/death1:
+    digitized: DSSWTDT1
+    adlib: ALSWTDT1
+    pc: PCSWTDT1
+  alienprotector/death1:
+    digitized: DSAPTDT1
+    adlib: ALSWTDT1
+    pc: PCSWTDT1
+  startrooper/wound:
+    digitized: DSSWTDT2
+    adlib: ALSWTDT2
+    pc: PCSWTDT2
+  alienprotector/wound:
+    digitized: DSAPTDT2
+    adlib: ALSWTDT2
+    pc: PCSWTDT2
+  startrooper/attack:
+    digitized: DSBRIFLE
+    adlib: ALBRIFLE
+    pc: PCBRIFLE
+  alienprotector/attack:
+    digitized: DSBRIFLE
+    adlib: ALBRIFLE
+    pc: PCBRIFLE
+  startrooper/death:
+    random:
+      - startrooper/death1
+      - startrooper/wound
+  alienprotector/death:
+    random:
+      - alienprotector/death1
+      - alienprotector/wound
+
+  scientist/sight:
+    digitized: DSSCISIT
+    adlib: ALSCISIT
+    pc: PCSCISIT
+  scientist/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+  scientist/death1:
+    digitized: DSSCIDT1
+    adlib: ALSCIDT1
+    pc: PCSCIDT1
+  scientist/death2:
+    digitized: DSSCIDT2
+    adlib: ALSCIDT2
+    pc: PCSCIDT2
+  scientist/death3:
+    digitized: DSSCIDT3
+    adlib: ALSCIDT3
+    pc: PCSCIDT3
+  scientist/inform_death1:
+    digitized: DSINFDT1
+    adlib: ALINFDT1
+    pc: PCINFDT1
+  scientist/inform_death2:
+    digitized: DSINFDT2
+    adlib: ALINFDT2
+    pc: PCINFDT2
+  scientist/inform_death3:
+    digitized: DSINFDT3
+    adlib: ALINFDT3
+    pc: PCINFDT3
+  scientist/death:
+    random:
+      - scientist/death1
+      - scientist/death2
+      - scientist/death3
+  scientist/inform_death:
+    random:
+      - scientist/inform_death1
+      - scientist/inform_death2
+      - scientist/inform_death3
+
+  floatingbomb/sight:
+    digitized: DSSCTSIT
+    adlib: ALSCTSIT
+    pc: PCSCTSIT
+  floatingbomb/death:
+    random:
+      - misc/blake/explosion1
+      - misc/blake/explosion2
+  volatiletransport/death:
+    random:
+      - misc/blake/explosion1
+      - misc/blake/explosion2
+
+  geneticguard/sight:
+    digitized: DSGENSIT
+    adlib: ALGENSIT
+    pc: PCGENSIT
+  geneticguard/death:
+    digitized: DSPODDTH
+    adlib: ALPODDTH
+    pc: PCPODDTH
+  geneticguard/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+  geneticguard/melee:
+    digitized: DSFISTAT
+    adlib: ALFISTAT
+    pc: PCFISTAT
+
+  cyborgwarrior/sight:
+    digitized: DSBLUSIT
+    adlib: ALBLUSIT
+    pc: PCBLUSIT
+  cyborgwarrior/death:
+    digitized: DSPODDTH
+    adlib: ALPODDTH
+    pc: PCPODDTH
+  cyborgwarrior/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+
+  spidermutant/sight:
+    digitized: DSSCNSIT
+    adlib: ALSCNSIT
+    pc: PCSCNSIT
+  spidermutant/death:
+    digitized: DSBLUDTH
+    adlib: ALBLUDTH
+    pc: PCBLUDTH
+  spidermutant/attack:
+    digitized: DSSPITAT
+    adlib: ALSPITAT
+    pc: PCSPITAT
+
+  aciddragon/sight:
+    digitized: DSPODSIT
+    adlib: ALPODSIT
+    pc: PCPODSIT
+  aciddragon/death:
+    digitized: DSPODDTH
+    adlib: ALPODDTH
+    pc: PCPODDTH
+  aciddragon/attack:
+    digitized: DSSPITAT
+    adlib: ALSPITAT
+    pc: PCSPITAT
+
+  breatherbeast/sight:
+    digitized: DSGENSIT
+    adlib: ALGENSIT
+    pc: PCGENSIT
+  breatherbeast/death:
+    digitized: DSPODDTH
+    adlib: ALPODDTH
+    pc: PCPODDTH
+  breatherbeast/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+
+  biomechguardian/sight:
+    digitized: DSBLUSIT
+    adlib: ALBLUSIT
+    pc: PCBLUSIT
+  biomechguardian/death:
+    digitized: DSMTHDTH
+    adlib: ALMTHDTH
+    pc: PCMTHDTH
+  biomechguardian/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+
+  reptilianwarrior/sight:
+    digitized: DSGENSIT
+    adlib: ALGENSIT
+    pc: PCGENSIT
+  reptilianwarrior/death:
+    digitized: DSSCNDTH
+    adlib: ALSCNDTH
+    pc: PCSCNDTH
+  reptilianwarrior/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+
+  mechsentinel/sight:
+    digitized: DSBLUSIT
+    adlib: ALBLUSIT
+    pc: PCBLUSIT
+  mechsentinel/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+  mechsentinel/death:
+    random:
+      - misc/blake/explosion1
+      - misc/blake/explosion2
+
+  mutanthuman/sight:
+    digitized: DSMTHSIT
+    adlib: ALMTHSIT
+    pc: PCMTHSIT
+  mutanthuman/death:
+    digitized: DSMTHDTH
+    adlib: ALMTHDTH
+    pc: PCMTHDTH
+  mutanthuman/melee:
+    digitized: DSFISTAT
+    adlib: ALFISTAT
+    pc: PCFISTAT
+
+  electrosphere/attack:
+    digitized: DSELCATK
+    adlib: ALELCATK
+    pc: PCELCATK
+
+  smallcanisteralien/release:
+    digitized: DSSCNBRK
+    adlib: ALSCNBRK
+    pc: PCSCNBRK
+  smallcanisteralien/sight:
+    digitized: DSSCNSIT
+    adlib: ALSCNSIT
+    pc: PCSCNSIT
+  smallcanisteralien/attack:
+    digitized: DSSPITAT
+    adlib: ALSPITAT
+    pc: PCSPITAT
+  smallcanisteralien/melee:
+    digitized: DSCLAWAT
+    adlib: ALCLAWAT
+    pc: PCCLAWAT
+  smallcanisteralien/death:
+    digitized: DSSCNDTH
+    adlib: ALSCNDTH
+    pc: PCSCNDTH
+
+  largecanisteralien/release:
+    digitized: DSLCNBRK
+    adlib: ALLCNBRK
+    pc: PCLCNBRK
+  largecanisteralien/sight:
+    digitized: DSLCNSIT
+    adlib: ALLCNSIT
+    pc: PCLCNSIT
+  largecanisteralien/attack:
+    digitized: DSSPITAT
+    adlib: ALSPITAT
+    pc: PCSPITAT
+  largecanisteralien/melee:
+    digitized: DSCLAWAT
+    adlib: ALCLAWAT
+    pc: PCCLAWAT
+  largecanisteralien/death:
+    digitized: DSLCNDTH
+    adlib: ALLCNDTH
+    pc: PCLCNDTH
+
+  gurneymutant/sight:
+    digitized: DSGRNSIT
+    adlib: ALGRNSIT
+    pc: PCGRNSIT
+  gurneymutant/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+  gurneymutant/death:
+    digitized: DSGRNDTH
+    adlib: ALGRNDTH
+    pc: PCGRNDTH
+
+  podalien/release:
+    digitized: DSPODHTC
+    adlib: ALPODHTC
+    pc: PCPODHTC
+  podalien/sight:
+    digitized: DSPODSIT
+    adlib: ALPODSIT
+    pc: PCPODSIT
+  podalien/melee:
+    digitized: DSCLAWAT
+    adlib: ALCLAWAT
+    pc: PCCLAWAT
+  podalien/death:
+    digitized: DSPODDTH
+    adlib: ALPODDTH
+    pc: PCPODDTH
+
+  turret/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+  turret/death:
+    random:
+      - misc/blake/explosion1
+      - misc/blake/explosion2
+
+  giantstalker/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+  giantstalker/sight:
+    digitized: DSBLUSIT
+    adlib: ALBLUSIT
+    pc: PCBLUSIT
+  giantstalker/death:
+    digitized: DSBLUDTH
+    adlib: ALBLUDTH
+    pc: PCBLUDTH
+
+  spectordemon/sight:
+    digitized: DSGENSIT
+    adlib: ALGENSIT
+    pc: PCGENSIT
+  spectordemon/death:
+    digitized: DSPODDTH
+    adlib: ALPODDTH
+    pc: PCPODDTH
+
+  goldfire/monster/attack:
+    digitized: DSELCATK
+    adlib: ALELCATK
+    pc: PCELCATK
+
+  armoredstalker/attack:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+  armoredstalker/sight:
+    digitized: DSBLUSIT
+    adlib: ALBLUSIT
+    pc: PCBLUSIT
+  armoredstalker/death:
+    digitized: DSMTHDTH
+    adlib: ALMTHDTH
+    pc: PCMTHDTH
+
+  crawlerbeast/attack:
+    digitized: DSSPITAT
+    adlib: ALSPITAT
+    pc: PCSPITAT
+  crawlerbeast/sight:
+    digitized: DSGENSIT
+    adlib: ALGENSIT
+    pc: PCGENSIT
+  crawlerbeast/death:
+    digitized: DSLCNDTH
+    adlib: ALLCNDTH
+    pc: PCLCNDTH
+
+  liquidalien/death:
+    digitized: DSLIQDTH
+    adlib: ALLIQDTH
+    pc: PCLIQDTH

@@ -1,0 +1,175 @@
+default-map:
+  ceiling-color: "#383838"
+  floor-color: "#717171"
+
+skills:
+  BABY:
+    name: "Can I play, Daddy?"
+    pic-name: C_BABYMODE
+    spawn-filter: [1]
+  EASY:
+    name: "Don't hurt me."
+    pic-name: C_EASY
+    spawn-filter: [1, 2]
+  MEDIUM:
+    name: "Bring 'em on!"
+    pic-name: C_NORMAL
+    spawn-filter: [1, 2, 3]
+  HARD:
+    name: "I am Death incarnate!"
+    pic-name: C_HARD
+    spawn-filter: [1, 2, 3, 4]
+
+episodes:
+  EP01:
+    start-map: MAP01
+
+clusters:
+  1:
+
+maps:
+  # Episode 1
+  MAP01:
+    next: MAP02
+    secret-next: MAP10
+    floor-number: 1
+    par-time: 90
+    music: GetThem
+    cluster: 1
+  MAP02:
+    next: MAP03
+    floor-number: 2
+    par-time: 120
+    music: Searching
+    cluster: 1
+  MAP03:
+    next: MAP04
+    floor-number: 3
+    par-time: 120
+    music: PrisonerOfWar
+    cluster: 1
+  MAP04:
+    next: MAP05
+    floor-number: 4
+    par-time: 210
+    music: Suspense
+    cluster: 1
+  MAP05:
+    next: MAP06
+    floor-number: 5
+    par-time: 180
+    music: GetThem
+    cluster: 1
+  MAP06:
+    next: MAP07
+    floor-number: 6
+    par-time: 180
+    music: Searching
+    cluster: 1
+  MAP07:
+    next: MAP08
+    floor-number: 7
+    par-time: 150
+    music: PrisonerOfWar
+    cluster: 1
+  MAP08:
+    next: MAP09
+    floor-number: 8
+    par-time: 150
+    music: Suspense
+    cluster: 1
+  MAP09:
+    floor-number: 9
+    music: MarchToWar
+    cluster: 1
+  MAP10:
+    next: MAP02
+    floor-number: 10
+    music: Corner
+    cluster: 1
+    ceiling-color: "#400040"
+
+  # Episode 2
+  MAP11:
+    next: MAP12
+    secret-next: MAP20
+    ceiling-color: "#585400"
+    floor-number: 1
+    par-time: 90
+    music: NaziAnthem
+    cluster: 2
+  MAP12:
+    next: MAP13
+    floor-number: 2
+    ceiling-color: "#585400"
+    par-time: 210
+    music: Lurking
+    cluster: 2
+  MAP13:
+    next: MAP14
+    floor-number: 3
+    par-time: 180
+    ceiling-color: "#585400"
+    music: GoingAfterHitler
+    cluster: 2
+  MAP14:
+    next: MAP15
+    floor-number: 4
+    par-time: 120
+    music: PoundingHeadache
+    cluster: 2
+  MAP15:
+    next: MAP16
+    floor-number: 5
+    par-time: 240
+    ceiling-color: "#4040FC"
+    music: NaziAnthem
+    cluster: 2
+  MAP16:
+    next: MAP17
+    floor-number: 6
+    par-time: 360
+    ceiling-color: "#585400"
+    music: Lurking
+    cluster: 2
+  MAP17:
+    next: MAP18
+    floor-number: 7
+    par-time: 60
+    music: PoundingHeadache
+    cluster: 2
+  MAP18:
+    next: MAP19
+    floor-number: 8
+    par-time: 180
+    ceiling-color: "#580000"
+    music: GoingAfterHitler
+    cluster: 2
+  MAP19:
+    floor-number: 9
+    music: MarchToWar
+    cluster: 2
+  MAP20:
+    next: MAP12
+    floor-number: 10
+    ceiling-color: "#4040FC"
+    music: Dungeon
+    cluster: 2
+
+  # Episode 3
+  MAP21:
+    floor-number: 1
+    par-time: 90
+    music: KillTheSOB
+    cluster: 3
+
+end-strings:
+  - $ENDSTR1
+  - $ENDSTR2
+  - $ENDSTR3
+  - $ENDSTR4
+  - $ENDSTR5
+  - $ENDSTR6
+  - $ENDSTR7
+  - $ENDSTR8
+  - $ENDSTR9

@@ -51,6 +51,19 @@
 # 6. SS drop either a MachineGun or a Clip depending on the player's current
 #    best weapon (KillActor) -- only `dropitem: Clip` is captured below;
 #    the conditional MachineGun drop is called out in a comment.
+# 7. Frame letters: Attack/Pain/Death originally all pointed at frame "A"
+#    (the rotating Spawn/stand sprite), which produced invalid asset names
+#    like "GARDA0" once IsDirectionalState (Program.WL_DRAW.cs) correctly
+#    stopped treating those states as directional -- there is no "A0" asset,
+#    only "A1".."A8". Corrected here against the actual single-view frame
+#    letters (verified both by rendering raw-data-map.yaml's registered
+#    sprite names and against the dead reference AssetManager.GetActors()
+#    Guard example, which already encoded F/G/H=Attack, I/J=Pain,
+#    K/L/M/N=Death). SS and Dog reuse a handful of distinct frames across
+#    several sub-states (matching how few single-view sprites raw-data-map
+#    registers for them) -- please spot-check those two in-game, since the
+#    exact sub-state-to-frame pairing within a reused cycle was inferred
+#    from the rendered sprites rather than a second authoritative source.
 # =============================================================================
 
 # -----------------------------------------------------------------------
@@ -90,23 +103,23 @@ Guard:
     # between them based on hitpoints odd/even. Both just fall into Chase.
     Pain:
       - sprite: GARD
-        frames: [A]
+        frames: [I]
         tics-per-frame: 10
         next-state: Chase
       - sprite: GARD
-        frames: [A]
+        frames: [J]
         tics-per-frame: 10
         next-state: Chase
     Attack: # s_grdshoot1..3 / T_Shoot
       - sprite: GARD
-        frames: [A]
+        frames: [F]
         tics-per-frame: 20
       - sprite: GARD
-        frames: [A]
+        frames: [G]
         tics-per-frame: 20
         action: T_Shoot
       - sprite: GARD
-        frames: [A]
+        frames: [H]
         tics-per-frame: 20
         next-state: Chase
     Chase: # s_grdchase1..4 / T_Chase
@@ -134,17 +147,17 @@ Guard:
         think: T_Chase
     Death: # s_grddie1..4 / A_DeathScream
       - sprite: GARD
-        frames: [A]
+        frames: [K]
         tics-per-frame: 15
         action: A_DeathScream
       - sprite: GARD
-        frames: [A]
+        frames: [L]
         tics-per-frame: 15
       - sprite: GARD
-        frames: [A]
+        frames: [M]
         tics-per-frame: 15
       - sprite: GARD
-        frames: [A]
+        frames: [N]
         tics-per-frame: -1
   properties:
     "health": 25
@@ -192,23 +205,23 @@ Officer:
         think: T_Path
     Pain: # s_ofcpain / s_ofcpain1
       - sprite: OFFI
-        frames: [A]
+        frames: [I]
         tics-per-frame: 10
         next-state: Chase
       - sprite: OFFI
-        frames: [A]
+        frames: [J]
         tics-per-frame: 10
         next-state: Chase
     Attack: # s_ofcshoot1..3 / T_Shoot
       - sprite: OFFI
-        frames: [A]
+        frames: [F]
         tics-per-frame: 6
       - sprite: OFFI
-        frames: [A]
+        frames: [G]
         tics-per-frame: 20
         action: T_Shoot
       - sprite: OFFI
-        frames: [A]
+        frames: [H]
         tics-per-frame: 10
         next-state: Chase
     Chase: # s_ofcchase1..4 / T_Chase
@@ -236,20 +249,20 @@ Officer:
         think: T_Chase
     Death: # s_ofcdie1..5 / A_DeathScream
       - sprite: OFFI
-        frames: [A]
+        frames: [K]
         tics-per-frame: 11
         action: A_DeathScream
       - sprite: OFFI
-        frames: [A]
+        frames: [L]
         tics-per-frame: 11
       - sprite: OFFI
-        frames: [A]
+        frames: [M]
         tics-per-frame: 11
       - sprite: OFFI
-        frames: [A]
+        frames: [N]
         tics-per-frame: 11
       - sprite: OFFI
-        frames: [A]
+        frames: [O]
         tics-per-frame: -1
   properties:
     "health": 50
@@ -267,9 +280,14 @@ Officer:
 # -----------------------------------------------------------------------
 SS:
   states:
+    # SS has a dedicated standing pose (SSWVW1..W8) distinct from its first
+    # walk frame (SSWVA1..A8) -- unlike Guard/Officer/Mutant, whose Spawn
+    # pose is frame "A" and whose first walk frame is "B". Confirmed by
+    # rendering both: W is a static feet-together idle stance, A is a
+    # mid-stride walk pose.
     Spawn: # s_ssstand / T_Stand
       - sprite: SSWV
-        frames: [A]
+        frames: [W]
         tics-per-frame: -1
         think: T_Stand
     Path: # s_sspath1..4 / T_Path
@@ -297,45 +315,50 @@ SS:
         think: T_Path
     Pain: # s_sspain / s_sspain1
       - sprite: SSWV
-        frames: [A]
+        frames: [H]
         tics-per-frame: 10
         next-state: Chase
       - sprite: SSWV
-        frames: [A]
+        frames: [I]
         tics-per-frame: 10
         next-state: Chase
     # SS unload a long 9-frame burst (s_ssshoot1..9) instead of one shot.
+    # Only 3 distinct single-view sprites exist (E/F/G) for this: E is the
+    # opening "raise weapon" pose, then F (no visible flash, T_Shoot's hit
+    # calc) and G (muzzle flash, purely cosmetic) alternate for the rest of
+    # the burst -- matching Guard/Mutant's pattern of the calc frame being
+    # drawn without a flash and the following frame carrying the flash.
     Attack:
       - sprite: SSWV
-        frames: [A]
+        frames: [E]
         tics-per-frame: 20
       - sprite: SSWV
-        frames: [A]
+        frames: [F]
         tics-per-frame: 20
         action: T_Shoot
       - sprite: SSWV
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
       - sprite: SSWV
-        frames: [A]
-        tics-per-frame: 10
-        action: T_Shoot
-      - sprite: SSWV
-        frames: [A]
-        tics-per-frame: 10
-      - sprite: SSWV
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: SSWV
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
       - sprite: SSWV
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: SSWV
-        frames: [A]
+        frames: [G]
+        tics-per-frame: 10
+      - sprite: SSWV
+        frames: [F]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: SSWV
+        frames: [G]
         tics-per-frame: 10
         next-state: Chase
     Chase: # s_sschase1..4 / T_Chase
@@ -363,17 +386,17 @@ SS:
         think: T_Chase
     Death: # s_ssdie1..4 / A_DeathScream
       - sprite: SSWV
-        frames: [A]
+        frames: [J]
         tics-per-frame: 15
         action: A_DeathScream
       - sprite: SSWV
-        frames: [A]
+        frames: [K]
         tics-per-frame: 15
       - sprite: SSWV
-        frames: [A]
+        frames: [L]
         tics-per-frame: 15
       - sprite: SSWV
-        frames: [A]
+        frames: [M]
         tics-per-frame: -1
   properties:
     "health": 100
@@ -427,28 +450,31 @@ Mutant:
         think: T_Path
     Pain: # s_mutpain / s_mutpain1
       - sprite: MTNT
-        frames: [A]
+        frames: [J]
         tics-per-frame: 10
         next-state: Chase
       - sprite: MTNT
-        frames: [A]
+        frames: [K]
         tics-per-frame: 10
         next-state: Chase
-    # Mutant fires twice in one attack cycle (s_mutshoot1..4).
+    # Mutant fires twice in one attack cycle (s_mutshoot1..4). Confirmed by
+    # rendering: F/H show no muzzle flash (T_Shoot's hit-calc frames), G/I
+    # show the chest flash (Mutant fires from its chest) on the following
+    # frame -- same calc-then-flash pairing as Guard/SS.
     Attack:
       - sprite: MTNT
-        frames: [A]
+        frames: [F]
         tics-per-frame: 6
         action: T_Shoot
       - sprite: MTNT
-        frames: [A]
+        frames: [G]
         tics-per-frame: 20
       - sprite: MTNT
-        frames: [A]
+        frames: [H]
         tics-per-frame: 10
         action: T_Shoot
       - sprite: MTNT
-        frames: [A]
+        frames: [I]
         tics-per-frame: 20
         next-state: Chase
     Chase: # s_mutchase1..4 / T_Chase
@@ -476,20 +502,20 @@ Mutant:
         think: T_Chase
     Death: # s_mutdie1..5 / A_DeathScream
       - sprite: MTNT
-        frames: [A]
+        frames: [L]
         tics-per-frame: 7
         action: A_DeathScream
       - sprite: MTNT
-        frames: [A]
+        frames: [M]
         tics-per-frame: 7
       - sprite: MTNT
-        frames: [A]
+        frames: [N]
         tics-per-frame: 7
       - sprite: MTNT
-        frames: [A]
+        frames: [O]
         tics-per-frame: 7
       - sprite: MTNT
-        frames: [A]
+        frames: [P]
         tics-per-frame: -1
   properties:
     "health.baby": 45
@@ -542,22 +568,26 @@ Dog:
         think: T_Path
     # No Pain state -- dogs have 1 hitpoint, so any hit is fatal.
     # Attack is a lunge-and-bite instead of a ranged shot (s_dogjump1..5).
+    # Only 3 distinct single-view sprites exist (E/F/G): E is the leap-in
+    # pose, F is the bite itself (mouth open, T_Bite), G is the recovery
+    # pose (blood on muzzle from the bite) -- E/G are reused for the last
+    # two states rather than adding new art.
     Attack:
       - sprite: DOGY
-        frames: [A]
+        frames: [E]
         tics-per-frame: 10
       - sprite: DOGY
-        frames: [A]
+        frames: [F]
         tics-per-frame: 10
         action: T_Bite
       - sprite: DOGY
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
       - sprite: DOGY
-        frames: [A]
+        frames: [E]
         tics-per-frame: 10
       - sprite: DOGY
-        frames: [A]
+        frames: [G]
         tics-per-frame: 10
         next-state: Chase
     Chase: # s_dogchase1..4 / T_DogChase (lunges into Attack at bite range)
@@ -585,17 +615,17 @@ Dog:
         think: T_DogChase
     Death: # s_dogdie1..3 + s_dogdead / A_DeathScream
       - sprite: DOGY
-        frames: [A]
+        frames: [H]
         tics-per-frame: 15
         action: A_DeathScream
       - sprite: DOGY
-        frames: [A]
+        frames: [I]
         tics-per-frame: 15
       - sprite: DOGY
-        frames: [A]
+        frames: [J]
         tics-per-frame: 15
       - sprite: DOGY
-        frames: [A]
+        frames: [K]
         tics-per-frame: -1
   properties:
     "health": 1

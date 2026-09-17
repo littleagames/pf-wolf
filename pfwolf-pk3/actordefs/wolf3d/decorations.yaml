@@ -13,7 +13,7 @@ Puddle2:
         frames: [A]
         tics-per-frame: -1
 
-GreenBarrel:
+OilDrum:
   radius: 32
   flags: [SOLID]
   states:
@@ -22,8 +22,8 @@ GreenBarrel:
         frames: [A]
         tics-per-frame: -1
 
-HorizontalGreenBarrel:
-  parent: GreenBarrel
+HorizontalOilDrum:
+  parent: OilDrum
   states:
     Spawn:
       - sprite: HDRM
@@ -83,7 +83,7 @@ Chandelier2:
         modifiers: [bright]
         tics-per-frame: -1
 
-HangedMan:
+HangingSkeleton:
   radius: 32
   flags: [SOLID]
   states:
@@ -92,16 +92,16 @@ HangedMan:
         frames: [A]
         tics-per-frame: -1
 
-HangedMan2:
+HangingSkeleton2:
   id: 110
-  parent: HangedMan
+  parent: HangingSkeleton
   states:
     Spawn:
       - sprite: HNG2
         frames: [A]
         tics-per-frame: -1
 
-WhitePillar:
+WhiteColumn:
   radius: 32
   flags: [SOLID]
   states:
@@ -110,8 +110,8 @@ WhitePillar:
         frames: [A]
         tics-per-frame: -1
 
-CrackedPillar:
-  parent: WhitePillar
+CrackedColumn:
+  parent: WhiteColumn
   states:
     Spawn:
       - sprite: COL3
@@ -135,15 +135,15 @@ GreenPlant2:
         frames: [A]
         tics-per-frame: -1
 
-SkeletonFlat:
+Skeleton:
   states:
     Spawn:
       - sprite: SKEL
         frames: [A]
         tics-per-frame: -1
 
-SkeletonFlat2:
-  parent: SkeletonFlat
+Skeleton2:
+  parent: Skeleton
   states:
     Spawn:
       - sprite: SKL2
@@ -193,7 +193,7 @@ Vase2:
         frames: [A]
         tics-per-frame: -1
 
-BareTable:
+Table:
   radius: 32
   flags: [SOLID]
   states:
@@ -203,7 +203,7 @@ BareTable:
         tics-per-frame: -1
 
 MetalTable:
-  parent: BareTable
+  parent: Table
   states:
     Spawn:
       - sprite: MTBL
@@ -214,7 +214,7 @@ CeilingLight:
   states:
     Spawn:
       - sprite: GLMP
-        frames: [A,B]
+        frames: [A]
         modifiers: [bright]
         tics-per-frame: 10
 
@@ -235,7 +235,7 @@ RedCeilingLight:
         modifiers: [bright]
         tics-per-frame: -1
 
-KitchenStuff:
+Utensils:
   radius: 32
   states:
     Spawn:
@@ -243,7 +243,7 @@ KitchenStuff:
         frames: [A]
         tics-per-frame: -1
 
-SuitOfArmor:
+Armor:
   radius: 32
   flags: [SOLID]
   states:
@@ -252,15 +252,15 @@ SuitOfArmor:
         frames: [A]
         tics-per-frame: -1
 
-SuitOfArmor2:
-  parent: SuitOfArmor
+Armor2:
+  parent: Armor
   states:
     Spawn:
       - sprite: ARM2
         frames: [A]
         tics-per-frame: -1
 
-HangingCage:
+EmptyCage:
   radius: 32
   flags: [SOLID]
   states:
@@ -269,15 +269,15 @@ HangingCage:
         frames: [A]
         tics-per-frame: -1
 
-HangingCage2:
-  parent: HangingCage
+EmptyCage2:
+  parent: EmptyCage
   states:
     Spawn:
       - sprite: CAG6
         frames: [A]
         tics-per-frame: -1
 
-SkeletonCage:
+CageWithSkeleton:
   radius: 32
   flags: [SOLID]
   states:
@@ -287,14 +287,14 @@ SkeletonCage:
         tics-per-frame: -1
 
 BrokenCage:
-  parent: SkeletonCage
+  parent: CageWithSkeleton
   states:
     Spawn:
       - sprite: CAG7
         frames: [A]
         tics-per-frame: -1
 
-Bones1:
+Bones:
   states:
     Spawn:
       - sprite: BON1
@@ -308,7 +308,7 @@ Bones5:
         frames: [A]
         tics-per-frame: -1
 
-BunkBed:
+Bed:
   radius: 32
   flags: [SOLID]
   states:
@@ -349,7 +349,7 @@ HorizontalBarrel:
         frames: [A]
         tics-per-frame: -1
 
-Well:
+WellWithWater:
   radius: 32
   flags: [SOLID]
   states:
@@ -358,15 +358,15 @@ Well:
         frames: [A]
         tics-per-frame: -1
 
-Well2:
-  parent: Well
+WellWithWater2:
+  parent: WellWithWater
   states:
     Spawn:
       - sprite: WEL4
         frames: [A]
         tics-per-frame: -1
 
-EmptyWell:
+Well:
   radius: 32
   flags: [SOLID]
   states:
@@ -375,8 +375,8 @@ EmptyWell:
         frames: [A]
         tics-per-frame: -1
 
-EmptyWell2:
-  parent: EmptyWell
+Well2:
+  parent: Well
   states:
     Spawn:
       - sprite: WEL5
@@ -400,7 +400,7 @@ TeslaCoil:
         frames: [A]
         tics-per-frame: -1
 
-CallApogee:
+Aardwolf:
   radius: 32
   flags: [SOLID]
   states:
@@ -454,7 +454,7 @@ GreenSlime:
         frames: [A]
         tics-per-frame: -1
 
-Pots:
+UtensilsBlue:
   radius: 32
   states:
     Spawn:
@@ -471,7 +471,7 @@ Stove:
         frames: [A]
         tics-per-frame: -1
 
-Spears:
+Rack:
   radius: 32
   flags: [SOLID]
   states:
@@ -480,7 +480,7 @@ Spears:
         frames: [A]
         tics-per-frame: -1
 
-Vines:
+Vine:
   states:
     Spawn:
       - sprite: VINE
@@ -488,7 +488,7 @@ Vines:
         tics-per-frame: -1
 
 Bubbles:
-  parent: Vines
+  parent: Vine
   states:
     Spawn:
       - sprite: BUBL
