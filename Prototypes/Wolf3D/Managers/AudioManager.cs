@@ -229,6 +229,7 @@ internal class AudioManager
         StopMusicStream();
 
         _requestedMusicTrack = name;
+        _isPaused = false; // A deliberate request for new music always plays, even if a prior unrelated pause was never lifted.
         AL.Source(_musicSource, ALSourcef.Gain, MusicGain);
 
         var cts = new CancellationTokenSource();

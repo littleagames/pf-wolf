@@ -793,7 +793,7 @@ internal partial class Program
             "ULTIMATE",
 
             "INTROCW3",
-            "NAZIRAP",
+            "NAZI_RAP",
             "TWELFTH",
             "ZEROHOUR",
             "VICMARCH",
