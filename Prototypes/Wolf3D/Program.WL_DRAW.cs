@@ -263,14 +263,14 @@ internal partial class Program
             }
             else
             {
-                mapDefs?.Walls.TryGetValue((tilehit & ~BIT_WALL), out mapTexture); // BUG: Wrong value
-                wallpic = (mapTexture ?? MapTextureTranslation.None).North;
+                mapDefs?.Walls.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
+                wallpic = (mapTexture ?? MapTextureTranslation.None).East;
             }
         }
         else
         {
             mapDefs?.Walls.TryGetValue(tilehit, out mapTexture);
-            wallpic = (mapTexture ?? MapTextureTranslation.None).North;
+            wallpic = (mapTexture ?? MapTextureTranslation.None).East;
         }
 
         var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
@@ -323,13 +323,13 @@ internal partial class Program
             else
             {
                 mapDefs?.Walls.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
-                wallpic = (mapTexture ?? MapTextureTranslation.None).East;
+                wallpic = (mapTexture ?? MapTextureTranslation.None).North;
             }
         }
         else
         {
             mapDefs?.Walls.TryGetValue(tilehit, out mapTexture);
-            wallpic = (mapTexture ?? MapTextureTranslation.None).East;
+            wallpic = (mapTexture ?? MapTextureTranslation.None).North;
         }
 
         var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
