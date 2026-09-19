@@ -479,13 +479,13 @@ internal partial class Program
         checksum = DoChecksum(_mapManager.tilemap, checksum);
         DiskFlopAnim(x, y);
 
-        for (i = 0; i < _mapManager.mapwidth; i++)
-            for (j = 0; j < _mapManager.mapheight; j++)
-            {
-                int objHashCode = br.ReadInt32();
-                checksum = DoChecksum(objHashCode, checksum);
-                _mapManager.actorat[i, j] = objlist2.FirstOrDefault(x => x.GetHashCode() == objHashCode);
-            }
+        //for (i = 0; i < _mapManager.mapwidth; i++)
+        //    for (j = 0; j < _mapManager.mapheight; j++)
+        //    {
+        //        int objHashCode = br.ReadInt32();
+        //        checksum = DoChecksum(objHashCode, checksum);
+        //        _mapManager.actorat[i, j] = objlist2.FirstOrDefault(x => x.GetHashCode() == objHashCode);
+        //    }
 
         areaconnect = br.ReadBytes(MapDataConstants.NUMAREAS* MapDataConstants.NUMAREAS).ToFixedArray(MapDataConstants.NUMAREAS, MapDataConstants.NUMAREAS);
         areabyplayer = br.ReadBytes(MapDataConstants.NUMAREAS);
@@ -636,37 +636,37 @@ internal partial class Program
         checksum = DoChecksum(_mapManager.tilemap, checksum);
         DiskFlopAnim(x, y);
 
-        for (i = 0; i < _mapManager.mapwidth; i++)
-        {
-            for (j = 0; j < _mapManager.mapheight; j++)
-            {
-                var actor = _mapManager.actorat[i, j];
-                if (actor is objstruct obj)
-                {
-                    LinkedListNode<objstruct>? objIndex = objlist2.Find(obj);
-                }
-                bw.Write((actor?.GetHashCode() ?? 0));
-                checksum = DoChecksum((actor?.GetHashCode() ?? 0), checksum);
-            }
-        }
+        //for (i = 0; i < _mapManager.mapwidth; i++)
+        //{
+        //    for (j = 0; j < _mapManager.mapheight; j++)
+        //    {
+        //        var actor = _mapManager.actorat[i, j];
+        //        if (actor is objstruct obj)
+        //        {
+        //            LinkedListNode<objstruct>? objIndex = objlist2.Find(obj);
+        //        }
+        //        bw.Write((actor?.GetHashCode() ?? 0));
+        //        checksum = DoChecksum((actor?.GetHashCode() ?? 0), checksum);
+        //    }
+        //}
 
         bw.Write(areaconnect);
         bw.Write(areabyplayer);
 
         DiskFlopAnim(x, y);
-        foreach (var ob in objlist2)
-        //for (int? o = 0; o != null; o = ob.next)
-        {
-            //ob = objlist[o.Value];
-            if (ob == null)
-                continue;
-            int stateOffset = 0;
-            if (ob == player)
-                stateOffset = PlayerStateList.IndexOf(ob.state);
-            else
-                stateOffset = EnemyStateList.IndexOf(ob.state);
-            bw.Write(ob.AsBytes(stateOffset));
-        }
+        //foreach (var ob in objlist2)
+        ////for (int? o = 0; o != null; o = ob.next)
+        //{
+        //    //ob = objlist[o.Value];
+        //    if (ob == null)
+        //        continue;
+        //    int stateOffset = 0;
+        //    if (ob == player)
+        //        stateOffset = PlayerStateList.IndexOf(ob.state);
+        //    else
+        //        stateOffset = EnemyStateList.IndexOf(ob.state);
+        //    bw.Write(ob.AsBytes(stateOffset));
+        //}
 
         nullobj.active = activetypes.ac_badobject;          // end of file marker
         DiskFlopAnim(x, y);

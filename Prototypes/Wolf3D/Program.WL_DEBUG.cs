@@ -308,16 +308,16 @@ internal partial class Program
         US_Print("\nDoors         :");
         US_Print(doornum.ToString());
 
-        foreach (var obj in objlist2)
-        {
-            if (obj.obclass == classtypes.playerobj)
-                continue;
-            //obj = objlist[o.Value];
-            if (obj.active != 0)
-                active++;
-            else
-                inactive++;
-        }
+        //foreach (var obj in objlist2)
+        //{
+        //    if (obj.obclass == classtypes.playerobj)
+        //        continue;
+        //    //obj = objlist[o.Value];
+        //    if (obj.active != 0)
+        //        active++;
+        //    else
+        //        inactive++;
+        //}
 
         US_Print("\nTotal actors  :");
         US_Print((active + inactive).ToString());

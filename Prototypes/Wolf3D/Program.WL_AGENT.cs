@@ -2,7 +2,6 @@
 using Wolf3D.Constants;
 using Wolf3D.Entities.Actors;
 using Wolf3D.Managers;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wolf3D;
 
