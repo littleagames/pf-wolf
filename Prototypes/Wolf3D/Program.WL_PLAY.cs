@@ -178,6 +178,7 @@ internal partial class Program
         return newobj;
     }
 
+    [Obsolete("Moving to the MapManager._actors")]
     internal static void DoActor(objstruct ob)
     {
         if (ob.active == 0 && ob.areanumber < MapDataConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
@@ -275,6 +276,7 @@ internal partial class Program
         _mapManager.actorat[ob.tilex, ob.tiley] = ob;// (uint)((objlistIndex + 0xffff));
     }
 
+    [Obsolete("Moving to the Actor.Remove")]
     internal static void RemoveObj(objstruct gone)
     {
         if (gone.obclass == classtypes.playerobj)
