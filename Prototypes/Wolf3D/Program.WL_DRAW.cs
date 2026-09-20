@@ -1336,6 +1336,39 @@ internal partial class Program
                 visptr++;
             }
         }
+
+        //
+        // draw from back to front
+        //
+        numvisable = (int)(visptr);
+
+        if (numvisable == 0)
+            return;                                                                 // no visable objects
+
+        for (i = 0; i < numvisable; i++)
+        {
+            least = 32000;
+            for (visstep = 0; visstep < visptr; visstep++)
+            {
+                visobj_t visstep_val = vislist[visstep];
+                height = visstep_val.viewheight;
+                if (height < least)
+                {
+                    least = height;
+                    farthest = visstep;
+                }
+            }
+            //
+            // draw farthest
+            //
+            if (farthest != -1)
+            {
+                visobj_t farthest_obj = vislist[farthest];
+                ScaleShape(farthest_obj);
+
+                farthest_obj.viewheight = 32000;
+            }
+        }
     }
 
     static string[][] weaponscale = {
