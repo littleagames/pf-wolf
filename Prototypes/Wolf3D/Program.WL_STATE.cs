@@ -121,8 +121,8 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
         //
         if (ob.areanumber >= MapDataConstants.NUMAREAS || areabyplayer[ob.areanumber] != 0)
         {
-            deltax = Math.Abs(newx - player.x);
-            deltay = Math.Abs(newy - player.y);
+            deltax = Math.Abs(newx - player.X);
+            deltay = Math.Abs(newy - player.Y);
 
             if (deltax <= MINACTORDIST && deltay <= MINACTORDIST)
             {
@@ -135,7 +135,7 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 // where he gets stuck, but not exploit it by moving further into
                 // the guard and effectively no-clipping through them...
                 //
-                if (!ob.hidden || !_mapManager.spotvis[player.tilex, player.tiley])
+                if (!ob.hidden || !_mapManager.spotvis[player.TileX, player.TileY])
                 {
                     if (ob.obclass == classtypes.ghostobj || ob.obclass == classtypes.spectreobj)
                         TakeDamage((int)(tics * 2), ob);
@@ -361,8 +361,8 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
     // SelectRunDir/KillActor/DamageActor (objstruct versions) were removed here -- all
     // their callers were enemy AI, which now runs on the new Entities.Actors.Actor type
     // (see Program.EnemyAI.cs for the ported equivalents, registered via
-    // ActorActionRegistry in Program.WL_AGENT.cs). Nothing left in objlist2 (player,
-    // projectiles, the BJ-victory actor) is ever FL_SHOOTABLE, so KillActor/DamageActor
+    // ActorActionRegistry in Program.WL_AGENT.cs). Nothing left in objlist2 (projectiles,
+    // the BJ-victory actor) is ever FL_SHOOTABLE, so KillActor/DamageActor
     // had no remaining caller once enemies were gone -- Program.WL_AGENT.cs's
     // GunAttack/KnifeAttack now only need the Entities.Actors.Actor overloads.
     // MoveObj/TryWalk/CHECKDIAG/CHECKSIDE above stay here, still used by BJ Victory.

@@ -60,12 +60,12 @@ internal partial class Program
 
         if (ob.AreaNumber >= MapDataConstants.NUMAREAS || areabyplayer[ob.AreaNumber] != 0)
         {
-            var deltax = Math.Abs(newx - player.x);
-            var deltay = Math.Abs(newy - player.y);
+            var deltax = Math.Abs(newx - player.X);
+            var deltay = Math.Abs(newy - player.Y);
 
             if (deltax <= MINACTORDIST && deltay <= MINACTORDIST)
             {
-                if (!ob.Hidden || !_mapManager.spotvis[player.tilex, player.tiley])
+                if (!ob.Hidden || !_mapManager.spotvis[player.TileX, player.TileY])
                 {
                     if (ob.Name is "Blinky" or "Clyde" or "Pinky" or "Inky")
                         TakeDamage((int)(tics * 2), ob);
@@ -246,8 +246,8 @@ internal partial class Program
 
         x2 = plux;
         y2 = pluy;
-        xt2 = player.tilex;
-        yt2 = player.tiley;
+        xt2 = player.TileX;
+        yt2 = player.TileY;
 
         xdist = Math.Abs(xt2 - xt1);
 
@@ -358,8 +358,8 @@ internal partial class Program
         if (ob.AreaNumber < MapDataConstants.NUMAREAS && areabyplayer[ob.AreaNumber] == 0)
             return false;
 
-        var deltax = player.x - ob.X;
-        var deltay = player.y - ob.Y;
+        var deltax = player.X - ob.X;
+        var deltay = player.Y - ob.Y;
 
         if (deltax > -MINSIGHT && deltax < MINSIGHT && deltay > -MINSIGHT && deltay < MINSIGHT)
             return true;
@@ -473,8 +473,8 @@ internal partial class Program
         else
             turnaround = opposite[(byte)ob.Dir];
 
-        deltax = player.tilex - ob.TileX;
-        deltay = player.tiley - ob.TileY;
+        deltax = player.TileX - ob.TileX;
+        deltay = player.TileY - ob.TileY;
 
         if (deltax > 0)
         {
@@ -545,8 +545,8 @@ internal partial class Program
         olddir = ob.Dir;
         turnaround = opposite[(byte)olddir];
 
-        deltax = player.tilex - ob.TileX;
-        deltay = player.tiley - ob.TileY;
+        deltax = player.TileX - ob.TileX;
+        deltay = player.TileY - ob.TileY;
 
         d[1] = objdirtypes.nodir;
         d[2] = objdirtypes.nodir;
@@ -623,8 +623,8 @@ internal partial class Program
         var d = new objdirtypes[3];
         objdirtypes tdir;
 
-        deltax = player.tilex - ob.TileX;
-        deltay = player.tiley - ob.TileY;
+        deltax = player.TileX - ob.TileX;
+        deltay = player.TileY - ob.TileY;
 
         d[1] = deltax < 0 ? objdirtypes.east : objdirtypes.west;
         d[2] = deltay < 0 ? objdirtypes.south : objdirtypes.north;
@@ -702,8 +702,8 @@ internal partial class Program
 
         if (ob.Name is "Schabbs" or "Gift" or "Fat" or "RealHitler")
         {
-            gamestate.killx = player.x;
-            gamestate.killy = player.y;
+            gamestate.killx = player.X;
+            gamestate.killy = player.Y;
         }
 
         gamestate.killcount++;
@@ -799,8 +799,8 @@ internal partial class Program
         if (CheckLine(ob))
         {
             ob.Hidden = false;
-            var dx = Math.Abs(ob.TileX - player.tilex);
-            var dy = Math.Abs(ob.TileY - player.tiley);
+            var dx = Math.Abs(ob.TileX - player.TileX);
+            var dy = Math.Abs(ob.TileY - player.TileY);
             var dist = dx > dy ? dx : dy;
             int chance;
 
@@ -814,10 +814,10 @@ internal partial class Program
 
                 if (dist == 1)
                 {
-                    var target = Math.Abs(ob.X - player.x);
+                    var target = Math.Abs(ob.X - player.X);
                     if (target < 0x14000L)
                     {
-                        target = Math.Abs(ob.Y - player.y);
+                        target = Math.Abs(ob.Y - player.Y);
                         if (target < 0x14000L)
                             chance = 300;
                     }
@@ -884,12 +884,12 @@ internal partial class Program
 
         while (move != 0)
         {
-            var dx = player.x - ob.X;
+            var dx = player.X - ob.X;
             if (dx < 0) dx = -dx;
             dx -= move;
             if (dx <= MINACTORDIST)
             {
-                var dy = player.y - ob.Y;
+                var dy = player.Y - ob.Y;
                 if (dy < 0) dy = -dy;
                 dy -= move;
                 if (dy <= MINACTORDIST)
@@ -919,12 +919,12 @@ internal partial class Program
         if (ob.Properties.TryGetValue("attacksound", out var sound) && sound is string soundName)
             PlaySoundLocActor(soundName, ob);
 
-        var dx = player.x - ob.X;
+        var dx = player.X - ob.X;
         if (dx < 0) dx = -dx;
         dx -= (int)MapConstants.TILEGLOBAL;
         if (dx <= MINACTORDIST)
         {
-            var dy = player.y - ob.Y;
+            var dy = player.Y - ob.Y;
             if (dy < 0) dy = -dy;
             dy -= (int)MapConstants.TILEGLOBAL;
             if (dy <= MINACTORDIST)
@@ -967,8 +967,8 @@ internal partial class Program
     // otherwise dodges toward the player (or runs, once very close).
     private static void DodgeAndRetreat(Entities.Actors.Actor ob, string attackState)
     {
-        var dx = Math.Abs(ob.TileX - player.tilex);
-        var dy = Math.Abs(ob.TileY - player.tiley);
+        var dx = Math.Abs(ob.TileX - player.TileX);
+        var dy = Math.Abs(ob.TileY - player.TileY);
         var dist = dx > dy ? dx : dy;
         var dodge = false;
 
@@ -1076,8 +1076,8 @@ internal partial class Program
 
         if (CheckLine(ob))
         {
-            var dx = Math.Abs(ob.TileX - player.tilex);
-            var dy = Math.Abs(ob.TileY - player.tiley);
+            var dx = Math.Abs(ob.TileX - player.TileX);
+            var dy = Math.Abs(ob.TileY - player.TileY);
             var dist = dx > dy ? dx : dy;
 
             if (ob.Properties.ContainsKey("monster.sharpshooter"))
@@ -1114,8 +1114,8 @@ internal partial class Program
 
     internal static void T_SchabbThrow(Entities.Actors.Actor ob)
     {
-        var deltax = player.x - ob.X;
-        var deltay = ob.Y - player.y;
+        var deltax = player.X - ob.X;
+        var deltay = ob.Y - player.Y;
         var angle = (float)Math.Atan2((float)deltay, (float)deltax);
         if (angle < 0) angle = (float)(M_PI * 2 + angle);
         var iangle = (int)(angle / (M_PI * 2) * ANGLES);
@@ -1139,8 +1139,8 @@ internal partial class Program
 
     internal static void T_GiftThrow(Entities.Actors.Actor ob)
     {
-        var deltax = player.x - ob.X;
-        var deltay = ob.Y - player.y;
+        var deltax = player.X - ob.X;
+        var deltay = ob.Y - player.Y;
         var angle = (float)Math.Atan2((float)deltay, (float)deltax);
         if (angle < 0) angle = (float)(M_PI * 2 + angle);
         var iangle = (int)(angle / (M_PI * 2) * ANGLES);
@@ -1164,8 +1164,8 @@ internal partial class Program
 
     internal static void T_FakeFire(Entities.Actors.Actor ob)
     {
-        var deltax = player.x - ob.X;
-        var deltay = ob.Y - player.y;
+        var deltax = player.X - ob.X;
+        var deltay = ob.Y - player.Y;
         var angle = (float)Math.Atan2((float)deltay, (float)deltax);
         if (angle < 0) angle = (float)(M_PI * 2 + angle);
         var iangle = (int)(angle / (M_PI * 2) * ANGLES);
@@ -1252,35 +1252,35 @@ internal partial class Program
 
         _inputManager.UserInput(300);
 
-        NewState(player, s_deathcam);
+        NewActorState(player, Entities.Actors.PlayerPawn.DeathCamState);
 
-        player.x = gamestate.killx;
-        player.y = gamestate.killy;
+        player.X = gamestate.killx;
+        player.Y = gamestate.killy;
 
-        dx = ob.X - player.x;
-        dy = player.y - ob.Y;
+        dx = ob.X - player.X;
+        dy = player.Y - ob.Y;
 
         fangle = (float)Math.Atan2((float)dy, (float)dx);
         if (fangle < 0)
             fangle = (float)(M_PI * 2 + fangle);
 
-        player.angle = (short)(fangle / (M_PI * 2) * ANGLES);
+        player.Angle = (short)(fangle / (M_PI * 2) * ANGLES);
 
         dist = 0x14000;
         do
         {
-            xmove = MathUtils.FixedMul(dist, costable[player.angle]);
-            ymove = -MathUtils.FixedMul(dist, sintable[player.angle]);
+            xmove = MathUtils.FixedMul(dist, costable[player.Angle]);
+            ymove = -MathUtils.FixedMul(dist, sintable[player.Angle]);
 
-            player.x = ob.X - xmove;
-            player.y = ob.Y - ymove;
+            player.X = ob.X - xmove;
+            player.Y = ob.Y - ymove;
             dist += 0x1000;
 
         } while (!CheckPosition(player));
-        plux = (ushort)(player.x >> UNSIGNEDSHIFT);
-        pluy = (ushort)(player.y >> UNSIGNEDSHIFT);
-        player.tilex = (byte)(player.x >> MapConstants.TILESHIFT);
-        player.tiley = (byte)(player.y >> MapConstants.TILESHIFT);
+        plux = (ushort)(player.X >> UNSIGNEDSHIFT);
+        pluy = (ushort)(player.Y >> UNSIGNEDSHIFT);
+        player.TileX = (byte)(player.X >> MapConstants.TILESHIFT);
+        player.TileY = (byte)(player.Y >> MapConstants.TILESHIFT);
 
         DrawPlayBorder();
 

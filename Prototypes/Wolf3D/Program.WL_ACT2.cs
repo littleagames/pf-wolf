@@ -28,9 +28,9 @@ internal partial class Program
     //
     // Everything below is still legacy/objstruct-based on purpose: projectiles (Rocket/
     // Smoke/Boom/Needle/Fire) and the BJ-victory end-of-episode cutscene weren't part of
-    // that migration, and SelectPathDir/CheckPosition (objstruct) are still used by the
-    // BJ-victory think functions and by the new Program.EnemyAI.cs's A_StartDeathCam
-    // respectively.
+    // that migration, and SelectPathDir (objstruct) is still used by the BJ-victory think
+    // functions. CheckPosition now takes the new Actor type: its only caller is the player
+    // pawn in the new Program.EnemyAI.cs's A_StartDeathCam.
 
     internal static statestruct s_rocket = new (1, "ROCKA", 3, T_Projectile, A_Smoke, "s_rocket" );
     internal static statestruct s_smoke1 = new(0, "SMOKA", 3, null, null, "s_smoke2" );
@@ -147,8 +147,8 @@ internal partial class Program
         ob.x += (int)deltax;
         ob.y += (int)deltay;
 
-        deltax = Math.Abs(ob.x - player.x);
-        deltay = Math.Abs(ob.y - player.y);
+        deltax = Math.Abs(ob.x - player.X);
+        deltay = Math.Abs(ob.y - player.Y);
 
         if (!ProjectileTryMove(ob))
         {
@@ -218,9 +218,6 @@ internal partial class Program
     internal static statestruct s_bjjump2 = new statestruct(0, "BLAZF", 14, T_BJJump, T_BJYell, "s_bjjump3" );
     internal static statestruct s_bjjump3 = new statestruct(0, "BLAZG", 14, T_BJJump, null, "s_bjjump4" );
     internal static statestruct s_bjjump4 = new statestruct(0, "BLAZH", 300, null, T_BJDone, "s_bjjump4" );
-
-
-    internal static statestruct s_deathcam = new statestruct( 0, "DCAMA", 0, null, null, null );
 
     /*
     ===============
@@ -308,9 +305,9 @@ internal partial class Program
     {
         objstruct newobj;
 
-        newobj = SpawnNewObj(player.tilex, (uint)(player.tiley + 1), s_bjrun1);
-        newobj.x = player.x;
-        newobj.y = player.y;
+        newobj = SpawnNewObj(player.TileX, (uint)(player.TileY + 1), s_bjrun1);
+        newobj.x = player.X;
+        newobj.y = player.Y;
         newobj.obclass = classtypes.bjobj;
         newobj.dir = objdirtypes.north;
         newobj.temp1 = 6;                      // tiles to run forward
@@ -391,16 +388,16 @@ internal partial class Program
     =
     ===============
     */
-    internal static bool CheckPosition(objstruct ob)
+    internal static bool CheckPosition(Entities.Actors.Actor ob)
     {
         int x, y, xl, yl, xh, yh;
         Actor? check;
 
-        xl = (int)((ob.x - PLAYERSIZE) >> MapConstants.TILESHIFT);
-        yl = (int)((ob.y - PLAYERSIZE) >> MapConstants.TILESHIFT);
+        xl = (int)((ob.X - PLAYERSIZE) >> MapConstants.TILESHIFT);
+        yl = (int)((ob.Y - PLAYERSIZE) >> MapConstants.TILESHIFT);
 
-        xh = (int)((ob.x + PLAYERSIZE) >> MapConstants.TILESHIFT);
-        yh = (int)((ob.y + PLAYERSIZE) >> MapConstants.TILESHIFT);
+        xh = (int)((ob.X + PLAYERSIZE) >> MapConstants.TILESHIFT);
+        yh = (int)((ob.Y + PLAYERSIZE) >> MapConstants.TILESHIFT);
 
         //
         // check for solid walls

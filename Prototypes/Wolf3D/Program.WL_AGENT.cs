@@ -49,16 +49,9 @@ internal partial class Program
     =============================================================================
     */
 
-    internal static statestruct s_player = new(0/*false*/, "", 0, T_Player, null, null);
-    internal static statestruct s_attack = new(0/*false*/, "", 0, T_Attack, null, null);
-
-    internal static Dictionary<string, statestruct> PlayerStateDict = new()
-    {
-        { "s_player", s_player },
-        { "s_attack", s_attack }
-    };
-
-    internal static List<statestruct> PlayerStateList => PlayerStateDict.Values.ToList();
+    // The player's states live on PlayerPawn. This order matches the state indices the legacy
+    // save-game format wrote (s_player, s_attack), so RestorePlayer can map them back.
+    internal static readonly string[] PlayerStateNames = [PlayerPawn.SpawnState, PlayerPawn.AttackState];
 
     internal struct atkinf
     {
@@ -117,7 +110,7 @@ internal partial class Program
         }
     }
 
-    internal static void ControlMovement(objstruct ob)
+    internal static void ControlMovement(Entities.Actors.Actor ob)
     {
         int angle;
         int angleunits;
@@ -126,7 +119,7 @@ internal partial class Program
 
         if (_inputManager.IsButtonPressed(buttontypes.bt_strafeleft))
         {
-            angle = ob.angle + ANGLES / 4;
+            angle = ob.Angle + ANGLES / 4;
             if (angle >= ANGLES)
                 angle -= ANGLES;
             if (_inputManager.IsButtonPressed(buttontypes.bt_run))
@@ -137,7 +130,7 @@ internal partial class Program
 
         if (_inputManager.IsButtonPressed(buttontypes.bt_straferight))
         {
-            angle = ob.angle - ANGLES / 4;
+            angle = ob.Angle - ANGLES / 4;
             if (angle < 0)
                 angle += ANGLES;
             if (_inputManager.IsButtonPressed(buttontypes.bt_run))
@@ -157,14 +150,14 @@ internal partial class Program
             //
             if (controlx > 0)
             {
-                angle = ob.angle - ANGLES / 4;
+                angle = ob.Angle - ANGLES / 4;
                 if (angle < 0)
                     angle += ANGLES;
                 Thrust(angle, (int)(controlx * MOVESCALE));      // move to left
             }
             else if (controlx < 0)
             {
-                angle = ob.angle + ANGLES / 4;
+                angle = ob.Angle + ANGLES / 4;
                 if (angle >= ANGLES)
                     angle -= ANGLES;
                 Thrust(angle, (int)(-controlx * MOVESCALE));     // move to right
@@ -178,12 +171,12 @@ internal partial class Program
             anglefrac += (short)controlx;
             angleunits = anglefrac / ANGLESCALE;
             anglefrac -= (short)(angleunits * ANGLESCALE);
-            ob.angle -= (short)angleunits;
+            ob.Angle -= (short)angleunits;
 
-            if (ob.angle >= ANGLES)
-                ob.angle -= ANGLES;
-            if (ob.angle < 0)
-                ob.angle += ANGLES;
+            if (ob.Angle >= ANGLES)
+                ob.Angle -= ANGLES;
+            if (ob.Angle < 0)
+                ob.Angle += ANGLES;
         }
 
         //
@@ -191,11 +184,11 @@ internal partial class Program
         //
         if (controly < 0)
         {
-            Thrust(ob.angle, (int)(-controly * MOVESCALE)); // move forwards
+            Thrust(ob.Angle, (int)(-controly * MOVESCALE)); // move forwards
         }
         else if (controly > 0)
         {
-            angle = ob.angle + ANGLES / 2;
+            angle = ob.Angle + ANGLES / 2;
             if (angle >= ANGLES)
                 angle -= ANGLES;
             Thrust(angle, (int)(controly * BACKMOVESCALE));          // move backwards
@@ -224,26 +217,26 @@ internal partial class Program
 
         ClipMove(player, xmove, ymove);
 
-        player.tilex = (byte)(player.x >> (int)MapConstants.TILESHIFT);                // scale to tile values
-        player.tiley = (byte)(player.y >> (int)MapConstants.TILESHIFT);
+        player.TileX = (byte)(player.X >> (int)MapConstants.TILESHIFT);                // scale to tile values
+        player.TileY = (byte)(player.Y >> (int)MapConstants.TILESHIFT);
 
-        player.areanumber = (byte)(_mapManager.MAPSPOT(player.tilex, player.tiley, 0) - MapDataConstants.AREATILE);
+        player.AreaNumber = (byte)(_mapManager.MAPSPOT(player.TileX, player.TileY, 0) - MapDataConstants.AREATILE);
 
-        if (_mapManager.MAPSPOT(player.tilex, player.tiley, 1) == MapDataConstants.EXITTILE)
+        if (_mapManager.MAPSPOT(player.TileX, player.TileY, 1) == MapDataConstants.EXITTILE)
             VictoryTile();
     }
 
-    internal static bool TryMove(objstruct ob)
+    internal static bool TryMove(Entities.Actors.Actor ob)
     {
         uint xl, yl, xh, yh, x, y;
         Actor? check;
         int deltax, deltay;
 
-        xl = (uint)((ob.x - PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
-        yl = (uint)((ob.y - PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
+        xl = (uint)((ob.X - PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
+        yl = (uint)((ob.Y - PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
 
-        xh = (uint)((ob.x + PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
-        yh = (uint)((ob.y + PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
+        xh = (uint)((ob.X + PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
+        yh = (uint)((ob.Y + PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
 
         const long PUSHWALLMINDIST = PLAYERSIZE;
 
@@ -262,19 +255,19 @@ internal partial class Program
                         switch (pwalldir)
                         {
                             case controldirs.di_north:
-                                if (ob.y - PUSHWALLMINDIST <= (pwally << (int)MapConstants.TILESHIFT) + ((63 - pwallpos) << 10))
+                                if (ob.Y - PUSHWALLMINDIST <= (pwally << (int)MapConstants.TILESHIFT) + ((63 - pwallpos) << 10))
                                     return false;
                                 break;
                             case controldirs.di_west:
-                                if (ob.x - PUSHWALLMINDIST <= (pwallx << (int)MapConstants.TILESHIFT) + ((63 - pwallpos) << 10))
+                                if (ob.X - PUSHWALLMINDIST <= (pwallx << (int)MapConstants.TILESHIFT) + ((63 - pwallpos) << 10))
                                     return false;
                                 break;
                             case controldirs.di_east:
-                                if (ob.x + PUSHWALLMINDIST >= (pwallx << (int)MapConstants.TILESHIFT) + (pwallpos << 10))
+                                if (ob.X + PUSHWALLMINDIST >= (pwallx << (int)MapConstants.TILESHIFT) + (pwallpos << 10))
                                     return false;
                                 break;
                             case controldirs.di_south:
-                                if (ob.y + PUSHWALLMINDIST >= (pwally << (int)MapConstants.TILESHIFT) + (pwallpos << 10))
+                                if (ob.Y + PUSHWALLMINDIST >= (pwally << (int)MapConstants.TILESHIFT) + (pwallpos << 10))
                                     return false;
                                 break;
                         }
@@ -301,13 +294,13 @@ internal partial class Program
             for (x = xl; x <= xh; x++)
             {
                 check = _mapManager.actorat[x, y];
-                // TODO: !check.Equals(player) might not operate correctly obclass != playerobj
-                if (check is objstruct actor && actor.obclass != classtypes.playerobj && actor.flags.HasFlag(objflags.FL_SHOOTABLE))
+                // The player is no longer an objstruct, so it can never be its own obstacle here.
+                if (check is objstruct actor && actor.flags.HasFlag(objflags.FL_SHOOTABLE))
                 {
-                    deltax = ob.x - check.x;
+                    deltax = ob.X - check.x;
                     if (deltax < -MINACTORDIST || deltax > MINACTORDIST)
                         continue;
-                    deltay = ob.y - check.y;
+                    deltay = ob.Y - check.y;
                     if (deltay < -MINACTORDIST || deltay > MINACTORDIST)
                         continue;
 
@@ -319,38 +312,38 @@ internal partial class Program
         return true;
     }
 
-    internal static void ClipMove(objstruct ob, int xmove, int ymove)
+    internal static void ClipMove(Entities.Actors.Actor ob, int xmove, int ymove)
     {
         int basex, basey;
 
-        basex = ob.x;
-        basey = ob.y;
+        basex = ob.X;
+        basey = ob.Y;
 
-        ob.x = basex + xmove;
-        ob.y = basey + ymove;
+        ob.X = basex + xmove;
+        ob.Y = basey + ymove;
         if (TryMove(ob))
             return;
 
-        if (noclip != 0 && ob.x > 2 * MapConstants.TILEGLOBAL && ob.y > 2 * MapConstants.TILEGLOBAL
-            && ob.x < (((int)(_mapManager.mapwidth - 1)) << (int)MapConstants.TILESHIFT)
-            && ob.y < (((int)(_mapManager.mapheight - 1)) << (int)MapConstants.TILESHIFT))
+        if (noclip != 0 && ob.X > 2 * MapConstants.TILEGLOBAL && ob.Y > 2 * MapConstants.TILEGLOBAL
+            && ob.X < (((int)(_mapManager.mapwidth - 1)) << (int)MapConstants.TILESHIFT)
+            && ob.Y < (((int)(_mapManager.mapheight - 1)) << (int)MapConstants.TILESHIFT))
             return;         // walk through walls
 
         if (!_audioManager.IsAnySoundPlaying())
              _audioManager.Play("world/hitwall");
 
-        ob.x = basex + xmove;
-        ob.y = basey;
+        ob.X = basex + xmove;
+        ob.Y = basey;
         if (TryMove(ob))
             return;
 
-        ob.x = basex;
-        ob.y = basey + ymove;
+        ob.X = basex;
+        ob.Y = basey + ymove;
         if (TryMove(ob))
             return;
 
-        ob.x = basex;
-        ob.y = basey;
+        ob.X = basex;
+        ob.Y = basey;
     }
 
     internal static void VictoryTile()
@@ -458,6 +451,10 @@ internal partial class Program
         ActorActionRegistry.Register("A_Slurpie", A_Slurpie);
         ActorActionRegistry.Register("A_HitlerMorph", A_HitlerMorph);
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
+
+        // The player's own think states (PlayerPawn), ticked by MapManager.DoActor.
+        ActorActionRegistry.Register("T_Player", T_Player);
+        ActorActionRegistry.Register("T_Attack", T_Attack);
     }
 
     private static void GiveInventoryAction(Entities.Actors.Actor actor, string[] args)
@@ -851,31 +848,31 @@ internal partial class Program
         //
         // find which cardinal direction the player is facing
         //
-        if (player.angle < ANGLES / 8 || player.angle > 7 * ANGLES / 8)
+        if (player.Angle < ANGLES / 8 || player.Angle > 7 * ANGLES / 8)
         {
-            checkx = player.tilex + 1;
-            checky = player.tiley;
+            checkx = player.TileX + 1;
+            checky = player.TileY;
             dir = controldirs.di_east;
             elevatorok = true;
         }
-        else if (player.angle < 3 * ANGLES / 8)
+        else if (player.Angle < 3 * ANGLES / 8)
         {
-            checkx = player.tilex;
-            checky = player.tiley - 1;
+            checkx = player.TileX;
+            checky = player.TileY - 1;
             dir = controldirs.di_north;
             elevatorok = false;
         }
-        else if (player.angle < 5 * ANGLES / 8)
+        else if (player.Angle < 5 * ANGLES / 8)
         {
-            checkx = player.tilex - 1;
-            checky = player.tiley;
+            checkx = player.TileX - 1;
+            checky = player.TileY;
             dir = controldirs.di_west;
             elevatorok = true;
         }
         else
         {
-            checkx = player.tilex;
-            checky = player.tiley + 1;
+            checkx = player.TileX;
+            checky = player.TileY + 1;
             dir = controldirs.di_south;
             elevatorok = false;
         }
@@ -898,7 +895,7 @@ internal partial class Program
             _inputManager.SetButtonHeld(buttontypes.bt_use, true);
 
             _mapManager.tilemap[checkx, checky]++;              // flip switch
-            if (_mapManager.MAPSPOT(player.tilex, player.tiley, 0) == MapDataConstants.ALTELEVATORTILE)
+            if (_mapManager.MAPSPOT(player.TileX, player.TileY, 0) == MapDataConstants.ALTELEVATORTILE)
                 playstate = playstatetypes.ex_secretlevel;
             else
                 playstate = playstatetypes.ex_completed;
@@ -920,7 +917,7 @@ internal partial class Program
 
         gamestate.weaponframe = 0;
 
-        player.state = s_attack;
+        NewActorState(player, PlayerPawn.AttackState);
 
         gamestate.attackframe = 0;
         gamestate.attackcount =
@@ -938,7 +935,7 @@ internal partial class Program
     =
     ===============
     */
-    internal static void T_Player(objstruct ob)
+    internal static void T_Player(Entities.Actors.Actor ob)
     {
         if (gamestate.victoryflag)              // watching the BJ actor
         {
@@ -959,13 +956,13 @@ internal partial class Program
         if (gamestate.victoryflag)              // watching the BJ actor
             return;
 
-        plux = (ushort)(player.x >> UNSIGNEDSHIFT);                     // scale to fit in unsigned
-        pluy = (ushort)(player.y >> UNSIGNEDSHIFT);
-        player.tilex = (byte)(player.x >> (int)MapConstants.TILESHIFT);                // scale to tile values
-        player.tiley = (byte)(player.y >> (int)MapConstants.TILESHIFT);
+        plux = (ushort)(player.X >> UNSIGNEDSHIFT);                     // scale to fit in unsigned
+        pluy = (ushort)(player.Y >> UNSIGNEDSHIFT);
+        player.TileX = (byte)(player.X >> (int)MapConstants.TILESHIFT);                // scale to tile values
+        player.TileY = (byte)(player.Y >> (int)MapConstants.TILESHIFT);
     }
 
-    internal static void T_Attack(objstruct ob)
+    internal static void T_Attack(Entities.Actors.Actor ob)
     {
         atkinf cur;
         UpdateFace();
@@ -987,10 +984,10 @@ internal partial class Program
         if (gamestate.victoryflag)              // watching the BJ actor
             return;
 
-        plux = (ushort)(player.x >> UNSIGNEDSHIFT);                     // scale to fit in unsigned
-        pluy = (ushort)(player.y >> UNSIGNEDSHIFT);
-        player.tilex = (byte)(player.x >> (int)MapConstants.TILESHIFT);                // scale to tile values
-        player.tiley = (byte)(player.y >> (int)MapConstants.TILESHIFT);
+        plux = (ushort)(player.X >> UNSIGNEDSHIFT);                     // scale to fit in unsigned
+        pluy = (ushort)(player.Y >> UNSIGNEDSHIFT);
+        player.TileX = (byte)(player.X >> (int)MapConstants.TILESHIFT);                // scale to tile values
+        player.TileY = (byte)(player.Y >> (int)MapConstants.TILESHIFT);
 
         //
         // change frame and fire
@@ -1002,7 +999,7 @@ internal partial class Program
             switch (cur.attack)
             {
                 case -1:
-                    ob.state = s_player;
+                    NewActorState(ob, PlayerPawn.SpawnState);
                     if (GetAmmo() == 0)
                     {
                         gamestate.weapon = weapontypes.wp_knife;
@@ -1065,9 +1062,10 @@ internal partial class Program
     }
 
     // The player's targets are now exclusively the new Entities.Actors.Actor enemies
-    // (Program.EnemyAI.cs) -- nothing left in objlist2 (player, projectiles, the
-    // BJ-victory actor) is ever FL_SHOOTABLE now that enemies are gone from it, so
-    // GunAttack/KnifeAttack no longer need to scan it at all.
+    // (Program.EnemyAI.cs) -- nothing left in objlist2 (projectiles, the BJ-victory
+    // actor) is ever FL_SHOOTABLE now that enemies are gone from it, so
+    // GunAttack/KnifeAttack no longer need to scan it at all. The player pawn shares
+    // _actors with the enemies but has no "Chase" state, so it never qualifies.
     private static List<Entities.Actors.Actor> FindShootCandidates()
     {
         var candidates = new List<Entities.Actors.Actor>();
@@ -1086,7 +1084,7 @@ internal partial class Program
         return candidates;
     }
 
-    internal static void KnifeAttack(objstruct ob)
+    internal static void KnifeAttack(Entities.Actors.Actor ob)
     {
         _audioManager.Play("weapon/knife/attack");
 
@@ -1097,7 +1095,7 @@ internal partial class Program
         DamageActor(closest, (uint)(US_RndT() >> 4));
     }
 
-    internal static void GunAttack(objstruct ob)
+    internal static void GunAttack(Entities.Actors.Actor ob)
     {
         int damage;
         int dx, dy, dist;
@@ -1132,8 +1130,8 @@ internal partial class Program
         //
         // hit something
         //
-        dx = Math.Abs(closest.TileX - player.tilex);
-        dy = Math.Abs(closest.TileY - player.tiley);
+        dx = Math.Abs(closest.TileX - player.TileX);
+        dy = Math.Abs(closest.TileY - player.TileY);
         dist = dx > dy ? dx : dy;
         if (dist < 2)
             damage = US_RndT() / 4;
@@ -1152,45 +1150,59 @@ internal partial class Program
     internal static void VictorySpin()
     {
         int desty;
-        if (player.angle > 270)
+        if (player.Angle > 270)
         {
-            player.angle -= (short)(tics * 3);
-            if (player.angle < 270)
-                player.angle = 270;
+            player.Angle -= (short)(tics * 3);
+            if (player.Angle < 270)
+                player.Angle = 270;
         }
-        else if (player.angle < 270)
+        else if (player.Angle < 270)
         {
-            player.angle += (short)(tics * 3);
-            if (player.angle > 270)
-                player.angle = 270;
+            player.Angle += (short)(tics * 3);
+            if (player.Angle > 270)
+                player.Angle = 270;
         }
 
-        desty = ((player.tiley - 5) << (int)MapConstants.TILESHIFT) - 0x3000;
+        desty = ((player.TileY - 5) << (int)MapConstants.TILESHIFT) - 0x3000;
 
-        if (player.y > desty)
+        if (player.Y > desty)
         {
-            player.y -= (int)(tics * 4096);
-            if (player.y < desty)
-                player.y = desty;
+            player.Y -= (int)(tics * 4096);
+            if (player.Y < desty)
+                player.Y = desty;
         }
     }
 
     internal static void SpawnPlayer(int tilex, int tiley, int dir)
     {
-        player.obclass = classtypes.playerobj;
-        player.active = activetypes.ac_yes;
-        player.tilex = (byte)tilex;
-        player.tiley = (byte)tiley;
-        player.areanumber = (byte)(_mapManager.MAPSPOT(tilex, tiley, 0) - MapDataConstants.AREATILE);
-        player.x = (tilex << (int)MapConstants.TILESHIFT) + (int)MapConstants.TILEGLOBAL / 2;
-        player.y = (tiley << (int)MapConstants.TILESHIFT) + (int)MapConstants.TILEGLOBAL / 2;
-        player.state = s_player;
-        player.angle = (short)((1 - dir) * 90);
-        if (player.angle < 0)
-            player.angle += ANGLES;
-        player.flags = objflags.FL_NEVERMARK;
+        player.Active = activetypes.ac_yes;
+        player.SetPosition(tilex, tiley);       // tile, and the tile-centred world x/y
+        player.AreaNumber = (byte)(_mapManager.MAPSPOT(tilex, tiley, 0) - MapDataConstants.AREATILE);
+        NewActorState(player, PlayerPawn.SpawnState);
+        player.Angle = (short)((1 - dir) * 90);
+        if (player.Angle < 0)
+            player.Angle += ANGLES;
+        player.RuntimeFlags = objflags.FL_NEVERMARK;
         Thrust(0, 0);                           // set some variables
 
         InitAreas();
+    }
+
+    /// <summary>
+    /// Load-game counterpart of SpawnPlayer: unpacks the player's legacy objstruct save record
+    /// (Program.LoadTheGame) onto the pawn in MapManager._actors.
+    /// </summary>
+    internal static void RestorePlayer(objstruct saved, int stateOffset)
+    {
+        player.Active = saved.active;
+        player.X = saved.x;
+        player.Y = saved.y;
+        player.TileX = saved.tilex;
+        player.TileY = saved.tiley;
+        player.SyncPosition();
+        player.AreaNumber = saved.areanumber;
+        player.Angle = saved.angle;
+        player.RuntimeFlags = saved.flags;
+        NewActorState(player, PlayerStateNames[stateOffset]);
     }
 }

@@ -62,19 +62,19 @@ internal partial class Program
 
         if (_inputManager.IsKeyDown(ScanCodes.sc_F))             // F = facing spot
         {
-            Actor? spot = _mapManager.actorat[player.tilex, player.tiley];
+            Actor? spot = _mapManager.actorat[player.TileX, player.TileY];
 
             CenterWindow(15, 9);
-            US_Print($"X: {player.x} ({(player.x % MapConstants.TILEGLOBAL)})\n");
-            US_Print($"Y: {player.y} ({(player.y % MapConstants.TILEGLOBAL)})\n");
-            US_Print($"A: {player.angle}\n");
-            US_Print($"TileX: {player.tilex}\n");
-            US_Print($"TileY: {player.tiley}\n");
-            US_Print($"1: {_mapManager.tilemap[player.tilex, player.tiley]}");
+            US_Print($"X: {player.X} ({(player.X % MapConstants.TILEGLOBAL)})\n");
+            US_Print($"Y: {player.Y} ({(player.Y % MapConstants.TILEGLOBAL)})\n");
+            US_Print($"A: {player.Angle}\n");
+            US_Print($"TileX: {player.TileX}\n");
+            US_Print($"TileY: {player.TileY}\n");
+            US_Print($"1: {_mapManager.tilemap[player.TileX, player.TileY]}");
             US_Print($"2: {spot}");
-            US_Print($"f 1: {player.areanumber}");
-            US_Print($" 2: {_mapManager.MAPSPOT(player.tilex, player.tiley, 1)}");
-            US_Print($" 3: {(spot is objstruct spotObj ? spotObj.flags : (_mapManager.spotvis[player.tilex, player.tiley] ? 1 : 0))}");
+            US_Print($"f 1: {player.AreaNumber}");
+            US_Print($" 2: {_mapManager.MAPSPOT(player.TileX, player.TileY, 1)}");
+            US_Print($" 3: {(spot is objstruct spotObj ? spotObj.flags : (_mapManager.spotvis[player.TileX, player.TileY] ? 1 : 0))}");
 
             _videoManager.Update();
             _inputManager.Ack();
@@ -410,7 +410,7 @@ internal partial class Program
             }
         }
 
-        _videoManager.Bar((player.tilex * zoom) + offx, (player.tiley * zoom) + offy, zoom, zoom, "White");
+        _videoManager.Bar((player.TileX * zoom) + offx, (player.TileY * zoom) + offy, zoom, zoom, "White");
 
         _videoManager.Update();
         _inputManager.Ack();

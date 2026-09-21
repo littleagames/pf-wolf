@@ -495,26 +495,25 @@ internal partial class Program
         DiskFlopAnim(x, y);
         InitActorList();
 
-        while (true)
-        {
-            objstruct nullobj = new();
-            int stateOffset = nullobj.Read(br);
-            if (nullobj.active == activetypes.ac_badobject)
-                break;
+        //while (true)
+        //{
+        //    objstruct nullobj = new();
+        //    int stateOffset = nullobj.Read(br);
+        //    if (nullobj.active == activetypes.ac_badobject)
+        //        break;
 
-            if (nullobj.obclass == classtypes.playerobj)
-            {
-                player.Copy(nullobj);
-                player.state = PlayerStateList[stateOffset];
-            }
-            else
-            {
-                objstruct newobj;
-                newobj = GetNewActor();
-                newobj.state = EnemyStateList[stateOffset];
-                newobj.Copy(nullobj);
-            }
-        }
+        //    if (nullobj.obclass == classtypes.playerobj)
+        //    {
+        //        RestorePlayer(nullobj, stateOffset);
+        //    }
+        //    else
+        //    {
+        //        objstruct newobj;
+        //        newobj = GetNewActor();
+        //        newobj.state = EnemyStateList[stateOffset];
+        //        newobj.Copy(nullobj);
+        //    }
+        //}
 
         DiskFlopAnim(x, y);
         //laststatobjnum = br.ReadUInt16();

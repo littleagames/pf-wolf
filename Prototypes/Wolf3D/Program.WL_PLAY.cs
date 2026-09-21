@@ -17,7 +17,9 @@ internal partial class Program
 
     [Obsolete("Moving to the MapManager._actors")]
     internal static LinkedList<objstruct> objlist2 = new LinkedList<objstruct>();
-    internal static objstruct player;
+    // The player lives in MapManager._actors like every other actor; this is just a shortcut to it.
+    internal static Entities.Actors.PlayerPawn player =>
+        _mapManager.Player ?? throw new InvalidOperationException("The player has not been spawned for this level yet.");
 
     internal static byte singlestep, godmode, noclip, ammocheat, mapreveal;
     internal static int extravbls;
@@ -119,6 +121,7 @@ internal partial class Program
             }
 
             // Runs side-by-side with the objlist2 loop above while actors migrate to _mapManager._actors.
+            // The player is the head of _actors, so it still thinks before every enemy.
             _mapManager.DoActors(tics);
 
             _videoManager.UpdatePaletteShifts(tics);
@@ -164,9 +167,9 @@ internal partial class Program
         objlist2 = new LinkedList<objstruct>();
 
         //
-        // give the player the first free spots
+        // the player is created first, so it sits at the head of _actors and thinks first
         //
-        player = GetNewActor();
+        _mapManager.CreatePlayer();
     }
 
     internal static objstruct GetNewActor()
@@ -279,9 +282,6 @@ internal partial class Program
     [Obsolete("Moving to the Actor.Remove")]
     internal static void RemoveObj(objstruct gone)
     {
-        if (gone.obclass == classtypes.playerobj)
-            _gameEngineManager.Quit("RemoveObj: Tried to remove the player!");
-
         gone.state = null;
 
         //

@@ -143,14 +143,14 @@ internal partial class Program
 
     internal static void Setup3DView()
     {
-        viewangle = player.angle;
+        viewangle = player.Angle;
         midangle = (short)(viewangle * (FINEANGLES / ANGLES));
 
         viewsin = sintable[viewangle];
         viewcos = costable[viewangle];
 
-        viewx = player.x - MathUtils.FixedMul(focallength, viewcos);
-        viewy = player.y + MathUtils.FixedMul(focallength, viewsin);
+        viewx = player.X - MathUtils.FixedMul(focallength, viewcos);
+        viewy = player.Y + MathUtils.FixedMul(focallength, viewsin);
 
         focaltx = (short)(viewx >> (int)MapConstants.TILESHIFT);
         focalty = (short)(viewy >> (int)MapConstants.TILESHIFT);
@@ -1107,7 +1107,7 @@ internal partial class Program
         // this isn't exactly correct, as it should vary by a trig value,
         // but it is close enough with only eight rotations
 
-        viewangle = (int)(player.angle + (centerx - ob.viewx) / (8 * viewwidth / 320.0));
+        viewangle = (int)(player.Angle + (centerx - ob.viewx) / (8 * viewwidth / 320.0));
 
         if (ob.obclass == classtypes.rocketobj || ob.obclass == classtypes.hrocketobj)
             angle = (viewangle - 180) - ob.angle;
@@ -1219,7 +1219,7 @@ internal partial class Program
 
     internal static int CalcRotate(Entities.Actors.Actor ob)
     {
-        var viewangle = (int)(player.angle + (centerx - ob.ViewX) / (8 * viewwidth / 320.0));
+        var viewangle = (int)(player.Angle + (centerx - ob.ViewX) / (8 * viewwidth / 320.0));
         var angle = (viewangle - 180) - dirangle[(byte)ob.Dir];
 
         angle += ANGLES / 16;
@@ -1257,6 +1257,9 @@ internal partial class Program
 
             if (actor == null)
                 continue;                                               // object has been deleted
+
+            if (actor is PlayerPawn)
+                continue;                                               // the camera itself, never drawn
 
             visobj_t visptr_val = new visobj_t();
             //statobj_t statptr_val = statobjlist[statptr];
@@ -1383,7 +1386,7 @@ internal partial class Program
         string shapenum;
         if (gamestate.victoryflag)
         {
-            if (player.state == s_deathcam && (GameEngineManager.GetTimeCount() & 32) != 0)
+            if (player.CurrentState?.StateName == PlayerPawn.DeathCamState && (GameEngineManager.GetTimeCount() & 32) != 0)
                 SimpleScaleShape(viewwidth / 2, "DCAMA", viewheight + 1);
             return;
         }
@@ -1411,9 +1414,9 @@ internal partial class Program
 
         if (!((demorecord || demoplayback)))
         {
-            if (_mapManager.tilemap[player.tilex, player.tiley] == 0 ||
-             (_mapManager.tilemap[player.tilex, player.tiley] & BIT_DOOR) != 0)
-                _mapManager.spotvis[player.tilex, player.tiley] = true;       // Detect all sprites over player fix
+            if (_mapManager.tilemap[player.TileX, player.TileY] == 0 ||
+             (_mapManager.tilemap[player.TileX, player.TileY] & BIT_DOOR) != 0)
+                _mapManager.spotvis[player.TileX, player.TileY] = true;       // Detect all sprites over player fix
         }
 
 

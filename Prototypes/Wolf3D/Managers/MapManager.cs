@@ -47,6 +47,10 @@ internal class MapManager
 
     private readonly LinkedList<Entities.Actors.Actor> _actors = new();
 
+    // The player's pawn, also held in _actors (always at the head). Null until CreatePlayer runs
+    // for the current level -- LoadMap clears _actors, which drops the previous level's pawn.
+    internal Entities.Actors.PlayerPawn? Player { get; private set; }
+
     // The unique story bosses (actordefs/wolf3d/bosses.yaml): always spawned ambush-ready and
     // stationary regardless of the floor tile beneath them, unlike the rank-and-file grunts.
     private static readonly HashSet<string> BossActorNames = new(StringComparer.Ordinal)
@@ -115,6 +119,7 @@ internal class MapManager
         // with lives left, replaying a level in a new game, etc.) would otherwise pile the new
         // level's actors on top of the previous load's instead of replacing them.
         _actors.Clear();
+        Player = null;
 
         var data = GetMapData();
 
@@ -338,6 +343,21 @@ internal class MapManager
     internal LinkedList<Entities.Actors.Actor> GetActors()
     {
         return _actors;
+    }
+
+    /// <summary>
+    /// Creates a fresh player pawn at the head of _actors, replacing any existing one. Head
+    /// placement keeps the player thinking ahead of every other actor, as the legacy
+    /// InitActorList did by allocating the player first.
+    /// </summary>
+    internal Entities.Actors.PlayerPawn CreatePlayer()
+    {
+        if (Player != null)
+            _actors.Remove(Player);
+
+        Player = new Entities.Actors.PlayerPawn();
+        _actors.AddFirst(Player);
+        return Player;
     }
 
     internal void DoActors(uint tics)

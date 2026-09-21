@@ -642,8 +642,8 @@ internal partial class Program
         //
         if (LastAttacker != null)
         {
-            dx = LastAttacker.x - player.x;
-            dy = player.y - LastAttacker.y;
+            dx = LastAttacker.x - player.X;
+            dy = player.Y - LastAttacker.y;
 
             fangle = (float)Math.Atan2((float)dy, (float)dx);     // returns -pi to pi
             if (fangle < 0)
@@ -653,22 +653,22 @@ internal partial class Program
         }
         else
         {
-            iangle = player.angle + ANGLES / 2;
+            iangle = player.Angle + ANGLES / 2;
             if (iangle >= ANGLES) iangle -= ANGLES;
         }
 
-        if (player.angle > iangle)
+        if (player.Angle > iangle)
         {
-            counter = player.angle - iangle;
-            clockwise = ANGLES - player.angle + iangle;
+            counter = player.Angle - iangle;
+            clockwise = ANGLES - player.Angle + iangle;
         }
         else
         {
-            clockwise = iangle - player.angle;
-            counter = player.angle + ANGLES - iangle;
+            clockwise = iangle - player.Angle;
+            counter = player.Angle + ANGLES - iangle;
         }
 
-        curangle = player.angle;
+        curangle = player.Angle;
 
         if (clockwise < counter)
         {
@@ -684,9 +684,9 @@ internal partial class Program
                     change = iangle - curangle;
 
                 curangle += change;
-                player.angle += (short)change;
-                if (player.angle >= ANGLES)
-                    player.angle -= ANGLES;
+                player.Angle += (short)change;
+                if (player.Angle >= ANGLES)
+                    player.Angle -= ANGLES;
 
                 ThreeDRefresh();
                 CalcTics();
@@ -706,9 +706,9 @@ internal partial class Program
                     change = iangle - curangle;
 
                 curangle += change;
-                player.angle += (short)change;
-                if (player.angle < 0)
-                    player.angle += ANGLES;
+                player.Angle += (short)change;
+                if (player.Angle < 0)
+                    player.Angle += ANGLES;
 
                 ThreeDRefresh();
                 CalcTics();

@@ -86,15 +86,15 @@ internal partial class Program
     internal static void ConnectAreas()
     {
         Array.Fill(areabyplayer, (byte)0);
-        areabyplayer[player.areanumber] = 1; // true
-        RecursiveConnect(player.areanumber);
+        areabyplayer[player.AreaNumber] = 1; // true
+        RecursiveConnect(player.AreaNumber);
     }
 
     internal static void InitAreas()
     {
         Array.Fill(areabyplayer, (byte)0);
-        if (player.areanumber < MapDataConstants.NUMAREAS)
-            areabyplayer[player.areanumber] = 1; // true
+        if (player.AreaNumber < MapDataConstants.NUMAREAS)
+            areabyplayer[player.AreaNumber] = 1; // true
     }
 
     /*
@@ -205,16 +205,16 @@ internal partial class Program
         if (_mapManager.actorat[tilex, tiley] is Actor)
             return;
 
-        if (player.tilex == tilex && player.tiley == tiley)
+        if (player.TileX == tilex && player.TileY == tiley)
             return;
 
         if (doorobjlist[door].vertical)
         {
-            if (player.tiley == tiley)
+            if (player.TileY == tiley)
             {
-                if (((player.x + MINDIST) >> MapConstants.TILESHIFT) == tilex)
+                if (((player.X + MINDIST) >> MapConstants.TILESHIFT) == tilex)
                     return;
-                if (((player.x - MINDIST) >> MapConstants.TILESHIFT) == tilex)
+                if (((player.X - MINDIST) >> MapConstants.TILESHIFT) == tilex)
                     return;
             }
             check = _mapManager.actorat[tilex - 1, tiley];
@@ -226,11 +226,11 @@ internal partial class Program
         }
         else
         {
-            if (player.tilex == tilex)
+            if (player.TileX == tilex)
             {
-                if (((player.y + MINDIST) >> MapConstants.TILESHIFT) == tiley)
+                if (((player.Y + MINDIST) >> MapConstants.TILESHIFT) == tiley)
                     return;
-                if (((player.y - MINDIST) >> MapConstants.TILESHIFT) == tiley)
+                if (((player.Y - MINDIST) >> MapConstants.TILESHIFT) == tiley)
                     return;
             }
 
@@ -355,7 +355,7 @@ internal partial class Program
                 areaconnect[area1, area2]++;
                 areaconnect[area2, area1]++;
 
-                if (player.areanumber < MapDataConstants.NUMAREAS)
+                if (player.AreaNumber < MapDataConstants.NUMAREAS)
                     ConnectAreas();
 
                 if (areabyplayer[area1] != 0)
@@ -401,7 +401,7 @@ internal partial class Program
         tiley = doorobjlist[door].tiley;
 
         if ((_mapManager.actorat[tilex, tiley] is not Door)//!= (door | BIT_DOOR))
-            || (player.tilex == tilex && player.tiley == tiley))
+            || (player.TileX == tilex && player.TileY == tiley))
         {                       // something got inside the door
             OpenDoor(door);
             return;
@@ -444,7 +444,7 @@ internal partial class Program
                 areaconnect[area1, area2]--;
                 areaconnect[area2, area1]--;
 
-                if (player.areanumber < MapDataConstants.NUMAREAS)
+                if (player.AreaNumber < MapDataConstants.NUMAREAS)
                     ConnectAreas();
             }
         }
@@ -544,7 +544,7 @@ internal partial class Program
         _mapManager.tilemap[pwallx, pwally] = BIT_WALL;
         _mapManager.tilemap[pwallx + dx, pwally + dy] = BIT_WALL;
         _mapManager.SetMapSpot(pwallx, pwally, 1,  0);   // remove P tile info
-        _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)_mapManager.MAPSPOT(player.tilex, player.tiley, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
+        _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)_mapManager.MAPSPOT(player.TileX, player.TileY, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
 
         _audioManager.Play("world/pushwall");
     }
@@ -578,7 +578,7 @@ internal partial class Program
             //
             _mapManager.tilemap[pwallx, pwally] = 0;
             _mapManager.actorat[pwallx, pwally] = null;
-            _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)(player.areanumber + MapDataConstants.AREATILE));    // TODO: this is unnecessary, and makes a mess of mapsegs
+            _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)(player.AreaNumber + MapDataConstants.AREATILE));    // TODO: this is unnecessary, and makes a mess of mapsegs
 
             int dx = dirs[(byte)pwalldir][0], dy = dirs[(byte)pwalldir][1];
             //
@@ -596,10 +596,10 @@ internal partial class Program
             else
             {
                 int xl, yl, xh, yh;
-                xl = (int)((player.x - PLAYERSIZE) >> MapConstants.TILESHIFT);
-                yl = (int)((player.y - PLAYERSIZE) >> MapConstants.TILESHIFT);
-                xh = (int)((player.x + PLAYERSIZE) >> MapConstants.TILESHIFT);
-                yh = (int)((player.y + PLAYERSIZE) >> MapConstants.TILESHIFT);
+                xl = (int)((player.X - PLAYERSIZE) >> MapConstants.TILESHIFT);
+                yl = (int)((player.Y - PLAYERSIZE) >> MapConstants.TILESHIFT);
+                xh = (int)((player.X + PLAYERSIZE) >> MapConstants.TILESHIFT);
+                yh = (int)((player.Y + PLAYERSIZE) >> MapConstants.TILESHIFT);
 
                 pwallx += (ushort)dx;
                 pwally += (ushort)dy;
