@@ -26,11 +26,10 @@ internal partial class Program
     // run on the new Entities.Actors.Actor type, spawned by MapManager.LoadMap from
     // mapdefs/wolf3d/enemies.yaml and driven by the AI ported to Program.EnemyAI.cs.
     //
-    // Projectiles (Rocket/Smoke/Boom/Needle/Fire, actordefs/wolf3d/projectiles.yaml) now run
-    // on the new Entities.Actors.Actor type, spawned into MapManager._actors by
-    // MapManager.SpawnAtActor. Only the BJ-victory end-of-episode cutscene is still
-    // legacy/objstruct-based, along with SelectPathDir which its think functions use.
-    // CheckPosition takes the new Actor type: its only caller is the player pawn in the new
+    // Projectiles (Rocket/Smoke/Boom/Needle/Fire, actordefs/wolf3d/projectiles.yaml) and the
+    // BJ-victory end-of-episode cutscene (actordefs/wolf3d/victory.yaml) run on the same type,
+    // spawned into MapManager._actors by MapManager.SpawnAtActor. Nothing in this file is
+    // legacy/objstruct-based any more. CheckPosition's only caller is the player pawn in
     // Program.EnemyAI.cs's A_StartDeathCam.
 
     /*
@@ -165,20 +164,8 @@ internal partial class Program
     ============================================================================
     */
 
-
-    //
-    // BJ victory
-    //
-    internal static statestruct s_bjrun1 =  new statestruct(0, "BLAZA", 12, T_BJRun, null, "s_bjrun1s" );
-    internal static statestruct s_bjrun1s = new statestruct(0, "BLAZA", 3, null, null, "s_bjrun2" );
-    internal static statestruct s_bjrun2 =  new statestruct(0, "BLAZB", 8, T_BJRun, null, "s_bjrun3" );
-    internal static statestruct s_bjrun3 =  new statestruct(0, "BLAZC", 12, T_BJRun, null, "s_bjrun3s" );
-    internal static statestruct s_bjrun3s = new statestruct(0, "BLAZC", 3, null, null, "s_bjrun4" );
-    internal static statestruct s_bjrun4 =  new statestruct(0, "BLAZD", 8, T_BJRun, null, "s_bjrun1" );
-    internal static statestruct s_bjjump1 = new statestruct(0, "BLAZE", 14, T_BJJump, null, "s_bjjump2" );
-    internal static statestruct s_bjjump2 = new statestruct(0, "BLAZF", 14, T_BJJump, T_BJYell, "s_bjjump3" );
-    internal static statestruct s_bjjump3 = new statestruct(0, "BLAZG", 14, T_BJJump, null, "s_bjjump4" );
-    internal static statestruct s_bjjump4 = new statestruct(0, "BLAZH", 300, null, T_BJDone, "s_bjjump4" );
+    // The BJVictory actor (actordefs/wolf3d/victory.yaml) runs along the map's arrow icons for
+    // a few tiles, jumps, and then ends the level.
 
     /*
     ===============
@@ -188,7 +175,7 @@ internal partial class Program
     ===============
     */
 
-    internal static void T_BJRun(objstruct ob)
+    internal static void T_BJRun(Entities.Actors.Actor ob)
     {
         int move;
 
@@ -196,22 +183,20 @@ internal partial class Program
 
         while (move != 0)
         {
-            if (move < ob.distance)
+            if (move < ob.Distance)
             {
                 MoveObj(ob, move);
                 break;
             }
 
-
-            ob.x = (int)((ob.tilex << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
-            ob.y = (int)((ob.tiley << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
-            move -= ob.distance;
+            RecenterOnTile(ob);
+            move -= ob.Distance;
 
             SelectPathDir(ob);
 
-            if ((--ob.temp1) == 0)
+            if ((--ob.Temp1) == 0)
             {
-                NewState(ob, s_bjjump1);
+                NewActorState(ob, "Jump");
                 return;
             }
         }
@@ -225,7 +210,7 @@ internal partial class Program
     ===============
     */
 
-    internal static void T_BJJump(objstruct ob)
+    internal static void T_BJJump(Entities.Actors.Actor ob)
     {
         int move;
 
@@ -242,7 +227,7 @@ internal partial class Program
     ===============
     */
 
-    internal static void T_BJYell(objstruct ob)
+    internal static void T_BJYell(Entities.Actors.Actor ob)
     {
         PlaySoundLocActor("misc/yeah", ob);  // JAB
     }
@@ -256,7 +241,7 @@ internal partial class Program
     ===============
     */
 
-    internal static void T_BJDone(objstruct ob)
+    internal static void T_BJDone(Entities.Actors.Actor ob)
     {
         playstate = playstatetypes.ex_victorious;                              // exit castle tile
     }
@@ -264,62 +249,22 @@ internal partial class Program
 
     internal static void SpawnBJVictory()
     {
-        objstruct newobj;
+        // Same spot the legacy SpawnNewObj used: BJ's tile is the one south of the player's, but
+        // he starts at the player's exact position (SpawnAtActor copies the player's x/y).
+        var bj = _mapManager.SpawnAtActor("BJVictory", player);
+        if (bj == null)
+            return;
 
-        newobj = SpawnNewObj(player.TileX, (uint)(player.TileY + 1), s_bjrun1);
-        newobj.x = player.X;
-        newobj.y = player.Y;
-        newobj.obclass = classtypes.bjobj;
-        newobj.dir = objdirtypes.north;
-        newobj.temp1 = 6;                      // tiles to run forward
-    }
+        bj.TileY = (byte)(player.TileY + 1);
+        bj.SyncPosition();
+        bj.AreaNumber = (byte)(_mapManager.MAPSPOT(bj.TileX, bj.TileY, 0) - MapDataConstants.AREATILE);
 
-    // Named next-state lookup for the legacy statestruct chain (Program.WL_DEF.cs) --
-    // still needed by Program.DoActor's `enemy_states.TryGetValue(ob.state.next, ...)`
-    // resolution and by save/load's EnemyStateList indexing (Program.cs), both of which
-    // predate this migration and serve every objlist2 actor, not just enemies. Now that
-    // enemies themselves are gone from objlist2, this only needs to carry the states the
-    // remaining legacy system (BJ victory) actually references.
-    internal static Dictionary<string, statestruct> enemy_states = new()
-    {
-        { "s_bjrun1", s_bjrun1 },
-        { "s_bjrun1s",s_bjrun1s},
-        { "s_bjrun2", s_bjrun2 },
-        { "s_bjrun3", s_bjrun3 },
-        { "s_bjrun3s",s_bjrun3s},
-        { "s_bjrun4", s_bjrun4 },
-        { "s_bjjump1",s_bjjump1},
-        { "s_bjjump2",s_bjjump2},
-        { "s_bjjump3",s_bjjump3},
-        { "s_bjjump4",s_bjjump4},
-    };
+        // SpawnNewObj started every actor a random number of tics into its first frame.
+        var firstTicTime = bj.CurrentState?.TicTime ?? 0;
+        bj.TicCount = firstTicTime != 0 ? (short)(US_RndT() % firstTicTime + 1) : (short)0;
 
-    internal static List<statestruct> EnemyStateList => enemy_states.Values.ToList();
-
-    /*
-    ===============
-    =
-    = SelectPathDir
-    =
-    ===============
-    */
-
-    internal static void SelectPathDir(objstruct ob)
-    {
-        uint spot;
-
-        spot = (uint)(_mapManager.MAPSPOT(ob.tilex, ob.tiley, 1) - MapDataConstants.ICONARROWS);
-
-        if (spot < 8)
-        {
-            // new direction
-            ob.dir = (objdirtypes)spot;
-        }
-
-        ob.distance = (int)MapConstants.TILEGLOBAL;
-
-        if (!TryWalk(ob))
-            ob.dir = objdirtypes.nodir;
+        bj.Dir = objdirtypes.north;
+        bj.Temp1 = 6;                      // tiles to run forward
     }
 
     //===========================================================================

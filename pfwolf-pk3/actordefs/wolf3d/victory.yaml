@@ -1,0 +1,58 @@
+# =============================================================================
+# The end-of-episode victory cutscene actor, converted from Program.WL_ACT2.cs
+# (SpawnBJVictory / s_bjrun1..s_bjjump4).
+#
+# Not placed on maps: SpawnBJVictory creates one at runtime when the player steps
+# on the exit tile (MapDataConstants.EXITTILE). It runs along the map's arrow
+# icons (T_BJRun / SelectPathDir) for a fixed number of tiles, then jumps
+# (T_BJJump), yelling as it goes (T_BJYell), and finally ends the level once the
+# last frame's time is up (T_BJDone).
+# =============================================================================
+
+BJVictory:
+  states:
+    Spawn: # s_bjrun1 .. s_bjrun4; the group loops back to its first frame
+      - sprite: BLAZ
+        frames: [A]
+        tics-per-frame: 12
+        think: T_BJRun
+      - sprite: BLAZ
+        frames: [A]
+        tics-per-frame: 3
+      - sprite: BLAZ
+        frames: [B]
+        tics-per-frame: 8
+        think: T_BJRun
+      - sprite: BLAZ
+        frames: [C]
+        tics-per-frame: 12
+        think: T_BJRun
+      - sprite: BLAZ
+        frames: [C]
+        tics-per-frame: 3
+      - sprite: BLAZ
+        frames: [D]
+        tics-per-frame: 8
+        think: T_BJRun
+
+    Jump: # s_bjjump1 .. s_bjjump3; T_BJRun switches here after the last tile
+      - sprite: BLAZ
+        frames: [E]
+        tics-per-frame: 14
+        think: T_BJJump
+      - sprite: BLAZ
+        frames: [F]
+        tics-per-frame: 14
+        think: T_BJJump
+        action: T_BJYell
+      - sprite: BLAZ
+        frames: [G]
+        tics-per-frame: 14
+        think: T_BJJump
+        next-state: JumpDone
+
+    JumpDone: # s_bjjump4; a lone frame loops onto itself, matching its legacy self-referencing next
+      - sprite: BLAZ
+        frames: [H]
+        tics-per-frame: 300
+        action: T_BJDone

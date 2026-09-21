@@ -1100,81 +1100,9 @@ internal partial class Program
             return false;
     }
 
-    internal static int CalcRotate(objstruct ob)
-    {
-        int angle, viewangle;
-
-        // this isn't exactly correct, as it should vary by a trig value,
-        // but it is close enough with only eight rotations
-
-        viewangle = (int)(player.Angle + (centerx - ob.viewx) / (8 * viewwidth / 320.0));
-
-        if (ob.obclass == classtypes.rocketobj || ob.obclass == classtypes.hrocketobj)
-            angle = (viewangle - 180) - ob.angle;
-        else
-            angle = (viewangle - 180) - dirangle[(byte)ob.dir];
-
-        angle += ANGLES / 16;
-        while (angle >= ANGLES)
-            angle -= ANGLES;
-        while (angle < 0)
-            angle += ANGLES;
-
-        if (ob.state.rotate == 2)             // 2 rotation pain frame
-            return 0;               // pain with shooting frame bugfix
-
-        return (angle / (ANGLES / 8))+1;
-    }
-
-    internal static void TransformActor(objstruct ob)
-    {
-        int gx, gy, gxt, gyt, nx, ny;
-
-        //
-        // translate point to view centered coordinates
-        //
-        gx = ob.x - viewx;
-        gy = ob.y - viewy;
-
-        //
-        // calculate newx
-        //
-        gxt = MathUtils.FixedMul(gx, viewcos);
-        gyt = MathUtils.FixedMul(gy, viewsin);
-        nx = gxt - gyt - ACTORSIZE;         // fudge the shape forward a bit, because
-                                            // the midpoint could put parts of the shape
-                                            // into an adjacent wall
-
-        //
-        // calculate newy
-        //
-        gxt = MathUtils.FixedMul(gx, viewsin);
-        gyt = MathUtils.FixedMul(gy, viewcos);
-        ny = gyt + gxt;
-
-        //
-        // calculate perspective ratio
-        //
-        ob.transx = nx;
-
-        if (nx < MINDIST)                 // too close, don't overflow the divide
-        {
-            ob.viewheight = 0;
-            return;
-        }
-
-        ob.viewx = (short)(centerx + ny * scale / nx);
-
-        //
-        // calculate height (heightnumerator/(nx>>8))
-        //
-        ob.viewheight = (ushort)(heightnumerator / (nx >> 8));
-    }
-
-    // New-actor-system counterpart of TransformActor(objstruct), computing the same
-    // screen-space hit-testing/scale data (ViewX/TransX/ViewHeight) from the fixed-point
-    // X/Y that Program.EnemyAI.cs's movement code maintains, so enemies driven by the new
-    // Actor type can be both rendered and shot at exactly like legacy objstruct actors.
+    // Computes an actor's screen-space hit-testing/scale data (ViewX/TransX/ViewHeight) from
+    // the fixed-point X/Y that Program.EnemyAI.cs's movement code maintains, so enemies,
+    // projectiles and the BJ-victory actor can be both rendered and (enemies) shot at.
     internal static void TransformActor(Entities.Actors.Actor ob)
     {
         var gx = ob.X - viewx;

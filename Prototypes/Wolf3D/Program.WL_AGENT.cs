@@ -457,6 +457,12 @@ internal partial class Program
         ActorActionRegistry.Register("A_Smoke", A_Smoke);
         ActorActionRegistry.Register("A_Remove", A_Remove);
 
+        // BJ victory cutscene (Program.WL_ACT2.cs).
+        ActorActionRegistry.Register("T_BJRun", T_BJRun);
+        ActorActionRegistry.Register("T_BJJump", T_BJJump);
+        ActorActionRegistry.Register("T_BJYell", T_BJYell);
+        ActorActionRegistry.Register("T_BJDone", T_BJDone);
+
         // The player's own think states (PlayerPawn), ticked by MapManager.DoActor.
         ActorActionRegistry.Register("T_Player", T_Player);
         ActorActionRegistry.Register("T_Attack", T_Attack);
@@ -1064,10 +1070,8 @@ internal partial class Program
     }
 
     // The player's targets are now exclusively the new Entities.Actors.Actor enemies
-    // (Program.EnemyAI.cs) -- nothing left in objlist2 (just the BJ-victory actor) is ever
-    // FL_SHOOTABLE now that enemies are gone from it, so GunAttack/KnifeAttack no longer need
-    // to scan it at all. The player pawn and the projectiles share _actors with the enemies
-    // but have no "Chase" state, so they never qualify.
+    // (Program.EnemyAI.cs). The player pawn, projectiles and the BJ-victory actor share
+    // _actors with the enemies but have no "Chase" state, so they never qualify.
     private static List<Entities.Actors.Actor> FindShootCandidates()
     {
         var candidates = new List<Entities.Actors.Actor>();

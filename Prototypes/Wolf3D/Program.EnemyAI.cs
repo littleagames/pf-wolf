@@ -192,9 +192,9 @@ internal partial class Program
         return true;
     }
 
-    // CHECKDIAG(int, int) is shared with the legacy objstruct movement code (Program.WL_STATE.cs)
-    // -- it's actor-type-agnostic (only checks actorat[,] for walls/doors/other shootables),
-    // so there's no separate Entities.Actors.Actor-typed overload here.
+    // CHECKDIAG(int, int) lives in Program.WL_STATE.cs -- it's actor-type-agnostic (only checks
+    // actorat[,] for walls/doors/other shootables), so there's no Entities.Actors.Actor-typed
+    // overload.
 
     internal static int CHECKSIDE(Entities.Actors.Actor ob, int x, int y, ref int doornumtile)
     {

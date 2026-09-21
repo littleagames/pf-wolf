@@ -15,8 +15,6 @@ internal partial class Program
 
     internal static int DebugOk;
 
-    [Obsolete("Moving to the MapManager._actors")]
-    internal static LinkedList<objstruct> objlist2 = new LinkedList<objstruct>();
     // The player lives in MapManager._actors like every other actor; this is just a shortcut to it.
     internal static Entities.Actors.PlayerPawn player =>
         _mapManager.Player ?? throw new InvalidOperationException("The player has not been spawned for this level yet.");
@@ -89,7 +87,6 @@ internal partial class Program
 
     internal static void PlayLoop()
     {
-        objstruct obj;
         playstate = playstatetypes.ex_stillplaying;
         lasttimecount = (int)GameEngineManager.GetTimeCount();
         frameon = 0;
@@ -115,13 +112,8 @@ internal partial class Program
             MoveDoors();
             MovePWalls();
 
-            for (LinkedListNode<objstruct>? actor = objlist2.First; actor != null; actor = actor.Next)
-            {
-                DoActor(actor.Value);
-            }
-
-            // Runs side-by-side with the objlist2 loop above while actors migrate to _mapManager._actors.
-            // The player is the head of _actors, so it still thinks before every enemy.
+            // Every actor lives in _mapManager._actors. The player is at its head, so it still
+            // thinks before every enemy, projectile and the BJ-victory actor.
             _mapManager.DoActors(tics);
 
             _videoManager.UpdatePaletteShifts(tics);
@@ -164,130 +156,10 @@ internal partial class Program
 
     internal static void InitActorList()
     {
-        objlist2 = new LinkedList<objstruct>();
-
         //
         // the player is created first, so it sits at the head of _actors and thinks first
         //
         _mapManager.CreatePlayer();
-    }
-
-    internal static objstruct GetNewActor()
-    {
-        objstruct? newobj = new();
-        objlist2.AddLast(newobj);
-
-        newobj.active = (byte)activetypes.ac_no;
-        return newobj;
-    }
-
-    [Obsolete("Moving to the MapManager._actors")]
-    internal static void DoActor(objstruct ob)
-    {
-        if (ob.active == 0 && ob.areanumber < MapDataConstants.NUMAREAS && areabyplayer[ob.areanumber] == 0)
-            return;
-        
-        if (!ob.flags.HasFlag(objflags.FL_NONMARK) && !ob.flags.HasFlag(objflags.FL_NEVERMARK))
-            _mapManager.actorat[ob.tilex,ob.tiley] = null;
-
-
-        //
-        // non transitional object
-        //
-
-        if (ob.ticcount == 0)
-        {
-            var think2 = ob.state?.think;
-            if (think2 != null)
-            {
-                think2.Invoke(ob);
-                if (ob.state == null)
-                {
-                    RemoveObj(ob);
-                    return;
-                }
-            }
-
-            if (ob.flags.HasFlag(objflags.FL_NEVERMARK))
-                return;
-
-            if (ob.flags.HasFlag(objflags.FL_NONMARK) && _mapManager.actorat[ob.tilex, ob.tiley] != null)
-                return;
-
-            _mapManager.actorat[ob.tilex, ob.tiley] = ob;
-            return;
-        }
-
-        //
-        // transitional object
-        //
-        ob.ticcount -= (short)tics;
-        while (ob.ticcount <= 0)
-        {
-            var action = ob.state?.action;        // end of state action
-            if (action != null)
-            {
-                action.Invoke(ob);
-                if (ob.state == null)
-                {
-                    RemoveObj(ob);
-                    return;
-                }
-            }
-            if (ob.state != null
-                && !string.IsNullOrEmpty(ob.state?.next)
-                && enemy_states.TryGetValue(ob.state.next, out var newState))
-            {
-                ob.state = newState;
-            }
-
-            if (ob.state == null)
-            {
-                RemoveObj(ob);
-                return;
-            }
-
-            if (ob.state.tictime == 0)
-            {
-                ob.ticcount = 0;
-                break;
-            }
-
-            ob.ticcount += ob.state.tictime;
-        }
-
-        //
-        // think
-        //
-        var think = ob.state?.think;
-        if (think != null)
-        {
-            think.Invoke(ob);
-            if (ob.state == null)
-            {
-                RemoveObj(ob);
-                return;
-            }
-        }
-
-        if (ob.flags.HasFlag(objflags.FL_NEVERMARK))
-            return;
-
-        if (ob.flags.HasFlag(objflags.FL_NONMARK) && _mapManager.actorat[ob.tilex, ob.tiley] != null)
-            return;
-
-        _mapManager.actorat[ob.tilex, ob.tiley] = ob;// (uint)((objlistIndex + 0xffff));
-    }
-
-    [Obsolete("Moving to the Actor.Remove")]
-    internal static void RemoveObj(objstruct gone)
-    {
-        gone.state = null;
-
-        //
-        // fix the next object's back link
-        //
-        objlist2.Remove(gone);
     }
 
     internal static void CheckKeys()

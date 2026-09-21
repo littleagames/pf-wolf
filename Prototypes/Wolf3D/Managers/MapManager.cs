@@ -114,10 +114,9 @@ internal class MapManager
         spotvis = new bool[MAPSIZE, MAPSIZE];
         actorat = new Actor?[MAPSIZE, MAPSIZE];
 
-        // Enemies/decorations spawned via SpawnThing live only in _actors -- unlike objlist2
-        // (reset by InitActorList) nothing else clears this list, so reloading a level (death
-        // with lives left, replaying a level in a new game, etc.) would otherwise pile the new
-        // level's actors on top of the previous load's instead of replacing them.
+        // Every actor lives in _actors and nothing else clears this list, so reloading a level
+        // (death with lives left, replaying a level in a new game, etc.) would otherwise pile
+        // the new level's actors on top of the previous load's instead of replacing them.
         _actors.Clear();
         Player = null;
 
