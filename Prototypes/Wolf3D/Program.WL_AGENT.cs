@@ -371,6 +371,9 @@ internal partial class Program
             return;
         }
 
+        if (builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
+            gamestate.treasurecount++;
+
         builtActor.RunState("Pickup");
 
         if (builtActor.Properties.TryGetValue("inventory.pickupsound", out var pickupSound))
@@ -406,7 +409,6 @@ internal partial class Program
                 DrawKeys();
                 return true;
             case Entities.Actors.ScoreItem:
-                gamestate.treasurecount++;
                 GivePoints(amount);
                 return true;
             default:

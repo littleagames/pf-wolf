@@ -97,7 +97,7 @@ internal partial class Program
     static int heightnumerator;
 
     static bool startgame;
-    static bool loadedgame;
+    internal static bool loadedgame;
     internal static int mouseadjustment;
 
     //

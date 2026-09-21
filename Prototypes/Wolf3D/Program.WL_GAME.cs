@@ -15,7 +15,7 @@ internal partial class Program
 =============================================================================
 */
     static bool ingame, fizzlein;
-    static gametype gamestate = new gametype();
+    internal static gametype gamestate = new gametype();
     static string bordercol = "VIEWCOLOR"; // color of the Change View/Ingame border
 # if SPEAR
     internal static int spearx, speary;

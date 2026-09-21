@@ -216,6 +216,11 @@ internal class MapManager
             builtActor.Speed = ReadIntProperty(builtActor, "speed", Program.SPDPATROL);
             builtActor.RuntimeFlags |= objflags.FL_SHOOTABLE;
 
+            // Every killable enemy counts toward the level's kill ratio (the old SpawnStand/
+            // SpawnPatrol/boss spawners each did this); ghosts take the branch above and don't.
+            if (!Program.loadedgame)
+                Program.gamestate.killtotal++;
+
             if (isBoss)
             {
                 builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
@@ -244,14 +249,10 @@ internal class MapManager
             }
         }
 
-        //builtActor.flags = 0;
-        if (builtActor.Flags.Any(f => f.Equals("COUNTITEM", StringComparison.OrdinalIgnoreCase)))
-        {
-            // TODO: GameManager? MapManager? who handles this?
-           // if (!loadedgame)
-           //     gamestate.treasuretotal++;
-           // newstatobj.flags = objflags.FL_BONUS;
-        }
+        // Treasure (ScoreItem and the 1-up) counts toward the level's treasure ratio; GetBonus
+        // (Program.WL_AGENT.cs) bumps treasurecount on pickup off the same flag.
+        if (!Program.loadedgame && builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
+            Program.gamestate.treasuretotal++;
 
         //if (builtActor.Properties.Keys.Any(x => x.StartsWith("inventory")))
         //{
