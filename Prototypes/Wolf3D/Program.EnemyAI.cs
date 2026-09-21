@@ -13,11 +13,10 @@ namespace Wolf3D;
 // from another namespace. Registered into ActorActionRegistry (see WL_AGENT.cs)
 // under the same Think/Action names those YAML files already use.
 //
-// Projectiles (Rocket/Needle/Fire/Smoke/Boom, actordefs/wolf3d/projectiles.yaml) are NOT
-// part of this port -- they stay on the legacy objstruct path (GetNewActor/s_rocket/etc, see
-// Program.WL_ACT2.cs) since only enemies were in scope. The boss throw/fire actions below
-// (T_SchabbThrow/T_GiftThrow/T_FakeFire) spawn those legacy projectiles directly, seeded from
-// the new actor's position, exactly like the code they were ported from.
+// Projectiles (Rocket/Needle/Fire/Smoke/Boom, actordefs/wolf3d/projectiles.yaml) are on the
+// new actor type as well: the boss throw/fire actions below (T_SchabbThrow/T_GiftThrow/
+// T_FakeFire) spawn them through MapManager.SpawnAtActor, seeded from the thrower's position,
+// and Program.WL_ACT2.cs's T_Projectile/A_Smoke/A_Remove drive them.
 internal partial class Program
 {
     internal static void NewActorState(Entities.Actors.Actor ob, string stateName)
@@ -1112,7 +1111,10 @@ internal partial class Program
         PlaySoundLocActor(sound, ob);
     }
 
-    internal static void T_SchabbThrow(Entities.Actors.Actor ob)
+    // Spawns a projectile actor (Needle/Rocket/Fire, actordefs/wolf3d/projectiles.yaml) at the
+    // thrower and aims it at the player. TicCount 1 makes its first frame expire on the very
+    // next tic, so the state's Action (a rocket's first A_Smoke) fires almost immediately.
+    private static void ThrowProjectile(Entities.Actors.Actor ob, string className, int speed, string sound)
     {
         var deltax = player.X - ob.X;
         var deltay = ob.Y - player.Y;
@@ -1120,72 +1122,25 @@ internal partial class Program
         if (angle < 0) angle = (float)(M_PI * 2 + angle);
         var iangle = (int)(angle / (M_PI * 2) * ANGLES);
 
-        var newobj = GetNewActor();
-        newobj.state = s_needle1;
-        newobj.ticcount = 1;
-        newobj.tilex = ob.TileX;
-        newobj.tiley = ob.TileY;
-        newobj.x = ob.X;
-        newobj.y = ob.Y;
-        newobj.obclass = classtypes.needleobj;
-        newobj.dir = objdirtypes.nodir;
-        newobj.angle = (short)iangle;
-        newobj.speed = 0x2000;
-        newobj.flags = objflags.FL_NEVERMARK;
-        newobj.active = activetypes.ac_yes;
+        var newobj = _mapManager.SpawnAtActor(className, ob);
+        if (newobj == null)
+            return;
 
-        PlaySoundLocActor("schabbs/throw", newobj);
+        newobj.TicCount = 1;
+        newobj.Angle = (short)iangle;
+        newobj.Speed = speed;
+
+        PlaySoundLocActor(sound, newobj);
     }
 
-    internal static void T_GiftThrow(Entities.Actors.Actor ob)
-    {
-        var deltax = player.X - ob.X;
-        var deltay = ob.Y - player.Y;
-        var angle = (float)Math.Atan2((float)deltay, (float)deltax);
-        if (angle < 0) angle = (float)(M_PI * 2 + angle);
-        var iangle = (int)(angle / (M_PI * 2) * ANGLES);
+    internal static void T_SchabbThrow(Entities.Actors.Actor ob) =>
+        ThrowProjectile(ob, "Needle", 0x2000, "schabbs/throw");
 
-        var newobj = GetNewActor();
-        newobj.state = s_rocket;
-        newobj.ticcount = 1;
-        newobj.tilex = ob.TileX;
-        newobj.tiley = ob.TileY;
-        newobj.x = ob.X;
-        newobj.y = ob.Y;
-        newobj.obclass = classtypes.rocketobj;
-        newobj.dir = objdirtypes.nodir;
-        newobj.angle = (short)iangle;
-        newobj.speed = 0x2000;
-        newobj.flags = objflags.FL_NEVERMARK;
-        newobj.active = activetypes.ac_yes;
+    internal static void T_GiftThrow(Entities.Actors.Actor ob) =>
+        ThrowProjectile(ob, "Rocket", 0x2000, "missile/fire");
 
-        PlaySoundLocActor("missile/fire", newobj);
-    }
-
-    internal static void T_FakeFire(Entities.Actors.Actor ob)
-    {
-        var deltax = player.X - ob.X;
-        var deltay = ob.Y - player.Y;
-        var angle = (float)Math.Atan2((float)deltay, (float)deltax);
-        if (angle < 0) angle = (float)(M_PI * 2 + angle);
-        var iangle = (int)(angle / (M_PI * 2) * ANGLES);
-
-        var newobj = GetNewActor();
-        newobj.state = s_fire1;
-        newobj.ticcount = 1;
-        newobj.tilex = ob.TileX;
-        newobj.tiley = ob.TileY;
-        newobj.x = ob.X;
-        newobj.y = ob.Y;
-        newobj.dir = objdirtypes.nodir;
-        newobj.angle = (short)iangle;
-        newobj.obclass = classtypes.fireobj;
-        newobj.speed = 0x1200;
-        newobj.flags = objflags.FL_NEVERMARK;
-        newobj.active = activetypes.ac_yes;
-
-        PlaySoundLocActor("flame/fire", newobj);
-    }
+    internal static void T_FakeFire(Entities.Actors.Actor ob) =>
+        ThrowProjectile(ob, "Fire", 0x1200, "flame/fire");
 
     internal static void A_DeathScream(Entities.Actors.Actor ob)
     {

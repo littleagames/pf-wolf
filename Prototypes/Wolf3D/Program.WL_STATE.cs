@@ -135,13 +135,10 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
                 // where he gets stuck, but not exploit it by moving further into
                 // the guard and effectively no-clipping through them...
                 //
+                // (The ghost/spectre contact damage that used to sit here moved to the new-actor
+                // MoveObj in Program.EnemyAI.cs; this legacy version only moves the BJ actor.)
                 if (!ob.hidden || !_mapManager.spotvis[player.TileX, player.TileY])
-                {
-                    if (ob.obclass == classtypes.ghostobj || ob.obclass == classtypes.spectreobj)
-                        TakeDamage((int)(tics * 2), ob);
-
                     return;
-                }
             }
         }
 
@@ -361,8 +358,8 @@ internal static objstruct SpawnNewObj(uint tilex, uint tiley, statestruct state)
     // SelectRunDir/KillActor/DamageActor (objstruct versions) were removed here -- all
     // their callers were enemy AI, which now runs on the new Entities.Actors.Actor type
     // (see Program.EnemyAI.cs for the ported equivalents, registered via
-    // ActorActionRegistry in Program.WL_AGENT.cs). Nothing left in objlist2 (projectiles,
-    // the BJ-victory actor) is ever FL_SHOOTABLE, so KillActor/DamageActor
+    // ActorActionRegistry in Program.WL_AGENT.cs). Nothing left in objlist2 (just the
+    // BJ-victory actor) is ever FL_SHOOTABLE, so KillActor/DamageActor
     // had no remaining caller once enemies were gone -- Program.WL_AGENT.cs's
     // GunAttack/KnifeAttack now only need the Entities.Actors.Actor overloads.
     // MoveObj/TryWalk/CHECKDIAG/CHECKSIDE above stay here, still used by BJ Victory.

@@ -39,7 +39,7 @@ internal partial class Program
 
     static short anglefrac;
 
-    static objstruct? LastAttacker;
+    static Entities.Actors.Actor? LastAttacker;
 
     /*
     =============================================================================
@@ -452,6 +452,11 @@ internal partial class Program
         ActorActionRegistry.Register("A_HitlerMorph", A_HitlerMorph);
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
 
+        // Projectiles and effects (Program.WL_ACT2.cs).
+        ActorActionRegistry.Register("T_Projectile", T_Projectile);
+        ActorActionRegistry.Register("A_Smoke", A_Smoke);
+        ActorActionRegistry.Register("A_Remove", A_Remove);
+
         // The player's own think states (PlayerPawn), ticked by MapManager.DoActor.
         ActorActionRegistry.Register("T_Player", T_Player);
         ActorActionRegistry.Register("T_Attack", T_Attack);
@@ -576,7 +581,7 @@ internal partial class Program
         }
         else
         {
-            if (LastAttacker != null && LastAttacker.obclass == classtypes.needleobj)
+            if (LastAttacker != null && LastAttacker.Name == "Needle")
                 StatusDrawFace("mutantbj");
             else
                 StatusDrawFace("face8a");
@@ -636,17 +641,14 @@ internal partial class Program
     ===============
     */
 
-    internal static void TakeDamage(int points, objstruct attacker)
+    // LastAttacker feeds Died()'s swing-around-to-face-the-killer (Program.WL_GAME.cs) and the
+    // needle-death face in DrawFace. Every attacker -- enemies (Program.EnemyAI.cs) and
+    // projectiles (Program.WL_ACT2.cs) -- is an Entities.Actors.Actor now.
+    internal static void TakeDamage(int points, Entities.Actors.Actor attacker)
     {
         LastAttacker = attacker;
         ApplyDamageToPlayer(points);
     }
-
-    // Enemy-side overload for the new Entities.Actors.Actor type (Program.EnemyAI.cs).
-    // LastAttacker stays objstruct-typed (Program.WL_GAME.cs's damage-flash direction and
-    // Program.WL_AGENT.cs's needleobj check both key off it) -- neither applies to attacks
-    // from the new actor system yet, so it's simply left unset here rather than widened.
-    internal static void TakeDamage(int points, Entities.Actors.Actor attacker) => ApplyDamageToPlayer(points);
 
     private static void ApplyDamageToPlayer(int points)
     {
@@ -1062,10 +1064,10 @@ internal partial class Program
     }
 
     // The player's targets are now exclusively the new Entities.Actors.Actor enemies
-    // (Program.EnemyAI.cs) -- nothing left in objlist2 (projectiles, the BJ-victory
-    // actor) is ever FL_SHOOTABLE now that enemies are gone from it, so
-    // GunAttack/KnifeAttack no longer need to scan it at all. The player pawn shares
-    // _actors with the enemies but has no "Chase" state, so it never qualifies.
+    // (Program.EnemyAI.cs) -- nothing left in objlist2 (just the BJ-victory actor) is ever
+    // FL_SHOOTABLE now that enemies are gone from it, so GunAttack/KnifeAttack no longer need
+    // to scan it at all. The player pawn and the projectiles share _actors with the enemies
+    // but have no "Chase" state, so they never qualify.
     private static List<Entities.Actors.Actor> FindShootCandidates()
     {
         var candidates = new List<Entities.Actors.Actor>();

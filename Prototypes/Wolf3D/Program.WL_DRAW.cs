@@ -1220,7 +1220,11 @@ internal partial class Program
     internal static int CalcRotate(Entities.Actors.Actor ob)
     {
         var viewangle = (int)(player.Angle + (centerx - ob.ViewX) / (8 * viewwidth / 320.0));
-        var angle = (viewangle - 180) - dirangle[(byte)ob.Dir];
+
+        // A rocket has no Dir (it flies at an arbitrary angle), so it rotates by its heading.
+        var angle = ob.Name == "Rocket"
+            ? (viewangle - 180) - ob.Angle
+            : (viewangle - 180) - dirangle[(byte)ob.Dir];
 
         angle += ANGLES / 16;
         while (angle >= ANGLES) angle -= ANGLES;
@@ -1270,7 +1274,9 @@ internal partial class Program
             // they're transformed like legacy "active objects" (TransformActor/CalcRotate,
             // fixed-point X/Y, checked against all 9 surrounding spotvis tiles) instead of
             // the tile-snapped, always-front-facing path decorations/pickups use below.
-            if (actor.ResolvedStates.ContainsKey("Chase"))
+            // Projectiles and their smoke/explosions (spawned Active by SpawnAtActor) fly
+            // between tiles too, so they take the same path.
+            if (actor.ResolvedStates.ContainsKey("Chase") || actor.Active == activetypes.ac_yes)
             {
                 var atx = actor.TileX;
                 var aty = actor.TileY;

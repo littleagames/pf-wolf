@@ -49,6 +49,7 @@ Smoke:
       - sprite: SMOK
         frames: [D]
         tics-per-frame: 3
+        action: A_Remove # legacy s_smoke4 had no next state, which removed the object
 
 # Rocket's wall-impact explosion.
 Boom:
@@ -63,6 +64,7 @@ Boom:
       - sprite: BOOM
         frames: [C]
         tics-per-frame: 6
+        action: A_Remove # legacy s_boom3 had no next state, which removed the object
 
 # Thrown by Schabbs (T_SchabbThrow); no wall-impact effect, just vanishes.
 Needle:

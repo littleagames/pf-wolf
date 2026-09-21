@@ -26,31 +26,12 @@ internal partial class Program
     // run on the new Entities.Actors.Actor type, spawned by MapManager.LoadMap from
     // mapdefs/wolf3d/enemies.yaml and driven by the AI ported to Program.EnemyAI.cs.
     //
-    // Everything below is still legacy/objstruct-based on purpose: projectiles (Rocket/
-    // Smoke/Boom/Needle/Fire) and the BJ-victory end-of-episode cutscene weren't part of
-    // that migration, and SelectPathDir (objstruct) is still used by the BJ-victory think
-    // functions. CheckPosition now takes the new Actor type: its only caller is the player
-    // pawn in the new Program.EnemyAI.cs's A_StartDeathCam.
-
-    internal static statestruct s_rocket = new (1, "ROCKA", 3, T_Projectile, A_Smoke, "s_rocket" );
-    internal static statestruct s_smoke1 = new(0, "SMOKA", 3, null, null, "s_smoke2" );
-    internal static statestruct s_smoke2 = new(0, "SMOKB", 3, null, null, "s_smoke3" );
-    internal static statestruct s_smoke3 = new(0, "SMOKC", 3, null, null, "s_smoke4" );
-    internal static statestruct s_smoke4 = new(0, "SMOKD", 3, null, null, null );
-
-    internal static statestruct s_boom1 = new(0, "BOOMA", 6, null, null, "s_boom2" );
-    internal static statestruct s_boom2 = new(0, "BOOMB", 6, null, null, "s_boom3" );
-    internal static statestruct s_boom3 = new(0, "BOOMC", 6, null, null, null);
-
-    // Thrown by Schabbs (T_SchabbThrow, Program.EnemyAI.cs).
-    internal static statestruct s_needle1 = new(0, "HYPOA", 6, T_Projectile, null, "s_needle2");
-    internal static statestruct s_needle2 = new(0, "HYPOB", 6, T_Projectile, null, "s_needle3");
-    internal static statestruct s_needle3 = new(0, "HYPOC", 6, T_Projectile, null, "s_needle4");
-    internal static statestruct s_needle4 = new(0, "HYPOD", 6, T_Projectile, null, "s_needle1");
-
-    // Fake Hitler's flamethrower stream (T_FakeFire, Program.EnemyAI.cs).
-    internal static statestruct s_fire1 = new(0, "FIREA", 6, T_Projectile, null, "s_fire2");
-    internal static statestruct s_fire2 = new(0, "FIREB", 6, T_Projectile, null, "s_fire1");
+    // Projectiles (Rocket/Smoke/Boom/Needle/Fire, actordefs/wolf3d/projectiles.yaml) now run
+    // on the new Entities.Actors.Actor type, spawned into MapManager._actors by
+    // MapManager.SpawnAtActor. Only the BJ-victory end-of-episode cutscene is still
+    // legacy/objstruct-based, along with SelectPathDir which its think functions use.
+    // CheckPosition takes the new Actor type: its only caller is the player pawn in the new
+    // Program.EnemyAI.cs's A_StartDeathCam.
 
     /*
     =================
@@ -60,28 +41,16 @@ internal partial class Program
     =================
     */
 
-    internal static void A_Smoke(objstruct ob)
+    internal static void A_Smoke(Entities.Actors.Actor ob)
     {
-        objstruct newobj = null!;
-
-        newobj = GetNewActor();
-//# ifdef SPEAR
-//        if (ob->obclass == hrocketobj)
-//            newobj->state = &s_hsmoke1;
-//        else
-//#endif
-        newobj.state = s_smoke1;
-        newobj.ticcount = 6;
-
-        newobj.tilex = ob.tilex;
-        newobj.tiley = ob.tiley;
-        newobj.x = ob.x;
-        newobj.y = ob.y;
-        newobj.obclass = classtypes.inertobj;
-        newobj.active = activetypes.ac_yes;
-
-        newobj.flags = objflags.FL_NEVERMARK;
+        var smoke = _mapManager.SpawnAtActor("Smoke", ob);
+        if (smoke != null)
+            smoke.TicCount = 6;             // the first puff lingers longer than its YAML 3 tics
     }
+
+    // Terminal action for one-shot effects (Smoke, Boom): the legacy chain ended on a null
+    // next state, which removed the object once its last frame's tics ran out.
+    internal static void A_Remove(Entities.Actors.Actor ob) => _mapManager.MarkForRemoval(ob);
 
 
     /*
@@ -95,16 +64,16 @@ internal partial class Program
 
     internal const int PROJSIZE = 0x2000;
 
-    internal static bool ProjectileTryMove(objstruct ob)
+    internal static bool ProjectileTryMove(Entities.Actors.Actor ob)
     {
         int xl, yl, xh, yh, x, y;
         Actor? check;
 
-        xl = (ob.x - PROJSIZE) >> MapConstants.TILESHIFT;
-        yl = (ob.y - PROJSIZE) >> MapConstants.TILESHIFT;
+        xl = (ob.X - PROJSIZE) >> MapConstants.TILESHIFT;
+        yl = (ob.Y - PROJSIZE) >> MapConstants.TILESHIFT;
 
-        xh = (ob.x + PROJSIZE) >> MapConstants.TILESHIFT;
-        yh = (ob.y + PROJSIZE) >> MapConstants.TILESHIFT;
+        xh = (ob.X + PROJSIZE) >> MapConstants.TILESHIFT;
+        yh = (ob.Y + PROJSIZE) >> MapConstants.TILESHIFT;
 
         //
         // check for solid walls
@@ -128,72 +97,64 @@ internal partial class Program
     =================
     */
 
-    internal static void T_Projectile(objstruct ob)
+    internal static void T_Projectile(Entities.Actors.Actor ob)
     {
         long deltax, deltay;
         int damage = 0;
         int speed;
 
-        speed = (int)(ob.speed * tics);
+        speed = (int)(ob.Speed * tics);
 
-        deltax = MathUtils.FixedMul(speed, costable[ob.angle]);
-        deltay = -MathUtils.FixedMul(speed, sintable[ob.angle]);
+        deltax = MathUtils.FixedMul(speed, costable[ob.Angle]);
+        deltay = -MathUtils.FixedMul(speed, sintable[ob.Angle]);
 
         if (deltax > 0x10000L)
             deltax = 0x10000L;
         if (deltay > 0x10000L)
             deltay = 0x10000L;
 
-        ob.x += (int)deltax;
-        ob.y += (int)deltay;
+        ob.X += (int)deltax;
+        ob.Y += (int)deltay;
 
-        deltax = Math.Abs(ob.x - player.X);
-        deltay = Math.Abs(ob.y - player.Y);
+        deltax = Math.Abs(ob.X - player.X);
+        deltay = Math.Abs(ob.Y - player.Y);
 
         if (!ProjectileTryMove(ob))
         {
-            if (ob.obclass == classtypes.rocketobj)
+            // Only rockets explode; needles and flames just vanish. (Spear's hrocket variant
+            // is not ported.)
+            if (ob.Name == "Rocket")
             {
                 PlaySoundLocActor("missile/hit", ob);
-                ob.state = s_boom1;
+                _mapManager.SpawnAtActor("Boom", ob);
             }
-#if SPEAR
-            else if (ob->obclass == hrocketobj)
-            {
-                PlaySoundLocActor(missile/hit", ob);
-                ob->state = &s_hboom1;
-            }
-#endif
-            else
-                ob.state = null;               // mark for removal
 
+            _mapManager.MarkForRemoval(ob);
             return;
         }
 
         if (deltax < PROJECTILESIZE && deltay < PROJECTILESIZE)
         {       // hit the player
-            switch (ob.obclass)
+            switch (ob.Name)
             {
-                case classtypes.needleobj:
+                case "Needle":
                     damage = (US_RndT() >> 3) + 20;
                     break;
-                case classtypes.rocketobj:
-                case classtypes.hrocketobj:
-                case classtypes.sparkobj:
+                case "Rocket":
                     damage = (US_RndT() >> 3) + 30;
                     break;
-                case classtypes.fireobj:
+                case "Fire":
                     damage = (US_RndT() >> 3);
                     break;
             }
 
             TakeDamage(damage, ob);
-            ob.state = null;               // mark for removal
+            _mapManager.MarkForRemoval(ob);
             return;
         }
 
-        ob.tilex = (byte)(ob.x >> MapConstants.TILESHIFT);
-        ob.tiley = (byte)(ob.y >> MapConstants.TILESHIFT);
+        ob.TileX = (byte)(ob.X >> MapConstants.TILESHIFT);
+        ob.TileY = (byte)(ob.Y >> MapConstants.TILESHIFT);
     }
 
     /*
@@ -318,26 +279,9 @@ internal partial class Program
     // resolution and by save/load's EnemyStateList indexing (Program.cs), both of which
     // predate this migration and serve every objlist2 actor, not just enemies. Now that
     // enemies themselves are gone from objlist2, this only needs to carry the states the
-    // remaining legacy systems (projectiles, BJ victory) actually reference.
+    // remaining legacy system (BJ victory) actually references.
     internal static Dictionary<string, statestruct> enemy_states = new()
     {
-        { "s_rocket", s_rocket},
-        { "s_smoke1", s_smoke1},
-        { "s_smoke2", s_smoke2},
-        { "s_smoke3", s_smoke3},
-        { "s_smoke4", s_smoke4},
-        { "s_boom1", s_boom1},
-        { "s_boom2", s_boom2},
-        { "s_boom3", s_boom3},
-
-        { "s_needle1", s_needle1},
-        { "s_needle2", s_needle2},
-        { "s_needle3", s_needle3},
-        { "s_needle4", s_needle4},
-
-        { "s_fire1", s_fire1},
-        { "s_fire2", s_fire2},
-
         { "s_bjrun1", s_bjrun1 },
         { "s_bjrun1s",s_bjrun1s},
         { "s_bjrun2", s_bjrun2 },

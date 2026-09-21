@@ -31,6 +31,10 @@ internal record Actor : Thinker
     public bool Hidden { get; internal set; }
     public byte AreaNumber { get; internal set; }
 
+    // Set by MapManager.MarkForRemoval (e.g. a projectile that hit something); MapManager.DoActors
+    // unlinks the actor once its tic finishes, since removing it mid-walk would break the iteration.
+    public bool IsRemoved { get; internal set; }
+
     // Sub-tile fixed-point world position and its containing tile, mirroring objstruct's
     // x/y and tilex/tiley (Program.WL_DEF.cs) -- kept as separate mutable fields because
     // legacy movement code (MoveObj/TryWalk) updates TileX/TileY the instant a move toward

@@ -298,6 +298,37 @@ internal class MapManager
         return builtActor;
     }
 
+    // Projectiles and their smoke trail spawn every few tics, and AssetManager.GetActorMetadata
+    // rebuilds its result on every call, so keep one for the runtime spawners below.
+    private ActorMetadata? _runtimeActorMetadata;
+
+    /// <summary>
+    /// Spawns a runtime projectile or effect (Rocket, Smoke, Boom, Needle, Fire --
+    /// actordefs/wolf3d/projectiles.yaml) at another actor's exact fixed-point position. It is
+    /// an "active" actor (free-moving, drawn through the exact-position path, never marked in
+    /// actorat), like the legacy objstruct projectiles it replaces; callers set Angle/Speed.
+    /// </summary>
+    internal Entities.Actors.Actor? SpawnAtActor(string className, Entities.Actors.Actor source)
+    {
+        _runtimeActorMetadata ??= assetManager.Value.GetActorMetadata();
+        if (!_runtimeActorMetadata.Actors.TryGetValue(className, out var actor))
+            return null;
+
+        var builtActor = _runtimeActorMetadata.CreateActor(className, actor);
+        if (builtActor == null)
+            return null;
+
+        builtActor.SetPosition(source.TileX, source.TileY);
+        builtActor.X = source.X;
+        builtActor.Y = source.Y;
+        builtActor.Dir = objdirtypes.nodir;
+        builtActor.Active = activetypes.ac_yes;
+        builtActor.RuntimeFlags = objflags.FL_NEVERMARK;
+
+        _actors.AddLast(builtActor);
+        return builtActor;
+    }
+
     private static readonly string[] DifficultyHealthKeys = ["health.baby", "health.easy", "health.normal", "health.hard"];
 
     // Difficulty-scaled health: "health.baby"/"health.easy"/"health.normal"/"health.hard" for
@@ -362,16 +393,31 @@ internal class MapManager
 
     internal void DoActors(uint tics)
     {
-        for (var actor = _actors.First; actor != null; actor = actor.Next)
+        var node = _actors.First;
+        while (node != null)
         {
-            DoActor(actor.Value, tics);
+            DoActor(node.Value, tics);
+
+            // Read Next only after the actor has run, so anything it appended (a rocket's smoke,
+            // a thrown projectile) is still visited this frame -- but before unlinking, since
+            // removing a node clears its own Next.
+            var next = node.Next;
+            if (node.Value.IsRemoved)
+                _actors.Remove(node);
+            node = next;
         }
     }
+
+    /// <summary>
+    /// Flags an actor to be dropped from _actors once its current tic finishes. Deferred rather
+    /// than immediate so an actor can safely remove itself from inside its own Think/Action.
+    /// </summary>
+    internal void MarkForRemoval(Entities.Actors.Actor actor) => actor.IsRemoved = true;
 
     internal void DoActor(Entities.Actors.Actor ob, uint tics)
     {
         var state = ob.CurrentState;
-        if (state == null)
+        if (state == null || ob.IsRemoved)
             return;
 
         // Mirrors Program.DoActor (Program.WL_PLAY.cs): a frame with TicTime == 0 holds forever
@@ -386,6 +432,8 @@ internal class MapManager
         while (ob.TicCount <= 0)
         {
             Entities.Actors.ActorActionRegistry.Invoke(state.Action, ob);
+            if (ob.IsRemoved)
+                return;
 
             state = state.Next;
             if (state == null)

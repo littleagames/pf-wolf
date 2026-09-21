@@ -642,8 +642,8 @@ internal partial class Program
         //
         if (LastAttacker != null)
         {
-            dx = LastAttacker.x - player.X;
-            dy = player.Y - LastAttacker.y;
+            dx = LastAttacker.X - player.X;
+            dy = player.Y - LastAttacker.Y;
 
             fangle = (float)Math.Atan2((float)dy, (float)dx);     // returns -pi to pi
             if (fangle < 0)
