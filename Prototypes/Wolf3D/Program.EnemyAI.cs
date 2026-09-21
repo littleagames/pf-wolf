@@ -199,7 +199,7 @@ internal partial class Program
         var temp = _mapManager.actorat[x, y];
         if (temp != null)
         {
-            if (temp is Wall)
+            if (temp is Wall or BlockingActor)
                 return 0;
             if (temp is Door door)
             {

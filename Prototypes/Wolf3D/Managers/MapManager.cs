@@ -257,6 +257,14 @@ internal class MapManager
         //{
         //    newstatobj.flags = objflags.FL_BONUS;
         //}
+
+        // Solid statics (barrels, pillars, tables, ...; `flags: [SOLID]` in actordefs, inherited
+        // through `parent:`) make their whole tile impassable to the player, enemies and
+        // projectiles, as the original's `block` statics did. The blocking marker is the same
+        // "something is here" entry walls and doors use, so every actorat[,] check sees it.
+        if (builtActor.Flags.Any(f => f.Equals("SOLID", StringComparison.OrdinalIgnoreCase)))
+            actorat[tilex, tiley] = new BlockingActor();
+
         _actors.AddLast(builtActor);
     }
 

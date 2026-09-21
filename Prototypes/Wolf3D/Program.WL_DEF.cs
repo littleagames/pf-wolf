@@ -338,7 +338,7 @@ internal class doorobj_t
 
 internal abstract class Actor
 {
-    // Marker base for the tiles actorat[,] holds: Wall, Door and BlockingActor.
+    // Marker base for the tiles actorat[,] holds: Wall, Door, and BlockingActor (a solid static).
 }
 
 internal class BlockingActor: Actor
