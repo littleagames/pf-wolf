@@ -31,14 +31,13 @@ internal partial class Program
                 { objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir}
 };
 
-    // actorat[,] only holds walls and doors, so any occupant blocks. (Actors live in
-    // MapManager._actors and aren't tracked there, so -- unlike the original -- other
-    // actors don't block a diagonal step.)
-    internal static bool CHECKDIAG(int x, int y) => _mapManager.actorat[x, y] == null;
+    // A diagonal step is blocked by a wall/door (actorat[,]) or by a living actor on the tile.
+    internal static bool CHECKDIAG(int x, int y) =>
+        _mapManager.actorat[x, y] == null && !_mapManager.IsShootableActorAt(x, y);
 
     // The per-actor movement, sight and combat code (MoveObj/TryWalk/CHECKSIDE, CheckLine/
     // CheckSight/SightPlayer, SelectChaseDir/SelectDodgeDir, KillActor/DamageActor, ...) lives
     // in Program.EnemyAI.cs, registered via ActorActionRegistry in Program.WL_AGENT.cs. Only
-    // CHECKDIAG stays here, since it just inspects actorat[,].
+    // CHECKDIAG stays here, since it isn't tied to a particular actor.
     internal const long MINSIGHT = 0x18000L;
 }

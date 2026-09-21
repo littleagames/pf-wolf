@@ -369,6 +369,40 @@ internal class MapManager
         return _actors;
     }
 
+    // actorat[,] only tracks walls and doors; the questions it used to answer about actors
+    // ("is something standing on that tile?") are answered from _actors instead. An actor
+    // occupies its TileX/TileY, which -- as in the original -- moves to the destination tile the
+    // instant a step begins.
+
+    /// <summary>Enemies are the actors with a "Chase" state (guards, dogs, bosses, ghosts).</summary>
+    internal static bool IsEnemy(Entities.Actors.Actor actor) => actor.ResolvedStates.ContainsKey("Chase");
+
+    /// <summary>
+    /// The enemies on a tile, living or dead: corpses keep occupying their tile, which is what
+    /// stops a door closing or a pushwall sliding onto them.
+    /// </summary>
+    internal IEnumerable<Entities.Actors.Actor> EnemiesAt(int tilex, int tiley)
+    {
+        foreach (var actor in _actors)
+        {
+            if (!actor.IsRemoved && actor.TileX == tilex && actor.TileY == tiley && IsEnemy(actor))
+                yield return actor;
+        }
+    }
+
+    /// <summary>True if a living (FL_SHOOTABLE) actor occupies the tile -- corpses don't count.</summary>
+    internal bool IsShootableActorAt(int tilex, int tiley)
+    {
+        foreach (var actor in _actors)
+        {
+            if (!actor.IsRemoved && actor.TileX == tilex && actor.TileY == tiley
+                && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
+                return true;
+        }
+
+        return false;
+    }
+
     /// <summary>
     /// Creates a fresh player pawn at the head of _actors, replacing any existing one. Head
     /// placement keeps the player thinking ahead of every other actor, as the legacy

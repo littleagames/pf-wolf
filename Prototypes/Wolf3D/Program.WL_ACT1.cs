@@ -204,6 +204,9 @@ internal partial class Program
         if (_mapManager.actorat[tilex, tiley] is Actor)
             return;
 
+        if (_mapManager.EnemiesAt(tilex, tiley).Any())      // an enemy (or its corpse) in the doorway
+            return;
+
         if (player.TileX == tilex && player.TileY == tiley)
             return;
 
@@ -216,6 +219,12 @@ internal partial class Program
                 if (((player.X - MINDIST) >> MapConstants.TILESHIFT) == tilex)
                     return;
             }
+
+            // an enemy on a neighbouring tile, close enough to reach into the doorway
+            if (_mapManager.EnemiesAt(tilex - 1, tiley).Any(e => ((e.X + MINDIST) >> MapConstants.TILESHIFT) == tilex))
+                return;
+            if (_mapManager.EnemiesAt(tilex + 1, tiley).Any(e => ((e.X - MINDIST) >> MapConstants.TILESHIFT) == tilex))
+                return;
         }
         else
         {
@@ -226,12 +235,12 @@ internal partial class Program
                 if (((player.Y - MINDIST) >> MapConstants.TILESHIFT) == tiley)
                     return;
             }
-        }
 
-        // NOTE: the original also refused to close on an actor standing in the doorway (one
-        // in the neighbouring tile, close enough to reach into this one). Actors live in
-        // MapManager._actors and aren't tracked in actorat[,], so that test needs
-        // re-implementing against _actors; until then only the player blocks a closing door.
+            if (_mapManager.EnemiesAt(tilex, tiley - 1).Any(e => ((e.Y + MINDIST) >> MapConstants.TILESHIFT) == tiley))
+                return;
+            if (_mapManager.EnemiesAt(tilex, tiley + 1).Any(e => ((e.Y - MINDIST) >> MapConstants.TILESHIFT) == tiley))
+                return;
+        }
 
 
         //
@@ -515,7 +524,8 @@ internal partial class Program
         dx = dirs[(int)dir][0];
         dy = dirs[(int)dir][1];
 
-        if (_mapManager.actorat[checkx + dx, checky + dy] != null)
+        if (_mapManager.actorat[checkx + dx, checky + dy] != null
+            || _mapManager.EnemiesAt(checkx + dx, checky + dy).Any())
         {
             _audioManager.Play("player/usefail");
             return;
@@ -595,6 +605,7 @@ internal partial class Program
                 pwally += (ushort)dy;
 
                 if (_mapManager.actorat[pwallx + dx, pwally + dy] != null
+                    || _mapManager.EnemiesAt(pwallx + dx, pwally + dy).Any()
                     || (xl <= pwallx + dx && pwallx + dx <= xh && yl <= pwally + dy && pwally + dy <= yh))
                 {
                     pwallstate = 0;

@@ -191,7 +191,7 @@ internal partial class Program
         return true;
     }
 
-    // CHECKDIAG(int, int) lives in Program.WL_STATE.cs -- it only looks at actorat[,], so
+    // CHECKDIAG(int, int) lives in Program.WL_STATE.cs -- it isn't tied to the mover, so
     // there's no Entities.Actors.Actor-typed overload.
 
     internal static int CHECKSIDE(Entities.Actors.Actor ob, int x, int y, ref int doornumtile)
@@ -218,6 +218,10 @@ internal partial class Program
                     }
                 }
             }
+        }
+        else if (_mapManager.IsShootableActorAt(x, y))
+        {
+            return 0;       // another living actor is standing there
         }
 
         return 2; // continue

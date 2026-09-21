@@ -272,10 +272,36 @@ internal partial class Program
             }
         }
 
-        // NOTE: the original also refused the move when a shootable actor was within
-        // MINACTORDIST. Actors live in MapManager._actors and aren't tracked in actorat[,],
-        // so that test needs re-implementing against _actors; until then the player can walk
-        // through enemies.
+        //
+        // check for actors: a living actor on a tile near the player, and within
+        // MINACTORDIST of it, blocks the move
+        //
+        if (yl > 0)
+            yl--;
+        if (yh < MapManager.MAPSIZE - 1)
+            yh++;
+        if (xl > 0)
+            xl--;
+        if (xh < MapManager.MAPSIZE - 1)
+            xh++;
+
+        foreach (var actor in _mapManager.GetActors())
+        {
+            if (actor.IsRemoved || !actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
+                continue;
+            if (actor.TileX < xl || actor.TileX > xh || actor.TileY < yl || actor.TileY > yh)
+                continue;
+
+            var deltax = ob.X - actor.X;
+            if (deltax < -MINACTORDIST || deltax > MINACTORDIST)
+                continue;
+            var deltay = ob.Y - actor.Y;
+            if (deltay < -MINACTORDIST || deltay > MINACTORDIST)
+                continue;
+
+            return false;
+        }
+
         return true;
     }
 
