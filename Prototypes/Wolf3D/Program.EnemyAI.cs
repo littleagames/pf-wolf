@@ -5,13 +5,12 @@ using Wolf3D.Managers;
 namespace Wolf3D;
 
 // Enemy AI ported from Program.WL_STATE.cs / Program.WL_ACT2.cs to run on the new
-// Entities.Actors.Actor type (actordefs/wolf3d/{guards,bosses,ghosts}.yaml) instead of the
-// legacy objstruct/objlist2 system. This file is deliberately careful to always spell out
-// "Entities.Actors.Actor" in full: a bare "Actor" in a file whose namespace is "Wolf3D"
-// resolves to the legacy Wall/Door/objstruct base class of the same name (also declared
-// directly in "Wolf3D"), which wins over any using-directive or alias for a same-named type
-// from another namespace. Registered into ActorActionRegistry (see WL_AGENT.cs)
-// under the same Think/Action names those YAML files already use.
+// Entities.Actors.Actor type (actordefs/wolf3d/{guards,bosses,ghosts}.yaml). This file is
+// deliberately careful to always spell out "Entities.Actors.Actor" in full: a bare "Actor"
+// in a file whose namespace is "Wolf3D" resolves to the Wall/Door base class of the same
+// name (also declared directly in "Wolf3D"), which wins over any using-directive or alias
+// for a same-named type from another namespace. Registered into ActorActionRegistry (see
+// WL_AGENT.cs) under the same Think/Action names those YAML files already use.
 //
 // Projectiles (Rocket/Needle/Fire/Smoke/Boom, actordefs/wolf3d/projectiles.yaml) are on the
 // new actor type as well: the boss throw/fire actions below (T_SchabbThrow/T_GiftThrow/
@@ -192,9 +191,8 @@ internal partial class Program
         return true;
     }
 
-    // CHECKDIAG(int, int) lives in Program.WL_STATE.cs -- it's actor-type-agnostic (only checks
-    // actorat[,] for walls/doors/other shootables), so there's no Entities.Actors.Actor-typed
-    // overload.
+    // CHECKDIAG(int, int) lives in Program.WL_STATE.cs -- it only looks at actorat[,], so
+    // there's no Entities.Actors.Actor-typed overload.
 
     internal static int CHECKSIDE(Entities.Actors.Actor ob, int x, int y, ref int doornumtile)
     {
@@ -220,9 +218,6 @@ internal partial class Program
                     }
                 }
             }
-
-            if (temp is objstruct check && check.flags.HasFlag(objflags.FL_SHOOTABLE))
-                return 0;
         }
 
         return 2; // continue

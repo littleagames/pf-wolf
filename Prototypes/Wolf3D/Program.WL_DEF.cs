@@ -78,44 +78,9 @@ internal enum controldirs
 }
 internal enum activetypes
 {
-    ac_badobject = -1,
     ac_no,
     ac_yes,
     ac_allways,
-}
-
-internal enum classtypes
-{
-    nothing,
-    playerobj,
-    inertobj,
-    guardobj,
-    officerobj,
-    ssobj,
-    dogobj,
-    bossobj,
-    schabbobj,
-    fakeobj,
-    mechahitlerobj,
-    mutantobj,
-    needleobj,
-    fireobj,
-    bjobj,
-    ghostobj,
-    realhitlerobj,
-    gretelobj,
-    giftobj,
-    fatobj,
-    rocketobj,
-
-    spectreobj,
-    angelobj,
-    transobj,
-    uberobj,
-    willobj,
-    deathobj,
-    hrocketobj,
-    sparkobj,
 }
 
 //enum wl_stat_types
@@ -373,8 +338,7 @@ internal class doorobj_t
 
 internal abstract class Actor
 {
-    // TBD: Use for actorat
-    public int x, y;
+    // Marker base for the tiles actorat[,] holds: Wall, Door and BlockingActor.
 }
 
 internal class BlockingActor: Actor
@@ -408,158 +372,6 @@ internal class Door: Actor
     }
 
     public int door;
-}
-
-internal class objstruct : Actor
-{
-    public activetypes active;
-    public short ticcount;
-    public classtypes obclass;
-    public statestruct? state;
-
-    public objflags flags;              // FL_SHOOTABLE, etc
-
-    public int distance;           // if negative, wait for that door to open
-    public objdirtypes dir;
-
-
-    public byte tilex, tiley;
-    public byte areanumber;
-
-    public short viewx;
-    public ushort viewheight;
-    public int transx;             // in global coord
-
-    public short angle;
-    public short hitpoints;
-    public int speed;
-
-    public short temp1, temp2;
-    public bool hidden;
-
-    /**
-    //
-    // WARNING: DO NOT ADD ANY MEMBERS AFTER THESE!!!
-    */
-    public int? next,prev;
-
-    public objstruct()
-    {
-        active = (byte)activetypes.ac_no;
-    }
-
-    public int Read(BinaryReader br)
-    {
-        active = (activetypes)br.ReadSByte();
-        ticcount = br.ReadInt16();
-        obclass = (classtypes)br.ReadInt16();
-        int stateOffset = br.ReadInt32();
-        flags = (objflags)br.ReadUInt32();
-        distance = br.ReadInt32();
-        dir = (objdirtypes)br.ReadByte();
-        x = br.ReadInt32();
-        y = br.ReadInt32();
-        tilex = br.ReadByte();
-        tiley = br.ReadByte();
-        areanumber = br.ReadByte();
-        viewx = br.ReadInt16();
-        viewheight = br.ReadUInt16();
-        transx = br.ReadInt32();
-        angle = br.ReadInt16();
-        hitpoints = br.ReadInt16();
-        speed = br.ReadInt32();
-        temp1 = br.ReadInt16();
-        temp2 = br.ReadInt16();
-        hidden = br.ReadByte() != 0;
-        int nextVal = br.ReadInt32();
-        next = nextVal != 0 ? nextVal : null;
-        int prevVal = br.ReadInt32();
-        prev = prevVal != 0 ? prevVal : null;
-
-        return stateOffset;
-    }
-
-    public void Copy(objstruct source)
-    {
-        active = source.active;
-        ticcount = source.ticcount;
-        obclass = source.obclass;
-        flags = source.flags;
-        distance = source.distance;
-        dir = source.dir;
-        x = source.x;
-        y = source.y;
-        tilex = source.tilex;
-        tiley = source.tiley;
-        areanumber = source.areanumber;
-        viewx = source.viewx;
-        viewheight = source.viewheight;
-        transx = source.transx;
-        angle = source.angle;
-        hitpoints = source.hitpoints;
-        speed = source.speed;
-        temp1 = source.temp1;
-        temp2 = source.temp2;
-        hidden = source.hidden;
-    }
-
-    public byte[] AsBytes(int stateOffset)
-    {
-        using var ms = new MemoryStream();
-        using var bw = new BinaryWriter(ms);
-        {
-            bw.Write((sbyte)active);
-            bw.Write(ticcount);
-            bw.Write((short)obclass);
-            bw.Write(stateOffset);
-            bw.Write((uint)flags);
-            bw.Write(distance);
-            bw.Write((byte)dir);
-            bw.Write(x);
-            bw.Write(y);
-            bw.Write(tilex);
-            bw.Write(tiley);
-            bw.Write(areanumber);
-            bw.Write(viewx);
-            bw.Write(viewheight);
-            bw.Write(transx);
-            bw.Write(angle);
-            bw.Write(hitpoints);
-            bw.Write(speed);
-            bw.Write(temp1);
-            bw.Write(temp2);
-            bw.Write(hidden);
-            bw.Write(next ?? 0);
-            bw.Write(prev ?? 0);
-            return ms.ToArray();
-        }
-    }
-}
-
-internal class statestruct
-{
-    public byte rotate; // boolean
-    public string shapenum;           // a shapenum of -1 means get from ob->temp1
-    public short tictime;
-    public Action<objstruct>? think;
-    public Action<objstruct>? action;
-    public string? next;
-
-    public statestruct(
-        byte rotate,
-        string shapenum, 
-        short tictime,
-        Action<objstruct>? think,
-        Action<objstruct>? action,
-        string? next)
-    {
-        this.rotate = rotate;
-        this.shapenum = shapenum;
-        this.tictime = tictime;
-        this.think = think;
-        this.action = action;
-        this.next = next;
-    }
 }
 
 internal enum playstatetypes
@@ -699,8 +511,6 @@ internal partial class Program
     //    (int)((tx << MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2)), 
     //    (int)((ty << MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2)),
     //    viewx,viewy,viewsin,viewcos);
-    internal static void PlaySoundLocActor(string s, objstruct ob) => _audioManager.Play(s);//PlaySoundLocGlobal(s, ob.x, ob.y,
-     //   viewx, viewy, viewsin, viewcos);
     internal static void PlaySoundLocActor(string s, Entities.Actors.Actor ob) => _audioManager.Play(s);
 
 

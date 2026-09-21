@@ -49,10 +49,6 @@ internal partial class Program
     =============================================================================
     */
 
-    // The player's states live on PlayerPawn. This order matches the state indices the legacy
-    // save-game format wrote (s_player, s_attack), so RestorePlayer can map them back.
-    internal static readonly string[] PlayerStateNames = [PlayerPawn.SpawnState, PlayerPawn.AttackState];
-
     internal struct atkinf
     {
         public short tics, attack, frame;
@@ -230,7 +226,6 @@ internal partial class Program
     {
         uint xl, yl, xh, yh, x, y;
         Actor? check;
-        int deltax, deltay;
 
         xl = (uint)((ob.X - PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
         yl = (uint)((ob.Y - PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
@@ -248,7 +243,7 @@ internal partial class Program
             for (x = xl; x <= xh; x++)
             {
                 check = _mapManager.actorat[x, y];
-                if (check != null && !MapManager.ISPOINTER(check))
+                if (check != null)
                 {
                     if (_mapManager.tilemap[x, y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
                     {
@@ -277,38 +272,10 @@ internal partial class Program
             }
         }
 
-        //
-        // check for actors
-        //
-        if (yl > 0)
-            yl--;
-        if (yh < MapManager.MAPSIZE - 1)
-            yh++;
-        if (xl > 0)
-            xl--;
-        if (xh < MapManager.MAPSIZE - 1)
-            xh++;
-
-        for (y = yl; y <= yh; y++)
-        {
-            for (x = xl; x <= xh; x++)
-            {
-                check = _mapManager.actorat[x, y];
-                // The player is no longer an objstruct, so it can never be its own obstacle here.
-                if (check is objstruct actor && actor.flags.HasFlag(objflags.FL_SHOOTABLE))
-                {
-                    deltax = ob.X - check.x;
-                    if (deltax < -MINACTORDIST || deltax > MINACTORDIST)
-                        continue;
-                    deltay = ob.Y - check.y;
-                    if (deltay < -MINACTORDIST || deltay > MINACTORDIST)
-                        continue;
-
-                    return false;
-                }
-            }
-        }
-
+        // NOTE: the original also refused the move when a shootable actor was within
+        // MINACTORDIST. Actors live in MapManager._actors and aren't tracked in actorat[,],
+        // so that test needs re-implementing against _actors; until then the player can walk
+        // through enemies.
         return true;
     }
 
@@ -1192,23 +1159,5 @@ internal partial class Program
         Thrust(0, 0);                           // set some variables
 
         InitAreas();
-    }
-
-    /// <summary>
-    /// Load-game counterpart of SpawnPlayer: unpacks the player's legacy objstruct save record
-    /// (Program.LoadTheGame) onto the pawn in MapManager._actors.
-    /// </summary>
-    internal static void RestorePlayer(objstruct saved, int stateOffset)
-    {
-        player.Active = saved.active;
-        player.X = saved.x;
-        player.Y = saved.y;
-        player.TileX = saved.tilex;
-        player.TileY = saved.tiley;
-        player.SyncPosition();
-        player.AreaNumber = saved.areanumber;
-        player.Angle = saved.angle;
-        player.RuntimeFlags = saved.flags;
-        NewActorState(player, PlayerStateNames[stateOffset]);
     }
 }

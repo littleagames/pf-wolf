@@ -609,8 +609,6 @@ internal partial class Program
         int i, j;
         int checksum;
         //ushort laststatobjnum;
-        //objstruct ob;
-        objstruct nullobj = new();
 
         checksum = 0;
 
@@ -666,9 +664,9 @@ internal partial class Program
         //    bw.Write(ob.AsBytes(stateOffset));
         //}
 
-        nullobj.active = activetypes.ac_badobject;          // end of file marker
+        // Actors aren't written yet (the loop above is disabled), so there is no actor list to
+        // terminate -- LoadTheGame's matching read loop is disabled the same way.
         DiskFlopAnim(x, y);
-        bw.Write(nullobj.AsBytes(stateOffset: 0));
 
         DiskFlopAnim(x, y);
         //laststatobjnum = (ushort)(laststatobj);

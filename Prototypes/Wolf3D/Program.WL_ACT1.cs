@@ -194,7 +194,6 @@ internal partial class Program
     internal static void CloseDoor(int door)
     {
         int tilex, tiley, area;
-        Actor? check = null;
 
         //
         // don't close on anything solid
@@ -217,12 +216,6 @@ internal partial class Program
                 if (((player.X - MINDIST) >> MapConstants.TILESHIFT) == tilex)
                     return;
             }
-            check = _mapManager.actorat[tilex - 1, tiley];
-            if (MapManager.ISPOINTER(check) && ((check.x + MINDIST) >> MapConstants.TILESHIFT) == tilex)
-                return;
-            check = _mapManager.actorat[tilex + 1, tiley];
-            if (MapManager.ISPOINTER(check) && ((check.x - MINDIST) >> MapConstants.TILESHIFT) == tilex)
-                return;
         }
         else
         {
@@ -233,15 +226,12 @@ internal partial class Program
                 if (((player.Y - MINDIST) >> MapConstants.TILESHIFT) == tiley)
                     return;
             }
-
-            check = _mapManager.actorat[tilex, tiley - 1];
-            if (MapManager.ISPOINTER(check) && ((check.y + MINDIST) >> MapConstants.TILESHIFT) == tiley)
-                return;
-
-            check = _mapManager.actorat[tilex, tiley + 1];
-            if (MapManager.ISPOINTER(check) && ((check.y - MINDIST) >> MapConstants.TILESHIFT) == tiley)
-                return;
         }
+
+        // NOTE: the original also refused to close on an actor standing in the doorway (one
+        // in the neighbouring tile, close enough to reach into this one). Actors live in
+        // MapManager._actors and aren't tracked in actorat[,], so that test needs
+        // re-implementing against _actors; until then only the player blocks a closing door.
 
 
         //

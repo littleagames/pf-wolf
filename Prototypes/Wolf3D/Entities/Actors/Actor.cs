@@ -17,8 +17,7 @@ internal record Actor : Thinker
     public required string Name { get; internal set; }
     public Vector2 Position { get; private set; } = Vector2.Zero;
 
-    // Mirrors objstruct's think/state-transition bookkeeping (Program.WL_DEF.cs) while
-    // actors migrate from objlist2 to MapManager._actors. See DoActor in MapManager.
+    // Think/state-transition bookkeeping, driven by MapManager.DoActor.
     public activetypes Active { get; internal set; } = activetypes.ac_no;
     public short TicCount { get; internal set; }
     public objdirtypes Dir { get; internal set; } = objdirtypes.nodir;
@@ -35,10 +34,9 @@ internal record Actor : Thinker
     // unlinks the actor once its tic finishes, since removing it mid-walk would break the iteration.
     public bool IsRemoved { get; internal set; }
 
-    // Sub-tile fixed-point world position and its containing tile, mirroring objstruct's
-    // x/y and tilex/tiley (Program.WL_DEF.cs) -- kept as separate mutable fields because
-    // legacy movement code (MoveObj/TryWalk) updates TileX/TileY the instant a move toward
-    // a new tile begins, while X/Y trail behind and approach the new tile center gradually.
+    // Sub-tile fixed-point world position and its containing tile -- kept as separate mutable
+    // fields because the movement code (MoveObj/TryWalk) updates TileX/TileY the instant a move
+    // toward a new tile begins, while X/Y trail behind and approach the new tile center gradually.
     public int X { get; internal set; }
     public int Y { get; internal set; }
     public byte TileX { get; internal set; }
@@ -49,9 +47,8 @@ internal record Actor : Thinker
     public Program.objflags RuntimeFlags { get; internal set; }
 
     // Screen-space hit-testing data, recomputed every frame in Program.WL_DRAW.cs's
-    // DrawScaleds (mirrors objstruct's viewx/transx, set there by TransformActor) so
-    // Program.WL_AGENT.cs's GunAttack/KnifeAttack can find the closest shootable actor
-    // under the crosshair regardless of which actor system it belongs to.
+    // DrawScaleds (set there by TransformActor) so Program.WL_AGENT.cs's
+    // GunAttack/KnifeAttack can find the closest shootable actor under the crosshair.
     public short ViewX { get; internal set; }
     public int TransX { get; internal set; } = int.MaxValue;
     public ushort ViewHeight { get; internal set; }

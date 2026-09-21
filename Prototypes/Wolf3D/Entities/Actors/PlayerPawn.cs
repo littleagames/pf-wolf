@@ -4,8 +4,7 @@ namespace Wolf3D.Entities.Actors;
 
 /// <summary>
 /// The player. Lives in <c>MapManager._actors</c> (at the head, so it thinks before everything
-/// else, as it did when it held the first slot of objlist2) and is driven by the same
-/// <c>MapManager.DoActor</c> loop as every other actor.
+/// else) and is driven by the same <c>MapManager.DoActor</c> loop as every other actor.
 /// </summary>
 /// <remarks>
 /// The states are built here rather than in actordefs YAML: they carry no sprites and exist only

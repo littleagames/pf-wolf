@@ -28,9 +28,8 @@ internal partial class Program
     //
     // Projectiles (Rocket/Smoke/Boom/Needle/Fire, actordefs/wolf3d/projectiles.yaml) and the
     // BJ-victory end-of-episode cutscene (actordefs/wolf3d/victory.yaml) run on the same type,
-    // spawned into MapManager._actors by MapManager.SpawnAtActor. Nothing in this file is
-    // legacy/objstruct-based any more. CheckPosition's only caller is the player pawn in
-    // Program.EnemyAI.cs's A_StartDeathCam.
+    // spawned into MapManager._actors by MapManager.SpawnAtActor. CheckPosition's only caller
+    // is the player pawn in Program.EnemyAI.cs's A_StartDeathCam.
 
     /*
     =================
@@ -81,7 +80,7 @@ internal partial class Program
             for (x = xl; x <= xh; x++)
             {
                 check = _mapManager.actorat[x, y];
-                if (check != null && check is not objstruct)
+                if (check != null)
                     return false;
             }
 
@@ -296,7 +295,7 @@ internal partial class Program
             for (x = xl; x <= xh; x++)
             {
                 check = _mapManager.actorat[x, y];
-                if (check != null && check is not objstruct)
+                if (check != null)
                     return false;
             }
         }

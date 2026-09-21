@@ -74,7 +74,7 @@ internal partial class Program
             US_Print($"2: {spot}");
             US_Print($"f 1: {player.AreaNumber}");
             US_Print($" 2: {_mapManager.MAPSPOT(player.TileX, player.TileY, 1)}");
-            US_Print($" 3: {(spot is objstruct spotObj ? spotObj.flags : (_mapManager.spotvis[player.TileX, player.TileY] ? 1 : 0))}");
+            US_Print($" 3: {(_mapManager.spotvis[player.TileX, player.TileY] ? 1 : 0)}");
 
             _videoManager.Update();
             _inputManager.Ack();
@@ -388,9 +388,7 @@ internal partial class Program
             {
                 tile = _mapManager.actorat[x, y];
 
-                if (tile is objstruct check && check.flags.HasFlag(objflags.FL_SHOOTABLE))
-                    color = "Yellow";
-                else if (tile is null)
+                if (tile is null)
                 {
                     if (_mapManager.spotvis[x, y])
                         color = "Dark Green";

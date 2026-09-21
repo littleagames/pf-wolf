@@ -31,25 +31,14 @@ internal partial class Program
                 { objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir}
 };
 
-    internal static bool CHECKDIAG(int x, int y)
-    {
-        Actor? temp = _mapManager.actorat[x, y];
-        if (temp != null)
-        { 
-              if (temp is not objstruct)
-                  return false;
-            if (temp is objstruct check && check.flags.HasFlag(objflags.FL_SHOOTABLE))
-                return false;
-        }
+    // actorat[,] only holds walls and doors, so any occupant blocks. (Actors live in
+    // MapManager._actors and aren't tracked there, so -- unlike the original -- other
+    // actors don't block a diagonal step.)
+    internal static bool CHECKDIAG(int x, int y) => _mapManager.actorat[x, y] == null;
 
-        return true;
-    }
-
-    // SpawnNewObj/NewState/MoveObj/TryWalk/CHECKSIDE and CheckLine/CheckSight/SightPlayer/
-    // FirstSighting/SelectDodgeDir/SelectChaseDir/SelectRunDir/KillActor/DamageActor (the
-    // objstruct versions) were removed from here -- every actor, including the BJ-victory
-    // cutscene, now runs on the new Entities.Actors.Actor type (see Program.EnemyAI.cs for
-    // the ported equivalents, registered via ActorActionRegistry in Program.WL_AGENT.cs).
-    // Only CHECKDIAG stays: it just inspects actorat[,], so both movement ports share it.
+    // The per-actor movement, sight and combat code (MoveObj/TryWalk/CHECKSIDE, CheckLine/
+    // CheckSight/SightPlayer, SelectChaseDir/SelectDodgeDir, KillActor/DamageActor, ...) lives
+    // in Program.EnemyAI.cs, registered via ActorActionRegistry in Program.WL_AGENT.cs. Only
+    // CHECKDIAG stays here, since it just inspects actorat[,].
     internal const long MINSIGHT = 0x18000L;
 }

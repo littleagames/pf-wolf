@@ -5,7 +5,7 @@ namespace Wolf3D.Entities.Actors;
 /// <summary>
 /// Flattens the DECORATE-style, grouped <see cref="StateData"/> lists parsed from actor
 /// definitions into a linked sequence of single-frame <see cref="ActorStateFrame"/> nodes,
-/// mirroring how the legacy per-frame `statestruct` chain resolved a `next` state name.
+/// where each frame's `Next` is its following frame, a named next state, or a loop/stop.
 /// </summary>
 internal static class ActorStateResolver
 {

@@ -67,7 +67,7 @@ internal partial class Program
                     // corpse decoration, and the Pac-Man bonus ghosts) are no longer spawned here --
                     // MapManager.LoadMap's generic Things lookup now handles all of that directly
                     // from mapdefs/wolf3d/enemies.yaml, driving the new Entities.Actors.Actor-based
-                    // AI in Program.EnemyAI.cs instead of objlist2/objstruct.
+                    // AI in Program.EnemyAI.cs.
                 }
             }
         }

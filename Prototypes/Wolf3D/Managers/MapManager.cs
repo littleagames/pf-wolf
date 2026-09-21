@@ -305,7 +305,7 @@ internal class MapManager
     /// Spawns a runtime projectile or effect (Rocket, Smoke, Boom, Needle, Fire --
     /// actordefs/wolf3d/projectiles.yaml) at another actor's exact fixed-point position. It is
     /// an "active" actor (free-moving, drawn through the exact-position path, never marked in
-    /// actorat), like the legacy objstruct projectiles it replaces; callers set Angle/Speed.
+    /// actorat); callers set Angle/Speed.
     /// </summary>
     internal Entities.Actors.Actor? SpawnAtActor(string className, Entities.Actors.Actor source)
     {
@@ -343,12 +343,6 @@ internal class MapManager
     }
 
     internal static bool VALIDAREA(int x) => (x) >= MapDataConstants.AREATILE && (x) < (MapDataConstants.AREATILE + MapDataConstants.NUMAREAS);
-
-    internal static bool ISPOINTER(Actor? check)
-    {
-        return check is objstruct;
-    }
-
 
     internal int MAPSPOT(int x, int y, int plane) => (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]);
     internal void SetMapSpot(int x, int y, int plane, ushort value)
