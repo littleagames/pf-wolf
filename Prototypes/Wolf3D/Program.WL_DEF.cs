@@ -76,16 +76,6 @@ internal enum controldirs
     di_south,
     di_west,
 }
-internal enum doortypes
-{
-    dr_normal,
-    dr_lock1,
-    dr_lock2,
-    dr_lock3,
-    dr_lock4,
-    dr_elevator,
-}
-
 internal enum activetypes
 {
     ac_badobject = -1,
@@ -207,9 +197,7 @@ internal class gametype
     public int oldscore, score, nextextra;
     public short lives;
     public short health;
-    public short ammo;
-    public short keys;
-    public weapontypes bestweapon, weapon, chosenweapon;
+    public weapontypes weapon, chosenweapon;
 
     public short faceframe;
     public short attackframe, attackcount, weaponframe;
@@ -229,9 +217,6 @@ internal class gametype
         nextextra = br.ReadInt32();
         lives = br.ReadInt16();
         health = br.ReadInt16();
-        ammo = br.ReadInt16();
-        keys = br.ReadInt16();
-        bestweapon = (weapontypes)br.ReadInt16();
         weapon = (weapontypes)br.ReadInt16();
         chosenweapon = (weapontypes)br.ReadInt16();
         faceframe = br.ReadInt16();
@@ -263,9 +248,6 @@ internal class gametype
             bw.Write(nextextra);
             bw.Write(lives);
             bw.Write(health);
-            bw.Write(ammo);
-            bw.Write(keys);
-            bw.Write((byte)bestweapon);
             bw.Write((byte)weapon);
             bw.Write((byte)chosenweapon);
             bw.Write(faceframe);
@@ -358,7 +340,6 @@ internal class doorobj_t
 {
     public sbyte tilex, tiley;
     public bool vertical;
-    public sbyte locknum;
     public dooractiontypes action;
     public short ticcount;
     public ushort position;            // leading edge of door (0 = closed, 0xffff = fully open)
@@ -369,7 +350,6 @@ internal class doorobj_t
         tilex = br.ReadSByte();
         tiley = br.ReadSByte();
         vertical = Convert.ToBoolean(br.ReadByte());
-        locknum = br.ReadSByte();
         action = (dooractiontypes)br.ReadSByte();
         ticcount = br.ReadInt16();
         position = br.ReadUInt16();
@@ -383,7 +363,6 @@ internal class doorobj_t
             bw.Write(tilex);
             bw.Write(tiley);
             bw.Write((byte)(vertical ? 1 : 0));
-            bw.Write(locknum);
             bw.Write((sbyte)action);
             bw.Write(ticcount);
             bw.Write(position);

@@ -23,7 +23,9 @@ WolfWeapon:
 Knife:
   parent: "WolfWeapon"
   properties:
+    "inventory.type": Knife
     "inventory.icon": "KNIFE"
+    "weapon.slot": 0
     "weapon.ammouse1": 0
     "weapon.selectionorder": 3700
     "attacksound": "weapon/knife/attack"
@@ -75,7 +77,9 @@ Knife2:
 Pistol:
   parent: "WolfWeapon"
   properties:
+    "inventory.type": Pistol
     "inventory.icon": "PISTOL"
+    "weapon.slot": 1
     "weapon.selectionorder": 1900
     "attacksound": "weapon/pistol/attack"
   flags: [WEAPON.NOAUTOFIRE]
@@ -136,6 +140,8 @@ MachineGun:
   parent: "WolfWeapon"
   properties:
     "attacksound": "weapon/machine/attack"
+    "inventory.type": MachineGun
+    "weapon.slot": 2
     "inventory.icon": "MACHGUN"
     "inventory.pickupsound": "weapon/machine/pickup"
     "weapon.selectionorder": 1300
@@ -211,6 +217,8 @@ GatlingGun:
   parent: "WolfWeapon"
   properties:
     "attacksound": "weapon/gatling/attack"
+    "inventory.type": GatlingGun
+    "weapon.slot": 3
     "inventory.icon": "GATLGUN"
     "inventory.pickupsound": "weapon/gatling/pickup"
     "weapon.selectionorder": 700
@@ -297,6 +305,7 @@ GatlingGunUpgrade:
   parent: "WeaponGiver"
   properties:
     "inventory.pickupsound": "weapon/gatling/pickup"
+    "weapongiver.weapon": GatlingGun
     "weapon.ammogive1": 6
     "dropitem": [GatlingGun, MachineGun]
   flags: [INVENTORY.ALWAYSPICKUP]
@@ -311,6 +320,7 @@ BlueGatlingGunUpgrade:
   parent: "GatlingGunUpgrade"
   properties:
     "inventory.pickupsound": "weapon/bluegatling/pickup"
+    "weapongiver.weapon": BlueGatlingGun
     "dropitem": [BlueGatlingGun, BlueAK47]
   states:
     Spawn:

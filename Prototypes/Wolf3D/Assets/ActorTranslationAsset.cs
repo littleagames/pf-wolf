@@ -104,6 +104,13 @@ internal class ActorMetadata
                 }
             }
 
+            // The stack enumerates root-first, so Reverse() walks the actor, its parent, then
+            // up to the root. Properties and states only fill keys that are still missing, so
+            // the nearest ancestor has to go first: Key's "inventory.interhubamount" must
+            // beat Inventory's, not the other way round.
+            foreach (var ancestor in ancestorChain.Reverse())
+                MergeInheritedMembers(ancestor, actor);
+
             while (ancestorChain.Count > 0)
             {
                 var ancestor = ancestorChain.Pop();
@@ -136,6 +143,30 @@ internal class ActorMetadata
         return actorInstance;
     }
 
+    /// <summary>
+    /// Looks a property up on the named actor, falling back through its parent chain, without
+    /// building an actor instance -- for callers (InventoryManager) that only need class-level
+    /// data such as `inventory.maxamount`.
+    /// </summary>
+    internal bool TryGetProperty(string actorName, string key, out object value)
+    {
+        // Bounded depth instead of a visited set: this runs per item per frame from the
+        // inventory code, and a parent cycle would otherwise loop forever.
+        var current = actorName;
+        for (var depth = 0; depth < 32 && !string.IsNullOrWhiteSpace(current) && Actors.TryGetValue(current, out var data); depth++)
+        {
+            if (data.Properties.TryGetValue(key, out value!))
+                return true;
+            current = data.Parent;
+        }
+
+        value = null!;
+        return false;
+    }
+
+    internal int GetIntProperty(string actorName, string key, int fallback) =>
+        TryGetProperty(actorName, key, out var value) ? Convert.ToInt32(value) : fallback;
+
     private Dictionary<string, ActorStateFrame> GetResolvedStates(string name, ActorData actor)
     {
         if (_resolvedStatesCache.TryGetValue(name, out var cached))
@@ -146,12 +177,10 @@ internal class ActorMetadata
         return resolved;
     }
 
-    private static void MergeActorProperties(ActorData source, ActorData target)
+    // Fills properties and states the target doesn't already have. Callers walk from the
+    // nearest ancestor to the root so the closest definition wins.
+    private static void MergeInheritedMembers(ActorData source, ActorData target)
     {
-        if (target.Radius != 0)
-            target.Radius = source.Radius; // TODO: this overwrites the target
-
-        // Merge dictionaries and lists
         foreach (var kvp in source.Properties)
         {
             if (!target.Properties.ContainsKey(kvp.Key))
@@ -163,7 +192,13 @@ internal class ActorMetadata
             if (!target.States.ContainsKey(kvp.Key))
                 target.States[kvp.Key] = kvp.Value;
         }
-        
+    }
+
+    private static void MergeActorProperties(ActorData source, ActorData target)
+    {
+        if (target.Radius != 0)
+            target.Radius = source.Radius; // TODO: this overwrites the target
+
         target.Flags.UnionWith(source.Flags);
     }
 }

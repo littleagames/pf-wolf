@@ -8,7 +8,7 @@ internal abstract record Inventory : Actor
 {
 }
 
-internal record CustomInventory : Actor
+internal record CustomInventory : Inventory
 {
 }
 

@@ -20,6 +20,7 @@ internal partial class Program
     private static GraphicManager _graphicManager;
     private static MapManager _mapManager;
     private static AssetManager _assetManager;
+    private static InventoryManager _inventoryManager;
 
     public Program()
     {
@@ -32,6 +33,7 @@ internal partial class Program
         services.AddSingleton<GraphicManager>();
         services.AddSingleton<MapManager>();
         services.AddSingleton<AssetManager>();
+        services.AddSingleton<InventoryManager>();
 
         // Build the service provider
         var serviceProvider = services.BuildServiceProvider();
@@ -47,6 +49,7 @@ internal partial class Program
         _graphicManager = serviceProvider.GetRequiredService<GraphicManager>();
         _mapManager = serviceProvider.GetRequiredService<MapManager>();
         _assetManager = serviceProvider.GetRequiredService<AssetManager>();
+        _inventoryManager = serviceProvider.GetRequiredService<InventoryManager>();
 
         // TODO: Remove circular dependencies here
         //_videoManager = new();
@@ -327,10 +330,9 @@ internal partial class Program
     {
         gamestate = new gametype();
         gamestate.difficulty = difficulty;
-        gamestate.weapon = gamestate.bestweapon = gamestate.chosenweapon = weapontypes.wp_pistol;
+        GiveStartingInventory();
 
         gamestate.health = 100;
-        gamestate.ammo = STARTAMMO;
         gamestate.lives = 3;
         gamestate.nextextra = EXTRAPOINTS;
         gamestate.cluster = mapInfo.Cluster;
@@ -597,10 +599,7 @@ internal partial class Program
 
             gamestate.oldscore = gamestate.score = 0;
             gamestate.lives = 1;
-            gamestate.weapon =
-            gamestate.chosenweapon =
-            gamestate.bestweapon = weapontypes.wp_pistol;
-            gamestate.ammo = 8;
+            GiveStartingInventory();
         }
 
         return true;

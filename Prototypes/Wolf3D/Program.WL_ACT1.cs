@@ -125,7 +125,7 @@ internal partial class Program
     =
     ===============
     */
-    internal static void SpawnDoor(int tilex, int tiley, bool vertical, int locknum, MapTextureTranslation doorXlat)
+    internal static void SpawnDoor(int tilex, int tiley, bool vertical, MapTextureTranslation doorXlat)
     {
         if (doornum == MAXDOORS)
             _gameEngineManager.Quit("64+ doors on level!");
@@ -135,7 +135,6 @@ internal partial class Program
         doorobj.tilex = (sbyte)tilex;
         doorobj.tiley = (sbyte)tiley;
         doorobj.vertical = vertical;
-        doorobj.locknum = (sbyte)locknum;
         doorobj.action = dooractiontypes.dr_closed;
         doorobj.xlat = doorXlat;
         doorobjlist[lastdoorobj] = doorobj;
@@ -274,17 +273,13 @@ internal partial class Program
 
     internal static void OperateDoor(int door)
     {
-        int locknum;
-
-        locknum = doorobjlist[door].locknum;
-        if (locknum >= (int)doortypes.dr_lock1 && locknum <= (int)doortypes.dr_lock4)
+        // The required key comes from the door's mapdef entry (doors.yaml `lock:`).
+        var lockItem = doorobjlist[door].xlat.Lock;
+        if (!string.IsNullOrEmpty(lockItem) && !_inventoryManager.Has(lockItem))
         {
-            if ((gamestate.keys & (1 << (locknum - (int)doortypes.dr_lock1) ) ) == 0)
-        {
-                if (doorobjlist[door].position == 0)
-                    _audioManager.Play("player/usefail");  // ADDEDFIX 9       // locked
-                return;
-            }
+            if (doorobjlist[door].position == 0)
+                _audioManager.Play("player/usefail");  // ADDEDFIX 9       // locked
+            return;
         }
 
         switch (doorobjlist[door].action)

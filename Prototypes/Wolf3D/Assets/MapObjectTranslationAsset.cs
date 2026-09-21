@@ -47,5 +47,11 @@ internal record MapTextureTranslation
     public string East { get; init; } = "";
     public string West { get; init; } = "";
 
+    /// <summary>
+    /// Doors only: the inventory item class (e.g. "GoldKey") the player must carry to open
+    /// this door. Empty means unlocked.
+    /// </summary>
+    public string Lock { get; init; } = "";
+
     public static MapTextureTranslation None => new(); // TODO: Missing texture
 }

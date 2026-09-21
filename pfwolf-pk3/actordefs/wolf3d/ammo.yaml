@@ -6,6 +6,8 @@ Clip:
         frames: [A]
         tics-per-frame: -1
   properties:
+    # Variants (ClipBox, BlueClip, ...) inherit this, so they all fill the one Clip stack.
+    "inventory.type": Clip
     "inventory.amount": 8
     "inventory.maxamount": 99
     "ammo.backpackamount": 20

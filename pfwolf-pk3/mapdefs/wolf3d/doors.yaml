@@ -14,21 +14,25 @@ doors:
         West: DOOR3_2
         North: SLOT1_1
         South: SLOT1_1
+        Lock: GoldKey
     '93':
         North: DOOR3_1
         South: DOOR3_1
         East: SLOT1_2
         West: SLOT1_2
+        Lock: GoldKey
     '94':
         East: DOOR3_2
         West: DOOR3_2
         North: SLOT1_1
         South: SLOT1_1
+        Lock: SilverKey
     '95':
         North: DOOR3_1
         South: DOOR3_1
         East: SLOT1_2
         West: SLOT1_2
+        Lock: SilverKey
     '100':
         East: DOOR2_1
         West: DOOR2_1

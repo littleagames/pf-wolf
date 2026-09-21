@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Wolf3D.Entities.Actors;
 
-internal record Weapon : Actor
+internal record Weapon : Inventory
 {
 }

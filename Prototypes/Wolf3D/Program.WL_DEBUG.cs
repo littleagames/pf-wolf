@@ -111,12 +111,9 @@ internal partial class Program
             _videoManager.Update();
             GivePoints(100000);
             HealSelf(99);
-            if (gamestate.bestweapon < weapontypes.wp_chaingun)
-                GiveWeapon(gamestate.bestweapon + 1);
-            gamestate.ammo += 50;
-            if (gamestate.ammo > 99)
-                gamestate.ammo = 99;
-            DrawAmmo();
+            if (GetBestWeapon() < weapontypes.wp_chaingun)
+                GiveWeapon(GetBestWeapon() + 1);
+            GiveAmmo(AmmoType, 50);
             _inputManager.Ack();
             return 1;
         }
@@ -124,15 +121,18 @@ internal partial class Program
         {
             CenterWindow(16, 3);
             PrintY += 6;
-            US_Print("  Give Key (1-4): ");
+            US_Print("  Give Key (1-2): ");
             _videoManager.Update();
             string str = "";
             esc = !US_LineInput(px, py, ref str, "", true, 1, 0);
             if (!esc && !string.IsNullOrEmpty(str))
             {
                 level = Convert.ToInt32(str);
-                if (level > 0 && level < 5)
-                    GiveKey(level - 1);
+                if (level == 1)
+                    _inventoryManager.Give("GoldKey", 1);
+                else if (level == 2)
+                    _inventoryManager.Give("SilverKey", 1);
+                DrawKeys();
             }
             return 1;
         }

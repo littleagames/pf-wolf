@@ -15,7 +15,8 @@ Ammo:
   parent: Inventory
   properties:
     "inventory.pickupsound": "misc/ammo_pkup"
-    
+    "inventory.interhubamount": 9999
+
 Health:
   parent: Inventory
   properties:
@@ -32,8 +33,6 @@ Key:
 
 GoldKey:
   parent: Key
-  properties:
-    "inventory.amount": 0
   states:
     Spawn:
       - sprite: GKEY
@@ -42,8 +41,6 @@ GoldKey:
 
 SilverKey:
   parent: Key
-  properties:
-    "inventory.amount": 1
   states:
     Spawn:
       - sprite: SKEY

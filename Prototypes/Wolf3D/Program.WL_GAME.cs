@@ -135,7 +135,7 @@ internal partial class Program
                 case playstatetypes.ex_completed:
                 case playstatetypes.ex_secretlevel:
                     if (viewsize == 21) DrawPlayScreen();
-                    gamestate.keys = 0;
+                    _inventoryManager.ResetForNextLevel();
                     DrawKeys();
                     _videoManager.FadeOut();
 
@@ -557,7 +557,7 @@ internal partial class Program
                         case 96:
                         case 98:
                         case 100:
-                            SpawnDoor(x, y, true, (tile - 90) / 2, doorXlat ?? MapTextureTranslation.None);
+                            SpawnDoor(x, y, true, doorXlat ?? MapTextureTranslation.None);
                             break;
                         case 91:
                         case 93:
@@ -565,7 +565,7 @@ internal partial class Program
                         case 97:
                         case 99:
                         case 101:
-                            SpawnDoor(x, y, false, (tile - 91) / 2, doorXlat ?? MapTextureTranslation.None);
+                            SpawnDoor(x, y, false, doorXlat ?? MapTextureTranslation.None);
                             break;
                     }
                 }
@@ -735,10 +735,7 @@ internal partial class Program
         if (gamestate.lives > -1)
         {
             gamestate.health = 100;
-            gamestate.weapon = gamestate.bestweapon
-                = gamestate.chosenweapon = weapontypes.wp_pistol;
-            gamestate.ammo = STARTAMMO;
-            gamestate.keys = 0;
+            GiveStartingInventory();
             pwallstate = pwallpos = 0;
             gamestate.attackframe = gamestate.attackcount =
                 gamestate.weaponframe = 0;
