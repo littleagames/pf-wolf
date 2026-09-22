@@ -53,10 +53,9 @@ sound-info:
     digitized: DSAMMOUP
     adlib: ALAMMOUP
     pc: PCAMMOUP
+  # Wolf3D has no separate ammo box sound; the box uses the regular ammo pickup.
   misc/ammobox_pkup:
-    digitized: DSAMBXUP
-    adlib: ALAMBXUP
-    pc: PCAMBXUP
+    alias: misc/ammo_pkup
   misc/health_pkup:
     digitized: DSFOODUP
     adlib: ALFOODUP
@@ -426,7 +425,7 @@ sound-info:
       - dog/death
   dog/fart:
     random:
-      - misc/fart16
+      - dog/fart16
       - dog/death
       - dog/death
       - dog/death
@@ -475,7 +474,7 @@ sound-info:
       - doberman/death
   doberman/crash:
     random:
-      - misc/crash16
+      - doberman/crash16
       - doberman/death
       - doberman/death
       - doberman/death
@@ -619,7 +618,7 @@ sound-info:
       - mutant/death
   mutant/fart:
     random:
-      - misc/fart16
+      - mutant/fart16
       - mutant/death
       - mutant/death
       - mutant/death
@@ -664,7 +663,7 @@ sound-info:
       - bat/death
   bat/crash:
     random:
-      - misc/crash16
+      - bat/crash16
       - bat/death
       - bat/death
       - bat/death
@@ -1035,8 +1034,9 @@ sound-info:
 
   weapon/flame/pickup:
     digitized: DSYEAH
+  # Fake Hitler's fireball; Wolf3D's own sound for it is fake/attack (FAKFIR).
   flame/fire:
-    digitized: DSFLAME
+    alias: fake/attack
   flame/hit:
     digitized: DSBAREXP
 
@@ -1155,63 +1155,12 @@ sound-info:
   machitler/death:
     alias: macgeneric/death
 
-  # --- $ifmacwolf3d ---
-  misc/ammobox_pkup:
-    alias: misc/ammo_pkup
-  misc/w_pkup:
-    alias: misc/ammo_pkup
-  weapon/machine/pickup:
-    alias: misc/w_pkup
-  misc/health_pkup:
-    alias: misc/medkit_pkup
-  misc/dogfood_pkup:
-    digitized: DSDOGATK
-  weapon/gatling/pickup:
-    digitized: DSYEAH
-
-  player/pain1:
-    digitized: DSPLPAIN
-  player/pain2:
-    digitized: DSPLAAI2
-  player/pain:
-    random:
-      - player/pain1
-      - player/pain2
-  # --- $endif ---
-
   # ------ Super 3D Noah's Ark ------
 
   misc/i_pkup:
     digitized: DSITEMUP
     adlib: ALITEMUP
     pc: PCITEMUP
-
-  # --- $ifnoah ---
-  # Kill hitwall sound in Noah's Ark
-  world/hitwall:
-    digitized: null
-
-  misc/100percent:
-    digitized: DSENDBN2
-    adlib: ALENDBN2
-    pc: PCENDBN2
-  misc/w_pkup:
-    alias: misc/i_pkup
-  misc/ammo_pkup:
-    alias: misc/i_pkup
-  misc/health_pkup:
-    alias: misc/i_pkup
-  misc/medkit_pkup:
-    alias: misc/i_pkup
-  misc/map_pkup:
-    alias: misc/k_pkup
-
-  # Defined here since vanilla Wolf3D didn't use it.
-  player/pain:
-    digitized: DSPLPAIN
-    adlib: ALPLPAIN
-    pc: PCPLPAIN
-  # --- $endif ---
 
   world/pushwall_ark:
     digitized: DSARKPSH
@@ -1410,13 +1359,6 @@ sound-info:
     pc: PCNOBNS
 
   # ------ Blake Stone ------
-
-  # --- $ifblake ---
-  misc/health_pkup:
-    digitized: DSHEAL1
-    adlib: ALHEAL1
-    pc: PCHEAL1
-  # --- $endif ---
 
   doors/heavy_open:
     digitized: DSDR2OPN
