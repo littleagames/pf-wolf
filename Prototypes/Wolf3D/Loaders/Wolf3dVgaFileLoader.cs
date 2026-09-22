@@ -16,15 +16,36 @@ internal class Wolf3dVgaFileLoader
         public ushort bit0, bit1; // 0-255 is a character, > is a pointer to a node
     }
 
-    private int[] grstarts = new int[GraphicConstants.NUMCHUNKS + 1];
-    private byte[][] grsegs = new byte[GraphicConstants.NUMCHUNKS][];
+    // Structural layout of every VGAGRAPH file: STRUCTPIC is always the first chunk,
+    // and the font chunks always start immediately after it.
+    private const int StructPic = 0;
+    private const int StartFont = 1;
+
+    private int[] grstarts = null!;
+    private byte[][] grsegs = null!;
     private huffnode[] grhuffman = new huffnode[255];
-    private pictabletype[] pictable;
+    private pictabletype[] pictable = null!;
 
     private int chunkcomplen, chunkexplen;
+    private int numChunks;
+    private int numPics;
+    private readonly int numFonts;
+    private int numTile8;
 
-    public Wolf3dVgaFileLoader(string vgaHeadFile, string vgaGraphFile, string vgaDictFile, string extension)
+    // Everything past the pic table is derived from the counts above, not read from the file:
+    // masked pics/sprites/tile16/tile32 are never populated by any known VGAGRAPH file, and
+    // tile8s are always packed into a single chunk immediately after the pics.
+    private int StartPics => StartFont + numFonts;
+    private int StartTile8 => StartPics + numPics;
+    private int StartExterns => StartTile8 + 1;
+
+    /// <param name="numFonts">Number of font chunks in the file. Not derivable from the file itself: a font chunk's decompressed
+    /// size includes its variable-length glyph bitmap data, so there's no fixed size or other signature that reliably
+    /// distinguishes it from a pic. For WL6/WL1/SOD this is 2.</param>
+    public Wolf3dVgaFileLoader(string vgaHeadFile, string vgaGraphFile, string vgaDictFile, string extension, int numFonts)
     {
+        this.numFonts = numFonts;
+
         var fname = $"{vgaDictFile}.{extension}";
         if (!File.Exists(fname))
         {
@@ -56,17 +77,17 @@ internal class Wolf3dVgaFileLoader
         {
             long headersize = fs.Length;
 
-            int expectedsize = grstarts.Length;
+            // Each chunk offset is a 3-byte value; the head file holds one entry per chunk
+            // plus a trailing sentinel offset used to compute the last chunk's length.
+            if (headersize % 3 != 0)
+                throw new PfWolfGraphicException($"Cannot open file: {fname}. File size ({headersize}) is not a multiple of 3.");
 
-            if (headersize / 3 != expectedsize)
-                throw new PfWolfGraphicException($@"Wolf4SDL was not compiled for these data files:
-{fname} contains a wrong number of offsets ({headersize / 3} instead of {expectedsize})!
-        
-Please check whether you are using the right executable!        
-(For mod developers: perhaps you forgot to update NUMCHUNKS?)");
+            int offsetCount = (int)(headersize / 3);
+            numChunks = offsetCount - 1;
+            grstarts = new int[offsetCount];
+            grsegs = new byte[numChunks][];
 
-            byte[] data = new byte[grstarts.Length * sizeof(int) * 3];
-            data = br.ReadBytes(data.Length);
+            byte[] data = br.ReadBytes(offsetCount * 3);
 
             for (int i = 0, dOffs = 0; i < grstarts.Length; i++, dOffs += 3)
             {
@@ -88,11 +109,13 @@ Please check whether you are using the right executable!
         using (FileStream fs = File.OpenRead(fname))
         using (BinaryReader br = new BinaryReader(fs))
         {
-            pictable = new pictabletype[GraphicConstants.NUMPICS];
-            CAL_GetGrChunkLength(fs, br, GraphicConstants.STRUCTPIC);
-            byte[] compseg = new byte[chunkcomplen];
-            compseg = br.ReadBytes(chunkcomplen);
-            var dest = CAL_HuffExpand(compseg, GraphicConstants.NUMPICS * sizeof(ushort) * 2, grhuffman);
+            CAL_GetGrChunkLength(fs, br, StructPic);
+            byte[] compseg = br.ReadBytes(chunkcomplen);
+
+            // The STRUCTPIC chunk's decompressed length (chunkexplen) tells us exactly how
+            // many pics the file describes, so NUMPICS never needs to be hard-coded.
+            numPics = chunkexplen / (sizeof(ushort) * 2);
+            var dest = CAL_HuffExpand(compseg, chunkexplen, grhuffman);
             pictable = StructHelpers.BytesToStructArray<pictabletype>(dest);
 
             CA_CacheGrChunks(fs, br);
@@ -119,7 +142,7 @@ Please check whether you are using the right executable!
         int chunk, next;
         int sourceIndex = 0;
 
-        for (chunk = GraphicConstants.STRUCTPIC + 1; chunk < GraphicConstants.NUMCHUNKS; chunk++)
+        for (chunk = StructPic + 1; chunk < numChunks; chunk++)
         {
             if (grsegs[chunk]?.Length > 0)
                 continue; // already in memory
@@ -150,51 +173,35 @@ Please check whether you are using the right executable!
 
             CAL_ExpandGrChunk(chunk, bufferseg);
 
-            if (chunk >= GraphicConstants.STARTPICS && chunk < GraphicConstants.STARTEXTERNS)
+            if (chunk >= StartPics && chunk < StartExterns)
                 CAL_DeplaneGrChunk(chunk);
         }
     }
 
     internal void CAL_ExpandGrChunk(int chunk, byte[] source)
     {
-        int expanded;
-        var sourceIndex = 0;
-
-        if (chunk >= GraphicConstants.STARTTILE8 && chunk < GraphicConstants.STARTEXTERNS)
+        if (chunk == StartTile8)
         {
-            //
-            // expanded sizes of tile8/16/32 are implicit
-            //
+            // The tile8 chunk has no explicit length prefix, so its decompressed size can't be
+            // read up front. Instead, decode until the compressed bitstream itself runs out;
+            // whatever came out is the real data, packed as fixed 8x8 (64-byte) tiles.
             const int BLOCK = 64;
-            const int MASKBLOCK = 128;
 
-            if (chunk < GraphicConstants.STARTTILE8M)          // tile 8s are all in one chunk!
-                expanded = BLOCK * GraphicConstants.NUMTILE8;
-            else if (chunk < GraphicConstants.STARTTILE16)
-                expanded = MASKBLOCK * GraphicConstants.NUMTILE8M;
-            else if (chunk < GraphicConstants.STARTTILE16M)    // all other tiles are one/chunk
-                expanded = BLOCK * 4;
-            else if (chunk < GraphicConstants.STARTTILE32)
-                expanded = MASKBLOCK * 4;
-            else if (chunk < GraphicConstants.STARTTILE32M)
-                expanded = BLOCK * 16;
-            else
-                expanded = MASKBLOCK * 16;
-        }
-        else
-        {
-            //
-            // everything else has an explicit size longword
-            //
-            expanded = BitConverter.ToInt32(source, sourceIndex);
-            sourceIndex += sizeof(int);
+            var tileData = CAL_HuffExpandUntilSourceExhausted(source, grhuffman);
+            numTile8 = tileData.Length / BLOCK;
+
+            if (numTile8 * BLOCK != tileData.Length)
+                throw new PfWolfGraphicException($"Tile8 chunk decompressed to {tileData.Length} bytes, which is not a whole number of {BLOCK}-byte tiles.");
+
+            grsegs[chunk] = tileData;
+            return;
         }
 
         //
-        // allocate final space and decompress it
+        // everything else has an explicit size longword
         //
-        grsegs[chunk] = new byte[expanded];
-        grsegs[chunk] = CAL_HuffExpand(source.Skip(sourceIndex).ToArray(), expanded, grhuffman);
+        var expanded = BitConverter.ToInt32(source, 0);
+        grsegs[chunk] = CAL_HuffExpand(source.Skip(sizeof(int)).ToArray(), expanded, grhuffman);
     }
 
     private void CAL_DeplaneGrChunk(int chunk)
@@ -202,10 +209,10 @@ Please check whether you are using the right executable!
         int i;
         short width, height;
 
-        if (chunk == GraphicConstants.STARTTILE8)
+        if (chunk == StartTile8)
         {
             width = height = 8;
-            for (i = 0; i < GraphicConstants.NUMTILE8; i++)
+            for (i = 0; i < numTile8; i++)
             {
                 var offset = i * (width * height);
                 var dest = VL_DePlaneVGA(grsegs[chunk].Skip(offset).ToArray(), width, height);
@@ -214,8 +221,8 @@ Please check whether you are using the right executable!
         }
         else
         {
-            width = pictable[chunk - GraphicConstants.STARTPICS].width;
-            height = pictable[chunk - GraphicConstants.STARTPICS].height;
+            width = pictable[chunk - StartPics].width;
+            height = pictable[chunk - StartPics].height;
 
             grsegs[chunk] = VL_DePlaneVGA(grsegs[chunk], width, height);
         }
@@ -317,28 +324,80 @@ Please check whether you are using the right executable!
         return dest;
     }
 
+    // Same Huffman walk as CAL_HuffExpand, but for the one chunk (tile8) with no explicit
+    // decompressed length: decode symbols until the compressed bitstream itself runs out,
+    // discarding whatever partial symbol was in progress when the input ended.
+    private static byte[] CAL_HuffExpandUntilSourceExhausted(byte[] source, huffnode[] hufftable)
+    {
+        if (source.Length == 0)
+        {
+            throw new PfWolfGraphicException("CAL_HuffExpand: source is empty!");
+        }
+
+        var dest = new List<byte>();
+
+        var headptr = 254; // head node is always node 254
+        var sourceIndex = 0;
+
+        byte val = source[sourceIndex++];
+        byte mask = 1;
+
+        ushort nodeval;
+        var huffptr = headptr;
+        while (true)
+        {
+            if ((val & mask) == 0)
+                nodeval = hufftable[huffptr].bit0;
+            else
+                nodeval = hufftable[huffptr].bit1;
+
+            if (mask == 0x80)
+            {
+                if (sourceIndex >= source.Length)
+                    break; // no more compressed bits left to resolve this symbol
+
+                val = source[sourceIndex++];
+                mask = 1;
+            }
+            else
+                mask <<= 1;
+
+            if (nodeval < 256)
+            {
+                dest.Add((byte)nodeval);
+                huffptr = headptr;
+            }
+            else
+            {
+                huffptr = (nodeval - 256);
+            }
+        }
+
+        return dest.ToArray();
+    }
+
     public Dictionary<string, Asset> GetAssets(List<string> dataMap)
     {
         var assets = new Dictionary<string, Asset>();
         int i = 1; // skip STRUCTPIC
         // fonts
-        for (int h = 0; h < GraphicConstants.NUMFONT; h++, i++)
+        for (int h = 0; h < numFonts; h++, i++)
         {
-            var data = grsegs[GraphicConstants.STARTFONT + h];
+            var data = grsegs[StartFont + h];
             var asset = new FontAsset(data);
             assets[dataMap[i].ToLowerInvariant()] = asset;
         }
 
         // graphic chunks
-        for (int j = 0; j < GraphicConstants.NUMPICS; j++,i++)
+        for (int j = 0; j < numPics; j++,i++)
         {
-            var data = grsegs[GraphicConstants.STARTPICS + j];
+            var data = grsegs[StartPics + j];
             var asset = new GraphicAsset(data, pictable[j].width, pictable[j].height);
             assets[dataMap[i].ToLowerInvariant()] = asset;
         }
 
         // Tile8
-        var tile8Data = grsegs[GraphicConstants.STARTTILE8];
+        var tile8Data = grsegs[StartTile8];
         var tile8Asset = new Tile8Asset(tile8Data);
         assets[dataMap[i].ToLowerInvariant()] = tile8Asset;
         i++;

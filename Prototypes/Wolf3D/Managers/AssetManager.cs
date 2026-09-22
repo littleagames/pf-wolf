@@ -58,7 +58,8 @@ internal class AssetManager
                 _assets[key] = kvp.Value;
         }
 
-        var vgaGraphicLoader = new Wolf3dVgaFileLoader("vgahead", "vgagraph", "vgadict", "wl6");
+        // numFonts isn't stored in the VGAGRAPH file itself, so it must be supplied here.
+        var vgaGraphicLoader = new Wolf3dVgaFileLoader("vgahead", "vgagraph", "vgadict", "wl6", numFonts: 2);
         assets = vgaGraphicLoader.GetAssets(rawDataMap?.Graphics ?? []);
 
         foreach (var kvp in assets)
