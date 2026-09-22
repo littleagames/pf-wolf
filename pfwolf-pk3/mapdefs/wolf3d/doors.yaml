@@ -34,12 +34,12 @@ doors:
         West: SLOT1_2
         Lock: SilverKey
     '100':
-        East: DOOR2_1
-        West: DOOR2_1
+        East: DOOR2_2
+        West: DOOR2_2
         North: SLOT1_1
         South: SLOT1_1
     '101':
-        North: DOOR2_2
-        South: DOOR2_2
+        North: DOOR2_1
+        South: DOOR2_1
         East: SLOT1_2
         West: SLOT1_2
