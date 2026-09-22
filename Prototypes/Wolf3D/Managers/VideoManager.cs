@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using System.Diagnostics;
+using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Wolf3D.Assets;
@@ -906,9 +907,33 @@ internal class VideoManager
 
     internal byte ParseColor(string colorValue)
     {
-        // TODO: Check if #000000, so that'll be RGB
-            // Which then needs to "find closest" on 256 color palette
-        // TODO: Check if "0x00", so that'll be HEX
-        return 0x19;
+        if (string.IsNullOrEmpty(colorValue) || colorValue[0] != '#' || colorValue.Length != 7)
+            throw new FormatException($"Expected a color in #RRGGBB format, got '{colorValue}'.");
+
+        byte r = byte.Parse(colorValue.AsSpan(1, 2), NumberStyles.HexNumber);
+        byte g = byte.Parse(colorValue.AsSpan(3, 2), NumberStyles.HexNumber);
+        byte b = byte.Parse(colorValue.AsSpan(5, 2), NumberStyles.HexNumber);
+
+        byte closestIndex = 0;
+        int closestDistance = int.MaxValue;
+
+        for (int i = 0; i < gamepal.Length; i++)
+        {
+            int dr = r - gamepal[i].r;
+            int dg = g - gamepal[i].g;
+            int db = b - gamepal[i].b;
+            int distance = dr * dr + dg * dg + db * db;
+
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestIndex = (byte)i;
+
+                if (distance == 0)
+                    break;
+            }
+        }
+
+        return closestIndex;
     }
 }
