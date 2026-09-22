@@ -143,26 +143,26 @@ internal partial class Program
             Direction dir = ci.dir;
             switch (dir)
             {
-                case Direction.dir_North:
-                case Direction.dir_South:
+                case Direction.North:
+                case Direction.South:
                     break;
 
                 default:
                     if (ci.button0)
-                        dir = Direction.dir_South;
+                        dir = Direction.South;
                     switch (_inputManager.GetLastKeyPressed())
                     {
                         case ScanCodes.sc_UpArrow:
                         case ScanCodes.sc_PgUp:
                         case ScanCodes.sc_LeftArrow:
-                            dir = Direction.dir_North;
+                            dir = Direction.North;
                             break;
 
                         case ScanCodes.sc_Enter:
                         case ScanCodes.sc_DownArrow:
                         case ScanCodes.sc_PgDn:
                         case ScanCodes.sc_RightArrow:
-                            dir = Direction.dir_South;
+                            dir = Direction.South;
                             break;
                     }
                     break;
@@ -170,8 +170,8 @@ internal partial class Program
 
             switch (dir)
             {
-                case Direction.dir_North:
-                case Direction.dir_West:
+                case Direction.North:
+                case Direction.West:
                     if (pagenum > 1)
                     {
                         BackPage();
@@ -181,8 +181,8 @@ internal partial class Program
                     TicDelay(20);
                     break;
 
-                case Direction.dir_South:
-                case Direction.dir_East:
+                case Direction.South:
+                case Direction.East:
                     if (pagenum < numpages)
                     {
                         newpage = true;

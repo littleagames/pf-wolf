@@ -348,7 +348,7 @@ internal partial class Program
 
     internal static void GetBonus(Inventory builtActor)
     {
-        if (playstate == playstatetypes.ex_died)   // ADDEDFIX 31 - Chris
+        if (playstate == playstatetypes.ex_died) 
             return;
 
         //if (string.IsNullOrWhiteSpace(check.item_class))

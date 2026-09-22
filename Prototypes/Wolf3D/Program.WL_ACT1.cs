@@ -277,7 +277,7 @@ internal partial class Program
         if (!string.IsNullOrEmpty(lockItem) && !_inventoryManager.Has(lockItem))
         {
             if (doorobjlist[door].position == 0)
-                _audioManager.Play("player/usefail");  // ADDEDFIX 9       // locked
+                _audioManager.Play("player/usefail"); // locked
             return;
         }
 

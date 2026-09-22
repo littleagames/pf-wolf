@@ -626,7 +626,7 @@ internal partial class Program
         if (_videoManager.screenHeight % 200 != 0)
             _videoManager.ClearScreen(0);
 
-        MainMenu[(int)menuitems.savegame].active = 0;  // ADDEDFIX 3 - Tricob
+        MainMenu[(int)menuitems.savegame].active = 0; 
 
         EndText();
     }

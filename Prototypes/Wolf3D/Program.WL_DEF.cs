@@ -580,24 +580,3 @@ internal partial class Program
     internal const int SPDPATROL = 512;
     internal const int SPDDOG = 1500;
 }
-
-/*
-=============================================================================
-
-                           FEATURE DEFINITIONS
-
-=============================================================================
-*/
-
-#if USE_FEATUREFLAGS
-    // The currently available feature flags
-    internal const int FF_STARSKY      = 0x0001;
-    internal const int FF_PARALLAXSKY  = 0x0002;
-    internal const int FF_CLOUDSKY     = 0x0004;
-    internal const int FF_RAIN         = 0x0010;
-        internal const int FF_SNOW         = 0x0020;
-    static ushort GetFeatureFlags ()
-    {
-        return ffDataTopRight;
-    }
-#endif

@@ -1,13 +1,6 @@
-﻿namespace Wolf3D;
+﻿using Wolf3D.Enums;
 
-internal enum Direction
-{
-    dir_North, dir_NorthEast,
-    dir_East, dir_SouthEast,
-    dir_South, dir_SouthWest,
-    dir_West, dir_NorthWest,
-    dir_None
-}
+namespace Wolf3D;
 
 internal struct ControlInfo
 {

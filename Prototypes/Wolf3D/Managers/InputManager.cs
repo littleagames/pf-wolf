@@ -234,9 +234,9 @@ internal class InputManager
 
     private Direction[] DirTable =        // Quick lookup for total direction
     {
-        Direction.dir_NorthWest,  Direction.dir_North,  Direction.dir_NorthEast,
-        Direction.dir_West,       Direction.dir_None,   Direction.dir_East,
-        Direction.dir_SouthWest,  Direction.dir_South,  Direction.dir_SouthEast
+        Direction.NorthWest,  Direction.North,  Direction.NorthEast,
+        Direction.West,       Direction.None,   Direction.East,
+        Direction.SouthWest,  Direction.South,  Direction.SouthEast
     };
 
 

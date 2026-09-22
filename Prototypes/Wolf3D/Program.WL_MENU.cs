@@ -25,11 +25,7 @@ internal enum menuitems
     loadgame,
     savegame,
     changeview,
-#if !GOODTIMES
-#if !SPEAR
     readthis,
-#endif
-#endif
     viewscores,
     backtodemo,
     quit
@@ -75,11 +71,11 @@ internal partial class Program
     internal const int CST_SPC = 60;
 
     internal static string MENUSONG => "WONDERIN";
-#if SPEAR
-    internal static string INTROSONG => musicnames.XTOWER2_MUS;
-#else
+//#if SPEAR
+//    internal static string INTROSONG => musicnames.XTOWER2_MUS;
+//#else
     internal static string INTROSONG => "NAZI_NOR";
-#endif
+//#endif
 
     internal static int SENSITIVE = 60;
 
@@ -242,11 +238,11 @@ internal partial class Program
         _videoManager.VerticalLine(y, y + h, x + w, color1);
     }
 
-#if SPEAR
-    internal static void MenuFadeOut() => VL_FadeOut(0, 255, 0, 0, 51, 10);
-#else
+//#if SPEAR
+ //   internal static void MenuFadeOut() => VL_FadeOut(0, 255, 0, 0, 51, 10);
+//#else
     internal static void MenuFadeOut() => _videoManager.FadeOut(0, 255, 43, 0, 0, 10);
-#endif
+//#endif
     internal static void MenuFadeIn() => _videoManager.FadeIn(10);
 
     internal static void DrawMenu(CP_iteminfo item_i, CP_itemtype[] items)
@@ -406,7 +402,7 @@ internal partial class Program
                 //
                 // MOVE UP
                 //
-                case Direction.dir_North:
+                case Direction.North:
 
                     EraseGun(item_i, items, x, y, which);
 
@@ -442,7 +438,7 @@ internal partial class Program
                 //
                 // MOVE DOWN
                 //
-                case Direction.dir_South:
+                case Direction.South:
 
                     EraseGun(item_i, items, x, y, which);
                     //
@@ -614,7 +610,7 @@ internal partial class Program
             GameEngineManager.DelayMs(5);
             ReadAnyControl(out ci);
         }
-        while ((int)GameEngineManager.GetTimeCount() - startTime < count && ci.dir != Direction.dir_None);
+        while ((int)GameEngineManager.GetTimeCount() - startTime < count && ci.dir != Direction.None);
     }
 
     static int totalMousex = 0, totalMousey = 0;
@@ -640,23 +636,23 @@ internal partial class Program
 
             if (totalMousey < -SENSITIVE)
             {
-                ci.dir = Direction.dir_North;
+                ci.dir = Direction.North;
                 mouseactive = 1;
             }
             else if (totalMousey > SENSITIVE)
             {
-                ci.dir = Direction.dir_South;
+                ci.dir = Direction.South;
                 mouseactive = 1;
             }
 
             if (totalMousex < -SENSITIVE)
             {
-                ci.dir = Direction.dir_West;
+                ci.dir = Direction.West;
                 mouseactive = 1;
             }
             else if (totalMousex > SENSITIVE)
             {
-                ci.dir = Direction.dir_East;
+                ci.dir = Direction.East;
                 mouseactive = 1;
             }
 
@@ -682,14 +678,14 @@ internal partial class Program
 
             _inputManager.GetJoyDelta(out jx, out jy);
             if (jy < -SENSITIVE)
-                ci.dir = Direction.dir_North;
+                ci.dir = Direction.North;
             else if (jy > SENSITIVE)
-                ci.dir = Direction.dir_South;
+                ci.dir = Direction.South;
 
             if (jx < -SENSITIVE)
-                ci.dir = Direction.dir_West;
+                ci.dir = Direction.West;
             else if (jx > SENSITIVE)
-                ci.dir = Direction.dir_East;
+                ci.dir = Direction.East;
 
             jb = _inputManager.JoyButtons();
             if (jb != 0)
@@ -1733,8 +1729,8 @@ internal partial class Program
             ReadAnyControl(out ci);
             switch (ci.dir)
             {
-                case Direction.dir_South:
-                case Direction.dir_West:
+                case Direction.South:
+                case Direction.West:
                     newview--;
                     if (newview < 4)
                         newview = 4;
@@ -1745,8 +1741,8 @@ internal partial class Program
                     TicDelay(10);
                     break;
 
-                case Direction.dir_North:
-                case Direction.dir_East:
+                case Direction.North:
+                case Direction.East:
                     newview++;
                     if (newview >= 21)
                     {
@@ -1819,11 +1815,11 @@ internal partial class Program
     {
         fontnumber = "SmallFont";
 
-#if SPEAR
-        StartCPMusic(musicnames.XAWARD_MUS);
-#else
+//#if SPEAR
+//        StartCPMusic(musicnames.XAWARD_MUS);
+//#else
         StartCPMusic("ROSTER");
-#endif
+//#endif
 
         DrawHighScores();
         _videoManager.Update();
@@ -1888,8 +1884,8 @@ internal partial class Program
             ReadAnyControl(out ci);
             switch (ci.dir)
             {
-                case Direction.dir_North:
-                case Direction.dir_West:
+                case Direction.North:
+                case Direction.West:
                     if (mouseadjustment != 0)
                     {
                         mouseadjustment--;
@@ -1903,8 +1899,8 @@ internal partial class Program
                     }
                     break;
 
-                case Direction.dir_South:
-                case Direction.dir_East:
+                case Direction.South:
+                case Direction.East:
                     if (mouseadjustment < 9)
                     {
                         mouseadjustment++;
@@ -2264,7 +2260,7 @@ internal partial class Program
             //
             switch (ci.dir)
             {
-                case Direction.dir_West:
+                case Direction.West:
                     do
                     {
                         which--;
@@ -2279,11 +2275,11 @@ internal partial class Program
                         ReadAnyControl(out ci);
                         GameEngineManager.DelayMs(5);
                     }
-                    while (ci.dir != Direction.dir_None);
+                    while (ci.dir != Direction.None);
                     _inputManager.ClearKeysDown();
                     break;
 
-                case Direction.dir_East:
+                case Direction.East:
                     do
                     {
                         which++;
@@ -2298,11 +2294,11 @@ internal partial class Program
                         ReadAnyControl(out ci);
                         GameEngineManager.DelayMs(5);
                     }
-                    while (ci.dir != Direction.dir_None);
+                    while (ci.dir != Direction.None);
                     _inputManager.ClearKeysDown();
                     break;
-                case Direction.dir_North:
-                case Direction.dir_South:
+                case Direction.North:
+                case Direction.South:
                     exit = 1;
                     break;
             }

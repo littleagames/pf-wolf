@@ -1,7 +1,4 @@
 ﻿using SDL2;
-using Wolf3D.Constants;
-using Wolf3D.Entities;
-using Wolf3D.Managers;
 using static Wolf3D.Program;
 
 namespace Wolf3D;
@@ -274,7 +271,7 @@ internal partial class Program
         string temp;
         uint curtime, lasttime, lastdirtime, lastbuttontime, lastdirmovetime;
         ControlInfo ci;
-        Direction lastdir = Direction.dir_None;
+        Direction lastdir = Direction.None;
 
         if (!string.IsNullOrEmpty(def))
             s = def;
@@ -317,7 +314,7 @@ internal partial class Program
 
                 switch ((Direction)ci.dir)
                 {
-                    case Direction.dir_West:
+                    case Direction.West:
                         if (cursor != 0)
                         {
                             // Remove trailing whitespace if cursor is at end of string
@@ -329,7 +326,7 @@ internal partial class Program
                         cursormoved = true;
                         checkkey = false;
                         break;
-                    case Direction.dir_East:
+                    case Direction.East:
                         if (cursor >= MaxString - 1) break;
 
                         if (s.Length == cursor)
@@ -347,7 +344,7 @@ internal partial class Program
                         checkkey = false;
                         break;
 
-                    case Direction.dir_North:
+                    case Direction.North:
                         {
                             if (string.IsNullOrEmpty(s) || s[cursor] == 0)
                             {
@@ -364,7 +361,7 @@ internal partial class Program
                         checkkey = false;
                         break;
 
-                    case Direction.dir_South:
+                    case Direction.South:
                         {
                             if (string.IsNullOrEmpty(s) || s[cursor] == 0)
                             {

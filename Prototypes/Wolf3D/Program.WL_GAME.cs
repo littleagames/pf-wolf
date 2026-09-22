@@ -23,10 +23,6 @@ internal partial class Program
     internal static bool spearflag;
 #endif
 
-#if USE_FEATUREFLAGS
-    internal static int ffDataTopLeft, ffDataTopRight, ffDataBottomLeft, ffDataBottomRight;
-#endif
-
     //
     // ELEVATOR BACK MAPS - REMEMBER (-1)!!
     //
@@ -93,7 +89,7 @@ internal partial class Program
             startgame = false;
             if (!loadedgame)
                 SetupGameLevel();
-            DrawLevel();                        // ADDEDFIX 5 -  Chris Chokan
+            DrawLevel(); 
 
             ingame = true;
             if (loadedgame)
@@ -111,7 +107,7 @@ internal partial class Program
                 fizzlein = true;
             }
 
-            DrawLevel ();                     // ADDEDFIX 5 - moved up  Chris Chokan
+            DrawLevel ();
 
             PlayLoop();
             StopMusic();
@@ -290,7 +286,8 @@ internal partial class Program
             if (level >= 0 && level <= 9)
             {
                 var demoFileName = demoname.Replace('?', (char)('0' + level));
-                CA_WriteFile(demoFileName, demoData, length);
+                throw new NotImplementedException("Need to rewrite demo storage to save mapon as string data");
+                //CA_WriteFile(demoFileName, demoData, length);
             }
         }
 
