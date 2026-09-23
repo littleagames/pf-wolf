@@ -1041,7 +1041,7 @@ internal partial class Program
         // ALREADY IN A GAME?
         //
         if (ingame)
-            if (Confirm($"CURGAME".ToLanguageText(language)) == 0)
+            if (Confirm($"$CURGAME".ToLanguageText(language)) == 0)
             {
                 MenuFadeOut();
                 return 0;
