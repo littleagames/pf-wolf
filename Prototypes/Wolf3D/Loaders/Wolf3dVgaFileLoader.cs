@@ -422,7 +422,7 @@ internal class Wolf3dVgaFileLoader
         for (int l = 0; l < 6; l++, i++)
         {
             var data = grsegs[i];
-            var asset = new TextAsset(helpTextData);
+            var asset = new TextAsset(data);
             assets[dataMap[i].ToLowerInvariant()] = asset;
         }
             return assets;
