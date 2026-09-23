@@ -15,5 +15,4 @@ internal partial class Program
         fontcolor = f;
         backcolor = b;
     }
-
 }

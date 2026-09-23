@@ -2,6 +2,13 @@
 
 namespace Wolf3D.Managers;
 
+internal struct ControlInfo
+{
+    public bool button0, button1, button2, button3;
+    public short x, y;
+    public short xaxis, yaxis;
+    public Direction dir;
+}
 public enum ScanCodes
 {
     sc_None = SDL.SDL_Scancode.SDL_SCANCODE_UNKNOWN,
