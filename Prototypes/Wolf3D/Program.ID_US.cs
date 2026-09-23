@@ -14,9 +14,14 @@ internal class HighScore
         name = "";
     }
 
+    // The name is a fixed, zero-padded run of Latin-1 bytes. (Written as chars it was UTF-8,
+    // where an accented letter takes two bytes and shifts everything after it.)
     internal void Read(BinaryReader br)
     {
-        name = new string(br.ReadChars(MaxHighName + 1));
+        var nameBytes = br.ReadBytes(MaxHighName + 1);
+        if (nameBytes.Length != MaxHighName + 1)
+            throw new EndOfStreamException();
+        name = System.Text.Encoding.Latin1.GetString(nameBytes).TrimEnd('\0');
         score = br.ReadInt32();
         completed = br.ReadUInt16();
         episode = br.ReadUInt16();
@@ -24,8 +29,9 @@ internal class HighScore
 
     internal void Write(BinaryWriter bw)
     {
-        var len = MaxHighName + 1;
-        bw.Write(name.ToFixedArray(len), 0, len);
+        var nameBytes = new byte[MaxHighName + 1];
+        System.Text.Encoding.Latin1.GetBytes(name, 0, Math.Min(name.Length, MaxHighName), nameBytes, 0);
+        bw.Write(nameBytes);
         bw.Write(score);
         bw.Write(completed);
         bw.Write(episode);

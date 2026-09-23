@@ -1409,7 +1409,7 @@ internal partial class Program
             if (screenshotPending)
             {
                 screenshotPending = false;
-                _consoleManager.Print($"Saved {TakeScreenshot()}");
+                _consoleManager.Print(TakeScreenshot());
             }
 
             DrawConsole();

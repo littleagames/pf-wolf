@@ -413,10 +413,8 @@ internal class VideoManager
         }
     }
 
-    internal void SaveScreenShot(string filename)
-    {
-        SDL.SDL_SaveBMP(screenBuffer, filename);
-    }
+    /// <summary>Writes the screen to a BMP file; false (see SDL_GetError) if it couldn't.</summary>
+    internal bool SaveScreenShot(string filename) => SDL.SDL_SaveBMP(screenBuffer, filename) == 0;
 
     internal bool FizzleFade(int x1, int y1, uint width, uint height, uint frames, bool abortable)
         => FizzleFade(screenBuffer, x1, y1, width, height, frames, abortable);

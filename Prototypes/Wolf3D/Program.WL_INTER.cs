@@ -152,6 +152,7 @@ internal partial class Program
             string str = new string(Scores[n].name);
             US_LineInput(PrintX, PrintY, ref str, "", true, MaxHighName, 100);
             Scores[n].name = str;
+            _gameEngineManager.WriteConfig();
         }
         else
         {

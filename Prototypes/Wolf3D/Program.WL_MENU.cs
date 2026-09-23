@@ -2529,6 +2529,10 @@ internal partial class Program
     internal static void CleanupControlPanel()
     {
         fontnumber = "SmallFont";
+
+        // Keep whatever was changed in the menus (view size, controls, sensitivity) even if the
+        // game doesn't get to exit cleanly.
+        _gameEngineManager.WriteConfig();
     }
 
     internal static void DrawMenuGun(CP_iteminfo iteminfo)

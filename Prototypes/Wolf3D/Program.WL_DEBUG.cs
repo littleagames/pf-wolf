@@ -7,23 +7,35 @@ internal partial class Program
     // Set by the "screenshot" command; ThreeDRefresh takes the shot before drawing the console.
     static bool screenshotPending;
 
-    /// <summary>Saves the screen to the first free WSHOT###.BMP and returns its name.</summary>
+    /// <summary>
+    /// Saves the screen to the first free WSHOT###.BMP in the screenshots folder and says where
+    /// it went, or why it couldn't be saved.
+    /// </summary>
     internal static string TakeScreenshot()
     {
-        int i;
-        string fname = "WSHOT000.BMP";
-
-        for (i = 0; i < 1000; i++)
+        var directory = _gameEngineManager.ConfigDirectories.ScreenshotsDirectory;
+        try
         {
-            fname = $"WSHOT{i:000}.BMP";
+            Directory.CreateDirectory(directory);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return $"Couldn't create {directory}: {e.Message}";
+        }
+
+        string fname = "";
+        for (int i = 0; i < 1000; i++)
+        {
+            fname = Path.Combine(directory, $"WSHOT{i:000}.BMP");
             if (!File.Exists(fname))
                 break;
         }
 
         // overwrites WSHOT999.BMP if all wshot files exist
 
-        _videoManager.SaveScreenShot(fname);
-        return fname;
+        return _videoManager.SaveScreenShot(fname)
+            ? $"Saved {fname}"
+            : $"Couldn't save {fname}: {SDL2.SDL.SDL_GetError()}";
     }
 
     internal static void BasicOverhead()

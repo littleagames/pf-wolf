@@ -80,7 +80,7 @@ internal partial class Program
         Register("fps", "Toggles the frame rate counter.", "fps [0|1]", Cmd_Fps, complete: Values("0", "1"));
         Register("slowmo", "Waits extra VBLs every frame (0 = off).", "slowmo [0-50]", Cmd_SlowMo);
         Register("vbls", "Adds extra VBLs per frame (0 = off).", "vbls [0-8]", Cmd_Vbls);
-        Register("screenshot", "Saves the screen, without the console, to WSHOT###.BMP.", "screenshot", _ => screenshotPending = true);
+        Register("screenshot", "Saves the screen, without the console, to WSHOT###.BMP in the screenshots folder.", "screenshot", _ => screenshotPending = true);
         Register("quit", "Quits the game immediately.", "quit", _ => _gameEngineManager.Quit(""));
     }
 

@@ -112,10 +112,10 @@ internal partial class Program
 
     private static void Main(string[] args)
     {
-        var gameParams = Parser.Default.ParseArguments<GameParams>(args); // Move into gamemanager, add unit tests
-        // TODO: gameParams, handle errors?
+        // Bad arguments are reported by the parser and otherwise ignored: run with the defaults.
+        var gameParams = Parser.Default.ParseArguments<GameParams>(args).Value ?? new GameParams(); // Move into gamemanager, add unit tests
         new Program();
-        _gameEngineManager.Init(gameParams.Value);
+        _gameEngineManager.Init(gameParams);
         _assetManager.Load();
         RegisterActorActions();
         RegisterConsoleCommands();
@@ -131,8 +131,8 @@ internal partial class Program
         _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.BindsFileName));
         _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.AutoexecFileName));
 
-        if (!string.IsNullOrWhiteSpace(gameParams.Value.Exec))
-            _consoleManager.Execute(gameParams.Value.Exec);
+        if (!string.IsNullOrWhiteSpace(gameParams.Exec))
+            _consoleManager.Execute(gameParams.Exec);
 
         DemoLoop();
 
