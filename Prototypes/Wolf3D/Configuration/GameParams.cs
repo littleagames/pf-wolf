@@ -9,4 +9,7 @@ internal class GameParams
 
     [Option("savedir", Required = false, HelpText = "Directory where the game saves are located. Default in %APPDATA%.")]
     public string SavesDir { get; set; } = "";
+
+    [Option("exec", Required = false, HelpText = "Console commands to run once the game has started, separated by ';'.")]
+    public string Exec { get; set; } = "";
 }

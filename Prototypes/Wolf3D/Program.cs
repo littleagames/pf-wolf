@@ -21,6 +21,7 @@ internal partial class Program
     private static MapManager _mapManager;
     private static AssetManager _assetManager;
     private static InventoryManager _inventoryManager;
+    private static ConsoleManager _consoleManager;
 
     public Program()
     {
@@ -34,6 +35,7 @@ internal partial class Program
         services.AddSingleton<MapManager>();
         services.AddSingleton<AssetManager>();
         services.AddSingleton<InventoryManager>();
+        services.AddSingleton<ConsoleManager>();
 
         // Build the service provider
         var serviceProvider = services.BuildServiceProvider();
@@ -50,6 +52,7 @@ internal partial class Program
         _mapManager = serviceProvider.GetRequiredService<MapManager>();
         _assetManager = serviceProvider.GetRequiredService<AssetManager>();
         _inventoryManager = serviceProvider.GetRequiredService<InventoryManager>();
+        _consoleManager = serviceProvider.GetRequiredService<ConsoleManager>();
 
         // TODO: Remove circular dependencies here
         //_videoManager = new();
@@ -115,12 +118,16 @@ internal partial class Program
         _gameEngineManager.Init(gameParams.Value);
         _assetManager.Load();
         RegisterActorActions();
+        RegisterConsoleCommands();
 
         //CheckParameters(args); // Remove
 
         CheckForEpisodes();
 
         InitGame();
+
+        if (!string.IsNullOrWhiteSpace(gameParams.Value.Exec))
+            _consoleManager.Execute(gameParams.Value.Exec);
 
         DemoLoop();
 
