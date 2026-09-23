@@ -18,7 +18,7 @@ components:
   -
     type: "Stripe"
     params:
-      - lines: 10
+      - y: 10
   -
     type: "Window"
     params:

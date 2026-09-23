@@ -338,7 +338,8 @@ internal class MenuMetadata
 
             if (instance == null) continue;
 
-            // Flatten params (list of single-key dictionaries) into a single map
+            // Flatten params (list of single-key dictionaries) into a single map.
+            // Keys are normalized so YAML-style names ("horizontal-orientation") match property names ("HorizontalOrientation").
             var paramMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (entry.Params != null)
             {
@@ -347,7 +348,8 @@ internal class MenuMetadata
                     if (d == null) continue;
                     foreach (var kv in d)
                     {
-                        if (!paramMap.ContainsKey(kv.Key)) paramMap[kv.Key] = kv.Value;
+                        var key = NormalizeParamName(kv.Key);
+                        if (!paramMap.ContainsKey(key)) paramMap[key] = kv.Value;
                     }
                 }
             }
@@ -356,7 +358,7 @@ internal class MenuMetadata
             foreach (var prop in compType.GetProperties(flags))
             {
                 if (!prop.CanWrite) continue;
-                if (paramMap.TryGetValue(prop.Name, out var sval))
+                if (paramMap.TryGetValue(NormalizeParamName(prop.Name), out var sval))
                 {
                     var conv = ConvertValue(sval, prop.PropertyType);
                     if (conv != null) prop.SetValue(instance, conv);
@@ -368,6 +370,9 @@ internal class MenuMetadata
 
         return result;
     }
+
+    private static string NormalizeParamName(string name)
+        => name.Replace("-", "").Replace("_", "");
 
     private static List<MenuItem> ConvertMenuItemEntries(IEnumerable<Wolf3D.Assets.MenuItemEntry> entries)
     {

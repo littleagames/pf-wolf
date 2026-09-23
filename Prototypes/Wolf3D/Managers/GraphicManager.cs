@@ -49,31 +49,21 @@ internal class GraphicManager
             if (gfxAsset == null)
                 return;
 
-            //string? foundKey = GraphicsMappings.GraphicKeys.FirstOrDefault(x => x.ToLowerInvariant().Equals(gfx.Asset.ToLowerInvariant()));
-            //if (foundKey != null)
-            //{
-                //var foundchunk = GraphicsMappings.GraphicKeys.IndexOf(foundKey);
-                //if (foundchunk != -1)
-                //{
-                    //int picnum = (int)(foundchunk - GraphicConstants.STARTPICS);
-                    //int width, height;
+            // Orientation overrides the explicit coordinate on that axis
+            int x = gfx.HorizontalOrientation switch
+            {
+                HorizontalOrientation.Center => 160 - gfxAsset.Width / 2,
+                HorizontalOrientation.Right => 320 - gfxAsset.Width,
+                _ => gfx.X
+            };
+            int y = gfx.VerticalOrientation switch
+            {
+                VerticalOrientation.Center => 100 - gfxAsset.Height / 2,
+                VerticalOrientation.Bottom => 200 - gfxAsset.Height,
+                _ => gfx.Y
+            };
 
-                    //width = pictable[picnum].width;
-                    //height = pictable[picnum].height;
-
-                    if (gfx.HorizontalOrientation == HorizontalOrientation.Center)
-                        gfx.X = 160 - gfxAsset.Width / 2;
-                    else if (gfx.HorizontalOrientation == HorizontalOrientation.Right)
-                        gfx.X = 320 - gfxAsset.Width;
-
-                    if (gfx.VerticalOrientation == VerticalOrientation.Center)
-                        gfx.Y = 100 - gfxAsset.Height / 2;
-                    if (gfx.VerticalOrientation == VerticalOrientation.Bottom)
-                        gfx.Y = 200 - gfxAsset.Height;
-
-                    DrawPic(gfx.X, gfx.Y, gfxAsset);
-                //}
-           // }
+            DrawPic(x, y, gfxAsset);
         }
         else if (component is Stripe stripe)
         {
