@@ -107,22 +107,31 @@ internal partial class Program
         {
             PollControls();
 
-            //
-            // actor thinking
-            //
-            madenoise = false;
-            MoveDoors();
-            MovePWalls();
+            // With con_pause on, an open console freezes the world but keeps drawing it.
+            // CalcTics still advances lasttimecount each frame, so no time builds up to be
+            // spent all at once when the console closes.
+            bool worldPaused = _consoleManager.IsPausingGame;
 
-            // Every actor lives in _mapManager._actors. The player is at its head, so it still
-            // thinks before every enemy, projectile and the BJ-victory actor.
-            _mapManager.DoActors(tics);
+            if (!worldPaused)
+            {
+                //
+                // actor thinking
+                //
+                madenoise = false;
+                MoveDoors();
+                MovePWalls();
 
-            _videoManager.UpdatePaletteShifts(tics);
+                // Every actor lives in _mapManager._actors. The player is at its head, so it still
+                // thinks before every enemy, projectile and the BJ-victory actor.
+                _mapManager.DoActors(tics);
+
+                _videoManager.UpdatePaletteShifts(tics);
+            }
 
             ThreeDRefresh();
 
-            gamestate.TimeCount += (int)tics;
+            if (!worldPaused)
+                gamestate.TimeCount += (int)tics;
 
             UpdateSoundListener();      // JAB
             if (_videoManager.screenfaded)

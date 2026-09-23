@@ -1404,6 +1404,7 @@ internal partial class Program
                 US_Print(fps.ToString());
                 US_Print(" fps");
             }
+            DrawConsole();
             _videoManager.Update();
         }
 

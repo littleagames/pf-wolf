@@ -49,6 +49,12 @@ internal class ConsoleManager
 
     internal bool IsOpen { get; private set; }
 
+    /// <summary>Whether the world stops while the console is open (the `con_pause` setting, saved in the config).</summary>
+    internal bool PauseWhenOpen { get; set; } = true;
+
+    /// <summary>True while the console is open and set to pause the world.</summary>
+    internal bool IsPausingGame => IsOpen && PauseWhenOpen;
+
     /// <summary>The line being typed. Kept across open/close so a half-typed command survives.</summary>
     internal string InputLine { get; private set; } = "";
 

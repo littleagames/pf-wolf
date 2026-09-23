@@ -23,6 +23,24 @@ internal partial class Program
 
         _consoleManager.Register(new ConsoleCommand(
             "history", "Lists previously entered lines.", "history", Cmd_History));
+
+        _consoleManager.Register(new ConsoleCommand(
+            "con_pause", "Whether the game pauses while the console is open.", "con_pause [0|1]", Cmd_ConPause));
+    }
+
+    private static void Cmd_ConPause(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            _consoleManager.PauseWhenOpen = args[0] switch
+            {
+                "1" or "on" or "true" => true,
+                "0" or "off" or "false" => false,
+                _ => throw new ArgumentException($"expected 0 or 1, got \"{args[0]}\""),
+            };
+        }
+
+        _consoleManager.Print($"con_pause is {(_consoleManager.PauseWhenOpen ? 1 : 0)}");
     }
 
     private static void Cmd_Help(string[] args)

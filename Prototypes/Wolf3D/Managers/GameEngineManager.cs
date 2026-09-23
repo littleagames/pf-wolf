@@ -20,15 +20,18 @@ internal class GameEngineManager
     private readonly InputManager inputManager;
     private readonly AudioManager audioManager;
     private readonly Lazy<AssetManager> assetManager;
+    private readonly ConsoleManager consoleManager;
 
     public GameEngineManager(
         VideoManager videoManager,
         InputManager inputManager,
         AudioManager audioManager,
-        Lazy<AssetManager> assetManager)
+        Lazy<AssetManager> assetManager,
+        ConsoleManager consoleManager)
     {
         this.videoManager = videoManager;
         this.inputManager = inputManager;
+        this.consoleManager = consoleManager;
         InputManager.Quit += Quit;
         InputManager.Pause += SetPaused;
         this.audioManager = audioManager;
@@ -125,6 +128,11 @@ internal class GameEngineManager
 
                 Program.viewsize = br.ReadInt32();
                 Program.mouseadjustment = br.ReadInt32();
+
+                // Settings appended after the original layout. Older configs end before them,
+                // so read each only if present rather than failing (which deletes the config).
+                if (fs.Position < fs.Length)
+                    consoleManager.PauseWhenOpen = br.ReadByte() != 0;
 
                 // AdLibPresent and SoundBlasterPresent are always true, so this is effectively a no-op
                 //if ((sd == SDMode.AdLib || sm == SMMode.AdLib) && !Program.AdLibPresent
@@ -245,6 +253,7 @@ internal class GameEngineManager
 
             bw.Write(Program.viewsize);
             bw.Write(Program.mouseadjustment);
+            bw.Write(consoleManager.PauseWhenOpen);
         }
     }
     public void ReadConfigData(GameParams args)
