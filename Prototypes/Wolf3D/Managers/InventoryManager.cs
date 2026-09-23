@@ -35,6 +35,33 @@ internal class InventoryManager
     public int GetIntProperty(string item, string key, int fallback) =>
         Metadata.GetIntProperty(item, key, fallback);
 
+    /// <summary>The actordefs class names that descend from <paramref name="baseClass"/> (e.g. "Weapon").</summary>
+    public IEnumerable<string> GetClassesDerivedFrom(string baseClass) =>
+        Metadata.Actors.Keys.Where(name => name != baseClass && DerivesFrom(name, baseClass));
+
+    /// <summary>
+    /// Looks up an actordefs class by name, ignoring case, and returns its exact spelling if it
+    /// descends from one of <paramref name="baseClasses"/>; otherwise null.
+    /// </summary>
+    public string? FindClass(string name, params string[] baseClasses)
+    {
+        var match = Metadata.Actors.Keys.FirstOrDefault(k => string.Equals(k, name, StringComparison.OrdinalIgnoreCase));
+        return match != null && baseClasses.Any(b => DerivesFrom(match, b)) ? match : null;
+    }
+
+    private bool DerivesFrom(string name, string baseClass)
+    {
+        // Bounded depth for the same reason as ActorMetadata.TryGetProperty: a parent cycle.
+        var current = name;
+        for (var depth = 0; depth < 32 && !string.IsNullOrWhiteSpace(current); depth++)
+        {
+            if (current == baseClass)
+                return true;
+            current = Metadata.Actors.TryGetValue(current, out var data) ? data.Parent : null;
+        }
+        return false;
+    }
+
     public int GetCount(string item) => _items.GetValueOrDefault(GetItemType(item));
 
     public bool Has(string item) => GetCount(item) > 0;

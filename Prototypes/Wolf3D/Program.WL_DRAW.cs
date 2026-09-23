@@ -1404,6 +1404,14 @@ internal partial class Program
                 US_Print(fps.ToString());
                 US_Print(" fps");
             }
+
+            // Taken here, before the console is drawn, so it never shows in the shot.
+            if (screenshotPending)
+            {
+                screenshotPending = false;
+                _consoleManager.Print($"Saved {TakeScreenshot()}");
+            }
+
             DrawConsole();
             _videoManager.Update();
         }

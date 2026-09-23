@@ -12,13 +12,20 @@ internal enum ConsoleCommandFlags
     RequiresLevel = 2,
 }
 
+/// <summary>
+/// Suggests values for one argument while Tab-completing: gets the arguments typed before it and
+/// its index, and returns every valid value (the console filters them by what's been typed).
+/// </summary>
+internal delegate IEnumerable<string> ConsoleCompleter(string[] previousArgs, int argIndex);
+
 internal record ConsoleCommand(
     string Name,
     string Help,
     string Usage,
     Action<string[]> Run,
     ConsoleCommandFlags Flags = ConsoleCommandFlags.None,
-    string[]? Aliases = null);
+    string[]? Aliases = null,
+    ConsoleCompleter? Complete = null);
 
 /// <summary>
 /// The in-game command console: a registry of named commands, a scrollback buffer of output lines
@@ -31,10 +38,15 @@ internal class ConsoleManager
     internal const int MaxScrollback = 256;
     internal const int MaxHistory = 64;
     internal const int MaxInputLength = 120;
+    internal const int MaxExecDepth = 8;
+    internal const int MaxListedCompletions = 40;
 
     private readonly Dictionary<string, ConsoleCommand> _commands = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> _scrollback = [];
     private readonly List<string> _history = [];
+    private readonly Queue<Action> _deferred = new();
+    private readonly Dictionary<ScanCodes, string> _binds = [];
+    private int _execDepth;
 
     // History browsing: _historyIndex == _history.Count means "editing a new line", and the
     // line being edited is kept in _draft while Up/Down walk through older entries.
@@ -46,6 +58,9 @@ internal class ConsoleManager
 
     /// <summary>Whether a level is loaded. Wired to the player's existence at registration.</summary>
     internal Func<bool> LevelLoaded { get; set; } = () => false;
+
+    /// <summary>A key's display name, as `bind` accepts it. Wired to SDL's scancode names at registration.</summary>
+    internal Func<ScanCodes, string> KeyName { get; set; } = key => key.ToString();
 
     internal bool IsOpen { get; private set; }
 
@@ -66,6 +81,18 @@ internal class ConsoleManager
 
     internal IReadOnlyList<string> Scrollback => _scrollback;
     internal IReadOnlyList<string> History => _history;
+
+    /// <summary>Commands run when a key is pressed during play, keyed by the (InputManager.MapKey-mapped) key.</summary>
+    internal IReadOnlyDictionary<ScanCodes, string> Binds => _binds;
+
+    internal void Bind(ScanCodes key, string command) => _binds[key] = command;
+    internal bool Unbind(ScanCodes key) => _binds.Remove(key);
+    internal void UnbindAll() => _binds.Clear();
+
+    /// <summary>The current binds as `bind` commands, for saving to a file that `exec` can load back.</summary>
+    internal IEnumerable<string> GetBindCommands() =>
+        _binds.OrderBy(b => KeyName(b.Key), StringComparer.OrdinalIgnoreCase)
+            .Select(b => $"bind \"{KeyName(b.Key)}\" \"{b.Value}\"");
 
     /// <summary>Every registered command once, ordered by name (aliases are not repeated).</summary>
     internal IEnumerable<ConsoleCommand> Commands =>
@@ -107,6 +134,27 @@ internal class ConsoleManager
     }
 
     internal void Close() => IsOpen = false;
+
+    /// <summary>
+    /// Queues work to run from the play loop rather than inside the key handler that executed
+    /// the command, for commands that show a blocking screen or otherwise need the frame done.
+    /// </summary>
+    internal void Defer(Action action) => _deferred.Enqueue(action);
+
+    internal void RunDeferred()
+    {
+        while (_deferred.TryDequeue(out var action))
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception ex)
+            {
+                Print(ex.Message);
+            }
+        }
+    }
 
     /// <summary>
     /// Handles a key press while the console is open. Printable characters arrive separately
@@ -179,7 +227,135 @@ internal class ConsoleManager
             case ScanCodes.sc_PgDn:
                 ScrollOffset = Math.Max(ScrollOffset - 4, 0);
                 break;
+
+            case ScanCodes.sc_Tab:
+                CompleteAtCursor();
+                break;
         }
+    }
+
+    /// <summary>
+    /// Tab completion of the word before the cursor: a command name for the first word of a
+    /// command, otherwise whatever that command's completer offers. One match is filled in
+    /// (with a trailing space); several are extended to their longest shared prefix, or listed
+    /// when there's nothing more in common.
+    /// </summary>
+    internal void CompleteAtCursor()
+    {
+        // Scan the text before the cursor the way Tokenize does, but keep the unfinished word.
+        var args = new List<string>();
+        var current = new StringBuilder();
+        bool inQuotes = false, inToken = false;
+
+        foreach (char c in InputLine[..Cursor])
+        {
+            if (c == '"')
+            {
+                inQuotes = !inQuotes;
+                inToken = true;
+            }
+            else if (inQuotes)
+                current.Append(c);
+            else if (c == ';')
+            {
+                args.Clear();
+                current.Clear();
+                inToken = false;
+            }
+            else if (char.IsWhiteSpace(c))
+            {
+                if (inToken)
+                    args.Add(current.ToString());
+                current.Clear();
+                inToken = false;
+            }
+            else
+            {
+                current.Append(c);
+                inToken = true;
+            }
+        }
+
+        // Right after a closing quote the word is finished; there's nothing to complete.
+        if (!inQuotes && Cursor > 0 && InputLine[Cursor - 1] == '"')
+            return;
+
+        string partial = current.ToString();
+        var matches = GetCompletions(args)
+            .Where(c => c.StartsWith(partial, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (matches.Count == 0)
+            return;
+
+        if (matches.Count == 1)
+        {
+            ReplaceWordBeforeCursor(partial.Length, FormatCompletion(matches[0], inQuotes, finished: true));
+            return;
+        }
+
+        string prefix = matches[0][..CommonPrefixLength(matches)];
+        if (prefix.Length > partial.Length)
+        {
+            ReplaceWordBeforeCursor(partial.Length, FormatCompletion(prefix, inQuotes, finished: false));
+            return;
+        }
+
+        var listed = string.Join("  ", matches.Take(MaxListedCompletions));
+        Print(matches.Count > MaxListedCompletions ? $"{listed}  ... and {matches.Count - MaxListedCompletions} more" : listed);
+    }
+
+    private IEnumerable<string> GetCompletions(List<string> args)
+    {
+        if (args.Count == 0)
+            return _commands.Keys;
+
+        if (!_commands.TryGetValue(args[0], out var command) || command.Complete == null)
+            return [];
+
+        try
+        {
+            return command.Complete([.. args.Skip(1)], args.Count - 1).ToList();
+        }
+        catch (Exception)
+        {
+            return [];      // e.g. a completer that needs a level when none is loaded
+        }
+    }
+
+    // Values with spaces or ';' only survive Tokenize inside quotes, so add them as needed.
+    private static string FormatCompletion(string text, bool inQuotes, bool finished)
+    {
+        if (inQuotes)
+            return finished ? text + "\" " : text;
+        if (text.Contains(' ') || text.Contains(';'))
+            return "\"" + text + (finished ? "\" " : "");
+        return finished ? text + " " : text;
+    }
+
+    private static int CommonPrefixLength(List<string> values)
+    {
+        int length = values.Min(v => v.Length);
+        for (int i = 0; i < length; i++)
+        {
+            char c = char.ToLowerInvariant(values[0][i]);
+            if (values.Any(v => char.ToLowerInvariant(v[i]) != c))
+                return i;
+        }
+        return length;
+    }
+
+    private void ReplaceWordBeforeCursor(int wordLength, string replacement)
+    {
+        int start = Cursor - wordLength;
+        var line = InputLine[..start] + replacement + InputLine[Cursor..];
+        if (line.Length > MaxInputLength)
+            return;
+
+        InputLine = line;
+        Cursor = start + replacement.Length;
     }
 
     /// <summary>
@@ -232,6 +408,41 @@ internal class ConsoleManager
             if (args.Length > 0)
                 ExecuteCommand(args[0], args[1..]);
         }
+    }
+
+    /// <summary>
+    /// Executes each line of a script file (autoexec.cfg, binds.cfg, `exec`). Blank lines and
+    /// lines starting with // or # are skipped. Returns false if the file doesn't exist.
+    /// </summary>
+    internal bool ExecFile(string path)
+    {
+        if (!File.Exists(path))
+            return false;
+
+        // A script that execs itself (directly or through others) would otherwise recurse forever.
+        if (_execDepth >= MaxExecDepth)
+        {
+            Print($"exec: \"{path}\" is nested too deeply; skipped");
+            return true;
+        }
+
+        _execDepth++;
+        try
+        {
+            foreach (var rawLine in File.ReadAllLines(path))
+            {
+                var line = rawLine.Trim();
+                if (line.Length == 0 || line.StartsWith("//") || line.StartsWith('#'))
+                    continue;
+                Execute(line);
+            }
+        }
+        finally
+        {
+            _execDepth--;
+        }
+
+        return true;
     }
 
     private void ExecuteCommand(string name, string[] args)

@@ -224,6 +224,11 @@ internal class InputManager
     private bool[] buttonheld = new bool[(int)buttontypes.NUMBUTTONS];
 
     private bool[] Keyboard = new bool[(int)ScanCodes.sc_Last];
+
+    // Fresh (non-repeat) key presses in order, for console binds: Keyboard[] only says what's
+    // held and LastScan only keeps the latest. Drained by the play loop; cleared with the keys.
+    private const int MaxPressedKeys = 32;
+    private readonly Queue<ScanCodes> pressedKeys = new();
     internal char[] textinput = new char[TEXTINPUTSIZE];
     internal ScanCodes LastScan;
 
@@ -372,7 +377,11 @@ internal class InputManager
         LastScan = ScanCodes.sc_None;
 
         Array.Fill(Keyboard, false);
+        pressedKeys.Clear();
     }
+
+    /// <summary>Takes the oldest key pressed since the last call (or since keys were cleared).</summary>
+    internal bool TryTakePressedKey(out ScanCodes key) => pressedKeys.TryDequeue(out key);
 
     internal char[] GetTextInput()
     {
@@ -546,6 +555,9 @@ internal class InputManager
 
                 if (LastScan < ScanCodes.sc_Last)
                     Keyboard[(int)LastScan] = true;
+
+                if (e.key.repeat == 0 && pressedKeys.Count < MaxPressedKeys)
+                    pressedKeys.Enqueue(LastScan);
 
                 if (LastScan == ScanCodes.sc_Pause)
                     Pause?.Invoke(this, true);

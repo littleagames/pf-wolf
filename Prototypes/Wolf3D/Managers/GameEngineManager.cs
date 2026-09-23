@@ -69,17 +69,19 @@ internal class GameEngineManager
         return gameInfo;
     }
 
+    internal const string BindsFileName = "binds.cfg";
+    internal const string AutoexecFileName = "autoexec.cfg";
+
+    /// <summary>Where a file of the given name lives in the config directory (config.cfg, binds.cfg, autoexec.cfg).</summary>
+    internal string GetConfigFilePath(string fileName) =>
+        !string.IsNullOrEmpty(configdir) ? $"{configdir}/{fileName}" : fileName;
+
     internal void ReadConfig()
     {
         //SDMode sd;
         //SMMode sm;
         //SDSMode sds;
-        string configpath;
-
-        if (!string.IsNullOrEmpty(configdir))
-            configpath = $"{configdir}/{configname}";
-        else
-            configpath = configname;
+        string configpath = GetConfigFilePath(configname);
 
         if (!File.Exists(configpath))
         {
@@ -214,12 +216,12 @@ internal class GameEngineManager
 
     internal void WriteConfig()
     {
-        string configpath = string.Empty;
+        string configpath = GetConfigFilePath(configname);
 
-        if (configdir != string.Empty)
-            configpath = $"{configdir}/{configname}";
-        else
-            configpath = configname;
+        // Binds are console commands, so they're saved as a script the console runs at startup.
+        // Written even when empty so that unbinding everything sticks.
+        File.WriteAllLines(GetConfigFilePath(BindsFileName),
+            ["// Written by the game on exit; use autoexec.cfg for your own commands.", .. consoleManager.GetBindCommands()]);
 
         using (FileStream fs = File.OpenWrite(configpath))
         using (BinaryWriter bw = new BinaryWriter(fs))

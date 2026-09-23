@@ -139,6 +139,8 @@ internal partial class Program
 
             CheckKeys();
 
+            _consoleManager.RunDeferred();      // console commands that need to run between frames
+
             //
             // debug aids
             //
@@ -183,7 +185,10 @@ internal partial class Program
         ScanCodes scan;
 
         if (_videoManager.screenfaded || demoplayback)    // don't do anything with a faded screen
+        {
+            while (_inputManager.TryTakePressedKey(out _)) { }     // nor fire binds for these keys later
             return;
+        }
 
         //
         // command console: it only opens from here, so it's never up during a blocking menu or
@@ -198,6 +203,16 @@ internal partial class Program
             _inputManager.ClearTextInput();
             _consoleManager.Open();
             return;
+        }
+
+        //
+        // console binds: run the command bound to each key pressed since the last frame
+        // (never while recording, or the demo wouldn't match what was played)
+        //
+        while (_inputManager.TryTakePressedKey(out var pressed))
+        {
+            if (!demorecord && _consoleManager.Binds.TryGetValue(pressed, out var boundCommand))
+                _consoleManager.Execute(boundCommand);
         }
 
         scan = _inputManager.GetLastKeyPressed();
@@ -245,7 +260,7 @@ internal partial class Program
             ClearMemory();
             ClearSplitVWB();
 
-            Message("Debugging keys are\nnow available!");
+            Message("Cheat commands are\nnow available!\nPress ` for the console.");
             _inputManager.ClearKeysDown();
             _inputManager.Ack();
 
@@ -323,23 +338,6 @@ internal partial class Program
                 playstate = playstatetypes.ex_abort;
             lasttimecount = (int)GameEngineManager.GetTimeCount();
             _inputManager.CenterMouse();
-            return;
-        }
-
-        //
-        // TAB-? debug keys
-        //
-        if (_inputManager.IsKeyDown(ScanCodes.sc_Tab) && DebugOk != 0)
-        {
-            fontnumber = "SmallFont";
-            SETFONTCOLOR("Black", "White");
-            if (DebugKeys() != 0 && viewsize < 20)
-            {
-                DrawPlayBorder();       // dont let the blue borders flash
-                _inputManager.CenterMouse();
-
-                lasttimecount = (int)GameEngineManager.GetTimeCount();
-            }
             return;
         }
     }
