@@ -26,8 +26,6 @@ internal partial class Program
 
     =============================================================================
     */
-    private const int BACKCOLOR = 0x11;
-
 
     private const int WORDLIMIT = 80;
     private const int FONTHEIGHT = 10;
@@ -489,21 +487,23 @@ internal partial class Program
                 textIndex--;             // back up to the '^'
                 break;
 
-            case 'C':               // ^c<hex digit> changes text color
-                i = Char.ToUpper(text[++textIndex]);
-                
-                //if (i >= '0' && i <= '9')
-                //    fontcolor = (byte)(i - '0');
-                //else if (i >= 'A' && i <= 'F')
-                //    fontcolor = (byte)(i - 'A' + 10);
+            case 'C':               // ^c<hex digit><hex digit> changes text color
+                int colorValue = 0;
 
-                //fontcolor *= 16;
-                //i = Char.ToUpper(text[++textIndex]);
-                //if (i >= '0' && i <= '9')
-                //    fontcolor += (byte)(i - '0');
-                //else if (i >= 'A' && i <= 'F')
-                //    fontcolor += (byte)(i - 'A' + 10);
-                fontcolor = "Black"; // TODO: Map readme colors to actual colors
+                i = Char.ToUpper(text[++textIndex]);
+                if (i >= '0' && i <= '9')
+                    colorValue = i - '0';
+                else if (i >= 'A' && i <= 'F')
+                    colorValue = i - 'A' + 10;
+
+                colorValue *= 16;
+                i = Char.ToUpper(text[++textIndex]);
+                if (i >= '0' && i <= '9')
+                    colorValue += i - '0';
+                else if (i >= 'A' && i <= 'F')
+                    colorValue += i - 'A' + 10;
+
+                fontcolor = colorValue.ToString();
                 textIndex++;
                 break;
 

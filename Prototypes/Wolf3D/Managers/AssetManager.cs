@@ -181,7 +181,8 @@ internal class AssetManager
                     { "SECONDCOLOR", 0x37 },
                     { "Lime", 0x0a },
                     { "Bright Yellow", 0x0e },
-                    { "Dark Yellow", 0x4f }
+                    { "Dark Yellow", 0x4f },
+                    { "BACKCOLOR", 0x11 }
                 },
                 Colors = new Dictionary<string, Color>
                 {
@@ -212,6 +213,7 @@ internal class AssetManager
                     { "Lime", Color.FromByteRGB("85 255 85") },
                     { "Bright Yellow", Color.FromByteRGB("255 255 85") },
                     { "Dark Yellow", Color.FromByteRGB("64 64 0") },
+                    { "BACKCOLOR", Color.FromByteRGB("85 255 255") },
                 }
             };
         if (normalizedTheme.Equals("spear-theme"))

@@ -41,6 +41,20 @@ internal class VideoManager
     private SDL.SDL_Color[] gamepal { get; set; }
     private ColorMetadata? Theme { get; set; }
 
+    /// <summary>
+    /// Resolves a color to a palette byte index. Named colors (e.g. "White") are looked
+    /// up in the theme; anything else is parsed as a raw numeric palette index, which is
+    /// how in-game layout text (^C&lt;hex&gt;&lt;hex&gt;) selects a color directly.
+    /// </summary>
+    private byte ResolveColorByte(string color)
+    {
+        if (this.Theme != null && this.Theme.Colors256.TryGetValue(color, out byte col))
+            return col;
+
+        byte.TryParse(color, out col);
+        return col;
+    }
+
     static readonly UInt32[] rndmasks = {
                     // n    XNOR from (starting at 1, not 0 as usual)
     0x00012000,     // 17   17,14
@@ -177,7 +191,7 @@ internal class VideoManager
 
     public void HorizontalLine(Vector2 position, int width, string color)
     {
-        this.Theme.Colors256.TryGetValue(color, out byte col);
+        byte col = ResolveColorByte(color);
         Debug.Assert(position.X >= 0 && position.X + width <= screenWidth
             && position.Y >= 0 && position.Y < screenHeight,
             "VL_Hlin: Destination rectangle out of bounds!");
@@ -234,7 +248,7 @@ internal class VideoManager
             && scy >= 0 && scy + scheight <= screenHeight,
             "VL_BarScaledCoord: Destination rectangle out of bounds!");
 
-        this.Theme.Colors256.TryGetValue(color, out byte col);
+        byte col = ResolveColorByte(color);
         IntPtr destPtr = LockSurface(screenBuffer);
         if (destPtr == IntPtr.Zero) return;
 
@@ -365,7 +379,7 @@ internal class VideoManager
 
         height = font.Height;
 
-        this.Theme.Colors256.TryGetValue(fontcolor, out byte col);
+        byte col = ResolveColorByte(fontcolor);
 
         unsafe
         {
