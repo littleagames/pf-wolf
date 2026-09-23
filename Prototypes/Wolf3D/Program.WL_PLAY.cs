@@ -101,6 +101,8 @@ internal partial class Program
         if (demoplayback)
             _inputManager.StartAck();
 
+        UpdateSoundListener();
+
         do
         {
             PollControls();
@@ -122,7 +124,7 @@ internal partial class Program
 
             gamestate.TimeCount += (int)tics;
 
-            //_audioManager.UpdateSoundLoc(viewx, viewy, viewsin, viewcos);      // JAB
+            UpdateSoundListener();      // JAB
             if (_videoManager.screenfaded)
                 _videoManager.FadeIn();
 

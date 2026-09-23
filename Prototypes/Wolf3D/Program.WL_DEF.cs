@@ -506,12 +506,15 @@ internal partial class Program
     internal static void ClearMemory() => _audioManager.StopAll();
 
     // JAB
-    internal static void PlaySoundLocTile(string s, int tx, int ty) => _audioManager.Play(s);// SoundLocGlobal(
-    //    s, 
-    //    (int)((tx << MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2)), 
-    //    (int)((ty << MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2)),
-    //    viewx,viewy,viewsin,viewcos);
-    internal static void PlaySoundLocActor(string s, Entities.Actors.Actor ob) => _audioManager.Play(s);
+    // Positional sounds are placed in tile units; the listener follows the player (see UpdateSoundListener).
+    internal static void PlaySoundLocTile(string s, int tx, int ty) => _audioManager.PlayAt(s, tx + 0.5f, ty + 0.5f);
+    internal static void PlaySoundLocActor(string s, Entities.Actors.Actor ob) =>
+        _audioManager.PlayAt(s, FixedToTiles(ob.X), FixedToTiles(ob.Y));
+
+    internal static void UpdateSoundListener() =>
+        _audioManager.SetListener(FixedToTiles(player.X), FixedToTiles(player.Y), player.Angle);
+
+    private static float FixedToTiles(int value) => value / (float)MapConstants.TILEGLOBAL;
 
 
     /*

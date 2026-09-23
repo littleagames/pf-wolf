@@ -65,7 +65,33 @@ internal class AudioManager
 
     }
 
-    public void Play(string name)
+    /// <summary>
+    /// Plays a sound at the listener, with no distance attenuation or panning.
+    /// </summary>
+    public void Play(string name) => Play(name, null);
+
+    /// <summary>
+    /// Plays a sound at a world position (in tiles), attenuated and panned relative to the
+    /// listener set by <see cref="SetListener"/>.
+    /// </summary>
+    public void PlayAt(string name, float x, float y) => Play(name, (x, y));
+
+    /// <summary>
+    /// Moves the OpenAL listener to the player's world position (in tiles) and facing.
+    /// Game space is x east / y south with angle 0 east and 90 north; this maps game x to
+    /// AL +X and game y to AL +Z, so facing north looks down AL -Z with east on the right.
+    /// </summary>
+    public void SetListener(float x, float y, float angleDegrees)
+    {
+        if (_isDisposed)
+            return;
+        var radians = angleDegrees * MathF.PI / 180.0f;
+        AL.Listener(ALListener3f.Position, x, 0.0f, y);
+        float[] orientation = [MathF.Cos(radians), 0.0f, -MathF.Sin(radians), 0.0f, 1.0f, 0.0f];
+        AL.Listener(ALListenerfv.Orientation, orientation);
+    }
+
+    private void Play(string name, (float X, float Y)? position)
     {
         var assetManager = _assetManager.Value;
         var soundSeq = assetManager.Find<SoundSequenceAsset>("sound-seq");
@@ -112,9 +138,7 @@ internal class AudioManager
                     _buffers[name.ToLowerInvariant()] = buffer;
                 }
 
-                AL.SourceStop(source);
-                AL.Source(source, ALSourcei.Buffer, buffer);
-                AL.SourcePlay(source);
+                StartSource(source, buffer, position);
                 return;
             }
         }
@@ -130,9 +154,7 @@ internal class AudioManager
                     _buffers[name.ToLowerInvariant()] = buffer;
                 }
 
-                AL.SourceStop(source);
-                AL.Source(source, ALSourcei.Buffer, buffer);
-                AL.SourcePlay(source);
+                StartSource(source, buffer, position);
                 return;
             }
         }
@@ -149,14 +171,31 @@ internal class AudioManager
                     _buffers[name.ToLowerInvariant()] = buffer;
                 }
 
-                AL.SourceStop(source);
-                AL.Source(source, ALSourcei.Buffer, buffer);
-                AL.SourcePlay(source);
+                StartSource(source, buffer, position);
                 return;
             }
         }
 
         // Sound not found
+    }
+
+    // Sources are recycled round-robin, so each play must reset positioning: positional sounds
+    // live in world space, everything else sits on the listener (relative, at the origin).
+    private static void StartSource(int source, int buffer, (float X, float Y)? position)
+    {
+        AL.SourceStop(source);
+        AL.Source(source, ALSourcei.Buffer, buffer);
+        if (position is { } pos)
+        {
+            AL.Source(source, ALSourceb.SourceRelative, false);
+            AL.Source(source, ALSource3f.Position, pos.X, 0.0f, pos.Y);
+        }
+        else
+        {
+            AL.Source(source, ALSourceb.SourceRelative, true);
+            AL.Source(source, ALSource3f.Position, 0.0f, 0.0f, 0.0f);
+        }
+        AL.SourcePlay(source);
     }
 
     public void Stop(string name)
