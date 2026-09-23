@@ -70,6 +70,7 @@ public enum ScanCodes
     sc_0 = SDL.SDL_Scancode.SDL_SCANCODE_0,
     sc_Equal = SDL.SDL_Scancode.SDL_SCANCODE_EQUALS,
     sc_Minus = SDL.SDL_Scancode.SDL_SCANCODE_MINUS,
+    sc_Grave = SDL.SDL_Scancode.SDL_SCANCODE_GRAVE,
     sc_A = SDL.SDL_Scancode.SDL_SCANCODE_A,
     sc_B = SDL.SDL_Scancode.SDL_SCANCODE_B,
     sc_C = SDL.SDL_Scancode.SDL_SCANCODE_C,
@@ -182,8 +183,11 @@ internal class InputManager
         return ScanNames[(int)scan];
     }
 
-    public InputManager()
+    private readonly Lazy<ConsoleManager> _consoleManager;
+
+    public InputManager(Lazy<ConsoleManager> consoleManager)
     {
+        _consoleManager = consoleManager;
     }
 
     private int param_joystickindex = 0;
@@ -525,6 +529,19 @@ internal class InputManager
                     return;
                 }
 
+                // While the console is open it takes every key, so the game never sees them
+                // (no walking, firing or menus while typing). The console is opened from the
+                // play loop (CheckKeys), but closes here on ` or Escape.
+                if (_consoleManager.Value.IsOpen)
+                {
+                    // Holding ` would otherwise auto-repeat and close the console right after opening it.
+                    if (e.key.repeat != 0 && key == ScanCodes.sc_Grave)
+                        return;
+
+                    _consoleManager.Value.HandleKey(MapKey(key));
+                    return;
+                }
+
                 LastScan = MapKey(key);
 
                 if (LastScan < ScanCodes.sc_Last)
@@ -542,19 +559,32 @@ internal class InputManager
                 break;
 
             case SDL.SDL_EventType.SDL_TEXTINPUT:
-                // Clear managed text buffer
-                Array.Fill(textinput, (char)0);
-
-                // e.text.text is a fixed-size buffer (byte* / fixed byte[]). Access it in unsafe context and copy bytes.
-                for (int i = 0; i < TEXTINPUTSIZE; i++)
+                string text;
+                unsafe
                 {
-                    unsafe
-                    {
-                        byte b = e.text.text[i]; // allowed inside unsafe
-                        if (b == 0)
-                            break;
-                        textinput[i] = (char)b;
-                    }
+                    // e.text.text is a fixed-size, null-terminated UTF-8 buffer.
+                    int length = 0;
+                    while (length < TEXTINPUTSIZE && e.text.text[length] != 0)
+                        length++;
+                    text = System.Text.Encoding.UTF8.GetString(e.text.text, length);
+                }
+
+                if (_consoleManager.Value.IsOpen)
+                {
+                    _consoleManager.Value.HandleText(text);
+                    break;
+                }
+
+                // Append rather than overwrite: several text events can arrive in one poll when
+                // typing quickly, and readers clear the buffer once they've consumed it.
+                int end = Array.IndexOf(textinput, (char)0);
+                if (end < 0)
+                    break;
+                foreach (char c in text)
+                {
+                    if (end >= textinput.Length - 1)
+                        break;
+                    textinput[end++] = c;
                 }
                 break;
         }

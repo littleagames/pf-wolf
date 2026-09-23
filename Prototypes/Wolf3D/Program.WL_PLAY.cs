@@ -152,6 +152,10 @@ internal partial class Program
         }
         while (playstate == 0 && !startgame);
 
+        // Intermission, death and menu screens don't draw the console, so don't leave it
+        // capturing keys behind them (e.g. after a "map" command ends the level).
+        _consoleManager.Close();
+
         if (playstate != playstatetypes.ex_died)
             _videoManager.FinishPaletteShifts();
     }
@@ -171,6 +175,21 @@ internal partial class Program
 
         if (_videoManager.screenfaded || demoplayback)    // don't do anything with a faded screen
             return;
+
+        //
+        // command console: it only opens from here, so it's never up during a blocking menu or
+        // screen with nothing drawing it. Once open, InputManager routes all keys to it.
+        //
+        if (_consoleManager.IsOpen)
+            return;
+
+        if (_inputManager.IsKeyDown(ScanCodes.sc_Grave) && !demorecord)
+        {
+            _inputManager.ClearKeysDown();
+            _inputManager.ClearTextInput();
+            _consoleManager.Open();
+            return;
+        }
 
         scan = _inputManager.GetLastKeyPressed();
 
@@ -371,6 +390,10 @@ internal partial class Program
             return;
         }
 
+        // Keyboard input already bypasses the game while the console is open; the mouse and
+        // joystick are polled directly, so skip them too or the player keeps moving and firing.
+        if (_consoleManager.IsOpen)
+            return;
 
         //
         // get button states
