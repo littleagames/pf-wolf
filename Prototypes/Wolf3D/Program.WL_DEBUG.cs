@@ -1,6 +1,3 @@
-using Wolf3D.Constants;
-using Wolf3D.Managers;
-
 namespace Wolf3D;
 
 // The old Tab+key debug keys are now console commands (Program.ConsoleCommands.cs); what's
