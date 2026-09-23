@@ -33,6 +33,10 @@ internal class AudioManager
     private readonly int _musicSource;
     private readonly Lazy<AssetManager> _assetManager;
     private string _requestedMusicTrack = "";
+
+    /// <summary>The track last started with <see cref="PlayMusic"/> (playing or paused), or "" if none.</summary>
+    public string CurrentMusicTrack => _requestedMusicTrack;
+
     private Thread? _musicStreamThread;
     private CancellationTokenSource? _musicStreamCts;
     private bool _isPaused;

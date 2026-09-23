@@ -1,4 +1,4 @@
-using SDL2;
+﻿using SDL2;
 using System.Text;
 
 namespace Wolf3D;
@@ -73,6 +73,10 @@ internal partial class Program
         Register("actors", "Lists actors, optionally only those whose name contains the filter.", "actors [filter]", Cmd_Actors, InLevel,
             complete: (_, i) => i == 0 ? _mapManager.GetActors().Select(a => a.Name) : []);
         Register("maps", "Lists the levels that map can warp to.", "maps", Cmd_Maps);
+        Register("save", "Saves the game to a load/save menu slot.", "save <slot 0-9> [name]", Cmd_Save, InLevel,
+            complete: CompleteSaveSlot);
+        Register("load", "Loads the game saved in a load/save menu slot.", "load <slot 0-9>", Cmd_Load, InLevel,
+            complete: CompleteSaveSlot);
         Register("fps", "Toggles the frame rate counter.", "fps [0|1]", Cmd_Fps, complete: Values("0", "1"));
         Register("slowmo", "Waits extra VBLs every frame (0 = off).", "slowmo [0-50]", Cmd_SlowMo);
         Register("vbls", "Adds extra VBLs per frame (0 = off).", "vbls [0-8]", Cmd_Vbls);
@@ -549,6 +553,49 @@ internal partial class Program
 
         if (_mapManager.Player != null)
             _consoleManager.Print($"Current map is {gamestate.mapon}");
+    }
+
+    static IEnumerable<string> CompleteSaveSlot(string[] args, int index) =>
+        index == 0 ? Enumerable.Range(0, SaveGamesAvail.Length).Select(i => i.ToString()) : [];
+
+    private static void Cmd_Save(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: save <slot 0-9> [name]");
+
+        var slot = ParseInt(args[0], 0, SaveGamesAvail.Length - 1);
+        var name = args.Length > 1 ? string.Join(' ', args.Skip(1))
+            : SaveGamesAvail[slot] != 0 ? SaveGameNames[slot]
+            : gamestate.mapon;
+        if (name.Length > MaxGameName - 1)
+            name = name[..(MaxGameName - 1)];
+
+        if (!SaveTheGame(GetSaveGamePath(slot), name, 0, 0))
+            throw new ArgumentException($"couldn't write {GetSaveGamePath(slot)}");
+
+        SaveGamesAvail[slot] = 1;
+        SaveGameNames[slot] = name;
+        _consoleManager.Print($"Saved \"{name}\" to slot {slot}");
+    }
+
+    private static void Cmd_Load(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: load <slot 0-9>");
+
+        var slot = ParseInt(args[0], 0, SaveGamesAvail.Length - 1);
+        if (SaveGamesAvail[slot] == 0)
+            throw new ArgumentException($"slot {slot} is empty");
+
+        // Between frames, not mid-command: the load replaces every actor, the player included.
+        _consoleManager.Defer(() =>
+        {
+            loadedgame = true;
+            if (LoadTheGame(GetSaveGamePath(slot), 0, 0))
+                playstate = playstatetypes.ex_abort;    // GameLoop redraws and restarts music for the loaded level
+            else
+                loadedgame = false;
+        });
     }
 
     private static void Cmd_Fps(string[] args)

@@ -318,11 +318,7 @@ internal class MapManager
     /// </summary>
     internal Entities.Actors.Actor? SpawnAtActor(string className, Entities.Actors.Actor source)
     {
-        _runtimeActorMetadata ??= assetManager.Value.GetActorMetadata();
-        if (!_runtimeActorMetadata.Actors.TryGetValue(className, out var actor))
-            return null;
-
-        var builtActor = _runtimeActorMetadata.CreateActor(className, actor);
+        var builtActor = CreateRuntimeActor(className);
         if (builtActor == null)
             return null;
 
@@ -336,6 +332,14 @@ internal class MapManager
         _actors.AddLast(builtActor);
         return builtActor;
     }
+
+    private ActorMetadata RuntimeActorMetadata => _runtimeActorMetadata ??= assetManager.Value.GetActorMetadata();
+
+    /// <summary>Builds an actordefs class in its Spawn state, without placing it or adding it to _actors.</summary>
+    private Entities.Actors.Actor? CreateRuntimeActor(string className) =>
+        RuntimeActorMetadata.Actors.TryGetValue(className, out var actor)
+            ? RuntimeActorMetadata.CreateActor(className, actor)
+            : null;
 
     private static readonly string[] DifficultyHealthKeys = ["health.baby", "health.easy", "health.normal", "health.hard"];
 
@@ -486,4 +490,165 @@ internal class MapManager
 
         Entities.Actors.ActorActionRegistry.Invoke(state.Think, ob);
     }
+
+    /*
+    =============================================================================
+
+                                    SAVE GAMES
+
+    A save stores the level as it stands, not as a diff from the map file: the map planes
+    (pushwalls, ambush tiles and doors rewrite them), the wall/door tilemap, what blocks each
+    tile, and every actor. Loading reloads the map first (for the parts a save doesn't hold,
+    such as door lock translations) and then lays this over it.
+
+    =============================================================================
+    */
+
+    private enum SavedTile : byte { Empty, Wall, Door, Blocking }
+
+    /// <summary>The actors a save writes, in the order it writes them -- removed ones are dropped.</summary>
+    internal List<Entities.Actors.Actor> GetSavedActors() => _actors.Where(a => !a.IsRemoved).ToList();
+
+    internal void WriteLevelState(BinaryWriter bw)
+    {
+        bw.Write(mapsegs.Length);
+        foreach (var plane in mapsegs)
+        {
+            bw.Write(plane.Length);
+            foreach (var spot in plane)
+                bw.Write(spot);
+        }
+
+        for (int x = 0; x < MAPSIZE; x++)
+        {
+            for (int y = 0; y < MAPSIZE; y++)
+            {
+                bw.Write(tilemap[x, y]);
+                switch (actorat[x, y])
+                {
+                    case Wall wall:
+                        bw.Write((byte)SavedTile.Wall);
+                        bw.Write(wall.wall);
+                        break;
+                    case Door door:
+                        bw.Write((byte)SavedTile.Door);
+                        bw.Write(door.door);
+                        break;
+                    case BlockingActor:
+                        bw.Write((byte)SavedTile.Blocking);
+                        break;
+                    default:
+                        bw.Write((byte)SavedTile.Empty);
+                        break;
+                }
+            }
+        }
+
+        var actors = GetSavedActors();
+        bw.Write(actors.Count);
+        foreach (var actor in actors)
+            Entities.Actors.ActorSnapshot.Capture(actor).Write(bw);
+    }
+
+    /// <summary>Parses what <see cref="WriteLevelState"/> wrote, without touching the loaded level.</summary>
+    internal static LevelSnapshot ReadLevelState(BinaryReader br)
+    {
+        var planes = new ushort[br.ReadCount()][];
+        for (int i = 0; i < planes.Length; i++)
+        {
+            planes[i] = new ushort[br.ReadCount()];
+            for (int j = 0; j < planes[i].Length; j++)
+                planes[i][j] = br.ReadUInt16();
+        }
+
+        var tiles = new byte[MAPSIZE, MAPSIZE];
+        var blocking = new Actor?[MAPSIZE, MAPSIZE];
+        for (int x = 0; x < MAPSIZE; x++)
+        {
+            for (int y = 0; y < MAPSIZE; y++)
+            {
+                tiles[x, y] = br.ReadByte();
+                blocking[x, y] = (SavedTile)br.ReadByte() switch
+                {
+                    SavedTile.Empty => null,
+                    SavedTile.Wall => new Wall(br.ReadInt32()),
+                    SavedTile.Door => new Door(br.ReadInt32()),
+                    SavedTile.Blocking => new BlockingActor(),
+                    var unknown => throw new InvalidDataException($"Unknown tile marker {unknown}."),
+                };
+            }
+        }
+
+        var actors = new List<Entities.Actors.ActorSnapshot>();
+        for (int i = br.ReadCount(); i > 0; i--)
+            actors.Add(Entities.Actors.ActorSnapshot.Read(br));
+
+        return new LevelSnapshot(planes, tiles, blocking, actors);
+    }
+
+    /// <summary>
+    /// Why <paramref name="level"/> can't be restored onto <paramref name="mapName"/> with the
+    /// current actordefs, or null if it can. Checked before anything is changed, so a save
+    /// from an incompatible mod or map edit fails cleanly instead of leaving a half-loaded level.
+    /// </summary>
+    internal string? CheckLevelState(LevelSnapshot level, string mapName)
+    {
+        var mapAsset = assetManager.Value.Find<MapAsset>(mapName);
+        if (mapAsset == null)
+            return $"Map \"{mapName}\" was not found.";
+
+        if (level.Planes.Length != mapAsset.MapData.Length
+            || level.Planes.Where((plane, i) => plane.Length != mapAsset.MapData[i].Length).Any())
+            return $"Map \"{mapName}\" has changed since the game was saved.";
+
+        if (level.Actors.Count(a => a.IsPlayer) != 1)
+            return "The save has no player.";
+
+        var missing = level.Actors.FirstOrDefault(a => !a.IsPlayer && !RuntimeActorMetadata.Actors.ContainsKey(a.ClassName));
+        if (missing != null)
+            return $"Actor \"{missing.ClassName}\" no longer exists.";
+
+        return null;
+    }
+
+    /// <summary>
+    /// Replaces the loaded level's state with a saved one (after <see cref="CheckLevelState"/>
+    /// passed). Returns the restored actors in saved order, so references to them (such as
+    /// the player's last attacker) can be looked up by index.
+    /// </summary>
+    internal List<Entities.Actors.Actor> RestoreLevelState(LevelSnapshot level)
+    {
+        mapsegs = level.Planes.Select(plane => (ushort[])plane.Clone()).ToArray();
+        tilemap = (byte[,])level.TileMap.Clone();
+        actorat = (Actor?[,])level.ActorAt.Clone();
+
+        _actors.Clear();
+        Player = null;
+
+        var restored = new List<Entities.Actors.Actor>(level.Actors.Count);
+        foreach (var saved in level.Actors)
+        {
+            Entities.Actors.Actor actor;
+            if (saved.IsPlayer)
+                actor = Player = new Entities.Actors.PlayerPawn();
+            else
+                actor = CreateRuntimeActor(saved.ClassName)!;
+
+            saved.ApplyTo(actor);
+            _actors.AddLast(actor);
+            restored.Add(actor);
+        }
+
+        // The player has to think first, as it does after a normal level load.
+        _actors.Remove(Player!);
+        _actors.AddFirst(Player!);
+
+        return restored;
+    }
 }
+
+internal sealed record LevelSnapshot(
+    ushort[][] Planes,
+    byte[,] TileMap,
+    Actor?[,] ActorAt,
+    List<Entities.Actors.ActorSnapshot> Actors);

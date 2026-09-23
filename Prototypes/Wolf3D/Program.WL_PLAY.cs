@@ -68,13 +68,17 @@ internal partial class Program
         _audioManager.PlayMusic(lastmusicchunk);
     }
 
+    // Music offsets aren't tracked, so this resumes the level's song if it's the one paused, and
+    // otherwise (after the menu or a loaded game replaced it) starts it over.
     internal static void ContinueMusic(int offs)
     {
-        //_audioManager.SetPaused(true);
         var gameInfo = _gameEngineManager.GetGameInfo();
         var song = gameInfo.Maps[gamestate.mapon].Music;
         lastmusicchunk = song;
-        //_audioManager.SetPaused(false);// lastmusicchunk, offs);
+        if (string.Equals(_audioManager.CurrentMusicTrack, song, StringComparison.OrdinalIgnoreCase))
+            _audioManager.SetPaused(false);
+        else
+            _audioManager.PlayMusic(song);
     }
 
     internal static int StopMusic()

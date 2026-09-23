@@ -20,6 +20,18 @@ internal static class ByteArrayHelpers
         }
     }
 
+    /// <summary>
+    /// Reads an element count written before a list, rejecting one that couldn't fit in what's
+    /// left of the stream -- so a corrupt file fails cleanly rather than allocating gigabytes.
+    /// </summary>
+    public static int ReadCount(this BinaryReader reader)
+    {
+        var count = reader.ReadInt32();
+        if (count < 0 || count > reader.BaseStream.Length - reader.BaseStream.Position)
+            throw new InvalidDataException($"Bad element count {count}.");
+        return count;
+    }
+
     public static byte[] Flatten(this byte[,] input)
     {
         int rows = input.GetLength(0);

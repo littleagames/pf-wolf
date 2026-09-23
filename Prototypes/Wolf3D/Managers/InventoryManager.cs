@@ -113,6 +113,17 @@ internal class InventoryManager
 
     public void Clear() => _items.Clear();
 
+    /// <summary>Replaces everything held with saved counts, keyed by item type as <see cref="Items"/> is.</summary>
+    public void Restore(IReadOnlyDictionary<string, int> items)
+    {
+        _items.Clear();
+        foreach (var (type, count) in items)
+        {
+            if (count > 0)
+                _items[type] = count;
+        }
+    }
+
     /// <summary>
     /// Level change: each item is trimmed to its `inventory.interhubamount` (keys are 0, so
     /// they're dropped; ammo keeps everything; the Inventory default of 1 keeps a weapon).

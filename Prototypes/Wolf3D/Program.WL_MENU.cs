@@ -179,33 +179,6 @@ internal partial class Program
         "",
     };
 
-    internal static string SaveName = "savegam?.dat";
-
-    internal static void SetupSaveGames()
-    {
-        string savepath = string.Empty;
-        for (int i = 0; i < 10; i++)
-        {
-            var name = SaveName.Replace('?', (char)('0' + i));
-            // TODO: Set up "Saves" folder
-           // if (!string.IsNullOrEmpty(configdir))
-           //     savepath = $"{configdir}/{name}";
-           // else
-                savepath = $"{name}";
-
-            if (File.Exists(savepath))
-            {
-                SaveGamesAvail[i] = 1;
-
-                using (FileStream fs = File.OpenRead(savepath))
-                    using (BinaryReader br = new(fs))
-                    {
-                        SaveGameNames[i] = new string(br.ReadChars(MaxGameName));
-                    }
-            }
-        }
-    }
-
     private static void EnableEndGameMenuItem()
     {
         var language = _assetManager.GetText("en-us");
@@ -1422,10 +1395,7 @@ internal partial class Program
     internal static int CP_LoadGame(int quick)
     {
         int which, exit = 0;
-        string name;
-        string loadpath;
 
-        name = SaveName;
         //
         // QUICKLOAD?
         //
@@ -1435,30 +1405,15 @@ internal partial class Program
 
             if (SaveGamesAvail[which] != 0)
             {
-                name.Replace('?', (char)(which + '0'));
+                // Loaded in place: play carries straight on in the restored level.
+                loadedgame = true;
+                var loaded = LoadTheGame(GetSaveGamePath(which), 0, 0);
+                loadedgame = false;
+                if (!loaded)
+                    return 0;
 
-                //if (string.IsNullOrEmpty(configdir))
-                //    loadpath = $"{configdir}/{name}";
-                //else
-                    loadpath = $"{name}";
-
-                using (FileStream fs = File.OpenRead(loadpath))
-                    using (BinaryReader br = new BinaryReader(fs))
-                    {
-                        fs.Seek(32, SeekOrigin.Begin);
-                        loadedgame = true;
-                        LoadTheGame(br, 0, 0);
-                        loadedgame = false;
-                    }
-
-                DrawFace();
-                DrawHealth();
-                DrawLives();
-                DrawLevel();
-                DrawAmmo();
-                DrawKeys();
-                DrawWeapon();
-                DrawScore();
+                if (viewsize != 21)
+                    DrawPlayScreen();
                 ContinueMusic(lastgamemusicoffset);
                 return 1;
             }
@@ -1472,22 +1427,15 @@ internal partial class Program
             if (which >= 0 && SaveGamesAvail[which] != 0)
             {
                 ShootSnd();
-                name = name.Replace('?', (char)(which + '0'));
 
-                //if (!string.IsNullOrEmpty(configdir))
-                //    loadpath = $"{configdir}/{name}";
-                //else
-                    loadpath = $"{name}";
+                DrawLSAction(0);
+                loadedgame = true;
 
-                using (FileStream fs = File.OpenRead(loadpath))
-                using (BinaryReader br = new BinaryReader(fs))
+                if (!LoadTheGame(GetSaveGamePath(which), LSA_X + 8, LSA_Y + 5))
                 {
-                    fs.Seek(32, SeekOrigin.Begin);
-
-                    DrawLSAction(0);
-                    loadedgame = true;
-
-                    LoadTheGame(br, LSA_X + 8, LSA_Y + 5);
+                    loadedgame = false;
+                    DrawLoadSaveScreen(0);
+                    continue;
                 }
 
                 StartGame = 1;
@@ -1593,11 +1541,8 @@ internal partial class Program
     {
         var language = _assetManager.GetText("en-us");
         int which, exit = 0;
-        string name;
-        string savepath;
         string input = "";
 
-        name = SaveName;
         //
         // QUICKSAVE?
         //
@@ -1607,23 +1552,8 @@ internal partial class Program
 
             if (SaveGamesAvail[which] != 0)
             {
-                name.Replace('?', (char)(which + '0'));
-
-                //if (!string.IsNullOrEmpty(configdir))
-                //    savepath = $"{configdir}/{name}";
-                //else
-                    savepath = $"{name}";
-
-                File.Delete(savepath);
-                using (FileStream fs = File.OpenRead(savepath))
-                    using (BinaryWriter bw = new BinaryWriter(fs))
-                    {
-                        input = SaveGameNames[which];
-                        bw.Write(input.ToFixedArray(32), 0, 32);
-                        bw.Seek(32, SeekOrigin.Begin);
-                        SaveTheGame(bw, 0, 0);
-                    }
-
+                if (!SaveTheGame(GetSaveGamePath(which), SaveGameNames[which], 0, 0))
+                    ShowSaveFailed();
                 return 1;
             }
         }
@@ -1654,8 +1584,7 @@ internal partial class Program
 
                 ShootSnd();
 
-                SaveGameNames[which] = input;
-                name = name.Replace('?', (char)(which + '0'));
+                input = SaveGameNames[which];
 
                 fontnumber = "SmallFont";
                 if (SaveGamesAvail[which] == 0)
@@ -1667,26 +1596,16 @@ internal partial class Program
                     (LSM_X + LSItems.indent + 2, LSM_Y + which * 13 + 1, ref input, input, true, 31,
                      LSM_W - LSItems.indent - 30))
                 {
+                    DrawLSAction(1);
+                    if (!SaveTheGame(GetSaveGamePath(which), input, LSA_X + 8, LSA_Y + 5))
+                    {
+                        ShowSaveFailed();
+                        DrawLoadSaveScreen(1);
+                        continue;
+                    }
+
                     SaveGamesAvail[which] = 1;
                     SaveGameNames[which] = input;
-
-                    //if (!string.IsNullOrEmpty(configdir))
-                    //    savepath = $"{configdir}/{name}";
-                    //else
-                        savepath = $"{name}";
-
-                    if (File.Exists(savepath))
-                        File.Delete(savepath);
-
-                    using (FileStream fs = File.OpenWrite(savepath))
-                    using (BinaryWriter bw = new BinaryWriter(fs))
-                    {
-                        bw.Write(input.ToFixedArray(32), 0, 32);
-                        bw.Seek(32, SeekOrigin.Begin);
-
-                        DrawLSAction(1);
-                        SaveTheGame(bw, LSA_X + 8, LSA_Y + 5);
-                    }
                     ShootSnd();
                     exit = 1;
                 }

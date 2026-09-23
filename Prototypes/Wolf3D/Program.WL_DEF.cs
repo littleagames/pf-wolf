@@ -173,65 +173,60 @@ internal class gametype
     public int killx, killy;
     public bool victoryflag;            // set during victory animations
 
-    public void Read(BinaryReader br)
+    public static gametype Read(BinaryReader br) => new()
     {
-        difficulty = (difficultytypes)br.ReadInt16();
-        mapon = br.ReadString();
-        oldscore = br.ReadInt32();
-        score = br.ReadInt32();
-        nextextra = br.ReadInt32();
-        lives = br.ReadInt16();
-        health = br.ReadInt16();
-        weapon = (weapontypes)br.ReadInt16();
-        chosenweapon = (weapontypes)br.ReadInt16();
-        faceframe = br.ReadInt16();
-        attackframe = br.ReadInt16();
-        attackcount = br.ReadInt16();
-        weaponframe = br.ReadInt16();
-        cluster = br.ReadInt16();
-        secretcount = br.ReadInt16();
-        treasurecount = br.ReadInt16();
-        killcount = br.ReadInt16();
-        secrettotal = br.ReadInt16();
-        treasuretotal = br.ReadInt16();
-        killtotal = br.ReadInt16();
-        TimeCount = br.ReadInt32();
-        killx = br.ReadInt32();
-        killy = br.ReadInt32();
-        victoryflag = br.ReadByte() > 0;
-    }
+        difficulty = (difficultytypes)br.ReadInt16(),
+        mapon = br.ReadString(),
+        oldscore = br.ReadInt32(),
+        score = br.ReadInt32(),
+        nextextra = br.ReadInt32(),
+        lives = br.ReadInt16(),
+        health = br.ReadInt16(),
+        weapon = (weapontypes)br.ReadInt16(),
+        chosenweapon = (weapontypes)br.ReadInt16(),
+        faceframe = br.ReadInt16(),
+        attackframe = br.ReadInt16(),
+        attackcount = br.ReadInt16(),
+        weaponframe = br.ReadInt16(),
+        cluster = br.ReadInt16(),
+        secretcount = br.ReadInt16(),
+        treasurecount = br.ReadInt16(),
+        killcount = br.ReadInt16(),
+        secrettotal = br.ReadInt16(),
+        treasuretotal = br.ReadInt16(),
+        killtotal = br.ReadInt16(),
+        TimeCount = br.ReadInt32(),
+        killx = br.ReadInt32(),
+        killy = br.ReadInt32(),
+        victoryflag = br.ReadBoolean(),
+    };
 
-    public byte[] AsBytes()
+    public void Write(BinaryWriter bw)
     {
-        using var ms = new MemoryStream();
-        using var bw = new BinaryWriter(ms);
-        {
-            bw.Write((byte)difficulty);
-            bw.Write(mapon);
-            bw.Write(oldscore);
-            bw.Write(score);
-            bw.Write(nextextra);
-            bw.Write(lives);
-            bw.Write(health);
-            bw.Write((byte)weapon);
-            bw.Write((byte)chosenweapon);
-            bw.Write(faceframe);
-            bw.Write(attackframe);
-            bw.Write(attackcount);
-            bw.Write(weaponframe);
-            bw.Write(cluster);
-            bw.Write(secretcount);
-            bw.Write(treasurecount);
-            bw.Write(killcount);
-            bw.Write(secrettotal);
-            bw.Write(treasuretotal);
-            bw.Write(killtotal);
-            bw.Write(TimeCount);
-            bw.Write(killx);
-            bw.Write(killy);
-            bw.Write((byte)(victoryflag ? 1 : 0));
-            return ms.ToArray();
-        }
+        bw.Write((short)difficulty);
+        bw.Write(mapon);
+        bw.Write(oldscore);
+        bw.Write(score);
+        bw.Write(nextextra);
+        bw.Write(lives);
+        bw.Write(health);
+        bw.Write((short)weapon);
+        bw.Write((short)chosenweapon);
+        bw.Write(faceframe);
+        bw.Write(attackframe);
+        bw.Write(attackcount);
+        bw.Write(weaponframe);
+        bw.Write(cluster);
+        bw.Write(secretcount);
+        bw.Write(treasurecount);
+        bw.Write(killcount);
+        bw.Write(secrettotal);
+        bw.Write(treasuretotal);
+        bw.Write(killtotal);
+        bw.Write(TimeCount);
+        bw.Write(killx);
+        bw.Write(killy);
+        bw.Write(victoryflag);
     }
 }
 
@@ -310,29 +305,20 @@ internal class doorobj_t
     public ushort position;            // leading edge of door (0 = closed, 0xffff = fully open)
     public MapTextureTranslation xlat = MapTextureTranslation.None;
 
-    public void Read(BinaryReader br)
+    // Only the moving parts: position, orientation and lock (xlat) come from the map, which a
+    // load has already respawned the doors from.
+    public void ReadState(BinaryReader br)
     {
-        tilex = br.ReadSByte();
-        tiley = br.ReadSByte();
-        vertical = Convert.ToBoolean(br.ReadByte());
-        action = (dooractiontypes)br.ReadSByte();
+        action = (dooractiontypes)br.ReadByte();
         ticcount = br.ReadInt16();
         position = br.ReadUInt16();
     }
 
-    public byte[] AsBytes()
+    public void WriteState(BinaryWriter bw)
     {
-        var ms = new MemoryStream();
-        var bw = new BinaryWriter(ms);
-        {
-            bw.Write(tilex);
-            bw.Write(tiley);
-            bw.Write((byte)(vertical ? 1 : 0));
-            bw.Write((sbyte)action);
-            bw.Write(ticcount);
-            bw.Write(position);
-            return ms.ToArray();
-        }
+        bw.Write((byte)action);
+        bw.Write(ticcount);
+        bw.Write(position);
     }
 }
 
@@ -531,25 +517,20 @@ internal partial class Program
         public short kill, secret, treasure;
         public int time;
 
-        public void Read(BinaryReader br)
+        public static LRstruct Read(BinaryReader br) => new()
         {
-            kill = br.ReadInt16();
-            secret = br.ReadInt16();
-            treasure = br.ReadInt16();
-            time = br.ReadInt32();
-        }
+            kill = br.ReadInt16(),
+            secret = br.ReadInt16(),
+            treasure = br.ReadInt16(),
+            time = br.ReadInt32(),
+        };
 
-        public byte[] AsBytes()
+        public void Write(BinaryWriter bw)
         {
-            using var ms = new MemoryStream();
-            using var bw = new BinaryWriter(ms);
-            {
-                bw.Write(kill);
-                bw.Write(secret);
-                bw.Write(treasure);
-                bw.Write(time);
-                return ms.ToArray();
-            }
+            bw.Write(kill);
+            bw.Write(secret);
+            bw.Write(treasure);
+            bw.Write(time);
         }
     }
 
