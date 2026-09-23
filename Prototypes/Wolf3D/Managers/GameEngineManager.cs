@@ -289,7 +289,7 @@ internal class GameEngineManager
 
         Environment.Exit(returnCode);
     }
-    public void Error(string errorStr)
+    public static void Error(string errorStr)
     {
         SDL2.SDL.SDL_ShowSimpleMessageBox(SDL2.SDL.SDL_MessageBoxFlags.SDL_MESSAGEBOX_ERROR, "Wolf4CSharp", errorStr, IntPtr.Zero);
     }

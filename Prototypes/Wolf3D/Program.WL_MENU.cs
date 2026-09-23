@@ -365,7 +365,9 @@ internal partial class Program
                     key -= (char)('a' - 'A');
 
                 for (i = which + 1; i < item_i.amount; i++)
-                    if (items[i].active != 0 && items[i].text[0] == key)
+                {
+                    var text = items[i].text;
+                    if (items[i].active != 0 && !string.IsNullOrWhiteSpace(text) && text[0] == key)
                     {
                         EraseGun(item_i, items, x, y, which);
                         which = i;
@@ -374,6 +376,7 @@ internal partial class Program
                         _inputManager.ClearKeysDown();
                         break;
                     }
+                }
 
                 //
                 // DIDN'T FIND A MATCH FIRST TIME THRU. CHECK AGAIN.
