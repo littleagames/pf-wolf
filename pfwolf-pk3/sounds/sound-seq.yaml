@@ -53,9 +53,12 @@ sound-info:
     digitized: DSAMMOUP
     adlib: ALAMMOUP
     pc: PCAMMOUP
-  # Wolf3D has no separate ammo box sound; the box uses the regular ammo pickup.
+  # Spear's ammo box has its own AdLib/PC sound but no digitized one; Wolf3D has no box
+  # sound at all, so its digitized ammo pickup stands in when digitized sound is on.
   misc/ammobox_pkup:
-    alias: misc/ammo_pkup
+    digitized: DSAMMOUP
+    adlib: ALAMMOBX
+    pc: PCAMMOBX
   misc/health_pkup:
     digitized: DSFOODUP
     adlib: ALFOODUP

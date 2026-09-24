@@ -908,6 +908,25 @@ internal partial class Program
         int which;
         MapInfo? mapInfo = null;
         EpisodeInfo? episodeInfo = null;
+
+        // A game with one episode (Spear) has no episode menu: straight to the difficulty menu
+        var episodes = _gameEngineManager.GetGameInfo().Episodes;
+        bool singleEpisode = episodes.Count == 1;
+        if (singleEpisode)
+        {
+            episodeInfo = episodes.Values.First();
+            if (!_gameEngineManager.GetGameInfo().Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
+            {
+                _audioManager.Play("player/usefail");
+                Message($"Starting Map \"{episodeInfo.StartMap}\" unavailable!");
+                _inputManager.ClearKeysDown();
+                _inputManager.Ack();
+                MenuFadeOut();
+                return 0;
+            }
+            goto difficulty;
+        }
+
     firstpart:
         DrawNewEpisode();
         do
@@ -953,6 +972,7 @@ internal partial class Program
 
         ShootSnd();
 
+    difficulty:
         //
         // ALREADY IN A GAME?
         //
@@ -969,6 +989,8 @@ internal partial class Program
         if (which < 0)
         {
             MenuFadeOut();
+            if (singleEpisode)
+                return 0;
             goto firstpart;
         }
 

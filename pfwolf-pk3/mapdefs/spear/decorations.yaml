@@ -1,0 +1,55 @@
+# Spear's static objects that differ from Wolf3D's; the rest of 23-70 come from
+# mapdefs/wolf3d/decorations.yaml through the spear release's base-pack.
+# 74 (the Spear of Destiny) ends the game and comes with the ending.
+things:
+  33:
+    class: SkullOnStick
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  38:
+    class: BloodyCage
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  45:
+    class: CageWithGibs
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  63:
+    class: RedLight
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  67:
+    class: CowSkull
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  68:
+    class: BloodyWell
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  69:
+    class: AngelStatue
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  71:
+    class: MarblePillar
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  # 25-round ammo box
+  72:
+    class: ClipBox
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  73:
+    class: Truck
+    angles: 0
+    patrol: 0
+    min-skill: 0

@@ -1,0 +1,93 @@
+# Spear of Destiny decorations. Everything else comes from actordefs/wolf3d/ through the
+# spear release's base-pack; these are the statics Spear replaced or added (see
+# mapdefs/spear/decorations.yaml for their map-object numbers). Solid or not follows
+# Spear's static-object table: its gibs and cages block, the red light doesn't.
+
+# Replaces Wolf3D's sink (33)
+SkullOnStick:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: SKWR
+        frames: [A]
+        tics-per-frame: -1
+
+# Replaces Wolf3D's kitchen utensils (38)
+BloodyCage:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: CAG3
+        frames: [A]
+        tics-per-frame: -1
+
+# Replaces Wolf3D's bed (45)
+CageWithGibs:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: CAG4
+        frames: [A]
+        tics-per-frame: -1
+
+# Replaces Wolf3D's Aardwolf sign (63)
+RedLight:
+  radius: 32
+  states:
+    Spawn:
+      - sprite: RLMP
+        frames: [A]
+        tics-per-frame: -1
+
+# Replaces Wolf3D's blue utensils (67)
+CowSkull:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: COWC
+        frames: [A]
+        tics-per-frame: -1
+
+# Replaces Wolf3D's stove (68)
+BloodyWell:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: WEL3
+        frames: [A]
+        tics-per-frame: -1
+
+# Replaces Wolf3D's spear rack (69)
+AngelStatue:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: STAT
+        frames: [A]
+        tics-per-frame: -1
+
+# New in Spear (71)
+MarblePillar:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: COL2
+        frames: [A]
+        tics-per-frame: -1
+
+# New in Spear (73)
+Truck:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: TRUK
+        frames: [A]
+        tics-per-frame: -1

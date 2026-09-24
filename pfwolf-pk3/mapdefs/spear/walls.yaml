@@ -1,0 +1,74 @@
+# Spear-only wall tiles. Tiles 1-49 are the same as Wolf3D's and come from
+# mapdefs/wolf3d/walls.yaml through the spear release's base-pack.
+# Tile t uses wall texture (t-1)*2 north/south and (t-1)*2+1 east/west.
+walls:
+    '50':
+        North: COBBLEA1
+        South: COBBLEA1
+        East: COBBLEA2
+        West: COBBLEA2
+    '51':
+        North: COBBLEB1
+        South: COBBLEB1
+        East: COBBLEB2
+        West: COBBLEB2
+    '52':
+        North: COBFLAG1
+        South: COBFLAG1
+        East: COBFLAG2
+        West: COBFLAG2
+    '53':
+        North: COBWRTH1
+        South: COBWRTH1
+        East: COBWRTH2
+        West: COBWRTH2
+    '54':
+        North: BOLDERA1
+        South: BOLDERA1
+        East: BOLDERA2
+        West: BOLDERA2
+    '55':
+        North: BOLDERB1
+        South: BOLDERB1
+        East: BOLDERB2
+        West: BOLDERB2
+    '56':
+        North: HELLWAL1
+        South: HELLWAL1
+        East: HELLWAL2
+        West: HELLWAL2
+    '57':
+        North: GRAYCAV1
+        South: GRAYCAV1
+        East: GRAYCAV2
+        West: GRAYCAV2
+    '58':
+        North: RAMPRTA1
+        South: RAMPRTA1
+        East: RAMPRTA2
+        West: RAMPRTA2
+    '59':
+        North: RAMPRTB1
+        South: RAMPRTB1
+        East: RAMPRTB2
+        West: RAMPRTB2
+    '60':
+        North: ELEV3_1
+        South: ELEV3_1
+        East: ELEV3_2
+        West: ELEV3_2
+    '61':
+        North: WHITWAL1
+        South: WHITWAL1
+        East: WHITWAL2
+        West: WHITWAL2
+    '62':
+        North: BRWNVIN1
+        South: BRWNVIN1
+        East: BRWNVIN2
+        West: BRWNVIN2
+    '63':
+        North: PINKBRK1
+        South: PINKBRK1
+        East: PINKBRK2
+        West: PINKBRK2
