@@ -1,0 +1,74 @@
+music: "Wondering"
+type: "wolf3d-menu"
+# The binding rows (b0, Ctrl, ...) are drawn in code on each selectable item's row:
+# row y = position.y + item index * 13. Binding columns are at x 60, 120, 180, 240,
+# so the column labels below use the same x values.
+position:
+  x: 8
+  y: 74
+indent: 0
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Stripe"
+    params:
+      - y: 10
+  -
+    type: "Graphic"
+    params:
+      - name: "c_customize"
+      - x: 80
+      - y: 0
+
+  # Mouse (binding row at y 74)
+  - { type: "Label", params: [ { text: "$STR_CUSTMOUSE" }, { horizontal-orientation: "center" }, { y: 48 }, { color: "READCOLOR" } ] }
+  - { type: "Label", params: [ { text: "$STR_CRUN" }, { x: 60 }, { y: 61 } ] }
+  - { type: "Label", params: [ { text: "$STR_COPEN" }, { x: 120 }, { y: 61 } ] }
+  - { type: "Label", params: [ { text: "$STR_CFIRE" }, { x: 180 }, { y: 61 } ] }
+  - { type: "Label", params: [ { text: "$STR_CSTRAFE" }, { x: 240 }, { y: 61 } ] }
+  - { type: "Window", params: [ { x: 5 }, { y: 73 }, { width: 310 }, { height: 13 } ] }
+
+  # Joystick (binding row at y 113)
+  - { type: "Label", params: [ { text: "$STR_CUSTJOY" }, { horizontal-orientation: "center" }, { y: 87 }, { color: "READCOLOR" } ] }
+  - { type: "Label", params: [ { text: "$STR_CRUN" }, { x: 60 }, { y: 100 } ] }
+  - { type: "Label", params: [ { text: "$STR_COPEN" }, { x: 120 }, { y: 100 } ] }
+  - { type: "Label", params: [ { text: "$STR_CFIRE" }, { x: 180 }, { y: 100 } ] }
+  - { type: "Label", params: [ { text: "$STR_CSTRAFE" }, { x: 240 }, { y: 100 } ] }
+  - { type: "Window", params: [ { x: 5 }, { y: 112 }, { width: 310 }, { height: 13 } ] }
+
+  # Keyboard buttons (binding row at y 152)
+  - { type: "Label", params: [ { text: "$STR_CUSTKEYBD" }, { horizontal-orientation: "center" }, { y: 126 }, { color: "READCOLOR" } ] }
+  - { type: "Label", params: [ { text: "$STR_CRUN" }, { x: 60 }, { y: 139 } ] }
+  - { type: "Label", params: [ { text: "$STR_COPEN" }, { x: 120 }, { y: 139 } ] }
+  - { type: "Label", params: [ { text: "$STR_CFIRE" }, { x: 180 }, { y: 139 } ] }
+  - { type: "Label", params: [ { text: "$STR_CSTRAFE" }, { x: 240 }, { y: 139 } ] }
+  - { type: "Window", params: [ { x: 5 }, { y: 151 }, { width: 310 }, { height: 13 } ] }
+
+  # Keyboard movement (binding row at y 178)
+  - { type: "Label", params: [ { text: "$STR_LEFT" }, { x: 60 }, { y: 165 } ] }
+  - { type: "Label", params: [ { text: "$STR_RIGHT" }, { x: 120 }, { y: 165 } ] }
+  - { type: "Label", params: [ { text: "$STR_FRWD" }, { x: 180 }, { y: 165 } ] }
+  - { type: "Label", params: [ { text: "$STR_BKWD" }, { x: 240 }, { y: 165 } ] }
+  - { type: "Window", params: [ { x: 5 }, { y: 177 }, { width: 310 }, { height: 13 } ] }
+
+# Selectable rows; the blanks space them to line up with the sections above.
+# Text is empty because the bindings are drawn by code.
+menu-items:
+  - { id: "mouse", type: "MenuSwitcher", enabled: true }
+  - { type: "BlankMenuItem" }
+  - { type: "BlankMenuItem" }
+  - { id: "joystick", type: "MenuSwitcher", enabled: true }
+  - { type: "BlankMenuItem" }
+  - { type: "BlankMenuItem" }
+  - { id: "keyboard", type: "MenuSwitcher", enabled: true }
+  - { type: "BlankMenuItem" }
+  - { id: "keyboard-move", type: "MenuSwitcher", enabled: true }

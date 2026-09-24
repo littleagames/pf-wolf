@@ -37,8 +37,7 @@ internal partial class Program
     // Width of the slot window in menudefs/load-game and save-game; slot outlines are sized from it
     internal const int LSM_W = 175;
 
-    internal const int CST_X = 20;
-    internal const int CST_Y = 48;
+    // Binding columns on the customize screen; the column labels in menudefs/customize line up with these
     internal const int CST_START = 60;
     internal const int CST_SPC = 60;
 
@@ -59,18 +58,7 @@ internal partial class Program
 
     internal static CP_itemtype[] LSMenu = [];
 
-    internal static CP_itemtype[] CusMenu =
-    {
-        new(1, "", null),
-        new(0, "", null),
-        new(0, "", null),
-        new(1, "", null),
-        new(0, "", null),
-        new(0, "", null),
-        new(1, "", null),
-        new(0, "", null),
-        new(1, "", null),
-    };
+    internal static CP_itemtype[] CusMenu = [];
 
     internal static CP_itemtype[] MusicMenu = [];
     // The jukebox shows one page of songs at a time
@@ -81,7 +69,7 @@ internal partial class Program
     internal static CP_iteminfo SndItems;
     internal static CP_iteminfo LSItems;
     internal static CP_iteminfo CtlItems;
-    internal static CP_iteminfo CusItems = new(8, CST_Y + 13 * 2, (short)CusMenu.Length, -1, 0);
+    internal static CP_iteminfo CusItems;
     internal static CP_iteminfo NewEitems;
     internal static CP_iteminfo NewItems;
     internal static CP_iteminfo MusicItems;
@@ -1819,21 +1807,21 @@ internal partial class Program
         do
         {
             which = HandleMenu(CusItems, CusMenu, FixupCustom);
-            switch (which)
+            switch (SelectedId(CusMenu, which))
             {
-                case 0:
+                case "mouse":
                     DefineMouseBtns();
                     DrawCustMouse(1);
                     break;
-                case 3:
+                case "joystick":
                     DefineJoyBtns();
                     DrawCustJoy(0);
                     break;
-                case 6:
+                case "keyboard":
                     DefineKeyBtns();
                     DrawCustKeybd(0);
                     break;
-                case 8:
+                case "keyboard-move":
                     DefineKeyMove();
                     DrawCustKeys(0);
                     break;
@@ -1846,6 +1834,37 @@ internal partial class Program
         return 0;
     }
 
+    /// <summary>
+    /// Screen Y of a binding row on the customize screen; each row sits on its menu item
+    /// </summary>
+    private static int CustomRowY(string id)
+    {
+        int index = Array.FindIndex(CusMenu, item => item.id == id);
+        return CusItems.y + Math.Max(index, 0) * 13;
+    }
+
+    /// <summary>
+    /// Redraws the binding row for a customize menu item
+    /// </summary>
+    private static void DrawCustomRow(string? id, int hilight)
+    {
+        switch (id)
+        {
+            case "mouse":
+                DrawCustMouse(hilight);
+                break;
+            case "joystick":
+                DrawCustJoy(hilight);
+                break;
+            case "keyboard":
+                DrawCustKeybd(hilight);
+                break;
+            case "keyboard-move":
+                DrawCustKeys(hilight);
+                break;
+        }
+    }
+
     ////////////////////////
     //
     // DEFINE THE MOUSE BUTTONS
@@ -1854,7 +1873,7 @@ internal partial class Program
     DefineMouseBtns()
     {
         CustomCtrls mouseallowed = new( 0, 1, 1, 1 );
-        EnterCtrlData(2, ref mouseallowed, DrawCustMouse, PrintCustMouse, CustomCtlOptions.MOUSE);
+        EnterCtrlData(CustomRowY("mouse"), ref mouseallowed, DrawCustMouse, PrintCustMouse, CustomCtlOptions.MOUSE);
     }
 
 
@@ -1866,7 +1885,7 @@ internal partial class Program
     DefineJoyBtns()
     {
         CustomCtrls joyallowed = new(1, 1, 1, 1);
-        EnterCtrlData(5, ref joyallowed, DrawCustJoy, PrintCustJoy, CustomCtlOptions.JOYSTICK);
+        EnterCtrlData(CustomRowY("joystick"), ref joyallowed, DrawCustJoy, PrintCustJoy, CustomCtlOptions.JOYSTICK);
     }
 
 
@@ -1878,7 +1897,7 @@ internal partial class Program
     DefineKeyBtns()
     {
         CustomCtrls keyallowed = new(1, 1, 1, 1);
-        EnterCtrlData(8, ref keyallowed, DrawCustKeybd, PrintCustKeybd, CustomCtlOptions.KEYBOARDBTNS);
+        EnterCtrlData(CustomRowY("keyboard"), ref keyallowed, DrawCustKeybd, PrintCustKeybd, CustomCtlOptions.KEYBOARDBTNS);
     }
 
 
@@ -1890,10 +1909,10 @@ internal partial class Program
     DefineKeyMove()
     {
         CustomCtrls keyallowed = new( 1, 1, 1, 1 );
-        EnterCtrlData(10, ref keyallowed, DrawCustKeys, PrintCustKeys, CustomCtlOptions.KEYBOARDMOVE);
+        EnterCtrlData(CustomRowY("keyboard-move"), ref keyallowed, DrawCustKeys, PrintCustKeys, CustomCtlOptions.KEYBOARDMOVE);
     }
 
-    internal static void EnterCtrlData(int index, ref CustomCtrls cust, Action<int> DrawRtn, Action<int> PrintRtn,
+    internal static void EnterCtrlData(int rowY, ref CustomCtrls cust, Action<int> DrawRtn, Action<int> PrintRtn,
                    CustomCtlOptions type)
     {
         int j, z, exit, tick, redraw, which = 0, x = 0, picked, lastFlashTime;
@@ -1901,7 +1920,7 @@ internal partial class Program
 
 
         ShootSnd();
-        PrintY = (ushort)(CST_Y + 13 * index);
+        PrintY = (ushort)rowY;
         _inputManager.ClearKeysDown();
         exit = 0;
         redraw = 1;
@@ -2152,53 +2171,25 @@ internal partial class Program
     internal static int fixup_lastwhich = -1;
     internal static void FixupCustom(int w)
     {
-        int y = CST_Y + 26 + w * 13;
+        int y = CusItems.y + w * 13;
 
 
         _videoManager.HorizontalLine(7, 32, y - 1, "DEACTIVE");
         _videoManager.HorizontalLine(7, 32, y + 12, "BORD2COLOR");
         _videoManager.HorizontalLine(7, 32, y - 2, "BORDCOLOR");
         _videoManager.HorizontalLine(7, 32, y + 13, "BORDCOLOR");
-        switch (w)
-        {
-            case 0:
-                DrawCustMouse(1);
-                break;
-            case 3:
-                DrawCustJoy(1);
-                break;
-            case 6:
-                DrawCustKeybd(1);
-                break;
-            case 8:
-                DrawCustKeys(1);
-                break;
-        }
+        DrawCustomRow(SelectedId(CusMenu, w), 1);
 
 
         if (fixup_lastwhich >= 0)
         {
-            y = CST_Y + 26 + fixup_lastwhich * 13;
+            y = CusItems.y + fixup_lastwhich * 13;
             _videoManager.HorizontalLine(7, 32, y - 1, "DEACTIVE");
             _videoManager.HorizontalLine(7, 32, y + 12, "BORD2COLOR");
             _videoManager.HorizontalLine(7, 32, y - 2, "BORDCOLOR");
             _videoManager.HorizontalLine(7, 32, y + 13, "BORDCOLOR");
             if (fixup_lastwhich != w)
-                switch (fixup_lastwhich)
-                {
-                    case 0:
-                        DrawCustMouse(0);
-                        break;
-                    case 3:
-                        DrawCustJoy(0);
-                        break;
-                    case 6:
-                        DrawCustKeybd(0);
-                        break;
-                    case 8:
-                        DrawCustKeys(0);
-                        break;
-                }
+                DrawCustomRow(SelectedId(CusMenu, fixup_lastwhich), 0);
         }
 
         fixup_lastwhich = w;
@@ -2212,93 +2203,16 @@ internal partial class Program
 
     internal static void DrawCustomScreen()
     {
-        var language = _assetManager.GetText("en-us");
         int i;
-        ClearMScreen();
-        WindowX = 0;
-        WindowW = 320;
-        _graphicManager.DrawPic("c_mouselback", 112, 184);
-        DrawStripes(10);
-        _graphicManager.DrawPic("c_customize", 80, 0);
 
-        //
-        // MOUSE
-        //
-        SETFONTCOLOR("READCOLOR", "BKGDCOLOR");
+        // Title, section headers, column labels and row windows
+        DrawMenuComponents("customize");
         WindowX = 0;
         WindowW = 320;
 
-        PrintY = CST_Y;
-        US_CPrint("Mouse\n");
-
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-        PrintX = CST_START;
-        US_Print("$STR_CRUN".ToLanguageText(language));
-        PrintX = CST_START + CST_SPC * 1;
-        US_Print("$STR_COPEN".ToLanguageText(language));
-        PrintX = CST_START + CST_SPC * 2;
-        US_Print("$STR_CFIRE".ToLanguageText(language));
-        PrintX = CST_START + CST_SPC * 3;
-        US_Print("$STR_CSTRAFE".ToLanguageText(language) + "\n");
-
-        DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
-        DrawCustMouse(0);
-        US_Print("\n");
-
-
-        //
-        // JOYSTICK/PAD
-        //
-        SETFONTCOLOR("READCOLOR", "BKGDCOLOR");
-        US_CPrint("Joystick/Gravis GamePad\n");
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-        PrintX = CST_START;
-        US_Print("$STR_CRUN".ToLanguageText(language));
-        PrintX = CST_START + CST_SPC * 1;
-        US_Print("$STR_COPEN".ToLanguageText(language));
-        PrintX = CST_START + CST_SPC * 2;
-        US_Print("$STR_CFIRE".ToLanguageText(language));
-        PrintX = CST_START + CST_SPC * 3;
-        US_Print("$STR_CSTRAFE".ToLanguageText(language) + "\n");
-        DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
-        DrawCustJoy(0);
-        US_Print("\n");
-
-
-        //
-        // KEYBOARD
-        //
-        SETFONTCOLOR("READCOLOR", "BKGDCOLOR");
-        US_CPrint("Keyboard\n");
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-
-        PrintX = CST_START;
-        US_Print("$STR_CRUN".ToLanguageText(language));
-        PrintX = CST_START + CST_SPC * 1;
-        US_Print("$STR_COPEN".ToLanguageText(language));
-        PrintX = CST_START + CST_SPC * 2;
-        US_Print("$STR_CFIRE".ToLanguageText(language));
-        PrintX = CST_START + CST_SPC * 3;
-        US_Print("$STR_CSTRAFE".ToLanguageText(language) + "\n");
-        DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
-        DrawCustKeybd(0);
-        US_Print("\n");
-
-
-        //
-        // KEYBOARD MOVE KEYS
-        //
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-        PrintX = CST_START;
-        US_Print("$STR_LEFT".ToLanguageText(language));
-        PrintX = CST_START + CST_SPC * 1;
-        US_Print("$STR_RIGHT".ToLanguageText(language));
-        PrintX = CST_START + CST_SPC * 2;
-        US_Print("$STR_FRWD".ToLanguageText(language));
-        PrintX = CST_START + CST_SPC * 3;
-        US_Print("$STR_BKWD".ToLanguageText(language) +"\n");
-        DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
-        DrawCustKeys(0);
+        // The current bindings, one row per menu item
+        foreach (var item in CusMenu)
+            DrawCustomRow(item.id, 0);
         //
         // PICK STARTING POINT IN MENU
         //
@@ -2343,12 +2257,12 @@ internal partial class Program
         if (!mouseenabled)
         {
             SETFONTCOLOR("DEACTIVE", "BKGDCOLOR");
-            CusMenu[0].active = 0;
+            FindMenuItem(CusMenu, "mouse")?.active = 0;
         }
         else
-            CusMenu[0].active = 1;
+            FindMenuItem(CusMenu, "mouse")?.active = 1;
 
-        PrintY = CST_Y + 13 * 2;
+        PrintY = (ushort)CustomRowY("mouse");
         for (i = 0; i < 4; i++)
             PrintCustMouse(i);
     }
@@ -2381,12 +2295,12 @@ internal partial class Program
         if (!joystickenabled)
         {
             SETFONTCOLOR("DEACTIVE", "BKGDCOLOR");
-            CusMenu[3].active = 0;
+            FindMenuItem(CusMenu, "joystick")?.active = 0;
         }
         else
-            CusMenu[3].active = 1;
+            FindMenuItem(CusMenu, "joystick")?.active = 1;
 
-        PrintY = CST_Y + 13 * 5;
+        PrintY = (ushort)CustomRowY("joystick");
         for (i = 0; i < 4; i++)
             PrintCustJoy(i);
     }
@@ -2411,7 +2325,7 @@ internal partial class Program
             color = "HIGHLIGHT";
         SETFONTCOLOR(color, "BKGDCOLOR");
 
-        PrintY = CST_Y + 13 * 8;
+        PrintY = (ushort)CustomRowY("keyboard");
         for (i = 0; i < 4; i++)
             PrintCustKeybd(i);
     }
@@ -2434,7 +2348,7 @@ internal partial class Program
             color = "HIGHLIGHT";
         SETFONTCOLOR(color, "BKGDCOLOR");
 
-        PrintY = CST_Y + 13 * 10;
+        PrintY = (ushort)CustomRowY("keyboard-move");
         for (i = 0; i < 4; i++)
             PrintCustKeys(i);
     }
@@ -2636,6 +2550,7 @@ internal partial class Program
         (MainMenu, MainItems) = LoadMenu("main-menu");
         (SndMenu, SndItems) = LoadMenu("sound");
         (CtlMenu, CtlItems) = LoadMenu("control", curpos: -1);
+        (CusMenu, CusItems) = LoadMenu("customize", curpos: -1);
         (NewEmenu, NewEitems) = LoadMenu("new-episode");
         (NewMenu, NewItems) = LoadMenu("new-game");
         (LSMenu, LSItems) = LoadMenu("load-game");

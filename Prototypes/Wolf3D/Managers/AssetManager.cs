@@ -335,6 +335,10 @@ internal class AssetManager
                     { "$STR_SLOW", "Slow"},
                     { "$STR_FAST", "Fast"},
 
+                    { "$STR_CUSTMOUSE", "Mouse"},
+                    { "$STR_CUSTJOY", "Joystick/Gravis GamePad"},
+                    { "$STR_CUSTKEYBD", "Keyboard"},
+
                     { "$STR_CRUN", "Run"},
                     { "$STR_COPEN", "Open"},
                     { "$STR_CFIRE", "Fire"},
