@@ -1,11 +1,12 @@
 music: "Wondering"
 type: "wolf3d-menu"
 # Position/indent of the save slots, shared with save-game.
-# The 10 slots themselves are built in code from the save files.
 position:
   x: 85
   y: 55
 indent: 24
+# One slot per save file; the slot text is drawn from the save names
+items-source: "save-slots"
 components:
   -
     type: "Background"

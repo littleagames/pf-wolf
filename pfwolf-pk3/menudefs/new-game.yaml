@@ -1,0 +1,35 @@
+music: "Wondering"
+type: "wolf3d-menu"
+position:
+  x: 50
+  y: 100
+indent: 24
+# One item per skill in game-info (name and pic-name come from there)
+items-source: "skills"
+# "Bring 'em on!"
+default-selection: 2
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Label"
+    params:
+      - text: "$STR_HOWTOUGH"
+      - x: 70
+      - y: 68
+      - color: "READHCOLOR"
+  -
+    type: "Window"
+    params:
+      - x: 45
+      - y: 90
+      - width: 225
+      - height: 67

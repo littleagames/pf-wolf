@@ -29,6 +29,17 @@ internal class MenuMetadata
     public List<MenuItem> MenuItems { get; set; } = new();
     public int Indent { get; internal set; }
 
+    /// <summary>
+    /// Builds the items from game data instead of menu-items:
+    /// "episodes", "skills" or "save-slots"
+    /// </summary>
+    public string? ItemsSource { get; set; }
+
+    /// <summary>
+    /// Item the cursor starts on (defaults to the first)
+    /// </summary>
+    public int? DefaultSelection { get; set; }
+
     internal static MenuMetadata? BuildFromAsset(MenuAsset asset)
     {
         if (asset is null) return null;

@@ -34,20 +34,8 @@ internal partial class Program
     internal const int CTL_W = 284;
     internal const int CTL_H = 60;
 
-    internal const int LSM_X = 85;
-    internal const int LSM_Y = 55;
     // Width of the slot window in menudefs/load-game and save-game; slot outlines are sized from it
     internal const int LSM_W = 175;
-
-    internal const int NM_X = 50;
-    internal const int NM_Y = 100;
-    internal const int NM_W = 225;
-    internal const int NM_H = 13 * 4 + 15;
-
-    internal const int NE_X = 10;
-    internal const int NE_Y = 23;
-    internal const int NE_W = 320 - NE_X * 2;
-    internal const int NE_H = 200 - NE_Y * 2;
 
     internal const int CST_X = 20;
     internal const int CST_Y = 48;
@@ -69,19 +57,7 @@ internal partial class Program
     internal static CP_itemtype[] NewEmenu = [];
     internal static CP_itemtype[] NewMenu = [];
 
-    internal static CP_itemtype[] LSMenu =
-    {
-        new(1, "", null),
-        new(1, "", null),
-        new(1, "", null),
-        new(1, "", null),
-        new(1, "", null),
-        new(1, "", null),
-        new(1, "", null),
-        new(1, "", null),
-        new(1, "", null),
-        new(1, "", null),
-    };
+    internal static CP_itemtype[] LSMenu = [];
 
     internal static CP_itemtype[] CusMenu =
     {
@@ -100,15 +76,15 @@ internal partial class Program
     // The jukebox shows one page of songs at a time
     internal const int JukeboxPageSize = 6;
 
+    // Loaded from menudefs/ in CheckForEpisodes
     internal static CP_iteminfo MainItems;
     internal static CP_iteminfo SndItems;
-    // Position/indent come from menudefs/load-game; the 10 slots are built here
-    internal static CP_iteminfo LSItems = new(LSM_X, LSM_Y, (short)LSMenu.Length, 0, 24);
+    internal static CP_iteminfo LSItems;
     internal static CP_iteminfo CtlItems;
     internal static CP_iteminfo CusItems = new(8, CST_Y + 13 * 2, (short)CusMenu.Length, -1, 0);
-    internal static CP_iteminfo NewEitems = new(NE_X, NE_Y, (short)NewEmenu.Length, 0, 88);
-    internal static CP_iteminfo NewItems = new(NM_X, NM_Y, (short)NewMenu.Length, 2, 24);
-    internal static CP_iteminfo MusicItems = new(CTL_X, CTL_Y, JukeboxPageSize, 0, 32);
+    internal static CP_iteminfo NewEitems;
+    internal static CP_iteminfo NewItems;
+    internal static CP_iteminfo MusicItems;
     static string[] color_hlite =
     {
         "DEACTIVE",
@@ -1026,21 +1002,16 @@ internal partial class Program
 
     internal static void DrawNewEpisode()
     {
-        int i;
-        ClearMScreen();
-        _graphicManager.DrawPic("c_mouselback", 112, 184);
-
-        DrawWindow(NE_X - 4, NE_Y - 4, NE_W + 8, NE_H + 8, "BKGDCOLOR");
-        SETFONTCOLOR("READHCOLOR", "BKGDCOLOR");
-        PrintY = 2;
-        WindowX = 0;
-        US_CPrint("Which episode to play?");
+        DrawMenuComponents("new-episode");
         SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         DrawMenu(NewEitems, NewEmenu);
 
-        string[] episodePics = new[] { "c_episode1", "c_episode2", "c_episode3", "c_episode4", "c_episode5", "c_episode6" };
-        for (i = 0; i < episodePics.Length; i++)
-            _graphicManager.DrawPic(episodePics[i], NE_X + 32, NE_Y + i * 26);
+        // Each episode's picture (pic-name in game-info) sits between the cursor and the name
+        for (int i = 0; i < NewEmenu.Length; i++)
+        {
+            if (NewEmenu[i].data is EpisodeInfo episode && !string.IsNullOrEmpty(episode.PicName))
+                _graphicManager.DrawPic(episode.PicName, NewEitems.x + 32, NewEitems.y + i * 13);
+        }
 
         _videoManager.Update();
         MenuFadeIn();
@@ -1049,14 +1020,7 @@ internal partial class Program
 
     internal static void DrawNewGame()
     {
-        ClearMScreen();
-        _graphicManager.DrawPic("c_mouselback", 112, 184);
-
-        SETFONTCOLOR("READHCOLOR", "BKGDCOLOR");
-        PrintX = NM_X + 20;
-        PrintY = NM_Y - 32;
-        US_Print("How tough are you?");
-        DrawWindow(NM_X - 5, NM_Y - 10, NM_W, NM_H, "BKGDCOLOR");
+        DrawMenuComponents("new-game");
 
         DrawMenu(NewItems, NewMenu);
         DrawNewGameDiff(NewItems.curpos);
@@ -1067,9 +1031,9 @@ internal partial class Program
 
     internal static void DrawNewGameDiff(int w)
     {
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        SkillInfo[] skills = gameInfo.Skills.Values.ToArray();
-        _graphicManager.DrawPic(skills[w].PicName, NM_X + 185, NM_Y + 7);
+        // Face picture for the highlighted skill (pic-name in game-info)
+        if (w >= 0 && w < NewMenu.Length && NewMenu[w].data is SkillInfo skill)
+            _graphicManager.DrawPic(skill.PicName, NewItems.x + 185, NewItems.y + 7);
     }
 
     internal static int CP_Sound(int _)
@@ -2645,9 +2609,6 @@ internal partial class Program
 
     internal static void CheckForEpisodes()
     {
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        NewMenu = gameInfo.Skills.Values.Select(s => new CP_itemtype(1, s.Name, null)).ToArray();
-        NewItems.amount = (short) NewMenu.Length;
         /*if (configdir != string.Empty)
         {
             if (!Directory.Exists(configdir))
@@ -2664,73 +2625,63 @@ internal partial class Program
         }*/
 
         // TODO: Create all directories? Or do it when the need arises?
-        if (File.Exists("vswap.wl6"))
-        {
-            NewEmenu = gameInfo.Episodes.Values.SelectMany(ep =>
-                new CP_itemtype[]
-                {
-                    new CP_itemtype(1, ep.Name, null, ep),
-                    new CP_itemtype(0, "", null)
-                }).SkipLast(1)
-                .ToArray();
-            NewEitems.amount = (short)NewEmenu.Length;
-        }
-        else
-        {
-
-            if (File.Exists("vswap.wl3"))
-            {
-                NewEmenu[2].active =
-                NewEmenu[4].active = 1;
-            }
-            else
-            {
-
-                if (File.Exists("vswap.wl1"))
-                {
-                }
-                else
-                {
-                    _gameEngineManager.Quit("NO WOLFENSTEIN 3-D DATA FILES to be found!");
-                }
-            }
-        }
+        // TODO: Shareware/3-episode data (wl1/wl3) should disable the missing episodes
+        if (!File.Exists("vswap.wl6") && !File.Exists("vswap.wl3") && !File.Exists("vswap.wl1"))
+            _gameEngineManager.Quit("NO WOLFENSTEIN 3-D DATA FILES to be found!");
 
         // Build every menudef now so problems in any of them are reported at startup
         foreach (var menuName in _assetManager.GetMenuNames())
             _assetManager.GetMenu(menuName);
 
-        (MainMenu, MainItems) = LoadMenu("main-menu", curpos: 0);
-        (SndMenu, SndItems) = LoadMenu("sound", curpos: 0);
+        (MainMenu, MainItems) = LoadMenu("main-menu");
+        (SndMenu, SndItems) = LoadMenu("sound");
         (CtlMenu, CtlItems) = LoadMenu("control", curpos: -1);
+        (NewEmenu, NewEitems) = LoadMenu("new-episode");
+        (NewMenu, NewItems) = LoadMenu("new-game");
+        (LSMenu, LSItems) = LoadMenu("load-game");
 
-        (MusicMenu, MusicItems) = LoadMenu("jukebox", curpos: 0);
+        (MusicMenu, MusicItems) = LoadMenu("jukebox");
         MusicItems.amount = (short)Math.Min(JukeboxPageSize, MusicMenu.Length);
-
-        var (_, lsInfo) = LoadMenu("load-game", curpos: 0);
-        LSItems = new CP_iteminfo(lsInfo.x, lsInfo.y, (short)LSMenu.Length, curpos: 0, lsInfo.indent);
     }
 
     /// <summary>
     /// Builds the item list and layout for a menu defined in menudefs/
     /// </summary>
-    private static (CP_itemtype[] items, CP_iteminfo info) LoadMenu(string name, short curpos)
+    private static (CP_itemtype[] items, CP_iteminfo info) LoadMenu(string name, short curpos = 0)
     {
         var menuAsset = _assetManager.GetMenu(name)
             ?? throw new InvalidOperationException($"Menu '{name}' not found in menudefs");
         var language = _assetManager.GetText("en-us");
 
-        var items = menuAsset.MenuItems.Select(mi =>
-                new CP_itemtype(
-                    (short)(mi.Enabled && mi is not BlankMenuItem ? 1 : 0),
-                    (mi.Text ?? "").ToLanguageText(language),
-                    MapFunction(name, mi as MenuSwitcher))
-                {
-                    id = mi.Id,
-                    shortKey = string.IsNullOrEmpty(mi.ShortKey) ? '\0' : mi.ShortKey[0],
-                    data = (mi as MusicMenuItem)?.Music
-                })
-                .ToArray();
+        CP_itemtype[] items;
+        if (menuAsset.ItemsSource != null)
+        {
+            if (menuAsset.MenuItems.Count > 0)
+                Console.WriteLine($"Menu '{name}': has items-source '{menuAsset.ItemsSource}', so its menu-items are ignored");
+            items = BuildSourceItems(name, menuAsset.ItemsSource);
+        }
+        else
+        {
+            items = menuAsset.MenuItems.Select(mi =>
+                    new CP_itemtype(
+                        (short)(mi.Enabled && mi is not BlankMenuItem ? 1 : 0),
+                        (mi.Text ?? "").ToLanguageText(language),
+                        MapFunction(name, mi as MenuSwitcher))
+                    {
+                        id = mi.Id,
+                        shortKey = string.IsNullOrEmpty(mi.ShortKey) ? '\0' : mi.ShortKey[0],
+                        data = (mi as MusicMenuItem)?.Music
+                    })
+                    .ToArray();
+        }
+
+        if (menuAsset.DefaultSelection is int selection)
+        {
+            if (selection >= 0 && selection < items.Length)
+                curpos = (short)selection;
+            else
+                Console.WriteLine($"Menu '{name}': default-selection {selection} is out of range (0-{items.Length - 1})");
+        }
 
         var info = new CP_iteminfo(
             (short)menuAsset.Position.X,
@@ -2740,6 +2691,43 @@ internal partial class Program
             indent: (short)menuAsset.Indent);
 
         return (items, info);
+    }
+
+    /// <summary>
+    /// Builds menu items from game data for a menu's items-source
+    /// </summary>
+    private static CP_itemtype[] BuildSourceItems(string menuName, string source)
+    {
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        var language = _assetManager.GetText("en-us");
+
+        switch (source.ToLowerInvariant())
+        {
+            case "episodes":
+                // Episode names are two lines, so a blank row follows each one
+                return gameInfo.Episodes.Values.SelectMany(ep =>
+                    new CP_itemtype[]
+                    {
+                        new CP_itemtype(1, ep.Name.ToLanguageText(language), null, ep) { shortKey = ep.Key },
+                        new CP_itemtype(0, "", null)
+                    }).SkipLast(1)
+                    .ToArray();
+
+            case "skills":
+                return gameInfo.Skills.Values
+                    .Select(skill => new CP_itemtype(1, skill.Name.ToLanguageText(language), null, skill))
+                    .ToArray();
+
+            case "save-slots":
+                // Text is drawn by PrintLSEntry from the save files, not by the menu
+                return SaveGamesAvail
+                    .Select(_ => new CP_itemtype(1, "", null))
+                    .ToArray();
+
+            default:
+                Console.WriteLine($"Menu '{menuName}': unknown items-source '{source}'");
+                return [];
+        }
     }
 
     /// <summary>

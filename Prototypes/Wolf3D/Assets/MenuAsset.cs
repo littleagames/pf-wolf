@@ -8,6 +8,8 @@ internal record MenuAsset : Asset
     public string? Type { get; init; }
     public Vector2? Position { get; init; }
     public int Indent { get; init; } = 0;
+    public string? ItemsSource { get; init; }
+    public int? DefaultSelection { get; init; }
     public List<ComponentEntry>? Components { get; init; }
     public List<MenuItemEntry>? MenuItems { get; init; }
 

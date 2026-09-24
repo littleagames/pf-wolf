@@ -305,6 +305,8 @@ internal class AssetManager
                     { "$MENU_BACKTODEMO", "Back to Demo" },
                     { "$MENU_BACKTOGAME", "Back to Game" },
                     { "$MENU_QUIT", "Quit" },
+                    { "$STR_WHICHEPISODE", "Which episode to play?" },
+                    { "$STR_HOWTOUGH", "How tough are you?" },
                     { "$STR_LOADING", "Loading"},
                     { "$STR_SAVING", "Saving"},
 

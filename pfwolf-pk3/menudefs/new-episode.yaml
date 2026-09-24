@@ -1,0 +1,34 @@
+music: "Wondering"
+type: "wolf3d-menu"
+position:
+  x: 10
+  y: 23
+indent: 88
+# One item per episode in game-info (name, key and pic-name come from there)
+items-source: "episodes"
+default-selection: 0
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Window"
+    params:
+      - x: 6
+      - y: 19
+      - width: 308
+      - height: 162
+  -
+    type: "Label"
+    params:
+      - text: "$STR_WHICHEPISODE"
+      - horizontal-orientation: "center"
+      - y: 2
+      - color: "READHCOLOR"

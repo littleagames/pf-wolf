@@ -1,6 +1,6 @@
 music: "Wondering"
 type: "wolf3d-menu"
-# Slot position/indent are taken from load-game so both screens line up.
+# The save slots (position, indent, items-source) come from load-game so both screens line up.
 components:
   -
     type: "Background"
