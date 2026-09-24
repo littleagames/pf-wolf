@@ -1149,8 +1149,9 @@ internal partial class Program
     {
         var viewangle = (int)(player.Angle + (centerx - ob.ViewX) / (8 * viewwidth / 320.0));
 
-        // A rocket has no Dir (it flies at an arbitrary angle), so it rotates by its heading.
-        var angle = ob.Name == "Rocket"
+        // A projectile (Rocket, the Death Knight's HeavyRocket) has no Dir -- it flies at an
+        // arbitrary angle -- so it rotates by its heading.
+        var angle = ob.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase)
             ? (viewangle - 180) - ob.Angle
             : (viewangle - 180) - dirangle[(byte)ob.Dir];
 

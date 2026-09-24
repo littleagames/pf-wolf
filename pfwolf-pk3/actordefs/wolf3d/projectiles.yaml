@@ -21,6 +21,7 @@
 # Thrown by Gift/Fat (T_GiftThrow); explodes into Smoke/Boom on impact
 # with a wall, or damages the player directly on contact.
 Rocket:
+  flags: [PROJECTILE]
   states:
     Spawn: # s_rocket / T_Projectile, A_Smoke
       - sprite: ROCK
@@ -71,6 +72,7 @@ Boom:
 
 # Thrown by Schabbs (T_SchabbThrow); no wall-impact effect, just vanishes.
 Needle:
+  flags: [PROJECTILE]
   states:
     Spawn: # s_needle1..4 / T_Projectile
       - sprite: HYPO
@@ -97,6 +99,7 @@ Needle:
 # Fake Hitler's flamethrower stream (T_FakeFire); one spawned per Attack
 # frame, forming a continuous line toward the player.
 Fire:
+  flags: [PROJECTILE]
   states:
     Spawn: # s_fire1..2 / T_Projectile
       - sprite: FIRE
