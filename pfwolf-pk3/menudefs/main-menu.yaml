@@ -26,71 +26,80 @@ components:
       - y: 52
       - width: 178
       - height: 136
-      - theme: "wolf3d-theme"
   -
     type: "Graphic"
     params:
       - name: "c_options"
       - horizontal-orientation: "Center"
       - y: 0
+# Items without an action are handled by the main menu loop (by id)
 menu-items:
   -
+      id: "newgame"
       type: "MenuSwitcher"
       text: "$MENU_NEWGAME"
       short-key: N
       enabled: true
       action: "CP_NewGame"
   -
+      id: "sound"
       type: "MenuSwitcher"
       text: "$MENU_SOUND"
       short-key: S
       enabled: true
       action: "CP_Sound"
   -
+      id: "control"
       type: "MenuSwitcher"
       text: "$MENU_CONTROL"
       short-key: C
       enabled: true
       action: "CP_Control"
   -
+      id: "loadgame"
       type: "MenuSwitcher"
       text: "$MENU_LOADGAME"
       short-key: L
       enabled: true
       action: "CP_LoadGame"
   -
+      id: "savegame"
       type: "MenuSwitcher"
       text: "$MENU_SAVEGAME"
       short-key: S
-      enabled: true
+      enabled: false
       action: "CP_SaveGame"
   -
+      id: "changeview"
       type: "MenuSwitcher"
       text: "$MENU_CHANGEVIEW"
       short-key: C
       enabled: true
       action: "CP_ChangeView"
   -
+      id: "readthis"
       type: "MenuSwitcher"
       text: "$MENU_READTHIS"
       short-key: R
       enabled: true
       action: "CP_ReadThis"
+  # Becomes "End Game" (no action) while a game is in progress
   -
+      id: "viewscores"
       type: "MenuSwitcher"
       text: "$MENU_VIEWSCORES"
       short-key: V
       enabled: true
-      action: "CP_ViewScoresOrEndGame"
+      action: "CP_ViewScores"
   -
+      id: "backtodemo"
       type: "MenuSwitcher"
       text: "$MENU_BACKTODEMO"
       short-key: B
       enabled: true
-      action: "CP_DemoOrPlayGame"
   -
+      id: "quit"
       type: "MenuSwitcher"
       text: "$MENU_QUIT"
       short-key: Q
       enabled: true
-      action: "CP_Quit"

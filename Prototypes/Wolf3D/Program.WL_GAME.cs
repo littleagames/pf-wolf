@@ -166,8 +166,7 @@ internal partial class Program
                     ClearMemory();
 
                     CheckHighScore(gamestate.score, (ushort)/*(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1)*/1); // TODO: Redo this to support map names
-                    MainMenu[(int)menuitems.viewscores].text = "$MENU_VIEWSCORES".ToLanguageText(language);
-                    MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
+                    EnableViewScoresMenuItem();
                     return;
 
                 case playstatetypes.ex_victorious:
@@ -180,8 +179,7 @@ internal partial class Program
                     ClearMemory();
 
                     CheckHighScore(gamestate.score, (ushort)/*(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1)*/1); // TODO: Redo this to support map names
-                    MainMenu[(int)menuitems.viewscores].text = "$MENU_VIEWSCORES".ToLanguageText(language);
-                    MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
+                    EnableViewScoresMenuItem();
                     return;
 
                 default:

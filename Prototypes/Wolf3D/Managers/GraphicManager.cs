@@ -72,7 +72,7 @@ internal class GraphicManager
         }
         else if (component is Window window)
         {
-            videoManager.Bar(window.X, window.Y, window.Width, window.Height, "BKGDCOLOR");
+            videoManager.Bar(window.X, window.Y, window.Width, window.Height, window.Color);
             DrawOutline(window.X, window.Y, window.Width, window.Height, "BORD2COLOR", "DEACTIVE");
         }
     }

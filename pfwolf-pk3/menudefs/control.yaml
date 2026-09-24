@@ -26,7 +26,6 @@ components:
       - y: 81
       - width: 284
       - height: 60
-      - theme: "wolf3d-theme"
   -
     type: "Graphic"
     params:
@@ -35,20 +34,24 @@ components:
       - y: 0
 menu-items:
   -
+      id: "mouse-enabled"
       type: "ToggleMenuItem"
-      text: "Mouse Enabled"
+      text: "$STR_MOUSEEN"
       enabled: false
   -
+      id: "mouse-sensitivity"
       type: "MenuSwitcher"
-      text: "Mouse Sensitivity"
+      text: "$STR_SENS"
       enabled: false
       action: "MouseSensitivity"
   -
+      id: "joystick-enabled"
       type: "ToggleMenuItem"
-      text: "Joystick Enabled"
+      text: "$STR_JOYEN"
       enabled: false
   -
+      id: "customize"
       type: "MenuSwitcher"
-      text: "Customize controls"
+      text: "$STR_CUSTOM"
       enabled: true
       action: "CustomControls"

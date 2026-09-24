@@ -11,6 +11,8 @@ namespace Wolf3D.Managers;
 internal class AssetManager
 {
     Dictionary<string, Asset> _assets = new Dictionary<string, Asset>();
+    // Menus are drawn every redraw; build each one once
+    private readonly Dictionary<string, MenuMetadata> _menuCache = new();
     private bool strict = false;
 
     /// <summary>
@@ -118,11 +120,17 @@ internal class AssetManager
     public MenuMetadata? GetMenu(string name)
     {
         var normalizedName = name.ToLowerInvariant();
+        if (_menuCache.TryGetValue(normalizedName, out var cached))
+            return cached;
+
         var asset = Find<MenuAsset>(normalizedName);
         if (asset != null)
         {
             // TODO: MenuManager?
-            return MenuMetadata.BuildFromAsset(asset);
+            var menu = MenuMetadata.BuildFromAsset(asset);
+            if (menu != null)
+                _menuCache[normalizedName] = menu;
+            return menu;
         }
 
         //if (normalizedName.Equals("game-options"))

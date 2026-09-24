@@ -29,6 +29,10 @@ internal record ComponentEntry
 
 internal record MenuItemEntry
 {
+    /// <summary>
+    /// Stable name code uses to find this item, so the YAML can be reordered safely
+    /// </summary>
+    public string? Id { get; init; } = null;
     public string Type { get; init; } = null!;
     public string Text { get; init; } = null!;
     public string? ShortKey { get; init; } = null;

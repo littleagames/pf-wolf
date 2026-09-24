@@ -134,7 +134,7 @@ internal class GameEngineManager
             consoleManager.PauseWhenOpen = pause;
 
         // Set "Read This" back to standard active
-        Program.MainMenu[6].active = 1;
+        Program.FindMenuItem(Program.MainMenu, "readthis")?.active = 1;
         Program.MainItems.curpos = 0;
     }
 

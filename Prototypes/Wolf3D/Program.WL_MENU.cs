@@ -17,24 +17,8 @@ internal struct CustomCtrls
     }
 };
 
-internal enum menuitems
-{
-    newgame,
-    soundmenu,
-    control,
-    loadgame,
-    savegame,
-    changeview,
-    readthis,
-    viewscores,
-    backtodemo,
-    quit
-}
-
 internal partial class Program
 {
-    internal const menuitems STARTITEM = menuitems.readthis;
-
     internal const int SM_X = 48;
     internal const int SM_W = 250;
 
@@ -81,8 +65,6 @@ internal partial class Program
 
     internal static CP_itemtype[] MainMenu = [];
     internal static CP_itemtype[] SndMenu = [];
-    internal enum CtlOptions { CTL_MOUSEENABLE, CTL_MOUSESENS, CTL_JOYENABLE, CTL_CUSTOMIZE };
-
     internal static CP_itemtype[] CtlMenu = [];
     internal static CP_itemtype[] NewEmenu = [];
     internal static CP_itemtype[] NewMenu = [];
@@ -182,8 +164,19 @@ internal partial class Program
     private static void EnableEndGameMenuItem()
     {
         var language = _assetManager.GetText("en-us");
-        MainMenu[(int)menuitems.viewscores].routine = null;
-        MainMenu[(int)menuitems.viewscores].text = "$MENU_ENDGAME".ToLanguageText(language);
+        var item = FindMenuItem(MainMenu, "viewscores");
+        if (item == null) return;
+        item.routine = null;
+        item.text = "$MENU_ENDGAME".ToLanguageText(language);
+    }
+
+    internal static void EnableViewScoresMenuItem()
+    {
+        var language = _assetManager.GetText("en-us");
+        var item = FindMenuItem(MainMenu, "viewscores");
+        if (item == null) return;
+        item.routine = CP_ViewScores;
+        item.text = "$MENU_VIEWSCORES".ToLanguageText(language);
     }
 
     internal static void ClearMScreen()
@@ -339,8 +332,7 @@ internal partial class Program
 
                 for (i = which + 1; i < item_i.amount; i++)
                 {
-                    var text = items[i].text;
-                    if (items[i].active != 0 && !string.IsNullOrWhiteSpace(text) && text[0] == key)
+                    if (items[i].active != 0 && ItemKey(items[i]) == key)
                     {
                         EraseGun(item_i, items, x, y, which);
                         which = i;
@@ -354,10 +346,10 @@ internal partial class Program
                 //
                 // DIDN'T FIND A MATCH FIRST TIME THRU. CHECK AGAIN.
                 //
-                if (ok != 0)
+                if (ok == 0)
                 {
                     for (i = 0; i < which; i++)
-                        if (items[i].active != 0 && (items[i]).text[0] == key)
+                        if (items[i].active != 0 && ItemKey(items[i]) == key)
                         {
                             EraseGun(item_i, items, x, y, which);
                             which = i;
@@ -494,6 +486,14 @@ internal partial class Program
         }
 
         return 0; // JUST TO SHUT UP THE ERROR MESSAGES!
+    }
+
+    private static char ItemKey(CP_itemtype item)
+    {
+        if (item.shortKey != '\0')
+            return char.ToUpperInvariant(item.shortKey);
+
+        return string.IsNullOrWhiteSpace(item.text) ? '\0' : item.text[0];
     }
 
     internal static void EraseGun(CP_iteminfo item_i, CP_itemtype[] items, int x, int y, int which)
@@ -688,7 +688,7 @@ internal partial class Program
         if (!ingame)
         { }// CA_LoadAllSounds();
         else
-            MainMenu[(int)menuitems.savegame].active = 1;
+            FindMenuItem(MainMenu, "savegame")?.active = 1;
 
         _inputManager.CenterMouse();
     }
@@ -750,10 +750,10 @@ internal partial class Program
         do
         {
             which = HandleMenu(MainItems, MainMenu, null);
-            switch (which)
+            switch (which < 0 ? "quit" : SelectedId(MainMenu, which))
             {
-                case (int)menuitems.viewscores:
-                    if (MainMenu[(int)menuitems.viewscores].routine == null)
+                case "viewscores":
+                    if (MainMenu[which].routine == null)
                     {
                         if (CP_EndGame(0) != 0)
                             StartGame = 1;
@@ -765,15 +765,14 @@ internal partial class Program
                     }
                     break;
 
-                case (int)menuitems.backtodemo:
+                case "backtodemo":
                     StartGame = 1;
                     if (!ingame)
                         StartCPMusic(INTROSONG);
                     _videoManager.FadeOut(0, 255, 0, 0, 0, 10);
                     break;
 
-                case -1:
-                case (int)menuitems.quit:
+                case "quit":
                     CP_Quit(0);
                     break;
 
@@ -823,7 +822,7 @@ internal partial class Program
 
                 WindowH = 200;
                 fontnumber = "SmallFont";
-                MainMenu[(int)menuitems.savegame].active = 0;
+                FindMenuItem(MainMenu, "savegame")?.active = 0;
                 return 1;
             //
             // QUICKSAVE
@@ -933,26 +932,26 @@ internal partial class Program
 
     internal static void DrawMainMenu()
     {
-        var mainMenu = _assetManager.GetMenu("main-menu");
         var language = _assetManager.GetText("en-us");
 
-        foreach (var menuComponent in mainMenu.Components)
-        {
-            _graphicManager.DrawComponent(menuComponent);
-        }
+        DrawMenuComponents("main-menu");
 
         //
         // CHANGE "GAME" AND "DEMO"
         //
-        if (ingame)
+        var backToDemo = FindMenuItem(MainMenu, "backtodemo");
+        if (backToDemo != null)
         {
-            MainMenu[(int)menuitems.backtodemo].text = "$MENU_BACKTOGAME".ToLanguageText(language);
-            MainMenu[(int)menuitems.backtodemo].active = 2;
-        }
-        else
-        {
-            MainMenu[(int)menuitems.backtodemo].text = "$MENU_BACKTODEMO".ToLanguageText(language);
-            MainMenu[(int)menuitems.backtodemo].active = 1;
+            if (ingame)
+            {
+                backToDemo.text = "$MENU_BACKTOGAME".ToLanguageText(language);
+                backToDemo.active = 2;
+            }
+            else
+            {
+                backToDemo.text = "$MENU_BACKTODEMO".ToLanguageText(language);
+                backToDemo.active = 1;
+            }
         }
 
         DrawMenu(MainItems, MainMenu);
@@ -1038,7 +1037,7 @@ internal partial class Program
         //
         // CHANGE "READ THIS!" TO NORMAL COLOR
         //
-        MainMenu[(int)menuitems.readthis].active = 1;
+        FindMenuItem(MainMenu, "readthis")?.active = 1;
         pickquick = 0;
 
         return 0;
@@ -1106,12 +1105,12 @@ internal partial class Program
             //
             // HANDLE MENU CHOICES
             //
-            switch (which)
+            switch (SelectedId(SndMenu, which))
             {
                 //
                 // SOUND EFFECTS
                 //
-                case 0:
+                case "sfx-none":
                    // if (_audioManager.SoundMode != SDMode.Off)
                     {
                     //    _audioManager.SD_WaitSoundDone();
@@ -1119,7 +1118,7 @@ internal partial class Program
                         DrawSoundMenu();
                     }
                     break;
-                case 1:
+                case "sfx-pc":
                    // if (_audioManager.SoundMode != SDMode.PC)
                     {
                     //    _audioManager.SD_WaitSoundDone();
@@ -1129,7 +1128,7 @@ internal partial class Program
                         ShootSnd();
                     }
                     break;
-                case 2:
+                case "sfx-adlib":
                    // if (_audioManager.SoundMode != SDMode.AdLib)
                     {
                     //    _audioManager.SD_WaitSoundDone();
@@ -1143,14 +1142,14 @@ internal partial class Program
                 //
                 // DIGITIZED SOUND
                 //
-                case 5:
+                case "digi-none":
                   //  if (_audioManager.DigiMode != (byte)SDSMode.Off)
                     {
                     //    _audioManager.SetDigiDevice((byte)SDSMode.Off);
                         DrawSoundMenu();
                     }
                     break;
-                case 6:
+                case "digi-soundsource":
                     /*                if (DigiMode != sds_SoundSource)
                                     {
                                         SD_SetDigiDevice (sds_SoundSource);
@@ -1158,7 +1157,7 @@ internal partial class Program
                                         ShootSnd ();
                                     }*/
                     break;
-                case 7:
+                case "digi-soundblaster":
                    // if (_audioManager.DigiMode != SDSMode.SoundBlaster)
                     {
                    //     _audioManager.SetDigiDevice(SDSMode.SoundBlaster);
@@ -1170,7 +1169,7 @@ internal partial class Program
                 //
                 // MUSIC
                 //
-                case 10:
+                case "music-none":
                     //if (_audioManager.MusicMode != SMMode.Off)
                     {
                    //     _audioManager.SetMusicMode(SMMode.Off);
@@ -1178,7 +1177,7 @@ internal partial class Program
                         ShootSnd();
                     }
                     break;
-                case 11:
+                case "music-adlib":
                     //if (_audioManager.MusicMode != SMMode.AdLib)
                     {
                     //    _audioManager.SetMusicMode(SMMode.AdLib);
@@ -1203,12 +1202,7 @@ internal partial class Program
         //
         // DRAW SOUND MENU
         //
-        var soundMenu = _assetManager.GetMenu("sound");
-
-        foreach (var menuComponent in soundMenu.Components)
-        {
-            _graphicManager.DrawComponent(menuComponent);
-        }
+        DrawMenuComponents("sound");
 
         //
         // IF NO ADLIB, NON-CHOOSENESS!
@@ -1232,20 +1226,20 @@ internal partial class Program
                 // DRAW SELECTED/NOT SELECTED GRAPHIC BUTTONS
                 //
                 on = 0;
-                switch (i)
+                switch (SndMenu[i].id)
                 {
                     //
                     // SOUND EFFECTS
                     //
-                    case 0:
+                    case "sfx-none":
                         //if (_audioManager.SoundMode == SDMode.Off)
                             on = 1;
                         break;
-                    case 1:
+                    case "sfx-pc":
                         //if (_audioManager.SoundMode == SDMode.PC)
                             on = 1;
                         break;
-                    case 2:
+                    case "sfx-adlib":
                         //if (_audioManager.SoundMode == SDMode.AdLib)
                             on = 1;
                         break;
@@ -1253,15 +1247,15 @@ internal partial class Program
                     //
                     // DIGITIZED SOUND
                     //
-                    case 5:
+                    case "digi-none":
                         //if (_audioManager.DigiMode == SDSMode.Off)
                             on = 1;
                         break;
-                    case 6:
+                    case "digi-soundsource":
                         //                    if (DigiMode == sds_SoundSource)
                         //                        on = 1;
                         break;
-                    case 7:
+                    case "digi-soundblaster":
                        // if (_audioManager.DigiMode == SDSMode.SoundBlaster)
                             on = 1;
                         break;
@@ -1269,20 +1263,22 @@ internal partial class Program
                     //
                     // MUSIC
                     //
-                    case 10:
+                    case "music-none":
                         //if (_audioManager.MusicMode == SMMode.Off)
                             on = 1;
                         break;
-                    case 11:
+                    case "music-adlib":
                        // if (_audioManager.MusicMode == SMMode.AdLib)
                             on = 1;
                         break;
                 }
 
+                int x = SndItems.x + 24;
+                int y = SndItems.y + i * 13 + 2;
                 if (on != 0)
-                    _graphicManager.DrawPic("c_selected", SM_X + 24, SM_Y1 + i * 13 + 2);
+                    _graphicManager.DrawPic("c_selected", x, y);
                 else
-                    _graphicManager.DrawPic("c_notselected", SM_X + 24, SM_Y1 + i * 13 + 2);
+                    _graphicManager.DrawPic("c_notselected", x, y);
             }
 
         DrawMenuGun(SndItems);
@@ -1300,9 +1296,9 @@ internal partial class Program
         do
         {
             which = HandleMenu(CtlItems, CtlMenu, null);
-            switch ((CtlOptions)which)
+            switch (SelectedId(CtlMenu, which))
             {
-                case CtlOptions.CTL_MOUSEENABLE:
+                case "mouse-enabled":
                     mouseenabled ^= true;
                     _inputManager.CenterMouse();
                     DrawCtlScreen();
@@ -1310,15 +1306,15 @@ internal partial class Program
                     ShootSnd();
                     break;
 
-                case CtlOptions.CTL_JOYENABLE:
+                case "joystick-enabled":
                     joystickenabled ^= true;
                     DrawCtlScreen();
                     CusItems.curpos = -1;
                     ShootSnd();
                     break;
 
-                case CtlOptions.CTL_MOUSESENS:
-                case CtlOptions.CTL_CUSTOMIZE:
+                case "mouse-sensitivity":
+                case "customize":
                     DrawCtlScreen();
                     MenuFadeIn();
                     WaitKeyUp();
@@ -1334,44 +1330,31 @@ internal partial class Program
 
     internal static void DrawCtlScreen()
     {
-        int i, x, y;
-        var assetMenu = _assetManager.GetMenu("control");
-
-        foreach (var menuComponent in assetMenu.Components)
-        {
-            _graphicManager.DrawComponent(menuComponent);
-        }
+        int i;
+        DrawMenuComponents("control");
 
         WindowX = 0;
         WindowW = 320;
         SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
 
+        var mouseEnabledItem = FindMenuItem(CtlMenu, "mouse-enabled");
+        var mouseSensItem = FindMenuItem(CtlMenu, "mouse-sensitivity");
+
         if (_inputManager.JoyPresent())
-            CtlMenu[(int)CtlOptions.CTL_JOYENABLE].active = 1;
+            FindMenuItem(CtlMenu, "joystick-enabled")?.active = 1;
 
         if (_inputManager.IsMousePresent())
         {
-            CtlMenu[(int)CtlOptions.CTL_MOUSESENS].active = CtlMenu[(int)CtlOptions.CTL_MOUSEENABLE].active = 1;
+            mouseEnabledItem?.active = 1;
         }
 
-        CtlMenu[(int)CtlOptions.CTL_MOUSESENS].active = (short)(mouseenabled ? 1 : 0);
+        mouseSensItem?.active = (short)(mouseenabled ? 1 : 0);
 
 
         DrawMenu(CtlItems, CtlMenu);
 
-
-        x = CTL_X + CtlItems.indent - 24;
-        y = CTL_Y + 3;
-        if (mouseenabled)
-            _graphicManager.DrawPic("c_selected", x, y);
-        else
-            _graphicManager.DrawPic("c_notselected", x, y);
-
-        y = CTL_Y + 29;
-        if (joystickenabled)
-            _graphicManager.DrawPic("c_selected", x, y);
-        else
-            _graphicManager.DrawPic("c_notselected", x, y);
+        DrawCtlCheckbox("mouse-enabled", mouseenabled);
+        DrawCtlCheckbox("joystick-enabled", joystickenabled);
 
         //
         // PICK FIRST AVAILABLE SPOT
@@ -1390,6 +1373,17 @@ internal partial class Program
 
         DrawMenuGun(CtlItems);
         _videoManager.Update();
+    }
+
+    private static void DrawCtlCheckbox(string id, bool on)
+    {
+        int index = Array.FindIndex(CtlMenu, item => item.id == id);
+        if (index < 0)
+            return;
+
+        int x = CtlItems.x + CtlItems.indent - 24;
+        int y = CtlItems.y + index * 13 + 3;
+        _graphicManager.DrawPic(on ? "c_selected" : "c_notselected", x, y);
     }
 
     internal static int CP_LoadGame(int quick)
@@ -1443,7 +1437,7 @@ internal partial class Program
                 //
                 // CHANGE "READ THIS!" TO NORMAL COLOR
                 //
-                MainMenu[(int)menuitems.readthis].active = 1;
+                FindMenuItem(MainMenu, "readthis")?.active = 1;
                 exit = 1;
                 break;
             }
@@ -1768,9 +1762,8 @@ internal partial class Program
         playstate = playstatetypes.ex_died;
         LastAttacker = null;
 
-        MainMenu[(int)menuitems.savegame].active = 0;
-        MainMenu[(int)menuitems.viewscores].routine = CP_ViewScores;
-        MainMenu[(int)menuitems.viewscores].text = "$MENU_VIEWSCORES".ToLanguageText(language);
+        FindMenuItem(MainMenu, "savegame")?.active = 0;
+        EnableViewScoresMenuItem();
         return 1;
     }
 
@@ -2748,42 +2741,98 @@ internal partial class Program
             }
         }
 
-        var menuAsset = _assetManager.GetMenu("main-menu");
-        var language = _assetManager.GetText("en-us");
-        MainMenu = menuAsset.MenuItems.Select(mi =>
-                new CP_itemtype((short)(mi.Enabled ? 1 : 0), mi.Text.ToLanguageText(language), MapFunction(mi as MenuSwitcher)))
-                .ToArray();
-        MainItems = new CP_iteminfo(
-            (short)menuAsset.Position.X, 
-            (short)menuAsset.Position.Y, 
-            amount: (short)MainMenu.Length, 
-            curpos: 0, 
-            indent: (short)menuAsset.Indent);
-
-        menuAsset = _assetManager.GetMenu("sound");
-        SndMenu = menuAsset.MenuItems.Select(mi =>
-                new CP_itemtype((short)(mi.Enabled ? 1 : 0), mi.Text.ToLanguageText(language), MapFunction(mi as MenuSwitcher)))
-                .ToArray();
-        SndItems = new CP_iteminfo(
-            (short)menuAsset.Position.X,
-            (short)menuAsset.Position.Y,
-            amount: (short)SndMenu.Length,
-            curpos: 0,
-            indent: (short)menuAsset.Indent);
-
-        menuAsset = _assetManager.GetMenu("control");
-        CtlMenu = menuAsset.MenuItems.Select(mi =>
-                new CP_itemtype((short)(mi.Enabled ? 1 : 0), mi.Text.ToLanguageText(language), MapFunction(mi as MenuSwitcher)))
-                .ToArray();
-        CtlItems = new CP_iteminfo(
-            (short)menuAsset.Position.X,
-            (short)menuAsset.Position.Y,
-            amount: (short)CtlMenu.Length,
-            curpos: -1,
-            indent: (short)menuAsset.Indent);
+        (MainMenu, MainItems) = LoadMenu("main-menu", curpos: 0);
+        (SndMenu, SndItems) = LoadMenu("sound", curpos: 0);
+        (CtlMenu, CtlItems) = LoadMenu("control", curpos: -1);
     }
 
-    private static Func<int, int>? MapFunction(MenuSwitcher? mi)
+    /// <summary>
+    /// Builds the item list and layout for a menu defined in menudefs/
+    /// </summary>
+    private static (CP_itemtype[] items, CP_iteminfo info) LoadMenu(string name, short curpos)
+    {
+        var menuAsset = _assetManager.GetMenu(name)
+            ?? throw new InvalidOperationException($"Menu '{name}' not found in menudefs");
+        var language = _assetManager.GetText("en-us");
+
+        var items = menuAsset.MenuItems.Select(mi =>
+                new CP_itemtype(
+                    (short)(mi.Enabled && mi is not BlankMenuItem ? 1 : 0),
+                    (mi.Text ?? "").ToLanguageText(language),
+                    MapFunction(name, mi as MenuSwitcher))
+                {
+                    id = mi.Id,
+                    shortKey = string.IsNullOrEmpty(mi.ShortKey) ? '\0' : mi.ShortKey[0]
+                })
+                .ToArray();
+
+        var info = new CP_iteminfo(
+            (short)menuAsset.Position.X,
+            (short)menuAsset.Position.Y,
+            amount: (short)items.Length,
+            curpos: curpos,
+            indent: (short)menuAsset.Indent);
+
+        return (items, info);
+    }
+
+    /// <summary>
+    /// Finds a menu item by its YAML id, or null if the menu has no such item (or isn't loaded yet)
+    /// </summary>
+    internal static CP_itemtype? FindMenuItem(CP_itemtype[] items, string id)
+        => items.FirstOrDefault(item => item.id == id);
+
+    /// <summary>
+    /// Id of the chosen item from HandleMenu's result, or null for escape / an item without an id
+    /// </summary>
+    private static string? SelectedId(CP_itemtype[] items, int which)
+        => which >= 0 && which < items.Length ? items[which].id : null;
+
+    /// <summary>
+    /// Draws the non-interactive parts of a menu (background, windows, graphics, labels)
+    /// </summary>
+    internal static void DrawMenuComponents(string name)
+    {
+        var menu = _assetManager.GetMenu(name);
+        if (menu == null)
+            return;
+
+        foreach (var component in menu.Components)
+        {
+            if (component is Label label)
+                DrawLabel(label);
+            else
+                _graphicManager.DrawComponent(component);
+        }
+    }
+
+    private static void DrawLabel(Label label)
+    {
+        var language = _assetManager.GetText("en-us");
+        var oldFont = fontnumber;
+
+        fontnumber = label.Font;
+        SETFONTCOLOR(label.Color, "BKGDCOLOR");
+        PrintY = (ushort)label.Y;
+
+        var text = label.Text.ToLanguageText(language);
+        if (label.HorizontalOrientation == HorizontalOrientation.Center)
+        {
+            WindowX = 0;
+            WindowW = 320;
+            US_CPrint(text);
+        }
+        else
+        {
+            PrintX = (ushort)label.X;
+            US_Print(text);
+        }
+
+        fontnumber = oldFont;
+        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
+    }
+
+    private static Func<int, int>? MapFunction(string menuName, MenuSwitcher? mi)
     {
         // This list will be built with attributes or scripting on the pk3
         List<Func<int, int>> avaiableFunctions = 
@@ -2804,10 +2853,12 @@ internal partial class Program
 
         var funcDict = avaiableFunctions.ToDictionary(f => f.Method.Name, f => f);
 
-        if (mi == null 
-            || string.IsNullOrEmpty(mi.Action)
-            || !funcDict.TryGetValue(mi.Action, out var func))
+        if (mi == null || string.IsNullOrEmpty(mi.Action))
+            return null;
+
+        if (!funcDict.TryGetValue(mi.Action, out var func))
         {
+            Console.WriteLine($"Menu '{menuName}': unknown action '{mi.Action}' on item '{mi.Id ?? mi.Text}'");
             return null;
         }
 

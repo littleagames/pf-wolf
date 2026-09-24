@@ -22,7 +22,6 @@ components:
       - y: 17
       - width: 250
       - height: 45
-      - theme: "wolf3d-theme"
   -
     type: "Window"
     params:
@@ -30,7 +29,6 @@ components:
       - y: 82
       - width: 250
       - height: 45
-      - theme: "wolf3d-theme"
   -
     type: "Window"
     params:
@@ -38,7 +36,6 @@ components:
       - y: 147
       - width: 250
       - height: 32
-      - theme: "wolf3d-theme"
   -
     type: "Graphic"
     params:
@@ -60,16 +57,19 @@ components:
 menu-items:
   # Sound FX
   -
+      id: "sfx-none"
       type: "ToggleMenuItem"
-      text: "None"
+      text: "$STR_NONE"
       enabled: true
   -
+      id: "sfx-pc"
       type: "ToggleMenuItem"
-      text: "PC Speaker"
+      text: "$STR_PC"
       enabled: true
   -
+      id: "sfx-adlib"
       type: "ToggleMenuItem"
-      text: "AdLib/Sound Blaster"
+      text: "$STR_ALSB"
       enabled: true
   # Digi FX, gap of 2
   -
@@ -77,16 +77,19 @@ menu-items:
   -
       type: "BlankMenuItem"
   -
+      id: "digi-none"
       type: "ToggleMenuItem"
-      text: "None"
+      text: "$STR_NONE"
       enabled: true
   -
+      id: "digi-soundsource"
       type: "ToggleMenuItem"
-      text: "Disney Sound Source"
+      text: "$STR_DISNEY"
       enabled: false
   -
+      id: "digi-soundblaster"
       type: "ToggleMenuItem"
-      text: "Sound Blaster"
+      text: "$STR_SB"
       enabled: true
   # Music, gap of 2
   -
@@ -94,10 +97,12 @@ menu-items:
   -
       type: "BlankMenuItem"
   -
+      id: "music-none"
       type: "ToggleMenuItem"
-      text: "None"
+      text: "$STR_NONE"
       enabled: true
   -
+      id: "music-adlib"
       type: "ToggleMenuItem"
-      text: "AdLib/Sound Blaster"
+      text: "$STR_ALSB"
       enabled: true

@@ -324,7 +324,11 @@ internal class MenuMetadata
         {
             if (entry == null || string.IsNullOrWhiteSpace(entry.Type)) continue;
             var compType = assembly.GetTypes().FirstOrDefault(t => compBase.IsAssignableFrom(t) && string.Equals(t.Name, entry.Type, StringComparison.OrdinalIgnoreCase));
-            if (compType == null) continue;
+            if (compType == null)
+            {
+                Console.WriteLine($"Menu: unknown component type '{entry.Type}', skipped");
+                continue;
+            }
 
             object? instance = null;
             try
@@ -355,15 +359,21 @@ internal class MenuMetadata
             }
 
             // Set matching properties from params
+            var usedParams = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var prop in compType.GetProperties(flags))
             {
                 if (!prop.CanWrite) continue;
                 if (paramMap.TryGetValue(NormalizeParamName(prop.Name), out var sval))
                 {
+                    usedParams.Add(NormalizeParamName(prop.Name));
                     var conv = ConvertValue(sval, prop.PropertyType);
                     if (conv != null) prop.SetValue(instance, conv);
+                    else Console.WriteLine($"Menu: {entry.Type}.{prop.Name} could not use value '{sval}'");
                 }
             }
+
+            foreach (var unused in paramMap.Keys.Where(k => !usedParams.Contains(k)))
+                Console.WriteLine($"Menu: {entry.Type} has no param '{unused}', ignored");
 
             result.Add((MenuComponent)instance);
         }
@@ -386,7 +396,11 @@ internal class MenuMetadata
         {
             if (entry == null || string.IsNullOrWhiteSpace(entry.Type)) continue;
             var menuItemType = assembly.GetTypes().FirstOrDefault(t => compBase.IsAssignableFrom(t) && string.Equals(t.Name, entry.Type, StringComparison.OrdinalIgnoreCase));
-            if (menuItemType == null) continue;
+            if (menuItemType == null)
+            {
+                Console.WriteLine($"Menu: unknown menu item type '{entry.Type}', skipped");
+                continue;
+            }
 
             object? instance = null;
             try
@@ -460,6 +474,7 @@ internal record Window : MenuComponent
     public int Y { get; set; }
     public int Width { get; set; }
     public int Height { get; set; }
+    public string Color { get; set; } = "BKGDCOLOR";
 
     public Window()
     {
@@ -551,6 +566,24 @@ internal record Stripe : MenuComponent
     }
 }
 
+/// <summary>
+/// A line of printed text. Language keys ("$STR_...") are translated when drawn.
+/// Center orientation centers the text across the full screen width, ignoring X.
+/// </summary>
+internal record Label : MenuComponent
+{
+    public string Text { get; set; } = "";
+    public int X { get; set; }
+    public int Y { get; set; }
+    public HorizontalOrientation HorizontalOrientation { get; set; } = HorizontalOrientation.Left;
+    public string Color { get; set; } = "TEXTCOLOR";
+    public string Font { get; set; } = "LargeFont";
+
+    public Label()
+    {
+    }
+}
+
 internal enum HorizontalOrientation
 {
     Left,
@@ -567,7 +600,9 @@ internal enum VerticalOrientation
 
 internal abstract record MenuItem
 {
+    public string? Id { get; set; }
     public string Text { get; set; } = null!;
+    public string? ShortKey { get; set; }
     public bool Enabled { get; set; }
 }
 

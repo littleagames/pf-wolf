@@ -22,6 +22,11 @@ internal class CP_itemtype
     public string text;
     public Func<int, int>? routine;
     public object? data = null;
+    public string? id = null;
+    /// <summary>
+    /// Key that jumps to this item; 0 means use the first letter of the text
+    /// </summary>
+    public char shortKey = '\0';
 }
 
 internal class CP_iteminfo
