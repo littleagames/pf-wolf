@@ -1,6 +1,6 @@
-music: "Wondering"
 type: "wolf3d-menu"
 # Debug jukebox. Songs are shown one page of 6 at a time; a random page is picked on open.
+# No music: opening it leaves the current track playing until a song is picked.
 position:
   x: 24
   y: 86

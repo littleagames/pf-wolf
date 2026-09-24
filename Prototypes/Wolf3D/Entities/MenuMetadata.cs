@@ -15,8 +15,7 @@ internal class MenuMetadata
 
     /// <summary>
     /// Music track asset name to play when entering this menu.
-    /// (If the track name is the same as a previous menu transition,
-    /// it will continue to play, unless you use the "MusicForceRestart"
+    /// If the track is already playing it carries on; with no music, the current track keeps playing.
     /// </summary>
     public string? Music { get; set; } = null;
 

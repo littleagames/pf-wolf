@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using SDL2;
 using Wolf3D.Assets;
+using Wolf3D.Assets.Sounds;
 using Wolf3D.Entities;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
@@ -41,7 +42,8 @@ internal partial class Program
     internal const int CST_START = 60;
     internal const int CST_SPC = 60;
 
-    internal static string MENUSONG => "WONDERIN";
+    // Control panel song: the main menu's music in menudefs/main-menu
+    internal static string MENUSONG => _assetManager.GetMenu("main-menu")?.Music ?? "WONDERIN";
 //#if SPEAR
 //    internal static string INTROSONG => musicnames.XTOWER2_MUS;
 //#else
@@ -2545,7 +2547,11 @@ internal partial class Program
 
         // Build every menudef now so problems in any of them are reported at startup
         foreach (var menuName in _assetManager.GetMenuNames())
-            _assetManager.GetMenu(menuName);
+        {
+            var menu = _assetManager.GetMenu(menuName);
+            if (!string.IsNullOrEmpty(menu?.Music) && _assetManager.Find<Wolf3dImfAudio>(menu.Music) == null)
+                Console.WriteLine($"Menu '{menuName}': unknown music '{menu.Music}'");
+        }
 
         (MainMenu, MainItems) = LoadMenu("main-menu");
         (SndMenu, SndItems) = LoadMenu("sound");
@@ -2666,6 +2672,8 @@ internal partial class Program
         if (menu == null)
             return;
 
+        StartMenuMusic(menu);
+
         foreach (var component in menu.Components)
         {
             if (component is Label label)
@@ -2673,6 +2681,24 @@ internal partial class Program
             else
                 _graphicManager.DrawComponent(component);
         }
+    }
+
+    /// <summary>
+    /// Plays a menu's music. A track that is already playing carries on rather than restarting,
+    /// and a menu without music leaves the current track alone.
+    /// </summary>
+    private static void StartMenuMusic(MenuMetadata menu)
+    {
+        if (string.IsNullOrEmpty(menu.Music))
+            return;
+
+        if (string.Equals(_audioManager.CurrentMusicTrack, menu.Music, StringComparison.OrdinalIgnoreCase))
+        {
+            _audioManager.SetPaused(false);
+            return;
+        }
+
+        StartCPMusic(menu.Music);
     }
 
     private static void DrawLabel(Label label)

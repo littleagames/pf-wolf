@@ -1,4 +1,4 @@
-music: "Wondering"
+music: "WONDERIN"
 type: "wolf3d-menu"
 # The binding rows (b0, Ctrl, ...) are drawn in code on each selectable item's row:
 # row y = position.y + item index * 13. Binding columns are at x 60, 120, 180, 240,
