@@ -1,0 +1,12 @@
+# Spear of Destiny text, added to the shared language/en-us.yaml.
+
+# Quit messages (game-info end-strings)
+$ENDSTR10: "Heroes don't quit, but\ngo ahead and press {YESBUTTONNAME}\nif you aren't one."
+$ENDSTR11: "Press {YESBUTTONNAME} to quit,\nor press {NOBUTTONNAME} to enjoy\nmore violent diversion."
+$ENDSTR12: "Depressing the {YESBUTTONNAME} key means\nyou must return to the\nhumdrum workday world."
+$ENDSTR13: "Hey, quit or play,\n{YESBUTTONNAME} or {NOBUTTONNAME}:\nit's your choice."
+$ENDSTR14: "Sure you don't want to\nwaste a few more\nproductive hours?"
+$ENDSTR15: "I think you had better\nplay some more. Please\npress {NOBUTTONNAME}...please?"
+$ENDSTR16: "If you are tough, press {NOBUTTONNAME}.\nIf not, press {YESBUTTONNAME} daintily."
+$ENDSTR17: "I'm thinkin' that\nyou might wanna press {NOBUTTONNAME}\nto play more. You do it."
+$ENDSTR18: "Sure. Fine. Quit.\nSee if we care.\nGet it over with.\nPress {YESBUTTONNAME}."

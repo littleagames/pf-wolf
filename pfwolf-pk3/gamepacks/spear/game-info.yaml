@@ -164,12 +164,12 @@ maps:
     cluster: 3
 
 end-strings:
-  - $ENDSTR1
-  - $ENDSTR2
-  - $ENDSTR3
-  - $ENDSTR4
-  - $ENDSTR5
-  - $ENDSTR6
-  - $ENDSTR7
-  - $ENDSTR8
-  - $ENDSTR9
+  - $ENDSTR10
+  - $ENDSTR11
+  - $ENDSTR12
+  - $ENDSTR13
+  - $ENDSTR14
+  - $ENDSTR15
+  - $ENDSTR16
+  - $ENDSTR17
+  - $ENDSTR18

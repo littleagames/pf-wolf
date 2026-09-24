@@ -72,6 +72,15 @@ internal class PfWolfPk3Loader
                 }
                 continue;
             }
+            if (entry.FullName.StartsWith("language/")
+                || (entry.FullName.StartsWith("gamepacks/") && entry.FullName.Contains("/language/")))
+            {
+                // language/en-us -> "language/en-us", gamepacks/wolf3d/language/en-us -> "wolf3d/language/en-us"
+                var uniqueName = GetAssetReadyName(entry.FullName, ignoreFirstDirectory: entry.FullName.StartsWith("gamepacks/"));
+                var data = YamlDataEntryLoader.Read<Dictionary<string, string>>(entry.Open());
+                MergeAsset(uniqueName, new LanguageAsset(data));
+                continue;
+            }
 
             if (entry.FullName.StartsWith("actordefs/"))
             {
