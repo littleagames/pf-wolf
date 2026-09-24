@@ -87,8 +87,7 @@ internal class GameEngineManager
 
     public GameInfoAsset GetGameInfo()
     {
-        string gameInfoKey = string.Join("/", GamePackId, "game-info");
-        var gameInfo = assetManager.Value.Find<GameInfoAsset>(gameInfoKey);
+        var gameInfo = assetManager.Value.FindInGamePack<GameInfoAsset>("game-info");
         if (gameInfo == null)
             throw new Exception("Game info not found");
         return gameInfo;

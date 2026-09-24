@@ -8,7 +8,13 @@ namespace Wolf3D.Loaders;
 internal class PfWolfPk3Loader
 {
     private Dictionary<string, Asset> _assets = [];
+    private readonly string? _gamePackId;
     private readonly string _gameReleaseId;
+
+    /// <summary>
+    /// Folders holding one subfolder per game pack (actordefs/wolf3d/, gamepacks/spear/)
+    /// </summary>
+    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/"];
 
     /// <summary>
     /// The running release's palette, which PNG graphics and sprites are matched to.
@@ -16,15 +22,21 @@ internal class PfWolfPk3Loader
     /// </summary>
     private string GamePalette => Load<GamePackInfoAsset>("gamepack-info").GetGamePalette(_gameReleaseId);
 
+    /// <param name="gamePackId">The running game pack; other packs' folders are skipped so their
+    /// assets can't overwrite its own. Null loads every pack.</param>
     /// <param name="gameReleaseId">The running release's key in gamepacks/gamepack-info.yaml</param>
-    public PfWolfPk3Loader(string pk3File, string gameReleaseId)
+    public PfWolfPk3Loader(string pk3File, string? gamePackId, string gameReleaseId)
     {
+        _gamePackId = gamePackId;
         _gameReleaseId = gameReleaseId;
 
         using ZipArchive archive = ZipFile.OpenRead(pk3File);
 
         foreach (ZipArchiveEntry entry in archive.Entries.Where(entry => entry.Length > 0 && entry.IsEncrypted == false))
         {
+            if (IsOtherGamePack(entry.FullName))
+                continue;
+
             var assetName = GetAssetReadyName(entry.Name);
             if (entry.FullName.StartsWith("gamepacks/gamepack-info"))
             {
@@ -94,7 +106,6 @@ internal class PfWolfPk3Loader
             if (entry.FullName.StartsWith("actordefs/"))
             {
                 // TODO: Move "native.yaml" to parent directory
-                // Perhaps only load in the "wolf3d/" actordefs if that gamepack is loaded.
                 var uniqueName = GetPackUniqueAssetName(entry.FullName);
                 var data = YamlDataEntryLoader.Read<Dictionary<string, ActorData>>(entry.Open());
                 MergeAsset(uniqueName, new ActorTranslationAsset(data));
@@ -154,6 +165,31 @@ internal class PfWolfPk3Loader
                 continue;
             }
         }
+    }
+
+    /// <summary>
+    /// True for an entry inside another game pack's subfolder of a per-pack folder.
+    /// Files directly in those folders (gamepacks/gamepack-info.yaml) belong to every pack.
+    /// </summary>
+    private bool IsOtherGamePack(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(_gamePackId))
+            return false;
+
+        foreach (var folder in GamePackFolders)
+        {
+            if (!fullName.StartsWith(folder, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var packFolderEnd = fullName.IndexOf('/', folder.Length);
+            if (packFolderEnd < 0)
+                return false;
+
+            var packFolder = fullName.Substring(folder.Length, packFolderEnd - folder.Length);
+            return !packFolder.Equals(_gamePackId, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
     }
 
     private void AddReference<T>(string assetName, Func<T> assetLoader) where T : Asset

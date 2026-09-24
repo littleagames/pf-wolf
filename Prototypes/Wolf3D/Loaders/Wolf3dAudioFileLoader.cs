@@ -12,14 +12,10 @@ internal class Wolf3dAudioFileLoader
 
     private Dictionary<string, Asset> assets = new Dictionary<string, Asset>();
 
-    public Wolf3dAudioFileLoader(
-        string dataFileName,
-        string dataExtension,
-        string headerFileName,
-        string headerExtension)
+    public Wolf3dAudioFileLoader(string dataFileName, string headerFileName)
     {
-        audioDataFileName = $"{dataFileName}.{dataExtension}";
-        var audioHeaderFileName = $"{headerFileName}.{headerExtension}";
+        audioDataFileName = dataFileName;
+        var audioHeaderFileName = headerFileName;
 
         if (!File.Exists(audioDataFileName))
             throw new FileNotFoundException("File not found", audioDataFileName);

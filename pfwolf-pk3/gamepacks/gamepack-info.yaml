@@ -77,6 +77,41 @@ spear:
   game-palette: spearpal
   starting-scene: "spear:SignonScene"
   game-pack-asset-reference: spear-map
+  file-pack:
+    description: Spear of Destiny
+    file-loaders:
+      Wolf3DAudioFileLoader:
+        header:
+          file: audiohed.sod
+          md5: 6e914d15335125872737718470061ad8
+        data:
+          file: audiot.sod
+          md5: 10020fce0f04d21bd07b1b5b951c360a
+        map: spear-map
+      Wolf3DMapFileLoader:
+        header:
+          file: maphead.sod
+          md5: 276c79a4a6419db6b23e7699e41cb9fa
+        data:
+          file: gamemaps.sod
+          md5: 04f16534235b4b57fc379d5709f88f4a
+        map: spear-map
+      Wolf3DVgaFileLoader:
+        dict:
+          file: vgadict.sod
+          md5: 30b11372b9ec6bc06289eb3e9b2ef0b9
+        header:
+          file: vgahead.sod
+          md5: fb75007a1167bba05c4acadf90bc30d8
+        data:
+          file: vgagraph.sod
+          md5: 3b85f170098fb48d91d8bedd0cac4e0d
+        map: spear-map
+      Wolf3DVswapFileLoader:
+        data:
+          file: vswap.sod
+          md5: b1dac0a8786c7cdbb09331a4eba00652
+        map: spear-map
 # spear-demo:
     # title: "Spear of Destiny: Demo"
     # map-definitions:

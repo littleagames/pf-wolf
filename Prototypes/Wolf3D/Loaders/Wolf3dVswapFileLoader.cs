@@ -21,9 +21,9 @@ internal class Wolf3dVswapFileLoader
     private byte[] PMPageData;
     private byte[][] PMPages;
 
-    public Wolf3dVswapFileLoader(string fileName, string extension)
+    public Wolf3dVswapFileLoader(string fileName)
     {
-        string fname = $"{fileName}.{extension}";
+        string fname = fileName;
 
         if (!File.Exists(fname))
             throw new FileNotFoundException("File not found", fname);

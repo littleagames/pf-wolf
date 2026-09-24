@@ -35,7 +35,7 @@ internal class AssetManager
         _gamePackId = gamePackId;
         _gameReleaseId = gameReleaseId;
         Dictionary<string, Asset> assets = new();
-        var pfWolfBasePk3Loader = new PfWolfPk3Loader("pfwolf.pk3", gameReleaseId);
+        var pfWolfBasePk3Loader = new PfWolfPk3Loader("pfwolf.pk3", gamePackId, gameReleaseId);
         assets = pfWolfBasePk3Loader.GetAssets();
 
         foreach (var kvp in assets)
@@ -44,9 +44,17 @@ internal class AssetManager
                 _assets[kvp.Key] = kvp.Value;
         }
 
-        var rawDataMap = Find<RawDataMapAsset>("wolf3d/raw-data-map");
+        var rawDataMap = FindInGamePack<RawDataMapAsset>("raw-data-map");
 
-        var audioLoader = new Wolf3dAudioFileLoader("audiot", "wl6", "audiohed", "wl6");
+        // The release's data files, named by its file-pack in gamepack-info
+        var gamePackInfo = Find<GamePackInfoAsset>("gamepack-info")
+            ?? throw new KeyNotFoundException("gamepacks/gamepack-info.yaml is missing from pfwolf.pk3");
+        string DataFile(string loaderName, Func<FileLoaderDetails, FileReference?> selectFile)
+            => gamePackInfo.GetDataFile(gameReleaseId, loaderName, selectFile);
+
+        var audioLoader = new Wolf3dAudioFileLoader(
+            DataFile("Wolf3DAudioFileLoader", d => d.Data),
+            DataFile("Wolf3DAudioFileLoader", d => d.Header));
         assets = audioLoader.GetAssets(rawDataMap?.Audio ?? [], rawDataMap?.Music ?? []);
 
         foreach (var kvp in assets)
@@ -57,7 +65,9 @@ internal class AssetManager
                 _assets[key] = kvp.Value;
         }
 
-        var mapLoader = new Wolf3dMapFileLoader("maphead", "gamemaps", "wl6");
+        var mapLoader = new Wolf3dMapFileLoader(
+            DataFile("Wolf3DMapFileLoader", d => d.Header),
+            DataFile("Wolf3DMapFileLoader", d => d.Data));
         assets = mapLoader.GetAssets(rawDataMap?.Maps ?? []);
 
         foreach (var kvp in assets)
@@ -69,7 +79,11 @@ internal class AssetManager
         }
 
         // numFonts isn't stored in the VGAGRAPH file itself, so it must be supplied here.
-        var vgaGraphicLoader = new Wolf3dVgaFileLoader("vgahead", "vgagraph", "vgadict", "wl6", numFonts: 2);
+        var vgaGraphicLoader = new Wolf3dVgaFileLoader(
+            DataFile("Wolf3DVgaFileLoader", d => d.Header),
+            DataFile("Wolf3DVgaFileLoader", d => d.Data),
+            DataFile("Wolf3DVgaFileLoader", d => d.Dict),
+            numFonts: 2);
         assets = vgaGraphicLoader.GetAssets(rawDataMap?.Graphics ?? []);
 
         foreach (var kvp in assets)
@@ -80,7 +94,7 @@ internal class AssetManager
                 _assets[key] = kvp.Value;
         }
 
-        var vswapLoader = new Wolf3dVswapFileLoader("vswap", "wl6");
+        var vswapLoader = new Wolf3dVswapFileLoader(DataFile("Wolf3DVswapFileLoader", d => d.Data));
         assets = vswapLoader.GetAssets(rawDataMap?.Walls ?? [], rawDataMap?.Sprites ?? [], rawDataMap?.DigitizedAudio ?? []);
 
         foreach (var kvp in assets)
@@ -123,6 +137,12 @@ internal class AssetManager
         Console.WriteLine($"Asset not found: {assetName} (Type: {assetType})");
         return null;
     }
+
+    /// <summary>
+    /// Finds an asset belonging to the running game pack, e.g. "alias" -> "wolf3d/alias"
+    /// </summary>
+    public T? FindInGamePack<T>(string assetName) where T : Asset
+        => Find<T>($"{_gamePackId}/{assetName}");
 
     /// <summary>
     /// Palette asset name the running release uses (its game-palette in gamepack-info)
@@ -196,9 +216,13 @@ internal class AssetManager
             return cached;
 
         LanguageMetadata? metadata = null;
-        foreach (var assetName in new[] { $"language/{normalizedName}", $"{_gamePackId}/language/{normalizedName}" })
+        var languageAssets = new[]
         {
-            var asset = Find<LanguageAsset>(assetName);
+            Find<LanguageAsset>($"language/{normalizedName}"),
+            FindInGamePack<LanguageAsset>($"language/{normalizedName}"),
+        };
+        foreach (var asset in languageAssets)
+        {
             if (asset == null)
                 continue;
 
@@ -216,7 +240,7 @@ internal class AssetManager
     {
         try
         {
-            var actors = Find<ActorTranslationAsset>("wolf3d/actordefs");
+            var actors = FindInGamePack<ActorTranslationAsset>("actordefs");
             var data = new ActorMetadata();
             if (actors != null)
                 data.AddActors(actors.Actors);

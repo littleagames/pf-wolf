@@ -366,7 +366,7 @@ internal class MapManager
     internal MapObjectTranslationAsset GetMapData()
     {
         //var mapSpecific = assetManager.Value.Find<MapObjectTranslationAsset>("map01/mapdefs");
-        var gameInfo = assetManager.Value.Find<MapObjectTranslationAsset>("wolf3d/mapdefs");
+        var gameInfo = assetManager.Value.FindInGamePack<MapObjectTranslationAsset>("mapdefs");
         if (gameInfo == null)
             throw new Exception("Map data not found");
         return gameInfo;

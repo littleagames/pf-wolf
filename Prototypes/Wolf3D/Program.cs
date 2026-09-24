@@ -142,7 +142,7 @@ internal partial class Program
     private static void InitGame()
     {
         bool didjukebox = false;
-        var theme = _assetManager.Find<ColorThemeAsset>($"{_gameEngineManager.GamePackId}/colors");
+        var theme = _assetManager.FindInGamePack<ColorThemeAsset>("colors");
         _videoManager.Init(theme);
         _inputManager.Init(_videoManager.fullscreen);
         

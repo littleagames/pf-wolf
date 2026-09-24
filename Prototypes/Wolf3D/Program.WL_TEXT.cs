@@ -268,7 +268,7 @@ internal partial class Program
     {
         picy = ParseNumber();
         picx = ParseNumber();
-        var alias = _assetManager.Find<AliasAsset>("wolf3d/alias");
+        var alias = _assetManager.FindInGamePack<AliasAsset>("alias");
         alias.ArtExtern.TryGetValue(ParseNumber(), out picName);
         RipToEOL();
     }
@@ -278,7 +278,7 @@ internal partial class Program
     {
         picy = ParseNumber();
         picx = ParseNumber();
-        var alias = _assetManager.Find<AliasAsset>("wolf3d/alias");
+        var alias = _assetManager.FindInGamePack<AliasAsset>("alias");
         alias.ArtExtern.TryGetValue(ParseNumber(), out picName);
         picdelay = ParseNumber();
         RipToEOL();

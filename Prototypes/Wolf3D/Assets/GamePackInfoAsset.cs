@@ -14,14 +14,34 @@ internal record GamePackInfoAsset : Asset
     /// </summary>
     public string GetGamePalette(string releaseId)
     {
-        if (!GamePacks.TryGetValue(releaseId, out var gamePack))
-            throw new KeyNotFoundException($"No '{releaseId}' entry in gamepacks/gamepack-info.yaml");
-
+        var gamePack = GetGamePack(releaseId);
         if (string.IsNullOrWhiteSpace(gamePack.GamePalette))
             throw new KeyNotFoundException($"'{releaseId}' in gamepacks/gamepack-info.yaml has no game-palette");
 
         return gamePack.GamePalette;
     }
+
+    /// <summary>
+    /// A data file a release's file-pack gives one of its loaders,
+    /// e.g. ("wolf3d-apogee", "Wolf3DAudioFileLoader", d => d.Data) -> "audiot.wl6"
+    /// </summary>
+    public string GetDataFile(string releaseId, string loaderName, Func<FileLoaderDetails, FileReference?> selectFile)
+    {
+        var fileLoaders = GetGamePack(releaseId).FilePack?.FileLoaders ?? [];
+        var details = fileLoaders.FirstOrDefault(kvp => kvp.Key.Equals(loaderName, StringComparison.OrdinalIgnoreCase)).Value
+            ?? throw new KeyNotFoundException($"'{releaseId}' in gamepacks/gamepack-info.yaml has no file-pack entry for {loaderName}");
+
+        var file = selectFile(details)?.File;
+        if (string.IsNullOrWhiteSpace(file))
+            throw new KeyNotFoundException($"'{releaseId}' in gamepacks/gamepack-info.yaml is missing a file name for {loaderName}");
+
+        return file;
+    }
+
+    private GamePack GetGamePack(string releaseId)
+        => GamePacks.TryGetValue(releaseId, out var gamePack)
+            ? gamePack
+            : throw new KeyNotFoundException($"No '{releaseId}' entry in gamepacks/gamepack-info.yaml");
 
     public override void Merge(Asset other)
     {

@@ -26,10 +26,10 @@ internal class Wolf3dMapFileLoader
     private string mapHeadFileName;
     private string mapDataFileName;
 
-    public Wolf3dMapFileLoader(string mapHeaderFile, string mapDataFile, string extension)
+    public Wolf3dMapFileLoader(string mapHeaderFile, string mapDataFile)
     {
-        mapHeadFileName = $"{mapHeaderFile}.{extension}";
-        mapDataFileName = $"{mapDataFile}.{extension}";
+        mapHeadFileName = mapHeaderFile;
+        mapDataFileName = mapDataFile;
         int i;
         int pos;
 

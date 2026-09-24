@@ -42,11 +42,11 @@ internal class Wolf3dVgaFileLoader
     /// <param name="numFonts">Number of font chunks in the file. Not derivable from the file itself: a font chunk's decompressed
     /// size includes its variable-length glyph bitmap data, so there's no fixed size or other signature that reliably
     /// distinguishes it from a pic. For WL6/WL1/SOD this is 2.</param>
-    public Wolf3dVgaFileLoader(string vgaHeadFile, string vgaGraphFile, string vgaDictFile, string extension, int numFonts)
+    public Wolf3dVgaFileLoader(string vgaHeadFile, string vgaGraphFile, string vgaDictFile, int numFonts)
     {
         this.numFonts = numFonts;
 
-        var fname = $"{vgaDictFile}.{extension}";
+        var fname = vgaDictFile;
         if (!File.Exists(fname))
         {
             throw new PfWolfGraphicException("Cannot open file: {0}. File does not exist.", fname);
@@ -65,7 +65,7 @@ internal class Wolf3dVgaFileLoader
         //
         // load the data offsets from ???head.ext
         //
-        fname = $"{vgaHeadFile}.{extension}";
+        fname = vgaHeadFile;
 
         if (!File.Exists(fname))
         {
@@ -99,7 +99,7 @@ internal class Wolf3dVgaFileLoader
         //
         // Open the graphics file
         //
-        fname = $"{vgaGraphFile}.{extension}";
+        fname = vgaGraphFile;
 
         if (!File.Exists(fname))
         {
