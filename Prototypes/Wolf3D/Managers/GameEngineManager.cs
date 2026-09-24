@@ -56,8 +56,27 @@ internal class GameEngineManager
 
     public void Init(GameParams args)
     {
+        // First: the settings and save folders depend on which game is running
+        GameType = ParseGameType(args.Game);
         ReadConfigData(args);
-        GameType = GameType.SpearOfDestiny; // TODO: Pull from config or PK3 in future
+    }
+
+    /// <summary>
+    /// The game --game names by its pack id ("spear"); Wolf3D when unset or unknown
+    /// </summary>
+    private static GameType ParseGameType(string gamePackId)
+    {
+        if (string.IsNullOrWhiteSpace(gamePackId))
+            return GameType.Wolf3D;
+
+        foreach (var type in Enum.GetValues<GameType>())
+        {
+            if (GetGamePackId(type).Equals(gamePackId.Trim(), StringComparison.OrdinalIgnoreCase))
+                return type;
+        }
+
+        Console.WriteLine($"Unknown --game '{gamePackId}' (expected {string.Join(", ", KnownGamePackIds)}); running {GetGamePackId(GameType.Wolf3D)}.");
+        return GameType.Wolf3D;
     }
 
     /// <summary>
@@ -74,6 +93,16 @@ internal class GameEngineManager
     {
         GameType.SpearOfDestiny => "spear",
         _ => "wolf3d-apogee",
+    };
+
+    /// <summary>
+    /// Folder under %APPDATA%\PFWolf holding this game's settings, high scores and saves,
+    /// so games don't share them. Wolf3D keeps the folder it has always used.
+    /// </summary>
+    private string GameDataFolderName => GameType switch
+    {
+        GameType.SpearOfDestiny => "SpearOfDestiny",
+        _ => "Wolfenstein3D",
     };
 
     /// <summary>
@@ -326,7 +355,7 @@ internal class GameEngineManager
     {
         GameParams = args;
 
-        var directories = ConfigDirectories.Default();
+        var directories = ConfigDirectories.Default(GameDataFolderName);
         if (!string.IsNullOrWhiteSpace(args.ConfigDir))
             directories = directories with { ConfigDirectory = Path.GetFullPath(args.ConfigDir) };
         if (!string.IsNullOrWhiteSpace(args.SavesDir))

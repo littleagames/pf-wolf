@@ -12,4 +12,7 @@ internal class GameParams
 
     [Option("exec", Required = false, HelpText = "Console commands to run once the game has started, separated by ';'.")]
     public string Exec { get; set; } = "";
+
+    [Option("game", Required = false, HelpText = "Game pack to run: wolf3d (default) or spear.")]
+    public string Game { get; set; } = "";
 }

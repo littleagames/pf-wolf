@@ -9,11 +9,11 @@ internal record ConfigDirectories
     public string ErrorLogsDirectory { get; set; } = null!;
 
 
-    internal static ConfigDirectories Default()
+    /// <param name="defaultModDirectory">The running game's folder under %APPDATA%\PFWolf ("Wolfenstein3D")</param>
+    internal static ConfigDirectories Default(string defaultModDirectory)
     {
         string defaultBaseDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         const string gameDirectory = "PFWolf";
-        const string defaultModDirectory = "Wolfenstein3D"; // TODO: Replace with "gamepack name" in the future
         return new ConfigDirectories
         {
             ConfigDirectory = $"{defaultBaseDirectory}\\{gameDirectory}\\{defaultModDirectory}\\configs",
