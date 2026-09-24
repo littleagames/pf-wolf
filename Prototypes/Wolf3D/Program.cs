@@ -464,30 +464,6 @@ internal partial class Program
     internal static void DoJukebox()
     {
         int which, lastsong = -1;
-        uint start;
-        string[] songs =
-        {
-            "GETTHEM",
-            "SEARCHN",
-            "POW",
-            "SUSPENSE",
-            "WARMARCH",
-            "CORNER",
-
-            "NAZI_OMI",
-            "PREGNANT",
-            "GOINGAFT",
-            "HEADACHE",
-            "DUNGEON",
-            "ULTIMATE",
-
-            "INTROCW3",
-            "NAZI_RAP",
-            "TWELFTH",
-            "ZEROHOUR",
-            "VICMARCH",
-            "PACMAN"
-        };
 
         _inputManager.ClearKeysDown();
         //if (!AdLibPresent && !SoundBlasterPresent)
@@ -495,41 +471,36 @@ internal partial class Program
 
         MenuFadeOut();
 
-        start = ((SDL.SDL_GetTicks() / 10) % 3) * 6;
+        // Show a random page of songs
+        int pages = Math.Max(1, (MusicMenu.Length + JukeboxPageSize - 1) / JukeboxPageSize);
+        int start = (int)((SDL.SDL_GetTicks() / 10) % (uint)pages) * JukeboxPageSize;
+        var page = MusicMenu.Skip(start).Take(JukeboxPageSize).ToArray();
+        MusicItems.amount = (short)page.Length;
+        MusicItems.curpos = 0;
 
         //CA_LoadAllSounds();
 
         fontnumber = "LargeFont";
-        ClearMScreen();
-        _graphicManager.DrawPic("c_mouselback", 112, 184);
-        DrawStripes(10);
+        DrawMenuComponents("jukebox");
         SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
 
-        DrawWindow(CTL_X - 2, CTL_Y - 6, 280, 13 * 7, "BKGDCOLOR");
+        DrawMenu(MusicItems, page);
 
-        DrawMenu(MusicItems, MusicMenu/*[start]*/);
-
-        SETFONTCOLOR("READHCOLOR", "BKGDCOLOR");
-        PrintY = 15;
-        WindowX = 0;
-        WindowY = 320;
-        US_CPrint("Robert's Jukebox");
-
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         _videoManager.Update();
         MenuFadeIn();
 
         do
         {
-            which = HandleMenu(MusicItems, MusicMenu/*[start]*/, null);
+            which = HandleMenu(MusicItems, page, null);
             if (which >= 0)
             {
                 if (lastsong >= 0)
-                    MusicMenu[start + lastsong].active = 1;
+                    page[lastsong].active = 1;
 
-                StartCPMusic(songs[start + which]);
-                MusicMenu[start + which].active = 2;
-                DrawMenu(MusicItems, MusicMenu/*[start]*/);
+                if (page[which].data is string song)
+                    StartCPMusic(song);
+                page[which].active = 2;
+                DrawMenu(MusicItems, page);
                 _videoManager.Update();
                 lastsong = which;
             }

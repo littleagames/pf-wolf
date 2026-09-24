@@ -1,0 +1,31 @@
+music: "Wondering"
+type: "wolf3d-menu"
+# Slot position/indent are taken from load-game so both screens line up.
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Window"
+    params:
+      - x: 75
+      - y: 50
+      - width: 175
+      - height: 140
+  -
+    type: "Stripe"
+    params:
+      - y: 10
+  -
+    type: "Graphic"
+    params:
+      - name: "c_savegame"
+      - x: 60
+      - y: 0

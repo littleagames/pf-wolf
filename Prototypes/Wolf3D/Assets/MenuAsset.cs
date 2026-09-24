@@ -38,4 +38,5 @@ internal record MenuItemEntry
     public string? ShortKey { get; init; } = null;
     public bool Enabled { get; init; } = true;
     public string? Action { get; init; } = null;
+    public string? Music { get; init; } = null;
 }

@@ -116,6 +116,18 @@ internal class AssetManager
         return null;
     }
 
+    /// <summary>
+    /// Names of every menu defined in menudefs/
+    /// </summary>
+    public IEnumerable<string> GetMenuNames()
+    {
+        var prefix = $"{nameof(MenuAsset)}:".ToLowerInvariant();
+        return _assets.Keys
+            .Where(key => key.StartsWith(prefix))
+            .Select(key => key.Substring(prefix.Length))
+            .ToList();
+    }
+
     [Obsolete("Temporary endpoint until the asset types are implemented")]
     public MenuMetadata? GetMenu(string name)
     {

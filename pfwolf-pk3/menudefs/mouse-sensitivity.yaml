@@ -1,0 +1,40 @@
+music: "Wondering"
+type: "wolf3d-menu"
+# The slider itself is drawn in code
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Window"
+    params:
+      - x: 10
+      - y: 80
+      - width: 300
+      - height: 30
+  -
+    type: "Label"
+    params:
+      - text: "$STR_MOUSEADJ"
+      - horizontal-orientation: "center"
+      - y: 82
+      - color: "READCOLOR"
+  -
+    type: "Label"
+    params:
+      - text: "$STR_SLOW"
+      - x: 14
+      - y: 95
+  -
+    type: "Label"
+    params:
+      - text: "$STR_FAST"
+      - x: 269
+      - y: 95

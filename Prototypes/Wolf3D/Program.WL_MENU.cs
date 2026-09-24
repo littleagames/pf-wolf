@@ -36,8 +36,8 @@ internal partial class Program
 
     internal const int LSM_X = 85;
     internal const int LSM_Y = 55;
+    // Width of the slot window in menudefs/load-game and save-game; slot outlines are sized from it
     internal const int LSM_W = 175;
-    internal const int LSM_H = 10 * 13 + 10;
 
     internal const int NM_X = 50;
     internal const int NM_Y = 100;
@@ -96,38 +96,19 @@ internal partial class Program
         new(1, "", null),
     };
 
-    internal static CP_itemtype[] MusicMenu =
-    {
-        new (1,"Get Them!", null),
-        new (1,"Searching", null),
-        new (1,"P.O.W.", null),
-        new (1,"Suspense", null),
-        new (1,"War March", null),
-        new (1,"Around The Corner!", null),
-
-        new (1,"Nazi Anthem", null),
-        new (1,"Lurking...", null),
-        new (1,"Going After Hitler", null),
-        new (1,"Pounding Headache", null),
-        new (1,"Into the Dungeons", null),
-        new (1,"Ultimate Conquest", null),
-
-        new (1,"Kill the S.O.B.", null),
-        new (1,"The Nazi Rap", null),
-        new (1,"Twelfth Hour", null),
-        new (1,"Zero Hour", null),
-        new (1,"Ultimate Conquest", null),
-        new (1,"Wolfpack", null)
-    };
+    internal static CP_itemtype[] MusicMenu = [];
+    // The jukebox shows one page of songs at a time
+    internal const int JukeboxPageSize = 6;
 
     internal static CP_iteminfo MainItems;
     internal static CP_iteminfo SndItems;
+    // Position/indent come from menudefs/load-game; the 10 slots are built here
     internal static CP_iteminfo LSItems = new(LSM_X, LSM_Y, (short)LSMenu.Length, 0, 24);
     internal static CP_iteminfo CtlItems;
     internal static CP_iteminfo CusItems = new(8, CST_Y + 13 * 2, (short)CusMenu.Length, -1, 0);
     internal static CP_iteminfo NewEitems = new(NE_X, NE_Y, (short)NewEmenu.Length, 0, 88);
     internal static CP_iteminfo NewItems = new(NM_X, NM_Y, (short)NewMenu.Length, 2, 24);
-    internal static CP_iteminfo MusicItems = new(CTL_X, CTL_Y, 6, 0, 32);
+    internal static CP_iteminfo MusicItems = new(CTL_X, CTL_Y, JukeboxPageSize, 0, 32);
     static string[] color_hlite =
     {
         "DEACTIVE",
@@ -1452,24 +1433,12 @@ internal partial class Program
 
     internal static void DrawLoadSaveScreen(int loadsave)
     {
-        const int DISKX = 100;
-        const int DISKY = 0;
-
         int i;
 
-
-        ClearMScreen();
         fontnumber = "LargeFont";
-        _graphicManager.DrawPic("c_mouselback",112, 184);
-        DrawWindow(LSM_X - 10, LSM_Y - 5, LSM_W, LSM_H, "BKGDCOLOR");
-        DrawStripes(10);
+        DrawMenuComponents(loadsave == 0 ? "load-game" : "save-game");
 
-        if (loadsave == 0)
-            _graphicManager.DrawPic("c_loadgame", 60, 0);
-        else
-            _graphicManager.DrawPic("c_savegame", 60, 0);
-
-        for (i = 0; i < 10; i++)
+        for (i = 0; i < LSMenu.Length; i++)
             PrintLSEntry(i, "TEXTCOLOR");
 
         DrawMenu(LSItems, LSMenu);
@@ -1478,10 +1447,11 @@ internal partial class Program
         WaitKeyUp();
     }
 
+    // Slot highlighted last, so it can be un-highlighted when the cursor moves
+    private static int lastgameon = 0;
+
     internal static void TrackWhichGame (int w)
     {
-        int lastgameon = 0;
-
         PrintLSEntry(lastgameon, "TEXTCOLOR");
         PrintLSEntry(w, "HIGHLIGHT");
 
@@ -1492,10 +1462,10 @@ internal partial class Program
     {
         var language = _assetManager.GetText("en-us");
         SETFONTCOLOR(color, "BKGDCOLOR");
-        DrawOutline(LSM_X + LSItems.indent, LSM_Y + w * 13, LSM_W - LSItems.indent - 15, 11, color,
+        DrawOutline(LSItems.x + LSItems.indent, LSItems.y + w * 13, LSM_W - LSItems.indent - 15, 11, color,
                      color);
-        PrintX = (ushort)(LSM_X + LSItems.indent + 2);
-        PrintY = (ushort)(LSM_Y + w * 13 + 1);
+        PrintX = (ushort)(LSItems.x + LSItems.indent + 2);
+        PrintY = (ushort)(LSItems.y + w * 13 + 1);
         fontnumber = "SmallFont";
 
         if (SaveGamesAvail[w] != 0)
@@ -1582,12 +1552,12 @@ internal partial class Program
 
                 fontnumber = "SmallFont";
                 if (SaveGamesAvail[which] == 0)
-                    _videoManager.Bar(LSM_X + LSItems.indent + 1, LSM_Y + which * 13 + 1,
+                    _videoManager.Bar(LSItems.x + LSItems.indent + 1, LSItems.y + which * 13 + 1,
                              LSM_W - LSItems.indent - 16, 10, "BKGDCOLOR");
                 _videoManager.Update();
 
                 if (US_LineInput
-                    (LSM_X + LSItems.indent + 2, LSM_Y + which * 13 + 1, ref input, input, true, 31,
+                    (LSItems.x + LSItems.indent + 2, LSItems.y + which * 13 + 1, ref input, input, true, 31,
                      LSM_W - LSItems.indent - 30))
                 {
                     DrawLSAction(1);
@@ -1605,7 +1575,7 @@ internal partial class Program
                 }
                 else
                 {
-                    _videoManager.Bar(LSM_X + LSItems.indent + 1, LSM_Y + which * 13 + 1,
+                    _videoManager.Bar(LSItems.x + LSItems.indent + 1, LSItems.y + which * 13 + 1,
                              LSM_W - LSItems.indent - 16, 10, "BKGDCOLOR");
                     PrintLSEntry(which, "HIGHLIGHT");
                     _videoManager.Update();
@@ -1854,22 +1824,7 @@ internal partial class Program
 
     internal static void DrawMouseSens()
     {
-        var language = _assetManager.GetText("en-us");
-        ClearMScreen();
-        _graphicManager.DrawPic("c_mouselback", 112, 184);
-        DrawWindow(10, 80, 300, 30, "BKGDCOLOR");
-        WindowX = 0;
-        WindowW = 320;
-        PrintY = 82;
-        SETFONTCOLOR("READCOLOR", "BKGDCOLOR");
-        US_CPrint("$STR_MOUSEADJ".ToLanguageText(language));
-
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-        PrintX = 14;
-        PrintY = 95;
-        US_Print("$STR_SLOW".ToLanguageText(language));
-        PrintX = 269;
-        US_Print("$STR_FAST".ToLanguageText(language));
+        DrawMenuComponents("mouse-sensitivity");
 
         _videoManager.Bar(60, 97, 200, 10, "TEXTCOLOR");
         DrawOutline(60, 97, 200, 10, "Black", "HIGHLIGHT");
@@ -2741,9 +2696,19 @@ internal partial class Program
             }
         }
 
+        // Build every menudef now so problems in any of them are reported at startup
+        foreach (var menuName in _assetManager.GetMenuNames())
+            _assetManager.GetMenu(menuName);
+
         (MainMenu, MainItems) = LoadMenu("main-menu", curpos: 0);
         (SndMenu, SndItems) = LoadMenu("sound", curpos: 0);
         (CtlMenu, CtlItems) = LoadMenu("control", curpos: -1);
+
+        (MusicMenu, MusicItems) = LoadMenu("jukebox", curpos: 0);
+        MusicItems.amount = (short)Math.Min(JukeboxPageSize, MusicMenu.Length);
+
+        var (_, lsInfo) = LoadMenu("load-game", curpos: 0);
+        LSItems = new CP_iteminfo(lsInfo.x, lsInfo.y, (short)LSMenu.Length, curpos: 0, lsInfo.indent);
     }
 
     /// <summary>
@@ -2762,7 +2727,8 @@ internal partial class Program
                     MapFunction(name, mi as MenuSwitcher))
                 {
                     id = mi.Id,
-                    shortKey = string.IsNullOrEmpty(mi.ShortKey) ? '\0' : mi.ShortKey[0]
+                    shortKey = string.IsNullOrEmpty(mi.ShortKey) ? '\0' : mi.ShortKey[0],
+                    data = (mi as MusicMenuItem)?.Music
                 })
                 .ToArray();
 

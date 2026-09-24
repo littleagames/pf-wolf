@@ -1,0 +1,58 @@
+music: "Wondering"
+type: "wolf3d-menu"
+# Debug jukebox. Songs are shown one page of 6 at a time; a random page is picked on open.
+position:
+  x: 24
+  y: 86
+indent: 32
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Stripe"
+    params:
+      - y: 10
+  -
+    type: "Window"
+    params:
+      - x: 22
+      - y: 80
+      - width: 280
+      - height: 91
+  -
+    type: "Label"
+    params:
+      - text: "Robert's Jukebox"
+      - horizontal-orientation: "center"
+      - y: 15
+      - color: "READHCOLOR"
+menu-items:
+  # Page 1
+  - { type: "MusicMenuItem", text: "Get Them!", music: "GETTHEM", enabled: true }
+  - { type: "MusicMenuItem", text: "Searching", music: "SEARCHN", enabled: true }
+  - { type: "MusicMenuItem", text: "P.O.W.", music: "POW", enabled: true }
+  - { type: "MusicMenuItem", text: "Suspense", music: "SUSPENSE", enabled: true }
+  - { type: "MusicMenuItem", text: "War March", music: "WARMARCH", enabled: true }
+  - { type: "MusicMenuItem", text: "Around The Corner!", music: "CORNER", enabled: true }
+  # Page 2
+  - { type: "MusicMenuItem", text: "Nazi Anthem", music: "NAZI_OMI", enabled: true }
+  - { type: "MusicMenuItem", text: "Lurking...", music: "PREGNANT", enabled: true }
+  - { type: "MusicMenuItem", text: "Going After Hitler", music: "GOINGAFT", enabled: true }
+  - { type: "MusicMenuItem", text: "Pounding Headache", music: "HEADACHE", enabled: true }
+  - { type: "MusicMenuItem", text: "Into the Dungeons", music: "DUNGEON", enabled: true }
+  - { type: "MusicMenuItem", text: "Ultimate Conquest", music: "ULTIMATE", enabled: true }
+  # Page 3
+  - { type: "MusicMenuItem", text: "Kill the S.O.B.", music: "INTROCW3", enabled: true }
+  - { type: "MusicMenuItem", text: "The Nazi Rap", music: "NAZI_RAP", enabled: true }
+  - { type: "MusicMenuItem", text: "Twelfth Hour", music: "TWELFTH", enabled: true }
+  - { type: "MusicMenuItem", text: "Zero Hour", music: "ZEROHOUR", enabled: true }
+  - { type: "MusicMenuItem", text: "Ultimate Conquest", music: "VICMARCH", enabled: true }
+  - { type: "MusicMenuItem", text: "Wolfpack", music: "PACMAN", enabled: true }

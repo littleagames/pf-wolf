@@ -1,0 +1,36 @@
+music: "Wondering"
+type: "wolf3d-menu"
+# Position/indent of the save slots, shared with save-game.
+# The 10 slots themselves are built in code from the save files.
+position:
+  x: 85
+  y: 55
+indent: 24
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Window"
+    params:
+      - x: 75
+      - y: 50
+      - width: 175
+      - height: 140
+  -
+    type: "Stripe"
+    params:
+      - y: 10
+  -
+    type: "Graphic"
+    params:
+      - name: "c_loadgame"
+      - x: 60
+      - y: 0

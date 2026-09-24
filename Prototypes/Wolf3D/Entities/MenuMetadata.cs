@@ -647,6 +647,18 @@ internal record BlankMenuItem : MenuItem
     }
 }
 
+/// <summary>
+/// Plays a music track when chosen (jukebox)
+/// </summary>
+internal record MusicMenuItem : MenuItem
+{
+    public string? Music { get; set; }
+
+    public MusicMenuItem()
+    {
+    }
+}
+
 internal record MultiChoiceMenuItem<T> : MenuItem
 {
     public List<T> Options { get; set; } = [];
