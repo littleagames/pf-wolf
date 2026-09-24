@@ -176,11 +176,6 @@ internal partial class Program
             DoJukebox();
             didjukebox = true;
         }
-        else if (_gameEngineManager.GetGameInfo().Signon.HardwareBoxes)
-            //
-            // draw intro screen stuff
-            //
-            IntroScreen();
 
         //
         // load in and lock down some basic chunks

@@ -4,7 +4,6 @@ default-map:
 
 signon:
   pic: spear-signon
-  hardware-boxes: false
   press-a-key: false
 
 # Drawn stacked top to bottom

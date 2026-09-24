@@ -2503,39 +2503,6 @@ internal partial class Program
         //UNCACHEAUDIOCHUNK(STARTMUSIC + chunk);
     }
 
-    internal static void IntroScreen()
-    {
-        //const byte MAINCOLOR = 0x6c;
-        //const byte EMSCOLOR = 0x6c; // 0x4f
-        //const byte XMSCOLOR = 0x6c; // 0x7f
-
-        int i;
-        //for (i = 0; i < 10; i++)
-        //    _videoManager.Bar(49, 163 - 8 * i, 6, 5, MAINCOLOR - i);
-        //for (i = 0; i < 10; i++)
-        //    _videoManager.Bar(89, 163 - 8 * i, 6, 5, EMSCOLOR - i);
-        //for (i = 0; i < 10; i++)
-        //    _videoManager.Bar(129, 163 - 8 * i, 6, 5, XMSCOLOR - i);
-
-        //
-        // FILL BOXES
-        //
-        if (_inputManager.IsMousePresent())
-            _videoManager.Bar(164, 82, 12, 2, "FILLCOLOR");
-
-        if (_inputManager.JoyPresent())
-            _videoManager.Bar(164, 105, 12, 2, "FILLCOLOR");
-
-        //if (_audioManager.AdLibPresent && !_audioManager.SoundBlasterPresent)
-            _videoManager.Bar(164, 128, 12, 2, "FILLCOLOR");
-
-       // if (_audioManager.SoundBlasterPresent)
-            _videoManager.Bar(164, 151, 12, 2, "FILLCOLOR");
-
-        //    if (SoundSourcePresent)
-        //        _videoManager.Bar (164, 174, 12, 2, FILLCOLOR);
-    }
-
     internal static void CheckForEpisodes()
     {
         /*if (configdir != string.Empty)

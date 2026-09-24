@@ -54,11 +54,6 @@ internal record SignonInfo
     public string? Pic { get; init; }
 
     /// <summary>
-    /// Fill in the detected-hardware boxes drawn on Wolf3D's signon screen
-    /// </summary>
-    public bool HardwareBoxes { get; init; }
-
-    /// <summary>
     /// Wait for "Press a key" before continuing, instead of a short pause
     /// </summary>
     public bool PressAKey { get; init; }

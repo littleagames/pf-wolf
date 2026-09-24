@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Wolf3D": {
-      "commandName": "Project",
-      "commandLineArgs": "--game spear"
+      "commandName": "Project"
     }
   }
 }

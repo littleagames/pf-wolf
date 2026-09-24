@@ -4,7 +4,6 @@ default-map:
 
 signon:
   pic: wolf3d-signon
-  hardware-boxes: true
   press-a-key: true
 
 non-shareware-notice: true
