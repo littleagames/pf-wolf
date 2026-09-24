@@ -235,6 +235,20 @@ internal partial class Program
         }
     }
 
+    /// <summary>
+    /// Fades the title in with its own palette (game-info title-palette), or the game palette.
+    /// The next screen's fade-in puts the game palette back.
+    /// </summary>
+    private static void FadeInTitle()
+    {
+        var paletteName = _gameEngineManager.GetGameInfo().TitlePalette;
+        var palette = string.IsNullOrEmpty(paletteName) ? null : _assetManager.Find<Palette>(paletteName);
+        if (palette == null)
+            _videoManager.FadeIn();
+        else
+            _videoManager.FadeIn(0, 255, new GamePalette { Colors = palette.ToSDLColors() }, 30);
+    }
+
     private static void FinishSignon()
     {
         if (!_gameEngineManager.GetGameInfo().Signon.PressAKey)
@@ -282,7 +296,7 @@ internal partial class Program
         //
         // main game cycle
         //
-        if (!param_nowait)
+        if (!param_nowait && _gameEngineManager.GetGameInfo().NonSharewareNotice)
             NonShareware();
 
         StartCPMusic(INTROSONG);
@@ -299,7 +313,7 @@ internal partial class Program
                 //
                 DrawTitle();
                 _videoManager.Update();
-                _videoManager.FadeIn();
+                FadeInTitle();
 
                 if (_inputManager.UserInput(Timing.TickBase * 15))
                     break;

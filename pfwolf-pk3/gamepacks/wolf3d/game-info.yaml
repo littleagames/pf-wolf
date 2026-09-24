@@ -7,6 +7,8 @@ signon:
   hardware-boxes: true
   press-a-key: true
 
+non-shareware-notice: true
+
 # Drawn stacked top to bottom
 title-pics:
   - Title

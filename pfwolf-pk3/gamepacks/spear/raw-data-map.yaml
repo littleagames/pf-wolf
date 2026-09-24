@@ -652,7 +652,7 @@ audio:
     - PCSchutzad
     - PCAhhhg
     - PCDeathScream5
-    - PCDeathScream6
+    - PCDeathScream7
     - PCDeathScream8
     - PCLeben
     - PCDeathScream6
@@ -733,7 +733,7 @@ audio:
     - ALSchutzad
     - ALAhhhg
     - ALDeathScream5
-    - ALDeathScream6
+    - ALDeathScream7
     - ALDeathScream8
     - ALLeben
     - ALDeathScream6

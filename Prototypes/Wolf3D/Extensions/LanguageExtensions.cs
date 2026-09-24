@@ -10,6 +10,7 @@ internal static class LanguageExtensions
     /// </summary>
     internal static string ToLanguageText(this string text, LanguageMetadata? language)
     {
+        text ??= string.Empty;
         if (language != null && text.StartsWith("$") && language.TextStrings.TryGetValue(text, out var result))
             text = result;
 

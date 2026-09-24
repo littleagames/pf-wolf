@@ -12,9 +12,19 @@ internal record GameInfoAsset : Asset
     public SignonInfo Signon { get; init; } = new();
 
     /// <summary>
+    /// Show the "This game is NOT shareware" notice before the title (Wolf3D's registered versions)
+    /// </summary>
+    public bool NonSharewareNotice { get; init; }
+
+    /// <summary>
     /// Title screen graphics, drawn stacked top to bottom (Spear's title is two halves)
     /// </summary>
     public List<string> TitlePics { get; init; } = [];
+
+    /// <summary>
+    /// Palette the title fades in with, when it isn't drawn in the game palette (Spear's TITLEPAL)
+    /// </summary>
+    public string? TitlePalette { get; init; }
 
     /// <summary>
     /// Music for the title, demo loop and control panel

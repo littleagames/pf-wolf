@@ -290,11 +290,15 @@ internal class Wolf3dVgaFileLoader
         byte val = source[sourceIndex++];
 
         byte mask = 1;
+        bool sourceEnded = false;
 
         ushort nodeval;
         var huffptr = headptr;
         while (true)
         {
+            if (sourceEnded)
+                throw new PfWolfGraphicException($"CAL_HuffExpand: compressed data ran out after {destIndex} of {length} bytes.");
+
             if ((val & mask) == 0)
                 nodeval = hufftable[huffptr].bit0;
             else
@@ -302,7 +306,14 @@ internal class Wolf3dVgaFileLoader
 
             if (mask == 0x80)
             {
-                val = source[sourceIndex++];
+                // The next byte is fetched before knowing whether this bit finished the last
+                // symbol, so a chunk whose data ends exactly on a byte boundary (SOD's ENDSCR4
+                // and ENDSCR9) would read one past its end. id's C code got away with that
+                // over-read; only fetch when there's a byte left.
+                if (sourceIndex < source.Length)
+                    val = source[sourceIndex++];
+                else
+                    sourceEnded = true;
                 mask = 1;
             }
             else
@@ -403,7 +414,8 @@ internal class Wolf3dVgaFileLoader
         i++;
 
         // Externs: which ones a release has, and in what order, differs (Wolf3D: screens, help text,
-        // demos, end texts; Spear: screens, palettes, demos, end text), so go by their data map names
+        // demos, end texts; Spear: screens, palettes, demos, end text), so go by their data map names:
+        // Demo0-3 are demos, *PAL are palettes, and the rest is text
         for (; i < dataMap.Count && i < numChunks; i++)
         {
             var name = dataMap[i];
@@ -413,6 +425,8 @@ internal class Wolf3dVgaFileLoader
 
             if (name.StartsWith("Demo", StringComparison.OrdinalIgnoreCase))
                 assets[name.ToLowerInvariant()] = new DemoAsset(data);
+            else if (name.EndsWith("PAL", StringComparison.OrdinalIgnoreCase))
+                assets[name.ToLowerInvariant()] = ToPalette(data);
             else
                 assets[name.ToLowerInvariant()] = new TextAsset(data);
         }
@@ -420,12 +434,29 @@ internal class Wolf3dVgaFileLoader
     }
 
     /// <summary>
-    /// Externs not loaded (yet): the order/error text screens, and Spear's palettes (TITLEPAL, END1PAL...)
+    /// Spear's palette chunks (TITLEPAL, END1PAL...): 256 RGB triples of 6-bit VGA values (0-63)
+    /// </summary>
+    private static Palette ToPalette(byte[] data)
+    {
+        const int PaletteBytes = 256 * 3;
+        if (data.Length != PaletteBytes)
+            throw new PfWolfGraphicException($"Palette chunk is {data.Length} bytes, expected {PaletteBytes}.");
+
+        var colors = new PaletteColor[256];
+        for (int i = 0; i < colors.Length; i++)
+            colors[i] = new PaletteColor(To8Bit(data[i * 3]), To8Bit(data[i * 3 + 1]), To8Bit(data[i * 3 + 2]));
+
+        return new Palette { Colors = colors };
+
+        static byte To8Bit(byte vgaValue) => (byte)(vgaValue * 255 / 63);
+    }
+
+    /// <summary>
+    /// Externs not loaded (yet): the order/error text screens
     /// </summary>
     private static bool IsSkippedExtern(string name)
     {
         return name.Equals("OrderScreen", StringComparison.OrdinalIgnoreCase)
-            || name.Equals("ErrorScreen", StringComparison.OrdinalIgnoreCase)
-            || name.EndsWith("PAL", StringComparison.OrdinalIgnoreCase);
+            || name.Equals("ErrorScreen", StringComparison.OrdinalIgnoreCase);
     }
 }
