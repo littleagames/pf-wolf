@@ -57,7 +57,7 @@ internal class GameEngineManager
     public void Init(GameParams args)
     {
         ReadConfigData(args);
-        GameType = GameType.Wolf3D; // TODO: Pull from config or PK3 in future
+        GameType = GameType.SpearOfDestiny; // TODO: Pull from config or PK3 in future
     }
 
     /// <summary>
@@ -65,6 +65,16 @@ internal class GameEngineManager
     /// and what menudefs list under game-packs
     /// </summary>
     public string GamePackId => GetGamePackId(GameType);
+
+    /// <summary>
+    /// Key of the running release in gamepacks/gamepack-info.yaml, which names its data files
+    /// and palette. Fixed per game until the release is detected from the data files.
+    /// </summary>
+    public string GameReleaseId => GameType switch
+    {
+        GameType.SpearOfDestiny => "spear",
+        _ => "wolf3d-apogee",
+    };
 
     /// <summary>
     /// Every game pack name the engine knows about

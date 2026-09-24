@@ -16,6 +16,7 @@ internal class AssetManager
     // Built once per language; menus look text up on every redraw
     private readonly Dictionary<string, LanguageMetadata?> _languageCache = new();
     private string _gamePackId = "";
+    private string _gameReleaseId = "";
     private bool strict = false;
 
     /// <summary>
@@ -28,11 +29,13 @@ internal class AssetManager
     }
 
     /// <param name="gamePackId">The running game pack ("wolf3d", "spear"), whose gamepacks/ assets override the shared ones</param>
-    public void Load(string gamePackId)
+    /// <param name="gameReleaseId">The running release's key in gamepacks/gamepack-info.yaml ("wolf3d-apogee")</param>
+    public void Load(string gamePackId, string gameReleaseId)
     {
         _gamePackId = gamePackId;
+        _gameReleaseId = gameReleaseId;
         Dictionary<string, Asset> assets = new();
-        var pfWolfBasePk3Loader = new PfWolfPk3Loader("pfwolf.pk3");
+        var pfWolfBasePk3Loader = new PfWolfPk3Loader("pfwolf.pk3", gameReleaseId);
         assets = pfWolfBasePk3Loader.GetAssets();
 
         foreach (var kvp in assets)
@@ -119,6 +122,16 @@ internal class AssetManager
 
         Console.WriteLine($"Asset not found: {assetName} (Type: {assetType})");
         return null;
+    }
+
+    /// <summary>
+    /// Palette asset name the running release uses (its game-palette in gamepack-info)
+    /// </summary>
+    public string GetGamePaletteName()
+    {
+        var gamePackInfo = Find<GamePackInfoAsset>("gamepack-info")
+            ?? throw new KeyNotFoundException("gamepacks/gamepack-info.yaml is missing from pfwolf.pk3");
+        return gamePackInfo.GetGamePalette(_gameReleaseId);
     }
 
     /// <summary>

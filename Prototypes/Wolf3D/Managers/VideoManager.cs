@@ -102,9 +102,10 @@ internal class VideoManager
             throw new PfWolfVideoException("Could not initialize SDL: {error}", SDL.SDL_GetError());
         }
 
-        var pal = _assetManager.Value.Find<Palette>("wolfpal");
+        var paletteName = _assetManager.Value.GetGamePaletteName();
+        var pal = _assetManager.Value.Find<Palette>(paletteName);
         if (pal == null)
-            throw new PfWolfVideoException("Could not find wolfpal palette in asset manager.");
+            throw new PfWolfVideoException($"Could not find '{paletteName}' palette in asset manager.");
 
         gamepal = pal.ToSDLColors();
 

@@ -116,7 +116,7 @@ internal partial class Program
         var gameParams = Parser.Default.ParseArguments<GameParams>(args).Value ?? new GameParams(); // Move into gamemanager, add unit tests
         new Program();
         _gameEngineManager.Init(gameParams);
-        _assetManager.Load(_gameEngineManager.GamePackId);
+        _assetManager.Load(_gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId);
         RegisterActorActions();
         RegisterConsoleCommands();
 

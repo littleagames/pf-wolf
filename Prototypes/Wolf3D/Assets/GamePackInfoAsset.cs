@@ -9,6 +9,20 @@ internal record GamePackInfoAsset : Asset
 
     public Dictionary<string, GamePack> GamePacks { get; init; } = [];
 
+    /// <summary>
+    /// Palette asset name (game-palette) of a game release entry, e.g. "wolf3d-apogee" -> "wolfpal"
+    /// </summary>
+    public string GetGamePalette(string releaseId)
+    {
+        if (!GamePacks.TryGetValue(releaseId, out var gamePack))
+            throw new KeyNotFoundException($"No '{releaseId}' entry in gamepacks/gamepack-info.yaml");
+
+        if (string.IsNullOrWhiteSpace(gamePack.GamePalette))
+            throw new KeyNotFoundException($"'{releaseId}' in gamepacks/gamepack-info.yaml has no game-palette");
+
+        return gamePack.GamePalette;
+    }
+
     public override void Merge(Asset other)
     {
         // TODO: Overwrite or merge the data

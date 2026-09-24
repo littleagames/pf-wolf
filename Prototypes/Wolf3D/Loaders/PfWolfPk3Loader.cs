@@ -8,9 +8,18 @@ namespace Wolf3D.Loaders;
 internal class PfWolfPk3Loader
 {
     private Dictionary<string, Asset> _assets = [];
+    private readonly string _gameReleaseId;
 
-    public PfWolfPk3Loader(string pk3File)
+    /// <summary>
+    /// The running release's palette, which PNG graphics and sprites are matched to.
+    /// Only read when those references load in GetAssets, after gamepack-info is parsed.
+    /// </summary>
+    private string GamePalette => Load<GamePackInfoAsset>("gamepack-info").GetGamePalette(_gameReleaseId);
+
+    /// <param name="gameReleaseId">The running release's key in gamepacks/gamepack-info.yaml</param>
+    public PfWolfPk3Loader(string pk3File, string gameReleaseId)
     {
+        _gameReleaseId = gameReleaseId;
 
         using ZipArchive archive = ZipFile.OpenRead(pk3File);
 
@@ -117,7 +126,7 @@ internal class PfWolfPk3Loader
                 // Then I can use this same loader for wolf3d file formats as well
                 try
                 {
-                    AddReference(assetName, () => GraphicDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName), sourcePalette: Load<Palette>("wolfpal")));
+                    AddReference(assetName, () => GraphicDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName), sourcePalette: Load<Palette>(GamePalette)));
                 }
                 catch (Exception e)
                 {
@@ -141,7 +150,7 @@ internal class PfWolfPk3Loader
 
             if (entry.FullName.StartsWith("sprites/"))
             {
-                AddReference(assetName, () => PngSpriteDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName), sourcePalette: Load<Palette>("wolfpal")));
+                AddReference(assetName, () => PngSpriteDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName), sourcePalette: Load<Palette>(GamePalette)));
                 continue;
             }
         }
