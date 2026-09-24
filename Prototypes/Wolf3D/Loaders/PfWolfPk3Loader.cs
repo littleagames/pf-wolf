@@ -10,6 +10,8 @@ internal class PfWolfPk3Loader
     private Dictionary<string, Asset> _assets = [];
     private readonly string? _gamePackId;
     private readonly string _gameReleaseId;
+    // The running release's base-pack, whose folders load first under the running pack's names
+    private readonly string? _basePackId;
 
     /// <summary>
     /// Folders holding one subfolder per game pack (actordefs/wolf3d/, gamepacks/spear/)
@@ -23,7 +25,7 @@ internal class PfWolfPk3Loader
     private string GamePalette => Load<GamePackInfoAsset>("gamepack-info").GetGamePalette(_gameReleaseId);
 
     /// <param name="gamePackId">The running game pack; other packs' folders are skipped so their
-    /// assets can't overwrite its own. Null loads every pack.</param>
+    /// assets can't overwrite its own, apart from its base-pack's. Null loads every pack.</param>
     /// <param name="gameReleaseId">The running release's key in gamepacks/gamepack-info.yaml</param>
     public PfWolfPk3Loader(string pk3File, string? gamePackId, string gameReleaseId)
     {
@@ -32,55 +34,44 @@ internal class PfWolfPk3Loader
 
         using ZipArchive archive = ZipFile.OpenRead(pk3File);
 
-        foreach (ZipArchiveEntry entry in archive.Entries.Where(entry => entry.Length > 0 && entry.IsEncrypted == false))
+        // Read first: the running release's base-pack decides which pack folders load, and in what order
+        var gamePackInfo = ReadGamePackInfo(archive);
+        if (gamePackInfo != null)
         {
-            if (IsOtherGamePack(entry.FullName))
-                continue;
+            AddAsset("gamepack-info", gamePackInfo);
+            if (!string.IsNullOrWhiteSpace(gamePackId) && gamePackInfo.GamePacks.ContainsKey(gameReleaseId))
+                _basePackId = gamePackInfo.GetGamePack(gameReleaseId).BasePack;
+        }
 
+        foreach (var (entry, fullName) in GetEntriesInLoadOrder(archive))
+        {
             var assetName = GetAssetReadyName(entry.Name);
-            if (entry.FullName.StartsWith("gamepacks/gamepack-info"))
+            if (fullName.StartsWith("gamepacks/gamepack-info"))
+                continue;
+            if (fullName.StartsWith("gamepacks/") && fullName.Contains("alias"))
             {
-                // TODO: Identify this one as a unique, there should only be one of these
-                try
-                {
-                    //Dictionary<string, GamePack>
-                    var data = YamlDataEntryLoader.Read<Dictionary<string, GamePack>>(entry.Open());
-                    AddAsset("gamepack-info", new GamePackInfoAsset(data));
-                    continue;
-                }   
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error parsing YAML from '{entry.FullName}': {ex.GetType().Name}");
-                    Console.WriteLine($"Message: {ex.Message}");
-                    if (ex.InnerException != null)
-                        Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
-                    throw;
-                }
-            }
-            if (entry.FullName.StartsWith("gamepacks/") && entry.FullName.Contains("alias"))
-            {
-                var uniqueName = GetAssetReadyName(entry.FullName, ignoreFirstDirectory: true);
+                var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
                 var data = YamlDataEntryLoader.Read<AliasAsset>(entry.Open());
                 AddAsset(uniqueName, data);
                 continue;
             }
-            if (entry.FullName.StartsWith("gamepacks/") && entry.FullName.Contains("game-info"))
+            if (fullName.StartsWith("gamepacks/") && fullName.Contains("game-info"))
             {
-                var uniqueName = GetAssetReadyName(entry.FullName, ignoreFirstDirectory: true);
+                var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
                 var data = YamlDataEntryLoader.Read<GameInfoAsset>(entry.Open());
                 AddAsset(uniqueName, data);
                 continue;
             }
-            if (entry.FullName.StartsWith("gamepacks/") && entry.FullName.Contains("raw-data-map"))
+            if (fullName.StartsWith("gamepacks/") && fullName.Contains("raw-data-map"))
             {
-                var uniqueName = GetAssetReadyName(entry.FullName, ignoreFirstDirectory: true);
+                var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
                 var data = YamlDataEntryLoader.Read<RawDataMapAsset>(entry.Open());
                 MergeAsset(uniqueName, data);
                 continue;
             }
-            if (entry.FullName.StartsWith("gamepacks/") && entry.Name.Equals("colors.yaml", StringComparison.OrdinalIgnoreCase))
+            if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("colors.yaml", StringComparison.OrdinalIgnoreCase))
             {
-                var uniqueName = GetAssetReadyName(entry.FullName, ignoreFirstDirectory: true);
+                var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
                 try
                 {
                     var data = YamlDataEntryLoader.Read<Dictionary<string, string>>(entry.Open());
@@ -88,48 +79,48 @@ internal class PfWolfPk3Loader
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error loading colors from '{entry.FullName}': {ex.Message}");
+                    Console.WriteLine($"Error loading colors from '{fullName}': {ex.Message}");
                     throw;
                 }
                 continue;
             }
-            if (entry.FullName.StartsWith("language/")
-                || (entry.FullName.StartsWith("gamepacks/") && entry.FullName.Contains("/language/")))
+            if (fullName.StartsWith("language/")
+                || (fullName.StartsWith("gamepacks/") && fullName.Contains("/language/")))
             {
                 // language/en-us -> "language/en-us", gamepacks/wolf3d/language/en-us -> "wolf3d/language/en-us"
-                var uniqueName = GetAssetReadyName(entry.FullName, ignoreFirstDirectory: entry.FullName.StartsWith("gamepacks/"));
+                var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: fullName.StartsWith("gamepacks/"));
                 var data = YamlDataEntryLoader.Read<Dictionary<string, string>>(entry.Open());
                 MergeAsset(uniqueName, new LanguageAsset(data));
                 continue;
             }
 
-            if (entry.FullName.StartsWith("actordefs/"))
+            if (fullName.StartsWith("actordefs/"))
             {
                 // TODO: Move "native.yaml" to parent directory
-                var uniqueName = GetPackUniqueAssetName(entry.FullName);
+                var uniqueName = GetPackUniqueAssetName(fullName);
                 var data = YamlDataEntryLoader.Read<Dictionary<string, ActorData>>(entry.Open());
                 MergeAsset(uniqueName, new ActorTranslationAsset(data));
                 continue;
             }
 
-            if (entry.FullName.StartsWith("menudefs/"))
+            if (fullName.StartsWith("menudefs/"))
             {
                 var data = YamlDataEntryLoader.Read<MenuAsset>(entry.Open());
                 AddAsset(assetName, data);
                 continue;
             }
 
-            if (entry.FullName.StartsWith("mapdefs/"))
+            if (fullName.StartsWith("mapdefs/"))
             {
                 // TODO: Get the folder after mapdefs to determine the mapdef type (Wolf3d, spear), if there's a second folder, then its map01, map02
                 // If there is no folders, then it is the base/default
-                var uniqueName = GetPackUniqueAssetName(entry.FullName);
+                var uniqueName = GetPackUniqueAssetName(fullName);
                 var data = YamlDataEntryLoader.Read<MapObjectTranslationAsset>(entry.Open());
                 MergeAsset(uniqueName, data);
                 continue;
             }
 
-            if (entry.FullName.StartsWith("graphics/"))
+            if (fullName.StartsWith("graphics/"))
             {
                 // 1) Validate file is a valid graphic to load
                 // 2) Load asset reference to pack, and what type it is
@@ -146,20 +137,20 @@ internal class PfWolfPk3Loader
                 continue;
             }
 
-            if (entry.FullName.StartsWith("palettes/"))
+            if (fullName.StartsWith("palettes/"))
             {
                 AddReference(assetName, () => PaletteDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName)));
                 continue;
             }
 
-            if (entry.FullName.StartsWith("sounds/") && entry.FullName.Contains("sound-seq"))
+            if (fullName.StartsWith("sounds/") && fullName.Contains("sound-seq"))
             {
                 var data = YamlDataEntryLoader.Read<SoundSequenceAsset>(entry.Open());
                 AddAsset(assetName, data);
                 continue;
             }
 
-            if (entry.FullName.StartsWith("sprites/"))
+            if (fullName.StartsWith("sprites/"))
             {
                 AddReference(assetName, () => PngSpriteDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName), sourcePalette: Load<Palette>(GamePalette)));
                 continue;
@@ -167,15 +158,65 @@ internal class PfWolfPk3Loader
         }
     }
 
-    /// <summary>
-    /// True for an entry inside another game pack's subfolder of a per-pack folder.
-    /// Files directly in those folders (gamepacks/gamepack-info.yaml) belong to every pack.
-    /// </summary>
-    private bool IsOtherGamePack(string fullName)
+    private static GamePackInfoAsset? ReadGamePackInfo(ZipArchive archive)
     {
-        if (string.IsNullOrWhiteSpace(_gamePackId))
-            return false;
+        // TODO: Identify this one as a unique, there should only be one of these
+        var entry = archive.Entries.FirstOrDefault(e => e.FullName.StartsWith("gamepacks/gamepack-info"));
+        if (entry == null)
+            return null;
 
+        try
+        {
+            var data = YamlDataEntryLoader.Read<Dictionary<string, GamePack>>(entry.Open());
+            return new GamePackInfoAsset(data);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error parsing YAML from '{entry.FullName}': {ex.GetType().Name}");
+            Console.WriteLine($"Message: {ex.Message}");
+            if (ex.InnerException != null)
+                Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// The entries to load, each with the path to load it under. Without a running pack that's
+    /// every entry as-is. With one, other packs' folders are left out, except the base pack's:
+    /// those come first and are renamed into the running pack's folder (actordefs/wolf3d/guards.yaml
+    /// -> actordefs/spear/guards.yaml), so the running pack's own files, loaded after, override or
+    /// merge into them under the same asset names.
+    /// </summary>
+    private IEnumerable<(ZipArchiveEntry Entry, string FullName)> GetEntriesInLoadOrder(ZipArchive archive)
+    {
+        var basePackEntries = new List<(ZipArchiveEntry, string)>();
+        var entries = new List<(ZipArchiveEntry, string)>();
+
+        foreach (var entry in archive.Entries.Where(entry => entry.Length > 0 && entry.IsEncrypted == false))
+        {
+            var packFolder = GetGamePackFolder(entry.FullName);
+            if (string.IsNullOrWhiteSpace(_gamePackId) || packFolder == null
+                || packFolder.Value.Pack.Equals(_gamePackId, StringComparison.OrdinalIgnoreCase))
+            {
+                entries.Add((entry, entry.FullName));
+            }
+            else if (packFolder.Value.Pack.Equals(_basePackId, StringComparison.OrdinalIgnoreCase))
+            {
+                var (folder, pack) = packFolder.Value;
+                basePackEntries.Add((entry, folder + _gamePackId + entry.FullName.Substring(folder.Length + pack.Length)));
+            }
+        }
+
+        return basePackEntries.Concat(entries);
+    }
+
+    /// <summary>
+    /// For an entry inside a per-pack folder's pack subfolder (actordefs/wolf3d/guards.yaml),
+    /// that folder ("actordefs/") and pack ("wolf3d"). Null otherwise, including files directly
+    /// in those folders (gamepacks/gamepack-info.yaml), which belong to every pack.
+    /// </summary>
+    private static (string Folder, string Pack)? GetGamePackFolder(string fullName)
+    {
         foreach (var folder in GamePackFolders)
         {
             if (!fullName.StartsWith(folder, StringComparison.OrdinalIgnoreCase))
@@ -183,13 +224,12 @@ internal class PfWolfPk3Loader
 
             var packFolderEnd = fullName.IndexOf('/', folder.Length);
             if (packFolderEnd < 0)
-                return false;
+                return null;
 
-            var packFolder = fullName.Substring(folder.Length, packFolderEnd - folder.Length);
-            return !packFolder.Equals(_gamePackId, StringComparison.OrdinalIgnoreCase);
+            return (folder, fullName.Substring(folder.Length, packFolderEnd - folder.Length));
         }
 
-        return false;
+        return null;
     }
 
     private void AddReference<T>(string assetName, Func<T> assetLoader) where T : Asset

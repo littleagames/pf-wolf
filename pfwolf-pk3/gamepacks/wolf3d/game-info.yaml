@@ -2,6 +2,19 @@ default-map:
   ceiling-color: "#383838"
   floor-color: "#717171"
 
+signon:
+  pic: wolf3d-signon
+  hardware-boxes: true
+  press-a-key: true
+
+# Drawn stacked top to bottom
+title-pics:
+  - Title
+
+intro-music: NAZI_NOR
+high-scores-music: ROSTER
+menu-fade-color: "#AE0000"
+
 skills:
   BABY:
     name: "Can I play, Daddy?"

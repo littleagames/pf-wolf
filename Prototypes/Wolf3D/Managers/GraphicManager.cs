@@ -17,6 +17,19 @@ internal class GraphicManager
     private readonly VideoManager videoManager;
     private readonly Lazy<AssetManager> assetManager;
 
+    /// <summary>
+    /// Graphic drawn behind the menus in place of their background color (game-info menu-backdrop)
+    /// </summary>
+    public string? MenuBackdrop { get; set; }
+
+    public void DrawMenuBackground(string color)
+    {
+        if (!string.IsNullOrEmpty(MenuBackdrop) && assetManager.Value.Exists<GraphicAsset>(MenuBackdrop))
+            DrawPic(MenuBackdrop, 0, 0);
+        else
+            videoManager.Bar(0, 0, 320, 200, color);
+    }
+
     public void DrawPropString(int px, int py, string s, string fontcolor, string fontName)
     {
         var fontAsset = assetManager.Value.Find<FontAsset>(fontName);
@@ -38,7 +51,7 @@ internal class GraphicManager
     {
         if (component is Background bkgd)
         {
-            videoManager.Bar(0, 0, 320, 200, bkgd.Color);
+            DrawMenuBackground(bkgd.Color);
         }
         else if (component is Graphic gfx)
         {

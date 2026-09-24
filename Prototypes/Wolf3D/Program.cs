@@ -144,6 +144,7 @@ internal partial class Program
         bool didjukebox = false;
         var theme = _assetManager.FindInGamePack<ColorThemeAsset>("colors");
         _videoManager.Init(theme);
+        _graphicManager.MenuBackdrop = _gameEngineManager.GetGameInfo().MenuBackdrop;
         _inputManager.Init(_videoManager.fullscreen);
         
         pixelangle = new short[_videoManager.screenWidth];
@@ -175,7 +176,7 @@ internal partial class Program
             DoJukebox();
             didjukebox = true;
         }
-        else
+        else if (_gameEngineManager.GetGameInfo().Signon.HardwareBoxes)
             //
             // draw intro screen stuff
             //
@@ -214,12 +215,29 @@ internal partial class Program
 
     private static void SignonScreen()
     {
-        _graphicManager.DrawPic("wolf3d-signon", 0, 0); // TODO: Pull this value from a gamepack configuration
+        _graphicManager.DrawPic(_gameEngineManager.GetGameInfo().Signon.Pic ?? "", 0, 0);
+    }
+
+    /// <summary>
+    /// The game-info title-pics, each drawn below the one before
+    /// </summary>
+    private static void DrawTitle()
+    {
+        int y = 0;
+        foreach (var pic in _gameEngineManager.GetGameInfo().TitlePics)
+        {
+            var graphic = _assetManager.Find<GraphicAsset>(pic);
+            if (graphic == null)
+                continue;
+
+            _graphicManager.DrawPic(pic, 0, y);
+            y += graphic.Height;
+        }
     }
 
     private static void FinishSignon()
     {
-        if (_gameEngineManager.GameType == GameType.SpearOfDestiny)
+        if (!_gameEngineManager.GetGameInfo().Signon.PressAKey)
         {
             // TODO: In the future, the signon screen will not be different for SPEAR, and this conditional will not be required
             // The hope is that the Signon will show the stats of loading chunks, what settings are configured, etc
@@ -279,7 +297,7 @@ internal partial class Program
                 //
                 // title page
                 //
-                _graphicManager.DrawPic("title", 0, 0);
+                DrawTitle();
                 _videoManager.Update();
                 _videoManager.FadeIn();
 

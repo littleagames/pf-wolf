@@ -402,29 +402,30 @@ internal class Wolf3dVgaFileLoader
         assets[dataMap[i].ToLowerInvariant()] = tile8Asset;
         i++;
 
-        // Screens
-        i += 2; // skip for now
-
-        // Extern "text"
-        var helpTextData = grsegs[i];
-        var helpTextAsset = new TextAsset(helpTextData);
-        assets[dataMap[i].ToLowerInvariant()] = helpTextAsset;
-        i++;
-
-        // Extern Demos
-        for (int k = 0; k < 4; k++, i++) {
-            var data = grsegs[i];
-            var asset = new DemoAsset(data);
-            assets[dataMap[i].ToLowerInvariant()] = asset;
-        }
-
-        // Extern "text" again
-        for (int l = 0; l < 6; l++, i++)
+        // Externs: which ones a release has, and in what order, differs (Wolf3D: screens, help text,
+        // demos, end texts; Spear: screens, palettes, demos, end text), so go by their data map names
+        for (; i < dataMap.Count && i < numChunks; i++)
         {
+            var name = dataMap[i];
             var data = grsegs[i];
-            var asset = new TextAsset(data);
-            assets[dataMap[i].ToLowerInvariant()] = asset;
+            if (data == null || IsSkippedExtern(name))
+                continue;
+
+            if (name.StartsWith("Demo", StringComparison.OrdinalIgnoreCase))
+                assets[name.ToLowerInvariant()] = new DemoAsset(data);
+            else
+                assets[name.ToLowerInvariant()] = new TextAsset(data);
         }
-            return assets;
+        return assets;
+    }
+
+    /// <summary>
+    /// Externs not loaded (yet): the order/error text screens, and Spear's palettes (TITLEPAL, END1PAL...)
+    /// </summary>
+    private static bool IsSkippedExtern(string name)
+    {
+        return name.Equals("OrderScreen", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("ErrorScreen", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith("PAL", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -337,13 +337,20 @@ internal class VideoManager
 
     internal void FadeOut() => FadeOut(0, 255, 0, 0, 0, 30);
 
+    /// <param name="red">6-bit VGA value (0-63), as are green and blue</param>
     internal void FadeOut(int start, int end, int red, int green, int blue, int steps)
+        => FadeOut(start, end, new Color
+        {
+            Red = (byte)(red * 255 / 63),
+            Green = (byte)(green * 255 / 63),
+            Blue = (byte)(blue * 255 / 63),
+            Alpha = 255
+        }, steps);
+
+    internal void FadeOut(int start, int end, Color color, int steps)
     {
         int i, j;
-
-        red = red * 255 / 63;
-        green = green * 255 / 63;
-        blue = blue * 255 / 63;
+        int red = color.Red, green = color.Green, blue = color.Blue;
 
         GameEngineManager.WaitVBL(1);
         GetPalette(palette1);

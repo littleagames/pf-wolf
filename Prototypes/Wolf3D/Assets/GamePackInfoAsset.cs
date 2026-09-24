@@ -38,7 +38,7 @@ internal record GamePackInfoAsset : Asset
         return file;
     }
 
-    private GamePack GetGamePack(string releaseId)
+    public GamePack GetGamePack(string releaseId)
         => GamePacks.TryGetValue(releaseId, out var gamePack)
             ? gamePack
             : throw new KeyNotFoundException($"No '{releaseId}' entry in gamepacks/gamepack-info.yaml");
@@ -79,6 +79,9 @@ public record GamePack
     public List<string>? MapDefinitions { get; init; }
     // "game-palette"
     public string? GamePalette { get; init; }
+    // "base-pack": game pack whose actordefs/mapdefs/gamepacks files this one starts from,
+    // overriding them with its own
+    public string? BasePack { get; init; }
     // "file-pack"
     public FilePack? FilePack { get; init; }
     // "starting-scene"

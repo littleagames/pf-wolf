@@ -75,6 +75,8 @@ spear:
     - mapdefs/spear/decorations
     - mapdefs/spear/enemies
   game-palette: spearpal
+  # Starts from wolf3d's actordefs, mapdefs and gamepacks files; spear's own files override them
+  base-pack: wolf3d
   starting-scene: "spear:SignonScene"
   game-pack-asset-reference: spear-map
   file-pack:

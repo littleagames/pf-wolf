@@ -44,11 +44,8 @@ internal partial class Program
 
     // Control panel song: the main menu's music in menudefs/main-menu
     internal static string MENUSONG => _assetManager.GetMenu("main-menu")?.Music ?? "WONDERIN";
-//#if SPEAR
-//    internal static string INTROSONG => musicnames.XTOWER2_MUS;
-//#else
-    internal static string INTROSONG => "NAZI_NOR";
-//#endif
+    internal static string INTROSONG => _gameEngineManager.GetGameInfo().IntroMusic ?? "";
+    internal static string HIGHSCORESSONG => _gameEngineManager.GetGameInfo().HighScoresMusic ?? "";
 
     internal static int SENSITIVE = 60;
 
@@ -128,7 +125,7 @@ internal partial class Program
 
     internal static void ClearMScreen()
     {
-        _videoManager.Bar(0, 0, 320, 200, "BORDCOLOR");
+        _graphicManager.DrawMenuBackground("BORDCOLOR");
     }
 
     internal static void DrawStripes(int y)
@@ -151,11 +148,11 @@ internal partial class Program
         _videoManager.VerticalLine(y, y + h, x + w, color1);
     }
 
-//#if SPEAR
- //   internal static void MenuFadeOut() => VL_FadeOut(0, 255, 0, 0, 51, 10);
-//#else
-    internal static void MenuFadeOut() => _videoManager.FadeOut(0, 255, 43, 0, 0, 10);
-//#endif
+    internal static void MenuFadeOut()
+    {
+        var fadeColor = _gameEngineManager.GetGameInfo().MenuFadeColor;
+        _videoManager.FadeOut(0, 255, string.IsNullOrEmpty(fadeColor) ? new Color { Alpha = 255 } : Color.FromHexRGBA(fadeColor), 10);
+    }
     internal static void MenuFadeIn() => _videoManager.FadeIn(10);
 
     internal static void DrawMenu(CP_iteminfo item_i, CP_itemtype[] items)
@@ -1655,11 +1652,7 @@ internal partial class Program
     {
         fontnumber = "SmallFont";
 
-//#if SPEAR
-//        StartCPMusic(musicnames.XAWARD_MUS);
-//#else
-        StartCPMusic("ROSTER");
-//#endif
+        StartCPMusic(HIGHSCORESSONG);
 
         DrawHighScores();
         _videoManager.Update();

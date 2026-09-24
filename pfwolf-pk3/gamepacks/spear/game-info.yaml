@@ -2,6 +2,21 @@ default-map:
   ceiling-color: "#383838"
   floor-color: "#717171"
 
+signon:
+  pic: spear-signon
+  hardware-boxes: false
+  press-a-key: false
+
+# Drawn stacked top to bottom
+title-pics:
+  - Title1
+  - Title2
+
+intro-music: XTOWER2
+high-scores-music: XAWARD
+menu-fade-color: "#0000CE"
+menu-backdrop: C_Backdrop
+
 skills:
   BABY:
     name: "Can I play, Daddy?"

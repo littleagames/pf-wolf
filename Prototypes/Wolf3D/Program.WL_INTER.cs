@@ -135,7 +135,7 @@ internal partial class Program
                 break;
             }
         }
-        StartCPMusic("ROSTER");
+        StartCPMusic(HIGHSCORESSONG);
         DrawHighScores();
 
         _videoManager.FadeIn();

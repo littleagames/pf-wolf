@@ -787,42 +787,42 @@ music:
     - XTOWER2
 graphics:
     - STRUCTPIC
-    - SMALLFNT
-    - BIGFONT
-    - BACKDROP
-    - M_MCONTL
-    - M_CURS1
-    - M_CURS2
-    - M_NSELCT
-    - M_SELCT
-    - M_CUSTOM
-    - M_JOY1
-    - M_JOY2
-    - M_MOUSE
-    - M_JOYSTK
-    - M_KEYBRD
-    - M_CONTRL
-    - M_OPTION
-    - M_FXTTL
-    - M_DIGTTL
-    - M_MUSTTL
-    - M_HOWTGH
-    - M_BABY
-    - M_EASY
-    - M_NORMAL
-    - M_HARD
-    - M_LDING1
-    - M_LDING2
-    - M_LOADGM
-    - M_SAVEGM
-    - HGHSCORE
-    - M_WONSPR
+    - SmallFont
+    - LargeFont
+    - C_Backdrop
+    - C_MouseLBack
+    - C_Cursor1
+    - C_Cursor2
+    - C_NotSelected
+    - C_Selected
+    - C_Customize
+    - C_Joy1
+    - C_Joy2
+    - C_Mouse
+    - C_Joystick
+    - C_Keyboard
+    - C_Control
+    - C_Options
+    - C_FxTitle
+    - C_DigiTitle
+    - C_MusicTitle
+    - C_HowTough
+    - C_BabyMode
+    - C_Easy
+    - C_Normal
+    - C_Hard
+    - C_DiskLoading1
+    - C_DiskLoading2
+    - C_LoadGame
+    - C_SaveGame
+    - HighScores
+    - C_WonSpear
     - BJCOLPS1
     - BJCOLPS2
     - BJCOLPS3
     - BJCOLPS4
     - ENDPIC
-    - L_GUY1
+    - L_Guy
     - FONTL058
     - FONTL048
     - FONTL049
@@ -865,8 +865,8 @@ graphics:
     - FONTL039
     - L_GUY2
     - L_BJWINS
-    - TITLE1
-    - TITLE2
+    - Title1
+    - Title2
     - ENDSCR1
     - ENDSCR2
     - ENDSCR3
@@ -876,9 +876,9 @@ graphics:
     - ENDSCR7
     - ENDSCR8
     - ENDSCR9
-    - STBACK
+    - StatusBar
     - PG13
-    - CREDITS
+    - Credits
     - IDGUYS1
     - IDGUYS2
     - COPYTOP
@@ -887,13 +887,13 @@ graphics:
     - BOSSPIC2
     - BOSSPIC3
     - BOSSPIC4
-    - KNIFE
-    - PISTOL
-    - MACHGUN
-    - GATLGUN
-    - STKEYS0
-    - STKEYS1
-    - STKEYS2
+    - Knife
+    - Gun
+    - MachineGun
+    - GatlingGun
+    - NoKey
+    - GoldKey
+    - SilverKey
     - FONTN032
     - FONTN048
     - FONTN049
@@ -905,40 +905,40 @@ graphics:
     - FONTN055
     - FONTN056
     - FONTN057
-    - STFST00
-    - STFST01
-    - STFST02
-    - STFST10
-    - STFST11
-    - STFST12
-    - STFST20
-    - STFST21
-    - STFST22
-    - STFST30
-    - STFST31
-    - STFST32
-    - STFST40
-    - STFST41
-    - STFST42
-    - STFST50
-    - STFST51
-    - STFST52
-    - STFST60
-    - STFST61
-    - STFST62
-    - STFDEAD0
-    - STFEVL0
+    - Face1A
+    - Face1B
+    - Face1C
+    - Face2A
+    - Face2B
+    - Face2C
+    - Face3A
+    - Face3B
+    - Face3C
+    - Face4A
+    - Face4B
+    - Face4C
+    - Face5A
+    - Face5B
+    - Face5C
+    - Face6A
+    - Face6B
+    - Face6C
+    - Face7A
+    - Face7B
+    - Face7C
+    - Face8A
+    - GotGatling
     - STFGOD0
     - STFGOD1
     - STFGOD2
     - STFWAIT0
     - STFWAIT1
     - STFOUCH0
-    - PAUSED
-    - GETPSYCH
-    - TILE8
-    - ORDERSCR
-    - ERRORSCR
+    - Paused
+    - GetPsyched
+    - Tile8
+    - OrderScreen
+    - ErrorScreen
     - TITLEPAL
     - END1PAL
     - END2PAL
@@ -950,11 +950,11 @@ graphics:
     - END8PAL
     - END9PAL
     - IDGUYPAL
-    - T_DEMO0
-    - T_DEMO1
-    - T_DEMO2
-    - T_DEMO3
-    - ENDART1
+    - Demo0
+    - Demo1
+    - Demo2
+    - Demo3
+    - EndArt1
 maps:
     - MAP01
     - MAP02
