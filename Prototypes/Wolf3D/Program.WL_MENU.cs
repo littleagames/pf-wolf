@@ -2494,8 +2494,6 @@ internal partial class Program
         //const byte EMSCOLOR = 0x6c; // 0x4f
         //const byte XMSCOLOR = 0x6c; // 0x7f
 
-        const byte FILLCOLOR = 14;
-
         int i;
         //for (i = 0; i < 10; i++)
         //    _videoManager.Bar(49, 163 - 8 * i, 6, 5, MAINCOLOR - i);

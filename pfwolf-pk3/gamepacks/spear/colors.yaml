@@ -1,0 +1,42 @@
+# Named colors used by menus, text layout and intermission screens.
+# Values are #RRGGBB; the engine draws the closest color in the game palette.
+
+# Menu frame
+BORDCOLOR: "#000089"
+BORD2COLOR: "#0000D6"
+DEACTIVE: "#000071"
+BKGDCOLOR: "#000059"
+STRIPE: "#000065"
+
+# Menu text
+READCOLOR: "#B6AE00"
+READHCOLOR: "#FFF600"
+VIEWCOLOR: "#004040"
+TEXTCOLOR: "#8D8D8D"
+HIGHLIGHT: "#C2C2C2"
+
+# Intermission bars
+FIRSTCOLOR: "#FF9D9D"
+SECONDCOLOR: "#FF0000"
+
+# Read This! / help text background
+BACKCOLOR: "#DEDEDE"
+
+# Signon screen hardware-detected boxes
+FILLCOLOR: "#FFFF55"
+
+Black: "#000000"
+White: "#FFFFFF"
+Grey: "#8D8D8D"
+Green: "#04A500"
+DarkGreen: "#047100"
+Yellow: "#E6DA00"
+Purple: "#61009D"
+"Dark Blue": "#00004C"
+Navy: "#00007D"
+Blue: "#0000E2"
+Maroon: "#AA0000"
+"Light Blue": "#20AAFF"
+Lime: "#55FF55"
+"Bright Yellow": "#FFFF55"
+"Dark Yellow": "#404000"

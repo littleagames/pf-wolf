@@ -39,20 +39,38 @@ internal class VideoManager
 
     [Obsolete("Will be 32-bit in the future, and this will only be used to map legacy data to 32bit. This will move to a graphic/asset manager")]
     private SDL.SDL_Color[] gamepal { get; set; }
-    private ColorMetadata? Theme { get; set; }
+    /// <summary>
+    /// Palette index for each color name seen so far: the theme's names, filled at Init,
+    /// plus any #RRGGBB literals as they are first drawn. Drawing calls resolve colors
+    /// every frame, so the palette search runs once per color instead.
+    /// </summary>
+    private readonly Dictionary<string, byte> _colorIndexCache = [];
+    private readonly HashSet<string> _unknownColors = [];
 
     /// <summary>
-    /// Resolves a color to a palette byte index. Named colors (e.g. "White") are looked
-    /// up in the theme; anything else is parsed as a raw numeric palette index, which is
-    /// how in-game layout text (^C&lt;hex&gt;&lt;hex&gt;) selects a color directly.
+    /// Resolves a color to a palette byte index. Named colors (e.g. "White") come from
+    /// the game pack's theme and #RRGGBB values are matched to the closest palette entry.
+    /// Anything else is parsed as a raw numeric palette index, which is how in-game
+    /// layout text (^C&lt;hex&gt;&lt;hex&gt;) selects a color directly.
     /// </summary>
     private byte ResolveColorByte(string color)
     {
-        if (this.Theme != null && this.Theme.Colors256.TryGetValue(color, out byte col))
+        if (_colorIndexCache.TryGetValue(color, out byte col))
             return col;
 
-        byte.TryParse(color, out col);
-        return col;
+        if (color.StartsWith('#'))
+        {
+            col = ParseColor(color);
+            _colorIndexCache[color] = col;
+            return col;
+        }
+
+        if (byte.TryParse(color, out col))
+            return col;
+
+        if (_unknownColors.Add(color))
+            Console.WriteLine($"Unknown color '{color}', drawing palette index 0 instead");
+        return 0;
     }
 
     static readonly UInt32[] rndmasks = {
@@ -77,7 +95,7 @@ internal class VideoManager
         InputManager.MouseGrabbed += SetWindowGrab;
     }
 
-    public void Init(ColorMetadata theme)
+    public void Init(ColorThemeAsset? theme)
     {
         if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
         {
@@ -89,7 +107,10 @@ internal class VideoManager
             throw new PfWolfVideoException("Could not find wolfpal palette in asset manager.");
 
         gamepal = pal.ToSDLColors();
-        this.Theme = theme;
+
+        _colorIndexCache.Clear();
+        foreach (var (name, color) in theme?.Colors ?? [])
+            _colorIndexCache[name] = ParseColor(color);
 
         InitializeSDLVideo();
 
@@ -926,6 +947,14 @@ internal class VideoManager
         byte g = byte.Parse(colorValue.AsSpan(3, 2), NumberStyles.HexNumber);
         byte b = byte.Parse(colorValue.AsSpan(5, 2), NumberStyles.HexNumber);
 
+        return FindClosestPaletteIndex(r, g, b);
+    }
+
+    internal byte ParseColor(Color color)
+        => FindClosestPaletteIndex(color.Red, color.Green, color.Blue);
+
+    private byte FindClosestPaletteIndex(byte r, byte g, byte b)
+    {
         byte closestIndex = 0;
         int closestDistance = int.MaxValue;
 

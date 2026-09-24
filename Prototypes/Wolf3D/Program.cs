@@ -142,8 +142,8 @@ internal partial class Program
     private static void InitGame()
     {
         bool didjukebox = false;
-        var theme = _assetManager.GetColors("wolf3d-theme");
-        _videoManager.Init(theme!);
+        var theme = _assetManager.Find<ColorThemeAsset>($"{_gameEngineManager.GamePackId}/colors");
+        _videoManager.Init(theme);
         _inputManager.Init(_videoManager.fullscreen);
         
         pixelangle = new short[_videoManager.screenWidth];

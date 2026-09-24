@@ -57,6 +57,21 @@ internal class PfWolfPk3Loader
                 MergeAsset(uniqueName, data);
                 continue;
             }
+            if (entry.FullName.StartsWith("gamepacks/") && entry.Name.Equals("colors.yaml", StringComparison.OrdinalIgnoreCase))
+            {
+                var uniqueName = GetAssetReadyName(entry.FullName, ignoreFirstDirectory: true);
+                try
+                {
+                    var data = YamlDataEntryLoader.Read<Dictionary<string, string>>(entry.Open());
+                    MergeAsset(uniqueName, new ColorThemeAsset(data));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading colors from '{entry.FullName}': {ex.Message}");
+                    throw;
+                }
+                continue;
+            }
 
             if (entry.FullName.StartsWith("actordefs/"))
             {
