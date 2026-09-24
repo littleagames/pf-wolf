@@ -373,6 +373,8 @@ internal class MenuMetadata
             foreach (var prop in compType.GetProperties(flags))
             {
                 if (!prop.CanWrite) continue;
+                // game-packs sits beside type/params, not inside params
+                if (prop.Name == nameof(MenuComponent.GamePacks)) continue;
                 if (paramMap.TryGetValue(NormalizeParamName(prop.Name), out var sval))
                 {
                     usedParams.Add(NormalizeParamName(prop.Name));
@@ -385,7 +387,9 @@ internal class MenuMetadata
             foreach (var unused in paramMap.Keys.Where(k => !usedParams.Contains(k)))
                 Console.WriteLine($"Menu: {entry.Type} has no param '{unused}', ignored");
 
-            result.Add((MenuComponent)instance);
+            var component = (MenuComponent)instance;
+            component.GamePacks = entry.GamePacks;
+            result.Add(component);
         }
 
         return result;
@@ -466,7 +470,10 @@ internal class MenuMetadata
 
 internal abstract record MenuComponent
 {
-
+    /// <summary>
+    /// Game packs this is drawn in; null means every pack
+    /// </summary>
+    public List<string>? GamePacks { get; set; }
 }
 
 internal record Background : MenuComponent
@@ -614,6 +621,10 @@ internal abstract record MenuItem
     public string Text { get; set; } = null!;
     public string? ShortKey { get; set; }
     public bool Enabled { get; set; }
+    /// <summary>
+    /// Game packs this item appears in; null means every pack
+    /// </summary>
+    public List<string>? GamePacks { get; set; }
 }
 
 internal record MenuSwitcher : MenuItem

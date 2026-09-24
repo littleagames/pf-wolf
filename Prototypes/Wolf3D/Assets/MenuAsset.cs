@@ -27,6 +27,10 @@ internal record ComponentEntry
     /// so values can be strings or numbers depending on the YAML file.
     /// </summary>
     public List<Dictionary<string, string>> Params { get; init; } = [];
+    /// <summary>
+    /// Only draw this in these game packs ("wolf3d", "spear"); unset means every pack
+    /// </summary>
+    public List<string>? GamePacks { get; init; }
 }
 
 internal record MenuItemEntry
@@ -41,4 +45,8 @@ internal record MenuItemEntry
     public bool Enabled { get; init; } = true;
     public string? Action { get; init; } = null;
     public string? Music { get; init; } = null;
+    /// <summary>
+    /// Only include this item in these game packs ("wolf3d", "spear"); unset means every pack
+    /// </summary>
+    public List<string>? GamePacks { get; init; } = null;
 }

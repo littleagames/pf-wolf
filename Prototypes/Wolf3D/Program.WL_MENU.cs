@@ -2549,8 +2549,19 @@ internal partial class Program
         foreach (var menuName in _assetManager.GetMenuNames())
         {
             var menu = _assetManager.GetMenu(menuName);
-            if (!string.IsNullOrEmpty(menu?.Music) && _assetManager.Find<Wolf3dImfAudio>(menu.Music) == null)
+            if (menu == null)
+                continue;
+
+            if (!string.IsNullOrEmpty(menu.Music) && _assetManager.Find<Wolf3dImfAudio>(menu.Music) == null)
                 Console.WriteLine($"Menu '{menuName}': unknown music '{menu.Music}'");
+
+            var packLists = menu.MenuItems.Select(item => item.GamePacks)
+                .Concat(menu.Components.Select(component => component.GamePacks));
+            foreach (var pack in packLists.Where(list => list != null).SelectMany(list => list!).Distinct())
+            {
+                if (!GameEngineManager.KnownGamePackIds.Contains(pack, StringComparer.OrdinalIgnoreCase))
+                    Console.WriteLine($"Menu '{menuName}': unknown game pack '{pack}' in game-packs");
+            }
         }
 
         (MainMenu, MainItems) = LoadMenu("main-menu");
@@ -2583,7 +2594,9 @@ internal partial class Program
         }
         else
         {
-            items = menuAsset.MenuItems.Select(mi =>
+            items = menuAsset.MenuItems
+                    .Where(mi => InCurrentGamePack(mi.GamePacks))
+                    .Select(mi =>
                     new CP_itemtype(
                         (short)(mi.Enabled && mi is not BlankMenuItem ? 1 : 0),
                         (mi.Text ?? "").ToLanguageText(language),
@@ -2676,12 +2689,22 @@ internal partial class Program
 
         foreach (var component in menu.Components)
         {
+            if (!InCurrentGamePack(component.GamePacks))
+                continue;
+
             if (component is Label label)
                 DrawLabel(label);
             else
                 _graphicManager.DrawComponent(component);
         }
     }
+
+    /// <summary>
+    /// Whether a menu item or component with this game-packs list belongs in the running game pack
+    /// </summary>
+    private static bool InCurrentGamePack(List<string>? gamePacks)
+        => gamePacks == null || gamePacks.Count == 0
+           || gamePacks.Contains(_gameEngineManager.GamePackId, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Plays a menu's music. A track that is already playing carries on rather than restarting,

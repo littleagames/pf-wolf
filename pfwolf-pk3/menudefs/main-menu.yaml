@@ -19,13 +19,23 @@ components:
     type: "Stripe"
     params:
       - y: 10
+  # Window fits the item count: 10 items in Wolf3D, 9 in Spear (no "Read This!")
   -
     type: "Window"
+    game-packs: [ "wolf3d" ]
     params:
       - x: 68
       - y: 52
       - width: 178
       - height: 136
+  -
+    type: "Window"
+    game-packs: [ "spear" ]
+    params:
+      - x: 68
+      - y: 52
+      - width: 178
+      - height: 123
   -
     type: "Graphic"
     params:
@@ -83,6 +93,8 @@ menu-items:
       short-key: R
       enabled: true
       action: "CP_ReadThis"
+      # Spear has no help screens
+      game-packs: [ "wolf3d" ]
   # Becomes "End Game" (no action) while a game is in progress
   -
       id: "viewscores"

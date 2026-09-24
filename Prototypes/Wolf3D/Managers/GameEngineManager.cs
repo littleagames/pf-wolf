@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using System.ComponentModel;
+using System.Reflection;
 using Wolf3D.Assets;
 using Wolf3D.Configuration;
 
@@ -59,9 +60,24 @@ internal class GameEngineManager
         GameType = GameType.Wolf3D; // TODO: Pull from config or PK3 in future
     }
 
+    /// <summary>
+    /// Name of the running game pack ("wolf3d", "spear"): the gamepacks/ folder name,
+    /// and what menudefs list under game-packs
+    /// </summary>
+    public string GamePackId => GetGamePackId(GameType);
+
+    /// <summary>
+    /// Every game pack name the engine knows about
+    /// </summary>
+    public static IEnumerable<string> KnownGamePackIds => Enum.GetValues<GameType>().Select(GetGamePackId);
+
+    private static string GetGamePackId(GameType type)
+        => typeof(GameType).GetField(type.ToString())?.GetCustomAttribute<DescriptionAttribute>()?.Description
+           ?? type.ToString().ToLowerInvariant();
+
     public GameInfoAsset GetGameInfo()
     {
-        string gameInfoKey = string.Join("/", this.GameType.ToString(), "game-info");
+        string gameInfoKey = string.Join("/", GamePackId, "game-info");
         var gameInfo = assetManager.Value.Find<GameInfoAsset>(gameInfoKey);
         if (gameInfo == null)
             throw new Exception("Game info not found");
