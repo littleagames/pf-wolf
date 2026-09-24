@@ -446,7 +446,11 @@ internal partial class Program
 
         NewActorState(ob, "Chase");
 
-        if (ob.Properties.TryGetValue("monster.chasespeedmultiplier", out var mult))
+        // Chasing is faster than patrolling: either a set speed (the Ubermutant's 3000) or a
+        // multiple of the actor's own
+        if (ob.Properties.TryGetValue("monster.chasespeed", out var chaseSpeed))
+            ob.Speed = Convert.ToInt32(chaseSpeed);
+        else if (ob.Properties.TryGetValue("monster.chasespeedmultiplier", out var mult))
             ob.Speed *= Convert.ToInt32(mult);
 
         if (ob.Distance < 0)
@@ -683,7 +687,17 @@ internal partial class Program
         var tiley = ob.Y >> (int)MapConstants.TILESHIFT;
 
         if (ob.Properties.TryGetValue("points", out var points))
-            GivePoints(Convert.ToInt32(points));
+        {
+            // POINTSONCE actors (Spectres, which come back) only pay out the first time;
+            // FL_BONUS is set at spawn and cleared here, as in the original
+            if (!ob.Flags.Contains("POINTSONCE", StringComparer.OrdinalIgnoreCase))
+                GivePoints(Convert.ToInt32(points));
+            else if (ob.RuntimeFlags.HasFlag(objflags.FL_BONUS))
+            {
+                GivePoints(Convert.ToInt32(points));
+                ob.RuntimeFlags &= ~objflags.FL_BONUS;
+            }
+        }
 
         NewActorState(ob, "Death");
 
@@ -1113,13 +1127,16 @@ internal partial class Program
     // Spawns a projectile actor (Needle/Rocket/Fire, actordefs/wolf3d/projectiles.yaml) at the
     // thrower and aims it at the player. TicCount 1 makes its first frame expire on the very
     // next tic, so the state's Action (a rocket's first A_Smoke) fires almost immediately.
-    private static void ThrowProjectile(Entities.Actors.Actor ob, string className, int speed, string sound)
+    // angleOffset turns the shot away from the player, in ANGLES units (the Death Knight's
+    // rockets go 4 either side). With no sound given, the projectile's own attacksound plays.
+    private static void ThrowProjectile(Entities.Actors.Actor ob, string className, int speed, string? sound = null, int angleOffset = 0)
     {
         var deltax = player.X - ob.X;
         var deltay = ob.Y - player.Y;
         var angle = (float)Math.Atan2((float)deltay, (float)deltax);
         if (angle < 0) angle = (float)(M_PI * 2 + angle);
         var iangle = (int)(angle / (M_PI * 2) * ANGLES);
+        iangle = ((iangle + angleOffset) % ANGLES + ANGLES) % ANGLES;
 
         var newobj = _mapManager.SpawnAtActor(className, ob);
         if (newobj == null)
@@ -1129,7 +1146,10 @@ internal partial class Program
         newobj.Angle = (short)iangle;
         newobj.Speed = speed;
 
-        PlaySoundLocActor(sound, newobj);
+        if (sound == null && newobj.Properties.TryGetValue("attacksound", out var attackSound))
+            sound = attackSound as string;
+        if (!string.IsNullOrEmpty(sound))
+            PlaySoundLocActor(sound, newobj);
     }
 
     internal static void T_SchabbThrow(Entities.Actors.Actor ob) =>
@@ -1154,6 +1174,100 @@ internal partial class Program
     }
 
     internal static void A_Slurpie(Entities.Actors.Actor ob) => _audioManager.Play("misc/slurpie");
+
+    /*
+    =============================================================================
+    SPEAR OF DESTINY BOSSES (ported from wl_act2.cpp's SPEAR section)
+    =============================================================================
+    */
+
+    // Wilhelm, the Death Knight and the Angel chase like Schabbs: attack when there's a clear
+    // shot, otherwise dodge toward the player, and back off once within four tiles
+    internal static void T_Will(Entities.Actors.Actor ob) => DodgeAndRetreat(ob, "Attack");
+
+    // The Ubermutant's volley: a normal shot, plus 10 more damage when right beside the player
+    internal static void T_UShoot(Entities.Actors.Actor ob)
+    {
+        T_Shoot(ob);
+
+        var dx = Math.Abs(ob.TileX - player.TileX);
+        var dy = Math.Abs(ob.TileY - player.TileY);
+        if (Math.Max(dx, dy) <= 1)
+            TakeDamage(10, ob);
+    }
+
+    /// <summary>
+    /// A_FireProjectile("HRocket"[, angle offset[, "shoot"]]): launches a projectile at the player,
+    /// turned by the offset in ANGLES units; with "shoot", also fires a gun volley (T_Shoot), as the
+    /// Death Knight does with each rocket.
+    /// </summary>
+    internal static void A_FireProjectile(Entities.Actors.Actor ob, string[] args)
+    {
+        if (args.Length == 0)
+        {
+            Console.WriteLine("A_FireProjectile: no projectile given.");
+            return;
+        }
+
+        var angleOffset = args.Length > 1 && int.TryParse(args[1], out var offset) ? offset : 0;
+        if (args.Skip(2).Any(a => a.Equals("shoot", StringComparison.OrdinalIgnoreCase)))
+            T_Shoot(ob);
+
+        ThrowProjectile(ob, args[0], 0x2000, angleOffset: angleOffset);
+    }
+
+    // The Angel's spark volley: A_StartAttack starts the count, A_Relaunch follows each spark and
+    // either tires the Angel out after the third, breaks off at random, or goes again
+    internal static void A_StartAttack(Entities.Actors.Actor ob) => ob.Temp1 = 0;
+
+    internal static void A_Relaunch(Entities.Actors.Actor ob)
+    {
+        if (++ob.Temp1 == 3)
+        {
+            NewActorState(ob, "Tired");
+            return;
+        }
+
+        if ((US_RndT() & 1) != 0)
+            NewActorState(ob, "Chase");
+    }
+
+    // Ends the game in victory (the Angel of Death's last death frame)
+    internal static void A_Victory(Entities.Actors.Actor ob) => playstate = playstatetypes.ex_victorious;
+
+    // A_PlaySound("angel/breath"): plays a sound, not placed in the world
+    internal static void A_PlaySound(Entities.Actors.Actor ob, string[] args)
+    {
+        if (args.Length > 0)
+            _audioManager.Play(args[0]);
+    }
+
+    // A dead Spectre comes back once nothing is in the way: the player isn't right on top of
+    // it, and the tiles it covers hold no wall, door, blocking object or live enemy
+    internal static void A_Dormant(Entities.Actors.Actor ob)
+    {
+        var deltax = ob.X - player.X;
+        var deltay = ob.Y - player.Y;
+        if (deltax >= -MINACTORDIST && deltax <= MINACTORDIST && deltay >= -MINACTORDIST && deltay <= MINACTORDIST)
+            return;
+
+        var xl = (int)((ob.X - MINDIST) >> (int)MapConstants.TILESHIFT);
+        var xh = (int)((ob.X + MINDIST) >> (int)MapConstants.TILESHIFT);
+        var yl = (int)((ob.Y - MINDIST) >> (int)MapConstants.TILESHIFT);
+        var yh = (int)((ob.Y + MINDIST) >> (int)MapConstants.TILESHIFT);
+
+        for (var y = yl; y <= yh; y++)
+            for (var x = xl; x <= xh; x++)
+            {
+                if (_mapManager.actorat[x, y] != null || _mapManager.IsShootableActorAt(x, y))
+                    return;
+            }
+
+        ob.RuntimeFlags |= objflags.FL_AMBUSH | objflags.FL_SHOOTABLE;
+        ob.RuntimeFlags &= ~(objflags.FL_ATTACKMODE | objflags.FL_NONMARK);
+        ob.Dir = objdirtypes.nodir;
+        NewActorState(ob, "Spawn");
+    }
 
     internal static void A_HitlerMorph(Entities.Actors.Actor ob)
     {

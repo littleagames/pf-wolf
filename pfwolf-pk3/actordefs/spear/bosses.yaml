@@ -1,0 +1,563 @@
+# Spear of Destiny bosses, ported from the SPEAR section of wl_act2.cpp (Wolf4SDL): state
+# timings, per-difficulty health (starthitpoints), chase speeds (FirstSighting), 5000 points
+# and the gold key dropped by all but the Angel (KillActor). Where a death frame waits out the
+# death scream, it uses the longer timing the original used with digitized sound.
+# AMBUSH: spawned ready to attack as soon as they see the player, whatever the floor tile.
+
+# MAP05. Stands, chases, and fires volleys like Hans.
+TransGrosse:
+  flags: [AMBUSH]
+  states:
+    Spawn: # s_transstand
+      - sprite: TRNS
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Chase: # s_transchase1..4
+      - sprite: TRNS
+        frames: [A]
+        tics-per-frame: 10
+        think: T_Chase
+      - sprite: TRNS
+        frames: [A]
+        tics-per-frame: 3
+      - sprite: TRNS
+        frames: [B]
+        tics-per-frame: 8
+        think: T_Chase
+      - sprite: TRNS
+        frames: [C]
+        tics-per-frame: 10
+        think: T_Chase
+      - sprite: TRNS
+        frames: [C]
+        tics-per-frame: 3
+      - sprite: TRNS
+        frames: [D]
+        tics-per-frame: 8
+        think: T_Chase
+    Attack: # s_transshoot1..8
+      - sprite: TRNS
+        frames: [E]
+        tics-per-frame: 30
+      - sprite: TRNS
+        frames: [F]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: TRNS
+        frames: [G]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: TRNS
+        frames: [F]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: TRNS
+        frames: [G]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: TRNS
+        frames: [F]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: TRNS
+        frames: [G]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: TRNS
+        frames: [E]
+        tics-per-frame: 10
+        next-state: Chase
+    Death: # s_transdie0..4
+      - sprite: TRNS
+        frames: [A]
+        tics-per-frame: 1
+        action: A_DeathScream
+      - sprite: TRNS
+        frames: [A]
+        tics-per-frame: 105
+      - sprite: TRNS
+        frames: [H]
+        tics-per-frame: 15
+      - sprite: TRNS
+        frames: [I]
+        tics-per-frame: 15
+      - sprite: TRNS
+        frames: [J]
+        tics-per-frame: 15
+      - sprite: TRNS
+        frames: [K]
+        tics-per-frame: -1
+  properties:
+    "health.baby": 850
+    "health.easy": 950
+    "health.normal": 1050
+    "health.hard": 1200
+    "monster.chasespeed": 1536
+    "points": 5000
+    "seesound": "trans/sight"
+    "deathsound": "trans/death"
+    "dropitem": "GoldKey"
+
+# MAP16. Chases like Trans Grosse; its volley also hurts at point-blank range (T_UShoot).
+Ubermutant:
+  flags: [AMBUSH]
+  states:
+    Spawn: # s_uberstand
+      - sprite: UBER
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Chase: # s_uberchase1..4
+      - sprite: UBER
+        frames: [A]
+        tics-per-frame: 10
+        think: T_Chase
+      - sprite: UBER
+        frames: [A]
+        tics-per-frame: 3
+      - sprite: UBER
+        frames: [B]
+        tics-per-frame: 8
+        think: T_Chase
+      - sprite: UBER
+        frames: [C]
+        tics-per-frame: 10
+        think: T_Chase
+      - sprite: UBER
+        frames: [C]
+        tics-per-frame: 3
+      - sprite: UBER
+        frames: [D]
+        tics-per-frame: 8
+        think: T_Chase
+    Attack: # s_ubershoot1..7
+      - sprite: UBER
+        frames: [E]
+        tics-per-frame: 30
+      - sprite: UBER
+        frames: [F]
+        tics-per-frame: 12
+        action: T_UShoot
+      - sprite: UBER
+        frames: [G]
+        tics-per-frame: 12
+        action: T_UShoot
+      - sprite: UBER
+        frames: [H]
+        tics-per-frame: 12
+        action: T_UShoot
+      - sprite: UBER
+        frames: [G]
+        tics-per-frame: 12
+        action: T_UShoot
+      - sprite: UBER
+        frames: [F]
+        tics-per-frame: 12
+        action: T_UShoot
+      - sprite: UBER
+        frames: [E]
+        tics-per-frame: 12
+        next-state: Chase
+    Death: # s_uberdie0..5
+      - sprite: UBER
+        frames: [A]
+        tics-per-frame: 1
+        action: A_DeathScream
+      - sprite: UBER
+        frames: [A]
+        tics-per-frame: 70
+      - sprite: UBER
+        frames: [I]
+        tics-per-frame: 15
+      - sprite: UBER
+        frames: [J]
+        tics-per-frame: 15
+      - sprite: UBER
+        frames: [K]
+        tics-per-frame: 15
+      - sprite: UBER
+        frames: [L]
+        tics-per-frame: 15
+      - sprite: UBER
+        frames: [M]
+        tics-per-frame: -1
+  properties:
+    "health.baby": 1050
+    "health.easy": 1150
+    "health.normal": 1250
+    "health.hard": 1400
+    "monster.chasespeed": 3000
+    "points": 5000
+    "deathsound": "uber/death"
+    "dropitem": "GoldKey"
+
+# MAP10. Dodges and backs off (T_Will); opens each volley with a rocket.
+Wilhelm:
+  flags: [AMBUSH]
+  states:
+    Spawn: # s_willstand
+      - sprite: WILL
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Chase: # s_willchase1..4
+      - sprite: WILL
+        frames: [A]
+        tics-per-frame: 10
+        think: T_Will
+      - sprite: WILL
+        frames: [A]
+        tics-per-frame: 3
+      - sprite: WILL
+        frames: [B]
+        tics-per-frame: 8
+        think: T_Will
+      - sprite: WILL
+        frames: [C]
+        tics-per-frame: 10
+        think: T_Will
+      - sprite: WILL
+        frames: [C]
+        tics-per-frame: 3
+      - sprite: WILL
+        frames: [D]
+        tics-per-frame: 8
+        think: T_Will
+    Attack: # s_willshoot1..6
+      - sprite: WILL
+        frames: [E]
+        tics-per-frame: 30
+      - sprite: WILL
+        frames: [F]
+        tics-per-frame: 10
+        action: A_FireProjectile("Rocket")
+      - sprite: WILL
+        frames: [G]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: WILL
+        frames: [H]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: WILL
+        frames: [G]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: WILL
+        frames: [H]
+        tics-per-frame: 10
+        action: T_Shoot
+        next-state: Chase
+    Death: # s_willdie1..6
+      - sprite: WILL
+        frames: [A]
+        tics-per-frame: 1
+        action: A_DeathScream
+      - sprite: WILL
+        frames: [A]
+        tics-per-frame: 70
+      - sprite: WILL
+        frames: [I]
+        tics-per-frame: 10
+      - sprite: WILL
+        frames: [J]
+        tics-per-frame: 10
+      - sprite: WILL
+        frames: [K]
+        tics-per-frame: 10
+      - sprite: WILL
+        frames: [L]
+        tics-per-frame: -1
+  properties:
+    "health.baby": 950
+    "health.easy": 1050
+    "health.normal": 1150
+    "health.hard": 1300
+    "monster.chasespeed": 2048
+    "points": 5000
+    "seesound": "will/sight"
+    "deathsound": "will/death"
+    "dropitem": "GoldKey"
+
+# MAP18. Dodges and backs off (T_Will); each volley fires two rockets angled either side of
+# the player, each with a burst from its guns.
+DeathKnight:
+  flags: [AMBUSH]
+  states:
+    Spawn: # s_deathstand
+      - sprite: DKNT
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Chase: # s_deathchase1..4
+      - sprite: DKNT
+        frames: [A]
+        tics-per-frame: 10
+        think: T_Will
+      - sprite: DKNT
+        frames: [A]
+        tics-per-frame: 3
+      - sprite: DKNT
+        frames: [B]
+        tics-per-frame: 8
+        think: T_Will
+      - sprite: DKNT
+        frames: [C]
+        tics-per-frame: 10
+        think: T_Will
+      - sprite: DKNT
+        frames: [C]
+        tics-per-frame: 3
+      - sprite: DKNT
+        frames: [D]
+        tics-per-frame: 8
+        think: T_Will
+    Attack: # s_deathshoot1..5
+      - sprite: DKNT
+        frames: [E]
+        tics-per-frame: 30
+      - sprite: DKNT
+        frames: [F]
+        tics-per-frame: 10
+        action: A_FireProjectile("HeavyRocket", -4, "shoot")
+      - sprite: DKNT
+        frames: [H]
+        tics-per-frame: 10
+        action: T_Shoot
+      - sprite: DKNT
+        frames: [G]
+        tics-per-frame: 10
+        action: A_FireProjectile("HeavyRocket", 4, "shoot")
+      - sprite: DKNT
+        frames: [H]
+        tics-per-frame: 10
+        action: T_Shoot
+        next-state: Chase
+    Death: # s_deathdie1..9
+      - sprite: DKNT
+        frames: [A]
+        tics-per-frame: 1
+        action: A_DeathScream
+      - sprite: DKNT
+        frames: [A]
+        tics-per-frame: 105
+      - sprite: DKNT
+        frames: [I]
+        tics-per-frame: 10
+      - sprite: DKNT
+        frames: [J]
+        tics-per-frame: 10
+      - sprite: DKNT
+        frames: [K]
+        tics-per-frame: 10
+      - sprite: DKNT
+        frames: [L]
+        tics-per-frame: 10
+      - sprite: DKNT
+        frames: [M]
+        tics-per-frame: 10
+      - sprite: DKNT
+        frames: [N]
+        tics-per-frame: 10
+      - sprite: DKNT
+        frames: [O]
+        tics-per-frame: -1
+  properties:
+    "health.baby": 1250
+    "health.easy": 1350
+    "health.normal": 1450
+    "health.hard": 1600
+    "monster.chasespeed": 2048
+    "points": 5000
+    "seesound": "knight/sight"
+    "deathsound": "knight/death"
+    "dropitem": "GoldKey"
+
+# MAP21. Dodges and backs off (T_Will); fires sparks until it tires after three, then catches
+# its breath. Its death wins the game.
+AngelOfDeath:
+  flags: [AMBUSH]
+  states:
+    Spawn: # s_angelstand
+      - sprite: ANGL
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Chase: # s_angelchase1..4
+      - sprite: ANGL
+        frames: [A]
+        tics-per-frame: 10
+        think: T_Will
+      - sprite: ANGL
+        frames: [A]
+        tics-per-frame: 3
+      - sprite: ANGL
+        frames: [B]
+        tics-per-frame: 8
+        think: T_Will
+      - sprite: ANGL
+        frames: [C]
+        tics-per-frame: 10
+        think: T_Will
+      - sprite: ANGL
+        frames: [C]
+        tics-per-frame: 3
+      - sprite: ANGL
+        frames: [D]
+        tics-per-frame: 8
+        think: T_Will
+    Attack: # s_angelshoot1
+      - sprite: ANGL
+        frames: [E]
+        tics-per-frame: 10
+        action: A_StartAttack
+        next-state: Volley
+    Volley: # s_angelshoot2..3, repeating until A_Relaunch breaks off
+      - sprite: ANGL
+        frames: [F]
+        tics-per-frame: 20
+        action: A_FireProjectile("Spark")
+      - sprite: ANGL
+        frames: [E]
+        tics-per-frame: 10
+        action: A_Relaunch
+    Tired: # s_angeltired..7
+      - sprite: ANGL
+        frames: [G]
+        tics-per-frame: 40
+        action: A_PlaySound("angel/breath")
+      - sprite: ANGL
+        frames: [H]
+        tics-per-frame: 40
+      - sprite: ANGL
+        frames: [G]
+        tics-per-frame: 40
+        action: A_PlaySound("angel/breath")
+      - sprite: ANGL
+        frames: [H]
+        tics-per-frame: 40
+      - sprite: ANGL
+        frames: [G]
+        tics-per-frame: 40
+        action: A_PlaySound("angel/breath")
+      - sprite: ANGL
+        frames: [H]
+        tics-per-frame: 40
+      - sprite: ANGL
+        frames: [G]
+        tics-per-frame: 40
+        action: A_PlaySound("angel/breath")
+        next-state: Chase
+    Death: # s_angeldie1..8
+      - sprite: ANGL
+        frames: [A]
+        tics-per-frame: 1
+        action: A_DeathScream
+      - sprite: ANGL
+        frames: [A]
+        tics-per-frame: 105
+      - sprite: ANGL
+        frames: [I]
+        tics-per-frame: 10
+        action: A_Slurpie
+      - sprite: ANGL
+        frames: [J]
+        tics-per-frame: 10
+      - sprite: ANGL
+        frames: [K]
+        tics-per-frame: 10
+      - sprite: ANGL
+        frames: [L]
+        tics-per-frame: 10
+      - sprite: ANGL
+        frames: [M]
+        tics-per-frame: 10
+      - sprite: ANGL
+        frames: [N]
+        tics-per-frame: 10
+      - sprite: ANGL
+        frames: [O]
+        tics-per-frame: 10
+        next-state: Victory
+    Victory: # s_angeldie9: lies dead for 130 tics, then the game is won
+      - sprite: ANGL
+        frames: [P]
+        tics-per-frame: 130
+        action: A_Victory
+  properties:
+    "health.baby": 1450
+    "health.easy": 1550
+    "health.normal": 1650
+    "health.hard": 2000
+    "monster.chasespeed": 1536
+    "points": 5000
+    "seesound": "angel/sight"
+    "deathsound": "angel/death"
+
+# MAP21's ghosts. Drift after the player (T_Ghosts); shot down, they fade and lie dormant,
+# then come back once nothing is in the way. Points only for the first kill.
+Spectre:
+  flags: [AMBUSH, POINTSONCE]
+  states:
+    Spawn: # s_spectrewait1..4
+      - sprite: SPCT
+        frames: [A]
+        tics-per-frame: 10
+        think: T_Stand
+      - sprite: SPCT
+        frames: [B]
+        tics-per-frame: 10
+        think: T_Stand
+      - sprite: SPCT
+        frames: [C]
+        tics-per-frame: 10
+        think: T_Stand
+      - sprite: SPCT
+        frames: [D]
+        tics-per-frame: 10
+        think: T_Stand
+    Chase: # s_spectrechase1..4
+      - sprite: SPCT
+        frames: [A]
+        tics-per-frame: 10
+        think: T_Ghosts
+      - sprite: SPCT
+        frames: [B]
+        tics-per-frame: 10
+        think: T_Ghosts
+      - sprite: SPCT
+        frames: [C]
+        tics-per-frame: 10
+        think: T_Ghosts
+      - sprite: SPCT
+        frames: [D]
+        tics-per-frame: 10
+        think: T_Ghosts
+    Death: # s_spectredie1..4
+      - sprite: SPCT
+        frames: [E]
+        tics-per-frame: 10
+      - sprite: SPCT
+        frames: [F]
+        tics-per-frame: 10
+      - sprite: SPCT
+        frames: [G]
+        tics-per-frame: 10
+      - sprite: SPCT
+        frames: [H]
+        tics-per-frame: 300
+        next-state: Dormant
+    Dormant: # s_spectrewake, retried every 10 tics until A_Dormant wakes it
+      - sprite: SPCT
+        frames: [H]
+        tics-per-frame: 10
+        action: A_Dormant
+  properties:
+    "health.baby": 5
+    "health.easy": 10
+    "health.normal": 15
+    "health.hard": 25
+    "monster.chasespeed": 800
+    "points": 200
+    "seesound": "ghost/sight"

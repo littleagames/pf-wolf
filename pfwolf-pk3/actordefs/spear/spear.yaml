@@ -1,0 +1,19 @@
+# The Spear of Destiny (map object 74, on MAP18 after the Death Knight). Taking it plays the
+# pickup sound and moves the player straight to MAP21 -- no intermission -- keeping their
+# spot and facing, where the Angel of Death waits.
+SpearOfDestiny:
+  parent: CustomInventory
+  properties:
+    "inventory.pickupsound": "treasure/spear/pickup"
+  flags:
+    - INVENTORY.ALWAYSPICKUP
+  states:
+    Spawn:
+      - sprite: SPOD
+        frames: [A]
+        tics-per-frame: -1
+    Pickup:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_ChangeMap("MAP21", "keep-position")

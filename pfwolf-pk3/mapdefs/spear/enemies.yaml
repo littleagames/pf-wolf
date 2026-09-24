@@ -1,0 +1,10 @@
+# Spear's bosses and Spectres (ScanInfoPlane in wl_game.cpp). The rank-and-file enemies use
+# the same numbers as Wolf3D's and come from mapdefs/wolf3d/enemies.yaml through the spear
+# release's base-pack.
+things:
+  106: { class: Spectre,      angles: 0, patrol: 0, min-skill: 0 }
+  107: { class: AngelOfDeath, angles: 0, patrol: 0, min-skill: 0 }
+  125: { class: TransGrosse,  angles: 0, patrol: 0, min-skill: 0 }
+  142: { class: Ubermutant,   angles: 0, patrol: 0, min-skill: 0 }
+  143: { class: Wilhelm,      angles: 0, patrol: 0, min-skill: 0 }
+  161: { class: DeathKnight,  angles: 0, patrol: 0, min-skill: 0 }

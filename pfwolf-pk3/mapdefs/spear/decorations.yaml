@@ -1,6 +1,5 @@
 # Spear's static objects that differ from Wolf3D's; the rest of 23-70 come from
 # mapdefs/wolf3d/decorations.yaml through the spear release's base-pack.
-# 74 (the Spear of Destiny) ends the game and comes with the ending.
 things:
   33:
     class: SkullOnStick
@@ -50,6 +49,12 @@ things:
     min-skill: 0
   73:
     class: Truck
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  # Taking it moves the player to MAP21 (actordefs/spear/spear.yaml)
+  74:
+    class: SpearOfDestiny
     angles: 0
     patrol: 0
     min-skill: 0

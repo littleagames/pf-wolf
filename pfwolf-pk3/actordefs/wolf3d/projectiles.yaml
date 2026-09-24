@@ -32,6 +32,9 @@ Rocket:
     "attacksound": "missile/fire" # was "MISSILEFIRE"
     "deathsound": "missile/hit" # was "MISSILEHIT"
     # Damage on player hit: (random()>>3) + 30.
+    "projectile.damage": 30
+    "projectile.smoke": Smoke
+    "projectile.explosion": Boom
 
 # Spawned continuously behind a moving Rocket by A_Smoke.
 Smoke:
@@ -89,6 +92,7 @@ Needle:
   properties:
     "attacksound": "schabbs/throw" # was "SCHABBSTHROW"
     # Damage on player hit: (random()>>3) + 20.
+    "projectile.damage": 20
 
 # Fake Hitler's flamethrower stream (T_FakeFire); one spawned per Attack
 # frame, forming a continuous line toward the player.
@@ -106,3 +110,4 @@ Fire:
   properties:
     "attacksound": "flame/fire" # was "FLAMETHROWER"
     # Damage on player hit: random()>>3 (no floor added, unlike Rocket/Needle).
+    "projectile.damage": 0

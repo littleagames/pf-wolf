@@ -1,0 +1,73 @@
+# Spear of Destiny projectiles, ported from wl_act2.cpp (Wolf4SDL). Both hit for random 0-31
+# plus 30, like Wolf3D's Rocket (actordefs/wolf3d/projectiles.yaml).
+
+# The Death Knight's rockets (s_hrocket): trail HeavySmoke and burst into HeavyBoom on a wall.
+HeavyRocket:
+  states:
+    Spawn:
+      - sprite: HRCK
+        frames: [A]
+        tics-per-frame: 3
+        think: T_Projectile
+        action: A_Smoke
+  properties:
+    "attacksound": "knight/missile"
+    "deathsound": "missile/hit"
+    "projectile.damage": 30
+    "projectile.smoke": HeavySmoke
+    "projectile.explosion": HeavyBoom
+
+HeavySmoke: # s_hsmoke1..4
+  states:
+    Spawn:
+      - sprite: HSMK
+        frames: [A]
+        tics-per-frame: 3
+      - sprite: HSMK
+        frames: [B]
+        tics-per-frame: 3
+      - sprite: HSMK
+        frames: [C]
+        tics-per-frame: 3
+      - sprite: HSMK
+        frames: [D]
+        tics-per-frame: 3
+        action: A_Remove
+
+HeavyBoom: # s_hboom1..3
+  states:
+    Spawn:
+      - sprite: HBOM
+        frames: [A]
+        tics-per-frame: 6
+      - sprite: HBOM
+        frames: [B]
+        tics-per-frame: 6
+      - sprite: HBOM
+        frames: [C]
+        tics-per-frame: 6
+        action: A_Remove
+
+# The Angel of Death's sparks (s_spark1..4): vanish against a wall.
+Spark:
+  states:
+    Spawn:
+      - sprite: SPRK
+        frames: [A]
+        tics-per-frame: 6
+        think: T_Projectile
+      - sprite: SPRK
+        frames: [B]
+        tics-per-frame: 6
+        think: T_Projectile
+      - sprite: SPRK
+        frames: [C]
+        tics-per-frame: 6
+        think: T_Projectile
+      - sprite: SPRK
+        frames: [D]
+        tics-per-frame: 6
+        think: T_Projectile
+  properties:
+    "attacksound": "angel/attack"
+    "projectile.damage": 30

@@ -581,10 +581,10 @@ digitized-audio:
     - DSSWITCH
     - DSGDDTH4
     - DSGDDTH5
+    - DSFART
     - DSGDDTH6
     - DSGDDTH7
     - DSGDDTH8
-    - DSFART
     - DSTRASIT
     - DSTRADTH
     - DSWILSIT
@@ -652,16 +652,16 @@ audio:
     - PCSSSIT
     - PCMUTDTH
     - PCGDDTH5
-    - PCGDDTH7
-    - PCGDDTH8
-    - PCSSDTH
     - PCGDDTH6
+    - PCGDDTH7
+    - PCSSDTH
+    - PCFART
     - PCGRDFIR
     - PCBOSSFR
     - PCSSFIRE
     - PCSLURPE
     - PCGHTDTH
-    - PCFART
+    - PCGDDTH8
     - PCAMMOBX
     - PCAGLSIT
     - PCOFFSIT
@@ -733,16 +733,16 @@ audio:
     - ALSSSIT
     - ALMUTDTH
     - ALGDDTH5
-    - ALGDDTH7
-    - ALGDDTH8
-    - ALSSDTH
     - ALGDDTH6
+    - ALGDDTH7
+    - ALSSDTH
+    - ALFART
     - ALGRDFIR
     - ALBOSSFR
     - ALSSFIRE
     - ALSLURPE
     - ALGHTDTH
-    - ALFART
+    - ALGDDTH8
     - ALAMMOBX
     - ALAGLSIT
     - ALOFFSIT

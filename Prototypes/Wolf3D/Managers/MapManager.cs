@@ -51,13 +51,6 @@ internal class MapManager
     // for the current level -- LoadMap clears _actors, which drops the previous level's pawn.
     internal Entities.Actors.PlayerPawn? Player { get; private set; }
 
-    // The unique story bosses (actordefs/wolf3d/bosses.yaml): always spawned ambush-ready and
-    // stationary regardless of the floor tile beneath them, unlike the rank-and-file grunts.
-    private static readonly HashSet<string> BossActorNames = new(StringComparer.Ordinal)
-    {
-        "Hans", "Gretel", "Schabbs", "Gift", "Fat", "FakeHitler", "MechaHitler", "RealHitler"
-    };
-
     // The Pac-Man bonus-level ghosts (actordefs/wolf3d/ghosts.yaml): never shootable/killable,
     // matching SpawnGhosts never assigning hitpoints in the legacy source.
     private static readonly HashSet<string> GhostActorNames = new(StringComparer.Ordinal)
@@ -201,15 +194,18 @@ internal class MapManager
             builtActor.Distance = (int)MapConstants.TILEGLOBAL;
         }
 
-        var isBoss = BossActorNames.Contains(thing.Class);
         var isGhost = GhostActorNames.Contains(thing.Class);
+
+        // AMBUSH actors (the bosses) are always spawned ambush-ready, whatever the floor tile
+        // beneath them, unlike grunts, which only ambush when placed on an ambush tile.
+        var alwaysAmbush = builtActor.Flags.Contains("AMBUSH", StringComparer.OrdinalIgnoreCase);
 
         if (isGhost)
         {
             builtActor.Speed = ReadIntProperty(builtActor, "speed", Program.SPDDOG);
             builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
         }
-        else if (isBoss || builtActor.Properties.ContainsKey("health") || builtActor.Properties.Keys.Any(k => k.StartsWith("health.", StringComparison.Ordinal)))
+        else if (builtActor.Properties.ContainsKey("health") || builtActor.Properties.Keys.Any(k => k.StartsWith("health.", StringComparison.Ordinal)))
         {
             // A grunt or boss enemy (has scaled health), as opposed to a plain decoration/pickup.
             builtActor.Hitpoints = GetScaledHealth(builtActor);
@@ -221,14 +217,18 @@ internal class MapManager
             if (!Program.loadedgame)
                 Program.gamestate.killtotal++;
 
-            if (isBoss)
+            // Points only for the first kill (Program.KillActor clears it)
+            if (builtActor.Flags.Contains("POINTSONCE", StringComparer.OrdinalIgnoreCase))
+                builtActor.RuntimeFlags |= objflags.FL_BONUS;
+
+            if (alwaysAmbush)
             {
                 builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
             }
             else
             {
                 // Grunts only ambush if placed directly on an ambush floor tile (SpawnStand
-                // in Program.WL_ACT2.cs), unlike bosses which are always ambush-ready.
+                // in Program.WL_ACT2.cs), unlike AMBUSH actors, which always are.
                 var floorTile = MAPSPOT(tilex, tiley, 0);
                 if (floorTile == MapDataConstants.AMBUSHTILE)
                 {
@@ -475,7 +475,9 @@ internal class MapManager
             if (ob.IsRemoved)
                 return;
 
-            state = state.Next;
+            // An action may switch state itself (the Angel's A_Relaunch, a Spectre's A_Dormant);
+            // like the original DoActor, carry on from the state it left rather than the old one
+            state = (ob.CurrentState ?? state).Next;
             if (state == null)
                 return; // the resolver never leaves Next null in practice; defensive only.
             ob.CurrentState = state;

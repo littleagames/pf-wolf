@@ -17,11 +17,13 @@ internal partial class Program
     static bool ingame, fizzlein;
     internal static gametype gamestate = new gametype();
     static string bordercol = "VIEWCOLOR"; // color of the Change View/Ingame border
-# if SPEAR
-    internal static int spearx, speary;
-    internal static uint spearangle;
-    internal static bool spearflag;
-#endif
+    /// <summary>
+    /// A map switch asked for by A_ChangeMap (Spear's pickup): GameLoop lets the pickup sound play
+    /// out, loads the map without an intermission and, with KeepPosition, puts the player back
+    /// where they stood, facing the same way.
+    /// </summary>
+    private record PendingMapChange(string Map, bool KeepPosition, int X, int Y, short Angle);
+    private static PendingMapChange? pendingMapChange;
 
     //
     // ELEVATOR BACK MAPS - REMEMBER (-1)!!
@@ -70,6 +72,26 @@ internal partial class Program
     }
 
 
+    /// <summary>
+    /// After an A_ChangeMap map loads: with KeepPosition, moves the player to where they were
+    /// on the old map, facing the same way.
+    /// </summary>
+    private static void ApplyPendingMapChange()
+    {
+        if (pendingMapChange is not { } change)
+            return;
+
+        pendingMapChange = null;
+        if (!change.KeepPosition)
+            return;
+
+        player.SetPosition(change.X >> (int)MapConstants.TILESHIFT, change.Y >> (int)MapConstants.TILESHIFT);
+        player.X = change.X;
+        player.Y = change.Y;
+        player.Angle = change.Angle;
+        Thrust(0, 0); // settles the player's tile and area at the new position
+    }
+
     internal static void GameLoop()
     {
         var language = _assetManager.GetText("en-us");
@@ -88,8 +110,11 @@ internal partial class Program
 
             startgame = false;
             if (!loadedgame)
+            {
                 SetupGameLevel();
-            DrawLevel(); 
+                ApplyPendingMapChange();
+            }
+            DrawLevel();
 
             ingame = true;
             if (loadedgame)
@@ -110,6 +135,17 @@ internal partial class Program
             DrawLevel ();
 
             PlayLoop();
+
+            if (playstate == playstatetypes.ex_warped && pendingMapChange != null)
+            {
+                // Spear waits 150 tics for its pickup sound before the new map loads; the score
+                // carries over, as the level ends without an intermission to bank it
+                GameEngineManager.WaitVBL(150);
+                gamestate.oldscore = gamestate.score;
+            }
+            else
+                pendingMapChange = null;
+
             StopMusic();
             ingame = false;
 

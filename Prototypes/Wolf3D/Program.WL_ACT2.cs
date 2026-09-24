@@ -39,9 +39,11 @@ internal partial class Program
     =================
     */
 
+    // Leaves a puff of the projectile's projectile.smoke actor (Smoke if not set) behind it
     internal static void A_Smoke(Entities.Actors.Actor ob)
     {
-        var smoke = _mapManager.SpawnAtActor("Smoke", ob);
+        var smokeClass = ob.Properties.TryGetValue("projectile.smoke", out var smokeName) && smokeName is string name ? name : "Smoke";
+        var smoke = _mapManager.SpawnAtActor(smokeClass, ob);
         if (smoke != null)
             smoke.TicCount = 6;             // the first puff lingers longer than its YAML 3 tics
     }
@@ -119,12 +121,13 @@ internal partial class Program
 
         if (!ProjectileTryMove(ob))
         {
-            // Only rockets explode; needles and flames just vanish. (Spear's hrocket variant
-            // is not ported.)
-            if (ob.Name == "Rocket")
+            // A projectile with a projectile.explosion (rockets) blows up against the wall with
+            // its deathsound; the rest (needles, flames, sparks) just vanish
+            if (ob.Properties.TryGetValue("projectile.explosion", out var explosion) && explosion is string explosionClass)
             {
-                PlaySoundLocActor("missile/hit", ob);
-                _mapManager.SpawnAtActor("Boom", ob);
+                if (ob.Properties.TryGetValue("deathsound", out var hitSound) && hitSound is string hitSoundName)
+                    PlaySoundLocActor(hitSoundName, ob);
+                _mapManager.SpawnAtActor(explosionClass, ob);
             }
 
             _mapManager.MarkForRemoval(ob);
@@ -132,19 +135,9 @@ internal partial class Program
         }
 
         if (deltax < PROJECTILESIZE && deltay < PROJECTILESIZE)
-        {       // hit the player
-            switch (ob.Name)
-            {
-                case "Needle":
-                    damage = (US_RndT() >> 3) + 20;
-                    break;
-                case "Rocket":
-                    damage = (US_RndT() >> 3) + 30;
-                    break;
-                case "Fire":
-                    damage = (US_RndT() >> 3);
-                    break;
-            }
+        {       // hit the player: random 0-31 on top of the projectile's projectile.damage
+            var baseDamage = ob.Properties.TryGetValue("projectile.damage", out var damageValue) ? Convert.ToInt32(damageValue) : 0;
+            damage = (US_RndT() >> 3) + baseDamage;
 
             TakeDamage(damage, ob);
             _mapManager.MarkForRemoval(ob);

@@ -54,6 +54,7 @@
 # Hans Grosse (classtypes.bossobj / enemytypes.en_boss)
 # -----------------------------------------------------------------------
 Hans:
+  flags: [AMBUSH]
   states:
     Spawn: # s_bossstand / T_Stand
       - sprite: HANS
@@ -151,6 +152,7 @@ Hans:
 # Gretel Grosse (classtypes.gretelobj / enemytypes.en_gretel)
 # -----------------------------------------------------------------------
 Gretel:
+  flags: [AMBUSH]
   states:
     Spawn: # s_gretelstand / T_Stand
       - sprite: GRET
@@ -247,6 +249,7 @@ Gretel:
 # and throws a Needle projectile rather than shooting.
 # -----------------------------------------------------------------------
 Schabbs:
+  flags: [AMBUSH]
   states:
     Spawn: # s_schabbstand / T_Stand
       - sprite: SHAB
@@ -335,6 +338,7 @@ Schabbs:
 # Same dodge/retreat pattern as Schabbs (T_Gift), but throws a Rocket.
 # -----------------------------------------------------------------------
 Gift:
+  flags: [AMBUSH]
   states:
     Spawn: # s_giftstand / T_Stand
       - sprite: GIFT
@@ -421,6 +425,7 @@ Gift:
 # regular shot (T_Shoot) later in the same attack.
 # -----------------------------------------------------------------------
 Fat:
+  flags: [AMBUSH]
   states:
     Spawn: # s_fatstand / T_Stand
       - sprite: FATF
@@ -523,6 +528,7 @@ Fat:
 # gun, and dodges rather than chasing directly (T_Fake).
 # -----------------------------------------------------------------------
 FakeHitler:
+  flags: [AMBUSH]
   states:
     Spawn: # s_fakestand / T_Stand
       - sprite: FAKE
@@ -632,6 +638,7 @@ FakeHitler:
 # dying outright.
 # -----------------------------------------------------------------------
 MechaHitler:
+  flags: [AMBUSH]
   states:
     Spawn: # s_mechastand / T_Stand
       - sprite: MECH
@@ -730,6 +737,7 @@ MechaHitler:
 # array in A_HitlerMorph, not from `starthitpoints`.
 # -----------------------------------------------------------------------
 RealHitler:
+  flags: [AMBUSH]
   states:
     # Only present so the actor initializes cleanly; A_HitlerMorph spawns
     # directly into Chase and never uses this state in practice.

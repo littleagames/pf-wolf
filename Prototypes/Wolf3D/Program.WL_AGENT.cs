@@ -425,6 +425,7 @@ internal partial class Program
     {
         ActorActionRegistry.Register("A_GiveExtraMan", (Entities.Actors.Actor _) => GiveExtraMan());
         ActorActionRegistry.Register("A_GiveInventory", GiveInventoryAction);
+        ActorActionRegistry.Register("A_ChangeMap", ChangeMapAction);
 
         // Enemy AI (Program.EnemyAI.cs), ported from Program.WL_STATE.cs / Program.WL_ACT2.cs.
         ActorActionRegistry.Register("T_Stand", T_Stand);
@@ -447,6 +448,16 @@ internal partial class Program
         ActorActionRegistry.Register("A_HitlerMorph", A_HitlerMorph);
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
 
+        // Spear of Destiny bosses (Program.EnemyAI.cs)
+        ActorActionRegistry.Register("T_Will", T_Will);
+        ActorActionRegistry.Register("T_UShoot", T_UShoot);
+        ActorActionRegistry.Register("A_FireProjectile", A_FireProjectile);
+        ActorActionRegistry.Register("A_StartAttack", A_StartAttack);
+        ActorActionRegistry.Register("A_Relaunch", A_Relaunch);
+        ActorActionRegistry.Register("A_Victory", A_Victory);
+        ActorActionRegistry.Register("A_PlaySound", A_PlaySound);
+        ActorActionRegistry.Register("A_Dormant", A_Dormant);
+
         // Projectiles and effects (Program.WL_ACT2.cs).
         ActorActionRegistry.Register("T_Projectile", T_Projectile);
         ActorActionRegistry.Register("A_Smoke", A_Smoke);
@@ -461,6 +472,33 @@ internal partial class Program
         // The player's own think states (PlayerPawn), ticked by MapManager.DoActor.
         ActorActionRegistry.Register("T_Player", T_Player);
         ActorActionRegistry.Register("T_Attack", T_Attack);
+    }
+
+    /// <summary>
+    /// A_ChangeMap("MAP21"[, "keep-position"]): ends the level and moves to another map with no
+    /// intermission. With keep-position the player keeps their spot and facing on the new map,
+    /// as when picking up the Spear of Destiny.
+    /// </summary>
+    private static void ChangeMapAction(Entities.Actors.Actor actor, string[] args)
+    {
+        if (args.Length == 0)
+        {
+            Console.WriteLine("A_ChangeMap: no map given.");
+            return;
+        }
+
+        var map = _gameEngineManager.GetGameInfo().Maps.Keys
+            .FirstOrDefault(k => k.Equals(args[0], StringComparison.OrdinalIgnoreCase));
+        if (map == null)
+        {
+            Console.WriteLine($"A_ChangeMap: unknown map '{args[0]}'.");
+            return;
+        }
+
+        var keepPosition = args.Skip(1).Any(a => a.Equals("keep-position", StringComparison.OrdinalIgnoreCase));
+        pendingMapChange = new PendingMapChange(map, keepPosition, player.X, player.Y, player.Angle);
+        gamestate.mapon = map;
+        playstate = playstatetypes.ex_warped;
     }
 
     private static void GiveInventoryAction(Entities.Actors.Actor actor, string[] args)
