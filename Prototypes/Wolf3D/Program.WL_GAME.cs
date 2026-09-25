@@ -561,6 +561,11 @@ internal partial class Program
         //int mapnum = gamestate.mapon + 10 * gamestate.cluster;
         _mapManager.LoadMap(gamestate.mapon, (int)gamestate.difficulty);
 
+        // The cluster follows the map, however it was reached: a new game, the next/secret
+        // level, a map-change trigger or the console's "map" warp
+        if (_gameEngineManager.GetGameInfo().Maps.TryGetValue(gamestate.mapon, out var mapInfo))
+            gamestate.cluster = mapInfo.Cluster;
+
         //
         // spawn doors
         //
