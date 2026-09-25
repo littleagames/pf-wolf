@@ -26,13 +26,14 @@ components:
       - x: 68
       - y: 79
       - width: 178
-      - height: 45
+      - height: 58
   -
     type: "Graphic"
     params:
       - name: "c_options"
       - horizontal-orientation: "Center"
       - y: 0
+# Change View and Video share V: pressing it again moves to the other one
 menu-items:
   -
       id: "sound"
@@ -55,3 +56,10 @@ menu-items:
       short-key: V
       enabled: true
       action: "CP_ChangeView"
+  -
+      id: "video"
+      type: "MenuSwitcher"
+      text: "$MENU_VIDEO"
+      short-key: V
+      enabled: true
+      action: "CP_Video"

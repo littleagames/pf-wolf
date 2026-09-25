@@ -2,6 +2,8 @@
 using SDL2;
 using Wolf3D.Assets;
 using Wolf3D.Assets.Sounds;
+using Wolf3D.Configuration;
+using Wolf3D.Constants;
 using Wolf3D.Entities;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
@@ -51,6 +53,7 @@ internal partial class Program
 
     internal static CP_itemtype[] MainMenu = [];
     internal static CP_itemtype[] OptMenu = [];
+    internal static CP_itemtype[] VidMenu = [];
     internal static CP_itemtype[] SndMenu = [];
     internal static CP_itemtype[] CtlMenu = [];
     internal static CP_itemtype[] NewEmenu = [];
@@ -67,6 +70,7 @@ internal partial class Program
     // Loaded from menudefs/ in CheckForEpisodes
     internal static CP_iteminfo MainItems;
     internal static CP_iteminfo OptItems;
+    internal static CP_iteminfo VidItems;
     internal static CP_iteminfo SndItems;
     internal static CP_iteminfo LSItems;
     internal static CP_iteminfo CtlItems;
@@ -1100,6 +1104,264 @@ internal partial class Program
         DrawMenu(OptItems, OptMenu);
         DrawMenuGun(OptItems);
         _videoManager.Update();
+    }
+
+    /// <summary>
+    /// The Video submenu. Toggles switch with Enter; choices step with left/right or Enter.
+    /// Every change takes effect at once, and ones that could leave the screen unreadable
+    /// ask to be kept (see ChangeVideo).
+    /// </summary>
+    internal static int CP_Video(int _)
+    {
+        int which;
+
+        DrawVideoMenu();
+        MenuFadeIn();
+        WaitKeyUp();
+
+        do
+        {
+            which = HandleMenu(VidItems, VidMenu, null, (w, delta) => StepVideoChoice(w, delta, wrap: false));
+
+            var settings = _videoManager.Settings;
+            switch (SelectedId(VidMenu, which))
+            {
+                case "fullscreen":
+                    ShootSnd();
+                    ChangeVideo(settings with { Fullscreen = !settings.Fullscreen });
+                    break;
+
+                case "vsync":
+                    ShootSnd();
+                    ChangeVideo(settings with { VSync = !settings.VSync });
+                    break;
+
+                case "aspect":
+                    ShootSnd();
+                    ChangeVideo(WithAspect(settings, !settings.AspectCorrect));
+                    break;
+
+                case "window-size":
+                case "render-scale":
+                case "filter":
+                    StepVideoChoice(which, 1, wrap: true);
+                    break;
+            }
+        }
+        while (which >= 0);
+
+        MenuFadeOut();
+
+        return 0;
+    }
+
+    internal static void DrawVideoMenu(bool update = true)
+    {
+        var settings = _videoManager.Settings;
+        var language = _assetManager.GetText("en-us");
+
+        DrawMenuComponents("video");
+
+        // The window's size means nothing while fullscreen
+        FindMenuItem(VidMenu, "window-size")?.active = (short)(settings.Fullscreen ? 0 : 1);
+        if (VidMenu[VidItems.curpos].active == 0)
+            VidItems.curpos = (short)Math.Max(0, Array.FindIndex(VidMenu, item => item.active != 0));
+
+        DrawMenu(VidItems, VidMenu);
+
+        DrawMenuCheckbox(VidItems, VidMenu, "fullscreen", settings.Fullscreen);
+        DrawMenuCheckbox(VidItems, VidMenu, "vsync", settings.VSync);
+        DrawMenuCheckbox(VidItems, VidMenu, "aspect", settings.AspectCorrect);
+        DrawMenuChoice(VidItems, VidMenu, "window-size", $"{settings.WindowWidth}x{settings.WindowHeight}");
+        DrawMenuChoice(VidItems, VidMenu, "render-scale", $"{settings.RenderWidth}x{settings.RenderHeight}");
+        DrawMenuChoice(VidItems, VidMenu, "filter", FilterName(settings.Filter).ToLanguageText(language));
+
+        DrawMenuGun(VidItems);
+        if (update)
+            _videoManager.Update();
+    }
+
+    private static string FilterName(ScaleFilter filter) => filter switch
+    {
+        ScaleFilter.Linear => "$STR_LINEAR",
+        _ => "$STR_NEAREST",
+    };
+
+    // Moves a Video menu choice row to its next value, and switches to it
+    private static void StepVideoChoice(int which, int delta, bool wrap)
+    {
+        var id = SelectedId(VidMenu, which);
+        if (id == null)
+            return;
+
+        var settings = _videoManager.Settings;
+        var choices = VideoChoices(id, settings);
+        if (choices.Count == 0)
+            return;
+
+        int current = Math.Max(0, choices.IndexOf(settings));
+        int next = StepMenuChoice(current, choices.Count, delta, wrap);
+        if (next == current)
+            return;
+
+        // Left/right arrive while HandleMenu is still running, before it records where the cursor is
+        VidItems.curpos = (short)which;
+        _audioManager.Play("menu/move1");
+        ChangeVideo(choices[next]);
+    }
+
+    /// <summary>
+    /// The video modes a choice row steps through, in order, each differing from the current
+    /// one only in that row's setting. The current mode is always one of them.
+    /// </summary>
+    private static List<VideoSettings> VideoChoices(string id, VideoSettings settings) => id switch
+    {
+        "window-size" => WindowSizes(settings)
+            .Select(size => settings with { WindowWidth = size.Width, WindowHeight = size.Height })
+            .ToList(),
+        "render-scale" => RenderScales(settings)
+            .Select(scale => settings with { RenderScale = scale })
+            .ToList(),
+        "filter" => Enum.GetValues<ScaleFilter>()
+            .Select(filter => settings with { Filter = filter })
+            .ToList(),
+        _ => [],
+    };
+
+    // The window's height for each 320 across: 200 with square pixels, 240 at 4:3
+    private static int WindowBaseHeight(bool aspectCorrect) => aspectCorrect ? 240 : 200;
+
+    /// <summary>
+    /// Whole multiples of 320x200 (320x240 at 4:3, so the picture fills the window) that fit on
+    /// the desktop, plus the current size if it's something else, as vid_window can set.
+    /// </summary>
+    private static List<(int Width, int Height)> WindowSizes(VideoSettings settings)
+    {
+        var (maxWidth, maxHeight) = _videoManager.GetLargestWindowSize();
+        int baseHeight = WindowBaseHeight(settings.AspectCorrect);
+
+        var sizes = new List<(int Width, int Height)> { (VideoSettings.BaseWidth, baseHeight) };
+        for (int k = 2; VideoSettings.BaseWidth * k <= maxWidth && baseHeight * k <= maxHeight; k++)
+            sizes.Add((VideoSettings.BaseWidth * k, baseHeight * k));
+
+        if (!sizes.Contains((settings.WindowWidth, settings.WindowHeight)))
+            sizes.Add((settings.WindowWidth, settings.WindowHeight));
+
+        return sizes.OrderBy(size => size.Width).ThenBy(size => size.Height).ToList();
+    }
+
+    private const int MaxRenderScale = 8;
+
+    // Render scales up to the display's size, since drawing more than it can show is wasted
+    private static List<int> RenderScales(VideoSettings settings)
+    {
+        var (displayWidth, displayHeight) = _videoManager.GetDisplaySize();
+        int max = Math.Min(MaxRenderScale, Math.Min(displayWidth / VideoSettings.BaseWidth, displayHeight / VideoSettings.BaseHeight));
+        max = Math.Max(max, Math.Max(1, settings.RenderScale));
+
+        return Enumerable.Range(1, max).ToList();
+    }
+
+    /// <summary>
+    /// Aspect correction on or off. A window of a standard size is reshaped to match, so the
+    /// picture still fills it: 640x400 becomes 640x480, made smaller if that won't fit.
+    /// </summary>
+    private static VideoSettings WithAspect(VideoSettings settings, bool aspectCorrect)
+    {
+        var result = settings with { AspectCorrect = aspectCorrect };
+
+        int k = settings.WindowWidth / VideoSettings.BaseWidth;
+        bool standardSize = settings.WindowWidth == VideoSettings.BaseWidth * k
+            && settings.WindowHeight == WindowBaseHeight(settings.AspectCorrect) * k;
+        if (!standardSize)
+            return result;
+
+        var (maxWidth, maxHeight) = _videoManager.GetLargestWindowSize();
+        int baseHeight = WindowBaseHeight(aspectCorrect);
+        while (k > 1 && (VideoSettings.BaseWidth * k > maxWidth || baseHeight * k > maxHeight))
+            k--;
+
+        return result with { WindowWidth = VideoSettings.BaseWidth * k, WindowHeight = baseHeight * k };
+    }
+
+    /// <summary>
+    /// Switches to a video mode and redraws the menu in it. A change that could leave the
+    /// screen unreadable (fullscreen, the window's size, the resolution, VSync) then asks to be
+    /// kept, and goes back if it isn't.
+    /// </summary>
+    private static void ChangeVideo(VideoSettings next)
+    {
+        var language = _assetManager.GetText("en-us");
+        var previous = _videoManager.Settings;
+
+        if (!_videoManager.ApplyVideoSettings(next))
+        {
+            DrawVideoMenu(update: false);
+            _audioManager.Play("player/usefail");
+            Message("$STR_VIDEOFAILED".ToLanguageText(language));
+            _inputManager.ClearKeysDown();
+            _inputManager.Ack();
+        }
+        else if (NeedsVideoConfirm(previous, next) && !ConfirmVideoMode())
+        {
+            _videoManager.ApplyVideoSettings(previous);
+        }
+
+        DrawVideoMenu();
+    }
+
+    private static bool NeedsVideoConfirm(VideoSettings previous, VideoSettings next)
+        => next.Fullscreen != previous.Fullscreen
+           || next.RenderScale != previous.RenderScale
+           || next.VSync != previous.VSync
+           || (!next.Fullscreen && (next.WindowWidth != previous.WindowWidth || next.WindowHeight != previous.WindowHeight));
+
+    private const int VideoConfirmSeconds = 10;
+
+    /// <summary>
+    /// Asks whether to keep the video mode just switched to, counting down on screen. Only
+    /// the yes key keeps it: no, escape, or letting the time run out goes back.
+    /// </summary>
+    private static bool ConfirmVideoMode()
+    {
+        var language = _assetManager.GetText("en-us");
+        uint start = GameEngineManager.GetTimeCount();
+        int shown = -1;
+        bool keep = false;
+        ControlInfo ci;
+
+        _inputManager.ClearKeysDown();
+
+        while (true)
+        {
+            int left = VideoConfirmSeconds - (int)((GameEngineManager.GetTimeCount() - start) / Timing.TickBase);
+            if (left <= 0)
+                break;
+
+            // The box is redrawn over a fresh menu each second, since its width changes with the number
+            if (left != shown)
+            {
+                shown = left;
+                DrawVideoMenu(update: false);
+                Message("$STR_KEEPVIDEO".ToLanguageText(language).Replace("{SECONDS}", left.ToString()));
+            }
+
+            ReadAnyControl(out ci);
+            if (_inputManager.IsKeyDown(ScanCodes.sc_Y) || ci.button0)
+            {
+                keep = true;
+                break;
+            }
+
+            if (_inputManager.IsKeyDown(ScanCodes.sc_N) || _inputManager.IsKeyDown(ScanCodes.sc_Escape) || ci.button1)
+                break;
+
+            GameEngineManager.DelayMs(5);
+        }
+
+        _inputManager.ClearKeysDown();
+        _audioManager.Play(keep ? "menu/activate" : "menu/escape");
+        return keep;
     }
 
     internal static int CP_Sound(int _)
@@ -2554,6 +2816,7 @@ internal partial class Program
 
         (MainMenu, MainItems) = LoadMenu("main-menu");
         (OptMenu, OptItems) = LoadMenu("options");
+        (VidMenu, VidItems) = LoadMenu("video");
         (SndMenu, SndItems) = LoadMenu("sound");
         (CtlMenu, CtlItems) = LoadMenu("control", curpos: -1);
         (CusMenu, CusItems) = LoadMenu("customize", curpos: -1);
@@ -2746,6 +3009,7 @@ internal partial class Program
             [
             CP_NewGame,
             CP_Options,
+            CP_Video,
             CP_Sound,
             CP_Control,
             CP_LoadGame,

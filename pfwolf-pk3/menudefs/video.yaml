@@ -1,0 +1,67 @@
+music: "WONDERIN"
+type: "wolf3d-menu"
+position:
+  x: 24
+  y: 62
+indent: 56
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Label"
+    params:
+      - text: "$MENU_VIDEO"
+      - horizontal-orientation: "center"
+      - y: 38
+      - color: "READHCOLOR"
+  # Window fits the item count: 13 per row plus 6
+  -
+    type: "Window"
+    params:
+      - x: 16
+      - y: 57
+      - width: 288
+      - height: 84
+# Values are drawn by code. Fullscreen, window size, resolution and VSync ask to be kept
+# once changed, and go back after a few seconds if nobody answers.
+menu-items:
+  -
+      id: "fullscreen"
+      type: "ToggleMenuItem"
+      text: "$STR_FULLSCREEN"
+      enabled: true
+  # Greyed out while fullscreen
+  -
+      id: "window-size"
+      type: "ChoiceMenuItem"
+      text: "$STR_WINDOWSIZE"
+      enabled: true
+  # The size the game is drawn at: sharper, not bigger
+  -
+      id: "render-scale"
+      type: "ChoiceMenuItem"
+      text: "$STR_RESOLUTION"
+      enabled: true
+  -
+      id: "vsync"
+      type: "ToggleMenuItem"
+      text: "$STR_VSYNC"
+      enabled: true
+  -
+      id: "aspect"
+      type: "ToggleMenuItem"
+      text: "$STR_ASPECT"
+      enabled: true
+  -
+      id: "filter"
+      type: "ChoiceMenuItem"
+      text: "$STR_FILTER"
+      enabled: true

@@ -165,6 +165,27 @@ internal class VideoManager
         return false;
     }
 
+    // Room left for the window's title bar and borders when sizing it to the desktop
+    private const int WindowFrameAllowance = 40;
+
+    /// <summary>The size of the display the window is on.</summary>
+    internal (int Width, int Height) GetDisplaySize()
+    {
+        int display = Math.Max(0, SDL.SDL_GetWindowDisplayIndex(window));
+        return SDL.SDL_GetDisplayBounds(display, out var bounds) == 0
+            ? (bounds.w, bounds.h)
+            : (screenWidth, screenHeight);
+    }
+
+    /// <summary>The largest window that fits on that display, clear of taskbars and with its frame showing.</summary>
+    internal (int Width, int Height) GetLargestWindowSize()
+    {
+        int display = Math.Max(0, SDL.SDL_GetWindowDisplayIndex(window));
+        return SDL.SDL_GetDisplayUsableBounds(display, out var bounds) == 0
+            ? (bounds.w, bounds.h - WindowFrameAllowance)
+            : (Settings.WindowWidth, Settings.WindowHeight);
+    }
+
     private bool TrySetVideoMode(VideoSettings from, VideoSettings to, bool rebuildAll)
     {
         bool newWindowMode = rebuildAll || to.Fullscreen != from.Fullscreen
@@ -373,7 +394,7 @@ internal class VideoManager
     public void HorizontalLine(int x1, int x2, int y, string color)
     {
         if (scaleFactor == 1)
-            HorizontalLine(x1, y, x2 - x1 + 1, color);
+            HorizontalLine(new Vector2(x1, y), x2 - x1 + 1, color);
         else
             Bar(x1, y, x2 - x1 + 1, 1, color);
     }
@@ -401,13 +422,14 @@ internal class VideoManager
     public void VerticalLine(int y1, int y2, int x, string color)
     {
         if (scaleFactor == 1)
-            VerticalLine(x, y1, y2 - y1 + 1, color);
+            VerticalLine(new Vector2(x, y1), y2 - y1 + 1, color);
         else
             Bar(x, y1, 1, y2 - y1 + 1, color);
     }
 
-    public void VerticalLine(Vector2 position, int height, int color)
+    public void VerticalLine(Vector2 position, int height, string color)
     {
+        byte col = ResolveColorByte(color);
         Debug.Assert(position.X >= 0 && position.X < screenWidth
             && position.Y >= 0 && position.Y + height <= screenHeight,
             "VL_Vlin: Destination rectangle out of bounds!");
@@ -419,7 +441,7 @@ internal class VideoManager
             dest += ylookup[(int)position.Y] + (int)position.X;
             while (height-- > 0)
             {
-                dest[0] = (byte)color;
+                dest[0] = col;
                 dest += bufferPitch;
 
             }

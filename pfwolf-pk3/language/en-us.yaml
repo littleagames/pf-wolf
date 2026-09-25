@@ -21,6 +21,20 @@ $MENU_ENDGAME: "End Game"
 $MENU_BACKTODEMO: "Back to Demo"
 $MENU_BACKTOGAME: "Back to Game"
 $MENU_QUIT: "Quit"
+$MENU_VIDEO: "Video"
+
+# Video
+$STR_FULLSCREEN: "Fullscreen"
+$STR_WINDOWSIZE: "Window Size"
+$STR_RESOLUTION: "Resolution"
+$STR_VSYNC: "VSync"
+$STR_ASPECT: "4:3 Aspect"
+$STR_FILTER: "Filtering"
+$STR_NEAREST: "Nearest"
+$STR_LINEAR: "Linear"
+# {SECONDS} is replaced with the time left
+$STR_KEEPVIDEO: "Keep these settings?\n({YESBUTTONNAME} or {NOBUTTONNAME})\nReverting in {SECONDS}"
+$STR_VIDEOFAILED: "That video mode\nisn't available."
 
 $STR_WHICHEPISODE: "Which episode to play?"
 $STR_HOWTOUGH: "How tough are you?"
