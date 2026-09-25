@@ -54,6 +54,8 @@ internal partial class Program
             "am_style [graphic|color]", Cmd_AmStyle, complete: Values("graphic", "color"));
         Register("am_overlay", "Whether the automap is drawn over the dimmed game view (1) or a solid backdrop (0).",
             "am_overlay [0|1]", Cmd_AmOverlay, complete: Values("0", "1"));
+        Register("am_grid", "Whether the automap marks every tile edge with a faint grid when zoomed in.",
+            "am_grid [0|1]", Cmd_AmGrid, complete: Values("0", "1"));
         Register("am_reveal", "Shows the whole map on the automap, seen or not.", "am_reveal [0|1]", Cmd_AmReveal, Cheat,
             complete: Values("0", "1"));
 

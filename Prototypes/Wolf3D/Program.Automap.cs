@@ -45,6 +45,7 @@ internal partial class Program
         am_rotate,
         am_style,
         am_overlay,
+        am_grid,
 
         NUMAUTOMAPKEYS
     }
@@ -53,8 +54,11 @@ internal partial class Program
     {
         ScanCodes.sc_Equal, ScanCodes.sc_Minus,
         ScanCodes.sc_KeyPad8, ScanCodes.sc_KeyPad2, ScanCodes.sc_KeyPad4, ScanCodes.sc_KeyPad6,
-        ScanCodes.sc_C, ScanCodes.sc_F, ScanCodes.sc_R, ScanCodes.sc_V, ScanCodes.sc_O,
+        ScanCodes.sc_C, ScanCodes.sc_F, ScanCodes.sc_R, ScanCodes.sc_V, ScanCodes.sc_O, ScanCodes.sc_G,
     };
+
+    // The grid only shows from this zoom (virtual pixels per tile) up; any closer together it's a solid wash
+    const float AUTOMAP_MINGRIDZOOM = 6f;
 
     // How bright the 3D view stays under the map in Overlay mode
     const float AUTOMAP_OVERLAYBRIGHTNESS = 0.4f;
@@ -148,6 +152,8 @@ internal partial class Program
             _automapManager.ToggleStyle();
         else if (key == automapscan[(int)automapkeys.am_overlay])
             _automapManager.ToggleOverlay();
+        else if (key == automapscan[(int)automapkeys.am_grid])
+            _automapManager.ToggleGrid();
         else
             return Array.IndexOf(automapscan, key) >= 0;    // held keys: used in UpdateAutomap, not binds
 
@@ -223,6 +229,9 @@ internal partial class Program
 
         bool reveal = mapreveal != 0;
 
+        if (_automapManager.ShowGrid && _automapManager.Zoom >= AUTOMAP_MINGRIDZOOM)
+            DrawAutomapGrid(view);
+
         if (_automapManager.Style == AutomapStyle.Graphic)
         {
             DrawAutomapTexels(view, reveal);
@@ -240,15 +249,34 @@ internal partial class Program
         DrawAutomapPosition(view);
     }
 
+    /// <summary>A faint one-pixel line along every tile edge of the map that reaches the view, under everything else.</summary>
+    static void DrawAutomapGrid(AutomapView view)
+    {
+        var (first, last) = AutomapReach(view.CenterX, view);
+        var (firstY, lastY) = AutomapReach(view.CenterY, view);
+        string color = AutomapColor("AutomapGrid");
+
+        for (int x = first; x <= last + 1; x++)
+            AutomapLine(view, x, firstY, x, lastY + 1, color, pen: 1);
+        for (int y = firstY; y <= lastY + 1; y++)
+            AutomapLine(view, first, y, last + 1, y, color, pen: 1);
+    }
+
+    /// <summary>
+    /// The tiles along one axis that can reach the view: within half its diagonal of the center,
+    /// whichever way the map is turned, and on the map.
+    /// </summary>
+    static (int First, int Last) AutomapReach(float center, AutomapView view)
+    {
+        float reach = MathF.Sqrt(view.ClipWidth * view.ClipWidth + view.ClipHeight * view.ClipHeight) / 2 / view.TileSize + 1;
+        return (Math.Max(0, (int)MathF.Floor(center - reach)), Math.Min(MapManager.MAPSIZE - 1, (int)MathF.Ceiling(center + reach)));
+    }
+
     /// <summary>Every seen wall face that borders open floor, as a line along the tile edge.</summary>
     static void DrawAutomapWalls(AutomapView view, bool reveal)
     {
-        // Only the tiles that can reach the view: within half its diagonal of the center, whichever way it's turned
-        float reach = MathF.Sqrt(view.ClipWidth * view.ClipWidth + view.ClipHeight * view.ClipHeight) / 2 / view.TileSize + 1;
-        int firstX = Math.Max(0, (int)MathF.Floor(view.CenterX - reach));
-        int lastX = Math.Min(MapManager.MAPSIZE - 1, (int)MathF.Ceiling(view.CenterX + reach));
-        int firstY = Math.Max(0, (int)MathF.Floor(view.CenterY - reach));
-        int lastY = Math.Min(MapManager.MAPSIZE - 1, (int)MathF.Ceiling(view.CenterY + reach));
+        var (firstX, lastX) = AutomapReach(view.CenterX, view);
+        var (firstY, lastY) = AutomapReach(view.CenterY, view);
 
         string color = AutomapColor("AutomapWall");
         const SeenFlags allFaces = SeenFlags.NorthFace | SeenFlags.SouthFace | SeenFlags.WestFace | SeenFlags.EastFace;
@@ -439,23 +467,39 @@ internal partial class Program
         int px = _videoManager.scaleFactor;
         int x = view.ClipX / px + 3;
         int y = (view.ClipY + view.ClipHeight) / px - font.Height - 2;
+        int room = view.ClipWidth / px - 6;
+
+        // The smallest view sizes can't fit it all: fall back to just the tile, then to nothing
+        GraphicManager.MeasureString(text, out ushort width, out _, font);
+        if (width > room)
+        {
+            text = $"{player.TileX},{player.TileY}";
+            GraphicManager.MeasureString(text, out width, out _, font);
+            if (width > room || font.Height + 2 > view.ClipHeight / px)
+                return;
+        }
 
         // On a backdrop box, so the map under it doesn't make it hard to read
-        GraphicManager.MeasureString(text, out ushort width, out _, font);
         _videoManager.Bar(x - 2, y - 1, width + 4, font.Height + 2, AutomapColor("AutomapBackground"));
         _videoManager.DrawPropString(x, y, text, AutomapColor("AutomapPlayer"), font);
     }
 
-    /// <summary>A line between two map positions (in tiles), with the pen centered on it.</summary>
-    static void AutomapLine(AutomapView view, float x0, float y0, float x1, float y1, string color)
+    /// <summary>
+    /// A line between two map positions (in tiles), with the pen centered on it. The pen is one
+    /// virtual pixel wide unless <paramref name="pen"/> gives a width in screen pixels.
+    /// </summary>
+    static void AutomapLine(AutomapView view, float x0, float y0, float x1, float y1, string color, int pen = 0)
     {
-        int offset = view.Pen / 2;
+        if (pen <= 0)
+            pen = view.Pen;
+
+        int offset = pen / 2;
         var (sx0, sy0) = view.ToScreen(x0, y0);
         var (sx1, sy1) = view.ToScreen(x1, y1);
         _videoManager.DrawLineScaledCoord(
             (int)MathF.Round(sx0) - offset, (int)MathF.Round(sy0) - offset,
             (int)MathF.Round(sx1) - offset, (int)MathF.Round(sy1) - offset,
-            color, view.Pen, view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight);
+            color, pen, view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight);
     }
 
     /// <summary>A filled rectangle in screen pixels, trimmed to the view.</summary>
@@ -503,6 +547,14 @@ internal partial class Program
             _automapManager.Overlay = ParseBool(args[0]);
 
         _consoleManager.Print($"am_overlay is {(_automapManager.Overlay ? 1 : 0)}");
+    }
+
+    private static void Cmd_AmGrid(string[] args)
+    {
+        if (args.Length > 0)
+            _automapManager.ShowGrid = ParseBool(args[0]);
+
+        _consoleManager.Print($"am_grid is {(_automapManager.ShowGrid ? 1 : 0)}");
     }
 
     private static void Cmd_AmReveal(string[] args)

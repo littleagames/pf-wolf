@@ -144,6 +144,8 @@ internal class GameEngineManager
         public ScanCodes? AutomapKey;
         public AutomapStyle? AutomapStyle;
         public bool? AutomapOverlay;
+        public bool? AutomapGrid;
+        public ScanCodes[]? AutomapKeys;
     }
 
     // Keyboard buttons stored in the original fixed layout. Buttons added after them (the
@@ -202,6 +204,16 @@ internal class GameEngineManager
             automapManager.Style = style;
         if (config.AutomapOverlay is bool overlay)
             automapManager.Overlay = overlay;
+        if (config.AutomapGrid is bool grid)
+            automapManager.ShowGrid = grid;
+
+        // A key the config doesn't have (it's from before that key existed) keeps its default
+        var automapKeys = config.AutomapKeys ?? [];
+        for (int i = 0; i < Math.Min(automapKeys.Length, Program.automapscan.Length); i++)
+        {
+            if (automapKeys[i] > ScanCodes.sc_None && automapKeys[i] < ScanCodes.sc_Last)
+                Program.automapscan[i] = automapKeys[i];
+        }
 
         // Set "Read This" back to standard active
         Program.FindMenuItem(Program.MainMenu, "readthis")?.active = 1;
@@ -256,6 +268,19 @@ internal class GameEngineManager
             config.AutomapStyle = (AutomapStyle)br.ReadByte();
         if (stream.Position < stream.Length)
             config.AutomapOverlay = br.ReadByte() != 0;
+        if (stream.Position < stream.Length)
+            config.AutomapGrid = br.ReadByte() != 0;
+        if (stream.Position < stream.Length)
+        {
+            // Counted, so keys added to the automap later still read from older configs
+            int count = br.ReadInt32();
+            if (count >= 0 && count <= 256)     // anything else is garbage: keep the default keys
+            {
+                config.AutomapKeys = new ScanCodes[count];
+                for (int i = 0; i < count; i++)
+                    config.AutomapKeys[i] = (ScanCodes)br.ReadInt32();
+            }
+        }
 
         return config;
     }
@@ -370,6 +395,10 @@ internal class GameEngineManager
         bw.Write((int)Program.buttonscan[(int)buttontypes.bt_automap]);
         bw.Write((byte)automapManager.Style);
         bw.Write(automapManager.Overlay);
+        bw.Write(automapManager.ShowGrid);
+        bw.Write(Program.automapscan.Length);
+        foreach (var key in Program.automapscan)
+            bw.Write((int)key);
     }
 
     /// <summary>

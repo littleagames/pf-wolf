@@ -40,6 +40,11 @@ internal class AutomapManager
 
     internal void ToggleOverlay() => Overlay = !Overlay;
 
+    /// <summary>Whether a faint line marks every tile edge when zoomed in (the `am_grid` setting, saved in the config).</summary>
+    internal bool ShowGrid { get; set; }
+
+    internal void ToggleGrid() => ShowGrid = !ShowGrid;
+
     /// <summary>Virtual (320x200) pixels per map tile; multiply by the video scale factor for screen pixels.</summary>
     internal float Zoom { get; private set; } = DefaultZoom;
 
