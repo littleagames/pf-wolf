@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Wolf3D.Assets;
+using Wolf3D.Configuration;
 using Wolf3D.Entities;
 using Wolf3D.Extensions;
 using static SDL2.SDL;
@@ -12,9 +13,19 @@ namespace Wolf3D.Managers;
 
 internal class VideoManager
 {
-    internal bool fullscreen = false; // TODO: Set these from config
-    internal short screenWidth = 640; // TODO: Set these from config
-    internal short screenHeight = 400; // TODO: Set these from config
+    /// <summary>The video mode in use; change it with ApplyVideoSettings.</summary>
+    internal VideoSettings Settings { get; private set; } = new();
+
+    /// <summary>
+    /// Raised after ApplyVideoSettings changes the mode, with the settings it replaced. The screen
+    /// buffer may be new and blank by then, so whatever was on screen needs drawing again.
+    /// </summary>
+    internal event EventHandler<VideoSettings>? VideoModeChanged;
+
+    internal bool fullscreen => Settings.Fullscreen;
+    // The screen buffer's size: Settings' render size
+    internal short screenWidth;
+    internal short screenHeight;
     internal int screenBits = -1; // use "best" color depth according to libSDL
 
     internal IntPtr screen = IntPtr.Zero;
@@ -95,7 +106,7 @@ internal class VideoManager
         InputManager.MouseGrabbed += SetWindowGrab;
     }
 
-    public void Init(ColorThemeAsset? theme)
+    public void Init(ColorThemeAsset? theme, VideoSettings? settings = null)
     {
         if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
         {
@@ -114,8 +125,137 @@ internal class VideoManager
         foreach (var (name, color) in theme?.Colors ?? [])
             _colorIndexCache[name] = ParseColor(color);
 
-        InitializeSDLVideo();
+        InitializeSDLVideo(settings ?? new VideoSettings());
+    }
 
+    public void Shutdown()
+    {
+        DestroyRenderer();
+        DestroySurfaces();
+        if (window != IntPtr.Zero) SDL.SDL_DestroyWindow(window);
+        window = IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Switches to another video mode while the game runs, rebuilding only what the change
+    /// touches: a new render scale means a new, blank screen buffer, and VSync a new renderer.
+    /// If SDL can't make the switch, the previous mode is put back and this returns false.
+    /// Either way the caller should draw the screen again.
+    /// </summary>
+    internal bool ApplyVideoSettings(VideoSettings next)
+    {
+        var previous = Settings;
+        if (next == previous)
+            return true;
+
+        if (TrySetVideoMode(previous, next, rebuildAll: false))
+        {
+            Settings = next;
+            VideoModeChanged?.Invoke(this, previous);
+            return true;
+        }
+
+        Console.WriteLine($"Couldn't switch to {next.RenderWidth}x{next.RenderHeight} " +
+            $"({(next.Fullscreen ? "fullscreen" : $"{next.WindowWidth}x{next.WindowHeight} window")}): {SDL.SDL_GetError()}");
+
+        // Part of the new mode may be in place, so rebuild all of the old one
+        if (!TrySetVideoMode(next, previous, rebuildAll: true))
+            throw new PfWolfVideoException("Unable to restore the previous video mode: {0}", SDL.SDL_GetError());
+
+        return false;
+    }
+
+    private bool TrySetVideoMode(VideoSettings from, VideoSettings to, bool rebuildAll)
+    {
+        bool newWindowMode = rebuildAll || to.Fullscreen != from.Fullscreen
+            || (!to.Fullscreen && (to.WindowWidth != from.WindowWidth || to.WindowHeight != from.WindowHeight));
+        bool newRenderer = rebuildAll || to.VSync != from.VSync;
+        bool newSurfaces = rebuildAll || to.RenderScale != from.RenderScale;
+        bool newTexture = newRenderer || newSurfaces || to.Filter != from.Filter;
+
+        if (newWindowMode && !SetWindowMode(to))
+            return false;
+
+        if (newTexture)
+            DestroyTexture();
+
+        if (newRenderer)
+        {
+            DestroyRenderer();
+            if (!CreateRenderer(to))
+                return false;
+        }
+        else if (!SetLogicalSize(to))
+            return false;
+
+        if (newSurfaces)
+        {
+            DestroySurfaces();
+            if (!CreateSurfaces(to))
+                return false;
+        }
+
+        return !newTexture || CreateTexture(to);
+    }
+
+    private bool SetWindowMode(VideoSettings settings)
+    {
+        if (settings.Fullscreen)
+            return SDL.SDL_SetWindowFullscreen(window, (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) == 0;
+
+        if (SDL.SDL_SetWindowFullscreen(window, 0) != 0)
+            return false;
+
+        SDL.SDL_SetWindowSize(window, settings.WindowWidth, settings.WindowHeight);
+        int centered = SDL.SDL_WINDOWPOS_CENTERED_DISPLAY(SDL.SDL_GetWindowDisplayIndex(window));
+        SDL.SDL_SetWindowPosition(window, centered, centered);
+        return true;
+    }
+
+    private bool CreateRenderer(VideoSettings settings)
+    {
+        var flags = SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED;
+        if (settings.VSync)
+            flags |= SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC;
+
+        renderer = SDL.SDL_CreateRenderer(window, -1, flags);
+        if (renderer == IntPtr.Zero)
+            return false;
+
+        SDL.SDL_SetRenderDrawBlendMode(renderer, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND);
+        return SetLogicalSize(settings);
+    }
+
+    // The picture keeps its shape in any window, with black bars filling the rest
+    private bool SetLogicalSize(VideoSettings settings)
+        => SDL.SDL_RenderSetLogicalSize(renderer, settings.DisplayWidth, settings.DisplayHeight) == 0;
+
+    /// <summary>The screen buffer and the 32-bit surface it's converted to, at the render size.</summary>
+    private bool CreateSurfaces(VideoSettings settings)
+    {
+        int width = settings.RenderWidth, height = settings.RenderHeight;
+
+        SDL.SDL_PixelFormatEnumToMasks(SDL.SDL_PIXELFORMAT_ARGB8888, out screenBits, out uint r, out uint g, out uint b, out uint a);
+
+        screen = SDL.SDL_CreateRGBSurface(0, width, height, screenBits, r, g, b, a);
+        if (screen == IntPtr.Zero)
+            return false;
+        SDL.SDL_SetPaletteColors(GetSurfaceFormatPalette(screen), curpal, 0, 256);
+
+        screenBuffer = SDL.SDL_CreateRGBSurface(0, width, height, 8, 0, 0, 0, 0);
+        if (screenBuffer == IntPtr.Zero)
+            return false;
+        SDL.SDL_SetPaletteColors(GetSurfaceFormatPalette(screenBuffer), curpal, 0, 256);
+
+        screenWidth = (short)width;
+        screenHeight = (short)height;
+        screenPitch = (uint)GetSurface(screen).pitch;
+        bufferPitch = (uint)GetSurface(screenBuffer).pitch;
+        scaleFactor = settings.RenderScale;
+
+        ylookup = new uint[screenHeight];
+        for (int i = 0; i < screenHeight; i++)
+            ylookup[i] = (uint)(i * bufferPitch);
 
         int rndbits_x = log2_ceil((UInt32)screenWidth);
         rndbits_y = (uint)log2_ceil((UInt32)screenHeight);
@@ -127,15 +267,41 @@ internal class VideoManager
             rndbits = 25;       // fizzle fade will not fill whole screen
 
         rndmask = rndmasks[rndbits - 17];
+        return true;
     }
 
-    public void Shutdown()
+    private bool CreateTexture(VideoSettings settings)
+    {
+        // Read when a texture is created
+        SDL.SDL_SetHint(SDL.SDL_HINT_RENDER_SCALE_QUALITY, settings.Filter == ScaleFilter.Linear ? "1" : "0");
+
+        texture = SDL.SDL_CreateTexture(renderer,
+            SDL.SDL_PIXELFORMAT_ARGB8888,
+            (int)SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING,
+            screenWidth,
+            screenHeight);
+        return texture != IntPtr.Zero;
+    }
+
+    private void DestroyTexture()
     {
         if (texture != IntPtr.Zero) SDL.SDL_DestroyTexture(texture);
+        texture = IntPtr.Zero;
+    }
+
+    // Its texture goes with it
+    private void DestroyRenderer()
+    {
+        DestroyTexture();
+        if (renderer != IntPtr.Zero) SDL.SDL_DestroyRenderer(renderer);
+        renderer = IntPtr.Zero;
+    }
+
+    private void DestroySurfaces()
+    {
         if (screenBuffer != IntPtr.Zero) SDL.SDL_FreeSurface(screenBuffer);
         if (screen != IntPtr.Zero) SDL.SDL_FreeSurface(screen);
-        if (renderer != IntPtr.Zero) SDL.SDL_DestroyRenderer(renderer);
-        if (window != IntPtr.Zero) SDL.SDL_DestroyWindow(window);
+        screenBuffer = screen = IntPtr.Zero;
     }
 
     public void MemToScreen(byte[] source, int width, int height, int x, int y)
@@ -805,6 +971,13 @@ internal class VideoManager
         UnlockSurface(screen);
 
         SDL.SDL_UpdateTexture(texture, IntPtr.Zero, GetSurface(screen).pixels, (int)screenPitch);
+        Present();
+    }
+
+    // Shows the texture; the clear blacks out any letterbox bars around it
+    private void Present()
+    {
+        SDL.SDL_RenderClear(renderer);
         SDL.SDL_RenderCopy(renderer, texture, IntPtr.Zero, IntPtr.Zero);
         SDL.SDL_RenderPresent(renderer);
     }
@@ -845,8 +1018,7 @@ internal class VideoManager
 
         var screenPixels = GetSurface(screen).pixels;
         SDL.SDL_UpdateTexture(texture, IntPtr.Zero, screenPixels, (int)screenPitch);
-        SDL.SDL_RenderCopy(renderer, texture, IntPtr.Zero, IntPtr.Zero);
-        SDL.SDL_RenderPresent(renderer);
+        Present();
     }
 
     public IntPtr LockSurface() => LockSurface(screenBuffer);
@@ -854,7 +1026,8 @@ internal class VideoManager
 
     public void CenterMouse()
     {
-        SDL.SDL_WarpMouseInWindow(window, screenWidth / 2, screenHeight / 2);
+        SDL.SDL_GetWindowSize(window, out int width, out int height);
+        SDL.SDL_WarpMouseInWindow(window, width / 2, height / 2);
     }
 
     internal void SetWindowGrab(object? sender, bool grabInput)
@@ -1038,68 +1211,28 @@ internal class VideoManager
         }
     }
 
-    private void InitializeSDLVideo()
+    private void InitializeSDLVideo(VideoSettings settings)
     {
-        int i;
-        UInt32 a, r, g, b;
-
         const string title = "Wolfenstein 3D"; // TODO: pull from PK3 in future
 
-        window = SDL.SDL_CreateWindow(
-            title,
-            SDL.SDL_WINDOWPOS_UNDEFINED,
-            SDL.SDL_WINDOWPOS_UNDEFINED,
-            screenWidth,
-            screenHeight,
-            (fullscreen ? SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN : 0) | SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL);
+        var flags = SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
+        if (settings.Fullscreen)
+            flags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP;
 
-        SDL.SDL_PixelFormatEnumToMasks(SDL.SDL_PIXELFORMAT_ARGB8888, out screenBits, out r, out g, out b, out a);
-
-        screen = SDL.SDL_CreateRGBSurface(0, screenWidth, screenHeight, screenBits, r, g, b, a);
-
-        if (screen == IntPtr.Zero)
-        {
-            Console.WriteLine($"Unable to set {screenWidth}x{screenHeight}x{screenBits} video mode: {SDL.SDL_GetError()}");
-            Environment.Exit(1);
-        }
-
-        renderer = SDL.SDL_CreateRenderer(window, -1, SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
-        SDL.SDL_SetRenderDrawBlendMode(renderer, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND);
-        SDL.SDL_SetHint(SDL.SDL_HINT_RENDER_SCALE_QUALITY, "0");
+        window = SDL.SDL_CreateWindow(title, SDL.SDL_WINDOWPOS_CENTERED, SDL.SDL_WINDOWPOS_CENTERED,
+            settings.WindowWidth, settings.WindowHeight, flags);
+        if (window == IntPtr.Zero)
+            throw new PfWolfVideoException("Unable to create the window: {0}", SDL.SDL_GetError());
 
         SDL.SDL_ShowCursor(SDL.SDL_DISABLE);
 
-        SDL.SDL_SetPaletteColors(GetSurfaceFormatPalette(screen), gamepal, 0, 256);
         Array.Copy(gamepal, curpal, 256);
 
-        screenBuffer = SDL.SDL_CreateRGBSurface(0, screenWidth, screenHeight, 8, 0, 0, 0, 0);
+        if (!CreateRenderer(settings) || !CreateSurfaces(settings) || !CreateTexture(settings))
+            throw new PfWolfVideoException($"Unable to set the {settings.RenderWidth}x{settings.RenderHeight} video mode: {{0}}",
+                SDL.SDL_GetError());
 
-        if (screenBuffer == IntPtr.Zero)
-        {
-            Console.WriteLine($"Unable to create screen buffer surface: {SDL.SDL_GetError()}");
-            Environment.Exit(1);
-        }
-
-        SDL.SDL_SetPaletteColors(GetSurfaceFormatPalette(screenBuffer), gamepal, 0, 256);
-
-        texture = SDL.SDL_CreateTexture(renderer,
-            SDL.SDL_PIXELFORMAT_ARGB8888,
-            (int)SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING,
-            screenWidth,
-            screenHeight);
-
-        screenPitch = (uint)GetSurface(screen).pitch;
-        bufferPitch = (uint)GetSurface(screenBuffer).pitch;
-
-        scaleFactor = screenWidth / 320;
-        if (screenHeight / 200 < scaleFactor) scaleFactor = screenHeight / 200;
-
-        ylookup = new uint[screenHeight];
-        //pixelangle = new short[screenWidth];
-        //wallheight = new short[screenWidth];
-
-        for (i = 0; i < screenHeight; i++)
-            ylookup[i] = (uint)(i * bufferPitch);
+        Settings = settings;
     }
 
     private static SDL.SDL_Surface GetSurface(IntPtr surface)

@@ -690,13 +690,13 @@ internal record MusicMenuItem : MenuItem
     }
 }
 
-internal record MultiChoiceMenuItem<T> : MenuItem
+/// <summary>
+/// One value picked from a list, stepped with left/right (or Enter) while highlighted.
+/// The menu's code supplies the values, since lists like resolutions come from the display.
+/// </summary>
+internal record ChoiceMenuItem : MenuItem
 {
-    public List<T> Options { get; set; } = [];
-    public T SelectedOption { get; set; } = default!;
-
-    public MultiChoiceMenuItem()
+    public ChoiceMenuItem()
     {
-        
     }
 }

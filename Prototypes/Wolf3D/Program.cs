@@ -153,6 +153,7 @@ internal partial class Program
         
         pixelangle = new short[_videoManager.screenWidth];
         wallheight = new short[_videoManager.screenWidth];
+        _videoManager.VideoModeChanged += OnVideoModeChanged;
 
         //AppDomain.CurrentDomain.ProcessExit += (s, e) => SDL.SDL_Quit();
 
@@ -196,6 +197,23 @@ internal partial class Program
 
         if (!didjukebox)
             FinishSignon();
+    }
+
+    // A new render size needs per-column tables for the new width and the view placed again;
+    // fullscreen takes the mouse, a window gives it back.
+    private static void OnVideoModeChanged(object? sender, VideoSettings previous)
+    {
+        var current = _videoManager.Settings;
+
+        if (current.RenderScale != previous.RenderScale)
+        {
+            pixelangle = new short[_videoManager.screenWidth];
+            wallheight = new short[_videoManager.screenWidth];
+            NewViewSize(viewsize);
+        }
+
+        if (current.Fullscreen != previous.Fullscreen)
+            _inputManager.SetMouseGrab(current.Fullscreen);
     }
 
     // Fade styles and lengths (tics) from game-info; ordinary fades use _videoManager.FadeStyle

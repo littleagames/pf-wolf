@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using System.Text;
+using Wolf3D.Configuration;
 
 namespace Wolf3D;
 
@@ -58,6 +59,25 @@ internal partial class Program
             "am_grid [0|1]", Cmd_AmGrid, complete: Values("0", "1"));
         Register("am_reveal", "Shows the whole map on the automap, seen or not.", "am_reveal [0|1]", Cmd_AmReveal, Cheat,
             complete: Values("0", "1"));
+
+        //
+        // video
+        //
+        Register("vid_mode", "Shows the video mode.", "vid_mode", _ => PrintVideoMode());
+        Register("vid_fullscreen", "Borderless fullscreen (1) or a window (0).", "vid_fullscreen [0|1]",
+            args => ApplyVideo(s => s with { Fullscreen = Toggle(args, s.Fullscreen) }), complete: Values("0", "1"));
+        Register("vid_scale", "Draws the game at 320x200 times this: sharper, not bigger.", "vid_scale <1-8>",
+            args => ApplyVideo(s => s with { RenderScale = args.Length > 0 ? ParseInt(args[0], 1, 8) : throw new ArgumentException("usage: vid_scale <1-8>") }),
+            complete: Values("1", "2", "3", "4", "5", "6"));
+        Register("vid_window", "The window's size when it isn't fullscreen.", "vid_window <width> <height>", Cmd_VidWindow);
+        Register("vid_vsync", "Waits for the display's refresh before showing each frame.", "vid_vsync [0|1]",
+            args => ApplyVideo(s => s with { VSync = Toggle(args, s.VSync) }), complete: Values("0", "1"));
+        Register("vid_aspect", "Shows the picture at 4:3, the shape it had on a CRT (1), or with square pixels (0).",
+            "vid_aspect [0|1]", args => ApplyVideo(s => s with { AspectCorrect = Toggle(args, s.AspectCorrect) }),
+            complete: Values("0", "1"));
+        Register("vid_filter", "How the picture is smoothed when scaled up to the window.", "vid_filter [nearest|linear]",
+            args => ApplyVideo(s => s with { Filter = args.Length > 0 ? ParseFilter(args[0]) : s.Filter == ScaleFilter.Nearest ? ScaleFilter.Linear : ScaleFilter.Nearest }),
+            complete: Values("nearest", "linear"));
 
         //
         // cheats (the old Tab debug keys, plus a few new ones)
@@ -319,6 +339,51 @@ internal partial class Program
         foreach (var (key, command) in _consoleManager.Binds.OrderBy(b => KeyName(b.Key), StringComparer.OrdinalIgnoreCase))
             _consoleManager.Print($"\"{KeyName(key)}\" = \"{command}\"");
     }
+
+    /*
+    =============================================================================
+
+                                    VIDEO
+
+    =============================================================================
+    */
+
+    /// <summary>Switches to the video mode <paramref name="change"/> makes of the current one, then shows it.</summary>
+    static void ApplyVideo(Func<VideoSettings, VideoSettings> change)
+    {
+        var next = change(_videoManager.Settings);
+        if (!_videoManager.ApplyVideoSettings(next))
+            _consoleManager.Print("Couldn't switch to that mode; kept the old one");
+
+        // A new screen buffer starts blank; the view redraws itself every frame, the rest doesn't
+        if (_mapManager.Player != null && viewsize != 21)
+            DrawPlayScreen();
+
+        PrintVideoMode();
+    }
+
+    static void PrintVideoMode()
+    {
+        var s = _videoManager.Settings;
+        var shown = s.Fullscreen ? "fullscreen" : $"{s.WindowWidth}x{s.WindowHeight} window";
+        _consoleManager.Print($"{s.RenderWidth}x{s.RenderHeight} (scale {s.RenderScale}) in a {shown}");
+        _consoleManager.Print($"vsync {(s.VSync ? 1 : 0)}  aspect {(s.AspectCorrect ? 1 : 0)}  filter {s.Filter.ToString().ToLowerInvariant()}");
+    }
+
+    private static void Cmd_VidWindow(string[] args)
+    {
+        if (args.Length < 2)
+            throw new ArgumentException("usage: vid_window <width> <height>");
+
+        int width = ParseInt(args[0], VideoSettings.BaseWidth, 16384);
+        int height = ParseInt(args[1], VideoSettings.BaseHeight, 16384);
+        ApplyVideo(s => s with { WindowWidth = width, WindowHeight = height });
+    }
+
+    static ScaleFilter ParseFilter(string arg) =>
+        Enum.TryParse<ScaleFilter>(arg, ignoreCase: true, out var filter) && Enum.IsDefined(filter)
+            ? filter
+            : throw new ArgumentException($"expected nearest or linear, got \"{arg}\"");
 
     /*
     =============================================================================

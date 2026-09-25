@@ -200,7 +200,7 @@ internal partial class Program
 
     /// <param name="adjust">
     /// Called with the highlighted item and -1 or +1 when left or right is pressed, for menus
-    /// with rows that change in place (sliders). Without it, left/right do nothing.
+    /// with rows that change in place (sliders, choices). Without it, left/right do nothing.
     /// </param>
     internal static int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine, Action<int, int>? adjust = null)
     {
@@ -1195,7 +1195,7 @@ internal partial class Program
     }
 
     private const int MenuSliderWidth = 88;
-    private const int MenuSliderOffset = 120; // from the start of the row's text, clear of "Sound Volume"
+    private const int MenuSliderOffset = 120; // from the start of the row's text, clear of "Sound Volume"; choices use it too
 
     // A level bar to the right of a SliderMenuItem's text, drawn like the mouse sensitivity bar:
     // a track with a highlighted knob at the current value (0 to max).
@@ -1212,6 +1212,38 @@ internal partial class Program
         DrawOutline(x, y, knobWidth * (max + 1), 9, "Black", "HIGHLIGHT");
         DrawOutline(x + knobWidth * value, y, knobWidth, 9, "Black", "READCOLOR");
         _videoManager.Bar(x + knobWidth * value + 1, y + 1, knobWidth - 1, 8, "READHCOLOR");
+    }
+
+    private const int MenuChoiceWidth = 96; // room for the widest value, like "1920x1200"
+
+    // A ChoiceMenuItem's current value, in the same column as the sliders. Greyed out with the row.
+    private static void DrawMenuChoice(CP_iteminfo iteminfo, CP_itemtype[] items, string id, string value)
+    {
+        int index = Array.FindIndex(items, item => item.id == id);
+        if (index < 0)
+            return;
+
+        int x = iteminfo.x + iteminfo.indent + MenuSliderOffset;
+        int y = iteminfo.y + index * 13;
+        _videoManager.Bar(x, y, MenuChoiceWidth, 13, "BKGDCOLOR");
+
+        SetTextColor(items[index], false);
+        PrintX = (ushort)x;
+        PrintY = (ushort)y;
+        US_Print(value);
+    }
+
+    /// <summary>
+    /// The choice after stepping a ChoiceMenuItem by delta. Left/right stop at the ends of the
+    /// list; Enter wraps round, so it can reach every value on its own.
+    /// </summary>
+    private static int StepMenuChoice(int current, int count, int delta, bool wrap)
+    {
+        if (count <= 0)
+            return 0;
+
+        int next = current + delta;
+        return wrap ? ((next % count) + count) % count : Math.Clamp(next, 0, count - 1);
     }
 
     internal static int CP_Control(int _)

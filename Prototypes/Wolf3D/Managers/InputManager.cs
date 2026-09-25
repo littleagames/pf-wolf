@@ -269,6 +269,16 @@ internal class InputManager
     };
 
 
+    /// <summary>Grabs or frees the mouse, as going in or out of fullscreen does (F12 toggles it by hand).</summary>
+    internal void SetMouseGrab(bool grab)
+    {
+        if (GrabInput == grab)
+            return;
+
+        GrabInput = grab;
+        MouseGrabbed?.Invoke(this, GrabInput);
+    }
+
     internal void Init(bool fullscreen)
     {
         if (Started)
