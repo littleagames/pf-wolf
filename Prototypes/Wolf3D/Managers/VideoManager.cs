@@ -108,6 +108,7 @@ internal class VideoManager
             throw new PfWolfVideoException($"Could not find '{paletteName}' palette in asset manager.");
 
         gamepal = pal.ToSDLColors();
+        _darkenTable = null;
 
         _colorIndexCache.Clear();
         foreach (var (name, color) in theme?.Colors ?? [])
@@ -296,6 +297,58 @@ internal class VideoManager
         UnlockSurface(screenBuffer);
     }
 
+
+    // Last table from GetDarkenTable, and the brightness it was built for
+    private byte[]? _darkenTable;
+    private float _darkenBrightness;
+
+    /// <summary>
+    /// A palette remap that dims every color to <paramref name="brightness"/> (0..1) of itself,
+    /// each matched to the closest palette entry. Built on first use and kept until the palette
+    /// or brightness changes.
+    /// </summary>
+    internal byte[] GetDarkenTable(float brightness)
+    {
+        if (_darkenTable != null && _darkenBrightness == brightness)
+            return _darkenTable;
+
+        var table = new byte[256];
+        for (int i = 0; i < table.Length; i++)
+        {
+            var c = gamepal[i];
+            table[i] = FindClosestPaletteIndex((byte)(c.r * brightness), (byte)(c.g * brightness), (byte)(c.b * brightness));
+        }
+
+        _darkenTable = table;
+        _darkenBrightness = brightness;
+        return table;
+    }
+
+    /// <summary>Replaces every pixel in a rectangle (screen pixels) with its entry in <paramref name="table"/>.</summary>
+    public void ShadeRegionScaledCoord(int scx, int scy, int scwidth, int scheight, byte[] table)
+    {
+        Debug.Assert(scx >= 0 && scx + scwidth <= screenWidth
+            && scy >= 0 && scy + scheight <= screenHeight,
+            "ShadeRegionScaledCoord: Destination rectangle out of bounds!");
+
+        IntPtr destPtr = LockSurface(screenBuffer);
+        if (destPtr == IntPtr.Zero) return;
+
+        unsafe
+        {
+            byte* dest = (byte*)destPtr + ylookup[scy] + scx;
+
+            while (scheight-- > 0)
+            {
+                for (int i = 0; i < scwidth; i++)
+                    dest[i] = table[dest[i]];
+
+                dest += bufferPitch;
+            }
+        }
+
+        UnlockSurface(screenBuffer);
+    }
 
     /// <summary>Whether a color name is defined by the game pack's theme.</summary>
     internal bool IsThemeColor(string name) => !name.StartsWith('#') && _colorIndexCache.ContainsKey(name);

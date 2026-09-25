@@ -44,6 +44,7 @@ internal partial class Program
         am_follow,
         am_rotate,
         am_style,
+        am_overlay,
 
         NUMAUTOMAPKEYS
     }
@@ -52,8 +53,11 @@ internal partial class Program
     {
         ScanCodes.sc_Equal, ScanCodes.sc_Minus,
         ScanCodes.sc_KeyPad8, ScanCodes.sc_KeyPad2, ScanCodes.sc_KeyPad4, ScanCodes.sc_KeyPad6,
-        ScanCodes.sc_C, ScanCodes.sc_F, ScanCodes.sc_R, ScanCodes.sc_V,
+        ScanCodes.sc_C, ScanCodes.sc_F, ScanCodes.sc_R, ScanCodes.sc_V, ScanCodes.sc_O,
     };
+
+    // How bright the 3D view stays under the map in Overlay mode
+    const float AUTOMAP_OVERLAYBRIGHTNESS = 0.4f;
 
     // Map panning speed at the default zoom: 8 tiles a second at walking pace, in virtual pixels a tic
     const float AUTOMAP_PANSPEED = 8 * AutomapManager.DefaultZoom / 70f;
@@ -142,6 +146,8 @@ internal partial class Program
             _automapManager.ToggleRotate();
         else if (key == automapscan[(int)automapkeys.am_style])
             _automapManager.ToggleStyle();
+        else if (key == automapscan[(int)automapkeys.am_overlay])
+            _automapManager.ToggleOverlay();
         else
             return Array.IndexOf(automapscan, key) >= 0;    // held keys: used in UpdateAutomap, not binds
 
@@ -208,7 +214,12 @@ internal partial class Program
             _automapManager.CenterX, _automapManager.CenterY,
             MathF.Cos(_automapManager.Rotation), MathF.Sin(_automapManager.Rotation), Pen: px);
 
-        _videoManager.BarScaledCoord(view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight, AutomapColor("AutomapBackground"));
+        // Overlay: the 3D view just drawn, dimmed, so the game still shows through
+        if (_automapManager.Overlay)
+            _videoManager.ShadeRegionScaledCoord(view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight,
+                _videoManager.GetDarkenTable(AUTOMAP_OVERLAYBRIGHTNESS));
+        else
+            _videoManager.BarScaledCoord(view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight, AutomapColor("AutomapBackground"));
 
         bool reveal = mapreveal != 0;
 
@@ -484,6 +495,14 @@ internal partial class Program
         }
 
         _consoleManager.Print($"am_style is {_automapManager.Style.ToString().ToLowerInvariant()}");
+    }
+
+    private static void Cmd_AmOverlay(string[] args)
+    {
+        if (args.Length > 0)
+            _automapManager.Overlay = ParseBool(args[0]);
+
+        _consoleManager.Print($"am_overlay is {(_automapManager.Overlay ? 1 : 0)}");
     }
 
     private static void Cmd_AmReveal(string[] args)

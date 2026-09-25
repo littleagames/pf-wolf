@@ -32,6 +32,14 @@ internal class AutomapManager
     internal void ToggleStyle() =>
         Style = Style == AutomapStyle.Graphic ? AutomapStyle.Color : AutomapStyle.Graphic;
 
+    /// <summary>
+    /// Whether the map is drawn over a darkened copy of the 3D view (Overlay) instead of a solid
+    /// backdrop (the `am_overlay` setting, saved in the config).
+    /// </summary>
+    internal bool Overlay { get; set; }
+
+    internal void ToggleOverlay() => Overlay = !Overlay;
+
     /// <summary>Virtual (320x200) pixels per map tile; multiply by the video scale factor for screen pixels.</summary>
     internal float Zoom { get; private set; } = DefaultZoom;
 

@@ -143,6 +143,7 @@ internal class GameEngineManager
         public bool? PauseWhenOpen;
         public ScanCodes? AutomapKey;
         public AutomapStyle? AutomapStyle;
+        public bool? AutomapOverlay;
     }
 
     // Keyboard buttons stored in the original fixed layout. Buttons added after them (the
@@ -199,6 +200,8 @@ internal class GameEngineManager
             consoleManager.PauseWhenOpen = pause;
         if (config.AutomapStyle is AutomapStyle style && Enum.IsDefined(style))
             automapManager.Style = style;
+        if (config.AutomapOverlay is bool overlay)
+            automapManager.Overlay = overlay;
 
         // Set "Read This" back to standard active
         Program.FindMenuItem(Program.MainMenu, "readthis")?.active = 1;
@@ -251,6 +254,8 @@ internal class GameEngineManager
             config.AutomapKey = (ScanCodes)br.ReadInt32();
         if (stream.Position < stream.Length)
             config.AutomapStyle = (AutomapStyle)br.ReadByte();
+        if (stream.Position < stream.Length)
+            config.AutomapOverlay = br.ReadByte() != 0;
 
         return config;
     }
@@ -364,6 +369,7 @@ internal class GameEngineManager
         bw.Write(consoleManager.PauseWhenOpen);
         bw.Write((int)Program.buttonscan[(int)buttontypes.bt_automap]);
         bw.Write((byte)automapManager.Style);
+        bw.Write(automapManager.Overlay);
     }
 
     /// <summary>
