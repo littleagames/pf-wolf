@@ -26,7 +26,7 @@ internal partial class Program
     // run on the new Entities.Actors.Actor type, spawned by MapManager.LoadMap from
     // mapdefs/wolf3d/enemies.yaml and driven by the AI ported to Program.EnemyAI.cs.
     //
-    // Projectiles (Rocket/Smoke/Boom/Needle/Fire, actordefs/wolf3d/projectiles.yaml) and the
+    // Projectiles (Rocket/Smoke/Needle/Fire, actordefs/wolf3d/projectiles.yaml) and the
     // BJ-victory end-of-episode cutscene (actordefs/wolf3d/victory.yaml) run on the same type,
     // spawned into MapManager._actors by MapManager.SpawnAtActor. CheckPosition's only caller
     // is the player pawn in Program.EnemyAI.cs's A_StartDeathCam.
@@ -34,21 +34,24 @@ internal partial class Program
     /*
     =================
     =
-    = A_Smoke
+    = A_SpawnThing
     =
     =================
     */
 
-    // Leaves a puff of the projectile's projectile.smoke actor (Smoke if not set) behind it
-    internal static void A_Smoke(Entities.Actors.Actor ob)
+    // A_SpawnThing("Smoke"): spawns the given actor at this one's position (a rocket's smoke trail)
+    internal static void A_SpawnThing(Entities.Actors.Actor ob, string[] args)
     {
-        var smokeClass = ob.Properties.TryGetValue("projectile.smoke", out var smokeName) && smokeName is string name ? name : "Smoke";
-        var smoke = _mapManager.SpawnAtActor(smokeClass, ob);
-        if (smoke != null)
-            smoke.TicCount = 6;             // the first puff lingers longer than its YAML 3 tics
+        if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
+        {
+            Console.WriteLine("A_SpawnThing: no actor given.");
+            return;
+        }
+
+        _mapManager.SpawnAtActor(args[0], ob);
     }
 
-    // Terminal action for one-shot effects (Smoke, Boom): the legacy chain ended on a null
+    // Terminal action for one-shot effects (Smoke, a rocket's Death): the legacy chain ended on a null
     // next state, which removed the object once its last frame's tics ran out.
     internal static void A_Remove(Entities.Actors.Actor ob) => _mapManager.MarkForRemoval(ob);
 
@@ -92,12 +95,15 @@ internal partial class Program
     /*
     =================
     =
-    = T_Projectile
+    = A_Projectile
     =
     =================
     */
 
-    internal static void T_Projectile(Entities.Actors.Actor ob)
+    // A_Projectile(min[, max]): flies the projectile along its Angle; hitting the player deals
+    // min..max damage (just min without a max). The roll scales one US_RndT() across the range,
+    // so a 32-wide range is exactly the legacy (US_RndT()>>3) + base.
+    internal static void A_Projectile(Entities.Actors.Actor ob, string[] args)
     {
         long deltax, deltay;
         int damage = 0;
@@ -121,23 +127,27 @@ internal partial class Program
 
         if (!ProjectileTryMove(ob))
         {
-            // A projectile with a projectile.explosion (rockets) blows up against the wall with
-            // its deathsound; the rest (needles, flames, sparks) just vanish
-            if (ob.Properties.TryGetValue("projectile.explosion", out var explosion) && explosion is string explosionClass)
+            // A projectile with a Death state (rockets) blows up against the wall with its
+            // deathsound, like the legacy switch to s_boom1; the rest (needles, flames, sparks)
+            // just vanish
+            if (ob.ResolvedStates.ContainsKey("Death"))
             {
                 if (ob.Properties.TryGetValue("deathsound", out var hitSound) && hitSound is string hitSoundName)
                     PlaySoundLocActor(hitSoundName, ob);
-                _mapManager.SpawnAtActor(explosionClass, ob);
+                NewActorState(ob, "Death");
             }
-
-            _mapManager.MarkForRemoval(ob);
+            else
+                _mapManager.MarkForRemoval(ob);
             return;
         }
 
         if (deltax < PROJECTILESIZE && deltay < PROJECTILESIZE)
-        {       // hit the player: random 0-31 on top of the projectile's projectile.damage
-            var baseDamage = ob.Properties.TryGetValue("projectile.damage", out var damageValue) ? Convert.ToInt32(damageValue) : 0;
-            damage = (US_RndT() >> 3) + baseDamage;
+        {       // hit the player
+            var minDamage = args.Length > 0 && int.TryParse(args[0], out var min) ? min : 0;
+            var maxDamage = args.Length > 1 && int.TryParse(args[1], out var max) ? max : minDamage;
+            damage = maxDamage > minDamage
+                ? minDamage + US_RndT() * (maxDamage - minDamage + 1) / 256
+                : minDamage;
 
             TakeDamage(damage, ob);
             _mapManager.MarkForRemoval(ob);

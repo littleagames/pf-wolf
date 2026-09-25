@@ -459,8 +459,8 @@ internal partial class Program
         ActorActionRegistry.Register("A_Dormant", A_Dormant);
 
         // Projectiles and effects (Program.WL_ACT2.cs).
-        ActorActionRegistry.Register("T_Projectile", T_Projectile);
-        ActorActionRegistry.Register("A_Smoke", A_Smoke);
+        ActorActionRegistry.Register("A_Projectile", A_Projectile);
+        ActorActionRegistry.Register("A_SpawnThing", A_SpawnThing);
         ActorActionRegistry.Register("A_Remove", A_Remove);
 
         // BJ victory cutscene (Program.WL_ACT2.cs).

@@ -1,7 +1,7 @@
-# Spear of Destiny projectiles, ported from wl_act2.cpp (Wolf4SDL). Both hit for random 0-31
-# plus 30, like Wolf3D's Rocket (actordefs/wolf3d/projectiles.yaml).
+# Spear of Destiny projectiles, ported from wl_act2.cpp (Wolf4SDL). Both hit for 30-61
+# ((random()>>3) + 30), like Wolf3D's Rocket (actordefs/wolf3d/projectiles.yaml).
 
-# The Death Knight's rockets (s_hrocket): trail HeavySmoke and burst into HeavyBoom on a wall.
+# The Death Knight's rockets (s_hrocket): trail HeavySmoke and burst (their Death state) on a wall.
 HeavyRocket:
   flags: [PROJECTILE]
   states:
@@ -9,21 +9,29 @@ HeavyRocket:
       - sprite: HRCK
         frames: [A]
         tics-per-frame: 3
-        think: T_Projectile
-        action: A_Smoke
+        think: A_Projectile(30, 61)
+        action: A_SpawnThing("HeavySmoke")
+    Death: # s_hboom1..3
+      - sprite: HBOM
+        frames: [A]
+        tics-per-frame: 6
+      - sprite: HBOM
+        frames: [B]
+        tics-per-frame: 6
+      - sprite: HBOM
+        frames: [C]
+        tics-per-frame: 6
+        action: A_Remove
   properties:
     "attacksound": "knight/missile"
     "deathsound": "missile/hit"
-    "projectile.damage": 30
-    "projectile.smoke": HeavySmoke
-    "projectile.explosion": HeavyBoom
 
 HeavySmoke: # s_hsmoke1..4
   states:
     Spawn:
       - sprite: HSMK
         frames: [A]
-        tics-per-frame: 3
+        tics-per-frame: 6 # legacy A_Smoke started each puff at ticcount 6, not s_hsmoke1's 3
       - sprite: HSMK
         frames: [B]
         tics-per-frame: 3
@@ -33,20 +41,6 @@ HeavySmoke: # s_hsmoke1..4
       - sprite: HSMK
         frames: [D]
         tics-per-frame: 3
-        action: A_Remove
-
-HeavyBoom: # s_hboom1..3
-  states:
-    Spawn:
-      - sprite: HBOM
-        frames: [A]
-        tics-per-frame: 6
-      - sprite: HBOM
-        frames: [B]
-        tics-per-frame: 6
-      - sprite: HBOM
-        frames: [C]
-        tics-per-frame: 6
         action: A_Remove
 
 # The Angel of Death's sparks (s_spark1..4): vanish against a wall.
@@ -57,19 +51,18 @@ Spark:
       - sprite: SPRK
         frames: [A]
         tics-per-frame: 6
-        think: T_Projectile
+        think: A_Projectile(30, 61)
       - sprite: SPRK
         frames: [B]
         tics-per-frame: 6
-        think: T_Projectile
+        think: A_Projectile(30, 61)
       - sprite: SPRK
         frames: [C]
         tics-per-frame: 6
-        think: T_Projectile
+        think: A_Projectile(30, 61)
       - sprite: SPRK
         frames: [D]
         tics-per-frame: 6
-        think: T_Projectile
+        think: A_Projectile(30, 61)
   properties:
     "attacksound": "angel/attack"
-    "projectile.damage": 30

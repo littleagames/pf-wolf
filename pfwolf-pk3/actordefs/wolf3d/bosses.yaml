@@ -9,7 +9,7 @@
 # Standard rank-and-file enemies (Guard/Officer/SS/Mutant/Dog) live in
 # actordefs/wolf3d/guards.yaml, the Pac-Man-bonus-level ghosts live in
 # actordefs/wolf3d/ghosts.yaml, and the projectile/FX actors these bosses'
-# attacks spawn (Rocket/Needle/Fire/Smoke/Boom) live in
+# attacks spawn (Rocket/Needle/Fire/Smoke) live in
 # actordefs/wolf3d/projectiles.yaml.
 #
 # This mirrors the actordefs/wolf3d/{decorations,ammo,weapons}.yaml schema

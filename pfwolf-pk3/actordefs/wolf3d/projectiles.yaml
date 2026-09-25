@@ -4,8 +4,9 @@
 # Supporting projectile / FX actors spawned by the boss attacks in
 # actordefs/wolf3d/bosses.yaml. None of these are placed on maps directly;
 # they're only ever created at runtime by T_GiftThrow (Gift/Fat),
-# T_SchabbThrow (Schabbs), T_FakeFire (Fake Hitler), or the T_Projectile
-# think that moves them once spawned.
+# T_SchabbThrow (Schabbs), T_FakeFire (Fake Hitler), or the A_Projectile
+# think that moves them once spawned. A_Projectile(min, max) is the damage
+# range on a player hit.
 #
 # This mirrors the actordefs/wolf3d/{decorations,ammo,weapons}.yaml schema
 # (states: sprite/frames/tics-per-frame/think/action/next-state, plus a flat
@@ -18,8 +19,8 @@
 # -- see the header comment in bosses.yaml for how those were inferred.
 # =============================================================================
 
-# Thrown by Gift/Fat (T_GiftThrow); explodes into Smoke/Boom on impact
-# with a wall, or damages the player directly on contact.
+# Thrown by Gift/Fat (T_GiftThrow); trails Smoke, explodes (its Death state)
+# on impact with a wall, or damages the player directly on contact.
 Rocket:
   flags: [PROJECTILE]
   states:
@@ -27,23 +28,30 @@ Rocket:
       - sprite: ROCK
         frames: [A]
         tics-per-frame: 3
-        think: T_Projectile
-        action: A_Smoke
+        think: A_Projectile(30, 61) # (random()>>3) + 30
+        action: A_SpawnThing("Smoke")
+    Death: # s_boom1..3: its wall-impact explosion
+      - sprite: BOOM
+        frames: [A]
+        tics-per-frame: 6
+      - sprite: BOOM
+        frames: [B]
+        tics-per-frame: 6
+      - sprite: BOOM
+        frames: [C]
+        tics-per-frame: 6
+        action: A_Remove # legacy s_boom3 had no next state, which removed the object
   properties:
     "attacksound": "missile/fire" # was "MISSILEFIRE"
     "deathsound": "missile/hit" # was "MISSILEHIT"
-    # Damage on player hit: (random()>>3) + 30.
-    "projectile.damage": 30
-    "projectile.smoke": Smoke
-    "projectile.explosion": Boom
 
-# Spawned continuously behind a moving Rocket by A_Smoke.
+# Spawned continuously behind a moving Rocket by A_SpawnThing.
 Smoke:
   states:
     Spawn: # s_smoke1..4
       - sprite: SMOK
         frames: [A]
-        tics-per-frame: 3
+        tics-per-frame: 6 # legacy A_Smoke started each puff at ticcount 6, not s_smoke1's 3
       - sprite: SMOK
         frames: [B]
         tics-per-frame: 3
@@ -55,22 +63,8 @@ Smoke:
         tics-per-frame: 3
         action: A_Remove # legacy s_smoke4 had no next state, which removed the object
 
-# Rocket's wall-impact explosion.
-Boom:
-  states:
-    Spawn: # s_boom1..3
-      - sprite: BOOM
-        frames: [A]
-        tics-per-frame: 6
-      - sprite: BOOM
-        frames: [B]
-        tics-per-frame: 6
-      - sprite: BOOM
-        frames: [C]
-        tics-per-frame: 6
-        action: A_Remove # legacy s_boom3 had no next state, which removed the object
-
 # Thrown by Schabbs (T_SchabbThrow); no wall-impact effect, just vanishes.
+# Damage on player hit: (random()>>3) + 20.
 Needle:
   flags: [PROJECTILE]
   states:
@@ -78,26 +72,25 @@ Needle:
       - sprite: HYPO
         frames: [A]
         tics-per-frame: 6
-        think: T_Projectile
+        think: A_Projectile(20, 51)
       - sprite: HYPO
         frames: [B]
         tics-per-frame: 6
-        think: T_Projectile
+        think: A_Projectile(20, 51)
       - sprite: HYPO
         frames: [C]
         tics-per-frame: 6
-        think: T_Projectile
+        think: A_Projectile(20, 51)
       - sprite: HYPO
         frames: [D]
         tics-per-frame: 6
-        think: T_Projectile
+        think: A_Projectile(20, 51)
   properties:
     "attacksound": "schabbs/throw" # was "SCHABBSTHROW"
-    # Damage on player hit: (random()>>3) + 20.
-    "projectile.damage": 20
 
 # Fake Hitler's flamethrower stream (T_FakeFire); one spawned per Attack
 # frame, forming a continuous line toward the player.
+# Damage on player hit: random()>>3 (no floor added, unlike Rocket/Needle).
 Fire:
   flags: [PROJECTILE]
   states:
@@ -105,12 +98,10 @@ Fire:
       - sprite: FIRE
         frames: [A]
         tics-per-frame: 6
-        think: T_Projectile
+        think: A_Projectile(0, 31)
       - sprite: FIRE
         frames: [B]
         tics-per-frame: 6
-        think: T_Projectile
+        think: A_Projectile(0, 31)
   properties:
     "attacksound": "flame/fire" # was "FLAMETHROWER"
-    # Damage on player hit: random()>>3 (no floor added, unlike Rocket/Needle).
-    "projectile.damage": 0

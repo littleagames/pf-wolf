@@ -12,10 +12,10 @@ namespace Wolf3D;
 // for a same-named type from another namespace. Registered into ActorActionRegistry (see
 // WL_AGENT.cs) under the same Think/Action names those YAML files already use.
 //
-// Projectiles (Rocket/Needle/Fire/Smoke/Boom, actordefs/wolf3d/projectiles.yaml) are on the
+// Projectiles (Rocket/Needle/Fire/Smoke, actordefs/wolf3d/projectiles.yaml) are on the
 // new actor type as well: the boss throw/fire actions below (T_SchabbThrow/T_GiftThrow/
 // T_FakeFire) spawn them through MapManager.SpawnAtActor, seeded from the thrower's position,
-// and Program.WL_ACT2.cs's T_Projectile/A_Smoke/A_Remove drive them.
+// and Program.WL_ACT2.cs's A_Projectile/A_SpawnThing/A_Remove drive them.
 internal partial class Program
 {
     internal static void NewActorState(Entities.Actors.Actor ob, string stateName)
@@ -1126,7 +1126,7 @@ internal partial class Program
 
     // Spawns a projectile actor (Needle/Rocket/Fire, actordefs/wolf3d/projectiles.yaml) at the
     // thrower and aims it at the player. TicCount 1 makes its first frame expire on the very
-    // next tic, so the state's Action (a rocket's first A_Smoke) fires almost immediately.
+    // next tic, so the state's Action (a rocket's first smoke puff) fires almost immediately.
     // angleOffset turns the shot away from the player, in ANGLES units (the Death Knight's
     // rockets go 4 either side). With no sound given, the projectile's own attacksound plays.
     private static void ThrowProjectile(Entities.Actors.Actor ob, string className, int speed, string? sound = null, int angleOffset = 0)

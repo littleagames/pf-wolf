@@ -311,7 +311,7 @@ internal class MapManager
     private ActorMetadata? _runtimeActorMetadata;
 
     /// <summary>
-    /// Spawns a runtime projectile or effect (Rocket, Smoke, Boom, Needle, Fire --
+    /// Spawns a runtime projectile or effect (Rocket, Smoke, Needle, Fire --
     /// actordefs/wolf3d/projectiles.yaml) at another actor's exact fixed-point position. It is
     /// an "active" actor (free-moving, drawn through the exact-position path, never marked in
     /// actorat); callers set Angle/Speed.
