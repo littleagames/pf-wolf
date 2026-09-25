@@ -610,116 +610,199 @@ internal class VideoManager
     /// <summary>Writes the screen to a BMP file; false (see SDL_GetError) if it couldn't.</summary>
     internal bool SaveScreenShot(string filename) => SDL.SDL_SaveBMP(screenBuffer, filename) == 0;
 
+    /// <summary>
+    /// Fizzles what's on screen over to what's been drawn in the screen buffer since, within a
+    /// rectangle (screen pixels), over <paramref name="frames"/> tics.
+    /// </summary>
     internal bool FizzleFade(int x1, int y1, uint width, uint height, uint frames, bool abortable)
-        => FizzleFade(screenBuffer, x1, y1, width, height, frames, abortable);
-
-    private bool FizzleFade(IntPtr source, int x1, int y1, uint width, uint height, uint frames, bool abortable)
     {
-        uint x = 0, y = 0, p, frame, pixperframe;
-        int rndval;
+        Transition(FadeStyle.Fizzle, x1, y1, (int)width, (int)height, frames);
+        return false;
+    }
 
-        rndval = 1;
-        pixperframe = width * height / frames;
+    /// <summary>
+    /// Changes what's on screen over to what's been drawn in the screen buffer since, within a
+    /// rectangle (screen pixels), over <paramref name="tics"/> tics. The palette style has nothing
+    /// to step between here, so it just shows the new frame.
+    /// </summary>
+    internal void Transition(FadeStyle style, int x1, int y1, int width, int height, uint tics)
+    {
+        if (style != FadeStyle.Palette)
+        {
+            var from = CaptureScreen();
+            var canvas = new TransitionCanvas
+            {
+                From = from,
+                To = RenderScreenBuffer(curpal),
+                Output = (uint[])from.Clone(),
+                Stride = screenWidth,
+                X = x1,
+                Y = y1,
+                Width = width,
+                Height = height,
+                ScaleFactor = scaleFactor,
+            };
+            RunTransition(style, canvas, tics);
+        }
 
-        //inputManager.StartAck();
+        Update(screenBuffer);
+    }
 
-        frame = GameEngineManager.GetTimeCount();
-        IntPtr srcptr = LockSurface(source);
-        if (srcptr == IntPtr.Zero) return false;
+    /// <summary>Fades what's on screen out to a solid color in the given style, over <paramref name="tics"/> tics.</summary>
+    internal void FadeOut(FadeStyle style, Color color, uint tics)
+    {
+        if (style == FadeStyle.Palette)
+        {
+            FadeOut(0, 255, color, (int)tics);
+            return;
+        }
+
+        var from = CaptureScreen();
+        var to = new uint[from.Length];
+        Array.Fill(to, SDL.SDL_MapRGBA(GetSurface(screen).format, color.Red, color.Green, color.Blue, 255));
+
+        RunTransition(style, FullScreenCanvas(from, to, fromIsSolid: false, toIsSolid: true), tics);
+
+        // Leave things as the palette fade does, so anything drawn before the fade in stays hidden
+        FillPalette(color.Red, color.Green, color.Blue);
+        screenfaded = true;
+    }
+
+    internal void FadeIn(FadeStyle style, uint tics) => FadeIn(style, new GamePalette { Colors = gamepal }, tics);
+
+    /// <summary>
+    /// Fades in the screen buffer, drawn in <paramref name="gamePalette"/>, from whatever's on
+    /// screen (normally the color it faded out to) in the given style, over <paramref name="tics"/> tics.
+    /// </summary>
+    internal void FadeIn(FadeStyle style, GamePalette gamePalette, uint tics)
+    {
+        if (style == FadeStyle.Palette)
+        {
+            FadeIn(0, 255, gamePalette, (int)tics);
+            return;
+        }
+
+        var from = CaptureScreen();
+        var to = RenderScreenBuffer(gamePalette.Colors);
+
+        RunTransition(style, FullScreenCanvas(from, to, fromIsSolid: screenfaded, toIsSolid: false), tics);
+
+        SetPalette(gamePalette.Colors, true);
+        screenfaded = false;
+    }
+
+    private TransitionCanvas FullScreenCanvas(uint[] from, uint[] to, bool fromIsSolid, bool toIsSolid) => new()
+    {
+        From = from,
+        To = to,
+        Output = (uint[])from.Clone(),
+        Stride = screenWidth,
+        X = 0,
+        Y = 0,
+        Width = screenWidth,
+        Height = screenHeight,
+        ScaleFactor = scaleFactor,
+        FromIsSolid = fromIsSolid,
+        ToIsSolid = toIsSolid,
+    };
+
+    /// <summary>Runs a transition to the end, putting each step on screen once a tic.</summary>
+    private void RunTransition(FadeStyle style, TransitionCanvas canvas, uint tics)
+    {
+        ScreenTransition transition = style switch
+        {
+            FadeStyle.Fizzle => new FizzleTransition(rndmask, (int)rndbits_y),
+            FadeStyle.Melt => new MeltTransition(canvas),
+            FadeStyle.Mosaic => new MosaicTransition(),
+            _ => throw new ArgumentOutOfRangeException(nameof(style), style, "Not a transition style"),
+        };
+
+        uint start = GameEngineManager.GetTimeCount();
+        uint frame = start;
 
         while (true)
         {
-            //inputManager.ProcessEvents();
+            double progress = tics == 0 ? 1 : (double)(GameEngineManager.GetTimeCount() - start) / tics;
+            bool done = transition.Draw(canvas, Math.Min(progress, 1));
 
-            //if (abortable && inputManager.CheckAck())
-            //{
-            //    UnlockSurface(source);
-            //    Update(source);
-            //    return true;
-            //}
+            PresentPixels(canvas.Output);
 
-            IntPtr destptr = LockSurface(screen);
-
-            if (destptr == IntPtr.Zero)
-                throw new PfWolfVideoException("Unable to lock dest surface: {0}", SDL.SDL_GetError());
-
-            var scrn_surface = GetSurface(screen);
-            var src_surface = GetSurface(source);
-
-            for (p = 0; p < pixperframe; p++)
-            {
-                //
-                // seperate random value into x/y pair
-                //
-                x = (uint)(rndval >> (int)rndbits_y);
-                y = (uint)(rndval & ((1 << (int)rndbits_y) - 1));
-
-                //
-                // advance to next random element
-                //
-                rndval = (int)((rndval >> 1) ^ ((rndval & 1) != 0 ? 0 : rndmask));
-
-                if (x >= width || y >= height)
-                    p--;                         // not into the view area; get a new pair
-                else
-                {
-                    unsafe
-                    {
-                        byte* src = (byte*)srcptr;
-                        byte* dest = (byte*)destptr;
-                        //
-                        // copy one pixel
-                        //
-                        if (screenBits == 8)
-                        {
-                            dest[((y1 + y) * scrn_surface.pitch + x1 + x)] =
-                                src[((y1 + y) * src_surface.pitch + x1 + x)];
-                            //*(destptr + (y1 + y) * scrn_surface.pitch + x1 + x)
-                            //   = *(srcptr + (y1 + y) * src_surface.pitch + x1 + x);
-                        }
-                        else
-                        {
-                            var screen_format = GetSurfaceFormat(screen);
-                            var scrnBpp = screen_format.BytesPerPixel;
-                            byte col = src[(y1 + y) * src_surface.pitch + x1 + x];//*(srcptr + (y1 + y) * src_surface.pitch + x1 + x);
-                            uint fullcol = SDL.SDL_MapRGBA(scrn_surface.format, curpal[col].r, curpal[col].g, curpal[col].b, 255);//SDL_ALPHA_OPAQUE);
-
-                            // saving "fullcol" into a full bpp of the dest
-                            //memcpy (dest, src, count)
-                            var fullColBytes = BitConverter.GetBytes(fullcol);
-                            for (var b = 0; b < scrnBpp; b++)
-                            {
-                                dest[(y1 + y) * scrn_surface.pitch + (x1 + x) * scrnBpp + b] = fullColBytes[b];
-                            }
-                            //memcpy(dest + (y1 + y) * scrn_surface.pitch + (x1 + x) * scrnBpp, fullcol, scrnBpp);
-                        }
-                    }
-                }
-
-                if (rndval == 1)
-                {
-                    //
-                    // entire sequence has been completed
-                    //
-                    UnlockSurface(screenBuffer);
-                    UnlockSurface(screen);
-                    Update(screenBuffer);
-
-                    return false;
-                }
-            }
-
-            UnlockSurface(screen);
-
-            SDL.SDL_UpdateTexture(texture, IntPtr.Zero, scrn_surface.pixels, (int)screenPitch);
-            SDL.SDL_RenderCopy(renderer, texture, IntPtr.Zero, IntPtr.Zero);
-            SDL.SDL_RenderPresent(renderer);
+            if (done)
+                return;
 
             frame++;
             GameEngineManager.DelayTics((int)(frame - GameEngineManager.GetTimeCount()));        // don't go too fast
         }
+    }
 
-        return false;
+    /// <summary>The frame last put on screen, as 32-bit pixels.</summary>
+    private uint[] CaptureScreen()
+    {
+        var pixels = new uint[screenWidth * screenHeight];
+
+        IntPtr src = LockSurface(screen);
+        if (src == IntPtr.Zero)
+            throw new PfWolfVideoException("Unable to lock screen surface: {0}", SDL.SDL_GetError());
+
+        unsafe
+        {
+            for (int y = 0; y < screenHeight; y++)
+                new ReadOnlySpan<uint>((byte*)src + y * screenPitch, screenWidth)
+                    .CopyTo(pixels.AsSpan(y * screenWidth, screenWidth));
+        }
+
+        UnlockSurface(screen);
+        return pixels;
+    }
+
+    /// <summary>The screen buffer as it would look drawn in <paramref name="palette"/>, as 32-bit pixels.</summary>
+    private uint[] RenderScreenBuffer(SDL.SDL_Color[] palette)
+    {
+        var format = GetSurface(screen).format;
+        var colors = new uint[256];
+        for (int i = 0; i < colors.Length; i++)
+            colors[i] = SDL.SDL_MapRGBA(format, palette[i].r, palette[i].g, palette[i].b, 255);
+
+        var pixels = new uint[screenWidth * screenHeight];
+
+        IntPtr src = LockSurface(screenBuffer);
+        if (src == IntPtr.Zero)
+            throw new PfWolfVideoException("Unable to lock screen buffer: {0}", SDL.SDL_GetError());
+
+        unsafe
+        {
+            byte* buffer = (byte*)src;
+            for (int y = 0; y < screenHeight; y++)
+            {
+                byte* row = buffer + ylookup[y];
+                for (int x = 0; x < screenWidth; x++)
+                    pixels[y * screenWidth + x] = colors[row[x]];
+            }
+        }
+
+        UnlockSurface(screenBuffer);
+        return pixels;
+    }
+
+    /// <summary>Copies full-screen 32-bit pixels to the screen surface and shows them.</summary>
+    private void PresentPixels(uint[] pixels)
+    {
+        IntPtr dest = LockSurface(screen);
+        if (dest == IntPtr.Zero)
+            throw new PfWolfVideoException("Unable to lock screen surface: {0}", SDL.SDL_GetError());
+
+        unsafe
+        {
+            for (int y = 0; y < screenHeight; y++)
+                pixels.AsSpan(y * screenWidth, screenWidth)
+                    .CopyTo(new Span<uint>((byte*)dest + y * screenPitch, screenWidth));
+        }
+
+        UnlockSurface(screen);
+
+        SDL.SDL_UpdateTexture(texture, IntPtr.Zero, GetSurface(screen).pixels, (int)screenPitch);
+        SDL.SDL_RenderCopy(renderer, texture, IntPtr.Zero, IntPtr.Zero);
+        SDL.SDL_RenderPresent(renderer);
     }
 
 

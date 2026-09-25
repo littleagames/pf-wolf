@@ -93,7 +93,10 @@ internal partial class Program
         Register("fps", "Toggles the frame rate counter.", "fps [0|1]", Cmd_Fps, complete: Values("0", "1"));
         Register("slowmo", "Waits extra VBLs every frame (0 = off).", "slowmo [0-50]", Cmd_SlowMo);
         Register("vbls", "Adds extra VBLs per frame (0 = off).", "vbls [0-8]", Cmd_Vbls);
-        Register("screenshot", "Saves the screen, without the console, to WSHOT###.BMP in the screenshots folder.", "screenshot", _ => screenshotPending = true);
+        Register("fade", "Fades the view out to black and back in, to try a fade style.",
+            "fade <palette|fizzle|melt|mosaic> [tics]", Cmd_Fade, InLevel,
+            complete: Values(Enum.GetNames<FadeStyle>().Select(n => n.ToLowerInvariant()).ToArray()));
+        Register("screenshot","Saves the screen, without the console, to WSHOT###.BMP in the screenshots folder.", "screenshot", _ => screenshotPending = true);
         Register("quit", "Quits the game immediately.", "quit", _ => _gameEngineManager.Quit(""));
     }
 
@@ -615,6 +618,24 @@ internal partial class Program
     {
         fpscounter = Toggle(args, fpscounter);
         _consoleManager.Print(fpscounter ? "FPS counter ON" : "FPS counter OFF");
+    }
+
+    private static void Cmd_Fade(string[] args)
+    {
+        if (args.Length == 0 || !Enum.TryParse<FadeStyle>(args[0], ignoreCase: true, out var style))
+            throw new ArgumentException("usage: fade <palette|fizzle|melt|mosaic> [tics]");
+
+        uint tics = (uint)(args.Length > 1 ? ParseInt(args[1], 1, 700) : style == FadeStyle.Palette ? 30 : 70);
+
+        // Fading blocks, so run it from the play loop with the console out of the picture.
+        _consoleManager.Close();
+        _consoleManager.Defer(() =>
+        {
+            ThreeDRefresh();
+            _videoManager.FadeOut(style, new Color { Alpha = 255 }, tics);
+            _videoManager.FadeIn(style, tics);
+            lasttimecount = (int)GameEngineManager.GetTimeCount();
+        });
     }
 
     private static void Cmd_SlowMo(string[] args)
