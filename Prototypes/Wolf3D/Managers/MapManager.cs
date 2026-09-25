@@ -224,6 +224,11 @@ internal class MapManager
             if (alwaysAmbush)
             {
                 builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
+
+                // The legacy boss spawners (SpawnGift, SpawnBoss, ...) all face nodir, which
+                // CheckSight takes as seeing all around; a map facing would blind them to a
+                // player approaching from behind.
+                builtActor.Dir = objdirtypes.nodir;
             }
             else
             {
