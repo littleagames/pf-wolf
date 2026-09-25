@@ -613,9 +613,8 @@ internal partial class Program
 
     private static bool vertentry(int ystep, int xstep,int yinttemp, ref int pwallposnorm, ref int pwallposinv, ref int pwallposi)
     {
-        // #ifdef REVEALMAP
-        //             mapseen[xtile][yinttile] = true;
-        // #endif
+        // the pushwall cases below move yinttile, so keep the tile the trace entered for the automap
+        int hitx = xtile, hity = yinttile;
         tilehit = _mapManager.tilemap[xtile, yinttile];
 
         if (tilehit != 0)
@@ -804,6 +803,7 @@ internal partial class Program
                 HitVertWall();
             }
 
+            _mapManager.seen[hitx, hity] |= xtilestep == 1 ? SeenFlags.WestFace : SeenFlags.EastFace;
             return true;
         }
 
@@ -824,9 +824,8 @@ internal partial class Program
 
     private static bool horizentry(int xstep,int ystep, int xinttemp, ref int pwallposnorm, ref int pwallposinv, ref int pwallposi)
     {
-        // #ifdef REVEALMAP
-        //             mapseen[xinttile][ytile] = true;
-        // #endif
+        // the pushwall cases below move xinttile, so keep the tile the trace entered for the automap
+        int hitx = xinttile, hity = ytile;
         tilehit = _mapManager.tilemap[xinttile, ytile];
 
         if (tilehit != 0)
@@ -1017,6 +1016,7 @@ internal partial class Program
                 HitHorizWall();
             }
 
+            _mapManager.seen[hitx, hity] |= ytilestep == 1 ? SeenFlags.NorthFace : SeenFlags.SouthFace;
             return true;
         }
 
@@ -1374,6 +1374,8 @@ internal partial class Program
         VGAClearScreen();
 
         WallRefresh();
+
+        _mapManager.MarkSeenFromSpotvis();      // floor the rays crossed, for the automap
 
         //
         // draw all the scaled images

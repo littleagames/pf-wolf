@@ -12,6 +12,20 @@ public class MapDataConstants
     public const int AMBUSHTILE = 106;
     public const int ALTELEVATORTILE = 107;
 }
+/// <summary>What the player has seen of a map tile (MapManager.seen), for the automap.</summary>
+[Flags]
+internal enum SeenFlags : byte
+{
+    None = 0,
+    /// <summary>A view ray crossed the tile (open floor, or an open door).</summary>
+    Floor = 1,
+    /// <summary>A view ray hit this side of the tile's wall or door.</summary>
+    NorthFace = 2,
+    SouthFace = 4,
+    WestFace = 8,
+    EastFace = 16,
+}
+
 struct maptype
 {
     public int[] planestart;
@@ -67,6 +81,38 @@ internal class MapManager
     internal bool[,] spotvis;
     internal Actor?[,] actorat;
 
+    /// <summary>
+    /// What the player has seen of this level, for the automap: floor the view rays have crossed
+    /// and the wall faces they've hit. Unlike spotvis it lasts for the whole level, and it's saved.
+    /// </summary>
+    internal SeenFlags[,] seen;
+
+    /// <summary>Adds the floor tiles visible this frame (spotvis, after the walls are traced) to <see cref="seen"/>.</summary>
+    internal void MarkSeenFromSpotvis()
+    {
+        for (int x = 0; x < MAPSIZE; x++)
+            for (int y = 0; y < MAPSIZE; y++)
+                if (spotvis[x, y])
+                    seen[x, y] |= SeenFlags.Floor;
+    }
+
+    /// <summary>The seen map as one byte per tile, column by column, for save games.</summary>
+    internal byte[] GetSeenBytes()
+    {
+        var bytes = new byte[MAPSIZE * MAPSIZE];
+        for (int x = 0; x < MAPSIZE; x++)
+            for (int y = 0; y < MAPSIZE; y++)
+                bytes[x * MAPSIZE + y] = (byte)seen[x, y];
+        return bytes;
+    }
+
+    internal void SetSeenBytes(byte[] bytes)
+    {
+        for (int x = 0; x < MAPSIZE; x++)
+            for (int y = 0; y < MAPSIZE; y++)
+                seen[x, y] = (SeenFlags)bytes[x * MAPSIZE + y];
+    }
+
     public ushort GetTile(int x, int y, int plane)
     {
         return mapsegs[0][y * mapwidth + x];
@@ -102,6 +148,7 @@ internal class MapManager
 
         tilemap = new byte[MAPSIZE, MAPSIZE]; // wall values only
         spotvis = new bool[MAPSIZE, MAPSIZE];
+        seen = new SeenFlags[MAPSIZE, MAPSIZE];
         actorat = new Actor?[MAPSIZE, MAPSIZE];
 
         // Every actor lives in _actors and nothing else clears this list, so reloading a level

@@ -21,8 +21,8 @@ internal partial class Program
         int       checksum of the body
 
     The body holds the game (gamestate, level ratios, inventory) and the level as
-    it stands (MapManager.WriteLevelState, then doors, area connections and the
-    moving pushwall). Nothing is restored until the whole file has been read and
+    it stands (MapManager.WriteLevelState, then doors, area connections, the
+    moving pushwall and the automap's seen tiles). Nothing is restored until the whole file has been read and
     checked against the current map and actordefs, so a save that can't be loaded
     leaves the game as it was.
 
@@ -34,7 +34,9 @@ internal partial class Program
 
     private static readonly byte[] SaveSignature = "PFWS"u8.ToArray();
     // 2: the patrol arrows became PatrolPoint actors, which version-1 saves' actor lists lack
-    private const int SaveVersion = 2;
+    // 3: the automap's seen tiles follow the rest of the body; version-2 saves load with none seen
+    private const int SaveVersion = 3;
+    private const int OldestLoadableSaveVersion = 2;
 
     internal static string GetSaveGamePath(int slot) =>
         Path.Combine(_gameEngineManager.ConfigDirectories.SaveGameDirectory, SaveName.Replace('?', (char)('0' + slot)));
@@ -153,6 +155,8 @@ internal partial class Program
         // Died() turns the player to face their killer, so keep who that is.
         // (By reference: actors are records, so IndexOf would match a look-alike by value.)
         bw.Write(_mapManager.GetSavedActors().FindIndex(a => ReferenceEquals(a, LastAttacker)));
+
+        bw.Write(_mapManager.GetSeenBytes());
     }
 
     /// <summary>Everything a save's body holds, read without changing any game state.</summary>
@@ -170,9 +174,10 @@ internal partial class Program
         ushort PwallY,
         controldirs PwallDir,
         byte PwallTile,
-        int LastAttacker);
+        int LastAttacker,
+        byte[]? Seen);
 
-    private static SaveGameData ReadSaveBody(BinaryReader br)
+    private static SaveGameData ReadSaveBody(BinaryReader br, int version)
     {
         var state = gametype.Read(br);
 
@@ -208,7 +213,8 @@ internal partial class Program
             PwallY: br.ReadUInt16(),
             PwallDir: (controldirs)br.ReadByte(),
             PwallTile: br.ReadByte(),
-            LastAttacker: br.ReadInt32());
+            LastAttacker: br.ReadInt32(),
+            Seen: version >= 3 ? ReadExactly(br, MapManager.MAPAREA) : null);
     }
 
     // BinaryReader.ReadBytes quietly returns fewer bytes at the end of the stream.
@@ -238,8 +244,8 @@ internal partial class Program
                 throw new InvalidDataException("It isn't a PFWolf save game.");
 
             var version = br.ReadInt32();
-            if (version != SaveVersion)
-                throw new InvalidDataException($"It was saved in format {version}; this build reads {SaveVersion}.");
+            if (version < OldestLoadableSaveVersion || version > SaveVersion)
+                throw new InvalidDataException($"It was saved in format {version}; this build reads {OldestLoadableSaveVersion} to {SaveVersion}.");
 
             var body = br.ReadBytes(br.ReadCount());
             checksumOk = br.BaseStream.Length - br.BaseStream.Position >= sizeof(int)
@@ -247,7 +253,7 @@ internal partial class Program
 
             DiskFlopAnim(x, y);
             using var bodyReader = new BinaryReader(new MemoryStream(body));
-            data = ReadSaveBody(bodyReader);
+            data = ReadSaveBody(bodyReader, version);
 
             if (!_gameEngineManager.GetGameInfo().Maps.ContainsKey(data.GameState.mapon))
                 throw new InvalidDataException($"Map \"{data.GameState.mapon}\" isn't in this game.");
@@ -296,6 +302,9 @@ internal partial class Program
         pwally = data.PwallY;
         pwalldir = data.PwallDir;
         pwalltile = data.PwallTile;
+
+        if (data.Seen != null)
+            _mapManager.SetSeenBytes(data.Seen);    // older saves: SetupGameLevel left it all unseen
 
         LastAttacker = data.LastAttacker >= 0 && data.LastAttacker < actors.Count ? actors[data.LastAttacker] : null;
         facetimes = 0;

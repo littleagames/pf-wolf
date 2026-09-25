@@ -79,6 +79,8 @@ internal partial class Program
                 (int)MathF.Round(originX + x1 * tileSize) - penOffset, (int)MathF.Round(originY + y1 * tileSize) - penOffset,
                 wallColor, pen, clipX, clipY, clipW, clipH);
 
+        bool reveal = mapreveal != 0;
+
         for (int y = firstY; y <= lastY; y++)
         {
             for (int x = firstX; x <= lastX; x++)
@@ -86,12 +88,22 @@ internal partial class Program
                 if (!IsAutomapWall(x, y))
                     continue;
 
-                if (!IsAutomapWall(x, y - 1)) Edge(x, y, x + 1, y);             // north face
-                if (!IsAutomapWall(x, y + 1)) Edge(x, y + 1, x + 1, y + 1);     // south face
-                if (!IsAutomapWall(x - 1, y)) Edge(x, y, x, y + 1);             // west face
-                if (!IsAutomapWall(x + 1, y)) Edge(x + 1, y, x + 1, y + 1);     // east face
+                // Only the faces the player has looked at, unless the reveal cheat is on
+                var faces = reveal ? SeenFlags.NorthFace | SeenFlags.SouthFace | SeenFlags.WestFace | SeenFlags.EastFace
+                    : _mapManager.seen[x, y];
+
+                if ((faces & SeenFlags.NorthFace) != 0 && !IsAutomapWall(x, y - 1)) Edge(x, y, x + 1, y);
+                if ((faces & SeenFlags.SouthFace) != 0 && !IsAutomapWall(x, y + 1)) Edge(x, y + 1, x + 1, y + 1);
+                if ((faces & SeenFlags.WestFace) != 0 && !IsAutomapWall(x - 1, y)) Edge(x, y, x, y + 1);
+                if ((faces & SeenFlags.EastFace) != 0 && !IsAutomapWall(x + 1, y)) Edge(x + 1, y, x + 1, y + 1);
             }
         }
+    }
+
+    private static void Cmd_AmReveal(string[] args)
+    {
+        mapreveal = (byte)(Toggle(args, mapreveal != 0) ? 1 : 0);
+        _consoleManager.Print(mapreveal != 0 ? "Automap reveal ON" : "Automap reveal OFF");
     }
 
     /// <summary>Whether a tile is solid wall. Doors count as open floor; off the map counts as wall.</summary>
