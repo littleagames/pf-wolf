@@ -83,31 +83,6 @@ internal enum activetypes
     ac_allways,
 }
 
-//enum wl_stat_types
-//{
-//    none,
-//    block,
-//    bo_gibs,
-//    bo_alpo,
-//    bo_firstaid,
-//    bo_key1,
-//    bo_key2,
-//    bo_key3,
-//    bo_key4,
-//    bo_cross,
-//    bo_chalice,
-//    bo_bible,
-//    bo_crown,
-//    bo_clip,
-//    bo_clip2,
-//    bo_machinegun,
-//    bo_chaingun,
-//    bo_food,
-//    bo_fullheal,
-//    bo_25clip,
-//    bo_spear,
-//}
-
 enum objdirtypes
 {
     east,
@@ -119,34 +94,6 @@ enum objdirtypes
     south,
     southeast,
     nodir,
-}
-
-enum enemytypes
-{
-    en_guard,
-    en_officer,
-    en_ss,
-    en_dog,
-    en_boss,
-    en_schabbs,
-    en_fake,
-    en_hitler,
-    en_mutant,
-    en_blinky,
-    en_clyde,
-    en_pinky,
-    en_inky,
-    en_gretel,
-    en_gift,
-    en_fat,
-    en_spectre,
-    en_angel,
-    en_trans,
-    en_uber,
-    en_will,
-    en_death,
-
-    NUMENEMIES
 }
 
 //---------------
