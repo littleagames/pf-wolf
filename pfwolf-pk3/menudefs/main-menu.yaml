@@ -19,7 +19,7 @@ components:
     type: "Stripe"
     params:
       - y: 10
-  # Window fits the item count: 10 items in Wolf3D, 9 in Spear (no "Read This!")
+  # Window fits the item count: 8 items in Wolf3D, 7 in Spear (no "Read This!")
   -
     type: "Window"
     game-packs: [ "wolf3d" ]
@@ -27,7 +27,7 @@ components:
       - x: 68
       - y: 52
       - width: 178
-      - height: 136
+      - height: 110
   -
     type: "Window"
     game-packs: [ "spear" ]
@@ -35,7 +35,7 @@ components:
       - x: 68
       - y: 52
       - width: 178
-      - height: 123
+      - height: 97
   -
     type: "Graphic"
     params:
@@ -51,20 +51,14 @@ menu-items:
       short-key: N
       enabled: true
       action: "CP_NewGame"
+  # Sound, Control and Change View are in here
   -
-      id: "sound"
+      id: "options"
       type: "MenuSwitcher"
-      text: "$MENU_SOUND"
-      short-key: S
+      text: "$MENU_OPTIONS"
+      short-key: O
       enabled: true
-      action: "CP_Sound"
-  -
-      id: "control"
-      type: "MenuSwitcher"
-      text: "$MENU_CONTROL"
-      short-key: C
-      enabled: true
-      action: "CP_Control"
+      action: "CP_Options"
   -
       id: "loadgame"
       type: "MenuSwitcher"
@@ -79,13 +73,6 @@ menu-items:
       short-key: S
       enabled: false
       action: "CP_SaveGame"
-  -
-      id: "changeview"
-      type: "MenuSwitcher"
-      text: "$MENU_CHANGEVIEW"
-      short-key: C
-      enabled: true
-      action: "CP_ChangeView"
   -
       id: "readthis"
       type: "MenuSwitcher"

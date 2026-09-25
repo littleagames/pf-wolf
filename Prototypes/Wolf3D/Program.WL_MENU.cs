@@ -50,6 +50,7 @@ internal partial class Program
     internal static int SENSITIVE = 60;
 
     internal static CP_itemtype[] MainMenu = [];
+    internal static CP_itemtype[] OptMenu = [];
     internal static CP_itemtype[] SndMenu = [];
     internal static CP_itemtype[] CtlMenu = [];
     internal static CP_itemtype[] NewEmenu = [];
@@ -65,6 +66,7 @@ internal partial class Program
 
     // Loaded from menudefs/ in CheckForEpisodes
     internal static CP_iteminfo MainItems;
+    internal static CP_iteminfo OptItems;
     internal static CP_iteminfo SndItems;
     internal static CP_iteminfo LSItems;
     internal static CP_iteminfo CtlItems;
@@ -1061,6 +1063,43 @@ internal partial class Program
         // Face picture for the highlighted skill (pic-name in game-info)
         if (w >= 0 && w < NewMenu.Length && NewMenu[w].data is SkillInfo skill)
             _graphicManager.DrawPic(skill.PicName, NewItems.x + 185, NewItems.y + 7);
+    }
+
+    /// <summary>
+    /// The Options submenu. Each item runs its own screen (Sound, Control, Change View),
+    /// and this menu is drawn again when that screen is left.
+    /// </summary>
+    internal static int CP_Options(int _)
+    {
+        int which;
+
+        DrawOptionsMenu();
+        MenuFadeIn();
+        WaitKeyUp();
+
+        do
+        {
+            which = HandleMenu(OptItems, OptMenu, null);
+            if (which >= 0)
+            {
+                DrawOptionsMenu();
+                MenuFadeIn();
+                WaitKeyUp();
+            }
+        }
+        while (which >= 0);
+
+        MenuFadeOut();
+
+        return 0;
+    }
+
+    internal static void DrawOptionsMenu()
+    {
+        DrawMenuComponents("options");
+        DrawMenu(OptItems, OptMenu);
+        DrawMenuGun(OptItems);
+        _videoManager.Update();
     }
 
     internal static int CP_Sound(int _)
@@ -2482,6 +2521,7 @@ internal partial class Program
         }
 
         (MainMenu, MainItems) = LoadMenu("main-menu");
+        (OptMenu, OptItems) = LoadMenu("options");
         (SndMenu, SndItems) = LoadMenu("sound");
         (CtlMenu, CtlItems) = LoadMenu("control", curpos: -1);
         (CusMenu, CusItems) = LoadMenu("customize", curpos: -1);
@@ -2673,6 +2713,7 @@ internal partial class Program
         List<Func<int, int>> avaiableFunctions = 
             [
             CP_NewGame,
+            CP_Options,
             CP_Sound,
             CP_Control,
             CP_LoadGame,

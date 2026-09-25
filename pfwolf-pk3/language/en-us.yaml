@@ -9,6 +9,7 @@ $ENDGAMESTR: "Are you sure you want\nto end the game you\nare playing? ({YESBUTT
 
 # Main menu
 $MENU_NEWGAME: "New Game"
+$MENU_OPTIONS: "Options"
 $MENU_SOUND: "Sound"
 $MENU_CONTROL: "Control"
 $MENU_LOADGAME: "Load Game"

@@ -1,0 +1,57 @@
+music: "WONDERIN"
+type: "wolf3d-menu"
+position:
+  x: 76
+  y: 82
+indent: 24
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "Center"
+      - y: 184
+  -
+    type: "Stripe"
+    params:
+      - y: 10
+  # Window fits the item count: 13 per row plus 6
+  -
+    type: "Window"
+    params:
+      - x: 68
+      - y: 79
+      - width: 178
+      - height: 45
+  -
+    type: "Graphic"
+    params:
+      - name: "c_options"
+      - horizontal-orientation: "Center"
+      - y: 0
+menu-items:
+  -
+      id: "sound"
+      type: "MenuSwitcher"
+      text: "$MENU_SOUND"
+      short-key: S
+      enabled: true
+      action: "CP_Sound"
+  -
+      id: "control"
+      type: "MenuSwitcher"
+      text: "$MENU_CONTROL"
+      short-key: C
+      enabled: true
+      action: "CP_Control"
+  -
+      id: "changeview"
+      type: "MenuSwitcher"
+      text: "$MENU_CHANGEVIEW"
+      short-key: V
+      enabled: true
+      action: "CP_ChangeView"
