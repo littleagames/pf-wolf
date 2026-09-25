@@ -6,7 +6,6 @@ namespace Wolf3D.Managers;
 
 public class MapDataConstants
 {
-    public const int ICONARROWS = 90;
     public const int AREATILE = 107;         // first of NUMAREAS floor tiles
     public const int NUMAREAS = 37;
     public const int ELEVATORTILE = 21;
@@ -198,15 +197,9 @@ internal class MapManager
         // that never patrols would never notice the player if area 0 isn't connected.
         builtActor.AreaNumber = (byte)(MAPSPOT(tilex, tiley, 0) - MapDataConstants.AREATILE);
 
-        // Angles: 0=east, 90=north, 180=west, 270=south (Program.WL_GAME.cs's
-        // `(objdirtypes)(dir * 2)`, dir 0..3 over east/north/west/south).
-        builtActor.Dir = (thing.Angles / 90) switch
-        {
-            1 => objdirtypes.north,
-            2 => objdirtypes.west,
-            3 => objdirtypes.south,
-            _ => objdirtypes.east,
-        };
+        // Angles: 0=east, 45=northeast, 90=north ... 315=southeast, in objdirtypes order
+        // (enemies only face the four cardinal ones, patrol points all eight).
+        builtActor.Dir = (objdirtypes)((thing.Angles / 45 % 8 + 8) % 8);
 
         // Patrol selects the initial resolved state (mirrors SpawnStand vs SpawnPatrol):
         // "Path" for patrolling grunts, otherwise whatever CreateActor already set ("Spawn").
@@ -417,6 +410,18 @@ internal class MapManager
 
     /// <summary>Enemies are the actors with a "Chase" state (guards, dogs, bosses, ghosts).</summary>
     internal static bool IsEnemy(Entities.Actors.Actor actor) => actor.ResolvedStates.ContainsKey("Chase");
+
+    /// <summary>The patrol point (a PATROLPOINT actor, e.g. an arrow) on a tile, if there is one.</summary>
+    internal Entities.Actors.Actor? PatrolPointAt(int tilex, int tiley)
+    {
+        foreach (var actor in _actors)
+        {
+            if (!actor.IsRemoved && actor.TileX == tilex && actor.TileY == tiley
+                && actor.Flags.Contains("PATROLPOINT", StringComparer.OrdinalIgnoreCase))
+                return actor;
+        }
+        return null;
+    }
 
     /// <summary>
     /// The enemies on a tile, living or dead: corpses keep occupying their tile, which is what

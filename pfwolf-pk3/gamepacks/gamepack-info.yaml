@@ -6,6 +6,7 @@ wolf3d-apogee:
     - mapdefs/wolf3d/doors
     - mapdefs/wolf3d/player
     - mapdefs/wolf3d/triggers
+    - mapdefs/wolf3d/patrolpoints
     - mapdefs/wolf3d/decorations
     - mapdefs/wolf3d/enemies
   game-palette: wolfpal

@@ -33,7 +33,8 @@ internal partial class Program
     private const int SaveSlots = 10;
 
     private static readonly byte[] SaveSignature = "PFWS"u8.ToArray();
-    private const int SaveVersion = 1;
+    // 2: the patrol arrows became PatrolPoint actors, which version-1 saves' actor lists lack
+    private const int SaveVersion = 2;
 
     internal static string GetSaveGamePath(int slot) =>
         Path.Combine(_gameEngineManager.ConfigDirectories.SaveGameDirectory, SaveName.Replace('?', (char)('0' + slot)));

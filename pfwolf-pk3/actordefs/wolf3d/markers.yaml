@@ -1,0 +1,12 @@
+# Invisible map markers, placed from the object plane by mapdefs/wolf3d/patrolpoints.yaml.
+
+# A patrol arrow: a patrolling enemy (T_Path) or BJ's victory run (T_BJRun) that reaches its
+# tile turns to face the way it points -- the direction it's spawned facing, from the mapdefs
+# thing's angles. Without one, they keep going the way they were heading.
+PatrolPoint:
+  flags: [PATROLPOINT]
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: -1

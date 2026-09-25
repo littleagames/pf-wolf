@@ -1199,6 +1199,11 @@ internal partial class Program
             if (actor.CurrentState == null)
                 continue;
 
+            // A marker with no sprite (a patrol point) takes no vislist slot. Inventory still
+            // goes through below, where touching it is what picks it up.
+            if (actor.CurrentState.Sprite == "TNT1" && actor is not Inventory)
+                continue;
+
             // Enemies (Program.EnemyAI.cs) move between tiles and need 8-way rotation, so
             // they're transformed like legacy "active objects" (TransformActor/CalcRotate,
             // fixed-point X/Y, checked against all 9 surrounding spotvis tiles) instead of

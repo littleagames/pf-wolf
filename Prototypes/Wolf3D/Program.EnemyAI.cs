@@ -662,12 +662,12 @@ internal partial class Program
         ob.Dir = objdirtypes.nodir;
     }
 
+    // Called as a patroller (T_Path, T_BJRun) reaches a tile's centre: a patrol point there
+    // (actordefs PatrolPoint, placed on the legacy arrow tiles) turns it the way the point faces
     internal static void SelectPathDir(Entities.Actors.Actor ob)
     {
-        var spot = (uint)(_mapManager.MAPSPOT(ob.TileX, ob.TileY, 1) - MapDataConstants.ICONARROWS);
-
-        if (spot < 8)
-            ob.Dir = (objdirtypes)spot;
+        if (_mapManager.PatrolPointAt(ob.TileX, ob.TileY) is { } point)
+            ob.Dir = point.Dir;
 
         ob.Distance = (int)MapConstants.TILEGLOBAL;
 
