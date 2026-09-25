@@ -43,6 +43,8 @@ public enum ScanCodes
     sc_KeyPad6 = SDL.SDL_Scancode.SDL_SCANCODE_KP_6,
     sc_KeyPad8 = SDL.SDL_Scancode.SDL_SCANCODE_KP_8,
     sc_KeyPadEnter = SDL.SDL_Scancode.SDL_SCANCODE_KP_ENTER,
+    sc_KeyPadPlus = SDL.SDL_Scancode.SDL_SCANCODE_KP_PLUS,
+    sc_KeyPadMinus = SDL.SDL_Scancode.SDL_SCANCODE_KP_MINUS,
     sc_F1 = SDL.SDL_Scancode.SDL_SCANCODE_F1,
     sc_F2 = SDL.SDL_Scancode.SDL_SCANCODE_F2,
     sc_F3 = SDL.SDL_Scancode.SDL_SCANCODE_F3,
@@ -231,6 +233,17 @@ internal class InputManager
     private readonly Queue<ScanCodes> pressedKeys = new();
     internal char[] textinput = new char[TEXTINPUTSIZE];
     internal ScanCodes LastScan;
+
+    // Mouse wheel notches since the last TakeWheelDelta (positive = away from the user).
+    private int wheelDelta;
+
+    /// <summary>The mouse wheel notches turned since the last call (positive = away from the user).</summary>
+    internal int TakeWheelDelta()
+    {
+        int delta = wheelDelta;
+        wheelDelta = 0;
+        return delta;
+    }
 
     private IntPtr Joystick;
     public int JoyNumButtons { get; private set; }
@@ -568,6 +581,11 @@ internal class InputManager
 
                 if (key < ScanCodes.sc_Last)
                     Keyboard[(int)key] = false;
+                break;
+
+            case SDL.SDL_EventType.SDL_MOUSEWHEEL:
+                wheelDelta += e.wheel.direction == (uint)SDL.SDL_MouseWheelDirection.SDL_MOUSEWHEEL_FLIPPED
+                    ? -e.wheel.y : e.wheel.y;
                 break;
 
             case SDL.SDL_EventType.SDL_TEXTINPUT:

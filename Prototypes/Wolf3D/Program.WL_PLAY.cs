@@ -225,6 +225,9 @@ internal partial class Program
         //
         while (_inputManager.TryTakePressedKey(out var pressed))
         {
+            if (HandleAutomapKey(pressed))      // the automap's own keys, while it's open
+                continue;
+
             if (!demorecord && _consoleManager.Binds.TryGetValue(pressed, out var boundCommand))
                 _consoleManager.Execute(boundCommand);
         }
@@ -454,6 +457,8 @@ internal partial class Program
             controly = max;
         else if (controly < min)
             controly = min;
+
+        RouteMovementToAutomap();       // pan mode: movement moves the map, not the player
 
         if (demorecord)
         {

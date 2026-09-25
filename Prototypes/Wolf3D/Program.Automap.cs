@@ -31,6 +31,37 @@ internal partial class Program
 
     static readonly string[] AutomapHeadings = ["E", "NE", "N", "NW", "W", "SW", "S", "SE"];
 
+    /// <summary>The keys that work while the automap is open, as indexes into <see cref="automapscan"/>.</summary>
+    internal enum automapkeys
+    {
+        am_zoomin,
+        am_zoomout,
+        am_panup,
+        am_pandown,
+        am_panleft,
+        am_panright,
+        am_center,
+        am_follow,
+        am_rotate,
+
+        NUMAUTOMAPKEYS
+    }
+
+    internal static ScanCodes[] automapscan = new ScanCodes[(int)automapkeys.NUMAUTOMAPKEYS]
+    {
+        ScanCodes.sc_Equal, ScanCodes.sc_Minus,
+        ScanCodes.sc_KeyPad8, ScanCodes.sc_KeyPad2, ScanCodes.sc_KeyPad4, ScanCodes.sc_KeyPad6,
+        ScanCodes.sc_C, ScanCodes.sc_F, ScanCodes.sc_R,
+    };
+
+    // Map panning speed at the default zoom: 8 tiles a second at walking pace, in virtual pixels a tic
+    const float AUTOMAP_PANSPEED = 8 * AutomapManager.DefaultZoom / 70f;
+
+    // Zoom steps a second while a zoom key is held
+    const float AUTOMAP_KEYZOOMRATE = 5f;
+
+    static bool IsAutomapKeyDown(automapkeys key) => _inputManager.IsKeyDown(automapscan[(int)key]);
+
     const string AUTOMAP_FONT = "SmallFont";
 
     static string AutomapColor(string name) =>
@@ -57,28 +88,104 @@ internal partial class Program
         if (demoplayback || demorecord)
             return;
 
-        _automapManager.Toggle();
-        UpdateAutomap();
+        _automapManager.Toggle();       // the play loop's next UpdateAutomap centers it before it's drawn
     }
 
-    /// <summary>Keeps the automap's view on the player. Called every frame from the play loop.</summary>
+    /// <summary>
+    /// Applies the held automap keys and the mouse wheel, then keeps the view on the player.
+    /// Called every frame from the play loop.
+    /// </summary>
     internal static void UpdateAutomap()
     {
+        int wheel = _inputManager.TakeWheelDelta();     // taken even while closed, so turns don't pile up
+
         if (_mapManager.Player == null)
             return;
 
-        _automapManager.Update(player.X / (float)MapConstants.TILEGLOBAL, player.Y / (float)MapConstants.TILEGLOBAL);
+        if (_automapManager.IsOpen)
+        {
+            float zoom = wheel;
+            if (IsAutomapKeyDown(automapkeys.am_zoomin) || _inputManager.IsKeyDown(ScanCodes.sc_KeyPadPlus))
+                zoom += AUTOMAP_KEYZOOMRATE * tics / 70f;
+            if (IsAutomapKeyDown(automapkeys.am_zoomout) || _inputManager.IsKeyDown(ScanCodes.sc_KeyPadMinus))
+                zoom -= AUTOMAP_KEYZOOMRATE * tics / 70f;
+            if (zoom != 0)
+                _automapManager.ZoomBy(zoom);
+
+            float pan = AUTOMAP_PANSPEED * tics * (_inputManager.IsButtonPressed(buttontypes.bt_run) ? 2 : 1);
+            float panx = 0, pany = 0;
+            if (IsAutomapKeyDown(automapkeys.am_panup)) pany -= pan;
+            if (IsAutomapKeyDown(automapkeys.am_pandown)) pany += pan;
+            if (IsAutomapKeyDown(automapkeys.am_panleft)) panx -= pan;
+            if (IsAutomapKeyDown(automapkeys.am_panright)) panx += pan;
+            _automapManager.Pan(panx, pany);
+        }
+
+        _automapManager.Update(player.X / (float)MapConstants.TILEGLOBAL, player.Y / (float)MapConstants.TILEGLOBAL, player.Angle);
+    }
+
+    /// <summary>
+    /// Handles a fresh key press (from CheckKeys) if it's one of the automap's toggles and the map
+    /// is open. Returns true if the key was used, so it doesn't also run a console bind.
+    /// </summary>
+    internal static bool HandleAutomapKey(ScanCodes key)
+    {
+        if (!_automapManager.IsOpen)
+            return false;
+
+        if (key == automapscan[(int)automapkeys.am_center])
+            _automapManager.SnapToPlayer();
+        else if (key == automapscan[(int)automapkeys.am_follow])
+            _automapManager.ToggleFollow();
+        else if (key == automapscan[(int)automapkeys.am_rotate])
+            _automapManager.ToggleRotate();
+        else
+            return Array.IndexOf(automapscan, key) >= 0;    // held keys: used in UpdateAutomap, not binds
+
+        return true;
+    }
+
+    /// <summary>
+    /// In pan mode the player's movement controls move the map instead: called from PollControls
+    /// once the movement is gathered, it hands the forward/back, turn and strafe input to the map
+    /// and clears it so the player stands still. Fire, use and weapon buttons are left alone.
+    /// </summary>
+    internal static void RouteMovementToAutomap()
+    {
+        if (!_automapManager.IsOpen || _automapManager.Follow)
+            return;
+
+        // controlx/controly run BASEMOVE a tic at walking pace (RUNMOVE running)
+        float dx = controlx, dy = controly;
+        int strafe = (_inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE : BASEMOVE) * (int)tics;
+        if (_inputManager.IsButtonPressed(buttontypes.bt_strafeleft))
+            dx -= strafe;
+        if (_inputManager.IsButtonPressed(buttontypes.bt_straferight))
+            dx += strafe;
+
+        _automapManager.Pan(dx * AUTOMAP_PANSPEED / BASEMOVE, dy * AUTOMAP_PANSPEED / BASEMOVE);
+
+        controlx = controly = 0;
+        _inputManager.SetButtonPressed(buttontypes.bt_strafeleft, false);
+        _inputManager.SetButtonPressed(buttontypes.bt_straferight, false);
     }
 
     /// <summary>
     /// Where the automap is being drawn this frame: the view rectangle in screen pixels, and the
-    /// map-to-screen mapping (map position in tiles × <see cref="TileSize"/> + origin).
+    /// map-to-screen transform: offset from the map center, turned by the map's rotation, scaled
+    /// to <see cref="TileSize"/> pixels a tile, then placed at the middle of the view.
     /// </summary>
     readonly record struct AutomapView(int ClipX, int ClipY, int ClipWidth, int ClipHeight,
-        float TileSize, float OriginX, float OriginY, int Pen)
+        float TileSize, float CenterX, float CenterY, float Cos, float Sin, int Pen)
     {
-        public float ScreenX(float mapX) => OriginX + mapX * TileSize;
-        public float ScreenY(float mapY) => OriginY + mapY * TileSize;
+        public float MidX => ClipX + ClipWidth / 2f;
+        public float MidY => ClipY + ClipHeight / 2f;
+
+        public (float X, float Y) ToScreen(float mapX, float mapY)
+        {
+            float x = (mapX - CenterX) * TileSize, y = (mapY - CenterY) * TileSize;
+            return (MidX + x * Cos - y * Sin, MidY + x * Sin + y * Cos);
+        }
     }
 
     /// <summary>
@@ -95,9 +202,8 @@ internal partial class Program
         int px = _videoManager.scaleFactor;
         float tileSize = _automapManager.Zoom * px;         // screen pixels per tile
         var view = new AutomapView(viewscreenx, viewscreeny, viewwidth, viewheight, tileSize,
-            OriginX: viewscreenx + viewwidth / 2f - _automapManager.CenterX * tileSize,
-            OriginY: viewscreeny + viewheight / 2f - _automapManager.CenterY * tileSize,
-            Pen: px);
+            _automapManager.CenterX, _automapManager.CenterY,
+            MathF.Cos(_automapManager.Rotation), MathF.Sin(_automapManager.Rotation), Pen: px);
 
         _videoManager.BarScaledCoord(view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight, AutomapColor("AutomapBackground"));
 
@@ -114,11 +220,12 @@ internal partial class Program
     /// <summary>Every seen wall face that borders open floor, as a line along the tile edge.</summary>
     static void DrawAutomapWalls(AutomapView view, bool reveal)
     {
-        // Only the tiles that can reach the view
-        int firstX = Math.Max(0, (int)Math.Floor((view.ClipX - view.OriginX) / view.TileSize) - 1);
-        int lastX = Math.Min(MapManager.MAPSIZE - 1, (int)Math.Ceiling((view.ClipX + view.ClipWidth - view.OriginX) / view.TileSize));
-        int firstY = Math.Max(0, (int)Math.Floor((view.ClipY - view.OriginY) / view.TileSize) - 1);
-        int lastY = Math.Min(MapManager.MAPSIZE - 1, (int)Math.Ceiling((view.ClipY + view.ClipHeight - view.OriginY) / view.TileSize));
+        // Only the tiles that can reach the view: within half its diagonal of the center, whichever way it's turned
+        float reach = MathF.Sqrt(view.ClipWidth * view.ClipWidth + view.ClipHeight * view.ClipHeight) / 2 / view.TileSize + 1;
+        int firstX = Math.Max(0, (int)MathF.Floor(view.CenterX - reach));
+        int lastX = Math.Min(MapManager.MAPSIZE - 1, (int)MathF.Ceiling(view.CenterX + reach));
+        int firstY = Math.Max(0, (int)MathF.Floor(view.CenterY - reach));
+        int lastY = Math.Min(MapManager.MAPSIZE - 1, (int)MathF.Ceiling(view.CenterY + reach));
 
         string color = AutomapColor("AutomapWall");
         const SeenFlags allFaces = SeenFlags.NorthFace | SeenFlags.SouthFace | SeenFlags.WestFace | SeenFlags.EastFace;
@@ -221,9 +328,8 @@ internal partial class Program
                 _ => "AutomapEnemy",
             });
 
-            int sx = (int)MathF.Round(view.ScreenX(x / (float)MapConstants.TILEGLOBAL)) - size / 2;
-            int sy = (int)MathF.Round(view.ScreenY(y / (float)MapConstants.TILEGLOBAL)) - size / 2;
-            AutomapFill(view, sx, sy, size, size, color);
+            var (sx, sy) = view.ToScreen(x / (float)MapConstants.TILEGLOBAL, y / (float)MapConstants.TILEGLOBAL);
+            AutomapFill(view, (int)MathF.Round(sx) - size / 2, (int)MathF.Round(sy) - size / 2, size, size, color);
         }
     }
 
@@ -298,6 +404,8 @@ internal partial class Program
 
         int heading = ((player.Angle % ANGLES + ANGLES) % ANGLES + ANGLES / 16) / (ANGLES / 8) % 8;
         string text = $"X {player.TileX}  Y {player.TileY}  {AutomapHeadings[heading]}";
+        if (!_automapManager.Follow)
+            text += "  PAN";
 
         // DrawPropString works in 320x200 virtual pixels
         int px = _videoManager.scaleFactor;
@@ -310,9 +418,11 @@ internal partial class Program
     static void AutomapLine(AutomapView view, float x0, float y0, float x1, float y1, string color)
     {
         int offset = view.Pen / 2;
+        var (sx0, sy0) = view.ToScreen(x0, y0);
+        var (sx1, sy1) = view.ToScreen(x1, y1);
         _videoManager.DrawLineScaledCoord(
-            (int)MathF.Round(view.ScreenX(x0)) - offset, (int)MathF.Round(view.ScreenY(y0)) - offset,
-            (int)MathF.Round(view.ScreenX(x1)) - offset, (int)MathF.Round(view.ScreenY(y1)) - offset,
+            (int)MathF.Round(sx0) - offset, (int)MathF.Round(sy0) - offset,
+            (int)MathF.Round(sx1) - offset, (int)MathF.Round(sy1) - offset,
             color, view.Pen, view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight);
     }
 
