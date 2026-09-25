@@ -1396,6 +1396,8 @@ internal partial class Program
         }
         else
         {
+            RestoreBorderAfterConsole();
+
             if (fpscounter)
             {
                 fontnumber = "SmallFont";

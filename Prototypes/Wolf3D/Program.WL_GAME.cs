@@ -482,13 +482,13 @@ internal partial class Program
         if (xl != 0)
         {
             _videoManager.BarScaledCoord(0, 0, xl - px, h, bordercol);                 // left side
-            _videoManager.BarScaledCoord(xl + vw + px, 0, xl - px * 2, h, bordercol);                 // right side
+            _videoManager.BarScaledCoord(xl + vw + px, 0, sw - (xl + vw + px), h, bordercol);          // right side, out to the screen edge
         }
 
         if (yl != 0)
         {
             _videoManager.BarScaledCoord(0, 0, sw, yl - px, bordercol);                    // upper side
-            _videoManager.BarScaledCoord(0, yl + vh + px, sw, yl - px, bordercol);                    // lower side
+            _videoManager.BarScaledCoord(0, yl + vh + px, sw, h - (yl + vh + px), bordercol);         // lower side, down to the status bar
         }
 
         if (xl != 0)

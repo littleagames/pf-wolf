@@ -12,11 +12,28 @@ internal partial class Program
     const string CONSOLE_FONT = "SmallFont";
     const string CONSOLE_PROMPT = "] ";
 
+    // Whether the console panel was drawn over the last frame
+    static bool consoleDrawn;
+
     /// <summary>
     /// Draws the console over the top of the screen: output lines (word-wrapped, newest at the
     /// bottom) above the input line and its blinking cursor. Called each frame from ThreeDRefresh
     /// after the 3D view is drawn and before the screen is presented.
     /// </summary>
+    /// <summary>
+    /// The console panel covers the view border, which (unlike the 3D view) isn't redrawn every
+    /// frame, so this repaints it the first frame after the console closes. Called from
+    /// ThreeDRefresh before anything else is drawn over the border (the fps counter).
+    /// </summary>
+    internal static void RestoreBorderAfterConsole()
+    {
+        if (!consoleDrawn || _consoleManager.IsOpen)
+            return;
+
+        consoleDrawn = false;
+        DrawPlayBorderSides();
+    }
+
     internal static void DrawConsole()
     {
         if (!_consoleManager.IsOpen)
@@ -25,6 +42,8 @@ internal partial class Program
         var font = _assetManager.Find<FontAsset>(CONSOLE_FONT);
         if (font == null)
             return;
+
+        consoleDrawn = true;
 
         int lineHeight = font.Height;
 
