@@ -1250,12 +1250,26 @@ internal class VideoManager
 
         Array.Copy(gamepal, curpal, 256);
 
-        if (!CreateRenderer(settings) || !CreateSurfaces(settings) || !CreateTexture(settings))
-            throw new PfWolfVideoException($"Unable to set the {settings.RenderWidth}x{settings.RenderHeight} video mode: {{0}}",
-                SDL.SDL_GetError());
+        // A saved mode this machine can't do (another display, another graphics card) falls
+        // back to the default one rather than stopping the game
+        var defaults = new VideoSettings();
+        if (!CreateVideoMode(settings) && settings != defaults)
+        {
+            Console.WriteLine($"Couldn't start in {settings.RenderWidth}x{settings.RenderHeight} ({SDL.SDL_GetError()}); using {defaults.RenderWidth}x{defaults.RenderHeight} in a window.");
+            DestroyRenderer();
+            DestroySurfaces();
+            settings = defaults;
+            SetWindowMode(settings);
+            if (!CreateVideoMode(settings))
+                throw new PfWolfVideoException($"Unable to set the {settings.RenderWidth}x{settings.RenderHeight} video mode: {{0}}",
+                    SDL.SDL_GetError());
+        }
 
         Settings = settings;
     }
+
+    private bool CreateVideoMode(VideoSettings settings)
+        => CreateRenderer(settings) && CreateSurfaces(settings) && CreateTexture(settings);
 
     private static SDL.SDL_Surface GetSurface(IntPtr surface)
     {

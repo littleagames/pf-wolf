@@ -15,4 +15,18 @@ internal class GameParams
 
     [Option("game", Required = false, HelpText = "Game pack to run: wolf3d (default) or spear.")]
     public string Game { get; set; } = "";
+
+    // Video: each overrides the saved setting, and is saved in its place
+
+    [Option("fullscreen", Required = false, HelpText = "Start in borderless fullscreen.")]
+    public bool Fullscreen { get; set; }
+
+    [Option("windowed", Required = false, HelpText = "Start in a window (wins over --fullscreen).")]
+    public bool Windowed { get; set; }
+
+    [Option("res", Required = false, HelpText = "Window size, e.g. 960x600.")]
+    public string Resolution { get; set; } = "";
+
+    [Option("scale", Required = false, HelpText = "Draw at 320x200 times this (1-8): sharper, not bigger.")]
+    public int? Scale { get; set; }
 }

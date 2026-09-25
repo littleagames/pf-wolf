@@ -146,7 +146,7 @@ internal partial class Program
     {
         bool didjukebox = false;
         var theme = _assetManager.FindInGamePack<ColorThemeAsset>("colors");
-        _videoManager.Init(theme);
+        _videoManager.Init(theme, _gameEngineManager.ReadVideoConfig());
         _graphicManager.MenuBackdrop = _gameEngineManager.GetGameInfo().MenuBackdrop;
         ReadFadeStyles();
         _inputManager.Init(_videoManager.fullscreen);

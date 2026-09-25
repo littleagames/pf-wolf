@@ -148,7 +148,22 @@ internal class GameEngineManager
         public ScanCodes[]? AutomapKeys;
         public AudioDevices? AudioDevices;
         public int? SoundVolume, MusicVolume;
+        public VideoSettings? Video;
     }
+
+    /// <summary>The Video menu's on/off settings, as saved in config.cfg.</summary>
+    [Flags]
+    private enum VideoFlags : byte
+    {
+        None = 0,
+        Fullscreen = 1,
+        VSync = 2,
+        AspectCorrect = 4,
+    }
+
+    // Limits on the saved sizes, so a damaged config can't ask for an impossible mode
+    private const int MaxRenderScale = 8;
+    private const int MaxWindowSize = 16384;
 
     /// <summary>The sound devices and music switched on in the Sound menu, as saved in config.cfg.</summary>
     [Flags]
@@ -311,8 +326,107 @@ internal class GameEngineManager
             config.SoundVolume = br.ReadByte();
         if (stream.Position < stream.Length)
             config.MusicVolume = br.ReadByte();
+        if (stream.Position < stream.Length)
+            config.Video = ReadVideoSettings(br);
 
         return config;
+    }
+
+    private static VideoSettings ReadVideoSettings(BinaryReader br)
+    {
+        var flags = (VideoFlags)br.ReadByte();
+        int renderScale = br.ReadByte();
+        int windowWidth = br.ReadUInt16();
+        int windowHeight = br.ReadUInt16();
+        var filter = (ScaleFilter)br.ReadByte();
+
+        return new VideoSettings
+        {
+            Fullscreen = flags.HasFlag(VideoFlags.Fullscreen),
+            VSync = flags.HasFlag(VideoFlags.VSync),
+            AspectCorrect = flags.HasFlag(VideoFlags.AspectCorrect),
+            RenderScale = Math.Clamp(renderScale, 1, MaxRenderScale),
+            WindowWidth = Math.Clamp(windowWidth, VideoSettings.BaseWidth, MaxWindowSize),
+            WindowHeight = Math.Clamp(windowHeight, VideoSettings.BaseHeight, MaxWindowSize),
+            Filter = Enum.IsDefined(filter) ? filter : ScaleFilter.Nearest,
+        };
+    }
+
+    private static void WriteVideoSettings(BinaryWriter bw, VideoSettings video)
+    {
+        var flags = VideoFlags.None;
+        if (video.Fullscreen)
+            flags |= VideoFlags.Fullscreen;
+        if (video.VSync)
+            flags |= VideoFlags.VSync;
+        if (video.AspectCorrect)
+            flags |= VideoFlags.AspectCorrect;
+
+        bw.Write((byte)flags);
+        bw.Write((byte)video.RenderScale);
+        bw.Write((ushort)video.WindowWidth);
+        bw.Write((ushort)video.WindowHeight);
+        bw.Write((byte)video.Filter);
+    }
+
+    /// <summary>
+    /// The video mode to open the window in: config.cfg's, or the default without one, then
+    /// changed by any --fullscreen, --windowed, --res or --scale given. Read on its own, ahead
+    /// of the rest of the config, since the window has to exist before anything else loads.
+    /// A mode picked on the command line is saved like one picked in the menu.
+    /// </summary>
+    internal VideoSettings ReadVideoConfig()
+    {
+        var video = new VideoSettings();
+        string configpath = GetConfigFilePath(ConfigFileName);
+
+        if (File.Exists(configpath))
+        {
+            try
+            {
+                using var br = new BinaryReader(File.OpenRead(configpath));
+                if (br.ReadUInt16() == ConfigSignature)
+                    video = ParseConfig(br).Video ?? video;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // ReadConfig reports this when it reads the rest
+            }
+        }
+
+        return ApplyVideoParams(video, GameParams);
+    }
+
+    private static VideoSettings ApplyVideoParams(VideoSettings video, GameParams args)
+    {
+        if (args.Fullscreen && args.Windowed)
+            Console.WriteLine("Both --fullscreen and --windowed given; using --windowed.");
+
+        if (args.Fullscreen)
+            video = video with { Fullscreen = true };
+        if (args.Windowed)
+            video = video with { Fullscreen = false };
+
+        if (!string.IsNullOrWhiteSpace(args.Resolution))
+        {
+            var parts = args.Resolution.ToLowerInvariant().Split('x');
+            if (parts.Length == 2
+                && int.TryParse(parts[0], out int width) && width >= VideoSettings.BaseWidth && width <= MaxWindowSize
+                && int.TryParse(parts[1], out int height) && height >= VideoSettings.BaseHeight && height <= MaxWindowSize)
+                video = video with { WindowWidth = width, WindowHeight = height };
+            else
+                Console.WriteLine($"Ignoring --res '{args.Resolution}': expected a window size like 960x600, at least 320x200.");
+        }
+
+        if (args.Scale is int scale)
+        {
+            if (scale >= 1 && scale <= MaxRenderScale)
+                video = video with { RenderScale = scale };
+            else
+                Console.WriteLine($"Ignoring --scale {scale}: expected 1 to {MaxRenderScale}.");
+        }
+
+        return video;
     }
 
     private void SetDefaultConfig()
@@ -419,6 +533,7 @@ internal class GameEngineManager
         bw.Write((byte)devices);
         bw.Write((byte)audioManager.SoundVolume);
         bw.Write((byte)audioManager.MusicVolume);
+        WriteVideoSettings(bw, videoManager.Settings);
     }
 
     /// <summary>
