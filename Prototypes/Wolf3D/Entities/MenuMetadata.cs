@@ -669,6 +669,16 @@ internal record BlankMenuItem : MenuItem
 }
 
 /// <summary>
+/// A level adjusted with left/right while highlighted (the Sound menu's volumes)
+/// </summary>
+internal record SliderMenuItem : MenuItem
+{
+    public SliderMenuItem()
+    {
+    }
+}
+
+/// <summary>
 /// Plays a music track when chosen (jukebox)
 /// </summary>
 internal record MusicMenuItem : MenuItem

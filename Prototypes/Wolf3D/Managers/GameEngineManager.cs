@@ -147,6 +147,7 @@ internal class GameEngineManager
         public bool? AutomapGrid;
         public ScanCodes[]? AutomapKeys;
         public AudioDevices? AudioDevices;
+        public int? SoundVolume, MusicVolume;
     }
 
     /// <summary>The sound devices and music switched on in the Sound menu, as saved in config.cfg.</summary>
@@ -225,6 +226,10 @@ internal class GameEngineManager
             audioManager.DigitizedSoundEnabled = devices.HasFlag(AudioDevices.DigitizedSound);
             audioManager.MusicEnabled = devices.HasFlag(AudioDevices.Music);
         }
+        if (config.SoundVolume is int soundVolume)
+            audioManager.SoundVolume = soundVolume;     // clamped by the setter
+        if (config.MusicVolume is int musicVolume)
+            audioManager.MusicVolume = musicVolume;
 
         // A key the config doesn't have (it's from before that key existed) keeps its default
         var automapKeys = config.AutomapKeys ?? [];
@@ -302,6 +307,10 @@ internal class GameEngineManager
         }
         if (stream.Position < stream.Length)
             config.AudioDevices = (AudioDevices)br.ReadByte();
+        if (stream.Position < stream.Length)
+            config.SoundVolume = br.ReadByte();
+        if (stream.Position < stream.Length)
+            config.MusicVolume = br.ReadByte();
 
         return config;
     }
@@ -408,6 +417,8 @@ internal class GameEngineManager
         if (audioManager.MusicEnabled)
             devices |= AudioDevices.Music;
         bw.Write((byte)devices);
+        bw.Write((byte)audioManager.SoundVolume);
+        bw.Write((byte)audioManager.MusicVolume);
     }
 
     /// <summary>

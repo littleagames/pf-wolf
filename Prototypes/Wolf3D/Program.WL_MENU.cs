@@ -196,7 +196,11 @@ internal partial class Program
 
     internal static int redrawitem = 1, lastitem = -1;
 
-    internal static int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine)
+    /// <param name="adjust">
+    /// Called with the highlighted item and -1 or +1 when left or right is pressed, for menus
+    /// with rows that change in place (sliders). Without it, left/right do nothing.
+    /// </param>
+    internal static int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine, Action<int, int>? adjust = null)
     {
         char key;
         int i, x, y, basey, exit, which;
@@ -376,6 +380,20 @@ internal partial class Program
                     //
                     // WAIT FOR BUTTON-UP OR DELAY NEXT MOVE
                     //
+                    TicDelay(20);
+                    break;
+
+                ////////////////////////////////////////////////
+                //
+                // ADJUST THE HIGHLIGHTED ITEM
+                //
+                case Direction.West when adjust != null:
+                    adjust(which, -1);
+                    TicDelay(20);
+                    break;
+
+                case Direction.East when adjust != null:
+                    adjust(which, 1);
                     TicDelay(20);
                     break;
             }
@@ -1055,7 +1073,7 @@ internal partial class Program
 
         do
         {
-            which = HandleMenu(SndItems, SndMenu, null);
+            which = HandleMenu(SndItems, SndMenu, null, AdjustSoundVolume);
             //
             // HANDLE MENU CHOICES
             //
@@ -1100,9 +1118,61 @@ internal partial class Program
         DrawMenuCheckbox(SndItems, SndMenu, "sound-adlib", _audioManager.AdLibSoundEnabled);
         DrawMenuCheckbox(SndItems, SndMenu, "sound-digitized", _audioManager.DigitizedSoundEnabled);
         DrawMenuCheckbox(SndItems, SndMenu, "music", _audioManager.MusicEnabled);
+        DrawMenuSlider(SndItems, SndMenu, "sound-volume", _audioManager.SoundVolume, AudioManager.MaxVolume);
+        DrawMenuSlider(SndItems, SndMenu, "music-volume", _audioManager.MusicVolume, AudioManager.MaxVolume);
 
         DrawMenuGun(SndItems);
         _videoManager.Update();
+    }
+
+    // Left/right on a volume row. The sound volume previews with a menu sound; the music
+    // volume is heard straight away on the menu's track.
+    private static void AdjustSoundVolume(int which, int delta)
+    {
+        switch (SelectedId(SndMenu, which))
+        {
+            case "sound-volume":
+                int soundVolume = _audioManager.SoundVolume;
+                _audioManager.SoundVolume += delta;
+                if (_audioManager.SoundVolume == soundVolume)
+                    return;
+                DrawMenuSlider(SndItems, SndMenu, "sound-volume", _audioManager.SoundVolume, AudioManager.MaxVolume);
+                break;
+
+            case "music-volume":
+                int musicVolume = _audioManager.MusicVolume;
+                _audioManager.MusicVolume += delta;
+                if (_audioManager.MusicVolume == musicVolume)
+                    return;
+                DrawMenuSlider(SndItems, SndMenu, "music-volume", _audioManager.MusicVolume, AudioManager.MaxVolume);
+                break;
+
+            default:
+                return;
+        }
+
+        _videoManager.Update();
+        _audioManager.Play("menu/move1");
+    }
+
+    private const int MenuSliderWidth = 88;
+    private const int MenuSliderOffset = 120; // from the start of the row's text, clear of "Sound Volume"
+
+    // A level bar to the right of a SliderMenuItem's text, drawn like the mouse sensitivity bar:
+    // a track with a highlighted knob at the current value (0 to max).
+    private static void DrawMenuSlider(CP_iteminfo iteminfo, CP_itemtype[] items, string id, int value, int max)
+    {
+        int index = Array.FindIndex(items, item => item.id == id);
+        if (index < 0)
+            return;
+
+        int knobWidth = MenuSliderWidth / (max + 1);
+        int x = iteminfo.x + iteminfo.indent + MenuSliderOffset;
+        int y = iteminfo.y + index * 13 + 2;
+        _videoManager.Bar(x, y, knobWidth * (max + 1), 9, "TEXTCOLOR");
+        DrawOutline(x, y, knobWidth * (max + 1), 9, "Black", "HIGHLIGHT");
+        DrawOutline(x + knobWidth * value, y, knobWidth, 9, "Black", "READCOLOR");
+        _videoManager.Bar(x + knobWidth * value + 1, y + 1, knobWidth - 1, 8, "READHCOLOR");
     }
 
     internal static int CP_Control(int _)

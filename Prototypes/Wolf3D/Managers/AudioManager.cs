@@ -77,6 +77,47 @@ internal class AudioManager
         }
     }
 
+    /// <summary>The top of the <see cref="SoundVolume"/> and <see cref="MusicVolume"/> scale.</summary>
+    public const int MaxVolume = 10;
+
+    private int _soundVolume = MaxVolume;
+    private int _musicVolume = MaxVolume;
+
+    /// <summary>Sound effects volume, 0 (silent) to <see cref="MaxVolume"/>.</summary>
+    public int SoundVolume
+    {
+        get => _soundVolume;
+        set
+        {
+            _soundVolume = Math.Clamp(value, 0, MaxVolume);
+            if (_isDisposed)
+                return;
+            var gain = VolumeGain(_soundVolume);
+            foreach (var source in _sources)
+                AL.Source(source, ALSourcef.Gain, gain);
+        }
+    }
+
+    /// <summary>Music volume, 0 (silent) to <see cref="MaxVolume"/>. Applies to the playing track at once.</summary>
+    public int MusicVolume
+    {
+        get => _musicVolume;
+        set
+        {
+            _musicVolume = Math.Clamp(value, 0, MaxVolume);
+            if (!_isDisposed)
+                AL.Source(_musicSource, ALSourcef.Gain, MusicGain * VolumeGain(_musicVolume));
+        }
+    }
+
+    // Loudness is heard roughly logarithmically, so a squared curve makes each step sound
+    // about as big as the last; a straight line would bunch the audible change at the bottom.
+    private static float VolumeGain(int volume)
+    {
+        var fraction = volume / (float)MaxVolume;
+        return fraction * fraction;
+    }
+
     // Switching a device off silences whatever it's playing now.
     private void SetSoundDevice(ref bool enabled, bool value)
     {
@@ -315,7 +356,7 @@ internal class AudioManager
         if (!_musicEnabled)
             return; // remembered, and started when music is switched back on
 
-        AL.Source(_musicSource, ALSourcef.Gain, MusicGain);
+        AL.Source(_musicSource, ALSourcef.Gain, MusicGain * VolumeGain(_musicVolume));
 
         var cts = new CancellationTokenSource();
         _musicStreamCts = cts;
