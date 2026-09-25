@@ -700,7 +700,7 @@ internal partial class Program
 
         _inputManager.ClearKeysDown();
 
-        _videoManager.FizzleFade(viewscreenx, viewscreeny, (uint)viewwidth, (uint)viewheight, 70, false);
+        _videoManager.Transition(deathFadeStyle, viewscreenx, viewscreeny, viewwidth, viewheight, (uint)deathFadeTics);
 
         _inputManager.UserInput(100);
         _audioManager.WaitSoundDone();

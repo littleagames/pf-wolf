@@ -16,6 +16,16 @@ intro-music: NAZI_NOR
 high-scores-music: ROSTER
 menu-fade-color: "#AE0000"
 
+# Fade styles are palette, fizzle, melt or mosaic, each lasting its -tics (70 a second)
+screen-fade-style: palette
+# screen-fade-tics: 60    # when set, every screen fade takes this long instead of its own length
+menu-fade-style: palette
+menu-fade-tics: 20
+death-fade-style: fizzle
+death-fade-tics: 70
+level-fade-style: fizzle
+level-fade-tics: 20
+
 skills:
   BABY:
     name: "Can I play, Daddy?"

@@ -1393,7 +1393,7 @@ internal partial class Program
 
         if (fizzlein)
         {
-            _videoManager.FizzleFade(0, 0, (uint)_videoManager.screenWidth, (uint)_videoManager.screenHeight, 20, false);
+            _videoManager.Transition(levelFadeStyle, 0, 0, _videoManager.screenWidth, _videoManager.screenHeight, (uint)levelFadeTics);
             fizzlein = false;
 
             lasttimecount = (int)GameEngineManager.GetTimeCount();          // don't make a big tic count

@@ -462,9 +462,27 @@ internal class VideoManager
         }
     }
 
+    /// <summary>The style of fades that aren't given one (game-info screen-fade-style)</summary>
+    internal FadeStyle FadeStyle { get; set; } = FadeStyle.Palette;
+
+    /// <summary>
+    /// How long fades that aren't given a style last, in tics (game-info screen-fade-tics);
+    /// null leaves each fade its own length
+    /// </summary>
+    internal int? FadeTics { get; set; }
+
+    /// <summary>
+    /// Tics a styled fade runs for each palette fade step, which takes about a WaitVBL and a
+    /// vsynced present, so a fade lasts about as long whatever its style.
+    /// </summary>
+    private const int TicsPerFadeStep = 2;
+
     internal void FadeIn() => FadeIn(30);
-    internal void FadeIn(int steps) => FadeIn(0, 255, new GamePalette { Colors = gamepal }, steps);
-    internal void FadeIn(int start, int end, GamePalette gamePalette, int steps)
+    internal void FadeIn(int steps) => FadeIn(FadeStyle, new GamePalette { Colors = gamepal }, steps, FadeTics);
+    internal void FadeIn(FadeStyle style, int steps, int? tics = null) => FadeIn(style, new GamePalette { Colors = gamepal }, steps, tics);
+    internal void FadeIn(GamePalette gamePalette, int steps) => FadeIn(FadeStyle, gamePalette, steps, FadeTics);
+
+    private void FadeIn(int start, int end, GamePalette gamePalette, int steps)
     {
         int i, j, delta;
         var palette = gamePalette.Colors;
@@ -500,19 +518,10 @@ internal class VideoManager
         screenfaded = false;
     }
 
-    internal void FadeOut() => FadeOut(0, 255, 0, 0, 0, 30);
+    internal void FadeOut() => FadeOut(new Color { Alpha = 255 }, 30);
+    internal void FadeOut(Color color, int steps) => FadeOut(FadeStyle, color, steps, FadeTics);
 
-    /// <param name="red">6-bit VGA value (0-63), as are green and blue</param>
-    internal void FadeOut(int start, int end, int red, int green, int blue, int steps)
-        => FadeOut(start, end, new Color
-        {
-            Red = (byte)(red * 255 / 63),
-            Green = (byte)(green * 255 / 63),
-            Blue = (byte)(blue * 255 / 63),
-            Alpha = 255
-        }, steps);
-
-    internal void FadeOut(int start, int end, Color color, int steps)
+    private void FadeOut(int start, int end, Color color, int steps)
     {
         int i, j;
         int red = color.Red, green = color.Green, blue = color.Blue;
@@ -611,16 +620,6 @@ internal class VideoManager
     internal bool SaveScreenShot(string filename) => SDL.SDL_SaveBMP(screenBuffer, filename) == 0;
 
     /// <summary>
-    /// Fizzles what's on screen over to what's been drawn in the screen buffer since, within a
-    /// rectangle (screen pixels), over <paramref name="frames"/> tics.
-    /// </summary>
-    internal bool FizzleFade(int x1, int y1, uint width, uint height, uint frames, bool abortable)
-    {
-        Transition(FadeStyle.Fizzle, x1, y1, (int)width, (int)height, frames);
-        return false;
-    }
-
-    /// <summary>
     /// Changes what's on screen over to what's been drawn in the screen buffer since, within a
     /// rectangle (screen pixels), over <paramref name="tics"/> tics. The palette style has nothing
     /// to step between here, so it just shows the new frame.
@@ -648,12 +647,15 @@ internal class VideoManager
         Update(screenBuffer);
     }
 
-    /// <summary>Fades what's on screen out to a solid color in the given style, over <paramref name="tics"/> tics.</summary>
-    internal void FadeOut(FadeStyle style, Color color, uint tics)
+    /// <summary>
+    /// Fades what's on screen out to a solid color in the given style, taking <paramref name="tics"/>
+    /// tics when given, or else as long as a palette fade of <paramref name="steps"/> steps.
+    /// </summary>
+    internal void FadeOut(FadeStyle style, Color color, int steps, int? tics = null)
     {
         if (style == FadeStyle.Palette)
         {
-            FadeOut(0, 255, color, (int)tics);
+            FadeOut(0, 255, color, PaletteFadeSteps(steps, tics));
             return;
         }
 
@@ -661,35 +663,37 @@ internal class VideoManager
         var to = new uint[from.Length];
         Array.Fill(to, SDL.SDL_MapRGBA(GetSurface(screen).format, color.Red, color.Green, color.Blue, 255));
 
-        RunTransition(style, FullScreenCanvas(from, to, fromIsSolid: false, toIsSolid: true), tics);
+        RunTransition(style, FullScreenCanvas(from, to, fromIsSolid: false, toIsSolid: true), StyledFadeTics(steps, tics));
 
         // Leave things as the palette fade does, so anything drawn before the fade in stays hidden
         FillPalette(color.Red, color.Green, color.Blue);
         screenfaded = true;
     }
 
-    internal void FadeIn(FadeStyle style, uint tics) => FadeIn(style, new GamePalette { Colors = gamepal }, tics);
-
     /// <summary>
     /// Fades in the screen buffer, drawn in <paramref name="gamePalette"/>, from whatever's on
-    /// screen (normally the color it faded out to) in the given style, over <paramref name="tics"/> tics.
+    /// screen (normally the color it faded out to) in the given style, taking <paramref name="tics"/>
+    /// tics when given, or else as long as a palette fade of <paramref name="steps"/> steps.
     /// </summary>
-    internal void FadeIn(FadeStyle style, GamePalette gamePalette, uint tics)
+    internal void FadeIn(FadeStyle style, GamePalette gamePalette, int steps, int? tics = null)
     {
         if (style == FadeStyle.Palette)
         {
-            FadeIn(0, 255, gamePalette, (int)tics);
+            FadeIn(0, 255, gamePalette, PaletteFadeSteps(steps, tics));
             return;
         }
 
         var from = CaptureScreen();
         var to = RenderScreenBuffer(gamePalette.Colors);
 
-        RunTransition(style, FullScreenCanvas(from, to, fromIsSolid: screenfaded, toIsSolid: false), tics);
+        RunTransition(style, FullScreenCanvas(from, to, fromIsSolid: screenfaded, toIsSolid: false), StyledFadeTics(steps, tics));
 
         SetPalette(gamePalette.Colors, true);
         screenfaded = false;
     }
+
+    private static int PaletteFadeSteps(int steps, int? tics) => tics is { } t ? Math.Max(1, t / TicsPerFadeStep) : steps;
+    private static uint StyledFadeTics(int steps, int? tics) => (uint)(tics ?? steps * TicsPerFadeStep);
 
     private TransitionCanvas FullScreenCanvas(uint[] from, uint[] to, bool fromIsSolid, bool toIsSolid) => new()
     {

@@ -17,6 +17,16 @@ high-scores-music: XAWARD
 menu-fade-color: "#0000CE"
 menu-backdrop: C_Backdrop
 
+# Fade styles are palette, fizzle, melt or mosaic, each lasting its -tics (70 a second)
+screen-fade-style: palette
+# screen-fade-tics: 60    # when set, every screen fade takes this long instead of its own length
+menu-fade-style: palette
+menu-fade-tics: 20
+death-fade-style: fizzle
+death-fade-tics: 70
+level-fade-style: fizzle
+level-fade-tics: 20
+
 skills:
   BABY:
     name: "Can I play, Daddy?"

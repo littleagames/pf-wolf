@@ -151,9 +151,9 @@ internal partial class Program
     internal static void MenuFadeOut()
     {
         var fadeColor = _gameEngineManager.GetGameInfo().MenuFadeColor;
-        _videoManager.FadeOut(0, 255, string.IsNullOrEmpty(fadeColor) ? new Color { Alpha = 255 } : Color.FromHexRGBA(fadeColor), 10);
+        _videoManager.FadeOut(menuFadeStyle, string.IsNullOrEmpty(fadeColor) ? new Color { Alpha = 255 } : Color.FromHexRGBA(fadeColor), 10, menuFadeTics);
     }
-    internal static void MenuFadeIn() => _videoManager.FadeIn(10);
+    internal static void MenuFadeIn() => _videoManager.FadeIn(menuFadeStyle, 10, menuFadeTics);
 
     internal static void DrawMenu(CP_iteminfo item_i, CP_itemtype[] items)
     {
@@ -713,7 +713,7 @@ internal partial class Program
                     StartGame = 1;
                     if (!ingame)
                         StartCPMusic(INTROSONG);
-                    _videoManager.FadeOut(0, 255, 0, 0, 0, 10);
+                    _videoManager.FadeOut(menuFadeStyle, new Color { Alpha = 255 }, 10, menuFadeTics);
                     break;
 
                 case "quit":

@@ -148,6 +148,7 @@ internal partial class Program
         var theme = _assetManager.FindInGamePack<ColorThemeAsset>("colors");
         _videoManager.Init(theme);
         _graphicManager.MenuBackdrop = _gameEngineManager.GetGameInfo().MenuBackdrop;
+        ReadFadeStyles();
         _inputManager.Init(_videoManager.fullscreen);
         
         pixelangle = new short[_videoManager.screenWidth];
@@ -197,6 +198,47 @@ internal partial class Program
             FinishSignon();
     }
 
+    // Fade styles and lengths (tics) from game-info; ordinary fades use _videoManager.FadeStyle
+    // and FadeTics (screen-fade-style, screen-fade-tics)
+    internal static FadeStyle menuFadeStyle, deathFadeStyle, levelFadeStyle;
+    internal static int menuFadeTics, deathFadeTics, levelFadeTics;
+
+    private static void ReadFadeStyles()
+    {
+        var gameInfo = _gameEngineManager.GetGameInfo();
+
+        _videoManager.FadeStyle = ParseFadeStyle(gameInfo.ScreenFadeStyle, "screen-fade-style", FadeStyle.Palette);
+        _videoManager.FadeTics = ParseFadeTics(gameInfo.ScreenFadeTics, "screen-fade-tics");
+        menuFadeStyle = ParseFadeStyle(gameInfo.MenuFadeStyle, "menu-fade-style", _videoManager.FadeStyle);
+        menuFadeTics = ParseFadeTics(gameInfo.MenuFadeTics, "menu-fade-tics") ?? 20;
+        deathFadeStyle = ParseFadeStyle(gameInfo.DeathFadeStyle, "death-fade-style", FadeStyle.Fizzle);
+        deathFadeTics = ParseFadeTics(gameInfo.DeathFadeTics, "death-fade-tics") ?? 70;
+        levelFadeStyle = ParseFadeStyle(gameInfo.LevelFadeStyle, "level-fade-style", FadeStyle.Fizzle);
+        levelFadeTics = ParseFadeTics(gameInfo.LevelFadeTics, "level-fade-tics") ?? 20;
+    }
+
+    private static int? ParseFadeTics(int? value, string key)
+    {
+        if (value is null or > 0)
+            return value;
+
+        Console.WriteLine($"{key} must be more than 0 tics in game-info, not {value}; using the default");
+        return null;
+    }
+
+    private static FadeStyle ParseFadeStyle(string? value, string key, FadeStyle fallback)
+    {
+        if (string.IsNullOrEmpty(value))
+            return fallback;
+
+        // By name only: Enum.TryParse would also take numbers
+        if (Enum.GetNames<FadeStyle>().Contains(value, StringComparer.OrdinalIgnoreCase))
+            return Enum.Parse<FadeStyle>(value, ignoreCase: true);
+
+        Console.WriteLine($"Unknown {key} '{value}' in game-info, using {fallback.ToString().ToLowerInvariant()} instead");
+        return fallback;
+    }
+
     internal static void SetupWalls()
     {
         int i;
@@ -244,7 +286,7 @@ internal partial class Program
         if (palette == null)
             _videoManager.FadeIn();
         else
-            _videoManager.FadeIn(0, 255, new GamePalette { Colors = palette.ToSDLColors() }, 30);
+            _videoManager.FadeIn(new GamePalette { Colors = palette.ToSDLColors() }, 30);
     }
 
     private static void FinishSignon()

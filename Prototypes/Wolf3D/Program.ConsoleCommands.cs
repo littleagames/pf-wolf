@@ -625,15 +625,16 @@ internal partial class Program
         if (args.Length == 0 || !Enum.TryParse<FadeStyle>(args[0], ignoreCase: true, out var style))
             throw new ArgumentException("usage: fade <palette|fizzle|melt|mosaic> [tics]");
 
-        uint tics = (uint)(args.Length > 1 ? ParseInt(args[1], 1, 700) : style == FadeStyle.Palette ? 30 : 70);
+        // Without a length, as long as a screen fade
+        int? tics = args.Length > 1 ? ParseInt(args[1], 1, 700) : _videoManager.FadeTics;
 
         // Fading blocks, so run it from the play loop with the console out of the picture.
         _consoleManager.Close();
         _consoleManager.Defer(() =>
         {
             ThreeDRefresh();
-            _videoManager.FadeOut(style, new Color { Alpha = 255 }, tics);
-            _videoManager.FadeIn(style, tics);
+            _videoManager.FadeOut(style, new Color { Alpha = 255 }, 30, tics);
+            _videoManager.FadeIn(style, 30, tics);
             lasttimecount = (int)GameEngineManager.GetTimeCount();
         });
     }

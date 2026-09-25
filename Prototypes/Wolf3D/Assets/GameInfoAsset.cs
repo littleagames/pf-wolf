@@ -38,6 +38,50 @@ internal record GameInfoAsset : Asset
     /// </summary>
     public string? MenuFadeColor { get; init; }
 
+    // Fade styles are palette, fizzle, melt or mosaic (see FadeStyle). Each has a length in
+    // tics (70 a second) beside it; a palette fade takes a step every 2 tics or so.
+
+    /// <summary>
+    /// How the screen fades out and back in between screens (default palette)
+    /// </summary>
+    public string? ScreenFadeStyle { get; init; }
+
+    /// <summary>
+    /// Length of every screen fade, when set; otherwise each keeps its own (mostly 60 tics)
+    /// </summary>
+    public int? ScreenFadeTics { get; init; }
+
+    /// <summary>
+    /// How the control panel fades out and in (default screen-fade-style)
+    /// </summary>
+    public string? MenuFadeStyle { get; init; }
+
+    /// <summary>
+    /// Length of the control panel's fades (default 20)
+    /// </summary>
+    public int? MenuFadeTics { get; init; }
+
+    /// <summary>
+    /// How the view changes over to red when the player dies, and to the death cam after a
+    /// boss dies (default fizzle). Palette has nothing to fade here, so it cuts straight over.
+    /// </summary>
+    public string? DeathFadeStyle { get; init; }
+
+    /// <summary>
+    /// Length of the death fade (default 70)
+    /// </summary>
+    public int? DeathFadeTics { get; init; }
+
+    /// <summary>
+    /// How the view appears when a level starts, or restarts after dying (default fizzle)
+    /// </summary>
+    public string? LevelFadeStyle { get; init; }
+
+    /// <summary>
+    /// Length of the level start fade (default 20)
+    /// </summary>
+    public int? LevelFadeTics { get; init; }
+
     /// <summary>
     /// Graphic drawn behind the menus in place of their background color, when set
     /// </summary>
