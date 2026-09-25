@@ -297,6 +297,118 @@ internal class VideoManager
     }
 
 
+    /// <summary>Whether a color name is defined by the game pack's theme.</summary>
+    internal bool IsThemeColor(string name) => !name.StartsWith('#') && _colorIndexCache.ContainsKey(name);
+
+    /// <summary>
+    /// Draws a line in screen pixels with a square pen <paramref name="thickness"/> pixels wide
+    /// (its top-left corner follows the line), clipped so that no pixel leaves the clip rectangle.
+    /// </summary>
+    public void DrawLineScaledCoord(int x0, int y0, int x1, int y1, string color, int thickness,
+        int clipX, int clipY, int clipWidth, int clipHeight)
+    {
+        // Clip the pen's top-left corner, so the whole pen stays inside the rectangle.
+        double left = clipX, top = clipY;
+        double right = clipX + clipWidth - thickness, bottom = clipY + clipHeight - thickness;
+        if (right < left || bottom < top)
+            return;
+
+        double ax = x0, ay = y0, bx = x1, by = y1;
+        if (!ClipLine(ref ax, ref ay, ref bx, ref by, left, top, right, bottom))
+            return;
+
+        int sx = (int)Math.Round(ax), sy = (int)Math.Round(ay);
+        int ex = (int)Math.Round(bx), ey = (int)Math.Round(by);
+
+        byte col = ResolveColorByte(color);
+        IntPtr destPtr = LockSurface(screenBuffer);
+        if (destPtr == IntPtr.Zero) return;
+
+        unsafe
+        {
+            byte* dest = (byte*)destPtr;
+
+            // Bresenham
+            int dx = Math.Abs(ex - sx), stepx = sx < ex ? 1 : -1;
+            int dy = -Math.Abs(ey - sy), stepy = sy < ey ? 1 : -1;
+            int err = dx + dy;
+
+            while (true)
+            {
+                for (int py = 0; py < thickness; py++)
+                {
+                    byte* row = dest + ylookup[sy + py] + sx;
+                    for (int px = 0; px < thickness; px++)
+                        row[px] = col;
+                }
+
+                if (sx == ex && sy == ey)
+                    break;
+
+                int e2 = 2 * err;
+                if (e2 >= dy) { err += dy; sx += stepx; }
+                if (e2 <= dx) { err += dx; sy += stepy; }
+            }
+        }
+
+        UnlockSurface(screenBuffer);
+    }
+
+    /// <summary>Cohen–Sutherland: trims a line to a rectangle, or returns false if none of it is inside.</summary>
+    private static bool ClipLine(ref double x0, ref double y0, ref double x1, ref double y1,
+        double left, double top, double right, double bottom)
+    {
+        const int Inside = 0, Left = 1, Right = 2, Top = 4, Bottom = 8;
+
+        int Code(double x, double y) =>
+            (x < left ? Left : x > right ? Right : Inside) | (y < top ? Top : y > bottom ? Bottom : Inside);
+
+        int code0 = Code(x0, y0), code1 = Code(x1, y1);
+
+        while (true)
+        {
+            if ((code0 | code1) == 0)
+                return true;
+            if ((code0 & code1) != 0)
+                return false;
+
+            int outside = code0 != 0 ? code0 : code1;
+            double x, y;
+
+            if ((outside & Bottom) != 0)
+            {
+                x = x0 + (x1 - x0) * (bottom - y0) / (y1 - y0);
+                y = bottom;
+            }
+            else if ((outside & Top) != 0)
+            {
+                x = x0 + (x1 - x0) * (top - y0) / (y1 - y0);
+                y = top;
+            }
+            else if ((outside & Right) != 0)
+            {
+                y = y0 + (y1 - y0) * (right - x0) / (x1 - x0);
+                x = right;
+            }
+            else
+            {
+                y = y0 + (y1 - y0) * (left - x0) / (x1 - x0);
+                x = left;
+            }
+
+            if (outside == code0)
+            {
+                x0 = x; y0 = y;
+                code0 = Code(x0, y0);
+            }
+            else
+            {
+                x1 = x; y1 = y;
+                code1 = Code(x1, y1);
+            }
+        }
+    }
+
     internal void FadeIn() => FadeIn(30);
     internal void FadeIn(int steps) => FadeIn(0, 255, new GamePalette { Colors = gamepal }, steps);
     internal void FadeIn(int start, int end, GamePalette gamePalette, int steps)

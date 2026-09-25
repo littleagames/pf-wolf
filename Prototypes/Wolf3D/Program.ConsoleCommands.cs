@@ -47,6 +47,11 @@ internal partial class Program
         Register("binds", "Lists the key binds.", "binds", Cmd_Binds);
 
         //
+        // automap
+        //
+        Register("automap", "Opens or closes the automap.", "automap", _ => ToggleAutomap(), InLevel);
+
+        //
         // cheats (the old Tab debug keys, plus a few new ones)
         //
         Register("god", "God mode: 1 = on, 2 = on without the damage flash.", "god [0|1|2]", Cmd_God, Cheat | InLevel,

@@ -47,6 +47,7 @@ internal enum buttontypes
     bt_movebackward,
     bt_turnleft,
     bt_turnright,
+    bt_automap,
 
     NUMBUTTONS
 };

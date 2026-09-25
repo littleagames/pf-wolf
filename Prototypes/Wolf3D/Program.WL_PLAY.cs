@@ -28,7 +28,7 @@ internal partial class Program
     //
     internal static bool mouseenabled, joystickenabled;
     internal static ScanCodes[] dirscan = new ScanCodes[4] { ScanCodes.sc_UpArrow, ScanCodes.sc_RightArrow, ScanCodes.sc_DownArrow, ScanCodes.sc_LeftArrow };
-    internal static ScanCodes[] buttonscan = new ScanCodes[(int)buttontypes.NUMBUTTONS] { ScanCodes.sc_Control, ScanCodes.sc_Alt, ScanCodes.sc_LShift, ScanCodes.sc_Space, ScanCodes.sc_1, ScanCodes.sc_2, ScanCodes.sc_3, ScanCodes.sc_4, 0,0,0,0,0,0,0,0,0,0 };
+    internal static ScanCodes[] buttonscan = new ScanCodes[(int)buttontypes.NUMBUTTONS] { ScanCodes.sc_Control, ScanCodes.sc_Alt, ScanCodes.sc_LShift, ScanCodes.sc_Space, ScanCodes.sc_1, ScanCodes.sc_2, ScanCodes.sc_3, ScanCodes.sc_4, 0,0,0,0,0,0,0,0,0,0, ScanCodes.sc_Tab };
     internal static buttontypes[] buttonmouse = new buttontypes[4] { buttontypes.bt_attack, buttontypes.bt_strafe, buttontypes.bt_use, buttontypes.bt_nobutton };
     internal static buttontypes[] buttonjoy = new buttontypes[32] {
         buttontypes.bt_attack, buttontypes.bt_strafe, buttontypes.bt_use, buttontypes.bt_run, buttontypes.bt_strafeleft, buttontypes.bt_straferight, buttontypes.bt_esc, buttontypes.bt_pause,
@@ -132,6 +132,8 @@ internal partial class Program
                 _videoManager.UpdatePaletteShifts(tics);
             }
 
+            UpdateAutomap();
+
             ThreeDRefresh();
 
             if (!worldPaused)
@@ -170,6 +172,7 @@ internal partial class Program
         // Intermission, death and menu screens don't draw the console, so don't leave it
         // capturing keys behind them (e.g. after a "map" command ends the level).
         _consoleManager.Close();
+        _automapManager.Close();
 
         if (playstate != playstatetypes.ex_died)
             _videoManager.FinishPaletteShifts();
@@ -205,9 +208,16 @@ internal partial class Program
         {
             _inputManager.ClearKeysDown();
             _inputManager.ClearTextInput();
+            _automapManager.Close();
             _consoleManager.Open();
             return;
         }
+
+        //
+        // automap
+        //
+        if (_inputManager.IsButtonPressed(buttontypes.bt_automap) && !_inputManager.IsButtonHeld(buttontypes.bt_automap))
+            ToggleAutomap();
 
         //
         // console binds: run the command bound to each key pressed since the last frame
@@ -312,6 +322,7 @@ internal partial class Program
         if (scan == ScanCodes.sc_F10 ||
             scan == ScanCodes.sc_F9 || scan == ScanCodes.sc_F7 || scan == ScanCodes.sc_F8)     // pop up quit dialog
         {
+            _automapManager.Close();
             ClearMemory();
             ClearSplitVWB();
             US_ControlPanel(scan);
@@ -326,6 +337,7 @@ internal partial class Program
         if ((scan >= ScanCodes.sc_F1 && scan <= ScanCodes.sc_F9) || scan == ScanCodes.sc_Escape || _inputManager.IsButtonPressed(buttontypes.bt_esc))
         {
             int lastoffs = StopMusic();
+            _automapManager.Close();
             ClearMemory();
             _videoManager.FadeOut();
 

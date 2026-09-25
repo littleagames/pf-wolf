@@ -1382,9 +1382,6 @@ internal partial class Program
 
         DrawPlayerWeapon();    // draw player's hands
 
-        if (_inputManager.IsKeyDown(ScanCodes.sc_Tab) && viewsize == 21 && gamestate.weapon != weapontypes.wp_none)
-            ShowActStatus();
-
         _videoManager.UnlockSurface();
         vbuf = 0;
 
@@ -1402,6 +1399,8 @@ internal partial class Program
         else
         {
             RestoreBorderAfterConsole();
+
+            DrawAutomap();
 
             if (fpscounter)
             {

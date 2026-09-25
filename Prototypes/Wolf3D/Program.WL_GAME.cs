@@ -364,29 +364,6 @@ internal partial class Program
         DrawScore();
     }
 
-    internal static void ShowActStatus()
-    {
-        // Draw status bar without borders
-        //byte[] source = grsegs[(int)graphicnums.STATUSBARPIC];
-        //graphicnums picnum = graphicnums.STATUSBARPIC - STARTPICS;
-        //int width = pictable[(int)picnum].width;
-        //int height = pictable[(int)picnum].height;
-        //int destx = (_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 2 + 9 * _videoManager.scaleFactor;
-        //int desty = _videoManager.screenHeight - (height - 4) * _videoManager.scaleFactor;
-        //_videoManager.MemToScreenScaledCoord2(source, width, 9, 4, destx, desty, width - 18, height - 7);
-
-        ingame = false;
-        DrawFace();
-        DrawHealth();
-        DrawLives();
-        DrawLevel();
-        DrawAmmo();
-        DrawKeys();
-        DrawWeapon();
-        DrawScore();
-        ingame = true;
-    }
-
     internal static void DrawPlayBorder()
     {
         int px = _videoManager.scaleFactor;

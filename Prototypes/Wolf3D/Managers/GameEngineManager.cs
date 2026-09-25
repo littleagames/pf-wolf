@@ -138,7 +138,12 @@ internal class GameEngineManager
         public required buttontypes[] ButtonMouse, ButtonJoy;
         public int ViewSize, MouseAdjustment;
         public bool? PauseWhenOpen;
+        public ScanCodes? AutomapKey;
     }
+
+    // Keyboard buttons stored in the original fixed layout. Buttons added after them (the
+    // automap key) are appended at the end, so older configs still read correctly.
+    private const int LayoutButtonCount = (int)buttontypes.bt_automap;
 
     internal void ReadConfig()
     {
@@ -175,7 +180,9 @@ internal class GameEngineManager
 
         Array.Copy(config.Scores, Program.Scores, Program.Scores.Length);
         Array.Copy(config.DirScan, Program.dirscan, Program.dirscan.Length);
-        Array.Copy(config.ButtonScan, Program.buttonscan, Program.buttonscan.Length);
+        Array.Copy(config.ButtonScan, Program.buttonscan, LayoutButtonCount);
+        if (config.AutomapKey is ScanCodes automapKey)
+            Program.buttonscan[(int)buttontypes.bt_automap] = automapKey;
         Array.Copy(config.ButtonMouse, Program.buttonmouse, Program.buttonmouse.Length);
         Array.Copy(config.ButtonJoy, Program.buttonjoy, Program.buttonjoy.Length);
 
@@ -209,7 +216,7 @@ internal class GameEngineManager
             MouseEnabled = br.ReadByte() != 0,
             JoystickEnabled = br.ReadByte() != 0,
             DirScan = new ScanCodes[Program.dirscan.Length],
-            ButtonScan = new ScanCodes[Program.buttonscan.Length],
+            ButtonScan = new ScanCodes[LayoutButtonCount],
             ButtonMouse = new buttontypes[Program.buttonmouse.Length],
             ButtonJoy = new buttontypes[Program.buttonjoy.Length],
         };
@@ -234,6 +241,8 @@ internal class GameEngineManager
         var stream = br.BaseStream;
         if (stream.Position < stream.Length)
             config.PauseWhenOpen = br.ReadByte() != 0;
+        if (stream.Position < stream.Length)
+            config.AutomapKey = (ScanCodes)br.ReadInt32();
 
         return config;
     }
@@ -333,7 +342,7 @@ internal class GameEngineManager
         for (int i = 0; i < Program.dirscan.Length; i++)
             bw.Write((int)Program.dirscan[i]);
 
-        for (int i = 0; i < Program.buttonscan.Length; i++)
+        for (int i = 0; i < LayoutButtonCount; i++)
             bw.Write((int)Program.buttonscan[i]);
 
         for (int i = 0; i < Program.buttonmouse.Length; i++)
@@ -345,6 +354,7 @@ internal class GameEngineManager
         bw.Write(Program.viewsize);
         bw.Write(Program.mouseadjustment);
         bw.Write(consoleManager.PauseWhenOpen);
+        bw.Write((int)Program.buttonscan[(int)buttontypes.bt_automap]);
     }
 
     /// <summary>
