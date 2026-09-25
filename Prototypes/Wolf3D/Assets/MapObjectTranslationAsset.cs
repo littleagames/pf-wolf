@@ -5,10 +5,8 @@ internal record MapObjectTranslationAsset : Asset
     public Dictionary<int, MapActorTranslation> Things { get; internal set; } = new();
     public Dictionary<int, MapTextureTranslation> Walls { get; internal set; } = new();
     public Dictionary<int, MapTextureTranslation> Doors { get; internal set; } = new();
-
-    // TODO:
-    // Player
-    // Enemies
+    public Dictionary<int, MapPlayerStartTranslation> PlayerStarts { get; internal set; } = new();
+    public Dictionary<int, MapTriggerTranslation> Triggers { get; internal set; } = new();
 
     public override void Merge(Asset other)
     {
@@ -28,8 +26,47 @@ internal record MapObjectTranslationAsset : Asset
             {
                 this.Doors[item.Key] = item.Value;
             }
+
+            foreach (var item in otherAsset.PlayerStarts)
+            {
+                this.PlayerStarts[item.Key] = item.Value;
+            }
+
+            foreach (var item in otherAsset.Triggers)
+            {
+                this.Triggers[item.Key] = item.Value;
+            }
         }
     }
+}
+
+/// <summary>An object-plane tile the player starts the level on, facing <see cref="Angles"/>.</summary>
+internal record MapPlayerStartTranslation
+{
+    /// <summary>0=east, 90=north, 180=west, 270=south, as for <see cref="MapActorTranslation.Angles"/>.</summary>
+    public int Angles { get; set; }
+}
+
+/// <summary>
+/// An object-plane tile the player sets off (e.g. a pushwall, the end-of-castle exit), running
+/// <see cref="Action"/> through Entities.MapTriggerRegistry. One-shot: once the action goes off,
+/// the tile is cleared.
+/// </summary>
+internal record MapTriggerTranslation
+{
+    /// <summary>The action call to run, e.g. `A_PushWall`.</summary>
+    public string Action { get; set; } = "";
+
+    /// <summary>
+    /// How the player sets it off: "use" (pressing use while facing its tile, the default) or
+    /// "walk" (stepping onto its tile).
+    /// </summary>
+    public string Activation { get; set; } = "use";
+
+    public bool IsWalkOver => Activation.Equals("walk", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Counts toward the level's secret ratio (the total on load, found when the action goes off).</summary>
+    public bool Secret { get; set; }
 }
 
 internal record MapActorTranslation

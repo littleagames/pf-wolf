@@ -510,16 +510,18 @@ internal partial class Program
     =
     ===============
     */
-    internal static void PushWall(int checkx, int checky, controldirs dir)
+    // A_PushWall, the mapdefs trigger action (registered in RegisterActorActions): true if the
+    // wall started moving, which is when a secret trigger counts as found
+    internal static bool PushWall(int checkx, int checky, controldirs dir)
     {
         int oldtile, dx, dy;
 
         if (pwallstate != 0)
-            return;
+            return false;
 
         oldtile = _mapManager.tilemap[checkx, checky];
         if (oldtile == 0)
-            return;
+            return false;
 
         dx = dirs[(int)dir][0];
         dy = dirs[(int)dir][1];
@@ -528,13 +530,12 @@ internal partial class Program
             || _mapManager.EnemiesAt(checkx + dx, checky + dy).Any())
         {
             _audioManager.Play("player/usefail");
-            return;
+            return false;
         }
 
         _mapManager.tilemap[checkx + dx, checky + dy] = (byte)oldtile;
         _mapManager.actorat[checkx + dx, checky + dy] = new Wall(oldtile);
 
-        gamestate.secretcount++;
         pwallx = (ushort)checkx;
         pwally = (ushort)checky;
         pwalldir = dir;
@@ -547,6 +548,7 @@ internal partial class Program
         _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)_mapManager.MAPSPOT(player.TileX, player.TileY, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
 
         _audioManager.Play("world/pushwall");
+        return true;
     }
 
     /*

@@ -213,13 +213,18 @@ internal partial class Program
 
         ClipMove(player, xmove, ymove);
 
+        var (oldtilex, oldtiley) = (player.TileX, player.TileY);
         player.TileX = (byte)(player.X >> (int)MapConstants.TILESHIFT);                // scale to tile values
         player.TileY = (byte)(player.Y >> (int)MapConstants.TILESHIFT);
 
         player.AreaNumber = (byte)(_mapManager.MAPSPOT(player.TileX, player.TileY, 0) - MapDataConstants.AREATILE);
 
-        if (_mapManager.MAPSPOT(player.TileX, player.TileY, 1) == MapDataConstants.EXITTILE)
-            VictoryTile();
+        //
+        // mapdefs walk-over trigger (the end-of-castle exit) on the tile just stepped onto
+        //
+        if ((player.TileX != oldtilex || player.TileY != oldtiley)
+            && _mapManager.GetTrigger(player.TileX, player.TileY) is { IsWalkOver: true } trigger)
+            ActivateTrigger(trigger, player.TileX, player.TileY, FacingDir(player.Angle));
     }
 
     internal static bool TryMove(Entities.Actors.Actor ob)
@@ -472,6 +477,11 @@ internal partial class Program
         // The player's own think states (PlayerPawn), ticked by MapManager.DoActor.
         ActorActionRegistry.Register("T_Player", T_Player);
         ActorActionRegistry.Register("T_Attack", T_Attack);
+
+        // mapdefs trigger actions, run when the player uses a trigger's tile (Cmd_Use) or steps
+        // onto a walk-over one (Thrust)
+        Entities.MapTriggerRegistry.Register("A_PushWall", (trigger, _) => PushWall(trigger.TileX, trigger.TileY, trigger.Dir));
+        Entities.MapTriggerRegistry.Register("A_VictoryTile", (_, _) => { VictoryTile(); return true; });
     }
 
     /// <summary>
@@ -880,6 +890,28 @@ internal partial class Program
     }
 
 
+    /// <summary>
+    /// Runs a mapdefs trigger's action. If it goes off, a secret trigger counts as found, and the
+    /// trigger's tile is cleared so it can't go off again.
+    /// </summary>
+    private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, controldirs dir)
+    {
+        var activation = new Entities.TriggerActivation(tilex, tiley, dir, player);
+        if (!Entities.MapTriggerRegistry.Invoke(trigger.Action, activation))
+            return;
+
+        if (trigger.Secret)
+            gamestate.secretcount++;
+        _mapManager.SetMapSpot(tilex, tiley, 1, 0);
+    }
+
+    // The cardinal direction the player faces, as Cmd_Use reckons it
+    private static controldirs FacingDir(int angle) =>
+        angle < ANGLES / 8 || angle > 7 * ANGLES / 8 ? controldirs.di_east
+        : angle < 3 * ANGLES / 8 ? controldirs.di_north
+        : angle < 5 * ANGLES / 8 ? controldirs.di_west
+        : controldirs.di_south;
+
     internal static void Cmd_Use()
     {
         int checkx, checky, cmdtile;
@@ -919,13 +951,12 @@ internal partial class Program
         }
 
         cmdtile = _mapManager.tilemap[checkx, checky];
-        if (_mapManager.MAPSPOT(checkx, checky, 1) == MapDataConstants.PUSHABLETILE)
+        if (_mapManager.GetTrigger(checkx, checky) is { IsWalkOver: false } trigger)
         {
             //
-            // pushable wall
+            // mapdefs use trigger (a pushable wall)
             //
-
-            PushWall(checkx, checky, dir);
+            ActivateTrigger(trigger, checkx, checky, dir);
             return;
         }
         if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && cmdtile == MapDataConstants.ELEVATORTILE && elevatorok)
@@ -1212,15 +1243,14 @@ internal partial class Program
         }
     }
 
-    internal static void SpawnPlayer(int tilex, int tiley, int dir)
+    // angle: the mapdefs player start's facing, 0=east, 90=north, 180=west, 270=south
+    internal static void SpawnPlayer(int tilex, int tiley, int angle)
     {
         player.Active = activetypes.ac_yes;
         player.SetPosition(tilex, tiley);       // tile, and the tile-centred world x/y
         player.AreaNumber = (byte)(_mapManager.MAPSPOT(tilex, tiley, 0) - MapDataConstants.AREATILE);
         NewActorState(player, PlayerPawn.SpawnState);
-        player.Angle = (short)((1 - dir) * 90);
-        if (player.Angle < 0)
-            player.Angle += ANGLES;
+        player.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
         player.RuntimeFlags = objflags.FL_NEVERMARK;
         Thrust(0, 0);                           // set some variables
 

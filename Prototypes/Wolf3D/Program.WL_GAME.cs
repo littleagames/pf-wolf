@@ -33,45 +33,6 @@ internal partial class Program
     //===========================================================================
 
 
-    [Obsolete("Moving to the MapManager.LoadMap")]
-    internal static void ScanInfoPlane()
-    {
-        int x, y;
-        int tile;
-        for (y = 0; y < _mapManager.mapheight; y++)
-        {
-            for (x = 0; x < _mapManager.mapwidth; x++)
-            {
-                tile = _mapManager.MAPSPOT(x, y, 1);
-
-                switch (tile)
-                {
-                    case 19:
-                    case 20:
-                    case 21:
-                    case 22:
-                        SpawnPlayer(x, y, NORTH + tile - 19);
-                        break;
-
-                    //
-                    // P wall
-                    //
-                    case 98:
-                        if (!loadedgame)
-                            gamestate.secrettotal++;
-                        break;
-
-                    // Enemies (guards/officers/SS/dogs/mutants, the unique bosses, the dead-guard
-                    // corpse decoration, and the Pac-Man bonus ghosts) are no longer spawned here --
-                    // MapManager.LoadMap's generic Things lookup now handles all of that directly
-                    // from mapdefs/wolf3d/enemies.yaml, driving the new Entities.Actors.Actor-based
-                    // AI in Program.EnemyAI.cs.
-                }
-            }
-        }
-    }
-
-
     /// <summary>
     /// After an A_ChangeMap map loads: with KeepPosition, moves the player to where they were
     /// on the old map, facing the same way.
@@ -609,9 +570,11 @@ internal partial class Program
         }
 
         //
-        // spawn actors
+        // spawn the player (MapManager.LoadMap already spawned every other thing and counted
+        // the secret pushwalls, from the mapdefs)
         //
-        ScanInfoPlane();
+        if (_mapManager.PlayerStart is { } start)
+            SpawnPlayer(start.TileX, start.TileY, start.Angle);
 
         //
         // take out the ambush markers

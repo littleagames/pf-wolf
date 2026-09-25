@@ -1,0 +1,14 @@
+# Object-plane tiles the player sets off. Each goes off once: when its action succeeds, the
+# tile is cleared.
+#   action:     the trigger action to run (MapTriggerRegistry), e.g. A_PushWall
+#   activation: use  -- pressing use while facing the tile (the default)
+#               walk -- stepping onto the tile
+#   secret:     counts toward the level's secret ratio (the total when the map loads, one found
+#               when its action goes off -- a pushwall blocked on the far side doesn't count)
+triggers:
+  98: # pushwall
+    action: A_PushWall
+    secret: true
+  99: # end of castle: BJ runs for the exit
+    action: A_VictoryTile
+    activation: walk

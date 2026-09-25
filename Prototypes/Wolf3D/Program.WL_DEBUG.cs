@@ -83,7 +83,7 @@ internal partial class Program
                     else
                         color = "Black";      // nothing
                 }
-                else if (_mapManager.MAPSPOT(x, y, 1) == MapDataConstants.PUSHABLETILE)
+                else if (_mapManager.GetTrigger(x, y) != null)      // a pushwall or other trigger
                     color = "Purple";
                 else if (tile is BlockingActor)
                     color = "Dark Blue";

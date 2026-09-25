@@ -34,7 +34,8 @@ internal static class ActorActionRegistry
         Console.WriteLine($"No handler registered for actor action '{name}'.");
     }
 
-    private static (string Name, string[] Args) Parse(string call)
+    /// <summary>Splits `Name("arg", 2)` into its name and unquoted arguments (also used by MapTriggerRegistry).</summary>
+    internal static (string Name, string[] Args) Parse(string call)
     {
         call = call.Trim();
         var parenIndex = call.IndexOf('(');

@@ -1,41 +1,12 @@
-player:
-    '19':
-        Actor: BJPlayer
-        Direction: North
-        Health: 100
-        Weapons:
-            - Knife
-            - Pistol
-        Ammo:
-            - 8
-    '20':
-        Actor: BJPlayer
-        Direction: EAST
-        Health: 100
-        Weapons:
-            - Knife
-            - Pistol
-        Ammo:
-            - 8
-    '21':
-        Actor: BJPlayer
-        Angle: 270
-        Health: 100
-        Weapons:
-            - Knife
-            - Pistol
-        Ammo:
-            - 8
-    '22':
-        Actor: BJPlayer
-        Angle: '180'
-        Health: 100
-        Weapons:
-            - Knife
-            - Pistol
-        Ammo:
-            - 8
-multi-player:
-    '18':
-        Actor: BJPlayer
-        Direction: North
+# Object-plane tiles the player starts the level on. angles: 0=east, 90=north, 180=west,
+# 270=south (as for things). With several starts on one map, the last one scanned wins.
+# Starting health, weapons and ammo are a new game's, not the map's (GiveStartingInventory).
+player-starts:
+  19:
+    angles: 90
+  20:
+    angles: 0
+  21:
+    angles: 270
+  22:
+    angles: 180

@@ -7,8 +7,6 @@ namespace Wolf3D.Managers;
 public class MapDataConstants
 {
     public const int ICONARROWS = 90;
-    public const int PUSHABLETILE = 98;
-    public const int EXITTILE = 99;          // at end of castle
     public const int AREATILE = 107;         // first of NUMAREAS floor tiles
     public const int NUMAREAS = 37;
     public const int ELEVATORTILE = 21;
@@ -112,6 +110,7 @@ internal class MapManager
         // the new level's actors on top of the previous load's instead of replacing them.
         _actors.Clear();
         Player = null;
+        PlayerStart = null;
 
         var data = GetMapData();
 
@@ -141,16 +140,40 @@ internal class MapManager
                     SpawnThing(x, y, thingXlat);
                     continue;
                 }
+
+                // The player pawn is created after the map loads (Program.InitActorList), so
+                // only note where it starts; with several starts, the last one scanned wins.
+                if (data.PlayerStarts.TryGetValue(objtile, out var startXlat))
+                {
+                    PlayerStart = new MapPlayerStart(x, y, startXlat.Angles);
+                    continue;
+                }
+
+                if (data.Triggers.TryGetValue(objtile, out var triggerXlat))
+                {
+                    if (triggerXlat.Secret && !Program.loadedgame)
+                        Program.gamestate.secrettotal++;
+                    continue;
+                }
             }
         }
     }
+
+    internal record MapPlayerStart(int TileX, int TileY, int Angle);
+
+    /// <summary>Where the loaded map puts the player (its object-plane player start); null if it has none.</summary>
+    internal MapPlayerStart? PlayerStart { get; private set; }
+
+    /// <summary>The trigger on this tile, if its object-plane tile is one in the mapdefs' triggers.</summary>
+    internal MapTriggerTranslation? GetTrigger(int x, int y) =>
+        GetMapData().Triggers.TryGetValue(MAPSPOT(x, y, 1), out var trigger) ? trigger : null;
 
     public void SpawnThing(int tilex, int tiley, string className) =>
         SpawnThing(tilex, tiley, new MapActorTranslation { Class = className });
 
     public void SpawnThing(int tilex, int tiley, MapActorTranslation thing)
     {
-        // MinSkill gates enemy availability by difficulty (Program.WL_GAME.cs's old
+        // MinSkill gates enemy availability by difficulty (the legacy
         // ScanInfoPlane checked `gamestate.difficulty < difficultytypes.gd_medium/gd_hard`
         // per tile-number range); always 0 for decorations/pickups, so this is a no-op there.
         if (thing.MinSkill > _difficulty)

@@ -5,6 +5,7 @@ wolf3d-apogee:
     - mapdefs/wolf3d/walls
     - mapdefs/wolf3d/doors
     - mapdefs/wolf3d/player
+    - mapdefs/wolf3d/triggers
     - mapdefs/wolf3d/decorations
     - mapdefs/wolf3d/enemies
   game-palette: wolfpal
@@ -71,7 +72,6 @@ spear:
   map-definitions:
     - mapdefs/spear/walls
     - mapdefs/spear/doors
-    - mapdefs/spear/player
     - mapdefs/spear/decorations
     - mapdefs/spear/enemies
   game-palette: spearpal
