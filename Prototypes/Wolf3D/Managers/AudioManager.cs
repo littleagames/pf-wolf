@@ -1,6 +1,7 @@
 ﻿using NukedOPL3Sharp;
 using OpenTK.Audio.OpenAL;
 using SDL2;
+using Wolf3D.Assets;
 using Wolf3D.Assets.Sounds;
 
 namespace Wolf3D.Managers;
@@ -24,7 +25,67 @@ internal class AudioManager
     private readonly ALDevice _device;
     private readonly ALContext _context;
 
+    // Keyed by variant ("digi:NAME", "adlib:NAME", "pc:NAME"), since the same sound can play
+    // from a different device once one is switched off.
     private readonly Dictionary<string, int> _buffers = [];
+
+    // The buffer each sound name last played, for Stop and IsPlaying.
+    private readonly Dictionary<string, int> _lastBufferForSound = [];
+
+    private bool _pcSoundEnabled = true;
+    private bool _adLibSoundEnabled = true;
+    private bool _digitizedSoundEnabled = true;
+    private bool _musicEnabled = true;
+
+    /// <summary>Whether sounds may fall back to their PC speaker variant.</summary>
+    public bool PcSoundEnabled
+    {
+        get => _pcSoundEnabled;
+        set => SetSoundDevice(ref _pcSoundEnabled, value);
+    }
+
+    /// <summary>Whether sounds may fall back to their AdLib variant.</summary>
+    public bool AdLibSoundEnabled
+    {
+        get => _adLibSoundEnabled;
+        set => SetSoundDevice(ref _adLibSoundEnabled, value);
+    }
+
+    /// <summary>Whether sounds may play their digitized variant.</summary>
+    public bool DigitizedSoundEnabled
+    {
+        get => _digitizedSoundEnabled;
+        set => SetSoundDevice(ref _digitizedSoundEnabled, value);
+    }
+
+    /// <summary>
+    /// Whether music plays. While off, <see cref="PlayMusic"/> still records the track, and
+    /// switching music back on starts it.
+    /// </summary>
+    public bool MusicEnabled
+    {
+        get => _musicEnabled;
+        set
+        {
+            if (_musicEnabled == value)
+                return;
+            _musicEnabled = value;
+            if (!value)
+                StopMusicStream();
+            else if (!string.IsNullOrEmpty(_requestedMusicTrack))
+                PlayMusic(_requestedMusicTrack);
+        }
+    }
+
+    // Switching a device off silences whatever it's playing now.
+    private void SetSoundDevice(ref bool enabled, bool value)
+    {
+        if (enabled == value)
+            return;
+        enabled = value;
+        if (!value)
+            StopAll();
+    }
 
     // Available sound channels
     private int _nextSource;
@@ -97,8 +158,8 @@ internal class AudioManager
 
     private void Play(string name, (float X, float Y)? position)
     {
-        var assetManager = _assetManager.Value;
-        var soundSeq = assetManager.Find<SoundSequenceAsset>("sound-seq");
+        var requestedName = name;
+        var soundSeq = _assetManager.Value.Find<SoundSequenceAsset>("sound-seq");
         if (soundSeq == null)
             // not found
             return;
@@ -128,59 +189,37 @@ internal class AudioManager
         if (soundProfile == null)
             return;
 
+        // Best variant first, skipping devices that are switched off. With none left, it's silent.
+        var buffer = (_digitizedSoundEnabled ? FindBuffer<Wolf3dDigitizedAudio>("digi", soundProfile.Digitized, CreateBuffer) : null)
+            ?? (_adLibSoundEnabled ? FindBuffer<AdLibSound>("adlib", soundProfile.AdLib, CreateBuffer) : null)
+            ?? (_pcSoundEnabled ? FindBuffer<PcSound>("pc", soundProfile.PC, CreateBuffer) : null);
+        if (buffer is not int playBuffer)
+            return;
+
         // Get next available sound channel
         var source = _sources[_nextSource++ % _sources.Length];
+        _lastBufferForSound[requestedName.ToLowerInvariant()] = playBuffer;
+        StartSource(source, playBuffer, position);
+    }
 
-        if (!string.IsNullOrWhiteSpace(soundProfile.Digitized))
-        {
-            var digiSound = assetManager.Find<Wolf3dDigitizedAudio>(soundProfile.Digitized);
-            if (digiSound != null)
-            {
-                if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
-                {
-                    buffer = CreateBuffer(digiSound);
-                    _buffers[name.ToLowerInvariant()] = buffer;
-                }
+    // The cached buffer for one variant of a sound, created on first use; null when the sound
+    // has no such variant.
+    private int? FindBuffer<T>(string device, string? assetName, Func<T, int> createBuffer) where T : Asset
+    {
+        if (string.IsNullOrWhiteSpace(assetName))
+            return null;
 
-                StartSource(source, buffer, position);
-                return;
-            }
-        }
+        var key = $"{device}:{assetName.ToLowerInvariant()}";
+        if (_buffers.TryGetValue(key, out var buffer))
+            return buffer;
 
-        if (!string.IsNullOrWhiteSpace(soundProfile.AdLib))
-        {
-            var adLibSound = assetManager.Find<AdLibSound>(soundProfile.AdLib);
-            if (adLibSound != null)
-            {
-                if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
-                {
-                    buffer = CreateBuffer(adLibSound);
-                    _buffers[name.ToLowerInvariant()] = buffer;
-                }
+        var sound = _assetManager.Value.Find<T>(assetName);
+        if (sound == null)
+            return null;
 
-                StartSource(source, buffer, position);
-                return;
-            }
-        }
-
-
-        if (!string.IsNullOrWhiteSpace(soundProfile.PC))
-        {
-            var pcSound = assetManager.Find<PcSound>(soundProfile.PC);
-            if (pcSound != null)
-            {
-                if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
-                {
-                    buffer = CreateBuffer(pcSound);
-                    _buffers[name.ToLowerInvariant()] = buffer;
-                }
-
-                StartSource(source, buffer, position);
-                return;
-            }
-        }
-
-        // Sound not found
+        buffer = createBuffer(sound);
+        _buffers[key] = buffer;
+        return buffer;
     }
 
     // Sources are recycled round-robin, so each play must reset positioning: positional sounds
@@ -204,7 +243,7 @@ internal class AudioManager
 
     public void Stop(string name)
     {
-        if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
+        if (!_lastBufferForSound.TryGetValue(name.ToLowerInvariant(), out var buffer))
             return;
         var source = _sources.FirstOrDefault(s => AL.GetSource(s, ALGetSourcei.Buffer) == buffer);
         if (source != 0)
@@ -249,7 +288,7 @@ internal class AudioManager
 
     public bool IsPlaying(string name)
     {
-        if (!_buffers.TryGetValue(name.ToLowerInvariant(), out var buffer))
+        if (!_lastBufferForSound.TryGetValue(name.ToLowerInvariant(), out var buffer))
             return false;
         var source = _sources.FirstOrDefault(s => AL.GetSource(s, ALGetSourcei.Buffer) == buffer);
         if (source == 0)
@@ -273,6 +312,9 @@ internal class AudioManager
 
         _requestedMusicTrack = name;
         _isPaused = false; // A deliberate request for new music always plays, even if a prior unrelated pause was never lifted.
+        if (!_musicEnabled)
+            return; // remembered, and started when music is switched back on
+
         AL.Source(_musicSource, ALSourcef.Gain, MusicGain);
 
         var cts = new CancellationTokenSource();

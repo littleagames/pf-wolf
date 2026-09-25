@@ -146,6 +146,18 @@ internal class GameEngineManager
         public bool? AutomapOverlay;
         public bool? AutomapGrid;
         public ScanCodes[]? AutomapKeys;
+        public AudioDevices? AudioDevices;
+    }
+
+    /// <summary>The sound devices and music switched on in the Sound menu, as saved in config.cfg.</summary>
+    [Flags]
+    private enum AudioDevices : byte
+    {
+        None = 0,
+        PcSound = 1,
+        AdLibSound = 2,
+        DigitizedSound = 4,
+        Music = 8,
     }
 
     // Keyboard buttons stored in the original fixed layout. Buttons added after them (the
@@ -206,6 +218,13 @@ internal class GameEngineManager
             automapManager.Overlay = overlay;
         if (config.AutomapGrid is bool grid)
             automapManager.ShowGrid = grid;
+        if (config.AudioDevices is AudioDevices devices)
+        {
+            audioManager.PcSoundEnabled = devices.HasFlag(AudioDevices.PcSound);
+            audioManager.AdLibSoundEnabled = devices.HasFlag(AudioDevices.AdLibSound);
+            audioManager.DigitizedSoundEnabled = devices.HasFlag(AudioDevices.DigitizedSound);
+            audioManager.MusicEnabled = devices.HasFlag(AudioDevices.Music);
+        }
 
         // A key the config doesn't have (it's from before that key existed) keeps its default
         var automapKeys = config.AutomapKeys ?? [];
@@ -229,7 +248,7 @@ internal class GameEngineManager
             scores[i].Read(br);
         }
 
-        br.ReadBytes(3); // sound, music and digitized sound modes -- not settings in this port yet
+        br.ReadBytes(3); // the original's sound, music and digitized modes -- unused; the device switches are appended at the end
 
         var config = new ConfigData
         {
@@ -281,32 +300,15 @@ internal class GameEngineManager
                     config.AutomapKeys[i] = (ScanCodes)br.ReadInt32();
             }
         }
+        if (stream.Position < stream.Length)
+            config.AudioDevices = (AudioDevices)br.ReadByte();
 
         return config;
     }
 
     private void SetDefaultConfig()
     {
-        //SDMode sd;
-        //SMMode sm;
-        //SDSMode sds;
-        //if (Program.SoundBlasterPresent || Program.AdLibPresent)
-        //{
-            //sd = SDMode.AdLib;
-            //sm = SMMode.AdLib;
-        //}
-        //else
-        //{
-        //    sd = SDMode.PC;
-        //    sm = SMMode.Off;
-        //}
-
-        // always true
-        //if (Program.SoundBlasterPresent)
-            //sds = SDSMode.SoundBlaster;
-        //else
-        //    sds = SDSMode.Off;
-
+        // Every sound device and music start switched on (AudioManager's defaults).
         if (inputManager.IsMousePresent())
             Program.mouseenabled = true;
 
@@ -315,10 +317,6 @@ internal class GameEngineManager
 
         Program.viewsize = 19;
         Program.mouseadjustment = 5;
-
-        //audioManager.SetMusicMode(sm);
-        //audioManager.SetSoundMode(sd);
-        //audioManager.SetDigiDevice(sds);
     }
 
     /// <summary>
@@ -367,9 +365,9 @@ internal class GameEngineManager
         foreach (var s in Program.Scores)
             s.Write(bw);
 
-        bw.Write((byte)0);//audioManager.SoundMode);
-        bw.Write((byte)0);//audioManager.MusicMode);
-        bw.Write((byte)0);//audioManager.DigiMode);
+        bw.Write((byte)0); // sound mode placeholder
+        bw.Write((byte)0); // music mode placeholder
+        bw.Write((byte)0); // digitized mode placeholder
 
         bw.Write(Program.mouseenabled);
         bw.Write(Program.joystickenabled);
@@ -399,6 +397,17 @@ internal class GameEngineManager
         bw.Write(Program.automapscan.Length);
         foreach (var key in Program.automapscan)
             bw.Write((int)key);
+
+        var devices = AudioDevices.None;
+        if (audioManager.PcSoundEnabled)
+            devices |= AudioDevices.PcSound;
+        if (audioManager.AdLibSoundEnabled)
+            devices |= AudioDevices.AdLibSound;
+        if (audioManager.DigitizedSoundEnabled)
+            devices |= AudioDevices.DigitizedSound;
+        if (audioManager.MusicEnabled)
+            devices |= AudioDevices.Music;
+        bw.Write((byte)devices);
     }
 
     /// <summary>

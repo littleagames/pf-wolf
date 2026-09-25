@@ -38,11 +38,10 @@ $STR_MOVEJOY2: "Move joystick to\nlower right and\npress button 1\n"
 $STR_ESCEXIT: "ESC to exit"
 
 # Sound
-$STR_NONE: "None"
 $STR_PC: "PC Speaker"
-$STR_ALSB: "AdLib/Sound Blaster"
-$STR_DISNEY: "Disney Sound Source"
-$STR_SB: "Sound Blaster"
+$STR_ADLIB: "AdLib"
+$STR_DIGITIZED: "Digitized Sound"
+$STR_MUSIC: "Music"
 
 # Control
 $STR_MOUSEEN: "Mouse Enabled"

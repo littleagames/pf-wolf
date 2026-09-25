@@ -1059,86 +1059,28 @@ internal partial class Program
             //
             // HANDLE MENU CHOICES
             //
+            // Each row switches its device; the shot sound previews what the fallback plays now
             switch (SelectedId(SndMenu, which))
             {
-                //
-                // SOUND EFFECTS
-                //
-                case "sfx-none":
-                   // if (_audioManager.SoundMode != SDMode.Off)
-                    {
-                    //    _audioManager.SD_WaitSoundDone();
-                    //    _audioManager.SetSoundMode(SDMode.Off);
-                        DrawSoundMenu();
-                    }
+                case "sound-pc":
+                    _audioManager.PcSoundEnabled ^= true;
+                    DrawSoundMenu();
+                    ShootSnd();
                     break;
-                case "sfx-pc":
-                   // if (_audioManager.SoundMode != SDMode.PC)
-                    {
-                    //    _audioManager.SD_WaitSoundDone();
-                    //    _audioManager.SetSoundMode(SDMode.PC);
-                        //CA_LoadAllSounds();
-                        DrawSoundMenu();
-                        ShootSnd();
-                    }
+                case "sound-adlib":
+                    _audioManager.AdLibSoundEnabled ^= true;
+                    DrawSoundMenu();
+                    ShootSnd();
                     break;
-                case "sfx-adlib":
-                   // if (_audioManager.SoundMode != SDMode.AdLib)
-                    {
-                    //    _audioManager.SD_WaitSoundDone();
-                    //    _audioManager.SetSoundMode(SDMode.AdLib);
-                        //CA_LoadAllSounds();
-                        DrawSoundMenu();
-                        ShootSnd();
-                    }
+                case "sound-digitized":
+                    _audioManager.DigitizedSoundEnabled ^= true;
+                    DrawSoundMenu();
+                    ShootSnd();
                     break;
-
-                //
-                // DIGITIZED SOUND
-                //
-                case "digi-none":
-                  //  if (_audioManager.DigiMode != (byte)SDSMode.Off)
-                    {
-                    //    _audioManager.SetDigiDevice((byte)SDSMode.Off);
-                        DrawSoundMenu();
-                    }
-                    break;
-                case "digi-soundsource":
-                    /*                if (DigiMode != sds_SoundSource)
-                                    {
-                                        SD_SetDigiDevice (sds_SoundSource);
-                                        DrawSoundMenu ();
-                                        ShootSnd ();
-                                    }*/
-                    break;
-                case "digi-soundblaster":
-                   // if (_audioManager.DigiMode != SDSMode.SoundBlaster)
-                    {
-                   //     _audioManager.SetDigiDevice(SDSMode.SoundBlaster);
-                        DrawSoundMenu();
-                        ShootSnd();
-                    }
-                    break;
-
-                //
-                // MUSIC
-                //
-                case "music-none":
-                    //if (_audioManager.MusicMode != SMMode.Off)
-                    {
-                   //     _audioManager.SetMusicMode(SMMode.Off);
-                        DrawSoundMenu();
-                        ShootSnd();
-                    }
-                    break;
-                case "music-adlib":
-                    //if (_audioManager.MusicMode != SMMode.AdLib)
-                    {
-                    //    _audioManager.SetMusicMode(SMMode.AdLib);
-                        DrawSoundMenu();
-                        ShootSnd();
-                        StartCPMusic(MENUSONG);
-                    }
+                case "music":
+                    _audioManager.MusicEnabled ^= true;
+                    DrawSoundMenu();
+                    ShootSnd();
                     break;
             }
         }
@@ -1151,89 +1093,13 @@ internal partial class Program
 
     internal static void DrawSoundMenu()
     {
-        int i, on;
-
-        //
-        // DRAW SOUND MENU
-        //
         DrawMenuComponents("sound");
-
-        //
-        // IF NO ADLIB, NON-CHOOSENESS!
-        //
-        //if (!_audioManager.AdLibPresent && !_audioManager.SoundBlasterPresent)
-       // {
-       //     SndMenu[2].active = SndMenu[10].active = SndMenu[11].active = 0;
-        //}
-
-       // if (!_audioManager.SoundBlasterPresent)
-       //     SndMenu[7].active = 0;
-
-        //if (!_audioManager.SoundBlasterPresent)
-        //    SndMenu[5].active = 0;
-
         DrawMenu(SndItems, SndMenu);
-        for (i = 0; i < SndItems.amount; i++)
-            if (SndMenu[i].text != string.Empty)
-            {
-                //
-                // DRAW SELECTED/NOT SELECTED GRAPHIC BUTTONS
-                //
-                on = 0;
-                switch (SndMenu[i].id)
-                {
-                    //
-                    // SOUND EFFECTS
-                    //
-                    case "sfx-none":
-                        //if (_audioManager.SoundMode == SDMode.Off)
-                            on = 1;
-                        break;
-                    case "sfx-pc":
-                        //if (_audioManager.SoundMode == SDMode.PC)
-                            on = 1;
-                        break;
-                    case "sfx-adlib":
-                        //if (_audioManager.SoundMode == SDMode.AdLib)
-                            on = 1;
-                        break;
 
-                    //
-                    // DIGITIZED SOUND
-                    //
-                    case "digi-none":
-                        //if (_audioManager.DigiMode == SDSMode.Off)
-                            on = 1;
-                        break;
-                    case "digi-soundsource":
-                        //                    if (DigiMode == sds_SoundSource)
-                        //                        on = 1;
-                        break;
-                    case "digi-soundblaster":
-                       // if (_audioManager.DigiMode == SDSMode.SoundBlaster)
-                            on = 1;
-                        break;
-
-                    //
-                    // MUSIC
-                    //
-                    case "music-none":
-                        //if (_audioManager.MusicMode == SMMode.Off)
-                            on = 1;
-                        break;
-                    case "music-adlib":
-                       // if (_audioManager.MusicMode == SMMode.AdLib)
-                            on = 1;
-                        break;
-                }
-
-                int x = SndItems.x + 24;
-                int y = SndItems.y + i * 13 + 2;
-                if (on != 0)
-                    _graphicManager.DrawPic("c_selected", x, y);
-                else
-                    _graphicManager.DrawPic("c_notselected", x, y);
-            }
+        DrawMenuCheckbox(SndItems, SndMenu, "sound-pc", _audioManager.PcSoundEnabled);
+        DrawMenuCheckbox(SndItems, SndMenu, "sound-adlib", _audioManager.AdLibSoundEnabled);
+        DrawMenuCheckbox(SndItems, SndMenu, "sound-digitized", _audioManager.DigitizedSoundEnabled);
+        DrawMenuCheckbox(SndItems, SndMenu, "music", _audioManager.MusicEnabled);
 
         DrawMenuGun(SndItems);
         _videoManager.Update();
@@ -1307,8 +1173,8 @@ internal partial class Program
 
         DrawMenu(CtlItems, CtlMenu);
 
-        DrawCtlCheckbox("mouse-enabled", mouseenabled);
-        DrawCtlCheckbox("joystick-enabled", joystickenabled);
+        DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-enabled", mouseenabled);
+        DrawMenuCheckbox(CtlItems, CtlMenu, "joystick-enabled", joystickenabled);
 
         //
         // PICK FIRST AVAILABLE SPOT
@@ -1329,14 +1195,15 @@ internal partial class Program
         _videoManager.Update();
     }
 
-    private static void DrawCtlCheckbox(string id, bool on)
+    // The on/off box to the left of a ToggleMenuItem's text
+    private static void DrawMenuCheckbox(CP_iteminfo iteminfo, CP_itemtype[] items, string id, bool on)
     {
-        int index = Array.FindIndex(CtlMenu, item => item.id == id);
+        int index = Array.FindIndex(items, item => item.id == id);
         if (index < 0)
             return;
 
-        int x = CtlItems.x + CtlItems.indent - 24;
-        int y = CtlItems.y + index * 13 + 3;
+        int x = iteminfo.x + iteminfo.indent - 24;
+        int y = iteminfo.y + index * 13 + 3;
         _graphicManager.DrawPic(on ? "c_selected" : "c_notselected", x, y);
     }
 
