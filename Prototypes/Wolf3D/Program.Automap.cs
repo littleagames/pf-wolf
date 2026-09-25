@@ -43,6 +43,7 @@ internal partial class Program
         am_center,
         am_follow,
         am_rotate,
+        am_style,
 
         NUMAUTOMAPKEYS
     }
@@ -51,7 +52,7 @@ internal partial class Program
     {
         ScanCodes.sc_Equal, ScanCodes.sc_Minus,
         ScanCodes.sc_KeyPad8, ScanCodes.sc_KeyPad2, ScanCodes.sc_KeyPad4, ScanCodes.sc_KeyPad6,
-        ScanCodes.sc_C, ScanCodes.sc_F, ScanCodes.sc_R,
+        ScanCodes.sc_C, ScanCodes.sc_F, ScanCodes.sc_R, ScanCodes.sc_V,
     };
 
     // Map panning speed at the default zoom: 8 tiles a second at walking pace, in virtual pixels a tic
@@ -139,6 +140,8 @@ internal partial class Program
             _automapManager.ToggleFollow();
         else if (key == automapscan[(int)automapkeys.am_rotate])
             _automapManager.ToggleRotate();
+        else if (key == automapscan[(int)automapkeys.am_style])
+            _automapManager.ToggleStyle();
         else
             return Array.IndexOf(automapscan, key) >= 0;    // held keys: used in UpdateAutomap, not binds
 
@@ -209,10 +212,19 @@ internal partial class Program
 
         bool reveal = mapreveal != 0;
 
-        DrawAutomapWalls(view, reveal);
-        DrawAutomapPushwall(view, reveal);
-        DrawAutomapDoors(view, reveal);
-        DrawAutomapActors(view, reveal);
+        if (_automapManager.Style == AutomapStyle.Graphic)
+        {
+            DrawAutomapTexels(view, reveal);
+            DrawAutomapActors(view, reveal, sprites: _automapManager.Zoom >= AUTOMAP_MINSPRITEZOOM);
+        }
+        else
+        {
+            DrawAutomapWalls(view, reveal);
+            DrawAutomapPushwall(view, reveal);
+            DrawAutomapDoors(view, reveal);
+            DrawAutomapActors(view, reveal, sprites: false);
+        }
+
         DrawAutomapPlayer(view);
         DrawAutomapPosition(view);
     }
@@ -301,25 +313,31 @@ internal partial class Program
     enum AutomapMark { None, Corpse, Decor, Item, Enemy }
 
     /// <summary>
-    /// Actors as dots: enemies while they're in view (their corpses once seen), pickups and solid
-    /// decorations once their tile is seen. Projectiles, walk-through decorations and markers
-    /// aren't drawn. The reveal cheat shows them all.
+    /// Actors worth marking: enemies while they're in view (their corpses once seen), pickups and
+    /// solid decorations once their tile is seen. Projectiles, walk-through decorations and markers
+    /// aren't drawn. The reveal cheat shows them all. Each is drawn as its sprite when
+    /// <paramref name="sprites"/> is set (falling back to a dot if it has none), else as a dot.
     /// </summary>
-    static void DrawAutomapActors(AutomapView view, bool reveal)
+    static void DrawAutomapActors(AutomapView view, bool reveal, bool sprites)
     {
         // A dot about a third of a tile, but never smaller than 2 virtual pixels
         int size = Math.Max(view.Pen * 2, (int)(view.TileSize / 3));
 
-        var marks = new List<(AutomapMark Mark, int X, int Y)>();
+        var marks = new List<(AutomapMark Mark, Entities.Actors.Actor Actor)>();
         foreach (var actor in _mapManager.GetActors())
         {
             var mark = GetAutomapMark(actor, reveal);
             if (mark != AutomapMark.None)
-                marks.Add((mark, actor.X, actor.Y));
+                marks.Add((mark, actor));
         }
 
-        foreach (var (mark, x, y) in marks.OrderBy(m => m.Mark))
+        foreach (var (mark, actor) in marks.OrderBy(m => m.Mark))
         {
+            var (sx, sy) = view.ToScreen(actor.X / (float)MapConstants.TILEGLOBAL, actor.Y / (float)MapConstants.TILEGLOBAL);
+
+            if (sprites && DrawAutomapSprite(view, actor, sx, sy))
+                continue;
+
             string color = AutomapColor(mark switch
             {
                 AutomapMark.Corpse => "AutomapCorpse",
@@ -328,7 +346,6 @@ internal partial class Program
                 _ => "AutomapEnemy",
             });
 
-            var (sx, sy) = view.ToScreen(x / (float)MapConstants.TILEGLOBAL, y / (float)MapConstants.TILEGLOBAL);
             AutomapFill(view, (int)MathF.Round(sx) - size / 2, (int)MathF.Round(sy) - size / 2, size, size, color);
         }
     }
@@ -407,10 +424,14 @@ internal partial class Program
         if (!_automapManager.Follow)
             text += "  PAN";
 
-        // DrawPropString works in 320x200 virtual pixels
+        // DrawPropString and Bar work in 320x200 virtual pixels
         int px = _videoManager.scaleFactor;
         int x = view.ClipX / px + 3;
         int y = (view.ClipY + view.ClipHeight) / px - font.Height - 2;
+
+        // On a backdrop box, so the map under it doesn't make it hard to read
+        GraphicManager.MeasureString(text, out ushort width, out _, font);
+        _videoManager.Bar(x - 2, y - 1, width + 4, font.Height + 2, AutomapColor("AutomapBackground"));
         _videoManager.DrawPropString(x, y, text, AutomapColor("AutomapPlayer"), font);
     }
 
@@ -448,6 +469,21 @@ internal partial class Program
 
         int tile = _mapManager.tilemap[x, y];
         return tile != 0 && (tile & BIT_DOOR) == 0 && tile != BIT_WALL;
+    }
+
+    private static void Cmd_AmStyle(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            _automapManager.Style = args[0].ToLowerInvariant() switch
+            {
+                "graphic" or "0" => AutomapStyle.Graphic,
+                "color" or "1" => AutomapStyle.Color,
+                _ => throw new ArgumentException($"expected graphic or color, got \"{args[0]}\""),
+            };
+        }
+
+        _consoleManager.Print($"am_style is {_automapManager.Style.ToString().ToLowerInvariant()}");
     }
 
     private static void Cmd_AmReveal(string[] args)

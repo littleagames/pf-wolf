@@ -50,6 +50,8 @@ internal partial class Program
         // automap
         //
         Register("automap", "Opens or closes the automap.", "automap", _ => ToggleAutomap(), InLevel);
+        Register("am_style", "How the automap draws the level: wall textures and sprites, or flat colors.",
+            "am_style [graphic|color]", Cmd_AmStyle, complete: Values("graphic", "color"));
         Register("am_reveal", "Shows the whole map on the automap, seen or not.", "am_reveal [0|1]", Cmd_AmReveal, Cheat,
             complete: Values("0", "1"));
 

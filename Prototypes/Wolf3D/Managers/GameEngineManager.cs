@@ -22,17 +22,20 @@ internal class GameEngineManager
     private readonly AudioManager audioManager;
     private readonly Lazy<AssetManager> assetManager;
     private readonly ConsoleManager consoleManager;
+    private readonly AutomapManager automapManager;
 
     public GameEngineManager(
         VideoManager videoManager,
         InputManager inputManager,
         AudioManager audioManager,
         Lazy<AssetManager> assetManager,
-        ConsoleManager consoleManager)
+        ConsoleManager consoleManager,
+        AutomapManager automapManager)
     {
         this.videoManager = videoManager;
         this.inputManager = inputManager;
         this.consoleManager = consoleManager;
+        this.automapManager = automapManager;
         InputManager.Quit += Quit;
         InputManager.Pause += SetPaused;
         this.audioManager = audioManager;
@@ -139,6 +142,7 @@ internal class GameEngineManager
         public int ViewSize, MouseAdjustment;
         public bool? PauseWhenOpen;
         public ScanCodes? AutomapKey;
+        public AutomapStyle? AutomapStyle;
     }
 
     // Keyboard buttons stored in the original fixed layout. Buttons added after them (the
@@ -193,6 +197,8 @@ internal class GameEngineManager
         Program.viewsize = Math.Clamp(config.ViewSize, 4, 21);
         if (config.PauseWhenOpen is bool pause)
             consoleManager.PauseWhenOpen = pause;
+        if (config.AutomapStyle is AutomapStyle style && Enum.IsDefined(style))
+            automapManager.Style = style;
 
         // Set "Read This" back to standard active
         Program.FindMenuItem(Program.MainMenu, "readthis")?.active = 1;
@@ -243,6 +249,8 @@ internal class GameEngineManager
             config.PauseWhenOpen = br.ReadByte() != 0;
         if (stream.Position < stream.Length)
             config.AutomapKey = (ScanCodes)br.ReadInt32();
+        if (stream.Position < stream.Length)
+            config.AutomapStyle = (AutomapStyle)br.ReadByte();
 
         return config;
     }
@@ -355,6 +363,7 @@ internal class GameEngineManager
         bw.Write(Program.mouseadjustment);
         bw.Write(consoleManager.PauseWhenOpen);
         bw.Write((int)Program.buttonscan[(int)buttontypes.bt_automap]);
+        bw.Write((byte)automapManager.Style);
     }
 
     /// <summary>

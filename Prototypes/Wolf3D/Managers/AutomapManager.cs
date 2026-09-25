@@ -1,5 +1,14 @@
 namespace Wolf3D.Managers;
 
+/// <summary>How the automap draws the level.</summary>
+internal enum AutomapStyle : byte
+{
+    /// <summary>Wall and door textures, and actors as their sprites.</summary>
+    Graphic,
+    /// <summary>Wall outlines, door lines and actor dots in flat colors.</summary>
+    Color,
+}
+
 /// <summary>
 /// State of the in-game automap: whether it's up, how far it's zoomed, which map position sits at
 /// the center of the view and which way the map is turned. The map is drawn over the 3D view by
@@ -16,6 +25,12 @@ internal class AutomapManager
     internal const float ZoomStep = 1.25f;
 
     internal bool IsOpen { get; private set; }
+
+    /// <summary>Graphic or Color (the `am_style` setting, saved in the config).</summary>
+    internal AutomapStyle Style { get; set; } = AutomapStyle.Graphic;
+
+    internal void ToggleStyle() =>
+        Style = Style == AutomapStyle.Graphic ? AutomapStyle.Color : AutomapStyle.Graphic;
 
     /// <summary>Virtual (320x200) pixels per map tile; multiply by the video scale factor for screen pixels.</summary>
     internal float Zoom { get; private set; } = DefaultZoom;
