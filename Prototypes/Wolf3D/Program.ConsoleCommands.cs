@@ -100,6 +100,8 @@ internal partial class Program
         Register("diag", "Makes a wall tile (default: the one you face) a 45 degree wall, named by its solid corner.",
             "diag <square|solidnw|solidne|solidsw|solidse> [tilex tiley]", Cmd_Diag, Cheat | InLevel,
             complete: (_, i) => i == 0 ? Enum.GetNames<WallShape>().Select(n => n.ToLowerInvariant()) : []);
+        Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
+            $"wallheight [1-{MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
 
         //
         // debugging aids and information
@@ -723,6 +725,13 @@ internal partial class Program
             else
                 loadedgame = false;
         });
+    }
+
+    private static void Cmd_WallHeight(string[] args)
+    {
+        if (args.Length > 0)
+            wallstories = ParseInt(args[0], 1, MAXWALLSTORIES);
+        _consoleManager.Print($"Walls are {wallstories} {(wallstories == 1 ? "story" : "stories")} tall");
     }
 
     private static void Cmd_Fps(string[] args)

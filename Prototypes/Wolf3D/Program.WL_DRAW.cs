@@ -60,7 +60,16 @@ internal partial class Program
     internal static int viewsin, viewcos;
 
     internal static int postx;
-    internal static byte[] postsource;
+    internal static byte[] postsource = [];     // the texture of the post ScalePost draws
+    internal static int postofs;                // where its column starts in postsource
+    static byte[]? uppersource;                 // stories above the first, if not postsource (door lintels)
+    static int upperofs;
+
+    //
+    // tall walls: every wall is wallstories 64 unit stories tall, built up from the floor
+    //
+    internal const int MAXWALLSTORIES = 8;
+    internal static int wallstories = 1;
 
     //
     // ray tracing variables
@@ -173,53 +182,50 @@ internal partial class Program
     */
     internal static void ScalePost()
     {
-        int ywcount, yoffs, yw, yd, yendoffs;
-        byte col;
+        var upper = uppersource ?? postsource;
+        DrawPost(postx, wallheight[postx] >> 3, 0, postsource, postofs, upper, uppersource != null ? upperofs : postofs);
+        uppersource = null;
+    }
 
-        ywcount = yd = wallheight[postx] >> 3;
-        if (yd <= 0) yd = 100;
+    /// <summary>
+    /// Draws one screen column of a wall wallstories tall, standing on the floor. Stories
+    /// firststory and up are drawn: the first story from lower, the ones above it from upper,
+    /// each repeating the 64 texel column. half is half a story's height in pixels.
+    /// </summary>
+    static void DrawPost(int x, int half, int firststory, byte[] lower, int lowerofs, byte[] upper, int upperofs)
+    {
+        if (half <= 0) half = 100;
 
-        yoffs = (int)((centery - ywcount) * _videoManager.bufferPitch);
-        if (yoffs < 0) yoffs = 0;
-        yoffs += postx;
+        //
+        // row k up from the floor line shows texel k * 32 / half up the wall; step that
+        // along as whole texels (t) plus a remainder, so it matches the old ScalePost exactly
+        //
+        int bottom = centery + half - 1 - firststory * 2 * half;
+        int top = centery + half - wallstories * 2 * half;
+        int y = Math.Min(bottom, viewheight - 1);
+        if (top < 0) top = 0;
+        if (y < top) return;
 
-        yendoffs = centery + ywcount - 1;
-        yw = TEXTURESIZE - 1;
+        long num = (long)(bottom - y) * (TEXTURESIZE / 2);
+        long t = num / half + firststory * TEXTURESIZE;
+        long rem = num % half;
+        int pitch = (int)_videoManager.bufferPitch;
 
-        while (yendoffs >= viewheight)
+        unsafe
         {
-            ywcount -= TEXTURESIZE / 2;
-            while (ywcount <= 0)
+            byte* dest = (byte*)vbufPtr + screenofs + x;
+            for (; y >= top; y--)
             {
-                ywcount += yd;
-                yw--;
-            }
-            yendoffs--;
-        }
-        if (yw < 0) return;
+                int texel = TEXTURESIZE - 1 - (int)(t & (TEXTURESIZE - 1));
+                dest[y * pitch] = t < TEXTURESIZE ? lower[lowerofs + texel] : upper[upperofs + texel];
 
-        col = postsource[yw];
-        yendoffs = (int)(yendoffs * _videoManager.bufferPitch + postx);
-        while (yoffs <= yendoffs)
-        {
-            unsafe
-            {
-                byte* dest = (byte*)vbufPtr + screenofs;
-                dest[yendoffs] = col; // get the surface pixels
-            }
-            ywcount -= TEXTURESIZE / 2;
-            if (ywcount <= 0)
-            {
-                do
+                rem += TEXTURESIZE / 2;
+                while (rem >= half)
                 {
-                    ywcount += yd;
-                    yw--;
+                    rem -= half;
+                    t++;
                 }
-                while (ywcount <= 0);
-                if (yw < 0) break;
-                col = postsource[yw];
             }
-            yendoffs -= (int)_videoManager.bufferPitch;
         }
     }
 
@@ -257,14 +263,15 @@ internal partial class Program
             // check for adjacent doors
             //
             var doortile = _mapManager.tilemap[xtile - xtilestep, yinttile];
+            mapDefs?.Walls.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
             if ((doortile & BIT_DOOR) != 0)
             {
                 var door = doorobjlist[doortile & ~BIT_DOOR];
                 wallpic = door.xlat.East; // West
+                SetUpperPost((mapTexture ?? MapTextureTranslation.None).East, texture);   // the wall above the door frame
             }
             else
             {
-                mapDefs?.Walls.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
                 wallpic = (mapTexture ?? MapTextureTranslation.None).East;
             }
         }
@@ -276,8 +283,12 @@ internal partial class Program
 
         var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
         if (textureAsset == null)
+        {
+            uppersource = null;
             return;
-        postsource = textureAsset.RawData.Skip(texture).ToArray();
+        }
+        postsource = textureAsset.RawData;
+        postofs = texture;
         ScalePost();
     }
 
@@ -316,14 +327,15 @@ internal partial class Program
             // check for adjacent doors
             //
             var doortile = _mapManager.tilemap[xinttile, ytile - ytilestep];
+            mapDefs?.Walls.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
             if ((doortile & BIT_DOOR) != 0)
             {
                 var door = doorobjlist[doortile & ~BIT_DOOR];
                 wallpic = door.xlat.North; // South
+                SetUpperPost((mapTexture ?? MapTextureTranslation.None).North, texture);  // the wall above the door frame
             }
             else
             {
-                mapDefs?.Walls.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
                 wallpic = (mapTexture ?? MapTextureTranslation.None).North;
             }
         }
@@ -335,9 +347,13 @@ internal partial class Program
 
         var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
         if (textureAsset == null)
+        {
+            uppersource = null;
             return;
-        
-        postsource = textureAsset.RawData.Skip(texture).ToArray();
+        }
+
+        postsource = textureAsset.RawData;
+        postofs = texture;
         ScalePost();
     }
 
@@ -376,7 +392,9 @@ internal partial class Program
         var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
         if (doorTextureAsset == null)
             return;
-        postsource = doorTextureAsset.RawData.Skip(texture).ToArray();
+        postsource = doorTextureAsset.RawData;
+        postofs = texture;
+        SetLintelPost(door, yintercept, xtilestep == -1);
 
         ScalePost();
     }
@@ -416,10 +434,147 @@ internal partial class Program
         var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
         if (doorTextureAsset == null)
             return;
-        postsource = doorTextureAsset.RawData.Skip(texture).ToArray();
-        //postsource = PM_GetPage(doorpage).Skip(texture).ToArray();// + texture;
+        postsource = doorTextureAsset.RawData;
+        postofs = texture;
+        SetLintelPost(door, xintercept, ytilestep == 1);
 
         ScalePost();
+    }
+
+    /*
+    ====================
+    =
+    = Tall walls
+    =
+    = Above the first story, a door is capped by a lintel on the door plane, textured like
+    = the wall the door is set into. It is there whether the door is shut or not: an open
+    = door's lintel is noted as the trace passes and drawn over the column once it ends.
+    =
+    ====================
+    */
+
+    const int MAXLINTELS = 8;
+    static int lintelcount;
+    static readonly short[] lintelheight = new short[MAXLINTELS];
+    static readonly byte[][] linteltexture = new byte[MAXLINTELS][];
+    static readonly int[] lintelofs = new int[MAXLINTELS];
+
+    // Points the stories above the first at the named wall texture, for the post being drawn
+    static void SetUpperPost(string wallpic, int texture)
+    {
+        if (wallstories == 1)
+            return;
+        uppersource = _assetManager.Find<TextureAsset>(wallpic)?.RawData;
+        upperofs = texture;
+    }
+
+    /// <summary>
+    /// The texture of the wall a door is set into, from the wall tile on either side of it in
+    /// line with the door; null if neither side is a plain wall.
+    /// </summary>
+    static byte[]? LintelTexture(doorobj_t door)
+    {
+        int dx = door.vertical ? 0 : 1, dy = door.vertical ? 1 : 0;
+        return WallTexture(door.tilex - dx, door.tiley - dy, door.vertical)
+            ?? WallTexture(door.tilex + dx, door.tiley + dy, door.vertical);
+    }
+
+    static byte[]? WallTexture(int tilex, int tiley, bool vertical)
+    {
+        var tile = _mapManager.tilemap[tilex, tiley];
+        if ((tile & BIT_DOOR) != 0 || (tile & ~BIT_WALL) == 0)
+            return null;                // open floor, a door or a pushwall
+
+        MapTextureTranslation? mapTexture = null;
+        if (_mapManager.GetMapData()?.Walls.TryGetValue(tile & ~BIT_WALL, out mapTexture) != true || mapTexture == null)
+            return null;
+        return _assetManager.Find<TextureAsset>(vertical ? mapTexture.East : mapTexture.North)?.RawData;
+    }
+
+    // The lintel column where the trace meets the door plane at along (y for a vertical door, x
+    // for a horizontal one); flip mirrors it like the wall faces seen from the same side
+    static int LintelColumn(int along, bool flip)
+    {
+        int texture = (along >> FIXED2TEXSHIFT) & TEXTUREMASK;
+        return flip ? TEXTUREMASK - texture : texture;
+    }
+
+    // Caps the door post being drawn with its lintel (the door texture again if it has no wall)
+    static void SetLintelPost(doorobj_t door, int along, bool flip)
+    {
+        if (wallstories == 1)
+            return;
+        uppersource = LintelTexture(door) ?? postsource;
+        upperofs = LintelColumn(along, flip);
+    }
+
+    /// <summary>
+    /// Notes the lintel of the door the trace is passing through, meeting its plane at
+    /// (planex, planey), to draw once the trace ends. Nothing to do for one story walls.
+    /// </summary>
+    static void NoteLintel(doorobj_t door, int planex, int planey)
+    {
+        if (wallstories == 1 || lintelcount == MAXLINTELS)
+            return;
+
+        var texture = LintelTexture(door);
+        if (texture == null)
+            return;                     // set into nothing: leave the view above it open
+
+        int savex = xintercept, savey = yintercept;
+        xintercept = planex;
+        yintercept = planey;
+        lintelheight[lintelcount] = CalcHeight();
+        xintercept = savex;
+        yintercept = savey;
+
+        linteltexture[lintelcount] = texture;
+        lintelofs[lintelcount] = door.vertical
+            ? LintelColumn(planey, xtilestep == -1)
+            : LintelColumn(planex, ytilestep == 1);
+        lintelcount++;
+    }
+
+    // Draws the lintels the column's trace passed, farthest first, over what it hit
+    static void DrawLintels()
+    {
+        while (lintelcount > 0)
+        {
+            lintelcount--;
+            var texture = linteltexture[lintelcount];
+            DrawPost(pixx, lintelheight[lintelcount] >> 3, 1, texture, lintelofs[lintelcount], texture, lintelofs[lintelcount]);
+        }
+    }
+
+    /// <summary>
+    /// When the view starts inside a door tile, the trace never enters it, so check whether this
+    /// column meets the door plane ahead of the view point.
+    /// </summary>
+    static void NoteFocalLintel(int xstep, int ystep)
+    {
+        var door = doorobjlist[_mapManager.tilemap[focaltx, focalty] & ~BIT_DOOR];
+        const int HALFTILE = (int)MapConstants.TILEGLOBAL / 2;
+
+        if (door.vertical)
+        {
+            int planex = (focaltx << MapConstants.TILESHIFT) + HALFTILE;
+            int dist = (planex - viewx) * xtilestep;
+            if (dist <= 0)
+                return;                 // the plane is behind the view
+            int planey = viewy + MathUtils.FixedMul(ystep, dist);
+            if (planey >> MapConstants.TILESHIFT == focalty)
+                NoteLintel(door, planex, planey);
+        }
+        else
+        {
+            int planey = (focalty << MapConstants.TILESHIFT) + HALFTILE;
+            int dist = (planey - viewy) * ytilestep;
+            if (dist <= 0)
+                return;
+            int planex = viewx + MathUtils.FixedMul(xstep, dist);
+            if (planex >> MapConstants.TILESHIFT == focaltx)
+                NoteLintel(door, planex, planey);
+        }
     }
 
     /*
@@ -509,7 +664,8 @@ internal partial class Program
         var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
         if (textureAsset == null)
             return;
-        postsource = textureAsset.RawData.Skip(texture).ToArray();
+        postsource = textureAsset.RawData;
+        postofs = texture;
         ScalePost();
     }
 
@@ -621,6 +777,7 @@ internal partial class Program
             ytile = (short)(focalty + ytilestep);
 
             texdelta = 0;
+            lintelcount = 0;
 
             //
             // special treatment when player is in back tile of pushwall
@@ -686,6 +843,10 @@ internal partial class Program
                     continue;
                 }
             }
+            else if ((_mapManager.tilemap[focaltx, focalty] & BIT_DOOR) != 0 && wallstories > 1)
+            {
+                NoteFocalLintel(xstep, ystep);
+            }
             //
             // trace along this angle until we hit a wall
             //
@@ -716,6 +877,8 @@ internal partial class Program
                 if ((xtilestep == -1 && xinttile <= xtile) || (xtilestep == 1 && xinttile >= xtile))
                     tileFound = vertentry(ystep, xstep, yinttemp, ref pwallposnorm, ref pwallposinv, ref pwallposi);           // holds modified pwallpos);
             }
+
+            DrawLintels();
         }
     }
 
@@ -734,14 +897,16 @@ internal partial class Program
                 // intersected at, and check to see if the door is open past that point
                 //
                 var door = doorobjlist[tilehit & ~BIT_DOOR];
+                yinttemp = yintercept + (ystep >> 1);    // add halfstep to current intercept position
+                int planex = (int)((xtile << (int)MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2));
 
                 if (door.action == dooractiontypes.dr_open)
                 {
+                    if (yinttemp >> MapConstants.TILESHIFT == yinttile)
+                        NoteLintel(door, planex, yinttemp);
                     passvert(ystep); // door is open, continue tracing
                     return false;
                 }
-
-                yinttemp = yintercept + (ystep >> 1);    // add halfstep to current intercept position
 
                 //
                 // midpoint is outside tile, so it hit the side of the wall before a door
@@ -760,13 +925,14 @@ internal partial class Program
                     //
                     if ((ushort)yinttemp < door.position)
                     {
+                        NoteLintel(door, planex, yinttemp);
                         passvert(ystep);
                         return false;
                     }
                 }
 
                 yintercept = yinttemp;
-                xintercept = (int)((xtile << (int)MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2));
+                xintercept = planex;
 
                 HitVertDoor();
             }
@@ -967,14 +1133,16 @@ internal partial class Program
                 // intersected at, and check to see if the door is open past that point
                 //
                 var door = doorobjlist[tilehit & ~BIT_DOOR];
+                xinttemp = xintercept + (xstep >> 1);    // add half step to current intercept position
+                int planey = (int)((ytile << (int)MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2));
 
                 if (door.action == (byte)dooractiontypes.dr_open)
                 {
+                    if ((xinttemp >> MapConstants.TILESHIFT) == xinttile)
+                        NoteLintel(door, xinttemp, planey);
                     passhoriz(xstep); // door is open, continue tracing
                     return false;
                 }
-
-                xinttemp = xintercept + (xstep >> 1);    // add half step to current intercept position
 
                 //
                 // midpoint is outside tile, so it hit the side of the wall before a door
@@ -993,13 +1161,14 @@ internal partial class Program
                     //
                     if ((ushort)xinttemp < door.position)
                     {
+                        NoteLintel(door, xinttemp, planey);
                         passhoriz(xstep);
                         return false;
                     }
                 }
 
                 xintercept = xinttemp;
-                yintercept = (int)((ytile << (int)MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2));
+                yintercept = planey;
 
                 HitHorizDoor();
             }

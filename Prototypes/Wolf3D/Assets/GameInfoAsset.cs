@@ -107,6 +107,11 @@ internal record DefaultMapInfo
 {
     public string FloorColor { get; init; } = null!;
     public string CeilingColor { get; init; } = null!;
+
+    /// <summary>
+    /// How many 64 unit stories tall the walls are
+    /// </summary>
+    public int WallHeight { get; init; } = 1;
 }
 
 internal record SkillInfo
@@ -159,4 +164,9 @@ internal record MapInfo
 
     public string? FloorColor { get; init; } = null;
     public string? CeilingColor { get; init; } = null;
+
+    /// <summary>
+    /// How many 64 unit stories tall the walls are; null uses the default map's
+    /// </summary>
+    public int? WallHeight { get; init; } = null;
 }

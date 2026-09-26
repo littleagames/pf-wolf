@@ -504,6 +504,9 @@ internal partial class Program
         if (_gameEngineManager.GetGameInfo().Maps.TryGetValue(gamestate.mapon, out var mapInfo))
             gamestate.cluster = mapInfo.Cluster;
 
+        wallstories = Math.Clamp(mapInfo?.WallHeight ?? _gameEngineManager.GetGameInfo().DefaultMap.WallHeight,
+            1, MAXWALLSTORIES);
+
         //
         // spawn doors
         //
