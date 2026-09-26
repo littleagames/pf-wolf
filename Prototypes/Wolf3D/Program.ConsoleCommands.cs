@@ -102,7 +102,7 @@ internal partial class Program
             complete: (_, i) => i == 0 ? Enum.GetNames<WallShape>().Select(n => n.ToLowerInvariant()) : []);
         Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
             $"wallheight [1-{MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
-        Register("height", "Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height.",
+        Register("height", "Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height. On open floor, 2 or more makes an arch.",
             $"height <0-{MAXWALLSTORIES}> [tilex tiley]", Cmd_Height, Cheat | InLevel);
 
         //

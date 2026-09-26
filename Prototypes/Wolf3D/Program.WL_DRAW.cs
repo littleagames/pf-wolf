@@ -195,6 +195,7 @@ internal partial class Program
     static readonly int[] postlowerofs = new int[MAXPOSTS];
     static readonly byte[][] postupper = new byte[MAXPOSTS][];
     static readonly int[] postupperofs = new int[MAXPOSTS];
+    static readonly short[] postunderside = new short[MAXPOSTS];   // an arch's: the height where the trace leaves it, 0 for none
 
     internal static short postheight;   // the height (as wallheight) of the post ScalePost queues
     static int hitstories;              // how many stories tall the wall the trace just hit is
@@ -223,10 +224,12 @@ internal partial class Program
         columntallest = Math.Max(columntallest, hitstories);
     }
 
-    static void QueuePost(short height, int firststory, int stories, byte[] lower, int lowerofs, byte[] upper, int upperofs)
+    static void QueuePost(short height, int firststory, int stories, byte[] lower, int lowerofs, byte[] upper, int upperofs,
+        short underside = 0)
     {
         if (postcount == MAXPOSTS)
             return;
+        postunderside[postcount] = underside;
         postheights[postcount] = height;
         postfirststory[postcount] = (byte)firststory;
         poststories[postcount] = (byte)stories;
@@ -245,8 +248,125 @@ internal partial class Program
             postcount--;
             DrawPost(pixx, postheights[postcount] >> 3, postfirststory[postcount], poststories[postcount],
                 postlower[postcount], postlowerofs[postcount], postupper[postcount], postupperofs[postcount]);
+            if (postunderside[postcount] != 0)
+                DrawUnderside(pixx, postheights[postcount] >> 3, postunderside[postcount] >> 3);
         }
     }
+
+    /// <summary>
+    /// Fills an arch's underside, one story up, between where the trace enters it (half a story
+    /// is entryhalf pixels there) and where it leaves (exithalf). Floors and ceilings are flat
+    /// colors, so it's the ceiling's.
+    /// </summary>
+    static void DrawUnderside(int x, int entryhalf, int exithalf)
+    {
+        int from = Math.Max(centery - entryhalf, 0);
+        int to = Math.Min(centery - exithalf - 1, viewheight - 1);
+        int pitch = (int)_videoManager.bufferPitch;
+
+        unsafe
+        {
+            byte* dest = (byte*)vbufPtr + screenofs + x;
+            for (int y = from; y <= to; y++)
+                dest[y * pitch] = ceilingcolor;
+        }
+    }
+
+    /*
+    ====================
+    =
+    = Arches
+    =
+    = An open floor tile with a height (plane 2) above one story is an arch: a block from the
+    = second story up to that height, that can be walked under. The trace opens one as it
+    = enters the tile and queues it as it leaves, once it knows how deep the underside runs.
+    = Its faces take the texture of a wall beside it.
+    =
+    ====================
+    */
+
+    static bool archopen;
+    static short archheight;            // where the trace entered it (short.MaxValue: the view is inside)
+    static int archstories;
+    static byte[]? archtexture;
+    static int archofs;
+
+    static bool IsArch(int tilex, int tiley) => _mapManager.tilemap[tilex, tiley] == 0 && _mapManager.storymap[tilex, tiley] > 1;
+
+    /// <summary>
+    /// The trace enters the arch at (tilex, tiley), crossing its edge at (edgex, edgey); vertical
+    /// says whether that's an edge along x = constant (the face then shows its East texture).
+    /// </summary>
+    static void OpenArch(int tilex, int tiley, int edgex, int edgey, bool vertical)
+    {
+        // the wall at either end of the run of arch tiles in line with the face, else one across from it
+        int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
+        archtexture = ArchEndTexture(tilex, tiley, -dx, -dy, vertical) ?? ArchEndTexture(tilex, tiley, dx, dy, vertical)
+            ?? WallTexture(tilex - dy, tiley - dx, vertical) ?? WallTexture(tilex + dy, tiley + dx, vertical);
+        if (archtexture == null)
+            return;                     // nothing to texture it from: leave it open
+
+        archopen = true;
+        archstories = _mapManager.storymap[tilex, tiley];
+        archheight = HeightAt(edgex, edgey);
+        archofs = vertical
+            ? LintelColumn(edgey, xtilestep == -1)
+            : LintelColumn(edgex, ytilestep == 1);
+    }
+
+    // The texture of the wall that ends the run of arch tiles from (tilex, tiley) going (dx, dy)
+    static byte[]? ArchEndTexture(int tilex, int tiley, int dx, int dy, bool vertical)
+    {
+        do
+        {
+            tilex += dx;
+            tiley += dy;
+            if (tilex < 0 || tiley < 0 || tilex >= _mapManager.mapwidth || tiley >= _mapManager.mapheight)
+                return null;
+        }
+        while (IsArch(tilex, tiley));
+
+        return WallTexture(tilex, tiley, vertical);
+    }
+
+    // The view starts under an arch: there's no face, only the underside from above the view
+    static void OpenFocalArch()
+    {
+        archtexture = [];
+        archopen = true;
+        archstories = _mapManager.storymap[focaltx, focalty];
+        archheight = short.MaxValue;
+        archofs = 0;
+    }
+
+    // The trace leaves the open arch, crossing its edge at (edgex, edgey)
+    static void CloseArch(int edgex, int edgey)
+    {
+        if (!archopen)
+            return;
+        archopen = false;
+
+        short exitheight = HeightAt(edgex, edgey);
+        if (exitheight == 0)
+            exitheight = 1;             // 0 means no underside
+        QueuePost(archheight, 1, archstories, archtexture!, archofs, archtexture!, archofs, exitheight);
+    }
+
+    // The height (as wallheight) of a wall at (x, y)
+    static short HeightAt(int x, int y)
+    {
+        int savex = xintercept, savey = yintercept;
+        xintercept = x;
+        yintercept = y;
+        short height = CalcHeight();
+        xintercept = savex;
+        yintercept = savey;
+        return height;
+    }
+
+    // Where the trace meets the vertical edge it enters xtile by, and the horizontal one it enters ytile by
+    static int VertEdge => (xtilestep == 1 ? xtile : xtile + 1) << MapConstants.TILESHIFT;
+    static int HorizEdge => (ytilestep == 1 ? ytile : ytile + 1) << MapConstants.TILESHIFT;
 
     /// <summary>
     /// Whether the trace should go on past the wall it just hit, on the tile (tilex, tiley): only
@@ -614,13 +734,7 @@ internal partial class Program
         if (texture == null)
             return;                     // set into nothing: leave the view above it open
 
-        int savex = xintercept, savey = yintercept;
-        xintercept = planex;
-        yintercept = planey;
-        short height = CalcHeight();
-        xintercept = savex;
-        yintercept = savey;
-
+        short height = HeightAt(planex, planey);
         int ofs = door.vertical
             ? LintelColumn(planey, xtilestep == -1)
             : LintelColumn(planex, ytilestep == 1);
@@ -761,6 +875,8 @@ internal partial class Program
         0x1d,0x1d,0x1d,0x1d,0xdd,0xdd,0x7d,0xdd,0xdd,0xdd
     };
 
+    static byte ceilingcolor;           // this frame's ceiling color, for arch undersides too
+
     internal static void VGAClearScreen()
     {
         var gameInfo = _gameEngineManager.GetGameInfo();
@@ -768,6 +884,7 @@ internal partial class Program
 
         string ceiling = mapInfo.CeilingColor ?? gameInfo.DefaultMap.CeilingColor;
         byte ceilingColor = _videoManager.ParseColor(ceiling);
+        ceilingcolor = ceilingColor;
         string floor = mapInfo.FloorColor ?? gameInfo.DefaultMap.FloorColor;
         byte floorColor = _videoManager.ParseColor(floor);
 
@@ -858,7 +975,7 @@ internal partial class Program
             ytile = (short)(focalty + ytilestep);
 
             texdelta = 0;
-            columnhit = pastwall = false;
+            columnhit = pastwall = archopen = false;
             columntallest = 0;
             columntop = viewheight;
             bool focalhit = false;              // hit a wall in the view's own tile: no trace
@@ -933,6 +1050,10 @@ internal partial class Program
             {
                 NoteFocalLintel(xstep, ystep);
             }
+            else if (IsArch(focaltx, focalty))
+            {
+                OpenFocalArch();
+            }
 
             //
             // trace along this angle until we hit a wall, and on past it while a taller wall
@@ -988,6 +1109,7 @@ internal partial class Program
     {
         // the pushwall cases below move yinttile, so keep the tile the trace entered for the automap
         int hitx = xtile, hity = yinttile;
+        CloseArch(VertEdge, yintercept);
         tilehit = _mapManager.tilemap[xtile, yinttile];
         hitstories = tilehit == BIT_WALL ? _mapManager.WallStories(pwallx, pwally) : _mapManager.WallStories(hitx, hity);
 
@@ -1209,6 +1331,8 @@ internal partial class Program
         //
         // mark the tile as visible and setup for next step
         //
+        if (IsArch(xtile, yinttile))
+            OpenArch(xtile, yinttile, VertEdge, yintercept, true);
         passvert(ystep);
         return false;
     }
@@ -1226,6 +1350,7 @@ internal partial class Program
     {
         // the pushwall cases below move xinttile, so keep the tile the trace entered for the automap
         int hitx = xinttile, hity = ytile;
+        CloseArch(xintercept, HorizEdge);
         tilehit = _mapManager.tilemap[xinttile, ytile];
         hitstories = tilehit == BIT_WALL ? _mapManager.WallStories(pwallx, pwally) : _mapManager.WallStories(hitx, hity);
 
@@ -1449,6 +1574,8 @@ internal partial class Program
         //
         // mark the tile as visible and setup for next step
         //
+        if (IsArch(xinttile, ytile))
+            OpenArch(xinttile, ytile, xintercept, HorizEdge, false);
         passhoriz(xstep);
         return false;
     }
