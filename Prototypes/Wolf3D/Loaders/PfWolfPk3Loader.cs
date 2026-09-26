@@ -137,6 +137,14 @@ internal class PfWolfPk3Loader
                 continue;
             }
 
+            if (fullName.StartsWith("textures/"))
+            {
+                // wall textures of any size (a VSWAP wall of the same name is replaced)
+                AddReference(assetName, () => TextureAsset.FromGraphic(
+                    GraphicDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName), sourcePalette: Load<Palette>(GamePalette))));
+                continue;
+            }
+
             if (fullName.StartsWith("palettes/"))
             {
                 AddReference(assetName, () => PaletteDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName)));

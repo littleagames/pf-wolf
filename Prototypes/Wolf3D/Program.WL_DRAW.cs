@@ -60,9 +60,11 @@ internal partial class Program
     internal static int viewsin, viewcos;
 
     internal static int postx;
-    internal static byte[] postsource = [];     // the texture of the post ScalePost draws
-    internal static int postofs;                // where its column starts in postsource
-    static byte[]? uppersource;                 // stories above the first, if not postsource (door lintels)
+    static readonly TextureAsset notexture = new() { RawData = new byte[TEXTURESIZE * TEXTURESIZE] };
+
+    internal static TextureAsset postsource = notexture;    // the texture of the post ScalePost draws
+    internal static int postofs;                // its column, times 64 (as the texture's across a tile)
+    static TextureAsset? uppersource;           // stories above the first, if not postsource (door lintels)
     static int upperofs;
 
     //
@@ -191,9 +193,9 @@ internal partial class Program
     static readonly short[] postheights = new short[MAXPOSTS];
     static readonly byte[] postfirststory = new byte[MAXPOSTS];
     static readonly byte[] poststories = new byte[MAXPOSTS];
-    static readonly byte[][] postlower = new byte[MAXPOSTS][];
+    static readonly TextureAsset[] postlower = new TextureAsset[MAXPOSTS];
     static readonly int[] postlowerofs = new int[MAXPOSTS];
-    static readonly byte[][] postupper = new byte[MAXPOSTS][];
+    static readonly TextureAsset[] postupper = new TextureAsset[MAXPOSTS];
     static readonly int[] postupperofs = new int[MAXPOSTS];
     static readonly short[] postunderside = new short[MAXPOSTS];   // an arch's: the height where the trace leaves it, 0 for none
 
@@ -224,7 +226,7 @@ internal partial class Program
         columntallest = Math.Max(columntallest, hitstories);
     }
 
-    static void QueuePost(short height, int firststory, int stories, byte[] lower, int lowerofs, byte[] upper, int upperofs,
+    static void QueuePost(short height, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
         short underside = 0)
     {
         if (postcount == MAXPOSTS)
@@ -288,7 +290,7 @@ internal partial class Program
     static bool archopen;
     static short archheight;            // where the trace entered it (short.MaxValue: the view is inside)
     static int archstories;
-    static byte[]? archtexture;
+    static TextureAsset? archtexture;
     static int archofs;
 
     static bool IsArch(int tilex, int tiley) => _mapManager.tilemap[tilex, tiley] == 0 && _mapManager.storymap[tilex, tiley] > 1;
@@ -315,7 +317,7 @@ internal partial class Program
     }
 
     // The texture of the wall that ends the run of arch tiles from (tilex, tiley) going (dx, dy)
-    static byte[]? ArchEndTexture(int tilex, int tiley, int dx, int dy, bool vertical)
+    static TextureAsset? ArchEndTexture(int tilex, int tiley, int dx, int dy, bool vertical)
     {
         do
         {
@@ -332,7 +334,7 @@ internal partial class Program
     // The view starts under an arch: there's no face, only the underside from above the view
     static void OpenFocalArch()
     {
-        archtexture = [];
+        archtexture = notexture;
         archopen = true;
         archstories = _mapManager.storymap[focaltx, focalty];
         archheight = short.MaxValue;
@@ -407,10 +409,12 @@ internal partial class Program
 
     /// <summary>
     /// Draws one screen column of a wall, standing on the floor, stories tall. Stories
-    /// firststory and up are drawn: the first story from lower, the ones above it from upper,
-    /// each repeating the 64 texel column. half is half a story's height in pixels.
+    /// firststory and up are drawn: the first story from lower, the ones above it from upper.
+    /// A texture covers a story per 64 texels of its height, from the floor up, and repeats
+    /// above that. half is half a story's height in pixels; lowerofs and upperofs are the
+    /// column to draw, times 64, as the trace finds it across a tile.
     /// </summary>
-    static void DrawPost(int x, int half, int firststory, int stories, byte[] lower, int lowerofs, byte[] upper, int upperofs)
+    static void DrawPost(int x, int half, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs)
     {
         if (half <= 0) half = 100;
 
@@ -429,13 +433,25 @@ internal partial class Program
         long rem = num % half;
         int pitch = (int)_videoManager.bufferPitch;
 
+        byte[] lowerdata = lower.RawData, upperdata = upper.RawData;
+        int lowerheight = lower.Height, upperheight = upper.Height;
+        int lowercolumn = TextureColumn(lower, lowerofs), uppercolumn = TextureColumn(upper, upperofs);
+
         unsafe
         {
             byte* dest = (byte*)vbufPtr + screenofs + x;
+            byte col = 0;
+            long colt = -1;             // the t col is for
             for (; y >= top; y--)
             {
-                int texel = TEXTURESIZE - 1 - (int)(t & (TEXTURESIZE - 1));
-                dest[y * pitch] = t < TEXTURESIZE ? lower[lowerofs + texel] : upper[upperofs + texel];
+                if (t != colt)
+                {
+                    col = t < TEXTURESIZE
+                        ? lowerdata[lowercolumn + lowerheight - 1 - (int)(t % lowerheight)]
+                        : upperdata[uppercolumn + upperheight - 1 - (int)(t % upperheight)];
+                    colt = t;
+                }
+                dest[y * pitch] = col;
 
                 rem += TEXTURESIZE / 2;
                 while (rem >= half)
@@ -446,6 +462,10 @@ internal partial class Program
             }
         }
     }
+
+    // Where the column the trace found (0 to 63, times 64) starts in the texture's pixels
+    static int TextureColumn(TextureAsset texture, int ofs) =>
+        (ofs >> TEXTURESHIFT) * texture.Width / TEXTURESIZE * texture.Height;
 
 
     /*
@@ -505,7 +525,7 @@ internal partial class Program
             uppersource = null;
             return;
         }
-        postsource = textureAsset.RawData;
+        postsource = textureAsset;
         postofs = texture;
         ScalePost();
     }
@@ -570,7 +590,7 @@ internal partial class Program
             return;
         }
 
-        postsource = textureAsset.RawData;
+        postsource = textureAsset;
         postofs = texture;
         ScalePost();
     }
@@ -610,7 +630,7 @@ internal partial class Program
         var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
         if (doorTextureAsset == null)
             return;
-        postsource = doorTextureAsset.RawData;
+        postsource = doorTextureAsset;
         postofs = texture;
         SetLintelPost(door, yintercept, xtilestep == -1);
 
@@ -652,7 +672,7 @@ internal partial class Program
         var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
         if (doorTextureAsset == null)
             return;
-        postsource = doorTextureAsset.RawData;
+        postsource = doorTextureAsset;
         postofs = texture;
         SetLintelPost(door, xintercept, ytilestep == 1);
 
@@ -676,7 +696,7 @@ internal partial class Program
     {
         if (hitstories == 1)
             return;
-        uppersource = _assetManager.Find<TextureAsset>(wallpic)?.RawData;
+        uppersource = _assetManager.Find<TextureAsset>(wallpic);
         upperofs = texture;
     }
 
@@ -684,14 +704,14 @@ internal partial class Program
     /// The texture of the wall a door is set into, from the wall tile on either side of it in
     /// line with the door; null if neither side is a plain wall.
     /// </summary>
-    static byte[]? LintelTexture(doorobj_t door)
+    static TextureAsset? LintelTexture(doorobj_t door)
     {
         int dx = door.vertical ? 0 : 1, dy = door.vertical ? 1 : 0;
         return WallTexture(door.tilex - dx, door.tiley - dy, door.vertical)
             ?? WallTexture(door.tilex + dx, door.tiley + dy, door.vertical);
     }
 
-    static byte[]? WallTexture(int tilex, int tiley, bool vertical)
+    static TextureAsset? WallTexture(int tilex, int tiley, bool vertical)
     {
         var tile = _mapManager.tilemap[tilex, tiley];
         if ((tile & BIT_DOOR) != 0 || (tile & ~BIT_WALL) == 0)
@@ -700,7 +720,7 @@ internal partial class Program
         MapTextureTranslation? mapTexture = null;
         if (_mapManager.GetMapData()?.Walls.TryGetValue(tile & ~BIT_WALL, out mapTexture) != true || mapTexture == null)
             return null;
-        return _assetManager.Find<TextureAsset>(vertical ? mapTexture.East : mapTexture.North)?.RawData;
+        return _assetManager.Find<TextureAsset>(vertical ? mapTexture.East : mapTexture.North);
     }
 
     // The lintel column where the trace meets the door plane at along (y for a vertical door, x
@@ -859,7 +879,7 @@ internal partial class Program
         var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
         if (textureAsset == null)
             return;
-        postsource = textureAsset.RawData;
+        postsource = textureAsset;
         postofs = texture;
         ScalePost();
     }
@@ -917,10 +937,11 @@ internal partial class Program
                 for (int y = 0; y < skyheight; y++)
                     skycolumns[x * skyheight + y] = pic.RawData[y * skywidth + x];
         }
-        else if (_assetManager.Find<TextureAsset>(levelsky) is { } texture && texture.RawData.Length >= TEXTURESIZE * TEXTURESIZE)
+        else if (_assetManager.Find<TextureAsset>(levelsky) is { } texture && texture.RawData.Length >= texture.Width * texture.Height)
         {
             // wall textures already are column by column
-            skywidth = skyheight = TEXTURESIZE;
+            skywidth = texture.Width;
+            skyheight = texture.Height;
             skycolumns = texture.RawData;
         }
 

@@ -51,7 +51,7 @@ internal partial class Program
 
         if (!automapTextures.TryGetValue(name, out var pixels))
         {
-            pixels = _assetManager.Find<TextureAsset>(name)?.RawData;
+            pixels = _assetManager.Find<TextureAsset>(name)?.BottomStory();
             if (pixels != null && pixels.Length < AUTOMAP_TEXSIZE * AUTOMAP_TEXSIZE)
                 pixels = null;
             automapTextures[name] = pixels;
