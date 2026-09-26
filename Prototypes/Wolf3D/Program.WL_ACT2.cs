@@ -1,5 +1,6 @@
 using System.Data;
 using Wolf3D.Constants;
+using Wolf3D.Enums;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
 
@@ -85,8 +86,15 @@ internal partial class Program
             for (x = xl; x <= xh; x++)
             {
                 check = _mapManager.actorat[x, y];
-                if (check != null)
-                    return false;
+                if (check == null)
+                    continue;
+
+                // a diagonal only blocks on its solid side of the face
+                if (_mapManager.wallshape[x, y] is var shape and not WallShape.Square
+                    && !BoxHitsDiagonal(shape, x, y, ob.X, ob.Y, PROJSIZE))
+                    continue;
+
+                return false;
             }
 
         return true;

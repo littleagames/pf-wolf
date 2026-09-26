@@ -1,5 +1,6 @@
 using Wolf3D.Assets;
 using Wolf3D.Entities.Actors;
+using Wolf3D.Enums;
 
 namespace Wolf3D;
 
@@ -91,9 +92,11 @@ internal partial class Program
                     continue;
 
                 // Revealed, only the walls that face open space: the solid mass behind them could
-                // never be seen, and filling it in buries the level's shape
+                // never be seen, and filling it in buries the level's shape. A diagonal always
+                // faces its own open half.
                 bool visible = reveal
                     ? !IsAutomapWall(x - 1, y) || !IsAutomapWall(x + 1, y) || !IsAutomapWall(x, y - 1) || !IsAutomapWall(x, y + 1)
+                      || _mapManager.wallshape[x, y] != WallShape.Square
                     : _mapManager.seen[x, y] != SeenFlags.None;
                 if (!visible)
                     continue;
@@ -189,7 +192,14 @@ internal partial class Program
         var north = automapWallNorth[tx, ty];
         var east = automapWallEast[tx, ty];
         if (north != null || east != null)
+        {
+            // a diagonal wall fills only its solid half; the backdrop shows through the open one
+            var shape = _mapManager.wallshape[tx, ty];
+            if (shape != WallShape.Square && !InDiagonalSolid(shape, fx, fy))
+                return -1;
+
             return AutomapWallTexel(north, east, fx, fy);
+        }
 
         int door = automapDoorAt[tx, ty];
         if (door == 0)

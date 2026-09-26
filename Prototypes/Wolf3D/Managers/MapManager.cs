@@ -1,5 +1,6 @@
 ﻿using Wolf3D.Assets;
 using Wolf3D.Constants;
+using Wolf3D.Enums;
 using objflags = Wolf3D.Program.objflags;
 
 namespace Wolf3D.Managers;
@@ -24,6 +25,8 @@ internal enum SeenFlags : byte
     SouthFace = 4,
     WestFace = 8,
     EastFace = 16,
+    /// <summary>A view ray hit a diagonal wall's 45 degree face (MapManager.wallshape).</summary>
+    DiagonalFace = 32,
 }
 
 struct maptype
@@ -78,6 +81,12 @@ internal class MapManager
 
     internal ushort mapwidth, mapheight;
     internal byte[,] tilemap;
+
+    /// <summary>
+    /// Each wall tile's shape: Square, or a 45 degree diagonal from a mapdefs diagonal marker on
+    /// the object plane. Not saved: it's rebuilt from the planes whenever they're loaded or restored.
+    /// </summary>
+    internal WallShape[,] wallshape = new WallShape[MAPSIZE, MAPSIZE];
     internal bool[,] spotvis;
     internal Actor?[,] actorat;
 
@@ -203,6 +212,61 @@ internal class MapManager
                 }
             }
         }
+
+        BuildWallShapes();
+    }
+
+    /// <summary>Sets <see cref="wallshape"/> from the diagonal markers on the object plane.</summary>
+    private void BuildWallShapes()
+    {
+        var diagonals = GetMapData().Diagonals;
+        wallshape = new WallShape[MAPSIZE, MAPSIZE];
+
+        for (int y = 0; y < mapheight; y++)
+            for (int x = 0; x < mapwidth; x++)
+                wallshape[x, y] = IsPlainWall(x, y) && diagonals.TryGetValue(MAPSPOT(x, y, 1), out var diagonal)
+                    ? diagonal.Shape
+                    : WallShape.Square;
+    }
+
+    /// <summary>
+    /// A solid wall tile that can take a shape: not a door, not a moving pushwall, and not open
+    /// floor. A wall beside a door (SpawnDoor sets BIT_WALL on it, for the door-side texture) counts.
+    /// Plane 0 has to hold a wall id too: before SpawnDoor runs, a door tile's raw tilemap value
+    /// (90-101) looks just like a wall id with BIT_WALL set.
+    /// </summary>
+    internal bool IsPlainWall(int x, int y)
+    {
+        var tile = tilemap[x, y];
+        return MAPSPOT(x, y, 0) is > 0 and < Program.BIT_WALL
+            && (tile & Program.BIT_DOOR) == 0 && (tile & ~Program.BIT_WALL) != 0;
+    }
+
+    /// <summary>The diagonal marker on this tile, if its shape came from one.</summary>
+    internal MapDiagonalTranslation? GetDiagonal(int x, int y) =>
+        wallshape[x, y] != WallShape.Square && GetMapData().Diagonals.TryGetValue(MAPSPOT(x, y, 1), out var diagonal)
+            ? diagonal
+            : null;
+
+    /// <summary>
+    /// Gives a wall tile a shape by writing the first mapdefs marker for it onto the object plane,
+    /// so it's saved with the level like a map-authored one. Square clears the marker. Returns the
+    /// marker id written (0 for Square), or null if the mapdefs have no marker for that shape.
+    /// </summary>
+    internal int? SetWallShape(int x, int y, WallShape shape)
+    {
+        int marker = 0;
+        if (shape != WallShape.Square)
+        {
+            var match = GetMapData().Diagonals.Where(d => d.Value.Shape == shape).Select(d => (int?)d.Key).Min();
+            if (match == null)
+                return null;
+            marker = match.Value;
+        }
+
+        SetMapSpot(x, y, 1, (ushort)marker);
+        wallshape[x, y] = shape;
+        return marker;
     }
 
     internal record MapPlayerStart(int TileX, int TileY, int Angle);
@@ -703,6 +767,7 @@ internal class MapManager
         mapsegs = level.Planes.Select(plane => (ushort[])plane.Clone()).ToArray();
         tilemap = (byte[,])level.TileMap.Clone();
         actorat = (Actor?[,])level.ActorAt.Clone();
+        BuildWallShapes();
 
         _actors.Clear();
         Player = null;

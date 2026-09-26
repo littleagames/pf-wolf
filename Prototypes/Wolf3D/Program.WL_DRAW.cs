@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Wolf3D.Assets;
 using Wolf3D.Constants;
 using Wolf3D.Entities.Actors;
+using Wolf3D.Enums;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
@@ -421,6 +422,97 @@ internal partial class Program
         ScalePost();
     }
 
+    /*
+    ====================
+    =
+    = Diagonal walls
+    =
+    = A diagonal tile (MapManager.wallshape) is solid on the two edges at its named corner, with
+    = a 45 degree face between the other two corners. A trace that enters through a solid edge
+    = hits it like a square wall. One that enters through an open edge either meets the face or
+    = crosses the open half and carries on to the next tile.
+    =
+    ====================
+    */
+
+    static int diaghitu;    // where the last TraceDiagonal hit, as the tile-local x (0..TILEGLOBAL)
+
+    // Whether the tile edge a trace enters by is one of the diagonal's two solid edges
+    private static bool IsSolidEdge(WallShape shape, controldirs edge) => edge switch
+    {
+        controldirs.di_west => shape is WallShape.SolidNW or WallShape.SolidSW,
+        controldirs.di_east => shape is WallShape.SolidNE or WallShape.SolidSE,
+        controldirs.di_north => shape is WallShape.SolidNW or WallShape.SolidNE,
+        _ => shape is WallShape.SolidSW or WallShape.SolidSE,
+    };
+
+    /// <summary>
+    /// Where a trace from tile-local (eu, ev), heading (du, dv), meets the diagonal face of the
+    /// tile at (tilex, tiley). All in 16.16 fixed point. On a hit, sets xintercept/yintercept and
+    /// diaghitu; false means it misses the face within the tile (it crosses the open half).
+    /// </summary>
+    private static bool TraceDiagonal(WallShape shape, int tilex, int tiley, long eu, long ev, long du, long dv)
+    {
+        const long TILE = MapConstants.TILEGLOBAL;
+        long num, den;
+
+        if (shape is WallShape.SolidNE or WallShape.SolidSW)
+        {
+            num = ev - eu;              // face runs NW to SE: u == v
+            den = du - dv;
+        }
+        else
+        {
+            num = TILE - eu - ev;       // face runs NE to SW: u + v == TILE
+            den = du + dv;
+        }
+
+        if (den == 0)
+            return false;               // parallel to the face
+        if (num != 0 && (num < 0) != (den < 0))
+            return false;               // the face is behind the trace
+
+        long hu = eu + num * du / den;
+        long hv = ev + num * dv / den;
+        if (hu < 0 || hu > TILE || hv < 0 || hv > TILE)
+            return false;
+
+        xintercept = (tilex << MapConstants.TILESHIFT) + (int)hu;
+        yintercept = (tiley << MapConstants.TILESHIFT) + (int)hv;
+        diaghitu = (int)hu;
+        return true;
+    }
+
+    internal static void HitDiagWall(WallShape shape, int tilex, int tiley)
+    {
+        //
+        // seen from the open side, the face runs left to right along +u for SolidNW/SolidNE,
+        // and along -u for SolidSW/SolidSE
+        //
+        int along = shape is WallShape.SolidSW or WallShape.SolidSE
+            ? (int)MapConstants.TILEGLOBAL - 1 - diaghitu
+            : diaghitu;
+        along = Math.Clamp(along, 0, (int)MapConstants.TILEGLOBAL - 1);
+        int texture = (along >> FIXED2TEXSHIFT) & TEXTUREMASK;
+
+        wallheight[pixx] = CalcHeight();
+        postx = pixx;
+
+        var wallpic = _mapManager.GetDiagonal(tilex, tiley)?.Texture;
+        if (string.IsNullOrEmpty(wallpic))
+        {
+            MapTextureTranslation? mapTexture = MapTextureTranslation.None;
+            _mapManager.GetMapData()?.Walls.TryGetValue(tilehit & ~BIT_WALL, out mapTexture);
+            wallpic = (mapTexture ?? MapTextureTranslation.None).North;
+        }
+
+        var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
+        if (textureAsset == null)
+            return;
+        postsource = textureAsset.RawData.Skip(texture).ToArray();
+        ScalePost();
+    }
+
     internal static byte[] vgaCeiling =
     {
         0x1d,0x1d,0x1d,0x1d,0x1d,0x1d,0x1d,0x1d,0x1d,0xbf,
@@ -576,6 +668,22 @@ internal partial class Program
                         HitHorizWall();
                         continue;
                     }
+                }
+            }
+            else if (_mapManager.wallshape[focaltx, focalty] is var focalshape and not WallShape.Square)
+            {
+                //
+                // the view starts inside a diagonal tile (noclip), so the trace never enters it:
+                // check its face from the view point
+                //
+                if (TraceDiagonal(focalshape, focaltx, focalty,
+                    viewx & (MapConstants.TILEGLOBAL - 1), viewy & (MapConstants.TILEGLOBAL - 1),
+                    xtilestep * MapConstants.TILEGLOBAL, ystep))
+                {
+                    tilehit = _mapManager.tilemap[focaltx, focalty];
+                    HitDiagWall(focalshape, focaltx, focalty);
+                    _mapManager.seen[focaltx, focalty] |= SeenFlags.DiagonalFace;
+                    continue;
                 }
             }
             //
@@ -798,9 +906,31 @@ internal partial class Program
             }
             else
             {
-                xintercept = (xtile << MapConstants.TILESHIFT);
+                var shape = _mapManager.wallshape[xtile, yinttile];
+                if (shape != WallShape.Square
+                    && !IsSolidEdge(shape, xtilestep == 1 ? controldirs.di_west : controldirs.di_east))
+                {
+                    //
+                    // entered a diagonal by an open edge: hit its face, or cross the open half
+                    //
+                    long eu = xtilestep == 1 ? 0 : MapConstants.TILEGLOBAL;
+                    long ev = yintercept - (yinttile << MapConstants.TILESHIFT);
+                    if (!TraceDiagonal(shape, xtile, yinttile, eu, ev, xtilestep * MapConstants.TILEGLOBAL, ystep))
+                    {
+                        passvert(ystep);
+                        return false;
+                    }
 
-                HitVertWall();
+                    HitDiagWall(shape, xtile, yinttile);
+                    _mapManager.seen[hitx, hity] |= SeenFlags.DiagonalFace;
+                    return true;
+                }
+                else
+                {
+                    xintercept = (xtile << MapConstants.TILESHIFT);
+
+                    HitVertWall();
+                }
             }
 
             _mapManager.seen[hitx, hity] |= xtilestep == 1 ? SeenFlags.WestFace : SeenFlags.EastFace;
@@ -1011,9 +1141,31 @@ internal partial class Program
             }
             else
             {
-                yintercept = ytile << MapConstants.TILESHIFT;
+                var shape = _mapManager.wallshape[xinttile, ytile];
+                if (shape != WallShape.Square
+                    && !IsSolidEdge(shape, ytilestep == 1 ? controldirs.di_north : controldirs.di_south))
+                {
+                    //
+                    // entered a diagonal by an open edge: hit its face, or cross the open half
+                    //
+                    long eu = xintercept - (xinttile << MapConstants.TILESHIFT);
+                    long ev = ytilestep == 1 ? 0 : MapConstants.TILEGLOBAL;
+                    if (!TraceDiagonal(shape, xinttile, ytile, eu, ev, xstep, ytilestep * MapConstants.TILEGLOBAL))
+                    {
+                        passhoriz(xstep);
+                        return false;
+                    }
 
-                HitHorizWall();
+                    HitDiagWall(shape, xinttile, ytile);
+                    _mapManager.seen[hitx, hity] |= SeenFlags.DiagonalFace;
+                    return true;
+                }
+                else
+                {
+                    yintercept = ytile << MapConstants.TILESHIFT;
+
+                    HitHorizWall();
+                }
             }
 
             _mapManager.seen[hitx, hity] |= ytilestep == 1 ? SeenFlags.NorthFace : SeenFlags.SouthFace;

@@ -1,6 +1,7 @@
 using Wolf3D.Assets;
 using Wolf3D.Constants;
 using Wolf3D.Entities.Actors;
+using Wolf3D.Enums;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
@@ -272,14 +273,18 @@ internal partial class Program
         return (Math.Max(0, (int)MathF.Floor(center - reach)), Math.Min(MapManager.MAPSIZE - 1, (int)MathF.Ceiling(center + reach)));
     }
 
-    /// <summary>Every seen wall face that borders open floor, as a line along the tile edge.</summary>
+    /// <summary>
+    /// Every seen wall face that borders open space, as a line along the tile edge. A diagonal
+    /// wall shows its two solid edges and a line corner to corner for its 45 degree face.
+    /// </summary>
     static void DrawAutomapWalls(AutomapView view, bool reveal)
     {
         var (firstX, lastX) = AutomapReach(view.CenterX, view);
         var (firstY, lastY) = AutomapReach(view.CenterY, view);
 
         string color = AutomapColor("AutomapWall");
-        const SeenFlags allFaces = SeenFlags.NorthFace | SeenFlags.SouthFace | SeenFlags.WestFace | SeenFlags.EastFace;
+        const SeenFlags allFaces = SeenFlags.NorthFace | SeenFlags.SouthFace | SeenFlags.WestFace | SeenFlags.EastFace
+            | SeenFlags.DiagonalFace;
 
         for (int y = firstY; y <= lastY; y++)
         {
@@ -291,10 +296,21 @@ internal partial class Program
                 // Only the faces the player has looked at, unless the reveal cheat is on
                 var faces = reveal ? allFaces : _mapManager.seen[x, y];
 
-                if ((faces & SeenFlags.NorthFace) != 0 && !IsAutomapWall(x, y - 1)) AutomapLine(view, x, y, x + 1, y, color);
-                if ((faces & SeenFlags.SouthFace) != 0 && !IsAutomapWall(x, y + 1)) AutomapLine(view, x, y + 1, x + 1, y + 1, color);
-                if ((faces & SeenFlags.WestFace) != 0 && !IsAutomapWall(x - 1, y)) AutomapLine(view, x, y, x, y + 1, color);
-                if ((faces & SeenFlags.EastFace) != 0 && !IsAutomapWall(x + 1, y)) AutomapLine(view, x + 1, y, x + 1, y + 1, color);
+                var shape = _mapManager.wallshape[x, y];
+                if (shape != WallShape.Square)
+                {
+                    faces &= DiagonalSolidEdges(shape) | SeenFlags.DiagonalFace;   // its open edges are empty space
+                    if ((faces & SeenFlags.DiagonalFace) != 0)
+                    {
+                        var (u0, v0, u1, v1) = DiagonalFaceEnds(shape);
+                        AutomapLine(view, x + u0, y + v0, x + u1, y + v1, color);
+                    }
+                }
+
+                if ((faces & SeenFlags.NorthFace) != 0 && !IsAutomapSolidEdge(x, y - 1, SeenFlags.SouthFace)) AutomapLine(view, x, y, x + 1, y, color);
+                if ((faces & SeenFlags.SouthFace) != 0 && !IsAutomapSolidEdge(x, y + 1, SeenFlags.NorthFace)) AutomapLine(view, x, y + 1, x + 1, y + 1, color);
+                if ((faces & SeenFlags.WestFace) != 0 && !IsAutomapSolidEdge(x - 1, y, SeenFlags.EastFace)) AutomapLine(view, x, y, x, y + 1, color);
+                if ((faces & SeenFlags.EastFace) != 0 && !IsAutomapSolidEdge(x + 1, y, SeenFlags.WestFace)) AutomapLine(view, x + 1, y, x + 1, y + 1, color);
             }
         }
     }
@@ -524,6 +540,20 @@ internal partial class Program
 
         int tile = _mapManager.tilemap[x, y];
         return tile != 0 && (tile & BIT_DOOR) == 0 && tile != BIT_WALL;
+    }
+
+    /// <summary>
+    /// Whether the tile at (x, y) is solid all along its given edge: a wall, and for a diagonal,
+    /// one of its solid edges (across an open edge its neighbor's face can be seen).
+    /// </summary>
+    static bool IsAutomapSolidEdge(int x, int y, SeenFlags edge)
+    {
+        if (!IsAutomapWall(x, y))
+            return false;
+        if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+            return true;
+
+        return (DiagonalSolidEdges(_mapManager.wallshape[x, y]) & edge) != 0;
     }
 
     private static void Cmd_AmStyle(string[] args)

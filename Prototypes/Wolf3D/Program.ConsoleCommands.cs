@@ -1,6 +1,7 @@
 ﻿using SDL2;
 using System.Text;
 using Wolf3D.Configuration;
+using Wolf3D.Enums;
 
 namespace Wolf3D;
 
@@ -96,6 +97,9 @@ internal partial class Program
         Register("tp", "Teleports to a tile.", "tp <tilex> <tiley> [angle]", Cmd_Teleport, Cheat | InLevel);
         Register("killall", "Kills every enemy on the level.", "killall", Cmd_KillAll, Cheat | InLevel);
         Register("overhead", "Shows the raw and filtered map overview.", "overhead", Cmd_Overhead, Cheat | InLevel);
+        Register("diag", "Makes a wall tile (default: the one you face) a 45 degree wall, named by its solid corner.",
+            "diag <square|solidnw|solidne|solidsw|solidse> [tilex tiley]", Cmd_Diag, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? Enum.GetNames<WallShape>().Select(n => n.ToLowerInvariant()) : []);
 
         //
         // debugging aids and information
@@ -533,6 +537,42 @@ internal partial class Program
         _consoleManager.Print($"Teleported to {x},{y}");
     }
 
+    private static void Cmd_Diag(string[] args)
+    {
+        if (args.Length == 0 || !Enum.TryParse<WallShape>(args[0], ignoreCase: true, out var shape)
+            || !Enum.IsDefined(shape))
+            throw new ArgumentException("usage: diag <square|solidnw|solidne|solidsw|solidse> [tilex tiley]");
+
+        int x, y;
+        if (args.Length >= 3)
+        {
+            x = ParseInt(args[1], 0, _mapManager.mapwidth - 1);
+            y = ParseInt(args[2], 0, _mapManager.mapheight - 1);
+        }
+        else
+        {
+            // the tile in front of the player, as Cmd_Use picks it
+            x = player.TileX;
+            y = player.TileY;
+            switch (FacingDir(player.Angle))
+            {
+                case controldirs.di_east: x++; break;
+                case controldirs.di_north: y--; break;
+                case controldirs.di_west: x--; break;
+                default: y++; break;
+            }
+        }
+
+        // A trigger shares the object plane, so a pushwall can't also be a diagonal.
+        if (!_mapManager.IsPlainWall(x, y) || _mapManager.GetTrigger(x, y) != null)
+            throw new ArgumentException($"tile {x},{y} is not a plain wall");
+
+        var marker = _mapManager.SetWallShape(x, y, shape)
+            ?? throw new ArgumentException($"the mapdefs have no diagonal marker for {shape}");
+
+        _consoleManager.Print($"Tile {x},{y} is now {shape} (plane 1: {marker})");
+    }
+
     private static void Cmd_KillAll(string[] args)
     {
         // Snapshot first: KillActor can drop items, which adds to the actor list.
@@ -582,6 +622,12 @@ internal partial class Program
         _consoleManager.Print($"Tile: {x},{y}  Area: {player.AreaNumber}  Map: {gamestate.mapon}");
         _consoleManager.Print($"tilemap: {_mapManager.tilemap[x, y]}  plane 1: {_mapManager.MAPSPOT(x, y, 1)}  spotvis: {_mapManager.spotvis[x, y]}");
         _consoleManager.Print($"actorat: {_mapManager.actorat[x, y]?.GetType().Name ?? "(nothing)"}");
+
+        var diagonals = new[] { (x + 1, y), (x, y - 1), (x - 1, y), (x, y + 1) }
+            .Where(t => _mapManager.wallshape[t.Item1, t.Item2] != WallShape.Square)
+            .Select(t => $"{t.Item1},{t.Item2} {_mapManager.wallshape[t.Item1, t.Item2]}");
+        if (diagonals.Any())
+            _consoleManager.Print($"diagonal walls beside: {string.Join("  ", diagonals)}");
     }
 
     private static void Cmd_Count(string[] args)

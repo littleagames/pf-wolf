@@ -1,0 +1,15 @@
+# Object-plane markers that turn the wall tile under them into a 45 degree wall. The wall keeps
+# its plane 0 texture id; the marker only gives it a shape. Markers on anything but a solid
+# wall tile (floor, doors) are ignored.
+#   shape:   the solid corner -- SolidNW, SolidNE, SolidSW or SolidSE. Its two tile edges stay
+#            square faces; the diagonal between the other two corners is the angled face.
+#   texture: the angled face's texture (optional; defaults to the wall's North texture)
+diagonals:
+  400:
+    shape: SolidNW
+  401:
+    shape: SolidNE
+  402:
+    shape: SolidSW
+  403:
+    shape: SolidSE

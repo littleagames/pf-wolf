@@ -7,6 +7,7 @@ internal record MapObjectTranslationAsset : Asset
     public Dictionary<int, MapTextureTranslation> Doors { get; internal set; } = new();
     public Dictionary<int, MapPlayerStartTranslation> PlayerStarts { get; internal set; } = new();
     public Dictionary<int, MapTriggerTranslation> Triggers { get; internal set; } = new();
+    public Dictionary<int, MapDiagonalTranslation> Diagonals { get; internal set; } = new();
 
     public override void Merge(Asset other)
     {
@@ -36,8 +37,26 @@ internal record MapObjectTranslationAsset : Asset
             {
                 this.Triggers[item.Key] = item.Value;
             }
+
+            foreach (var item in otherAsset.Diagonals)
+            {
+                this.Diagonals[item.Key] = item.Value;
+            }
         }
     }
+}
+
+/// <summary>
+/// An object-plane marker that turns the wall tile under it into a 45 degree wall. The wall
+/// keeps its plane 0 texture id; this only gives it a shape (and optionally its diagonal face's
+/// texture). A marker on anything but a wall tile is ignored.
+/// </summary>
+internal record MapDiagonalTranslation
+{
+    public Enums.WallShape Shape { get; set; }
+
+    /// <summary>The diagonal face's texture. Empty means the wall's own North texture.</summary>
+    public string Texture { get; set; } = "";
 }
 
 /// <summary>An object-plane tile the player starts the level on, facing <see cref="Angles"/>.</summary>

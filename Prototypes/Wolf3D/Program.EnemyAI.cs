@@ -1,4 +1,5 @@
 using Wolf3D.Constants;
+using Wolf3D.Enums;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
 
@@ -281,9 +282,12 @@ internal partial class Program
                 yfrac += ystep;
 
                 value = (uint)_mapManager.tilemap[x, y];
+                var shape = _mapManager.wallshape[x, y];
+                if (shape != WallShape.Square && LineHitsDiagonal(shape, x, y, ob.X, ob.Y, player.X, player.Y))
+                    return false;
                 x += xstep;
 
-                if (value == 0)
+                if (value == 0 || shape != WallShape.Square)
                     continue;
 
                 if (value < BIT_DOOR || value > BIT_ALLTILES)
@@ -332,9 +336,12 @@ internal partial class Program
                 xfrac += xstep;
 
                 value = (uint)_mapManager.tilemap[x, y];
+                var shape = _mapManager.wallshape[x, y];
+                if (shape != WallShape.Square && LineHitsDiagonal(shape, x, y, ob.X, ob.Y, player.X, player.Y))
+                    return false;
                 y += ystep;
 
-                if (value == 0)
+                if (value == 0 || shape != WallShape.Square)
                     continue;
 
                 if (value < BIT_DOOR || value > BIT_ALLTILES)

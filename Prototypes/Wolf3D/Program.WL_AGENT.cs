@@ -1,5 +1,6 @@
 ﻿using Wolf3D.Assets;
 using Wolf3D.Constants;
+using Wolf3D.Enums;
 using Wolf3D.Entities.Actors;
 using Wolf3D.Managers;
 
@@ -217,7 +218,11 @@ internal partial class Program
         player.TileX = (byte)(player.X >> (int)MapConstants.TILESHIFT);                // scale to tile values
         player.TileY = (byte)(player.Y >> (int)MapConstants.TILESHIFT);
 
-        player.AreaNumber = (byte)(_mapManager.MAPSPOT(player.TileX, player.TileY, 0) - MapDataConstants.AREATILE);
+        // A diagonal wall tile's open half has no area number (plane 0 holds the wall), so keep
+        // the one the player walked in from.
+        var areatile = _mapManager.MAPSPOT(player.TileX, player.TileY, 0);
+        if (MapManager.VALIDAREA(areatile))
+            player.AreaNumber = (byte)(areatile - MapDataConstants.AREATILE);
 
         //
         // mapdefs walk-over trigger (the end-of-castle exit) on the tile just stepped onto
@@ -272,6 +277,17 @@ internal partial class Program
                                 break;
                         }
                     }
+                    else if (_mapManager.wallshape[x, y] is var shape and not WallShape.Square)
+                    {
+                        //
+                        // a diagonal only blocks on its solid side of the face
+                        //
+                        if (BoxHitsDiagonal(shape, (int)x, (int)y, ob.X, ob.Y, PLAYERSIZE))
+                        {
+                            diagonalblock = shape;
+                            return false;
+                        }
+                    }
                     else return false;
                 }
             }
@@ -319,6 +335,7 @@ internal partial class Program
 
         ob.X = basex + xmove;
         ob.Y = basey + ymove;
+        diagonalblock = WallShape.Square;
         if (TryMove(ob))
             return;
 
@@ -329,6 +346,20 @@ internal partial class Program
 
         if (!_audioManager.IsAnySoundPlaying())
              _audioManager.Play("world/hitwall");
+
+        //
+        // ran into a diagonal face: slide along it (the move's part in the face's direction),
+        // since neither axis on its own gets past a 45 degree wall
+        //
+        if (diagonalblock != WallShape.Square)
+        {
+            bool nwToSe = diagonalblock is WallShape.SolidNE or WallShape.SolidSW;
+            int along = nwToSe ? (xmove + ymove) / 2 : (xmove - ymove) / 2;
+            ob.X = basex + along;
+            ob.Y = basey + (nwToSe ? along : -along);
+            if (TryMove(ob))
+                return;
+        }
 
         ob.X = basex + xmove;
         ob.Y = basey;
