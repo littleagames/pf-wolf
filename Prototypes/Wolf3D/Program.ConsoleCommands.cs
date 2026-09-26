@@ -102,6 +102,8 @@ internal partial class Program
             complete: (_, i) => i == 0 ? Enum.GetNames<WallShape>().Select(n => n.ToLowerInvariant()) : []);
         Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
             $"wallheight [1-{MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
+        Register("height", "Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height.",
+            $"height <0-{MAXWALLSTORIES}> [tilex tiley]", Cmd_Height, Cheat | InLevel);
 
         //
         // debugging aids and information
@@ -545,25 +547,7 @@ internal partial class Program
             || !Enum.IsDefined(shape))
             throw new ArgumentException("usage: diag <square|solidnw|solidne|solidsw|solidse> [tilex tiley]");
 
-        int x, y;
-        if (args.Length >= 3)
-        {
-            x = ParseInt(args[1], 0, _mapManager.mapwidth - 1);
-            y = ParseInt(args[2], 0, _mapManager.mapheight - 1);
-        }
-        else
-        {
-            // the tile in front of the player, as Cmd_Use picks it
-            x = player.TileX;
-            y = player.TileY;
-            switch (FacingDir(player.Angle))
-            {
-                case controldirs.di_east: x++; break;
-                case controldirs.di_north: y--; break;
-                case controldirs.di_west: x--; break;
-                default: y++; break;
-            }
-        }
+        var (x, y) = TileArg(args, 1);
 
         // A trigger shares the object plane, so a pushwall can't also be a diagonal.
         if (!_mapManager.IsPlainWall(x, y) || _mapManager.GetTrigger(x, y) != null)
@@ -573,6 +557,40 @@ internal partial class Program
             ?? throw new ArgumentException($"the mapdefs have no diagonal marker for {shape}");
 
         _consoleManager.Print($"Tile {x},{y} is now {shape} (plane 1: {marker})");
+    }
+
+    /// <summary>
+    /// The tile named by args[index] and args[index + 1], or when they aren't given, the tile in
+    /// front of the player, as Cmd_Use picks it.
+    /// </summary>
+    private static (int x, int y) TileArg(string[] args, int index)
+    {
+        if (args.Length >= index + 2)
+            return (ParseInt(args[index], 0, _mapManager.mapwidth - 1), ParseInt(args[index + 1], 0, _mapManager.mapheight - 1));
+
+        int x = player.TileX, y = player.TileY;
+        switch (FacingDir(player.Angle))
+        {
+            case controldirs.di_east: x++; break;
+            case controldirs.di_north: y--; break;
+            case controldirs.di_west: x--; break;
+            default: y++; break;
+        }
+        return (x, y);
+    }
+
+    private static void Cmd_Height(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException($"usage: height <0-{MAXWALLSTORIES}> [tilex tiley]");
+
+        int stories = ParseInt(args[0], 0, MAXWALLSTORIES);
+        var (x, y) = TileArg(args, 1);
+
+        _mapManager.SetWallStories(x, y, stories);
+        _consoleManager.Print(stories == 0
+            ? $"Tile {x},{y} is back to the level's height ({wallstories})"
+            : $"Tile {x},{y} is now {stories} {(stories == 1 ? "story" : "stories")} tall");
     }
 
     private static void Cmd_KillAll(string[] args)
@@ -630,6 +648,10 @@ internal partial class Program
             .Select(t => $"{t.Item1},{t.Item2} {_mapManager.wallshape[t.Item1, t.Item2]}");
         if (diagonals.Any())
             _consoleManager.Print($"diagonal walls beside: {string.Join("  ", diagonals)}");
+
+        var (fx, fy) = TileArg([], 0);
+        _consoleManager.Print($"wall heights: level {wallstories}  tallest {_mapManager.MaxWallStories}  "
+            + $"faced tile {fx},{fy}: {_mapManager.WallStories(fx, fy)} (plane 2: {_mapManager.MAPSPOT(fx, fy, MapManager.HEIGHTPLANE)})");
     }
 
     private static void Cmd_Count(string[] args)

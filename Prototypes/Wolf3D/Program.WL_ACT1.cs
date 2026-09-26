@@ -593,6 +593,7 @@ internal partial class Program
                 //
                 pwallstate = 0;
                 _mapManager.tilemap[pwallx + dx, pwally + dy] = (byte)oldtile;
+                _mapManager.MoveWallStories(pwallx, pwally, pwallx + dx, pwally + dy);
                 return;
             }
             else
@@ -603,6 +604,8 @@ internal partial class Program
                 xh = (int)((player.X + PLAYERSIZE) >> MapConstants.TILESHIFT);
                 yh = (int)((player.Y + PLAYERSIZE) >> MapConstants.TILESHIFT);
 
+                // the wall's height goes with it, on the tile pwallx/pwally name
+                _mapManager.MoveWallStories(pwallx, pwally, pwallx + dx, pwally + dy);
                 pwallx += (ushort)dx;
                 pwally += (ushort)dy;
 

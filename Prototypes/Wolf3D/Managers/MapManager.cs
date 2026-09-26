@@ -87,6 +87,17 @@ internal class MapManager
     /// the object plane. Not saved: it's rebuilt from the planes whenever they're loaded or restored.
     /// </summary>
     internal WallShape[,] wallshape = new WallShape[MAPSIZE, MAPSIZE];
+
+    /// <summary>
+    /// Each tile's wall height in stories from the height plane (plane 2), or 0 where it has
+    /// none and the map's default applies (see <see cref="WallStories"/>). Rebuilt from the
+    /// planes whenever they're loaded or restored, like <see cref="wallshape"/>.
+    /// </summary>
+    internal byte[,] storymap = new byte[MAPSIZE, MAPSIZE];
+    private int maxtilestories;
+
+    internal const int HEIGHTPLANE = 2;
+
     internal bool[,] spotvis;
     internal Actor?[,] actorat;
 
@@ -214,6 +225,54 @@ internal class MapManager
         }
 
         BuildWallShapes();
+        BuildWallHeights();
+    }
+
+    /// <summary>
+    /// Sets <see cref="storymap"/> from the height plane. Values outside 1 to MAXWALLSTORIES
+    /// (a map that uses plane 2 for something else) are left to the map's default.
+    /// </summary>
+    private void BuildWallHeights()
+    {
+        storymap = new byte[MAPSIZE, MAPSIZE];
+        maxtilestories = 0;
+
+        for (int y = 0; y < mapheight; y++)
+            for (int x = 0; x < mapwidth; x++)
+            {
+                int stories = MAPSPOT(x, y, HEIGHTPLANE);
+                if (stories is >= 1 and <= Program.MAXWALLSTORIES)
+                {
+                    storymap[x, y] = (byte)stories;
+                    maxtilestories = Math.Max(maxtilestories, stories);
+                }
+            }
+    }
+
+    /// <summary>How many stories tall the wall on this tile is.</summary>
+    internal int WallStories(int x, int y) => storymap[x, y] != 0 ? storymap[x, y] : Program.wallstories;
+
+    /// <summary>The tallest wall anywhere on the level.</summary>
+    internal int MaxWallStories => Math.Max(maxtilestories, Program.wallstories);
+
+    /// <summary>
+    /// Sets a tile's height on the height plane, so it's saved with the level; 0 gives it back
+    /// to the map's default.
+    /// </summary>
+    internal void SetWallStories(int x, int y, int stories)
+    {
+        SetMapSpot(x, y, HEIGHTPLANE, (ushort)stories);
+        storymap[x, y] = (byte)stories;
+        if (stories > maxtilestories)
+            maxtilestories = stories;
+    }
+
+    /// <summary>Moves a tile's height to another tile, as a pushwall slides.</summary>
+    internal void MoveWallStories(int fromx, int fromy, int tox, int toy)
+    {
+        int stories = storymap[fromx, fromy];
+        SetWallStories(fromx, fromy, 0);
+        SetWallStories(tox, toy, stories);
     }
 
     /// <summary>Sets <see cref="wallshape"/> from the diagonal markers on the object plane.</summary>
@@ -768,6 +827,7 @@ internal class MapManager
         tilemap = (byte[,])level.TileMap.Clone();
         actorat = (Actor?[,])level.ActorAt.Clone();
         BuildWallShapes();
+        BuildWallHeights();
 
         _actors.Clear();
         Player = null;

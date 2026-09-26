@@ -180,19 +180,117 @@ internal partial class Program
     =
     ===================
     */
+    //
+    // A column's trace can go on past a wall, when a taller one behind might show over it. So
+    // rather than drawing what it hits straight away, it queues a post for each wall (and door
+    // lintel) nearest first, and the queue is drawn farthest first: in one screen column, that
+    // puts everything in front of what's behind it.
+    //
+    const int MAXPOSTS = 16;
+    static int postcount;
+    static readonly short[] postheights = new short[MAXPOSTS];
+    static readonly byte[] postfirststory = new byte[MAXPOSTS];
+    static readonly byte[] poststories = new byte[MAXPOSTS];
+    static readonly byte[][] postlower = new byte[MAXPOSTS][];
+    static readonly int[] postlowerofs = new int[MAXPOSTS];
+    static readonly byte[][] postupper = new byte[MAXPOSTS][];
+    static readonly int[] postupperofs = new int[MAXPOSTS];
+
+    internal static short postheight;   // the height (as wallheight) of the post ScalePost queues
+    static int hitstories;              // how many stories tall the wall the trace just hit is
+    static bool columnhit;              // this column's trace has hit a wall: wallheight is set
+    static int columntallest;           // the most stories of any wall it has hit
+    static int columntop;               // the highest screen row any of them reach
+
     internal static void ScalePost()
     {
         var upper = uppersource ?? postsource;
-        DrawPost(postx, wallheight[postx] >> 3, 0, postsource, postofs, upper, uppersource != null ? upperofs : postofs);
+        QueuePost(postheight, 0, hitstories, postsource, postofs, upper, uppersource != null ? upperofs : postofs);
         uppersource = null;
+
+        //
+        // sprites clip against the nearest wall: nothing behind it is taller than it
+        // on screen, since every wall stands at least a story high and sprites don't
+        //
+        if (!columnhit)
+        {
+            wallheight[pixx] = postheight;
+            columnhit = true;
+        }
+
+        int half = Math.Max(postheight >> 3, 1);
+        columntop = Math.Min(columntop, centery + half - hitstories * 2 * half);
+        columntallest = Math.Max(columntallest, hitstories);
+    }
+
+    static void QueuePost(short height, int firststory, int stories, byte[] lower, int lowerofs, byte[] upper, int upperofs)
+    {
+        if (postcount == MAXPOSTS)
+            return;
+        postheights[postcount] = height;
+        postfirststory[postcount] = (byte)firststory;
+        poststories[postcount] = (byte)stories;
+        postlower[postcount] = lower;
+        postlowerofs[postcount] = lowerofs;
+        postupper[postcount] = upper;
+        postupperofs[postcount] = upperofs;
+        postcount++;
+    }
+
+    // Draws the column's queued posts, farthest first
+    static void DrawPosts()
+    {
+        while (postcount > 0)
+        {
+            postcount--;
+            DrawPost(pixx, postheights[postcount] >> 3, postfirststory[postcount], poststories[postcount],
+                postlower[postcount], postlowerofs[postcount], postupper[postcount], postupperofs[postcount]);
+        }
     }
 
     /// <summary>
-    /// Draws one screen column of a wall wallstories tall, standing on the floor. Stories
+    /// Whether the trace should go on past the wall it just hit, on the tile (tilex, tiley): only
+    /// while a taller wall somewhere on the level could still show above everything it has hit.
+    /// </summary>
+    static bool TracePastWall(int tilex, int tiley)
+    {
+        if (columntallest >= _mapManager.MaxWallStories || columntop <= 0 || postcount >= MAXPOSTS - 1)
+            return false;
+        // a trace never leaves the map through its edge
+        return tilex > 0 && tiley > 0 && tilex < _mapManager.mapwidth - 1 && tiley < _mapManager.mapheight - 1;
+    }
+
+    //
+    // the trace's position, kept from before it enters a tile, to carry on past a wall it hits there
+    //
+    static short savedxtile, savedytile;
+    static int savedxintercept, savedyintercept, savedxinttile, savedyinttile;
+    static ushort savedtexdelta;
+    static bool pastwall;               // tracing on past the nearest wall: tiles aren't visible
+
+    static void SaveTrace()
+    {
+        savedxtile = xtile; savedytile = ytile;
+        savedxintercept = xintercept; savedyintercept = yintercept;
+        savedxinttile = xinttile; savedyinttile = yinttile;
+        savedtexdelta = texdelta;
+    }
+
+    static void RestoreTrace()
+    {
+        xtile = savedxtile; ytile = savedytile;
+        xintercept = savedxintercept; yintercept = savedyintercept;
+        xinttile = savedxinttile; yinttile = savedyinttile;
+        texdelta = savedtexdelta;
+        pastwall = true;
+    }
+
+    /// <summary>
+    /// Draws one screen column of a wall, standing on the floor, stories tall. Stories
     /// firststory and up are drawn: the first story from lower, the ones above it from upper,
     /// each repeating the 64 texel column. half is half a story's height in pixels.
     /// </summary>
-    static void DrawPost(int x, int half, int firststory, byte[] lower, int lowerofs, byte[] upper, int upperofs)
+    static void DrawPost(int x, int half, int firststory, int stories, byte[] lower, int lowerofs, byte[] upper, int upperofs)
     {
         if (half <= 0) half = 100;
 
@@ -201,7 +299,7 @@ internal partial class Program
         // along as whole texels (t) plus a remainder, so it matches the old ScalePost exactly
         //
         int bottom = centery + half - 1 - firststory * 2 * half;
-        int top = centery + half - wallstories * 2 * half;
+        int top = centery + half - stories * 2 * half;
         int y = Math.Min(bottom, viewheight - 1);
         if (top < 0) top = 0;
         if (y < top) return;
@@ -253,7 +351,7 @@ internal partial class Program
             texture = TEXTUREMASK - texture;
             xintercept += (int)MapConstants.TILEGLOBAL;
         }
-        wallheight[pixx] = CalcHeight();
+        postheight = CalcHeight();
         postx = pixx;
         var mapDefs = _mapManager.GetMapData();
         MapTextureTranslation? mapTexture = MapTextureTranslation.None;
@@ -315,7 +413,7 @@ internal partial class Program
         else
             texture = TEXTUREMASK - texture;
 
-        wallheight[pixx] = CalcHeight();
+        postheight = CalcHeight();
         postx = pixx;
 
         var mapDefs = _mapManager.GetMapData();
@@ -366,7 +464,7 @@ internal partial class Program
         doornumtile = tilehit & ~BIT_DOOR;
         texture = ((yintercept - doorobjlist[doornumtile].position) >> FIXED2TEXSHIFT) & TEXTUREMASK;
 
-        wallheight[pixx] = CalcHeight();
+        postheight = CalcHeight();
         postx = pixx;
 
         var door = doorobjlist[doornumtile];
@@ -408,7 +506,7 @@ internal partial class Program
         doornumtile = tilehit & ~BIT_DOOR;
         texture = ((xintercept - doorobjlist[doornumtile].position) >> FIXED2TEXSHIFT) & TEXTUREMASK;
 
-        wallheight[pixx] = CalcHeight();
+        postheight = CalcHeight();
         postx = pixx;
 
         var door = doorobjlist[doornumtile];
@@ -446,23 +544,17 @@ internal partial class Program
     =
     = Tall walls
     =
-    = Above the first story, a door is capped by a lintel on the door plane, textured like
-    = the wall the door is set into. It is there whether the door is shut or not: an open
-    = door's lintel is noted as the trace passes and drawn over the column once it ends.
+    = Above the first story, a door is capped by a lintel on the door plane, as tall as the
+    = door tile and textured like the wall the door is set into. It is there whether the door
+    = is shut or not: the trace queues an open door's lintel as it passes through.
     =
     ====================
     */
 
-    const int MAXLINTELS = 8;
-    static int lintelcount;
-    static readonly short[] lintelheight = new short[MAXLINTELS];
-    static readonly byte[][] linteltexture = new byte[MAXLINTELS][];
-    static readonly int[] lintelofs = new int[MAXLINTELS];
-
     // Points the stories above the first at the named wall texture, for the post being drawn
     static void SetUpperPost(string wallpic, int texture)
     {
-        if (wallstories == 1)
+        if (hitstories == 1)
             return;
         uppersource = _assetManager.Find<TextureAsset>(wallpic)?.RawData;
         upperofs = texture;
@@ -502,7 +594,7 @@ internal partial class Program
     // Caps the door post being drawn with its lintel (the door texture again if it has no wall)
     static void SetLintelPost(doorobj_t door, int along, bool flip)
     {
-        if (wallstories == 1)
+        if (hitstories == 1)
             return;
         uppersource = LintelTexture(door) ?? postsource;
         upperofs = LintelColumn(along, flip);
@@ -510,11 +602,12 @@ internal partial class Program
 
     /// <summary>
     /// Notes the lintel of the door the trace is passing through, meeting its plane at
-    /// (planex, planey), to draw once the trace ends. Nothing to do for one story walls.
+    /// (planex, planey), in the column's queue. Nothing to do for a one story door.
     /// </summary>
     static void NoteLintel(doorobj_t door, int planex, int planey)
     {
-        if (wallstories == 1 || lintelcount == MAXLINTELS)
+        int stories = _mapManager.WallStories(door.tilex, door.tiley);
+        if (stories == 1)
             return;
 
         var texture = LintelTexture(door);
@@ -524,26 +617,14 @@ internal partial class Program
         int savex = xintercept, savey = yintercept;
         xintercept = planex;
         yintercept = planey;
-        lintelheight[lintelcount] = CalcHeight();
+        short height = CalcHeight();
         xintercept = savex;
         yintercept = savey;
 
-        linteltexture[lintelcount] = texture;
-        lintelofs[lintelcount] = door.vertical
+        int ofs = door.vertical
             ? LintelColumn(planey, xtilestep == -1)
             : LintelColumn(planex, ytilestep == 1);
-        lintelcount++;
-    }
-
-    // Draws the lintels the column's trace passed, farthest first, over what it hit
-    static void DrawLintels()
-    {
-        while (lintelcount > 0)
-        {
-            lintelcount--;
-            var texture = linteltexture[lintelcount];
-            DrawPost(pixx, lintelheight[lintelcount] >> 3, 1, texture, lintelofs[lintelcount], texture, lintelofs[lintelcount]);
-        }
+        QueuePost(height, 1, stories, texture, ofs, texture, ofs);
     }
 
     /// <summary>
@@ -650,7 +731,7 @@ internal partial class Program
         along = Math.Clamp(along, 0, (int)MapConstants.TILEGLOBAL - 1);
         int texture = (along >> FIXED2TEXSHIFT) & TEXTUREMASK;
 
-        wallheight[pixx] = CalcHeight();
+        postheight = CalcHeight();
         postx = pixx;
 
         var wallpic = _mapManager.GetDiagonal(tilex, tiley)?.Texture;
@@ -777,13 +858,17 @@ internal partial class Program
             ytile = (short)(focalty + ytilestep);
 
             texdelta = 0;
-            lintelcount = 0;
+            columnhit = pastwall = false;
+            columntallest = 0;
+            columntop = viewheight;
+            bool focalhit = false;              // hit a wall in the view's own tile: no trace
 
             //
             // special treatment when player is in back tile of pushwall
             //
             if (_mapManager.tilemap[focaltx, focalty] == BIT_WALL)
             {
+                hitstories = _mapManager.WallStories(pwallx, pwally);
                 if ((pwalldir == controldirs.di_east && xtilestep == 1) || (pwalldir == controldirs.di_west && xtilestep == -1))
                 {
                     yinttemp = yintercept - ((ystep * (64 - pwallpos)) >> 6);
@@ -802,7 +887,7 @@ internal partial class Program
                         yinttile = yintercept >> MapConstants.TILESHIFT;
                         tilehit = pwalltile;
                         HitVertWall();
-                        continue;
+                        focalhit = true;
                     }
                 }
                 else if ((pwalldir == controldirs.di_south && ytilestep == 1) || (pwalldir == controldirs.di_north && ytilestep == -1))
@@ -823,7 +908,7 @@ internal partial class Program
                         xinttile = xintercept >> MapConstants.TILESHIFT;
                         tilehit = pwalltile;
                         HitHorizWall();
-                        continue;
+                        focalhit = true;
                     }
                 }
             }
@@ -838,22 +923,25 @@ internal partial class Program
                     xtilestep * MapConstants.TILEGLOBAL, ystep))
                 {
                     tilehit = _mapManager.tilemap[focaltx, focalty];
+                    hitstories = _mapManager.WallStories(focaltx, focalty);
                     HitDiagWall(focalshape, focaltx, focalty);
                     _mapManager.seen[focaltx, focalty] |= SeenFlags.DiagonalFace;
-                    continue;
+                    focalhit = true;
                 }
             }
-            else if ((_mapManager.tilemap[focaltx, focalty] & BIT_DOOR) != 0 && wallstories > 1)
+            else if ((_mapManager.tilemap[focaltx, focalty] & BIT_DOOR) != 0)
             {
                 NoteFocalLintel(xstep, ystep);
             }
+
             //
-            // trace along this angle until we hit a wall
+            // trace along this angle until we hit a wall, and on past it while a taller wall
+            // could still show over the top: a wall that is hit and passed is traced through
+            // from where the trace entered its tile, as if it were open floor
             //
             // CORE LOOP!
             //
-            var tileFound = false;
-            while (!tileFound)
+            while (!focalhit)
             {
                 //
                 // check intersections with vertical walls
@@ -862,11 +950,16 @@ internal partial class Program
                     yinttile = ytile;
 
                 if ((ytilestep == -1 && yinttile <= ytile) || (ytilestep == 1 && yinttile >= ytile))
-                    tileFound = horizentry(xstep,ystep, xinttemp, ref pwallposnorm, ref pwallposinv, ref pwallposi);
-
-                if (tileFound) break;
-
-                //tileFound = vertentry(ystep, xstep);
+                {
+                    SaveTrace();
+                    if (horizentry(xstep, ystep, xinttemp, ref pwallposnorm, ref pwallposinv, ref pwallposi))
+                    {
+                        if (!TracePastWall(savedxinttile, savedytile))
+                            break;
+                        RestoreTrace();
+                        passhoriz(xstep);
+                    }
+                }
 
                 //
                 // check intersections with horizontal walls
@@ -875,10 +968,19 @@ internal partial class Program
                     xinttile = xtile;
 
                 if ((xtilestep == -1 && xinttile <= xtile) || (xtilestep == 1 && xinttile >= xtile))
-                    tileFound = vertentry(ystep, xstep, yinttemp, ref pwallposnorm, ref pwallposinv, ref pwallposi);           // holds modified pwallpos);
+                {
+                    SaveTrace();
+                    if (vertentry(ystep, xstep, yinttemp, ref pwallposnorm, ref pwallposinv, ref pwallposi))
+                    {
+                        if (!TracePastWall(savedxtile, savedyinttile))
+                            break;
+                        RestoreTrace();
+                        passvert(ystep);
+                    }
+                }
             }
 
-            DrawLintels();
+            DrawPosts();
         }
     }
 
@@ -887,6 +989,7 @@ internal partial class Program
         // the pushwall cases below move yinttile, so keep the tile the trace entered for the automap
         int hitx = xtile, hity = yinttile;
         tilehit = _mapManager.tilemap[xtile, yinttile];
+        hitstories = tilehit == BIT_WALL ? _mapManager.WallStories(pwallx, pwally) : _mapManager.WallStories(hitx, hity);
 
         if (tilehit != 0)
         {
@@ -1112,7 +1215,8 @@ internal partial class Program
 
     private static void passvert(int ystep)
     {
-        _mapManager.spotvis[xtile, yinttile] = true;
+        if (!pastwall)
+            _mapManager.spotvis[xtile, yinttile] = true;
         xtile += xtilestep;
         yintercept += ystep;
         yinttile = yintercept >> (int)MapConstants.TILESHIFT;
@@ -1123,6 +1227,7 @@ internal partial class Program
         // the pushwall cases below move xinttile, so keep the tile the trace entered for the automap
         int hitx = xinttile, hity = ytile;
         tilehit = _mapManager.tilemap[xinttile, ytile];
+        hitstories = tilehit == BIT_WALL ? _mapManager.WallStories(pwallx, pwally) : _mapManager.WallStories(hitx, hity);
 
         if (tilehit != 0)
         {
@@ -1350,7 +1455,8 @@ internal partial class Program
 
     private static void passhoriz(int xstep)
     {
-        _mapManager.spotvis[xinttile, ytile] = true;
+        if (!pastwall)
+            _mapManager.spotvis[xinttile, ytile] = true;
         ytile += ytilestep;
         xintercept += xstep;
         xinttile = xintercept >> (int)MapConstants.TILESHIFT;
