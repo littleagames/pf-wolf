@@ -112,6 +112,11 @@ internal record DefaultMapInfo
     /// How many 64 unit stories tall the walls are
     /// </summary>
     public int WallHeight { get; init; } = 1;
+
+    /// <summary>
+    /// Graphic (or wall texture) drawn in place of the ceiling color; null for none
+    /// </summary>
+    public string? Sky { get; init; } = null;
 }
 
 internal record SkillInfo
@@ -169,4 +174,9 @@ internal record MapInfo
     /// How many 64 unit stories tall the walls are; null uses the default map's
     /// </summary>
     public int? WallHeight { get; init; } = null;
+
+    /// <summary>
+    /// Graphic (or wall texture) drawn in place of the ceiling color; null uses the default map's
+    /// </summary>
+    public string? Sky { get; init; } = null;
 }

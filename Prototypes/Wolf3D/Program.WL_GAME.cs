@@ -506,6 +506,7 @@ internal partial class Program
 
         wallstories = Math.Clamp(mapInfo?.WallHeight ?? _gameEngineManager.GetGameInfo().DefaultMap.WallHeight,
             1, MAXWALLSTORIES);
+        levelsky = mapInfo?.Sky ?? _gameEngineManager.GetGameInfo().DefaultMap.Sky;
 
         //
         // spawn doors

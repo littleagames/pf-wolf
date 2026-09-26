@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using System.Text;
+using Wolf3D.Assets;
 using Wolf3D.Configuration;
 using Wolf3D.Enums;
 
@@ -102,7 +103,9 @@ internal partial class Program
             complete: (_, i) => i == 0 ? Enum.GetNames<WallShape>().Select(n => n.ToLowerInvariant()) : []);
         Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
             $"wallheight [1-{MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
-        Register("height", "Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height. On open floor, 2 or more makes an arch.",
+        Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
+            "sky [name|none]", Cmd_Sky, InLevel);
+        Register("height","Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height. On open floor, 2 or more makes an arch.",
             $"height <0-{MAXWALLSTORIES}> [tilex tiley]", Cmd_Height, Cheat | InLevel);
 
         //
@@ -754,6 +757,18 @@ internal partial class Program
         if (args.Length > 0)
             wallstories = ParseInt(args[0], 1, MAXWALLSTORIES);
         _consoleManager.Print($"Walls are {wallstories} {(wallstories == 1 ? "story" : "stories")} tall");
+    }
+
+    private static void Cmd_Sky(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            var name = args[0].Equals("none", StringComparison.OrdinalIgnoreCase) ? null : args[0];
+            if (name != null && _assetManager.Find<GraphicAsset>(name) == null && _assetManager.Find<TextureAsset>(name) == null)
+                throw new ArgumentException($"no graphic or texture named {name}");
+            levelsky = name;
+        }
+        _consoleManager.Print(levelsky == null ? "No sky: the ceiling is a color" : $"Sky: {levelsky}");
     }
 
     private static void Cmd_Fps(string[] args)

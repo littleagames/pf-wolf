@@ -877,6 +877,79 @@ internal partial class Program
 
     static byte ceilingcolor;           // this frame's ceiling color, for arch undersides too
 
+    /*
+    ====================
+    =
+    = Sky
+    =
+    = A level can have a sky: a picture drawn above the horizon in place of the ceiling color.
+    = It's stretched down to the horizon, and repeats around the full circle every SKYCIRCLE
+    = pixels, turning with the view but not moving as the player walks.
+    =
+    ====================
+    */
+
+    const int SKYCIRCLE = 1024;         // sky pixels all the way round: a 256 wide picture shows 4 times
+
+    internal static string? levelsky;   // the level's sky graphic (or wall texture), null for none
+    static string? skyname;             // the one skycolumns holds
+    static byte[] skycolumns = [];      // its pixels, column by column
+    static int skywidth, skyheight;
+
+    /// <summary>Makes skycolumns hold the level's sky; false if it has none, or it can't be found.</summary>
+    static bool LoadSky()
+    {
+        if (string.IsNullOrEmpty(levelsky))
+            return false;
+        if (levelsky == skyname)
+            return skycolumns.Length > 0;
+
+        skyname = levelsky;
+        skycolumns = [];
+
+        if (_assetManager.Find<GraphicAsset>(levelsky) is { Width: > 0, Height: > 0 } pic)
+        {
+            // pictures are stored row by row
+            skywidth = pic.Width;
+            skyheight = pic.Height;
+            skycolumns = new byte[skywidth * skyheight];
+            for (int x = 0; x < skywidth; x++)
+                for (int y = 0; y < skyheight; y++)
+                    skycolumns[x * skyheight + y] = pic.RawData[y * skywidth + x];
+        }
+        else if (_assetManager.Find<TextureAsset>(levelsky) is { } texture && texture.RawData.Length >= TEXTURESIZE * TEXTURESIZE)
+        {
+            // wall textures already are column by column
+            skywidth = skyheight = TEXTURESIZE;
+            skycolumns = texture.RawData;
+        }
+
+        return skycolumns.Length > 0;
+    }
+
+    static void DrawSky()
+    {
+        int pitch = (int)_videoManager.bufferPitch;
+
+        unsafe
+        {
+            byte* dest = (byte*)vbufPtr + screenofs;
+            for (int x = 0; x < viewwidth; x++)
+            {
+                int angle = (midangle + pixelangle[x]) % ANG360;
+                if (angle < 0)
+                    angle += ANG360;
+
+                // angles grow to the left, and the picture runs left to right
+                int u = (int)((long)(ANG360 - 1 - angle) * SKYCIRCLE / ANG360 % skywidth);
+                int column = u * skyheight;
+
+                for (int y = 0; y < centery; y++)
+                    dest[y * pitch + x] = skycolumns[column + y * skyheight / centery];
+            }
+        }
+    }
+
     internal static void VGAClearScreen()
     {
         var gameInfo = _gameEngineManager.GetGameInfo();
@@ -893,10 +966,19 @@ internal partial class Program
         unsafe
         {
             byte* dest = (byte*)vbufPtr;// + destIndex;
-            for (y = 0; y < centery; y++, destIndex += (int)_videoManager.bufferPitch)
-                for(var v = 0; v < viewwidth; v++)
-                    dest[destIndex+v] = ceilingColor;
-                    //Array.Fill(dest, ceiling, destIndex, viewwidth);
+            if (LoadSky())
+            {
+                DrawSky();
+                y = centery;
+                destIndex += centery * (int)_videoManager.bufferPitch;
+            }
+            else
+            {
+                for (y = 0; y < centery; y++, destIndex += (int)_videoManager.bufferPitch)
+                    for(var v = 0; v < viewwidth; v++)
+                        dest[destIndex+v] = ceilingColor;
+                        //Array.Fill(dest, ceiling, destIndex, viewwidth);
+            }
 
             for (; y < viewheight; y++, destIndex += (int)_videoManager.bufferPitch)
                 for (var v = 0; v < viewwidth; v++)
