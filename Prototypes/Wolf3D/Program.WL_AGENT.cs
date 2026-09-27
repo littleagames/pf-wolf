@@ -136,6 +136,19 @@ internal partial class Program
         }
 
         //
+        // a controller stick's strafe, as far as it's pushed
+        //
+        if (controlstrafe != 0)
+        {
+            angle = ob.Angle + (controlstrafe > 0 ? -ANGLES / 4 : ANGLES / 4);
+            if (angle < 0)
+                angle += ANGLES;
+            else if (angle >= ANGLES)
+                angle -= ANGLES;
+            Thrust(angle, (int)(Math.Abs(controlstrafe) * MOVESCALE));
+        }
+
+        //
         // side to side move
         //
         if (_inputManager.IsButtonPressed(buttontypes.bt_strafe))

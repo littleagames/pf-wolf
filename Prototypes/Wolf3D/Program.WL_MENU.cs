@@ -413,6 +413,7 @@ internal partial class Program
         }
         while (exit == 0);
         _inputManager.ClearKeysDown();
+        WaitKeyUp();        // or a held button picks in, or backs out of, the next menu too
 
         //
         // ERASE EVERYTHING
@@ -2694,14 +2695,18 @@ internal partial class Program
         return xit;
     }
 
+    /// <summary>
+    /// Waits for the select and back buttons, Space, Enter and Escape to be let go, so one press
+    /// isn't taken again by the next screen. Matters most for a controller, whose buttons are read
+    /// as they are rather than as presses that ClearKeysDown can throw away.
+    /// </summary>
     internal static void WaitKeyUp()
     {
         ControlInfo ci;
-        bool keyPressed = false;
-        while (keyPressed)
+        while (true)
         {
             ReadAnyControl(out ci);
-            keyPressed =
+            bool keyPressed =
                ci.button0 ||
                ci.button1 ||
                ci.button2 ||
@@ -2710,7 +2715,10 @@ internal partial class Program
                _inputManager.IsKeyDown(ScanCodes.sc_Enter) ||
                _inputManager.IsKeyDown(ScanCodes.sc_Escape);
 
-            _inputManager.WaitAndProcessEvents();
+            if (!keyPressed)
+                break;
+
+            GameEngineManager.DelayMs(5);
         }
     }
 

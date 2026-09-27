@@ -43,6 +43,13 @@ internal partial class Program
     // current user input
     //
     static int controlx, controly;         // range from -100 to 100 per tic
+    static int controlstrafe;              // a controller stick's sideways move, the same range (positive is right)
+
+    // How much of a controller stick's travel around the middle is ignored, in percent
+    internal static int joydeadzone = 20;
+
+    // Turning speed with a controller's stick pushed all the way, per tic (the arrow keys turn at BASEMOVE, RUNMOVE running)
+    const int JOYTURNSPEED = 90;
 
     static int lastgamemusicoffset = 0;
 
@@ -385,6 +392,7 @@ internal partial class Program
 
         controlx = 0;
         controly = 0;
+        controlstrafe = 0;
         _inputManager.ProcessButtons();
 
         if (demoplayback)
@@ -447,6 +455,8 @@ internal partial class Program
         else if (controly < min)
             controly = min;
 
+        controlstrafe = Math.Clamp(controlstrafe, min, max);
+
         RouteMovementToAutomap();       // pan mode: movement moves the map, not the player
 
         if (demorecord)
@@ -456,6 +466,7 @@ internal partial class Program
             //
             controlx /= (int)tics;
             controly /= (int)tics;
+            controlstrafe = 0;      // a demo has no room for a stick's strafe, so it isn't played either
 
             buttonbits = 0;
 
@@ -591,9 +602,24 @@ internal partial class Program
     {
         int joyx, joyy;
 
+        int speed = _inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE : BASEMOVE;
+
+        // A controller: the left stick walks and strafes and the right stick turns, as fast as
+        // they're pushed. Turning goes up with the square of the push, for fine aim near the middle.
+        if (_inputManager.HasGameController)
+        {
+            float turn = StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX);
+
+            controly += (int)(StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY) * speed * tics);
+            controlstrafe += (int)(StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX) * speed * tics);
+            controlx += (int)(turn * Math.Abs(turn) * JOYTURNSPEED * tics);
+            return;
+        }
+
+        // A plain joystick: its stick walks and turns at full speed once it's pushed halfway
         _inputManager.GetJoyDelta(out joyx, out joyy);
 
-        int delta = (int)(_inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE * tics : BASEMOVE * tics);
+        int delta = (int)(speed * tics);
 
         // The movement buttons are in PollButtonMove, whatever they're bound to
         if (joyx > 64)
@@ -604,5 +630,17 @@ internal partial class Program
             controly += delta;
         else if (joyy < -64)
             controly -= delta;
+    }
+
+    /// <summary>A controller stick's axis from -1 to 1, with the dead zone taken out and the rest stretched to fill it.</summary>
+    static float StickValue(SDL_GameControllerAxis axis)
+    {
+        float value = _inputManager.GetPadAxis(axis);
+        float deadzone = Math.Clamp(joydeadzone, 0, 90) / 100f;
+
+        if (Math.Abs(value) <= deadzone)
+            return 0;
+
+        return Math.Sign(value) * (Math.Abs(value) - deadzone) / (1 - deadzone);
     }
 }

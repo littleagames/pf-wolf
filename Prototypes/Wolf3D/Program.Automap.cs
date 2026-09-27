@@ -168,7 +168,7 @@ internal partial class Program
             return;
 
         // controlx/controly run BASEMOVE a tic at walking pace (RUNMOVE running)
-        float dx = controlx, dy = controly;
+        float dx = controlx + controlstrafe, dy = controly;
         int strafe = (_inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE : BASEMOVE) * (int)tics;
         if (_inputManager.IsButtonPressed(buttontypes.bt_strafeleft))
             dx -= strafe;
@@ -177,7 +177,7 @@ internal partial class Program
 
         _automapManager.Pan(dx * AUTOMAP_PANSPEED / BASEMOVE, dy * AUTOMAP_PANSPEED / BASEMOVE);
 
-        controlx = controly = 0;
+        controlx = controly = controlstrafe = 0;
         _inputManager.SetButtonPressed(buttontypes.bt_strafeleft, false);
         _inputManager.SetButtonPressed(buttontypes.bt_straferight, false);
     }

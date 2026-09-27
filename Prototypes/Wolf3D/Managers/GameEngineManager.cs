@@ -224,13 +224,16 @@ internal class GameEngineManager
         // only has blanks where they were. A config from before that still has them: take them
         // over this once, and controls.cfg holds them from the next save on.
         bool hasLegacyControls = config.DirScan.Any(key => key != ScanCodes.sc_None);
-        if (hasLegacyControls && !File.Exists(GetConfigFilePath(ControlsFileName)))
+        bool legacyConfig = hasLegacyControls && !File.Exists(GetConfigFilePath(ControlsFileName));
+        if (legacyConfig)
             Program.controls.ImportLegacy(config.DirScan, config.ButtonScan, config.ButtonMouse, config.ButtonJoy,
                 config.AutomapKey, config.AutomapKeys);
 
-        // Devices that were there last time may not be now.
+        // Devices that were there last time may not be now. A controller can be plugged in
+        // later, so its setting is kept as it was either way. Before that, the joystick was
+        // saved as off whenever none was plugged in, so an old config's "off" doesn't count.
         Program.mouseenabled = config.MouseEnabled && inputManager.IsMousePresent();
-        Program.joystickenabled = config.JoystickEnabled && inputManager.JoyPresent();
+        Program.joystickenabled = config.JoystickEnabled || legacyConfig;
         Program.mouseadjustment = Math.Clamp(config.MouseAdjustment, 0, 9);
         Program.viewsize = Math.Clamp(config.ViewSize, 4, 21);
         if (config.PauseWhenOpen is bool pause)
@@ -434,8 +437,7 @@ internal class GameEngineManager
         if (inputManager.IsMousePresent())
             Program.mouseenabled = true;
 
-        if (inputManager.JoyPresent())
-            Program.joystickenabled = true;
+        Program.joystickenabled = true;     // used as soon as one is plugged in
 
         Program.viewsize = 19;
         Program.mouseadjustment = 5;

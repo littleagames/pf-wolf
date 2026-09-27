@@ -1,3 +1,5 @@
+using SDL2;
+
 namespace Wolf3D.Configuration;
 
 /// <summary>
@@ -188,27 +190,27 @@ internal sealed class ControlBindings
 
         static InputCode Key(ScanCodes key) => InputCode.FromKey(key);
         static InputCode Mouse(int button) => InputCode.FromMouseButton(button);
-        static InputCode Joy(int index) => InputCode.FromJoyButton(index);
+        static InputCode Pad(SDL.SDL_GameControllerButton button) => InputCode.FromPadButton(button);
+        static InputCode Trigger(SDL.SDL_GameControllerAxis axis) => InputCode.FromPadAxis(axis, true);
 
-        Default(buttontypes.bt_attack, Key(ScanCodes.sc_Control), Mouse(1), Joy(0));
-        Default(buttontypes.bt_strafe, Key(ScanCodes.sc_Alt), Mouse(3), Joy(1));
-        Default(buttontypes.bt_run, Key(ScanCodes.sc_LShift), Joy(3));
-        Default(buttontypes.bt_use, Key(ScanCodes.sc_Space), Mouse(2), Joy(2));
+        // A controller walks, strafes and turns with its sticks (PollJoystickMove); the d-pad
+        // walks and turns like the arrow keys.
+        Default(buttontypes.bt_attack, Key(ScanCodes.sc_Control), Mouse(1), Trigger(SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERRIGHT));
+        Default(buttontypes.bt_strafe, Key(ScanCodes.sc_Alt), Mouse(3), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_X));
+        Default(buttontypes.bt_run, Key(ScanCodes.sc_LShift), Trigger(SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT));
+        Default(buttontypes.bt_use, Key(ScanCodes.sc_Space), Mouse(2), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_A));
         Default(buttontypes.bt_readyknife, Key(ScanCodes.sc_1));
         Default(buttontypes.bt_readypistol, Key(ScanCodes.sc_2));
         Default(buttontypes.bt_readymachinegun, Key(ScanCodes.sc_3));
         Default(buttontypes.bt_readychaingun, Key(ScanCodes.sc_4));
-        Default(buttontypes.bt_nextweapon, Joy(9));
-        Default(buttontypes.bt_prevweapon, Joy(8));
-        Default(buttontypes.bt_esc, Joy(6));
-        Default(buttontypes.bt_pause, Joy(7));
-        Default(buttontypes.bt_strafeleft, Joy(4));
-        Default(buttontypes.bt_straferight, Joy(5));
-        Default(buttontypes.bt_moveforward, Key(ScanCodes.sc_UpArrow));
-        Default(buttontypes.bt_movebackward, Key(ScanCodes.sc_DownArrow));
-        Default(buttontypes.bt_turnleft, Key(ScanCodes.sc_LeftArrow));
-        Default(buttontypes.bt_turnright, Key(ScanCodes.sc_RightArrow));
-        Default(buttontypes.bt_automap, Key(ScanCodes.sc_Tab));
+        Default(buttontypes.bt_nextweapon, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_RIGHTSHOULDER));
+        Default(buttontypes.bt_prevweapon, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
+        Default(buttontypes.bt_esc, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_START));
+        Default(buttontypes.bt_moveforward, Key(ScanCodes.sc_UpArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_UP));
+        Default(buttontypes.bt_movebackward, Key(ScanCodes.sc_DownArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_DOWN));
+        Default(buttontypes.bt_turnleft, Key(ScanCodes.sc_LeftArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_LEFT));
+        Default(buttontypes.bt_turnright, Key(ScanCodes.sc_RightArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
+        Default(buttontypes.bt_automap, Key(ScanCodes.sc_Tab), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_BACK));
 
         for (int i = 0; i < DefaultAutomapKeys.Length; i++)
             Add(ControlAction.Of((Program.automapkeys)i), Key(DefaultAutomapKeys[i]));
@@ -278,10 +280,7 @@ internal sealed class ControlBindings
             SetKey(ControlAction.Of((Program.automapkeys)i), automapKeys![i]);
 
         foreach (var action in ControlAction.All)
-        {
             Clear(action, InputDevice.MouseButton);
-            Clear(action, InputDevice.JoyButton);
-        }
 
         for (int i = 0; i < Math.Min(buttonMouse.Length, LegacyMouseButtons.Length); i++)
         {
@@ -289,12 +288,29 @@ internal sealed class ControlBindings
                 Add(ControlAction.Of(buttonMouse[i]), InputCode.FromMouseButton(LegacyMouseButtons[i]));
         }
 
-        for (int i = 0; i < buttonJoy.Length; i++)
+        // Raw joystick buttons only if they were changed from the old layout's: the stock one
+        // gives way to the named controller buttons the defaults use now.
+        if (!buttonJoy.SequenceEqual(LegacyJoyDefaults))
         {
-            if (IsLegacyButton(buttonJoy[i]))
-                Add(ControlAction.Of(buttonJoy[i]), InputCode.FromJoyButton(i));
+            foreach (var action in ControlAction.All)
+                this[action, ControllerSlot] = InputCode.None;
+
+            for (int i = 0; i < buttonJoy.Length; i++)
+            {
+                if (IsLegacyButton(buttonJoy[i]))
+                    Add(ControlAction.Of(buttonJoy[i]), InputCode.FromJoyButton(i));
+            }
         }
     }
+
+    // The old layout's 32 joystick buttons: these ten, then the rest unbound
+    private static readonly buttontypes[] LegacyJoyDefaults =
+    [
+        buttontypes.bt_attack, buttontypes.bt_strafe, buttontypes.bt_use, buttontypes.bt_run,
+        buttontypes.bt_strafeleft, buttontypes.bt_straferight, buttontypes.bt_esc, buttontypes.bt_pause,
+        buttontypes.bt_prevweapon, buttontypes.bt_nextweapon,
+        .. Enumerable.Repeat(buttontypes.bt_nobutton, 22),
+    ];
 
     private static bool IsLegacyButton(buttontypes button) => button >= 0 && button < buttontypes.NUMBUTTONS;
 }
