@@ -191,14 +191,16 @@ internal partial class Program
 
     /// <summary>
     /// A key or button by name. Keys are folded as InputManager reports them: right-hand
-    /// modifiers (and keypad arrows without Num Lock) into their left-hand/arrow equivalents.
+    /// modifiers into left-hand ones, keypad Enter into Enter. Not the keypad arrows, which
+    /// InputManager only folds while Num Lock is off: a keypad key stays itself, and works as
+    /// that key when it's pressed with Num Lock on.
     /// </summary>
     static InputCode ParseInput(string name)
     {
         if (!InputCode.TryParse(name, out var code))
             throw new ArgumentException($"unknown key or button \"{name}\"");
 
-        return code.Device == InputDevice.Key ? InputCode.FromKey(_inputManager.MapKey(code.Key)) : code;
+        return code.Device == InputDevice.Key ? InputCode.FromKey(InputManager.FoldKey(code.Key)) : code;
     }
 
     /// <summary>Quotes an argument if Tokenize would otherwise split it.</summary>

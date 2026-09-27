@@ -756,17 +756,27 @@ internal class InputManager
         }
     }
 
+    /// <summary>
+    /// The folding <see cref="MapKey"/> always does: right-hand modifiers into left-hand ones and
+    /// keypad Enter into Enter. For reading a key's name from a .cfg file or the console, where
+    /// MapKey's Num Lock-dependent keypad arrows would bind a different key depending on the
+    /// Num Lock light at the time.
+    /// </summary>
+    internal static ScanCodes FoldKey(ScanCodes key) => key switch
+    {
+        ScanCodes.sc_KeyPadEnter => ScanCodes.sc_Enter,
+        ScanCodes.sc_RShift => ScanCodes.sc_LShift,
+        ScanCodes.sc_RAlt => ScanCodes.sc_LAlt,
+        ScanCodes.sc_RControl => ScanCodes.sc_LControl,
+        _ => key,
+    };
+
     internal ScanCodes MapKey(ScanCodes key)
     {
-        ScanCodes scan = key;
+        ScanCodes scan = FoldKey(key);
 
         switch (key)
         {
-            case ScanCodes.sc_KeyPadEnter: scan = ScanCodes.sc_Enter; break;
-            case ScanCodes.sc_RShift: scan = ScanCodes.sc_LShift; break;
-            case ScanCodes.sc_RAlt: scan = ScanCodes.sc_LAlt; break;
-            case ScanCodes.sc_RControl: scan = ScanCodes.sc_LControl; break;
-
             case ScanCodes.sc_KeyPad2:
             case ScanCodes.sc_KeyPad4:
             case ScanCodes.sc_KeyPad6:

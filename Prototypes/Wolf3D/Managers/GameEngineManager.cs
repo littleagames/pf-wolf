@@ -125,6 +125,12 @@ internal class GameEngineManager
         return gameInfo;
     }
 
+    /// <summary>
+    /// Set once config.cfg, controls.cfg and binds.cfg have been read at startup; WriteConfig
+    /// does nothing before then.
+    /// </summary>
+    internal bool SettingsLoaded { get; set; }
+
     internal const string ControlsFileName = "controls.cfg";
     internal const string BindsFileName = "binds.cfg";
     internal const string AutoexecFileName = "autoexec.cfg";
@@ -450,6 +456,11 @@ internal class GameEngineManager
     /// </summary>
     internal void WriteConfig()
     {
+        // Until the settings are all loaded, what's in memory is partly defaults: writing it (as
+        // quitting at the signon screen would) would replace the saved controls with them.
+        if (!SettingsLoaded)
+            return;
+
         try
         {
             // The controls and binds are console commands, so they're saved as scripts the

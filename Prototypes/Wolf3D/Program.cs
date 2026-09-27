@@ -133,6 +133,7 @@ internal partial class Program
         // saved on the last exit, then the player's own autoexec.cfg, then any --exec commands.
         _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.ControlsFileName));
         _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.BindsFileName));
+        _gameEngineManager.SettingsLoaded = true;      // from here on, saving them keeps what was loaded
         _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.AutoexecFileName));
 
         if (!string.IsNullOrWhiteSpace(gameParams.Exec))
