@@ -123,7 +123,8 @@ internal partial class Program
             "fade <palette|fizzle|melt|mosaic> [tics]", Cmd_Fade, InLevel,
             complete: Values(Enum.GetNames<FadeStyle>().Select(n => n.ToLowerInvariant()).ToArray()));
         Register("screenshot","Saves the screen, without the console, to WSHOT###.BMP in the screenshots folder.", "screenshot", _ => screenshotPending = true);
-        Register("quit", "Quits the game immediately.", "quit", _ => _gameEngineManager.Quit(""));    }
+        Register("quit", "Quits the game immediately.", "quit", _ => _gameEngineManager.Quit(""));
+    }
 
     static void Register(string name, string help, string usage, Action<string[]> run,
         ConsoleCommandFlags flags = ConsoleCommandFlags.None, string[]? aliases = null, ConsoleCompleter? complete = null) =>

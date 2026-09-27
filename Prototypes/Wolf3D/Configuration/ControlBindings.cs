@@ -113,35 +113,34 @@ internal sealed class ControlBindings
     }
 
     /// <summary>
-    /// Binds an input to an action in place of the action's own input from the same device (or
-    /// in a free slot, or over its last slot of that kind), taking it off every other action first.
+    /// Puts an input in one of an action's slots, and takes it off the action's other slots and
+    /// off every other action in the same group: the play buttons, or the automap's keys, which
+    /// only work while the map is open. Returns the actions it was taken off.
     /// </summary>
-    public void Replace(ControlAction action, InputCode code)
+    public List<ControlAction> Set(ControlAction action, int slot, InputCode code)
     {
-        if (code.IsNone)
-            return;
+        var takenFrom = new List<ControlAction>();
 
-        Unbind(code);
-
-        var slots = SlotsFor(code).ToArray();
-        int found = Array.FindIndex(slots, s => _slots[action.Index, s].Device == code.Device);
-        if (found < 0)
-            found = Array.FindIndex(slots, s => _slots[action.Index, s].IsNone);
-
-        _slots[action.Index, found >= 0 ? slots[found] : slots[^1]] = code;
-    }
-
-    /// <summary>Takes an input off every action it's bound to.</summary>
-    public void Unbind(InputCode code)
-    {
-        for (int action = 0; action < ControlAction.Count; action++)
+        if (!code.IsNone)
         {
-            for (int slot = 0; slot < SlotCount; slot++)
+            foreach (var other in ControlAction.All)
             {
-                if (_slots[action, slot] == code)
-                    _slots[action, slot] = InputCode.None;
+                if (other.IsAutomapKey != action.IsAutomapKey || !IsBound(other, code))
+                    continue;
+
+                for (int s = 0; s < SlotCount; s++)
+                {
+                    if (_slots[other.Index, s] == code)
+                        _slots[other.Index, s] = InputCode.None;
+                }
+
+                if (other != action)
+                    takenFrom.Add(other);
             }
         }
+
+        this[action, slot] = code;
+        return takenFrom;
     }
 
     /// <summary>Empties an action's slots, or only those holding the given device's inputs.</summary>

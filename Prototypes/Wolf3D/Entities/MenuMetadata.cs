@@ -691,6 +691,30 @@ internal record MusicMenuItem : MenuItem
 }
 
 /// <summary>
+/// A row of the Customize Controls screen: the keys and buttons bound to one control
+/// </summary>
+internal record ControlMenuItem : MenuItem
+{
+    /// <summary>The control's controls.cfg name ("attack", "am_zoomin")</summary>
+    public string? Control { get; set; }
+
+    public ControlMenuItem()
+    {
+    }
+}
+
+/// <summary>
+/// A title over a group of rows in a list that can't be selected (Customize Controls' sections)
+/// </summary>
+internal record HeaderMenuItem : MenuItem
+{
+    public HeaderMenuItem()
+    {
+        Enabled = false;
+    }
+}
+
+/// <summary>
 /// One value picked from a list, stepped with left/right (or Enter) while highlighted.
 /// The menu's code supplies the values, since lists like resolutions come from the display.
 /// </summary>
