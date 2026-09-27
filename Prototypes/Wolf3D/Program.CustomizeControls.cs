@@ -251,7 +251,7 @@ internal partial class Program
     }
 
     /// <summary>
-    /// Waits for a fresh press: a key or mouse button, or for the controller slot a controller
+    /// Waits for a fresh press: a key, mouse button or wheel turn, or for the controller slot a controller
     /// button, trigger or stick. The slot's cursor flashes a "?" meanwhile. Escape, or waiting
     /// too long, gives up and returns None. Grave is left for the console.
     /// </summary>
@@ -296,6 +296,10 @@ internal partial class Program
                 else if (!held.Contains(code))
                     return code;
             }
+
+            int wheel = _inputManager.TakeWheelDelta();     // ClearKeysDown dropped any from before
+            if (!controller && wheel != 0)
+                return wheel > 0 ? InputCode.WheelUp : InputCode.WheelDown;
 
             if (GameEngineManager.GetTimeCount() - lastFlash > 10)
             {
@@ -473,6 +477,7 @@ internal partial class Program
     {
         InputDevice.Key => _inputManager.GetScanName(code.Key) is var name && name != "?" ? name : code.ToString(),
         InputDevice.PadButton or InputDevice.PadAxis => code.ToString()["Pad ".Length..],
+        InputDevice.MouseWheel => code == InputCode.WheelUp ? "Wheel Up" : "Wheel Dn",
         _ => code.ToString(),
     };
 

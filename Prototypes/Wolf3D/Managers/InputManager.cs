@@ -476,6 +476,7 @@ internal class InputManager
 
         Array.Fill(Keyboard, false);
         pressedKeys.Clear();
+        wheelDelta = 0;     // or turns made in a menu change weapons once the game carries on
     }
 
     /// <summary>Takes the oldest key pressed since the last call (or since keys were cleared).</summary>

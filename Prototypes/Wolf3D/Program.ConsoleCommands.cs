@@ -17,7 +17,6 @@ internal partial class Program
     {
         _consoleManager.CheatsEnabled = () => DebugOk != 0;
         _consoleManager.LevelLoaded = () => _mapManager.Player != null;
-        _consoleManager.KeyName = KeyName;
 
         //
         // console
@@ -34,12 +33,12 @@ internal partial class Program
             "exec <file>", Cmd_Exec, complete: (_, i) => i == 0 ? ConfigScriptNames() : []);
 
         //
-        // key binds (saved to binds.cfg on exit)
+        // binds (saved to binds.cfg on exit)
         //
-        Register("bind", "Binds a key to a command run when it's pressed in play, or shows its bind.",
-            "bind <key> [command]", Cmd_Bind, complete: CompleteBind);
-        Register("unbind", "Removes a key's bind.", "unbind <key>", Cmd_Unbind,
-            complete: (_, i) => i == 0 ? _consoleManager.Binds.Keys.Select(KeyName) : []);
+        Register("bind", "Binds a key, mouse button, wheel turn or controller button to a command run when it's pressed in play, or shows its bind.",
+            "bind <key or button> [command]", Cmd_Bind, complete: CompleteBind);
+        Register("unbind", "Removes a key or button's bind.", "unbind <key or button>", Cmd_Unbind,
+            complete: (_, i) => i == 0 ? _consoleManager.Binds.Keys.Select(input => input.ToString()) : []);
         Register("unbindall", "Removes every bind.", "unbindall", _ =>
         {
             _consoleManager.UnbindAll();
@@ -50,8 +49,19 @@ internal partial class Program
         //
         // controls (saved to controls.cfg on exit)
         //
-        Register("bindaction", "Sets a control's keys and buttons: up to two keys or mouse buttons and one joystick button. Lists them all with no control.",
-            "bindaction [control] [key|\"Mouse 1-5\"|\"Joy 1-32\"...|none]", Cmd_BindAction, complete: CompleteBindAction);
+        Register("bindaction", "Sets a control's keys and buttons: up to two keys, mouse buttons or wheel turns and one controller button. Lists them all with no control.",
+            "bindaction [control] [key|\"Mouse 1-5\"|\"Wheel Up\"|\"Pad A\"|\"Joy 1-32\"...|none]", Cmd_BindAction, complete: CompleteBindAction);
+        Register("resetcontrols", "Puts every control back to its default keys and buttons.", "resetcontrols", _ =>
+        {
+            controls.SetDefaults();
+            _consoleManager.Print("Every control is back to its default");
+        });
+        Register("joy_deadzone", "How much of a controller stick's travel around the middle is ignored, in percent.",
+            "joy_deadzone [0-50]", args => SetOrShow("joy_deadzone", args, ref joydeadzone, 0, 50));
+        Register("joy_turnspeed", "How fast a controller's stick turns you, pushed all the way.",
+            "joy_turnspeed [0-9]", args => SetOrShow("joy_turnspeed", args, ref joyturnspeed, 0, JOYTURNSPEEDS - 1));
+        Register("joy_sticks", "Which controller stick turns: the right (modern) or the left, with the right strafing (classic).",
+            "joy_sticks [modern|classic]", Cmd_JoySticks, complete: Values("modern", "classic"));
 
         //
         // automap
@@ -151,7 +161,7 @@ internal partial class Program
 
     static IEnumerable<string> CompleteBind(string[] args, int index) => index switch
     {
-        0 => AllKeyNames(),
+        0 => InputCode.AllNames(),
         1 => CommandNames(),
         _ => [],
     };
@@ -170,31 +180,26 @@ internal partial class Program
     /*
     =============================================================================
 
-                                    KEY NAMES
+                                KEY AND BUTTON NAMES
 
-    Binds use SDL's scancode names ("F5", "Keypad 1", "Left Shift"), matched
-    without regard to case, so they read the same in binds.cfg as on screen.
+    Binds and controls use SDL's key names ("F5", "Keypad 1", "Left Shift"),
+    "Mouse 1", "Wheel Up", "Joy 1" and "Pad A" (see InputCode), matched without
+    regard to case, so they read the same in the .cfg files as on screen.
 
     =============================================================================
     */
 
-    static string KeyName(ScanCodes key) => InputCode.KeyName(key);
-
-    static ScanCodes ParseKey(string name)
+    /// <summary>
+    /// A key or button by name. Keys are folded as InputManager reports them: right-hand
+    /// modifiers (and keypad arrows without Num Lock) into their left-hand/arrow equivalents.
+    /// </summary>
+    static InputCode ParseInput(string name)
     {
-        var scancode = SDL.SDL_GetScancodeFromName(name);
-        if (scancode == SDL.SDL_Scancode.SDL_SCANCODE_UNKNOWN)
-            throw new ArgumentException($"unknown key \"{name}\"");
+        if (!InputCode.TryParse(name, out var code))
+            throw new ArgumentException($"unknown key or button \"{name}\"");
 
-        // Binds are looked up by the key InputManager reports, which folds right-hand modifiers
-        // (and keypad arrows without Num Lock) into their left-hand/arrow equivalents.
-        return _inputManager.MapKey((ScanCodes)scancode);
+        return code.Device == InputDevice.Key ? InputCode.FromKey(_inputManager.MapKey(code.Key)) : code;
     }
-
-    static IEnumerable<string> AllKeyNames() =>
-        Enumerable.Range(1, (int)SDL.SDL_Scancode.SDL_NUM_SCANCODES - 1)
-            .Select(i => SDL.SDL_GetScancodeName((SDL.SDL_Scancode)i))
-            .Where(name => !string.IsNullOrEmpty(name));
 
     /// <summary>Quotes an argument if Tokenize would otherwise split it.</summary>
     static string QuoteArg(string arg) =>
@@ -298,39 +303,39 @@ internal partial class Program
     private static void Cmd_Bind(string[] args)
     {
         if (args.Length == 0)
-            throw new ArgumentException("usage: bind <key> [command]");
+            throw new ArgumentException("usage: bind <key or button> [command]");
 
-        var key = ParseKey(args[0]);
+        var input = ParseInput(args[0]);
 
         if (args.Length == 1)
         {
-            _consoleManager.Print(_consoleManager.Binds.TryGetValue(key, out var bound)
-                ? $"\"{KeyName(key)}\" = \"{bound}\""
-                : $"\"{KeyName(key)}\" is not bound");
+            _consoleManager.Print(_consoleManager.Binds.TryGetValue(input, out var bound)
+                ? $"\"{input}\" = \"{bound}\""
+                : $"\"{input}\" is not bound");
             return;
         }
 
         // ` always toggles the console and Escape always opens the menu, before binds are seen.
-        if (key is ScanCodes.sc_Grave or ScanCodes.sc_Escape)
-            throw new ArgumentException($"\"{KeyName(key)}\" is reserved");
+        if (input.Key is ScanCodes.sc_Grave or ScanCodes.sc_Escape)
+            throw new ArgumentException($"\"{input}\" is reserved");
 
         // One argument is the command line as-is (`bind F5 "god; noclip"`); several are
         // rejoined, re-quoting any that need it (`bind F5 give GoldKey`).
         var command = args.Length == 2 ? args[1] : string.Join(' ', args[1..].Select(QuoteArg));
 
-        _consoleManager.Bind(key, command);
-        _consoleManager.Print($"\"{KeyName(key)}\" = \"{command}\"");
+        _consoleManager.Bind(input, command);
+        _consoleManager.Print($"\"{input}\" = \"{command}\"");
     }
 
     private static void Cmd_Unbind(string[] args)
     {
         if (args.Length == 0)
-            throw new ArgumentException("usage: unbind <key>");
+            throw new ArgumentException("usage: unbind <key or button>");
 
-        var key = ParseKey(args[0]);
-        _consoleManager.Print(_consoleManager.Unbind(key)
-            ? $"\"{KeyName(key)}\" unbound"
-            : $"\"{KeyName(key)}\" is not bound");
+        var input = ParseInput(args[0]);
+        _consoleManager.Print(_consoleManager.Unbind(input)
+            ? $"\"{input}\" unbound"
+            : $"\"{input}\" is not bound");
     }
 
     private static void Cmd_BindAction(string[] args)
@@ -363,25 +368,59 @@ internal partial class Program
         _consoleManager.Print($"{action.Name} = {controls.FormatInputs(action)}");
     }
 
-    /// <summary>A key or button by name, with keys folded as InputManager reports them (like binds).</summary>
-    static InputCode ParseInput(string name)
+    /// <summary>
+    /// Sets a number setting from args[0] if given, then shows it (quietly when controls.cfg
+    /// sets it at startup).
+    /// </summary>
+    static void SetOrShow(string name, string[] args, ref int setting, int min, int max)
     {
-        if (!InputCode.TryParse(name, out var code))
-            throw new ArgumentException($"unknown key or button \"{name}\"");
+        if (args.Length > 0)
+        {
+            setting = ParseInt(args[0], min, max);
+            if (_consoleManager.IsRunningScript)
+                return;
+        }
 
-        return code.Device == InputDevice.Key ? InputCode.FromKey(_inputManager.MapKey(code.Key)) : code;
+        _consoleManager.Print($"{name} = {setting}");
     }
+
+    private static void Cmd_JoySticks(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            joyclassicsticks = args[0].ToLowerInvariant() switch
+            {
+                "modern" => false,
+                "classic" => true,
+                _ => throw new ArgumentException($"expected modern or classic, got \"{args[0]}\""),
+            };
+            if (_consoleManager.IsRunningScript)
+                return;
+        }
+
+        _consoleManager.Print($"joy_sticks = {JoySticksName}");
+    }
+
+    static string JoySticksName => joyclassicsticks ? "classic" : "modern";
+
+    /// <summary>The controller settings as console commands, for saving to controls.cfg.</summary>
+    internal static IEnumerable<string> GetControllerSettingCommands() =>
+    [
+        $"joy_deadzone {joydeadzone}",
+        $"joy_turnspeed {joyturnspeed}",
+        $"joy_sticks {JoySticksName}",
+    ];
 
     private static void Cmd_Binds(string[] args)
     {
         if (_consoleManager.Binds.Count == 0)
         {
-            _consoleManager.Print("No keys are bound");
+            _consoleManager.Print("Nothing is bound");
             return;
         }
 
-        foreach (var (key, command) in _consoleManager.Binds.OrderBy(b => KeyName(b.Key), StringComparer.OrdinalIgnoreCase))
-            _consoleManager.Print($"\"{KeyName(key)}\" = \"{command}\"");
+        foreach (var (input, command) in _consoleManager.Binds.OrderBy(b => b.Key.ToString(), StringComparer.OrdinalIgnoreCase))
+            _consoleManager.Print($"\"{input}\" = \"{command}\"");
     }
 
     /*

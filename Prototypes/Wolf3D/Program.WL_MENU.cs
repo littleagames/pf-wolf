@@ -42,6 +42,7 @@ internal partial class Program
     internal static CP_itemtype[] VidMenu = [];
     internal static CP_itemtype[] SndMenu = [];
     internal static CP_itemtype[] CtlMenu = [];
+    internal static CP_itemtype[] JoyMenu = [];
     internal static CP_itemtype[] NewEmenu = [];
     internal static CP_itemtype[] NewMenu = [];
 
@@ -58,6 +59,7 @@ internal partial class Program
     internal static CP_iteminfo SndItems;
     internal static CP_iteminfo LSItems;
     internal static CP_iteminfo CtlItems;
+    internal static CP_iteminfo JoyItems;
     internal static CP_iteminfo NewEitems;
     internal static CP_iteminfo NewItems;
     internal static CP_iteminfo MusicItems;
@@ -1519,6 +1521,7 @@ internal partial class Program
                     break;
 
                 case "mouse-sensitivity":
+                case "controller-settings":
                 case "customize":
                     DrawCtlScreen();
                     MenuFadeIn();
@@ -1578,6 +1581,103 @@ internal partial class Program
 
         DrawMenuGun(CtlItems);
         _videoManager.Update();
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    //
+    // CONTROLLER SETTINGS
+    //
+    ////////////////////////////////////////////////////////////////////
+
+    // The dead zone slider moves in steps of this many percent
+    private const int JoyDeadzoneStep = 5;
+    private const int JoyDeadzoneMax = 50;
+
+    internal static int CP_ControllerSettings(int _)
+    {
+        int which;
+
+        DrawControllerMenu();
+        MenuFadeIn();
+        WaitKeyUp();
+
+        do
+        {
+            which = HandleMenu(JoyItems, JoyMenu, null, AdjustControllerSetting);
+
+            // Enter steps the stick layout round too; the sliders only move with left/right
+            if (SelectedId(JoyMenu, which) == "joy-sticks")
+                AdjustControllerSetting(which, 1);
+        }
+        while (which >= 0);
+
+        MenuFadeOut();
+
+        return 0;
+    }
+
+    internal static void DrawControllerMenu()
+    {
+        var language = _assetManager.GetText("en-us");
+
+        DrawMenuComponents("controller");
+        DrawMenu(JoyItems, JoyMenu);
+        DrawControllerValues();
+
+        // Which controller the settings are for, under the hints
+        fontnumber = "SmallFont";
+        SETFONTCOLOR("READCOLOR", "BKGDCOLOR");
+        WindowX = 0;
+        WindowW = 320;
+        PrintY = 160;
+        US_CPrint(FitText(_inputManager.ControllerName is string name
+            ? $"{"$STR_CTL_PAD".ToLanguageText(language)} {name}"
+            : "$STR_CTL_NOPAD".ToLanguageText(language), 300));     // a controller's name can be long
+        fontnumber = "LargeFont";
+
+        DrawMenuGun(JoyItems);
+        _videoManager.Update();
+    }
+
+    private static void DrawControllerValues()
+    {
+        var language = _assetManager.GetText("en-us");
+
+        DrawMenuSlider(JoyItems, JoyMenu, "joy-deadzone", Math.Clamp(joydeadzone, 0, JoyDeadzoneMax) / JoyDeadzoneStep, JoyDeadzoneMax / JoyDeadzoneStep);
+        DrawMenuSlider(JoyItems, JoyMenu, "joy-turnspeed", Math.Clamp(joyturnspeed, 0, JOYTURNSPEEDS - 1), JOYTURNSPEEDS - 1);
+        DrawMenuChoice(JoyItems, JoyMenu, "joy-sticks", (joyclassicsticks ? "$STR_JOYCLASSIC" : "$STR_JOYMODERN").ToLanguageText(language));
+    }
+
+    // Left/right on a Controller Settings row
+    private static void AdjustControllerSetting(int which, int delta)
+    {
+        switch (SelectedId(JoyMenu, which))
+        {
+            case "joy-deadzone":
+                int deadzone = Math.Clamp((joydeadzone / JoyDeadzoneStep + delta) * JoyDeadzoneStep, 0, JoyDeadzoneMax);
+                if (deadzone == joydeadzone)
+                    return;
+                joydeadzone = deadzone;
+                break;
+
+            case "joy-turnspeed":
+                int turnspeed = Math.Clamp(joyturnspeed + delta, 0, JOYTURNSPEEDS - 1);
+                if (turnspeed == joyturnspeed)
+                    return;
+                joyturnspeed = turnspeed;
+                break;
+
+            case "joy-sticks":
+                joyclassicsticks = !joyclassicsticks;
+                break;
+
+            default:
+                return;
+        }
+
+        DrawControllerValues();
+        _videoManager.Update();
+        _audioManager.Play("menu/move1");
     }
 
     // The on/off box to the left of a ToggleMenuItem's text
@@ -2243,6 +2343,7 @@ internal partial class Program
         (VidMenu, VidItems) = LoadMenu("video");
         (SndMenu, SndItems) = LoadMenu("sound");
         (CtlMenu, CtlItems) = LoadMenu("control", curpos: -1);
+        (JoyMenu, JoyItems) = LoadMenu("controller");
         customizeRows = LoadCustomizeRows();
         (NewEmenu, NewEitems) = LoadMenu("new-episode");
         (NewMenu, NewItems) = LoadMenu("new-game");
@@ -2436,6 +2537,7 @@ internal partial class Program
             CP_Video,
             CP_Sound,
             CP_Control,
+            CP_ControllerSettings,
             CP_LoadGame,
             CP_SaveGame,
             CP_ChangeView,

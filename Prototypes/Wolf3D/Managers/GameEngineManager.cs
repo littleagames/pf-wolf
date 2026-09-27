@@ -459,7 +459,7 @@ internal class GameEngineManager
             {
                 using var writer = new StreamWriter(stream);
                 writer.WriteLine("// Written by the game; use autoexec.cfg for your own commands.");
-                foreach (var command in Program.controls.GetCommands())
+                foreach (var command in Program.controls.GetCommands().Concat(Program.GetControllerSettingCommands()))
                     writer.WriteLine(command);
             });
 

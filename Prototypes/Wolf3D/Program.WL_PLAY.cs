@@ -44,12 +44,21 @@ internal partial class Program
     //
     static int controlx, controly;         // range from -100 to 100 per tic
     static int controlstrafe;              // a controller stick's sideways move, the same range (positive is right)
+    static int wheelnotches;               // the mouse wheel's turn this frame (positive is away from the user)
 
-    // How much of a controller stick's travel around the middle is ignored, in percent
+    // The controller settings (the Controller Settings menu, and joy_* in controls.cfg):
+    // how much of a stick's travel around the middle is ignored, in percent; how fast a stick
+    // turns, as a step of JoyTurnSpeed; and whether the left stick turns, with the right
+    // strafing (classic), rather than the right stick turning (modern).
     internal static int joydeadzone = 20;
+    internal static int joyturnspeed = 4;
+    internal static bool joyclassicsticks;
 
-    // Turning speed with a controller's stick pushed all the way, per tic (the arrow keys turn at BASEMOVE, RUNMOVE running)
-    const int JOYTURNSPEED = 90;
+    internal const int JOYTURNSPEEDS = 10;
+
+    // Turning speed with a stick pushed all the way, per tic: 50 to 140, 90 by default (the
+    // arrow keys turn at BASEMOVE, RUNMOVE running)
+    static int JoyTurnSpeed => 50 + 10 * Math.Clamp(joyturnspeed, 0, JOYTURNSPEEDS - 1);
 
     static int lastgamemusicoffset = 0;
 
@@ -222,15 +231,20 @@ internal partial class Program
             ToggleAutomap();
 
         //
-        // console binds: run the command bound to each key pressed since the last frame
-        // (never while recording, or the demo wouldn't match what was played)
+        // console binds: run the command bound to each key or button pressed since the last
+        // frame (never while recording, or the demo wouldn't match what was played)
         //
+        var pressedInputs = new List<InputCode>();
         while (_inputManager.TryTakePressedKey(out var pressed))
+            pressedInputs.Add(InputCode.FromKey(pressed));
+        pressedInputs.AddRange(TakeFreshPresses());
+
+        foreach (var input in pressedInputs)
         {
-            if (HandleAutomapKey(pressed))      // the automap's own keys, while it's open
+            if (HandleAutomapKey(input))        // the automap's own keys, while it's open
                 continue;
 
-            if (!demorecord && _consoleManager.Binds.TryGetValue(pressed, out var boundCommand))
+            if (!demorecord && _consoleManager.Binds.TryGetValue(input, out var boundCommand))
                 _consoleManager.Execute(boundCommand);
         }
 
@@ -393,6 +407,7 @@ internal partial class Program
         controlx = 0;
         controly = 0;
         controlstrafe = 0;
+        wheelnotches = _inputManager.TakeWheelDelta();     // taken every frame, so turns don't pile up
         _inputManager.ProcessButtons();
 
         if (demoplayback)
@@ -527,25 +542,71 @@ internal partial class Program
     }
 
     /// <summary>
-    /// Whether anything bound to an action is held down. Mouse buttons only count while the mouse
-    /// is enabled and grabbed, and joystick buttons while the joystick is enabled.
+    /// Whether anything bound to an action is held down. While the automap is open, an input
+    /// bound to one of its keys belongs to it, so it doesn't press a play button as well (the
+    /// wheel zooms the map then, rather than changing weapons).
     /// </summary>
     internal static bool IsControlDown(ControlAction action)
     {
+        bool mapFirst = action.IsButton && _automapManager.IsOpen;
+
         foreach (var code in controls.Get(action))
         {
-            bool usable = code.Device switch
-            {
-                InputDevice.MouseButton => mouseenabled && _inputManager.IsMouseInputGrabbed(),
-                InputDevice.JoyButton => joystickenabled,
-                _ => true,
-            };
+            if (mapFirst && IsAutomapInput(code))
+                continue;
 
-            if (usable && _inputManager.IsInputDown(code))
+            if (IsInputActive(code))
                 return true;
         }
         return false;
     }
+
+    static bool IsAutomapInput(InputCode code) =>
+        ControlAction.All.Any(action => action.IsAutomapKey && controls.IsBound(action, code));
+
+    /// <summary>
+    /// Whether an input is down this frame. Mouse buttons only count while the mouse is enabled
+    /// and grabbed (so the click that brings the window forward doesn't fire), the wheel while it's
+    /// enabled, and a controller or joystick while it's enabled. The wheel is down for the frame it turns in.
+    /// </summary>
+    internal static bool IsInputActive(InputCode code) => code.Device switch
+    {
+        InputDevice.MouseButton => mouseenabled && _inputManager.IsMouseInputGrabbed() && _inputManager.IsInputDown(code),
+        InputDevice.MouseWheel => mouseenabled && WheelNotches(code) > 0,
+        InputDevice.JoyButton or InputDevice.PadButton or InputDevice.PadAxis => joystickenabled && _inputManager.IsInputDown(code),
+        _ => _inputManager.IsInputDown(code),
+    };
+
+    // Mouse and controller inputs that were down last frame, so a press is only taken once
+    static readonly HashSet<InputCode> heldinputs = [];
+
+    /// <summary>
+    /// The mouse buttons, wheel turns and controller buttons with a console bind or an automap
+    /// key on them that went down since the last frame. Keys come from InputManager's own queue.
+    /// </summary>
+    static List<InputCode> TakeFreshPresses()
+    {
+        var watched = _consoleManager.Binds.Keys
+            .Concat(ControlAction.All.Where(action => action.IsAutomapKey).SelectMany(controls.Get))
+            .Where(input => input.Device != InputDevice.Key)
+            .Distinct();
+
+        var fresh = new List<InputCode>();
+        foreach (var input in watched)
+        {
+            if (!IsInputActive(input))
+                heldinputs.Remove(input);
+            else if (heldinputs.Add(input) || input.Device == InputDevice.MouseWheel)   // every notch is a press
+                fresh.Add(input);
+        }
+        return fresh;
+    }
+
+    /// <summary>How many notches the wheel turned this frame the way a wheel input stands for (0 for anything else).</summary>
+    static int WheelNotches(InputCode code) =>
+        code == InputCode.WheelUp ? Math.Max(wheelnotches, 0)
+        : code == InputCode.WheelDown ? Math.Max(-wheelnotches, 0)
+        : 0;
 
     /*
     ===================
@@ -604,15 +665,18 @@ internal partial class Program
 
         int speed = _inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE : BASEMOVE;
 
-        // A controller: the left stick walks and strafes and the right stick turns, as fast as
-        // they're pushed. Turning goes up with the square of the push, for fine aim near the middle.
+        // A controller: the left stick walks and strafes and the right stick turns (classic: the
+        // left stick walks and turns and the right strafes), as fast as they're pushed. Turning
+        // goes up with the square of the push, for fine aim near the middle.
         if (_inputManager.HasGameController)
         {
-            float turn = StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX);
+            var turnAxis = joyclassicsticks ? SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX : SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX;
+            var strafeAxis = joyclassicsticks ? SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX : SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX;
+            float turn = StickValue(turnAxis);
 
             controly += (int)(StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY) * speed * tics);
-            controlstrafe += (int)(StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX) * speed * tics);
-            controlx += (int)(turn * Math.Abs(turn) * JOYTURNSPEED * tics);
+            controlstrafe += (int)(StickValue(strafeAxis) * speed * tics);
+            controlx += (int)(turn * Math.Abs(turn) * JoyTurnSpeed * tics);
             return;
         }
 

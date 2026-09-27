@@ -13,6 +13,12 @@ internal enum InputDevice : byte
     /// <summary>A mouse button, numbered as SDL does: 1 left, 2 middle, 3 right, 4 and 5 the side buttons.</summary>
     MouseButton,
 
+    /// <summary>
+    /// The mouse wheel turned one way: code 0 is away from the user (up), 1 towards (down). It
+    /// has no held state; it counts as pressed for the frame it turns in.
+    /// </summary>
+    MouseWheel,
+
     /// <summary>A joystick button by its raw index, from 0: for a joystick SDL has no controller layout for.</summary>
     JoyButton,
 
@@ -29,7 +35,7 @@ internal enum InputDevice : byte
 /// <summary>
 /// One key, mouse button or controller button that a control can be bound to. Written in
 /// controls.cfg and the console by name: SDL's key names ("Left Ctrl"), "Mouse 1" to "Mouse 5",
-/// "Joy 1" up (joystick buttons counted from 1), and "Pad A", "Pad RT", "Pad LStick Up" and so on
+/// "Wheel Up" and "Wheel Down", "Joy 1" up (joystick buttons counted from 1), and "Pad A", "Pad RT", "Pad LStick Up" and so on
 /// for a controller.
 /// </summary>
 internal readonly record struct InputCode(InputDevice Device, int Code)
@@ -84,10 +90,14 @@ internal readonly record struct InputCode(InputDevice Device, int Code)
     public static InputCode FromJoyButton(int index) =>
         index >= 0 && index < JoyButtonCount ? new(InputDevice.JoyButton, index) : None;
 
+    public static readonly InputCode WheelUp = new(InputDevice.MouseWheel, 0);
+    public static readonly InputCode WheelDown = new(InputDevice.MouseWheel, 1);
+
     public override string ToString() => Device switch
     {
         InputDevice.Key => KeyName((ScanCodes)Code),
         InputDevice.MouseButton => $"Mouse {Code}",
+        InputDevice.MouseWheel => Code == 0 ? "Wheel Up" : "Wheel Down",
         InputDevice.JoyButton => $"Joy {Code + 1}",
         InputDevice.PadButton => PadButtonNames[Code],
         InputDevice.PadAxis => PadAxisNames[Code]!,
@@ -117,6 +127,10 @@ internal readonly record struct InputCode(InputDevice Device, int Code)
             code = new(InputDevice.PadButton, pad);
         else if (axis >= 0)
             code = new(InputDevice.PadAxis, axis);
+        else if (string.Equals(text, WheelUp.ToString(), StringComparison.OrdinalIgnoreCase))
+            code = WheelUp;
+        else if (string.Equals(text, WheelDown.ToString(), StringComparison.OrdinalIgnoreCase))
+            code = WheelDown;
         else if (TryParseNumbered(text, "Mouse", out int button))
             code = FromMouseButton(button);
         else if (TryParseNumbered(text, "Joy", out int joy))
@@ -147,6 +161,7 @@ internal readonly record struct InputCode(InputDevice Device, int Code)
             .Select(i => SDL.SDL_GetScancodeName((SDL.SDL_Scancode)i))
             .Where(name => !string.IsNullOrEmpty(name))
             .Concat(Enumerable.Range(1, MouseButtonCount).Select(i => $"Mouse {i}"))
+            .Concat([WheelUp.ToString(), WheelDown.ToString()])
             .Concat(Enumerable.Range(1, JoyButtonCount).Select(i => $"Joy {i}"))
             .Concat(PadButtonNames)
             .Concat(PadAxisNames.OfType<string>());

@@ -202,8 +202,8 @@ internal sealed class ControlBindings
         Default(buttontypes.bt_readypistol, Key(ScanCodes.sc_2));
         Default(buttontypes.bt_readymachinegun, Key(ScanCodes.sc_3));
         Default(buttontypes.bt_readychaingun, Key(ScanCodes.sc_4));
-        Default(buttontypes.bt_nextweapon, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_RIGHTSHOULDER));
-        Default(buttontypes.bt_prevweapon, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
+        Default(buttontypes.bt_nextweapon, InputCode.WheelDown, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_RIGHTSHOULDER));
+        Default(buttontypes.bt_prevweapon, InputCode.WheelUp, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
         Default(buttontypes.bt_esc, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_START));
         Default(buttontypes.bt_moveforward, Key(ScanCodes.sc_UpArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_UP));
         Default(buttontypes.bt_movebackward, Key(ScanCodes.sc_DownArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_DOWN));
@@ -213,6 +213,10 @@ internal sealed class ControlBindings
 
         for (int i = 0; i < DefaultAutomapKeys.Length; i++)
             Add(ControlAction.Of((Program.automapkeys)i), Key(DefaultAutomapKeys[i]));
+
+        // While the map is open the wheel zooms it rather than changing weapons (see Program.IsControlDown)
+        Add(ControlAction.Of(Program.automapkeys.am_zoomin), InputCode.WheelUp);
+        Add(ControlAction.Of(Program.automapkeys.am_zoomout), InputCode.WheelDown);
     }
 
     private static readonly ScanCodes[] DefaultAutomapKeys =

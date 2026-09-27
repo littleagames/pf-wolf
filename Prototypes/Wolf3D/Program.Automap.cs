@@ -63,7 +63,11 @@ internal partial class Program
     // Zoom steps a second while a zoom key is held
     const float AUTOMAP_KEYZOOMRATE = 5f;
 
-    static bool IsAutomapKeyDown(automapkeys key) => IsControlDown(ControlAction.Of(key));
+    static bool IsAutomapKeyDown(automapkeys key) =>
+        controls.Get(ControlAction.Of(key)).Any(code => code.Device != InputDevice.MouseWheel && IsInputActive(code));
+
+    static int AutomapWheelNotches(automapkeys key) =>
+        mouseenabled ? controls.Get(ControlAction.Of(key)).Sum(WheelNotches) : 0;
 
     const string AUTOMAP_FONT = "SmallFont";
 
@@ -100,14 +104,13 @@ internal partial class Program
     /// </summary>
     internal static void UpdateAutomap()
     {
-        int wheel = _inputManager.TakeWheelDelta();     // taken even while closed, so turns don't pile up
-
         if (_mapManager.Player == null)
             return;
 
         if (_automapManager.IsOpen)
         {
-            float zoom = wheel;
+            // A wheel bound to a zoom key steps once a notch; keys zoom smoothly while held
+            float zoom = AutomapWheelNotches(automapkeys.am_zoomin) - AutomapWheelNotches(automapkeys.am_zoomout);
             if (IsAutomapKeyDown(automapkeys.am_zoomin) || _inputManager.IsKeyDown(ScanCodes.sc_KeyPadPlus))
                 zoom += AUTOMAP_KEYZOOMRATE * tics / 70f;
             if (IsAutomapKeyDown(automapkeys.am_zoomout) || _inputManager.IsKeyDown(ScanCodes.sc_KeyPadMinus))
@@ -128,15 +131,15 @@ internal partial class Program
     }
 
     /// <summary>
-    /// Handles a fresh key press (from CheckKeys) if it's one of the automap's toggles and the map
-    /// is open. Returns true if the key was used, so it doesn't also run a console bind.
+    /// Handles a fresh press of a key or button (from CheckKeys) if it's one of the automap's
+    /// toggles and the map is open. Returns true if it's one of the automap's keys, so it doesn't
+    /// also run a console bind.
     /// </summary>
-    internal static bool HandleAutomapKey(ScanCodes key)
+    internal static bool HandleAutomapKey(InputCode code)
     {
         if (!_automapManager.IsOpen)
             return false;
 
-        var code = InputCode.FromKey(key);
         bool Bound(automapkeys automapKey) => controls.IsBound(ControlAction.Of(automapKey), code);
 
         if (Bound(automapkeys.am_center))
@@ -152,7 +155,7 @@ internal partial class Program
         else if (Bound(automapkeys.am_grid))
             _automapManager.ToggleGrid();
         else    // held keys: used in UpdateAutomap, not binds
-            return ControlAction.All.Any(action => action.IsAutomapKey && controls.IsBound(action, code));
+            return IsAutomapInput(code);
 
         return true;
     }

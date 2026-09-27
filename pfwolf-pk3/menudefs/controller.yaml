@@ -1,0 +1,56 @@
+music: "WONDERIN"
+type: "wolf3d-menu"
+# Controller Settings, from the Control menu. Dead zone and turn speed are sliders and the stick
+# layout is a choice: left/right change them while highlighted. They're saved in controls.cfg
+# as joy_deadzone, joy_turnspeed and joy_sticks. The controller's name is drawn by code below
+# the hints.
+position:
+  x: 24
+  y: 90
+indent: 56
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Stripe"
+    params:
+      - y: 10
+  -
+    type: "Graphic"
+    params:
+      - name: "c_control"
+      - horizontal-orientation: "center"
+      - y: 0
+  -
+    type: "Window"
+    params:
+      - x: 16
+      - y: 85
+      - width: 284
+      - height: 45
+  - { type: "Label", params: [ { text: "$STR_JOYMODERNHINT" }, { horizontal-orientation: "center" }, { y: 136 }, { font: "SmallFont" }, { color: "TEXTCOLOR" } ] }
+  - { type: "Label", params: [ { text: "$STR_JOYCLASSICHINT" }, { horizontal-orientation: "center" }, { y: 146 }, { font: "SmallFont" }, { color: "TEXTCOLOR" } ] }
+menu-items:
+  -
+      id: "joy-deadzone"
+      type: "SliderMenuItem"
+      text: "$STR_JOYDEADZONE"
+      enabled: true
+  -
+      id: "joy-turnspeed"
+      type: "SliderMenuItem"
+      text: "$STR_JOYTURN"
+      enabled: true
+  -
+      id: "joy-sticks"
+      type: "ChoiceMenuItem"
+      text: "$STR_JOYSTICKS"
+      enabled: true

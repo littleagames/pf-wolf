@@ -1,4 +1,5 @@
 using System.Text;
+using Wolf3D.Configuration;
 
 namespace Wolf3D.Managers;
 
@@ -45,7 +46,7 @@ internal class ConsoleManager
     private readonly List<string> _scrollback = [];
     private readonly List<string> _history = [];
     private readonly Queue<Action> _deferred = new();
-    private readonly Dictionary<ScanCodes, string> _binds = [];
+    private readonly Dictionary<InputCode, string> _binds = [];
     private int _execDepth;
 
     // History browsing: _historyIndex == _history.Count means "editing a new line", and the
@@ -58,9 +59,6 @@ internal class ConsoleManager
 
     /// <summary>Whether a level is loaded. Wired to the player's existence at registration.</summary>
     internal Func<bool> LevelLoaded { get; set; } = () => false;
-
-    /// <summary>A key's display name, as `bind` accepts it. Wired to SDL's scancode names at registration.</summary>
-    internal Func<ScanCodes, string> KeyName { get; set; } = key => key.ToString();
 
     internal bool IsOpen { get; private set; }
 
@@ -82,17 +80,20 @@ internal class ConsoleManager
     internal IReadOnlyList<string> Scrollback => _scrollback;
     internal IReadOnlyList<string> History => _history;
 
-    /// <summary>Commands run when a key is pressed during play, keyed by the (InputManager.MapKey-mapped) key.</summary>
-    internal IReadOnlyDictionary<ScanCodes, string> Binds => _binds;
+    /// <summary>
+    /// Commands run when a key, mouse button, wheel turn or controller button is pressed during
+    /// play. Keys are as InputManager.MapKey reports them.
+    /// </summary>
+    internal IReadOnlyDictionary<InputCode, string> Binds => _binds;
 
-    internal void Bind(ScanCodes key, string command) => _binds[key] = command;
-    internal bool Unbind(ScanCodes key) => _binds.Remove(key);
+    internal void Bind(InputCode input, string command) => _binds[input] = command;
+    internal bool Unbind(InputCode input) => _binds.Remove(input);
     internal void UnbindAll() => _binds.Clear();
 
     /// <summary>The current binds as `bind` commands, for saving to a file that `exec` can load back.</summary>
     internal IEnumerable<string> GetBindCommands() =>
-        _binds.OrderBy(b => KeyName(b.Key), StringComparer.OrdinalIgnoreCase)
-            .Select(b => $"bind \"{KeyName(b.Key)}\" \"{b.Value}\"");
+        _binds.OrderBy(b => b.Key.ToString(), StringComparer.OrdinalIgnoreCase)
+            .Select(b => $"bind \"{b.Key}\" \"{b.Value}\"");
 
     /// <summary>Every registered command once, ordered by name (aliases are not repeated).</summary>
     internal IEnumerable<ConsoleCommand> Commands =>
