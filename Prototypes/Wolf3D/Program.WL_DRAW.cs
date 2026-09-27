@@ -198,6 +198,7 @@ internal partial class Program
     static readonly TextureAsset[] postupper = new TextureAsset[MAXPOSTS];
     static readonly int[] postupperofs = new int[MAXPOSTS];
     static readonly short[] postunderside = new short[MAXPOSTS];   // an arch's: the height where the trace leaves it, 0 for none
+    static readonly TextureAsset?[] postundertexture = new TextureAsset?[MAXPOSTS];
 
     internal static short postheight;   // the height (as wallheight) of the post ScalePost queues
     static int hitstories;              // how many stories tall the wall the trace just hit is
@@ -227,11 +228,12 @@ internal partial class Program
     }
 
     static void QueuePost(short height, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
-        short underside = 0)
+        short underside = 0, TextureAsset? undertexture = null)
     {
         if (postcount == MAXPOSTS)
             return;
         postunderside[postcount] = underside;
+        postundertexture[postcount] = undertexture;
         postheights[postcount] = height;
         postfirststory[postcount] = (byte)firststory;
         poststories[postcount] = (byte)stories;
@@ -251,26 +253,58 @@ internal partial class Program
             DrawPost(pixx, postheights[postcount] >> 3, postfirststory[postcount], poststories[postcount],
                 postlower[postcount], postlowerofs[postcount], postupper[postcount], postupperofs[postcount]);
             if (postunderside[postcount] != 0)
-                DrawUnderside(pixx, postheights[postcount] >> 3, postunderside[postcount] >> 3);
+                DrawUnderside(pixx, postheights[postcount] >> 3, postunderside[postcount] >> 3, postundertexture[postcount]);
         }
     }
 
     /// <summary>
-    /// Fills an arch's underside, one story up, between where the trace enters it (half a story
-    /// is entryhalf pixels there) and where it leaves (exithalf). Floors and ceilings are flat
-    /// colors, so it's the ceiling's.
+    /// Draws an arch's underside, one story up, between where the trace enters it (half a story
+    /// is entryhalf pixels there) and where it leaves (exithalf). It's a flat surface, so each
+    /// row is textured from where the view ray meets it, from the texture's bottom story
+    /// laid flat: one tile of it per tile. With no texture, it's the ceiling color.
     /// </summary>
-    static void DrawUnderside(int x, int entryhalf, int exithalf)
+    static void DrawUnderside(int x, int entryhalf, int exithalf, TextureAsset? texture)
     {
         int from = Math.Max(centery - entryhalf, 0);
         int to = Math.Min(centery - exithalf - 1, viewheight - 1);
+        if (from > to)
+            return;
         int pitch = (int)_videoManager.bufferPitch;
 
         unsafe
         {
             byte* dest = (byte*)vbufPtr + screenofs + x;
+
+            if (texture == null)
+            {
+                for (int y = from; y <= to; y++)
+                    dest[y * pitch] = ceilingcolor;
+                return;
+            }
+
+            //
+            // The underside shows on row y where its edge would at a distance (along the view,
+            // as CalcHeight measures it) with half a story centery - y pixels high: nx = heightnumerator
+            // * 32 / half. Going that far along the view means going nx / cos(offset) along the ray.
+            //
+            const double TORADIANS = 2 * Math.PI / FINEANGLES;
+            double angle = (midangle + pixelangle[x]) * TORADIANS;
+            double perview = 1 / Math.Cos(pixelangle[x] * TORADIANS);
+            double stepx = Math.Cos(angle) * perview, stepy = -Math.Sin(angle) * perview;
+            double numerator = heightnumerator * 32.0;
+
+            byte[] data = texture.RawData;
+            int width = texture.Width, height = texture.Height;
+
             for (int y = from; y <= to; y++)
-                dest[y * pitch] = ceilingcolor;
+            {
+                double nx = numerator / (centery - y - 0.5);
+                long px = (long)(viewx + nx * stepx), py = (long)(viewy + nx * stepy);
+                int u = (int)(px >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
+                int v = (int)(py >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
+                int row = height >= TEXTURESIZE ? height - TEXTURESIZE + v : v * height / TEXTURESIZE;
+                dest[y * pitch] = data[u * width / TEXTURESIZE * height + row];
+            }
         }
     }
 
@@ -282,7 +316,7 @@ internal partial class Program
     = An open floor tile with a height (plane 2) above one story is an arch: a block from the
     = second story up to that height, that can be walked under. The trace opens one as it
     = enters the tile and queues it as it leaves, once it knows how deep the underside runs.
-    = Its faces take the texture of a wall beside it.
+    = Its faces and its textured underside take the texture of a wall beside it.
     =
     ====================
     */
@@ -291,6 +325,7 @@ internal partial class Program
     static short archheight;            // where the trace entered it (short.MaxValue: the view is inside)
     static int archstories;
     static TextureAsset? archtexture;
+    static TextureAsset? archunderside;
     static int archofs;
 
     static bool IsArch(int tilex, int tiley) => _mapManager.tilemap[tilex, tiley] == 0 && _mapManager.storymap[tilex, tiley] > 1;
@@ -301,14 +336,16 @@ internal partial class Program
     /// </summary>
     static void OpenArch(int tilex, int tiley, int edgex, int edgey, bool vertical)
     {
-        // the wall at either end of the run of arch tiles in line with the face, else one across from it
+        // the wall at either end of the run of arch tiles in line with the face, else at either
+        // end of the run across it (a face on the end of a run, entered along it)
         int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
         archtexture = ArchEndTexture(tilex, tiley, -dx, -dy, vertical) ?? ArchEndTexture(tilex, tiley, dx, dy, vertical)
-            ?? WallTexture(tilex - dy, tiley - dx, vertical) ?? WallTexture(tilex + dy, tiley + dx, vertical);
+            ?? ArchEndTexture(tilex, tiley, -dy, -dx, vertical) ?? ArchEndTexture(tilex, tiley, dy, dx, vertical);
         if (archtexture == null)
             return;                     // nothing to texture it from: leave it open
 
         archopen = true;
+        archunderside = ArchUndersideTexture(tilex, tiley) ?? archtexture;
         archstories = _mapManager.storymap[tilex, tiley];
         archheight = HeightAt(edgex, edgey);
         archofs = vertical
@@ -331,9 +368,21 @@ internal partial class Program
         return WallTexture(tilex, tiley, vertical);
     }
 
+    /// <summary>
+    /// The texture of an arch tile's underside: the same one whichever way the trace enters it,
+    /// so it doesn't change as the view moves under it. It's from a wall ending the run of arch
+    /// tiles it's in, north or south first, else west or east.
+    /// </summary>
+    static TextureAsset? ArchUndersideTexture(int tilex, int tiley) =>
+        ArchEndTexture(tilex, tiley, 0, -1, false) ?? ArchEndTexture(tilex, tiley, 0, 1, false)
+        ?? ArchEndTexture(tilex, tiley, -1, 0, true) ?? ArchEndTexture(tilex, tiley, 1, 0, true);
+
     // The view starts under an arch: there's no face, only the underside from above the view
     static void OpenFocalArch()
     {
+        archunderside = ArchUndersideTexture(focaltx, focalty);
+        if (archunderside == null)
+            return;                     // as OpenArch: nothing to texture it from
         archtexture = notexture;
         archopen = true;
         archstories = _mapManager.storymap[focaltx, focalty];
@@ -351,7 +400,7 @@ internal partial class Program
         short exitheight = HeightAt(edgex, edgey);
         if (exitheight == 0)
             exitheight = 1;             // 0 means no underside
-        QueuePost(archheight, 1, archstories, archtexture!, archofs, archtexture!, archofs, exitheight);
+        QueuePost(archheight, 1, archstories, archtexture!, archofs, archtexture!, archofs, exitheight, archunderside);
     }
 
     // The height (as wallheight) of a wall at (x, y)
