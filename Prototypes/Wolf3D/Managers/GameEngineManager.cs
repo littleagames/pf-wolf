@@ -125,10 +125,11 @@ internal class GameEngineManager
         return gameInfo;
     }
 
+    internal const string ControlsFileName = "controls.cfg";
     internal const string BindsFileName = "binds.cfg";
     internal const string AutoexecFileName = "autoexec.cfg";
 
-    /// <summary>Where a file of the given name lives in the config directory (config.cfg, binds.cfg, autoexec.cfg).</summary>
+    /// <summary>Where a file of the given name lives in the config directory (config.cfg, controls.cfg, binds.cfg, autoexec.cfg).</summary>
     internal string GetConfigFilePath(string fileName) =>
         string.IsNullOrEmpty(ConfigDirectories.ConfigDirectory) ? fileName : Path.Combine(ConfigDirectories.ConfigDirectory, fileName);
 
@@ -176,9 +177,13 @@ internal class GameEngineManager
         Music = 8,
     }
 
-    // Keyboard buttons stored in the original fixed layout. Buttons added after them (the
-    // automap key) are appended at the end, so older configs still read correctly.
+    // The controls' place in the original fixed layout: the movement keys, a key per button
+    // (the automap key was appended at the end later), and a button for each mouse and joystick
+    // button. They're in controls.cfg now; these are only read from an older config.cfg.
+    private const int LayoutDirCount = 4;
     private const int LayoutButtonCount = (int)buttontypes.bt_automap;
+    private const int LayoutMouseCount = 4;
+    private const int LayoutJoyCount = 32;
 
     internal void ReadConfig()
     {
@@ -214,12 +219,14 @@ internal class GameEngineManager
         }
 
         Array.Copy(config.Scores, Program.Scores, Program.Scores.Length);
-        Array.Copy(config.DirScan, Program.dirscan, Program.dirscan.Length);
-        Array.Copy(config.ButtonScan, Program.buttonscan, LayoutButtonCount);
-        if (config.AutomapKey is ScanCodes automapKey)
-            Program.buttonscan[(int)buttontypes.bt_automap] = automapKey;
-        Array.Copy(config.ButtonMouse, Program.buttonmouse, Program.buttonmouse.Length);
-        Array.Copy(config.ButtonJoy, Program.buttonjoy, Program.buttonjoy.Length);
+
+        // The controls moved to controls.cfg, which the console runs at startup; config.cfg now
+        // only has blanks where they were. A config from before that still has them: take them
+        // over this once, and controls.cfg holds them from the next save on.
+        bool hasLegacyControls = config.DirScan.Any(key => key != ScanCodes.sc_None);
+        if (hasLegacyControls && !File.Exists(GetConfigFilePath(ControlsFileName)))
+            Program.controls.ImportLegacy(config.DirScan, config.ButtonScan, config.ButtonMouse, config.ButtonJoy,
+                config.AutomapKey, config.AutomapKeys);
 
         // Devices that were there last time may not be now.
         Program.mouseenabled = config.MouseEnabled && inputManager.IsMousePresent();
@@ -246,14 +253,6 @@ internal class GameEngineManager
         if (config.MusicVolume is int musicVolume)
             audioManager.MusicVolume = musicVolume;
 
-        // A key the config doesn't have (it's from before that key existed) keeps its default
-        var automapKeys = config.AutomapKeys ?? [];
-        for (int i = 0; i < Math.Min(automapKeys.Length, Program.automapscan.Length); i++)
-        {
-            if (automapKeys[i] > ScanCodes.sc_None && automapKeys[i] < ScanCodes.sc_Last)
-                Program.automapscan[i] = automapKeys[i];
-        }
-
         // Set "Read This" back to standard active
         Program.FindMenuItem(Program.MainMenu, "readthis")?.active = 1;
         Program.MainItems.curpos = 0;
@@ -275,10 +274,10 @@ internal class GameEngineManager
             Scores = scores,
             MouseEnabled = br.ReadByte() != 0,
             JoystickEnabled = br.ReadByte() != 0,
-            DirScan = new ScanCodes[Program.dirscan.Length],
+            DirScan = new ScanCodes[LayoutDirCount],
             ButtonScan = new ScanCodes[LayoutButtonCount],
-            ButtonMouse = new buttontypes[Program.buttonmouse.Length],
-            ButtonJoy = new buttontypes[Program.buttonjoy.Length],
+            ButtonMouse = new buttontypes[LayoutMouseCount],
+            ButtonJoy = new buttontypes[LayoutJoyCount],
         };
         _ = br.ReadByte(); // joypad enabled placeholder
         _ = br.ReadByte(); // joystick progressive placeholder
@@ -443,16 +442,25 @@ internal class GameEngineManager
     }
 
     /// <summary>
-    /// Writes config.cfg and binds.cfg. Called on exit, and whenever the settings or high
-    /// scores change, so they survive a crash. A failure is logged, not thrown, since this
-    /// also runs on the way out of the game.
+    /// Writes config.cfg, controls.cfg and binds.cfg. Called on exit, and whenever the settings
+    /// or high scores change, so they survive a crash. A failure is logged, not thrown, since
+    /// this also runs on the way out of the game.
     /// </summary>
     internal void WriteConfig()
     {
         try
         {
-            // Binds are console commands, so they're saved as a script the console runs at
-            // startup. Written even when empty so that unbinding everything sticks.
+            // The controls and binds are console commands, so they're saved as scripts the
+            // console runs at startup. Binds are written even when empty so that unbinding
+            // everything sticks; every control is written, bound or not, for the same reason.
+            ReplaceFile(GetConfigFilePath(ControlsFileName), stream =>
+            {
+                using var writer = new StreamWriter(stream);
+                writer.WriteLine("// Written by the game; use autoexec.cfg for your own commands.");
+                foreach (var command in Program.controls.GetCommands())
+                    writer.WriteLine(command);
+            });
+
             ReplaceFile(GetConfigFilePath(BindsFileName), stream =>
             {
                 using var writer = new StreamWriter(stream);
@@ -498,28 +506,18 @@ internal class GameEngineManager
         bw.Write((byte)0); // joystick-progressive placeholder
         bw.Write((int)0); // joystick port placeholder
 
-        for (int i = 0; i < Program.dirscan.Length; i++)
-            bw.Write((int)Program.dirscan[i]);
-
-        for (int i = 0; i < LayoutButtonCount; i++)
-            bw.Write((int)Program.buttonscan[i]);
-
-        for (int i = 0; i < Program.buttonmouse.Length; i++)
-            bw.Write((int)Program.buttonmouse[i]);
-
-        for (int i = 0; i < Program.buttonjoy.Length; i++)
-            bw.Write((int)Program.buttonjoy[i]);
+        // The controls are in controls.cfg: blanks where the old layout had them (see ReadConfig)
+        for (int i = 0; i < LayoutDirCount + LayoutButtonCount + LayoutMouseCount + LayoutJoyCount; i++)
+            bw.Write((int)0);
 
         bw.Write(Program.viewsize);
         bw.Write(Program.mouseadjustment);
         bw.Write(consoleManager.PauseWhenOpen);
-        bw.Write((int)Program.buttonscan[(int)buttontypes.bt_automap]);
+        bw.Write((int)ScanCodes.sc_None);   // automap key placeholder
         bw.Write((byte)automapManager.Style);
         bw.Write(automapManager.Overlay);
         bw.Write(automapManager.ShowGrid);
-        bw.Write(Program.automapscan.Length);
-        foreach (var key in Program.automapscan)
-            bw.Write((int)key);
+        bw.Write(0);                        // no automap keys: they're in controls.cfg
 
         var devices = AudioDevices.None;
         if (audioManager.PcSoundEnabled)

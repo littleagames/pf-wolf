@@ -2081,11 +2081,16 @@ internal partial class Program
     ////////////////////////////////////////////////////////////////////
 
     internal enum CustomCtlOptions { MOUSE, JOYSTICK, KEYBOARDBTNS, KEYBOARDMOVE };        // FOR INPUT TYPES
-    internal enum CustomCtlActions : byte { FIRE, STRAFE, RUN, OPEN };
-    enum CustomCtlMove : byte { FWRD, RIGHT, BKWD, LEFT };
-    static int[] moveorder = { (byte)CustomCtlMove.LEFT, (byte)CustomCtlMove.RIGHT, (byte)CustomCtlMove.FWRD, (byte)CustomCtlMove.BKWD };
-    static string[] mbarray = { "b0", "b1", "b2", "b3" };
-    static byte[] order = { (byte)CustomCtlActions.RUN, (byte)CustomCtlActions.OPEN, (byte)CustomCtlActions.FIRE, (byte)CustomCtlActions.STRAFE };
+    // The buttons in each row's columns, left to right
+    static readonly buttontypes[] moveorder = { buttontypes.bt_turnleft, buttontypes.bt_turnright, buttontypes.bt_moveforward, buttontypes.bt_movebackward };
+    static readonly buttontypes[] order = { buttontypes.bt_run, buttontypes.bt_use, buttontypes.bt_attack, buttontypes.bt_strafe };
+
+    // The mouse buttons as the screen numbers them (b0 left, b1 right, b2 middle, then the side buttons)
+    static readonly int[] mbbuttons = { 1, 3, 2, 4, 5 };
+
+    /// <summary>The first input of a device bound to a button, or None.</summary>
+    static InputCode FirstBinding(buttontypes button, InputDevice device) =>
+        controls.Get(button).FirstOrDefault(code => code.Device == device);
     internal static int CustomControls(int _)
     {
         int which;
@@ -2202,7 +2207,7 @@ internal partial class Program
     internal static void EnterCtrlData(int rowY, ref CustomCtrls cust, Action<int> DrawRtn, Action<int> PrintRtn,
                    CustomCtlOptions type)
     {
-        int j, z, exit, tick, redraw, which = 0, x = 0, picked, lastFlashTime;
+        int j, exit, tick, redraw, which = 0, x = 0, picked, lastFlashTime;
         ControlInfo ci;
 
 
@@ -2311,14 +2316,7 @@ internal partial class Program
 
                             if (result != 0)
                             {
-                                for (z = 0; z < 4; z++)
-                                    if (order[which] == (byte)buttonmouse[z])
-                                    {
-                                        buttonmouse[z] = buttontypes.bt_nobutton;
-                                        break;
-                                    }
-
-                                buttonmouse[result - 1] = (buttontypes)order[which];
+                                controls.Replace(ControlAction.Of(order[which]), InputCode.FromMouseButton(mbbuttons[result - 1]));
                                 picked = 1;
                                 ShootSnd();
                             }
@@ -2336,16 +2334,7 @@ internal partial class Program
 
                             if (result != 0)
                             {
-                                for (z = 0; z < 4; z++)
-                                {
-                                    if (order[which] == (byte)buttonjoy[z])
-                                    {
-                                        buttonjoy[z] = buttontypes.bt_nobutton;
-                                        break;
-                                    }
-                                }
-
-                                buttonjoy[result - 1] = (buttontypes)order[which];
+                                controls.Replace(ControlAction.Of(order[which]), InputCode.FromJoyButton(result - 1));
                                 picked = 1;
                                 ShootSnd();
                             }
@@ -2354,7 +2343,7 @@ internal partial class Program
                         case CustomCtlOptions.KEYBOARDBTNS:
                             if (_inputManager.GetLastKeyPressed() != 0 && _inputManager.GetLastKeyPressed() != ScanCodes.sc_Escape)
                             {
-                                buttonscan[order[which]] = _inputManager.GetLastKeyPressed();
+                                controls.Replace(ControlAction.Of(order[which]), InputCode.FromKey(_inputManager.GetLastKeyPressed()));
                                 picked = 1;
                                 ShootSnd();
                                 _inputManager.ClearKeysDown();
@@ -2364,7 +2353,7 @@ internal partial class Program
                         case CustomCtlOptions.KEYBOARDMOVE:
                             if (_inputManager.GetLastKeyPressed() != 0 && _inputManager.GetLastKeyPressed() != ScanCodes.sc_Escape)
                             {
-                                dirscan[moveorder[which]] = _inputManager.GetLastKeyPressed();
+                                controls.Replace(ControlAction.Of(moveorder[which]), InputCode.FromKey(_inputManager.GetLastKeyPressed()));
                                 picked = 1;
                                 ShootSnd();
                                 _inputManager.ClearKeysDown();
@@ -2519,15 +2508,12 @@ internal partial class Program
     internal static void
     PrintCustMouse(int i)
     {
-        int j;
-
-        for (j = 0; j < 4; j++)
-            if (order[i] == (byte)buttonmouse[j])
-            {
-                PrintX = (ushort)(CST_START + CST_SPC * i);
-                US_Print(mbarray[j]);
-                break;
-            }
+        var code = FirstBinding(order[i], InputDevice.MouseButton);
+        if (!code.IsNone)
+        {
+            PrintX = (ushort)(CST_START + CST_SPC * i);
+            US_Print($"b{Array.IndexOf(mbbuttons, code.Code)}");
+        }
     }
 
     internal static void DrawCustMouse(int hilight)
@@ -2556,16 +2542,11 @@ internal partial class Program
 
     internal static void PrintCustJoy(int i)
     {
-        int j;
-
-        for (j = 0; j < 4; j++)
+        var code = FirstBinding(order[i], InputDevice.JoyButton);
+        if (!code.IsNone)
         {
-            if (order[i] == (byte)buttonjoy[j])
-            {
-                PrintX = (ushort)(CST_START + CST_SPC * i);
-                US_Print(mbarray[j]);
-                break;
-            }
+            PrintX = (ushort)(CST_START + CST_SPC * i);
+            US_Print($"b{code.Code}");
         }
     }
 
@@ -2597,7 +2578,7 @@ internal partial class Program
     PrintCustKeybd(int i)
     {
         PrintX = (ushort)(CST_START + CST_SPC * i);
-        US_Print(_inputManager.GetScanName(buttonscan[order[i]]));
+        US_Print(_inputManager.GetScanName(FirstBinding(order[i], InputDevice.Key).Key));
     }
 
     internal static void
@@ -2621,7 +2602,7 @@ internal partial class Program
     PrintCustKeys(int i)
     {
         PrintX = (ushort)(CST_START + CST_SPC * i);
-        US_Print(_inputManager.GetScanName(dirscan[moveorder[i]]));
+        US_Print(_inputManager.GetScanName(FirstBinding(moveorder[i], InputDevice.Key).Key));
     }
 
     internal static void DrawCustKeys(int hilight)

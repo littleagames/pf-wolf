@@ -1,4 +1,5 @@
-﻿using Wolf3D.Entities.Actors;
+﻿using Wolf3D.Configuration;
+using Wolf3D.Entities.Actors;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
 using static SDL2.SDL;
@@ -27,15 +28,9 @@ internal partial class Program
     // control info
     //
     internal static bool mouseenabled, joystickenabled;
-    internal static ScanCodes[] dirscan = new ScanCodes[4] { ScanCodes.sc_UpArrow, ScanCodes.sc_RightArrow, ScanCodes.sc_DownArrow, ScanCodes.sc_LeftArrow };
-    internal static ScanCodes[] buttonscan = new ScanCodes[(int)buttontypes.NUMBUTTONS] { ScanCodes.sc_Control, ScanCodes.sc_Alt, ScanCodes.sc_LShift, ScanCodes.sc_Space, ScanCodes.sc_1, ScanCodes.sc_2, ScanCodes.sc_3, ScanCodes.sc_4, 0,0,0,0,0,0,0,0,0,0, ScanCodes.sc_Tab };
-    internal static buttontypes[] buttonmouse = new buttontypes[4] { buttontypes.bt_attack, buttontypes.bt_strafe, buttontypes.bt_use, buttontypes.bt_nobutton };
-    internal static buttontypes[] buttonjoy = new buttontypes[32] {
-        buttontypes.bt_attack, buttontypes.bt_strafe, buttontypes.bt_use, buttontypes.bt_run, buttontypes.bt_strafeleft, buttontypes.bt_straferight, buttontypes.bt_esc, buttontypes.bt_pause,
-        buttontypes.bt_prevweapon, buttontypes.bt_nextweapon, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton,
-        buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton,
-        buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton
-    };
+
+    /// <summary>The keys, mouse buttons and joystick buttons bound to each button and automap key (saved to controls.cfg).</summary>
+    internal static readonly ControlBindings controls = new();
 
     internal static int viewsize;
 
@@ -424,18 +419,12 @@ internal partial class Program
         //
         // get button states
         //
-        PollKeyboardButtons();
-
-        if (mouseenabled && _inputManager.IsMouseInputGrabbed())
-            PollMouseButtons();
-
-        if (joystickenabled)
-            PollJoystickButtons();
+        PollButtons();
 
         //
         // get movements
         //
-        PollKeyboardMove();
+        PollButtonMove();
 
         if (mouseenabled && _inputManager.IsMouseInputGrabbed())
             PollMouseMove();
@@ -511,79 +500,62 @@ internal partial class Program
     /*
     ===================
     =
-    = PollKeyboardButtons
+    = PollButtons
     =
     ===================
     */
 
-    internal static void PollKeyboardButtons()
+    /// <summary>Presses every button with something bound to it held down.</summary>
+    internal static void PollButtons()
     {
-        int i;
-
-        for (i = 0; i < (int)buttontypes.NUMBUTTONS; i++)
-            if (_inputManager.IsKeyDown((ScanCodes)buttonscan[i]))
-                _inputManager.SetButtonPressed((buttontypes)i, true);
-    }
-
-    /*
-    ===================
-    =
-    = PollMouseButtons
-    =
-    ===================
-    */
-
-    internal static void PollMouseButtons()
-    {
-        int buttons = _inputManager.MouseButtons();
-
-        if ((buttons & 1) != 0)
-            _inputManager.SetButtonPressed((buttontypes)buttonmouse[0], true);
-        if ((buttons & 2) != 0)
-            _inputManager.SetButtonPressed((buttontypes)buttonmouse[1], true);
-        if ((buttons & 4) != 0)
-            _inputManager.SetButtonPressed((buttontypes)buttonmouse[2], true);
-    }
-
-
-    /*
-    ===================
-    =
-    = PollJoystickButtons
-    =
-    ===================
-    */
-
-    internal static void PollJoystickButtons()
-    {
-        int i, val, buttons = _inputManager.JoyButtons();
-
-        for (i = 0, val = 1; i < _inputManager.JoyNumButtons; i++, val <<= 1)
+        for (int i = 0; i < (int)buttontypes.NUMBUTTONS; i++)
         {
-            if ((buttons & val) != 0)
-                _inputManager.SetButtonPressed((buttontypes)buttonjoy[i], true);
+            if (IsControlDown(ControlAction.Of((buttontypes)i)))
+                _inputManager.SetButtonPressed((buttontypes)i, true);
         }
     }
 
+    /// <summary>
+    /// Whether anything bound to an action is held down. Mouse buttons only count while the mouse
+    /// is enabled and grabbed, and joystick buttons while the joystick is enabled.
+    /// </summary>
+    internal static bool IsControlDown(ControlAction action)
+    {
+        foreach (var code in controls.Get(action))
+        {
+            bool usable = code.Device switch
+            {
+                InputDevice.MouseButton => mouseenabled && _inputManager.IsMouseInputGrabbed(),
+                InputDevice.JoyButton => joystickenabled,
+                _ => true,
+            };
+
+            if (usable && _inputManager.IsInputDown(code))
+                return true;
+        }
+        return false;
+    }
+
     /*
     ===================
     =
-    = PollKeyboardMove
+    = PollButtonMove
     =
     ===================
     */
 
-    internal static void PollKeyboardMove()
+    /// <summary>Walking and turning from the movement buttons, whatever they're bound to.</summary>
+    internal static void PollButtonMove()
     {
         int delta = (int)(_inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE * tics : BASEMOVE * tics);
 
-        if (_inputManager.IsKeyDown(dirscan[(int)controldirs.di_north]))
+        if (_inputManager.IsButtonPressed(buttontypes.bt_moveforward))
             controly -= delta;
-        if (_inputManager.IsKeyDown(dirscan[(int)controldirs.di_south]))
+        if (_inputManager.IsButtonPressed(buttontypes.bt_movebackward))
             controly += delta;
-        if (_inputManager.IsKeyDown(dirscan[(int)controldirs.di_west]))
+        if (_inputManager.IsButtonPressed(buttontypes.bt_turnleft))
             controlx -= delta;
-        if (_inputManager.IsKeyDown(dirscan[(int)controldirs.di_east]))
+        if (_inputManager.IsButtonPressed(buttontypes.bt_turnright))
             controlx += delta;
     }
 
@@ -623,13 +595,14 @@ internal partial class Program
 
         int delta = (int)(_inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE * tics : BASEMOVE * tics);
 
-        if (joyx > 64 || _inputManager.IsButtonPressed(buttontypes.bt_turnright))
+        // The movement buttons are in PollButtonMove, whatever they're bound to
+        if (joyx > 64)
             controlx += delta;
-        else if (joyx < -64 || _inputManager.IsButtonPressed(buttontypes.bt_turnleft))
+        else if (joyx < -64)
             controlx -= delta;
-        if (joyy > 64 || _inputManager.IsButtonPressed(buttontypes.bt_movebackward))
+        if (joyy > 64)
             controly += delta;
-        else if (joyy < -64 || _inputManager.IsButtonPressed(buttontypes.bt_moveforward))
+        else if (joyy < -64)
             controly -= delta;
     }
 }

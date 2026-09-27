@@ -1,4 +1,5 @@
 using Wolf3D.Assets;
+using Wolf3D.Configuration;
 using Wolf3D.Constants;
 using Wolf3D.Entities.Actors;
 using Wolf3D.Managers;
@@ -31,7 +32,7 @@ internal partial class Program
 
     static readonly string[] AutomapHeadings = ["E", "NE", "N", "NW", "W", "SW", "S", "SE"];
 
-    /// <summary>The keys that work while the automap is open, as indexes into <see cref="automapscan"/>.</summary>
+    /// <summary>The keys that work while the automap is open; bound in <see cref="controls"/>.</summary>
     internal enum automapkeys
     {
         am_zoomin,
@@ -50,13 +51,6 @@ internal partial class Program
         NUMAUTOMAPKEYS
     }
 
-    internal static ScanCodes[] automapscan = new ScanCodes[(int)automapkeys.NUMAUTOMAPKEYS]
-    {
-        ScanCodes.sc_Equal, ScanCodes.sc_Minus,
-        ScanCodes.sc_KeyPad8, ScanCodes.sc_KeyPad2, ScanCodes.sc_KeyPad4, ScanCodes.sc_KeyPad6,
-        ScanCodes.sc_C, ScanCodes.sc_F, ScanCodes.sc_R, ScanCodes.sc_V, ScanCodes.sc_O, ScanCodes.sc_G,
-    };
-
     // The grid only shows from this zoom (virtual pixels per tile) up; any closer together it's a solid wash
     const float AUTOMAP_MINGRIDZOOM = 6f;
 
@@ -69,7 +63,7 @@ internal partial class Program
     // Zoom steps a second while a zoom key is held
     const float AUTOMAP_KEYZOOMRATE = 5f;
 
-    static bool IsAutomapKeyDown(automapkeys key) => _inputManager.IsKeyDown(automapscan[(int)key]);
+    static bool IsAutomapKeyDown(automapkeys key) => IsControlDown(ControlAction.Of(key));
 
     const string AUTOMAP_FONT = "SmallFont";
 
@@ -142,20 +136,23 @@ internal partial class Program
         if (!_automapManager.IsOpen)
             return false;
 
-        if (key == automapscan[(int)automapkeys.am_center])
+        var code = InputCode.FromKey(key);
+        bool Bound(automapkeys automapKey) => controls.IsBound(ControlAction.Of(automapKey), code);
+
+        if (Bound(automapkeys.am_center))
             _automapManager.SnapToPlayer();
-        else if (key == automapscan[(int)automapkeys.am_follow])
+        else if (Bound(automapkeys.am_follow))
             _automapManager.ToggleFollow();
-        else if (key == automapscan[(int)automapkeys.am_rotate])
+        else if (Bound(automapkeys.am_rotate))
             _automapManager.ToggleRotate();
-        else if (key == automapscan[(int)automapkeys.am_style])
+        else if (Bound(automapkeys.am_style))
             _automapManager.ToggleStyle();
-        else if (key == automapscan[(int)automapkeys.am_overlay])
+        else if (Bound(automapkeys.am_overlay))
             _automapManager.ToggleOverlay();
-        else if (key == automapscan[(int)automapkeys.am_grid])
+        else if (Bound(automapkeys.am_grid))
             _automapManager.ToggleGrid();
-        else
-            return Array.IndexOf(automapscan, key) >= 0;    // held keys: used in UpdateAutomap, not binds
+        else    // held keys: used in UpdateAutomap, not binds
+            return ControlAction.All.Any(action => action.IsAutomapKey && controls.IsBound(action, code));
 
         return true;
     }

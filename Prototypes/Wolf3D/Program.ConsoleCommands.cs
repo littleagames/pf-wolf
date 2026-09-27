@@ -48,6 +48,12 @@ internal partial class Program
         Register("binds", "Lists the key binds.", "binds", Cmd_Binds);
 
         //
+        // controls (saved to controls.cfg on exit)
+        //
+        Register("bindaction", "Sets a control's keys and buttons: up to two keys or mouse buttons and one joystick button. Lists them all with no control.",
+            "bindaction [control] [key|\"Mouse 1-5\"|\"Joy 1-32\"...|none]", Cmd_BindAction, complete: CompleteBindAction);
+
+        //
         // automap
         //
         Register("automap", "Opens or closes the automap.", "automap", _ => ToggleAutomap(), InLevel);
@@ -150,6 +156,9 @@ internal partial class Program
         _ => [],
     };
 
+    static IEnumerable<string> CompleteBindAction(string[] args, int index) =>
+        index == 0 ? ControlAction.All.Select(action => action.Name) : ["none", .. InputCode.AllNames()];
+
     static IEnumerable<string> ConfigScriptNames()
     {
         var dir = Path.GetDirectoryName(Path.GetFullPath(_gameEngineManager.GetConfigFilePath("x.cfg")));
@@ -169,11 +178,7 @@ internal partial class Program
     =============================================================================
     */
 
-    static string KeyName(ScanCodes key)
-    {
-        var name = SDL.SDL_GetScancodeName((SDL.SDL_Scancode)key);
-        return string.IsNullOrEmpty(name) ? $"#{(int)key}" : name;
-    }
+    static string KeyName(ScanCodes key) => InputCode.KeyName(key);
 
     static ScanCodes ParseKey(string name)
     {
@@ -326,6 +331,45 @@ internal partial class Program
         _consoleManager.Print(_consoleManager.Unbind(key)
             ? $"\"{KeyName(key)}\" unbound"
             : $"\"{KeyName(key)}\" is not bound");
+    }
+
+    private static void Cmd_BindAction(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            foreach (var each in ControlAction.All)
+                _consoleManager.Print($"{each.Name} = {controls.FormatInputs(each)}");
+            return;
+        }
+
+        if (!ControlAction.TryParse(args[0], out var action))
+            throw new ArgumentException($"unknown control \"{args[0]}\"");
+
+        if (args.Length > 1)
+        {
+            // All read before any is set, so a bad name leaves the control as it was
+            List<InputCode> codes = args[1..] is ["none"] ? [] : args[1..].Select(ParseInput).ToList();
+            if (codes.Count(code => !code.IsController) > ControlBindings.KeySlots || codes.Count(code => code.IsController) > 1)
+                throw new ArgumentException($"a control takes up to {ControlBindings.KeySlots} keys or mouse buttons and one joystick button");
+
+            controls.Clear(action);
+            foreach (var code in codes)
+                controls.Add(action, code);
+
+            if (_consoleManager.IsRunningScript)    // controls.cfg sets every control at startup
+                return;
+        }
+
+        _consoleManager.Print($"{action.Name} = {controls.FormatInputs(action)}");
+    }
+
+    /// <summary>A key or button by name, with keys folded as InputManager reports them (like binds).</summary>
+    static InputCode ParseInput(string name)
+    {
+        if (!InputCode.TryParse(name, out var code))
+            throw new ArgumentException($"unknown key or button \"{name}\"");
+
+        return code.Device == InputDevice.Key ? InputCode.FromKey(_inputManager.MapKey(code.Key)) : code;
     }
 
     private static void Cmd_Binds(string[] args)

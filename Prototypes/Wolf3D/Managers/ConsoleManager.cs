@@ -410,6 +410,9 @@ internal class ConsoleManager
         }
     }
 
+    /// <summary>True while a script file is running, for commands that only report back to someone typing.</summary>
+    internal bool IsRunningScript => _execDepth > 0;
+
     /// <summary>
     /// Executes each line of a script file (autoexec.cfg, binds.cfg, `exec`). Blank lines and
     /// lines starting with // or # are skipped. Returns false if the file doesn't exist.

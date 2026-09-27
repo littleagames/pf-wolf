@@ -129,8 +129,9 @@ internal partial class Program
 
         InitGame();
 
-        // After the config is read, so these can override its settings: the binds saved on the
-        // last exit, then the player's own autoexec.cfg, then any --exec commands.
+        // After the config is read, so these can override its settings: the controls and binds
+        // saved on the last exit, then the player's own autoexec.cfg, then any --exec commands.
+        _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.ControlsFileName));
         _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.BindsFileName));
         _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.AutoexecFileName));
 

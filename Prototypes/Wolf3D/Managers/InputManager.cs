@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Configuration;
 
 namespace Wolf3D.Managers;
 
@@ -360,6 +361,17 @@ internal class InputManager
     {
         return Keyboard[(int)code];
     }
+
+    /// <summary>Whether a key, mouse button or joystick button is held down right now.</summary>
+    internal bool IsInputDown(InputCode code) => code.Device switch
+    {
+        InputDevice.Key => code.Code < (int)ScanCodes.sc_Last && Keyboard[code.Code],
+        InputDevice.MouseButton => MousePresent
+            && (SDL.SDL_GetMouseState(out _, out _) & SDL.SDL_BUTTON((uint)code.Code)) != 0,
+        InputDevice.JoyButton => Joystick != IntPtr.Zero && code.Code < JoyNumButtons
+            && SDL.SDL_JoystickGetButton(Joystick, code.Code) != 0,
+        _ => false,
+    };
 
     public bool IsButtonPressed(buttontypes code)
     {
