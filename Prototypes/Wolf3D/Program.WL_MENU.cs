@@ -2169,7 +2169,7 @@ internal partial class Program
     {
         int x, y;
 
-        x = iteminfo.x;
+        x = iteminfo.x & -8;    // same column HandleMenu draws and erases the gun in
         y = iteminfo.y + iteminfo.curpos * 13 - 2;
         _graphicManager.DrawPic("c_cursor1", x, y);
     }
