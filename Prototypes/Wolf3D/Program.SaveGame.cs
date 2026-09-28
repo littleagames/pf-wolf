@@ -48,6 +48,25 @@ internal partial class Program
 
     private static string SaveDirectory => _gameEngineManager.ConfigDirectories.SaveGameDirectory;
 
+    // F8 saves over this one and F9 loads it; the level start autosave is the other
+    internal static string QuickSavePath => Path.Combine(SaveDirectory, QuickSaveFile);
+    internal static string AutoSavePath => Path.Combine(SaveDirectory, AutoSaveFile);
+
+    // Whether a new level saves itself as it starts (the `autosave` setting, saved in the config)
+    internal static bool autosaveEnabled = true;
+
+    // Set as a new level begins; PlayLoop saves once the first frame is drawn, so the
+    // autosave has a picture of it
+    private static bool autosavePending;
+
+    /// <summary>Saves over the autosave, if it's on. Quietly: a failure is only logged.</summary>
+    internal static void AutoSaveGame()
+    {
+        autosavePending = false;
+        if (autosaveEnabled)
+            SaveTheGame(AutoSavePath, "$STR_LS_AUTO".ToLanguageText(_assetManager.GetText("en-us")), 0, 0);
+    }
+
     /// <summary>
     /// A path for a new save, named for when it was made (the save's own name is inside the
     /// file, so it can be anything).

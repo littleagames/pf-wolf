@@ -156,6 +156,7 @@ internal class GameEngineManager
         public AudioDevices? AudioDevices;
         public int? SoundVolume, MusicVolume;
         public VideoSettings? Video;
+        public bool? AutoSave;
     }
 
     /// <summary>The Video menu's on/off settings, as saved in config.cfg.</summary>
@@ -261,6 +262,8 @@ internal class GameEngineManager
             audioManager.SoundVolume = soundVolume;     // clamped by the setter
         if (config.MusicVolume is int musicVolume)
             audioManager.MusicVolume = musicVolume;
+        if (config.AutoSave is bool autoSave)
+            Program.autosaveEnabled = autoSave;
 
         // Set "Read This" back to standard active
         Program.FindMenuItem(Program.MainMenu, "readthis")?.active = 1;
@@ -336,6 +339,8 @@ internal class GameEngineManager
             config.MusicVolume = br.ReadByte();
         if (stream.Position < stream.Length)
             config.Video = ReadVideoSettings(br);
+        if (stream.Position < stream.Length)
+            config.AutoSave = br.ReadByte() != 0;
 
         return config;
     }
@@ -545,6 +550,7 @@ internal class GameEngineManager
         bw.Write((byte)audioManager.SoundVolume);
         bw.Write((byte)audioManager.MusicVolume);
         WriteVideoSettings(bw, videoManager.Settings);
+        bw.Write((byte)(Program.autosaveEnabled ? 1 : 0));
     }
 
     /// <summary>

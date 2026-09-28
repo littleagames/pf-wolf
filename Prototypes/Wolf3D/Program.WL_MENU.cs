@@ -75,7 +75,6 @@ internal partial class Program
 
     internal static int StartGame;
     internal static int SoundStatus = 1;
-    internal static int pickquick;
 
     private static void EnableEndGameMenuItem()
     {
@@ -752,7 +751,7 @@ internal partial class Program
                 {
                     playstate = playstatetypes.ex_died;
                     LastAttacker = null;
-                    pickquick = gamestate.lives = 0;
+                    gamestate.lives = 0;
                 }
 
                 WindowH = 200;
@@ -762,51 +761,24 @@ internal partial class Program
             //
             // QUICKSAVE
             //
+            // Always the quicksave file, never a save picked in the menus
             case ScanCodes.sc_F8:
-                if (lastSaveGame != null && pickquick != 0)
-                {
-                    fontnumber = "LargeFont";
-                    Message("$STR_SAVING".ToLanguageText(language) + "...");
-                    CP_SaveGame(1);
-                    fontnumber = "SmallFont";
-                }
-                else
-                {
-                    _videoManager.FadeOut();
-                    if (_videoManager.screenHeight % 200 != 0)
-                        _videoManager.ClearScreen(0);
-
-                    lastgamemusicoffset = StartCPMusic(MENUSONG);
-                    pickquick = CP_SaveGame(0);
-
-                    SETFONTCOLOR("Black", "White");
-                    _inputManager.ClearKeysDown();
-                    _videoManager.FadeOut();
-                    if (viewsize != 21)
-                        DrawPlayScreen();
-
-                    if (!startgame && !loadedgame)
-                        ContinueMusic(lastgamemusicoffset);
-
-                    if (loadedgame)
-                        playstate = playstatetypes.ex_abort;
-                    lasttimecount = (int)GameEngineManager.GetTimeCount();
-
-                    _inputManager.CenterMouse();
-                }
+                fontnumber = "LargeFont";
+                Message("$STR_SAVING".ToLanguageText(language) + "...");
+                CP_SaveGame(1);
+                fontnumber = "SmallFont";
                 return 1;
 
             //
             // QUICKLOAD
             //
+            // The quicksave, or the load screen until there is one
             case ScanCodes.sc_F9:
-                if (lastSaveGame != null && pickquick != 0)
+                if (File.Exists(QuickSavePath))
                 {
                     fontnumber = "LargeFont";
 
-                    var str = $"{"$STR_LGC".ToLanguageText(language)} {lastSaveGame.Name}\"?";
-
-                    if (Confirm(str) != 0)
+                    if (Confirm("$STR_LS_QUICKLOAD".ToLanguageText(language)) != 0)
                         CP_LoadGame(1);
 
                     fontnumber = "SmallFont";
@@ -818,7 +790,7 @@ internal partial class Program
                         _videoManager.ClearScreen(0);
 
                     lastgamemusicoffset = StartCPMusic(MENUSONG);
-                    pickquick = CP_LoadGame(0);    // loads lastgamemusicoffs
+                    CP_LoadGame(0);    // loads lastgamemusicoffs
 
                     SETFONTCOLOR("Black", "White");
                     _inputManager.ClearKeysDown();
@@ -995,7 +967,6 @@ internal partial class Program
         // CHANGE "READ THIS!" TO NORMAL COLOR
         //
         FindMenuItem(MainMenu, "readthis")?.active = 1;
-        pickquick = 0;
 
         return 0;
     }
@@ -1802,7 +1773,7 @@ internal partial class Program
         DrawMainMenu();
         if (res == 0) return 0;
 
-        pickquick = gamestate.lives = 0;
+        gamestate.lives = 0;
         playstate = playstatetypes.ex_died;
         LastAttacker = null;
 

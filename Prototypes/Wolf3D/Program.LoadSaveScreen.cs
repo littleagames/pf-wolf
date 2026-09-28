@@ -35,7 +35,7 @@ internal partial class Program
     private const int LS_SEPY = LS_ROWY + LS_ROWS * LS_ROWH + 3;
     private const int LS_HELPY = LS_SEPY + 3;
 
-    // The save last saved or loaded, which F8/F9 save over and load
+    // The save last saved or loaded on these screens, which the load screen starts on
     private static SaveInfo? lastSaveGame;
 
     // How the list is shown; kept for the rest of the session
@@ -45,13 +45,12 @@ internal partial class Program
     internal static int CP_LoadGame(int quick)
     {
         //
-        // QUICKLOAD?
+        // QUICKLOAD: THE QUICKSAVE, IN PLACE, SO PLAY CARRIES STRAIGHT ON IN THE RESTORED LEVEL
         //
-        if (quick != 0 && lastSaveGame != null)
+        if (quick != 0)
         {
-            // Loaded in place: play carries straight on in the restored level.
             loadedgame = true;
-            var loaded = LoadTheGame(lastSaveGame.Path, 0, 0);
+            var loaded = LoadTheGame(QuickSavePath, 0, 0);
             loadedgame = false;
             if (!loaded)
                 return 0;
@@ -68,11 +67,11 @@ internal partial class Program
     internal static int CP_SaveGame(int quick)
     {
         //
-        // QUICKSAVE?
+        // QUICKSAVE: OVER THE QUICKSAVE, WITHOUT ASKING
         //
-        if (quick != 0 && lastSaveGame != null)
+        if (quick != 0)
         {
-            if (!SaveTheGame(lastSaveGame.Path, lastSaveGame.Name, 0, 0))
+            if (!SaveTheGame(QuickSavePath, "$STR_LS_QUICK".ToLanguageText(_assetManager.GetText("en-us")), 0, 0))
                 ShowSaveFailed();
             return 1;
         }

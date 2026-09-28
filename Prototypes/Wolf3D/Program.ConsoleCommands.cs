@@ -123,6 +123,8 @@ internal partial class Program
             complete: (_, i) => i == 0 ? _mapManager.GetActors().Select(a => a.Name) : []);
         Register("maps", "Lists the levels that map can warp to.", "maps", Cmd_Maps);
         Register("saves", "Lists the saved games, newest first, numbered for load.", "saves", Cmd_Saves);
+        Register("autosave", "Whether each new level saves itself as it starts, to the Autosave.", "autosave [0|1]",
+            Cmd_AutoSave, complete: Values("0", "1"));
         Register("save", "Saves the game. A name that's already saved is saved over; with none, it's a new save named for the level.",
             "save [name]", Cmd_Save, InLevel, complete: CompleteSaveName);
         Register("load", "Loads a saved game, by its number in saves or its name.", "load <number|name>", Cmd_Load, InLevel,
@@ -739,6 +741,14 @@ internal partial class Program
             var kind = s.Kind == SaveKind.Normal ? "" : $" [{s.Kind.ToString().ToLowerInvariant()}]";
             _consoleManager.Print($"{i + 1,3}. {s.Name}{kind} - {s.MapName}, {s.SavedAt.ToLocalTime():yyyy-MM-dd HH:mm}, played {FormatPlayTime(s.PlayTime)}");
         }
+    }
+
+    private static void Cmd_AutoSave(string[] args)
+    {
+        if (args.Length > 0)
+            autosaveEnabled = ParseBool(args[0]);
+
+        _consoleManager.Print($"autosave is {(autosaveEnabled ? 1 : 0)}");
     }
 
     // A save by its number in the saves list or its name (the newest, if several share it)

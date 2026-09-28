@@ -41,7 +41,7 @@ $STR_LOADING: "Loading"
 $STR_SAVING: "Saving"
 
 # Load / save
-$STR_LGC: "Load Game called\n\""
+$STR_LS_QUICKLOAD: "Load the quicksave?"
 $STR_LS_NEWSAVE: "- New save -"
 $STR_LS_NOSAVES: "No saved games"
 $STR_LS_TRYALL: "Left/Right shows every game's saves"

@@ -76,6 +76,9 @@ internal partial class Program
                 SetupGameLevel();
                 ApplyPendingMapChange();
             }
+
+            // A level being entered, not one loaded or restarted after dying, saves itself
+            autosavePending = !loadedgame && !died && !demoplayback && !demorecord;
             DrawLevel();
 
             ingame = true;

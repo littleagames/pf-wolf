@@ -147,6 +147,9 @@ internal partial class Program
 
             ThreeDRefresh();
 
+            if (autosavePending)
+                AutoSaveGame();         // now there's a picture of the level for it
+
             if (!worldPaused)
             {
                 gamestate.TimeCount += (int)tics;
