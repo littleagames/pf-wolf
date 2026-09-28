@@ -122,32 +122,13 @@ internal class gametype
     public int killx, killy;
     public bool victoryflag;            // set during victory animations
 
-    // What the weapon numbers in pre-version-4 saves (the old weapontypes enum) stand for.
-    private static readonly string[] LegacyWeapons = ["Knife", "Pistol", "MachineGun", "GatlingGun"];
-
-    private static string? ReadWeapon(BinaryReader br, int version)
+    private static string? ReadWeapon(BinaryReader br)
     {
-        if (version >= 4)
-        {
-            var name = br.ReadString();
-            return name.Length == 0 ? null : name;
-        }
-
-        var index = br.ReadInt16();
-        return index >= 0 && index < LegacyWeapons.Length ? LegacyWeapons[index] : null;
+        var name = br.ReadString();
+        return name.Length == 0 ? null : name;
     }
 
-    // Before version 5 the attack animation was three numbers here (attackframe, attackcount,
-    // weaponframe); the weapon's own state is saved separately now, so they're skipped.
-    private static short ReadFaceFrame(BinaryReader br, int version)
-    {
-        var faceframe = br.ReadInt16();
-        if (version < 5)
-            br.ReadBytes(3 * sizeof(short));
-        return faceframe;
-    }
-
-    public static gametype Read(BinaryReader br, int version) => new()
+    public static gametype Read(BinaryReader br) => new()
     {
         difficulty = (difficultytypes)br.ReadInt16(),
         mapon = br.ReadString(),
@@ -156,9 +137,9 @@ internal class gametype
         nextextra = br.ReadInt32(),
         lives = br.ReadInt16(),
         health = br.ReadInt16(),
-        weapon = ReadWeapon(br, version),
-        chosenweapon = ReadWeapon(br, version),
-        faceframe = ReadFaceFrame(br, version),
+        weapon = ReadWeapon(br),
+        chosenweapon = ReadWeapon(br),
+        faceframe = br.ReadInt16(),
         cluster = br.ReadInt16(),
         secretcount = br.ReadInt16(),
         treasurecount = br.ReadInt16(),

@@ -33,13 +33,10 @@ internal partial class Program
     private const int SaveSlots = 10;
 
     private static readonly byte[] SaveSignature = "PFWS"u8.ToArray();
-    // 2: the patrol arrows became PatrolPoint actors, which version-1 saves' actor lists lack
-    // 3: the automap's seen tiles follow the rest of the body; version-2 saves load with none seen
-    // 4: the weapon in hand and the chosen one are weapon class names, not weapontypes numbers
-    // 5: the weapon's state (mid-attack or ready) follows the seen tiles; gamestate loses the
-    //    old attack numbers. Older saves load with the weapon ready.
+    // Still in development, so a layout change bumps SaveVersion and older saves are refused
+    // rather than converted. 5: weapons by class name, and the weapon's state after the seen tiles.
     private const int SaveVersion = 5;
-    private const int OldestLoadableSaveVersion = 2;
+    private const int OldestLoadableSaveVersion = 5;
 
     internal static string GetSaveGamePath(int slot) =>
         Path.Combine(_gameEngineManager.ConfigDirectories.SaveGameDirectory, SaveName.Replace('?', (char)('0' + slot)));
@@ -183,12 +180,12 @@ internal partial class Program
         controldirs PwallDir,
         byte PwallTile,
         int LastAttacker,
-        byte[]? Seen,
+        byte[] Seen,
         Entities.Actors.ActorSnapshot? Weapon);
 
-    private static SaveGameData ReadSaveBody(BinaryReader br, int version)
+    private static SaveGameData ReadSaveBody(BinaryReader br)
     {
-        var state = gametype.Read(br, version);
+        var state = gametype.Read(br);
 
         var ratios = new Dictionary<string, LRstruct>();
         for (int i = br.ReadCount(); i > 0; i--)
@@ -223,8 +220,8 @@ internal partial class Program
             PwallDir: (controldirs)br.ReadByte(),
             PwallTile: br.ReadByte(),
             LastAttacker: br.ReadInt32(),
-            Seen: version >= 3 ? ReadExactly(br, MapManager.MAPAREA) : null,
-            Weapon: version >= 5 && br.ReadBoolean() ? Entities.Actors.ActorSnapshot.Read(br) : null);
+            Seen: ReadExactly(br, MapManager.MAPAREA),
+            Weapon: br.ReadBoolean() ? Entities.Actors.ActorSnapshot.Read(br) : null);
     }
 
     // BinaryReader.ReadBytes quietly returns fewer bytes at the end of the stream.
@@ -263,7 +260,7 @@ internal partial class Program
 
             DiskFlopAnim(x, y);
             using var bodyReader = new BinaryReader(new MemoryStream(body));
-            data = ReadSaveBody(bodyReader, version);
+            data = ReadSaveBody(bodyReader);
 
             if (!_gameEngineManager.GetGameInfo().Maps.ContainsKey(data.GameState.mapon))
                 throw new InvalidDataException($"Map \"{data.GameState.mapon}\" isn't in this game.");
@@ -319,13 +316,12 @@ internal partial class Program
         pwalldir = data.PwallDir;
         pwalltile = data.PwallTile;
 
-        if (data.Seen != null)
-            _mapManager.SetSeenBytes(data.Seen);    // older saves: SetupGameLevel left it all unseen
+        _mapManager.SetSeenBytes(data.Seen);
 
         LastAttacker = data.LastAttacker >= 0 && data.LastAttacker < actors.Count ? actors[data.LastAttacker] : null;
         facetimes = 0;
 
-        // The weapon picks up where it was (mid-attack, say); older saves start it ready.
+        // The weapon picks up where it was (mid-attack, say).
         weaponSprite = null;
         if (SyncWeaponSprite() is { } sprite && data.Weapon != null
             && string.Equals(data.Weapon.ClassName, sprite.Name, StringComparison.OrdinalIgnoreCase))

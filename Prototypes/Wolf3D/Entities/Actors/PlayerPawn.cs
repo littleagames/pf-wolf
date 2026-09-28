@@ -10,8 +10,7 @@ namespace Wolf3D.Entities.Actors;
 /// The states are built here rather than in actordefs YAML: they carry no sprites and exist only
 /// to pick which engine handler runs each tic (T_Player, registered in
 /// Program.RegisterActorActions), plus the death-cam marker DrawPlayerWeapon looks for.
-/// Attacks are the weapon's own states (Program.PlayerWeapon.cs), not the player's; a save from
-/// before that, taken mid-attack, names an "Attack" state and loads back on Spawn.
+/// Attacks are the weapon's own states (Program.PlayerWeapon.cs), not the player's.
 /// Both hold forever (TicTime -1), so the handler runs every tic and Next is never consulted.
 /// </remarks>
 internal record PlayerPawn : Actor
