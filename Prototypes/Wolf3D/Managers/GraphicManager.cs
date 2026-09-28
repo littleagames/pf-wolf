@@ -40,7 +40,11 @@ internal class GraphicManager
         if (font == null)
             return;
 
-        font.Draw(videoManager, x, y, text, style.Color);
+        var shadow = style.Shadow ?? font.Shadow;
+        if (shadow != null && shadow != FontShadow.None && style.ShadowColor != null)
+            shadow = shadow with { Color = style.ShadowColor };
+
+        font.Draw(videoManager, x, y, text, style.Color, shadow);
     }
 
     public void DrawText(int x, int y, string text, Font font, string color) => font.Draw(videoManager, x, y, text, color);

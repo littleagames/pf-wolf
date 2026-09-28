@@ -21,7 +21,22 @@ internal abstract class Font
     /// </summary>
     public abstract int Advance(char ch);
 
-    public abstract void Draw(VideoManager video, int x, int y, string text, string color);
+    /// <summary>A copy of the text drawn behind it, offset, in one color; none by default</summary>
+    public FontShadow? Shadow { get; set; }
+
+    /// <summary>Draws a line of text, with its shadow first if the font has one</summary>
+    public void Draw(VideoManager video, int x, int y, string text, string color) => Draw(video, x, y, text, color, Shadow);
+
+    /// <summary>Draws a line of text with <paramref name="shadow"/> behind it in place of the font's own; none for null</summary>
+    public void Draw(VideoManager video, int x, int y, string text, string color, FontShadow? shadow)
+    {
+        if (shadow != null && shadow != FontShadow.None)
+            DrawText(video, x + shadow.X, y + shadow.Y, text, shadow.Color, silhouette: true);
+        DrawText(video, x, y, text, color, silhouette: false);
+    }
+
+    /// <param name="silhouette">Draw every pixel of the glyphs in <paramref name="color"/>, even for a font whose glyphs have their own colors</param>
+    protected abstract void DrawText(VideoManager video, int x, int y, string text, string color, bool silhouette);
 
     /// <summary>Width of a line of text</summary>
     public int Measure(string text)
@@ -40,4 +55,14 @@ internal abstract class Font
             width += Advance(text[length++]);
         return length;
     }
+}
+
+/// <summary>A text shadow: how far right and down of the text it sits, and its color</summary>
+internal record FontShadow(int X, int Y, string Color)
+{
+    /// <summary>For a <see cref="TextStyle"/>: no shadow, even if the font has one</summary>
+    public static readonly FontShadow None = new(0, 0, "");
+
+    /// <summary>One pixel right and down, in black</summary>
+    public static readonly FontShadow Default = new(1, 1, "Black");
 }

@@ -5,8 +5,20 @@ namespace Wolf3D.Fonts;
 /// in what colors. Colors are names from the game pack's colors.yaml, #RRGGBB or a palette index.
 /// </summary>
 /// <param name="Background">The color behind the text, which the line input cursor blinks with</param>
-internal readonly record struct TextStyle(string Font, string Color, string Background = "BKGDCOLOR")
+/// <param name="Shadow">
+/// A shadow for this text in place of the font's own (fonts.yaml); null keeps the font's, and
+/// <see cref="FontShadow.None"/> turns it off
+/// </param>
+/// <param name="ShadowColor">Draws whichever shadow the text has in this color instead of its own</param>
+internal readonly record struct TextStyle(string Font, string Color, string Background = "BKGDCOLOR",
+    FontShadow? Shadow = null, string? ShadowColor = null)
 {
-    /// <summary>The same style with the text and background colors swapped</summary>
-    public TextStyle Inverted => this with { Color = Background, Background = Color };
+    /// <summary>
+    /// The same style with the text and background colors swapped. Its shadow is in the
+    /// background color too, so drawing text in it erases the text and its shadow.
+    /// </summary>
+    public TextStyle Inverted => this with { Color = Background, Background = Color, ShadowColor = Background };
+
+    /// <summary>The same style with a shadow; one pixel right and down, in black, by default</summary>
+    public TextStyle WithShadow(FontShadow? shadow = null) => this with { Shadow = shadow ?? FontShadow.Default };
 }

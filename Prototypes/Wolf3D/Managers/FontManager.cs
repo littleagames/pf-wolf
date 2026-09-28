@@ -35,11 +35,15 @@ internal class FontManager
         if (fonts.TryGetValue(name, out var font))
             return font;
 
-        font = Definitions?.Fonts.TryGetValue(name, out var definition) == true
+        FontDefinition? definition = null;
+        font = Definitions?.Fonts.TryGetValue(name, out definition) == true
             ? Build(name, definition)
             : FindVgaFont(name);
         if (font == null)
             return null;
+
+        if (definition?.Shadow is { } shadow)
+            font.Shadow = new FontShadow(shadow.X, shadow.Y, shadow.Color);
 
         fonts[name] = font;
         return font;

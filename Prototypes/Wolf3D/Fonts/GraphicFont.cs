@@ -60,7 +60,7 @@ internal sealed class GraphicFont : Font
 
     public override int Advance(char ch) => FindGlyph(ch)?.Advance ?? SpaceWidth;
 
-    public override void Draw(VideoManager video, int x, int y, string text, string color)
+    protected override void DrawText(VideoManager video, int x, int y, string text, string color, bool silhouette)
     {
         foreach (char ch in text)
         {
@@ -68,7 +68,7 @@ internal sealed class GraphicFont : Font
             if (glyph?.Image is GraphicAsset image)
             {
                 video.DrawImageRegion(image.RawData, image.OpacityMask, image.Width, glyph.SrcX, glyph.SrcY,
-                    glyph.Width, glyph.Height, x, y, _transparent, _colorize ? color : null);
+                    glyph.Width, glyph.Height, x, y, _transparent, _colorize || silhouette ? color : null);
             }
             x += glyph?.Advance ?? SpaceWidth;
         }

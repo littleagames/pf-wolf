@@ -28,6 +28,19 @@ internal record FontDefinitionsAsset : Asset
     }
 }
 
+/// <summary>A font's shadow in fonts.yaml; `shadow: {}` is one pixel right and down, in black</summary>
+internal class ShadowDefinition
+{
+    /// <summary>How far right of the text the shadow sits (negative for left)</summary>
+    public int X { get; set; } = 1;
+
+    /// <summary>How far down from the text the shadow sits (negative for up)</summary>
+    public int Y { get; set; } = 1;
+
+    /// <summary>A color name, #RRGGBB or palette index</summary>
+    public string Color { get; set; } = "Black";
+}
+
 /// <summary>One font in fonts.yaml</summary>
 internal class FontDefinition
 {
@@ -44,6 +57,9 @@ internal class FontDefinition
     /// the font's own name
     /// </summary>
     public string? Source { get; set; }
+
+    /// <summary>Any type: a copy of the text drawn behind it, offset, in one color</summary>
+    public ShadowDefinition? Shadow { get; set; }
 
     /// <summary>sheet: the picture holding the characters</summary>
     public string? Image { get; set; }

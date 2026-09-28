@@ -31,6 +31,12 @@
 #   colorize:     Draw the glyphs in the text's color instead of their own
 #   transparent:  A color (name, #RRGGBB or palette index) left out, so what's behind shows
 #                 through. A PNG's see-through pixels always are.
+#
+# Any type of font also takes:
+#   shadow:       A copy of the text drawn behind it in one color, e.g. { x: 1, y: 1, color: Black }
+#                 (those are the defaults, so "shadow: {}" gives a one-pixel black drop shadow).
+#                 Picture glyphs cast a solid silhouette, so they need see-through pixels
+#                 (a PNG's, or transparent:) or the shadow is a filled box.
 
 SmallFont:
   type: vga
