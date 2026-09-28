@@ -33,9 +33,6 @@ internal class GraphicManager
             videoManager.Bar(0, 0, 320, 200, color);
     }
 
-    public void DrawPropString(int px, int py, string s, string fontcolor, string fontName)
-        => DrawText(px, py, s, new TextStyle(fontName, fontcolor));
-
     /// <summary>Draws one line of text; a missing font draws nothing</summary>
     public void DrawText(int x, int y, string text, TextStyle style)
     {
@@ -137,12 +134,5 @@ internal class GraphicManager
     public void DrawPicScaledCoord(int scx, int scy, GraphicAsset gfxAsset)
     {
         videoManager.MemToScreenScaledCoord(gfxAsset.RawData, gfxAsset.Width, gfxAsset.Height, scx, scy);
-    }
-
-    public void MeasurePropString(string text, string font, out ushort width, out ushort height)
-    {
-        MeasureText(text, font, out int w, out int h);
-        width = (ushort)w;
-        height = (ushort)h;
     }
 }

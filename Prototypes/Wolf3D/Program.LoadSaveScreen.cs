@@ -1,4 +1,5 @@
 using Wolf3D.Extensions;
+using Wolf3D.Fonts;
 
 namespace Wolf3D;
 
@@ -237,9 +238,11 @@ internal partial class Program
         _inputManager.ClearKeysDown();
         WaitKeyUp();
         MenuFadeOut();
-        fontnumber = "LargeFont";
         return exit;
     }
+
+    /// <summary>The screen's text is in the small font</summary>
+    private static TextStyle LoadSaveStyle(string color, string background = "BKGDCOLOR") => new(SMALL_FONT, color, background);
 
     /// <summary>Lists the saves as the screen is set to show them, keeping the cursor on <paramref name="select"/> if it's there.</summary>
     private static void FillSaveRows(LoadSaveState state, string? select)
@@ -261,14 +264,7 @@ internal partial class Program
     }
 
     /// <summary>A save's name cut to fit a Confirm box, which is in the large font and can't be wider than the screen.</summary>
-    private static string NameForConfirm(string name)
-    {
-        var oldFont = fontnumber;
-        fontnumber = "LargeFont";
-        var fitted = FitText(name, 280);
-        fontnumber = oldFont;
-        return fitted;
-    }
+    private static string NameForConfirm(string name) => FitText(name, 280, LARGE_FONT);
 
     /// <summary>Names in the order a person would put them: "test 2" before "test 10".</summary>
     private sealed class NaturalNameComparer : IComparer<string>
@@ -350,7 +346,7 @@ internal partial class Program
 
         DrawLoadSaveScreen(state, editing: true);
         int y = LoadSaveRowY(state.Row, state.Top);
-        if (!US_LineInput(LS_LISTX, y, ref input, input, true, MaxGameName - 1, LS_EDITW - 8))
+        if (!US_LineInput(LS_LISTX, y, ref input, input, true, MaxGameName - 1, LS_EDITW - 8, LoadSaveStyle("HIGHLIGHT")))
         {
             _audioManager.Play("menu/escape");
             return false;
@@ -382,15 +378,8 @@ internal partial class Program
         DrawOutline(LSA_X, LSA_Y, LSA_W, LSA_H, "Black", "HIGHLIGHT");
         _graphicManager.DrawPic("c_diskloading1", LSA_X + 8, LSA_Y + 5);
 
-        fontnumber = "LargeFont";
-        SETFONTCOLOR("Black", "TEXTCOLOR");
-        PrintX = LSA_X + 46;
-        PrintY = LSA_Y + 13;
-
-        if (which == 0)
-            US_Print("$STR_LOADING".ToLanguageText(language) + "...");
-        else
-            US_Print("$STR_SAVING".ToLanguageText(language) + "...");
+        var text = which == 0 ? "$STR_LOADING" : "$STR_SAVING";
+        TextAt(LSA_X + 46, LSA_Y + 13, new TextStyle(LARGE_FONT, "Black", "TEXTCOLOR")).Print(text.ToLanguageText(language) + "...");
 
         _videoManager.Update();
     }
@@ -407,20 +396,14 @@ internal partial class Program
         var language = _assetManager.GetText("en-us");
 
         DrawMenuComponents(state.Saving ? "save-game" : "load-game");
-        fontnumber = "SmallFont";
 
         //
         // HOW THE LIST IS SORTED, AND WHOSE SAVES IT SHOWS
         //
-        SETFONTCOLOR("READHCOLOR", "BKGDCOLOR");
-        PrintX = LS_LISTX;
-        PrintY = LS_STATUSY;
-        US_Print((saveListByName ? "$STR_LS_SORTNAME" : "$STR_LS_SORTDATE").ToLanguageText(language));
+        var status = LoadSaveStyle("READHCOLOR");
+        TextAt(LS_LISTX, LS_STATUSY, status).Print((saveListByName ? "$STR_LS_SORTNAME" : "$STR_LS_SORTDATE").ToLanguageText(language));
         var filter = $"< {(saveListAllGames ? "$STR_LS_FILTERALL" : "$STR_LS_FILTERGAME").ToLanguageText(language)} >";
-        USL_MeasureString(filter, out ushort fw, out _);
-        PrintX = (ushort)(LS_PREVX + LS_PREVW - 2 - fw);
-        PrintY = LS_STATUSY;
-        US_Print(filter);
+        TextAt(LS_PREVX + LS_PREVW - 2 - TextWidth(filter, status.Font), LS_STATUSY, status).Print(filter);
         _videoManager.HorizontalLine(8, 312, LS_ROWY - 3, "DEACTIVE");
 
         //
@@ -441,16 +424,10 @@ internal partial class Program
         // With nothing to list there's nothing to preview either, so it says so across the window
         if (state.Rows.Count == 0)
         {
-            SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-            WindowX = 8;
-            WindowW = 304;
-            PrintY = LS_ROWY + 4 * LS_ROWH;
-            US_CPrint(FitText("$STR_LS_NOSAVES".ToLanguageText(language), WindowW));
+            var empty = CenteredText(8, 304, LS_ROWY + 4 * LS_ROWH, LoadSaveStyle("TEXTCOLOR"));
+            empty.CPrint(FitText("$STR_LS_NOSAVES".ToLanguageText(language), empty.Width, SMALL_FONT));
             if (!saveListAllGames)
-            {
-                SETFONTCOLOR("READCOLOR", "BKGDCOLOR");
-                US_CPrint(FitText("$STR_LS_TRYALL".ToLanguageText(language), WindowW));
-            }
+                empty.CPrint(FitText("$STR_LS_TRYALL".ToLanguageText(language), empty.Width, SMALL_FONT), LoadSaveStyle("READCOLOR"));
         }
 
         if (state.Top > 0)
@@ -488,13 +465,9 @@ internal partial class Program
         // WHICH KEYS DO WHAT
         //
         _videoManager.HorizontalLine(8, 312, LS_SEPY, "DEACTIVE");
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-        WindowX = 0;
-        WindowW = 320;
-        PrintY = LS_HELPY;
-        US_CPrint(FitText((state.Saving ? "$STR_LS_HELPSAVE" : "$STR_LS_HELPLOAD").ToLanguageText(language), 300));
+        CenteredText(0, 320, LS_HELPY, LoadSaveStyle("TEXTCOLOR"))
+            .CPrint(FitText((state.Saving ? "$STR_LS_HELPSAVE" : "$STR_LS_HELPLOAD").ToLanguageText(language), 300, SMALL_FONT));
 
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         _videoManager.Update();
     }
 
@@ -508,22 +481,20 @@ internal partial class Program
             // Across the window, over the preview, so the name has room for all its letters
             _videoManager.Bar(LS_LISTX - 3, y - 1, LS_EDITW, LS_ROWH, "BKGDCOLOR");
             DrawOutline(LS_LISTX - 3, y - 1, LS_EDITW, LS_ROWH, "HIGHLIGHT", "HIGHLIGHT");
-            SETFONTCOLOR("HIGHLIGHT", "BKGDCOLOR");     // US_LineInput draws the name
-            return;
+            return;     // US_LineInput draws the name
         }
 
+        TextStyle style;
         if (selected)
         {
             _videoManager.Bar(LS_LISTX - 3, y - 1, LS_LISTW + 4, LS_ROWH, "TEXTCOLOR");
             DrawOutline(LS_LISTX - 3, y - 1, LS_LISTW + 4, LS_ROWH, "Black", "HIGHLIGHT");
-            SETFONTCOLOR("Black", "TEXTCOLOR");
+            style = LoadSaveStyle("Black", "TEXTCOLOR");
         }
         else
-            SETFONTCOLOR(save == null ? "READCOLOR" : "TEXTCOLOR", "BKGDCOLOR");
+            style = LoadSaveStyle(save == null ? "READCOLOR" : "TEXTCOLOR");
 
-        PrintX = LS_LISTX;
-        PrintY = (ushort)y;
-        US_Print(FitText(save?.Name ?? "$STR_LS_NEWSAVE".ToLanguageText(language), LS_LISTW - 2));
+        TextAt(LS_LISTX, y, style).Print(FitText(save?.Name ?? "$STR_LS_NEWSAVE".ToLanguageText(language), LS_LISTW - 2, style.Font));
     }
 
     /// <summary>The picture, fitted inside its box keeping its shape.</summary>
@@ -534,11 +505,8 @@ internal partial class Program
 
         if (thumbnail == null)
         {
-            SETFONTCOLOR("DEACTIVE", "Black");
-            WindowX = LS_THUMBX;
-            WindowW = LS_THUMBW;
-            PrintY = LS_THUMBY + LS_THUMBH / 2 - 5;
-            US_CPrint(FitText("$STR_LS_NOPICTURE".ToLanguageText(_assetManager.GetText("en-us")), LS_THUMBW));
+            CenteredText(LS_THUMBX, LS_THUMBW, LS_THUMBY + LS_THUMBH / 2 - 5, LoadSaveStyle("DEACTIVE", "Black"))
+                .CPrint(FitText("$STR_LS_NOPICTURE".ToLanguageText(_assetManager.GetText("en-us")), LS_THUMBW, SMALL_FONT));
             return;
         }
 
@@ -580,13 +548,8 @@ internal partial class Program
             (string.Format(L("$STR_LS_TREASURE"), Ratio(info.Treasure, info.TreasureTotal), info.Score), "TEXTCOLOR"),
         ];
 
-        WindowX = LS_PREVX;
-        WindowW = LS_PREVW;
         for (int i = 0; i < lines.Length; i++)
-        {
-            SETFONTCOLOR(lines[i].Color, "BKGDCOLOR");
-            PrintY = (ushort)(LS_INFOY + i * LS_INFOH);
-            US_CPrint(FitText(lines[i].Text, LS_PREVW - 4));
-        }
+            CenteredText(LS_PREVX, LS_PREVW, LS_INFOY + i * LS_INFOH, LoadSaveStyle(lines[i].Color))
+                .CPrint(FitText(lines[i].Text, LS_PREVW - 4, SMALL_FONT));
     }
 }

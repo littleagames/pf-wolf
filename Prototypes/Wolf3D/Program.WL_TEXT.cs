@@ -1,4 +1,5 @@
 ﻿using Wolf3D.Assets;
+using Wolf3D.Fonts;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
@@ -100,7 +101,6 @@ internal partial class Program
         ShowArticle(text);
 
         _videoManager.FadeOut();
-        SETFONTCOLOR("Black", "White");
         _inputManager.ClearKeysDown();
         _inputManager.CenterMouse();
 
@@ -109,13 +109,12 @@ internal partial class Program
 
     internal static void ShowArticle(string article)
     {
-        string oldfontnumber;
         bool newpage, firstpage;
         ControlInfo ci;
 
         text = article;
-        oldfontnumber = new string(fontnumber);
-        fontnumber = "SmallFont";
+        // Where the layout has got to on the page, and the color ^C last set
+        var page = TextWindow.FullScreen(_graphicManager, new TextStyle(SMALL_FONT, "Black", "BACKCOLOR"));
         _videoManager.Bar(0, 0, 320, 200, "BACKCOLOR");
         CacheLayout();
 
@@ -126,7 +125,7 @@ internal partial class Program
             if (newpage)
             {
                 newpage = false;
-                PageLayout(true);
+                PageLayout(page, true);
                 _videoManager.Update();
                 if (firstpage)
                 {
@@ -191,7 +190,6 @@ internal partial class Program
         } while (_inputManager.GetLastKeyPressed() != ScanCodes.sc_Escape && !ci.button1);
 
         _inputManager.ClearKeysDown();
-        fontnumber = new string(oldfontnumber);
     }
 
     /*
@@ -373,15 +371,12 @@ internal partial class Program
 =====================
 */
 
-    private static void PageLayout(bool shownumber)
+    private static void PageLayout(TextWindow page, bool shownumber)
     {
         int i;
-        string oldfontcolor;
         char ch;
 
-        oldfontcolor = fontcolor;
-
-        fontcolor = "Black";
+        page.Style = page.Style with { Color = "Black" };
 
         //
         // clear the screen
@@ -399,8 +394,8 @@ internal partial class Program
             rightmargin[i] = SCREENPIXWIDTH - RIGHTMARGIN;
         }
 
-        px = LEFTMARGIN;
-        py = TOPMARGIN;
+        page.PrintX = LEFTMARGIN;
+        page.PrintY = TOPMARGIN;
         rowon = 0;
         layoutdone = false;
 
@@ -425,17 +420,17 @@ internal partial class Program
             ch = text[textIndex];
 
             if (ch == '^')
-                HandleCommand();
+                HandleCommand(page);
             else
                 if (ch == 9)
                 {
-                    px = (px + 8) & 0xf8;
+                    page.PrintX = (page.PrintX + 8) & 0xf8;
                     textIndex++;
                 }
                 else if (ch <= 32)
-                    HandleCtrls();
+                    HandleCtrls(page);
                 else
-                    HandleWord();
+                    HandleWord(page);
 
         } while (!layoutdone);
 
@@ -444,14 +439,8 @@ internal partial class Program
         if (shownumber)
         {
             var str = $"pg {pagenum} of {numpages}";
-            px = 213;
-            py = 183;
-            fontcolor = "Dark Yellow";                          //12^BACKCOLOR;
-
-            _graphicManager.DrawPropString(px, py, str, fontcolor, fontnumber);
+            _graphicManager.DrawText(213, 183, str, page.Style with { Color = "Dark Yellow" });    //12^BACKCOLOR;
         }
-
-        fontcolor = oldfontcolor;
     }
 
 
@@ -463,7 +452,7 @@ internal partial class Program
     =====================
     */
 
-    private static void HandleCommand()
+    private static void HandleCommand(TextWindow page)
     {
         int i, margin, top, bottom;
         int picwidth, picheight, picmid;
@@ -503,20 +492,20 @@ internal partial class Program
                 else if (i >= 'A' && i <= 'F')
                     colorValue += i - 'A' + 10;
 
-                fontcolor = colorValue.ToString();
+                page.Style = page.Style with { Color = colorValue.ToString() };
                 textIndex++;
                 break;
 
             case '>':
-                px = 160;
+                page.PrintX = 160;
                 textIndex++;
                 break;
 
             case 'L':
-                py = ParseNumber();
-                rowon = (uint)((py - TOPMARGIN) / FONTHEIGHT);
-                py = (int)(TOPMARGIN + rowon * FONTHEIGHT);
-                px = ParseNumber();
+                page.PrintY = ParseNumber();
+                rowon = (uint)((page.PrintY - TOPMARGIN) / FONTHEIGHT);
+                page.PrintY = (int)(TOPMARGIN + rowon * FONTHEIGHT);
+                page.PrintX = ParseNumber();
                 while (text[textIndex++] != '\n')         // scan to end of line
                     ;
                 break;
@@ -561,8 +550,8 @@ internal partial class Program
                 //
                 // adjust this line if needed
                 //
-                if (px < (int)leftmargin[rowon])
-                    px = (int)leftmargin[rowon];
+                if (page.PrintX < (int)leftmargin[rowon])
+                    page.PrintX = (int)leftmargin[rowon];
                 break;
         }
     }
@@ -574,7 +563,7 @@ internal partial class Program
     =====================
     */
 
-    private static void HandleCtrls()
+    private static void HandleCtrls(TextWindow page)
     {
         char ch;
 
@@ -582,7 +571,7 @@ internal partial class Program
 
         if (ch == '\n')
         {
-            NewLine();
+            NewLine(page);
             return;
         }
     }
@@ -596,11 +585,10 @@ internal partial class Program
     =====================
     */
 
-    private static void HandleWord()
+    private static void HandleWord(TextWindow page)
     {
         char[] wword = new char[WORDLIMIT];
         int wordindex;
-        ushort wwidth, wheight, newpos;
 
 
         //
@@ -614,16 +602,16 @@ internal partial class Program
             if (++wordindex == WORDLIMIT)
                 _gameEngineManager.Quit("PageLayout: Word limit exceeded");
         }
-        wword[wordindex] = (char)0;            // stick a null at end for C
+        string word = new string(wword, 0, wordindex);
 
         //
         // see if it fits on this line
         //
-        _graphicManager.MeasurePropString(new string(wword), fontnumber, out wwidth, out wheight);
+        page.Measure(word, out int wwidth, out _);
 
-        while (px + wwidth > (int)rightmargin[rowon])
+        while (page.PrintX + wwidth > (int)rightmargin[rowon])
         {
-            NewLine();
+            NewLine(page);
             if (layoutdone)
                 return;         // overflowed page
         }
@@ -631,16 +619,14 @@ internal partial class Program
         //
         // print it
         //
-        newpos = (ushort)(px + wwidth);
-        _graphicManager.DrawPropString(px, py, new string(wword), fontcolor, fontnumber);
-        px = newpos;
+        page.Print(word);
 
         //
         // suck up any extra spaces
         //
         while (text[textIndex] == ' ')
         {
-            px += SPACEWIDTH;
+            page.PrintX += SPACEWIDTH;
             textIndex++;
         }
     }
@@ -653,7 +639,7 @@ internal partial class Program
     =====================
     */
 
-    private static void NewLine()
+    private static void NewLine(TextWindow page)
     {
         char ch;
 
@@ -677,7 +663,7 @@ internal partial class Program
                 textIndex++;
             } while (true);
         }
-        px = (int)leftmargin[rowon];
-        py += FONTHEIGHT;
+        page.PrintX = (int)leftmargin[rowon];
+        page.PrintY += FONTHEIGHT;
     }
 }

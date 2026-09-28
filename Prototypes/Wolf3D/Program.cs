@@ -7,6 +7,7 @@ using Wolf3D.Configuration;
 using Wolf3D.Constants;
 using Wolf3D.DependencyInjection;
 using Wolf3D.Extensions;
+using Wolf3D.Fonts;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
@@ -325,13 +326,7 @@ internal partial class Program
         else
         {
             _videoManager.Bar(0, 189, 300, 11, "Maroon");
-            WindowX = 0;
-            WindowW = 320;
-            PrintY = 190;
-
-            SETFONTCOLOR("Bright Yellow", "Maroon");
-            fontnumber = "SmallFont";
-            US_CPrint("Press a key"); // "Oprima una tecla"
+            CenteredText(0, 320, 190, new TextStyle(SMALL_FONT, "Bright Yellow", "Maroon")).CPrint("Press a key"); // "Oprima una tecla"
 
             _videoManager.Update();
 
@@ -339,15 +334,10 @@ internal partial class Program
                 _inputManager.Ack();
 
             _videoManager.Bar(0, 189, 300, 11, "Maroon");
-
-            PrintY = 190;
-            SETFONTCOLOR("Lime", "Maroon");
-
-            US_CPrint("Working..."); // "pensando..."
+            CenteredText(0, 320, 190, new TextStyle(SMALL_FONT, "Lime", "Maroon")).CPrint("Working..."); // "pensando..."
 
             _videoManager.Update();
         }
-        SETFONTCOLOR("Black", "White");
     }
 
     private static void DemoLoop()
@@ -573,9 +563,7 @@ internal partial class Program
 
         //CA_LoadAllSounds();
 
-        fontnumber = "LargeFont";
         DrawMenuComponents("jukebox");
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
 
         DrawMenu(MusicItems, page);
 

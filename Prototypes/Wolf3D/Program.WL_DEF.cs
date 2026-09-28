@@ -12,11 +12,6 @@ internal struct Point
     public static Point Zero => new Point { x = 0, y = 0 };
 }
 
-internal struct Rect
-{
-    public Point ul, lr;
-}
-
 internal class visobj_t
 {
     public byte tilex, tiley;

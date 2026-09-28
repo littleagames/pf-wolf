@@ -60,7 +60,6 @@ internal partial class Program
         bool warped = false;
 
         ClearMemory();
-        SETFONTCOLOR("Black", "White");
         _videoManager.FadeOut();
         DrawPlayScreen();
         died = false;
@@ -120,7 +119,6 @@ internal partial class Program
             if (startgame || loadedgame)
             {
                 ClearMemory();
-                SETFONTCOLOR("Black", "White");
                 _videoManager.FadeOut();
                 DrawPlayScreen();
                 died = false;
@@ -224,7 +222,6 @@ internal partial class Program
 
         _videoManager.FadeOut();
 
-        SETFONTCOLOR("Black", "White");
         DrawPlayScreen();
 
         startgame = false;
@@ -269,15 +266,13 @@ internal partial class Program
         demoData[demoptr + 2] = 0;
 
         _videoManager.FadeIn();
-        CenterWindow(24, 3);
-        PrintY += 6;
-        fontnumber = "SmallFont";
-        SETFONTCOLOR("Black", "White");
-        US_Print(" Demo number (0-9): ");
+        var window = CenterWindow(24, 3, PromptStyle);
+        window.PrintY += 6;
+        window.Print(" Demo number (0-9): ");
         _videoManager.Update();
 
         string str = "";
-        if (US_LineInput(px, py, ref str, "", true, 1, 0))
+        if (US_LineInput(window.PrintX, window.PrintY, ref str, "", true, 1, 0, window.Style))
         {
             if (string.IsNullOrEmpty(str))
                 return;
@@ -308,15 +303,13 @@ internal partial class Program
     internal static void RecordDemo()
     {
         int level, maps;
-        CenterWindow(26, 3);
-        PrintY += 6;
-        fontnumber = "SmallFont";
-        SETFONTCOLOR("Black", "White");
-        US_Print("  Demo which level(1-60): "); maps = 60;
+        var window = CenterWindow(26, 3, PromptStyle);
+        window.PrintY += 6;
+        window.Print("  Demo which level(1-60): "); maps = 60;
         _videoManager.Update();
         _videoManager.FadeIn();
         string str = "";
-        var esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
+        var esc = !US_LineInput(window.PrintX, window.PrintY, ref str, "", true, 2, 0, window.Style);
         if (esc || string.IsNullOrEmpty(str))
             return;
 

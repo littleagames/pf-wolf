@@ -25,6 +25,9 @@ internal sealed class TextWindow
     /// <summary>A window covering the whole screen, for text placed by setting the print position</summary>
     public static TextWindow FullScreen(GraphicManager graphics, TextStyle style) => new(graphics, 0, 0, 320, 200, style);
 
+    /// <summary>A window from (x, y) to the bottom right of the screen: text prints from there, and newlines come back to x</summary>
+    public static TextWindow At(GraphicManager graphics, int x, int y, TextStyle style) => new(graphics, x, y, 320 - x, 200 - y, style);
+
     public int X { get; set; }
     public int Y { get; set; }
     public int Width { get; set; }

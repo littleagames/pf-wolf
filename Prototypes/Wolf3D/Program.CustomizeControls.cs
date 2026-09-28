@@ -1,5 +1,6 @@
 using Wolf3D.Configuration;
 using Wolf3D.Extensions;
+using Wolf3D.Fonts;
 using static SDL2.SDL;
 
 namespace Wolf3D;
@@ -183,10 +184,12 @@ internal partial class Program
         _inputManager.ClearKeysDown();
         WaitKeyUp();
         MenuFadeOut();
-        fontnumber = "LargeFont";
 
         return 0;
     }
+
+    /// <summary>The screen's text is in the small font</summary>
+    private static TextStyle CustomizeStyle(string color, string background = "BKGDCOLOR") => new(SMALL_FONT, color, background);
 
     /// <summary>The next row that can be picked, going <paramref name="step"/> from <paramref name="from"/>; -1 with none.</summary>
     private static int NextCustomRow(List<CustomRow> rows, int from, int step, bool wrap = true)
@@ -327,24 +330,15 @@ internal partial class Program
         var language = _assetManager.GetText("en-us");
 
         DrawMenuComponents("customize");
-        fontnumber = "SmallFont";
-        WindowX = 0;
-        WindowW = 320;
 
         //
         // COLUMN TITLES
         //
-        SETFONTCOLOR("READHCOLOR", "BORDCOLOR");
-        PrintY = CUS_TITLEY;
-        PrintX = CUS_NAMEX;
-        US_Print("$STR_CTL_COLCONTROL".ToLanguageText(language));
+        var titleStyle = CustomizeStyle("READHCOLOR", "BORDCOLOR");
+        TextAt(CUS_NAMEX, CUS_TITLEY, titleStyle).Print("$STR_CTL_COLCONTROL".ToLanguageText(language));
         string[] titles = ["$STR_CTL_COLKEY1", "$STR_CTL_COLKEY2", "$STR_CTL_COLPAD"];
         for (int c = 0; c < titles.Length; c++)
-        {
-            PrintX = (ushort)CUS_COLX[c];
-            PrintY = CUS_TITLEY;
-            US_Print(titles[c].ToLanguageText(language));
-        }
+            TextAt(CUS_COLX[c], CUS_TITLEY, titleStyle).Print(titles[c].ToLanguageText(language));
         _videoManager.HorizontalLine(6, 314, CUS_ROWY - 2, "DEACTIVE");
 
         //
@@ -395,15 +389,9 @@ internal partial class Program
             help = (current.Kind == CustomRowKind.Reset ? "$STR_CTL_HELPRESET" : "$STR_CTL_HELP").ToLanguageText(language);
         }
 
-        SETFONTCOLOR(infoColor, "BKGDCOLOR");
-        PrintY = CUS_INFOY;
-        US_CPrint(FitText(info, 300));
+        CenteredText(0, 320, CUS_INFOY, CustomizeStyle(infoColor)).CPrint(FitText(info, 300, SMALL_FONT));
+        CenteredText(0, 320, CUS_HELPY, CustomizeStyle("TEXTCOLOR")).CPrint(FitText(help, 300, SMALL_FONT));
 
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-        PrintY = CUS_HELPY;
-        US_CPrint(FitText(help, 300));
-
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         _videoManager.Update();
     }
 
@@ -412,26 +400,18 @@ internal partial class Program
         switch (row.Kind)
         {
             case CustomRowKind.Header:
-                SETFONTCOLOR("READCOLOR", "BKGDCOLOR");
-                PrintX = CUS_NAMEX - 4;
-                PrintY = (ushort)y;
-                US_Print(row.Text);
-                USL_MeasureString(row.Text, out ushort w, out _);
+                TextAt(CUS_NAMEX - 4, y, CustomizeStyle("READCOLOR")).Print(row.Text);
+                int w = TextWidth(row.Text, SMALL_FONT);
                 _videoManager.HorizontalLine(CUS_NAMEX + w + 2, 302, y + 5, "DEACTIVE");
                 break;
 
             case CustomRowKind.Reset:
-                SETFONTCOLOR(selected ? "HIGHLIGHT" : "TEXTCOLOR", "BKGDCOLOR");
-                PrintX = CUS_NAMEX;
-                PrintY = (ushort)y;
-                US_Print(row.Text);
+                TextAt(CUS_NAMEX, y, CustomizeStyle(selected ? "HIGHLIGHT" : "TEXTCOLOR")).Print(row.Text);
                 break;
 
             case CustomRowKind.Control:
-                SETFONTCOLOR(selected ? "HIGHLIGHT" : "TEXTCOLOR", "BKGDCOLOR");
-                PrintX = CUS_NAMEX;
-                PrintY = (ushort)y;
-                US_Print(FitText(row.Text, CUS_COLX[0] - CUS_NAMEX - 4));
+                TextAt(CUS_NAMEX, y, CustomizeStyle(selected ? "HIGHLIGHT" : "TEXTCOLOR"))
+                    .Print(FitText(row.Text, CUS_COLX[0] - CUS_NAMEX - 4, SMALL_FONT));
 
                 for (int c = 0; c < ControlBindings.SlotCount; c++)
                 {
@@ -449,18 +429,17 @@ internal partial class Program
     /// <summary>One slot's key or button; the cursor's slot is a lit box, like the old screen's.</summary>
     private static void DrawCustomCell(int x, int y, string label, bool selected, bool unbound)
     {
+        TextStyle style;
         if (selected)
         {
             _videoManager.Bar(x - 3, y - 1, CUS_COLW - 2, CUS_ROWH, "TEXTCOLOR");
             DrawOutline(x - 3, y - 1, CUS_COLW - 2, CUS_ROWH, "Black", "HIGHLIGHT");
-            SETFONTCOLOR("Black", "TEXTCOLOR");
+            style = CustomizeStyle("Black", "TEXTCOLOR");
         }
         else
-            SETFONTCOLOR(unbound ? "DEACTIVE" : "TEXTCOLOR", "BKGDCOLOR");
+            style = CustomizeStyle(unbound ? "DEACTIVE" : "TEXTCOLOR");
 
-        PrintX = (ushort)x;
-        PrintY = (ushort)y;
-        US_Print(FitText(label, CUS_COLW - 6));
+        TextAt(x, y, style).Print(FitText(label, CUS_COLW - 6, style.Font));
     }
 
     private static void DrawCustomArrow(int x, int y, bool up)
@@ -480,16 +459,4 @@ internal partial class Program
         InputDevice.MouseWheel => code == InputCode.WheelUp ? "Wheel Up" : "Wheel Dn",
         _ => code.ToString(),
     };
-
-    /// <summary>Cuts text short to fit a width in the current font.</summary>
-    private static string FitText(string text, int width)
-    {
-        USL_MeasureString(text, out ushort w, out _);
-        while (text.Length > 1 && w > width)
-        {
-            text = text[..^1];
-            USL_MeasureString(text, out w, out _);
-        }
-        return text;
-    }
 }

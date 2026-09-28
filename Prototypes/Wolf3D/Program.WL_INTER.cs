@@ -2,6 +2,7 @@
 using Wolf3D.Assets;
 using Wolf3D.Constants;
 using Wolf3D.Extensions;
+using Wolf3D.Fonts;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
@@ -18,23 +19,14 @@ internal partial class Program
         ClearMScreen();
         DrawStripes(10);
 
-        fontnumber = "LargeFont";
+        TextAt(110, 15, MenuStyle("READHCOLOR")).Print("Attention");
 
-        SETFONTCOLOR("READHCOLOR", "BKGDCOLOR");
-        PrintX = 110;
-        PrintY = 15;
+        var notice = TextAt(40, 60, MenuStyle("HIGHLIGHT"));
+        notice.Print("This game is NOT shareware.\n");
+        notice.Print("Please do not distribute it.\n");
+        notice.Print("Thanks.\n\n");
 
-        US_Print("Attention");
-
-        SETFONTCOLOR("HIGHLIGHT", "BKGDCOLOR");
-        WindowX = PrintX = 40;
-        PrintY = 60;
-
-        US_Print("This game is NOT shareware.\n");
-        US_Print("Please do not distribute it.\n");
-        US_Print("Thanks.\n\n");
-
-        US_Print("        Id Software\n");
+        notice.Print("        Id Software\n");
 
         _videoManager.Update();
         _videoManager.FadeIn();
@@ -55,9 +47,12 @@ internal partial class Program
         _videoManager.FadeOut();
     }
 
+    /// <summary>The high score names and numbers; also what a new name is typed in with</summary>
+    private static readonly TextStyle HighScoreStyle = new(SMALL_FONT, "White", "BORDCOLOR");
+
     internal static void DrawHighScores()
     {
-        ushort i, w, h;
+        int i;
 
         ClearMScreen();
         DrawStripes(10);
@@ -69,44 +64,28 @@ internal partial class Program
         _graphicManager.DrawPic("c_score", 28 * 8, 68);
         //_graphicManager.DrawPic(35 * 8, 68, graphicnums.C_CODEPIC);
 
-        fontnumber = "SmallFont";
-        SETFONTCOLOR("White", "BORDCOLOR");
-
-
         for (i = 0; i < MaxScores; i++)
         {
             HighScore s = Scores[i];
-            PrintY = (ushort)(76 + (16 * i));
+            int y = 76 + (16 * i);
 
             //
             // name
             //
-            PrintX = 4 * 8;
-            US_Print(new string(s.name));
+            TextAt(4 * 8, y, HighScoreStyle).Print(s.name);
 
             //
             // level
             //
             var buffer = s.completed.ToString();
-            USL_MeasureString(buffer, out w, out h);
-            PrintX = (ushort)((22 * 8) - w);
-
-            PrintX -= 6;
-            var buffer1 = (s.episode + 1).ToString();
-            US_Print("E");
-            US_Print(buffer1);
-            US_Print("/L");
-
-            US_Print(buffer);
+            int x = (22 * 8) - TextWidth(buffer, HighScoreStyle.Font) - 6;
+            TextAt(x, y, HighScoreStyle).Print($"E{s.episode + 1}/L{buffer}");
 
             //
             // score
             //
-
             buffer = s.score.ToString();
-            USL_MeasureString(buffer, out w, out h);
-            PrintX = (ushort)((34 * 8) - 8 - w);
-            US_Print(buffer);
+            TextAt((34 * 8) - 8 - TextWidth(buffer, HighScoreStyle.Font), y, HighScoreStyle).Print(buffer);
         }
 
         _videoManager.Update();
@@ -145,12 +124,8 @@ internal partial class Program
             //
             // got a high score
             //
-            PrintY = (ushort)(76 + (16 * n));
-            PrintX = 4 * 8;
-            backcolor = "BORDCOLOR";
-            fontcolor = "White";
-            string str = new string(Scores[n].name);
-            US_LineInput(PrintX, PrintY, ref str, "", true, MaxHighName, 100);
+            string str = Scores[n].name;
+            US_LineInput(4 * 8, 76 + (16 * n), ref str, "", true, MaxHighName, 100, HighScoreStyle);
             Scores[n].name = str;
             _gameEngineManager.WriteConfig();
         }
@@ -161,27 +136,20 @@ internal partial class Program
         }
     }
 
-    internal static void ClearSplitVWB()
+    /// <summary>The "get psyched" progress bar, along the bottom of a box in screen (scaled) pixels</summary>
+    internal static bool PreloadUpdate(uint current, uint total, int boxX, int boxY, int boxW, int boxH)
     {
-        WindowX = 0;
-        WindowY = 0;
-        WindowW = 320;
-        WindowH = 160;
-    }
+        int scale = _videoManager.scaleFactor;
+        int x = boxX + scale * 5;
+        int y = boxY + boxH - scale * 3;
+        uint w = (uint)(boxW - scale * 10);
 
-    internal static bool PreloadUpdate(uint current, uint total)
-    {
-        uint w = (uint)(WindowW - _videoManager.scaleFactor * 10);
-
-        _videoManager.BarScaledCoord(WindowX + _videoManager.scaleFactor * 5, WindowY + WindowH - _videoManager.scaleFactor * 3,
-            (int)w, _videoManager.scaleFactor * 2, "Black");
+        _videoManager.BarScaledCoord(x, y, (int)w, scale * 2, "Black");
         w = (uint)((int)w * current / total);
         if (w != 0)
         {
-            _videoManager.BarScaledCoord(WindowX + _videoManager.scaleFactor * 5, WindowY + WindowH - _videoManager.scaleFactor * 3,
-                (int)w, _videoManager.scaleFactor * 2, "SECONDCOLOR");       //SECONDCOLOR 0x37);
-            _videoManager.BarScaledCoord(WindowX + _videoManager.scaleFactor * 5, WindowY + WindowH - _videoManager.scaleFactor * 3,
-                (int)(w - _videoManager.scaleFactor * 1), _videoManager.scaleFactor * 1, "FIRSTCOLOR"); // 0x32
+            _videoManager.BarScaledCoord(x, y, (int)w, scale * 2, "SECONDCOLOR");       //SECONDCOLOR 0x37);
+            _videoManager.BarScaledCoord(x, y, (int)(w - scale * 1), scale * 1, "FIRSTCOLOR"); // 0x32
 
         }
         _videoManager.Update();
@@ -197,7 +165,6 @@ internal partial class Program
     internal static void PreloadGraphics()
     {
         DrawLevel();
-        ClearSplitVWB();           // set up for double buffering in split screen
 
         _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 1), bordercol);
 
@@ -206,16 +173,14 @@ internal partial class Program
         //    (_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2,
         _graphicManager.DrawPic("getpsyched", (320 - 224) / 2, (200 - STATUSLINES - 48) / 2);
 
-        WindowX = (ushort)((_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 2);
-        WindowY = (ushort)((_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2);
-        WindowW = (ushort)(_videoManager.scaleFactor * 28 * 8);
-        WindowH = (ushort)(_videoManager.scaleFactor * 48);
+        int boxX = (_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 2;
+        int boxY = (_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2;
 
         _videoManager.Update();
         _videoManager.FadeIn();
 
         //      PM_Preload (PreloadUpdate);
-        PreloadUpdate(10, 10);
+        PreloadUpdate(10, 10, boxX, boxY, _videoManager.scaleFactor * 28 * 8, _videoManager.scaleFactor * 48);
         _inputManager.UserInput(70);
         _videoManager.FadeOut();
 
@@ -235,7 +200,6 @@ internal partial class Program
         string tempstr = "";
         int bonus, timeleft = 0;
 
-        ClearSplitVWB();           // set up for double buffering in split screen
         _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, "VIEWCOLOR");
 
         if (bordercol != "VIEWCOLOR")
@@ -535,7 +499,6 @@ internal partial class Program
         const int TIMEY = 8;
 
         StartCPMusic("URAHERO");
-        ClearSplitVWB();
 
         _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, "VIEWCOLOR");
         if (bordercol != "VIEWCOLOR")
@@ -616,7 +579,6 @@ internal partial class Program
         //    US_Print(tempstr);
         //}
 
-        fontnumber = "LargeFont";
 
         _videoManager.Update();
         _videoManager.FadeIn();

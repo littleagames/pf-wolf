@@ -5,7 +5,7 @@ namespace Wolf3D;
 
 internal partial class Program
 {
-    // Drop-down console layout, in the 320x200 virtual screen coordinates Bar/DrawPropString use.
+    // Drop-down console layout, in the 320x200 virtual screen coordinates Bar/DrawText use.
     const int CONSOLE_HEIGHT = 100;
     const int CONSOLE_MARGIN = 4;
     const int CONSOLE_TEXTWIDTH = 320 - (CONSOLE_MARGIN * 2);
