@@ -40,7 +40,10 @@ internal partial class Program
     private const int SaveVersion = 6;
     private const int OldestLoadableSaveVersion = 6;
 
-    // Thumbnails are small; anything claiming more than this is garbage
+    // Thumbnails are taken this wide (less if the view is narrower), their height from the
+    // view's shape; big enough to stay sharp in the menus at a few times 320x200
+    private const int ThumbnailWidth = 256;
+    // Anything claiming more than this is garbage
     private const int MaxThumbnailPixels = 1024 * 1024;
 
     private static string SaveDirectory => _gameEngineManager.ConfigDirectories.SaveGameDirectory;
@@ -166,6 +169,7 @@ internal partial class Program
             using (var bw = new BinaryWriter(header, Encoding.UTF8, leaveOpen: true))
                 CurrentSaveInfo(path, name).Write(bw);
             var headerBytes = header.ToArray();
+            var thumbnail = _videoManager.MakeThumbnail(ThumbnailWidth);
 
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             using (var bw = new BinaryWriter(File.Create(tempPath)))
@@ -174,9 +178,10 @@ internal partial class Program
                 bw.Write(SaveVersion);
                 bw.Write(headerBytes.Length);
                 bw.Write(headerBytes);
-                // No thumbnail yet
-                bw.Write(0);
-                bw.Write(0);
+                bw.Write(thumbnail?.Width ?? 0);
+                bw.Write(thumbnail?.Height ?? 0);
+                if (thumbnail != null)
+                    bw.Write(thumbnail.Pixels);
                 bw.Write(bodyBytes.Length);
                 bw.Write(bodyBytes);
                 bw.Write(DoChecksum(bodyBytes, 0));
@@ -311,12 +316,33 @@ internal partial class Program
         return bytes;
     }
 
-    private static void SkipThumbnail(BinaryReader br)
+    private static SaveThumbnail? ReadThumbnail(BinaryReader br)
     {
         int width = br.ReadInt32(), height = br.ReadInt32();
         if (width < 0 || height < 0 || (long)width * height > MaxThumbnailPixels)
             throw new InvalidDataException($"Bad thumbnail size {width}x{height}.");
-        ReadExactly(br, width * height);
+        var pixels = ReadExactly(br, width * height);
+        return width > 0 && height > 0 ? new SaveThumbnail(width, height, pixels) : null;
+    }
+
+    /// <summary>
+    /// The picture of the game kept with a save, read only when the menu shows it; null if it
+    /// has none or can't be read.
+    /// </summary>
+    internal static SaveThumbnail? ReadSaveThumbnail(SaveInfo save)
+    {
+        try
+        {
+            using var br = new BinaryReader(File.OpenRead(save.Path));
+            ReadSaveVersion(br);
+            ReadExactly(br, br.ReadCount());
+            return ReadThumbnail(br);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            Console.WriteLine($"Couldn't read the picture in {save.Path}: {e.Message}");
+            return null;
+        }
     }
 
     /// <summary>
@@ -333,8 +359,8 @@ internal partial class Program
             DiskFlopAnim(x, y);
             using var br = new BinaryReader(File.OpenRead(path));
             ReadSaveVersion(br);
-            ReadExactly(br, br.ReadCount());    // the header is only for the menus
-            SkipThumbnail(br);
+            ReadExactly(br, br.ReadCount());    // the header and picture are only for the menus
+            ReadThumbnail(br);
 
             var body = br.ReadBytes(br.ReadCount());
             checksumOk = br.BaseStream.Length - br.BaseStream.Position >= sizeof(int)
@@ -478,6 +504,9 @@ internal partial class Program
 }
 
 internal enum SaveKind { Normal, Quick, Auto }
+
+/// <summary>A save's picture of the game: game palette indices, a row at a time.</summary>
+internal sealed record SaveThumbnail(int Width, int Height, byte[] Pixels);
 
 /// <summary>
 /// A save's header: what the load/save menus show about it, read without loading the game.

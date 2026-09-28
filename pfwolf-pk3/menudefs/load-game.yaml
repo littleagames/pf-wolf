@@ -1,30 +1,14 @@
 music: "WONDERIN"
 type: "wolf3d-menu"
-# Position/indent of the save slots, shared with save-game.
-position:
-  x: 85
-  y: 55
-indent: 24
-# One slot per save file; the slot text is drawn from the save names
-items-source: "save-slots"
+# Load Game: the list of saves, the highlighted one's picture and progress, and the help line
+# are drawn by code (Program.LoadSaveScreen.cs) inside the window below: the list in its left
+# half from y 49, the preview in its right half, the help line at the bottom. Keep the window
+# where it is, and the same as save-game's.
 components:
   -
     type: "Background"
     params:
       - color: "BORDCOLOR"
-  -
-    type: "Graphic"
-    params:
-      - name: "c_mouselback"
-      - horizontal-orientation: "center"
-      - y: 184
-  -
-    type: "Window"
-    params:
-      - x: 75
-      - y: 50
-      - width: 175
-      - height: 140
   -
     type: "Stripe"
     params:
@@ -35,3 +19,10 @@ components:
       - name: "c_loadgame"
       - x: 60
       - y: 0
+  -
+    type: "Window"
+    params:
+      - x: 5
+      - y: 46
+      - width: 310
+      - height: 142

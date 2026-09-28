@@ -807,6 +807,113 @@ internal class VideoManager
     /// <summary>Writes the screen to a BMP file; false (see SDL_GetError) if it couldn't.</summary>
     internal bool SaveScreenShot(string filename) => SDL.SDL_SaveBMP(screenBuffer, filename) == 0;
 
+    // The 3D view as last drawn, so a save gets a picture of the game even though a menu,
+    // message or the console has been drawn over the screen since
+    private byte[] _viewCopy = [];
+    private int _viewCopyWidth, _viewCopyHeight;
+
+    /// <summary>
+    /// Keeps a copy of the 3D view (screen pixels) for <see cref="MakeThumbnail"/>. Called
+    /// every frame once the view is drawn, before the automap, console or anything else goes over it.
+    /// </summary>
+    internal void KeepViewCopy(int x, int y, int width, int height)
+    {
+        if (width <= 0 || height <= 0)
+            return;
+
+        if (_viewCopy.Length != width * height)
+            _viewCopy = new byte[width * height];
+        _viewCopyWidth = width;
+        _viewCopyHeight = height;
+
+        IntPtr srcPtr = LockSurface(screenBuffer);
+        if (srcPtr == IntPtr.Zero) return;
+
+        unsafe
+        {
+            byte* src = (byte*)srcPtr;
+            for (int j = 0; j < height; j++)
+                new ReadOnlySpan<byte>(src + ylookup[y + j] + x, width).CopyTo(_viewCopy.AsSpan(j * width, width));
+        }
+
+        UnlockSurface(screenBuffer);
+    }
+
+    /// <summary>
+    /// The last 3D view shrunk to at most <paramref name="maxWidth"/> wide, keeping its shape,
+    /// as game palette indices; null before a view has been drawn. Each pixel is the average
+    /// of the ones it covers, matched back to the palette, so it doesn't sparkle like
+    /// skipping pixels would.
+    /// </summary>
+    internal SaveThumbnail? MakeThumbnail(int maxWidth)
+    {
+        int sw = _viewCopyWidth, sh = _viewCopyHeight;
+        if (sw == 0 || sh == 0)
+            return null;
+
+        int dw = Math.Min(maxWidth, sw);
+        int dh = Math.Max(1, (int)((long)sh * dw / sw));
+        var pixels = new byte[dw * dh];
+        var matches = new Dictionary<int, byte>();
+
+        for (int dy = 0; dy < dh; dy++)
+        {
+            int y0 = dy * sh / dh, y1 = Math.Max(y0 + 1, (dy + 1) * sh / dh);
+            for (int dx = 0; dx < dw; dx++)
+            {
+                int x0 = dx * sw / dw, x1 = Math.Max(x0 + 1, (dx + 1) * sw / dw);
+                int r = 0, g = 0, b = 0, count = (x1 - x0) * (y1 - y0);
+                for (int sy = y0; sy < y1; sy++)
+                {
+                    for (int sx = x0; sx < x1; sx++)
+                    {
+                        var c = gamepal[_viewCopy[sy * sw + sx]];
+                        r += c.r; g += c.g; b += c.b;
+                    }
+                }
+
+                r /= count; g /= count; b /= count;
+                int key = (r << 16) | (g << 8) | b;
+                if (!matches.TryGetValue(key, out var index))
+                    matches[key] = index = FindClosestPaletteIndex((byte)r, (byte)g, (byte)b);
+                pixels[dy * dw + dx] = index;
+            }
+        }
+
+        return new SaveThumbnail(dw, dh, pixels);
+    }
+
+    /// <summary>
+    /// Draws a thumbnail stretched over a rectangle given in 320x200 units, sampled at screen
+    /// resolution so it's as sharp as the thumbnail allows.
+    /// </summary>
+    internal void DrawThumbnail(SaveThumbnail thumbnail, int x, int y, int width, int height)
+    {
+        int destx = x * scaleFactor, desty = y * scaleFactor;
+        int dw = width * scaleFactor, dh = height * scaleFactor;
+        // Clipped to the screen, but sampled over the whole rectangle
+        int clipw = Math.Min(dw, screenWidth - destx), cliph = Math.Min(dh, screenHeight - desty);
+        if (destx < 0 || desty < 0 || clipw <= 0 || cliph <= 0 || thumbnail.Width <= 0 || thumbnail.Height <= 0)
+            return;
+
+        IntPtr destPtr = LockSurface(screenBuffer);
+        if (destPtr == IntPtr.Zero) return;
+
+        unsafe
+        {
+            byte* dest = (byte*)destPtr;
+            for (int j = 0; j < cliph; j++)
+            {
+                int row = (j * thumbnail.Height / dh) * thumbnail.Width;
+                byte* line = dest + ylookup[desty + j] + destx;
+                for (int i = 0; i < clipw; i++)
+                    line[i] = thumbnail.Pixels[row + i * thumbnail.Width / dw];
+            }
+        }
+
+        UnlockSurface(screenBuffer);
+    }
+
     /// <summary>
     /// Changes what's on screen over to what's been drawn in the screen buffer since, within a
     /// rectangle (screen pixels), over <paramref name="tics"/> tics. The palette style has nothing

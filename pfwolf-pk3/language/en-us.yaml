@@ -4,7 +4,6 @@
 
 # Confirmations
 $CURGAME: "You are currently in\na game. Continuing will\nerase old game. Ok?"
-$GAMESVD: "There's already a game\nsaved at this position.\n      Overwrite?"
 $ENDGAMESTR: "Are you sure you want\nto end the game you\nare playing? ({YESBUTTONNAME} or {NOBUTTONNAME}):"
 
 # Main menu
@@ -43,7 +42,27 @@ $STR_SAVING: "Saving"
 
 # Load / save
 $STR_LGC: "Load Game called\n\""
-$STR_EMPTY: "empty"
+$STR_LS_NEWSAVE: "- New save -"
+$STR_LS_NOSAVES: "No saved games"
+$STR_LS_TRYALL: "Left/Right shows every game's saves"
+$STR_LS_NOPICTURE: "No picture"
+$STR_LS_SORTDATE: "Tab/X: Newest first"
+$STR_LS_SORTNAME: "Tab/X: By name"
+$STR_LS_FILTERGAME: "This game"
+$STR_LS_FILTERALL: "All games"
+$STR_LS_QUICK: "Quicksave"
+$STR_LS_AUTO: "Autosave"
+# {0} time on the level, {1} the whole game
+$STR_LS_TIME: "Time {0}  Total {1}"
+# {0} kill ratio, {1} secret ratio
+$STR_LS_KILLS: "Kills {0}  Secrets {1}"
+# {0} treasure ratio, {1} score
+$STR_LS_TREASURE: "Treasure {0}  Score {1}"
+$STR_LS_HELPLOAD: "Enter/A load   Del/Y delete   Esc/B back"
+$STR_LS_HELPSAVE: "Enter/A save   Del/Y delete   Esc/B back"
+# {0} is the save's name
+$STR_LS_OVERWRITE: "Save over\n\"{0}\"?"
+$STR_LS_DELETE: "Delete\n\"{0}\"?"
 # A level with no name in game-info: {0} is the episode (cluster), {1} the floor
 $STR_MAPEPISODEFLOOR: "Episode {0}, Floor {1}"
 $STR_MAPFLOOR: "Floor {0}"

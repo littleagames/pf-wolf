@@ -30,7 +30,7 @@ internal class MenuMetadata
 
     /// <summary>
     /// Builds the items from game data instead of menu-items:
-    /// "episodes", "skills" or "save-slots"
+    /// "episodes" or "skills"
     /// </summary>
     public string? ItemsSource { get; set; }
 

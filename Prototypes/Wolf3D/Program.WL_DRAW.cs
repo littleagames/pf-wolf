@@ -1377,6 +1377,9 @@ internal partial class Program
         _videoManager.UnlockSurface();
         vbuf = 0;
 
+        // For the next save's thumbnail, before the automap or console is drawn over the view
+        _videoManager.KeepViewCopy(viewscreenx, viewscreeny, viewwidth, viewheight);
+
         //
         // show screen and time last cycle
         //

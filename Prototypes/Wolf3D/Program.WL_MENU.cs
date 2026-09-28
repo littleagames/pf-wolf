@@ -27,9 +27,6 @@ internal partial class Program
     internal const int CTL_W = 284;
     internal const int CTL_H = 60;
 
-    // Width of the slot window in menudefs/load-game and save-game; slot outlines are sized from it
-    internal const int LSM_W = 175;
-
     // Control panel song: the main menu's music in menudefs/main-menu
     internal static string MENUSONG => _assetManager.GetMenu("main-menu")?.Music ?? "WONDERIN";
     internal static string INTROSONG => _gameEngineManager.GetGameInfo().IntroMusic ?? "";
@@ -46,8 +43,6 @@ internal partial class Program
     internal static CP_itemtype[] NewEmenu = [];
     internal static CP_itemtype[] NewMenu = [];
 
-    internal static CP_itemtype[] LSMenu = [];
-
     internal static CP_itemtype[] MusicMenu = [];
     // The jukebox shows one page of songs at a time
     internal const int JukeboxPageSize = 6;
@@ -57,7 +52,6 @@ internal partial class Program
     internal static CP_iteminfo OptItems;
     internal static CP_iteminfo VidItems;
     internal static CP_iteminfo SndItems;
-    internal static CP_iteminfo LSItems;
     internal static CP_iteminfo CtlItems;
     internal static CP_iteminfo JoyItems;
     internal static CP_iteminfo NewEitems;
@@ -79,14 +73,9 @@ internal partial class Program
         "DarkGreen" // 4 113 0 (used for disabled episodes)
     };
 
-    // The load/save menus' rows: the newest saves, with the save menu's first row kept free
-    // for a new one. Null is an empty row.
-    internal static SaveInfo?[] SaveRows = new SaveInfo?[10];
     internal static int StartGame;
     internal static int SoundStatus = 1;
     internal static int pickquick;
-    // The save last saved or loaded in the menus, which F8/F9 save over and load
-    private static SaveInfo? lastSaveGame;
 
     private static void EnableEndGameMenuItem()
     {
@@ -1684,250 +1673,6 @@ internal partial class Program
         _graphicManager.DrawPic(on ? "c_selected" : "c_notselected", x, y);
     }
 
-    internal static int CP_LoadGame(int quick)
-    {
-        int which, exit = 0;
-
-        //
-        // QUICKLOAD?
-        //
-        if (quick != 0)
-        {
-            if (lastSaveGame != null)
-            {
-                // Loaded in place: play carries straight on in the restored level.
-                loadedgame = true;
-                var loaded = LoadTheGame(lastSaveGame.Path, 0, 0);
-                loadedgame = false;
-                if (!loaded)
-                    return 0;
-
-                if (viewsize != 21)
-                    DrawPlayScreen();
-                ContinueMusic(lastgamemusicoffset);
-                return 1;
-            }
-        }
-
-        SetupSaveRows(forSave: false);
-        DrawLoadSaveScreen(0);
-
-        do
-        {
-            which = HandleMenu(LSItems, LSMenu, TrackWhichGame);
-            if (which >= 0 && SaveRows[which] is { } save)
-            {
-                ShootSnd();
-
-                DrawLSAction(0);
-                loadedgame = true;
-
-                if (!LoadTheGame(save.Path, LSA_X + 8, LSA_Y + 5))
-                {
-                    loadedgame = false;
-                    DrawLoadSaveScreen(0);
-                    continue;
-                }
-
-                lastSaveGame = save;
-                StartGame = 1;
-                ShootSnd();
-                //
-                // CHANGE "READ THIS!" TO NORMAL COLOR
-                //
-                FindMenuItem(MainMenu, "readthis")?.active = 1;
-                exit = 1;
-                break;
-            }
-
-        }
-        while (which >= 0);
-
-        MenuFadeOut();
-
-        return exit;
-    }
-
-    /// <summary>
-    /// Fills the menu's rows from the save folder, newest first. The save menu keeps its first
-    /// row free, so there's always somewhere to make a new save.
-    /// </summary>
-    private static void SetupSaveRows(bool forSave)
-    {
-        Array.Clear(SaveRows);
-        int first = forSave ? 1 : 0;
-        var saves = ListSaveGames();
-        for (int i = first; i < SaveRows.Length && i - first < saves.Count; i++)
-            SaveRows[i] = saves[i - first];
-    }
-
-    internal static void DrawLoadSaveScreen(int loadsave)
-    {
-        int i;
-
-        fontnumber = "LargeFont";
-        DrawMenuComponents(loadsave == 0 ? "load-game" : "save-game");
-
-        for (i = 0; i < LSMenu.Length; i++)
-            PrintLSEntry(i, "TEXTCOLOR");
-
-        DrawMenu(LSItems, LSMenu);
-        _videoManager.Update();
-        MenuFadeIn();
-        WaitKeyUp();
-    }
-
-    // Slot highlighted last, so it can be un-highlighted when the cursor moves
-    private static int lastgameon = 0;
-
-    internal static void TrackWhichGame (int w)
-    {
-        PrintLSEntry(lastgameon, "TEXTCOLOR");
-        PrintLSEntry(w, "HIGHLIGHT");
-
-        lastgameon = w;
-    }
-
-    internal static void PrintLSEntry(int w, string color)
-    {
-        var language = _assetManager.GetText("en-us");
-        SETFONTCOLOR(color, "BKGDCOLOR");
-        DrawOutline(LSItems.x + LSItems.indent, LSItems.y + w * 13, LSM_W - LSItems.indent - 15, 11, color,
-                     color);
-        PrintX = (ushort)(LSItems.x + LSItems.indent + 2);
-        PrintY = (ushort)(LSItems.y + w * 13 + 1);
-        fontnumber = "SmallFont";
-
-        if (SaveRows[w] is { } save)
-            US_Print(save.Name);
-        else
-            US_Print($"      - {"$STR_EMPTY".ToLanguageText(language)} -");
-
-        fontnumber = "LargeFont";
-    }
-
-    internal const int LSA_X = 96;
-    internal const int LSA_Y = 80;
-    internal const int LSA_W = 130;
-    internal const int LSA_H = 42;
-
-    internal static void DrawLSAction(int which)
-    {
-        var language = _assetManager.GetText("en-us");
-        DrawWindow(LSA_X, LSA_Y, LSA_W, LSA_H, "TEXTCOLOR");
-        DrawOutline(LSA_X, LSA_Y, LSA_W, LSA_H, "Black", "HIGHLIGHT");
-        _graphicManager.DrawPic("c_diskloading1", LSA_X + 8, LSA_Y + 5);
-
-        fontnumber = "LargeFont";
-        SETFONTCOLOR("Black", "TEXTCOLOR");
-        PrintX = LSA_X + 46;
-        PrintY = LSA_Y + 13;
-
-        if (which == 0)
-            US_Print("$STR_LOADING".ToLanguageText(language) + "...");
-        else
-            US_Print("$STR_SAVING".ToLanguageText(language) + "...");
-
-        _videoManager.Update();
-    }
-
-    internal static int CP_SaveGame(int quick)
-    {
-        var language = _assetManager.GetText("en-us");
-        int which, exit = 0;
-        string input = "";
-
-        //
-        // QUICKSAVE?
-        //
-        if (quick != 0)
-        {
-            if (lastSaveGame != null)
-            {
-                if (!SaveTheGame(lastSaveGame.Path, lastSaveGame.Name, 0, 0))
-                    ShowSaveFailed();
-                return 1;
-            }
-        }
-
-        SetupSaveRows(forSave: true);
-        DrawLoadSaveScreen(1);
-        do
-        {
-            which = HandleMenu(LSItems, LSMenu, TrackWhichGame);
-            if (which >= 0)
-            {
-                var existing = SaveRows[which];
-
-                //
-                // OVERWRITE EXISTING SAVEGAME?
-                //
-                if (existing != null)
-                {
-                    if (Confirm("$GAMESVD".ToLanguageText(language)) == 0)
-                    {
-                        DrawLoadSaveScreen(1);
-                        continue;
-                    }
-                    else
-                    {
-                        DrawLoadSaveScreen(1);
-                        PrintLSEntry(which, "HIGHLIGHT");
-                        _videoManager.Update();
-                    }
-                }
-
-                ShootSnd();
-
-                // A new save starts out named for the level
-                input = existing?.Name ?? GetMapDisplayName(gamestate.mapon);
-                if (input.Length > MaxGameName - 1)
-                    input = input[..(MaxGameName - 1)];
-
-                fontnumber = "SmallFont";
-                _videoManager.Bar(LSItems.x + LSItems.indent + 1, LSItems.y + which * 13 + 1,
-                         LSM_W - LSItems.indent - 16, 10, "BKGDCOLOR");
-                _videoManager.Update();
-
-                if (US_LineInput
-                    (LSItems.x + LSItems.indent + 2, LSItems.y + which * 13 + 1, ref input, input, true, MaxGameName - 1,
-                     LSM_W - LSItems.indent - 30))
-                {
-                    var path = existing?.Path ?? NewSaveGamePath();
-                    DrawLSAction(1);
-                    if (!SaveTheGame(path, input, LSA_X + 8, LSA_Y + 5))
-                    {
-                        ShowSaveFailed();
-                        DrawLoadSaveScreen(1);
-                        continue;
-                    }
-
-                    lastSaveGame = SaveRows[which] = ReadSaveInfo(path);
-                    ShootSnd();
-                    exit = 1;
-                }
-                else
-                {
-                    _videoManager.Bar(LSItems.x + LSItems.indent + 1, LSItems.y + which * 13 + 1,
-                             LSM_W - LSItems.indent - 16, 10, "BKGDCOLOR");
-                    PrintLSEntry(which, "HIGHLIGHT");
-                    _videoManager.Update();
-                    _audioManager.Play("menu/escape");
-                    continue;
-                }
-
-                fontnumber = "LargeFont";
-                break;
-            }
-
-        }
-        while (which >= 0);
-
-        MenuFadeOut();
-
-        return exit;
-    }
-
     internal static int CP_ChangeView(int _)
     {
         var language = _assetManager.GetText("en-us");
@@ -2355,7 +2100,6 @@ internal partial class Program
         customizeRows = LoadCustomizeRows();
         (NewEmenu, NewEitems) = LoadMenu("new-episode");
         (NewMenu, NewItems) = LoadMenu("new-game");
-        (LSMenu, LSItems) = LoadMenu("load-game");
 
         (MusicMenu, MusicItems) = LoadMenu("jukebox");
         MusicItems.amount = (short)Math.Min(JukeboxPageSize, MusicMenu.Length);
@@ -2435,12 +2179,6 @@ internal partial class Program
             case "skills":
                 return gameInfo.Skills.Values
                     .Select(skill => new CP_itemtype(1, skill.Name.ToLanguageText(language), null, skill))
-                    .ToArray();
-
-            case "save-slots":
-                // Text is drawn by PrintLSEntry from the save files, not by the menu
-                return SaveRows
-                    .Select(_ => new CP_itemtype(1, "", null))
                     .ToArray();
 
             default:
