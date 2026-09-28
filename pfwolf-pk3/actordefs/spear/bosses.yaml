@@ -497,9 +497,9 @@ AngelOfDeath:
 
 # MAP21's ghosts. Drift after the player (T_Ghosts); shot down, they fade and lie dormant,
 # then come back once nothing is in the way. Points only for the first kill. They drift
-# through doors without opening them (PHASEDOORS).
+# through doors without opening them (PHASEDOORS) and hurt the player on contact (TOUCHDAMAGE).
 Spectre:
-  flags: [AMBUSH, POINTSONCE, PHASEDOORS]
+  flags: [AMBUSH, POINTSONCE, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn: # s_spectrewait1..4
       - sprite: SPCT

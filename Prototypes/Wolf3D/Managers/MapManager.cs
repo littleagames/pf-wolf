@@ -62,13 +62,6 @@ internal class MapManager
     // for the current level -- LoadMap clears _actors, which drops the previous level's pawn.
     internal Entities.Actors.PlayerPawn? Player { get; private set; }
 
-    // The Pac-Man bonus-level ghosts (actordefs/wolf3d/ghosts.yaml): never shootable/killable,
-    // matching SpawnGhosts never assigning hitpoints in the legacy source.
-    private static readonly HashSet<string> GhostActorNames = new(StringComparer.Ordinal)
-    {
-        "Blinky", "Clyde", "Pinky", "Inky"
-    };
-
     private int _difficulty;
 
     public MapManager(Lazy<AssetManager> assetManager)
@@ -257,18 +250,21 @@ internal class MapManager
             builtActor.Distance = (int)MapConstants.TILEGLOBAL;
         }
 
-        var isGhost = GhostActorNames.Contains(thing.Class);
-
-        // AMBUSH actors (the bosses) are always spawned ambush-ready, whatever the floor tile
-        // beneath them, unlike grunts, which only ambush when placed on an ambush tile.
+        // AMBUSH actors (the bosses, the Pac-Man ghosts) are always spawned ambush-ready,
+        // whatever the floor tile beneath them, unlike grunts, which only ambush when placed
+        // on an ambush tile.
         var alwaysAmbush = builtActor.Flags.Contains("AMBUSH", StringComparer.OrdinalIgnoreCase);
+        var hasHealth = builtActor.Properties.ContainsKey("health") || builtActor.Properties.Keys.Any(k => k.StartsWith("health.", StringComparison.Ordinal));
 
-        if (isGhost)
+        if (!hasHealth && builtActor.Properties.ContainsKey("speed"))
         {
+            // A mover with no health (the Pac-Man ghosts, matching SpawnGhosts never assigning
+            // hitpoints): never shootable, and not counted toward the kill ratio.
             builtActor.Speed = ReadIntProperty(builtActor, "speed", Program.SPDDOG);
-            builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
+            if (alwaysAmbush)
+                builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
         }
-        else if (builtActor.Properties.ContainsKey("health") || builtActor.Properties.Keys.Any(k => k.StartsWith("health.", StringComparison.Ordinal)))
+        else if (hasHealth)
         {
             // A grunt or boss enemy (has scaled health), as opposed to a plain decoration/pickup.
             builtActor.Hitpoints = GetScaledHealth(builtActor);

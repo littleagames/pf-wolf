@@ -65,7 +65,8 @@ internal partial class Program
             {
                 if (!ob.Hidden || !_mapManager.spotvis[player.TileX, player.TileY])
                 {
-                    if (ob.Name is "Blinky" or "Clyde" or "Pinky" or "Inky")
+                    // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
+                    if (ob.Flags.Contains("TOUCHDAMAGE", StringComparer.OrdinalIgnoreCase))
                         TakeDamage((int)(tics * 2), ob);
 
                     return;
