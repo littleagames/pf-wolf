@@ -7,6 +7,8 @@ namespace Wolf3D.Loaders;
 
 internal class PngGraphicDataLoader
 {
+    private const byte AlphaOpaqueThreshold = 128;
+
     internal static GraphicAsset Load(MemoryStream stream, Palette sourcePalette)
     {
         // Using SixLabors.ImageSharp for cross-platform PNG support
@@ -42,6 +44,9 @@ internal class PngGraphicDataLoader
             return minIdx;
         }
 
+        var opacityMask = new byte[width * height];
+        bool anyClear = false;
+
         image.ProcessPixelRows(accessor =>
         {
             for (int y = 0; y < height; y++)
@@ -52,6 +57,10 @@ internal class PngGraphicDataLoader
                     var color = row[x];
                     int idx = FindClosestPaletteIndex(color);
                     indexedData[y * width + x] = (byte)idx;
+                    if (color.A < AlphaOpaqueThreshold)
+                        anyClear = true;
+                    else
+                        opacityMask[y * width + x] = 1;
                 }
             }
         });
@@ -87,6 +96,7 @@ internal class PngGraphicDataLoader
 
         return new GraphicAsset(indexedData, (short)width, (short)height)//, offset);
         {
+            OpacityMask = anyClear ? opacityMask : null,
             //Data = indexedData,
             //Size = new Dimension(width, height),
             //Offset = offset

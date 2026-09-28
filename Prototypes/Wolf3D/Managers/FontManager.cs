@@ -7,17 +7,20 @@ namespace Wolf3D.Managers;
 
 /// <summary>
 /// Finds fonts by name: the game pack's font definitions (gamepacks/{pack}/fonts.yaml) first,
-/// then any font registered in code, then a VGAGRAPH font chunk of that name, so "SmallFont"
-/// and "LargeFont" work without a definition. Each font is built once, the first time it's used.
+/// then any font registered in code, then a Wolf3D font of that name (a VGAGRAPH font chunk or
+/// a file in the pk3's fonts/ folder), so "SmallFont" and "LargeFont" work without a
+/// definition. Each font is built once, the first time it's used.
 /// </summary>
 internal class FontManager
 {
-    public FontManager(Lazy<AssetManager> assetManager)
+    public FontManager(Lazy<AssetManager> assetManager, VideoManager videoManager)
     {
         this.assetManager = assetManager;
+        this.videoManager = videoManager;
     }
 
     private readonly Lazy<AssetManager> assetManager;
+    private readonly VideoManager videoManager;
     private readonly Dictionary<string, Font> fonts = new(StringComparer.OrdinalIgnoreCase);
     private FontDefinitionsAsset? definitions;
     private bool definitionsRead;
@@ -74,11 +77,20 @@ internal class FontManager
             case "graphic":
                 return BuildGraphicFont(name, definition);
 
+            case "sheet":
+                return BuildSheetFont(name, definition);
+
             default:
-                Console.WriteLine($"Font '{name}' has an unknown type '{definition.Type}' (vga or graphic)");
+                Console.WriteLine($"Font '{name}' has an unknown type '{definition.Type}' (vga, graphic or sheet)");
                 return null;
         }
     }
+
+    private byte? TransparentIndex(FontDefinition definition)
+        => string.IsNullOrEmpty(definition.Transparent) ? null : videoManager.ResolveColor(definition.Transparent);
+
+    private GraphicAsset? FindPicture(string picName)
+        => assetManager.Value.Exists<GraphicAsset>(picName) ? assetManager.Value.Find<GraphicAsset>(picName) : null;
 
     private static readonly Regex CodePlaceholder = new(@"\{code(?::([^}]*))?\}");
 
@@ -104,7 +116,7 @@ internal class FontManager
         var missing = new List<string>();
         foreach (var (ch, picName) in pics)
         {
-            var pic = assetManager.Value.Exists<GraphicAsset>(picName) ? assetManager.Value.Find<GraphicAsset>(picName) : null;
+            var pic = FindPicture(picName);
             if (pic == null)
             {
                 missing.Add(picName);
@@ -124,7 +136,85 @@ internal class FontManager
             Console.WriteLine($"Font '{name}': no picture for {string.Join(", ", missing)}");
 
         return new GraphicFont(glyphs, definition.Height, definition.LineHeight,
-            definition.SpaceWidth ?? (glyphs.ContainsKey(' ') ? null : definition.CellWidth), definition.UpperCase);
+            definition.SpaceWidth ?? (glyphs.ContainsKey(' ') ? null : definition.CellWidth), definition.UpperCase,
+            definition.Colorize, TransparentIndex(definition));
+    }
+
+    /// <summary>
+    /// A font cut from one picture: a grid of CellWidth by CellHeight cells, left to right and
+    /// down, holding Chars (or FirstChar onwards). A proportional sheet trims each glyph to the
+    /// columns it draws in; a blank cell there is a gap, and only a space keeps one.
+    /// </summary>
+    private GraphicFont? BuildSheetFont(string name, FontDefinition definition)
+    {
+        if (string.IsNullOrEmpty(definition.Image) || definition.CellWidth is not int cellWidth || cellWidth <= 0)
+        {
+            Console.WriteLine($"Font '{name}': a sheet needs an image and a cell-width");
+            return null;
+        }
+
+        var image = FindPicture(definition.Image);
+        if (image == null)
+        {
+            Console.WriteLine($"Font '{name}': no picture '{definition.Image}'");
+            return null;
+        }
+
+        int cellHeight = definition.CellHeight ?? cellWidth;
+        int columns = image.Width / cellWidth;
+        int cells = columns * (image.Height / cellHeight);
+        string chars = definition.Chars
+            ?? new string(Enumerable.Range(0, cells).Select(i => (char)(definition.FirstChar + i)).ToArray());
+
+        byte? transparent = TransparentIndex(definition);
+        bool Shows(int x, int y)
+        {
+            int i = y * image.Width + x;
+            return (image.OpacityMask == null || image.OpacityMask[i] != 0) && image.RawData[i] != transparent;
+        }
+
+        var glyphs = new Dictionary<char, GraphicFont.Glyph>();
+        for (int cell = 0; cell < Math.Min(chars.Length, cells); cell++)
+        {
+            char ch = chars[cell];
+            int sx = (cell % columns) * cellWidth;
+            int sy = (cell / columns) * cellHeight;
+            int? advance = AdvanceFor(definition, ch);
+
+            if (!definition.Proportional)
+            {
+                glyphs[ch] = new GraphicFont.Glyph(image, sx, sy, cellWidth, cellHeight, advance ?? cellWidth);
+                continue;
+            }
+
+            // The columns of the cell with something in them
+            int first = -1, last = -1;
+            for (int x = 0; x < cellWidth; x++)
+            {
+                for (int y = 0; y < cellHeight; y++)
+                {
+                    if (!Shows(sx + x, sy + y))
+                        continue;
+                    if (first < 0)
+                        first = x;
+                    last = x;
+                    break;
+                }
+            }
+
+            if (first < 0)
+            {
+                if (ch == ' ')
+                    glyphs[ch] = new GraphicFont.Glyph(null, advance ?? definition.SpaceWidth ?? cellWidth / 2);
+                continue;
+            }
+
+            int width = last - first + 1;
+            glyphs[ch] = new GraphicFont.Glyph(image, sx + first, sy, width, cellHeight, advance ?? width + definition.Spacing);
+        }
+
+        return new GraphicFont(glyphs, definition.Height ?? cellHeight, definition.LineHeight, definition.SpaceWidth,
+            definition.UpperCase, definition.Colorize, transparent);
     }
 
     private static int? AdvanceFor(FontDefinition definition, char ch)

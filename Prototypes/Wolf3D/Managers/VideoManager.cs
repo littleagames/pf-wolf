@@ -756,6 +756,55 @@ internal class VideoManager
     }
 
 
+    /// <summary>A color name, #RRGGBB or palette index, as the palette index it draws with</summary>
+    internal byte ResolveColor(string color) => ResolveColorByte(color);
+
+    /// <summary>
+    /// Draws part of a paletted image (width by height from srcX, srcY) at (x, y) in 320x200
+    /// coordinates, leaving out pixels the opacity mask clears and pixels of the key color. With
+    /// a color, every pixel drawn is that color instead of its own. Clipped to the screen.
+    /// </summary>
+    internal void DrawImageRegion(byte[] pixels, byte[]? opacityMask, int stride, int srcX, int srcY, int width, int height,
+        int x, int y, byte? key = null, string? color = null)
+    {
+        IntPtr destPtr = LockSurface(screenBuffer);
+        if (destPtr == IntPtr.Zero)
+            return;
+
+        byte? col = color == null ? null : ResolveColorByte(color);
+        int maxX = screenWidth / scaleFactor, maxY = screenHeight / scaleFactor;
+
+        unsafe
+        {
+            byte* dest = (byte*)destPtr;
+            for (int j = 0; j < height; j++)
+            {
+                int dy = y + j;
+                if (dy < 0 || dy >= maxY)
+                    continue;
+
+                for (int i = 0; i < width; i++)
+                {
+                    int dx = x + i;
+                    if (dx < 0 || dx >= maxX)
+                        continue;
+
+                    int src = (srcY + j) * stride + srcX + i;
+                    byte pixel = pixels[src];
+                    if ((opacityMask != null && opacityMask[src] == 0) || pixel == key)
+                        continue;
+
+                    byte draw = col ?? pixel;
+                    for (int m = 0; m < scaleFactor; m++)
+                        for (int n = 0; n < scaleFactor; n++)
+                            dest[ylookup[dy * scaleFactor + m] + dx * scaleFactor + n] = draw;
+                }
+            }
+        }
+
+        UnlockSurface(screenBuffer);
+    }
+
     internal void DrawPropString(int px, int py, string text, string fontcolor, FontAsset font)
     {
         int width, step, height;

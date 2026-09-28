@@ -144,6 +144,24 @@ internal class PfWolfPk3Loader
                 continue;
             }
 
+            if (fullName.StartsWith("fonts/"))
+            {
+                // Wolf3D-format font files, used by name like SmallFont and LargeFont (a file of
+                // the same name replaces one of those)
+                try
+                {
+                    using var stream = entry.Open();
+                    using var data = new MemoryStream();
+                    stream.CopyTo(data);
+                    AddAsset(assetName, FontAsset.FromFile(data.ToArray()));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error loading font '{fullName}': {e.Message}");
+                }
+                continue;
+            }
+
             if (fullName.StartsWith("palettes/"))
             {
                 AddReference(assetName, () => PaletteDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName)));
