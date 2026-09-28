@@ -200,7 +200,7 @@ maps:
     cluster: 1
   # Angel of Death; killing it wins the game
   MAP21:
-    floor-number: 21
+    floor-number: 18
     music: XEVIL
     ceiling-color: "#483818"
     cluster: 1
