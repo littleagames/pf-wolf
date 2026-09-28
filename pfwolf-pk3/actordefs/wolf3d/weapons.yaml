@@ -1,3 +1,7 @@
+# Player weapon states follow the engine's state rules: tics are 70Hz, a frame's action runs
+# when the frame ENDS, 0 tics ends the frame the moment it's entered, and -1 holds forever.
+# The Fire/Hold timings reproduce vanilla attackinfo: every frame lasts 6 tics, and the
+# attack fires at the end of C (end of D too for the gatling gun's second shot).
 WolfWeapon:
   parent: "Weapon"
   properties:
@@ -10,13 +14,13 @@ WolfWeapon:
     Select:
       - sprite: TNT1
         frames: [A]
-        tics-per-frame: 0
+        tics-per-frame: 1
         action: A_Raise
         next-state: Select
     Deselect:
       - sprite: TNT1
         frames: [A]
-        tics-per-frame: 0
+        tics-per-frame: 1
         action: A_Lower
         next-state: Deselect
 
@@ -39,15 +43,15 @@ Knife:
         next-state: Ready
     Fire:
       - sprite: KNIF
-        frames: [B, C]
-        tics-per-frame: 3
+        frames: [B]
+        tics-per-frame: 6
       - sprite: KNIF
-        frames: [D]
-        tics-per-frame: 3
+        frames: [C]
+        tics-per-frame: 6
         action: "A_CustomPunch(random(0,15), true, CPF_ALWAYSPLAYSOUND)"
       - sprite: KNIF
-        frames: [E]
-        tics-per-frame: 3
+        frames: [D, E]
+        tics-per-frame: 6
         next-state: Ready
 
 Knife2:
@@ -63,15 +67,15 @@ Knife2:
         next-state: Ready
     Fire:
       - sprite: KNF2
-        frames: [B, C]
-        tics-per-frame: 3
+        frames: [B]
+        tics-per-frame: 6
       - sprite: KNF2
-        frames: [D]
-        tics-per-frame: 3
+        frames: [C]
+        tics-per-frame: 6
         action: "A_CustomPunch(random(0,15), true, CPF_ALWAYSPLAYSOUND)"
       - sprite: KNF2
-        frames: [E]
-        tics-per-frame: 3
+        frames: [D, E]
+        tics-per-frame: 6
         next-state: Ready
 
 Pistol:
@@ -93,18 +97,15 @@ Pistol:
     Fire:
       - sprite: PISG
         frames: [B]
-        tics-per-frame: 3
+        tics-per-frame: 6
       - sprite: PISG
         frames: [C]
-        tics-per-frame: 3
+        tics-per-frame: 6
         modifiers: [bright]
-      - sprite: PISG
-        frames: [D]
-        tics-per-frame: 3
         action: A_GunAttack
       - sprite: PISG
-        frames: [E]
-        tics-per-frame: 3
+        frames: [D, E]
+        tics-per-frame: 6
         next-state: Ready
 
 BluePistol:
@@ -122,20 +123,18 @@ BluePistol:
     Fire:
       - sprite: BPSG
         frames: [B]
-        tics-per-frame: 3
+        tics-per-frame: 6
       - sprite: BPSG
         frames: [C]
-        tics-per-frame: 3
+        tics-per-frame: 6
         modifiers: [bright]
-      - sprite: BPSG
-        frames: [D]
-        tics-per-frame: 3
         action: A_GunAttack
       - sprite: BPSG
-        frames: [E]
-        tics-per-frame: 3
+        frames: [D, E]
+        tics-per-frame: 6
         next-state: Ready
 
+# Holding fire loops C-D (a shot every 12 tics); A_ReFire at the end of D jumps back to Hold.
 MachineGun:
   parent: "WolfWeapon"
   properties:
@@ -160,20 +159,20 @@ MachineGun:
     Fire:
       - sprite: MCHG
         frames: [B]
-        tics-per-frame: 3
+        tics-per-frame: 6
     Hold:
       - sprite: MCHG
         frames: [C]
-        tics-per-frame: 3
+        tics-per-frame: 6
         modifiers: [bright]
-      - sprite: MCHG
-        frames: [D]
-        tics-per-frame: 3
         action: A_GunAttack
       - sprite: MCHG
-        frames: [E]
-        tics-per-frame: 3
+        frames: [D]
+        tics-per-frame: 6
         action: A_ReFire
+      - sprite: MCHG
+        frames: [E]
+        tics-per-frame: 6
         next-state: Ready
 
 BlueAK47:
@@ -197,22 +196,24 @@ BlueAK47:
     Fire:
       - sprite: BAKG
         frames: [B]
-        tics-per-frame: 3
+        tics-per-frame: 6
     Hold:
       - sprite: BAKG
         frames: [C]
-        tics-per-frame: 3
+        tics-per-frame: 6
         modifiers: [bright]
-      - sprite: BAKG
-        frames: [D]
-        tics-per-frame: 3
         action: A_GunAttack
       - sprite: BAKG
-        frames: [E]
-        tics-per-frame: 3
+        frames: [D]
+        tics-per-frame: 6
         action: A_ReFire
+      - sprite: BAKG
+        frames: [E]
+        tics-per-frame: 6
         next-state: Ready
 
+# Like the machine gun, but D fires a second shot as it ends; the 0-tic frame after it then
+# checks for refire in the same tic, so holding fire gives two shots every 12 tics.
 GatlingGun:
   parent: "WolfWeapon"
   properties:
@@ -237,26 +238,26 @@ GatlingGun:
     Fire:
       - sprite: CHGG
         frames: [B]
-        tics-per-frame: 3
+        tics-per-frame: 6
     Hold:
       - sprite: CHGG
         frames: [C]
-        tics-per-frame: 3
+        tics-per-frame: 6
         modifiers: [bright]
+        action: A_GunAttack
       - sprite: CHGG
         frames: [D]
-        tics-per-frame: 3
+        tics-per-frame: 6
         modifiers: [bright]
         action: A_GunAttack
       - sprite: CHGG
         frames: [D]
         tics-per-frame: 0
         modifiers: [bright]
-        action: A_GunAttack
+        action: A_ReFire
       - sprite: CHGG
         frames: [E]
-        tics-per-frame: 3
-        action: A_ReFire
+        tics-per-frame: 6
         next-state: Ready
 
 BlueGatlingGun:
@@ -279,26 +280,26 @@ BlueGatlingGun:
     Fire:
       - sprite: BGTG
         frames: [B]
-        tics-per-frame: 3
+        tics-per-frame: 6
     Hold:
       - sprite: BGTG
         frames: [C]
-        tics-per-frame: 3
+        tics-per-frame: 6
         modifiers: [bright]
+        action: A_GunAttack
       - sprite: BGTG
         frames: [D]
-        tics-per-frame: 3
+        tics-per-frame: 6
         modifiers: [bright]
         action: A_GunAttack
       - sprite: BGTG
         frames: [D]
         tics-per-frame: 0
         modifiers: [bright]
-        action: A_GunAttack
+        action: A_ReFire
       - sprite: BGTG
         frames: [E]
-        tics-per-frame: 3
-        action: A_ReFire
+        tics-per-frame: 6
         next-state: Ready
 
 GatlingGunUpgrade:
