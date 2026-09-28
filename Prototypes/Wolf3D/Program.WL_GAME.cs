@@ -57,6 +57,7 @@ internal partial class Program
     {
         var language = _assetManager.GetText("en-us");
         bool died;
+        bool warped = false;
 
         ClearMemory();
         SETFONTCOLOR("Black", "White");
@@ -85,7 +86,9 @@ internal partial class Program
             }
             else StartMusic();
 
-            if (!died)
+            if (warped)
+                warped = false;                 // an A_ChangeMap switch loads silently, no "get psyched!"
+            else if (!died)
                 PreloadGraphics();             // TODO: Let this do something useful!
             else
             {
@@ -103,6 +106,7 @@ internal partial class Program
                 // carries over, as the level ends without an intermission to bank it
                 GameEngineManager.WaitVBL(150);
                 gamestate.oldscore = gamestate.score;
+                warped = true;
             }
             else
                 pendingMapChange = null;
@@ -120,6 +124,7 @@ internal partial class Program
                 _videoManager.FadeOut();
                 DrawPlayScreen();
                 died = false;
+                warped = false;
                 continue;
             }
 
