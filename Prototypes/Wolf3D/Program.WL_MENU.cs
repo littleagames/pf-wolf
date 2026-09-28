@@ -2015,9 +2015,9 @@ internal partial class Program
         int h = 0, w = 0, mw = 0, i, len = text.Length;
 
         fontnumber = "LargeFont";
-        FontAsset font = _assetManager.Find<FontAsset>(fontnumber);
+        var font = _fontManager.Find(fontnumber);
         if (font == null) return;
-        h = font.Height;
+        h = font.LineHeight;
 
         for (i = 0; i < len; i++)
         {
@@ -2026,10 +2026,10 @@ internal partial class Program
                 if (w > mw)
                     mw = w;
                 w = 0;
-                h += font.Height;
+                h += font.LineHeight;
             }
             else
-                w += font.Width[(byte)text[i]];
+                w += font.Advance(text[i]);
         }
 
         if (w + 10 > mw)

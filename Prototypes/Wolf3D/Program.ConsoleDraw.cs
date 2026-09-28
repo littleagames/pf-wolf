@@ -1,5 +1,5 @@
 using System.Text;
-using Wolf3D.Assets;
+using Wolf3D.Fonts;
 
 namespace Wolf3D;
 
@@ -39,13 +39,13 @@ internal partial class Program
         if (!_consoleManager.IsOpen)
             return;
 
-        var font = _assetManager.Find<FontAsset>(CONSOLE_FONT);
+        var font = _fontManager.Find(CONSOLE_FONT);
         if (font == null)
             return;
 
         consoleDrawn = true;
 
-        int lineHeight = font.Height;
+        int lineHeight = font.LineHeight;
 
         _videoManager.Bar(0, 0, 320, CONSOLE_HEIGHT - 1, "Black");
         _videoManager.Bar(0, CONSOLE_HEIGHT - 1, 320, 1, "Grey");
@@ -64,8 +64,8 @@ internal partial class Program
             start++;
         string visible = ConsoleFitText(input[start..], inputWidth, font);
 
-        _videoManager.DrawPropString(CONSOLE_MARGIN, inputY, CONSOLE_PROMPT, "White", font);
-        _videoManager.DrawPropString(CONSOLE_MARGIN + promptWidth, inputY, visible, "White", font);
+        _graphicManager.DrawText(CONSOLE_MARGIN, inputY, CONSOLE_PROMPT, font, "White");
+        _graphicManager.DrawText(CONSOLE_MARGIN + promptWidth, inputY, visible, font, "White");
 
         if ((GameEngineManager.GetTimeCount() / 20) % 2 == 0)     // blink about 3 times a second
         {
@@ -82,7 +82,7 @@ internal partial class Program
         if (_consoleManager.ScrollOffset > 0)
         {
             // Quake-style marker that there's newer output below
-            _videoManager.DrawPropString(CONSOLE_MARGIN, y, "^   ^   ^   ^   ^   ^   ^   ^", "Grey", font);
+            _graphicManager.DrawText(CONSOLE_MARGIN, y, "^   ^   ^   ^   ^   ^   ^   ^", font, "Grey");
             y -= lineHeight;
         }
 
@@ -93,7 +93,7 @@ internal partial class Program
 
             for (int r = rows.Count - 1; r >= 0 && y >= 0; r--)
             {
-                _videoManager.DrawPropString(CONSOLE_MARGIN, y, rows[r], color, font);
+                _graphicManager.DrawText(CONSOLE_MARGIN, y, rows[r], font, color);
                 y -= lineHeight;
             }
         }
@@ -111,23 +111,13 @@ internal partial class Program
         return sb.ToString();
     }
 
-    static int ConsoleTextWidth(string text, FontAsset font)
-    {
-        GraphicManager.MeasureString(text, out ushort width, out _, font);
-        return width;
-    }
+    static int ConsoleTextWidth(string text, Font font) => font.Measure(text);
 
     /// <summary>The longest prefix of <paramref name="text"/> that fits in <paramref name="maxWidth"/>.</summary>
-    static string ConsoleFitText(string text, int maxWidth, FontAsset font)
-    {
-        int width = 0, length = 0;
-        while (length < text.Length && width + font.Width[text[length]] <= maxWidth)
-            width += font.Width[text[length++]];
-        return text[..length];
-    }
+    static string ConsoleFitText(string text, int maxWidth, Font font) => text[..font.Fit(text, maxWidth)];
 
     /// <summary>Splits a line into rows that fit the console, breaking at spaces where possible.</summary>
-    static List<string> ConsoleWrapText(string text, int maxWidth, FontAsset font)
+    static List<string> ConsoleWrapText(string text, int maxWidth, Font font)
     {
         var rows = new List<string>();
 

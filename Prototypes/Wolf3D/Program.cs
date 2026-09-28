@@ -18,6 +18,7 @@ internal partial class Program
     private static InputManager _inputManager;
     private static GameEngineManager _gameEngineManager;
     private static GraphicManager _graphicManager;
+    private static FontManager _fontManager;
     private static MapManager _mapManager;
     private static AssetManager _assetManager;
     private static InventoryManager _inventoryManager;
@@ -33,6 +34,7 @@ internal partial class Program
         services.AddSingleton<AudioManager>();
         services.AddSingleton<InputManager>();
         services.AddSingleton<GraphicManager>();
+        services.AddSingleton<FontManager>();
         services.AddSingleton<MapManager>();
         services.AddSingleton<AssetManager>();
         services.AddSingleton<InventoryManager>();
@@ -51,6 +53,7 @@ internal partial class Program
         _audioManager = serviceProvider.GetRequiredService<AudioManager>();
         _inputManager = serviceProvider.GetRequiredService<InputManager>();
         _graphicManager = serviceProvider.GetRequiredService<GraphicManager>();
+        _fontManager = serviceProvider.GetRequiredService<FontManager>();
         _mapManager = serviceProvider.GetRequiredService<MapManager>();
         _assetManager = serviceProvider.GetRequiredService<AssetManager>();
         _inventoryManager = serviceProvider.GetRequiredService<InventoryManager>();

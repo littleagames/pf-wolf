@@ -777,8 +777,16 @@ internal class VideoManager
             byte* dest = (byte*)destPtr;
             dest += scaleFactor * (ylookup[py] + px); // starting point on the screenbuffer
 
-            foreach (char ch in text.ToCharArray())
+            foreach (char ch in text)
             {
+                // Past the font's 256 glyphs: leave a space's worth of room (see VgaFont.Advance)
+                if (ch >= font.Width.Length)
+                {
+                    px += font.Width[' '];
+                    dest += scaleFactor * font.Width[' '];
+                    continue;
+                }
+
                 width = step = font.Width[ch];
                 int locIndex = font.Location[ch];
 
