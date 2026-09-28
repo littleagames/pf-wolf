@@ -172,8 +172,6 @@ internal partial class Program
 
         _gameEngineManager.ReadConfig();
 
-        SetupSaveGames();
-
         //
         // HOLDING DOWN 'M' KEY?
         //

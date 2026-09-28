@@ -148,7 +148,10 @@ internal partial class Program
             ThreeDRefresh();
 
             if (!worldPaused)
+            {
                 gamestate.TimeCount += (int)tics;
+                gamestate.PlayTime += (int)tics;
+            }
 
             UpdateSoundListener();      // JAB
             if (_videoManager.screenfaded)

@@ -11,12 +11,13 @@ internal partial class Program
 
                                     SAVE GAMES
 
-    A save file is:
+    Every *.dat in the save folder is a save; there are no slots. A save file is:
 
-        byte[32]  the save's name, Latin-1, zero padded -- the load/save menus list
-                  saves from this alone
         byte[4]   "PFWS"
         int       format version
+        int       header length, then the header (SaveInfo: name, when, where, progress)
+                  -- the load/save menus list saves from this alone
+        int, int  thumbnail width and height, then that many palette indices
         int       body length, then the body
         int       checksum of the body
 
@@ -29,53 +30,123 @@ internal partial class Program
     =============================================================================
     */
 
-    internal const string SaveName = "savegam?.dat";
-    private const int SaveSlots = 10;
+    internal const string SaveExtension = ".dat";
+    internal const string QuickSaveFile = "quicksave" + SaveExtension;
+    internal const string AutoSaveFile = "autosave" + SaveExtension;
 
     private static readonly byte[] SaveSignature = "PFWS"u8.ToArray();
     // Still in development, so a layout change bumps SaveVersion and older saves are refused
-    // rather than converted. 5: weapons by class name, and the weapon's state after the seen tiles.
-    private const int SaveVersion = 5;
-    private const int OldestLoadableSaveVersion = 5;
+    // rather than converted. 6: the header (SaveInfo) and thumbnail ahead of the body, no slots.
+    private const int SaveVersion = 6;
+    private const int OldestLoadableSaveVersion = 6;
 
-    internal static string GetSaveGamePath(int slot) =>
-        Path.Combine(_gameEngineManager.ConfigDirectories.SaveGameDirectory, SaveName.Replace('?', (char)('0' + slot)));
+    // Thumbnails are small; anything claiming more than this is garbage
+    private const int MaxThumbnailPixels = 1024 * 1024;
 
-    /// <summary>Fills the load/save menu's slots from the save files present.</summary>
-    internal static void SetupSaveGames()
+    private static string SaveDirectory => _gameEngineManager.ConfigDirectories.SaveGameDirectory;
+
+    /// <summary>
+    /// A path for a new save, named for when it was made (the save's own name is inside the
+    /// file, so it can be anything).
+    /// </summary>
+    internal static string NewSaveGamePath()
     {
-        for (int i = 0; i < SaveSlots; i++)
-        {
-            var name = ReadSaveGameName(GetSaveGamePath(i));
-            SaveGamesAvail[i] = name != null ? 1 : 0;
-            SaveGameNames[i] = name ?? "";
-        }
+        var stem = Path.Combine(SaveDirectory, $"save_{DateTime.Now:yyyyMMdd_HHmmss}");
+        var path = stem + SaveExtension;
+        for (int i = 2; File.Exists(path); i++)
+            path = $"{stem}_{i}{SaveExtension}";
+        return path;
     }
 
-    /// <summary>The save's name, or null if there's no save there in this format.</summary>
-    private static string? ReadSaveGameName(string path)
+    /// <summary>A time in tics as m:ss, or h:mm:ss from an hour up.</summary>
+    internal static string FormatPlayTime(int tics)
+    {
+        var time = TimeSpan.FromSeconds(Math.Max(tics, 0) / 70);
+        return time.TotalHours >= 1 ? $"{(int)time.TotalHours}:{time:mm\\:ss}" : $"{time.Minutes}:{time:ss}";
+    }
+
+    /// <summary>Every save in the save folder that this build can read, newest first.</summary>
+    internal static List<SaveInfo> ListSaveGames()
+    {
+        var saves = new List<SaveInfo>();
+        try
+        {
+            if (!Directory.Exists(SaveDirectory))
+                return saves;
+
+            foreach (var path in Directory.EnumerateFiles(SaveDirectory, "*" + SaveExtension))
+            {
+                if (ReadSaveInfo(path) is { } info)
+                    saves.Add(info);
+            }
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Console.WriteLine($"Couldn't list the saves in {SaveDirectory}: {e.Message}");
+        }
+
+        saves.Sort((a, b) => b.SavedAt.CompareTo(a.SavedAt));
+        return saves;
+    }
+
+    /// <summary>The save's header, or null (having said why) if it isn't a save this build reads.</summary>
+    internal static SaveInfo? ReadSaveInfo(string path)
     {
         try
         {
-            if (!File.Exists(path))
-                return null;
-
             using var br = new BinaryReader(File.OpenRead(path));
-            var name = ReadSaveHeaderName(br);
-            return br.ReadBytes(SaveSignature.Length).AsSpan().SequenceEqual(SaveSignature) ? name : null;
+            ReadSaveVersion(br);
+            using var header = new BinaryReader(new MemoryStream(ReadExactly(br, br.ReadCount())));
+            return SaveInfo.Read(header) with { Path = path };
         }
-        catch (IOException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or FormatException)
         {
-            return null;
-        }
-        catch (UnauthorizedAccessException)
-        {
+            Console.WriteLine($"Skipping {path}: {e.Message}");
             return null;
         }
     }
 
-    private static string ReadSaveHeaderName(BinaryReader br) =>
-        Encoding.Latin1.GetString(br.ReadBytes(MaxGameName)).TrimEnd('\0');
+    /// <summary>Checks the signature and reads the format version, refusing one this build can't read.</summary>
+    private static int ReadSaveVersion(BinaryReader br)
+    {
+        if (!br.ReadBytes(SaveSignature.Length).AsSpan().SequenceEqual(SaveSignature))
+            throw new InvalidDataException("It isn't a PFWolf save game.");
+
+        var version = br.ReadInt32();
+        if (version < OldestLoadableSaveVersion || version > SaveVersion)
+            throw new InvalidDataException($"It was saved in format {version}; this build reads {OldestLoadableSaveVersion} to {SaveVersion}.");
+        return version;
+    }
+
+    /// <summary>The header for a save of the game as it stands.</summary>
+    private static SaveInfo CurrentSaveInfo(string path, string name)
+    {
+        var language = _assetManager.GetText("en-us");
+        var skill = _gameEngineManager.GetGameInfo().Skills.Values.ElementAtOrDefault((int)gamestate.difficulty);
+
+        return new SaveInfo
+        {
+            Path = path,
+            Name = name,
+            SavedAt = DateTime.UtcNow,
+            GamePack = _gameEngineManager.GamePackId,
+            MapOn = gamestate.mapon,
+            MapName = GetMapDisplayName(gamestate.mapon),
+            Difficulty = gamestate.difficulty,
+            SkillName = skill?.Name.ToLanguageText(language) ?? "",
+            LevelTime = gamestate.TimeCount,
+            PlayTime = gamestate.PlayTime,
+            Score = gamestate.score,
+            Lives = gamestate.lives,
+            Health = gamestate.health,
+            Kills = gamestate.killcount,
+            KillTotal = gamestate.killtotal,
+            Secrets = gamestate.secretcount,
+            SecretTotal = gamestate.secrettotal,
+            Treasure = gamestate.treasurecount,
+            TreasureTotal = gamestate.treasuretotal,
+        };
+    }
 
     /// <summary>
     /// Saves the game in progress. Written to a temporary file first, so a failed save
@@ -91,14 +162,21 @@ internal partial class Program
                 WriteSaveBody(bw, x, y);
             var bodyBytes = body.ToArray();
 
+            using var header = new MemoryStream();
+            using (var bw = new BinaryWriter(header, Encoding.UTF8, leaveOpen: true))
+                CurrentSaveInfo(path, name).Write(bw);
+            var headerBytes = header.ToArray();
+
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             using (var bw = new BinaryWriter(File.Create(tempPath)))
             {
-                var header = new byte[MaxGameName];
-                Encoding.Latin1.GetBytes(name, 0, Math.Min(name.Length, MaxGameName), header, 0);
-                bw.Write(header);
                 bw.Write(SaveSignature);
                 bw.Write(SaveVersion);
+                bw.Write(headerBytes.Length);
+                bw.Write(headerBytes);
+                // No thumbnail yet
+                bw.Write(0);
+                bw.Write(0);
                 bw.Write(bodyBytes.Length);
                 bw.Write(bodyBytes);
                 bw.Write(DoChecksum(bodyBytes, 0));
@@ -233,6 +311,14 @@ internal partial class Program
         return bytes;
     }
 
+    private static void SkipThumbnail(BinaryReader br)
+    {
+        int width = br.ReadInt32(), height = br.ReadInt32();
+        if (width < 0 || height < 0 || (long)width * height > MaxThumbnailPixels)
+            throw new InvalidDataException($"Bad thumbnail size {width}x{height}.");
+        ReadExactly(br, width * height);
+    }
+
     /// <summary>
     /// Loads a save over whatever is running. The caller sets <c>loadedgame</c> first, so the
     /// level rebuild doesn't re-count kills, treasure and secrets. Returns false, having shown
@@ -246,13 +332,9 @@ internal partial class Program
         {
             DiskFlopAnim(x, y);
             using var br = new BinaryReader(File.OpenRead(path));
-            ReadSaveHeaderName(br);
-            if (!br.ReadBytes(SaveSignature.Length).AsSpan().SequenceEqual(SaveSignature))
-                throw new InvalidDataException("It isn't a PFWolf save game.");
-
-            var version = br.ReadInt32();
-            if (version < OldestLoadableSaveVersion || version > SaveVersion)
-                throw new InvalidDataException($"It was saved in format {version}; this build reads {OldestLoadableSaveVersion} to {SaveVersion}.");
+            ReadSaveVersion(br);
+            ReadExactly(br, br.ReadCount());    // the header is only for the menus
+            SkipThumbnail(br);
 
             var body = br.ReadBytes(br.ReadCount());
             checksumOk = br.BaseStream.Length - br.BaseStream.Position >= sizeof(int)
@@ -392,5 +474,96 @@ internal partial class Program
             checksum += source[i] ^ source[i + 1];
 
         return checksum;
+    }
+}
+
+internal enum SaveKind { Normal, Quick, Auto }
+
+/// <summary>
+/// A save's header: what the load/save menus show about it, read without loading the game.
+/// Map and skill names are kept as they read when saved, so a save from another game pack
+/// or mod still shows them.
+/// </summary>
+internal sealed record SaveInfo
+{
+    /// <summary>The file it was read from; not stored in it.</summary>
+    public string Path { get; init; } = "";
+
+    public string Name { get; init; } = "";
+    public DateTime SavedAt { get; init; }      // UTC
+    public string GamePack { get; init; } = "";
+    public string MapOn { get; init; } = "";
+    public string MapName { get; init; } = "";
+    public difficultytypes Difficulty { get; init; }
+    public string SkillName { get; init; } = "";
+    public int LevelTime { get; init; }         // tics on this level
+    public int PlayTime { get; init; }          // tics since the game began
+    public int Score { get; init; }
+    public short Lives { get; init; }
+    public short Health { get; init; }
+    public short Kills { get; init; }
+    public short KillTotal { get; init; }
+    public short Secrets { get; init; }
+    public short SecretTotal { get; init; }
+    public short Treasure { get; init; }
+    public short TreasureTotal { get; init; }
+
+    public SaveKind Kind => System.IO.Path.GetFileName(Path).ToLowerInvariant() switch
+    {
+        Program.QuickSaveFile => SaveKind.Quick,
+        Program.AutoSaveFile => SaveKind.Auto,
+        _ => SaveKind.Normal,
+    };
+
+    public void Write(BinaryWriter bw)
+    {
+        bw.Write(Name);
+        bw.Write(SavedAt.ToUniversalTime().Ticks);
+        bw.Write(GamePack);
+        bw.Write(MapOn);
+        bw.Write(MapName);
+        bw.Write((short)Difficulty);
+        bw.Write(SkillName);
+        bw.Write(LevelTime);
+        bw.Write(PlayTime);
+        bw.Write(Score);
+        bw.Write(Lives);
+        bw.Write(Health);
+        bw.Write(Kills);
+        bw.Write(KillTotal);
+        bw.Write(Secrets);
+        bw.Write(SecretTotal);
+        bw.Write(Treasure);
+        bw.Write(TreasureTotal);
+    }
+
+    public static SaveInfo Read(BinaryReader br)
+    {
+        var name = br.ReadString();
+        var ticks = br.ReadInt64();
+        if (ticks < DateTime.MinValue.Ticks || ticks > DateTime.MaxValue.Ticks)
+            throw new InvalidDataException($"Bad save time {ticks}.");
+
+        return new SaveInfo
+        {
+            Name = name,
+            SavedAt = new DateTime(ticks, DateTimeKind.Utc),
+            GamePack = br.ReadString(),
+            MapOn = br.ReadString(),
+            MapName = br.ReadString(),
+            Difficulty = (difficultytypes)br.ReadInt16(),
+            SkillName = br.ReadString(),
+            LevelTime = br.ReadInt32(),
+            PlayTime = br.ReadInt32(),
+            Score = br.ReadInt32(),
+            Lives = br.ReadInt16(),
+            Health = br.ReadInt16(),
+            Kills = br.ReadInt16(),
+            KillTotal = br.ReadInt16(),
+            Secrets = br.ReadInt16(),
+            SecretTotal = br.ReadInt16(),
+            Treasure = br.ReadInt16(),
+            TreasureTotal = br.ReadInt16(),
+        };
     }
 }

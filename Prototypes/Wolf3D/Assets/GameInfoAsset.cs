@@ -149,6 +149,12 @@ internal record ClusterInfo
 
 internal record MapInfo
 {
+    /// <summary>
+    /// Name shown for the level (e.g. on saves), or a $language key; when unset it's
+    /// "Episode X, Floor Y" (just "Floor Y" in a single-episode game)
+    /// </summary>
+    public string? Name { get; init; }
+
     //public string Current { get; set; }
     public string Next { get; init; } = null!;
     public string? SecretNext { get; init; } = null;

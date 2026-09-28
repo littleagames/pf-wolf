@@ -44,6 +44,9 @@ $STR_SAVING: "Saving"
 # Load / save
 $STR_LGC: "Load Game called\n\""
 $STR_EMPTY: "empty"
+# A level with no name in game-info: {0} is the episode (cluster), {1} the floor
+$STR_MAPEPISODEFLOOR: "Episode {0}, Floor {1}"
+$STR_MAPFLOOR: "Floor {0}"
 
 # Joystick calibration
 $STR_CALIB: "Calibrate"

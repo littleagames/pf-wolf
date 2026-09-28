@@ -122,10 +122,11 @@ internal partial class Program
         Register("actors", "Lists actors, optionally only those whose name contains the filter.", "actors [filter]", Cmd_Actors, InLevel,
             complete: (_, i) => i == 0 ? _mapManager.GetActors().Select(a => a.Name) : []);
         Register("maps", "Lists the levels that map can warp to.", "maps", Cmd_Maps);
-        Register("save", "Saves the game to a load/save menu slot.", "save <slot 0-9> [name]", Cmd_Save, InLevel,
-            complete: CompleteSaveSlot);
-        Register("load", "Loads the game saved in a load/save menu slot.", "load <slot 0-9>", Cmd_Load, InLevel,
-            complete: CompleteSaveSlot);
+        Register("saves", "Lists the saved games, newest first, numbered for load.", "saves", Cmd_Saves);
+        Register("save", "Saves the game. A name that's already saved is saved over; with none, it's a new save named for the level.",
+            "save [name]", Cmd_Save, InLevel, complete: CompleteSaveName);
+        Register("load", "Loads a saved game, by its number in saves or its name.", "load <number|name>", Cmd_Load, InLevel,
+            complete: CompleteSaveName);
         Register("fps", "Toggles the frame rate counter.", "fps [0|1]", Cmd_Fps, complete: Values("0", "1"));
         Register("slowmo", "Waits extra VBLs every frame (0 = off).", "slowmo [0-50]", Cmd_SlowMo);
         Register("vbls", "Adds extra VBLs per frame (0 = off).", "vbls [0-8]", Cmd_Vbls);
@@ -720,43 +721,71 @@ internal partial class Program
             _consoleManager.Print($"Current map is {gamestate.mapon}");
     }
 
-    static IEnumerable<string> CompleteSaveSlot(string[] args, int index) =>
-        index == 0 ? Enumerable.Range(0, SaveGamesAvail.Length).Select(i => i.ToString()) : [];
+    static IEnumerable<string> CompleteSaveName(string[] args, int index) =>
+        index == 0 ? ListSaveGames().Select(s => s.Name).Distinct(StringComparer.OrdinalIgnoreCase) : [];
+
+    private static void Cmd_Saves(string[] args)
+    {
+        var saves = ListSaveGames();
+        if (saves.Count == 0)
+        {
+            _consoleManager.Print($"No saved games in {_gameEngineManager.ConfigDirectories.SaveGameDirectory}");
+            return;
+        }
+
+        for (int i = 0; i < saves.Count; i++)
+        {
+            var s = saves[i];
+            var kind = s.Kind == SaveKind.Normal ? "" : $" [{s.Kind.ToString().ToLowerInvariant()}]";
+            _consoleManager.Print($"{i + 1,3}. {s.Name}{kind} - {s.MapName}, {s.SavedAt.ToLocalTime():yyyy-MM-dd HH:mm}, played {FormatPlayTime(s.PlayTime)}");
+        }
+    }
+
+    // A save by its number in the saves list or its name (the newest, if several share it)
+    private static SaveInfo FindSaveGame(string arg)
+    {
+        var saves = ListSaveGames();
+        if (int.TryParse(arg, out var number))
+        {
+            if (number < 1 || number > saves.Count)
+                throw new ArgumentException($"there's no save {number}; saves lists them");
+            return saves[number - 1];
+        }
+
+        return saves.FirstOrDefault(s => string.Equals(s.Name, arg, StringComparison.OrdinalIgnoreCase))
+            ?? throw new ArgumentException($"there's no save called \"{arg}\"; saves lists them");
+    }
 
     private static void Cmd_Save(string[] args)
     {
-        if (args.Length == 0)
-            throw new ArgumentException("usage: save <slot 0-9> [name]");
-
-        var slot = ParseInt(args[0], 0, SaveGamesAvail.Length - 1);
-        var name = args.Length > 1 ? string.Join(' ', args.Skip(1))
-            : SaveGamesAvail[slot] != 0 ? SaveGameNames[slot]
-            : gamestate.mapon;
+        var name = args.Length > 0 ? string.Join(' ', args) : GetMapDisplayName(gamestate.mapon);
         if (name.Length > MaxGameName - 1)
             name = name[..(MaxGameName - 1)];
 
-        if (!SaveTheGame(GetSaveGamePath(slot), name, 0, 0))
-            throw new ArgumentException($"couldn't write {GetSaveGamePath(slot)}");
+        var path = args.Length > 0
+            && ListSaveGames().FirstOrDefault(s => s.Kind == SaveKind.Normal
+                && string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)) is { } existing
+            ? existing.Path
+            : NewSaveGamePath();
 
-        SaveGamesAvail[slot] = 1;
-        SaveGameNames[slot] = name;
-        _consoleManager.Print($"Saved \"{name}\" to slot {slot}");
+        if (!SaveTheGame(path, name, 0, 0))
+            throw new ArgumentException($"couldn't write {path}");
+
+        _consoleManager.Print($"Saved \"{name}\" to {Path.GetFileName(path)}");
     }
 
     private static void Cmd_Load(string[] args)
     {
         if (args.Length == 0)
-            throw new ArgumentException("usage: load <slot 0-9>");
+            throw new ArgumentException("usage: load <number|name>");
 
-        var slot = ParseInt(args[0], 0, SaveGamesAvail.Length - 1);
-        if (SaveGamesAvail[slot] == 0)
-            throw new ArgumentException($"slot {slot} is empty");
+        var save = FindSaveGame(string.Join(' ', args));
 
         // Between frames, not mid-command: the load replaces every actor, the player included.
         _consoleManager.Defer(() =>
         {
             loadedgame = true;
-            if (LoadTheGame(GetSaveGamePath(slot), 0, 0))
+            if (LoadTheGame(save.Path, 0, 0))
                 playstate = playstatetypes.ex_abort;    // GameLoop redraws and restarts music for the loaded level
             else
                 loadedgame = false;

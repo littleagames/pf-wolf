@@ -118,7 +118,8 @@ internal class gametype
 
     public short cluster, secretcount, treasurecount, killcount,
                 secrettotal, treasuretotal, killtotal;
-    public int TimeCount;
+    public int TimeCount;               // tics on this level
+    public int PlayTime;                // tics since the game began, over every level
     public int killx, killy;
     public bool victoryflag;            // set during victory animations
 
@@ -148,6 +149,7 @@ internal class gametype
         treasuretotal = br.ReadInt16(),
         killtotal = br.ReadInt16(),
         TimeCount = br.ReadInt32(),
+        PlayTime = br.ReadInt32(),
         killx = br.ReadInt32(),
         killy = br.ReadInt32(),
         victoryflag = br.ReadBoolean(),
@@ -173,6 +175,7 @@ internal class gametype
         bw.Write(treasuretotal);
         bw.Write(killtotal);
         bw.Write(TimeCount);
+        bw.Write(PlayTime);
         bw.Write(killx);
         bw.Write(killy);
         bw.Write(victoryflag);

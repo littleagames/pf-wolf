@@ -38,20 +38,6 @@ internal class HighScore
     }
 }
 
-struct SaveGame
-{
-    char[] signature;
-    //short[] oldtest;
-    bool present;
-    char[] name;
-
-    public SaveGame()
-    {
-        signature = new char[4];
-        name = new char[Program.MaxGameName + 1];
-    }
-}
-
 // Record used to save & restore screen windows
 struct WindowRec
 {
@@ -68,7 +54,6 @@ internal partial class Program
 
     static bool US_Started;
 
-    internal static SaveGame[] Games = new SaveGame[MaxSaveGames];
     internal static HighScore[] Scores = new HighScore[MaxScores]
     {
         new HighScore {name = "id software-'92", score = 10000,completed = 1},
@@ -88,8 +73,7 @@ internal partial class Program
     internal const int MaxHighName = 57;
     internal const int MaxScores = 7;
 
-    internal const int MaxGameName = 32;
-    internal const int MaxSaveGames = 6;
+    internal const int MaxGameName = 32;    // a save's name, as typed in the save menu, is one less
 
     internal const int MaxString = 128;
 

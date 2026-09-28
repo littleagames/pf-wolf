@@ -473,6 +473,27 @@ internal partial class Program
             _videoManager.scaleFactor * 1, _videoManager.scaleFactor * 14, color);// - 3);
     }
 
+    /// <summary>
+    /// The level's name for showing to the player: game-info's name for it, else
+    /// "Episode X, Floor Y" ("Floor Y" when there's one episode), else the map's lump name.
+    /// </summary>
+    internal static string GetMapDisplayName(string mapon)
+    {
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        if (!gameInfo.Maps.TryGetValue(mapon, out var mapInfo))
+            return mapon;
+
+        var language = _assetManager.GetText("en-us");
+        if (!string.IsNullOrEmpty(mapInfo.Name))
+            return mapInfo.Name.ToLanguageText(language);
+        if (mapInfo.FloorNumber <= 0)
+            return mapon;
+
+        return gameInfo.Episodes.Count > 1
+            ? string.Format("$STR_MAPEPISODEFLOOR".ToLanguageText(language), mapInfo.Cluster, mapInfo.FloorNumber)
+            : string.Format("$STR_MAPFLOOR".ToLanguageText(language), mapInfo.FloorNumber);
+    }
+
     internal static void SetupGameLevel()
     {
         if (!loadedgame)
