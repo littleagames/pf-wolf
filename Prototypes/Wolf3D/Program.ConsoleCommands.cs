@@ -509,7 +509,7 @@ internal partial class Program
             case "all":
                 HealSelf(100);
                 GiveAllWeapons();
-                GiveAmmo(AmmoType, int.MaxValue);
+                GiveAllAmmo(int.MaxValue);
                 GiveAllKeys();
                 _consoleManager.Print("Gave everything");
                 break;
@@ -535,8 +535,7 @@ internal partial class Program
                 break;
 
             case "ammo":
-                var addedAmmo = GiveAmmo(AmmoType, amount ?? int.MaxValue);
-                _consoleManager.Print($"Gave {addedAmmo} {AmmoType}");
+                _consoleManager.Print($"Gave {GiveAllAmmo(amount ?? int.MaxValue)} ammo");
                 break;
 
             default:
@@ -561,7 +560,7 @@ internal partial class Program
         if (_inventoryManager.FindClass(item, "Weapon") != null)
         {
             // Goes through the pickup path so a better weapon also gets selected.
-            TryGiveWeapon(item, "None", 0);
+            TryGiveWeapon(item, 0);
             _consoleManager.Print($"Gave {item}");
         }
         else if (_inventoryManager.FindClass(item, "Ammo") != null)
@@ -573,7 +572,7 @@ internal partial class Program
     static void GiveAllWeapons()
     {
         foreach (var weapon in WeaponSlotItems)
-            TryGiveWeapon(weapon, "None", 0);
+            TryGiveWeapon(weapon, 0);
     }
 
     static void GiveAllKeys()

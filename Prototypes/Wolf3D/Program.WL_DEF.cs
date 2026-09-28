@@ -52,16 +52,6 @@ internal enum buttontypes
     NUMBUTTONS
 };
 
-internal enum weapontypes
-{
-    wp_none = -1,
-    wp_knife,
-    wp_pistol,
-    wp_machinegun,
-    wp_chaingun,
-    NUMWEAPONS
-};
-
 internal enum difficultytypes
 {
     gd_baby,
@@ -110,7 +100,10 @@ internal class gametype
     public int oldscore, score, nextextra;
     public short lives;
     public short health;
-    public weapontypes weapon, chosenweapon;
+    // The weapon in hand and the one the player picked, as held inventory item types (actordefs
+    // Weapon classes, e.g. "Pistol"). They differ while out of ammo forces a fallback; null
+    // means no weapon (dead).
+    public string? weapon, chosenweapon;
 
     public short faceframe;
     public short attackframe, attackcount, weaponframe;
@@ -121,7 +114,22 @@ internal class gametype
     public int killx, killy;
     public bool victoryflag;            // set during victory animations
 
-    public static gametype Read(BinaryReader br) => new()
+    // What the weapon numbers in pre-version-4 saves (the old weapontypes enum) stand for.
+    private static readonly string[] LegacyWeapons = ["Knife", "Pistol", "MachineGun", "GatlingGun"];
+
+    private static string? ReadWeapon(BinaryReader br, int version)
+    {
+        if (version >= 4)
+        {
+            var name = br.ReadString();
+            return name.Length == 0 ? null : name;
+        }
+
+        var index = br.ReadInt16();
+        return index >= 0 && index < LegacyWeapons.Length ? LegacyWeapons[index] : null;
+    }
+
+    public static gametype Read(BinaryReader br, int version) => new()
     {
         difficulty = (difficultytypes)br.ReadInt16(),
         mapon = br.ReadString(),
@@ -130,8 +138,8 @@ internal class gametype
         nextextra = br.ReadInt32(),
         lives = br.ReadInt16(),
         health = br.ReadInt16(),
-        weapon = (weapontypes)br.ReadInt16(),
-        chosenweapon = (weapontypes)br.ReadInt16(),
+        weapon = ReadWeapon(br, version),
+        chosenweapon = ReadWeapon(br, version),
         faceframe = br.ReadInt16(),
         attackframe = br.ReadInt16(),
         attackcount = br.ReadInt16(),
@@ -158,8 +166,8 @@ internal class gametype
         bw.Write(nextextra);
         bw.Write(lives);
         bw.Write(health);
-        bw.Write((short)weapon);
-        bw.Write((short)chosenweapon);
+        bw.Write(weapon ?? "");
+        bw.Write(chosenweapon ?? "");
         bw.Write(faceframe);
         bw.Write(attackframe);
         bw.Write(attackcount);

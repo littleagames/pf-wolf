@@ -615,7 +615,7 @@ internal partial class Program
             _videoManager.FadeIn();
         }
 
-        gamestate.weapon = weapontypes.wp_none;                     // take away weapon
+        gamestate.weapon = null;                     // take away weapon
         _audioManager.Play("player/death");
 
         //

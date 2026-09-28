@@ -707,8 +707,10 @@ internal partial class Program
         if (ob.Name == "SS")
         {
             // KillActor's one enemy-specific drop rule that isn't a flat `dropitem`:
-            // upgrades a Clip drop to a MachineGun if the player doesn't have one yet.
-            PlaceItemType(GetBestWeapon() < weapontypes.wp_machinegun ? "MachineGun" : "Clip", tilex, tiley);
+            // upgrades a Clip drop to a MachineGun if the player has nothing as good yet.
+            var best = BestWeapon();
+            var upgrade = best == null || WeaponSelectionOrder(best) > WeaponSelectionOrder("MachineGun");
+            PlaceItemType(upgrade ? "MachineGun" : "Clip", tilex, tiley);
         }
         else if (ob.Properties.TryGetValue("dropitem", out var dropitem) && dropitem is string dropitemName)
         {

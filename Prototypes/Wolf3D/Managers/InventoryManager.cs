@@ -1,4 +1,5 @@
 using Wolf3D.Assets;
+using Wolf3D.Entities.Actors;
 
 namespace Wolf3D.Managers;
 
@@ -13,6 +14,7 @@ internal class InventoryManager
     private readonly Lazy<AssetManager> _assetManager;
     private readonly Dictionary<string, int> _items = new(StringComparer.OrdinalIgnoreCase);
     private ActorMetadata? _metadata;
+    private readonly Dictionary<string, IReadOnlyDictionary<string, ActorStateFrame>> _states = new(StringComparer.OrdinalIgnoreCase);
 
     public InventoryManager(Lazy<AssetManager> assetManager)
     {
@@ -34,6 +36,25 @@ internal class InventoryManager
 
     public int GetIntProperty(string item, string key, int fallback) =>
         Metadata.GetIntProperty(item, key, fallback);
+
+    public string? GetStringProperty(string item, string key) =>
+        Metadata.TryGetProperty(item, key, out var value) ? value?.ToString() : null;
+
+    /// <summary>
+    /// An item class's resolved states, inherited ones included (e.g. a weapon's Ready/Fire).
+    /// Empty for an unknown class. Built once per class.
+    /// </summary>
+    public IReadOnlyDictionary<string, ActorStateFrame> GetStates(string item)
+    {
+        if (!_states.TryGetValue(item, out var states))
+        {
+            states = Metadata.Actors.TryGetValue(item, out var data)
+                ? Metadata.CreateActor(item, data).ResolvedStates
+                : new Dictionary<string, ActorStateFrame>();
+            _states[item] = states;
+        }
+        return states;
+    }
 
     /// <summary>The actordefs class names that descend from <paramref name="baseClass"/> (e.g. "Weapon").</summary>
     public IEnumerable<string> GetClassesDerivedFrom(string baseClass) =>

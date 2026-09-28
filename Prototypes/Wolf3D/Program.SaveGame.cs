@@ -35,7 +35,8 @@ internal partial class Program
     private static readonly byte[] SaveSignature = "PFWS"u8.ToArray();
     // 2: the patrol arrows became PatrolPoint actors, which version-1 saves' actor lists lack
     // 3: the automap's seen tiles follow the rest of the body; version-2 saves load with none seen
-    private const int SaveVersion = 3;
+    // 4: the weapon in hand and the chosen one are weapon class names, not weapontypes numbers
+    private const int SaveVersion = 4;
     private const int OldestLoadableSaveVersion = 2;
 
     internal static string GetSaveGamePath(int slot) =>
@@ -179,7 +180,7 @@ internal partial class Program
 
     private static SaveGameData ReadSaveBody(BinaryReader br, int version)
     {
-        var state = gametype.Read(br);
+        var state = gametype.Read(br, version);
 
         var ratios = new Dictionary<string, LRstruct>();
         for (int i = br.ReadCount(); i > 0; i--)
@@ -257,6 +258,12 @@ internal partial class Program
 
             if (!_gameEngineManager.GetGameInfo().Maps.ContainsKey(data.GameState.mapon))
                 throw new InvalidDataException($"Map \"{data.GameState.mapon}\" isn't in this game.");
+
+            foreach (var weapon in new[] { data.GameState.weapon, data.GameState.chosenweapon })
+            {
+                if (weapon != null && _inventoryManager.FindClass(weapon, "Weapon") == null)
+                    throw new InvalidDataException($"Weapon \"{weapon}\" isn't in this game.");
+            }
 
             var problem = _mapManager.CheckLevelState(data.Level, data.GameState.mapon);
             if (problem != null)

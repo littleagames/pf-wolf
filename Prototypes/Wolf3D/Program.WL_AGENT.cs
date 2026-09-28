@@ -61,6 +61,7 @@ internal partial class Program
         }
     }
 
+    // Indexed by the weapon's `weapon.slot` until the weapons' own Fire states drive attacks.
     internal static atkinf[,] attackinfo =
     {
         { new(6,0,1), new (6,2,2), new (6,0,3), new (6,-1,4) },
@@ -69,37 +70,52 @@ internal partial class Program
         { new(6,0,1), new (6,1,2), new (6,4,3), new (6,-1,4) },
     };
 
+    static atkinf AttackInfo(int frame) =>
+        attackinfo[gamestate.weapon != null ? Math.Clamp(WeaponSlot(gamestate.weapon), 0, attackinfo.GetLength(0) - 1) : 0, frame];
+
+    // The ready buttons pick a weapon slot (`weapon.slot`), in order.
+    private static readonly buttontypes[] SlotButtons =
+    [
+        buttontypes.bt_readyknife, buttontypes.bt_readypistol,
+        buttontypes.bt_readymachinegun, buttontypes.bt_readychaingun,
+    ];
+
+    // Only weapons with ammo can be switched to. Out of ammo for the picked weapon, the player
+    // keeps the fallback it forced (the knife) and the pick stands, so the weapon comes back
+    // when ammo turns up -- unless they switch to another weapon that still has ammo.
     internal static void CheckWeaponChange()
     {
-        weapontypes i, newWeapon = weapontypes.wp_none;
-
-        if (GetAmmo() == 0)                 // must use knife with no ammo
+        var usable = OwnedWeapons().Where(CanFire).ToList();
+        if (!CanFire(gamestate.chosenweapon) && gamestate.weapon != null)
+            usable.Remove(gamestate.weapon);
+        if (usable.Count == 0)
             return;
 
-        var bestWeapon = GetBestWeapon();
+        string? newWeapon = null;
+        var current = gamestate.weapon != null ? usable.IndexOf(gamestate.weapon) : -1;
+
         if (_inputManager.IsButtonPressed(buttontypes.bt_nextweapon) && !_inputManager.IsButtonHeld(buttontypes.bt_nextweapon))
         {
-            newWeapon = gamestate.weapon + 1;
-            if (newWeapon > bestWeapon) newWeapon = 0;
+            newWeapon = usable[(current + 1) % usable.Count];
         }
         else if (_inputManager.IsButtonPressed(buttontypes.bt_prevweapon) && !_inputManager.IsButtonHeld(buttontypes.bt_prevweapon))
         {
-            newWeapon = gamestate.weapon - 1;
-            if (newWeapon < 0) newWeapon = bestWeapon;
+            newWeapon = usable[current <= 0 ? usable.Count - 1 : current - 1];
         }
         else
         {
-            for (i = weapontypes.wp_knife; i <= bestWeapon; i++)
+            for (var slot = 0; slot < SlotButtons.Length; slot++)
             {
-                if (_inputManager.IsButtonPressed((buttontypes)((int)buttontypes.bt_readyknife + i - weapontypes.wp_knife)))
-                {
-                    newWeapon = i;
-                    break;
-                }
+                if (!_inputManager.IsButtonPressed(SlotButtons[slot]))
+                    continue;
+
+                // The best weapon with ammo in that slot, if any.
+                newWeapon = usable.Where(w => WeaponSlot(w) == slot).OrderBy(WeaponSelectionOrder).FirstOrDefault();
+                break;
             }
         }
 
-        if (newWeapon != weapontypes.wp_none)
+        if (newWeapon != null)
         {
             gamestate.weapon = gamestate.chosenweapon = newWeapon;
             DrawWeapon();
@@ -594,17 +610,88 @@ internal partial class Program
         }
     }
 
-    // The one ammo type every Wolf3D weapon draws on (`weapon.ammotype1` in weapons.yaml);
-    // the status bar and the legacy attack code only ever look at this stack.
-    private const string AmmoType = "Clip";
+    /*
+    =============================================================================
 
-    static int GetAmmo() => _inventoryManager.GetCount(AmmoType);
+                                    WEAPONS
+
+    Everything about a weapon comes from its actordefs class (weapons.yaml): `weapon.slot`
+    and `weapon.selectionorder` (lower is better) order and rank them, `weapon.ammotype1`/
+    `weapon.ammouse1` say what a shot costs, `attacksound` and `inventory.icon` are its
+    sound and status bar pic, and its Ready state's sprite is drawn in the view.
+
+    =============================================================================
+    */
+
+    static int WeaponSlot(string weapon) => _inventoryManager.GetIntProperty(weapon, "weapon.slot", 0);
+
+    static int WeaponSelectionOrder(string weapon) =>
+        _inventoryManager.GetIntProperty(weapon, "weapon.selectionorder", int.MaxValue);
+
+    /// <summary>The ammo a weapon shoots, or null for one that needs none (the knife).</summary>
+    static string? WeaponAmmoType(string? weapon)
+    {
+        if (weapon == null || _inventoryManager.GetIntProperty(weapon, "weapon.ammouse1", 0) <= 0)
+            return null;
+        var type = _inventoryManager.GetStringProperty(weapon, "weapon.ammotype1");
+        return string.IsNullOrEmpty(type) || type.Equals("None", StringComparison.OrdinalIgnoreCase) ? null : type;
+    }
+
+    /// <summary>Whether the player has the ammo for one shot of <paramref name="weapon"/>.</summary>
+    static bool CanFire(string? weapon)
+    {
+        if (weapon == null)
+            return false;
+        var ammoType = WeaponAmmoType(weapon);
+        return ammoType == null
+            || _inventoryManager.GetCount(ammoType) >= _inventoryManager.GetIntProperty(weapon, "weapon.ammouse1", 0);
+    }
+
+    /// <summary>Takes one shot's ammo for the weapon in hand (unless the ammo cheat is on).</summary>
+    static void UseAmmo()
+    {
+        var ammoType = WeaponAmmoType(gamestate.weapon);
+        if (ammoType != null && ammocheat == 0)
+            _inventoryManager.Take(ammoType, _inventoryManager.GetIntProperty(gamestate.weapon!, "weapon.ammouse1", 0));
+        DrawAmmo();
+    }
+
+    /// <summary>The held weapons, in slot order and worst to best within a slot.</summary>
+    static List<string> OwnedWeapons() =>
+        _inventoryManager.Items.Keys
+            .Where(item => _inventoryManager.FindClass(item, "Weapon") != null
+                && _inventoryManager.FindClass(item, "WeaponGiver") == null)
+            .OrderBy(WeaponSlot)
+            .ThenByDescending(WeaponSelectionOrder)
+            .ToList();
+
+    /// <summary>The best held weapon (lowest selectionorder), optionally only among those with ammo.</summary>
+    static string? BestWeapon(bool canFire = false) =>
+        OwnedWeapons()
+            .Where(w => !canFire || CanFire(w))
+            .OrderBy(WeaponSelectionOrder)
+            .FirstOrDefault();
+
+    // The status bar shows the ammo of the weapon the player picked, even while out of ammo
+    // forces a fallback; with an ammo-less weapon picked, the ammo of the best one that has some.
+    static string? DisplayAmmoType() =>
+        WeaponAmmoType(gamestate.chosenweapon)
+        ?? OwnedWeapons().OrderBy(WeaponSelectionOrder).Select(WeaponAmmoType).FirstOrDefault(t => t != null);
+
+    static int GetAmmo() => DisplayAmmoType() is { } type ? _inventoryManager.GetCount(type) : 0;
 
     static void DrawAmmo()
     {
         if (viewsize == 21 && ingame) return;
         LatchNumber(27, 16, 2, GetAmmo());
     }
+
+    /// <summary>Gives <paramref name="amount"/> of every ammo type; returns how much was taken in all.</summary>
+    internal static int GiveAllAmmo(int amount) =>
+        _inventoryManager.GetClassesDerivedFrom("Ammo")
+            .Select(_inventoryManager.GetItemType)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Sum(type => GiveAmmo(type, amount));
 
 /*
 ===============
@@ -618,9 +705,12 @@ internal partial class Program
 
     internal static int GiveAmmo(string ammoType, int ammo)
     {
-        var knifeWasOut = GetAmmo() == 0;
         var added = _inventoryManager.Give(ammoType, ammo);
-        if (added > 0 && knifeWasOut && gamestate.attackframe == 0)
+
+        // Out of ammo had forced a fallback (the knife): take the picked weapon back up now
+        // it can shoot, unless mid-attack.
+        if (added > 0 && gamestate.weapon != null && gamestate.weapon != gamestate.chosenweapon
+            && gamestate.attackframe == 0 && CanFire(gamestate.chosenweapon))
         {
             gamestate.weapon = gamestate.chosenweapon;
             DrawWeapon();
@@ -819,9 +909,11 @@ internal partial class Program
     static void DrawWeapon()
     {
         if (viewsize == 21 && ingame) return;
+        if (gamestate.weapon == null) return;
 
-        string[] weaponPic = ["knife", "gun", "machinegun", "gatlinggun"];
-        StatusDrawPic(weaponPic[(int)gamestate.weapon], 32, 8);
+        var icon = _inventoryManager.GetStringProperty(gamestate.weapon, "inventory.icon");
+        if (!string.IsNullOrEmpty(icon))
+            StatusDrawPic(icon, 32, 8);
     }
 /*
 ==================
@@ -831,25 +923,9 @@ internal partial class Program
 ==================
 */
 
-    // The weapon item behind each legacy weapontypes slot, for the cheats and the starting
-    // loadout. Pickups on the map don't use this: they carry their own `weapon.slot`.
+    // The legacy Wolf3D weapon set, for the starting loadout and the cheats (knife and pistol
+    // to start with, all four for "give weapons"). Pickups on the map don't use this.
     private static readonly string[] WeaponSlotItems = ["Knife", "Pistol", "MachineGun", "GatlingGun"];
-
-    /// <summary>
-    /// The highest weapon slot the player owns, from each held weapon's `weapon.slot`.
-    /// Blue (Spear of Destiny) reskins share their base weapon's slot.
-    /// </summary>
-    internal static weapontypes GetBestWeapon()
-    {
-        var best = weapontypes.wp_none;
-        foreach (var item in _inventoryManager.Items.Keys)
-        {
-            var slot = (weapontypes)_inventoryManager.GetIntProperty(item, "weapon.slot", -1);
-            if (slot > best)
-                best = slot;
-        }
-        return best;
-    }
 
     /// <summary>
     /// New game / respawn loadout: knife, pistol and starting ammo, with the pistol selected.
@@ -857,14 +933,16 @@ internal partial class Program
     internal static void GiveStartingInventory()
     {
         _inventoryManager.Clear();
-        _inventoryManager.Give(WeaponSlotItems[(int)weapontypes.wp_knife], 1);
-        _inventoryManager.Give(WeaponSlotItems[(int)weapontypes.wp_pistol], 1);
-        _inventoryManager.Give(AmmoType, STARTAMMO);
-        gamestate.weapon = gamestate.chosenweapon = weapontypes.wp_pistol;
+        _inventoryManager.Give(WeaponSlotItems[0], 1);
+        _inventoryManager.Give(WeaponSlotItems[1], 1);
+        if (WeaponAmmoType(WeaponSlotItems[1]) is { } ammoType)
+            _inventoryManager.Give(ammoType, STARTAMMO);
+        gamestate.weapon = gamestate.chosenweapon = _inventoryManager.GetItemType(WeaponSlotItems[1]);
     }
 
-    internal static void GiveWeapon(weapontypes weapon) =>
-        TryGiveWeapon(WeaponSlotItems[(int)weapon], AmmoType, 6);
+    /// <summary>Gives a weapon by class name with a pickup's worth (6) of its ammo.</summary>
+    internal static void GiveWeapon(string weapon) =>
+        TryGiveWeapon(weapon, 6);
 
     private static bool TryGiveWeapon(Entities.Actors.Weapon pickup)
     {
@@ -872,33 +950,30 @@ internal partial class Program
         var weaponName = pickup.Properties.TryGetValue("weapongiver.weapon", out var given)
             ? given.ToString() ?? pickup.Name
             : pickup.Name;
-        var ammoType = pickup.Properties.TryGetValue("weapon.ammotype1", out var type)
-            ? type.ToString() ?? AmmoType
-            : AmmoType;
         var ammoGive = pickup.Properties.TryGetValue("weapon.ammogive1", out var ammo)
             ? Convert.ToInt32(ammo)
             : 0;
 
-        return TryGiveWeapon(weaponName, ammoType, ammoGive);
+        return TryGiveWeapon(weaponName, ammoGive);
     }
 
-    // Weapon pickups always come with ammo (vanilla GiveWeapon gave 6), and a weapon that's
-    // better than anything held becomes the selected one. Returns false only when the player
-    // already owned the weapon and had no room for its ammo.
-    private static bool TryGiveWeapon(string weaponName, string ammoType, int ammoGive)
+    // Weapon pickups always come with ammo (vanilla GiveWeapon gave 6) of the weapon's own
+    // type, and a weapon that's better than anything held becomes the selected one. Returns
+    // false only when the player already owned the weapon and had no room for its ammo.
+    private static bool TryGiveWeapon(string weaponName, int ammoGive)
     {
-        var oldBest = GetBestWeapon();
+        var oldBest = BestWeapon();
 
-        var gotAmmo = ammoGive > 0
-            && !string.Equals(ammoType, "None", StringComparison.OrdinalIgnoreCase)
-            && GiveAmmo(ammoType, ammoGive) > 0;
+        var ammoType = WeaponAmmoType(weaponName);
+        var gotAmmo = ammoGive > 0 && ammoType != null && GiveAmmo(ammoType, ammoGive) > 0;
         var gotWeapon = _inventoryManager.Give(weaponName, 1) > 0;
 
-        var newBest = GetBestWeapon();
-        if (newBest > oldBest)
+        var newBest = BestWeapon();
+        if (newBest != null && newBest != oldBest)
             gamestate.weapon = gamestate.chosenweapon = newBest;
 
         DrawWeapon();
+        DrawAmmo();
         return gotWeapon || gotAmmo;
     }
 
@@ -998,6 +1073,9 @@ internal partial class Program
 
     internal static void Cmd_Fire()
     {
+        if (gamestate.weapon == null)
+            return;
+
         _inputManager.SetButtonHeld(buttontypes.bt_attack, true);
 
         gamestate.weaponframe = 0;
@@ -1005,10 +1083,8 @@ internal partial class Program
         NewActorState(player, PlayerPawn.AttackState);
 
         gamestate.attackframe = 0;
-        gamestate.attackcount =
-            attackinfo[(int)gamestate.weapon, gamestate.attackframe].tics;
-        gamestate.weaponframe =
-            attackinfo[(int)gamestate.weapon, gamestate.attackframe].frame;
+        gamestate.attackcount = AttackInfo(gamestate.attackframe).tics;
+        gamestate.weaponframe = AttackInfo(gamestate.attackframe).frame;
     }
 
     //===========================================================================
@@ -1080,53 +1156,44 @@ internal partial class Program
         gamestate.attackcount -= (short)tics;
         while (gamestate.attackcount <= 0)
         {
-            cur = attackinfo[(int)gamestate.weapon, gamestate.attackframe];
+            cur = AttackInfo(gamestate.attackframe);
             switch (cur.attack)
             {
                 case -1:
                     NewActorState(ob, PlayerPawn.SpawnState);
-                    if (GetAmmo() == 0)
+                    // Out of ammo for the picked weapon: fall back to the best one that can
+                    // still fire (the knife); otherwise make sure the picked one is in hand.
+                    var inHand = CanFire(gamestate.chosenweapon) ? gamestate.chosenweapon : BestWeapon(canFire: true);
+                    if (inHand != null && inHand != gamestate.weapon)
                     {
-                        gamestate.weapon = weapontypes.wp_knife;
+                        gamestate.weapon = inHand;
                         DrawWeapon();
-                    }
-                    else
-                    {
-                        if (gamestate.weapon != gamestate.chosenweapon)
-                        {
-                            gamestate.weapon = gamestate.chosenweapon;
-                            DrawWeapon();
-                        }
                     }
                     gamestate.attackframe = gamestate.weaponframe = 0;
                     return;
 
                 case 4:
-                    if (GetAmmo() == 0)
+                    if (!CanFire(gamestate.weapon))
                         break;
                     if (_inputManager.IsButtonPressed(buttontypes.bt_attack))
                         gamestate.attackframe -= 2;
                     // case passthrough is not a thing in C#, repeating case 1 code
-                    if (GetAmmo() == 0)
+                    if (!CanFire(gamestate.weapon))
                     {       // can only happen with chain gun
                         gamestate.attackframe++;
                         break;
                     }
                     GunAttack(ob);
-                    if (ammocheat == 0)
-                        _inventoryManager.Take(AmmoType, 1);
-                    DrawAmmo();
+                    UseAmmo();
                     break;
                 case 1:
-                    if (GetAmmo() == 0)
+                    if (!CanFire(gamestate.weapon))
                     {       // can only happen with chain gun
                         gamestate.attackframe++;
                         break;
                     }
                     GunAttack(ob);
-                    if (ammocheat == 0)
-                        _inventoryManager.Take(AmmoType, 1);
-                    DrawAmmo();
+                    UseAmmo();
                     break;
 
                 case 2:
@@ -1134,15 +1201,14 @@ internal partial class Program
                     break;
 
                 case 3:
-                    if (GetAmmo() != 0 && _inputManager.IsButtonPressed(buttontypes.bt_attack))
+                    if (CanFire(gamestate.weapon) && _inputManager.IsButtonPressed(buttontypes.bt_attack))
                         gamestate.attackframe -= 2;
                     break;
             }
 
             gamestate.attackcount += cur.tics;
             gamestate.attackframe++;
-            gamestate.weaponframe =
-                attackinfo[(int)gamestate.weapon, gamestate.attackframe].frame;
+            gamestate.weaponframe = AttackInfo(gamestate.attackframe).frame;
         }
     }
 
@@ -1167,9 +1233,16 @@ internal partial class Program
         return candidates;
     }
 
+    // The weapon in hand's `attacksound`.
+    static void PlayAttackSound()
+    {
+        if (gamestate.weapon != null && _inventoryManager.GetStringProperty(gamestate.weapon, "attacksound") is { Length: > 0 } sound)
+            _audioManager.Play(sound);
+    }
+
     internal static void KnifeAttack(Entities.Actors.Actor ob)
     {
-        _audioManager.Play("weapon/knife/attack");
+        PlayAttackSound();
 
         var closest = FindShootCandidates().FirstOrDefault(c => c.TransX <= 0x18000L);
         if (closest == null)
@@ -1183,18 +1256,7 @@ internal partial class Program
         int damage;
         int dx, dy, dist;
 
-        switch (gamestate.weapon)
-        {
-            case weapontypes.wp_pistol:
-                _audioManager.Play("weapon/pistol/attack");
-                break;
-            case weapontypes.wp_machinegun:
-                _audioManager.Play("weapon/machine/attack");
-                break;
-            case weapontypes.wp_chaingun:
-                _audioManager.Play("weapon/gatling/attack");
-                break;
-        }
+        PlayAttackSound();
 
         madenoise = true;
 

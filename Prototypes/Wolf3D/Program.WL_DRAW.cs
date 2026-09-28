@@ -1314,16 +1314,8 @@ internal partial class Program
         }
     }
 
-    static string[][] weaponscale = {
-        ["KNIFA0", "KNIFB0", "KNIFC0", "KNIFD0", "KNIFE0"],
-        ["PISGA0", "PISGB0", "PISGC0", "PISGD0", "PISGE0"],
-        ["MCHGA0", "MCHGB0", "MCHGC0", "MCHGD0", "MCHGE0"],
-        ["CHGGA0", "CHGGB0", "CHGGC0", "CHGGD0", "CHGGE0"]
-    };
-
     internal static void DrawPlayerWeapon()
     {
-        string shapenum;
         if (gamestate.victoryflag)
         {
             if (player.CurrentState?.StateName == PlayerPawn.DeathCamState && (GameEngineManager.GetTimeCount() & 32) != 0)
@@ -1331,10 +1323,13 @@ internal partial class Program
             return;
         }
 
-        if (gamestate.weapon != weapontypes.wp_none)
+        // The weapon's Ready sprite, frame A while ready and B-E through an attack
+        // (weaponframe 0-4).
+        if (gamestate.weapon != null
+            && _inventoryManager.GetStates(gamestate.weapon).TryGetValue("Ready", out var ready)
+            && !string.IsNullOrEmpty(ready.Sprite))
         {
-            shapenum = weaponscale[(int)gamestate.weapon][gamestate.weaponframe];
-            SimpleScaleShape(viewwidth / 2, shapenum, viewheight + 1);
+            SimpleScaleShape(viewwidth / 2, $"{ready.Sprite}{(char)('A' + gamestate.weaponframe)}0", viewheight + 1);
         }
 
         if (demorecord || demoplayback)

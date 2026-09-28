@@ -257,12 +257,12 @@ internal partial class Program
         if (_inputManager.IsKeyDown(ScanCodes.sc_M) && _inputManager.IsKeyDown(ScanCodes.sc_L) && _inputManager.IsKeyDown(ScanCodes.sc_I))
         {
             gamestate.health = 100;
-            _inventoryManager.Give(AmmoType, 99);
             _inventoryManager.Give("GoldKey", 1);
             _inventoryManager.Give("SilverKey", 1);
             gamestate.score = 0;
             gamestate.TimeCount += (int)42000L;
-            GiveWeapon(weapontypes.wp_chaingun);
+            GiveWeapon("GatlingGun");
+            GiveAllAmmo(99);
             DrawWeapon();
             DrawHealth();
             DrawKeys();
