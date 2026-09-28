@@ -6,8 +6,8 @@ namespace Wolf3D.Entities.Actors;
 /// Dispatches the `Action`/`Think` name strings carried on <see cref="ActorStateFrame"/> (parsed
 /// from actordefs YAML, e.g. `A_GiveInventory("Clip", 25)`) to real C# handlers. Handlers are
 /// registered by name at startup; an unregistered name is logged and skipped rather than
-/// throwing, since most action names authored today (e.g. weapon Ready/Fire behavior) don't have
-/// a handler wired up yet.
+/// throwing, since some action names authored today (e.g. the weapons' A_Raise/A_Lower) don't
+/// have a handler wired up yet.
 /// </summary>
 internal static class ActorActionRegistry
 {

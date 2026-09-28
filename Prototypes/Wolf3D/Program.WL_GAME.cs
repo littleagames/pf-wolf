@@ -483,10 +483,8 @@ internal partial class Program
             gamestate.treasuretotal =
             gamestate.secretcount =
             gamestate.killcount =
-            gamestate.treasurecount =
-            gamestate.attackframe =
-            gamestate.attackcount =
-            gamestate.weaponframe = 0;
+            gamestate.treasurecount = 0;
+            weaponSprite = null;            // the weapon in hand starts on its Ready state
             pwallstate =
             pwallpos = 0;
             facetimes = 0;
@@ -718,8 +716,7 @@ internal partial class Program
             gamestate.health = 100;
             GiveStartingInventory();
             pwallstate = pwallpos = 0;
-            gamestate.attackframe = gamestate.attackcount =
-                gamestate.weaponframe = 0;
+            weaponSprite = null;            // the weapon in hand starts on its Ready state
 
             if (viewsize != 21)
             {

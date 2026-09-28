@@ -1,5 +1,7 @@
 # Player weapon states follow the engine's state rules: tics are 70Hz, a frame's action runs
 # when the frame ENDS, 0 tics ends the frame the moment it's entered, and -1 holds forever.
+# A state without a next-state loops back to its own first frame (there's no ZDoom-style fall
+# through into the next label), so Fire names Hold explicitly.
 # The Fire/Hold timings reproduce vanilla attackinfo: every frame lasts 6 tics, and the
 # attack fires at the end of C (end of D too for the gatling gun's second shot).
 WolfWeapon:
@@ -160,6 +162,7 @@ MachineGun:
       - sprite: MCHG
         frames: [B]
         tics-per-frame: 6
+        next-state: Hold
     Hold:
       - sprite: MCHG
         frames: [C]
@@ -197,6 +200,7 @@ BlueAK47:
       - sprite: BAKG
         frames: [B]
         tics-per-frame: 6
+        next-state: Hold
     Hold:
       - sprite: BAKG
         frames: [C]
@@ -239,6 +243,7 @@ GatlingGun:
       - sprite: CHGG
         frames: [B]
         tics-per-frame: 6
+        next-state: Hold
     Hold:
       - sprite: CHGG
         frames: [C]
@@ -281,6 +286,7 @@ BlueGatlingGun:
       - sprite: BGTG
         frames: [B]
         tics-per-frame: 6
+        next-state: Hold
     Hold:
       - sprite: BGTG
         frames: [C]

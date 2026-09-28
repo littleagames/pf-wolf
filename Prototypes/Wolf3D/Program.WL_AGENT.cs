@@ -49,30 +49,6 @@ internal partial class Program
     =============================================================================
     */
 
-    internal struct atkinf
-    {
-        public short tics, attack, frame;
-
-        public atkinf(short tics, short attack, short frame)
-        {
-            this.tics = tics;
-            this.attack = attack;
-            this.frame = frame;
-        }
-    }
-
-    // Indexed by the weapon's `weapon.slot` until the weapons' own Fire states drive attacks.
-    internal static atkinf[,] attackinfo =
-    {
-        { new(6,0,1), new (6,2,2), new (6,0,3), new (6,-1,4) },
-        { new(6,0,1), new (6,1,2), new (6,0,3), new (6,-1,4) },
-        { new(6,0,1), new (6,1,2), new (6,3,3), new (6,-1,4) },
-        { new(6,0,1), new (6,1,2), new (6,4,3), new (6,-1,4) },
-    };
-
-    static atkinf AttackInfo(int frame) =>
-        attackinfo[gamestate.weapon != null ? Math.Clamp(WeaponSlot(gamestate.weapon), 0, attackinfo.GetLength(0) - 1) : 0, frame];
-
     // The ready buttons pick a weapon slot (`weapon.slot`), in order.
     private static readonly buttontypes[] SlotButtons =
     [
@@ -505,7 +481,9 @@ internal partial class Program
 
         // The player's own think states (PlayerPawn), ticked by MapManager.DoActor.
         ActorActionRegistry.Register("T_Player", T_Player);
-        ActorActionRegistry.Register("T_Attack", T_Attack);
+
+        // The weapon in hand's states (Program.PlayerWeapon.cs).
+        RegisterWeaponActions();
 
         // mapdefs trigger actions, run when the player uses a trigger's tile (Cmd_Use) or steps
         // onto a walk-over one (Thrust)
@@ -705,16 +683,9 @@ internal partial class Program
 
     internal static int GiveAmmo(string ammoType, int ammo)
     {
+        // Out of ammo had forced a fallback (the knife): A_WeaponReady takes the picked weapon
+        // back up once the fallback is idle again.
         var added = _inventoryManager.Give(ammoType, ammo);
-
-        // Out of ammo had forced a fallback (the knife): take the picked weapon back up now
-        // it can shoot, unless mid-attack.
-        if (added > 0 && gamestate.weapon != null && gamestate.weapon != gamestate.chosenweapon
-            && gamestate.attackframe == 0 && CanFire(gamestate.chosenweapon))
-        {
-            gamestate.weapon = gamestate.chosenweapon;
-            DrawWeapon();
-        }
         DrawAmmo();
         return added;
     }
@@ -1071,22 +1042,6 @@ internal partial class Program
         { }// _audioManager.Play("DONOTHING");
     }
 
-    internal static void Cmd_Fire()
-    {
-        if (gamestate.weapon == null)
-            return;
-
-        _inputManager.SetButtonHeld(buttontypes.bt_attack, true);
-
-        gamestate.weaponframe = 0;
-
-        NewActorState(player, PlayerPawn.AttackState);
-
-        gamestate.attackframe = 0;
-        gamestate.attackcount = AttackInfo(gamestate.attackframe).tics;
-        gamestate.weaponframe = AttackInfo(gamestate.attackframe).frame;
-    }
-
     //===========================================================================
 
     /*
@@ -1105,41 +1060,24 @@ internal partial class Program
         }
 
         UpdateFace();
-        CheckWeaponChange();
 
-        if (_inputManager.IsButtonPressed(buttontypes.bt_use))
-            Cmd_Use();
-
-        if (_inputManager.IsButtonPressed(buttontypes.bt_attack) && !_inputManager.IsButtonHeld(buttontypes.bt_attack))
-            Cmd_Fire();
-
-        ControlMovement(ob);
-        if (gamestate.victoryflag)              // watching the BJ actor
-            return;
-
-        plux = (ushort)(player.X >> UNSIGNEDSHIFT);                     // scale to fit in unsigned
-        pluy = (ushort)(player.Y >> UNSIGNEDSHIFT);
-        player.TileX = (byte)(player.X >> (int)MapConstants.TILESHIFT);                // scale to tile values
-        player.TileY = (byte)(player.Y >> (int)MapConstants.TILESHIFT);
-    }
-
-    internal static void T_Attack(Entities.Actors.Actor ob)
-    {
-        atkinf cur;
-        UpdateFace();
-
-        if (gamestate.victoryflag)              // watching the BJ actor
+        if (IsWeaponReady())
         {
-            VictorySpin();
-            return;
+            CheckWeaponChange();
+
+            if (_inputManager.IsButtonPressed(buttontypes.bt_use))
+                Cmd_Use();
         }
+        else
+        {
+            // Mid-attack, a fresh press of use or fire is dropped rather than kept for later
+            // (vanilla T_Attack); fire held down from before still counts for A_ReFire.
+            if (_inputManager.IsButtonPressed(buttontypes.bt_use) && !_inputManager.IsButtonHeld(buttontypes.bt_use))
+                _inputManager.SetButtonPressed(buttontypes.bt_use, false);
 
-
-        if (_inputManager.IsButtonPressed(buttontypes.bt_use) && !_inputManager.IsButtonHeld(buttontypes.bt_use))
-            _inputManager.SetButtonPressed(buttontypes.bt_use, false);
-
-        if (_inputManager.IsButtonPressed(buttontypes.bt_attack) && !_inputManager.IsButtonHeld(buttontypes.bt_attack))
-            _inputManager.SetButtonPressed(buttontypes.bt_attack, false);
+            if (_inputManager.IsButtonPressed(buttontypes.bt_attack) && !_inputManager.IsButtonHeld(buttontypes.bt_attack))
+                _inputManager.SetButtonPressed(buttontypes.bt_attack, false);
+        }
 
         ControlMovement(ob);
         if (gamestate.victoryflag)              // watching the BJ actor
@@ -1150,66 +1088,8 @@ internal partial class Program
         player.TileX = (byte)(player.X >> (int)MapConstants.TILESHIFT);                // scale to tile values
         player.TileY = (byte)(player.Y >> (int)MapConstants.TILESHIFT);
 
-        //
-        // change frame and fire
-        //
-        gamestate.attackcount -= (short)tics;
-        while (gamestate.attackcount <= 0)
-        {
-            cur = AttackInfo(gamestate.attackframe);
-            switch (cur.attack)
-            {
-                case -1:
-                    NewActorState(ob, PlayerPawn.SpawnState);
-                    // Out of ammo for the picked weapon: fall back to the best one that can
-                    // still fire (the knife); otherwise make sure the picked one is in hand.
-                    var inHand = CanFire(gamestate.chosenweapon) ? gamestate.chosenweapon : BestWeapon(canFire: true);
-                    if (inHand != null && inHand != gamestate.weapon)
-                    {
-                        gamestate.weapon = inHand;
-                        DrawWeapon();
-                    }
-                    gamestate.attackframe = gamestate.weaponframe = 0;
-                    return;
-
-                case 4:
-                    if (!CanFire(gamestate.weapon))
-                        break;
-                    if (_inputManager.IsButtonPressed(buttontypes.bt_attack))
-                        gamestate.attackframe -= 2;
-                    // case passthrough is not a thing in C#, repeating case 1 code
-                    if (!CanFire(gamestate.weapon))
-                    {       // can only happen with chain gun
-                        gamestate.attackframe++;
-                        break;
-                    }
-                    GunAttack(ob);
-                    UseAmmo();
-                    break;
-                case 1:
-                    if (!CanFire(gamestate.weapon))
-                    {       // can only happen with chain gun
-                        gamestate.attackframe++;
-                        break;
-                    }
-                    GunAttack(ob);
-                    UseAmmo();
-                    break;
-
-                case 2:
-                    KnifeAttack(ob);
-                    break;
-
-                case 3:
-                    if (CanFire(gamestate.weapon) && _inputManager.IsButtonPressed(buttontypes.bt_attack))
-                        gamestate.attackframe -= 2;
-                    break;
-            }
-
-            gamestate.attackcount += cur.tics;
-            gamestate.attackframe++;
-            gamestate.weaponframe = AttackInfo(gamestate.attackframe).frame;
-        }
+        // The weapon's Ready/Fire states (Program.PlayerWeapon.cs): starts and plays attacks
+        TickWeapon();
     }
 
     // The player's targets are now exclusively the new Entities.Actors.Actor enemies

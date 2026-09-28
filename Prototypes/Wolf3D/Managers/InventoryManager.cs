@@ -1,5 +1,4 @@
 using Wolf3D.Assets;
-using Wolf3D.Entities.Actors;
 
 namespace Wolf3D.Managers;
 
@@ -14,8 +13,6 @@ internal class InventoryManager
     private readonly Lazy<AssetManager> _assetManager;
     private readonly Dictionary<string, int> _items = new(StringComparer.OrdinalIgnoreCase);
     private ActorMetadata? _metadata;
-    private readonly Dictionary<string, IReadOnlyDictionary<string, ActorStateFrame>> _states = new(StringComparer.OrdinalIgnoreCase);
-
     public InventoryManager(Lazy<AssetManager> assetManager)
     {
         _assetManager = assetManager;
@@ -41,19 +38,13 @@ internal class InventoryManager
         Metadata.TryGetProperty(item, key, out var value) ? value?.ToString() : null;
 
     /// <summary>
-    /// An item class's resolved states, inherited ones included (e.g. a weapon's Ready/Fire).
-    /// Empty for an unknown class. Built once per class.
+    /// A fresh actor of an item class, with its inherited properties and states (e.g. the
+    /// weapon in hand, run through its Ready/Fire states). Null for an unknown class.
     /// </summary>
-    public IReadOnlyDictionary<string, ActorStateFrame> GetStates(string item)
+    public Entities.Actors.Actor? CreateActor(string item)
     {
-        if (!_states.TryGetValue(item, out var states))
-        {
-            states = Metadata.Actors.TryGetValue(item, out var data)
-                ? Metadata.CreateActor(item, data).ResolvedStates
-                : new Dictionary<string, ActorStateFrame>();
-            _states[item] = states;
-        }
-        return states;
+        var match = Metadata.Actors.Keys.FirstOrDefault(k => string.Equals(k, item, StringComparison.OrdinalIgnoreCase));
+        return match != null ? Metadata.CreateActor(match, Metadata.Actors[match]) : null;
     }
 
     /// <summary>The actordefs class names that descend from <paramref name="baseClass"/> (e.g. "Weapon").</summary>

@@ -36,7 +36,9 @@ internal partial class Program
     // 2: the patrol arrows became PatrolPoint actors, which version-1 saves' actor lists lack
     // 3: the automap's seen tiles follow the rest of the body; version-2 saves load with none seen
     // 4: the weapon in hand and the chosen one are weapon class names, not weapontypes numbers
-    private const int SaveVersion = 4;
+    // 5: the weapon's state (mid-attack or ready) follows the seen tiles; gamestate loses the
+    //    old attack numbers. Older saves load with the weapon ready.
+    private const int SaveVersion = 5;
     private const int OldestLoadableSaveVersion = 2;
 
     internal static string GetSaveGamePath(int slot) =>
@@ -158,6 +160,11 @@ internal partial class Program
         bw.Write(_mapManager.GetSavedActors().FindIndex(a => ReferenceEquals(a, LastAttacker)));
 
         bw.Write(_mapManager.GetSeenBytes());
+
+        var weapon = SyncWeaponSprite();
+        bw.Write(weapon != null);
+        if (weapon != null)
+            Entities.Actors.ActorSnapshot.Capture(weapon).Write(bw);
     }
 
     /// <summary>Everything a save's body holds, read without changing any game state.</summary>
@@ -176,7 +183,8 @@ internal partial class Program
         controldirs PwallDir,
         byte PwallTile,
         int LastAttacker,
-        byte[]? Seen);
+        byte[]? Seen,
+        Entities.Actors.ActorSnapshot? Weapon);
 
     private static SaveGameData ReadSaveBody(BinaryReader br, int version)
     {
@@ -215,7 +223,8 @@ internal partial class Program
             PwallDir: (controldirs)br.ReadByte(),
             PwallTile: br.ReadByte(),
             LastAttacker: br.ReadInt32(),
-            Seen: version >= 3 ? ReadExactly(br, MapManager.MAPAREA) : null);
+            Seen: version >= 3 ? ReadExactly(br, MapManager.MAPAREA) : null,
+            Weapon: version >= 5 && br.ReadBoolean() ? Entities.Actors.ActorSnapshot.Read(br) : null);
     }
 
     // BinaryReader.ReadBytes quietly returns fewer bytes at the end of the stream.
@@ -315,6 +324,14 @@ internal partial class Program
 
         LastAttacker = data.LastAttacker >= 0 && data.LastAttacker < actors.Count ? actors[data.LastAttacker] : null;
         facetimes = 0;
+
+        // The weapon picks up where it was (mid-attack, say); older saves start it ready.
+        weaponSprite = null;
+        if (SyncWeaponSprite() is { } sprite && data.Weapon != null
+            && string.Equals(data.Weapon.ClassName, sprite.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            data.Weapon.ApplyTo(sprite);
+        }
 
         if (!checksumOk)
         {

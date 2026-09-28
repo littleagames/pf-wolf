@@ -77,6 +77,9 @@ internal record Actor : Thinker
     // nested walk -- the outer loop carries on from whatever state the action picked.
     private bool _advancingFrames;
 
+    // A frame an action asked to go to next (JumpTo), taken in place of the ended frame's Next.
+    private ActorStateFrame? _pendingJump;
+
     /// <summary>
     /// Puts the actor on <paramref name="frame"/> and arms its countdown, without running
     /// anything. A 0-tic frame armed this way is ended by DoActor on the actor's next tic;
@@ -97,6 +100,19 @@ internal record Actor : Thinker
         ArmState(frame);
         if (frame.TicTime == 0 && !_advancingFrames)
             AdvanceFrames();
+    }
+
+    /// <summary>
+    /// ZDoom-style state jump (A_WeaponReady, A_ReFire): the actor goes to exactly
+    /// <paramref name="frame"/>. From inside an action it replaces the ended frame's Next, unlike
+    /// SetState there, which (as in the original DoActor) carries on from the new state's Next.
+    /// </summary>
+    internal void JumpTo(ActorStateFrame frame)
+    {
+        if (_advancingFrames)
+            _pendingJump = frame;
+        else
+            SetState(frame);
     }
 
     /// <summary>
@@ -122,13 +138,16 @@ internal record Actor : Thinker
                     return;
                 }
 
+                _pendingJump = null;
                 ActorActionRegistry.Invoke(state.Action, this);
                 if (IsRemoved)
                     return;
 
                 // An action may switch state itself (the Angel's A_Relaunch, a Spectre's A_Dormant);
-                // like the original DoActor, carry on from the state it left rather than the old one
-                var next = (CurrentState ?? state).Next;
+                // like the original DoActor, carry on from the state it left rather than the old one.
+                // A JumpTo lands on its frame instead.
+                var next = _pendingJump ?? (CurrentState ?? state).Next;
+                _pendingJump = null;
                 if (next == null)
                     return; // the resolver never leaves Next null in practice; defensive only.
                 CurrentState = next;

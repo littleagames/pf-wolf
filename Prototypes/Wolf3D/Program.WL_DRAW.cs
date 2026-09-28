@@ -1323,14 +1323,9 @@ internal partial class Program
             return;
         }
 
-        // The weapon's Ready sprite, frame A while ready and B-E through an attack
-        // (weaponframe 0-4).
-        if (gamestate.weapon != null
-            && _inventoryManager.GetStates(gamestate.weapon).TryGetValue("Ready", out var ready)
-            && !string.IsNullOrEmpty(ready.Sprite))
-        {
-            SimpleScaleShape(viewwidth / 2, $"{ready.Sprite}{(char)('A' + gamestate.weaponframe)}0", viewheight + 1);
-        }
+        // The frame the weapon's states are on (Program.PlayerWeapon.cs)
+        if (WeaponShapeName() is { } shape)
+            SimpleScaleShape(viewwidth / 2, shape, viewheight + 1);
 
         if (demorecord || demoplayback)
             SimpleScaleShape(viewwidth / 2, "DEMOA", viewheight + 1);

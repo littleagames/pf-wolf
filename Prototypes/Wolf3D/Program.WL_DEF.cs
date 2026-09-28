@@ -106,7 +106,6 @@ internal class gametype
     public string? weapon, chosenweapon;
 
     public short faceframe;
-    public short attackframe, attackcount, weaponframe;
 
     public short cluster, secretcount, treasurecount, killcount,
                 secrettotal, treasuretotal, killtotal;
@@ -129,6 +128,16 @@ internal class gametype
         return index >= 0 && index < LegacyWeapons.Length ? LegacyWeapons[index] : null;
     }
 
+    // Before version 5 the attack animation was three numbers here (attackframe, attackcount,
+    // weaponframe); the weapon's own state is saved separately now, so they're skipped.
+    private static short ReadFaceFrame(BinaryReader br, int version)
+    {
+        var faceframe = br.ReadInt16();
+        if (version < 5)
+            br.ReadBytes(3 * sizeof(short));
+        return faceframe;
+    }
+
     public static gametype Read(BinaryReader br, int version) => new()
     {
         difficulty = (difficultytypes)br.ReadInt16(),
@@ -140,10 +149,7 @@ internal class gametype
         health = br.ReadInt16(),
         weapon = ReadWeapon(br, version),
         chosenweapon = ReadWeapon(br, version),
-        faceframe = br.ReadInt16(),
-        attackframe = br.ReadInt16(),
-        attackcount = br.ReadInt16(),
-        weaponframe = br.ReadInt16(),
+        faceframe = ReadFaceFrame(br, version),
         cluster = br.ReadInt16(),
         secretcount = br.ReadInt16(),
         treasurecount = br.ReadInt16(),
@@ -169,9 +175,6 @@ internal class gametype
         bw.Write(weapon ?? "");
         bw.Write(chosenweapon ?? "");
         bw.Write(faceframe);
-        bw.Write(attackframe);
-        bw.Write(attackcount);
-        bw.Write(weaponframe);
         bw.Write(cluster);
         bw.Write(secretcount);
         bw.Write(treasurecount);
