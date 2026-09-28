@@ -84,6 +84,13 @@ internal class PfWolfPk3Loader
                 }
                 continue;
             }
+            if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("fonts.yaml", StringComparison.OrdinalIgnoreCase))
+            {
+                var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
+                var data = YamlDataEntryLoader.Read<Dictionary<string, FontDefinition>>(entry.Open());
+                MergeAsset(uniqueName, new FontDefinitionsAsset(data));
+                continue;
+            }
             if (fullName.StartsWith("language/")
                 || (fullName.StartsWith("gamepacks/") && fullName.Contains("/language/")))
             {

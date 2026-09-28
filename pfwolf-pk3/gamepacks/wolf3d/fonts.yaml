@@ -1,0 +1,43 @@
+# Fonts text can be printed in, by name. A font not listed here is looked up as a VGAGRAPH
+# font chunk of that name. Spear of Destiny starts from these; a gamepacks/spear/fonts.yaml
+# would replace them font by font.
+#
+# type: vga       A Wolf3D VGAGRAPH font chunk (one-bit glyphs drawn in the text's color)
+#   source:       The chunk's name in raw-data-map (defaults to the font's own name)
+#
+# type: graphic   A picture for each character, drawn in the picture's own colors
+#   pattern:      Picture name for each of chars, {code} standing for the character's code
+#                 ({code:000} pads it to three digits)
+#   chars:        The characters pattern makes glyphs for
+#   glyphs:       "<char>": <picture>, as well as or instead of the pattern's
+#   advances:     "<char>": <pixels>, for characters that move along more or less than cell-width
+#   cell-width:   How far each character moves along (defaults to each picture's width)
+#   space-width:  How far a character without a glyph moves along (defaults to the space's, or cell-width)
+#   height, line-height:  Glyph height (defaults to the tallest picture) and line spacing (defaults to height)
+#   upper-case:   Lower case letters use the upper case glyphs
+
+SmallFont:
+  type: vga
+
+LargeFont:
+  type: vga
+
+# The status bar's numbers
+StatusNumbers:
+  type: graphic
+  pattern: "FONTN{code:000}"
+  chars: " 0123456789"
+  cell-width: 8
+
+# The intermission and victory screens' letters and numbers
+IntermissionFont:
+  type: graphic
+  pattern: "FONTL{code:000}"
+  chars: "0123456789:%!'ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  cell-width: 16
+  line-height: 16
+  upper-case: true
+  advances:
+    ":": 8
+    "!": 8
+    "'": 8

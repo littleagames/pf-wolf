@@ -568,33 +568,19 @@ internal partial class Program
         StatusDrawPic(picName, 17, 4);
     }
 
-    static void LatchNumber(int x, int y, uint width, int number)
+    /// <summary>The status bar's numbers (fonts.yaml)</summary>
+    internal static readonly Fonts.TextStyle StatusNumberStyle = new("StatusNumbers", "White");
+
+    /// <summary>
+    /// A number right-aligned in <paramref name="width"/> characters of the status bar, blanking
+    /// the rest; a number too long to fit shows its last digits. x is in 8 pixel columns.
+    /// </summary>
+    static void LatchNumber(int x, int y, int width, int number)
     {
-        uint length, c;
-        string str;
+        string str = number.ToString();
+        str = str.Length <= width ? str.PadLeft(width) : str[^width..];
 
-        str = number.ToString();
-
-        length = (uint)str.Length;
-        while (length < width)
-        {
-            // TODO: 032 is "space"
-            StatusDrawPic("FONTN032", (uint)x, (uint)y);
-            x++;
-            width--;
-        }
-
-        c = length <= width ? 0 : length - width;
-
-        while (c < length)
-        {
-            // TODO: "FONTN" + ascii value (if exists)
-            string[] numberPic = ["FONTN048", "FONTN049", "FONTN050", "FONTN051", "FONTN052", "FONTN053", "FONTN054", "FONTN055", "FONTN056", "FONTN057"];
-            var digitIndex = (int)(str[(int)c] - '0');
-            StatusDrawPic(numberPic[digitIndex], (uint)x, (uint)y);
-            x++;
-            c++;
-        }
+        _graphicManager.DrawText(x * 8, 200 - (STATUSLINES - y), str, StatusNumberStyle);
     }
 
     /*

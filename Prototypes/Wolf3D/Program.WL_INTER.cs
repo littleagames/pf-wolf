@@ -188,7 +188,6 @@ internal partial class Program
         _videoManager.Update();
     }
 
-    private static string[] numpics = new[] { "FONTL048", "FONTL049", "FONTL050", "FONTL051", "FONTL052", "FONTL053", "FONTL054", "FONTL055", "FONTL056", "FONTL057" };
     internal static void LevelCompleted()
     {
         var language = _assetManager.GetText("en-us");
@@ -239,16 +238,7 @@ internal partial class Program
 
             min = sec / 60;
             sec %= 60;
-            i = 26 * 8;
-            _graphicManager.DrawPic(numpics[(min / 10)], i, 10 * 8);
-            i += 2 * 8;
-            _graphicManager.DrawPic(numpics[(min % 10)], i, 10 * 8);
-            i += 2 * 8;
-            Write(i / 8, 10, ":");
-            i += 1 * 8;
-            _graphicManager.DrawPic(numpics[(sec / 10)], i, 10 * 8);
-            i += 2 * 8;
-            _graphicManager.DrawPic(numpics[(sec % 10)], i, 10 * 8);
+            WriteTime(26 * 8, 10 * 8, min, sec);
 
             _videoManager.Update();
             _videoManager.FadeIn();
@@ -491,7 +481,7 @@ internal partial class Program
     {
         var language = _assetManager.GetText("en-us");
         int sec;
-        int i, min, kr, sr, tr, x;
+        int min, kr, sr, tr, x;
         string tempstr;
         const int RATIOX = 6;
         const int RATIOY = 14;
@@ -537,16 +527,7 @@ internal partial class Program
         if (min > 99)
             min = sec = 99;
 
-        i = TIMEX * 8 + 1;
-        _graphicManager.DrawPic(numpics[(min / 10)], i, TIMEY * 8);
-        i += 2 * 8;
-        _graphicManager.DrawPic(numpics[(min % 10)], i, TIMEY * 8);
-        i += 2 * 8;
-        Write(i / 8, TIMEY, ":");
-        i += 1 * 8;
-        _graphicManager.DrawPic(numpics[(sec / 10)], i, TIMEY * 8);
-        i += 2 * 8;
-        _graphicManager.DrawPic(numpics[(sec % 10)], i, TIMEY * 8);
+        WriteTime(TIMEX * 8 + 1, TIMEY * 8, min, sec);
         _videoManager.Update();
 
         tempstr = kr.ToString();
@@ -614,65 +595,15 @@ internal partial class Program
         }
     }
 
-    internal static void Write(int x, int y, string text)
-    {
-        // TODO: This would be a good ASCII text map in the pk3, which allows for easy graphic pickings
-        string[] alpha = { "FONTL048", "FONTL049", "FONTL050", "FONTL051", "FONTL052", "FONTL053",
-            "FONTL054", "FONTL055", "FONTL056", "FONTL057", "FONTL058", "", "", "", "", "", "", "FONTL065", "FONTL066",
-            "FONTL067", "FONTL068", "FONTL069", "FONTL070", "FONTL071", "FONTL072", "FONTL073", "FONTL074", "FONTL075",
-            "FONTL076", "FONTL077", "FONTL078", "FONTL079", "FONTL080", "FONTL081", "FONTL082", "FONTL083", "FONTL084",
-            "FONTL085", "FONTL086", "FONTL087", "FONTL088", "FONTL089", "FONTL090"
-        };
+    /// <summary>The intermission and victory screens' big letters (fonts.yaml)</summary>
+    internal static readonly TextStyle IntermissionStyle = new("IntermissionFont", "White");
 
-        int i, ox, nx, ny, len = text.Length;
-        char ch;
+    /// <summary>Intermission text at (x, y) in 8 pixel tiles</summary>
+    internal static void Write(int x, int y, string text) => WriteAt(x * 8, y * 8, text);
 
-        ox = nx = x * 8;
-        ny = y * 8;
-        for (i = 0; i < len; i++)
-        {
-            if (text[i] == '\n')
-            {
-                nx = ox;
-                ny += 16;
-            }
-            else
-            {
-                ch = text[i];
+    /// <summary>Intermission text at (x, y) in pixels</summary>
+    internal static void WriteAt(int x, int y, string text) => TextAt(x, y, IntermissionStyle).Print(text);
 
-                if (char.ToUpper(ch) != 0)
-                    ch = char.ToUpper(ch);
-
-                ch -= '0';
-
-                switch (text[i])
-                {
-                    case '!':
-                        _graphicManager.DrawPic("FONTL033", nx, ny);
-                        nx += 8;
-                        continue;
-                    case '\'':
-                        _graphicManager.DrawPic("FONTL039", nx, ny);
-                        nx += 8;
-                        continue;
-                case ' ':
-                        break;
-
-                    case ':':
-                        _graphicManager.DrawPic("FONTL058", nx, ny);
-                        nx += 8;
-                        continue;
-
-                    case '%':
-                        _graphicManager.DrawPic("FONTL037", nx, ny);
-                        break;
-
-                    default:
-                        _graphicManager.DrawPic(alpha[ch], nx, ny);
-                        break;
-                }
-                nx += 16;
-            }
-        }
-    }
+    /// <summary>Minutes and seconds as mm:ss, in the intermission font at (x, y) in pixels</summary>
+    private static void WriteTime(int x, int y, int min, int sec) => WriteAt(x, y, $"{min:00}:{sec:00}");
 }

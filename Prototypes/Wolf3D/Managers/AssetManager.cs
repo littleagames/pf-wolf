@@ -138,6 +138,9 @@ internal class AssetManager
         return null;
     }
 
+    /// <summary>The running game pack ("wolf3d", "spear")</summary>
+    public string GamePackId => _gamePackId;
+
     /// <summary>
     /// Finds an asset belonging to the running game pack, e.g. "alias" -> "wolf3d/alias"
     /// </summary>
