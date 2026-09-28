@@ -22,8 +22,7 @@ internal partial class Program
     {
         if (!ob.ResolvedStates.TryGetValue(stateName, out var state))
             return;
-        ob.CurrentState = state;
-        ob.TicCount = state.TicTime;
+        ob.SetState(state);
     }
 
     private static void RecenterOnTile(Entities.Actors.Actor ob)

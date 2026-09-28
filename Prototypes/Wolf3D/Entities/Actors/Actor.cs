@@ -69,6 +69,84 @@ internal record Actor : Thinker
         Position = new Vector2(TileX, TileY);
     }
 
+    // A chain of 0-tic frames that loops back on itself would otherwise spin forever inside
+    // one tic; ZDoom treats that as a content error, and so do we.
+    private const int MaxInstantFrames = 1000;
+
+    // Set while AdvanceFrames runs, so an action that calls SetState doesn't start a second,
+    // nested walk -- the outer loop carries on from whatever state the action picked.
+    private bool _advancingFrames;
+
+    /// <summary>
+    /// Puts the actor on <paramref name="frame"/> and arms its countdown, without running
+    /// anything. A 0-tic frame armed this way is ended by DoActor on the actor's next tic;
+    /// used when spawning, where no actions should run yet.
+    /// </summary>
+    internal void ArmState(ActorStateFrame frame)
+    {
+        CurrentState = frame;
+        TicCount = Math.Max(frame.TicTime, (short)0);
+    }
+
+    /// <summary>
+    /// Enters <paramref name="frame"/> (legacy NewState). If it's a 0-tic frame, it ends right
+    /// away: its Action runs and the actor moves on, through any further 0-tic frames.
+    /// </summary>
+    internal void SetState(ActorStateFrame frame)
+    {
+        ArmState(frame);
+        if (frame.TicTime == 0 && !_advancingFrames)
+            AdvanceFrames();
+    }
+
+    /// <summary>
+    /// Ends every frame whose countdown has run out (TicCount &lt;= 0), running each one's Action
+    /// and following Next, until the actor is on a frame with tics left or one that holds
+    /// forever. 0-tic frames end the moment they're entered.
+    /// </summary>
+    internal void AdvanceFrames()
+    {
+        _advancingFrames = true;
+        try
+        {
+            for (var steps = 0; TicCount <= 0; steps++)
+            {
+                var state = CurrentState;
+                if (state == null || state.HoldsForever)
+                    return;
+
+                if (steps == MaxInstantFrames)
+                {
+                    Console.WriteLine($"Actor '{Name}': 0-tic frames loop forever from state '{state.StateName}'; freezing it");
+                    TicCount = short.MaxValue;
+                    return;
+                }
+
+                ActorActionRegistry.Invoke(state.Action, this);
+                if (IsRemoved)
+                    return;
+
+                // An action may switch state itself (the Angel's A_Relaunch, a Spectre's A_Dormant);
+                // like the original DoActor, carry on from the state it left rather than the old one
+                var next = (CurrentState ?? state).Next;
+                if (next == null)
+                    return; // the resolver never leaves Next null in practice; defensive only.
+                CurrentState = next;
+
+                if (next.HoldsForever)
+                {
+                    TicCount = 0;
+                    return;
+                }
+                TicCount += next.TicTime;
+            }
+        }
+        finally
+        {
+            _advancingFrames = false;
+        }
+    }
+
     /// <summary>
     /// Walks a named state's resolved frame chain once, firing each frame's Action along the
     /// way -- for event-triggered states like "Pickup" that aren't ticked by DoActor, rather

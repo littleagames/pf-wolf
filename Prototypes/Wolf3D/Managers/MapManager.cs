@@ -245,8 +245,7 @@ internal class MapManager
         // "Path" for patrolling grunts, otherwise whatever CreateActor already set ("Spawn").
         if (thing.Patrol != 0 && builtActor.ResolvedStates.TryGetValue("Path", out var pathState))
         {
-            builtActor.CurrentState = pathState;
-            builtActor.TicCount = pathState.TicTime;
+            builtActor.ArmState(pathState);
             builtActor.Distance = (int)MapConstants.TILEGLOBAL;
         }
 
@@ -362,8 +361,7 @@ internal class MapManager
 
         if (builtActor.ResolvedStates.TryGetValue("Chase", out var chaseState))
         {
-            builtActor.CurrentState = chaseState;
-            builtActor.TicCount = chaseState.TicTime;
+            builtActor.ArmState(chaseState);
         }
 
         _actors.AddLast(builtActor);
@@ -536,34 +534,15 @@ internal class MapManager
         if (state == null || ob.IsRemoved)
             return;
 
-        // Mirrors Program.DoActor (Program.WL_PLAY.cs): a frame with TicTime == 0 holds forever
-        // -- once TicCount sticks at 0, only Think runs each tic, Next is never consulted again.
-        if (ob.TicCount == 0)
+        // Mirrors Program.DoActor (Program.WL_PLAY.cs): a frame that holds forever (-1) only
+        // runs its Think each tic; Next is never consulted again.
+        if (!state.HoldsForever)
         {
-            Entities.Actors.ActorActionRegistry.Invoke(state.Think, ob);
-            return;
-        }
-
-        ob.TicCount -= (short)tics;
-        while (ob.TicCount <= 0)
-        {
-            Entities.Actors.ActorActionRegistry.Invoke(state.Action, ob);
+            ob.TicCount -= (short)tics;
+            ob.AdvanceFrames();
             if (ob.IsRemoved)
                 return;
-
-            // An action may switch state itself (the Angel's A_Relaunch, a Spectre's A_Dormant);
-            // like the original DoActor, carry on from the state it left rather than the old one
-            state = (ob.CurrentState ?? state).Next;
-            if (state == null)
-                return; // the resolver never leaves Next null in practice; defensive only.
-            ob.CurrentState = state;
-
-            if (state.TicTime == 0)
-            {
-                ob.TicCount = 0;
-                break;
-            }
-            ob.TicCount += state.TicTime;
+            state = ob.CurrentState ?? state;
         }
 
         Entities.Actors.ActorActionRegistry.Invoke(state.Think, ob);
