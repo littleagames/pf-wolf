@@ -719,7 +719,7 @@ internal partial class Program
             //
             // Always the quicksave file, never a save picked in the menus
             case ScanCodes.sc_F8:
-                    Message("$STR_SAVING".ToLanguageText(language) + "...", MAXY);
+                Message("$STR_SAVING".ToLanguageText(language) + "...", MAXY);
                 CP_SaveGame(1);
                 return 1;
 
