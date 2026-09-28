@@ -185,7 +185,10 @@ internal partial class Program
             return true;
         }
 
-        ob.AreaNumber = (byte)(_mapManager.MAPSPOT(ob.TileX, ob.TileY, 0) - MapDataConstants.AREATILE);
+        // A door tile has no area of its own, so a PHASEDOORS actor passing through one
+        // keeps the area it came from
+        if (_mapManager.actorat[ob.TileX, ob.TileY] is not Door)
+            ob.AreaNumber = (byte)(_mapManager.MAPSPOT(ob.TileX, ob.TileY, 0) - MapDataConstants.AREATILE);
         ob.Distance = (int)MapConstants.TILEGLOBAL;
         ob.SyncPosition();
         return true;
@@ -203,19 +206,19 @@ internal partial class Program
                 return 0;
             if (temp is Door door)
             {
-                if (demorecord || demoplayback)
-                    doornumtile = door.door;
-                else
+                // PHASEDOORS actors (ghosts, Spectres) drift straight through a door
+                // without opening it. Don't set doornumtile for them: TryWalk would give
+                // them a "waiting on door" Distance, which T_Ghosts doesn't handle (its
+                // move loop then never ends).
+                if (ob.Flags.Contains("PHASEDOORS", StringComparer.OrdinalIgnoreCase))
+                    return 2;
+
+                doornumtile = door.door;
+                if (!(demorecord || demoplayback))
                 {
-                    doornumtile = door.door;
-                    // Ghosts phase through closed doors rather than opening them
-                    // (Program.WL_STATE.cs's original ghostobj/spectreobj exception).
-                    if (ob.Name is not ("Blinky" or "Clyde" or "Pinky" or "Inky"))
-                    {
-                        OpenDoor(doornumtile);
-                        ob.Distance = -doornumtile - 1;
-                        return 1;
-                    }
+                    OpenDoor(doornumtile);
+                    ob.Distance = -doornumtile - 1;
+                    return 1;
                 }
             }
         }

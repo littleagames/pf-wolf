@@ -16,6 +16,7 @@
 # =============================================================================
 
 Blinky:
+  flags: [PHASEDOORS]
   states:
     Spawn:
       - sprite: BLKY
@@ -32,6 +33,7 @@ Blinky:
     "deathsound": "ghost/death"
 
 Inky:
+  flags: [PHASEDOORS]
   states:
     Spawn:
       - sprite: INKY
@@ -48,6 +50,7 @@ Inky:
     "deathsound": "ghost/death"
 
 Pinky:
+  flags: [PHASEDOORS]
   states:
     Spawn:
       - sprite: PNKY
@@ -64,6 +67,7 @@ Pinky:
     "deathsound": "ghost/death"
 
 Clyde:
+  flags: [PHASEDOORS]
   states:
     Spawn:
       - sprite: CLYD
