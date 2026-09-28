@@ -23,14 +23,30 @@ internal readonly record struct ControlAction(int Index)
 
     /// <summary>
     /// The name controls.cfg and the console use: the enum name, less bt_ for the buttons
-    /// ("attack", "readyknife"); the automap keys keep their am_ ("am_zoomin").
+    /// ("attack", "slot1"); the automap keys keep their am_ ("am_zoomin").
     /// </summary>
     public string Name => IsButton
         ? ((buttontypes)Index).ToString()["bt_".Length..]
         : ((Program.automapkeys)(Index - ButtonCount)).ToString();
 
+    // Names the weapon slot keys had before they were generic, still found in older
+    // controls.cfg files and menus.
+    private static readonly Dictionary<string, buttontypes> OldNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["readyknife"] = buttontypes.bt_slot1,
+        ["readypistol"] = buttontypes.bt_slot2,
+        ["readymachinegun"] = buttontypes.bt_slot3,
+        ["readychaingun"] = buttontypes.bt_slot4,
+    };
+
     public static bool TryParse(string name, out ControlAction action)
     {
+        if (OldNames.TryGetValue(name, out var renamed))
+        {
+            action = Of(renamed);
+            return true;
+        }
+
         foreach (var candidate in All)
         {
             if (string.Equals(candidate.Name, name, StringComparison.OrdinalIgnoreCase))
@@ -198,10 +214,16 @@ internal sealed class ControlBindings
         Default(buttontypes.bt_strafe, Key(ScanCodes.sc_Alt), Mouse(3), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_X));
         Default(buttontypes.bt_run, Key(ScanCodes.sc_LShift), Trigger(SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT));
         Default(buttontypes.bt_use, Key(ScanCodes.sc_Space), Mouse(2), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_A));
-        Default(buttontypes.bt_readyknife, Key(ScanCodes.sc_1));
-        Default(buttontypes.bt_readypistol, Key(ScanCodes.sc_2));
-        Default(buttontypes.bt_readymachinegun, Key(ScanCodes.sc_3));
-        Default(buttontypes.bt_readychaingun, Key(ScanCodes.sc_4));
+        Default(buttontypes.bt_slot1, Key(ScanCodes.sc_1));
+        Default(buttontypes.bt_slot2, Key(ScanCodes.sc_2));
+        Default(buttontypes.bt_slot3, Key(ScanCodes.sc_3));
+        Default(buttontypes.bt_slot4, Key(ScanCodes.sc_4));
+        Default(buttontypes.bt_slot5, Key(ScanCodes.sc_5));
+        Default(buttontypes.bt_slot6, Key(ScanCodes.sc_6));
+        Default(buttontypes.bt_slot7, Key(ScanCodes.sc_7));
+        Default(buttontypes.bt_slot8, Key(ScanCodes.sc_8));
+        Default(buttontypes.bt_slot9, Key(ScanCodes.sc_9));
+        Default(buttontypes.bt_slot0, Key(ScanCodes.sc_0));
         Default(buttontypes.bt_nextweapon, InputCode.WheelDown, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_RIGHTSHOULDER));
         Default(buttontypes.bt_prevweapon, InputCode.WheelUp, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
         Default(buttontypes.bt_esc, Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_START));

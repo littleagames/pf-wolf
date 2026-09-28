@@ -704,18 +704,18 @@ internal partial class Program
 
         NewActorState(ob, "Death");
 
-        if (ob.Name == "SS")
+        // `dropweapon` (the SS's MachineGun) replaces the `dropitem` while the player holds
+        // nothing as good (by weapon.selectionorder), as KillActor did for the SS.
+        var drop = ob.Properties.TryGetValue("dropitem", out var dropitem) ? dropitem as string : null;
+        if (ob.Properties.TryGetValue("dropweapon", out var dropweapon) && dropweapon is string weaponName)
         {
-            // KillActor's one enemy-specific drop rule that isn't a flat `dropitem`:
-            // upgrades a Clip drop to a MachineGun if the player has nothing as good yet.
             var best = BestWeapon();
-            var upgrade = best == null || WeaponSelectionOrder(best) > WeaponSelectionOrder("MachineGun");
-            PlaceItemType(upgrade ? "MachineGun" : "Clip", tilex, tiley);
+            if (best == null || WeaponSelectionOrder(best) > WeaponSelectionOrder(weaponName))
+                drop = weaponName;
         }
-        else if (ob.Properties.TryGetValue("dropitem", out var dropitem) && dropitem is string dropitemName)
-        {
-            PlaceItemType(dropitemName, tilex, tiley);
-        }
+
+        if (drop != null)
+            PlaceItemType(drop, tilex, tiley);
 
         if (ob.Name is "Schabbs" or "Gift" or "Fat" or "RealHitler")
         {

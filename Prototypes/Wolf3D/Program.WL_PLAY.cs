@@ -261,7 +261,9 @@ internal partial class Program
             _inventoryManager.Give("SilverKey", 1);
             gamestate.score = 0;
             gamestate.TimeCount += (int)42000L;
-            GiveWeapon("GatlingGun");
+            // the best weapon there is (the gatling gun)
+            if (AllWeapons().OrderBy(WeaponSelectionOrder).FirstOrDefault() is { } bestWeapon)
+                GiveWeapon(bestWeapon);
             GiveAllAmmo(99);
             DrawWeapon();
             DrawHealth();

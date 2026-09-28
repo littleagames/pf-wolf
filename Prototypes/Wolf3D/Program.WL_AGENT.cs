@@ -49,11 +49,11 @@ internal partial class Program
     =============================================================================
     */
 
-    // The ready buttons pick a weapon slot (`weapon.slot`), in order.
+    // The weapon slot keys, indexed by slot number (`weapon.slot` 0-9, 1-4 for Wolf3D's four).
     private static readonly buttontypes[] SlotButtons =
     [
-        buttontypes.bt_readyknife, buttontypes.bt_readypistol,
-        buttontypes.bt_readymachinegun, buttontypes.bt_readychaingun,
+        buttontypes.bt_slot0, buttontypes.bt_slot1, buttontypes.bt_slot2, buttontypes.bt_slot3, buttontypes.bt_slot4,
+        buttontypes.bt_slot5, buttontypes.bt_slot6, buttontypes.bt_slot7, buttontypes.bt_slot8, buttontypes.bt_slot9,
     ];
 
     // Only weapons with ammo can be switched to. Out of ammo for the picked weapon, the player
@@ -82,11 +82,20 @@ internal partial class Program
         {
             for (var slot = 0; slot < SlotButtons.Length; slot++)
             {
-                if (!_inputManager.IsButtonPressed(SlotButtons[slot]))
+                if (!_inputManager.IsButtonPressed(SlotButtons[slot]) || _inputManager.IsButtonHeld(SlotButtons[slot]))
                     continue;
 
-                // The best weapon with ammo in that slot, if any.
-                newWeapon = usable.Where(w => WeaponSlot(w) == slot).OrderBy(WeaponSelectionOrder).FirstOrDefault();
+                // The best weapon with ammo in that slot; pressed again with one of the slot's
+                // weapons already in hand, the next one in the slot.
+                var inSlot = usable.Where(w => WeaponSlot(w) == slot).ToList();
+                if (inSlot.Count == 0)
+                    break;
+                var inHand = gamestate.weapon != null ? inSlot.IndexOf(gamestate.weapon) : -1;
+                newWeapon = inHand >= 0
+                    ? inSlot[(inHand + 1) % inSlot.Count]
+                    : inSlot.OrderBy(WeaponSelectionOrder).First();
+                if (newWeapon == gamestate.weapon)
+                    newWeapon = null;
                 break;
             }
         }
@@ -601,7 +610,12 @@ internal partial class Program
     =============================================================================
     */
 
-    static int WeaponSlot(string weapon) => _inventoryManager.GetIntProperty(weapon, "weapon.slot", 0);
+    // The slot key (1-9, 0) that picks a weapon; -1 for one with no `weapon.slot`, which only
+    // next/previous weapon reach.
+    static int WeaponSlot(string weapon) => _inventoryManager.GetIntProperty(weapon, "weapon.slot", -1);
+
+    // Slot order for cycling, as on the keyboard: 1-9, then 0, then weapons with no slot.
+    static int WeaponSlotOrder(string weapon) => WeaponSlot(weapon) switch { 0 => 10, < 0 => 11, var slot => slot };
 
     static int WeaponSelectionOrder(string weapon) =>
         _inventoryManager.GetIntProperty(weapon, "weapon.selectionorder", int.MaxValue);
@@ -639,7 +653,7 @@ internal partial class Program
         _inventoryManager.Items.Keys
             .Where(item => _inventoryManager.FindClass(item, "Weapon") != null
                 && _inventoryManager.FindClass(item, "WeaponGiver") == null)
-            .OrderBy(WeaponSlot)
+            .OrderBy(WeaponSlotOrder)
             .ThenByDescending(WeaponSelectionOrder)
             .ToList();
 
@@ -894,22 +908,40 @@ internal partial class Program
 ==================
 */
 
-    // The legacy Wolf3D weapon set, for the starting loadout and the cheats (knife and pistol
-    // to start with, all four for "give weapons"). Pickups on the map don't use this.
-    private static readonly string[] WeaponSlotItems = ["Knife", "Pistol", "MachineGun", "GatlingGun"];
+    // The player's actordefs class (actordefs/wolf3d/player.yaml), for its `player.*` properties.
+    private const string PlayerClass = "Player";
 
     /// <summary>
-    /// New game / respawn loadout: knife, pistol and starting ammo, with the pistol selected.
+    /// New game / respawn loadout: the Player class's `player.startitem` (item: amount), with
+    /// the best weapon in it selected.
     /// </summary>
     internal static void GiveStartingInventory()
     {
         _inventoryManager.Clear();
-        _inventoryManager.Give(WeaponSlotItems[0], 1);
-        _inventoryManager.Give(WeaponSlotItems[1], 1);
-        if (WeaponAmmoType(WeaponSlotItems[1]) is { } ammoType)
-            _inventoryManager.Give(ammoType, STARTAMMO);
-        gamestate.weapon = gamestate.chosenweapon = _inventoryManager.GetItemType(WeaponSlotItems[1]);
+
+        if (_inventoryManager.GetProperty(PlayerClass, "player.startitem") is IDictionary<object, object> items)
+        {
+            foreach (var (item, amount) in items)
+                _inventoryManager.Give(item.ToString() ?? "", Convert.ToInt32(amount));
+        }
+        else
+            Console.WriteLine($"No player.startitem on actordefs class {PlayerClass}: the player starts with nothing.");
+
+        gamestate.weapon = gamestate.chosenweapon = BestWeapon();
     }
+
+    /// <summary>
+    /// Every weapon in actordefs that can be held, as held item types: a Blue reskin counts as
+    /// its base weapon, and base classes with no Ready state (WolfWeapon) and WeaponGivers are
+    /// left out.
+    /// </summary>
+    internal static List<string> AllWeapons() =>
+        _inventoryManager.GetClassesDerivedFrom("Weapon")
+            .Where(w => _inventoryManager.FindClass(w, "WeaponGiver") == null
+                && _inventoryManager.CreateActor(w)?.ResolvedStates.ContainsKey(WeaponReadyState) == true)
+            .Select(_inventoryManager.GetItemType)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
     /// <summary>Gives a weapon by class name with a pickup's worth (6) of its ammo.</summary>
     internal static void GiveWeapon(string weapon) =>

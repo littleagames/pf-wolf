@@ -49,8 +49,8 @@
 #    that don't fit the properties schema are left as comments rather than
 #    invented property keys.
 # 6. SS drop either a MachineGun or a Clip depending on the player's current
-#    best weapon (KillActor) -- only `dropitem: Clip` is captured below;
-#    the conditional MachineGun drop is called out in a comment.
+#    best weapon (KillActor): `dropitem: Clip` plus `dropweapon: MachineGun`,
+#    which replaces the dropitem while the player has nothing as good.
 # 7. Frame letters: Attack/Pain/Death originally all pointed at frame "A"
 #    (the rotating Spawn/stand sprite), which produced invalid asset names
 #    like "GARDA0" once IsDirectionalState (Program.WL_DRAW.cs) correctly
@@ -407,12 +407,12 @@ SS:
     "attacksound": "wolfss/attack" # was "SSFIRE"
     "deathsound": "wolfss/death"
     "dropitem": "Clip"
+    # Drops a MachineGun instead of the Clip while the player holds nothing as
+    # good (KillActor's bestweapon < wp_machinegun).
+    "dropweapon": "MachineGun"
     # SS are better shots: T_Shoot halves their effective distance penalty
     # (dist = dist * 2 / 3) when rolling to hit the player.
     "monster.sharpshooter": true
-    # KillActor drops a MachineGun instead of a Clip if the player's
-    # bestweapon is below wp_machinegun -- not represented by a single
-    # `dropitem` value.
     # Reaction delay after first sighting: 1 + random()/6 tics.
 
 # -----------------------------------------------------------------------

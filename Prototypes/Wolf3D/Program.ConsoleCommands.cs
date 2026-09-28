@@ -571,7 +571,7 @@ internal partial class Program
 
     static void GiveAllWeapons()
     {
-        foreach (var weapon in WeaponSlotItems)
+        foreach (var weapon in AllWeapons())
             TryGiveWeapon(weapon, 0);
     }
 

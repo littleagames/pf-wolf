@@ -1,0 +1,10 @@
+# The player's class data. The player actor itself is built in code (Entities.Actors.PlayerPawn,
+# named "Player"); only these properties are read from here.
+Player:
+  properties:
+    # A new game's (and a respawn's) inventory: item: amount. The best weapon given
+    # (lowest weapon.selectionorder) is the one in hand.
+    "player.startitem":
+      Knife: 1
+      Pistol: 1
+      Clip: 8

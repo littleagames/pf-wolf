@@ -35,7 +35,11 @@ internal class InventoryManager
         Metadata.GetIntProperty(item, key, fallback);
 
     public string? GetStringProperty(string item, string key) =>
-        Metadata.TryGetProperty(item, key, out var value) ? value?.ToString() : null;
+        GetProperty(item, key)?.ToString();
+
+    /// <summary>A property as parsed from YAML (a string, a list or a mapping), or null.</summary>
+    public object? GetProperty(string item, string key) =>
+        Metadata.TryGetProperty(item, key, out var value) ? value : null;
 
     /// <summary>
     /// A fresh actor of an item class, with its inherited properties and states (e.g. the

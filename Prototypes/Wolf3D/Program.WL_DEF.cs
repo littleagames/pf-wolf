@@ -33,10 +33,13 @@ internal enum buttontypes
     bt_strafe,
     bt_run,
     bt_use,
-    bt_readyknife,
-    bt_readypistol,
-    bt_readymachinegun,
-    bt_readychaingun,
+    // Weapon slot keys: slot N picks a weapon with `weapon.slot: N`. Slots 1-4 sit where the old
+    // ready-knife/pistol/machine gun/chaingun buttons were, so demos and the old config.cfg
+    // layout (both indexed by this enum) still line up; 5-9 and 0 come after automap.
+    bt_slot1,
+    bt_slot2,
+    bt_slot3,
+    bt_slot4,
     bt_nextweapon,
     bt_prevweapon,
     bt_esc,
@@ -48,6 +51,12 @@ internal enum buttontypes
     bt_turnleft,
     bt_turnright,
     bt_automap,
+    bt_slot5,
+    bt_slot6,
+    bt_slot7,
+    bt_slot8,
+    bt_slot9,
+    bt_slot0,
 
     NUMBUTTONS
 };
@@ -411,7 +420,6 @@ internal partial class Program
     internal const int WEST = 3;
 
     internal const int STATUSLINES = 40;
-    internal const int STARTAMMO = 8;
 
     [Flags]
     internal enum objflags

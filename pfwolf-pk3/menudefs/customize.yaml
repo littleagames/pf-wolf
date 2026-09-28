@@ -52,10 +52,12 @@ menu-items:
   - { type: "ControlMenuItem", control: "use", text: "$STR_CTL_USE" }
 
   - { type: "HeaderMenuItem", text: "$STR_CTL_WEAPONS" }
-  - { type: "ControlMenuItem", control: "readyknife", text: "$STR_CTL_KNIFE" }
-  - { type: "ControlMenuItem", control: "readypistol", text: "$STR_CTL_PISTOL" }
-  - { type: "ControlMenuItem", control: "readymachinegun", text: "$STR_CTL_MACHINEGUN" }
-  - { type: "ControlMenuItem", control: "readychaingun", text: "$STR_CTL_CHAINGUN" }
+  # Weapon slot keys (slot1-slot9, slot0) pick weapons by their `weapon.slot`; only the four
+  # slots Wolf3D's weapons use are listed.
+  - { type: "ControlMenuItem", control: "slot1", text: "$STR_CTL_KNIFE" }
+  - { type: "ControlMenuItem", control: "slot2", text: "$STR_CTL_PISTOL" }
+  - { type: "ControlMenuItem", control: "slot3", text: "$STR_CTL_MACHINEGUN" }
+  - { type: "ControlMenuItem", control: "slot4", text: "$STR_CTL_CHAINGUN" }
   - { type: "ControlMenuItem", control: "nextweapon", text: "$STR_CTL_NEXTWEAPON" }
   - { type: "ControlMenuItem", control: "prevweapon", text: "$STR_CTL_PREVWEAPON" }
 
