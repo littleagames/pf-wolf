@@ -1,18 +1,16 @@
-﻿namespace Wolf3D;
+using Wolf3D.Fonts;
+
+namespace Wolf3D;
 
 
 internal partial class Program
 {
-    static int px, py;
-    [Obsolete("Should build this into each rendered item instead of using a global variable.")]
-    static string fontcolor, backcolor;
-    [Obsolete("Should build this into each rendered item instead of using a global variable.")]
-    static string fontnumber;
+    internal const string SMALL_FONT = "SmallFont";
+    internal const string LARGE_FONT = "LargeFont";
 
-    [Obsolete("Should build this into each rendered item instead of using a global variable.")]
-    internal static void SETFONTCOLOR(string f, string b)
-    {
-        fontcolor = f;
-        backcolor = b;
-    }
+    /// <summary>Control panel menu items are printed in this</summary>
+    internal const string MENU_FONT = LARGE_FONT;
+
+    /// <summary>Control panel text in <paramref name="color"/> on the menu background</summary>
+    internal static TextStyle MenuStyle(string color) => new(MENU_FONT, color);
 }

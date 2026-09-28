@@ -1399,12 +1399,8 @@ internal partial class Program
 
             if (fpscounter)
             {
-                fontnumber = "SmallFont";
-                SETFONTCOLOR("Grey", "VIEWCOLOR");
-                PrintX = 4; PrintY = 1;
                 _videoManager.Bar(0, 0, 40, 10, bordercol);
-                US_Print(fps.ToString());
-                US_Print(" fps");
+                _graphicManager.DrawText(4, 1, $"{fps} fps", new Fonts.TextStyle(SMALL_FONT, "Grey", "VIEWCOLOR"));
             }
 
             // Taken here, before the console is drawn, so it never shows in the shot.

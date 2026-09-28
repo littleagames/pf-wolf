@@ -278,13 +278,12 @@ internal partial class Program
             DrawScore();
 
             ClearMemory();
-            ClearSplitVWB();
 
             Message("$STR_CHEATER1".ToLanguageText(language) + "\n" +
                     "$STR_CHEATER2".ToLanguageText(language) + "\n\n" +
                     "$STR_CHEATER3".ToLanguageText(language) + "\n" +
                     "$STR_CHEATER4".ToLanguageText(language) + "\n" +
-                    "$STR_CHEATER5".ToLanguageText(language));
+                    "$STR_CHEATER5".ToLanguageText(language), MAXY);
 
             _inputManager.ClearKeysDown();
             _inputManager.Ack();
@@ -299,9 +298,8 @@ internal partial class Program
         if (_inputManager.IsKeyDown(ScanCodes.sc_BackSpace) && _inputManager.IsKeyDown(ScanCodes.sc_LShift) && _inputManager.IsKeyDown(ScanCodes.sc_Alt))
         {
             ClearMemory();
-            ClearSplitVWB();
 
-            Message("Cheat commands are\nnow available!\nPress ` for the console.");
+            Message("Cheat commands are\nnow available!\nPress ` for the console.", MAXY);
             _inputManager.ClearKeysDown();
             _inputManager.Ack();
 
@@ -315,12 +313,11 @@ internal partial class Program
         if (_inputManager.IsKeyDown(ScanCodes.sc_B) && _inputManager.IsKeyDown(ScanCodes.sc_A) && _inputManager.IsKeyDown(ScanCodes.sc_T))
         {
             ClearMemory();
-            ClearSplitVWB();
 
             Message("Commander Keen is also\n" +
                         "available from Apogee, but\n" +
                         "then, you already know\n" +
-                        "that - right, Cheatmeister?!");
+                        "that - right, Cheatmeister?!", MAXY);
 
             _inputManager.ClearKeysDown();
             _inputManager.Ack();
@@ -351,12 +348,10 @@ internal partial class Program
         {
             _automapManager.Close();
             ClearMemory();
-            ClearSplitVWB();
             US_ControlPanel(scan);
 
             DrawPlayBorderSides();
 
-            SETFONTCOLOR("Black", "White");
             _inputManager.ClearKeysDown();
             return;
         }
@@ -370,7 +365,6 @@ internal partial class Program
 
             US_ControlPanel(_inputManager.IsButtonPressed(buttontypes.bt_esc) ? ScanCodes.sc_Escape : scan);
 
-            SETFONTCOLOR("Black", "White");
             _inputManager.ClearKeysDown();
             _videoManager.FadeOut();
             if (viewsize != 21)
@@ -518,10 +512,12 @@ internal partial class Program
     internal const int MAXX = 320;
     internal const int MAXY = 160;
 
-    internal static void CenterWindow(ushort w, ushort h)
-    {
-        US_DrawWindow((ushort)(((MAXX / 8) - w) / 2), (ushort)(((MAXY / 8) - h) / 2), w, h);
-    }
+    /// <summary>Black text on the white of a <see cref="CenterWindow"/></summary>
+    internal static readonly Fonts.TextStyle PromptStyle = new(SMALL_FONT, "Black", "White");
+
+    /// <summary>A framed window of w by h tiles, centered in the play view</summary>
+    internal static Fonts.TextWindow CenterWindow(int w, int h, Fonts.TextStyle style)
+        => US_DrawWindow(((MAXX / 8) - w) / 2, ((MAXY / 8) - h) / 2, w, h, style);
 
 /*
 =============================================================================

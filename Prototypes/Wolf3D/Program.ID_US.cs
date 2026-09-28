@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Fonts;
 using static Wolf3D.Program;
 
 namespace Wolf3D;
@@ -38,20 +39,8 @@ internal class HighScore
     }
 }
 
-// Record used to save & restore screen windows
-struct WindowRec
-{
-    public int x, y, w, h, px, py;
-}
-
 internal partial class Program
 {
-    internal static ushort PrintX, PrintY;
-    internal static ushort WindowX { get; set; }
-    internal static ushort WindowY { get; set; }
-    internal static ushort WindowW { get; set; }
-    internal static ushort WindowH { get; set; }
-
     static bool US_Started;
 
     internal static HighScore[] Scores = new HighScore[MaxScores]
@@ -76,12 +65,6 @@ internal partial class Program
     internal const int MaxGameName = 32;    // a save's name, as typed in the save menu, is one less
 
     internal const int MaxString = 128;
-
-    internal static void US_HomeWindow()
-    {
-        PrintX = WindowX;
-        PrintY = WindowY;
-    }
 
     static int rndindex = 0;
 
@@ -134,120 +117,35 @@ internal partial class Program
     }
 
 
-    internal static void USL_MeasureString(string s, out ushort w, out ushort h) => _graphicManager.MeasurePropString(s, fontnumber, out w, out h);
-    internal static void USL_DrawString(string s) => _graphicManager.DrawPropString(px, py, s, fontcolor, fontnumber);
-    internal static void US_Print(string sorg)
+    /// <summary>Text printed from (x, y), coming back to x after a newline</summary>
+    internal static TextWindow TextAt(int x, int y, TextStyle style) => TextWindow.At(_graphicManager, x, y, style);
+
+    /// <summary>Lines centered between x and x + width, the first at y</summary>
+    internal static TextWindow CenteredText(int x, int width, int y, TextStyle style) => new(_graphicManager, x, y, width, 200 - y, style);
+
+    internal static void MeasureText(string text, string font, out int width, out int height) => _graphicManager.MeasureText(text, font, out width, out height);
+
+    internal static int TextWidth(string text, string font)
     {
-        ushort w, h;
-        if (sorg == null)
-            return;
-
-        int index = 0;
-        int len = sorg.Length;
-
-        while (index < len)
-        {
-            // Find end of segment (up to next newline or end of string)
-            int se = index;
-            while (se < len && sorg[se] != '\n')
-                se++;
-
-            // Extract segment
-            string segment = sorg.Substring(index, se - index);
-
-            // Measure and draw
-            USL_MeasureString(segment, out w, out h);
-            px = PrintX;
-            py = PrintY;
-            USL_DrawString(segment);
-
-            // Advance index
-            index = se;
-            if (index < len && sorg[index] == '\n')
-            {
-                // consume newline
-                index++;
-
-                // move to start of next line
-                PrintX = WindowX;
-                PrintY += h;
-            }
-            else
-            {
-                // continue on same line
-                PrintX += w;
-            }
-        }
+        MeasureText(text, font, out int width, out _);
+        return width;
     }
 
-    internal static void US_CPrint(string sorg)
+    /// <summary>Cuts text short (to one character at least) to fit a width in a font.</summary>
+    internal static string FitText(string text, int width, string font)
     {
-        if (sorg == null)
-            return;
+        var f = _fontManager.Find(font);
+        if (f == null || text.Length == 0)
+            return text;
 
-        int len = sorg.Length;
-        int index = 0;
-
-        while (index < len)
-        {
-            int se = index;
-            while (se < len && sorg[se] != '\n')
-                se++;
-
-            // substring for current line (may be empty)
-            string segment = sorg.Substring(index, se - index);
-            US_CPrintLine(segment);
-
-            // advance index past the processed part
-            index = se;
-
-            // if we're at a newline, skip it and continue to next line
-            if (index < len && sorg[index] == '\n')
-                index++;
-        }
+        return text[..Math.Max(1, f.Fit(text, width))];
     }
 
-    internal static void USL_PrintInCenter(string s, Rect r)
-    {
-        ushort w, h,
-                rw, rh;
-
-        USL_MeasureString(s, out w, out h);
-        rw = (ushort)(r.lr.x - r.ul.x);
-        rh = (ushort)(r.lr.y - r.ul.y);
-
-        px = r.ul.x + ((rw - w) / 2);
-        py = r.ul.y + ((rh - h) / 2);
-        USL_DrawString(s);
-    }
-
-    internal static void US_PrintCentered(string s)
-    {
-        Rect r = new Rect();
-
-        r.ul.x = WindowX;
-        r.ul.y = WindowY;
-        r.lr.x = r.ul.x + WindowW;
-        r.lr.y = r.ul.y + WindowH;
-
-        USL_PrintInCenter(s, r);
-    }
-
-    internal static void US_CPrintLine(string s)
-    {
-        ushort w, h;
-
-        USL_MeasureString(s, out w, out h);
-
-        if (w > WindowW)
-            _gameEngineManager.Quit("US_CPrintLine() - String exceeds width");
-        px = WindowX + ((WindowW - w) / 2);
-        py = PrintY;
-        USL_DrawString(s);
-        PrintY += h;
-    }
-
-    internal static bool US_LineInput(int x, int y, ref string buf, string def, bool escok, int maxchars, int maxwidth)
+    /// <summary>
+    /// Lets a line of text be typed in at (x, y), in <paramref name="style"/>; its background
+    /// color is what erases the old text and blinks the cursor
+    /// </summary>
+    internal static bool US_LineInput(int x, int y, ref string buf, string def, bool escok, int maxchars, int maxwidth, TextStyle style)
     {
         bool redraw,
                     cursorvis, cursormoved,
@@ -255,10 +153,7 @@ internal partial class Program
         ScanCodes sc;
         string s, olds;
         //char[] s = new char[MaxString], olds = new char[MaxString];
-        int cursor, len;
-        ushort i,
-                    w, h;
-        string temp;
+        int cursor, w, h;
         uint curtime, lasttime, lastdirtime, lastbuttontime, lastdirmovetime;
         ControlInfo ci;
         Direction lastdir = Direction.None;
@@ -284,7 +179,7 @@ internal partial class Program
             ReadAnyControl(out ci);
 
             if (cursorvis)
-                USL_XORICursor(x, y, new string(s), (ushort)cursor);
+                USL_XORICursor(x, y, s, cursor, style);
 
             sc = _inputManager.GetLastKeyPressed();
             _inputManager.ClearLastKey();
@@ -321,7 +216,7 @@ internal partial class Program
 
                         if (s.Length == cursor)
                         {
-                            USL_MeasureString(new string(s), out w, out h);
+                            MeasureText(s, style.Font, out w, out h);
                             if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
                                 break;
 
@@ -338,7 +233,7 @@ internal partial class Program
                         {
                             if (string.IsNullOrEmpty(s) || s[cursor] == 0)
                             {
-                                USL_MeasureString(new string(s), out w, out h);
+                                MeasureText(s, style.Font, out w, out h);
                                 if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
                                     break;
                                 s += ' ';
@@ -355,7 +250,7 @@ internal partial class Program
                         {
                             if (string.IsNullOrEmpty(s) || s[cursor] == 0)
                             {
-                                USL_MeasureString(new string(s), out w, out h);
+                                MeasureText(s, style.Font, out w, out h);
                                 if (s.Length >= maxchars || (maxwidth != 0 && w >= maxwidth))
                                     break;
                                 s += ' ';
@@ -484,7 +379,7 @@ internal partial class Program
                 {
                     char txt = textinput[t];
                     //len = (int)strlen(s);
-                    USL_MeasureString(new string(s), out w, out h);
+                    MeasureText(s, style.Font, out w, out h);
 
                     if (!char.IsControl(txt) && (s.Length < MaxString - 1) && ((maxchars == 0) || (s.Length < maxchars))
                         && ((maxwidth == 0) || (w < maxwidth)))
@@ -504,17 +399,9 @@ internal partial class Program
 
             if (redraw)
             {
-                px = x;
-                py = y;
-                temp = fontcolor;
-                fontcolor = backcolor;
-                USL_DrawString(new string(olds));
-                fontcolor = temp;
+                _graphicManager.DrawText(x, y, olds, style.Inverted);
                 olds = s;
-
-                px = x;
-                py = y;
-                USL_DrawString(new string(s));
+                _graphicManager.DrawText(x, y, s, style);
 
                 redraw = false;
             }
@@ -534,19 +421,15 @@ internal partial class Program
             }
             else GameEngineManager.DelayMs(5);
             if (cursorvis)
-                USL_XORICursor(x, y, new string(s), (ushort)cursor);
+                USL_XORICursor(x, y, s, cursor, style);
 
             _videoManager.Update();
         }
 
         if (cursorvis)
-            USL_XORICursor(x, y, new string(s), (ushort)cursor);
+            USL_XORICursor(x, y, s, cursor, style);
         if (!result)
-        {
-            px = x;
-            py = y;
-            USL_DrawString(new string (olds));
-        }
+            _graphicManager.DrawText(x, y, olds, style);
         _videoManager.Update();
 
         _inputManager.ClearKeysDown();
@@ -570,80 +453,46 @@ internal partial class Program
         return charSet[i];
     }
 
-    internal static void US_ClearWindow()
+    /// <summary>
+    /// Draws a white window with a TILE8 frame, in 8 pixel tiles, and returns it to print into
+    /// </summary>
+    internal static TextWindow US_DrawWindow(int x, int y, int w, int h, TextStyle style)
     {
-        _videoManager.Bar(WindowX, WindowY, WindowW, WindowH, "White");
-        PrintX = WindowX;
-        PrintY = WindowY;
-    }
+        int i, sx, sy, sw, sh;
 
-    internal static void US_DrawWindow(ushort x, ushort y, ushort w, ushort h)
-    {
-        ushort i,
-                sx, sy, sw, sh;
+        var window = new TextWindow(_graphicManager, x * 8, y * 8, w * 8, h * 8, style);
 
-        WindowX = (ushort)(x * 8);
-        WindowY = (ushort)(y * 8);
-        WindowW = (ushort)(w * 8);
-        WindowH = (ushort)(h * 8);
+        sx = (x - 1) * 8;
+        sy = (y - 1) * 8;
+        sw = (w + 1) * 8;
+        sh = (h + 1) * 8;
 
-        PrintX = WindowX;
-        PrintY = WindowY;
-
-        sx = (ushort)((x - 1) * 8);
-        sy = (ushort)((y - 1) * 8);
-        sw = (ushort)((w + 1) * 8);
-        sh = (ushort)((h + 1) * 8);
-
-        US_ClearWindow();
+        window.Clear("White");
 
         _graphicManager.DrawTile8(sx, sy, 0);
         _graphicManager.DrawTile8(sx, sy + sh, 5);
-        for (i = (ushort)(sx + 8); i <= sx + sw - 8; i += 8) {
+        for (i = sx + 8; i <= sx + sw - 8; i += 8) {
             _graphicManager.DrawTile8(i, sy, 1);
             _graphicManager.DrawTile8(i, sy + sh, 6);
         }
         _graphicManager.DrawTile8(i, sy, 2);
         _graphicManager.DrawTile8(i, sy + sh, 7);
 
-        for (i = (ushort)(sy + 8); i <= sy + sh - 8; i += 8) {
+        for (i = sy + 8; i <= sy + sh - 8; i += 8) {
             _graphicManager.DrawTile8(sx, i, 3);
             _graphicManager.DrawTile8(sx + sw, i, 4);
         }
-    }
-    ///////////////////////////////////////////////////////////////////////////
-    //
-    //	US_CenterWindow() - Generates a window of a given width & height in the
-    //		middle of the screen
-    //
-    ///////////////////////////////////////////////////////////////////////////
-    internal static void US_CenterWindow(ushort w, ushort h)
-    {
-        US_DrawWindow((ushort)(((MaxX / 8) - w) / 2), (ushort)(((MaxY / 8) - h) / 2), w, h);
+
+        return window;
     }
 
     private static bool _xoricursor_status = false;
-    internal static void USL_XORICursor(int x, int y, string s, ushort cursor)
+    internal static void USL_XORICursor(int x, int y, string s, int cursor, TextStyle style)
     {
-        string buf;
-        string temp;
-        ushort w, h;
+        int w = TextWidth(s, style.Font);
 
-        buf = s;
-        // buf[cursor] = '\0'; // not necessary for C# strings
-        USL_MeasureString(buf, out w, out h);
-
-        px = x + w - 1;
-        py = y;
-        if (_xoricursor_status ^= true)
-            USL_DrawString("\x80");
-        else
-        {
-            temp = fontcolor;
-            fontcolor = backcolor;
-            USL_DrawString("\x80");
-            fontcolor = temp;
-        }
+        // Blinks by drawing the cursor glyph in the text color, then in the background color
+        _graphicManager.DrawText(x + w - 1, y, "\x80", (_xoricursor_status ^= true) ? style : style.Inverted);
     }
 
     internal static int US_RndT()

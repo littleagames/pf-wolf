@@ -454,7 +454,7 @@ internal partial class Program
     /// <summary>The player's tile and compass heading, in the bottom-left corner of the view.</summary>
     static void DrawAutomapPosition(AutomapView view)
     {
-        var font = _assetManager.Find<FontAsset>(AUTOMAP_FONT);
+        var font = _fontManager.Find(AUTOMAP_FONT);
         if (font == null)
             return;
 
@@ -463,25 +463,25 @@ internal partial class Program
         if (!_automapManager.Follow)
             text += "  PAN";
 
-        // DrawPropString and Bar work in 320x200 virtual pixels
+        // DrawText and Bar work in 320x200 virtual pixels
         int px = _videoManager.scaleFactor;
         int x = view.ClipX / px + 3;
         int y = (view.ClipY + view.ClipHeight) / px - font.Height - 2;
         int room = view.ClipWidth / px - 6;
 
         // The smallest view sizes can't fit it all: fall back to just the tile, then to nothing
-        GraphicManager.MeasureString(text, out ushort width, out _, font);
+        int width = font.Measure(text);
         if (width > room)
         {
             text = $"{player.TileX},{player.TileY}";
-            GraphicManager.MeasureString(text, out width, out _, font);
+            width = font.Measure(text);
             if (width > room || font.Height + 2 > view.ClipHeight / px)
                 return;
         }
 
         // On a backdrop box, so the map under it doesn't make it hard to read
         _videoManager.Bar(x - 2, y - 1, width + 4, font.Height + 2, AutomapColor("AutomapBackground"));
-        _videoManager.DrawPropString(x, y, text, AutomapColor("AutomapPlayer"), font);
+        _graphicManager.DrawText(x, y, text, font, AutomapColor("AutomapPlayer"));
     }
 
     /// <summary>

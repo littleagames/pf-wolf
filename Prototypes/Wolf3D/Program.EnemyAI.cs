@@ -1311,10 +1311,7 @@ internal partial class Program
 
         if (bordercol != "VIEWCOLOR")
         {
-            fontnumber = "LargeFont";
-            SETFONTCOLOR("White", bordercol);
-            PrintX = 68; PrintY = 45;
-            US_Print("$STR_SEEAGAIN".ToLanguageText(language));
+            TextAt(68, 45, new Fonts.TextStyle(LARGE_FONT, "White", bordercol)).Print("$STR_SEEAGAIN".ToLanguageText(language));
         }
         else
         {

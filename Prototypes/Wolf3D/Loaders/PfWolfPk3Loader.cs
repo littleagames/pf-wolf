@@ -84,6 +84,13 @@ internal class PfWolfPk3Loader
                 }
                 continue;
             }
+            if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("fonts.yaml", StringComparison.OrdinalIgnoreCase))
+            {
+                var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
+                var data = YamlDataEntryLoader.Read<Dictionary<string, FontDefinition>>(entry.Open());
+                MergeAsset(uniqueName, new FontDefinitionsAsset(data));
+                continue;
+            }
             if (fullName.StartsWith("language/")
                 || (fullName.StartsWith("gamepacks/") && fullName.Contains("/language/")))
             {
@@ -133,6 +140,24 @@ internal class PfWolfPk3Loader
                 catch (Exception e)
                 {
                     Console.WriteLine($"Error loading asset '{assetName}': {e.Message}");
+                }
+                continue;
+            }
+
+            if (fullName.StartsWith("fonts/"))
+            {
+                // Wolf3D-format font files, used by name like SmallFont and LargeFont (a file of
+                // the same name replaces one of those)
+                try
+                {
+                    using var stream = entry.Open();
+                    using var data = new MemoryStream();
+                    stream.CopyTo(data);
+                    AddAsset(assetName, FontAsset.FromFile(data.ToArray()));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error loading font '{fullName}': {e.Message}");
                 }
                 continue;
             }

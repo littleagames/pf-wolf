@@ -6,6 +6,7 @@ using Wolf3D.Configuration;
 using Wolf3D.Constants;
 using Wolf3D.Entities;
 using Wolf3D.Extensions;
+using Wolf3D.Fonts;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
@@ -128,30 +129,15 @@ internal partial class Program
 
     internal static void DrawMenu(CP_iteminfo item_i, CP_itemtype[] items)
     {
-        int i, which = item_i.curpos;
+        int which = item_i.curpos;
 
-        WindowX = PrintX = (ushort)(item_i.x + item_i.indent);
-        WindowY = PrintY = (ushort)item_i.y;
-        WindowW = 320;
-        WindowH = 200;
-
-        for (i = 0; i < item_i.amount; i++)
-        {
-            SetTextColor(items[i], which == i);
-
-            PrintY = (ushort)(item_i.y + i * 13);
-            if (items[i].active > 0)
-                US_Print((items[i]).text);
-            else
-            {
-                SETFONTCOLOR("DEACTIVE", "BKGDCOLOR");
-                US_Print((items[i]).text);
-                SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-            }
-
-            US_Print("\n");
-        }
+        for (int i = 0; i < item_i.amount; i++)
+            PrintMenuItem(item_i, items, i, items[i].active > 0 ? MenuItemColor(items[i], which == i) : "DEACTIVE");
     }
+
+    /// <summary>An item's text in its row; a newline in it goes on under the start of the text</summary>
+    internal static void PrintMenuItem(CP_iteminfo item_i, CP_itemtype[] items, int which, string color)
+        => TextAt(item_i.x + item_i.indent, item_i.y + which * 13, MenuStyle(color)).Print(items[which].text);
 
     internal static int StartCPMusic(string song)
     {
@@ -185,13 +171,8 @@ internal partial class Program
         y = basey + which * 13;
 
         _graphicManager.DrawPic("c_cursor1", x, y);
-        SetTextColor(items[which], true);
         if (redrawitem != 0)
-        {
-            PrintX = (ushort)(item_i.x + item_i.indent);
-            PrintY = (ushort)(item_i.y + which * 13);
-            US_Print((items[which].text));
-        }
+            PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
         //
         // CALL CUSTOM ROUTINE IF IT IS NEEDED
         //
@@ -386,9 +367,7 @@ internal partial class Program
         if (lastitem != which)
         {
             _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
-            PrintX = (ushort)(item_i.x + item_i.indent);
-            PrintY = (ushort)(item_i.y + which * 13);
-            US_Print(items[which].text);
+            PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
             redrawitem = 1;
         }
         else
@@ -433,11 +412,7 @@ internal partial class Program
     internal static void EraseGun(CP_iteminfo item_i, CP_itemtype[] items, int x, int y, int which)
     {
         _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
-        SetTextColor(items[which], false);
-
-        PrintX = (ushort)(item_i.x + item_i.indent);
-        PrintY = (ushort)(item_i.y + which * 13);
-        US_Print(items[which].text);
+        PrintMenuItem(item_i, items, which, MenuItemColor(items[which], false));
         _videoManager.Update();
     }
 
@@ -457,11 +432,7 @@ internal partial class Program
         _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
         y = basey + which * 13;
         _graphicManager.DrawPic("c_cursor1", x, y);
-        SetTextColor(items[which], true);
-
-        PrintX = (ushort)(item_i.x + item_i.indent);
-        PrintY = (ushort)(item_i.y + which * 13);
-        US_Print(items[which].text);
+        PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
 
         //
         // CALL CUSTOM ROUTINE IF IT IS NEEDED
@@ -492,17 +463,8 @@ internal partial class Program
         }
     }
 
-    internal static void SetTextColor(CP_itemtype items, bool hlight)
-    {
-        if (hlight)
-        {
-            SETFONTCOLOR(color_hlite[items.active], "BKGDCOLOR");
-        }
-        else
-        {
-            SETFONTCOLOR(color_norml[items.active], "BKGDCOLOR");
-        }
-    }
+    internal static string MenuItemColor(CP_itemtype item, bool hlight)
+        => hlight ? color_hlite[item.active] : color_norml[item.active];
 
     internal static void ShootSnd()
     {
@@ -613,9 +575,6 @@ internal partial class Program
         //
         // CACHE SOUNDS
         //
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-        fontnumber = "LargeFont";
-        WindowH = 200;
         if (_videoManager.screenHeight % 200 != 0)
             _videoManager.ClearScreen(0);
 
@@ -746,16 +705,13 @@ internal partial class Program
             // END GAME
             //
             case ScanCodes.sc_F7:
-                WindowH = 160;
-                if (Confirm("$ENDGAMESTR".ToLanguageText(language)) != 0)
+                if (Confirm("$ENDGAMESTR".ToLanguageText(language), MAXY) != 0)
                 {
                     playstate = playstatetypes.ex_died;
                     LastAttacker = null;
                     gamestate.lives = 0;
                 }
 
-                WindowH = 200;
-                fontnumber = "SmallFont";
                 FindMenuItem(MainMenu, "savegame")?.active = 0;
                 return 1;
             //
@@ -763,10 +719,8 @@ internal partial class Program
             //
             // Always the quicksave file, never a save picked in the menus
             case ScanCodes.sc_F8:
-                fontnumber = "LargeFont";
-                Message("$STR_SAVING".ToLanguageText(language) + "...");
+                    Message("$STR_SAVING".ToLanguageText(language) + "...", MAXY);
                 CP_SaveGame(1);
-                fontnumber = "SmallFont";
                 return 1;
 
             //
@@ -776,12 +730,10 @@ internal partial class Program
             case ScanCodes.sc_F9:
                 if (File.Exists(QuickSavePath))
                 {
-                    fontnumber = "LargeFont";
+                    var str = $"{"$STR_LGC".ToLanguageText(language)} {lastSaveGame.Name}\"?";
 
-                    if (Confirm("$STR_LS_QUICKLOAD".ToLanguageText(language)) != 0)
+                    if (Confirm(str, MAXY) != 0)
                         CP_LoadGame(1);
-
-                    fontnumber = "SmallFont";
                 }
                 else
                 {
@@ -792,7 +744,6 @@ internal partial class Program
                     lastgamemusicoffset = StartCPMusic(MENUSONG);
                     CP_LoadGame(0);    // loads lastgamemusicoffs
 
-                    SETFONTCOLOR("Black", "White");
                     _inputManager.ClearKeysDown();
                     _videoManager.FadeOut();
                     if (viewsize != 21)
@@ -814,11 +765,8 @@ internal partial class Program
             // QUIT
             //
             case ScanCodes.sc_F10:
-                WindowX = WindowY = 0;
-                WindowW = 320;
-                WindowH = 160;
                 string endStr = gameInfo.EndStrings[(US_RndT() & (gameInfo.EndStrings.Count - 2)) + (US_RndT() & 1)];
-                if (Confirm(endStr) != 0)
+                if (Confirm(endStr, MAXY) != 0)
                 {
                     _videoManager.Update();
                     _audioManager.SetPaused(true);
@@ -829,8 +777,6 @@ internal partial class Program
                 }
 
                 DrawPlayBorder();
-                WindowH = 200;
-                fontnumber = "SmallFont";
                 return 1;
         }
 
@@ -974,7 +920,6 @@ internal partial class Program
     internal static void DrawNewEpisode()
     {
         DrawMenuComponents("new-episode");
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         DrawMenu(NewEitems, NewEmenu);
 
         // Each episode's picture (pic-name in game-info) sits between the cursor and the name
@@ -1427,10 +1372,7 @@ internal partial class Program
         int y = iteminfo.y + index * 13;
         _videoManager.Bar(x, y, MenuChoiceWidth, 13, "BKGDCOLOR");
 
-        SetTextColor(items[index], false);
-        PrintX = (ushort)x;
-        PrintY = (ushort)y;
-        US_Print(value);
+        TextAt(x, y, MenuStyle(MenuItemColor(items[index], false))).Print(value);
     }
 
     /// <summary>
@@ -1492,10 +1434,6 @@ internal partial class Program
     {
         int i;
         DrawMenuComponents("control");
-
-        WindowX = 0;
-        WindowW = 320;
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
 
         var mouseEnabledItem = FindMenuItem(CtlMenu, "mouse-enabled");
         var mouseSensItem = FindMenuItem(CtlMenu, "mouse-sensitivity");
@@ -1577,15 +1515,9 @@ internal partial class Program
         DrawControllerValues();
 
         // Which controller the settings are for, under the hints
-        fontnumber = "SmallFont";
-        SETFONTCOLOR("READCOLOR", "BKGDCOLOR");
-        WindowX = 0;
-        WindowW = 320;
-        PrintY = 160;
-        US_CPrint(FitText(_inputManager.ControllerName is string name
+        CenteredText(0, 320, 160, new TextStyle(SMALL_FONT, "READCOLOR")).CPrint(FitText(_inputManager.ControllerName is string name
             ? $"{"$STR_CTL_PAD".ToLanguageText(language)} {name}"
-            : "$STR_CTL_NOPAD".ToLanguageText(language), 300));     // a controller's name can be long
-        fontnumber = "LargeFont";
+            : "$STR_CTL_NOPAD".ToLanguageText(language), 300, SMALL_FONT));     // a controller's name can be long
 
         DrawMenuGun(JoyItems);
         _videoManager.Update();
@@ -1650,9 +1582,6 @@ internal partial class Program
         int exit = 0, oldview, newview;
         ControlInfo ci;
 
-        WindowX = WindowY = 0;
-        WindowW = 320;
-        WindowH = 200;
         newview = oldview = viewsize;
         DrawChangeView(oldview);
         MenuFadeIn();
@@ -1727,14 +1656,10 @@ internal partial class Program
 
         ShowViewSize(view);
 
-        PrintY = (ushort)((_videoManager.screenHeight / _videoManager.scaleFactor) - 39);
-        WindowX = 0;
-        WindowY = 320;                                  // TODO: Check this!
-        SETFONTCOLOR("HIGHLIGHT", "BKGDCOLOR");
-
-        US_CPrint("$STR_SIZE1".ToLanguageText(language) +"\n");
-        US_CPrint("$STR_SIZE2".ToLanguageText(language) +"\n");
-        US_CPrint("$STR_SIZE3".ToLanguageText(language));
+        var help = CenteredText(0, 320, rescaledHeight - 39, MenuStyle("HIGHLIGHT"));
+        help.CPrint("$STR_SIZE1".ToLanguageText(language) + "\n");
+        help.CPrint("$STR_SIZE2".ToLanguageText(language) + "\n");
+        help.CPrint("$STR_SIZE3".ToLanguageText(language));
         _videoManager.Update();
     }
 
@@ -1748,14 +1673,11 @@ internal partial class Program
 
     internal static int CP_ViewScores(int _)
     {
-        fontnumber = "SmallFont";
-
         StartCPMusic(HIGHSCORESSONG);
 
         DrawHighScores();
         _videoManager.Update();
         MenuFadeIn();
-        fontnumber = "LargeFont";
 
         _inputManager.Ack();
 
@@ -1882,8 +1804,6 @@ internal partial class Program
 
     internal static void CleanupControlPanel()
     {
-        fontnumber = "SmallFont";
-
         // Keep whatever was changed in the menus (view size, controls, sensitivity) even if the
         // game doesn't get to exit cleanly.
         _gameEngineManager.WriteConfig();
@@ -1898,22 +1818,23 @@ internal partial class Program
         _graphicManager.DrawPic("c_cursor1", x, y);
     }
 
-    internal static int Confirm(string text)
+    /// <param name="areaHeight">Height of the screen area the question is centered in: the play view (MAXY) in a game</param>
+    internal static int Confirm(string text, int areaHeight = 200)
     {
         var language = _assetManager.GetText("en-us");
         int xit = 0, x, y, tick = 0, lastBlinkTime;
         string[] whichsnd = ["menu/escape", "menu/activate"];
         ControlInfo ci;
 
-        Message(text.ToLanguageText(language));
+        var message = Message(text.ToLanguageText(language), areaHeight);
         _inputManager.ClearKeysDown();
         WaitKeyUp();
 
         //
         // BLINK CURSOR
         //
-        x = PrintX;
-        y = PrintY;
+        x = message.PrintX;
+        y = message.PrintY;
         lastBlinkTime = (int)GameEngineManager.GetTimeCount();
 
         do
@@ -1928,9 +1849,7 @@ internal partial class Program
                         _videoManager.Bar(x, y, 8, 13, "TEXTCOLOR");
                         break;
                     case 1:
-                        PrintX = (ushort)x;
-                        PrintY = (ushort)y;
-                        US_Print("_");
+                        _graphicManager.DrawText(x, y, "_", message.Style);
                         break;
                 }
                 _videoManager.Update();
@@ -1981,14 +1900,20 @@ internal partial class Program
         }
     }
 
-    internal static void Message(string text)
+    /// <summary>
+    /// Shows text in a box in the middle of the screen, and returns the box's text window with its
+    /// print position just after the text
+    /// </summary>
+    /// <param name="areaHeight">Height of the screen area the box is centered in: the play view (MAXY) in a game</param>
+    internal static TextWindow Message(string text, int areaHeight = 200)
     {
         int h = 0, w = 0, mw = 0, i, len = text.Length;
+        var style = new TextStyle(LARGE_FONT, "Black", "TEXTCOLOR");
 
-        fontnumber = "LargeFont";
-        FontAsset font = _assetManager.Find<FontAsset>(fontnumber);
-        if (font == null) return;
-        h = font.Height;
+        var font = _fontManager.Find(style.Font);
+        if (font == null)
+            return TextWindow.FullScreen(_graphicManager, style);
+        h = font.LineHeight;
 
         for (i = 0; i < len; i++)
         {
@@ -1997,23 +1922,24 @@ internal partial class Program
                 if (w > mw)
                     mw = w;
                 w = 0;
-                h += font.Height;
+                h += font.LineHeight;
             }
             else
-                w += font.Width[(byte)text[i]];
+                w += font.Advance(text[i]);
         }
 
         if (w + 10 > mw)
             mw = w + 10;
 
-        PrintY = (ushort)((WindowH / 2) - (h / 2));
-        PrintX = WindowX = (ushort)(160 - (mw / 2));
+        int x = 160 - (mw / 2);
+        int y = (areaHeight / 2) - (h / 2);
 
-        DrawWindow(WindowX - 5, PrintY - 5, mw + 10, h + 10, "TEXTCOLOR");
-        DrawOutline(WindowX - 5, PrintY - 5, mw + 10, h + 10, "Black", "HIGHLIGHT");
-        SETFONTCOLOR("Black", "TEXTCOLOR");
-        US_Print(text);
+        DrawWindow(x - 5, y - 5, mw + 10, h + 10, "TEXTCOLOR");
+        DrawOutline(x - 5, y - 5, mw + 10, h + 10, "Black", "HIGHLIGHT");
+        var window = new TextWindow(_graphicManager, x, y, mw, h, style);
+        window.Print(text);
         _videoManager.Update();
+        return window;
     }
 
     internal static void FreeMusic()
@@ -2221,27 +2147,13 @@ internal partial class Program
     private static void DrawLabel(Label label)
     {
         var language = _assetManager.GetText("en-us");
-        var oldFont = fontnumber;
-
-        fontnumber = label.Font;
-        SETFONTCOLOR(label.Color, "BKGDCOLOR");
-        PrintY = (ushort)label.Y;
+        var style = new TextStyle(label.Font, label.Color);
 
         var text = label.Text.ToLanguageText(language);
         if (label.HorizontalOrientation == HorizontalOrientation.Center)
-        {
-            WindowX = 0;
-            WindowW = 320;
-            US_CPrint(text);
-        }
+            CenteredText(0, 320, label.Y, style).CPrint(text);
         else
-        {
-            PrintX = (ushort)label.X;
-            US_Print(text);
-        }
-
-        fontnumber = oldFont;
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
+            TextAt(label.X, label.Y, style).Print(text);
     }
 
     private static Func<int, int>? MapFunction(string menuName, MenuSwitcher? mi)
