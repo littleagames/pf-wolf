@@ -953,8 +953,9 @@ internal partial class Program
     }
 
     /// <summary>
-    /// The Options submenu. Each item runs its own screen (Sound, Control, Change View),
-    /// and this menu is drawn again when that screen is left.
+    /// The Options submenu. Most items run their own screen (Sound, Control, Change View,
+    /// Video), and this menu is drawn again when that screen is left; Messages switches the
+    /// messages over the view on and off in place.
     /// </summary>
     internal static int CP_Options(int _)
     {
@@ -967,7 +968,16 @@ internal partial class Program
         do
         {
             which = HandleMenu(OptItems, OptMenu, null);
-            if (which >= 0)
+            if (SelectedId(OptMenu, which) == "messages")
+            {
+                // The player's own choice from now on, over the game pack's default (msg_enabled)
+                _hudMessageManager.EnabledSetting = !_hudMessageManager.Enabled;
+                if (!_hudMessageManager.Enabled)
+                    _hudMessageManager.Clear();
+                DrawOptionsMenu();
+                ShootSnd();
+            }
+            else if (which >= 0)
             {
                 DrawOptionsMenu();
                 MenuFadeIn();
@@ -985,6 +995,7 @@ internal partial class Program
     {
         DrawMenuComponents("options");
         DrawMenu(OptItems, OptMenu);
+        DrawMenuCheckbox(OptItems, OptMenu, "messages", _hudMessageManager.Enabled);
         DrawMenuGun(OptItems);
         _videoManager.Update();
     }

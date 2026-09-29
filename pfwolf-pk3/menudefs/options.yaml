@@ -1,9 +1,10 @@
 music: "WONDERIN"
 type: "wolf3d-menu"
+# Indented enough for the Messages checkbox between the cursor and the text
 position:
-  x: 76
+  x: 52
   y: 82
-indent: 24
+indent: 48
 components:
   -
     type: "Background"
@@ -23,10 +24,10 @@ components:
   -
     type: "Window"
     params:
-      - x: 68
+      - x: 44
       - y: 79
-      - width: 178
-      - height: 58
+      - width: 202
+      - height: 71
   -
     type: "Graphic"
     params:
@@ -63,3 +64,10 @@ menu-items:
       short-key: V
       enabled: true
       action: "CP_Video"
+  # Whether item pickups, locked doors and deaths show messages over the view (msg_enabled)
+  -
+      id: "messages"
+      type: "ToggleMenuItem"
+      text: "$MENU_MESSAGES"
+      short-key: M
+      enabled: true
