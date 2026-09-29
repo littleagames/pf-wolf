@@ -67,11 +67,9 @@ internal partial class Program
         }
     }
 
-    /// <summary>The style an obituary is shown in when its killer doesn't give one</summary>
-    internal const string ObituaryStyleName = "Obituary";
-
     /// <summary>
-    /// Says what killed the player (LastAttacker): its `obituary` in its `obituarystyle`. A
+    /// Says what killed the player (LastAttacker): its `obituary` in its `obituarystyle` (or
+    /// game-info's for obituaries). A
     /// projectile without an obituary of its own is put down to whoever fired it. A killer with
     /// none says "killed by", and no killer at all (the `hurt` command) that the player died.
     /// %o in the text is the player's tag and %k the killer's (the shooter's, for a projectile).
@@ -84,7 +82,7 @@ internal partial class Program
         string text = source == null ? "$OB_DIED" : PropertyText(source, "obituary") ?? "$OB_KILLED";
         string? style = source == null ? null : PropertyText(source, "obituarystyle");
 
-        _hudMessageManager.Show(text, style ?? ObituaryStyleName, new Dictionary<char, string>
+        _hudMessageManager.Show(HudMessageKind.Obituary, text, style, new Dictionary<char, string>
         {
             ['o'] = ActorTag(player),
             ['k'] = killer == null ? "" : ActorTag(killer.Shooter ?? killer),

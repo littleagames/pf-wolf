@@ -27,6 +27,13 @@ death-fade-tics: 70
 level-fade-style: fizzle
 level-fade-tics: 20
 
+# Messages over the view: see gamepacks/wolf3d/game-info.yaml
+hud-messages:
+  enabled: false
+  pickup-style: Default
+  lock-style: Center
+  obituary-style: Obituary
+
 skills:
   BABY:
     name: "Can I play, Daddy?"

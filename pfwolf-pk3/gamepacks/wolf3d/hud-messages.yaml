@@ -2,6 +2,9 @@
 # the player. Spear of Destiny starts from these; a gamepacks/spear/hud-messages.yaml would
 # replace them style by style. Try one in the console with "msg <style> <text>".
 #
+# Which style each kind of message gets, and whether messages are on at all, is in
+# game-info.yaml's hud-messages; an item, door or enemy can name its own style instead.
+#
 #   parent:     The style this one starts from; anything left out comes from it. A style with
 #               no parent starts from Default.
 #   anchor:     Where in the view the messages sit: TopLeft, Top, TopRight, Left, Center (or
@@ -37,7 +40,8 @@ Center:
   duration: 140
   max-lines: 2
 
-# What killed the player (an actor's "obituary"), shown when it has no "obituarystyle". It
+# What killed the player (an actor's "obituary"): game-info's obituary-style, for a killer
+# without an "obituarystyle". It
 # stays up through the turn to face the killer and on the red after it. One line, so it
 # pushes out a locked-door message sharing the middle of the view.
 Obituary:

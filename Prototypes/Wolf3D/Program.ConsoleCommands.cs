@@ -81,6 +81,8 @@ internal partial class Program
         //
         Register("msg", "Shows a message over the view, in a style from hud-messages.yaml if the first word names one.",
             "msg [style] <text...>", Cmd_Msg, InLevel, complete: (_, i) => i == 0 ? _hudMessageManager.StyleNames : []);
+        Register("msg_enabled", "Whether item pickups, locked doors and deaths show messages over the view; default goes back to the game's own choice.",
+            "msg_enabled [0|1|default]", Cmd_MsgEnabled, complete: Values("0", "1", "default"));
         Register("msg_clear", "Takes away the messages shown over the view.", "msg_clear", _ => _hudMessageManager.Clear());
         Register("msg_styles", "Lists the message styles and where each puts its messages.", "msg_styles", Cmd_MsgStyles);
 
@@ -764,9 +766,23 @@ internal partial class Program
 
         // A first word naming a style is the style, as long as there's text after it
         if (args.Length > 1 && _hudMessageManager.StyleExists(args[0]))
-            _hudMessageManager.Show(string.Join(' ', args[1..]), args[0]);
+            _hudMessageManager.Show(HudMessageKind.Other, string.Join(' ', args[1..]), args[0]);
         else
-            _hudMessageManager.Show(string.Join(' ', args));
+            _hudMessageManager.Show(HudMessageKind.Other, string.Join(' ', args));
+    }
+
+    private static void Cmd_MsgEnabled(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            _hudMessageManager.EnabledSetting = args[0].Equals("default", StringComparison.OrdinalIgnoreCase)
+                ? null
+                : ParseBool(args[0]);
+            if (!_hudMessageManager.Enabled)
+                _hudMessageManager.Clear();
+        }
+        _consoleManager.Print($"msg_enabled is {(_hudMessageManager.Enabled ? 1 : 0)}" +
+            (_hudMessageManager.EnabledSetting == null ? " (the game's default)" : ""));
     }
 
     private static void Cmd_MsgStyles(string[] args)

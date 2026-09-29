@@ -23,6 +23,7 @@ internal class GameEngineManager
     private readonly Lazy<AssetManager> assetManager;
     private readonly ConsoleManager consoleManager;
     private readonly AutomapManager automapManager;
+    private readonly HudMessageManager hudMessageManager;
 
     public GameEngineManager(
         VideoManager videoManager,
@@ -30,12 +31,14 @@ internal class GameEngineManager
         AudioManager audioManager,
         Lazy<AssetManager> assetManager,
         ConsoleManager consoleManager,
-        AutomapManager automapManager)
+        AutomapManager automapManager,
+        HudMessageManager hudMessageManager)
     {
         this.videoManager = videoManager;
         this.inputManager = inputManager;
         this.consoleManager = consoleManager;
         this.automapManager = automapManager;
+        this.hudMessageManager = hudMessageManager;
         InputManager.Quit += Quit;
         InputManager.Pause += SetPaused;
         this.audioManager = audioManager;
@@ -157,6 +160,15 @@ internal class GameEngineManager
         public int? SoundVolume, MusicVolume;
         public VideoSettings? Video;
         public bool? AutoSave;
+        public HudMessagesSetting? HudMessages;
+    }
+
+    /// <summary>The `msg_enabled` setting, as saved in config.cfg</summary>
+    private enum HudMessagesSetting : byte
+    {
+        Off = 0,
+        On = 1,
+        GameDefault = 2,
     }
 
     /// <summary>The Video menu's on/off settings, as saved in config.cfg.</summary>
@@ -264,6 +276,8 @@ internal class GameEngineManager
             audioManager.MusicVolume = musicVolume;
         if (config.AutoSave is bool autoSave)
             Program.autosaveEnabled = autoSave;
+        if (config.HudMessages is HudMessagesSetting.Off or HudMessagesSetting.On)
+            hudMessageManager.EnabledSetting = config.HudMessages == HudMessagesSetting.On;
 
         // Set "Read This" back to standard active
         Program.FindMenuItem(Program.MainMenu, "readthis")?.active = 1;
@@ -341,6 +355,8 @@ internal class GameEngineManager
             config.Video = ReadVideoSettings(br);
         if (stream.Position < stream.Length)
             config.AutoSave = br.ReadByte() != 0;
+        if (stream.Position < stream.Length)
+            config.HudMessages = (HudMessagesSetting)br.ReadByte();
 
         return config;
     }
@@ -551,6 +567,12 @@ internal class GameEngineManager
         bw.Write((byte)audioManager.MusicVolume);
         WriteVideoSettings(bw, videoManager.Settings);
         bw.Write((byte)(Program.autosaveEnabled ? 1 : 0));
+        bw.Write((byte)(hudMessageManager.EnabledSetting switch
+        {
+            true => HudMessagesSetting.On,
+            false => HudMessagesSetting.Off,
+            null => HudMessagesSetting.GameDefault,
+        }));
     }
 
     /// <summary>

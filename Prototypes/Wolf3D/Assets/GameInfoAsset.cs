@@ -87,10 +87,32 @@ internal record GameInfoAsset : Asset
     /// </summary>
     public string? MenuBackdrop { get; init; }
 
+    /// <summary>
+    /// The messages shown over the view (hud-messages.yaml): whether they're on until the
+    /// player says otherwise, and the style each kind is shown in when its actor or door
+    /// doesn't give one
+    /// </summary>
+    public HudMessagesInfo HudMessages { get; init; } = new();
+
     public override void Merge(Asset other)
     {
         // TODO: Overwrite or merge the data
     }
+}
+
+internal record HudMessagesInfo
+{
+    /// <summary>Whether messages are shown before the player turns them on or off (msg_enabled)</summary>
+    public bool Enabled { get; init; }
+
+    /// <summary>The style for an item's pickup message</summary>
+    public string PickupStyle { get; init; } = "Default";
+
+    /// <summary>The style for a locked door's message</summary>
+    public string LockStyle { get; init; } = "Center";
+
+    /// <summary>The style for what killed the player</summary>
+    public string ObituaryStyle { get; init; } = "Obituary";
 }
 
 internal record SignonInfo

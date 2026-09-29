@@ -301,7 +301,8 @@ internal partial class Program
 
     /// <summary>
     /// Says what a locked door needs: the door's own lock-message (doors.yaml), else its lock
-    /// item's `key.lockedmessage`, else that it's locked. The style is found the same way.
+    /// item's `key.lockedmessage`, else that it's locked. The style is found the same way, then
+    /// comes from game-info's for locked doors.
     /// </summary>
     static void ShowLockedMessage(MapTextureTranslation xlat, string lockItem)
     {
@@ -309,7 +310,7 @@ internal partial class Program
             : _inventoryManager.GetStringProperty(lockItem, "key.lockedmessage") ?? "$LOCKEDDOOR";
         var style = !string.IsNullOrWhiteSpace(xlat.LockMessageStyle) ? xlat.LockMessageStyle
             : _inventoryManager.GetStringProperty(lockItem, "key.lockedmessagestyle");
-        _hudMessageManager.Show(message, style);
+        _hudMessageManager.Show(HudMessageKind.Lock, message, style);
     }
 
     //===========================================================================

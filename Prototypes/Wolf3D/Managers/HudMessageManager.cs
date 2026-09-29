@@ -21,6 +21,16 @@ internal sealed record HudMessageStyle(string Name, HudAnchor Anchor, int X, int
 
 internal readonly record struct HudMessagePosition(HudAnchor Anchor, int X, int Y, int Margin);
 
+/// <summary>What a message is about, which picks its default style (game-info hud-messages)</summary>
+internal enum HudMessageKind : byte
+{
+    /// <summary>The `msg` command's: shown even with messages off, in Default</summary>
+    Other,
+    Pickup,
+    Lock,
+    Obituary,
+}
+
 internal sealed class HudMessage(string text, HudMessageStyle style)
 {
     public string Text { get; } = text;
@@ -55,6 +65,29 @@ internal class HudMessageManager
     private HudMessageStylesAsset? definitions;
     private bool definitionsRead;
 
+    /// <summary>
+    /// Whether pickups, locked doors and obituaries show messages: the player's choice (the
+    /// `msg_enabled` setting, saved in the config) or, until they make one, the game pack's
+    /// (game-info hud-messages enabled)
+    /// </summary>
+    internal bool Enabled => EnabledSetting ?? GameInfo?.Enabled ?? false;
+
+    /// <summary>The player's `msg_enabled` choice; null for the game pack's default</summary>
+    internal bool? EnabledSetting { get; set; }
+
+    private HudMessagesInfo? GameInfo =>
+        gameInfo ??= assetManager.Value.FindInGamePack<GameInfoAsset>("game-info")?.HudMessages;
+    private HudMessagesInfo? gameInfo;
+
+    /// <summary>The style a kind of message is shown in when nothing more particular gives one</summary>
+    internal string KindStyle(HudMessageKind kind) => kind switch
+    {
+        HudMessageKind.Pickup => GameInfo?.PickupStyle ?? DefaultStyleName,
+        HudMessageKind.Lock => GameInfo?.LockStyle ?? DefaultStyleName,
+        HudMessageKind.Obituary => GameInfo?.ObituaryStyle ?? DefaultStyleName,
+        _ => DefaultStyleName,
+    };
+
     /// <summary>The messages up now, oldest first</summary>
     internal IReadOnlyList<HudMessage> Messages => messages;
 
@@ -67,18 +100,24 @@ internal class HudMessageManager
 
     /// <summary>
     /// Shows <paramref name="text"/> (a $NAME language key or the text itself) in the named
-    /// style, or Default. ZDoom-style placeholders in it, such as %k, are filled in from
-    /// <paramref name="placeholders"/> (%% is a percent sign). The same text already up at that
-    /// position is brought back to the bottom of its stack with its time restarted instead of
-    /// shown twice. It's printed to the console too, which keeps a history of them.
+    /// style, or the one for its <paramref name="kind"/>. Nothing is shown while messages are
+    /// off, except the `msg` command's (<see cref="HudMessageKind.Other"/>). ZDoom-style
+    /// placeholders in it, such as %k, are filled in from <paramref name="placeholders"/> (%% is
+    /// a percent sign). The same text already up at that position is brought back to the bottom
+    /// of its stack with its time restarted instead of shown twice. It's printed to the console
+    /// too, which keeps a history of them.
     /// </summary>
-    internal void Show(string? text, string? styleName = null, IReadOnlyDictionary<char, string>? placeholders = null)
+    internal void Show(HudMessageKind kind, string? text, string? styleName = null,
+        IReadOnlyDictionary<char, string>? placeholders = null)
     {
+        if (kind != HudMessageKind.Other && !Enabled)
+            return;
+
         text = text == null ? null : FillPlaceholders(Localize(text), placeholders).Trim();
         if (string.IsNullOrEmpty(text))
             return;
 
-        var style = FindStyle(styleName);
+        var style = FindStyle(string.IsNullOrWhiteSpace(styleName) ? KindStyle(kind) : styleName);
         messages.RemoveAll(m => m.Style.Position == style.Position && m.Text == text);
         messages.Add(new HudMessage(text, style));
 
