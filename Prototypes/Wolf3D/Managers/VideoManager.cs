@@ -495,6 +495,66 @@ internal class VideoManager
     /// each matched to the closest palette entry. Built on first use and kept until the palette
     /// or brightness changes.
     /// </summary>
+    private readonly Dictionary<(string Color, int Rows, int Top, int Bottom), byte[]> _gradients = [];
+
+    /// <summary>
+    /// A palette index for each of <paramref name="rows"/> rows of text, shading
+    /// <paramref name="color"/> from <paramref name="top"/> percent at the first row to
+    /// <paramref name="bottom"/> percent at the last: positive toward white, negative toward black.
+    /// Each row is matched to the closest palette entry. Built once per color and shape.
+    /// </summary>
+    internal byte[] GetGradient(string color, int rows, int top, int bottom)
+    {
+        rows = Math.Max(rows, 1);
+        var key = (color, rows, top, bottom);
+        if (_gradients.TryGetValue(key, out var table))
+            return table;
+
+        var c = gamepal[ResolveColorByte(color)];
+        static byte Shade(byte value, float amount)
+            => (byte)Math.Clamp(amount >= 0 ? value + (255 - value) * amount : value * (1 + amount), 0, 255);
+
+        table = new byte[rows];
+        for (int i = 0; i < rows; i++)
+        {
+            float t = rows > 1 ? i / (float)(rows - 1) : 0.5f;
+            float amount = (top + (bottom - top) * t) / 100f;
+            table[i] = FindClosestPaletteIndex(Shade(c.r, amount), Shade(c.g, amount), Shade(c.b, amount));
+        }
+
+        _gradients[key] = table;
+        return table;
+    }
+
+    private readonly Dictionary<(string Glow, string Background, int Radius, int Strength), string[]> _glowColors = [];
+
+    /// <summary>
+    /// The color of each of <paramref name="radius"/> glow rings, nearest the text first: the
+    /// glow color mixed into the background at <paramref name="strength"/> percent for the
+    /// first, fading evenly for the rest. Each is a palette index, as a color string.
+    /// </summary>
+    internal string[] GetGlowColors(string glow, string background, int radius, int strength)
+    {
+        radius = Math.Max(radius, 1);
+        var key = (glow, background, radius, strength);
+        if (_glowColors.TryGetValue(key, out var colors))
+            return colors;
+
+        var g = gamepal[ResolveColorByte(glow)];
+        var b = gamepal[ResolveColorByte(background)];
+        static byte Mix(byte from, byte to, float amount) => (byte)Math.Clamp(from + (to - from) * amount, 0, 255);
+
+        colors = new string[radius];
+        for (int ring = 0; ring < radius; ring++)
+        {
+            float amount = strength / 100f * (1 - ring / (float)radius);
+            colors[ring] = FindClosestPaletteIndex(Mix(b.r, g.r, amount), Mix(b.g, g.g, amount), Mix(b.b, g.b, amount)).ToString();
+        }
+
+        _glowColors[key] = colors;
+        return colors;
+    }
+
     internal byte[] GetDarkenTable(float brightness)
     {
         if (_darkenTable != null && _darkenBrightness == brightness)
@@ -756,47 +816,105 @@ internal class VideoManager
     }
 
 
-    internal void DrawPropString(int px, int py, string text, string fontcolor, FontAsset font)
+    /// <summary>A color name, #RRGGBB or palette index, as the palette index it draws with</summary>
+    internal byte ResolveColor(string color) => ResolveColorByte(color);
+
+    /// <summary>
+    /// Draws part of a paletted image (width by height from srcX, srcY) at (x, y) in 320x200
+    /// coordinates, leaving out pixels the opacity mask clears and pixels of the key color. With
+    /// a color, every pixel drawn is that color instead of its own, or with
+    /// <paramref name="rowColors"/> too, each row that row's color. Clipped to the screen.
+    /// </summary>
+    internal void DrawImageRegion(byte[] pixels, byte[]? opacityMask, int stride, int srcX, int srcY, int width, int height,
+        int x, int y, byte? key = null, string? color = null, byte[]? rowColors = null)
     {
-        int width, step, height;
-        byte[] source;
-
-        int i;
-        int sx, sy;
-
         IntPtr destPtr = LockSurface(screenBuffer);
         if (destPtr == IntPtr.Zero)
             return;
 
-        height = font.Height;
-
-        byte col = ResolveColorByte(fontcolor);
+        byte? col = color == null ? null : ResolveColorByte(color);
+        int maxX = screenWidth / scaleFactor, maxY = screenHeight / scaleFactor;
 
         unsafe
         {
             byte* dest = (byte*)destPtr;
-            dest += scaleFactor * (ylookup[py] + px); // starting point on the screenbuffer
-
-            foreach (char ch in text.ToCharArray())
+            for (int j = 0; j < height; j++)
             {
-                width = step = font.Width[ch];
+                int dy = y + j;
+                if (dy < 0 || dy >= maxY)
+                    continue;
+
+                byte? rowCol = col != null && rowColors != null ? rowColors[Math.Min(j, rowColors.Length - 1)] : col;
+
+                for (int i = 0; i < width; i++)
+                {
+                    int dx = x + i;
+                    if (dx < 0 || dx >= maxX)
+                        continue;
+
+                    int src = (srcY + j) * stride + srcX + i;
+                    byte pixel = pixels[src];
+                    if ((opacityMask != null && opacityMask[src] == 0) || pixel == key)
+                        continue;
+
+                    byte draw = rowCol ?? pixel;
+                    for (int m = 0; m < scaleFactor; m++)
+                        for (int n = 0; n < scaleFactor; n++)
+                            dest[ylookup[dy * scaleFactor + m] + dx * scaleFactor + n] = draw;
+                }
+            }
+        }
+
+        UnlockSurface(screenBuffer);
+    }
+
+    /// <summary>
+    /// Draws a line of text in a Wolf3D font at (px, py) in 320x200 coordinates. Clipped to the
+    /// screen, so text (or a shadow, outline or glow drawn with it) can reach past the edges.
+    /// </summary>
+    /// <param name="rowColors">A palette index for each row of the glyphs, in place of <paramref name="fontcolor"/></param>
+    internal void DrawPropString(int px, int py, string text, string fontcolor, FontAsset font, byte[]? rowColors = null)
+    {
+        IntPtr destPtr = LockSurface(screenBuffer);
+        if (destPtr == IntPtr.Zero)
+            return;
+
+        int height = font.Height;
+        byte col = ResolveColorByte(fontcolor);
+        int maxX = screenWidth / scaleFactor, maxY = screenHeight / scaleFactor;
+
+        unsafe
+        {
+            byte* dest = (byte*)destPtr;
+
+            foreach (char ch in text)
+            {
+                // Past the font's 256 glyphs: leave a space's worth of room (see VgaFont.Advance)
+                if (ch >= font.Width.Length)
+                {
+                    px += font.Width[' '];
+                    continue;
+                }
+
+                int step = font.Width[ch];
                 int locIndex = font.Location[ch];
 
-                while (width-- != 0)
+                for (int column = 0; column < step; column++, px++)
                 {
-                    for (i = 0; i < height; i++)
-                    {
-                        if (font.RawData[locIndex + (i * step)] != 0)
-                        {
-                            for (sy = 0; sy < scaleFactor; sy++)
-                                for (sx = 0; sx < scaleFactor; sx++)
-                                    dest[ylookup[scaleFactor * i + sy] + sx] = col;
-                        }
-                    }
+                    if (px < 0 || px >= maxX)
+                        continue;
 
-                    locIndex++;
-                    px++;
-                    dest += scaleFactor;
+                    for (int i = 0; i < height; i++)
+                    {
+                        int y = py + i;
+                        if (y < 0 || y >= maxY || font.RawData[locIndex + column + i * step] == 0)
+                            continue;
+
+                        byte rowCol = rowColors != null ? rowColors[Math.Min(i, rowColors.Length - 1)] : col;
+                        for (int sy = 0; sy < scaleFactor; sy++)
+                            for (int sx = 0; sx < scaleFactor; sx++)
+                                dest[ylookup[y * scaleFactor + sy] + px * scaleFactor + sx] = rowCol;
+                    }
                 }
             }
 
@@ -806,6 +924,113 @@ internal class VideoManager
 
     /// <summary>Writes the screen to a BMP file; false (see SDL_GetError) if it couldn't.</summary>
     internal bool SaveScreenShot(string filename) => SDL.SDL_SaveBMP(screenBuffer, filename) == 0;
+
+    // The 3D view as last drawn, so a save gets a picture of the game even though a menu,
+    // message or the console has been drawn over the screen since
+    private byte[] _viewCopy = [];
+    private int _viewCopyWidth, _viewCopyHeight;
+
+    /// <summary>
+    /// Keeps a copy of the 3D view (screen pixels) for <see cref="MakeThumbnail"/>. Called
+    /// every frame once the view is drawn, before the automap, console or anything else goes over it.
+    /// </summary>
+    internal void KeepViewCopy(int x, int y, int width, int height)
+    {
+        if (width <= 0 || height <= 0)
+            return;
+
+        if (_viewCopy.Length != width * height)
+            _viewCopy = new byte[width * height];
+        _viewCopyWidth = width;
+        _viewCopyHeight = height;
+
+        IntPtr srcPtr = LockSurface(screenBuffer);
+        if (srcPtr == IntPtr.Zero) return;
+
+        unsafe
+        {
+            byte* src = (byte*)srcPtr;
+            for (int j = 0; j < height; j++)
+                new ReadOnlySpan<byte>(src + ylookup[y + j] + x, width).CopyTo(_viewCopy.AsSpan(j * width, width));
+        }
+
+        UnlockSurface(screenBuffer);
+    }
+
+    /// <summary>
+    /// The last 3D view shrunk to at most <paramref name="maxWidth"/> wide, keeping its shape,
+    /// as game palette indices; null before a view has been drawn. Each pixel is the average
+    /// of the ones it covers, matched back to the palette, so it doesn't sparkle like
+    /// skipping pixels would.
+    /// </summary>
+    internal SaveThumbnail? MakeThumbnail(int maxWidth)
+    {
+        int sw = _viewCopyWidth, sh = _viewCopyHeight;
+        if (sw == 0 || sh == 0)
+            return null;
+
+        int dw = Math.Min(maxWidth, sw);
+        int dh = Math.Max(1, (int)((long)sh * dw / sw));
+        var pixels = new byte[dw * dh];
+        var matches = new Dictionary<int, byte>();
+
+        for (int dy = 0; dy < dh; dy++)
+        {
+            int y0 = dy * sh / dh, y1 = Math.Max(y0 + 1, (dy + 1) * sh / dh);
+            for (int dx = 0; dx < dw; dx++)
+            {
+                int x0 = dx * sw / dw, x1 = Math.Max(x0 + 1, (dx + 1) * sw / dw);
+                int r = 0, g = 0, b = 0, count = (x1 - x0) * (y1 - y0);
+                for (int sy = y0; sy < y1; sy++)
+                {
+                    for (int sx = x0; sx < x1; sx++)
+                    {
+                        var c = gamepal[_viewCopy[sy * sw + sx]];
+                        r += c.r; g += c.g; b += c.b;
+                    }
+                }
+
+                r /= count; g /= count; b /= count;
+                int key = (r << 16) | (g << 8) | b;
+                if (!matches.TryGetValue(key, out var index))
+                    matches[key] = index = FindClosestPaletteIndex((byte)r, (byte)g, (byte)b);
+                pixels[dy * dw + dx] = index;
+            }
+        }
+
+        return new SaveThumbnail(dw, dh, pixels);
+    }
+
+    /// <summary>
+    /// Draws a thumbnail stretched over a rectangle given in 320x200 units, sampled at screen
+    /// resolution so it's as sharp as the thumbnail allows.
+    /// </summary>
+    internal void DrawThumbnail(SaveThumbnail thumbnail, int x, int y, int width, int height)
+    {
+        int destx = x * scaleFactor, desty = y * scaleFactor;
+        int dw = width * scaleFactor, dh = height * scaleFactor;
+        // Clipped to the screen, but sampled over the whole rectangle
+        int clipw = Math.Min(dw, screenWidth - destx), cliph = Math.Min(dh, screenHeight - desty);
+        if (destx < 0 || desty < 0 || clipw <= 0 || cliph <= 0 || thumbnail.Width <= 0 || thumbnail.Height <= 0)
+            return;
+
+        IntPtr destPtr = LockSurface(screenBuffer);
+        if (destPtr == IntPtr.Zero) return;
+
+        unsafe
+        {
+            byte* dest = (byte*)destPtr;
+            for (int j = 0; j < cliph; j++)
+            {
+                int row = (j * thumbnail.Height / dh) * thumbnail.Width;
+                byte* line = dest + ylookup[desty + j] + destx;
+                for (int i = 0; i < clipw; i++)
+                    line[i] = thumbnail.Pixels[row + i * thumbnail.Width / dw];
+            }
+        }
+
+        UnlockSurface(screenBuffer);
+    }
 
     /// <summary>
     /// Changes what's on screen over to what's been drawn in the screen buffer since, within a
@@ -1235,7 +1460,9 @@ internal class VideoManager
 
     private void InitializeSDLVideo(VideoSettings settings)
     {
-        const string title = "Wolfenstein 3D"; // TODO: pull from PK3 in future
+        var title = _assetManager.Value.GetGameTitle();
+        if (string.IsNullOrWhiteSpace(title))
+            title = "PFWolf";
 
         var flags = SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
         if (settings.Fullscreen)

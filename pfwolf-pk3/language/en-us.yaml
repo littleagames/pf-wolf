@@ -4,7 +4,6 @@
 
 # Confirmations
 $CURGAME: "You are currently in\na game. Continuing will\nerase old game. Ok?"
-$GAMESVD: "There's already a game\nsaved at this position.\n      Overwrite?"
 $ENDGAMESTR: "Are you sure you want\nto end the game you\nare playing? ({YESBUTTONNAME} or {NOBUTTONNAME}):"
 
 # Main menu
@@ -19,9 +18,19 @@ $MENU_READTHIS: "Read This!"
 $MENU_VIEWSCORES: "View Scores"
 $MENU_ENDGAME: "End Game"
 $MENU_BACKTODEMO: "Back to Demo"
+$MENU_MESSAGES: "Messages"
 $MENU_BACKTOGAME: "Back to Game"
 $MENU_QUIT: "Quit"
 $MENU_VIDEO: "Video"
+$MENU_MODS: "Mods"
+
+# Mods
+$STR_MODS_NONE: "There are no mods in\nthe mods folder beside\nthe game."
+$STR_MODS_NONEFORGAME: "None of the mods in\nthe mods folder are\nmade for this game."
+$STR_MODS_MORE: "More mods..."
+$STR_MODS_RESTART: "The mods change when\nthe game starts again.\nRestart now? ({YESBUTTONNAME} or {NOBUTTONNAME})"
+$STR_MODS_RESTART_INGAME: "The mods change when\nthe game starts again,\nending this game.\nRestart now? ({YESBUTTONNAME} or {NOBUTTONNAME})"
+$STR_MODS_NOTSAVED: "Your choice of mods\ncouldn't be saved."
 
 # Video
 $STR_FULLSCREEN: "Fullscreen"
@@ -42,8 +51,41 @@ $STR_LOADING: "Loading"
 $STR_SAVING: "Saving"
 
 # Load / save
-$STR_LGC: "Load Game called\n\""
-$STR_EMPTY: "empty"
+$STR_LS_QUICKLOAD: "Load the quicksave?"
+$STR_LS_NEWSAVE: "- New save -"
+$STR_LS_NOSAVES: "No saved games"
+$STR_LS_TRYALL: "Left/Right shows every game's saves"
+$STR_LS_NOPICTURE: "No picture"
+$STR_LS_SORTDATE: "Tab/X: Newest first"
+$STR_LS_SORTNAME: "Tab/X: By name"
+$STR_LS_FILTERGAME: "This game"
+$STR_LS_FILTERALL: "All games"
+$STR_LS_QUICK: "Quicksave"
+$STR_LS_AUTO: "Autosave"
+# {0} time on the level, {1} the whole game
+$STR_LS_TIME: "Time {0}  Total {1}"
+# {0} kill ratio, {1} secret ratio
+$STR_LS_KILLS: "Kills {0}  Secrets {1}"
+# {0} treasure ratio, {1} score
+$STR_LS_TREASURE: "Treasure {0}  Score {1}"
+$STR_LS_HELPLOAD: "Enter/A load   Del/Y delete   Esc/B back"
+$STR_LS_HELPSAVE: "Enter/A save   Del/Y delete   Esc/B back"
+# {0} is the save's name
+$STR_LS_OVERWRITE: "Save over\n\"{0}\"?"
+$STR_LS_DELETE: "Delete\n\"{0}\"?"
+# A save made with other mods than are loaded: it loads, with a warning
+$STR_LS_OTHERMODSTAG: "other mods"
+$STR_LS_OTHERMODS: "This game was saved with\nother mods, so it may\nnot play the same."
+$STR_LS_SAVEDWITH: "Saved with:"
+$STR_LS_LOADEDNOW: "Loaded now:"
+$STR_LS_NOMODS: "no mods"
+# {0} the first mods' names, {1} how many more
+$STR_LS_MOREMODS: "{0} and {1} more"
+# Added when a save can't be loaded and was made with other mods
+$STR_LS_SAVEDOTHERMODS: "It was saved with\nother mods."
+# A level with no name in game-info: {0} is the episode (cluster), {1} the floor
+$STR_MAPEPISODEFLOOR: "Episode {0}, Floor {1}"
+$STR_MAPFLOOR: "Floor {0}"
 
 # Joystick calibration
 $STR_CALIB: "Calibrate"
@@ -67,25 +109,78 @@ $STR_PORT2: "Use joystick port 2"
 $STR_GAMEPAD: "Gravis GamePad Enabled"
 $STR_SENS: "Mouse Sensitivity"
 $STR_CUSTOM: "Customize controls"
+$STR_JOYSETTINGS: "Controller settings"
+
+# Controller settings
+$STR_JOYDEADZONE: "Dead Zone"
+$STR_JOYTURN: "Turn Speed"
+$STR_JOYSTICKS: "Sticks"
+$STR_JOYMODERN: "Modern"
+$STR_JOYCLASSIC: "Classic"
+$STR_JOYMODERNHINT: "Modern: left stick moves, right stick turns"
+$STR_JOYCLASSICHINT: "Classic: left stick turns, right strafes"
 
 $STR_MOUSEADJ: "Adjust Mouse Sensitivity"
 $STR_SLOW: "Slow"
 $STR_FAST: "Fast"
 
-# Customize controls
-$STR_CUSTMOUSE: "Mouse"
-$STR_CUSTJOY: "Joystick/Gravis GamePad"
-$STR_CUSTKEYBD: "Keyboard"
+# Customize controls: column titles and help lines
+$STR_CTL_COLCONTROL: "Control"
+$STR_CTL_COLKEY1: "Key 1"
+$STR_CTL_COLKEY2: "Key 2"
+$STR_CTL_COLPAD: "Controller"
+$STR_CTL_UNBOUND: "---"
+$STR_CTL_HELP: "Enter/A change   Del/Y clear   Esc/B back"
+$STR_CTL_HELPRESET: "Enter/A reset every control   Esc/B back"
+$STR_CTL_PRESSKEY: "Press a key, mouse button or wheel for"
+$STR_CTL_PRESSPAD: "Press a controller button for"
+$STR_CTL_CANCEL: "Esc cancels; waiting a few seconds does too"
+$STR_CTL_NOPAD: "No controller is plugged in"
+$STR_CTL_PAD: "Controller:"
+$STR_CTL_TAKEN: "Taken off"
+$STR_CTL_RESETASK: "Reset every control\nto its default?"
 
-$STR_CRUN: "Run"
-$STR_COPEN: "Open"
-$STR_CFIRE: "Fire"
-$STR_CSTRAFE: "Strafe"
+# Customize controls: sections
+$STR_CTL_MOVEMENT: "Movement"
+$STR_CTL_ACTION: "Action"
+$STR_CTL_WEAPONS: "Weapons"
+$STR_CTL_GAME: "Game"
+$STR_CTL_AUTOMAPKEYS: "Automap (while it's open)"
 
-$STR_LEFT: "Left"
-$STR_RIGHT: "Right"
-$STR_FRWD: "Frwd"
-$STR_BKWD: "Bkwrd"
+# Customize controls: rows
+$STR_CTL_FORWARD: "Forward"
+$STR_CTL_BACKWARD: "Backward"
+$STR_CTL_TURNLEFT: "Turn left"
+$STR_CTL_TURNRIGHT: "Turn right"
+$STR_CTL_STRAFELEFT: "Strafe left"
+$STR_CTL_STRAFERIGHT: "Strafe right"
+$STR_CTL_STRAFE: "Strafe (hold)"
+$STR_CTL_RUN: "Run"
+$STR_CTL_ATTACK: "Fire"
+$STR_CTL_USE: "Open / use"
+$STR_CTL_KNIFE: "Knife"
+$STR_CTL_PISTOL: "Pistol"
+$STR_CTL_MACHINEGUN: "Machine gun"
+$STR_CTL_CHAINGUN: "Chaingun"
+$STR_CTL_NEXTWEAPON: "Next weapon"
+$STR_CTL_PREVWEAPON: "Prev. weapon"
+$STR_CTL_MENU: "Menu"
+$STR_CTL_PAUSE: "Pause"
+$STR_CTL_AUTOMAP: "Automap"
+$STR_CTL_AMZOOMIN: "Zoom in"
+$STR_CTL_AMZOOMOUT: "Zoom out"
+$STR_CTL_AMPANUP: "Pan up"
+$STR_CTL_AMPANDOWN: "Pan down"
+$STR_CTL_AMPANLEFT: "Pan left"
+$STR_CTL_AMPANRIGHT: "Pan right"
+$STR_CTL_AMCENTER: "Center map"
+$STR_CTL_AMFOLLOW: "Follow player"
+$STR_CTL_AMROTATE: "Rotate map"
+$STR_CTL_AMSTYLE: "Map style"
+$STR_CTL_AMOVERLAY: "Overlay"
+$STR_CTL_AMGRID: "Grid"
+$STR_CTL_RESET: "Reset to defaults"
+
 $STR_THINK: "Thinking"
 
 # Change view
@@ -129,3 +224,17 @@ $STR_SAVECHT4: "play anyway...."
 
 # Demo playback
 $STR_SEEAGAIN: "Let's see that again!"
+
+# Pickup messages for the shared items (actordefs/native.yaml)
+$GOTGOLDKEY: "Picked up the gold key."
+$GOTSILVERKEY: "Picked up the silver key."
+
+# Locked doors (a door's lock-message in doors.yaml, else its key's "key.lockedmessage")
+$LOCKEDDOOR: "This door is locked."
+$NEEDGOLDKEY: "You need the gold key to open this door."
+$NEEDSILVERKEY: "You need the silver key to open this door."
+
+# Obituaries: what killed the player. An actor's "obituary" can use %o (the player's tag),
+# %k (the killer's tag, or its class) and %% (a percent sign).
+$OB_DIED: "You died."
+$OB_KILLED: "You were killed by %k."

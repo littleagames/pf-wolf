@@ -23,7 +23,7 @@ internal class GraphicDataLoader
         else
         {
             //return WolfRawGraphicDataLoader.Load(stream, picNum, dimensions, huffman);
-            throw new NotImplementedException();
+            throw new NotSupportedException("it isn't a PNG or BMP picture");
         }
     }
 }

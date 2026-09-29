@@ -1,4 +1,4 @@
-﻿using SDL2;
+using SDL2;
 using Wolf3D.Assets;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
@@ -57,9 +57,9 @@ internal partial class Program
     {
         var language = _assetManager.GetText("en-us");
         bool died;
+        bool warped = false;
 
         ClearMemory();
-        SETFONTCOLOR("Black", "White");
         _videoManager.FadeOut();
         DrawPlayScreen();
         died = false;
@@ -75,6 +75,9 @@ internal partial class Program
                 SetupGameLevel();
                 ApplyPendingMapChange();
             }
+
+            // A level being entered, not one loaded or restarted after dying, saves itself
+            autosavePending = !loadedgame && !died && !demoplayback && !demorecord;
             DrawLevel();
 
             ingame = true;
@@ -85,7 +88,9 @@ internal partial class Program
             }
             else StartMusic();
 
-            if (!died)
+            if (warped)
+                warped = false;                 // an A_ChangeMap switch loads silently, no "get psyched!"
+            else if (!died)
                 PreloadGraphics();             // TODO: Let this do something useful!
             else
             {
@@ -103,6 +108,7 @@ internal partial class Program
                 // carries over, as the level ends without an intermission to bank it
                 GameEngineManager.WaitVBL(150);
                 gamestate.oldscore = gamestate.score;
+                warped = true;
             }
             else
                 pendingMapChange = null;
@@ -113,13 +119,23 @@ internal partial class Program
             if (demorecord && playstate != playstatetypes.ex_warped)
                 FinishDemoRecord();
 
+            if (pendingDemo != null || pendingRecord != null)
+            {
+                // playdemo or recorddemo ended the game: back to the title loop, which starts the demo
+                ClearMemory();
+                _videoManager.FadeOut();
+                FindMenuItem(MainMenu, "savegame")?.active = 0;
+                EnableViewScoresMenuItem();
+                return;
+            }
+
             if (startgame || loadedgame)
             {
                 ClearMemory();
-                SETFONTCOLOR("Black", "White");
                 _videoManager.FadeOut();
                 DrawPlayScreen();
                 died = false;
+                warped = false;
                 continue;
             }
 
@@ -162,20 +178,25 @@ internal partial class Program
                         _videoManager.ClearScreen(0);
                     ClearMemory();
 
-                    CheckHighScore(gamestate.score, (ushort)/*(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1)*/1); // TODO: Redo this to support map names
+                    CheckHighScore(gamestate.score, won: false);
                     EnableViewScoresMenuItem();
                     return;
 
                 case playstatetypes.ex_victorious:
                     if (viewsize == 21) DrawPlayScreen();
-                    _videoManager.FadeOut();
+                    // A cluster with a victory-fade-color fades to it slowly, as Spear does when the Angel falls
+                    var wonCluster = WonCluster();
+                    if (string.IsNullOrEmpty(wonCluster.VictoryFadeColor))
+                        _videoManager.FadeOut();
+                    else
+                        _videoManager.FadeOut(VictoryFadeColor(wonCluster), 300);
                     ClearMemory();
 
                     Victory();
 
                     ClearMemory();
 
-                    CheckHighScore(gamestate.score, (ushort)/*(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1)*/1); // TODO: Redo this to support map names
+                    CheckHighScore(gamestate.score, won: true);
                     EnableViewScoresMenuItem();
                     return;
 
@@ -190,36 +211,40 @@ internal partial class Program
     internal static void PlayDemo(int demonumber)
     {
         short length;
-        if (true)
+
+        // A demo recorded with that number plays in place of the game's own
+        var recorded = ReadRecordedDemo(demonumber);
+        if (recorded != null)
+            demoData = recorded;
+        else
         {
             var demoAsset = _assetManager.Find<DemoAsset>($"demo{demonumber}");
             if (demoAsset == null)
                 return;
 
-            demoData = demoAsset.RawData;// _graphicManager.GetDemo(demonumber);
-            demoptr = 0;
+            demoData = demoAsset.RawData;
         }
-        else
-        {
+        demoptr = 0;
 
-            var demoFileName = demoname.Replace('?', (char)('0' + demonumber));
-            if (!File.Exists(demoFileName))
-                return;
+        // id's header: the floor in the first episode (0 = MAP01), a 16-bit length counting the
+        // header, and a pad byte. Every demo plays on the hardest skill, as id's did.
+        if (demoData.Length < 4)
+            return;
 
-            demoData = File.ReadAllBytes(demoFileName);
-            demoptr = 0;
-        }
+        var mapName = $"MAP{demoData[0] + 1:D2}";
+        if (!_gameEngineManager.GetGameInfo().Maps.TryGetValue(mapName, out var mapInfo))
+            return;
 
-        throw new NotImplementedException("Need to rewrite demo storage to save mapon as string data");
-        //NewGame(difficultytypes.gd_hard, cluster: 0, mapon: demoData[demoptr++]); // TODO: Allow demo to set difficulty too
-        length = BitConverter.ToInt16(demoData, demoptr);
+        length = BitConverter.ToInt16(demoData, 1);
+        demoptr = 4;
+        lastdemoptr = Math.Min((int)length, demoData.Length);   // stop at the data's end if the length overshoots
+        if (lastdemoptr - demoptr < 3)
+            return;
 
-        demoptr += 3;
-        lastdemoptr = demoptr - 4 + length;
+        NewGame(difficultytypes.gd_hard, new EpisodeInfo { StartMap = mapName }, mapInfo);
 
         _videoManager.FadeOut();
 
-        SETFONTCOLOR("Black", "White");
         DrawPlayScreen();
 
         startgame = false;
@@ -236,57 +261,115 @@ internal partial class Program
         ClearMemory();
     }
 
-    internal static string demoname = "DEMO?.dmo";
     internal const int MAXDEMOSIZE = 8192;
-    internal static void StartDemoRecord(int levelnumber)
+
+    /// <summary>
+    /// A demo asked for by playdemo; the title loop plays it next (a game in progress ends first)
+    /// </summary>
+    internal static int? pendingDemo;
+
+    /// <summary>Whether demo number <paramref name="demonumber"/> has been recorded or comes with the game</summary>
+    internal static bool DemoExists(int demonumber)
+        => File.Exists(DemoFilePath(demonumber)) || _assetManager.Exists<DemoAsset>($"demo{demonumber}");
+
+    /// <summary>
+    /// Plays the demo playdemo asked for, if any, leaving the screen faded and the title music on
+    /// </summary>
+    internal static void PlayPendingDemo()
     {
-        demoData = new byte[MAXDEMOSIZE];
-        demoptr = 0;
-        lastdemoptr = MAXDEMOSIZE;
+        if (pendingDemo is not int demonumber)
+            return;
 
-        Buffer.BlockCopy(BitConverter.GetBytes(levelnumber), 0, demoData, demoptr, sizeof(int));
-        demoptr += sizeof(int); // += 4, leave space for length
-        demorecord = true;
-
+        pendingDemo = null;
+        PlayDemo(demonumber);
+        _videoManager.FadeOut();
+        if (_videoManager.screenHeight % 200 != 0)
+            _videoManager.ClearScreen(0x00);
+        StartCPMusic(INTROSONG);
     }
 
-    internal static void FinishDemoRecord()
+    /// <summary>A recorded demo's file: DEMO0.dmo to DEMO9.dmo in the demos folder</summary>
+    private static string DemoFilePath(int demonumber)
+        => Path.Combine(_gameEngineManager.ConfigDirectories.DemosDirectory ?? "", $"DEMO{demonumber}.dmo");
+
+    private static byte[]? ReadRecordedDemo(int demonumber)
     {
-        int length, level;
+        var path = DemoFilePath(demonumber);
+        try
+        {
+            return File.Exists(path) ? File.ReadAllBytes(path) : null;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Console.WriteLine($"Couldn't read the demo {path}: {e.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Starts recording in id's format: the map's number less one (0 = MAP01) in the first byte,
+    /// then room for the length, then 3 bytes a frame from PollControls
+    /// </summary>
+    internal static void StartDemoRecord(int mapIndex)
+    {
+        demoData = new byte[MAXDEMOSIZE];
+        demoData[0] = (byte)mapIndex;
+        demoptr = 4;                            // leave space for length
+        lastdemoptr = MAXDEMOSIZE;
+        demorecord = true;
+    }
+
+    /// <summary>
+    /// Ends the recording and saves it as demo <paramref name="demonumber"/>, or asks which
+    /// number to save it as when none was given (Esc throws it away)
+    /// </summary>
+    internal static void FinishDemoRecord(int? demonumber = null)
+    {
+        int length;
 
         demorecord = false;
 
+        // The length counts the 4 header bytes; the byte after it is padding
         length = demoptr;
+        demoData[1] = (byte)length;
+        demoData[2] = (byte)(length >> 8);
+        demoData[3] = 0;
 
-        demoptr++;
-        demoData[demoptr] = (byte)length;
-        demoData[demoptr + 1] = (byte)(length >> 8);
-        demoData[demoptr + 2] = 0;
-
-        _videoManager.FadeIn();
-        CenterWindow(24, 3);
-        PrintY += 6;
-        fontnumber = "SmallFont";
-        SETFONTCOLOR("Black", "White");
-        US_Print(" Demo number (0-9): ");
-        _videoManager.Update();
-
-        string str = "";
-        if (US_LineInput(px, py, ref str, "", true, 1, 0))
+        if (demonumber == null)
         {
-            if (string.IsNullOrEmpty(str))
-                return;
+            _videoManager.FadeIn();
+            var window = CenterWindow(24, 3, PromptStyle);
+            window.PrintY += 6;
+            window.Print(" Demo number (0-9): ");
+            _videoManager.Update();
 
-            level = Convert.ToInt32(str);
-            if (level >= 0 && level <= 9)
-            {
-                var demoFileName = demoname.Replace('?', (char)('0' + level));
-                throw new NotImplementedException("Need to rewrite demo storage to save mapon as string data");
-                //CA_WriteFile(demoFileName, demoData, length);
-            }
+            string str = "";
+            if (US_LineInput(window.PrintX, window.PrintY, ref str, "", true, 1, 0, window.Style)
+                && int.TryParse(str, out int typed) && typed >= 0 && typed <= 9)
+                demonumber = typed;
         }
 
+        if (demonumber is int number)
+            SaveDemo(number, demoData[..length]);
+
         demoData = [];
+    }
+
+    private static void SaveDemo(int demonumber, byte[] data)
+    {
+        var path = DemoFilePath(demonumber);
+        try
+        {
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+            File.WriteAllBytes(path, data);
+            Console.WriteLine($"Recorded demo saved to {path}");
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Console.WriteLine($"Couldn't save the demo to {path}: {e.Message}");
+        }
     }
 
     //==========================================================================
@@ -302,30 +385,68 @@ internal partial class Program
     */
     internal static void RecordDemo()
     {
-        int level, maps;
-        CenterWindow(26, 3);
-        PrintY += 6;
-        fontnumber = "SmallFont";
-        SETFONTCOLOR("Black", "White");
-        US_Print("  Demo which level(1-60): "); maps = 60;
+        int maps = DemoMapCount();
+        if (maps == 0)
+            return;
+
+        // Clear what's behind: a title drawn in its own palette (Spear's) is noise in the game's
+        _videoManager.ClearScreen(0);
+        var window = CenterWindow(26, 3, PromptStyle);
+        window.PrintY += 6;
+        window.Print($"  Demo which level(1-{maps}): ");
         _videoManager.Update();
         _videoManager.FadeIn();
         string str = "";
-        var esc = !US_LineInput(px, py, ref str, "", true, 2, 0);
-        if (esc || string.IsNullOrEmpty(str))
+        var esc = !US_LineInput(window.PrintX, window.PrintY, ref str, "", true, 2, 0, window.Style);
+        if (esc || !int.TryParse(str, out int level) || level < 1 || level > maps)
             return;
 
-        level = Convert.ToInt32(str);
-        level--;
+        RecordDemo(level);
+    }
 
-        if (level >= maps || level < 0)
-            return;
+    /// <summary>
+    /// How many maps a demo can be recorded on: a demo names its map by one byte, so it can be
+    /// any of MAP01 to MAP99 the game has, counting up from MAP01
+    /// </summary>
+    internal static int DemoMapCount()
+    {
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        int maps = 0;
+        while (maps < 99 && gameInfo.Maps.ContainsKey($"MAP{maps + 1:D2}"))
+            maps++;
+        return maps;
+    }
 
+    /// <summary>
+    /// A recording asked for by recorddemo; the title loop starts it next (a game in progress ends first)
+    /// </summary>
+    internal record DemoRecordRequest(int Level, int? DemoNumber);
+    internal static DemoRecordRequest? pendingRecord;
+
+    /// <summary>
+    /// Starts the recording recorddemo asked for, if any. Returns whether one ran.
+    /// </summary>
+    internal static bool RecordPendingDemo()
+    {
+        if (pendingRecord is not { } request)
+            return false;
+
+        pendingRecord = null;
+        RecordDemo(request.Level, request.DemoNumber);
+        return true;
+    }
+
+    /// <summary>
+    /// Records a demo of MAP<paramref name="level"/> on the hardest skill until the level ends, then
+    /// saves it as <paramref name="demonumber"/>, or asks for a number when none is given
+    /// </summary>
+    internal static void RecordDemo(int level, int? demonumber = null)
+    {
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        var mapName = $"MAP{level:D2}";
         _videoManager.FadeOut();
-        //NewGame(difficultytypes.gd_hard, level / 10);
-        //gamestate.mapon = (short)(level % 10);
-        throw new NotImplementedException("Need to rewrite demo storage to save mapon as string data");
-        StartDemoRecord(level);
+        NewGame(difficultytypes.gd_hard, new EpisodeInfo { StartMap = mapName }, gameInfo.Maps[mapName]);
+        StartDemoRecord(level - 1);
 
         DrawPlayScreen();
         _videoManager.FadeIn();
@@ -346,7 +467,7 @@ internal partial class Program
         _videoManager.FadeOut();
         ClearMemory();
 
-        FinishDemoRecord();
+        FinishDemoRecord(demonumber);
     }
 
     internal static void DrawPlayScreen()
@@ -468,6 +589,27 @@ internal partial class Program
             _videoManager.scaleFactor * 1, _videoManager.scaleFactor * 14, color);// - 3);
     }
 
+    /// <summary>
+    /// The level's name for showing to the player: game-info's name for it, else
+    /// "Episode X, Floor Y" ("Floor Y" when there's one episode), else the map's lump name.
+    /// </summary>
+    internal static string GetMapDisplayName(string mapon)
+    {
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        if (!gameInfo.Maps.TryGetValue(mapon, out var mapInfo))
+            return mapon;
+
+        var language = _assetManager.GetText("en-us");
+        if (!string.IsNullOrEmpty(mapInfo.Name))
+            return mapInfo.Name.ToLanguageText(language);
+        if (mapInfo.FloorNumber <= 0)
+            return mapon;
+
+        return gameInfo.Episodes.Count > 1
+            ? string.Format("$STR_MAPEPISODEFLOOR".ToLanguageText(language), mapInfo.Cluster, mapInfo.FloorNumber)
+            : string.Format("$STR_MAPFLOOR".ToLanguageText(language), mapInfo.FloorNumber);
+    }
+
     internal static void SetupGameLevel()
     {
         if (!loadedgame)
@@ -478,10 +620,8 @@ internal partial class Program
             gamestate.treasuretotal =
             gamestate.secretcount =
             gamestate.killcount =
-            gamestate.treasurecount =
-            gamestate.attackframe =
-            gamestate.attackcount =
-            gamestate.weaponframe = 0;
+            gamestate.treasurecount = 0;
+            weaponSprite = null;            // the weapon in hand starts on its Ready state
             pwallstate =
             pwallpos = 0;
             facetimes = 0;
@@ -614,8 +754,9 @@ internal partial class Program
             _videoManager.FadeIn();
         }
 
-        gamestate.weapon = weapontypes.wp_none;                     // take away weapon
+        gamestate.weapon = null;                     // take away weapon
         _audioManager.Play("player/death");
+        ShowObituary();
 
         //
         // swing around to face attacker
@@ -670,6 +811,7 @@ internal partial class Program
 
                 ThreeDRefresh();
                 CalcTics();
+                _hudMessageManager.Tick((int)tics);
             } while (curangle != iangle);
         }
         else
@@ -692,6 +834,7 @@ internal partial class Program
 
                 ThreeDRefresh();
                 CalcTics();
+                _hudMessageManager.Tick((int)tics);
             } while (curangle != iangle);
         }
 
@@ -701,6 +844,7 @@ internal partial class Program
         _videoManager.FinishPaletteShifts();
 
         _videoManager.BarScaledCoord(viewscreenx, viewscreeny, viewwidth, viewheight, "Maroon");
+        DrawHudMessages();      // the obituary stays up on the red, through the fade and the wait after it
 
         _inputManager.ClearKeysDown();
 
@@ -717,8 +861,7 @@ internal partial class Program
             gamestate.health = 100;
             GiveStartingInventory();
             pwallstate = pwallpos = 0;
-            gamestate.attackframe = gamestate.attackcount =
-                gamestate.weaponframe = 0;
+            weaponSprite = null;            // the weapon in hand starts on its Ready state
 
             if (viewsize != 21)
             {

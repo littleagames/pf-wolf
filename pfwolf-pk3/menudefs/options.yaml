@@ -1,9 +1,10 @@
 music: "WONDERIN"
 type: "wolf3d-menu"
+# Indented enough for the Messages checkbox between the cursor and the text
 position:
-  x: 76
+  x: 52
   y: 82
-indent: 24
+indent: 48
 components:
   -
     type: "Background"
@@ -23,17 +24,17 @@ components:
   -
     type: "Window"
     params:
-      - x: 68
+      - x: 44
       - y: 79
-      - width: 178
-      - height: 58
+      - width: 202
+      - height: 84
   -
     type: "Graphic"
     params:
       - name: "c_options"
       - horizontal-orientation: "Center"
       - y: 0
-# Change View and Video share V: pressing it again moves to the other one
+# Change View and Video share V, and Messages and Mods share M: pressing it again moves to the other one
 menu-items:
   -
       id: "sound"
@@ -63,3 +64,18 @@ menu-items:
       short-key: V
       enabled: true
       action: "CP_Video"
+  # Whether item pickups, locked doors and deaths show messages over the view (msg_enabled)
+  -
+      id: "messages"
+      type: "ToggleMenuItem"
+      text: "$MENU_MESSAGES"
+      short-key: M
+      enabled: true
+  # Which mods in the mods folder load over pfwolf.pk3 (mods.cfg); changing them restarts the game
+  -
+      id: "mods"
+      type: "MenuSwitcher"
+      text: "$MENU_MODS"
+      short-key: M
+      enabled: true
+      action: "CP_Mods"

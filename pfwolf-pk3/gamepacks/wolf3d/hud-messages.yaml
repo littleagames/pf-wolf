@@ -1,0 +1,57 @@
+# Styles for the messages shown over the 3D view: item pickups, locked doors and what killed
+# the player. Spear of Destiny starts from these; a gamepacks/spear/hud-messages.yaml would
+# replace them style by style. Try one in the console with "msg <style> <text>".
+#
+# Which style each kind of message gets, and whether messages are on at all, is in
+# game-info.yaml's hud-messages; an item, door or enemy can name its own style instead.
+#
+#   parent:     The style this one starts from; anything left out comes from it. A style with
+#               no parent starts from Default.
+#   anchor:     Where in the view the messages sit: TopLeft, Top, TopRight, Left, Center (or
+#               Middle), Right, BottomLeft, Bottom or BottomRight. Lines line up with that side
+#               of the view, or are centered for Top, Center and Bottom.
+#   x, y:       Moves the messages right and down (negative for left and up) from the anchor,
+#               in 320x200 pixels
+#   margin:     The gap kept between the messages and the edges of the view
+#   font:       A font from fonts.yaml
+#   color:      A color name from colors.yaml, #RRGGBB or a palette index
+#   duration:   How long each message stays up, in tics (70 a second)
+#   max-lines:  How many messages can be up at the anchor at once; a new one pushes out the oldest
+#
+# Styles with the same anchor, x, y and margin share one stack of messages, oldest at the top.
+# Showing a message that's already up brings it back to the bottom with its time restarted.
+# A message too wide for the view wraps onto more lines.
+
+# What every style builds on, and what a message without a style uses
+Default:
+  anchor: TopLeft
+  x: 0
+  y: 0
+  margin: 2
+  font: HudMessage
+  color: White
+  duration: 210
+  max-lines: 4
+
+# In the middle of the view, for things worth stopping for
+Center:
+  anchor: Center
+  color: Yellow
+  duration: 140
+  max-lines: 2
+
+# What killed the player (an actor's "obituary"): game-info's obituary-style, for a killer
+# without an "obituarystyle". It
+# stays up through the turn to face the killer and on the red after it. One line, so it
+# pushes out a locked-door message sharing the middle of the view.
+Obituary:
+  parent: Center
+  color: White
+  duration: 350
+  max-lines: 1
+
+# Across the bottom of the view, above the weapon
+Bottom:
+  anchor: Bottom
+  y: -8
+  max-lines: 2

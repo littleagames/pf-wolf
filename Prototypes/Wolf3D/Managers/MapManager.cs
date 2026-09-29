@@ -65,13 +65,6 @@ internal class MapManager
     // for the current level -- LoadMap clears _actors, which drops the previous level's pawn.
     internal Entities.Actors.PlayerPawn? Player { get; private set; }
 
-    // The Pac-Man bonus-level ghosts (actordefs/wolf3d/ghosts.yaml): never shootable/killable,
-    // matching SpawnGhosts never assigning hitpoints in the legacy source.
-    private static readonly HashSet<string> GhostActorNames = new(StringComparer.Ordinal)
-    {
-        "Blinky", "Clyde", "Pinky", "Inky"
-    };
-
     private int _difficulty;
 
     public MapManager(Lazy<AssetManager> assetManager)
@@ -375,23 +368,25 @@ internal class MapManager
         // "Path" for patrolling grunts, otherwise whatever CreateActor already set ("Spawn").
         if (thing.Patrol != 0 && builtActor.ResolvedStates.TryGetValue("Path", out var pathState))
         {
-            builtActor.CurrentState = pathState;
-            builtActor.TicCount = pathState.TicTime;
+            builtActor.ArmState(pathState);
             builtActor.Distance = (int)MapConstants.TILEGLOBAL;
         }
 
-        var isGhost = GhostActorNames.Contains(thing.Class);
-
-        // AMBUSH actors (the bosses) are always spawned ambush-ready, whatever the floor tile
-        // beneath them, unlike grunts, which only ambush when placed on an ambush tile.
+        // AMBUSH actors (the bosses, the Pac-Man ghosts) are always spawned ambush-ready,
+        // whatever the floor tile beneath them, unlike grunts, which only ambush when placed
+        // on an ambush tile.
         var alwaysAmbush = builtActor.Flags.Contains("AMBUSH", StringComparer.OrdinalIgnoreCase);
+        var hasHealth = builtActor.Properties.ContainsKey("health") || builtActor.Properties.Keys.Any(k => k.StartsWith("health.", StringComparison.Ordinal));
 
-        if (isGhost)
+        if (!hasHealth && builtActor.Properties.ContainsKey("speed"))
         {
+            // A mover with no health (the Pac-Man ghosts, matching SpawnGhosts never assigning
+            // hitpoints): never shootable, and not counted toward the kill ratio.
             builtActor.Speed = ReadIntProperty(builtActor, "speed", Program.SPDDOG);
-            builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
+            if (alwaysAmbush)
+                builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
         }
-        else if (builtActor.Properties.ContainsKey("health") || builtActor.Properties.Keys.Any(k => k.StartsWith("health.", StringComparison.Ordinal)))
+        else if (hasHealth)
         {
             // A grunt or boss enemy (has scaled health), as opposed to a plain decoration/pickup.
             builtActor.Hitpoints = GetScaledHealth(builtActor);
@@ -489,8 +484,7 @@ internal class MapManager
 
         if (builtActor.ResolvedStates.TryGetValue("Chase", out var chaseState))
         {
-            builtActor.CurrentState = chaseState;
-            builtActor.TicCount = chaseState.TicTime;
+            builtActor.ArmState(chaseState);
         }
 
         _actors.AddLast(builtActor);
@@ -663,34 +657,15 @@ internal class MapManager
         if (state == null || ob.IsRemoved)
             return;
 
-        // Mirrors Program.DoActor (Program.WL_PLAY.cs): a frame with TicTime == 0 holds forever
-        // -- once TicCount sticks at 0, only Think runs each tic, Next is never consulted again.
-        if (ob.TicCount == 0)
+        // Mirrors Program.DoActor (Program.WL_PLAY.cs): a frame that holds forever (-1) only
+        // runs its Think each tic; Next is never consulted again.
+        if (!state.HoldsForever)
         {
-            Entities.Actors.ActorActionRegistry.Invoke(state.Think, ob);
-            return;
-        }
-
-        ob.TicCount -= (short)tics;
-        while (ob.TicCount <= 0)
-        {
-            Entities.Actors.ActorActionRegistry.Invoke(state.Action, ob);
+            ob.TicCount -= (short)tics;
+            ob.AdvanceFrames();
             if (ob.IsRemoved)
                 return;
-
-            // An action may switch state itself (the Angel's A_Relaunch, a Spectre's A_Dormant);
-            // like the original DoActor, carry on from the state it left rather than the old one
-            state = (ob.CurrentState ?? state).Next;
-            if (state == null)
-                return; // the resolver never leaves Next null in practice; defensive only.
-            ob.CurrentState = state;
-
-            if (state.TicTime == 0)
-            {
-                ob.TicCount = 0;
-                break;
-            }
-            ob.TicCount += state.TicTime;
+            state = ob.CurrentState ?? state;
         }
 
         Entities.Actors.ActorActionRegistry.Invoke(state.Think, ob);

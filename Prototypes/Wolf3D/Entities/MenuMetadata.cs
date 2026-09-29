@@ -30,7 +30,7 @@ internal class MenuMetadata
 
     /// <summary>
     /// Builds the items from game data instead of menu-items:
-    /// "episodes", "skills" or "save-slots"
+    /// "episodes" or "skills"
     /// </summary>
     public string? ItemsSource { get; set; }
 
@@ -556,6 +556,9 @@ internal record Graphic : MenuComponent
     //}
 }
 
+/// <summary>
+/// The band across the top of a menu, shaped by game-info menu-stripe; colors left unset come from there too
+/// </summary>
 internal record Stripe : MenuComponent
 {
     public int Y { get; set; } = 0;
@@ -564,15 +567,11 @@ internal record Stripe : MenuComponent
 
     public Stripe()
     {
-        BackingColor = "Black";
-        LineColor = "STRIPE";
     }
 
     public Stripe(int y)
     {
         Y = y;
-        BackingColor = "Black";
-        LineColor = "STRIPE";
     }
 
     public Stripe(int y, string backingColor, string lineColor)
@@ -595,6 +594,62 @@ internal record Label : MenuComponent
     public HorizontalOrientation HorizontalOrientation { get; set; } = HorizontalOrientation.Left;
     public string Color { get; set; } = "TEXTCOLOR";
     public string Font { get; set; } = "LargeFont";
+
+    /// <summary>
+    /// true gives the text a drop shadow, false takes away the font's own (fonts.yaml); left out,
+    /// the text has whatever shadow its font has. Setting a shadow-x, -y or -color turns it on too.
+    /// </summary>
+    public bool? Shadow { get; set; }
+
+    /// <summary>How far right of the text the shadow sits; defaults to 1</summary>
+    public int? ShadowX { get; set; }
+
+    /// <summary>How far down from the text the shadow sits; defaults to 1</summary>
+    public int? ShadowY { get; set; }
+
+    /// <summary>The shadow's color; defaults to Black</summary>
+    public string? ShadowColor { get; set; }
+
+    /// <summary>
+    /// true shades the text's color lighter to darker down the glyphs, false takes away the font's
+    /// own gradient (fonts.yaml); left out, the text has whatever its font has. Setting a
+    /// gradient-top or -bottom turns it on too.
+    /// </summary>
+    public bool? Gradient { get; set; }
+
+    /// <summary>Percent toward white (negative: black) at the top row; defaults to 40</summary>
+    public int? GradientTop { get; set; }
+
+    /// <summary>Percent toward white (negative: black) at the bottom row; defaults to -40</summary>
+    public int? GradientBottom { get; set; }
+
+    /// <summary>
+    /// true draws a border round the text, false takes away the font's own (fonts.yaml); left
+    /// out, the text has whatever its font has. Setting an outline-color or -thickness turns it on too.
+    /// </summary>
+    public bool? Outline { get; set; }
+
+    /// <summary>The outline's color; defaults to Black</summary>
+    public string? OutlineColor { get; set; }
+
+    /// <summary>How many pixels wide the outline is; defaults to 1</summary>
+    public int? OutlineThickness { get; set; }
+
+    /// <summary>
+    /// true puts a halo round the text fading into the menu background, false takes away the
+    /// font's own (fonts.yaml); left out, the text has whatever its font has. Setting a
+    /// glow-color, -radius or -strength turns it on too.
+    /// </summary>
+    public bool? Glow { get; set; }
+
+    /// <summary>The glow's color; defaults to the text's color</summary>
+    public string? GlowColor { get; set; }
+
+    /// <summary>How many pixels it spreads out; defaults to 2</summary>
+    public int? GlowRadius { get; set; }
+
+    /// <summary>Percent of the glow color nearest the text; defaults to 50</summary>
+    public int? GlowStrength { get; set; }
 
     public Label()
     {
@@ -687,6 +742,30 @@ internal record MusicMenuItem : MenuItem
 
     public MusicMenuItem()
     {
+    }
+}
+
+/// <summary>
+/// A row of the Customize Controls screen: the keys and buttons bound to one control
+/// </summary>
+internal record ControlMenuItem : MenuItem
+{
+    /// <summary>The control's controls.cfg name ("attack", "am_zoomin")</summary>
+    public string? Control { get; set; }
+
+    public ControlMenuItem()
+    {
+    }
+}
+
+/// <summary>
+/// A title over a group of rows in a list that can't be selected (Customize Controls' sections)
+/// </summary>
+internal record HeaderMenuItem : MenuItem
+{
+    public HeaderMenuItem()
+    {
+        Enabled = false;
     }
 }
 

@@ -16,6 +16,15 @@ internal class GameParams
     [Option("game", Required = false, HelpText = "Game pack to run: wolf3d (default) or spear.")]
     public string Game { get; set; } = "";
 
+    [Option("file", Required = false, HelpText = "Mods to load over pfwolf.pk3: pk3 or zip files, or folders, found as given or in the mods folder. Later ones win.")]
+    public IEnumerable<string> Files { get; set; } = [];
+
+    /// <summary>
+    /// Mods named without --file, which is how files dropped on the exe arrive
+    /// </summary>
+    [Value(0, Required = false, MetaName = "mods", HelpText = "More mods, as for --file.")]
+    public IEnumerable<string> Paths { get; set; } = [];
+
     // Video: each overrides the saved setting, and is saved in its place
 
     [Option("fullscreen", Required = false, HelpText = "Start in borderless fullscreen.")]

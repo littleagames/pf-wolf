@@ -1,6 +1,7 @@
 # Object-plane tiles the player starts the level on. angles: 0=east, 90=north, 180=west,
 # 270=south (as for things). With several starts on one map, the last one scanned wins.
-# Starting health, weapons and ammo are a new game's, not the map's (GiveStartingInventory).
+# Starting weapons and ammo are a new game's, not the map's: `player.startitem` in
+# actordefs/wolf3d/player.yaml.
 player-starts:
   19:
     angles: 90

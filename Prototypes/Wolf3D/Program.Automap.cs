@@ -1,4 +1,5 @@
 using Wolf3D.Assets;
+using Wolf3D.Configuration;
 using Wolf3D.Constants;
 using Wolf3D.Entities.Actors;
 using Wolf3D.Enums;
@@ -32,7 +33,7 @@ internal partial class Program
 
     static readonly string[] AutomapHeadings = ["E", "NE", "N", "NW", "W", "SW", "S", "SE"];
 
-    /// <summary>The keys that work while the automap is open, as indexes into <see cref="automapscan"/>.</summary>
+    /// <summary>The keys that work while the automap is open; bound in <see cref="controls"/>.</summary>
     internal enum automapkeys
     {
         am_zoomin,
@@ -51,13 +52,6 @@ internal partial class Program
         NUMAUTOMAPKEYS
     }
 
-    internal static ScanCodes[] automapscan = new ScanCodes[(int)automapkeys.NUMAUTOMAPKEYS]
-    {
-        ScanCodes.sc_Equal, ScanCodes.sc_Minus,
-        ScanCodes.sc_KeyPad8, ScanCodes.sc_KeyPad2, ScanCodes.sc_KeyPad4, ScanCodes.sc_KeyPad6,
-        ScanCodes.sc_C, ScanCodes.sc_F, ScanCodes.sc_R, ScanCodes.sc_V, ScanCodes.sc_O, ScanCodes.sc_G,
-    };
-
     // The grid only shows from this zoom (virtual pixels per tile) up; any closer together it's a solid wash
     const float AUTOMAP_MINGRIDZOOM = 6f;
 
@@ -70,7 +64,11 @@ internal partial class Program
     // Zoom steps a second while a zoom key is held
     const float AUTOMAP_KEYZOOMRATE = 5f;
 
-    static bool IsAutomapKeyDown(automapkeys key) => _inputManager.IsKeyDown(automapscan[(int)key]);
+    static bool IsAutomapKeyDown(automapkeys key) =>
+        controls.Get(ControlAction.Of(key)).Any(code => code.Device != InputDevice.MouseWheel && IsInputActive(code));
+
+    static int AutomapWheelNotches(automapkeys key) =>
+        mouseenabled ? controls.Get(ControlAction.Of(key)).Sum(WheelNotches) : 0;
 
     const string AUTOMAP_FONT = "SmallFont";
 
@@ -107,14 +105,13 @@ internal partial class Program
     /// </summary>
     internal static void UpdateAutomap()
     {
-        int wheel = _inputManager.TakeWheelDelta();     // taken even while closed, so turns don't pile up
-
         if (_mapManager.Player == null)
             return;
 
         if (_automapManager.IsOpen)
         {
-            float zoom = wheel;
+            // A wheel bound to a zoom key steps once a notch; keys zoom smoothly while held
+            float zoom = AutomapWheelNotches(automapkeys.am_zoomin) - AutomapWheelNotches(automapkeys.am_zoomout);
             if (IsAutomapKeyDown(automapkeys.am_zoomin) || _inputManager.IsKeyDown(ScanCodes.sc_KeyPadPlus))
                 zoom += AUTOMAP_KEYZOOMRATE * tics / 70f;
             if (IsAutomapKeyDown(automapkeys.am_zoomout) || _inputManager.IsKeyDown(ScanCodes.sc_KeyPadMinus))
@@ -135,28 +132,31 @@ internal partial class Program
     }
 
     /// <summary>
-    /// Handles a fresh key press (from CheckKeys) if it's one of the automap's toggles and the map
-    /// is open. Returns true if the key was used, so it doesn't also run a console bind.
+    /// Handles a fresh press of a key or button (from CheckKeys) if it's one of the automap's
+    /// toggles and the map is open. Returns true if it's one of the automap's keys, so it doesn't
+    /// also run a console bind.
     /// </summary>
-    internal static bool HandleAutomapKey(ScanCodes key)
+    internal static bool HandleAutomapKey(InputCode code)
     {
         if (!_automapManager.IsOpen)
             return false;
 
-        if (key == automapscan[(int)automapkeys.am_center])
+        bool Bound(automapkeys automapKey) => controls.IsBound(ControlAction.Of(automapKey), code);
+
+        if (Bound(automapkeys.am_center))
             _automapManager.SnapToPlayer();
-        else if (key == automapscan[(int)automapkeys.am_follow])
+        else if (Bound(automapkeys.am_follow))
             _automapManager.ToggleFollow();
-        else if (key == automapscan[(int)automapkeys.am_rotate])
+        else if (Bound(automapkeys.am_rotate))
             _automapManager.ToggleRotate();
-        else if (key == automapscan[(int)automapkeys.am_style])
+        else if (Bound(automapkeys.am_style))
             _automapManager.ToggleStyle();
-        else if (key == automapscan[(int)automapkeys.am_overlay])
+        else if (Bound(automapkeys.am_overlay))
             _automapManager.ToggleOverlay();
-        else if (key == automapscan[(int)automapkeys.am_grid])
+        else if (Bound(automapkeys.am_grid))
             _automapManager.ToggleGrid();
-        else
-            return Array.IndexOf(automapscan, key) >= 0;    // held keys: used in UpdateAutomap, not binds
+        else    // held keys: used in UpdateAutomap, not binds
+            return IsAutomapInput(code);
 
         return true;
     }
@@ -172,7 +172,7 @@ internal partial class Program
             return;
 
         // controlx/controly run BASEMOVE a tic at walking pace (RUNMOVE running)
-        float dx = controlx, dy = controly;
+        float dx = controlx + controlstrafe, dy = controly;
         int strafe = (_inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE : BASEMOVE) * (int)tics;
         if (_inputManager.IsButtonPressed(buttontypes.bt_strafeleft))
             dx -= strafe;
@@ -181,7 +181,7 @@ internal partial class Program
 
         _automapManager.Pan(dx * AUTOMAP_PANSPEED / BASEMOVE, dy * AUTOMAP_PANSPEED / BASEMOVE);
 
-        controlx = controly = 0;
+        controlx = controly = controlstrafe = 0;
         _inputManager.SetButtonPressed(buttontypes.bt_strafeleft, false);
         _inputManager.SetButtonPressed(buttontypes.bt_straferight, false);
     }
@@ -470,7 +470,7 @@ internal partial class Program
     /// <summary>The player's tile and compass heading, in the bottom-left corner of the view.</summary>
     static void DrawAutomapPosition(AutomapView view)
     {
-        var font = _assetManager.Find<FontAsset>(AUTOMAP_FONT);
+        var font = _fontManager.Find(AUTOMAP_FONT);
         if (font == null)
             return;
 
@@ -479,25 +479,25 @@ internal partial class Program
         if (!_automapManager.Follow)
             text += "  PAN";
 
-        // DrawPropString and Bar work in 320x200 virtual pixels
+        // DrawText and Bar work in 320x200 virtual pixels
         int px = _videoManager.scaleFactor;
         int x = view.ClipX / px + 3;
         int y = (view.ClipY + view.ClipHeight) / px - font.Height - 2;
         int room = view.ClipWidth / px - 6;
 
         // The smallest view sizes can't fit it all: fall back to just the tile, then to nothing
-        GraphicManager.MeasureString(text, out ushort width, out _, font);
+        int width = font.Measure(text);
         if (width > room)
         {
             text = $"{player.TileX},{player.TileY}";
-            GraphicManager.MeasureString(text, out width, out _, font);
+            width = font.Measure(text);
             if (width > room || font.Height + 2 > view.ClipHeight / px)
                 return;
         }
 
         // On a backdrop box, so the map under it doesn't make it hard to read
         _videoManager.Bar(x - 2, y - 1, width + 4, font.Height + 2, AutomapColor("AutomapBackground"));
-        _videoManager.DrawPropString(x, y, text, AutomapColor("AutomapPlayer"), font);
+        _graphicManager.DrawText(x, y, text, font, AutomapColor("AutomapPlayer"));
     }
 
     /// <summary>

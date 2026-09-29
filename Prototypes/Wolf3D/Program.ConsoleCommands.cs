@@ -3,6 +3,7 @@ using System.Text;
 using Wolf3D.Assets;
 using Wolf3D.Configuration;
 using Wolf3D.Enums;
+using Wolf3D.Loaders;
 
 namespace Wolf3D;
 
@@ -19,7 +20,6 @@ internal partial class Program
     {
         _consoleManager.CheatsEnabled = () => DebugOk != 0;
         _consoleManager.LevelLoaded = () => _mapManager.Player != null;
-        _consoleManager.KeyName = KeyName;
 
         //
         // console
@@ -36,18 +36,35 @@ internal partial class Program
             "exec <file>", Cmd_Exec, complete: (_, i) => i == 0 ? ConfigScriptNames() : []);
 
         //
-        // key binds (saved to binds.cfg on exit)
+        // binds (saved to binds.cfg on exit)
         //
-        Register("bind", "Binds a key to a command run when it's pressed in play, or shows its bind.",
-            "bind <key> [command]", Cmd_Bind, complete: CompleteBind);
-        Register("unbind", "Removes a key's bind.", "unbind <key>", Cmd_Unbind,
-            complete: (_, i) => i == 0 ? _consoleManager.Binds.Keys.Select(KeyName) : []);
+        Register("bind", "Binds a key, mouse button, wheel turn or controller button to a command run when it's pressed in play, or shows its bind.",
+            "bind <key or button> [command]", Cmd_Bind, complete: CompleteBind);
+        Register("unbind", "Removes a key or button's bind.", "unbind <key or button>", Cmd_Unbind,
+            complete: (_, i) => i == 0 ? _consoleManager.Binds.Keys.Select(input => input.ToString()) : []);
         Register("unbindall", "Removes every bind.", "unbindall", _ =>
         {
             _consoleManager.UnbindAll();
             _consoleManager.Print("All binds removed");
         });
         Register("binds", "Lists the key binds.", "binds", Cmd_Binds);
+
+        //
+        // controls (saved to controls.cfg on exit)
+        //
+        Register("bindaction", "Sets a control's keys and buttons: up to two keys, mouse buttons or wheel turns and one controller button. Lists them all with no control.",
+            "bindaction [control] [key|\"Mouse 1-5\"|\"Wheel Up\"|\"Pad A\"|\"Joy 1-32\"...|none]", Cmd_BindAction, complete: CompleteBindAction);
+        Register("resetcontrols", "Puts every control back to its default keys and buttons.", "resetcontrols", _ =>
+        {
+            controls.SetDefaults();
+            _consoleManager.Print("Every control is back to its default");
+        });
+        Register("joy_deadzone", "How much of a controller stick's travel around the middle is ignored, in percent.",
+            "joy_deadzone [0-50]", args => SetOrShow("joy_deadzone", args, ref joydeadzone, 0, 50));
+        Register("joy_turnspeed", "How fast a controller's stick turns you, pushed all the way.",
+            "joy_turnspeed [0-9]", args => SetOrShow("joy_turnspeed", args, ref joyturnspeed, 0, JOYTURNSPEEDS - 1));
+        Register("joy_sticks", "Which controller stick turns: the right (modern) or the left, with the right strafing (classic).",
+            "joy_sticks [modern|classic]", Cmd_JoySticks, complete: Values("modern", "classic"));
 
         //
         // automap
@@ -61,6 +78,16 @@ internal partial class Program
             "am_grid [0|1]", Cmd_AmGrid, complete: Values("0", "1"));
         Register("am_reveal", "Shows the whole map on the automap, seen or not.", "am_reveal [0|1]", Cmd_AmReveal, Cheat,
             complete: Values("0", "1"));
+
+        //
+        // messages over the view
+        //
+        Register("msg", "Shows a message over the view, in a style from hud-messages.yaml if the first word names one.",
+            "msg [style] <text...>", Cmd_Msg, InLevel, complete: (_, i) => i == 0 ? _hudMessageManager.StyleNames : []);
+        Register("msg_enabled", "Whether item pickups, locked doors and deaths show messages over the view; default goes back to the game's own choice.",
+            "msg_enabled [0|1|default]", Cmd_MsgEnabled, complete: Values("0", "1", "default"));
+        Register("msg_clear", "Takes away the messages shown over the view.", "msg_clear", _ => _hudMessageManager.Clear());
+        Register("msg_styles", "Lists the message styles and where each puts its messages.", "msg_styles", Cmd_MsgStyles);
 
         //
         // video
@@ -117,10 +144,30 @@ internal partial class Program
         Register("actors", "Lists actors, optionally only those whose name contains the filter.", "actors [filter]", Cmd_Actors, InLevel,
             complete: (_, i) => i == 0 ? _mapManager.GetActors().Select(a => a.Name) : []);
         Register("maps", "Lists the levels that map can warp to.", "maps", Cmd_Maps);
-        Register("save", "Saves the game to a load/save menu slot.", "save <slot 0-9> [name]", Cmd_Save, InLevel,
-            complete: CompleteSaveSlot);
-        Register("load", "Loads the game saved in a load/save menu slot.", "load <slot 0-9>", Cmd_Load, InLevel,
-            complete: CompleteSaveSlot);
+        Register("mods", "Lists the mods loaded over pfwolf.pk3, in load order, and anything wrong with them.", "mods", Cmd_Mods);
+        Register("assetinfo", "Shows where an asset came from: each file that added, replaced or merged into it, in order.",
+            "assetinfo <name>", Cmd_AssetInfo, complete: (_, i) => i == 0 ? _assetManager.AssetNames : []);
+        Register("exportmap", "Writes a level, or all of them, as ECWolf binary maps (NAME.wad) for a mod's maps/ folder: to the exports folder, or the folder given.",
+            "exportmap <MAP##|all> [folder]", Cmd_ExportMap,
+            complete: (_, i) => i == 0 ? ["all", .. _gameEngineManager.GetGameInfo().Maps.Keys] : []);
+        Register("playdemo", "Plays a demo: one recorded with that number (DEMO#.dmo in the demos folder), or else the game's own. Ends the game in progress, then goes back to the title.",
+            "playdemo <0-9>", Cmd_PlayDemo,
+            complete: (_, i) => i == 0 ? Enumerable.Range(0, 10).Where(DemoExists).Select(n => n.ToString()) : []);
+        Register("recorddemo", "Records a demo on a level, on the hardest skill, until the level ends or you die; saves it as that demo number, or asks for one. Ends the game in progress first.",
+            "recorddemo <MAP##> [0-9]", Cmd_RecordDemo,
+            complete: (_, i) => i switch
+            {
+                0 => Enumerable.Range(1, DemoMapCount()).Select(n => $"MAP{n:D2}"),
+                1 => Enumerable.Range(0, 10).Select(n => n.ToString()),
+                _ => []
+            });
+        Register("saves", "Lists the saved games, newest first, numbered for load.", "saves", Cmd_Saves);
+        Register("autosave", "Whether each new level saves itself as it starts, to the Autosave.", "autosave [0|1]",
+            Cmd_AutoSave, complete: Values("0", "1"));
+        Register("save", "Saves the game. A name that's already saved is saved over; with none, it's a new save named for the level.",
+            "save [name]", Cmd_Save, InLevel, complete: CompleteSaveName);
+        Register("load", "Loads a saved game, by its number in saves or its name.", "load <number|name>", Cmd_Load, InLevel,
+            complete: CompleteSaveName);
         Register("fps", "Toggles the frame rate counter.", "fps [0|1]", Cmd_Fps, complete: Values("0", "1"));
         Register("slowmo", "Waits extra VBLs every frame (0 = off).", "slowmo [0-50]", Cmd_SlowMo);
         Register("vbls", "Adds extra VBLs per frame (0 = off).", "vbls [0-8]", Cmd_Vbls);
@@ -156,10 +203,13 @@ internal partial class Program
 
     static IEnumerable<string> CompleteBind(string[] args, int index) => index switch
     {
-        0 => AllKeyNames(),
+        0 => InputCode.AllNames(),
         1 => CommandNames(),
         _ => [],
     };
+
+    static IEnumerable<string> CompleteBindAction(string[] args, int index) =>
+        index == 0 ? ControlAction.All.Select(action => action.Name) : ["none", .. InputCode.AllNames()];
 
     static IEnumerable<string> ConfigScriptNames()
     {
@@ -172,35 +222,28 @@ internal partial class Program
     /*
     =============================================================================
 
-                                    KEY NAMES
+                                KEY AND BUTTON NAMES
 
-    Binds use SDL's scancode names ("F5", "Keypad 1", "Left Shift"), matched
-    without regard to case, so they read the same in binds.cfg as on screen.
+    Binds and controls use SDL's key names ("F5", "Keypad 1", "Left Shift"),
+    "Mouse 1", "Wheel Up", "Joy 1" and "Pad A" (see InputCode), matched without
+    regard to case, so they read the same in the .cfg files as on screen.
 
     =============================================================================
     */
 
-    static string KeyName(ScanCodes key)
+    /// <summary>
+    /// A key or button by name. Keys are folded as InputManager reports them: right-hand
+    /// modifiers into left-hand ones, keypad Enter into Enter. Not the keypad arrows, which
+    /// InputManager only folds while Num Lock is off: a keypad key stays itself, and works as
+    /// that key when it's pressed with Num Lock on.
+    /// </summary>
+    static InputCode ParseInput(string name)
     {
-        var name = SDL.SDL_GetScancodeName((SDL.SDL_Scancode)key);
-        return string.IsNullOrEmpty(name) ? $"#{(int)key}" : name;
+        if (!InputCode.TryParse(name, out var code))
+            throw new ArgumentException($"unknown key or button \"{name}\"");
+
+        return code.Device == InputDevice.Key ? InputCode.FromKey(InputManager.FoldKey(code.Key)) : code;
     }
-
-    static ScanCodes ParseKey(string name)
-    {
-        var scancode = SDL.SDL_GetScancodeFromName(name);
-        if (scancode == SDL.SDL_Scancode.SDL_SCANCODE_UNKNOWN)
-            throw new ArgumentException($"unknown key \"{name}\"");
-
-        // Binds are looked up by the key InputManager reports, which folds right-hand modifiers
-        // (and keypad arrows without Num Lock) into their left-hand/arrow equivalents.
-        return _inputManager.MapKey((ScanCodes)scancode);
-    }
-
-    static IEnumerable<string> AllKeyNames() =>
-        Enumerable.Range(1, (int)SDL.SDL_Scancode.SDL_NUM_SCANCODES - 1)
-            .Select(i => SDL.SDL_GetScancodeName((SDL.SDL_Scancode)i))
-            .Where(name => !string.IsNullOrEmpty(name));
 
     /// <summary>Quotes an argument if Tokenize would otherwise split it.</summary>
     static string QuoteArg(string arg) =>
@@ -304,51 +347,193 @@ internal partial class Program
     private static void Cmd_Bind(string[] args)
     {
         if (args.Length == 0)
-            throw new ArgumentException("usage: bind <key> [command]");
+            throw new ArgumentException("usage: bind <key or button> [command]");
 
-        var key = ParseKey(args[0]);
+        var input = ParseInput(args[0]);
 
         if (args.Length == 1)
         {
-            _consoleManager.Print(_consoleManager.Binds.TryGetValue(key, out var bound)
-                ? $"\"{KeyName(key)}\" = \"{bound}\""
-                : $"\"{KeyName(key)}\" is not bound");
+            _consoleManager.Print(_consoleManager.Binds.TryGetValue(input, out var bound)
+                ? $"\"{input}\" = \"{bound}\""
+                : $"\"{input}\" is not bound");
             return;
         }
 
         // ` always toggles the console and Escape always opens the menu, before binds are seen.
-        if (key is ScanCodes.sc_Grave or ScanCodes.sc_Escape)
-            throw new ArgumentException($"\"{KeyName(key)}\" is reserved");
+        if (input.Key is ScanCodes.sc_Grave or ScanCodes.sc_Escape)
+            throw new ArgumentException($"\"{input}\" is reserved");
 
         // One argument is the command line as-is (`bind F5 "god; noclip"`); several are
         // rejoined, re-quoting any that need it (`bind F5 give GoldKey`).
         var command = args.Length == 2 ? args[1] : string.Join(' ', args[1..].Select(QuoteArg));
 
-        _consoleManager.Bind(key, command);
-        _consoleManager.Print($"\"{KeyName(key)}\" = \"{command}\"");
+        _consoleManager.Bind(input, command);
+        _consoleManager.Print($"\"{input}\" = \"{command}\"");
     }
 
     private static void Cmd_Unbind(string[] args)
     {
         if (args.Length == 0)
-            throw new ArgumentException("usage: unbind <key>");
+            throw new ArgumentException("usage: unbind <key or button>");
 
-        var key = ParseKey(args[0]);
-        _consoleManager.Print(_consoleManager.Unbind(key)
-            ? $"\"{KeyName(key)}\" unbound"
-            : $"\"{KeyName(key)}\" is not bound");
+        var input = ParseInput(args[0]);
+        _consoleManager.Print(_consoleManager.Unbind(input)
+            ? $"\"{input}\" unbound"
+            : $"\"{input}\" is not bound");
+    }
+
+    private static void Cmd_BindAction(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            foreach (var each in ControlAction.All)
+                _consoleManager.Print($"{each.Name} = {controls.FormatInputs(each)}");
+            return;
+        }
+
+        if (!ControlAction.TryParse(args[0], out var action))
+            throw new ArgumentException($"unknown control \"{args[0]}\"");
+
+        if (args.Length > 1)
+        {
+            // All read before any is set, so a bad name leaves the control as it was
+            List<InputCode> codes = args[1..] is ["none"] ? [] : args[1..].Select(ParseInput).ToList();
+            if (codes.Count(code => !code.IsController) > ControlBindings.KeySlots || codes.Count(code => code.IsController) > 1)
+                throw new ArgumentException($"a control takes up to {ControlBindings.KeySlots} keys or mouse buttons and one joystick button");
+
+            controls.Clear(action);
+            foreach (var code in codes)
+                controls.Add(action, code);
+
+            if (_consoleManager.IsRunningScript)    // controls.cfg sets every control at startup
+                return;
+        }
+
+        _consoleManager.Print($"{action.Name} = {controls.FormatInputs(action)}");
+    }
+
+    /// <summary>
+    /// Sets a number setting from args[0] if given, then shows it (quietly when controls.cfg
+    /// sets it at startup).
+    /// </summary>
+    static void SetOrShow(string name, string[] args, ref int setting, int min, int max)
+    {
+        if (args.Length > 0)
+        {
+            setting = ParseInt(args[0], min, max);
+            if (_consoleManager.IsRunningScript)
+                return;
+        }
+
+        _consoleManager.Print($"{name} = {setting}");
+    }
+
+    private static void Cmd_JoySticks(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            joyclassicsticks = args[0].ToLowerInvariant() switch
+            {
+                "modern" => false,
+                "classic" => true,
+                _ => throw new ArgumentException($"expected modern or classic, got \"{args[0]}\""),
+            };
+            if (_consoleManager.IsRunningScript)
+                return;
+        }
+
+        _consoleManager.Print($"joy_sticks = {JoySticksName}");
+    }
+
+    static string JoySticksName => joyclassicsticks ? "classic" : "modern";
+
+    /// <summary>The controller settings as console commands, for saving to controls.cfg.</summary>
+    internal static IEnumerable<string> GetControllerSettingCommands() =>
+    [
+        $"joy_deadzone {joydeadzone}",
+        $"joy_turnspeed {joyturnspeed}",
+        $"joy_sticks {JoySticksName}",
+    ];
+
+    private static void Cmd_Mods(string[] args)
+    {
+        var mods = _assetManager.LoadedMods;
+        if (mods.Count == 0)
+            _consoleManager.Print("No mods loaded");
+
+        for (var i = 0; i < mods.Count; i++)
+        {
+            var mod = mods[i];
+            var version = string.IsNullOrWhiteSpace(mod.Info.Version) ? "" : $" {mod.Info.Version}";
+            var author = string.IsNullOrWhiteSpace(mod.Info.Author) ? "" : $" by {mod.Info.Author}";
+            _consoleManager.Print($"{i + 1}. {mod.DisplayName}{version}{author} ({mod.FullPath})");
+        }
+
+        foreach (var warning in _assetManager.ModWarnings)
+            _consoleManager.Print(warning);
+    }
+
+    private static void Cmd_AssetInfo(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: assetinfo <name>");
+
+        var found = false;
+        foreach (var (type, name, origins) in _assetManager.FindAssetOrigins(args[0]))
+        {
+            found = true;
+            _consoleManager.Print($"{name} ({type})");
+            foreach (var origin in origins)
+            {
+                _consoleManager.Print(origin.Action == AssetOrigin.LeftOut
+                    ? $"  left out, couldn't be loaded: {origin.Source}: {origin.Path}"
+                    : $"  {origin.Action} by {origin.Source}: {origin.Path}");
+            }
+        }
+
+        if (!found)
+            _consoleManager.Print($"No asset named {args[0]}");
+    }
+
+    private static void Cmd_ExportMap(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: exportmap <MAP##|all> [folder]");
+
+        var mapNames = args[0].Equals("all", StringComparison.OrdinalIgnoreCase)
+            ? _gameEngineManager.GetGameInfo().Maps.Keys.ToList()
+            : [args[0]];
+        var folder = args.Length > 1 ? args[1] : _gameEngineManager.ConfigDirectories.ExportsDirectory;
+        Directory.CreateDirectory(folder);
+
+        var written = 0;
+        foreach (var mapName in mapNames)
+        {
+            // The level as loaded, before a game changes it
+            var map = _assetManager.Find<MapAsset>(mapName);
+            if (map == null)
+            {
+                _consoleManager.Print($"No level named {mapName}");
+                continue;
+            }
+
+            File.WriteAllBytes(Path.Combine(folder, $"{mapName.ToUpperInvariant()}.wad"), EcWolfMapLoader.Save(map, mapName));
+            written++;
+        }
+
+        _consoleManager.Print($"Wrote {written} level{(written == 1 ? "" : "s")} to {Path.GetFullPath(folder)}");
     }
 
     private static void Cmd_Binds(string[] args)
     {
         if (_consoleManager.Binds.Count == 0)
         {
-            _consoleManager.Print("No keys are bound");
+            _consoleManager.Print("Nothing is bound");
             return;
         }
 
-        foreach (var (key, command) in _consoleManager.Binds.OrderBy(b => KeyName(b.Key), StringComparer.OrdinalIgnoreCase))
-            _consoleManager.Print($"\"{KeyName(key)}\" = \"{command}\"");
+        foreach (var (input, command) in _consoleManager.Binds.OrderBy(b => b.Key.ToString(), StringComparer.OrdinalIgnoreCase))
+            _consoleManager.Print($"\"{input}\" = \"{command}\"");
     }
 
     /*
@@ -435,7 +620,7 @@ internal partial class Program
             case "all":
                 HealSelf(100);
                 GiveAllWeapons();
-                GiveAmmo(AmmoType, int.MaxValue);
+                GiveAllAmmo(int.MaxValue);
                 GiveAllKeys();
                 _consoleManager.Print("Gave everything");
                 break;
@@ -461,8 +646,7 @@ internal partial class Program
                 break;
 
             case "ammo":
-                var addedAmmo = GiveAmmo(AmmoType, amount ?? int.MaxValue);
-                _consoleManager.Print($"Gave {addedAmmo} {AmmoType}");
+                _consoleManager.Print($"Gave {GiveAllAmmo(amount ?? int.MaxValue)} ammo");
                 break;
 
             default:
@@ -487,7 +671,7 @@ internal partial class Program
         if (_inventoryManager.FindClass(item, "Weapon") != null)
         {
             // Goes through the pickup path so a better weapon also gets selected.
-            TryGiveWeapon(item, "None", 0);
+            TryGiveWeapon(item, 0);
             _consoleManager.Print($"Gave {item}");
         }
         else if (_inventoryManager.FindClass(item, "Ammo") != null)
@@ -498,8 +682,8 @@ internal partial class Program
 
     static void GiveAllWeapons()
     {
-        foreach (var weapon in WeaponSlotItems)
-            TryGiveWeapon(weapon, "None", 0);
+        foreach (var weapon in AllWeapons())
+            TryGiveWeapon(weapon, 0);
     }
 
     static void GiveAllKeys()
@@ -665,6 +849,12 @@ internal partial class Program
         int active = actors.Count(a => a.Active != activetypes.ac_no);
 
         _consoleManager.Print($"Doors: {doornum}");
+        for (int i = 0; i < doornum; i++)
+        {
+            var door = doorobjlist[i];
+            if (!string.IsNullOrEmpty(door.xlat.Lock))
+                _consoleManager.Print($"  locked ({door.xlat.Lock}) at {door.tilex},{door.tiley}");
+        }
         _consoleManager.Print($"Actors: {actors.Count}  active: {active}");
         _consoleManager.Print($"Enemies: {enemies}  alive: {alive}");
         _consoleManager.Print($"Kills: {gamestate.killcount}/{gamestate.killtotal}  Secrets: {gamestate.secretcount}/{gamestate.secrettotal}  Treasure: {gamestate.treasurecount}/{gamestate.treasuretotal}");
@@ -695,6 +885,53 @@ internal partial class Program
         _consoleManager.Print($"{shown} actor(s)");
     }
 
+    // Queues the demo for the title loop; in a level the game ends first (PlayLoop exits on the
+    // abort, and GameLoop, seeing pendingDemo, goes back to the title without a death or scores)
+    private static void Cmd_PlayDemo(string[] args)
+    {
+        if (args.Length == 0 || !int.TryParse(args[0], out int demonumber) || demonumber < 0 || demonumber > 9)
+            throw new ArgumentException("usage: playdemo <0-9>");
+
+        if (!DemoExists(demonumber))
+        {
+            _consoleManager.Print($"There's no demo {demonumber}");
+            return;
+        }
+
+        pendingDemo = demonumber;
+        if (ingame)
+            playstate = playstatetypes.ex_abort;
+    }
+
+    // Queued like playdemo. The map is MAP## or just its number; a demo can only name MAP01 onwards,
+    // one byte's worth, so it has to be one of the maps counting up from MAP01
+    private static void Cmd_RecordDemo(string[] args)
+    {
+        const string usage = "usage: recorddemo <MAP##> [0-9]";
+        if (args.Length == 0)
+            throw new ArgumentException(usage);
+
+        var mapArg = args[0].StartsWith("MAP", StringComparison.OrdinalIgnoreCase) ? args[0][3..] : args[0];
+        int maps = DemoMapCount();
+        if (!int.TryParse(mapArg, out int level) || level < 1 || level > maps)
+        {
+            _consoleManager.Print(maps == 0 ? "No map can be recorded: there's no MAP01" : $"A demo can be recorded on MAP01 to MAP{maps:D2}");
+            return;
+        }
+
+        int? demonumber = null;
+        if (args.Length > 1)
+        {
+            if (!int.TryParse(args[1], out int number) || number < 0 || number > 9)
+                throw new ArgumentException(usage);
+            demonumber = number;
+        }
+
+        pendingRecord = new DemoRecordRequest(level, demonumber);
+        if (ingame)
+            playstate = playstatetypes.ex_abort;
+    }
+
     private static void Cmd_Maps(string[] args)
     {
         // Ten to a row (an episode's worth in Wolf3D) so a whole game fits in the console.
@@ -709,43 +946,115 @@ internal partial class Program
             _consoleManager.Print($"Current map is {gamestate.mapon}");
     }
 
-    static IEnumerable<string> CompleteSaveSlot(string[] args, int index) =>
-        index == 0 ? Enumerable.Range(0, SaveGamesAvail.Length).Select(i => i.ToString()) : [];
+    static IEnumerable<string> CompleteSaveName(string[] args, int index) =>
+        index == 0 ? ListSaveGames().Select(s => s.Name).Distinct(StringComparer.OrdinalIgnoreCase) : [];
+
+    private static void Cmd_Saves(string[] args)
+    {
+        var saves = ListSaveGames();
+        if (saves.Count == 0)
+        {
+            _consoleManager.Print($"No saved games in {_gameEngineManager.ConfigDirectories.SaveGameDirectory}");
+            return;
+        }
+
+        for (int i = 0; i < saves.Count; i++)
+        {
+            var s = saves[i];
+            var kind = s.Kind == SaveKind.Normal ? "" : $" [{s.Kind.ToString().ToLowerInvariant()}]";
+            _consoleManager.Print($"{i + 1,3}. {s.Name}{kind} - {s.MapName}, {s.SavedAt.ToLocalTime():yyyy-MM-dd HH:mm}, played {FormatPlayTime(s.PlayTime)}");
+        }
+    }
+
+    private static void Cmd_Msg(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: msg [style] <text...>");
+
+        // A first word naming a style is the style, as long as there's text after it
+        if (args.Length > 1 && _hudMessageManager.StyleExists(args[0]))
+            _hudMessageManager.Show(HudMessageKind.Other, string.Join(' ', args[1..]), args[0]);
+        else
+            _hudMessageManager.Show(HudMessageKind.Other, string.Join(' ', args));
+    }
+
+    private static void Cmd_MsgEnabled(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            _hudMessageManager.EnabledSetting = args[0].Equals("default", StringComparison.OrdinalIgnoreCase)
+                ? null
+                : ParseBool(args[0]);
+            if (!_hudMessageManager.Enabled)
+                _hudMessageManager.Clear();
+        }
+        _consoleManager.Print($"msg_enabled is {(_hudMessageManager.Enabled ? 1 : 0)}" +
+            (_hudMessageManager.EnabledSetting == null ? " (the game's default)" : ""));
+    }
+
+    private static void Cmd_MsgStyles(string[] args)
+    {
+        foreach (var name in _hudMessageManager.StyleNames.OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
+        {
+            var s = _hudMessageManager.FindStyle(name);
+            _consoleManager.Print($"{s.Name}: {s.Anchor} {s.X:+0;-0;0},{s.Y:+0;-0;0} margin {s.Margin}, {s.Font} in {s.Color}, " +
+                $"{s.Duration} tics, {s.MaxLines} line{(s.MaxLines == 1 ? "" : "s")}");
+        }
+    }
+
+    private static void Cmd_AutoSave(string[] args)
+    {
+        if (args.Length > 0)
+            autosaveEnabled = ParseBool(args[0]);
+
+        _consoleManager.Print($"autosave is {(autosaveEnabled ? 1 : 0)}");
+    }
+
+    // A save by its number in the saves list or its name (the newest, if several share it)
+    private static SaveInfo FindSaveGame(string arg)
+    {
+        var saves = ListSaveGames();
+        if (int.TryParse(arg, out var number))
+        {
+            if (number < 1 || number > saves.Count)
+                throw new ArgumentException($"there's no save {number}; saves lists them");
+            return saves[number - 1];
+        }
+
+        return saves.FirstOrDefault(s => string.Equals(s.Name, arg, StringComparison.OrdinalIgnoreCase))
+            ?? throw new ArgumentException($"there's no save called \"{arg}\"; saves lists them");
+    }
 
     private static void Cmd_Save(string[] args)
     {
-        if (args.Length == 0)
-            throw new ArgumentException("usage: save <slot 0-9> [name]");
-
-        var slot = ParseInt(args[0], 0, SaveGamesAvail.Length - 1);
-        var name = args.Length > 1 ? string.Join(' ', args.Skip(1))
-            : SaveGamesAvail[slot] != 0 ? SaveGameNames[slot]
-            : gamestate.mapon;
+        var name = args.Length > 0 ? string.Join(' ', args) : GetMapDisplayName(gamestate.mapon);
         if (name.Length > MaxGameName - 1)
             name = name[..(MaxGameName - 1)];
 
-        if (!SaveTheGame(GetSaveGamePath(slot), name, 0, 0))
-            throw new ArgumentException($"couldn't write {GetSaveGamePath(slot)}");
+        var path = args.Length > 0
+            && ListSaveGames().FirstOrDefault(s => s.Kind == SaveKind.Normal
+                && string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)) is { } existing
+            ? existing.Path
+            : NewSaveGamePath();
 
-        SaveGamesAvail[slot] = 1;
-        SaveGameNames[slot] = name;
-        _consoleManager.Print($"Saved \"{name}\" to slot {slot}");
+        if (!SaveTheGame(path, name, 0, 0))
+            throw new ArgumentException($"couldn't write {path}");
+
+        _consoleManager.Print($"Saved \"{name}\" to {Path.GetFileName(path)}");
     }
 
     private static void Cmd_Load(string[] args)
     {
         if (args.Length == 0)
-            throw new ArgumentException("usage: load <slot 0-9>");
+            throw new ArgumentException("usage: load <number|name>");
 
-        var slot = ParseInt(args[0], 0, SaveGamesAvail.Length - 1);
-        if (SaveGamesAvail[slot] == 0)
-            throw new ArgumentException($"slot {slot} is empty");
+        var save = FindSaveGame(string.Join(' ', args));
 
         // Between frames, not mid-command: the load replaces every actor, the player included.
         _consoleManager.Defer(() =>
         {
             loadedgame = true;
-            if (LoadTheGame(GetSaveGamePath(slot), 0, 0))
+            if (LoadTheGame(save.Path, 0, 0))
                 playstate = playstatetypes.ex_abort;    // GameLoop redraws and restarts music for the loaded level
             else
                 loadedgame = false;

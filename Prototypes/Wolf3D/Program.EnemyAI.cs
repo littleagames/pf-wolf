@@ -23,8 +23,7 @@ internal partial class Program
     {
         if (!ob.ResolvedStates.TryGetValue(stateName, out var state))
             return;
-        ob.CurrentState = state;
-        ob.TicCount = state.TicTime;
+        ob.SetState(state);
     }
 
     private static void RecenterOnTile(Entities.Actors.Actor ob)
@@ -66,7 +65,8 @@ internal partial class Program
             {
                 if (!ob.Hidden || !_mapManager.spotvis[player.TileX, player.TileY])
                 {
-                    if (ob.Name is "Blinky" or "Clyde" or "Pinky" or "Inky")
+                    // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
+                    if (ob.Flags.Contains("TOUCHDAMAGE", StringComparer.OrdinalIgnoreCase))
                         TakeDamage((int)(tics * 2), ob);
 
                     return;
@@ -186,7 +186,10 @@ internal partial class Program
             return true;
         }
 
-        ob.AreaNumber = (byte)(_mapManager.MAPSPOT(ob.TileX, ob.TileY, 0) - MapDataConstants.AREATILE);
+        // A door tile has no area of its own, so a PHASEDOORS actor passing through one
+        // keeps the area it came from
+        if (_mapManager.actorat[ob.TileX, ob.TileY] is not Door)
+            ob.AreaNumber = (byte)(_mapManager.MAPSPOT(ob.TileX, ob.TileY, 0) - MapDataConstants.AREATILE);
         ob.Distance = (int)MapConstants.TILEGLOBAL;
         ob.SyncPosition();
         return true;
@@ -204,19 +207,19 @@ internal partial class Program
                 return 0;
             if (temp is Door door)
             {
-                if (demorecord || demoplayback)
-                    doornumtile = door.door;
-                else
+                // PHASEDOORS actors (ghosts, Spectres) drift straight through a door
+                // without opening it. Don't set doornumtile for them: TryWalk would give
+                // them a "waiting on door" Distance, which T_Ghosts doesn't handle (its
+                // move loop then never ends).
+                if (ob.Flags.Contains("PHASEDOORS", StringComparer.OrdinalIgnoreCase))
+                    return 2;
+
+                doornumtile = door.door;
+                if (!(demorecord || demoplayback))
                 {
-                    doornumtile = door.door;
-                    // Ghosts phase through closed doors rather than opening them
-                    // (Program.WL_STATE.cs's original ghostobj/spectreobj exception).
-                    if (ob.Name is not ("Blinky" or "Clyde" or "Pinky" or "Inky"))
-                    {
-                        OpenDoor(doornumtile);
-                        ob.Distance = -doornumtile - 1;
-                        return 1;
-                    }
+                    OpenDoor(doornumtile);
+                    ob.Distance = -doornumtile - 1;
+                    return 1;
                 }
             }
         }
@@ -708,16 +711,18 @@ internal partial class Program
 
         NewActorState(ob, "Death");
 
-        if (ob.Name == "SS")
+        // `dropweapon` (the SS's MachineGun) replaces the `dropitem` while the player holds
+        // nothing as good (by weapon.selectionorder), as KillActor did for the SS.
+        var drop = ob.Properties.TryGetValue("dropitem", out var dropitem) ? dropitem as string : null;
+        if (ob.Properties.TryGetValue("dropweapon", out var dropweapon) && dropweapon is string weaponName)
         {
-            // KillActor's one enemy-specific drop rule that isn't a flat `dropitem`:
-            // upgrades a Clip drop to a MachineGun if the player doesn't have one yet.
-            PlaceItemType(GetBestWeapon() < weapontypes.wp_machinegun ? "MachineGun" : "Clip", tilex, tiley);
+            var best = BestWeapon();
+            if (best == null || WeaponSelectionOrder(best) > WeaponSelectionOrder(weaponName))
+                drop = weaponName;
         }
-        else if (ob.Properties.TryGetValue("dropitem", out var dropitem) && dropitem is string dropitemName)
-        {
-            PlaceItemType(dropitemName, tilex, tiley);
-        }
+
+        if (drop != null)
+            PlaceItemType(drop, tilex, tiley);
 
         if (ob.Name is "Schabbs" or "Gift" or "Fat" or "RealHitler")
         {
@@ -1152,6 +1157,7 @@ internal partial class Program
         newobj.TicCount = 1;
         newobj.Angle = (short)iangle;
         newobj.Speed = speed;
+        newobj.Shooter = ob;
 
         if (sound == null && newobj.Properties.TryGetValue("attacksound", out var attackSound))
             sound = attackSound as string;
@@ -1313,10 +1319,7 @@ internal partial class Program
 
         if (bordercol != "VIEWCOLOR")
         {
-            fontnumber = "LargeFont";
-            SETFONTCOLOR("White", bordercol);
-            PrintX = 68; PrintY = 45;
-            US_Print("$STR_SEEAGAIN".ToLanguageText(language));
+            TextAt(68, 45, new Fonts.TextStyle(LARGE_FONT, "White", bordercol)).Print("$STR_SEEAGAIN".ToLanguageText(language));
         }
         else
         {
@@ -1327,6 +1330,7 @@ internal partial class Program
 
         _inputManager.UserInput(300);
 
+        deathCamSprite = null;      // T_DeathCam builds a fresh one, so the flash starts from its first frame
         NewActorState(player, Entities.Actors.PlayerPawn.DeathCamState);
 
         player.X = gamestate.killx;
@@ -1363,5 +1367,18 @@ internal partial class Program
 
         if (ob.ResolvedStates.ContainsKey("DeathCam"))
             NewActorState(ob, "DeathCam");
+    }
+
+    // The death cam's "LET'S SEE THAT AGAIN!" banner (actordefs/deathcam.yaml), drawn by
+    // DrawPlayerWeapon. Like the weapon in hand it's never placed in the world: the player's
+    // DeathCam state runs its states instead.
+    static Entities.Actors.Actor? deathCamSprite;
+
+    /// <summary>The player's think while on its DeathCam state: animates the banner.</summary>
+    internal static void T_DeathCam(Entities.Actors.Actor ob)
+    {
+        deathCamSprite ??= _inventoryManager.CreateActor("DeathCam");
+        if (deathCamSprite != null)
+            _mapManager.DoActor(deathCamSprite, tics);
     }
 }

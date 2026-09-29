@@ -109,5 +109,18 @@ internal record MapTextureTranslation
     /// </summary>
     public string Lock { get; init; } = "";
 
+    /// <summary>
+    /// Doors only: what's shown when the player tries this door without its <see cref="Lock"/>
+    /// item (a $NAME language key or the text itself). Empty uses the lock item's
+    /// `key.lockedmessage`.
+    /// </summary>
+    public string LockMessage { get; init; } = "";
+
+    /// <summary>
+    /// Doors only: the hud-messages.yaml style <see cref="LockMessage"/> is shown in. Empty uses
+    /// the lock item's `key.lockedmessagestyle`.
+    /// </summary>
+    public string LockMessageStyle { get; init; } = "";
+
     public static MapTextureTranslation None => new(); // TODO: Missing texture
 }

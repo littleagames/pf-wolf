@@ -1,4 +1,5 @@
-﻿using Wolf3D.Entities.Actors;
+﻿using Wolf3D.Configuration;
+using Wolf3D.Entities.Actors;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
 using static SDL2.SDL;
@@ -27,15 +28,9 @@ internal partial class Program
     // control info
     //
     internal static bool mouseenabled, joystickenabled;
-    internal static ScanCodes[] dirscan = new ScanCodes[4] { ScanCodes.sc_UpArrow, ScanCodes.sc_RightArrow, ScanCodes.sc_DownArrow, ScanCodes.sc_LeftArrow };
-    internal static ScanCodes[] buttonscan = new ScanCodes[(int)buttontypes.NUMBUTTONS] { ScanCodes.sc_Control, ScanCodes.sc_Alt, ScanCodes.sc_LShift, ScanCodes.sc_Space, ScanCodes.sc_1, ScanCodes.sc_2, ScanCodes.sc_3, ScanCodes.sc_4, 0,0,0,0,0,0,0,0,0,0, ScanCodes.sc_Tab };
-    internal static buttontypes[] buttonmouse = new buttontypes[4] { buttontypes.bt_attack, buttontypes.bt_strafe, buttontypes.bt_use, buttontypes.bt_nobutton };
-    internal static buttontypes[] buttonjoy = new buttontypes[32] {
-        buttontypes.bt_attack, buttontypes.bt_strafe, buttontypes.bt_use, buttontypes.bt_run, buttontypes.bt_strafeleft, buttontypes.bt_straferight, buttontypes.bt_esc, buttontypes.bt_pause,
-        buttontypes.bt_prevweapon, buttontypes.bt_nextweapon, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton,
-        buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton,
-        buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton, buttontypes.bt_nobutton
-    };
+
+    /// <summary>The keys, mouse buttons and joystick buttons bound to each button and automap key (saved to controls.cfg).</summary>
+    internal static readonly ControlBindings controls = new();
 
     internal static int viewsize;
 
@@ -48,6 +43,22 @@ internal partial class Program
     // current user input
     //
     static int controlx, controly;         // range from -100 to 100 per tic
+    static int controlstrafe;              // a controller stick's sideways move, the same range (positive is right)
+    static int wheelnotches;               // the mouse wheel's turn this frame (positive is away from the user)
+
+    // The controller settings (the Controller Settings menu, and joy_* in controls.cfg):
+    // how much of a stick's travel around the middle is ignored, in percent; how fast a stick
+    // turns, as a step of JoyTurnSpeed; and whether the left stick turns, with the right
+    // strafing (classic), rather than the right stick turning (modern).
+    internal static int joydeadzone = 20;
+    internal static int joyturnspeed = 4;
+    internal static bool joyclassicsticks;
+
+    internal const int JOYTURNSPEEDS = 10;
+
+    // Turning speed with a stick pushed all the way, per tic: 50 to 140, 90 by default (the
+    // arrow keys turn at BASEMOVE, RUNMOVE running)
+    static int JoyTurnSpeed => 50 + 10 * Math.Clamp(joyturnspeed, 0, JOYTURNSPEEDS - 1);
 
     static int lastgamemusicoffset = 0;
 
@@ -102,6 +113,8 @@ internal partial class Program
 
         _inputManager.CenterMouse();
 
+        _hudMessageManager.Clear();     // nothing left over from the last level, life or saved game
+
         if (demoplayback)
             _inputManager.StartAck();
 
@@ -130,14 +143,21 @@ internal partial class Program
                 _mapManager.DoActors(tics);
 
                 _videoManager.UpdatePaletteShifts(tics);
+                _hudMessageManager.Tick((int)tics);
             }
 
             UpdateAutomap();
 
             ThreeDRefresh();
 
+            if (autosavePending)
+                AutoSaveGame();         // now there's a picture of the level for it
+
             if (!worldPaused)
+            {
                 gamestate.TimeCount += (int)tics;
+                gamestate.PlayTime += (int)tics;
+            }
 
             UpdateSoundListener();      // JAB
             if (_videoManager.screenfaded)
@@ -220,15 +240,20 @@ internal partial class Program
             ToggleAutomap();
 
         //
-        // console binds: run the command bound to each key pressed since the last frame
-        // (never while recording, or the demo wouldn't match what was played)
+        // console binds: run the command bound to each key or button pressed since the last
+        // frame (never while recording, or the demo wouldn't match what was played)
         //
+        var pressedInputs = new List<InputCode>();
         while (_inputManager.TryTakePressedKey(out var pressed))
+            pressedInputs.Add(InputCode.FromKey(pressed));
+        pressedInputs.AddRange(TakeFreshPresses());
+
+        foreach (var input in pressedInputs)
         {
-            if (HandleAutomapKey(pressed))      // the automap's own keys, while it's open
+            if (HandleAutomapKey(input))        // the automap's own keys, while it's open
                 continue;
 
-            if (!demorecord && _consoleManager.Binds.TryGetValue(pressed, out var boundCommand))
+            if (!demorecord && _consoleManager.Binds.TryGetValue(input, out var boundCommand))
                 _consoleManager.Execute(boundCommand);
         }
 
@@ -241,12 +266,14 @@ internal partial class Program
         if (_inputManager.IsKeyDown(ScanCodes.sc_M) && _inputManager.IsKeyDown(ScanCodes.sc_L) && _inputManager.IsKeyDown(ScanCodes.sc_I))
         {
             gamestate.health = 100;
-            _inventoryManager.Give(AmmoType, 99);
             _inventoryManager.Give("GoldKey", 1);
             _inventoryManager.Give("SilverKey", 1);
             gamestate.score = 0;
             gamestate.TimeCount += (int)42000L;
-            GiveWeapon(weapontypes.wp_chaingun);
+            // the best weapon there is (the gatling gun)
+            if (AllWeapons().OrderBy(WeaponSelectionOrder).FirstOrDefault() is { } bestWeapon)
+                GiveWeapon(bestWeapon);
+            GiveAllAmmo(99);
             DrawWeapon();
             DrawHealth();
             DrawKeys();
@@ -254,13 +281,12 @@ internal partial class Program
             DrawScore();
 
             ClearMemory();
-            ClearSplitVWB();
 
             Message("$STR_CHEATER1".ToLanguageText(language) + "\n" +
                     "$STR_CHEATER2".ToLanguageText(language) + "\n\n" +
                     "$STR_CHEATER3".ToLanguageText(language) + "\n" +
                     "$STR_CHEATER4".ToLanguageText(language) + "\n" +
-                    "$STR_CHEATER5".ToLanguageText(language));
+                    "$STR_CHEATER5".ToLanguageText(language), MAXY);
 
             _inputManager.ClearKeysDown();
             _inputManager.Ack();
@@ -275,9 +301,8 @@ internal partial class Program
         if (_inputManager.IsKeyDown(ScanCodes.sc_BackSpace) && _inputManager.IsKeyDown(ScanCodes.sc_LShift) && _inputManager.IsKeyDown(ScanCodes.sc_Alt))
         {
             ClearMemory();
-            ClearSplitVWB();
 
-            Message("Cheat commands are\nnow available!\nPress ` for the console.");
+            Message("Cheat commands are\nnow available!\nPress ` for the console.", MAXY);
             _inputManager.ClearKeysDown();
             _inputManager.Ack();
 
@@ -291,12 +316,11 @@ internal partial class Program
         if (_inputManager.IsKeyDown(ScanCodes.sc_B) && _inputManager.IsKeyDown(ScanCodes.sc_A) && _inputManager.IsKeyDown(ScanCodes.sc_T))
         {
             ClearMemory();
-            ClearSplitVWB();
 
             Message("Commander Keen is also\n" +
                         "available from Apogee, but\n" +
                         "then, you already know\n" +
-                        "that - right, Cheatmeister?!");
+                        "that - right, Cheatmeister?!", MAXY);
 
             _inputManager.ClearKeysDown();
             _inputManager.Ack();
@@ -327,12 +351,10 @@ internal partial class Program
         {
             _automapManager.Close();
             ClearMemory();
-            ClearSplitVWB();
             US_ControlPanel(scan);
 
             DrawPlayBorderSides();
 
-            SETFONTCOLOR("Black", "White");
             _inputManager.ClearKeysDown();
             return;
         }
@@ -346,7 +368,6 @@ internal partial class Program
 
             US_ControlPanel(_inputManager.IsButtonPressed(buttontypes.bt_esc) ? ScanCodes.sc_Escape : scan);
 
-            SETFONTCOLOR("Black", "White");
             _inputManager.ClearKeysDown();
             _videoManager.FadeOut();
             if (viewsize != 21)
@@ -390,6 +411,8 @@ internal partial class Program
 
         controlx = 0;
         controly = 0;
+        controlstrafe = 0;
+        wheelnotches = _inputManager.TakeWheelDelta();     // taken every frame, so turns don't pile up
         _inputManager.ProcessButtons();
 
         if (demoplayback)
@@ -407,8 +430,8 @@ internal partial class Program
             controlx = (sbyte)demoData[demoptr++];
             controly = (sbyte)demoData[demoptr++];
 
-            if (demoptr == lastdemoptr)
-                playstate = playstatetypes.ex_completed;   // demo is done
+            if (demoptr + 3 > lastdemoptr)
+                playstate = playstatetypes.ex_completed;   // demo is done: no whole frame left
 
             controlx *= (int)tics;
             controly *= (int)tics;
@@ -424,18 +447,12 @@ internal partial class Program
         //
         // get button states
         //
-        PollKeyboardButtons();
-
-        if (mouseenabled && _inputManager.IsMouseInputGrabbed())
-            PollMouseButtons();
-
-        if (joystickenabled)
-            PollJoystickButtons();
+        PollButtons();
 
         //
         // get movements
         //
-        PollKeyboardMove();
+        PollButtonMove();
 
         if (mouseenabled && _inputManager.IsMouseInputGrabbed())
             PollMouseMove();
@@ -458,6 +475,8 @@ internal partial class Program
         else if (controly < min)
             controly = min;
 
+        controlstrafe = Math.Clamp(controlstrafe, min, max);
+
         RouteMovementToAutomap();       // pan mode: movement moves the map, not the player
 
         if (demorecord)
@@ -467,6 +486,7 @@ internal partial class Program
             //
             controlx /= (int)tics;
             controly /= (int)tics;
+            controlstrafe = 0;      // a demo has no room for a stick's strafe, so it isn't played either
 
             buttonbits = 0;
 
@@ -495,10 +515,12 @@ internal partial class Program
     internal const int MAXX = 320;
     internal const int MAXY = 160;
 
-    internal static void CenterWindow(ushort w, ushort h)
-    {
-        US_DrawWindow((ushort)(((MAXX / 8) - w) / 2), (ushort)(((MAXY / 8) - h) / 2), w, h);
-    }
+    /// <summary>Black text on the white of a <see cref="CenterWindow"/></summary>
+    internal static readonly Fonts.TextStyle PromptStyle = new(SMALL_FONT, "Black", "White");
+
+    /// <summary>A framed window of w by h tiles, centered in the play view</summary>
+    internal static Fonts.TextWindow CenterWindow(int w, int h, Fonts.TextStyle style)
+        => US_DrawWindow(((MAXX / 8) - w) / 2, ((MAXY / 8) - h) / 2, w, h, style);
 
 /*
 =============================================================================
@@ -511,79 +533,108 @@ internal partial class Program
     /*
     ===================
     =
-    = PollKeyboardButtons
+    = PollButtons
     =
     ===================
     */
 
-    internal static void PollKeyboardButtons()
+    /// <summary>Presses every button with something bound to it held down.</summary>
+    internal static void PollButtons()
     {
-        int i;
-
-        for (i = 0; i < (int)buttontypes.NUMBUTTONS; i++)
-            if (_inputManager.IsKeyDown((ScanCodes)buttonscan[i]))
-                _inputManager.SetButtonPressed((buttontypes)i, true);
-    }
-
-    /*
-    ===================
-    =
-    = PollMouseButtons
-    =
-    ===================
-    */
-
-    internal static void PollMouseButtons()
-    {
-        int buttons = _inputManager.MouseButtons();
-
-        if ((buttons & 1) != 0)
-            _inputManager.SetButtonPressed((buttontypes)buttonmouse[0], true);
-        if ((buttons & 2) != 0)
-            _inputManager.SetButtonPressed((buttontypes)buttonmouse[1], true);
-        if ((buttons & 4) != 0)
-            _inputManager.SetButtonPressed((buttontypes)buttonmouse[2], true);
-    }
-
-
-    /*
-    ===================
-    =
-    = PollJoystickButtons
-    =
-    ===================
-    */
-
-    internal static void PollJoystickButtons()
-    {
-        int i, val, buttons = _inputManager.JoyButtons();
-
-        for (i = 0, val = 1; i < _inputManager.JoyNumButtons; i++, val <<= 1)
+        for (int i = 0; i < (int)buttontypes.NUMBUTTONS; i++)
         {
-            if ((buttons & val) != 0)
-                _inputManager.SetButtonPressed((buttontypes)buttonjoy[i], true);
+            if (IsControlDown(ControlAction.Of((buttontypes)i)))
+                _inputManager.SetButtonPressed((buttontypes)i, true);
         }
     }
 
+    /// <summary>
+    /// Whether anything bound to an action is held down. While the automap is open, an input
+    /// bound to one of its keys belongs to it, so it doesn't press a play button as well (the
+    /// wheel zooms the map then, rather than changing weapons).
+    /// </summary>
+    internal static bool IsControlDown(ControlAction action)
+    {
+        bool mapFirst = action.IsButton && _automapManager.IsOpen;
+
+        foreach (var code in controls.Get(action))
+        {
+            if (mapFirst && IsAutomapInput(code))
+                continue;
+
+            if (IsInputActive(code))
+                return true;
+        }
+        return false;
+    }
+
+    static bool IsAutomapInput(InputCode code) =>
+        ControlAction.All.Any(action => action.IsAutomapKey && controls.IsBound(action, code));
+
+    /// <summary>
+    /// Whether an input is down this frame. Mouse buttons only count while the mouse is enabled
+    /// and grabbed (so the click that brings the window forward doesn't fire), the wheel while it's
+    /// enabled, and a controller or joystick while it's enabled. The wheel is down for the frame it turns in.
+    /// </summary>
+    internal static bool IsInputActive(InputCode code) => code.Device switch
+    {
+        InputDevice.MouseButton => mouseenabled && _inputManager.IsMouseInputGrabbed() && _inputManager.IsInputDown(code),
+        InputDevice.MouseWheel => mouseenabled && WheelNotches(code) > 0,
+        InputDevice.JoyButton or InputDevice.PadButton or InputDevice.PadAxis => joystickenabled && _inputManager.IsInputDown(code),
+        _ => _inputManager.IsInputDown(code),
+    };
+
+    // Mouse and controller inputs that were down last frame, so a press is only taken once
+    static readonly HashSet<InputCode> heldinputs = [];
+
+    /// <summary>
+    /// The mouse buttons, wheel turns and controller buttons with a console bind or an automap
+    /// key on them that went down since the last frame. Keys come from InputManager's own queue.
+    /// </summary>
+    static List<InputCode> TakeFreshPresses()
+    {
+        var watched = _consoleManager.Binds.Keys
+            .Concat(ControlAction.All.Where(action => action.IsAutomapKey).SelectMany(controls.Get))
+            .Where(input => input.Device != InputDevice.Key)
+            .Distinct();
+
+        var fresh = new List<InputCode>();
+        foreach (var input in watched)
+        {
+            if (!IsInputActive(input))
+                heldinputs.Remove(input);
+            else if (heldinputs.Add(input) || input.Device == InputDevice.MouseWheel)   // every notch is a press
+                fresh.Add(input);
+        }
+        return fresh;
+    }
+
+    /// <summary>How many notches the wheel turned this frame the way a wheel input stands for (0 for anything else).</summary>
+    static int WheelNotches(InputCode code) =>
+        code == InputCode.WheelUp ? Math.Max(wheelnotches, 0)
+        : code == InputCode.WheelDown ? Math.Max(-wheelnotches, 0)
+        : 0;
+
     /*
     ===================
     =
-    = PollKeyboardMove
+    = PollButtonMove
     =
     ===================
     */
 
-    internal static void PollKeyboardMove()
+    /// <summary>Walking and turning from the movement buttons, whatever they're bound to.</summary>
+    internal static void PollButtonMove()
     {
         int delta = (int)(_inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE * tics : BASEMOVE * tics);
 
-        if (_inputManager.IsKeyDown(dirscan[(int)controldirs.di_north]))
+        if (_inputManager.IsButtonPressed(buttontypes.bt_moveforward))
             controly -= delta;
-        if (_inputManager.IsKeyDown(dirscan[(int)controldirs.di_south]))
+        if (_inputManager.IsButtonPressed(buttontypes.bt_movebackward))
             controly += delta;
-        if (_inputManager.IsKeyDown(dirscan[(int)controldirs.di_west]))
+        if (_inputManager.IsButtonPressed(buttontypes.bt_turnleft))
             controlx -= delta;
-        if (_inputManager.IsKeyDown(dirscan[(int)controldirs.di_east]))
+        if (_inputManager.IsButtonPressed(buttontypes.bt_turnright))
             controlx += delta;
     }
 
@@ -619,17 +670,48 @@ internal partial class Program
     {
         int joyx, joyy;
 
+        int speed = _inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE : BASEMOVE;
+
+        // A controller: the left stick walks and strafes and the right stick turns (classic: the
+        // left stick walks and turns and the right strafes), as fast as they're pushed. Turning
+        // goes up with the square of the push, for fine aim near the middle.
+        if (_inputManager.HasGameController)
+        {
+            var turnAxis = joyclassicsticks ? SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX : SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX;
+            var strafeAxis = joyclassicsticks ? SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX : SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX;
+            float turn = StickValue(turnAxis);
+
+            controly += (int)(StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY) * speed * tics);
+            controlstrafe += (int)(StickValue(strafeAxis) * speed * tics);
+            controlx += (int)(turn * Math.Abs(turn) * JoyTurnSpeed * tics);
+            return;
+        }
+
+        // A plain joystick: its stick walks and turns at full speed once it's pushed halfway
         _inputManager.GetJoyDelta(out joyx, out joyy);
 
-        int delta = (int)(_inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE * tics : BASEMOVE * tics);
+        int delta = (int)(speed * tics);
 
-        if (joyx > 64 || _inputManager.IsButtonPressed(buttontypes.bt_turnright))
+        // The movement buttons are in PollButtonMove, whatever they're bound to
+        if (joyx > 64)
             controlx += delta;
-        else if (joyx < -64 || _inputManager.IsButtonPressed(buttontypes.bt_turnleft))
+        else if (joyx < -64)
             controlx -= delta;
-        if (joyy > 64 || _inputManager.IsButtonPressed(buttontypes.bt_movebackward))
+        if (joyy > 64)
             controly += delta;
-        else if (joyy < -64 || _inputManager.IsButtonPressed(buttontypes.bt_moveforward))
+        else if (joyy < -64)
             controly -= delta;
+    }
+
+    /// <summary>A controller stick's axis from -1 to 1, with the dead zone taken out and the rest stretched to fill it.</summary>
+    static float StickValue(SDL_GameControllerAxis axis)
+    {
+        float value = _inputManager.GetPadAxis(axis);
+        float deadzone = Math.Clamp(joydeadzone, 0, 90) / 100f;
+
+        if (Math.Abs(value) <= deadzone)
+            return 0;
+
+        return Math.Sign(value) * (Math.Abs(value) - deadzone) / (1 - deadzone);
     }
 }

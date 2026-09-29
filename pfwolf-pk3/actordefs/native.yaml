@@ -29,10 +29,17 @@ Key:
   properties:
     "inventory.pickupsound": "misc/k_pkup"
     "inventory.interhubamount": 0
+    # Shown when the player tries a door this key locks (doors.yaml `lock:`) without it,
+    # unless the door has its own lock-message. "key.lockedmessagestyle" can name a
+    # hud-messages.yaml style for it; left out, game-info's lock-style is used.
+    "key.lockedmessage": "$LOCKEDDOOR"
     
 
 GoldKey:
   parent: Key
+  properties:
+    "inventory.pickupmessage": "$GOTGOLDKEY"
+    "key.lockedmessage": "$NEEDGOLDKEY"
   states:
     Spawn:
       - sprite: GKEY
@@ -41,6 +48,9 @@ GoldKey:
 
 SilverKey:
   parent: Key
+  properties:
+    "inventory.pickupmessage": "$GOTSILVERKEY"
+    "key.lockedmessage": "$NEEDSILVERKEY"
   states:
     Spawn:
       - sprite: SKEY

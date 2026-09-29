@@ -8,6 +8,7 @@ DogFood:
   properties:
     "inventory.amount": 4
     "inventory.pickupsound": "misc/dogfood_pkup"
+    "inventory.pickupmessage": "$GOTDOGFOOD"
 
 DogFood2: 
   parent: DogFood
@@ -26,6 +27,7 @@ Food:
         tics-per-frame: -1
   properties:
     "inventory.amount": 10
+    "inventory.pickupmessage": "$GOTFOOD"
 
 Food2:
   parent: Food
@@ -45,6 +47,7 @@ FirstAidKit:
   properties:
       "inventory.amount": 25
       "inventory.pickupsound": "misc/medkit_pkup"
+      "inventory.pickupmessage": "$GOTMEDKIT"
 
 FirstAidKit2:
   parent: FirstAidKit
@@ -63,6 +66,7 @@ ExtraLife:
   parent: CustomInventory
   properties:
     "inventory.pickupsound": "misc/1up"
+    "inventory.pickupmessage": "$GOTEXTRALIFE"
   flags:
     - COUNTITEM
     - INVENTORY.ALWAYSPICKUP
@@ -102,6 +106,7 @@ PoolOfBlood:
     inventory.amount: 1
     inventory.maxamount: 11
     inventory.pickupsound: "misc/slurpie"
+    inventory.pickupmessage: "$GOTBLOOD"
   states:
     Spawn:
       - sprite: BLUD
@@ -124,6 +129,7 @@ Gibs:
     inventory.amount: 1
     inventory.maxamount: 11
     inventory.pickupsound: "misc/slurpie"
+    inventory.pickupmessage: "$GOTGIBS"
   states:
     Spawn:
       - sprite: GIBS

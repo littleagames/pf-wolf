@@ -8,14 +8,15 @@ namespace Wolf3D.Entities.Actors;
 /// </summary>
 /// <remarks>
 /// The states are built here rather than in actordefs YAML: they carry no sprites and exist only
-/// to pick which engine handler runs each tic (T_Player / T_Attack, registered in
-/// Program.RegisterActorActions), plus the death-cam marker DrawPlayerWeapon looks for.
-/// Both think states have TicTime 0, so the handler runs every tic and Next is never consulted.
+/// to pick which engine handler runs each tic (T_Player, registered in
+/// Program.RegisterActorActions): T_Player normally, and T_DeathCam during the death cam, which
+/// animates the banner DrawPlayerWeapon draws (the DeathCam class in actordefs/deathcam.yaml).
+/// Attacks are the weapon's own states (Program.PlayerWeapon.cs), not the player's.
+/// Both hold forever (TicTime -1), so the handler runs every tic and Next is never consulted.
 /// </remarks>
 internal record PlayerPawn : Actor
 {
     internal const string SpawnState = "Spawn";
-    internal const string AttackState = "Attack";
     internal const string DeathCamState = "DeathCam";
 
     [SetsRequiredMembers]
@@ -23,14 +24,12 @@ internal record PlayerPawn : Actor
     {
         Name = "Player";
 
-        var spawn = new ActorStateFrame { StateName = SpawnState, Sprite = "", FrameLetter = "", Think = "T_Player" };
-        var attack = new ActorStateFrame { StateName = AttackState, Sprite = "", FrameLetter = "", Think = "T_Attack" };
-        var deathCam = new ActorStateFrame { StateName = DeathCamState, Sprite = "DCAM", FrameLetter = "A" };
+        var spawn = new ActorStateFrame { StateName = SpawnState, Sprite = "", FrameLetter = "", TicTime = -1, Think = "T_Player" };
+        var deathCam = new ActorStateFrame { StateName = DeathCamState, Sprite = "", FrameLetter = "", TicTime = -1, Think = "T_DeathCam" };
 
         ResolvedStates = new()
         {
             [SpawnState] = spawn,
-            [AttackState] = attack,
             [DeathCamState] = deathCam,
         };
         CurrentState = spawn;

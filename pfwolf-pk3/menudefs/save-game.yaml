@@ -1,24 +1,11 @@
 music: "WONDERIN"
 type: "wolf3d-menu"
-# The save slots (position, indent, items-source) come from load-game so both screens line up.
+# Save Game: laid out like load-game (see there); the list's first row makes a new save.
 components:
   -
     type: "Background"
     params:
       - color: "BORDCOLOR"
-  -
-    type: "Graphic"
-    params:
-      - name: "c_mouselback"
-      - horizontal-orientation: "center"
-      - y: 184
-  -
-    type: "Window"
-    params:
-      - x: 75
-      - y: 50
-      - width: 175
-      - height: 140
   -
     type: "Stripe"
     params:
@@ -29,3 +16,10 @@ components:
       - name: "c_savegame"
       - x: 60
       - y: 0
+  -
+    type: "Window"
+    params:
+      - x: 5
+      - y: 46
+      - width: 310
+      - height: 142

@@ -89,6 +89,8 @@ TransGrosse:
         frames: [K]
         tics-per-frame: -1
   properties:
+    "tag": "Trans Grosse"
+    "obituary": "$OB_BOSSGUN"
     "health.baby": 850
     "health.easy": 950
     "health.normal": 1050
@@ -183,6 +185,8 @@ Ubermutant:
         frames: [M]
         tics-per-frame: -1
   properties:
+    "tag": "the Ubermutant"
+    "obituary": "$OB_UBERMUTANT"
     "health.baby": 1050
     "health.easy": 1150
     "health.normal": 1250
@@ -270,6 +274,8 @@ Wilhelm:
         frames: [L]
         tics-per-frame: -1
   properties:
+    "tag": "Barnacle Wilhelm"
+    "obituary": "$OB_BOSSROCKET"
     "health.baby": 950
     "health.easy": 1050
     "health.normal": 1150
@@ -364,6 +370,8 @@ DeathKnight:
         frames: [O]
         tics-per-frame: -1
   properties:
+    "tag": "the Death Knight"
+    "obituary": "$OB_BOSSROCKET"
     "health.baby": 1250
     "health.easy": 1350
     "health.normal": 1450
@@ -486,6 +494,8 @@ AngelOfDeath:
         tics-per-frame: 130
         action: A_Victory
   properties:
+    "tag": "the Angel of Death"
+    "obituary": "$OB_ANGEL"
     "health.baby": 1450
     "health.easy": 1550
     "health.normal": 1650
@@ -496,9 +506,10 @@ AngelOfDeath:
     "deathsound": "angel/death"
 
 # MAP21's ghosts. Drift after the player (T_Ghosts); shot down, they fade and lie dormant,
-# then come back once nothing is in the way. Points only for the first kill.
+# then come back once nothing is in the way. Points only for the first kill. They drift
+# through doors without opening them (PHASEDOORS) and hurt the player on contact (TOUCHDAMAGE).
 Spectre:
-  flags: [AMBUSH, POINTSONCE]
+  flags: [AMBUSH, POINTSONCE, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn: # s_spectrewait1..4
       - sprite: SPCT
@@ -554,6 +565,8 @@ Spectre:
         tics-per-frame: 10
         action: A_Dormant
   properties:
+    "tag": "a Spectre"
+    "obituary": "$OB_SPECTRE"
     "health.baby": 5
     "health.easy": 10
     "health.normal": 15

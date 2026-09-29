@@ -6,12 +6,20 @@ namespace Wolf3D.Loaders;
 internal class YamlDataEntryLoader
 {
     public static T Read<T>(Stream stream) where T : new()
+        => Deserialize<T>(ReadText(stream));
+
+    /// <summary>
+    /// A YAML file's text, without the byte order mark some editors save (YamlDotNet rejects it)
+    /// </summary>
+    public static string ReadText(Stream stream)
     {
         using var ms = new MemoryStream();
         stream.CopyTo(ms);
-        var rawData = ms.ToArray();
-        var encoded = System.Text.Encoding.UTF8.GetString(rawData);
+        return System.Text.Encoding.UTF8.GetString(ms.ToArray()).TrimStart('﻿');
+    }
 
+    public static T Deserialize<T>(string encoded) where T : new()
+    {
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(HyphenatedNamingConvention.Instance)
             //.WithDuplicateKeyChecking()

@@ -132,6 +132,8 @@ Hans:
         frames: [K]
         tics-per-frame: -1
   properties:
+    "tag": "Hans Grosse"
+    "obituary": "$OB_BOSSGUN"
     "health.baby": 850
     "health.easy": 950
     "health.normal": 1050
@@ -230,6 +232,8 @@ Gretel:
         frames: [K]
         tics-per-frame: -1
   properties:
+    "tag": "Gretel Grosse"
+    "obituary": "$OB_BOSSGUN"
     "health.baby": 850
     "health.easy": 950
     "health.normal": 1050
@@ -317,7 +321,10 @@ Schabbs:
         frames: [J]
         tics-per-frame: 20
         action: A_StartDeathCam
+      - stop # the dead frame loops onto itself, as in vanilla, rather than back to the first
   properties:
+    "tag": "Dr. Schabbs"
+    "obituary": "$OB_SCHABBS"
     "health.baby": 850
     "health.easy": 950
     "health.normal": 1550
@@ -404,7 +411,10 @@ Gift:
         frames: [J]
         tics-per-frame: 20
         action: A_StartDeathCam
+      - stop # the dead frame loops onto itself, as in vanilla, rather than back to the first
   properties:
+    "tag": "Otto Giftmacher"
+    "obituary": "$OB_BOSSROCKET"
     "health.baby": 850
     "health.easy": 950
     "health.normal": 1050
@@ -507,7 +517,10 @@ Fat:
         frames: [L]
         tics-per-frame: 20
         action: A_StartDeathCam
+      - stop # the dead frame loops onto itself, as in vanilla, rather than back to the first
   properties:
+    "tag": "General Fettgesicht"
+    "obituary": "$OB_BOSSROCKET"
     "health.baby": 850
     "health.easy": 950
     "health.normal": 1050
@@ -619,6 +632,8 @@ FakeHitler:
         frames: [K]
         tics-per-frame: -1
   properties:
+    "tag": "a fake Hitler"
+    "obituary": "$OB_FAKEHITLER"
     "health.baby": 200
     "health.easy": 300
     "health.normal": 400
@@ -714,6 +729,8 @@ MechaHitler:
         frames: [K]
         tics-per-frame: -1
   properties:
+    "tag": "Mecha Hitler"
+    "obituary": "$OB_BOSSGUN"
     "health.baby": 800
     "health.easy": 950
     "health.normal": 1050
@@ -836,7 +853,10 @@ RealHitler:
         frames: [O]
         tics-per-frame: 20
         action: A_StartDeathCam
+      - stop # the dead frame loops onto itself, as in vanilla, rather than back to the first
   properties:
+    "tag": "Hitler"
+    "obituary": "$OB_BOSSGUN"
     "health.baby": 500
     "health.easy": 700
     "health.normal": 800

@@ -2,6 +2,7 @@
 using Wolf3D.Assets;
 using Wolf3D.Constants;
 using Wolf3D.Extensions;
+using Wolf3D.Fonts;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
@@ -18,23 +19,14 @@ internal partial class Program
         ClearMScreen();
         DrawStripes(10);
 
-        fontnumber = "LargeFont";
+        TextAt(110, 15, MenuStyle("READHCOLOR")).Print("Attention");
 
-        SETFONTCOLOR("READHCOLOR", "BKGDCOLOR");
-        PrintX = 110;
-        PrintY = 15;
+        var notice = TextAt(40, 60, MenuStyle("HIGHLIGHT"));
+        notice.Print("This game is NOT shareware.\n");
+        notice.Print("Please do not distribute it.\n");
+        notice.Print("Thanks.\n\n");
 
-        US_Print("Attention");
-
-        SETFONTCOLOR("HIGHLIGHT", "BKGDCOLOR");
-        WindowX = PrintX = 40;
-        PrintY = 60;
-
-        US_Print("This game is NOT shareware.\n");
-        US_Print("Please do not distribute it.\n");
-        US_Print("Thanks.\n\n");
-
-        US_Print("        Id Software\n");
+        notice.Print("        Id Software\n");
 
         _videoManager.Update();
         _videoManager.FadeIn();
@@ -55,73 +47,75 @@ internal partial class Program
         _videoManager.FadeOut();
     }
 
+    /// <summary>
+    /// Set in a high score's completed level when the game was won, so it ranks above a score
+    /// that ended part way and can show the game-info high-scores won-pic
+    /// </summary>
+    internal const ushort HighScoreWon = 0x8000;
+
+    private static HighScoresInfo HighScoresLayout => _gameEngineManager.GetGameInfo().HighScores;
+
     internal static void DrawHighScores()
     {
-        ushort i, w, h;
+        var layout = HighScoresLayout;
+        var style = new TextStyle(layout.Font, layout.Color, "BORDCOLOR");
 
         ClearMScreen();
         DrawStripes(10);
 
-        _graphicManager.DrawPic("highscores", 48, 0);
+        _graphicManager.DrawPic(layout.Pic, layout.PicX, layout.PicY);
+        foreach (var header in layout.Headers)
+            _graphicManager.DrawPic(header.Pic, header.X, header.Y);
 
-        _graphicManager.DrawPic("c_name", 4 * 8, 68);
-        _graphicManager.DrawPic("c_level", 20 * 8, 68);
-        _graphicManager.DrawPic("c_score", 28 * 8, 68);
-        //_graphicManager.DrawPic(35 * 8, 68, graphicnums.C_CODEPIC);
-
-        fontnumber = "SmallFont";
-        SETFONTCOLOR("White", "BORDCOLOR");
-
-
-        for (i = 0; i < MaxScores; i++)
+        for (int i = 0; i < MaxScores; i++)
         {
             HighScore s = Scores[i];
-            PrintY = (ushort)(76 + (16 * i));
+            int y = layout.RowY + (16 * i);
 
             //
             // name
             //
-            PrintX = 4 * 8;
-            US_Print(new string(s.name));
+            TextAt(layout.NameX, y, style).Print(s.name);
 
             //
             // level
             //
-            var buffer = s.completed.ToString();
-            USL_MeasureString(buffer, out w, out h);
-            PrintX = (ushort)((22 * 8) - w);
-
-            PrintX -= 6;
-            var buffer1 = (s.episode + 1).ToString();
-            US_Print("E");
-            US_Print(buffer1);
-            US_Print("/L");
-
-            US_Print(buffer);
+            var buffer = (s.completed & ~HighScoreWon).ToString();
+            int x = layout.LevelRight - TextWidth(buffer, style.Font);
+            if ((s.completed & HighScoreWon) != 0 && !string.IsNullOrEmpty(layout.WonPic))
+                _graphicManager.DrawPic(layout.WonPic, x + 8, y - 1);
+            else if (layout.ShowEpisode)
+                TextAt(x - 6, y, style).Print($"E{s.episode + 1}/L{buffer}");
+            else
+                TextAt(x, y, style).Print(buffer);
 
             //
             // score
             //
-
             buffer = s.score.ToString();
-            USL_MeasureString(buffer, out w, out h);
-            PrintX = (ushort)((34 * 8) - 8 - w);
-            US_Print(buffer);
+            TextAt(layout.ScoreRight - TextWidth(buffer, style.Font), y, style).Print(buffer);
         }
 
         _videoManager.Update();
     }
 
-    internal static void CheckHighScore(int score, ushort other)
+    /// <summary>
+    /// Ranks the score among the high scores, and has a name typed for it if it made the list.
+    /// The level recorded is the current map's floor number, marked as won when <paramref name="won"/>.
+    /// </summary>
+    internal static void CheckHighScore(int score, bool won)
     {
         ushort i, j;
         int n;
         HighScore myscore = new HighScore();
 
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        int floor = gameInfo.Maps.TryGetValue(gamestate.mapon, out var mapInfo) ? mapInfo.FloorNumber : 1;
+
         myscore.name = "";
         myscore.score = score;
-        myscore.episode = (ushort)gamestate.cluster;
-        myscore.completed = other;
+        myscore.episode = (ushort)Math.Max(gamestate.cluster - 1, 0);   // shown from 1, as id's were
+        myscore.completed = (ushort)(Math.Clamp(floor, 0, HighScoreWon - 1) | (won ? HighScoreWon : 0));
 
         for (i = 0, n = -1; i < MaxScores; i++)
         {
@@ -145,12 +139,17 @@ internal partial class Program
             //
             // got a high score
             //
-            PrintY = (ushort)(76 + (16 * n));
-            PrintX = 4 * 8;
-            backcolor = "BORDCOLOR";
-            fontcolor = "White";
-            string str = new string(Scores[n].name);
-            US_LineInput(PrintX, PrintY, ref str, "", true, MaxHighName, 100);
+            var layout = HighScoresLayout;
+            int x = layout.NameX, y = layout.RowY + (16 * n);
+            if (layout.EntryBarWidth > 0)
+            {
+                _videoManager.Bar(x - 2, y - 2, layout.EntryBarWidth, 15, layout.EntryBackground);
+                _videoManager.Update();
+            }
+
+            string str = Scores[n].name;
+            US_LineInput(x, y, ref str, "", true, MaxHighName, layout.EntryWidth,
+                new TextStyle(layout.Font, layout.EntryColor, layout.EntryBackground));
             Scores[n].name = str;
             _gameEngineManager.WriteConfig();
         }
@@ -161,27 +160,20 @@ internal partial class Program
         }
     }
 
-    internal static void ClearSplitVWB()
+    /// <summary>The "get psyched" progress bar, along the bottom of a box in screen (scaled) pixels</summary>
+    internal static bool PreloadUpdate(uint current, uint total, int boxX, int boxY, int boxW, int boxH)
     {
-        WindowX = 0;
-        WindowY = 0;
-        WindowW = 320;
-        WindowH = 160;
-    }
+        int scale = _videoManager.scaleFactor;
+        int x = boxX + scale * 5;
+        int y = boxY + boxH - scale * 3;
+        uint w = (uint)(boxW - scale * 10);
 
-    internal static bool PreloadUpdate(uint current, uint total)
-    {
-        uint w = (uint)(WindowW - _videoManager.scaleFactor * 10);
-
-        _videoManager.BarScaledCoord(WindowX + _videoManager.scaleFactor * 5, WindowY + WindowH - _videoManager.scaleFactor * 3,
-            (int)w, _videoManager.scaleFactor * 2, "Black");
+        _videoManager.BarScaledCoord(x, y, (int)w, scale * 2, "Black");
         w = (uint)((int)w * current / total);
         if (w != 0)
         {
-            _videoManager.BarScaledCoord(WindowX + _videoManager.scaleFactor * 5, WindowY + WindowH - _videoManager.scaleFactor * 3,
-                (int)w, _videoManager.scaleFactor * 2, "SECONDCOLOR");       //SECONDCOLOR 0x37);
-            _videoManager.BarScaledCoord(WindowX + _videoManager.scaleFactor * 5, WindowY + WindowH - _videoManager.scaleFactor * 3,
-                (int)(w - _videoManager.scaleFactor * 1), _videoManager.scaleFactor * 1, "FIRSTCOLOR"); // 0x32
+            _videoManager.BarScaledCoord(x, y, (int)w, scale * 2, "SECONDCOLOR");       //SECONDCOLOR 0x37);
+            _videoManager.BarScaledCoord(x, y, (int)(w - scale * 1), scale * 1, "FIRSTCOLOR"); // 0x32
 
         }
         _videoManager.Update();
@@ -197,7 +189,6 @@ internal partial class Program
     internal static void PreloadGraphics()
     {
         DrawLevel();
-        ClearSplitVWB();           // set up for double buffering in split screen
 
         _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 1), bordercol);
 
@@ -206,16 +197,14 @@ internal partial class Program
         //    (_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2,
         _graphicManager.DrawPic("getpsyched", (320 - 224) / 2, (200 - STATUSLINES - 48) / 2);
 
-        WindowX = (ushort)((_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 2);
-        WindowY = (ushort)((_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2);
-        WindowW = (ushort)(_videoManager.scaleFactor * 28 * 8);
-        WindowH = (ushort)(_videoManager.scaleFactor * 48);
+        int boxX = (_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 2;
+        int boxY = (_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2;
 
         _videoManager.Update();
         _videoManager.FadeIn();
 
         //      PM_Preload (PreloadUpdate);
-        PreloadUpdate(10, 10);
+        PreloadUpdate(10, 10, boxX, boxY, _videoManager.scaleFactor * 28 * 8, _videoManager.scaleFactor * 48);
         _inputManager.UserInput(70);
         _videoManager.FadeOut();
 
@@ -223,7 +212,6 @@ internal partial class Program
         _videoManager.Update();
     }
 
-    private static string[] numpics = new[] { "FONTL048", "FONTL049", "FONTL050", "FONTL051", "FONTL052", "FONTL053", "FONTL054", "FONTL055", "FONTL056", "FONTL057" };
     internal static void LevelCompleted()
     {
         var language = _assetManager.GetText("en-us");
@@ -235,7 +223,6 @@ internal partial class Program
         string tempstr = "";
         int bonus, timeleft = 0;
 
-        ClearSplitVWB();           // set up for double buffering in split screen
         _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, "VIEWCOLOR");
 
         if (bordercol != "VIEWCOLOR")
@@ -275,16 +262,7 @@ internal partial class Program
 
             min = sec / 60;
             sec %= 60;
-            i = 26 * 8;
-            _graphicManager.DrawPic(numpics[(min / 10)], i, 10 * 8);
-            i += 2 * 8;
-            _graphicManager.DrawPic(numpics[(min % 10)], i, 10 * 8);
-            i += 2 * 8;
-            Write(i / 8, 10, ":");
-            i += 1 * 8;
-            _graphicManager.DrawPic(numpics[(sec / 10)], i, 10 * 8);
-            i += 2 * 8;
-            _graphicManager.DrawPic(numpics[(sec % 10)], i, 10 * 8);
+            WriteTime(26 * 8, 10 * 8, min, sec);
 
             _videoManager.Update();
             _videoManager.FadeIn();
@@ -483,15 +461,15 @@ internal partial class Program
             //
             // SAVE RATIO INFORMATION FOR ENDGAME
             //
-            // TODO: Store this via "cluster"
-            LevelRatios.TryAdd(gamestate.mapon,
+            // The latest run through a floor counts; the win tally averages the won cluster's floors
+            LevelRatios[gamestate.mapon] =
                 new LRstruct
             {
                 kill = (short)kr,
                 secret = (short)sr,
                 treasure = (short)tr,
                 time = min * 60 + sec
-            });
+            };
 
             // TODO This should be set up as different LevelCompleted "screens"???
         }
@@ -523,19 +501,35 @@ internal partial class Program
         DrawPlayBorder();
     }
 
+    /// <summary>
+    /// What the game-info shows when the current cluster is won; an empty one when it has no entry
+    /// </summary>
+    internal static ClusterInfo WonCluster()
+        => _gameEngineManager.GetGameInfo().Clusters.GetValueOrDefault(gamestate.cluster) ?? new();
+
+    /// <summary>
+    /// The color a won cluster fades to (its victory-fade-color), or black
+    /// </summary>
+    internal static Entities.Color VictoryFadeColor(ClusterInfo cluster)
+        => string.IsNullOrEmpty(cluster.VictoryFadeColor)
+            ? new Entities.Color { Alpha = 255 }
+            : Entities.Color.FromHexRGBA(cluster.VictoryFadeColor);
+
     internal static void Victory()
     {
         var language = _assetManager.GetText("en-us");
         int sec;
-        int i, min, kr, sr, tr, x;
+        int min, kr, sr, tr, x;
         string tempstr;
         const int RATIOX = 6;
         const int RATIOY = 14;
         const int TIMEX = 14;
         const int TIMEY = 8;
 
+        var cluster = WonCluster();
+        VictoryFrames(cluster);
+
         StartCPMusic("URAHERO");
-        ClearSplitVWB();
 
         _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, "VIEWCOLOR");
         if (bordercol != "VIEWCOLOR")
@@ -551,22 +545,23 @@ internal partial class Program
         Write(RATIOX, RATIOY + 4, "$STR_RATTREASURE".ToLanguageText(language));
 
         _graphicManager.DrawPic("L_BJWINS", 8, 4);
-        // TODO: Gather data via each cluster
-        //for (kr = sr = tr = sec = i = 0; i < LRpack; i++)
-        //{
-        //    sec += LevelRatios[i].time;
-        //    kr += LevelRatios[i].kill;
-        //    sr += LevelRatios[i].secret;
-        //    tr += LevelRatios[i].treasure;
-        //}
+        // Total time and average ratios over the floors of the won cluster that were completed.
+        // id divided by a fixed floor count (8, or 20 in Spear), counting floors never played
+        // (Spear's boss floors, a skipped secret floor) as 0%; this averages the ones played.
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        var floors = LevelRatios
+            .Where(lr => gameInfo.Maps.TryGetValue(lr.Key, out var map) && map.Cluster == gamestate.cluster)
+            .Select(lr => lr.Value)
+            .ToList();
 
-        //kr /= LRpack;
-        //sr /= LRpack;
-        //tr /= LRpack;
-        sec = 0; // TODO: Gather data via each cluster
-        kr = 0;
-        tr = 0;
-        sr = 0;
+        sec = floors.Sum(f => f.time);
+        kr = sr = tr = 0;
+        if (floors.Count > 0)
+        {
+            kr = floors.Sum(f => f.kill) / floors.Count;
+            sr = floors.Sum(f => f.secret) / floors.Count;
+            tr = floors.Sum(f => f.treasure) / floors.Count;
+        }
 
         min = sec / 60;
         sec %= 60;
@@ -574,16 +569,7 @@ internal partial class Program
         if (min > 99)
             min = sec = 99;
 
-        i = TIMEX * 8 + 1;
-        _graphicManager.DrawPic(numpics[(min / 10)], i, TIMEY * 8);
-        i += 2 * 8;
-        _graphicManager.DrawPic(numpics[(min % 10)], i, TIMEY * 8);
-        i += 2 * 8;
-        Write(i / 8, TIMEY, ":");
-        i += 1 * 8;
-        _graphicManager.DrawPic(numpics[(sec / 10)], i, TIMEY * 8);
-        i += 2 * 8;
-        _graphicManager.DrawPic(numpics[(sec % 10)], i, TIMEY * 8);
+        WriteTime(TIMEX * 8 + 1, TIMEY * 8, min, sec);
         _videoManager.Update();
 
         tempstr = kr.ToString();
@@ -616,7 +602,6 @@ internal partial class Program
         //    US_Print(tempstr);
         //}
 
-        fontnumber = "LargeFont";
 
         _videoManager.Update();
         _videoManager.FadeIn();
@@ -630,6 +615,71 @@ internal partial class Program
         FindMenuItem(MainMenu, "savegame")?.active = 0;
 
         EndText();
+        EndScreens(cluster);
+    }
+
+    /// <summary>
+    /// The cluster's victory-frames, each on the view color for its tics (Spear's BJ collapsing),
+    /// ending in a quick fade to the victory-fade-color
+    /// </summary>
+    private static void VictoryFrames(ClusterInfo cluster)
+    {
+        if (cluster.VictoryFrames.Count == 0)
+            return;
+
+        if (!string.IsNullOrEmpty(cluster.VictoryMusic))
+            StartCPMusic(cluster.VictoryMusic);
+
+        for (int i = 0; i < cluster.VictoryFrames.Count; i++)
+        {
+            var frame = cluster.VictoryFrames[i];
+            _videoManager.Bar(0, 0, 320, 200, "VIEWCOLOR");
+            _graphicManager.DrawPic(frame.Pic, frame.X, frame.Y);
+            _videoManager.Update();
+            if (i == 0)
+                _videoManager.FadeIn();
+            GameEngineManager.WaitVBL((uint)frame.Tics);
+        }
+
+        _videoManager.FadeOut(VictoryFadeColor(cluster), 5);
+    }
+
+    /// <summary>
+    /// The cluster's end-screens (Spear's EndSpear): each picture fades in with its palette,
+    /// shows its captions in turn along the bottom (or waits for a key), then fades out
+    /// </summary>
+    private static void EndScreens(ClusterInfo cluster)
+    {
+        var language = _assetManager.GetText("en-us");
+
+        foreach (var screen in cluster.EndScreens)
+        {
+            _graphicManager.DrawPic(screen.Pic, 0, 0);
+            _videoManager.Update();
+
+            var palette = string.IsNullOrEmpty(screen.Palette) ? null : _assetManager.Find<Palette>(screen.Palette);
+            if (palette == null)
+                _videoManager.FadeIn();
+            else
+                _videoManager.FadeIn(new GamePalette { Colors = palette.ToSDLColors() }, 30);
+
+            if (screen.Captions.Count == 0)
+            {
+                _inputManager.ClearKeysDown();
+                _inputManager.Ack();
+            }
+
+            var style = new TextStyle(SMALL_FONT, screen.CaptionColor, screen.CaptionBackground);
+            foreach (var caption in screen.Captions)
+            {
+                _videoManager.Bar(0, screen.CaptionY, 320, 200 - screen.CaptionY, screen.CaptionBackground);
+                CenteredText(0, 320, screen.CaptionY, style).CPrint(caption.ToLanguageText(language));
+                _videoManager.Update();
+                _inputManager.UserInput((uint)screen.CaptionTics);
+            }
+
+            _videoManager.FadeOut();
+        }
     }
 
     //
@@ -652,65 +702,15 @@ internal partial class Program
         }
     }
 
-    internal static void Write(int x, int y, string text)
-    {
-        // TODO: This would be a good ASCII text map in the pk3, which allows for easy graphic pickings
-        string[] alpha = { "FONTL048", "FONTL049", "FONTL050", "FONTL051", "FONTL052", "FONTL053",
-            "FONTL054", "FONTL055", "FONTL056", "FONTL057", "FONTL058", "", "", "", "", "", "", "FONTL065", "FONTL066",
-            "FONTL067", "FONTL068", "FONTL069", "FONTL070", "FONTL071", "FONTL072", "FONTL073", "FONTL074", "FONTL075",
-            "FONTL076", "FONTL077", "FONTL078", "FONTL079", "FONTL080", "FONTL081", "FONTL082", "FONTL083", "FONTL084",
-            "FONTL085", "FONTL086", "FONTL087", "FONTL088", "FONTL089", "FONTL090"
-        };
+    /// <summary>The intermission and victory screens' big letters (fonts.yaml)</summary>
+    internal static readonly TextStyle IntermissionStyle = new("IntermissionFont", "White");
 
-        int i, ox, nx, ny, len = text.Length;
-        char ch;
+    /// <summary>Intermission text at (x, y) in 8 pixel tiles</summary>
+    internal static void Write(int x, int y, string text) => WriteAt(x * 8, y * 8, text);
 
-        ox = nx = x * 8;
-        ny = y * 8;
-        for (i = 0; i < len; i++)
-        {
-            if (text[i] == '\n')
-            {
-                nx = ox;
-                ny += 16;
-            }
-            else
-            {
-                ch = text[i];
+    /// <summary>Intermission text at (x, y) in pixels</summary>
+    internal static void WriteAt(int x, int y, string text) => TextAt(x, y, IntermissionStyle).Print(text);
 
-                if (char.ToUpper(ch) != 0)
-                    ch = char.ToUpper(ch);
-
-                ch -= '0';
-
-                switch (text[i])
-                {
-                    case '!':
-                        _graphicManager.DrawPic("FONTL033", nx, ny);
-                        nx += 8;
-                        continue;
-                    case '\'':
-                        _graphicManager.DrawPic("FONTL039", nx, ny);
-                        nx += 8;
-                        continue;
-                case ' ':
-                        break;
-
-                    case ':':
-                        _graphicManager.DrawPic("FONTL058", nx, ny);
-                        nx += 8;
-                        continue;
-
-                    case '%':
-                        _graphicManager.DrawPic("FONTL037", nx, ny);
-                        break;
-
-                    default:
-                        _graphicManager.DrawPic(alpha[ch], nx, ny);
-                        break;
-                }
-                nx += 16;
-            }
-        }
-    }
+    /// <summary>Minutes and seconds as mm:ss, in the intermission font at (x, y) in pixels</summary>
+    private static void WriteTime(int x, int y, int min, int sec) => WriteAt(x, y, $"{min:00}:{sec:00}");
 }

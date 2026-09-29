@@ -1,12 +1,9 @@
 music: "WONDERIN"
 type: "wolf3d-menu"
-# The binding rows (b0, Ctrl, ...) are drawn in code on each selectable item's row:
-# row y = position.y + item index * 13. Binding columns are at x 60, 120, 180, 240,
-# so the column labels below use the same x values.
-position:
-  x: 8
-  y: 74
-indent: 0
+# Customize Controls: a scrolling list of controls, each with two key/mouse slots and a
+# controller slot. The list, its column titles and the help lines are drawn by code inside the
+# window below (titles at y 48, rows from y 61, 11 apart, help lines at the bottom), so keep the
+# window where it is.
 components:
   -
     type: "Background"
@@ -28,47 +25,60 @@ components:
       - name: "c_customize"
       - x: 80
       - y: 0
+  -
+    type: "Window"
+    params:
+      - x: 5
+      - y: 46
+      - width: 310
+      - height: 137
 
-  # Mouse (binding row at y 74)
-  - { type: "Label", params: [ { text: "$STR_CUSTMOUSE" }, { horizontal-orientation: "center" }, { y: 48 }, { color: "READCOLOR" } ] }
-  - { type: "Label", params: [ { text: "$STR_CRUN" }, { x: 60 }, { y: 61 } ] }
-  - { type: "Label", params: [ { text: "$STR_COPEN" }, { x: 120 }, { y: 61 } ] }
-  - { type: "Label", params: [ { text: "$STR_CFIRE" }, { x: 180 }, { y: 61 } ] }
-  - { type: "Label", params: [ { text: "$STR_CSTRAFE" }, { x: 240 }, { y: 61 } ] }
-  - { type: "Window", params: [ { x: 5 }, { y: 73 }, { width: 310 }, { height: 13 } ] }
-
-  # Joystick (binding row at y 113)
-  - { type: "Label", params: [ { text: "$STR_CUSTJOY" }, { horizontal-orientation: "center" }, { y: 87 }, { color: "READCOLOR" } ] }
-  - { type: "Label", params: [ { text: "$STR_CRUN" }, { x: 60 }, { y: 100 } ] }
-  - { type: "Label", params: [ { text: "$STR_COPEN" }, { x: 120 }, { y: 100 } ] }
-  - { type: "Label", params: [ { text: "$STR_CFIRE" }, { x: 180 }, { y: 100 } ] }
-  - { type: "Label", params: [ { text: "$STR_CSTRAFE" }, { x: 240 }, { y: 100 } ] }
-  - { type: "Window", params: [ { x: 5 }, { y: 112 }, { width: 310 }, { height: 13 } ] }
-
-  # Keyboard buttons (binding row at y 152)
-  - { type: "Label", params: [ { text: "$STR_CUSTKEYBD" }, { horizontal-orientation: "center" }, { y: 126 }, { color: "READCOLOR" } ] }
-  - { type: "Label", params: [ { text: "$STR_CRUN" }, { x: 60 }, { y: 139 } ] }
-  - { type: "Label", params: [ { text: "$STR_COPEN" }, { x: 120 }, { y: 139 } ] }
-  - { type: "Label", params: [ { text: "$STR_CFIRE" }, { x: 180 }, { y: 139 } ] }
-  - { type: "Label", params: [ { text: "$STR_CSTRAFE" }, { x: 240 }, { y: 139 } ] }
-  - { type: "Window", params: [ { x: 5 }, { y: 151 }, { width: 310 }, { height: 13 } ] }
-
-  # Keyboard movement (binding row at y 178)
-  - { type: "Label", params: [ { text: "$STR_LEFT" }, { x: 60 }, { y: 165 } ] }
-  - { type: "Label", params: [ { text: "$STR_RIGHT" }, { x: 120 }, { y: 165 } ] }
-  - { type: "Label", params: [ { text: "$STR_FRWD" }, { x: 180 }, { y: 165 } ] }
-  - { type: "Label", params: [ { text: "$STR_BKWD" }, { x: 240 }, { y: 165 } ] }
-  - { type: "Window", params: [ { x: 5 }, { y: 177 }, { width: 310 }, { height: 13 } ] }
-
-# Selectable rows; the blanks space them to line up with the sections above.
-# Text is empty because the bindings are drawn by code.
+# The rows, in order. ControlMenuItem binds the control named in "control" (as bindaction and
+# controls.cfg name it); HeaderMenuItem titles a group; BlankMenuItem leaves a gap; the "reset"
+# item puts every control back to its default. Rows can be reordered, renamed or left out.
 menu-items:
-  - { id: "mouse", type: "MenuSwitcher", enabled: true }
+  - { type: "HeaderMenuItem", text: "$STR_CTL_MOVEMENT" }
+  - { type: "ControlMenuItem", control: "moveforward", text: "$STR_CTL_FORWARD" }
+  - { type: "ControlMenuItem", control: "movebackward", text: "$STR_CTL_BACKWARD" }
+  - { type: "ControlMenuItem", control: "turnleft", text: "$STR_CTL_TURNLEFT" }
+  - { type: "ControlMenuItem", control: "turnright", text: "$STR_CTL_TURNRIGHT" }
+  - { type: "ControlMenuItem", control: "strafeleft", text: "$STR_CTL_STRAFELEFT" }
+  - { type: "ControlMenuItem", control: "straferight", text: "$STR_CTL_STRAFERIGHT" }
+  - { type: "ControlMenuItem", control: "strafe", text: "$STR_CTL_STRAFE" }
+  - { type: "ControlMenuItem", control: "run", text: "$STR_CTL_RUN" }
+
+  - { type: "HeaderMenuItem", text: "$STR_CTL_ACTION" }
+  - { type: "ControlMenuItem", control: "attack", text: "$STR_CTL_ATTACK" }
+  - { type: "ControlMenuItem", control: "use", text: "$STR_CTL_USE" }
+
+  - { type: "HeaderMenuItem", text: "$STR_CTL_WEAPONS" }
+  # Weapon slot keys (slot1-slot9, slot0) pick weapons by their `weapon.slot`; only the four
+  # slots Wolf3D's weapons use are listed.
+  - { type: "ControlMenuItem", control: "slot1", text: "$STR_CTL_KNIFE" }
+  - { type: "ControlMenuItem", control: "slot2", text: "$STR_CTL_PISTOL" }
+  - { type: "ControlMenuItem", control: "slot3", text: "$STR_CTL_MACHINEGUN" }
+  - { type: "ControlMenuItem", control: "slot4", text: "$STR_CTL_CHAINGUN" }
+  - { type: "ControlMenuItem", control: "nextweapon", text: "$STR_CTL_NEXTWEAPON" }
+  - { type: "ControlMenuItem", control: "prevweapon", text: "$STR_CTL_PREVWEAPON" }
+
+  - { type: "HeaderMenuItem", text: "$STR_CTL_GAME" }
+  - { type: "ControlMenuItem", control: "esc", text: "$STR_CTL_MENU" }
+  - { type: "ControlMenuItem", control: "pause", text: "$STR_CTL_PAUSE" }
+  - { type: "ControlMenuItem", control: "automap", text: "$STR_CTL_AUTOMAP" }
+
+  - { type: "HeaderMenuItem", text: "$STR_CTL_AUTOMAPKEYS" }
+  - { type: "ControlMenuItem", control: "am_zoomin", text: "$STR_CTL_AMZOOMIN" }
+  - { type: "ControlMenuItem", control: "am_zoomout", text: "$STR_CTL_AMZOOMOUT" }
+  - { type: "ControlMenuItem", control: "am_panup", text: "$STR_CTL_AMPANUP" }
+  - { type: "ControlMenuItem", control: "am_pandown", text: "$STR_CTL_AMPANDOWN" }
+  - { type: "ControlMenuItem", control: "am_panleft", text: "$STR_CTL_AMPANLEFT" }
+  - { type: "ControlMenuItem", control: "am_panright", text: "$STR_CTL_AMPANRIGHT" }
+  - { type: "ControlMenuItem", control: "am_center", text: "$STR_CTL_AMCENTER" }
+  - { type: "ControlMenuItem", control: "am_follow", text: "$STR_CTL_AMFOLLOW" }
+  - { type: "ControlMenuItem", control: "am_rotate", text: "$STR_CTL_AMROTATE" }
+  - { type: "ControlMenuItem", control: "am_style", text: "$STR_CTL_AMSTYLE" }
+  - { type: "ControlMenuItem", control: "am_overlay", text: "$STR_CTL_AMOVERLAY" }
+  - { type: "ControlMenuItem", control: "am_grid", text: "$STR_CTL_AMGRID" }
+
   - { type: "BlankMenuItem" }
-  - { type: "BlankMenuItem" }
-  - { id: "joystick", type: "MenuSwitcher", enabled: true }
-  - { type: "BlankMenuItem" }
-  - { type: "BlankMenuItem" }
-  - { id: "keyboard", type: "MenuSwitcher", enabled: true }
-  - { type: "BlankMenuItem" }
-  - { id: "keyboard-move", type: "MenuSwitcher", enabled: true }
+  - { id: "reset", type: "MenuSwitcher", text: "$STR_CTL_RESET", enabled: true }

@@ -45,4 +45,9 @@
 			<FileWrites Include="$(TargetDir)pfwolf.pk3" />
 		</ItemGroup>
 	</Target>
+
+	<!-- Where players put mods (pk3, zip or folder) for the Options menu's Mods screen -->
+	<Target Name="CreateModsFolder" AfterTargets="Build">
+		<MakeDir Directories="$(TargetDir)mods" />
+	</Target>
 </Project>

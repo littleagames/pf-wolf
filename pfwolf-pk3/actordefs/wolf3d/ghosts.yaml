@@ -16,6 +16,7 @@
 # =============================================================================
 
 Blinky:
+  flags: [AMBUSH, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn:
       - sprite: BLKY
@@ -27,11 +28,14 @@ Blinky:
         tics-per-frame: 10
         think: T_Ghosts
   properties:
+    "tag": "Blinky"
+    "obituary": "$OB_GHOST"
     "speed": 1500
     "seesound": "ghost/sight"
     "deathsound": "ghost/death"
 
 Inky:
+  flags: [AMBUSH, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn:
       - sprite: INKY
@@ -43,11 +47,14 @@ Inky:
         tics-per-frame: 10
         think: T_Ghosts
   properties:
+    "tag": "Inky"
+    "obituary": "$OB_GHOST"
     "speed": 1500
     "seesound": "ghost/sight"
     "deathsound": "ghost/death"
 
 Pinky:
+  flags: [AMBUSH, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn:
       - sprite: PNKY
@@ -59,11 +66,14 @@ Pinky:
         tics-per-frame: 10
         think: T_Ghosts
   properties:
+    "tag": "Pinky"
+    "obituary": "$OB_GHOST"
     "speed": 1500
     "seesound": "ghost/sight"
     "deathsound": "ghost/death"
 
 Clyde:
+  flags: [AMBUSH, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn:
       - sprite: CLYD
@@ -75,6 +85,8 @@ Clyde:
         tics-per-frame: 10
         think: T_Ghosts
   properties:
+    "tag": "Clyde"
+    "obituary": "$OB_GHOST"
     "speed": 1500
     "seesound": "ghost/sight"
     "deathsound": "ghost/death"

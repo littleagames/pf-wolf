@@ -10,3 +10,13 @@ $ENDSTR15: "I think you had better\nplay some more. Please\npress {NOBUTTONNAME}
 $ENDSTR16: "If you are tough, press {NOBUTTONNAME}.\nIf not, press {YESBUTTONNAME} daintily."
 $ENDSTR17: "I'm thinkin' that\nyou might wanna press {NOBUTTONNAME}\nto play more. You do it."
 $ENDSTR18: "Sure. Fine. Quit.\nSee if we care.\nGet it over with.\nPress {YESBUTTONNAME}."
+
+# Captions on the ending's third screen (game-info end-screens). id's STR_ENDGAME4 reads
+# "by able", a typo fixed here.
+$STR_ENDGAME1: "We owe you a great debt, Mr. Blazkowicz.\nYou have served your country well."
+$STR_ENDGAME2: "With the spear gone, the Allies will finally\nbe able to destroy Hitler..."
+
+# Obituaries for Spear's bosses (the rest come from Wolfenstein 3D's)
+$OB_UBERMUTANT: "You were torn apart by %k."
+$OB_ANGEL: "You were struck down by %k."
+$OB_SPECTRE: "Your life was drained by %k."

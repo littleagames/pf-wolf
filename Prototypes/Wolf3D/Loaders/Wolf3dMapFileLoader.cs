@@ -3,96 +3,89 @@ using Wolf3D.Managers;
 
 namespace Wolf3D.Loaders;
 
+/// <summary>
+/// A GAMEMAPS/MAPHEAD pair: the game's own, or a mod's under maps/ in a pk3. MAPHEAD is the
+/// RLEW tag, then each level's offset in GAMEMAPS (up to 100; 0 or -1 for no level). Each
+/// level there starts with its planes' offsets and lengths, its size and a 16-character name,
+/// and its planes are Carmack- then RLEW-compressed.
+/// </summary>
 internal class Wolf3dMapFileLoader
 {
-    struct mapfiletype
-    {
-        public UInt16 RLEWtag;
-        //public UInt16 numplanes; // If >= 4
-        public Int32[] headeroffsets;
-
-        public mapfiletype()
-        {
-            headeroffsets = new Int32[MapManager.NUMMAPS]; // TODO: This will be dynamic with the file
-        }
-    }
-    private mapfiletype tinf;
-
-    private maptype[] mapheaderseg = new maptype[MapManager.NUMMAPS];
+    private readonly ushort _rlewTag;
+    // Null where MAPHEAD has no level
+    private readonly maptype?[] _levels;
+    private readonly byte[] _gameMaps;
 
     internal const ushort NEARTAG = 0xa7;
     internal const ushort FARTAG = 0xa8;
 
-    private string mapHeadFileName;
-    private string mapDataFileName;
+    // MAPHEAD's offset table holds no more than this
+    private const int MaxLevels = 100;
 
-    public Wolf3dMapFileLoader(string mapHeaderFile, string mapDataFile)
+    /// <summary>The game's own pair, from the working folder</summary>
+    public static Wolf3dMapFileLoader FromFiles(string mapHeaderFile, string mapDataFile)
     {
-        mapHeadFileName = mapHeaderFile;
-        mapDataFileName = mapDataFile;
-        int i;
-        int pos;
-
-        //
-        // load maphead.ext (offsets and tileinfo for map file)
-        //
-        if (!File.Exists(mapHeadFileName))
-            throw new PfWolfMapException("Cannot open file: {0}. File does not exist.", mapHeadFileName);
-
-        tinf = new mapfiletype();
-        using (var fs = new FileStream(mapHeadFileName, FileMode.Open, FileAccess.Read))
-        using (var br = new BinaryReader(fs))
+        foreach (var file in new[] { mapHeaderFile, mapDataFile })
         {
-            tinf.RLEWtag = br.ReadUInt16();
-            for (i = 0; i < MapManager.NUMMAPS; i++)
-                tinf.headeroffsets[i] = br.ReadInt32();
+            if (!File.Exists(file))
+                throw new PfWolfMapException("Cannot open file: {0}. File does not exist.", file);
         }
 
-        //
-        // open the data file
-        //
+        return new Wolf3dMapFileLoader(File.ReadAllBytes(mapHeaderFile), File.ReadAllBytes(mapDataFile));
+    }
 
-        if (!File.Exists(mapDataFileName))
-            throw new PfWolfMapException("Cannot open file: {0}. File does not exist.", mapDataFileName);
+    public Wolf3dMapFileLoader(byte[] mapHead, byte[] gameMaps)
+    {
+        _gameMaps = gameMaps;
+        if (mapHead.Length < sizeof(ushort))
+            throw new InvalidDataException("MAPHEAD is too short");
 
-        using (var fs = new FileStream(mapDataFileName, FileMode.Open, FileAccess.Read))
-        using (var br = new BinaryReader(fs))
+        _rlewTag = BitConverter.ToUInt16(mapHead, 0);
+        _levels = new maptype?[Math.Min(MaxLevels, (mapHead.Length - sizeof(ushort)) / sizeof(int))];
+
+        using var br = new BinaryReader(new MemoryStream(gameMaps));
+        for (int i = 0; i < _levels.Length; i++)
         {
-            //
-            // load all map header
-            //
+            var pos = BitConverter.ToInt32(mapHead, sizeof(ushort) + i * sizeof(int));
+            if (pos <= 0)                           // $FFFFFFFF start is a sparse map; 0 is none
+                continue;
+            if (pos > gameMaps.Length - (MapManager.MAPPLANES * 6 + 4 + 16))
+                throw new InvalidDataException($"MAPHEAD puts level {i + 1} past the end of GAMEMAPS");
 
-            for (i = 0; i < MapManager.NUMMAPS; i++)
-            {
-                pos = tinf.headeroffsets[i];
-                if (pos < 0)                          // $FFFFFFFF start is a sparse map
-                    continue;
-
-                mapheaderseg[i] = new maptype();
-
-                fs.Seek(pos, SeekOrigin.Begin);
-                for (int p = 0; p < MapManager.MAPPLANES; p++)
-                {
-                    mapheaderseg[i].planestart[p] = br.ReadInt32();
-                }
-                for (int p = 0; p < MapManager.MAPPLANES; p++)
-                {
-                    mapheaderseg[i].planelength[p] = br.ReadUInt16();
-                }
-                mapheaderseg[i].width = br.ReadUInt16();
-                mapheaderseg[i].height = br.ReadUInt16();
-                for (int n = 0; n < 16; n++)
-                    mapheaderseg[i].name[n] = (char)br.ReadByte();
-            }
+            var level = new maptype();
+            br.BaseStream.Seek(pos, SeekOrigin.Begin);
+            for (int p = 0; p < MapManager.MAPPLANES; p++)
+                level.planestart[p] = br.ReadInt32();
+            for (int p = 0; p < MapManager.MAPPLANES; p++)
+                level.planelength[p] = br.ReadUInt16();
+            level.width = br.ReadUInt16();
+            level.height = br.ReadUInt16();
+            for (int n = 0; n < 16; n++)
+                level.name[n] = (char)br.ReadByte();
+            _levels[i] = level;
         }
     }
 
-    public Dictionary<string, Asset> GetAssets(List<string> dataMap)
+    /// <summary>
+    /// The levels, named by <paramref name="dataMap"/> in order (raw-data-map's maps). A level
+    /// the pair doesn't have is left out, and so is one that can't be read (with a warning).
+    /// </summary>
+    public Dictionary<string, Asset> GetAssets(List<string> dataMap, Action<string>? warn = null)
     {
         var assets = new Dictionary<string, Asset>();
-        for(int i = 0; i < dataMap.Count; i++)
+        for (int i = 0; i < dataMap.Count && i < _levels.Length; i++)
         {
-            assets.Add(dataMap[i].ToLowerInvariant(), CacheMap(i));
+            if (_levels[i] == null)
+                continue;
+
+            try
+            {
+                assets[dataMap[i].ToLowerInvariant()] = CacheMap(i);
+            }
+            catch (Exception e) when (e is PfWolfMapException or InvalidDataException or IndexOutOfRangeException or ArgumentException)
+            {
+                warn?.Invoke($"{dataMap[i]} can't be read, so it's left out: {e.Message}");
+            }
         }
 
         return assets;
@@ -101,11 +94,9 @@ internal class Wolf3dMapFileLoader
     public MapAsset CacheMap(int mapnum)
     {
         int pos, compressed;
-        if (mapheaderseg[mapnum].width != MapManager.MAPSIZE || mapheaderseg[mapnum].height != MapManager.MAPSIZE)
+        var level = _levels[mapnum] ?? throw new PfWolfMapException($"There's no level {mapnum + 1}");
+        if (level.width != MapManager.MAPSIZE || level.height != MapManager.MAPSIZE)
             throw new PfWolfMapException($"CA_CacheMap: Map not {MapManager.MAPSIZE}*{MapManager.MAPSIZE}!");
-
-        if (!File.Exists(mapDataFileName))
-            throw new PfWolfMapException("Cannot open file: {0}. File does not exist.", mapDataFileName);
 
         //
         // load the planes into the allready allocated buffers
@@ -114,7 +105,7 @@ internal class Wolf3dMapFileLoader
 
         UInt16[][] mapsegs = new ushort[MapManager.MAPPLANES][];
 
-        using (FileStream fs = File.OpenRead(mapDataFileName))
+        using (var fs = new MemoryStream(_gameMaps))
         using (BinaryReader br = new BinaryReader(fs))
         {
             for (var plane = 0; plane < MapManager.MAPPLANES; plane++)
@@ -122,12 +113,14 @@ internal class Wolf3dMapFileLoader
                 // allocate
                 mapsegs[plane] = new ushort[MapManager.MAPAREA];
 
-                pos = mapheaderseg[mapnum].planestart[plane];
-                compressed = mapheaderseg[mapnum].planelength[plane];
+                pos = level.planestart[plane];
+                compressed = level.planelength[plane];
 
                 if (compressed == 0)
                     continue; // empty plane
 
+                if (pos < 0 || pos + compressed > _gameMaps.Length)
+                    throw new InvalidDataException($"its plane {plane} runs past the end of GAMEMAPS");
                 fs.Seek(pos, SeekOrigin.Begin);
 
                 //var bufferseg = new byte[compressed];
@@ -147,15 +140,15 @@ internal class Wolf3dMapFileLoader
                 var expanded = BitConverter.ToUInt16(bufferseg);
                 var buffer2seg = new ushort[expanded / sizeof(ushort)]; // might be byte[expanded]
                 CAL_CarmackExpand(bufferseg.Skip(sizeof(ushort)).ToArray(), buffer2seg, expanded);
-                CA_RLEWexpand(buffer2seg.Skip(1).ToArray(), out ushort[] dest, size, tinf.RLEWtag);
+                CA_RLEWexpand(buffer2seg.Skip(1).ToArray(), out ushort[] dest, size, _rlewTag);
                 mapsegs[plane] = dest;
             }
 
             return new MapAsset() // TODO: Add raw data for the entire map's data like a single MAP file, which means I'll have to come up with the format here.
             {
-                Width = mapheaderseg[mapnum].width,
-                Height = mapheaderseg[mapnum].height,
-                Name = new string(mapheaderseg[mapnum].name),
+                Width = level.width,
+                Height = level.height,
+                Name = new string(level.name),
                 MapData = mapsegs
             };
         }

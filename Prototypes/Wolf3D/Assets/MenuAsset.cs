@@ -46,6 +46,10 @@ internal record MenuItemEntry
     public string? Action { get; init; } = null;
     public string? Music { get; init; } = null;
     /// <summary>
+    /// The control a row of the Customize Controls screen binds, by its controls.cfg name ("attack", "am_zoomin")
+    /// </summary>
+    public string? Control { get; init; } = null;
+    /// <summary>
     /// Only include this item in these game packs ("wolf3d", "spear"); unset means every pack
     /// </summary>
     public List<string>? GamePacks { get; init; } = null;

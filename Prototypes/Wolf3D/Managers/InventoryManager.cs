@@ -13,7 +13,6 @@ internal class InventoryManager
     private readonly Lazy<AssetManager> _assetManager;
     private readonly Dictionary<string, int> _items = new(StringComparer.OrdinalIgnoreCase);
     private ActorMetadata? _metadata;
-
     public InventoryManager(Lazy<AssetManager> assetManager)
     {
         _assetManager = assetManager;
@@ -34,6 +33,23 @@ internal class InventoryManager
 
     public int GetIntProperty(string item, string key, int fallback) =>
         Metadata.GetIntProperty(item, key, fallback);
+
+    public string? GetStringProperty(string item, string key) =>
+        GetProperty(item, key)?.ToString();
+
+    /// <summary>A property as parsed from YAML (a string, a list or a mapping), or null.</summary>
+    public object? GetProperty(string item, string key) =>
+        Metadata.TryGetProperty(item, key, out var value) ? value : null;
+
+    /// <summary>
+    /// A fresh actor of an item class, with its inherited properties and states (e.g. the
+    /// weapon in hand, run through its Ready/Fire states). Null for an unknown class.
+    /// </summary>
+    public Entities.Actors.Actor? CreateActor(string item)
+    {
+        var match = Metadata.Actors.Keys.FirstOrDefault(k => string.Equals(k, item, StringComparison.OrdinalIgnoreCase));
+        return match != null ? Metadata.CreateActor(match, Metadata.Actors[match]) : null;
+    }
 
     /// <summary>The actordefs class names that descend from <paramref name="baseClass"/> (e.g. "Weapon").</summary>
     public IEnumerable<string> GetClassesDerivedFrom(string baseClass) =>

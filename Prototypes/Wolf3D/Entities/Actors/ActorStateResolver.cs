@@ -64,11 +64,10 @@ internal static class ActorStateResolver
             }
 
             // No explicit terminal marker: loop back to this group's own first frame. This only
-            // matters for a multi-frame group whose last frame has a real TicTime (e.g. a
-            // flickering light with no next-state) -- a single-frame group, or one ending on a
-            // TicTime == 0 ("-1" in YAML) frame, holds forever regardless of what Next points
-            // to, since DoActor never re-consults Next once TicCount sticks at 0. An explicit
-            // Stop still means "freeze on this exact frame", distinct from this implicit default.
+            // matters for a group whose last frame has a real TicTime (e.g. a flickering light
+            // with no next-state) -- a group ending on a -1 frame holds forever regardless of
+            // what Next points to, since DoActor never re-consults Next on such a frame. An
+            // explicit Stop still means "freeze on this exact frame", distinct from this default.
             if (previous != null && entries.Count > 0 && entries[^1] is ActorStatesData)
                 pendingMarkers.Add((previous, groupName, new LoopStateData()));
         }
@@ -91,5 +90,5 @@ internal static class ActorStateResolver
     }
 
     private static short ToTicTime(float ticsPerFrame) =>
-        ticsPerFrame < 0 ? (short)0 : (short)MathF.Round(ticsPerFrame);
+        ticsPerFrame < 0 ? (short)-1 : (short)MathF.Round(ticsPerFrame);
 }

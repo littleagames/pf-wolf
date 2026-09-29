@@ -34,6 +34,10 @@ internal record Actor : Thinker
     // unlinks the actor once its tic finishes, since removing it mid-walk would break the iteration.
     public bool IsRemoved { get; internal set; }
 
+    // For a projectile: the actor that fired it (Program.EnemyAI.cs's ThrowProjectile), so a
+    // death by it is put down to the shooter (Died's obituary). Not kept in saved games.
+    public Actor? Shooter { get; internal set; }
+
     // Sub-tile fixed-point world position and its containing tile -- kept as separate mutable
     // fields because the movement code (MoveObj/TryWalk) updates TileX/TileY the instant a move
     // toward a new tile begins, while X/Y trail behind and approach the new tile center gradually.
@@ -67,6 +71,103 @@ internal record Actor : Thinker
     internal void SyncPosition()
     {
         Position = new Vector2(TileX, TileY);
+    }
+
+    // A chain of 0-tic frames that loops back on itself would otherwise spin forever inside
+    // one tic; ZDoom treats that as a content error, and so do we.
+    private const int MaxInstantFrames = 1000;
+
+    // Set while AdvanceFrames runs, so an action that calls SetState doesn't start a second,
+    // nested walk -- the outer loop carries on from whatever state the action picked.
+    private bool _advancingFrames;
+
+    // A frame an action asked to go to next (JumpTo), taken in place of the ended frame's Next.
+    private ActorStateFrame? _pendingJump;
+
+    /// <summary>
+    /// Puts the actor on <paramref name="frame"/> and arms its countdown, without running
+    /// anything. A 0-tic frame armed this way is ended by DoActor on the actor's next tic;
+    /// used when spawning, where no actions should run yet.
+    /// </summary>
+    internal void ArmState(ActorStateFrame frame)
+    {
+        CurrentState = frame;
+        TicCount = Math.Max(frame.TicTime, (short)0);
+    }
+
+    /// <summary>
+    /// Enters <paramref name="frame"/> (legacy NewState). If it's a 0-tic frame, it ends right
+    /// away: its Action runs and the actor moves on, through any further 0-tic frames.
+    /// </summary>
+    internal void SetState(ActorStateFrame frame)
+    {
+        ArmState(frame);
+        if (frame.TicTime == 0 && !_advancingFrames)
+            AdvanceFrames();
+    }
+
+    /// <summary>
+    /// ZDoom-style state jump (A_WeaponReady, A_ReFire): the actor goes to exactly
+    /// <paramref name="frame"/>. From inside an action it replaces the ended frame's Next, unlike
+    /// SetState there, which (as in the original DoActor) carries on from the new state's Next.
+    /// </summary>
+    internal void JumpTo(ActorStateFrame frame)
+    {
+        if (_advancingFrames)
+            _pendingJump = frame;
+        else
+            SetState(frame);
+    }
+
+    /// <summary>
+    /// Ends every frame whose countdown has run out (TicCount &lt;= 0), running each one's Action
+    /// and following Next, until the actor is on a frame with tics left or one that holds
+    /// forever. 0-tic frames end the moment they're entered.
+    /// </summary>
+    internal void AdvanceFrames()
+    {
+        _advancingFrames = true;
+        try
+        {
+            for (var steps = 0; TicCount <= 0; steps++)
+            {
+                var state = CurrentState;
+                if (state == null || state.HoldsForever)
+                    return;
+
+                if (steps == MaxInstantFrames)
+                {
+                    Console.WriteLine($"Actor '{Name}': 0-tic frames loop forever from state '{state.StateName}'; freezing it");
+                    TicCount = short.MaxValue;
+                    return;
+                }
+
+                _pendingJump = null;
+                ActorActionRegistry.Invoke(state.Action, this);
+                if (IsRemoved)
+                    return;
+
+                // An action may switch state itself (the Angel's A_Relaunch, a Spectre's A_Dormant);
+                // like the original DoActor, carry on from the state it left rather than the old one.
+                // A JumpTo lands on its frame instead.
+                var next = _pendingJump ?? (CurrentState ?? state).Next;
+                _pendingJump = null;
+                if (next == null)
+                    return; // the resolver never leaves Next null in practice; defensive only.
+                CurrentState = next;
+
+                if (next.HoldsForever)
+                {
+                    TicCount = 0;
+                    return;
+                }
+                TicCount += next.TicTime;
+            }
+        }
+        finally
+        {
+            _advancingFrames = false;
+        }
     }
 
     /// <summary>

@@ -13,6 +13,7 @@ Clip:
     "ammo.backpackamount": 20
     "ammo.backpackboostamount": 100
     "ammo.backpackmaxamount": 299
+    "inventory.pickupmessage": "$GOTCLIP"
 ClipBox:
   parent: Clip
   states:
@@ -23,6 +24,7 @@ ClipBox:
   properties:
     "inventory.pickupsound": "misc/ammobox_pkup"
     "inventory.amount": 25
+    "inventory.pickupmessage": "$GOTCLIPBOX"
 BlueClip:
   parent: Clip
   states:

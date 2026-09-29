@@ -2,7 +2,7 @@ music: "WONDERIN"
 type: "wolf3d-menu"
 position:
   x: 24
-  y: 86
+  y: 80
 indent: 56
 components:
   -
@@ -23,9 +23,9 @@ components:
     type: "Window"
     params:
       - x: 16
-      - y: 81
+      - y: 75
       - width: 284
-      - height: 60
+      - height: 73
   -
     type: "Graphic"
     params:
@@ -49,6 +49,12 @@ menu-items:
       type: "ToggleMenuItem"
       text: "$STR_JOYEN"
       enabled: false
+  -
+      id: "controller-settings"
+      type: "MenuSwitcher"
+      text: "$STR_JOYSETTINGS"
+      enabled: true
+      action: "CP_ControllerSettings"
   -
       id: "customize"
       type: "MenuSwitcher"

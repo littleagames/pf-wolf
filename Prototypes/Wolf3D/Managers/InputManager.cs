@@ -1,4 +1,5 @@
 ﻿using SDL2;
+using Wolf3D.Configuration;
 
 namespace Wolf3D.Managers;
 
@@ -245,9 +246,22 @@ internal class InputManager
         return delta;
     }
 
+    // The joystick in use, and when SDL knows its layout, the controller it's opened as (the
+    // joystick is then the controller's own). Swapped for another when it's unplugged.
     private IntPtr Joystick;
+    private IntPtr GameController;
+    private int JoystickInstance = -1;
     public int JoyNumButtons { get; private set; }
     private int JoyNumHats;
+
+    /// <summary>The name of the controller or joystick in use, or null with none plugged in.</summary>
+    internal string? ControllerName { get; private set; }
+
+    /// <summary>Whether the joystick in use is a controller SDL knows the layout of.</summary>
+    internal bool HasGameController => GameController != IntPtr.Zero;
+
+    // How far a stick has to be pushed, or a trigger pulled, to count as pressed when bound as a button
+    private const short AxisPressThreshold = 16384;
 
     private bool GrabInput = false;
 
@@ -284,30 +298,16 @@ internal class InputManager
         if (Started)
             return;
 
-        if (SDL.SDL_InitSubSystem(SDL.SDL_INIT_JOYSTICK) < 0)
+        if (SDL.SDL_InitSubSystem(SDL.SDL_INIT_JOYSTICK | SDL.SDL_INIT_GAMECONTROLLER) < 0)
         {
             throw new PfWolfInputException("Could not initialize SDL: {0}", SDL.SDL_GetError());
         }
 
         ClearKeysDown();
 
+        // A controller plugged in later is opened by HandleEvent
         if (param_joystickindex >= 0 && param_joystickindex < SDL.SDL_NumJoysticks())
-        {
-            Joystick = SDL.SDL_JoystickOpen(param_joystickindex);
-
-            if (Joystick != IntPtr.Zero)
-            {
-                JoyNumButtons = SDL.SDL_JoystickNumButtons(Joystick);
-
-                if (JoyNumButtons > 32)
-                    JoyNumButtons = 32; // only up to 32 buttons are supported
-
-                JoyNumHats = SDL.SDL_JoystickNumHats(Joystick);
-
-                if (param_joystickhat < -1 || param_joystickhat >= JoyNumHats)
-                    throw new PfWolfInputException($"The joystickhit param must be between 0 and {JoyNumHats - 1}!");
-            }
-        }
+            OpenJoystick(param_joystickindex);
 
         SDL.SDL_EventState(SDL.SDL_EventType.SDL_MOUSEMOTION, SDL.SDL_IGNORE);
 
@@ -345,10 +345,61 @@ internal class InputManager
         if (!Started)
             return;
 
-        if (Joystick != IntPtr.Zero)
-            SDL.SDL_JoystickClose(Joystick);
+        CloseJoystick();
 
         Started = false;
+    }
+
+    /// <summary>
+    /// Opens a joystick: as a controller if SDL knows its layout (so its buttons have names and
+    /// its sticks and triggers are told apart), otherwise as a plain joystick. Only one is used
+    /// at a time; does nothing if one is already open.
+    /// </summary>
+    private void OpenJoystick(int deviceIndex)
+    {
+        if (Joystick != IntPtr.Zero)
+            return;
+
+        if (SDL.SDL_IsGameController(deviceIndex) == SDL.SDL_bool.SDL_TRUE)
+        {
+            GameController = SDL.SDL_GameControllerOpen(deviceIndex);
+            if (GameController != IntPtr.Zero)
+                Joystick = SDL.SDL_GameControllerGetJoystick(GameController);
+        }
+
+        if (Joystick == IntPtr.Zero)
+            Joystick = SDL.SDL_JoystickOpen(deviceIndex);
+
+        if (Joystick == IntPtr.Zero)
+        {
+            Console.WriteLine($"Couldn't open joystick {deviceIndex}: {SDL.SDL_GetError()}");
+            return;
+        }
+
+        JoystickInstance = SDL.SDL_JoystickInstanceID(Joystick);
+        JoyNumButtons = Math.Min(SDL.SDL_JoystickNumButtons(Joystick), 32);    // only up to 32 buttons are supported
+        JoyNumHats = SDL.SDL_JoystickNumHats(Joystick);
+        ControllerName = GameController != IntPtr.Zero
+            ? SDL.SDL_GameControllerName(GameController)
+            : SDL.SDL_JoystickName(Joystick);
+
+        Console.WriteLine(GameController != IntPtr.Zero
+            ? $"Controller connected: {ControllerName}"
+            : $"Joystick connected: {ControllerName} (no controller layout; bind its buttons as Joy 1 and up)");
+    }
+
+    private void CloseJoystick()
+    {
+        // A controller's joystick belongs to it, so it's closed with it
+        if (GameController != IntPtr.Zero)
+            SDL.SDL_GameControllerClose(GameController);
+        else if (Joystick != IntPtr.Zero)
+            SDL.SDL_JoystickClose(Joystick);
+
+        GameController = Joystick = IntPtr.Zero;
+        JoystickInstance = -1;
+        JoyNumButtons = JoyNumHats = 0;
+        ControllerName = null;
     }
 
     public bool IsMouseInputGrabbed()
@@ -360,6 +411,30 @@ internal class InputManager
     {
         return Keyboard[(int)code];
     }
+
+    /// <summary>Whether a key, mouse button or joystick button is held down right now.</summary>
+    internal bool IsInputDown(InputCode code) => code.Device switch
+    {
+        InputDevice.Key => code.Code < (int)ScanCodes.sc_Last && Keyboard[code.Code],
+        InputDevice.MouseButton => MousePresent
+            && (SDL.SDL_GetMouseState(out _, out _) & SDL.SDL_BUTTON((uint)code.Code)) != 0,
+        InputDevice.JoyButton => Joystick != IntPtr.Zero && code.Code < JoyNumButtons
+            && SDL.SDL_JoystickGetButton(Joystick, code.Code) != 0,
+        InputDevice.PadButton => GameController != IntPtr.Zero
+            && SDL.SDL_GameControllerGetButton(GameController, (SDL.SDL_GameControllerButton)code.Code) != 0,
+        InputDevice.PadAxis => GameController != IntPtr.Zero
+            && (code.IsPositive ? RawPadAxis(code.Axis) >= AxisPressThreshold : RawPadAxis(code.Axis) <= -AxisPressThreshold),
+        _ => false,
+    };
+
+    private short RawPadAxis(SDL.SDL_GameControllerAxis axis) => SDL.SDL_GameControllerGetAxis(GameController, axis);
+
+    /// <summary>
+    /// A controller axis from -1 to 1 (a trigger from 0 to 1), with nothing ignored around the
+    /// middle; 0 without a controller. Down is positive on the sticks.
+    /// </summary>
+    internal float GetPadAxis(SDL.SDL_GameControllerAxis axis) =>
+        GameController == IntPtr.Zero ? 0 : Math.Max(RawPadAxis(axis) / 32767f, -1f);
 
     public bool IsButtonPressed(buttontypes code)
     {
@@ -401,6 +476,7 @@ internal class InputManager
 
         Array.Fill(Keyboard, false);
         pressedKeys.Clear();
+        wheelDelta = 0;     // or turns made in a menu change weapons once the game carries on
     }
 
     /// <summary>Takes the oldest key pressed since the last call (or since keys were cleared).</summary>
@@ -489,10 +565,33 @@ internal class InputManager
         }
 
         SDL.SDL_JoystickUpdate();
+
+        // A controller: its left stick, with the d-pad pushing it all the way
+        if (GameController != IntPtr.Zero)
+        {
+            static bool Held(IntPtr pad, SDL.SDL_GameControllerButton button) => SDL.SDL_GameControllerGetButton(pad, button) != 0;
+
+            int padx = RawPadAxis(SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX) >> 8;
+            int pady = RawPadAxis(SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY) >> 8;
+
+            if (Held(GameController, SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_LEFT))
+                padx = -127;
+            else if (Held(GameController, SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_RIGHT))
+                padx = 127;
+            if (Held(GameController, SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_UP))
+                pady = -127;
+            else if (Held(GameController, SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_DOWN))
+                pady = 127;
+
+            dx = padx;
+            dy = pady;
+            return;
+        }
+
         int x = SDL.SDL_JoystickGetAxis(Joystick, 0) >> 8;
         int y = SDL.SDL_JoystickGetAxis(Joystick, 1) >> 8;
 
-        if (param_joystickhat != -1)
+        if (param_joystickhat != -1 && param_joystickhat < JoyNumHats)
         {
             byte hatState = SDL.SDL_JoystickGetHat(Joystick, param_joystickhat);
 
@@ -525,6 +624,15 @@ internal class InputManager
 
         int res = 0;
 
+        // A controller's buttons in its own order, so A and B come first: the menus take the
+        // first as select and the second as back
+        if (GameController != IntPtr.Zero)
+        {
+            for (i = 0; i < (int)SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_MAX; i++)
+                res |= SDL.SDL_GameControllerGetButton(GameController, (SDL.SDL_GameControllerButton)i) << i;
+            return res;
+        }
+
         for (i = 0; i < JoyNumButtons && i < 32; i++)
             res |= SDL.SDL_JoystickGetButton(Joystick, i) << i;
 
@@ -549,6 +657,24 @@ internal class InputManager
         {
             case SDL.SDL_EventType.SDL_QUIT:
                 Quit?.Invoke(this, EventArgs.Empty);
+                break;
+
+            // Controllers come as joysticks too, so these cover both. SDL also sends an added
+            // event at startup for each one already plugged in; OpenJoystick skips it if in use.
+            case SDL.SDL_EventType.SDL_JOYDEVICEADDED:     // which: the device index
+                OpenJoystick(e.jdevice.which);
+                break;
+
+            case SDL.SDL_EventType.SDL_JOYDEVICEREMOVED:   // which: the instance ID
+                if (e.jdevice.which == JoystickInstance)
+                {
+                    Console.WriteLine($"Controller disconnected: {ControllerName}");
+                    CloseJoystick();
+
+                    // Carry on with another, if there is one
+                    for (int i = 0; i < SDL.SDL_NumJoysticks() && Joystick == IntPtr.Zero; i++)
+                        OpenJoystick(i);
+                }
                 break;
 
             case SDL.SDL_EventType.SDL_KEYDOWN:
@@ -630,17 +756,27 @@ internal class InputManager
         }
     }
 
+    /// <summary>
+    /// The folding <see cref="MapKey"/> always does: right-hand modifiers into left-hand ones and
+    /// keypad Enter into Enter. For reading a key's name from a .cfg file or the console, where
+    /// MapKey's Num Lock-dependent keypad arrows would bind a different key depending on the
+    /// Num Lock light at the time.
+    /// </summary>
+    internal static ScanCodes FoldKey(ScanCodes key) => key switch
+    {
+        ScanCodes.sc_KeyPadEnter => ScanCodes.sc_Enter,
+        ScanCodes.sc_RShift => ScanCodes.sc_LShift,
+        ScanCodes.sc_RAlt => ScanCodes.sc_LAlt,
+        ScanCodes.sc_RControl => ScanCodes.sc_LControl,
+        _ => key,
+    };
+
     internal ScanCodes MapKey(ScanCodes key)
     {
-        ScanCodes scan = key;
+        ScanCodes scan = FoldKey(key);
 
         switch (key)
         {
-            case ScanCodes.sc_KeyPadEnter: scan = ScanCodes.sc_Enter; break;
-            case ScanCodes.sc_RShift: scan = ScanCodes.sc_LShift; break;
-            case ScanCodes.sc_RAlt: scan = ScanCodes.sc_LAlt; break;
-            case ScanCodes.sc_RControl: scan = ScanCodes.sc_LControl; break;
-
             case ScanCodes.sc_KeyPad2:
             case ScanCodes.sc_KeyPad4:
             case ScanCodes.sc_KeyPad6:

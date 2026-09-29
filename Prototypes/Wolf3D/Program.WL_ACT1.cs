@@ -273,11 +273,15 @@ internal partial class Program
     internal static void OperateDoor(int door)
     {
         // The required key comes from the door's mapdef entry (doors.yaml `lock:`).
-        var lockItem = doorobjlist[door].xlat.Lock;
+        var xlat = doorobjlist[door].xlat;
+        var lockItem = xlat.Lock;
         if (!string.IsNullOrEmpty(lockItem) && !_inventoryManager.Has(lockItem))
         {
             if (doorobjlist[door].position == 0)
+            {
                 _audioManager.Play("player/usefail"); // locked
+                ShowLockedMessage(xlat, lockItem);
+            }
             return;
         }
 
@@ -294,6 +298,20 @@ internal partial class Program
         }
     }
 
+
+    /// <summary>
+    /// Says what a locked door needs: the door's own lock-message (doors.yaml), else its lock
+    /// item's `key.lockedmessage`, else that it's locked. The style is found the same way, then
+    /// comes from game-info's for locked doors.
+    /// </summary>
+    static void ShowLockedMessage(MapTextureTranslation xlat, string lockItem)
+    {
+        var message = !string.IsNullOrWhiteSpace(xlat.LockMessage) ? xlat.LockMessage
+            : _inventoryManager.GetStringProperty(lockItem, "key.lockedmessage") ?? "$LOCKEDDOOR";
+        var style = !string.IsNullOrWhiteSpace(xlat.LockMessageStyle) ? xlat.LockMessageStyle
+            : _inventoryManager.GetStringProperty(lockItem, "key.lockedmessagestyle");
+        _hudMessageManager.Show(HudMessageKind.Lock, message, style);
+    }
 
     //===========================================================================
 

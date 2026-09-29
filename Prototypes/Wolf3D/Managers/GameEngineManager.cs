@@ -23,6 +23,7 @@ internal class GameEngineManager
     private readonly Lazy<AssetManager> assetManager;
     private readonly ConsoleManager consoleManager;
     private readonly AutomapManager automapManager;
+    private readonly HudMessageManager hudMessageManager;
 
     public GameEngineManager(
         VideoManager videoManager,
@@ -30,12 +31,14 @@ internal class GameEngineManager
         AudioManager audioManager,
         Lazy<AssetManager> assetManager,
         ConsoleManager consoleManager,
-        AutomapManager automapManager)
+        AutomapManager automapManager,
+        HudMessageManager hudMessageManager)
     {
         this.videoManager = videoManager;
         this.inputManager = inputManager;
         this.consoleManager = consoleManager;
         this.automapManager = automapManager;
+        this.hudMessageManager = hudMessageManager;
         InputManager.Quit += Quit;
         InputManager.Pause += SetPaused;
         this.audioManager = audioManager;
@@ -125,10 +128,17 @@ internal class GameEngineManager
         return gameInfo;
     }
 
+    /// <summary>
+    /// Set once config.cfg, controls.cfg and binds.cfg have been read at startup; WriteConfig
+    /// does nothing before then.
+    /// </summary>
+    internal bool SettingsLoaded { get; set; }
+
+    internal const string ControlsFileName = "controls.cfg";
     internal const string BindsFileName = "binds.cfg";
     internal const string AutoexecFileName = "autoexec.cfg";
 
-    /// <summary>Where a file of the given name lives in the config directory (config.cfg, binds.cfg, autoexec.cfg).</summary>
+    /// <summary>Where a file of the given name lives in the config directory (config.cfg, controls.cfg, binds.cfg, autoexec.cfg).</summary>
     internal string GetConfigFilePath(string fileName) =>
         string.IsNullOrEmpty(ConfigDirectories.ConfigDirectory) ? fileName : Path.Combine(ConfigDirectories.ConfigDirectory, fileName);
 
@@ -149,6 +159,16 @@ internal class GameEngineManager
         public AudioDevices? AudioDevices;
         public int? SoundVolume, MusicVolume;
         public VideoSettings? Video;
+        public bool? AutoSave;
+        public HudMessagesSetting? HudMessages;
+    }
+
+    /// <summary>The `msg_enabled` setting, as saved in config.cfg</summary>
+    private enum HudMessagesSetting : byte
+    {
+        Off = 0,
+        On = 1,
+        GameDefault = 2,
     }
 
     /// <summary>The Video menu's on/off settings, as saved in config.cfg.</summary>
@@ -176,9 +196,13 @@ internal class GameEngineManager
         Music = 8,
     }
 
-    // Keyboard buttons stored in the original fixed layout. Buttons added after them (the
-    // automap key) are appended at the end, so older configs still read correctly.
+    // The controls' place in the original fixed layout: the movement keys, a key per button
+    // (the automap key was appended at the end later), and a button for each mouse and joystick
+    // button. They're in controls.cfg now; these are only read from an older config.cfg.
+    private const int LayoutDirCount = 4;
     private const int LayoutButtonCount = (int)buttontypes.bt_automap;
+    private const int LayoutMouseCount = 4;
+    private const int LayoutJoyCount = 32;
 
     internal void ReadConfig()
     {
@@ -214,16 +238,21 @@ internal class GameEngineManager
         }
 
         Array.Copy(config.Scores, Program.Scores, Program.Scores.Length);
-        Array.Copy(config.DirScan, Program.dirscan, Program.dirscan.Length);
-        Array.Copy(config.ButtonScan, Program.buttonscan, LayoutButtonCount);
-        if (config.AutomapKey is ScanCodes automapKey)
-            Program.buttonscan[(int)buttontypes.bt_automap] = automapKey;
-        Array.Copy(config.ButtonMouse, Program.buttonmouse, Program.buttonmouse.Length);
-        Array.Copy(config.ButtonJoy, Program.buttonjoy, Program.buttonjoy.Length);
 
-        // Devices that were there last time may not be now.
+        // The controls moved to controls.cfg, which the console runs at startup; config.cfg now
+        // only has blanks where they were. A config from before that still has them: take them
+        // over this once, and controls.cfg holds them from the next save on.
+        bool hasLegacyControls = config.DirScan.Any(key => key != ScanCodes.sc_None);
+        bool legacyConfig = hasLegacyControls && !File.Exists(GetConfigFilePath(ControlsFileName));
+        if (legacyConfig)
+            Program.controls.ImportLegacy(config.DirScan, config.ButtonScan, config.ButtonMouse, config.ButtonJoy,
+                config.AutomapKey, config.AutomapKeys);
+
+        // Devices that were there last time may not be now. A controller can be plugged in
+        // later, so its setting is kept as it was either way. Before that, the joystick was
+        // saved as off whenever none was plugged in, so an old config's "off" doesn't count.
         Program.mouseenabled = config.MouseEnabled && inputManager.IsMousePresent();
-        Program.joystickenabled = config.JoystickEnabled && inputManager.JoyPresent();
+        Program.joystickenabled = config.JoystickEnabled || legacyConfig;
         Program.mouseadjustment = Math.Clamp(config.MouseAdjustment, 0, 9);
         Program.viewsize = Math.Clamp(config.ViewSize, 4, 21);
         if (config.PauseWhenOpen is bool pause)
@@ -245,14 +274,10 @@ internal class GameEngineManager
             audioManager.SoundVolume = soundVolume;     // clamped by the setter
         if (config.MusicVolume is int musicVolume)
             audioManager.MusicVolume = musicVolume;
-
-        // A key the config doesn't have (it's from before that key existed) keeps its default
-        var automapKeys = config.AutomapKeys ?? [];
-        for (int i = 0; i < Math.Min(automapKeys.Length, Program.automapscan.Length); i++)
-        {
-            if (automapKeys[i] > ScanCodes.sc_None && automapKeys[i] < ScanCodes.sc_Last)
-                Program.automapscan[i] = automapKeys[i];
-        }
+        if (config.AutoSave is bool autoSave)
+            Program.autosaveEnabled = autoSave;
+        if (config.HudMessages is HudMessagesSetting.Off or HudMessagesSetting.On)
+            hudMessageManager.EnabledSetting = config.HudMessages == HudMessagesSetting.On;
 
         // Set "Read This" back to standard active
         Program.FindMenuItem(Program.MainMenu, "readthis")?.active = 1;
@@ -275,10 +300,10 @@ internal class GameEngineManager
             Scores = scores,
             MouseEnabled = br.ReadByte() != 0,
             JoystickEnabled = br.ReadByte() != 0,
-            DirScan = new ScanCodes[Program.dirscan.Length],
+            DirScan = new ScanCodes[LayoutDirCount],
             ButtonScan = new ScanCodes[LayoutButtonCount],
-            ButtonMouse = new buttontypes[Program.buttonmouse.Length],
-            ButtonJoy = new buttontypes[Program.buttonjoy.Length],
+            ButtonMouse = new buttontypes[LayoutMouseCount],
+            ButtonJoy = new buttontypes[LayoutJoyCount],
         };
         _ = br.ReadByte(); // joypad enabled placeholder
         _ = br.ReadByte(); // joystick progressive placeholder
@@ -328,6 +353,10 @@ internal class GameEngineManager
             config.MusicVolume = br.ReadByte();
         if (stream.Position < stream.Length)
             config.Video = ReadVideoSettings(br);
+        if (stream.Position < stream.Length)
+            config.AutoSave = br.ReadByte() != 0;
+        if (stream.Position < stream.Length)
+            config.HudMessages = (HudMessagesSetting)br.ReadByte();
 
         return config;
     }
@@ -435,24 +464,37 @@ internal class GameEngineManager
         if (inputManager.IsMousePresent())
             Program.mouseenabled = true;
 
-        if (inputManager.JoyPresent())
-            Program.joystickenabled = true;
+        Program.joystickenabled = true;     // used as soon as one is plugged in
 
         Program.viewsize = 19;
         Program.mouseadjustment = 5;
     }
 
     /// <summary>
-    /// Writes config.cfg and binds.cfg. Called on exit, and whenever the settings or high
-    /// scores change, so they survive a crash. A failure is logged, not thrown, since this
-    /// also runs on the way out of the game.
+    /// Writes config.cfg, controls.cfg and binds.cfg. Called on exit, and whenever the settings
+    /// or high scores change, so they survive a crash. A failure is logged, not thrown, since
+    /// this also runs on the way out of the game.
     /// </summary>
     internal void WriteConfig()
     {
+        // Until the settings are all loaded, what's in memory is partly defaults: writing it (as
+        // quitting at the signon screen would) would replace the saved controls with them.
+        if (!SettingsLoaded)
+            return;
+
         try
         {
-            // Binds are console commands, so they're saved as a script the console runs at
-            // startup. Written even when empty so that unbinding everything sticks.
+            // The controls and binds are console commands, so they're saved as scripts the
+            // console runs at startup. Binds are written even when empty so that unbinding
+            // everything sticks; every control is written, bound or not, for the same reason.
+            ReplaceFile(GetConfigFilePath(ControlsFileName), stream =>
+            {
+                using var writer = new StreamWriter(stream);
+                writer.WriteLine("// Written by the game; use autoexec.cfg for your own commands.");
+                foreach (var command in Program.controls.GetCommands().Concat(Program.GetControllerSettingCommands()))
+                    writer.WriteLine(command);
+            });
+
             ReplaceFile(GetConfigFilePath(BindsFileName), stream =>
             {
                 using var writer = new StreamWriter(stream);
@@ -498,28 +540,18 @@ internal class GameEngineManager
         bw.Write((byte)0); // joystick-progressive placeholder
         bw.Write((int)0); // joystick port placeholder
 
-        for (int i = 0; i < Program.dirscan.Length; i++)
-            bw.Write((int)Program.dirscan[i]);
-
-        for (int i = 0; i < LayoutButtonCount; i++)
-            bw.Write((int)Program.buttonscan[i]);
-
-        for (int i = 0; i < Program.buttonmouse.Length; i++)
-            bw.Write((int)Program.buttonmouse[i]);
-
-        for (int i = 0; i < Program.buttonjoy.Length; i++)
-            bw.Write((int)Program.buttonjoy[i]);
+        // The controls are in controls.cfg: blanks where the old layout had them (see ReadConfig)
+        for (int i = 0; i < LayoutDirCount + LayoutButtonCount + LayoutMouseCount + LayoutJoyCount; i++)
+            bw.Write((int)0);
 
         bw.Write(Program.viewsize);
         bw.Write(Program.mouseadjustment);
         bw.Write(consoleManager.PauseWhenOpen);
-        bw.Write((int)Program.buttonscan[(int)buttontypes.bt_automap]);
+        bw.Write((int)ScanCodes.sc_None);   // automap key placeholder
         bw.Write((byte)automapManager.Style);
         bw.Write(automapManager.Overlay);
         bw.Write(automapManager.ShowGrid);
-        bw.Write(Program.automapscan.Length);
-        foreach (var key in Program.automapscan)
-            bw.Write((int)key);
+        bw.Write(0);                        // no automap keys: they're in controls.cfg
 
         var devices = AudioDevices.None;
         if (audioManager.PcSoundEnabled)
@@ -534,6 +566,13 @@ internal class GameEngineManager
         bw.Write((byte)audioManager.SoundVolume);
         bw.Write((byte)audioManager.MusicVolume);
         WriteVideoSettings(bw, videoManager.Settings);
+        bw.Write((byte)(Program.autosaveEnabled ? 1 : 0));
+        bw.Write((byte)(hudMessageManager.EnabledSetting switch
+        {
+            true => HudMessagesSetting.On,
+            false => HudMessagesSetting.Off,
+            null => HudMessagesSetting.GameDefault,
+        }));
     }
 
     /// <summary>
@@ -633,6 +672,41 @@ internal class GameEngineManager
 
         Environment.Exit(returnCode);
     }
+    /// <summary>
+    /// Quits as normal, saving the settings, and starts the game again: the same game pack and
+    /// folders, with the mods mods.cfg names. Mods, video options and --exec commands given on
+    /// the command line aren't passed on (the video options were saved as settings).
+    /// </summary>
+    public void Restart()
+    {
+        var args = new List<string> { "--game", GamePackId };
+        if (!string.IsNullOrWhiteSpace(GameParams.ConfigDir))
+            args.AddRange(["--configdir", GameParams.ConfigDir]);
+        if (!string.IsNullOrWhiteSpace(GameParams.SavesDir))
+            args.AddRange(["--savedir", GameParams.SavesDir]);
+
+        WriteConfig();
+        Shutdown();
+
+        try
+        {
+            var startInfo = new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath!)
+            {
+                WorkingDirectory = Environment.CurrentDirectory,
+                UseShellExecute = false,
+            };
+            foreach (var arg in args)
+                startInfo.ArgumentList.Add(arg);
+            System.Diagnostics.Process.Start(startInfo);
+        }
+        catch (Exception e)
+        {
+            Error($"The game couldn't be started again: {e.Message}");
+        }
+
+        Environment.Exit(0);
+    }
+
     public static void Error(string errorStr)
     {
         SDL2.SDL.SDL_ShowSimpleMessageBox(SDL2.SDL.SDL_MessageBoxFlags.SDL_MESSAGEBOX_ERROR, "Wolf4CSharp", errorStr, IntPtr.Zero);

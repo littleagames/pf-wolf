@@ -1,5 +1,6 @@
 ﻿using Wolf3D.Assets;
 using Wolf3D.Entities;
+using Wolf3D.Fonts;
 
 namespace Wolf3D.Managers;
 
@@ -7,20 +8,36 @@ namespace Wolf3D.Managers;
 internal class GraphicManager
 {
 
-    public GraphicManager(VideoManager videoManager, Lazy<AssetManager> assetManager)
+    public GraphicManager(VideoManager videoManager, Lazy<AssetManager> assetManager, FontManager fontManager)
     {
         this.videoManager = videoManager;
         this.assetManager = assetManager;
+        this.fontManager = fontManager;
     }
 
 
     private readonly VideoManager videoManager;
     private readonly Lazy<AssetManager> assetManager;
+    private readonly FontManager fontManager;
 
     /// <summary>
     /// Graphic drawn behind the menus in place of their background color (game-info menu-backdrop)
     /// </summary>
     public string? MenuBackdrop { get; set; }
+
+    /// <summary>
+    /// Shape and colors of the band across the top of the menus (game-info menu-stripe)
+    /// </summary>
+    public MenuStripeInfo MenuStripe { get; set; } = new();
+
+    /// <summary>
+    /// Draws the menu stripe with its top at <paramref name="y"/>, in the given colors or the game's
+    /// </summary>
+    public void DrawStripe(int y, string? color = null, string? lineColor = null)
+    {
+        videoManager.Bar(0, y, 320, MenuStripe.Height, color ?? MenuStripe.Color);
+        videoManager.HorizontalLine(0, 319, y + MenuStripe.LineY, lineColor ?? MenuStripe.LineColor);
+    }
 
     public void DrawMenuBackground(string color)
     {
@@ -30,14 +47,44 @@ internal class GraphicManager
             videoManager.Bar(0, 0, 320, 200, color);
     }
 
-    public void DrawPropString(int px, int py, string s, string fontcolor, string fontName)
+    /// <summary>Draws one line of text; a missing font draws nothing</summary>
+    public void DrawText(int x, int y, string text, TextStyle style)
     {
-        var fontAsset = assetManager.Value.Find<FontAsset>(fontName);
-        if (fontAsset == null)
+        var font = fontManager.Find(style.Font);
+        if (font == null)
             return;
 
-        videoManager.DrawPropString(px, py, s, fontcolor, fontAsset);
+        var shadow = style.Shadow ?? font.Shadow;
+        if (shadow != null && shadow != FontShadow.None && style.ShadowColor != null)
+            shadow = shadow with { Color = style.ShadowColor };
+
+        var outline = style.Outline ?? font.Outline;
+        if (outline != null && outline != FontOutline.None && style.OutlineColor != null)
+            outline = outline with { Color = style.OutlineColor };
+
+        // A glow color draws the rings flat, fading from that color into itself
+        var glow = style.Glow ?? font.Glow;
+        var glowBackground = style.Background;
+        if (glow != null && glow != FontGlow.None && style.GlowColor != null)
+        {
+            glow = glow with { Color = style.GlowColor };
+            glowBackground = style.GlowColor;
+        }
+
+        font.Draw(videoManager, x, y, text, style.Color, shadow, style.Gradient ?? font.Gradient, outline, glow, glowBackground);
     }
+
+    public void DrawText(int x, int y, string text, Font font, string color) => font.Draw(videoManager, x, y, text, color);
+
+    /// <summary>Width and line height of one line of text; zero for a missing font</summary>
+    public void MeasureText(string text, string fontName, out int width, out int height)
+    {
+        var font = fontManager.Find(fontName);
+        width = font?.Measure(text) ?? 0;
+        height = font?.LineHeight ?? 0;
+    }
+
+    public void Bar(int x, int y, int width, int height, string color) => videoManager.Bar(x, y, width, height, color);
 
     public void DrawTile8(int x, int y, int tile)
     {
@@ -80,8 +127,7 @@ internal class GraphicManager
         }
         else if (component is Stripe stripe)
         {
-            videoManager.Bar(0, stripe.Y, 320, 24, stripe.BackingColor);
-            videoManager.HorizontalLine(0, 319, stripe.Y + 22, stripe.LineColor);
+            DrawStripe(stripe.Y, stripe.BackingColor, stripe.LineColor);
         }
         else if (component is Window window)
         {
@@ -119,29 +165,4 @@ internal class GraphicManager
     {
         videoManager.MemToScreenScaledCoord(gfxAsset.RawData, gfxAsset.Width, gfxAsset.Height, scx, scy);
     }
-
-    public void MeasurePropString(string text, string font, out ushort width, out ushort height)
-    {
-        var fontAsset = assetManager.Value.Find<FontAsset>(font);
-        if (fontAsset == null)
-        {
-            width = 0;
-            height = 0;
-            return;
-        }
-
-        MeasureString(text, out width, out height, fontAsset);
-    }
-
-    public static void MeasureString(string text, out ushort width, out ushort height, FontAsset font)
-    {
-        width = 0;
-        int i;
-        height = (ushort)font.Height;
-        for (i = 0; i < text.Length; i++)
-        {
-            width += font.Width[text[i]]; // proportional width
-        }
-    }
-
 }

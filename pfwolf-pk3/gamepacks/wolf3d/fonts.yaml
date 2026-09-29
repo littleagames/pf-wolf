@@ -1,0 +1,87 @@
+# Fonts text can be printed in, by name. A font not listed here is looked up as a Wolf3D font
+# of that name. Spear of Destiny starts from these; a gamepacks/spear/fonts.yaml would replace
+# them font by font.
+#
+# type: vga       A Wolf3D font: one-bit glyphs drawn in the text's color
+#   source:       A VGAGRAPH font chunk's name in raw-data-map, or a Wolf3D-format font file's
+#                 name in the pk3's fonts/ folder (defaults to the font's own name). A file in
+#                 fonts/ named like a chunk (SmallFont.fnt) replaces the chunk.
+#
+# type: graphic   A picture for each character, drawn in the picture's own colors
+#   pattern:      Picture name for each of chars, {code} standing for the character's code
+#                 ({code:000} pads it to three digits)
+#   chars:        The characters pattern makes glyphs for
+#   glyphs:       "<char>": <picture>, as well as or instead of the pattern's
+#   cell-width:   How far each character moves along (defaults to each picture's width)
+#
+# type: sheet     One picture (e.g. a PNG in graphics/) with the characters in a grid of cells,
+#                 left to right and down
+#   image:        The picture
+#   cell-width, cell-height:  A cell's size (cell-height defaults to cell-width)
+#   chars:        The character in each cell; without it the cells run from first-char on
+#   first-char:   The first cell's character code (defaults to 32, a space)
+#   proportional: Each character moves along by its own width plus spacing (defaults to 1),
+#                 not the cell's; a blank cell is left out, except a space
+#
+# Both graphic and sheet fonts also take:
+#   advances:     "<char>": <pixels>, for characters that move along more or less than usual
+#   space-width:  How far a character without a glyph moves along (defaults to the space's, or cell-width)
+#   height, line-height:  Glyph height (defaults to the tallest) and line spacing (defaults to height)
+#   upper-case:   Lower case letters use the upper case glyphs
+#   colorize:     Draw the glyphs in the text's color instead of their own
+#   transparent:  A color (name, #RRGGBB or palette index) left out, so what's behind shows
+#                 through. A PNG's see-through pixels always are.
+#
+# Any type of font also takes:
+#   shadow:       A copy of the text drawn behind it in one color, e.g. { x: 1, y: 1, color: Black }
+#                 (those are the defaults, so "shadow: {}" gives a one-pixel black drop shadow).
+#                 Picture glyphs cast a solid silhouette, so they need see-through pixels
+#                 (a PNG's, or transparent:) or the shadow is a filled box.
+#   gradient:     The text's color shaded down the glyphs, e.g. { top: 40, bottom: -40 }: percent
+#                 toward white (positive) or black (negative) at the top and bottom rows, blending
+#                 in between (those are the defaults, so "gradient: {}" works). Only for glyphs
+#                 drawn in the text's color: vga fonts, and graphic or sheet fonts with colorize.
+#   outline:      A border round each glyph, e.g. { color: Black, thickness: 1, diagonals: true }
+#                 (the defaults, so "outline: {}" works); diagonals: false leaves the corners out
+#                 for a rounder look. Characters don't move further apart, so outlines fill the
+#                 gaps between them. Like shadows, picture glyphs need see-through pixels.
+#   glow:         A halo fading out from the glyphs into the background color behind the text
+#                 (the style's, e.g. BKGDCOLOR in menus), e.g. { color: Yellow, radius: 2, strength: 50 }:
+#                 radius rings of pixels, the nearest strength percent glow color, the rest fading.
+#                 No color glows in the text's own color; "glow: {}" uses the defaults. It's drawn
+#                 in solid colors, so over a picture it covers it rather than showing it through.
+#   Shadows, outlines and glows reach past the letters and paint over whatever is next to the
+#   text, such as the border of a tight box round it; keep them small on fonts used in boxes.
+
+SmallFont:
+  type: vga
+
+LargeFont:
+  type: vga
+
+# Messages over the 3D view (hud-messages.yaml): the small font, with a shadow so it reads
+# against walls and floors
+HudMessage:
+  type: vga
+  source: SmallFont
+  shadow: {}
+
+# The status bar's numbers
+StatusNumbers:
+  type: graphic
+  pattern: "FONTN{code:000}"
+  chars: " 0123456789"
+  cell-width: 8
+
+# The intermission and victory screens' letters and numbers
+IntermissionFont:
+  type: graphic
+  pattern: "FONTL{code:000}"
+  chars: "0123456789:%!'ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  cell-width: 16
+  line-height: 16
+  upper-case: true
+  advances:
+    ":": 8
+    "!": 8
+    "'": 8

@@ -7,6 +7,8 @@ using Wolf3D.Configuration;
 using Wolf3D.Constants;
 using Wolf3D.DependencyInjection;
 using Wolf3D.Extensions;
+using Wolf3D.Fonts;
+using Wolf3D.Loaders;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
@@ -18,11 +20,13 @@ internal partial class Program
     private static InputManager _inputManager;
     private static GameEngineManager _gameEngineManager;
     private static GraphicManager _graphicManager;
+    private static FontManager _fontManager;
     private static MapManager _mapManager;
     private static AssetManager _assetManager;
     private static InventoryManager _inventoryManager;
     private static ConsoleManager _consoleManager;
     private static AutomapManager _automapManager;
+    private static HudMessageManager _hudMessageManager;
 
     public Program()
     {
@@ -33,11 +37,13 @@ internal partial class Program
         services.AddSingleton<AudioManager>();
         services.AddSingleton<InputManager>();
         services.AddSingleton<GraphicManager>();
+        services.AddSingleton<FontManager>();
         services.AddSingleton<MapManager>();
         services.AddSingleton<AssetManager>();
         services.AddSingleton<InventoryManager>();
         services.AddSingleton<ConsoleManager>();
         services.AddSingleton<AutomapManager>();
+        services.AddSingleton<HudMessageManager>();
 
         // Build the service provider
         var serviceProvider = services.BuildServiceProvider();
@@ -51,11 +57,13 @@ internal partial class Program
         _audioManager = serviceProvider.GetRequiredService<AudioManager>();
         _inputManager = serviceProvider.GetRequiredService<InputManager>();
         _graphicManager = serviceProvider.GetRequiredService<GraphicManager>();
+        _fontManager = serviceProvider.GetRequiredService<FontManager>();
         _mapManager = serviceProvider.GetRequiredService<MapManager>();
         _assetManager = serviceProvider.GetRequiredService<AssetManager>();
         _inventoryManager = serviceProvider.GetRequiredService<InventoryManager>();
         _consoleManager = serviceProvider.GetRequiredService<ConsoleManager>();
         _automapManager = serviceProvider.GetRequiredService<AutomapManager>();
+        _hudMessageManager = serviceProvider.GetRequiredService<HudMessageManager>();
 
         // TODO: Remove circular dependencies here
         //_videoManager = new();
@@ -116,10 +124,25 @@ internal partial class Program
     private static void Main(string[] args)
     {
         // Bad arguments are reported by the parser and otherwise ignored: run with the defaults.
-        var gameParams = Parser.Default.ParseArguments<GameParams>(args).Value ?? new GameParams(); // Move into gamemanager, add unit tests
+        // --file can be given more than once.
+        using var parser = new Parser(settings =>
+        {
+            settings.HelpWriter = Console.Error;
+            settings.AllowMultiInstance = true;
+        });
+        var gameParams = parser.ParseArguments<GameParams>(args).Value ?? new GameParams(); // Move into gamemanager, add unit tests
+
+        // Relative mod paths mean the folder the game was started in, so pin them down before
+        // UseGameFolder can move away from it
+        var modPaths = gameParams.Files.Concat(gameParams.Paths).Select(ModSource.FullPathIfExists).ToList();
+        UseGameFolder();
+
         new Program();
         _gameEngineManager.Init(gameParams);
-        _assetManager.Load(_gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId);
+
+        // The Mods menu's choices (mods.cfg, per game), then the command line's
+        var configMods = ModsConfig.Read(_gameEngineManager.GetConfigFilePath(ModsConfig.FileName));
+        _assetManager.Load(_gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId, configMods.Concat(modPaths));
         RegisterActorActions();
         RegisterConsoleCommands();
 
@@ -129,9 +152,11 @@ internal partial class Program
 
         InitGame();
 
-        // After the config is read, so these can override its settings: the binds saved on the
-        // last exit, then the player's own autoexec.cfg, then any --exec commands.
+        // After the config is read, so these can override its settings: the controls and binds
+        // saved on the last exit, then the player's own autoexec.cfg, then any --exec commands.
+        _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.ControlsFileName));
         _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.BindsFileName));
+        _gameEngineManager.SettingsLoaded = true;      // from here on, saving them keeps what was loaded
         _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.AutoexecFileName));
 
         if (!string.IsNullOrWhiteSpace(gameParams.Exec))
@@ -142,12 +167,25 @@ internal partial class Program
         _gameEngineManager.Quit("Demo loop exited???");
     }
 
+    /// <summary>
+    /// Files dropped on the exe start it in some other folder (often the dropped files' own), but
+    /// pfwolf.pk3 and the game's data files are read from the working folder. When they aren't
+    /// there and are beside the exe, work from there instead.
+    /// </summary>
+    private static void UseGameFolder()
+    {
+        const string basePk3 = "pfwolf.pk3";
+        if (!File.Exists(basePk3) && File.Exists(Path.Combine(AppContext.BaseDirectory, basePk3)))
+            Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+    }
+
     private static void InitGame()
     {
         bool didjukebox = false;
         var theme = _assetManager.FindInGamePack<ColorThemeAsset>("colors");
         _videoManager.Init(theme, _gameEngineManager.ReadVideoConfig());
         _graphicManager.MenuBackdrop = _gameEngineManager.GetGameInfo().MenuBackdrop;
+        _graphicManager.MenuStripe = _gameEngineManager.GetGameInfo().MenuStripe;
         ReadFadeStyles();
         _inputManager.Init(_videoManager.fullscreen);
         
@@ -169,8 +207,6 @@ internal partial class Program
         InitDigiMap();
 
         _gameEngineManager.ReadConfig();
-
-        SetupSaveGames();
 
         //
         // HOLDING DOWN 'M' KEY?
@@ -322,13 +358,7 @@ internal partial class Program
         else
         {
             _videoManager.Bar(0, 189, 300, 11, "Maroon");
-            WindowX = 0;
-            WindowW = 320;
-            PrintY = 190;
-
-            SETFONTCOLOR("Bright Yellow", "Maroon");
-            fontnumber = "SmallFont";
-            US_CPrint("Press a key"); // "Oprima una tecla"
+            CenteredText(0, 320, 190, new TextStyle(SMALL_FONT, "Bright Yellow", "Maroon")).CPrint("Press a key"); // "Oprima una tecla"
 
             _videoManager.Update();
 
@@ -336,15 +366,10 @@ internal partial class Program
                 _inputManager.Ack();
 
             _videoManager.Bar(0, 189, 300, 11, "Maroon");
-
-            PrintY = 190;
-            SETFONTCOLOR("Lime", "Maroon");
-
-            US_CPrint("Working..."); // "pensando..."
+            CenteredText(0, 320, 190, new TextStyle(SMALL_FONT, "Lime", "Maroon")).CPrint("Working..."); // "pensando..."
 
             _videoManager.Update();
         }
-        SETFONTCOLOR("Black", "White");
     }
 
     private static void DemoLoop()
@@ -364,6 +389,14 @@ internal partial class Program
 
         while (true)
         {
+            // recorddemo and playdemo, from the command line's --exec or a game they ended
+            if (RecordPendingDemo())
+            {
+                RunStartedGame();       // New Game from the menu ends a recording and starts one
+                continue;
+            }
+            PlayPendingDemo();
+
             while (!param_nowait)
             {
                 //
@@ -416,21 +449,28 @@ internal partial class Program
             else
                 US_ControlPanel(0);
 
-            if (startgame || loadedgame)
-            {
-                GameLoop();
-                if (!param_nowait)
-                {
-                    _videoManager.FadeOut();
-                    StartCPMusic(INTROSONG);
-                }
-            }
+            RunStartedGame();
+        }
+    }
+
+    /// <summary>Plays the game the menu started or loaded, if it did, then puts the title music back</summary>
+    private static void RunStartedGame()
+    {
+        if (!startgame && !loadedgame)
+            return;
+
+        GameLoop();
+        if (!param_nowait)
+        {
+            _videoManager.FadeOut();
+            StartCPMusic(INTROSONG);
         }
     }
 
     internal static void NewGame(difficultytypes difficulty, EpisodeInfo epInfo, MapInfo mapInfo)
     {
         gamestate = new gametype();
+        LevelRatios = [];       // the win tally averages only this game's floors
         gamestate.difficulty = difficulty;
         GiveStartingInventory();
 
@@ -570,9 +610,7 @@ internal partial class Program
 
         //CA_LoadAllSounds();
 
-        fontnumber = "LargeFont";
         DrawMenuComponents("jukebox");
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
 
         DrawMenu(MusicItems, page);
 

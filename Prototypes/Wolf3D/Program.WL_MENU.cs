@@ -6,19 +6,10 @@ using Wolf3D.Configuration;
 using Wolf3D.Constants;
 using Wolf3D.Entities;
 using Wolf3D.Extensions;
+using Wolf3D.Fonts;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
-
-internal struct CustomCtrls
-{
-    public short[] allowed;
-
-    public CustomCtrls(short n0, short n1, short n2, short n3)
-    {
-        allowed = [n0, n1, n2, n3];
-    }
-};
 
 internal partial class Program
 {
@@ -37,13 +28,6 @@ internal partial class Program
     internal const int CTL_W = 284;
     internal const int CTL_H = 60;
 
-    // Width of the slot window in menudefs/load-game and save-game; slot outlines are sized from it
-    internal const int LSM_W = 175;
-
-    // Binding columns on the customize screen; the column labels in menudefs/customize line up with these
-    internal const int CST_START = 60;
-    internal const int CST_SPC = 60;
-
     // Control panel song: the main menu's music in menudefs/main-menu
     internal static string MENUSONG => _assetManager.GetMenu("main-menu")?.Music ?? "WONDERIN";
     internal static string INTROSONG => _gameEngineManager.GetGameInfo().IntroMusic ?? "";
@@ -56,12 +40,9 @@ internal partial class Program
     internal static CP_itemtype[] VidMenu = [];
     internal static CP_itemtype[] SndMenu = [];
     internal static CP_itemtype[] CtlMenu = [];
+    internal static CP_itemtype[] JoyMenu = [];
     internal static CP_itemtype[] NewEmenu = [];
     internal static CP_itemtype[] NewMenu = [];
-
-    internal static CP_itemtype[] LSMenu = [];
-
-    internal static CP_itemtype[] CusMenu = [];
 
     internal static CP_itemtype[] MusicMenu = [];
     // The jukebox shows one page of songs at a time
@@ -72,9 +53,8 @@ internal partial class Program
     internal static CP_iteminfo OptItems;
     internal static CP_iteminfo VidItems;
     internal static CP_iteminfo SndItems;
-    internal static CP_iteminfo LSItems;
     internal static CP_iteminfo CtlItems;
-    internal static CP_iteminfo CusItems;
+    internal static CP_iteminfo JoyItems;
     internal static CP_iteminfo NewEitems;
     internal static CP_iteminfo NewItems;
     internal static CP_iteminfo MusicItems;
@@ -94,22 +74,8 @@ internal partial class Program
         "DarkGreen" // 4 113 0 (used for disabled episodes)
     };
 
-    internal static int[] SaveGamesAvail = new int[10] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     internal static int StartGame;
     internal static int SoundStatus = 1;
-    internal static int pickquick;
-    internal static string[] SaveGameNames = new string[10] {
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-    };
 
     private static void EnableEndGameMenuItem()
     {
@@ -136,8 +102,7 @@ internal partial class Program
 
     internal static void DrawStripes(int y)
     {
-        _videoManager.Bar(0, y, 320, 24, "Black");
-        _videoManager.HorizontalLine(0, 319, y + 22, "STRIPE");
+        _graphicManager.DrawStripe(y);
     }
 
     internal static void DrawWindow(int x, int y, int w, int h, string wcolor)
@@ -163,30 +128,15 @@ internal partial class Program
 
     internal static void DrawMenu(CP_iteminfo item_i, CP_itemtype[] items)
     {
-        int i, which = item_i.curpos;
+        int which = item_i.curpos;
 
-        WindowX = PrintX = (ushort)(item_i.x + item_i.indent);
-        WindowY = PrintY = (ushort)item_i.y;
-        WindowW = 320;
-        WindowH = 200;
-
-        for (i = 0; i < item_i.amount; i++)
-        {
-            SetTextColor(items[i], which == i);
-
-            PrintY = (ushort)(item_i.y + i * 13);
-            if (items[i].active > 0)
-                US_Print((items[i]).text);
-            else
-            {
-                SETFONTCOLOR("DEACTIVE", "BKGDCOLOR");
-                US_Print((items[i]).text);
-                SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-            }
-
-            US_Print("\n");
-        }
+        for (int i = 0; i < item_i.amount; i++)
+            PrintMenuItem(item_i, items, i, items[i].active > 0 ? MenuItemColor(items[i], which == i) : "DEACTIVE");
     }
+
+    /// <summary>An item's text in its row; a newline in it goes on under the start of the text</summary>
+    internal static void PrintMenuItem(CP_iteminfo item_i, CP_itemtype[] items, int which, string color)
+        => TextAt(item_i.x + item_i.indent, item_i.y + which * 13, MenuStyle(color)).Print(items[which].text);
 
     internal static int StartCPMusic(string song)
     {
@@ -220,13 +170,8 @@ internal partial class Program
         y = basey + which * 13;
 
         _graphicManager.DrawPic("c_cursor1", x, y);
-        SetTextColor(items[which], true);
         if (redrawitem != 0)
-        {
-            PrintX = (ushort)(item_i.x + item_i.indent);
-            PrintY = (ushort)(item_i.y + which * 13);
-            US_Print((items[which].text));
-        }
+            PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
         //
         // CALL CUSTOM ROUTINE IF IT IS NEEDED
         //
@@ -413,6 +358,7 @@ internal partial class Program
         }
         while (exit == 0);
         _inputManager.ClearKeysDown();
+        WaitKeyUp();        // or a held button picks in, or backs out of, the next menu too
 
         //
         // ERASE EVERYTHING
@@ -420,9 +366,7 @@ internal partial class Program
         if (lastitem != which)
         {
             _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
-            PrintX = (ushort)(item_i.x + item_i.indent);
-            PrintY = (ushort)(item_i.y + which * 13);
-            US_Print(items[which].text);
+            PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
             redrawitem = 1;
         }
         else
@@ -467,11 +411,7 @@ internal partial class Program
     internal static void EraseGun(CP_iteminfo item_i, CP_itemtype[] items, int x, int y, int which)
     {
         _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
-        SetTextColor(items[which], false);
-
-        PrintX = (ushort)(item_i.x + item_i.indent);
-        PrintY = (ushort)(item_i.y + which * 13);
-        US_Print(items[which].text);
+        PrintMenuItem(item_i, items, which, MenuItemColor(items[which], false));
         _videoManager.Update();
     }
 
@@ -491,11 +431,7 @@ internal partial class Program
         _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
         y = basey + which * 13;
         _graphicManager.DrawPic("c_cursor1", x, y);
-        SetTextColor(items[which], true);
-
-        PrintX = (ushort)(item_i.x + item_i.indent);
-        PrintY = (ushort)(item_i.y + which * 13);
-        US_Print(items[which].text);
+        PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
 
         //
         // CALL CUSTOM ROUTINE IF IT IS NEEDED
@@ -526,17 +462,8 @@ internal partial class Program
         }
     }
 
-    internal static void SetTextColor(CP_itemtype items, bool hlight)
-    {
-        if (hlight)
-        {
-            SETFONTCOLOR(color_hlite[items.active], "BKGDCOLOR");
-        }
-        else
-        {
-            SETFONTCOLOR(color_norml[items.active], "BKGDCOLOR");
-        }
-    }
+    internal static string MenuItemColor(CP_itemtype item, bool hlight)
+        => hlight ? color_hlite[item.active] : color_norml[item.active];
 
     internal static void ShootSnd()
     {
@@ -647,9 +574,6 @@ internal partial class Program
         //
         // CACHE SOUNDS
         //
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-        fontnumber = "LargeFont";
-        WindowH = 200;
         if (_videoManager.screenHeight % 200 != 0)
             _videoManager.ClearScreen(0);
 
@@ -780,69 +704,33 @@ internal partial class Program
             // END GAME
             //
             case ScanCodes.sc_F7:
-                WindowH = 160;
-                if (Confirm("$ENDGAMESTR".ToLanguageText(language)) != 0)
+                if (Confirm("$ENDGAMESTR".ToLanguageText(language), MAXY) != 0)
                 {
                     playstate = playstatetypes.ex_died;
                     LastAttacker = null;
-                    pickquick = gamestate.lives = 0;
+                    gamestate.lives = 0;
                 }
 
-                WindowH = 200;
-                fontnumber = "SmallFont";
                 FindMenuItem(MainMenu, "savegame")?.active = 0;
                 return 1;
             //
             // QUICKSAVE
             //
+            // Always the quicksave file, never a save picked in the menus
             case ScanCodes.sc_F8:
-                if (SaveGamesAvail[LSItems.curpos] != 0 && pickquick != 0)
-                {
-                    fontnumber = "LargeFont";
-                    Message("$STR_SAVING".ToLanguageText(language) + "...");
-                    CP_SaveGame(1);
-                    fontnumber = "SmallFont";
-                }
-                else
-                {
-                    _videoManager.FadeOut();
-                    if (_videoManager.screenHeight % 200 != 0)
-                        _videoManager.ClearScreen(0);
-
-                    lastgamemusicoffset = StartCPMusic(MENUSONG);
-                    pickquick = CP_SaveGame(0);
-
-                    SETFONTCOLOR("Black", "White");
-                    _inputManager.ClearKeysDown();
-                    _videoManager.FadeOut();
-                    if (viewsize != 21)
-                        DrawPlayScreen();
-
-                    if (!startgame && !loadedgame)
-                        ContinueMusic(lastgamemusicoffset);
-
-                    if (loadedgame)
-                        playstate = playstatetypes.ex_abort;
-                    lasttimecount = (int)GameEngineManager.GetTimeCount();
-
-                    _inputManager.CenterMouse();
-                }
+                Message("$STR_SAVING".ToLanguageText(language) + "...", MAXY);
+                CP_SaveGame(1);
                 return 1;
 
             //
             // QUICKLOAD
             //
+            // The quicksave, or the load screen until there is one
             case ScanCodes.sc_F9:
-                if (SaveGamesAvail[LSItems.curpos] != 0 && pickquick != 0)
+                if (File.Exists(QuickSavePath))
                 {
-                    fontnumber = "LargeFont";
-
-                    var str = $"{"$STR_LGC".ToLanguageText(language)} {SaveGameNames[LSItems.curpos]}\"?";
-
-                    if (Confirm(str) != 0)
+                    if (Confirm("$STR_LS_QUICKLOAD".ToLanguageText(language), MAXY) != 0)
                         CP_LoadGame(1);
-
-                    fontnumber = "SmallFont";
                 }
                 else
                 {
@@ -851,9 +739,8 @@ internal partial class Program
                         _videoManager.ClearScreen(0);
 
                     lastgamemusicoffset = StartCPMusic(MENUSONG);
-                    pickquick = CP_LoadGame(0);    // loads lastgamemusicoffs
+                    CP_LoadGame(0);    // loads lastgamemusicoffs
 
-                    SETFONTCOLOR("Black", "White");
                     _inputManager.ClearKeysDown();
                     _videoManager.FadeOut();
                     if (viewsize != 21)
@@ -875,11 +762,8 @@ internal partial class Program
             // QUIT
             //
             case ScanCodes.sc_F10:
-                WindowX = WindowY = 0;
-                WindowW = 320;
-                WindowH = 160;
                 string endStr = gameInfo.EndStrings[(US_RndT() & (gameInfo.EndStrings.Count - 2)) + (US_RndT() & 1)];
-                if (Confirm(endStr) != 0)
+                if (Confirm(endStr, MAXY) != 0)
                 {
                     _videoManager.Update();
                     _audioManager.SetPaused(true);
@@ -890,8 +774,6 @@ internal partial class Program
                 }
 
                 DrawPlayBorder();
-                WindowH = 200;
-                fontnumber = "SmallFont";
                 return 1;
         }
 
@@ -1028,7 +910,6 @@ internal partial class Program
         // CHANGE "READ THIS!" TO NORMAL COLOR
         //
         FindMenuItem(MainMenu, "readthis")?.active = 1;
-        pickquick = 0;
 
         return 0;
     }
@@ -1036,7 +917,6 @@ internal partial class Program
     internal static void DrawNewEpisode()
     {
         DrawMenuComponents("new-episode");
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
         DrawMenu(NewEitems, NewEmenu);
 
         // Each episode's picture (pic-name in game-info) sits between the cursor and the name
@@ -1070,8 +950,9 @@ internal partial class Program
     }
 
     /// <summary>
-    /// The Options submenu. Each item runs its own screen (Sound, Control, Change View),
-    /// and this menu is drawn again when that screen is left.
+    /// The Options submenu. Most items run their own screen (Sound, Control, Change View,
+    /// Video), and this menu is drawn again when that screen is left; Messages switches the
+    /// messages over the view on and off in place.
     /// </summary>
     internal static int CP_Options(int _)
     {
@@ -1084,7 +965,16 @@ internal partial class Program
         do
         {
             which = HandleMenu(OptItems, OptMenu, null);
-            if (which >= 0)
+            if (SelectedId(OptMenu, which) == "messages")
+            {
+                // The player's own choice from now on, over the game pack's default (msg_enabled)
+                _hudMessageManager.EnabledSetting = !_hudMessageManager.Enabled;
+                if (!_hudMessageManager.Enabled)
+                    _hudMessageManager.Clear();
+                DrawOptionsMenu();
+                ShootSnd();
+            }
+            else if (which >= 0)
             {
                 DrawOptionsMenu();
                 MenuFadeIn();
@@ -1102,6 +992,7 @@ internal partial class Program
     {
         DrawMenuComponents("options");
         DrawMenu(OptItems, OptMenu);
+        DrawMenuCheckbox(OptItems, OptMenu, "messages", _hudMessageManager.Enabled);
         DrawMenuGun(OptItems);
         _videoManager.Update();
     }
@@ -1489,10 +1380,7 @@ internal partial class Program
         int y = iteminfo.y + index * 13;
         _videoManager.Bar(x, y, MenuChoiceWidth, 13, "BKGDCOLOR");
 
-        SetTextColor(items[index], false);
-        PrintX = (ushort)x;
-        PrintY = (ushort)y;
-        US_Print(value);
+        TextAt(x, y, MenuStyle(MenuItemColor(items[index], false))).Print(value);
     }
 
     /// <summary>
@@ -1525,18 +1413,17 @@ internal partial class Program
                     mouseenabled ^= true;
                     _inputManager.CenterMouse();
                     DrawCtlScreen();
-                    CusItems.curpos = -1;
                     ShootSnd();
                     break;
 
                 case "joystick-enabled":
                     joystickenabled ^= true;
                     DrawCtlScreen();
-                    CusItems.curpos = -1;
                     ShootSnd();
                     break;
 
                 case "mouse-sensitivity":
+                case "controller-settings":
                 case "customize":
                     DrawCtlScreen();
                     MenuFadeIn();
@@ -1555,10 +1442,6 @@ internal partial class Program
     {
         int i;
         DrawMenuComponents("control");
-
-        WindowX = 0;
-        WindowW = 320;
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
 
         var mouseEnabledItem = FindMenuItem(CtlMenu, "mouse-enabled");
         var mouseSensItem = FindMenuItem(CtlMenu, "mouse-sensitivity");
@@ -1598,244 +1481,110 @@ internal partial class Program
         _videoManager.Update();
     }
 
+    ////////////////////////////////////////////////////////////////////
+    //
+    // CONTROLLER SETTINGS
+    //
+    ////////////////////////////////////////////////////////////////////
+
+    // The dead zone slider moves in steps of this many percent
+    private const int JoyDeadzoneStep = 5;
+    private const int JoyDeadzoneMax = 50;
+
+    internal static int CP_ControllerSettings(int _)
+    {
+        int which;
+
+        DrawControllerMenu();
+        MenuFadeIn();
+        WaitKeyUp();
+
+        do
+        {
+            which = HandleMenu(JoyItems, JoyMenu, null, AdjustControllerSetting);
+
+            // Enter steps the stick layout round too; the sliders only move with left/right
+            if (SelectedId(JoyMenu, which) == "joy-sticks")
+                AdjustControllerSetting(which, 1);
+        }
+        while (which >= 0);
+
+        MenuFadeOut();
+
+        return 0;
+    }
+
+    internal static void DrawControllerMenu()
+    {
+        var language = _assetManager.GetText("en-us");
+
+        DrawMenuComponents("controller");
+        DrawMenu(JoyItems, JoyMenu);
+        DrawControllerValues();
+
+        // Which controller the settings are for, under the hints
+        CenteredText(0, 320, 160, new TextStyle(SMALL_FONT, "READCOLOR")).CPrint(FitText(_inputManager.ControllerName is string name
+            ? $"{"$STR_CTL_PAD".ToLanguageText(language)} {name}"
+            : "$STR_CTL_NOPAD".ToLanguageText(language), 300, SMALL_FONT));     // a controller's name can be long
+
+        DrawMenuGun(JoyItems);
+        _videoManager.Update();
+    }
+
+    private static void DrawControllerValues()
+    {
+        var language = _assetManager.GetText("en-us");
+
+        DrawMenuSlider(JoyItems, JoyMenu, "joy-deadzone", Math.Clamp(joydeadzone, 0, JoyDeadzoneMax) / JoyDeadzoneStep, JoyDeadzoneMax / JoyDeadzoneStep);
+        DrawMenuSlider(JoyItems, JoyMenu, "joy-turnspeed", Math.Clamp(joyturnspeed, 0, JOYTURNSPEEDS - 1), JOYTURNSPEEDS - 1);
+        DrawMenuChoice(JoyItems, JoyMenu, "joy-sticks", (joyclassicsticks ? "$STR_JOYCLASSIC" : "$STR_JOYMODERN").ToLanguageText(language));
+    }
+
+    // Left/right on a Controller Settings row
+    private static void AdjustControllerSetting(int which, int delta)
+    {
+        switch (SelectedId(JoyMenu, which))
+        {
+            case "joy-deadzone":
+                int deadzone = Math.Clamp((joydeadzone / JoyDeadzoneStep + delta) * JoyDeadzoneStep, 0, JoyDeadzoneMax);
+                if (deadzone == joydeadzone)
+                    return;
+                joydeadzone = deadzone;
+                break;
+
+            case "joy-turnspeed":
+                int turnspeed = Math.Clamp(joyturnspeed + delta, 0, JOYTURNSPEEDS - 1);
+                if (turnspeed == joyturnspeed)
+                    return;
+                joyturnspeed = turnspeed;
+                break;
+
+            case "joy-sticks":
+                joyclassicsticks = !joyclassicsticks;
+                break;
+
+            default:
+                return;
+        }
+
+        DrawControllerValues();
+        _videoManager.Update();
+        _audioManager.Play("menu/move1");
+    }
+
     // The on/off box to the left of a ToggleMenuItem's text
     private static void DrawMenuCheckbox(CP_iteminfo iteminfo, CP_itemtype[] items, string id, bool on)
     {
         int index = Array.FindIndex(items, item => item.id == id);
-        if (index < 0)
-            return;
+        if (index >= 0)
+            DrawMenuCheckbox(iteminfo, index, on);
+    }
 
+    private static void DrawMenuCheckbox(CP_iteminfo iteminfo, int index, bool on)
+    {
         int x = iteminfo.x + iteminfo.indent - 24;
         int y = iteminfo.y + index * 13 + 3;
         _graphicManager.DrawPic(on ? "c_selected" : "c_notselected", x, y);
-    }
-
-    internal static int CP_LoadGame(int quick)
-    {
-        int which, exit = 0;
-
-        //
-        // QUICKLOAD?
-        //
-        if (quick != 0)
-        {
-            which = LSItems.curpos;
-
-            if (SaveGamesAvail[which] != 0)
-            {
-                // Loaded in place: play carries straight on in the restored level.
-                loadedgame = true;
-                var loaded = LoadTheGame(GetSaveGamePath(which), 0, 0);
-                loadedgame = false;
-                if (!loaded)
-                    return 0;
-
-                if (viewsize != 21)
-                    DrawPlayScreen();
-                ContinueMusic(lastgamemusicoffset);
-                return 1;
-            }
-        }
-
-        DrawLoadSaveScreen(0);
-
-        do
-        {
-            which = HandleMenu(LSItems, LSMenu, TrackWhichGame);
-            if (which >= 0 && SaveGamesAvail[which] != 0)
-            {
-                ShootSnd();
-
-                DrawLSAction(0);
-                loadedgame = true;
-
-                if (!LoadTheGame(GetSaveGamePath(which), LSA_X + 8, LSA_Y + 5))
-                {
-                    loadedgame = false;
-                    DrawLoadSaveScreen(0);
-                    continue;
-                }
-
-                StartGame = 1;
-                ShootSnd();
-                //
-                // CHANGE "READ THIS!" TO NORMAL COLOR
-                //
-                FindMenuItem(MainMenu, "readthis")?.active = 1;
-                exit = 1;
-                break;
-            }
-
-        }
-        while (which >= 0);
-
-        MenuFadeOut();
-
-        return exit;
-    }
-
-    internal static void DrawLoadSaveScreen(int loadsave)
-    {
-        int i;
-
-        fontnumber = "LargeFont";
-        DrawMenuComponents(loadsave == 0 ? "load-game" : "save-game");
-
-        for (i = 0; i < LSMenu.Length; i++)
-            PrintLSEntry(i, "TEXTCOLOR");
-
-        DrawMenu(LSItems, LSMenu);
-        _videoManager.Update();
-        MenuFadeIn();
-        WaitKeyUp();
-    }
-
-    // Slot highlighted last, so it can be un-highlighted when the cursor moves
-    private static int lastgameon = 0;
-
-    internal static void TrackWhichGame (int w)
-    {
-        PrintLSEntry(lastgameon, "TEXTCOLOR");
-        PrintLSEntry(w, "HIGHLIGHT");
-
-        lastgameon = w;
-    }
-
-    internal static void PrintLSEntry(int w, string color)
-    {
-        var language = _assetManager.GetText("en-us");
-        SETFONTCOLOR(color, "BKGDCOLOR");
-        DrawOutline(LSItems.x + LSItems.indent, LSItems.y + w * 13, LSM_W - LSItems.indent - 15, 11, color,
-                     color);
-        PrintX = (ushort)(LSItems.x + LSItems.indent + 2);
-        PrintY = (ushort)(LSItems.y + w * 13 + 1);
-        fontnumber = "SmallFont";
-
-        if (SaveGamesAvail[w] != 0)
-            US_Print(new string(SaveGameNames[w]));
-        else
-            US_Print($"      - {"$STR_EMPTY".ToLanguageText(language)} -");
-
-        fontnumber = "LargeFont";
-    }
-
-    internal const int LSA_X = 96;
-    internal const int LSA_Y = 80;
-    internal const int LSA_W = 130;
-    internal const int LSA_H = 42;
-
-    internal static void DrawLSAction(int which)
-    {
-        var language = _assetManager.GetText("en-us");
-        DrawWindow(LSA_X, LSA_Y, LSA_W, LSA_H, "TEXTCOLOR");
-        DrawOutline(LSA_X, LSA_Y, LSA_W, LSA_H, "Black", "HIGHLIGHT");
-        _graphicManager.DrawPic("c_diskloading1", LSA_X + 8, LSA_Y + 5);
-
-        fontnumber = "LargeFont";
-        SETFONTCOLOR("Black", "TEXTCOLOR");
-        PrintX = LSA_X + 46;
-        PrintY = LSA_Y + 13;
-
-        if (which == 0)
-            US_Print("$STR_LOADING".ToLanguageText(language) + "...");
-        else
-            US_Print("$STR_SAVING".ToLanguageText(language) + "...");
-
-        _videoManager.Update();
-    }
-
-    internal static int CP_SaveGame(int quick)
-    {
-        var language = _assetManager.GetText("en-us");
-        int which, exit = 0;
-        string input = "";
-
-        //
-        // QUICKSAVE?
-        //
-        if (quick != 0)
-        {
-            which = LSItems.curpos;
-
-            if (SaveGamesAvail[which] != 0)
-            {
-                if (!SaveTheGame(GetSaveGamePath(which), SaveGameNames[which], 0, 0))
-                    ShowSaveFailed();
-                return 1;
-            }
-        }
-
-        DrawLoadSaveScreen(1);
-        do
-        {
-            which = HandleMenu(LSItems, LSMenu, TrackWhichGame);
-            if (which >= 0)
-            {
-                //
-                // OVERWRITE EXISTING SAVEGAME?
-                //
-                if (SaveGamesAvail[which] != 0)
-                {
-                    if (Confirm("$GAMESVD".ToLanguageText(language)) == 0)
-                    {
-                        DrawLoadSaveScreen(1);
-                        continue;
-                    }
-                    else
-                    {
-                        DrawLoadSaveScreen(1);
-                        PrintLSEntry(which, "HIGHLIGHT");
-                        _videoManager.Update();
-                    }
-                }
-
-                ShootSnd();
-
-                input = SaveGameNames[which];
-
-                fontnumber = "SmallFont";
-                if (SaveGamesAvail[which] == 0)
-                    _videoManager.Bar(LSItems.x + LSItems.indent + 1, LSItems.y + which * 13 + 1,
-                             LSM_W - LSItems.indent - 16, 10, "BKGDCOLOR");
-                _videoManager.Update();
-
-                if (US_LineInput
-                    (LSItems.x + LSItems.indent + 2, LSItems.y + which * 13 + 1, ref input, input, true, 31,
-                     LSM_W - LSItems.indent - 30))
-                {
-                    DrawLSAction(1);
-                    if (!SaveTheGame(GetSaveGamePath(which), input, LSA_X + 8, LSA_Y + 5))
-                    {
-                        ShowSaveFailed();
-                        DrawLoadSaveScreen(1);
-                        continue;
-                    }
-
-                    SaveGamesAvail[which] = 1;
-                    SaveGameNames[which] = input;
-                    ShootSnd();
-                    exit = 1;
-                }
-                else
-                {
-                    _videoManager.Bar(LSItems.x + LSItems.indent + 1, LSItems.y + which * 13 + 1,
-                             LSM_W - LSItems.indent - 16, 10, "BKGDCOLOR");
-                    PrintLSEntry(which, "HIGHLIGHT");
-                    _videoManager.Update();
-                    _audioManager.Play("menu/escape");
-                    continue;
-                }
-
-                fontnumber = "LargeFont";
-                break;
-            }
-
-        }
-        while (which >= 0);
-
-        MenuFadeOut();
-
-        return exit;
     }
 
     internal static int CP_ChangeView(int _)
@@ -1844,9 +1593,6 @@ internal partial class Program
         int exit = 0, oldview, newview;
         ControlInfo ci;
 
-        WindowX = WindowY = 0;
-        WindowW = 320;
-        WindowH = 200;
         newview = oldview = viewsize;
         DrawChangeView(oldview);
         MenuFadeIn();
@@ -1921,14 +1667,10 @@ internal partial class Program
 
         ShowViewSize(view);
 
-        PrintY = (ushort)((_videoManager.screenHeight / _videoManager.scaleFactor) - 39);
-        WindowX = 0;
-        WindowY = 320;                                  // TODO: Check this!
-        SETFONTCOLOR("HIGHLIGHT", "BKGDCOLOR");
-
-        US_CPrint("$STR_SIZE1".ToLanguageText(language) +"\n");
-        US_CPrint("$STR_SIZE2".ToLanguageText(language) +"\n");
-        US_CPrint("$STR_SIZE3".ToLanguageText(language));
+        var help = CenteredText(0, 320, rescaledHeight - 39, MenuStyle("HIGHLIGHT"));
+        help.CPrint("$STR_SIZE1".ToLanguageText(language) + "\n");
+        help.CPrint("$STR_SIZE2".ToLanguageText(language) + "\n");
+        help.CPrint("$STR_SIZE3".ToLanguageText(language));
         _videoManager.Update();
     }
 
@@ -1942,14 +1684,11 @@ internal partial class Program
 
     internal static int CP_ViewScores(int _)
     {
-        fontnumber = "SmallFont";
-
         StartCPMusic(HIGHSCORESSONG);
 
         DrawHighScores();
         _videoManager.Update();
         MenuFadeIn();
-        fontnumber = "LargeFont";
 
         _inputManager.Ack();
 
@@ -1967,7 +1706,7 @@ internal partial class Program
         DrawMainMenu();
         if (res == 0) return 0;
 
-        pickquick = gamestate.lives = 0;
+        gamestate.lives = 0;
         playstate = playstatetypes.ex_died;
         LastAttacker = null;
 
@@ -2074,575 +1813,8 @@ internal partial class Program
         MenuFadeIn();
     }
 
-    ////////////////////////////////////////////////////////////////////
-    //
-    // CUSTOMIZE CONTROLS
-    //
-    ////////////////////////////////////////////////////////////////////
-
-    internal enum CustomCtlOptions { MOUSE, JOYSTICK, KEYBOARDBTNS, KEYBOARDMOVE };        // FOR INPUT TYPES
-    internal enum CustomCtlActions : byte { FIRE, STRAFE, RUN, OPEN };
-    enum CustomCtlMove : byte { FWRD, RIGHT, BKWD, LEFT };
-    static int[] moveorder = { (byte)CustomCtlMove.LEFT, (byte)CustomCtlMove.RIGHT, (byte)CustomCtlMove.FWRD, (byte)CustomCtlMove.BKWD };
-    static string[] mbarray = { "b0", "b1", "b2", "b3" };
-    static byte[] order = { (byte)CustomCtlActions.RUN, (byte)CustomCtlActions.OPEN, (byte)CustomCtlActions.FIRE, (byte)CustomCtlActions.STRAFE };
-    internal static int CustomControls(int _)
-    {
-        int which;
-
-        DrawCustomScreen();
-        do
-        {
-            which = HandleMenu(CusItems, CusMenu, FixupCustom);
-            switch (SelectedId(CusMenu, which))
-            {
-                case "mouse":
-                    DefineMouseBtns();
-                    DrawCustMouse(1);
-                    break;
-                case "joystick":
-                    DefineJoyBtns();
-                    DrawCustJoy(0);
-                    break;
-                case "keyboard":
-                    DefineKeyBtns();
-                    DrawCustKeybd(0);
-                    break;
-                case "keyboard-move":
-                    DefineKeyMove();
-                    DrawCustKeys(0);
-                    break;
-            }
-        }
-        while (which >= 0);
-
-        MenuFadeOut();
-
-        return 0;
-    }
-
-    /// <summary>
-    /// Screen Y of a binding row on the customize screen; each row sits on its menu item
-    /// </summary>
-    private static int CustomRowY(string id)
-    {
-        int index = Array.FindIndex(CusMenu, item => item.id == id);
-        return CusItems.y + Math.Max(index, 0) * 13;
-    }
-
-    /// <summary>
-    /// Redraws the binding row for a customize menu item
-    /// </summary>
-    private static void DrawCustomRow(string? id, int hilight)
-    {
-        switch (id)
-        {
-            case "mouse":
-                DrawCustMouse(hilight);
-                break;
-            case "joystick":
-                DrawCustJoy(hilight);
-                break;
-            case "keyboard":
-                DrawCustKeybd(hilight);
-                break;
-            case "keyboard-move":
-                DrawCustKeys(hilight);
-                break;
-        }
-    }
-
-    ////////////////////////
-    //
-    // DEFINE THE MOUSE BUTTONS
-    //
-    internal static void
-    DefineMouseBtns()
-    {
-        CustomCtrls mouseallowed = new( 0, 1, 1, 1 );
-        EnterCtrlData(CustomRowY("mouse"), ref mouseallowed, DrawCustMouse, PrintCustMouse, CustomCtlOptions.MOUSE);
-    }
-
-
-    ////////////////////////
-    //
-    // DEFINE THE JOYSTICK BUTTONS
-    //
-    internal static void
-    DefineJoyBtns()
-    {
-        CustomCtrls joyallowed = new(1, 1, 1, 1);
-        EnterCtrlData(CustomRowY("joystick"), ref joyallowed, DrawCustJoy, PrintCustJoy, CustomCtlOptions.JOYSTICK);
-    }
-
-
-    ////////////////////////
-    //
-    // DEFINE THE KEYBOARD BUTTONS
-    //
-    internal static void
-    DefineKeyBtns()
-    {
-        CustomCtrls keyallowed = new(1, 1, 1, 1);
-        EnterCtrlData(CustomRowY("keyboard"), ref keyallowed, DrawCustKeybd, PrintCustKeybd, CustomCtlOptions.KEYBOARDBTNS);
-    }
-
-
-    ////////////////////////
-    //
-    // DEFINE THE KEYBOARD BUTTONS
-    //
-    internal static void
-    DefineKeyMove()
-    {
-        CustomCtrls keyallowed = new( 1, 1, 1, 1 );
-        EnterCtrlData(CustomRowY("keyboard-move"), ref keyallowed, DrawCustKeys, PrintCustKeys, CustomCtlOptions.KEYBOARDMOVE);
-    }
-
-    internal static void EnterCtrlData(int rowY, ref CustomCtrls cust, Action<int> DrawRtn, Action<int> PrintRtn,
-                   CustomCtlOptions type)
-    {
-        int j, z, exit, tick, redraw, which = 0, x = 0, picked, lastFlashTime;
-        ControlInfo ci;
-
-
-        ShootSnd();
-        PrintY = (ushort)rowY;
-        _inputManager.ClearKeysDown();
-        exit = 0;
-        redraw = 1;
-        //
-        // FIND FIRST SPOT IN ALLOWED ARRAY
-        //
-        for (j = 0; j < 4; j++)
-            if (cust.allowed[j] != 0)
-            {
-                which = j;
-                break;
-            }
-
-        do
-        {
-            if (redraw != 0)
-            {
-                x = CST_START + CST_SPC * which;
-                DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
-
-                DrawRtn(1);
-                DrawWindow(x - 2, PrintY, CST_SPC, 11, "TEXTCOLOR");
-                DrawOutline(x - 2, PrintY, CST_SPC, 11, "Black", "HIGHLIGHT");
-                SETFONTCOLOR("Black", "TEXTCOLOR");
-                PrintRtn(which);
-                PrintX = (ushort)x;
-                SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-                _videoManager.Update();
-                WaitKeyUp();
-                redraw = 0;
-            }
-
-            GameEngineManager.DelayMs(5);
-            ReadAnyControl(out ci);
-
-            if (type == CustomCtlOptions.MOUSE || type == CustomCtlOptions.JOYSTICK)
-                if (_inputManager.IsKeyDown(ScanCodes.sc_Enter) || _inputManager.IsKeyDown(ScanCodes.sc_Control) || _inputManager.IsKeyDown(ScanCodes.sc_Alt))
-                {
-                    _inputManager.ClearKeysDown();
-                    ci.button0 = ci.button1 = false;
-                }
-
-            //
-            // CHANGE BUTTON VALUE?
-            //
-            if ((type != CustomCtlOptions.KEYBOARDBTNS && type != CustomCtlOptions.KEYBOARDMOVE) && (ci.button0 || ci.button1 || ci.button2 || ci.button3) ||
-                ((type == CustomCtlOptions.KEYBOARDBTNS || type == CustomCtlOptions.KEYBOARDMOVE) && _inputManager.GetLastKeyPressed() == ScanCodes.sc_Enter))
-            {
-                lastFlashTime = (int)GameEngineManager.GetTimeCount();
-                tick = picked = 0;
-                SETFONTCOLOR("Black", "TEXTCOLOR");
-
-                if (type == CustomCtlOptions.KEYBOARDBTNS || type == CustomCtlOptions.KEYBOARDMOVE)
-                    _inputManager.ClearKeysDown();
-
-                while (true)
-                {
-                    int button, result = 0;
-
-                    //
-                    // FLASH CURSOR
-                    //
-                    if (GameEngineManager.GetTimeCount() - lastFlashTime > 10)
-                    {
-                        switch (tick)
-                        {
-                            case 0:
-                                _videoManager.Bar(x, PrintY + 1, CST_SPC - 2, 10, "TEXTCOLOR");
-                                break;
-                            case 1:
-                                PrintX = (ushort)x;
-                                US_Print("?");
-                                _audioManager.Play("world/hitwall");
-                                break;
-                        }
-                        tick ^= 1;
-                        lastFlashTime = (int)GameEngineManager.GetTimeCount();
-                        _videoManager.Update();
-                    }
-                    else GameEngineManager.DelayMs(5);
-
-                    //
-                    // WHICH TYPE OF INPUT DO WE PROCESS?
-                    //
-                    switch (type)
-                    {
-                        case CustomCtlOptions.MOUSE:
-                            button = _inputManager.MouseButtons();
-                            switch (button)
-                            {
-                                case 1:
-                                    result = 1;
-                                    break;
-                                case 2:
-                                    result = 2;
-                                    break;
-                                case 4:
-                                    result = 3;
-                                    break;
-                            }
-
-                            if (result != 0)
-                            {
-                                for (z = 0; z < 4; z++)
-                                    if (order[which] == (byte)buttonmouse[z])
-                                    {
-                                        buttonmouse[z] = buttontypes.bt_nobutton;
-                                        break;
-                                    }
-
-                                buttonmouse[result - 1] = (buttontypes)order[which];
-                                picked = 1;
-                                ShootSnd();
-                            }
-                            break;
-
-                        case CustomCtlOptions.JOYSTICK:
-                            if (ci.button0)
-                                result = 1;
-                            else if (ci.button1)
-                                result = 2;
-                            else if (ci.button2)
-                                result = 3;
-                            else if (ci.button3)
-                                result = 4;
-
-                            if (result != 0)
-                            {
-                                for (z = 0; z < 4; z++)
-                                {
-                                    if (order[which] == (byte)buttonjoy[z])
-                                    {
-                                        buttonjoy[z] = buttontypes.bt_nobutton;
-                                        break;
-                                    }
-                                }
-
-                                buttonjoy[result - 1] = (buttontypes)order[which];
-                                picked = 1;
-                                ShootSnd();
-                            }
-                            break;
-
-                        case CustomCtlOptions.KEYBOARDBTNS:
-                            if (_inputManager.GetLastKeyPressed() != 0 && _inputManager.GetLastKeyPressed() != ScanCodes.sc_Escape)
-                            {
-                                buttonscan[order[which]] = _inputManager.GetLastKeyPressed();
-                                picked = 1;
-                                ShootSnd();
-                                _inputManager.ClearKeysDown();
-                            }
-                            break;
-
-                        case CustomCtlOptions.KEYBOARDMOVE:
-                            if (_inputManager.GetLastKeyPressed() != 0 && _inputManager.GetLastKeyPressed() != ScanCodes.sc_Escape)
-                            {
-                                dirscan[moveorder[which]] = _inputManager.GetLastKeyPressed();
-                                picked = 1;
-                                ShootSnd();
-                                _inputManager.ClearKeysDown();
-                            }
-                            break;
-                    }
-
-                    //
-                    // EXIT INPUT?
-                    //
-                    if (_inputManager.IsKeyDown(ScanCodes.sc_Escape) || type != CustomCtlOptions.JOYSTICK && ci.button1)
-                    {
-                        picked = 1;
-                        _audioManager.Play("menu/escape");
-                    }
-
-                    if (picked != 0) break;
-
-                    ReadAnyControl(out ci);
-                }
-
-                SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
-                redraw = 1;
-                WaitKeyUp();
-                continue;
-            }
-
-            if (ci.button1 || _inputManager.IsKeyDown(ScanCodes.sc_Escape))
-                exit = 1;
-
-            //
-            // MOVE TO ANOTHER SPOT?
-            //
-            switch (ci.dir)
-            {
-                case Direction.West:
-                    do
-                    {
-                        which--;
-                        if (which < 0)
-                            which = 3;
-                    }
-                    while (cust.allowed[which] == 0);
-                    redraw = 1;
-                    _audioManager.Play("menu/move1");
-                    do
-                    {
-                        ReadAnyControl(out ci);
-                        GameEngineManager.DelayMs(5);
-                    }
-                    while (ci.dir != Direction.None);
-                    _inputManager.ClearKeysDown();
-                    break;
-
-                case Direction.East:
-                    do
-                    {
-                        which++;
-                        if (which > 3)
-                            which = 0;
-                    }
-                    while (cust.allowed[which] == 0);
-                    redraw = 1;
-                    _audioManager.Play("menu/move1");
-                    do
-                    {
-                        ReadAnyControl(out ci);
-                        GameEngineManager.DelayMs(5);
-                    }
-                    while (ci.dir != Direction.None);
-                    _inputManager.ClearKeysDown();
-                    break;
-                case Direction.North:
-                case Direction.South:
-                    exit = 1;
-                    break;
-            }
-        }
-        while (exit == 0);
-
-        _audioManager.Play("menu/escape");
-        WaitKeyUp();
-        DrawWindow(5, PrintY - 1, 310, 13, "BKGDCOLOR");
-    }
-
-
-    ////////////////////////
-    //
-    // FIXUP GUN CURSOR OVERDRAW SHIT
-    //
-    internal static int fixup_lastwhich = -1;
-    internal static void FixupCustom(int w)
-    {
-        int y = CusItems.y + w * 13;
-
-
-        _videoManager.HorizontalLine(7, 32, y - 1, "DEACTIVE");
-        _videoManager.HorizontalLine(7, 32, y + 12, "BORD2COLOR");
-        _videoManager.HorizontalLine(7, 32, y - 2, "BORDCOLOR");
-        _videoManager.HorizontalLine(7, 32, y + 13, "BORDCOLOR");
-        DrawCustomRow(SelectedId(CusMenu, w), 1);
-
-
-        if (fixup_lastwhich >= 0)
-        {
-            y = CusItems.y + fixup_lastwhich * 13;
-            _videoManager.HorizontalLine(7, 32, y - 1, "DEACTIVE");
-            _videoManager.HorizontalLine(7, 32, y + 12, "BORD2COLOR");
-            _videoManager.HorizontalLine(7, 32, y - 2, "BORDCOLOR");
-            _videoManager.HorizontalLine(7, 32, y + 13, "BORDCOLOR");
-            if (fixup_lastwhich != w)
-                DrawCustomRow(SelectedId(CusMenu, fixup_lastwhich), 0);
-        }
-
-        fixup_lastwhich = w;
-    }
-
-
-    ////////////////////////
-    //
-    // DRAW CUSTOMIZE SCREEN
-    //
-
-    internal static void DrawCustomScreen()
-    {
-        int i;
-
-        // Title, section headers, column labels and row windows
-        DrawMenuComponents("customize");
-        WindowX = 0;
-        WindowW = 320;
-
-        // The current bindings, one row per menu item
-        foreach (var item in CusMenu)
-            DrawCustomRow(item.id, 0);
-        //
-        // PICK STARTING POINT IN MENU
-        //
-        if (CusItems.curpos < 0)
-            for (i = 0; i < CusItems.amount; i++)
-                if (CusMenu[i].active != 0)
-                {
-                    CusItems.curpos = (short)i;
-                    break;
-                }
-
-
-        _videoManager.Update();
-        MenuFadeIn();
-    }
-
-    internal static void
-    PrintCustMouse(int i)
-    {
-        int j;
-
-        for (j = 0; j < 4; j++)
-            if (order[i] == (byte)buttonmouse[j])
-            {
-                PrintX = (ushort)(CST_START + CST_SPC * i);
-                US_Print(mbarray[j]);
-                break;
-            }
-    }
-
-    internal static void DrawCustMouse(int hilight)
-    {
-        int i;
-        string color;
-
-
-        color = "TEXTCOLOR";
-        if (hilight != 0)
-            color = "HIGHLIGHT";
-        SETFONTCOLOR(color, "BKGDCOLOR");
-
-        if (!mouseenabled)
-        {
-            SETFONTCOLOR("DEACTIVE", "BKGDCOLOR");
-            FindMenuItem(CusMenu, "mouse")?.active = 0;
-        }
-        else
-            FindMenuItem(CusMenu, "mouse")?.active = 1;
-
-        PrintY = (ushort)CustomRowY("mouse");
-        for (i = 0; i < 4; i++)
-            PrintCustMouse(i);
-    }
-
-    internal static void PrintCustJoy(int i)
-    {
-        int j;
-
-        for (j = 0; j < 4; j++)
-        {
-            if (order[i] == (byte)buttonjoy[j])
-            {
-                PrintX = (ushort)(CST_START + CST_SPC * i);
-                US_Print(mbarray[j]);
-                break;
-            }
-        }
-    }
-
-    internal static void DrawCustJoy(int hilight)
-    {
-        int i;
-        string color;
-
-        color = "TEXTCOLOR";
-        if (hilight != 0)
-            color = "HIGHLIGHT";
-        SETFONTCOLOR(color, "BKGDCOLOR");
-
-        if (!joystickenabled)
-        {
-            SETFONTCOLOR("DEACTIVE", "BKGDCOLOR");
-            FindMenuItem(CusMenu, "joystick")?.active = 0;
-        }
-        else
-            FindMenuItem(CusMenu, "joystick")?.active = 1;
-
-        PrintY = (ushort)CustomRowY("joystick");
-        for (i = 0; i < 4; i++)
-            PrintCustJoy(i);
-    }
-
-
-    internal static void
-    PrintCustKeybd(int i)
-    {
-        PrintX = (ushort)(CST_START + CST_SPC * i);
-        US_Print(_inputManager.GetScanName(buttonscan[order[i]]));
-    }
-
-    internal static void
-    DrawCustKeybd(int hilight)
-    {
-        int i;
-        string color;
-
-
-        color = "TEXTCOLOR";
-        if (hilight != 0)
-            color = "HIGHLIGHT";
-        SETFONTCOLOR(color, "BKGDCOLOR");
-
-        PrintY = (ushort)CustomRowY("keyboard");
-        for (i = 0; i < 4; i++)
-            PrintCustKeybd(i);
-    }
-
-    internal static void
-    PrintCustKeys(int i)
-    {
-        PrintX = (ushort)(CST_START + CST_SPC * i);
-        US_Print(_inputManager.GetScanName(dirscan[moveorder[i]]));
-    }
-
-    internal static void DrawCustKeys(int hilight)
-    {
-        int i;
-        string color;
-
-
-        color = "TEXTCOLOR";
-        if (hilight != 0)
-            color = "HIGHLIGHT";
-        SETFONTCOLOR(color, "BKGDCOLOR");
-
-        PrintY = (ushort)CustomRowY("keyboard-move");
-        for (i = 0; i < 4; i++)
-            PrintCustKeys(i);
-    }
     internal static void CleanupControlPanel()
     {
-        fontnumber = "SmallFont";
-
         // Keep whatever was changed in the menus (view size, controls, sensitivity) even if the
         // game doesn't get to exit cleanly.
         _gameEngineManager.WriteConfig();
@@ -2652,27 +1824,28 @@ internal partial class Program
     {
         int x, y;
 
-        x = iteminfo.x;
+        x = iteminfo.x & -8;    // same column HandleMenu draws and erases the gun in
         y = iteminfo.y + iteminfo.curpos * 13 - 2;
         _graphicManager.DrawPic("c_cursor1", x, y);
     }
 
-    internal static int Confirm(string text)
+    /// <param name="areaHeight">Height of the screen area the question is centered in: the play view (MAXY) in a game</param>
+    internal static int Confirm(string text, int areaHeight = 200)
     {
         var language = _assetManager.GetText("en-us");
         int xit = 0, x, y, tick = 0, lastBlinkTime;
         string[] whichsnd = ["menu/escape", "menu/activate"];
         ControlInfo ci;
 
-        Message(text.ToLanguageText(language));
+        var message = Message(text.ToLanguageText(language), areaHeight);
         _inputManager.ClearKeysDown();
         WaitKeyUp();
 
         //
         // BLINK CURSOR
         //
-        x = PrintX;
-        y = PrintY;
+        x = message.PrintX;
+        y = message.PrintY;
         lastBlinkTime = (int)GameEngineManager.GetTimeCount();
 
         do
@@ -2687,9 +1860,7 @@ internal partial class Program
                         _videoManager.Bar(x, y, 8, 13, "TEXTCOLOR");
                         break;
                     case 1:
-                        PrintX = (ushort)x;
-                        PrintY = (ushort)y;
-                        US_Print("_");
+                        _graphicManager.DrawText(x, y, "_", message.Style);
                         break;
                 }
                 _videoManager.Update();
@@ -2713,14 +1884,18 @@ internal partial class Program
         return xit;
     }
 
+    /// <summary>
+    /// Waits for the select and back buttons, Space, Enter and Escape to be let go, so one press
+    /// isn't taken again by the next screen. Matters most for a controller, whose buttons are read
+    /// as they are rather than as presses that ClearKeysDown can throw away.
+    /// </summary>
     internal static void WaitKeyUp()
     {
         ControlInfo ci;
-        bool keyPressed = false;
-        while (keyPressed)
+        while (true)
         {
             ReadAnyControl(out ci);
-            keyPressed =
+            bool keyPressed =
                ci.button0 ||
                ci.button1 ||
                ci.button2 ||
@@ -2729,18 +1904,27 @@ internal partial class Program
                _inputManager.IsKeyDown(ScanCodes.sc_Enter) ||
                _inputManager.IsKeyDown(ScanCodes.sc_Escape);
 
-            _inputManager.WaitAndProcessEvents();
+            if (!keyPressed)
+                break;
+
+            GameEngineManager.DelayMs(5);
         }
     }
 
-    internal static void Message(string text)
+    /// <summary>
+    /// Shows text in a box in the middle of the screen, and returns the box's text window with its
+    /// print position just after the text
+    /// </summary>
+    /// <param name="areaHeight">Height of the screen area the box is centered in: the play view (MAXY) in a game</param>
+    internal static TextWindow Message(string text, int areaHeight = 200)
     {
         int h = 0, w = 0, mw = 0, i, len = text.Length;
+        var style = new TextStyle(LARGE_FONT, "Black", "TEXTCOLOR");
 
-        fontnumber = "LargeFont";
-        FontAsset font = _assetManager.Find<FontAsset>(fontnumber);
-        if (font == null) return;
-        h = font.Height;
+        var font = _fontManager.Find(style.Font);
+        if (font == null)
+            return TextWindow.FullScreen(_graphicManager, style);
+        h = font.LineHeight;
 
         for (i = 0; i < len; i++)
         {
@@ -2749,23 +1933,24 @@ internal partial class Program
                 if (w > mw)
                     mw = w;
                 w = 0;
-                h += font.Height;
+                h += font.LineHeight;
             }
             else
-                w += font.Width[(byte)text[i]];
+                w += font.Advance(text[i]);
         }
 
         if (w + 10 > mw)
             mw = w + 10;
 
-        PrintY = (ushort)((WindowH / 2) - (h / 2));
-        PrintX = WindowX = (ushort)(160 - (mw / 2));
+        int x = 160 - (mw / 2);
+        int y = (areaHeight / 2) - (h / 2);
 
-        DrawWindow(WindowX - 5, PrintY - 5, mw + 10, h + 10, "TEXTCOLOR");
-        DrawOutline(WindowX - 5, PrintY - 5, mw + 10, h + 10, "Black", "HIGHLIGHT");
-        SETFONTCOLOR("Black", "TEXTCOLOR");
-        US_Print(text);
+        DrawWindow(x - 5, y - 5, mw + 10, h + 10, "TEXTCOLOR");
+        DrawOutline(x - 5, y - 5, mw + 10, h + 10, "Black", "HIGHLIGHT");
+        var window = new TextWindow(_graphicManager, x, y, mw, h, style);
+        window.Print(text);
         _videoManager.Update();
+        return window;
     }
 
     internal static void FreeMusic()
@@ -2819,10 +2004,10 @@ internal partial class Program
         (VidMenu, VidItems) = LoadMenu("video");
         (SndMenu, SndItems) = LoadMenu("sound");
         (CtlMenu, CtlItems) = LoadMenu("control", curpos: -1);
-        (CusMenu, CusItems) = LoadMenu("customize", curpos: -1);
+        (JoyMenu, JoyItems) = LoadMenu("controller");
+        customizeRows = LoadCustomizeRows();
         (NewEmenu, NewEitems) = LoadMenu("new-episode");
         (NewMenu, NewItems) = LoadMenu("new-game");
-        (LSMenu, LSItems) = LoadMenu("load-game");
 
         (MusicMenu, MusicItems) = LoadMenu("jukebox");
         MusicItems.amount = (short)Math.Min(JukeboxPageSize, MusicMenu.Length);
@@ -2904,11 +2089,8 @@ internal partial class Program
                     .Select(skill => new CP_itemtype(1, skill.Name.ToLanguageText(language), null, skill))
                     .ToArray();
 
-            case "save-slots":
-                // Text is drawn by PrintLSEntry from the save files, not by the menu
-                return SaveGamesAvail
-                    .Select(_ => new CP_itemtype(1, "", null))
-                    .ToArray();
+            case "mods":
+                return BuildModsPage();
 
             default:
                 Console.WriteLine($"Menu '{menuName}': unknown items-source '{source}'");
@@ -2976,30 +2158,78 @@ internal partial class Program
         StartCPMusic(menu.Music);
     }
 
+    /// <summary>A label's shadow: its own, none, or null to keep the font's</summary>
+    private static FontShadow? LabelShadow(Label label)
+    {
+        if (label.Shadow == false)
+            return FontShadow.None;
+
+        if (label.Shadow == true || label.ShadowX != null || label.ShadowY != null || label.ShadowColor != null)
+        {
+            var d = FontShadow.Default;
+            return new FontShadow(label.ShadowX ?? d.X, label.ShadowY ?? d.Y, label.ShadowColor ?? d.Color);
+        }
+
+        return null;
+    }
+
+    /// <summary>A label's gradient: its own, none, or null to keep the font's</summary>
+    private static FontGradient? LabelGradient(Label label)
+    {
+        if (label.Gradient == false)
+            return FontGradient.None;
+
+        if (label.Gradient == true || label.GradientTop != null || label.GradientBottom != null)
+        {
+            var d = FontGradient.Default;
+            return new FontGradient(label.GradientTop ?? d.Top, label.GradientBottom ?? d.Bottom);
+        }
+
+        return null;
+    }
+
+    /// <summary>A label's outline: its own, none, or null to keep the font's</summary>
+    private static FontOutline? LabelOutline(Label label)
+    {
+        if (label.Outline == false)
+            return FontOutline.None;
+
+        if (label.Outline == true || label.OutlineColor != null || label.OutlineThickness != null)
+        {
+            var d = FontOutline.Default;
+            return new FontOutline(label.OutlineColor ?? d.Color, Math.Max(label.OutlineThickness ?? d.Thickness, 1));
+        }
+
+        return null;
+    }
+
+    /// <summary>A label's glow: its own, none, or null to keep the font's</summary>
+    private static FontGlow? LabelGlow(Label label)
+    {
+        if (label.Glow == false)
+            return FontGlow.None;
+
+        if (label.Glow == true || label.GlowColor != null || label.GlowRadius != null || label.GlowStrength != null)
+        {
+            var d = FontGlow.Default;
+            return new FontGlow(label.GlowColor ?? d.Color, Math.Max(label.GlowRadius ?? d.Radius, 1),
+                Math.Clamp(label.GlowStrength ?? d.Strength, 0, 100));
+        }
+
+        return null;
+    }
+
     private static void DrawLabel(Label label)
     {
         var language = _assetManager.GetText("en-us");
-        var oldFont = fontnumber;
-
-        fontnumber = label.Font;
-        SETFONTCOLOR(label.Color, "BKGDCOLOR");
-        PrintY = (ushort)label.Y;
+        var style = new TextStyle(label.Font, label.Color, Shadow: LabelShadow(label), Gradient: LabelGradient(label),
+            Outline: LabelOutline(label), Glow: LabelGlow(label));
 
         var text = label.Text.ToLanguageText(language);
         if (label.HorizontalOrientation == HorizontalOrientation.Center)
-        {
-            WindowX = 0;
-            WindowW = 320;
-            US_CPrint(text);
-        }
+            CenteredText(0, 320, label.Y, style).CPrint(text);
         else
-        {
-            PrintX = (ushort)label.X;
-            US_Print(text);
-        }
-
-        fontnumber = oldFont;
-        SETFONTCOLOR("TEXTCOLOR", "BKGDCOLOR");
+            TextAt(label.X, label.Y, style).Print(text);
     }
 
     private static Func<int, int>? MapFunction(string menuName, MenuSwitcher? mi)
@@ -3010,8 +2240,10 @@ internal partial class Program
             CP_NewGame,
             CP_Options,
             CP_Video,
+            CP_Mods,
             CP_Sound,
             CP_Control,
+            CP_ControllerSettings,
             CP_LoadGame,
             CP_SaveGame,
             CP_ChangeView,

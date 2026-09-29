@@ -12,11 +12,6 @@ internal struct Point
     public static Point Zero => new Point { x = 0, y = 0 };
 }
 
-internal struct Rect
-{
-    public Point ul, lr;
-}
-
 internal class visobj_t
 {
     public byte tilex, tiley;
@@ -33,10 +28,13 @@ internal enum buttontypes
     bt_strafe,
     bt_run,
     bt_use,
-    bt_readyknife,
-    bt_readypistol,
-    bt_readymachinegun,
-    bt_readychaingun,
+    // Weapon slot keys: slot N picks a weapon with `weapon.slot: N`. Slots 1-4 sit where the old
+    // ready-knife/pistol/machine gun/chaingun buttons were, so demos and the old config.cfg
+    // layout (both indexed by this enum) still line up; 5-9 and 0 come after automap.
+    bt_slot1,
+    bt_slot2,
+    bt_slot3,
+    bt_slot4,
     bt_nextweapon,
     bt_prevweapon,
     bt_esc,
@@ -48,18 +46,14 @@ internal enum buttontypes
     bt_turnleft,
     bt_turnright,
     bt_automap,
+    bt_slot5,
+    bt_slot6,
+    bt_slot7,
+    bt_slot8,
+    bt_slot9,
+    bt_slot0,
 
     NUMBUTTONS
-};
-
-internal enum weapontypes
-{
-    wp_none = -1,
-    wp_knife,
-    wp_pistol,
-    wp_machinegun,
-    wp_chaingun,
-    NUMWEAPONS
 };
 
 internal enum difficultytypes
@@ -110,16 +104,25 @@ internal class gametype
     public int oldscore, score, nextextra;
     public short lives;
     public short health;
-    public weapontypes weapon, chosenweapon;
+    // The weapon in hand and the one the player picked, as held inventory item types (actordefs
+    // Weapon classes, e.g. "Pistol"). They differ while out of ammo forces a fallback; null
+    // means no weapon (dead).
+    public string? weapon, chosenweapon;
 
     public short faceframe;
-    public short attackframe, attackcount, weaponframe;
 
     public short cluster, secretcount, treasurecount, killcount,
                 secrettotal, treasuretotal, killtotal;
-    public int TimeCount;
+    public int TimeCount;               // tics on this level
+    public int PlayTime;                // tics since the game began, over every level
     public int killx, killy;
     public bool victoryflag;            // set during victory animations
+
+    private static string? ReadWeapon(BinaryReader br)
+    {
+        var name = br.ReadString();
+        return name.Length == 0 ? null : name;
+    }
 
     public static gametype Read(BinaryReader br) => new()
     {
@@ -130,12 +133,9 @@ internal class gametype
         nextextra = br.ReadInt32(),
         lives = br.ReadInt16(),
         health = br.ReadInt16(),
-        weapon = (weapontypes)br.ReadInt16(),
-        chosenweapon = (weapontypes)br.ReadInt16(),
+        weapon = ReadWeapon(br),
+        chosenweapon = ReadWeapon(br),
         faceframe = br.ReadInt16(),
-        attackframe = br.ReadInt16(),
-        attackcount = br.ReadInt16(),
-        weaponframe = br.ReadInt16(),
         cluster = br.ReadInt16(),
         secretcount = br.ReadInt16(),
         treasurecount = br.ReadInt16(),
@@ -144,6 +144,7 @@ internal class gametype
         treasuretotal = br.ReadInt16(),
         killtotal = br.ReadInt16(),
         TimeCount = br.ReadInt32(),
+        PlayTime = br.ReadInt32(),
         killx = br.ReadInt32(),
         killy = br.ReadInt32(),
         victoryflag = br.ReadBoolean(),
@@ -158,12 +159,9 @@ internal class gametype
         bw.Write(nextextra);
         bw.Write(lives);
         bw.Write(health);
-        bw.Write((short)weapon);
-        bw.Write((short)chosenweapon);
+        bw.Write(weapon ?? "");
+        bw.Write(chosenweapon ?? "");
         bw.Write(faceframe);
-        bw.Write(attackframe);
-        bw.Write(attackcount);
-        bw.Write(weaponframe);
         bw.Write(cluster);
         bw.Write(secretcount);
         bw.Write(treasurecount);
@@ -172,6 +170,7 @@ internal class gametype
         bw.Write(treasuretotal);
         bw.Write(killtotal);
         bw.Write(TimeCount);
+        bw.Write(PlayTime);
         bw.Write(killx);
         bw.Write(killy);
         bw.Write(victoryflag);
@@ -400,7 +399,6 @@ internal partial class Program
     internal const int WEST = 3;
 
     internal const int STATUSLINES = 40;
-    internal const int STARTAMMO = 8;
 
     [Flags]
     internal enum objflags

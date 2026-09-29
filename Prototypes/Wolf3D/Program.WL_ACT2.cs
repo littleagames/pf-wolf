@@ -271,7 +271,7 @@ internal partial class Program
 
         // SpawnNewObj started every actor a random number of tics into its first frame.
         var firstTicTime = bj.CurrentState?.TicTime ?? 0;
-        bj.TicCount = firstTicTime != 0 ? (short)(US_RndT() % firstTicTime + 1) : (short)0;
+        bj.TicCount = firstTicTime > 0 ? (short)(US_RndT() % firstTicTime + 1) : (short)0;
 
         bj.Dir = objdirtypes.north;
         bj.Temp1 = 6;                      // tiles to run forward

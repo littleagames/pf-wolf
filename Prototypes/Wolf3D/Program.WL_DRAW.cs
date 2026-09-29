@@ -2020,31 +2020,23 @@ internal partial class Program
         }
     }
 
-    static string[][] weaponscale = {
-        ["KNIFA0", "KNIFB0", "KNIFC0", "KNIFD0", "KNIFE0"],
-        ["PISGA0", "PISGB0", "PISGC0", "PISGD0", "PISGE0"],
-        ["MCHGA0", "MCHGB0", "MCHGC0", "MCHGD0", "MCHGE0"],
-        ["CHGGA0", "CHGGB0", "CHGGC0", "CHGGD0", "CHGGE0"]
-    };
-
     internal static void DrawPlayerWeapon()
     {
-        string shapenum;
         if (gamestate.victoryflag)
         {
-            if (player.CurrentState?.StateName == PlayerPawn.DeathCamState && (GameEngineManager.GetTimeCount() & 32) != 0)
-                SimpleScaleShape(viewwidth / 2, "DCAMA", viewheight + 1);
+            // The death cam's banner, on whichever frame T_DeathCam has it (TNT1 is the "off" half of its flash)
+            if (player.CurrentState?.StateName == PlayerPawn.DeathCamState
+                && deathCamSprite?.CurrentState is { Sprite.Length: > 0 } state && state.Sprite != "TNT1")
+                SimpleScaleShape(viewwidth / 2, $"{state.Sprite}{state.FrameLetter}0", viewheight + 1);
             return;
         }
 
-        if (gamestate.weapon != weapontypes.wp_none)
-        {
-            shapenum = weaponscale[(int)gamestate.weapon][gamestate.weaponframe];
-            SimpleScaleShape(viewwidth / 2, shapenum, viewheight + 1);
-        }
+        // The frame the weapon's states are on (Program.PlayerWeapon.cs)
+        if (WeaponShapeName() is { } shape)
+            SimpleScaleShape(viewwidth / 2, shape, viewheight + 1);
 
         if (demorecord || demoplayback)
-            SimpleScaleShape(viewwidth / 2, "DEMOA", viewheight + 1);
+            SimpleScaleShape(viewwidth / 2, "DEMOA0", viewheight + 1);
     }
 
     internal static void ThreeDRefresh()
@@ -2093,6 +2085,9 @@ internal partial class Program
         _videoManager.UnlockSurface();
         vbuf = 0;
 
+        // For the next save's thumbnail, before the automap or console is drawn over the view
+        _videoManager.KeepViewCopy(viewscreenx, viewscreeny, viewwidth, viewheight);
+
         //
         // show screen and time last cycle
         //
@@ -2110,14 +2105,12 @@ internal partial class Program
 
             DrawAutomap();
 
+            DrawHudMessages();      // over the automap too, but not in the save thumbnail
+
             if (fpscounter)
             {
-                fontnumber = "SmallFont";
-                SETFONTCOLOR("Grey", "VIEWCOLOR");
-                PrintX = 4; PrintY = 1;
                 _videoManager.Bar(0, 0, 40, 10, bordercol);
-                US_Print(fps.ToString());
-                US_Print(" fps");
+                _graphicManager.DrawText(4, 1, $"{fps} fps", new Fonts.TextStyle(SMALL_FONT, "Grey", "VIEWCOLOR"));
             }
 
             // Taken here, before the console is drawn, so it never shows in the shot.
