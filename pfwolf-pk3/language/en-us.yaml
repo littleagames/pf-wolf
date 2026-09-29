@@ -73,6 +73,16 @@ $STR_LS_HELPSAVE: "Enter/A save   Del/Y delete   Esc/B back"
 # {0} is the save's name
 $STR_LS_OVERWRITE: "Save over\n\"{0}\"?"
 $STR_LS_DELETE: "Delete\n\"{0}\"?"
+# A save made with other mods than are loaded: it loads, with a warning
+$STR_LS_OTHERMODSTAG: "other mods"
+$STR_LS_OTHERMODS: "This game was saved with\nother mods, so it may\nnot play the same."
+$STR_LS_SAVEDWITH: "Saved with:"
+$STR_LS_LOADEDNOW: "Loaded now:"
+$STR_LS_NOMODS: "no mods"
+# {0} the first mods' names, {1} how many more
+$STR_LS_MOREMODS: "{0} and {1} more"
+# Added when a save can't be loaded and was made with other mods
+$STR_LS_SAVEDOTHERMODS: "It was saved with\nother mods."
 # A level with no name in game-info: {0} is the episode (cluster), {1} the floor
 $STR_MAPEPISODEFLOOR: "Episode {0}, Floor {1}"
 $STR_MAPFLOOR: "Floor {0}"

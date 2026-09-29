@@ -532,10 +532,20 @@ internal partial class Program
         // As the intermission shows them; a level with none of something shows a dash
         static string Ratio(int count, int total) => total > 0 ? $"{count * 100 / total}%" : "-";
 
-        // A save from another game pack says whose it is (it won't load here)
-        string skill = string.Equals(info.GamePack, _gameEngineManager.GamePackId, StringComparison.OrdinalIgnoreCase)
-            ? info.SkillName
-            : $"{info.SkillName} ({info.GamePack})";
+        // The skill with a note after it, cut short so the note always shows
+        static string WithNote(string text, string note)
+        {
+            note = $" ({note})";
+            return FitText(text, LS_PREVW - 4 - TextWidth(note, SMALL_FONT), SMALL_FONT) + note;
+        }
+
+        // A save from another game pack says whose it is (it won't load here); one made with
+        // other mods says so (it loads, with a warning)
+        string skill = !string.Equals(info.GamePack, _gameEngineManager.GamePackId, StringComparison.OrdinalIgnoreCase)
+            ? WithNote(info.SkillName, info.GamePack)
+            : !isNew && HasOtherMods(info)
+                ? WithNote(info.SkillName, L("$STR_LS_OTHERMODSTAG"))
+                : info.SkillName;
 
         (string Text, string Color)[] lines =
         [

@@ -729,9 +729,7 @@ internal partial class Program
             case ScanCodes.sc_F9:
                 if (File.Exists(QuickSavePath))
                 {
-                    var str = $"{"$STR_LGC".ToLanguageText(language)} {lastSaveGame.Name}\"?";
-
-                    if (Confirm(str, MAXY) != 0)
+                    if (Confirm("$STR_LS_QUICKLOAD".ToLanguageText(language), MAXY) != 0)
                         CP_LoadGame(1);
                 }
                 else

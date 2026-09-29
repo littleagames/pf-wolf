@@ -37,8 +37,9 @@ internal partial class Program
     private static readonly byte[] SaveSignature = "PFWS"u8.ToArray();
     // Still in development, so a layout change bumps SaveVersion and older saves are refused
     // rather than converted. 6: the header (SaveInfo) and thumbnail ahead of the body, no slots.
-    private const int SaveVersion = 6;
-    private const int OldestLoadableSaveVersion = 6;
+    // 7: the mods loaded when it was saved, at the end of the header.
+    private const int SaveVersion = 7;
+    private const int OldestLoadableSaveVersion = 7;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the
     // view's shape; big enough to stay sharp in the menus at a few times 320x200
@@ -167,7 +168,39 @@ internal partial class Program
             SecretTotal = gamestate.secrettotal,
             Treasure = gamestate.treasurecount,
             TreasureTotal = gamestate.treasuretotal,
+            Mods = CurrentSavedMods(),
         };
+    }
+
+    /// <summary>The mods loaded now, as a save records them</summary>
+    internal static List<SavedMod> CurrentSavedMods()
+        => _assetManager.LoadedMods
+            .Select(mod => new SavedMod(mod.DisplayName, mod.Info.Version ?? "", Path.GetFileName(mod.FullPath)))
+            .ToList();
+
+    /// <summary>Whether a save was made with other mods than are loaded now</summary>
+    internal static bool HasOtherMods(SaveInfo save) => !SavedMod.SameMods(save.Mods, CurrentSavedMods());
+
+    /// <summary>
+    /// Says a save was made with other mods than are loaded now, and waits for a key: it still
+    /// loads, but may not play the same
+    /// </summary>
+    private static void WarnOtherMods(SaveInfo save)
+    {
+        var language = _assetManager.GetText("en-us");
+        string L(string key) => key.ToLanguageText(language);
+        string ModList(List<SavedMod> mods) => mods.Count switch
+        {
+            0 => L("$STR_LS_NOMODS"),
+            <= 3 => string.Join(", ", mods),
+            _ => string.Format(L("$STR_LS_MOREMODS"), string.Join(", ", mods.Take(2)), mods.Count - 2),
+        };
+
+        Message($"{L("$STR_LS_OTHERMODS")}\n\n"
+            + $"{WrapForMessage($"{L("$STR_LS_SAVEDWITH")} {ModList(save.Mods)}")}\n"
+            + WrapForMessage($"{L("$STR_LS_LOADEDNOW")} {ModList(CurrentSavedMods())}"));
+        _inputManager.ClearKeysDown();
+        _inputManager.Ack();
     }
 
     /// <summary>
@@ -372,13 +405,16 @@ internal partial class Program
     internal static bool LoadTheGame(string path, int x, int y)
     {
         SaveGameData data;
+        SaveInfo? info = null;
         bool checksumOk;
         try
         {
             DiskFlopAnim(x, y);
             using var br = new BinaryReader(File.OpenRead(path));
             ReadSaveVersion(br);
-            ReadExactly(br, br.ReadCount());    // the header and picture are only for the menus
+            // The header is for the menus, and for saying whether it was saved with other mods
+            using (var header = new BinaryReader(new MemoryStream(ReadExactly(br, br.ReadCount()))))
+                info = SaveInfo.Read(header);
             ReadThumbnail(br);
 
             var body = br.ReadBytes(br.ReadCount());
@@ -407,11 +443,19 @@ internal partial class Program
             // EndOfStreamException is an IOException, so a truncated file lands here too, and a
             // garbled string length is a FormatException.
             Console.WriteLine($"Couldn't load {path}: {e.Message}");
-            Message($"This saved game can't\nbe loaded.\n\n{WrapForMessage(e.Message)}");
+            // Other mods are the likely reason a map, weapon or actor is missing
+            var modsNote = info != null && HasOtherMods(info)
+                ? $"\n\n{"$STR_LS_SAVEDOTHERMODS".ToLanguageText(_assetManager.GetText("en-us"))}"
+                : "";
+            Message($"This saved game can't\nbe loaded.\n\n{WrapForMessage(e.Message)}{modsNote}");
             _inputManager.ClearKeysDown();
             _inputManager.Ack();
             return false;
         }
+
+        // Read above, or the load would have stopped
+        if (HasOtherMods(info!))
+            WarnOtherMods(info!);
 
         DiskFlopAnim(x, y);
         gamestate = data.GameState;
@@ -524,6 +568,24 @@ internal partial class Program
 
 internal enum SaveKind { Normal, Quick, Auto }
 
+/// <summary>
+/// A mod a save was made with: its modinfo.yaml name (or file name) and version, and the file
+/// or folder it was loaded from
+/// </summary>
+internal sealed record SavedMod(string Name, string Version, string FileName)
+{
+    public override string ToString() => Version.Length == 0 ? Name : $"{Name} {Version}";
+
+    /// <summary>
+    /// Whether two lists name the same mods, by name and version, in the same order (a
+    /// different order can change which mod's files win)
+    /// </summary>
+    public static bool SameMods(IReadOnlyList<SavedMod> a, IReadOnlyList<SavedMod> b)
+        => a.Count == b.Count && a.Zip(b).All(pair =>
+            string.Equals(pair.First.Name, pair.Second.Name, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(pair.First.Version, pair.Second.Version, StringComparison.OrdinalIgnoreCase));
+}
+
 /// <summary>A save's picture of the game: game palette indices, a row at a time.</summary>
 internal sealed record SaveThumbnail(int Width, int Height, byte[] Pixels);
 
@@ -556,6 +618,12 @@ internal sealed record SaveInfo
     public short Treasure { get; init; }
     public short TreasureTotal { get; init; }
 
+    /// <summary>The mods loaded when it was saved, in load order</summary>
+    public List<SavedMod> Mods { get; init; } = [];
+
+    // Anything claiming more than this is garbage
+    private const int MaxMods = 1000;
+
     public SaveKind Kind => System.IO.Path.GetFileName(Path).ToLowerInvariant() switch
     {
         Program.QuickSaveFile => SaveKind.Quick,
@@ -583,6 +651,14 @@ internal sealed record SaveInfo
         bw.Write(SecretTotal);
         bw.Write(Treasure);
         bw.Write(TreasureTotal);
+
+        bw.Write(Mods.Count);
+        foreach (var mod in Mods)
+        {
+            bw.Write(mod.Name);
+            bw.Write(mod.Version);
+            bw.Write(mod.FileName);
+        }
     }
 
     public static SaveInfo Read(BinaryReader br)
@@ -592,6 +668,19 @@ internal sealed record SaveInfo
         if (ticks < DateTime.MinValue.Ticks || ticks > DateTime.MaxValue.Ticks)
             throw new InvalidDataException($"Bad save time {ticks}.");
 
+        var info = ReadStats(br, name, ticks);
+
+        var modCount = br.ReadInt32();
+        if (modCount < 0 || modCount > MaxMods)
+            throw new InvalidDataException($"Bad mod count {modCount}.");
+        for (int i = 0; i < modCount; i++)
+            info.Mods.Add(new SavedMod(br.ReadString(), br.ReadString(), br.ReadString()));
+
+        return info;
+    }
+
+    private static SaveInfo ReadStats(BinaryReader br, string name, long ticks)
+    {
         return new SaveInfo
         {
             Name = name,
