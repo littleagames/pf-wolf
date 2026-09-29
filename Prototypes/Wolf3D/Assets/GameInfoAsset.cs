@@ -164,9 +164,80 @@ internal record EpisodeInfo
     public char Key { get; init; }
 }
 
+/// <summary>
+/// What's shown when a cluster is won. The win tally always shows; around it come, in order,
+/// the victory frames, the tally, the end text and the end screens, each when set.
+/// </summary>
 internal record ClusterInfo
 {
-    public string EndText { get; init; } = null!;
+    /// <summary>
+    /// Article shown after the win tally (Wolf3D's ENDARTn), when set
+    /// </summary>
+    public string? EndText { get; init; }
+
+    /// <summary>
+    /// #RRGGBB the game slowly fades to when the cluster is won, and the victory frames fade
+    /// out to; black when unset
+    /// </summary>
+    public string? VictoryFadeColor { get; init; }
+
+    /// <summary>
+    /// Music over the victory frames
+    /// </summary>
+    public string? VictoryMusic { get; init; }
+
+    /// <summary>
+    /// Pictures shown one after another on the view color before the win tally (Spear's BJ collapsing)
+    /// </summary>
+    public List<VictoryFrameInfo> VictoryFrames { get; init; } = [];
+
+    /// <summary>
+    /// Full screen pictures shown one after another after the win tally, each faded in with
+    /// its own palette (Spear's ending)
+    /// </summary>
+    public List<EndScreenInfo> EndScreens { get; init; } = [];
+}
+
+internal record VictoryFrameInfo
+{
+    public string Pic { get; init; } = null!;
+    public int X { get; init; }
+    public int Y { get; init; }
+
+    /// <summary>
+    /// How long the frame stays up (70 a second)
+    /// </summary>
+    public int Tics { get; init; }
+}
+
+internal record EndScreenInfo
+{
+    public string Pic { get; init; } = null!;
+
+    /// <summary>
+    /// Palette the picture is drawn in; the game palette when unset
+    /// </summary>
+    public string? Palette { get; init; }
+
+    /// <summary>
+    /// Text shown in turn along the bottom of the picture, each until a key is pressed or
+    /// caption-tics pass; with none, the picture stays until a key is pressed
+    /// </summary>
+    public List<string> Captions { get; init; } = [];
+
+    // Caption colors are looked up in the game palette's theme, but drawn in the screen's own
+    // palette, so a raw palette index ("208") is usually what's wanted
+
+    public string CaptionColor { get; init; } = "White";
+
+    /// <summary>
+    /// Top of the caption area, which is cleared to caption-background before each caption
+    /// </summary>
+    public int CaptionY { get; init; } = 180;
+
+    public string CaptionBackground { get; init; } = "0";
+
+    public int CaptionTics { get; init; } = 700;
 }
 
 internal record MapInfo

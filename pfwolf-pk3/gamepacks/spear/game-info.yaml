@@ -56,8 +56,33 @@ episodes:
   EP01:
     start-map: MAP01
 
+# Winning, as id's Spear does it: a long fade to dark teal as the Angel falls, BJ collapsing,
+# the win tally, then the ending screens (EndSpear), each in its own palette
 clusters:
   1:
+    victory-fade-color: "#004444"
+    victory-music: XTHEEND
+    victory-frames:
+      - { pic: BJCOLPS1, x: 124, y: 44, tics: 140 }
+      - { pic: BJCOLPS2, x: 124, y: 44, tics: 105 }
+      - { pic: BJCOLPS3, x: 124, y: 44, tics: 105 }
+      - { pic: BJCOLPS4, x: 124, y: 44, tics: 210 }
+    # ENDSCR1/ENDSCR2 are id's ENDSCREEN11PIC/ENDSCREEN12PIC
+    end-screens:
+      - { pic: ENDSCR1, palette: END1PAL }
+      - pic: ENDSCR3
+        palette: END3PAL
+        caption-color: "208"
+        captions:
+          - $STR_ENDGAME1
+          - $STR_ENDGAME2
+      - { pic: ENDSCR4, palette: END4PAL }
+      - { pic: ENDSCR5, palette: END5PAL }
+      - { pic: ENDSCR6, palette: END6PAL }
+      - { pic: ENDSCR7, palette: END7PAL }
+      - { pic: ENDSCR8, palette: END8PAL }
+      - { pic: ENDSCR9, palette: END9PAL }
+      - { pic: ENDSCR2, palette: END2PAL }
 
 maps:
   # Level order, music, par times and ceilings from id's Spear of Destiny tables.

@@ -174,7 +174,12 @@ internal partial class Program
 
                 case playstatetypes.ex_victorious:
                     if (viewsize == 21) DrawPlayScreen();
-                    _videoManager.FadeOut();
+                    // A cluster with a victory-fade-color fades to it slowly, as Spear does when the Angel falls
+                    var wonCluster = WonCluster();
+                    if (string.IsNullOrEmpty(wonCluster.VictoryFadeColor))
+                        _videoManager.FadeOut();
+                    else
+                        _videoManager.FadeOut(VictoryFadeColor(wonCluster), 300);
                     ClearMemory();
 
                     Victory();

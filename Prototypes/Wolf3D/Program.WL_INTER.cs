@@ -477,6 +477,20 @@ internal partial class Program
         DrawPlayBorder();
     }
 
+    /// <summary>
+    /// What the game-info shows when the current cluster is won; an empty one when it has no entry
+    /// </summary>
+    internal static ClusterInfo WonCluster()
+        => _gameEngineManager.GetGameInfo().Clusters.GetValueOrDefault(gamestate.cluster) ?? new();
+
+    /// <summary>
+    /// The color a won cluster fades to (its victory-fade-color), or black
+    /// </summary>
+    internal static Entities.Color VictoryFadeColor(ClusterInfo cluster)
+        => string.IsNullOrEmpty(cluster.VictoryFadeColor)
+            ? new Entities.Color { Alpha = 255 }
+            : Entities.Color.FromHexRGBA(cluster.VictoryFadeColor);
+
     internal static void Victory()
     {
         var language = _assetManager.GetText("en-us");
@@ -487,6 +501,9 @@ internal partial class Program
         const int RATIOY = 14;
         const int TIMEX = 14;
         const int TIMEY = 8;
+
+        var cluster = WonCluster();
+        VictoryFrames(cluster);
 
         StartCPMusic("URAHERO");
 
@@ -573,6 +590,71 @@ internal partial class Program
         FindMenuItem(MainMenu, "savegame")?.active = 0;
 
         EndText();
+        EndScreens(cluster);
+    }
+
+    /// <summary>
+    /// The cluster's victory-frames, each on the view color for its tics (Spear's BJ collapsing),
+    /// ending in a quick fade to the victory-fade-color
+    /// </summary>
+    private static void VictoryFrames(ClusterInfo cluster)
+    {
+        if (cluster.VictoryFrames.Count == 0)
+            return;
+
+        if (!string.IsNullOrEmpty(cluster.VictoryMusic))
+            StartCPMusic(cluster.VictoryMusic);
+
+        for (int i = 0; i < cluster.VictoryFrames.Count; i++)
+        {
+            var frame = cluster.VictoryFrames[i];
+            _videoManager.Bar(0, 0, 320, 200, "VIEWCOLOR");
+            _graphicManager.DrawPic(frame.Pic, frame.X, frame.Y);
+            _videoManager.Update();
+            if (i == 0)
+                _videoManager.FadeIn();
+            GameEngineManager.WaitVBL((uint)frame.Tics);
+        }
+
+        _videoManager.FadeOut(VictoryFadeColor(cluster), 5);
+    }
+
+    /// <summary>
+    /// The cluster's end-screens (Spear's EndSpear): each picture fades in with its palette,
+    /// shows its captions in turn along the bottom (or waits for a key), then fades out
+    /// </summary>
+    private static void EndScreens(ClusterInfo cluster)
+    {
+        var language = _assetManager.GetText("en-us");
+
+        foreach (var screen in cluster.EndScreens)
+        {
+            _graphicManager.DrawPic(screen.Pic, 0, 0);
+            _videoManager.Update();
+
+            var palette = string.IsNullOrEmpty(screen.Palette) ? null : _assetManager.Find<Palette>(screen.Palette);
+            if (palette == null)
+                _videoManager.FadeIn();
+            else
+                _videoManager.FadeIn(new GamePalette { Colors = palette.ToSDLColors() }, 30);
+
+            if (screen.Captions.Count == 0)
+            {
+                _inputManager.ClearKeysDown();
+                _inputManager.Ack();
+            }
+
+            var style = new TextStyle(SMALL_FONT, screen.CaptionColor, screen.CaptionBackground);
+            foreach (var caption in screen.Captions)
+            {
+                _videoManager.Bar(0, screen.CaptionY, 320, 200 - screen.CaptionY, screen.CaptionBackground);
+                CenteredText(0, 320, screen.CaptionY, style).CPrint(caption.ToLanguageText(language));
+                _videoManager.Update();
+                _inputManager.UserInput((uint)screen.CaptionTics);
+            }
+
+            _videoManager.FadeOut();
+        }
     }
 
     //

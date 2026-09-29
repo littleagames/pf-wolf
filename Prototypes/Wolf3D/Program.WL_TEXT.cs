@@ -84,7 +84,8 @@ internal partial class Program
         ClearMemory();
 
         var gameInfo = _gameEngineManager.GetGameInfo();
-        if (!gameInfo.Clusters.TryGetValue(gamestate.cluster, out var clusterInfo))
+        if (!gameInfo.Clusters.TryGetValue(gamestate.cluster, out var clusterInfo)
+            || string.IsNullOrEmpty(clusterInfo?.EndText))
         {
             return;
         }
