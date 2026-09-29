@@ -8,6 +8,7 @@ using Wolf3D.Constants;
 using Wolf3D.DependencyInjection;
 using Wolf3D.Extensions;
 using Wolf3D.Fonts;
+using Wolf3D.Loaders;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
@@ -123,10 +124,22 @@ internal partial class Program
     private static void Main(string[] args)
     {
         // Bad arguments are reported by the parser and otherwise ignored: run with the defaults.
-        var gameParams = Parser.Default.ParseArguments<GameParams>(args).Value ?? new GameParams(); // Move into gamemanager, add unit tests
+        // --file can be given more than once.
+        using var parser = new Parser(settings =>
+        {
+            settings.HelpWriter = Console.Error;
+            settings.AllowMultiInstance = true;
+        });
+        var gameParams = parser.ParseArguments<GameParams>(args).Value ?? new GameParams(); // Move into gamemanager, add unit tests
+
+        // Relative mod paths mean the folder the game was started in, so pin them down before
+        // UseGameFolder can move away from it
+        var modPaths = gameParams.Files.Concat(gameParams.Paths).Select(ModSource.FullPathIfExists).ToList();
+        UseGameFolder();
+
         new Program();
         _gameEngineManager.Init(gameParams);
-        _assetManager.Load(_gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId);
+        _assetManager.Load(_gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId, modPaths);
         RegisterActorActions();
         RegisterConsoleCommands();
 
@@ -149,6 +162,18 @@ internal partial class Program
         DemoLoop();
 
         _gameEngineManager.Quit("Demo loop exited???");
+    }
+
+    /// <summary>
+    /// Files dropped on the exe start it in some other folder (often the dropped files' own), but
+    /// pfwolf.pk3 and the game's data files are read from the working folder. When they aren't
+    /// there and are beside the exe, work from there instead.
+    /// </summary>
+    private static void UseGameFolder()
+    {
+        const string basePk3 = "pfwolf.pk3";
+        if (!File.Exists(basePk3) && File.Exists(Path.Combine(AppContext.BaseDirectory, basePk3)))
+            Directory.SetCurrentDirectory(AppContext.BaseDirectory);
     }
 
     private static void InitGame()

@@ -28,15 +28,32 @@ internal class AssetManager
         this.strict = strict;
     }
 
+    private const string BasePk3FileName = "pfwolf.pk3";
+
+    // Each asset's history, by key: which sources added, replaced or merged into it
+    private Dictionary<string, List<AssetOrigin>> _origins = [];
+
+    /// <summary>The mods loaded over pfwolf.pk3, in load order</summary>
+    public IReadOnlyList<ModSource> LoadedMods { get; private set; } = [];
+
+    /// <summary>What went wrong finding or loading the mods</summary>
+    public List<string> ModWarnings { get; } = [];
+
     /// <param name="gamePackId">The running game pack ("wolf3d", "spear"), whose gamepacks/ assets override the shared ones</param>
     /// <param name="gameReleaseId">The running release's key in gamepacks/gamepack-info.yaml ("wolf3d-apogee")</param>
-    public void Load(string gamePackId, string gameReleaseId)
+    /// <param name="modPaths">Mods to load over pfwolf.pk3, in load order: paths, or names in the mods folder</param>
+    public void Load(string gamePackId, string gameReleaseId, IEnumerable<string> modPaths)
     {
         _gamePackId = gamePackId;
         _gameReleaseId = gameReleaseId;
+        LoadedMods = OpenMods(modPaths, gamePackId);
+
         Dictionary<string, Asset> assets = new();
-        var pfWolfBasePk3Loader = new PfWolfPk3Loader([new Pk3AssetSource("pfwolf.pk3")], gamePackId, gameReleaseId);
+        var pfWolfBasePk3Loader = new PfWolfPk3Loader([new Pk3AssetSource(BasePk3FileName)], gamePackId, gameReleaseId,
+            LoadedMods.Select(mod => mod.Source).ToList());
         assets = pfWolfBasePk3Loader.GetAssets();
+        _origins = pfWolfBasePk3Loader.GetAssetOrigins();
+        ModWarnings.AddRange(pfWolfBasePk3Loader.Warnings);
 
         foreach (var kvp in assets)
         {
@@ -55,28 +72,13 @@ internal class AssetManager
         var audioLoader = new Wolf3dAudioFileLoader(
             DataFile("Wolf3DAudioFileLoader", d => d.Data),
             DataFile("Wolf3DAudioFileLoader", d => d.Header));
-        assets = audioLoader.GetAssets(rawDataMap?.Audio ?? [], rawDataMap?.Music ?? []);
-
-        foreach (var kvp in assets)
-        {
-            string assetType = kvp.Value.GetType().Name;
-            var key = GetKey(kvp.Key, assetType);
-            if (!_assets.ContainsKey(key))
-                _assets[key] = kvp.Value;
-        }
+        AddDataFileAssets(audioLoader.GetAssets(rawDataMap?.Audio ?? [], rawDataMap?.Music ?? []),
+            DataFile("Wolf3DAudioFileLoader", d => d.Data));
 
         var mapLoader = new Wolf3dMapFileLoader(
             DataFile("Wolf3DMapFileLoader", d => d.Header),
             DataFile("Wolf3DMapFileLoader", d => d.Data));
-        assets = mapLoader.GetAssets(rawDataMap?.Maps ?? []);
-
-        foreach (var kvp in assets)
-        {
-            string assetType = kvp.Value.GetType().Name;
-            var key = GetKey(kvp.Key, assetType);
-            if (!_assets.ContainsKey(key))
-                _assets[key] = kvp.Value;
-        }
+        AddDataFileAssets(mapLoader.GetAssets(rawDataMap?.Maps ?? []), DataFile("Wolf3DMapFileLoader", d => d.Data));
 
         // numFonts isn't stored in the VGAGRAPH file itself, so it must be supplied here.
         var vgaGraphicLoader = new Wolf3dVgaFileLoader(
@@ -84,27 +86,81 @@ internal class AssetManager
             DataFile("Wolf3DVgaFileLoader", d => d.Data),
             DataFile("Wolf3DVgaFileLoader", d => d.Dict),
             numFonts: 2);
-        assets = vgaGraphicLoader.GetAssets(rawDataMap?.Graphics ?? []);
-
-        foreach (var kvp in assets)
-        {
-            string assetType = kvp.Value.GetType().Name;
-            var key = GetKey(kvp.Key, assetType);
-            if (!_assets.ContainsKey(key))
-                _assets[key] = kvp.Value;
-        }
+        AddDataFileAssets(vgaGraphicLoader.GetAssets(rawDataMap?.Graphics ?? []), DataFile("Wolf3DVgaFileLoader", d => d.Data));
 
         var vswapLoader = new Wolf3dVswapFileLoader(DataFile("Wolf3DVswapFileLoader", d => d.Data));
-        assets = vswapLoader.GetAssets(rawDataMap?.Walls ?? [], rawDataMap?.Sprites ?? [], rawDataMap?.DigitizedAudio ?? []);
+        AddDataFileAssets(vswapLoader.GetAssets(rawDataMap?.Walls ?? [], rawDataMap?.Sprites ?? [], rawDataMap?.DigitizedAudio ?? []),
+            DataFile("Wolf3DVswapFileLoader", d => d.Data));
+    }
 
+    /// <summary>
+    /// Adds the assets read from one of the game's data files (VSWAP.WL6), apart from those the
+    /// pk3s already have: theirs replace the data file's
+    /// </summary>
+    private void AddDataFileAssets(Dictionary<string, Asset> assets, string dataFile)
+    {
         foreach (var kvp in assets)
         {
-            string assetType = kvp.Value.GetType().Name;
-            var key = GetKey(kvp.Key, assetType);
+            var key = GetKey(kvp.Key, kvp.Value.GetType().Name);
+            if (!_origins.TryGetValue(key, out var origins))
+                _origins[key] = origins = [];
+
+            // The data file comes first in the history, since what the pk3s did was done over it
+            if (origins.Count > 0 && origins[0].Action == "added")
+                origins[0] = origins[0] with { Action = "replaced" };
+            origins.Insert(0, new AssetOrigin(dataFile, kvp.Key, "added"));
+
             if (!_assets.ContainsKey(key))
                 _assets[key] = kvp.Value;
         }
     }
+
+    /// <summary>
+    /// Finds and opens the mods to load, leaving out any that are missing, repeated, can't be
+    /// read or aren't for this game pack (each with a warning)
+    /// </summary>
+    private List<ModSource> OpenMods(IEnumerable<string> modPaths, string gamePackId)
+    {
+        var mods = new List<ModSource>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { Path.GetFullPath(BasePk3FileName) };
+        foreach (var modPath in modPaths.Where(path => !string.IsNullOrWhiteSpace(path)))
+        {
+            var fullPath = ModSource.ResolvePath(modPath);
+            if (fullPath == null)
+            {
+                ModWarnings.Add($"Mod '{modPath}' isn't there, or in {ModSource.ModsFolder}, so it isn't loaded");
+                continue;
+            }
+            if (!seen.Add(fullPath))
+                continue;
+
+            var mod = ModSource.TryOpen(fullPath, gamePackId, ModWarnings);
+            if (mod != null)
+                mods.Add(mod);
+        }
+
+        foreach (var warning in ModWarnings)
+            Console.WriteLine(warning);
+        return mods;
+    }
+
+    /// <summary>
+    /// Every asset with this name, of any type, with where it came from: e.g. a wall's
+    /// picture from VSWAP.WL6, replaced by a mod's PNG
+    /// </summary>
+    public IEnumerable<(string Type, string Name, IReadOnlyList<AssetOrigin> Origins)> FindAssetOrigins(string assetName)
+    {
+        var name = assetName.ToLowerInvariant();
+        foreach (var key in _assets.Keys.Where(key => key.EndsWith(":" + name)).OrderBy(key => key, StringComparer.Ordinal))
+        {
+            var type = _assets[key].GetType().Name;
+            yield return (type, name, _origins.TryGetValue(key, out var origins) ? origins : []);
+        }
+    }
+
+    /// <summary>Names of every loaded asset, for completing assetinfo</summary>
+    public IEnumerable<string> AssetNames
+        => _assets.Keys.Select(key => key.Substring(key.IndexOf(':') + 1)).Distinct();
 
     public bool Exists<T>(string assetName) where T : Asset
     {

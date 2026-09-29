@@ -132,6 +132,9 @@ internal partial class Program
         Register("actors", "Lists actors, optionally only those whose name contains the filter.", "actors [filter]", Cmd_Actors, InLevel,
             complete: (_, i) => i == 0 ? _mapManager.GetActors().Select(a => a.Name) : []);
         Register("maps", "Lists the levels that map can warp to.", "maps", Cmd_Maps);
+        Register("mods", "Lists the mods loaded over pfwolf.pk3, in load order, and anything wrong with them.", "mods", Cmd_Mods);
+        Register("assetinfo", "Shows where an asset came from: each file that added, replaced or merged into it, in order.",
+            "assetinfo <name>", Cmd_AssetInfo, complete: (_, i) => i == 0 ? _assetManager.AssetNames : []);
         Register("playdemo", "Plays a demo: one recorded with that number (DEMO#.dmo in the demos folder), or else the game's own. Ends the game in progress, then goes back to the title.",
             "playdemo <0-9>", Cmd_PlayDemo,
             complete: (_, i) => i == 0 ? Enumerable.Range(0, 10).Where(DemoExists).Select(n => n.ToString()) : []);
@@ -436,6 +439,42 @@ internal partial class Program
         $"joy_turnspeed {joyturnspeed}",
         $"joy_sticks {JoySticksName}",
     ];
+
+    private static void Cmd_Mods(string[] args)
+    {
+        var mods = _assetManager.LoadedMods;
+        if (mods.Count == 0)
+            _consoleManager.Print("No mods loaded");
+
+        for (var i = 0; i < mods.Count; i++)
+        {
+            var mod = mods[i];
+            var version = string.IsNullOrWhiteSpace(mod.Info.Version) ? "" : $" {mod.Info.Version}";
+            var author = string.IsNullOrWhiteSpace(mod.Info.Author) ? "" : $" by {mod.Info.Author}";
+            _consoleManager.Print($"{i + 1}. {mod.DisplayName}{version}{author} ({mod.FullPath})");
+        }
+
+        foreach (var warning in _assetManager.ModWarnings)
+            _consoleManager.Print(warning);
+    }
+
+    private static void Cmd_AssetInfo(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: assetinfo <name>");
+
+        var found = false;
+        foreach (var (type, name, origins) in _assetManager.FindAssetOrigins(args[0]))
+        {
+            found = true;
+            _consoleManager.Print($"{name} ({type})");
+            foreach (var origin in origins)
+                _consoleManager.Print($"  {origin.Action} by {origin.Source}: {origin.Path}");
+        }
+
+        if (!found)
+            _consoleManager.Print($"No asset named {args[0]}");
+    }
 
     private static void Cmd_Binds(string[] args)
     {
