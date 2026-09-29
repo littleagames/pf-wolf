@@ -33,6 +33,8 @@ Key:
 
 GoldKey:
   parent: Key
+  properties:
+    "inventory.pickupmessage": "$GOTGOLDKEY"
   states:
     Spawn:
       - sprite: GKEY
@@ -41,6 +43,8 @@ GoldKey:
 
 SilverKey:
   parent: Key
+  properties:
+    "inventory.pickupmessage": "$GOTSILVERKEY"
   states:
     Spawn:
       - sprite: SKEY

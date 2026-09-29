@@ -204,3 +204,7 @@ $STR_SAVECHT4: "play anyway...."
 
 # Demo playback
 $STR_SEEAGAIN: "Let's see that again!"
+
+# Pickup messages for the shared items (actordefs/native.yaml)
+$GOTGOLDKEY: "Picked up the gold key."
+$GOTSILVERKEY: "Picked up the silver key."

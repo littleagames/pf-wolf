@@ -8,6 +8,7 @@ Cross:
   properties:
     "inventory.amount": 100
     "inventory.pickupsound": "treasure/cross/pickup"
+    "inventory.pickupmessage": "$GOTCROSS"
 Radio:
   parent: "Cross"
   states:
@@ -15,6 +16,8 @@ Radio:
       - sprite: RDIO
         frames: [A]
         tics-per-frame: -1
+  properties:
+    "inventory.pickupmessage": "$GOTRADIO"
 Chalice:
   parent: "ScoreItem"
   states:
@@ -25,6 +28,7 @@ Chalice:
   properties:
     "inventory.amount": 500
     "inventory.pickupsound": "treasure/chalice/pickup"
+    "inventory.pickupmessage": "$GOTCHALICE"
 Plutonium:
   parent: "Chalice"
   states:
@@ -32,6 +36,8 @@ Plutonium:
       - sprite: PLUT
         frames: [A]
         tics-per-frame: -1
+  properties:
+    "inventory.pickupmessage": "$GOTPLUTONIUM"
 ChestOfJewels:
   parent: "ScoreItem"
   states:
@@ -42,6 +48,7 @@ ChestOfJewels:
   properties:
     "inventory.amount": 1000
     "inventory.pickupsound": "treasure/bible/pickup"
+    "inventory.pickupmessage": "$GOTJEWELS"
 ControlPanel:
   parent: "ChestOfJewels"
   states:
@@ -49,6 +56,8 @@ ControlPanel:
       - sprite: CPNL
         frames: [A]
         tics-per-frame: -1
+  properties:
+    "inventory.pickupmessage": "$GOTCONTROLPANEL"
 Crown:
   parent: "ScoreItem"
   states:
@@ -59,6 +68,7 @@ Crown:
   properties:
     "inventory.amount": 5000
     "inventory.pickupsound": "treasure/crown/pickup"
+    "inventory.pickupmessage": "$GOTCROWN"
 Bomb:
   parent: "Crown"
   states:
@@ -66,4 +76,5 @@ Bomb:
       - sprite: BOMB
         frames: [A]
         tics-per-frame: -1
-  
+  properties:
+    "inventory.pickupmessage": "$GOTBOMB"

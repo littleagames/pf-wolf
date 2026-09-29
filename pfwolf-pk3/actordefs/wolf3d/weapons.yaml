@@ -145,6 +145,7 @@ MachineGun:
     "weapon.slot": 3
     "inventory.icon": "MachineGun"
     "inventory.pickupsound": "weapon/machine/pickup"
+    "inventory.pickupmessage": "$GOTMACHINEGUN"
     "weapon.selectionorder": 1300
   flags: [INVENTORY.ALWAYSPICKUP]
   states:
@@ -226,6 +227,7 @@ GatlingGun:
     "weapon.slot": 4
     "inventory.icon": "GatlingGun"
     "inventory.pickupsound": "weapon/gatling/pickup"
+    "inventory.pickupmessage": "$GOTGATLINGGUN"
     "weapon.selectionorder": 700
   flags: [WEAPON.ALWAYSGRIN, INVENTORY.ALWAYSPICKUP]
   states:
@@ -312,6 +314,7 @@ GatlingGunUpgrade:
   parent: "WeaponGiver"
   properties:
     "inventory.pickupsound": "weapon/gatling/pickup"
+    "inventory.pickupmessage": "$GOTGATLINGGUN"
     "weapongiver.weapon": GatlingGun
     "weapon.ammogive1": 6
     "dropitem": [GatlingGun, MachineGun]

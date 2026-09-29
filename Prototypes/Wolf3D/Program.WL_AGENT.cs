@@ -400,6 +400,13 @@ internal partial class Program
             _audioManager.Play(pickupSound?.ToString() ?? "");
         }
 
+        // Shown over the view in the item's message style (hud-messages.yaml), or the default
+        if (builtActor.Properties.TryGetValue("inventory.pickupmessage", out var pickupMessage))
+        {
+            builtActor.Properties.TryGetValue("inventory.pickupmessagestyle", out var pickupMessageStyle);
+            _hudMessageManager.Show(pickupMessage?.ToString(), pickupMessageStyle?.ToString());
+        }
+
         _videoManager.StartBonusFlash();
         //check.shapenum = "";                   // remove from list
         _mapManager.RemoveActor(builtActor);
