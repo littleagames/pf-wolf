@@ -33,6 +33,9 @@ internal class PfWolfPk3Loader
     private readonly Dictionary<string, YamlMappingNode> _yamlTrees = [];
     private readonly bool _keepYamlTrees;
 
+    // Files directly in maps/ other than .wad levels, in load order
+    private readonly List<AssetSourceEntry> _mapDataFiles = [];
+
     /// <summary>
     /// Folders holding one subfolder per game pack (actordefs/wolf3d/, gamepacks/spear/)
     /// </summary>
@@ -236,6 +239,8 @@ internal class PfWolfPk3Loader
             // level of that name, or a new one for game-info to send the player to
             if (entry.Name.EndsWith(".wad", StringComparison.OrdinalIgnoreCase))
                 AddReference(assetName, () => EcWolfMapLoader.Load(entry.Open().ToArray()));
+            else if (fullName.IndexOf('/', "maps/".Length) < 0)
+                _mapDataFiles.Add(entry);       // maybe half of a GAMEMAPS/MAPHEAD pair (FindMapFilePair)
             return;
         }
     }
@@ -527,6 +532,27 @@ internal class PfWolfPk3Loader
         if (!_origins.TryGetValue(key, out var origins))
             _origins[key] = origins = [];
         origins.Add(origin);
+    }
+
+    /// <summary>
+    /// A GAMEMAPS/MAPHEAD pair to use in place of the game's own: the last source with both
+    /// directly in maps/, named as the running release names them (maps/maphead.wl6 and
+    /// maps/gamemaps.wl6). A source with only one of them is warned about and skipped.
+    /// </summary>
+    public (AssetSourceEntry Header, AssetSourceEntry Data)? FindMapFilePair(string headerName, string dataName)
+    {
+        (AssetSourceEntry Header, AssetSourceEntry Data)? pair = null;
+        foreach (var files in _mapDataFiles.GroupBy(entry => entry.Source))
+        {
+            var header = files.LastOrDefault(entry => entry.Name.Equals(headerName, StringComparison.OrdinalIgnoreCase));
+            var data = files.LastOrDefault(entry => entry.Name.Equals(dataName, StringComparison.OrdinalIgnoreCase));
+            if (header != null && data != null)
+                pair = (header, data);
+            else if (header != null || data != null)
+                Warn($"{files.Key.Name}: maps/{header?.Name ?? data!.Name} is left out: it needs maps/{(header == null ? headerName : dataName)} beside it");
+        }
+
+        return pair;
     }
 
     /// <summary>Each asset's history, by the same keys as GetAssets</summary>

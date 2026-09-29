@@ -53,7 +53,6 @@ internal class AssetManager
             LoadedMods.Select(mod => mod.Source).ToList());
         assets = pfWolfBasePk3Loader.GetAssets();
         _origins = pfWolfBasePk3Loader.GetAssetOrigins();
-        ModWarnings.AddRange(pfWolfBasePk3Loader.Warnings);
 
         foreach (var kvp in assets)
         {
@@ -75,10 +74,9 @@ internal class AssetManager
         AddDataFileAssets(audioLoader.GetAssets(rawDataMap?.Audio ?? [], rawDataMap?.Music ?? []),
             DataFile("Wolf3DAudioFileLoader", d => d.Data));
 
-        var mapLoader = new Wolf3dMapFileLoader(
+        LoadLevels(pfWolfBasePk3Loader, rawDataMap?.Maps ?? [],
             DataFile("Wolf3DMapFileLoader", d => d.Header),
             DataFile("Wolf3DMapFileLoader", d => d.Data));
-        AddDataFileAssets(mapLoader.GetAssets(rawDataMap?.Maps ?? []), DataFile("Wolf3DMapFileLoader", d => d.Data));
 
         // numFonts isn't stored in the VGAGRAPH file itself, so it must be supplied here.
         var vgaGraphicLoader = new Wolf3dVgaFileLoader(
@@ -91,6 +89,8 @@ internal class AssetManager
         var vswapLoader = new Wolf3dVswapFileLoader(DataFile("Wolf3DVswapFileLoader", d => d.Data));
         AddDataFileAssets(vswapLoader.GetAssets(rawDataMap?.Walls ?? [], rawDataMap?.Sprites ?? [], rawDataMap?.DigitizedAudio ?? []),
             DataFile("Wolf3DVswapFileLoader", d => d.Data));
+
+        ModWarnings.AddRange(pfWolfBasePk3Loader.Warnings);
     }
 
     /// <summary>
@@ -100,19 +100,88 @@ internal class AssetManager
     private void AddDataFileAssets(Dictionary<string, Asset> assets, string dataFile)
     {
         foreach (var kvp in assets)
+            AddBeneathPk3s(GetKey(kvp.Key, kvp.Value.GetType().Name), kvp.Value, [new AssetOrigin(dataFile, kvp.Key, "added")]);
+    }
+
+    /// <summary>
+    /// Adds an asset read from data files, with how it came to be, unless a pk3 already has it
+    /// </summary>
+    private void AddBeneathPk3s(string key, Asset asset, List<AssetOrigin> history)
+    {
+        if (!_origins.TryGetValue(key, out var origins))
+            _origins[key] = origins = [];
+
+        // The data files come first in the history, since what the pk3s did was done over them
+        if (origins.Count > 0 && origins[0].Action == "added")
+            origins[0] = origins[0] with { Action = "replaced" };
+        origins.InsertRange(0, history);
+
+        if (!_assets.ContainsKey(key))
+            _assets[key] = asset;
+    }
+
+    /// <summary>
+    /// The levels in GAMEMAPS/MAPHEAD pairs, beneath the pk3s' maps/*.wad levels: the game's
+    /// own pair, then level by level a pk3's pair under maps/ (named like the game's own). The
+    /// game's own pair isn't needed when a pk3 supplies the levels game-info plays.
+    /// </summary>
+    private void LoadLevels(PfWolfPk3Loader pk3Loader, List<string> levelNames, string headerFile, string dataFile)
+    {
+        var levels = new Dictionary<string, (Asset Map, List<AssetOrigin> History)>();
+        void AddPair(Wolf3dMapFileLoader loader, string source, Func<string, string> path, Action<string> warn)
         {
-            var key = GetKey(kvp.Key, kvp.Value.GetType().Name);
-            if (!_origins.TryGetValue(key, out var origins))
-                _origins[key] = origins = [];
-
-            // The data file comes first in the history, since what the pk3s did was done over it
-            if (origins.Count > 0 && origins[0].Action == "added")
-                origins[0] = origins[0] with { Action = "replaced" };
-            origins.Insert(0, new AssetOrigin(dataFile, kvp.Key, "added"));
-
-            if (!_assets.ContainsKey(key))
-                _assets[key] = kvp.Value;
+            foreach (var (name, map) in loader.GetAssets(levelNames, warn))
+            {
+                if (levels.TryGetValue(name, out var level))
+                    levels[name] = (map, [.. level.History, new AssetOrigin(source, path(name), "replaced")]);
+                else
+                    levels[name] = (map, [new AssetOrigin(source, path(name), "added")]);
+            }
         }
+
+        var ownPair = File.Exists(headerFile) && File.Exists(dataFile);
+        if (ownPair)
+            AddPair(Wolf3dMapFileLoader.FromFiles(headerFile, dataFile), dataFile.ToLowerInvariant(), name => name,
+                warning => ModWarnings.Add($"{dataFile}: {warning}"));
+
+        var pk3Pair = pk3Loader.FindMapFilePair(headerFile, dataFile);
+        if (pk3Pair is { } pair)
+        {
+            var where = $"{pair.Data.Source.Name}: {pair.Data.FullName}";
+            try
+            {
+                AddPair(new Wolf3dMapFileLoader(pair.Header.Open().ToArray(), pair.Data.Open().ToArray()), pair.Data.Source.Name,
+                    name => $"{pair.Data.FullName} ({name})", warning => ModWarnings.Add($"{where}: {warning}"));
+            }
+            catch (InvalidDataException e)
+            {
+                ModWarnings.Add($"{where} can't be read, so it's left out: {e.Message}");
+            }
+        }
+
+        foreach (var (name, level) in levels)
+            AddBeneathPk3s(GetKey(name, nameof(MapAsset)), level.Map, level.History);
+
+        // Levels game-info sends the player to that nothing supplied
+        var gameInfo = FindInGamePack<GameInfoAsset>("game-info");
+        if (gameInfo == null)
+            return;
+
+        var missing = gameInfo.Maps.Keys
+            .Concat(gameInfo.Maps.Values.SelectMany(map => new[] { map.Next, map.SecretNext }))
+            .Concat(gameInfo.Episodes.Values.Select(episode => episode.StartMap))
+            .Where(name => !string.IsNullOrWhiteSpace(name) && !Exists<MapAsset>(name!))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (missing.Count == 0)
+            return;
+
+        var list = string.Join(", ", missing.Take(8)) + (missing.Count > 8 ? $" and {missing.Count - 8} more" : "");
+        if (!ownPair && pk3Pair == null)
+            throw new PfWolfMapException("Cannot open file: {0}. File does not exist, and no pk3 has these levels: " + list,
+                File.Exists(headerFile) ? dataFile : headerFile);
+
+        ModWarnings.Add($"These levels are in game-info but nothing supplies them: {list}");
     }
 
     /// <summary>
