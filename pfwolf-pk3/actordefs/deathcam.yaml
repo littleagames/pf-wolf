@@ -1,12 +1,15 @@
 # The "LET'S SEE THAT AGAIN!" banner shown over the view while the death cam replays a boss's
 # death (A_StartDeathCam). Shared by every game pack; a pack's own actordefs can redefine it.
 #
-# Not placed on maps: DrawPlayerWeapon draws its current frame where the weapon would be,
-# flashing it on and off, while the player is on its DeathCam state.
+# Not placed on maps: the player's DeathCam state runs these states (T_DeathCam) and
+# DrawPlayerWeapon draws the current frame where the weapon would be. A TNT1 frame draws nothing.
 
 DeathCam:
   states:
-    Spawn:
+    Spawn: # vanilla's (TimeCount & 32) flash: 32 tics shown, 32 hidden; the group loops
       - sprite: DCAM
         frames: [A]
-        tics-per-frame: -1
+        tics-per-frame: 32
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 32

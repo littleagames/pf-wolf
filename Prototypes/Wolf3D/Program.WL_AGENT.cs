@@ -490,6 +490,7 @@ internal partial class Program
 
         // The player's own think states (PlayerPawn), ticked by MapManager.DoActor.
         ActorActionRegistry.Register("T_Player", T_Player);
+        ActorActionRegistry.Register("T_DeathCam", T_DeathCam);
 
         // The weapon in hand's states (Program.PlayerWeapon.cs).
         RegisterWeaponActions();

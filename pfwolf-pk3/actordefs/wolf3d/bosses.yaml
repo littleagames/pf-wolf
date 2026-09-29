@@ -317,6 +317,7 @@ Schabbs:
         frames: [J]
         tics-per-frame: 20
         action: A_StartDeathCam
+      - stop # the dead frame loops onto itself, as in vanilla, rather than back to the first
   properties:
     "health.baby": 850
     "health.easy": 950
@@ -404,6 +405,7 @@ Gift:
         frames: [J]
         tics-per-frame: 20
         action: A_StartDeathCam
+      - stop # the dead frame loops onto itself, as in vanilla, rather than back to the first
   properties:
     "health.baby": 850
     "health.easy": 950
@@ -507,6 +509,7 @@ Fat:
         frames: [L]
         tics-per-frame: 20
         action: A_StartDeathCam
+      - stop # the dead frame loops onto itself, as in vanilla, rather than back to the first
   properties:
     "health.baby": 850
     "health.easy": 950
@@ -836,6 +839,7 @@ RealHitler:
         frames: [O]
         tics-per-frame: 20
         action: A_StartDeathCam
+      - stop # the dead frame loops onto itself, as in vanilla, rather than back to the first
   properties:
     "health.baby": 500
     "health.easy": 700

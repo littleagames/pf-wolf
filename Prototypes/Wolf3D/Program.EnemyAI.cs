@@ -1322,6 +1322,7 @@ internal partial class Program
 
         _inputManager.UserInput(300);
 
+        deathCamSprite = null;      // T_DeathCam builds a fresh one, so the flash starts from its first frame
         NewActorState(player, Entities.Actors.PlayerPawn.DeathCamState);
 
         player.X = gamestate.killx;
@@ -1358,5 +1359,18 @@ internal partial class Program
 
         if (ob.ResolvedStates.ContainsKey("DeathCam"))
             NewActorState(ob, "DeathCam");
+    }
+
+    // The death cam's "LET'S SEE THAT AGAIN!" banner (actordefs/deathcam.yaml), drawn by
+    // DrawPlayerWeapon. Like the weapon in hand it's never placed in the world: the player's
+    // DeathCam state runs its states instead.
+    static Entities.Actors.Actor? deathCamSprite;
+
+    /// <summary>The player's think while on its DeathCam state: animates the banner.</summary>
+    internal static void T_DeathCam(Entities.Actors.Actor ob)
+    {
+        deathCamSprite ??= _inventoryManager.CreateActor("DeathCam");
+        if (deathCamSprite != null)
+            _mapManager.DoActor(deathCamSprite, tics);
     }
 }

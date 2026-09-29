@@ -103,7 +103,8 @@ internal class PfWolfPk3Loader
 
             if (fullName.StartsWith("actordefs/"))
             {
-                // TODO: Move "native.yaml" to parent directory
+                // actordefs/{pack}/*.yaml -> "{pack}/actordefs"; files directly in actordefs/
+                // (native.yaml, deathcam.yaml) -> "actordefs", shared by every pack
                 var uniqueName = GetPackUniqueAssetName(fullName);
                 var data = YamlDataEntryLoader.Read<Dictionary<string, ActorData>>(entry.Open());
                 MergeAsset(uniqueName, new ActorTranslationAsset(data));

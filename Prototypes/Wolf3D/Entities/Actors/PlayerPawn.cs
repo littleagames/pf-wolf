@@ -9,8 +9,8 @@ namespace Wolf3D.Entities.Actors;
 /// <remarks>
 /// The states are built here rather than in actordefs YAML: they carry no sprites and exist only
 /// to pick which engine handler runs each tic (T_Player, registered in
-/// Program.RegisterActorActions), plus the death-cam marker DrawPlayerWeapon looks for (the
-/// banner it draws is the DeathCam class in actordefs/deathcam.yaml).
+/// Program.RegisterActorActions): T_Player normally, and T_DeathCam during the death cam, which
+/// animates the banner DrawPlayerWeapon draws (the DeathCam class in actordefs/deathcam.yaml).
 /// Attacks are the weapon's own states (Program.PlayerWeapon.cs), not the player's.
 /// Both hold forever (TicTime -1), so the handler runs every tic and Next is never consulted.
 /// </remarks>
@@ -25,7 +25,7 @@ internal record PlayerPawn : Actor
         Name = "Player";
 
         var spawn = new ActorStateFrame { StateName = SpawnState, Sprite = "", FrameLetter = "", TicTime = -1, Think = "T_Player" };
-        var deathCam = new ActorStateFrame { StateName = DeathCamState, Sprite = "", FrameLetter = "", TicTime = -1 };
+        var deathCam = new ActorStateFrame { StateName = DeathCamState, Sprite = "", FrameLetter = "", TicTime = -1, Think = "T_DeathCam" };
 
         ResolvedStates = new()
         {

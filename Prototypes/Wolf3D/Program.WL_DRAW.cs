@@ -1314,15 +1314,13 @@ internal partial class Program
         }
     }
 
-    // The death cam's banner (actordefs/deathcam.yaml), built the first time it's shown
-    static Entities.Actors.Actor? deathCamSprite;
-
     internal static void DrawPlayerWeapon()
     {
         if (gamestate.victoryflag)
         {
-            if (player.CurrentState?.StateName == PlayerPawn.DeathCamState && (GameEngineManager.GetTimeCount() & 32) != 0
-                && (deathCamSprite ??= _inventoryManager.CreateActor("DeathCam"))?.CurrentState is { Sprite.Length: > 0 } state)
+            // The death cam's banner, on whichever frame T_DeathCam has it (TNT1 is the "off" half of its flash)
+            if (player.CurrentState?.StateName == PlayerPawn.DeathCamState
+                && deathCamSprite?.CurrentState is { Sprite.Length: > 0 } state && state.Sprite != "TNT1")
                 SimpleScaleShape(viewwidth / 2, $"{state.Sprite}{state.FrameLetter}0", viewheight + 1);
             return;
         }
