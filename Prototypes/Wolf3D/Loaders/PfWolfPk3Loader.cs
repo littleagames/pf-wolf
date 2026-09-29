@@ -1,5 +1,4 @@
-﻿using System.IO.Compression;
-using Wolf3D.Assets;
+﻿using Wolf3D.Assets;
 using Wolf3D.Assets.Sounds;
 using Wolf3D.Entities.Actors;
 
@@ -24,18 +23,18 @@ internal class PfWolfPk3Loader
     /// </summary>
     private string GamePalette => Load<GamePackInfoAsset>("gamepack-info").GetGamePalette(_gameReleaseId);
 
+    /// <param name="sources">Where assets are read from, in load order (pfwolf.pk3 first). A later
+    /// source's asset replaces, or merges into, an earlier one of the same name.</param>
     /// <param name="gamePackId">The running game pack; other packs' folders are skipped so their
     /// assets can't overwrite its own, apart from its base-pack's. Null loads every pack.</param>
     /// <param name="gameReleaseId">The running release's key in gamepacks/gamepack-info.yaml</param>
-    public PfWolfPk3Loader(string pk3File, string? gamePackId, string gameReleaseId)
+    public PfWolfPk3Loader(IReadOnlyList<IAssetSource> sources, string? gamePackId, string gameReleaseId)
     {
         _gamePackId = gamePackId;
         _gameReleaseId = gameReleaseId;
 
-        using ZipArchive archive = ZipFile.OpenRead(pk3File);
-
         // Read first: the running release's base-pack decides which pack folders load, and in what order
-        var gamePackInfo = ReadGamePackInfo(archive);
+        var gamePackInfo = ReadGamePackInfo(sources);
         if (gamePackInfo != null)
         {
             AddAsset("gamepack-info", gamePackInfo);
@@ -43,7 +42,7 @@ internal class PfWolfPk3Loader
                 _basePackId = gamePackInfo.GetGamePack(gameReleaseId).BasePack;
         }
 
-        foreach (var (entry, fullName) in GetEntriesInLoadOrder(archive))
+        foreach (var (entry, fullName) in GetEntriesInLoadOrder(sources))
         {
             var assetName = GetAssetReadyName(entry.Name);
             if (fullName.StartsWith("gamepacks/gamepack-info"))
@@ -143,7 +142,7 @@ internal class PfWolfPk3Loader
                 // Then I can use this same loader for wolf3d file formats as well
                 try
                 {
-                    AddReference(assetName, () => GraphicDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName), sourcePalette: Load<Palette>(GamePalette)));
+                    AddReference(assetName, () => GraphicDataLoader.Load(entry.Open(), sourcePalette: Load<Palette>(GamePalette)));
                 }
                 catch (Exception e)
                 {
@@ -172,7 +171,7 @@ internal class PfWolfPk3Loader
 
             if (fullName.StartsWith("palettes/"))
             {
-                AddReference(assetName, () => PaletteDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName)));
+                AddReference(assetName, () => PaletteDataLoader.Load(entry.Open()));
                 continue;
             }
 
@@ -185,16 +184,18 @@ internal class PfWolfPk3Loader
 
             if (fullName.StartsWith("sprites/"))
             {
-                AddReference(assetName, () => PngSpriteDataLoader.Load(Pk3EntryLoader.Open(pk3File, entry.FullName), sourcePalette: Load<Palette>(GamePalette)));
+                AddReference(assetName, () => PngSpriteDataLoader.Load(entry.Open(), sourcePalette: Load<Palette>(GamePalette)));
                 continue;
             }
         }
     }
 
-    private static GamePackInfoAsset? ReadGamePackInfo(ZipArchive archive)
+    private static GamePackInfoAsset? ReadGamePackInfo(IReadOnlyList<IAssetSource> sources)
     {
         // TODO: Identify this one as a unique, there should only be one of these
-        var entry = archive.Entries.FirstOrDefault(e => e.FullName.StartsWith("gamepacks/gamepack-info"));
+        var entry = sources
+            .SelectMany(source => source.EntryPaths.Select(path => new AssetSourceEntry(source, path)))
+            .FirstOrDefault(e => e.FullName.StartsWith("gamepacks/gamepack-info"));
         if (entry == null)
             return null;
 
@@ -218,14 +219,15 @@ internal class PfWolfPk3Loader
     /// every entry as-is. With one, other packs' folders are left out, except the base pack's:
     /// those come first and are renamed into the running pack's folder (actordefs/wolf3d/guards.yaml
     /// -> actordefs/spear/guards.yaml), so the running pack's own files, loaded after, override or
-    /// merge into them under the same asset names.
+    /// merge into them under the same asset names. Within each of those two groups, sources keep
+    /// their order.
     /// </summary>
-    private IEnumerable<(ZipArchiveEntry Entry, string FullName)> GetEntriesInLoadOrder(ZipArchive archive)
+    private IEnumerable<(AssetSourceEntry Entry, string FullName)> GetEntriesInLoadOrder(IReadOnlyList<IAssetSource> sources)
     {
-        var basePackEntries = new List<(ZipArchiveEntry, string)>();
-        var entries = new List<(ZipArchiveEntry, string)>();
+        var basePackEntries = new List<(AssetSourceEntry, string)>();
+        var entries = new List<(AssetSourceEntry, string)>();
 
-        foreach (var entry in archive.Entries.Where(entry => entry.Length > 0 && entry.IsEncrypted == false))
+        foreach (var entry in sources.SelectMany(source => source.EntryPaths.Select(path => new AssetSourceEntry(source, path))))
         {
             var packFolder = GetGamePackFolder(entry.FullName);
             if (string.IsNullOrWhiteSpace(_gamePackId) || packFolder == null

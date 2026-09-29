@@ -35,7 +35,7 @@ internal class AssetManager
         _gamePackId = gamePackId;
         _gameReleaseId = gameReleaseId;
         Dictionary<string, Asset> assets = new();
-        var pfWolfBasePk3Loader = new PfWolfPk3Loader("pfwolf.pk3", gamePackId, gameReleaseId);
+        var pfWolfBasePk3Loader = new PfWolfPk3Loader([new Pk3AssetSource("pfwolf.pk3")], gamePackId, gameReleaseId);
         assets = pfWolfBasePk3Loader.GetAssets();
 
         foreach (var kvp in assets)
