@@ -16,6 +16,11 @@ intro-music: XTOWER2
 high-scores-music: XAWARD
 menu-fade-color: "#0000CE"
 menu-backdrop: C_Backdrop
+# id's Spear stripe: a shorter black band, the backdrop showing through one row, then a black line
+menu-stripe:
+  height: 22
+  line-y: 23
+  line-color: Black
 
 # Fade styles are palette, fizzle, melt or mosaic, each lasting its -tics (70 a second)
 screen-fade-style: palette
@@ -33,6 +38,23 @@ hud-messages:
   pickup-style: Default
   lock-style: Center
   obituary-style: Obituary
+
+# id's Spear layout: the title picture carries the column headings, the rows are in the big
+# font, and a game won shows the Spear in place of its floor
+high-scores:
+  pic: HighScores
+  pic-x: 0
+  headers: []
+  font: LargeFont
+  color: HIGHLIGHT
+  name-x: 16
+  level-right: 194
+  show-episode: false
+  won-pic: C_WonSpear
+  score-right: 292
+  entry-background: "156"
+  entry-bar-width: 145
+  entry-width: 130
 
 skills:
   BABY:

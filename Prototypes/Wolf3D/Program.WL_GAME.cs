@@ -1,4 +1,4 @@
-﻿using SDL2;
+using SDL2;
 using Wolf3D.Assets;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
@@ -168,7 +168,7 @@ internal partial class Program
                         _videoManager.ClearScreen(0);
                     ClearMemory();
 
-                    CheckHighScore(gamestate.score, (ushort)/*(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1)*/1); // TODO: Redo this to support map names
+                    CheckHighScore(gamestate.score, won: false);
                     EnableViewScoresMenuItem();
                     return;
 
@@ -186,7 +186,7 @@ internal partial class Program
 
                     ClearMemory();
 
-                    CheckHighScore(gamestate.score, (ushort)/*(MapInfoMappings.MapAssetToIndex[gamestate.mapon] + 1)*/1); // TODO: Redo this to support map names
+                    CheckHighScore(gamestate.score, won: true);
                     EnableViewScoresMenuItem();
                     return;
 
@@ -221,12 +221,22 @@ internal partial class Program
             demoptr = 0;
         }
 
-        throw new NotImplementedException("Need to rewrite demo storage to save mapon as string data");
-        //NewGame(difficultytypes.gd_hard, cluster: 0, mapon: demoData[demoptr++]); // TODO: Allow demo to set difficulty too
-        length = BitConverter.ToInt16(demoData, demoptr);
+        // id's header: the floor in the first episode (0 = MAP01), a 16-bit length counting the
+        // header, and a pad byte. Every demo plays on the hardest skill, as id's did.
+        if (demoData.Length < 4)
+            return;
 
-        demoptr += 3;
-        lastdemoptr = demoptr - 4 + length;
+        var mapName = $"MAP{demoData[0] + 1:D2}";
+        if (!_gameEngineManager.GetGameInfo().Maps.TryGetValue(mapName, out var mapInfo))
+            return;
+
+        length = BitConverter.ToInt16(demoData, 1);
+        demoptr = 4;
+        lastdemoptr = Math.Min((int)length, demoData.Length);   // stop at the data's end if the length overshoots
+        if (lastdemoptr - demoptr < 3)
+            return;
+
+        NewGame(difficultytypes.gd_hard, new EpisodeInfo { StartMap = mapName }, mapInfo);
 
         _videoManager.FadeOut();
 

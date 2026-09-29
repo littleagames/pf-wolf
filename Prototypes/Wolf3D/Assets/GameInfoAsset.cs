@@ -88,16 +88,42 @@ internal record GameInfoAsset : Asset
     public string? MenuBackdrop { get; init; }
 
     /// <summary>
+    /// The band across the top of the menus and high scores; Wolf3D's when unset
+    /// </summary>
+    public MenuStripeInfo MenuStripe { get; init; } = new();
+
+    /// <summary>
     /// The messages shown over the view (hud-messages.yaml): whether they're on until the
     /// player says otherwise, and the style each kind is shown in when its actor or door
     /// doesn't give one
     /// </summary>
     public HudMessagesInfo HudMessages { get; init; } = new();
 
+    /// <summary>
+    /// How the high scores screen is laid out; Wolf3D's layout when unset
+    /// </summary>
+    public HighScoresInfo HighScores { get; init; } = new();
+
     public override void Merge(Asset other)
     {
         // TODO: Overwrite or merge the data
     }
+}
+
+/// <summary>
+/// A solid band with a line under it, both measured down from the top the menu asks for
+/// </summary>
+internal record MenuStripeInfo
+{
+    public int Height { get; init; } = 24;
+    public string Color { get; init; } = "Black";
+
+    /// <summary>
+    /// Row of the line, counted from the band's top
+    /// </summary>
+    public int LineY { get; init; } = 22;
+
+    public string LineColor { get; init; } = "STRIPE";
 }
 
 internal record HudMessagesInfo
@@ -113,6 +139,78 @@ internal record HudMessagesInfo
 
     /// <summary>The style for what killed the player</summary>
     public string ObituaryStyle { get; init; } = "Obituary";
+}
+
+/// <summary>
+/// The high scores screen: a title picture and column headings over the menu stripes, then a
+/// row every 16 pixels of name, level and score. The defaults are Wolf3D's layout.
+/// </summary>
+internal record HighScoresInfo
+{
+    public string Pic { get; init; } = "HighScores";
+    public int PicX { get; init; } = 48;
+    public int PicY { get; init; }
+
+    /// <summary>
+    /// Column heading pictures (Spear's are part of its title picture)
+    /// </summary>
+    public List<PicPlacement> Headers { get; init; } =
+    [
+        new() { Pic = "C_Name", X = 4 * 8, Y = 68 },
+        new() { Pic = "C_Level", X = 20 * 8, Y = 68 },
+        new() { Pic = "C_Score", X = 28 * 8, Y = 68 },
+    ];
+
+    public string Font { get; init; } = "SmallFont";
+    public string Color { get; init; } = "White";
+
+    /// <summary>
+    /// Top of the first row
+    /// </summary>
+    public int RowY { get; init; } = 76;
+
+    public int NameX { get; init; } = 4 * 8;
+
+    /// <summary>
+    /// Where the level number ends; with show-episode, "E#/L" goes before it and it ends 6 pixels short
+    /// </summary>
+    public int LevelRight { get; init; } = 22 * 8;
+
+    public bool ShowEpisode { get; init; } = true;
+
+    /// <summary>
+    /// Drawn in place of the level for a score from a game that was won (Spear's C_WonSpear)
+    /// </summary>
+    public string? WonPic { get; init; }
+
+    public int ScoreRight { get; init; } = 34 * 8 - 8;
+
+    /// <summary>
+    /// Text color the new high score's name is typed in
+    /// </summary>
+    public string EntryColor { get; init; } = "White";
+
+    /// <summary>
+    /// Color behind the name being typed
+    /// </summary>
+    public string EntryBackground { get; init; } = "BORDCOLOR";
+
+    /// <summary>
+    /// Width of a bar in entry-background drawn behind the name before typing; none when 0
+    /// </summary>
+    public int EntryBarWidth { get; init; }
+
+    /// <summary>
+    /// How wide the typed name can get
+    /// </summary>
+    public int EntryWidth { get; init; } = 100;
+}
+
+internal record PicPlacement
+{
+    public string Pic { get; init; } = null!;
+    public int X { get; init; }
+    public int Y { get; init; }
 }
 
 internal record SignonInfo

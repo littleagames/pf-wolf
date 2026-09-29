@@ -430,8 +430,8 @@ internal partial class Program
             controlx = (sbyte)demoData[demoptr++];
             controly = (sbyte)demoData[demoptr++];
 
-            if (demoptr == lastdemoptr)
-                playstate = playstatetypes.ex_completed;   // demo is done
+            if (demoptr + 3 > lastdemoptr)
+                playstate = playstatetypes.ex_completed;   // demo is done: no whole frame left
 
             controlx *= (int)tics;
             controly *= (int)tics;

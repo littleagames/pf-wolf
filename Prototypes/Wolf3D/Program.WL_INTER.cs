@@ -47,60 +47,75 @@ internal partial class Program
         _videoManager.FadeOut();
     }
 
-    /// <summary>The high score names and numbers; also what a new name is typed in with</summary>
-    private static readonly TextStyle HighScoreStyle = new(SMALL_FONT, "White", "BORDCOLOR");
+    /// <summary>
+    /// Set in a high score's completed level when the game was won, so it ranks above a score
+    /// that ended part way and can show the game-info high-scores won-pic
+    /// </summary>
+    internal const ushort HighScoreWon = 0x8000;
+
+    private static HighScoresInfo HighScoresLayout => _gameEngineManager.GetGameInfo().HighScores;
 
     internal static void DrawHighScores()
     {
-        int i;
+        var layout = HighScoresLayout;
+        var style = new TextStyle(layout.Font, layout.Color, "BORDCOLOR");
 
         ClearMScreen();
         DrawStripes(10);
 
-        _graphicManager.DrawPic("highscores", 48, 0);
+        _graphicManager.DrawPic(layout.Pic, layout.PicX, layout.PicY);
+        foreach (var header in layout.Headers)
+            _graphicManager.DrawPic(header.Pic, header.X, header.Y);
 
-        _graphicManager.DrawPic("c_name", 4 * 8, 68);
-        _graphicManager.DrawPic("c_level", 20 * 8, 68);
-        _graphicManager.DrawPic("c_score", 28 * 8, 68);
-        //_graphicManager.DrawPic(35 * 8, 68, graphicnums.C_CODEPIC);
-
-        for (i = 0; i < MaxScores; i++)
+        for (int i = 0; i < MaxScores; i++)
         {
             HighScore s = Scores[i];
-            int y = 76 + (16 * i);
+            int y = layout.RowY + (16 * i);
 
             //
             // name
             //
-            TextAt(4 * 8, y, HighScoreStyle).Print(s.name);
+            TextAt(layout.NameX, y, style).Print(s.name);
 
             //
             // level
             //
-            var buffer = s.completed.ToString();
-            int x = (22 * 8) - TextWidth(buffer, HighScoreStyle.Font) - 6;
-            TextAt(x, y, HighScoreStyle).Print($"E{s.episode + 1}/L{buffer}");
+            var buffer = (s.completed & ~HighScoreWon).ToString();
+            int x = layout.LevelRight - TextWidth(buffer, style.Font);
+            if ((s.completed & HighScoreWon) != 0 && !string.IsNullOrEmpty(layout.WonPic))
+                _graphicManager.DrawPic(layout.WonPic, x + 8, y - 1);
+            else if (layout.ShowEpisode)
+                TextAt(x - 6, y, style).Print($"E{s.episode + 1}/L{buffer}");
+            else
+                TextAt(x, y, style).Print(buffer);
 
             //
             // score
             //
             buffer = s.score.ToString();
-            TextAt((34 * 8) - 8 - TextWidth(buffer, HighScoreStyle.Font), y, HighScoreStyle).Print(buffer);
+            TextAt(layout.ScoreRight - TextWidth(buffer, style.Font), y, style).Print(buffer);
         }
 
         _videoManager.Update();
     }
 
-    internal static void CheckHighScore(int score, ushort other)
+    /// <summary>
+    /// Ranks the score among the high scores, and has a name typed for it if it made the list.
+    /// The level recorded is the current map's floor number, marked as won when <paramref name="won"/>.
+    /// </summary>
+    internal static void CheckHighScore(int score, bool won)
     {
         ushort i, j;
         int n;
         HighScore myscore = new HighScore();
 
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        int floor = gameInfo.Maps.TryGetValue(gamestate.mapon, out var mapInfo) ? mapInfo.FloorNumber : 1;
+
         myscore.name = "";
         myscore.score = score;
-        myscore.episode = (ushort)gamestate.cluster;
-        myscore.completed = other;
+        myscore.episode = (ushort)Math.Max(gamestate.cluster - 1, 0);   // shown from 1, as id's were
+        myscore.completed = (ushort)(Math.Clamp(floor, 0, HighScoreWon - 1) | (won ? HighScoreWon : 0));
 
         for (i = 0, n = -1; i < MaxScores; i++)
         {
@@ -124,8 +139,17 @@ internal partial class Program
             //
             // got a high score
             //
+            var layout = HighScoresLayout;
+            int x = layout.NameX, y = layout.RowY + (16 * n);
+            if (layout.EntryBarWidth > 0)
+            {
+                _videoManager.Bar(x - 2, y - 2, layout.EntryBarWidth, 15, layout.EntryBackground);
+                _videoManager.Update();
+            }
+
             string str = Scores[n].name;
-            US_LineInput(4 * 8, 76 + (16 * n), ref str, "", true, MaxHighName, 100, HighScoreStyle);
+            US_LineInput(x, y, ref str, "", true, MaxHighName, layout.EntryWidth,
+                new TextStyle(layout.Font, layout.EntryColor, layout.EntryBackground));
             Scores[n].name = str;
             _gameEngineManager.WriteConfig();
         }
@@ -437,15 +461,15 @@ internal partial class Program
             //
             // SAVE RATIO INFORMATION FOR ENDGAME
             //
-            // TODO: Store this via "cluster"
-            LevelRatios.TryAdd(gamestate.mapon,
+            // The latest run through a floor counts; the win tally averages the won cluster's floors
+            LevelRatios[gamestate.mapon] =
                 new LRstruct
             {
                 kill = (short)kr,
                 secret = (short)sr,
                 treasure = (short)tr,
                 time = min * 60 + sec
-            });
+            };
 
             // TODO This should be set up as different LevelCompleted "screens"???
         }
@@ -521,22 +545,23 @@ internal partial class Program
         Write(RATIOX, RATIOY + 4, "$STR_RATTREASURE".ToLanguageText(language));
 
         _graphicManager.DrawPic("L_BJWINS", 8, 4);
-        // TODO: Gather data via each cluster
-        //for (kr = sr = tr = sec = i = 0; i < LRpack; i++)
-        //{
-        //    sec += LevelRatios[i].time;
-        //    kr += LevelRatios[i].kill;
-        //    sr += LevelRatios[i].secret;
-        //    tr += LevelRatios[i].treasure;
-        //}
+        // Total time and average ratios over the floors of the won cluster that were completed.
+        // id divided by a fixed floor count (8, or 20 in Spear), counting floors never played
+        // (Spear's boss floors, a skipped secret floor) as 0%; this averages the ones played.
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        var floors = LevelRatios
+            .Where(lr => gameInfo.Maps.TryGetValue(lr.Key, out var map) && map.Cluster == gamestate.cluster)
+            .Select(lr => lr.Value)
+            .ToList();
 
-        //kr /= LRpack;
-        //sr /= LRpack;
-        //tr /= LRpack;
-        sec = 0; // TODO: Gather data via each cluster
-        kr = 0;
-        tr = 0;
-        sr = 0;
+        sec = floors.Sum(f => f.time);
+        kr = sr = tr = 0;
+        if (floors.Count > 0)
+        {
+            kr = floors.Sum(f => f.kill) / floors.Count;
+            sr = floors.Sum(f => f.secret) / floors.Count;
+            tr = floors.Sum(f => f.treasure) / floors.Count;
+        }
 
         min = sec / 60;
         sec %= 60;

@@ -25,6 +25,20 @@ internal class GraphicManager
     /// </summary>
     public string? MenuBackdrop { get; set; }
 
+    /// <summary>
+    /// Shape and colors of the band across the top of the menus (game-info menu-stripe)
+    /// </summary>
+    public MenuStripeInfo MenuStripe { get; set; } = new();
+
+    /// <summary>
+    /// Draws the menu stripe with its top at <paramref name="y"/>, in the given colors or the game's
+    /// </summary>
+    public void DrawStripe(int y, string? color = null, string? lineColor = null)
+    {
+        videoManager.Bar(0, y, 320, MenuStripe.Height, color ?? MenuStripe.Color);
+        videoManager.HorizontalLine(0, 319, y + MenuStripe.LineY, lineColor ?? MenuStripe.LineColor);
+    }
+
     public void DrawMenuBackground(string color)
     {
         if (!string.IsNullOrEmpty(MenuBackdrop) && assetManager.Value.Exists<GraphicAsset>(MenuBackdrop))
@@ -113,8 +127,7 @@ internal class GraphicManager
         }
         else if (component is Stripe stripe)
         {
-            videoManager.Bar(0, stripe.Y, 320, 24, stripe.BackingColor);
-            videoManager.HorizontalLine(0, 319, stripe.Y + 22, stripe.LineColor);
+            DrawStripe(stripe.Y, stripe.BackingColor, stripe.LineColor);
         }
         else if (component is Window window)
         {

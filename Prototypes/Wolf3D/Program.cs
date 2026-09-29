@@ -157,6 +157,7 @@ internal partial class Program
         var theme = _assetManager.FindInGamePack<ColorThemeAsset>("colors");
         _videoManager.Init(theme, _gameEngineManager.ReadVideoConfig());
         _graphicManager.MenuBackdrop = _gameEngineManager.GetGameInfo().MenuBackdrop;
+        _graphicManager.MenuStripe = _gameEngineManager.GetGameInfo().MenuStripe;
         ReadFadeStyles();
         _inputManager.Init(_videoManager.fullscreen);
         
@@ -427,6 +428,7 @@ internal partial class Program
     internal static void NewGame(difficultytypes difficulty, EpisodeInfo epInfo, MapInfo mapInfo)
     {
         gamestate = new gametype();
+        LevelRatios = [];       // the win tally averages only this game's floors
         gamestate.difficulty = difficulty;
         GiveStartingInventory();
 

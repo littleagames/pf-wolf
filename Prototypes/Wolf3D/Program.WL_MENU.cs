@@ -102,8 +102,7 @@ internal partial class Program
 
     internal static void DrawStripes(int y)
     {
-        _videoManager.Bar(0, y, 320, 24, "Black");
-        _videoManager.HorizontalLine(0, 319, y + 22, "STRIPE");
+        _graphicManager.DrawStripe(y);
     }
 
     internal static void DrawWindow(int x, int y, int w, int h, string wcolor)

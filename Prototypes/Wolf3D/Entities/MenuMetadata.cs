@@ -556,6 +556,9 @@ internal record Graphic : MenuComponent
     //}
 }
 
+/// <summary>
+/// The band across the top of a menu, shaped by game-info menu-stripe; colors left unset come from there too
+/// </summary>
 internal record Stripe : MenuComponent
 {
     public int Y { get; set; } = 0;
@@ -564,15 +567,11 @@ internal record Stripe : MenuComponent
 
     public Stripe()
     {
-        BackingColor = "Black";
-        LineColor = "STRIPE";
     }
 
     public Stripe(int y)
     {
         Y = y;
-        BackingColor = "Black";
-        LineColor = "STRIPE";
     }
 
     public Stripe(int y, string backingColor, string lineColor)

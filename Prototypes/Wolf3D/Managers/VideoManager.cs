@@ -1460,7 +1460,9 @@ internal class VideoManager
 
     private void InitializeSDLVideo(VideoSettings settings)
     {
-        const string title = "Wolfenstein 3D"; // TODO: pull from PK3 in future
+        var title = _assetManager.Value.GetGameTitle();
+        if (string.IsNullOrWhiteSpace(title))
+            title = "PFWolf";
 
         var flags = SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
         if (settings.Fullscreen)

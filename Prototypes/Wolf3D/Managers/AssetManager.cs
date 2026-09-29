@@ -158,6 +158,17 @@ internal class AssetManager
     }
 
     /// <summary>
+    /// The running release's title in gamepack-info ("Spear of Destiny"), or null when it has none
+    /// </summary>
+    public string? GetGameTitle()
+    {
+        var gamePackInfo = Find<GamePackInfoAsset>("gamepack-info");
+        return gamePackInfo != null && gamePackInfo.GamePacks.TryGetValue(_gameReleaseId, out var gamePack)
+            ? gamePack.Title
+            : null;
+    }
+
+    /// <summary>
     /// Names of every menu defined in menudefs/
     /// </summary>
     public IEnumerable<string> GetMenuNames()
