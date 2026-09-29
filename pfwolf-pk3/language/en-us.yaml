@@ -208,3 +208,8 @@ $STR_SEEAGAIN: "Let's see that again!"
 # Pickup messages for the shared items (actordefs/native.yaml)
 $GOTGOLDKEY: "Picked up the gold key."
 $GOTSILVERKEY: "Picked up the silver key."
+
+# Locked doors (a door's lock-message in doors.yaml, else its key's "key.lockedmessage")
+$LOCKEDDOOR: "This door is locked."
+$NEEDGOLDKEY: "You need the gold key to open this door."
+$NEEDSILVERKEY: "You need the silver key to open this door."

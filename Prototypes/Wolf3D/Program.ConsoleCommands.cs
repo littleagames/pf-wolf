@@ -687,6 +687,12 @@ internal partial class Program
         int active = actors.Count(a => a.Active != activetypes.ac_no);
 
         _consoleManager.Print($"Doors: {doornum}");
+        for (int i = 0; i < doornum; i++)
+        {
+            var door = doorobjlist[i];
+            if (!string.IsNullOrEmpty(door.xlat.Lock))
+                _consoleManager.Print($"  locked ({door.xlat.Lock}) at {door.tilex},{door.tiley}");
+        }
         _consoleManager.Print($"Actors: {actors.Count}  active: {active}");
         _consoleManager.Print($"Enemies: {enemies}  alive: {alive}");
         _consoleManager.Print($"Kills: {gamestate.killcount}/{gamestate.killtotal}  Secrets: {gamestate.secretcount}/{gamestate.secrettotal}  Treasure: {gamestate.treasurecount}/{gamestate.treasuretotal}");

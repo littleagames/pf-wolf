@@ -1,3 +1,9 @@
+# Doors by map tile number: the texture on each face, and for a locked door the item that opens it.
+#   lock:                An inventory class (e.g. GoldKey) the player must carry to open the door
+#   lock-message:        Shown when the player tries the door without it (a $NAME language key or
+#                        the text); left out, the lock item's "key.lockedmessage" is used
+#   lock-message-style:  The hud-messages.yaml style for it; left out, the lock item's
+#                        "key.lockedmessagestyle"
 doors:
     '90':
         East: DOOR1_2
