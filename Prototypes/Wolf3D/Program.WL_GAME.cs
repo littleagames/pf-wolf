@@ -201,25 +201,20 @@ internal partial class Program
     internal static void PlayDemo(int demonumber)
     {
         short length;
-        if (true)
+
+        // A demo recorded with that number plays in place of the game's own
+        var recorded = ReadRecordedDemo(demonumber);
+        if (recorded != null)
+            demoData = recorded;
+        else
         {
             var demoAsset = _assetManager.Find<DemoAsset>($"demo{demonumber}");
             if (demoAsset == null)
                 return;
 
-            demoData = demoAsset.RawData;// _graphicManager.GetDemo(demonumber);
-            demoptr = 0;
+            demoData = demoAsset.RawData;
         }
-        else
-        {
-
-            var demoFileName = demoname.Replace('?', (char)('0' + demonumber));
-            if (!File.Exists(demoFileName))
-                return;
-
-            demoData = File.ReadAllBytes(demoFileName);
-            demoptr = 0;
-        }
+        demoptr = 0;
 
         // id's header: the floor in the first episode (0 = MAP01), a 16-bit length counting the
         // header, and a pad byte. Every demo plays on the hardest skill, as id's did.
@@ -256,18 +251,37 @@ internal partial class Program
         ClearMemory();
     }
 
-    internal static string demoname = "DEMO?.dmo";
     internal const int MAXDEMOSIZE = 8192;
-    internal static void StartDemoRecord(int levelnumber)
+
+    /// <summary>A recorded demo's file: DEMO0.dmo to DEMO9.dmo in the demos folder</summary>
+    private static string DemoFilePath(int demonumber)
+        => Path.Combine(_gameEngineManager.ConfigDirectories.DemosDirectory ?? "", $"DEMO{demonumber}.dmo");
+
+    private static byte[]? ReadRecordedDemo(int demonumber)
+    {
+        var path = DemoFilePath(demonumber);
+        try
+        {
+            return File.Exists(path) ? File.ReadAllBytes(path) : null;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Console.WriteLine($"Couldn't read the demo {path}: {e.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Starts recording in id's format: the map's number less one (0 = MAP01) in the first byte,
+    /// then room for the length, then 3 bytes a frame from PollControls
+    /// </summary>
+    internal static void StartDemoRecord(int mapIndex)
     {
         demoData = new byte[MAXDEMOSIZE];
-        demoptr = 0;
+        demoData[0] = (byte)mapIndex;
+        demoptr = 4;                            // leave space for length
         lastdemoptr = MAXDEMOSIZE;
-
-        Buffer.BlockCopy(BitConverter.GetBytes(levelnumber), 0, demoData, demoptr, sizeof(int));
-        demoptr += sizeof(int); // += 4, leave space for length
         demorecord = true;
-
     }
 
     internal static void FinishDemoRecord()
@@ -276,12 +290,11 @@ internal partial class Program
 
         demorecord = false;
 
+        // The length counts the 4 header bytes; the byte after it is padding
         length = demoptr;
-
-        demoptr++;
-        demoData[demoptr] = (byte)length;
-        demoData[demoptr + 1] = (byte)(length >> 8);
-        demoData[demoptr + 2] = 0;
+        demoData[1] = (byte)length;
+        demoData[2] = (byte)(length >> 8);
+        demoData[3] = 0;
 
         _videoManager.FadeIn();
         var window = CenterWindow(24, 3, PromptStyle);
@@ -292,15 +305,21 @@ internal partial class Program
         string str = "";
         if (US_LineInput(window.PrintX, window.PrintY, ref str, "", true, 1, 0, window.Style))
         {
-            if (string.IsNullOrEmpty(str))
-                return;
-
-            level = Convert.ToInt32(str);
-            if (level >= 0 && level <= 9)
+            if (int.TryParse(str, out level) && level >= 0 && level <= 9)
             {
-                var demoFileName = demoname.Replace('?', (char)('0' + level));
-                throw new NotImplementedException("Need to rewrite demo storage to save mapon as string data");
-                //CA_WriteFile(demoFileName, demoData, length);
+                var path = DemoFilePath(level);
+                try
+                {
+                    var directory = Path.GetDirectoryName(path);
+                    if (!string.IsNullOrEmpty(directory))
+                        Directory.CreateDirectory(directory);
+                    File.WriteAllBytes(path, demoData[..length]);
+                    Console.WriteLine($"Recorded demo saved to {path}");
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    Console.WriteLine($"Couldn't save the demo to {path}: {e.Message}");
+                }
             }
         }
 
@@ -320,28 +339,30 @@ internal partial class Program
     */
     internal static void RecordDemo()
     {
-        int level, maps;
+        // A demo names its map by one byte, so it can be any of MAP01 to MAP99 the game has
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        int maps = 0;
+        while (maps < 99 && gameInfo.Maps.ContainsKey($"MAP{maps + 1:D2}"))
+            maps++;
+        if (maps == 0)
+            return;
+
+        // Clear what's behind: a title drawn in its own palette (Spear's) is noise in the game's
+        _videoManager.ClearScreen(0);
         var window = CenterWindow(26, 3, PromptStyle);
         window.PrintY += 6;
-        window.Print("  Demo which level(1-60): "); maps = 60;
+        window.Print($"  Demo which level(1-{maps}): ");
         _videoManager.Update();
         _videoManager.FadeIn();
         string str = "";
         var esc = !US_LineInput(window.PrintX, window.PrintY, ref str, "", true, 2, 0, window.Style);
-        if (esc || string.IsNullOrEmpty(str))
+        if (esc || !int.TryParse(str, out int level) || level < 1 || level > maps)
             return;
 
-        level = Convert.ToInt32(str);
-        level--;
-
-        if (level >= maps || level < 0)
-            return;
-
+        var mapName = $"MAP{level:D2}";
         _videoManager.FadeOut();
-        //NewGame(difficultytypes.gd_hard, level / 10);
-        //gamestate.mapon = (short)(level % 10);
-        throw new NotImplementedException("Need to rewrite demo storage to save mapon as string data");
-        StartDemoRecord(level);
+        NewGame(difficultytypes.gd_hard, new EpisodeInfo { StartMap = mapName }, gameInfo.Maps[mapName]);
+        StartDemoRecord(level - 1);
 
         DrawPlayScreen();
         _videoManager.FadeIn();
