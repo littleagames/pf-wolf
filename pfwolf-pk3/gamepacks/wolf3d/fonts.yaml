@@ -59,6 +59,13 @@ SmallFont:
 LargeFont:
   type: vga
 
+# Messages over the 3D view (hud-messages.yaml): the small font, with a shadow so it reads
+# against walls and floors
+HudMessage:
+  type: vga
+  source: SmallFont
+  shadow: {}
+
 # The status bar's numbers
 StatusNumbers:
   type: graphic

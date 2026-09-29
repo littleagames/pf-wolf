@@ -25,6 +25,7 @@ internal partial class Program
     private static InventoryManager _inventoryManager;
     private static ConsoleManager _consoleManager;
     private static AutomapManager _automapManager;
+    private static HudMessageManager _hudMessageManager;
 
     public Program()
     {
@@ -41,6 +42,7 @@ internal partial class Program
         services.AddSingleton<InventoryManager>();
         services.AddSingleton<ConsoleManager>();
         services.AddSingleton<AutomapManager>();
+        services.AddSingleton<HudMessageManager>();
 
         // Build the service provider
         var serviceProvider = services.BuildServiceProvider();
@@ -60,6 +62,7 @@ internal partial class Program
         _inventoryManager = serviceProvider.GetRequiredService<InventoryManager>();
         _consoleManager = serviceProvider.GetRequiredService<ConsoleManager>();
         _automapManager = serviceProvider.GetRequiredService<AutomapManager>();
+        _hudMessageManager = serviceProvider.GetRequiredService<HudMessageManager>();
 
         // TODO: Remove circular dependencies here
         //_videoManager = new();

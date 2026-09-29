@@ -77,6 +77,14 @@ internal partial class Program
             complete: Values("0", "1"));
 
         //
+        // messages over the view
+        //
+        Register("msg", "Shows a message over the view, in a style from hud-messages.yaml if the first word names one.",
+            "msg [style] <text...>", Cmd_Msg, InLevel, complete: (_, i) => i == 0 ? _hudMessageManager.StyleNames : []);
+        Register("msg_clear", "Takes away the messages shown over the view.", "msg_clear", _ => _hudMessageManager.Clear());
+        Register("msg_styles", "Lists the message styles and where each puts its messages.", "msg_styles", Cmd_MsgStyles);
+
+        //
         // video
         //
         Register("vid_mode", "Shows the video mode.", "vid_mode", _ => PrintVideoMode());
@@ -740,6 +748,28 @@ internal partial class Program
             var s = saves[i];
             var kind = s.Kind == SaveKind.Normal ? "" : $" [{s.Kind.ToString().ToLowerInvariant()}]";
             _consoleManager.Print($"{i + 1,3}. {s.Name}{kind} - {s.MapName}, {s.SavedAt.ToLocalTime():yyyy-MM-dd HH:mm}, played {FormatPlayTime(s.PlayTime)}");
+        }
+    }
+
+    private static void Cmd_Msg(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: msg [style] <text...>");
+
+        // A first word naming a style is the style, as long as there's text after it
+        if (args.Length > 1 && _hudMessageManager.StyleExists(args[0]))
+            _hudMessageManager.Show(string.Join(' ', args[1..]), args[0]);
+        else
+            _hudMessageManager.Show(string.Join(' ', args));
+    }
+
+    private static void Cmd_MsgStyles(string[] args)
+    {
+        foreach (var name in _hudMessageManager.StyleNames.OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
+        {
+            var s = _hudMessageManager.FindStyle(name);
+            _consoleManager.Print($"{s.Name}: {s.Anchor} {s.X:+0;-0;0},{s.Y:+0;-0;0} margin {s.Margin}, {s.Font} in {s.Color}, " +
+                $"{s.Duration} tics, {s.MaxLines} line{(s.MaxLines == 1 ? "" : "s")}");
         }
     }
 

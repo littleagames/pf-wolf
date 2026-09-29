@@ -91,6 +91,13 @@ internal class PfWolfPk3Loader
                 MergeAsset(uniqueName, new FontDefinitionsAsset(data));
                 continue;
             }
+            if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("hud-messages.yaml", StringComparison.OrdinalIgnoreCase))
+            {
+                var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
+                var data = YamlDataEntryLoader.Read<Dictionary<string, HudMessageStyleDefinition>>(entry.Open());
+                MergeAsset(uniqueName, new HudMessageStylesAsset(data));
+                continue;
+            }
             if (fullName.StartsWith("language/")
                 || (fullName.StartsWith("gamepacks/") && fullName.Contains("/language/")))
             {

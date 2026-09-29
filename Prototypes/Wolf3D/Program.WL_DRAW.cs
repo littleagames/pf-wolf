@@ -1399,6 +1399,8 @@ internal partial class Program
 
             DrawAutomap();
 
+            DrawHudMessages();      // over the automap too, but not in the save thumbnail
+
             if (fpscounter)
             {
                 _videoManager.Bar(0, 0, 40, 10, bordercol);

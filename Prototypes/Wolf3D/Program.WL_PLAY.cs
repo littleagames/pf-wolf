@@ -113,6 +113,8 @@ internal partial class Program
 
         _inputManager.CenterMouse();
 
+        _hudMessageManager.Clear();     // nothing left over from the last level, life or saved game
+
         if (demoplayback)
             _inputManager.StartAck();
 
@@ -141,6 +143,7 @@ internal partial class Program
                 _mapManager.DoActors(tics);
 
                 _videoManager.UpdatePaletteShifts(tics);
+                _hudMessageManager.Tick((int)tics);
             }
 
             UpdateAutomap();
