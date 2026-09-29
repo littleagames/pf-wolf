@@ -611,6 +611,19 @@ internal record Label : MenuComponent
     /// <summary>The shadow's color; defaults to Black</summary>
     public string? ShadowColor { get; set; }
 
+    /// <summary>
+    /// true shades the text's color lighter to darker down the glyphs, false takes away the font's
+    /// own gradient (fonts.yaml); left out, the text has whatever its font has. Setting a
+    /// gradient-top or -bottom turns it on too.
+    /// </summary>
+    public bool? Gradient { get; set; }
+
+    /// <summary>Percent toward white (negative: black) at the top row; defaults to 40</summary>
+    public int? GradientTop { get; set; }
+
+    /// <summary>Percent toward white (negative: black) at the bottom row; defaults to -40</summary>
+    public int? GradientBottom { get; set; }
+
     public Label()
     {
     }

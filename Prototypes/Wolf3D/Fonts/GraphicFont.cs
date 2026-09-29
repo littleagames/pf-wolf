@@ -60,15 +60,17 @@ internal sealed class GraphicFont : Font
 
     public override int Advance(char ch) => FindGlyph(ch)?.Advance ?? SpaceWidth;
 
-    protected override void DrawText(VideoManager video, int x, int y, string text, string color, bool silhouette)
+    protected override void DrawText(VideoManager video, int x, int y, string text, string color, bool silhouette, byte[]? rowColors)
     {
         foreach (char ch in text)
         {
             var glyph = FindGlyph(ch);
             if (glyph?.Image is GraphicAsset image)
             {
+                // A gradient only shades glyphs drawn in the text's color
                 video.DrawImageRegion(image.RawData, image.OpacityMask, image.Width, glyph.SrcX, glyph.SrcY,
-                    glyph.Width, glyph.Height, x, y, _transparent, _colorize || silhouette ? color : null);
+                    glyph.Width, glyph.Height, x, y, _transparent, _colorize || silhouette ? color : null,
+                    _colorize ? rowColors : null);
             }
             x += glyph?.Advance ?? SpaceWidth;
         }

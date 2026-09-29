@@ -41,6 +41,17 @@ internal class ShadowDefinition
     public string Color { get; set; } = "Black";
 }
 
+/// <summary>
+/// A font's gradient in fonts.yaml: percent toward white (positive) or black (negative) at the
+/// top and bottom rows of the glyphs. `gradient: {}` is 40% lighter to 40% darker.
+/// </summary>
+internal class GradientDefinition
+{
+    public int Top { get; set; } = 40;
+
+    public int Bottom { get; set; } = -40;
+}
+
 /// <summary>One font in fonts.yaml</summary>
 internal class FontDefinition
 {
@@ -60,6 +71,11 @@ internal class FontDefinition
 
     /// <summary>Any type: a copy of the text drawn behind it, offset, in one color</summary>
     public ShadowDefinition? Shadow { get; set; }
+
+    /// <summary>
+    /// vga, or colorized graphic and sheet: the text's color shaded lighter to darker down the glyphs
+    /// </summary>
+    public GradientDefinition? Gradient { get; set; }
 
     /// <summary>sheet: the picture holding the characters</summary>
     public string? Image { get; set; }

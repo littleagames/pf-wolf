@@ -37,6 +37,10 @@
 #                 (those are the defaults, so "shadow: {}" gives a one-pixel black drop shadow).
 #                 Picture glyphs cast a solid silhouette, so they need see-through pixels
 #                 (a PNG's, or transparent:) or the shadow is a filled box.
+#   gradient:     The text's color shaded down the glyphs, e.g. { top: 40, bottom: -40 }: percent
+#                 toward white (positive) or black (negative) at the top and bottom rows, blending
+#                 in between (those are the defaults, so "gradient: {}" works). Only for glyphs
+#                 drawn in the text's color: vga fonts, and graphic or sheet fonts with colorize.
 
 SmallFont:
   type: vga

@@ -44,6 +44,8 @@ internal class FontManager
 
         if (definition?.Shadow is { } shadow)
             font.Shadow = new FontShadow(shadow.X, shadow.Y, shadow.Color);
+        if (definition?.Gradient is { } gradient)
+            font.Gradient = new FontGradient(gradient.Top, gradient.Bottom);
 
         fonts[name] = font;
         return font;

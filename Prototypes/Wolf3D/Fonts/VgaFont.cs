@@ -21,6 +21,6 @@ internal sealed class VgaFont : Font
     public override int Advance(char ch) => ch < Asset.Width.Length ? Asset.Width[ch] : Asset.Width[' '];
 
     // Its glyphs are one color already, so a silhouette is drawn the same way
-    protected override void DrawText(VideoManager video, int x, int y, string text, string color, bool silhouette)
-        => video.DrawPropString(x, y, text, color, Asset);
+    protected override void DrawText(VideoManager video, int x, int y, string text, string color, bool silhouette, byte[]? rowColors)
+        => video.DrawPropString(x, y, text, color, Asset, rowColors);
 }

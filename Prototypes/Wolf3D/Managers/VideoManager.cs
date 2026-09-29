@@ -495,6 +495,37 @@ internal class VideoManager
     /// each matched to the closest palette entry. Built on first use and kept until the palette
     /// or brightness changes.
     /// </summary>
+    private readonly Dictionary<(string Color, int Rows, int Top, int Bottom), byte[]> _gradients = [];
+
+    /// <summary>
+    /// A palette index for each of <paramref name="rows"/> rows of text, shading
+    /// <paramref name="color"/> from <paramref name="top"/> percent at the first row to
+    /// <paramref name="bottom"/> percent at the last: positive toward white, negative toward black.
+    /// Each row is matched to the closest palette entry. Built once per color and shape.
+    /// </summary>
+    internal byte[] GetGradient(string color, int rows, int top, int bottom)
+    {
+        rows = Math.Max(rows, 1);
+        var key = (color, rows, top, bottom);
+        if (_gradients.TryGetValue(key, out var table))
+            return table;
+
+        var c = gamepal[ResolveColorByte(color)];
+        static byte Shade(byte value, float amount)
+            => (byte)Math.Clamp(amount >= 0 ? value + (255 - value) * amount : value * (1 + amount), 0, 255);
+
+        table = new byte[rows];
+        for (int i = 0; i < rows; i++)
+        {
+            float t = rows > 1 ? i / (float)(rows - 1) : 0.5f;
+            float amount = (top + (bottom - top) * t) / 100f;
+            table[i] = FindClosestPaletteIndex(Shade(c.r, amount), Shade(c.g, amount), Shade(c.b, amount));
+        }
+
+        _gradients[key] = table;
+        return table;
+    }
+
     internal byte[] GetDarkenTable(float brightness)
     {
         if (_darkenTable != null && _darkenBrightness == brightness)
@@ -762,10 +793,11 @@ internal class VideoManager
     /// <summary>
     /// Draws part of a paletted image (width by height from srcX, srcY) at (x, y) in 320x200
     /// coordinates, leaving out pixels the opacity mask clears and pixels of the key color. With
-    /// a color, every pixel drawn is that color instead of its own. Clipped to the screen.
+    /// a color, every pixel drawn is that color instead of its own, or with
+    /// <paramref name="rowColors"/> too, each row that row's color. Clipped to the screen.
     /// </summary>
     internal void DrawImageRegion(byte[] pixels, byte[]? opacityMask, int stride, int srcX, int srcY, int width, int height,
-        int x, int y, byte? key = null, string? color = null)
+        int x, int y, byte? key = null, string? color = null, byte[]? rowColors = null)
     {
         IntPtr destPtr = LockSurface(screenBuffer);
         if (destPtr == IntPtr.Zero)
@@ -783,6 +815,8 @@ internal class VideoManager
                 if (dy < 0 || dy >= maxY)
                     continue;
 
+                byte? rowCol = col != null && rowColors != null ? rowColors[Math.Min(j, rowColors.Length - 1)] : col;
+
                 for (int i = 0; i < width; i++)
                 {
                     int dx = x + i;
@@ -794,7 +828,7 @@ internal class VideoManager
                     if ((opacityMask != null && opacityMask[src] == 0) || pixel == key)
                         continue;
 
-                    byte draw = col ?? pixel;
+                    byte draw = rowCol ?? pixel;
                     for (int m = 0; m < scaleFactor; m++)
                         for (int n = 0; n < scaleFactor; n++)
                             dest[ylookup[dy * scaleFactor + m] + dx * scaleFactor + n] = draw;
@@ -805,7 +839,8 @@ internal class VideoManager
         UnlockSurface(screenBuffer);
     }
 
-    internal void DrawPropString(int px, int py, string text, string fontcolor, FontAsset font)
+    /// <param name="rowColors">A palette index for each row of the glyphs, in place of <paramref name="fontcolor"/></param>
+    internal void DrawPropString(int px, int py, string text, string fontcolor, FontAsset font, byte[]? rowColors = null)
     {
         int width, step, height;
         byte[] source;
@@ -845,9 +880,10 @@ internal class VideoManager
                     {
                         if (font.RawData[locIndex + (i * step)] != 0)
                         {
+                            byte rowCol = rowColors != null ? rowColors[Math.Min(i, rowColors.Length - 1)] : col;
                             for (sy = 0; sy < scaleFactor; sy++)
                                 for (sx = 0; sx < scaleFactor; sx++)
-                                    dest[ylookup[scaleFactor * i + sy] + sx] = col;
+                                    dest[ylookup[scaleFactor * i + sy] + sx] = rowCol;
                         }
                     }
 

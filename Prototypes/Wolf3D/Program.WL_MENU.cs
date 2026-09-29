@@ -2159,10 +2159,25 @@ internal partial class Program
         return null;
     }
 
+    /// <summary>A label's gradient: its own, none, or null to keep the font's</summary>
+    private static FontGradient? LabelGradient(Label label)
+    {
+        if (label.Gradient == false)
+            return FontGradient.None;
+
+        if (label.Gradient == true || label.GradientTop != null || label.GradientBottom != null)
+        {
+            var d = FontGradient.Default;
+            return new FontGradient(label.GradientTop ?? d.Top, label.GradientBottom ?? d.Bottom);
+        }
+
+        return null;
+    }
+
     private static void DrawLabel(Label label)
     {
         var language = _assetManager.GetText("en-us");
-        var style = new TextStyle(label.Font, label.Color, Shadow: LabelShadow(label));
+        var style = new TextStyle(label.Font, label.Color, Shadow: LabelShadow(label), Gradient: LabelGradient(label));
 
         var text = label.Text.ToLanguageText(language);
         if (label.HorizontalOrientation == HorizontalOrientation.Center)
