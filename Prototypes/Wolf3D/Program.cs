@@ -139,7 +139,10 @@ internal partial class Program
 
         new Program();
         _gameEngineManager.Init(gameParams);
-        _assetManager.Load(_gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId, modPaths);
+
+        // The Mods menu's choices (mods.cfg, per game), then the command line's
+        var configMods = ModsConfig.Read(_gameEngineManager.GetConfigFilePath(ModsConfig.FileName));
+        _assetManager.Load(_gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId, configMods.Concat(modPaths));
         RegisterActorActions();
         RegisterConsoleCommands();
 

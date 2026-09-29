@@ -672,6 +672,41 @@ internal class GameEngineManager
 
         Environment.Exit(returnCode);
     }
+    /// <summary>
+    /// Quits as normal, saving the settings, and starts the game again: the same game pack and
+    /// folders, with the mods mods.cfg names. Mods, video options and --exec commands given on
+    /// the command line aren't passed on (the video options were saved as settings).
+    /// </summary>
+    public void Restart()
+    {
+        var args = new List<string> { "--game", GamePackId };
+        if (!string.IsNullOrWhiteSpace(GameParams.ConfigDir))
+            args.AddRange(["--configdir", GameParams.ConfigDir]);
+        if (!string.IsNullOrWhiteSpace(GameParams.SavesDir))
+            args.AddRange(["--savedir", GameParams.SavesDir]);
+
+        WriteConfig();
+        Shutdown();
+
+        try
+        {
+            var startInfo = new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath!)
+            {
+                WorkingDirectory = Environment.CurrentDirectory,
+                UseShellExecute = false,
+            };
+            foreach (var arg in args)
+                startInfo.ArgumentList.Add(arg);
+            System.Diagnostics.Process.Start(startInfo);
+        }
+        catch (Exception e)
+        {
+            Error($"The game couldn't be started again: {e.Message}");
+        }
+
+        Environment.Exit(0);
+    }
+
     public static void Error(string errorStr)
     {
         SDL2.SDL.SDL_ShowSimpleMessageBox(SDL2.SDL.SDL_MessageBoxFlags.SDL_MESSAGEBOX_ERROR, "Wolf4CSharp", errorStr, IntPtr.Zero);

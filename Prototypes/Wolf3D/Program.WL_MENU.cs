@@ -1578,9 +1578,12 @@ internal partial class Program
     private static void DrawMenuCheckbox(CP_iteminfo iteminfo, CP_itemtype[] items, string id, bool on)
     {
         int index = Array.FindIndex(items, item => item.id == id);
-        if (index < 0)
-            return;
+        if (index >= 0)
+            DrawMenuCheckbox(iteminfo, index, on);
+    }
 
+    private static void DrawMenuCheckbox(CP_iteminfo iteminfo, int index, bool on)
+    {
         int x = iteminfo.x + iteminfo.indent - 24;
         int y = iteminfo.y + index * 13 + 3;
         _graphicManager.DrawPic(on ? "c_selected" : "c_notselected", x, y);
@@ -2088,6 +2091,9 @@ internal partial class Program
                     .Select(skill => new CP_itemtype(1, skill.Name.ToLanguageText(language), null, skill))
                     .ToArray();
 
+            case "mods":
+                return BuildModsPage();
+
             default:
                 Console.WriteLine($"Menu '{menuName}': unknown items-source '{source}'");
                 return [];
@@ -2236,6 +2242,7 @@ internal partial class Program
             CP_NewGame,
             CP_Options,
             CP_Video,
+            CP_Mods,
             CP_Sound,
             CP_Control,
             CP_ControllerSettings,

@@ -134,9 +134,16 @@ internal class AssetManager
             if (!seen.Add(fullPath))
                 continue;
 
-            var mod = ModSource.TryOpen(fullPath, gamePackId, ModWarnings);
-            if (mod != null)
-                mods.Add(mod);
+            var mod = ModSource.TryOpen(fullPath, ModWarnings);
+            if (mod == null)
+                continue;
+            if (!mod.IsForGamePack(gamePackId))
+            {
+                ModWarnings.Add($"Mod '{mod.DisplayName}' is for {string.Join(", ", mod.Info.GamePacks!)}, not {gamePackId}, so it isn't loaded");
+                continue;
+            }
+
+            mods.Add(mod);
         }
 
         foreach (var warning in ModWarnings)

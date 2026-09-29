@@ -1,0 +1,36 @@
+music: "WONDERIN"
+type: "wolf3d-menu"
+# Indented enough for each mod's checkbox between the cursor and its name
+position:
+  x: 24
+  y: 51
+indent: 48
+# One row per pk3, zip or folder in the mods folder, checked when mods.cfg switches it on;
+# past 9 they come a page at a time, with a "More mods" row
+items-source: "mods"
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Label"
+    params:
+      - text: "$MENU_MODS"
+      - horizontal-orientation: "center"
+      - y: 30
+      - color: "READHCOLOR"
+  # Window fits 9 rows: 13 per row plus 6
+  -
+    type: "Window"
+    params:
+      - x: 16
+      - y: 48
+      - width: 288
+      - height: 123

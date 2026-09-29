@@ -22,6 +22,15 @@ $MENU_MESSAGES: "Messages"
 $MENU_BACKTOGAME: "Back to Game"
 $MENU_QUIT: "Quit"
 $MENU_VIDEO: "Video"
+$MENU_MODS: "Mods"
+
+# Mods
+$STR_MODS_NONE: "There are no mods in\nthe mods folder beside\nthe game."
+$STR_MODS_NONEFORGAME: "None of the mods in\nthe mods folder are\nmade for this game."
+$STR_MODS_MORE: "More mods..."
+$STR_MODS_RESTART: "The mods change when\nthe game starts again.\nRestart now? ({YESBUTTONNAME} or {NOBUTTONNAME})"
+$STR_MODS_RESTART_INGAME: "The mods change when\nthe game starts again,\nending this game.\nRestart now? ({YESBUTTONNAME} or {NOBUTTONNAME})"
+$STR_MODS_NOTSAVED: "Your choice of mods\ncouldn't be saved."
 
 # Video
 $STR_FULLSCREEN: "Fullscreen"

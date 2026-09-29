@@ -64,10 +64,30 @@ internal class ModSource
     }
 
     /// <summary>
-    /// Opens a mod, or gives null (with the reason in warnings) when it can't be read or its
-    /// modinfo.yaml says it's for other game packs
+    /// Whether the mod can load in this game pack: its modinfo.yaml names it, or names none
     /// </summary>
-    public static ModSource? TryOpen(string fullPath, string gamePackId, List<string> warnings)
+    public bool IsForGamePack(string gamePackId)
+        => Info.GamePacks is not { Count: > 0 } packs || packs.Contains(gamePackId, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Every pk3, zip and folder in the mods folder, by name
+    /// </summary>
+    public static IEnumerable<string> FindInModsFolder()
+    {
+        if (!Directory.Exists(ModsFolder))
+            return [];
+
+        return Directory.EnumerateDirectories(ModsFolder)
+            .Concat(Directory.EnumerateFiles(ModsFolder).Where(file =>
+                Path.GetExtension(file).Equals(".pk3", StringComparison.OrdinalIgnoreCase)
+                || Path.GetExtension(file).Equals(".zip", StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Opens a mod, or gives null (with the reason in warnings) when it can't be read
+    /// </summary>
+    public static ModSource? TryOpen(string fullPath, List<string> warnings)
     {
         IAssetSource source;
         try
@@ -94,13 +114,6 @@ internal class ModSource
             }
         }
 
-        var mod = new ModSource(fullPath, source, info);
-        if (info.GamePacks is { Count: > 0 } packs && !packs.Contains(gamePackId, StringComparer.OrdinalIgnoreCase))
-        {
-            warnings.Add($"Mod '{mod.DisplayName}' is for {string.Join(", ", packs)}, not {gamePackId}, so it isn't loaded");
-            return null;
-        }
-
-        return mod;
+        return new ModSource(fullPath, source, info);
     }
 }
