@@ -119,6 +119,16 @@ internal partial class Program
             if (demorecord && playstate != playstatetypes.ex_warped)
                 FinishDemoRecord();
 
+            if (pendingDemo != null)
+            {
+                // playdemo ended the game: back to the title loop, which plays the demo
+                ClearMemory();
+                _videoManager.FadeOut();
+                FindMenuItem(MainMenu, "savegame")?.active = 0;
+                EnableViewScoresMenuItem();
+                return;
+            }
+
             if (startgame || loadedgame)
             {
                 ClearMemory();
@@ -252,6 +262,31 @@ internal partial class Program
     }
 
     internal const int MAXDEMOSIZE = 8192;
+
+    /// <summary>
+    /// A demo asked for by playdemo; the title loop plays it next (a game in progress ends first)
+    /// </summary>
+    internal static int? pendingDemo;
+
+    /// <summary>Whether demo number <paramref name="demonumber"/> has been recorded or comes with the game</summary>
+    internal static bool DemoExists(int demonumber)
+        => File.Exists(DemoFilePath(demonumber)) || _assetManager.Exists<DemoAsset>($"demo{demonumber}");
+
+    /// <summary>
+    /// Plays the demo playdemo asked for, if any, leaving the screen faded and the title music on
+    /// </summary>
+    internal static void PlayPendingDemo()
+    {
+        if (pendingDemo is not int demonumber)
+            return;
+
+        pendingDemo = null;
+        PlayDemo(demonumber);
+        _videoManager.FadeOut();
+        if (_videoManager.screenHeight % 200 != 0)
+            _videoManager.ClearScreen(0x00);
+        StartCPMusic(INTROSONG);
+    }
 
     /// <summary>A recorded demo's file: DEMO0.dmo to DEMO9.dmo in the demos folder</summary>
     private static string DemoFilePath(int demonumber)

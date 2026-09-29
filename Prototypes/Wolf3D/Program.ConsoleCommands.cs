@@ -132,6 +132,9 @@ internal partial class Program
         Register("actors", "Lists actors, optionally only those whose name contains the filter.", "actors [filter]", Cmd_Actors, InLevel,
             complete: (_, i) => i == 0 ? _mapManager.GetActors().Select(a => a.Name) : []);
         Register("maps", "Lists the levels that map can warp to.", "maps", Cmd_Maps);
+        Register("playdemo", "Plays a demo: one recorded with that number (DEMO#.dmo in the demos folder), or else the game's own. Ends the game in progress, then goes back to the title.",
+            "playdemo <0-9>", Cmd_PlayDemo,
+            complete: (_, i) => i == 0 ? Enumerable.Range(0, 10).Where(DemoExists).Select(n => n.ToString()) : []);
         Register("saves", "Lists the saved games, newest first, numbered for load.", "saves", Cmd_Saves);
         Register("autosave", "Whether each new level saves itself as it starts, to the Autosave.", "autosave [0|1]",
             Cmd_AutoSave, complete: Values("0", "1"));
@@ -723,6 +726,24 @@ internal partial class Program
         }
 
         _consoleManager.Print($"{shown} actor(s)");
+    }
+
+    // Queues the demo for the title loop; in a level the game ends first (PlayLoop exits on the
+    // abort, and GameLoop, seeing pendingDemo, goes back to the title without a death or scores)
+    private static void Cmd_PlayDemo(string[] args)
+    {
+        if (args.Length == 0 || !int.TryParse(args[0], out int demonumber) || demonumber < 0 || demonumber > 9)
+            throw new ArgumentException("usage: playdemo <0-9>");
+
+        if (!DemoExists(demonumber))
+        {
+            _consoleManager.Print($"There's no demo {demonumber}");
+            return;
+        }
+
+        pendingDemo = demonumber;
+        if (ingame)
+            playstate = playstatetypes.ex_abort;
     }
 
     private static void Cmd_Maps(string[] args)

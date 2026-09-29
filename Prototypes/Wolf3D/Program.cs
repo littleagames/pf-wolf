@@ -361,6 +361,8 @@ internal partial class Program
 
         while (true)
         {
+            PlayPendingDemo();      // playdemo, from the command line's --exec or a game it ended
+
             while (!param_nowait)
             {
                 //
