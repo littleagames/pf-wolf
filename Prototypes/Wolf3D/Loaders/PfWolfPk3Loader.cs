@@ -7,9 +7,13 @@ namespace Wolf3D.Loaders;
 
 /// <summary>
 /// Where one step of an asset came from: a source ("pfwolf.pk3", "mymod.pk3", "vswap.wl6"), the
-/// file in it, and whether that step added the asset, replaced it or merged into it
+/// file in it, and whether that step added the asset, replaced it, merged into it, or couldn't
+/// be loaded and was left out
 /// </summary>
-internal record AssetOrigin(string Source, string Path, string Action);
+internal record AssetOrigin(string Source, string Path, string Action)
+{
+    public const string LeftOut = "left out";
+}
 
 internal class PfWolfPk3Loader
 {
@@ -49,7 +53,7 @@ internal class PfWolfPk3Loader
     private string GamePalette => Load<GamePackInfoAsset>("gamepack-info").GetGamePalette(_gameReleaseId);
 
     /// <summary>
-    /// What was wrong with the mods' files: each was left out, or fell back to what it replaced
+    /// Files that couldn't be loaded (mostly mods'): each was left out, or fell back to what it replaced
     /// </summary>
     public List<string> Warnings { get; } = [];
 
@@ -223,6 +227,15 @@ internal class PfWolfPk3Loader
         if (fullName.StartsWith("sprites/"))
         {
             AddReference(assetName, () => PngSpriteDataLoader.Load(entry.Open(), sourcePalette: Load<Palette>(GamePalette)));
+            return;
+        }
+
+        if (fullName.StartsWith("maps/"))
+        {
+            // maps/NAME.wad, an ECWolf binary map, is the level NAME: in place of the game's own
+            // level of that name, or a new one for game-info to send the player to
+            if (entry.Name.EndsWith(".wad", StringComparison.OrdinalIgnoreCase))
+                AddReference(assetName, () => EcWolfMapLoader.Load(entry.Open().ToArray()));
             return;
         }
     }
@@ -560,7 +573,15 @@ internal class PfWolfPk3Loader
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error loading asset '{asset.Key}': {e.Message}");
+                // Left out, so the game's own data file (a GAMEMAPS level, say) can fill in for it
+                var reason = (e as System.Reflection.TargetInvocationException)?.InnerException?.Message ?? e.Message;
+                var where = asset.Key;
+                if (_origins.TryGetValue(asset.Key, out var origins) && origins.Count > 0)
+                {
+                    where = $"{origins[^1].Source}: {origins[^1].Path}";
+                    origins[^1] = origins[^1] with { Action = AssetOrigin.LeftOut };
+                }
+                Warn($"{where} can't be loaded, so it's left out: {reason}");
                 continue;
             }
         }

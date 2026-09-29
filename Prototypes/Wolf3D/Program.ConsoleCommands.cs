@@ -1,6 +1,8 @@
 ﻿using SDL2;
 using System.Text;
+using Wolf3D.Assets;
 using Wolf3D.Configuration;
+using Wolf3D.Loaders;
 
 namespace Wolf3D;
 
@@ -135,6 +137,9 @@ internal partial class Program
         Register("mods", "Lists the mods loaded over pfwolf.pk3, in load order, and anything wrong with them.", "mods", Cmd_Mods);
         Register("assetinfo", "Shows where an asset came from: each file that added, replaced or merged into it, in order.",
             "assetinfo <name>", Cmd_AssetInfo, complete: (_, i) => i == 0 ? _assetManager.AssetNames : []);
+        Register("exportmap", "Writes a level, or all of them, as ECWolf binary maps (NAME.wad) for a mod's maps/ folder: to the exports folder, or the folder given.",
+            "exportmap <MAP##|all> [folder]", Cmd_ExportMap,
+            complete: (_, i) => i == 0 ? ["all", .. _gameEngineManager.GetGameInfo().Maps.Keys] : []);
         Register("playdemo", "Plays a demo: one recorded with that number (DEMO#.dmo in the demos folder), or else the game's own. Ends the game in progress, then goes back to the title.",
             "playdemo <0-9>", Cmd_PlayDemo,
             complete: (_, i) => i == 0 ? Enumerable.Range(0, 10).Where(DemoExists).Select(n => n.ToString()) : []);
@@ -469,11 +474,44 @@ internal partial class Program
             found = true;
             _consoleManager.Print($"{name} ({type})");
             foreach (var origin in origins)
-                _consoleManager.Print($"  {origin.Action} by {origin.Source}: {origin.Path}");
+            {
+                _consoleManager.Print(origin.Action == AssetOrigin.LeftOut
+                    ? $"  left out, couldn't be loaded: {origin.Source}: {origin.Path}"
+                    : $"  {origin.Action} by {origin.Source}: {origin.Path}");
+            }
         }
 
         if (!found)
             _consoleManager.Print($"No asset named {args[0]}");
+    }
+
+    private static void Cmd_ExportMap(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: exportmap <MAP##|all> [folder]");
+
+        var mapNames = args[0].Equals("all", StringComparison.OrdinalIgnoreCase)
+            ? _gameEngineManager.GetGameInfo().Maps.Keys.ToList()
+            : [args[0]];
+        var folder = args.Length > 1 ? args[1] : _gameEngineManager.ConfigDirectories.ExportsDirectory;
+        Directory.CreateDirectory(folder);
+
+        var written = 0;
+        foreach (var mapName in mapNames)
+        {
+            // The level as loaded, before a game changes it
+            var map = _assetManager.Find<MapAsset>(mapName);
+            if (map == null)
+            {
+                _consoleManager.Print($"No level named {mapName}");
+                continue;
+            }
+
+            File.WriteAllBytes(Path.Combine(folder, $"{mapName.ToUpperInvariant()}.wad"), EcWolfMapLoader.Save(map, mapName));
+            written++;
+        }
+
+        _consoleManager.Print($"Wrote {written} level{(written == 1 ? "" : "s")} to {Path.GetFullPath(folder)}");
     }
 
     private static void Cmd_Binds(string[] args)
