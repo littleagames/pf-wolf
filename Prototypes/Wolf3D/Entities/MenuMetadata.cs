@@ -596,6 +596,21 @@ internal record Label : MenuComponent
     public string Color { get; set; } = "TEXTCOLOR";
     public string Font { get; set; } = "LargeFont";
 
+    /// <summary>
+    /// true gives the text a drop shadow, false takes away the font's own (fonts.yaml); left out,
+    /// the text has whatever shadow its font has. Setting a shadow-x, -y or -color turns it on too.
+    /// </summary>
+    public bool? Shadow { get; set; }
+
+    /// <summary>How far right of the text the shadow sits; defaults to 1</summary>
+    public int? ShadowX { get; set; }
+
+    /// <summary>How far down from the text the shadow sits; defaults to 1</summary>
+    public int? ShadowY { get; set; }
+
+    /// <summary>The shadow's color; defaults to Black</summary>
+    public string? ShadowColor { get; set; }
+
     public Label()
     {
     }

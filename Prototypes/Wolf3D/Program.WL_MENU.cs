@@ -2144,10 +2144,25 @@ internal partial class Program
         StartCPMusic(menu.Music);
     }
 
+    /// <summary>A label's shadow: its own, none, or null to keep the font's</summary>
+    private static FontShadow? LabelShadow(Label label)
+    {
+        if (label.Shadow == false)
+            return FontShadow.None;
+
+        if (label.Shadow == true || label.ShadowX != null || label.ShadowY != null || label.ShadowColor != null)
+        {
+            var d = FontShadow.Default;
+            return new FontShadow(label.ShadowX ?? d.X, label.ShadowY ?? d.Y, label.ShadowColor ?? d.Color);
+        }
+
+        return null;
+    }
+
     private static void DrawLabel(Label label)
     {
         var language = _assetManager.GetText("en-us");
-        var style = new TextStyle(label.Font, label.Color);
+        var style = new TextStyle(label.Font, label.Color, Shadow: LabelShadow(label));
 
         var text = label.Text.ToLanguageText(language);
         if (label.HorizontalOrientation == HorizontalOrientation.Center)
