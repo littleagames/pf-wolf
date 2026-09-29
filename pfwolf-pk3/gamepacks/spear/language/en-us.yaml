@@ -10,3 +10,8 @@ $ENDSTR15: "I think you had better\nplay some more. Please\npress {NOBUTTONNAME}
 $ENDSTR16: "If you are tough, press {NOBUTTONNAME}.\nIf not, press {YESBUTTONNAME} daintily."
 $ENDSTR17: "I'm thinkin' that\nyou might wanna press {NOBUTTONNAME}\nto play more. You do it."
 $ENDSTR18: "Sure. Fine. Quit.\nSee if we care.\nGet it over with.\nPress {YESBUTTONNAME}."
+
+# Obituaries for Spear's bosses (the rest come from Wolfenstein 3D's)
+$OB_UBERMUTANT: "You were torn apart by %k."
+$OB_ANGEL: "You were struck down by %k."
+$OB_SPECTRE: "Your life was drained by %k."

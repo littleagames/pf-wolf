@@ -34,6 +34,10 @@ internal record Actor : Thinker
     // unlinks the actor once its tic finishes, since removing it mid-walk would break the iteration.
     public bool IsRemoved { get; internal set; }
 
+    // For a projectile: the actor that fired it (Program.EnemyAI.cs's ThrowProjectile), so a
+    // death by it is put down to the shooter (Died's obituary). Not kept in saved games.
+    public Actor? Shooter { get; internal set; }
+
     // Sub-tile fixed-point world position and its containing tile -- kept as separate mutable
     // fields because the movement code (MoveObj/TryWalk) updates TileX/TileY the instant a move
     // toward a new tile begins, while X/Y trail behind and approach the new tile center gradually.

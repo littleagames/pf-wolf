@@ -1150,6 +1150,7 @@ internal partial class Program
         newobj.TicCount = 1;
         newobj.Angle = (short)iangle;
         newobj.Speed = speed;
+        newobj.Shooter = ob;
 
         if (sound == null && newobj.Properties.TryGetValue("attacksound", out var attackSound))
             sound = attackSound as string;

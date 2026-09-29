@@ -67,13 +67,14 @@ internal class HudMessageManager
 
     /// <summary>
     /// Shows <paramref name="text"/> (a $NAME language key or the text itself) in the named
-    /// style, or Default. The same text already up at that position is brought back to the
-    /// bottom of its stack with its time restarted instead of shown twice. It's printed to the
-    /// console too, which keeps a history of them.
+    /// style, or Default. ZDoom-style placeholders in it, such as %k, are filled in from
+    /// <paramref name="placeholders"/> (%% is a percent sign). The same text already up at that
+    /// position is brought back to the bottom of its stack with its time restarted instead of
+    /// shown twice. It's printed to the console too, which keeps a history of them.
     /// </summary>
-    internal void Show(string? text, string? styleName = null)
+    internal void Show(string? text, string? styleName = null, IReadOnlyDictionary<char, string>? placeholders = null)
     {
-        text = text?.ToLanguageText(assetManager.Value.GetText("en-us")).Trim();
+        text = text == null ? null : FillPlaceholders(Localize(text), placeholders).Trim();
         if (string.IsNullOrEmpty(text))
             return;
 
@@ -86,6 +87,42 @@ internal class HudMessageManager
             messages.Remove(stack[i]);
 
         consoleManager.Value.Print(text);
+    }
+
+    /// <summary>The text for a $NAME language key; anything else as it is</summary>
+    internal string Localize(string text) => text.ToLanguageText(assetManager.Value.GetText("en-us"));
+
+    /// <summary>
+    /// <paramref name="text"/> with each %x that has a value in <paramref name="placeholders"/>
+    /// replaced by it and %% by a percent sign; any other % is left as it is
+    /// </summary>
+    internal static string FillPlaceholders(string text, IReadOnlyDictionary<char, string>? placeholders)
+    {
+        if (!text.Contains('%'))
+            return text;
+
+        var result = new System.Text.StringBuilder(text.Length);
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (text[i] == '%' && i + 1 < text.Length)
+            {
+                char code = text[i + 1];
+                if (code == '%')
+                {
+                    result.Append('%');
+                    i++;
+                    continue;
+                }
+                if (placeholders != null && placeholders.TryGetValue(code, out var value))
+                {
+                    result.Append(value);
+                    i++;
+                    continue;
+                }
+            }
+            result.Append(text[i]);
+        }
+        return result.ToString();
     }
 
     /// <summary>Counts down each message's time, and takes away the ones that have run out</summary>

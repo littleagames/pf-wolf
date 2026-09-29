@@ -213,3 +213,8 @@ $GOTSILVERKEY: "Picked up the silver key."
 $LOCKEDDOOR: "This door is locked."
 $NEEDGOLDKEY: "You need the gold key to open this door."
 $NEEDSILVERKEY: "You need the silver key to open this door."
+
+# Obituaries: what killed the player. An actor's "obituary" can use %o (the player's tag),
+# %k (the killer's tag, or its class) and %% (a percent sign).
+$OB_DIED: "You died."
+$OB_KILLED: "You were killed by %k."

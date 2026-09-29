@@ -67,6 +67,42 @@ internal partial class Program
         }
     }
 
+    /// <summary>The style an obituary is shown in when its killer doesn't give one</summary>
+    internal const string ObituaryStyleName = "Obituary";
+
+    /// <summary>
+    /// Says what killed the player (LastAttacker): its `obituary` in its `obituarystyle`. A
+    /// projectile without an obituary of its own is put down to whoever fired it. A killer with
+    /// none says "killed by", and no killer at all (the `hurt` command) that the player died.
+    /// %o in the text is the player's tag and %k the killer's (the shooter's, for a projectile).
+    /// </summary>
+    internal static void ShowObituary()
+    {
+        var killer = LastAttacker;
+        var source = killer?.Shooter != null && !killer.Properties.ContainsKey("obituary") ? killer.Shooter : killer;
+
+        string text = source == null ? "$OB_DIED" : PropertyText(source, "obituary") ?? "$OB_KILLED";
+        string? style = source == null ? null : PropertyText(source, "obituarystyle");
+
+        _hudMessageManager.Show(text, style ?? ObituaryStyleName, new Dictionary<char, string>
+        {
+            ['o'] = ActorTag(player),
+            ['k'] = killer == null ? "" : ActorTag(killer.Shooter ?? killer),
+        });
+    }
+
+    /// <summary>
+    /// An actor's name for messages: its `tag` (a $NAME language key or the name), or its class.
+    /// The class's actordefs are asked too, for the player, whose actor is built in code.
+    /// </summary>
+    internal static string ActorTag(Entities.Actors.Actor actor) =>
+        (PropertyText(actor, "tag") ?? _inventoryManager.GetStringProperty(actor.Name, "tag")) is { Length: > 0 } tag
+            ? _hudMessageManager.Localize(tag)
+            : actor.Name;
+
+    private static string? PropertyText(Entities.Actors.Actor actor, string key) =>
+        actor.Properties.TryGetValue(key, out var value) && value?.ToString() is { Length: > 0 } text ? text : null;
+
     /// <summary>0 for an anchor on the left, 1 for the middle, 2 for the right</summary>
     private static int HorizontalPlace(HudAnchor anchor) => (int)anchor % 3;
 

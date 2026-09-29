@@ -2,6 +2,8 @@
 # named "Player"); only these properties are read from here.
 Player:
   properties:
+    # The player's name in messages: %o in an obituary
+    "tag": "B.J. Blazkowicz"
     # A new game's (and a respawn's) inventory: item: amount. The best weapon given
     # (lowest weapon.selectionorder) is the one in hand.
     "player.startitem":

@@ -160,6 +160,8 @@ Guard:
         frames: [N]
         tics-per-frame: -1
   properties:
+    "tag": "Guard"
+    "obituary": "$OB_GUARD"
     "health": 25
     "speed": 512
     "monster.chasespeedmultiplier": 3
@@ -265,6 +267,8 @@ Officer:
         frames: [O]
         tics-per-frame: -1
   properties:
+    "tag": "Officer"
+    "obituary": "$OB_OFFICER"
     "health": 50
     "speed": 512
     "monster.chasespeedmultiplier": 5
@@ -399,6 +403,8 @@ SS:
         frames: [M]
         tics-per-frame: -1
   properties:
+    "tag": "SS Guard"
+    "obituary": "$OB_SS"
     "health": 100
     "speed": 512
     "monster.chasespeedmultiplier": 4
@@ -518,6 +524,8 @@ Mutant:
         frames: [P]
         tics-per-frame: -1
   properties:
+    "tag": "Mutant"
+    "obituary": "$OB_MUTANT"
     "health.baby": 45
     "health.easy": 55
     "health.normal": 55
@@ -628,6 +636,8 @@ Dog:
         frames: [K]
         tics-per-frame: -1
   properties:
+    "tag": "Dog"
+    "obituary": "$OB_DOG"
     "health": 1
     "speed": 1500
     "monster.chasespeedmultiplier": 2

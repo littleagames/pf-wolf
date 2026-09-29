@@ -632,6 +632,7 @@ internal partial class Program
 
         gamestate.weapon = null;                     // take away weapon
         _audioManager.Play("player/death");
+        ShowObituary();
 
         //
         // swing around to face attacker
@@ -686,6 +687,7 @@ internal partial class Program
 
                 ThreeDRefresh();
                 CalcTics();
+                _hudMessageManager.Tick((int)tics);
             } while (curangle != iangle);
         }
         else
@@ -708,6 +710,7 @@ internal partial class Program
 
                 ThreeDRefresh();
                 CalcTics();
+                _hudMessageManager.Tick((int)tics);
             } while (curangle != iangle);
         }
 
@@ -717,6 +720,7 @@ internal partial class Program
         _videoManager.FinishPaletteShifts();
 
         _videoManager.BarScaledCoord(viewscreenx, viewscreeny, viewwidth, viewheight, "Maroon");
+        DrawHudMessages();      // the obituary stays up on the red, through the fade and the wait after it
 
         _inputManager.ClearKeysDown();
 

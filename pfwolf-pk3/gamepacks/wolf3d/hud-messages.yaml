@@ -37,6 +37,15 @@ Center:
   duration: 140
   max-lines: 2
 
+# What killed the player (an actor's "obituary"), shown when it has no "obituarystyle". It
+# stays up through the turn to face the killer and on the red after it. One line, so it
+# pushes out a locked-door message sharing the middle of the view.
+Obituary:
+  parent: Center
+  color: White
+  duration: 350
+  max-lines: 1
+
 # Across the bottom of the view, above the weapon
 Bottom:
   anchor: Bottom
