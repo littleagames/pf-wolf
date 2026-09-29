@@ -243,10 +243,14 @@ internal class AssetManager
     {
         try
         {
-            var actors = FindInGamePack<ActorTranslationAsset>("actordefs");
+            // Files directly in actordefs/ belong to every pack; the running pack's own
+            // (actordefs/{pack}/) come after, so a class it defines replaces the shared one.
             var data = new ActorMetadata();
-            if (actors != null)
-                data.AddActors(actors.Actors);
+            foreach (var actors in new[] { Find<ActorTranslationAsset>("actordefs"), FindInGamePack<ActorTranslationAsset>("actordefs") })
+            {
+                if (actors != null)
+                    data.AddActors(actors.Actors);
+            }
 
             return data;
         }

@@ -1,0 +1,12 @@
+# The "LET'S SEE THAT AGAIN!" banner shown over the view while the death cam replays a boss's
+# death (A_StartDeathCam). Shared by every game pack; a pack's own actordefs can redefine it.
+#
+# Not placed on maps: DrawPlayerWeapon draws its current frame where the weapon would be,
+# flashing it on and off, while the player is on its DeathCam state.
+
+DeathCam:
+  states:
+    Spawn:
+      - sprite: DCAM
+        frames: [A]
+        tics-per-frame: -1

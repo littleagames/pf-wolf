@@ -1314,12 +1314,16 @@ internal partial class Program
         }
     }
 
+    // The death cam's banner (actordefs/deathcam.yaml), built the first time it's shown
+    static Entities.Actors.Actor? deathCamSprite;
+
     internal static void DrawPlayerWeapon()
     {
         if (gamestate.victoryflag)
         {
-            if (player.CurrentState?.StateName == PlayerPawn.DeathCamState && (GameEngineManager.GetTimeCount() & 32) != 0)
-                SimpleScaleShape(viewwidth / 2, "DCAMA", viewheight + 1);
+            if (player.CurrentState?.StateName == PlayerPawn.DeathCamState && (GameEngineManager.GetTimeCount() & 32) != 0
+                && (deathCamSprite ??= _inventoryManager.CreateActor("DeathCam"))?.CurrentState is { Sprite.Length: > 0 } state)
+                SimpleScaleShape(viewwidth / 2, $"{state.Sprite}{state.FrameLetter}0", viewheight + 1);
             return;
         }
 
@@ -1328,7 +1332,7 @@ internal partial class Program
             SimpleScaleShape(viewwidth / 2, shape, viewheight + 1);
 
         if (demorecord || demoplayback)
-            SimpleScaleShape(viewwidth / 2, "DEMOA", viewheight + 1);
+            SimpleScaleShape(viewwidth / 2, "DEMOA0", viewheight + 1);
     }
 
     internal static void ThreeDRefresh()
