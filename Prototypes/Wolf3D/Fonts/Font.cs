@@ -30,17 +30,52 @@ internal abstract class Font
     /// </summary>
     public FontGradient? Gradient { get; set; }
 
-    /// <summary>Draws a line of text, with the font's own shadow and gradient</summary>
-    public void Draw(VideoManager video, int x, int y, string text, string color) => Draw(video, x, y, text, color, Shadow, Gradient);
+    /// <summary>A border in one color around each glyph; none by default</summary>
+    public FontOutline? Outline { get; set; }
+
+    /// <summary>A halo round the glyphs fading out into the background; none by default</summary>
+    public FontGlow? Glow { get; set; }
 
     /// <summary>
-    /// Draws a line of text with <paramref name="shadow"/> behind it and shaded by
-    /// <paramref name="gradient"/>, in place of the font's own; none for null
+    /// Draws a line of text, with the font's own shadow, outline, gradient and glow; a glow fades
+    /// into black, as there's no style saying what's behind the text
     /// </summary>
-    public void Draw(VideoManager video, int x, int y, string text, string color, FontShadow? shadow, FontGradient? gradient)
+    public void Draw(VideoManager video, int x, int y, string text, string color)
+        => Draw(video, x, y, text, color, Shadow, Gradient, Outline, Glow, "Black");
+
+    /// <summary>
+    /// Draws a line of text with <paramref name="glow"/> and <paramref name="shadow"/> behind it,
+    /// <paramref name="outline"/> around it and shaded by <paramref name="gradient"/>, in place
+    /// of the font's own; none for null. The glow fades into <paramref name="background"/> and,
+    /// like the shadow, spreads from the outlined text. None of them change how far characters
+    /// move along, so they spread into the gaps between them.
+    /// </summary>
+    public void Draw(VideoManager video, int x, int y, string text, string color, FontShadow? shadow, FontGradient? gradient,
+        FontOutline? outline = null, FontGlow? glow = null, string background = "Black")
     {
+        bool outlined = outline != null && outline != FontOutline.None;
+        var outlineOffsets = outlined ? outline!.Offsets() : [];
+
+        // Outermost ring first, so each pixel ends up the color of the ring nearest the text
+        if (glow != null && glow != FontGlow.None)
+        {
+            var ringColors = video.GetGlowColors(glow.Color ?? color, background, glow.Radius, glow.Strength);
+            var rings = glow.Rings(outlined ? outline!.Thickness : 0);
+            for (int ring = rings.Count - 1; ring >= 0; ring--)
+                foreach (var (dx, dy) in rings[ring])
+                    DrawText(video, x + dx, y + dy, text, ringColors[ring], silhouette: true, rowColors: null);
+        }
+
         if (shadow != null && shadow != FontShadow.None)
+        {
             DrawText(video, x + shadow.X, y + shadow.Y, text, shadow.Color, silhouette: true, rowColors: null);
+            foreach (var (dx, dy) in outlineOffsets)
+                DrawText(video, x + shadow.X + dx, y + shadow.Y + dy, text, shadow.Color, silhouette: true, rowColors: null);
+        }
+
+        // Every glyph's outline goes down before any glyph, so one doesn't cover its neighbor
+        foreach (var (dx, dy) in outlineOffsets)
+            DrawText(video, x + dx, y + dy, text, outline!.Color, silhouette: true, rowColors: null);
 
         byte[]? rowColors = gradient != null && gradient != FontGradient.None
             ? video.GetGradient(color, Height, gradient.Top, gradient.Bottom)
@@ -79,6 +114,71 @@ internal record FontShadow(int X, int Y, string Color)
 
     /// <summary>One pixel right and down, in black</summary>
     public static readonly FontShadow Default = new(1, 1, "Black");
+}
+
+/// <summary>
+/// A border around text: <paramref name="Thickness"/> pixels of <paramref name="Color"/> on
+/// every side, including the corners when <paramref name="Diagonals"/> (otherwise only straight
+/// up, down, left and right, for a rounder look)
+/// </summary>
+internal record FontOutline(string Color, int Thickness = 1, bool Diagonals = true)
+{
+    /// <summary>For a <see cref="TextStyle"/>: no outline, even if the font has one</summary>
+    public static readonly FontOutline None = new("", 0);
+
+    /// <summary>One pixel of black all round</summary>
+    public static readonly FontOutline Default = new("Black");
+
+    /// <summary>Where the text is drawn again, in the outline color, to make the outline</summary>
+    public List<(int X, int Y)> Offsets()
+    {
+        var offsets = new List<(int, int)>();
+        for (int dy = -Thickness; dy <= Thickness; dy++)
+            for (int dx = -Thickness; dx <= Thickness; dx++)
+            {
+                if (dx == 0 && dy == 0)
+                    continue;
+                if (!Diagonals && Math.Abs(dx) + Math.Abs(dy) > Thickness)
+                    continue;
+                offsets.Add((dx, dy));
+            }
+        return offsets;
+    }
+}
+
+/// <summary>
+/// A halo round text: <paramref name="Radius"/> rings of pixels, the nearest in the glow color
+/// at <paramref name="Strength"/> percent over the background, each further one fading more
+/// toward the background. No <paramref name="Color"/> glows in the text's own color.
+/// </summary>
+internal record FontGlow(string? Color = null, int Radius = 2, int Strength = 50)
+{
+    /// <summary>For a <see cref="TextStyle"/>: no glow, even if the font has one</summary>
+    public static readonly FontGlow None = new(null, 0, 0);
+
+    /// <summary>Two rings in the text's color, from 50% strength</summary>
+    public static readonly FontGlow Default = new();
+
+    /// <summary>
+    /// For each ring, nearest first, where the text is drawn again to make it: the offsets
+    /// <paramref name="reach"/> plus the ring's number of pixels away (rounded), so a glow round
+    /// an outline starts outside it
+    /// </summary>
+    public List<List<(int X, int Y)>> Rings(int reach)
+    {
+        var rings = new List<List<(int, int)>>();
+        for (int ring = 1; ring <= Radius; ring++)
+        {
+            int distance = reach + ring;
+            var offsets = new List<(int, int)>();
+            for (int dy = -distance; dy <= distance; dy++)
+                for (int dx = -distance; dx <= distance; dx++)
+                    if ((int)Math.Round(Math.Sqrt(dx * dx + dy * dy)) == distance)
+                        offsets.Add((dx, dy));
+            rings.Add(offsets);
+        }
+        return rings;
+    }
 }
 
 /// <summary>

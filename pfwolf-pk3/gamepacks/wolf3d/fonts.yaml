@@ -41,6 +41,17 @@
 #                 toward white (positive) or black (negative) at the top and bottom rows, blending
 #                 in between (those are the defaults, so "gradient: {}" works). Only for glyphs
 #                 drawn in the text's color: vga fonts, and graphic or sheet fonts with colorize.
+#   outline:      A border round each glyph, e.g. { color: Black, thickness: 1, diagonals: true }
+#                 (the defaults, so "outline: {}" works); diagonals: false leaves the corners out
+#                 for a rounder look. Characters don't move further apart, so outlines fill the
+#                 gaps between them. Like shadows, picture glyphs need see-through pixels.
+#   glow:         A halo fading out from the glyphs into the background color behind the text
+#                 (the style's, e.g. BKGDCOLOR in menus), e.g. { color: Yellow, radius: 2, strength: 50 }:
+#                 radius rings of pixels, the nearest strength percent glow color, the rest fading.
+#                 No color glows in the text's own color; "glow: {}" uses the defaults. It's drawn
+#                 in solid colors, so over a picture it covers it rather than showing it through.
+#   Shadows, outlines and glows reach past the letters and paint over whatever is next to the
+#   text, such as the border of a tight box round it; keep them small on fonts used in boxes.
 
 SmallFont:
   type: vga

@@ -492,8 +492,8 @@ internal partial class Program
         int w = TextWidth(s, style.Font);
 
         // Blinks by drawing the cursor glyph in the text color, then in the background color;
-        // without a shadow, which would reach below the line and wear away what's there
-        style = style with { Shadow = FontShadow.None };
+        // without a shadow, outline or glow, which would reach past the line and wear away what's there
+        style = style with { Shadow = FontShadow.None, Outline = FontOutline.None, Glow = FontGlow.None };
         _graphicManager.DrawText(x + w - 1, y, "\x80", (_xoricursor_status ^= true) ? style : style.Inverted);
     }
 

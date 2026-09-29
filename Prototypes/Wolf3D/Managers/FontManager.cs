@@ -46,6 +46,10 @@ internal class FontManager
             font.Shadow = new FontShadow(shadow.X, shadow.Y, shadow.Color);
         if (definition?.Gradient is { } gradient)
             font.Gradient = new FontGradient(gradient.Top, gradient.Bottom);
+        if (definition?.Outline is { } outline)
+            font.Outline = new FontOutline(outline.Color, Math.Max(outline.Thickness, 1), outline.Diagonals);
+        if (definition?.Glow is { } glow)
+            font.Glow = new FontGlow(glow.Color, Math.Max(glow.Radius, 1), Math.Clamp(glow.Strength, 0, 100));
 
         fonts[name] = font;
         return font;

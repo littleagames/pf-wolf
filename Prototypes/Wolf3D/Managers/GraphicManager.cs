@@ -44,7 +44,20 @@ internal class GraphicManager
         if (shadow != null && shadow != FontShadow.None && style.ShadowColor != null)
             shadow = shadow with { Color = style.ShadowColor };
 
-        font.Draw(videoManager, x, y, text, style.Color, shadow, style.Gradient ?? font.Gradient);
+        var outline = style.Outline ?? font.Outline;
+        if (outline != null && outline != FontOutline.None && style.OutlineColor != null)
+            outline = outline with { Color = style.OutlineColor };
+
+        // A glow color draws the rings flat, fading from that color into itself
+        var glow = style.Glow ?? font.Glow;
+        var glowBackground = style.Background;
+        if (glow != null && glow != FontGlow.None && style.GlowColor != null)
+        {
+            glow = glow with { Color = style.GlowColor };
+            glowBackground = style.GlowColor;
+        }
+
+        font.Draw(videoManager, x, y, text, style.Color, shadow, style.Gradient ?? font.Gradient, outline, glow, glowBackground);
     }
 
     public void DrawText(int x, int y, string text, Font font, string color) => font.Draw(videoManager, x, y, text, color);

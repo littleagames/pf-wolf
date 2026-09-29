@@ -526,6 +526,35 @@ internal class VideoManager
         return table;
     }
 
+    private readonly Dictionary<(string Glow, string Background, int Radius, int Strength), string[]> _glowColors = [];
+
+    /// <summary>
+    /// The color of each of <paramref name="radius"/> glow rings, nearest the text first: the
+    /// glow color mixed into the background at <paramref name="strength"/> percent for the
+    /// first, fading evenly for the rest. Each is a palette index, as a color string.
+    /// </summary>
+    internal string[] GetGlowColors(string glow, string background, int radius, int strength)
+    {
+        radius = Math.Max(radius, 1);
+        var key = (glow, background, radius, strength);
+        if (_glowColors.TryGetValue(key, out var colors))
+            return colors;
+
+        var g = gamepal[ResolveColorByte(glow)];
+        var b = gamepal[ResolveColorByte(background)];
+        static byte Mix(byte from, byte to, float amount) => (byte)Math.Clamp(from + (to - from) * amount, 0, 255);
+
+        colors = new string[radius];
+        for (int ring = 0; ring < radius; ring++)
+        {
+            float amount = strength / 100f * (1 - ring / (float)radius);
+            colors[ring] = FindClosestPaletteIndex(Mix(b.r, g.r, amount), Mix(b.g, g.g, amount), Mix(b.b, g.b, amount)).ToString();
+        }
+
+        _glowColors[key] = colors;
+        return colors;
+    }
+
     internal byte[] GetDarkenTable(float brightness)
     {
         if (_darkenTable != null && _darkenBrightness == brightness)
@@ -839,27 +868,24 @@ internal class VideoManager
         UnlockSurface(screenBuffer);
     }
 
+    /// <summary>
+    /// Draws a line of text in a Wolf3D font at (px, py) in 320x200 coordinates. Clipped to the
+    /// screen, so text (or a shadow, outline or glow drawn with it) can reach past the edges.
+    /// </summary>
     /// <param name="rowColors">A palette index for each row of the glyphs, in place of <paramref name="fontcolor"/></param>
     internal void DrawPropString(int px, int py, string text, string fontcolor, FontAsset font, byte[]? rowColors = null)
     {
-        int width, step, height;
-        byte[] source;
-
-        int i;
-        int sx, sy;
-
         IntPtr destPtr = LockSurface(screenBuffer);
         if (destPtr == IntPtr.Zero)
             return;
 
-        height = font.Height;
-
+        int height = font.Height;
         byte col = ResolveColorByte(fontcolor);
+        int maxX = screenWidth / scaleFactor, maxY = screenHeight / scaleFactor;
 
         unsafe
         {
             byte* dest = (byte*)destPtr;
-            dest += scaleFactor * (ylookup[py] + px); // starting point on the screenbuffer
 
             foreach (char ch in text)
             {
@@ -867,29 +893,28 @@ internal class VideoManager
                 if (ch >= font.Width.Length)
                 {
                     px += font.Width[' '];
-                    dest += scaleFactor * font.Width[' '];
                     continue;
                 }
 
-                width = step = font.Width[ch];
+                int step = font.Width[ch];
                 int locIndex = font.Location[ch];
 
-                while (width-- != 0)
+                for (int column = 0; column < step; column++, px++)
                 {
-                    for (i = 0; i < height; i++)
-                    {
-                        if (font.RawData[locIndex + (i * step)] != 0)
-                        {
-                            byte rowCol = rowColors != null ? rowColors[Math.Min(i, rowColors.Length - 1)] : col;
-                            for (sy = 0; sy < scaleFactor; sy++)
-                                for (sx = 0; sx < scaleFactor; sx++)
-                                    dest[ylookup[scaleFactor * i + sy] + sx] = rowCol;
-                        }
-                    }
+                    if (px < 0 || px >= maxX)
+                        continue;
 
-                    locIndex++;
-                    px++;
-                    dest += scaleFactor;
+                    for (int i = 0; i < height; i++)
+                    {
+                        int y = py + i;
+                        if (y < 0 || y >= maxY || font.RawData[locIndex + column + i * step] == 0)
+                            continue;
+
+                        byte rowCol = rowColors != null ? rowColors[Math.Min(i, rowColors.Length - 1)] : col;
+                        for (int sy = 0; sy < scaleFactor; sy++)
+                            for (int sx = 0; sx < scaleFactor; sx++)
+                                dest[ylookup[y * scaleFactor + sy] + px * scaleFactor + sx] = rowCol;
+                    }
                 }
             }
 

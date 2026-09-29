@@ -52,6 +52,32 @@ internal class GradientDefinition
     public int Bottom { get; set; } = -40;
 }
 
+/// <summary>A font's outline in fonts.yaml; `outline: {}` is one pixel of black all round</summary>
+internal class OutlineDefinition
+{
+    /// <summary>A color name, #RRGGBB or palette index</summary>
+    public string Color { get; set; } = "Black";
+
+    /// <summary>How many pixels wide</summary>
+    public int Thickness { get; set; } = 1;
+
+    /// <summary>Fill the corners too; false leaves them out, for a rounder look</summary>
+    public bool Diagonals { get; set; } = true;
+}
+
+/// <summary>A font's glow in fonts.yaml; `glow: {}` is two rings in the text's color, from 50%</summary>
+internal class GlowDefinition
+{
+    /// <summary>A color name, #RRGGBB or palette index; left out, the text's own color</summary>
+    public string? Color { get; set; }
+
+    /// <summary>How many pixels (rings) it spreads out</summary>
+    public int Radius { get; set; } = 2;
+
+    /// <summary>Percent of the glow color in the nearest ring; the rest fade toward the background</summary>
+    public int Strength { get; set; } = 50;
+}
+
 /// <summary>One font in fonts.yaml</summary>
 internal class FontDefinition
 {
@@ -76,6 +102,12 @@ internal class FontDefinition
     /// vga, or colorized graphic and sheet: the text's color shaded lighter to darker down the glyphs
     /// </summary>
     public GradientDefinition? Gradient { get; set; }
+
+    /// <summary>Any type: a border in one color around each glyph</summary>
+    public OutlineDefinition? Outline { get; set; }
+
+    /// <summary>Any type: a halo round the glyphs fading into the background</summary>
+    public GlowDefinition? Glow { get; set; }
 
     /// <summary>sheet: the picture holding the characters</summary>
     public string? Image { get; set; }

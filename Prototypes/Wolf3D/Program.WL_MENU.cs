@@ -2174,10 +2174,42 @@ internal partial class Program
         return null;
     }
 
+    /// <summary>A label's outline: its own, none, or null to keep the font's</summary>
+    private static FontOutline? LabelOutline(Label label)
+    {
+        if (label.Outline == false)
+            return FontOutline.None;
+
+        if (label.Outline == true || label.OutlineColor != null || label.OutlineThickness != null)
+        {
+            var d = FontOutline.Default;
+            return new FontOutline(label.OutlineColor ?? d.Color, Math.Max(label.OutlineThickness ?? d.Thickness, 1));
+        }
+
+        return null;
+    }
+
+    /// <summary>A label's glow: its own, none, or null to keep the font's</summary>
+    private static FontGlow? LabelGlow(Label label)
+    {
+        if (label.Glow == false)
+            return FontGlow.None;
+
+        if (label.Glow == true || label.GlowColor != null || label.GlowRadius != null || label.GlowStrength != null)
+        {
+            var d = FontGlow.Default;
+            return new FontGlow(label.GlowColor ?? d.Color, Math.Max(label.GlowRadius ?? d.Radius, 1),
+                Math.Clamp(label.GlowStrength ?? d.Strength, 0, 100));
+        }
+
+        return null;
+    }
+
     private static void DrawLabel(Label label)
     {
         var language = _assetManager.GetText("en-us");
-        var style = new TextStyle(label.Font, label.Color, Shadow: LabelShadow(label), Gradient: LabelGradient(label));
+        var style = new TextStyle(label.Font, label.Color, Shadow: LabelShadow(label), Gradient: LabelGradient(label),
+            Outline: LabelOutline(label), Glow: LabelGlow(label));
 
         var text = label.Text.ToLanguageText(language);
         if (label.HorizontalOrientation == HorizontalOrientation.Center)

@@ -624,6 +624,34 @@ internal record Label : MenuComponent
     /// <summary>Percent toward white (negative: black) at the bottom row; defaults to -40</summary>
     public int? GradientBottom { get; set; }
 
+    /// <summary>
+    /// true draws a border round the text, false takes away the font's own (fonts.yaml); left
+    /// out, the text has whatever its font has. Setting an outline-color or -thickness turns it on too.
+    /// </summary>
+    public bool? Outline { get; set; }
+
+    /// <summary>The outline's color; defaults to Black</summary>
+    public string? OutlineColor { get; set; }
+
+    /// <summary>How many pixels wide the outline is; defaults to 1</summary>
+    public int? OutlineThickness { get; set; }
+
+    /// <summary>
+    /// true puts a halo round the text fading into the menu background, false takes away the
+    /// font's own (fonts.yaml); left out, the text has whatever its font has. Setting a
+    /// glow-color, -radius or -strength turns it on too.
+    /// </summary>
+    public bool? Glow { get; set; }
+
+    /// <summary>The glow's color; defaults to the text's color</summary>
+    public string? GlowColor { get; set; }
+
+    /// <summary>How many pixels it spreads out; defaults to 2</summary>
+    public int? GlowRadius { get; set; }
+
+    /// <summary>Percent of the glow color nearest the text; defaults to 50</summary>
+    public int? GlowStrength { get; set; }
+
     public Label()
     {
     }
