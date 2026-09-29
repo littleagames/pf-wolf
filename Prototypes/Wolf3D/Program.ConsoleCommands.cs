@@ -135,6 +135,14 @@ internal partial class Program
         Register("playdemo", "Plays a demo: one recorded with that number (DEMO#.dmo in the demos folder), or else the game's own. Ends the game in progress, then goes back to the title.",
             "playdemo <0-9>", Cmd_PlayDemo,
             complete: (_, i) => i == 0 ? Enumerable.Range(0, 10).Where(DemoExists).Select(n => n.ToString()) : []);
+        Register("recorddemo", "Records a demo on a level, on the hardest skill, until the level ends or you die; saves it as that demo number, or asks for one. Ends the game in progress first.",
+            "recorddemo <MAP##> [0-9]", Cmd_RecordDemo,
+            complete: (_, i) => i switch
+            {
+                0 => Enumerable.Range(1, DemoMapCount()).Select(n => $"MAP{n:D2}"),
+                1 => Enumerable.Range(0, 10).Select(n => n.ToString()),
+                _ => []
+            });
         Register("saves", "Lists the saved games, newest first, numbered for load.", "saves", Cmd_Saves);
         Register("autosave", "Whether each new level saves itself as it starts, to the Autosave.", "autosave [0|1]",
             Cmd_AutoSave, complete: Values("0", "1"));
@@ -742,6 +750,35 @@ internal partial class Program
         }
 
         pendingDemo = demonumber;
+        if (ingame)
+            playstate = playstatetypes.ex_abort;
+    }
+
+    // Queued like playdemo. The map is MAP## or just its number; a demo can only name MAP01 onwards,
+    // one byte's worth, so it has to be one of the maps counting up from MAP01
+    private static void Cmd_RecordDemo(string[] args)
+    {
+        const string usage = "usage: recorddemo <MAP##> [0-9]";
+        if (args.Length == 0)
+            throw new ArgumentException(usage);
+
+        var mapArg = args[0].StartsWith("MAP", StringComparison.OrdinalIgnoreCase) ? args[0][3..] : args[0];
+        int maps = DemoMapCount();
+        if (!int.TryParse(mapArg, out int level) || level < 1 || level > maps)
+        {
+            _consoleManager.Print(maps == 0 ? "No map can be recorded: there's no MAP01" : $"A demo can be recorded on MAP01 to MAP{maps:D2}");
+            return;
+        }
+
+        int? demonumber = null;
+        if (args.Length > 1)
+        {
+            if (!int.TryParse(args[1], out int number) || number < 0 || number > 9)
+                throw new ArgumentException(usage);
+            demonumber = number;
+        }
+
+        pendingRecord = new DemoRecordRequest(level, demonumber);
         if (ingame)
             playstate = playstatetypes.ex_abort;
     }

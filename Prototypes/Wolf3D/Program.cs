@@ -361,7 +361,13 @@ internal partial class Program
 
         while (true)
         {
-            PlayPendingDemo();      // playdemo, from the command line's --exec or a game it ended
+            // recorddemo and playdemo, from the command line's --exec or a game they ended
+            if (RecordPendingDemo())
+            {
+                RunStartedGame();       // New Game from the menu ends a recording and starts one
+                continue;
+            }
+            PlayPendingDemo();
 
             while (!param_nowait)
             {
@@ -415,15 +421,21 @@ internal partial class Program
             else
                 US_ControlPanel(0);
 
-            if (startgame || loadedgame)
-            {
-                GameLoop();
-                if (!param_nowait)
-                {
-                    _videoManager.FadeOut();
-                    StartCPMusic(INTROSONG);
-                }
-            }
+            RunStartedGame();
+        }
+    }
+
+    /// <summary>Plays the game the menu started or loaded, if it did, then puts the title music back</summary>
+    private static void RunStartedGame()
+    {
+        if (!startgame && !loadedgame)
+            return;
+
+        GameLoop();
+        if (!param_nowait)
+        {
+            _videoManager.FadeOut();
+            StartCPMusic(INTROSONG);
         }
     }
 

@@ -119,9 +119,9 @@ internal partial class Program
             if (demorecord && playstate != playstatetypes.ex_warped)
                 FinishDemoRecord();
 
-            if (pendingDemo != null)
+            if (pendingDemo != null || pendingRecord != null)
             {
-                // playdemo ended the game: back to the title loop, which plays the demo
+                // playdemo or recorddemo ended the game: back to the title loop, which starts the demo
                 ClearMemory();
                 _videoManager.FadeOut();
                 FindMenuItem(MainMenu, "savegame")?.active = 0;
@@ -319,9 +319,13 @@ internal partial class Program
         demorecord = true;
     }
 
-    internal static void FinishDemoRecord()
+    /// <summary>
+    /// Ends the recording and saves it as demo <paramref name="demonumber"/>, or asks which
+    /// number to save it as when none was given (Esc throws it away)
+    /// </summary>
+    internal static void FinishDemoRecord(int? demonumber = null)
     {
-        int length, level;
+        int length;
 
         demorecord = false;
 
@@ -331,34 +335,41 @@ internal partial class Program
         demoData[2] = (byte)(length >> 8);
         demoData[3] = 0;
 
-        _videoManager.FadeIn();
-        var window = CenterWindow(24, 3, PromptStyle);
-        window.PrintY += 6;
-        window.Print(" Demo number (0-9): ");
-        _videoManager.Update();
-
-        string str = "";
-        if (US_LineInput(window.PrintX, window.PrintY, ref str, "", true, 1, 0, window.Style))
+        if (demonumber == null)
         {
-            if (int.TryParse(str, out level) && level >= 0 && level <= 9)
-            {
-                var path = DemoFilePath(level);
-                try
-                {
-                    var directory = Path.GetDirectoryName(path);
-                    if (!string.IsNullOrEmpty(directory))
-                        Directory.CreateDirectory(directory);
-                    File.WriteAllBytes(path, demoData[..length]);
-                    Console.WriteLine($"Recorded demo saved to {path}");
-                }
-                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-                {
-                    Console.WriteLine($"Couldn't save the demo to {path}: {e.Message}");
-                }
-            }
+            _videoManager.FadeIn();
+            var window = CenterWindow(24, 3, PromptStyle);
+            window.PrintY += 6;
+            window.Print(" Demo number (0-9): ");
+            _videoManager.Update();
+
+            string str = "";
+            if (US_LineInput(window.PrintX, window.PrintY, ref str, "", true, 1, 0, window.Style)
+                && int.TryParse(str, out int typed) && typed >= 0 && typed <= 9)
+                demonumber = typed;
         }
 
+        if (demonumber is int number)
+            SaveDemo(number, demoData[..length]);
+
         demoData = [];
+    }
+
+    private static void SaveDemo(int demonumber, byte[] data)
+    {
+        var path = DemoFilePath(demonumber);
+        try
+        {
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+            File.WriteAllBytes(path, data);
+            Console.WriteLine($"Recorded demo saved to {path}");
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Console.WriteLine($"Couldn't save the demo to {path}: {e.Message}");
+        }
     }
 
     //==========================================================================
@@ -374,11 +385,7 @@ internal partial class Program
     */
     internal static void RecordDemo()
     {
-        // A demo names its map by one byte, so it can be any of MAP01 to MAP99 the game has
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        int maps = 0;
-        while (maps < 99 && gameInfo.Maps.ContainsKey($"MAP{maps + 1:D2}"))
-            maps++;
+        int maps = DemoMapCount();
         if (maps == 0)
             return;
 
@@ -394,6 +401,48 @@ internal partial class Program
         if (esc || !int.TryParse(str, out int level) || level < 1 || level > maps)
             return;
 
+        RecordDemo(level);
+    }
+
+    /// <summary>
+    /// How many maps a demo can be recorded on: a demo names its map by one byte, so it can be
+    /// any of MAP01 to MAP99 the game has, counting up from MAP01
+    /// </summary>
+    internal static int DemoMapCount()
+    {
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        int maps = 0;
+        while (maps < 99 && gameInfo.Maps.ContainsKey($"MAP{maps + 1:D2}"))
+            maps++;
+        return maps;
+    }
+
+    /// <summary>
+    /// A recording asked for by recorddemo; the title loop starts it next (a game in progress ends first)
+    /// </summary>
+    internal record DemoRecordRequest(int Level, int? DemoNumber);
+    internal static DemoRecordRequest? pendingRecord;
+
+    /// <summary>
+    /// Starts the recording recorddemo asked for, if any. Returns whether one ran.
+    /// </summary>
+    internal static bool RecordPendingDemo()
+    {
+        if (pendingRecord is not { } request)
+            return false;
+
+        pendingRecord = null;
+        RecordDemo(request.Level, request.DemoNumber);
+        return true;
+    }
+
+    /// <summary>
+    /// Records a demo of MAP<paramref name="level"/> on the hardest skill until the level ends, then
+    /// saves it as <paramref name="demonumber"/>, or asks for a number when none is given
+    /// </summary>
+    internal static void RecordDemo(int level, int? demonumber = null)
+    {
+        var gameInfo = _gameEngineManager.GetGameInfo();
         var mapName = $"MAP{level:D2}";
         _videoManager.FadeOut();
         NewGame(difficultytypes.gd_hard, new EpisodeInfo { StartMap = mapName }, gameInfo.Maps[mapName]);
@@ -418,7 +467,7 @@ internal partial class Program
         _videoManager.FadeOut();
         ClearMemory();
 
-        FinishDemoRecord();
+        FinishDemoRecord(demonumber);
     }
 
     internal static void DrawPlayScreen()
