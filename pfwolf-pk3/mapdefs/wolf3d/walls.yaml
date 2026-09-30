@@ -118,6 +118,14 @@ walls:
     #                        A_Exit ends the level (to the secret level when standing on the
     #                        floors' secret-exit code); A_SecretExit always goes to the secret
     #                        level. Both wait for the switch's sound to finish.
+    #                        A_OpenDoor("hold"), A_CloseDoor, A_ToggleDoor("hold"): the tagged
+    #                        doors, whatever their lock; with hold, opened doors stay open
+    #                        until something closes them.
+    #                        A_MoveWall(direction, "moving sound", "blocked sound"): pushes the
+    #                        first tagged wall north/east/south/west (left out or "": the way
+    #                        the player faces); its tag goes with it.
+    #                        A_SetWall(id): turns the tagged walls into wall id.
+    #                        The switch's own tile is never a target, though it has the tag.
     '21':
         North: ELEV1_1
         South: ELEV1_1

@@ -342,9 +342,21 @@ internal class MapManager
         SetTag(tox, toy, tag);
     }
 
-    /// <summary>The live actors with this tag.</summary>
+    /// <summary>The live actors with this tag; none for tag 0, which is no tag.</summary>
     internal IEnumerable<Entities.Actors.Actor> TaggedActors(ushort tag) =>
-        _actors.Where(a => a.Tag == tag && !a.IsRemoved);
+        tag == 0 ? [] : _actors.Where(a => a.Tag == tag && !a.IsRemoved);
+
+    /// <summary>The tiles with this tag, row by row; none for tag 0, which is no tag.</summary>
+    internal IEnumerable<(int X, int Y)> TaggedTiles(ushort tag)
+    {
+        if (tag == 0)
+            yield break;
+
+        for (int y = 0; y < mapheight; y++)
+            for (int x = 0; x < mapwidth; x++)
+                if (GetTag(x, y) == tag)
+                    yield return (x, y);
+    }
 
     /// <summary>Moves a tile's height to another tile, as a pushwall slides.</summary>
     internal void MoveWallStories(int fromx, int fromy, int tox, int toy)

@@ -258,6 +258,7 @@ internal class doorobj_t
     public dooractiontypes action;
     public short ticcount;
     public ushort position;            // leading edge of door (0 = closed, 0xffff = fully open)
+    public bool held;                  // opened by a switch to stay open, until something closes it
     public MapTextureTranslation xlat = MapTextureTranslation.None;
 
     // Only the moving parts: position, orientation and lock (xlat) come from the map, which a
@@ -267,6 +268,7 @@ internal class doorobj_t
         action = (dooractiontypes)br.ReadByte();
         ticcount = br.ReadInt16();
         position = br.ReadUInt16();
+        held = br.ReadBoolean();
     }
 
     public void WriteState(BinaryWriter bw)
@@ -274,6 +276,7 @@ internal class doorobj_t
         bw.Write((byte)action);
         bw.Write(ticcount);
         bw.Write(position);
+        bw.Write(held);
     }
 }
 

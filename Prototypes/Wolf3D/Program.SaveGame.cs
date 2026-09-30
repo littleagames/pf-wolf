@@ -42,7 +42,8 @@ internal partial class Program
     // 9: the area count (mapdefs floors) ahead of the area tables.
     // 10: the player class, after the skill in gamestate.
     // 11: armor points and percent, after health in gamestate.
-    // 12: a fifth map plane (tags), and each actor's tag after its tile.
+    // 12: a fifth map plane (tags), each actor's tag after its tile, and whether each door is
+    //     held open by a switch.
     private const int SaveVersion = 12;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
@@ -488,6 +489,7 @@ internal partial class Program
             doorobjlist[i].action = data.Doors[i].action;
             doorobjlist[i].ticcount = data.Doors[i].ticcount;
             doorobjlist[i].position = data.Doors[i].position;
+            doorobjlist[i].held = data.Doors[i].held;
         }
 
         areaconnect = data.AreaConnect;

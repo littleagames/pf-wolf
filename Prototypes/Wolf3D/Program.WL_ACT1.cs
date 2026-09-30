@@ -251,6 +251,7 @@ internal partial class Program
         }
 
         doorobjlist[door].action = dooractiontypes.dr_closing;
+        doorobjlist[door].held = false;     // closing lets go of a switch's hold
         //
         // make the door space solid
         //
@@ -322,13 +323,16 @@ internal partial class Program
     =
     = DoorOpen
     =
-    = Close the door after three seconds
+    = Close the door after three seconds, unless a switch holds it open
     =
     ===============
     */
 
     internal static void DoorOpen(int door)
     {
+        if (doorobjlist[door].held)
+            return;
+
         if ((doorobjlist[door].ticcount += (short)tics) >= OPENTICS)
             CloseDoor(door);
     }
