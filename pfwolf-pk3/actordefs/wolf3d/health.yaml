@@ -62,10 +62,10 @@ ExtraLifeHealth:
   properties:
     "inventory.amount": 99
 
+# No pickup sound: A_GiveExtraMan plays the extra life sound (statusbar.yaml lives.sound)
 ExtraLife:
   parent: CustomInventory
   properties:
-    "inventory.pickupsound": "misc/1up"
     "inventory.pickupmessage": "$GOTEXTRALIFE"
   flags:
     - COUNTITEM

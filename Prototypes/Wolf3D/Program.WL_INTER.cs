@@ -212,6 +212,20 @@ internal partial class Program
         _videoManager.Update();
     }
 
+    private static IntermissionAsset? intermission;
+    private static readonly IntermissionAsset NoIntermission = new();
+
+    /// <summary>The game pack's level-end screen settings (intermission.yaml); empty if it has none.</summary>
+    static IntermissionAsset Intermission =>
+        intermission ?? (intermission = _assetManager.FindInGamePack<IntermissionAsset>("intermission")) ?? NoIntermission;
+
+    /// <summary>Plays one of the intermission's sounds; one it leaves out is silent.</summary>
+    static void PlayIntermissionSound(string? name)
+    {
+        if (!string.IsNullOrEmpty(name))
+            _audioManager.Play(name);
+    }
+
     internal static void LevelCompleted()
     {
         var language = _assetManager.GetText("en-us");
@@ -219,7 +233,7 @@ internal partial class Program
         const int PAR_AMOUNT = 500;
         const int PERCENT100AMT = 10000;
 
-        int x, i, min, sec, ratio, kr, sr, tr;
+        int i, min, sec, ratio, kr, sr, tr;
         string tempstr = "";
         int bonus, timeleft = 0;
 
@@ -235,21 +249,18 @@ internal partial class Program
         //
         _inputManager.ClearKeysDown();
         _inputManager.StartAck();
-        _graphicManager.DrawPic("l_guy", 0, 16);
+        bj_which = 0;
+        DrawBJ();
 
         var gameInfo = _gameEngineManager.GetGameInfo();
         var mapInfo = gameInfo.Maps[gamestate.mapon];
         //if (gamestate.mapon < LRpack)
         {
-            Write(14, 2, "floor\ncompleted");
-            Write(14, 7, "$STR_BONUS".ToLanguageText(language) + "     0");
-            Write(16, 10, "$STR_TIME".ToLanguageText(language));
-            Write(16, 12, "$STR_PAR".ToLanguageText(language));
-            Write(9, 14, "$STR_RAT2KILL".ToLanguageText(language));
-            Write(5, 16, "$STR_RAT2SECRET".ToLanguageText(language));
-            Write(1, 18, "$STR_RAT2TREASURE".ToLanguageText(language));
-            Write(26, 2, (mapInfo.FloorNumber).ToString());
-            Write(26, 12, int.SecondsAsTime(mapInfo.ParTime));
+            foreach (var label in Intermission.Labels ?? [])
+                TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
+            WriteValue("bonus", "0");
+            WriteValue("floor", mapInfo.FloorNumber.ToString());
+            WriteValue("par", int.SecondsAsTime(mapInfo.ParTime));
             //
             // PRINT TIME
             //
@@ -262,7 +273,7 @@ internal partial class Program
 
             min = sec / 60;
             sec %= 60;
-            WriteTime(26 * 8, 10 * 8, min, sec);
+            WriteValue("time", $"{min:00}:{sec:00}");
 
             _videoManager.Update();
             _videoManager.FadeIn();
@@ -289,10 +300,9 @@ internal partial class Program
                 for (i = 0; i <= timeleft; i++)
                 {
                     tempstr = (i * PAR_AMOUNT).ToString();
-                    x = 36 - tempstr.Length * 2;
-                    Write(x, 7, tempstr);
+                    WriteValue("bonus", tempstr);
                     if ((i % (PAR_AMOUNT / 10)) == 0)
-                        _audioManager.Play("misc/end_bonus1");
+                        PlayIntermissionSound(Intermission.Sounds.Tally);
                     _videoManager.Update();
                     while (_audioManager.IsAnySoundPlaying())
                         BJ_Breathe();
@@ -302,12 +312,11 @@ internal partial class Program
 
                 _videoManager.Update();
 
-                _audioManager.Play("misc/end_bonus2");
+                PlayIntermissionSound(Intermission.Sounds.TallyDone);
                 while (_audioManager.IsAnySoundPlaying())
                     BJ_Breathe();
             }
 
-            const int RATIOXX = 37;
             //
             // KILL RATIO
             //
@@ -315,10 +324,9 @@ internal partial class Program
             for (i = 0; i <= ratio; i++)
             {
                 tempstr = i.ToString();
-                x = RATIOXX - tempstr.Length * 2;
-                Write(x, 14, tempstr);
+                WriteValue("kill", tempstr);
                 if ((i % 10) == 0)
-                    _audioManager.Play("misc/end_bonus1");
+                    PlayIntermissionSound(Intermission.Sounds.Tally);
                 _videoManager.Update();
                 while (_audioManager.IsAnySoundPlaying())
                     BJ_Breathe();
@@ -332,19 +340,18 @@ internal partial class Program
                 _audioManager.StopAll();
                 bonus += PERCENT100AMT;
                 tempstr = bonus.ToString();
-                x = (RATIOXX - 1) - tempstr.Length * 2;
-                Write(x, 7, tempstr);
+                WriteValue("bonus", tempstr);
                 _videoManager.Update();
-                _audioManager.Play("misc/100percent");
+                PlayIntermissionSound(Intermission.Sounds.Perfect);
             }
             else if (ratio == 0)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
                 _audioManager.StopAll();
-                _audioManager.Play("misc/no_bonus");
+                PlayIntermissionSound(Intermission.Sounds.None);
             }
             else
-                _audioManager.Play("misc/end_bonus2");
+                PlayIntermissionSound(Intermission.Sounds.TallyDone);
 
             _videoManager.Update();
             while (_audioManager.IsAnySoundPlaying())
@@ -357,10 +364,9 @@ internal partial class Program
             for (i = 0; i <= ratio; i++)
             {
                 tempstr = i.ToString();
-                x = RATIOXX - tempstr.Length * 2;
-                Write(x, 16, tempstr);
+                WriteValue("secret", tempstr);
                 if ((i % 10) == 0)
-                    _audioManager.Play("misc/end_bonus1");
+                    PlayIntermissionSound(Intermission.Sounds.Tally);
                 _videoManager.Update();
                 while (_audioManager.IsAnySoundPlaying())
                     BJ_Breathe();
@@ -374,19 +380,18 @@ internal partial class Program
                 _audioManager.StopAll();
                 bonus += PERCENT100AMT;
                 tempstr = bonus.ToString();
-                x = (RATIOXX - 1) - tempstr.Length * 2;
-                Write(x, 7, tempstr);
+                WriteValue("bonus", tempstr);
                 _videoManager.Update();
-                _audioManager.Play("misc/100percent");
+                PlayIntermissionSound(Intermission.Sounds.Perfect);
             }
             else if (ratio == 0)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
                 _audioManager.StopAll();
-                _audioManager.Play("misc/no_bonus");
+                PlayIntermissionSound(Intermission.Sounds.None);
             }
             else
-                _audioManager.Play("misc/end_bonus2");
+                PlayIntermissionSound(Intermission.Sounds.TallyDone);
             _videoManager.Update();
             while (_audioManager.IsAnySoundPlaying())
                 BJ_Breathe();
@@ -398,10 +403,9 @@ internal partial class Program
             for (i = 0; i <= ratio; i++)
             {
                 tempstr = i.ToString();
-                x = RATIOXX - tempstr.Length * 2;
-                Write(x, 18, tempstr);
+                WriteValue("treasure", tempstr);
                 if ((i % 10) == 0)
-                    _audioManager.Play("misc/end_bonus1");
+                    PlayIntermissionSound(Intermission.Sounds.Tally);
                 _videoManager.Update();
                 while (_audioManager.IsAnySoundPlaying())
                     BJ_Breathe();
@@ -414,19 +418,18 @@ internal partial class Program
                 _audioManager.StopAll();
                 bonus += PERCENT100AMT;
                 tempstr = bonus.ToString();
-                x = (RATIOXX - 1) - tempstr.Length * 2;
-                Write(x, 7, tempstr);
+                WriteValue("bonus", tempstr);
                 _videoManager.Update();
-                _audioManager.Play("misc/100percent");
+                PlayIntermissionSound(Intermission.Sounds.Perfect);
             }
             else if (ratio == 0)
             {
                 GameEngineManager.WaitVBL(VBLWAIT);
                 _audioManager.StopAll();
-                _audioManager.Play("misc/no_bonus");
+                PlayIntermissionSound(Intermission.Sounds.None);
             }
             else
-                _audioManager.Play("misc/end_bonus2");
+                PlayIntermissionSound(Intermission.Sounds.TallyDone);
             _videoManager.Update();
             while (_audioManager.IsAnySoundPlaying())
                 BJ_Breathe();
@@ -437,16 +440,13 @@ internal partial class Program
             //
         done:
             tempstr = kr.ToString();
-            x = RATIOXX - tempstr.Length * 2;
-            Write(x, 14, tempstr);
+            WriteValue("kill", tempstr);
 
             tempstr = sr.ToString();
-            x = RATIOXX - tempstr.Length * 2;
-            Write(x, 16, tempstr);
+            WriteValue("secret", tempstr);
 
             tempstr = tr.ToString();
-            x = RATIOXX - tempstr.Length * 2;
-            Write(x, 18, tempstr);
+            WriteValue("treasure", tempstr);
 
             bonus = (int)timeleft * PAR_AMOUNT +
                 (PERCENT100AMT * ((kr >= 100) ? 1 : 0)) +
@@ -455,8 +455,7 @@ internal partial class Program
 
             GivePoints(bonus);
             tempstr = bonus.ToString();
-            x = 36 - tempstr.Length * 2;
-            Write(x, 7, tempstr);
+            WriteValue("bonus", tempstr);
 
             //
             // SAVE RATIO INFORMATION FOR ENDGAME
@@ -519,12 +518,8 @@ internal partial class Program
     {
         var language = _assetManager.GetText("en-us");
         int sec;
-        int min, kr, sr, tr, x;
-        string tempstr;
-        const int RATIOX = 6;
-        const int RATIOY = 14;
-        const int TIMEX = 14;
-        const int TIMEY = 8;
+        int min, kr, sr, tr;
+        var screen = Intermission.Victory ?? new VictoryScreen();
 
         var cluster = WonCluster();
         VictoryFrames(cluster);
@@ -534,17 +529,11 @@ internal partial class Program
         _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, "VIEWCOLOR");
         if (bordercol != "VIEWCOLOR")
             DrawStatusBorder("VIEWCOLOR");
-        Write(18, 2, "$STR_YOUWIN".ToLanguageText(language));
-
-        Write(TIMEX, TIMEY - 2, "$STR_TOTALTIME".ToLanguageText(language));
-
-        Write(12, RATIOY - 2, "averages");
-
-        Write(RATIOX + 8, RATIOY, "$STR_RATKILL".ToLanguageText(language));
-        Write(RATIOX + 4, RATIOY + 2, "$STR_RATSECRET".ToLanguageText(language));
-        Write(RATIOX, RATIOY + 4, "$STR_RATTREASURE".ToLanguageText(language));
-
-        _graphicManager.DrawPic("L_BJWINS", 8, 4);
+        // intermission.yaml victory
+        foreach (var label in screen.Labels)
+            TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
+        foreach (var pic in screen.Pics)
+            _graphicManager.DrawPic(pic.Pic, pic.X, pic.Y);
         // Total time and average ratios over the floors of the won cluster that were completed.
         // id divided by a fixed floor count (8, or 20 in Spear), counting floors never played
         // (Spear's boss floors, a skipped secret floor) as 0%; this averages the ones played.
@@ -569,20 +558,12 @@ internal partial class Program
         if (min > 99)
             min = sec = 99;
 
-        WriteTime(TIMEX * 8 + 1, TIMEY * 8, min, sec);
+        WriteValue(screen.Values, "time", $"{min:00}:{sec:00}");
         _videoManager.Update();
 
-        tempstr = kr.ToString();
-        x = RATIOX + 24 - tempstr.Length * 2;
-        Write(x, RATIOY, tempstr);
-
-        tempstr = sr.ToString();
-        x = RATIOX + 24 - tempstr.Length * 2;
-        Write(x, RATIOY + 2, tempstr);
-
-        tempstr = tr.ToString();
-        x = RATIOX + 24 - tempstr.Length * 2;
-        Write(x, RATIOY + 4, tempstr);
+        WriteValue(screen.Values, "kill", kr.ToString());
+        WriteValue(screen.Values, "secret", sr.ToString());
+        WriteValue(screen.Values, "treasure", tr.ToString());
 
         //
         // TOTAL TIME VERIFICATION CODE
@@ -685,21 +666,49 @@ internal partial class Program
     //
     // Breathe Mr. BJ!!!
     //
+    // The first breath comes sooner, once per run, as in the original
     private static int bj_which = 0, bj_max = 10;
     internal static void BJ_Breathe()
     {
-        string[] pics = { "L_Guy", "L_GUY2" };
-
         GameEngineManager.DelayMs(5);
+
+        if (Intermission.Bj is not { Pics.Count: > 1 } bj)
+            return;
 
         if ((int)GameEngineManager.GetTimeCount() - lastBreathTime > bj_max)
         {
-            bj_which ^= 1;
-            _graphicManager.DrawPic(pics[bj_which], 0, 16);
+            bj_which = (bj_which + 1) % bj.Pics.Count;
+            DrawBJ();
             _videoManager.Update();
             lastBreathTime = (int)GameEngineManager.GetTimeCount();
-            bj_max = 35;
+            bj_max = bj.BreathTics;
         }
+    }
+
+    /// <summary>BJ on the level-end screen (intermission.yaml bj), in his current breath</summary>
+    static void DrawBJ()
+    {
+        if (Intermission.Bj is { Pics.Count: > 0 } bj)
+            _graphicManager.DrawPic(bj.Pics[bj_which % bj.Pics.Count], bj.X, bj.Y);
+    }
+
+    /// <summary>The level-end screen's text style: intermission.yaml's font and color, else the intermission font's</summary>
+    static TextStyle IntermissionTextStyle =>
+        new(Intermission.Font ?? IntermissionStyle.Font, Intermission.Color ?? IntermissionStyle.Color);
+
+    /// <summary>
+    /// A number (or time) on the level-end screen, where intermission.yaml's values put it: from
+    /// its x, or with its right edge at its right. Left out of the layout, it isn't shown.
+    /// </summary>
+    static void WriteValue(string name, string text) => WriteValue(Intermission.Values, name, text);
+
+    static void WriteValue(Dictionary<string, IntermissionValue> values, string name, string text)
+    {
+        if (!values.TryGetValue(name, out var value))
+            return;
+        var style = IntermissionTextStyle;
+        int x = value.Right is { } right ? right - TextWidth(text, style.Font) : value.X;
+        TextAt(x, value.Y, style).Print(text);
     }
 
     /// <summary>The intermission and victory screens' big letters (fonts.yaml)</summary>
@@ -710,7 +719,4 @@ internal partial class Program
 
     /// <summary>Intermission text at (x, y) in pixels</summary>
     internal static void WriteAt(int x, int y, string text) => TextAt(x, y, IntermissionStyle).Print(text);
-
-    /// <summary>Minutes and seconds as mm:ss, in the intermission font at (x, y) in pixels</summary>
-    private static void WriteTime(int x, int y, int min, int sec) => WriteAt(x, y, $"{min:00}:{sec:00}");
 }

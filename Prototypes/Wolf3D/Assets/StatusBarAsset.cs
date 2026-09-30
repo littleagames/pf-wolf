@@ -56,6 +56,46 @@ internal class StatusBarElement
     /// <summary>Numbers: a color name, #RRGGBB or palette index</summary>
     public string? Color { get; set; }
 
+    /// <summary>lives: the sound played when the player is given an extra life</summary>
+    public string? Sound { get; set; }
+
     /// <summary>keys: pixels between one key slot and the next, downwards</summary>
     public int Spacing { get; set; }
+
+    /// <summary>
+    /// border: on a screen wider than the picture, the border color fills from each screen
+    /// edge to this many pixels into the picture
+    /// </summary>
+    public int Sides { get; set; }
+
+    /// <summary>
+    /// border: the picture's own border-colored areas, as [x, y, width, height], painted over
+    /// when the border is another color. One touching the picture's left or right edge reaches
+    /// out to that screen edge.
+    /// </summary>
+    public List<List<int>> Rects { get; set; } = [];
+
+    /// <summary>
+    /// face: the faces by health. The player shows the first whose health they have at least
+    /// (highest first), one of its pics at a time as the face looks around.
+    /// </summary>
+    public List<StatusBarFace> Faces { get; set; } = [];
+
+    /// <summary>face: the face once the player is dead</summary>
+    public string? Dead { get; set; }
+
+    /// <summary>face: the face once dead, by the class of what killed the player, over <see cref="Dead"/></summary>
+    public Dictionary<string, string> KilledBy { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// face: the grin, while the pickup sound of an item or weapon flagged WEAPON.ALWAYSGRIN plays
+    /// </summary>
+    public string? Grin { get; set; }
+}
+
+/// <summary>One of the face part's faces: from this health up, the pics it looks around through.</summary>
+internal class StatusBarFace
+{
+    public int Health { get; set; }
+    public List<string> Pics { get; set; } = [];
 }

@@ -3,16 +3,33 @@
 # on this one (spear) uses it as is; a mod's statusbar.yaml replaces parts one by one.
 #
 #   background:  pic, and height -- the 320x200 lines the bar takes from the bottom of the view
+#   border:      the view border color beside and around the picture (see below)
 #   numbers:     the font (fonts.yaml) and color of every number below, unless one has its own
 #   level, score, lives, health, ammo:
 #                numbers, right-aligned in `digits` digits (a longer number shows its last ones)
-#   face:        BJ's face
+#   face:        BJ's face: faces by health, dead, killed-by and grin (see below)
 #   keys:        the first key slot; each key's slot (actordefs key.statusbarslot) is `spacing`
 #                pixels below the one before
 #   weapon:      the weapon in hand's icon (actordefs inventory.icon)
 background:
   pic: statusbar
   height: 40
+# The view border color around the picture. sides: on a screen wider than the picture, the
+# border color fills from each screen edge this many pixels into it. rects: the picture's own
+# border-colored frame, as [x, y, width, height], painted over when the border is recolored
+# (one touching the picture's left or right edge reaches out to that screen edge).
+border:
+  sides: 8
+  rects:
+    - [0, 0, 320, 3]      # top
+    - [0, 3, 8, 36]       # left
+    - [312, 3, 8, 36]     # right
+    - [0, 38, 320, 2]     # bottom
+    - [9, 37, 97, 1]      # under the level, score and lives
+    - [106, 37, 161, 1]   # under the face, health and ammo
+    - [267, 37, 44, 1]    # under the keys and weapon
+    - [311, 4, 1, 20]     # right of the keys and weapon
+    - [311, 24, 1, 14]
 numbers:
   font: StatusNumbers
   color: White
@@ -28,9 +45,27 @@ lives:
   x: 112
   y: 16
   digits: 1
+  # Played when an extra life is given (the extra life item, or every extra-life score)
+  sound: misc/1up
 face:
   x: 136
   y: 4
+  # By health: the first face whose health the player has at least, looking around through its
+  # pics (the second is looking ahead)
+  faces:
+    - { health: 85, pics: [face1a, face1b, face1c] }
+    - { health: 69, pics: [face2a, face2b, face2c] }
+    - { health: 53, pics: [face3a, face3b, face3c] }
+    - { health: 37, pics: [face4a, face4b, face4c] }
+    - { health: 21, pics: [face5a, face5b, face5c] }
+    - { health: 5,  pics: [face6a, face6b, face6c] }
+    - { health: 1,  pics: [face7a, face7b, face7c] }
+  dead: face8a
+  # Once dead, by the class of what killed the player
+  killed-by:
+    Needle: mutantbj
+  # While the pickup sound of an item flagged WEAPON.ALWAYSGRIN (the chaingun) plays
+  grin: gotgatling
 health:
   x: 168
   y: 16

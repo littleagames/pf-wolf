@@ -437,6 +437,7 @@ internal partial class Program
         if (builtActor.Properties.TryGetValue("inventory.pickupsound", out var pickupSound))
         {
             _audioManager.Play(pickupSound?.ToString() ?? "");
+            GrinAtPickup(builtActor, pickupSound?.ToString());
         }
 
         // Shown over the view in the item's message style (hud-messages.yaml), or game-info's for pickups
@@ -753,25 +754,52 @@ internal partial class Program
         return added;
     }
 
+    // The pickup sound of the WEAPON.ALWAYSGRIN item that made the player grin; the face grins
+    // while it plays
+    static string? grinsound;
+
+    static bool Grinning => grinsound != null && _audioManager.IsPlaying(grinsound);
+
+    /// <summary>
+    /// Starts the grin if the item, or the weapon it gives, is flagged WEAPON.ALWAYSGRIN: the
+    /// status bar's face grin shows while the item's pickup sound plays.
+    /// </summary>
+    static void GrinAtPickup(Inventory item, string? pickupSound)
+    {
+        const string AlwaysGrin = "WEAPON.ALWAYSGRIN";
+        var given = item.Properties.TryGetValue("weapongiver.weapon", out var weapon) ? weapon?.ToString() : null;
+        if (string.IsNullOrEmpty(pickupSound)
+            || !(item.Flags.Contains(AlwaysGrin, StringComparer.OrdinalIgnoreCase)
+                || given != null && _inventoryManager.CreateActor(given)?.Flags.Contains(AlwaysGrin, StringComparer.OrdinalIgnoreCase) == true))
+            return;
+
+        grinsound = pickupSound;
+        facetimes = 38;     // how long demos hold it, as they can't depend on the sound playing
+        facecount = 0;
+        DrawFace();
+    }
+
+    // The face (statusbar.yaml face): the grin, else the one for the player's health, looking
+    // around through its pics, else once dead the one for what killed them
     static void DrawFace()
     {
         if (viewsize == 21 && ingame) return;
-        if (_audioManager.IsPlaying("GETGATLING"))
-            StatusDrawFace("gotgatling");
+        if (StatusBar.Get("face") is not { } face) return;
+
+        string? pic;
+        if (Grinning && !string.IsNullOrEmpty(face.Grin))
+            pic = face.Grin;
         else if (gamestate.health != 0)
         {
-            int tier = ((100 - gamestate.health) / 16) + 1;
-            char animationFrame = (char)('a' + gamestate.faceframe);
-            string facePic = $"face{tier}{animationFrame}";
-            StatusDrawFace(facePic);
+            var faces = face.Faces.OrderByDescending(f => f.Health).ToList();
+            var pics = (faces.FirstOrDefault(f => gamestate.health >= f.Health) ?? faces.LastOrDefault())?.Pics;
+            pic = pics is { Count: > 0 } ? pics[gamestate.faceframe % pics.Count] : null;
         }
         else
-        {
-            if (LastAttacker != null && LastAttacker.Name == "Needle")
-                StatusDrawFace("mutantbj");
-            else
-                StatusDrawFace("face8a");
-        }
+            pic = LastAttacker != null && face.KilledBy.TryGetValue(LastAttacker.Name, out var killedBy) ? killedBy : face.Dead;
+
+        if (!string.IsNullOrEmpty(pic))
+            StatusDrawFace(pic);
     }
 
     /*
@@ -798,7 +826,7 @@ internal partial class Program
                 return;
             }
         }
-        else if (_audioManager.IsPlaying("GETGATLING"))
+        else if (Grinning)
             return;
 
         facecount += (int)tics;
@@ -916,7 +944,8 @@ internal partial class Program
         if (gamestate.lives < 9)
             gamestate.lives++;
         DrawLives();
-        _audioManager.Play("misc/1up");
+        if (StatusBar.Get("lives")?.Sound is { Length: > 0 } sound)
+            _audioManager.Play(sound);
     }
 
     static void DrawScore()

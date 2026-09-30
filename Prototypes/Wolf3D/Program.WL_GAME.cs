@@ -494,11 +494,16 @@ internal partial class Program
             DrawStatusBorder(bordercol);
         else
         {
+            // Beside the status bar: from each screen edge to the border's sides into the picture
             int statusborderw = (_videoManager.screenWidth - px * 320) / 2;
-            _videoManager.BarScaledCoord(0, _videoManager.screenHeight - px * STATUSLINES,
-                statusborderw + px * 8, px * STATUSLINES, bordercol);
-            _videoManager.BarScaledCoord(_videoManager.screenWidth - statusborderw - px * 8, _videoManager.screenHeight - px * STATUSLINES,
-                statusborderw + px * 8, px * STATUSLINES, bordercol);
+            int sides = statusborderw + px * (StatusBar.Get("border")?.Sides ?? 0);
+            if (sides > 0 && STATUSLINES > 0)
+            {
+                _videoManager.BarScaledCoord(0, _videoManager.screenHeight - px * STATUSLINES,
+                    sides, px * STATUSLINES, bordercol);
+                _videoManager.BarScaledCoord(_videoManager.screenWidth - sides, _videoManager.screenHeight - px * STATUSLINES,
+                    sides, px * STATUSLINES, bordercol);
+            }
         }
 
         if (viewheight == _videoManager.screenHeight) return;
@@ -567,27 +572,32 @@ internal partial class Program
         }
     }
 
+    /// <summary>
+    /// Paints the view border and the status bar's own border-colored areas (statusbar.yaml
+    /// border rects) in <paramref name="color"/>.
+    /// </summary>
     internal static void DrawStatusBorder(string color)
     {
-        int statusborderw = (_videoManager.screenWidth - _videoManager.scaleFactor * 320) / 2;
+        int px = _videoManager.scaleFactor;
+        int statusborderw = (_videoManager.screenWidth - px * 320) / 2;
+        int top = _videoManager.screenHeight - px * STATUSLINES;
 
-        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 3), color);
-        _videoManager.BarScaledCoord(0, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 3),
-            statusborderw + _videoManager.scaleFactor * 8, _videoManager.scaleFactor * (STATUSLINES - 4), color);
-        _videoManager.BarScaledCoord(0, _videoManager.screenHeight - _videoManager.scaleFactor * 2, _videoManager.screenWidth, _videoManager.scaleFactor * 2, color);
-        _videoManager.BarScaledCoord(_videoManager.screenWidth - statusborderw - _videoManager.scaleFactor * 8, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 3),
-            statusborderw + _videoManager.scaleFactor * 8, _videoManager.scaleFactor * (STATUSLINES - 4), color);
+        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, top, color);
 
-        _videoManager.BarScaledCoord(statusborderw + _videoManager.scaleFactor * 9, _videoManager.screenHeight - _videoManager.scaleFactor * 3,
-            _videoManager.scaleFactor * 97, _videoManager.scaleFactor * 1, color);// - 1);
-        _videoManager.BarScaledCoord(statusborderw + _videoManager.scaleFactor * 106, _videoManager.screenHeight - _videoManager.scaleFactor * 3,
-            _videoManager.scaleFactor * 161, _videoManager.scaleFactor * 1, color);// - 2);
-        _videoManager.BarScaledCoord(statusborderw + _videoManager.scaleFactor * 267, _videoManager.screenHeight - _videoManager.scaleFactor * 3,
-            _videoManager.scaleFactor * 44, _videoManager.scaleFactor * 1, color);// - 3);
-        _videoManager.BarScaledCoord(_videoManager.screenWidth - statusborderw - _videoManager.scaleFactor * 9, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 4),
-           _videoManager.scaleFactor * 1, _videoManager.scaleFactor * 20, color);// - 2);
-        _videoManager.BarScaledCoord(_videoManager.screenWidth - statusborderw - _videoManager.scaleFactor * 9, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES / 2 - 4),
-            _videoManager.scaleFactor * 1, _videoManager.scaleFactor * 14, color);// - 3);
+        foreach (var rect in StatusBar.Get("border")?.Rects ?? [])
+        {
+            if (rect.Count != 4)
+                continue;
+            int x = statusborderw + px * rect[0], width = px * rect[2];
+            if (rect[0] <= 0)
+            {
+                width += x;             // out to the left edge
+                x = 0;
+            }
+            if (rect[0] + rect[2] >= 320)
+                width = _videoManager.screenWidth - x;  // out to the right edge
+            _videoManager.BarScaledCoord(x, top + px * rect[1], width, px * rect[3], color);
+        }
     }
 
     /// <summary>
