@@ -1,0 +1,4 @@
+name: Switch Demo
+version: "1.0"
+description: A small level (replacing Floor 1) showing off wall switches, tags and switchable lights.
+game-packs: [wolf3d]

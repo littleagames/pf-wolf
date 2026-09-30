@@ -1,0 +1,6 @@
+# The hall's lights: a light that starts off and comes on with A_Activate
+# (actordefs/wolf3d/decorations.yaml in pfwolf-pk3)
+things:
+  500:
+    class: SwitchLightOff
+    angles: 0
