@@ -4,6 +4,8 @@ Player:
   properties:
     # The player's name in messages: %o in an obituary
     "tag": "B.J. Blazkowicz"
+    # Played when the player dies, as enemies' deathsound is
+    "deathsound": "player/death"
     # A new game's (and a respawn's) inventory: item: amount. The best weapon given
     # (lowest weapon.selectionorder) is the one in hand.
     "player.startitem":

@@ -1119,21 +1119,10 @@ internal partial class Program
             }
         }
 
-        // Mirrors the original per-obclass sound switch in T_Shoot (Program.WL_ACT2.cs) --
-        // NOT the same as each actor's own "attacksound" property, since a few enemies
-        // (Gift/Fat/Schabbs/FakeHitler) use a different sound for their thrown/breathed
-        // attack than for this generic gunshot roll.
-        var sound = ob.Name switch
-        {
-            "SS" => "wolfss/attack",
-            "Gift" or "Fat" => "missile/fire",
-            "Hans" => "hans/attack",
-            "MechaHitler" or "RealHitler" => "hitler/attack",
-            "Schabbs" => "schabbs/throw",
-            "FakeHitler" => "flame/fire",
-            _ => "guard/attack", // Guard/Officer/Mutant/Gretel: generic soldier gunfire
-        };
-        PlaySoundLocActor(sound, ob);
+        // The shooter's own attacksound (vanilla's per-class switch: SSFIRE, BOSSFIRE, ... and
+        // NAZIFIRE for the rest, Spear's bosses included)
+        if (ob.Properties.TryGetValue("attacksound", out var sound) && sound is string soundName)
+            PlaySoundLocActor(soundName, ob);
     }
 
     // Spawns a projectile actor (Needle/Rocket/Fire, actordefs/wolf3d/projectiles.yaml) at the
@@ -1165,14 +1154,15 @@ internal partial class Program
             PlaySoundLocActor(sound, newobj);
     }
 
+    // Each plays the thrown projectile's attacksound (projectiles.yaml)
     internal static void T_SchabbThrow(Entities.Actors.Actor ob) =>
-        ThrowProjectile(ob, "Needle", 0x2000, "schabbs/throw");
+        ThrowProjectile(ob, "Needle", 0x2000);
 
     internal static void T_GiftThrow(Entities.Actors.Actor ob) =>
-        ThrowProjectile(ob, "Rocket", 0x2000, "missile/fire");
+        ThrowProjectile(ob, "Rocket", 0x2000);
 
     internal static void T_FakeFire(Entities.Actors.Actor ob) =>
-        ThrowProjectile(ob, "Fire", 0x1200, "flame/fire");
+        ThrowProjectile(ob, "Fire", 0x1200);
 
     internal static void A_DeathScream(Entities.Actors.Actor ob)
     {
@@ -1180,13 +1170,14 @@ internal partial class Program
             PlaySoundLocActor(soundName, ob);
     }
 
-    internal static void A_MechaSound(Entities.Actors.Actor ob)
+    // A_ActiveSound: the actor's "activesound" (Mecha Hitler's stomp), only where the player can
+    // hear it -- in an area connected to theirs, as vanilla's A_MechaSound was
+    internal static void A_ActiveSound(Entities.Actors.Actor ob)
     {
-        if (ob.AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[ob.AreaNumber] != 0)
-            PlaySoundLocActor("hitler/active", ob);
+        if (ob.Properties.TryGetValue("activesound", out var sound) && sound is string soundName
+            && (ob.AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[ob.AreaNumber] != 0))
+            PlaySoundLocActor(soundName, ob);
     }
-
-    internal static void A_Slurpie(Entities.Actors.Actor ob) => _audioManager.Play("misc/slurpie");
 
     /*
     =============================================================================
@@ -1248,10 +1239,15 @@ internal partial class Program
     // Ends the game in victory (the Angel of Death's last death frame)
     internal static void A_Victory(Entities.Actors.Actor ob) => playstate = playstatetypes.ex_victorious;
 
-    // A_PlaySound("angel/breath"): plays a sound, not placed in the world
+    // A_PlaySound("angel/breath"): plays a sound, not placed in the world; with "positional"
+    // (A_PlaySound("misc/yeah", "positional")), from where the actor is
     internal static void A_PlaySound(Entities.Actors.Actor ob, string[] args)
     {
-        if (args.Length > 0)
+        if (args.Length == 0)
+            return;
+        if (args.Skip(1).Any(a => a.Equals("positional", StringComparison.OrdinalIgnoreCase)))
+            PlaySoundLocActor(args[0], ob);
+        else
             _audioManager.Play(args[0]);
     }
 
@@ -1304,7 +1300,9 @@ internal partial class Program
 
         _videoManager.FinishPaletteShifts();
 
-        GameEngineManager.WaitVBL(100);
+        // intermission.yaml deathcam
+        var deathcam = Intermission.DeathCam ?? new Assets.DeathCamScreen();
+        GameEngineManager.DelayMs((uint)Math.Max(deathcam.PauseMs, 0));
 
         if (gamestate.victoryflag)
         {
@@ -1317,18 +1315,12 @@ internal partial class Program
         _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, (int)fadeheight, bordercol);
         _videoManager.Transition(deathFadeStyle, 0, 0, _videoManager.screenWidth, (int)fadeheight, (uint)deathFadeTics);
 
-        if (bordercol != "VIEWCOLOR")
-        {
-            TextAt(68, 45, new Fonts.TextStyle(LARGE_FONT, "White", bordercol)).Print("$STR_SEEAGAIN".ToLanguageText(language));
-        }
-        else
-        {
-            Write(0, 7, "$STR_SEEAGAIN".ToLanguageText(language));
-        }
+        foreach (var label in deathcam.Labels)
+            TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
 
         _videoManager.Update();
 
-        _inputManager.UserInput(300);
+        _inputManager.UserInput((uint)Math.Max(deathcam.HoldTics, 0));
 
         deathCamSprite = null;      // T_DeathCam builds a fresh one, so the flash starts from its first frame
         NewActorState(player, Entities.Actors.PlayerPawn.DeathCamState);

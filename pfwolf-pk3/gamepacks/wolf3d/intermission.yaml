@@ -52,11 +52,25 @@ scoring:
 #   tally-done:  the time bonus, or a ratio between 1% and 99%, finished counting
 #   perfect:     a ratio reached 100%, and its bonus is added
 #   none:        a ratio finished at 0%
+#   pause-ms:    milliseconds of silence, the tally cut off, before perfect or none (0 or left
+#                out: none)
 sounds:
+  pause-ms: 240
   tally: misc/end_bonus1
   tally-done: misc/end_bonus2
   perfect: misc/100percent
   none: misc/no_bonus
+
+# deathcam: the text over the faded view before a boss's death is replayed (A_StartDeathCam),
+# in the same font and color. labels as above.
+#   pause-ms:   milliseconds after the boss dies before the view fades, and after the replay
+#               before the level ends
+#   hold-tics:  how long the text stays up (70 a second) before the replay, unless a key is pressed
+deathcam:
+  pause-ms: 800
+  hold-tics: 300
+  labels:
+    - { text: "$STR_SEEAGAIN", x: 0, y: 56 }
 
 # victory: the screen when a cluster is won, in the same font and color. music: as above (the
 # cluster's own victory-music in game-info plays over its victory-frames before this). pics:

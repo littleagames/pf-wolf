@@ -229,7 +229,8 @@ internal partial class Program
     internal static void LevelCompleted()
     {
         var language = _assetManager.GetText("en-us");
-        const int VBLWAIT = 30;
+        // intermission.yaml sounds pause-ms
+        uint PAUSE_MS = (uint)Math.Max(Intermission.Sounds.PauseMs ?? 0, 0);
         // intermission.yaml scoring
         int PAR_AMOUNT = Math.Max(Intermission.Scoring.TimeBonus ?? 0, 0);
         int PERCENT100AMT = Math.Max(Intermission.Scoring.PerfectBonus ?? 0, 0);
@@ -338,7 +339,7 @@ internal partial class Program
             }
             if (ratio >= 100)
             {
-                GameEngineManager.WaitVBL(VBLWAIT);
+                GameEngineManager.DelayMs(PAUSE_MS);
                 _audioManager.StopAll();
                 bonus += PERCENT100AMT;
                 tempstr = bonus.ToString();
@@ -348,7 +349,7 @@ internal partial class Program
             }
             else if (ratio == 0)
             {
-                GameEngineManager.WaitVBL(VBLWAIT);
+                GameEngineManager.DelayMs(PAUSE_MS);
                 _audioManager.StopAll();
                 PlayIntermissionSound(Intermission.Sounds.None);
             }
@@ -378,7 +379,7 @@ internal partial class Program
             }
             if (ratio >= 100)
             {
-                GameEngineManager.WaitVBL(VBLWAIT);
+                GameEngineManager.DelayMs(PAUSE_MS);
                 _audioManager.StopAll();
                 bonus += PERCENT100AMT;
                 tempstr = bonus.ToString();
@@ -388,7 +389,7 @@ internal partial class Program
             }
             else if (ratio == 0)
             {
-                GameEngineManager.WaitVBL(VBLWAIT);
+                GameEngineManager.DelayMs(PAUSE_MS);
                 _audioManager.StopAll();
                 PlayIntermissionSound(Intermission.Sounds.None);
             }
@@ -416,7 +417,7 @@ internal partial class Program
             }
             if (ratio >= 100)
             {
-                GameEngineManager.WaitVBL(VBLWAIT);
+                GameEngineManager.DelayMs(PAUSE_MS);
                 _audioManager.StopAll();
                 bonus += PERCENT100AMT;
                 tempstr = bonus.ToString();
@@ -426,7 +427,7 @@ internal partial class Program
             }
             else if (ratio == 0)
             {
-                GameEngineManager.WaitVBL(VBLWAIT);
+                GameEngineManager.DelayMs(PAUSE_MS);
                 _audioManager.StopAll();
                 PlayIntermissionSound(Intermission.Sounds.None);
             }
@@ -714,12 +715,6 @@ internal partial class Program
         TextAt(x, value.Y, style).Print(text);
     }
 
-    /// <summary>The intermission and victory screens' big letters (fonts.yaml)</summary>
+    /// <summary>The intermission, victory and death cam text when intermission.yaml doesn't set a font or color</summary>
     internal static readonly TextStyle IntermissionStyle = new("IntermissionFont", "White");
-
-    /// <summary>Intermission text at (x, y) in 8 pixel tiles</summary>
-    internal static void Write(int x, int y, string text) => WriteAt(x * 8, y * 8, text);
-
-    /// <summary>Intermission text at (x, y) in pixels</summary>
-    internal static void WriteAt(int x, int y, string text) => TextAt(x, y, IntermissionStyle).Print(text);
 }

@@ -515,8 +515,7 @@ internal partial class Program
         ActorActionRegistry.Register("T_FakeFire", T_FakeFire);
         ActorActionRegistry.Register("T_Shoot", T_Shoot);
         ActorActionRegistry.Register("A_DeathScream", A_DeathScream);
-        ActorActionRegistry.Register("A_MechaSound", A_MechaSound);
-        ActorActionRegistry.Register("A_Slurpie", A_Slurpie);
+        ActorActionRegistry.Register("A_ActiveSound", A_ActiveSound);
         ActorActionRegistry.Register("A_HitlerMorph", A_HitlerMorph);
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
 
@@ -538,7 +537,6 @@ internal partial class Program
         // BJ victory cutscene (Program.WL_ACT2.cs).
         ActorActionRegistry.Register("T_BJRun", T_BJRun);
         ActorActionRegistry.Register("T_BJJump", T_BJJump);
-        ActorActionRegistry.Register("T_BJYell", T_BJYell);
         ActorActionRegistry.Register("T_BJDone", T_BJDone);
 
         // The player's own think states (PlayerPawn), ticked by MapManager.DoActor.

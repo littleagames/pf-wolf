@@ -529,7 +529,7 @@ Fat:
     "monster.chasespeedmultiplier": 3
     "points": 5000
     "seesound": "fat/sight" # inferred, was "ERLAUBEN"
-    "attacksound": "missile/fire" # T_Shoot's switch cases Fat alongside Gift, both play "MISSILEFIRE" (not the generic soldier gunfire cue)
+    "attacksound": "missile/fire" # his gunfire (T_Shoot) too: vanilla played MISSILEFIRE for Fat and Gift, not the soldier gunfire
     "deathsound": "fat/death"
     # No dropitem -- KillActor has no PlaceItemType call for fatobj.
     # Sets gamestate.killx/killy to the player's position on death.
@@ -686,14 +686,14 @@ MechaHitler:
         tics-per-frame: 10
         action: T_Shoot
         next-state: Chase
-    # A_MechaSound plays an ambient servo/stomp loop on frames 1 and 3
+    # A_ActiveSound plays his activesound (the servo/stomp) on frames 1 and 3
     # whenever Mecha Hitler is in an area the player can hear.
     Chase: # s_mechachase1..4 / T_Chase, A_MechaSound
       - sprite: MECH
         frames: [A]
         tics-per-frame: 10
         think: T_Chase
-        action: A_MechaSound
+        action: A_ActiveSound
       - sprite: MECH
         frames: [A]
         tics-per-frame: 6
@@ -705,7 +705,7 @@ MechaHitler:
         frames: [C]
         tics-per-frame: 10
         think: T_Chase
-        action: A_MechaSound
+        action: A_ActiveSound
       - sprite: MECH
         frames: [C]
         tics-per-frame: 6
@@ -741,10 +741,10 @@ MechaHitler:
     "seesound": "hitler/sight" # inferred, was "DIE"
     "attacksound": "hitler/attack" # was "BOSSFIRE"
     "deathsound": "hitler/mechadeath"
+    # Played by A_ActiveSound while he chases, only while in an area connected to the player
+    "activesound": "hitler/active"
     # No dropitem -- KillActor has no PlaceItemType call for
     # mechahitlerobj (A_HitlerMorph spawns RealHitler in its place instead).
-    # A_MechaSound plays "hitler/active" instead, but only while in an area
-    # connected to the player.
     # Reaction delay after first sighting: fixed 1 tic.
 
 # -----------------------------------------------------------------------
@@ -819,7 +819,7 @@ RealHitler:
         frames: [A]
         tics-per-frame: 10
         next-state: Death
-    Death: # s_hitlerdie1..10 / A_DeathScream, A_Slurpie, A_StartDeathCam
+    Death: # s_hitlerdie1..10 / A_DeathScream, A_Slurpie (the slurpie sound), A_StartDeathCam
       - sprite: HTLR
         frames: [A]
         tics-per-frame: 1
@@ -830,7 +830,7 @@ RealHitler:
       - sprite: HTLR
         frames: [H]
         tics-per-frame: 10
-        action: A_Slurpie
+        action: A_PlaySound("misc/slurpie")
       - sprite: HTLR
         frames: [I]
         tics-per-frame: 10
@@ -869,4 +869,4 @@ RealHitler:
     "deathsound": "hitler/death"
     # No dropitem -- KillActor has no PlaceItemType call for realhitlerobj.
     # Sets gamestate.killx/killy to the player's position on death.
-    # A_Slurpie plays "misc/slurpie" partway through the death animation.
+    # A_PlaySound("misc/slurpie") partway through the death animation (vanilla's A_Slurpie).

@@ -232,20 +232,6 @@ internal partial class Program
     /*
     ===============
     =
-    = T_BJYell
-    =
-    ===============
-    */
-
-    internal static void T_BJYell(Entities.Actors.Actor ob)
-    {
-        PlaySoundLocActor("misc/yeah", ob);  // JAB
-    }
-
-
-    /*
-    ===============
-    =
     = T_BJDone
     =
     ===============

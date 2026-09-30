@@ -99,6 +99,7 @@ TransGrosse:
     "points": 5000
     "seesound": "trans/sight"
     "deathsound": "trans/death"
+    "attacksound": "guard/attack" # vanilla Spear's T_Shoot plays NAZIFIRE for its bosses
     "dropitem": "GoldKey"
 
 # MAP16. Chases like Trans Grosse; its volley also hurts at point-blank range (T_UShoot).
@@ -194,6 +195,7 @@ Ubermutant:
     "monster.chasespeed": 3000
     "points": 5000
     "deathsound": "uber/death"
+    "attacksound": "guard/attack" # vanilla Spear's T_Shoot plays NAZIFIRE for its bosses
     "dropitem": "GoldKey"
 
 # MAP10. Dodges and backs off (T_Will); opens each volley with a rocket.
@@ -284,6 +286,7 @@ Wilhelm:
     "points": 5000
     "seesound": "will/sight"
     "deathsound": "will/death"
+    "attacksound": "guard/attack" # vanilla Spear's T_Shoot plays NAZIFIRE for its bosses
     "dropitem": "GoldKey"
 
 # MAP18. Dodges and backs off (T_Will); each volley fires two rockets angled either side of
@@ -380,6 +383,7 @@ DeathKnight:
     "points": 5000
     "seesound": "knight/sight"
     "deathsound": "knight/death"
+    "attacksound": "guard/attack" # vanilla Spear's T_Shoot plays NAZIFIRE for its bosses
     "dropitem": "GoldKey"
 
 # MAP21. Dodges and backs off (T_Will); fires sparks until it tires after three, then catches
@@ -468,7 +472,7 @@ AngelOfDeath:
       - sprite: ANGL
         frames: [I]
         tics-per-frame: 10
-        action: A_Slurpie
+        action: A_PlaySound("misc/slurpie")
       - sprite: ANGL
         frames: [J]
         tics-per-frame: 10

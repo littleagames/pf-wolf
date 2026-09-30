@@ -32,11 +32,18 @@ internal record IntermissionAsset : Asset
     /// <summary>The screen shown when a cluster is won, in the same font and color</summary>
     public VictoryScreen? Victory { get; set; }
 
+    /// <summary>
+    /// The text over the view before a boss's death is replayed (A_StartDeathCam), in the same
+    /// font and color
+    /// </summary>
+    public DeathCamScreen? DeathCam { get; set; }
+
     public override void Merge(Asset other)
     {
         if (other is IntermissionAsset otherAsset)
         {
             Victory = otherAsset.Victory ?? Victory;
+            DeathCam = otherAsset.DeathCam ?? DeathCam;
             Music = otherAsset.Music ?? Music;
             Font = otherAsset.Font ?? Font;
             Color = otherAsset.Color ?? Color;
@@ -91,6 +98,21 @@ internal record VictoryScreen
     public Dictionary<string, IntermissionValue> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
+/// <summary>The death cam's text, drawn over the faded view</summary>
+internal record DeathCamScreen
+{
+    public List<IntermissionLabel> Labels { get; set; } = [];
+
+    /// <summary>
+    /// Milliseconds after the boss dies before the view fades; after the replay, before the
+    /// level ends
+    /// </summary>
+    public int PauseMs { get; set; }
+
+    /// <summary>Tics (70 a second) the text stays up before the replay, unless a key is pressed</summary>
+    public int HoldTics { get; set; }
+}
+
 /// <summary>A picture at (x, y)</summary>
 internal record IntermissionPic
 {
@@ -133,11 +155,15 @@ internal record IntermissionSounds
     /// <summary>A ratio finished at 0%</summary>
     public string? None { get; set; }
 
+    /// <summary>Milliseconds of silence, the tally cut off, before <see cref="Perfect"/> or <see cref="None"/></summary>
+    public int? PauseMs { get; set; }
+
     public IntermissionSounds MergedWith(IntermissionSounds other) => new()
     {
         Tally = other.Tally ?? Tally,
         TallyDone = other.TallyDone ?? TallyDone,
         Perfect = other.Perfect ?? Perfect,
         None = other.None ?? None,
+        PauseMs = other.PauseMs ?? PauseMs,
     };
 }

@@ -256,6 +256,9 @@ internal partial class Program
     // and FadeTics (screen-fade-style, screen-fade-tics)
     internal static FadeStyle menuFadeStyle, deathFadeStyle, levelFadeStyle;
     internal static int menuFadeTics, deathFadeTics, levelFadeTics;
+    internal static string deathFadeColor = "Maroon";
+    // The death screen's turn to face the killer (degrees a tic) and hold on the color (tics)
+    internal static int deathTurnSpeed = 2, deathHoldTics = 100;
 
     private static void ReadFadeStyles()
     {
@@ -267,6 +270,9 @@ internal partial class Program
         menuFadeTics = ParseFadeTics(gameInfo.MenuFadeTics, "menu-fade-tics") ?? 20;
         deathFadeStyle = ParseFadeStyle(gameInfo.DeathFadeStyle, "death-fade-style", FadeStyle.Fizzle);
         deathFadeTics = ParseFadeTics(gameInfo.DeathFadeTics, "death-fade-tics") ?? 70;
+        deathFadeColor = string.IsNullOrWhiteSpace(gameInfo.DeathFadeColor) ? "Maroon" : gameInfo.DeathFadeColor;
+        deathTurnSpeed = Math.Max(gameInfo.DeathTurnSpeed ?? 2, 1);     // 0 would never finish turning
+        deathHoldTics = Math.Max(gameInfo.DeathHoldTics ?? 100, 0);
         levelFadeStyle = ParseFadeStyle(gameInfo.LevelFadeStyle, "level-fade-style", FadeStyle.Fizzle);
         levelFadeTics = ParseFadeTics(gameInfo.LevelFadeTics, "level-fade-tics") ?? 20;
     }

@@ -734,7 +734,6 @@ internal partial class Program
         //CA_LoadAllSounds();
     }
 
-    internal const int DEATHROTATE = 2;
     internal static void Died()
     {
         float fangle;
@@ -749,7 +748,8 @@ internal partial class Program
 
         gamestate.weapon = null;                     // take away weapon
         viewpitch = 0;                               // and face the attacker straight on
-        _audioManager.Play("player/death");
+        if (_inventoryManager.GetStringProperty(PlayerClass, "deathsound") is { Length: > 0 } deathSound)
+            _audioManager.Play(deathSound);     // the Player class's deathsound
         ShowObituary();
 
         //
@@ -794,7 +794,7 @@ internal partial class Program
                 curangle -= ANGLES;
             do
             {
-                change = (int)(tics * DEATHROTATE);
+                change = (int)(tics * deathTurnSpeed);
                 if (curangle + change > iangle)
                     change = iangle - curangle;
 
@@ -817,7 +817,7 @@ internal partial class Program
                 curangle += ANGLES;
             do
             {
-                change = -(int)tics * DEATHROTATE;
+                change = -(int)tics * deathTurnSpeed;
                 if (curangle + change < iangle)
                     change = iangle - curangle;
 
@@ -837,14 +837,14 @@ internal partial class Program
         //
         _videoManager.FinishPaletteShifts();
 
-        _videoManager.BarScaledCoord(viewscreenx, viewscreeny, viewwidth, viewheight, "Maroon");
+        _videoManager.BarScaledCoord(viewscreenx, viewscreeny, viewwidth, viewheight, deathFadeColor);
         DrawHudMessages();      // the obituary stays up on the red, through the fade and the wait after it
 
         _inputManager.ClearKeysDown();
 
         _videoManager.Transition(deathFadeStyle, viewscreenx, viewscreeny, viewwidth, viewheight, (uint)deathFadeTics);
 
-        _inputManager.UserInput(100);
+        _inputManager.UserInput((uint)deathHoldTics);
         _audioManager.WaitSoundDone();
         ClearMemory();
 

@@ -73,6 +73,23 @@ internal record GameInfoAsset : Asset
     public int? DeathFadeTics { get; init; }
 
     /// <summary>
+    /// The color the view fades to when the player dies: a color name, #RRGGBB or palette
+    /// index (default Maroon)
+    /// </summary>
+    public string? DeathFadeColor { get; init; }
+
+    /// <summary>
+    /// How fast the dead player turns to face their killer, in degrees a tic (default 2)
+    /// </summary>
+    public int? DeathTurnSpeed { get; init; }
+
+    /// <summary>
+    /// How long the death fade's color stays up before the level restarts or the game ends,
+    /// in tics, unless a key is pressed (default 100)
+    /// </summary>
+    public int? DeathHoldTics { get; init; }
+
+    /// <summary>
     /// How the view appears when a level starts, or restarts after dying (default fizzle)
     /// </summary>
     public string? LevelFadeStyle { get; init; }

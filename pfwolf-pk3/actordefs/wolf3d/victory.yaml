@@ -5,7 +5,7 @@
 # Not placed on maps: SpawnBJVictory creates one at runtime when the player steps
 # on the exit tile (the A_VictoryTile trigger, mapdefs triggers.yaml). It runs along the map's arrow
 # icons (T_BJRun / SelectPathDir) for a fixed number of tiles, then jumps
-# (T_BJJump), yelling as it goes (T_BJYell), and finally ends the level once the
+# (T_BJJump), yelling as it goes (A_PlaySound, vanilla's T_BJYell), and finally ends the level once the
 # last frame's time is up (T_BJDone).
 # =============================================================================
 
@@ -44,7 +44,7 @@ BJVictory:
         frames: [F]
         tics-per-frame: 14
         think: T_BJJump
-        action: T_BJYell
+        action: A_PlaySound("misc/yeah", "positional")
       - sprite: BLAZ
         frames: [G]
         tics-per-frame: 14
