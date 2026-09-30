@@ -245,9 +245,9 @@ internal partial class Program
         //
         area = _mapManager.MAPSPOT(tilex, tiley, 0) - _mapManager.Floors.AreaTile;
 
-        if (areabyplayer[area] != 0)
+        if (areabyplayer[area] != 0 && doorobjlist[door].xlat.CloseSound is { Length: > 0 } closeSound)
         {
-            PlaySoundLocTile("doors/close", doorobjlist[door].tilex, doorobjlist[door].tiley); // JAB
+            PlaySoundLocTile(closeSound, doorobjlist[door].tilex, doorobjlist[door].tiley); // JAB
         }
 
         doorobjlist[door].action = dooractiontypes.dr_closing;
@@ -276,7 +276,11 @@ internal partial class Program
         {
             if (doorobjlist[door].position == 0)
             {
-                _audioManager.Play("player/usefail"); // locked
+                // locked: the door's locked-sound, else its lock item's key.lockedsound
+                var lockedSound = !string.IsNullOrWhiteSpace(xlat.LockedSound) ? xlat.LockedSound
+                    : _inventoryManager.GetStringProperty(lockItem, "key.lockedsound");
+                if (!string.IsNullOrEmpty(lockedSound))
+                    _audioManager.Play(lockedSound);
                 ShowLockedMessage(xlat, lockItem);
             }
             return;
@@ -372,9 +376,9 @@ internal partial class Program
                 if (player.AreaNumber < _mapManager.Floors.NumAreas)
                     ConnectAreas();
 
-                if (areabyplayer[area1] != 0)
+                if (areabyplayer[area1] != 0 && doorobjlist[door].xlat.OpenSound is { Length: > 0 } openSound)
                 {
-                    PlaySoundLocTile("doors/open", doorobjlist[door].tilex, doorobjlist[door].tiley);  // JAB
+                    PlaySoundLocTile(openSound, doorobjlist[door].tilex, doorobjlist[door].tiley);  // JAB
                 }
             }
         }
@@ -526,8 +530,9 @@ internal partial class Program
     ===============
     */
     // A_PushWall, the mapdefs trigger action (registered in RegisterActorActions): true if the
-    // wall started moving, which is when a secret trigger counts as found
-    internal static bool PushWall(int checkx, int checky, controldirs dir)
+    // wall started moving, which is when a secret trigger counts as found. moveSound plays as it
+    // starts, blockedSound when something's in the way (either null for none).
+    internal static bool PushWall(int checkx, int checky, controldirs dir, string? moveSound = null, string? blockedSound = null)
     {
         int oldtile, dx, dy;
 
@@ -544,7 +549,8 @@ internal partial class Program
         if (_mapManager.actorat[checkx + dx, checky + dy] != null
             || _mapManager.EnemiesAt(checkx + dx, checky + dy).Any())
         {
-            _audioManager.Play("player/usefail");
+            if (!string.IsNullOrEmpty(blockedSound))
+                _audioManager.Play(blockedSound);
             return false;
         }
 
@@ -562,7 +568,8 @@ internal partial class Program
         _mapManager.SetMapSpot(pwallx, pwally, 1,  0);   // remove P tile info
         _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)_mapManager.MAPSPOT(player.TileX, player.TileY, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
 
-        _audioManager.Play("world/pushwall");
+        if (!string.IsNullOrEmpty(moveSound))
+            _audioManager.Play(moveSound);
         return true;
     }
 

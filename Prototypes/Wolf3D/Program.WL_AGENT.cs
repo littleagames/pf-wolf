@@ -548,7 +548,9 @@ internal partial class Program
 
         // mapdefs trigger actions, run when the player uses a trigger's tile (Cmd_Use) or steps
         // onto a walk-over one (Thrust)
-        Entities.MapTriggerRegistry.Register("A_PushWall", (trigger, _) => PushWall(trigger.TileX, trigger.TileY, trigger.Dir));
+        // A_PushWall("moving sound", "blocked sound"): either left out is silent
+        Entities.MapTriggerRegistry.Register("A_PushWall", (trigger, args) => PushWall(trigger.TileX, trigger.TileY, trigger.Dir,
+            args.ElementAtOrDefault(0), args.ElementAtOrDefault(1)));
         Entities.MapTriggerRegistry.Register("A_VictoryTile", (_, _) => { VictoryTile(); return true; });
     }
 
@@ -1165,8 +1167,11 @@ internal partial class Program
                 playstate = playstatetypes.ex_secretlevel;
             else
                 playstate = playstatetypes.ex_completed;
-            _audioManager.Play("switches/elevbutn");
-            _audioManager.WaitSoundDone();
+            if (!string.IsNullOrEmpty(switchWall.ExitSwitchSound))
+            {
+                _audioManager.Play(switchWall.ExitSwitchSound);
+                _audioManager.WaitSoundDone();
+            }
         }
         else if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) != 0)
         {

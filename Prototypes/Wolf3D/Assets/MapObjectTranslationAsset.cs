@@ -186,6 +186,18 @@ internal record MapTextureTranslation
     public string AutomapColor { get; init; } = "";
 
     /// <summary>
+    /// Doors only: the sound when the player tries this door without its <see cref="Lock"/>
+    /// item. Empty uses the lock item's `key.lockedsound`.
+    /// </summary>
+    public string LockedSound { get; init; } = "";
+
+    /// <summary>Doors only: played from the door as it starts to open, when the player can hear it</summary>
+    public string OpenSound { get; init; } = "";
+
+    /// <summary>Doors only: played from the door as it starts to close, when the player can hear it</summary>
+    public string CloseSound { get; init; } = "";
+
+    /// <summary>
     /// Doors only: the door runs north-south, so it's passed through going east or west (its
     /// East/West faces are the door). False, it runs east-west (North/South are the door).
     /// </summary>
@@ -197,6 +209,12 @@ internal record MapTextureTranslation
     /// into this wall id, the switch thrown.
     /// </summary>
     public int? ExitSwitch { get; init; }
+
+    /// <summary>
+    /// Walls only: the sound when the <see cref="ExitSwitch"/> is thrown; the level ends once
+    /// it's done. Empty: silent, and the level ends straight away.
+    /// </summary>
+    public string ExitSwitchSound { get; init; } = "";
 
     public static MapTextureTranslation None => new(); // TODO: Missing texture
 }

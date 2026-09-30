@@ -104,13 +104,15 @@ walls:
         West: BRIKEGL2
     # The elevator switch. exit-switch makes a wall one: using it from the east or west ends
     # the level (to the secret level when standing on the floors' secret-exit code) and turns
-    # it into the wall id given, the switch thrown.
+    # it into the wall id given, the switch thrown. exit-switch-sound plays as it's thrown, and
+    # the level ends once it's done.
     '21':
         North: ELEV1_1
         South: ELEV1_1
         East: ELEV1_2
         West: ELEV1_2
         exit-switch: 22
+        exit-switch-sound: switches/elevbutn
     '22':
         North: ELEV2_1
         South: ELEV2_1

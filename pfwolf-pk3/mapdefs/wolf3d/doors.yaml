@@ -10,22 +10,32 @@
 #                        the text); left out, the lock item's "key.lockedmessage" is used
 #   lock-message-style:  The hud-messages.yaml style for it; left out, the lock item's
 #                        "key.lockedmessagestyle"
+#   open-sound:          Played from the door as it starts to open, and close-sound as it starts to
+#   close-sound:         close, when the player can hear it (in an area connected to theirs)
+#   locked-sound:        Played when the player tries the door without its lock item; left out,
+#                        the lock item's "key.lockedsound"
 #   automap-color:       The door's color on the automap (a theme color or #RRGGBB), such as its
 #                        key's color; left out, the theme's AutomapDoor. A theme color named
 #                        Automap<lock item> (e.g. AutomapGoldKey) wins over it
 doors:
     '90':
+        open-sound: doors/open
+        close-sound: doors/close
         Vertical: true
         East: DOOR1_2
         West: DOOR1_2
         North: SLOT1_1
         South: SLOT1_1
     '91':
+        open-sound: doors/open
+        close-sound: doors/close
         North: DOOR1_1
         South: DOOR1_1
         East: SLOT1_2
         West: SLOT1_2
     '92':
+        open-sound: doors/open
+        close-sound: doors/close
         Vertical: true
         East: DOOR3_2
         West: DOOR3_2
@@ -34,6 +44,8 @@ doors:
         Lock: GoldKey
         automap-color: '#FFAA00'
     '93':
+        open-sound: doors/open
+        close-sound: doors/close
         North: DOOR3_1
         South: DOOR3_1
         East: SLOT1_2
@@ -41,6 +53,8 @@ doors:
         Lock: GoldKey
         automap-color: '#FFAA00'
     '94':
+        open-sound: doors/open
+        close-sound: doors/close
         Vertical: true
         East: DOOR3_2
         West: DOOR3_2
@@ -49,6 +63,8 @@ doors:
         Lock: SilverKey
         automap-color: '#FFFFFF'
     '95':
+        open-sound: doors/open
+        close-sound: doors/close
         North: DOOR3_1
         South: DOOR3_1
         East: SLOT1_2
@@ -56,12 +72,16 @@ doors:
         Lock: SilverKey
         automap-color: '#FFFFFF'
     '100':
+        open-sound: doors/open
+        close-sound: doors/close
         Vertical: true
         East: DOOR2_2
         West: DOOR2_2
         North: SLOT1_1
         South: SLOT1_1
     '101':
+        open-sound: doors/open
+        close-sound: doors/close
         North: DOOR2_1
         South: DOOR2_1
         East: SLOT1_2
