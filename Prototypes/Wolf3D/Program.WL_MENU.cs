@@ -998,8 +998,8 @@ internal partial class Program
 
     /// <summary>
     /// The Options submenu. Most items run their own screen (Sound, Control, Change View,
-    /// Video), and this menu is drawn again when that screen is left; Messages switches the
-    /// messages over the view on and off in place.
+    /// Video), and this menu is drawn again when that screen is left; Messages and Automap Stats
+    /// switch on and off in place.
     /// </summary>
     internal static int CP_Options(int _)
     {
@@ -1018,6 +1018,12 @@ internal partial class Program
                 _hudMessageManager.EnabledSetting = !_hudMessageManager.Enabled;
                 if (!_hudMessageManager.Enabled)
                     _hudMessageManager.Clear();
+                DrawOptionsMenu();
+                ShootSnd();
+            }
+            else if (SelectedId(OptMenu, which) == "automapstats")
+            {
+                _automapManager.ShowStats = !_automapManager.ShowStats;
                 DrawOptionsMenu();
                 ShootSnd();
             }
@@ -1040,6 +1046,7 @@ internal partial class Program
         DrawMenuComponents("options");
         DrawMenu(OptItems, OptMenu);
         DrawMenuCheckbox(OptItems, OptMenu, "messages", _hudMessageManager.Enabled);
+        DrawMenuCheckbox(OptItems, OptMenu, "automapstats", _automapManager.ShowStats);
         DrawMenuGun(OptItems);
         _videoManager.Update();
     }

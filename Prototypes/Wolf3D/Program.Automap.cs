@@ -22,6 +22,8 @@ internal partial class Program
         ["AutomapDecor"] = "#8D8D8D",
         ["AutomapWallSprite"] = "#8D8D8D",
         ["AutomapGrid"] = "#004040",
+        ["AutomapTitle"] = "#FFFF55",
+        ["AutomapStats"] = "#C2C2C2",
     };
 
     static readonly string[] AutomapHeadings = ["E", "NE", "N", "NW", "W", "SW", "S", "SE"];
@@ -241,6 +243,9 @@ internal partial class Program
 
         DrawAutomapPlayer(view);
         DrawAutomapPosition(view);
+
+        if (_automapManager.ShowStats)
+            DrawAutomapStats(view);
     }
 
     /// <summary>A faint one-pixel line along every tile edge of the map that reaches the view, under everything else.</summary>
@@ -526,6 +531,50 @@ internal partial class Program
     }
 
     /// <summary>
+    /// The level's name, then the kills, treasure and secrets found so far out of the level's
+    /// totals and the time on the level, one to a line down the top-left corner of the view.
+    /// Lines that don't fit the view's width or height are left out.
+    /// </summary>
+    static void DrawAutomapStats(AutomapView view)
+    {
+        var font = _fontManager.Find(AUTOMAP_FONT);
+        if (font == null)
+            return;
+
+        (string Text, string Color)[] lines =
+        [
+            (GetMapDisplayName(gamestate.mapon), AutomapColor("AutomapTitle")),
+            ($"Kills {gamestate.killcount}/{gamestate.killtotal}", AutomapColor("AutomapStats")),
+            ($"Treasure {gamestate.treasurecount}/{gamestate.treasuretotal}", AutomapColor("AutomapStats")),
+            ($"Secrets {gamestate.secretcount}/{gamestate.secrettotal}", AutomapColor("AutomapStats")),
+            ($"Time {FormatPlayTime(gamestate.TimeCount)}", AutomapColor("AutomapStats")),
+        ];
+
+        // DrawText and Bar work in 320x200 virtual pixels; the bottom rows are the position line's
+        int px = _videoManager.scaleFactor;
+        int x = view.ClipX / px + 3;
+        int y = view.ClipY / px + 2;
+        int room = view.ClipWidth / px - 6;
+        int bottom = (view.ClipY + view.ClipHeight) / px - font.Height - 4;
+
+        foreach (var (text, color) in lines)
+        {
+            if (y + font.Height + 1 > bottom)
+                break;
+
+            int width = font.Measure(text);
+            if (width <= room)
+            {
+                // On a backdrop box, like the position line
+                _videoManager.Bar(x - 2, y - 1, width + 4, font.Height + 2, AutomapColor("AutomapBackground"));
+                _graphicManager.DrawText(x, y, text, font, color);
+            }
+
+            y += font.Height + 2;
+        }
+    }
+
+    /// <summary>
     /// A line between two map positions (in tiles), with the pen centered on it. The pen is one
     /// virtual pixel wide unless <paramref name="pen"/> gives a width in screen pixels.
     /// </summary>
@@ -610,6 +659,14 @@ internal partial class Program
             _automapManager.ShowGrid = ParseBool(args[0]);
 
         _consoleManager.Print($"am_grid is {(_automapManager.ShowGrid ? 1 : 0)}");
+    }
+
+    private static void Cmd_AmStats(string[] args)
+    {
+        if (args.Length > 0)
+            _automapManager.ShowStats = ParseBool(args[0]);
+
+        _consoleManager.Print($"am_stats is {(_automapManager.ShowStats ? 1 : 0)}");
     }
 
     private static void Cmd_AmReveal(string[] args)

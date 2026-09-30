@@ -1,6 +1,6 @@
 music: "WONDERIN"
 type: "wolf3d-menu"
-# Indented enough for the Messages checkbox between the cursor and the text
+# Indented enough for the Messages and Automap Stats checkboxes between the cursor and the text
 position:
   x: 52
   y: 82
@@ -27,7 +27,7 @@ components:
       - x: 44
       - y: 79
       - width: 202
-      - height: 84
+      - height: 97
   -
     type: "Graphic"
     params:
@@ -70,6 +70,13 @@ menu-items:
       type: "ToggleMenuItem"
       text: "$MENU_MESSAGES"
       short-key: M
+      enabled: true
+  # Whether the automap shows the level's name, kills, treasure, secrets and time (am_stats)
+  -
+      id: "automapstats"
+      type: "ToggleMenuItem"
+      text: "$MENU_AUTOMAPSTATS"
+      short-key: A
       enabled: true
   # Which mods in the mods folder load over pfwolf.pk3 (mods.cfg); changing them restarts the game
   -

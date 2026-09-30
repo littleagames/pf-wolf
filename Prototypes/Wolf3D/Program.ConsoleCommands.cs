@@ -80,6 +80,8 @@ internal partial class Program
             "am_overlay [0|1]", Cmd_AmOverlay, complete: Values("0", "1"));
         Register("am_grid", "Whether the automap marks every tile edge with a faint grid when zoomed in.",
             "am_grid [0|1]", Cmd_AmGrid, complete: Values("0", "1"));
+        Register("am_stats", "Whether the automap shows the level's name, kills, treasure, secrets and time.",
+            "am_stats [0|1]", Cmd_AmStats, complete: Values("0", "1"));
         Register("am_reveal", "Shows the whole map on the automap, seen or not.", "am_reveal [0|1]", Cmd_AmReveal, Cheat,
             complete: Values("0", "1"));
 

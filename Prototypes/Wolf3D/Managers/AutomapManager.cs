@@ -45,6 +45,12 @@ internal class AutomapManager
 
     internal void ToggleGrid() => ShowGrid = !ShowGrid;
 
+    /// <summary>
+    /// Whether the level's name, kills, treasure, secrets and time show in the top-left corner
+    /// (the `am_stats` setting, saved in the config).
+    /// </summary>
+    internal bool ShowStats { get; set; } = true;
+
     /// <summary>Virtual (320x200) pixels per map tile; multiply by the video scale factor for screen pixels.</summary>
     internal float Zoom { get; private set; } = DefaultZoom;
 

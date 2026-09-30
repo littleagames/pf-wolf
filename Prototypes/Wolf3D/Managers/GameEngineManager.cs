@@ -161,6 +161,7 @@ internal class GameEngineManager
         public VideoSettings? Video;
         public bool? AutoSave;
         public HudMessagesSetting? HudMessages;
+        public bool? AutomapStats;
     }
 
     /// <summary>The `msg_enabled` setting, as saved in config.cfg</summary>
@@ -278,6 +279,8 @@ internal class GameEngineManager
             Program.autosaveEnabled = autoSave;
         if (config.HudMessages is HudMessagesSetting.Off or HudMessagesSetting.On)
             hudMessageManager.EnabledSetting = config.HudMessages == HudMessagesSetting.On;
+        if (config.AutomapStats is bool stats)
+            automapManager.ShowStats = stats;
 
         // Set "Read This" back to standard active
         Program.FindMenuItem(Program.MainMenu, "readthis")?.active = 1;
@@ -357,6 +360,8 @@ internal class GameEngineManager
             config.AutoSave = br.ReadByte() != 0;
         if (stream.Position < stream.Length)
             config.HudMessages = (HudMessagesSetting)br.ReadByte();
+        if (stream.Position < stream.Length)
+            config.AutomapStats = br.ReadByte() != 0;
 
         return config;
     }
@@ -573,6 +578,7 @@ internal class GameEngineManager
             false => HudMessagesSetting.Off,
             null => HudMessagesSetting.GameDefault,
         }));
+        bw.Write(automapManager.ShowStats);
     }
 
     /// <summary>
