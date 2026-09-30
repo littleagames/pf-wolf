@@ -115,6 +115,9 @@ internal partial class Program
 
         thrustspeed = 0;
 
+        // The player class's speeds: player.forwardmove forwards and back, player.sidemove strafing
+        double forward = PlayerFactor("player.forwardmove"), side = PlayerFactor("player.sidemove");
+
         //
         // looking up and down: only the view, which SetupPitch keeps within what it can show
         //
@@ -129,9 +132,9 @@ internal partial class Program
             if (angle >= ANGLES)
                 angle -= ANGLES;
             if (_inputManager.IsButtonPressed(buttontypes.bt_run))
-                Thrust(angle, (int)(RUNMOVE * MOVESCALE * tics));
+                Thrust(angle, (int)(RUNMOVE * MOVESCALE * tics * side));
             else
-                Thrust(angle, (int)(BASEMOVE * MOVESCALE * tics));
+                Thrust(angle, (int)(BASEMOVE * MOVESCALE * tics * side));
         }
 
         if (_inputManager.IsButtonPressed(buttontypes.bt_straferight))
@@ -140,9 +143,9 @@ internal partial class Program
             if (angle < 0)
                 angle += ANGLES;
             if (_inputManager.IsButtonPressed(buttontypes.bt_run))
-                Thrust(angle, (int)(RUNMOVE * MOVESCALE * tics));
+                Thrust(angle, (int)(RUNMOVE * MOVESCALE * tics * side));
             else
-                Thrust(angle, (int)(BASEMOVE * MOVESCALE * tics));
+                Thrust(angle, (int)(BASEMOVE * MOVESCALE * tics * side));
         }
 
         //
@@ -155,7 +158,7 @@ internal partial class Program
                 angle += ANGLES;
             else if (angle >= ANGLES)
                 angle -= ANGLES;
-            Thrust(angle, (int)(Math.Abs(controlstrafe) * MOVESCALE));
+            Thrust(angle, (int)(Math.Abs(controlstrafe) * MOVESCALE * side));
         }
 
         //
@@ -172,14 +175,14 @@ internal partial class Program
                 angle = ob.Angle - ANGLES / 4;
                 if (angle < 0)
                     angle += ANGLES;
-                Thrust(angle, (int)(controlx * MOVESCALE));      // move to left
+                Thrust(angle, (int)(controlx * MOVESCALE * side));      // move to left
             }
             else if (controlx < 0)
             {
                 angle = ob.Angle + ANGLES / 4;
                 if (angle >= ANGLES)
                     angle -= ANGLES;
-                Thrust(angle, (int)(-controlx * MOVESCALE));     // move to right
+                Thrust(angle, (int)(-controlx * MOVESCALE * side));     // move to right
             }
         }
         else
@@ -203,14 +206,14 @@ internal partial class Program
         //
         if (controly < 0)
         {
-            Thrust(ob.Angle, (int)(-controly * MOVESCALE)); // move forwards
+            Thrust(ob.Angle, (int)(-controly * MOVESCALE * forward)); // move forwards
         }
         else if (controly > 0)
         {
             angle = ob.Angle + ANGLES / 2;
             if (angle >= ANGLES)
                 angle -= ANGLES;
-            Thrust(angle, (int)(controly * BACKMOVESCALE));          // move backwards
+            Thrust(angle, (int)(controly * BACKMOVESCALE * forward));          // move backwards
         }
     }
 
@@ -420,6 +423,10 @@ internal partial class Program
         if (builtActor.Properties.Count == 0)
             return;
 
+        // An item for other player classes stays on the floor
+        if (!PlayerClassCanPickUp(builtActor.Name))
+            return;
+
         // An item the player can't take (health at 100, a key already held) stays on the
         // floor, unless it's flagged ALWAYSPICKUP.
         if (builtActor.Properties.TryGetValue("inventory.amount", out var amount)
@@ -453,6 +460,27 @@ internal partial class Program
     }
 
     /// <summary>
+    /// Whether the player class may pick up an item: not when it's in the item's
+    /// `inventory.forbiddento`, or the item has an `inventory.restrictedto` it isn't in. A class
+    /// counts as in a list that names it or a class it descends from.
+    /// </summary>
+    internal static bool PlayerClassCanPickUp(string item)
+    {
+        // A list of classes, or one class on its own; null when the item doesn't say
+        string[]? Classes(string key) => _inventoryManager.GetProperty(item, key) switch
+        {
+            string one => [one],
+            IEnumerable<object> list => list.Select(c => c.ToString() ?? "").ToArray(),
+            _ => null,
+        };
+        bool In(string[] classes) => _inventoryManager.FindClass(PlayerClass, classes) != null;
+
+        if (Classes("inventory.forbiddento") is { } forbidden && In(forbidden))
+            return false;
+        return Classes("inventory.restrictedto") is not { } restricted || In(restricted);
+    }
+
+    /// <summary>
     /// Gives the player <paramref name="amount"/> of <paramref name="item"/>. Returns false
     /// when nothing could be taken, so the pickup should be left where it is.
     /// </summary>
@@ -473,7 +501,7 @@ internal partial class Program
             }
             case Entities.Actors.Ammo:
                 return GiveAmmo(item.Name, amount) > 0;
-            case Entities.Actors.Armor:
+            case Entities.Actors.BasicArmor:
                 return TryGiveArmor(item.Name);
             case Entities.Actors.Weapon weapon:
                 return TryGiveWeapon(weapon);
@@ -915,7 +943,7 @@ internal partial class Program
     internal static short MaxArmor => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.maxarmor", short.MaxValue), 0, short.MaxValue);
 
     /// <summary>
-    /// Puts on an Armor class (native.yaml): an armor replaces the player's when it has more
+    /// Puts on a BasicArmor class (native.yaml): an armor replaces the player's when it has more
     /// points; a bonus (armor.maxsaveamount) adds to it. False when it would change nothing.
     /// </summary>
     internal static bool TryGiveArmor(string armorClass)
@@ -1123,7 +1151,7 @@ internal partial class Program
             foreach (var (item, amount) in items)
             {
                 // Armor isn't held: it's put on (the amount doesn't matter)
-                if (_inventoryManager.FindClass(item.ToString() ?? "", "Armor") is { } armor)
+                if (_inventoryManager.FindClass(item.ToString() ?? "", "BasicArmor") is { } armor)
                     TryGiveArmor(armor);
                 else
                     _inventoryManager.Give(item.ToString() ?? "", Convert.ToInt32(amount));

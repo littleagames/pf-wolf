@@ -23,8 +23,9 @@ internal record Health : Inventory
 
 }
 
-// Not held: picking it up sets the player's armor points and how much of each hit they absorb
-internal record Armor : Inventory
+// Not held: picking it up sets the player's armor points and how much of each hit they absorb.
+// (Not "Armor": that's Wolf3D's suit of armor decoration.)
+internal record BasicArmor : Inventory
 {
 
 }

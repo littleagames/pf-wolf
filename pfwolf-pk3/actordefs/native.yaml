@@ -1,3 +1,6 @@
+# Any item can be kept from some player classes (actordefs player.yaml): "inventory.restrictedto"
+# lists the only classes that pick it up, "inventory.forbiddento" ones that don't. A class
+# descended from a listed one counts as listed. Either can be a list or a single class.
 Inventory:
   properties:
     "inventory.amount": 1
@@ -31,8 +34,9 @@ Health:
 #   armor.savepercent:   how much of each hit it absorbs, 0-100
 #   armor.maxsaveamount: makes it a bonus instead: adds saveamount, up to this many, keeping the
 #                        armor the player has (or taking this savepercent when they have none)
-# The Player class's player.maxarmor caps them all. None of Wolf3D's items are armor.
-Armor:
+# The Player class's player.maxarmor caps them all. None of Wolf3D's items are armor (its Armor
+# is the suit of armor decoration).
+BasicArmor:
   parent: Inventory
   properties:
     "armor.saveamount": 100

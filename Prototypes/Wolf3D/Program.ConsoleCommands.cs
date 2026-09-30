@@ -209,7 +209,7 @@ internal partial class Program
 
     /// <summary>The item classes `give` accepts by name (see GiveItem).</summary>
     static IEnumerable<string> GivableItems() =>
-        new[] { "Weapon", "Ammo", "Key", "Armor" }
+        new[] { "Weapon", "Ammo", "Key", "BasicArmor" }
             .SelectMany(_inventoryManager.GetClassesDerivedFrom)
             .Where(item => _inventoryManager.FindClass(item, "WeaponGiver") == null);
 
@@ -722,11 +722,11 @@ internal partial class Program
     {
         // Health and treasure aren't held; they're applied on pickup, hence "give health/points".
         // A WeaponGiver only names the weapon to hand out, so it's never an item itself.
-        var item = _inventoryManager.FindClass(name, "Weapon", "Ammo", "Key", "Armor");
+        var item = _inventoryManager.FindClass(name, "Weapon", "Ammo", "Key", "BasicArmor");
         if (item == null || _inventoryManager.FindClass(item, "WeaponGiver") != null)
             throw new ArgumentException($"\"{name}\" is not a weapon, ammo, key or armor");
 
-        if (_inventoryManager.FindClass(item, "Armor") != null)
+        if (_inventoryManager.FindClass(item, "BasicArmor") != null)
         {
             TryGiveArmor(item);
             _consoleManager.Print($"Armor is {gamestate.armor} ({gamestate.armorpercent}%)");
