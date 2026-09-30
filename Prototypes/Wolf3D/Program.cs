@@ -105,8 +105,9 @@ internal partial class Program
     static int viewscreenx, viewscreeny;
     static int viewwidth;
     static int viewheight;
-    static short centerx, centery;
-    static int shootdelta;           // pixels away from centerx a target can be
+    static short centerx, centery;   // centery is this frame's horizon: basecentery moved by viewpitch
+    static short basecentery;        // the horizon looking straight ahead, mid view
+    static int shootdelta;          // pixels away from centerx a target can be
     static int scale;
     static int heightnumerator;
 
@@ -522,7 +523,7 @@ internal partial class Program
         viewwidth = (int)(width & ~15);                  // must be divisable by 16
         viewheight = (int)(height & ~1);                 // must be even
         centerx = (short)(viewwidth / 2 - 1);
-        centery = (short)(viewheight / 2);
+        centery = basecentery = (short)(viewheight / 2);
         shootdelta = viewwidth / 10;
         if (viewheight == _videoManager.screenHeight)
             viewscreenx = viewscreeny = (int)(screenofs = 0);

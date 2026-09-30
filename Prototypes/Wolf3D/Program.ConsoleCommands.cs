@@ -142,6 +142,8 @@ internal partial class Program
         //
         // debugging aids and information
         //
+        Register("pitch", "Looks up (positive) or down (negative) by that many degrees, as far as the view allows; 0 looks straight ahead.",
+            "pitch [degrees]", Cmd_Pitch, InLevel);
         Register("hurt", "Damages the player.", "hurt [points]", Cmd_Hurt, InLevel);
         Register("where", "Shows the player's position and what's at their tile.", "where", Cmd_Where, InLevel, aliases: ["pos"]);
         Register("count", "Counts doors and actors.", "count", Cmd_Count, InLevel);
@@ -610,6 +612,18 @@ internal partial class Program
     {
         noclip = (byte)(Toggle(args, noclip != 0) ? 1 : 0);
         _consoleManager.Print(noclip != 0 ? "No clipping ON" : "No clipping OFF");
+    }
+
+    private static void Cmd_Pitch(string[] args)
+    {
+        double max = MaxPitch();
+        if (args.Length > 0)
+        {
+            if (!double.TryParse(args[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double degrees))
+                throw new ArgumentException("usage: pitch [degrees]");
+            viewpitch = Math.Clamp(degrees, -max, max);
+        }
+        _consoleManager.Print($"Pitch is {viewpitch:0.#} degrees (up to {max:0.#} either way)");
     }
 
     private static void Cmd_Give(string[] args)

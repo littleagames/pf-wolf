@@ -153,10 +153,40 @@ internal partial class Program
         return height;
     }
 
+    /*
+    ====================
+    =
+    = Pitch (y-shearing)
+    =
+    = Looking up or down doesn't tilt the view: it moves the horizon (centery) down or up the
+    = screen, by as many pixels as the pitch's tangent at the projection's focal length (scale,
+    = in pixels). Walls stay upright, so everything draws as before, only measured from the
+    = moved horizon. It's kept on the screen, which limits how far the view can look.
+    =
+    ====================
+    */
+
+    internal static double viewpitch;   // degrees, up positive; reset each level
+
+    /// <summary>The steepest pitch, in degrees, that keeps the horizon a row inside the view</summary>
+    internal static double MaxPitch() =>
+        scale > 0 ? Math.Atan((basecentery - 1) / (double)scale) * 180 / Math.PI : 0;
+
+    static void SetupPitch()
+    {
+        double max = MaxPitch();
+        viewpitch = Math.Clamp(viewpitch, -max, max);
+        int offset = (int)Math.Round(scale * Math.Tan(viewpitch * Math.PI / 180));
+        offset = Math.Clamp(offset, 1 - basecentery, basecentery - 1);
+        centery = (short)(basecentery + offset);
+    }
+
     internal static void Setup3DView()
     {
         viewangle = player.Angle;
         midangle = (short)(viewangle * (FINEANGLES / ANGLES));
+
+        SetupPitch();
 
         viewsin = sintable[viewangle];
         viewcos = costable[viewangle];
@@ -952,8 +982,10 @@ internal partial class Program
     = Sky
     =
     = A level can have a sky: a picture drawn above the horizon in place of the ceiling color.
-    = It's stretched down to the horizon, and repeats around the full circle every SKYCIRCLE
-    = pixels, turning with the view but not moving as the player walks.
+    = It's stretched to fill the view above the horizon when looking straight ahead, and repeats
+    = around the full circle every SKYCIRCLE pixels, turning with the view but not moving as the
+    = player walks. Its bottom stays on the horizon as the view pitches; looking up past its top
+    = shows its top row.
     =
     ====================
     */
@@ -1015,7 +1047,10 @@ internal partial class Program
                 int column = u * skyheight;
 
                 for (int y = 0; y < centery; y++)
-                    dest[y * pitch + x] = skycolumns[column + y * skyheight / centery];
+                {
+                    int row = (y - centery + basecentery) * skyheight / basecentery;
+                    dest[y * pitch + x] = skycolumns[column + Math.Max(row, 0)];
+                }
             }
         }
     }

@@ -167,7 +167,7 @@ internal partial class Program
         frac = 0;
 
         xcenter = dispx - height;
-        toppix = centery - height;
+        toppix = basecentery - height;      // the weapon in hand doesn't move with the view's pitch
 
         x2 = xcenter;
 

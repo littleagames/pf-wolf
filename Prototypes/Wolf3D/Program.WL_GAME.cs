@@ -612,6 +612,8 @@ internal partial class Program
 
     internal static void SetupGameLevel()
     {
+        viewpitch = 0;                      // each level, and each loaded game, starts looking straight ahead
+
         if (!loadedgame)
         {
             gamestate.TimeCount =
