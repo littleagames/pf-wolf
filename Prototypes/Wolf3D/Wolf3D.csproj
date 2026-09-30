@@ -50,4 +50,12 @@
 	<Target Name="CreateModsFolder" AfterTargets="Build">
 		<MakeDir Directories="$(TargetDir)mods" />
 	</Target>
+
+	<!-- The example mods (examples/mods), ready to switch on in the Mods screen -->
+	<ItemGroup>
+		<ExampleModFiles Include="$(MSBuildProjectDirectory)\..\..\examples\mods\**\*.*" />
+	</ItemGroup>
+	<Target Name="CopyExampleMods" AfterTargets="CreateModsFolder">
+		<Copy SourceFiles="@(ExampleModFiles)" DestinationFiles="@(ExampleModFiles->'$(TargetDir)mods\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+	</Target>
 </Project>

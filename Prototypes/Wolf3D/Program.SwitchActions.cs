@@ -41,6 +41,25 @@ internal partial class Program
         // A_SetWall(id): turns the tagged walls into wall id (walls.yaml), e.g. lights on a
         // panel coming on
         MapTriggerRegistry.Register("A_SetWall", SetWallAction);
+
+        // A_Activate / A_Deactivate: the tagged actors go to their Active / Inactive state
+        // (actordefs), e.g. a light coming on; actors without that state are left alone
+        MapTriggerRegistry.Register("A_Activate", (trigger, _) => SetTaggedActorsState(trigger, "Active"));
+        MapTriggerRegistry.Register("A_Deactivate", (trigger, _) => SetTaggedActorsState(trigger, "Inactive"));
+    }
+
+    private static bool SetTaggedActorsState(TriggerActivation trigger, string stateName)
+    {
+        bool any = false;
+        // Listed first: a state's action could spawn or remove actors
+        foreach (var actor in _mapManager.TaggedActors(trigger.Tag).ToList())
+        {
+            if (actor.IsRemoved || !actor.ResolvedStates.TryGetValue(stateName, out var frame))
+                continue;
+            actor.JumpTo(frame);
+            any = true;
+        }
+        return any;
     }
 
     private static bool Hold(string[] args) => args.Any(a => a.Equals("hold", StringComparison.OrdinalIgnoreCase));

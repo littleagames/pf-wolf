@@ -83,6 +83,30 @@ Chandelier2:
         modifiers: [bright]
         tics-per-frame: -1
 
+# A light a switch turns on and off (walls.yaml switch actions A_Activate / A_Deactivate on
+# its tile's tag): Active shows it, Inactive hides it (TNT1 draws nothing). It starts on;
+# SwitchLightOff starts off. Neither has a mapdefs id yet: place one with `summon`.
+SwitchLight:
+  parent: Chandelier
+  states:
+    Active:
+      - sprite: CHAN
+        frames: [A]
+        modifiers: [bright]
+        tics-per-frame: -1
+    Inactive:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: -1
+
+SwitchLightOff:
+  parent: SwitchLight
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: -1
+
 HangingSkeleton:
   radius: 32
   flags: [SOLID]

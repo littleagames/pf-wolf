@@ -125,6 +125,9 @@ walls:
     #                        first tagged wall north/east/south/west (left out or "": the way
     #                        the player faces); its tag goes with it.
     #                        A_SetWall(id): turns the tagged walls into wall id.
+    #                        A_Activate, A_Deactivate: the tagged actors (tagged by the tile
+    #                        they spawn on) go to their Active / Inactive state, e.g.
+    #                        SwitchLight in actordefs decorations.
     #                        The switch's own tile is never a target, though it has the tag.
     '21':
         North: ELEV1_1
