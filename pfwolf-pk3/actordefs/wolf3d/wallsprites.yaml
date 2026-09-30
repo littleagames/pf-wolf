@@ -1,0 +1,31 @@
+# Wall sprites (directional 3D sprites): flat panels standing in their tile instead of
+# billboards (Program.WallSprites.cs). The map's `angles` is the way the panel's front faces;
+# 0/180 make a north-south panel, 90/270 an east-west one, the diagonals run corner to corner.
+# `wallsprite.offset` moves the panel toward its front, in texels (32 = on the tile edge).
+
+WoodFence:
+  flags: [WALLSPRITE]
+  states:
+    Spawn:
+      - sprite: FENC
+        frames: [A]
+        tics-per-frame: -1
+
+# The same fence on the tile edge its front faces, to run along a room's border.
+WoodFenceEdge:
+  parent: WoodFence
+  properties:
+    "wallsprite.offset": 32
+
+WoodGate:
+  parent: WoodFence
+  states:
+    Spawn:
+      - sprite: GATE
+        frames: [A]
+        tics-per-frame: -1
+
+WoodGateEdge:
+  parent: WoodGate
+  properties:
+    "wallsprite.offset": 32

@@ -132,6 +132,9 @@ internal partial class Program
         Register("diag", "Makes a wall tile (default: the one you face) a 45 degree wall, named by its solid corner.",
             "diag <square|solidnw|solidne|solidsw|solidse> [tilex tiley]", Cmd_Diag, Cheat | InLevel,
             complete: (_, i) => i == 0 ? Enum.GetNames<WallShape>().Select(n => n.ToLowerInvariant()) : []);
+        Register("summon", "Spawns an actor on an open tile (default: the one you face), facing an angle (default: back at you).",
+            "summon <class> [angle] [tilex tiley]", Cmd_Summon, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? _assetManager.GetActorMetadata().Actors.Keys : i == 1 ? ["0", "45", "90", "135", "180", "225", "270", "315"] : []);
         Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
             $"wallheight [1-{MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
         Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
@@ -809,6 +812,51 @@ internal partial class Program
         _consoleManager.Print($"Tile {x},{y} is now {shape} (plane 1: {marker})");
     }
 
+    private static void Cmd_Summon(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: summon <class> [angle] [tilex tiley]");
+
+        var className = _assetManager.GetActorMetadata().Actors.Keys
+            .FirstOrDefault(k => k.Equals(args[0], StringComparison.OrdinalIgnoreCase))
+            ?? throw new ArgumentException($"no actor class named {args[0]}");
+
+        // Facing back at the player by default, so a panel is seen from its front.
+        int angle = args.Length > 1 ? ParseInt(args[1], 0, 359) : FacingDir(player.Angle) switch
+        {
+            controldirs.di_east => 180,
+            controldirs.di_north => 270,
+            controldirs.di_west => 0,
+            _ => 90,
+        };
+        var (x, y) = TileArg(args, 2);
+
+        if (_mapManager.tilemap[x, y] != 0 || _mapManager.actorat[x, y] != null
+            || !_mapManager.VALIDAREA(_mapManager.MAPSPOT(x, y, 0)))
+            throw new ArgumentException($"tile {x},{y} is not open floor");
+
+        var before = _mapManager.GetActors().Last;
+        _mapManager.SpawnThing(x, y, new MapActorTranslation { Class = className, Angles = angle });
+        var actor = _mapManager.GetActors().Last;
+        if (actor == before || actor == null)
+            throw new ArgumentException($"{className} can't be spawned");
+
+        _consoleManager.Print($"Spawned {className} at {x},{y} facing {angle}{WallSpriteDescription(actor.Value)}");
+    }
+
+    /// <summary>"  panel ..." for a wall sprite, else nothing.</summary>
+    private static string WallSpriteDescription(Entities.Actors.Actor actor)
+    {
+        if (!IsWallSprite(actor))
+            return "";
+        if (GetWallSpriteSpan(actor) is not { } span)
+            return "  panel (off its tile)";
+
+        static string Point(double x, double y) =>
+            $"{x / MapConstants.TILEGLOBAL:0.##},{y / MapConstants.TILEGLOBAL:0.##}";
+        return $"  panel {WallSpriteAxis(actor.Dir)} facing {actor.Dir}, {Point(span.X1, span.Y1)} to {Point(span.X2, span.Y2)}";
+    }
+
     /// <summary>
     /// The tile named by args[index] and args[index + 1], or when they aren't given, the tile in
     /// front of the player, as Cmd_Use picks it.
@@ -971,6 +1019,7 @@ internal partial class Program
                 line.Append($"  hp {actor.Hitpoints}");
             if (actor.Active != activetypes.ac_no)
                 line.Append("  active");
+            line.Append(WallSpriteDescription(actor));
 
             _consoleManager.Print(line.ToString());
             shown++;
