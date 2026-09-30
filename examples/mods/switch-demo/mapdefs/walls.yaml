@@ -106,3 +106,53 @@ walls:
         South: ELEV2_2
         East: ELEV2_2
         West: ELEV2_2
+
+    # Stations 6 and 7 change light zones (the zone plane, plane 5, and game-info.yaml's zones),
+    # which they name themselves, so they need no tag.
+
+    # Station 6: fades the light room's lights (zone 1) up and down over half a second
+    '60':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 61
+            sound: switches/elevbutn
+            actions:
+                - A_SetZoneLight(1, 255, 35)
+    '61':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 60
+            sound: switches/elevbutn
+            actions:
+                - A_SetZoneLight(1, 24, 35)
+
+    # Station 7, in the light room: the hall's alarm, red strobing light (zone 2, timed by its
+    # low, tics and bright-tics in game-info.yaml), and back to its plain light
+    '62':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 63
+            sound: switches/elevbutn
+            actions:
+                - A_SetZoneLight(2, 255, 0, "#FF4040")
+                - A_SetZoneEffect(2, "strobe")
+    '63':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 62
+            sound: switches/elevbutn
+            actions:
+                - A_SetZoneEffect(2, "none")
+                - A_SetZoneLight(2, 255, 0, "none")

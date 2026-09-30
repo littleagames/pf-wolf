@@ -4,7 +4,8 @@
 #   powershell -ExecutionPolicy Bypass -File examples/tools/make-switch-demo-map.ps1
 #
 # The level is an ECWolf binary map (a WAD holding a MAP01 marker lump and a WDC3.1 PLANES
-# lump) with PFWolf's five planes: walls/floors, objects, flats, wall heights and tags.
+# lump) with PFWolf's six planes: walls/floors, objects, flats, wall heights, tags and light
+# zones.
 
 $ErrorActionPreference = 'Stop'
 
@@ -14,13 +15,14 @@ $Left = 16
 $Top = 20
 $Layout = @(
     '#################################'   # y=20
-    '#################################'
-    '############aaaaa################'   #      the door room (behind station 1's door)
-    '############aaaaa################'
-    '############aaCaa################'
-    '############aaaaa################'
-    '############aaaaa################'
-    '###########1##D####2#############'   # y=27 station 1 and its door, station 2
+    '#######################7#########'   #      station 7 (in the light room)
+    '############aaaaa####rrrrr#######'   #      the door room (behind station 1's door),
+    '############aaaaa####rrrrr#######'   #      the light room
+    '############aaCaa####rrgrr#######'
+    '############aaaaa####rrrrr#######'
+    '############aaaaa####rrrrr#######'
+    '###########1##D####2#6#r#########'   # y=27 station 1 and its door, stations 2 and 6,
+                                          #      the light room's archway
     '########.................########'   #      the hall
     '########.................########'
     '#######3.................5#######'   # y=30 station 3, station 5
@@ -37,18 +39,23 @@ $Layout = @(
     '#################################'
 )
 
-# What each character puts on plane 0 (walls and floor codes), plane 1 (objects) and the tag
-# plane. Floor codes are areas (mapdefs floors: area n is 107 + n); walls, doors and objects
-# are mapdefs ids (pfwolf-pk3's mapdefs/wolf3d, and the mod's own walls 50-59 and thing 500).
+# What each character puts on plane 0 (walls and floor codes), plane 1 (objects), the tag
+# plane and the zone plane. Floor codes are areas (mapdefs floors: area n is 107 + n); walls,
+# doors and objects are mapdefs ids (pfwolf-pk3's mapdefs/wolf3d, and the mod's own walls
+# 50-63 and thing 500). Light zones are the mod's game-info.yaml zones: 1 the light room, 2 the
+# hall. The light room opens onto the hall with no door, so it shares the hall's area.
 $Hall = 108; $DoorRoom = 109; $ExitRoom = 110; $SecretRoom = 111
+$LightRoomZone = 1; $HallZone = 2
 $Tiles = @{
     '#' = @{ Plane0 = 1 }                                   # grey stone
-    '.' = @{ Plane0 = $Hall }
+    '.' = @{ Plane0 = $Hall; Zone = $HallZone }
     'a' = @{ Plane0 = $DoorRoom }
     'e' = @{ Plane0 = $ExitRoom }
     's' = @{ Plane0 = $SecretRoom }
-    'P' = @{ Plane0 = $Hall; Plane1 = 19 }                  # player start, facing north
-    'L' = @{ Plane0 = $Hall; Plane1 = 500; Tag = 2 }        # SwitchLightOff
+    'r' = @{ Plane0 = $Hall; Zone = $LightRoomZone }
+    'g' = @{ Plane0 = $Hall; Plane1 = 53; Zone = $LightRoomZone }  # chalice (treasure)
+    'P' = @{ Plane0 = $Hall; Plane1 = 19; Zone = $HallZone }       # player start, facing north
+    'L' = @{ Plane0 = $Hall; Plane1 = 500; Tag = 2; Zone = $HallZone }  # SwitchLightOff
     'C' = @{ Plane0 = $DoorRoom; Plane1 = 52 }              # cross (treasure)
     'K' = @{ Plane0 = $SecretRoom; Plane1 = 44 }            # silver key
     '1' = @{ Plane0 = 50; Tag = 1 }                         # station 1: door toggle
@@ -61,11 +68,14 @@ $Tiles = @{
     '5' = @{ Plane0 = 58; Tag = 5 }                         # station 5: locked, opens the exit
     'V' = @{ Plane0 = 92; Tag = 5 }                         # gold-locked door (north-south)
     'X' = @{ Plane0 = 21 }                                  # elevator switch: ends the level
+    '6' = @{ Plane0 = 60 }                                  # station 6: the light room's lights
+    '7' = @{ Plane0 = 62 }                                  # station 7: the hall's alarm
 }
 
 $Size = 64
-$PlaneCount = 5
+$PlaneCount = 6
 $TagPlane = 4
+$ZonePlane = 5
 $planes = @()
 for ($p = 0; $p -lt $PlaneCount; $p++) { $planes += , (New-Object 'uint16[]' ($Size * $Size)) }
 for ($i = 0; $i -lt $Size * $Size; $i++) { $planes[0][$i] = 1 }
@@ -80,6 +90,7 @@ for ($row = 0; $row -lt $Layout.Count; $row++) {
         $planes[0][$i] = $tile.Plane0
         if ($tile.Plane1) { $planes[1][$i] = $tile.Plane1 }
         if ($tile.Tag) { $planes[$TagPlane][$i] = $tile.Tag }
+        if ($tile.Zone) { $planes[$ZonePlane][$i] = $tile.Zone }
     }
 }
 
