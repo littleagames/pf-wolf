@@ -20,6 +20,7 @@ internal partial class Program
         ["AutomapCorpse"] = "#710000",
         ["AutomapItem"] = "#20AAFF",
         ["AutomapDecor"] = "#8D8D8D",
+        ["AutomapWallSprite"] = "#8D8D8D",
         ["AutomapGrid"] = "#004040",
     };
 
@@ -226,6 +227,7 @@ internal partial class Program
         if (_automapManager.Style == AutomapStyle.Graphic)
         {
             DrawAutomapTexels(view, reveal);
+            DrawAutomapWallSprites(view, reveal, graphic: true);
             DrawAutomapActors(view, reveal, sprites: _automapManager.Zoom >= AUTOMAP_MINSPRITEZOOM);
         }
         else
@@ -233,6 +235,7 @@ internal partial class Program
             DrawAutomapWalls(view, reveal);
             DrawAutomapPushwall(view, reveal);
             DrawAutomapDoors(view, reveal);
+            DrawAutomapWallSprites(view, reveal, graphic: false);
             DrawAutomapActors(view, reveal, sprites: false);
         }
 
@@ -350,6 +353,38 @@ internal partial class Program
                 AutomapLine(view, door.tilex + 0.5f, door.tiley + open, door.tilex + 0.5f, door.tiley + 1, color);
             else
                 AutomapLine(view, door.tilex + open, door.tiley + 0.5f, door.tilex + 1, door.tiley + 0.5f, color);
+        }
+    }
+
+    /// <summary>
+    /// Wall sprites (fences, gates) once their tile or one beside it is seen, as a line along the
+    /// panel: in the theme's AutomapWallSprite color, or in graphic style a strip in the color
+    /// most of its sprite is.
+    /// </summary>
+    static void DrawAutomapWallSprites(AutomapView view, bool reveal, bool graphic)
+    {
+        // In graphic style about as wide as a door's strip, so it reads next to them
+        int pen = graphic ? Math.Max(view.Pen, (int)(view.TileSize * AUTOMAP_DOORWIDTH / 2)) : view.Pen;
+
+        foreach (var actor in _mapManager.GetActors())
+        {
+            if (actor.IsRemoved || actor.CurrentState == null || !IsWallSprite(actor))
+                continue;
+            if (GetWallSpriteSpan(actor) is not { } span)
+                continue;
+
+            int x = actor.TileX, y = actor.TileY;
+            bool seen = reveal || ((_mapManager.seen[x, y] | _mapManager.seen[x + 1, y] | _mapManager.seen[x - 1, y]
+                | _mapManager.seen[x, y + 1] | _mapManager.seen[x, y - 1]) & SeenFlags.Floor) != 0;
+            if (!seen)
+                continue;
+
+            string color = graphic && AutomapSpriteColor(actor.CurrentState.GetShapeName(objdirtypes.nodir)) is { } index
+                ? index.ToString()
+                : AutomapColor("AutomapWallSprite");
+
+            const float T = MapConstants.TILEGLOBAL;
+            AutomapLine(view, (float)(span.X1 / T), (float)(span.Y1 / T), (float)(span.X2 / T), (float)(span.Y2 / T), color, pen);
         }
     }
 

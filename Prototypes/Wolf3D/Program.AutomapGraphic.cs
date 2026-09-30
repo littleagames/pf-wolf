@@ -304,6 +304,32 @@ internal partial class Program
         return true;
     }
 
+    static readonly Dictionary<string, byte?> automapSpriteColors = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The palette color most of a sprite's opaque pixels are, or null if it's missing or blank.</summary>
+    static byte? AutomapSpriteColor(string shape)
+    {
+        if (automapSpriteColors.TryGetValue(shape, out var cached))
+            return cached;
+
+        byte? color = null;
+        var asset = _assetManager.Find<SpriteAsset>(shape);
+        if (asset != null && asset.OpacityMask.Length >= asset.Width * asset.Height)
+        {
+            var counts = new int[256];
+            for (int i = 0; i < asset.Width * asset.Height; i++)
+                if (asset.OpacityMask[i] != 0)
+                    counts[asset.RawData[i]]++;
+
+            int best = Array.IndexOf(counts, counts.Max());
+            if (counts[best] > 0)
+                color = (byte)best;
+        }
+
+        automapSpriteColors[shape] = color;
+        return color;
+    }
+
     /// <summary>A sprite trimmed to its opaque pixels, or null if it's missing or blank.</summary>
     static AutomapSprite? FindAutomapSprite(string shape)
     {
