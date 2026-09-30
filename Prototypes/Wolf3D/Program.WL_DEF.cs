@@ -19,6 +19,7 @@ internal class visobj_t
     public short viewheight;
     public string shapenum;
     public objflags flags;
+    public Entities.Actors.Actor? wallsprite;   // drawn as a panel (Program.WallSprites.cs), not a billboard
 }
 
 internal enum buttontypes

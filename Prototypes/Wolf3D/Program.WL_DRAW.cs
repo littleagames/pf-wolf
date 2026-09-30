@@ -2046,6 +2046,20 @@ internal partial class Program
 
             visptr_val.shapenum = actor.CurrentState.GetShapeName(objdirtypes.nodir);
 
+            // A panel (Program.WallSprites.cs) is drawn column by column, clipped per column,
+            // so it's placed by its own geometry rather than as a billboard in its tile.
+            if (IsWallSprite(actor))
+            {
+                if (WallSpriteSeen(actor) && TransformWallSprite(actor, visptr_val) && visptr < MAXVISABLE - 1)
+                {
+                    visptr_val.tilex = actor.TileX;
+                    visptr_val.tiley = actor.TileY;
+                    vislist[visptr] = visptr_val;
+                    visptr++;
+                }
+                continue;
+            }
+
             if (!_mapManager.spotvis[(int)actor.Position.X, (int)actor.Position.Y])
                 continue;                                               // not visable
 
@@ -2097,7 +2111,10 @@ internal partial class Program
             if (farthest != -1)
             {
                 visobj_t farthest_obj = vislist[farthest];
-                ScaleShape(farthest_obj);
+                if (farthest_obj.wallsprite != null)
+                    ScaleWallSprite(farthest_obj);
+                else
+                    ScaleShape(farthest_obj);
 
                 farthest_obj.viewheight = 32000;
             }
