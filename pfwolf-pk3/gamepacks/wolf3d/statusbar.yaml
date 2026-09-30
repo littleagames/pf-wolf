@@ -1,0 +1,48 @@
+# The status bar: its picture and where each part goes on it. x and y are in 320x200 pixels
+# from the status bar's top left corner. A part left out isn't drawn. A game pack that builds
+# on this one (spear) uses it as is; a mod's statusbar.yaml replaces parts one by one.
+#
+#   background:  pic, and height -- the 320x200 lines the bar takes from the bottom of the view
+#   numbers:     the font (fonts.yaml) and color of every number below, unless one has its own
+#   level, score, lives, health, ammo:
+#                numbers, right-aligned in `digits` digits (a longer number shows its last ones)
+#   face:        BJ's face
+#   keys:        the first key slot; each key's slot (actordefs key.statusbarslot) is `spacing`
+#                pixels below the one before
+#   weapon:      the weapon in hand's icon (actordefs inventory.icon)
+background:
+  pic: statusbar
+  height: 40
+numbers:
+  font: StatusNumbers
+  color: White
+level:
+  x: 16
+  y: 16
+  digits: 2
+score:
+  x: 48
+  y: 16
+  digits: 6
+lives:
+  x: 112
+  y: 16
+  digits: 1
+face:
+  x: 136
+  y: 4
+health:
+  x: 168
+  y: 16
+  digits: 3
+ammo:
+  x: 216
+  y: 16
+  digits: 2
+keys:
+  x: 240
+  y: 4
+  spacing: 16
+weapon:
+  x: 256
+  y: 8

@@ -33,13 +33,18 @@ Key:
     # unless the door has its own lock-message. "key.lockedmessagestyle" can name a
     # hud-messages.yaml style for it; left out, game-info's lock-style is used.
     "key.lockedmessage": "$LOCKEDDOOR"
-    
+    # A key with a "key.statusbarslot" (0 at the top, 16 pixels apart) is shown on the status
+    # bar: "key.statusbarpic" while carried, else "key.statusbaremptypic".
+    "key.statusbaremptypic": "nokey"
+
 
 GoldKey:
   parent: Key
   properties:
     "inventory.pickupmessage": "$GOTGOLDKEY"
     "key.lockedmessage": "$NEEDGOLDKEY"
+    "key.statusbarpic": "goldkey"
+    "key.statusbarslot": 0
   states:
     Spawn:
       - sprite: GKEY
@@ -51,6 +56,8 @@ SilverKey:
   properties:
     "inventory.pickupmessage": "$GOTSILVERKEY"
     "key.lockedmessage": "$NEEDSILVERKEY"
+    "key.statusbarpic": "silverkey"
+    "key.statusbarslot": 1
   states:
     Spawn:
       - sprite: SKEY

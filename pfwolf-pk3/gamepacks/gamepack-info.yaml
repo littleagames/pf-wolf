@@ -8,6 +8,7 @@ wolf3d-apogee:
     - mapdefs/wolf3d/triggers
     - mapdefs/wolf3d/patrolpoints
     - mapdefs/wolf3d/decorations
+    - mapdefs/wolf3d/items
     - mapdefs/wolf3d/enemies
   game-palette: wolfpal
   file-pack:
@@ -74,6 +75,7 @@ spear:
     - mapdefs/spear/walls
     - mapdefs/spear/doors
     - mapdefs/spear/decorations
+    - mapdefs/spear/items
     - mapdefs/spear/enemies
   game-palette: spearpal
   # Starts from wolf3d's actordefs, mapdefs and gamepacks files; spear's own files override them

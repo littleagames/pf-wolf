@@ -23,14 +23,6 @@ internal partial class Program
         ["AutomapGrid"] = "#004040",
     };
 
-    // Locked doors are drawn in their key's color: the theme's "Automap<lock item>" if it has one
-    // (e.g. AutomapGoldKey), else these, else the plain door color.
-    static readonly Dictionary<string, string> AutomapLockFallbacks = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["GoldKey"] = "#FFAA00",
-        ["SilverKey"] = "#FFFFFF",
-    };
-
     static readonly string[] AutomapHeadings = ["E", "NE", "N", "NW", "W", "SW", "S", "SE"];
 
     /// <summary>The keys that work while the automap is open; bound in <see cref="controls"/>.</summary>
@@ -75,16 +67,14 @@ internal partial class Program
     static string AutomapColor(string name) =>
         _videoManager.IsThemeColor(name) ? name : AutomapColorFallbacks[name];
 
-    static string AutomapDoorColor(string lockItem)
+    // A locked door is drawn in its key's color: the theme's "Automap<lock item>" if it has one
+    // (e.g. AutomapGoldKey), else the door's mapdefs automap-color, else the plain door color.
+    static string AutomapDoorColor(MapTextureTranslation door)
     {
-        if (string.IsNullOrEmpty(lockItem))
-            return AutomapColor("AutomapDoor");
+        if (!string.IsNullOrEmpty(door.Lock) && _videoManager.IsThemeColor("Automap" + door.Lock))
+            return "Automap" + door.Lock;
 
-        string themeName = "Automap" + lockItem;
-        if (_videoManager.IsThemeColor(themeName))
-            return themeName;
-
-        return AutomapLockFallbacks.TryGetValue(lockItem, out var color) ? color : AutomapColor("AutomapDoor");
+        return !string.IsNullOrEmpty(door.AutomapColor) ? door.AutomapColor : AutomapColor("AutomapDoor");
     }
 
     /// <summary>
@@ -354,7 +344,7 @@ internal partial class Program
             if (open >= 0.99f)
                 continue;
 
-            string color = AutomapDoorColor(door.xlat.Lock);
+            string color = AutomapDoorColor(door.xlat);
 
             if (door.vertical)
                 AutomapLine(view, door.tilex + 0.5f, door.tiley + open, door.tilex + 0.5f, door.tiley + 1, color);

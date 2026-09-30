@@ -1,5 +1,7 @@
 # Doors by map tile number: every plane 0 tile listed here is a door. Each has the texture on
-# each face, and for a locked door the item that opens it.
+# each face, and for a locked door the item that opens it. The two faces across the doorway are
+# the door (East/West for a vertical door, North/South otherwise); the other two are the slot
+# drawn on the walls either side of it.
 #   vertical:            true: the door runs north-south, passed through going east or west (its
 #                        East/West faces are the door, North/South the slot beside it); left out,
 #                        it runs east-west
@@ -8,6 +10,9 @@
 #                        the text); left out, the lock item's "key.lockedmessage" is used
 #   lock-message-style:  The hud-messages.yaml style for it; left out, the lock item's
 #                        "key.lockedmessagestyle"
+#   automap-color:       The door's color on the automap (a theme color or #RRGGBB), such as its
+#                        key's color; left out, the theme's AutomapDoor. A theme color named
+#                        Automap<lock item> (e.g. AutomapGoldKey) wins over it
 doors:
     '90':
         Vertical: true
@@ -27,12 +32,14 @@ doors:
         North: SLOT1_1
         South: SLOT1_1
         Lock: GoldKey
+        automap-color: '#FFAA00'
     '93':
         North: DOOR3_1
         South: DOOR3_1
         East: SLOT1_2
         West: SLOT1_2
         Lock: GoldKey
+        automap-color: '#FFAA00'
     '94':
         Vertical: true
         East: DOOR3_2
@@ -40,12 +47,14 @@ doors:
         North: SLOT1_1
         South: SLOT1_1
         Lock: SilverKey
+        automap-color: '#FFFFFF'
     '95':
         North: DOOR3_1
         South: DOOR3_1
         East: SLOT1_2
         West: SLOT1_2
         Lock: SilverKey
+        automap-color: '#FFFFFF'
     '100':
         Vertical: true
         East: DOOR2_2

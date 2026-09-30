@@ -686,23 +686,6 @@ internal partial class Program
 
         var door = doorobjlist[doornumtile];
         doorpage = door.xlat.East; // West
-        //switch ((doortypes)doorobjlist[doornumtile].locknum)
-        //{
-        //    case doortypes.dr_normal:
-        //        doorpage = "DOOR1_2"; // DOORWALL + 1;
-        //        break;
-
-        //    case doortypes.dr_lock1:
-        //    case doortypes.dr_lock2:
-        //    case doortypes.dr_lock3:
-        //    case doortypes.dr_lock4:
-        //        doorpage = "DOOR3_2"; // "DOORWALL + 7;
-        //        break;
-
-        //    case doortypes.dr_elevator:
-        //        doorpage = "DOOR2_2"; //DOORWALL + 5;
-        //        break;
-        //}
 
         var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
         if (doorTextureAsset == null)
@@ -727,24 +710,6 @@ internal partial class Program
         postx = pixx;
 
         var door = doorobjlist[doornumtile];
-
-        //switch ((doortypes)door.locknum)
-        //{
-        //    case doortypes.dr_normal:
-        //        doorpage = door.xlat.North;// "DOOR1_1"; // DOORWALL
-        //        break;
-
-        //    case doortypes.dr_lock1:
-        //    case doortypes.dr_lock2:
-        //    case doortypes.dr_lock3:
-        //    case doortypes.dr_lock4:
-        //        doorpage = door.xlat.North;// "DOOR3_1"; // DOORWALL + 6;
-        //        break;
-
-        //    case doortypes.dr_elevator:
-        //        doorpage = "DOOR2_1";// DOORWALL + 4;
-        //        break;
-        //    }
         doorpage = door.xlat.North; // South
         var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
         if (doorTextureAsset == null)

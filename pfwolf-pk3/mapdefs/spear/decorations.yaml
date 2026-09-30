@@ -1,5 +1,5 @@
-# Spear's static objects that differ from Wolf3D's; the rest of 23-70 come from
-# mapdefs/wolf3d/decorations.yaml through the spear release's base-pack.
+# Spear's scenery that differs from Wolf3D's; the rest come from mapdefs/wolf3d/decorations.yaml
+# through the spear release's base-pack. Pickups are in items.yaml.
 things:
   33:
     class: SkullOnStick
@@ -41,20 +41,8 @@ things:
     angles: 0
     patrol: 0
     min-skill: 0
-  # 25-round ammo box
-  72:
-    class: ClipBox
-    angles: 0
-    patrol: 0
-    min-skill: 0
   73:
     class: Truck
-    angles: 0
-    patrol: 0
-    min-skill: 0
-  # Taking it moves the player to MAP21 (actordefs/spear/spear.yaml)
-  74:
-    class: SpearOfDestiny
     angles: 0
     patrol: 0
     min-skill: 0

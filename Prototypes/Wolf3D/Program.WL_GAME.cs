@@ -472,7 +472,8 @@ internal partial class Program
 
     internal static void DrawPlayScreen()
     {
-        _graphicManager.DrawPic("statusbar", 0, 200 - STATUSLINES); // TODO: Orientation: Bottom/Centered
+        if (StatusBar.Get("background")?.Pic is { Length: > 0 } statusbarpic)
+            _graphicManager.DrawPic(statusbarpic, 0, 200 - STATUSLINES); // TODO: Orientation: Bottom/Centered
         DrawPlayBorder();
 
         DrawFace();

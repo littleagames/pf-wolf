@@ -46,7 +46,7 @@ internal class PfWolfPk3Loader
     /// </summary>
     private static readonly HashSet<string> ModRootGamePackFiles = new(StringComparer.OrdinalIgnoreCase)
     {
-        "game-info.yaml", "colors.yaml", "fonts.yaml", "hud-messages.yaml", "alias.yaml", "raw-data-map.yaml",
+        "game-info.yaml", "colors.yaml", "fonts.yaml", "hud-messages.yaml", "statusbar.yaml", "alias.yaml", "raw-data-map.yaml",
     };
 
     /// <summary>
@@ -144,6 +144,13 @@ internal class PfWolfPk3Loader
             var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
             LoadYaml(entry, uniqueName, isMod, mergeLevels: 1,
                 yaml => new HudMessageStylesAsset(YamlDataEntryLoader.Deserialize<Dictionary<string, HudMessageStyleDefinition>>(yaml)));
+            return;
+        }
+        if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("statusbar.yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
+            LoadYaml(entry, uniqueName, isMod, mergeLevels: 1,
+                yaml => new StatusBarAsset(YamlDataEntryLoader.Deserialize<Dictionary<string, StatusBarElement>>(yaml)));
             return;
         }
         if (fullName.StartsWith("language/")

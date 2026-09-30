@@ -1,0 +1,15 @@
+# Spear's pickups that Wolf3D doesn't have; the rest come from mapdefs/wolf3d/items.yaml
+# through the spear release's base-pack. The scenery is in decorations.yaml.
+things:
+  # 25-round ammo box
+  72:
+    class: ClipBox
+    angles: 0
+    patrol: 0
+    min-skill: 0
+  # Taking it moves the player to MAP21 (actordefs/spear/spear.yaml)
+  74:
+    class: SpearOfDestiny
+    angles: 0
+    patrol: 0
+    min-skill: 0

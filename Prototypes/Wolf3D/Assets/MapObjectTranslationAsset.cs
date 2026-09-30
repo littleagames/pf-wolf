@@ -179,6 +179,13 @@ internal record MapTextureTranslation
     public string LockMessageStyle { get; init; } = "";
 
     /// <summary>
+    /// Doors only: the door's color on the automap (a theme color name or #RRGGBB), e.g. its
+    /// key's color on a locked door. Empty uses the theme's AutomapDoor. A theme color named
+    /// "Automap" + <see cref="Lock"/> (e.g. AutomapGoldKey) wins over it.
+    /// </summary>
+    public string AutomapColor { get; init; } = "";
+
+    /// <summary>
     /// Doors only: the door runs north-south, so it's passed through going east or west (its
     /// East/West faces are the door). False, it runs east-west (North/South are the door).
     /// </summary>

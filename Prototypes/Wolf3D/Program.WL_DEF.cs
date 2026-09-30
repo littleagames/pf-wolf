@@ -401,7 +401,8 @@ internal partial class Program
     internal const int SOUTH = 2;
     internal const int WEST = 3;
 
-    internal const int STATUSLINES = 40;
+    // The status bar's height in 320x200 lines (statusbar.yaml background), 0 with none
+    internal static int STATUSLINES => StatusBar.Get("background")?.Height ?? 0;
 
     [Flags]
     internal enum objflags

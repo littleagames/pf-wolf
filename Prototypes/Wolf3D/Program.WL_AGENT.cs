@@ -602,32 +602,48 @@ internal partial class Program
     }
 
 
-    static void StatusDrawPic (string picName, uint x, uint y)
-    {
-        _graphicManager.DrawPic(
-            picName,
-            (int)x*8, // TODO: Allow more flexibility than 8s
-            (int)(200 - (STATUSLINES - y)));
-    }
-
-    static void StatusDrawFace(string picName)
-    {
-        StatusDrawPic(picName, 17, 4);
-    }
-
-    /// <summary>The status bar's numbers (fonts.yaml)</summary>
-    internal static readonly Fonts.TextStyle StatusNumberStyle = new("StatusNumbers", "White");
+    private static StatusBarAsset? statusbar;
+    private static readonly StatusBarAsset NoStatusBar = new();
 
     /// <summary>
-    /// A number right-aligned in <paramref name="width"/> characters of the status bar, blanking
-    /// the rest; a number too long to fit shows its last digits. x is in 8 pixel columns.
+    /// The game pack's status bar layout (statusbar.yaml); empty if it has none. Only a layout
+    /// that was found is kept, so a look before the assets are loaded doesn't stick.
     /// </summary>
-    static void LatchNumber(int x, int y, int width, int number)
+    internal static StatusBarAsset StatusBar =>
+        statusbar ?? (statusbar = _assetManager?.FindInGamePack<StatusBarAsset>("statusbar")) ?? NoStatusBar;
+
+    /// <summary>Draws a picture at a status bar position (320x200 pixels from its top left corner).</summary>
+    static void StatusDrawPic(string picName, int x, int y) =>
+        _graphicManager.DrawPic(picName, x, 200 - STATUSLINES + y);
+
+    /// <summary>Draws a picture at the named part of the status bar, if the layout has it.</summary>
+    static void StatusDrawPic(string picName, string part)
     {
+        if (StatusBar.Get(part) is { } element)
+            StatusDrawPic(picName, element.X, element.Y);
+    }
+
+    static void StatusDrawFace(string picName) => StatusDrawPic(picName, "face");
+
+    /// <summary>
+    /// A number right-aligned in the named part's digits, blanking the rest; a number too long
+    /// to fit shows its last digits. In the part's font and color, else the layout's numbers'.
+    /// </summary>
+    static void LatchNumber(string part, int number)
+    {
+        if (StatusBar.Get(part) is not { } element)
+            return;
+        var numbers = StatusBar.Get("numbers");
+        var font = element.Font ?? numbers?.Font;
+        if (string.IsNullOrEmpty(font))
+            return;
+
+        int width = Math.Max(element.Digits, 1);
         string str = number.ToString();
         str = str.Length <= width ? str.PadLeft(width) : str[^width..];
 
-        _graphicManager.DrawText(x * 8, 200 - (STATUSLINES - y), str, StatusNumberStyle);
+        _graphicManager.DrawText(element.X, 200 - STATUSLINES + element.Y, str,
+            new Fonts.TextStyle(font, element.Color ?? numbers?.Color ?? "White"));
     }
 
     /*
@@ -708,7 +724,7 @@ internal partial class Program
     static void DrawAmmo()
     {
         if (viewsize == 21 && ingame) return;
-        LatchNumber(27, 16, 2, GetAmmo());
+        LatchNumber("ammo", GetAmmo());
     }
 
     /// <summary>Gives <paramref name="amount"/> of every ammo type; returns how much was taken in all.</summary>
@@ -800,7 +816,7 @@ internal partial class Program
     static void DrawHealth()
     {
         if (viewsize == 21 && ingame) return;
-        LatchNumber(21, 16, 3, gamestate.health);
+        LatchNumber("health", gamestate.health);
     }
 
     /*
@@ -856,16 +872,20 @@ internal partial class Program
     static void DrawKeys()
     {
         if (viewsize == 21 && ingame) return;
-        // The status bar has one fixed slot per key.
-        if (_inventoryManager.Has("GoldKey"))
-            StatusDrawPic("goldkey", 30, 4);
-        else
-            StatusDrawPic("nokey", 30, 4);
-
-        if (_inventoryManager.Has("SilverKey"))
-            StatusDrawPic("silverkey", 30, 20);
-        else
-            StatusDrawPic("nokey", 30, 20);
+        if (StatusBar.Get("keys") is not { } layout) return;
+        // Each key with a "key.statusbarslot" (0 at the top) has its own spot on the status bar:
+        // its "key.statusbarpic" while carried, else "key.statusbaremptypic". Carried keys are
+        // drawn last, so one wins a slot it shares with a key that isn't.
+        var keys = _inventoryManager.GetClassesDerivedFrom("Key")
+            .Select(key => (Key: key, Slot: _inventoryManager.GetIntProperty(key, "key.statusbarslot", -1), Has: _inventoryManager.Has(key)))
+            .Where(key => key.Slot >= 0)
+            .OrderBy(key => key.Has);
+        foreach (var (key, slot, has) in keys)
+        {
+            var pic = _inventoryManager.GetStringProperty(key, has ? "key.statusbarpic" : "key.statusbaremptypic");
+            if (!string.IsNullOrEmpty(pic))
+                StatusDrawPic(pic, layout.X, layout.Y + layout.Spacing * slot);
+        }
     }
 
     static void DrawLevel()
@@ -874,13 +894,13 @@ internal partial class Program
         var mapInfo = gameInfo.Maps[gamestate.mapon];
         //var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
         if (viewsize == 21 && ingame) return;
-        LatchNumber(2, 16, 2, mapInfo.FloorNumber);
+        LatchNumber("level", mapInfo.FloorNumber);
     }
 
     static void DrawLives()
     {
         if (viewsize == 21 && ingame) return;
-        LatchNumber(14, 16, 1, gamestate.lives);
+        LatchNumber("lives", gamestate.lives);
     }
 
     /*
@@ -902,7 +922,7 @@ internal partial class Program
     static void DrawScore()
     {
         if (viewsize == 21 && ingame) return;
-        LatchNumber(6, 16, 6, gamestate.score);
+        LatchNumber("score", gamestate.score);
     }
 
     /*
@@ -931,7 +951,7 @@ internal partial class Program
 
         var icon = _inventoryManager.GetStringProperty(gamestate.weapon, "inventory.icon");
         if (!string.IsNullOrEmpty(icon))
-            StatusDrawPic(icon, 32, 8);
+            StatusDrawPic(icon, "weapon");
     }
 /*
 ==================
