@@ -89,7 +89,7 @@ internal partial class Program
                 if (check == null)
                     continue;
 
-                // a wall sprite only blocks along its panel, whatever its flags
+                // a wall sprite only blocks along its panel, unless it lets projectiles through
                 if (check is WallSpriteBlocker)
                 {
                     if (WallSpriteHitByBox(x, y, x, y, ob.X, ob.Y, PROJSIZE, player: false) != null)

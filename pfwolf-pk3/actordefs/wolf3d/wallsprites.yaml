@@ -3,8 +3,8 @@
 # 0/180 make a north-south panel, 90/270 an east-west one, the diagonals run corner to corner.
 # `wallsprite.offset` moves the panel toward its front, in texels (32 = on the tile edge).
 # A panel blocks movement along its line; WALLSPRITE.SHOOTTHROUGH lets sight and hitscan
-# through it (projectiles never pass). Flags are inherited, so the gate doesn't use the
-# see-through fence as its parent.
+# through it, and WALLSPRITE.PROJECTILETHROUGH lets projectiles (rockets, fireballs) through.
+# Flags are inherited, so the gate doesn't use the see-through fence as its parent.
 
 WoodFence:
   flags: [WALLSPRITE, WALLSPRITE.SHOOTTHROUGH]

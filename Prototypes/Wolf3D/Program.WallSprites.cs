@@ -22,14 +22,16 @@ internal partial class Program
 
     The panel blocks along its line: the player and projectiles can stand or fly on either
     side of it in its tile, and it blocks sight and hitscan unless it has the
-    WALLSPRITE.SHOOTTHROUGH flag (a grille or chain-link fence). Enemies keep out of its whole
-    tile (WallSpriteBlocker in actorat), as they do a diagonal wall's.
+    WALLSPRITE.SHOOTTHROUGH flag (a grille or chain-link fence), and projectiles unless it has
+    WALLSPRITE.PROJECTILETHROUGH. Enemies keep out of its whole tile (WallSpriteBlocker in
+    actorat), as they do a diagonal wall's.
 
     =============================================================================
     */
 
     internal const string WallSpriteFlag = "WALLSPRITE";
     internal const string WallSpriteShootThroughFlag = "WALLSPRITE.SHOOTTHROUGH";
+    internal const string WallSpriteProjectileThroughFlag = "WALLSPRITE.PROJECTILETHROUGH";
     internal const string WallSpriteOffsetProperty = "wallsprite.offset";
 
     /// <summary>
@@ -288,7 +290,8 @@ internal partial class Program
     /// <summary>
     /// The first panel standing in tiles xl..xh, yl..yh that a box of half-width
     /// <paramref name="size"/> centred on (x, y) crosses. For the player, a panel the box
-    /// already crossed where ClipMove's move began is skipped.
+    /// already crossed where ClipMove's move began is skipped; otherwise it's a projectile's box,
+    /// which WALLSPRITE.PROJECTILETHROUGH panels let by.
     /// </summary>
     internal static WallSpriteSpan? WallSpriteHitByBox(int xl, int yl, int xh, int yh, long x, long y, long size, bool player)
     {
@@ -297,6 +300,8 @@ internal partial class Program
             if (actor.TileX < xl || actor.TileX > xh || actor.TileY < yl || actor.TileY > yh)
                 continue;
             if (!IsWallSprite(actor) || GetWallSpriteSpan(actor) is not { } span)
+                continue;
+            if (!player && actor.Flags.Contains(WallSpriteProjectileThroughFlag, StringComparer.OrdinalIgnoreCase))
                 continue;
             if (!BoxHitsWallSprite(span, x, y, size))
                 continue;
