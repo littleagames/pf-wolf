@@ -240,6 +240,11 @@ $LOCKEDDOOR: "This door is locked."
 $NEEDGOLDKEY: "You need the gold key to open this door."
 $NEEDSILVERKEY: "You need the silver key to open this door."
 
+# Locked switches (a switch's lock-message in walls.yaml, else its key's "key.switchlockedmessage")
+$LOCKEDSWITCH: "This switch is locked."
+$SWITCHNEEDGOLDKEY: "You need the gold key to use this switch."
+$SWITCHNEEDSILVERKEY: "You need the silver key to use this switch."
+
 # Obituaries: what killed the player. An actor's "obituary" can use %o (the player's tag),
 # %k (the killer's tag, or its class) and %% (a percent sign).
 $OB_DIED: "You died."

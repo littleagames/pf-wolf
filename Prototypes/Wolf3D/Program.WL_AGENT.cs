@@ -606,12 +606,14 @@ internal partial class Program
         // The weapon in hand's states (Program.PlayerWeapon.cs).
         RegisterWeaponActions();
 
-        // mapdefs trigger actions, run when the player uses a trigger's tile (Cmd_Use) or steps
-        // onto a walk-over one (Thrust)
+        // mapdefs trigger and switch actions, run when the player uses a trigger's tile or a
+        // switch wall (Cmd_Use) or steps onto a walk-over trigger (Thrust)
         // A_PushWall("moving sound", "blocked sound"): either left out is silent
         Entities.MapTriggerRegistry.Register("A_PushWall", (trigger, args) => PushWall(trigger.TileX, trigger.TileY, trigger.Dir,
             args.ElementAtOrDefault(0), args.ElementAtOrDefault(1)));
         Entities.MapTriggerRegistry.Register("A_VictoryTile", (_, _) => { VictoryTile(); return true; });
+        Entities.MapTriggerRegistry.Register("A_Exit", (_, _) => ExitAction(secret: false));
+        Entities.MapTriggerRegistry.Register("A_SecretExit", (_, _) => ExitAction(secret: true));
     }
 
     /// <summary>
@@ -1250,13 +1252,56 @@ internal partial class Program
     /// </summary>
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, controldirs dir)
     {
-        var activation = new Entities.TriggerActivation(tilex, tiley, dir, player);
+        var activation = new Entities.TriggerActivation(tilex, tiley, dir, player, _mapManager.GetTag(tilex, tiley));
         if (!Entities.MapTriggerRegistry.Invoke(trigger.Action, activation))
             return;
 
         if (trigger.Secret)
             gamestate.secretcount++;
         _mapManager.SetMapSpot(tilex, tiley, 1, 0);
+    }
+
+    /// <summary>
+    /// Throws a switch wall: refused without its lock item, else it turns into its `to` wall,
+    /// plays its sound and runs its actions on whatever shares its tile's tag.
+    /// </summary>
+    private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, controldirs dir)
+    {
+        if (!string.IsNullOrEmpty(wallSwitch.Lock) && !_inventoryManager.Has(wallSwitch.Lock))
+        {
+            RefuseLocked(wallSwitch.Lock, wallSwitch.LockedSound, wallSwitch.LockMessage, wallSwitch.LockMessageStyle, isSwitch: true);
+            return;
+        }
+
+        if (wallSwitch.To is > 0 and < BIT_WALL && _mapManager.GetMapData().Walls.ContainsKey(wallSwitch.To))
+        {
+            // flip the switch, keeping the door-side mark on a wall beside a door
+            var tile = _mapManager.tilemap[tilex, tiley];
+            _mapManager.tilemap[tilex, tiley] = (byte)(wallSwitch.To | (tile & BIT_WALL));
+        }
+
+        if (!string.IsNullOrEmpty(wallSwitch.Sound))
+            _audioManager.Play(wallSwitch.Sound);
+
+        var activation = new Entities.TriggerActivation(tilex, tiley, dir, player, _mapManager.GetTag(tilex, tiley));
+        foreach (var action in wallSwitch.Actions)
+            Entities.MapTriggerRegistry.Invoke(action, activation);
+    }
+
+    /// <summary>
+    /// A_Exit ends the level, going to the secret level when the player stands on the floors'
+    /// secret-exit code (as the elevator always did); A_SecretExit always goes to the secret
+    /// level. Either waits for a sound that's playing (the switch's) to finish first.
+    /// </summary>
+    private static bool ExitAction(bool secret)
+    {
+        if (secret || _mapManager.MAPSPOT(player.TileX, player.TileY, 0) == _mapManager.Floors.SecretExitTile)
+            playstate = playstatetypes.ex_secretlevel;
+        else
+            playstate = playstatetypes.ex_completed;
+
+        _audioManager.WaitSoundDone();
+        return true;
     }
 
     // The cardinal direction the player faces, as Cmd_Use reckons it
@@ -1270,7 +1315,6 @@ internal partial class Program
     {
         int checkx, checky, cmdtile;
         controldirs dir;
-        bool elevatorok;
 
         //
         // find which cardinal direction the player is facing
@@ -1280,28 +1324,24 @@ internal partial class Program
             checkx = player.TileX + 1;
             checky = player.TileY;
             dir = controldirs.di_east;
-            elevatorok = true;
         }
         else if (player.Angle < 3 * ANGLES / 8)
         {
             checkx = player.TileX;
             checky = player.TileY - 1;
             dir = controldirs.di_north;
-            elevatorok = false;
         }
         else if (player.Angle < 5 * ANGLES / 8)
         {
             checkx = player.TileX - 1;
             checky = player.TileY;
             dir = controldirs.di_west;
-            elevatorok = true;
         }
         else
         {
             checkx = player.TileX;
             checky = player.TileY + 1;
             dir = controldirs.di_south;
-            elevatorok = false;
         }
 
         cmdtile = _mapManager.tilemap[checkx, checky];
@@ -1313,25 +1353,16 @@ internal partial class Program
             ActivateTrigger(trigger, checkx, checky, dir);
             return;
         }
-        if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && elevatorok
-            && _mapManager.GetMapData().Walls.TryGetValue(cmdtile, out var switchWall)
-            && switchWall.ExitSwitch is > 0 and < BIT_WALL)
+        // A wall beside a door keeps its id under BIT_WALL; a moving pushwall's tiles are bare BIT_WALL
+        if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) == 0
+            && _mapManager.GetMapData().Walls.TryGetValue(cmdtile & ~BIT_WALL, out var switchWall)
+            && switchWall.Switch is { } wallSwitch && wallSwitch.UsableFrom(dir))
         {
             //
-            // use elevator (a mapdefs wall with an exit-switch)
+            // use a switch (a mapdefs wall with a switch, such as the elevator's)
             //
             _inputManager.SetButtonHeld(buttontypes.bt_use, true);
-
-            _mapManager.tilemap[checkx, checky] = (byte)switchWall.ExitSwitch.Value;              // flip switch
-            if (_mapManager.MAPSPOT(player.TileX, player.TileY, 0) == _mapManager.Floors.SecretExitTile)
-                playstate = playstatetypes.ex_secretlevel;
-            else
-                playstate = playstatetypes.ex_completed;
-            if (!string.IsNullOrEmpty(switchWall.ExitSwitchSound))
-            {
-                _audioManager.Play(switchWall.ExitSwitchSound);
-                _audioManager.WaitSoundDone();
-            }
+            UseSwitch(wallSwitch, checkx, checky, dir);
         }
         else if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) != 0)
         {

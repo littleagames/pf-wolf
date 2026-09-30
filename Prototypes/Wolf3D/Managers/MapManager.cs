@@ -170,7 +170,7 @@ internal class MapManager
     // A wall's id is kept in tilemap below the BIT_WALL and BIT_DOOR flags
     private static bool IsWallId(int tile) => tile is > 0 and < Program.BIT_WALL;
 
-    private readonly HashSet<int> badwallids = new();
+    private readonly HashSet<int> badwallids = new(), badswitches = new();
 
     private FloorCodes? _floors;
 
@@ -228,6 +228,10 @@ internal class MapManager
         foreach (var id in data.Walls.Keys.Where(id => !IsWallId(id)))
             if (badwallids.Add(id))
                 Console.WriteLine($"mapdefs wall {id} is ignored: wall ids are 1 to {Program.BIT_WALL - 1}");
+        foreach (var (id, wall) in data.Walls)
+            if (wall.Switch is { To: not 0 } wallSwitch && !(IsWallId(wallSwitch.To) && data.Walls.ContainsKey(wallSwitch.To))
+                && badswitches.Add(id))
+                Console.WriteLine($"mapdefs wall {id}'s switch goes to {wallSwitch.To}, which isn't a wall; it won't change when used");
 
         for (int y = 0; y < mapheight; y++)
         {

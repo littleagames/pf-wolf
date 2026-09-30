@@ -1,4 +1,4 @@
-﻿namespace Wolf3D.Assets;
+namespace Wolf3D.Assets;
 
 internal record MapObjectTranslationAsset : Asset
 {
@@ -203,18 +203,64 @@ internal record MapTextureTranslation
     /// </summary>
     public bool Vertical { get; init; }
 
-    /// <summary>
-    /// Walls only: makes this wall an elevator switch. Using it from the east or west ends the
-    /// level (going to the secret level from the floors' secret-exit code) and turns the wall
-    /// into this wall id, the switch thrown.
-    /// </summary>
-    public int? ExitSwitch { get; init; }
-
-    /// <summary>
-    /// Walls only: the sound when the <see cref="ExitSwitch"/> is thrown; the level ends once
-    /// it's done. Empty: silent, and the level ends straight away.
-    /// </summary>
-    public string ExitSwitchSound { get; init; } = "";
+    /// <summary>Walls only: makes this wall a switch the player can use.</summary>
+    public MapSwitchTranslation? Switch { get; init; }
 
     public static MapTextureTranslation None => new(); // TODO: Missing texture
+}
+
+/// <summary>
+/// A wall the player uses (like a door) to set things off. Using it turns it into wall
+/// <see cref="To"/>, plays <see cref="Sound"/> and runs <see cref="Actions"/> through
+/// Entities.MapTriggerRegistry, which act on whatever shares the switch tile's tag. If wall
+/// <see cref="To"/> has a switch of its own (back to this one, say), it's a toggle; if not, the
+/// switch is thrown once and stays that way.
+/// </summary>
+internal record MapSwitchTranslation
+{
+    /// <summary>The wall id it turns into when used (1 to 63); 0 leaves the wall as it is.</summary>
+    public int To { get; init; }
+
+    /// <summary>
+    /// The faces it can be used from (north, south, east, west): using it while facing east
+    /// presses its west face. Empty means any.
+    /// </summary>
+    public List<string> Sides { get; init; } = [];
+
+    /// <summary>Played as it's thrown. Empty: silent.</summary>
+    public string Sound { get; init; } = "";
+
+    /// <summary>The inventory item class (e.g. "GoldKey") the player must carry to use it. Empty: none.</summary>
+    public string Lock { get; init; } = "";
+
+    /// <summary>
+    /// Shown when it's used without its <see cref="Lock"/> item (a $NAME language key or the
+    /// text itself). Empty uses the lock item's `key.lockedmessage`.
+    /// </summary>
+    public string LockMessage { get; init; } = "";
+
+    /// <summary>The hud-messages.yaml style for <see cref="LockMessage"/>. Empty uses the lock item's `key.lockedmessagestyle`.</summary>
+    public string LockMessageStyle { get; init; } = "";
+
+    /// <summary>Played when it's used without its <see cref="Lock"/> item. Empty uses the lock item's `key.lockedsound`.</summary>
+    public string LockedSound { get; init; } = "";
+
+    /// <summary>The action calls to run, in order, e.g. `A_Exit`.</summary>
+    public List<string> Actions { get; init; } = [];
+
+    /// <summary>Whether the player can use it while facing <paramref name="dir"/>.</summary>
+    public bool UsableFrom(controldirs dir)
+    {
+        if (Sides.Count == 0)
+            return true;
+
+        var face = dir switch
+        {
+            controldirs.di_east => "west",
+            controldirs.di_west => "east",
+            controldirs.di_north => "south",
+            _ => "north",
+        };
+        return Sides.Contains(face, StringComparer.OrdinalIgnoreCase);
+    }
 }

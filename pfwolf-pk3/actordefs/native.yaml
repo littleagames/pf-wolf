@@ -51,7 +51,9 @@ Key:
     # unless the door has its own lock-message. "key.lockedmessagestyle" can name a
     # hud-messages.yaml style for it; left out, game-info's lock-style is used.
     "key.lockedmessage": "$LOCKEDDOOR"
-    # Played then too, unless the door has its own locked-sound
+    # The same for a switch this key locks (walls.yaml switch lock:)
+    "key.switchlockedmessage": "$LOCKEDSWITCH"
+    # Played then too, unless the door or switch has its own locked-sound
     "key.lockedsound": "player/usefail"
     # A key with a "key.statusbarslot" (0 at the top, 16 pixels apart) is shown on the status
     # bar: "key.statusbarpic" while carried, else "key.statusbaremptypic".
@@ -63,6 +65,7 @@ GoldKey:
   properties:
     "inventory.pickupmessage": "$GOTGOLDKEY"
     "key.lockedmessage": "$NEEDGOLDKEY"
+    "key.switchlockedmessage": "$SWITCHNEEDGOLDKEY"
     "key.statusbarpic": "goldkey"
     "key.statusbarslot": 0
   states:
@@ -76,6 +79,7 @@ SilverKey:
   properties:
     "inventory.pickupmessage": "$GOTSILVERKEY"
     "key.lockedmessage": "$NEEDSILVERKEY"
+    "key.switchlockedmessage": "$SWITCHNEEDSILVERKEY"
     "key.statusbarpic": "silverkey"
     "key.statusbarslot": 1
   states:

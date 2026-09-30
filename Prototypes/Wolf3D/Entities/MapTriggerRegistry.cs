@@ -3,16 +3,18 @@ using Wolf3D.Entities.Actors;
 namespace Wolf3D.Entities;
 
 /// <summary>
-/// A mapdefs trigger being set off: the tile it sits on, the direction it was used from and who
-/// used it. (Actors.Actor spelled out: a bare `Actor` in the Wolf3D namespaces is the legacy
+/// A mapdefs trigger or switch being set off: the tile it sits on, the direction it was used
+/// from, who used it, and its tile's tag (0 for none), which says what its actions act on.
+/// (Actors.Actor spelled out: a bare `Actor` in the Wolf3D namespaces is the legacy
 /// Wolf3D.Actor wall/door base class.)
 /// </summary>
-internal record TriggerActivation(int TileX, int TileY, controldirs Dir, Actors.Actor Activator);
+internal record TriggerActivation(int TileX, int TileY, controldirs Dir, Actors.Actor Activator, ushort Tag);
 
 /// <summary>
-/// Dispatches the `action` call strings on mapdefs triggers (e.g. `A_PushWall`) to C# handlers,
-/// parsed the same way as actor actions. A handler returns whether the trigger actually went off
-/// (a pushwall blocked on the far side doesn't), which is when a secret trigger counts as found.
+/// Dispatches the `action` call strings on mapdefs triggers and switches (e.g. `A_PushWall`) to
+/// C# handlers, parsed the same way as actor actions. A handler returns whether the trigger
+/// actually went off (a pushwall blocked on the far side doesn't), which is when a secret trigger
+/// counts as found. A switch runs its actions whatever they return.
 /// </summary>
 internal static class MapTriggerRegistry
 {

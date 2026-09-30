@@ -275,14 +275,7 @@ internal partial class Program
         if (!string.IsNullOrEmpty(lockItem) && !_inventoryManager.Has(lockItem))
         {
             if (doorobjlist[door].position == 0)
-            {
-                // locked: the door's locked-sound, else its lock item's key.lockedsound
-                var lockedSound = !string.IsNullOrWhiteSpace(xlat.LockedSound) ? xlat.LockedSound
-                    : _inventoryManager.GetStringProperty(lockItem, "key.lockedsound");
-                if (!string.IsNullOrEmpty(lockedSound))
-                    _audioManager.Play(lockedSound);
-                ShowLockedMessage(xlat, lockItem);
-            }
+                RefuseLocked(lockItem, xlat.LockedSound, xlat.LockMessage, xlat.LockMessageStyle);
             return;
         }
 
@@ -301,15 +294,23 @@ internal partial class Program
 
 
     /// <summary>
-    /// Says what a locked door needs: the door's own lock-message (doors.yaml), else its lock
-    /// item's `key.lockedmessage`, else that it's locked. The style is found the same way, then
+    /// Refuses a locked door or switch the player lacks the lock item for. The sound is its own
+    /// locked-sound (doors.yaml or the switch), else its lock item's `key.lockedsound`. The
+    /// message is its own lock-message, else the lock item's `key.lockedmessage` (for a switch,
+    /// `key.switchlockedmessage`), else that it's locked; the style is found the same way, then
     /// comes from game-info's for locked doors.
     /// </summary>
-    static void ShowLockedMessage(MapTextureTranslation xlat, string lockItem)
+    static void RefuseLocked(string lockItem, string lockedSound, string lockMessage, string lockMessageStyle, bool isSwitch = false)
     {
-        var message = !string.IsNullOrWhiteSpace(xlat.LockMessage) ? xlat.LockMessage
+        var sound = !string.IsNullOrWhiteSpace(lockedSound) ? lockedSound
+            : _inventoryManager.GetStringProperty(lockItem, "key.lockedsound");
+        if (!string.IsNullOrEmpty(sound))
+            _audioManager.Play(sound);
+
+        var message = !string.IsNullOrWhiteSpace(lockMessage) ? lockMessage
+            : isSwitch ? _inventoryManager.GetStringProperty(lockItem, "key.switchlockedmessage") ?? "$LOCKEDSWITCH"
             : _inventoryManager.GetStringProperty(lockItem, "key.lockedmessage") ?? "$LOCKEDDOOR";
-        var style = !string.IsNullOrWhiteSpace(xlat.LockMessageStyle) ? xlat.LockMessageStyle
+        var style = !string.IsNullOrWhiteSpace(lockMessageStyle) ? lockMessageStyle
             : _inventoryManager.GetStringProperty(lockItem, "key.lockedmessagestyle");
         _hudMessageManager.Show(HudMessageKind.Lock, message, style);
     }

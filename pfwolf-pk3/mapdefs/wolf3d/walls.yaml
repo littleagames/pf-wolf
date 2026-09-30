@@ -102,17 +102,33 @@ walls:
         South: BRIKEGL1
         East: BRIKEGL2
         West: BRIKEGL2
-    # The elevator switch. exit-switch makes a wall one: using it from the east or west ends
-    # the level (to the secret level when standing on the floors' secret-exit code) and turns
-    # it into the wall id given, the switch thrown. exit-switch-sound plays as it's thrown, and
-    # the level ends once it's done.
+    # The elevator switch. A switch block makes a wall one the player can use, like a door:
+    #   to:                  the wall id it turns into (the switch thrown); left out, it stays
+    #                        as it is. If that wall has a switch of its own (back to this one,
+    #                        say), it's a toggle; if not, it's thrown once.
+    #   sides:               the faces it can be used from, e.g. [east, west] (using it while
+    #                        facing east presses its west face); left out, any
+    #   sound:               played as it's thrown
+    #   lock:                an inventory item (e.g. GoldKey) needed to use it; lock-message,
+    #                        lock-message-style and locked-sound work as on doors.yaml doors,
+    #                        falling back to the key's "key.switchlockedmessage"
+    #   actions:             action calls run in order, acting on whatever shares the switch
+    #                        tile's tag (map plane 4). Write one with arguments as a block list
+    #                        item ("- A_Foo(1, 2)"): a comma breaks up a [flow, list].
+    #                        A_Exit ends the level (to the secret level when standing on the
+    #                        floors' secret-exit code); A_SecretExit always goes to the secret
+    #                        level. Both wait for the switch's sound to finish.
     '21':
         North: ELEV1_1
         South: ELEV1_1
         East: ELEV1_2
         West: ELEV1_2
-        exit-switch: 22
-        exit-switch-sound: switches/elevbutn
+        switch:
+            to: 22
+            sides: [east, west]
+            sound: switches/elevbutn
+            actions:
+                - A_Exit
     '22':
         North: ELEV2_1
         South: ELEV2_1
