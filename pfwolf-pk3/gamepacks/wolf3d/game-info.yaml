@@ -5,6 +5,18 @@ default-map:
   # doesn't give one; left out, those tiles keep the colors above. Also settable per map.
   # default-floor: FLOOR1
   # default-ceiling: CEIL1
+  # Distance shading, also settable per map (each value a map leaves out comes from here).
+  # Left out on both, levels aren't shaded. The sky is never shaded; a state with
+  # `modifiers: [bright]` (or an actor with the bright flag) is drawn at full light.
+  #   fade-color: #RRGGBB the view fades toward with distance: black for night, grey for fog (default #000000)
+  #   fade-start: tiles away, along the view, the fade starts (default 0)
+  #   fade-end:   tiles away it reaches max-fade (default 16)
+  #   max-fade:   percent toward fade-color at fade-end and beyond (default 100)
+  #   light:      light everywhere, 0 (black) to 255 (full, the default)
+  # shading:
+  #   fade-color: "#000000"
+  #   fade-start: 2
+  #   fade-end: 20
 
 signon:
   pic: wolf3d-signon

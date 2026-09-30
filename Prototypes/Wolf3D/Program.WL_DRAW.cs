@@ -279,7 +279,8 @@ internal partial class Program
         {
             postcount--;
             DrawPost(pixx, postheights[postcount] >> 3, postfirststory[postcount], poststories[postcount],
-                postlower[postcount], postlowerofs[postcount], postupper[postcount], postupperofs[postcount]);
+                postlower[postcount], postlowerofs[postcount], postupper[postcount], postupperofs[postcount],
+                lightrow, ShadeOffsetForHeight(postheights[postcount]));
             if (postunderside[postcount] != 0)
                 DrawUnderside(pixx, postheights[postcount] >> 3, postunderside[postcount] >> 3, postundertexture[postcount]);
         }
@@ -302,11 +303,12 @@ internal partial class Program
         unsafe
         {
             byte* dest = (byte*)vbufPtr + screenofs + x;
+            double numerator = heightnumerator * 32.0;
 
             if (texture == null)
             {
                 for (int y = from; y <= to; y++)
-                    dest[y * pitch] = ceilingcolor;
+                    dest[y * pitch] = lightrow[ShadeOffset((long)(numerator / (centery - y - 0.5))) + ceilingcolor];
                 return;
             }
 
@@ -319,7 +321,6 @@ internal partial class Program
             double angle = (midangle + pixelangle[x]) * TORADIANS;
             double perview = 1 / Math.Cos(pixelangle[x] * TORADIANS);
             double stepx = Math.Cos(angle) * perview, stepy = -Math.Sin(angle) * perview;
-            double numerator = heightnumerator * 32.0;
 
             byte[] data = texture.RawData;
             int width = texture.Width, height = texture.Height;
@@ -331,7 +332,7 @@ internal partial class Program
                 int u = (int)(px >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
                 int v = (int)(py >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
                 int row = height >= TEXTURESIZE ? height - TEXTURESIZE + v : v * height / TEXTURESIZE;
-                dest[y * pitch] = data[u * width / TEXTURESIZE * height + row];
+                dest[y * pitch] = lightrow[ShadeOffset((long)nx) + data[u * width / TEXTURESIZE * height + row]];
             }
         }
     }
@@ -489,9 +490,11 @@ internal partial class Program
     /// firststory and up are drawn: the first story from lower, the ones above it from upper.
     /// A texture covers a story per 64 texels of its height, from the floor up, and repeats
     /// above that. half is half a story's height in pixels; lowerofs and upperofs are the
-    /// column to draw, times 64, as the trace finds it across a tile.
+    /// column to draw, times 64, as the trace finds it across a tile. Each texel is remapped
+    /// through shade from shadeofs (a light row and fade step, see Program.WL_SHADE.cs).
     /// </summary>
-    static void DrawPost(int x, int half, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs)
+    static void DrawPost(int x, int half, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
+        byte[] shade, int shadeofs)
     {
         if (half <= 0) half = 100;
 
@@ -523,9 +526,9 @@ internal partial class Program
             {
                 if (t != colt)
                 {
-                    col = t < TEXTURESIZE
+                    col = shade[shadeofs + (t < TEXTURESIZE
                         ? lowerdata[lowercolumn + lowerheight - 1 - (int)(t % lowerheight)]
-                        : upperdata[uppercolumn + upperheight - 1 - (int)(t % upperheight)];
+                        : upperdata[uppercolumn + upperheight - 1 - (int)(t % upperheight)])];
                     colt = t;
                 }
                 dest[y * pitch] = col;
@@ -1043,16 +1046,21 @@ internal partial class Program
             }
             else
             {
+                // the ceiling is at the top of the walls, 2 * wallstories - 1 half stories above the eye
                 for (y = 0; y < centery; y++, destIndex += (int)_videoManager.bufferPitch)
-                    for(var v = 0; v < viewwidth; v++)
-                        dest[destIndex+v] = ceilingColor;
-                        //Array.Fill(dest, ceiling, destIndex, viewwidth);
+                {
+                    byte color = lightrow[FlatRowShadeOffset(y, 2 * wallstories - 1) + ceilingColor];
+                    for (var v = 0; v < viewwidth; v++)
+                        dest[destIndex + v] = color;
+                }
             }
 
             for (; y < viewheight; y++, destIndex += (int)_videoManager.bufferPitch)
+            {
+                byte color = lightrow[FlatRowShadeOffset(y, 1) + floorColor];
                 for (var v = 0; v < viewwidth; v++)
-                    dest[destIndex + v] = floorColor;
-                    //Array.Fill(dest, 0x19, destIndex, viewwidth);
+                    dest[destIndex + v] = color;
+            }
         }
 
         bool ceilingflats = _mapManager.hasceilingflats && !sky;
@@ -1118,6 +1126,7 @@ internal partial class Program
                 // the row half a story (times halves) above or below the horizon at this distance
                 double rowsfromcenter = Math.Abs(y + 0.5 - centery);
                 long nx = (long)(numerator / rowsfromcenter);
+                int shadeofs = ShadeOffset(nx);
                 byte* row = dest + y * pitch;
 
                 for (int x = 0; x < viewwidth; x++)
@@ -1135,11 +1144,15 @@ internal partial class Program
                     int u = (int)(px >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
                     int v = (int)(py >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
                     int height = texture.Height;
-                    row[x] = texture.RawData[u * texture.Width / TEXTURESIZE * height + v * height / TEXTURESIZE];
+                    row[x] = lightrow[shadeofs + texture.RawData[u * texture.Width / TEXTURESIZE * height + v * height / TEXTURESIZE]];
                 }
             }
         }
     }
+
+    // ShadeOffset for screen row y of a floor or ceiling halves half stories from the eye (as DrawFlats)
+    static int FlatRowShadeOffset(int y, int halves) =>
+        shading ? ShadeOffset((long)(heightnumerator * 32.0 * halves / Math.Abs(y + 0.5 - centery))) : 0;
 
 
     private static void WallRefresh()
@@ -1988,6 +2001,7 @@ internal partial class Program
             //statobj_t statptr_val = statobjlist[statptr];
             if (actor.CurrentState == null)
                 continue;
+            visptr_val.bright = shading && IsBright(actor);
 
             // A marker with no sprite (a patrol point) takes no vislist slot. Inventory still
             // goes through below, where touching it is what picks it up.
@@ -2132,9 +2146,11 @@ internal partial class Program
             return;
         }
 
-        // The frame the weapon's states are on (Program.PlayerWeapon.cs)
+        // The frame the weapon's states are on (Program.PlayerWeapon.cs), in the level's light but
+        // not faded: it's at arm's length
         if (WeaponShapeName() is { } shape)
-            SimpleScaleShape(viewwidth / 2, shape, viewheight + 1);
+            SimpleScaleShape(viewwidth / 2, shape, viewheight + 1,
+                weaponSprite != null && IsBright(weaponSprite) ? noshade : lightrow);
 
         if (demorecord || demoplayback)
             SimpleScaleShape(viewwidth / 2, "DEMOA0", viewheight + 1);

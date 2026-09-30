@@ -139,6 +139,11 @@ internal partial class Program
             $"wallheight [1-{MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
         Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
             "sky [name|none]", Cmd_Sky, InLevel);
+        Register("fog", "Fades the view toward a color with distance, from start to end tiles away, up to max percent, until the level is left or reloaded; none for no shading.",
+            "fog [#RRGGBB|none] [start] [end] [max 0-100]", Cmd_Fog, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? ["none", "#000000", "#707070"] : []);
+        Register("light", "Sets the level's light, 0 (black) to 255 (full), until the level is left or reloaded.",
+            "light [0-255]", Cmd_Light, Cheat | InLevel);
         Register("height","Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height. On open floor, 2 or more makes an arch.",
             $"height <0-{MAXWALLSTORIES}> [tilex tiley]", Cmd_Height, Cheat | InLevel);
         Register("tag", "Shows or sets a tile's tag on the tag plane (default: the one you face), and the tag of any actors on it; 0 clears it.",
@@ -1251,6 +1256,46 @@ internal partial class Program
             levelsky = name;
         }
         _consoleManager.Print(levelsky == null ? "No sky: the ceiling is a color" : $"Sky: {levelsky}");
+    }
+
+    // The level's shading, or what shading starts from when it has none
+    static ShadingSettings CurrentShading => levelshading ?? new ShadingSettings("#000000", 0, 16, 0, 255);
+
+    private static void Cmd_Fog(string[] args)
+    {
+        if (args.Length > 0 && args[0].Equals("none", StringComparison.OrdinalIgnoreCase))
+            SetShading(null);
+        else if (args.Length > 0)
+        {
+            var color = args[0];
+            try { Entities.Color.FromHexRGBA(color); }
+            catch (Exception) { throw new ArgumentException($"expected a #RRGGBB color, got \"{color}\""); }
+
+            var s = CurrentShading with { FadeColor = color, MaxFade = 100 };
+            if (args.Length > 1) s = s with { FadeStart = ParseTiles(args[1]) };
+            if (args.Length > 2) s = s with { FadeEnd = ParseTiles(args[2]) };
+            if (args.Length > 3) s = s with { MaxFade = ParseInt(args[3], 0, 100) };
+            SetShading(s);
+        }
+
+        _consoleManager.Print(levelshading is { MaxFade: > 0 } f
+            ? $"Fog: {f.FadeColor} from {f.FadeStart} to {f.FadeEnd} tiles, up to {f.MaxFade}%"
+            : "No fog");
+    }
+
+    private static void Cmd_Light(string[] args)
+    {
+        if (args.Length > 0)
+            SetShading(CurrentShading with { Light = ParseInt(args[0], 0, 255) });
+        _consoleManager.Print($"Light: {levelshading?.Light ?? 255}");
+    }
+
+    static double ParseTiles(string arg)
+    {
+        if (!double.TryParse(arg, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var tiles)
+            || tiles < 0 || tiles > MapManager.MAPSIZE)
+            throw new ArgumentException($"expected a number of tiles from 0 to {MapManager.MAPSIZE}, got \"{arg}\"");
+        return tiles;
     }
 
     private static void Cmd_Fps(string[] args)

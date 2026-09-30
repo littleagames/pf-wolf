@@ -716,7 +716,7 @@ internal partial class Program
             }
         }
 
-        InitLevelShadeTable();
+        InitLevelShading(mapInfo);
 
         //
         // load floor/ceiling textures

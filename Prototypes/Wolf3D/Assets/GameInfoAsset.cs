@@ -285,6 +285,34 @@ internal record DefaultMapInfo
     /// ceiling color. A sky shows in place of ceiling flats.
     /// </summary>
     public string? DefaultCeiling { get; init; } = null;
+
+    /// <summary>
+    /// Distance shading (night, fog) on every level; null leaves levels unshaded
+    /// </summary>
+    public ShadingInfo? Shading { get; init; } = null;
+}
+
+/// <summary>
+/// How a level is shaded: everything is dimmed to its light, then fades toward the fade color
+/// with distance. Each value left out comes from the default map's shading, else the default
+/// here. A level with neither map nor default map shading isn't shaded.
+/// </summary>
+internal record ShadingInfo
+{
+    /// <summary>#RRGGBB distance fades toward: black for night, grey for fog (default black)</summary>
+    public string? FadeColor { get; init; }
+
+    /// <summary>Tiles away, along the view, the fade starts (default 0)</summary>
+    public double? FadeStart { get; init; }
+
+    /// <summary>Tiles away the fade reaches max-fade (default 16)</summary>
+    public double? FadeEnd { get; init; }
+
+    /// <summary>How far toward the fade color, in percent, the view fades at fade-end and beyond (default 100)</summary>
+    public int? MaxFade { get; init; }
+
+    /// <summary>Light everywhere, 0 (black) to 255 (full, the default)</summary>
+    public int? Light { get; init; }
 }
 
 /// <summary>
@@ -450,4 +478,9 @@ internal record MapInfo
     /// Texture for ceiling tiles the flat plane doesn't give one; null uses the default map's
     /// </summary>
     public string? DefaultCeiling { get; init; } = null;
+
+    /// <summary>
+    /// Distance shading; each value left out uses the default map's (see ShadingInfo)
+    /// </summary>
+    public ShadingInfo? Shading { get; init; } = null;
 }

@@ -20,6 +20,7 @@ internal class visobj_t
     public string shapenum;
     public objflags flags;
     public Entities.Actors.Actor? wallsprite;   // drawn as a panel (Program.WallSprites.cs), not a billboard
+    public bool bright;                         // drawn unshaded (Program.IsBright)
 }
 
 internal enum buttontypes
