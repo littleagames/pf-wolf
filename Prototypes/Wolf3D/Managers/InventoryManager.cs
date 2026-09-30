@@ -82,14 +82,32 @@ internal class InventoryManager
 
     public bool Has(string item) => GetCount(item) > 0;
 
+    /// <summary>The player's actordefs class (set by Program), whose `player.maxamount` overrides items' own caps</summary>
+    public Func<string?> PlayerClass { get; set; } = () => null;
+
     /// <summary>
-    /// `inventory.maxamount` for the item's type. Zero or less means "uncapped", matching how
-    /// the actordefs mark non-stacking base classes such as Health.
+    /// `inventory.maxamount` for the item's type, unless the player class's `player.maxamount`
+    /// (item: amount) names that type. Zero or less means "uncapped", matching how the
+    /// actordefs mark non-stacking base classes such as Health.
     /// </summary>
     public int GetMaxAmount(string item)
     {
-        var max = Metadata.GetIntProperty(GetItemType(item), "inventory.maxamount", 1);
+        var type = GetItemType(item);
+        var max = PlayerMaxAmount(type) ?? Metadata.GetIntProperty(type, "inventory.maxamount", 1);
         return max > 0 ? max : int.MaxValue;
+    }
+
+    // The player class's cap for an item type; its keys may name any class of that type (ClipBox for Clip)
+    private int? PlayerMaxAmount(string type)
+    {
+        if (PlayerClass() is not { } playerClass || GetProperty(playerClass, "player.maxamount") is not IDictionary<object, object> caps)
+            return null;
+        foreach (var (item, amount) in caps)
+        {
+            if (string.Equals(GetItemType(item.ToString() ?? ""), type, StringComparison.OrdinalIgnoreCase))
+                return Convert.ToInt32(amount);
+        }
+        return null;
     }
 
     public bool IsFull(string item) => GetCount(item) >= GetMaxAmount(item);

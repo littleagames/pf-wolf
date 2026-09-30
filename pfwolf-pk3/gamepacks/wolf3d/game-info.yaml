@@ -70,6 +70,14 @@ skills:
     pic-name: C_HARD
     enemy-health: health.hard
 
+# The classes a new game can be played as (actordefs Player, or classes with Player as a parent;
+# see actordefs player.yaml), keyed by class, in menu order. The first is the default. Left out,
+# or with only one, there's no choosing and the game is played as that class (else Player).
+#   name, pic-name: the class menu's text and picture
+# player-classes:
+#   Player:
+#     name: "B.J. Blazkowicz"
+
 # The skill demos are recorded and played back on (left out: the hardest). A demo only replays
 # right on the skill it was recorded on, and id's were recorded on HARD.
 demo-skill: HARD

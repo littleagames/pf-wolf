@@ -4,6 +4,13 @@ internal record GameInfoAsset : Asset
 {
     public DefaultMapInfo DefaultMap { get; init; } = new();
     public Dictionary<string, SkillInfo> Skills { get; init; } = [];
+
+    /// <summary>
+    /// The classes a new game can be played as, keyed by actordefs class (Player or one with
+    /// Player as a parent), in menu order. The first is the default; none means Player.
+    /// </summary>
+    public Dictionary<string, PlayerClassInfo> PlayerClasses { get; init; } = [];
+
     public Dictionary<string, EpisodeInfo> Episodes { get; init; } = [];
     public Dictionary<int, ClusterInfo> Clusters { get; init; } = [];
     public Dictionary<string, MapInfo> Maps { get; init; } = [];
@@ -297,6 +304,13 @@ internal record SkillInfo
     /// an enemy without it, or a skill without one, uses the enemy's plain `health`
     /// </summary>
     public string? EnemyHealth { get; init; }
+}
+
+/// <summary>A class in game-info's player-classes: how the class menu shows it</summary>
+internal record PlayerClassInfo
+{
+    public string? Name { get; init; }
+    public string? PicName { get; init; }
 }
 
 internal record EpisodeInfo

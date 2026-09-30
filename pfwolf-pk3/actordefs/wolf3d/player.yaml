@@ -1,5 +1,15 @@
 # The player's class data. The player actor itself is built in code (Entities.Actors.PlayerPawn,
 # named "Player"); only these properties are read from here.
+#
+# Player classes: a class with `parent: "Player"` overrides only the properties it gives and
+# inherits the rest. game-info's player-classes lists the ones a new game can be played as.
+#   Commando:
+#     parent: "Player"
+#     properties:
+#       "player.maxhealth": 75
+#       "player.damagedealt": 1.25
+#       "player.maxamount":
+#         Clip: 150
 Player:
   properties:
     # The player's name in messages: %o in an obituary
@@ -19,3 +29,11 @@ Player:
     # inventory.maxamount when it has one (blood and gibs only help when nearly dead), else to here.
     "player.maxhealth": 100
     "player.maxlives": 9
+    # Damage factors: the player's attacks do damagedealt times as much, and they take
+    # damagetaken times as much (on top of the skill's damage-taken). Left out: 1.
+    # "player.damagedealt": 1
+    # "player.damagetaken": 1
+    # Item caps (item: amount) in place of the items' own inventory.maxamount; any class of
+    # an item type names it (ClipBox for Clip)
+    # "player.maxamount":
+    #   Clip: 99

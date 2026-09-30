@@ -874,8 +874,8 @@ internal partial class Program
     {
         if (gamestate.victoryflag)
             return;
-        // The skill's damage-taken (the easiest skill's 0.25 is vanilla's points >> 2)
-        points = (int)(points * Math.Max(CurrentSkill.DamageTaken, 0));
+        // The skill's damage-taken (the easiest skill's 0.25 is vanilla's points >> 2), then the class's
+        points = (int)(points * Math.Max(CurrentSkill.DamageTaken, 0) * DamageTakenFactor);
 
         if (godmode == 0)
             gamestate.health -= (short)points;
@@ -1005,19 +1005,61 @@ internal partial class Program
 ==================
 */
 
-    // The player's actordefs class (actordefs/wolf3d/player.yaml), for its `player.*` properties.
-    private const string PlayerClass = "Player";
+    // The base player class (actordefs/wolf3d/player.yaml); every player class is it or descends from it
+    private const string BasePlayerClass = "Player";
 
-    /// <summary>
-    /// New game / respawn loadout: the Player class's `player.startitem` (item: amount), with
-    /// the best weapon in it selected.
-    /// </summary>
+    // The class being played as, for its `player.*` properties (inherited from Player where it
+    // leaves them out)
+    private static string PlayerClass => gamestate.playerclass;
+
+    /// <summary>The classes a new game can be played as: game-info's player-classes, else just Player</summary>
+    internal static List<string> PlayerClasses()
+    {
+        var classes = _gameEngineManager.GetGameInfo().PlayerClasses.Keys
+            .Select(name => (Name: name, Class: FindPlayerClass(name)))
+            .Where(c =>
+            {
+                if (c.Class == null)
+                    Console.WriteLine($"game-info player-classes: '{c.Name}' isn't Player or an actordefs class with Player as a parent");
+                return c.Class != null;
+            })
+            .Select(c => c.Class!)
+            .ToList();
+        return classes.Count > 0 ? classes : [BasePlayerClass];
+    }
+
+    /// <summary>The class a new game is played as when none is picked: the first in game-info's player-classes</summary>
+    internal static string DefaultPlayerClass => PlayerClasses()[0];
+
+    /// <summary>A player class's exact actordefs spelling, or null if the name isn't Player or a class descended from it</summary>
+    internal static string? FindPlayerClass(string name) =>
+        string.Equals(name, BasePlayerClass, StringComparison.OrdinalIgnoreCase)
+            ? BasePlayerClass
+            : _inventoryManager.FindClass(name, BasePlayerClass);
+
+    /// <summary>A factor from the player class (e.g. `player.damagedealt`), 1 when left out; never below 0</summary>
+    private static double PlayerFactor(string key) =>
+        _inventoryManager.GetProperty(PlayerClass, key) is { } value
+        && double.TryParse(value.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var factor)
+            ? Math.Max(factor, 0)
+            : 1;
+
+    /// <summary>How much of the damage their weapons would do the player deals: the class's `player.damagedealt`</summary>
+    internal static double DamageDealt => PlayerFactor("player.damagedealt");
+
+    /// <summary>How much of the damage they're dealt the player takes, before the skill's: the class's `player.damagetaken`</summary>
+    internal static double DamageTakenFactor => PlayerFactor("player.damagetaken");
+
     /// <summary>A new game's and a respawn's health: the Player class's `player.starthealth` (Wolf3D's 100 when left out)</summary>
     internal static short StartingHealth => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.starthealth", 100), 1, short.MaxValue);
 
     /// <summary>A new game's lives: the Player class's `player.startlives` (Wolf3D's 3 when left out)</summary>
     internal static short StartingLives => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.startlives", 3), 0, short.MaxValue);
 
+    /// <summary>
+    /// New game / respawn loadout: the Player class's `player.startitem` (item: amount), with
+    /// the best weapon in it selected.
+    /// </summary>
     internal static void GiveStartingInventory()
     {
         _inventoryManager.Clear();
@@ -1268,8 +1310,11 @@ internal partial class Program
         if (closest == null)
             return; // missed
 
-        DamageActor(closest, (uint)(US_RndT() >> 4));
+        DamageActor(closest, PlayerDamage(US_RndT() >> 4));
     }
+
+    // A player attack's damage, scaled by the class's player.damagedealt
+    static uint PlayerDamage(int damage) => (uint)Math.Round(damage * DamageDealt);
 
     internal static void GunAttack(Entities.Actors.Actor ob)
     {
@@ -1309,7 +1354,7 @@ internal partial class Program
             damage = US_RndT() / 6;
         }
 
-        DamageActor(closest, (uint)damage);
+        DamageActor(closest, PlayerDamage(damage));
     }
 
     internal static void VictorySpin()

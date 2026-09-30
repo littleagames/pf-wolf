@@ -149,6 +149,8 @@ internal partial class Program
         Register("pitch", "Looks up (positive) or down (negative) by that many degrees, as far as the view allows; 0 looks straight ahead.",
             "pitch [degrees]", Cmd_Pitch, InLevel);
         Register("hurt", "Damages the player.", "hurt [points]", Cmd_Hurt, InLevel);
+        Register("playerclass", "Shows the class being played as and the classes there are; with a name, the class new games are played as.",
+            "playerclass [class]", Cmd_PlayerClass, complete: (_, i) => i == 0 ? PlayerClasses() : []);
         Register("where", "Shows the player's position and what's at their tile.", "where", Cmd_Where, InLevel, aliases: ["pos"]);
         Register("count", "Counts doors and actors.", "count", Cmd_Count, InLevel);
         Register("actors", "Lists actors, optionally only those whose name contains the filter.", "actors [filter]", Cmd_Actors, InLevel,
@@ -646,6 +648,22 @@ internal partial class Program
             viewpitch = Math.Clamp(degrees, -max, max);
         }
         _consoleManager.Print($"Pitch is {viewpitch:0.#} degrees (up to {max:0.#} either way)");
+    }
+
+    private static void Cmd_PlayerClass(string[] args)
+    {
+        var classes = PlayerClasses();
+        if (args.Length > 0)
+        {
+            // Any class descended from Player works, listed in game-info or not (for trying one out)
+            newGamePlayerClass = FindPlayerClass(args[0])
+                ?? throw new ArgumentException($"no player class {args[0]}; there's {string.Join(", ", classes)}");
+        }
+
+        if (ingame)
+            _consoleManager.Print($"Playing as {gamestate.playerclass}");
+        _consoleManager.Print($"New games are played as {newGamePlayerClass ?? DefaultPlayerClass}");
+        _consoleManager.Print($"Classes: {string.Join(", ", classes)}");
     }
 
     private static void Cmd_Give(string[] args)

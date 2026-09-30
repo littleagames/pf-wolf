@@ -811,9 +811,6 @@ internal class MapManager
     /// <summary>The actors a save writes, in the order it writes them -- removed ones are dropped.</summary>
     internal List<Entities.Actors.Actor> GetSavedActors() => _actors.Where(a => !a.IsRemoved).ToList();
 
-    // Save version 8 moved wall heights from plane 2 (now ECWolf's flats) to plane 3
-    internal const int FlatsSaveVersion = 8;
-
     internal void WriteLevelState(BinaryWriter bw)
     {
         bw.Write(mapsegs.Length);
@@ -856,7 +853,7 @@ internal class MapManager
     }
 
     /// <summary>Parses what <see cref="WriteLevelState"/> wrote, without touching the loaded level.</summary>
-    internal static LevelSnapshot ReadLevelState(BinaryReader br, int version)
+    internal static LevelSnapshot ReadLevelState(BinaryReader br)
     {
         var planes = new ushort[br.ReadCount()][];
         for (int i = 0; i < planes.Length; i++)
@@ -865,10 +862,6 @@ internal class MapManager
             for (int j = 0; j < planes[i].Length; j++)
                 planes[i][j] = br.ReadUInt16();
         }
-
-        // An older save has three planes, with its wall heights in plane 2 (nothing had flats yet)
-        if (version < FlatsSaveVersion && planes.Length == MAPPLANES)
-            planes = [planes[0], planes[1], new ushort[planes[FLATPLANE].Length], planes[FLATPLANE]];
 
         var tiles = new byte[MAPSIZE, MAPSIZE];
         var blocking = new Actor?[MAPSIZE, MAPSIZE];

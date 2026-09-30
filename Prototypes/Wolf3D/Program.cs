@@ -61,6 +61,7 @@ internal partial class Program
         _mapManager = serviceProvider.GetRequiredService<MapManager>();
         _assetManager = serviceProvider.GetRequiredService<AssetManager>();
         _inventoryManager = serviceProvider.GetRequiredService<InventoryManager>();
+        _inventoryManager.PlayerClass = () => gamestate.playerclass;
         _consoleManager = serviceProvider.GetRequiredService<ConsoleManager>();
         _automapManager = serviceProvider.GetRequiredService<AutomapManager>();
         _hudMessageManager = serviceProvider.GetRequiredService<HudMessageManager>();
@@ -481,11 +482,19 @@ internal partial class Program
         }
     }
 
-    internal static void NewGame(short difficulty, EpisodeInfo epInfo, MapInfo mapInfo)
+    /// <summary>The class the next new game is played as (the `playerclass` command); null for the default</summary>
+    internal static string? newGamePlayerClass;
+
+    /// <summary>
+    /// Starts a game as <paramref name="playerClass"/>: when null, the `playerclass` command's pick,
+    /// else game-info's first player class
+    /// </summary>
+    internal static void NewGame(short difficulty, EpisodeInfo epInfo, MapInfo mapInfo, string? playerClass = null)
     {
         gamestate = new gametype();
         LevelRatios = [];       // the win tally averages only this game's floors
         gamestate.difficulty = difficulty;
+        gamestate.playerclass = playerClass ?? newGamePlayerClass ?? DefaultPlayerClass;
         GiveStartingInventory();
 
         gamestate.health = StartingHealth;

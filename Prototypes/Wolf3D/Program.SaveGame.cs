@@ -38,12 +38,11 @@ internal partial class Program
     // Still in development, so a layout change bumps SaveVersion and older saves are refused
     // rather than converted. 6: the header (SaveInfo) and thumbnail ahead of the body, no slots.
     // 7: the mods loaded when it was saved, at the end of the header.
-    // 8: a fourth map plane, wall heights moved from plane 2 to it (plane 2 is flats); a 7 is
-    //    converted as it's read, since only the planes' meaning changed.
-    // 9: the area count (mapdefs floors) ahead of the area tables; older saves have Wolf3D's 37.
-    private const int AreaCountSaveVersion = 9;
-    private const int SaveVersion = AreaCountSaveVersion;
-    private const int OldestLoadableSaveVersion = 7;
+    // 8: a fourth map plane, wall heights moved from plane 2 to it (plane 2 is flats).
+    // 9: the area count (mapdefs floors) ahead of the area tables.
+    // 10: the player class, after the skill in gamestate.
+    private const int SaveVersion = 10;
+    private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the
     // view's shape; big enough to stay sharp in the menus at a few times 320x200
@@ -323,7 +322,7 @@ internal partial class Program
         byte[] Seen,
         Entities.Actors.ActorSnapshot? Weapon);
 
-    private static SaveGameData ReadSaveBody(BinaryReader br, int version)
+    private static SaveGameData ReadSaveBody(BinaryReader br)
     {
         var state = gametype.Read(br);
 
@@ -335,7 +334,7 @@ internal partial class Program
         for (int i = br.ReadCount(); i > 0; i--)
             inventory[br.ReadString()] = br.ReadInt32();
 
-        var level = MapManager.ReadLevelState(br, version);
+        var level = MapManager.ReadLevelState(br);
 
         var doors = new doorobj_t[br.ReadCount()];
         for (int i = 0; i < doors.Length; i++)
@@ -344,7 +343,7 @@ internal partial class Program
             doors[i].ReadState(br);
         }
 
-        var numareas = version >= AreaCountSaveVersion ? br.ReadInt32() : 37;
+        var numareas = br.ReadInt32();
         if (numareas != _mapManager.Floors.NumAreas)
             throw new InvalidDataException($"It was saved with {numareas} map areas; this game has {_mapManager.Floors.NumAreas}.");
 
@@ -419,7 +418,7 @@ internal partial class Program
         {
             DiskFlopAnim(x, y);
             using var br = new BinaryReader(File.OpenRead(path));
-            var version = ReadSaveVersion(br);
+            ReadSaveVersion(br);
             // The header is for the menus, and for saying whether it was saved with other mods
             using (var header = new BinaryReader(new MemoryStream(ReadExactly(br, br.ReadCount()))))
                 info = SaveInfo.Read(header);
@@ -431,10 +430,14 @@ internal partial class Program
 
             DiskFlopAnim(x, y);
             using var bodyReader = new BinaryReader(new MemoryStream(body));
-            data = ReadSaveBody(bodyReader, version);
+            data = ReadSaveBody(bodyReader);
 
             if (!_gameEngineManager.GetGameInfo().Maps.ContainsKey(data.GameState.mapon))
                 throw new InvalidDataException($"Map \"{data.GameState.mapon}\" isn't in this game.");
+
+            if (FindPlayerClass(data.GameState.playerclass) is not { } playerClass)
+                throw new InvalidDataException($"Player class \"{data.GameState.playerclass}\" isn't in this game.");
+            data.GameState.playerclass = playerClass;
 
             foreach (var weapon in new[] { data.GameState.weapon, data.GameState.chosenweapon })
             {

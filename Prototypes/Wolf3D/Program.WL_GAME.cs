@@ -241,7 +241,7 @@ internal partial class Program
         if (lastdemoptr - demoptr < 3)
             return;
 
-        NewGame(DemoSkill, new EpisodeInfo { StartMap = mapName }, mapInfo);
+        NewGame(DemoSkill, new EpisodeInfo { StartMap = mapName }, mapInfo, BasePlayerClass);   // recorded as Player: another class's stats would change how it plays
 
         _videoManager.FadeOut();
 
@@ -445,7 +445,7 @@ internal partial class Program
         var gameInfo = _gameEngineManager.GetGameInfo();
         var mapName = $"MAP{level:D2}";
         _videoManager.FadeOut();
-        NewGame(DemoSkill, new EpisodeInfo { StartMap = mapName }, gameInfo.Maps[mapName]);
+        NewGame(DemoSkill, new EpisodeInfo { StartMap = mapName }, gameInfo.Maps[mapName], BasePlayerClass);
         StartDemoRecord(level - 1);
 
         DrawPlayScreen();

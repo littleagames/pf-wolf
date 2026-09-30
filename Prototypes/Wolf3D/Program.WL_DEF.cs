@@ -97,6 +97,8 @@ internal class gametype
 {
     // The skill: its place in game-info's skills, 0 for the first (easiest)
     public short difficulty;
+    // The actordefs class played as (game-info player-classes); its player.* properties
+    public string playerclass = "Player";
     public string mapon;
     public int oldscore, score, nextextra;
     public short lives;
@@ -124,6 +126,7 @@ internal class gametype
     public static gametype Read(BinaryReader br) => new()
     {
         difficulty = br.ReadInt16(),
+        playerclass = br.ReadString(),
         mapon = br.ReadString(),
         oldscore = br.ReadInt32(),
         score = br.ReadInt32(),
@@ -150,6 +153,7 @@ internal class gametype
     public void Write(BinaryWriter bw)
     {
         bw.Write((short)difficulty);
+        bw.Write(playerclass);
         bw.Write(mapon);
         bw.Write(oldscore);
         bw.Write(score);
