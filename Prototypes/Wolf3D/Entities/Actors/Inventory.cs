@@ -23,6 +23,12 @@ internal record Health : Inventory
 
 }
 
+// Not held: picking it up sets the player's armor points and how much of each hit they absorb
+internal record Armor : Inventory
+{
+
+}
+
 internal record Key : Inventory
 {
 

@@ -473,6 +473,8 @@ internal partial class Program
             }
             case Entities.Actors.Ammo:
                 return GiveAmmo(item.Name, amount) > 0;
+            case Entities.Actors.Armor:
+                return TryGiveArmor(item.Name);
             case Entities.Actors.Weapon weapon:
                 return TryGiveWeapon(weapon);
             case Entities.Actors.Key:
@@ -878,7 +880,16 @@ internal partial class Program
         points = (int)(points * Math.Max(CurrentSkill.DamageTaken, 0) * DamageTakenFactor);
 
         if (godmode == 0)
+        {
+            // Armor takes its share of the hit off its points, as far as they go
+            int saved = Math.Min(points * gamestate.armorpercent / 100, gamestate.armor);
+            gamestate.armor -= (short)saved;
+            if (gamestate.armor == 0)
+                gamestate.armorpercent = 0;
+            points -= saved;
+
             gamestate.health -= (short)points;
+        }
 
         if (gamestate.health <= 0)
         {
@@ -890,6 +901,7 @@ internal partial class Program
             _videoManager.StartDamageFlash(points);
 
         DrawHealth();
+        DrawArmor();
         DrawFace();
     }
 
@@ -898,6 +910,47 @@ internal partial class Program
 
     /// <summary>The most lives the player can have: the Player class's `player.maxlives` (Wolf3D's 9 when left out)</summary>
     internal static short MaxLives => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.maxlives", 9), 0, short.MaxValue);
+
+    /// <summary>The most armor points the player can have: the Player class's `player.maxarmor` (no cap but the armor's own when left out)</summary>
+    internal static short MaxArmor => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.maxarmor", short.MaxValue), 0, short.MaxValue);
+
+    /// <summary>
+    /// Puts on an Armor class (native.yaml): an armor replaces the player's when it has more
+    /// points; a bonus (armor.maxsaveamount) adds to it. False when it would change nothing.
+    /// </summary>
+    internal static bool TryGiveArmor(string armorClass)
+    {
+        int amount = _inventoryManager.GetIntProperty(armorClass, "armor.saveamount", 0);
+        short percent = (short)Math.Clamp(_inventoryManager.GetIntProperty(armorClass, "armor.savepercent", 0), 0, 100);
+
+        if (_inventoryManager.GetProperty(armorClass, "armor.maxsaveamount") != null)
+        {
+            int cap = Math.Min(_inventoryManager.GetIntProperty(armorClass, "armor.maxsaveamount", 0), MaxArmor);
+            if (gamestate.armor >= cap || amount <= 0)
+                return false;
+            if (gamestate.armor == 0)
+                gamestate.armorpercent = percent;
+            gamestate.armor = (short)Math.Min(gamestate.armor + amount, cap);
+        }
+        else
+        {
+            amount = Math.Min(amount, MaxArmor);
+            if (gamestate.armor >= amount)
+                return false;
+            gamestate.armor = (short)amount;
+            gamestate.armorpercent = percent;
+        }
+
+        DrawArmor();
+        return true;
+    }
+
+    // The status bar's optional armor number (statusbar.yaml `armor`)
+    static void DrawArmor()
+    {
+        if (viewsize == 21 && ingame) return;
+        LatchNumber("armor", gamestate.armor);
+    }
 
     /// <summary>Heals the player by <paramref name="points"/>, up to <paramref name="upTo"/> (their max health when null)</summary>
     internal static void HealSelf(int points, int? upTo = null)
@@ -1063,11 +1116,18 @@ internal partial class Program
     internal static void GiveStartingInventory()
     {
         _inventoryManager.Clear();
+        gamestate.armor = gamestate.armorpercent = 0;
 
         if (_inventoryManager.GetProperty(PlayerClass, "player.startitem") is IDictionary<object, object> items)
         {
             foreach (var (item, amount) in items)
-                _inventoryManager.Give(item.ToString() ?? "", Convert.ToInt32(amount));
+            {
+                // Armor isn't held: it's put on (the amount doesn't matter)
+                if (_inventoryManager.FindClass(item.ToString() ?? "", "Armor") is { } armor)
+                    TryGiveArmor(armor);
+                else
+                    _inventoryManager.Give(item.ToString() ?? "", Convert.ToInt32(amount));
+            }
         }
         else
             Console.WriteLine($"No player.startitem on actordefs class {PlayerClass}: the player starts with nothing.");

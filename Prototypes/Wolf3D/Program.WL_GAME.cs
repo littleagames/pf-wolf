@@ -478,6 +478,7 @@ internal partial class Program
 
         DrawFace();
         DrawHealth();
+        DrawArmor();
         DrawLives();
         DrawLevel();
         DrawAmmo();
@@ -863,6 +864,7 @@ internal partial class Program
                 DrawWeapon();
                 DrawAmmo();
                 DrawHealth();
+                DrawArmor();
                 DrawFace();
                 DrawLives();
             }

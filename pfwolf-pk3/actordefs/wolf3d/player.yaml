@@ -17,7 +17,7 @@ Player:
     # Played when the player dies, as enemies' deathsound is
     "deathsound": "player/death"
     # A new game's (and a respawn's) inventory: item: amount. The best weapon given
-    # (lowest weapon.selectionorder) is the one in hand.
+    # (lowest weapon.selectionorder) is the one in hand. An Armor class (native.yaml) is put on.
     "player.startitem":
       Knife: 1
       Pistol: 1
@@ -37,3 +37,5 @@ Player:
     # an item type names it (ClipBox for Clip)
     # "player.maxamount":
     #   Clip: 99
+    # The most armor points the player can have (left out: only each armor's own amount)
+    # "player.maxarmor": 200

@@ -23,7 +23,21 @@ Health:
     "inventory.amount": 1
     "inventory.maxamount": 0
     "inventory.pickupsound": "misc/health_pkup"
-    
+
+# Armor, as Doom's: the player has armor points, and each hit takes armor.savepercent of its
+# damage off them instead of health until they run out.
+#   armor.saveamount:    an armor's points; it's only picked up when the player has fewer, and
+#                        replaces their armor (points and savepercent) outright
+#   armor.savepercent:   how much of each hit it absorbs, 0-100
+#   armor.maxsaveamount: makes it a bonus instead: adds saveamount, up to this many, keeping the
+#                        armor the player has (or taking this savepercent when they have none)
+# The Player class's player.maxarmor caps them all. None of Wolf3D's items are armor.
+Armor:
+  parent: Inventory
+  properties:
+    "armor.saveamount": 100
+    "armor.savepercent": 33
+
 Key:
   parent: Inventory
   properties:

@@ -41,7 +41,8 @@ internal partial class Program
     // 8: a fourth map plane, wall heights moved from plane 2 to it (plane 2 is flats).
     // 9: the area count (mapdefs floors) ahead of the area tables.
     // 10: the player class, after the skill in gamestate.
-    private const int SaveVersion = 10;
+    // 11: armor points and percent, after health in gamestate.
+    private const int SaveVersion = 11;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the

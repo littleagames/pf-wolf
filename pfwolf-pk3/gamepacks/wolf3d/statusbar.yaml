@@ -5,8 +5,9 @@
 #   background:  pic, and height -- the 320x200 lines the bar takes from the bottom of the view
 #   border:      the view border color beside and around the picture (see below)
 #   numbers:     the font (fonts.yaml) and color of every number below, unless one has its own
-#   level, score, lives, health, ammo:
-#                numbers, right-aligned in `digits` digits (a longer number shows its last ones)
+#   level, score, lives, health, ammo, armor:
+#                numbers, right-aligned in `digits` digits (a longer number shows its last ones);
+#                Wolf3D's bar has no room for armor (actordefs Armor), so it has none
 #   face:        BJ's face: faces by health, dead, killed-by and grin (see below)
 #   keys:        the first key slot; each key's slot (actordefs key.statusbarslot) is `spacing`
 #                pixels below the one before

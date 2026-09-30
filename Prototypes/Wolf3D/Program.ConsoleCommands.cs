@@ -119,7 +119,7 @@ internal partial class Program
             complete: Values("0", "1", "2"));
         Register("noclip", "Walk through walls.", "noclip [0|1]", Cmd_Noclip, Cheat | InLevel,
             complete: Values("0", "1"));
-        Register("give", "Gives an item, or health, points, keys, weapons, ammo or all.",
+        Register("give", "Gives an item (weapon, ammo, key or armor), or health, points, keys, weapons, ammo or all.",
             "give <item|health|points|keys|weapons|ammo|all> [amount]", Cmd_Give, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["all", "health", "points", "keys", "weapons", "ammo", .. GivableItems()] : []);
         Register("map", "Warps to a level.", "map <MAP##>", Cmd_Map, Cheat | InLevel, aliases: ["warp"],
@@ -209,7 +209,7 @@ internal partial class Program
 
     /// <summary>The item classes `give` accepts by name (see GiveItem).</summary>
     static IEnumerable<string> GivableItems() =>
-        new[] { "Weapon", "Ammo", "Key" }
+        new[] { "Weapon", "Ammo", "Key", "Armor" }
             .SelectMany(_inventoryManager.GetClassesDerivedFrom)
             .Where(item => _inventoryManager.FindClass(item, "WeaponGiver") == null);
 
@@ -717,16 +717,21 @@ internal partial class Program
         DrawAmmo();
     }
 
-    /// <summary>Gives one named actordefs item: a key, some ammo or a weapon.</summary>
+    /// <summary>Gives one named actordefs item: a key, some ammo, a weapon or armor.</summary>
     static void GiveItem(string name, int amount)
     {
         // Health and treasure aren't held; they're applied on pickup, hence "give health/points".
         // A WeaponGiver only names the weapon to hand out, so it's never an item itself.
-        var item = _inventoryManager.FindClass(name, "Weapon", "Ammo", "Key");
+        var item = _inventoryManager.FindClass(name, "Weapon", "Ammo", "Key", "Armor");
         if (item == null || _inventoryManager.FindClass(item, "WeaponGiver") != null)
-            throw new ArgumentException($"\"{name}\" is not a weapon, ammo or key");
+            throw new ArgumentException($"\"{name}\" is not a weapon, ammo, key or armor");
 
-        if (_inventoryManager.FindClass(item, "Weapon") != null)
+        if (_inventoryManager.FindClass(item, "Armor") != null)
+        {
+            TryGiveArmor(item);
+            _consoleManager.Print($"Armor is {gamestate.armor} ({gamestate.armorpercent}%)");
+        }
+        else if (_inventoryManager.FindClass(item, "Weapon") != null)
         {
             // Goes through the pickup path so a better weapon also gets selected.
             TryGiveWeapon(item, 0);
@@ -904,7 +909,7 @@ internal partial class Program
     private static void Cmd_Hurt(string[] args)
     {
         TakeDamage(args.Length > 0 ? ParseInt(args[0], 1, 1000) : 16, null!);
-        _consoleManager.Print($"Health is {gamestate.health}");
+        _consoleManager.Print($"Health is {gamestate.health}, armor {gamestate.armor} ({gamestate.armorpercent}%)");
     }
 
     private static void Cmd_Where(string[] args)

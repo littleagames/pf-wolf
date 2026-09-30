@@ -103,6 +103,8 @@ internal class gametype
     public int oldscore, score, nextextra;
     public short lives;
     public short health;
+    // Armor points, and how much of each hit (0-100%) they absorb
+    public short armor, armorpercent;
     // The weapon in hand and the one the player picked, as held inventory item types (actordefs
     // Weapon classes, e.g. "Pistol"). They differ while out of ammo forces a fallback; null
     // means no weapon (dead).
@@ -133,6 +135,8 @@ internal class gametype
         nextextra = br.ReadInt32(),
         lives = br.ReadInt16(),
         health = br.ReadInt16(),
+        armor = br.ReadInt16(),
+        armorpercent = br.ReadInt16(),
         weapon = ReadWeapon(br),
         chosenweapon = ReadWeapon(br),
         faceframe = br.ReadInt16(),
@@ -160,6 +164,8 @@ internal class gametype
         bw.Write(nextextra);
         bw.Write(lives);
         bw.Write(health);
+        bw.Write(armor);
+        bw.Write(armorpercent);
         bw.Write(weapon ?? "");
         bw.Write(chosenweapon ?? "");
         bw.Write(faceframe);
