@@ -151,6 +151,7 @@ internal partial class Program
                 // Every actor lives in _mapManager._actors. The player is at its head, so it still
                 // thinks before every enemy, projectile and the BJ-victory actor.
                 _mapManager.DoActors(tics);
+                TickZoneLights(tics);       // light zones' fades and effects (Program.ZoneLights.cs)
 
                 _videoManager.UpdatePaletteShifts(tics);
                 _hudMessageManager.Tick((int)tics);

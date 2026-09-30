@@ -129,6 +129,15 @@ walls:
     #                        they spawn on) go to their Active / Inactive state, e.g.
     #                        SwitchLight in actordefs decorations.
     #                        The switch's own tile is never a target, though it has the tag.
+    #                        Light zone actions name their zone (plane 5), not a tag; actor
+    #                        states can run them too:
+    #                        A_SetZoneLight(zone, light, [tics], [color]): fades the zone to
+    #                        light (0-255) over tics (left out: at once); color #RRGGBB tints
+    #                        it, "none" takes the tint off, left out keeps it.
+    #                        A_ToggleZoneLight(zone, light1, light2, [tics]): to light2 if
+    #                        it's at (or going to) light1, else to light1.
+    #                        A_SetZoneEffect(zone, effect): none, flicker, pulse or strobe,
+    #                        timed as the zone's game-info low, tics and bright-tics.
     '21':
         North: ELEV1_1
         South: ELEV1_1

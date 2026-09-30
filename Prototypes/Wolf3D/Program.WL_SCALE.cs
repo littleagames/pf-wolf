@@ -20,11 +20,12 @@ internal partial class Program
     =
     = Draws one column of a sprite's indexed bitmap, scaling its rows onto
     = the screen column at x. Rows whose OpacityMask entry is 0 are skipped.
+    = Each color is remapped through shade from shadeofs (Program.WL_SHADE.cs).
     =
     ===================
     */
 
-    internal static void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column)
+    internal static void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column, byte[] shade, int shadeofs)
     {
         int height = sprite.Height;
         int width = sprite.Width;
@@ -58,7 +59,7 @@ internal partial class Program
             if (mask[srcIndex] == 0)
                 continue;                       // transparent pixel
 
-            byte color = indices[srcIndex];
+            byte color = shade[shadeofs + indices[srcIndex]];
 
             var destIndex = _videoManager.ylookup[startpix] + x;
             unsafe
@@ -104,6 +105,9 @@ internal partial class Program
         xcenter = sprite.viewx - height;
         toppix = centery - height;
 
+        byte[] shade = sprite.bright ? noshade : TileLight(sprite.tilex, sprite.tiley);
+        int shadeofs = sprite.bright ? 0 : ShadeOffsetForHeight(sprite.viewheight);
+
         x2 = xcenter;
 
         for (int i = 0; i < spriteAsset.Width; i++)
@@ -132,7 +136,7 @@ internal partial class Program
             {
                 if (wallheight[x1] < sprite.viewheight)
                 {
-                    ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i);
+                    ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, shadeofs);
                 }
 
                 x1++;
@@ -147,12 +151,14 @@ internal partial class Program
     =
     = NO CLIPPING, height in pixels
     =
-    = Draws a sprite's indexed bitmap at [height] pixels high
+    = Draws a sprite's indexed bitmap at [height] pixels high, through shade
+    = (unshaded when left out)
     =
     ===================
     */
-    internal static void SimpleScaleShape (int dispx, string shapenum, int dispheight)
+    internal static void SimpleScaleShape (int dispx, string shapenum, int dispheight, byte[]? shade = null)
     {
+        shade ??= noshade;
         int height, toppix;
         int x1, x2, xcenter;
         int frac, fracstep;
@@ -183,7 +189,7 @@ internal partial class Program
 
             while (x1 < x2)
             {
-                ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i);
+                ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, 0);
 
                 x1++;
             }

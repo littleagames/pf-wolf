@@ -5,6 +5,36 @@ default-map:
   # doesn't give one; left out, those tiles keep the colors above. Also settable per map.
   # default-floor: FLOOR1
   # default-ceiling: CEIL1
+  # Distance shading, also settable per map (each value a map leaves out comes from here).
+  # Left out on both, levels aren't shaded. The sky is never shaded; a state with
+  # `modifiers: [bright]` (or an actor with the bright flag) is drawn at full light.
+  #   fade-color: #RRGGBB the view fades toward with distance: black for night, grey for fog (default #000000)
+  #   fade-start: tiles away, along the view, the fade starts (default 0)
+  #   fade-end:   tiles away it reaches max-fade (default 16)
+  #   max-fade:   percent toward fade-color at fade-end and beyond (default 100)
+  #   light:      light everywhere, 0 (black) to 255 (full, the default)
+  # shading:
+  #   fade-color: "#000000"
+  #   fade-start: 2
+  #   fade-end: 20
+  # Light zones, also settable per map (a map's zone takes each value it leaves out from the
+  # zone of the same id here). A tile's zone is its value on plane 5 (0: none, the level's
+  # light). Walls take the light of the tile they're seen from, floors and ceilings their
+  # own tile's, sprites the tile they're on. Distance still fades zones as shading says.
+  #   light: 0 (black) to 255 (full, the default)
+  #   color: #RRGGBB the light is tinted with (default white: no tint)
+  #   effect: none (default), flicker (jumps between low and the light at random, up to tics
+  #           apart), pulse (glows down to low and back every tics) or strobe (the light for
+  #           bright-tics, then low, every tics)
+  #   low: the effect's dark end, 0-255 (default half the light)
+  #   tics: the effect's timing, 70 a second (default flicker 8, pulse 70, strobe 35)
+  #   bright-tics: how long a strobe stays at the light (default 5)
+  # Switches and actor states change zones as the level is played (A_SetZoneLight,
+  # A_ToggleZoneLight, A_SetZoneEffect: see mapdefs walls.yaml), and saves keep them.
+  # zones:
+  #   1: { light: 70 }                          # a dim room
+  #   2: { light: 255, color: "#FF4040" }       # red emergency lighting
+  #   3: { light: 200, effect: flicker, low: 120 }   # a failing lamp
 
 signon:
   pic: wolf3d-signon

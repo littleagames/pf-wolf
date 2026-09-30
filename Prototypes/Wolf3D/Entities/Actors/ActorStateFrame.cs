@@ -12,6 +12,11 @@ internal class ActorStateFrame
     public short TicTime { get; init; }
     public bool HoldsForever => TicTime < 0;
     public List<string> Modifiers { get; init; } = [];
+
+    // The "bright" modifier: the frame is drawn at full light, unshaded
+    private bool? _bright;
+    public bool Bright => _bright ??= Modifiers.Contains("bright", StringComparer.OrdinalIgnoreCase);
+
     public string? Think { get; init; }
     public string? Action { get; init; }
     public ActorStateFrame? Next { get; internal set; }

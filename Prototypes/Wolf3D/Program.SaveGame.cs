@@ -23,7 +23,7 @@ internal partial class Program
 
     The body holds the game (gamestate, level ratios, inventory) and the level as
     it stands (MapManager.WriteLevelState, then doors, area connections, the
-    moving pushwall and the automap's seen tiles). Nothing is restored until the whole file has been read and
+    moving pushwall, the automap's seen tiles, the weapon and the light zones). Nothing is restored until the whole file has been read and
     checked against the current map and actordefs, so a save that can't be loaded
     leaves the game as it was.
 
@@ -44,7 +44,9 @@ internal partial class Program
     // 11: armor points and percent, after health in gamestate.
     // 12: a fifth map plane (tags), each actor's tag after its tile, and whether each door is
     //     held open by a switch.
-    private const int SaveVersion = 12;
+    // 13: a sixth map plane (light zones).
+    // 14: the light zones' lights, tints, fades and effects, at the end.
+    private const int SaveVersion = 14;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the
@@ -304,6 +306,8 @@ internal partial class Program
         bw.Write(weapon != null);
         if (weapon != null)
             Entities.Actors.ActorSnapshot.Capture(weapon).Write(bw);
+
+        WriteZoneLights(bw);
     }
 
     /// <summary>Everything a save's body holds, read without changing any game state.</summary>
@@ -323,7 +327,8 @@ internal partial class Program
         byte PwallTile,
         int LastAttacker,
         byte[] Seen,
-        Entities.Actors.ActorSnapshot? Weapon);
+        Entities.Actors.ActorSnapshot? Weapon,
+        Dictionary<int, ZoneState> Zones);
 
     private static SaveGameData ReadSaveBody(BinaryReader br)
     {
@@ -366,7 +371,8 @@ internal partial class Program
             PwallTile: br.ReadByte(),
             LastAttacker: br.ReadInt32(),
             Seen: ReadExactly(br, MapManager.MAPAREA),
-            Weapon: br.ReadBoolean() ? Entities.Actors.ActorSnapshot.Read(br) : null);
+            Weapon: br.ReadBoolean() ? Entities.Actors.ActorSnapshot.Read(br) : null,
+            Zones: ReadZoneLights(br));
     }
 
     // BinaryReader.ReadBytes quietly returns fewer bytes at the end of the stream.
@@ -503,6 +509,7 @@ internal partial class Program
         pwalltile = data.PwallTile;
 
         _mapManager.SetSeenBytes(data.Seen);
+        RestoreZoneLights(data.Zones);
 
         LastAttacker = data.LastAttacker >= 0 && data.LastAttacker < actors.Count ? actors[data.LastAttacker] : null;
         facetimes = 0;

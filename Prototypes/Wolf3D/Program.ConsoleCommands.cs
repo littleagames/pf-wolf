@@ -139,6 +139,18 @@ internal partial class Program
             $"wallheight [1-{MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
         Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
             "sky [name|none]", Cmd_Sky, InLevel);
+        Register("fog", "Fades the view toward a color with distance, from start to end tiles away, up to max percent, until the level is left or reloaded; none for no shading.",
+            "fog [#RRGGBB|none] [start] [end] [max 0-100]", Cmd_Fog, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? ["none", "#000000", "#707070"] : []);
+        Register("light", "Sets the level's light, 0 (black) to 255 (full), until the level is left or reloaded.",
+            "light [0-255]", Cmd_Light, Cheat | InLevel);
+        Register("zone", "Shows or sets the light zone (plane 5) of the tile you stand on, a tile, or a rectangle of tiles; 0 takes them out of any zone.",
+            "zone [0-65535 [tilex tiley [tilex2 tiley2]]]", Cmd_Zone, Cheat | InLevel);
+        Register("zonelight", "Lists the level's light zones, or shows or sets how one is lit (light 0-255, optional #RRGGBB tint or none, optional fade tics; none as the light removes the zone).",
+            "zonelight [zone [0-255|none] [#RRGGBB|none] [tics]]", Cmd_ZoneLight, Cheat | InLevel);
+        Register("zoneeffect", "Makes a light zone flicker, pulse or strobe (none stops it), down to low, timed in tics (70 a second).",
+            "zoneeffect <zone> <none|flicker|pulse|strobe> [low 0-255] [tics] [bright-tics]", Cmd_ZoneEffect, Cheat | InLevel,
+            complete: (_, i) => i == 1 ? ["none", "flicker", "pulse", "strobe"] : []);
         Register("height","Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height. On open floor, 2 or more makes an arch.",
             $"height <0-{MAXWALLSTORIES}> [tilex tiley]", Cmd_Height, Cheat | InLevel);
         Register("tag", "Shows or sets a tile's tag on the tag plane (default: the one you face), and the tag of any actors on it; 0 clears it.",
@@ -945,6 +957,93 @@ internal partial class Program
         _consoleManager.Print($"Default floor: {_mapManager.DefaultFloor ?? "(color)"}  ceiling: {_mapManager.DefaultCeiling ?? "(color)"}");
     }
 
+    private static void Cmd_Zone(string[] args)
+    {
+        if (args.Length is 2 or 4 or > 5)
+            throw new ArgumentException("usage: zone [0-65535 [tilex tiley [tilex2 tiley2]]]");
+
+        // the tile stood on, one given, or a rectangle between two
+        var (x1, y1) = args.Length >= 3 ? TileArg(args, 1) : (player.TileX, player.TileY);
+        var (x2, y2) = args.Length == 5 ? TileArg(args, 3) : (x1, y1);
+        if (args.Length > 0)
+        {
+            var zone = (ushort)ParseInt(args[0], 0, ushort.MaxValue);
+            for (int y = Math.Min(y1, y2); y <= Math.Max(y1, y2); y++)
+                for (int x = Math.Min(x1, x2); x <= Math.Max(x1, x2); x++)
+                    _mapManager.SetZone(x, y, zone);
+        }
+
+        int shown = _mapManager.GetZone(x1, y1);
+        var tiles = (x1, y1) == (x2, y2) ? $"Tile {x1},{y1}" : $"Tiles {x1},{y1} to {x2},{y2}";
+        _consoleManager.Print($"{tiles}: zone {shown} ({DescribeZone(shown)})");
+    }
+
+    private static void Cmd_ZoneLight(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            if (levelzones.Count == 0)
+                _consoleManager.Print("The level has no light zones");
+            foreach (var id in levelzones.Keys.Order())
+                _consoleManager.Print($"Zone {id}: {DescribeZone(id)}");
+            return;
+        }
+
+        int zone = ParseInt(args[0], 1, ushort.MaxValue);
+        if (args.Length > 1)
+        {
+            if (args[1].Equals("none", StringComparison.OrdinalIgnoreCase))
+                RemoveZone(zone);
+            else
+            {
+                int light = ParseInt(args[1], 0, 255);
+                if (args.Length > 2)
+                {
+                    if (args[2].Equals("none", StringComparison.OrdinalIgnoreCase))
+                        SetZoneColor(zone, null);
+                    else if (IsRgb(args[2]))
+                        SetZoneColor(zone, args[2]);
+                    else
+                        throw new ArgumentException($"expected a #RRGGBB color or none, got \"{args[2]}\"");
+                }
+                FadeZoneLight(zone, light, args.Length > 3 ? ParseInt(args[3], 0, 7000) : 0);
+            }
+        }
+        _consoleManager.Print($"Zone {zone}: {DescribeZone(zone)}");
+    }
+
+    private static void Cmd_ZoneEffect(string[] args)
+    {
+        if (args.Length < 2 || !TryParseZoneEffect(args[1], out var effect))
+            throw new ArgumentException("usage: zoneeffect <zone> <none|flicker|pulse|strobe> [low 0-255] [tics] [bright-tics]");
+
+        int zone = ParseInt(args[0], 1, ushort.MaxValue);
+        var state = ZoneFor(zone);
+        if (args.Length > 2) state.LowSetting = ParseInt(args[2], 0, 255);
+        if (args.Length > 3) state.TicsSetting = ParseInt(args[3], 1, 7000);
+        if (args.Length > 4) state.BrightTics = ParseInt(args[4], 0, 7000);
+        SetZoneEffect(zone, effect);
+        _consoleManager.Print($"Zone {zone}: {DescribeZone(zone)}");
+    }
+
+    static string DescribeZone(int zone)
+    {
+        if (zone == 0)
+            return $"the level's light, {levelshading?.Light ?? 255}";
+        if (!levelzones.TryGetValue(zone, out var z))
+            return "not in the map's zones: the level's light";
+
+        var text = $"light {z.Light}";
+        if (z.FadeLeft > 0)
+            text += $" (fading, now {z.BaseLight}, {z.FadeLeft} tics to go)";
+        if (z.Color != null)
+            text += $", tinted {z.Color}";
+        if (z.Effect != ZoneEffect.None)
+            text += $", {z.Effect.ToString().ToLowerInvariant()} to {z.Low} every {z.Tics} tics"
+                + (z.Effect == ZoneEffect.Strobe ? $" ({z.BrightTics} bright)" : "");
+        return text;
+    }
+
     private static void Cmd_KillAll(string[] args)
     {
         // Snapshot first: KillActor can drop items, which adds to the actor list.
@@ -1009,6 +1108,9 @@ internal partial class Program
             + $"(plane 2: {_mapManager.MAPSPOT(x, y, MapManager.FLATPLANE)})");
 
         _consoleManager.Print($"tags (plane 4): tile {_mapManager.GetTag(x, y)}  faced tile {fx},{fy}: {_mapManager.GetTag(fx, fy)}");
+
+        int zone = _mapManager.GetZone(x, y);
+        _consoleManager.Print($"light zone (plane 5): {zone} ({DescribeZone(zone)})");
     }
 
     private static void Cmd_Count(string[] args)
@@ -1251,6 +1353,46 @@ internal partial class Program
             levelsky = name;
         }
         _consoleManager.Print(levelsky == null ? "No sky: the ceiling is a color" : $"Sky: {levelsky}");
+    }
+
+    // The level's shading, or what shading starts from when it has none
+    static ShadingSettings CurrentShading => levelshading ?? new ShadingSettings("#000000", 0, 16, 0, 255);
+
+    private static void Cmd_Fog(string[] args)
+    {
+        if (args.Length > 0 && args[0].Equals("none", StringComparison.OrdinalIgnoreCase))
+            SetShading(null);
+        else if (args.Length > 0)
+        {
+            var color = args[0];
+            try { Entities.Color.FromHexRGBA(color); }
+            catch (Exception) { throw new ArgumentException($"expected a #RRGGBB color, got \"{color}\""); }
+
+            var s = CurrentShading with { FadeColor = color, MaxFade = 100 };
+            if (args.Length > 1) s = s with { FadeStart = ParseTiles(args[1]) };
+            if (args.Length > 2) s = s with { FadeEnd = ParseTiles(args[2]) };
+            if (args.Length > 3) s = s with { MaxFade = ParseInt(args[3], 0, 100) };
+            SetShading(s);
+        }
+
+        _consoleManager.Print(levelshading is { MaxFade: > 0 } f
+            ? $"Fog: {f.FadeColor} from {f.FadeStart} to {f.FadeEnd} tiles, up to {f.MaxFade}%"
+            : "No fog");
+    }
+
+    private static void Cmd_Light(string[] args)
+    {
+        if (args.Length > 0)
+            SetShading(CurrentShading with { Light = ParseInt(args[0], 0, 255) });
+        _consoleManager.Print($"Light: {levelshading?.Light ?? 255}");
+    }
+
+    static double ParseTiles(string arg)
+    {
+        if (!double.TryParse(arg, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var tiles)
+            || tiles < 0 || tiles > MapManager.MAPSIZE)
+            throw new ArgumentException($"expected a number of tiles from 0 to {MapManager.MAPSIZE}, got \"{arg}\"");
+        return tiles;
     }
 
     private static void Cmd_Fps(string[] args)
