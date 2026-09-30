@@ -47,6 +47,7 @@ $STR_VIDEOFAILED: "That video mode\nisn't available."
 
 $STR_WHICHEPISODE: "Which episode to play?"
 $STR_HOWTOUGH: "How tough are you?"
+$STR_WHICHCLASS: "Who will you play as?"
 $STR_LOADING: "Loading"
 $STR_SAVING: "Saving"
 

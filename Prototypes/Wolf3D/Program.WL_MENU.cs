@@ -43,6 +43,7 @@ internal partial class Program
     internal static CP_itemtype[] JoyMenu = [];
     internal static CP_itemtype[] NewEmenu = [];
     internal static CP_itemtype[] NewMenu = [];
+    internal static CP_itemtype[] ClassMenu = [];
 
     internal static CP_itemtype[] MusicMenu = [];
     // The jukebox shows one page of songs at a time
@@ -57,6 +58,7 @@ internal partial class Program
     internal static CP_iteminfo JoyItems;
     internal static CP_iteminfo NewEitems;
     internal static CP_iteminfo NewItems;
+    internal static CP_iteminfo ClassItems;
     internal static CP_iteminfo MusicItems;
     static string[] color_hlite =
     {
@@ -814,8 +816,11 @@ internal partial class Program
         int which;
         MapInfo? mapInfo = null;
         EpisodeInfo? episodeInfo = null;
+        // Episode, then class (only when there's a choice), then skill; Esc steps back one
+        bool chooseClass = ClassMenu.Length > 1;
+        string? playerClass = null;
 
-        // A game with one episode (Spear) has no episode menu: straight to the difficulty menu
+        // A game with one episode (Spear) has no episode menu: straight to the class or difficulty menu
         var episodes = _gameEngineManager.GetGameInfo().Episodes;
         bool singleEpisode = episodes.Count == 1;
         if (singleEpisode)
@@ -830,7 +835,7 @@ internal partial class Program
                 MenuFadeOut();
                 return 0;
             }
-            goto difficulty;
+            goto confirm;
         }
 
     firstpart:
@@ -878,7 +883,7 @@ internal partial class Program
 
         ShootSnd();
 
-    difficulty:
+    confirm:
         //
         // ALREADY IN A GAME?
         //
@@ -889,11 +894,31 @@ internal partial class Program
                 return 0;
             }
 
+    classpart:
+        if (chooseClass)
+        {
+            MenuFadeOut();
+            DrawNewClass();
+            which = HandleMenu(ClassItems, ClassMenu, DrawNewClassPic);
+            if (which < 0)
+            {
+                MenuFadeOut();
+                if (singleEpisode)
+                    return 0;
+                goto firstpart;
+            }
+
+            playerClass = ((PlayerClassChoice)ClassMenu[which].data!).Class;
+            ShootSnd();
+        }
+
         MenuFadeOut();
         DrawNewGame();
         which = HandleMenu(NewItems, NewMenu, DrawNewGameDiff);
         if (which < 0)
         {
+            if (chooseClass)
+                goto classpart;
             MenuFadeOut();
             if (singleEpisode)
                 return 0;
@@ -902,7 +927,7 @@ internal partial class Program
 
         ShootSnd();
 
-        NewGame((short)which, episodeInfo, mapInfo);     // one menu item per skill, in order
+        NewGame((short)which, episodeInfo, mapInfo, playerClass);     // one menu item per skill, in order
         StartGame = 1;
         MenuFadeOut();
 
@@ -947,6 +972,28 @@ internal partial class Program
         // Face picture for the highlighted skill (pic-name in game-info)
         if (w >= 0 && w < NewMenu.Length && NewMenu[w].data is SkillInfo skill)
             _graphicManager.DrawPic(skill.PicName, NewItems.x + 185, NewItems.y + 7);
+    }
+
+    /// <summary>A class menu item: the actordefs class and its picture (game-info pic-name)</summary>
+    internal sealed record PlayerClassChoice(string Class, string? PicName);
+
+    internal static void DrawNewClass()
+    {
+        DrawMenuComponents("new-class");
+        DrawMenu(ClassItems, ClassMenu);
+        DrawNewClassPic(ClassItems.curpos);
+        _videoManager.Update();
+        MenuFadeIn();
+        WaitKeyUp();
+    }
+
+    internal static void DrawNewClassPic(int w)
+    {
+        // The highlighted class's picture; pictures can differ in size, so the last one is cleared first
+        int x = ClassItems.x + 175, y = ClassItems.y - 6;
+        _videoManager.Bar(x, y, 96, 100, "BKGDCOLOR");
+        if (w >= 0 && w < ClassMenu.Length && ClassMenu[w].data is PlayerClassChoice { PicName: { Length: > 0 } pic })
+            _graphicManager.DrawPic(pic, x, y);
     }
 
     /// <summary>
@@ -2025,6 +2072,7 @@ internal partial class Program
         customizeRows = LoadCustomizeRows();
         (NewEmenu, NewEitems) = LoadMenu("new-episode");
         (NewMenu, NewItems) = LoadMenu("new-game");
+        (ClassMenu, ClassItems) = LoadMenu("new-class");
 
         (MusicMenu, MusicItems) = LoadMenu("jukebox");
         MusicItems.amount = (short)Math.Min(JukeboxPageSize, MusicMenu.Length);
@@ -2105,6 +2153,15 @@ internal partial class Program
                 return gameInfo.Skills.Values
                     .Select(skill => new CP_itemtype(1, skill.Name.ToLanguageText(language), null, skill))
                     .ToArray();
+
+            case "player-classes":
+                // Named by game-info, else by the class's tag (the name obituaries use), else the class
+                return PlayerClasses().Select(playerClass =>
+                {
+                    var info = gameInfo.PlayerClasses.FirstOrDefault(c => string.Equals(c.Key, playerClass, StringComparison.OrdinalIgnoreCase)).Value;
+                    var name = info?.Name ?? _inventoryManager.GetStringProperty(playerClass, "tag") ?? playerClass;
+                    return new CP_itemtype(1, name.ToLanguageText(language), null, new PlayerClassChoice(playerClass, info?.PicName));
+                }).ToArray();
 
             case "mods":
                 return BuildModsPage();

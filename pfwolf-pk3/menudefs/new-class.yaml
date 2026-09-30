@@ -1,0 +1,36 @@
+music: "WONDERIN"
+type: "wolf3d-menu"
+position:
+  x: 25
+  y: 62
+indent: 24
+# One item per class in game-info's player-classes (name and pic-name come from there); only
+# shown when there's more than one. Room for seven. The highlighted class's picture is drawn
+# 175 right of the position, in up to 96x100.
+items-source: "player-classes"
+default-selection: 0
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Label"
+    params:
+      - text: "$STR_WHICHCLASS"
+      - horizontal-orientation: "center"
+      - y: 36
+      - color: "READHCOLOR"
+  -
+    type: "Window"
+    params:
+      - x: 20
+      - y: 52
+      - width: 280
+      - height: 111
