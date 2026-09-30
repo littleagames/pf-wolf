@@ -127,6 +127,12 @@ internal record GameInfoAsset : Asset
     /// </summary>
     public int ExtraLifeScore { get; init; }
 
+    /// <summary>
+    /// The skill (a key in skills) demos are recorded and played back on; the hardest (last)
+    /// one when unset. A demo only replays right on the skill it was recorded on.
+    /// </summary>
+    public string? DemoSkill { get; init; }
+
     public override void Merge(Asset other)
     {
         // TODO: Overwrite or merge the data
@@ -274,14 +280,23 @@ internal record DefaultMapInfo
     public string? DefaultCeiling { get; init; } = null;
 }
 
+/// <summary>
+/// A skill in game-info's skills, which are listed easiest first. A skill's place in that list
+/// (0 for the first) is what saves record and what mapdefs min-skill compares against.
+/// </summary>
 internal record SkillInfo
 {
     public string Name { get; init; } = null!;
     public string PicName { get; init; } = null!;
 
-    // Not sure if I want the filtering of things here, or each tile would hold that info
-    // or this would be a category that both things listen to a spawnfilters list
-    public List<int> SpawnFilter { get; init; } = [];
+    /// <summary>How much of the damage the player is dealt they take (default 1; the easiest skill's 0.25)</summary>
+    public float DamageTaken { get; init; } = 1;
+
+    /// <summary>
+    /// The actordefs property enemies take their health from on this skill (e.g. health.normal);
+    /// an enemy without it, or a skill without one, uses the enemy's plain `health`
+    /// </summary>
+    public string? EnemyHealth { get; init; }
 }
 
 internal record EpisodeInfo

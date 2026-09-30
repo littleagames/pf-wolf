@@ -459,7 +459,29 @@ internal partial class Program
         }
     }
 
-    internal static void NewGame(difficultytypes difficulty, EpisodeInfo epInfo, MapInfo mapInfo)
+    /// <summary>The skill being played (game-info skills, by gamestate.difficulty); an ordinary one if it's missing</summary>
+    internal static SkillInfo CurrentSkill =>
+        _gameEngineManager.GetGameInfo().Skills.Values.ElementAtOrDefault(gamestate.difficulty) ?? new SkillInfo();
+
+    /// <summary>
+    /// The skill demos are recorded and played back on (they only replay right on the skill they
+    /// were made on): game-info's demo-skill, else the hardest (last) skill
+    /// </summary>
+    internal static short DemoSkill
+    {
+        get
+        {
+            var gameInfo = _gameEngineManager.GetGameInfo();
+            var keys = gameInfo.Skills.Keys.ToList();
+            var index = gameInfo.DemoSkill == null ? -1
+                : keys.FindIndex(k => k.Equals(gameInfo.DemoSkill, StringComparison.OrdinalIgnoreCase));
+            if (index < 0 && gameInfo.DemoSkill != null)
+                Console.WriteLine($"game-info demo-skill '{gameInfo.DemoSkill}' isn't one of the skills; using the hardest");
+            return (short)(index >= 0 ? index : Math.Max(keys.Count - 1, 0));
+        }
+    }
+
+    internal static void NewGame(short difficulty, EpisodeInfo epInfo, MapInfo mapInfo)
     {
         gamestate = new gametype();
         LevelRatios = [];       // the win tally averages only this game's floors

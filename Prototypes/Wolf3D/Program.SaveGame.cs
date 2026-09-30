@@ -149,7 +149,7 @@ internal partial class Program
     private static SaveInfo CurrentSaveInfo(string path, string name)
     {
         var language = _assetManager.GetText("en-us");
-        var skill = _gameEngineManager.GetGameInfo().Skills.Values.ElementAtOrDefault((int)gamestate.difficulty);
+        var skill = _gameEngineManager.GetGameInfo().Skills.Values.ElementAtOrDefault(gamestate.difficulty);
 
         return new SaveInfo
         {
@@ -612,7 +612,7 @@ internal sealed record SaveInfo
     public string GamePack { get; init; } = "";
     public string MapOn { get; init; } = "";
     public string MapName { get; init; } = "";
-    public difficultytypes Difficulty { get; init; }
+    public short Difficulty { get; init; }      // the skill's place in game-info's skills
     public string SkillName { get; init; } = "";
     public int LevelTime { get; init; }         // tics on this level
     public int PlayTime { get; init; }          // tics since the game began
@@ -696,7 +696,7 @@ internal sealed record SaveInfo
             GamePack = br.ReadString(),
             MapOn = br.ReadString(),
             MapName = br.ReadString(),
-            Difficulty = (difficultytypes)br.ReadInt16(),
+            Difficulty = br.ReadInt16(),
             SkillName = br.ReadString(),
             LevelTime = br.ReadInt32(),
             PlayTime = br.ReadInt32(),

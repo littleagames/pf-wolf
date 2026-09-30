@@ -227,7 +227,7 @@ internal partial class Program
         demoptr = 0;
 
         // id's header: the floor in the first episode (0 = MAP01), a 16-bit length counting the
-        // header, and a pad byte. Every demo plays on the hardest skill, as id's did.
+        // header, and a pad byte. Every demo plays on game-info's demo-skill (the hardest, as id's did).
         if (demoData.Length < 4)
             return;
 
@@ -241,7 +241,7 @@ internal partial class Program
         if (lastdemoptr - demoptr < 3)
             return;
 
-        NewGame(difficultytypes.gd_hard, new EpisodeInfo { StartMap = mapName }, mapInfo);
+        NewGame(DemoSkill, new EpisodeInfo { StartMap = mapName }, mapInfo);
 
         _videoManager.FadeOut();
 
@@ -437,7 +437,7 @@ internal partial class Program
     }
 
     /// <summary>
-    /// Records a demo of MAP<paramref name="level"/> on the hardest skill until the level ends, then
+    /// Records a demo of MAP<paramref name="level"/> on game-info's demo-skill until the level ends, then
     /// saves it as <paramref name="demonumber"/>, or asks for a number when none is given
     /// </summary>
     internal static void RecordDemo(int level, int? demonumber = null)
@@ -445,7 +445,7 @@ internal partial class Program
         var gameInfo = _gameEngineManager.GetGameInfo();
         var mapName = $"MAP{level:D2}";
         _videoManager.FadeOut();
-        NewGame(difficultytypes.gd_hard, new EpisodeInfo { StartMap = mapName }, gameInfo.Maps[mapName]);
+        NewGame(DemoSkill, new EpisodeInfo { StartMap = mapName }, gameInfo.Maps[mapName]);
         StartDemoRecord(level - 1);
 
         DrawPlayScreen();
@@ -650,7 +650,7 @@ internal partial class Program
         // load the level
         //
         //int mapnum = gamestate.mapon + 10 * gamestate.cluster;
-        _mapManager.LoadMap(gamestate.mapon, (int)gamestate.difficulty);
+        _mapManager.LoadMap(gamestate.mapon, gamestate.difficulty, CurrentSkill.EnemyHealth);
 
         // The cluster follows the map, however it was reached: a new game, the next/secret
         // level, a map-change trigger or the console's "map" warp

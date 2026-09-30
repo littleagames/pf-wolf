@@ -78,6 +78,7 @@ internal class MapManager
     internal Entities.Actors.PlayerPawn? Player { get; private set; }
 
     private int _difficulty;
+    private string? _enemyHealthKey;
 
     public MapManager(Lazy<AssetManager> assetManager)
     {
@@ -169,9 +170,12 @@ internal class MapManager
     /// <summary>The plane 0 floor codes, from the mapdefs floors.</summary>
     internal FloorCodes Floors => _floors ??= FloorCodes.From(GetMapData().Floors);
 
-    public void LoadMap(string mapName, int difficulty)
+    /// <param name="difficulty">The skill's place in game-info's skills (mapdefs min-skill compares against it)</param>
+    /// <param name="enemyHealth">The skill's enemy-health: the actordefs property enemies' health comes from</param>
+    public void LoadMap(string mapName, int difficulty, string? enemyHealth = null)
     {
         _difficulty = difficulty;
+        _enemyHealthKey = enemyHealth;
         _floors = null; // read again, in case the mapdefs changed
 
         var mapAsset = assetManager.Value.Find<MapAsset>(mapName);
@@ -456,9 +460,9 @@ internal class MapManager
 
     public void SpawnThing(int tilex, int tiley, MapActorTranslation thing)
     {
-        // MinSkill gates enemy availability by difficulty (the legacy
-        // ScanInfoPlane checked `gamestate.difficulty < difficultytypes.gd_medium/gd_hard`
-        // per tile-number range); always 0 for decorations/pickups, so this is a no-op there.
+        // MinSkill gates enemy availability by skill (its place in game-info's skills, as the
+        // legacy ScanInfoPlane's gd_medium/gd_hard checks per tile-number range); always 0 for
+        // decorations/pickups, so this is a no-op there.
         if (thing.MinSkill > _difficulty)
             return;
 
@@ -647,15 +651,12 @@ internal class MapManager
             ? RuntimeActorMetadata.CreateActor(className, actor)
             : null;
 
-    private static readonly string[] DifficultyHealthKeys = ["health.baby", "health.easy", "health.normal", "health.hard"];
-
-    // Difficulty-scaled health: "health.baby"/"health.easy"/"health.normal"/"health.hard" for
-    // enemies whose hitpoints vary by skill (Program.WL_ACT2.cs's starthitpoints table), or a
-    // flat "health" for the rest. _difficulty is difficultytypes' ordinal (0=baby..3=hard).
+    // Skill-scaled health: the property the skill's enemy-health names (e.g. "health.normal"),
+    // for enemies whose hitpoints vary by skill (vanilla's starthitpoints table), or a flat
+    // "health" for the rest.
     private short GetScaledHealth(Entities.Actors.Actor actor)
     {
-        var key = DifficultyHealthKeys[Math.Clamp(_difficulty, 0, 3)];
-        if (actor.Properties.TryGetValue(key, out var scaled))
+        if (!string.IsNullOrEmpty(_enemyHealthKey) && actor.Properties.TryGetValue(_enemyHealthKey, out var scaled))
             return (short)Convert.ToInt32(scaled);
 
         return actor.Properties.TryGetValue("health", out var flat) ? (short)Convert.ToInt32(flat) : (short)0;

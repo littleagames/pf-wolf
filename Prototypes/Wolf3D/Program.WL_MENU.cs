@@ -902,7 +902,7 @@ internal partial class Program
 
         ShootSnd();
 
-        NewGame((difficultytypes)which, episodeInfo, mapInfo);
+        NewGame((short)which, episodeInfo, mapInfo);     // one menu item per skill, in order
         StartGame = 1;
         MenuFadeOut();
 

@@ -45,23 +45,34 @@ hud-messages:
   lock-style: Center
   obituary-style: Obituary
 
+# The skills, easiest first, as the New Game menu lists them. A skill's place here (0 for the
+# first) is what saves record and what mapdefs min-skill compares against.
+#   name, pic-name: the menu's text and face picture
+#   damage-taken:   how much of the damage the player is dealt they take (left out: 1)
+#   enemy-health:   the actordefs property enemies take their health from (e.g. health.normal);
+#                   an enemy without it, or a skill without one, uses the enemy's plain health
 skills:
   BABY:
     name: "Can I play, Daddy?"
     pic-name: C_BABYMODE
-    spawn-filter: [1]
+    damage-taken: 0.25
+    enemy-health: health.baby
   EASY:
     name: "Don't hurt me."
     pic-name: C_EASY
-    spawn-filter: [1, 2]
+    enemy-health: health.easy
   MEDIUM:
     name: "Bring 'em on!"
     pic-name: C_NORMAL
-    spawn-filter: [1, 2, 3]
+    enemy-health: health.normal
   HARD:
     name: "I am Death incarnate!"
     pic-name: C_HARD
-    spawn-filter: [1, 2, 3, 4]
+    enemy-health: health.hard
+
+# The skill demos are recorded and played back on (left out: the hardest). A demo only replays
+# right on the skill it was recorded on, and id's were recorded on HARD.
+demo-skill: HARD
 
 episodes:
   EP01:

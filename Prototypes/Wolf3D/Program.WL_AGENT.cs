@@ -874,8 +874,8 @@ internal partial class Program
     {
         if (gamestate.victoryflag)
             return;
-        if (gamestate.difficulty == difficultytypes.gd_baby)
-            points >>= 2;
+        // The skill's damage-taken (the easiest skill's 0.25 is vanilla's points >> 2)
+        points = (int)(points * Math.Max(CurrentSkill.DamageTaken, 0));
 
         if (godmode == 0)
             gamestate.health -= (short)points;

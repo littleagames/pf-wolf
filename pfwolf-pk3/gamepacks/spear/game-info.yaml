@@ -62,23 +62,27 @@ high-scores:
   entry-bar-width: 145
   entry-width: 130
 
+# The skills, easiest first: see gamepacks/wolf3d/game-info.yaml
 skills:
   BABY:
     name: "Can I play, Daddy?"
     pic-name: C_BABYMODE
-    spawn-filter: [1]
+    damage-taken: 0.25
+    enemy-health: health.baby
   EASY:
     name: "Don't hurt me."
     pic-name: C_EASY
-    spawn-filter: [1, 2]
+    enemy-health: health.easy
   MEDIUM:
     name: "Bring 'em on!"
     pic-name: C_NORMAL
-    spawn-filter: [1, 2, 3]
+    enemy-health: health.normal
   HARD:
     name: "I am Death incarnate!"
     pic-name: C_HARD
-    spawn-filter: [1, 2, 3, 4]
+    enemy-health: health.hard
+
+demo-skill: HARD
 
 episodes:
   EP01:

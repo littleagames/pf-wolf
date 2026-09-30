@@ -572,7 +572,7 @@ internal partial class Program
         //
         // TOTAL TIME VERIFICATION CODE
         //
-        //if (gamestate.difficulty >= difficultytypes.gd_medium)
+        //if (gamestate.difficulty >= 2)   // medium or harder
         //{
         //    _graphicManager.DrawPic(30 * 8, TIMEY * 8, graphicnums.C_TIMECODEPIC);
         //    fontnumber = "SmallFont";

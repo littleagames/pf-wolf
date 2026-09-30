@@ -60,14 +60,6 @@ internal enum buttontypes
     NUMBUTTONS
 };
 
-internal enum difficultytypes
-{
-    gd_baby,
-    gd_easy,
-    gd_medium,
-    gd_hard
-};
-
 internal enum controldirs
 {
     di_north,
@@ -103,7 +95,8 @@ enum objdirtypes
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 internal class gametype
 {
-    public difficultytypes difficulty;
+    // The skill: its place in game-info's skills, 0 for the first (easiest)
+    public short difficulty;
     public string mapon;
     public int oldscore, score, nextextra;
     public short lives;
@@ -130,7 +123,7 @@ internal class gametype
 
     public static gametype Read(BinaryReader br) => new()
     {
-        difficulty = (difficultytypes)br.ReadInt16(),
+        difficulty = br.ReadInt16(),
         mapon = br.ReadString(),
         oldscore = br.ReadInt32(),
         score = br.ReadInt32(),
