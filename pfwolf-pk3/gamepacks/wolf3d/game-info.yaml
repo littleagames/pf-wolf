@@ -1,6 +1,10 @@
 default-map:
   ceiling-color: "#383838"
   floor-color: "#717171"
+  # Textures on every floor and ceiling tile the flat plane (plane 2, see mapdefs flats.yaml)
+  # doesn't give one; left out, those tiles keep the colors above. Also settable per map.
+  # default-floor: FLOOR1
+  # default-ceiling: CEIL1
 
 signon:
   pic: wolf3d-signon

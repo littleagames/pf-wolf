@@ -38,7 +38,9 @@ internal partial class Program
     // Still in development, so a layout change bumps SaveVersion and older saves are refused
     // rather than converted. 6: the header (SaveInfo) and thumbnail ahead of the body, no slots.
     // 7: the mods loaded when it was saved, at the end of the header.
-    private const int SaveVersion = 7;
+    // 8: a fourth map plane, wall heights moved from plane 2 to it (plane 2 is flats); a 7 is
+    //    converted as it's read, since only the planes' meaning changed.
+    private const int SaveVersion = MapManager.FlatsSaveVersion;
     private const int OldestLoadableSaveVersion = 7;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the
@@ -318,7 +320,7 @@ internal partial class Program
         byte[] Seen,
         Entities.Actors.ActorSnapshot? Weapon);
 
-    private static SaveGameData ReadSaveBody(BinaryReader br)
+    private static SaveGameData ReadSaveBody(BinaryReader br, int version)
     {
         var state = gametype.Read(br);
 
@@ -330,7 +332,7 @@ internal partial class Program
         for (int i = br.ReadCount(); i > 0; i--)
             inventory[br.ReadString()] = br.ReadInt32();
 
-        var level = MapManager.ReadLevelState(br);
+        var level = MapManager.ReadLevelState(br, version);
 
         var doors = new doorobj_t[br.ReadCount()];
         for (int i = 0; i < doors.Length; i++)
@@ -411,7 +413,7 @@ internal partial class Program
         {
             DiskFlopAnim(x, y);
             using var br = new BinaryReader(File.OpenRead(path));
-            ReadSaveVersion(br);
+            var version = ReadSaveVersion(br);
             // The header is for the menus, and for saying whether it was saved with other mods
             using (var header = new BinaryReader(new MemoryStream(ReadExactly(br, br.ReadCount()))))
                 info = SaveInfo.Read(header);
@@ -423,7 +425,7 @@ internal partial class Program
 
             DiskFlopAnim(x, y);
             using var bodyReader = new BinaryReader(new MemoryStream(body));
-            data = ReadSaveBody(bodyReader);
+            data = ReadSaveBody(bodyReader, version);
 
             if (!_gameEngineManager.GetGameInfo().Maps.ContainsKey(data.GameState.mapon))
                 throw new InvalidDataException($"Map \"{data.GameState.mapon}\" isn't in this game.");

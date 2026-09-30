@@ -8,6 +8,7 @@ internal record MapObjectTranslationAsset : Asset
     public Dictionary<int, MapPlayerStartTranslation> PlayerStarts { get; internal set; } = new();
     public Dictionary<int, MapTriggerTranslation> Triggers { get; internal set; } = new();
     public Dictionary<int, MapDiagonalTranslation> Diagonals { get; internal set; } = new();
+    public MapFlatsTranslation Flats { get; internal set; } = new();
 
     public override void Merge(Asset other)
     {
@@ -42,8 +43,29 @@ internal record MapObjectTranslationAsset : Asset
             {
                 this.Diagonals[item.Key] = item.Value;
             }
+
+            foreach (var item in otherAsset.Flats.Floor)
+            {
+                this.Flats.Floor[item.Key] = item.Value;
+            }
+
+            foreach (var item in otherAsset.Flats.Ceiling)
+            {
+                this.Flats.Ceiling[item.Key] = item.Value;
+            }
         }
     }
+}
+
+/// <summary>
+/// ECWolf's flats table: the texture for each index on the flat plane (plane 2). The low byte of
+/// a tile's value is its floor's index and the high byte its ceiling's, 0 to 255 each. An index
+/// with no entry here uses the map's default-floor or default-ceiling.
+/// </summary>
+internal record MapFlatsTranslation
+{
+    public Dictionary<int, string> Floor { get; set; } = new();
+    public Dictionary<int, string> Ceiling { get; set; } = new();
 }
 
 /// <summary>

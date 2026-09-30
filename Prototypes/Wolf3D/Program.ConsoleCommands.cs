@@ -134,6 +134,10 @@ internal partial class Program
             "sky [name|none]", Cmd_Sky, InLevel);
         Register("height","Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height. On open floor, 2 or more makes an arch.",
             $"height <0-{MAXWALLSTORIES}> [tilex tiley]", Cmd_Height, Cheat | InLevel);
+        Register("flat", "Sets a tile's floor and ceiling flat indices (mapdefs flats) on the flat plane (default: the tile you stand on).",
+            "flat <floor 0-255> <ceiling 0-255> [tilex tiley]", Cmd_Flat, Cheat | InLevel);
+        Register("flats", "Sets the level's default floor and ceiling textures, for tiles the flat plane doesn't give one (not saved).",
+            "flats [floor|none] [ceiling|none]", Cmd_Flats, InLevel);
 
         //
         // debugging aids and information
@@ -780,6 +784,34 @@ internal partial class Program
             : $"Tile {x},{y} is now {stories} {(stories == 1 ? "story" : "stories")} tall");
     }
 
+    private static void Cmd_Flat(string[] args)
+    {
+        if (args.Length < 2)
+            throw new ArgumentException("usage: flat <floor 0-255> <ceiling 0-255> [tilex tiley]");
+
+        int floor = ParseInt(args[0], 0, 255), ceiling = ParseInt(args[1], 0, 255);
+        var (x, y) = args.Length >= 4 ? TileArg(args, 2) : (player.TileX, player.TileY);
+
+        _mapManager.SetFlats(x, y, (ushort)(floor | ceiling << 8));
+        _consoleManager.Print($"Tile {x},{y}: floor {_mapManager.FlatName(x, y, false)}, ceiling {_mapManager.FlatName(x, y, true)}");
+    }
+
+    private static void Cmd_Flats(string[] args)
+    {
+        string? Texture(int i)
+        {
+            if (args[i].Equals("none", StringComparison.OrdinalIgnoreCase))
+                return null;
+            if (_assetManager.Find<TextureAsset>(args[i]) == null)
+                throw new ArgumentException($"no texture named {args[i]}");
+            return args[i];
+        }
+
+        if (args.Length > 0)
+            _mapManager.BuildFlats(Texture(0), args.Length > 1 ? Texture(1) : _mapManager.DefaultCeiling);
+        _consoleManager.Print($"Default floor: {_mapManager.DefaultFloor ?? "(color)"}  ceiling: {_mapManager.DefaultCeiling ?? "(color)"}");
+    }
+
     private static void Cmd_KillAll(string[] args)
     {
         // Snapshot first: KillActor can drop items, which adds to the actor list.
@@ -838,7 +870,10 @@ internal partial class Program
 
         var (fx, fy) = TileArg([], 0);
         _consoleManager.Print($"wall heights: level {wallstories}  tallest {_mapManager.MaxWallStories}  "
-            + $"faced tile {fx},{fy}: {_mapManager.WallStories(fx, fy)} (plane 2: {_mapManager.MAPSPOT(fx, fy, MapManager.HEIGHTPLANE)})");
+            + $"faced tile {fx},{fy}: {_mapManager.WallStories(fx, fy)} (plane 3: {_mapManager.MAPSPOT(fx, fy, MapManager.HEIGHTPLANE)})");
+
+        _consoleManager.Print($"flats: floor {_mapManager.FlatName(x, y, false)}  ceiling {_mapManager.FlatName(x, y, true)}  "
+            + $"(plane 2: {_mapManager.MAPSPOT(x, y, MapManager.FLATPLANE)})");
     }
 
     private static void Cmd_Count(string[] args)

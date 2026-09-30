@@ -237,6 +237,18 @@ internal record DefaultMapInfo
     /// Graphic (or wall texture) drawn in place of the ceiling color; null for none
     /// </summary>
     public string? Sky { get; init; } = null;
+
+    /// <summary>
+    /// Texture on every floor tile the flat plane doesn't give one (see mapdefs flats); null
+    /// leaves them the floor color
+    /// </summary>
+    public string? DefaultFloor { get; init; } = null;
+
+    /// <summary>
+    /// Texture on every ceiling tile the flat plane doesn't give one; null leaves them the
+    /// ceiling color. A sky shows in place of ceiling flats.
+    /// </summary>
+    public string? DefaultCeiling { get; init; } = null;
 }
 
 internal record SkillInfo
@@ -376,4 +388,14 @@ internal record MapInfo
     /// Graphic (or wall texture) drawn in place of the ceiling color; null uses the default map's
     /// </summary>
     public string? Sky { get; init; } = null;
+
+    /// <summary>
+    /// Texture for floor tiles the flat plane doesn't give one; null uses the default map's
+    /// </summary>
+    public string? DefaultFloor { get; init; } = null;
+
+    /// <summary>
+    /// Texture for ceiling tiles the flat plane doesn't give one; null uses the default map's
+    /// </summary>
+    public string? DefaultCeiling { get; init; } = null;
 }

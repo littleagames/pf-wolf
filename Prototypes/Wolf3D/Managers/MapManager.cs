@@ -52,11 +52,17 @@ internal class MapManager
     internal const int MAPAREA = MAPSIZE * MAPSIZE;
 
     public const int NUMMAPS = 60;
-    public const int MAPPLANES = 3;
+    public const int MAPPLANES = 3;         // planes in a GAMEMAPS level
+
+    /// <summary>
+    /// Planes every loaded level has: walls, objects, flats (ECWolf's floor and ceiling, see
+    /// <see cref="FLATPLANE"/>) and wall heights. A GAMEMAPS level has no height plane, so it's empty.
+    /// </summary>
+    public const int LEVELPLANES = 4;
 
     private readonly Lazy<AssetManager> assetManager;
 
-    private UInt16[][] mapsegs = new ushort[MAPPLANES][];
+    private UInt16[][] mapsegs = new ushort[LEVELPLANES][];
     private maptype[] mapheaderseg = new maptype[NUMMAPS];
 
     private readonly LinkedList<Entities.Actors.Actor> _actors = new();
@@ -82,15 +88,31 @@ internal class MapManager
     internal WallShape[,] wallshape = new WallShape[MAPSIZE, MAPSIZE];
 
     /// <summary>
-    /// Each tile's wall height in stories from the height plane (plane 2), or 0 where it has
+    /// Each tile's wall height in stories from the height plane (plane 3), or 0 where it has
     /// none and the map's default applies (see <see cref="WallStories"/>). Rebuilt from the
     /// planes whenever they're loaded or restored, like <see cref="wallshape"/>.
     /// </summary>
     internal byte[,] storymap = new byte[MAPSIZE, MAPSIZE];
     private int maxtilestories;
 
-    internal const int HEIGHTPLANE = 2;
+    internal const int HEIGHTPLANE = 3;
 
+    /// <summary>
+    /// ECWolf's floor and ceiling plane: the low byte of a tile's value picks its floor flat and
+    /// the high byte its ceiling flat, through the mapdefs flats table (see <see cref="floorflat"/>).
+    /// </summary>
+    internal const int FLATPLANE = 2;
+
+    /// <summary>
+    /// Each tile's floor and ceiling texture: its flat plane indices through the mapdefs flats
+    /// table, else the map's default-floor and default-ceiling; null where there's none (the
+    /// floor or ceiling color shows). Indexed (y &lt;&lt; MAPSHIFT) + x. Flats don't move, so these
+    /// are only built when a level is loaded or restored.
+    /// </summary>
+    internal TextureAsset?[] floorflat = new TextureAsset?[MAPAREA], ceilingflat = new TextureAsset?[MAPAREA];
+
+    /// <summary>Whether any tile has a floor flat, or a ceiling flat.</summary>
+    internal bool hasfloorflats, hasceilingflats;
     internal bool[,] spotvis;
     internal Actor?[,] actorat;
 
@@ -148,6 +170,9 @@ internal class MapManager
         mapsegs = new ushort[mapAsset.MapData.Length][];
         for (int i = 0; i < mapAsset.MapData.Length; i++)
             mapsegs[i] = (ushort[])mapAsset.MapData[i].Clone();
+        floorflat = new TextureAsset?[MAPAREA];     // BuildFlats fills these in, once the level's defaults are known
+        ceilingflat = new TextureAsset?[MAPAREA];
+        hasfloorflats = hasceilingflats = false;
 
 #if USE_FEATUREFLAGS
     const int MXX = MAPSIZE - 1;
@@ -223,7 +248,7 @@ internal class MapManager
 
     /// <summary>
     /// Sets <see cref="storymap"/> from the height plane. Values outside 1 to MAXWALLSTORIES
-    /// (a map that uses plane 2 for something else) are left to the map's default.
+    /// (such as an ECWolf info plane) are left to the map's default.
     /// </summary>
     private void BuildWallHeights()
     {
@@ -266,6 +291,81 @@ internal class MapManager
         int stories = storymap[fromx, fromy];
         SetWallStories(fromx, fromy, 0);
         SetWallStories(tox, toy, stories);
+    }
+
+    private string? defaultfloor, defaultceiling;
+
+    internal string? DefaultFloor => defaultfloor;
+    internal string? DefaultCeiling => defaultceiling;
+
+    /// <summary>Sets a tile's value on the flat plane (floor index | ceiling index &lt;&lt; 8), so it's saved with the level.</summary>
+    internal void SetFlats(int x, int y, ushort value)
+    {
+        SetMapSpot(x, y, FLATPLANE, value);
+        BuildFlats(defaultfloor, defaultceiling);
+    }
+
+    /// <summary>
+    /// Sets <see cref="floorflat"/> and <see cref="ceilingflat"/> from the flat plane, as ECWolf
+    /// does: the low byte is the floor's index in the mapdefs flats table and the high byte the
+    /// ceiling's. An index the table doesn't list (or whose texture isn't found) gets the map's
+    /// default; with no default either, the tile keeps the floor or ceiling color.
+    /// </summary>
+    internal void BuildFlats(string? defaultFloor, string? defaultCeiling)
+    {
+        defaultfloor = defaultFloor;
+        defaultceiling = defaultCeiling;
+
+        var flats = GetMapData().Flats;
+        var floors = new TextureAsset?[256];
+        var ceilings = new TextureAsset?[256];
+        var floorDefault = FindFlat(defaultFloor);
+        var ceilingDefault = FindFlat(defaultCeiling);
+        for (int i = 0; i < 256; i++)
+        {
+            floors[i] = (flats.Floor.TryGetValue(i, out var floor) ? FindFlat(floor) : null) ?? floorDefault;
+            ceilings[i] = (flats.Ceiling.TryGetValue(i, out var ceiling) ? FindFlat(ceiling) : null) ?? ceilingDefault;
+        }
+
+        floorflat = new TextureAsset?[MAPAREA];
+        ceilingflat = new TextureAsset?[MAPAREA];
+        hasfloorflats = hasceilingflats = false;
+        for (int y = 0; y < mapheight; y++)
+            for (int x = 0; x < mapwidth; x++)
+            {
+                int spot = MAPSPOT(x, y, FLATPLANE);
+                int i = (y << MAPSHIFT) + x;
+                floorflat[i] = floors[spot & 0xff];
+                ceilingflat[i] = ceilings[spot >> 8];
+                hasfloorflats |= floorflat[i] != null;
+                hasceilingflats |= ceilingflat[i] != null;
+            }
+    }
+
+    /// <summary>The name of the texture on a tile's floor or ceiling, for the console.</summary>
+    internal string FlatName(int x, int y, bool ceiling)
+    {
+        int spot = MAPSPOT(x, y, FLATPLANE);
+        int index = ceiling ? spot >> 8 : spot & 0xff;
+        var table = ceiling ? GetMapData().Flats.Ceiling : GetMapData().Flats.Floor;
+        var name = table.TryGetValue(index, out var listed) && FindFlat(listed) != null ? listed
+            : ceiling ? defaultceiling : defaultfloor;
+        return $"{index} {(FindFlat(name) != null ? name : "(color)")}";
+    }
+
+    private readonly HashSet<string> missingflats = new(StringComparer.OrdinalIgnoreCase);
+
+    // A flat is any texture: a VSWAP wall, or a picture in the pk3's textures/ or flats/
+    private TextureAsset? FindFlat(string? name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return null;
+        var texture = assetManager.Value.Find<TextureAsset>(name);
+        if (texture is { Width: > 0, Height: > 0 } && texture.RawData.Length >= texture.Width * texture.Height)
+            return texture;
+        if (missingflats.Add(name))
+            Console.WriteLine($"Flat texture \"{name}\" wasn't found");
+        return null;
     }
 
     /// <summary>Sets <see cref="wallshape"/> from the diagonal markers on the object plane.</summary>
@@ -689,6 +789,9 @@ internal class MapManager
     /// <summary>The actors a save writes, in the order it writes them -- removed ones are dropped.</summary>
     internal List<Entities.Actors.Actor> GetSavedActors() => _actors.Where(a => !a.IsRemoved).ToList();
 
+    // Save version 8 moved wall heights from plane 2 (now ECWolf's flats) to plane 3
+    internal const int FlatsSaveVersion = 8;
+
     internal void WriteLevelState(BinaryWriter bw)
     {
         bw.Write(mapsegs.Length);
@@ -731,7 +834,7 @@ internal class MapManager
     }
 
     /// <summary>Parses what <see cref="WriteLevelState"/> wrote, without touching the loaded level.</summary>
-    internal static LevelSnapshot ReadLevelState(BinaryReader br)
+    internal static LevelSnapshot ReadLevelState(BinaryReader br, int version)
     {
         var planes = new ushort[br.ReadCount()][];
         for (int i = 0; i < planes.Length; i++)
@@ -740,6 +843,10 @@ internal class MapManager
             for (int j = 0; j < planes[i].Length; j++)
                 planes[i][j] = br.ReadUInt16();
         }
+
+        // An older save has three planes, with its wall heights in plane 2 (nothing had flats yet)
+        if (version < FlatsSaveVersion && planes.Length == MAPPLANES)
+            planes = [planes[0], planes[1], new ushort[planes[FLATPLANE].Length], planes[FLATPLANE]];
 
         var tiles = new byte[MAPSIZE, MAPSIZE];
         var blocking = new Actor?[MAPSIZE, MAPSIZE];
@@ -803,6 +910,7 @@ internal class MapManager
         actorat = (Actor?[,])level.ActorAt.Clone();
         BuildWallShapes();
         BuildWallHeights();
+        BuildFlats(defaultfloor, defaultceiling);
 
         _actors.Clear();
         Player = null;

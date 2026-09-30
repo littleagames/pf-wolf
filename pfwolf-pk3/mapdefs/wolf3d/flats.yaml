@@ -1,0 +1,19 @@
+# Floor and ceiling textures ("flats") for the flat plane, map plane 2, as ECWolf has them: the
+# low byte of a tile's value is its floor's index here and the high byte its ceiling's (so a
+# tile of 0x0302 has floor 2 and ceiling 3). Any texture works: a VSWAP wall, or a picture in
+# the pk3's textures/ or flats/ folder, tiled once per map tile.
+#
+# An index with no entry uses the map's default-floor / default-ceiling (game-info), and with no
+# default the floor or ceiling color shows. Stock maps leave plane 2 at 0, so index 0 is left out
+# to keep them looking as they always have. A sky is drawn in place of ceiling flats.
+#
+# Keep the whole table in this one file: a mod's flats.yaml merges over it entry by entry.
+flats:
+  floor:
+    1: GSTONEA1
+    2: BSTONEA1
+    3: WOOD1
+  ceiling:
+    1: GSTONEA1
+    2: BSTONEA1
+    3: WOOD1

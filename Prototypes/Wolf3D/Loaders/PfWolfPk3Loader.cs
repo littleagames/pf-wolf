@@ -215,9 +215,10 @@ internal class PfWolfPk3Loader
             return;
         }
 
-        if (fullName.StartsWith("textures/"))
+        if (fullName.StartsWith("textures/") || fullName.StartsWith("flats/"))
         {
-            // wall textures of any size (a VSWAP wall of the same name is replaced)
+            // wall textures of any size (a VSWAP wall of the same name is replaced); flats/ is
+            // ECWolf's folder for floor and ceiling textures, which are textures like any other
             AddReference(assetName, () => TextureAsset.FromGraphic(
                 GraphicDataLoader.Load(entry.Open(), sourcePalette: Load<Palette>(GamePalette))));
             return;

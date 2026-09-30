@@ -313,7 +313,7 @@ internal partial class Program
     =
     = Arches
     =
-    = An open floor tile with a height (plane 2) above one story is an arch: a block from the
+    = An open floor tile with a height (plane 3) above one story is an arch: a block from the
     = second story up to that height, that can be walked under. The trace opens one as it
     = enters the tile and queues it as it leaves, once it knows how deep the underside runs.
     = Its faces and its textured underside take the texture of a wall beside it.
@@ -1033,10 +1033,11 @@ internal partial class Program
 
         var destIndex = vbuf;
         int y;
+        bool sky = LoadSky();
         unsafe
         {
             byte* dest = (byte*)vbufPtr;// + destIndex;
-            if (LoadSky())
+            if (sky)
             {
                 DrawSky();
                 y = centery;
@@ -1054,6 +1055,91 @@ internal partial class Program
                 for (var v = 0; v < viewwidth; v++)
                     dest[destIndex + v] = floorColor;
                     //Array.Fill(dest, 0x19, destIndex, viewwidth);
+        }
+
+        bool ceilingflats = _mapManager.hasceilingflats && !sky;
+        if (_mapManager.hasfloorflats || ceilingflats)
+        {
+            SetupFlatColumns();
+            if (_mapManager.hasfloorflats)
+                DrawFlats(_mapManager.floorflat, centery, viewheight - 1, 1);
+            if (ceilingflats)
+                DrawFlats(_mapManager.ceilingflat, 0, centery - 1, 2 * wallstories - 1);
+        }
+    }
+
+    /*
+    ====================
+    =
+    = Flats
+    =
+    = Textured floors and ceilings, from the flat plane as ECWolf has them. They're drawn over
+    = the floor and ceiling colors before the walls, row by row: every pixel in a row is the
+    = same distance away along the view, so each is textured from where its view ray meets the
+    = floor (or ceiling), one texture per tile.
+    =
+    ====================
+    */
+
+    static long[] flatdirx = [], flatdiry = [];
+
+    // Each column's ray, per unit of distance along the view (as CalcHeight measures it), in 1/65536ths
+    static void SetupFlatColumns()
+    {
+        if (flatdirx.Length != viewwidth)
+        {
+            flatdirx = new long[viewwidth];
+            flatdiry = new long[viewwidth];
+        }
+
+        const double TORADIANS = 2 * Math.PI / FINEANGLES;
+        for (int x = 0; x < viewwidth; x++)
+        {
+            double angle = (midangle + pixelangle[x]) * TORADIANS;
+            double perview = 65536 / Math.Cos(pixelangle[x] * TORADIANS);
+            flatdirx[x] = (long)(Math.Cos(angle) * perview);
+            flatdiry[x] = (long)(-Math.Sin(angle) * perview);
+        }
+    }
+
+    /// <summary>
+    /// Draws rows from to to (inclusive) of a flat whose surface is halves half stories from the
+    /// eye (the floor 1, a ceiling at the top of n story walls 2n - 1). Tiles with no texture
+    /// keep the color already there.
+    /// </summary>
+    static void DrawFlats(TextureAsset?[] flats, int from, int to, int halves)
+    {
+        int pitch = (int)_videoManager.bufferPitch;
+        double numerator = heightnumerator * 32.0 * halves;
+
+        unsafe
+        {
+            byte* dest = (byte*)vbufPtr + screenofs;
+            for (int y = from; y <= to; y++)
+            {
+                // the row half a story (times halves) above or below the horizon at this distance
+                double rowsfromcenter = Math.Abs(y + 0.5 - centery);
+                long nx = (long)(numerator / rowsfromcenter);
+                byte* row = dest + y * pitch;
+
+                for (int x = 0; x < viewwidth; x++)
+                {
+                    long px = viewx + (nx * flatdirx[x] >> 16);
+                    long py = viewy + (nx * flatdiry[x] >> 16);
+                    long tilex = px >> MapConstants.TILESHIFT, tiley = py >> MapConstants.TILESHIFT;
+                    if ((ulong)tilex >= MapManager.MAPSIZE || (ulong)tiley >= MapManager.MAPSIZE)
+                        continue;
+
+                    var texture = flats[(tiley << MapManager.MAPSHIFT) + tilex];
+                    if (texture == null)
+                        continue;
+
+                    int u = (int)(px >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
+                    int v = (int)(py >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
+                    int height = texture.Height;
+                    row[x] = texture.RawData[u * texture.Width / TEXTURESIZE * height + v * height / TEXTURESIZE];
+                }
+            }
         }
     }
 

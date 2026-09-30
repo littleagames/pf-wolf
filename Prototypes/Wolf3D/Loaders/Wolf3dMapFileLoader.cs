@@ -103,15 +103,16 @@ internal class Wolf3dMapFileLoader
         //
         var size = MapManager.MAPAREA * sizeof(ushort);
 
-        UInt16[][] mapsegs = new ushort[MapManager.MAPPLANES][];
+        // GAMEMAPS has three planes; the height plane after them is left empty
+        UInt16[][] mapsegs = new ushort[MapManager.LEVELPLANES][];
+        for (var plane = 0; plane < MapManager.LEVELPLANES; plane++)
+            mapsegs[plane] = new ushort[MapManager.MAPAREA];
 
         using (var fs = new MemoryStream(_gameMaps))
         using (BinaryReader br = new BinaryReader(fs))
         {
             for (var plane = 0; plane < MapManager.MAPPLANES; plane++)
             {
-                // allocate
-                mapsegs[plane] = new ushort[MapManager.MAPAREA];
 
                 pos = level.planestart[plane];
                 compressed = level.planelength[plane];
