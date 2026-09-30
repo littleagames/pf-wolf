@@ -759,6 +759,7 @@ internal partial class Program
         }
 
         gamestate.weapon = null;                     // take away weapon
+        viewpitch = 0;                               // and face the attacker straight on
         _audioManager.Play("player/death");
         ShowObituary();
 

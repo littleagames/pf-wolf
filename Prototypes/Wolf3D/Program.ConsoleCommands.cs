@@ -63,6 +63,10 @@ internal partial class Program
             "joy_deadzone [0-50]", args => SetOrShow("joy_deadzone", args, ref joydeadzone, 0, 50));
         Register("joy_turnspeed", "How fast a controller's stick turns you, pushed all the way.",
             "joy_turnspeed [0-9]", args => SetOrShow("joy_turnspeed", args, ref joyturnspeed, 0, JOYTURNSPEEDS - 1));
+        Register("m_look", "Whether moving the mouse up and down looks up and down (1) or walks (0).",
+            "m_look [0|1]", args => ToggleOrShow("m_look", args, ref mouselook), complete: Values("0", "1"));
+        Register("m_invert", "Whether mouse look is upside down: pushing the mouse away looks down.",
+            "m_invert [0|1]", args => ToggleOrShow("m_invert", args, ref mouseinvert), complete: Values("0", "1"));
         Register("joy_sticks", "Which controller stick turns: the right (modern) or the left, with the right strafing (classic).",
             "joy_sticks [modern|classic]", Cmd_JoySticks, complete: Values("modern", "classic"));
 
@@ -434,6 +438,22 @@ internal partial class Program
         _consoleManager.Print($"{name} = {setting}");
     }
 
+    /// <summary>
+    /// Sets an on/off setting from args[0] if given (with none, shows it), quietly when
+    /// controls.cfg sets it at startup.
+    /// </summary>
+    static void ToggleOrShow(string name, string[] args, ref bool setting)
+    {
+        if (args.Length > 0)
+        {
+            setting = Toggle(args, setting);
+            if (_consoleManager.IsRunningScript)
+                return;
+        }
+
+        _consoleManager.Print($"{name} = {(setting ? 1 : 0)}");
+    }
+
     private static void Cmd_JoySticks(string[] args)
     {
         if (args.Length > 0)
@@ -453,9 +473,11 @@ internal partial class Program
 
     static string JoySticksName => joyclassicsticks ? "classic" : "modern";
 
-    /// <summary>The controller settings as console commands, for saving to controls.cfg.</summary>
+    /// <summary>The mouse look and controller settings as console commands, for saving to controls.cfg.</summary>
     internal static IEnumerable<string> GetControllerSettingCommands() =>
     [
+        $"m_look {(mouselook ? 1 : 0)}",
+        $"m_invert {(mouseinvert ? 1 : 0)}",
         $"joy_deadzone {joydeadzone}",
         $"joy_turnspeed {joyturnspeed}",
         $"joy_sticks {JoySticksName}",

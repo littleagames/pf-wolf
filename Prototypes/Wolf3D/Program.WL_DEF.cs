@@ -52,6 +52,10 @@ internal enum buttontypes
     bt_slot8,
     bt_slot9,
     bt_slot0,
+    // Looking up and down (y-shearing, Program.WL_DRAW.cs): the view's pitch only, not saved or in demos
+    bt_lookup,
+    bt_lookdown,
+    bt_centerview,
 
     NUMBUTTONS
 };

@@ -45,6 +45,16 @@ internal partial class Program
     static int controlx, controly;         // range from -100 to 100 per tic
     static int controlstrafe;              // a controller stick's sideways move, the same range (positive is right)
     static int wheelnotches;               // the mouse wheel's turn this frame (positive is away from the user)
+    static double controlpitch;            // how far to look up (down if negative) this frame, in degrees
+    static bool controlcenterview;         // look straight ahead again this frame
+
+    // Mouse look (m_look, m_invert in controls.cfg): moving the mouse up and down looks up and
+    // down rather than walking, the other way round if inverted
+    internal static bool mouselook, mouseinvert;
+
+    // Degrees a tic the look keys (and a stick pushed all the way) look up or down: level to
+    // the steepest the view allows (about 19 degrees) in half a second, like Heretic's keys
+    const double LOOKSPEED = 0.6;
 
     // The controller settings (the Controller Settings menu, and joy_* in controls.cfg):
     // how much of a stick's travel around the middle is ignored, in percent; how fast a stick
@@ -412,7 +422,9 @@ internal partial class Program
         controlx = 0;
         controly = 0;
         controlstrafe = 0;
-        wheelnotches = _inputManager.TakeWheelDelta();     // taken every frame, so turns don't pile up
+        controlpitch = 0;
+        controlcenterview = false;
+        wheelnotches = _inputManager.TakeWheelDelta();    // taken every frame, so turns don't pile up
         _inputManager.ProcessButtons();
 
         if (demoplayback)
@@ -636,6 +648,13 @@ internal partial class Program
             controlx -= delta;
         if (_inputManager.IsButtonPressed(buttontypes.bt_turnright))
             controlx += delta;
+
+        if (_inputManager.IsButtonPressed(buttontypes.bt_lookup))
+            controlpitch += LOOKSPEED * tics;
+        if (_inputManager.IsButtonPressed(buttontypes.bt_lookdown))
+            controlpitch -= LOOKSPEED * tics;
+        if (_inputManager.IsButtonPressed(buttontypes.bt_centerview))
+            controlcenterview = true;
     }
 
 
@@ -654,7 +673,13 @@ internal partial class Program
         SDL_GetRelativeMouseState(out mousexmove, out mouseymove);
 
         controlx += mousexmove * 10 / (13 - mouseadjustment);
-        controly += mouseymove * 20 / (13 - mouseadjustment);
+
+        // Looking goes as fast as turning: controlx turns a degree every ANGLESCALE. In the
+        // automap's pan mode the mouse pans the map, so it walks (RouteMovementToAutomap takes it).
+        if (mouselook && !(_automapManager.IsOpen && !_automapManager.Follow))
+            controlpitch += (mouseinvert ? mouseymove : -mouseymove) * 10.0 / (13 - mouseadjustment) / ANGLESCALE;
+        else
+            controly += mouseymove * 20 / (13 - mouseadjustment);
     }
 
 
@@ -684,6 +709,10 @@ internal partial class Program
             controly += (int)(StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY) * speed * tics);
             controlstrafe += (int)(StickValue(strafeAxis) * speed * tics);
             controlx += (int)(turn * Math.Abs(turn) * JoyTurnSpeed * tics);
+
+            // the right stick's up and down looks, whichever way the sticks are set
+            float look = StickValue(SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTY);
+            controlpitch -= look * Math.Abs(look) * LOOKSPEED * tics;
             return;
         }
 

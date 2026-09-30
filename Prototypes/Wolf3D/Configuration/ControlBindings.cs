@@ -233,6 +233,11 @@ internal sealed class ControlBindings
         Default(buttontypes.bt_turnright, Key(ScanCodes.sc_RightArrow), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
         Default(buttontypes.bt_automap, Key(ScanCodes.sc_Tab), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_BACK));
 
+        // A controller looks up and down with its right stick (PollJoystickMove)
+        Default(buttontypes.bt_lookup, Key(ScanCodes.sc_PgUp));
+        Default(buttontypes.bt_lookdown, Key(ScanCodes.sc_PgDn));
+        Default(buttontypes.bt_centerview, Key(ScanCodes.sc_End), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_RIGHTSTICK));
+
         for (int i = 0; i < DefaultAutomapKeys.Length; i++)
             Add(ControlAction.Of((Program.automapkeys)i), Key(DefaultAutomapKeys[i]));
 

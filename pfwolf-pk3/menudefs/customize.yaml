@@ -46,6 +46,9 @@ menu-items:
   - { type: "ControlMenuItem", control: "straferight", text: "$STR_CTL_STRAFERIGHT" }
   - { type: "ControlMenuItem", control: "strafe", text: "$STR_CTL_STRAFE" }
   - { type: "ControlMenuItem", control: "run", text: "$STR_CTL_RUN" }
+  - { type: "ControlMenuItem", control: "lookup", text: "$STR_CTL_LOOKUP" }
+  - { type: "ControlMenuItem", control: "lookdown", text: "$STR_CTL_LOOKDOWN" }
+  - { type: "ControlMenuItem", control: "centerview", text: "$STR_CTL_CENTERVIEW" }
 
   - { type: "HeaderMenuItem", text: "$STR_CTL_ACTION" }
   - { type: "ControlMenuItem", control: "attack", text: "$STR_CTL_ATTACK" }
