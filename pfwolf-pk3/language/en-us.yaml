@@ -108,6 +108,8 @@ $STR_JOYEN: "Joystick Enabled"
 $STR_PORT2: "Use joystick port 2"
 $STR_GAMEPAD: "Gravis GamePad Enabled"
 $STR_SENS: "Mouse Sensitivity"
+$STR_MOUSELOOK: "Mouse Look"
+$STR_MOUSEINVERT: "Invert Mouse Look"
 $STR_CUSTOM: "Customize controls"
 $STR_JOYSETTINGS: "Controller settings"
 

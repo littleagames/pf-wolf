@@ -1416,6 +1416,18 @@ internal partial class Program
                     ShootSnd();
                     break;
 
+                case "mouse-look":
+                    mouselook ^= true;
+                    DrawCtlScreen();
+                    ShootSnd();
+                    break;
+
+                case "mouse-invert":
+                    mouseinvert ^= true;
+                    DrawCtlScreen();
+                    ShootSnd();
+                    break;
+
                 case "joystick-enabled":
                     joystickenabled ^= true;
                     DrawCtlScreen();
@@ -1456,10 +1468,15 @@ internal partial class Program
 
         mouseSensItem?.active = (short)(mouseenabled ? 1 : 0);
 
+        // Inverting only means something while the mouse looks
+        FindMenuItem(CtlMenu, "mouse-look")?.active = (short)(mouseenabled ? 1 : 0);
+        FindMenuItem(CtlMenu, "mouse-invert")?.active = (short)(mouseenabled && mouselook ? 1 : 0);
 
         DrawMenu(CtlItems, CtlMenu);
 
         DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-enabled", mouseenabled);
+        DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-look", mouselook);
+        DrawMenuCheckbox(CtlItems, CtlMenu, "mouse-invert", mouseinvert);
         DrawMenuCheckbox(CtlItems, CtlMenu, "joystick-enabled", joystickenabled);
 
         //

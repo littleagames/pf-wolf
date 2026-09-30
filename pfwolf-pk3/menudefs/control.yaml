@@ -25,7 +25,7 @@ components:
       - x: 16
       - y: 75
       - width: 284
-      - height: 73
+      - height: 99
   -
     type: "Graphic"
     params:
@@ -44,6 +44,17 @@ menu-items:
       text: "$STR_SENS"
       enabled: false
       action: "MouseSensitivity"
+  # Mouse look (m_look / m_invert in controls.cfg): the mouse's up and down looks rather than walks
+  -
+      id: "mouse-look"
+      type: "ToggleMenuItem"
+      text: "$STR_MOUSELOOK"
+      enabled: false
+  -
+      id: "mouse-invert"
+      type: "ToggleMenuItem"
+      text: "$STR_MOUSEINVERT"
+      enabled: false
   -
       id: "joystick-enabled"
       type: "ToggleMenuItem"
