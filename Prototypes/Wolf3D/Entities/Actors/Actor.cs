@@ -30,6 +30,10 @@ internal record Actor : Thinker
     public bool Hidden { get; internal set; }
     public byte AreaNumber { get; internal set; }
 
+    // The tag on the tile it spawned on (MapManager.TAGPLANE), 0 for none; a switch with the
+    // same tag acts on it wherever it has since moved.
+    public ushort Tag { get; internal set; }
+
     // Set by MapManager.MarkForRemoval (e.g. a projectile that hit something); MapManager.DoActors
     // unlinks the actor once its tic finishes, since removing it mid-walk would break the iteration.
     public bool IsRemoved { get; internal set; }

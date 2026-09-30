@@ -11,7 +11,8 @@ namespace Wolf3D.Loaders;
 ///   char[name length] name, int16 width, int16 height, then each plane's width x height
 ///   uint16s, uncompressed, all little-endian.
 /// The planes are the same as GAMEMAPS': walls, objects, then ECWolf's floor and ceiling
-/// flats; a fourth holds PFWolf's wall heights (ECWolf reads it as its info plane). A map
+/// flats; a fourth holds PFWolf's wall heights (ECWolf reads it as its info plane) and a fifth
+/// PFWolf's tags. A map
 /// written in ECWolf's text format (TEXTMAP, UWMF) isn't read yet.
 /// </summary>
 internal static class EcWolfMapLoader
@@ -50,8 +51,8 @@ internal static class EcWolfMapLoader
             if (width != MapManager.MAPSIZE || height != MapManager.MAPSIZE)
                 throw new InvalidDataException($"it's {width}x{height}; PFWolf maps are {MapManager.MAPSIZE}x{MapManager.MAPSIZE}");
 
-            // The fourth plane (ECWolf's info plane) holds PFWolf's wall heights; planes past it
-            // are left out, and missing ones are empty
+            // The fourth plane (ECWolf's info plane) holds PFWolf's wall heights and the fifth its
+            // tags; planes past them are left out, and missing ones are empty
             var mapData = new ushort[MapManager.LEVELPLANES][];
             for (var plane = 0; plane < MapManager.LEVELPLANES; plane++)
             {
@@ -83,9 +84,10 @@ internal static class EcWolfMapLoader
         using var ms = new MemoryStream();
         using (var bw = new BinaryWriter(ms, Encoding.ASCII, leaveOpen: true))
         {
-            // An empty height plane is left off, so ECWolf doesn't read it as an info plane
+            // Empty planes at the end (tags, then heights) are left off, so ECWolf doesn't read
+            // an empty height plane as an info plane. One in use keeps those before it.
             var planes = map.MapData.ToList();
-            if (planes.Count > MapManager.MAPPLANES && planes[^1].All(tile => tile == 0))
+            while (planes.Count > MapManager.MAPPLANES && planes[^1].All(tile => tile == 0))
                 planes.RemoveAt(planes.Count - 1);
 
             bw.Write(Encoding.ASCII.GetBytes(Magic));

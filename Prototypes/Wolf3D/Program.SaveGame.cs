@@ -42,7 +42,8 @@ internal partial class Program
     // 9: the area count (mapdefs floors) ahead of the area tables.
     // 10: the player class, after the skill in gamestate.
     // 11: armor points and percent, after health in gamestate.
-    private const int SaveVersion = 11;
+    // 12: a fifth map plane (tags), and each actor's tag after its tile.
+    private const int SaveVersion = 12;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the

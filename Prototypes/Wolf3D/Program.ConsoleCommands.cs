@@ -141,6 +141,8 @@ internal partial class Program
             "sky [name|none]", Cmd_Sky, InLevel);
         Register("height","Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height. On open floor, 2 or more makes an arch.",
             $"height <0-{MAXWALLSTORIES}> [tilex tiley]", Cmd_Height, Cheat | InLevel);
+        Register("tag", "Shows or sets a tile's tag on the tag plane (default: the one you face), and the tag of any actors on it; 0 clears it.",
+            "tag [0-65535 [tilex tiley]]", Cmd_Tag, Cheat | InLevel);
         Register("flat", "Sets a tile's floor and ceiling flat indices (mapdefs flats) on the flat plane (default: the tile you stand on).",
             "flat <floor 0-255> <ceiling 0-255> [tilex tiley]", Cmd_Flat, Cheat | InLevel);
         Register("flats", "Sets the level's default floor and ceiling textures, for tiles the flat plane doesn't give one (not saved).",
@@ -891,6 +893,30 @@ internal partial class Program
             : $"Tile {x},{y} is now {stories} {(stories == 1 ? "story" : "stories")} tall");
     }
 
+    private static void Cmd_Tag(string[] args)
+    {
+        if (args.Length is 2 or > 3)
+            throw new ArgumentException("usage: tag [0-65535 [tilex tiley]]");
+
+        var (x, y) = TileArg(args, 1);
+        // The actors standing on the tile (not the player), which keep the tag they spawned with
+        var actors = _mapManager.GetActors()
+            .Where(a => a is not Entities.Actors.PlayerPawn && !a.IsRemoved && a.TileX == x && a.TileY == y)
+            .ToList();
+
+        if (args.Length > 0)
+        {
+            var tag = (ushort)ParseInt(args[0], 0, ushort.MaxValue);
+            _mapManager.SetTag(x, y, tag);
+            foreach (var actor in actors)
+                actor.Tag = tag;
+        }
+
+        var tagged = actors.Count == 0 ? ""
+            : "  actors: " + string.Join(", ", actors.Select(a => $"{a.Name} {a.Tag}"));
+        _consoleManager.Print($"Tile {x},{y}: tag {_mapManager.GetTag(x, y)}{tagged}");
+    }
+
     private static void Cmd_Flat(string[] args)
     {
         if (args.Length < 2)
@@ -981,6 +1007,8 @@ internal partial class Program
 
         _consoleManager.Print($"flats: floor {_mapManager.FlatName(x, y, false)}  ceiling {_mapManager.FlatName(x, y, true)}  "
             + $"(plane 2: {_mapManager.MAPSPOT(x, y, MapManager.FLATPLANE)})");
+
+        _consoleManager.Print($"tags (plane 4): tile {_mapManager.GetTag(x, y)}  faced tile {fx},{fy}: {_mapManager.GetTag(fx, fy)}");
     }
 
     private static void Cmd_Count(string[] args)
@@ -1019,6 +1047,8 @@ internal partial class Program
                 line.Append($"  hp {actor.Hitpoints}");
             if (actor.Active != activetypes.ac_no)
                 line.Append("  active");
+            if (actor.Tag != 0)
+                line.Append($"  tag {actor.Tag}");
             line.Append(WallSpriteDescription(actor));
 
             _consoleManager.Print(line.ToString());

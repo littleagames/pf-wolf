@@ -62,9 +62,10 @@ internal class MapManager
 
     /// <summary>
     /// Planes every loaded level has: walls, objects, flats (ECWolf's floor and ceiling, see
-    /// <see cref="FLATPLANE"/>) and wall heights. A GAMEMAPS level has no height plane, so it's empty.
+    /// <see cref="FLATPLANE"/>), wall heights and tags. A GAMEMAPS level has neither of the last
+    /// two, so they're empty.
     /// </summary>
-    public const int LEVELPLANES = 4;
+    public const int LEVELPLANES = 5;
 
     private readonly Lazy<AssetManager> assetManager;
 
@@ -103,6 +104,12 @@ internal class MapManager
     private int maxtilestories;
 
     internal const int HEIGHTPLANE = 3;
+
+    /// <summary>
+    /// Each tile's tag, 0 for none: a switch acts on the doors, walls and actors that share its
+    /// tag. An actor takes its tag from the tile it spawns on (<see cref="Entities.Actors.Actor.Tag"/>).
+    /// </summary>
+    internal const int TAGPLANE = 4;
 
     /// <summary>
     /// ECWolf's floor and ceiling plane: the low byte of a tile's value picks its floor flat and
@@ -309,6 +316,32 @@ internal class MapManager
             maxtilestories = stories;
     }
 
+    /// <summary>The tag on a tile, 0 for none.</summary>
+    internal ushort GetTag(int x, int y) => (ushort)MAPSPOT(x, y, TAGPLANE);
+
+    /// <summary>
+    /// Tags a tile on the tag plane, so it's saved with the level; 0 clears it. An actor keeps
+    /// the tag it spawned with, so this doesn't change the tags of any actors on the tile.
+    /// </summary>
+    internal void SetTag(int x, int y, ushort tag) => SetMapSpot(x, y, TAGPLANE, tag);
+
+    /// <summary>
+    /// Moves a tile's tag to another tile, as a pushwall slides, so a switch can push it again.
+    /// An untagged pushwall leaves the tiles it crosses as they were.
+    /// </summary>
+    internal void MoveTag(int fromx, int fromy, int tox, int toy)
+    {
+        var tag = GetTag(fromx, fromy);
+        if (tag == 0)
+            return;
+        SetTag(fromx, fromy, 0);
+        SetTag(tox, toy, tag);
+    }
+
+    /// <summary>The live actors with this tag.</summary>
+    internal IEnumerable<Entities.Actors.Actor> TaggedActors(ushort tag) =>
+        _actors.Where(a => a.Tag == tag && !a.IsRemoved);
+
     /// <summary>Moves a tile's height to another tile, as a pushwall slides.</summary>
     internal void MoveWallStories(int fromx, int fromy, int tox, int toy)
     {
@@ -484,6 +517,7 @@ internal class MapManager
         // CheckSight's area check) reads the wrong area, e.g. a stationary/ambushed actor
         // that never patrols would never notice the player if area 0 isn't connected.
         builtActor.AreaNumber = (byte)(MAPSPOT(tilex, tiley, 0) - Floors.AreaTile);
+        builtActor.Tag = GetTag(tilex, tiley);
 
         // Angles: 0=east, 45=northeast, 90=north ... 315=southeast, in objdirtypes order
         // (enemies only face the four cardinal ones, patrol points all eight).

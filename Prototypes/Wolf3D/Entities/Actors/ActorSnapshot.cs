@@ -27,6 +27,7 @@ internal sealed record ActorSnapshot
     public int Y { get; init; }
     public byte TileX { get; init; }
     public byte TileY { get; init; }
+    public ushort Tag { get; init; }
     public Program.objflags RuntimeFlags { get; init; }
 
     public static ActorSnapshot Capture(Actor actor)
@@ -53,6 +54,7 @@ internal sealed record ActorSnapshot
             Y = actor.Y,
             TileX = actor.TileX,
             TileY = actor.TileY,
+            Tag = actor.Tag,
             RuntimeFlags = actor.RuntimeFlags,
         };
     }
@@ -76,6 +78,7 @@ internal sealed record ActorSnapshot
         actor.Y = Y;
         actor.TileX = TileX;
         actor.TileY = TileY;
+        actor.Tag = Tag;
         actor.RuntimeFlags = RuntimeFlags;
         actor.SyncPosition();
     }
@@ -101,6 +104,7 @@ internal sealed record ActorSnapshot
         bw.Write(Y);
         bw.Write(TileX);
         bw.Write(TileY);
+        bw.Write(Tag);
         bw.Write((int)RuntimeFlags);
     }
 
@@ -130,6 +134,7 @@ internal sealed record ActorSnapshot
             Y = br.ReadInt32(),
             TileX = br.ReadByte(),
             TileY = br.ReadByte(),
+            Tag = br.ReadUInt16(),
             RuntimeFlags = (Program.objflags)br.ReadInt32(),
         };
     }
