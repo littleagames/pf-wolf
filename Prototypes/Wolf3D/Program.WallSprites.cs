@@ -20,10 +20,16 @@ internal partial class Program
     texels (64 to a tile): 32 puts an axis-aligned panel on the tile edge. The panel is always
     clipped to its own tile. Coordinates are 16.16 global fixed point.
 
+    The panel blocks along its line: the player and projectiles can stand or fly on either
+    side of it in its tile, and it blocks sight and hitscan unless it has the
+    WALLSPRITE.SHOOTTHROUGH flag (a grille or chain-link fence). Enemies keep out of its whole
+    tile (WallSpriteBlocker in actorat), as they do a diagonal wall's.
+
     =============================================================================
     */
 
     internal const string WallSpriteFlag = "WALLSPRITE";
+    internal const string WallSpriteShootThroughFlag = "WALLSPRITE.SHOOTTHROUGH";
     internal const string WallSpriteOffsetProperty = "wallsprite.offset";
 
     /// <summary>
@@ -217,5 +223,105 @@ internal partial class Program
             int column = Math.Min((int)(t * spriteAsset.Width), spriteAsset.Width - 1);
             ScaleColumn((short)x, (short)(centery - half), MathUtils.FixedDiv(half, TEXTURESIZE / 2), spriteAsset, column);
         }
+    }
+
+    /*
+    =============================================================================
+
+                            WALL SPRITE COLLISION AND SIGHT
+
+    =============================================================================
+    */
+
+    // The panel the player last ran into in TryMove, for ClipMove to slide along
+    static WallSpriteSpan? wallspriteblock;
+
+    // Where ClipMove's move starts: a panel the player already overlaps there (one spawned on
+    // top of them) doesn't block, so they can always step off it
+    static int wallspritefromx, wallspritefromy;
+
+    /// <summary>
+    /// Whether a box of half-width <paramref name="size"/> centred on (x, y) crosses the panel.
+    /// Touching it along the box's edge doesn't count, so the player can slide along one.
+    /// </summary>
+    internal static bool BoxHitsWallSprite(WallSpriteSpan span, long x, long y, long size)
+    {
+        double dx = span.X2 - span.X1, dy = span.Y2 - span.Y1;
+
+        //
+        // clip the panel to the box (Liang-Barsky)
+        //
+        double t0 = 0, t1 = 1;
+        bool Clip(double p, double q)
+        {
+            if (p == 0)
+                return q > 0;
+            double r = q / p;
+            if (p < 0)
+                t0 = Math.Max(t0, r);
+            else
+                t1 = Math.Min(t1, r);
+            return t0 < t1;
+        }
+
+        return Clip(-dx, span.X1 - (x - size)) && Clip(dx, x + size - span.X1)
+            && Clip(-dy, span.Y1 - (y - size)) && Clip(dy, y + size - span.Y1);
+    }
+
+    /// <summary>Whether the line from (x1, y1) to (x2, y2) crosses the panel.</summary>
+    internal static bool LineHitsWallSprite(WallSpriteSpan span, long x1, long y1, long x2, long y2)
+    {
+        static double Cross(double ax, double ay, double bx, double by) => ax * by - ay * bx;
+
+        double ex = span.X2 - span.X1, ey = span.Y2 - span.Y1;
+        double d1 = Cross(ex, ey, x1 - span.X1, y1 - span.Y1);
+        double d2 = Cross(ex, ey, x2 - span.X1, y2 - span.Y1);
+        if (d1 > 0 && d2 > 0 || d1 < 0 && d2 < 0 || d1 == 0 && d2 == 0)
+            return false;                               // both ends on one side, or along it
+
+        double lx = x2 - x1, ly = y2 - y1;
+        double d3 = Cross(lx, ly, span.X1 - x1, span.Y1 - y1);
+        double d4 = Cross(lx, ly, span.X2 - x1, span.Y2 - y1);
+        return !(d3 > 0 && d4 > 0 || d3 < 0 && d4 < 0);
+    }
+
+    /// <summary>
+    /// The first panel standing in tiles xl..xh, yl..yh that a box of half-width
+    /// <paramref name="size"/> centred on (x, y) crosses. For the player, a panel the box
+    /// already crossed where ClipMove's move began is skipped.
+    /// </summary>
+    internal static WallSpriteSpan? WallSpriteHitByBox(int xl, int yl, int xh, int yh, long x, long y, long size, bool player)
+    {
+        foreach (var actor in _mapManager.GetActors())
+        {
+            if (actor.TileX < xl || actor.TileX > xh || actor.TileY < yl || actor.TileY > yh)
+                continue;
+            if (!IsWallSprite(actor) || GetWallSpriteSpan(actor) is not { } span)
+                continue;
+            if (!BoxHitsWallSprite(span, x, y, size))
+                continue;
+            if (player && BoxHitsWallSprite(span, wallspritefromx, wallspritefromy, size))
+                continue;
+            return span;
+        }
+        return null;
+    }
+
+    /// <summary>Whether a panel that isn't WALLSPRITE.SHOOTTHROUGH stands across the line (sight, hitscan).</summary>
+    internal static bool WallSpriteBlocksLine(long x1, long y1, long x2, long y2)
+    {
+        long xl = Math.Min(x1, x2) >> MapConstants.TILESHIFT, xh = Math.Max(x1, x2) >> MapConstants.TILESHIFT;
+        long yl = Math.Min(y1, y2) >> MapConstants.TILESHIFT, yh = Math.Max(y1, y2) >> MapConstants.TILESHIFT;
+
+        foreach (var actor in _mapManager.GetActors())
+        {
+            if (actor.TileX < xl || actor.TileX > xh || actor.TileY < yl || actor.TileY > yh)
+                continue;
+            if (!IsWallSprite(actor) || actor.Flags.Contains(WallSpriteShootThroughFlag, StringComparer.OrdinalIgnoreCase))
+                continue;
+            if (GetWallSpriteSpan(actor) is { } span && LineHitsWallSprite(span, x1, y1, x2, y2))
+                return true;
+        }
+        return false;
     }
 }

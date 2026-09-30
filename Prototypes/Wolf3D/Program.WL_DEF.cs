@@ -286,6 +286,12 @@ internal class BlockingActor: Actor
 {
 }
 
+// A wall sprite's tile (Program.WallSprites.cs): enemies keep out of all of it, as they do a
+// solid static's, while the player and projectiles are only stopped by the panel itself.
+internal class WallSpriteBlocker: BlockingActor
+{
+}
+
 internal class Wall: Actor
 {
     public Wall()

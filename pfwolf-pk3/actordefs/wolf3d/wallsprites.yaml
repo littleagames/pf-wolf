@@ -2,9 +2,12 @@
 # billboards (Program.WallSprites.cs). The map's `angles` is the way the panel's front faces;
 # 0/180 make a north-south panel, 90/270 an east-west one, the diagonals run corner to corner.
 # `wallsprite.offset` moves the panel toward its front, in texels (32 = on the tile edge).
+# A panel blocks movement along its line; WALLSPRITE.SHOOTTHROUGH lets sight and hitscan
+# through it (projectiles never pass). Flags are inherited, so the gate doesn't use the
+# see-through fence as its parent.
 
 WoodFence:
-  flags: [WALLSPRITE]
+  flags: [WALLSPRITE, WALLSPRITE.SHOOTTHROUGH]
   states:
     Spawn:
       - sprite: FENC
@@ -18,7 +21,7 @@ WoodFenceEdge:
     "wallsprite.offset": 32
 
 WoodGate:
-  parent: WoodFence
+  flags: [WALLSPRITE]
   states:
     Spawn:
       - sprite: GATE

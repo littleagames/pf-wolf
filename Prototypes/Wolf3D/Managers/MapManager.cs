@@ -576,6 +576,8 @@ internal class MapManager
         // "something is here" entry walls and doors use, so every actorat[,] check sees it.
         if (builtActor.Flags.Any(f => f.Equals("SOLID", StringComparison.OrdinalIgnoreCase)))
             actorat[tilex, tiley] = new BlockingActor();
+        else if (Program.IsWallSprite(builtActor) && actorat[tilex, tiley] == null)
+            actorat[tilex, tiley] = new WallSpriteBlocker();
 
         _actors.AddLast(builtActor);
     }
@@ -806,7 +808,7 @@ internal class MapManager
     =============================================================================
     */
 
-    private enum SavedTile : byte { Empty, Wall, Door, Blocking }
+    private enum SavedTile : byte { Empty, Wall, Door, Blocking, WallSprite }
 
     /// <summary>The actors a save writes, in the order it writes them -- removed ones are dropped.</summary>
     internal List<Entities.Actors.Actor> GetSavedActors() => _actors.Where(a => !a.IsRemoved).ToList();
@@ -835,6 +837,9 @@ internal class MapManager
                     case Door door:
                         bw.Write((byte)SavedTile.Door);
                         bw.Write(door.door);
+                        break;
+                    case WallSpriteBlocker:
+                        bw.Write((byte)SavedTile.WallSprite);
                         break;
                     case BlockingActor:
                         bw.Write((byte)SavedTile.Blocking);
@@ -876,6 +881,7 @@ internal class MapManager
                     SavedTile.Wall => new Wall(br.ReadInt32()),
                     SavedTile.Door => new Door(br.ReadInt32()),
                     SavedTile.Blocking => new BlockingActor(),
+                    SavedTile.WallSprite => new WallSpriteBlocker(),
                     var unknown => throw new InvalidDataException($"Unknown tile marker {unknown}."),
                 };
             }

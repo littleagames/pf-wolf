@@ -89,6 +89,14 @@ internal partial class Program
                 if (check == null)
                     continue;
 
+                // a wall sprite only blocks along its panel, whatever its flags
+                if (check is WallSpriteBlocker)
+                {
+                    if (WallSpriteHitByBox(x, y, x, y, ob.X, ob.Y, PROJSIZE, player: false) != null)
+                        return false;
+                    continue;
+                }
+
                 // a diagonal only blocks on its solid side of the face
                 if (_mapManager.wallshape[x, y] is var shape and not WallShape.Square
                     && !BoxHitsDiagonal(shape, x, y, ob.X, ob.Y, PROJSIZE))

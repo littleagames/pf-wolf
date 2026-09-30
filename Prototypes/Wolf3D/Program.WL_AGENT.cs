@@ -269,6 +269,7 @@ internal partial class Program
         yh = (uint)((ob.Y + PLAYERSIZE) >> (int)MapConstants.TILESHIFT);
 
         const long PUSHWALLMINDIST = PLAYERSIZE;
+        bool nearwallsprite = false;
 
         //
         // check for solid walls
@@ -280,7 +281,9 @@ internal partial class Program
                 check = _mapManager.actorat[x, y];
                 if (check != null)
                 {
-                    if (_mapManager.tilemap[x, y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
+                    if (check is WallSpriteBlocker)
+                        nearwallsprite = true;          // only its panel blocks: checked below
+                    else if (_mapManager.tilemap[x, y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
                     {
                         switch (pwalldir)
                         {
@@ -316,6 +319,16 @@ internal partial class Program
                     else return false;
                 }
             }
+        }
+
+        //
+        // a wall sprite only blocks along its panel (Program.WallSprites.cs)
+        //
+        if (nearwallsprite
+            && WallSpriteHitByBox((int)xl, (int)yl, (int)xh, (int)yh, ob.X, ob.Y, PLAYERSIZE, player: true) is { } panel)
+        {
+            wallspriteblock = panel;
+            return false;
         }
 
         //
@@ -361,6 +374,9 @@ internal partial class Program
         ob.X = basex + xmove;
         ob.Y = basey + ymove;
         diagonalblock = WallShape.Square;
+        wallspriteblock = null;
+        wallspritefromx = basex;
+        wallspritefromy = basey;
         if (TryMove(ob))
             return;
 
@@ -382,6 +398,20 @@ internal partial class Program
             int along = nwToSe ? (xmove + ymove) / 2 : (xmove - ymove) / 2;
             ob.X = basex + along;
             ob.Y = basey + (nwToSe ? along : -along);
+            if (TryMove(ob))
+                return;
+        }
+
+        //
+        // ran into a wall sprite's panel: slide along it, which for a diagonal one neither
+        // axis on its own would
+        //
+        if (wallspriteblock is { } panel)
+        {
+            double ux = (panel.X2 - panel.X1) / panel.Length, uy = (panel.Y2 - panel.Y1) / panel.Length;
+            double along = xmove * ux + ymove * uy;
+            ob.X = basex + (int)(along * ux);
+            ob.Y = basey + (int)(along * uy);
             if (TryMove(ob))
                 return;
         }

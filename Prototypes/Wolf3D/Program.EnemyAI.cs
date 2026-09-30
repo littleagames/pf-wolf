@@ -241,6 +241,10 @@ internal partial class Program
         int xfrac, yfrac, deltafrac;
         uint value, intercept;
 
+        // a wall sprite's panel across the line (Program.WallSprites.cs), unless it's shoot-through
+        if (WallSpriteBlocksLine(ob.X, ob.Y, player.X, player.Y))
+            return false;
+
         x1 = ob.X >> UNSIGNEDSHIFT;
         y1 = ob.Y >> UNSIGNEDSHIFT;
         xt1 = x1 >> 8;
