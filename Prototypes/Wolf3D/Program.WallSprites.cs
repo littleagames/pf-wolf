@@ -224,7 +224,7 @@ internal partial class Program
 
             int column = Math.Min((int)(t * spriteAsset.Width), spriteAsset.Width - 1);
             ScaleColumn((short)x, (short)(centery - half), MathUtils.FixedDiv(half, TEXTURESIZE / 2), spriteAsset, column,
-                vis.bright ? noshade : lightrow, vis.bright ? 0 : ShadeOffsetForHeight(height));
+                vis.bright ? noshade : TileLight(vis.tilex, vis.tiley), vis.bright ? 0 : ShadeOffsetForHeight(height));
         }
     }
 

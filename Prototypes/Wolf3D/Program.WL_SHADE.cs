@@ -1,11 +1,15 @@
 using Wolf3D.Assets;
 using Wolf3D.Constants;
 using Wolf3D.Entities;
+using Wolf3D.Managers;
 
 namespace Wolf3D;
 
 /// <summary>A level's shading, with every value filled in (see ShadingInfo)</summary>
 internal record struct ShadingSettings(string FadeColor, double FadeStart, double FadeEnd, int MaxFade, int Light);
+
+/// <summary>A light zone's light, with every value filled in (see ZoneInfo); a null color is no tint</summary>
+internal record struct ZoneLight(int Light, string? Color);
 
 internal partial class Program
 {
@@ -15,10 +19,15 @@ internal partial class Program
                                     SHADING
 
     The view is drawn in palette indices, so shading remaps them, Doom colormap style. A light
-    row (VideoManager.GetLightRow) holds FADESTEPS remaps of 256 entries for one light level:
-    step 0 is only dimmed to the light, and each step after it goes further toward the fade
-    color. A pixel's step comes from its distance along the view (as CalcHeight measures it),
-    so walls take one per post, flats one per row, and sprites one per sprite.
+    row (VideoManager.GetLightRow) holds FADESTEPS remaps of 256 entries for one light (a level
+    and a tint): step 0 is only lit, and each step after it goes further toward the fade color.
+    A pixel's step comes from its distance along the view (as CalcHeight measures it), so walls
+    take one per post, flats one per row, and sprites one per sprite.
+
+    Which light a pixel gets comes from the zone plane: a tile in a light zone (the map's
+    game-info zones) takes that zone's row, and any other tile the level's (lightrow). A wall
+    face is lit by the open tile it's seen from, a floor or ceiling by its own tile, and a
+    sprite by the tile it's on.
 
     =============================================================================
     */
@@ -28,12 +37,27 @@ internal partial class Program
 
     static readonly byte[] noshade = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray();
 
+    // What the level fades with when it has zones but no shading of its own: nothing
+    static readonly ShadingSettings NoFade = new("#000000", 0, 16, 0, 255);
+
     internal static ShadingSettings? levelshading;  // null: the level isn't shaded
-    static bool shading;                // anything to do: levelshading dims or fades something
+    internal static Dictionary<int, ZoneLight> levelzones = [];
+    static bool shading;                // anything to do: something is dimmed, tinted or faded
     static byte[] lightrow = noshade;   // the level's light's row
     static byte fader, fadeg, fadeb;
     static long fadestart, fadeend;     // along the view, in global units (TILEGLOBAL a tile)
     static int maxfadestep;
+
+    static readonly Dictionary<int, byte[]> zonerows = [];
+
+    /// <summary>
+    /// Each tile's light row, indexed (y &lt;&lt; MAPSHIFT) + x like the flats: its zone's, else
+    /// the level's. Rebuilt when the zone plane or the lights change (UpdateTileLight).
+    /// </summary>
+    static readonly byte[][] tilelight = Enumerable.Repeat(noshade, MapManager.MAPAREA).ToArray();
+    static bool tilelightdirty = true;
+    static int tilelightversion;        // the MapManager.ZonesVersion tilelight was built for
+    static bool haszones;               // some tile is lit other than by the level's light
 
     /// <summary>
     /// The map's shading, each value it leaves out taken from the default map's, else the
@@ -53,37 +77,113 @@ internal partial class Program
             map?.Light ?? fallback?.Light ?? 255);
     }
 
+    /// <summary>
+    /// The map's light zones and the default map's, a map's zone taking each value it leaves
+    /// out from the default map's zone of the same id, else the ZoneInfo defaults.
+    /// </summary>
+    internal static Dictionary<int, ZoneLight> ResolveZones(MapInfo? mapInfo, DefaultMapInfo defaultMap)
+    {
+        var zones = new Dictionary<int, ZoneLight>();
+        var mapZones = mapInfo?.Zones ?? [];
+        foreach (var id in defaultMap.Zones.Keys.Union(mapZones.Keys))
+        {
+            ZoneInfo? map = mapZones.GetValueOrDefault(id), fallback = defaultMap.Zones.GetValueOrDefault(id);
+            zones[id] = new ZoneLight(map?.Light ?? fallback?.Light ?? 255, map?.Color ?? fallback?.Color);
+        }
+        return zones;
+    }
+
     /// <summary>Shades the level with settings (null for none) until it's left or reloaded.</summary>
     internal static void SetShading(ShadingSettings? settings)
     {
         levelshading = settings;
-        shading = settings is { } set && (set.MaxFade > 0 || set.Light < 255);
+        RebuildShading();
+    }
+
+    /// <summary>Lights a zone (null takes it out: its tiles get the level's light) until the level is left or reloaded.</summary>
+    internal static void SetZoneLight(int zone, ZoneLight? light)
+    {
+        if (light is { } l)
+            levelzones[zone] = l;
+        else
+            levelzones.Remove(zone);
+        RebuildShading();
+    }
+
+    static void RebuildShading()
+    {
+        var s = levelshading ?? NoFade;
+        shading = s.MaxFade > 0 || s.Light < 255
+            || levelzones.Values.Any(z => z.Light < 255 || ParseRgb(z.Color, (255, 255, 255), "zone color") != (255, 255, 255));
         lightrow = noshade;
+        zonerows.Clear();
+        tilelightdirty = true;
         if (!shading)
             return;
 
-        var s = settings!.Value;
-        try
-        {
-            var fade = Color.FromHexRGBA(s.FadeColor);
-            (fader, fadeg, fadeb) = (fade.Red, fade.Green, fade.Blue);
-        }
-        catch (ArgumentException)
-        {
-            Console.WriteLine($"Shading fade-color '{s.FadeColor}' isn't #RRGGBB, fading to black instead");
-            (fader, fadeg, fadeb) = (0, 0, 0);
-        }
-
+        (fader, fadeg, fadeb) = ParseRgb(s.FadeColor, (0, 0, 0), "shading fade-color");
         fadestart = (long)(Math.Max(s.FadeStart, 0) * MapConstants.TILEGLOBAL);
         fadeend = Math.Max((long)(s.FadeEnd * MapConstants.TILEGLOBAL), fadestart + 1);
         maxfadestep = (int)Math.Round(Math.Clamp(s.MaxFade, 0, 100) / 100.0 * (FADESTEPS - 1));
 
-        lightrow = LightRow((int)Math.Round(Math.Clamp(s.Light, 0, 255) / 255.0 * (LIGHTLEVELS - 1)));
+        lightrow = LightRow(s.Light, (255, 255, 255));
+        foreach (var (id, zone) in levelzones)
+            zonerows[id] = LightRow(zone.Light, ParseRgb(zone.Color, (255, 255, 255), "zone color"));
     }
 
-    // The light row for a light level (0 to LIGHTLEVELS - 1)
-    static byte[] LightRow(int level) =>
-        shading ? _videoManager.GetLightRow(level, LIGHTLEVELS, FADESTEPS, fader, fadeg, fadeb) : noshade;
+    static readonly HashSet<string> badcolors = [];
+
+    // A #RRGGBB color, or fallback when there's none or it isn't one (warned about once)
+    static (byte R, byte G, byte B) ParseRgb(string? color, (byte, byte, byte) fallback, string what)
+    {
+        if (string.IsNullOrEmpty(color))
+            return fallback;
+        try
+        {
+            var c = Color.FromHexRGBA(color);
+            return (c.Red, c.Green, c.Blue);
+        }
+        catch (Exception e) when (e is ArgumentException or FormatException)
+        {
+            if (badcolors.Add(color))
+                Console.WriteLine($"The {what} '{color}' isn't #RRGGBB; using #{fallback.Item1:X2}{fallback.Item2:X2}{fallback.Item3:X2}");
+            return fallback;
+        }
+    }
+
+    // The light row for a light (0 to 255) with a tint
+    static byte[] LightRow(int light, (byte R, byte G, byte B) tint)
+    {
+        if (!shading)
+            return noshade;
+        int level = (int)Math.Round(Math.Clamp(light, 0, 255) / 255.0 * (LIGHTLEVELS - 1));
+        return _videoManager.GetLightRow(level, LIGHTLEVELS, FADESTEPS, fader, fadeg, fadeb, tint.R, tint.G, tint.B);
+    }
+
+    /// <summary>Brings tilelight up to date with the zone plane and the lights; called before each frame.</summary>
+    static void UpdateTileLight()
+    {
+        if (!tilelightdirty && tilelightversion == _mapManager.ZonesVersion)
+            return;
+        tilelightdirty = false;
+        tilelightversion = _mapManager.ZonesVersion;
+
+        haszones = false;
+        for (int y = 0; y < MapManager.MAPSIZE; y++)
+            for (int x = 0; x < MapManager.MAPSIZE; x++)
+            {
+                var row = lightrow;
+                if (x < _mapManager.mapwidth && y < _mapManager.mapheight
+                    && _mapManager.GetZone(x, y) is var zone and not 0 && zonerows.TryGetValue(zone, out var zonerow))
+                    row = zonerow;
+                tilelight[(y << MapManager.MAPSHIFT) + x] = row;
+                haszones |= row != lightrow;
+            }
+    }
+
+    /// <summary>The light row of a tile (the level's off the map).</summary>
+    static byte[] TileLight(int x, int y) =>
+        (uint)x < MapManager.MAPSIZE && (uint)y < MapManager.MAPSIZE ? tilelight[(y << MapManager.MAPSHIFT) + x] : lightrow;
 
     /// <summary>Where the remap for something nx away along the view (global units) starts in a light row.</summary>
     static int ShadeOffset(long nx)
@@ -103,6 +203,10 @@ internal partial class Program
     internal static bool IsBright(Entities.Actors.Actor actor) =>
         actor.CurrentState?.Bright == true || actor.Flags.Contains("bright", StringComparer.OrdinalIgnoreCase);
 
-    internal static void InitLevelShading(MapInfo? mapInfo) =>
-        SetShading(ResolveShading(mapInfo, _gameEngineManager.GetGameInfo().DefaultMap));
+    internal static void InitLevelShading(MapInfo? mapInfo)
+    {
+        var defaultMap = _gameEngineManager.GetGameInfo().DefaultMap;
+        levelzones = ResolveZones(mapInfo, defaultMap);
+        SetShading(ResolveShading(mapInfo, defaultMap));
+    }
 }

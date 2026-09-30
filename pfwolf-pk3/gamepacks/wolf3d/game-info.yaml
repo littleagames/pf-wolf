@@ -17,6 +17,15 @@ default-map:
   #   fade-color: "#000000"
   #   fade-start: 2
   #   fade-end: 20
+  # Light zones, also settable per map (a map's zone takes each value it leaves out from the
+  # zone of the same id here). A tile's zone is its value on plane 5 (0: none, the level's
+  # light). Walls take the light of the tile they're seen from, floors and ceilings their
+  # own tile's, sprites the tile they're on. Distance still fades zones as shading says.
+  #   light: 0 (black) to 255 (full, the default)
+  #   color: #RRGGBB the light is tinted with (default white: no tint)
+  # zones:
+  #   1: { light: 70 }                          # a dim room
+  #   2: { light: 255, color: "#FF4040" }       # red emergency lighting
 
 signon:
   pic: wolf3d-signon

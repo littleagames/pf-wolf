@@ -103,7 +103,7 @@ internal class Wolf3dMapFileLoader
         //
         var size = MapManager.MAPAREA * sizeof(ushort);
 
-        // GAMEMAPS has three planes; the height and tag planes after them are left empty
+        // GAMEMAPS has three planes; the height, tag and zone planes after them are left empty
         UInt16[][] mapsegs = new ushort[MapManager.LEVELPLANES][];
         for (var plane = 0; plane < MapManager.LEVELPLANES; plane++)
             mapsegs[plane] = new ushort[MapManager.MAPAREA];

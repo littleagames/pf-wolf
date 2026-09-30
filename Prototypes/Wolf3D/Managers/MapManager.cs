@@ -62,10 +62,10 @@ internal class MapManager
 
     /// <summary>
     /// Planes every loaded level has: walls, objects, flats (ECWolf's floor and ceiling, see
-    /// <see cref="FLATPLANE"/>), wall heights and tags. A GAMEMAPS level has neither of the last
-    /// two, so they're empty.
+    /// <see cref="FLATPLANE"/>), wall heights, tags and light zones. A GAMEMAPS level has none
+    /// of the last three, so they're empty.
     /// </summary>
-    public const int LEVELPLANES = 5;
+    public const int LEVELPLANES = 6;
 
     private readonly Lazy<AssetManager> assetManager;
 
@@ -110,6 +110,15 @@ internal class MapManager
     /// tag. An actor takes its tag from the tile it spawns on (<see cref="Entities.Actors.Actor.Tag"/>).
     /// </summary>
     internal const int TAGPLANE = 4;
+
+    /// <summary>
+    /// Each tile's light zone, 0 for none (the map's light): the map's game-info zones say how
+    /// each is lit (Program.WL_SHADE.cs).
+    /// </summary>
+    internal const int ZONEPLANE = 5;
+
+    /// <summary>Goes up whenever the zone plane may have changed: a level loaded or restored, or a zone set.</summary>
+    internal int ZonesVersion { get; private set; }
 
     /// <summary>
     /// ECWolf's floor and ceiling plane: the low byte of a tile's value picks its floor flat and
@@ -279,6 +288,7 @@ internal class MapManager
 
         BuildWallShapes();
         BuildWallHeights();
+        ZonesVersion++;
     }
 
     /// <summary>
@@ -318,6 +328,16 @@ internal class MapManager
         storymap[x, y] = (byte)stories;
         if (stories > maxtilestories)
             maxtilestories = stories;
+    }
+
+    /// <summary>The light zone a tile is in, 0 for none.</summary>
+    internal ushort GetZone(int x, int y) => (ushort)MAPSPOT(x, y, ZONEPLANE);
+
+    /// <summary>Puts a tile in a light zone on the zone plane, so it's saved with the level; 0 takes it out.</summary>
+    internal void SetZone(int x, int y, ushort zone)
+    {
+        SetMapSpot(x, y, ZONEPLANE, zone);
+        ZonesVersion++;
     }
 
     /// <summary>The tag on a tile, 0 for none.</summary>
@@ -982,6 +1002,7 @@ internal class MapManager
         BuildWallShapes();
         BuildWallHeights();
         BuildFlats(defaultfloor, defaultceiling);
+        ZonesVersion++;
 
         _actors.Clear();
         Player = null;

@@ -227,6 +227,17 @@ internal partial class Program
     static readonly int[] postupperofs = new int[MAXPOSTS];
     static readonly short[] postunderside = new short[MAXPOSTS];   // an arch's: the height where the trace leaves it, 0 for none
     static readonly TextureAsset?[] postundertexture = new TextureAsset?[MAXPOSTS];
+    static readonly byte[][] postlight = new byte[MAXPOSTS][];              // its face's light row
+
+    // The light row of the open tile the trace last came from: walls and doors it hits are seen
+    // from there. A wall or door tile keeps the one before it (a wall the trace passes, an open door).
+    static byte[] hitlight = noshade;
+
+    static void EnterTileLight(int x, int y)
+    {
+        if (_mapManager.tilemap[x, y] == 0)
+            hitlight = TileLight(x, y);
+    }
 
     internal static short postheight;   // the height (as wallheight) of the post ScalePost queues
     static int hitstories;              // how many stories tall the wall the trace just hit is
@@ -256,10 +267,11 @@ internal partial class Program
     }
 
     static void QueuePost(short height, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
-        short underside = 0, TextureAsset? undertexture = null)
+        short underside = 0, TextureAsset? undertexture = null, byte[]? light = null)
     {
         if (postcount == MAXPOSTS)
             return;
+        postlight[postcount] = light ?? hitlight;
         postunderside[postcount] = underside;
         postundertexture[postcount] = undertexture;
         postheights[postcount] = height;
@@ -280,7 +292,7 @@ internal partial class Program
             postcount--;
             DrawPost(pixx, postheights[postcount] >> 3, postfirststory[postcount], poststories[postcount],
                 postlower[postcount], postlowerofs[postcount], postupper[postcount], postupperofs[postcount],
-                lightrow, ShadeOffsetForHeight(postheights[postcount]));
+                postlight[postcount], ShadeOffsetForHeight(postheights[postcount]));
             if (postunderside[postcount] != 0)
                 DrawUnderside(pixx, postheights[postcount] >> 3, postunderside[postcount] >> 3, postundertexture[postcount]);
         }
@@ -305,34 +317,36 @@ internal partial class Program
             byte* dest = (byte*)vbufPtr + screenofs + x;
             double numerator = heightnumerator * 32.0;
 
-            if (texture == null)
-            {
-                for (int y = from; y <= to; y++)
-                    dest[y * pitch] = lightrow[ShadeOffset((long)(numerator / (centery - y - 0.5))) + ceilingcolor];
-                return;
-            }
-
             //
             // The underside shows on row y where its edge would at a distance (along the view,
             // as CalcHeight measures it) with half a story centery - y pixels high: nx = heightnumerator
             // * 32 / half. Going that far along the view means going nx / cos(offset) along the ray.
+            // That point's tile also gives its light.
             //
             const double TORADIANS = 2 * Math.PI / FINEANGLES;
             double angle = (midangle + pixelangle[x]) * TORADIANS;
             double perview = 1 / Math.Cos(pixelangle[x] * TORADIANS);
             double stepx = Math.Cos(angle) * perview, stepy = -Math.Sin(angle) * perview;
 
-            byte[] data = texture.RawData;
-            int width = texture.Width, height = texture.Height;
+            byte[]? data = texture?.RawData;
+            int width = texture?.Width ?? 0, height = texture?.Height ?? 0;
 
             for (int y = from; y <= to; y++)
             {
                 double nx = numerator / (centery - y - 0.5);
                 long px = (long)(viewx + nx * stepx), py = (long)(viewy + nx * stepy);
+                var light = TileLight((int)(px >> MapConstants.TILESHIFT), (int)(py >> MapConstants.TILESHIFT));
+                int shadeofs = ShadeOffset((long)nx);
+                if (data == null)
+                {
+                    dest[y * pitch] = light[shadeofs + ceilingcolor];
+                    continue;
+                }
+
                 int u = (int)(px >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
                 int v = (int)(py >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
                 int row = height >= TEXTURESIZE ? height - TEXTURESIZE + v : v * height / TEXTURESIZE;
-                dest[y * pitch] = lightrow[ShadeOffset((long)nx) + data[u * width / TEXTURESIZE * height + row]];
+                dest[y * pitch] = light[shadeofs + data[u * width / TEXTURESIZE * height + row]];
             }
         }
     }
@@ -356,6 +370,7 @@ internal partial class Program
     static TextureAsset? archtexture;
     static TextureAsset? archunderside;
     static int archofs;
+    static byte[] archlight = noshade;  // its face's light row: the tile it's seen from
 
     static bool IsArch(int tilex, int tiley) => _mapManager.tilemap[tilex, tiley] == 0 && _mapManager.storymap[tilex, tiley] > 1;
 
@@ -374,6 +389,7 @@ internal partial class Program
             return;                     // nothing to texture it from: leave it open
 
         archopen = true;
+        archlight = hitlight;
         archunderside = ArchUndersideTexture(tilex, tiley) ?? archtexture;
         archstories = _mapManager.storymap[tilex, tiley];
         archheight = HeightAt(edgex, edgey);
@@ -414,6 +430,7 @@ internal partial class Program
             return;                     // as OpenArch: nothing to texture it from
         archtexture = notexture;
         archopen = true;
+        archlight = hitlight;
         archstories = _mapManager.storymap[focaltx, focalty];
         archheight = short.MaxValue;
         archofs = 0;
@@ -429,7 +446,7 @@ internal partial class Program
         short exitheight = HeightAt(edgex, edgey);
         if (exitheight == 0)
             exitheight = 1;             // 0 means no underside
-        QueuePost(archheight, 1, archstories, archtexture!, archofs, archtexture!, archofs, exitheight, archunderside);
+        QueuePost(archheight, 1, archstories, archtexture!, archofs, archtexture!, archofs, exitheight, archunderside, archlight);
     }
 
     // The height (as wallheight) of a wall at (x, y)
@@ -1063,14 +1080,16 @@ internal partial class Program
             }
         }
 
-        bool ceilingflats = _mapManager.hasceilingflats && !sky;
-        if (_mapManager.hasfloorflats || ceilingflats)
+        // In light zones, even the plain colors change from tile to tile, so they're cast too
+        bool floorflats = _mapManager.hasfloorflats || haszones;
+        bool ceilingflats = (_mapManager.hasceilingflats || haszones) && !sky;
+        if (floorflats || ceilingflats)
         {
             SetupFlatColumns();
-            if (_mapManager.hasfloorflats)
-                DrawFlats(_mapManager.floorflat, centery, viewheight - 1, 1);
+            if (floorflats)
+                DrawFlats(_mapManager.floorflat, floorColor, centery, viewheight - 1, 1);
             if (ceilingflats)
-                DrawFlats(_mapManager.ceilingflat, 0, centery - 1, 2 * wallstories - 1);
+                DrawFlats(_mapManager.ceilingflat, ceilingColor, 0, centery - 1, 2 * wallstories - 1);
         }
     }
 
@@ -1110,10 +1129,10 @@ internal partial class Program
 
     /// <summary>
     /// Draws rows from to to (inclusive) of a flat whose surface is halves half stories from the
-    /// eye (the floor 1, a ceiling at the top of n story walls 2n - 1). Tiles with no texture
-    /// keep the color already there.
+    /// eye (the floor 1, a ceiling at the top of n story walls 2n - 1), each pixel in its
+    /// tile's light. Tiles with no texture are color, or with no light zones, keep what's there.
     /// </summary>
-    static void DrawFlats(TextureAsset?[] flats, int from, int to, int halves)
+    static void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, int halves)
     {
         int pitch = (int)_videoManager.bufferPitch;
         double numerator = heightnumerator * 32.0 * halves;
@@ -1137,14 +1156,19 @@ internal partial class Program
                     if ((ulong)tilex >= MapManager.MAPSIZE || (ulong)tiley >= MapManager.MAPSIZE)
                         continue;
 
-                    var texture = flats[(tiley << MapManager.MAPSHIFT) + tilex];
+                    long tile = (tiley << MapManager.MAPSHIFT) + tilex;
+                    var texture = flats[tile];
                     if (texture == null)
+                    {
+                        if (haszones)
+                            row[x] = tilelight[tile][shadeofs + color];
                         continue;
+                    }
 
                     int u = (int)(px >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
                     int v = (int)(py >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
                     int height = texture.Height;
-                    row[x] = lightrow[shadeofs + texture.RawData[u * texture.Width / TEXTURESIZE * height + v * height / TEXTURESIZE]];
+                    row[x] = tilelight[tile][shadeofs + texture.RawData[u * texture.Width / TEXTURESIZE * height + v * height / TEXTURESIZE]];
                 }
             }
         }
@@ -1224,6 +1248,7 @@ internal partial class Program
             ytile = (short)(focalty + ytilestep);
 
             texdelta = 0;
+            hitlight = TileLight(focaltx, focalty);
             columnhit = pastwall = archopen = false;
             columntallest = 0;
             columntop = viewheight;
@@ -1359,6 +1384,7 @@ internal partial class Program
         // the pushwall cases below move yinttile, so keep the tile the trace entered for the automap
         int hitx = xtile, hity = yinttile;
         CloseArch(VertEdge, yintercept);
+        EnterTileLight(xtile - xtilestep, yinttile);
         tilehit = _mapManager.tilemap[xtile, yinttile];
         hitstories = tilehit == BIT_WALL ? _mapManager.WallStories(pwallx, pwally) : _mapManager.WallStories(hitx, hity);
 
@@ -1600,6 +1626,7 @@ internal partial class Program
         // the pushwall cases below move xinttile, so keep the tile the trace entered for the automap
         int hitx = xinttile, hity = ytile;
         CloseArch(xintercept, HorizEdge);
+        EnterTileLight(xinttile, ytile - ytilestep);
         tilehit = _mapManager.tilemap[xinttile, ytile];
         hitstories = tilehit == BIT_WALL ? _mapManager.WallStories(pwallx, pwally) : _mapManager.WallStories(hitx, hity);
 
@@ -2146,11 +2173,11 @@ internal partial class Program
             return;
         }
 
-        // The frame the weapon's states are on (Program.PlayerWeapon.cs), in the level's light but
-        // not faded: it's at arm's length
+        // The frame the weapon's states are on (Program.PlayerWeapon.cs), in the light of the
+        // player's tile but not faded: it's at arm's length
         if (WeaponShapeName() is { } shape)
             SimpleScaleShape(viewwidth / 2, shape, viewheight + 1,
-                weaponSprite != null && IsBright(weaponSprite) ? noshade : lightrow);
+                weaponSprite != null && IsBright(weaponSprite) ? noshade : TileLight(player.TileX, player.TileY));
 
         if (demorecord || demoplayback)
             SimpleScaleShape(viewwidth / 2, "DEMOA0", viewheight + 1);
@@ -2182,6 +2209,7 @@ internal partial class Program
         vbuf += (int)screenofs;
 
         Setup3DView();
+        UpdateTileLight();
 
         //
         // follow the walls from there to the right, drawing as we go

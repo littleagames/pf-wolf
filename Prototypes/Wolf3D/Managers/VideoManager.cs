@@ -574,22 +574,27 @@ internal class VideoManager
         return table;
     }
 
-    private readonly Dictionary<(int Level, int Levels, int FadeSteps, int Fade), byte[]> _lightRows = [];
+    private readonly Dictionary<(int Level, int Levels, int FadeSteps, int Fade, int Tint), byte[]> _lightRows = [];
 
     /// <summary>
     /// The shading tables for one light level: <paramref name="fadeSteps"/> palette remaps of 256
-    /// entries each, one after another. Every color is dimmed toward black to
-    /// <paramref name="level"/>/(<paramref name="levels"/> - 1) of itself, then mixed toward the
-    /// fade color by step/(<paramref name="fadeSteps"/> - 1) for the step'th remap, and matched
-    /// to the closest palette entry. Built on first use and kept until the palette changes.
+    /// entries each, one after another. Every color is lit: dimmed toward black to
+    /// <paramref name="level"/>/(<paramref name="levels"/> - 1) of itself and multiplied by the
+    /// tint (#FFFFFF for none). Then it's mixed toward the fade color by
+    /// step/(<paramref name="fadeSteps"/> - 1) for the step'th remap, and matched to the closest
+    /// palette entry. Built on first use and kept until the palette changes.
     /// </summary>
-    internal byte[] GetLightRow(int level, int levels, int fadeSteps, byte fadeR, byte fadeG, byte fadeB)
+    internal byte[] GetLightRow(int level, int levels, int fadeSteps, byte fadeR, byte fadeG, byte fadeB,
+        byte tintR = 255, byte tintG = 255, byte tintB = 255)
     {
-        var key = (level, levels, fadeSteps, fadeR << 16 | fadeG << 8 | fadeB);
+        int tint = tintR << 16 | tintG << 8 | tintB;
+        var key = (level, levels, fadeSteps, fadeR << 16 | fadeG << 8 | fadeB, tint);
         if (_lightRows.TryGetValue(key, out var row))
             return row;
 
         float light = level / (float)(levels - 1);
+        float lightR = light * tintR / 255f, lightG = light * tintG / 255f, lightB = light * tintB / 255f;
+        bool untouched = level == levels - 1 && tint == 0xFFFFFF;
         static byte Mix(float from, byte to, float amount) => (byte)Math.Clamp(from + (to - from) * amount + 0.5f, 0, 255);
 
         row = new byte[fadeSteps * 256];
@@ -599,14 +604,14 @@ internal class VideoManager
             float fade = step / (float)(fadeSteps - 1);
             for (int i = 0; i < 256; i++)
             {
-                if (level == levels - 1 && step == 0)
+                if (untouched && step == 0)
                 {
-                    row[i] = (byte)i;           // untouched: keep the index, not just its color
+                    row[i] = (byte)i;           // keep the index, not just its color
                     continue;
                 }
 
                 var c = gamepal[i];
-                byte r = Mix(c.r * light, fadeR, fade), g = Mix(c.g * light, fadeG, fade), b = Mix(c.b * light, fadeB, fade);
+                byte r = Mix(c.r * lightR, fadeR, fade), g = Mix(c.g * lightG, fadeG, fade), b = Mix(c.b * lightB, fadeB, fade);
                 int rgb = r << 16 | g << 8 | b;
                 if (!matches.TryGetValue(rgb, out var index))
                     matches[rgb] = index = FindClosestPaletteIndexByLab(r, g, b);

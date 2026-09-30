@@ -290,6 +290,25 @@ internal record DefaultMapInfo
     /// Distance shading (night, fog) on every level; null leaves levels unshaded
     /// </summary>
     public ShadingInfo? Shading { get; init; } = null;
+
+    /// <summary>
+    /// Light zones every level has, by zone id (the zone plane's value); a map's own zones
+    /// override these value by value
+    /// </summary>
+    public Dictionary<int, ZoneInfo> Zones { get; init; } = [];
+}
+
+/// <summary>
+/// How the tiles of a light zone (those with its id on the zone plane, plane 5) are lit, in
+/// place of the level's light. Distance still fades them as the level's shading says.
+/// </summary>
+internal record ZoneInfo
+{
+    /// <summary>Light, 0 (black) to 255 (full, the default)</summary>
+    public int? Light { get; init; }
+
+    /// <summary>#RRGGBB the light is tinted with (default white: no tint), e.g. "#FF4040" for red emergency lighting</summary>
+    public string? Color { get; init; }
 }
 
 /// <summary>
@@ -483,4 +502,9 @@ internal record MapInfo
     /// Distance shading; each value left out uses the default map's (see ShadingInfo)
     /// </summary>
     public ShadingInfo? Shading { get; init; } = null;
+
+    /// <summary>
+    /// Light zones by zone id; each value left out uses the default map's zone of that id (see ZoneInfo)
+    /// </summary>
+    public Dictionary<int, ZoneInfo>? Zones { get; init; } = null;
 }

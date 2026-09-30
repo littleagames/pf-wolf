@@ -105,7 +105,7 @@ internal partial class Program
         xcenter = sprite.viewx - height;
         toppix = centery - height;
 
-        byte[] shade = sprite.bright ? noshade : lightrow;
+        byte[] shade = sprite.bright ? noshade : TileLight(sprite.tilex, sprite.tiley);
         int shadeofs = sprite.bright ? 0 : ShadeOffsetForHeight(sprite.viewheight);
 
         x2 = xcenter;

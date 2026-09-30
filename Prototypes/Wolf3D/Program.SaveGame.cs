@@ -44,7 +44,8 @@ internal partial class Program
     // 11: armor points and percent, after health in gamestate.
     // 12: a fifth map plane (tags), each actor's tag after its tile, and whether each door is
     //     held open by a switch.
-    private const int SaveVersion = 12;
+    // 13: a sixth map plane (light zones).
+    private const int SaveVersion = 13;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the
