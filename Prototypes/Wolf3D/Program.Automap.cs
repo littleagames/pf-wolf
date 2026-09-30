@@ -3,6 +3,7 @@ using Wolf3D.Configuration;
 using Wolf3D.Constants;
 using Wolf3D.Entities.Actors;
 using Wolf3D.Enums;
+using Wolf3D.Extensions;
 using Wolf3D.Managers;
 
 namespace Wolf3D;
@@ -26,7 +27,12 @@ internal partial class Program
         ["AutomapStats"] = "#C2C2C2",
     };
 
-    static readonly string[] AutomapHeadings = ["E", "NE", "N", "NW", "W", "SW", "S", "SE"];
+    // Language keys for the compass headings, counterclockwise from east like Wolf3D angles
+    static readonly string[] AutomapHeadings =
+        ["$STR_AM_E", "$STR_AM_NE", "$STR_AM_N", "$STR_AM_NW", "$STR_AM_W", "$STR_AM_SW", "$STR_AM_S", "$STR_AM_SE"];
+
+    static string AutomapText(string key, params object[] args) =>
+        string.Format(key.ToLanguageText(_assetManager.GetText("en-us")), args);
 
     /// <summary>The keys that work while the automap is open; bound in <see cref="controls"/>.</summary>
     internal enum automapkeys
@@ -43,6 +49,7 @@ internal partial class Program
         am_style,
         am_overlay,
         am_grid,
+        am_stats,
 
         NUMAUTOMAPKEYS
     }
@@ -148,6 +155,8 @@ internal partial class Program
             _automapManager.ToggleOverlay();
         else if (Bound(automapkeys.am_grid))
             _automapManager.ToggleGrid();
+        else if (Bound(automapkeys.am_stats))
+            _automapManager.ToggleStats();
         else    // held keys: used in UpdateAutomap, not binds
             return IsAutomapInput(code);
 
@@ -505,9 +514,9 @@ internal partial class Program
             return;
 
         int heading = ((player.Angle % ANGLES + ANGLES) % ANGLES + ANGLES / 16) / (ANGLES / 8) % 8;
-        string text = $"X {player.TileX}  Y {player.TileY}  {AutomapHeadings[heading]}";
+        string text = AutomapText("$STR_AM_POSITION", player.TileX, player.TileY, AutomapText(AutomapHeadings[heading]));
         if (!_automapManager.Follow)
-            text += "  PAN";
+            text += "  " + AutomapText("$STR_AM_PAN");
 
         // DrawText and Bar work in 320x200 virtual pixels
         int px = _videoManager.scaleFactor;
@@ -519,7 +528,7 @@ internal partial class Program
         int width = font.Measure(text);
         if (width > room)
         {
-            text = $"{player.TileX},{player.TileY}";
+            text = AutomapText("$STR_AM_POSITIONSHORT", player.TileX, player.TileY);
             width = font.Measure(text);
             if (width > room || font.Height + 2 > view.ClipHeight / px)
                 return;
@@ -544,10 +553,10 @@ internal partial class Program
         (string Text, string Color)[] lines =
         [
             (GetMapDisplayName(gamestate.mapon), AutomapColor("AutomapTitle")),
-            ($"Kills {gamestate.killcount}/{gamestate.killtotal}", AutomapColor("AutomapStats")),
-            ($"Treasure {gamestate.treasurecount}/{gamestate.treasuretotal}", AutomapColor("AutomapStats")),
-            ($"Secrets {gamestate.secretcount}/{gamestate.secrettotal}", AutomapColor("AutomapStats")),
-            ($"Time {FormatPlayTime(gamestate.TimeCount)}", AutomapColor("AutomapStats")),
+            (AutomapText("$STR_AM_KILLS", gamestate.killcount, gamestate.killtotal), AutomapColor("AutomapStats")),
+            (AutomapText("$STR_AM_TREASURE", gamestate.treasurecount, gamestate.treasuretotal), AutomapColor("AutomapStats")),
+            (AutomapText("$STR_AM_SECRETS", gamestate.secretcount, gamestate.secrettotal), AutomapColor("AutomapStats")),
+            (AutomapText("$STR_AM_TIME", FormatPlayTime(gamestate.TimeCount)), AutomapColor("AutomapStats")),
         ];
 
         // DrawText and Bar work in 320x200 virtual pixels; the bottom rows are the position line's

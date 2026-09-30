@@ -51,6 +51,8 @@ internal class AutomapManager
     /// </summary>
     internal bool ShowStats { get; set; } = true;
 
+    internal void ToggleStats() => ShowStats = !ShowStats;
+
     /// <summary>Virtual (320x200) pixels per map tile; multiply by the video scale factor for screen pixels.</summary>
     internal float Zoom { get; private set; } = DefaultZoom;
 

@@ -89,6 +89,26 @@ $STR_LS_SAVEDOTHERMODS: "It was saved with\nother mods."
 $STR_MAPEPISODEFLOOR: "Episode {0}, Floor {1}"
 $STR_MAPFLOOR: "Floor {0}"
 
+# Automap. Stats (am_stats): {0} found so far, {1} the level's total; time is on the level
+$STR_AM_KILLS: "Kills {0}/{1}"
+$STR_AM_TREASURE: "Treasure {0}/{1}"
+$STR_AM_SECRETS: "Secrets {0}/{1}"
+$STR_AM_TIME: "Time {0}"
+# The player's position: {0} and {1} the tile, {2} the heading below; the short form is for
+# views too narrow for the long one
+$STR_AM_POSITION: "X {0}  Y {1}  {2}"
+$STR_AM_POSITIONSHORT: "{0},{1}"
+# Added to the position while the map is panned away from the player
+$STR_AM_PAN: "PAN"
+$STR_AM_E: "E"
+$STR_AM_NE: "NE"
+$STR_AM_N: "N"
+$STR_AM_NW: "NW"
+$STR_AM_W: "W"
+$STR_AM_SW: "SW"
+$STR_AM_S: "S"
+$STR_AM_SE: "SE"
+
 # Joystick calibration
 $STR_CALIB: "Calibrate"
 $STR_JOYST: "Joystick"
@@ -186,6 +206,7 @@ $STR_CTL_AMROTATE: "Rotate map"
 $STR_CTL_AMSTYLE: "Map style"
 $STR_CTL_AMOVERLAY: "Overlay"
 $STR_CTL_AMGRID: "Grid"
+$STR_CTL_AMSTATS: "Level stats"
 $STR_CTL_RESET: "Reset to defaults"
 
 $STR_THINK: "Thinking"

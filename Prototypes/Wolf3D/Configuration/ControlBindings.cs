@@ -251,6 +251,7 @@ internal sealed class ControlBindings
         ScanCodes.sc_Equal, ScanCodes.sc_Minus,
         ScanCodes.sc_KeyPad8, ScanCodes.sc_KeyPad2, ScanCodes.sc_KeyPad4, ScanCodes.sc_KeyPad6,
         ScanCodes.sc_C, ScanCodes.sc_F, ScanCodes.sc_R, ScanCodes.sc_V, ScanCodes.sc_O, ScanCodes.sc_G,
+        ScanCodes.sc_S,
     ];
 
     /*

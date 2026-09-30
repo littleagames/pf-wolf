@@ -82,6 +82,7 @@ menu-items:
   - { type: "ControlMenuItem", control: "am_style", text: "$STR_CTL_AMSTYLE" }
   - { type: "ControlMenuItem", control: "am_overlay", text: "$STR_CTL_AMOVERLAY" }
   - { type: "ControlMenuItem", control: "am_grid", text: "$STR_CTL_AMGRID" }
+  - { type: "ControlMenuItem", control: "am_stats", text: "$STR_CTL_AMSTATS" }
 
   - { type: "BlankMenuItem" }
   - { id: "reset", type: "MenuSwitcher", text: "$STR_CTL_RESET", enabled: true }
