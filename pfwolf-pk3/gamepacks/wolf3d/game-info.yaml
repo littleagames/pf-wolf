@@ -23,9 +23,18 @@ default-map:
   # own tile's, sprites the tile they're on. Distance still fades zones as shading says.
   #   light: 0 (black) to 255 (full, the default)
   #   color: #RRGGBB the light is tinted with (default white: no tint)
+  #   effect: none (default), flicker (jumps between low and the light at random, up to tics
+  #           apart), pulse (glows down to low and back every tics) or strobe (the light for
+  #           bright-tics, then low, every tics)
+  #   low: the effect's dark end, 0-255 (default half the light)
+  #   tics: the effect's timing, 70 a second (default flicker 8, pulse 70, strobe 35)
+  #   bright-tics: how long a strobe stays at the light (default 5)
+  # Switches and actor states change zones as the level is played (A_SetZoneLight,
+  # A_ToggleZoneLight, A_SetZoneEffect: see mapdefs walls.yaml), and saves keep them.
   # zones:
   #   1: { light: 70 }                          # a dim room
   #   2: { light: 255, color: "#FF4040" }       # red emergency lighting
+  #   3: { light: 200, effect: flicker, low: 120 }   # a failing lamp
 
 signon:
   pic: wolf3d-signon

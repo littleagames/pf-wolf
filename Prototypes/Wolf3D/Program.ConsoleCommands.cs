@@ -146,8 +146,11 @@ internal partial class Program
             "light [0-255]", Cmd_Light, Cheat | InLevel);
         Register("zone", "Shows or sets the light zone (plane 5) of the tile you stand on, a tile, or a rectangle of tiles; 0 takes them out of any zone.",
             "zone [0-65535 [tilex tiley [tilex2 tiley2]]]", Cmd_Zone, Cheat | InLevel);
-        Register("zonelight", "Lists the level's light zones, or shows or sets how one is lit (light 0-255, optional #RRGGBB tint; none removes it), until the level is left or reloaded.",
-            "zonelight [zone [0-255|none] [#RRGGBB]]", Cmd_ZoneLight, Cheat | InLevel);
+        Register("zonelight", "Lists the level's light zones, or shows or sets how one is lit (light 0-255, optional #RRGGBB tint or none, optional fade tics; none as the light removes the zone).",
+            "zonelight [zone [0-255|none] [#RRGGBB|none] [tics]]", Cmd_ZoneLight, Cheat | InLevel);
+        Register("zoneeffect", "Makes a light zone flicker, pulse or strobe (none stops it), down to low, timed in tics (70 a second).",
+            "zoneeffect <zone> <none|flicker|pulse|strobe> [low 0-255] [tics] [bright-tics]", Cmd_ZoneEffect, Cheat | InLevel,
+            complete: (_, i) => i == 1 ? ["none", "flicker", "pulse", "strobe"] : []);
         Register("height","Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height. On open floor, 2 or more makes an arch.",
             $"height <0-{MAXWALLSTORIES}> [tilex tiley]", Cmd_Height, Cheat | InLevel);
         Register("tag", "Shows or sets a tile's tag on the tag plane (default: the one you face), and the tag of any actors on it; 0 clears it.",
@@ -990,25 +993,56 @@ internal partial class Program
         if (args.Length > 1)
         {
             if (args[1].Equals("none", StringComparison.OrdinalIgnoreCase))
-                SetZoneLight(zone, null);
+                RemoveZone(zone);
             else
             {
-                string? color = args.Length > 2 ? args[2] : levelzones.GetValueOrDefault(zone).Color;
-                if (color != null)
+                int light = ParseInt(args[1], 0, 255);
+                if (args.Length > 2)
                 {
-                    try { Entities.Color.FromHexRGBA(color); }
-                    catch (Exception) { throw new ArgumentException($"expected a #RRGGBB color, got \"{color}\""); }
+                    if (args[2].Equals("none", StringComparison.OrdinalIgnoreCase))
+                        SetZoneColor(zone, null);
+                    else if (IsRgb(args[2]))
+                        SetZoneColor(zone, args[2]);
+                    else
+                        throw new ArgumentException($"expected a #RRGGBB color or none, got \"{args[2]}\"");
                 }
-                SetZoneLight(zone, new ZoneLight(ParseInt(args[1], 0, 255), color));
+                FadeZoneLight(zone, light, args.Length > 3 ? ParseInt(args[3], 0, 7000) : 0);
             }
         }
         _consoleManager.Print($"Zone {zone}: {DescribeZone(zone)}");
     }
 
-    static string DescribeZone(int zone) =>
-        zone == 0 ? $"the level's light, {levelshading?.Light ?? 255}"
-        : levelzones.TryGetValue(zone, out var light) ? $"light {light.Light}{(light.Color != null ? $", tinted {light.Color}" : "")}"
-        : "not in the map's zones: the level's light";
+    private static void Cmd_ZoneEffect(string[] args)
+    {
+        if (args.Length < 2 || !TryParseZoneEffect(args[1], out var effect))
+            throw new ArgumentException("usage: zoneeffect <zone> <none|flicker|pulse|strobe> [low 0-255] [tics] [bright-tics]");
+
+        int zone = ParseInt(args[0], 1, ushort.MaxValue);
+        var state = ZoneFor(zone);
+        if (args.Length > 2) state.LowSetting = ParseInt(args[2], 0, 255);
+        if (args.Length > 3) state.TicsSetting = ParseInt(args[3], 1, 7000);
+        if (args.Length > 4) state.BrightTics = ParseInt(args[4], 0, 7000);
+        SetZoneEffect(zone, effect);
+        _consoleManager.Print($"Zone {zone}: {DescribeZone(zone)}");
+    }
+
+    static string DescribeZone(int zone)
+    {
+        if (zone == 0)
+            return $"the level's light, {levelshading?.Light ?? 255}";
+        if (!levelzones.TryGetValue(zone, out var z))
+            return "not in the map's zones: the level's light";
+
+        var text = $"light {z.Light}";
+        if (z.FadeLeft > 0)
+            text += $" (fading, now {z.BaseLight}, {z.FadeLeft} tics to go)";
+        if (z.Color != null)
+            text += $", tinted {z.Color}";
+        if (z.Effect != ZoneEffect.None)
+            text += $", {z.Effect.ToString().ToLowerInvariant()} to {z.Low} every {z.Tics} tics"
+                + (z.Effect == ZoneEffect.Strobe ? $" ({z.BrightTics} bright)" : "");
+        return text;
+    }
 
     private static void Cmd_KillAll(string[] args)
     {

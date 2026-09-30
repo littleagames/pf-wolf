@@ -615,6 +615,7 @@ internal partial class Program
         Entities.MapTriggerRegistry.Register("A_Exit", (_, _) => ExitAction(secret: false));
         Entities.MapTriggerRegistry.Register("A_SecretExit", (_, _) => ExitAction(secret: true));
         RegisterSwitchActions();    // tag-targeted door and wall actions (Program.SwitchActions.cs)
+        RegisterZoneLightActions(); // light zone actions, for switches and actors (Program.ZoneLights.cs)
     }
 
     /// <summary>

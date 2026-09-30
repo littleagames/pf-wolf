@@ -8,9 +8,6 @@ namespace Wolf3D;
 /// <summary>A level's shading, with every value filled in (see ShadingInfo)</summary>
 internal record struct ShadingSettings(string FadeColor, double FadeStart, double FadeEnd, int MaxFade, int Light);
 
-/// <summary>A light zone's light, with every value filled in (see ZoneInfo); a null color is no tint</summary>
-internal record struct ZoneLight(int Light, string? Color);
-
 internal partial class Program
 {
     /*
@@ -41,7 +38,7 @@ internal partial class Program
     static readonly ShadingSettings NoFade = new("#000000", 0, 16, 0, 255);
 
     internal static ShadingSettings? levelshading;  // null: the level isn't shaded
-    internal static Dictionary<int, ZoneLight> levelzones = [];
+    internal static Dictionary<int, ZoneState> levelzones = [];     // Program.ZoneLights.cs
     static bool shading;                // anything to do: something is dimmed, tinted or faded
     static byte[] lightrow = noshade;   // the level's light's row
     static byte fader, fadeg, fadeb;
@@ -81,15 +78,12 @@ internal partial class Program
     /// The map's light zones and the default map's, a map's zone taking each value it leaves
     /// out from the default map's zone of the same id, else the ZoneInfo defaults.
     /// </summary>
-    internal static Dictionary<int, ZoneLight> ResolveZones(MapInfo? mapInfo, DefaultMapInfo defaultMap)
+    internal static Dictionary<int, ZoneState> ResolveZones(MapInfo? mapInfo, DefaultMapInfo defaultMap)
     {
-        var zones = new Dictionary<int, ZoneLight>();
+        var zones = new Dictionary<int, ZoneState>();
         var mapZones = mapInfo?.Zones ?? [];
         foreach (var id in defaultMap.Zones.Keys.Union(mapZones.Keys))
-        {
-            ZoneInfo? map = mapZones.GetValueOrDefault(id), fallback = defaultMap.Zones.GetValueOrDefault(id);
-            zones[id] = new ZoneLight(map?.Light ?? fallback?.Light ?? 255, map?.Color ?? fallback?.Color);
-        }
+            zones[id] = ZoneState.FromInfo(mapZones.GetValueOrDefault(id), defaultMap.Zones.GetValueOrDefault(id));
         return zones;
     }
 
@@ -100,23 +94,16 @@ internal partial class Program
         RebuildShading();
     }
 
-    /// <summary>Lights a zone (null takes it out: its tiles get the level's light) until the level is left or reloaded.</summary>
-    internal static void SetZoneLight(int zone, ZoneLight? light)
-    {
-        if (light is { } l)
-            levelzones[zone] = l;
-        else
-            levelzones.Remove(zone);
-        RebuildShading();
-    }
-
+    // Everything shading draws from, again: after the settings change or zones come or go
     static void RebuildShading()
     {
         var s = levelshading ?? NoFade;
-        shading = s.MaxFade > 0 || s.Light < 255
-            || levelzones.Values.Any(z => z.Light < 255 || ParseRgb(z.Color, (255, 255, 255), "zone color") != (255, 255, 255));
+        // any zone at all, since its light can change as the level is played
+        shading = s.MaxFade > 0 || s.Light < 255 || levelzones.Count > 0;
         lightrow = noshade;
         zonerows.Clear();
+        foreach (var zone in levelzones.Values)
+            zone.RowLevel = -1;
         tilelightdirty = true;
         if (!shading)
             return;
@@ -126,9 +113,30 @@ internal partial class Program
         fadeend = Math.Max((long)(s.FadeEnd * MapConstants.TILEGLOBAL), fadestart + 1);
         maxfadestep = (int)Math.Round(Math.Clamp(s.MaxFade, 0, 100) / 100.0 * (FADESTEPS - 1));
 
-        lightrow = LightRow(s.Light, (255, 255, 255));
+        lightrow = LevelRow(LightLevelOf(s.Light), (255, 255, 255));
+        foreach (var zone in levelzones.Values)
+            if (zone.Effect != ZoneEffect.None)
+                PrewarmZoneRows(zone, zone.Low, zone.BaseLight);
+        UpdateZoneRows();
+    }
+
+    /// <summary>Gives each zone the light row for the light it shows now, where that's moved.</summary>
+    static void UpdateZoneRows()
+    {
+        if (!shading)
+            return;
         foreach (var (id, zone) in levelzones)
-            zonerows[id] = LightRow(zone.Light, ParseRgb(zone.Color, (255, 255, 255), "zone color"));
+        {
+            int level = LightLevelOf(zone.Current);
+            if (zone.Row != null && level == zone.RowLevel && zone.Color == zone.RowColor)
+                continue;
+
+            zone.Row = LevelRow(level, ParseRgb(zone.Color, (255, 255, 255), "zone color"));
+            zone.RowLevel = level;
+            zone.RowColor = zone.Color;
+            zonerows[id] = zone.Row;
+            tilelightdirty = true;
+        }
     }
 
     static readonly HashSet<string> badcolors = [];
@@ -151,14 +159,12 @@ internal partial class Program
         }
     }
 
-    // The light row for a light (0 to 255) with a tint
-    static byte[] LightRow(int light, (byte R, byte G, byte B) tint)
-    {
-        if (!shading)
-            return noshade;
-        int level = (int)Math.Round(Math.Clamp(light, 0, 255) / 255.0 * (LIGHTLEVELS - 1));
-        return _videoManager.GetLightRow(level, LIGHTLEVELS, FADESTEPS, fader, fadeg, fadeb, tint.R, tint.G, tint.B);
-    }
+    // The light level (0 to LIGHTLEVELS - 1) for a light (0 to 255)
+    static int LightLevelOf(int light) => (int)Math.Round(Math.Clamp(light, 0, 255) / 255.0 * (LIGHTLEVELS - 1));
+
+    // The light row for a light level with a tint
+    static byte[] LevelRow(int level, (byte R, byte G, byte B) tint) =>
+        shading ? _videoManager.GetLightRow(level, LIGHTLEVELS, FADESTEPS, fader, fadeg, fadeb, tint.R, tint.G, tint.B) : noshade;
 
     /// <summary>Brings tilelight up to date with the zone plane and the lights; called before each frame.</summary>
     static void UpdateTileLight()

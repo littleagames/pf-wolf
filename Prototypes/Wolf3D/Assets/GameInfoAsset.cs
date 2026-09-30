@@ -309,6 +309,22 @@ internal record ZoneInfo
 
     /// <summary>#RRGGBB the light is tinted with (default white: no tint), e.g. "#FF4040" for red emergency lighting</summary>
     public string? Color { get; init; }
+
+    /// <summary>
+    /// How the light moves by itself: none (the default), flicker (jumps between low and the
+    /// light at random, up to tics apart), pulse (glows down to low and back every tics) or
+    /// strobe (the light for bright-tics, then low, every tics)
+    /// </summary>
+    public string? Effect { get; init; }
+
+    /// <summary>The effect's dark end, 0 to 255 (default half the light)</summary>
+    public int? Low { get; init; }
+
+    /// <summary>The effect's timing, 70 a second (default flicker 8, pulse 70, strobe 35)</summary>
+    public int? Tics { get; init; }
+
+    /// <summary>How long a strobe stays at the light each time (default 5)</summary>
+    public int? BrightTics { get; init; }
 }
 
 /// <summary>

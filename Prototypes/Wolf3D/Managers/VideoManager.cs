@@ -121,6 +121,7 @@ internal class VideoManager
         gamepal = pal.ToSDLColors();
         _darkenTable = null;
         _lightRows.Clear();
+        _lightMatches.Clear();
         _paletteLab = null;
 
         _colorIndexCache.Clear();
@@ -576,6 +577,10 @@ internal class VideoManager
 
     private readonly Dictionary<(int Level, int Levels, int FadeSteps, int Fade, int Tint), byte[]> _lightRows = [];
 
+    // The closest palette entry to each #RRGGBB any light row has needed, shared by them all:
+    // rows built mid-level (for changing lights) mostly find their colors here
+    private readonly Dictionary<int, byte> _lightMatches = [];
+
     /// <summary>
     /// The shading tables for one light level: <paramref name="fadeSteps"/> palette remaps of 256
     /// entries each, one after another. Every color is lit: dimmed toward black to
@@ -598,7 +603,7 @@ internal class VideoManager
         static byte Mix(float from, byte to, float amount) => (byte)Math.Clamp(from + (to - from) * amount + 0.5f, 0, 255);
 
         row = new byte[fadeSteps * 256];
-        var matches = new Dictionary<int, byte>();
+        var matches = _lightMatches;
         for (int step = 0; step < fadeSteps; step++)
         {
             float fade = step / (float)(fadeSteps - 1);
