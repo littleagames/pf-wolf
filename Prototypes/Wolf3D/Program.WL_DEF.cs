@@ -356,7 +356,6 @@ internal partial class Program
     internal const int MAXACTORS = 150;
     internal const int MAXSTATS = 400;
     internal const int MAXDOORS = 64;
-    internal const int MAXWALLTILES = 64;
     internal const int MAXVISABLE = 250;
 
     internal const int NUMBERCHARS = 9;

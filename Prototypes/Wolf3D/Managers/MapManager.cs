@@ -5,13 +5,19 @@ using objflags = Wolf3D.Program.objflags;
 
 namespace Wolf3D.Managers;
 
-public class MapDataConstants
+/// <summary>
+/// The game pack's plane 0 floor codes (mapdefs floors), resolved. See <see cref="MapFloorsTranslation"/>.
+/// </summary>
+internal sealed record FloorCodes(int AreaTile, int NumAreas, int AmbushTile, int SecretExitTile)
 {
-    public const int AREATILE = 107;         // first of NUMAREAS floor tiles
-    public const int NUMAREAS = 37;
-    public const int ELEVATORTILE = 21;
-    public const int AMBUSHTILE = 106;
-    public const int ALTELEVATORTILE = 107;
+    public static FloorCodes From(MapFloorsTranslation floors)
+    {
+        if (floors.AreaStart is not { } start || floors.AreaCount is not { } count)
+            throw new Exception("The mapdefs floors need an area-start and an area-count");
+        if (start < 1 || count is < 1 or > 255)
+            throw new Exception($"The mapdefs floors' area-start ({start}) must be 1 or more and area-count ({count}) 1 to 255");
+        return new FloorCodes(start, count, floors.Ambush ?? -1, floors.SecretExit ?? -1);
+    }
 }
 /// <summary>What the player has seen of a map tile (MapManager.seen), for the automap.</summary>
 [Flags]
@@ -153,9 +159,20 @@ internal class MapManager
         return mapsegs[0][y * mapwidth + x];
     }
 
+    // A wall's id is kept in tilemap below the BIT_WALL and BIT_DOOR flags
+    private static bool IsWallId(int tile) => tile is > 0 and < Program.BIT_WALL;
+
+    private readonly HashSet<int> badwallids = new();
+
+    private FloorCodes? _floors;
+
+    /// <summary>The plane 0 floor codes, from the mapdefs floors.</summary>
+    internal FloorCodes Floors => _floors ??= FloorCodes.From(GetMapData().Floors);
+
     public void LoadMap(string mapName, int difficulty)
     {
         _difficulty = difficulty;
+        _floors = null; // read again, in case the mapdefs changed
 
         var mapAsset = assetManager.Value.Find<MapAsset>(mapName);
         if (mapAsset == null)
@@ -197,15 +214,18 @@ internal class MapManager
         PlayerStart = null;
 
         var data = GetMapData();
+        foreach (var id in data.Walls.Keys.Where(id => !IsWallId(id)))
+            if (badwallids.Add(id))
+                Console.WriteLine($"mapdefs wall {id} is ignored: wall ids are 1 to {Program.BIT_WALL - 1}");
 
         for (int y = 0; y < mapheight; y++)
         {
             for (int x = 0; x < mapwidth; x++)
             {
                 int tile = MAPSPOT(x, y, 0);
-                if (tile < MapDataConstants.AMBUSHTILE)
+                if (IsWallId(tile) && data.Walls.ContainsKey(tile) || data.Doors.ContainsKey(tile))
                 {
-                    // solid wall
+                    // solid wall (a door's tile is made a door by SpawnDoor)
                     tilemap[x, y] = (byte)tile;
                     actorat[x, y] = new Wall(tile);// (uint)tile;
                 }
@@ -384,13 +404,14 @@ internal class MapManager
     /// <summary>
     /// A solid wall tile that can take a shape: not a door, not a moving pushwall, and not open
     /// floor. A wall beside a door (SpawnDoor sets BIT_WALL on it, for the door-side texture) counts.
-    /// Plane 0 has to hold a wall id too: before SpawnDoor runs, a door tile's raw tilemap value
-    /// (90-101) looks just like a wall id with BIT_WALL set.
+    /// Plane 0 has to hold a mapdefs wall too: before SpawnDoor runs, a door tile's raw tilemap
+    /// value (90-101 in Wolf3D) looks just like a wall id with BIT_WALL set.
     /// </summary>
     internal bool IsPlainWall(int x, int y)
     {
         var tile = tilemap[x, y];
-        return MAPSPOT(x, y, 0) is > 0 and < Program.BIT_WALL
+        var spot = MAPSPOT(x, y, 0);
+        return IsWallId(spot) && !GetMapData().Doors.ContainsKey(spot) && GetMapData().Walls.ContainsKey(spot)
             && (tile & Program.BIT_DOOR) == 0 && (tile & ~Program.BIT_WALL) != 0;
     }
 
@@ -458,7 +479,7 @@ internal class MapManager
         // gated on AreaNumber (SightPlayer's areabyplayer connectivity check, T_Shoot/
         // CheckSight's area check) reads the wrong area, e.g. a stationary/ambushed actor
         // that never patrols would never notice the player if area 0 isn't connected.
-        builtActor.AreaNumber = (byte)(MAPSPOT(tilex, tiley, 0) - MapDataConstants.AREATILE);
+        builtActor.AreaNumber = (byte)(MAPSPOT(tilex, tiley, 0) - Floors.AreaTile);
 
         // Angles: 0=east, 45=northeast, 90=north ... 315=southeast, in objdirtypes order
         // (enemies only face the four cardinal ones, patrol points all eight).
@@ -516,7 +537,7 @@ internal class MapManager
                 // Grunts only ambush if placed directly on an ambush floor tile (SpawnStand
                 // in Program.WL_ACT2.cs), unlike AMBUSH actors, which always are.
                 var floorTile = MAPSPOT(tilex, tiley, 0);
-                if (floorTile == MapDataConstants.AMBUSHTILE)
+                if (floorTile == Floors.AmbushTile)
                 {
                     if (VALIDAREA(MAPSPOT(tilex + 1, tiley, 0)))
                         floorTile = MAPSPOT(tilex + 1, tiley, 0);
@@ -528,7 +549,7 @@ internal class MapManager
                         floorTile = MAPSPOT(tilex - 1, tiley, 0);
 
                     SetMapSpot(tilex, tiley, 0, (ushort)floorTile);
-                    builtActor.AreaNumber = (byte)(floorTile - MapDataConstants.AREATILE);
+                    builtActor.AreaNumber = (byte)(floorTile - Floors.AreaTile);
 
                     builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
                 }
@@ -640,7 +661,7 @@ internal class MapManager
         return actor.Properties.TryGetValue("health", out var flat) ? (short)Convert.ToInt32(flat) : (short)0;
     }
 
-    internal static bool VALIDAREA(int x) => (x) >= MapDataConstants.AREATILE && (x) < (MapDataConstants.AREATILE + MapDataConstants.NUMAREAS);
+    internal bool VALIDAREA(int x) => (x) >= Floors.AreaTile && (x) < (Floors.AreaTile + Floors.NumAreas);
 
     internal int MAPSPOT(int x, int y, int plane) => (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]);
     internal void SetMapSpot(int x, int y, int plane, ushort value)

@@ -756,11 +756,11 @@ internal partial class Program
         // Only onto open floor: a solid tile, a door or a blocking object would trap the player,
         // and an area number is needed for the sight/sound area bookkeeping.
         if (_mapManager.tilemap[x, y] != 0 || _mapManager.actorat[x, y] != null
-            || !MapManager.VALIDAREA(_mapManager.MAPSPOT(x, y, 0)))
+            || !_mapManager.VALIDAREA(_mapManager.MAPSPOT(x, y, 0)))
             throw new ArgumentException($"tile {x},{y} is not open floor");
 
         player.SetPosition(x, y);
-        player.AreaNumber = (byte)(_mapManager.MAPSPOT(x, y, 0) - MapDataConstants.AREATILE);
+        player.AreaNumber = (byte)(_mapManager.MAPSPOT(x, y, 0) - _mapManager.Floors.AreaTile);
         if (args.Length > 2)
             player.Angle = (short)ParseInt(args[2], 0, ANGLES - 1);
         ConnectAreas();

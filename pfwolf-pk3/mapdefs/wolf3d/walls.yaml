@@ -1,3 +1,6 @@
+# Walls by map tile number: every plane 0 tile listed here is a solid wall, with the texture on
+# each face. Wall ids are 1 to 63; any plane 0 value not listed here or in doors.yaml is open
+# floor (see floors.yaml).
 walls:
     '1':
         North: GSTONEA1
@@ -99,11 +102,15 @@ walls:
         South: BRIKEGL1
         East: BRIKEGL2
         West: BRIKEGL2
+    # The elevator switch. exit-switch makes a wall one: using it from the east or west ends
+    # the level (to the secret level when standing on the floors' secret-exit code) and turns
+    # it into the wall id given, the switch thrown.
     '21':
         North: ELEV1_1
         South: ELEV1_1
         East: ELEV1_2
         West: ELEV1_2
+        exit-switch: 22
     '22':
         North: ELEV2_1
         South: ELEV2_1

@@ -90,8 +90,6 @@ internal partial class Program
     internal static int xinttile, yinttile;
     internal static ushort texdelta;
 
-    internal static ushort[] horizwall = new ushort[MAXWALLTILES];
-    internal static ushort[] vertwall = new ushort[MAXWALLTILES];
 
     /*
 =====================

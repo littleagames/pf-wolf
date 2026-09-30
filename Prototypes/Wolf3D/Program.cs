@@ -223,7 +223,6 @@ internal partial class Program
         // load in and lock down some basic chunks
         //
         BuildTables();          // trig tables
-        SetupWalls();
 
         NewViewSize(viewsize);
 
@@ -292,20 +291,6 @@ internal partial class Program
 
         Console.WriteLine($"Unknown {key} '{value}' in game-info, using {fallback.ToString().ToLowerInvariant()} instead");
         return fallback;
-    }
-
-    internal static void SetupWalls()
-    {
-        int i;
-
-        horizwall[0] = 0;
-        vertwall[0] = 0;
-
-        for (i = 1; i < MAXWALLTILES; i++)
-        {
-            horizwall[i] = (ushort)((i - 1) * 2);
-            vertwall[i] = (ushort)((i - 1) * 2 + 1);
-        }
     }
 
     private static void SignonScreen()

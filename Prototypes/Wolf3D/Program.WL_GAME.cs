@@ -661,36 +661,14 @@ internal partial class Program
 
 
         int x, y;
+        var doors = _mapManager.GetMapData().Doors;
         for (y = 0; y < _mapManager.mapheight; y++)
         {
             for (x = 0; x < _mapManager.mapwidth; x++)
             {
-                int tile = _mapManager.MAPSPOT(x, y, 0);
-                if (tile >= 90 && tile <= 101)
-                {
-                    var mapDef = _mapManager.GetMapData();
-                    mapDef.Doors.TryGetValue(tile, out var doorXlat);
-                    // door
-                    switch (tile)
-                    {
-                        case 90:
-                        case 92:
-                        case 94:
-                        case 96:
-                        case 98:
-                        case 100:
-                            SpawnDoor(x, y, true, doorXlat ?? MapTextureTranslation.None);
-                            break;
-                        case 91:
-                        case 93:
-                        case 95:
-                        case 97:
-                        case 99:
-                        case 101:
-                            SpawnDoor(x, y, false, doorXlat ?? MapTextureTranslation.None);
-                            break;
-                    }
-                }
+                // door (a plane 0 tile listed in the mapdefs doors)
+                if (doors.TryGetValue(_mapManager.MAPSPOT(x, y, 0), out var doorXlat))
+                    SpawnDoor(x, y, doorXlat.Vertical, doorXlat);
             }
         }
 
@@ -710,15 +688,15 @@ internal partial class Program
             {
                 var tile = _mapManager.MAPSPOT(x, y, 0);
 
-                if (tile == MapDataConstants.AMBUSHTILE)
+                if (tile == _mapManager.Floors.AmbushTile)
                 {
-                    if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x + 1, y, 0)))
+                    if (_mapManager.VALIDAREA(_mapManager.MAPSPOT(x + 1, y, 0)))
                         tile = (ushort)_mapManager.MAPSPOT(x + 1, y, 0);
-                    if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x, y - 1, 0)))
+                    if (_mapManager.VALIDAREA(_mapManager.MAPSPOT(x, y - 1, 0)))
                         tile = (ushort)_mapManager.MAPSPOT(x, y - 1, 0);
-                    if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x, y + 1, 0)))
+                    if (_mapManager.VALIDAREA(_mapManager.MAPSPOT(x, y + 1, 0)))
                         tile = (ushort)_mapManager.MAPSPOT(x, y + 1, 0);
-                    if (MapManager.VALIDAREA(_mapManager.MAPSPOT(x - 1, y, 0)))
+                    if (_mapManager.VALIDAREA(_mapManager.MAPSPOT(x - 1, y, 0)))
                         tile = (ushort)_mapManager.MAPSPOT(x - 1, y, 0);
 
                     _mapManager.SetMapSpot(x, y, 1, 0);

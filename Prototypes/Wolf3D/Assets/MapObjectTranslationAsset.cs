@@ -9,6 +9,7 @@ internal record MapObjectTranslationAsset : Asset
     public Dictionary<int, MapTriggerTranslation> Triggers { get; internal set; } = new();
     public Dictionary<int, MapDiagonalTranslation> Diagonals { get; internal set; } = new();
     public MapFlatsTranslation Flats { get; internal set; } = new();
+    public MapFloorsTranslation Floors { get; internal set; } = new();
 
     public override void Merge(Asset other)
     {
@@ -53,8 +54,41 @@ internal record MapObjectTranslationAsset : Asset
             {
                 this.Flats.Ceiling[item.Key] = item.Value;
             }
+
+            this.Floors = this.Floors.MergedWith(otherAsset.Floors);
         }
     }
+}
+
+/// <summary>
+/// The floor codes on plane 0: the values that mark open floor rather than a wall or door.
+/// Each area code is a room, for sound and sight (areas connect through open doors); the
+/// ambush code makes the enemy standing on it wait deaf until it sees the player, then takes
+/// on a neighbouring area's code; standing on the secret exit code while flipping the
+/// elevator switch goes to the secret level. Every value is optional, so a file that only
+/// sets one merges over the rest.
+/// </summary>
+internal record MapFloorsTranslation
+{
+    /// <summary>The first area code; area n is AreaStart + n.</summary>
+    public int? AreaStart { get; set; }
+
+    /// <summary>How many area codes there are (at most 255).</summary>
+    public int? AreaCount { get; set; }
+
+    /// <summary>The ambush code, or -1 for none.</summary>
+    public int? Ambush { get; set; }
+
+    /// <summary>The secret exit floor code, or -1 for none.</summary>
+    public int? SecretExit { get; set; }
+
+    public MapFloorsTranslation MergedWith(MapFloorsTranslation other) => new()
+    {
+        AreaStart = other.AreaStart ?? AreaStart,
+        AreaCount = other.AreaCount ?? AreaCount,
+        Ambush = other.Ambush ?? Ambush,
+        SecretExit = other.SecretExit ?? SecretExit,
+    };
 }
 
 /// <summary>
@@ -143,6 +177,19 @@ internal record MapTextureTranslation
     /// the lock item's `key.lockedmessagestyle`.
     /// </summary>
     public string LockMessageStyle { get; init; } = "";
+
+    /// <summary>
+    /// Doors only: the door runs north-south, so it's passed through going east or west (its
+    /// East/West faces are the door). False, it runs east-west (North/South are the door).
+    /// </summary>
+    public bool Vertical { get; init; }
+
+    /// <summary>
+    /// Walls only: makes this wall an elevator switch. Using it from the east or west ends the
+    /// level (going to the secret level from the floors' secret-exit code) and turns the wall
+    /// into this wall id, the switch thrown.
+    /// </summary>
+    public int? ExitSwitch { get; init; }
 
     public static MapTextureTranslation None => new(); // TODO: Missing texture
 }

@@ -1,0 +1,17 @@
+# Floor codes: what the plane 0 values that are open floor mean. A plane 0 value listed in
+# walls.yaml is a wall and one in doors.yaml a door; every other value is open floor.
+#   area-start:  the first area code. Each area is a room for sound and sight: enemies hear
+#                shots and doors only in areas connected to the player's, and areas connect
+#                through open doors. Area n is area-start + n.
+#   area-count:  how many area codes follow area-start (at most 255)
+#   ambush:      an enemy standing on this code is deaf until it sees the player; the tile then
+#                takes a neighbouring area's code (-1 for none)
+#   secret-exit: flipping the elevator switch while standing on this code goes to the secret
+#                level (-1 for none). It can be one of the area codes, as it is in Wolf3D.
+#
+# A mod's floors.yaml merges over this one value by value.
+floors:
+  area-start: 107
+  area-count: 37
+  ambush: 106
+  secret-exit: 107

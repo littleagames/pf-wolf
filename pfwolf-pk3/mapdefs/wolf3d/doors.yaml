@@ -1,4 +1,8 @@
-# Doors by map tile number: the texture on each face, and for a locked door the item that opens it.
+# Doors by map tile number: every plane 0 tile listed here is a door. Each has the texture on
+# each face, and for a locked door the item that opens it.
+#   vertical:            true: the door runs north-south, passed through going east or west (its
+#                        East/West faces are the door, North/South the slot beside it); left out,
+#                        it runs east-west
 #   lock:                An inventory class (e.g. GoldKey) the player must carry to open the door
 #   lock-message:        Shown when the player tries the door without it (a $NAME language key or
 #                        the text); left out, the lock item's "key.lockedmessage" is used
@@ -6,6 +10,7 @@
 #                        "key.lockedmessagestyle"
 doors:
     '90':
+        Vertical: true
         East: DOOR1_2
         West: DOOR1_2
         North: SLOT1_1
@@ -16,6 +21,7 @@ doors:
         East: SLOT1_2
         West: SLOT1_2
     '92':
+        Vertical: true
         East: DOOR3_2
         West: DOOR3_2
         North: SLOT1_1
@@ -28,6 +34,7 @@ doors:
         West: SLOT1_2
         Lock: GoldKey
     '94':
+        Vertical: true
         East: DOOR3_2
         West: DOOR3_2
         North: SLOT1_1
@@ -40,6 +47,7 @@ doors:
         West: SLOT1_2
         Lock: SilverKey
     '100':
+        Vertical: true
         East: DOOR2_2
         West: DOOR2_2
         North: SLOT1_1

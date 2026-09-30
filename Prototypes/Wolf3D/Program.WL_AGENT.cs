@@ -243,8 +243,8 @@ internal partial class Program
         // A diagonal wall tile's open half has no area number (plane 0 holds the wall), so keep
         // the one the player walked in from.
         var areatile = _mapManager.MAPSPOT(player.TileX, player.TileY, 0);
-        if (MapManager.VALIDAREA(areatile))
-            player.AreaNumber = (byte)(areatile - MapDataConstants.AREATILE);
+        if (_mapManager.VALIDAREA(areatile))
+            player.AreaNumber = (byte)(areatile - _mapManager.Floors.AreaTile);
 
         //
         // mapdefs walk-over trigger (the end-of-castle exit) on the tile just stepped onto
@@ -1083,15 +1083,17 @@ internal partial class Program
             ActivateTrigger(trigger, checkx, checky, dir);
             return;
         }
-        if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && cmdtile == MapDataConstants.ELEVATORTILE && elevatorok)
+        if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && elevatorok
+            && _mapManager.GetMapData().Walls.TryGetValue(cmdtile, out var switchWall)
+            && switchWall.ExitSwitch is > 0 and < BIT_WALL)
         {
             //
-            // use elevator
+            // use elevator (a mapdefs wall with an exit-switch)
             //
             _inputManager.SetButtonHeld(buttontypes.bt_use, true);
 
-            _mapManager.tilemap[checkx, checky]++;              // flip switch
-            if (_mapManager.MAPSPOT(player.TileX, player.TileY, 0) == MapDataConstants.ALTELEVATORTILE)
+            _mapManager.tilemap[checkx, checky] = (byte)switchWall.ExitSwitch.Value;              // flip switch
+            if (_mapManager.MAPSPOT(player.TileX, player.TileY, 0) == _mapManager.Floors.SecretExitTile)
                 playstate = playstatetypes.ex_secretlevel;
             else
                 playstate = playstatetypes.ex_completed;
@@ -1269,7 +1271,7 @@ internal partial class Program
     {
         player.Active = activetypes.ac_yes;
         player.SetPosition(tilex, tiley);       // tile, and the tile-centred world x/y
-        player.AreaNumber = (byte)(_mapManager.MAPSPOT(tilex, tiley, 0) - MapDataConstants.AREATILE);
+        player.AreaNumber = (byte)(_mapManager.MAPSPOT(tilex, tiley, 0) - _mapManager.Floors.AreaTile);
         NewActorState(player, PlayerPawn.SpawnState);
         player.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
         player.RuntimeFlags = objflags.FL_NEVERMARK;

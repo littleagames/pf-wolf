@@ -40,7 +40,9 @@ internal partial class Program
     // 7: the mods loaded when it was saved, at the end of the header.
     // 8: a fourth map plane, wall heights moved from plane 2 to it (plane 2 is flats); a 7 is
     //    converted as it's read, since only the planes' meaning changed.
-    private const int SaveVersion = MapManager.FlatsSaveVersion;
+    // 9: the area count (mapdefs floors) ahead of the area tables; older saves have Wolf3D's 37.
+    private const int AreaCountSaveVersion = 9;
+    private const int SaveVersion = AreaCountSaveVersion;
     private const int OldestLoadableSaveVersion = 7;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the
@@ -279,6 +281,7 @@ internal partial class Program
         for (int i = 0; i < lastdoorobj; i++)
             doorobjlist[i].WriteState(bw);
 
+        bw.Write(areabyplayer.Length);
         bw.Write(areaconnect);
         bw.Write(areabyplayer);
 
@@ -341,15 +344,18 @@ internal partial class Program
             doors[i].ReadState(br);
         }
 
+        var numareas = version >= AreaCountSaveVersion ? br.ReadInt32() : 37;
+        if (numareas != _mapManager.Floors.NumAreas)
+            throw new InvalidDataException($"It was saved with {numareas} map areas; this game has {_mapManager.Floors.NumAreas}.");
+
         return new SaveGameData(
             state,
             ratios,
             inventory,
             level,
             doors,
-            AreaConnect: ReadExactly(br, MapDataConstants.NUMAREAS * MapDataConstants.NUMAREAS)
-                .ToFixedArray(MapDataConstants.NUMAREAS, MapDataConstants.NUMAREAS),
-            AreaByPlayer: ReadExactly(br, MapDataConstants.NUMAREAS),
+            AreaConnect: ReadExactly(br, numareas * numareas).ToFixedArray(numareas, numareas),
+            AreaByPlayer: ReadExactly(br, numareas),
             PwallState: br.ReadUInt16(),
             PwallPos: br.ReadUInt16(),
             PwallX: br.ReadUInt16(),

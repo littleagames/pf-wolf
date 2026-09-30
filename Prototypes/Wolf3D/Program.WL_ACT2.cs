@@ -267,7 +267,7 @@ internal partial class Program
 
         bj.TileY = (byte)(player.TileY + 1);
         bj.SyncPosition();
-        bj.AreaNumber = (byte)(_mapManager.MAPSPOT(bj.TileX, bj.TileY, 0) - MapDataConstants.AREATILE);
+        bj.AreaNumber = (byte)(_mapManager.MAPSPOT(bj.TileX, bj.TileY, 0) - _mapManager.Floors.AreaTile);
 
         // SpawnNewObj started every actor a random number of tics into its first frame.
         var firstTicTime = bj.CurrentState?.TicTime ?? 0;

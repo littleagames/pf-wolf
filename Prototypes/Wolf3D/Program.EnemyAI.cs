@@ -56,7 +56,7 @@ internal partial class Program
             default: _gameEngineManager.Quit("MoveObj: bad dir!"); break;
         }
 
-        if (ob.AreaNumber >= MapDataConstants.NUMAREAS || areabyplayer[ob.AreaNumber] != 0)
+        if (ob.AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[ob.AreaNumber] != 0)
         {
             var deltax = Math.Abs(newx - player.X);
             var deltay = Math.Abs(newy - player.Y);
@@ -189,7 +189,7 @@ internal partial class Program
         // A door tile has no area of its own, so a PHASEDOORS actor passing through one
         // keeps the area it came from
         if (_mapManager.actorat[ob.TileX, ob.TileY] is not Door)
-            ob.AreaNumber = (byte)(_mapManager.MAPSPOT(ob.TileX, ob.TileY, 0) - MapDataConstants.AREATILE);
+            ob.AreaNumber = (byte)(_mapManager.MAPSPOT(ob.TileX, ob.TileY, 0) - _mapManager.Floors.AreaTile);
         ob.Distance = (int)MapConstants.TILEGLOBAL;
         ob.SyncPosition();
         return true;
@@ -363,7 +363,7 @@ internal partial class Program
 
     internal static bool CheckSight(Entities.Actors.Actor ob)
     {
-        if (ob.AreaNumber < MapDataConstants.NUMAREAS && areabyplayer[ob.AreaNumber] == 0)
+        if (ob.AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[ob.AreaNumber] == 0)
             return false;
 
         var deltax = player.X - ob.X;
@@ -426,7 +426,7 @@ internal partial class Program
         }
         else
         {
-            if (ob.AreaNumber < MapDataConstants.NUMAREAS && areabyplayer[ob.AreaNumber] == 0)
+            if (ob.AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[ob.AreaNumber] == 0)
                 return false;
 
             if (ob.RuntimeFlags.HasFlag(objflags.FL_AMBUSH))
@@ -1095,7 +1095,7 @@ internal partial class Program
     {
         var hitchance = 128;
 
-        if (ob.AreaNumber < MapDataConstants.NUMAREAS && areabyplayer[ob.AreaNumber] == 0)
+        if (ob.AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[ob.AreaNumber] == 0)
             return;
 
         if (CheckLine(ob))
@@ -1182,7 +1182,7 @@ internal partial class Program
 
     internal static void A_MechaSound(Entities.Actors.Actor ob)
     {
-        if (ob.AreaNumber >= MapDataConstants.NUMAREAS || areabyplayer[ob.AreaNumber] != 0)
+        if (ob.AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[ob.AreaNumber] != 0)
             PlaySoundLocActor("hitler/active", ob);
     }
 
