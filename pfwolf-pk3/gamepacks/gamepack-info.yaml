@@ -1,15 +1,6 @@
 wolf3d-apogee:
   title: Wolfenstein 3D
   game-info: wolf3d-game-info
-  map-definitions:
-    - mapdefs/wolf3d/walls
-    - mapdefs/wolf3d/doors
-    - mapdefs/wolf3d/player
-    - mapdefs/wolf3d/triggers
-    - mapdefs/wolf3d/patrolpoints
-    - mapdefs/wolf3d/decorations
-    - mapdefs/wolf3d/items
-    - mapdefs/wolf3d/enemies
   game-palette: wolfpal
   file-pack:
     description: Wolfenstein 3D v1.4 Apogee
@@ -49,34 +40,16 @@ wolf3d-apogee:
 
 # wolf3d-activision:
     # title: "Wolfenstein 3D"
-    # map-definitions:
-        # - mapdefs/wolf3d/walls
-        # - mapdefs/wolf3d/doors
-        # - mapdefs/wolf3d/player
-        # - mapdefs/wolf3d/decorations
-        # - mapdefs/wolf3d/enemies
     # game-palette: wolfpal
     # starting-scene: "wolf3d:GameLoopScene"
     # game-pack-asset-reference: wolf3d-activision-map
 # wolf3d-shareware:
     # title: "Wolfenstein 3D: Shareware"
-    # map-definitions:
-        # - mapdefs/wolf3d/walls
-        # - mapdefs/wolf3d/doors
-        # - mapdefs/wolf3d/player
-        # - mapdefs/wolf3d/decorations
-        # - mapdefs/wolf3d/enemies
     # game-palette: wolfpal
     # starting-scene: "wolf3d:GameLoopScene"
     # game-pack-asset-reference: wolf3d-shareware-map
 spear:
   title: "Spear of Destiny"
-  map-definitions:
-    - mapdefs/spear/walls
-    - mapdefs/spear/doors
-    - mapdefs/spear/decorations
-    - mapdefs/spear/items
-    - mapdefs/spear/enemies
   game-palette: spearpal
   # Starts from wolf3d's actordefs, mapdefs and gamepacks files; spear's own files override them
   base-pack: wolf3d
@@ -119,12 +92,6 @@ spear:
         map: spear-map
 # spear-demo:
     # title: "Spear of Destiny: Demo"
-    # map-definitions:
-        # - mapdefs/spear/walls
-        # - mapdefs/spear/doors
-        # - mapdefs/spear/player
-        # - mapdefs/spear/decorations
-        # - mapdefs/spear/enemies
     # game-palette: spearpal
     # starting-scene: "spear:SignonScene"
     # game-pack-asset-reference: spear-demo-map

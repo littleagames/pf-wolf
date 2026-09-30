@@ -75,12 +75,10 @@ public record GamePack
     public string? Title { get; init; }
     // "game-info"
     public string? GameInfo { get; init; }
-    // "map-definitions"
-    public List<string>? MapDefinitions { get; init; }
     // "game-palette"
     public string? GamePalette { get; init; }
     // "base-pack": game pack whose actordefs/mapdefs/gamepacks files this one starts from,
-    // overriding them with its own
+    // overriding them with its own. (Every file in mapdefs/{pack}/ is loaded; there's no list.)
     public string? BasePack { get; init; }
     // "file-pack"
     public FilePack? FilePack { get; init; }
