@@ -230,8 +230,9 @@ internal partial class Program
     {
         var language = _assetManager.GetText("en-us");
         const int VBLWAIT = 30;
-        const int PAR_AMOUNT = 500;
-        const int PERCENT100AMT = 10000;
+        // intermission.yaml scoring
+        int PAR_AMOUNT = Math.Max(Intermission.Scoring.TimeBonus ?? 0, 0);
+        int PERCENT100AMT = Math.Max(Intermission.Scoring.PerfectBonus ?? 0, 0);
 
         int i, min, sec, ratio, kr, sr, tr;
         string tempstr = "";
@@ -242,7 +243,8 @@ internal partial class Program
         if (bordercol != "VIEWCOLOR")
             DrawStatusBorder("VIEWCOLOR");
 
-        StartCPMusic("ENDLEVEL");
+        if (!string.IsNullOrEmpty(Intermission.Music))
+            StartCPMusic(Intermission.Music);
 
         //
         // do the intermission
@@ -301,7 +303,7 @@ internal partial class Program
                 {
                     tempstr = (i * PAR_AMOUNT).ToString();
                     WriteValue("bonus", tempstr);
-                    if ((i % (PAR_AMOUNT / 10)) == 0)
+                    if ((i % Math.Max(PAR_AMOUNT / 10, 1)) == 0)
                         PlayIntermissionSound(Intermission.Sounds.Tally);
                     _videoManager.Update();
                     while (_audioManager.IsAnySoundPlaying())
@@ -524,7 +526,8 @@ internal partial class Program
         var cluster = WonCluster();
         VictoryFrames(cluster);
 
-        StartCPMusic("URAHERO");
+        if (!string.IsNullOrEmpty(screen.Music))
+            StartCPMusic(screen.Music);
 
         _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, "VIEWCOLOR");
         if (bordercol != "VIEWCOLOR")

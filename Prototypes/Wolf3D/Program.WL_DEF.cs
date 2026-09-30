@@ -363,7 +363,6 @@ internal partial class Program
 
     //----------------
 
-    internal const int EXTRAPOINTS = 40000;
 
     internal const int RUNSPEED = 6000;
 

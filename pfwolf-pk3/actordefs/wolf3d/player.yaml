@@ -10,3 +10,10 @@ Player:
       Knife: 1
       Pistol: 1
       Clip: 8
+    # A new game's (and a respawn's) health, and a new game's lives
+    "player.starthealth": 100
+    "player.startlives": 3
+    # The most health and lives the player can have. A health item heals up to its own
+    # inventory.maxamount when it has one (blood and gibs only help when nearly dead), else to here.
+    "player.maxhealth": 100
+    "player.maxlives": 9

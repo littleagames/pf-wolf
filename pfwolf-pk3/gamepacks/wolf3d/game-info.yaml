@@ -30,6 +30,9 @@ death-fade-tics: 70
 level-fade-style: fizzle
 level-fade-tics: 20
 
+# An extra life each time the score passes another this many points (0 or left out: never)
+extra-life-score: 40000
+
 # Messages over the view (styles in hud-messages.yaml). enabled is whether they're on before
 # the player chooses (msg_enabled); off keeps the original game's quiet screen. Each kind's
 # style is used when the item, door or killer doesn't name its own.

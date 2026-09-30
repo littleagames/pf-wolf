@@ -852,7 +852,7 @@ internal partial class Program
 
         if (gamestate.lives > -1)
         {
-            gamestate.health = 100;
+            gamestate.health = StartingHealth;
             GiveStartingInventory();
             pwallstate = pwallpos = 0;
             weaponSprite = null;            // the weapon in hand starts on its Ready state

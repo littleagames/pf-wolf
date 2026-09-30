@@ -658,7 +658,7 @@ internal partial class Program
         switch (args[0].ToLowerInvariant())
         {
             case "all":
-                HealSelf(100);
+                HealSelf(MaxHealth);
                 GiveAllWeapons();
                 GiveAllAmmo(int.MaxValue);
                 GiveAllKeys();
@@ -666,7 +666,7 @@ internal partial class Program
                 break;
 
             case "health":
-                HealSelf(amount ?? 100);
+                HealSelf(amount ?? MaxHealth);
                 _consoleManager.Print($"Health is {gamestate.health}");
                 break;
 

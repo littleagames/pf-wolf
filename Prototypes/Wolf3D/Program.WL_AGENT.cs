@@ -461,10 +461,16 @@ internal partial class Program
         switch (item)
         {
             case Entities.Actors.Health:
-                if (gamestate.health >= 100)
+            {
+                // A health item's inventory.maxamount is the most it heals to (Wolf3D's blood and
+                // gibs only help when nearly dead); 0 is up to the player's max health
+                int itemMax = _inventoryManager.GetIntProperty(item.Name, "inventory.maxamount", 0);
+                int cap = itemMax > 0 ? Math.Min(itemMax, MaxHealth) : MaxHealth;
+                if (gamestate.health >= cap)
                     return false;
-                HealSelf(amount);
+                HealSelf(amount, cap);
                 return true;
+            }
             case Entities.Actors.Ammo:
                 return GiveAmmo(item.Name, amount) > 0;
             case Entities.Actors.Weapon weapon:
@@ -887,11 +893,17 @@ internal partial class Program
         DrawFace();
     }
 
-    internal static void HealSelf(int points)
+    /// <summary>The most health the player can have: the Player class's `player.maxhealth` (Wolf3D's 100 when left out)</summary>
+    internal static short MaxHealth => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.maxhealth", 100), 1, short.MaxValue);
+
+    /// <summary>The most lives the player can have: the Player class's `player.maxlives` (Wolf3D's 9 when left out)</summary>
+    internal static short MaxLives => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.maxlives", 9), 0, short.MaxValue);
+
+    /// <summary>Heals the player by <paramref name="points"/>, up to <paramref name="upTo"/> (their max health when null)</summary>
+    internal static void HealSelf(int points, int? upTo = null)
     {
-        gamestate.health += (short)points;
-        if (gamestate.health > 100)
-            gamestate.health = 100;
+        int cap = Math.Min(upTo ?? MaxHealth, MaxHealth);
+        gamestate.health = (short)Math.Min(gamestate.health + points, Math.Max(cap, gamestate.health));
 
         DrawHealth();
         DrawFace();
@@ -941,7 +953,7 @@ internal partial class Program
 
     static void GiveExtraMan()
     {
-        if (gamestate.lives < 9)
+        if (gamestate.lives < MaxLives)
             gamestate.lives++;
         DrawLives();
         if (StatusBar.Get("lives")?.Sound is { Length: > 0 } sound)
@@ -962,12 +974,15 @@ internal partial class Program
     ===============
     */
 
+    /// <summary>The score between extra lives (game-info extra-life-score); 0 for none</summary>
+    internal static int ExtraLifeScore => Math.Max(_gameEngineManager.GetGameInfo().ExtraLifeScore, 0);
+
     static void GivePoints(int points)
     {
         gamestate.score += points;
-        while (gamestate.score >= gamestate.nextextra)
+        while (ExtraLifeScore > 0 && gamestate.score >= gamestate.nextextra)
         {
-            gamestate.nextextra += EXTRAPOINTS;
+            gamestate.nextextra += ExtraLifeScore;
             GiveExtraMan();
         }
         DrawScore();
@@ -997,6 +1012,12 @@ internal partial class Program
     /// New game / respawn loadout: the Player class's `player.startitem` (item: amount), with
     /// the best weapon in it selected.
     /// </summary>
+    /// <summary>A new game's and a respawn's health: the Player class's `player.starthealth` (Wolf3D's 100 when left out)</summary>
+    internal static short StartingHealth => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.starthealth", 100), 1, short.MaxValue);
+
+    /// <summary>A new game's lives: the Player class's `player.startlives` (Wolf3D's 3 when left out)</summary>
+    internal static short StartingLives => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.startlives", 3), 0, short.MaxValue);
+
     internal static void GiveStartingInventory()
     {
         _inventoryManager.Clear();

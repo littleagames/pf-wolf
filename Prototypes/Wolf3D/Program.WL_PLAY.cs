@@ -275,7 +275,7 @@ internal partial class Program
         //
         if (_inputManager.IsKeyDown(ScanCodes.sc_M) && _inputManager.IsKeyDown(ScanCodes.sc_L) && _inputManager.IsKeyDown(ScanCodes.sc_I))
         {
-            gamestate.health = 100;
+            gamestate.health = MaxHealth;
             _inventoryManager.Give("GoldKey", 1);
             _inventoryManager.Give("SilverKey", 1);
             gamestate.score = 0;

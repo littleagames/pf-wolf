@@ -32,6 +32,9 @@ death-fade-tics: 70
 level-fade-style: fizzle
 level-fade-tics: 20
 
+# An extra life each time the score passes another this many points: see gamepacks/wolf3d/game-info.yaml
+extra-life-score: 40000
+
 # Messages over the view: see gamepacks/wolf3d/game-info.yaml
 hud-messages:
   enabled: false

@@ -1,6 +1,9 @@
 # The level-end screen. A game pack that builds on this one (spear) uses it as is; a mod's
 # intermission.yaml replaces values one by one. Positions are in 320x200 pixels.
 #
+# music: played while the screen is up (left out, what was playing carries on)
+music: ENDLEVEL
+
 # font, color: the text's (fonts.yaml font; a color name, #RRGGBB or palette index)
 font: IntermissionFont
 color: White
@@ -35,6 +38,14 @@ values:
   secret: { right: 296, y: 128 }
   treasure: { right: 296, y: 144 }
 
+# scoring: the bonus added to the score (either left out is 0)
+#   time-bonus:     points for each second the level was finished under its par time (the
+#                   tally sound plays every time-bonus / 10 seconds as it counts)
+#   perfect-bonus:  points for each of the kill, secret and treasure ratios at 100%
+scoring:
+  time-bonus: 500
+  perfect-bonus: 10000
+
 # sounds: the tally of the time bonus and the kill, secret and treasure ratios (sound names
 # from sounds/). Any left out are silent.
 #   tally:       every 10% as a ratio counts up, and as the time bonus counts up
@@ -47,10 +58,12 @@ sounds:
   perfect: misc/100percent
   none: misc/no_bonus
 
-# victory: the screen when a cluster is won, in the same font and color. pics: pictures at
-# (x, y), drawn over the labels. values: the won cluster's total time, and its floors' average
-# kill, secret and treasure ratios.
+# victory: the screen when a cluster is won, in the same font and color. music: as above (the
+# cluster's own victory-music in game-info plays over its victory-frames before this). pics:
+# pictures at (x, y), drawn over the labels. values: the won cluster's total time, and its
+# floors' average kill, secret and treasure ratios.
 victory:
+  music: URAHERO
   pics:
     - { pic: L_BJWINS, x: 8, y: 4 }
   labels:

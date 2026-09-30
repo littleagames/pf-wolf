@@ -104,6 +104,12 @@ internal record GameInfoAsset : Asset
     /// </summary>
     public HighScoresInfo HighScores { get; init; } = new();
 
+    /// <summary>
+    /// The player gets an extra life each time their score passes another this many points;
+    /// 0 (or unset) for never
+    /// </summary>
+    public int ExtraLifeScore { get; init; }
+
     public override void Merge(Asset other)
     {
         // TODO: Overwrite or merge the data

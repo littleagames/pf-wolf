@@ -460,9 +460,9 @@ internal partial class Program
         gamestate.difficulty = difficulty;
         GiveStartingInventory();
 
-        gamestate.health = 100;
-        gamestate.lives = 3;
-        gamestate.nextextra = EXTRAPOINTS;
+        gamestate.health = StartingHealth;
+        gamestate.lives = StartingLives;
+        gamestate.nextextra = ExtraLifeScore;
         gamestate.cluster = mapInfo.Cluster;
         gamestate.mapon = epInfo.StartMap;
 
