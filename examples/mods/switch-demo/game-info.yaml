@@ -1,0 +1,11 @@
+# Merged into the game pack's game-info.yaml: the demo level's light zones (the map's zone
+# plane, plane 5; see the zones notes under default-map in pfwolf-pk3's
+# gamepacks/wolf3d/game-info.yaml). Stations 6 and 7 change them as the level is played.
+maps:
+  MAP01:
+    zones:
+      # The light room: dark until station 6 turns its lights on
+      1: { light: 24 }
+      # The hall: full light. Station 7's alarm tints it red and strobes it down to low,
+      # bright for bright-tics of every tics (70 a second)
+      2: { light: 255, low: 90, tics: 40, bright-tics: 20 }

@@ -1,0 +1,158 @@
+# The demo's switches (see the switch block's fields at wall 21 in pfwolf-pk3's
+# mapdefs/wolf3d/walls.yaml). Each switch's actions act on whatever shares its tile's tag on the
+# map's tag plane: tags 1 to 5 here, one per station. Off switches show the elevator's lever
+# down (ELEV1_2), thrown ones lever up (ELEV2_2).
+walls:
+    # Station 1, tag 1: a door only this switch opens (it's gold-locked, and the level has no
+    # gold key). A toggle: 50 and 51 switch to each other.
+    '50':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 51
+            sound: switches/elevbutn
+            actions:
+                - A_OpenDoor("hold")
+    '51':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 50
+            sound: switches/elevbutn
+            actions:
+                - A_CloseDoor
+
+    # Station 2, tag 2: the hall's lights (SwitchLightOff), on and off
+    '52':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 53
+            sound: switches/elevbutn
+            actions:
+                - A_Activate
+    '53':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 52
+            sound: switches/elevbutn
+            actions:
+                - A_Deactivate
+
+    # Station 3, tag 3: pushes the brick wall west into a secret room. Thrown once: wall 55
+    # has no switch of its own.
+    '54':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 55
+            sound: switches/elevbutn
+            actions:
+                - A_MoveWall("west", "world/pushwall")
+    '55':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+
+    # Station 4, tag 4: hangs flags on a row of walls (wall 3), and takes them down (wall 1)
+    '56':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 57
+            sound: switches/elevbutn
+            actions:
+                - A_SetWall(3)
+    '57':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 56
+            sound: switches/elevbutn
+            actions:
+                - A_SetWall(1)
+
+    # Station 5, tag 5: needs the silver key from the secret room, then opens the way to the
+    # exit for good
+    '58':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 59
+            sound: switches/elevbutn
+            lock: SilverKey
+            actions:
+                - A_OpenDoor("hold")
+    '59':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+
+    # Stations 6 and 7 change light zones (the zone plane, plane 5, and game-info.yaml's zones),
+    # which they name themselves, so they need no tag.
+
+    # Station 6: fades the light room's lights (zone 1) up and down over half a second
+    '60':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 61
+            sound: switches/elevbutn
+            actions:
+                - A_SetZoneLight(1, 255, 35)
+    '61':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 60
+            sound: switches/elevbutn
+            actions:
+                - A_SetZoneLight(1, 24, 35)
+
+    # Station 7, in the light room: the hall's alarm, red strobing light (zone 2, timed by its
+    # low, tics and bright-tics in game-info.yaml), and back to its plain light
+    '62':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 63
+            sound: switches/elevbutn
+            actions:
+                - A_SetZoneLight(2, 255, 0, "#FF4040")
+                - A_SetZoneEffect(2, "strobe")
+    '63':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 62
+            sound: switches/elevbutn
+            actions:
+                - A_SetZoneEffect(2, "none")
+                - A_SetZoneLight(2, 255, 0, "none")
