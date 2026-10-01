@@ -459,7 +459,18 @@ internal partial class Program
         FL_DIR_VERT_FLAG = 0x00000800,
         FL_DIR_MASK = 0x00000e00,
 #endif
-        // next free bit is   0x00001000
+        // Blake Stone's AI (Program.BlakeAI.cs)
+        FL_FRIENDLY = 0x00001000,       // doesn't go after the player until it hears or is told to (FRIENDLY actors)
+        FL_INTERROGATED = 0x00002000,   // has been talked to: an informant has given its hint, a scientist turned mean
+        FL_LOCKEDSTATE = 0x00004000,    // just hurt: no more pain or shooting back until it next chases
+        FL_SHOOTMODE = 0x00008000,      // `monster.shootmode` actors: shooting rather than closing in
+        FL_RUNAWAY = 0x00010000,        // a SMART actor running for supplies or a door
+        FL_RUNTOSTATIC = 0x00020000,    // ... heading for a pickup or door (SeekX/SeekY) rather than a far corner
+        FL_MUSTATTACK = 0x00040000,     // a scientist asked once already: the next asking makes it mean
+        FL_HASAMMO = 0x00080000,        // an informant still has its charge pack to give
+        FL_HASTOKENS = 0x00100000,      // ... and its food tokens
+        FL_SLIDING = 0x00200000,        // a corpse sliding back from the shot that killed it (T_BlowBack)
+        // next free bit is   0x00400000
     }
 
     internal static void ClearMemory() => _audioManager.StopAll();

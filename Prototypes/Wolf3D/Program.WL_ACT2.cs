@@ -41,6 +41,7 @@ internal partial class Program
     */
 
     // A_SpawnThing("Smoke"): spawns the given actor at this one's position (a rocket's smoke trail)
+    // A_SpawnThing("GreenOoze", 128): with a chance, only that many times in 256
     internal static void A_SpawnThing(Entities.Actors.Actor ob, string[] args)
     {
         if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
@@ -48,6 +49,9 @@ internal partial class Program
             Console.WriteLine("A_SpawnThing: no actor given.");
             return;
         }
+
+        if (args.Length > 1 && int.TryParse(args[1], out var chance) && US_RndT() >= chance)
+            return;
 
         _mapManager.SpawnAtActor(args[0], ob);
     }
@@ -166,7 +170,12 @@ internal partial class Program
                 : minDamage;
 
             TakeDamage(damage, ob);
-            _mapManager.MarkForRemoval(ob);
+
+            // BURSTONPLAYER projectiles (Blake Stone's spit and shots) burst on the player as on a wall
+            if (ActorHasFlag(ob, "BURSTONPLAYER") && ob.ResolvedStates.ContainsKey("Death"))
+                NewActorState(ob, "Death");
+            else
+                _mapManager.MarkForRemoval(ob);
             return;
         }
 

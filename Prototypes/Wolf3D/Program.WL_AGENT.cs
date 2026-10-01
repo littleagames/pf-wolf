@@ -346,7 +346,7 @@ internal partial class Program
 
         foreach (var actor in _mapManager.GetActors())
         {
-            if (actor.IsRemoved || !actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
+            if (actor.IsRemoved || !Managers.MapManager.IsSolidActor(actor))
                 continue;
             if (actor.TileX < xl || actor.TileX > xh || actor.TileY < yl || actor.TileY > yh)
                 continue;
@@ -598,6 +598,29 @@ internal partial class Program
         ActorActionRegistry.Register("A_Victory", A_Victory);
         ActorActionRegistry.Register("A_PlaySound", A_PlaySound);
         ActorActionRegistry.Register("A_Dormant", A_Dormant);
+
+        // Blake Stone's enemies (Program.BlakeAI.cs)
+        ActorActionRegistry.Register("T_BlakeChase", T_BlakeChase);
+        ActorActionRegistry.Register("T_BlakeShoot", T_BlakeShoot);
+        ActorActionRegistry.Register("T_BlowBack", T_BlowBack);
+        ActorActionRegistry.Register("T_Wounded", T_Wounded);
+        ActorActionRegistry.Register("T_WaitToWake", T_WaitToWake);
+        ActorActionRegistry.Register("A_SpawnEnemy", A_SpawnEnemy);
+        ActorActionRegistry.Register("A_Melee", A_Melee);
+
+        // Blake Stone's machines and specials (Program.BlakeMachines.cs)
+        ActorActionRegistry.Register("T_Bounce", T_Bounce);
+        ActorActionRegistry.Register("A_SetShootable", A_SetShootable);
+        ActorActionRegistry.Register("T_LiquidMove", T_LiquidMove);
+        ActorActionRegistry.Register("T_LiquidStand", T_LiquidStand);
+        ActorActionRegistry.Register("T_Seek", T_Seek);
+        ActorActionRegistry.Register("T_SecurityLight", T_SecurityLight);
+        ActorActionRegistry.Register("T_SteamVent", T_SteamVent);
+        ActorActionRegistry.Register("A_HurtPlayerHere", A_HurtPlayerHere);
+        ActorActionRegistry.Register("A_SelfDestruct", A_SelfDestruct);
+        ActorActionRegistry.Register("A_CountRemaining", A_CountRemaining);
+        ActorActionRegistry.Register("A_VictoryIfLast", A_VictoryIfLast);
+        ActorActionRegistry.Register("A_WarpSiteGone", A_WarpSiteGone);
 
         // Projectiles and effects (Program.WL_ACT2.cs).
         ActorActionRegistry.Register("A_Projectile", A_Projectile);
@@ -1441,7 +1464,10 @@ internal partial class Program
             OperateDoor(cmdtile & ~BIT_DOOR);
         }
         else
-        { }// _audioManager.Play("DONOTHING");
+        {
+            // Nothing ahead to use: talk to whoever's there (Program.BlakeAI.cs)
+            TryInterrogate();
+        }
     }
 
     //===========================================================================
@@ -1470,6 +1496,8 @@ internal partial class Program
 
             if (_inputManager.IsButtonPressed(buttontypes.bt_use))
                 Cmd_Use();
+            else
+                ResetInterrogateDelay();
         }
         else
         {
@@ -1531,7 +1559,7 @@ internal partial class Program
         if (closest == null)
             return; // missed
 
-        DamageActor(closest, PlayerDamage(US_RndT() >> 4));
+        DamageActor(closest, PlayerDamage(US_RndT() >> 4), player);
     }
 
     // A player attack's damage, scaled by the class's player.damagedealt
@@ -1546,7 +1574,9 @@ internal partial class Program
 
         PlayAttackSound();
 
-        madenoise = true;
+        // A silent weapon (weapon.silent, Blake Stone's auto-charge pistol) alerts no one
+        if (!PlayerWeaponIsSilent())
+            madenoise = true;
 
         //
         // find the closest potential target, and confirm a clear line to it
@@ -1577,7 +1607,7 @@ internal partial class Program
             damage = US_RndT() / far;
         }
 
-        DamageActor(closest, PlayerDamage(damage));
+        DamageActor(closest, PlayerDamage(damage), player);
     }
 
     internal static void VictorySpin()

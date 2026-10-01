@@ -1,0 +1,27 @@
+# The patrol arrows (legacy ICONARROWS 90-97): a PatrolPoint facing each of the 8 directions.
+# angles: 0=east, 45=northeast, 90=north ... 315=southeast.
+things:
+  90:
+    class: PatrolPoint
+    angles: 0
+  91:
+    class: PatrolPoint
+    angles: 45
+  92:
+    class: PatrolPoint
+    angles: 90
+  93:
+    class: PatrolPoint
+    angles: 135
+  94:
+    class: PatrolPoint
+    angles: 180
+  95:
+    class: PatrolPoint
+    angles: 225
+  96:
+    class: PatrolPoint
+    angles: 270
+  97:
+    class: PatrolPoint
+    angles: 315

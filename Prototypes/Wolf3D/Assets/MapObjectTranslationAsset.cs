@@ -124,6 +124,18 @@ internal static class MapInfoCodes
     /// </summary>
     public const string TagLink = "tag-link";
 
+    /// <summary>
+    /// "hint:Text": a hint (or saying) the map places: message (low byte, from 1) of the VGAGRAPH
+    /// text Text, about the room whose floor it's on, for the actors that talk (Program.BlakeAI.cs)
+    /// </summary>
+    public const string HintPrefix = "hint:";
+
+    /// <summary>The text a hint code's messages come from, or null when the kind isn't a hint</summary>
+    public static string? HintText(string kind) =>
+        kind.StartsWith(HintPrefix, StringComparison.OrdinalIgnoreCase) && kind.Length > HintPrefix.Length
+            ? kind[HintPrefix.Length..].Trim()
+            : null;
+
     /// <summary>Whether the code's value is in the tile after it</summary>
     public static bool HasValue(string kind) =>
         kind.Equals(CeilingFloorColors, StringComparison.OrdinalIgnoreCase)
@@ -229,6 +241,12 @@ internal record MapActorTranslation
     public int Angles { get; set; }
     public int Patrol { get; set; }
     public int MinSkill { get; set; }
+
+    /// <summary>
+    /// What's placed instead below <see cref="MinSkill"/> (Blake Stone's canister aliens are
+    /// plain canisters on easier skills); nothing when empty
+    /// </summary>
+    public string Else { get; set; } = "";
 }
 
 internal record MapTextureTranslation
@@ -310,7 +328,29 @@ internal record MapTextureTranslation
     /// <summary>Walls only: makes this wall a switch the player can use.</summary>
     public MapSwitchTranslation? Switch { get; init; }
 
+    /// <summary>Walls only: makes this wall an outlet enemies come out of (Blake Stone's electro-aliens).</summary>
+    public MapOutletTranslation? Outlet { get; init; }
+
     public static MapTextureTranslation None => new(); // TODO: Missing texture
+}
+
+/// <summary>
+/// A wall that lets enemies out (Program.BlakeMachines.cs): every so often, while the room beside
+/// it joins the player's, one comes out onto open floor beside it.
+/// </summary>
+internal record MapOutletTranslation
+{
+    /// <summary>The actordefs class that comes out</summary>
+    public string Class { get; init; } = "";
+
+    /// <summary>Seconds between them, [min, max] at random; a 0xFA value on the wall's object-plane tile sets it instead</summary>
+    public List<int> Delay { get; init; } = [8, 30];
+
+    /// <summary>How many from this outlet can be about at once, by skill (the last for any skill past the list)</summary>
+    public List<int> Max { get; init; } = [1];
+
+    /// <summary>Played where one appears</summary>
+    public string Sound { get; init; } = "";
 }
 
 /// <summary>

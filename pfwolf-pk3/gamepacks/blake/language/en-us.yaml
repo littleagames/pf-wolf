@@ -52,3 +52,43 @@ $BS_BARRIEROFF: "Deactivating barrier"
 # The status bar's info area with no messages ({FoodToken} is how many the player has)
 $BS_NOMESSAGES: "No messages.\nFood tokens: {FoodToken}"
 $BS_OUTOFORDER: "Food unit machine is out of order."
+
+# Guards and bio-techs (actordefs/blake/enemies.yaml)
+$BS_RENTACOP: "Rent-a-cop"
+$BS_PROGUARD: "Pro guard"
+$BS_SWATGUARD: "SWAT guard"
+$BS_SCIENTIST: "Bio-tech"
+$BS_INFORMANT: "Informant"
+
+# Talking to bio-techs (the hint itself is the game's own text)
+$BS_INTERROGATE: "INTERROGATE:"
+$BS_INTERROGATE_INFORMANT: "INTERROGATE: INFORMANT"
+$BS_INFORMANT_AMMO: "HEY BLAKE,\nTAKE MY CHARGE PACK!"
+$BS_INFORMANT_TOKENS: "HEY BLAKE,\nTAKE MY FOOD TOKENS!"
+$BS_KILLEDINFORMANT: "YOU JUST SHOT AN\nINFORMANT!\nONLY SHOOT BIO-TECHS\nTHAT SHOOT AT YOU!"
+
+# Mutants and aliens (actordefs/blake/aliens.yaml)
+$BS_GENETICGUARD: "Genetic guard"
+$BS_MUTANTHUMAN1: "Mutant human"
+$BS_MUTANTHUMAN2: "Mutant human"
+$BS_SCANALIEN: "Small canister alien"
+$BS_LCANALIEN: "Large canister alien"
+$BS_GURNEYMUTANT: "Gurney mutant"
+$BS_PODALIEN: "P.O.D. alien"
+
+# Machines, bosses and Goldfire (actordefs/blake/machines.yaml, bosses.yaml)
+$BS_ELECTROALIEN: "Electro-alien"
+$BS_ELECTROSPHERE: "Electro-sphere"
+$BS_LIQUIDALIEN: "Liquid alien"
+$BS_TURRET: "Hanging turret"
+$BS_FLOATINGBOMB: "Floating bomb"
+$BS_VOLATILETRANSPORT: "Volatile material transport"
+$BS_GENERATOR: "Projection generator"
+$BS_SPIDERMUTANT: "Spider mutant"
+$BS_BREATHERBEAST: "Breather beast"
+$BS_CYBORGWARRIOR: "Cyborg warrior"
+$BS_REPTILIANWARRIOR: "Reptilian warrior"
+$BS_ACIDDRAGON: "Acid dragon"
+$BS_BIOMECHGUARDIAN: "Bio-mech guardian"
+$BS_GOLDFIRE: "Dr. Goldfire"
+$BS_GENERATORSLEFT: "PROJECTION GENERATOR\nDESTROYED!\n\n- %n REMAINING -\nDESTROY THEM TO WIN!"

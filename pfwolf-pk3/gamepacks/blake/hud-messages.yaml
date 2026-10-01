@@ -13,6 +13,11 @@ Default:
   duration: 280
   max-lines: 1
 
+# What bio-techs say when talked to: longer, as Blake Stone shows them twice as long
+Talk:
+  parent: Default
+  duration: 600
+
 Center:
   anchor: Center
   color: Yellow

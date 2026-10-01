@@ -1,0 +1,440 @@
+# Blake Stone's mutants and aliens, as bstone has them (its "offset objects": 3d_act2.cpp's
+# s_ofs_* states, the same for all of them, each with its own pictures). They notice Blake once
+# he can see them, face no way in particular (they see all round), and take turns at closing in
+# and attacking (monster.shootmode). One within a tile goes at him hand to hand (Melee) when it
+# can; further off it spits or shoots (Attack). Health is by skill (novice, skilled, expert,
+# veteran). The map numbers that place them are in mapdefs/blake/aliens.yaml; their shots are at
+# the end.
+
+BlakeAlien:
+  parent: BlakeEnemy
+  flags: [NOTICEWHENSEEN]
+  properties:
+    "monster.shootmode": true
+    "monster.ammo": [30, 89]
+    "monster.reactiondelay": [1]
+    "attacksound": "bs/atkcharged"
+
+# -----------------------------------------------------------------------
+# Genetic guard: shoots, and punches up close; leaves its slow fire protector or a charge pack
+# -----------------------------------------------------------------------
+GeneticGuard:
+  parent: BlakeAlien
+  properties:
+    "tag": "$BS_GENETICGUARD"
+    "health.baby": 20
+    "health.easy": 60
+    "health.normal": 180
+    "health.hard": 240
+    "points": 10000
+    "monster.chasespeedmultiplier": 3
+    "seesound": "bs/gguardhalt"
+    "meleesound": "bs/punchattack"
+    "deathsound": "bs/gguarddeath"
+    "dropweapon": "SlowFireProtector"
+    "dropweapon.ifmissing": true
+    "dropitem": "ChargePack"
+  states:
+    Spawn:
+      - { sprite: GENG, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: GENG, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: GENG, frames: [A], tics-per-frame: 5 }
+      - { sprite: GENG, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: GENG, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: GENG, frames: [C], tics-per-frame: 5 }
+      - { sprite: GENG, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: GENG, frames: [L], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: GENG, frames: [I], tics-per-frame: 20 }
+      - { sprite: GENG, frames: [J], tics-per-frame: 20, action: T_BlakeShoot }
+      - { sprite: GENG, frames: [K], tics-per-frame: 10, next-state: Chase }
+    Melee:
+      - { sprite: GENG, frames: [E], tics-per-frame: 20 }
+      - { sprite: GENG, frames: [F], tics-per-frame: 20, action: "A_Melee(220, 1, 31)" }
+      - { sprite: GENG, frames: [H], tics-per-frame: 30, next-state: Chase }
+    Death:
+      - { sprite: GENG, frames: [L], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: GENG, frames: [M], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: GENG, frames: [N], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: GENG, frames: [O], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: GENG, frames: [P], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: GENG, frames: [Q], tics-per-frame: -1 }
+
+# -----------------------------------------------------------------------
+# Mutant human (the "blue boy"): shoots; blows up dying, leaving a charge pack
+# -----------------------------------------------------------------------
+MutantHuman1:
+  parent: BlakeAlien
+  properties:
+    "tag": "$BS_MUTANTHUMAN1"
+    "health.baby": 27
+    "health.easy": 50
+    "health.normal": 155
+    "health.hard": 210
+    "points": 5055
+    "monster.chasespeedmultiplier": 2
+    "seesound": "bs/blueboyhalt"
+    "deathsound": ["bs/explode1", "bs/explode2"]
+    "dropitem": "ChargePack"
+  states:
+    Spawn:
+      - { sprite: MSEN, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: MSEN, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MSEN, frames: [A], tics-per-frame: 5 }
+      - { sprite: MSEN, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: MSEN, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MSEN, frames: [C], tics-per-frame: 5 }
+      - { sprite: MSEN, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: MSEN, frames: [H], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: MSEN, frames: [E], tics-per-frame: 10 }
+      - { sprite: MSEN, frames: [F], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: MSEN, frames: [G], tics-per-frame: 10, next-state: Chase }
+    Death:
+      - { sprite: MSEN, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: MSEN, frames: [I], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: MSEN, frames: [J], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: MSEN, frames: [K], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: MSEN, frames: [L], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: MSEN, frames: [M], tics-per-frame: -1 }
+
+# -----------------------------------------------------------------------
+# Mutant human (the "dog boy"): spits, and punches up close
+# -----------------------------------------------------------------------
+MutantHuman2:
+  parent: BlakeAlien
+  properties:
+    "tag": "$BS_MUTANTHUMAN2"
+    "health.baby": 27
+    "health.easy": 50
+    "health.normal": 155
+    "health.hard": 210
+    "points": 6055
+    "monster.chasespeedmultiplier": 2
+    "seesound": "bs/dogboyhalt"
+    "meleesound": "bs/punchattack"
+    "deathsound": "bs/dogboydeath"
+  states:
+    Spawn:
+      - { sprite: MHUM, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: MHUM, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MHUM, frames: [A], tics-per-frame: 5 }
+      - { sprite: MHUM, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: MHUM, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MHUM, frames: [C], tics-per-frame: 5 }
+      - { sprite: MHUM, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: MHUM, frames: [K], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: MHUM, frames: [H], tics-per-frame: 20 }
+      - { sprite: MHUM, frames: [I], tics-per-frame: 20, action: A_FireProjectile("ScanSpit") }
+      - { sprite: MHUM, frames: [J], tics-per-frame: 10, next-state: Chase }
+    Melee:
+      - { sprite: MHUM, frames: [E], tics-per-frame: 20 }
+      - { sprite: MHUM, frames: [F], tics-per-frame: 20, action: "A_Melee(220, 1, 31)" }
+      - { sprite: MHUM, frames: [G], tics-per-frame: 30, next-state: Chase }
+    Death:
+      - { sprite: MHUM, frames: [K], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: MHUM, frames: [L], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: MHUM, frames: [M], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: MHUM, frames: [N], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: MHUM, frames: [O], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: MHUM, frames: [P], tics-per-frame: -1 }
+
+# -----------------------------------------------------------------------
+# Canister aliens: spit, and claw up close. Each also comes asleep in its canister (below),
+# breaking out when the canister is shot.
+# -----------------------------------------------------------------------
+ScanAlien:
+  parent: BlakeAlien
+  properties:
+    "tag": "$BS_SCANALIEN"
+    "health.baby": 30
+    "health.easy": 60
+    "health.normal": 180
+    "health.hard": 240
+    "points": 3750
+    "monster.chasespeedmultiplier": 3
+    "seesound": "bs/scanhalt"
+    "meleesound": "bs/clawattack"
+    "deathsound": "bs/scandeath"
+  states:
+    Spawn:
+      - { sprite: CNSA, frames: [F], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: CNSA, frames: [F], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: CNSA, frames: [F], tics-per-frame: 5 }
+      - { sprite: CNSA, frames: [G], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: CNSA, frames: [H], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: CNSA, frames: [H], tics-per-frame: 5 }
+      - { sprite: CNSA, frames: [I], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: CNSA, frames: [P], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: CNSA, frames: [M], tics-per-frame: 20 }
+      - { sprite: CNSA, frames: [N], tics-per-frame: 20, action: A_FireProjectile("ScanSpit") }
+      - { sprite: CNSA, frames: [O], tics-per-frame: 10, next-state: Chase }
+    Melee:
+      - { sprite: CNSA, frames: [J], tics-per-frame: 20 }
+      - { sprite: CNSA, frames: [K], tics-per-frame: 20, action: "A_Melee(220, 1, 31)" }
+      - { sprite: CNSA, frames: [L], tics-per-frame: 30, next-state: Chase }
+    Death:
+      - { sprite: CNSA, frames: [P], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: CNSA, frames: [Q], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: CNSA, frames: [R], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: CNSA, frames: [S], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: CNSA, frames: [T], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: CNSA, frames: [U], tics-per-frame: -1 }
+
+LcanAlien:
+  parent: BlakeAlien
+  properties:
+    "tag": "$BS_LCANALIEN"
+    "health.baby": 37
+    "health.easy": 75
+    "health.normal": 225
+    "health.hard": 300
+    "points": 6050
+    "monster.chasespeedmultiplier": 3
+    "seesound": "bs/lcanhalt"
+    "meleesound": "bs/clawattack"
+    "deathsound": "bs/lcandeath"
+  states:
+    Spawn:
+      - { sprite: CNTA, frames: [F], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: CNTA, frames: [F], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: CNTA, frames: [F], tics-per-frame: 5 }
+      - { sprite: CNTA, frames: [G], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: CNTA, frames: [H], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: CNTA, frames: [H], tics-per-frame: 5 }
+      - { sprite: CNTA, frames: [I], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: CNTA, frames: [P], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: CNTA, frames: [M], tics-per-frame: 20 }
+      - { sprite: CNTA, frames: [N], tics-per-frame: 20, action: A_FireProjectile("LcanSpit") }
+      - { sprite: CNTA, frames: [O], tics-per-frame: 10, next-state: Chase }
+    Melee:
+      - { sprite: CNTA, frames: [J], tics-per-frame: 20 }
+      - { sprite: CNTA, frames: [K], tics-per-frame: 20, action: "A_Melee(220, 1, 31)" }
+      - { sprite: CNTA, frames: [L], tics-per-frame: 30, next-state: Chase }
+    Death:
+      - { sprite: CNTA, frames: [P], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: CNTA, frames: [Q], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: CNTA, frames: [R], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: CNTA, frames: [S], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: CNTA, frames: [T], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: CNTA, frames: [U], tics-per-frame: -1 }
+
+# -----------------------------------------------------------------------
+# Gurney mutant: shoots; leaves a slow fire protector or a charge pack. It also comes asleep on
+# its gurney (below).
+# -----------------------------------------------------------------------
+GurneyMutant:
+  parent: BlakeAlien
+  properties:
+    "tag": "$BS_GURNEYMUTANT"
+    "health.baby": 33
+    "health.easy": 37
+    "health.normal": 150
+    "health.hard": 200
+    "points": 3750
+    "monster.chasespeedmultiplier": 3
+    "seesound": "bs/gurney"
+    "deathsound": "bs/gurneydeath"
+    "dropweapon": "SlowFireProtector"
+    "dropweapon.ifmissing": true
+    "dropitem": "ChargePack"
+  states:
+    Spawn:
+      - { sprite: MGUR, frames: [F], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: MGUR, frames: [F], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MGUR, frames: [F], tics-per-frame: 5 }
+      - { sprite: MGUR, frames: [G], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: MGUR, frames: [H], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MGUR, frames: [H], tics-per-frame: 5 }
+      - { sprite: MGUR, frames: [I], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: MGUR, frames: [M], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: MGUR, frames: [J], tics-per-frame: 10 }
+      - { sprite: MGUR, frames: [K], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: MGUR, frames: [L], tics-per-frame: 10, next-state: Chase }
+    Death:
+      - { sprite: MGUR, frames: [M], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: MGUR, frames: [N], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: MGUR, frames: [O], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: MGUR, frames: [P], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: MGUR, frames: [Q], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: MGUR, frames: [R], tics-per-frame: -1 }
+
+# -----------------------------------------------------------------------
+# P.O.D. alien: hatches from its egg (below); spits, and claws up close
+# -----------------------------------------------------------------------
+PodAlien:
+  parent: BlakeAlien
+  properties:
+    "tag": "$BS_PODALIEN"
+    "health.baby": 28
+    "health.easy": 60
+    "health.normal": 160
+    "health.hard": 210
+    "points": 5075
+    "monster.ammo": 255
+    "monster.chasespeedmultiplier": 2
+    "seesound": "bs/podhalt"
+    "meleesound": "bs/clawattack"
+    "deathsound": "bs/poddeath"
+  states:
+    Spawn:
+      - { sprite: PODA, frames: [E], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: PODA, frames: [E], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: PODA, frames: [E], tics-per-frame: 5 }
+      - { sprite: PODA, frames: [F], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: PODA, frames: [G], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: PODA, frames: [G], tics-per-frame: 5 }
+      - { sprite: PODA, frames: [H], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: PODA, frames: [O], tics-per-frame: 11, next-state: Chase }
+    Attack:
+      - { sprite: PODA, frames: [L], tics-per-frame: 8 }
+      - { sprite: PODA, frames: [M], tics-per-frame: 8 }
+      - { sprite: PODA, frames: [N], tics-per-frame: 8, action: A_FireProjectile("PodSpit"), next-state: Chase }
+    Melee:
+      - { sprite: PODA, frames: [I], tics-per-frame: 8 }
+      - { sprite: PODA, frames: [J], tics-per-frame: 8 }
+      - { sprite: PODA, frames: [J], tics-per-frame: 20, action: "A_Melee(220, 1, 31)" }
+      - { sprite: PODA, frames: [K], tics-per-frame: 30, next-state: Chase }
+    Death:
+      - { sprite: PODA, frames: [P], tics-per-frame: 60, action: A_DeathScream }
+      - { sprite: PODA, frames: [Q], tics-per-frame: 30 }
+      - { sprite: PODA, frames: [R], tics-per-frame: -1 }
+
+# -----------------------------------------------------------------------
+# Sleepers: each counts as the enemy it becomes (monster.becomes). A canister shot open lets
+# its alien out; a gurney mutant wakes when shot or, with a time on the map (a 0xFA value east of
+# it), that many seconds after Blake first sees it, and can't be shot till then; a pod egg
+# hatches 5-24 seconds (or the map's time) after Blake first sees it, or when shot.
+# -----------------------------------------------------------------------
+ScanCanister:
+  flags: [STATIONARY]
+  properties:
+    "tag": "$BS_SCANALIEN"
+    "health": 1
+    "monster.becomes": "ScanAlien"
+    "deathsound": "bs/scanbreak"
+  states:
+    Spawn:
+      - { sprite: CNSA, frames: [A], tics-per-frame: -1 }
+    # (only so it can be shot)
+    Chase:
+      - { sprite: CNSA, frames: [A], tics-per-frame: -1 }
+    Death:
+      - { sprite: CNSA, frames: [B], tics-per-frame: 30, action: A_DeathScream }
+      - { sprite: CNSA, frames: [C, D], tics-per-frame: 30 }
+      - { sprite: CNSA, frames: [E], tics-per-frame: 0, action: A_SpawnEnemy("ScanAlien") }
+      - { sprite: CNSA, frames: [E], tics-per-frame: 0, action: A_BlockTile }
+      - { sprite: CNSA, frames: [E], tics-per-frame: -1 }
+
+LcanCanister:
+  parent: ScanCanister
+  properties:
+    "tag": "$BS_LCANALIEN"
+    "monster.becomes": "LcanAlien"
+    "deathsound": "bs/lcanbreak"
+  states:
+    Spawn:
+      - { sprite: CNTA, frames: [A], tics-per-frame: -1 }
+    Chase:
+      - { sprite: CNTA, frames: [A], tics-per-frame: -1 }
+    Death:
+      - { sprite: CNTA, frames: [B], tics-per-frame: 30, action: A_DeathScream }
+      - { sprite: CNTA, frames: [C, D], tics-per-frame: 30 }
+      - { sprite: CNTA, frames: [E], tics-per-frame: 0, action: A_SpawnEnemy("LcanAlien") }
+      - { sprite: CNTA, frames: [E], tics-per-frame: 0, action: A_BlockTile }
+      - { sprite: CNTA, frames: [E], tics-per-frame: -1 }
+
+GurneySleeper:
+  flags: [STATIONARY]
+  properties:
+    "tag": "$BS_GURNEYMUTANT"
+    "health": 1
+    "monster.becomes": "GurneyMutant"
+    "monster.wakedelay": [0]
+    "monster.wakeprotected": true
+  states:
+    Spawn:
+      - { sprite: MGUR, frames: [A], tics-per-frame: -1, think: T_WaitToWake }
+    Chase:
+      - { sprite: MGUR, frames: [A], tics-per-frame: -1 }
+    Wake:
+      - { sprite: MGUR, frames: [B], tics-per-frame: 0, next-state: Death }
+    Death:
+      - { sprite: MGUR, frames: [B, C, D], tics-per-frame: 30 }
+      - { sprite: MGUR, frames: [E], tics-per-frame: 0, action: A_SpawnEnemy("GurneyMutant") }
+      - { sprite: MGUR, frames: [E], tics-per-frame: 0, action: A_BlockTile }
+      - { sprite: MGUR, frames: [E], tics-per-frame: -1 }
+
+PodEgg:
+  properties:
+    "tag": "$BS_PODALIEN"
+    "health": 1
+    "monster.becomes": "PodAlien"
+    "monster.wakedelay": [5, 24]
+  states:
+    Spawn:
+      - { sprite: PODA, frames: [A], tics-per-frame: -1, think: T_WaitToWake }
+    Chase:
+      - { sprite: PODA, frames: [A], tics-per-frame: -1 }
+    Wake:
+      - { sprite: PODA, frames: [B], tics-per-frame: 0, next-state: Death }
+    Death:
+      - { sprite: PODA, frames: [B], tics-per-frame: 45, action: 'A_PlaySound("bs/podhatch", "positional")' }
+      - { sprite: PODA, frames: [C, D], tics-per-frame: 45 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: 'A_SpawnEnemy("PodAlien", "chase")' }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+# An egg that never hatches (bstone's, below a pod egg's skill): just there in the way
+PodEggDud:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - { sprite: PODA, frames: [A], tics-per-frame: -1 }
+
+# -----------------------------------------------------------------------
+# Their shots: they burst on a wall or on Blake, for 0-15
+# -----------------------------------------------------------------------
+ScanSpit:
+  flags: [PROJECTILE, BURSTONPLAYER, bright]
+  properties:
+    "speed": 7168
+    "speed.random": 256
+    "spread": 2
+    "attacksound": "bs/spitattack"
+  states:
+    Spawn:
+      - { sprite: SPT1, frames: [A, B, C], tics-per-frame: 10, think: "A_Projectile(0, 15)" }
+    Death:
+      - { sprite: SPT1, frames: [D, E, F], tics-per-frame: 8 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+LcanSpit:
+  parent: ScanSpit
+  states:
+    Spawn:
+      - { sprite: SPT3, frames: [A, B, C], tics-per-frame: 10, think: "A_Projectile(0, 15)" }
+    Death:
+      - { sprite: SPT3, frames: [D, E, F], tics-per-frame: 8 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+PodSpit:
+  parent: LcanSpit

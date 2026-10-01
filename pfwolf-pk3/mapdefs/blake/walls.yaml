@@ -132,6 +132,13 @@ walls:
         South: PLASMSP1
         East: PLASMSP2
         West: PLASMSP2
+        # Lets electro-aliens out every 8-30 seconds (or a 0xFA value's seconds), as many at a
+        # time as the skill's number (bstone's electro-alien walls)
+        outlet:
+            class: ElectroAlien
+            delay: [8, 30]
+            max: [1, 2, 3, 4]
+            sound: bs/elecappear
     '25':    # Elevator Outside Wall
         North: ELEVOUT1
         South: ELEVOUT1

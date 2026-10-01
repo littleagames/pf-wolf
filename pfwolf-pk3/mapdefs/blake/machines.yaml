@@ -1,0 +1,156 @@
+# Where Blake Stone's maps place its machines, electro-aliens, bosses and moving scenery
+# (actordefs/blake/machines.yaml and bosses.yaml), as bstone's ScanInfoPlane: one tile (or row of
+# four, facing east, north, west, south) for every skill (min-skill 0), one for expert and up (2)
+# and one for veteran (3). Electro-aliens also come out of the electro-alien walls (mapdefs walls
+# 24 outlet); Goldfire comes at his spawn sites.
+things:
+  # Electro-aliens, liquid aliens, electro-spheres
+  310: { class: ElectroAlien, angles: -1, min-skill: 0 }
+  311: { class: ElectroAlien, angles: -1, min-skill: 2 }
+  312: { class: ElectroAlien, angles: -1, min-skill: 3 }
+  291: { class: LiquidAlien, angles: -1, min-skill: 0 }
+  292: { class: LiquidAlien, angles: -1, min-skill: 2 }
+  293: { class: LiquidAlien, angles: -1, min-skill: 3 }
+  324: { class: ElectroSphereVertical, angles: -1, min-skill: 0 }
+  342: { class: ElectroSphereVertical, angles: -1, min-skill: 2 }
+  360: { class: ElectroSphereVertical, angles: -1, min-skill: 3 }
+  325: { class: ElectroSphereHorizontal, angles: -1, min-skill: 0 }
+  343: { class: ElectroSphereHorizontal, angles: -1, min-skill: 2 }
+  361: { class: ElectroSphereHorizontal, angles: -1, min-skill: 3 }
+  326: { class: ElectroSphere, angles: -1, min-skill: 0 }
+  344: { class: ElectroSphere, angles: -1, min-skill: 2 }
+  362: { class: ElectroSphere, angles: -1, min-skill: 3 }
+  # Hanging turrets: fixed, then turning
+  224: { class: HangingTurretFixed, angles: 0, patrol: 0, min-skill: 0 }
+  225: { class: HangingTurretFixed, angles: 90, patrol: 0, min-skill: 0 }
+  226: { class: HangingTurretFixed, angles: 180, patrol: 0, min-skill: 0 }
+  227: { class: HangingTurretFixed, angles: 270, patrol: 0, min-skill: 0 }
+  242: { class: HangingTurretFixed, angles: 0, patrol: 0, min-skill: 2 }
+  243: { class: HangingTurretFixed, angles: 90, patrol: 0, min-skill: 2 }
+  244: { class: HangingTurretFixed, angles: 180, patrol: 0, min-skill: 2 }
+  245: { class: HangingTurretFixed, angles: 270, patrol: 0, min-skill: 2 }
+  368: { class: HangingTurretFixed, angles: 0, patrol: 0, min-skill: 3 }
+  369: { class: HangingTurretFixed, angles: 90, patrol: 0, min-skill: 3 }
+  370: { class: HangingTurretFixed, angles: 180, patrol: 0, min-skill: 3 }
+  371: { class: HangingTurretFixed, angles: 270, patrol: 0, min-skill: 3 }
+  228: { class: HangingTurret, angles: 0, patrol: 0, min-skill: 0 }
+  229: { class: HangingTurret, angles: 90, patrol: 0, min-skill: 0 }
+  230: { class: HangingTurret, angles: 180, patrol: 0, min-skill: 0 }
+  231: { class: HangingTurret, angles: 270, patrol: 0, min-skill: 0 }
+  246: { class: HangingTurret, angles: 0, patrol: 0, min-skill: 2 }
+  247: { class: HangingTurret, angles: 90, patrol: 0, min-skill: 2 }
+  248: { class: HangingTurret, angles: 180, patrol: 0, min-skill: 2 }
+  249: { class: HangingTurret, angles: 270, patrol: 0, min-skill: 2 }
+  372: { class: HangingTurret, angles: 0, patrol: 0, min-skill: 3 }
+  373: { class: HangingTurret, angles: 90, patrol: 0, min-skill: 3 }
+  374: { class: HangingTurret, angles: 180, patrol: 0, min-skill: 3 }
+  375: { class: HangingTurret, angles: 270, patrol: 0, min-skill: 3 }
+  # Floating bombs: fixed, waiting, patrolling, and on paths
+  328: { class: FloatingBombFixed, angles: 0, patrol: 0, min-skill: 0 }
+  329: { class: FloatingBombFixed, angles: 90, patrol: 0, min-skill: 0 }
+  330: { class: FloatingBombFixed, angles: 180, patrol: 0, min-skill: 0 }
+  331: { class: FloatingBombFixed, angles: 270, patrol: 0, min-skill: 0 }
+  346: { class: FloatingBombFixed, angles: 0, patrol: 0, min-skill: 2 }
+  347: { class: FloatingBombFixed, angles: 90, patrol: 0, min-skill: 2 }
+  348: { class: FloatingBombFixed, angles: 180, patrol: 0, min-skill: 2 }
+  349: { class: FloatingBombFixed, angles: 270, patrol: 0, min-skill: 2 }
+  364: { class: FloatingBombFixed, angles: 0, patrol: 0, min-skill: 3 }
+  365: { class: FloatingBombFixed, angles: 90, patrol: 0, min-skill: 3 }
+  366: { class: FloatingBombFixed, angles: 180, patrol: 0, min-skill: 3 }
+  367: { class: FloatingBombFixed, angles: 270, patrol: 0, min-skill: 3 }
+  260: { class: FloatingBomb, angles: 0, patrol: 0, min-skill: 0 }
+  261: { class: FloatingBomb, angles: 90, patrol: 0, min-skill: 0 }
+  262: { class: FloatingBomb, angles: 180, patrol: 0, min-skill: 0 }
+  263: { class: FloatingBomb, angles: 270, patrol: 0, min-skill: 0 }
+  278: { class: FloatingBomb, angles: 0, patrol: 0, min-skill: 2 }
+  279: { class: FloatingBomb, angles: 90, patrol: 0, min-skill: 2 }
+  280: { class: FloatingBomb, angles: 180, patrol: 0, min-skill: 2 }
+  281: { class: FloatingBomb, angles: 270, patrol: 0, min-skill: 2 }
+  296: { class: FloatingBomb, angles: 0, patrol: 0, min-skill: 3 }
+  297: { class: FloatingBomb, angles: 90, patrol: 0, min-skill: 3 }
+  298: { class: FloatingBomb, angles: 180, patrol: 0, min-skill: 3 }
+  299: { class: FloatingBomb, angles: 270, patrol: 0, min-skill: 3 }
+  264: { class: FloatingBomb, angles: 0, patrol: 1, min-skill: 0 }
+  265: { class: FloatingBomb, angles: 90, patrol: 1, min-skill: 0 }
+  266: { class: FloatingBomb, angles: 180, patrol: 1, min-skill: 0 }
+  267: { class: FloatingBomb, angles: 270, patrol: 1, min-skill: 0 }
+  282: { class: FloatingBomb, angles: 0, patrol: 1, min-skill: 2 }
+  283: { class: FloatingBomb, angles: 90, patrol: 1, min-skill: 2 }
+  284: { class: FloatingBomb, angles: 180, patrol: 1, min-skill: 2 }
+  285: { class: FloatingBomb, angles: 270, patrol: 1, min-skill: 2 }
+  300: { class: FloatingBomb, angles: 0, patrol: 1, min-skill: 3 }
+  301: { class: FloatingBomb, angles: 90, patrol: 1, min-skill: 3 }
+  302: { class: FloatingBomb, angles: 180, patrol: 1, min-skill: 3 }
+  303: { class: FloatingBomb, angles: 270, patrol: 1, min-skill: 3 }
+  508: { class: FloatingBomb, angles: 0, patrol: 1, min-skill: 0 }
+  509: { class: FloatingBomb, angles: 90, patrol: 1, min-skill: 0 }
+  510: { class: FloatingBomb, angles: 180, patrol: 1, min-skill: 0 }
+  511: { class: FloatingBomb, angles: 270, patrol: 1, min-skill: 0 }
+  526: { class: FloatingBomb, angles: 0, patrol: 1, min-skill: 2 }
+  527: { class: FloatingBomb, angles: 90, patrol: 1, min-skill: 2 }
+  528: { class: FloatingBomb, angles: 180, patrol: 1, min-skill: 2 }
+  529: { class: FloatingBomb, angles: 270, patrol: 1, min-skill: 2 }
+  544: { class: FloatingBomb, angles: 0, patrol: 1, min-skill: 3 }
+  545: { class: FloatingBomb, angles: 90, patrol: 1, min-skill: 3 }
+  546: { class: FloatingBomb, angles: 180, patrol: 1, min-skill: 3 }
+  547: { class: FloatingBomb, angles: 270, patrol: 1, min-skill: 3 }
+  # Volatile material transports: parked, moving, and on paths
+  314: { class: VolatileTransportFixed, angles: 0, patrol: 0, min-skill: 0 }
+  315: { class: VolatileTransportFixed, angles: 90, patrol: 0, min-skill: 0 }
+  316: { class: VolatileTransportFixed, angles: 180, patrol: 0, min-skill: 0 }
+  317: { class: VolatileTransportFixed, angles: 270, patrol: 0, min-skill: 0 }
+  332: { class: VolatileTransportFixed, angles: 0, patrol: 0, min-skill: 2 }
+  333: { class: VolatileTransportFixed, angles: 90, patrol: 0, min-skill: 2 }
+  334: { class: VolatileTransportFixed, angles: 180, patrol: 0, min-skill: 2 }
+  335: { class: VolatileTransportFixed, angles: 270, patrol: 0, min-skill: 2 }
+  350: { class: VolatileTransportFixed, angles: 0, patrol: 0, min-skill: 3 }
+  351: { class: VolatileTransportFixed, angles: 90, patrol: 0, min-skill: 3 }
+  352: { class: VolatileTransportFixed, angles: 180, patrol: 0, min-skill: 3 }
+  353: { class: VolatileTransportFixed, angles: 270, patrol: 0, min-skill: 3 }
+  318: { class: VolatileTransport, angles: 0, patrol: 1, min-skill: 0 }
+  319: { class: VolatileTransport, angles: 90, patrol: 1, min-skill: 0 }
+  320: { class: VolatileTransport, angles: 180, patrol: 1, min-skill: 0 }
+  321: { class: VolatileTransport, angles: 270, patrol: 1, min-skill: 0 }
+  336: { class: VolatileTransport, angles: 0, patrol: 1, min-skill: 2 }
+  337: { class: VolatileTransport, angles: 90, patrol: 1, min-skill: 2 }
+  338: { class: VolatileTransport, angles: 180, patrol: 1, min-skill: 2 }
+  339: { class: VolatileTransport, angles: 270, patrol: 1, min-skill: 2 }
+  354: { class: VolatileTransport, angles: 0, patrol: 1, min-skill: 3 }
+  355: { class: VolatileTransport, angles: 90, patrol: 1, min-skill: 3 }
+  356: { class: VolatileTransport, angles: 180, patrol: 1, min-skill: 3 }
+  357: { class: VolatileTransport, angles: 270, patrol: 1, min-skill: 3 }
+  512: { class: VolatileTransport, angles: 0, patrol: 1, min-skill: 0 }
+  513: { class: VolatileTransport, angles: 90, patrol: 1, min-skill: 0 }
+  514: { class: VolatileTransport, angles: 180, patrol: 1, min-skill: 0 }
+  515: { class: VolatileTransport, angles: 270, patrol: 1, min-skill: 0 }
+  530: { class: VolatileTransport, angles: 0, patrol: 1, min-skill: 2 }
+  531: { class: VolatileTransport, angles: 90, patrol: 1, min-skill: 2 }
+  532: { class: VolatileTransport, angles: 180, patrol: 1, min-skill: 2 }
+  533: { class: VolatileTransport, angles: 270, patrol: 1, min-skill: 2 }
+  548: { class: VolatileTransport, angles: 0, patrol: 1, min-skill: 3 }
+  549: { class: VolatileTransport, angles: 90, patrol: 1, min-skill: 3 }
+  550: { class: VolatileTransport, angles: 180, patrol: 1, min-skill: 3 }
+  551: { class: VolatileTransport, angles: 270, patrol: 1, min-skill: 3 }
+  # Bosses, each guarding a gold access card
+  232: { class: SpiderMutant, angles: -1 }
+  233: { class: BreatherBeast, angles: -1 }
+  250: { class: CyborgWarrior, angles: -1 }
+  251: { class: ReptilianWarrior, angles: -1 }
+  268: { class: AcidDragon, angles: -1 }
+  269: { class: BioMechGuardian, angles: -1 }
+  # Goldfire's spawn sites
+  124: { class: GoldfireSite }
+  # Projection generator, security light, steam, drips, flickering light, ooze
+  177: { class: ProjectionGenerator, angles: -1 }
+  160: { class: SecurityLight }
+  178: { class: SteamGrate }
+  179: { class: SteamVentPipe }
+  81: { class: BloodDrip }
+  82: { class: WaterDrip }
+  79: { class: FlickeringLight }
+  206: { class: GreenOoze, angles: -1, min-skill: 0 }
+  207: { class: GreenOoze, angles: -1, min-skill: 2 }
+  208: { class: GreenOoze, angles: -1, min-skill: 3 }
+  210: { class: BlackOoze, angles: -1, min-skill: 0 }
+  211: { class: BlackOoze, angles: -1, min-skill: 2 }
+  212: { class: BlackOoze, angles: -1, min-skill: 3 }

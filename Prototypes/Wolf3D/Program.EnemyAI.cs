@@ -56,7 +56,8 @@ internal partial class Program
             default: _gameEngineManager.Quit("MoveObj: bad dir!"); break;
         }
 
-        if (ob.AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[ob.AreaNumber] != 0)
+        // A NOTSOLID actor (Blake Stone's electro-spheres) goes right through the player
+        if ((ob.AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[ob.AreaNumber] != 0) && !ActorHasFlag(ob, "NOTSOLID"))
         {
             var deltax = Math.Abs(newx - player.X);
             var deltay = Math.Abs(newy - player.Y);
@@ -68,6 +69,11 @@ internal partial class Program
                     // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
                     if (ob.Flags.Contains("TOUCHDAMAGE", StringComparer.OrdinalIgnoreCase))
                         TakeDamage((int)(tics * 2), ob);
+
+                    // STEPBACK actors (Blake Stone's) turn round and head back to the tile they
+                    // came from, rather than standing stuck against the player
+                    if (ActorHasFlag(ob, "STEPBACK"))
+                        StepBack(ob);
 
                     return;
                 }
@@ -213,6 +219,11 @@ internal partial class Program
                 // move loop then never ends).
                 if (ob.Flags.Contains("PHASEDOORS", StringComparer.OrdinalIgnoreCase))
                     return 2;
+
+                // NOLOCKEDDOORS actors (Blake Stone's) don't open a door that needs a key, and
+                // NODOORS ones (its liquid alien and electro-spheres) none at all
+                if (ActorHasFlag(ob, "NODOORS") || ActorHasFlag(ob, "NOLOCKEDDOORS") && doorobjlist[door.door].Lock.Length > 0)
+                    return 0;
 
                 doornumtile = door.door;
                 if (!(demorecord || demoplayback))
@@ -407,17 +418,32 @@ internal partial class Program
         return CheckLine(ob);
     }
 
-    private static short GetReactionDelay(Entities.Actors.Actor ob) => ob.Name switch
+    // How long (tics) an actor takes to react once it has noticed the player: its
+    // `monster.reactiondelay: [base, divisor]`, base plus a random 0-255 over divisor (no divisor,
+    // or 0, for none). Wolf3D's grunts keep their vanilla delays without one.
+    private static short GetReactionDelay(Entities.Actors.Actor ob)
     {
-        "Guard" => (short)(1 + US_RndT() / 4),
-        "Officer" => 2,
-        "Mutant" or "SS" => (short)(1 + US_RndT() / 6),
-        "Dog" => (short)(1 + US_RndT() / 8),
-        _ => 1, // bosses
-    };
+        var delay = PropertyInts(ob, "monster.reactiondelay");
+        if (delay.Count > 0)
+            return (short)(delay[0] + (delay.Count > 1 && delay[1] > 0 ? US_RndT() / delay[1] : 0));
+
+        return ob.Name switch
+        {
+            "Guard" => (short)(1 + US_RndT() / 4),
+            "Officer" => 2,
+            "Mutant" or "SS" => (short)(1 + US_RndT() / 6),
+            "Dog" => (short)(1 + US_RndT() / 8),
+            _ => 1, // bosses
+        };
+    }
 
     internal static bool SightPlayer(Entities.Actors.Actor ob)
     {
+        // An INFORMANT never goes after the player, nor does a BLIND actor (Blake Stone's
+        // volatile material transports, which just go their way)
+        if (ActorHasFlag(ob, "INFORMANT") || ActorHasFlag(ob, "BLIND"))
+            return false;
+
         if (ob.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
             _gameEngineManager.Quit("An actor in ATTACKMODE called SightPlayer!");
 
@@ -441,11 +467,14 @@ internal partial class Program
             }
             else
             {
-                if (!madenoise && !CheckSight(ob))
+                // A NOTICEWHENSEEN actor (Blake Stone's aliens) notices the player once the player can see it
+                bool seen = ActorHasFlag(ob, "NOTICEWHENSEEN") && ob.RuntimeFlags.HasFlag(objflags.FL_VISABLE);
+                if (!madenoise && !seen && !CheckSight(ob))
                     return false;
             }
 
             ob.Temp2 = GetReactionDelay(ob);
+            ob.RuntimeFlags &= ~objflags.FL_FRIENDLY;   // it has seen the player: no longer friendly
             return false;
         }
 
@@ -455,8 +484,7 @@ internal partial class Program
 
     internal static void FirstSighting(Entities.Actors.Actor ob)
     {
-        if (ob.Properties.TryGetValue("seesound", out var seesound) && seesound is string seesoundName)
-            PlaySoundLocActor(seesoundName, ob);
+        PlayActorSound(ob, "seesound");
 
         NewActorState(ob, "Chase");
 
@@ -489,8 +517,7 @@ internal partial class Program
         else
             turnaround = opposite[(byte)ob.Dir];
 
-        deltax = player.TileX - ob.TileX;
-        deltay = player.TileY - ob.TileY;
+        SeekDelta(ob, out deltax, out deltay);
 
         if (deltax > 0)
         {
@@ -561,8 +588,7 @@ internal partial class Program
         olddir = ob.Dir;
         turnaround = opposite[(byte)olddir];
 
-        deltax = player.TileX - ob.TileX;
-        deltay = player.TileY - ob.TileY;
+        SeekDelta(ob, out deltax, out deltay);
 
         d[1] = objdirtypes.nodir;
         d[2] = objdirtypes.nodir;
@@ -680,6 +706,13 @@ internal partial class Program
     // (actordefs PatrolPoint, placed on the legacy arrow tiles) turns it the way the point faces
     internal static void SelectPathDir(Entities.Actors.Actor ob)
     {
+        // PATROLTURNS patrollers turn when blocked rather than stopping (Program.BlakeAI.cs)
+        if (ActorHasFlag(ob, "PATROLTURNS"))
+        {
+            TurningPathDir(ob);
+            return;
+        }
+
         if (_mapManager.PatrolPointAt(ob.TileX, ob.TileY) is { } point)
             ob.Dir = point.Dir;
 
@@ -695,12 +728,16 @@ internal partial class Program
     =============================================================================
     */
 
-    internal static void KillActor(Entities.Actors.Actor ob)
+    internal static void KillActor(Entities.Actors.Actor ob, Entities.Actors.Actor? attacker = null)
     {
         var tilex = ob.X >> (int)MapConstants.TILESHIFT;
         var tiley = ob.Y >> (int)MapConstants.TILESHIFT;
+        bool informant = ActorHasFlag(ob, "INFORMANT");
 
-        if (ob.Properties.TryGetValue("points", out var points))
+        // An informant is worth nothing, and says so (Blake Stone's warning)
+        if (informant)
+            WarnKilledInformant(ob);
+        else if (ob.Properties.TryGetValue("points", out var points))
         {
             // POINTSONCE actors (Spectres, which come back) only pay out the first time;
             // FL_BONUS is set at spawn and cleared here, as in the original
@@ -714,18 +751,9 @@ internal partial class Program
         }
 
         NewActorState(ob, "Death");
+        StartBlowBack(ob, attacker);
 
-        // `dropweapon` (the SS's MachineGun) replaces the `dropitem` while the player holds
-        // nothing as good (by weapon.selectionorder), as KillActor did for the SS.
-        var drop = ob.Properties.TryGetValue("dropitem", out var dropitem) ? dropitem as string : null;
-        if (ob.Properties.TryGetValue("dropweapon", out var dropweapon) && dropweapon is string weaponName)
-        {
-            var best = BestWeapon();
-            if (best == null || WeaponSelectionOrder(best) > WeaponSelectionOrder(weaponName))
-                drop = weaponName;
-        }
-
-        if (drop != null)
+        if (!informant && DeathDrop(ob) is { } drop)
             PlaceItemType(drop, tilex, tiley);
 
         if (ob.Name is "Schabbs" or "Gift" or "Fat" or "RealHitler")
@@ -734,34 +762,125 @@ internal partial class Program
             gamestate.killy = player.Y;
         }
 
-        gamestate.killcount++;
-        ob.RuntimeFlags &= ~objflags.FL_SHOOTABLE;
+        // A sleeper that becomes an enemy (`monster.becomes`) isn't the kill; that enemy is.
+        // NOTCOUNTED actors (crates, Goldfire, who keeps coming back) aren't enemies to count.
+        if (!informant && !ob.Properties.ContainsKey("monster.becomes") && !ActorHasFlag(ob, "NOTCOUNTED"))
+            gamestate.killcount++;
+        ob.RuntimeFlags &= ~(objflags.FL_SHOOTABLE | objflags.FL_FRIENDLY);
         ob.RuntimeFlags |= objflags.FL_NONMARK;
     }
 
-    internal static void DamageActor(Entities.Actors.Actor ob, uint damage)
+    /// <summary>
+    /// What a dying actor leaves: its `dropweapon` while the player hasn't got it (by default,
+    /// while they hold nothing as good, by weapon.selectionorder, as the SS's machine gun; with
+    /// `dropweapon.ifmissing`, while they haven't got that weapon, as Blake Stone's guards), else
+    /// its `dropitem`. With `dropitem.alt`, the alt instead `dropitem.altchance` times in 256, and
+    /// always once it's out of ammo (`monster.ammo`). `dropitem.needsammo`: nothing at all once
+    /// it's out of ammo.
+    /// </summary>
+    static string? DeathDrop(Entities.Actors.Actor ob)
     {
-        madenoise = true;
+        if (ob.Properties.TryGetValue("dropweapon", out var dropweapon) && dropweapon is string weaponName)
+        {
+            if (PropertyBool(ob, "dropweapon.ifmissing"))
+            {
+                if (!_inventoryManager.Has(weaponName))
+                    return weaponName;
+            }
+            else
+            {
+                var best = BestWeapon();
+                if (best == null || WeaponSelectionOrder(best) > WeaponSelectionOrder(weaponName))
+                    return weaponName;
+            }
+        }
+
+        // `dropitem.onfloor`: only on that floor (game-info floor-number), and only once a level
+        // (Goldfire's gold card, on floor 9)
+        if (PropertyInt(ob, "dropitem.onfloor", -1) is >= 0 and var floor)
+        {
+            if (floor != _mapManager.CurrentFloorNumber || floordropgiven)
+                return null;
+            floordropgiven = true;
+        }
+
+        bool outOfAmmo = ob.Properties.ContainsKey("monster.ammo") && ob.Ammo == 0;
+        if (outOfAmmo && PropertyBool(ob, "dropitem.needsammo"))
+            return null;
+
+        var drop = ob.Properties.TryGetValue("dropitem", out var dropitem) ? dropitem as string : null;
+        if (ob.Properties.TryGetValue("dropitem.alt", out var alt) && alt is string altName
+            && (outOfAmmo || US_RndT() < PropertyInt(ob, "dropitem.altchance", 128)))
+            drop = altName;
+        return drop;
+    }
+
+    internal static void DamageActor(Entities.Actors.Actor ob, uint damage, Entities.Actors.Actor? attacker = null)
+    {
+        // A sleeper on a timer (`monster.wakeprotected`, the gurney mutant) can't be shot awake
+        if (PropertyBool(ob, "monster.wakeprotected") && ob.Temp3 > 0)
+            return;
+
+        // `monster.minweapon` (the hanging turret's rapid assault weapon): only that weapon, or a
+        // better one (by weapon.selectionorder), in Blake's hand hurts it
+        if (ob.Properties.TryGetValue("monster.minweapon", out var minWeapon) && minWeapon is string minWeaponName
+            && (gamestate.weapon == null || WeaponSelectionOrder(gamestate.weapon) > WeaponSelectionOrder(minWeaponName)))
+            return;
+
+        // A silent weapon (weapon.silent, Blake Stone's auto-charge pistol) doesn't alert anyone
+        if (!(ReferenceEquals(attacker, player) && PlayerWeaponIsSilent()))
+            madenoise = true;
 
         if (!ob.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
             damage <<= 1;
 
+        int oldHitpoints = ob.Hitpoints;
         ob.Hitpoints -= (short)damage;
 
         if (ob.Hitpoints <= 0)
         {
-            KillActor(ob);
+            KillActor(ob, attacker);
             return;
         }
 
-        if (!ob.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
+        // Blake Stone's ways when hurt (Program.BlakeAI.cs): a SWAT guard goes down wounded, and
+        // a `monster.painattack` actor shoots straight back and can't be stunned again until it
+        // next chases
+        if (WoundActor(ob, oldHitpoints))
+            return;
+        bool counterattacks = ob.Properties.ContainsKey("monster.painattack");
+        if (counterattacks && ob.RuntimeFlags.HasFlag(objflags.FL_LOCKEDSTATE))
+            return;
+
+        // An informant hurt (and still alive) just flinches
+        if (!ob.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE) && !ActorHasFlag(ob, "INFORMANT"))
             FirstSighting(ob);
 
+        // `monster.damagestates: [full, 3/4, 1/2, 1/4]` (the floating bomb, which looks more
+        // battered as it's hurt): it goes to the one for the health it has left instead of Pain.
+        // A `monster.painonce` actor (the projection generator) only flinches at its first hit.
+        int fullHealth = _mapManager.GetScaledHealth(ob);
+        var damageStates = PropertyStrings(ob, "monster.damagestates");
+        if (damageStates.Count > 0)
+        {
+            int stage = ob.Hitpoints > 3 * fullHealth / 4 ? 0 : ob.Hitpoints > fullHealth / 2 ? 1 : ob.Hitpoints > fullHealth / 4 ? 2 : 3;
+            NewActorState(ob, damageStates[Math.Min(stage, damageStates.Count - 1)]);
+        }
         // Legacy DamageActor alternated between two single-frame Pain variants by hitpoints
         // parity; the new actordefs' "Pain" group instead plays both frames in sequence
         // before falling through to Chase -- close enough visually, simpler to drive.
-        if (ob.ResolvedStates.ContainsKey("Pain"))
+        else if (ob.ResolvedStates.ContainsKey("Pain") && (!PropertyBool(ob, "monster.painonce") || oldHitpoints >= fullHealth))
             NewActorState(ob, "Pain");
+
+        if (counterattacks)
+        {
+            if (US_RndT() < PropertyInt(ob, "monster.painattack", 0) && !ActorHasFlag(ob, "STATIONARY"))
+            {
+                ChangeShootMode(ob);
+                DoAttack(ob);
+            }
+            ob.RuntimeFlags |= objflags.FL_LOCKEDSTATE;
+        }
     }
 
     /*
@@ -774,7 +893,12 @@ internal partial class Program
 
     internal static void T_Path(Entities.Actors.Actor ob)
     {
-        if (SightPlayer(ob))
+        // A STATIONARY actor (Blake Stone's parked transports) stays put
+        if (ActorHasFlag(ob, "STATIONARY"))
+            return;
+
+        // A friendly patroller only looks for the player once there's been a noise
+        if ((!ob.RuntimeFlags.HasFlag(objflags.FL_FRIENDLY) || madenoise) && SightPlayer(ob))
             return;
 
         if (ob.Dir == objdirtypes.nodir)
@@ -1097,36 +1221,42 @@ internal partial class Program
 
     internal static void T_Shoot(Entities.Actors.Actor ob)
     {
-        var hitchance = 128;
-
         if (ob.AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[ob.AreaNumber] == 0)
             return;
 
         if (CheckLine(ob))
-        {
-            var dx = Math.Abs(ob.TileX - player.TileX);
-            var dy = Math.Abs(ob.TileY - player.TileY);
-            var dist = dx > dy ? dx : dy;
-
-            if (ob.Properties.ContainsKey("monster.sharpshooter"))
-                dist = dist * 2 / 3;
-
-            if (thrustspeed >= RUNSPEED)
-                hitchance = ob.RuntimeFlags.HasFlag(objflags.FL_VISABLE) ? 160 - dist * 16 : 160 - dist * 8;
-            else
-                hitchance = ob.RuntimeFlags.HasFlag(objflags.FL_VISABLE) ? 256 - dist * 16 : 256 - dist * 8;
-
-            if (US_RndT() < hitchance)
-            {
-                int damage = dist < 2 ? US_RndT() >> 2 : dist < 4 ? US_RndT() >> 3 : US_RndT() >> 4;
-                TakeDamage(damage, ob);
-            }
-        }
+            ShotAtPlayer(ob);
 
         // The shooter's own attacksound (vanilla's per-class switch: SSFIRE, BOSSFIRE, ... and
         // NAZIFIRE for the rest, Spear's bosses included)
-        if (ob.Properties.TryGetValue("attacksound", out var sound) && sound is string soundName)
-            PlaySoundLocActor(soundName, ob);
+        PlayActorSound(ob, "attacksound");
+    }
+
+    /// <summary>
+    /// A hitscan shot at the player, who's in sight: more likely to hit the nearer it is, less
+    /// when the player is running, and less again when the shooter is in view (the player can
+    /// dodge). `monster.sharpshooter` actors count the distance as two thirds of it.
+    /// </summary>
+    static void ShotAtPlayer(Entities.Actors.Actor ob)
+    {
+        var dx = Math.Abs(ob.TileX - player.TileX);
+        var dy = Math.Abs(ob.TileY - player.TileY);
+        var dist = dx > dy ? dx : dy;
+
+        if (ob.Properties.ContainsKey("monster.sharpshooter"))
+            dist = dist * 2 / 3;
+
+        int hitchance;
+        if (thrustspeed >= RUNSPEED)
+            hitchance = ob.RuntimeFlags.HasFlag(objflags.FL_VISABLE) ? 160 - dist * 16 : 160 - dist * 8;
+        else
+            hitchance = ob.RuntimeFlags.HasFlag(objflags.FL_VISABLE) ? 256 - dist * 16 : 256 - dist * 8;
+
+        if (US_RndT() < hitchance)
+        {
+            int damage = dist < 2 ? US_RndT() >> 2 : dist < 4 ? US_RndT() >> 3 : US_RndT() >> 4;
+            TakeDamage(damage, ob);
+        }
     }
 
     // Spawns a projectile actor (Needle/Rocket/Fire, actordefs/wolf3d/projectiles.yaml) at the
@@ -1168,10 +1298,17 @@ internal partial class Program
     internal static void T_FakeFire(Entities.Actors.Actor ob) =>
         ThrowProjectile(ob, "Fire", 0x1200);
 
-    internal static void A_DeathScream(Entities.Actors.Actor ob)
+    internal static void A_DeathScream(Entities.Actors.Actor ob) => PlayActorSound(ob, "deathsound");
+
+    /// <summary>
+    /// Plays an actor's sound property from where it is: one sound, or a list to pick one from
+    /// at random (Blake Stone's guards have more than one death cry)
+    /// </summary>
+    internal static void PlayActorSound(Entities.Actors.Actor ob, string key)
     {
-        if (ob.Properties.TryGetValue("deathsound", out var sound) && sound is string soundName)
-            PlaySoundLocActor(soundName, ob);
+        var sounds = PropertyStrings(ob, key);
+        if (sounds.Count > 0)
+            PlaySoundLocActor(sounds[sounds.Count == 1 ? 0 : US_RndT() % sounds.Count], ob);
     }
 
     // A_ActiveSound: the actor's "activesound" (Mecha Hitler's stomp), only where the player can
@@ -1221,8 +1358,20 @@ internal partial class Program
         if (args.Skip(2).Any(a => a.Equals("shoot", StringComparison.OrdinalIgnoreCase)))
             T_Shoot(ob);
 
-        ThrowProjectile(ob, args[0], 0x2000, angleOffset: angleOffset);
+        // The projectile's own `speed` (plus up to `speed.random` more) and `spread` (aimed up to
+        // that many degrees either side of the player, at random), else 0x2000 dead on
+        int speed = 0x2000;
+        if (RuntimeActorProperty(args[0], "speed") is { } baseSpeed)
+            speed = baseSpeed + (RuntimeActorProperty(args[0], "speed.random") is { } extra and > 0 ? US_RndT() * extra / 256 : 0);
+        if (RuntimeActorProperty(args[0], "spread") is { } spread and > 0)
+            angleOffset += US_RndT() % (spread * 2 + 1) - spread;
+
+        ThrowProjectile(ob, args[0], speed, angleOffset: angleOffset);
     }
+
+    // A whole-number property of an actordefs class, or null
+    static int? RuntimeActorProperty(string className, string key) =>
+        _inventoryManager.GetProperty(className, key) is { } value && int.TryParse(value.ToString(), out var n) ? n : null;
 
     // The Angel's spark volley: A_StartAttack starts the count, A_Relaunch follows each spark and
     // either tires the Angel out after the third, breaks off at random, or goes again

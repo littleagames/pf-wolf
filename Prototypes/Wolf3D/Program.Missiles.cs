@@ -140,7 +140,7 @@ internal partial class Program
             int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
             int damage = max > min ? min + US_RndT() * (max - min + 1) / 256 : min;
             if (damage > 0)
-                DamageActor(victim, PlayerDamage(damage));
+                DamageActor(victim, PlayerDamage(damage), ob);
         }
 
         Detonate(ob);
@@ -186,7 +186,7 @@ internal partial class Program
 
             foreach (var target in _mapManager.ShootableActorsAt(x, y).ToList())
                 if (!ReferenceEquals(target, ob) && target is not Entities.Actors.PlayerPawn)
-                    DamageActor(target, ReferenceEquals(ob.Shooter, player) ? PlayerDamage(damage) : (uint)damage);
+                    DamageActor(target, ReferenceEquals(ob.Shooter, player) ? PlayerDamage(damage) : (uint)damage, ob);
 
             if (hurtPlayer && player.TileX == x && player.TileY == y)
                 TakeDamage(damage, ob);

@@ -322,6 +322,14 @@ internal class MapManager
     /// </summary>
     private bool[] infotiles = new bool[MAPAREA];
 
+    internal record MapHint(int Message, byte Area);
+
+    /// <summary>
+    /// The map's hints (map-info `hint:<text>` codes), by text: each the message's number in the
+    /// text and the room it's in (0xff for none), in map order. Read with the map, so not saved.
+    /// </summary>
+    internal Dictionary<string, List<MapHint>> Hints { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>The map's own ceiling and floor colors (a map-info ceiling-floor-colors code), as palette indices.</summary>
     internal byte? MapCeilingColor { get; private set; }
     internal byte? MapFloorColor { get; private set; }
@@ -336,6 +344,7 @@ internal class MapManager
     {
         infotiles = new bool[MAPAREA];
         MapCeilingColor = MapFloorColor = null;
+        Hints = new(StringComparer.OrdinalIgnoreCase);
 
         var codes = GetMapData().MapInfo;
         if (codes.Count == 0)
@@ -350,6 +359,18 @@ internal class MapManager
                 continue;
 
             infotiles[i] = true;
+            if (MapInfoCodes.HintText(kind) is { } hintText)
+            {
+                // the hint's number, and the room it's in: its floor's, or a neighbour's on a floor
+                // code that isn't a room; 0xff when it's on a wall or door (a general hint)
+                int spot = mapsegs[0][i];
+                bool onWall = IsWallId(spot) && GetMapData().Walls.ContainsKey(spot) || GetMapData().Doors.ContainsKey(spot);
+                byte area = onWall ? (byte)0xff : SpawnArea(i % MAPSIZE, i / MAPSIZE);
+                if (!Hints.TryGetValue(hintText, out var list))
+                    Hints[hintText] = list = [];
+                list.Add(new MapHint(objects[i] & 0xff, area));
+                continue;
+            }
             if (!MapInfoCodes.HasValue(kind) || i + 1 >= objects.Length)
                 continue;
 
@@ -678,21 +699,39 @@ internal class MapManager
     public void SpawnThing(int tilex, int tiley, string className) =>
         SpawnThing(tilex, tiley, new MapActorTranslation { Class = className });
 
-    public void SpawnThing(int tilex, int tiley, MapActorTranslation thing)
+    /// <param name="countKill">
+    /// Whether a killable enemy adds to the level's kill total: not for one appearing mid-level
+    /// out of another that already counted for it (an alien out of its canister)
+    /// </param>
+    public Entities.Actors.Actor? SpawnThing(int tilex, int tiley, MapActorTranslation thing, bool countKill = true)
     {
         // MinSkill gates enemy availability by skill (its place in game-info's skills, as the
         // legacy ScanInfoPlane's gd_medium/gd_hard checks per tile-number range); always 0 for
         // decorations/pickups, so this is a no-op there.
         if (thing.MinSkill > _difficulty)
-            return;
+            return string.IsNullOrEmpty(thing.Else) ? null
+                : SpawnThing(tilex, tiley, thing with { Class = thing.Else, MinSkill = 0, Else = "" }, countKill);
 
         var actorMetaData = assetManager.Value.GetActorMetadata();
 
         if (!actorMetaData.Actors.TryGetValue(thing.Class, out var actor))
-            return;
+            return null;
         var builtActor = actorMetaData.CreateActor(thing.Class, actor); // TODO: Should this just create objects?
         if (builtActor == null)
-            return;
+            return null;
+
+        // A random spawner (`spawn.random: [A, B]`) is one of its classes, picked at random
+        // (Blake Stone's bio-techs: half of them informants)
+        if (Program.PropertyStrings(builtActor, "spawn.random") is { Count: > 0 } choices)
+        {
+            var choice = choices[Program.US_RndT() % choices.Count];
+            if (!actorMetaData.Actors.TryGetValue(choice, out var chosen) || actorMetaData.CreateActor(choice, chosen) is not { } chosenActor)
+            {
+                Console.WriteLine($"{thing.Class}'s spawn.random names \"{choice}\", which isn't an actor");
+                return null;
+            }
+            builtActor = chosenActor;
+        }
 
         builtActor.SetPosition(tilex, tiley);
 
@@ -707,8 +746,9 @@ internal class MapManager
         builtActor.Tag = GetTag(tilex, tiley);
 
         // Angles: 0=east, 45=northeast, 90=north ... 315=southeast, in objdirtypes order
-        // (enemies only face the four cardinal ones, patrol points all eight).
-        builtActor.Dir = (objdirtypes)((thing.Angles / 45 % 8 + 8) % 8);
+        // (enemies only face the four cardinal ones, patrol points all eight); -1 faces no way
+        // at all, so it sees all round (Blake Stone's aliens)
+        builtActor.Dir = thing.Angles < 0 ? objdirtypes.nodir : (objdirtypes)((thing.Angles / 45 % 8 + 8) % 8);
 
         // Patrol selects the initial resolved state (mirrors SpawnStand vs SpawnPatrol):
         // "Path" for patrolling grunts, otherwise whatever CreateActor already set ("Spawn").
@@ -740,8 +780,10 @@ internal class MapManager
             builtActor.RuntimeFlags |= objflags.FL_SHOOTABLE;
 
             // Every killable enemy counts toward the level's kill ratio (the old SpawnStand/
-            // SpawnPatrol/boss spawners each did this); ghosts take the branch above and don't.
-            if (!Program.loadedgame)
+            // SpawnPatrol/boss spawners each did this); ghosts take the branch above and don't,
+            // and nor do informants, which aren't enemies
+            if (countKill && !Program.loadedgame && !Program.ActorHasFlag(builtActor, "INFORMANT")
+                && !Program.ActorHasFlag(builtActor, "NOTCOUNTED"))
                 Program.gamestate.killtotal++;
 
             // Points only for the first kill (Program.KillActor clears it)
@@ -779,6 +821,8 @@ internal class MapManager
                     builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
                 }
             }
+
+            Program.InitSpawnedActor(builtActor, tilex, tiley);
         }
 
         // Treasure (ScoreItem and the 1-up) counts toward the level's treasure ratio; GetBonus
@@ -801,6 +845,7 @@ internal class MapManager
             actorat[tilex, tiley] = new WallSpriteBlocker();
 
         _actors.AddLast(builtActor);
+        return builtActor;
     }
 
     private static int ReadIntProperty(Entities.Actors.Actor actor, string key, int fallback) =>
@@ -877,7 +922,7 @@ internal class MapManager
     // Skill-scaled health: the property the skill's enemy-health names (e.g. "health.normal"),
     // for enemies whose hitpoints vary by skill (vanilla's starthitpoints table), or a flat
     // "health" for the rest.
-    private short GetScaledHealth(Entities.Actors.Actor actor)
+    internal short GetScaledHealth(Entities.Actors.Actor actor)
     {
         if (!string.IsNullOrEmpty(_enemyHealthKey) && actor.Properties.TryGetValue(_enemyHealthKey, out var scaled))
             return (short)Convert.ToInt32(scaled);
@@ -956,17 +1001,24 @@ internal class MapManager
                 && Math.Abs((long)a.X - x) <= reach && Math.Abs((long)a.Y - y) <= reach)
             .OrderBy(a => Math.Max(Math.Abs((long)a.X - x), Math.Abs((long)a.Y - y)));
 
+    /// <summary>True if a living (FL_SHOOTABLE) actor that's in the way occupies the tile</summary>
     internal bool IsShootableActorAt(int tilex, int tiley)
     {
         foreach (var actor in _actors)
         {
-            if (!actor.IsRemoved && actor.TileX == tilex && actor.TileY == tiley
-                && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
+            if (!actor.IsRemoved && actor.TileX == tilex && actor.TileY == tiley && IsSolidActor(actor))
                 return true;
         }
 
         return false;
     }
+
+    /// <summary>
+    /// A living actor in the way of the player and other actors: shootable, and not NOTSOLID
+    /// (Blake Stone's hanging turrets and electro-spheres, which things pass under or through)
+    /// </summary>
+    internal static bool IsSolidActor(Entities.Actors.Actor actor) =>
+        actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) && !actor.Flags.Contains("NOTSOLID", StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Creates a fresh player pawn at the head of _actors, replacing any existing one. Head

@@ -21,6 +21,11 @@ internal sealed record ActorSnapshot
     public int Distance { get; init; }
     public short Temp1 { get; init; }
     public short Temp2 { get; init; }
+    public short Temp3 { get; init; }
+    public short Ammo { get; init; }
+    public byte SeekX { get; init; }
+    public byte SeekY { get; init; }
+    public byte TryDir { get; init; }
     public bool Hidden { get; init; }
     public byte AreaNumber { get; init; }
     public int X { get; init; }
@@ -49,6 +54,11 @@ internal sealed record ActorSnapshot
             Distance = actor.Distance,
             Temp1 = actor.Temp1,
             Temp2 = actor.Temp2,
+            Temp3 = actor.Temp3,
+            Ammo = actor.Ammo,
+            SeekX = actor.SeekX,
+            SeekY = actor.SeekY,
+            TryDir = actor.TryDir,
             Hidden = actor.Hidden,
             AreaNumber = actor.AreaNumber,
             X = actor.X,
@@ -74,6 +84,11 @@ internal sealed record ActorSnapshot
         actor.Distance = Distance;
         actor.Temp1 = Temp1;
         actor.Temp2 = Temp2;
+        actor.Temp3 = Temp3;
+        actor.Ammo = Ammo;
+        actor.SeekX = SeekX;
+        actor.SeekY = SeekY;
+        actor.TryDir = TryDir;
         actor.Hidden = Hidden;
         actor.AreaNumber = AreaNumber;
         actor.X = X;
@@ -102,6 +117,11 @@ internal sealed record ActorSnapshot
         bw.Write(Distance);
         bw.Write(Temp1);
         bw.Write(Temp2);
+        bw.Write(Temp3);
+        bw.Write(Ammo);
+        bw.Write(SeekX);
+        bw.Write(SeekY);
+        bw.Write(TryDir);
         bw.Write(Hidden);
         bw.Write(AreaNumber);
         bw.Write(X);
@@ -134,6 +154,11 @@ internal sealed record ActorSnapshot
             Distance = br.ReadInt32(),
             Temp1 = br.ReadInt16(),
             Temp2 = br.ReadInt16(),
+            Temp3 = br.ReadInt16(),
+            Ammo = br.ReadInt16(),
+            SeekX = br.ReadByte(),
+            SeekY = br.ReadByte(),
+            TryDir = br.ReadByte(),
             Hidden = br.ReadBoolean(),
             AreaNumber = br.ReadByte(),
             X = br.ReadInt32(),

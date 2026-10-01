@@ -1,0 +1,306 @@
+# Blake Stone's blastable crates, as bstone has them: one shot (of anything) blows a crate up,
+# hurting everything near, and leaves what was hidden in it. There are three kinds of crate, each
+# with eighteen things it can hide (bstone's ExpCrateShapes), one class for each; their map
+# numbers (432-485) are in mapdefs/blake/crates.yaml. Not counted as enemies.
+BlakeCrate:
+  flags: [NOTCOUNTED, STATIONARY]
+  properties:
+    "health": 1
+    "deathsound": ["bs/explode1", "bs/explode2"]
+  states:
+    Spawn:
+      - { sprite: CRT1, frames: [A], tics-per-frame: -1 }
+    # (only so it can be shot)
+    Chase:
+      - { sprite: CRT1, frames: [A], tics-per-frame: -1 }
+    Death:
+      - { sprite: GREN, frames: [F], tics-per-frame: 24, action: A_DeathScream, modifiers: [bright] }
+      - { sprite: GREN, frames: [G, H], tics-per-frame: 24, modifiers: [bright] }
+      - { sprite: GREN, frames: [I], tics-per-frame: 24, action: 'A_Explode(20, 20, 2, "hurtplayer")', modifiers: [bright] }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+BlakeCrate2:
+  parent: BlakeCrate
+  states:
+    Spawn:
+      - { sprite: CRT2, frames: [B], tics-per-frame: -1 }
+    Chase:
+      - { sprite: CRT2, frames: [B], tics-per-frame: -1 }
+
+BlakeCrate3:
+  parent: BlakeCrate
+  states:
+    Spawn:
+      - { sprite: CRT3, frames: [C], tics-per-frame: -1 }
+    Chase:
+      - { sprite: CRT3, frames: [C], tics-per-frame: -1 }
+
+Crate1ChickenLeg:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "ChickenLeg"
+
+Crate1Ham:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "Ham"
+
+Crate1ChargeUnit:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "ChargeUnit"
+
+Crate1SlowFireProtector:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "SlowFireProtector"
+
+Crate1RapidAssaultWeapon:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "RapidAssaultWeapon"
+
+Crate1DualNeutronDisruptor:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "DualNeutronDisruptor"
+
+Crate1PlasmaDischargeUnit:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "PlasmaDischargeUnit"
+
+Crate1MoneyBag:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "MoneyBag"
+
+Crate1Loot:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "Loot"
+
+Crate1GoldBars:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "GoldBars"
+
+Crate1XylanOrb:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "XylanOrb"
+
+Crate1Gore:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "Gore"
+
+Crate1Gore2:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "Gore"
+
+Crate1RedCard:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "RedCard"
+
+Crate1YellowCard:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "YellowCard"
+
+Crate1GreenCard:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "GreenCard"
+
+Crate1BlueCard:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "BlueCard"
+
+Crate1GoldCard:
+  parent: BlakeCrate
+  properties:
+    "dropitem": "GoldCard"
+
+Crate2ChickenLeg:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "ChickenLeg"
+
+Crate2Ham:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "Ham"
+
+Crate2ChargeUnit:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "ChargeUnit"
+
+Crate2SlowFireProtector:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "SlowFireProtector"
+
+Crate2RapidAssaultWeapon:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "RapidAssaultWeapon"
+
+Crate2DualNeutronDisruptor:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "DualNeutronDisruptor"
+
+Crate2PlasmaDischargeUnit:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "PlasmaDischargeUnit"
+
+Crate2MoneyBag:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "MoneyBag"
+
+Crate2Loot:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "Loot"
+
+Crate2GoldBars:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "GoldBars"
+
+Crate2XylanOrb:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "XylanOrb"
+
+Crate2Gore:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "Gore"
+
+Crate2Gore2:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "Gore"
+
+Crate2RedCard:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "RedCard"
+
+Crate2YellowCard:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "YellowCard"
+
+Crate2GreenCard:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "GreenCard"
+
+Crate2BlueCard:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "BlueCard"
+
+Crate2GoldCard:
+  parent: BlakeCrate2
+  properties:
+    "dropitem": "GoldCard"
+
+Crate3ChickenLeg:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "ChickenLeg"
+
+Crate3Ham:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "Ham"
+
+Crate3ChargeUnit:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "ChargeUnit"
+
+Crate3SlowFireProtector:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "SlowFireProtector"
+
+Crate3RapidAssaultWeapon:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "RapidAssaultWeapon"
+
+Crate3DualNeutronDisruptor:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "DualNeutronDisruptor"
+
+Crate3PlasmaDischargeUnit:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "PlasmaDischargeUnit"
+
+Crate3MoneyBag:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "MoneyBag"
+
+Crate3Loot:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "Loot"
+
+Crate3GoldBars:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "GoldBars"
+
+Crate3XylanOrb:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "XylanOrb"
+
+Crate3Gore:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "Gore"
+
+Crate3Gore2:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "Gore"
+
+Crate3RedCard:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "RedCard"
+
+Crate3YellowCard:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "YellowCard"
+
+Crate3GreenCard:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "GreenCard"
+
+Crate3BlueCard:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "BlueCard"
+
+Crate3GoldCard:
+  parent: BlakeCrate3
+  properties:
+    "dropitem": "GoldCard"

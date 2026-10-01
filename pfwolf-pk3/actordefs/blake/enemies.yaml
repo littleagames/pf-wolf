@@ -1,0 +1,556 @@
+# Blake Stone's guards and bio-techs, as bstone has them (3d_act2.cpp's states, 3d_state.cpp's
+# AI): health by skill (novice, skilled, expert, veteran), points, reaction delays and sounds are
+# its. They chase dodging (T_BlakeChase), shoot back when hurt (monster.painattack) and slide
+# back from the shot that kills them (T_BlowBack); see Program.BlakeAI.cs for what the flags and
+# properties do. The map numbers that place them are in mapdefs/blake/enemies.yaml.
+
+# What they all share: patrollers turn aside when blocked, none open a door needing a card, and
+# one that walks into Blake turns back
+BlakeEnemy:
+  flags: [PATROLTURNS, NOLOCKEDDOORS, STEPBACK]
+  properties:
+    "speed": 512
+    "monster.painattack": 192
+
+# -----------------------------------------------------------------------
+# Rent-a-cop: runs off for a charge pack or food when out of shots or hurt
+# -----------------------------------------------------------------------
+RentACop:
+  parent: BlakeEnemy
+  flags: [SMART]
+  properties:
+    "tag": "$BS_RENTACOP"
+    "health.baby": 6
+    "health.easy": 9
+    "health.normal": 25
+    "health.hard": 38
+    "points": 1025
+    "monster.chasespeedmultiplier": 3
+    "monster.reactiondelay": [1, 4]
+    "monster.ammo": 8
+    "seesound": "bs/halt"
+    "attacksound": "bs/atkcharged"
+    "deathsound": ["bs/rentdeath1", "bs/rentdeath2"]
+    # Its slow fire protector while Blake hasn't one, else a charge pack, or (one time in four,
+    # or always once it's out of shots) a food token
+    "dropweapon": "SlowFireProtector"
+    "dropweapon.ifmissing": true
+    "dropitem": "ChargePack"
+    "dropitem.alt": "FoodToken"
+    "dropitem.altchance": 65
+  states:
+    Spawn:
+      - sprite: RENT
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Path:
+      - sprite: RENT
+        frames: [B]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: RENT
+        frames: [C]
+        tics-per-frame: 5
+      - sprite: RENT
+        frames: [C]
+        tics-per-frame: 15
+        think: T_Path
+      - sprite: RENT
+        frames: [D]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: RENT
+        frames: [D]
+        tics-per-frame: 5
+      - sprite: RENT
+        frames: [E]
+        tics-per-frame: 15
+        think: T_Path
+    Pain:
+      - sprite: RENT
+        frames: [I]
+        tics-per-frame: 15
+        next-state: Chase
+    Attack:
+      - sprite: RENT
+        frames: [F]
+        tics-per-frame: 20
+      - sprite: RENT
+        frames: [G]
+        tics-per-frame: 20
+        action: T_BlakeShoot
+      - sprite: RENT
+        frames: [H]
+        tics-per-frame: 20
+        next-state: Chase
+    Chase:
+      - sprite: RENT
+        frames: [B]
+        tics-per-frame: 10
+        think: T_BlakeChase
+      - sprite: RENT
+        frames: [B]
+        tics-per-frame: 3
+      - sprite: RENT
+        frames: [C]
+        tics-per-frame: 8
+        think: T_BlakeChase
+      - sprite: RENT
+        frames: [D]
+        tics-per-frame: 10
+        think: T_BlakeChase
+      - sprite: RENT
+        frames: [D]
+        tics-per-frame: 3
+      - sprite: RENT
+        frames: [E]
+        tics-per-frame: 8
+        think: T_BlakeChase
+    Death:
+      - sprite: RENT
+        frames: [J]
+        tics-per-frame: 17
+        think: T_BlowBack
+        action: A_DeathScream
+      - sprite: RENT
+        frames: [K]
+        tics-per-frame: 21
+        think: T_BlowBack
+      - sprite: RENT
+        frames: [L]
+        tics-per-frame: 16
+        think: T_BlowBack
+      - sprite: RENT
+        frames: [M]
+        tics-per-frame: 13
+        think: T_BlowBack
+      - sprite: RENT
+        frames: [N]
+        tics-per-frame: -1
+
+# -----------------------------------------------------------------------
+# Pro guard: a three-shot burst; runs off like the rent-a-cop
+# -----------------------------------------------------------------------
+ProGuard:
+  parent: BlakeEnemy
+  flags: [SMART]
+  properties:
+    "tag": "$BS_PROGUARD"
+    "health.baby": 43
+    "health.easy": 63
+    "health.normal": 150
+    "health.hard": 175
+    "points": 5000
+    "monster.chasespeedmultiplier": 4
+    "monster.reactiondelay": [1, 6]
+    "monster.ammo": 25
+    "seesound": "bs/prohalt"
+    "attacksound": "bs/atkburstrifle"
+    "deathsound": ["bs/proguarddeath", "bs/prodeath2"]
+    "dropweapon": "RapidAssaultWeapon"
+    "dropweapon.ifmissing": true
+    "dropitem": "ChargePack"
+    "dropitem.alt": "FoodToken"
+    "dropitem.altchance": 65
+  states:
+    Spawn:
+      - sprite: PROG
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Path:
+      - sprite: PROG
+        frames: [B]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: PROG
+        frames: [B]
+        tics-per-frame: 5
+      - sprite: PROG
+        frames: [C]
+        tics-per-frame: 15
+        think: T_Path
+      - sprite: PROG
+        frames: [D]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: PROG
+        frames: [D]
+        tics-per-frame: 5
+      - sprite: PROG
+        frames: [E]
+        tics-per-frame: 15
+        think: T_Path
+    Pain:
+      - sprite: PROG
+        frames: [I]
+        tics-per-frame: 15
+        next-state: Chase
+    Attack:
+      - sprite: PROG
+        frames: [F]
+        tics-per-frame: 20
+      - sprite: PROG
+        frames: [G]
+        tics-per-frame: 20
+        action: T_BlakeShoot
+      - sprite: PROG
+        frames: [H]
+        tics-per-frame: 10
+      - sprite: PROG
+        frames: [G]
+        tics-per-frame: 10
+        action: T_BlakeShoot
+      - sprite: PROG
+        frames: [H]
+        tics-per-frame: 10
+      - sprite: PROG
+        frames: [G]
+        tics-per-frame: 10
+        action: T_BlakeShoot
+      - sprite: PROG
+        frames: [H]
+        tics-per-frame: 10
+        next-state: Chase
+    Chase:
+      - sprite: PROG
+        frames: [B]
+        tics-per-frame: 10
+        think: T_BlakeChase
+      - sprite: PROG
+        frames: [B]
+        tics-per-frame: 3
+      - sprite: PROG
+        frames: [C]
+        tics-per-frame: 8
+        think: T_BlakeChase
+      - sprite: PROG
+        frames: [D]
+        tics-per-frame: 10
+        think: T_BlakeChase
+      - sprite: PROG
+        frames: [D]
+        tics-per-frame: 3
+      - sprite: PROG
+        frames: [E]
+        tics-per-frame: 8
+        think: T_BlakeChase
+    Death:
+      - sprite: PROG
+        frames: [K]
+        tics-per-frame: 20
+        think: T_BlowBack
+        action: A_DeathScream
+      - sprite: PROG
+        frames: [L]
+        tics-per-frame: 20
+        think: T_BlowBack
+      - sprite: PROG
+        frames: [M]
+        tics-per-frame: 20
+        think: T_BlowBack
+      - sprite: PROG
+        frames: [N]
+        tics-per-frame: 20
+        think: T_BlowBack
+      - sprite: PROG
+        frames: [O]
+        tics-per-frame: -1
+
+# -----------------------------------------------------------------------
+# SWAT guard: a sharp shot with a three-shot burst; hurt badly enough it goes down wounded
+# (one or two times, or as many as the 0xFA value east of it on the map says) and gets up again
+# -----------------------------------------------------------------------
+SwatGuard:
+  parent: BlakeEnemy
+  properties:
+    "tag": "$BS_SWATGUARD"
+    "health.baby": 88
+    "health.easy": 112
+    "health.normal": 325
+    "health.hard": 425
+    "points": 7025
+    "monster.chasespeedmultiplier": 3
+    "monster.reactiondelay": [1, 6]
+    "monster.ammo": 30
+    "monster.sharpshooter": true
+    "monster.woundstages": [0, 1]
+    "seesound": "bs/swathalt"
+    "attacksound": "bs/atkburstrifle"
+    "deathsound": ["bs/swatdie", "bs/swatdeath3"]
+    "woundsound": "bs/swatdeath2"
+    "dropweapon": "RapidAssaultWeapon"
+    "dropweapon.ifmissing": true
+    "dropitem": "ChargePack"
+    "dropitem.alt": "FoodToken"
+    "dropitem.altchance": 65
+  states:
+    Spawn:
+      - sprite: SWAT
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Path:
+      - sprite: SWAT
+        frames: [B]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: SWAT
+        frames: [B]
+        tics-per-frame: 5
+      - sprite: SWAT
+        frames: [C]
+        tics-per-frame: 15
+        think: T_Path
+      - sprite: SWAT
+        frames: [D]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: SWAT
+        frames: [D]
+        tics-per-frame: 5
+      - sprite: SWAT
+        frames: [E]
+        tics-per-frame: 15
+        think: T_Path
+    # Hurt, it shoots straight back
+    Pain:
+      - sprite: SWAT
+        frames: [I]
+        tics-per-frame: 15
+        next-state: Attack
+    Attack:
+      - sprite: SWAT
+        frames: [F]
+        tics-per-frame: 10
+      - sprite: SWAT
+        frames: [G]
+        tics-per-frame: 20
+        action: T_BlakeShoot
+      - sprite: SWAT
+        frames: [H]
+        tics-per-frame: 10
+      - sprite: SWAT
+        frames: [G]
+        tics-per-frame: 10
+        action: T_BlakeShoot
+      - sprite: SWAT
+        frames: [H]
+        tics-per-frame: 10
+      - sprite: SWAT
+        frames: [G]
+        tics-per-frame: 10
+        action: T_BlakeShoot
+      - sprite: SWAT
+        frames: [H]
+        tics-per-frame: 10
+        next-state: Chase
+    Chase:
+      - sprite: SWAT
+        frames: [B]
+        tics-per-frame: 10
+        think: T_BlakeChase
+      - sprite: SWAT
+        frames: [B]
+        tics-per-frame: 3
+      - sprite: SWAT
+        frames: [C]
+        tics-per-frame: 8
+        think: T_BlakeChase
+      - sprite: SWAT
+        frames: [D]
+        tics-per-frame: 10
+        think: T_BlakeChase
+      - sprite: SWAT
+        frames: [D]
+        tics-per-frame: 3
+      - sprite: SWAT
+        frames: [E]
+        tics-per-frame: 8
+        think: T_BlakeChase
+    Wounded:
+      - sprite: SWAT
+        frames: [K, L, M]
+        tics-per-frame: 10
+      - sprite: SWAT
+        frames: [N]
+        tics-per-frame: -1
+        think: T_Wounded
+    Recover:
+      - sprite: SWAT
+        frames: [N, M, L, K]
+        tics-per-frame: 10
+        next-state: Chase
+    Death:
+      - sprite: SWAT
+        frames: [O]
+        tics-per-frame: 20
+        think: T_BlowBack
+        action: A_DeathScream
+      - sprite: SWAT
+        frames: [P]
+        tics-per-frame: 20
+        think: T_BlowBack
+      - sprite: SWAT
+        frames: [Q]
+        tics-per-frame: 20
+        think: T_BlowBack
+      - sprite: SWAT
+        frames: [R]
+        tics-per-frame: 20
+        think: T_BlowBack
+      - sprite: SWAT
+        frames: [S]
+        tics-per-frame: -1
+
+# -----------------------------------------------------------------------
+# Bio-techs: half are informants, half plain scientists (spawn.random). A scientist left alone
+# while it patrols only turns on Blake when it hears trouble or sees him standing about; talked
+# to, it says something nice (then turns mean if asked again) or something mean and attacks.
+# -----------------------------------------------------------------------
+BioTech:
+  properties:
+    "spawn.random": [Scientist, Informant]
+  states:
+    Spawn:
+      - sprite: GSCI
+        frames: [A]
+        tics-per-frame: -1
+
+Scientist:
+  parent: BlakeEnemy
+  flags: [SMART, FRIENDLY, RANDOMTURN, TALKATIVE]
+  properties:
+    "tag": "$BS_SCIENTIST"
+    "health.baby": 6
+    "health.easy": 9
+    "health.normal": 23
+    "health.hard": 28
+    "points": 500
+    "monster.chasespeedmultiplier": 3
+    "monster.reactiondelay": [2, 0]
+    "monster.ammo": 8
+    "seesound": "bs/scientisthalt"
+    "attacksound": "bs/atkcharged"
+    "deathsound": ["bs/scientistdeath", "bs/scideath2", "bs/scideath3"]
+    # A charge pack, or one time in four a food token; nothing once it's out of shots
+    "dropitem": "ChargePack"
+    "dropitem.alt": "FoodToken"
+    "dropitem.altchance": 65
+    "dropitem.needsammo": true
+    "talk.header": "$BS_INTERROGATE"
+    "talk.friendly": "NiceScientistHints"
+    "talk.hostile": "MeanScientistHints"
+    "talk.style": "Talk"
+    "talk.sound": "bs/interrogate"
+  states:
+    Spawn:
+      - sprite: GSCI
+        frames: [A]
+        tics-per-frame: -1
+        think: T_Stand
+    Path:
+      - sprite: GSCI
+        frames: [B]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: GSCI
+        frames: [B]
+        tics-per-frame: 5
+      - sprite: GSCI
+        frames: [C]
+        tics-per-frame: 15
+        think: T_Path
+      - sprite: GSCI
+        frames: [D]
+        tics-per-frame: 20
+        think: T_Path
+      - sprite: GSCI
+        frames: [D]
+        tics-per-frame: 5
+      - sprite: GSCI
+        frames: [E]
+        tics-per-frame: 15
+        think: T_Path
+    Pain:
+      - sprite: GSCI
+        frames: [I]
+        tics-per-frame: 15
+        next-state: Chase
+    Attack:
+      - sprite: GSCI
+        frames: [F]
+        tics-per-frame: 6
+      - sprite: GSCI
+        frames: [G]
+        tics-per-frame: 20
+        action: T_BlakeShoot
+      - sprite: GSCI
+        frames: [H]
+        tics-per-frame: 10
+        next-state: Chase
+    Chase:
+      - sprite: GSCI
+        frames: [B]
+        tics-per-frame: 10
+        think: T_BlakeChase
+      - sprite: GSCI
+        frames: [B]
+        tics-per-frame: 3
+      - sprite: GSCI
+        frames: [C]
+        tics-per-frame: 8
+        think: T_BlakeChase
+      - sprite: GSCI
+        frames: [D]
+        tics-per-frame: 10
+        think: T_BlakeChase
+      - sprite: GSCI
+        frames: [D]
+        tics-per-frame: 3
+      - sprite: GSCI
+        frames: [E]
+        tics-per-frame: 8
+        think: T_BlakeChase
+    Death:
+      - sprite: GSCI
+        frames: [K]
+        tics-per-frame: 15
+        think: T_BlowBack
+        action: A_DeathScream
+      - sprite: GSCI
+        frames: [L]
+        tics-per-frame: 15
+        think: T_BlowBack
+      - sprite: GSCI
+        frames: [M]
+        tics-per-frame: 15
+        think: T_BlowBack
+      - sprite: GSCI
+        frames: [N]
+        tics-per-frame: 15
+        think: T_BlowBack
+      - sprite: GSCI
+        frames: [O]
+        tics-per-frame: -1
+
+# An informant: never attacks, isn't counted as an enemy, and is worth nothing shot. Talked to,
+# it gives a hint (the map's for the room it's in, else a general one); talked to again, its
+# charge pack, then its food tokens.
+Informant:
+  parent: Scientist
+  flags: [INFORMANT]
+  properties:
+    "tag": "$BS_INFORMANT"
+    "health.baby": 1
+    "health.easy": 1
+    "health.normal": 1
+    "health.hard": 1
+    "monster.ammo": 0
+    "deathsound": ["bs/informantdeath", "bs/informdeath2", "bs/informdeath3"]
+    "talk.header": "$BS_INTERROGATE_INFORMANT"
+    "talk.hints": "InformantHints"
+    "talk.gifts": ["ChargePack", "FoodTokens5"]
+    "talk.giftmessages": ["$BS_INFORMANT_AMMO", "$BS_INFORMANT_TOKENS"]
+    "talk.killedmessage": "$BS_KILLEDINFORMANT"

@@ -97,6 +97,7 @@ Ham:
   parent: Health
   properties:
     "inventory.amount": 20
+    "monster.healthgain": 12     # a running enemy on it eats it, for this much
     "inventory.pickupsound": "bs/health1"
     "inventory.pickupmessage": "$BS_GOTMEAT"
   states:
@@ -114,6 +115,7 @@ ChickenLeg:
   parent: Health
   properties:
     "inventory.amount": 15
+    "monster.healthgain": 8     # a running enemy on it eats it, for this much
     "inventory.pickupsound": "bs/health1"
     "inventory.pickupmessage": "$BS_GOTMEAT"
   states:
@@ -132,6 +134,7 @@ Sandwich:
   properties:
     "inventory.amount": 10
     "inventory.pickupsound": "bs/health1"
+    "monster.healthgain": 8     # a running enemy on it eats it, for this much
     "inventory.pickupmessage": "$BS_GOTSANDWICH"
   states:
     Spawn:
@@ -149,6 +152,7 @@ CandyBar:
   properties:
     "inventory.amount": 8
     "inventory.pickupsound": "bs/health1"
+    "monster.healthgain": 8     # a running enemy on it eats it, for this much
     "inventory.pickupmessage": "$BS_GOTCANDY"
   states:
     Spawn:
@@ -167,6 +171,7 @@ WaterBowl:
     "inventory.amount": 5
     "inventory.pickupsound": "bs/health1"
     "inventory.pickupmessage": "$BS_GOTWATER"
+    "monster.healthgain": 2     # a running enemy on it eats it, for this much
   states:
     Spawn:
       - sprite: WBWL
@@ -198,6 +203,7 @@ ChargeUnit:
   parent: Ammo
   properties:
     "inventory.type": ChargeUnit
+    "monster.ammogain": 8         # a running enemy out of ammo on it takes it, for this many shots
     "inventory.amount": 8
     "inventory.maxamount": 100
     "inventory.pickupsound": "bs/getammo"

@@ -30,6 +30,8 @@ AutoChargePistol:
     "weapon.slot": 1
     "weapon.selectionorder": 3700
     "weapon.chargetics": 50
+    "weapon.silent": true            # its shots alert no one
+    "weapon.knockback": 4096         # how far (1/65536 tile) a body it kills slides back
     "attacksound": "bs/atkautocharge"
   flags: [WEAPON.NOAUTOFIRE]
   states:
@@ -71,6 +73,7 @@ SlowFireProtector:
     "inventory.pickupmessage": "$BS_GOTSLOWFIRE"
     "weapon.slot": 2
     "weapon.selectionorder": 1900
+    "weapon.knockback": 8192
     "attacksound": "bs/atkcharged"
   flags: [WEAPON.NOAUTOFIRE, INVENTORY.ALWAYSPICKUP]
   states:
@@ -108,6 +111,7 @@ RapidAssaultWeapon:
     "inventory.pickupmessage": "$BS_GOTRAPIDASSAULT"
     "weapon.slot": 3
     "weapon.selectionorder": 1300
+    "weapon.knockback": 12288
     "attacksound": "bs/atkburstrifle"
   states:
     Spawn:
@@ -150,6 +154,7 @@ DualNeutronDisruptor:
     "inventory.pickupmessage": "$BS_GOTDUALNEUTRON"
     "weapon.slot": 4
     "weapon.selectionorder": 700
+    "weapon.knockback": 16384
     "attacksound": "bs/atkioncannon"
   states:
     Spawn:
@@ -192,6 +197,7 @@ PlasmaDischargeUnit:
     "inventory.pickupmessage": "$BS_GOTPLASMADISCHARGE"
     "weapon.slot": 5
     "weapon.selectionorder": 500
+    "weapon.knockback": 20480
     "weapon.ammouse1": 4
     "attacksound": "bs/atkgrenade"
   states:

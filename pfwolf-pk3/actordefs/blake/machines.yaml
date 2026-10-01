@@ -1,0 +1,382 @@
+# Blake Stone's other foes and moving scenery, as bstone has them: electro-aliens and their
+# shots, electro-spheres, the liquid alien, hanging turrets, floating bombs, volatile material
+# transports, projection generators, security lights, steam vents, drips, flickering lights and
+# ooze. What their thinks and actions do is in Program.BlakeMachines.cs; the map numbers that
+# place them are in mapdefs/blake/machines.yaml. Health is by skill (novice ... veteran).
+
+# -----------------------------------------------------------------------
+# Electro-alien: comes out of the electro-alien walls (mapdefs walls 24 outlet), and fires
+# electric bolts. Not counted as an enemy, as it keeps coming.
+# -----------------------------------------------------------------------
+ElectroAlien:
+  parent: BlakeEnemy
+  flags: [NOTCOUNTED, NOTICEWHENSEEN, bright]
+  properties:
+    "tag": "$BS_ELECTROALIEN"
+    "health.baby": 18
+    "health.easy": 37
+    "health.normal": 112
+    "health.hard": 150
+    "points": 5150
+    "monster.reactiondelay": [1]
+    "deathsound": "bs/elecdie"
+  states:
+    # Appearing out of the wall, then straight after Blake
+    Spawn:
+      - { sprite: ELCA, frames: [A, B, C], tics-per-frame: 14, next-state: Chase }
+    Chase:
+      - { sprite: ELCA, frames: [D], tics-per-frame: 14, think: T_BlakeChase }
+      - { sprite: ELCA, frames: [E], tics-per-frame: 14 }
+      - { sprite: ELCA, frames: [F], tics-per-frame: 14, think: T_BlakeChase }
+      - { sprite: ELCA, frames: [G], tics-per-frame: 14 }
+    Pain:
+      - { sprite: ELCA, frames: [H], tics-per-frame: 14, next-state: Chase }
+    Attack:
+      - { sprite: ELCA, frames: [I], tics-per-frame: 14 }
+      - { sprite: ELCA, frames: [J], tics-per-frame: 14, action: A_FireProjectile("ElectroShot") }
+      - { sprite: ELCA, frames: [K], tics-per-frame: 14, next-state: Chase }
+    Death:
+      - { sprite: ELCA, frames: [L], tics-per-frame: 14, action: A_DeathScream }
+      - { sprite: ELCA, frames: [M, N], tics-per-frame: 14 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+# For 0-7, bursting on a wall or on Blake
+ElectroShot:
+  flags: [PROJECTILE, BURSTONPLAYER, bright]
+  properties:
+    "speed": 7168
+    "spread": 2
+    "attacksound": "bs/electshot"
+  states:
+    Spawn:
+      - { sprite: ELCS, frames: [A, B], tics-per-frame: 1, think: "A_Projectile(0, 7)" }
+    Death:
+      - { sprite: ELCS, frames: [C, D], tics-per-frame: 6 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+# -----------------------------------------------------------------------
+# Electro-spheres: bounce up and down, side to side or diagonally, zapping Blake if he's within a
+# tile; one shot pops them. Things go through them, and they don't go through doors.
+# -----------------------------------------------------------------------
+ElectroSphere:
+  flags: [NOTSOLID, NODOORS, bright]
+  properties:
+    "tag": "$BS_ELECTROSPHERE"
+    "health": 1
+    "points": 2055
+    "speed": 3096
+    "monster.bounce": "diagonal"
+    "monster.touchdamage": 4
+    "touchsound": "bs/elecarcdamage"
+  states:
+    Spawn:
+      - { sprite: ESPR, frames: [A, B, C], tics-per-frame: 10, think: T_Bounce }
+    Chase:
+      - { sprite: ESPR, frames: [A, C, B], tics-per-frame: 10, think: T_Bounce }
+    Pain:
+      - { sprite: ESPR, frames: [E], tics-per-frame: 15, think: T_Bounce, next-state: Chase }
+    Death:
+      - { sprite: ESPR, frames: [F, G, H], tics-per-frame: 15 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+ElectroSphereVertical:
+  parent: ElectroSphere
+  properties:
+    "monster.bounce": "vertical"
+
+ElectroSphereHorizontal:
+  parent: ElectroSphere
+  properties:
+    "monster.bounce": "horizontal"
+
+# -----------------------------------------------------------------------
+# Liquid alien: a puddle that slides after Blake (and can't be shot) until it's near, rises up,
+# spits up to five times, and sinks back
+# -----------------------------------------------------------------------
+LiquidAlien:
+  parent: BlakeEnemy
+  flags: [NOTICEWHENSEEN, NODOORS]
+  properties:
+    "tag": "$BS_LIQUIDALIEN"
+    "health.baby": 47
+    "health.easy": 66
+    "health.normal": 163
+    "health.hard": 210
+    "points": 12000
+    "speed": 1536
+    "monster.reactiondelay": [1, 6]
+    # Chasing, it rises rarely and only from three tiles or more
+    "monster.attackchance": 30
+    "monster.attackmindist": 3
+    "deathsound": "bs/liquiddie"
+  states:
+    Spawn:
+      - { sprite: LIQA, frames: [A], tics-per-frame: 0, action: A_SetShootable("off") }
+      - { sprite: LIQA, frames: [A], tics-per-frame: 14, think: T_Stand }
+    Chase:
+      - { sprite: LIQA, frames: [A, C, B, A, B, C], tics-per-frame: 14, think: T_LiquidMove }
+    Attack:
+      - { sprite: LIQA, frames: [A], tics-per-frame: 0, next-state: Rise }
+    Rise:
+      - { sprite: LIQA, frames: [D, E], tics-per-frame: 12 }
+      - { sprite: LIQA, frames: [F], tics-per-frame: 12, action: A_SetShootable("on"), next-state: Shoot }
+    Shoot:
+      - { sprite: LIQA, frames: [H, I], tics-per-frame: 12 }
+      - { sprite: LIQA, frames: [J], tics-per-frame: 12, action: A_FireProjectile("LiquidShot"), next-state: Stand }
+    Stand:
+      - { sprite: LIQA, frames: [G], tics-per-frame: 40, think: T_LiquidStand }
+    Fall:
+      - { sprite: LIQA, frames: [F, E, D], tics-per-frame: 15, next-state: Chase }
+    Pain:
+      - { sprite: LIQA, frames: [K], tics-per-frame: 7, next-state: Shoot }
+    Death:
+      - { sprite: LIQA, frames: [L], tics-per-frame: 20, action: A_DeathScream }
+      - { sprite: LIQA, frames: [M, N, O, P], tics-per-frame: 20 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+LiquidShot:
+  flags: [PROJECTILE, BURSTONPLAYER]
+  properties:
+    "speed": 7168
+    "speed.random": 256
+    "spread": 2
+  states:
+    Spawn:
+      - { sprite: LIQS, frames: [A, B, C], tics-per-frame: 10, think: "A_Projectile(0, 15)" }
+    Death:
+      - { sprite: LIQS, frames: [D, E, F], tics-per-frame: 8 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+# -----------------------------------------------------------------------
+# Hanging turret: turns round (unless STATIONARY) until it faces Blake, then fires. Only the
+# rapid assault weapon or better hurts it, and it hangs overhead, out of the way.
+# -----------------------------------------------------------------------
+HangingTurret:
+  flags: [NOTSOLID]
+  properties:
+    "tag": "$BS_TURRET"
+    "health.baby": 6
+    "health.easy": 9
+    "health.normal": 23
+    "health.hard": 28
+    "points": 1050
+    "monster.minweapon": "RapidAssaultWeapon"
+    "monster.reactiondelay": [1, 4]
+    "seesound": "bs/turret"
+    "attacksound": "bs/atkcharged"
+    "deathsound": ["bs/explode1", "bs/explode2"]
+  states:
+    Spawn:
+      - { sprite: TURR, frames: [A], tics-per-frame: -1, think: T_Seek }
+    Chase:
+      - { sprite: TURR, frames: [A], tics-per-frame: 10, think: T_Seek }
+      - { sprite: TURR, frames: [A], tics-per-frame: 3 }
+    Attack:
+      - { sprite: TURR, frames: [B], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: TURR, frames: [C], tics-per-frame: 20, modifiers: [bright] }
+      - { sprite: TURR, frames: [B], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: TURR, frames: [C], tics-per-frame: 20, modifiers: [bright], next-state: Chase }
+    Death:
+      - { sprite: TURR, frames: [D], tics-per-frame: 15, action: A_DeathScream, modifiers: [bright] }
+      - { sprite: TURR, frames: [E, F, G], tics-per-frame: 15, modifiers: [bright] }
+      - { sprite: TURR, frames: [H], tics-per-frame: -1 }
+
+HangingTurretFixed:
+  parent: HangingTurret
+  flags: [STATIONARY]
+
+# -----------------------------------------------------------------------
+# Floating bomb: drifts after Blake once it spots him and blows itself up beside him (taking
+# its points with it); it looks more battered as it's hurt. A STATIONARY one never moves.
+# -----------------------------------------------------------------------
+FloatingBomb:
+  parent: BlakeEnemy
+  flags: [CHASEDIR]
+  properties:
+    "tag": "$BS_FLOATINGBOMB"
+    "health.baby": 20
+    "health.easy": 40
+    "health.normal": 60
+    "health.hard": 85
+    "points": 2025
+    "monster.chasespeedmultiplier": 3
+    "monster.reactiondelay": [1, 4]
+    "monster.attackrange": 1
+    "monster.damagestates": [Chase, Chase2, Chase3, Chase4]
+    "seesound": "bs/scout_alert"
+    "deathsound": ["bs/explode1", "bs/explode2"]
+  states:
+    Spawn:
+      - { sprite: FSCT, frames: [A], tics-per-frame: 20, think: T_Stand }
+    Path:
+      - { sprite: FSCT, frames: [A], tics-per-frame: 15, think: T_Path }
+    Chase:
+      - { sprite: FSCT, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+    Chase2:
+      - { sprite: FSCT, frames: [B], tics-per-frame: 10, think: T_BlakeChase }
+    Chase3:
+      - { sprite: FSCT, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+    Chase4:
+      - { sprite: FSCT, frames: [D], tics-per-frame: 10, think: T_BlakeChase }
+    Attack:
+      - { sprite: FSCT, frames: [A], tics-per-frame: 0, action: A_SelfDestruct }
+    Death:
+      - { sprite: FSCT, frames: [E], tics-per-frame: 20, action: A_DeathScream, modifiers: [bright] }
+      - { sprite: FSCT, frames: [F], tics-per-frame: 20, modifiers: [bright] }
+      - { sprite: FSCT, frames: [G], tics-per-frame: 20, action: 'A_Explode(20, 20, 2, "hurtplayer")', modifiers: [bright] }
+      - { sprite: FSCT, frames: [H, I, J, K], tics-per-frame: 20 }
+      - { sprite: FSCT, frames: [L], tics-per-frame: -1 }
+
+FloatingBombFixed:
+  parent: FloatingBomb
+  flags: [STATIONARY]
+  properties:
+    "seesound": ""
+  states:
+    Spawn:
+      - { sprite: FSCT, frames: [A], tics-per-frame: -1 }
+
+# -----------------------------------------------------------------------
+# Volatile material transport: goes its way, never minding Blake; shot to pieces it blows up,
+# often spilling green ooze. A STATIONARY one stays parked.
+# -----------------------------------------------------------------------
+VolatileTransport:
+  parent: BlakeEnemy
+  flags: [BLIND]
+  properties:
+    "tag": "$BS_VOLATILETRANSPORT"
+    "health.baby": 17
+    "health.easy": 25
+    "health.normal": 63
+    "health.hard": 75
+    "points": 2025
+    "monster.painattack": 0
+    "monster.damagestates": [Path, Path2, Path3, Path4]
+    "deathsound": ["bs/explode1", "bs/explode2"]
+  states:
+    Spawn:
+      - { sprite: GSCT, frames: [A], tics-per-frame: -1 }
+    Path:
+      - { sprite: GSCT, frames: [A], tics-per-frame: 15, think: T_Path }
+    Path2:
+      - { sprite: GSCT, frames: [B], tics-per-frame: 15, think: T_Path }
+    Path3:
+      - { sprite: GSCT, frames: [C], tics-per-frame: 15, think: T_Path }
+    Path4:
+      - { sprite: GSCT, frames: [D], tics-per-frame: 15, think: T_Path }
+    # (only so it can be shot)
+    Chase:
+      - { sprite: GSCT, frames: [A], tics-per-frame: 15, think: T_Path }
+    Death:
+      - { sprite: GSCT, frames: [E], tics-per-frame: 20, action: A_DeathScream, modifiers: [bright] }
+      - { sprite: GSCT, frames: [F], tics-per-frame: 20, modifiers: [bright] }
+      - { sprite: GSCT, frames: [G], tics-per-frame: 0, action: 'A_SpawnThing("GreenOoze", 128)', modifiers: [bright] }
+      - { sprite: GSCT, frames: [G], tics-per-frame: 20, action: 'A_Explode(20, 20, 2, "hurtplayer")', modifiers: [bright] }
+      - { sprite: GSCT, frames: [H, I, J, K, L], tics-per-frame: 20 }
+      - { sprite: GSCT, frames: [M], tics-per-frame: -1 }
+
+VolatileTransportFixed:
+  parent: VolatileTransport
+  flags: [STATIONARY]
+
+# -----------------------------------------------------------------------
+# Projection generator: destroying them all wins the level. It flinches at its first hit;
+# blowing up, it says how many are left and hurts everything near.
+# -----------------------------------------------------------------------
+ProjectionGenerator:
+  flags: [STATIONARY, bright]
+  properties:
+    "tag": "$BS_GENERATOR"
+    "health.baby": 150
+    "health.easy": 175
+    "health.normal": 375
+    "health.hard": 450
+    "points": 50000
+    "monster.painonce": true
+    "deathsound": "bs/explode1"
+  states:
+    Spawn:
+      - { sprite: EXDE, frames: [A], tics-per-frame: -1 }
+    Chase:
+      - { sprite: EXDE, frames: [A], tics-per-frame: -1 }
+    Pain:
+      - { sprite: EXDE, frames: [M], tics-per-frame: 23, next-state: Spawn }
+    Death:
+      - { sprite: EXDE, frames: [B], tics-per-frame: 0, action: A_DeathScream }
+      - { sprite: EXDE, frames: [B], tics-per-frame: 7, action: A_PlaySound("bs/vital_gone") }
+      - { sprite: EXDE, frames: [C], tics-per-frame: 7, action: A_CountRemaining("$BS_GENERATORSLEFT") }
+      - { sprite: EXDE, frames: [D], tics-per-frame: 7 }
+      - { sprite: EXDE, frames: [E], tics-per-frame: 0, action: A_CountRemaining("$BS_GENERATORSLEFT") }
+      - { sprite: EXDE, frames: [E], tics-per-frame: 7, action: 'A_Explode(35, 50, 2, "hurtplayer")' }
+      - { sprite: EXDE, frames: [F, G, H, I], tics-per-frame: 7, next-state: Dead }
+    # Its wreck, sparking; with it the last, the level is won
+    Dead:
+      - { sprite: EXDE, frames: [J], tics-per-frame: 16, action: A_VictoryIfLast }
+      - { sprite: EXDE, frames: [K, L], tics-per-frame: 16 }
+
+# -----------------------------------------------------------------------
+# Scenery that moves
+# -----------------------------------------------------------------------
+
+# A security light: flashes once there's trouble where Blake can hear it
+SecurityLight:
+  states:
+    Spawn:
+      - { sprite: SECL, frames: [A], tics-per-frame: -1, think: T_SecurityLight }
+    Alert:
+      - { sprite: SECL, frames: [A], tics-per-frame: 20 }
+      - { sprite: SUCL, frames: [B], tics-per-frame: 20, modifiers: [bright] }
+
+# A floor grate (and a wall pipe) that lets off steam now and then while Blake can see it
+SteamGrate:
+  states:
+    Spawn:
+      - { sprite: GRAT, frames: [A], tics-per-frame: -1, think: T_SteamVent }
+    Release:
+      - { sprite: GRAT, frames: [B], tics-per-frame: 1 }
+      - { sprite: GRAT, frames: [C, D, C, D], tics-per-frame: 14 }
+      - { sprite: GRAT, frames: [E], tics-per-frame: 16, next-state: Spawn }
+
+SteamVentPipe:
+  states:
+    Spawn:
+      - { sprite: ALCL, frames: [A], tics-per-frame: -1, think: T_SteamVent }
+    Release:
+      - { sprite: ALCL, frames: [B], tics-per-frame: 1 }
+      - { sprite: ALCL, frames: [C, D, C, D], tics-per-frame: 14 }
+      - { sprite: ALCL, frames: [E], tics-per-frame: 16, next-state: Spawn }
+
+# Drips from the air vents above: blood and water
+BloodDrip:
+  states:
+    Spawn:
+      - { sprite: AVNT, frames: [B, C, D, E], tics-per-frame: 10 }
+
+WaterDrip:
+  states:
+    Spawn:
+      - { sprite: AVNT, frames: [F, G, H, I], tics-per-frame: 10 }
+
+# A light that flickers, mostly on (bstone's is random: 4-13 seconds on, a few dim tics)
+FlickeringLight:
+  states:
+    Spawn:
+      - { sprite: ARCL, frames: [A], tics-per-frame: 300, modifiers: [bright] }
+      - { sprite: ARCL, frames: [B, C], tics-per-frame: 3 }
+      - { sprite: ARCL, frames: [A], tics-per-frame: 500, modifiers: [bright] }
+      - { sprite: ARCL, frames: [C], tics-per-frame: 2 }
+      - { sprite: ARCL, frames: [A], tics-per-frame: 240, modifiers: [bright] }
+      - { sprite: ARCL, frames: [B], tics-per-frame: 2 }
+
+# Ooze: standing in it now and then hurts
+GreenOoze:
+  states:
+    Spawn:
+      - { sprite: OOZ1, frames: [A, B], tics-per-frame: 30 }
+      - { sprite: OOZ1, frames: [C], tics-per-frame: 30, think: "A_HurtPlayerHere(4, 32)" }
+
+BlackOoze:
+  states:
+    Spawn:
+      - { sprite: OOZ2, frames: [A, B], tics-per-frame: 30 }
+      - { sprite: OOZ2, frames: [C], tics-per-frame: 30, think: "A_HurtPlayerHere(4, 32)" }

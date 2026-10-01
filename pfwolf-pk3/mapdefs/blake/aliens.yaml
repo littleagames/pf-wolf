@@ -1,0 +1,50 @@
+# Where Blake Stone's maps place its mutants and aliens (actordefs/blake/aliens.yaml), as
+# bstone's ScanInfoPlane: one tile for every skill (min-skill 0), one for expert and up (2) and
+# one for veteran (3). They face no way (angles -1), so they see all round. Below its skill, a
+# sleeping canister alien or gurney mutant is just its canister or gurney, and a pod egg one that
+# never hatches (else).
+things:
+  # Mutant humans
+  103: { class: MutantHuman1, angles: -1, min-skill: 0 }
+  104: { class: MutantHuman1, angles: -1, min-skill: 2 }
+  105: { class: MutantHuman1, angles: -1, min-skill: 3 }
+  106: { class: MutantHuman2, angles: -1, min-skill: 0 }
+  107: { class: MutantHuman2, angles: -1, min-skill: 2 }
+  125: { class: MutantHuman2, angles: -1, min-skill: 3 }
+
+  # Genetic guard
+  214: { class: GeneticGuard, angles: -1, min-skill: 0 }
+  142: { class: GeneticGuard, angles: -1, min-skill: 2 }
+  143: { class: GeneticGuard, angles: -1, min-skill: 3 }
+
+  # Canister aliens, asleep in their canisters
+  134: { class: ScanCanister, angles: -1, min-skill: 0 }
+  135: { class: ScanCanister, angles: -1, min-skill: 2, else: SmallCanisterStatic }
+  136: { class: ScanCanister, angles: -1, min-skill: 3, else: SmallCanisterStatic }
+  170: { class: LcanCanister, angles: -1, min-skill: 0 }
+  171: { class: LcanCanister, angles: -1, min-skill: 2, else: LargeCanisterStatic }
+  172: { class: LcanCanister, angles: -1, min-skill: 3, else: LargeCanisterStatic }
+
+  # ... and already out
+  290: { class: ScanAlien, angles: -1, min-skill: 0 }
+  289: { class: ScanAlien, angles: -1, min-skill: 2 }
+  288: { class: ScanAlien, angles: -1, min-skill: 3 }
+  272: { class: LcanAlien, angles: -1, min-skill: 0 }
+  271: { class: LcanAlien, angles: -1, min-skill: 2 }
+  270: { class: LcanAlien, angles: -1, min-skill: 3 }
+
+  # Gurney mutants, asleep and awake
+  137: { class: GurneySleeper, angles: -1, min-skill: 0 }
+  173: { class: GurneySleeper, angles: -1, min-skill: 2, else: GurneyMutantStatic }
+  161: { class: GurneySleeper, angles: -1, min-skill: 3, else: GurneyMutantStatic }
+  273: { class: GurneyMutant, angles: -1, min-skill: 0 }
+  274: { class: GurneyMutant, angles: -1, min-skill: 2 }
+  275: { class: GurneyMutant, angles: -1, min-skill: 3 }
+
+  # P.O.D. eggs and aliens
+  306: { class: PodEgg, angles: -1, min-skill: 0 }
+  276: { class: PodEgg, angles: -1, min-skill: 2, else: PodEggDud }
+  294: { class: PodEgg, angles: -1, min-skill: 3, else: PodEggDud }
+  307: { class: PodAlien, angles: -1, min-skill: 0 }
+  308: { class: PodAlien, angles: -1, min-skill: 2 }
+  309: { class: PodAlien, angles: -1, min-skill: 3 }

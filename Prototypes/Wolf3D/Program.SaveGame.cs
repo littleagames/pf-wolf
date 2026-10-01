@@ -48,7 +48,7 @@ internal partial class Program
     // 14: the light zones' lights, tints, fades and effects, at the end.
     // 15: each actor's light as A_SetLight / A_LightOff left it, after its runtime flags.
     // 16: whether each door has been unlocked (doors.yaml takes-key), after held.
-    private const int SaveVersion = 16;
+    private const int SaveVersion = 17;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the
@@ -310,6 +310,8 @@ internal partial class Program
             Entities.Actors.ActorSnapshot.Capture(weapon).Write(bw);
 
         WriteZoneLights(bw);
+
+        bw.Write(weaponcharge);
     }
 
     /// <summary>Everything a save's body holds, read without changing any game state.</summary>
@@ -330,7 +332,8 @@ internal partial class Program
         int LastAttacker,
         byte[] Seen,
         Entities.Actors.ActorSnapshot? Weapon,
-        Dictionary<int, ZoneState> Zones);
+        Dictionary<int, ZoneState> Zones,
+        int WeaponCharge);
 
     private static SaveGameData ReadSaveBody(BinaryReader br)
     {
@@ -374,7 +377,8 @@ internal partial class Program
             LastAttacker: br.ReadInt32(),
             Seen: ReadExactly(br, MapManager.MAPAREA),
             Weapon: br.ReadBoolean() ? Entities.Actors.ActorSnapshot.Read(br) : null,
-            Zones: ReadZoneLights(br));
+            Zones: ReadZoneLights(br),
+            WeaponCharge: br.ReadInt32());
     }
 
     // BinaryReader.ReadBytes quietly returns fewer bytes at the end of the stream.
@@ -524,6 +528,7 @@ internal partial class Program
         {
             data.Weapon.ApplyTo(sprite);
         }
+        weaponcharge = data.WeaponCharge;
 
         if (!checksumOk)
         {

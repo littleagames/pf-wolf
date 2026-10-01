@@ -1,0 +1,329 @@
+# Blake Stone's bosses, as bstone has them: the six aliens guarding the gold access cards, one
+# to a mission, and Dr. Goldfire, who warps in at his spawn sites, and warps out again when shot
+# down, to come back later. Health is by skill (novice ... veteran). The map numbers that place
+# them are in mapdefs/blake/bosses.yaml.
+
+# The aliens: built like the rest (actordefs/blake/aliens.yaml), shooting from range; each leaves
+# the floor's gold access card
+BlakeBoss:
+  parent: BlakeAlien
+  properties:
+    "dropitem": "GoldCard"
+    "attacksound": "bs/atkcharged"
+
+SpiderMutant:
+  parent: BlakeBoss
+  properties:
+    "tag": "$BS_SPIDERMUTANT"
+    "health.baby": 800
+    "health.easy": 1000
+    "health.normal": 2000
+    "health.hard": 3000
+    "points": 5000
+    "monster.chasespeedmultiplier": 3
+    "seesound": "bs/scanhalt"
+    "deathsound": "bs/blueboydeath"
+  states:
+    Spawn:
+      - { sprite: MSUP, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: MSUP, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MSUP, frames: [A], tics-per-frame: 5 }
+      - { sprite: MSUP, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: MSUP, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MSUP, frames: [C], tics-per-frame: 5 }
+      - { sprite: MSUP, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: MSUP, frames: [H], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: MSUP, frames: [E], tics-per-frame: 10 }
+      - { sprite: MSUP, frames: [F], tics-per-frame: 10, action: A_FireProjectile("SpiderShot") }
+      - { sprite: MSUP, frames: [G], tics-per-frame: 10, next-state: Chase }
+    Death:
+      - { sprite: MSUP, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: MSUP, frames: [I], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: MSUP, frames: [J], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: MSUP, frames: [K], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: MSUP, frames: [L], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: MSUP, frames: [M], tics-per-frame: -1 }
+
+BreatherBeast:
+  parent: BlakeBoss
+  properties:
+    "tag": "$BS_BREATHERBEAST"
+    "health.baby": 850
+    "health.easy": 1250
+    "health.normal": 2500
+    "health.hard": 3500
+    "points": 6000
+    "monster.chasespeedmultiplier": 3
+    "seesound": "bs/gguardhalt"
+    "deathsound": "bs/poddeath"
+  states:
+    Spawn:
+      - { sprite: BBST, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: BBST, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: BBST, frames: [A], tics-per-frame: 5 }
+      - { sprite: BBST, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: BBST, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: BBST, frames: [C], tics-per-frame: 5 }
+      - { sprite: BBST, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: BBST, frames: [H], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: BBST, frames: [E], tics-per-frame: 10 }
+      - { sprite: BBST, frames: [F], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: BBST, frames: [G], tics-per-frame: 10, next-state: Chase }
+    Death:
+      - { sprite: BBST, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: BBST, frames: [I], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: BBST, frames: [J], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: BBST, frames: [K], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: BBST, frames: [L], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: BBST, frames: [M], tics-per-frame: -1 }
+
+# The cyborg warrior and the bio-mech guardian whir as they walk
+CyborgWarrior:
+  parent: BlakeBoss
+  properties:
+    "tag": "$BS_CYBORGWARRIOR"
+    "health.baby": 900
+    "health.easy": 1500
+    "health.normal": 3000
+    "health.hard": 4000
+    "points": 7000
+    "monster.chasespeedmultiplier": 2
+    "seesound": "bs/blueboyhalt"
+    "deathsound": "bs/poddeath"
+  states:
+    Spawn:
+      - { sprite: CYBW, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: CYBW, frames: [A], tics-per-frame: 10, think: T_BlakeChase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
+      - { sprite: CYBW, frames: [A], tics-per-frame: 5 }
+      - { sprite: CYBW, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: CYBW, frames: [C], tics-per-frame: 10, think: T_BlakeChase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
+      - { sprite: CYBW, frames: [C], tics-per-frame: 5 }
+      - { sprite: CYBW, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: CYBW, frames: [H], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: CYBW, frames: [E], tics-per-frame: 10 }
+      - { sprite: CYBW, frames: [F], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: CYBW, frames: [G], tics-per-frame: 10, next-state: Chase }
+    Death:
+      - { sprite: CYBW, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: CYBW, frames: [I], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: CYBW, frames: [J], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: CYBW, frames: [K], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: CYBW, frames: [L], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: CYBW, frames: [M], tics-per-frame: -1 }
+
+ReptilianWarrior:
+  parent: BlakeBoss
+  properties:
+    "tag": "$BS_REPTILIANWARRIOR"
+    "health.baby": 950
+    "health.easy": 1750
+    "health.normal": 3500
+    "health.hard": 4500
+    "points": 8000
+    "monster.chasespeedmultiplier": 3
+    "seesound": "bs/gguardhalt"
+    "deathsound": "bs/scandeath"
+  states:
+    Spawn:
+      - { sprite: REPW, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: REPW, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: REPW, frames: [A], tics-per-frame: 5 }
+      - { sprite: REPW, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: REPW, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: REPW, frames: [C], tics-per-frame: 5 }
+      - { sprite: REPW, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: REPW, frames: [H], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: REPW, frames: [E], tics-per-frame: 10 }
+      - { sprite: REPW, frames: [F], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: REPW, frames: [G], tics-per-frame: 10, next-state: Chase }
+    Death:
+      - { sprite: REPW, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: REPW, frames: [I], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: REPW, frames: [J], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: REPW, frames: [K], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: REPW, frames: [L], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: REPW, frames: [M], tics-per-frame: -1 }
+
+AcidDragon:
+  parent: BlakeBoss
+  properties:
+    "tag": "$BS_ACIDDRAGON"
+    "health.baby": 1000
+    "health.easy": 2000
+    "health.normal": 4000
+    "health.hard": 5000
+    "points": 9000
+    "monster.chasespeedmultiplier": 2
+    "seesound": "bs/podhalt"
+    "deathsound": "bs/poddeath"
+  states:
+    Spawn:
+      - { sprite: ADRG, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: ADRG, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: ADRG, frames: [A], tics-per-frame: 5 }
+      - { sprite: ADRG, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: ADRG, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: ADRG, frames: [C], tics-per-frame: 5 }
+      - { sprite: ADRG, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: ADRG, frames: [H], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: ADRG, frames: [E], tics-per-frame: 10 }
+      - { sprite: ADRG, frames: [F], tics-per-frame: 10, action: A_FireProjectile("AcidShot") }
+      - { sprite: ADRG, frames: [G], tics-per-frame: 10, next-state: Chase }
+    Death:
+      - { sprite: ADRG, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: ADRG, frames: [I], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: ADRG, frames: [J], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: ADRG, frames: [K], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: ADRG, frames: [L], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: ADRG, frames: [M], tics-per-frame: -1 }
+
+BioMechGuardian:
+  parent: BlakeBoss
+  properties:
+    "tag": "$BS_BIOMECHGUARDIAN"
+    "health.baby": 1050
+    "health.easy": 2500
+    "health.normal": 5000
+    "health.hard": 6000
+    "points": 9000
+    "monster.chasespeedmultiplier": 2
+    "seesound": "bs/blueboyhalt"
+    "deathsound": "bs/dogboydeath"
+  states:
+    Spawn:
+      - { sprite: BIOM, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: BIOM, frames: [A], tics-per-frame: 10, think: T_BlakeChase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
+      - { sprite: BIOM, frames: [A], tics-per-frame: 5 }
+      - { sprite: BIOM, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: BIOM, frames: [C], tics-per-frame: 10, think: T_BlakeChase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
+      - { sprite: BIOM, frames: [C], tics-per-frame: 5 }
+      - { sprite: BIOM, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: BIOM, frames: [H], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: BIOM, frames: [E], tics-per-frame: 10 }
+      - { sprite: BIOM, frames: [F], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: BIOM, frames: [G], tics-per-frame: 10, next-state: Chase }
+    Death:
+      - { sprite: BIOM, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: BIOM, frames: [I], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: BIOM, frames: [J], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: BIOM, frames: [K], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: BIOM, frames: [L], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: BIOM, frames: [M], tics-per-frame: -1 }
+
+# The spider mutant's and acid dragon's spit: 0-15, bursting on a wall or on Blake
+SpiderShot:
+  flags: [PROJECTILE, BURSTONPLAYER, bright]
+  properties:
+    "speed": 7168
+    "spread": 2
+    "attacksound": "bs/spitattack"
+  states:
+    Spawn:
+      - { sprite: MSPR, frames: [A, C, B], tics-per-frame: 2, think: "A_Projectile(0, 15)" }
+    Death:
+      - { sprite: MSPR, frames: [D, E, F], tics-per-frame: 5 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+AcidShot:
+  parent: SpiderShot
+  states:
+    Spawn:
+      - { sprite: ADPR, frames: [A, C, B], tics-per-frame: 2, think: "A_Projectile(0, 15)" }
+    Death:
+      - { sprite: ADPR, frames: [E, F, G], tics-per-frame: 5 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+# -----------------------------------------------------------------------
+# Dr. Goldfire: warps in at one of the floor's spawn sites (GoldfireSite), patrols and fights
+# like a pro guard; shot down, he laughs and warps out, to come back 30 seconds to 4 minutes
+# later somewhere else. On floor 9 he's fifteen times as tough, comes straight away, and leaves
+# the gold access card the first time.
+# -----------------------------------------------------------------------
+Goldfire:
+  parent: BlakeEnemy
+  flags: [NOTCOUNTED]
+  properties:
+    "tag": "$BS_GOLDFIRE"
+    "health.baby": 50
+    "health.easy": 63
+    "health.normal": 125
+    "health.hard": 188
+    "monster.floorhealth": [9, 15]
+    "points": 5000
+    "monster.chasespeedmultiplier": 3
+    "monster.reactiondelay": [1, 4]
+    "seesound": "bs/goldsternhalt"
+    "attacksound": "bs/atkcharged"
+    "dropitem": "GoldCard"
+    "dropitem.onfloor": 9
+  states:
+    # Warping in
+    Spawn:
+      - { sprite: DGLD, frames: [P], tics-per-frame: 15, action: A_PlaySound("bs/warpin") }
+      - { sprite: DGLD, frames: [O, N, M, L], tics-per-frame: 15, next-state: Path }
+    Path:
+      - { sprite: DGLD, frames: [B], tics-per-frame: 20, think: T_Path }
+      - { sprite: DGLD, frames: [B], tics-per-frame: 5 }
+      - { sprite: DGLD, frames: [C], tics-per-frame: 15, think: T_Path }
+      - { sprite: DGLD, frames: [D], tics-per-frame: 20, think: T_Path }
+      - { sprite: DGLD, frames: [D], tics-per-frame: 5 }
+      - { sprite: DGLD, frames: [E], tics-per-frame: 15, think: T_Path }
+    Pain:
+      - { sprite: DGLD, frames: [I], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: DGLD, frames: [F], tics-per-frame: 20 }
+      - { sprite: DGLD, frames: [G], tics-per-frame: 20, action: T_BlakeShoot }
+      - { sprite: DGLD, frames: [H], tics-per-frame: 10 }
+      - { sprite: DGLD, frames: [G], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: DGLD, frames: [H], tics-per-frame: 10 }
+      - { sprite: DGLD, frames: [G], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: DGLD, frames: [H], tics-per-frame: 10, next-state: Chase }
+    Chase:
+      - { sprite: DGLD, frames: [B], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: DGLD, frames: [B], tics-per-frame: 3 }
+      - { sprite: DGLD, frames: [C], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: DGLD, frames: [D], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: DGLD, frames: [D], tics-per-frame: 3 }
+      - { sprite: DGLD, frames: [E], tics-per-frame: 8, think: T_BlakeChase }
+    # Shot down: laughs, taps his wrist and warps out
+    Death:
+      - { sprite: DGLD, frames: [A], tics-per-frame: 45, action: 'A_PlaySound("bs/goldsternlaugh", "positional")' }
+      - { sprite: DGLD, frames: [J], tics-per-frame: 25 }
+      - { sprite: DGLD, frames: [K], tics-per-frame: 25, action: A_PlaySound("bs/elev_button") }
+      - { sprite: DGLD, frames: [J], tics-per-frame: 15 }
+      - { sprite: DGLD, frames: [K], tics-per-frame: 25, action: A_PlaySound("bs/elev_button") }
+      - { sprite: DGLD, frames: [A], tics-per-frame: 15 }
+      - { sprite: DGLD, frames: [L], tics-per-frame: 30, action: A_PlaySound("bs/warpout") }
+      - { sprite: DGLD, frames: [M, N, O], tics-per-frame: 30 }
+      - { sprite: DGLD, frames: [P], tics-per-frame: 40, action: A_WarpSiteGone }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+# One of Goldfire's spawn sites (invisible)
+GoldfireSite:
+  flags: [WARPSITE]
+  properties:
+    "warpsite.class": "Goldfire"
+    "warpsite.firstwait": [5, 15]
+    "warpsite.wait": [30, 240]
+    "warpsite.quickfloor": 9
+  states:
+    Spawn:
+      - { sprite: TNT1, frames: [A], tics-per-frame: -1 }

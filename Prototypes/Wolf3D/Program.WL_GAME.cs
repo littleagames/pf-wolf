@@ -724,6 +724,7 @@ internal partial class Program
         }
 
         InitLevelShading(mapInfo);
+        InitLevelSpawners();        // wall outlets and Goldfire's spawn sites (Program.BlakeMachines.cs)
 
         //
         // load floor/ceiling textures

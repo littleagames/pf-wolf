@@ -46,15 +46,19 @@ skills:
   NOVICE:
     name: "Novice Agent"
     pic-name: C_BabyMode
+    enemy-health: health.baby
   SKILLED:
     name: "Skilled Agent"
     pic-name: C_Easy
+    enemy-health: health.easy
   EXPERT:
     name: "Expert Agent"
     pic-name: C_Normal
+    enemy-health: health.normal
   VETERAN:
     name: "Veteran Agent"
     pic-name: C_Hard
+    enemy-health: health.hard
 
 # Each mission is 15 MAPTEMP slots: floor 0 (the basement) to floor 10, then four slots the game
 # never uses. The game starts a mission on its basement for now; the elevator comes later.

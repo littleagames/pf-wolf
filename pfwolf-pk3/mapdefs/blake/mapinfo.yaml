@@ -10,6 +10,9 @@
 #                          so a switch here acts on them. The code's low byte is the floor
 #                          (game-info floor-number) the target is on: links to other floors wait
 #                          for floors that keep their state.
+#   hint:<text>:           a hint (or saying) for the actors that talk: message xx (the code's low
+#                          byte, from 1) of the game's text <text>, about the room it's on (on a
+#                          wall or door, a general one); see Program.BlakeAI.cs
 #   none:                  only that the tile isn't a thing
 # Only a map's first code of each kind counts. Blake Stone puts both in the object plane's top row.
 # (Codes on walls and doors need no entry: things only stand on open floor.)
@@ -17,12 +20,12 @@ map-info:
   254: ceiling-floor-colors     # 0xFE00
   251: ceiling-floor-flats      # 0xFB00
   # Not things; their phases decide what they do (as bstone reads them):
-  241: none                     # 0xF1xx informant message xx
-  242: none                     # 0xF2xx "nice" scientist message xx
-  243: none                     # 0xF3xx "mean" scientist message xx
+  241: hint:InformantHints      # 0xF1xx informant message xx
+  242: hint:NiceScientistHints  # 0xF2xx "nice" scientist message xx
+  243: hint:MeanScientistHints  # 0xF3xx "mean" scientist message xx
   244: none                     # 0xF4xx (on a transporter wall) goes to floor xx
   245: value                    # 0xF5xx an in-level warp, to the x,y in the tile after it
   248: tag-link                 # 0xF8xx (on a barrier switch) floor xx's barrier at the x,y after it
-  250: none                     # 0xFAxx a timer (xx seconds) for the thing to its west
+  250: none                     # 0xFAxx a value for the thing to its west (a SWAT guard's wound stages)
   252: none                     # 0xFCxx (on a food unit) its message
   253: none                     # 0xFDxx unused
