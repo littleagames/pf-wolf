@@ -1139,8 +1139,8 @@ internal partial class Program
         for (int i = 0; i < doornum; i++)
         {
             var door = doorobjlist[i];
-            if (!string.IsNullOrEmpty(door.xlat.Lock))
-                _consoleManager.Print($"  locked ({door.xlat.Lock}) at {door.tilex},{door.tiley}");
+            if (!string.IsNullOrEmpty(door.Lock))
+                _consoleManager.Print($"  locked ({door.Lock}) at {door.tilex},{door.tiley}");
         }
         _consoleManager.Print($"Actors: {actors.Count}  active: {active}");
         _consoleManager.Print($"Enemies: {enemies}  alive: {alive}");

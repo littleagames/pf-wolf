@@ -262,15 +262,21 @@ internal class doorobj_t
     public ushort position;            // leading edge of door (0 = closed, 0xffff = fully open)
     public bool held;                  // opened by a switch to stay open, until something closes it
     public MapTextureTranslation xlat = MapTextureTranslation.None;
+    public string maplock = "";        // the lock from the map: a door-locks object on its tile, else its doors.yaml lock
+    public bool unlocked;              // a takes-key door the player has opened with its lock item
 
-    // Only the moving parts: position, orientation and lock (xlat) come from the map, which a
-    // load has already respawned the doors from.
+    /// <summary>The item the door needs to open, empty when it needs none</summary>
+    public string Lock => unlocked ? "" : maplock;
+
+    // Only the moving parts and whether it's been unlocked: position, orientation and lock come
+    // from the map, which a load has already respawned the doors from.
     public void ReadState(BinaryReader br)
     {
         action = (dooractiontypes)br.ReadByte();
         ticcount = br.ReadInt16();
         position = br.ReadUInt16();
         held = br.ReadBoolean();
+        unlocked = br.ReadBoolean();
     }
 
     public void WriteState(BinaryWriter bw)
@@ -279,6 +285,7 @@ internal class doorobj_t
         bw.Write(ticcount);
         bw.Write(position);
         bw.Write(held);
+        bw.Write(unlocked);
     }
 }
 

@@ -4,6 +4,13 @@ default-map:
   # A map's own colors (its map-info code, mapdefs/blake/mapinfo.yaml) win over these
   ceiling-color: "#383838"
   floor-color: "#717171"
+  # Blake Stone's distance lighting, as bstone has it for Aliens of Gold (shade_max 51, normal
+  # shade divisor 6): no darkening within 4.5 tiles, then 80% x (1 - 4.52 / distance) toward black
+  shading:
+    fade-color: "#000000"
+    fade-start: 4.52
+    max-fade: 80
+    fade-curve: inverse
 
 signon:
   press-a-key: false
@@ -29,7 +36,8 @@ level-fade-style: fizzle
 level-fade-tics: 20
 
 hud-messages:
-  enabled: false
+  # Blake Stone always shows its pickup and door messages
+  enabled: true
   pickup-style: Default
   lock-style: Center
   obituary-style: Obituary

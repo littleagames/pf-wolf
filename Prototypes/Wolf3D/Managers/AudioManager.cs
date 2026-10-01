@@ -28,6 +28,8 @@ internal class AudioManager
     // Keyed by variant ("digi:NAME", "adlib:NAME", "pc:NAME"), since the same sound can play
     // from a different device once one is switched off.
     private readonly Dictionary<string, int> _buffers = [];
+    // The running pack's own sound sequences, found on first use (empty when it has none)
+    private SoundSequenceAsset? _packSoundSeq;
 
     // The buffer each sound name last played, for Stop and IsPlaying.
     private readonly Dictionary<string, int> _lastBufferForSound = [];
@@ -201,14 +203,19 @@ internal class AudioManager
     {
         var requestedName = name;
         var soundSeq = _assetManager.Value.Find<SoundSequenceAsset>("sound-seq");
-        if (soundSeq == null)
+        // The running pack's own sounds (gamepacks/<pack>/sound-seq.yaml) win over the shared ones
+        var packSeq = _packSoundSeq ??= _assetManager.Value.Exists<SoundSequenceAsset>($"{_assetManager.Value.GamePackId}/sound-seq")
+            ? _assetManager.Value.FindInGamePack<SoundSequenceAsset>("sound-seq")
+            : new SoundSequenceAsset();
+        if (soundSeq == null && packSeq.SoundInfo.Count == 0)
             // not found
             return;
 
-        SoundProfile soundProfile = null;
+        SoundProfile? soundProfile = null;
         for (var indirection = 0; indirection < 8; indirection++)
         {
-            if (!soundSeq.SoundInfo.TryGetValue(name, out soundProfile) || soundProfile == null)
+            if (!(packSeq.SoundInfo.TryGetValue(name, out soundProfile) || soundSeq?.SoundInfo.TryGetValue(name, out soundProfile) == true)
+                || soundProfile == null)
                 // not found
                 return;
 

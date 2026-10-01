@@ -79,12 +79,12 @@ internal partial class Program
 
     // A locked door is drawn in its key's color: the theme's "Automap<lock item>" if it has one
     // (e.g. AutomapGoldKey), else the door's mapdefs automap-color, else the plain door color.
-    static string AutomapDoorColor(MapTextureTranslation door)
+    static string AutomapDoorColor(doorobj_t door)
     {
         if (!string.IsNullOrEmpty(door.Lock) && _videoManager.IsThemeColor("Automap" + door.Lock))
             return "Automap" + door.Lock;
 
-        return !string.IsNullOrEmpty(door.AutomapColor) ? door.AutomapColor : AutomapColor("AutomapDoor");
+        return !string.IsNullOrEmpty(door.xlat.AutomapColor) ? door.xlat.AutomapColor : AutomapColor("AutomapDoor");
     }
 
     /// <summary>
@@ -361,7 +361,7 @@ internal partial class Program
             if (open >= 0.99f)
                 continue;
 
-            string color = AutomapDoorColor(door.xlat);
+            string color = AutomapDoorColor(door);
 
             if (door.vertical)
                 AutomapLine(view, door.tilex + 0.5f, door.tiley + open, door.tilex + 0.5f, door.tiley + 1, color);

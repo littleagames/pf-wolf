@@ -1,0 +1,699 @@
+# Blake Stone's scenery, from bstone's statinfo table: SOLID ones block the tile, and the lamps
+# its renderer lights are drawn bright. Pickups are in items.yaml; the map numbers that place
+# these are in mapdefs/blake/decorations.yaml.
+
+# Containment canister
+ContainmentCanister:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: CCAN
+        frames: [A]
+        tics-per-frame: -1
+
+# Lunch table
+LunchTable:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: LUNT
+        frames: [A]
+        tics-per-frame: -1
+
+# Floor lamp
+FloorLamp:
+  radius: 32
+  flags: [SOLID, bright]
+  states:
+    Spawn:
+      - sprite: FLRL
+        frames: [A]
+        tics-per-frame: -1
+
+# Lab table
+LabTable:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: LABT
+        frames: [A]
+        tics-per-frame: -1
+
+# Pillar
+Pillar:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: PILR
+        frames: [A]
+        tics-per-frame: -1
+
+# Blood puddle
+BloodPuddle:
+  states:
+    Spawn:
+      - sprite: BPUD
+        frames: [A]
+        tics-per-frame: -1
+
+# Yellow puddle
+PissPuddle:
+  states:
+    Spawn:
+      - sprite: PISS
+        frames: [A]
+        tics-per-frame: -1
+
+# Ficus tree
+FicusTree:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: FICS
+        frames: [A]
+        tics-per-frame: -1
+
+# Half-eaten corpse
+HalfEatenCorpse:
+  states:
+    Spawn:
+      - sprite: HFEC
+        frames: [A]
+        tics-per-frame: -1
+
+# Water fountain
+WaterFountain:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: WFNT
+        frames: [A]
+        tics-per-frame: -1
+
+# Plant
+Plant1:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: PLT1
+        frames: [A]
+        tics-per-frame: -1
+
+# Vase
+Vase:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: BVSE
+        frames: [A]
+        tics-per-frame: -1
+
+# Table
+GeneralTable:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: GENT
+        frames: [A]
+        tics-per-frame: -1
+
+# Ceiling light
+CeilingLight:
+  flags: [bright]
+  states:
+    Spawn:
+      - sprite: CLT1
+        frames: [A]
+        tics-per-frame: -1
+
+# Chair
+GeneralChair:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: GENC
+        frames: [A]
+        tics-per-frame: -1
+
+# Kitchen trash
+KitchenTrash:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: KTRH
+        frames: [A]
+        tics-per-frame: -1
+
+# Office trash
+OfficeTrash:
+  states:
+    Spawn:
+      - sprite: OTRH
+        frames: [A]
+        tics-per-frame: -1
+
+# Plant
+Plant2:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: PLT2
+        frames: [A]
+        tics-per-frame: -1
+
+# Gurney
+Gurney:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: GURN
+        frames: [A]
+        tics-per-frame: -1
+
+# Indirect half-sphere light
+IndirectHalfSphere:
+  flags: [bright]
+  states:
+    Spawn:
+      - sprite: IDHS
+        frames: [A]
+        tics-per-frame: -1
+
+# Exit sign
+ExitSign:
+  states:
+    Spawn:
+      - sprite: EXIT
+        frames: [A]
+        tics-per-frame: -1
+
+# Transporter
+Transporter:
+  states:
+    Spawn:
+      - sprite: TNSP
+        frames: [A]
+        tics-per-frame: -1
+
+# Body can
+BodyCan:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: BDYC
+        frames: [A]
+        tics-per-frame: -1
+
+# Statue
+Statue:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: MSTT
+        frames: [A]
+        tics-per-frame: -1
+
+# Office desk
+OfficeDesk:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: ODSK
+        frames: [A]
+        tics-per-frame: -1
+
+# Office chair
+OfficeChair:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: OCHR
+        frames: [A]
+        tics-per-frame: -1
+
+# Security desk
+SecurityDesk:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: SDSK
+        frames: [A]
+        tics-per-frame: -1
+
+# Empty water bowl
+EmptyWaterBowl:
+  states:
+    Spawn:
+      - sprite: WBWL
+        frames: [B]
+        tics-per-frame: -1
+
+# Chicken bone
+ChickenBone:
+  states:
+    Spawn:
+      - sprite: CKLG
+        frames: [B]
+        tics-per-frame: -1
+
+# Ham bone
+HamBone:
+  states:
+    Spawn:
+      - sprite: HAMM
+        frames: [B]
+        tics-per-frame: -1
+
+# Video game machine
+VideoGameMachine:
+  flags: [bright]
+  states:
+    Spawn:
+      - sprite: IDSL
+        frames: [A]
+        tics-per-frame: -1
+
+# Gurney mutant
+GurneyMutantStatic:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: MGUR
+        frames: [A]
+        tics-per-frame: -1
+
+# Large alien canister
+LargeCanisterStatic:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: CNTA
+        frames: [A]
+        tics-per-frame: -1
+
+# Small alien canister
+SmallCanisterStatic:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: CNSA
+        frames: [A]
+        tics-per-frame: -1
+
+# Empty gurney
+EmptyGurney:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: MGUR
+        frames: [E]
+        tics-per-frame: -1
+
+# Empty large canister
+EmptyLargeCanister:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: CNTA
+        frames: [E]
+        tics-per-frame: -1
+
+# Empty small canister
+EmptySmallCanister:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: CNSA
+        frames: [E]
+        tics-per-frame: -1
+
+# Dead scientist
+DeadScientist:
+  states:
+    Spawn:
+      - sprite: GSCI
+        frames: [O]
+        tics-per-frame: -1
+
+# Air vent
+AirVent:
+  states:
+    Spawn:
+      - sprite: AVNT
+        frames: [A]
+        tics-per-frame: -1
+
+# Floor grate
+FloorGrate:
+  states:
+    Spawn:
+      - sprite: GRAT
+        frames: [A]
+        tics-per-frame: -1
+
+# Steam pipe
+SteamPipe:
+  states:
+    Spawn:
+      - sprite: ALCL
+        frames: [A]
+        tics-per-frame: -1
+
+# Greek post
+GreekPost:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: GRPS
+        frames: [A]
+        tics-per-frame: -1
+
+# Red/blue post
+RedBluePost:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: BLPS
+        frames: [A]
+        tics-per-frame: -1
+
+# Red hi-tech post
+HiTechPost:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: HTPS
+        frames: [A]
+        tics-per-frame: -1
+
+# Ceiling lamp
+CeilingLamp2:
+  flags: [bright]
+  states:
+    Spawn:
+      - sprite: CLT2
+        frames: [A]
+        tics-per-frame: -1
+
+# Ceiling lamp
+CeilingLamp3:
+  flags: [bright]
+  states:
+    Spawn:
+      - sprite: CLT3
+        frames: [A]
+        tics-per-frame: -1
+
+# Body parts
+BodyParts:
+  states:
+    Spawn:
+      - sprite: BDYP
+        frames: [A]
+        tics-per-frame: -1
+
+# Operating room lamp
+OperatingLamp:
+  states:
+    Spawn:
+      - sprite: ORLP
+        frames: [A]
+        tics-per-frame: -1
+
+# Office sink
+OfficeSink:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: OSNK
+        frames: [A]
+        tics-per-frame: -1
+
+# Crate
+Crate1:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: CRT1
+        frames: [A]
+        tics-per-frame: -1
+
+# Crate
+Crate2:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: CRT2
+        frames: [B]
+        tics-per-frame: -1
+
+# Crate
+Crate3:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: CRT3
+        frames: [C]
+        tics-per-frame: -1
+
+# Table
+Table:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: STBL
+        frames: [A]
+        tics-per-frame: -1
+
+# Chair
+Chair:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: SCHR
+        frames: [A]
+        tics-per-frame: -1
+
+# Stool
+Stool:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: SSTL
+        frames: [A]
+        tics-per-frame: -1
+
+# Gore
+Gore:
+  states:
+    Spawn:
+      - sprite: BDYG
+        frames: [A]
+        tics-per-frame: -1
+
+Static68:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: BRPS
+        frames: [A]
+        tics-per-frame: -1
+
+Static69:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: GRP2
+        frames: [A]
+        tics-per-frame: -1
+
+Static70:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: GNPS
+        frames: [A]
+        tics-per-frame: -1
+
+Static71:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: TDCL
+        frames: [A]
+        tics-per-frame: -1
+
+Static72:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: SDCL
+        frames: [A]
+        tics-per-frame: -1
+
+# Debris
+Debris1:
+  states:
+    Spawn:
+      - sprite: DBR1
+        frames: [A]
+        tics-per-frame: -1
+
+# Debris
+Debris2:
+  states:
+    Spawn:
+      - sprite: DBR2
+        frames: [A]
+        tics-per-frame: -1
+
+# Debris
+Debris3:
+  states:
+    Spawn:
+      - sprite: DBR3
+        frames: [A]
+        tics-per-frame: -1
+
+# Debris
+Debris4:
+  states:
+    Spawn:
+      - sprite: DBR4
+        frames: [A]
+        tics-per-frame: -1
+
+# Dead sector patrol
+DeadSectorPatrol:
+  states:
+    Spawn:
+      - sprite: RENT
+        frames: [N]
+        tics-per-frame: -1
+
+# Dead star sentinel
+DeadStarSentinel:
+  states:
+    Spawn:
+      - sprite: PROG
+        frames: [O]
+        tics-per-frame: -1
+
+# Dead star trooper
+DeadStarTrooper:
+  states:
+    Spawn:
+      - sprite: SWAT
+        frames: [S]
+        tics-per-frame: -1
+
+# Dead ground scout
+DeadGroundScout:
+  states:
+    Spawn:
+      - sprite: GSCT
+        frames: [M]
+        tics-per-frame: -1
+
+# Dead floating scout
+DeadFloatingScout:
+  states:
+    Spawn:
+      - sprite: FSCT
+        frames: [L]
+        tics-per-frame: -1
+
+# Dead mech sentinel
+DeadMechSentinel:
+  states:
+    Spawn:
+      - sprite: MSEN
+        frames: [M]
+        tics-per-frame: -1
+
+# Dead mutant human
+DeadMutantHuman:
+  states:
+    Spawn:
+      - sprite: MHUM
+        frames: [P]
+        tics-per-frame: -1
+
+# Dead large canister alien
+DeadLargeCanisterAlien:
+  states:
+    Spawn:
+      - sprite: CNTA
+        frames: [U]
+        tics-per-frame: -1
+
+# Dead small canister alien
+DeadSmallCanisterAlien:
+  states:
+    Spawn:
+      - sprite: CNSA
+        frames: [U]
+        tics-per-frame: -1
+
+# Dead gurney mutant
+DeadGurneyMutant:
+  states:
+    Spawn:
+      - sprite: MGUR
+        frames: [R]
+        tics-per-frame: -1
+
+# Dead turret
+DeadTurret:
+  states:
+    Spawn:
+      - sprite: TURR
+        frames: [H]
+        tics-per-frame: -1
+
+# Dead pod alien
+DeadPodAlien:
+  states:
+    Spawn:
+      - sprite: PODA
+        frames: [R]
+        tics-per-frame: -1

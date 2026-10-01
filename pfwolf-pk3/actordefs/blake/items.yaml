@@ -1,0 +1,327 @@
+# Blake Stone's pickups, with what they give as bstone's GetBonus does (3d_agent.cpp). The weapons
+# are in weapons.yaml; the map numbers that place these are in mapdefs/blake/decorations.yaml.
+
+# --- Access cards: each opens the doors its number locks (mapdefs/blake/doors.yaml door-locks),
+# and is used up unlocking one. Blake carries at most one of each.
+BlakeCard:
+  parent: Key
+  properties:
+    "inventory.maxamount": 1
+    "inventory.pickupsound": "bs/getkey"
+    "key.lockedsound": "player/usefail"
+
+RedCard:
+  parent: BlakeCard
+  properties:
+    "inventory.pickupmessage": "$BS_GOTREDCARD"
+    "key.lockedmessage": "$BS_REDDENIED"
+  states:
+    Spawn:
+      - sprite: RCRD
+        frames: [A]
+        tics-per-frame: -1
+
+YellowCard:
+  parent: BlakeCard
+  properties:
+    "inventory.pickupmessage": "$BS_GOTYELLOWCARD"
+    "key.lockedmessage": "$BS_YELLOWDENIED"
+  states:
+    Spawn:
+      - sprite: YCRD
+        frames: [A]
+        tics-per-frame: -1
+
+GreenCard:
+  parent: BlakeCard
+  properties:
+    "inventory.pickupmessage": "$BS_GOTGREENCARD"
+    "key.lockedmessage": "$BS_GREENDENIED"
+  states:
+    Spawn:
+      - sprite: GCRD
+        frames: [A]
+        tics-per-frame: -1
+
+BlueCard:
+  parent: BlakeCard
+  properties:
+    "inventory.pickupmessage": "$BS_GOTBLUECARD"
+    "key.lockedmessage": "$BS_BLUEDENIED"
+  states:
+    Spawn:
+      - sprite: BCRD
+        frames: [A]
+        tics-per-frame: -1
+
+GoldCard:
+  parent: BlakeCard
+  properties:
+    "inventory.pickupmessage": "$BS_GOTGOLDCARD"
+    "key.lockedmessage": "$BS_GOLDDENIED"
+  states:
+    Spawn:
+      - sprite: OCRD
+        frames: [A]
+        tics-per-frame: -1
+
+# --- Health: each heals up to 100. Food leaves its remains behind (Pickup spawns them).
+FirstAidKit:
+  parent: Health
+  properties:
+    "inventory.amount": 30
+    "inventory.pickupsound": "bs/health1"
+    "inventory.pickupmessage": "$BS_GOTFIRSTAID"
+  states:
+    Spawn:
+      - sprite: FAID
+        frames: [A]
+        tics-per-frame: -1
+
+Ham:
+  parent: Health
+  properties:
+    "inventory.amount": 20
+    "inventory.pickupsound": "bs/health1"
+    "inventory.pickupmessage": "$BS_GOTMEAT"
+  states:
+    Spawn:
+      - sprite: HAMM
+        frames: [A]
+        tics-per-frame: -1
+    Pickup:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnThing("HamBone")
+
+ChickenLeg:
+  parent: Health
+  properties:
+    "inventory.amount": 15
+    "inventory.pickupsound": "bs/health1"
+    "inventory.pickupmessage": "$BS_GOTMEAT"
+  states:
+    Spawn:
+      - sprite: CKLG
+        frames: [A]
+        tics-per-frame: -1
+    Pickup:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnThing("ChickenBone")
+
+Sandwich:
+  parent: Health
+  properties:
+    "inventory.amount": 10
+    "inventory.pickupsound": "bs/health1"
+    "inventory.pickupmessage": "$BS_GOTSANDWICH"
+  states:
+    Spawn:
+      - sprite: SNDW
+        frames: [A]
+        tics-per-frame: -1
+    Pickup:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnThing("SandwichWrapper")
+
+CandyBar:
+  parent: Health
+  properties:
+    "inventory.amount": 8
+    "inventory.pickupsound": "bs/health1"
+    "inventory.pickupmessage": "$BS_GOTCANDY"
+  states:
+    Spawn:
+      - sprite: CNDY
+        frames: [A]
+        tics-per-frame: -1
+    Pickup:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnThing("CandyWrapper")
+
+WaterBowl:
+  parent: Health
+  properties:
+    "inventory.amount": 5
+    "inventory.pickupsound": "bs/health1"
+    "inventory.pickupmessage": "$BS_GOTWATER"
+  states:
+    Spawn:
+      - sprite: WBWL
+        frames: [A]
+        tics-per-frame: -1
+    Pickup:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnThing("EmptyWaterBowl")
+
+# Only drunk from when nearly dead: bstone takes it at 15 health or less. A health item heals up
+# to its maxamount and isn't taken at or above it, so this one stops at 16.
+WaterPuddle:
+  parent: Health
+  properties:
+    "inventory.amount": 5
+    "inventory.maxamount": 16
+    "inventory.pickupsound": "bs/health1"
+    "inventory.pickupmessage": "$BS_GOTPUDDLE"
+  states:
+    Spawn:
+      - sprite: WPUD
+        frames: [A]
+        tics-per-frame: -1
+
+# --- Ammo: the energy weapons share one supply of charge units, at most 100
+ChargeUnit:
+  parent: Ammo
+  properties:
+    "inventory.type": ChargeUnit
+    "inventory.amount": 8
+    "inventory.maxamount": 100
+    "inventory.pickupsound": "bs/getammo"
+    "inventory.pickupmessage": "$BS_GOTCHARGEUNIT"
+  states:
+    Spawn:
+      - sprite: CHGU
+        frames: [A]
+        tics-per-frame: -1
+
+# bstone gives 1 to 8 units at random; a fixed 4 until pickups can give random amounts
+ChargePack:
+  parent: ChargeUnit
+  properties:
+    "inventory.amount": 4
+    "inventory.pickupmessage": "$BS_GOTCHARGEPACK"
+  states:
+    Spawn:
+      - sprite: CHRG
+        frames: [A]
+        tics-per-frame: -1
+
+# --- Food tokens, spent at the food units: at most 25
+FoodToken:
+  parent: Ammo
+  properties:
+    "inventory.type": FoodToken
+    "inventory.amount": 1
+    "inventory.maxamount": 25
+    "inventory.pickupsound": "bs/gottoken"
+    "inventory.pickupmessage": "$BS_GOTTOKEN"
+  states:
+    Spawn:
+      - sprite: CON1
+        frames: [A]
+        tics-per-frame: -1
+
+FoodTokens5:
+  parent: FoodToken
+  properties:
+    "inventory.amount": 5
+    "inventory.pickupmessage": "$BS_GOTTOKENS5"
+  states:
+    Spawn:
+      - sprite: CON5
+        frames: [A]
+        tics-per-frame: -1
+
+# --- Points
+MoneyBag:
+  parent: ScoreItem
+  properties:
+    "inventory.amount": 100
+    "inventory.pickupsound": "bs/bonus1"
+    "inventory.pickupmessage": "$BS_GOTMONEYBAG"
+  states:
+    Spawn:
+      - sprite: MBAG
+        frames: [A]
+        tics-per-frame: -1
+
+Loot:
+  parent: ScoreItem
+  properties:
+    "inventory.amount": 500
+    "inventory.pickupsound": "bs/bonus2"
+    "inventory.pickupmessage": "$BS_GOTLOOT"
+  states:
+    Spawn:
+      - sprite: LOOT
+        frames: [A]
+        tics-per-frame: -1
+
+Gold1:
+  parent: ScoreItem
+  properties:
+    "inventory.amount": 250
+    "inventory.pickupsound": "bs/bonus3"
+    "inventory.pickupmessage": "$BS_GOTGOLD"
+  states:
+    Spawn:
+      - sprite: GLD1
+        frames: [A]
+        tics-per-frame: -1
+
+Gold2:
+  parent: Gold1
+  properties:
+    "inventory.amount": 500
+  states:
+    Spawn:
+      - sprite: GLD2
+        frames: [A]
+        tics-per-frame: -1
+
+Gold3:
+  parent: Gold1
+  properties:
+    "inventory.amount": 750
+  states:
+    Spawn:
+      - sprite: GLD3
+        frames: [A]
+        tics-per-frame: -1
+
+GoldBars:
+  parent: Gold1
+  properties:
+    "inventory.amount": 1000
+  states:
+    Spawn:
+      - sprite: GLD5
+        frames: [A]
+        tics-per-frame: -1
+
+XylanOrb:
+  parent: ScoreItem
+  properties:
+    "inventory.amount": 5000
+    "inventory.pickupsound": "bs/bonus4"
+    "inventory.pickupmessage": "$BS_GOTXYLANORB"
+  flags: [COUNTITEM, bright]
+  states:
+    Spawn:
+      - sprite: XORB
+        frames: [A]
+        tics-per-frame: -1
+
+# --- What food leaves behind
+CandyWrapper:
+  states:
+    Spawn:
+      - sprite: CNDY
+        frames: [B]
+        tics-per-frame: -1
+
+SandwichWrapper:
+  states:
+    Spawn:
+      - sprite: SNDW
+        frames: [B]
+        tics-per-frame: -1

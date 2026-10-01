@@ -616,8 +616,9 @@ internal partial class Program
             mapDefs?.Walls.TryGetValue((tilehit & ~BIT_WALL), out mapTexture);
             if ((doortile & BIT_DOOR) != 0)
             {
+                // the door's jamb on the side the ray left it from
                 var door = doorobjlist[doortile & ~BIT_DOOR];
-                wallpic = door.xlat.East; // West
+                wallpic = DoorFace(door, xtilestep == 1 ? "east" : "west");
                 SetUpperPost((mapTexture ?? MapTextureTranslation.None).East, texture);   // the wall above the door frame
             }
             else
@@ -681,7 +682,7 @@ internal partial class Program
             if ((doortile & BIT_DOOR) != 0)
             {
                 var door = doorobjlist[doortile & ~BIT_DOOR];
-                wallpic = door.xlat.North; // South
+                wallpic = DoorFace(door, ytilestep == 1 ? "south" : "north");
                 SetUpperPost((mapTexture ?? MapTextureTranslation.None).North, texture);  // the wall above the door frame
             }
             else
@@ -719,8 +720,9 @@ internal partial class Program
         postheight = CalcHeight();
         postx = pixx;
 
+        // the face on the viewer's side: heading east, the ray meets the door's west face
         var door = doorobjlist[doornumtile];
-        doorpage = door.xlat.East; // West
+        doorpage = DoorFace(door, xtilestep == 1 ? "west" : "east");
 
         var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
         if (doorTextureAsset == null)
@@ -744,8 +746,9 @@ internal partial class Program
         postheight = CalcHeight();
         postx = pixx;
 
+        // heading south, the ray meets the door's north face
         var door = doorobjlist[doornumtile];
-        doorpage = door.xlat.North; // South
+        doorpage = DoorFace(door, ytilestep == 1 ? "north" : "south");
         var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
         if (doorTextureAsset == null)
             return;

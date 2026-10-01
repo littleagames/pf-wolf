@@ -1,7 +1,42 @@
-# Blake Stone text, added to the shared language/en-us.yaml.
+# Blake Stone text, added to the shared language/en-us.yaml. Pickup and door messages follow the
+# game's own (bstone's 3d_msgs.cpp and 3d_act1.cpp); they show over the view until Blake Stone's
+# status bar info area is built.
 
-# Quit messages (game-info end-strings)
+# Quit messages (game-info end-strings): placeholders
 $BS_ENDSTR1: "Are you sure you want\nto quit?"
 $BS_ENDSTR2: "Goldfire is still out\nthere. Quit anyway?"
 $BS_ENDSTR3: "The mission isn't over,\nBlake. Quit anyway?"
 $BS_ENDSTR4: "Leaving so soon?"
+
+# Doors
+$BS_DOORONEWAY: "Door locked from this side."
+$BS_REDDENIED: "Red level access denied!"
+$BS_YELLOWDENIED: "Yellow level access denied!"
+$BS_GREENDENIED: "Green level access denied!"
+$BS_BLUEDENIED: "Blue level access denied!"
+$BS_GOLDDENIED: "Gold level access denied!"
+
+# Pickups
+$BS_GOTREDCARD: "Access card: red level"
+$BS_GOTYELLOWCARD: "Access card: yellow level"
+$BS_GOTGREENCARD: "Access card: green level"
+$BS_GOTBLUECARD: "Access card: blue level"
+$BS_GOTGOLDCARD: "Access card: gold level"
+$BS_GOTFIRSTAID: "Health: first aid kit"
+$BS_GOTMEAT: "Food: raw meat"
+$BS_GOTSANDWICH: "Food: sandwich"
+$BS_GOTCANDY: "Food: candy bar"
+$BS_GOTWATER: "Food: fresh water"
+$BS_GOTPUDDLE: "Food: water puddle"
+$BS_GOTCHARGEUNIT: "Weapon: energy pack"
+$BS_GOTCHARGEPACK: "Weapon: energy pack"
+$BS_GOTTOKEN: "Food token: 1 credit"
+$BS_GOTTOKENS5: "Food token: 5 credits"
+$BS_GOTMONEYBAG: "Bonus: money bag"
+$BS_GOTLOOT: "Bonus: loot"
+$BS_GOTGOLD: "Bonus: gold bars"
+$BS_GOTXYLANORB: "Bonus: xylan orb"
+$BS_GOTSLOWFIRE: "Weapon: slow fire protector"
+$BS_GOTRAPIDASSAULT: "Weapon: rapid assault weapon"
+$BS_GOTDUALNEUTRON: "Weapon: dual neutron disrupter"
+$BS_GOTPLASMADISCHARGE: "Weapon: plasma discharge unit"

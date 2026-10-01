@@ -134,6 +134,10 @@ internal partial class Program
         doorobj.vertical = vertical;
         doorobj.action = dooractiontypes.dr_closed;
         doorobj.xlat = doorXlat;
+        // A mapdefs door-locks object on the door's tile locks it in place of its own lock
+        doorobj.maplock = _mapManager.GetMapData().DoorLocks.TryGetValue(_mapManager.MAPSPOT(tilex, tiley, 1), out var tileLock)
+            ? tileLock
+            : doorXlat.Lock;
         doorobjlist[lastdoorobj] = doorobj;
 
         _mapManager.actorat[tilex, tiley] = new Door(doornum);// (uint)(doornum | BIT_DOOR);   // consider it a solid wall
@@ -270,14 +274,40 @@ internal partial class Program
 
     internal static void OperateDoor(int door)
     {
-        // The required key comes from the door's mapdef entry (doors.yaml `lock:`).
         var xlat = doorobjlist[door].xlat;
-        var lockItem = xlat.Lock;
-        if (!string.IsNullOrEmpty(lockItem) && !_inventoryManager.Has(lockItem))
+
+        // A one-way door only opens from its opens-from side
+        if (!OnOpeningSide(doorobjlist[door]))
         {
-            if (doorobjlist[door].position == 0)
-                RefuseLocked(lockItem, xlat.LockedSound, xlat.LockMessage, xlat.LockMessageStyle);
+            if (doorobjlist[door].action == dooractiontypes.dr_closed)
+            {
+                if (xlat.WrongSideSound is { Length: > 0 } sound)
+                    _audioManager.Play(sound);
+                if (xlat.WrongSideMessage is { Length: > 0 } message)
+                    _hudMessageManager.Show(HudMessageKind.Lock, message, xlat.LockMessageStyle is { Length: > 0 } style ? style : null);
+            }
             return;
+        }
+
+        // The required key comes from the map: a door-locks object on the door's tile, else the
+        // door's mapdef entry (doors.yaml `lock:`)
+        var lockItem = doorobjlist[door].Lock;
+        if (!string.IsNullOrEmpty(lockItem))
+        {
+            if (!_inventoryManager.Has(lockItem))
+            {
+                if (doorobjlist[door].position == 0)
+                    RefuseLocked(lockItem, xlat.LockedSound, xlat.LockMessage, xlat.LockMessageStyle);
+                return;
+            }
+
+            // A takes-key door uses the item up and stays unlocked
+            if (xlat.TakesKey)
+            {
+                _inventoryManager.Take(lockItem, 1);
+                doorobjlist[door].unlocked = true;
+                DrawKeys();
+            }
         }
 
         switch (doorobjlist[door].action)
@@ -293,6 +323,46 @@ internal partial class Program
         }
     }
 
+
+    /// <summary>
+    /// Whether the player is on a one-way door's opens-from side (or in line with it); always
+    /// true for an ordinary door
+    /// </summary>
+    static bool OnOpeningSide(doorobj_t door) => door.xlat.OpensFrom.ToLowerInvariant() switch
+    {
+        "east" => player.TileX >= door.tilex,
+        "west" => player.TileX <= door.tilex,
+        "south" => player.TileY >= door.tiley,
+        "north" => player.TileY <= door.tiley,
+        _ => true,
+    };
+
+    /// <summary>
+    /// The texture on one face of a door (north, south, east or west): its locked face while
+    /// it's locked, else its own; a face it doesn't give falls back to the one opposite.
+    /// </summary>
+    internal static string DoorFace(doorobj_t door, string face)
+    {
+        static string Face(MapTextureTranslation? xlat, string face) => xlat == null ? "" : face switch
+        {
+            "north" => xlat.North,
+            "south" => xlat.South,
+            "east" => xlat.East,
+            _ => xlat.West,
+        };
+        static string Opposite(string face) => face switch { "north" => "south", "south" => "north", "east" => "west", _ => "east" };
+
+        var xlat = door.xlat;
+        if (!string.IsNullOrEmpty(door.Lock) && xlat.Locked != null)
+        {
+            var locked = Face(xlat.Locked, face);
+            if (locked.Length > 0)
+                return locked;
+        }
+
+        var own = Face(xlat, face);
+        return own.Length > 0 ? own : Face(xlat, Opposite(face));
+    }
 
     /// <summary>
     /// Refuses a locked door or switch the player lacks the lock item for. The sound is its own

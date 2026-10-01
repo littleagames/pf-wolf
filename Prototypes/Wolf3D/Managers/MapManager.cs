@@ -253,7 +253,8 @@ internal class MapManager
             for (int x = 0; x < mapwidth; x++)
             {
                 int tile = MAPSPOT(x, y, 0);
-                if (IsWallId(tile) && data.Walls.ContainsKey(tile) || data.Doors.ContainsKey(tile))
+                bool solid = IsWallId(tile) && data.Walls.ContainsKey(tile) || data.Doors.ContainsKey(tile);
+                if (solid)
                 {
                     // solid wall (a door's tile is made a door by SpawnDoor)
                     tilemap[x, y] = (byte)tile;
@@ -271,8 +272,10 @@ internal class MapManager
                 if (infotiles[y * MAPSIZE + x])
                     continue;
 
+                // Things only stand on open floor: an object-plane value on a wall or door is
+                // something else (Blake Stone's door locks, switch and teleporter data)
                 int objtile = MAPSPOT(x, y, 1);
-                if (data.Things.TryGetValue(objtile, out var thingXlat))
+                if (!solid && data.Things.TryGetValue(objtile, out var thingXlat))
                 {
                     SpawnThing(x, y, thingXlat);
                     continue;
@@ -357,7 +360,7 @@ internal class MapManager
                     MapFloorColor = (byte)(value & 0xff);
                 }
             }
-            else if (!gotFlats)
+            else if (kind.Equals(MapInfoCodes.CeilingFloorFlats, StringComparison.OrdinalIgnoreCase) && !gotFlats)
             {
                 gotFlats = true;
                 if (fillFlats)

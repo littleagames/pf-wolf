@@ -153,6 +153,13 @@ internal class PfWolfPk3Loader
                 yaml => new StatusBarAsset(YamlDataEntryLoader.Deserialize<Dictionary<string, StatusBarElement>>(yaml)));
             return;
         }
+        if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("sound-seq.yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            // A pack's own sounds, whose entries win over the shared sounds/sound-seq.yaml's
+            var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
+            LoadYaml(entry, uniqueName, isMod, mergeLevels: 2, YamlDataEntryLoader.Deserialize<SoundSequenceAsset>);
+            return;
+        }
         if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("intermission.yaml", StringComparison.OrdinalIgnoreCase))
         {
             var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);

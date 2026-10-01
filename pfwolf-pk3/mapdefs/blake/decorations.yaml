@@ -1,0 +1,108 @@
+# Scenery and pickups by object-plane number, as bstone's ScanInfoPlane spawns them (actordefs/blake
+# decorations.yaml and items.yaml). Numbers bstone leaves to Planet Strike or to other actors (the
+# flickering light 79, the air vents 81-82 and the enemies) aren't here.
+things:
+  23: { class: WaterPuddle }    # Water puddle
+  24: { class: ContainmentCanister }    # Containment canister
+  25: { class: LunchTable }    # Lunch table
+  26: { class: FloorLamp }    # Floor lamp
+  27: { class: LabTable }    # Lab table
+  28: { class: Pillar }    # Pillar
+  29: { class: BloodPuddle }    # Blood puddle
+  30: { class: PissPuddle }    # Yellow puddle
+  31: { class: FicusTree }    # Ficus tree
+  32: { class: HalfEatenCorpse }    # Half-eaten corpse
+  33: { class: WaterFountain }    # Water fountain
+  34: { class: Plant1 }    # Plant
+  35: { class: Vase }    # Vase
+  36: { class: GeneralTable }    # Table
+  37: { class: CeilingLight }    # Ceiling light
+  38: { class: GeneralChair }    # Chair
+  39: { class: KitchenTrash }    # Kitchen trash
+  40: { class: OfficeTrash }    # Office trash
+  41: { class: Plant2 }    # Plant
+  42: { class: Gurney }    # Gurney
+  43: { class: IndirectHalfSphere }    # Indirect half-sphere light
+  44: { class: ExitSign }    # Exit sign
+  45: { class: Transporter }    # Transporter
+  46: { class: BodyCan }    # Body can
+  47: { class: SlowFireProtector }    # Slow fire protector
+  48: { class: Statue }    # Statue
+  49: { class: ChargeUnit }    # Charge unit
+  50: { class: RapidAssaultWeapon }    # Rapid assault weapon
+  51: { class: DualNeutronDisruptor }    # Dual neutron disruptor
+  52: { class: FirstAidKit }    # First aid kit
+  54: { class: ChargePack }    # Charge pack
+  55: { class: RedCard }    # Red access card
+  56: { class: YellowCard }    # Yellow access card
+  57: { class: GreenCard }    # Green access card
+  58: { class: BlueCard }    # Blue access card
+  59: { class: GoldCard }    # Gold access card
+  60: { class: OfficeDesk }    # Office desk
+  61: { class: OfficeChair }    # Office chair
+  62: { class: SecurityDesk }    # Security desk
+  63: { class: WaterBowl }    # Water bowl
+  64: { class: EmptyWaterBowl }    # Empty water bowl
+  65: { class: ChickenLeg }    # Chicken leg
+  66: { class: ChickenBone }    # Chicken bone
+  67: { class: Ham }    # Ham
+  68: { class: HamBone }    # Ham bone
+  69: { class: PlasmaDischargeUnit }    # Plasma discharge unit
+  70: { class: VideoGameMachine }    # Video game machine
+  72: { class: GurneyMutantStatic }    # Gurney mutant
+  73: { class: LargeCanisterStatic }    # Large alien canister
+  74: { class: SmallCanisterStatic }    # Small alien canister
+  75: { class: EmptyGurney }    # Empty gurney
+  76: { class: EmptyLargeCanister }    # Empty large canister
+  77: { class: EmptySmallCanister }    # Empty small canister
+  78: { class: DeadScientist }    # Dead scientist
+  80: { class: AirVent }    # Air vent
+  83: { class: FloorGrate }    # Floor grate
+  84: { class: SteamPipe }    # Steam pipe
+  85: { class: MoneyBag }    # Money bag
+  86: { class: Loot }    # Loot
+  87: { class: GoldBars }    # Gold
+  88: { class: XylanOrb }    # Xylan orb (bonus)
+  381: { class: GreekPost }    # Greek post
+  382: { class: RedBluePost }    # Red/blue post
+  383: { class: HiTechPost }    # Red hi-tech post
+  384: { class: CeilingLamp2 }    # Ceiling lamp
+  385: { class: CeilingLamp3 }    # Ceiling lamp
+  386: { class: BodyParts }    # Body parts
+  387: { class: OperatingLamp }    # Operating room lamp
+  388: { class: OfficeSink }    # Office sink
+  390: { class: CandyBar }    # Candy bar
+  391: { class: Sandwich }    # Sandwich
+  392: { class: Crate1 }    # Crate
+  393: { class: Crate2 }    # Crate
+  394: { class: Crate3 }    # Crate
+  395: { class: Table }    # Table
+  396: { class: Chair }    # Chair
+  397: { class: Stool }    # Stool
+  398: { class: Gore }    # Gore
+  399: { class: Gold3 }    # Gold bars (3)
+  400: { class: Gold2 }    # Gold bars (2)
+  401: { class: Gold1 }    # Gold bar
+  402: { class: Static68 }
+  403: { class: Static69 }
+  404: { class: Static70 }
+  405: { class: Static71 }
+  406: { class: Static72 }
+  407: { class: Debris1 }    # Debris
+  408: { class: Debris2 }    # Debris
+  409: { class: Debris3 }    # Debris
+  410: { class: Debris4 }    # Debris
+  411: { class: DeadSectorPatrol }    # Dead sector patrol
+  412: { class: DeadStarSentinel }    # Dead star sentinel
+  413: { class: DeadStarTrooper }    # Dead star trooper
+  414: { class: DeadGroundScout }    # Dead ground scout
+  415: { class: DeadFloatingScout }    # Dead floating scout
+  416: { class: DeadMechSentinel }    # Dead mech sentinel
+  417: { class: DeadMutantHuman }    # Dead mutant human
+  418: { class: DeadLargeCanisterAlien }    # Dead large canister alien
+  419: { class: DeadSmallCanisterAlien }    # Dead small canister alien
+  420: { class: DeadGurneyMutant }    # Dead gurney mutant
+  421: { class: DeadTurret }    # Dead turret
+  422: { class: DeadPodAlien }    # Dead pod alien
+  423: { class: FoodToken }    # Food token
+  424: { class: FoodTokens5 }    # Five food tokens

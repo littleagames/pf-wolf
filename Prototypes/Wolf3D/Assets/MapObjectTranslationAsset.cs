@@ -18,6 +18,12 @@ internal record MapObjectTranslationAsset : Asset
     /// </summary>
     public Dictionary<int, string> MapInfo { get; internal set; } = new();
 
+    /// <summary>
+    /// Object-plane values that lock the door they sit on, with the inventory item that opens it
+    /// (Blake Stone puts an access card's number on a door tile). In place of the door's own lock.
+    /// </summary>
+    public Dictionary<int, string> DoorLocks { get; internal set; } = new();
+
     public override void Merge(Asset other)
     {
         if (other is MapObjectTranslationAsset otherAsset)
@@ -67,6 +73,11 @@ internal record MapObjectTranslationAsset : Asset
                 this.MapInfo[item.Key] = item.Value;
             }
 
+            foreach (var item in otherAsset.DoorLocks)
+            {
+                this.DoorLocks[item.Key] = item.Value;
+            }
+
             this.Floors = this.Floors.MergedWith(otherAsset.Floors);
         }
     }
@@ -90,10 +101,14 @@ internal static class MapInfoCodes
     /// <summary>Just not a thing: the tile is skipped (and the one after it isn't)</summary>
     public const string None = "none";
 
+    /// <summary>Not a thing, and nor is the tile after it, which holds a value for something else to read</summary>
+    public const string Value = "value";
+
     /// <summary>Whether the code's value is in the tile after it</summary>
     public static bool HasValue(string kind) =>
         kind.Equals(CeilingFloorColors, StringComparison.OrdinalIgnoreCase)
-        || kind.Equals(CeilingFloorFlats, StringComparison.OrdinalIgnoreCase);
+        || kind.Equals(CeilingFloorFlats, StringComparison.OrdinalIgnoreCase)
+        || kind.Equals(Value, StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>
@@ -239,6 +254,31 @@ internal record MapTextureTranslation
 
     /// <summary>Doors only: played from the door as it starts to close, when the player can hear it</summary>
     public string CloseSound { get; init; } = "";
+
+    /// <summary>
+    /// Doors only: the faces drawn while the door is locked (any left out are its usual ones),
+    /// such as Blake Stone's doors with their lock lights on
+    /// </summary>
+    public MapTextureTranslation? Locked { get; init; }
+
+    /// <summary>
+    /// Doors only: opening the door with its lock item uses the item up and unlocks the door for
+    /// good (Blake Stone's access cards), instead of the item opening it every time
+    /// </summary>
+    public bool TakesKey { get; init; }
+
+    /// <summary>
+    /// Doors only: a one-way door, opened only from this side (north, south, east or west); from
+    /// the other side it won't open. Empty: either side. A side's face is what's seen from it,
+    /// so a one-way door's two faces can differ.
+    /// </summary>
+    public string OpensFrom { get; init; } = "";
+
+    /// <summary>Doors only: shown when the player tries a one-way door from the wrong side (a $NAME language key or the text)</summary>
+    public string WrongSideMessage { get; init; } = "";
+
+    /// <summary>Doors only: played when the player tries a one-way door from the wrong side</summary>
+    public string WrongSideSound { get; init; } = "";
 
     /// <summary>
     /// Doors only: the door runs north-south, so it's passed through going east or west (its

@@ -27,7 +27,7 @@ AutoChargePistol:
     "inventory.icon": "WeaponPic1"
     "weapon.slot": 1
     "weapon.selectionorder": 3700
-    "attacksound": "weapon/pistol/attack"
+    "attacksound": "bs/atkautocharge"
   flags: [WEAPON.NOAUTOFIRE]
   states:
     Ready:
@@ -49,3 +49,157 @@ AutoChargePistol:
         frames: [D, E]
         tics-per-frame: 6
         next-state: Ready
+
+# The weapons Blake picks up. Stand-ins until the weapons phase: each fires like Wolf3D's pistol
+# for one charge unit; their real rates, damage, projectiles and splash come then.
+BlakeEnergyWeapon:
+  parent: "BlakeWeapon"
+  properties:
+    "weapon.ammotype1": "ChargeUnit"
+    "weapon.ammouse1": 1
+    "weapon.ammogive1": 0
+    "inventory.pickupsound": "bs/getburstrifle"
+SlowFireProtector:
+  parent: "BlakeEnergyWeapon"
+  properties:
+    "inventory.type": SlowFireProtector
+    "inventory.icon": "WeaponPic2"
+    "inventory.pickupsound": "bs/getpistol"
+    "inventory.pickupmessage": "$BS_GOTSLOWFIRE"
+    "weapon.slot": 2
+    "weapon.selectionorder": 1900
+    "attacksound": "bs/atkcharged"
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: SFPP
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: SFPG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: SFPG
+        frames: [B]
+        tics-per-frame: 6
+      - sprite: SFPG
+        frames: [C]
+        tics-per-frame: 6
+        modifiers: [bright]
+        action: A_GunAttack
+      - sprite: SFPG
+        frames: [D, E]
+        tics-per-frame: 6
+        next-state: Ready
+
+RapidAssaultWeapon:
+  parent: "BlakeEnergyWeapon"
+  properties:
+    "inventory.type": RapidAssaultWeapon
+    "inventory.icon": "WeaponPic3"
+    "inventory.pickupsound": "bs/getburstrifle"
+    "inventory.pickupmessage": "$BS_GOTRAPIDASSAULT"
+    "weapon.slot": 3
+    "weapon.selectionorder": 1300
+    "attacksound": "bs/atkburstrifle"
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: RAWP
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: RAWG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: RAWG
+        frames: [B]
+        tics-per-frame: 6
+      - sprite: RAWG
+        frames: [C]
+        tics-per-frame: 6
+        modifiers: [bright]
+        action: A_GunAttack
+      - sprite: RAWG
+        frames: [D, E]
+        tics-per-frame: 6
+        next-state: Ready
+
+DualNeutronDisruptor:
+  parent: "BlakeEnergyWeapon"
+  properties:
+    "inventory.type": DualNeutronDisruptor
+    "inventory.icon": "WeaponPic4"
+    "inventory.pickupsound": "bs/getioncannon"
+    "inventory.pickupmessage": "$BS_GOTDUALNEUTRON"
+    "weapon.slot": 4
+    "weapon.selectionorder": 700
+    "attacksound": "bs/atkioncannon"
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: DNDP
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: DNDG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: DNDG
+        frames: [B]
+        tics-per-frame: 6
+      - sprite: DNDG
+        frames: [C]
+        tics-per-frame: 6
+        modifiers: [bright]
+        action: A_GunAttack
+      - sprite: DNDG
+        frames: [D, E]
+        tics-per-frame: 6
+        next-state: Ready
+
+PlasmaDischargeUnit:
+  parent: "BlakeEnergyWeapon"
+  properties:
+    "inventory.type": PlasmaDischargeUnit
+    "inventory.icon": "WeaponPic5"
+    "inventory.pickupsound": "bs/getcannon"
+    "inventory.pickupmessage": "$BS_GOTPLASMADISCHARGE"
+    "weapon.slot": 5
+    "weapon.selectionorder": 500
+    "attacksound": "bs/atkgrenade"
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: PDUP
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: PDUG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: PDUG
+        frames: [B]
+        tics-per-frame: 6
+      - sprite: PDUG
+        frames: [C]
+        tics-per-frame: 6
+        modifiers: [bright]
+        action: A_GunAttack
+      - sprite: PDUG
+        frames: [D, E]
+        tics-per-frame: 6
+        next-state: Ready
+

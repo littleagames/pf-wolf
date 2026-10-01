@@ -348,6 +348,13 @@ internal record ShadingInfo
 
     /// <summary>Light everywhere, 0 (black) to 255 (full, the default)</summary>
     public int? Light { get; init; }
+
+    /// <summary>
+    /// How the fade grows past fade-start: linear (the default), reaching max-fade at fade-end;
+    /// or inverse, as Blake Stone's, max-fade × (1 − fade-start / distance), nearing max-fade
+    /// far away (fade-end isn't used)
+    /// </summary>
+    public string? FadeCurve { get; init; }
 }
 
 /// <summary>

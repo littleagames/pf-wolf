@@ -5,9 +5,12 @@ namespace Wolf3D.Assets.Sounds;
 internal record SoundSequenceAsset : Asset
 {
     public Dictionary<string, SoundProfile> SoundInfo { get; set; } = [];
+    // A later file's entries replace these, name by name
     public override void Merge(Asset other)
     {
-        throw new NotImplementedException();
+        if (other is SoundSequenceAsset sequence)
+            foreach (var (name, profile) in sequence.SoundInfo)
+                SoundInfo[name] = profile;
     }
 }
 

@@ -6,7 +6,7 @@ using Wolf3D.Managers;
 namespace Wolf3D;
 
 /// <summary>A level's shading, with every value filled in (see ShadingInfo)</summary>
-internal record struct ShadingSettings(string FadeColor, double FadeStart, double FadeEnd, int MaxFade, int Light);
+internal record struct ShadingSettings(string FadeColor, double FadeStart, double FadeEnd, int MaxFade, int Light, bool InverseFade = false);
 
 internal partial class Program
 {
@@ -44,6 +44,7 @@ internal partial class Program
     static byte fader, fadeg, fadeb;
     static long fadestart, fadeend;     // along the view, in global units (TILEGLOBAL a tile)
     static int maxfadestep;
+    static bool inversefade;            // fade-curve inverse: maxfadestep × (1 − fadestart / nx)
 
     /// <summary>
     /// The map's shading, each value it leaves out taken from the default map's, else the
@@ -60,7 +61,19 @@ internal partial class Program
             map?.FadeStart ?? fallback?.FadeStart ?? 0,
             map?.FadeEnd ?? fallback?.FadeEnd ?? 16,
             map?.MaxFade ?? fallback?.MaxFade ?? 100,
-            map?.Light ?? fallback?.Light ?? 255);
+            map?.Light ?? fallback?.Light ?? 255,
+            IsInverseCurve(map?.FadeCurve ?? fallback?.FadeCurve));
+    }
+
+    static bool IsInverseCurve(string? curve)
+    {
+        if (string.IsNullOrEmpty(curve) || curve.Equals("linear", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (curve.Equals("inverse", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (badcolors.Add("fade-curve:" + curve))
+            Console.WriteLine($"Unknown shading fade-curve '{curve}' (linear or inverse); using linear");
+        return false;
     }
 
     /// <summary>
@@ -100,6 +113,7 @@ internal partial class Program
         fadestart = (long)(Math.Max(s.FadeStart, 0) * MapConstants.TILEGLOBAL);
         fadeend = Math.Max((long)(s.FadeEnd * MapConstants.TILEGLOBAL), fadestart + 1);
         maxfadestep = (int)Math.Round(Math.Clamp(s.MaxFade, 0, 100) / 100.0 * (FADESTEPS - 1));
+        inversefade = s.InverseFade;
 
         ResetLightRows();
         ambientlevel = LightLevelOf(s.Light);
@@ -160,6 +174,8 @@ internal partial class Program
     {
         if (!shading || nx <= fadestart || maxfadestep == 0)
             return 0;
+        if (inversefade)
+            return (int)(maxfadestep - maxfadestep * fadestart / nx) * 256;
         if (nx >= fadeend)
             return maxfadestep * 256;
         return (int)((nx - fadestart) * maxfadestep / (fadeend - fadestart)) * 256;

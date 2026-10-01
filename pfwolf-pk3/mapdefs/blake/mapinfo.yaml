@@ -4,13 +4,20 @@
 #                          byte and the floor's in its low byte; game-info's colors for the map win
 #   ceiling-floor-flats:   the tile after it holds the ceiling's flats.yaml index in its high byte
 #                          and the floor's in its low byte, given to every flat plane tile at 0
+#   value:                 not a thing, and nor is the tile after it, which holds its value
 #   none:                  only that the tile isn't a thing
 # Only a map's first code of each kind counts. Blake Stone puts both in the object plane's top row.
+# (Codes on walls and doors need no entry: things only stand on open floor.)
 map-info:
   254: ceiling-floor-colors     # 0xFE00
   251: ceiling-floor-flats      # 0xFB00
-  # Not things, and their phases decide what they do:
-  241: none                     # 0xF1xx informant messages
-  242: none                     # 0xF2xx scientist messages
-  243: none                     # 0xF3xx more scientist messages
-  245: none                     # 0xF5xx a warp coordinate
+  # Not things; their phases decide what they do (as bstone reads them):
+  241: none                     # 0xF1xx informant message xx
+  242: none                     # 0xF2xx "nice" scientist message xx
+  243: none                     # 0xF3xx "mean" scientist message xx
+  244: none                     # 0xF4xx (on a transporter wall) goes to floor xx
+  245: value                    # 0xF5xx an in-level warp, to the x,y in the tile after it
+  248: value                    # 0xF8xx (on a barrier switch) floor xx's barrier at the x,y after it
+  250: none                     # 0xFAxx a timer (xx seconds) for the thing to its west
+  252: none                     # 0xFCxx (on a food unit) its message
+  253: none                     # 0xFDxx unused
