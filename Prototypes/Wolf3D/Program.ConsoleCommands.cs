@@ -146,6 +146,8 @@ internal partial class Program
             complete: (_, i) => i == 0 ? ["none", "#000000", "#707070"] : []);
         Register("light", "Sets the level's light, 0 (black) to 255 (full), until the level is left or reloaded.",
             "light [0-255]", Cmd_Light, Cheat | InLevel);
+        Register("lights", "Lists the actors giving off light (actordefs light.*, A_SetLight), and their light now.",
+            "lights", Cmd_Lights, InLevel);
         Register("zone", "Shows or sets the light zone (plane 5) of the tile you stand on, a tile, or a rectangle of tiles; 0 takes them out of any zone.",
             "zone [0-65535 [tilex tiley [tilex2 tiley2]]]", Cmd_Zone, Cheat | InLevel);
         Register("zonelight", "Lists the level's light zones, or shows or sets how one is lit (light 0-255, optional #RRGGBB tint or none, optional fade tics; none as the light removes the zone).",
@@ -1012,6 +1014,17 @@ internal partial class Program
             }
         }
         _consoleManager.Print($"Zone {zone}: {DescribeZone(zone)}");
+    }
+
+    private static void Cmd_Lights(string[] args)
+    {
+        var lights = DescribeActorLights().ToList();
+        if (lights.Count == 0)
+            _consoleManager.Print("Nothing on the level gives off light");
+        foreach (var line in lights)
+            _consoleManager.Print(line);
+        if (lights.Count > 0 && !shading)
+            _consoleManager.Print("(the level is at full light, so they don't show)");
     }
 
     private static void Cmd_ZoneEffect(string[] args)

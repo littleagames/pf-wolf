@@ -7,9 +7,10 @@ namespace Wolf3D.Entities.Actors;
 /// while the actor is on that state's frames:
 ///   light: none                            no light
 ///   light: 200                             the actor's light, at this intensity
-///   light: { intensity: 200, radius: 2 }   either or both, the rest from the actor's light
+///   light: { intensity: 200, radius: 2, color: "#FFD080" }
+///                                          any of them, the rest from the actor's light
 /// </summary>
-internal sealed record StateLight(bool Off, int? Intensity, double? Radius)
+internal sealed record StateLight(bool Off, int? Intensity, double? Radius, string? Color = null)
 {
     public static StateLight? Parse(object? value)
     {
@@ -21,16 +22,18 @@ internal sealed record StateLight(bool Off, int? Intensity, double? Radius)
             {
                 int? intensity = null;
                 double? radius = null;
+                string? color = null;
                 foreach (var (key, field) in fields)
                 {
                     switch (key.ToString()?.ToLowerInvariant())
                     {
                         case "intensity": intensity = ToInt(field, "intensity"); break;
                         case "radius": radius = ToDouble(field, "radius"); break;
-                        default: Console.WriteLine($"Unknown state light field '{key}' (intensity or radius)"); break;
+                        case "color": color = field?.ToString(); break;
+                        default: Console.WriteLine($"Unknown state light field '{key}' (intensity, radius or color)"); break;
                     }
                 }
-                return new StateLight(false, intensity, radius);
+                return new StateLight(false, intensity, radius, color);
             }
             default:
             {

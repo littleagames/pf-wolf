@@ -128,6 +128,11 @@ walls:
     #                        A_Activate, A_Deactivate: the tagged actors (tagged by the tile
     #                        they spawn on) go to their Active / Inactive state, e.g.
     #                        SwitchLight in actordefs decorations.
+    #                        A_SetLight(intensity, [radius], [color]): gives the tagged actors
+    #                        this light (0-255, radius in tiles, #RRGGBB or "none"; radius or
+    #                        color left out keep theirs); with no arguments, their own light
+    #                        back. A_LightOff: puts their light out. Actor states can run both
+    #                        too, on the actor itself (see actordefs decorations light.*).
     #                        The switch's own tile is never a target, though it has the tag.
     #                        Light zone actions name their zone (plane 5), not a tag; actor
     #                        states can run them too:

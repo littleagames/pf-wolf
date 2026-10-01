@@ -32,13 +32,21 @@ Stations 6 and 7 work on **light zones**: each tile's zone is its value on the z
 (plane 5), and the mod's `game-info.yaml` says how each zone is lit. Unlike the other
 stations, they name the zone they change rather than acting on a tag.
 
+While the room's lights are off, its floor lamp gives off a warm, flickering glow of its own:
+an **actor light** (`light.*` properties in the mod's `actordefs/demo-lights.yaml`). Fire your
+gun in there too: the weapons' muzzle flashes light up the dark around you.
+
 The exit room has the usual elevator switch, now just a switch whose action is `A_Exit`.
 
 ### What's in it
 
 - `mapdefs/walls.yaml`: the switch walls (ids 50-63), each with its `switch:` block. Every
   field and action is described at wall 21 in `pfwolf-pk3/mapdefs/wolf3d/walls.yaml`.
-- `mapdefs/things.yaml`: object 500, a `SwitchLightOff`.
+- `mapdefs/things.yaml`: object 500, a `SwitchLightOff`, and 501, the light room's
+  `FlickeringLamp`.
+- `actordefs/demo-lights.yaml`: `FlickeringLamp`, a floor lamp with an amber, flickering
+  light. Actor lights are described in `pfwolf-pk3/actordefs/wolf3d/decorations.yaml` (and
+  the switch actions `A_SetLight` / `A_LightOff` at wall 21 in `mapdefs/wolf3d/walls.yaml`).
 - `game-info.yaml`: merged into the game's own; it gives the level its light zones (the
   dark room, and the hall with the alarm's strobe timing). The zone fields are described
   under `default-map` in `pfwolf-pk3/gamepacks/wolf3d/game-info.yaml`.
@@ -51,5 +59,5 @@ The exit room has the usual elevator switch, now just a switch whose action is `
   ```
 
 In game, the `tag` console command (with cheats on) shows or sets a tile's tag, and
-`actors` lists each actor's tag. `zone` shows or sets a tile's light zone, and `zonelight`
-lists the zones and how each is lit.
+`actors` lists each actor's tag. `zone` shows or sets a tile's light zone, `zonelight`
+lists the zones and how each is lit, and `lights` lists the actors giving off light.

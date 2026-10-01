@@ -1,0 +1,12 @@
+# A floor lamp with a failing bulb: a warm, flickering light (actor light.* properties, see
+# pfwolf-pk3's actordefs/wolf3d/decorations.yaml and Program.ActorLights.cs). It stands in the
+# light room, where it only shows while station 6 has the room's lights off.
+FlickeringLamp:
+  parent: FloorLamp
+  properties:
+    "light.intensity": 170
+    "light.radius": 3
+    "light.color": "#FFB060"
+    "light.effect": flicker
+    "light.low": 90
+    "light.tics": 6

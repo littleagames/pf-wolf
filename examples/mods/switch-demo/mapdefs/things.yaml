@@ -4,3 +4,7 @@ things:
   500:
     class: SwitchLightOff
     angles: 0
+  # The light room's lamp, flickering amber (this mod's actordefs/demo-lights.yaml)
+  501:
+    class: FlickeringLamp
+    angles: 0

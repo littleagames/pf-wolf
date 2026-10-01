@@ -47,10 +47,16 @@ TableWithChairs2:
         frames: [A]
         tics-per-frame: -1
 
-# Lamps and chandeliers give off light (light.* properties: see Program.ActorLights.cs / the
-# ActorLightInfo notes). It only shows on levels darker than full light (game-info shading
-# light, or dim light zones); a state's `light:` overrides it (none, an intensity, or
-# {intensity, radius}).
+# Lamps and chandeliers give off light. Any actor can, with these properties (inherited):
+#   light.intensity   light added at the actor, 0-255 (255 is full light)
+#   light.radius      how far it reaches, in tiles (default 2)
+#   light.color       #RRGGBB it tints what it lights (default none: white)
+#   light.effect      none, flicker, pulse or strobe (as for light zones), with light.low (its
+#                     dark end, default half the intensity), light.tics and light.brighttics
+# A state's `light:` changes it while the actor is on that state: none, an intensity, or
+# { intensity, radius, color } (any of them). A_SetLight / A_LightOff change it as it plays.
+# Light spreads through open floor and open doors, not through walls, and only shows where
+# the level is darker than full light (game-info shading light, or dim light zones).
 FloorLamp:
   radius: 32
   flags: [SOLID]

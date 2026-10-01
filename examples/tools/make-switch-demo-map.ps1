@@ -19,7 +19,7 @@ $Layout = @(
     '############aaaaa####rrrrr#######'   #      the door room (behind station 1's door),
     '############aaaaa####rrrrr#######'   #      the light room
     '############aaCaa####rrgrr#######'
-    '############aaaaa####rrrrr#######'
+    '############aaaaa####hrrrr#######'   #      the light room's flickering lamp
     '############aaaaa####rrrrr#######'
     '###########1##D####2#6#r#########'   # y=27 station 1 and its door, stations 2 and 6,
                                           #      the light room's archway
@@ -42,7 +42,7 @@ $Layout = @(
 # What each character puts on plane 0 (walls and floor codes), plane 1 (objects), the tag
 # plane and the zone plane. Floor codes are areas (mapdefs floors: area n is 107 + n); walls,
 # doors and objects are mapdefs ids (pfwolf-pk3's mapdefs/wolf3d, and the mod's own walls
-# 50-63 and thing 500). Light zones are the mod's game-info.yaml zones: 1 the light room, 2 the
+# 50-63 and things 500-501). Light zones are the mod's game-info.yaml zones: 1 the light room, 2 the
 # hall. The light room opens onto the hall with no door, so it shares the hall's area.
 $Hall = 108; $DoorRoom = 109; $ExitRoom = 110; $SecretRoom = 111
 $LightRoomZone = 1; $HallZone = 2
@@ -54,6 +54,7 @@ $Tiles = @{
     's' = @{ Plane0 = $SecretRoom }
     'r' = @{ Plane0 = $Hall; Zone = $LightRoomZone }
     'g' = @{ Plane0 = $Hall; Plane1 = 53; Zone = $LightRoomZone }  # chalice (treasure)
+    'h' = @{ Plane0 = $Hall; Plane1 = 501; Zone = $LightRoomZone } # FlickeringLamp
     'P' = @{ Plane0 = $Hall; Plane1 = 19; Zone = $HallZone }       # player start, facing north
     'L' = @{ Plane0 = $Hall; Plane1 = 500; Tag = 2; Zone = $HallZone }  # SwitchLightOff
     'C' = @{ Plane0 = $DoorRoom; Plane1 = 52 }              # cross (treasure)

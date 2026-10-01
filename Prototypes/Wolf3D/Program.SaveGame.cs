@@ -46,7 +46,8 @@ internal partial class Program
     //     held open by a switch.
     // 13: a sixth map plane (light zones).
     // 14: the light zones' lights, tints, fades and effects, at the end.
-    private const int SaveVersion = 14;
+    // 15: each actor's light as A_SetLight / A_LightOff left it, after its runtime flags.
+    private const int SaveVersion = 15;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the

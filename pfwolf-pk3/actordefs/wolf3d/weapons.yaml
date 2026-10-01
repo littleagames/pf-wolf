@@ -4,6 +4,8 @@
 # through into the next label), so Fire names Hold explicitly.
 # The Fire/Hold timings reproduce vanilla attackinfo: every frame lasts 6 tics, and the
 # attack fires at the end of C (end of D too for the gatling gun's second shot).
+# The muzzle flash frames light the room around the player (state `light:`, see
+# Program.ActorLights.cs); that only shows where the level is darker than full light.
 WolfWeapon:
   parent: "Weapon"
   properties:
@@ -104,6 +106,7 @@ Pistol:
         frames: [C]
         tics-per-frame: 6
         modifiers: [bright]
+        light: { intensity: 200, radius: 3, color: "#FFF0D0" }
         action: A_GunAttack
       - sprite: PISG
         frames: [D, E]
@@ -130,6 +133,7 @@ BluePistol:
         frames: [C]
         tics-per-frame: 6
         modifiers: [bright]
+        light: { intensity: 200, radius: 3, color: "#FFF0D0" }
         action: A_GunAttack
       - sprite: BPSG
         frames: [D, E]
@@ -169,6 +173,7 @@ MachineGun:
         frames: [C]
         tics-per-frame: 6
         modifiers: [bright]
+        light: { intensity: 200, radius: 3, color: "#FFF0D0" }
         action: A_GunAttack
       - sprite: MCHG
         frames: [D]
@@ -207,6 +212,7 @@ BlueAK47:
         frames: [C]
         tics-per-frame: 6
         modifiers: [bright]
+        light: { intensity: 200, radius: 3, color: "#FFF0D0" }
         action: A_GunAttack
       - sprite: BAKG
         frames: [D]
@@ -251,16 +257,19 @@ GatlingGun:
         frames: [C]
         tics-per-frame: 6
         modifiers: [bright]
+        light: { intensity: 200, radius: 3, color: "#FFF0D0" }
         action: A_GunAttack
       - sprite: CHGG
         frames: [D]
         tics-per-frame: 6
         modifiers: [bright]
+        light: { intensity: 200, radius: 3, color: "#FFF0D0" }
         action: A_GunAttack
       - sprite: CHGG
         frames: [D]
         tics-per-frame: 0
         modifiers: [bright]
+        light: { intensity: 200, radius: 3, color: "#FFF0D0" }
         action: A_ReFire
       - sprite: CHGG
         frames: [E]
@@ -294,16 +303,19 @@ BlueGatlingGun:
         frames: [C]
         tics-per-frame: 6
         modifiers: [bright]
+        light: { intensity: 200, radius: 3, color: "#FFF0D0" }
         action: A_GunAttack
       - sprite: BGTG
         frames: [D]
         tics-per-frame: 6
         modifiers: [bright]
+        light: { intensity: 200, radius: 3, color: "#FFF0D0" }
         action: A_GunAttack
       - sprite: BGTG
         frames: [D]
         tics-per-frame: 0
         modifiers: [bright]
+        light: { intensity: 200, radius: 3, color: "#FFF0D0" }
         action: A_ReFire
       - sprite: BGTG
         frames: [E]

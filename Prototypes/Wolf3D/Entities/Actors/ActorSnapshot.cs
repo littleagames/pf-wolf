@@ -29,6 +29,7 @@ internal sealed record ActorSnapshot
     public byte TileY { get; init; }
     public ushort Tag { get; init; }
     public Program.objflags RuntimeFlags { get; init; }
+    public LightOverride? Light { get; init; }
 
     public static ActorSnapshot Capture(Actor actor)
     {
@@ -56,6 +57,7 @@ internal sealed record ActorSnapshot
             TileY = actor.TileY,
             Tag = actor.Tag,
             RuntimeFlags = actor.RuntimeFlags,
+            Light = actor.LightState?.Override,
         };
     }
 
@@ -80,6 +82,8 @@ internal sealed record ActorSnapshot
         actor.TileY = TileY;
         actor.Tag = Tag;
         actor.RuntimeFlags = RuntimeFlags;
+        if (Light != null)
+            (actor.LightState ??= new ActorLightState()).Override = Light;
         actor.SyncPosition();
     }
 
@@ -106,6 +110,8 @@ internal sealed record ActorSnapshot
         bw.Write(TileY);
         bw.Write(Tag);
         bw.Write((int)RuntimeFlags);
+        bw.Write(Light != null);
+        Light?.Write(bw);
     }
 
     public static ActorSnapshot Read(BinaryReader br)
@@ -136,6 +142,7 @@ internal sealed record ActorSnapshot
             TileY = br.ReadByte(),
             Tag = br.ReadUInt16(),
             RuntimeFlags = (Program.objflags)br.ReadInt32(),
+            Light = br.ReadBoolean() ? LightOverride.Read(br) : null,
         };
     }
 

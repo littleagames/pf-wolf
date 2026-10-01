@@ -30,8 +30,10 @@ internal partial class Program
     // tint (an index in tints)
     static readonly byte[] tilelevel = new byte[MapManager.MAPAREA], tiletint = new byte[MapManager.MAPAREA];
 
-    // Light levels added to each cell, indexed (y << GRIDSHIFT) + x in cells
+    // Light levels added to each cell, indexed (y << GRIDSHIFT) + x in cells; the most of them any
+    // one light added, and that light's tint (0: none, the tile's own)
     static readonly byte[] celladd = new byte[GRIDSIZE * GRIDSIZE];
+    static readonly byte[] cellstrong = new byte[GRIDSIZE * GRIDSIZE], celltint = new byte[GRIDSIZE * GRIDSIZE];
 
     // The tints in use (0 is none), and each one's light rows by level, made as they're needed
     static readonly List<(byte R, byte G, byte B)> tints = [];
@@ -62,6 +64,9 @@ internal partial class Program
     {
         tints.Clear();
         tintrows.Clear();
+        colortints.Clear();
+        // cells tinted from the old tints mustn't name new ones
+        Array.Clear(celltint);
         TintIndex(NoTint);
     }
 
@@ -83,11 +88,16 @@ internal partial class Program
         if (tile < 0)
             return lightrow;
 
-        int level = tilelevel[tile];
+        int level = tilelevel[tile], tint = tiletint[tile];
         long cx = gx >> CELLGLOBALSHIFT, cy = gy >> CELLGLOBALSHIFT;
         if ((ulong)cx < GRIDSIZE && (ulong)cy < GRIDSIZE)
-            level += celladd[(cy << GRIDSHIFT) + cx];
-        return RowOf(tiletint[tile], level > MAXLIGHTLEVEL ? MAXLIGHTLEVEL : level);
+        {
+            long cell = (cy << GRIDSHIFT) + cx;
+            level += celladd[cell];
+            if (celltint[cell] != 0)
+                tint = celltint[cell];
+        }
+        return RowOf(tint, level > MAXLIGHTLEVEL ? MAXLIGHTLEVEL : level);
     }
 
     /// <summary>The middle of a tile, in global units: where something placed on the tile stands.</summary>
