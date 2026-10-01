@@ -1,7 +1,7 @@
 # Walls by map tile number (see mapdefs/wolf3d/walls.yaml). As in Wolf3D, wall n's north and
 # south faces are VSWAP wall page 2(n-1) and its east and west faces the darker page after it.
-# Blake Stone's maps use walls 1 to 63; the switches, food units and elevator controls among
-# them are plain walls until their phases.
+# Blake Stone's maps use walls 1 to 63. The barrier switches (45 on, 57 off) and food units (15,
+# 18) work as in bstone; the elevator controls and teleporters are plain walls until their phase.
 walls:
     '1':    # Prison Wall
         North: PRIWALA1
@@ -78,6 +78,11 @@ walls:
         South: FOODBEV1
         East: FOODBEV2
         West: FOODBEV2
+        switch:
+            # A drink for a food token: 7 health (bstone's beverage unit). Its object-plane value 0xFCnn
+            # (252) gives it nn uses; anything else and it's out of order, as in bstone
+            actions:
+                - A_Vend("FoodToken", "FoodUnitDrink", "$BS_NOTOKENS", "$BS_NOTHUNGRY", "$BS_OUTOFORDER", 252)
     '16':    # Metal Wall w/ Panel 1
         North: METPNLA1
         South: METPNLA1
@@ -93,6 +98,10 @@ walls:
         South: FOODSNK1
         East: FOODSNK2
         West: FOODSNK2
+        switch:
+            # A snack for a food token: 10 health (bstone's food unit); uses as wall 15's
+            actions:
+                - A_Vend("FoodToken", "FoodUnitSnack", "$BS_NOTOKENS", "$BS_NOTHUNGRY", "$BS_OUTOFORDER", 252)
     '19':    # Metal Wall w/ Lights
         North: METLITE1
         South: METLITE1
@@ -228,6 +237,13 @@ walls:
         South: SWITCHA1
         East: SWITCHA2
         West: SWITCHA2
+        switch:
+            # A barrier switch, on: throwing it turns its barriers off
+            to: 57
+            sound: bs/switch
+            actions:
+                - A_ToggleActive
+                - A_Message("$BS_BARRIEROFF")
     '46':    # Biotech Wall 1
         North: BIOWALA1
         South: BIOWALA1
@@ -288,6 +304,13 @@ walls:
         South: SWITCHI1
         East: SWITCHI2
         West: SWITCHI2
+        switch:
+            # A barrier switch, off: throwing it turns its barriers on
+            to: 45
+            sound: bs/switch
+            actions:
+                - A_ToggleActive
+                - A_Message("$BS_BARRIERON")
     '58':    # Gold Wall 2
         North: GLDWALB1
         South: GLDWALB1

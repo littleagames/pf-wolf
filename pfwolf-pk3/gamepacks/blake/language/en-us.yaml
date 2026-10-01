@@ -40,3 +40,15 @@ $BS_GOTSLOWFIRE: "Weapon: slow fire protector"
 $BS_GOTRAPIDASSAULT: "Weapon: rapid assault weapon"
 $BS_GOTDUALNEUTRON: "Weapon: dual neutron disrupter"
 $BS_GOTPLASMADISCHARGE: "Weapon: plasma discharge unit"
+
+# Food units and barrier switches
+$BS_NOTHUNGRY: "Can't eat now, not hungry."
+$BS_NOTOKENS: "You don't have any food tokens!"
+$BS_FOODUNITDRINK: "Food unit dispenses a cold beverage."
+$BS_FOODUNITSNACK: "Food unit dispenses something resembling food."
+$BS_BARRIERON: "Activating barrier"
+$BS_BARRIEROFF: "Deactivating barrier"
+
+# The status bar's info area with no messages ({FoodToken} is how many the player has)
+$BS_NOMESSAGES: "No messages.\nFood tokens: {FoodToken}"
+$BS_OUTOFORDER: "Food unit machine is out of order."

@@ -13,6 +13,9 @@ BlakeCard:
 RedCard:
   parent: BlakeCard
   properties:
+    "key.statusbarslot": 0
+    "key.statusbarcolor": "201"
+    "key.statusbaremptycolor": "17"
     "inventory.pickupmessage": "$BS_GOTREDCARD"
     "key.lockedmessage": "$BS_REDDENIED"
   states:
@@ -24,6 +27,9 @@ RedCard:
 YellowCard:
   parent: BlakeCard
   properties:
+    "key.statusbarslot": 1
+    "key.statusbarcolor": "185"
+    "key.statusbaremptycolor": "49"
     "inventory.pickupmessage": "$BS_GOTYELLOWCARD"
     "key.lockedmessage": "$BS_YELLOWDENIED"
   states:
@@ -35,6 +41,9 @@ YellowCard:
 GreenCard:
   parent: BlakeCard
   properties:
+    "key.statusbarslot": 2
+    "key.statusbarcolor": "91"
+    "key.statusbaremptycolor": "81"
     "inventory.pickupmessage": "$BS_GOTGREENCARD"
     "key.lockedmessage": "$BS_GREENDENIED"
   states:
@@ -46,6 +55,9 @@ GreenCard:
 BlueCard:
   parent: BlakeCard
   properties:
+    "key.statusbarslot": 3
+    "key.statusbarcolor": "156"
+    "key.statusbaremptycolor": "145"
     "inventory.pickupmessage": "$BS_GOTBLUECARD"
     "key.lockedmessage": "$BS_BLUEDENIED"
   states:
@@ -57,6 +69,9 @@ BlueCard:
 GoldCard:
   parent: BlakeCard
   properties:
+    "key.statusbarslot": 4
+    "key.statusbarcolor": "43"
+    "key.statusbaremptycolor": "33"
     "inventory.pickupmessage": "$BS_GOTGOLDCARD"
     "key.lockedmessage": "$BS_GOLDDENIED"
   states:
@@ -325,3 +340,18 @@ SandwichWrapper:
       - sprite: SNDW
         frames: [B]
         tics-per-frame: -1
+
+# --- What the food units (mapdefs/blake/walls.yaml 15 and 18) give for a food token
+FoodUnitDrink:
+  parent: Health
+  properties:
+    "inventory.amount": 7
+    "inventory.pickupsound": "bs/concessions"
+    "inventory.pickupmessage": "$BS_FOODUNITDRINK"
+
+FoodUnitSnack:
+  parent: Health
+  properties:
+    "inventory.amount": 10
+    "inventory.pickupsound": "bs/concessions"
+    "inventory.pickupmessage": "$BS_FOODUNITSNACK"

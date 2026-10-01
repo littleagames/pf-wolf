@@ -1,6 +1,7 @@
-# Blake Stone's weapons (see actordefs/wolf3d/weapons.yaml for the state rules). Phase 0 has only
-# a stand-in auto charge pistol so the player has something in hand: it fires like Wolf3D's
-# pistol and uses no ammo. Its recharging, the other weapons and their timings come later.
+# Blake Stone's weapons, timed as bstone's attackinfo table (3d_agent.cpp) has them: each frame's
+# tics, and the shot at the end of C. Hitscan shots use Blake Stone's damage: a random 0-255
+# divided by 2 within 2 tiles, else by 4 (A_GunAttack(2, 4, 4)). The energy weapons share one
+# supply of charge units (items.yaml ChargeUnit); picking one up gives 6 of them.
 BlakeWeapon:
   parent: "Weapon"
   properties:
@@ -20,6 +21,7 @@ BlakeWeapon:
         action: A_Lower
         next-state: Deselect
 
+# Uses no ammo, but takes 50 tics to charge between shots (the status bar's wait/ready light)
 AutoChargePistol:
   parent: "BlakeWeapon"
   properties:
@@ -27,6 +29,7 @@ AutoChargePistol:
     "inventory.icon": "WeaponPic1"
     "weapon.slot": 1
     "weapon.selectionorder": 3700
+    "weapon.chargetics": 50
     "attacksound": "bs/atkautocharge"
   flags: [WEAPON.NOAUTOFIRE]
   states:
@@ -44,21 +47,21 @@ AutoChargePistol:
         frames: [C]
         tics-per-frame: 6
         modifiers: [bright]
-        action: A_GunAttack
+        action: A_GunAttack(2, 4, 4)
       - sprite: ACPG
         frames: [D, E]
         tics-per-frame: 6
         next-state: Ready
 
-# The weapons Blake picks up. Stand-ins until the weapons phase: each fires like Wolf3D's pistol
-# for one charge unit; their real rates, damage, projectiles and splash come then.
 BlakeEnergyWeapon:
   parent: "BlakeWeapon"
   properties:
     "weapon.ammotype1": "ChargeUnit"
     "weapon.ammouse1": 1
-    "weapon.ammogive1": 0
-    "inventory.pickupsound": "bs/getburstrifle"
+    "weapon.ammogive1": 6
+  flags: [INVENTORY.ALWAYSPICKUP]
+
+# One shot a press
 SlowFireProtector:
   parent: "BlakeEnergyWeapon"
   properties:
@@ -69,7 +72,7 @@ SlowFireProtector:
     "weapon.slot": 2
     "weapon.selectionorder": 1900
     "attacksound": "bs/atkcharged"
-  flags: [INVENTORY.ALWAYSPICKUP]
+  flags: [WEAPON.NOAUTOFIRE, INVENTORY.ALWAYSPICKUP]
   states:
     Spawn:
       - sprite: SFPP
@@ -89,12 +92,13 @@ SlowFireProtector:
         frames: [C]
         tics-per-frame: 6
         modifiers: [bright]
-        action: A_GunAttack
+        action: A_GunAttack(2, 4, 4)
       - sprite: SFPG
         frames: [D, E]
         tics-per-frame: 6
         next-state: Ready
 
+# Holding fire: a shot every 11 tics
 RapidAssaultWeapon:
   parent: "BlakeEnergyWeapon"
   properties:
@@ -105,7 +109,6 @@ RapidAssaultWeapon:
     "weapon.slot": 3
     "weapon.selectionorder": 1300
     "attacksound": "bs/atkburstrifle"
-  flags: [INVENTORY.ALWAYSPICKUP]
   states:
     Spawn:
       - sprite: RAWP
@@ -121,16 +124,23 @@ RapidAssaultWeapon:
       - sprite: RAWG
         frames: [B]
         tics-per-frame: 6
+        next-state: Hold
+    Hold:
       - sprite: RAWG
         frames: [C]
         tics-per-frame: 6
         modifiers: [bright]
-        action: A_GunAttack
+        action: A_GunAttack(2, 4, 4)
       - sprite: RAWG
-        frames: [D, E]
-        tics-per-frame: 6
+        frames: [D]
+        tics-per-frame: 5
+        action: A_ReFire
+      - sprite: RAWG
+        frames: [E]
+        tics-per-frame: 5
         next-state: Ready
 
+# Holding fire: a shot every 9 tics
 DualNeutronDisruptor:
   parent: "BlakeEnergyWeapon"
   properties:
@@ -141,7 +151,6 @@ DualNeutronDisruptor:
     "weapon.slot": 4
     "weapon.selectionorder": 700
     "attacksound": "bs/atkioncannon"
-  flags: [INVENTORY.ALWAYSPICKUP]
   states:
     Spawn:
       - sprite: DNDP
@@ -157,16 +166,23 @@ DualNeutronDisruptor:
       - sprite: DNDG
         frames: [B]
         tics-per-frame: 6
+        next-state: Hold
+    Hold:
       - sprite: DNDG
         frames: [C]
         tics-per-frame: 6
         modifiers: [bright]
-        action: A_GunAttack
+        action: A_GunAttack(2, 4, 4)
       - sprite: DNDG
-        frames: [D, E]
-        tics-per-frame: 6
+        frames: [D]
+        tics-per-frame: 3
+        action: A_ReFire
+      - sprite: DNDG
+        frames: [E]
+        tics-per-frame: 3
         next-state: Ready
 
+# Throws a plasma grenade (projectiles.yaml) for 4 charge units; holding fire, one every 12 tics
 PlasmaDischargeUnit:
   parent: "BlakeEnergyWeapon"
   properties:
@@ -176,8 +192,8 @@ PlasmaDischargeUnit:
     "inventory.pickupmessage": "$BS_GOTPLASMADISCHARGE"
     "weapon.slot": 5
     "weapon.selectionorder": 500
+    "weapon.ammouse1": 4
     "attacksound": "bs/atkgrenade"
-  flags: [INVENTORY.ALWAYSPICKUP]
   states:
     Spawn:
       - sprite: PDUP
@@ -193,13 +209,18 @@ PlasmaDischargeUnit:
       - sprite: PDUG
         frames: [B]
         tics-per-frame: 6
+        next-state: Hold
+    Hold:
       - sprite: PDUG
         frames: [C]
         tics-per-frame: 6
         modifiers: [bright]
-        action: A_GunAttack
+        action: A_FireMissile("PlasmaGrenade", 1)
       - sprite: PDUG
-        frames: [D, E]
+        frames: [D]
+        tics-per-frame: 6
+        action: A_ReFire
+      - sprite: PDUG
+        frames: [E]
         tics-per-frame: 6
         next-state: Ready
-

@@ -71,10 +71,13 @@ internal partial class Program
             return true;
         });
 
-        // A_Vend("FoodToken", "FoodUnitMeal", "no-money message", "full message"): a vending machine
-        // (Blake Stone's food units). The item would do nothing (health full): the full message.
-        // No currency: the no-money message. Either way the player's use-fail sound. Otherwise
-        // one currency is taken and the item given, with its pickup sound and message.
+        // A_Vend("FoodToken", "FoodUnitMeal", "no-money message", "full message"[, "out-of-order
+        // message", uses code]): a vending machine (Blake Stone's food units). The item would do
+        // nothing (health full): the full message. No currency: the no-money message. With a uses
+        // code (the high byte of the switch tile's object-plane value, whose low byte is the uses
+        // left), none left or no such value: the out-of-order message. Each with the player's
+        // use-fail sound. Otherwise one currency is taken and the item given, with its pickup
+        // sound and message.
         MapTriggerRegistry.Register("A_Vend", VendAction);
     }
 
@@ -94,6 +97,14 @@ internal partial class Program
             return false;
         }
 
+        // With a uses code, the machine's object-plane value (code << 8 | uses left) says how many
+        // more times it works; any other value, or none left, and it's out of order
+        int usesCode = int.TryParse(args.ElementAtOrDefault(5), out var code) ? code : -1;
+        int spot = _mapManager.MAPSPOT(trigger.TileX, trigger.TileY, 1);
+        int usesLeft = usesCode >= 0 && spot >> 8 == usesCode ? spot & 0xff : usesCode >= 0 ? 0 : int.MaxValue;
+        if (usesLeft <= 0)
+            return Refuse(args.ElementAtOrDefault(4));
+
         if (!CouldTakeInventory(item))
             return Refuse(args.ElementAtOrDefault(3));
         if (!_inventoryManager.Has(args[0]))
@@ -104,6 +115,8 @@ internal partial class Program
             return Refuse(args.ElementAtOrDefault(3));
 
         _inventoryManager.Take(args[0], 1);
+        if (usesCode >= 0)
+            _mapManager.SetMapSpot(trigger.TileX, trigger.TileY, 1, (ushort)(usesCode << 8 | (usesLeft - 1)));
         if (item.Properties.TryGetValue("inventory.pickupsound", out var sound) && sound?.ToString() is { Length: > 0 } soundName)
             _audioManager.Play(soundName);
         if (item.Properties.TryGetValue("inventory.pickupmessage", out var message))

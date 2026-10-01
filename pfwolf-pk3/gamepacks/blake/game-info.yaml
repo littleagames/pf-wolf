@@ -39,7 +39,7 @@ hud-messages:
   # Blake Stone always shows its pickup and door messages
   enabled: true
   pickup-style: Default
-  lock-style: Center
+  lock-style: Default
   obituary-style: Obituary
 
 skills:

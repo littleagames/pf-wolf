@@ -38,3 +38,17 @@ StatusNumbers:
     "8": N_8
     "9": N_9
   cell-width: 8
+
+# The status bars' small print: Font3, as bstone prints them (fontnumber 2)
+BlakeHud:
+  type: vga
+  source: Font3
+  upper-case: true      # Font3 has only capitals
+  shadow: { x: 1, y: 1, color: "4" }
+
+# The info area's messages
+BlakeInfo:
+  type: vga
+  source: Font3
+  upper-case: true      # Font3 has only capitals
+  shadow: { x: 1, y: 1, color: "4" }

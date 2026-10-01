@@ -1,17 +1,140 @@
-# The status bar (see gamepacks/wolf3d/statusbar.yaml for every setting). Phase 0 of Blake Stone
-# support: the bottom bar picture with health and ammo in its LED digits. The top bar, the info
-# area, the health monitor, the weapon and the access cards come with the status bar redesign.
+# Blake Stone's status bars (see gamepacks/wolf3d/statusbar.yaml for the parts Wolf3D has), laid
+# out where bstone draws them (3d_agent.cpp, 3d_game.cpp). x and y are in 320x200 pixels from the
+# bar's top left corner; a part with `top: true` is on the top bar.
+#
+# Parts Wolf3D's bar doesn't have:
+#   top:            a bar across the top of the screen: pic, and height (lines it takes from the view)
+#   location:       the level's name, lined up by align
+#   charge:         for a weapon that charges (weapon.chargetics), its ready and wait pictures
+#   ammo-gauge:     a strip of segments (segments, segment-height lines each, width wide) lit from
+#                   the bottom as the weapon in hand's ammo goes, in the first of its levels whose
+#                   below is more than the unlit segments: lit and dim are a color per line
+#   heart-monitor:  a heartbeat trace (count segment pictures, segment-pic with {0:00} the
+#                   segment, segment-width apart, scrolling every scroll-tics) and a heart at
+#                   heart-x, heart-y beating every pulse-tics, heart-bad below bad-below health
+#   info-area:      where messages in an `anchor: Status` style (hud-messages.yaml) are written:
+#                   pic drawn at box's corner, text from x, y within size [width, height], and
+#                   idle-text while there are none
+# Numbers also take prefix, suffix, align (left, right, center), box with box-color (cleared
+# first), behind (a part drawn first, under it) and digits 0 (no padding). Keys take spacing-x
+# (rightwards) and size [width, height] for squares in each key's "key.statusbarcolor" /
+# "key.statusbaremptycolor".
 background:
   pic: StatusBar
   height: 48
+top:
+  pic: TopStatusBar
+  height: 16
+
 numbers:
   font: StatusNumbers
   color: White
+
+# The top bar: "FLOOR: n", the floor's name and "LIVES: n" in the small font, as ShadowPrintLocationText
+level:
+  top: true
+  x: 17
+  y: 5
+  digits: 0
+  prefix: "FLOOR: "
+  font: BlakeHud
+  color: "175"
+  box: [17, 4, 60, 8]
+  box-color: Black
+lives:
+  top: true
+  x: 267
+  y: 5
+  digits: 0
+  prefix: "LIVES: "
+  font: BlakeHud
+  color: "175"
+  box: [267, 4, 50, 8]
+  box-color: Black
+location:
+  top: true
+  x: 160
+  y: 5
+  align: center
+  font: BlakeHud
+  color: "175"
+
+# The score in LED digits, top right of the bottom bar
+score:
+  x: 256
+  y: 3
+  digits: 7
+
+# Health under the heart monitor, ammo on the weapon's picture
 health:
-  x: 128
-  y: 30
-  digits: 3
+  x: 168
+  y: 34
+  digits: 0
+  suffix: "%"
+  align: right
+  font: BlakeHud
+  color: "157"
+  box: [144, 32, 24, 8]
+  box-color: Black
 ammo:
-  x: 200
-  y: 30
-  digits: 3
+  x: 230
+  y: 38
+  digits: 0
+  suffix: "%"
+  align: right
+  font: BlakeHud
+  color: "157"
+  behind: weapon
+  only-with-ammo: true
+
+weapon:
+  x: 176
+  y: 0
+charge:
+  x: 232
+  y: 0
+  ready: ReadyPic
+  wait: WaitPic
+ammo-gauge:
+  x: 234
+  y: 3
+  width: 11
+  segments: 21
+  segment-height: 2
+  # green, then yellow, then red as it empties (bstone's LitAmmo / DimAmmo)
+  levels:
+    - { below: 7, lit: ["88", "86"], dim: ["85", "83"] }
+    - { below: 14, lit: ["56", "54"], dim: ["53", "51"] }
+    - { below: 22, lit: ["24", "22"], dim: ["21", "19"] }
+
+# The access cards: red, yellow, green, blue, gold squares (actordefs/blake/items.yaml)
+keys:
+  x: 257
+  y: 25
+  spacing-x: 8
+  size: [7, 7]
+
+heart-monitor:
+  x: 120
+  y: 8
+  segment-pic: "EcgSeg{0:00}"
+  count: 6
+  segment-width: 8
+  scroll-tics: 7
+  pulse-tics: 70
+  heart-x: 120
+  heart-y: 32
+  heart-good: EcgHeartGood
+  heart-bad: EcgHeartBad
+  heart-off: EcgGridPiece
+  bad-below: 40
+
+info-area:
+  x: 3
+  y: 3
+  size: [109, 37]
+  pic: InfoArea
+  box: [0, 0]
+  font: BlakeInfo
+  color: "166"
+  idle-text: "$BS_NOMESSAGES"

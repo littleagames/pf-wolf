@@ -190,7 +190,8 @@ internal partial class Program
     {
         DrawLevel();
 
-        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 1), bordercol);
+        // the play area, below any top status bar, down to the bottom one's first line
+        _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaHeight + _videoManager.scaleFactor, bordercol);
 
         // TODO: This may have just been centered in the viewport area
         //    ((_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 16) * 8,

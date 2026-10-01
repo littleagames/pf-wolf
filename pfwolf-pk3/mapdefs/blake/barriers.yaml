@@ -1,0 +1,8 @@
+# Blake Stone's barriers (actordefs/blake/barriers.yaml), both starting on as bstone has them in
+# Aliens of Gold. Barriers side by side pass a barrier switch's link on to each other
+# (linked-things), so one switch works a whole row.
+things:
+  174: { class: ArcBarrier }      # electric arc barrier
+  175: { class: PostBarrier }     # electric post barrier
+
+linked-things: [174, 175]

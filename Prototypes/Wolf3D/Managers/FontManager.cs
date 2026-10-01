@@ -71,10 +71,24 @@ internal class FontManager
 
     private string GamePackId => assetManager.Value.GamePackId;
 
-    private VgaFont? FindVgaFont(string source)
+    // upperCase: lower case letters use the upper case glyphs (Blake Stone's small font has only capitals)
+    private VgaFont? FindVgaFont(string source, bool upperCase = false)
     {
         var asset = assetManager.Value.Find<FontAsset>(source);
-        return asset == null ? null : new VgaFont(asset);
+        if (asset == null)
+            return null;
+        if (upperCase)
+        {
+            var location = (short[])asset.Location.Clone();
+            var width = (byte[])asset.Width.Clone();
+            for (char ch = 'a'; ch <= 'z'; ch++)
+            {
+                location[ch] = location[char.ToUpperInvariant(ch)];
+                width[ch] = width[char.ToUpperInvariant(ch)];
+            }
+            asset = asset with { Location = location, Width = width };
+        }
+        return new VgaFont(asset);
     }
 
     private Font? Build(string name, FontDefinition definition)
@@ -82,7 +96,7 @@ internal class FontManager
         switch (definition.Type.ToLowerInvariant())
         {
             case "vga":
-                return FindVgaFont(string.IsNullOrEmpty(definition.Source) ? name : definition.Source);
+                return FindVgaFont(string.IsNullOrEmpty(definition.Source) ? name : definition.Source, definition.UpperCase);
 
             case "graphic":
                 return BuildGraphicFont(name, definition);

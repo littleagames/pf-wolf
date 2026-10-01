@@ -1,0 +1,32 @@
+# The plasma discharge unit's grenade, as bstone's grenadeobj: it flies about eight tiles (its
+# picture changing as it arcs), and meeting a wall, a solid thing or an enemy on the way, or at the
+# end of its flight, it blows up. An enemy it hits takes 40-167; the blast hurts everything
+# shootable within two tiles for 50-177 (not the player).
+PlasmaGrenade:
+  properties:
+    "speed": 7168            # bstone's SPDPROJ, in 1/65536 tile a tic
+    "speed.random": 3584     # up to half as fast again
+  flags: [bright]
+  states:
+    Spawn:
+      - sprite: GREN
+        frames: [C, C, B, A, B, B, C, D]
+        tics-per-frame: 8
+        think: A_Missile(40, 167)
+        next-state: Death
+    Death:
+      - sprite: GREN
+        frames: [E]
+        tics-per-frame: 0
+        action: A_PlaySound("bs/explode1", "positional")
+      - sprite: GREN
+        frames: [E]
+        tics-per-frame: 4
+        action: A_Explode(50, 177, 2)
+      - sprite: GREN
+        frames: [F, G, H, I]
+        tics-per-frame: 4
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_Remove

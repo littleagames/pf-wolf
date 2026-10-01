@@ -1,0 +1,55 @@
+# Blake Stone's barriers, as bstone's SpawnBarrier / ToggleBarrier have them: on, a barrier
+# crackles (its three frames cycling, drawn bright) and blocks its tile; off, it shows its dead
+# frame and lets things through. A barrier switch (mapdefs/blake/walls.yaml 45 and 57) toggles
+# the barriers it's linked to (mapdefs/blake/mapinfo.yaml tag-link) with A_ToggleActive.
+#
+# The arc barrier also shocks a player within 1.375 tiles of it now and then: a 1 in 16 chance
+# each tic, for 4 points.
+ArcBarrier:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: ELCK
+        frames: [A, B, C]
+        tics-per-frame: 20
+        modifiers: [bright]
+        think: A_ShockNearby(4, 1.375, 16, "bs/elecarcdamage")
+    Active:
+      - sprite: ELCK
+        frames: [A]
+        tics-per-frame: 0
+        action: A_BlockTile
+        next-state: Spawn
+    Inactive:
+      - sprite: ELCK
+        frames: [D]
+        tics-per-frame: 0
+        action: A_UnblockTile
+      - sprite: ELCK
+        frames: [D]
+        tics-per-frame: -1
+
+PostBarrier:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: ELCP
+        frames: [A, B, C]
+        tics-per-frame: 20
+        modifiers: [bright]
+    Active:
+      - sprite: ELCP
+        frames: [A]
+        tics-per-frame: 0
+        action: A_BlockTile
+        next-state: Spawn
+    Inactive:
+      - sprite: ELCP
+        frames: [D]
+        tics-per-frame: 0
+        action: A_UnblockTile
+      - sprite: ELCP
+        frames: [D]
+        tics-per-frame: -1
