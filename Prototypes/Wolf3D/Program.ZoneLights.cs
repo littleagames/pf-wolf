@@ -6,6 +6,61 @@ namespace Wolf3D;
 internal enum ZoneEffect : byte { None, Flicker, Pulse, Strobe }
 
 /// <summary>
+/// How an effect moves a light between low and its light, for light zones and actor lights
+/// alike. An effect's place is a phase (tics into a pulse or strobe cycle, or for a flicker,
+/// tics until it jumps again) and, for a flicker, how far toward low it jumped (0 to 256).
+/// </summary>
+internal static class LightEffects
+{
+    public static int DefaultTics(ZoneEffect effect) => effect switch
+    {
+        ZoneEffect.Flicker => 8,
+        ZoneEffect.Pulse => 70,
+        _ => 35,
+    };
+
+    /// <summary>The light an effect shows now; tics is its cycle (at least 1).</summary>
+    public static int Apply(ZoneEffect effect, int light, int low, int tics, int brightTics, int phase, int flickerAmount)
+    {
+        switch (effect)
+        {
+            case ZoneEffect.Flicker:
+                return light + (low - light) * flickerAmount / 256;
+            case ZoneEffect.Pulse:
+            {
+                // down to low over the first half of the cycle, and back up over the second
+                int half = Math.Max(tics / 2, 1);
+                int into = phase < half ? phase : Math.Max(tics - phase, 0);
+                return light + (low - light) * Math.Min(into, half) / half;
+            }
+            case ZoneEffect.Strobe:
+                return phase < brightTics ? light : low;
+            default:
+                return light;
+        }
+    }
+
+    /// <summary>Moves an effect on by elapsed tics; tics is its cycle (at least 1).</summary>
+    public static void Tick(ZoneEffect effect, int elapsed, int tics, ref int phase, ref int flickerAmount, Random rng)
+    {
+        switch (effect)
+        {
+            case ZoneEffect.Pulse or ZoneEffect.Strobe:
+                phase = (phase + elapsed) % tics;
+                break;
+            case ZoneEffect.Flicker:
+                phase -= elapsed;
+                if (phase <= 0)
+                {
+                    phase = rng.Next(1, tics + 1);
+                    flickerAmount = rng.Next(0, 257);
+                }
+                break;
+        }
+    }
+}
+
+/// <summary>
 /// A light zone as it stands: its light (game-info zones, changed by switches and actors), its
 /// tint, a fade in progress and an effect. Saved with the level.
 /// </summary>
@@ -39,57 +94,16 @@ internal sealed class ZoneState
 
     public int Low => LowSetting ?? BaseLight / 2;
 
-    public int Tics => Math.Max(TicsSetting ?? Effect switch
-    {
-        ZoneEffect.Flicker => 8,
-        ZoneEffect.Pulse => 70,
-        _ => 35,
-    }, 1);
+    public int Tics => Math.Max(TicsSetting ?? LightEffects.DefaultTics(Effect), 1);
 
     /// <summary>The light it's showing now, the effect included</summary>
-    public int Current
-    {
-        get
-        {
-            int light = BaseLight, low = Low;
-            switch (Effect)
-            {
-                case ZoneEffect.Flicker:
-                    return light + (low - light) * FlickerAmount / 256;
-                case ZoneEffect.Pulse:
-                {
-                    // down to low over the first half of the cycle, and back up over the second
-                    int half = Math.Max(Tics / 2, 1);
-                    int into = Phase < half ? Phase : Math.Max(Tics - Phase, 0);
-                    return light + (low - light) * Math.Min(into, half) / half;
-                }
-                case ZoneEffect.Strobe:
-                    return Phase < BrightTics ? light : low;
-                default:
-                    return light;
-            }
-        }
-    }
+    public int Current => LightEffects.Apply(Effect, BaseLight, Low, Tics, BrightTics, Phase, FlickerAmount);
 
     public void Tick(int tics, Random rng)
     {
         if (FadeLeft > 0)
             FadeLeft = Math.Max(FadeLeft - tics, 0);
-
-        switch (Effect)
-        {
-            case ZoneEffect.Pulse or ZoneEffect.Strobe:
-                Phase = (Phase + tics) % Tics;
-                break;
-            case ZoneEffect.Flicker:
-                Phase -= tics;
-                if (Phase <= 0)
-                {
-                    Phase = rng.Next(1, Tics + 1);
-                    FlickerAmount = rng.Next(0, 257);
-                }
-                break;
-        }
+        LightEffects.Tick(Effect, tics, Tics, ref Phase, ref FlickerAmount, rng);
     }
 
     public void SetEffect(ZoneEffect effect)
@@ -180,6 +194,7 @@ internal partial class Program
         foreach (var zone in levelzones.Values)
             zone.Tick((int)tics, zonerandom);
         UpdateZoneLevels();
+        TickActorLights(tics);      // and actors' (Program.ActorLights.cs)
     }
 
     /// <summary>The zone with this id, made (at full light) if the level has none yet.</summary>

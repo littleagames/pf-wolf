@@ -2,6 +2,7 @@ using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 using Wolf3D.Assets;
+using Wolf3D.Entities.Actors;
 
 namespace Wolf3D.Loaders;
 
@@ -68,6 +69,9 @@ internal class StateDataNodeDeserializer : INodeDeserializer
 
         if (fields.TryGetValue("modifiers", out var modifiers))
             data.Modifiers = ToStringList(modifiers);
+
+        if (fields.TryGetValue("light", out var light))
+            data.Light = StateLight.Parse(light);
 
         if (fields.TryGetValue("action", out var action))
             data.Action = action?.ToString() ?? "";

@@ -42,6 +42,10 @@ internal record Actor : Thinker
     // death by it is put down to the shooter (Died's obituary). Not kept in saved games.
     public Actor? Shooter { get; internal set; }
 
+    // Its light (actordefs `light.*` properties and state `light:`, Program.ActorLights.cs):
+    // set the first time it's looked at, and where its light's effect is. Not saved.
+    internal ActorLightState? LightState { get; set; }
+
     // Sub-tile fixed-point world position and its containing tile -- kept as separate mutable
     // fields because the movement code (MoveObj/TryWalk) updates TileX/TileY the instant a move
     // toward a new tile begins, while X/Y trail behind and approach the new tile center gradually.

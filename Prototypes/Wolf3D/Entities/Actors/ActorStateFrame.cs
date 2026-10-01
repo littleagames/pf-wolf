@@ -17,6 +17,9 @@ internal class ActorStateFrame
     private bool? _bright;
     public bool Bright => _bright ??= Modifiers.Contains("bright", StringComparer.OrdinalIgnoreCase);
 
+    // The state's `light:`, overriding the actor's light on this frame; null keeps the actor's
+    public StateLight? Light { get; init; }
+
     public string? Think { get; init; }
     public string? Action { get; init; }
     public ActorStateFrame? Next { get; internal set; }

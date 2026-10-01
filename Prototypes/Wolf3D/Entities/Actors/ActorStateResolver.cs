@@ -36,6 +36,7 @@ internal static class ActorStateResolver
                             FrameLetter = letter,
                             TicTime = ToTicTime(frameData.TicsPerFrame),
                             Modifiers = frameData.Modifiers,
+                            Light = frameData.Light,
                             Think = string.IsNullOrEmpty(frameData.Think) ? null : frameData.Think,
                             Action = string.IsNullOrEmpty(frameData.Action) ? null : frameData.Action,
                         };

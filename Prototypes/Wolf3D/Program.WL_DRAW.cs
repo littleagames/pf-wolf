@@ -1095,9 +1095,10 @@ internal partial class Program
             }
         }
 
-        // In light zones, even the plain colors change from tile to tile, so they're cast too
-        bool floorflats = _mapManager.hasfloorflats || haszones;
-        bool ceilingflats = (_mapManager.hasceilingflats || haszones) && !sky;
+        // In light zones or actors' light, even the plain colors change from place to place, so
+        // they're cast too
+        bool floorflats = _mapManager.hasfloorflats || haszones || haslights;
+        bool ceilingflats = (_mapManager.hasceilingflats || haszones || haslights) && !sky;
         if (floorflats || ceilingflats)
         {
             SetupFlatColumns();
@@ -1145,7 +1146,7 @@ internal partial class Program
     /// <summary>
     /// Draws rows from to to (inclusive) of a flat whose surface is halves half stories from the
     /// eye (the floor 1, a ceiling at the top of n story walls 2n - 1), each pixel in its
-    /// tile's light. Tiles with no texture are color, or with no light zones, keep what's there.
+    /// tile's light. Tiles with no texture are color, or with no light zones or actor light, keep what's there.
     /// </summary>
     static void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, int halves)
     {
@@ -1175,7 +1176,7 @@ internal partial class Program
                     var texture = flats[tile];
                     if (texture == null)
                     {
-                        if (haszones)
+                        if (haszones || haslights)
                             row[x] = LightAt((int)tile, px, py)[shadeofs + color];
                         continue;
                     }
@@ -2229,6 +2230,7 @@ internal partial class Program
 
         Setup3DView();
         UpdateLightGrid();
+        CastActorLights();
 
         //
         // follow the walls from there to the right, drawing as we go

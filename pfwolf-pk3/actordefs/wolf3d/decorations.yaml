@@ -47,9 +47,16 @@ TableWithChairs2:
         frames: [A]
         tics-per-frame: -1
 
+# Lamps and chandeliers give off light (light.* properties: see Program.ActorLights.cs / the
+# ActorLightInfo notes). It only shows on levels darker than full light (game-info shading
+# light, or dim light zones); a state's `light:` overrides it (none, an intensity, or
+# {intensity, radius}).
 FloorLamp:
   radius: 32
   flags: [SOLID]
+  properties:
+    "light.intensity": 160
+    "light.radius": 2.5
   states:
     Spawn:
       - sprite: FLMP
@@ -67,6 +74,9 @@ TallFloorLamp:
         tics-per-frame: -1
 
 Chandelier:
+  properties:
+    "light.intensity": 180
+    "light.radius": 3
   states:
     Spawn:
       - sprite: CHAN
@@ -97,6 +107,7 @@ SwitchLight:
     Inactive:
       - sprite: TNT1
         frames: [A]
+        light: none
         tics-per-frame: -1
 
 SwitchLightOff:
@@ -105,6 +116,7 @@ SwitchLightOff:
     Spawn:
       - sprite: TNT1
         frames: [A]
+        light: none
         tics-per-frame: -1
 
 HangingSkeleton:

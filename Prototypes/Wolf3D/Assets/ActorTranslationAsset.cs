@@ -213,6 +213,7 @@ internal class ActorStatesData : StateData
     public List<string> Frames { get; internal set; } = [];
     public float TicsPerFrame { get; internal set; }
     public List<string> Modifiers { get; internal set; } = [];
+    public StateLight? Light { get; internal set; }
     public string Action { get; internal set; }
     public string Think { get; internal set; }
     public string? NextState { get; internal set; }
