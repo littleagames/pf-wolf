@@ -424,6 +424,8 @@ internal partial class Program
 
     // The status bar's height in 320x200 lines (statusbar.yaml background), 0 with none
     internal static int STATUSLINES => StatusBar.Get("background")?.Height ?? 0;
+    // Lines a status bar across the top of the screen takes (statusbar.yaml top; Blake Stone's)
+    internal static int TOPLINES => StatusBar.Get("top")?.Height ?? 0;
 
     [Flags]
     internal enum objflags

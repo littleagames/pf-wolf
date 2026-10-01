@@ -37,6 +37,7 @@ internal partial class Program
     /// <summary>Runs the weapon's states for this tic's worth of time.</summary>
     static void TickWeapon()
     {
+        TickWeaponCharge();
         if (SyncWeaponSprite() is { } sprite)
             _mapManager.DoActor(sprite, tics);
     }
@@ -60,6 +61,7 @@ internal partial class Program
         Entities.Actors.ActorActionRegistry.Register("A_GunAttack", A_GunAttack);
         Entities.Actors.ActorActionRegistry.Register("A_CustomPunch", A_CustomPunch);
         Entities.Actors.ActorActionRegistry.Register("A_ReFire", A_ReFire);
+        RegisterMissileActions();
     }
 
     /// <summary>
@@ -84,12 +86,17 @@ internal partial class Program
         }
     }
 
-    /// <summary>One hitscan shot from the weapon in hand, if there's ammo for it.</summary>
-    static void A_GunAttack(Entities.Actors.Actor weapon)
+    /// <summary>
+    /// A_GunAttack([near, mid, far]): one hitscan shot from the weapon in hand, if there's ammo
+    /// (and, for a weapon.chargetics weapon, charge) for it. A hit deals a random 0-255 divided by
+    /// near within 2 tiles, mid within 4 and far beyond (Wolf3D's 4, 6, 6 when left out).
+    /// </summary>
+    static void A_GunAttack(Entities.Actors.Actor weapon, string[] args)
     {
-        if (!CanFire(gamestate.weapon))
+        if (!CanFire(gamestate.weapon) || !TakeCharge())
             return;
-        GunAttack(player);
+        int Divisor(int i, int fallback) => args.Length > i && int.TryParse(args[i], out var d) && d > 0 ? d : fallback;
+        GunAttack(player, Divisor(0, 4), Divisor(1, 6), Divisor(2, 6));
         UseAmmo();
     }
 

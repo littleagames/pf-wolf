@@ -24,6 +24,12 @@ internal record MapObjectTranslationAsset : Asset
     /// </summary>
     public Dictionary<int, string> DoorLocks { get; internal set; } = new();
 
+    /// <summary>
+    /// Object-plane values (things) that pass a map-info tag-link's tag on to each other: a link
+    /// to one of them tags the whole group touching it (Blake Stone's barriers)
+    /// </summary>
+    public List<int> LinkedThings { get; internal set; } = [];
+
     public override void Merge(Asset other)
     {
         if (other is MapObjectTranslationAsset otherAsset)
@@ -78,6 +84,12 @@ internal record MapObjectTranslationAsset : Asset
                 this.DoorLocks[item.Key] = item.Value;
             }
 
+            foreach (var item in otherAsset.LinkedThings)
+            {
+                if (!this.LinkedThings.Contains(item))
+                    this.LinkedThings.Add(item);
+            }
+
             this.Floors = this.Floors.MergedWith(otherAsset.Floors);
         }
     }
@@ -104,11 +116,20 @@ internal static class MapInfoCodes
     /// <summary>Not a thing, and nor is the tile after it, which holds a value for something else to read</summary>
     public const string Value = "value";
 
+    /// <summary>
+    /// The tile after it holds a tile's x (high byte) and y (low byte): the code's own tile (a
+    /// switch) and that one share a new tag (plane 4), as do the mapdefs linked-things chained
+    /// to it, so the switch's actions act on them. The code's low byte is the floor (game-info
+    /// floor-number) the link is on; 255 is this one, and a link to another floor is left alone.
+    /// </summary>
+    public const string TagLink = "tag-link";
+
     /// <summary>Whether the code's value is in the tile after it</summary>
     public static bool HasValue(string kind) =>
         kind.Equals(CeilingFloorColors, StringComparison.OrdinalIgnoreCase)
         || kind.Equals(CeilingFloorFlats, StringComparison.OrdinalIgnoreCase)
-        || kind.Equals(Value, StringComparison.OrdinalIgnoreCase);
+        || kind.Equals(Value, StringComparison.OrdinalIgnoreCase)
+        || kind.Equals(TagLink, StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>

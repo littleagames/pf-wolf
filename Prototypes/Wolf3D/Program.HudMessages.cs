@@ -13,6 +13,9 @@ internal partial class Program
     /// </summary>
     internal static void DrawHudMessages()
     {
+        bool infoArea = HasInfoArea;
+        if (infoArea)
+            DrawInfoArea(force: false);
         if (_hudMessageManager.Messages.Count == 0)
             return;
 
@@ -21,7 +24,10 @@ internal partial class Program
         int viewX = viewscreenx / scale, viewY = viewscreeny / scale;
         int viewW = viewwidth / scale, viewH = viewheight / scale;
 
-        foreach (var stack in _hudMessageManager.Messages.GroupBy(m => m.Style.Position))
+        // Messages for the status bar's info area go there; with no status bar showing, over the view's top left
+        foreach (var stack in _hudMessageManager.Messages
+            .Where(m => m.Style.Anchor != HudAnchor.Status || !infoArea)
+            .GroupBy(m => m.Style.Anchor == HudAnchor.Status ? m.Style.Position with { Anchor = HudAnchor.TopLeft } : m.Style.Position))
         {
             var position = stack.Key;
             int areaX = viewX + position.Margin, areaY = viewY + position.Margin;

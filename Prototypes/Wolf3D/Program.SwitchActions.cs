@@ -1,4 +1,4 @@
-using Wolf3D.Entities;
+﻿using Wolf3D.Entities;
 
 namespace Wolf3D;
 
@@ -46,6 +46,70 @@ internal partial class Program
         // (actordefs), e.g. a light coming on; actors without that state are left alone
         MapTriggerRegistry.Register("A_Activate", (trigger, _) => SetTaggedActorsState(trigger, "Active"));
         MapTriggerRegistry.Register("A_Deactivate", (trigger, _) => SetTaggedActorsState(trigger, "Inactive"));
+        // A_ToggleActive: each tagged actor on its Inactive state goes Active, the rest Inactive
+        MapTriggerRegistry.Register("A_ToggleActive", (trigger, _) =>
+        {
+            bool any = false;
+            foreach (var actor in _mapManager.TaggedActors(trigger.Tag).ToList())
+            {
+                var stateName = actor.CurrentState?.StateName == "Inactive" ? "Active" : "Inactive";
+                if (actor.IsRemoved || !actor.ResolvedStates.TryGetValue(stateName, out var frame))
+                    continue;
+                actor.JumpTo(frame);
+                any = true;
+            }
+            return any;
+        });
+
+        // A_Message("text"[, "style"]): shows a message (a $NAME language key or the text), in
+        // the style for locked doors unless one is named
+        MapTriggerRegistry.Register("A_Message", (_, args) =>
+        {
+            if (args.Length == 0)
+                return false;
+            _hudMessageManager.Show(Managers.HudMessageKind.Lock, args[0], args.ElementAtOrDefault(1));
+            return true;
+        });
+
+        // A_Vend("FoodToken", "FoodUnitMeal", "no-money message", "full message"): a vending machine
+        // (Blake Stone's food units). The item would do nothing (health full): the full message.
+        // No currency: the no-money message. Either way the player's use-fail sound. Otherwise
+        // one currency is taken and the item given, with its pickup sound and message.
+        MapTriggerRegistry.Register("A_Vend", VendAction);
+    }
+
+    private static bool VendAction(TriggerActivation trigger, string[] args)
+    {
+        if (args.Length < 2 || _inventoryManager.CreateActor(args[1]) is not Entities.Actors.Inventory item)
+        {
+            Console.WriteLine($"A_Vend: needs a currency and an inventory item to give ('{args.ElementAtOrDefault(1)}' isn't one).");
+            return false;
+        }
+
+        bool Refuse(string? message)
+        {
+            _audioManager.Play("player/usefail");
+            if (!string.IsNullOrEmpty(message))
+                _hudMessageManager.Show(Managers.HudMessageKind.Lock, message);
+            return false;
+        }
+
+        if (!CouldTakeInventory(item))
+            return Refuse(args.ElementAtOrDefault(3));
+        if (!_inventoryManager.Has(args[0]))
+            return Refuse(args.ElementAtOrDefault(2));
+
+        int amount = item.Properties.TryGetValue("inventory.amount", out var a) ? Convert.ToInt32(a) : 1;
+        if (!TryApplyInventory(item, amount))
+            return Refuse(args.ElementAtOrDefault(3));
+
+        _inventoryManager.Take(args[0], 1);
+        if (item.Properties.TryGetValue("inventory.pickupsound", out var sound) && sound?.ToString() is { Length: > 0 } soundName)
+            _audioManager.Play(soundName);
+        if (item.Properties.TryGetValue("inventory.pickupmessage", out var message))
+            _hudMessageManager.Show(Managers.HudMessageKind.Pickup, message?.ToString(),
+                item.Properties.TryGetValue("inventory.pickupmessagestyle", out var style) ? style?.ToString() : null);
+        return true;
     }
 
     private static bool SetTaggedActorsState(TriggerActivation trigger, string stateName)

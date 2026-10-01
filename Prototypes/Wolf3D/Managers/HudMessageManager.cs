@@ -9,6 +9,9 @@ internal enum HudAnchor : byte
     TopLeft, Top, TopRight,
     Left, Center, Right,
     BottomLeft, Bottom, BottomRight,
+
+    /// <summary>In the status bar's info area (statusbar.yaml info-area), not over the view</summary>
+    Status,
 }
 
 /// <summary>A message style from hud-messages.yaml, with everything its parents give it filled in</summary>

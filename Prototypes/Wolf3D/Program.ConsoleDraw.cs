@@ -32,6 +32,14 @@ internal partial class Program
 
         consoleDrawn = false;
         DrawPlayBorderSides();
+        if (TOPLINES > 0)
+        {
+            // the console covered the top status bar too
+            DrawTopBar();
+            DrawLevel();
+            DrawLives();
+            DrawLocation();
+        }
     }
 
     internal static void DrawConsole()

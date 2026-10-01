@@ -535,10 +535,16 @@ internal partial class Program
         if (viewsize == 21)
             SetViewSize((uint)_videoManager.screenWidth, (uint)_videoManager.screenHeight);
         else if (viewsize == 20)
-            SetViewSize((uint)_videoManager.screenWidth, (uint)(_videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES));
+            SetViewSize((uint)_videoManager.screenWidth, (uint)PlayAreaHeight);
         else
             SetViewSize((uint)(width * 16 * _videoManager.screenWidth / 320), (uint)BorderedViewHeight(width));
     }
+
+    /// <summary>The screen lines between the top status bar (if any) and the bottom one, in screen pixels</summary>
+    internal static int PlayAreaHeight => _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + TOPLINES);
+
+    /// <summary>Where the play area (view and border) starts down the screen, in screen pixels: below any top status bar</summary>
+    internal static int PlayAreaTop => _videoManager.scaleFactor * TOPLINES;
 
     /// <summary>
     /// A bordered view's height at view size <paramref name="width"/>. The sizes are laid out for
@@ -548,7 +554,7 @@ internal partial class Program
     private static int BorderedViewHeight(int width)
     {
         int height = (int)(width * 16 * HEIGHTRATIO * _videoManager.screenHeight / 200);
-        int room = _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 2);
+        int room = PlayAreaHeight - _videoManager.scaleFactor * 2;
         return Math.Min(height, room);
     }
 
@@ -564,7 +570,7 @@ internal partial class Program
         else
         {
             viewscreenx = (_videoManager.screenWidth - viewwidth) / 2;
-            viewscreeny = (_videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES - viewheight) / 2;
+            viewscreeny = PlayAreaTop + (PlayAreaHeight - viewheight) / 2;
             screenofs = (uint)(viewscreeny * _videoManager.screenWidth + viewscreenx);
         }
 
@@ -726,7 +732,7 @@ internal partial class Program
         else if (width == 20)
         {
             viewwidth = _videoManager.screenWidth;
-            viewheight = _videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES;
+            viewheight = PlayAreaHeight;
             DrawPlayBorder();
         }
         else

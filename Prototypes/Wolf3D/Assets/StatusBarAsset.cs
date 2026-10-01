@@ -91,6 +91,78 @@ internal class StatusBarElement
     /// face: the grin, while the pickup sound of an item or weapon flagged WEAPON.ALWAYSGRIN plays
     /// </summary>
     public string? Grin { get; set; }
+
+    /// <summary>Any part: placed on the top status bar (statusbar.yaml top) instead of the bottom one</summary>
+    public bool Top { get; set; }
+
+    /// <summary>Numbers: text drawn before and after the number, e.g. "FLOOR: " or "%"</summary>
+    public string Prefix { get; set; } = "";
+    public string Suffix { get; set; } = "";
+
+    /// <summary>Numbers and location: left (x is the left edge, the default), right (x is the right edge) or center (x is the middle)</summary>
+    public string Align { get; set; } = "left";
+
+    /// <summary>Numbers: [x, y, width, height] filled with box-color before the number is drawn, so the old one goes</summary>
+    public List<int> Box { get; set; } = [];
+    public string? BoxColor { get; set; }
+
+    /// <summary>Numbers: another part (weapon) drawn first, under the number</summary>
+    public string? Behind { get; set; }
+
+    /// <summary>ammo: shown only while the weapon in hand uses ammo</summary>
+    public bool OnlyWithAmmo { get; set; }
+
+    /// <summary>keys: pixels between one key slot and the next, rightwards (spacing is downwards)</summary>
+    public int SpacingX { get; set; }
+
+    /// <summary>keys: [width, height] of a colored square per key ("key.statusbarcolor" / "key.statusbaremptycolor") in place of pictures</summary>
+    public List<int> Size { get; set; } = [];
+
+    /// <summary>charge: the pictures for a charging weapon (weapon.chargetics) ready to fire, and charging</summary>
+    public string? Ready { get; set; }
+    public string? Wait { get; set; }
+
+    /// <summary>ammo-gauge: the strip's width, how many segments it has and each one's height (lines)</summary>
+    public int Width { get; set; } = 8;
+    public int Segments { get; set; } = 20;
+    public int SegmentHeight { get; set; } = 2;
+
+    /// <summary>
+    /// ammo-gauge: the colors by how empty it is: the first level whose below is more than the
+    /// segments left unlit gives its lit and dim colors (a color per line of a segment)
+    /// </summary>
+    public List<StatusBarGaugeLevel> Levels { get; set; } = [];
+
+    /// <summary>heart-monitor: the trace's pictures ({0:00} the segment number) and how many across, each width wide</summary>
+    public string? SegmentPic { get; set; }
+    public int Count { get; set; } = 6;
+    public int SegmentWidth { get; set; } = 8;
+
+    /// <summary>heart-monitor: tics between trace scrolls, and between heart beats</summary>
+    public int ScrollTics { get; set; } = 7;
+    public int PulseTics { get; set; } = 70;
+
+    /// <summary>heart-monitor: the heart, beating (good, then off) above bad-below health, else bad; off when dead</summary>
+    public int HeartX { get; set; }
+    public int HeartY { get; set; }
+    public string? HeartGood { get; set; }
+    public string? HeartBad { get; set; }
+    public string? HeartOff { get; set; }
+    public int BadBelow { get; set; } = 40;
+
+    /// <summary>
+    /// info-area: shown while there are no messages for it (a $NAME language key or the text);
+    /// {Item} in it is how many of an inventory item the player has, e.g. {FoodToken}
+    /// </summary>
+    public string? IdleText { get; set; }
+}
+
+/// <summary>An ammo gauge's colors while fewer than <see cref="Below"/> of its segments are unlit</summary>
+internal class StatusBarGaugeLevel
+{
+    public int Below { get; set; } = int.MaxValue;
+    public List<string> Lit { get; set; } = [];
+    public List<string> Dim { get; set; } = [];
 }
 
 /// <summary>One of the face part's faces: from this health up, the pics it looks around through.</summary>

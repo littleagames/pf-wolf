@@ -474,6 +474,7 @@ internal partial class Program
     {
         if (StatusBar.Get("background")?.Pic is { Length: > 0 } statusbarpic)
             _graphicManager.DrawPic(statusbarpic, 0, 200 - STATUSLINES); // TODO: Orientation: Bottom/Centered
+        DrawTopBar();
         DrawPlayBorder();
 
         DrawFace();
@@ -481,10 +482,14 @@ internal partial class Program
         DrawArmor();
         DrawLives();
         DrawLevel();
-        DrawAmmo();
-        DrawKeys();
         DrawWeapon();
+        DrawAmmo();
+        DrawCharge();
+        DrawKeys();
         DrawScore();
+        DrawLocation();
+        DrawHeartMonitor(force: true);
+        DrawInfoArea(force: true);
     }
 
     internal static void DrawPlayBorder()
@@ -509,10 +514,10 @@ internal partial class Program
 
         if (viewheight == _videoManager.screenHeight) return;
 
-        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight - px * STATUSLINES, bordercol);
+        _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaHeight, bordercol);
 
         int xl = _videoManager.screenWidth / 2 - viewwidth / 2;
-        int yl = (_videoManager.screenHeight - px * STATUSLINES - viewheight) / 2;
+        int yl = PlayAreaTop + (PlayAreaHeight - viewheight) / 2;
         _videoManager.BarScaledCoord(xl, yl, viewwidth, viewheight, "Black");
 
         if (xl != 0)
@@ -541,20 +546,21 @@ internal partial class Program
         int vh = viewheight;
         int px = _videoManager.scaleFactor; // size of one "pixel"
 
-        int h = sh - px * STATUSLINES;
+        int top = PlayAreaTop;                  // below any top status bar
+        int h = PlayAreaHeight;
         int xl = sw / 2 - vw / 2;
-        int yl = (h - vh) / 2;
+        int yl = top + (h - vh) / 2;
 
         if (xl != 0)
         {
-            _videoManager.BarScaledCoord(0, 0, xl - px, h, bordercol);                 // left side
-            _videoManager.BarScaledCoord(xl + vw + px, 0, sw - (xl + vw + px), h, bordercol);          // right side, out to the screen edge
+            _videoManager.BarScaledCoord(0, top, xl - px, h, bordercol);                 // left side
+            _videoManager.BarScaledCoord(xl + vw + px, top, sw - (xl + vw + px), h, bordercol);          // right side, out to the screen edge
         }
 
-        if (yl != 0)
+        if (yl != top)
         {
-            _videoManager.BarScaledCoord(0, 0, sw, yl - px, bordercol);                    // upper side
-            _videoManager.BarScaledCoord(0, yl + vh + px, sw, h - (yl + vh + px), bordercol);         // lower side, down to the status bar
+            _videoManager.BarScaledCoord(0, top, sw, yl - px - top, bordercol);                    // upper side
+            _videoManager.BarScaledCoord(0, yl + vh + px, sw, top + h - (yl + vh + px), bordercol);         // lower side, down to the status bar
         }
 
         if (xl != 0)
@@ -583,7 +589,7 @@ internal partial class Program
         int statusborderw = (_videoManager.screenWidth - px * 320) / 2;
         int top = _videoManager.screenHeight - px * STATUSLINES;
 
-        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, top, color);
+        _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaHeight, color);
 
         foreach (var rect in StatusBar.Get("border")?.Rects ?? [])
         {
@@ -651,7 +657,8 @@ internal partial class Program
         // load the level
         //
         //int mapnum = gamestate.mapon + 10 * gamestate.cluster;
-        _mapManager.LoadMap(gamestate.mapon, gamestate.difficulty, CurrentSkill.EnemyHealth);
+        _mapManager.LoadMap(gamestate.mapon, gamestate.difficulty, CurrentSkill.EnemyHealth,
+            _gameEngineManager.GetGameInfo().Maps.TryGetValue(gamestate.mapon, out var loadingMap) ? loadingMap.FloorNumber : -1);
 
         // The cluster follows the map, however it was reached: a new game, the next/secret
         // level, a map-change trigger or the console's "map" warp

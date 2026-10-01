@@ -514,6 +514,16 @@ internal partial class Program
     /// Gives the player <paramref name="amount"/> of <paramref name="item"/>. Returns false
     /// when nothing could be taken, so the pickup should be left where it is.
     /// </summary>
+    /// <summary>Whether giving the item would do anything now (a health item, unless health is full); without giving it</summary>
+    internal static bool CouldTakeInventory(Inventory item)
+    {
+        if (item is not Entities.Actors.Health)
+            return true;
+        int itemMax = _inventoryManager.GetIntProperty(item.Name, "inventory.maxamount", 0);
+        int cap = itemMax > 0 ? Math.Min(itemMax, MaxHealth) : MaxHealth;
+        return gamestate.health < cap;
+    }
+
     internal static bool TryApplyInventory(Inventory item, int amount)
     {
         switch (item)
@@ -701,7 +711,7 @@ internal partial class Program
     /// A number right-aligned in the named part's digits, blanking the rest; a number too long
     /// to fit shows its last digits. In the part's font and color, else the layout's numbers'.
     /// </summary>
-    static void LatchNumber(string part, int number)
+    static void LatchNumber(string part, int number, bool hide = false)
     {
         if (StatusBar.Get(part) is not { } element)
             return;
@@ -710,12 +720,44 @@ internal partial class Program
         if (string.IsNullOrEmpty(font))
             return;
 
-        int width = Math.Max(element.Digits, 1);
-        string str = number.ToString();
-        str = str.Length <= width ? str.PadLeft(width) : str[^width..];
+        // What the number is drawn over: a part under it, or a box to clear the old one
+        if (element.Behind is { Length: > 0 } behind)
+            DrawStatusPart(behind);
+        if (element.Box.Count == 4)
+            _videoManager.Bar(element.Box[0], StatusBarTop(element) + element.Box[1], element.Box[2], element.Box[3],
+                element.BoxColor ?? "Black");
+        if (hide)
+            return;
 
-        _graphicManager.DrawText(element.X, 200 - STATUSLINES + element.Y, str,
-            new Fonts.TextStyle(font, element.Color ?? numbers?.Color ?? "White"));
+        // digits 0: as long as the number is, else right-aligned in that many (its last digits if longer)
+        string str = number.ToString();
+        if (element.Digits > 0)
+            str = str.Length <= element.Digits ? str.PadLeft(element.Digits) : str[^element.Digits..];
+        str = element.Prefix + str + element.Suffix;
+
+        DrawStatusText(element, str, font, element.Color ?? numbers?.Color ?? "White");
+    }
+
+    /// <summary>Text at a status bar part, lined up as its align says</summary>
+    static void DrawStatusText(Assets.StatusBarElement element, string text, string font, string color)
+    {
+        int x = element.Align.ToLowerInvariant() switch
+        {
+            "right" => element.X - TextWidth(text, font),
+            "center" => element.X - TextWidth(text, font) / 2,
+            _ => element.X,
+        };
+        _graphicManager.DrawText(x, StatusBarTop(element) + element.Y, text, new Fonts.TextStyle(font, color));
+    }
+
+    /// <summary>Where a part's bar starts down the screen (320x200): the top bar's, or the bottom one's</summary>
+    static int StatusBarTop(Assets.StatusBarElement element) => element.Top ? 0 : 200 - STATUSLINES;
+
+    /// <summary>Draws a part that a number can sit on (statusbar.yaml behind)</summary>
+    static void DrawStatusPart(string part)
+    {
+        if (part.Equals("weapon", StringComparison.OrdinalIgnoreCase))
+            DrawWeaponPic();
     }
 
     /*
@@ -796,7 +838,10 @@ internal partial class Program
     static void DrawAmmo()
     {
         if (viewsize == 21 && ingame) return;
-        LatchNumber("ammo", GetAmmo());
+        // only-with-ammo: nothing while the weapon in hand needs none (Blake Stone's auto charge pistol)
+        bool hide = StatusBar.Get("ammo")?.OnlyWithAmmo == true && WeaponAmmoType(gamestate.weapon) == null;
+        LatchNumber("ammo", GetAmmo(), hide);
+        DrawAmmoGauge();
     }
 
     /// <summary>Gives <paramref name="amount"/> of every ammo type; returns how much was taken in all.</summary>
@@ -1038,9 +1083,20 @@ internal partial class Program
             .OrderBy(key => key.Has);
         foreach (var (key, slot, has) in keys)
         {
+            int x = layout.X + layout.SpacingX * slot, y = layout.Y + layout.Spacing * slot;
+
+            // size: a colored square for each key ("key.statusbarcolor" / "key.statusbaremptycolor")
+            if (layout.Size.Count == 2)
+            {
+                var color = _inventoryManager.GetStringProperty(key, has ? "key.statusbarcolor" : "key.statusbaremptycolor");
+                if (!string.IsNullOrEmpty(color))
+                    _videoManager.Bar(x, StatusBarTop(layout) + y, layout.Size[0], layout.Size[1], color);
+                continue;
+            }
+
             var pic = _inventoryManager.GetStringProperty(key, has ? "key.statusbarpic" : "key.statusbaremptypic");
             if (!string.IsNullOrEmpty(pic))
-                StatusDrawPic(pic, layout.X, layout.Y + layout.Spacing * slot);
+                _graphicManager.DrawPic(pic, x, StatusBarTop(layout) + y);
         }
     }
 
@@ -1104,14 +1160,26 @@ internal partial class Program
         DrawScore();
     }
 
+    // The weapon in hand's picture, and what goes with it: its ammo (drawn over it, for a layout
+    // that puts it there) and its charge
     static void DrawWeapon()
+    {
+        if (viewsize == 21 && ingame) return;
+        DrawWeaponPic();
+        if (StatusBar.Get("ammo")?.Behind?.Equals("weapon", StringComparison.OrdinalIgnoreCase) == true
+            || StatusBar.Get("ammo")?.OnlyWithAmmo == true || StatusBar.Get("ammo-gauge") != null)
+            DrawAmmo();
+        DrawCharge();
+    }
+
+    static void DrawWeaponPic()
     {
         if (viewsize == 21 && ingame) return;
         if (gamestate.weapon == null) return;
 
         var icon = _inventoryManager.GetStringProperty(gamestate.weapon, "inventory.icon");
-        if (!string.IsNullOrEmpty(icon))
-            StatusDrawPic(icon, "weapon");
+        if (!string.IsNullOrEmpty(icon) && StatusBar.Get("weapon") is { } element)
+            _graphicManager.DrawPic(icon, element.X, StatusBarTop(element) + element.Y);
     }
 /*
 ==================
@@ -1394,6 +1462,7 @@ internal partial class Program
         }
 
         UpdateFace();
+        UpdateHeartMonitor();
 
         if (IsWeaponReady())
         {
@@ -1468,7 +1537,9 @@ internal partial class Program
     // A player attack's damage, scaled by the class's player.damagedealt
     static uint PlayerDamage(int damage) => (uint)Math.Round(damage * DamageDealt);
 
-    internal static void GunAttack(Entities.Actors.Actor ob)
+    // near, mid, far: what a random 0-255 is divided by for a hit within 2 tiles, within 4, and
+    // beyond (where it can also miss); Wolf3D's are 4, 6, 6
+    internal static void GunAttack(Entities.Actors.Actor ob, int near = 4, int mid = 6, int far = 6)
     {
         int damage;
         int dx, dy, dist;
@@ -1496,14 +1567,14 @@ internal partial class Program
         dy = Math.Abs(closest.TileY - player.TileY);
         dist = dx > dy ? dx : dy;
         if (dist < 2)
-            damage = US_RndT() / 4;
+            damage = US_RndT() / near;
         else if (dist < 4)
-            damage = US_RndT() / 6;
+            damage = US_RndT() / mid;
         else
         {
             if ((US_RndT() / 12) < dist)           // missed
                 return;
-            damage = US_RndT() / 6;
+            damage = US_RndT() / far;
         }
 
         DamageActor(closest, PlayerDamage(damage));

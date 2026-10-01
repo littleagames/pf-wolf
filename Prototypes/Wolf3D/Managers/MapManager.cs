@@ -192,8 +192,10 @@ internal class MapManager
 
     /// <param name="difficulty">The skill's place in game-info's skills (mapdefs min-skill compares against it)</param>
     /// <param name="enemyHealth">The skill's enemy-health: the actordefs property enemies' health comes from</param>
-    public void LoadMap(string mapName, int difficulty, string? enemyHealth = null)
+    /// <param name="floorNumber">The map's game-info floor-number, which map-info tag-links name floors by</param>
+    public void LoadMap(string mapName, int difficulty, string? enemyHealth = null, int floorNumber = -1)
     {
+        CurrentFloorNumber = floorNumber;
         _difficulty = difficulty;
         _enemyHealthKey = enemyHealth;
         _floors = null; // read again, in case the mapdefs changed
@@ -341,6 +343,7 @@ internal class MapManager
 
         var objects = mapsegs[1];
         bool gotFlats = false;
+        var links = new Dictionary<int, ushort>();      // linked tile -> its tag
         for (int i = 0; i < MAPAREA && i < objects.Length; i++)
         {
             if (!codes.TryGetValue(objects[i] >> 8, out var kind))
@@ -350,9 +353,15 @@ internal class MapManager
             if (!MapInfoCodes.HasValue(kind) || i + 1 >= objects.Length)
                 continue;
 
+            int codeTile = i;
             var value = objects[++i];
             infotiles[i] = true;
-            if (kind.Equals(MapInfoCodes.CeilingFloorColors, StringComparison.OrdinalIgnoreCase))
+            if (kind.Equals(MapInfoCodes.TagLink, StringComparison.OrdinalIgnoreCase))
+            {
+                if (fillFlats)          // a fresh level: a restored one has its tags already
+                    LinkTags(codeTile, objects[codeTile] & 0xff, value >> 8, value & 0xff, links);
+            }
+            else if (kind.Equals(MapInfoCodes.CeilingFloorColors, StringComparison.OrdinalIgnoreCase))
             {
                 if (MapCeilingColor == null)
                 {
@@ -373,6 +382,50 @@ internal class MapManager
             }
         }
     }
+
+    // Tags map-info tag-links hand out: counted down from the top, clear of tags a map author gives
+    private const ushort FirstLinkTag = 0xffff;
+
+    /// <summary>
+    /// A map-info tag-link from the code's tile to (x, y) on floor <paramref name="floor"/>: on
+    /// this floor, both tiles get the target's tag (a new one, unless another link already
+    /// tagged it), and so do the linked-things joined to the target through their neighbours.
+    /// </summary>
+    private void LinkTags(int codeTile, int floor, int x, int y, Dictionary<int, ushort> links)
+    {
+        if (floor != 0xff && floor != CurrentFloorNumber)
+            return;     // on another floor: for when floors keep their state
+        if (x <= 0 || y <= 0 || x >= mapwidth - 1 || y >= mapheight - 1)
+            return;
+
+        int target = (y << MAPSHIFT) + x;
+        if (!links.TryGetValue(target, out var tag))
+        {
+            tag = (ushort)(FirstLinkTag - links.Values.Distinct().Count());
+            var linked = GetMapData().LinkedThings;
+            var open = new Queue<int>([target]);
+            var seen = new HashSet<int> { target };
+            while (open.Count > 0)
+            {
+                int spot = open.Dequeue();
+                links[spot] = tag;
+                mapsegs[TAGPLANE][spot] = tag;
+                int sx = spot & (MAPSIZE - 1), sy = spot >> MAPSHIFT;
+                foreach (var (dx, dy) in new[] { (1, 0), (-1, 0), (0, 1), (0, -1) })
+                {
+                    int nx = sx + dx, ny = sy + dy;
+                    int next = (ny << MAPSHIFT) + nx;
+                    if (nx >= 0 && ny >= 0 && nx < mapwidth && ny < mapheight
+                        && linked.Contains(mapsegs[1][next]) && seen.Add(next))
+                        open.Enqueue(next);
+                }
+            }
+        }
+        mapsegs[TAGPLANE][codeTile] = tag;
+    }
+
+    /// <summary>The floor number (game-info floor-number) of the level loading, for map-info tag-links</summary>
+    internal int CurrentFloorNumber { get; private set; }
 
     /// <summary>
     /// The area a thing spawning on this tile is in: its floor code's, else a neighbouring tile's
@@ -893,6 +946,16 @@ internal class MapManager
     }
 
     /// <summary>True if a living (FL_SHOOTABLE) actor occupies the tile -- corpses don't count.</summary>
+    /// <summary>The living (FL_SHOOTABLE) actors on a tile</summary>
+    internal IEnumerable<Entities.Actors.Actor> ShootableActorsAt(int tilex, int tiley) =>
+        _actors.Where(a => !a.IsRemoved && a.TileX == tilex && a.TileY == tiley && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
+
+    /// <summary>The living (FL_SHOOTABLE) actors within <paramref name="reach"/> (global units, each way) of a point, nearest first</summary>
+    internal IEnumerable<Entities.Actors.Actor> ShootableActorsNear(int x, int y, long reach) =>
+        _actors.Where(a => !a.IsRemoved && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)
+                && Math.Abs((long)a.X - x) <= reach && Math.Abs((long)a.Y - y) <= reach)
+            .OrderBy(a => Math.Max(Math.Abs((long)a.X - x), Math.Abs((long)a.Y - y)));
+
     internal bool IsShootableActorAt(int tilex, int tiley)
     {
         foreach (var actor in _actors)
