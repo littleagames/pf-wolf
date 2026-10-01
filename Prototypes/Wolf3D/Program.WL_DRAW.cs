@@ -229,14 +229,29 @@ internal partial class Program
     static readonly TextureAsset?[] postundertexture = new TextureAsset?[MAXPOSTS];
     static readonly byte[][] postlight = new byte[MAXPOSTS][];              // its face's light row
 
-    // The light row of the open tile the trace last came from: walls and doors it hits are seen
-    // from there. A wall or door tile keeps the one before it (a wall the trace passes, an open door).
-    static byte[] hitlight = noshade;
+    // The open tile the trace last came from (a TileIndex): walls and doors it hits are seen from
+    // there, so take its base light. A wall or door tile keeps the one before it (a wall the
+    // trace passes, an open door).
+    static int hittile = -1;
 
     static void EnterTileLight(int x, int y)
     {
         if (_mapManager.tilemap[x, y] == 0)
-            hitlight = TileLight(x, y);
+            hittile = TileIndex(x, y);
+    }
+
+    // Half a light cell, in global units
+    const int HALFCELL = 1 << (CELLGLOBALSHIFT - 1);
+
+    /// <summary>
+    /// The light on a wall face at (x, y) (global units), seen from hittile: from the light cell
+    /// just in front of it, half a cell toward the view, not the one inside the wall.
+    /// </summary>
+    static byte[] WallLight(int x, int y)
+    {
+        long gx = x + (viewx > x ? HALFCELL : viewx < x ? -HALFCELL : 0);
+        long gy = y + (viewy > y ? HALFCELL : viewy < y ? -HALFCELL : 0);
+        return LightAt(hittile, gx, gy);
     }
 
     internal static short postheight;   // the height (as wallheight) of the post ScalePost queues
@@ -271,7 +286,7 @@ internal partial class Program
     {
         if (postcount == MAXPOSTS)
             return;
-        postlight[postcount] = light ?? hitlight;
+        postlight[postcount] = light ?? WallLight(xintercept, yintercept);
         postunderside[postcount] = underside;
         postundertexture[postcount] = undertexture;
         postheights[postcount] = height;
@@ -335,7 +350,7 @@ internal partial class Program
             {
                 double nx = numerator / (centery - y - 0.5);
                 long px = (long)(viewx + nx * stepx), py = (long)(viewy + nx * stepy);
-                var light = TileLight((int)(px >> MapConstants.TILESHIFT), (int)(py >> MapConstants.TILESHIFT));
+                var light = LightAt(TileIndex((int)(px >> MapConstants.TILESHIFT), (int)(py >> MapConstants.TILESHIFT)), px, py);
                 int shadeofs = ShadeOffset((long)nx);
                 if (data == null)
                 {
@@ -370,7 +385,7 @@ internal partial class Program
     static TextureAsset? archtexture;
     static TextureAsset? archunderside;
     static int archofs;
-    static byte[] archlight = noshade;  // its face's light row: the tile it's seen from
+    static byte[] archlight = noshade;  // its face's light row: where the trace entered it, seen from the tile before
 
     static bool IsArch(int tilex, int tiley) => _mapManager.tilemap[tilex, tiley] == 0 && _mapManager.storymap[tilex, tiley] > 1;
 
@@ -389,7 +404,7 @@ internal partial class Program
             return;                     // nothing to texture it from: leave it open
 
         archopen = true;
-        archlight = hitlight;
+        archlight = WallLight(edgex, edgey);
         archunderside = ArchUndersideTexture(tilex, tiley) ?? archtexture;
         archstories = _mapManager.storymap[tilex, tiley];
         archheight = HeightAt(edgex, edgey);
@@ -430,7 +445,7 @@ internal partial class Program
             return;                     // as OpenArch: nothing to texture it from
         archtexture = notexture;
         archopen = true;
-        archlight = hitlight;
+        archlight = LightAt(hittile, viewx, viewy);
         archstories = _mapManager.storymap[focaltx, focalty];
         archheight = short.MaxValue;
         archofs = 0;
@@ -820,7 +835,7 @@ internal partial class Program
         int ofs = door.vertical
             ? LintelColumn(planey, xtilestep == -1)
             : LintelColumn(planex, ytilestep == 1);
-        QueuePost(height, 1, stories, texture, ofs, texture, ofs);
+        QueuePost(height, 1, stories, texture, ofs, texture, ofs, light: WallLight(planex, planey));
     }
 
     /// <summary>
@@ -1161,14 +1176,14 @@ internal partial class Program
                     if (texture == null)
                     {
                         if (haszones)
-                            row[x] = tilelight[tile][shadeofs + color];
+                            row[x] = LightAt((int)tile, px, py)[shadeofs + color];
                         continue;
                     }
 
                     int u = (int)(px >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
                     int v = (int)(py >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
                     int height = texture.Height;
-                    row[x] = tilelight[tile][shadeofs + texture.RawData[u * texture.Width / TEXTURESIZE * height + v * height / TEXTURESIZE]];
+                    row[x] = LightAt((int)tile, px, py)[shadeofs + texture.RawData[u * texture.Width / TEXTURESIZE * height + v * height / TEXTURESIZE]];
                 }
             }
         }
@@ -1248,7 +1263,7 @@ internal partial class Program
             ytile = (short)(focalty + ytilestep);
 
             texdelta = 0;
-            hitlight = TileLight(focaltx, focalty);
+            hittile = TileIndex(focaltx, focalty);
             columnhit = pastwall = archopen = false;
             columntallest = 0;
             columntop = viewheight;
@@ -2079,6 +2094,8 @@ internal partial class Program
                 {
                     visptr_val.tilex = atx;
                     visptr_val.tiley = aty;
+                    visptr_val.worldx = actor.X;
+                    visptr_val.worldy = actor.Y;
                     vislist[visptr] = visptr_val;
                     visptr++;
                 }
@@ -2095,6 +2112,7 @@ internal partial class Program
                 {
                     visptr_val.tilex = actor.TileX;
                     visptr_val.tiley = actor.TileY;
+                    (visptr_val.worldx, visptr_val.worldy) = TileCenter(actor.TileX, actor.TileY);
                     vislist[visptr] = visptr_val;
                     visptr++;
                 }
@@ -2119,6 +2137,7 @@ internal partial class Program
             {
                 visptr_val.tilex = (byte)actor.Position.X;
                 visptr_val.tiley = (byte)actor.Position.Y;
+                (visptr_val.worldx, visptr_val.worldy) = TileCenter(visptr_val.tilex, visptr_val.tiley);
                 //visptr_val.flags = actor.Flags;
                 vislist[visptr] = visptr_val;
                 visptr++;
@@ -2177,7 +2196,7 @@ internal partial class Program
         // player's tile but not faded: it's at arm's length
         if (WeaponShapeName() is { } shape)
             SimpleScaleShape(viewwidth / 2, shape, viewheight + 1,
-                weaponSprite != null && IsBright(weaponSprite) ? noshade : TileLight(player.TileX, player.TileY));
+                weaponSprite != null && IsBright(weaponSprite) ? noshade : LightAt(TileIndex(player.TileX, player.TileY), player.X, player.Y));
 
         if (demorecord || demoplayback)
             SimpleScaleShape(viewwidth / 2, "DEMOA0", viewheight + 1);
@@ -2209,7 +2228,7 @@ internal partial class Program
         vbuf += (int)screenofs;
 
         Setup3DView();
-        UpdateTileLight();
+        UpdateLightGrid();
 
         //
         // follow the walls from there to the right, drawing as we go

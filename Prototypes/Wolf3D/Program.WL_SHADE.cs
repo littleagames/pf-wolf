@@ -21,10 +21,10 @@ internal partial class Program
     A pixel's step comes from its distance along the view (as CalcHeight measures it), so walls
     take one per post, flats one per row, and sprites one per sprite.
 
-    Which light a pixel gets comes from the zone plane: a tile in a light zone (the map's
-    game-info zones) takes that zone's row, and any other tile the level's (lightrow). A wall
-    face is lit by the open tile it's seen from, a floor or ceiling by its own tile, and a
-    sprite by the tile it's on.
+    Which light a pixel gets comes from the light grid (Program.LightGrid.cs): a tile in a
+    light zone (the map's game-info zones) has that zone's light, any other tile the level's
+    (lightrow), and light can be added to parts of tiles. A wall face is lit by the open tile
+    it's seen from, a floor or ceiling by its own tile, and a sprite by the tile it's on.
 
     =============================================================================
     */
@@ -44,17 +44,6 @@ internal partial class Program
     static byte fader, fadeg, fadeb;
     static long fadestart, fadeend;     // along the view, in global units (TILEGLOBAL a tile)
     static int maxfadestep;
-
-    static readonly Dictionary<int, byte[]> zonerows = [];
-
-    /// <summary>
-    /// Each tile's light row, indexed (y &lt;&lt; MAPSHIFT) + x like the flats: its zone's, else
-    /// the level's. Rebuilt when the zone plane or the lights change (UpdateTileLight).
-    /// </summary>
-    static readonly byte[][] tilelight = Enumerable.Repeat(noshade, MapManager.MAPAREA).ToArray();
-    static bool tilelightdirty = true;
-    static int tilelightversion;        // the MapManager.ZonesVersion tilelight was built for
-    static bool haszones;               // some tile is lit other than by the level's light
 
     /// <summary>
     /// The map's shading, each value it leaves out taken from the default map's, else the
@@ -101,10 +90,9 @@ internal partial class Program
         // any zone at all, since its light can change as the level is played
         shading = s.MaxFade > 0 || s.Light < 255 || levelzones.Count > 0;
         lightrow = noshade;
-        zonerows.Clear();
         foreach (var zone in levelzones.Values)
             zone.RowLevel = -1;
-        tilelightdirty = true;
+        griddirty = true;
         if (!shading)
             return;
 
@@ -113,29 +101,30 @@ internal partial class Program
         fadeend = Math.Max((long)(s.FadeEnd * MapConstants.TILEGLOBAL), fadestart + 1);
         maxfadestep = (int)Math.Round(Math.Clamp(s.MaxFade, 0, 100) / 100.0 * (FADESTEPS - 1));
 
-        lightrow = LevelRow(LightLevelOf(s.Light), (255, 255, 255));
+        ResetLightRows();
+        ambientlevel = LightLevelOf(s.Light);
+        lightrow = RowOf(0, ambientlevel);
         foreach (var zone in levelzones.Values)
             if (zone.Effect != ZoneEffect.None)
                 PrewarmZoneRows(zone, zone.Low, zone.BaseLight);
-        UpdateZoneRows();
+        UpdateZoneLevels();
     }
 
-    /// <summary>Gives each zone the light row for the light it shows now, where that's moved.</summary>
-    static void UpdateZoneRows()
+    /// <summary>Gives each zone the light level and tint for the light it shows now, where that's moved.</summary>
+    static void UpdateZoneLevels()
     {
         if (!shading)
             return;
-        foreach (var (id, zone) in levelzones)
+        foreach (var zone in levelzones.Values)
         {
             int level = LightLevelOf(zone.Current);
-            if (zone.Row != null && level == zone.RowLevel && zone.Color == zone.RowColor)
+            if (zone.RowLevel >= 0 && level == zone.RowLevel && zone.Color == zone.RowColor)
                 continue;
 
-            zone.Row = LevelRow(level, ParseRgb(zone.Color, (255, 255, 255), "zone color"));
             zone.RowLevel = level;
             zone.RowColor = zone.Color;
-            zonerows[id] = zone.Row;
-            tilelightdirty = true;
+            zone.RowTint = TintIndex(ParseRgb(zone.Color, NoTint, "zone color"));
+            griddirty = true;
         }
     }
 
@@ -165,31 +154,6 @@ internal partial class Program
     // The light row for a light level with a tint
     static byte[] LevelRow(int level, (byte R, byte G, byte B) tint) =>
         shading ? _videoManager.GetLightRow(level, LIGHTLEVELS, FADESTEPS, fader, fadeg, fadeb, tint.R, tint.G, tint.B) : noshade;
-
-    /// <summary>Brings tilelight up to date with the zone plane and the lights; called before each frame.</summary>
-    static void UpdateTileLight()
-    {
-        if (!tilelightdirty && tilelightversion == _mapManager.ZonesVersion)
-            return;
-        tilelightdirty = false;
-        tilelightversion = _mapManager.ZonesVersion;
-
-        haszones = false;
-        for (int y = 0; y < MapManager.MAPSIZE; y++)
-            for (int x = 0; x < MapManager.MAPSIZE; x++)
-            {
-                var row = lightrow;
-                if (x < _mapManager.mapwidth && y < _mapManager.mapheight
-                    && _mapManager.GetZone(x, y) is var zone and not 0 && zonerows.TryGetValue(zone, out var zonerow))
-                    row = zonerow;
-                tilelight[(y << MapManager.MAPSHIFT) + x] = row;
-                haszones |= row != lightrow;
-            }
-    }
-
-    /// <summary>The light row of a tile (the level's off the map).</summary>
-    static byte[] TileLight(int x, int y) =>
-        (uint)x < MapManager.MAPSIZE && (uint)y < MapManager.MAPSIZE ? tilelight[(y << MapManager.MAPSHIFT) + x] : lightrow;
 
     /// <summary>Where the remap for something nx away along the view (global units) starts in a light row.</summary>
     static int ShadeOffset(long nx)

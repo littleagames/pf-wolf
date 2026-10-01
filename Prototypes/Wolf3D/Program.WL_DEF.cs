@@ -21,6 +21,7 @@ internal class visobj_t
     public objflags flags;
     public Entities.Actors.Actor? wallsprite;   // drawn as a panel (Program.WallSprites.cs), not a billboard
     public bool bright;                         // drawn unshaded (Program.IsBright)
+    public int worldx, worldy;                  // where it stands (global units), for its light
 }
 
 internal enum buttontypes

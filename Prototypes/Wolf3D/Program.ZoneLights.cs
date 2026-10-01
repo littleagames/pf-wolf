@@ -28,9 +28,10 @@ internal sealed class ZoneState
     // jumps again, and how far toward Low it jumped (0 to 256)
     public int Phase, FlickerAmount;
 
-    // The light row last built for it, and the light level and tint it was built for
-    public byte[]? Row;
+    // The light level and tint (an index in Program's tints) its tiles have in the light grid,
+    // and the color the tint is for; RowLevel -1 until they're set
     public int RowLevel = -1;
+    public byte RowTint;
     public string? RowColor;
 
     /// <summary>The light before any effect: part way through a fade, or Light</summary>
@@ -162,7 +163,7 @@ internal partial class Program
     Light zones change as the level is played: switches and actor states set their light
     (at once or fading over some tics) and effects make it flicker, pulse or strobe. The
     zones tick with the actors, and each frame a zone whose light level or tint has moved
-    gets the light row for it (Program.WL_SHADE.cs).
+    gives its tiles the new one in the light grid (Program.LightGrid.cs).
 
     =============================================================================
     */
@@ -178,7 +179,7 @@ internal partial class Program
     {
         foreach (var zone in levelzones.Values)
             zone.Tick((int)tics, zonerandom);
-        UpdateZoneRows();
+        UpdateZoneLevels();
     }
 
     /// <summary>The zone with this id, made (at full light) if the level has none yet.</summary>
@@ -200,7 +201,7 @@ internal partial class Program
         zone.Light = Math.Clamp(light, 0, 255);
         zone.FadeTotal = zone.FadeLeft = Math.Max(tics, 0);
         PrewarmZoneRows(zone, zone.FadeFrom, zone.Light);
-        UpdateZoneRows();
+        UpdateZoneLevels();
     }
 
     /// <summary>Sets a zone's tint (null for none).</summary>
@@ -215,7 +216,7 @@ internal partial class Program
         var zone = ZoneFor(id);
         zone.SetEffect(effect);
         PrewarmZoneRows(zone, zone.Low, zone.BaseLight);
-        UpdateZoneRows();
+        UpdateZoneLevels();
     }
 
     /// <summary>Takes a zone out: its tiles get the level's light.</summary>
