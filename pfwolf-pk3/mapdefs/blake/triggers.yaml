@@ -1,0 +1,6 @@
+# Object-plane tiles the player sets off (see mapdefs/wolf3d/triggers.yaml). Blake Stone's secret
+# pushwall is 98, as in Wolf3D.
+triggers:
+  98: # pushwall
+    action: A_PushWall("world/pushwall", "player/usefail")
+    secret: true

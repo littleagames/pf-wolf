@@ -11,6 +11,13 @@ internal record MapObjectTranslationAsset : Asset
     public MapFlatsTranslation Flats { get; internal set; } = new();
     public MapFloorsTranslation Floors { get; internal set; } = new();
 
+    /// <summary>
+    /// Object-plane values that carry information about the map rather than a thing, keyed by
+    /// the value's high byte (Blake Stone's 0xFE00 and 0xFB00): what each holds. See
+    /// <see cref="MapInfoCodes"/>.
+    /// </summary>
+    public Dictionary<int, string> MapInfo { get; internal set; } = new();
+
     public override void Merge(Asset other)
     {
         if (other is MapObjectTranslationAsset otherAsset)
@@ -55,9 +62,38 @@ internal record MapObjectTranslationAsset : Asset
                 this.Flats.Ceiling[item.Key] = item.Value;
             }
 
+            foreach (var item in otherAsset.MapInfo)
+            {
+                this.MapInfo[item.Key] = item.Value;
+            }
+
             this.Floors = this.Floors.MergedWith(otherAsset.Floors);
         }
     }
+}
+
+/// <summary>
+/// What a mapdefs map-info code holds. The code's own low byte is unused; the map's value is in
+/// the object-plane tile after it (the next one east), which isn't a thing either.
+/// </summary>
+internal static class MapInfoCodes
+{
+    /// <summary>The next tile's high byte is the ceiling's palette index and its low byte the floor's</summary>
+    public const string CeilingFloorColors = "ceiling-floor-colors";
+
+    /// <summary>
+    /// The next tile's high byte is the ceiling's index in the mapdefs flats table and its low byte
+    /// the floor's: every tile the flat plane leaves at 0 gets them
+    /// </summary>
+    public const string CeilingFloorFlats = "ceiling-floor-flats";
+
+    /// <summary>Just not a thing: the tile is skipped (and the one after it isn't)</summary>
+    public const string None = "none";
+
+    /// <summary>Whether the code's value is in the tile after it</summary>
+    public static bool HasValue(string kind) =>
+        kind.Equals(CeilingFloorColors, StringComparison.OrdinalIgnoreCase)
+        || kind.Equals(CeilingFloorFlats, StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>
@@ -82,12 +118,19 @@ internal record MapFloorsTranslation
     /// <summary>The secret exit floor code, or -1 for none.</summary>
     public int? SecretExit { get; set; }
 
+    /// <summary>
+    /// The first hidden area code, or -1 for none: HiddenAreaStart + n is area n too, but kept
+    /// off the automap (Blake Stone). The map loads with them turned into the plain area codes.
+    /// </summary>
+    public int? HiddenAreaStart { get; set; }
+
     public MapFloorsTranslation MergedWith(MapFloorsTranslation other) => new()
     {
         AreaStart = other.AreaStart ?? AreaStart,
         AreaCount = other.AreaCount ?? AreaCount,
         Ambush = other.Ambush ?? Ambush,
         SecretExit = other.SecretExit ?? SecretExit,
+        HiddenAreaStart = other.HiddenAreaStart ?? HiddenAreaStart,
     };
 }
 

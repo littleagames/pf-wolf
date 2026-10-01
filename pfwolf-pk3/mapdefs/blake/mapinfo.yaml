@@ -1,0 +1,16 @@
+# Object-plane values that tell the engine about the map rather than placing a thing, keyed by
+# the value's high byte (so 254 is any value from 0xFE00 to 0xFEFF). Each kind:
+#   ceiling-floor-colors:  the tile after it (east) holds the ceiling's palette index in its high
+#                          byte and the floor's in its low byte; game-info's colors for the map win
+#   ceiling-floor-flats:   the tile after it holds the ceiling's flats.yaml index in its high byte
+#                          and the floor's in its low byte, given to every flat plane tile at 0
+#   none:                  only that the tile isn't a thing
+# Only a map's first code of each kind counts. Blake Stone puts both in the object plane's top row.
+map-info:
+  254: ceiling-floor-colors     # 0xFE00
+  251: ceiling-floor-flats      # 0xFB00
+  # Not things, and their phases decide what they do:
+  241: none                     # 0xF1xx informant messages
+  242: none                     # 0xF2xx scientist messages
+  243: none                     # 0xF3xx more scientist messages
+  245: none                     # 0xF5xx a warp coordinate

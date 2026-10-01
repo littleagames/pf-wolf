@@ -1,0 +1,17 @@
+# The status bar (see gamepacks/wolf3d/statusbar.yaml for every setting). Phase 0 of Blake Stone
+# support: the bottom bar picture with health and ammo in its LED digits. The top bar, the info
+# area, the health monitor, the weapon and the access cards come with the status bar redesign.
+background:
+  pic: StatusBar
+  height: 48
+numbers:
+  font: StatusNumbers
+  color: White
+health:
+  x: 128
+  y: 30
+  digits: 3
+ammo:
+  x: 200
+  y: 30
+  digits: 3

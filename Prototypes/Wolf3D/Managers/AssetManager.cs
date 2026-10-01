@@ -78,12 +78,12 @@ internal class AssetManager
             DataFile("Wolf3DMapFileLoader", d => d.Header),
             DataFile("Wolf3DMapFileLoader", d => d.Data));
 
-        // numFonts isn't stored in the VGAGRAPH file itself, so it must be supplied here.
+        // numFonts isn't stored in the VGAGRAPH file itself, so the file-pack gives it (font-count)
         var vgaGraphicLoader = new Wolf3dVgaFileLoader(
             DataFile("Wolf3DVgaFileLoader", d => d.Header),
             DataFile("Wolf3DVgaFileLoader", d => d.Data),
             DataFile("Wolf3DVgaFileLoader", d => d.Dict),
-            numFonts: 2);
+            numFonts: gamePackInfo.GetFileLoader(gameReleaseId, "Wolf3DVgaFileLoader").FontCount ?? 2);
         AddDataFileAssets(vgaGraphicLoader.GetAssets(rawDataMap?.Graphics ?? []), DataFile("Wolf3DVgaFileLoader", d => d.Data));
 
         var vswapLoader = new Wolf3dVswapFileLoader(DataFile("Wolf3DVswapFileLoader", d => d.Data));

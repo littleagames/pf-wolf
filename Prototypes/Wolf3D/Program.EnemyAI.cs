@@ -187,8 +187,8 @@ internal partial class Program
         }
 
         // A door tile has no area of its own, so a PHASEDOORS actor passing through one
-        // keeps the area it came from
-        if (_mapManager.actorat[ob.TileX, ob.TileY] is not Door)
+        // keeps the area it came from, and so does one crossing a floor code that isn't an area
+        if (_mapManager.actorat[ob.TileX, ob.TileY] is not Door && _mapManager.VALIDAREA(_mapManager.MAPSPOT(ob.TileX, ob.TileY, 0)))
             ob.AreaNumber = (byte)(_mapManager.MAPSPOT(ob.TileX, ob.TileY, 0) - _mapManager.Floors.AreaTile);
         ob.Distance = (int)MapConstants.TILEGLOBAL;
         ob.SyncPosition();

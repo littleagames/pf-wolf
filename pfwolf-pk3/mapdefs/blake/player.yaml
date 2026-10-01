@@ -1,0 +1,11 @@
+# Object-plane tiles the player starts the level on (see mapdefs/wolf3d/player.yaml); the same
+# numbers as Wolf3D's. angles: 0=east, 90=north, 180=west, 270=south.
+player-starts:
+  19:
+    angles: 90
+  20:
+    angles: 0
+  21:
+    angles: 270
+  22:
+    angles: 180

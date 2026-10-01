@@ -1,0 +1,51 @@
+# Blake Stone's weapons (see actordefs/wolf3d/weapons.yaml for the state rules). Phase 0 has only
+# a stand-in auto charge pistol so the player has something in hand: it fires like Wolf3D's
+# pistol and uses no ammo. Its recharging, the other weapons and their timings come later.
+BlakeWeapon:
+  parent: "Weapon"
+  properties:
+    "weapon.yadjust": 19
+  flags: [WEAPON.NOGRIN, WEAPON.DONTBOB]
+  states:
+    Select:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 1
+        action: A_Raise
+        next-state: Select
+    Deselect:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 1
+        action: A_Lower
+        next-state: Deselect
+
+AutoChargePistol:
+  parent: "BlakeWeapon"
+  properties:
+    "inventory.type": AutoChargePistol
+    "inventory.icon": "WeaponPic1"
+    "weapon.slot": 1
+    "weapon.selectionorder": 3700
+    "attacksound": "weapon/pistol/attack"
+  flags: [WEAPON.NOAUTOFIRE]
+  states:
+    Ready:
+      - sprite: ACPG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: ACPG
+        frames: [B]
+        tics-per-frame: 6
+      - sprite: ACPG
+        frames: [C]
+        tics-per-frame: 6
+        modifiers: [bright]
+        action: A_GunAttack
+      - sprite: ACPG
+        frames: [D, E]
+        tics-per-frame: 6
+        next-state: Ready

@@ -1541,7 +1541,7 @@ internal partial class Program
     {
         player.Active = activetypes.ac_yes;
         player.SetPosition(tilex, tiley);       // tile, and the tile-centred world x/y
-        player.AreaNumber = (byte)(_mapManager.MAPSPOT(tilex, tiley, 0) - _mapManager.Floors.AreaTile);
+        player.AreaNumber = _mapManager.SpawnArea(tilex, tiley);
         NewActorState(player, PlayerPawn.SpawnState);
         player.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
         player.RuntimeFlags = objflags.FL_NEVERMARK;

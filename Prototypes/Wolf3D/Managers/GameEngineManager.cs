@@ -12,7 +12,9 @@ internal enum GameType
     [Description("wolf3d")]
     Wolf3D,
     [Description("spear")]
-    SpearOfDestiny
+    SpearOfDestiny,
+    [Description("blake")]
+    BlakeStone
 }
 
 internal class GameEngineManager
@@ -98,6 +100,7 @@ internal class GameEngineManager
     public string GameReleaseId => GameType switch
     {
         GameType.SpearOfDestiny => "spear",
+        GameType.BlakeStone => "blake-aog",
         _ => "wolf3d-apogee",
     };
 
@@ -108,6 +111,7 @@ internal class GameEngineManager
     private string GameDataFolderName => GameType switch
     {
         GameType.SpearOfDestiny => "SpearOfDestiny",
+        GameType.BlakeStone => "BlakeStone",
         _ => "Wolfenstein3D",
     };
 

@@ -1,0 +1,320 @@
+# Walls by map tile number (see mapdefs/wolf3d/walls.yaml). As in Wolf3D, wall n's north and
+# south faces are VSWAP wall page 2(n-1) and its east and west faces the darker page after it.
+# Blake Stone's maps use walls 1 to 63; the switches, food units and elevator controls among
+# them are plain walls until their phases.
+walls:
+    '1':    # Prison Wall
+        North: PRIWALA1
+        South: PRIWALA1
+        East: PRIWALA2
+        West: PRIWALA2
+    '2':    # Prison Wall w/ Windows
+        North: PRIWALB1
+        South: PRIWALB1
+        East: PRIWALB2
+        West: PRIWALB2
+    '3':    # Red Brick
+        North: RBRICKA1
+        South: RBRICKA1
+        East: RBRICKA2
+        West: RBRICKA2
+    '4':    # Red Brick (Variation)
+        North: RBRICKB1
+        South: RBRICKB1
+        East: RBRICKB2
+        West: RBRICKB2
+    '5':    # Red Brick w/ Blood
+        North: RBRKBLD1
+        South: RBRKBLD1
+        East: RBRKBLD2
+        West: RBRKBLD2
+    '6':    # Prison Wall w/ Blood
+        North: PRIBLDA1
+        South: PRIBLDA1
+        East: PRIBLDA2
+        West: PRIBLDA2
+    '7':    # Gray Brick
+        North: GBRICKA1
+        South: GBRICKA1
+        East: GBRICKA2
+        West: GBRICKA2
+    '8':    # Gray Brick (Variation)
+        North: GBRICKB1
+        South: GBRICKB1
+        East: GBRICKB2
+        West: GBRICKB2
+    '9':    # Prison Vent
+        North: PRIVENA1
+        South: PRIVENA1
+        East: PRIVENA2
+        West: PRIVENA2
+    '10':    # Prison Wall w/ Light
+        North: PRILITE1
+        South: PRILITE1
+        East: PRILITE2
+        West: PRILITE2
+    '11':    # Institute Wall w/ Light
+        North: INSLITE1
+        South: INSLITE1
+        East: INSLITE2
+        West: INSLITE2
+    '12':    # Institute Wall 1
+        North: INSWALA1
+        South: INSWALA1
+        East: INSWALA2
+        West: INSWALA2
+    '13':    # Teleporter Wall
+        North: TELEWAL1
+        South: TELEWAL1
+        East: TELEWAL2
+        West: TELEWAL2
+    '14':    # Prison Wall Span
+        North: PRISPAN1
+        South: PRISPAN1
+        East: PRISPAN2
+        West: PRISPAN2
+    '15':    # Food Unit (Beverage)
+        North: FOODBEV1
+        South: FOODBEV1
+        East: FOODBEV2
+        West: FOODBEV2
+    '16':    # Metal Wall w/ Panel 1
+        North: METPNLA1
+        South: METPNLA1
+        East: METPNLA2
+        West: METPNLA2
+    '17':    # Computer Console
+        North: COMPCON1
+        South: COMPCON1
+        East: COMPCON2
+        West: COMPCON2
+    '18':    # Food Unit (Snack)
+        North: FOODSNK1
+        South: FOODSNK1
+        East: FOODSNK2
+        West: FOODSNK2
+    '19':    # Metal Wall w/ Lights
+        North: METLITE1
+        South: METLITE1
+        East: METLITE2
+        West: METLITE2
+    '20':    # Metal Wall
+        North: METWALL1
+        South: METWALL1
+        East: METWALL2
+        West: METWALL2
+    '21':    # Elevator Wall w/ Emblem
+        North: ELEVEMBL
+        South: ELEVEMBL
+        East: ELEVPANL
+        West: ELEVPANL
+    '22':    # Elevator Wall 1
+        North: ELEVWAL1
+        South: ELEVWAL1
+        East: ELEVWAL2
+        West: ELEVWAL2
+    '23':    # Gray Bricks w/ Blood
+        North: GBRKBLD1
+        South: GBRKBLD1
+        East: GBRKBLD2
+        West: GBRKBLD2
+    '24':    # Plasma Alien Spawner
+        North: PLASMSP1
+        South: PLASMSP1
+        East: PLASMSP2
+        West: PLASMSP2
+    '25':    # Elevator Outside Wall
+        North: ELEVOUT1
+        South: ELEVOUT1
+        East: ELEVOUT2
+        West: ELEVOUT2
+    '26':    # Computer w/ Lights
+        North: COMPLIT1
+        South: COMPLIT1
+        East: COMPLIT2
+        West: COMPLIT2
+    '27':    # Computer Elevator? (Same as #0054)
+        North: COMPELE1
+        South: COMPELE1
+        East: COMPELE2
+        West: COMPELE2
+    '28':    # Computer Room Wall
+        North: COMPWAL1
+        South: COMPWAL1
+        East: COMPWAL2
+        West: COMPWAL2
+    '29':    # Episode Segue Art
+        North: XHANGAR1
+        South: XHANGAR1
+        East: XPASSAG1
+        West: XPASSAG1
+    '30':
+        North: XHANGAR2
+        South: XHANGAR2
+        East: XPASSAG2
+        West: XPASSAG2
+    '31':
+        North: XHANGAR3
+        South: XHANGAR3
+        East: XPASSAG3
+        West: XPASSAG3
+    '32':    # Teleporter
+        North: TELEPOR1
+        South: TELEPOR1
+        East: TELEPOR2
+        West: TELEPOR2
+    '33':    # Institute Wall w/ "Danger"
+        North: INSDANG1
+        South: INSDANG1
+        East: INSDANG2
+        West: INSDANG2
+    '34':    # Shipping Crate
+        North: SHCRATE1
+        South: SHCRATE1
+        East: SHCRATE2
+        West: SHCRATE2
+    '35':    # Biotech Wall w/ Gold Deco
+        North: BIOTECH1
+        South: BIOTECH1
+        East: BIOTECH2
+        West: BIOTECH2
+    '36':    # Biotech Wall w/ Emblem
+        North: BIOEMBL1
+        South: BIOEMBL1
+        East: BIOEMBL2
+        West: BIOEMBL2
+    '37':    # Prison Vent w/ Blood
+        North: PRIVENB1
+        South: PRIVENB1
+        East: PRIVENB2
+        West: PRIVENB2
+    '38':    # Metal Wall w/ Panel 2
+        North: METPNLB1
+        South: METPNLB1
+        East: METPNLB2
+        West: METPNLB2
+    '39':    # Metal Wall w/ Panel 3
+        North: METPNLC1
+        South: METPNLC1
+        East: METPNLC2
+        West: METPNLC2
+    '40':    # Biotech Wall w/ Lights
+        North: BIOLITE1
+        South: BIOLITE1
+        East: BIOLITE2
+        West: BIOLITE2
+    '41':    # Metal Wall w/ Tech
+        North: METTECH1
+        South: METTECH1
+        East: METTECH2
+        West: METTECH2
+    '42':    # Space Wall 1
+        North: SPCWALA1
+        South: SPCWALA1
+        East: SPCWALA2
+        West: SPCWALA2
+    '43':    # Space Wall 2
+        North: SPCWALB1
+        South: SPCWALB1
+        East: SPCWALB2
+        West: SPCWALB2
+    '44':    # Space Wall 3
+        North: SPCWALC1
+        South: SPCWALC1
+        East: SPCWALC2
+        West: SPCWALC2
+    '45':    # Switch Active
+        North: SWITCHA1
+        South: SWITCHA1
+        East: SWITCHA2
+        West: SWITCHA2
+    '46':    # Biotech Wall 1
+        North: BIOWALA1
+        South: BIOWALA1
+        East: BIOWALA2
+        West: BIOWALA2
+    '47':    # Cave w/ Sign
+        North: CAVESIN1
+        South: CAVESIN1
+        East: CAVESIN2
+        West: CAVESIN2
+    '48':    # Biotech Wall 2
+        North: BIOWALB1
+        South: BIOWALB1
+        East: BIOWALB2
+        West: BIOWALB2
+    '49':    # Biotech Wall w/ "Danger"
+        North: BIODANG1
+        South: BIODANG1
+        East: BIODANG2
+        West: BIODANG2
+    '50':    # Biotech Wall 3
+        North: BIOWALC1
+        South: BIOWALC1
+        East: BIOWALC2
+        West: BIOWALC2
+    '51':    # Gold Wall w/ Lights
+        North: GLDLITE1
+        South: GLDLITE1
+        East: GLDLITE2
+        West: GLDLITE2
+    '52':    # Gold Wall w/ Emblem
+        North: GLDEMBL1
+        South: GLDEMBL1
+        East: GLDEMBL2
+        West: GLDEMBL2
+    '53':    # Gold Wall 1
+        North: GLDWALA1
+        South: GLDWALA1
+        East: GLDWALA2
+        West: GLDWALA2
+    '54':    # Cave Wall 1
+        North: CAVERNA1
+        South: CAVERNA1
+        East: CAVERNA2
+        West: CAVERNA2
+    '55':    # Cave Wall w/ Blood
+        North: CAVEBLD1
+        South: CAVEBLD1
+        East: CAVEBLD2
+        West: CAVEBLD2
+    '56':    # Cave Wall 2
+        North: CAVERNB1
+        South: CAVERNB1
+        East: CAVERNB2
+        West: CAVERNB2
+    '57':    # Switch Inactive
+        North: SWITCHI1
+        South: SWITCHI1
+        East: SWITCHI2
+        West: SWITCHI2
+    '58':    # Gold Wall 2
+        North: GLDWALB1
+        South: GLDWALB1
+        East: GLDWALB2
+        West: GLDWALB2
+    '59':    # Institute Wall 2
+        North: INSWALB1
+        South: INSWALB1
+        East: INSWALB2
+        West: INSWALB2
+    '60':    # Gold Wall w/ Comm Screen
+        North: GLDCOMM1
+        South: GLDCOMM1
+        East: GLDCOMM2
+        West: GLDCOMM2
+    '61':    # Institute Wall w/ Emblem
+        North: INSEMBL1
+        South: INSEMBL1
+        East: INSEMBL2
+        West: INSEMBL2
+    '62':    # Space Wall 4
+        North: SPCWALD1
+        South: SPCWALD1
+        East: SPCWALD2
+        West: SPCWALD2
+    '63':    # Space Wall w/ Emblem
+        North: SPCEMBL1
+        South: SPCEMBL1
+        East: SPCEMBL2
+        West: SPCEMBL2

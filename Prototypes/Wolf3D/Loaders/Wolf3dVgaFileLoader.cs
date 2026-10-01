@@ -187,13 +187,15 @@ internal class Wolf3dVgaFileLoader
             // whatever came out is the real data, packed as fixed 8x8 (64-byte) tiles.
             const int BLOCK = 64;
 
+            // The last byte's unused bits (up to 7) can decode as a few stray symbols past the
+            // tiles (Blake Stone's 35 tiles come out 3 bytes long), so those are dropped.
             var tileData = CAL_HuffExpandUntilSourceExhausted(source, grhuffman);
             numTile8 = tileData.Length / BLOCK;
 
-            if (numTile8 * BLOCK != tileData.Length)
+            if (tileData.Length - numTile8 * BLOCK >= 8)
                 throw new PfWolfGraphicException($"Tile8 chunk decompressed to {tileData.Length} bytes, which is not a whole number of {BLOCK}-byte tiles.");
 
-            grsegs[chunk] = tileData;
+            grsegs[chunk] = tileData.Length == numTile8 * BLOCK ? tileData : tileData[..(numTile8 * BLOCK)];
             return;
         }
 

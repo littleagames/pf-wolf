@@ -1,0 +1,30 @@
+# Styles for the messages shown over the 3D view (see gamepacks/wolf3d/hud-messages.yaml for
+# every setting). Blake Stone shows its messages in the status bar's info area; until that's
+# built, they go over the view like Wolf3D's.
+
+Default:
+  anchor: TopLeft
+  x: 0
+  y: 0
+  margin: 2
+  font: HudMessage
+  color: White
+  duration: 210
+  max-lines: 4
+
+Center:
+  anchor: Center
+  color: Yellow
+  duration: 140
+  max-lines: 2
+
+Obituary:
+  parent: Center
+  color: White
+  duration: 350
+  max-lines: 1
+
+Bottom:
+  anchor: Bottom
+  y: -8
+  max-lines: 2

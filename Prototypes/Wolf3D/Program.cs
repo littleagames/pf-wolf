@@ -537,7 +537,19 @@ internal partial class Program
         else if (viewsize == 20)
             SetViewSize((uint)_videoManager.screenWidth, (uint)(_videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES));
         else
-            SetViewSize((uint)(width * 16 * _videoManager.screenWidth / 320), (uint)(width * 16 * HEIGHTRATIO * _videoManager.screenHeight / 200));
+            SetViewSize((uint)(width * 16 * _videoManager.screenWidth / 320), (uint)BorderedViewHeight(width));
+    }
+
+    /// <summary>
+    /// A bordered view's height at view size <paramref name="width"/>. The sizes are laid out for
+    /// Wolf3D's 40 line status bar: with a taller one (Blake Stone's), the view stops short of it,
+    /// leaving room for the border lines round it.
+    /// </summary>
+    private static int BorderedViewHeight(int width)
+    {
+        int height = (int)(width * 16 * HEIGHTRATIO * _videoManager.screenHeight / 200);
+        int room = _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 2);
+        return Math.Min(height, room);
     }
 
     internal static bool SetViewSize(uint width, uint height)
@@ -720,7 +732,7 @@ internal partial class Program
         else
         {
             viewwidth = width * 16 * _videoManager.screenWidth / 320;
-            viewheight = (int)(width * 16 * HEIGHTRATIO * _videoManager.screenHeight / 200);
+            viewheight = BorderedViewHeight(width);
             DrawPlayBorder();
         }
 

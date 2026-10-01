@@ -8,7 +8,7 @@ namespace Wolf3D.Managers;
 /// <summary>
 /// The game pack's plane 0 floor codes (mapdefs floors), resolved. See <see cref="MapFloorsTranslation"/>.
 /// </summary>
-internal sealed record FloorCodes(int AreaTile, int NumAreas, int AmbushTile, int SecretExitTile)
+internal sealed record FloorCodes(int AreaTile, int NumAreas, int AmbushTile, int SecretExitTile, int HiddenAreaTile)
 {
     public static FloorCodes From(MapFloorsTranslation floors)
     {
@@ -16,8 +16,12 @@ internal sealed record FloorCodes(int AreaTile, int NumAreas, int AmbushTile, in
             throw new Exception("The mapdefs floors need an area-start and an area-count");
         if (start < 1 || count is < 1 or > 255)
             throw new Exception($"The mapdefs floors' area-start ({start}) must be 1 or more and area-count ({count}) 1 to 255");
-        return new FloorCodes(start, count, floors.Ambush ?? -1, floors.SecretExit ?? -1);
+        return new FloorCodes(start, count, floors.Ambush ?? -1, floors.SecretExit ?? -1, floors.HiddenAreaStart ?? -1);
     }
+
+    /// <summary>The plain area code for a hidden one (see MapFloorsTranslation.HiddenAreaStart); any other code as it is.</summary>
+    public int Unhidden(int tile) =>
+        HiddenAreaTile > 0 && tile >= HiddenAreaTile && tile < HiddenAreaTile + NumAreas ? tile - HiddenAreaTile + AreaTile : tile;
 }
 /// <summary>What the player has seen of a map tile (MapManager.seen), for the automap.</summary>
 [Flags]
@@ -234,6 +238,8 @@ internal class MapManager
         PlayerStart = null;
 
         var data = GetMapData();
+        UnhideAreas();
+        ReadMapInfo(fillFlats: true);
         foreach (var id in data.Walls.Keys.Where(id => !IsWallId(id)))
             if (badwallids.Add(id))
                 Console.WriteLine($"mapdefs wall {id} is ignored: wall ids are 1 to {Program.BIT_WALL - 1}");
@@ -262,6 +268,9 @@ internal class MapManager
 
                 // TODO: SpawnDoor
 
+                if (infotiles[y * MAPSIZE + x])
+                    continue;
+
                 int objtile = MAPSPOT(x, y, 1);
                 if (data.Things.TryGetValue(objtile, out var thingXlat))
                 {
@@ -289,6 +298,92 @@ internal class MapManager
         BuildWallShapes();
         BuildWallHeights();
         ZonesVersion++;
+    }
+
+    /// <summary>Turns the hidden area codes on plane 0 into the plain area codes (mapdefs floors hidden-area-start).</summary>
+    private void UnhideAreas()
+    {
+        if (Floors.HiddenAreaTile <= 0)
+            return;
+
+        var plane = mapsegs[0];
+        for (int i = 0; i < plane.Length; i++)
+            plane[i] = (ushort)Floors.Unhidden(plane[i]);
+    }
+
+    /// <summary>
+    /// Object-plane tiles that hold map info (mapdefs map-info) or its value, rather than a
+    /// thing. Indexed (y &lt;&lt; MAPSHIFT) + x. Rebuilt with the planes, so it isn't saved.
+    /// </summary>
+    private bool[] infotiles = new bool[MAPAREA];
+
+    /// <summary>The map's own ceiling and floor colors (a map-info ceiling-floor-colors code), as palette indices.</summary>
+    internal byte? MapCeilingColor { get; private set; }
+    internal byte? MapFloorColor { get; private set; }
+
+    /// <summary>
+    /// Reads the map-info codes on the object plane (mapdefs map-info): marks their tiles in
+    /// <see cref="infotiles"/>, takes the map's colors, and with <paramref name="fillFlats"/>
+    /// gives its flats to every flat plane tile still at 0. As in Blake Stone, only a map's first
+    /// code of each kind counts.
+    /// </summary>
+    private void ReadMapInfo(bool fillFlats)
+    {
+        infotiles = new bool[MAPAREA];
+        MapCeilingColor = MapFloorColor = null;
+
+        var codes = GetMapData().MapInfo;
+        if (codes.Count == 0)
+            return;
+
+        var objects = mapsegs[1];
+        bool gotFlats = false;
+        for (int i = 0; i < MAPAREA && i < objects.Length; i++)
+        {
+            if (!codes.TryGetValue(objects[i] >> 8, out var kind))
+                continue;
+
+            infotiles[i] = true;
+            if (!MapInfoCodes.HasValue(kind) || i + 1 >= objects.Length)
+                continue;
+
+            var value = objects[++i];
+            infotiles[i] = true;
+            if (kind.Equals(MapInfoCodes.CeilingFloorColors, StringComparison.OrdinalIgnoreCase))
+            {
+                if (MapCeilingColor == null)
+                {
+                    MapCeilingColor = (byte)(value >> 8);
+                    MapFloorColor = (byte)(value & 0xff);
+                }
+            }
+            else if (!gotFlats)
+            {
+                gotFlats = true;
+                if (fillFlats)
+                {
+                    var flats = mapsegs[FLATPLANE];
+                    for (int t = 0; t < flats.Length; t++)
+                        if (flats[t] == 0)
+                            flats[t] = value;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The area a thing spawning on this tile is in: its floor code's, else a neighbouring tile's
+    /// (a floor code that isn't an area, like Blake Stone's 157 and 158), else area 0.
+    /// </summary>
+    internal byte SpawnArea(int x, int y)
+    {
+        foreach (var (dx, dy) in new[] { (0, 0), (1, 0), (0, -1), (0, 1), (-1, 0) })
+        {
+            int tx = x + dx, ty = y + dy;
+            if (tx >= 0 && ty >= 0 && tx < mapwidth && ty < mapheight && VALIDAREA(MAPSPOT(tx, ty, 0)))
+                return (byte)(MAPSPOT(tx, ty, 0) - Floors.AreaTile);
+        }
+        return 0;
     }
 
     /// <summary>
@@ -552,7 +647,7 @@ internal class MapManager
         // gated on AreaNumber (SightPlayer's areabyplayer connectivity check, T_Shoot/
         // CheckSight's area check) reads the wrong area, e.g. a stationary/ambushed actor
         // that never patrols would never notice the player if area 0 isn't connected.
-        builtActor.AreaNumber = (byte)(MAPSPOT(tilex, tiley, 0) - Floors.AreaTile);
+        builtActor.AreaNumber = SpawnArea(tilex, tiley);
         builtActor.Tag = GetTag(tilex, tiley);
 
         // Angles: 0=east, 45=northeast, 90=north ... 315=southeast, in objdirtypes order
@@ -999,6 +1094,7 @@ internal class MapManager
         mapsegs = level.Planes.Select(plane => (ushort[])plane.Clone()).ToArray();
         tilemap = (byte[,])level.TileMap.Clone();
         actorat = (Actor?[,])level.ActorAt.Clone();
+        ReadMapInfo(fillFlats: false);      // the saved flat plane already has the map's flats
         BuildWallShapes();
         BuildWallHeights();
         BuildFlats(defaultfloor, defaultceiling);

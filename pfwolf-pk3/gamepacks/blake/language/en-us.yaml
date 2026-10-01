@@ -1,0 +1,7 @@
+# Blake Stone text, added to the shared language/en-us.yaml.
+
+# Quit messages (game-info end-strings)
+$BS_ENDSTR1: "Are you sure you want\nto quit?"
+$BS_ENDSTR2: "Goldfire is still out\nthere. Quit anyway?"
+$BS_ENDSTR3: "The mission isn't over,\nBlake. Quit anyway?"
+$BS_ENDSTR4: "Leaving so soon?"

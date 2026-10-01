@@ -1,0 +1,39 @@
+# Floor and ceiling textures (see mapdefs/wolf3d/flats.yaml). Blake Stone's 32 flats are the
+# VSWAP wall pages after the walls; a map picks its floor and ceiling by index with a map-info
+# code (mapinfo.yaml), which fills the flat plane. Index 0 is left out: no texture, the map's
+# floor or ceiling color shows.
+flats:
+  floor: &flats
+    1: F_GRYBIG
+    2: F_SQNORM
+    3: F_GRYTIL
+    4: F_BRNTIL
+    5: F_BLUTIL
+    6: F_GRYCIR
+    7: F_SQLITC
+    8: F_METALS
+    9: F_OCTTEK
+    10: F_GRYPN1
+    11: F_OCTOS
+    12: F_TRIPNL
+    13: F_GRYPN2
+    14: F_TRILIT
+    15: F_TEKGLO
+    16: F_TEKFRM
+    17: F_CRSCYN
+    18: F_CRSPNK
+    19: F_PNKTIL
+    20: F_GRDIAG
+    21: F_SQLITY
+    22: F_SQLITR
+    23: F_OCTHOL
+    24: F_OCTLIT
+    25: F_GRNBIG
+    26: F_YLOTIL
+    27: F_CYNTIL
+    28: F_BLUCIR
+    29: F_GRNCIR
+    30: F_BLUPNL
+    31: F_YLOPNL
+    32: F_OCTPNK
+  ceiling: *flats

@@ -27,15 +27,19 @@ internal record GamePackInfoAsset : Asset
     /// </summary>
     public string GetDataFile(string releaseId, string loaderName, Func<FileLoaderDetails, FileReference?> selectFile)
     {
-        var fileLoaders = GetGamePack(releaseId).FilePack?.FileLoaders ?? [];
-        var details = fileLoaders.FirstOrDefault(kvp => kvp.Key.Equals(loaderName, StringComparison.OrdinalIgnoreCase)).Value
-            ?? throw new KeyNotFoundException($"'{releaseId}' in gamepacks/gamepack-info.yaml has no file-pack entry for {loaderName}");
-
-        var file = selectFile(details)?.File;
+        var file = selectFile(GetFileLoader(releaseId, loaderName))?.File;
         if (string.IsNullOrWhiteSpace(file))
             throw new KeyNotFoundException($"'{releaseId}' in gamepacks/gamepack-info.yaml is missing a file name for {loaderName}");
 
         return file;
+    }
+
+    /// <summary>A release's file-pack entry for one of its loaders</summary>
+    public FileLoaderDetails GetFileLoader(string releaseId, string loaderName)
+    {
+        var fileLoaders = GetGamePack(releaseId).FilePack?.FileLoaders ?? [];
+        return fileLoaders.FirstOrDefault(kvp => kvp.Key.Equals(loaderName, StringComparison.OrdinalIgnoreCase)).Value
+            ?? throw new KeyNotFoundException($"'{releaseId}' in gamepacks/gamepack-info.yaml has no file-pack entry for {loaderName}");
     }
 
     public GamePack GetGamePack(string releaseId)
@@ -61,6 +65,9 @@ public record FileLoaderDetails
     public FileReference? Data { get; init; }
     public FileReference? Dict { get; init; }
     public string? Map { get; init; }
+    // "font-count": Wolf3DVgaFileLoader's number of font chunks after STRUCTPIC, which the file
+    // itself doesn't record (2 when left out, as in Wolf3D and Spear; Blake Stone has 5)
+    public int? FontCount { get; init; }
 }
 
 public record FilePack

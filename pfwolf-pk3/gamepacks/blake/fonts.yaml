@@ -1,0 +1,40 @@
+# Fonts text can be printed in, by name (see gamepacks/wolf3d/fonts.yaml for every setting).
+# Blake Stone's VGAGRAPH has five fonts, Font1 to Font5:
+#   Font1  10 high, its glyphs 31 codes below their characters (code 32 is "?", 34 is "A"),
+#          so it can't print plain text
+#   Font2  13 high, the menus'
+#   Font3  6 high, upper case only
+#   Font4  20 high
+#   Font5  11 high
+# SmallFont and LargeFont are the names the engine prints most text in.
+
+SmallFont:
+  type: vga
+  source: Font5
+
+LargeFont:
+  type: vga
+  source: Font2
+
+# Messages over the 3D view (hud-messages.yaml)
+HudMessage:
+  type: vga
+  source: Font5
+  shadow: {}
+
+# The status bar's numbers: Blake Stone's LED digits
+StatusNumbers:
+  type: graphic
+  glyphs:
+    " ": N_Blank
+    "0": N_0
+    "1": N_1
+    "2": N_2
+    "3": N_3
+    "4": N_4
+    "5": N_5
+    "6": N_6
+    "7": N_7
+    "8": N_8
+    "9": N_9
+  cell-width: 8

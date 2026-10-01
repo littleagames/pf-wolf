@@ -90,6 +90,46 @@ spear:
           file: vswap.sod
           md5: b1dac0a8786c7cdbb09331a4eba00652
         map: spear-map
+blake-aog:
+  title: "Blake Stone: Aliens of Gold"
+  game-palette: blake
+  # Blake Stone's own pack: it doesn't start from wolf3d's files
+  file-pack:
+    description: Blake Stone - Aliens of Gold (registered)
+    file-loaders:
+      Wolf3DAudioFileLoader:
+        header:
+          file: audiohed.bs6
+          md5: 52a203285041846c9fd73e8947a64522
+        data:
+          file: audiot.bs6
+          md5: 144a201ef4bd5bd9989dc61d9250eeac
+        map: blake-aog-map
+      Wolf3DMapFileLoader:
+        header:
+          file: maphead.bs6
+          md5: 6cf51fb5cdece6b03c90feb6c94cc7ff
+        data:
+          file: maptemp.bs6
+          md5: 897af42e172bf6d68954c111d1625bd8
+        map: blake-aog-map
+      Wolf3DVgaFileLoader:
+        dict:
+          file: vgadict.bs6
+          md5: b303d9155baaa1c126917053a93f054a
+        header:
+          file: vgahead.bs6
+          md5: 095d7c737e1c31d7674e1ed2160b676c
+        data:
+          file: vgagraph.bs6
+          md5: 6089a1cbe454cdf5022b3c115bcd2e9d
+        font-count: 5
+        map: blake-aog-map
+      Wolf3DVswapFileLoader:
+        data:
+          file: vswap.bs6
+          md5: 5e7d5862fda72a1b2874301c01491aac
+        map: blake-aog-map
 # spear-demo:
     # title: "Spear of Destiny: Demo"
     # game-palette: spearpal

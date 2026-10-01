@@ -1,0 +1,32 @@
+# Doors by map tile number (see mapdefs/wolf3d/doors.yaml for every setting). Blake Stone's doors
+# come in pairs, the even tile running north-south (vertical) and the odd one east-west. Each
+# kind has unlocked (U) and locked (L) textures; Phase 0 uses the unlocked ones, and the slot
+# beside each door is its kind's door jamb. Locks, one-way doors (98-101) and the elevator door
+# come with the doors phase.
+doors:
+    # Bio-tech door (white)
+    '88': { Vertical: true, East: DBIOU2, West: DBIOU2, North: JAMBIO1, South: JAMBIO1 }
+    '89': { North: DBIOU1, South: DBIOU1, East: JAMBIO2, West: JAMBIO2 }
+    # Metal door (grey/blue)
+    '90': { Vertical: true, East: DMETALU2, West: DMETALU2, North: JAMSTEL1, South: JAMSTEL1 }
+    '91': { North: DMETALU1, South: DMETALU1, East: JAMSTEL2, West: JAMSTEL2 }
+    # Prison door (blue/blue)
+    '92': { Vertical: true, East: DPRISNU2, West: DPRISNU2, North: JAMSTEL1, South: JAMSTEL1 }
+    '93': { North: DPRISNU1, South: DPRISNU1, East: JAMSTEL2, West: JAMSTEL2 }
+    # Elevator door
+    '94': { Vertical: true, East: DELEVU2, West: DELEVU2, North: JAMSTEL1, South: JAMSTEL1 }
+    '95': { North: DELEVU1, South: DELEVU1, East: JAMSTEL2, West: JAMSTEL2 }
+    # High security door (blue/red)
+    '96': { Vertical: true, East: DHSECU2, West: DHSECU2, North: JAMSPCB1, South: JAMSPCB1 }
+    '97': { North: DHSECU1, South: DHSECU1, East: JAMSPCB2, West: JAMSPCB2 }
+    # One-way doors (for now, ordinary doors both ways)
+    '98': { Vertical: true, East: DONEWYU2, West: DONEWYU2, North: JAMSTEL1, South: JAMSTEL1 }
+    '99': { North: DONEWYU1, South: DONEWYU1, East: JAMSTEL2, West: JAMSTEL2 }
+    '100': { Vertical: true, East: DONEWYU2, West: DONEWYU2, North: JAMSTEL1, South: JAMSTEL1 }
+    '101': { North: DONEWYU1, South: DONEWYU1, East: JAMSTEL2, West: JAMSTEL2 }
+    # Office door (brown)
+    '102': { Vertical: true, East: DOFFICU2, West: DOFFICU2, North: JAMOFFC1, South: JAMOFFC1 }
+    '103': { North: DOFFICU1, South: DOFFICU1, East: JAMOFFC2, West: JAMOFFC2 }
+    # Space door (grey/grey)
+    '104': { Vertical: true, East: DSPACEU2, West: DSPACEU2, North: JAMSPCA1, South: JAMSPCA1 }
+    '105': { North: DSPACEU1, South: DSPACEU1, East: JAMSPCA2, West: JAMSPCA2 }

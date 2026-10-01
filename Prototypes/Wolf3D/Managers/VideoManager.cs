@@ -343,6 +343,8 @@ internal class VideoManager
         {
             byte* dest = (byte*)destPtr;
 
+            // A picture reaching past the screen's edges (a game pack's bigger pictures in a
+            // menu laid out for smaller ones, say) is cut off there
             for (j = 0, scj = 0; j < height; j++, scj += scaleFactor)
             {
                 for (i = 0, sci = 0; i < width; i++, sci += scaleFactor)
@@ -350,9 +352,14 @@ internal class VideoManager
                     byte col = source[(j * width) + i];
                     for (m = 0; m < scaleFactor; m++)
                     {
+                        int y = scj + m + desty;
+                        if (y < 0 || y >= screenHeight)
+                            continue;
                         for (n = 0; n < scaleFactor; n++)
                         {
-                            dest[ylookup[scj + m + desty] + sci + n + destx] = col;
+                            int x = sci + n + destx;
+                            if (x >= 0 && x < screenWidth)
+                                dest[ylookup[y] + x] = col;
                         }
                     }
                 }

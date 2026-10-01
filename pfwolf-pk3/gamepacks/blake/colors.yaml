@@ -1,0 +1,57 @@
+# Named colors used by menus, text layout and intermission screens (see gamepacks/wolf3d/colors.yaml).
+# Values are #RRGGBB; the engine draws the closest color in the game palette. Blake Stone's
+# menus are green on black; the original control panel's look comes in a later phase.
+
+# Menu frame
+BORDCOLOR: "#00A600"
+BORD2COLOR: "#28CF00"
+DEACTIVE: "#004500"
+BKGDCOLOR: "#002800"
+STRIPE: "#003800"
+
+# Menu text
+READCOLOR: "#00A600"
+READHCOLOR: "#28FF00"
+VIEWCOLOR: "#004040"
+TEXTCOLOR: "#8D8D8D"
+HIGHLIGHT: "#C2C2C2"
+
+# Intermission bars
+FIRSTCOLOR: "#9DFF9D"
+SECONDCOLOR: "#00FF00"
+
+# Read This! / help text background
+BACKCOLOR: "#DEDEDE"
+
+# Signon screen hardware-detected boxes
+FILLCOLOR: "#FFFF55"
+
+Black: "#000000"
+White: "#FFFFFF"
+Grey: "#8D8D8D"
+Green: "#04A500"
+DarkGreen: "#047100"
+Yellow: "#E6DA00"
+Purple: "#61009D"
+"Dark Blue": "#00004C"
+Navy: "#00007D"
+Blue: "#0000E2"
+Maroon: "#AA0000"
+"Light Blue": "#20AAFF"
+Lime: "#55FF55"
+"Bright Yellow": "#FFFF55"
+"Dark Yellow": "#404000"
+
+# Automap
+AutomapBackground: "#555555"
+AutomapWall: "#008E00"
+AutomapDoor: "#10C710"
+AutomapPlayer: "#FF8000"
+AutomapEnemy: "#FF0000"
+AutomapCorpse: "#710000"
+AutomapItem: "#20AAFF"
+AutomapDecor: "#8D8D8D"
+AutomapWallSprite: "#8D8D8D"
+AutomapGrid: "#004040"
+AutomapTitle: "#FFFF55"
+AutomapStats: "#C2C2C2"

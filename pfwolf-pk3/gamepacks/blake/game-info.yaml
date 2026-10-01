@@ -1,0 +1,492 @@
+# Blake Stone: Aliens of Gold. Phase 0 of Blake Stone support: enough to start a mission and walk
+# its floors. Elevators, briefings, the floor-select screen and the rest come in later phases.
+default-map:
+  # A map's own colors (its map-info code, mapdefs/blake/mapinfo.yaml) win over these
+  ceiling-color: "#383838"
+  floor-color: "#717171"
+
+signon:
+  press-a-key: false
+
+non-shareware-notice: false
+
+title-pics:
+  - Title
+
+intro-music: THEME
+high-scores-music: THEME
+menu-fade-color: "#000000"
+
+screen-fade-style: palette
+menu-fade-style: palette
+menu-fade-tics: 20
+death-fade-style: fizzle
+death-fade-tics: 70
+death-fade-color: Maroon
+death-turn-speed: 2
+death-hold-tics: 100
+level-fade-style: fizzle
+level-fade-tics: 20
+
+hud-messages:
+  enabled: false
+  pickup-style: Default
+  lock-style: Center
+  obituary-style: Obituary
+
+skills:
+  NOVICE:
+    name: "Novice Agent"
+    pic-name: C_BabyMode
+  SKILLED:
+    name: "Skilled Agent"
+    pic-name: C_Easy
+  EXPERT:
+    name: "Expert Agent"
+    pic-name: C_Normal
+  VETERAN:
+    name: "Veteran Agent"
+    pic-name: C_Hard
+
+# Each mission is 15 MAPTEMP slots: floor 0 (the basement) to floor 10, then four slots the game
+# never uses. The game starts a mission on its basement for now; the elevator comes later.
+# The missions' pictures (C_Episode1-6) are too tall for this episode menu; they come back with
+# Blake Stone's own menus.
+episodes:
+  MISSION1:
+    name: "Mission 1\nSTAR Institute"
+    start-map: MAP01
+  MISSION2:
+    name: "Mission 2\nFloating Fortress"
+    start-map: MAP16
+  MISSION3:
+    name: "Mission 3"
+    start-map: MAP31
+  MISSION4:
+    name: "Mission 4\nSTAR Port"
+    start-map: MAP46
+  MISSION5:
+    name: "Mission 5\nHabitat II"
+    start-map: MAP61
+  MISSION6:
+    name: "Mission 6\nSatellite Defense"
+    start-map: MAP76
+
+clusters:
+  1: {}
+  2: {}
+  3: {}
+  4: {}
+  5: {}
+  6: {}
+
+# Floor names are the game's own (its FloorNames text)
+maps:
+  # Mission 1
+  MAP01:
+    name: "SECURITY TRAINING ARENAS"
+    next: MAP02
+    floor-number: 0
+    cluster: 1
+  MAP02:
+    name: "STAR INSTITUTE GENERAL OPERATIONS"
+    next: MAP03
+    floor-number: 1
+    cluster: 1
+  MAP03:
+    name: "TECHNICAL PLANNING OFFICES"
+    next: MAP04
+    floor-number: 2
+    cluster: 1
+  MAP04:
+    name: "MUTANT HOLDING CHAMBERS"
+    next: MAP05
+    floor-number: 3
+    cluster: 1
+  MAP05:
+    name: "ALIEN CANISTER STORAGE"
+    next: MAP06
+    floor-number: 4
+    cluster: 1
+  MAP06:
+    name: "CONTROLLED POD HATCHERY"
+    next: MAP07
+    floor-number: 5
+    cluster: 1
+  MAP07:
+    name: "POD STABILIZATION AREA"
+    next: MAP08
+    floor-number: 6
+    cluster: 1
+  MAP08:
+    name: "AMMUNITION AND WEAPONRY STORAGE"
+    next: MAP09
+    floor-number: 7
+    cluster: 1
+  MAP09:
+    name: "SECURITY OFFICES"
+    next: MAP10
+    floor-number: 8
+    cluster: 1
+  MAP10:
+    name: "SPACE TRAK TRANSPORT"
+    next: MAP11
+    floor-number: 9
+    cluster: 1
+  MAP11:
+    name: "SECRET ALIEN CHAMBERS"
+    floor-number: 10
+    cluster: 1
+  MAP12:
+    name: "Mission 1 unused slot 11"
+    cluster: 1
+  MAP13:
+    name: "Mission 1 unused slot 12"
+    cluster: 1
+  MAP14:
+    name: "Mission 1 unused slot 13"
+    cluster: 1
+  MAP15:
+    name: "Mission 1 unused slot 14"
+    cluster: 1
+  # Mission 2
+  MAP16:
+    name: "POD ALIEN STORAGE AND TRANSPORT"
+    next: MAP17
+    floor-number: 0
+    cluster: 2
+  MAP17:
+    name: "TRANSPORT ARRIVAL AND PROCESSING"
+    next: MAP18
+    floor-number: 1
+    cluster: 2
+  MAP18:
+    name: "GENERAL STORAGE AND OPERATIONS"
+    next: MAP19
+    floor-number: 2
+    cluster: 2
+  MAP19:
+    name: "PERSONNEL BRIEFING AND TRAINING"
+    next: MAP20
+    floor-number: 3
+    cluster: 2
+  MAP20:
+    name: "CARGO STORAGE AND PROCESSING"
+    next: MAP21
+    floor-number: 4
+    cluster: 2
+  MAP21:
+    name: "PERSONNEL CORRECTION AND DETENTION"
+    next: MAP22
+    floor-number: 5
+    cluster: 2
+  MAP22:
+    name: "WEAPONS DEVELOPMENT AND TESTING"
+    next: MAP23
+    floor-number: 6
+    cluster: 2
+  MAP23:
+    name: "GENETIC DEVELOPMENT AND STORAGE"
+    next: MAP24
+    floor-number: 7
+    cluster: 2
+  MAP24:
+    name: "TECHNICAL ENGINEERING"
+    next: MAP25
+    floor-number: 8
+    cluster: 2
+  MAP25:
+    name: "TRANSPORT PROCESSING AND DEPARTURE"
+    next: MAP26
+    floor-number: 9
+    cluster: 2
+  MAP26:
+    name: "SECRET STORAGE CHAMBERS"
+    floor-number: 10
+    cluster: 2
+  MAP27:
+    name: "Mission 2 unused slot 11"
+    cluster: 2
+  MAP28:
+    name: "Mission 2 unused slot 12"
+    cluster: 2
+  MAP29:
+    name: "Mission 2 unused slot 13"
+    cluster: 2
+  MAP30:
+    name: "Mission 2 unused slot 14"
+    cluster: 2
+  # Mission 3
+  MAP31:
+    name: "SECRET ALIEN TEST ENVIRONMENT"
+    next: MAP32
+    floor-number: 0
+    cluster: 3
+  MAP32:
+    name: "NETWORK SECURITY MONITORING"
+    next: MAP33
+    floor-number: 1
+    cluster: 3
+  MAP33:
+    name: "NETWORK OPERATIONS AND CONTROL"
+    next: MAP34
+    floor-number: 2
+    cluster: 3
+  MAP34:
+    name: "LUNAR EXPLORATIONS"
+    next: MAP35
+    floor-number: 3
+    cluster: 3
+  MAP35:
+    name: "GENETICIST TRAINING LABS"
+    next: MAP36
+    floor-number: 4
+    cluster: 3
+  MAP36:
+    name: "NETWORK ATMOSPHERIC CONTROL"
+    next: MAP37
+    floor-number: 5
+    cluster: 3
+  MAP37:
+    name: "ALIEN BEHAVIORAL OBSERVATORY"
+    next: MAP38
+    floor-number: 6
+    cluster: 3
+  MAP38:
+    name: "LUNAR BIOSPHERE MONITORING"
+    next: MAP39
+    floor-number: 7
+    cluster: 3
+  MAP39:
+    name: "HUMAN MORPHING LABS"
+    next: MAP40
+    floor-number: 8
+    cluster: 3
+  MAP40:
+    name: "NETWORK TRANSIT DECK"
+    next: MAP41
+    floor-number: 9
+    cluster: 3
+  MAP41:
+    name: "SECRET NETWORK COMMUNICATIONS NODE"
+    floor-number: 10
+    cluster: 3
+  MAP42:
+    name: "Mission 3 unused slot 11"
+    cluster: 3
+  MAP43:
+    name: "Mission 3 unused slot 12"
+    cluster: 3
+  MAP44:
+    name: "Mission 3 unused slot 13"
+    cluster: 3
+  MAP45:
+    name: "Mission 3 unused slot 14"
+    cluster: 3
+  # Mission 4
+  MAP46:
+    name: "HIDDEN HABITAT STORAGE"
+    next: MAP47
+    floor-number: 0
+    cluster: 4
+  MAP47:
+    name: "ALIEN CONTROLLED QUARTERS"
+    next: MAP48
+    floor-number: 1
+    cluster: 4
+  MAP48:
+    name: "MUTANT PERFECTION LABS"
+    next: MAP49
+    floor-number: 2
+    cluster: 4
+  MAP49:
+    name: "CIRCULAR ALIEN CHAMBERS"
+    next: MAP50
+    floor-number: 3
+    cluster: 4
+  MAP50:
+    name: "LUNAR OPERATIONS GOLD OPENING"
+    next: MAP51
+    floor-number: 4
+    cluster: 4
+  MAP51:
+    name: "NEURO-NET CELLS"
+    next: MAP52
+    floor-number: 5
+    cluster: 4
+  MAP52:
+    name: "ALIEN PROCESSING STATION"
+    next: MAP53
+    floor-number: 6
+    cluster: 4
+  MAP53:
+    name: "STAR RECREATION AREA"
+    next: MAP54
+    floor-number: 7
+    cluster: 4
+  MAP54:
+    name: "BIO-MORPHING LABS"
+    next: MAP55
+    floor-number: 8
+    cluster: 4
+  MAP55:
+    name: "CRYO-STORAGE LEVEL"
+    next: MAP56
+    floor-number: 9
+    cluster: 4
+  MAP56:
+    name: "MUTANT TRANSPORT DECK"
+    floor-number: 10
+    cluster: 4
+  MAP57:
+    name: "Mission 4 unused slot 11"
+    cluster: 4
+  MAP58:
+    name: "Mission 4 unused slot 12"
+    cluster: 4
+  MAP59:
+    name: "Mission 4 unused slot 13"
+    cluster: 4
+  MAP60:
+    name: "Mission 4 unused slot 14"
+    cluster: 4
+  # Mission 5
+  MAP61:
+    name: "SUB-LUNAR TESTING LABS"
+    next: MAP62
+    floor-number: 0
+    cluster: 5
+  MAP62:
+    name: "HABITAT CREW QUARTERS"
+    next: MAP63
+    floor-number: 1
+    cluster: 5
+  MAP63:
+    name: "SOLAR RADIATION MONITORING"
+    next: MAP64
+    floor-number: 2
+    cluster: 5
+  MAP64:
+    name: "ARTIFICIAL ATMOSPHERIC RESEARCH"
+    next: MAP65
+    floor-number: 3
+    cluster: 5
+  MAP65:
+    name: "HABITAT SUPPLY STORAGE DECK"
+    next: MAP66
+    floor-number: 4
+    cluster: 5
+  MAP66:
+    name: "GENETIC RESEARCH HOLDING AREAS"
+    next: MAP67
+    floor-number: 5
+    cluster: 5
+  MAP67:
+    name: "HABITAT CENTRAL CORE PASSAGEWAY"
+    next: MAP68
+    floor-number: 6
+    cluster: 5
+  MAP68:
+    name: "BIO-MEDICAL STORAGE DECK"
+    next: MAP69
+    floor-number: 7
+    cluster: 5
+  MAP69:
+    name: "MUTANT EXAMINATION CHAMBERS"
+    next: MAP70
+    floor-number: 8
+    cluster: 5
+  MAP70:
+    name: "HIGH SECURITY EXPERIMENTAL LAB"
+    next: MAP71
+    floor-number: 9
+    cluster: 5
+  MAP71:
+    name: "MUTANT ISOLATION DECK"
+    floor-number: 10
+    cluster: 5
+  MAP72:
+    name: "Mission 5 unused slot 11"
+    cluster: 5
+  MAP73:
+    name: "Mission 5 unused slot 12"
+    cluster: 5
+  MAP74:
+    name: "Mission 5 unused slot 13"
+    cluster: 5
+  MAP75:
+    name: "Mission 5 unused slot 14"
+    cluster: 5
+  # Mission 6
+  MAP76:
+    name: "GOLDFIRE'S MONEY VAULT"
+    next: MAP77
+    floor-number: 0
+    cluster: 6
+  MAP77:
+    name: "SATELLITE DEFENSE OPERATIONS"
+    next: MAP78
+    floor-number: 1
+    cluster: 6
+  MAP78:
+    name: "SECRET INTELLIGENCE HEADQUARTERS"
+    next: MAP79
+    floor-number: 2
+    cluster: 6
+  MAP79:
+    name: "SECRET INTELLIGENCE TRAINING ARENA"
+    next: MAP80
+    floor-number: 3
+    cluster: 6
+  MAP80:
+    name: "STAR DEFENSE RESEARCH LABORATORY"
+    next: MAP81
+    floor-number: 4
+    cluster: 6
+  MAP81:
+    name: "CANISTER ALIEN GENESIS LABORATORY"
+    next: MAP82
+    floor-number: 5
+    cluster: 6
+  MAP82:
+    name: "STAR COMMUNICATIONS"
+    next: MAP83
+    floor-number: 6
+    cluster: 6
+  MAP83:
+    name: "GENETIC RESEARCH HEADQUARTERS"
+    next: MAP84
+    floor-number: 7
+    cluster: 6
+  MAP84:
+    name: "STRATEGIC DEFENSE HEADQUARTERS"
+    next: MAP85
+    floor-number: 8
+    cluster: 6
+  MAP85:
+    name: "STAR CENTRAL COMPUTER NETWORK"
+    next: MAP86
+    floor-number: 9
+    cluster: 6
+  MAP86:
+    name: "STAR TECHNICAL AND INTELLIGENCE ARCHIVES"
+    floor-number: 10
+    cluster: 6
+  MAP87:
+    name: "Mission 6 unused slot 11"
+    cluster: 6
+  MAP88:
+    name: "Mission 6 unused slot 12"
+    cluster: 6
+  MAP89:
+    name: "Mission 6 unused slot 13"
+    cluster: 6
+  MAP90:
+    name: "Mission 6 unused slot 14"
+    cluster: 6
+
+end-strings:
+  - $BS_ENDSTR1
+  - $BS_ENDSTR2
+  - $BS_ENDSTR3
+  - $BS_ENDSTR4

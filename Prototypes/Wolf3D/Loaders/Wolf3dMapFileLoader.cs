@@ -7,7 +7,8 @@ namespace Wolf3D.Loaders;
 /// A GAMEMAPS/MAPHEAD pair: the game's own, or a mod's under maps/ in a pk3. MAPHEAD is the
 /// RLEW tag, then each level's offset in GAMEMAPS (up to 100; 0 or -1 for no level). Each
 /// level there starts with its planes' offsets and lengths, its size and a 16-character name,
-/// and its planes are Carmack- then RLEW-compressed.
+/// and its planes are Carmack- then RLEW-compressed (or, as in Blake Stone's MAPTEMP, only
+/// RLEW-compressed). MAPHEAD may carry more after the offsets (TED5's tile info), which is ignored.
 /// </summary>
 internal class Wolf3dMapFileLoader
 {
@@ -139,9 +140,21 @@ internal class Wolf3dMapFileLoader
                 // needed
                 //
                 var expanded = BitConverter.ToUInt16(bufferseg);
-                var buffer2seg = new ushort[expanded / sizeof(ushort)]; // might be byte[expanded]
-                CAL_CarmackExpand(bufferseg.Skip(sizeof(ushort)).ToArray(), buffer2seg, expanded);
-                CA_RLEWexpand(buffer2seg.Skip(1).ToArray(), out ushort[] dest, size, _rlewTag);
+                ushort[] rlewseg;
+                if (expanded == size)
+                {
+                    // Not Carmack-compressed (Blake Stone's MAPTEMP): the chunk is the RLEW
+                    // data itself, whose length word is the plane's full size
+                    rlewseg = new ushort[(bufferseg.Length - sizeof(ushort)) / sizeof(ushort)];
+                    Buffer.BlockCopy(bufferseg, sizeof(ushort), rlewseg, 0, rlewseg.Length * sizeof(ushort));
+                }
+                else
+                {
+                    var buffer2seg = new ushort[expanded / sizeof(ushort)]; // might be byte[expanded]
+                    CAL_CarmackExpand(bufferseg.Skip(sizeof(ushort)).ToArray(), buffer2seg, expanded);
+                    rlewseg = buffer2seg.Skip(1).ToArray();
+                }
+                CA_RLEWexpand(rlewseg, out ushort[] dest, size, _rlewTag);
                 mapsegs[plane] = dest;
             }
 

@@ -1056,13 +1056,14 @@ internal partial class Program
     internal static void VGAClearScreen()
     {
         var gameInfo = _gameEngineManager.GetGameInfo();
-        var mapInfo = gameInfo.Maps[gamestate.mapon];
+        gameInfo.Maps.TryGetValue(gamestate.mapon, out var mapInfo);
 
-        string ceiling = mapInfo.CeilingColor ?? gameInfo.DefaultMap.CeilingColor;
-        byte ceilingColor = _videoManager.ParseColor(ceiling);
+        // game-info's colors for the map, else the map's own (mapdefs map-info), else the default map's
+        byte ceilingColor = mapInfo?.CeilingColor is { } ceiling ? _videoManager.ParseColor(ceiling)
+            : _mapManager.MapCeilingColor ?? _videoManager.ParseColor(gameInfo.DefaultMap.CeilingColor);
         ceilingcolor = ceilingColor;
-        string floor = mapInfo.FloorColor ?? gameInfo.DefaultMap.FloorColor;
-        byte floorColor = _videoManager.ParseColor(floor);
+        byte floorColor = mapInfo?.FloorColor is { } floor ? _videoManager.ParseColor(floor)
+            : _mapManager.MapFloorColor ?? _videoManager.ParseColor(gameInfo.DefaultMap.FloorColor);
 
         var destIndex = vbuf;
         int y;
