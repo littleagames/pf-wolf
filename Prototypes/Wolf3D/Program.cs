@@ -109,6 +109,7 @@ internal partial class Program
     static short centerx, centery;   // centery is this frame's horizon: basecentery moved by viewpitch
     static short basecentery;        // the horizon looking straight ahead, mid view
     static int shootdelta;          // pixels away from centerx a target can be
+    static int projectionwidth;     // the view width the field of view is worked out for (see ProjectionWidth)
     static int scale;
     static int heightnumerator;
 
@@ -607,7 +608,8 @@ internal partial class Program
         viewheight = (int)(height & ~1);                 // must be even
         centerx = (short)(viewwidth / 2 - 1);
         centery = basecentery = (short)(viewheight / 2);
-        shootdelta = viewwidth / 10;
+        projectionwidth = ProjectionWidth(viewwidth, viewheight);
+        shootdelta = projectionwidth / 10;               // the same angle either side, however wide the view
         if (viewheight == _videoManager.screenHeight)
             viewscreenx = viewscreeny = (int)(screenofs = 0);
         else
@@ -650,9 +652,10 @@ internal partial class Program
 
         //
         // calculate scale value for vertical height calculations
-        // and sprite x calculations
+        // and sprite x calculations: from the projection width, so a view wider than the
+        // classic shape sees further to the sides rather than having its walls made taller
         //
-        scale = (int) (halfview * facedist / (VIEWGLOBAL / 2));
+        scale = (int) (projectionwidth / 2 * facedist / (VIEWGLOBAL / 2));
 
         //
         // divide heightnumerator by a posts distance to get the posts height for
@@ -667,12 +670,39 @@ internal partial class Program
         for (i = 0; i < halfview; i++)
         {
             // start 1/2 pixel over, so viewangle bisects two middle pixels
-            tang = (int)i * VIEWGLOBAL / viewwidth / facedist;
+            tang = (int)i * VIEWGLOBAL / projectionwidth / facedist;
             angle = (float)Math.Atan(tang);
             intang = (int)(angle * radtoint);
             pixelangle[halfview - 1 - i] = (short)intang;
             pixelangle[halfview + i] = (short)-intang;
         }
+    }
+
+    /// <summary>
+    /// The width a view's field of view is worked out for. Up to the shape the view size has on
+    /// a 320x200 screen, that's the view's own width, as it always was: a narrower screen (4:3)
+    /// shows the same across and more above and below. A wider view is worked out from its
+    /// height instead, so it shows the same above and below and more to the sides (Hor+).
+    /// </summary>
+    static int ProjectionWidth(int width, int height)
+    {
+        // SetViewSize rounds the height down to even, so allow for the line that may lose:
+        // otherwise a classic layout could come out a hair too wide and change
+        int classicWidth = (int)Math.Ceiling((height + 1) * ClassicViewAspect(viewsize) - 1e-9);
+        return Math.Max(1, Math.Min(width, classicWidth));
+    }
+
+    /// <summary>A view size's width over its height on a 320x200 screen, as NewViewSize lays it out there.</summary>
+    static double ClassicViewAspect(int size)
+    {
+        int playArea = VideoSettings.BaseHeight - STATUSLINES - TOPLINES;
+        if (size >= 21)
+            return (double)VideoSettings.BaseWidth / VideoSettings.BaseHeight;
+        if (size == 20)
+            return (double)VideoSettings.BaseWidth / Math.Max(playArea, 1);
+
+        double height = Math.Min(size * 16 * HEIGHTRATIO, playArea - 2);
+        return size * 16 / Math.Max(height, 1);
     }
 
     internal static void DoJukebox()

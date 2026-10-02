@@ -2027,7 +2027,7 @@ internal partial class Program
 
     internal static int CalcRotate(Entities.Actors.Actor ob)
     {
-        var viewangle = (int)(player.Angle + (centerx - ob.ViewX) / (8 * viewwidth / 320.0));
+        var viewangle = (int)(player.Angle + (centerx - ob.ViewX) / (8 * projectionwidth / 320.0));
 
         // A projectile (Rocket, the Death Knight's HeavyRocket) has no Dir -- it flies at an
         // arbitrary angle -- so it rotates by its heading.
