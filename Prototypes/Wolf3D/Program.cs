@@ -265,6 +265,9 @@ internal partial class Program
     internal static string deathFadeColor = "Maroon";
     // The death screen's turn to face the killer (degrees a tic) and hold on the color (tics)
     internal static int deathTurnSpeed = 2, deathHoldTics = 100;
+    // The dead view's drop toward the floor: the eye height it ends at (null: no drop) and texels a tic
+    internal static int? deathDropHeight;
+    internal static int deathDropSpeed = 1;
 
     private static void ReadFadeStyles()
     {
@@ -279,6 +282,8 @@ internal partial class Program
         deathFadeColor = string.IsNullOrWhiteSpace(gameInfo.DeathFadeColor) ? "Maroon" : gameInfo.DeathFadeColor;
         deathTurnSpeed = Math.Max(gameInfo.DeathTurnSpeed ?? 2, 1);     // 0 would never finish turning
         deathHoldTics = Math.Max(gameInfo.DeathHoldTics ?? 100, 0);
+        deathDropHeight = gameInfo.DeathDropHeight is { } drop ? Math.Clamp(drop, MINEYE, MAXEYE) : null;
+        deathDropSpeed = Math.Max(gameInfo.DeathDropSpeed ?? 1, 1);     // 0 would never finish dropping
         levelFadeStyle = ParseFadeStyle(gameInfo.LevelFadeStyle, "level-fade-style", FadeStyle.Fizzle);
         levelFadeTics = ParseFadeTics(gameInfo.LevelFadeTics, "level-fade-tics") ?? 20;
     }

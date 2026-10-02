@@ -109,6 +109,18 @@ internal record GameInfoAsset : Asset
     public int? DeathTurnSpeed { get; init; }
 
     /// <summary>
+    /// How high the dead player's view drops to, as Doom's does, while they turn to face their
+    /// killer: in texels above the floor (64 a story, 32 standing; 4-60). Left out, the view
+    /// stays where it is, as in Wolf3D.
+    /// </summary>
+    public int? DeathDropHeight { get; init; }
+
+    /// <summary>
+    /// How fast the dead player's view drops, in texels a tic (default 1)
+    /// </summary>
+    public int? DeathDropSpeed { get; init; }
+
+    /// <summary>
     /// How long the death fade's color stays up before the level restarts or the game ends,
     /// in tics, unless a key is pressed (default 100)
     /// </summary>

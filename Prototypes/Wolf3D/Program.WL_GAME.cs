@@ -845,52 +845,39 @@ internal partial class Program
 
         curangle = player.Angle;
 
-        if (clockwise < counter)
+        //
+        // rotate the shorter way round, while the view drops (game-info death-drop-height)
+        //
+        bool rotateclockwise = clockwise < counter;
+        if (rotateclockwise && curangle > iangle)
+            curangle -= ANGLES;
+        else if (!rotateclockwise && curangle < iangle)
+            curangle += ANGLES;
+
+        int dropto = deathDropHeight ?? vieweyez;
+        do
         {
-            //
-            // rotate clockwise
-            //
-            if (curangle > iangle)
-                curangle -= ANGLES;
-            do
+            if (curangle != iangle)
             {
-                change = (int)(tics * deathTurnSpeed);
-                if (curangle + change > iangle)
+                change = rotateclockwise ? (int)(tics * deathTurnSpeed) : -(int)tics * deathTurnSpeed;
+                if (rotateclockwise ? curangle + change > iangle : curangle + change < iangle)
                     change = iangle - curangle;
 
                 curangle += change;
                 player.Angle += (short)change;
                 if (player.Angle >= ANGLES)
                     player.Angle -= ANGLES;
-
-                ThreeDRefresh();
-                CalcTics();
-                _hudMessageManager.Tick((int)tics);
-            } while (curangle != iangle);
-        }
-        else
-        {
-            //
-            // rotate counterclockwise
-            //
-            if (curangle < iangle)
-                curangle += ANGLES;
-            do
-            {
-                change = -(int)tics * deathTurnSpeed;
-                if (curangle + change < iangle)
-                    change = iangle - curangle;
-
-                curangle += change;
-                player.Angle += (short)change;
-                if (player.Angle < 0)
+                else if (player.Angle < 0)
                     player.Angle += ANGLES;
+            }
 
-                ThreeDRefresh();
-                CalcTics();
-                _hudMessageManager.Tick((int)tics);
-            } while (curangle != iangle);
-        }
+            if (vieweyez > dropto)
+                vieweyez = Math.Max(vieweyez - (int)tics * deathDropSpeed, dropto);
+
+            ThreeDRefresh();
+            CalcTics();
+            _hudMessageManager.Tick((int)tics);
+        } while (curangle != iangle || vieweyez > dropto);
 
         //
         // fade to red
@@ -907,6 +894,7 @@ internal partial class Program
         _inputManager.UserInput((uint)deathHoldTics);
         _audioManager.WaitSoundDone();
         ClearMemory();
+        vieweyez = EYEDEFAULT;                       // back on their feet for the restart
 
         gamestate.lives--;
 
