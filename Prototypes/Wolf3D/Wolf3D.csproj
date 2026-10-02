@@ -26,6 +26,9 @@
 	  <Folder Include="Models\" />
 	</ItemGroup>
 	<ItemGroup>
+		<InternalsVisibleTo Include="Wolf3D.Tests" />
+	</ItemGroup>
+	<ItemGroup>
 		<Content Include="..\..\pfwolf-pk3\**\*">
 			<Link>pk3\%(RecursiveDir)%(FileName)%(Extension)</Link>
 			<CopyToOutputDirectory>DoNotCopy</CopyToOutputDirectory>
