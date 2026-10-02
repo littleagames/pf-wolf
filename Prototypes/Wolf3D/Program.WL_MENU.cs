@@ -77,6 +77,9 @@ internal partial class Program
     };
 
     internal static int StartGame;
+
+    /// <summary>The game was ended with End Game in the menu, so the game over screen is skipped</summary>
+    internal static bool endedFromMenu;
     internal static int SoundStatus = 1;
 
     private static void EnableEndGameMenuItem()
@@ -157,6 +160,8 @@ internal partial class Program
         var bar = item_i.cursor!;
         _videoManager.Bar(bar.X, MenuItemY(item_i, which) + bar.YOffset, bar.Width, bar.Height, on ? bar.Color : bar.EraseColor);
         PrintMenuItem(item_i, items, which, MenuItemColor(items[which], on));
+        if (items[which].checkbox is bool checkedOn)
+            DrawMenuCheckbox(item_i, which, checkedOn, highlighted: on);
     }
 
     internal static int StartCPMusic(string song)
@@ -1726,14 +1731,21 @@ internal partial class Program
     {
         int index = Array.FindIndex(items, item => item.id == id);
         if (index >= 0)
+        {
+            items[index].checkbox = on;
             DrawMenuCheckbox(iteminfo, index, on);
+        }
     }
 
-    private static void DrawMenuCheckbox(CP_iteminfo iteminfo, int index, bool on)
+    /// <param name="highlighted">Under a highlight bar: the pack's c_selected_hi / c_notselected_hi, when it has them</param>
+    private static void DrawMenuCheckbox(CP_iteminfo iteminfo, int index, bool on, bool highlighted = false)
     {
-        int x = iteminfo.x + iteminfo.indent - 24;
-        int y = iteminfo.y + index * iteminfo.rowHeight + 3;
-        _graphicManager.DrawPic(on ? "c_selected" : "c_notselected", x, y);
+        int x = iteminfo.x + iteminfo.indent + iteminfo.checkboxX;
+        int y = iteminfo.y + index * iteminfo.rowHeight + iteminfo.checkboxY;
+        var pic = on ? "c_selected" : "c_notselected";
+        if (highlighted && _assetManager.Exists<GraphicAsset>(pic + "_hi"))
+            pic += "_hi";
+        _graphicManager.DrawPic(pic, x, y);
     }
 
     internal static int CP_ChangeView(int _)
@@ -1858,6 +1870,7 @@ internal partial class Program
         gamestate.lives = 0;
         playstate = playstatetypes.ex_died;
         LastAttacker = null;
+        endedFromMenu = true;       // no game over screen (bstone's InstantQuit)
 
         FindMenuItem(MainMenu, "savegame")?.active = 0;
         EnableViewScoresMenuItem();
@@ -2228,6 +2241,8 @@ internal partial class Program
             itemShadow = menuAsset.ItemShadow,
             cursor = menuAsset.Cursor,
             selectionPic = menuAsset.SelectionPic,
+            checkboxX = menuAsset.CheckboxOffset?.X ?? -24,
+            checkboxY = menuAsset.CheckboxOffset?.Y ?? 3,
         };
 
         return (items, info);

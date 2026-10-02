@@ -63,6 +63,9 @@ internal class MenuMetadata
     /// </summary>
     public Assets.MenuPoint? SelectionPic { get; set; }
 
+    /// <summary>Where a toggle item's checkbox goes from its text's left and top (default -24, 3)</summary>
+    public Assets.MenuPoint? CheckboxOffset { get; set; }
+
     internal static MenuMetadata? BuildFromAsset(MenuAsset asset)
     {
         if (asset is null) return null;

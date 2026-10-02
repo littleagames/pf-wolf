@@ -58,19 +58,30 @@ internal partial class Program
     internal static void DrawHighScores()
     {
         var layout = HighScoresLayout;
-        var style = new TextStyle(layout.Font, layout.Color, "BORDCOLOR");
+        var shadow = layout.Shadow is { } shadowColor ? new FontShadow(1, 1, shadowColor) : null;
+        var style = new TextStyle(layout.Font, layout.Color, "BORDCOLOR", Shadow: shadow);
 
-        ClearMScreen();
-        DrawStripes(10);
+        // A pack's frame (a menudef's components), else Wolf3D's stripes
+        if (!string.IsNullOrEmpty(layout.Frame))
+            DrawMenuComponents(layout.Frame);
+        else
+        {
+            ClearMScreen();
+            DrawStripes(10);
+        }
 
         _graphicManager.DrawPic(layout.Pic, layout.PicX, layout.PicY);
         foreach (var header in layout.Headers)
             _graphicManager.DrawPic(header.Pic, header.X, header.Y);
+        var language = _assetManager.GetText("en-us");
+        foreach (var label in layout.Labels)
+            TextAt(label.X, label.Y, style with { Font = label.Font ?? style.Font, Color = label.Color ?? style.Color })
+                .Print(label.Text.ToLanguageText(language));
 
         for (int i = 0; i < MaxScores; i++)
         {
             HighScore s = Scores[i];
-            int y = layout.RowY + (16 * i);
+            int y = layout.RowY + (layout.RowHeight * i);
 
             //
             // name
@@ -82,7 +93,9 @@ internal partial class Program
             //
             var buffer = (s.completed & ~HighScoreWon).ToString();
             int x = layout.LevelRight - TextWidth(buffer, style.Font);
-            if ((s.completed & HighScoreWon) != 0 && !string.IsNullOrEmpty(layout.WonPic))
+            if (!layout.ShowLevel)
+            { }
+            else if ((s.completed & HighScoreWon) != 0 && !string.IsNullOrEmpty(layout.WonPic))
                 _graphicManager.DrawPic(layout.WonPic, x + 8, y - 1);
             else if (layout.ShowEpisode)
                 TextAt(x - 6, y, style).Print($"E{s.episode + 1}/L{buffer}");
@@ -94,6 +107,15 @@ internal partial class Program
             //
             buffer = s.score.ToString();
             TextAt(layout.ScoreRight - TextWidth(buffer, style.Font), y, style).Print(buffer);
+
+            //
+            // ratio
+            //
+            if (layout.RatioRight > 0)
+            {
+                buffer = s.ratio.ToString();
+                TextAt(layout.RatioRight - TextWidth(buffer, style.Font), y, style).Print(buffer);
+            }
         }
 
         _videoManager.Update();
@@ -116,13 +138,14 @@ internal partial class Program
         myscore.score = score;
         myscore.episode = (ushort)Math.Max(gamestate.cluster - 1, 0);   // shown from 1, as id's were
         myscore.completed = (ushort)(Math.Clamp(floor, 0, HighScoreWon - 1) | (won ? HighScoreWon : 0));
+        myscore.ratio = (ushort)Math.Clamp(FloorScore() * 100 / 300, 0, 100);    // the last floor's rating
 
         for (i = 0, n = -1; i < MaxScores; i++)
         {
             if ((myscore.score > Scores[i].score)
                 || ((myscore.score == Scores[i].score) && (myscore.completed > Scores[i].completed)))
             {
-                for (j = MaxScores; --j > i;)
+                for (j = (ushort)MaxScores; --j > i;)
                     Scores[j] = Scores[j - 1];
                 Scores[i] = myscore;
                 n = i;
@@ -140,10 +163,16 @@ internal partial class Program
             // got a high score
             //
             var layout = HighScoresLayout;
-            int x = layout.NameX, y = layout.RowY + (16 * n);
+            int x = layout.NameX, y = layout.RowY + (layout.RowHeight * n);
             if (layout.EntryBarWidth > 0)
             {
-                _videoManager.Bar(x - 2, y - 2, layout.EntryBarWidth, 15, layout.EntryBackground);
+                _videoManager.Bar(x - 2, y - 2, layout.EntryBarWidth, Math.Min(15, layout.RowHeight), layout.EntryBackground);
+                _videoManager.Update();
+            }
+            else
+            {
+                // The name typed over a blank row
+                _videoManager.Bar(x, y, Math.Max(layout.EntryWidth, 1), layout.RowHeight, layout.EntryBackground);
                 _videoManager.Update();
             }
 

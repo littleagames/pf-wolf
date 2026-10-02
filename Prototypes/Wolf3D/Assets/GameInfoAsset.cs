@@ -288,6 +288,49 @@ internal record HighScoresInfo
     /// How wide the typed name can get
     /// </summary>
     public int EntryWidth { get; init; } = 100;
+
+    /// <summary>How many scores there are (default 7, or as many as the defaults)</summary>
+    public int? Count { get; init; }
+
+    /// <summary>The scores a new player's table starts with, top first; Wolf3D's when empty</summary>
+    public List<HighScoreDefault> Defaults { get; init; } = [];
+
+    /// <summary>
+    /// A menudef whose components are drawn as the screen's frame (Blake Stone's LINC terminal),
+    /// in place of the menu stripes and title picture; its pic and headers are still drawn
+    /// </summary>
+    public string? Frame { get; init; }
+
+    /// <summary>Text drawn over the frame, such as column headings</summary>
+    public List<HighScoreLabel> Labels { get; init; } = [];
+
+    /// <summary>Pixels from one row to the next</summary>
+    public int RowHeight { get; init; } = 16;
+
+    /// <summary>A shadow color for the rows' text, one pixel right and down; none when unset</summary>
+    public string? Shadow { get; init; }
+
+    /// <summary>Whether the level column shows</summary>
+    public bool ShowLevel { get; init; } = true;
+
+    /// <summary>Where the ratio column ends (Blake Stone's mission ratio); no column when 0</summary>
+    public int RatioRight { get; init; }
+}
+
+internal record HighScoreDefault
+{
+    public string Name { get; init; } = "";
+    public int Score { get; init; } = 10000;
+    public int Level { get; init; } = 1;
+}
+
+internal record HighScoreLabel
+{
+    public string Text { get; init; } = "";
+    public int X { get; init; }
+    public int Y { get; init; }
+    public string? Font { get; init; }
+    public string? Color { get; init; }
 }
 
 /// <summary>
@@ -571,6 +614,9 @@ internal record EpisodeInfo
 
     /// <summary>A presenter script shown when the episode is won</summary>
     public string? EndBriefing { get; init; }
+
+    /// <summary>A movie played when the episode is won, before its end briefing</summary>
+    public string? EndMovie { get; init; }
 }
 
 /// <summary>

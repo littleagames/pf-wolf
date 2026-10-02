@@ -208,6 +208,7 @@ internal partial class Program
         //
         InitDigiMap();
 
+        InitHighScores();
         _gameEngineManager.ReadConfig();
 
         //

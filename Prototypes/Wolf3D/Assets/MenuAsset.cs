@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 
 namespace Wolf3D.Assets;
 
@@ -18,6 +18,7 @@ internal record MenuAsset : Asset
     public MenuCursorInfo? Cursor { get; init; }
     public bool? SpacerRows { get; init; }
     public MenuPoint? SelectionPic { get; init; }
+    public MenuPoint? CheckboxOffset { get; init; }
 
     public override void Merge(Asset other)
     {

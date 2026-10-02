@@ -194,6 +194,11 @@ internal partial class Program
                         _videoManager.ClearScreen(0);
                     ClearMemory();
 
+                    // The pack's game over screen, unless the game was ended from the menu
+                    if (!endedFromMenu && _gameEngineManager.GetGameInfo().LoseScreen is { } loseScreen)
+                        ShowLoseScreen(loseScreen);
+                    endedFromMenu = false;
+
                     CheckHighScore(gamestate.score, won: false);
                     EnableViewScoresMenuItem();
                     return;
@@ -213,6 +218,11 @@ internal partial class Program
                         }
                         _videoManager.FadeOut();
                         ClearMemory();
+                        if (CurrentEpisode()?.EndMovie is { Length: > 0 } endMovie)
+                        {
+                            PlayMovie(endMovie);
+                            _videoManager.FadeOut();
+                        }
                         ShowBriefing(endBriefing);
 
                         CheckHighScore(gamestate.score, won: true);

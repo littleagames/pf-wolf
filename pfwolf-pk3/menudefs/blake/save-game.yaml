@@ -1,0 +1,8 @@
+# Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/save-game.yaml
+# The list, preview and help line are drawn by code (Program.LoadSaveScreen.cs) inside the window, which stays where it is in every pack
+music: "MEETINGA"
+type: "blake-menu"
+components:
+  - { type: "Background", params: [ { color: "2" } ] }
+  - { type: "Label", params: [ { text: "SAVE MISSION" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { y: 20 }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Window", params: [ { x: 5 }, { y: 46 }, { width: 310 }, { height: 142 }, { color: "2" } ] }

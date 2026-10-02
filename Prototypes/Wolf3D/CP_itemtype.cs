@@ -27,6 +27,8 @@ internal class CP_itemtype
     /// Key that jumps to this item; 0 means use the first letter of the text
     /// </summary>
     public char shortKey = '\0';
+    /// <summary>The item's checkbox as last drawn (on or off), so a highlight bar can draw it again; null for none</summary>
+    public bool? checkbox;
 }
 
 internal class CP_iteminfo
@@ -42,6 +44,9 @@ internal class CP_iteminfo
 
     /// <summary>Where the highlighted item's picture goes; null for the menu's own placement</summary>
     public Assets.MenuPoint? selectionPic;
+
+    /// <summary>A toggle item's checkbox, from its text's left and top</summary>
+    public int checkboxX = -24, checkboxY = 3;
 
     public CP_iteminfo(short x, short y, short amount, short curpos, short indent)
     {

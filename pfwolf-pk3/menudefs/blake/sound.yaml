@@ -1,0 +1,25 @@
+# Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/sound.yaml
+# Sound devices are lights 16 left of their text; the volumes are sliders 120 right of it
+music: "MEETINGA"
+type: "blake-menu"
+position: { x: 52, y: 62 }
+indent: 0
+row-height: 11
+font: "SmallFont"
+item-shadow: "1"
+cursor: { x: 34, y-offset: 0, width: 120, height: 11, color: "82", erase-color: "2", flash-tics: 40 }
+checkbox-offset: { x: -16, y: 1 }
+components:
+  # The LINC screen (game-info menu-backdrop) with its terminal cleared
+  - { type: "Background", params: [ { color: "2" } ] }
+  - { type: "Fill", params: [ { x: 32 }, { y: 28 }, { width: 244 }, { height: 132 }, { color: "2" } ] }
+  - { type: "Label", params: [ { text: "SOUND" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { x: 31 }, { width: 244 }, { y: 31 }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "UP/DN SELECTS - LF/RT CHANGES - ESC EXITS" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 47 }, { width: 236 }, { y: 163 }, { color: "83" }, { shadow-color: "1" } ] }
+menu-items:
+  - { id: "sound-pc", type: "ToggleMenuItem", text: "PC SPEAKER", enabled: true }
+  - { id: "sound-adlib", type: "ToggleMenuItem", text: "ADLIB SOUND", enabled: true }
+  - { id: "sound-digitized", type: "ToggleMenuItem", text: "DIGITIZED SOUND", enabled: true }
+  - { id: "music", type: "ToggleMenuItem", text: "MUSIC", enabled: true }
+  - { type: "BlankMenuItem" }
+  - { id: "sound-volume", type: "SliderMenuItem", text: "SOUND VOLUME", enabled: true }
+  - { id: "music-volume", type: "SliderMenuItem", text: "MUSIC VOLUME", enabled: true }

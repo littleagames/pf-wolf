@@ -1,4 +1,4 @@
-﻿using SDL2;
+using SDL2;
 using System.ComponentModel;
 using System.Reflection;
 using Wolf3D.Assets;
@@ -166,6 +166,7 @@ internal class GameEngineManager
         public bool? AutoSave;
         public HudMessagesSetting? HudMessages;
         public bool? AutomapStats;
+        public HighScore[]? ScoreTable;
     }
 
     /// <summary>The `msg_enabled` setting, as saved in config.cfg</summary>
@@ -242,7 +243,8 @@ internal class GameEngineManager
             return;
         }
 
-        Array.Copy(config.Scores, Program.Scores, Program.Scores.Length);
+        var savedScores = config.ScoreTable ?? config.Scores;
+        Array.Copy(savedScores, Program.Scores, Math.Min(savedScores.Length, Program.Scores.Length));
 
         // The controls moved to controls.cfg, which the console runs at startup; config.cfg now
         // only has blanks where they were. A config from before that still has them: take them
@@ -293,7 +295,7 @@ internal class GameEngineManager
 
     private static ConfigData ParseConfig(BinaryReader br)
     {
-        var scores = new HighScore[Program.Scores.Length];
+        var scores = new HighScore[Program.LegacyScoreCount];
         for (int i = 0; i < scores.Length; i++)
         {
             scores[i] = new HighScore();
@@ -366,6 +368,18 @@ internal class GameEngineManager
             config.HudMessages = (HudMessagesSetting)br.ReadByte();
         if (stream.Position < stream.Length)
             config.AutomapStats = br.ReadByte() != 0;
+        if (stream.Position < stream.Length)
+        {
+            // The whole high score table, with each one's ratio: games with more than the original block's 7
+            int count = br.ReadByte();
+            config.ScoreTable = new HighScore[count];
+            for (int i = 0; i < count; i++)
+            {
+                config.ScoreTable[i] = new HighScore();
+                config.ScoreTable[i].Read(br);
+                config.ScoreTable[i].ratio = br.ReadUInt16();
+            }
+        }
 
         return config;
     }
@@ -536,8 +550,8 @@ internal class GameEngineManager
     private void WriteConfigData(BinaryWriter bw)
     {
         bw.Write(ConfigSignature);
-        foreach (var s in Program.Scores)
-            s.Write(bw);
+        for (int i = 0; i < Program.LegacyScoreCount; i++)
+            (i < Program.Scores.Length ? Program.Scores[i] : new HighScore()).Write(bw);
 
         bw.Write((byte)0); // sound mode placeholder
         bw.Write((byte)0); // music mode placeholder
@@ -583,6 +597,13 @@ internal class GameEngineManager
             null => HudMessagesSetting.GameDefault,
         }));
         bw.Write(automapManager.ShowStats);
+
+        bw.Write((byte)Program.Scores.Length);
+        foreach (var s in Program.Scores)
+        {
+            s.Write(bw);
+            bw.Write(s.ratio);
+        }
     }
 
     /// <summary>

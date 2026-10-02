@@ -1,4 +1,4 @@
-# Blake Stone: Aliens of Gold. Its own menus, movies and high scores come in a later phase.
+# Blake Stone: Aliens of Gold
 default-map:
   # A map's own colors (its map-info code, mapdefs/blake/mapinfo.yaml) win over these
   ceiling-color: "#383838"
@@ -68,6 +68,72 @@ title-loop:
     seconds: 9
 menu-fade-color: "#000000"
 
+# The control panel (menudefs/blake/): drawn on the LINC screen, with bstone's bevelled
+# message box for its questions
+menu-backdrop: LincScreen
+menu-message:
+  font: LargeFont
+  color: "175"
+  shadow: "128"
+  hi: "133"
+  med: "130"
+  lo: "128"
+
+# F1 in a game, and the main menu's Instructions (presenter.yaml's briefing window)
+help-text: HelpText
+
+# bstone's DrawHighScores: ten rows 7 apart in the six point font on the LINC terminal, with each
+# game's last floor rating as its mission ratio
+high-scores:
+  frame: high-scores
+  pic: ""
+  headers: []
+  labels:
+    - { text: "NAME", x: 86, y: 60, color: "86" }
+    - { text: "SCORE", x: 175, y: 60, color: "86" }
+    - { text: "MISSION", x: 247, y: 53, color: "86" }
+    - { text: "RATIO", x: 254, y: 60, color: "86" }
+  font: BlakeSmall
+  color: "88"
+  shadow: "1"
+  row-y: 68
+  row-height: 7
+  name-x: 45
+  show-level: false
+  score-right: 205
+  ratio-right: 272
+  entry-color: "89"
+  entry-background: "2"
+  entry-width: 120
+  count: 10
+  defaults:
+    - { name: "JAM PRODUCTIONS INC." }
+    - { name: "" }
+    - { name: "JERRY JONES" }
+    - { name: "MICHAEL MAYNARD" }
+    - { name: "JAMES T. ROW" }
+    - { name: "" }
+    - { name: "" }
+    - { name: "TO REGISTER CALL" }
+    - { name: " 1-800-GAME123" }
+    - { name: "" }
+
+# Game over (bstone's LoseScreen): Goldfire's transmission typed out under his picture
+lose-screen:
+  pic: GoldfireScreen
+  script: Transmission
+  x1: 14
+  y1: 141
+  x2: 307
+  y2: 173
+  font: 2
+  light: 15
+  background: 0
+  dark: 1
+  shadow: 1
+  print-delay: 2
+  type-sound: bs/term_type
+
 screen-fade-style: palette
 menu-fade-style: palette
 menu-fade-tics: 20
@@ -88,58 +154,69 @@ hud-messages:
 
 skills:
   NOVICE:
-    name: "Novice Agent"
+    name: "Level 1:\nNovice Agent"
     pic-name: C_BabyMode
     enemy-health: health.baby
   SKILLED:
-    name: "Skilled Agent"
+    name: "Level 2:\nSkilled Agent"
     pic-name: C_Easy
     enemy-health: health.easy
   EXPERT:
-    name: "Expert Agent"
+    name: "Level 3:\nExpert Agent"
     pic-name: C_Normal
     enemy-health: health.normal
   VETERAN:
-    name: "Veteran Agent"
+    name: "Level 4:\nVeteran Agent"
     pic-name: C_Hard
     enemy-health: health.hard
 
 # Each mission is 15 MAPTEMP slots: floor 0 (reached by teleporter) to floor 10, then four slots
 # the game never uses. A mission starts on floor 1, after its briefing; the elevator (walls.yaml
 # A_FloorSelect, elevator.yaml) goes between floors 1 to 10, and the mission ends on the way out
-# (floors.yaml), with its end briefing. The missions' pictures (C_Episode1-6) are too tall for
-# this episode menu; they come back with Blake Stone's own menus.
+# (floors.yaml), with its end briefing. The mission menu shows the highlighted one's pic-name.
 episodes:
   MISSION1:
-    name: "Mission 1\nSTAR Institute"
+    name: "Mission 1:\nSTAR Institute"
+    pic-name: C_Episode1
     start-map: MAP02
     briefing: Mission1Brief
     end-briefing: Mission1End
+    end-movie: ShuttleMovie
   MISSION2:
-    name: "Mission 2\nFloating Fortress"
+    name: "Mission 2:\nFloating Fortress"
+    pic-name: C_Episode2
     start-map: MAP17
     briefing: Mission2Brief
     end-briefing: Mission2End
+    end-movie: ShuttleMovie
   MISSION3:
-    name: "Mission 3"
+    name: "Mission 3:\nUnderground Network"
+    pic-name: C_Episode3
     start-map: MAP32
     briefing: Mission3Brief
     end-briefing: Mission3End
+    end-movie: GoldfireMovie
   MISSION4:
-    name: "Mission 4\nSTAR Port"
+    name: "Mission 4:\nSTAR Port"
+    pic-name: C_Episode4
     start-map: MAP47
     briefing: Mission4Brief
     end-briefing: Mission4End
+    end-movie: ShuttleMovie
   MISSION5:
-    name: "Mission 5\nHabitat II"
+    name: "Mission 5:\nHabitat II"
+    pic-name: C_Episode5
     start-map: MAP62
     briefing: Mission5Brief
     end-briefing: Mission5End
+    end-movie: GoldfireMovie
   MISSION6:
-    name: "Mission 6\nSatellite Defense"
+    name: "Mission 6:\nSatellite Defense"
+    pic-name: C_Episode6
     start-map: MAP77
     briefing: Mission6Brief
     end-briefing: Mission6End
+    end-movie: EndMovie
 
 # A mission's floors are kept as they're left
 clusters:

@@ -1,0 +1,24 @@
+# Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/video.yaml
+# Values are drawn by code, 120 right of the text
+music: "MEETINGA"
+type: "blake-menu"
+position: { x: 52, y: 62 }
+indent: 0
+row-height: 11
+font: "SmallFont"
+item-shadow: "1"
+cursor: { x: 34, y-offset: 0, width: 120, height: 11, color: "82", erase-color: "2", flash-tics: 40 }
+checkbox-offset: { x: -16, y: 1 }
+components:
+  # The LINC screen (game-info menu-backdrop) with its terminal cleared
+  - { type: "Background", params: [ { color: "2" } ] }
+  - { type: "Fill", params: [ { x: 32 }, { y: 28 }, { width: 244 }, { height: 132 }, { color: "2" } ] }
+  - { type: "Label", params: [ { text: "VIDEO" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { x: 31 }, { width: 244 }, { y: 31 }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "UP/DN SELECTS - LF/RT CHANGES - ESC EXITS" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 47 }, { width: 236 }, { y: 163 }, { color: "83" }, { shadow-color: "1" } ] }
+menu-items:
+  - { id: "fullscreen", type: "ToggleMenuItem", text: "FULLSCREEN", enabled: true }
+  - { id: "window-size", type: "ChoiceMenuItem", text: "WINDOW SIZE", enabled: true }
+  - { id: "render-scale", type: "ChoiceMenuItem", text: "RESOLUTION", enabled: true }
+  - { id: "vsync", type: "ToggleMenuItem", text: "VSYNC", enabled: true }
+  - { id: "aspect", type: "ToggleMenuItem", text: "ASPECT RATIO", enabled: true }
+  - { id: "filter", type: "ChoiceMenuItem", text: "SCALE FILTER", enabled: true }

@@ -68,3 +68,12 @@ BlakeInfo:
   source: Font3
   upper-case: true      # Font3 has only capitals
   shadow: { x: 1, y: 1, color: "4" }
+
+# The control panel's titles (bstone's DrawMenuTitle, font 3) and six point print (font 2)
+BlakeTitle:
+  type: vga
+  source: Font4
+BlakeSmall:
+  type: vga
+  source: Font3
+  upper-case: true      # Font3 has only capitals

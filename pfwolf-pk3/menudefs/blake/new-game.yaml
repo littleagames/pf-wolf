@@ -1,0 +1,21 @@
+# Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/new-game.yaml
+# One item per skill in game-info; the highlighted one's picture beside them
+music: "MEETINGA"
+type: "blake-menu"
+position: { x: 71, y: 66 }
+indent: 0
+row-height: 16
+font: "BlakeSmall"
+item-shadow: "1"
+cursor: { x: 60, y-offset: -2, width: 105, height: 16, color: "82", erase-color: "2", flash-tics: 40 }
+items-source: "skills"
+selection-pic: { x: 192, y: 77 }
+default-selection: 1
+components:
+  # The LINC screen (game-info menu-backdrop) with its terminal cleared
+  - { type: "Background", params: [ { color: "2" } ] }
+  - { type: "Fill", params: [ { x: 32 }, { y: 28 }, { width: 244 }, { height: 132 }, { color: "2" } ] }
+  - { type: "Label", params: [ { text: "DIFFICULTY LEVEL" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { x: 31 }, { width: 244 }, { y: 31 }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "UP/DN SELECTS - ENTER CHOOSES - ESC EXITS" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 47 }, { width: 236 }, { y: 163 }, { color: "83" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "HIGHER DIFFICULTY LEVELS CONTAIN" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 48 }, { width: 236 }, { y: 140 }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "MORE, STRONGER ENEMIES" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 48 }, { width: 236 }, { y: 146 }, { color: "86" }, { shadow-color: "1" } ] }

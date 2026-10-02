@@ -1,20 +1,21 @@
 # Named colors used by menus, text layout and intermission screens (see gamepacks/wolf3d/colors.yaml).
-# Values are #RRGGBB; the engine draws the closest color in the game palette. Blake Stone's
-# menus are green on black; the original control panel's look comes in a later phase.
+# Values are #RRGGBB; the engine draws the closest color in the game palette. The menu ones are
+# bstone's control panel colors (3d_menu.cpp), exactly palette entries: green on the LINC
+# terminal's near-black.
 
 # Menu frame
 BORDCOLOR: "#00A600"
-BORD2COLOR: "#28CF00"
-DEACTIVE: "#004500"
-BKGDCOLOR: "#002800"
+BORD2COLOR: "#005C00"   # 0x53
+DEACTIVE: "#005C00"     # 0x53, DISABLED_TEXT_COLOR
+BKGDCOLOR: "#0C0C0C"    # 0x02, TERM_BACK_COLOR
 STRIPE: "#003800"
 
 # Menu text
-READCOLOR: "#00A600"
-READHCOLOR: "#28FF00"
+READCOLOR: "#B0D040"    # 0x4A
+READHCOLOR: "#90BC00"   # 0x47
 VIEWCOLOR: "#004040"
-TEXTCOLOR: "#8D8D8D"
-HIGHLIGHT: "#C2C2C2"
+TEXTCOLOR: "#00A400"    # 0x56, ENABLED_TEXT_COLOR
+HIGHLIGHT: "#28CC28"    # 0x59, HIGHLIGHT_TEXT_COLOR
 
 # Intermission bars
 FIRSTCOLOR: "#9DFF9D"

@@ -1,0 +1,17 @@
+# Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/mods.yaml
+# One row per mod, its checkbox before its name
+music: "MEETINGA"
+type: "blake-menu"
+position: { x: 40, y: 51 }
+indent: 32
+row-height: 11
+font: "SmallFont"
+item-shadow: "1"
+cursor: { x: 34, y-offset: 0, width: 236, height: 11, color: "82", erase-color: "2", flash-tics: 40 }
+items-source: "mods"
+components:
+  # The LINC screen (game-info menu-backdrop) with its terminal cleared
+  - { type: "Background", params: [ { color: "2" } ] }
+  - { type: "Fill", params: [ { x: 32 }, { y: 28 }, { width: 244 }, { height: 132 }, { color: "2" } ] }
+  - { type: "Label", params: [ { text: "MODS" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { x: 31 }, { width: 244 }, { y: 31 }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "UP/DN SELECTS - ENTER CHOOSES - ESC EXITS" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 47 }, { width: 236 }, { y: 163 }, { color: "83" }, { shadow-color: "1" } ] }

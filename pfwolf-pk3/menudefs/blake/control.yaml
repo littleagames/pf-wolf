@@ -1,0 +1,25 @@
+# Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/control.yaml
+# Mouse and controller switches and screens
+music: "MEETINGA"
+type: "blake-menu"
+position: { x: 76, y: 66 }
+indent: 0
+row-height: 11
+font: "SmallFont"
+item-shadow: "1"
+cursor: { x: 58, y-offset: 0, width: 196, height: 11, color: "82", erase-color: "2", flash-tics: 40 }
+checkbox-offset: { x: -16, y: 1 }
+components:
+  # The LINC screen (game-info menu-backdrop) with its terminal cleared
+  - { type: "Background", params: [ { color: "2" } ] }
+  - { type: "Fill", params: [ { x: 32 }, { y: 28 }, { width: 244 }, { height: 132 }, { color: "2" } ] }
+  - { type: "Label", params: [ { text: "CONTROLS" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { x: 31 }, { width: 244 }, { y: 31 }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "UP/DN SELECTS - ENTER CHOOSES - ESC EXITS" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 47 }, { width: 236 }, { y: 163 }, { color: "83" }, { shadow-color: "1" } ] }
+menu-items:
+  - { id: "mouse-enabled", type: "ToggleMenuItem", text: "MOUSE ENABLED", enabled: false }
+  - { id: "mouse-sensitivity", type: "MenuSwitcher", text: "MOUSE SENSITIVITY", enabled: false, action: "MouseSensitivity" }
+  - { id: "mouse-look", type: "ToggleMenuItem", text: "MOUSE LOOK", enabled: false }
+  - { id: "mouse-invert", type: "ToggleMenuItem", text: "INVERT MOUSE", enabled: false }
+  - { id: "joystick-enabled", type: "ToggleMenuItem", text: "CONTROLLER ENABLED", enabled: false }
+  - { id: "controller-settings", type: "MenuSwitcher", text: "CONTROLLER SETTINGS", enabled: true, action: "CP_ControllerSettings" }
+  - { id: "customize", type: "MenuSwitcher", text: "CUSTOMIZE CONTROLS", enabled: true, action: "CustomControls" }

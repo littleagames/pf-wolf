@@ -1,0 +1,20 @@
+# Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/new-episode.yaml
+# One item per mission in game-info, 16 apart in the six point font; the highlighted one's picture beside them
+music: "MEETINGA"
+type: "blake-menu"
+position: { x: 58, y: 54 }
+indent: 0
+row-height: 16
+font: "BlakeSmall"
+item-shadow: "1"
+cursor: { x: 43, y-offset: -2, width: 119, height: 16, color: "82", erase-color: "2", flash-tics: 40 }
+items-source: "episodes"
+spacer-rows: false
+selection-pic: { x: 176, y: 72 }
+default-selection: 0
+components:
+  # The LINC screen (game-info menu-backdrop) with its terminal cleared
+  - { type: "Background", params: [ { color: "2" } ] }
+  - { type: "Fill", params: [ { x: 32 }, { y: 28 }, { width: 244 }, { height: 132 }, { color: "2" } ] }
+  - { type: "Label", params: [ { text: "CHOOSE A MISSION" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { x: 31 }, { width: 244 }, { y: 31 }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "UP/DN SELECTS - ENTER CHOOSES - ESC EXITS" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 47 }, { width: 236 }, { y: 163 }, { color: "83" }, { shadow-color: "1" } ] }

@@ -1,0 +1,24 @@
+# Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/options.yaml
+# Game options (no Change View: Blake Stone's view is a fixed size); the Messages and Automap Stats lights go 16 left of their text, as bstone's switches do
+music: "MEETINGA"
+type: "blake-menu"
+position: { x: 111, y: 70 }
+indent: 0
+row-height: 9
+font: "SmallFont"
+item-shadow: "1"
+cursor: { x: 77, y-offset: 1, width: 154, height: 9, color: "82", erase-color: "2", flash-tics: 40 }
+checkbox-offset: { x: -16, y: -1 }
+components:
+  # The LINC screen (game-info menu-backdrop) with its terminal cleared
+  - { type: "Background", params: [ { color: "2" } ] }
+  - { type: "Fill", params: [ { x: 32 }, { y: 28 }, { width: 244 }, { height: 132 }, { color: "2" } ] }
+  - { type: "Label", params: [ { text: "GAME OPTIONS" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { x: 31 }, { width: 244 }, { y: 31 }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "UP/DN SELECTS - ENTER CHOOSES - ESC EXITS" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 47 }, { width: 236 }, { y: 163 }, { color: "83" }, { shadow-color: "1" } ] }
+menu-items:
+  - { id: "sound", type: "MenuSwitcher", text: "SOUND", short-key: S, enabled: true, action: "CP_Sound" }
+  - { id: "control", type: "MenuSwitcher", text: "CONTROLS", short-key: C, enabled: true, action: "CP_Control" }
+  - { id: "video", type: "MenuSwitcher", text: "VIDEO", short-key: V, enabled: true, action: "CP_Video" }
+  - { id: "messages", type: "ToggleMenuItem", text: "MESSAGES", short-key: M, enabled: true }
+  - { id: "automapstats", type: "ToggleMenuItem", text: "AUTOMAP STATS", short-key: A, enabled: true }
+  - { id: "mods", type: "MenuSwitcher", text: "MODS", short-key: M, enabled: true, action: "CP_Mods" }

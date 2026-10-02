@@ -422,7 +422,10 @@ internal partial class Program
                             else
                                 length += TpWidth(TpAt(s++));
                         }
-                        tpcurx += (tpxh - tpcurx + 1 - length) / 2;
+                        // Too long to center: JAM's unsigned arithmetic puts it past the right
+                        // margin, so it starts the next line from the left instead
+                        int room = tpxh - tpcurx + 1 - length;
+                        tpcurx = room >= 0 ? tpcurx + room / 2 : tpxh + 1;
                         tpflags |= fl_center;
                         break;
                     }
@@ -935,6 +938,46 @@ internal partial class Program
     /// until it's finished or left. Returns whether it was left with Esc.
     /// </summary>
     internal static bool ShowBriefing(string textName) => ShowTextPages(textName, fromMenu: false);
+
+    /// <summary>
+    /// game-info's lose-screen (bstone's LoseScreen): its picture, and its text typed out a
+    /// letter at a time into its window, scrolling as it fills, until a key
+    /// </summary>
+    internal static void ShowLoseScreen(LoseScreenInfo lose)
+    {
+        if (PresenterScript(lose.Script) is not { } script)
+            return;
+
+        _videoManager.FadeOut();
+        _audioManager.StopMusic();
+        _videoManager.ClearScreen(0);
+        if (!string.IsNullOrEmpty(lose.Pic))
+            _graphicManager.DrawPic(lose.Pic, 0, 0);
+        _videoManager.Update();
+        _videoManager.FadeIn();
+
+        TP_Presenter(new PresenterInfo
+        {
+            Flags = PresenterFlags.UseCurrent | PresenterFlags.ShowCursor | PresenterFlags.ScrollRegion
+                | PresenterFlags.Continue | PresenterFlags.TermSound | PresenterFlags.Abortable,
+            Script = script,
+            X1 = lose.X1,
+            Y1 = lose.Y1,
+            X2 = lose.X2,
+            Y2 = lose.Y2,
+            Font = lose.Font,
+            FontColor = lose.Color,
+            Background = lose.Background,
+            Light = lose.Light,
+            Dark = lose.Dark,
+            Shadow = lose.Shadow,
+            PrintDelay = lose.PrintDelay,
+            TypeSound = lose.TypeSound,
+        });
+
+        _videoManager.FadeOut();
+        _inputManager.ClearKeysDown();
+    }
 
     /// <summary>
     /// A menu item's pages of presenter text (Blake Stone's instructions, story and ordering

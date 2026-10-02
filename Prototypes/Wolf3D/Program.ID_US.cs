@@ -1,4 +1,4 @@
-﻿using SDL2;
+using SDL2;
 using Wolf3D.Fonts;
 using static Wolf3D.Program;
 
@@ -9,6 +9,9 @@ internal class HighScore
     public string name;
     public int score;
     public ushort completed, episode;
+
+    /// <summary>The last floor's rating, 0 to 100 (Blake Stone's mission ratio column)</summary>
+    public ushort ratio;
 
     public HighScore()
     {
@@ -43,7 +46,7 @@ internal partial class Program
 {
     static bool US_Started;
 
-    internal static HighScore[] Scores = new HighScore[MaxScores]
+    internal static HighScore[] Scores = new HighScore[]
     {
         new HighScore {name = "id software-'92", score = 10000,completed = 1},
         new HighScore {name = "Adrian Carmack", score = 10000,completed = 1},
@@ -60,7 +63,34 @@ internal partial class Program
     internal const int MaxHelpLines = 500;
 
     internal const int MaxHighName = 57;
-    internal const int MaxScores = 7;
+
+    /// <summary>How many high scores config.cfg's original block holds; a longer table is appended after the settings</summary>
+    internal const int LegacyScoreCount = 7;
+
+    /// <summary>How many high scores there are: Wolf3D's 7, or game-info high-scores count</summary>
+    internal static int MaxScores => Scores.Length;
+
+    /// <summary>
+    /// Puts in the game pack's own default high scores (game-info high-scores defaults and
+    /// count) in place of Wolf3D's, before the config's are read over them
+    /// </summary>
+    internal static void InitHighScores()
+    {
+        var layout = _gameEngineManager.GetGameInfo().HighScores;
+        int count = Math.Clamp(layout.Count ?? (layout.Defaults.Count > 0 ? layout.Defaults.Count : LegacyScoreCount), 1, 100);
+        if (layout.Defaults.Count == 0 && count == Scores.Length)
+            return;
+
+        var scores = new HighScore[count];
+        for (int i = 0; i < count; i++)
+        {
+            var d = i < layout.Defaults.Count ? layout.Defaults[i] : null;
+            scores[i] = d == null
+                ? (layout.Defaults.Count == 0 && i < Scores.Length ? Scores[i] : new HighScore { score = 10000, completed = 1 })
+                : new HighScore { name = d.Name, score = d.Score, completed = (ushort)d.Level };
+        }
+        Scores = scores;
+    }
 
     internal const int MaxGameName = 32;    // a save's name, as typed in the save menu, is one less
 

@@ -1,17 +1,106 @@
-# The JAM text presenter (Program.TextPresenter.cs): Blake Stone's briefings, elevator messages
-# and message boxes are scripts in its ^ codes. Colors are palette indices.
+# The JAM text presenter (Program.TextPresenter.cs): Blake Stone's briefings, elevator messages,
+# message boxes and help pages are scripts in its ^ codes. Colors are palette indices.
 
 # The fonts a script's ^FNn picks from (fonts.yaml): ^FN0 isn't printable, so it's ^FN1's
 fonts: [Presenter1, Presenter1, Presenter2, Presenter3, Presenter4]
 
-# What ^SHnnn draws (nnn in hex: ^SH090 is 144). The briefings show their mission's picture.
+# What ^SHnnn draws (nnn in hex: ^SH090 is 144), from bstone's shape table for Aliens of Gold
+# v1.0 (jm_tp.cpp): pictures, and sprites and walls at 64x64. Only the ones the game's texts
+# use are here: the briefings' mission pictures, the instructions' keys and items, the story's
+# pictures and the ordering info's logos.
 shapes:
+  # Items and machines (the instructions)
+  1: { sprite: RCRDA0 }
+  6: { sprite: CHGUA0 }
+  7: { sprite: SFPPA0 }
+  8: { sprite: RAWPA0 }
+  9: { sprite: DNDPA0 }
+  10: { sprite: FAIDA0 }
+  12: { sprite: MBAGA0 }
+  13: { sprite: LOOTA0 }
+  14: { sprite: GLD5A0 }
+  15: { sprite: XORBA0 }
+  16: { sprite: CKLGA0 }
+  17: { sprite: HAMMA0 }
+  18: { sprite: WBWLA0 }
+  32: { sprite: CON1A0 }
+  33: { sprite: CON5A0 }
+  34: { sprite: ACPPA0 }
+  35: { wall: FOODBEV1 }
+  37: { wall: ELEVPANL }
+  38: { wall: SWITCHA1 }
+  39: { wall: TELEPOR1 }
+  118: { sprite: FSCTA8 }
+  136: { sprite: CNDYA0 }
+  137: { sprite: SNDWA0 }
+  138: { sprite: PDUPA0 }
+  207: { sprite: CRT1A0 }
+  # The story's pictures
+  40: { pic: GoldfireBig }
+  41: { pic: StarSigil }
+  42: { pic: BlakeWithGun }
+  43: { pic: StarInstitute }
+  44: { pic: MedalOfHonor }
+  45: { pic: GoldfireSmall }
+  46: { pic: BlakeWin }
+  47: { pic: FloorStats }
+  51: { pic: ShuttleExplosion }
+  52: { pic: Planets }
+  # Controls and keys (the instructions)
+  54: { pic: H_P }
+  55: { pic: MousePic }
+  113: { pic: JoystickPic }
+  134: { pic: GravisPadPic }
+  135: { pic: H_M }
+  # The briefings' missions
   144: { pic: C_Episode1 }   # STAR Institute
   145: { pic: C_Episode2 }   # Floating Fortress
   146: { pic: C_Episode3 }   # Underground Network
   147: { pic: C_Episode4 }   # STAR Port
   148: { pic: C_Episode5 }   # Habitat II
   149: { pic: C_Episode6 }   # Defense Center
+  174: { pic: H_Alt }
+  175: { pic: H_Ctrl }
+  176: { pic: H_Space }
+  177: { pic: H_Pause }
+  178: { pic: H_Esc }
+  179: { pic: H_LeftArrow }
+  180: { pic: H_UpArrow }
+  181: { pic: H_DownArrow }
+  182: { pic: H_RightArrow }
+  183: { pic: H_Q }
+  184: { pic: H_W }
+  185: { pic: H_E }
+  186: { pic: H_I }
+  187: { pic: H_H }
+  188: { pic: H_1 }
+  189: { pic: H_2 }
+  190: { pic: H_3 }
+  191: { pic: H_4 }
+  192: { pic: H_5 }
+  193: { pic: H_F1 }
+  194: { pic: H_F2 }
+  195: { pic: H_F3 }
+  196: { pic: H_F4 }
+  197: { pic: H_F5 }
+  198: { pic: H_F6 }
+  199: { pic: H_F7 }
+  200: { pic: H_F8 }
+  201: { pic: H_F9 }
+  202: { pic: H_F10 }
+  203: { pic: H_Enter }
+  204: { pic: H_Tab }
+  205: { pic: H_C }
+  206: { pic: H_F }
+  # The ordering info's
+  210: { pic: ApogeeLogoSmall }
+  211: { pic: VisaCard }
+  212: { pic: MasterCard }
+  213: { pic: FaxPic }
+
+# What ^PSnn plays: Blake Stone's sounds by their place in its sound list (bstone's audio.h)
+sounds:
+  65: bs/goldsternlaugh
 
 # The box over the status bar that "Get Ready, Blake!" and the like are shown in (bstone's BMAmsg)
 message-box:
@@ -25,7 +114,7 @@ message-box:
   text-color: 175
   font: 1
 
-# The window briefings are shown in (bstone's HelpPresenter)
+# The window briefings and help pages are shown in (bstone's HelpPresenter)
 briefing:
   pics:
     - { pic: H_TopWindow, x: 0, y: 0 }
@@ -46,3 +135,6 @@ briefing:
   info-color: 57
   page-x: 246
   page-y: 190
+  # The instructions, story and ordering info from the menu (and F1): only Esc leaves them
+  pages-info-line: "$BS_PAGESHELP"
+  pages-music: RHUMBAAS

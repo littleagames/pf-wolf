@@ -1,0 +1,12 @@
+# Blake Stone's look (bstone's 3d_menu.cpp), in place of menudefs/mouse-sensitivity.yaml
+# The slider itself is drawn in code, across 60 to 260 at 97
+music: "MEETINGA"
+type: "blake-menu"
+components:
+  # The LINC screen (game-info menu-backdrop) with its terminal cleared
+  - { type: "Background", params: [ { color: "2" } ] }
+  - { type: "Fill", params: [ { x: 32 }, { y: 28 }, { width: 244 }, { height: 132 }, { color: "2" } ] }
+  - { type: "Label", params: [ { text: "MOUSE SENSITIVITY" }, { font: "BlakeTitle" }, { horizontal-orientation: "center" }, { x: 31 }, { width: 244 }, { y: 31 }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "LF/RT CHANGES - ENTER ACCEPTS - ESC EXITS" }, { font: "BlakeSmall" }, { horizontal-orientation: "center" }, { x: 47 }, { width: 236 }, { y: 163 }, { color: "83" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "SLOW" }, { x: 36 }, { y: 112 }, { font: "BlakeSmall" }, { color: "86" }, { shadow-color: "1" } ] }
+  - { type: "Label", params: [ { text: "FAST" }, { x: 252 }, { y: 112 }, { font: "BlakeSmall" }, { color: "86" }, { shadow-color: "1" } ] }
