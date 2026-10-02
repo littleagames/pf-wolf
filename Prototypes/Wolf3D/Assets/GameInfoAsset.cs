@@ -390,6 +390,12 @@ internal record TitleScreenInfo
 
     /// <summary>#RRGGBB the screen fades to when it's done, before black (Blake Stone's red flash)</summary>
     public string? FadeTo { get; init; }
+
+    /// <summary>A picture the screen fizzles over to once it's faded in, before it's held (Planet Strike's title)</summary>
+    public string? FizzlePic { get; init; }
+
+    /// <summary>Tics the fizzle takes</summary>
+    public int FizzleTics { get; init; } = 70;
 }
 
 /// <summary>Presenter text on a title screen: a VGAGRAPH text, its window and colors (palette indices)</summary>

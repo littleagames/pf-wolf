@@ -30,7 +30,11 @@ internal partial class Program
             return false;
 
         int panelWall = _mapManager.MAPSPOT(trigger.TileX, trigger.TileY, 0);
-        var map = FloorSelectScreen(elevator);
+
+        // Planet Strike's teleporter map (Program.Teleporter.cs): the player comes out at the
+        // new floor's start
+        bool teleporter = elevator.Style.Equals("teleporter", StringComparison.OrdinalIgnoreCase) && elevator.Teleporter != null;
+        var map = teleporter ? TeleporterScreen(elevator, elevator.Teleporter!) : FloorSelectScreen(elevator);
         if (map == null)
         {
             DrawPlayScreen();
@@ -39,7 +43,9 @@ internal partial class Program
             return true;
         }
 
-        pendingMapChange = new PendingMapChange(map, true, player.X, player.Y, player.Angle, WaitTics: 0, ElevatorWall: panelWall);
+        pendingMapChange = teleporter
+            ? new PendingMapChange(map, false, 0, 0, 0, WaitTics: 0)
+            : new PendingMapChange(map, true, player.X, player.Y, player.Angle, WaitTics: 0, ElevatorWall: panelWall);
         gamestate.mapon = map;
         playstate = playstatetypes.ex_warped;
         return true;

@@ -1,0 +1,62 @@
+# Planet Strike's teleporter map (Program.Teleporter.cs), over blake's elevator panel
+# (gamepacks/blake/elevator.yaml), as bstone's ps_input_floor lays it out. Colors are palette
+# indices; floors are by game-info floor-number from 0.
+style: teleporter
+teleporter:
+  background:
+    - { pic: TELETOP, x: 0, y: 0 }
+    - { pic: TELEBOT, x: 0, y: 96 }
+  on-pic: "TELEON{0:D2}"
+  off-pic: "TELEOF{0:D2}"
+  floors:
+    - { x: 16, y: 13 }
+    - { x: 40, y: 26 }
+    - { x: 86, y: 9 }
+    - { x: 23, y: 50 }
+    - { x: 44, y: 50 }
+    - { x: 62, y: 50 }
+    - { x: 83, y: 50 }
+    - { x: 27, y: 62 }
+    - { x: 118, y: 42 }
+    - { x: 161, y: 17 }
+    - { x: 161, y: 26 }
+    - { x: 161, y: 35 }
+    - { x: 213, y: 41 }
+    - { x: 213, y: 50 }
+    - { x: 184, y: 62 }
+    - { x: 205, y: 62 }
+    - { x: 226, y: 62 }
+    - { x: 256, y: 10 }
+    - { x: 276, y: 10 }
+    - { x: 276, y: 30 }
+  up-on-pic: TELEUPON
+  up-off-pic: TELEUPOF
+  down-on-pic: TELEDNON
+  down-off-pic: TELEDNOF
+  up-spots: [{ x: 34, y: 91 }, { x: 270, y: 91 }]
+  down-spots: [{ x: 34, y: 104 }, { x: 270, y: 104 }]
+  bar-x: 54
+  bar-y: 101
+  bar-width: 212
+  bar-height: 9
+  bar-color: 82
+  text-y: 103
+  font: 2
+  name-color: 87
+  locked-text: "-- TELEPORT DISABLED --"
+  locked-color: 245
+  overhead: { x: 16, y: 132 }
+  unmapped-text: "   AREA\n  UNMAPPED"
+  unmapped-color: 87
+  colors:
+    background: 82
+    unmapped: 82
+    floor: 85
+    door: 88
+    locked: 24
+    player: 240
+  stats: { x: 235, y: 138, font: 2, color: 175 }
+  help: "UP/DN MOVES SELECTOR - ENTER ACTIVATES"
+  help-spot: { x: 115, y: 188 }
+  help-color: 175
+  locked-sound: bs/noway

@@ -1,0 +1,10 @@
+# Planet Strike's movies, over blake's (gamepacks/blake/movies.yaml; an entry here replaces
+# blake's whole). Its ending (EANIM) plays in its own palette (bstone's ENDINGPALETTE).
+EndMovie:
+  frame-tics: 3
+  palette: EndPAL
+  sounds:
+    50: bs/explode1
+    54: bs/explode2
+    65: bs/goldsternlaugh
+    81: bs/htechdooropen

@@ -90,7 +90,10 @@ internal partial class Program
                 // weapons already in hand, the next one in the slot.
                 var inSlot = usable.Where(w => WeaponSlot(w) == slot).ToList();
                 if (inSlot.Count == 0)
+                {
+                    UseSlotItem(slot);      // Planet Strike's fission detonator (Program.Teleporter.cs)
                     break;
+                }
                 var inHand = gamestate.weapon != null ? inSlot.IndexOf(gamestate.weapon) : -1;
                 newWeapon = inHand >= 0
                     ? inSlot[(inHand + 1) % inSlot.Count]
@@ -631,6 +634,8 @@ internal partial class Program
         ActorActionRegistry.Register("A_CountRemaining", A_CountRemaining);
         ActorActionRegistry.Register("A_VictoryIfLast", A_VictoryIfLast);
         ActorActionRegistry.Register("A_WarpSiteGone", A_WarpSiteGone);
+        ActorActionRegistry.Register("A_WarpSitesOff", A_WarpSitesOff);
+        ActorActionRegistry.Register("A_FireSpread", A_FireSpread);
 
         // Projectiles and effects (Program.WL_ACT2.cs).
         ActorActionRegistry.Register("A_Projectile", A_Projectile);
@@ -664,6 +669,7 @@ internal partial class Program
         ActorActionRegistry.Register("T_VictoryRun", T_VictoryRun);
         RegisterSwitchActions();    // tag-targeted door and wall actions (Program.SwitchActions.cs)
         RegisterSmartSwitchActions();   // A_SmartSwitch (Program.SmartSwitch.cs)
+        RegisterTeleporterActions();    // A_UnlockFloor, A_DropDetonator (Program.Teleporter.cs)
         RegisterZoneLightActions(); // light zone actions, for switches and actors (Program.ZoneLights.cs)
         RegisterActorLightActions(); // actors' own lights (Program.ActorLights.cs)
     }

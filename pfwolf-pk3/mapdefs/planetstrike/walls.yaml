@@ -71,8 +71,7 @@ walls:
         East: TELEMAP2
         West: TELEMAP2
         switch:
-            # The teleporter's map panel: for now, Aliens of Gold's floor-select screen
-            sides: [east, west]
+            # The teleporter's map panel, from any side: the teleporter map (gamepacks/planetstrike/elevator.yaml)
             actions:
                 - A_FloorSelect
     '23':    # Console Wires

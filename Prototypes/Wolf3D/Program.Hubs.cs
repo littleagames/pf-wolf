@@ -29,13 +29,21 @@ internal partial class Program
         string? LevelMap,
         byte[]? LevelStart,
         Dictionary<string, int> FloorScores,
-        int InformantTotal);
+        int InformantTotal,
+        HashSet<string> Unlocked,
+        Dictionary<string, byte[]> Overheads);
 
     /// <summary>The hub levels that have been left, as they were left, by map</summary>
     static readonly Dictionary<string, byte[]> hubLevels = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The maps the player has been on this game: their floors are open in the elevator</summary>
     internal static readonly HashSet<string> visitedMaps = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Floors unlocked without having been on them (A_UnlockFloor: Planet Strike's security cubes)</summary>
+    internal static readonly HashSet<string> unlockedMaps = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Each floor's overhead map (64x64 palette colors) as last seen, for the teleporter (Program.Teleporter.cs)</summary>
+    internal static readonly Dictionary<string, byte[]> floorOverheads = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Each floor's overall score (0 to 300) as last left, for the mission ratio (Program.Elevator.cs)</summary>
     static readonly Dictionary<string, int> floorScores = new(StringComparer.OrdinalIgnoreCase);
@@ -65,6 +73,8 @@ internal partial class Program
     {
         hubLevels.Clear();
         visitedMaps.Clear();
+        unlockedMaps.Clear();
+        floorOverheads.Clear();
         floorScores.Clear();
         levelMap = null;
         levelStart = null;
@@ -100,6 +110,7 @@ internal partial class Program
             return;
 
         floorScores[levelMap] = FloorScore();
+        floorOverheads[levelMap] = CaptureOverhead();
 
         using var ms = new MemoryStream();
         using (var bw = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
@@ -237,6 +248,17 @@ internal partial class Program
         }
 
         bw.Write(informantTotal);
+
+        bw.Write(unlockedMaps.Count);
+        foreach (var map in unlockedMaps)
+            bw.Write(map);
+        bw.Write(floorOverheads.Count);
+        foreach (var (map, image) in floorOverheads)
+        {
+            bw.Write(map);
+            bw.Write(image.Length);
+            bw.Write(image);
+        }
     }
 
     private static HubState ReadHubState(BinaryReader br)
@@ -260,7 +282,18 @@ internal partial class Program
         for (int i = br.ReadCount(); i > 0; i--)
             scores[br.ReadString()] = br.ReadInt32();
 
-        return new HubState(levels, visited, map0.Length > 0 ? map0 : null, start, scores, br.ReadInt32());
+        int informants = br.ReadInt32();
+        var unlocked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (int i = br.ReadCount(); i > 0; i--)
+            unlocked.Add(br.ReadString());
+        var overheads = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+        for (int i = br.ReadCount(); i > 0; i--)
+        {
+            var map = br.ReadString();
+            overheads[map] = ReadExactly(br, br.ReadCount());
+        }
+
+        return new HubState(levels, visited, map0.Length > 0 ? map0 : null, start, scores, informants, unlocked, overheads);
     }
 
     private static void RestoreHubState(HubState state)
@@ -270,6 +303,11 @@ internal partial class Program
             hubLevels[map] = data;
         visitedMaps.Clear();
         visitedMaps.UnionWith(state.Visited);
+        unlockedMaps.Clear();
+        unlockedMaps.UnionWith(state.Unlocked);
+        floorOverheads.Clear();
+        foreach (var (map, image) in state.Overheads)
+            floorOverheads[map] = image;
         floorScores.Clear();
         foreach (var (map, score) in state.FloorScores)
             floorScores[map] = score;

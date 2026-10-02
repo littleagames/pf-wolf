@@ -1496,16 +1496,16 @@ graphics:
     - Font5
     - TELETOP    # Planet Strike's (TELEPORTBACKTOPPIC)
     - TELEBOT    # Planet Strike's (TELEPORTBACKBOTPIC)
-    - FloorButtonLit1
-    - FloorButtonLit2
-    - FloorButtonLit3
-    - FloorButtonLit4
-    - FloorButtonLit5
-    - FloorButtonLit6
-    - FloorButtonLit7
-    - FloorButtonLit8
-    - FloorButtonLit9
-    - FloorButtonLit10
+    - TELEON01    # Planet Strike's (TELEPORT1ONPIC)
+    - TELEON02    # Planet Strike's (TELEPORT2ONPIC)
+    - TELEON03    # Planet Strike's (TELEPORT3ONPIC)
+    - TELEON04    # Planet Strike's (TELEPORT4ONPIC)
+    - TELEON05    # Planet Strike's (TELEPORT5ONPIC)
+    - TELEON06    # Planet Strike's (TELEPORT6ONPIC)
+    - TELEON07    # Planet Strike's (TELEPORT7ONPIC)
+    - TELEON08    # Planet Strike's (TELEPORT8ONPIC)
+    - TELEON09    # Planet Strike's (TELEPORT9ONPIC)
+    - TELEON10    # Planet Strike's (TELEPORT10ONPIC)
     - TELEON11    # Planet Strike's (TELEPORT11ONPIC)
     - TELEON12    # Planet Strike's (TELEPORT12ONPIC)
     - TELEON13    # Planet Strike's (TELEPORT13ONPIC)
@@ -1520,16 +1520,16 @@ graphics:
     - TELEDNON    # Planet Strike's (TELEDNONPIC)
     - TELEUPOF    # Planet Strike's (TELEUPOFFPIC)
     - TELEDNOF    # Planet Strike's (TELEDNOFFPIC)
-    - FloorButton1
-    - FloorButton2
-    - FloorButton3
-    - FloorButton4
-    - FloorButton5
-    - FloorButton6
-    - FloorButton7
-    - FloorButton8
-    - FloorButton9
-    - FloorButton10
+    - TELEOF01    # Planet Strike's (TELEPORT1OFFPIC)
+    - TELEOF02    # Planet Strike's (TELEPORT2OFFPIC)
+    - TELEOF03    # Planet Strike's (TELEPORT3OFFPIC)
+    - TELEOF04    # Planet Strike's (TELEPORT4OFFPIC)
+    - TELEOF05    # Planet Strike's (TELEPORT5OFFPIC)
+    - TELEOF06    # Planet Strike's (TELEPORT6OFFPIC)
+    - TELEOF07    # Planet Strike's (TELEPORT7OFFPIC)
+    - TELEOF08    # Planet Strike's (TELEPORT8OFFPIC)
+    - TELEOF09    # Planet Strike's (TELEPORT9OFFPIC)
+    - TELEOF10    # Planet Strike's (TELEPORT10OFFPIC)
     - TELEOF11    # Planet Strike's (TELEPORT11OFFPIC)
     - TELEOF12    # Planet Strike's (TELEPORT12OFFPIC)
     - TELEOF13    # Planet Strike's (TELEPORT13OFFPIC)

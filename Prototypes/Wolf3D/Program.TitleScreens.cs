@@ -74,6 +74,12 @@ internal partial class Program
             _videoManager.Update();
             FadeInWithPalette(screen.Palette);
 
+            if (!string.IsNullOrEmpty(screen.FizzlePic))
+            {
+                _graphicManager.DrawPic(screen.FizzlePic, 0, 0);
+                _videoManager.Transition(FadeStyle.Fizzle, 0, 0, _videoManager.screenWidth, _videoManager.screenHeight, (uint)screen.FizzleTics);
+            }
+
             pressed = WaitOnTitleScreen(screen);
         }
 

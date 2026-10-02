@@ -572,4 +572,40 @@ internal partial class Program
             warpwait = WarpWait(warpsites[0], first: false);
         warpchosen = -1;
     }
+
+    /// <summary>A_WarpSitesOff: no more comes; the level's warp sites go (Goldfire, morphed)</summary>
+    internal static void A_WarpSitesOff(Entities.Actors.Actor ob)
+    {
+        foreach (var site in warpsites)
+            _mapManager.MarkForRemoval(site);
+        warpsites.Clear();
+        warpchosen = -1;
+    }
+
+    /// <summary>
+    /// A_FireSpread("SpectorShot", chance, health, lowchance, 24, 16, 8): a projectile at the
+    /// player and, chance times in 256 (lowchance below that health), one either side at each
+    /// offset in ANGLES units too (bstone's morphed Goldfire)
+    /// </summary>
+    internal static void A_FireSpread(Entities.Actors.Actor ob, string[] args)
+    {
+        if (args.Length == 0)
+        {
+            Console.WriteLine("A_FireSpread: no projectile given.");
+            return;
+        }
+
+        A_FireProjectile(ob, [args[0]]);
+
+        int Arg(int i, int fallback) => args.Length > i && int.TryParse(args[i], out var n) ? n : fallback;
+        int chance = ob.Hitpoints < Arg(2, 0) ? Arg(3, 0) : Arg(1, 0);
+        if (US_RndT() >= chance)
+            return;
+        for (int i = 4; i < args.Length; i++)
+        {
+            int offset = Arg(i, 0);
+            A_FireProjectile(ob, [args[0], offset.ToString()]);
+            A_FireProjectile(ob, [args[0], (-offset).ToString()]);
+        }
+    }
 }

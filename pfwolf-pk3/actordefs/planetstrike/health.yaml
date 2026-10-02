@@ -44,9 +44,6 @@ LiquidAlien:
 SwatGuard:
   extend: true
   properties: { "health.baby": 78, "health.easy": 112, "health.normal": 325, "health.hard": 425 }
-Goldfire:
-  extend: true
-  properties: { "health.baby": 90, "health.easy": 100, "health.normal": 150, "health.hard": 250, "dropitem": "" }
 VolatileTransport:
   extend: true
   properties: { "health.baby": 17, "health.easy": 25, "health.normal": 63, "health.hard": 75 }

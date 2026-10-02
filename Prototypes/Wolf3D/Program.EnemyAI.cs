@@ -734,6 +734,16 @@ internal partial class Program
         var tiley = ob.Y >> (int)MapConstants.TILESHIFT;
         bool informant = ActorHasFlag(ob, "INFORMANT");
 
+        // `monster.floordeath`: on that floor (game-info floor-number) it isn't killed but goes
+        // to its FloorDeath state, worth nothing yet (Goldfire morphing on Planet Strike's last)
+        if (PropertyInt(ob, "monster.floordeath", -1) is >= 0 and var deathFloor && deathFloor == _mapManager.CurrentFloorNumber
+            && ob.ResolvedStates.ContainsKey("FloorDeath"))
+        {
+            NewActorState(ob, "FloorDeath");
+            ob.RuntimeFlags &= ~(objflags.FL_SHOOTABLE | objflags.FL_FRIENDLY);
+            return;
+        }
+
         // An informant is worth nothing, and says so (Blake Stone's warning)
         if (informant)
             WarnKilledInformant(ob);

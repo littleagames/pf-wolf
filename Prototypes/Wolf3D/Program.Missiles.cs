@@ -163,7 +163,8 @@ internal partial class Program
     /// A_Explode(min, max[, radius[, "hurtplayer"]]): a blast spreading from the actor's tile
     /// through open floor (not walls or shut doors) up to radius tiles away (default 2): each
     /// shootable thing in it takes min..max, rolled once. With hurtplayer the player takes it
-    /// too, if standing in it.
+    /// too, if standing in it. A thing whose `monster.blastedby` names the actor's class breaks
+    /// (goes to its Death state).
     /// </summary>
     static void A_Explode(Entities.Actors.Actor ob, string[] args)
     {
@@ -190,6 +191,13 @@ internal partial class Program
 
             if (hurtPlayer && player.TileX == x && player.TileY == y)
                 TakeDamage(damage, ob);
+
+            // `monster.blastedby: Class`: only a blast from that class breaks it (Planet Strike's
+            // security cube, by the fission detonator): it goes to its Death state
+            foreach (var target in _mapManager.GetActors().Where(a => !a.IsRemoved && a.TileX == x && a.TileY == y
+                && a.Properties.TryGetValue("monster.blastedby", out var by) && string.Equals(by?.ToString(), ob.Name, StringComparison.OrdinalIgnoreCase)
+                && a.CurrentState?.StateName != "Death").ToList())
+                NewActorState(target, "Death");
 
             foreach (var (dx, dy) in new[] { (1, 0), (-1, 0), (0, 1), (0, -1) })
             {

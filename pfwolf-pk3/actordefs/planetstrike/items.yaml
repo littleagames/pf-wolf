@@ -95,11 +95,14 @@ RadarEnergy:
         tics-per-frame: -1
 
 # The fission detonator, one to a floor: blowing up its security cube with it opens the way on
-# (bstone's GivePlasmaDetonator, up to 100). Using it waits for the security cube.
+# (bstone's GivePlasmaDetonator, up to 100). Slot key 7 drops one by the floor's security cube
+# (Program.Teleporter.cs A_DropDetonator).
 PlasmaDetonator:
   parent: Ammo
   properties:
     "inventory.type": PlasmaDetonator
+    "inventory.useslot": 7
+    "inventory.use": 'A_DropDetonator("PlasmaDetonatorArmed", "SecurityCube")'
     "inventory.amount": 1
     "inventory.maxamount": 100
     "inventory.pickupsound": "bs/getdetonator"

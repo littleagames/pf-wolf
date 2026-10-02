@@ -44,11 +44,12 @@ intro:
     y: 64
     seconds: 2
 
-# Until a key is pressed (bstone's DemoLoop): the title, the credits on the menu screen, then
-# the high scores
+# Until a key is pressed (bstone's DemoLoop): the title (fizzling over to its second picture,
+# which has the copyright lines), the credits on the menu screen, then the high scores
 title-loop:
   - pic: TITLE1
     palette: Extra3PAL
+    fizzle-pic: TITLE2
     seconds: 6
   - pic: LincScreen
     text:

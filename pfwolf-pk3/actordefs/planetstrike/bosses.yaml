@@ -152,14 +152,89 @@ CrawlerBeast:
       - { sprite: CRWL, frames: [M], tics-per-frame: -1 }
 
 # The security cube (bstone's rotating cube, 177, in Aliens of Gold's projection generator's
-# place): it turns, lit, and can't be shot. A fission detonator destroys it, unlocking the
-# next floor (not done yet: 6d).
+# place): it turns, lit, and can't be shot. Only a fission detonator's blast breaks it, and that
+# unlocks the next floor in the teleporter.
 SecurityCube:
   radius: 32
   flags: [SOLID]
+  properties:
+    "monster.blastedby": PlasmaDetonatorArmed
   states:
     Spawn:
       - { sprite: CUBE, frames: [A, B, C, D, E, F, G, H, I, J], tics-per-frame: 5, modifiers: [bright] }
+    Death:
+      - { sprite: CUBE, frames: [K], tics-per-frame: 5, action: 'A_PlaySound("bs/explode1", "positional")', modifiers: [bright] }
+      - { sprite: CUBE, frames: [L, M, N, O, P, Q, R], tics-per-frame: 5, modifiers: [bright] }
+      - { sprite: CUBE, frames: [S], tics-per-frame: 0, action: A_UnblockTile }
+      - { sprite: CUBE, frames: [S], tics-per-frame: 0, action: A_UnlockFloor }
+      - { sprite: CUBE, frames: [S], tics-per-frame: -1 }
+
+# A dropped fission detonator: it flashes for four seconds, then goes off, blowing open nearby
+# doors' way and breaking a security cube within two tiles
+PlasmaDetonatorArmed:
+  states:
+    Spawn:
+      - { sprite: DBOM, frames: [A, B, A, B, A, B, A, B, A, B, A, B], tics-per-frame: 20 }
+      - { sprite: PEXP, frames: [A], tics-per-frame: 4, action: 'A_PlaySound("bs/explode2", "positional")', modifiers: [bright] }
+      - { sprite: PEXP, frames: [B], tics-per-frame: 4, action: 'A_Explode(20, 20, 2, "hurtplayer")', modifiers: [bright] }
+      - { sprite: PEXP, frames: [C, D, E, F, G, H], tics-per-frame: 4, modifiers: [bright] }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+# Goldfire, with no gold card to leave. Shot down on the last floor (Goldfire's Lair), he taps
+# his wrist and morphs instead of warping out (bstone's gold_morphingobj), and comes on as
+# GoldfireMorphed; no more warps in.
+Goldfire:
+  extend: true
+  properties:
+    "health.baby": 90
+    "health.easy": 100
+    "health.normal": 150
+    "health.hard": 250
+    "dropitem": ""
+    "monster.floordeath": 19
+  states:
+    FloorDeath:
+      - { sprite: DGLD, frames: [J], tics-per-frame: 60, action: A_WarpSitesOff }
+      - { sprite: DGLD, frames: [Q, R, S, T, U, V, W, X], tics-per-frame: 10 }
+      - { sprite: DGLD, frames: [X], tics-per-frame: 0, action: 'A_SpawnEnemy("GoldfireMorphed", "chase")' }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+# Goldfire morphed (bstone's gold_morphobj): four times as fast, and his plasma comes in a
+# stream, now and then fanned out six wider (more often once he's below 500). Killing him wins
+# the game, once he's done dying.
+GoldfireMorphed:
+  parent: BlakeEnemy
+  flags: [NOTCOUNTED]
+  properties:
+    "tag": "$BS_GOLDFIRE"
+    "health.baby": 4000
+    "health.easy": 4500
+    "health.normal": 4800
+    "health.hard": 5400
+    "points": 5000
+    "monster.chasespeedmultiplier": 4
+    "deathsound": "bs/poddeath"
+  states:
+    Spawn:
+      - { sprite: MGLD, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: MGLD, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MGLD, frames: [B], tics-per-frame: 8 }
+      - { sprite: MGLD, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MGLD, frames: [D], tics-per-frame: 8 }
+    Pain:
+      - { sprite: MGLD, frames: [I], tics-per-frame: 25, next-state: Chase }
+    # The third frame fires every tic it's up (a think, as bstone's s_mgold_shoot3)
+    Attack:
+      - { sprite: MGLD, frames: [E], tics-per-frame: 10 }
+      - { sprite: MGLD, frames: [F], tics-per-frame: 20 }
+      - { sprite: MGLD, frames: [G], tics-per-frame: 14, think: 'A_FireSpread("SpectorShot", 63, 500, 127, 24, 16, 8)' }
+      - { sprite: MGLD, frames: [H], tics-per-frame: 12, next-state: Chase }
+    Death:
+      - { sprite: MGLD, frames: [J], tics-per-frame: 25, action: A_DeathScream }
+      - { sprite: MGLD, frames: [K, L, M], tics-per-frame: 25 }
+      - { sprite: MGLD, frames: [N], tics-per-frame: 25, action: A_Victory }
+      - { sprite: MGLD, frames: [N], tics-per-frame: -1 }
 
 # A Goldfire spawn site he comes at straight away (bstone's 141)
 GoldfireSiteNow:
