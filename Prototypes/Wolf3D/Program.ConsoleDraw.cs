@@ -57,13 +57,13 @@ internal partial class Program
         int lineHeight = font.LineHeight;
 
         using var _ = _videoManager.UseUiOrigin(UiAnchor.Top);
-        int scale = _videoManager.scaleFactor;
-        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, scale * (CONSOLE_HEIGHT - 1), "Black");
-        _videoManager.BarScaledCoord(0, scale * (CONSOLE_HEIGHT - 1), _videoManager.screenWidth, scale, "Grey");
+        int line = _videoManager.ScreenY(CONSOLE_HEIGHT - 1), bottom = _videoManager.ScreenY(CONSOLE_HEIGHT);
+        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, line, "Black");
+        _videoManager.BarScaledCoord(0, line, _videoManager.screenWidth, bottom - line, "Grey");
 
         // The text runs from the screen's left edge to its right, less the margins
-        int left = _videoManager.ToLayoutX(0) + CONSOLE_MARGIN;
-        int textWidth = _videoManager.screenWidth / scale - 2 * CONSOLE_MARGIN;
+        int left = _videoManager.ToLayoutX(0, roundUp: true) + CONSOLE_MARGIN;
+        int textWidth = _videoManager.ToLayoutX(_videoManager.screenWidth) - left - CONSOLE_MARGIN;
 
         //
         // input line, scrolled sideways so the cursor stays visible

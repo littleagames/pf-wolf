@@ -416,7 +416,7 @@ internal class GameEngineManager
         {
             MatchWindow = flags.HasFlag(MoreVideoFlags.MatchWindow),
             RenderSize = hasSize ? (width, height) : null,
-            UiScale = Math.Clamp((uiScale + 50) / 100, 0, MaxUiScale),
+            UiScale = Math.Clamp(uiScale / 100.0, 0, MaxUiScale),
         };
     }
 
@@ -427,7 +427,7 @@ internal class GameEngineManager
         var size = video.MatchWindow ? null : video.RenderSize;
         bw.Write((ushort)(size?.Width ?? 0));
         bw.Write((ushort)(size?.Height ?? 0));
-        bw.Write((ushort)(Math.Max(video.UiScale, 0) * 100));
+        bw.Write((ushort)Math.Round(Math.Clamp(video.UiScale, 0, MaxUiScale) * 100));
     }
 
     private static VideoSettings ReadVideoSettings(BinaryReader br)

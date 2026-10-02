@@ -106,8 +106,8 @@ internal partial class Program
             complete: Values("1", "2", "3", "4", "5", "6"));
         Register("vid_render", "Draws the game at any size and shape in place of 320x200 times vid_scale: auto follows the window (or the desktop when fullscreen); default goes back to vid_scale.",
             "vid_render <width> <height> | auto | default", Cmd_VidRender, complete: Values("auto", "default"));
-        Register("vid_uiscale", "How big the menus, text and status bar are: screen pixels to each of their 320x200 pixels, or auto for the most that fits.",
-            "vid_uiscale <n|auto>", Cmd_VidUiScale, complete: Values("auto", "1", "2", "3", "4"));
+        Register("vid_uiscale", "How big the menus, text and status bar are: screen pixels to each of their 320x200 pixels (2.5 is fine), or auto for the most whole number that fits.",
+            "vid_uiscale <n|auto>", Cmd_VidUiScale, complete: Values("auto", "1", "1.5", "2", "2.5", "3", "4"));
         Register("vid_window", "The window's size when it isn't fullscreen.", "vid_window <width> <height>", Cmd_VidWindow);
         Register("vid_vsync", "Waits for the display's refresh before showing each frame.", "vid_vsync [0|1]",
             args => ApplyVideo(s => s with { VSync = Toggle(args, s.VSync) }), complete: Values("0", "1"));
@@ -620,7 +620,8 @@ internal partial class Program
         var s = _videoManager.Settings;
         var shown = s.Fullscreen ? "fullscreen" : $"{s.WindowWidth}x{s.WindowHeight} window";
         var size = s.MatchWindow ? "auto" : s.RenderSize != null ? "custom size" : $"scale {s.RenderScale}";
-        var ui = s.UiScale <= 0 ? $"auto ({s.EffectiveUiScale})" : $"{s.EffectiveUiScale}";
+        var effective = VideoSettings.FormatScale(s.EffectiveUiScale);
+        var ui = s.UiScale <= 0 ? $"auto ({effective})" : effective;
         _consoleManager.Print($"{s.RenderWidth}x{s.RenderHeight} ({size}) in a {shown}, ui scale {ui}");
         _consoleManager.Print($"vsync {(s.VSync ? 1 : 0)}  aspect {(s.AspectCorrect ? 1 : 0)}  filter {s.Filter.ToString().ToLowerInvariant()}");
     }
@@ -660,8 +661,14 @@ internal partial class Program
         if (args.Length == 0)
             throw new ArgumentException("usage: vid_uiscale <n|auto>");
 
-        int scale = args[0].Equals("auto", StringComparison.OrdinalIgnoreCase) ? 0 : ParseInt(args[0], 1, 32);
-        ApplyVideo(s => s with { UiScale = scale });
+        double scale = 0;
+        if (!args[0].Equals("auto", StringComparison.OrdinalIgnoreCase)
+            && !(double.TryParse(args[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out scale)
+                 && scale >= 1 && scale <= 32))
+            throw new ArgumentException($"expected auto or a scale from 1 to 32 (2.5, say), got \"{args[0]}\"");
+
+        // Kept to hundredths, as config.cfg saves it
+        ApplyVideo(s => s with { UiScale = Math.Round(scale, 2) });
     }
 
     static ScaleFilter ParseFilter(string arg) =>

@@ -217,11 +217,12 @@ internal partial class Program
         if (!_automapManager.IsOpen || _mapManager.Player == null)
             return;
 
-        int px = _videoManager.scaleFactor;
-        float tileSize = _automapManager.Zoom * px;         // screen pixels per tile
+        // Sized with the UI: a layout pixel's worth of screen pixels for the pen, whole
+        float tileSize = _automapManager.Zoom * (float)_videoManager.uiScale;   // screen pixels per tile
+        int pen = Math.Max(1, _videoManager.ToScreenLength(1));
         var view = new AutomapView(viewscreenx, viewscreeny, viewwidth, viewheight, tileSize,
             _automapManager.CenterX, _automapManager.CenterY,
-            MathF.Cos(_automapManager.Rotation), MathF.Sin(_automapManager.Rotation), Pen: px);
+            MathF.Cos(_automapManager.Rotation), MathF.Sin(_automapManager.Rotation), Pen: pen);
 
         // Overlay: the 3D view just drawn, dimmed, so the game still shows through
         if (_automapManager.Overlay)
@@ -536,10 +537,10 @@ internal partial class Program
             text += "  " + AutomapText("$STR_AM_PAN");
 
         // DrawText and Bar work in 320x200 virtual pixels
-        int px = _videoManager.scaleFactor;
-        int x = _videoManager.ToLayoutX(view.ClipX) + 3;
-        int y = _videoManager.ToLayoutY(view.ClipY + view.ClipHeight) - font.Height - 2;
-        int room = view.ClipWidth / px - 6;
+        var (left, top, right, bottom) = LayoutExtent(view);
+        int x = left + 3;
+        int y = bottom - font.Height - 2;
+        int room = right - left - 6;
 
         // The smallest view sizes can't fit it all: fall back to just the tile, then to nothing
         int width = font.Measure(text);
@@ -547,7 +548,7 @@ internal partial class Program
         {
             text = AutomapText("$STR_AM_POSITIONSHORT", player.TileX, player.TileY);
             width = font.Measure(text);
-            if (width > room || font.Height + 2 > view.ClipHeight / px)
+            if (width > room || font.Height + 2 > bottom - top)
                 return;
         }
 
@@ -555,6 +556,16 @@ internal partial class Program
         _videoManager.Bar(x - 2, y - 1, width + 4, font.Height + 2, AutomapColor("AutomapBackground"));
         _graphicManager.DrawText(x, y, text, font, AutomapColor("AutomapPlayer"));
     }
+
+    /// <summary>
+    /// The 320x200 layout pixels wholly inside the view, for text over the map: the first
+    /// column and row in it, and the column and row just past it.
+    /// </summary>
+    static (int Left, int Top, int Right, int Bottom) LayoutExtent(AutomapView view) => (
+        _videoManager.ToLayoutX(view.ClipX, roundUp: true),
+        _videoManager.ToLayoutY(view.ClipY, roundUp: true),
+        _videoManager.ToLayoutX(view.ClipX + view.ClipWidth),
+        _videoManager.ToLayoutY(view.ClipY + view.ClipHeight));
 
     /// <summary>
     /// The level's name, then the kills, treasure and secrets found so far out of the level's
@@ -577,11 +588,11 @@ internal partial class Program
         ];
 
         // DrawText and Bar work in 320x200 virtual pixels; the bottom rows are the position line's
-        int px = _videoManager.scaleFactor;
-        int x = _videoManager.ToLayoutX(view.ClipX) + 3;
-        int y = _videoManager.ToLayoutY(view.ClipY) + 2;
-        int room = view.ClipWidth / px - 6;
-        int bottom = _videoManager.ToLayoutY(view.ClipY + view.ClipHeight) - font.Height - 4;
+        var (left, top, right, viewBottom) = LayoutExtent(view);
+        int x = left + 3;
+        int y = top + 2;
+        int room = right - left - 6;
+        int bottom = viewBottom - font.Height - 4;
 
         foreach (var (text, color) in lines)
         {

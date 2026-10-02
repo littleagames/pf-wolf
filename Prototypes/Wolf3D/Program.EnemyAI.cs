@@ -1476,7 +1476,7 @@ internal partial class Program
         }
 
         gamestate.victoryflag = true;
-        uint fadeheight = (uint)(viewsize != 21 ? _videoManager.screenHeight - _videoManager.scaleFactor * STATUSLINES : _videoManager.screenHeight);
+        uint fadeheight = (uint)(viewsize != 21 ? _videoManager.ScreenYAboveBottom(STATUSLINES) : _videoManager.screenHeight);
         _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, (int)fadeheight, bordercol);
         _videoManager.Transition(deathFadeStyle, 0, 0, _videoManager.screenWidth, (int)fadeheight, (uint)deathFadeTics);
 

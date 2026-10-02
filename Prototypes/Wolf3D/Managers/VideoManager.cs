@@ -46,16 +46,20 @@ internal class VideoManager
 
     /// <summary>
     /// The UI scale: screen pixels to each of the 320x200 pixels that menus, text, pictures and
-    /// the status bar are laid out in. The 3D view fills the screen buffer whatever this is.
+    /// the status bar are laid out in, which needn't be whole. A layout pixel's edges go to the
+    /// screen rounded down (<see cref="ScreenX"/>, <see cref="ScreenY"/>), so at 2.5 they're
+    /// 2 and 3 screen pixels by turns and always meet. The 3D view fills the screen buffer
+    /// whatever this is.
     /// </summary>
-    internal int scaleFactor;
+    internal double uiScale = 1;
 
     /// <summary>
-    /// Where the 320x200 layout's top left corner is on the screen (screen pixels), for the
-    /// origin in use (<see cref="UseUiOrigin"/>). Both are 0 when the screen is exactly
-    /// 320x200 times the UI scale; on a bigger or other-shaped screen it sits in the middle.
+    /// Where the 320x200 layout's left edge is on the screen (screen pixels), always centered
+    /// across, and which edge it lines up with down the screen (<see cref="UseUiOrigin"/>).
     /// </summary>
-    internal int uiX, uiY;
+    internal int uiX;
+    private int uiY;
+    private UiAnchor uiAnchor;
 
     internal uint[] ylookup;
 
@@ -316,8 +320,8 @@ internal class VideoManager
         screenHeight = (short)height;
         screenPitch = (uint)GetSurface(screen).pitch;
         bufferPitch = (uint)GetSurface(screenBuffer).pitch;
-        scaleFactor = settings.EffectiveUiScale;
-        (uiX, uiY) = UiOriginFor(UiAnchor.Center);
+        uiScale = settings.EffectiveUiScale;
+        SetUiOrigin(UiAnchor.Center);
 
         ylookup = new uint[screenHeight];
         for (int i = 0; i < screenHeight; i++)
@@ -370,21 +374,31 @@ internal class VideoManager
         screenBuffer = screen = IntPtr.Zero;
     }
 
-    /// <summary>Whether the screen has room beyond the 320x200 layout, which nothing laid out in it covers.</summary>
-    internal bool HasMargins => screenWidth != VideoSettings.BaseWidth * scaleFactor
-        || screenHeight != VideoSettings.BaseHeight * scaleFactor;
+    /// <summary>
+    /// Screen pixels across <paramref name="n"/> layout pixels at the UI scale, rounded down
+    /// (and down for a negative count too, so edges further left or up keep their order).
+    /// </summary>
+    internal int ToScreenLength(int n) => (int)Math.Floor(n * uiScale + 1e-6);
 
-    /// <summary>The 320x200 layout's screen position for an anchor: always centered across, and up or down as anchored.</summary>
-    private (int X, int Y) UiOriginFor(UiAnchor anchor)
+    // Transitions (melt, mosaic) work in blocks of whole screen pixels about a layout pixel big
+    private int TransitionBlockSize => Math.Max(1, (int)Math.Round(uiScale));
+
+    /// <summary>Whether the screen has room beyond the 320x200 layout, which nothing laid out in it covers.</summary>
+    internal bool HasMargins => screenWidth != ToScreenLength(VideoSettings.BaseWidth)
+        || screenHeight != ToScreenLength(VideoSettings.BaseHeight);
+
+    // Puts the 320x200 layout at an anchor: always centered across, and up or down as anchored
+    private void SetUiOrigin(UiAnchor anchor)
     {
-        int x = (screenWidth - VideoSettings.BaseWidth * scaleFactor) / 2;
-        int room = screenHeight - VideoSettings.BaseHeight * scaleFactor;
-        return (x, anchor switch
+        int room = screenHeight - ToScreenLength(VideoSettings.BaseHeight);
+        uiAnchor = anchor;
+        uiX = (screenWidth - ToScreenLength(VideoSettings.BaseWidth)) / 2;
+        uiY = anchor switch
         {
             UiAnchor.Top => 0,
             UiAnchor.Bottom => room,
             _ => room / 2,
-        });
+        };
     }
 
     /// <summary>
@@ -394,92 +408,100 @@ internal class VideoManager
     /// </summary>
     internal UiOriginScope UseUiOrigin(UiAnchor anchor)
     {
-        var scope = new UiOriginScope(this, uiX, uiY);
-        (uiX, uiY) = UiOriginFor(anchor);
+        var scope = new UiOriginScope(this, uiAnchor);
+        SetUiOrigin(anchor);
         return scope;
     }
 
-    internal readonly struct UiOriginScope(VideoManager video, int x, int y) : IDisposable
+    internal readonly struct UiOriginScope(VideoManager video, UiAnchor anchor) : IDisposable
     {
-        public void Dispose() => (video.uiX, video.uiY) = (x, y);
+        public void Dispose() => video.SetUiOrigin(anchor);
     }
 
-    /// <summary>A screen x (pixels) as an x in the 320x200 layout, rounded down.</summary>
-    internal int ToLayoutX(int screenX) => FloorDiv(screenX - uiX, scaleFactor);
+    /// <summary>The screen x of layout x's left edge.</summary>
+    internal int ScreenX(int x) => uiX + ToScreenLength(x);
 
-    /// <summary>A screen y (pixels) as a y in the 320x200 layout, rounded down.</summary>
-    internal int ToLayoutY(int screenY) => FloorDiv(screenY - uiY, scaleFactor);
+    /// <summary>
+    /// The screen y of layout y's top edge. A bottom-anchored layout is measured up from the
+    /// screen's bottom, so its last line sits flush on it whatever the scale.
+    /// </summary>
+    internal int ScreenY(int y) => uiAnchor == UiAnchor.Bottom
+        ? screenHeight - ToScreenLength(VideoSettings.BaseHeight - y)
+        : uiY + ToScreenLength(y);
 
-    private static int FloorDiv(int a, int b) => a >= 0 ? a / b : -((-a + b - 1) / b);
+    /// <summary>The screen y this many layout lines up from the screen's bottom: where a bottom bar that tall starts.</summary>
+    internal int ScreenYAboveBottom(int lines) => screenHeight - ToScreenLength(lines);
+
+    /// <summary>
+    /// The layout x whose pixel covers screen x; with <paramref name="roundUp"/>, the first
+    /// layout x whose pixel starts at or after it, so it's wholly to the right.
+    /// </summary>
+    internal int ToLayoutX(int screenX, bool roundUp = false) => ToLayout(screenX, ScreenX, roundUp);
+
+    /// <summary>As ToLayoutX, down the screen.</summary>
+    internal int ToLayoutY(int screenY, bool roundUp = false) => ToLayout(screenY, ScreenY, roundUp);
+
+    private int ToLayout(int screen, Func<int, int> toScreen, bool roundUp)
+    {
+        // A guess from the scale, put right against the rounded edges
+        int origin = toScreen(0);
+        int v = (int)Math.Floor((screen - origin) / uiScale);
+        while (toScreen(v) > screen) v--;
+        while (toScreen(v + 1) <= screen) v++;
+        if (roundUp && toScreen(v) < screen) v++;
+        return v;
+    }
 
     /// <summary>Fills the whole screen with a color: the 320x200 layout and any room round it.</summary>
     public void FillScreen(string color) => BarScaledCoord(0, 0, screenWidth, screenHeight, color);
 
+    /// <summary>Draws a paletted picture at (x, y) in the 320x200 layout.</summary>
     public void MemToScreen(byte[] source, int width, int height, int x, int y)
-        => MemToScreenScaledCoord(source, width, height, uiX + scaleFactor * x, uiY + scaleFactor * y);
+        => DrawScaledPixels(source, width, height, Edges(x, width, ScreenX), Edges(y, height, ScreenY));
 
+    /// <summary>Draws a paletted picture at the UI scale with its top left corner at a screen position.</summary>
     public void MemToScreenScaledCoord(byte[] source, int width, int height, int destx, int desty)
+        => DrawScaledPixels(source, width, height,
+            Edges(0, width, i => destx + ToScreenLength(i)), Edges(0, height, j => desty + ToScreenLength(j)));
+
+    // The screen edges of count layout pixels from start: count + 1 of them
+    private static int[] Edges(int start, int count, Func<int, int> toScreen)
     {
-        int i, j, sci, scj;
-        int m, n;
-
-        IntPtr destPtr = LockSurface(screenBuffer);
-        if (destPtr == IntPtr.Zero) return;
-
-        unsafe
-        {
-            byte* dest = (byte*)destPtr;
-
-            // A picture reaching past the screen's edges (a game pack's bigger pictures in a
-            // menu laid out for smaller ones, say) is cut off there
-            for (j = 0, scj = 0; j < height; j++, scj += scaleFactor)
-            {
-                for (i = 0, sci = 0; i < width; i++, sci += scaleFactor)
-                {
-                    byte col = source[(j * width) + i];
-                    for (m = 0; m < scaleFactor; m++)
-                    {
-                        int y = scj + m + desty;
-                        if (y < 0 || y >= screenHeight)
-                            continue;
-                        for (n = 0; n < scaleFactor; n++)
-                        {
-                            int x = sci + n + destx;
-                            if (x >= 0 && x < screenWidth)
-                                dest[ylookup[y] + x] = col;
-                        }
-                    }
-                }
-            }
-        }
-
-        UnlockSurface(screenBuffer);
+        var edges = new int[count + 1];
+        for (int i = 0; i <= count; i++)
+            edges[i] = toScreen(start + i);
+        return edges;
     }
 
-    public void MemToScreenScaledCoord2(byte[] source, int origwidth, int srcx, int srcy,
-                                int destx, int desty, int width, int height)
+    // Each pixel of a picture filled across the screen rectangle between its edges. A picture
+    // reaching past the screen's edges (a game pack's bigger pictures in a menu laid out for
+    // smaller ones, say) is cut off there.
+    private void DrawScaledPixels(byte[] source, int width, int height, int[] xs, int[] ys)
     {
-        int i, j, sci, scj;
-        int m, n;
-
         IntPtr destPtr = LockSurface(screenBuffer);
         if (destPtr == IntPtr.Zero) return;
 
         unsafe
         {
             byte* dest = (byte*)destPtr;
-
-            for (j = 0, scj = 0; j < height; j++, scj += scaleFactor)
+            for (int j = 0; j < height; j++)
             {
-                for (i = 0, sci = 0; i < width; i++, sci += scaleFactor)
+                int y0 = Math.Max(ys[j], 0), y1 = Math.Min(ys[j + 1], screenHeight);
+                if (y0 >= y1)
+                    continue;
+
+                for (int i = 0; i < width; i++)
                 {
-                    byte col = source[((j + srcy) * origwidth) + (i + srcx)];
-                    for (m = 0; m < scaleFactor; m++)
+                    int x0 = Math.Max(xs[i], 0), x1 = Math.Min(xs[i + 1], screenWidth);
+                    if (x0 >= x1)
+                        continue;
+
+                    byte col = source[j * width + i];
+                    for (int y = y0; y < y1; y++)
                     {
-                        for (n = 0; n < scaleFactor; n++)
-                        {
-                            dest[ylookup[scj + m + desty] + sci + n + destx] = col;
-                        }
+                        byte* row = dest + ylookup[y];
+                        for (int x = x0; x < x1; x++)
+                            row[x] = col;
                     }
                 }
             }
@@ -494,7 +516,10 @@ internal class VideoManager
 
     /// <summary>Fills a rectangle in the 320x200 layout.</summary>
     public void Bar(int x, int y, int width, int height, string color)
-        => BarScaledCoord(uiX + scaleFactor * x, uiY + scaleFactor * y, scaleFactor * width, scaleFactor * height, color);
+    {
+        int sx = ScreenX(x), sy = ScreenY(y);
+        BarScaledCoord(sx, sy, ScreenX(x + width) - sx, ScreenY(y + height) - sy, color);
+    }
 
     /// <summary>Fills a rectangle in screen pixels, clipped to the screen.</summary>
     public void BarScaledCoord(int scx, int scy, int scwidth, int scheight, string color)
@@ -1015,29 +1040,21 @@ internal class VideoManager
         UnlockSurface(screenBuffer);
     }
 
-    // Whether a whole 320x200 layout pixel's screen square is on the screen. A margin narrower
-    // than the UI scale leaves a partial square at the edge, which is left out.
-    private bool LayoutXOnScreen(int x)
-    {
-        int sx = uiX + x * scaleFactor;
-        return sx >= 0 && sx + scaleFactor <= screenWidth;
-    }
+    // Whether any of a 320x200 layout pixel's screen rectangle is on the screen
+    private bool LayoutXOnScreen(int x) => ScreenX(x + 1) > 0 && ScreenX(x) < screenWidth;
 
-    private bool LayoutYOnScreen(int y)
-    {
-        int sy = uiY + y * scaleFactor;
-        return sy >= 0 && sy + scaleFactor <= screenHeight;
-    }
+    private bool LayoutYOnScreen(int y) => ScreenY(y + 1) > 0 && ScreenY(y) < screenHeight;
 
-    // Fills a 320x200 layout pixel's square of screen pixels; it must be on screen
+    // Fills the screen rectangle between a 320x200 layout pixel's edges, clipped to the screen
     private unsafe void PutLayoutPixel(byte* dest, int x, int y, byte color)
     {
-        int sx = uiX + x * scaleFactor, sy = uiY + y * scaleFactor;
-        for (int m = 0; m < scaleFactor; m++)
+        int x0 = Math.Max(ScreenX(x), 0), x1 = Math.Min(ScreenX(x + 1), screenWidth);
+        int y0 = Math.Max(ScreenY(y), 0), y1 = Math.Min(ScreenY(y + 1), screenHeight);
+        for (int sy = y0; sy < y1; sy++)
         {
-            byte* row = dest + ylookup[sy + m] + sx;
-            for (int n = 0; n < scaleFactor; n++)
-                row[n] = color;
+            byte* row = dest + ylookup[sy];
+            for (int sx = x0; sx < x1; sx++)
+                row[sx] = color;
         }
     }
 
@@ -1176,8 +1193,8 @@ internal class VideoManager
     /// </summary>
     internal void DrawThumbnail(SaveThumbnail thumbnail, int x, int y, int width, int height)
     {
-        int destx = uiX + x * scaleFactor, desty = uiY + y * scaleFactor;
-        int dw = width * scaleFactor, dh = height * scaleFactor;
+        int destx = ScreenX(x), desty = ScreenY(y);
+        int dw = ScreenX(x + width) - destx, dh = ScreenY(y + height) - desty;
         // Clipped to the screen, but sampled over the whole rectangle
         int clipw = Math.Min(dw, screenWidth - destx), cliph = Math.Min(dh, screenHeight - desty);
         if (destx < 0 || desty < 0 || clipw <= 0 || cliph <= 0 || thumbnail.Width <= 0 || thumbnail.Height <= 0)
@@ -1221,7 +1238,7 @@ internal class VideoManager
                 Y = y1,
                 Width = width,
                 Height = height,
-                ScaleFactor = scaleFactor,
+                ScaleFactor = TransitionBlockSize,
             };
             RunTransition(style, canvas, tics);
         }
@@ -1287,7 +1304,7 @@ internal class VideoManager
         Y = 0,
         Width = screenWidth,
         Height = screenHeight,
-        ScaleFactor = scaleFactor,
+        ScaleFactor = TransitionBlockSize,
         FromIsSolid = fromIsSolid,
         ToIsSolid = toIsSolid,
     };

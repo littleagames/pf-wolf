@@ -1205,9 +1205,10 @@ internal partial class Program
         DrawMenuChoice(VidItems, VidMenu, "render-scale", settings.MatchWindow
             ? "$STR_AUTO".ToLanguageText(language)
             : $"{settings.RenderWidth}x{settings.RenderHeight}");
+        var uiScale = VideoSettings.FormatScale(settings.EffectiveUiScale);
         DrawMenuChoice(VidItems, VidMenu, "ui-scale", settings.UiScale <= 0
-            ? $"{"$STR_AUTO".ToLanguageText(language)} ({settings.EffectiveUiScale}x)"
-            : $"{settings.EffectiveUiScale}x");
+            ? $"{"$STR_AUTO".ToLanguageText(language)} ({uiScale}x)"
+            : $"{uiScale}x");
         DrawMenuChoice(VidItems, VidMenu, "filter", FilterName(settings.Filter).ToLanguageText(language));
 
         DrawMenuGun(VidItems);
@@ -1258,7 +1259,7 @@ internal partial class Program
             .Select(scale => settings with { RenderScale = scale, RenderSize = null, MatchWindow = false })
             .Prepend(settings.MatchWindow ? settings : settings with { MatchWindow = true })
             .ToList(),
-        "ui-scale" => Enumerable.Range(0, settings.MaxUiScale + 1)
+        "ui-scale" => UiScales(settings)
             .Select(scale => settings with { UiScale = scale })
             .ToList(),
         "filter" => Enum.GetValues<ScaleFilter>()
@@ -1300,6 +1301,26 @@ internal partial class Program
             sizes.Add((settings.WindowWidth, settings.WindowHeight));
 
         return sizes.Distinct().OrderBy(size => size.Width).ThenBy(size => size.Height).ToList();
+    }
+
+    private const double UiScaleStep = 0.25;
+
+    /// <summary>
+    /// Auto (0), then quarter steps from 1 up to the most that fits, then that most itself (to
+    /// the hundredth below, as config.cfg keeps it), which fills the screen's height or width.
+    /// A scale set in the console that's none of these is put in its place.
+    /// </summary>
+    private static List<double> UiScales(VideoSettings settings)
+    {
+        double max = Math.Floor(settings.MaxUiScale * 100) / 100;
+        var scales = new List<double> { 0 };
+        for (double scale = 1; scale <= max + 1e-9; scale += UiScaleStep)
+            scales.Add(scale);
+        scales.Add(max);
+        if (settings.UiScale > 0)
+            scales.Add(settings.UiScale);
+
+        return scales.Distinct().Order().ToList();
     }
 
     private const int MaxRenderScale = 8;
@@ -1853,9 +1874,9 @@ internal partial class Program
     {
         var language = _assetManager.GetText("en-us");
         // The help goes in the bottom 40 lines of the screen, where the status bar is
-        int scale = _videoManager.scaleFactor;
+        int top = _videoManager.ScreenYAboveBottom(40);
         if (view != 21)
-            _videoManager.BarScaledCoord(0, _videoManager.screenHeight - scale * 40, _videoManager.screenWidth, scale * 40, bordercol);
+            _videoManager.BarScaledCoord(0, top, _videoManager.screenWidth, _videoManager.screenHeight - top, bordercol);
 
         ShowViewSize(view);
 

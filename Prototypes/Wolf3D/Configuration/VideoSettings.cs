@@ -46,9 +46,10 @@ internal sealed record VideoSettings
 
     /// <summary>
     /// Screen pixels to each of the menus' and status bar's 320x200 pixels; 0 (auto) is the
-    /// most that fits. Smaller makes them smaller on the screen, not less sharp.
+    /// most whole number that fits. Smaller makes them smaller on the screen, not less sharp.
+    /// It needn't be whole: at 2.5 their pixels are 2 and 3 screen pixels by turns.
     /// </summary>
-    public int UiScale { get; init; }
+    public double UiScale { get; init; }
 
     /// <summary>The window's size when it isn't fullscreen.</summary>
     public int WindowWidth { get; init; } = 640;
@@ -64,11 +65,18 @@ internal sealed record VideoSettings
     public int RenderWidth => RenderSize?.Width ?? BaseWidth * RenderScale;
     public int RenderHeight => RenderSize?.Height ?? BaseHeight * RenderScale;
 
-    /// <summary>The largest UI scale the render size has room for.</summary>
-    public int MaxUiScale => Math.Max(1, Math.Min(RenderWidth / BaseWidth, RenderHeight / BaseHeight));
+    /// <summary>The largest UI scale the render size has room for, which may not be whole.</summary>
+    public double MaxUiScale => Math.Max(1, Math.Min((double)RenderWidth / BaseWidth, (double)RenderHeight / BaseHeight));
 
-    /// <summary>The UI scale in use: <see cref="UiScale"/>, or the most that fits when that's auto or too big.</summary>
-    public int EffectiveUiScale => UiScale <= 0 ? MaxUiScale : Math.Min(UiScale, MaxUiScale);
+    /// <summary>
+    /// The UI scale in use: <see cref="UiScale"/>, or when that's auto the most whole number that
+    /// fits (crisp, every layout pixel the same size), and never more than fits.
+    /// </summary>
+    public double EffectiveUiScale => UiScale <= 0 ? Math.Floor(MaxUiScale) : Math.Clamp(UiScale, 1, MaxUiScale);
+
+    /// <summary>A UI scale for showing: up to two decimals, with no trailing zeros (2, 2.5, 3.38).</summary>
+    public static string FormatScale(double scale) =>
+        scale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>
     /// The shape the picture is shown at: the render size, with its pixels stretched 6:5 tall

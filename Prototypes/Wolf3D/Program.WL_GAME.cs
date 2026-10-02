@@ -545,23 +545,24 @@ internal partial class Program
         DrawInfoArea(force: true);
     }
 
+    /// <summary>The thickness of the view border's lines: a layout pixel's worth of screen pixels, at least one</summary>
+    static int BorderLinePixels => Math.Max(1, _videoManager.ToScreenLength(1));
+
     internal static void DrawPlayBorder()
     {
-        int px = _videoManager.scaleFactor;
+        int px = BorderLinePixels;
 
         if (bordercol != "VIEWCOLOR")
             DrawStatusBorder(bordercol);
         else
         {
             // Beside the status bar: from each screen edge to the border's sides into the picture
-            int statusborderw = (_videoManager.screenWidth - px * 320) / 2;
-            int sides = statusborderw + px * (StatusBar.Get("border")?.Sides ?? 0);
+            int sides = _videoManager.ScreenX(StatusBar.Get("border")?.Sides ?? 0);
+            int top = _videoManager.ScreenYAboveBottom(STATUSLINES);
             if (sides > 0 && STATUSLINES > 0)
             {
-                _videoManager.BarScaledCoord(0, _videoManager.screenHeight - px * STATUSLINES,
-                    sides, px * STATUSLINES, bordercol);
-                _videoManager.BarScaledCoord(_videoManager.screenWidth - sides, _videoManager.screenHeight - px * STATUSLINES,
-                    sides, px * STATUSLINES, bordercol);
+                _videoManager.BarScaledCoord(0, top, sides, _videoManager.screenHeight - top, bordercol);
+                _videoManager.BarScaledCoord(_videoManager.screenWidth - sides, top, sides, _videoManager.screenHeight - top, bordercol);
             }
         }
 
@@ -597,7 +598,7 @@ internal partial class Program
         int sh = _videoManager.screenHeight;
         int vw = viewwidth;
         int vh = viewheight;
-        int px = _videoManager.scaleFactor; // size of one "pixel"
+        int px = BorderLinePixels;
 
         int top = PlayAreaTop;                  // below any top status bar
         int h = PlayAreaHeight;
@@ -638,17 +639,13 @@ internal partial class Program
     /// </summary>
     internal static void DrawStatusBorder(string color)
     {
-        int px = _videoManager.scaleFactor;
-        int statusborderw = (_videoManager.screenWidth - px * 320) / 2;
-        int top = _videoManager.screenHeight - px * STATUSLINES;
-
         _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaHeight, color);
 
         foreach (var rect in StatusBar.Get("border")?.Rects ?? [])
         {
             if (rect.Count != 4)
                 continue;
-            int x = statusborderw + px * rect[0], width = px * rect[2];
+            int x = _videoManager.ScreenX(rect[0]), width = _videoManager.ScreenX(rect[0] + rect[2]) - x;
             if (rect[0] <= 0)
             {
                 width += x;             // out to the left edge
@@ -656,7 +653,9 @@ internal partial class Program
             }
             if (rect[0] + rect[2] >= 320)
                 width = _videoManager.screenWidth - x;  // out to the right edge
-            _videoManager.BarScaledCoord(x, top + px * rect[1], width, px * rect[3], color);
+            // Down from the status bar's top, which sits on the screen's bottom
+            int y = _videoManager.ScreenYAboveBottom(STATUSLINES - rect[1]);
+            _videoManager.BarScaledCoord(x, y, width, _videoManager.ScreenYAboveBottom(STATUSLINES - rect[1] - rect[3]) - y, color);
         }
     }
 

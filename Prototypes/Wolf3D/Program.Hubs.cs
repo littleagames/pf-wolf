@@ -597,7 +597,7 @@ internal partial class Program
     internal static void ShowLevelStartMessage(string script)
     {
         DrawPlayScreen();       // the new level's bars, then the view blacked out under the message
-        _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaHeight + _videoManager.scaleFactor, "0");
+        _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaAndStatusLine, "0");
         PresenterMessageBox(script.Replace("\\r", "\r").Replace("\n", "\r\n"));
         _videoManager.Update();
         if (_videoManager.screenfaded)

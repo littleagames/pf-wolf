@@ -36,10 +36,9 @@ internal class GraphicManager
     public void DrawStripe(int y, string? color = null, string? lineColor = null)
     {
         // Across the whole screen, however wide
-        int scale = videoManager.scaleFactor;
-        int top = videoManager.uiY + scale * y;
-        videoManager.BarScaledCoord(0, top, videoManager.screenWidth, scale * MenuStripe.Height, color ?? MenuStripe.Color);
-        videoManager.BarScaledCoord(0, top + scale * MenuStripe.LineY, videoManager.screenWidth, scale, lineColor ?? MenuStripe.LineColor);
+        int top = videoManager.ScreenY(y), line = videoManager.ScreenY(y + MenuStripe.LineY);
+        videoManager.BarScaledCoord(0, top, videoManager.screenWidth, videoManager.ScreenY(y + MenuStripe.Height) - top, color ?? MenuStripe.Color);
+        videoManager.BarScaledCoord(0, line, videoManager.screenWidth, videoManager.ScreenY(y + MenuStripe.LineY + 1) - line, lineColor ?? MenuStripe.LineColor);
     }
 
     public void DrawMenuBackground(string color)

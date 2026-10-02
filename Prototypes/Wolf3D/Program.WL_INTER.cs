@@ -189,20 +189,25 @@ internal partial class Program
         }
     }
 
-    /// <summary>The "get psyched" progress bar, along the bottom of a box in screen (scaled) pixels</summary>
+    /// <summary>
+    /// The "get psyched" progress bar, along the bottom of a box drawn at the UI scale from a
+    /// screen position; its width and height are in layout pixels
+    /// </summary>
     internal static bool PreloadUpdate(uint current, uint total, int boxX, int boxY, int boxW, int boxH)
     {
-        int scale = _videoManager.scaleFactor;
-        int x = boxX + scale * 5;
-        int y = boxY + boxH - scale * 3;
-        uint w = (uint)(boxW - scale * 10);
+        // Edges at the UI scale from the box's corner, as the picture's are
+        int L(int n) => _videoManager.ToScreenLength(n);
+        int x = boxX + L(5);
+        int y = boxY + L(boxH - 3);
+        int h = L(boxH - 1) - L(boxH - 3), line = L(boxH - 2) - L(boxH - 3);
+        uint w = (uint)(L(boxW - 5) - L(5));
 
-        _videoManager.BarScaledCoord(x, y, (int)w, scale * 2, "Black");
+        _videoManager.BarScaledCoord(x, y, (int)w, h, "Black");
         w = (uint)((int)w * current / total);
         if (w != 0)
         {
-            _videoManager.BarScaledCoord(x, y, (int)w, scale * 2, "SECONDCOLOR");       //SECONDCOLOR 0x37);
-            _videoManager.BarScaledCoord(x, y, (int)(w - scale * 1), scale * 1, "FIRSTCOLOR"); // 0x32
+            _videoManager.BarScaledCoord(x, y, (int)w, h, "SECONDCOLOR");       //SECONDCOLOR 0x37);
+            _videoManager.BarScaledCoord(x, y, (int)w - L(1), line, "FIRSTCOLOR"); // 0x32
 
         }
         _videoManager.Update();
@@ -221,7 +226,7 @@ internal partial class Program
     /// </summary>
     static void ClearAboveStatusBar() =>
         _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth,
-            _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 1), "VIEWCOLOR");
+            _videoManager.ScreenYAboveBottom(STATUSLINES - 1), "VIEWCOLOR");
 
     internal static void PreloadGraphics()
     {
@@ -235,18 +240,18 @@ internal partial class Program
         DrawLevel();
 
         // the play area, below any top status bar, down to the bottom one's first line
-        _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaHeight + _videoManager.scaleFactor, bordercol);
+        _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaAndStatusLine, bordercol);
 
         // Centered over the screen above the status bar
-        int boxX = (_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 2;
-        int boxY = (_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2;
+        int boxX = (_videoManager.screenWidth - _videoManager.ToScreenLength(224)) / 2;
+        int boxY = (_videoManager.ScreenYAboveBottom(STATUSLINES) - _videoManager.ToScreenLength(48)) / 2;
         _graphicManager.DrawPicScaledCoord("getpsyched", boxX, boxY);
 
         _videoManager.Update();
         _videoManager.FadeIn();
 
         //      PM_Preload (PreloadUpdate);
-        PreloadUpdate(10, 10, boxX, boxY, _videoManager.scaleFactor * 28 * 8, _videoManager.scaleFactor * 48);
+        PreloadUpdate(10, 10, boxX, boxY, 28 * 8, 48);
         _inputManager.UserInput(70);
         _videoManager.FadeOut();
 

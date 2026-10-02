@@ -585,10 +585,13 @@ internal partial class Program
     }
 
     /// <summary>The screen lines between the top status bar (if any) and the bottom one, in screen pixels</summary>
-    internal static int PlayAreaHeight => _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + TOPLINES);
+    internal static int PlayAreaHeight => _videoManager.ScreenYAboveBottom(STATUSLINES) - PlayAreaTop;
+
+    /// <summary>The play area's height and the bottom status bar's first line, in screen pixels</summary>
+    internal static int PlayAreaAndStatusLine => _videoManager.ScreenYAboveBottom(STATUSLINES - 1) - PlayAreaTop;
 
     /// <summary>Where the play area (view and border) starts down the screen, in screen pixels: below any top status bar</summary>
-    internal static int PlayAreaTop => _videoManager.scaleFactor * TOPLINES;
+    internal static int PlayAreaTop => _videoManager.ToScreenLength(TOPLINES);
 
     /// <summary>
     /// A bordered view's height at view size <paramref name="width"/>. The sizes are laid out for
@@ -598,7 +601,7 @@ internal partial class Program
     private static int BorderedViewHeight(int width)
     {
         int height = (int)(width * 16 * HEIGHTRATIO * _videoManager.screenHeight / 200);
-        int room = PlayAreaHeight - _videoManager.scaleFactor * 2;
+        int room = PlayAreaHeight - _videoManager.ToScreenLength(2);
         return Math.Min(height, room);
     }
 

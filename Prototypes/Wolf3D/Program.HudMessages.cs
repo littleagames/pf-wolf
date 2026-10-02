@@ -20,8 +20,7 @@ internal partial class Program
             return;
 
         // The view in the 320x200 virtual pixels text is drawn in: the ones wholly inside it
-        int scale = _videoManager.scaleFactor;
-        int viewX = _videoManager.ToLayoutX(viewscreenx + scale - 1), viewY = _videoManager.ToLayoutY(viewscreeny + scale - 1);
+        int viewX = _videoManager.ToLayoutX(viewscreenx, roundUp: true), viewY = _videoManager.ToLayoutY(viewscreeny, roundUp: true);
         int viewW = _videoManager.ToLayoutX(viewscreenx + viewwidth) - viewX;
         int viewH = _videoManager.ToLayoutY(viewscreeny + viewheight) - viewY;
 
