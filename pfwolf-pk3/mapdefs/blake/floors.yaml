@@ -1,10 +1,13 @@
 # Floor codes (see mapdefs/wolf3d/floors.yaml). Blake Stone has 45 areas, 108 to 152, and the
 # same 45 again from 162 as hidden areas (rooms kept off the automap), which load as the plain
-# codes. 157 and 158 are other floor codes, not areas; what they do comes in a later phase.
-# Secret floors are reached by elevator, so there's no secret-exit code.
+# codes. 158 (door triggers) isn't done yet. Secret floors are reached by elevator, so there's
+# no secret-exit code.
 floors:
   area-start: 108
   area-count: 45
   ambush: 106
   secret-exit: -1
   hidden-area-start: 162
+  triggers:
+    # The way out: Blake runs for the shuttle (the map's first wall 30) and the mission is won
+    157: A_VictoryRun("BlakeVictory", 30)

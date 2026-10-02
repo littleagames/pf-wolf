@@ -86,7 +86,8 @@ internal partial class Program
         var gameInfo = _gameEngineManager.GetGameInfo();
         var song = gameInfo.Maps[gamestate.mapon].Music;
         lastmusicchunk = song;
-        _audioManager.PlayMusic(lastmusicchunk);
+        if (!string.IsNullOrEmpty(song))        // a map with no music keeps quiet
+            _audioManager.PlayMusic(lastmusicchunk);
     }
 
     // Music offsets aren't tracked, so this resumes the level's song if it's the one paused, and
@@ -98,7 +99,7 @@ internal partial class Program
         lastmusicchunk = song;
         if (string.Equals(_audioManager.CurrentMusicTrack, song, StringComparison.OrdinalIgnoreCase))
             _audioManager.SetPaused(false);
-        else
+        else if (!string.IsNullOrEmpty(song))
             _audioManager.PlayMusic(song);
     }
 

@@ -1,0 +1,48 @@
+# The JAM text presenter (Program.TextPresenter.cs): Blake Stone's briefings, elevator messages
+# and message boxes are scripts in its ^ codes. Colors are palette indices.
+
+# The fonts a script's ^FNn picks from (fonts.yaml): ^FN0 isn't printable, so it's ^FN1's
+fonts: [Presenter1, Presenter1, Presenter2, Presenter3, Presenter4]
+
+# What ^SHnnn draws (nnn in hex: ^SH090 is 144). The briefings show their mission's picture.
+shapes:
+  144: { pic: C_Episode1 }   # STAR Institute
+  145: { pic: C_Episode2 }   # Floating Fortress
+  146: { pic: C_Episode3 }   # Underground Network
+  147: { pic: C_Episode4 }   # STAR Port
+  148: { pic: C_Episode5 }   # Habitat II
+  149: { pic: C_Episode6 }   # Defense Center
+
+# The box over the status bar that "Get Ready, Blake!" and the like are shown in (bstone's BMAmsg)
+message-box:
+  x: 0
+  y: 152
+  width: 320
+  height: 48
+  hi: 133
+  med: 130
+  lo: 128
+  text-color: 175
+  font: 1
+
+# The window briefings are shown in (bstone's HelpPresenter)
+briefing:
+  pics:
+    - { pic: H_TopWindow, x: 0, y: 0 }
+    - { pic: H_LeftWindow, x: 0, y: 8 }
+    - { pic: H_RightWindow, x: 312, y: 8 }
+    - { pic: H_BottomInfo, x: 8, y: 176 }
+  x1: 8
+  y1: 8
+  x2: 311
+  y2: 175
+  light: 123
+  background: 125
+  dark: 127
+  shadow: 0
+  font: 4
+  info-line: "$BS_BRIEFINGHELP"
+  info-font: 2
+  info-color: 57
+  page-x: 246
+  page-y: 190

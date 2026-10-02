@@ -46,6 +46,22 @@ BlakeHud:
   upper-case: true      # Font3 has only capitals
   shadow: { x: 1, y: 1, color: "4" }
 
+# The text presenter's fonts by number (presenter.yaml): bstone's font n is Font(n+1). Plain,
+# as the presenter draws its own shadows (^ST1)
+Presenter1:
+  type: vga
+  source: Font2
+Presenter2:
+  type: vga
+  source: Font3
+  upper-case: true      # Font3 has only capitals
+Presenter3:
+  type: vga
+  source: Font4
+Presenter4:
+  type: vga
+  source: Font5
+
 # The info area's messages
 BlakeInfo:
   type: vga

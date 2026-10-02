@@ -172,6 +172,12 @@ internal record MapFloorsTranslation
     /// </summary>
     public int? HiddenAreaStart { get; set; }
 
+    /// <summary>
+    /// Floor codes that set off a trigger action (MapTriggerRegistry, e.g. A_VictoryRun) when
+    /// the player steps onto them: Blake Stone's way out
+    /// </summary>
+    public Dictionary<int, string>? Triggers { get; set; }
+
     public MapFloorsTranslation MergedWith(MapFloorsTranslation other) => new()
     {
         AreaStart = other.AreaStart ?? AreaStart,
@@ -179,6 +185,7 @@ internal record MapFloorsTranslation
         Ambush = other.Ambush ?? Ambush,
         SecretExit = other.SecretExit ?? SecretExit,
         HiddenAreaStart = other.HiddenAreaStart ?? HiddenAreaStart,
+        Triggers = other.Triggers ?? Triggers,
     };
 }
 

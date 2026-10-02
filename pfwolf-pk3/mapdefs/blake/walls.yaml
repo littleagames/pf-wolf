@@ -1,7 +1,7 @@
 # Walls by map tile number (see mapdefs/wolf3d/walls.yaml). As in Wolf3D, wall n's north and
 # south faces are VSWAP wall page 2(n-1) and its east and west faces the darker page after it.
 # Blake Stone's maps use walls 1 to 63. The barrier switches (45 on, 57 off) and food units (15,
-# 18) work as in bstone; the elevator controls and teleporters are plain walls until their phase.
+# 18), the elevator panel (21) and teleporters (32) work as in bstone.
 walls:
     '1':    # Prison Wall
         North: PRIWALA1
@@ -117,6 +117,11 @@ walls:
         South: ELEVEMBL
         East: ELEVPANL
         West: ELEVPANL
+        switch:
+            # The elevator's panel (its east and west faces): the floor-select screen (elevator.yaml)
+            sides: [east, west]
+            actions:
+                - A_FloorSelect
     '22':    # Elevator Wall 1
         North: ELEVWAL1
         South: ELEVWAL1
@@ -179,6 +184,10 @@ walls:
         South: TELEPOR1
         East: TELEPOR2
         West: TELEPOR2
+        switch:
+            # To the floor (0xF4nn) or the tile (x high byte, y low) its object-plane value says
+            actions:
+                - A_Teleport
     '33':    # Institute Wall w/ "Danger"
         North: INSDANG1
         South: INSDANG1

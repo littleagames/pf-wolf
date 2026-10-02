@@ -10,13 +10,19 @@ namespace Wolf3D.Managers;
 /// </summary>
 internal sealed record FloorCodes(int AreaTile, int NumAreas, int AmbushTile, int SecretExitTile, int HiddenAreaTile)
 {
+    /// <summary>Floor codes that set off a trigger action when the player steps onto them</summary>
+    public IReadOnlyDictionary<int, string> Triggers { get; init; } = new Dictionary<int, string>();
+
     public static FloorCodes From(MapFloorsTranslation floors)
     {
         if (floors.AreaStart is not { } start || floors.AreaCount is not { } count)
             throw new Exception("The mapdefs floors need an area-start and an area-count");
         if (start < 1 || count is < 1 or > 255)
             throw new Exception($"The mapdefs floors' area-start ({start}) must be 1 or more and area-count ({count}) 1 to 255");
-        return new FloorCodes(start, count, floors.Ambush ?? -1, floors.SecretExit ?? -1, floors.HiddenAreaStart ?? -1);
+        return new FloorCodes(start, count, floors.Ambush ?? -1, floors.SecretExit ?? -1, floors.HiddenAreaStart ?? -1)
+        {
+            Triggers = floors.Triggers ?? new Dictionary<int, string>(),
+        };
     }
 
     /// <summary>The plain area code for a hidden one (see MapFloorsTranslation.HiddenAreaStart); any other code as it is.</summary>

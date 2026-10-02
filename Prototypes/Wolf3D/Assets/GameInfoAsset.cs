@@ -140,6 +140,24 @@ internal record GameInfoAsset : Asset
     /// </summary>
     public string? DemoSkill { get; init; }
 
+    /// <summary>
+    /// A presenter script (presenter.yaml's message box) shown as a level loads, in place of the
+    /// "get psyched" picture: Blake Stone's "Get Ready, Blake!"
+    /// </summary>
+    public string? LevelStartMessage { get; init; }
+
+    /// <summary>
+    /// A presenter script (a VGAGRAPH text) shown in presenter.yaml's message box when an episode
+    /// with an end-briefing is won, before the briefing
+    /// </summary>
+    public string? MissionWonMessage { get; init; }
+
+    /// <summary>
+    /// Dying puts the player back as they came into the level (health, score, items), less a
+    /// life, as Blake Stone does; otherwise they restart with the starting health and items
+    /// </summary>
+    public bool DeathRestoresLevelStart { get; init; }
+
     public override void Merge(Asset other)
     {
         // TODO: Overwrite or merge the data
@@ -404,6 +422,15 @@ internal record EpisodeInfo
     /// Single key press to auto jump to the episode in the menu list
     /// </summary>
     public char Key { get; init; }
+
+    /// <summary>
+    /// A presenter script (a VGAGRAPH text) shown as the episode starts; Esc there goes back to
+    /// the menu
+    /// </summary>
+    public string? Briefing { get; init; }
+
+    /// <summary>A presenter script shown when the episode is won</summary>
+    public string? EndBriefing { get; init; }
 }
 
 /// <summary>
@@ -412,6 +439,13 @@ internal record EpisodeInfo
 /// </summary>
 internal record ClusterInfo
 {
+    /// <summary>
+    /// The cluster's levels are kept as they were left (Blake Stone's floors): going back to one
+    /// finds it as the player left it, until the game leaves the cluster. Levels are left
+    /// without the level-end screen.
+    /// </summary>
+    public bool Hub { get; init; }
+
     /// <summary>
     /// Article shown after the win tally (Wolf3D's ENDARTn), when set
     /// </summary>

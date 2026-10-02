@@ -3,6 +3,14 @@
 # A patrol arrow: a patrolling enemy (T_Path) that reaches its
 # tile turns to face the way it points -- the direction it's spawned facing, from the mapdefs
 # thing's angles. Without one, they keep going the way they were heading.
+# Blake running for the shuttle as the mission's won (floors.yaml A_VictoryRun): past the player,
+# the way they face, six tiles
+BlakeVictory:
+  flags: [NOTSOLID]
+  states:
+    Spawn:
+      - { sprite: BLKE, frames: [A, B, C, D], tics-per-frame: 8, think: T_VictoryRun }
+
 PatrolPoint:
   flags: [PATROLPOINT]
   states:

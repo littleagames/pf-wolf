@@ -1,0 +1,60 @@
+# The elevator's floor-select screen (Program.Elevator.cs), as bstone lays it out: A_FloorSelect
+# on the panel wall (mapdefs/blake/walls.yaml, wall 21) shows it. Colors are palette indices.
+
+# The next floor up opens with the red access card, which is used up
+unlock-item: RedCard
+buttons: 10
+
+# The bevelled frame over the view
+frame:
+  x: 0
+  y: 16
+  width: 320
+  height: 136
+  inset-x: 7
+  inset-y: 5
+  hi: 133
+  med: 130
+  lo: 128
+
+panel: { pic: FloorSelect, x: 8, y: 22 }
+
+# Button n is FloorButton<n>, FloorButtonLit<n> when pressed; floor 1 bottom left, two a row
+button-layout:
+  pic-prefix: FloorButton
+  lit-pic-prefix: FloorButtonLit
+  x: 264
+  y: 114
+  step-x: 24
+  step-y: 20
+  size: 17
+  current-color: 31
+  current-away-color: 24
+  selected-color: 175
+  other-color: 130
+
+messages:
+  pic: { pic: FloorSelectBar, x: 24, y: 26 }
+  x1: 24
+  y1: 24
+  x2: 234
+  y2: 58
+  font: 3
+  line-height: 17
+  color: 151
+  select: ElevatorSelectFloor
+  current-x: 167
+  unlocked: ElevatorCardUsed
+  locked: ElevatorFloorLocked
+  locked-x: 82
+  need-item: ElevatorNeedCard
+  number-font: 3
+  number-color: 56
+
+# In the message box over the status bar
+prompt: ElevatorPressNumber
+
+stats: { x: 167, y: 92, font: 2, color: 175 }
+
+button-sound: bs/elev_button
+message-tics: 210

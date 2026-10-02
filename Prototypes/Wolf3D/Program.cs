@@ -493,6 +493,7 @@ internal partial class Program
     {
         gamestate = new gametype();
         LevelRatios = [];       // the win tally averages only this game's floors
+        ResetHubs();            // no levels kept, no floors been on (Program.Hubs.cs)
         gamestate.difficulty = difficulty;
         gamestate.playerclass = playerClass ?? newGamePlayerClass ?? DefaultPlayerClass;
         GiveStartingInventory();

@@ -1,5 +1,4 @@
-# Blake Stone: Aliens of Gold. Phase 0 of Blake Stone support: enough to start a mission and walk
-# its floors. Elevators, briefings, the floor-select screen and the rest come in later phases.
+# Blake Stone: Aliens of Gold. Its own menus, movies and high scores come in a later phase.
 default-map:
   # A map's own colors (its map-info code, mapdefs/blake/mapinfo.yaml) win over these
   ceiling-color: "#383838"
@@ -60,37 +59,60 @@ skills:
     pic-name: C_Hard
     enemy-health: health.hard
 
-# Each mission is 15 MAPTEMP slots: floor 0 (the basement) to floor 10, then four slots the game
-# never uses. The game starts a mission on its basement for now; the elevator comes later.
-# The missions' pictures (C_Episode1-6) are too tall for this episode menu; they come back with
-# Blake Stone's own menus.
+# Each mission is 15 MAPTEMP slots: floor 0 (reached by teleporter) to floor 10, then four slots
+# the game never uses. A mission starts on floor 1, after its briefing; the elevator (walls.yaml
+# A_FloorSelect, elevator.yaml) goes between floors 1 to 10, and the mission ends on the way out
+# (floors.yaml), with its end briefing. The missions' pictures (C_Episode1-6) are too tall for
+# this episode menu; they come back with Blake Stone's own menus.
 episodes:
   MISSION1:
     name: "Mission 1\nSTAR Institute"
-    start-map: MAP01
+    start-map: MAP02
+    briefing: Mission1Brief
+    end-briefing: Mission1End
   MISSION2:
     name: "Mission 2\nFloating Fortress"
-    start-map: MAP16
+    start-map: MAP17
+    briefing: Mission2Brief
+    end-briefing: Mission2End
   MISSION3:
     name: "Mission 3"
-    start-map: MAP31
+    start-map: MAP32
+    briefing: Mission3Brief
+    end-briefing: Mission3End
   MISSION4:
     name: "Mission 4\nSTAR Port"
-    start-map: MAP46
+    start-map: MAP47
+    briefing: Mission4Brief
+    end-briefing: Mission4End
   MISSION5:
     name: "Mission 5\nHabitat II"
-    start-map: MAP61
+    start-map: MAP62
+    briefing: Mission5Brief
+    end-briefing: Mission5End
   MISSION6:
     name: "Mission 6\nSatellite Defense"
-    start-map: MAP76
+    start-map: MAP77
+    briefing: Mission6Brief
+    end-briefing: Mission6End
 
+# A mission's floors are kept as they're left
 clusters:
-  1: {}
-  2: {}
-  3: {}
-  4: {}
-  5: {}
-  6: {}
+  1: { hub: true }
+  2: { hub: true }
+  3: { hub: true }
+  4: { hub: true }
+  5: { hub: true }
+  6: { hub: true }
+
+# Shown over the status bar as each floor loads (a presenter script)
+level-start-message: "^ST1^CEGet Ready, Blake!\r^XX"
+
+# Shown over the status bar when the mission is won, before its end briefing
+mission-won-message: MissionCompleteText
+
+# Dying puts Blake back as he came onto the floor, less a life
+death-restores-level-start: true
 
 # Floor names are the game's own (its FloorNames text)
 maps:
@@ -100,55 +122,66 @@ maps:
     next: MAP02
     floor-number: 0
     cluster: 1
+    music: INCNRATN
   MAP02:
     name: "STAR INSTITUTE GENERAL OPERATIONS"
     next: MAP03
     floor-number: 1
     cluster: 1
+    music: DRKHALLA
   MAP03:
     name: "TECHNICAL PLANNING OFFICES"
     next: MAP04
     floor-number: 2
     cluster: 1
+    music: JUNGLEA
   MAP04:
     name: "MUTANT HOLDING CHAMBERS"
     next: MAP05
     floor-number: 3
     cluster: 1
+    music: RACSHUFL
   MAP05:
     name: "ALIEN CANISTER STORAGE"
     next: MAP06
     floor-number: 4
     cluster: 1
+    music: DRKHALLA
   MAP06:
     name: "CONTROLLED POD HATCHERY"
     next: MAP07
     floor-number: 5
     cluster: 1
+    music: HIDINGA
   MAP07:
     name: "POD STABILIZATION AREA"
     next: MAP08
     floor-number: 6
     cluster: 1
+    music: JUNGLEA
   MAP08:
     name: "AMMUNITION AND WEAPONRY STORAGE"
     next: MAP09
     floor-number: 7
     cluster: 1
+    music: RACSHUFL
   MAP09:
     name: "SECURITY OFFICES"
     next: MAP10
     floor-number: 8
     cluster: 1
+    music: HIDINGA
   MAP10:
     name: "SPACE TRAK TRANSPORT"
     next: MAP11
     floor-number: 9
     cluster: 1
+    music: DRKHALLA
   MAP11:
     name: "SECRET ALIEN CHAMBERS"
     floor-number: 10
     cluster: 1
+    music: INCNRATN
   MAP12:
     name: "Mission 1 unused slot 11"
     cluster: 1
@@ -167,55 +200,66 @@ maps:
     next: MAP17
     floor-number: 0
     cluster: 2
+    music: FREEDOMA
   MAP17:
     name: "TRANSPORT ARRIVAL AND PROCESSING"
     next: MAP18
     floor-number: 1
     cluster: 2
+    music: DRKHALLA
   MAP18:
     name: "GENERAL STORAGE AND OPERATIONS"
     next: MAP19
     floor-number: 2
     cluster: 2
+    music: STRUTA
   MAP19:
     name: "PERSONNEL BRIEFING AND TRAINING"
     next: MAP20
     floor-number: 3
     cluster: 2
+    music: INTRIGEA
   MAP20:
     name: "CARGO STORAGE AND PROCESSING"
     next: MAP21
     floor-number: 4
     cluster: 2
+    music: MEETINGA
   MAP21:
     name: "PERSONNEL CORRECTION AND DETENTION"
     next: MAP22
     floor-number: 5
     cluster: 2
+    music: DRKHALLA
   MAP22:
     name: "WEAPONS DEVELOPMENT AND TESTING"
     next: MAP23
     floor-number: 6
     cluster: 2
+    music: INCNRATN
   MAP23:
     name: "GENETIC DEVELOPMENT AND STORAGE"
     next: MAP24
     floor-number: 7
     cluster: 2
+    music: RACSHUFL
   MAP24:
     name: "TECHNICAL ENGINEERING"
     next: MAP25
     floor-number: 8
     cluster: 2
+    music: JUNGLEA
   MAP25:
     name: "TRANSPORT PROCESSING AND DEPARTURE"
     next: MAP26
     floor-number: 9
     cluster: 2
+    music: GENEFUNK
   MAP26:
     name: "SECRET STORAGE CHAMBERS"
     floor-number: 10
     cluster: 2
+    music: THEME
   MAP27:
     name: "Mission 2 unused slot 11"
     cluster: 2
@@ -234,55 +278,66 @@ maps:
     next: MAP32
     floor-number: 0
     cluster: 3
+    music: LEVELA
   MAP32:
     name: "NETWORK SECURITY MONITORING"
     next: MAP33
     floor-number: 1
     cluster: 3
+    music: HIDINGA
   MAP33:
     name: "NETWORK OPERATIONS AND CONTROL"
     next: MAP34
     floor-number: 2
     cluster: 3
+    music: STRUTA
   MAP34:
     name: "LUNAR EXPLORATIONS"
     next: MAP35
     floor-number: 3
     cluster: 3
+    music: THEME
   MAP35:
     name: "GENETICIST TRAINING LABS"
     next: MAP36
     floor-number: 4
     cluster: 3
+    music: RACSHUFL
   MAP36:
     name: "NETWORK ATMOSPHERIC CONTROL"
     next: MAP37
     floor-number: 5
     cluster: 3
+    music: INCNRATN
   MAP37:
     name: "ALIEN BEHAVIORAL OBSERVATORY"
     next: MAP38
     floor-number: 6
     cluster: 3
+    music: GOLDA
   MAP38:
     name: "LUNAR BIOSPHERE MONITORING"
     next: MAP39
     floor-number: 7
     cluster: 3
+    music: JUNGLEA
   MAP39:
     name: "HUMAN MORPHING LABS"
     next: MAP40
     floor-number: 8
     cluster: 3
+    music: DRKHALLA
   MAP40:
     name: "NETWORK TRANSIT DECK"
     next: MAP41
     floor-number: 9
     cluster: 3
+    music: THEWAYA
   MAP41:
     name: "SECRET NETWORK COMMUNICATIONS NODE"
     floor-number: 10
     cluster: 3
+    music: FREEDOMA
   MAP42:
     name: "Mission 3 unused slot 11"
     cluster: 3
@@ -301,55 +356,66 @@ maps:
     next: MAP47
     floor-number: 0
     cluster: 4
+    music: HIDINGA
   MAP47:
     name: "ALIEN CONTROLLED QUARTERS"
     next: MAP48
     floor-number: 1
     cluster: 4
+    music: DRKHALLA
   MAP48:
     name: "MUTANT PERFECTION LABS"
     next: MAP49
     floor-number: 2
     cluster: 4
+    music: GENEFUNK
   MAP49:
     name: "CIRCULAR ALIEN CHAMBERS"
     next: MAP50
     floor-number: 3
     cluster: 4
+    music: JUNGLEA
   MAP50:
     name: "LUNAR OPERATIONS GOLD OPENING"
     next: MAP51
     floor-number: 4
     cluster: 4
+    music: INCNRATN
   MAP51:
     name: "NEURO-NET CELLS"
     next: MAP52
     floor-number: 5
     cluster: 4
+    music: GOLDA
   MAP52:
     name: "ALIEN PROCESSING STATION"
     next: MAP53
     floor-number: 6
     cluster: 4
+    music: HIDINGA
   MAP53:
     name: "STAR RECREATION AREA"
     next: MAP54
     floor-number: 7
     cluster: 4
+    music: JUNGLEA
   MAP54:
     name: "BIO-MORPHING LABS"
     next: MAP55
     floor-number: 8
     cluster: 4
+    music: DRKHALLA
   MAP55:
     name: "CRYO-STORAGE LEVEL"
     next: MAP56
     floor-number: 9
     cluster: 4
+    music: THEWAYA
   MAP56:
     name: "MUTANT TRANSPORT DECK"
     floor-number: 10
     cluster: 4
+    music: RHUMBAAS
   MAP57:
     name: "Mission 4 unused slot 11"
     cluster: 4
@@ -368,55 +434,66 @@ maps:
     next: MAP62
     floor-number: 0
     cluster: 5
+    music: RACSHUFL
   MAP62:
     name: "HABITAT CREW QUARTERS"
     next: MAP63
     floor-number: 1
     cluster: 5
+    music: SEARCHNA
   MAP63:
     name: "SOLAR RADIATION MONITORING"
     next: MAP64
     floor-number: 2
     cluster: 5
+    music: JUNGLEA
   MAP64:
     name: "ARTIFICIAL ATMOSPHERIC RESEARCH"
     next: MAP65
     floor-number: 3
     cluster: 5
+    music: HIDINGA
   MAP65:
     name: "HABITAT SUPPLY STORAGE DECK"
     next: MAP66
     floor-number: 4
     cluster: 5
+    music: GENEFUNK
   MAP66:
     name: "GENETIC RESEARCH HOLDING AREAS"
     next: MAP67
     floor-number: 5
     cluster: 5
+    music: MEETINGA
   MAP67:
     name: "HABITAT CENTRAL CORE PASSAGEWAY"
     next: MAP68
     floor-number: 6
     cluster: 5
+    music: 2100A
   MAP68:
     name: "BIO-MEDICAL STORAGE DECK"
     next: MAP69
     floor-number: 7
     cluster: 5
+    music: THEME
   MAP69:
     name: "MUTANT EXAMINATION CHAMBERS"
     next: MAP70
     floor-number: 8
     cluster: 5
+    music: INCNRATN
   MAP70:
     name: "HIGH SECURITY EXPERIMENTAL LAB"
     next: MAP71
     floor-number: 9
     cluster: 5
+    music: DRKHALLA
   MAP71:
     name: "MUTANT ISOLATION DECK"
     floor-number: 10
     cluster: 5
+    music: THEWAYA
   MAP72:
     name: "Mission 5 unused slot 11"
     cluster: 5
@@ -435,55 +512,66 @@ maps:
     next: MAP77
     floor-number: 0
     cluster: 6
+    music: TIMEA
   MAP77:
     name: "SATELLITE DEFENSE OPERATIONS"
     next: MAP78
     floor-number: 1
     cluster: 6
+    music: RACSHUFL
   MAP78:
     name: "SECRET INTELLIGENCE HEADQUARTERS"
     next: MAP79
     floor-number: 2
     cluster: 6
+    music: GENEFUNK
   MAP79:
     name: "SECRET INTELLIGENCE TRAINING ARENA"
     next: MAP80
     floor-number: 3
     cluster: 6
+    music: HIDINGA
   MAP80:
     name: "STAR DEFENSE RESEARCH LABORATORY"
     next: MAP81
     floor-number: 4
     cluster: 6
+    music: 2100A
   MAP81:
     name: "CANISTER ALIEN GENESIS LABORATORY"
     next: MAP82
     floor-number: 5
     cluster: 6
+    music: THEME
   MAP82:
     name: "STAR COMMUNICATIONS"
     next: MAP83
     floor-number: 6
     cluster: 6
+    music: THEWAYA
   MAP83:
     name: "GENETIC RESEARCH HEADQUARTERS"
     next: MAP84
     floor-number: 7
     cluster: 6
+    music: JUNGLEA
   MAP84:
     name: "STRATEGIC DEFENSE HEADQUARTERS"
     next: MAP85
     floor-number: 8
     cluster: 6
+    music: MEETINGA
   MAP85:
     name: "STAR CENTRAL COMPUTER NETWORK"
     next: MAP86
     floor-number: 9
     cluster: 6
+    music: DRKHALLA
   MAP86:
     name: "STAR TECHNICAL AND INTELLIGENCE ARCHIVES"
     floor-number: 10
     cluster: 6
+    music: INCNRATN
   MAP87:
     name: "Mission 6 unused slot 11"
     cluster: 6

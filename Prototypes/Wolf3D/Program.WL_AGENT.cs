@@ -255,6 +255,14 @@ internal partial class Program
         if ((player.TileX != oldtilex || player.TileY != oldtiley)
             && _mapManager.GetTrigger(player.TileX, player.TileY) is { IsWalkOver: true } trigger)
             ActivateTrigger(trigger, player.TileX, player.TileY, FacingDir(player.Angle));
+
+        // mapdefs floors trigger: a floor code that does something when stepped onto (Blake Stone's way out)
+        if ((player.TileX != oldtilex || player.TileY != oldtiley)
+            && _mapManager.Floors.Triggers.TryGetValue(areatile, out var floorAction))
+        {
+            Entities.MapTriggerRegistry.Invoke(floorAction, new Entities.TriggerActivation(player.TileX, player.TileY,
+                FacingDir(player.Angle), player, _mapManager.GetTag(player.TileX, player.TileY)));
+        }
     }
 
     internal static bool TryMove(Entities.Actors.Actor ob)
@@ -647,6 +655,11 @@ internal partial class Program
         Entities.MapTriggerRegistry.Register("A_VictoryTile", (_, _) => { VictoryTile(); return true; });
         Entities.MapTriggerRegistry.Register("A_Exit", (_, _) => ExitAction(secret: false));
         Entities.MapTriggerRegistry.Register("A_SecretExit", (_, _) => ExitAction(secret: true));
+        // Hub clusters' ways between levels (Program.Elevator.cs, Program.Hubs.cs)
+        Entities.MapTriggerRegistry.Register("A_FloorSelect", FloorSelectAction);
+        Entities.MapTriggerRegistry.Register("A_Teleport", TeleportAction);
+        Entities.MapTriggerRegistry.Register("A_VictoryRun", VictoryRunAction);
+        ActorActionRegistry.Register("T_VictoryRun", T_VictoryRun);
         RegisterSwitchActions();    // tag-targeted door and wall actions (Program.SwitchActions.cs)
         RegisterZoneLightActions(); // light zone actions, for switches and actors (Program.ZoneLights.cs)
         RegisterActorLightActions(); // actors' own lights (Program.ActorLights.cs)
@@ -1483,7 +1496,8 @@ internal partial class Program
     {
         if (gamestate.victoryflag)              // watching the BJ actor
         {
-            VictorySpin();
+            if (!victoryRunning)                // A_VictoryRun's runner goes the way the player faces
+                VictorySpin();
             return;
         }
 

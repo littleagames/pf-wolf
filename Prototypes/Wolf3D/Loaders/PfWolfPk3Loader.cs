@@ -166,6 +166,18 @@ internal class PfWolfPk3Loader
             LoadYaml(entry, uniqueName, isMod, mergeLevels: 2, YamlDataEntryLoader.Deserialize<IntermissionAsset>);
             return;
         }
+        if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("presenter.yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
+            LoadYaml(entry, uniqueName, isMod, mergeLevels: 2, YamlDataEntryLoader.Deserialize<PresenterAsset>);
+            return;
+        }
+        if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("elevator.yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
+            LoadYaml(entry, uniqueName, isMod, mergeLevels: 2, YamlDataEntryLoader.Deserialize<ElevatorAsset>);
+            return;
+        }
         if (fullName.StartsWith("language/")
             || (fullName.StartsWith("gamepacks/") && fullName.Contains("/language/")))
         {

@@ -21,9 +21,9 @@ internal partial class Program
         int       body length, then the body
         int       checksum of the body
 
-    The body holds the game (gamestate, level ratios, inventory) and the level as
-    it stands (MapManager.WriteLevelState, then doors, area connections, the
-    moving pushwall, the automap's seen tiles, the weapon and the light zones). Nothing is restored until the whole file has been read and
+    The body holds the game (gamestate, level ratios, inventory), the level as it
+    stands (WriteLevelBody), the weapon, and the hub clusters' levels kept as they
+    were left (Program.Hubs.cs). Nothing is restored until the whole file has been read and
     checked against the current map and actordefs, so a save that can't be loaded
     leaves the game as it was.
 
@@ -48,7 +48,9 @@ internal partial class Program
     // 14: the light zones' lights, tints, fades and effects, at the end.
     // 15: each actor's light as A_SetLight / A_LightOff left it, after its runtime flags.
     // 16: whether each door has been unlocked (doors.yaml takes-key), after held.
-    private const int SaveVersion = 17;
+    // 17: actors' Temp3, Ammo, SeekX/Y and TryDir; the weapon charge.
+    // 18: the light zones before the weapon; the hub state (levels kept, floors visited) at the end.
+    private const int SaveVersion = 18;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the
@@ -280,9 +282,28 @@ internal partial class Program
         }
 
         DiskFlopAnim(x, y);
-        _mapManager.WriteLevelState(bw);
+        WriteLevelBody(bw);
+
+        var weapon = SyncWeaponSprite();
+        bw.Write(weapon != null);
+        if (weapon != null)
+            Entities.Actors.ActorSnapshot.Capture(weapon).Write(bw);
+
+        bw.Write(weaponcharge);
 
         DiskFlopAnim(x, y);
+        WriteHubState(bw);
+    }
+
+    /// <summary>
+    /// The level as it stands, as a save holds it and as a hub keeps a level that's been left:
+    /// the map and its actors (MapManager.WriteLevelState), then doors, area connections, the
+    /// moving pushwall, the player's last attacker, the automap's seen tiles and the light zones.
+    /// </summary>
+    private static void WriteLevelBody(BinaryWriter bw)
+    {
+        _mapManager.WriteLevelState(bw);
+
         bw.Write(lastdoorobj);
         for (int i = 0; i < lastdoorobj; i++)
             doorobjlist[i].WriteState(bw);
@@ -304,21 +325,11 @@ internal partial class Program
 
         bw.Write(_mapManager.GetSeenBytes());
 
-        var weapon = SyncWeaponSprite();
-        bw.Write(weapon != null);
-        if (weapon != null)
-            Entities.Actors.ActorSnapshot.Capture(weapon).Write(bw);
-
         WriteZoneLights(bw);
-
-        bw.Write(weaponcharge);
     }
 
-    /// <summary>Everything a save's body holds, read without changing any game state.</summary>
-    private sealed record SaveGameData(
-        gametype GameState,
-        Dictionary<string, LRstruct> LevelRatios,
-        Dictionary<string, int> Inventory,
+    /// <summary>What <see cref="WriteLevelBody"/> wrote, read without changing any game state.</summary>
+    private sealed record LevelBody(
         LevelSnapshot Level,
         doorobj_t[] Doors,
         byte[,] AreaConnect,
@@ -331,22 +342,10 @@ internal partial class Program
         byte PwallTile,
         int LastAttacker,
         byte[] Seen,
-        Entities.Actors.ActorSnapshot? Weapon,
-        Dictionary<int, ZoneState> Zones,
-        int WeaponCharge);
+        Dictionary<int, ZoneState> Zones);
 
-    private static SaveGameData ReadSaveBody(BinaryReader br)
+    private static LevelBody ReadLevelBody(BinaryReader br)
     {
-        var state = gametype.Read(br);
-
-        var ratios = new Dictionary<string, LRstruct>();
-        for (int i = br.ReadCount(); i > 0; i--)
-            ratios[br.ReadString()] = LRstruct.Read(br);
-
-        var inventory = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        for (int i = br.ReadCount(); i > 0; i--)
-            inventory[br.ReadString()] = br.ReadInt32();
-
         var level = MapManager.ReadLevelState(br);
 
         var doors = new doorobj_t[br.ReadCount()];
@@ -360,10 +359,7 @@ internal partial class Program
         if (numareas != _mapManager.Floors.NumAreas)
             throw new InvalidDataException($"It was saved with {numareas} map areas; this game has {_mapManager.Floors.NumAreas}.");
 
-        return new SaveGameData(
-            state,
-            ratios,
-            inventory,
+        return new LevelBody(
             level,
             doors,
             AreaConnect: ReadExactly(br, numareas * numareas).ToFixedArray(numareas, numareas),
@@ -376,9 +372,74 @@ internal partial class Program
             PwallTile: br.ReadByte(),
             LastAttacker: br.ReadInt32(),
             Seen: ReadExactly(br, MapManager.MAPAREA),
+            Zones: ReadZoneLights(br));
+    }
+
+    /// <summary>
+    /// Lays a level body over the level SetupGameLevel just built from the same map (with
+    /// loadedgame set, so it didn't count kills, treasure and secrets again)
+    /// </summary>
+    private static void ApplyLevelBody(LevelBody body)
+    {
+        var actors = _mapManager.RestoreLevelState(body.Level);
+
+        // Door positions and orientations come from the map; only the motion is saved.
+        for (int i = 0; i < Math.Min(lastdoorobj, body.Doors.Length); i++)
+        {
+            doorobjlist[i].action = body.Doors[i].action;
+            doorobjlist[i].ticcount = body.Doors[i].ticcount;
+            doorobjlist[i].position = body.Doors[i].position;
+            doorobjlist[i].held = body.Doors[i].held;
+            doorobjlist[i].unlocked = body.Doors[i].unlocked;
+        }
+
+        areaconnect = body.AreaConnect;
+        areabyplayer = body.AreaByPlayer;
+
+        pwallstate = body.PwallState;
+        pwallpos = body.PwallPos;
+        pwallx = body.PwallX;
+        pwally = body.PwallY;
+        pwalldir = body.PwallDir;
+        pwalltile = body.PwallTile;
+
+        _mapManager.SetSeenBytes(body.Seen);
+        RestoreZoneLights(body.Zones);
+
+        LastAttacker = body.LastAttacker >= 0 && body.LastAttacker < actors.Count ? actors[body.LastAttacker] : null;
+        facetimes = 0;
+    }
+
+    /// <summary>Everything a save's body holds, read without changing any game state.</summary>
+    private sealed record SaveGameData(
+        gametype GameState,
+        Dictionary<string, LRstruct> LevelRatios,
+        Dictionary<string, int> Inventory,
+        LevelBody Body,
+        Entities.Actors.ActorSnapshot? Weapon,
+        int WeaponCharge,
+        HubState Hubs);
+
+    private static SaveGameData ReadSaveBody(BinaryReader br)
+    {
+        var state = gametype.Read(br);
+
+        var ratios = new Dictionary<string, LRstruct>();
+        for (int i = br.ReadCount(); i > 0; i--)
+            ratios[br.ReadString()] = LRstruct.Read(br);
+
+        var inventory = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (int i = br.ReadCount(); i > 0; i--)
+            inventory[br.ReadString()] = br.ReadInt32();
+
+        return new SaveGameData(
+            state,
+            ratios,
+            inventory,
+            ReadLevelBody(br),
             Weapon: br.ReadBoolean() ? Entities.Actors.ActorSnapshot.Read(br) : null,
-            Zones: ReadZoneLights(br),
-            WeaponCharge: br.ReadInt32());
+            WeaponCharge: br.ReadInt32(),
+            Hubs: ReadHubState(br));
     }
 
     // BinaryReader.ReadBytes quietly returns fewer bytes at the end of the stream.
@@ -460,7 +521,7 @@ internal partial class Program
                     throw new InvalidDataException($"Weapon \"{weapon}\" isn't in this game.");
             }
 
-            var problem = _mapManager.CheckLevelState(data.Level, data.GameState.mapon);
+            var problem = _mapManager.CheckLevelState(data.Body.Level, data.GameState.mapon);
             if (problem != null)
                 throw new InvalidDataException(problem);
         }
@@ -493,33 +554,8 @@ internal partial class Program
         SetupGameLevel();
 
         DiskFlopAnim(x, y);
-        var actors = _mapManager.RestoreLevelState(data.Level);
-
-        // Door positions and orientations come from the map; only the motion is saved.
-        for (int i = 0; i < Math.Min(lastdoorobj, data.Doors.Length); i++)
-        {
-            doorobjlist[i].action = data.Doors[i].action;
-            doorobjlist[i].ticcount = data.Doors[i].ticcount;
-            doorobjlist[i].position = data.Doors[i].position;
-            doorobjlist[i].held = data.Doors[i].held;
-            doorobjlist[i].unlocked = data.Doors[i].unlocked;
-        }
-
-        areaconnect = data.AreaConnect;
-        areabyplayer = data.AreaByPlayer;
-
-        pwallstate = data.PwallState;
-        pwallpos = data.PwallPos;
-        pwallx = data.PwallX;
-        pwally = data.PwallY;
-        pwalldir = data.PwallDir;
-        pwalltile = data.PwallTile;
-
-        _mapManager.SetSeenBytes(data.Seen);
-        RestoreZoneLights(data.Zones);
-
-        LastAttacker = data.LastAttacker >= 0 && data.LastAttacker < actors.Count ? actors[data.LastAttacker] : null;
-        facetimes = 0;
+        ApplyLevelBody(data.Body);
+        RestoreHubState(data.Hubs);
 
         // The weapon picks up where it was (mid-attack, say).
         weaponSprite = null;

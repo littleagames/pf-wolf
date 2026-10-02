@@ -188,6 +188,13 @@ internal partial class Program
 
     internal static void PreloadGraphics()
     {
+        // A game with a level start message (Blake Stone) shows it instead of "get psyched"
+        if (_gameEngineManager.GetGameInfo().LevelStartMessage is { Length: > 0 } message)
+        {
+            ShowLevelStartMessage(message);
+            return;
+        }
+
         DrawLevel();
 
         // the play area, below any top status bar, down to the bottom one's first line

@@ -18,11 +18,12 @@ internal partial class Program
     internal static gametype gamestate = new gametype();
     static string bordercol = "VIEWCOLOR"; // color of the Change View/Ingame border
     /// <summary>
-    /// A map switch asked for by A_ChangeMap (Spear's pickup): GameLoop lets the pickup sound play
-    /// out, loads the map without an intermission and, with KeepPosition, puts the player back
-    /// where they stood, facing the same way.
+    /// A map switch asked for by A_ChangeMap (Spear's pickup), an elevator or a teleporter:
+    /// GameLoop waits WaitTics (Spear lets the pickup sound play out), loads the map without an
+    /// intermission and, with KeepPosition, puts the player back where they stood, facing the
+    /// same way. With ElevatorWall, they're then moved into the elevator by that panel wall.
     /// </summary>
-    private record PendingMapChange(string Map, bool KeepPosition, int X, int Y, short Angle);
+    private record PendingMapChange(string Map, bool KeepPosition, int X, int Y, short Angle, int WaitTics = 150, int ElevatorWall = 0);
     private static PendingMapChange? pendingMapChange;
 
     //
@@ -51,6 +52,9 @@ internal partial class Program
         player.Y = change.Y;
         player.Angle = change.Angle;
         Thrust(0, 0); // settles the player's tile and area at the new position
+
+        if (change.ElevatorWall > 0)
+            AlignPlayerInElevator(player.TileX, player.TileY, change.ElevatorWall);
     }
 
     internal static void GameLoop()
@@ -72,8 +76,10 @@ internal partial class Program
             startgame = false;
             if (!loadedgame)
             {
-                SetupGameLevel();
+                EnterLevel();               // a kept hub level as it was left, or the map afresh (Program.Hubs.cs)
                 ApplyPendingMapChange();
+                if (!died)
+                    MarkLevelStart();       // what dying puts the player back to, with death-restores-level-start
             }
 
             // A level being entered, not one loaded or restarted after dying, saves itself
@@ -88,8 +94,13 @@ internal partial class Program
             }
             else StartMusic();
 
+            var levelStartMessage = _gameEngineManager.GetGameInfo().LevelStartMessage;
             if (warped)
+            {
                 warped = false;                 // an A_ChangeMap switch loads silently, no "get psyched!"
+                if (!string.IsNullOrEmpty(levelStartMessage))
+                    ShowLevelStartMessage(levelStartMessage);
+            }
             else if (!died)
                 PreloadGraphics();             // TODO: Let this do something useful!
             else
@@ -102,11 +113,15 @@ internal partial class Program
 
             PlayLoop();
 
+            if (playstate is playstatetypes.ex_completed or playstatetypes.ex_secretlevel or playstatetypes.ex_warped)
+                LeaveLevel();               // a hub level is kept as it's left
+
             if (playstate == playstatetypes.ex_warped && pendingMapChange != null)
             {
                 // Spear waits 150 tics for its pickup sound before the new map loads; the score
                 // carries over, as the level ends without an intermission to bank it
-                GameEngineManager.WaitVBL(150);
+                if (pendingMapChange.WaitTics > 0)
+                    GameEngineManager.WaitVBL((uint)pendingMapChange.WaitTics);
                 gamestate.oldscore = gamestate.score;
                 warped = true;
             }
@@ -150,7 +165,8 @@ internal partial class Program
 
                     ClearMemory();
 
-                    LevelCompleted();              // do the intermission
+                    if (!IsHubMap(levelMap))
+                        LevelCompleted();          // do the intermission; a hub's levels are just left
                     if (viewsize == 21) DrawPlayScreen();
                     gamestate.oldscore = gamestate.score;
 
@@ -183,6 +199,27 @@ internal partial class Program
                     return;
 
                 case playstatetypes.ex_victorious:
+                    if (CurrentEpisode()?.EndBriefing is { Length: > 0 } endBriefing)
+                    {
+                        // Blake Stone: the mission's won message over the status bar, then its
+                        // end briefing, then the high scores
+                        if (_gameEngineManager.GetGameInfo().MissionWonMessage is { Length: > 0 } wonMessage
+                            && PresenterScript(wonMessage) is { } wonScript)
+                        {
+                            PresenterMessageBox(wonScript);
+                            _videoManager.Update();
+                            _audioManager.Play("bs/bonus1");
+                            _inputManager.UserInput(5 * 70);
+                        }
+                        _videoManager.FadeOut();
+                        ClearMemory();
+                        ShowBriefing(endBriefing);
+
+                        CheckHighScore(gamestate.score, won: true);
+                        EnableViewScoresMenuItem();
+                        return;
+                    }
+
                     if (viewsize == 21) DrawPlayScreen();
                     // A cluster with a victory-fade-color fades to it slowly, as Spear does when the Angel falls
                     var wonCluster = WonCluster();
@@ -861,8 +898,12 @@ internal partial class Program
 
         if (gamestate.lives > -1)
         {
-            gamestate.health = StartingHealth;
-            GiveStartingInventory();
+            // Back as they came into the level (Blake Stone), or fresh with the starting items
+            if (!_gameEngineManager.GetGameInfo().DeathRestoresLevelStart || !RestoreLevelStart())
+            {
+                gamestate.health = StartingHealth;
+                GiveStartingInventory();
+            }
             pwallstate = pwallpos = 0;
             weaponSprite = null;            // the weapon in hand starts on its Ready state
 

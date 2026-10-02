@@ -912,6 +912,7 @@ internal partial class Program
             ShootSnd();
         }
 
+    skillpart:
         MenuFadeOut();
         DrawNewGame();
         which = HandleMenu(NewItems, NewMenu, DrawNewGameDiff);
@@ -926,6 +927,14 @@ internal partial class Program
         }
 
         ShootSnd();
+
+        // The episode's briefing (Blake Stone's missions); Esc there goes back to the skills
+        if (!string.IsNullOrEmpty(episodeInfo!.Briefing))
+        {
+            MenuFadeOut();
+            if (ShowBriefing(episodeInfo.Briefing))
+                goto skillpart;
+        }
 
         NewGame((short)which, episodeInfo, mapInfo, playerClass);     // one menu item per skill, in order
         StartGame = 1;

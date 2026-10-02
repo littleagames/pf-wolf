@@ -92,3 +92,6 @@ $BS_ACIDDRAGON: "Acid dragon"
 $BS_BIOMECHGUARDIAN: "Bio-mech guardian"
 $BS_GOLDFIRE: "Dr. Goldfire"
 $BS_GENERATORSLEFT: "PROJECTION GENERATOR\nDESTROYED!\n\n- %n REMAINING -\nDESTROY THEM TO WIN!"
+
+# Level flow (presenter.yaml, elevator.yaml)
+$BS_BRIEFINGHELP: " UP / DN - PAGES       ENTER - CONTINUES         ESC - EXITS"
