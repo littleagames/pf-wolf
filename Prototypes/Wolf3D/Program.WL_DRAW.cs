@@ -179,6 +179,30 @@ internal partial class Program
         centery = (short)(basecentery + offset);
     }
 
+    /*
+    ====================
+    =
+    = Eye height
+    =
+    = How high above the floor the view is, in texels (64 a story). Vanilla's eye is half a
+    = story up. It stays under one story: wall tops are never drawn, so a view over a one
+    = story wall would show the floor behind it through it.
+    =
+    ====================
+    */
+
+    internal const int EYEDEFAULT = TEXTURESIZE / 2, MINEYE = 4, MAXEYE = TEXTURESIZE - 4;
+
+    internal static int vieweyez = EYEDEFAULT;  // reset each level
+
+    internal static void SetEyeHeight(int z) => vieweyez = Math.Clamp(z, MINEYE, MAXEYE);
+
+    /// <summary>The screen row of the floor line, for a wall where half a story is half pixels high</summary>
+    static int FloorRow(int half) => centery + half * vieweyez / (TEXTURESIZE / 2);
+
+    /// <summary>How many half stories a floor or ceiling z texels up is from the eye</summary>
+    static double EyeHalves(int z) => Math.Abs(z - vieweyez) / (double)(TEXTURESIZE / 2);
+
     internal static void Setup3DView()
     {
         viewangle = player.Angle;
@@ -277,7 +301,7 @@ internal partial class Program
         }
 
         int half = Math.Max(postheight >> 3, 1);
-        columntop = Math.Min(columntop, centery + half - hitstories * 2 * half);
+        columntop = Math.Min(columntop, FloorRow(half) - hitstories * 2 * half);
         columntallest = Math.Max(columntallest, hitstories);
     }
 
@@ -321,8 +345,9 @@ internal partial class Program
     /// </summary>
     static void DrawUnderside(int x, int entryhalf, int exithalf, TextureAsset? texture)
     {
-        int from = Math.Max(centery - entryhalf, 0);
-        int to = Math.Min(centery - exithalf - 1, viewheight - 1);
+        // one story up from the floor line, as DrawPost puts the top of the arch's first story
+        int from = Math.Max(FloorRow(entryhalf) - 2 * entryhalf, 0);
+        int to = Math.Min(FloorRow(exithalf) - 2 * exithalf - 1, viewheight - 1);
         if (from > to)
             return;
         int pitch = (int)_videoManager.bufferPitch;
@@ -330,13 +355,13 @@ internal partial class Program
         unsafe
         {
             byte* dest = (byte*)vbufPtr + screenofs + x;
-            double numerator = heightnumerator * 32.0;
+            double numerator = heightnumerator * 32.0 * EyeHalves(TEXTURESIZE);
 
             //
-            // The underside shows on row y where its edge would at a distance (along the view,
-            // as CalcHeight measures it) with half a story centery - y pixels high: nx = heightnumerator
-            // * 32 / half. Going that far along the view means going nx / cos(offset) along the ray.
-            // That point's tile also gives its light.
+            // The underside, h half stories above the eye, shows on row y where its edge would at
+            // a distance (along the view, as CalcHeight measures it) with h half stories centery - y
+            // pixels high: nx = heightnumerator * 32 * h / (centery - y). Going that far along the
+            // view means going nx / cos(offset) along the ray. That point's tile also gives its light.
             //
             const double TORADIANS = 2 * Math.PI / FINEANGLES;
             double angle = (midangle + pixelangle[x]) * TORADIANS;
@@ -534,8 +559,9 @@ internal partial class Program
         // row k up from the floor line shows texel k * 32 / half up the wall; step that
         // along as whole texels (t) plus a remainder, so it matches the old ScalePost exactly
         //
-        int bottom = centery + half - 1 - firststory * 2 * half;
-        int top = centery + half - stories * 2 * half;
+        int floor = FloorRow(half);
+        int bottom = floor - 1 - firststory * 2 * half;
+        int top = floor - stories * 2 * half;
         int y = Math.Min(bottom, viewheight - 1);
         if (top < 0) top = 0;
         if (y < top) return;
@@ -1082,10 +1108,10 @@ internal partial class Program
             }
             else
             {
-                // the ceiling is at the top of the walls, 2 * wallstories - 1 half stories above the eye
+                // the ceiling is at the top of the walls
                 for (y = 0; y < centery; y++, destIndex += (int)_videoManager.bufferPitch)
                 {
-                    byte color = lightrow[FlatRowShadeOffset(y, 2 * wallstories - 1) + ceilingColor];
+                    byte color = lightrow[FlatRowShadeOffset(y, CeilingHalves) + ceilingColor];
                     for (var v = 0; v < viewwidth; v++)
                         dest[destIndex + v] = color;
                 }
@@ -1093,7 +1119,7 @@ internal partial class Program
 
             for (; y < viewheight; y++, destIndex += (int)_videoManager.bufferPitch)
             {
-                byte color = lightrow[FlatRowShadeOffset(y, 1) + floorColor];
+                byte color = lightrow[FlatRowShadeOffset(y, FloorHalves) + floorColor];
                 for (var v = 0; v < viewwidth; v++)
                     dest[destIndex + v] = color;
             }
@@ -1107,9 +1133,9 @@ internal partial class Program
         {
             SetupFlatColumns();
             if (floorflats)
-                DrawFlats(_mapManager.floorflat, floorColor, centery, viewheight - 1, 1);
+                DrawFlats(_mapManager.floorflat, floorColor, centery, viewheight - 1, FloorHalves);
             if (ceilingflats)
-                DrawFlats(_mapManager.ceilingflat, ceilingColor, 0, centery - 1, 2 * wallstories - 1);
+                DrawFlats(_mapManager.ceilingflat, ceilingColor, 0, centery - 1, CeilingHalves);
         }
     }
 
@@ -1149,10 +1175,10 @@ internal partial class Program
 
     /// <summary>
     /// Draws rows from to to (inclusive) of a flat whose surface is halves half stories from the
-    /// eye (the floor 1, a ceiling at the top of n story walls 2n - 1), each pixel in its
-    /// tile's light. Tiles with no texture are color, or with no light zones or actor light, keep what's there.
+    /// eye (FloorHalves or CeilingHalves), each pixel in its tile's light. Tiles with no texture
+    /// are color, or with no light zones or actor light, keep what's there.
     /// </summary>
-    static void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, int halves)
+    static void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, double halves)
     {
         int pitch = (int)_videoManager.bufferPitch;
         double numerator = heightnumerator * 32.0 * halves;
@@ -1195,7 +1221,11 @@ internal partial class Program
     }
 
     // ShadeOffset for screen row y of a floor or ceiling halves half stories from the eye (as DrawFlats)
-    static int FlatRowShadeOffset(int y, int halves) =>
+    // How far the floor, and the ceiling at the top of the level's walls, are from the eye, in half stories
+    static double FloorHalves => EyeHalves(0);
+    static double CeilingHalves => EyeHalves(wallstories * TEXTURESIZE);
+
+    static int FlatRowShadeOffset(int y, double halves) =>
         shading ? ShadeOffset((long)(heightnumerator * 32.0 * halves / Math.Abs(y + 0.5 - centery))) : 0;
 
 

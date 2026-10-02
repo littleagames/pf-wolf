@@ -169,6 +169,8 @@ internal partial class Program
         //
         Register("pitch", "Looks up (positive) or down (negative) by that many degrees, as far as the view allows; 0 looks straight ahead.",
             "pitch [degrees]", Cmd_Pitch, InLevel);
+        Register("eyeheight", $"Sets how high the view is above the floor, in texels (64 a story, {EYEDEFAULT} standing), until the level is left or reloaded.",
+            $"eyeheight [{MINEYE}-{MAXEYE}]", Cmd_EyeHeight, InLevel);
         Register("hurt", "Damages the player.", "hurt [points]", Cmd_Hurt, InLevel);
         Register("playerclass", "Shows the class being played as and the classes there are; with a name, the class new games are played as.",
             "playerclass [class]", Cmd_PlayerClass, complete: (_, i) => i == 0 ? PlayerClasses() : []);
@@ -669,6 +671,17 @@ internal partial class Program
             viewpitch = Math.Clamp(degrees, -max, max);
         }
         _consoleManager.Print($"Pitch is {viewpitch:0.#} degrees (up to {max:0.#} either way)");
+    }
+
+    private static void Cmd_EyeHeight(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            if (!int.TryParse(args[0], out int z))
+                throw new ArgumentException($"usage: eyeheight [{MINEYE}-{MAXEYE}]");
+            SetEyeHeight(z);
+        }
+        _consoleManager.Print($"Eye height is {vieweyez} ({MINEYE}-{MAXEYE}, 64 a story, {EYEDEFAULT} standing)");
     }
 
     private static void Cmd_PlayerClass(string[] args)

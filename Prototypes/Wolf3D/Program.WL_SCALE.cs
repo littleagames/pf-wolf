@@ -104,7 +104,7 @@ internal partial class Program
         frac = 0;
 
         xcenter = sprite.viewx - height;
-        toppix = centery - height;
+        toppix = FloorRow(height) - 2 * height;     // standing on the floor, a story tall
 
         byte[] shade = sprite.bright ? noshade : LightAt(TileIndex(sprite.tilex, sprite.tiley), sprite.worldx, sprite.worldy);
         int shadeofs = sprite.bright ? 0 : ShadeOffsetForHeight(sprite.viewheight);
