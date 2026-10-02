@@ -7,6 +7,7 @@ BlakeCrate:
   properties:
     "health": 1
     "deathsound": ["bs/explode1", "bs/explode2"]
+    "switched": kill      # a smart switch on its tile blows it up (Program.SmartSwitch.cs)
   states:
     Spawn:
       - { sprite: CRT1, frames: [A], tics-per-frame: -1 }

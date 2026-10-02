@@ -256,6 +256,7 @@ walls:
         switch:
             # A barrier switch, on: throwing it turns its barriers off
             to: 57
+            state: on
             sound: bs/switch
             actions:
                 - A_ToggleActive
@@ -323,6 +324,7 @@ walls:
         switch:
             # A barrier switch, off: throwing it turns its barriers on
             to: 45
+            state: off
             sound: bs/switch
             actions:
                 - A_ToggleActive

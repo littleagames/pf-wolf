@@ -1,0 +1,77 @@
+# Planet Strike's health for the enemies it shares with Aliens of Gold (bstone's
+# ps_start_hit_points), by skill: each `extend`s blake's class (actordefs/blake), changing only
+# these. Its bosses are ordinary enemies here, far weaker than Aliens of Gold's, and guard no
+# gold card (Planet Strike has none).
+RentACop:
+  extend: true
+  properties: { "health.baby": 4, "health.easy": 9, "health.normal": 25, "health.hard": 38 }
+HangingTurret:
+  extend: true
+  properties: { "health.baby": 4, "health.easy": 9, "health.normal": 23, "health.hard": 28 }
+Scientist:
+  extend: true
+  properties: { "health.baby": 4, "health.easy": 9, "health.normal": 23, "health.hard": 28 }
+PodAlien:
+  extend: true
+  properties: { "health.baby": 22, "health.easy": 60, "health.normal": 160, "health.hard": 210 }
+ElectroAlien:
+  extend: true
+  properties: { "health.baby": 13, "health.easy": 37, "health.normal": 112, "health.hard": 150 }
+ProGuard:
+  extend: true
+  properties: { "health.baby": 33, "health.easy": 63, "health.normal": 150, "health.hard": 175 }
+GeneticGuard:
+  extend: true
+  properties: { "health.baby": 20, "health.easy": 60, "health.normal": 180, "health.hard": 240 }
+MutantHuman1:
+  extend: true
+  properties: { "health.baby": 24, "health.easy": 50, "health.normal": 155, "health.hard": 210 }
+MutantHuman2:
+  extend: true
+  properties: { "health.baby": 24, "health.easy": 50, "health.normal": 155, "health.hard": 210 }
+LcanAlien:
+  extend: true
+  properties: { "health.baby": 34, "health.easy": 75, "health.normal": 225, "health.hard": 300 }
+ScanAlien:
+  extend: true
+  properties: { "health.baby": 25, "health.easy": 60, "health.normal": 180, "health.hard": 240 }
+GurneyMutant:
+  extend: true
+  properties: { "health.baby": 27, "health.easy": 37, "health.normal": 150, "health.hard": 200 }
+LiquidAlien:
+  extend: true
+  properties: { "health.baby": 30, "health.easy": 66, "health.normal": 163, "health.hard": 210 }
+SwatGuard:
+  extend: true
+  properties: { "health.baby": 78, "health.easy": 112, "health.normal": 325, "health.hard": 425 }
+Goldfire:
+  extend: true
+  properties: { "health.baby": 90, "health.easy": 100, "health.normal": 150, "health.hard": 250, "dropitem": "" }
+VolatileTransport:
+  extend: true
+  properties: { "health.baby": 17, "health.easy": 25, "health.normal": 63, "health.hard": 75 }
+FloatingBomb:
+  extend: true
+  properties: { "health.baby": 15, "health.easy": 40, "health.normal": 60, "health.hard": 85 }
+
+BlakeBoss:
+  extend: true
+  properties: { "dropitem": "" }
+SpiderMutant:
+  extend: true
+  properties: { "health.baby": 60, "health.easy": 100, "health.normal": 150, "health.hard": 200 }
+BreatherBeast:
+  extend: true
+  properties: { "health.baby": 65, "health.easy": 115, "health.normal": 165, "health.hard": 225 }
+CyborgWarrior:
+  extend: true
+  properties: { "health.baby": 70, "health.easy": 100, "health.normal": 150, "health.hard": 200 }
+ReptilianWarrior:
+  extend: true
+  properties: { "health.baby": 65, "health.easy": 115, "health.normal": 165, "health.hard": 225 }
+AcidDragon:
+  extend: true
+  properties: { "health.baby": 60, "health.easy": 100, "health.normal": 150, "health.hard": 200 }
+BioMechGuardian:
+  extend: true
+  properties: { "health.baby": 65, "health.easy": 115, "health.normal": 165, "health.hard": 225 }

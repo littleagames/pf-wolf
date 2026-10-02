@@ -89,24 +89,24 @@ HiTechTableAndChairs:
         frames: [A]
         tics-per-frame: -1
 
-# Aliens of Gold's guards, dead
+# Aliens of Gold's guards, dead (raw-data-map DAOG: PS's guards took the RENT/PROG/SWAT names)
 DeadAogRentACop:
   states:
     Spawn:
-      - sprite: RENT
-        frames: [N]
+      - sprite: DAOG
+        frames: [A]
         tics-per-frame: -1
 
 DeadAogProGuard:
   states:
     Spawn:
-      - sprite: PROG
-        frames: [O]
+      - sprite: DAOG
+        frames: [B]
         tics-per-frame: -1
 
 DeadAogSwatGuard:
   states:
     Spawn:
-      - sprite: SWAT
-        frames: [T]
+      - sprite: DAOG
+        frames: [C]
         tics-per-frame: -1

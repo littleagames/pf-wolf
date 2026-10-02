@@ -43,6 +43,16 @@ internal record Actor : Thinker
     // same tag acts on it wherever it has since moved.
     public ushort Tag { get; internal set; }
 
+    // From the floor code it spawned on (mapdefs floors actor-codes, Planet Strike's): what it
+    // drops when it dies besides its class's drops, the tile (x << 8 | y, 0 for none) its death
+    // works as a smart switch (A_SmartSwitch), and whether it's cloaked (drawn shimmering)
+    public List<string> CarriedDrops { get; internal set; } = [];
+    public ushort DeathLink { get; internal set; }
+    public bool Cloaked { get; internal set; }
+
+    // Hit since it was last drawn: a cloaked actor shows for that frame. Not saved.
+    public bool CloakHit { get; internal set; }
+
     // Set by MapManager.MarkForRemoval (e.g. a projectile that hit something); MapManager.DoActors
     // unlinks the actor once its tic finishes, since removing it mid-walk would break the iteration.
     public bool IsRemoved { get; internal set; }

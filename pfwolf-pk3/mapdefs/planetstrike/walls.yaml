@@ -11,6 +11,7 @@ walls:
         West: SWITCHA2
         switch:
             to: 57
+            state: on
             sound: bs/switch
             link: object-plane
             actions:
@@ -23,6 +24,7 @@ walls:
         West: SWITCHI2
         switch:
             to: 45
+            state: off
             sound: bs/switch
             link: object-plane
             actions:

@@ -1,4 +1,4 @@
-﻿using Wolf3D.Assets;
+using Wolf3D.Assets;
 using Wolf3D.Constants;
 using Wolf3D.Enums;
 using objflags = Wolf3D.Program.objflags;
@@ -13,6 +13,9 @@ internal sealed record FloorCodes(int AreaTile, int NumAreas, int AmbushTile, in
     /// <summary>Floor codes that set off a trigger action when the player steps onto them</summary>
     public IReadOnlyDictionary<int, string> Triggers { get; init; } = new Dictionary<int, string>();
 
+    /// <summary>Floor codes that do something to the enemy standing on them (MapFloorsTranslation.ActorCodes)</summary>
+    public IReadOnlyDictionary<int, Assets.MapActorCodeTranslation> ActorCodes { get; init; } = new Dictionary<int, Assets.MapActorCodeTranslation>();
+
     public static FloorCodes From(MapFloorsTranslation floors)
     {
         if (floors.AreaStart is not { } start || floors.AreaCount is not { } count)
@@ -22,6 +25,7 @@ internal sealed record FloorCodes(int AreaTile, int NumAreas, int AmbushTile, in
         return new FloorCodes(start, count, floors.Ambush ?? -1, floors.SecretExit ?? -1, floors.HiddenAreaStart ?? -1)
         {
             Triggers = floors.Triggers ?? new Dictionary<int, string>(),
+            ActorCodes = floors.ActorCodes ?? new Dictionary<int, Assets.MapActorCodeTranslation>(),
         };
     }
 
@@ -424,6 +428,13 @@ internal class MapManager
         var walllayer = mapsegs[0];
         for (int i = 0; i < MAPAREA && i < objects.Length && i < walllayer.Length; i++)
         {
+            // A smart switch floor trigger's value is the tile it works, not a thing
+            if (objects[i] != 0 && Floors.Triggers.TryGetValue(walllayer[i], out var floorAction)
+                && floorAction.StartsWith("A_SmartSwitch", StringComparison.OrdinalIgnoreCase))
+            {
+                infotiles[i] = true;
+                continue;
+            }
             if (objects[i] == 0 || !IsWallId(walllayer[i]) || !walls.TryGetValue(walllayer[i], out var wall)
                 || wall.Switch is not { } wallSwitch || !wallSwitch.Link.Equals("object-plane", StringComparison.OrdinalIgnoreCase))
                 continue;
@@ -834,20 +845,25 @@ internal class MapManager
                 var floorTile = MAPSPOT(tilex, tiley, 0);
                 if (floorTile == Floors.AmbushTile)
                 {
-                    if (VALIDAREA(MAPSPOT(tilex + 1, tiley, 0)))
-                        floorTile = MAPSPOT(tilex + 1, tiley, 0);
-                    if (VALIDAREA(MAPSPOT(tilex, tiley - 1, 0)))
-                        floorTile = MAPSPOT(tilex, tiley - 1, 0);
-                    if (VALIDAREA(MAPSPOT(tilex, tiley + 1, 0)))
-                        floorTile = MAPSPOT(tilex, tiley + 1, 0);
-                    if (VALIDAREA(MAPSPOT(tilex - 1, tiley, 0)))
-                        floorTile = MAPSPOT(tilex - 1, tiley, 0);
-
-                    SetMapSpot(tilex, tiley, 0, (ushort)floorTile);
-                    builtActor.AreaNumber = (byte)(floorTile - Floors.AreaTile);
-
+                    TakeNeighbourArea(builtActor, tilex, tiley);
                     builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
                 }
+            }
+
+            // A floors actor-code under it (Planet Strike's): what it carries, its cloak, its link
+            if (Floors.ActorCodes.TryGetValue(MAPSPOT(tilex, tiley, 0), out var code))
+            {
+                if (!string.IsNullOrEmpty(code.Drop))
+                    builtActor.CarriedDrops.Add(code.Drop);
+                builtActor.Cloaked |= code.Cloak;
+                if (code.Ambush)
+                    builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
+                if (code.Link.Equals("east", StringComparison.OrdinalIgnoreCase) && tilex + 1 < mapwidth)
+                {
+                    builtActor.DeathLink = (ushort)MAPSPOT(tilex + 1, tiley, 1);
+                    SetMapSpot(tilex + 1, tiley, 1, 0);     // a tile, not a thing
+                }
+                TakeNeighbourArea(builtActor, tilex, tiley);
             }
 
             Program.InitSpawnedActor(builtActor, tilex, tiley);
@@ -874,6 +890,28 @@ internal class MapManager
 
         _actors.AddLast(builtActor);
         return builtActor;
+    }
+
+    // A floor code that isn't an area (ambush, actor-codes) under an actor becomes a neighbouring
+    // tile's area code, which the actor is then in (SpawnStand's ambush handling)
+    private void TakeNeighbourArea(Entities.Actors.Actor actor, int tilex, int tiley) =>
+        actor.AreaNumber = (byte)(ClearFloorCode(tilex, tiley) - Floors.AreaTile);
+
+    /// <summary>Turns a floor code that isn't an area into a neighbouring tile's area code, which it returns.</summary>
+    internal int ClearFloorCode(int tilex, int tiley)
+    {
+        var floorTile = MAPSPOT(tilex, tiley, 0);
+        if (VALIDAREA(MAPSPOT(tilex + 1, tiley, 0)))
+            floorTile = MAPSPOT(tilex + 1, tiley, 0);
+        if (VALIDAREA(MAPSPOT(tilex, tiley - 1, 0)))
+            floorTile = MAPSPOT(tilex, tiley - 1, 0);
+        if (VALIDAREA(MAPSPOT(tilex, tiley + 1, 0)))
+            floorTile = MAPSPOT(tilex, tiley + 1, 0);
+        if (VALIDAREA(MAPSPOT(tilex - 1, tiley, 0)))
+            floorTile = MAPSPOT(tilex - 1, tiley, 0);
+
+        SetMapSpot(tilex, tiley, 0, (ushort)floorTile);
+        return floorTile;
     }
 
     private static int ReadIntProperty(Entities.Actors.Actor actor, string key, int fallback) =>

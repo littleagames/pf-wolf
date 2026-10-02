@@ -320,162 +320,162 @@ sprites:
     - ALCLC0
     - ALCLD0
     - ALCLE0    # - Shut Off
-    - RENTN0    # Dead AoG Guard
-    - PROGO0    # Dead AoG Sentinel
-    - SWATT0    # Dead AoG Trooper
-    - SECGA1    # Stand
-    - SECGA2
-    - SECGA3
-    - SECGA4
-    - SECGA5
-    - SECGA6
-    - SECGA7
-    - SECGA8
-    - SECGB1    # Walk 1
-    - SECGB2
-    - SECGB3
-    - SECGB4
-    - SECGB5
-    - SECGB6
-    - SECGB7
-    - SECGB8
-    - SECGC1    # Walk 2
-    - SECGC2
-    - SECGC3
-    - SECGC4
-    - SECGC5
-    - SECGC6
-    - SECGC7
-    - SECGC8
-    - SECGD1    # Walk 3
-    - SECGD2
-    - SECGD3
-    - SECGD4
-    - SECGD5
-    - SECGD6
-    - SECGD7
-    - SECGD8
-    - SECGE1    # Walk 4
-    - SECGE2
-    - SECGE3
-    - SECGE4
-    - SECGE5
-    - SECGE6
-    - SECGE7
-    - SECGE8
-    - SECGJ0    # Death
-    - SECGK0
-    - SECGL0
-    - SECGM0
-    - SECGI0    # Pain
-    - SECGN0    # Dead
-    - SECGF0    # Attack
-    - SECGG0
-    - SECGH0
-    - TECWA1    # Stand
-    - TECWA2
-    - TECWA3
-    - TECWA4
-    - TECWA5
-    - TECWA6
-    - TECWA7
-    - TECWA8
-    - TECWB1    # Walk 1
-    - TECWB2
-    - TECWB3
-    - TECWB4
-    - TECWB5
-    - TECWB6
-    - TECWB7
-    - TECWB8
-    - TECWC1    # Walk 2
-    - TECWC2
-    - TECWC3
-    - TECWC4
-    - TECWC5
-    - TECWC6
-    - TECWC7
-    - TECWC8
-    - TECWD1    # Walk 3
-    - TECWD2
-    - TECWD3
-    - TECWD4
-    - TECWD5
-    - TECWD6
-    - TECWD7
-    - TECWD8
-    - TECWE1    # Walk 4
-    - TECWE2
-    - TECWE3
-    - TECWE4
-    - TECWE5
-    - TECWE6
-    - TECWE7
-    - TECWE8
-    - TECWI0    # Pain 2
-    - TECWK0    # Death
-    - TECWL0
-    - TECWM0
-    - TECWJ0    # Pain
-    - TECWN0    # Death (Last)
-    - TECWO0    # Dead
-    - TECWF0    # Attack
-    - TECWG0
-    - TECWH0
-    - PROTA1    # Stand
-    - PROTA2
-    - PROTA3
-    - PROTA4
-    - PROTA5
-    - PROTA6
-    - PROTA7
-    - PROTA8
-    - PROTB1    # Walk 1
-    - PROTB2
-    - PROTB3
-    - PROTB4
-    - PROTB5
-    - PROTB6
-    - PROTB7
-    - PROTB8
-    - PROTC1    # Walk 2
-    - PROTC2
-    - PROTC3
-    - PROTC4
-    - PROTC5
-    - PROTC6
-    - PROTC7
-    - PROTC8
-    - PROTD1    # Walk 3
-    - PROTD2
-    - PROTD3
-    - PROTD4
-    - PROTD5
-    - PROTD6
-    - PROTD7
-    - PROTD8
-    - PROTE1    # Walk 4
-    - PROTE2
-    - PROTE3
-    - PROTE4
-    - PROTE5
-    - PROTE6
-    - PROTE7
-    - PROTE8
-    - PROTI0    # Pain
-    - PROTO0    # Death
-    - PROTP0
-    - PROTQ0
-    - PROTJ0    # Pain (Duplicate)
-    - PROTR0    # Death (Last)
-    - PROTS0    # Dead
-    - PROTF0    # Attack
-    - PROTG0
-    - PROTH0
-    - PROTK0    # Knocked Down
-    - PROTL0
-    - PROTM0
-    - PROTN0
+    - DAOGA0    # Dead AoG Guard
+    - DAOGB0    # Dead AoG Sentinel
+    - DAOGC0    # Dead AoG Trooper
+    - RENTA1    # Sector Guard (bstone's rent-a-cop slot; named as Aliens of Gold's so blake's actordefs fit)
+    - RENTA2
+    - RENTA3
+    - RENTA4
+    - RENTA5
+    - RENTA6
+    - RENTA7
+    - RENTA8
+    - RENTB1    # Walk 1
+    - RENTB2
+    - RENTB3
+    - RENTB4
+    - RENTB5
+    - RENTB6
+    - RENTB7
+    - RENTB8
+    - RENTC1    # Walk 2
+    - RENTC2
+    - RENTC3
+    - RENTC4
+    - RENTC5
+    - RENTC6
+    - RENTC7
+    - RENTC8
+    - RENTD1    # Walk 3
+    - RENTD2
+    - RENTD3
+    - RENTD4
+    - RENTD5
+    - RENTD6
+    - RENTD7
+    - RENTD8
+    - RENTE1    # Walk 4
+    - RENTE2
+    - RENTE3
+    - RENTE4
+    - RENTE5
+    - RENTE6
+    - RENTE7
+    - RENTE8
+    - RENTJ0    # Death
+    - RENTK0
+    - RENTL0
+    - RENTM0
+    - RENTI0    # Pain
+    - RENTN0    # Dead
+    - RENTF0    # Attack
+    - RENTG0
+    - RENTH0
+    - PROGA1    # Tech Warrior (the pro guard slot)
+    - PROGA2
+    - PROGA3
+    - PROGA4
+    - PROGA5
+    - PROGA6
+    - PROGA7
+    - PROGA8
+    - PROGB1    # Walk 1
+    - PROGB2
+    - PROGB3
+    - PROGB4
+    - PROGB5
+    - PROGB6
+    - PROGB7
+    - PROGB8
+    - PROGC1    # Walk 2
+    - PROGC2
+    - PROGC3
+    - PROGC4
+    - PROGC5
+    - PROGC6
+    - PROGC7
+    - PROGC8
+    - PROGD1    # Walk 3
+    - PROGD2
+    - PROGD3
+    - PROGD4
+    - PROGD5
+    - PROGD6
+    - PROGD7
+    - PROGD8
+    - PROGE1    # Walk 4
+    - PROGE2
+    - PROGE3
+    - PROGE4
+    - PROGE5
+    - PROGE6
+    - PROGE7
+    - PROGE8
+    - PROGI0    # Pain 2
+    - PROGK0    # Death
+    - PROGL0
+    - PROGM0
+    - PROGJ0    # Pain
+    - PROGN0    # Death (Last)
+    - PROGO0    # Dead
+    - PROGF0    # Attack
+    - PROGG0
+    - PROGH0
+    - SWATA1    # Alien Protector (the SWAT guard slot)
+    - SWATA2
+    - SWATA3
+    - SWATA4
+    - SWATA5
+    - SWATA6
+    - SWATA7
+    - SWATA8
+    - SWATB1    # Walk 1
+    - SWATB2
+    - SWATB3
+    - SWATB4
+    - SWATB5
+    - SWATB6
+    - SWATB7
+    - SWATB8
+    - SWATC1    # Walk 2
+    - SWATC2
+    - SWATC3
+    - SWATC4
+    - SWATC5
+    - SWATC6
+    - SWATC7
+    - SWATC8
+    - SWATD1    # Walk 3
+    - SWATD2
+    - SWATD3
+    - SWATD4
+    - SWATD5
+    - SWATD6
+    - SWATD7
+    - SWATD8
+    - SWATE1    # Walk 4
+    - SWATE2
+    - SWATE3
+    - SWATE4
+    - SWATE5
+    - SWATE6
+    - SWATE7
+    - SWATE8
+    - SWATI0    # Pain
+    - SWATO0    # Death
+    - SWATP0
+    - SWATQ0
+    - SWATJ0    # Pain (Duplicate)
+    - SWATR0    # Death (Last)
+    - SWATS0    # Dead
+    - SWATF0    # Attack
+    - SWATG0
+    - SWATH0
+    - SWATK0    # Knocked Down
+    - SWATL0
+    - SWATM0
+    - SWATN0
     - GSCIA1    # Stand
     - GSCIA2
     - GSCIA3

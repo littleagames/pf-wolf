@@ -35,6 +35,9 @@ internal sealed record ActorSnapshot
     public ushort Tag { get; init; }
     public Program.objflags RuntimeFlags { get; init; }
     public LightOverride? Light { get; init; }
+    public List<string> CarriedDrops { get; init; } = [];
+    public ushort DeathLink { get; init; }
+    public bool Cloaked { get; init; }
 
     public static ActorSnapshot Capture(Actor actor)
     {
@@ -68,6 +71,9 @@ internal sealed record ActorSnapshot
             Tag = actor.Tag,
             RuntimeFlags = actor.RuntimeFlags,
             Light = actor.LightState?.Override,
+            CarriedDrops = [.. actor.CarriedDrops],
+            DeathLink = actor.DeathLink,
+            Cloaked = actor.Cloaked,
         };
     }
 
@@ -99,6 +105,9 @@ internal sealed record ActorSnapshot
         actor.RuntimeFlags = RuntimeFlags;
         if (Light != null)
             (actor.LightState ??= new ActorLightState()).Override = Light;
+        actor.CarriedDrops = [.. CarriedDrops];
+        actor.DeathLink = DeathLink;
+        actor.Cloaked = Cloaked;
         actor.SyncPosition();
     }
 
@@ -132,6 +141,11 @@ internal sealed record ActorSnapshot
         bw.Write((int)RuntimeFlags);
         bw.Write(Light != null);
         Light?.Write(bw);
+        bw.Write(CarriedDrops.Count);
+        foreach (var drop in CarriedDrops)
+            bw.Write(drop);
+        bw.Write(DeathLink);
+        bw.Write(Cloaked);
     }
 
     public static ActorSnapshot Read(BinaryReader br)
@@ -168,6 +182,9 @@ internal sealed record ActorSnapshot
             Tag = br.ReadUInt16(),
             RuntimeFlags = (Program.objflags)br.ReadInt32(),
             Light = br.ReadBoolean() ? LightOverride.Read(br) : null,
+            CarriedDrops = [.. Enumerable.Range(0, br.ReadInt32()).Select(_ => br.ReadString())],
+            DeathLink = br.ReadUInt16(),
+            Cloaked = br.ReadBoolean(),
         };
     }
 

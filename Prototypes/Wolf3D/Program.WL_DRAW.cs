@@ -2095,6 +2095,10 @@ internal partial class Program
                 visptr_val.viewx = actor.ViewX;
                 visptr_val.viewheight = (short)actor.ViewHeight;
 
+                // A cloaked enemy shows for a frame when it's hit (bstone's FL2_DAMAGE_CLOAK)
+                visptr_val.cloaked = actor.Cloaked && !actor.CloakHit && actor.Hitpoints > 0;
+                actor.CloakHit = false;
+
                 if (visptr < MAXVISABLE - 1)
                 {
                     visptr_val.tilex = atx;

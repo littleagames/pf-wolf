@@ -755,6 +755,7 @@ internal partial class Program
 
         if (!informant && DeathDrop(ob) is { } drop)
             PlaceItemType(drop, tilex, tiley);
+        CarriedDeathWork(ob, tilex, tiley);
 
         if (ob.Name is "Schabbs" or "Gift" or "Fat" or "RealHitler")
         {
@@ -836,6 +837,7 @@ internal partial class Program
 
         int oldHitpoints = ob.Hitpoints;
         ob.Hitpoints -= (short)damage;
+        ob.CloakHit = true;
 
         if (ob.Hitpoints <= 0)
         {

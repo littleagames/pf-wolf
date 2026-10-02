@@ -178,6 +178,13 @@ internal record MapFloorsTranslation
     /// </summary>
     public Dictionary<int, string>? Triggers { get; set; }
 
+    /// <summary>
+    /// Floor codes that do something to the enemy standing on them (Planet Strike's): it carries
+    /// an item to drop, is cloaked, waits in ambush, or works a smart switch when it dies. The
+    /// floor takes on a neighbouring area's code, as under an ambush.
+    /// </summary>
+    public Dictionary<int, MapActorCodeTranslation>? ActorCodes { get; set; }
+
     public MapFloorsTranslation MergedWith(MapFloorsTranslation other) => new()
     {
         AreaStart = other.AreaStart ?? AreaStart,
@@ -186,7 +193,28 @@ internal record MapFloorsTranslation
         SecretExit = other.SecretExit ?? SecretExit,
         HiddenAreaStart = other.HiddenAreaStart ?? HiddenAreaStart,
         Triggers = other.Triggers ?? Triggers,
+        ActorCodes = other.ActorCodes ?? ActorCodes,
     };
+}
+
+/// <summary>What a floors actor-code does to the enemy standing on it. See <see cref="MapFloorsTranslation.ActorCodes"/>.</summary>
+internal record MapActorCodeTranslation
+{
+    /// <summary>An inventory item class it drops when it dies (a key, a weapon, the detonator). Empty: none.</summary>
+    public string Drop { get; set; } = "";
+
+    /// <summary>Drawn shimmering, hard to see (bstone's FL2_CLOAKED)</summary>
+    public bool Cloak { get; set; }
+
+    /// <summary>Waits deaf until it sees the player, as on the ambush code</summary>
+    public bool Ambush { get; set; }
+
+    /// <summary>
+    /// "east": the object-plane value on the tile east of it is a tile's x (high byte) and y
+    /// (low byte), which its death works as a smart switch would (A_SmartSwitch("off")).
+    /// Empty: none.
+    /// </summary>
+    public string Link { get; set; } = "";
 }
 
 /// <summary>
@@ -406,6 +434,13 @@ internal record MapSwitchTranslation
     /// barrier switches). Empty: its tag only.
     /// </summary>
     public string Link { get; init; } = "";
+
+    /// <summary>
+    /// "on" or "off": which way the switch is thrown, for a smart switch told to turn things
+    /// on or off (A_SmartSwitch), which leaves it be if it's already that way. Empty: a smart
+    /// switch always throws it.
+    /// </summary>
+    public string State { get; init; } = "";
 
     /// <summary>Whether the player can use it while facing <paramref name="dir"/>.</summary>
     public bool UsableFrom(controldirs dir)

@@ -1,0 +1,190 @@
+# Planet Strike's own bosses (bstone's final_boss1-4), built as Aliens of Gold's are
+# (actordefs/blake/bosses.yaml): the giant stalker and the armored stalker shoot, the spector
+# demon (drawn unshaded) throws plasma and the crawler beast spits. Health by skill (novice ...
+# veteran) from bstone's ps_start_hit_points. The map numbers that place them (630-633) are in
+# mapdefs/planetstrike/bosses.yaml.
+FinalBoss:
+  parent: BlakeBoss
+  properties:
+    "monster.chasespeedmultiplier": 2
+    "seesound": "bs/blueboyhalt"
+
+GiantStalker:
+  parent: FinalBoss
+  properties:
+    "tag": "$BS_GIANTSTALKER"
+    "health.baby": 1600
+    "health.easy": 1700
+    "health.normal": 1800
+    "health.hard": 1900
+    "points": 30000
+    "deathsound": "bs/blueboydeath"
+    # Its slow fire protector while Blake hasn't one, else a charge pack (as the genetic guard)
+    "dropweapon": "SlowFireProtector"
+    "dropweapon.ifmissing": true
+    "dropitem": "ChargePack"
+  states:
+    Spawn:
+      - { sprite: STLK, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: STLK, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: STLK, frames: [A], tics-per-frame: 5 }
+      - { sprite: STLK, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: STLK, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: STLK, frames: [C], tics-per-frame: 5 }
+      - { sprite: STLK, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: STLK, frames: [H], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: STLK, frames: [E], tics-per-frame: 10 }
+      - { sprite: STLK, frames: [F], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: STLK, frames: [G], tics-per-frame: 10, next-state: Chase }
+    Death:
+      - { sprite: STLK, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: STLK, frames: [I], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: STLK, frames: [J], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: STLK, frames: [K], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: STLK, frames: [L], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: STLK, frames: [M], tics-per-frame: -1 }
+
+SpectorDemon:
+  parent: FinalBoss
+  properties:
+    "tag": "$BS_SPECTORDEMON"
+    "health.baby": 1700
+    "health.easy": 1800
+    "health.normal": 1900
+    "health.hard": 2000
+    "points": 40000
+    "monster.chasespeedmultiplier": 3
+    "seesound": "bs/gguardhalt"
+    "deathsound": "bs/poddeath"
+  states:
+    Spawn:
+      - { sprite: SPEC, frames: [A], tics-per-frame: -1, think: T_Stand, modifiers: [bright] }
+    Chase:
+      - { sprite: SPEC, frames: [A], tics-per-frame: 10, think: T_BlakeChase, modifiers: [bright] }
+      - { sprite: SPEC, frames: [A], tics-per-frame: 5, modifiers: [bright] }
+      - { sprite: SPEC, frames: [B], tics-per-frame: 8, think: T_BlakeChase, modifiers: [bright] }
+      - { sprite: SPEC, frames: [C], tics-per-frame: 10, think: T_BlakeChase, modifiers: [bright] }
+      - { sprite: SPEC, frames: [C], tics-per-frame: 5, modifiers: [bright] }
+      - { sprite: SPEC, frames: [D], tics-per-frame: 8, think: T_BlakeChase, modifiers: [bright] }
+    Pain:
+      - { sprite: SPEC, frames: [H], tics-per-frame: 15, next-state: Chase, modifiers: [bright] }
+    Attack:
+      - { sprite: SPEC, frames: [E], tics-per-frame: 10, modifiers: [bright] }
+      - { sprite: SPEC, frames: [F], tics-per-frame: 10, action: A_FireProjectile("SpectorShot"), modifiers: [bright] }
+      - { sprite: SPEC, frames: [G], tics-per-frame: 10, next-state: Chase, modifiers: [bright] }
+    # Fades away, 25 tics a frame
+    Death:
+      - { sprite: SPEC, frames: [I], tics-per-frame: 25, action: A_DeathScream, modifiers: [bright] }
+      - { sprite: SPEC, frames: [J, K, L], tics-per-frame: 25, modifiers: [bright] }
+      - { sprite: SPEC, frames: [M], tics-per-frame: -1, modifiers: [bright] }
+
+ArmoredStalker:
+  parent: FinalBoss
+  properties:
+    "tag": "$BS_ARMOREDSTALKER"
+    "health.baby": 1800
+    "health.easy": 1900
+    "health.normal": 2000
+    "health.hard": 2100
+    "points": 50000
+    "deathsound": "bs/dogboydeath"
+  states:
+    Spawn:
+      - { sprite: ARST, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: ARST, frames: [A], tics-per-frame: 10, think: T_BlakeChase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
+      - { sprite: ARST, frames: [A], tics-per-frame: 5 }
+      - { sprite: ARST, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: ARST, frames: [C], tics-per-frame: 10, think: T_BlakeChase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
+      - { sprite: ARST, frames: [C], tics-per-frame: 5 }
+      - { sprite: ARST, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: ARST, frames: [H], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: ARST, frames: [E], tics-per-frame: 10 }
+      - { sprite: ARST, frames: [F], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: ARST, frames: [G], tics-per-frame: 10, next-state: Chase }
+    Death:
+      - { sprite: ARST, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: ARST, frames: [I], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: ARST, frames: [J], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: ARST, frames: [K], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: ARST, frames: [L], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: ARST, frames: [M], tics-per-frame: -1 }
+
+CrawlerBeast:
+  parent: FinalBoss
+  properties:
+    "tag": "$BS_CRAWLERBEAST"
+    "health.baby": 1900
+    "health.easy": 2000
+    "health.normal": 2100
+    "health.hard": 2200
+    "points": 60000
+    "monster.chasespeedmultiplier": 3
+    "seesound": "bs/gguardhalt"
+    "deathsound": "bs/lcandeath"
+  states:
+    Spawn:
+      - { sprite: CRWL, frames: [A], tics-per-frame: -1, think: T_Stand }
+    Chase:
+      - { sprite: CRWL, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: CRWL, frames: [A], tics-per-frame: 5 }
+      - { sprite: CRWL, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: CRWL, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: CRWL, frames: [C], tics-per-frame: 5 }
+      - { sprite: CRWL, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+    Pain:
+      - { sprite: CRWL, frames: [H], tics-per-frame: 15, next-state: Chase }
+    Attack:
+      - { sprite: CRWL, frames: [E], tics-per-frame: 10 }
+      - { sprite: CRWL, frames: [F], tics-per-frame: 10, action: A_FireProjectile("CrawlerShot") }
+      - { sprite: CRWL, frames: [G], tics-per-frame: 10, next-state: Chase }
+    Death:
+      - { sprite: CRWL, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
+      - { sprite: CRWL, frames: [I], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: CRWL, frames: [J], tics-per-frame: 22, think: T_BlowBack }
+      - { sprite: CRWL, frames: [K], tics-per-frame: 20, think: T_BlowBack }
+      - { sprite: CRWL, frames: [L], tics-per-frame: 18, think: T_BlowBack }
+      - { sprite: CRWL, frames: [M], tics-per-frame: -1 }
+
+# The security cube (bstone's rotating cube, 177, in Aliens of Gold's projection generator's
+# place): it turns, lit, and can't be shot. A fission detonator destroys it, unlocking the
+# next floor (not done yet: 6d).
+SecurityCube:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - { sprite: CUBE, frames: [A, B, C, D, E, F, G, H, I, J], tics-per-frame: 5, modifiers: [bright] }
+
+# A Goldfire spawn site he comes at straight away (bstone's 141)
+GoldfireSiteNow:
+  parent: GoldfireSite
+  properties:
+    "warpsite.firstwait": [0, 0]
+
+# The crawler beast's spit, as the spider mutant's (0-15)
+CrawlerShot:
+  parent: SpiderShot
+  states:
+    Spawn:
+      - { sprite: SPT4, frames: [A, C, B], tics-per-frame: 2, think: "A_Projectile(0, 15)" }
+    Death:
+      - { sprite: SPT4, frames: [D, E, F], tics-per-frame: 5 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+# The spector demon's plasma (and the morphed Goldfire's): 0-15, unshaded
+SpectorShot:
+  parent: SpiderShot
+  properties:
+    "attacksound": "bs/electshot"
+  states:
+    Spawn:
+      - { sprite: MSHT, frames: [A, B, C], tics-per-frame: 2, think: "A_Projectile(0, 15)" }
+    Death:
+      - { sprite: MSHT, frames: [D, E, F], tics-per-frame: 5 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }

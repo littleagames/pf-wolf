@@ -663,6 +663,7 @@ internal partial class Program
         Entities.MapTriggerRegistry.Register("A_VictoryRun", VictoryRunAction);
         ActorActionRegistry.Register("T_VictoryRun", T_VictoryRun);
         RegisterSwitchActions();    // tag-targeted door and wall actions (Program.SwitchActions.cs)
+        RegisterSmartSwitchActions();   // A_SmartSwitch (Program.SmartSwitch.cs)
         RegisterZoneLightActions(); // light zone actions, for switches and actors (Program.ZoneLights.cs)
         RegisterActorLightActions(); // actors' own lights (Program.ActorLights.cs)
     }

@@ -1,0 +1,23 @@
+# Planet Strike's bosses (bstone's ScanInfoPlane): Aliens of Gold's six (mapdefs/blake/machines.yaml
+# 232-269) come again for skilled and up (583-588) and for veteran (601-606), as ordinary enemies
+# here; its own four (actordefs/planetstrike/bosses.yaml) are 630-633. 141 brings Goldfire in
+# straight away.
+things:
+  583: { class: SpiderMutant, angles: -1, min-skill: 2 }
+  584: { class: BreatherBeast, angles: -1, min-skill: 2 }
+  585: { class: CyborgWarrior, angles: -1, min-skill: 2 }
+  586: { class: ReptilianWarrior, angles: -1, min-skill: 2 }
+  587: { class: AcidDragon, angles: -1, min-skill: 2 }
+  588: { class: BioMechGuardian, angles: -1, min-skill: 2 }
+  601: { class: SpiderMutant, angles: -1, min-skill: 3 }
+  602: { class: BreatherBeast, angles: -1, min-skill: 3 }
+  603: { class: CyborgWarrior, angles: -1, min-skill: 3 }
+  604: { class: ReptilianWarrior, angles: -1, min-skill: 3 }
+  605: { class: AcidDragon, angles: -1, min-skill: 3 }
+  606: { class: BioMechGuardian, angles: -1, min-skill: 3 }
+  630: { class: GiantStalker, angles: -1 }
+  631: { class: SpectorDemon, angles: -1 }
+  632: { class: ArmoredStalker, angles: -1 }
+  633: { class: CrawlerBeast, angles: -1 }
+  141: { class: GoldfireSiteNow }
+  177: { class: SecurityCube }

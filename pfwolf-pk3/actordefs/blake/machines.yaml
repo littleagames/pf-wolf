@@ -231,6 +231,7 @@ FloatingBombFixed:
   parent: FloatingBomb
   flags: [STATIONARY]
   properties:
+    "switched": kill      # a smart switch on its tile sets it off (Program.SmartSwitch.cs)
     "seesound": ""
   states:
     Spawn:
@@ -278,6 +279,8 @@ VolatileTransport:
 VolatileTransportFixed:
   parent: VolatileTransport
   flags: [STATIONARY]
+  properties:
+    "switched": kill      # a smart switch on its tile sets it off (Program.SmartSwitch.cs)
 
 # -----------------------------------------------------------------------
 # Projection generator: destroying them all wins the level. It flinches at its first hit;

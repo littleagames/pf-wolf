@@ -1,5 +1,14 @@
 # Planet Strike's text, over blake's (gamepacks/blake/language/en-us.yaml)
 
+# Its guards, in Aliens of Gold's guards' places (actordefs/blake/enemies.yaml)
+$BS_RENTACOP: "Sector guard"
+$BS_PROGUARD: "Tech warrior"
+$BS_SWATGUARD: "Alien protector"
+$BS_GIANTSTALKER: "The giant stalker"
+$BS_SPECTORDEMON: "The spector demon"
+$BS_ARMOREDSTALKER: "The armored stalker"
+$BS_CRAWLERBEAST: "The crawler beast"
+
 $BS_GOTANTIPLASMA: "Weapon: anti-plasma cannon"
 $BS_GOTDETONATOR: "Fission detonator"
 $BS_GOTRADAR: "Radar magnification energy"

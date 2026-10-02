@@ -50,7 +50,8 @@ internal partial class Program
     // 16: whether each door has been unlocked (doors.yaml takes-key), after held.
     // 17: actors' Temp3, Ammo, SeekX/Y and TryDir; the weapon charge.
     // 18: the light zones before the weapon; the hub state (levels kept, floors visited) at the end.
-    private const int SaveVersion = 18;
+    // 19: each actor's carried drops, death link and cloak (mapdefs floors actor-codes), after its light.
+    private const int SaveVersion = 19;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the

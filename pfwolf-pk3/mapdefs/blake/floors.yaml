@@ -1,7 +1,6 @@
 # Floor codes (see mapdefs/wolf3d/floors.yaml). Blake Stone has 45 areas, 108 to 152, and the
 # same 45 again from 162 as hidden areas (rooms kept off the automap), which load as the plain
-# codes. 158 (door triggers) isn't done yet. Secret floors are reached by elevator, so there's
-# no secret-exit code.
+# codes. Secret floors are reached by elevator, so there's no secret-exit code.
 floors:
   area-start: 108
   area-count: 45
@@ -11,3 +10,9 @@ floors:
   triggers:
     # The way out: Blake runs for the shuttle (the map's first wall 30) and the mission is won
     157: A_VictoryRun("BlakeVictory", 30)
+    # Smart switch triggers: the object-plane value on the tile is the tile they work (a door,
+    # a wall switch, an enemy; Program.SmartSwitch.cs). 158 toggles, and goes once it has found
+    # something there to work besides a door or wall; 159 turns things off, 160 on.
+    158: A_SmartSwitch("toggle", "remove")
+    159: A_SmartSwitch("off")
+    160: A_SmartSwitch("on")

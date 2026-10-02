@@ -1,0 +1,14 @@
+# Planet Strike's floor codes over blake's (mapdefs/blake/floors.yaml): the codes under an
+# enemy that give it something (bstone's SpawnStand/SpawnPatrol special tiles). Each floor then
+# takes on a neighbouring area's code.
+floors:
+  actor-codes:
+    72: { drop: RedCard }               # it carries the red card
+    73: { drop: YellowCard }
+    74: { drop: BlueCard }
+    75: { drop: AntiPlasmaCannon }
+    76: { drop: DualNeutronDisruptor }  # bstone's ion cannon
+    77: { drop: PlasmaDetonator }       # the floor's fission detonator
+    78: { cloak: true }
+    79: { link: east }                  # its death throws the switch at the x,y on the tile east of it
+    80: { cloak: true, ambush: true }

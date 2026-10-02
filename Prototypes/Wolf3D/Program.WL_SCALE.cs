@@ -25,7 +25,7 @@ internal partial class Program
     ===================
     */
 
-    internal static void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column, byte[] shade, int shadeofs)
+    internal static void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column, byte[] shade, int shadeofs, bool cloaked = false)
     {
         int height = sprite.Height;
         int width = sprite.Width;
@@ -67,7 +67,8 @@ internal partial class Program
                 byte* dest = (byte*)vbufPtr + screenofs;
                 while (startpix < endpix)
                 {
-                    dest[destIndex] = color;
+                    // cloaked: what's behind, darkened (shade is then the light table, shadeofs its level)
+                    dest[destIndex] = cloaked ? shade[shadeofs + dest[destIndex]] : color;
                     destIndex += _videoManager.bufferPitch;
                     startpix++;
                 }
@@ -108,6 +109,14 @@ internal partial class Program
         byte[] shade = sprite.bright ? noshade : LightAt(TileIndex(sprite.tilex, sprite.tiley), sprite.worldx, sprite.worldy);
         int shadeofs = sprite.bright ? 0 : ShadeOffsetForHeight(sprite.viewheight);
 
+        // A cloaked sprite (Planet Strike's) darkens what's behind it, through shade level 16 as
+        // bstone's shading[0x1000 | pixel] does
+        if (sprite.cloaked)
+        {
+            shade = LightAt(TileIndex(sprite.tilex, sprite.tiley), sprite.worldx, sprite.worldy);
+            shadeofs = Math.Min(16 * 256, shade.Length - 256);
+        }
+
         x2 = xcenter;
 
         for (int i = 0; i < spriteAsset.Width; i++)
@@ -136,7 +145,7 @@ internal partial class Program
             {
                 if (wallheight[x1] < sprite.viewheight)
                 {
-                    ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, shadeofs);
+                    ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, shadeofs, sprite.cloaked);
                 }
 
                 x1++;

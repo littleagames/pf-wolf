@@ -15,14 +15,14 @@ things:
   493: { class: DeadAogRentACop }
   494: { class: DeadAogProGuard }
   495: { class: DeadAogSwatGuard }
-  # Posts and a statue that come alive (as a spider mutant, a reptilian warrior and a mutant
-  # human) on harder skills: still scenery until those are done
-  590: { class: GreekPost2 }
-  591: { class: GreekPost2 }
-  592: { class: GreekPost2 }
-  608: { class: BronzePost }
-  609: { class: BronzePost }
-  610: { class: BronzePost }
-  626: { class: Statue }
-  627: { class: Statue }
-  628: { class: Statue }
+  # Posts and a statue that come alive (actordefs/planetstrike/aliens.yaml): for every skill,
+  # skilled and up, or veteran, and plain scenery below that
+  590: { class: MorphingReptilianWarrior }
+  591: { class: MorphingReptilianWarrior, min-skill: 2, else: GreekPost2 }
+  592: { class: MorphingReptilianWarrior, min-skill: 3, else: GreekPost2 }
+  608: { class: MorphingSpiderMutant }
+  609: { class: MorphingSpiderMutant, min-skill: 2, else: BronzePost }
+  610: { class: MorphingSpiderMutant, min-skill: 3, else: BronzePost }
+  626: { class: MorphingMutantHuman2 }
+  627: { class: MorphingMutantHuman2, min-skill: 2, else: Statue }
+  628: { class: MorphingMutantHuman2, min-skill: 3, else: Statue }

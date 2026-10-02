@@ -1,0 +1,76 @@
+# Planet Strike's sleepers (as actordefs/blake/aliens.yaml's): posts and a statue that come
+# alive (bstone's morphing spider mutant, reptilian warrior and mutant human). Each stands as
+# scenery until it's shot, a smart switch works it, or (with a time on the map, a 0xFA value
+# east of it) that many seconds after Blake first sees it; then it changes over 9 frames into
+# the enemy, which comes straight for him. Each counts as the enemy it becomes. Below their
+# skill they're plain scenery (mapdefs/planetstrike/decorations.yaml).
+MorphingSpiderMutant:
+  properties:
+    "tag": "$BS_SPIDERMUTANT"
+    "health": 1
+    "monster.becomes": "SpiderMutant"
+    "monster.wakedelay": [0]
+    "switched": kill
+  states:
+    Spawn:
+      - { sprite: MSUP, frames: [N], tics-per-frame: -1, think: T_WaitToWake }
+    # (only so it can be shot)
+    Chase:
+      - { sprite: MSUP, frames: [N], tics-per-frame: -1 }
+    Wake:
+      - { sprite: MSUP, frames: [N], tics-per-frame: 0, next-state: Death }
+    Death:
+      - { sprite: MSUP, frames: [N, O, P, Q, R, S, T, U, V], tics-per-frame: 2 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: 'A_PlaySound("bs/scanhalt", "positional")' }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: 'A_SpawnEnemy("SpiderMutant", "chase")' }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+MorphingReptilianWarrior:
+  properties:
+    "tag": "$BS_REPTILIANWARRIOR"
+    "health": 1
+    "monster.becomes": "ReptilianWarrior"
+    "monster.wakedelay": [0]
+    "switched": kill
+  states:
+    Spawn:
+      - { sprite: REPW, frames: [N], tics-per-frame: -1, think: T_WaitToWake }
+    Chase:
+      - { sprite: REPW, frames: [N], tics-per-frame: -1 }
+    Wake:
+      - { sprite: REPW, frames: [N], tics-per-frame: 0, next-state: Death }
+    Death:
+      - { sprite: REPW, frames: [N, O, P, Q, R, S, T, U, V], tics-per-frame: 2 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: 'A_PlaySound("bs/gguardhalt", "positional")' }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: 'A_SpawnEnemy("ReptilianWarrior", "chase")' }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+MorphingMutantHuman2:
+  properties:
+    "tag": "$BS_MUTANTHUMAN2"
+    "health": 1
+    "monster.becomes": "MutantHuman2"
+    "monster.wakedelay": [0]
+    "switched": kill
+  states:
+    Spawn:
+      - { sprite: MHUM, frames: [Q], tics-per-frame: -1, think: T_WaitToWake }
+    Chase:
+      - { sprite: MHUM, frames: [Q], tics-per-frame: -1 }
+    Wake:
+      - { sprite: MHUM, frames: [Q], tics-per-frame: 0, next-state: Death }
+    Death:
+      - { sprite: MHUM, frames: [Q, R, S, T, U, V, W, X, Y], tics-per-frame: 2 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: 'A_PlaySound("bs/dogboyhalt", "positional")' }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: 'A_SpawnEnemy("MutantHuman2", "chase")' }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
+
+# Planet Strike's pod eggs hatch far quicker (7 tics a frame to Aliens of Gold's 45)
+PodEgg:
+  extend: true
+  states:
+    Death:
+      - { sprite: PODA, frames: [B], tics-per-frame: 7, action: 'A_PlaySound("bs/podhatch", "positional")' }
+      - { sprite: PODA, frames: [C, D], tics-per-frame: 7 }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: 'A_SpawnEnemy("PodAlien", "chase")' }
+      - { sprite: TNT1, frames: [A], tics-per-frame: 0, action: A_Remove }
