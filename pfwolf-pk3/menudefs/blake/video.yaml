@@ -19,6 +19,7 @@ menu-items:
   - { id: "fullscreen", type: "ToggleMenuItem", text: "FULLSCREEN", enabled: true }
   - { id: "window-size", type: "ChoiceMenuItem", text: "WINDOW SIZE", enabled: true }
   - { id: "render-scale", type: "ChoiceMenuItem", text: "RESOLUTION", enabled: true }
+  - { id: "ui-scale", type: "ChoiceMenuItem", text: "UI SCALE", enabled: true }
   - { id: "vsync", type: "ToggleMenuItem", text: "VSYNC", enabled: true }
   - { id: "aspect", type: "ToggleMenuItem", text: "ASPECT RATIO", enabled: true }
   - { id: "filter", type: "ChoiceMenuItem", text: "SCALE FILTER", enabled: true }

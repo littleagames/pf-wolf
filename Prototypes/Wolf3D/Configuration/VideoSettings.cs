@@ -16,6 +16,10 @@ internal sealed record VideoSettings
     internal const int BaseWidth = 320;
     internal const int BaseHeight = 200;
 
+    // The largest render size: the fizzle fade's random sequence covers no more
+    internal const int MaxRenderWidth = 8192;
+    internal const int MaxRenderHeight = 4096;
+
     /// <summary>Borderless fullscreen on the desktop; the window size is kept for leaving it.</summary>
     public bool Fullscreen { get; init; }
 
@@ -32,6 +36,13 @@ internal sealed record VideoSettings
     /// drawn at <see cref="UiScale"/>.
     /// </summary>
     public (int Width, int Height)? RenderSize { get; init; }
+
+    /// <summary>
+    /// The render size follows what the picture is shown in: the window, or the desktop when
+    /// fullscreen (less a sixth of its height when aspect correcting, which stretches it back).
+    /// VideoManager works it out into <see cref="RenderSize"/> whenever the mode is set.
+    /// </summary>
+    public bool MatchWindow { get; init; }
 
     /// <summary>
     /// Screen pixels to each of the menus' and status bar's 320x200 pixels; 0 (auto) is the

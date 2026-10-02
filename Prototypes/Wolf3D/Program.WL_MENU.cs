@@ -1171,6 +1171,7 @@ internal partial class Program
 
                 case "window-size":
                 case "render-scale":
+                case "ui-scale":
                 case "filter":
                     StepVideoChoice(which, 1, wrap: true);
                     break;
@@ -1201,7 +1202,12 @@ internal partial class Program
         DrawMenuCheckbox(VidItems, VidMenu, "vsync", settings.VSync);
         DrawMenuCheckbox(VidItems, VidMenu, "aspect", settings.AspectCorrect);
         DrawMenuChoice(VidItems, VidMenu, "window-size", $"{settings.WindowWidth}x{settings.WindowHeight}");
-        DrawMenuChoice(VidItems, VidMenu, "render-scale", $"{settings.RenderWidth}x{settings.RenderHeight}");
+        DrawMenuChoice(VidItems, VidMenu, "render-scale", settings.MatchWindow
+            ? "$STR_AUTO".ToLanguageText(language)
+            : $"{settings.RenderWidth}x{settings.RenderHeight}");
+        DrawMenuChoice(VidItems, VidMenu, "ui-scale", settings.UiScale <= 0
+            ? $"{"$STR_AUTO".ToLanguageText(language)} ({settings.EffectiveUiScale}x)"
+            : $"{settings.EffectiveUiScale}x");
         DrawMenuChoice(VidItems, VidMenu, "filter", FilterName(settings.Filter).ToLanguageText(language));
 
         DrawMenuGun(VidItems);
@@ -1247,8 +1253,13 @@ internal partial class Program
         "window-size" => WindowSizes(settings)
             .Select(size => settings with { WindowWidth = size.Width, WindowHeight = size.Height })
             .ToList(),
+        // Auto first, then the whole multiples of 320x200
         "render-scale" => RenderScales(settings)
-            .Select(scale => settings with { RenderScale = scale, RenderSize = null })
+            .Select(scale => settings with { RenderScale = scale, RenderSize = null, MatchWindow = false })
+            .Prepend(settings.MatchWindow ? settings : settings with { MatchWindow = true })
+            .ToList(),
+        "ui-scale" => Enumerable.Range(0, settings.MaxUiScale + 1)
+            .Select(scale => settings with { UiScale = scale })
             .ToList(),
         "filter" => Enum.GetValues<ScaleFilter>()
             .Select(filter => settings with { Filter = filter })
@@ -1259,9 +1270,19 @@ internal partial class Program
     // The window's height for each 320 across: 200 with square pixels, 240 at 4:3
     private static int WindowBaseHeight(bool aspectCorrect) => aspectCorrect ? 240 : 200;
 
+    // Common monitor sizes offered as window sizes, for an Auto resolution to fill: 4:3, 16:10, 16:9 and 21:9
+    private static readonly (int Width, int Height)[] CommonWindowSizes =
+    [
+        (800, 600), (1024, 768), (1280, 960), (1600, 1200),
+        (1280, 800), (1440, 900), (1680, 1050), (1920, 1200), (2560, 1600),
+        (1280, 720), (1366, 768), (1600, 900), (1920, 1080), (2560, 1440), (3200, 1800), (3840, 2160),
+        (2560, 1080), (3440, 1440),
+    ];
+
     /// <summary>
-    /// Whole multiples of 320x200 (320x240 at 4:3, so the picture fills the window) that fit on
-    /// the desktop, plus the current size if it's something else, as vid_window can set.
+    /// Whole multiples of 320x200 (320x240 at 4:3, so the picture fills the window) and, with
+    /// an Auto resolution (which fills a window of any shape), the common monitor sizes, that
+    /// fit on the desktop, plus the current size if it's something else, as vid_window can set.
     /// </summary>
     private static List<(int Width, int Height)> WindowSizes(VideoSettings settings)
     {
@@ -1272,10 +1293,13 @@ internal partial class Program
         for (int k = 2; VideoSettings.BaseWidth * k <= maxWidth && baseHeight * k <= maxHeight; k++)
             sizes.Add((VideoSettings.BaseWidth * k, baseHeight * k));
 
+        if (settings.MatchWindow)
+            sizes.AddRange(CommonWindowSizes.Where(size => size.Width <= maxWidth && size.Height <= maxHeight));
+
         if (!sizes.Contains((settings.WindowWidth, settings.WindowHeight)))
             sizes.Add((settings.WindowWidth, settings.WindowHeight));
 
-        return sizes.OrderBy(size => size.Width).ThenBy(size => size.Height).ToList();
+        return sizes.Distinct().OrderBy(size => size.Width).ThenBy(size => size.Height).ToList();
     }
 
     private const int MaxRenderScale = 8;
@@ -1297,6 +1321,10 @@ internal partial class Program
     private static VideoSettings WithAspect(VideoSettings settings, bool aspectCorrect)
     {
         var result = settings with { AspectCorrect = aspectCorrect };
+
+        // An Auto resolution reshapes itself to fill the window instead
+        if (settings.MatchWindow)
+            return result;
 
         int k = settings.WindowWidth / VideoSettings.BaseWidth;
         bool standardSize = settings.WindowWidth == VideoSettings.BaseWidth * k
@@ -1330,7 +1358,8 @@ internal partial class Program
             _inputManager.ClearKeysDown();
             _inputManager.Ack();
         }
-        else if (NeedsVideoConfirm(previous, next) && !ConfirmVideoMode())
+        // Against the mode as set, with an Auto resolution's size worked out
+        else if (NeedsVideoConfirm(previous, _videoManager.Settings) && !ConfirmVideoMode())
         {
             _videoManager.ApplyVideoSettings(previous);
         }

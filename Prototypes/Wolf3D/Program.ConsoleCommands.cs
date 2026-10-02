@@ -102,10 +102,10 @@ internal partial class Program
         Register("vid_fullscreen", "Borderless fullscreen (1) or a window (0).", "vid_fullscreen [0|1]",
             args => ApplyVideo(s => s with { Fullscreen = Toggle(args, s.Fullscreen) }), complete: Values("0", "1"));
         Register("vid_scale", "Draws the game at 320x200 times this: sharper, not bigger.", "vid_scale <1-8>",
-            args => ApplyVideo(s => s with { RenderScale = args.Length > 0 ? ParseInt(args[0], 1, 8) : throw new ArgumentException("usage: vid_scale <1-8>"), RenderSize = null }),
+            args => ApplyVideo(s => s with { RenderScale = args.Length > 0 ? ParseInt(args[0], 1, 8) : throw new ArgumentException("usage: vid_scale <1-8>"), RenderSize = null, MatchWindow = false }),
             complete: Values("1", "2", "3", "4", "5", "6"));
-        Register("vid_render", "Draws the game at any size and shape in place of 320x200 times vid_scale; default goes back to that.",
-            "vid_render <width> <height> | default", Cmd_VidRender, complete: Values("default"));
+        Register("vid_render", "Draws the game at any size and shape in place of 320x200 times vid_scale: auto follows the window (or the desktop when fullscreen); default goes back to vid_scale.",
+            "vid_render <width> <height> | auto | default", Cmd_VidRender, complete: Values("auto", "default"));
         Register("vid_uiscale", "How big the menus, text and status bar are: screen pixels to each of their 320x200 pixels, or auto for the most that fits.",
             "vid_uiscale <n|auto>", Cmd_VidUiScale, complete: Values("auto", "1", "2", "3", "4"));
         Register("vid_window", "The window's size when it isn't fullscreen.", "vid_window <width> <height>", Cmd_VidWindow);
@@ -619,7 +619,7 @@ internal partial class Program
     {
         var s = _videoManager.Settings;
         var shown = s.Fullscreen ? "fullscreen" : $"{s.WindowWidth}x{s.WindowHeight} window";
-        var size = s.RenderSize != null ? "custom size" : $"scale {s.RenderScale}";
+        var size = s.MatchWindow ? "auto" : s.RenderSize != null ? "custom size" : $"scale {s.RenderScale}";
         var ui = s.UiScale <= 0 ? $"auto ({s.EffectiveUiScale})" : $"{s.EffectiveUiScale}";
         _consoleManager.Print($"{s.RenderWidth}x{s.RenderHeight} ({size}) in a {shown}, ui scale {ui}");
         _consoleManager.Print($"vsync {(s.VSync ? 1 : 0)}  aspect {(s.AspectCorrect ? 1 : 0)}  filter {s.Filter.ToString().ToLowerInvariant()}");
@@ -639,15 +639,20 @@ internal partial class Program
     {
         if (args.Length == 1 && args[0].Equals("default", StringComparison.OrdinalIgnoreCase))
         {
-            ApplyVideo(s => s with { RenderSize = null });
+            ApplyVideo(s => s with { RenderSize = null, MatchWindow = false });
+            return;
+        }
+        if (args.Length == 1 && args[0].Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            ApplyVideo(s => s with { MatchWindow = true });
             return;
         }
         if (args.Length < 2)
-            throw new ArgumentException("usage: vid_render <width> <height> | default");
+            throw new ArgumentException("usage: vid_render <width> <height> | auto | default");
 
-        int width = ParseInt(args[0], VideoSettings.BaseWidth, 8192);
-        int height = ParseInt(args[1], VideoSettings.BaseHeight, 4096);
-        ApplyVideo(s => s with { RenderSize = (width, height) });
+        int width = ParseInt(args[0], VideoSettings.BaseWidth, VideoSettings.MaxRenderWidth);
+        int height = ParseInt(args[1], VideoSettings.BaseHeight, VideoSettings.MaxRenderHeight);
+        ApplyVideo(s => s with { RenderSize = (width, height), MatchWindow = false });
     }
 
     private static void Cmd_VidUiScale(string[] args)

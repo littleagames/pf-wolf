@@ -29,7 +29,7 @@ components:
       - x: 16
       - y: 57
       - width: 288
-      - height: 84
+      - height: 97
 # Values are drawn by code. Fullscreen, window size, resolution and VSync ask to be kept
 # once changed, and go back after a few seconds if nobody answers.
 menu-items:
@@ -44,11 +44,17 @@ menu-items:
       type: "ChoiceMenuItem"
       text: "$STR_WINDOWSIZE"
       enabled: true
-  # The size the game is drawn at: sharper, not bigger
+  # The size the game is drawn at: Auto (the window's), or 320x200 times a whole number
   -
       id: "render-scale"
       type: "ChoiceMenuItem"
       text: "$STR_RESOLUTION"
+      enabled: true
+  # How big the menus, text and status bar are: Auto is the most that fits
+  -
+      id: "ui-scale"
+      type: "ChoiceMenuItem"
+      text: "$STR_UISCALE"
       enabled: true
   -
       id: "vsync"

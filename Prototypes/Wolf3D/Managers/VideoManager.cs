@@ -165,6 +165,7 @@ internal class VideoManager
     internal bool ApplyVideoSettings(VideoSettings next)
     {
         var previous = Settings;
+        next = ResolveRenderSize(next);
         if (next == previous)
             return true;
 
@@ -183,6 +184,27 @@ internal class VideoManager
             throw new PfWolfVideoException("Unable to restore the previous video mode: {0}", SDL.SDL_GetError());
 
         return false;
+    }
+
+    /// <summary>
+    /// For settings whose render size matches the window (<see cref="VideoSettings.MatchWindow"/>),
+    /// that size worked out: the window's, or the display's when fullscreen, made shorter by
+    /// a sixth when aspect correcting so the 6:5 stretch fills it. Other settings come back as they are.
+    /// </summary>
+    internal VideoSettings ResolveRenderSize(VideoSettings settings)
+    {
+        if (!settings.MatchWindow)
+            return settings;
+
+        var (width, height) = settings.Fullscreen && window != IntPtr.Zero
+            ? GetDisplaySize()
+            : (settings.WindowWidth, settings.WindowHeight);
+        if (settings.AspectCorrect)
+            height = height * 5 / 6;
+
+        width = Math.Clamp(width, VideoSettings.BaseWidth, VideoSettings.MaxRenderWidth);
+        height = Math.Clamp(height, VideoSettings.BaseHeight, VideoSettings.MaxRenderHeight);
+        return settings with { RenderSize = (width, height) };
     }
 
     // Room left for the window's title bar and borders when sizing it to the desktop
@@ -1623,6 +1645,7 @@ internal class VideoManager
         SDL.SDL_ShowCursor(SDL.SDL_DISABLE);
 
         Array.Copy(gamepal, curpal, 256);
+        settings = ResolveRenderSize(settings);
 
         // A saved mode this machine can't do (another display, another graphics card) falls
         // back to the default one rather than stopping the game

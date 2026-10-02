@@ -173,6 +173,14 @@ internal class GameEngineManager
         public HighScore[]? ScoreTable;
     }
 
+    /// <summary>The video settings appended after the score table (see ReadMoreVideoSettings)</summary>
+    [Flags]
+    private enum MoreVideoFlags : byte
+    {
+        None = 0,
+        MatchWindow = 1,
+    }
+
     /// <summary>The `msg_enabled` setting, as saved in config.cfg</summary>
     private enum HudMessagesSetting : byte
     {
@@ -194,6 +202,7 @@ internal class GameEngineManager
     // Limits on the saved sizes, so a damaged config can't ask for an impossible mode
     private const int MaxRenderScale = 8;
     private const int MaxWindowSize = 16384;
+    private const int MaxUiScale = 32;
 
     /// <summary>The sound devices and music switched on in the Sound menu, as saved in config.cfg.</summary>
     [Flags]
@@ -384,8 +393,41 @@ internal class GameEngineManager
                 config.ScoreTable[i].ratio = br.ReadUInt16();
             }
         }
+        if (stream.Position < stream.Length && config.Video != null)
+            config.Video = ReadMoreVideoSettings(br, config.Video);
 
         return config;
+    }
+
+    /// <summary>
+    /// The video settings added after the first video block, which sits mid-file: whether the
+    /// render size matches the window, a render size of its own (0x0 for none), and the UI
+    /// scale in hundredths (0 for auto), so a fractional one needs no new layout.
+    /// </summary>
+    private static VideoSettings ReadMoreVideoSettings(BinaryReader br, VideoSettings video)
+    {
+        var flags = (MoreVideoFlags)br.ReadByte();
+        int width = br.ReadUInt16(), height = br.ReadUInt16();
+        int uiScale = br.ReadUInt16();
+
+        bool hasSize = width >= VideoSettings.BaseWidth && width <= VideoSettings.MaxRenderWidth
+            && height >= VideoSettings.BaseHeight && height <= VideoSettings.MaxRenderHeight;
+        return video with
+        {
+            MatchWindow = flags.HasFlag(MoreVideoFlags.MatchWindow),
+            RenderSize = hasSize ? (width, height) : null,
+            UiScale = Math.Clamp((uiScale + 50) / 100, 0, MaxUiScale),
+        };
+    }
+
+    private static void WriteMoreVideoSettings(BinaryWriter bw, VideoSettings video)
+    {
+        bw.Write((byte)(video.MatchWindow ? MoreVideoFlags.MatchWindow : MoreVideoFlags.None));
+        // An Auto resolution's size is worked out afresh each time, so it isn't kept
+        var size = video.MatchWindow ? null : video.RenderSize;
+        bw.Write((ushort)(size?.Width ?? 0));
+        bw.Write((ushort)(size?.Height ?? 0));
+        bw.Write((ushort)(Math.Max(video.UiScale, 0) * 100));
     }
 
     private static VideoSettings ReadVideoSettings(BinaryReader br)
@@ -477,7 +519,7 @@ internal class GameEngineManager
         if (args.Scale is int scale)
         {
             if (scale >= 1 && scale <= MaxRenderScale)
-                video = video with { RenderScale = scale };
+                video = video with { RenderScale = scale, RenderSize = null, MatchWindow = false };
             else
                 Console.WriteLine($"Ignoring --scale {scale}: expected 1 to {MaxRenderScale}.");
         }
@@ -608,6 +650,8 @@ internal class GameEngineManager
             s.Write(bw);
             bw.Write(s.ratio);
         }
+
+        WriteMoreVideoSettings(bw, videoManager.Settings);
     }
 
     /// <summary>
