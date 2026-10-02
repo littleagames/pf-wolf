@@ -47,6 +47,7 @@ internal class PfWolfPk3Loader
     private static readonly HashSet<string> ModRootGamePackFiles = new(StringComparer.OrdinalIgnoreCase)
     {
         "game-info.yaml", "colors.yaml", "fonts.yaml", "hud-messages.yaml", "statusbar.yaml", "intermission.yaml", "alias.yaml", "raw-data-map.yaml",
+        "movies.yaml",
     };
 
     /// <summary>
@@ -172,6 +173,13 @@ internal class PfWolfPk3Loader
             LoadYaml(entry, uniqueName, isMod, mergeLevels: 2, YamlDataEntryLoader.Deserialize<PresenterAsset>);
             return;
         }
+        if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("movies.yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
+            LoadYaml(entry, uniqueName, isMod, mergeLevels: 1,
+                yaml => new MoviesAsset { Movies = YamlDataEntryLoader.Deserialize<Dictionary<string, MovieInfo>>(yaml) });
+            return;
+        }
         if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("elevator.yaml", StringComparison.OrdinalIgnoreCase))
         {
             var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
@@ -200,8 +208,10 @@ internal class PfWolfPk3Loader
 
         if (fullName.StartsWith("menudefs/"))
         {
+            // menudefs/main-menu.yaml -> "main-menu"; a pack's own, menudefs/blake/main-menu.yaml,
+            // -> "blake/main-menu", which that pack uses in its place (AssetManager.GetMenu)
             var data = YamlDataEntryLoader.Read<MenuAsset>(entry.Open());
-            AddAsset(assetName, data);
+            AddAsset(GetAssetReadyName(fullName, ignoreFirstDirectory: true), data);
             return;
         }
 

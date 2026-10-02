@@ -32,6 +32,17 @@ internal class CP_itemtype
 internal class CP_iteminfo
 {
     public short x, y, amount, curpos, indent;
+
+    // How the menu looks (its menudef): pixels between items, the items' font (null: the menu
+    // font) and shadow color (null: none), and a highlight bar in place of the gun cursor
+    public int rowHeight = 13;
+    public string? font;
+    public string? itemShadow;
+    public Assets.MenuCursorInfo? cursor;
+
+    /// <summary>Where the highlighted item's picture goes; null for the menu's own placement</summary>
+    public Assets.MenuPoint? selectionPic;
+
     public CP_iteminfo(short x, short y, short amount, short curpos, short indent)
     {
         this.x = x;

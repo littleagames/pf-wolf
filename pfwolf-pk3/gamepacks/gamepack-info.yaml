@@ -130,6 +130,17 @@ blake-aog:
           file: vswap.bs6
           md5: 5e7d5862fda72a1b2874301c01491aac
         map: blake-aog-map
+      # JAM's movies, by the names game-info and movies.yaml play them by
+      JamMovieFileLoader:
+        movies:
+          IntroMovie:
+            file: ianim.bs6
+          EndMovie:
+            file: eanim.bs6
+          ShuttleMovie:
+            file: sanim.bs6
+          GoldfireMovie:
+            file: ganim.bs6
 # spear-demo:
     # title: "Spear of Destiny: Demo"
     # game-palette: spearpal

@@ -34,6 +34,11 @@ internal record GamePackInfoAsset : Asset
         return file;
     }
 
+    /// <summary>A release's file-pack entry for one of its loaders, or null when it has none</summary>
+    public FileLoaderDetails? FindFileLoader(string releaseId, string loaderName)
+        => (GetGamePack(releaseId).FilePack?.FileLoaders ?? [])
+            .FirstOrDefault(kvp => kvp.Key.Equals(loaderName, StringComparison.OrdinalIgnoreCase)).Value;
+
     /// <summary>A release's file-pack entry for one of its loaders</summary>
     public FileLoaderDetails GetFileLoader(string releaseId, string loaderName)
     {
@@ -68,6 +73,9 @@ public record FileLoaderDetails
     // "font-count": Wolf3DVgaFileLoader's number of font chunks after STRUCTPIC, which the file
     // itself doesn't record (2 when left out, as in Wolf3D and Spear; Blake Stone has 5)
     public int? FontCount { get; init; }
+    // JamMovieFileLoader's movie files, by the name the game plays them by (Blake Stone's
+    // IntroMovie: ianim.bs6)
+    public Dictionary<string, FileReference>? Movies { get; init; }
 }
 
 public record FilePack

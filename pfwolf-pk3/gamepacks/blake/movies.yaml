@@ -1,0 +1,28 @@
+# JAM's movies (gamepack-info's JamMovieFileLoader names their files), as Program.TitleScreens.cs
+# plays them: each frame stays up frame-tics (70 a second), and a movie's sound numbers are
+# Blake Stone's sounds by their place in its sound list (bstone's audio.h).
+
+# The JAM Productions logo, in the intro (IANIM)
+IntroMovie:
+  frame-tics: 3
+
+# After mission 6 is won (EANIM)
+EndMovie:
+  frame-tics: 3
+  sounds:
+    50: bs/explode1
+    54: bs/explode2
+    65: bs/goldsternlaugh
+    81: bs/htechdooropen
+
+# After missions 1, 2 and 4 are won (SANIM)
+ShuttleMovie:
+  frame-tics: 3
+  sounds:
+    42: bs/elev_button
+    58: bs/engine_thrust
+    81: bs/htechdooropen
+
+# After missions 3 and 5 are won (GANIM)
+GoldfireMovie:
+  frame-tics: 3

@@ -537,6 +537,11 @@ internal partial class Program
                     _audioManager.Play("bs/term_beep");
                     break;
 
+                case "PS":
+                    if (Presenter.Sounds.TryGetValue(value, out var sound))
+                        _audioManager.Play(sound);
+                    break;
+
                 case "PA":
                     _videoManager.Update();
                     GameEngineManager.DelayTics(30);
@@ -571,31 +576,71 @@ internal partial class Program
         return value;
     }
 
-    /// <summary>The picture presenter.yaml gives shape <paramref name="number"/>, or null</summary>
-    static GraphicAsset? ShapePic(int number) =>
-        Presenter.Shapes.TryGetValue(number, out var shape) && !string.IsNullOrEmpty(shape.Pic)
-            ? _assetManager.Find<GraphicAsset>(shape.Pic)
-            : null;
+    /// <summary>
+    /// A shape ready to draw: row-major pixels, which of them show (null: all), and whether it's
+    /// a picture (which snaps to 8 pixels across)
+    /// </summary>
+    sealed record TpShape(byte[] Pixels, byte[]? Mask, int Width, int Height, bool IsPic);
+
+    static readonly Dictionary<int, TpShape?> tpShapes = [];
+
+    /// <summary>What presenter.yaml gives shape <paramref name="number"/>: a picture, sprite or wall; null if none</summary>
+    static TpShape? ShapePic(int number)
+    {
+        if (tpShapes.TryGetValue(number, out var cached))
+            return cached;
+
+        TpShape? found = null;
+        if (Presenter.Shapes.TryGetValue(number, out var shape))
+        {
+            if (!string.IsNullOrEmpty(shape.Pic) && _assetManager.Find<GraphicAsset>(shape.Pic) is { } pic)
+                found = new TpShape(pic.RawData, null, pic.Width, pic.Height, true);
+            else if (!string.IsNullOrEmpty(shape.Sprite) && _assetManager.Find<SpriteAsset>(shape.Sprite) is { } sprite)
+                found = new TpShape(sprite.RawData, sprite.OpacityMask, sprite.Width, sprite.Height, false);
+            else if (!string.IsNullOrEmpty(shape.Wall) && _assetManager.Find<TextureAsset>(shape.Wall) is { } wall)
+            {
+                // Walls are kept column by column
+                var story = wall.BottomStory();
+                const int size = TextureAsset.StorySize;
+                var rows = new byte[size * size];
+                for (int x = 0; x < size; x++)
+                    for (int y = 0; y < size; y++)
+                        rows[y * size + x] = story[x * size + y];
+                found = new TpShape(rows, null, size, size, false);
+            }
+        }
+
+        tpShapes[number] = found;
+        return found;
+    }
 
     /// <summary>Draws a shape at the print position (pictures snap to 8 pixels across) and moves past it</summary>
-    static void TpDrawShape(int x, int y, GraphicAsset? pic)
+    static void TpDrawShape(int x, int y, TpShape? shape)
     {
-        if (pic == null)
+        if (shape == null)
             return;
 
-        x = (x + 7) & ~7;
-        int width = TpBoxAroundShape(x, y, pic);
-        _videoManager.MemToScreen(pic.RawData, pic.Width, pic.Height, x, y);
+        if (shape.IsPic)
+            x = (x + 7) & ~7;
+        int width = TpBoxAroundShape(x, y, shape);
+        if (shape.Mask == null)
+            _videoManager.MemToScreen(shape.Pixels, shape.Width, shape.Height, x, y);
+        else
+        {
+            if ((tpflags & fl_clearscback) != 0)
+                _videoManager.Bar(x, y, shape.Width, shape.Height, tpbg.ToString());
+            _videoManager.DrawImageRegion(shape.Pixels, shape.Mask, shape.Width, 0, 0, shape.Width, shape.Height, x, y);
+        }
         tpcurx += width;
     }
 
     /// <summary>A shape's width, with its box and shadow if they're on; draws them unless x is -1</summary>
-    static int TpBoxAroundShape(int x1, int y1, GraphicAsset? pic)
+    static int TpBoxAroundShape(int x1, int y1, TpShape? shape)
     {
-        if (pic == null)
+        if (shape == null)
             return 0;
 
-        int x2 = x1 + pic.Width - 1, y2 = y1 + pic.Height - 1;
+        int x2 = x1 + shape.Width - 1, y2 = y1 + shape.Height - 1;
         if ((tpflags & fl_boxshape) != 0)
         {
             x1--;
@@ -831,15 +876,23 @@ internal partial class Program
 
     /// <summary>A bevelled box: the face, its light top and left edges and dark bottom and right ones</summary>
     internal static void BevelBox(int x, int y, int width, int height, int hi, int med, int lo)
+        => BevelBox(x, y, width, height, hi.ToString(), med.ToString(), lo.ToString());
+
+    /// <summary>
+    /// A bevelled box in colors by name or palette index. Its two mixed corners are the palette
+    /// color after the face's, when that's an index.
+    /// </summary>
+    internal static void BevelBox(int x, int y, int width, int height, string hi, string med, string lo)
     {
         int x2 = x + width - 1, y2 = y + height - 1;
-        _videoManager.Bar(x, y, width, height, med.ToString());
-        _videoManager.HorizontalLine(x, x2, y, hi.ToString());
-        _videoManager.HorizontalLine(x, x2, y2, lo.ToString());
-        _videoManager.VerticalLine(y, y2, x, hi.ToString());
-        _videoManager.VerticalLine(y, y2, x2, lo.ToString());
-        _videoManager.Bar(x, y2, 1, 1, (med + 1).ToString());
-        _videoManager.Bar(x2, y, 1, 1, (med + 1).ToString());
+        _videoManager.Bar(x, y, width, height, med);
+        _videoManager.HorizontalLine(x, x2, y, hi);
+        _videoManager.HorizontalLine(x, x2, y2, lo);
+        _videoManager.VerticalLine(y, y2, x, hi);
+        _videoManager.VerticalLine(y, y2, x2, lo);
+        var corner = int.TryParse(med, out int index) ? (index + 1).ToString() : med;
+        _videoManager.Bar(x, y2, 1, 1, corner);
+        _videoManager.Bar(x2, y, 1, 1, corner);
     }
 
     /// <summary>
@@ -881,7 +934,24 @@ internal partial class Program
     /// Shows a briefing (a VGAGRAPH text) in presenter.yaml's briefing window, page by page,
     /// until it's finished or left. Returns whether it was left with Esc.
     /// </summary>
-    internal static bool ShowBriefing(string textName)
+    internal static bool ShowBriefing(string textName) => ShowTextPages(textName, fromMenu: false);
+
+    /// <summary>
+    /// A menu item's pages of presenter text (Blake Stone's instructions, story and ordering
+    /// info) in the briefing window, with its pages-info-line and pages-music, until Esc
+    /// </summary>
+    internal static int CP_TextScreen(string textName)
+    {
+        ShowTextPages(textName, fromMenu: true);
+        StartCPMusic(MENUSONG);
+        return 0;
+    }
+
+    /// <summary>
+    /// Presenter text in the briefing window, page by page. From the menu only Esc leaves it;
+    /// a briefing is also finished with Enter. Returns whether it was left with Esc.
+    /// </summary>
+    static bool ShowTextPages(string textName, bool fromMenu)
     {
         if (Presenter.Briefing is not { } briefing || PresenterScript(textName) is not { } script)
             return false;
@@ -891,13 +961,15 @@ internal partial class Program
         foreach (var pic in briefing.Pics)
             _graphicManager.DrawPic(pic.Pic, pic.X, pic.Y);
 
-        if (!string.IsNullOrEmpty(briefing.Music))
-            StartCPMusic(briefing.Music);
+        var music = fromMenu ? briefing.PagesMusic : briefing.Music;
+        if (!string.IsNullOrEmpty(music))
+            StartCPMusic(music);
 
         var language = _assetManager.GetText("en-us");
+        var infoLine = fromMenu ? briefing.PagesInfoLine ?? briefing.InfoLine : briefing.InfoLine;
         var pi = new PresenterInfo
         {
-            Flags = PresenterFlags.ShowPages | PresenterFlags.Continue,
+            Flags = PresenterFlags.ShowPages | (fromMenu ? PresenterFlags.None : PresenterFlags.Continue),
             Script = script,
             X1 = briefing.X1,
             Y1 = briefing.Y1,
@@ -908,7 +980,7 @@ internal partial class Program
             Dark = briefing.Dark,
             Shadow = briefing.Shadow,
             Font = briefing.Font,
-            InfoLine = briefing.InfoLine.ToLanguageText(language),
+            InfoLine = infoLine.ToLanguageText(language),
             InfoFont = briefing.InfoFont,
             InfoColor = briefing.InfoColor,
             PageX = briefing.PageX ?? -1,

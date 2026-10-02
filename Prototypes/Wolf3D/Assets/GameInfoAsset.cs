@@ -38,6 +38,18 @@ internal record GameInfoAsset : Asset
     /// </summary>
     public string? IntroMusic { get; init; }
 
+    /// <summary>
+    /// Screens shown once as the game starts (Program.TitleScreens.cs), in place of Wolf3D's
+    /// notice and PG-13 screen; a key skips the one it's pressed on
+    /// </summary>
+    public List<TitleScreenInfo> Intro { get; init; } = [];
+
+    /// <summary>
+    /// Screens shown over and over until a key goes to the menu, in place of Wolf3D's title,
+    /// credits, high scores and demo. Played to intro-music when nothing else is playing.
+    /// </summary>
+    public List<TitleScreenInfo> TitleLoop { get; init; } = [];
+
     public string? HighScoresMusic { get; init; }
 
     /// <summary>
@@ -158,6 +170,24 @@ internal record GameInfoAsset : Asset
     /// </summary>
     public bool DeathRestoresLevelStart { get; init; }
 
+    /// <summary>
+    /// A presenter script (a VGAGRAPH text) F1 shows in presenter.yaml's briefing window, in
+    /// place of Wolf3D's help article
+    /// </summary>
+    public string? HelpText { get; init; }
+
+    /// <summary>
+    /// What's shown when the game is lost, the last life gone, before the high scores (Blake
+    /// Stone's transmission from Goldfire); nothing when unset
+    /// </summary>
+    public LoseScreenInfo? LoseScreen { get; init; }
+
+    /// <summary>
+    /// The box the menus' questions and messages are shown in (Blake Stone's bevelled one); the
+    /// Wolf3D window when unset
+    /// </summary>
+    public MenuMessageInfo? MenuMessage { get; init; }
+
     public override void Merge(Asset other)
     {
         // TODO: Overwrite or merge the data
@@ -258,6 +288,116 @@ internal record HighScoresInfo
     /// How wide the typed name can get
     /// </summary>
     public int EntryWidth { get; init; } = 100;
+}
+
+/// <summary>
+/// One of game-info's intro or title-loop screens. It's a movie, a demo, or else drawn from a
+/// background color, the high scores, the title, a picture and presenter text (each when set,
+/// in that order), then held for its seconds or until its music ends.
+/// </summary>
+internal record TitleScreenInfo
+{
+    /// <summary>A movie to play (gamepack-info's JamMovieFileLoader names them)</summary>
+    public string? Movie { get; init; }
+
+    /// <summary>Plays the next demo</summary>
+    public bool Demo { get; init; }
+
+    /// <summary>Fills the screen first: a color name, #RRGGBB or palette index</summary>
+    public string? Background { get; init; }
+
+    public bool HighScores { get; init; }
+
+    /// <summary>Draws game-info's title-pics</summary>
+    public bool Title { get; init; }
+
+    public string? Pic { get; init; }
+    public int X { get; init; }
+    public int Y { get; init; }
+
+    /// <summary>Presenter text printed into a window</summary>
+    public TitleTextInfo? Text { get; init; }
+
+    /// <summary>The palette the screen fades in with; the game palette when unset</summary>
+    public string? Palette { get; init; }
+
+    /// <summary>Music started as the screen shows; what's playing carries on when unset</summary>
+    public string? Music { get; init; }
+
+    /// <summary>false plays the music once</summary>
+    public bool MusicLoop { get; init; } = true;
+
+    /// <summary>Stops the music as the screen shows</summary>
+    public bool StopMusic { get; init; }
+
+    /// <summary>How long the screen stays up, unless a key is pressed</summary>
+    public double Seconds { get; init; }
+
+    /// <summary>Stays up until the music ends (when music is on), unless a key is pressed</summary>
+    public bool UntilMusicEnds { get; init; }
+
+    /// <summary>#RRGGBB the screen fades to before it's shown (Blake Stone's blue)</summary>
+    public string? FadeFrom { get; init; }
+
+    /// <summary>#RRGGBB the screen fades to when it's done, before black (Blake Stone's red flash)</summary>
+    public string? FadeTo { get; init; }
+}
+
+/// <summary>Presenter text on a title screen: a VGAGRAPH text, its window and colors (palette indices)</summary>
+internal record TitleTextInfo
+{
+    public string Script { get; init; } = "";
+    public int X1 { get; init; }
+    public int Y1 { get; init; }
+    public int X2 { get; init; } = 319;
+    public int Y2 { get; init; } = 199;
+    public int Font { get; init; }
+    public int Color { get; init; }
+    public int Background { get; init; }
+    public int Light { get; init; }
+    public int Dark { get; init; }
+    public int Shadow { get; init; }
+}
+
+/// <summary>
+/// The screen shown when the game is lost: a picture, with presenter text typed out a letter at
+/// a time into a window on it (a key prints the rest), scrolling as it fills. Colors are
+/// palette indices.
+/// </summary>
+internal record LoseScreenInfo
+{
+    public string? Pic { get; init; }
+    public string Script { get; init; } = "";
+    public int X1 { get; init; }
+    public int Y1 { get; init; }
+    public int X2 { get; init; } = 319;
+    public int Y2 { get; init; } = 199;
+    public int Font { get; init; }
+    public int Color { get; init; }
+    public int Background { get; init; }
+    public int Light { get; init; }
+    public int Dark { get; init; }
+    public int Shadow { get; init; }
+
+    /// <summary>Tics between letters</summary>
+    public int PrintDelay { get; init; } = 2;
+
+    /// <summary>Played as each letter is typed</summary>
+    public string? TypeSound { get; init; }
+}
+
+/// <summary>
+/// The menus' message and question box (Blake Stone's): a bevelled box in its hi, med and lo
+/// colors, with the text in color over a shadow. Colors are color names, #RRGGBB or palette indices.
+/// </summary>
+internal record MenuMessageInfo
+{
+    public string Font { get; init; } = "LargeFont";
+    public string Color { get; init; } = "White";
+    public string Shadow { get; init; } = "Black";
+    public string Hi { get; init; } = "White";
+    public string Med { get; init; } = "Grey";
+    public string Lo { get; init; } = "Black";
 }
 
 internal record PicPlacement

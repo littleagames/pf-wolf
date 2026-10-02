@@ -349,7 +349,8 @@ internal class AudioManager
         return state == ALSourceState.Playing;
     }
 
-    public void PlayMusic(string name)
+    /// <param name="loop">false plays the track once (Blake Stone's Apogee fanfare); see IsMusicPlaying</param>
+    public void PlayMusic(string name, bool loop = true)
     {
         var assetManager = _assetManager.Value;
         var imfTrack = assetManager.Find<Wolf3dImfAudio>(name);
@@ -367,14 +368,32 @@ internal class AudioManager
 
         var cts = new CancellationTokenSource();
         _musicStreamCts = cts;
-        _musicStreamThread = new Thread(() => StreamMusic(imfTrack, cts.Token)) { IsBackground = true, Name = "MusicStream" };
+        _musicStreamThread = new Thread(() => StreamMusic(imfTrack, loop, cts.Token)) { IsBackground = true, Name = "MusicStream" };
         _musicStreamThread.Start();
+    }
+
+    /// <summary>
+    /// Whether music is still sounding: false once a track played without looping has finished,
+    /// or when music is off or stopped
+    /// </summary>
+    public bool IsMusicPlaying
+    {
+        get
+        {
+            if (_isDisposed || !_musicEnabled || string.IsNullOrEmpty(_requestedMusicTrack))
+                return false;
+            if (_musicStreamThread?.IsAlive == true)
+                return true;
+            AL.GetSource(_musicSource, ALGetSourcei.SourceState, out var stateInt);
+            return (ALSourceState)stateInt is ALSourceState.Playing or ALSourceState.Paused;
+        }
     }
 
     // Synthesizes the IMF track a small chunk at a time and feeds it to the music source as
     // queued OpenAL buffers, so playback can start after the first couple of chunks instead of
-    // waiting for the whole (often minutes-long) track to be rendered up front.
-    private void StreamMusic(Wolf3dImfAudio track, CancellationToken token)
+    // waiting for the whole (often minutes-long) track to be rendered up front. A track that
+    // doesn't loop stops being fed at its end; what's queued plays out.
+    private void StreamMusic(Wolf3dImfAudio track, bool loop, CancellationToken token)
     {
         var commands = track.Commands;
         if (commands.Count == 0 || commands.Sum(command => command.Delay) == 0)
@@ -388,23 +407,33 @@ internal class AudioManager
         var commandIndex = 0;
         var framesRemainingInCommand = 0;
         var buffersPrimed = 0;
+        var ended = false;
 
-        while (!token.IsCancellationRequested)
+        while (!token.IsCancellationRequested && !ended)
         {
             var chunk = new short[MusicStreamFramesPerChunk * 2];
             var framesWritten = 0;
 
-            while (framesWritten < MusicStreamFramesPerChunk)
+            while (framesWritten < MusicStreamFramesPerChunk && !ended)
             {
                 while (framesRemainingInCommand == 0)
                 {
+                    if (commandIndex >= commands.Count)
+                    {
+                        if (!loop)
+                        {
+                            ended = true;   // the rest of this chunk stays silent
+                            break;
+                        }
+                        commandIndex = 0;   // loop the track
+                    }
                     var command = commands[commandIndex];
                     chip.WriteRegister(command.Register, command.Value);
                     framesRemainingInCommand = command.Delay * framesPerTick;
                     commandIndex++;
-                    if (commandIndex >= commands.Count)
-                        commandIndex = 0; // loop the track
                 }
+                if (ended)
+                    break;
 
                 var framesToGenerate = Math.Min(framesRemainingInCommand, MusicStreamFramesPerChunk - framesWritten);
                 chip.GenerateStream(chunk.AsSpan(framesWritten * 2, framesToGenerate * 2));
@@ -430,7 +459,8 @@ internal class AudioManager
             if (buffersPrimed < MusicStreamPrimedBuffers)
             {
                 buffersPrimed++;
-                if (buffersPrimed == MusicStreamPrimedBuffers && !_isPaused)
+                // A short track that ended before priming plays what it has
+                if ((buffersPrimed == MusicStreamPrimedBuffers || ended) && !_isPaused)
                     AL.SourcePlay(_musicSource);
             }
 

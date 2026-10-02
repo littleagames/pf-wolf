@@ -19,8 +19,53 @@ non-shareware-notice: false
 title-pics:
   - Title
 
-intro-music: THEME
-high-scores-music: THEME
+# The title loop's music when it's come back to from the menu or a game (the intro leaves its own
+# playing the first time)
+intro-music: MEETINGA
+high-scores-music: LEVELA
+
+# As the game starts (bstone's PreDemo): the anti-piracy notice from and to dark blue, Apogee
+# to the end of its fanfare, the JAM logo movie, then the PC-13 rating, out through red
+intro:
+  - pic: NonShareware
+    palette: Extra1PAL
+    fade-from: "#000064"
+    seconds: 20
+    fade-to: "#000064"
+  - pic: ApogeeLogo
+    palette: Extra2PAL
+    music: APOGFNFM
+    music-loop: false
+    until-music-ends: true
+    seconds: 6            # with music off
+  - movie: IntroMovie
+    music: GOLDA
+  - background: "20"
+    pic: ParentalWarning
+    y: 64
+    seconds: 2
+    fade-to: "#9C0000"
+
+# Until a key is pressed (bstone's DemoLoop): the title, the credits on the menu screen, then
+# the high scores
+title-loop:
+  - pic: Title
+    palette: Extra3PAL
+    seconds: 6
+  - pic: LincScreen
+    text:
+      script: CreditsText
+      x1: 38
+      y1: 28
+      x2: 281
+      y2: 170
+      font: 2
+      color: 175
+      background: 2
+      light: 133
+    seconds: 6
+  - high-scores: true
+    seconds: 9
 menu-fade-color: "#000000"
 
 screen-fade-style: palette

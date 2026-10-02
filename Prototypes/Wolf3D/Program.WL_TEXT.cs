@@ -65,6 +65,13 @@ internal partial class Program
 
     internal static void HelpScreens()
     {
+        // A pack with presenter help (Blake Stone's) shows it in the briefing window
+        if (_gameEngineManager.GetGameInfo().HelpText is { Length: > 0 } helpText)
+        {
+            ShowTextPages(helpText, fromMenu: true);
+            return;
+        }
+
         var textAsset = _assetManager.Find<TextAsset>("HELPART");
         if (textAsset == null)
             return;

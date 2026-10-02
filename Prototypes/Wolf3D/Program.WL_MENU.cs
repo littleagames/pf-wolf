@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using SDL2;
 using Wolf3D.Assets;
 using Wolf3D.Assets.Sounds;
@@ -138,7 +138,26 @@ internal partial class Program
 
     /// <summary>An item's text in its row; a newline in it goes on under the start of the text</summary>
     internal static void PrintMenuItem(CP_iteminfo item_i, CP_itemtype[] items, int which, string color)
-        => TextAt(item_i.x + item_i.indent, item_i.y + which * 13, MenuStyle(color)).Print(items[which].text);
+        => TextAt(item_i.x + item_i.indent, MenuItemY(item_i, which), MenuItemStyle(item_i, color)).Print(items[which].text);
+
+    /// <summary>The top of an item's row</summary>
+    internal static int MenuItemY(CP_iteminfo item_i, int which) => item_i.y + which * item_i.rowHeight;
+
+    /// <summary>The menu's text style for its items: its font and shadow (menudef font, item-shadow)</summary>
+    internal static TextStyle MenuItemStyle(CP_iteminfo item_i, string color)
+        => new(item_i.font ?? MENU_FONT, color,
+            Shadow: item_i.itemShadow is { } shadow ? new FontShadow(1, 1, shadow) : null);
+
+    /// <summary>
+    /// Draws or erases a menu's highlight bar (menudef cursor) behind the item, printing the item
+    /// over it highlighted, or plain when the bar is off
+    /// </summary>
+    internal static void DrawMenuBar(CP_iteminfo item_i, CP_itemtype[] items, int which, bool on)
+    {
+        var bar = item_i.cursor!;
+        _videoManager.Bar(bar.X, MenuItemY(item_i, which) + bar.YOffset, bar.Width, bar.Height, on ? bar.Color : bar.EraseColor);
+        PrintMenuItem(item_i, items, which, MenuItemColor(items[which], on));
+    }
 
     internal static int StartCPMusic(string song)
     {
@@ -169,11 +188,18 @@ internal partial class Program
         which = item_i.curpos;
         x = item_i.x & -8;
         basey = item_i.y - 2;
-        y = basey + which * 13;
+        y = basey + which * item_i.rowHeight;
+        // A highlight bar (Blake Stone's) flashes on and off, where the gun blinks its shape
+        bool bar = item_i.cursor != null, barOn = true;
 
-        _graphicManager.DrawPic("c_cursor1", x, y);
-        if (redrawitem != 0)
-            PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
+        if (bar)
+            DrawMenuBar(item_i, items, which, true);
+        else
+        {
+            _graphicManager.DrawPic("c_cursor1", x, y);
+            if (redrawitem != 0)
+                PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
+        }
         //
         // CALL CUSTOM ROUTINE IF IT IS NEEDED
         //
@@ -182,7 +208,7 @@ internal partial class Program
         _videoManager.Update();
 
         shape = "c_cursor1";
-        timer = 8;
+        timer = bar ? item_i.cursor!.FlashTics : 8;
         exit = 0;
         lastBlinkTime = (int)GameEngineManager.GetTimeCount();
         _inputManager.ClearKeysDown();
@@ -196,18 +222,26 @@ internal partial class Program
             if ((int)GameEngineManager.GetTimeCount() - lastBlinkTime > timer)
             {
                 lastBlinkTime = (int)GameEngineManager.GetTimeCount();
-                if (shape == "c_cursor1")
+                if (bar)
                 {
-                    shape = "c_cursor2";
-                    timer = 8;
+                    barOn = !barOn;
+                    DrawMenuBar(item_i, items, which, barOn);
                 }
                 else
                 {
-                    shape = "c_cursor1";
-                    timer = 70;
-                }
+                    if (shape == "c_cursor1")
+                    {
+                        shape = "c_cursor2";
+                        timer = 8;
+                    }
+                    else
+                    {
+                        shape = "c_cursor1";
+                        timer = 70;
+                    }
 
-                _graphicManager.DrawPic(shape, x, y);
+                    _graphicManager.DrawPic(shape, x, y);
+                }
                 routine?.Invoke(which);
                 _videoManager.Update();
             }
@@ -278,7 +312,7 @@ internal partial class Program
                     //
                     // ANIMATE HALF-STEP
                     //
-                    if (which != 0 && items[which - 1].active != 0)
+                    if (!bar && which != 0 && items[which - 1].active != 0)
                     {
                         y -= 6;
                         DrawHalfStep(x, y);
@@ -313,7 +347,7 @@ internal partial class Program
                     //
                     // ANIMATE HALF-STEP
                     //
-                    if (which != item_i.amount - 1 && items[which + 1].active != 0)
+                    if (!bar && which != item_i.amount - 1 && items[which + 1].active != 0)
                     {
                         y += 6;
                         DrawHalfStep(x, y);
@@ -365,7 +399,9 @@ internal partial class Program
         //
         // ERASE EVERYTHING
         //
-        if (lastitem != which)
+        if (bar)
+            DrawMenuBar(item_i, items, which, false);
+        else if (lastitem != which)
         {
             _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
             PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
@@ -412,8 +448,13 @@ internal partial class Program
 
     internal static void EraseGun(CP_iteminfo item_i, CP_itemtype[] items, int x, int y, int which)
     {
-        _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
-        PrintMenuItem(item_i, items, which, MenuItemColor(items[which], false));
+        if (item_i.cursor != null)
+            DrawMenuBar(item_i, items, which, false);
+        else
+        {
+            _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
+            PrintMenuItem(item_i, items, which, MenuItemColor(items[which], false));
+        }
         _videoManager.Update();
     }
 
@@ -430,10 +471,18 @@ internal partial class Program
 
     internal static void DrawGun(CP_iteminfo item_i, CP_itemtype[] items, int x, ref int y, int which, int basey, Action<int>? routine)
     {
-        _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
-        y = basey + which * 13;
-        _graphicManager.DrawPic("c_cursor1", x, y);
-        PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
+        if (item_i.cursor != null)
+        {
+            y = basey + which * item_i.rowHeight;
+            DrawMenuBar(item_i, items, which, true);
+        }
+        else
+        {
+            _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
+            y = basey + which * item_i.rowHeight;
+            _graphicManager.DrawPic("c_cursor1", x, y);
+            PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
+        }
 
         //
         // CALL CUSTOM ROUTINE IF IT IS NEEDED
@@ -842,7 +891,7 @@ internal partial class Program
         DrawNewEpisode();
         do
         {
-            which = HandleMenu(NewEitems, NewEmenu, null);
+            which = HandleMenu(NewEitems, NewEmenu, NewEitems.selectionPic != null ? DrawNewEpisodePic : null);
             switch (which)
             {
                 case -1:
@@ -953,16 +1002,30 @@ internal partial class Program
         DrawMenuComponents("new-episode");
         DrawMenu(NewEitems, NewEmenu);
 
-        // Each episode's picture (pic-name in game-info) sits between the cursor and the name
-        for (int i = 0; i < NewEmenu.Length; i++)
+        // Each episode's picture (pic-name in game-info) sits between the cursor and the name,
+        // or the highlighted one's at the menu's selection-pic
+        if (NewEitems.selectionPic != null)
+            DrawNewEpisodePic(NewEitems.curpos);
+        else
         {
-            if (NewEmenu[i].data is EpisodeInfo episode && !string.IsNullOrEmpty(episode.PicName))
-                _graphicManager.DrawPic(episode.PicName, NewEitems.x + 32, NewEitems.y + i * 13);
+            for (int i = 0; i < NewEmenu.Length; i++)
+            {
+                if (NewEmenu[i].data is EpisodeInfo episode && !string.IsNullOrEmpty(episode.PicName))
+                    _graphicManager.DrawPic(episode.PicName, NewEitems.x + 32, MenuItemY(NewEitems, i));
+            }
         }
 
         _videoManager.Update();
         MenuFadeIn();
         WaitKeyUp();
+    }
+
+    /// <summary>The highlighted episode's picture at the menu's selection-pic, when it has one</summary>
+    internal static void DrawNewEpisodePic(int w)
+    {
+        if (NewEitems.selectionPic is { } at && w >= 0 && w < NewEmenu.Length
+            && NewEmenu[w].data is EpisodeInfo { PicName: { Length: > 0 } pic })
+            _graphicManager.DrawPic(pic, at.X, at.Y);
     }
 
     internal static void DrawNewGame()
@@ -978,9 +1041,15 @@ internal partial class Program
 
     internal static void DrawNewGameDiff(int w)
     {
-        // Face picture for the highlighted skill (pic-name in game-info)
+        // Face picture for the highlighted skill (pic-name in game-info), at the menu's
+        // selection-pic or beside the skills
         if (w >= 0 && w < NewMenu.Length && NewMenu[w].data is SkillInfo skill)
-            _graphicManager.DrawPic(skill.PicName, NewItems.x + 185, NewItems.y + 7);
+        {
+            if (NewItems.selectionPic is { } at)
+                _graphicManager.DrawPic(skill.PicName, at.X, at.Y);
+            else
+                _graphicManager.DrawPic(skill.PicName, NewItems.x + 185, NewItems.y + 7);
+        }
     }
 
     /// <summary>A class menu item: the actordefs class and its picture (game-info pic-name)</summary>
@@ -1423,7 +1492,7 @@ internal partial class Program
 
         int knobWidth = MenuSliderWidth / (max + 1);
         int x = iteminfo.x + iteminfo.indent + MenuSliderOffset;
-        int y = iteminfo.y + index * 13 + 2;
+        int y = iteminfo.y + index * iteminfo.rowHeight + 2;
         _videoManager.Bar(x, y, knobWidth * (max + 1), 9, "TEXTCOLOR");
         DrawOutline(x, y, knobWidth * (max + 1), 9, "Black", "HIGHLIGHT");
         DrawOutline(x + knobWidth * value, y, knobWidth, 9, "Black", "READCOLOR");
@@ -1440,10 +1509,10 @@ internal partial class Program
             return;
 
         int x = iteminfo.x + iteminfo.indent + MenuSliderOffset;
-        int y = iteminfo.y + index * 13;
-        _videoManager.Bar(x, y, MenuChoiceWidth, 13, "BKGDCOLOR");
+        int y = iteminfo.y + index * iteminfo.rowHeight;
+        _videoManager.Bar(x, y, MenuChoiceWidth, iteminfo.rowHeight, "BKGDCOLOR");
 
-        TextAt(x, y, MenuStyle(MenuItemColor(items[index], false))).Print(value);
+        TextAt(x, y, MenuItemStyle(iteminfo, MenuItemColor(items[index], false))).Print(value);
     }
 
     /// <summary>
@@ -1663,7 +1732,7 @@ internal partial class Program
     private static void DrawMenuCheckbox(CP_iteminfo iteminfo, int index, bool on)
     {
         int x = iteminfo.x + iteminfo.indent - 24;
-        int y = iteminfo.y + index * 13 + 3;
+        int y = iteminfo.y + index * iteminfo.rowHeight + 3;
         _graphicManager.DrawPic(on ? "c_selected" : "c_notselected", x, y);
     }
 
@@ -1904,8 +1973,12 @@ internal partial class Program
     {
         int x, y;
 
+        // A highlight bar goes on with its item's text when HandleMenu starts
+        if (iteminfo.cursor != null)
+            return;
+
         x = iteminfo.x & -8;    // same column HandleMenu draws and erases the gun in
-        y = iteminfo.y + iteminfo.curpos * 13 - 2;
+        y = iteminfo.y + iteminfo.curpos * iteminfo.rowHeight - 2;
         _graphicManager.DrawPic("c_cursor1", x, y);
     }
 
@@ -1937,7 +2010,7 @@ internal partial class Program
                 switch (tick)
                 {
                     case 0:
-                        _videoManager.Bar(x, y, 8, 13, "TEXTCOLOR");
+                        _videoManager.Bar(x, y, 8, 13, message.Style.Background);
                         break;
                     case 1:
                         _graphicManager.DrawText(x, y, "_", message.Style);
@@ -1999,7 +2072,10 @@ internal partial class Program
     internal static TextWindow Message(string text, int areaHeight = 200)
     {
         int h = 0, w = 0, mw = 0, i, len = text.Length;
-        var style = new TextStyle(LARGE_FONT, "Black", "TEXTCOLOR");
+        var box = _gameEngineManager.GetGameInfo().MenuMessage;
+        var style = box == null
+            ? new TextStyle(LARGE_FONT, "Black", "TEXTCOLOR")
+            : new TextStyle(box.Font, box.Color, box.Med, Shadow: new FontShadow(1, 1, box.Shadow));
 
         var font = _fontManager.Find(style.Font);
         if (font == null)
@@ -2025,8 +2101,13 @@ internal partial class Program
         int x = 160 - (mw / 2);
         int y = (areaHeight / 2) - (h / 2);
 
-        DrawWindow(x - 5, y - 5, mw + 10, h + 10, "TEXTCOLOR");
-        DrawOutline(x - 5, y - 5, mw + 10, h + 10, "Black", "HIGHLIGHT");
+        if (box != null)
+            BevelBox(x - 5, y - 5, mw + 10, h + 10, box.Hi, box.Med, box.Lo);
+        else
+        {
+            DrawWindow(x - 5, y - 5, mw + 10, h + 10, "TEXTCOLOR");
+            DrawOutline(x - 5, y - 5, mw + 10, h + 10, "Black", "HIGHLIGHT");
+        }
         var window = new TextWindow(_graphicManager, x, y, mw, h, style);
         window.Print(text);
         _videoManager.Update();
@@ -2116,7 +2197,7 @@ internal partial class Program
                     .Where(mi => InCurrentGamePack(mi.GamePacks))
                     .Select(mi =>
                     new CP_itemtype(
-                        (short)(mi.Enabled && mi is not BlankMenuItem ? 1 : 0),
+                        (short)(mi.Enabled && mi is not BlankMenuItem ? (mi.Highlighted ? 2 : 1) : 0),
                         (mi.Text ?? "").ToLanguageText(language),
                         MapFunction(name, mi as MenuSwitcher))
                     {
@@ -2140,7 +2221,14 @@ internal partial class Program
             (short)menuAsset.Position.Y,
             amount: (short)items.Length,
             curpos: curpos,
-            indent: (short)menuAsset.Indent);
+            indent: (short)menuAsset.Indent)
+        {
+            rowHeight = menuAsset.RowHeight is > 0 and int rowHeight ? rowHeight : 13,
+            font = menuAsset.Font,
+            itemShadow = menuAsset.ItemShadow,
+            cursor = menuAsset.Cursor,
+            selectionPic = menuAsset.SelectionPic,
+        };
 
         return (items, info);
     }
@@ -2156,7 +2244,12 @@ internal partial class Program
         switch (source.ToLowerInvariant())
         {
             case "episodes":
-                // Episode names are two lines, so a blank row follows each one
+                // Episode names are two lines, so a blank row follows each one, unless the menu's
+                // rows are tall enough for both (spacer-rows: false)
+                if (_assetManager.GetMenu(menuName)?.SpacerRows == false)
+                    return gameInfo.Episodes.Values
+                        .Select(ep => new CP_itemtype(1, ep.Name.ToLanguageText(language), null, ep) { shortKey = ep.Key })
+                        .ToArray();
                 return gameInfo.Episodes.Values.SelectMany(ep =>
                     new CP_itemtype[]
                     {
@@ -2316,7 +2409,9 @@ internal partial class Program
             Outline: LabelOutline(label), Glow: LabelGlow(label));
 
         var text = label.Text.ToLanguageText(language);
-        if (label.HorizontalOrientation == HorizontalOrientation.Center)
+        if (label.HorizontalOrientation == HorizontalOrientation.Center && label.Width > 0)
+            CenteredText(label.X, label.Width, label.Y, style).CPrint(text);
+        else if (label.HorizontalOrientation == HorizontalOrientation.Center)
             CenteredText(0, 320, label.Y, style).CPrint(text);
         else
             TextAt(label.X, label.Y, style).Print(text);
@@ -2349,6 +2444,18 @@ internal partial class Program
 
         if (mi == null || string.IsNullOrEmpty(mi.Action))
             return null;
+
+        // A page of presenter text (Blake Stone's instructions, story and ordering info)
+        if (mi.Action == nameof(CP_TextScreen))
+        {
+            var script = mi.Script;
+            if (string.IsNullOrEmpty(script))
+            {
+                Console.WriteLine($"Menu '{menuName}': item '{mi.Id ?? mi.Text}' is a CP_TextScreen without a script");
+                return null;
+            }
+            return _ => CP_TextScreen(script);
+        }
 
         if (!funcDict.TryGetValue(mi.Action, out var func))
         {

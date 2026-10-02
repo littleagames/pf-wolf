@@ -39,6 +39,30 @@ internal class MenuMetadata
     /// </summary>
     public int? DefaultSelection { get; set; }
 
+    /// <summary>Pixels from one item to the next (default 13)</summary>
+    public int? RowHeight { get; set; }
+
+    /// <summary>The items' font (default the menu font, LargeFont)</summary>
+    public string? Font { get; set; }
+
+    /// <summary>A color the items get a shadow in, one pixel right and down; none when unset</summary>
+    public string? ItemShadow { get; set; }
+
+    /// <summary>A highlight bar in place of Wolf3D's gun cursor</summary>
+    public Assets.MenuCursorInfo? Cursor { get; set; }
+
+    /// <summary>
+    /// Whether an episodes items-source puts a blank row after each episode, for two-line names
+    /// in 13 pixel rows (default true)
+    /// </summary>
+    public bool? SpacerRows { get; set; }
+
+    /// <summary>
+    /// Where the highlighted item's picture (its episode's or skill's pic-name) is drawn, in
+    /// place of each episode's beside its name, or Wolf3D's skill face
+    /// </summary>
+    public Assets.MenuPoint? SelectionPic { get; set; }
+
     internal static MenuMetadata? BuildFromAsset(MenuAsset asset)
     {
         if (asset is null) return null;
@@ -514,6 +538,20 @@ internal record Window : MenuComponent
     //}
 }
 
+/// <summary>A plain filled rectangle, without the window's outline (Blake Stone's menu terminal)</summary>
+internal record Fill : MenuComponent
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+    public int Width { get; set; }
+    public int Height { get; set; }
+    public string Color { get; set; } = "BKGDCOLOR";
+
+    public Fill()
+    {
+    }
+}
+
 internal record Graphic : MenuComponent
 {
     public string Name { get; set; }
@@ -584,13 +622,15 @@ internal record Stripe : MenuComponent
 
 /// <summary>
 /// A line of printed text. Language keys ("$STR_...") are translated when drawn.
-/// Center orientation centers the text across the full screen width, ignoring X.
+/// Center orientation centers the text across the full screen width, ignoring X, or between
+/// X and X + Width when a width is given.
 /// </summary>
 internal record Label : MenuComponent
 {
     public string Text { get; set; } = "";
     public int X { get; set; }
     public int Y { get; set; }
+    public int Width { get; set; }
     public HorizontalOrientation HorizontalOrientation { get; set; } = HorizontalOrientation.Left;
     public string Color { get; set; } = "TEXTCOLOR";
     public string Font { get; set; } = "LargeFont";
@@ -680,6 +720,8 @@ internal abstract record MenuItem
     /// Game packs this item appears in; null means every pack
     /// </summary>
     public List<string>? GamePacks { get; set; }
+    /// <summary>Drawn in the read-it colors (READCOLOR, READHCOLOR)</summary>
+    public bool Highlighted { get; set; }
 }
 
 internal record MenuSwitcher : MenuItem
@@ -696,6 +738,9 @@ internal record MenuSwitcher : MenuItem
     }
 
     public string? Action { get; init; } = null;
+
+    /// <summary>The presenter text a CP_TextScreen item shows</summary>
+    public string? Script { get; init; } = null;
 }
 
 internal record ToggleMenuItem : MenuItem

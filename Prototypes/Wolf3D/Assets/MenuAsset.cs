@@ -12,11 +12,46 @@ internal record MenuAsset : Asset
     public int? DefaultSelection { get; init; }
     public List<ComponentEntry>? Components { get; init; }
     public List<MenuItemEntry>? MenuItems { get; init; }
+    public int? RowHeight { get; init; }
+    public string? Font { get; init; }
+    public string? ItemShadow { get; init; }
+    public MenuCursorInfo? Cursor { get; init; }
+    public bool? SpacerRows { get; init; }
+    public MenuPoint? SelectionPic { get; init; }
 
     public override void Merge(Asset other)
     {
         // For now, do nothing
     }
+}
+
+/// <summary>
+/// A menu's highlight bar (Blake Stone's), in place of Wolf3D's gun: a bar behind the item the
+/// cursor is on, flashing on and off. Colors are color names, #RRGGBB or palette indices.
+/// </summary>
+internal record MenuCursorInfo
+{
+    /// <summary>The bar's left edge</summary>
+    public int X { get; init; }
+
+    /// <summary>How far below an item's top the bar starts</summary>
+    public int YOffset { get; init; }
+
+    public int Width { get; init; } = 100;
+    public int Height { get; init; } = 9;
+    public string Color { get; init; } = "HIGHLIGHT";
+
+    /// <summary>What the bar is erased to: the menu's background</summary>
+    public string EraseColor { get; init; } = "BKGDCOLOR";
+
+    /// <summary>Tics the bar stays on, and then off, as it flashes</summary>
+    public int FlashTics { get; init; } = 40;
+}
+
+internal record MenuPoint
+{
+    public int X { get; init; }
+    public int Y { get; init; }
 }
 
 internal record ComponentEntry
@@ -53,4 +88,8 @@ internal record MenuItemEntry
     /// Only include this item in these game packs ("wolf3d", "spear"); unset means every pack
     /// </summary>
     public List<string>? GamePacks { get; init; } = null;
+    /// <summary>The presenter text a CP_TextScreen item shows (a VGAGRAPH text)</summary>
+    public string? Script { get; init; } = null;
+    /// <summary>Drawn in the read-it colors (READCOLOR, READHCOLOR), like Wolf3D's "Read This!"</summary>
+    public bool Highlighted { get; init; } = false;
 }

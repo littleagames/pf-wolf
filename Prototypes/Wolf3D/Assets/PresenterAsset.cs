@@ -14,6 +14,9 @@ internal record PresenterAsset : Asset
     /// <summary>What a script's ^SHnnn draws, by its (hex) number</summary>
     public Dictionary<int, PresenterShape> Shapes { get; set; } = [];
 
+    /// <summary>The sound a script's ^PSnn plays, by its (hex) number</summary>
+    public Dictionary<int, string> Sounds { get; set; } = [];
+
     /// <summary>The box messages are shown in over the status bar ("Get Ready, Blake!")</summary>
     public PresenterMessageBox? MessageBox { get; set; }
 
@@ -27,16 +30,23 @@ internal record PresenterAsset : Asset
             Fonts = otherAsset.Fonts ?? Fonts;
             foreach (var (number, shape) in otherAsset.Shapes)
                 Shapes[number] = shape;
+            foreach (var (number, sound) in otherAsset.Sounds)
+                Sounds[number] = sound;
             MessageBox = otherAsset.MessageBox ?? MessageBox;
             Briefing = otherAsset.Briefing ?? Briefing;
         }
     }
 }
 
-/// <summary>A shape a script can draw: a picture</summary>
+/// <summary>
+/// A shape a script can draw: a picture, or a sprite or wall texture at 64x64 (a sprite's
+/// see-through parts let what's behind show)
+/// </summary>
 internal record PresenterShape
 {
-    public string Pic { get; set; } = "";
+    public string? Pic { get; set; }
+    public string? Sprite { get; set; }
+    public string? Wall { get; set; }
 }
 
 /// <summary>
@@ -97,4 +107,13 @@ internal record PresenterBriefing
 
     /// <summary>The music while it's up; none keeps what's playing</summary>
     public string? Music { get; set; }
+
+    /// <summary>
+    /// The help line for text pages shown from the menu (the instructions, the story), which
+    /// only Esc leaves; the briefing's info-line when unset
+    /// </summary>
+    public string? PagesInfoLine { get; set; }
+
+    /// <summary>The music for text pages shown from the menu; none keeps what's playing</summary>
+    public string? PagesMusic { get; set; }
 }

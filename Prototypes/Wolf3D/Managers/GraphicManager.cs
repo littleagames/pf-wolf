@@ -134,6 +134,10 @@ internal class GraphicManager
             videoManager.Bar(window.X, window.Y, window.Width, window.Height, window.Color);
             DrawOutline(window.X, window.Y, window.Width, window.Height, "BORD2COLOR", "DEACTIVE");
         }
+        else if (component is Fill fill)
+        {
+            videoManager.Bar(fill.X, fill.Y, fill.Width, fill.Height, fill.Color);
+        }
     }
 
     private void DrawOutline(int x, int y, int w, int h, string color1, string color2)

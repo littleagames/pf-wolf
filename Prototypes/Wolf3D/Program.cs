@@ -367,18 +367,29 @@ internal partial class Program
 
     private static void DemoLoop()
     {
-        int LastDemo = 0;
+        var gameInfo = _gameEngineManager.GetGameInfo();
 
         //
         // main game cycle
         //
-        if (!param_nowait && _gameEngineManager.GetGameInfo().NonSharewareNotice)
-            NonShareware();
+        if (gameInfo.Intro.Count > 0)
+        {
+            // The game pack's own intro (Blake Stone's), which starts its own music
+            if (param_nowait)
+                StartCPMusic(INTROSONG);
+            else
+                RunTitleScreens(gameInfo.Intro, titleLoop: false);
+        }
+        else
+        {
+            if (!param_nowait && gameInfo.NonSharewareNotice)
+                NonShareware();
 
-        StartCPMusic(INTROSONG);
+            StartCPMusic(INTROSONG);
 
-        if (!param_nowait)
-            PG13();
+            if (!param_nowait)
+                PG13();
+        }
 
         while (true)
         {
@@ -390,7 +401,15 @@ internal partial class Program
             }
             PlayPendingDemo();
 
-            while (!param_nowait)
+            while (!param_nowait && gameInfo.TitleLoop.Count > 0)
+            {
+                if (string.IsNullOrEmpty(_audioManager.CurrentMusicTrack))
+                    StartCPMusic(INTROSONG);
+                if (RunTitleScreens(gameInfo.TitleLoop, titleLoop: true))
+                    break;
+            }
+
+            while (!param_nowait && gameInfo.TitleLoop.Count == 0)
             {
                 //
                 // title page
@@ -426,7 +445,7 @@ internal partial class Program
                 //
                 // demo
                 //
-                PlayDemo(LastDemo++ % 4);
+                PlayDemo(nextTitleDemo++ % 4);
                 if (playstate == playstatetypes.ex_abort)
                     break;
                 _videoManager.FadeOut();

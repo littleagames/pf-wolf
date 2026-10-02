@@ -90,7 +90,34 @@ internal class AssetManager
         AddDataFileAssets(vswapLoader.GetAssets(rawDataMap?.Walls ?? [], rawDataMap?.Sprites ?? [], rawDataMap?.DigitizedAudio ?? []),
             DataFile("Wolf3DVswapFileLoader", d => d.Data));
 
+        LoadMovies(gamePackInfo.FindFileLoader(gameReleaseId, "JamMovieFileLoader")?.Movies);
+
         ModWarnings.AddRange(pfWolfBasePk3Loader.Warnings);
+    }
+
+    /// <summary>
+    /// The release's JAM movies (Blake Stone's), by the names its file-pack gives them. One
+    /// that's missing or can't be read is left out, and the game goes on without it.
+    /// </summary>
+    private void LoadMovies(Dictionary<string, FileReference>? movies)
+    {
+        foreach (var (name, file) in movies ?? [])
+        {
+            if (string.IsNullOrWhiteSpace(file.File) || !File.Exists(file.File))
+            {
+                Console.WriteLine($"Movie {name}: {file.File} isn't there, so it won't play");
+                continue;
+            }
+
+            try
+            {
+                AddDataFileAssets(new Dictionary<string, Asset> { [name] = new JamMovieAsset(File.ReadAllBytes(file.File)) }, file.File);
+            }
+            catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
+            {
+                Console.WriteLine($"Movie {name}: {file.File} can't be read, so it won't play: {e.Message}");
+            }
+        }
     }
 
     /// <summary>
@@ -301,7 +328,7 @@ internal class AssetManager
     }
 
     /// <summary>
-    /// Names of every menu defined in menudefs/
+    /// Names of every menu defined in menudefs/, without the packs' own versions (menudefs/{pack}/)
     /// </summary>
     public IEnumerable<string> GetMenuNames()
     {
@@ -309,9 +336,14 @@ internal class AssetManager
         return _assets.Keys
             .Where(key => key.StartsWith(prefix))
             .Select(key => key.Substring(prefix.Length))
+            .Where(name => !name.Contains('/'))
             .ToList();
     }
 
+    /// <summary>
+    /// A menu by name: the running pack's own (menudefs/{pack}/name.yaml) when it has one, else
+    /// the shared one
+    /// </summary>
     [Obsolete("Temporary endpoint until the asset types are implemented")]
     public MenuMetadata? GetMenu(string name)
     {
@@ -319,7 +351,8 @@ internal class AssetManager
         if (_menuCache.TryGetValue(normalizedName, out var cached))
             return cached;
 
-        var asset = Find<MenuAsset>(normalizedName);
+        var packName = $"{_gamePackId}/{normalizedName}".ToLowerInvariant();
+        var asset = Exists<MenuAsset>(packName) ? Find<MenuAsset>(packName) : Find<MenuAsset>(normalizedName);
         if (asset != null)
         {
             // TODO: MenuManager?

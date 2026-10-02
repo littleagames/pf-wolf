@@ -1377,10 +1377,10 @@ graphics:
     - H_LeftWindow
     - H_RightWindow
     - H_BottomInfo
-    - MenuLight1
-    - MenuLight2
-    - MenuLight3
-    - MenuLight4
+    - C_NotSelected      # the menus' checkboxes: off, on, and both highlighted
+    - C_Selected
+    - C_NotSelected_Hi
+    - C_Selected_Hi
     - C_BabyMode
     - C_Easy
     - C_Normal
