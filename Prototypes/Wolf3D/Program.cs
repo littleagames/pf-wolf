@@ -161,6 +161,10 @@ internal partial class Program
         _gameEngineManager.SettingsLoaded = true;      // from here on, saving them keeps what was loaded
         _consoleManager.ExecFile(_gameEngineManager.GetConfigFilePath(GameEngineManager.AutoexecFileName));
 
+        // --cheats: the debug keys and cheat commands from the start, as Shift+Alt+Backspace opens them
+        if (gameParams.Cheats)
+            DebugOk = 1;
+
         if (!string.IsNullOrWhiteSpace(gameParams.Exec))
             _consoleManager.Execute(gameParams.Exec);
 

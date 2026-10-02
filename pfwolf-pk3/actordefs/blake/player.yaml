@@ -1,12 +1,12 @@
-# Blake Stone's player (see actordefs/wolf3d/player.yaml for every property). Phase 0: Blake
-# starts with the auto charge pistol and nothing else; the energy weapons and their charge packs
-# come in a later phase.
+# Blake Stone's player (see actordefs/wolf3d/player.yaml for every property): he starts with the
+# auto charge pistol and 8 charge units (bstone's STARTAMMO).
 Player:
   properties:
     "tag": "Blake Stone"
     "deathsound": "player/death"
     "player.startitem":
       AutoChargePistol: 1
+      ChargeUnit: 8
     "player.starthealth": 100
     "player.startlives": 3
     "player.maxhealth": 100

@@ -536,6 +536,9 @@ internal partial class Program
         DrawScore();
         DrawLocation();
         DrawHeartMonitor(force: true);
+        DrawRadarGauge();
+        if (StatusBar.Get("radar") is { } radar && !(viewsize == 21 && ingame))
+            DrawRadar(radar);
         DrawInfoArea(force: true);
     }
 

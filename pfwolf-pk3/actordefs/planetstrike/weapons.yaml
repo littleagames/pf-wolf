@@ -1,0 +1,88 @@
+# Planet Strike's anti-plasma cannon (bstone's wp_bfg_cannon), beside the weapons it shares with
+# Aliens of Gold (actordefs/blake/weapons.yaml).
+
+# Fires an anti-plasma shot for 8 charge units; holding fire, one every 12 tics
+AntiPlasmaCannon:
+  parent: "BlakeEnergyWeapon"
+  properties:
+    "inventory.type": AntiPlasmaCannon
+    "inventory.icon": "STWEAP6"
+    "inventory.pickupsound": "bs/getcannon"
+    "inventory.pickupmessage": "$BS_GOTANTIPLASMA"
+    "weapon.slot": 6
+    "weapon.selectionorder": 400
+    "weapon.knockback": 20480
+    "weapon.ammouse1": 8
+    "attacksound": "bs/atkioncannon"
+  states:
+    Spawn:
+      - sprite: APCP
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: APCG
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: APCG
+        frames: [B]
+        tics-per-frame: 6
+        next-state: Hold
+    Hold:
+      - sprite: APCG
+        frames: [C]
+        tics-per-frame: 6
+        modifiers: [bright]
+        action: A_FireMissile("AntiPlasmaShot", 1)
+      - sprite: APCG
+        frames: [D]
+        tics-per-frame: 6
+        action: A_ReFire
+      - sprite: APCG
+        frames: [E]
+        tics-per-frame: 6
+        next-state: Ready
+
+# The cannon's shot (bstone's bfg_shotobj): it flies on until it meets a wall, a solid thing or an
+# enemy, shrinking after about four tiles. An enemy it hits takes 40-167; then it blows up,
+# hurting everything shootable within two tiles for 50-177, and again for 80-334 (not the player).
+AntiPlasmaShot:
+  properties:
+    "speed": 7168            # bstone's SPDPROJ, in 1/65536 tile a tic
+    "speed.random": 3584     # up to half as fast again
+  flags: [bright]
+  states:
+    Spawn:
+      - sprite: APCS
+        frames: [B]
+        tics-per-frame: 36
+        think: A_Missile(40, 167)
+        next-state: Flight
+    Flight:
+      - sprite: APCS
+        frames: [C]
+        tics-per-frame: 70
+        think: A_Missile(40, 167)
+        next-state: Flight
+    Death:
+      - sprite: APCS
+        frames: [E]
+        tics-per-frame: 0
+        action: A_PlaySound("bs/explode1", "positional")
+      - sprite: APCS
+        frames: [E]
+        tics-per-frame: 0
+        action: A_Explode(50, 177, 2)
+      - sprite: APCS
+        frames: [E]
+        tics-per-frame: 5
+        action: A_Explode(80, 334, 2)
+      - sprite: APCS
+        frames: [F, G, H, I, J, K, L]
+        tics-per-frame: 5
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_Remove

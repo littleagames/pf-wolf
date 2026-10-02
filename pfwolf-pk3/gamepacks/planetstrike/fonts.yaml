@@ -1,0 +1,18 @@
+# Planet Strike's fonts beside blake's (gamepacks/blake/fonts.yaml)
+
+# The status bar's health, in its big digits
+PSHealthDigits:
+  type: graphic
+  glyphs:
+    " ": STFNG032
+    "0": STFNG048
+    "1": STFNG049
+    "2": STFNG050
+    "3": STFNG051
+    "4": STFNG052
+    "5": STFNG053
+    "6": STFNG054
+    "7": STFNG055
+    "8": STFNG056
+    "9": STFNG057
+  cell-width: 8

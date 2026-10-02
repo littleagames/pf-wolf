@@ -352,13 +352,16 @@ internal class MapManager
         MapCeilingColor = MapFloorColor = null;
         Hints = new(StringComparer.OrdinalIgnoreCase);
 
+        var objects = mapsegs[1];
+        var links = new Dictionary<int, ushort>();      // linked tile -> its tag
+        if (fillFlats)          // a fresh level: a restored one has its tags already
+            LinkObjectPlaneSwitches(objects, links);
+
         var codes = GetMapData().MapInfo;
         if (codes.Count == 0)
             return;
 
-        var objects = mapsegs[1];
         bool gotFlats = false;
-        var links = new Dictionary<int, ushort>();      // linked tile -> its tag
         for (int i = 0; i < MAPAREA && i < objects.Length; i++)
         {
             if (!codes.TryGetValue(objects[i] >> 8, out var kind))
@@ -407,6 +410,25 @@ internal class MapManager
                             flats[t] = value;
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Switches whose walls.yaml switch has `link: object-plane`: each gets the tag of the tile
+    /// its object-plane value names (x high byte, y low byte), as a tag-link on this floor, and
+    /// that value is no thing.
+    /// </summary>
+    private void LinkObjectPlaneSwitches(ushort[] objects, Dictionary<int, ushort> links)
+    {
+        var walls = GetMapData().Walls;
+        var walllayer = mapsegs[0];
+        for (int i = 0; i < MAPAREA && i < objects.Length && i < walllayer.Length; i++)
+        {
+            if (objects[i] == 0 || !IsWallId(walllayer[i]) || !walls.TryGetValue(walllayer[i], out var wall)
+                || wall.Switch is not { } wallSwitch || !wallSwitch.Link.Equals("object-plane", StringComparison.OrdinalIgnoreCase))
+                continue;
+            infotiles[i] = true;
+            LinkTags(i, 0xff, objects[i] >> 8, objects[i] & 0xff, links);
         }
     }
 

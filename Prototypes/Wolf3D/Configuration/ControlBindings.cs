@@ -238,6 +238,11 @@ internal sealed class ControlBindings
         Default(buttontypes.bt_lookdown, Key(ScanCodes.sc_PgDn));
         Default(buttontypes.bt_centerview, Key(ScanCodes.sc_End), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_RIGHTSTICK));
 
+        // Only does anything with a status bar radar (Planet Strike's); the automap's zoom keys
+        // are its own while the map is open
+        Default(buttontypes.bt_radarzoomin, Key(ScanCodes.sc_Equal));
+        Default(buttontypes.bt_radarzoomout, Key(ScanCodes.sc_Minus));
+
         for (int i = 0; i < DefaultAutomapKeys.Length; i++)
             Add(ControlAction.Of((Program.automapkeys)i), Key(DefaultAutomapKeys[i]));
 

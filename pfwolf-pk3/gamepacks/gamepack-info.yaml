@@ -141,6 +141,55 @@ blake-aog:
             file: sanim.bs6
           GoldfireMovie:
             file: ganim.bs6
+blake-ps:
+  title: "Blake Stone: Planet Strike"
+  game-palette: blake
+  # Starts from blake's actordefs, mapdefs, menudefs and gamepacks files; planetstrike's own
+  # files override them
+  base-pack: blake
+  file-pack:
+    description: Blake Stone - Planet Strike
+    file-loaders:
+      Wolf3DAudioFileLoader:
+        header:
+          file: audiohed.vsi
+          md5: 47c42494b67c14e93c7f3e90aed41a9a
+        data:
+          file: audiot.vsi
+          md5: ce0ba53c4c41d0256896b1075653366e
+        map: blake-ps-map
+      Wolf3DMapFileLoader:
+        header:
+          file: maphead.vsi
+          md5: 3c073394635250e348f6c1da6330069a
+        data:
+          file: maptemp.vsi
+          md5: 9dcbeab5d5c123455ae3c24964956b22
+        map: blake-ps-map
+      Wolf3DVgaFileLoader:
+        dict:
+          file: vgadict.vsi
+          md5: e20c862256e504194c5a9a68526a1beb
+        header:
+          file: vgahead.vsi
+          md5: 31c0301eb320718029efaa3b275f689c
+        data:
+          file: vgagraph.vsi
+          md5: ad57bd602ac4e571dd4101fe52b35807
+        font-count: 5
+        map: blake-ps-map
+      Wolf3DVswapFileLoader:
+        data:
+          file: vswap.vsi
+          md5: 24827f8b2920acc60bab0e57b6e9937e
+        map: blake-ps-map
+      # JAM's movies: the logo, and the ending
+      JamMovieFileLoader:
+        movies:
+          IntroMovie:
+            file: ianim.vsi
+          EndMovie:
+            file: eanim.vsi
 # spear-demo:
     # title: "Spear of Destiny: Demo"
     # game-palette: spearpal

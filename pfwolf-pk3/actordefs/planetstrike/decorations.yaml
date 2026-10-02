@@ -1,0 +1,112 @@
+# Planet Strike's own scenery (bstone's statinfo, for the numbers only Planet Strike's maps
+# use); the rest is actordefs/blake/decorations.yaml's. Placed by mapdefs/planetstrike/decorations.yaml.
+
+# The barrier posts as plain, closed scenery
+StaticVSpike:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: VSPK
+        frames: [H]
+        tics-per-frame: -1
+
+StaticVPost:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: VPST
+        frames: [H]
+        tics-per-frame: -1
+
+# "OPEN" (the gold card's slot in Aliens of Gold)
+YellowBox:
+  states:
+    Spawn:
+      - sprite: YBOX
+        frames: [A]
+        tics-per-frame: -1
+
+BronzePost:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: BRPS
+        frames: [A]
+        tics-per-frame: -1
+
+GreekPost2:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: GRP2
+        frames: [A]
+        tics-per-frame: -1
+
+DoorRubble:
+  states:
+    Spawn:
+      - sprite: RUBL
+        frames: [A]
+        tics-per-frame: -1
+
+BonsaiTree:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: BONZ
+        frames: [A]
+        tics-per-frame: -1
+
+TerrariumPottedPlant:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: POTP
+        frames: [A]
+        tics-per-frame: -1
+
+TerrariumTubedPlant:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: TUBP
+        frames: [A]
+        tics-per-frame: -1
+
+HiTechTableAndChairs:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: HTCH
+        frames: [A]
+        tics-per-frame: -1
+
+# Aliens of Gold's guards, dead
+DeadAogRentACop:
+  states:
+    Spawn:
+      - sprite: RENT
+        frames: [N]
+        tics-per-frame: -1
+
+DeadAogProGuard:
+  states:
+    Spawn:
+      - sprite: PROG
+        frames: [O]
+        tics-per-frame: -1
+
+DeadAogSwatGuard:
+  states:
+    Spawn:
+      - sprite: SWAT
+        frames: [T]
+        tics-per-frame: -1

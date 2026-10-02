@@ -1,0 +1,283 @@
+# Planet Strike's barriers (bstone's SpawnBarrier, ToggleBarrier, T_BarrierTransition), over
+# actordefs/blake/barriers.yaml. Its arc and post barriers crackle faster than Aliens of Gold's,
+# and come off as well as on; its v-posts and v-spikes rise and sink over 8 frames, 7 tics each,
+# blocking once 4 are up. Switchable ones are worked by barrier switches like the rest
+# (A_ToggleActive); cycling ones, and switchable ones no switch is linked to (bstone's, not in its
+# barrier table), go up and down by themselves, 90 tics up, 90 down. A rising one
+# waits while the player is within 1.5 tiles, hurting them within half a tile (A_HoldNearPlayer).
+# The off variants start on InactiveIdle, which A_ToggleActive counts as off.
+
+ArcBarrier:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: ELCK
+        frames: [A, B, C]
+        tics-per-frame: 4
+        modifiers: [bright]
+        think: A_ShockNearby(4, 1.375, 16, "bs/elecarcdamage")
+    Active:
+      - sprite: ELCK
+        frames: [A]
+        tics-per-frame: 0
+        action: A_BlockTile
+        next-state: Spawn
+    Inactive:
+      - sprite: ELCK
+        frames: [D]
+        tics-per-frame: 0
+        action: A_UnblockTile
+        next-state: InactiveIdle
+    InactiveIdle:
+      - sprite: ELCK
+        frames: [D]
+        tics-per-frame: -1
+
+ArcBarrierOff:
+  parent: ArcBarrier
+  states:
+    Spawn:
+      - sprite: ELCK
+        frames: [D]
+        tics-per-frame: 0
+        action: A_UnblockTile
+        next-state: InactiveIdle
+
+PostBarrier:
+  radius: 32
+  flags: [SOLID]
+  states:
+    Spawn:
+      - sprite: ELCP
+        frames: [A, B, C]
+        tics-per-frame: 4
+        modifiers: [bright]
+    Active:
+      - sprite: ELCP
+        frames: [A]
+        tics-per-frame: 0
+        action: A_BlockTile
+        next-state: Spawn
+    Inactive:
+      - sprite: ELCP
+        frames: [D]
+        tics-per-frame: 0
+        action: A_UnblockTile
+        next-state: InactiveIdle
+    InactiveIdle:
+      - sprite: ELCP
+        frames: [D]
+        tics-per-frame: -1
+
+PostBarrierOff:
+  parent: PostBarrier
+  states:
+    Spawn:
+      - sprite: ELCP
+        frames: [D]
+        tics-per-frame: 0
+        action: A_UnblockTile
+        next-state: InactiveIdle
+
+# --- V-spikes: up (H) blocks; switched, they sink (Inactive) or rise (Active)
+VSpikeBarrier:
+  radius: 32
+  flags: [SOLID]
+  states:
+    # Up; with no switch to work it, it cycles
+    Spawn:
+      - sprite: VSPK
+        frames: [H]
+        tics-per-frame: -1
+        think: A_JumpIfUntagged("CycleUp")
+    Active:
+      - sprite: VSPK
+        frames: [B, C]
+        tics-per-frame: 7
+        think: A_HoldNearPlayer(2)
+      - sprite: VSPK
+        frames: [D]
+        tics-per-frame: 7
+        action: A_BlockTile
+        think: A_HoldNearPlayer(2)
+      - sprite: VSPK
+        frames: [E, F, G]
+        tics-per-frame: 7
+        think: A_HoldNearPlayer(2)
+      - sprite: VSPK
+        frames: [H]
+        tics-per-frame: -1
+    Inactive:
+      - sprite: VSPK
+        frames: [G, F, E, D]
+        tics-per-frame: 7
+      - sprite: VSPK
+        frames: [C]
+        tics-per-frame: 7
+        action: A_UnblockTile
+      - sprite: VSPK
+        frames: [B]
+        tics-per-frame: 7
+        next-state: InactiveIdle
+    InactiveIdle:
+      - sprite: VSPK
+        frames: [A]
+        tics-per-frame: -1
+        think: A_JumpIfUntagged("Cycle")
+    # Cycling: down 90 tics, up, up 90 tics, down
+    Cycle:
+      - sprite: VSPK
+        frames: [A]
+        tics-per-frame: 90
+      - sprite: VSPK
+        frames: [B, C]
+        tics-per-frame: 7
+        think: A_HoldNearPlayer(2)
+      - sprite: VSPK
+        frames: [D]
+        tics-per-frame: 7
+        action: A_BlockTile
+        think: A_HoldNearPlayer(2)
+      - sprite: VSPK
+        frames: [E, F, G]
+        tics-per-frame: 7
+        think: A_HoldNearPlayer(2)
+        next-state: CycleUp
+    CycleUp:
+      - sprite: VSPK
+        frames: [H]
+        tics-per-frame: 90
+      - sprite: VSPK
+        frames: [G, F, E, D]
+        tics-per-frame: 7
+      - sprite: VSPK
+        frames: [C]
+        tics-per-frame: 7
+        action: A_UnblockTile
+      - sprite: VSPK
+        frames: [B]
+        tics-per-frame: 7
+        next-state: Cycle
+
+VSpikeBarrierOff:
+  parent: VSpikeBarrier
+  states:
+    Spawn:
+      - sprite: VSPK
+        frames: [A]
+        tics-per-frame: 0
+        action: A_UnblockTile
+        next-state: InactiveIdle
+
+# Cycles whatever its tag
+VSpikeCycle:
+  parent: VSpikeBarrier
+  states:
+    Spawn:
+      - sprite: VSPK
+        frames: [A]
+        tics-per-frame: 0
+        action: A_UnblockTile
+        next-state: Cycle
+
+# --- V-posts: the same, as posts
+VPostBarrier:
+  radius: 32
+  flags: [SOLID]
+  states:
+    # Up; with no switch to work it, it cycles
+    Spawn:
+      - sprite: VPST
+        frames: [H]
+        tics-per-frame: -1
+        think: A_JumpIfUntagged("CycleUp")
+    Active:
+      - sprite: VPST
+        frames: [B, C]
+        tics-per-frame: 7
+        think: A_HoldNearPlayer(2)
+      - sprite: VPST
+        frames: [D]
+        tics-per-frame: 7
+        action: A_BlockTile
+        think: A_HoldNearPlayer(2)
+      - sprite: VPST
+        frames: [E, F, G]
+        tics-per-frame: 7
+        think: A_HoldNearPlayer(2)
+      - sprite: VPST
+        frames: [H]
+        tics-per-frame: -1
+    Inactive:
+      - sprite: VPST
+        frames: [G, F, E, D]
+        tics-per-frame: 7
+      - sprite: VPST
+        frames: [C]
+        tics-per-frame: 7
+        action: A_UnblockTile
+      - sprite: VPST
+        frames: [B]
+        tics-per-frame: 7
+        next-state: InactiveIdle
+    InactiveIdle:
+      - sprite: VPST
+        frames: [A]
+        tics-per-frame: -1
+        think: A_JumpIfUntagged("Cycle")
+    # Cycling: down 90 tics, up, up 90 tics, down
+    Cycle:
+      - sprite: VPST
+        frames: [A]
+        tics-per-frame: 90
+      - sprite: VPST
+        frames: [B, C]
+        tics-per-frame: 7
+        think: A_HoldNearPlayer(2)
+      - sprite: VPST
+        frames: [D]
+        tics-per-frame: 7
+        action: A_BlockTile
+        think: A_HoldNearPlayer(2)
+      - sprite: VPST
+        frames: [E, F, G]
+        tics-per-frame: 7
+        think: A_HoldNearPlayer(2)
+        next-state: CycleUp
+    CycleUp:
+      - sprite: VPST
+        frames: [H]
+        tics-per-frame: 90
+      - sprite: VPST
+        frames: [G, F, E, D]
+        tics-per-frame: 7
+      - sprite: VPST
+        frames: [C]
+        tics-per-frame: 7
+        action: A_UnblockTile
+      - sprite: VPST
+        frames: [B]
+        tics-per-frame: 7
+        next-state: Cycle
+
+VPostBarrierOff:
+  parent: VPostBarrier
+  states:
+    Spawn:
+      - sprite: VPST
+        frames: [A]
+        tics-per-frame: 0
+        action: A_UnblockTile
+        next-state: InactiveIdle
+
+# Cycles whatever its tag
+VPostCycle:
+  parent: VPostBarrier
+  states:
+    Spawn:
+      - sprite: VPST
+        frames: [A]
+        tics-per-frame: 0
+        action: A_UnblockTile
+        next-state: Cycle

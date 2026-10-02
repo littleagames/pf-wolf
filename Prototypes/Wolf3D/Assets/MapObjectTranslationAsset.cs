@@ -399,6 +399,14 @@ internal record MapSwitchTranslation
     /// <summary>The action calls to run, in order, e.g. `A_Exit`.</summary>
     public List<string> Actions { get; init; } = [];
 
+    /// <summary>
+    /// How the switch finds what it works besides its tag. "object-plane": the switch tile's
+    /// object-plane value is a tile's x (high byte) and y (low byte) on this floor, and the
+    /// switch shares that tile's tag, as a map-info tag-link would give it (Planet Strike's
+    /// barrier switches). Empty: its tag only.
+    /// </summary>
+    public string Link { get; init; } = "";
+
     /// <summary>Whether the player can use it while facing <paramref name="dir"/>.</summary>
     public bool UsableFrom(controldirs dir)
     {

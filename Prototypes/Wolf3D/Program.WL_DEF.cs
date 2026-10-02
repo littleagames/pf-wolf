@@ -59,6 +59,9 @@ internal enum buttontypes
     bt_lookup,
     bt_lookdown,
     bt_centerview,
+    // The status bar radar's zoom (statusbar.yaml radar, Planet Strike's): not in demos
+    bt_radarzoomin,
+    bt_radarzoomout,
 
     NUMBUTTONS
 };

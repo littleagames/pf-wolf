@@ -1,0 +1,397 @@
+# Planet Strike's sounds (generated; see gamepacks/blake/sound-seq.yaml), laid over blake's: these entries
+# win. Each of the game's 100 sounds is "bs/<name>", after its name in Blake Stone's source,
+# with its PC and AdLib versions and, for those that have one, its digitized one (VSWAP). The
+# shared names the engine and actordefs use are aliased onto them at the end.
+sound-info:
+  bs/hitwall:
+    adlib: ALHITWAL
+    pc: PCHITWAL
+  bs/term_type:
+    adlib: ALTETYPE
+    pc: PCTETYPE
+  bs/getpistol:
+    adlib: ALGETPIS
+    pc: PCGETPIS
+  bs/liquiddie:
+    digitized: DSLIQDTH
+    adlib: ALLIQDTH
+    pc: PCLIQDTH
+  bs/movegun2:
+    adlib: ALMVGUN2
+    pc: PCMVGUN2
+  bs/movegun1:
+    adlib: ALMVGUN1
+    pc: PCMVGUN1
+  bs/noway:
+    adlib: ALNOWAY
+    pc: PCNOWAY
+  bs/scout_alert:
+    adlib: ALSCTSIT
+    pc: PCSCTSIT
+  bs/gurney:
+    digitized: DSGRNSIT
+    adlib: ALGRNSIT
+    pc: PCGRNSIT
+  bs/playerdeath:
+    adlib: ALPLRDTH
+    pc: PCPLRDTH
+  bs/concessions:
+    adlib: ALCONCES
+    pc: PCCONCES
+  bs/atkioncannon:
+    digitized: DSIONCAN
+    adlib: ALIONCAN
+    pc: PCIONCAN
+  bs/getkey:
+    adlib: ALGETKEY
+    pc: PCGETKEY
+  bs/warpout:
+    digitized: DSWARPOU
+    adlib: ALWARPIN
+    pc: PCWARPIN
+  bs/warpin:
+    digitized: DSWARPIN
+    adlib: ALWAPROU
+    pc: PCWAPROU
+  bs/robot_servo:
+    adlib: ALROBSRV
+    pc: PCROBSRV
+  bs/informantdeath:
+    digitized: DSINFDT1
+    adlib: ALINFDT1
+    pc: PCINFDT1
+  bs/goldsternhalt:
+    digitized: DSGLDSIT
+    adlib: ALGLDSIT
+    pc: PCGLDSIT
+  bs/opendoor:
+    digitized: DSDR2OPN
+    adlib: ALDR2OPN
+    pc: PCDR2OPN
+  bs/closedoor:
+    digitized: DSDR2CLS
+    adlib: ALDR2CLS
+    pc: PCDR2CLS
+  bs/getdetonator:
+    adlib: ALGETDET
+    pc: PCGETDET
+  bs/halt:
+    digitized: DSSECSIT
+    adlib: ALRNTSIT
+    pc: PCRNTSIT
+  bs/rentdeath2:
+    digitized: DSSECDT2
+    adlib: ALRNTDT2
+    pc: PCRNTDT2
+  bs/atkautocharge:
+    adlib: ALFIRAUT
+    pc: PCFIRAUT
+  bs/atkcharged:
+    digitized: DSBLASTR
+    adlib: ALBLASTR
+    pc: PCBLASTR
+  bs/radar_powerup:
+    adlib: ALGETRDR
+    pc: PCGETRDR
+  bs/atkburstrifle:
+    digitized: DSBRIFLE
+    adlib: ALBRIFLE
+    pc: PCBRIFLE
+  bs/vital_gone:
+    adlib: ALVITAL
+    pc: PCVITAL
+  bs/shootdoor:
+    adlib: ALSHTDOR
+    pc: PCSHTDOR
+  bs/rentdeath1:
+    digitized: DSSECDT1
+    adlib: ALRNTDT1
+    pc: PCRNTDT1
+  bs/getburstrifle:
+    adlib: ALGETRIF
+    pc: PCGETRIF
+  bs/getammo:
+    adlib: ALAMMOUP
+    pc: PCAMMOUP
+  bs/shoot:
+    adlib: ALSHOOT
+    pc: PCSHOOT
+  bs/health1:
+    adlib: ALHEAL1
+    pc: PCHEAL1
+  bs/health2:
+    adlib: ALHEAL2
+    pc: PCHEAL2
+  bs/bonus1:
+    adlib: ALBONUS1
+    pc: PCBONUS1
+  bs/bonus2:
+    adlib: ALBONUS2
+    pc: PCBONUS2
+  bs/bonus3:
+    adlib: ALBONUS3
+    pc: PCBONUS3
+  bs/getioncannon:
+    adlib: ALGETION
+    pc: PCGETION
+  bs/escpressed:
+    adlib: ALESCAPE
+    pc: PCESCAPE
+  bs/elecappear:
+    digitized: DSELCSIT
+    adlib: ALELCSPN
+    pc: PCELCSPN
+  bs/extra_man:
+    adlib: ALLIFEUP
+    pc: PCLIFEUP
+  bs/elev_button:
+    adlib: ALELEVAT
+    pc: PCELEVAT
+  bs/interrogate:
+    adlib: ALINTERR
+    pc: PCINTERR
+  bs/bonus5:
+    adlib: ALBONUS5
+    pc: PCBONUS5
+  bs/bonus4:
+    adlib: ALBONUS4
+    pc: PCBONUS4
+  bs/pushwall:
+    adlib: ALPSHWAL
+    pc: PCPSHWAL
+  bs/term_beep:
+    adlib: ALTEBEEP
+    pc: PCTEBEEP
+  bs/roll_score:
+    adlib: ALSCORE
+    pc: PCSCORE
+  bs/turret:
+    adlib: ALTURPAI
+    pc: PCTURPAI
+  bs/explode1:
+    digitized: DSEXPLO1
+    adlib: ALEXPLO1
+    pc: PCEXPLO1
+  bs/swatdie:
+    digitized: DSAPTDT1
+    adlib: ALSWTDT1
+    pc: PCSWTDT1
+  bs/gguardhalt:
+    digitized: DSGENSIT
+    adlib: ALGENSIT
+    pc: PCGENSIT
+  bs/explode2:
+    digitized: DSEXPLO2
+    adlib: ALEXPLO2
+    pc: PCEXPLO2
+  bs/blueboyhalt:
+    digitized: DSBLUSIT
+    adlib: ALBLUSIT
+    pc: PCBLUSIT
+  bs/proguarddeath:
+    digitized: DSTCWDT1
+    adlib: ALPRODT1
+    pc: PCPRODT1
+  bs/dogboyhalt:
+    digitized: DSMTHSIT
+    adlib: ALMTHSIT
+    pc: PCMTHSIT
+  bs/engine_thrust:
+    adlib: ALENGINE
+    pc: PCENGINE
+  bs/scanhalt:
+    digitized: DSSCNSIT
+    adlib: ALSCNSIT
+    pc: PCSCNSIT
+  bs/getcannon:
+    adlib: ALGETCAN
+    pc: PCGETCAN
+  bs/lcanhalt:
+    digitized: DSLCNSIT
+    adlib: ALLCNSIT
+    pc: PCLCNSIT
+  bs/prohalt:
+    digitized: DSTCWSIT
+    adlib: ALPROSIT
+    pc: PCPROSIT
+  bs/gguarddeath:
+    digitized: DSGENDTH
+    adlib: ALGENDTH
+    pc: PCGENDTH
+  bs/blueboydeath:
+    digitized: DSBLUDTH
+    adlib: ALBLUDTH
+    pc: PCBLUDTH
+  bs/goldsternlaugh:
+    digitized: DSGLDLAF
+    adlib: ALGLDLAF
+    pc: PCGLDLAF
+  bs/scientisthalt:
+    digitized: DSSCISIT
+    adlib: ALSCISIT
+    pc: PCSCISIT
+  bs/scientistdeath:
+    digitized: DSSCIDT1
+    adlib: ALSCIDT1
+    pc: PCSCIDT1
+  bs/dogboydeath:
+    digitized: DSMTHDTH
+    adlib: ALMTHDTH
+    pc: PCMTHDTH
+  bs/h_beat:
+    adlib: ALHEART
+    pc: PCHEART
+  bs/swathalt:
+    digitized: DSAPTSIT
+    adlib: ALSWTSIT
+    pc: PCSWTSIT
+  bs/scandeath:
+    digitized: DSSCNDTH
+    adlib: ALSCNDTH
+    pc: PCSCNDTH
+  bs/lcandeath:
+    digitized: DSLCNDTH
+    adlib: ALLCNDTH
+    pc: PCLCNDTH
+  bs/informdeath2:
+    digitized: DSINFDT2
+    adlib: ALINFDT2
+    pc: PCINFDT2
+  bs/informdeath3:
+    digitized: DSINFDT3
+    adlib: ALINFDT3
+    pc: PCINFDT3
+  bs/gurneydeath:
+    digitized: DSGRNDTH
+    adlib: ALGRNDTH
+    pc: PCGRNDTH
+  bs/prodeath2:
+    digitized: DSTCWDT2
+    adlib: ALPRODT2
+    pc: PCPRODT2
+  bs/prodeath3:
+    digitized: DSTCWDT3
+    adlib: AL_UN_77
+    pc: PC_UN_77
+  bs/swatdeath2:
+    digitized: DSAPTDT2
+    adlib: ALSWTDT2
+    pc: PCSWTDT2
+  bs/lcanbreak:
+    digitized: DSLCNBRK
+    adlib: ALLCNBRK
+    pc: PCLCNBRK
+  bs/scanbreak:
+    digitized: DSSCNBRK
+    adlib: ALSCNBRK
+    pc: PCSCNBRK
+  bs/htechdooropen:
+    digitized: DSDROPN
+    adlib: ALDROPN
+    pc: PCDROPN
+  bs/htechdoorclose:
+    digitized: DSDRCLS
+    adlib: ALDRCLS
+    pc: PCDRCLS
+  bs/elecarcdamage:
+    digitized: DSARCZAP
+    adlib: ALARCZAP
+    pc: PCARCZAP
+  bs/podhatch:
+    digitized: DSPODHTC
+    adlib: ALPODHTC
+    pc: PCPODHTC
+  bs/electshot:
+    digitized: DSELCATK
+    adlib: ALELCATK
+    pc: PCELCATK
+  bs/elecdie:
+    digitized: DSELCDTH
+    adlib: ALELCDTH
+    pc: PCELCDTH
+  bs/atkgrenade:
+    digitized: DSGRENAD
+    adlib: ALGRENAD
+    pc: PCGRENAD
+  bs/clawattack:
+    digitized: DSCLAWAT
+    adlib: ALCLAWAT
+    pc: PCCLAWAT
+  bs/punchattack:
+    digitized: DSFISTAT
+    adlib: ALFISTAT
+    pc: PCFISTAT
+  bs/spitattack:
+    digitized: DSSPITAT
+    adlib: ALSPITAT
+    pc: PCSPITAT
+  bs/poddeath:
+    digitized: DSPODDTH
+    adlib: ALPODDTH
+    pc: PCPODDTH
+  bs/podhalt:
+    digitized: DSPODSIT
+    adlib: ALPODSIT
+    pc: PCPODSIT
+  bs/swatdeath3:
+    digitized: DSAPTDT3
+    adlib: AL_UN_93
+    pc: PC_UN_93
+  bs/scideath2:
+    digitized: DSSCIDT2
+    adlib: ALSCIDT2
+    pc: PCSCIDT2
+  bs/scideath3:
+    digitized: DSSCIDT3
+    adlib: ALSCIDT3
+    pc: PCSCIDT3
+  bs/gottoken:
+    adlib: ALGETTKN
+    pc: PCGETTKN
+  bs/switch:
+    adlib: ALSWITCH
+    pc: PCSWITCH
+  bs/stats1:
+    adlib: ALSTATS1
+    pc: PCSTATS1
+  bs/stats2:
+    adlib: ALSTATS2
+    pc: PCSTATS2
+
+  # The shared names
+  menu/move1:
+    alias: bs/movegun1
+  menu/move2:
+    alias: bs/movegun2
+  menu/activate:
+    alias: bs/shoot
+  menu/escape:
+    alias: bs/escpressed
+  player/usefail:
+    alias: bs/noway
+  player/death:
+    alias: bs/playerdeath
+  world/hitwall:
+    alias: bs/hitwall
+  world/pushwall:
+    alias: bs/pushwall
+  doors/open:
+    alias: bs/opendoor
+  doors/close:
+    alias: bs/closedoor
+  doors/htech_open:
+    alias: bs/htechdooropen
+  doors/htech_close:
+    alias: bs/htechdoorclose
+  misc/1up:
+    alias: bs/extra_man
+  misc/k_pkup:
+    alias: bs/getkey
+  misc/i_pkup:
+    alias: bs/bonus1
+  misc/ammo_pkup:
+    alias: bs/getammo
+  misc/health_pkup:
+    alias: bs/health1
+  misc/w_pkup:
+    alias: bs/getpistol

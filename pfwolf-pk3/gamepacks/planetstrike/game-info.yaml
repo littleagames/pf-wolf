@@ -1,0 +1,327 @@
+# Blake Stone: Planet Strike. Starts from gamepacks/blake (base-pack), but a game-info replaces
+# the base pack's whole, so this one has everything.
+default-map:
+  ceiling-color: "#383838"
+  floor-color: "#717171"
+  # Blake Stone's distance lighting (as Aliens of Gold's for now)
+  shading:
+    fade-color: "#000000"
+    fade-start: 4.52
+    max-fade: 80
+    fade-curve: inverse
+
+signon:
+  press-a-key: false
+
+non-shareware-notice: false
+
+title-pics:
+  - TITLE1
+
+# The title loop's music when it's come back to from the menu or a game (bstone's MENUSONG);
+# the intro leaves the title music (PLOT) playing the first time
+intro-music: LASTLAFF
+high-scores-music: HISCORE
+
+# The control panel's music, in place of each menu's (blake's menudefs play Aliens of Gold's)
+menu-music: LASTLAFF
+
+# As the game starts (bstone's PreDemo): Apogee from and to blue, to the end of its fanfare, the
+# JAM logo movie, then the PC-13 rating
+intro:
+  - pic: ApogeeLogo
+    palette: Extra2PAL
+    fade-from: "#6474D4"
+    music: APOGFNFM
+    music-loop: false
+    until-music-ends: true
+    seconds: 6            # with music off
+    fade-to: "#6474D4"
+  - movie: IntroMovie
+    music: PLOT
+  - background: "20"
+    pic: ParentalWarning
+    y: 64
+    seconds: 2
+
+# Until a key is pressed (bstone's DemoLoop): the title, the credits on the menu screen, then
+# the high scores
+title-loop:
+  - pic: TITLE1
+    palette: Extra3PAL
+    seconds: 6
+  - pic: LincScreen
+    text:
+      script: CreditsText
+      x1: 38
+      y1: 28
+      x2: 281
+      y2: 170
+      font: 2
+      color: 175
+      background: 2
+      light: 133
+    seconds: 6
+  - high-scores: true
+    seconds: 9
+menu-fade-color: "#000000"
+
+menu-backdrop: LincScreen
+menu-message:
+  font: LargeFont
+  color: "175"
+  shadow: "128"
+  hi: "133"
+  med: "130"
+  lo: "128"
+
+help-text: HelpText
+
+high-scores:
+  frame: high-scores
+  pic: ""
+  headers: []
+  labels:
+    - { text: "NAME", x: 86, y: 60, color: "86" }
+    - { text: "SCORE", x: 175, y: 60, color: "86" }
+    - { text: "MISSION", x: 247, y: 53, color: "86" }
+    - { text: "RATIO", x: 254, y: 60, color: "86" }
+  font: BlakeSmall
+  color: "88"
+  shadow: "1"
+  row-y: 68
+  row-height: 7
+  name-x: 45
+  show-level: false
+  score-right: 205
+  ratio-right: 272
+  entry-color: "89"
+  entry-background: "2"
+  entry-width: 120
+  count: 10
+  defaults:
+    - { name: "JAM PRODUCTIONS INC." }
+    - { name: "" }
+    - { name: "JERRY JONES" }
+    - { name: "MICHAEL MAYNARD" }
+    - { name: "JAMES T. ROW" }
+    - { name: "" }
+    - { name: "" }
+    - { name: "TO REGISTER CALL" }
+    - { name: " 1-800-GAME123" }
+    - { name: "" }
+
+lose-screen:
+  pic: GoldfireScreen
+  script: Transmission
+  x1: 14
+  y1: 141
+  x2: 307
+  y2: 173
+  font: 2
+  light: 15
+  background: 0
+  dark: 1
+  shadow: 1
+  print-delay: 2
+  type-sound: bs/term_type
+
+screen-fade-style: palette
+menu-fade-style: palette
+menu-fade-tics: 20
+death-fade-style: fizzle
+death-fade-tics: 70
+death-fade-color: Maroon
+death-turn-speed: 2
+death-hold-tics: 100
+level-fade-style: fizzle
+level-fade-tics: 20
+
+hud-messages:
+  enabled: true
+  pickup-style: Default
+  lock-style: Default
+  obituary-style: Obituary
+
+skills:
+  NOVICE:
+    name: "Level 1:\nNovice Agent"
+    pic-name: C_BabyMode
+    enemy-health: health.baby
+  SKILLED:
+    name: "Level 2:\nSkilled Agent"
+    pic-name: C_Easy
+    enemy-health: health.easy
+  EXPERT:
+    name: "Level 3:\nExpert Agent"
+    pic-name: C_Normal
+    enemy-health: health.normal
+  VETERAN:
+    name: "Level 4:\nVeteran Agent"
+    pic-name: C_Hard
+    enemy-health: health.hard
+
+# One mission: areas 0 to 19 (MAP01-MAP20) and four secret areas (MAP21-MAP24), all kept as
+# they're left. It starts in area 0, after its briefing.
+episodes:
+  PLANETSTRIKE:
+    name: "Planet Strike"
+    start-map: MAP01
+    briefing: Mission1Brief
+    end-briefing: Mission1End
+    end-movie: EndMovie
+
+clusters:
+  1: { hub: true }
+
+level-start-message: "^ST1^CEGet Ready, Blake!\r^XX"
+mission-won-message: MissionCompleteText
+death-restores-level-start: true
+
+# Area names are the game's own (its LEVEL_DESCS text); music is bstone's songs table
+maps:
+  MAP01:
+    name: "TRANSPORT ARRIVAL AREA"
+    next: MAP02
+    floor-number: 0
+    cluster: 1
+    music: MAJMIN
+  MAP02:
+    name: "BIO-TECH LABS"
+    next: MAP03
+    floor-number: 1
+    cluster: 1
+    music: STICKS
+  MAP03:
+    name: "CARGO HOLDING"
+    next: MAP04
+    floor-number: 2
+    cluster: 1
+    music: MOURNING
+  MAP04:
+    name: "RADIATION CONTAINMENT"
+    next: MAP05
+    floor-number: 3
+    cluster: 1
+    music: LURKING
+  MAP05:
+    name: "TRAINEE QUARTERS"
+    next: MAP06
+    floor-number: 4
+    cluster: 1
+    music: CIRCLES
+  MAP06:
+    name: "SECURITY SECTION"
+    next: MAP07
+    floor-number: 5
+    cluster: 1
+    music: TIME
+  MAP07:
+    name: "REHABILITATION AREAS"
+    next: MAP08
+    floor-number: 6
+    cluster: 1
+    music: TOHELL
+  MAP08:
+    name: "WEAPONS TRAINING"
+    next: MAP09
+    floor-number: 7
+    cluster: 1
+    music: FORTRESS
+  MAP09:
+    name: "ADMINISTRATIVE AREAS"
+    next: MAP10
+    floor-number: 8
+    cluster: 1
+    music: GIVING
+  MAP10:
+    name: "COMMUNICATIONS"
+    next: MAP11
+    floor-number: 9
+    cluster: 1
+    music: HARTBEAT
+  MAP11:
+    name: "MUTANT HOLDING CHAMBERS"
+    next: MAP12
+    floor-number: 10
+    cluster: 1
+    music: MOURNING
+  MAP12:
+    name: "CRYOGENICS LABS"
+    next: MAP13
+    floor-number: 11
+    cluster: 1
+    music: MAJMIN
+  MAP13:
+    name: "ENGINEERING SECTOR"
+    next: MAP14
+    floor-number: 12
+    cluster: 1
+    music: VACCINAP
+  MAP14:
+    name: "HIGH SECURITY AREA"
+    next: MAP15
+    floor-number: 13
+    cluster: 1
+    music: LURKING
+  MAP15:
+    name: "SUPPLY PROCESSING"
+    next: MAP16
+    floor-number: 14
+    cluster: 1
+    music: MONASTRY
+  MAP16:
+    name: "BIO MATERIALS STORAGE"
+    next: MAP17
+    floor-number: 15
+    cluster: 1
+    music: TOMBP
+  MAP17:
+    name: "CREW QUARTERS"
+    next: MAP18
+    floor-number: 16
+    cluster: 1
+    music: DARKNESS
+  MAP18:
+    name: "MUTANT ISOLATION AREA"
+    next: MAP19
+    floor-number: 17
+    cluster: 1
+    music: MOURNING
+  MAP19:
+    name: "CRYO TESTING CHAMBERS"
+    next: MAP20
+    floor-number: 18
+    cluster: 1
+    music: SERPENT
+  MAP20:
+    name: "GOLDFIRE'S LAIR"
+    floor-number: 19
+    cluster: 1
+    music: TIME
+  MAP21:
+    name: "MUTANT PROGRAMMING"
+    floor-number: 20
+    cluster: 1
+    music: CATACOMB
+  MAP22:
+    name: "PLASMA TEST AREAS"
+    floor-number: 21
+    cluster: 1
+    music: PLOT
+  MAP23:
+    name: "BIO MECHANICS LABS"
+    floor-number: 22
+    cluster: 1
+    music: GIVING
+  MAP24:
+    name: "CYBORG REPAIR BAYS"
+    floor-number: 23
+    cluster: 1
+    music: VACCINAP
+
+end-strings:
+  - $BS_ENDSTR1
+  - $BS_ENDSTR2
+  - $BS_ENDSTR3
+  - $BS_ENDSTR4

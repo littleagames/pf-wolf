@@ -1,0 +1,28 @@
+# Planet Strike's own scenery numbers (bstone's ScanInfoPlane), over mapdefs/blake/decorations.yaml
+# (actordefs/planetstrike/decorations.yaml)
+things:
+  53: { class: StaticVSpike }
+  57: { class: AntiPlasmaCannon }
+  486: { class: PlasmaDetonator }
+  488: { class: RadarEnergy }
+  59: { class: YellowBox }
+  71: { class: StaticVPost }
+  487: { class: DoorRubble }
+  489: { class: BonsaiTree }
+  490: { class: TerrariumPottedPlant }
+  491: { class: TerrariumTubedPlant }
+  492: { class: HiTechTableAndChairs }
+  493: { class: DeadAogRentACop }
+  494: { class: DeadAogProGuard }
+  495: { class: DeadAogSwatGuard }
+  # Posts and a statue that come alive (as a spider mutant, a reptilian warrior and a mutant
+  # human) on harder skills: still scenery until those are done
+  590: { class: GreekPost2 }
+  591: { class: GreekPost2 }
+  592: { class: GreekPost2 }
+  608: { class: BronzePost }
+  609: { class: BronzePost }
+  610: { class: BronzePost }
+  626: { class: Statue }
+  627: { class: Statue }
+  628: { class: Statue }

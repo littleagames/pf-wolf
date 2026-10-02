@@ -1,0 +1,160 @@
+# Planet Strike's walls where they differ from Aliens of Gold's (mapdefs/blake/walls.yaml, which
+# this pack starts from): the textures at those VSWAP pages are Planet Strike's own. A tile here
+# replaces blake's entry for it whole.
+walls:
+    # Barrier switches as blake's, but each finds its barrier by the x,y in its own object-plane
+    # value (bstone's UpdateBarrierTable for Planet Strike), not a map-info tag-link
+    '45':    # Switch Active
+        North: SWITCHA1
+        South: SWITCHA1
+        East: SWITCHA2
+        West: SWITCHA2
+        switch:
+            to: 57
+            sound: bs/switch
+            link: object-plane
+            actions:
+                - A_ToggleActive
+                - A_Message("$BS_BARRIEROFF")
+    '57':    # Switch Inactive
+        North: SWITCHI1
+        South: SWITCHI1
+        East: SWITCHI2
+        West: SWITCHI2
+        switch:
+            to: 45
+            sound: bs/switch
+            link: object-plane
+            actions:
+                - A_ToggleActive
+                - A_Message("$BS_BARRIERON")
+    '3':    # Piping 1
+        North: PIPINGA1
+        South: PIPINGA1
+        East: PIPINGA2
+        West: PIPINGA2
+    '4':    # Piping 2
+        North: PIPINGB1
+        South: PIPINGB1
+        East: PIPINGB2
+        West: PIPINGB2
+    '5':    # Piping 3
+        North: PIPINGC1
+        South: PIPINGC1
+        East: PIPINGC2
+        West: PIPINGC2
+    '7':    # Horizontal Pipes 1
+        North: PIPHORA1
+        South: PIPHORA1
+        East: PIPHORA2
+        West: PIPHORA2
+    '8':    # Horizontal Pipes 2
+        North: PIPHORB1
+        South: PIPHORB1
+        East: PIPHORB2
+        West: PIPHORB2
+    '13':    # Bronze Crate
+        North: BZCRATE1
+        South: BZCRATE1
+        East: BZCRATE2
+        West: BZCRATE2
+    '17':    # Console Biology Display
+        North: CONSBIO1
+        South: CONSBIO1
+        East: CONSBIO2
+        West: CONSBIO2
+    '21':    # Teleport Map
+        North: TELEMAP1
+        South: TELEMAP1
+        East: TELEMAP2
+        West: TELEMAP2
+        switch:
+            # The teleporter's map panel: for now, Aliens of Gold's floor-select screen
+            sides: [east, west]
+            actions:
+                - A_FloorSelect
+    '23':    # Console Wires
+        North: CONSWIR1
+        South: CONSWIR1
+        East: CONSWIR2
+        West: CONSWIR2
+    '25':    # Pipes with Bars 1
+        North: PIPBARA1
+        South: PIPBARA1
+        East: PIPBARA2
+        West: PIPBARA2
+    '26':    # Pipes with Bars 3
+        North: PIPBARB1
+        South: PIPBARB1
+        East: PIPBARB2
+        West: PIPBARB2
+    '27':    # Console Piping
+        North: CONSPIP1
+        South: CONSPIP1
+        East: CONSPIP2
+        West: CONSPIP2
+    '28':    # Console Data Display
+        North: CONSDAT1
+        South: CONSDAT1
+        East: CONSDAT2
+        West: CONSDAT2
+    '29':    # Pink Wall 1
+        North: PNKWALA1
+        South: PNKWALA1
+        East: PNKWALA2
+        West: PNKWALA2
+    '30':    # Pink Wall 2
+        North: PNKWALB1
+        South: PNKWALB1
+        East: PNKWALB2
+        West: PNKWALB2
+    '31':    # Elevator Wall w/ Emblem (Contrast Version)
+        North: ELEVEMB1
+        South: ELEVEMB1
+        East: ELEVEMB2
+        West: ELEVEMB2
+    '42':    # Planet Wall 1
+        North: PLNWALA1
+        South: PLNWALA1
+        East: PLNWALA2
+        West: PLNWALA2
+    '43':    # Planet Wall 2
+        North: PLNWALB1
+        South: PLNWALB1
+        East: PLNWALB2
+        West: PLNWALB2
+    '44':    # Planet Wall 3
+        North: PLNWALC1
+        South: PLNWALC1
+        East: PLNWALC2
+        West: PLNWALC2
+    '47':    # Console Planet Display
+        North: CONSPLN1
+        South: CONSPLN1
+        East: CONSPLN2
+        West: CONSPLN2
+    '54':    # Pink Wall 3
+        North: PNKWALC1
+        South: PNKWALC1
+        East: PNKWALC2
+        West: PNKWALC2
+    '55':    # Pink Wall 4
+        North: PNKWALD1
+        South: PNKWALD1
+        East: PNKWALD2
+        West: PNKWALD2
+    '56':    # Pink Wall 5
+        North: PNKWALE1
+        South: PNKWALE1
+        East: PNKWALE2
+        West: PNKWALE2
+    '62':    # Planet Wall 4
+        North: PLNWALD1
+        South: PLNWALD1
+        East: PLNWALD2
+        West: PLNWALD2
+    '63':    # Planet Wall w/ Emblem
+        North: PLNEMBL1
+        South: PLNEMBL1
+        East: PLNEMBL2
+        West: PLNEMBL2

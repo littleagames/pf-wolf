@@ -1,0 +1,126 @@
+# Planet Strike's pickups where they differ from Aliens of Gold's (actordefs/blake/items.yaml,
+# which this pack starts from; a class here replaces blake's whole). Its access cards are red,
+# yellow and blue only, with their own pictures (on the status bar too), and its two charge
+# pickups swap pictures (bstone's statinfo).
+
+RedCard:
+  parent: BlakeCard
+  properties:
+    "key.statusbarpic": "STKEYS1"
+    "key.statusbaremptypic": "STKEYS0"
+    "key.statusbarslot": 0
+    "key.statusbarcolor": "201"
+    "key.statusbaremptycolor": "17"
+    "inventory.pickupmessage": "$BS_GOTREDCARD"
+    "key.lockedmessage": "$BS_REDDENIED"
+  states:
+    Spawn:
+      - sprite: RACS
+        frames: [A]
+        tics-per-frame: -1
+
+YellowCard:
+  parent: BlakeCard
+  properties:
+    "key.statusbarpic": "STKEYS2"
+    "key.statusbaremptypic": "STKEYS0"
+    "key.statusbarslot": 1
+    "key.statusbarcolor": "185"
+    "key.statusbaremptycolor": "49"
+    "inventory.pickupmessage": "$BS_GOTYELLOWCARD"
+    "key.lockedmessage": "$BS_YELLOWDENIED"
+  states:
+    Spawn:
+      - sprite: YACS
+        frames: [A]
+        tics-per-frame: -1
+
+BlueCard:
+  parent: BlakeCard
+  properties:
+    "key.statusbarpic": "STKEYS3"
+    "key.statusbaremptypic": "STKEYS0"
+    "key.statusbarslot": 2
+    "key.statusbarcolor": "156"
+    "key.statusbaremptycolor": "145"
+    "inventory.pickupmessage": "$BS_GOTBLUECARD"
+    "key.lockedmessage": "$BS_BLUEDENIED"
+  states:
+    Spawn:
+      - sprite: BACS
+        frames: [A]
+        tics-per-frame: -1
+
+ChargeUnit:
+  parent: Ammo
+  properties:
+    "inventory.type": ChargeUnit
+    "monster.ammogain": 8
+    "inventory.amount": 8
+    "inventory.maxamount": 100
+    "inventory.pickupsound": "bs/getammo"
+    "inventory.pickupmessage": "$BS_GOTCHARGEUNIT"
+  states:
+    Spawn:
+      - sprite: CHRG
+        frames: [A]
+        tics-per-frame: -1
+
+# bstone gives 1 to 8 units at random; a fixed 4 until pickups can give random amounts
+ChargePack:
+  parent: ChargeUnit
+  properties:
+    "inventory.amount": 4
+    "inventory.pickupmessage": "$BS_GOTCHARGEPACK"
+  states:
+    Spawn:
+      - sprite: CHGU
+        frames: [A]
+        tics-per-frame: -1
+
+# The radar's power (statusbar.yaml radar, gauge): each pack is 900 tics of 2x zoom, up to 14400.
+# bstone turns a pack away above 14400 - 112; this takes one while there's room for any of it.
+RadarEnergy:
+  parent: Ammo
+  properties:
+    "inventory.type": RadarEnergy
+    "inventory.amount": 900
+    "inventory.maxamount": 14400
+    "inventory.pickupsound": "bs/radar_powerup"
+    "inventory.pickupmessage": "$BS_GOTRADAR"
+  states:
+    Spawn:
+      - sprite: AUTO
+        frames: [A]
+        tics-per-frame: -1
+
+# The fission detonator, one to a floor: blowing up its security cube with it opens the way on
+# (bstone's GivePlasmaDetonator, up to 100). Using it waits for the security cube.
+PlasmaDetonator:
+  parent: Ammo
+  properties:
+    "inventory.type": PlasmaDetonator
+    "inventory.amount": 1
+    "inventory.maxamount": 100
+    "inventory.pickupsound": "bs/getdetonator"
+    "inventory.pickupmessage": "$BS_GOTDETONATOR"
+  states:
+    Spawn:
+      - sprite: DBOM
+        frames: [A]
+        tics-per-frame: -1
+
+# Aliens of Gold's green and gold cards don't come in Planet Strike: no place on its status bar
+GreenCard:
+  parent: BlakeCard
+  properties:
+    "key.statusbarslot": -1
+    "inventory.pickupmessage": "$BS_GOTGREENCARD"
+    "key.lockedmessage": "$BS_GREENDENIED"
+
+GoldCard:
+  parent: BlakeCard
+  properties:
+    "key.statusbarslot": -1
+    "inventory.pickupmessage": "$BS_GOTGOLDCARD"
+    "key.lockedmessage": "$BS_GOLDDENIED"

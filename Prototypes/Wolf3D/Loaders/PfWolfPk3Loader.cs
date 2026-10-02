@@ -37,9 +37,10 @@ internal class PfWolfPk3Loader
     private readonly List<AssetSourceEntry> _mapDataFiles = [];
 
     /// <summary>
-    /// Folders holding one subfolder per game pack (actordefs/wolf3d/, gamepacks/spear/)
+    /// Folders holding one subfolder per game pack (actordefs/wolf3d/, gamepacks/spear/,
+    /// menudefs/blake/; the menus directly in menudefs/ are every pack's)
     /// </summary>
-    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/"];
+    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/", "menudefs/"];
 
     /// <summary>
     /// Files a mod keeps at its root that pfwolf.pk3 keeps in gamepacks/{pack}/

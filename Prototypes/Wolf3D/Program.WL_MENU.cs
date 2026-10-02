@@ -29,7 +29,7 @@ internal partial class Program
     internal const int CTL_H = 60;
 
     // Control panel song: the main menu's music in menudefs/main-menu
-    internal static string MENUSONG => _assetManager.GetMenu("main-menu")?.Music ?? "WONDERIN";
+    internal static string MENUSONG => _gameEngineManager.GetGameInfo().MenuMusic ?? _assetManager.GetMenu("main-menu")?.Music ?? "WONDERIN";
     internal static string INTROSONG => _gameEngineManager.GetGameInfo().IntroMusic ?? "";
     internal static string HIGHSCORESSONG => _gameEngineManager.GetGameInfo().HighScoresMusic ?? "";
 
@@ -2161,8 +2161,9 @@ internal partial class Program
             if (menu == null)
                 continue;
 
-            if (!string.IsNullOrEmpty(menu.Music) && _assetManager.Find<Wolf3dImfAudio>(menu.Music) == null)
-                Console.WriteLine($"Menu '{menuName}': unknown music '{menu.Music}'");
+            var music = _gameEngineManager.GetGameInfo().MenuMusic ?? menu.Music;
+            if (!string.IsNullOrEmpty(music) && !_assetManager.Exists<Wolf3dImfAudio>(music))
+                Console.WriteLine($"Menu '{menuName}': unknown music '{music}'");
 
             var packLists = menu.MenuItems.Select(item => item.GamePacks)
                 .Concat(menu.Components.Select(component => component.GamePacks));
@@ -2347,13 +2348,14 @@ internal partial class Program
         if (string.IsNullOrEmpty(menu.Music))
             return;
 
-        if (string.Equals(_audioManager.CurrentMusicTrack, menu.Music, StringComparison.OrdinalIgnoreCase))
+        var music = _gameEngineManager.GetGameInfo().MenuMusic ?? menu.Music;
+        if (string.Equals(_audioManager.CurrentMusicTrack, music, StringComparison.OrdinalIgnoreCase))
         {
             _audioManager.SetPaused(false);
             return;
         }
 
-        StartCPMusic(menu.Music);
+        StartCPMusic(music);
     }
 
     /// <summary>A label's shadow: its own, none, or null to keep the font's</summary>

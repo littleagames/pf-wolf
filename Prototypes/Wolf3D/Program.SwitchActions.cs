@@ -46,13 +46,15 @@ internal partial class Program
         // (actordefs), e.g. a light coming on; actors without that state are left alone
         MapTriggerRegistry.Register("A_Activate", (trigger, _) => SetTaggedActorsState(trigger, "Active"));
         MapTriggerRegistry.Register("A_Deactivate", (trigger, _) => SetTaggedActorsState(trigger, "Inactive"));
-        // A_ToggleActive: each tagged actor on its Inactive state goes Active, the rest Inactive
+        // A_ToggleActive: each tagged actor on its Inactive state (or one named Inactive...,
+        // such as an InactiveIdle it starts off on) goes Active, the rest Inactive
         MapTriggerRegistry.Register("A_ToggleActive", (trigger, _) =>
         {
             bool any = false;
             foreach (var actor in _mapManager.TaggedActors(trigger.Tag).ToList())
             {
-                var stateName = actor.CurrentState?.StateName == "Inactive" ? "Active" : "Inactive";
+                bool inactive = actor.CurrentState?.StateName?.StartsWith("Inactive", StringComparison.Ordinal) == true;
+                var stateName = inactive ? "Active" : "Inactive";
                 if (actor.IsRemoved || !actor.ResolvedStates.TryGetValue(stateName, out var frame))
                     continue;
                 actor.JumpTo(frame);

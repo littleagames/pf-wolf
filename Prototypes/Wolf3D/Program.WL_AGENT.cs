@@ -1,4 +1,4 @@
-﻿using Wolf3D.Assets;
+using Wolf3D.Assets;
 using Wolf3D.Constants;
 using Wolf3D.Enums;
 using Wolf3D.Entities.Actors;
@@ -625,6 +625,8 @@ internal partial class Program
         ActorActionRegistry.Register("T_SecurityLight", T_SecurityLight);
         ActorActionRegistry.Register("T_SteamVent", T_SteamVent);
         ActorActionRegistry.Register("A_HurtPlayerHere", A_HurtPlayerHere);
+        ActorActionRegistry.Register("A_HoldNearPlayer", A_HoldNearPlayer);
+        ActorActionRegistry.Register("A_JumpIfUntagged", A_JumpIfUntagged);
         ActorActionRegistry.Register("A_SelfDestruct", A_SelfDestruct);
         ActorActionRegistry.Register("A_CountRemaining", A_CountRemaining);
         ActorActionRegistry.Register("A_VictoryIfLast", A_VictoryIfLast);
@@ -794,6 +796,8 @@ internal partial class Program
     {
         if (part.Equals("weapon", StringComparison.OrdinalIgnoreCase))
             DrawWeaponPic();
+        else if (part.Equals("weapon-corner", StringComparison.OrdinalIgnoreCase))
+            DrawWeaponCorner();
     }
 
     /*
@@ -876,7 +880,11 @@ internal partial class Program
         if (viewsize == 21 && ingame) return;
         // only-with-ammo: nothing while the weapon in hand needs none (Blake Stone's auto charge pistol)
         bool hide = StatusBar.Get("ammo")?.OnlyWithAmmo == true && WeaponAmmoType(gamestate.weapon) == null;
-        LatchNumber("ammo", GetAmmo(), hide);
+        // item: what to count while the weapon picked uses none (Planet Strike's charge units)
+        int ammo = WeaponAmmoType(gamestate.chosenweapon) == null && StatusBar.Get("ammo")?.Item is { Length: > 0 } item
+            ? _inventoryManager.GetCount(item)
+            : GetAmmo();
+        LatchNumber("ammo", ammo, hide);
         DrawAmmoGauge();
     }
 
@@ -1216,6 +1224,18 @@ internal partial class Program
         var icon = _inventoryManager.GetStringProperty(gamestate.weapon, "inventory.icon");
         if (!string.IsNullOrEmpty(icon) && StatusBar.Get("weapon") is { } element)
             _graphicManager.DrawPic(icon, element.X, StatusBarTop(element) + element.Y);
+        DrawWeaponCorner();
+    }
+
+    // Planet Strike's corner under the weapon's picture, with the ammo on it (statusbar.yaml
+    // weapon-corner): its picture for the weapon in hand
+    static void DrawWeaponCorner()
+    {
+        if (viewsize == 21 && ingame) return;
+        if (gamestate.weapon == null || StatusBar.Get("weapon-corner") is not { } element) return;
+        var pic = element.WeaponPics.GetValueOrDefault(gamestate.weapon);
+        if (!string.IsNullOrEmpty(pic))
+            _graphicManager.DrawPic(pic, element.X, StatusBarTop(element) + element.Y);
     }
 /*
 ==================
@@ -1503,6 +1523,7 @@ internal partial class Program
 
         UpdateFace();
         UpdateHeartMonitor();
+        UpdateRadar();
 
         if (IsWeaponReady())
         {

@@ -1,0 +1,96 @@
+# Planet Strike's status bar where it differs from Aliens of Gold's (gamepacks/blake/statusbar.yaml,
+# which this pack starts from; a part here replaces blake's whole, and ~ takes one away), as bstone
+# draws it (3d_agent.cpp, 3d_draw.cpp). Its bottom bar has no heart monitor: health is in big
+# digits, the three cards are pictures, the weapon sits right with its corner under it, and there's
+# a radar with its own power gauge.
+#
+# Parts Aliens of Gold's bar doesn't have:
+#   weapon-corner:  a picture under the weapon's, for the weapon in hand (weapon-pics, by class)
+#   radar-gauge:    a gauge like ammo-gauge, of an item's count out of its max (item)
+#   radar:          the map around the player (Program.Radar.cs), tiles across at 1x from x, y;
+#                   zoom-pics (1x, 2x, 4x) at zoom-x, zoom-y; zooming in uses up item; colors
+heart-monitor: ~
+
+health:
+  x: 128
+  y: 10
+  digits: 3
+  font: PSHealthDigits
+
+keys:
+  x: 120
+  y: 27
+  spacing-x: 16
+
+weapon:
+  x: 248
+  y: 24
+weapon-corner:
+  x: 248
+  y: 32
+  weapon-pics:
+    AutoChargePistol: STCWEAP1
+    SlowFireProtector: STCWEAP2
+    RapidAssaultWeapon: STCWEAP3
+    DualNeutronDisruptor: STCWEAP4
+    PlasmaDischargeUnit: STCWEAP5
+    AntiPlasmaCannon: STCWEAP6
+
+# The charge units show, on the weapon's corner, whatever's in hand
+ammo:
+  item: ChargeUnit
+  x: 273
+  y: 38
+  digits: 0
+  suffix: "%"
+  align: right
+  font: BlakeHud
+  color: "157"
+  behind: weapon-corner
+
+charge:
+  x: 240
+  y: 0
+  ready: ReadyPic
+  wait: WaitPic
+
+ammo-gauge:
+  x: 243
+  y: 3
+  width: 5
+  segments: 21
+  segment-height: 2
+  levels:
+    - { below: 7, lit: ["88", "86"], dim: ["85", "83"] }
+    - { below: 14, lit: ["56", "54"], dim: ["53", "51"] }
+    - { below: 22, lit: ["24", "22"], dim: ["21", "19"] }
+
+radar-gauge:
+  x: 235
+  y: 3
+  width: 5
+  segments: 21
+  segment-height: 2
+  item: RadarEnergy
+  levels:
+    - { below: 7, lit: ["88", "86"], dim: ["85", "83"] }
+    - { below: 14, lit: ["56", "54"], dim: ["53", "51"] }
+    - { below: 22, lit: ["24", "22"], dim: ["21", "19"] }
+
+radar:
+  x: 192
+  y: 4
+  tiles: 32
+  item: RadarEnergy
+  zoom-pics: [STMAG1X, STMAG2X, STMAG4X]
+  zoom-x: 176
+  zoom-y: 0
+  empty-message: "$BS_RADARGONE"
+  colors:
+    unmapped: "82"
+    floor: "85"
+    door: "88"
+    locked: "24"
+    player: "240"
+    key: "243"
+    enemy: "41"

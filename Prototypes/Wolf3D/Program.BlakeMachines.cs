@@ -313,6 +313,34 @@ internal partial class Program
             TakeDamage(damage, ob);
     }
 
+    /// <summary>
+    /// A_HoldNearPlayer(damage): a think for a barrier rising (Planet Strike's v-posts and
+    /// v-spikes, bstone's T_BarrierTransition closing): while the player is within 1.5 tiles
+    /// its frame doesn't run down, so it can't shut on them, and within half a tile they're
+    /// hurt for damage each tic.
+    /// </summary>
+    internal static void A_HoldNearPlayer(Entities.Actors.Actor ob, string[] args)
+    {
+        int damage = args.Length > 0 && int.TryParse(args[0], out var d) ? d : 0;
+        long dx = Math.Abs(player.X - ob.X), dy = Math.Abs(player.Y - ob.Y);
+        if (dx > 0x18000 || dy > 0x18000)
+            return;
+        if (damage > 0 && dx <= 0x8000 && dy <= 0x8000)
+            TakeDamage(damage, ob);
+        ob.TicCount += (short)tics;
+    }
+
+    /// <summary>
+    /// A_JumpIfUntagged(state): an actor nothing is tagged to work (no tag, nor a map-info
+    /// tag-link) goes to the state (Planet Strike's switchable barriers with no switch cycle by
+    /// themselves, as bstone's do)
+    /// </summary>
+    internal static void A_JumpIfUntagged(Entities.Actors.Actor ob, string[] args)
+    {
+        if (ob.Tag == 0 && args.Length > 0 && ob.ResolvedStates.TryGetValue(args[0], out var frame))
+            ob.JumpTo(frame);
+    }
+
     /// <summary>A_SelfDestruct: the actor dies, with its points (the floating bomb, reaching the player, blows itself up)</summary>
     internal static void A_SelfDestruct(Entities.Actors.Actor ob)
     {

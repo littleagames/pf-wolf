@@ -1,0 +1,21 @@
+# Planet Strike's barriers (actordefs/planetstrike/barriers.yaml), as bstone's ScanInfoPlane
+# places them: arc and post barriers come on or off, v-posts and v-spikes switchable (on or off)
+# or cycling by themselves (for every skill, medium and up, or hard). Barriers side by side pass
+# a barrier switch's link on to each other (linked-things), so one switch works a whole row.
+things:
+  138: { class: ArcBarrierOff }
+  139: { class: ArcBarrier }
+  174: { class: PostBarrierOff }
+  175: { class: PostBarrier }
+  425: { class: VSpikeBarrierOff }
+  426: { class: VSpikeBarrier }
+  428: { class: VSpikeCycle, min-skill: 0 }
+  429: { class: VSpikeCycle, min-skill: 2 }
+  430: { class: VSpikeCycle, min-skill: 3 }
+  562: { class: VPostBarrierOff }
+  563: { class: VPostBarrier }
+  565: { class: VPostCycle, min-skill: 0 }
+  566: { class: VPostCycle, min-skill: 2 }
+  567: { class: VPostCycle, min-skill: 3 }
+
+linked-things: [138, 139, 174, 175, 425, 426, 562, 563]

@@ -14,7 +14,9 @@ internal enum GameType
     [Description("spear")]
     SpearOfDestiny,
     [Description("blake")]
-    BlakeStone
+    BlakeStone,
+    [Description("planetstrike")]
+    PlanetStrike
 }
 
 internal class GameEngineManager
@@ -101,6 +103,7 @@ internal class GameEngineManager
     {
         GameType.SpearOfDestiny => "spear",
         GameType.BlakeStone => "blake-aog",
+        GameType.PlanetStrike => "blake-ps",
         _ => "wolf3d-apogee",
     };
 
@@ -112,6 +115,7 @@ internal class GameEngineManager
     {
         GameType.SpearOfDestiny => "SpearOfDestiny",
         GameType.BlakeStone => "BlakeStone",
+        GameType.PlanetStrike => "PlanetStrike",
         _ => "Wolfenstein3D",
     };
 

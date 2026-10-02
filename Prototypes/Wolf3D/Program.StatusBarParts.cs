@@ -57,13 +57,26 @@ internal partial class Program
         if (viewsize == 21 && ingame) return;
         if (StatusBar.Get("ammo-gauge") is not { } gauge || WeaponAmmoType(gamestate.weapon) is not { } ammoType)
             return;
+        DrawGauge(gauge, ammoType);
+    }
 
+    /// <summary>The radar's power gauge (statusbar.yaml radar-gauge): its item's count out of its max</summary>
+    static void DrawRadarGauge()
+    {
+        if (viewsize == 21 && ingame) return;
+        if (StatusBar.Get("radar-gauge") is { Item: { Length: > 0 } item } gauge)
+            DrawGauge(gauge, item);
+    }
+
+    /// <summary>A gauge of segments lit from the bottom for how much of the item there is</summary>
+    static void DrawGauge(Assets.StatusBarElement gauge, string item)
+    {
         int segments = Math.Max(gauge.Segments, 1);
-        int max = _inventoryManager.GetMaxAmount(ammoType);
+        int max = _inventoryManager.GetMaxAmount(item);
         if (max == int.MaxValue)
             max = 100;
-        int ammo = _inventoryManager.GetCount(ammoType);
-        int lit = ammo <= 0 ? 0 : Math.Clamp(ammo * segments / max, 1, segments);
+        int ammo = _inventoryManager.GetCount(item);
+        int lit = ammo <= 0 ? 0 : Math.Clamp((int)((long)ammo * segments / max), 1, segments);
         int unlit = segments - lit;
 
         var level = gauge.Levels.FirstOrDefault(l => unlit < l.Below) ?? gauge.Levels.LastOrDefault();

@@ -13,8 +13,11 @@ internal class GameParams
     [Option("exec", Required = false, HelpText = "Console commands to run once the game has started, separated by ';'.")]
     public string Exec { get; set; } = "";
 
-    [Option("game", Required = false, HelpText = "Game pack to run: wolf3d (default) or spear.")]
+    [Option("game", Required = false, HelpText = "Game pack to run: wolf3d (default), spear, blake or planetstrike.")]
     public string Game { get; set; } = "";
+
+    [Option("cheats", Required = false, HelpText = "Turn on the cheat commands and debug keys from the start.")]
+    public bool Cheats { get; set; }
 
     [Option("file", Required = false, HelpText = "Mods to load over pfwolf.pk3: pk3 or zip files, or folders, found as given or in the mods folder. Later ones win.")]
     public IEnumerable<string> Files { get; set; } = [];

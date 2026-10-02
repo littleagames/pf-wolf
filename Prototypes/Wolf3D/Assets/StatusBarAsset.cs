@@ -155,6 +155,32 @@ internal class StatusBarElement
     /// {Item} in it is how many of an inventory item the player has, e.g. {FoodToken}
     /// </summary>
     public string? IdleText { get; set; }
+
+    /// <summary>
+    /// gauge (radar-gauge): the inventory item whose count it shows, out of its max amount;
+    /// radar: the item that powers its zoom (used up while zoomed in)
+    /// </summary>
+    public string? Item { get; set; }
+
+    /// <summary>radar: how many map tiles across it shows at its widest (1 pixel each)</summary>
+    public int Tiles { get; set; } = 32;
+
+    /// <summary>radar: the zoom picture for each zoom (1x, 2x, 4x), drawn at zoom-x, zoom-y</summary>
+    public List<string> ZoomPics { get; set; } = [];
+    public int ZoomX { get; set; }
+    public int ZoomY { get; set; }
+
+    /// <summary>
+    /// radar: its colors (palette indices, color names or #RRGGBB) by what's there: unmapped,
+    /// floor, door, locked, player, key, enemy
+    /// </summary>
+    public Dictionary<string, string> Colors { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>weapon-corner: the picture for each weapon, by its class</summary>
+    public Dictionary<string, string> WeaponPics { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>radar: shown as its item runs out while zoomed in (a $NAME language key or the text)</summary>
+    public string? EmptyMessage { get; set; }
 }
 
 /// <summary>An ammo gauge's colors while fewer than <see cref="Below"/> of its segments are unlit</summary>

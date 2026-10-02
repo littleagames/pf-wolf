@@ -361,3 +361,12 @@ FoodUnitSnack:
     "inventory.amount": 10
     "inventory.pickupsound": "bs/concessions"
     "inventory.pickupmessage": "$BS_FOODUNITSNACK"
+# Wolf3D's keys (actordefs/native.yaml) never turn up in Blake Stone: off its status bar
+GoldKey:
+  parent: Key
+  properties:
+    "key.statusbarslot": -1
+SilverKey:
+  parent: Key
+  properties:
+    "key.statusbarslot": -1

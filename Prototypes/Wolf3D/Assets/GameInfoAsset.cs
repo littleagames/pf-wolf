@@ -53,6 +53,12 @@ internal record GameInfoAsset : Asset
     public string? HighScoresMusic { get; init; }
 
     /// <summary>
+    /// The control panel's music in place of what each menudef plays (a pack built on another
+    /// pack's menus, with its own song); the menudefs' own when unset
+    /// </summary>
+    public string? MenuMusic { get; init; }
+
+    /// <summary>
     /// #RRGGBB the screen fades to when leaving the control panel
     /// </summary>
     public string? MenuFadeColor { get; init; }
