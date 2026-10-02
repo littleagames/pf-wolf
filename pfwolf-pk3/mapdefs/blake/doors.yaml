@@ -16,34 +16,36 @@
 #                       (in line with it counts). Each side shows its own face, so the far side
 #                       can say there's no way through.
 #   wrong-side-message, wrong-side-sound: shown and played when it's tried from the other side
+#   split:              true: the door parts in the middle, each half sliding out to its side
+#                       (as all of Blake Stone's do), instead of sliding as one into the wall
 doors:
     # Bio-tech door
-    '88': { Vertical: true, East: DBIOU2, West: DBIOU2, North: JAMBIO1, South: JAMBIO1, locked: { East: DBIOL2, West: DBIOL2 }, takes-key: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
-    '89': { North: DBIOU1, South: DBIOU1, East: JAMBIO2, West: JAMBIO2, locked: { North: DBIOL1, South: DBIOL1 }, takes-key: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
+    '88': { Vertical: true, East: DBIOU2, West: DBIOU2, North: JAMBIO1, South: JAMBIO1, locked: { East: DBIOL2, West: DBIOL2 }, takes-key: true, split: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
+    '89': { North: DBIOU1, South: DBIOU1, East: JAMBIO2, West: JAMBIO2, locked: { North: DBIOL1, South: DBIOL1 }, takes-key: true, split: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
     # Metal door
-    '90': { Vertical: true, East: DMETALU2, West: DMETALU2, North: JAMSPCB1, South: JAMSPCB1, locked: { East: DMETALL2, West: DMETALL2 }, takes-key: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
-    '91': { North: DMETALU1, South: DMETALU1, East: JAMSPCB2, West: JAMSPCB2, locked: { North: DMETALL1, South: DMETALL1 }, takes-key: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
+    '90': { Vertical: true, East: DMETALU2, West: DMETALU2, North: JAMSPCB1, South: JAMSPCB1, locked: { East: DMETALL2, West: DMETALL2 }, takes-key: true, split: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
+    '91': { North: DMETALU1, South: DMETALU1, East: JAMSPCB2, West: JAMSPCB2, locked: { North: DMETALL1, South: DMETALL1 }, takes-key: true, split: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
     # Prison door
-    '92': { Vertical: true, East: DPRISNU2, West: DPRISNU2, North: JAMSTEL1, South: JAMSTEL1, locked: { East: DPRISNL2, West: DPRISNL2 }, takes-key: true, open-sound: doors/open, close-sound: doors/close }
-    '93': { North: DPRISNU1, South: DPRISNU1, East: JAMSTEL2, West: JAMSTEL2, locked: { North: DPRISNL1, South: DPRISNL1 }, takes-key: true, open-sound: doors/open, close-sound: doors/close }
+    '92': { Vertical: true, East: DPRISNU2, West: DPRISNU2, North: JAMSTEL1, South: JAMSTEL1, locked: { East: DPRISNL2, West: DPRISNL2 }, takes-key: true, split: true, open-sound: doors/open, close-sound: doors/close }
+    '93': { North: DPRISNU1, South: DPRISNU1, East: JAMSTEL2, West: JAMSTEL2, locked: { North: DPRISNL1, South: DPRISNL1 }, takes-key: true, split: true, open-sound: doors/open, close-sound: doors/close }
     # Elevator door (what it does beyond opening comes with the elevator)
-    '94': { Vertical: true, East: DELEVU2, West: DELEVU2, North: JAMSPCB1, South: JAMSPCB1, locked: { East: DELEVL2, West: DELEVL2 }, takes-key: true, open-sound: doors/open, close-sound: doors/close }
-    '95': { North: DELEVU1, South: DELEVU1, East: JAMSPCB2, West: JAMSPCB2, locked: { North: DELEVL1, South: DELEVL1 }, takes-key: true, open-sound: doors/open, close-sound: doors/close }
+    '94': { Vertical: true, East: DELEVU2, West: DELEVU2, North: JAMSPCB1, South: JAMSPCB1, locked: { East: DELEVL2, West: DELEVL2 }, takes-key: true, split: true, open-sound: doors/open, close-sound: doors/close }
+    '95': { North: DELEVU1, South: DELEVU1, East: JAMSPCB2, West: JAMSPCB2, locked: { North: DELEVL1, South: DELEVL1 }, takes-key: true, split: true, open-sound: doors/open, close-sound: doors/close }
     # High security door
-    '96': { Vertical: true, East: DHSECU2, West: DHSECU2, North: JAMSTEL1, South: JAMSTEL1, locked: { East: DHSECL2, West: DHSECL2 }, takes-key: true, open-sound: doors/open, close-sound: doors/close }
-    '97': { North: DHSECU1, South: DHSECU1, East: JAMSTEL2, West: JAMSTEL2, locked: { North: DHSECL1, South: DHSECL1 }, takes-key: true, open-sound: doors/open, close-sound: doors/close }
+    '96': { Vertical: true, East: DHSECU2, West: DHSECU2, North: JAMSTEL1, South: JAMSTEL1, locked: { East: DHSECL2, West: DHSECL2 }, takes-key: true, split: true, open-sound: doors/open, close-sound: doors/close }
+    '97': { North: DHSECU1, South: DHSECU1, East: JAMSTEL2, West: JAMSTEL2, locked: { North: DHSECL1, South: DHSECL1 }, takes-key: true, split: true, open-sound: doors/open, close-sound: doors/close }
     # One-way doors, passed through going west (98), north (99), east (100) or south (101): the
     # side they open from says enter only, the other no exit
-    '98': { Vertical: true, opens-from: east, East: DONEWYU2, West: DOWEXIT2, North: JAMSTEL1, South: JAMSTEL1, locked: { East: DONEWYL2 }, takes-key: true, open-sound: doors/open, close-sound: doors/close, wrong-side-message: $BS_DOORONEWAY, wrong-side-sound: player/usefail }
-    '99': { opens-from: south, South: DONEWYU1, North: DOWEXIT1, East: JAMSTEL2, West: JAMSTEL2, locked: { South: DONEWYL1 }, takes-key: true, open-sound: doors/open, close-sound: doors/close, wrong-side-message: $BS_DOORONEWAY, wrong-side-sound: player/usefail }
-    '100': { Vertical: true, opens-from: west, West: DONEWYU2, East: DOWEXIT2, North: JAMSTEL1, South: JAMSTEL1, locked: { West: DONEWYL2 }, takes-key: true, open-sound: doors/open, close-sound: doors/close, wrong-side-message: $BS_DOORONEWAY, wrong-side-sound: player/usefail }
-    '101': { opens-from: north, North: DONEWYU1, South: DOWEXIT1, East: JAMSTEL2, West: JAMSTEL2, locked: { North: DONEWYL1 }, takes-key: true, open-sound: doors/open, close-sound: doors/close, wrong-side-message: $BS_DOORONEWAY, wrong-side-sound: player/usefail }
+    '98': { Vertical: true, opens-from: east, East: DONEWYU2, West: DOWEXIT2, North: JAMSTEL1, South: JAMSTEL1, locked: { East: DONEWYL2 }, takes-key: true, split: true, open-sound: doors/open, close-sound: doors/close, wrong-side-message: $BS_DOORONEWAY, wrong-side-sound: player/usefail }
+    '99': { opens-from: south, South: DONEWYU1, North: DOWEXIT1, East: JAMSTEL2, West: JAMSTEL2, locked: { South: DONEWYL1 }, takes-key: true, split: true, open-sound: doors/open, close-sound: doors/close, wrong-side-message: $BS_DOORONEWAY, wrong-side-sound: player/usefail }
+    '100': { Vertical: true, opens-from: west, West: DONEWYU2, East: DOWEXIT2, North: JAMSTEL1, South: JAMSTEL1, locked: { West: DONEWYL2 }, takes-key: true, split: true, open-sound: doors/open, close-sound: doors/close, wrong-side-message: $BS_DOORONEWAY, wrong-side-sound: player/usefail }
+    '101': { opens-from: north, North: DONEWYU1, South: DOWEXIT1, East: JAMSTEL2, West: JAMSTEL2, locked: { North: DONEWYL1 }, takes-key: true, split: true, open-sound: doors/open, close-sound: doors/close, wrong-side-message: $BS_DOORONEWAY, wrong-side-sound: player/usefail }
     # Office door
-    '102': { Vertical: true, East: DOFFICU2, West: DOFFICU2, North: JAMOFFC1, South: JAMOFFC1, locked: { East: DOFFICL2, West: DOFFICL2 }, takes-key: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
-    '103': { North: DOFFICU1, South: DOFFICU1, East: JAMOFFC2, West: JAMOFFC2, locked: { North: DOFFICL1, South: DOFFICL1 }, takes-key: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
+    '102': { Vertical: true, East: DOFFICU2, West: DOFFICU2, North: JAMOFFC1, South: JAMOFFC1, locked: { East: DOFFICL2, West: DOFFICL2 }, takes-key: true, split: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
+    '103': { North: DOFFICU1, South: DOFFICU1, East: JAMOFFC2, West: JAMOFFC2, locked: { North: DOFFICL1, South: DOFFICL1 }, takes-key: true, split: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
     # Space door
-    '104': { Vertical: true, East: DSPACEU2, West: DSPACEU2, North: JAMSPCA1, South: JAMSPCA1, locked: { East: DSPACEL2, West: DSPACEL2 }, takes-key: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
-    '105': { North: DSPACEU1, South: DSPACEU1, East: JAMSPCA2, West: JAMSPCA2, locked: { North: DSPACEL1, South: DSPACEL1 }, takes-key: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
+    '104': { Vertical: true, East: DSPACEU2, West: DSPACEU2, North: JAMSPCA1, South: JAMSPCA1, locked: { East: DSPACEL2, West: DSPACEL2 }, takes-key: true, split: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
+    '105': { North: DSPACEU1, South: DSPACEU1, East: JAMSPCA2, West: JAMSPCA2, locked: { North: DSPACEL1, South: DSPACEL1 }, takes-key: true, split: true, open-sound: doors/htech_open, close-sound: doors/htech_close }
 
 # Access cards on a door's tile lock it (actordefs/blake/keys.yaml)
 door-locks:

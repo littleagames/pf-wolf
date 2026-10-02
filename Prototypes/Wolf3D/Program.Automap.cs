@@ -363,6 +363,23 @@ internal partial class Program
 
             string color = AutomapDoorColor(door);
 
+            if (door.xlat.Split)
+            {
+                // Two halves, each solid from its outer edge to half of `open` short of the middle
+                float half = 0.5f - open / 2;
+                if (door.vertical)
+                {
+                    AutomapLine(view, door.tilex + 0.5f, door.tiley, door.tilex + 0.5f, door.tiley + half, color);
+                    AutomapLine(view, door.tilex + 0.5f, door.tiley + 1 - half, door.tilex + 0.5f, door.tiley + 1, color);
+                }
+                else
+                {
+                    AutomapLine(view, door.tilex, door.tiley + 0.5f, door.tilex + half, door.tiley + 0.5f, color);
+                    AutomapLine(view, door.tilex + 1 - half, door.tiley + 0.5f, door.tilex + 1, door.tiley + 0.5f, color);
+                }
+                continue;
+            }
+
             if (door.vertical)
                 AutomapLine(view, door.tilex + 0.5f, door.tiley + open, door.tilex + 0.5f, door.tiley + 1, color);
             else

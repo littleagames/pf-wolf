@@ -715,7 +715,7 @@ internal partial class Program
         int texture;
 
         doornumtile = tilehit & ~BIT_DOOR;
-        texture = ((yintercept - doorobjlist[doornumtile].position) >> FIXED2TEXSHIFT) & TEXTUREMASK;
+        texture = (doorobjlist[doornumtile].TextureAlong(yintercept) >> FIXED2TEXSHIFT) & TEXTUREMASK;
 
         postheight = CalcHeight();
         postx = pixx;
@@ -741,7 +741,7 @@ internal partial class Program
         int texture;
 
         doornumtile = tilehit & ~BIT_DOOR;
-        texture = ((xintercept - doorobjlist[doornumtile].position) >> FIXED2TEXSHIFT) & TEXTUREMASK;
+        texture = (doorobjlist[doornumtile].TextureAlong(xintercept) >> FIXED2TEXSHIFT) & TEXTUREMASK;
 
         postheight = CalcHeight();
         postx = pixx;
@@ -1443,7 +1443,7 @@ internal partial class Program
                     // the trace hit the door plane at pixel position yintercept, see if the door is
                     // closed that much
                     //
-                    if ((ushort)yinttemp < door.position)
+                    if (door.OpenAt(yinttemp))
                     {
                         NoteLintel(door, planex, yinttemp);
                         passvert(ystep);
@@ -1685,7 +1685,7 @@ internal partial class Program
                     // the trace hit the door plane at pixel position xintercept, see if the door is
                     // closed that much
                     //
-                    if ((ushort)xinttemp < door.position)
+                    if (door.OpenAt(xinttemp))
                     {
                         NoteLintel(door, xinttemp, planey);
                         passhoriz(xstep);

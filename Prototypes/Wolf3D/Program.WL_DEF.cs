@@ -272,6 +272,28 @@ internal class doorobj_t
     /// <summary>The item the door needs to open, empty when it needs none</summary>
     public string Lock => unlocked ? "" : maplock;
 
+    /// <summary>
+    /// Whether the door has slid out of the way at along (0..0xffff across the tile). A sliding
+    /// door is open below its leading edge; a split door (doors.yaml split) opens from the middle,
+    /// each half sliding out by half of position.
+    /// </summary>
+    public bool OpenAt(int along)
+    {
+        along &= 0xffff;
+        if (!xlat.Split)
+            return along < position;
+        int half = position >> 1;
+        return along >= 0x8000 - half && along < 0x8000 + half;
+    }
+
+    /// <summary>Where the door's texture is at along: it slides with the door (or with its half)</summary>
+    public int TextureAlong(int along)
+    {
+        if (!xlat.Split)
+            return along - position;
+        return (along & 0xffff) >= 0x8000 ? along - (position >> 1) : along + (position >> 1);
+    }
+
     // Only the moving parts and whether it's been unlocked: position, orientation and lock come
     // from the map, which a load has already respawned the doors from.
     public void ReadState(BinaryReader br)

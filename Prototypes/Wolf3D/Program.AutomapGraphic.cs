@@ -214,13 +214,13 @@ internal partial class Program
         // of its tile, and its texture slides with it, as in the 3D view
         float across = doorobj.vertical ? fx : fy;
         float along = doorobj.vertical ? fy : fx;
-        float open = doorobj.position / 65536f;
+        int alongFixed = Math.Clamp((int)(along * 65536f), 0, 0xffff);
 
         float edge = 0.5f - AUTOMAP_DOORWIDTH / 2;
-        if (across < edge || across >= edge + AUTOMAP_DOORWIDTH || along < open)
+        if (across < edge || across >= edge + AUTOMAP_DOORWIDTH || doorobj.OpenAt(alongFixed))
             return -1;
 
-        int column = Math.Min((int)((along - open) * AUTOMAP_TEXSIZE), AUTOMAP_TEXSIZE - 1);
+        int column = Math.Clamp((int)(doorobj.TextureAlong(alongFixed) / 65536f * AUTOMAP_TEXSIZE), 0, AUTOMAP_TEXSIZE - 1);
         int texrow = Math.Min((int)((across - edge) / AUTOMAP_DOORWIDTH * AUTOMAP_TEXSIZE), AUTOMAP_TEXSIZE - 1);
         return texture[column * AUTOMAP_TEXSIZE + texrow];
     }

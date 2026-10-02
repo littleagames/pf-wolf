@@ -348,6 +348,12 @@ internal record MapTextureTranslation
     /// </summary>
     public string OpensFrom { get; init; } = "";
 
+    /// <summary>
+    /// Doors only: the door parts in the middle, its two halves sliding out to either side
+    /// (Blake Stone's doors), instead of sliding as one into the wall
+    /// </summary>
+    public bool Split { get; init; }
+
     /// <summary>Doors only: shown when the player tries a one-way door from the wrong side (a $NAME language key or the text)</summary>
     public string WrongSideMessage { get; init; } = "";
 
