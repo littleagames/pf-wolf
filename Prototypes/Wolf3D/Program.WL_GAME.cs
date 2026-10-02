@@ -519,8 +519,9 @@ internal partial class Program
 
     internal static void DrawPlayScreen()
     {
-        if (StatusBar.Get("background")?.Pic is { Length: > 0 } statusbarpic)
+        if (StatusBar.Get("background") is { Pic: { Length: > 0 } statusbarpic } background)
         {
+            FillBarSides(background, atTop: false, STATUSLINES);
             using var _ = _videoManager.UseUiOrigin(UiAnchor.Bottom);
             _graphicManager.DrawPic(statusbarpic, 0, 200 - STATUSLINES);
         }
@@ -556,8 +557,9 @@ internal partial class Program
             DrawStatusBorder(bordercol);
         else
         {
-            // Beside the status bar: from each screen edge to the border's sides into the picture
-            int sides = _videoManager.ScreenX(StatusBar.Get("border")?.Sides ?? 0);
+            // Beside the status bar: from each screen edge to the border's sides into the picture.
+            // A bar with no border (Blake Stone's) keeps its side-color there instead.
+            int sides = StatusBar.Get("border") is { } border ? _videoManager.ScreenX(border.Sides) : 0;
             int top = _videoManager.ScreenYAboveBottom(STATUSLINES);
             if (sides > 0 && STATUSLINES > 0)
             {

@@ -47,6 +47,12 @@ internal class StatusBarElement
     /// <summary>background: how many 320x200 pixel lines the status bar takes from the view</summary>
     public int? Height { get; set; }
 
+    /// <summary>
+    /// background, top: on a screen wider than the picture, the color its lines are filled with
+    /// beside it (Black when left out). Wolf3D's bar is filled by its border's sides instead.
+    /// </summary>
+    public string? SideColor { get; set; }
+
     /// <summary>Numbers: how many digits the number takes, right-aligned (a longer number shows its last digits)</summary>
     public int Digits { get; set; } = 1;
 

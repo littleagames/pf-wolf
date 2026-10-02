@@ -408,14 +408,31 @@ internal class VideoManager
     /// </summary>
     internal UiOriginScope UseUiOrigin(UiAnchor anchor)
     {
-        var scope = new UiOriginScope(this, uiAnchor);
+        var scope = new UiOriginScope(this, uiAnchor, uiY);
         SetUiOrigin(anchor);
         return scope;
     }
 
-    internal readonly struct UiOriginScope(VideoManager video, UiAnchor anchor) : IDisposable
+    /// <summary>
+    /// Until disposed, centers the 320x200 layout's lines above a bottom bar
+    /// <paramref name="bottomLines"/> tall in the screen above that bar (which sits on the
+    /// screen's bottom), for screens drawn over the play area: the level's end, say.
+    /// </summary>
+    internal UiOriginScope UseUiOriginAboveBottom(int bottomLines)
     {
-        public void Dispose() => video.SetUiOrigin(anchor);
+        var scope = new UiOriginScope(this, uiAnchor, uiY);
+        SetUiOrigin(UiAnchor.Center);
+        uiY = (ScreenYAboveBottom(bottomLines) - ToScreenLength(VideoSettings.BaseHeight - bottomLines)) / 2;
+        return scope;
+    }
+
+    internal readonly struct UiOriginScope(VideoManager video, UiAnchor anchor, int y) : IDisposable
+    {
+        public void Dispose()
+        {
+            video.SetUiOrigin(anchor);
+            video.uiY = y;
+        }
     }
 
     /// <summary>The screen x of layout x's left edge.</summary>

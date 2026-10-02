@@ -291,6 +291,9 @@ internal partial class Program
         if (bordercol != "VIEWCOLOR")
             DrawStatusBorder("VIEWCOLOR");
 
+        // Laid out in the screen above the status bar, however tall
+        using var origin = _videoManager.UseUiOriginAboveBottom(STATUSLINES);
+
         if (!string.IsNullOrEmpty(Intermission.Music))
             StartCPMusic(Intermission.Music);
 
@@ -580,6 +583,10 @@ internal partial class Program
         ClearAboveStatusBar();
         if (bordercol != "VIEWCOLOR")
             DrawStatusBorder("VIEWCOLOR");
+
+        // Laid out in the screen above the status bar, until the end text and screens take over
+        var origin = _videoManager.UseUiOriginAboveBottom(STATUSLINES);
+
         // intermission.yaml victory
         foreach (var label in screen.Labels)
             TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
@@ -639,6 +646,7 @@ internal partial class Program
         _videoManager.FadeIn();
 
         _inputManager.Ack();
+        origin.Dispose();
 
         _videoManager.FadeOut();
         if (_videoManager.HasMargins)

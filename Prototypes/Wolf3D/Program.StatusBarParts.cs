@@ -18,11 +18,30 @@ internal partial class Program
     static void DrawTopBar()
     {
         if (viewsize == 21 && ingame) return;
-        if (StatusBar.Get("top")?.Pic is { Length: > 0 } pic)
+        if (StatusBar.Get("top") is { Pic: { Length: > 0 } pic } top)
         {
+            FillBarSides(top, atTop: true, TOPLINES);
             using var _ = _videoManager.UseUiOrigin(Managers.UiAnchor.Top);
             _graphicManager.DrawPic(pic, 0, 0);
         }
+    }
+
+    /// <summary>
+    /// On a screen wider than 320x200, fills a bar's screen lines beside its picture (the top
+    /// or bottom height layout lines of the screen) in its side-color, so nothing from an
+    /// earlier screen shows there. Wolf3D's border sides are painted over this afterwards.
+    /// </summary>
+    static void FillBarSides(Assets.StatusBarElement bar, bool atTop, int height)
+    {
+        int left = _videoManager.ScreenX(0), right = _videoManager.ScreenX(320);
+        if (height <= 0 || (left <= 0 && right >= _videoManager.screenWidth))
+            return;
+
+        int y0 = atTop ? 0 : _videoManager.ScreenYAboveBottom(height);
+        int y1 = atTop ? _videoManager.ToScreenLength(height) : _videoManager.screenHeight;
+        string color = bar.SideColor ?? "Black";
+        _videoManager.BarScaledCoord(0, y0, left, y1 - y0, color);
+        _videoManager.BarScaledCoord(right, y0, _videoManager.screenWidth - right, y1 - y0, color);
     }
 
     /// <summary>The level's name (statusbar.yaml location), as GetMapDisplayName gives it</summary>

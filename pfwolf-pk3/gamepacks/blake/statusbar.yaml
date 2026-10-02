@@ -3,7 +3,8 @@
 # bar's top left corner; a part with `top: true` is on the top bar.
 #
 # Parts Wolf3D's bar doesn't have:
-#   top:            a bar across the top of the screen: pic, and height (lines it takes from the view)
+#   top:            a bar across the top of the screen: pic, and height (lines it takes from the view);
+#                   side-color, as background's, fills beside the picture on a wider screen
 #   location:       the level's name, lined up by align
 #   charge:         for a weapon that charges (weapon.chargetics), its ready and wait pictures
 #   ammo-gauge:     a strip of segments (segments, segment-height lines each, width wide) lit from

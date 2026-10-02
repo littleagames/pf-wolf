@@ -2,7 +2,9 @@
 # from the status bar's top left corner. A part left out isn't drawn. A game pack that builds
 # on this one (spear) uses it as is; a mod's statusbar.yaml replaces parts one by one.
 #
-#   background:  pic, and height -- the 320x200 lines the bar takes from the bottom of the view
+#   background:  pic, and height -- the 320x200 lines the bar takes from the bottom of the view;
+#                side-color fills its lines beside the picture on a wider screen (Black if left
+#                out; border sides paint over it)
 #   border:      the view border color beside and around the picture (see below)
 #   numbers:     the font (fonts.yaml) and color of every number below, unless one has its own
 #   level, score, lives, health, ammo, armor:
