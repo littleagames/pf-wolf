@@ -247,7 +247,8 @@ internal partial class Program
     {
         var current = _videoManager.Settings;
 
-        if (current.RenderScale != previous.RenderScale)
+        if (current.RenderWidth != previous.RenderWidth || current.RenderHeight != previous.RenderHeight
+            || current.EffectiveUiScale != previous.EffectiveUiScale)
         {
             pixelangle = new short[_videoManager.screenWidth];
             wallheight = new short[_videoManager.screenWidth];
@@ -316,10 +317,21 @@ internal partial class Program
     }
 
     /// <summary>
+    /// Blanks the screen to black when it's bigger than the 320x200 layout, so a full-screen
+    /// picture about to be drawn in the middle doesn't keep the last screen round its edges
+    /// </summary>
+    internal static void ClearMargins()
+    {
+        if (_videoManager.HasMargins)
+            _videoManager.ClearScreen(0);
+    }
+
+    /// <summary>
     /// The game-info title-pics, each drawn below the one before
     /// </summary>
     private static void DrawTitle()
     {
+        ClearMargins();
         int y = 0;
         foreach (var pic in _gameEngineManager.GetGameInfo().TitlePics)
         {
@@ -435,6 +447,7 @@ internal partial class Program
                 //
                 // credits page
                 //
+                ClearMargins();
                 _graphicManager.DrawPic("credits", 0, 0);
                 _videoManager.Update();
                 _videoManager.FadeIn();
@@ -459,7 +472,7 @@ internal partial class Program
                 if (playstate == playstatetypes.ex_abort)
                     break;
                 _videoManager.FadeOut();
-                if (_videoManager.screenHeight % 200 != 0)
+                if (_videoManager.HasMargins)
                     _videoManager.ClearScreen(0x00); // 0x00 = Black
                 StartCPMusic(INTROSONG);
             }

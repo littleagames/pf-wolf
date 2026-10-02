@@ -179,7 +179,7 @@ internal partial class Program
 
         var font = PresenterFont(layout.Font);
         _videoManager.FadeOut();
-        _videoManager.Bar(0, 0, 320, 200, "0");
+        _videoManager.FillScreen("0");
         foreach (var pic in layout.Background)
             _graphicManager.DrawPic(pic.Pic, pic.X, pic.Y);
 

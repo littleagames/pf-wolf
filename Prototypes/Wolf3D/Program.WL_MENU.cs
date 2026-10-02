@@ -1,4 +1,4 @@
-using CommandLine;
+﻿using CommandLine;
 using SDL2;
 using Wolf3D.Assets;
 using Wolf3D.Assets.Sounds;
@@ -630,7 +630,7 @@ internal partial class Program
         //
         // CACHE SOUNDS
         //
-        if (_videoManager.screenHeight % 200 != 0)
+        if (_videoManager.HasMargins)
             _videoManager.ClearScreen(0);
 
         if (!ingame)
@@ -791,7 +791,7 @@ internal partial class Program
                 else
                 {
                     _videoManager.FadeOut();
-                    if (_videoManager.screenHeight % 200 != 0)
+                    if (_videoManager.HasMargins)
                         _videoManager.ClearScreen(0);
 
                     lastgamemusicoffset = StartCPMusic(MENUSONG);
@@ -1248,7 +1248,7 @@ internal partial class Program
             .Select(size => settings with { WindowWidth = size.Width, WindowHeight = size.Height })
             .ToList(),
         "render-scale" => RenderScales(settings)
-            .Select(scale => settings with { RenderScale = scale })
+            .Select(scale => settings with { RenderScale = scale, RenderSize = null })
             .ToList(),
         "filter" => Enum.GetValues<ScaleFilter>()
             .Select(filter => settings with { Filter = filter })
@@ -1340,7 +1340,7 @@ internal partial class Program
 
     private static bool NeedsVideoConfirm(VideoSettings previous, VideoSettings next)
         => next.Fullscreen != previous.Fullscreen
-           || next.RenderScale != previous.RenderScale
+           || next.RenderWidth != previous.RenderWidth || next.RenderHeight != previous.RenderHeight
            || next.VSync != previous.VSync
            || (!next.Fullscreen && (next.WindowWidth != previous.WindowWidth || next.WindowHeight != previous.WindowHeight));
 
@@ -1798,7 +1798,7 @@ internal partial class Program
             {
                 _audioManager.Play("menu/escape");
                 MenuFadeOut();
-                if (_videoManager.screenHeight % 200 != 0)
+                if (_videoManager.HasMargins)
                     _videoManager.ClearScreen(0);
                 return 0;
             }
@@ -1814,7 +1814,7 @@ internal partial class Program
 
         ShootSnd();
         MenuFadeOut();
-        if (_videoManager.screenHeight % 200 != 0)
+        if (_videoManager.HasMargins)
             _videoManager.ClearScreen(0);
 
         return 0;
@@ -1823,12 +1823,15 @@ internal partial class Program
     internal static void DrawChangeView(int view)
     {
         var language = _assetManager.GetText("en-us");
-        int rescaledHeight = _videoManager.screenHeight / _videoManager.scaleFactor;
-        if (view != 21) _videoManager.Bar(0, rescaledHeight - 40, 320, 40, bordercol);
+        // The help goes in the bottom 40 lines of the screen, where the status bar is
+        int scale = _videoManager.scaleFactor;
+        if (view != 21)
+            _videoManager.BarScaledCoord(0, _videoManager.screenHeight - scale * 40, _videoManager.screenWidth, scale * 40, bordercol);
 
         ShowViewSize(view);
 
-        var help = CenteredText(0, 320, rescaledHeight - 39, MenuStyle("HIGHLIGHT"));
+        using var _ = _videoManager.UseUiOrigin(UiAnchor.Bottom);
+        var help = CenteredText(0, 320, 200 - 39, MenuStyle("HIGHLIGHT"));
         help.CPrint("$STR_SIZE1".ToLanguageText(language) + "\n");
         help.CPrint("$STR_SIZE2".ToLanguageText(language) + "\n");
         help.CPrint("$STR_SIZE3".ToLanguageText(language));

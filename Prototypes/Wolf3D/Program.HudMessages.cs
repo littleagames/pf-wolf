@@ -19,10 +19,11 @@ internal partial class Program
         if (_hudMessageManager.Messages.Count == 0)
             return;
 
-        // The view in the 320x200 virtual pixels text is drawn in
+        // The view in the 320x200 virtual pixels text is drawn in: the ones wholly inside it
         int scale = _videoManager.scaleFactor;
-        int viewX = viewscreenx / scale, viewY = viewscreeny / scale;
-        int viewW = viewwidth / scale, viewH = viewheight / scale;
+        int viewX = _videoManager.ToLayoutX(viewscreenx + scale - 1), viewY = _videoManager.ToLayoutY(viewscreeny + scale - 1);
+        int viewW = _videoManager.ToLayoutX(viewscreenx + viewwidth) - viewX;
+        int viewH = _videoManager.ToLayoutY(viewscreeny + viewheight) - viewY;
 
         // Messages for the status bar's info area go there; with no status bar showing, over the view's top left
         foreach (var stack in _hudMessageManager.Messages

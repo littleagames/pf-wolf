@@ -61,7 +61,9 @@ internal partial class Program
         else
         {
             if (!string.IsNullOrEmpty(screen.Background))
-                _videoManager.Bar(0, 0, 320, 200, screen.Background);
+                _videoManager.FillScreen(screen.Background);
+            else
+                ClearMargins();
             if (screen.HighScores)
                 DrawHighScores();
             if (screen.Title)

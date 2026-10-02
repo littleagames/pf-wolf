@@ -35,16 +35,21 @@ internal class GraphicManager
     /// </summary>
     public void DrawStripe(int y, string? color = null, string? lineColor = null)
     {
-        videoManager.Bar(0, y, 320, MenuStripe.Height, color ?? MenuStripe.Color);
-        videoManager.HorizontalLine(0, 319, y + MenuStripe.LineY, lineColor ?? MenuStripe.LineColor);
+        // Across the whole screen, however wide
+        int scale = videoManager.scaleFactor;
+        int top = videoManager.uiY + scale * y;
+        videoManager.BarScaledCoord(0, top, videoManager.screenWidth, scale * MenuStripe.Height, color ?? MenuStripe.Color);
+        videoManager.BarScaledCoord(0, top + scale * MenuStripe.LineY, videoManager.screenWidth, scale, lineColor ?? MenuStripe.LineColor);
     }
 
     public void DrawMenuBackground(string color)
     {
-        if (!string.IsNullOrEmpty(MenuBackdrop) && assetManager.Value.Exists<GraphicAsset>(MenuBackdrop))
-            DrawPic(MenuBackdrop, 0, 0);
-        else
-            videoManager.Bar(0, 0, 320, 200, color);
+        // A backdrop covers the 320x200 in the middle of the screen; the color fills the rest
+        bool backdrop = !string.IsNullOrEmpty(MenuBackdrop) && assetManager.Value.Exists<GraphicAsset>(MenuBackdrop);
+        if (!backdrop || videoManager.HasMargins)
+            videoManager.FillScreen(color);
+        if (backdrop)
+            DrawPic(MenuBackdrop!, 0, 0);
     }
 
     /// <summary>Draws one line of text; a missing font draws nothing</summary>
@@ -168,5 +173,12 @@ internal class GraphicManager
     public void DrawPicScaledCoord(int scx, int scy, GraphicAsset gfxAsset)
     {
         videoManager.MemToScreenScaledCoord(gfxAsset.RawData, gfxAsset.Width, gfxAsset.Height, scx, scy);
+    }
+
+    /// <summary>Draws a picture with its top left corner at a screen position (pixels), at the UI scale.</summary>
+    public void DrawPicScaledCoord(string graphicName, int scx, int scy)
+    {
+        if (!string.IsNullOrEmpty(graphicName) && assetManager.Value.Find<GraphicAsset>(graphicName) is { } asset)
+            DrawPicScaledCoord(scx, scy, asset);
     }
 }

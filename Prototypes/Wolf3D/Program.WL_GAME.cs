@@ -1,4 +1,4 @@
-using SDL2;
+﻿using SDL2;
 using Wolf3D.Assets;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
@@ -190,7 +190,7 @@ internal partial class Program
                         break;                          // more lives left
 
                     _videoManager.FadeOut();
-                    if (_videoManager.screenHeight % 200 != 0)
+                    if (_videoManager.HasMargins)
                         _videoManager.ClearScreen(0);
                     ClearMemory();
 
@@ -330,7 +330,7 @@ internal partial class Program
         pendingDemo = null;
         PlayDemo(demonumber);
         _videoManager.FadeOut();
-        if (_videoManager.screenHeight % 200 != 0)
+        if (_videoManager.HasMargins)
             _videoManager.ClearScreen(0x00);
         StartCPMusic(INTROSONG);
     }
@@ -520,7 +520,10 @@ internal partial class Program
     internal static void DrawPlayScreen()
     {
         if (StatusBar.Get("background")?.Pic is { Length: > 0 } statusbarpic)
-            _graphicManager.DrawPic(statusbarpic, 0, 200 - STATUSLINES); // TODO: Orientation: Bottom/Centered
+        {
+            using var _ = _videoManager.UseUiOrigin(UiAnchor.Bottom);
+            _graphicManager.DrawPic(statusbarpic, 0, 200 - STATUSLINES);
+        }
         DrawTopBar();
         DrawPlayBorder();
 

@@ -123,7 +123,7 @@ internal partial class Program
         text = article;
         // Where the layout has got to on the page, and the color ^C last set
         var page = TextWindow.FullScreen(_graphicManager, new TextStyle(SMALL_FONT, "Black", "BACKCOLOR"));
-        _videoManager.Bar(0, 0, 320, 200, "BACKCOLOR");
+        _videoManager.FillScreen("BACKCOLOR");
         CacheLayout();
 
         newpage = true;
@@ -389,7 +389,7 @@ internal partial class Program
         //
         // clear the screen
         //
-        _videoManager.Bar(0, 0, 320, 200, "BACKCOLOR");
+        _videoManager.FillScreen("BACKCOLOR");
         _graphicManager.DrawPic("h_topwindow", 0, 0);
         _graphicManager.DrawPic("h_leftwindow", 0, 8);
         _graphicManager.DrawPic("h_rightwindow", 312, 8);

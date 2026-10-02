@@ -740,8 +740,11 @@ internal partial class Program
         statusbar ?? (statusbar = _assetManager?.FindInGamePack<StatusBarAsset>("statusbar")) ?? NoStatusBar;
 
     /// <summary>Draws a picture at a status bar position (320x200 pixels from its top left corner).</summary>
-    static void StatusDrawPic(string picName, int x, int y) =>
+    static void StatusDrawPic(string picName, int x, int y)
+    {
+        using var _ = _videoManager.UseUiOrigin(UiAnchor.Bottom);
         _graphicManager.DrawPic(picName, x, 200 - STATUSLINES + y);
+    }
 
     /// <summary>Draws a picture at the named part of the status bar, if the layout has it.</summary>
     static void StatusDrawPic(string picName, string part)
@@ -769,8 +772,11 @@ internal partial class Program
         if (element.Behind is { Length: > 0 } behind)
             DrawStatusPart(behind);
         if (element.Box.Count == 4)
+        {
+            using var _ = StatusBarOrigin(element);
             _videoManager.Bar(element.Box[0], StatusBarTop(element) + element.Box[1], element.Box[2], element.Box[3],
                 element.BoxColor ?? "Black");
+        }
         if (hide)
             return;
 
@@ -792,11 +798,19 @@ internal partial class Program
             "center" => element.X - TextWidth(text, font) / 2,
             _ => element.X,
         };
+        using var _ = StatusBarOrigin(element);
         _graphicManager.DrawText(x, StatusBarTop(element) + element.Y, text, new Fonts.TextStyle(font, color));
     }
 
     /// <summary>Where a part's bar starts down the screen (320x200): the top bar's, or the bottom one's</summary>
     static int StatusBarTop(Assets.StatusBarElement element) => element.Top ? 0 : 200 - STATUSLINES;
+
+    /// <summary>
+    /// Lines the 320x200 layout up with the edge of the screen a part's bar is on, until
+    /// disposed, so the bars stay at the top and bottom of a screen taller than 320x200.
+    /// </summary>
+    static VideoManager.UiOriginScope StatusBarOrigin(Assets.StatusBarElement element) =>
+        _videoManager.UseUiOrigin(element.Top ? UiAnchor.Top : UiAnchor.Bottom);
 
     /// <summary>Draws a part that a number can sit on (statusbar.yaml behind)</summary>
     static void DrawStatusPart(string part)
@@ -1132,6 +1146,7 @@ internal partial class Program
             .Select(key => (Key: key, Slot: _inventoryManager.GetIntProperty(key, "key.statusbarslot", -1), Has: _inventoryManager.Has(key)))
             .Where(key => key.Slot >= 0)
             .OrderBy(key => key.Has);
+        using var _ = StatusBarOrigin(layout);
         foreach (var (key, slot, has) in keys)
         {
             int x = layout.X + layout.SpacingX * slot, y = layout.Y + layout.Spacing * slot;
@@ -1230,7 +1245,10 @@ internal partial class Program
 
         var icon = _inventoryManager.GetStringProperty(gamestate.weapon, "inventory.icon");
         if (!string.IsNullOrEmpty(icon) && StatusBar.Get("weapon") is { } element)
+        {
+            using var _ = StatusBarOrigin(element);
             _graphicManager.DrawPic(icon, element.X, StatusBarTop(element) + element.Y);
+        }
         DrawWeaponCorner();
     }
 
@@ -1241,6 +1259,7 @@ internal partial class Program
         if (viewsize == 21 && ingame) return;
         if (gamestate.weapon == null || StatusBar.Get("weapon-corner") is not { } element) return;
         var pic = element.WeaponPics.GetValueOrDefault(gamestate.weapon);
+        using var _ = StatusBarOrigin(element);
         if (!string.IsNullOrEmpty(pic))
             _graphicManager.DrawPic(pic, element.X, StatusBarTop(element) + element.Y);
     }

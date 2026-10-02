@@ -19,7 +19,10 @@ internal partial class Program
     {
         if (viewsize == 21 && ingame) return;
         if (StatusBar.Get("top")?.Pic is { Length: > 0 } pic)
+        {
+            using var _ = _videoManager.UseUiOrigin(Managers.UiAnchor.Top);
             _graphicManager.DrawPic(pic, 0, 0);
+        }
     }
 
     /// <summary>The level's name (statusbar.yaml location), as GetMapDisplayName gives it</summary>
@@ -43,6 +46,7 @@ internal partial class Program
         if (StatusBar.Get("charge") is not { } element || WeaponChargeTics(gamestate.weapon) <= 0)
             return;
         var pic = weaponcharge > 0 ? element.Wait : element.Ready;
+        using var _ = StatusBarOrigin(element);
         if (!string.IsNullOrEmpty(pic))
             _graphicManager.DrawPic(pic, element.X, StatusBarTop(element) + element.Y);
     }
@@ -83,6 +87,7 @@ internal partial class Program
         if (level == null)
             return;
 
+        using var _ = StatusBarOrigin(gauge);
         int y = StatusBarTop(gauge) + gauge.Y;
         for (int segment = 0; segment < segments; segment++)
         {
@@ -118,6 +123,7 @@ internal partial class Program
             return;
         infoareashown = text;
 
+        using var origin = StatusBarOrigin(area);
         int top = StatusBarTop(area);
         if (!string.IsNullOrEmpty(area.Pic))
             _graphicManager.DrawPic(area.Pic, area.Box.ElementAtOrDefault(0), top + area.Box.ElementAtOrDefault(1));
@@ -246,6 +252,7 @@ internal partial class Program
         if (!changed)
             return;
 
+        using var _ = StatusBarOrigin(monitor);
         int top = StatusBarTop(monitor);
         if (!string.IsNullOrEmpty(monitor.SegmentPic))
             for (int i = 0; i < count; i++)

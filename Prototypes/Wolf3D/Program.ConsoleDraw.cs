@@ -1,14 +1,15 @@
 using System.Text;
 using Wolf3D.Fonts;
+using Wolf3D.Managers;
 
 namespace Wolf3D;
 
 internal partial class Program
 {
-    // Drop-down console layout, in the 320x200 virtual screen coordinates Bar/DrawText use.
+    // Drop-down console layout, in the 320x200 virtual screen coordinates Bar/DrawText use. It
+    // hangs from the top of the screen and reaches across all of it, however wide.
     const int CONSOLE_HEIGHT = 100;
     const int CONSOLE_MARGIN = 4;
-    const int CONSOLE_TEXTWIDTH = 320 - (CONSOLE_MARGIN * 2);
     const string CONSOLE_FONT = "SmallFont";
     const string CONSOLE_PROMPT = "] ";
 
@@ -55,8 +56,14 @@ internal partial class Program
 
         int lineHeight = font.LineHeight;
 
-        _videoManager.Bar(0, 0, 320, CONSOLE_HEIGHT - 1, "Black");
-        _videoManager.Bar(0, CONSOLE_HEIGHT - 1, 320, 1, "Grey");
+        using var _ = _videoManager.UseUiOrigin(UiAnchor.Top);
+        int scale = _videoManager.scaleFactor;
+        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, scale * (CONSOLE_HEIGHT - 1), "Black");
+        _videoManager.BarScaledCoord(0, scale * (CONSOLE_HEIGHT - 1), _videoManager.screenWidth, scale, "Grey");
+
+        // The text runs from the screen's left edge to its right, less the margins
+        int left = _videoManager.ToLayoutX(0) + CONSOLE_MARGIN;
+        int textWidth = _videoManager.screenWidth / scale - 2 * CONSOLE_MARGIN;
 
         //
         // input line, scrolled sideways so the cursor stays visible
@@ -65,19 +72,19 @@ internal partial class Program
         string input = ConsoleSafeText(_consoleManager.InputLine);
         int cursor = _consoleManager.Cursor;
         int promptWidth = ConsoleTextWidth(CONSOLE_PROMPT, font);
-        int inputWidth = CONSOLE_TEXTWIDTH - promptWidth - 1;
+        int inputWidth = textWidth - promptWidth - 1;
 
         int start = 0;
         while (start < cursor && ConsoleTextWidth(input[start..cursor], font) > inputWidth)
             start++;
         string visible = ConsoleFitText(input[start..], inputWidth, font);
 
-        _graphicManager.DrawText(CONSOLE_MARGIN, inputY, CONSOLE_PROMPT, font, "White");
-        _graphicManager.DrawText(CONSOLE_MARGIN + promptWidth, inputY, visible, font, "White");
+        _graphicManager.DrawText(left, inputY, CONSOLE_PROMPT, font, "White");
+        _graphicManager.DrawText(left + promptWidth, inputY, visible, font, "White");
 
         if ((GameEngineManager.GetTimeCount() / 20) % 2 == 0)     // blink about 3 times a second
         {
-            int cursorX = CONSOLE_MARGIN + promptWidth + ConsoleTextWidth(input[start..cursor], font);
+            int cursorX = left + promptWidth + ConsoleTextWidth(input[start..cursor], font);
             _videoManager.Bar(cursorX, inputY, 1, lineHeight, "White");
         }
 
@@ -90,18 +97,18 @@ internal partial class Program
         if (_consoleManager.ScrollOffset > 0)
         {
             // Quake-style marker that there's newer output below
-            _graphicManager.DrawText(CONSOLE_MARGIN, y, "^   ^   ^   ^   ^   ^   ^   ^", font, "Grey");
+            _graphicManager.DrawText(left, y, "^   ^   ^   ^   ^   ^   ^   ^", font, "Grey");
             y -= lineHeight;
         }
 
         for (int i = scrollback.Count - 1 - _consoleManager.ScrollOffset; i >= 0 && y >= 0; i--)
         {
             string color = scrollback[i].StartsWith(CONSOLE_PROMPT) ? "White" : "HIGHLIGHT";
-            var rows = ConsoleWrapText(ConsoleSafeText(scrollback[i]), CONSOLE_TEXTWIDTH, font);
+            var rows = ConsoleWrapText(ConsoleSafeText(scrollback[i]), textWidth, font);
 
             for (int r = rows.Count - 1; r >= 0 && y >= 0; r--)
             {
-                _graphicManager.DrawText(CONSOLE_MARGIN, y, rows[r], font, color);
+                _graphicManager.DrawText(left, y, rows[r], font, color);
                 y -= lineHeight;
             }
         }

@@ -537,8 +537,8 @@ internal partial class Program
 
         // DrawText and Bar work in 320x200 virtual pixels
         int px = _videoManager.scaleFactor;
-        int x = view.ClipX / px + 3;
-        int y = (view.ClipY + view.ClipHeight) / px - font.Height - 2;
+        int x = _videoManager.ToLayoutX(view.ClipX) + 3;
+        int y = _videoManager.ToLayoutY(view.ClipY + view.ClipHeight) - font.Height - 2;
         int room = view.ClipWidth / px - 6;
 
         // The smallest view sizes can't fit it all: fall back to just the tile, then to nothing
@@ -578,10 +578,10 @@ internal partial class Program
 
         // DrawText and Bar work in 320x200 virtual pixels; the bottom rows are the position line's
         int px = _videoManager.scaleFactor;
-        int x = view.ClipX / px + 3;
-        int y = view.ClipY / px + 2;
+        int x = _videoManager.ToLayoutX(view.ClipX) + 3;
+        int y = _videoManager.ToLayoutY(view.ClipY) + 2;
         int room = view.ClipWidth / px - 6;
-        int bottom = (view.ClipY + view.ClipHeight) / px - font.Height - 4;
+        int bottom = _videoManager.ToLayoutY(view.ClipY + view.ClipHeight) - font.Height - 4;
 
         foreach (var (text, color) in lines)
         {

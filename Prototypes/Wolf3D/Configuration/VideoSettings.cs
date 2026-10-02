@@ -20,10 +20,24 @@ internal sealed record VideoSettings
     public bool Fullscreen { get; init; }
 
     /// <summary>
-    /// The screen buffer is 320x200 times this. Everything is drawn at this size, so it sets
-    /// how sharp the 3D view and text are, not how big the window is.
+    /// The screen buffer is 320x200 times this, unless <see cref="RenderSize"/> gives another
+    /// size. Everything is drawn at this size, so it sets how sharp the 3D view and text are,
+    /// not how big the window is.
     /// </summary>
     public int RenderScale { get; init; } = 2;
+
+    /// <summary>
+    /// A screen buffer of any size and shape (at least 320x200) in place of 320x200 times
+    /// <see cref="RenderScale"/>. The 320x200 menus and status bar sit in the middle of it,
+    /// drawn at <see cref="UiScale"/>.
+    /// </summary>
+    public (int Width, int Height)? RenderSize { get; init; }
+
+    /// <summary>
+    /// Screen pixels to each of the menus' and status bar's 320x200 pixels; 0 (auto) is the
+    /// most that fits. Smaller makes them smaller on the screen, not less sharp.
+    /// </summary>
+    public int UiScale { get; init; }
 
     /// <summary>The window's size when it isn't fullscreen.</summary>
     public int WindowWidth { get; init; } = 640;
@@ -36,10 +50,19 @@ internal sealed record VideoSettings
 
     public ScaleFilter Filter { get; init; } = ScaleFilter.Nearest;
 
-    public int RenderWidth => BaseWidth * RenderScale;
-    public int RenderHeight => BaseHeight * RenderScale;
+    public int RenderWidth => RenderSize?.Width ?? BaseWidth * RenderScale;
+    public int RenderHeight => RenderSize?.Height ?? BaseHeight * RenderScale;
 
-    /// <summary>The shape the picture is shown at: the render size, stretched to 4:3 when aspect correcting.</summary>
+    /// <summary>The largest UI scale the render size has room for.</summary>
+    public int MaxUiScale => Math.Max(1, Math.Min(RenderWidth / BaseWidth, RenderHeight / BaseHeight));
+
+    /// <summary>The UI scale in use: <see cref="UiScale"/>, or the most that fits when that's auto or too big.</summary>
+    public int EffectiveUiScale => UiScale <= 0 ? MaxUiScale : Math.Min(UiScale, MaxUiScale);
+
+    /// <summary>
+    /// The shape the picture is shown at: the render size, with its pixels stretched 6:5 tall
+    /// when aspect correcting (320x200 becomes 4:3, as on a CRT).
+    /// </summary>
     public int DisplayWidth => RenderWidth;
-    public int DisplayHeight => AspectCorrect ? RenderWidth * 3 / 4 : RenderHeight;
+    public int DisplayHeight => AspectCorrect ? RenderHeight * 6 / 5 : RenderHeight;
 }

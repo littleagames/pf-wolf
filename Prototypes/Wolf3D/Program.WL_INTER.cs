@@ -36,7 +36,7 @@ internal partial class Program
     internal static void PG13()
     {
         _videoManager.FadeOut();
-        _videoManager.Bar(0, 0, 320, 200, "Light Blue");     // background
+        _videoManager.FillScreen("Light Blue");     // background
 
         _graphicManager.DrawPic("pg13", 216, 110);
         _videoManager.Update();
@@ -215,6 +215,14 @@ internal partial class Program
         return (false);
     }
 
+    /// <summary>
+    /// Fills the screen in the view color from the top down to the bottom status bar's first
+    /// line, for the level-end screens drawn over the play area
+    /// </summary>
+    static void ClearAboveStatusBar() =>
+        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth,
+            _videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES - 1), "VIEWCOLOR");
+
     internal static void PreloadGraphics()
     {
         // A game with a level start message (Blake Stone) shows it instead of "get psyched"
@@ -229,13 +237,10 @@ internal partial class Program
         // the play area, below any top status bar, down to the bottom one's first line
         _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaHeight + _videoManager.scaleFactor, bordercol);
 
-        // TODO: This may have just been centered in the viewport area
-        //    ((_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 16) * 8,
-        //    (_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2,
-        _graphicManager.DrawPic("getpsyched", (320 - 224) / 2, (200 - STATUSLINES - 48) / 2);
-
+        // Centered over the screen above the status bar
         int boxX = (_videoManager.screenWidth - _videoManager.scaleFactor * 224) / 2;
         int boxY = (_videoManager.screenHeight - _videoManager.scaleFactor * (STATUSLINES + 48)) / 2;
+        _graphicManager.DrawPicScaledCoord("getpsyched", boxX, boxY);
 
         _videoManager.Update();
         _videoManager.FadeIn();
@@ -276,7 +281,7 @@ internal partial class Program
         string tempstr = "";
         int bonus, timeleft = 0;
 
-        _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, "VIEWCOLOR");
+        ClearAboveStatusBar();
 
         if (bordercol != "VIEWCOLOR")
             DrawStatusBorder("VIEWCOLOR");
@@ -567,7 +572,7 @@ internal partial class Program
         if (!string.IsNullOrEmpty(screen.Music))
             StartCPMusic(screen.Music);
 
-        _videoManager.Bar(0, 0, 320, _videoManager.screenHeight / _videoManager.scaleFactor - STATUSLINES + 1, "VIEWCOLOR");
+        ClearAboveStatusBar();
         if (bordercol != "VIEWCOLOR")
             DrawStatusBorder("VIEWCOLOR");
         // intermission.yaml victory
@@ -631,7 +636,7 @@ internal partial class Program
         _inputManager.Ack();
 
         _videoManager.FadeOut();
-        if (_videoManager.screenHeight % 200 != 0)
+        if (_videoManager.HasMargins)
             _videoManager.ClearScreen(0);
 
         FindMenuItem(MainMenu, "savegame")?.active = 0;
@@ -655,7 +660,7 @@ internal partial class Program
         for (int i = 0; i < cluster.VictoryFrames.Count; i++)
         {
             var frame = cluster.VictoryFrames[i];
-            _videoManager.Bar(0, 0, 320, 200, "VIEWCOLOR");
+            _videoManager.FillScreen("VIEWCOLOR");
             _graphicManager.DrawPic(frame.Pic, frame.X, frame.Y);
             _videoManager.Update();
             if (i == 0)

@@ -71,6 +71,7 @@ internal partial class Program
         if (_mapManager.Player == null)     // the status bar is drawn before a level is loaded too
             return;
 
+        using var _ = StatusBarOrigin(radar);
         int top = StatusBarTop(radar);
         int zoompic = Math.Min(radarzoom, radar.ZoomPics.Count - 1);
         if (zoompic >= 0)
