@@ -126,6 +126,8 @@ internal partial class Program
 
     private static void Main(string[] args)
     {
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+
         // Bad arguments are reported by the parser and otherwise ignored: run with the defaults.
         // --file can be given more than once.
         using var parser = new Parser(settings =>
@@ -172,6 +174,45 @@ internal partial class Program
         DemoLoop();
 
         _gameEngineManager.Quit("Demo loop exited???");
+    }
+
+    /// <summary>
+    /// A crash writes the error to crash.log beside the exe (or in the temp folder when that can't
+    /// be written) and keeps the console open, so a double-clicked exe doesn't vanish with it.
+    /// </summary>
+    private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        var report = $"PFWolf crashed at {DateTime.Now:yyyy-MM-dd HH:mm:ss}{Environment.NewLine}{e.ExceptionObject}{Environment.NewLine}";
+        string? logPath = null;
+        foreach (var folder in new[] { AppContext.BaseDirectory, Path.GetTempPath() })
+        {
+            try
+            {
+                logPath = Path.Combine(folder, "crash.log");
+                File.WriteAllText(logPath, report);
+                break;
+            }
+            catch
+            {
+                logPath = null;
+            }
+        }
+
+        try
+        {
+            Console.Error.WriteLine(report);
+            if (logPath != null)
+                Console.Error.WriteLine($"Saved to {logPath}");
+            if (!Console.IsInputRedirected)
+            {
+                Console.Error.WriteLine("Press any key to exit.");
+                Console.ReadKey(true);
+            }
+        }
+        catch
+        {
+            // No console to report to: the log is all there is
+        }
     }
 
     /// <summary>

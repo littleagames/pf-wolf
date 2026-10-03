@@ -8,6 +8,13 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Platforms>AnyCPU;x64</Platforms>
+	<PublishSelfContained>true</PublishSelfContained>
+	<FileVersion>0.1.0.0</FileVersion>
+	<AssemblyVersion>0.1.0.0</AssemblyVersion>
+	<Version>0.1</Version>
+	<Authors>Andrew McCauley</Authors>
+	<Company>Little A Games</Company>
+	<Copyright>Copyright (c) 2026 Little A Games</Copyright>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
@@ -27,6 +34,10 @@
 	</ItemGroup>
 	<ItemGroup>
 		<InternalsVisibleTo Include="Wolf3D.Tests" />
+	</ItemGroup>
+	<!-- OpenAL Soft 1.23.1 (OpenTK.Audio.OpenAL doesn't ship the native library) -->
+	<ItemGroup>
+		<None Include="native\win-x64\OpenAL32.dll" Link="OpenAL32.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
 	</ItemGroup>
 	<ItemGroup>
 		<Content Include="..\..\pfwolf-pk3\**\*">
@@ -60,5 +71,13 @@
 	</ItemGroup>
 	<Target Name="CopyExampleMods" AfterTargets="CreateModsFolder">
 		<Copy SourceFiles="@(ExampleModFiles)" DestinationFiles="@(ExampleModFiles->'$(TargetDir)mods\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+	</Target>
+
+	<!-- Publish carries the pk3 and example mods too (they're made in the build folder, not as content) -->
+	<Target Name="PublishPfWolfExtras" AfterTargets="ComputeResolvedFilesToPublishList">
+		<ItemGroup>
+			<ResolvedFileToPublish Include="$(TargetDir)pfwolf.pk3" RelativePath="pfwolf.pk3" CopyToPublishDirectory="PreserveNewest" />
+			<ResolvedFileToPublish Include="@(ExampleModFiles)" RelativePath="mods\%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+		</ItemGroup>
 	</Target>
 </Project>
