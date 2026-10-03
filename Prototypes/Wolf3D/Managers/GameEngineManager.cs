@@ -16,7 +16,9 @@ internal enum GameType
     [Description("blake")]
     BlakeStone,
     [Description("planetstrike")]
-    PlanetStrike
+    PlanetStrike,
+    [Description("wolf3d-shareware")]
+    WolfShareware
 }
 
 internal class GameEngineManager
@@ -104,6 +106,7 @@ internal class GameEngineManager
         GameType.SpearOfDestiny => "spear",
         GameType.BlakeStone => "blake-aog",
         GameType.PlanetStrike => "blake-ps",
+        GameType.WolfShareware => "wolf3d-shareware",
         _ => "wolf3d-apogee",
     };
 
@@ -116,6 +119,7 @@ internal class GameEngineManager
         GameType.SpearOfDestiny => "SpearOfDestiny",
         GameType.BlakeStone => "BlakeStone",
         GameType.PlanetStrike => "PlanetStrike",
+        GameType.WolfShareware => "Wolfenstein3DShareware",
         _ => "Wolfenstein3D",
     };
 

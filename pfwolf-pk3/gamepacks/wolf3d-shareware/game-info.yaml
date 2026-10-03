@@ -1,0 +1,143 @@
+# Wolfenstein 3D Shareware: episode 1 of wolf3d's game-info (see gamepacks/wolf3d/game-info.yaml
+# for what each setting does). game-info isn't merged with the base pack's, so this is all of it.
+default-map:
+  ceiling-color: "#383838"
+  floor-color: "#717171"
+
+signon:
+  pic: wolf3d-signon
+  press-a-key: true
+  text-area: { x: 16, y: 79, width: 290, height: 101 }
+
+# Shareware: no "This game is NOT shareware" notice
+non-shareware-notice: false
+
+title-pics:
+  - Title
+
+intro-music: NAZI_NOR
+high-scores-music: ROSTER
+menu-fade-color: "#AE0000"
+
+screen-fade-style: palette
+menu-fade-style: palette
+menu-fade-tics: 20
+death-fade-style: fizzle
+death-fade-tics: 70
+death-fade-color: Maroon
+death-turn-speed: 2
+death-hold-tics: 100
+level-fade-style: fizzle
+level-fade-tics: 20
+
+extra-life-score: 40000
+
+hud-messages:
+  enabled: false
+  pickup-style: Default
+  lock-style: Center
+  obituary-style: Obituary
+
+skills:
+  BABY:
+    name: "Can I play, Daddy?"
+    pic-name: C_BABYMODE
+    damage-taken: 0.25
+    enemy-health: health.baby
+  EASY:
+    name: "Don't hurt me."
+    pic-name: C_EASY
+    enemy-health: health.easy
+  MEDIUM:
+    name: "Bring 'em on!"
+    pic-name: C_NORMAL
+    enemy-health: health.normal
+  HARD:
+    name: "I am Death incarnate!"
+    pic-name: C_HARD
+    enemy-health: health.hard
+
+demo-skill: HARD
+
+episodes:
+  EP01:
+    name: "Episode 1\nEscape from Wolfenstein"
+    start-map: MAP01
+    pic-name: C_EPISODE1
+    key: E
+
+clusters:
+  1:
+    end-text: ENDART1
+
+maps:
+  MAP01:
+    next: MAP02
+    secret-next: MAP10
+    floor-number: 1
+    par-time: 90
+    music: GETTHEM
+    cluster: 1
+  MAP02:
+    next: MAP03
+    floor-number: 2
+    par-time: 120
+    music: SEARCHN
+    cluster: 1
+  MAP03:
+    next: MAP04
+    floor-number: 3
+    par-time: 120
+    music: POW
+    cluster: 1
+  MAP04:
+    next: MAP05
+    floor-number: 4
+    par-time: 210
+    music: SUSPENSE
+    cluster: 1
+  MAP05:
+    next: MAP06
+    floor-number: 5
+    par-time: 180
+    music: GETTHEM
+    cluster: 1
+  MAP06:
+    next: MAP07
+    floor-number: 6
+    par-time: 180
+    music: SEARCHN
+    cluster: 1
+  MAP07:
+    next: MAP08
+    floor-number: 7
+    par-time: 150
+    music: POW
+    cluster: 1
+  MAP08:
+    next: MAP09
+    floor-number: 8
+    par-time: 150
+    music: SUSPENSE
+    cluster: 1
+  MAP09:
+    floor-number: 9
+    music: WARMARCH
+    cluster: 1
+  MAP10:
+    next: MAP02
+    floor-number: 10
+    music: CORNER
+    cluster: 1
+    ceiling-color: "#400040"
+
+end-strings:
+  - $ENDSTR1
+  - $ENDSTR2
+  - $ENDSTR3
+  - $ENDSTR4
+  - $ENDSTR5
+  - $ENDSTR6
+  - $ENDSTR7
+  - $ENDSTR8
+  - $ENDSTR9

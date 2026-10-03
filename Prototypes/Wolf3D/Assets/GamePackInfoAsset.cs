@@ -1,5 +1,32 @@
 ﻿namespace Wolf3D.Assets;
 
+/// <summary>
+/// A game-packs list, as menudefs and mods give it: which packs something belongs in
+/// </summary>
+internal static class GamePackList
+{
+    /// <summary>
+    /// Whether a game-packs list takes in the running pack: when the list is empty or unset, when
+    /// it names the pack, or when it names the pack's base-pack and doesn't leave the pack out
+    /// with "!pack" (so [wolf3d] is for Wolf3D and the packs built on it, and [wolf3d, "!spear"]
+    /// is for them apart from Spear)
+    /// </summary>
+    public static bool Includes(IReadOnlyCollection<string>? gamePacks, string gamePackId, string? basePackId)
+    {
+        if (gamePacks == null || gamePacks.Count == 0)
+            return true;
+        if (gamePacks.Contains(gamePackId, StringComparer.OrdinalIgnoreCase))
+            return true;
+
+        return !string.IsNullOrWhiteSpace(basePackId)
+            && gamePacks.Contains(basePackId, StringComparer.OrdinalIgnoreCase)
+            && !gamePacks.Contains("!" + gamePackId, StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>A list entry's pack name, without the "!" that leaves a pack out</summary>
+    public static string PackName(string entry) => entry.TrimStart('!');
+}
+
 internal record GamePackInfoAsset : Asset
 {
     public GamePackInfoAsset(Dictionary<string, GamePack> gamePacks)

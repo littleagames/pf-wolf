@@ -2202,11 +2202,7 @@ internal partial class Program
             }
         }*/
 
-        // TODO: Create all directories? Or do it when the need arises?
-        // TODO: Shareware/3-episode data (wl1/wl3) should disable the missing episodes
-        if (!File.Exists("vswap.wl6") && !File.Exists("vswap.wl3") && !File.Exists("vswap.wl1"))
-            _gameEngineManager.Quit("NO WOLFENSTEIN 3-D DATA FILES to be found!");
-
+        // The running release's data files were checked for when the assets were loaded
         // Build every menudef now so problems in any of them are reported at startup
         foreach (var menuName in _assetManager.GetMenuNames())
         {
@@ -2222,7 +2218,7 @@ internal partial class Program
                 .Concat(menu.Components.Select(component => component.GamePacks));
             foreach (var pack in packLists.Where(list => list != null).SelectMany(list => list!).Distinct())
             {
-                if (!GameEngineManager.KnownGamePackIds.Contains(pack, StringComparer.OrdinalIgnoreCase))
+                if (!GameEngineManager.KnownGamePackIds.Contains(GamePackList.PackName(pack), StringComparer.OrdinalIgnoreCase))
                     Console.WriteLine($"Menu '{menuName}': unknown game pack '{pack}' in game-packs");
             }
         }
@@ -2389,8 +2385,7 @@ internal partial class Program
     /// Whether a menu item or component with this game-packs list belongs in the running game pack
     /// </summary>
     private static bool InCurrentGamePack(List<string>? gamePacks)
-        => gamePacks == null || gamePacks.Count == 0
-           || gamePacks.Contains(_gameEngineManager.GamePackId, StringComparer.OrdinalIgnoreCase);
+        => GamePackList.Includes(gamePacks, _gameEngineManager.GamePackId, _assetManager.BasePackId);
 
     /// <summary>
     /// Plays a menu's music. A track that is already playing carries on rather than restarting,

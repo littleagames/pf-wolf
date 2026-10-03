@@ -159,9 +159,13 @@ internal class Wolf3dVswapFileLoader
         // 2) Get sprite mapping
         // 3) Get digi sound mapping
 
+        // A sparse page (empty) is one the release leaves out, as shareware does the registered
+        // episodes' walls and sprites: it gets no asset
         for (int i = 0; i < PMSpriteStart; i++)
         {
             byte[] textureData = PM_GetPage(i);
+            if (textureData.Length == 0)
+                continue;
             assets.Add(textures[i].ToLowerInvariant(), new TextureAsset { RawData = textureData });
             // Use SDL_SetupSprite to get sprite data
         }
@@ -169,6 +173,8 @@ internal class Wolf3dVswapFileLoader
         for (int i = PMSpriteStart; i < PMSoundStart; i++)
         {
             byte[] spriteData = PM_GetPage(i);
+            if (spriteData.Length == 0)
+                continue;
             assets.Add(sprites[i-PMSpriteStart].ToLowerInvariant(), Wolf3dCompiledSpriteConverter.Convert(spriteData));
             // Use SDL_SetupSprite to get sprite data
         }
@@ -220,8 +226,14 @@ internal class Wolf3dVswapFileLoader
             digiList[i].length = (uint)size;
         }
 
-        for (int i = 0; i < digiList.Length; i++)
+        // The sound info page's size can take in padding past the last entry, read as a sound
+        // the data map has no name for
+        for (int i = 0; i < numDigi && i < digitizedAudio.Count; i++)
         {
+            // Left out of the release (shareware's): its pages are sparse
+            if (PM_GetPage((int)(PMSoundStart + digiList[i].startpage)).Length == 0)
+                continue;
+
             byte[] soundData = PM_GetSoundPage(digiList[i].startpage, digiList[i].length);
             assets.Add(digitizedAudio[i].ToLowerInvariant(), new Wolf3dDigitizedAudio { RawData = soundData });
         }

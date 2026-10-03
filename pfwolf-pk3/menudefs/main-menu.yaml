@@ -19,10 +19,11 @@ components:
     type: "Stripe"
     params:
       - y: 10
-  # Window fits the item count: 8 items in Wolf3D, 7 in Spear (no "Read This!")
+  # Window fits the item count: 8 items in Wolf3D (and its shareware), 7 in Spear (no "Read This!").
+  # [wolf3d] takes in the packs built on wolf3d; "!spear" leaves Spear out.
   -
     type: "Window"
-    game-packs: [ "wolf3d" ]
+    game-packs: [ "wolf3d", "!spear" ]
     params:
       - x: 68
       - y: 52
@@ -81,7 +82,7 @@ menu-items:
       enabled: true
       action: "CP_ReadThis"
       # Spear has no help screens
-      game-packs: [ "wolf3d" ]
+      game-packs: [ "wolf3d", "!spear" ]
   # Becomes "End Game" (no action) while a game is in progress
   -
       id: "viewscores"

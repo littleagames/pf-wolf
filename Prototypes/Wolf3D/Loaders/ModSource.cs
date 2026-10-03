@@ -1,3 +1,5 @@
+using Wolf3D.Assets;
+
 namespace Wolf3D.Loaders;
 
 /// <summary>
@@ -64,10 +66,11 @@ internal class ModSource
     }
 
     /// <summary>
-    /// Whether the mod can load in this game pack: its modinfo.yaml names it, or names none
+    /// Whether the mod can load in this game pack: its modinfo.yaml names it or its base-pack
+    /// (see GamePackList.Includes), or names none
     /// </summary>
-    public bool IsForGamePack(string gamePackId)
-        => Info.GamePacks is not { Count: > 0 } packs || packs.Contains(gamePackId, StringComparer.OrdinalIgnoreCase);
+    public bool IsForGamePack(string gamePackId, string? basePackId)
+        => GamePackList.Includes(Info.GamePacks, gamePackId, basePackId);
 
     /// <summary>
     /// Every pk3, zip and folder in the mods folder, by name

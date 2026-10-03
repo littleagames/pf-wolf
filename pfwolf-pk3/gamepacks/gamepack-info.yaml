@@ -38,16 +38,48 @@ wolf3d-apogee:
           md5: a6d901dfb455dfac96db5e4705837cdb
         map: wolf3d-apogee-map
 
-# wolf3d-activision:
-    # title: "Wolfenstein 3D"
-    # game-palette: wolfpal
-    # starting-scene: "wolf3d:GameLoopScene"
-    # game-pack-asset-reference: wolf3d-activision-map
-# wolf3d-shareware:
-    # title: "Wolfenstein 3D: Shareware"
-    # game-palette: wolfpal
-    # starting-scene: "wolf3d:GameLoopScene"
-    # game-pack-asset-reference: wolf3d-shareware-map
+wolf3d-shareware:
+  title: "Wolfenstein 3D Shareware"
+  game-palette: wolfpal
+  # Episode 1 of Wolf3D: starts from wolf3d's actordefs, mapdefs, menudefs and gamepacks files;
+  # wolf3d-shareware's own files override them. Its data has the v1.4 layout, with what
+  # shareware leaves out as empty chunks, so wolf3d's raw-data-map fits it.
+  base-pack: wolf3d
+  file-pack:
+    description: Wolfenstein 3D v1.4 Shareware
+    file-loaders:
+      Wolf3DAudioFileLoader:
+        header:
+          file: audiohed.wl1
+          md5: 58aa1b9892d5adfa725fab343d9446f8
+        data:
+          file: audiot.wl1
+          md5: 4b6109e957b584e4ad7f376961f3887e
+        map: wolf3d-apogee-map
+      Wolf3DMapFileLoader:
+        header:
+          file: maphead.wl1
+          md5: 7b6dd4e55c33c33a41d1600be5df3228
+        data:
+          file: gamemaps.wl1
+          md5: 30fecd7cce6bc70402651ec922d2da3d
+        map: wolf3d-apogee-map
+      Wolf3DVgaFileLoader:
+        dict:
+          file: vgadict.wl1
+          md5: 76a6128f3c0dd9b77939ce8313992746
+        header:
+          file: vgahead.wl1
+          md5: 61bf1616e78367853c91f2c04e2c1cb7
+        data:
+          file: vgagraph.wl1
+          md5: 74decb641b1a4faed173e10ab744bff0
+        map: wolf3d-apogee-map
+      Wolf3DVswapFileLoader:
+        data:
+          file: vswap.wl1
+          md5: 6efa079414b817c97db779cecfb081c9
+        map: wolf3d-apogee-map
 spear:
   title: "Spear of Destiny"
   game-palette: spearpal
@@ -190,8 +222,3 @@ blake-ps:
             file: ianim.vsi
           EndMovie:
             file: eanim.vsi
-# spear-demo:
-    # title: "Spear of Destiny: Demo"
-    # game-palette: spearpal
-    # starting-scene: "spear:SignonScene"
-    # game-pack-asset-reference: spear-demo-map

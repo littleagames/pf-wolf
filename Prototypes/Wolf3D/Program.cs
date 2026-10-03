@@ -150,7 +150,17 @@ internal partial class Program
 
         // The Mods menu's choices (mods.cfg, per game), then the command line's
         var configMods = ModsConfig.Read(_gameEngineManager.GetConfigFilePath(ModsConfig.FileName));
-        _assetManager.Load(_gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId, configMods.Concat(modPaths));
+        try
+        {
+            _assetManager.Load(_gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId, configMods.Concat(modPaths));
+        }
+        catch (DataFilesMissingException e)
+        {
+            // Nothing is set up yet to shut down, and there are no settings to keep
+            Console.Error.WriteLine(e.Message);
+            GameEngineManager.Error(e.Message);
+            Environment.Exit(1);
+        }
         RegisterActorActions();
         RegisterConsoleCommands();
 

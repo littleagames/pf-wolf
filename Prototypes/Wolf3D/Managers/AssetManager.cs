@@ -46,10 +46,12 @@ internal class AssetManager
     {
         _gamePackId = gamePackId;
         _gameReleaseId = gameReleaseId;
+        var basePk3 = new Pk3AssetSource(BasePk3FileName);
+        BasePackId = PfWolfPk3Loader.ReadBasePackId(basePk3, gameReleaseId);
         LoadedMods = OpenMods(modPaths, gamePackId);
 
         Dictionary<string, Asset> assets = new();
-        var pfWolfBasePk3Loader = new PfWolfPk3Loader([new Pk3AssetSource(BasePk3FileName)], gamePackId, gameReleaseId,
+        var pfWolfBasePk3Loader = new PfWolfPk3Loader([basePk3], gamePackId, gameReleaseId,
             LoadedMods.Select(mod => mod.Source).ToList());
         assets = pfWolfBasePk3Loader.GetAssets();
         _origins = pfWolfBasePk3Loader.GetAssetOrigins();
@@ -67,6 +69,7 @@ internal class AssetManager
             ?? throw new KeyNotFoundException("gamepacks/gamepack-info.yaml is missing from pfwolf.pk3");
         string DataFile(string loaderName, Func<FileLoaderDetails, FileReference?> selectFile)
             => gamePackInfo.GetDataFile(gameReleaseId, loaderName, selectFile);
+        CheckDataFiles(gamePackInfo, gameReleaseId);
 
         var audioLoader = new Wolf3dAudioFileLoader(
             DataFile("Wolf3DAudioFileLoader", d => d.Data),
@@ -93,6 +96,26 @@ internal class AssetManager
         LoadMovies(gamePackInfo.FindFileLoader(gameReleaseId, "JamMovieFileLoader")?.Movies);
 
         ModWarnings.AddRange(pfWolfBasePk3Loader.Warnings);
+    }
+
+    /// <summary>
+    /// Stops with the names of the release's data files that aren't there (its movies apart,
+    /// which it can go without). The levels' pair isn't needed when the pk3s have the levels,
+    /// which LoadLevels sorts out.
+    /// </summary>
+    private static void CheckDataFiles(GamePackInfoAsset gamePackInfo, string gameReleaseId)
+    {
+        var gamePack = gamePackInfo.GetGamePack(gameReleaseId);
+        var missing = (gamePack.FilePack?.FileLoaders ?? [])
+            .Where(kvp => !kvp.Key.Equals("Wolf3DMapFileLoader", StringComparison.OrdinalIgnoreCase))
+            .SelectMany(kvp => new[] { kvp.Value.Header, kvp.Value.Data, kvp.Value.Dict })
+            .Select(file => file?.File)
+            .Where(file => !string.IsNullOrWhiteSpace(file) && !File.Exists(file))
+            .ToList();
+        if (missing.Count > 0)
+            throw new DataFilesMissingException(
+                $"{gamePack.FilePack?.Description ?? gamePack.Title ?? gameReleaseId}: these data files aren't in the game folder: "
+                + string.Join(", ", missing!));
     }
 
     /// <summary>
@@ -233,7 +256,7 @@ internal class AssetManager
             var mod = ModSource.TryOpen(fullPath, ModWarnings);
             if (mod == null)
                 continue;
-            if (!mod.IsForGamePack(gamePackId))
+            if (!mod.IsForGamePack(gamePackId, BasePackId))
             {
                 ModWarnings.Add($"Mod '{mod.DisplayName}' is for {string.Join(", ", mod.Info.GamePacks!)}, not {gamePackId}, so it isn't loaded");
                 continue;
@@ -310,6 +333,9 @@ internal class AssetManager
 
     /// <summary>The running game pack ("wolf3d", "spear")</summary>
     public string GamePackId => _gamePackId;
+
+    /// <summary>The pack the running one is built on ("wolf3d" for Spear), or null</summary>
+    public string? BasePackId { get; private set; }
 
     /// <summary>
     /// Finds an asset belonging to the running game pack, e.g. "alias" -> "wolf3d/alias"

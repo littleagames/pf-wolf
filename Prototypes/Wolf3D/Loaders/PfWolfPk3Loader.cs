@@ -443,6 +443,20 @@ internal class PfWolfPk3Loader
         Warnings.Add(message);
     }
 
+    /// <summary>
+    /// The base-pack gamepack-info gives a release, read ahead of loading, so that mods can be
+    /// picked by it before they're loaded. Null when the release has none.
+    /// </summary>
+    public static string? ReadBasePackId(IAssetSource source, string gameReleaseId)
+    {
+        var path = source.EntryPaths.FirstOrDefault(p => p.StartsWith("gamepacks/gamepack-info"));
+        if (path == null)
+            return null;
+
+        var gamePackInfo = ReadGamePackInfo(new AssetSourceEntry(source, path));
+        return gamePackInfo.GamePacks.TryGetValue(gameReleaseId, out var gamePack) ? gamePack.BasePack : null;
+    }
+
     // TODO: Identify this one as a unique, there should only be one of these
     private static GamePackInfoAsset ReadGamePackInfo(AssetSourceEntry entry)
     {
