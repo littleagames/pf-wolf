@@ -5,6 +5,8 @@ default-map:
 signon:
   pic: spear-signon
   press-a-key: false
+  # Where the startup info is printed: see wolf3d's game-info
+  text-area: { x: 16, y: 79, width: 290, height: 101 }
 
 # Drawn stacked top to bottom
 title-pics:

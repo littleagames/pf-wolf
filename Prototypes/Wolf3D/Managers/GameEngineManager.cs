@@ -128,6 +128,28 @@ internal class GameEngineManager
         => typeof(GameType).GetField(type.ToString())?.GetCustomAttribute<DescriptionAttribute>()?.Description
            ?? type.ToString().ToLowerInvariant();
 
+    /// <summary>
+    /// The engine's version from the build (Version in Wolf3D.csproj): "0.1", followed by the
+    /// commit it was built from when the build knows it, as in "0.1 (1a2b3c4)"
+    /// </summary>
+    internal static string EngineVersion { get; } = ReadEngineVersion();
+
+    private static string ReadEngineVersion()
+    {
+        var assembly = typeof(GameEngineManager).Assembly;
+        var version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            ?? assembly.GetName().Version?.ToString()
+            ?? "?";
+
+        // The SDK adds "+<commit hash>" when it builds from a git checkout
+        var plus = version.IndexOf('+');
+        if (plus < 0)
+            return version;
+
+        var commit = version[(plus + 1)..];
+        return commit.Length == 0 ? version[..plus] : $"{version[..plus]} ({commit[..Math.Min(7, commit.Length)]})";
+    }
+
     public GameInfoAsset GetGameInfo()
     {
         var gameInfo = assetManager.Value.FindInGamePack<GameInfoAsset>("game-info");

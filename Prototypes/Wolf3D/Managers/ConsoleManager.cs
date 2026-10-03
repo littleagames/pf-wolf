@@ -122,6 +122,14 @@ internal class ConsoleManager
             _scrollback.RemoveRange(0, _scrollback.Count - MaxScrollback);
     }
 
+    /// <summary>Adds lines already written to stdout to the scrollback, without writing them again.</summary>
+    internal void AddToScrollback(IEnumerable<string> lines)
+    {
+        _scrollback.AddRange(lines);
+        if (_scrollback.Count > MaxScrollback)
+            _scrollback.RemoveRange(0, _scrollback.Count - MaxScrollback);
+    }
+
     internal void Clear()
     {
         _scrollback.Clear();

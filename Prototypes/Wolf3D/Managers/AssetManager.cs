@@ -265,6 +265,17 @@ internal class AssetManager
     public IEnumerable<string> AssetNames
         => _assets.Keys.Select(key => key.Substring(key.IndexOf(':') + 1)).Distinct();
 
+    /// <summary>How many differently named assets there are of any of these types</summary>
+    public int CountNames(params Type[] assetTypes)
+    {
+        var prefixes = assetTypes.Select(type => $"{type.Name}:".ToLowerInvariant()).ToList();
+        return _assets.Keys
+            .Where(key => prefixes.Any(prefix => key.StartsWith(prefix, StringComparison.Ordinal)))
+            .Select(key => key.Substring(key.IndexOf(':') + 1))
+            .Distinct()
+            .Count();
+    }
+
     public bool Exists<T>(string assetName) where T : Asset
     {
         if (string.IsNullOrWhiteSpace(assetName))
@@ -324,6 +335,18 @@ internal class AssetManager
         var gamePackInfo = Find<GamePackInfoAsset>("gamepack-info");
         return gamePackInfo != null && gamePackInfo.GamePacks.TryGetValue(_gameReleaseId, out var gamePack)
             ? gamePack.Title
+            : null;
+    }
+
+    /// <summary>
+    /// The running release's data files as gamepack-info describes them ("Wolfenstein 3D v1.4
+    /// Apogee"), else its title, or null when it has neither
+    /// </summary>
+    public string? GetGameDescription()
+    {
+        var gamePackInfo = Find<GamePackInfoAsset>("gamepack-info");
+        return gamePackInfo != null && gamePackInfo.GamePacks.TryGetValue(_gameReleaseId, out var gamePack)
+            ? (string.IsNullOrWhiteSpace(gamePack.FilePack?.Description) ? gamePack.Title : gamePack.FilePack.Description)
             : null;
     }
 

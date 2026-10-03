@@ -482,6 +482,29 @@ internal record SignonInfo
     /// Wait for "Press a key" before continuing, instead of a short pause
     /// </summary>
     public bool PressAKey { get; init; }
+
+    /// <summary>
+    /// The open area of the pic the startup info (engine, game, mods, video, input, sound,
+    /// content, warnings) is printed in; none is printed when left out
+    /// </summary>
+    public SignonTextArea? TextArea { get; init; }
+}
+
+/// <summary>Where the signon's startup info goes, in 320x200 coordinates, and its colors</summary>
+internal record SignonTextArea
+{
+    public int X { get; init; }
+    public int Y { get; init; }
+    public int Width { get; init; }
+    public int Height { get; init; }
+
+    public string Font { get; init; } = "SmallFont";
+    // Each line's name ("Video:"), its value, and the warnings
+    public string LabelColor { get; init; } = "TEXTCOLOR";
+    public string Color { get; init; } = "HIGHLIGHT";
+    public string WarningColor { get; init; } = "READHCOLOR";
+    // The area's own color on the pic, which the text is drawn over
+    public string Background { get; init; } = "BKGDCOLOR";
 }
 
 internal record DefaultMapInfo

@@ -39,6 +39,10 @@ default-map:
 signon:
   pic: wolf3d-signon
   press-a-key: true
+  # The pic's open area, where the startup info is printed (engine, game, mods, video, input,
+  # sound, content and any warnings). Optional: font (SmallFont), label-color (TEXTCOLOR),
+  # color (HIGHLIGHT), warning-color (READHCOLOR), background (BKGDCOLOR). Left out, none is printed.
+  text-area: { x: 16, y: 79, width: 290, height: 101 }
 
 non-shareware-notice: true
 

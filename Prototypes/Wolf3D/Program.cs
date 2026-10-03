@@ -128,6 +128,9 @@ internal partial class Program
     {
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
 
+        // What startup prints is shown on the signon screen as warnings
+        CaptureStartupOutput();
+
         // Bad arguments are reported by the parser and otherwise ignored: run with the defaults.
         // --file can be given more than once.
         using var parser = new Parser(settings =>
@@ -279,8 +282,9 @@ internal partial class Program
         //
         _videoManager.InitRedShifts();
 
+        var startupLines = StopCapturingStartupOutput();
         if (!didjukebox)
-            FinishSignon();
+            FinishSignon(startupLines);
     }
 
     // A new render size needs per-column tables for the new width and the view placed again;
@@ -356,6 +360,7 @@ internal partial class Program
     private static void SignonScreen()
     {
         _graphicManager.DrawPic(_gameEngineManager.GetGameInfo().Signon.Pic ?? "", 0, 0);
+        PrintSignonInfo();
     }
 
     /// <summary>
@@ -400,13 +405,13 @@ internal partial class Program
             _videoManager.FadeIn(new GamePalette { Colors = palette.ToSDLColors() }, 30);
     }
 
-    private static void FinishSignon()
+    /// <param name="startupLines">What startup printed, shown as warnings in the signon's text area</param>
+    private static void FinishSignon(List<string> startupLines)
     {
+        FinishSignonInfo(startupLines);
+
         if (!_gameEngineManager.GetGameInfo().Signon.PressAKey)
         {
-            // TODO: In the future, the signon screen will not be different for SPEAR, and this conditional will not be required
-            // The hope is that the Signon will show the stats of loading chunks, what settings are configured, etc
-            // The graphic may change, but the logic and "Console" viewport should remain the same`
             _videoManager.Update();
 
             if (!param_nowait)
