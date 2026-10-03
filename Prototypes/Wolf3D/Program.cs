@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using SDL2;
 using System;
@@ -154,7 +154,7 @@ internal partial class Program
         {
             _assetManager.Load(_gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId, configMods.Concat(modPaths));
         }
-        catch (DataFilesMissingException e)
+        catch (DataFilesException e)
         {
             // Nothing is set up yet to shut down, and there are no settings to keep
             Console.Error.WriteLine(e.Message);

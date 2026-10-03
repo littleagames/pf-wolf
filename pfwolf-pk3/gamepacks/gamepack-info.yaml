@@ -2,8 +2,11 @@ wolf3d-apogee:
   title: Wolfenstein 3D
   game-info: wolf3d-game-info
   game-palette: wolfpal
+  # The GT/id/Activision v1.4 files: their VGAGRAPH is gfxv_wl6.h's layout, which wolf3d's
+  # raw-data-map and alias.yaml follow. (Apogee v1.4's has the same audio, maps and VSWAP, but
+  # a VGAGRAPH with 12 more "Read This" pictures, as the shareware's does.)
   file-pack:
-    description: Wolfenstein 3D v1.4 Apogee
+    description: Wolfenstein 3D v1.4 (GT/id/Activision)
     file-loaders:
       Wolf3DAudioFileLoader:
         header:
@@ -24,13 +27,13 @@ wolf3d-apogee:
       Wolf3DVgaFileLoader:
         dict:
           file: vgadict.wl6
-          md5: adb10b0d6fdddba9fcc3d1a7c16937e7
+          md5: ccad1a688ebafad9856eca085a20dfc4
         header:
           file: vgahead.wl6
-          md5: a08905e2b0d299b3fad259f90c0efb1a
+          md5: 9059afb104a51140bd0c127b73717197
         data:
           file: vgagraph.wl6
-          md5: 4e96d7b4e89a5b3a4beeebf5d7d87eb7
+          md5: f18b07d6ba988b8505415f7446235366
         map: wolf3d-apogee-map
       Wolf3DVswapFileLoader:
         data:
@@ -47,6 +50,8 @@ wolf3d-shareware:
   base-pack: wolf3d
   file-pack:
     description: Wolfenstein 3D v1.4 Shareware
+    # v1.0-1.2's files (and pre-release ones) have other layouts, so only these are taken
+    strict-md5: true
     file-loaders:
       Wolf3DAudioFileLoader:
         header:

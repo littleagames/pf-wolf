@@ -28,7 +28,7 @@ internal class AssetManager
         this.strict = strict;
     }
 
-    private const string BasePk3FileName = "pfwolf.pk3";
+    internal const string BasePk3FileName = "pfwolf.pk3";
 
     // Each asset's history, by key: which sources added, replaced or merged into it
     private Dictionary<string, List<AssetOrigin>> _origins = [];
@@ -100,22 +100,25 @@ internal class AssetManager
 
     /// <summary>
     /// Stops with the names of the release's data files that aren't there (its movies apart,
-    /// which it can go without). The levels' pair isn't needed when the pk3s have the levels,
-    /// which LoadLevels sorts out.
+    /// which it can go without; the levels' pair isn't needed when the pk3s have the levels,
+    /// which LoadLevels sorts out), or, for a strict-md5 release, that are another version's
     /// </summary>
     private static void CheckDataFiles(GamePackInfoAsset gamePackInfo, string gameReleaseId)
     {
         var gamePack = gamePackInfo.GetGamePack(gameReleaseId);
-        var missing = (gamePack.FilePack?.FileLoaders ?? [])
-            .Where(kvp => !kvp.Key.Equals("Wolf3DMapFileLoader", StringComparison.OrdinalIgnoreCase))
-            .SelectMany(kvp => new[] { kvp.Value.Header, kvp.Value.Data, kvp.Value.Dict })
-            .Select(file => file?.File)
-            .Where(file => !string.IsNullOrWhiteSpace(file) && !File.Exists(file))
-            .ToList();
+        var release = gamePack.FilePack?.Description ?? gamePack.Title ?? gameReleaseId;
+
+        var missing = gamePackInfo.FindMissingDataFiles(gameReleaseId);
         if (missing.Count > 0)
-            throw new DataFilesMissingException(
-                $"{gamePack.FilePack?.Description ?? gamePack.Title ?? gameReleaseId}: these data files aren't in the game folder: "
-                + string.Join(", ", missing!));
+            throw new DataFilesException($"{release}: these data files aren't in the game folder: {string.Join(", ", missing)}");
+
+        if (gamePack.FilePack?.StrictMd5 == true)
+        {
+            var mismatched = gamePackInfo.FindMismatchedDataFiles(gameReleaseId);
+            if (mismatched.Count > 0)
+                throw new DataFilesException(
+                    $"These data files aren't {release}'s, the only version that can be played: {string.Join(", ", mismatched)}");
+        }
     }
 
     /// <summary>

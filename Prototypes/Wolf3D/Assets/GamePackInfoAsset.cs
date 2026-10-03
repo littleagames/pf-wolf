@@ -74,6 +74,40 @@ internal record GamePackInfoAsset : Asset
             ?? throw new KeyNotFoundException($"'{releaseId}' in gamepacks/gamepack-info.yaml has no file-pack entry for {loaderName}");
     }
 
+    /// <summary>
+    /// The release's data files that aren't in the game folder, its movies apart (it can go
+    /// without them) and the levels' pair too (a pk3 can have the levels)
+    /// </summary>
+    public List<string> FindMissingDataFiles(string releaseId)
+        => DataFiles(releaseId, includeMaps: false)
+            .Select(file => file.File!)
+            .Where(file => !File.Exists(file))
+            .ToList();
+
+    /// <summary>
+    /// The release's data files in the game folder whose md5 isn't the one gamepack-info gives:
+    /// another version of the game's files
+    /// </summary>
+    public List<string> FindMismatchedDataFiles(string releaseId)
+        => DataFiles(releaseId, includeMaps: true)
+            .Where(file => !string.IsNullOrWhiteSpace(file.Md5) && File.Exists(file.File))
+            .Where(file => !Md5Of(file.File!).Equals(file.Md5!.Trim(), StringComparison.OrdinalIgnoreCase))
+            .Select(file => file.File!)
+            .ToList();
+
+    private IEnumerable<FileReference> DataFiles(string releaseId, bool includeMaps)
+        => (GetGamePack(releaseId).FilePack?.FileLoaders ?? [])
+            .Where(kvp => includeMaps || !kvp.Key.Equals("Wolf3DMapFileLoader", StringComparison.OrdinalIgnoreCase))
+            .SelectMany(kvp => new[] { kvp.Value.Header, kvp.Value.Data, kvp.Value.Dict })
+            .Where(file => !string.IsNullOrWhiteSpace(file?.File))
+            .Select(file => file!);
+
+    private static string Md5Of(string path)
+    {
+        using var stream = File.OpenRead(path);
+        return Convert.ToHexString(System.Security.Cryptography.MD5.HashData(stream));
+    }
+
     public GamePack GetGamePack(string releaseId)
         => GamePacks.TryGetValue(releaseId, out var gamePack)
             ? gamePack
@@ -108,6 +142,9 @@ public record FileLoaderDetails
 public record FilePack
 {
     public string? Description { get; init; }
+    // "strict-md5": data files whose md5 isn't the one given are refused, for a release whose
+    // other versions are laid out differently (the shareware: v1.0-1.2 aren't v1.4's layout)
+    public bool StrictMd5 { get; init; }
     // Each item is a mapping from loader-type name -> details, preserving the YAML shape:
     public Dictionary<string, FileLoaderDetails> FileLoaders { get; init; } = [];
 }

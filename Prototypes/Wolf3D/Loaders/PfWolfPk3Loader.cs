@@ -449,12 +449,18 @@ internal class PfWolfPk3Loader
     /// </summary>
     public static string? ReadBasePackId(IAssetSource source, string gameReleaseId)
     {
-        var path = source.EntryPaths.FirstOrDefault(p => p.StartsWith("gamepacks/gamepack-info"));
-        if (path == null)
-            return null;
+        var gamePackInfo = ReadGamePackInfo(source);
+        return gamePackInfo != null && gamePackInfo.GamePacks.TryGetValue(gameReleaseId, out var gamePack) ? gamePack.BasePack : null;
+    }
 
-        var gamePackInfo = ReadGamePackInfo(new AssetSourceEntry(source, path));
-        return gamePackInfo.GamePacks.TryGetValue(gameReleaseId, out var gamePack) ? gamePack.BasePack : null;
+    /// <summary>
+    /// A source's gamepacks/gamepack-info.yaml, read on its own ahead of loading (to pick the game
+    /// by the data files there are, and mods by base-pack), or null when it has none
+    /// </summary>
+    public static GamePackInfoAsset? ReadGamePackInfo(IAssetSource source)
+    {
+        var path = source.EntryPaths.FirstOrDefault(p => p.StartsWith("gamepacks/gamepack-info"));
+        return path == null ? null : ReadGamePackInfo(new AssetSourceEntry(source, path));
     }
 
     // TODO: Identify this one as a unique, there should only be one of these

@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Reflection;
 using Wolf3D.Assets;
 using Wolf3D.Configuration;
+using Wolf3D.Loaders;
 
 namespace Wolf3D.Managers;
 
@@ -69,17 +70,64 @@ internal class GameEngineManager
     public void Init(GameParams args)
     {
         // First: the settings and save folders depend on which game is running
-        GameType = ParseGameType(args.Game);
+        GameType = PickGameType(ParseGameType(args.Game));
         ReadConfigData(args);
     }
 
     /// <summary>
-    /// The game --game names by its pack id ("spear"); Wolf3D when unset or unknown
+    /// What's played when no game is asked for, or the one asked for has no data files here: the
+    /// first of these whose data files are all in the game folder
     /// </summary>
-    private static GameType ParseGameType(string gamePackId)
+    private static readonly GameType[] FallbackOrder =
+        [GameType.Wolf3D, GameType.WolfShareware, GameType.SpearOfDestiny, GameType.BlakeStone, GameType.PlanetStrike];
+
+    /// <summary>
+    /// The game to run: the one --game asks for when its data files are here, else the first game
+    /// whose files are (Wolf3D's shareware first, so asking for Wolf3D with only the shareware's
+    /// files plays that). With none, the one asked for (or Wolf3D), which then says what's missing.
+    /// </summary>
+    private static GameType PickGameType(GameType? requested)
+    {
+        GamePackInfoAsset? gamePackInfo;
+        try
+        {
+            gamePackInfo = PfWolfPk3Loader.ReadGamePackInfo(new Pk3AssetSource(AssetManager.BasePk3FileName));
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+            gamePackInfo = null;        // loading the assets reports it
+        }
+
+        bool HasDataFiles(GameType type)
+            => gamePackInfo != null && gamePackInfo.GamePacks.ContainsKey(GetReleaseId(type))
+               && gamePackInfo.FindMissingDataFiles(GetReleaseId(type)).Count == 0;
+
+        if (gamePackInfo == null || (requested is { } asked && HasDataFiles(asked)))
+            return requested ?? GameType.Wolf3D;
+
+        // Asked for Wolf3D (or for nothing): its shareware is the closest thing
+        var candidates = requested is null or GameType.Wolf3D ? FallbackOrder : [];
+        foreach (var type in candidates)
+        {
+            if (!HasDataFiles(type))
+                continue;
+            if (type != (requested ?? GameType.Wolf3D))
+                Console.WriteLine(requested == null
+                    ? $"Running {GetGamePackId(type)}: its data files are the ones here (--game picks another)."
+                    : $"Running {GetGamePackId(type)}: {GetGamePackId(requested.Value)}'s data files aren't here.");
+            return type;
+        }
+
+        return requested ?? GameType.Wolf3D;
+    }
+
+    /// <summary>
+    /// The game --game names by its pack id ("spear"); null when unset or unknown
+    /// </summary>
+    private static GameType? ParseGameType(string gamePackId)
     {
         if (string.IsNullOrWhiteSpace(gamePackId))
-            return GameType.Wolf3D;
+            return null;
 
         foreach (var type in Enum.GetValues<GameType>())
         {
@@ -87,8 +135,8 @@ internal class GameEngineManager
                 return type;
         }
 
-        Console.WriteLine($"Unknown --game '{gamePackId}' (expected {string.Join(", ", KnownGamePackIds)}); running {GetGamePackId(GameType.Wolf3D)}.");
-        return GameType.Wolf3D;
+        Console.WriteLine($"Unknown --game '{gamePackId}' (expected {string.Join(", ", KnownGamePackIds)}); picking by the data files here.");
+        return null;
     }
 
     /// <summary>
@@ -101,7 +149,9 @@ internal class GameEngineManager
     /// Key of the running release in gamepacks/gamepack-info.yaml, which names its data files
     /// and palette. Fixed per game until the release is detected from the data files.
     /// </summary>
-    public string GameReleaseId => GameType switch
+    public string GameReleaseId => GetReleaseId(GameType);
+
+    private static string GetReleaseId(GameType type) => type switch
     {
         GameType.SpearOfDestiny => "spear",
         GameType.BlakeStone => "blake-aog",

@@ -661,7 +661,10 @@ internal partial class Program
         switch (scancode)
         {
             case ScanCodes.sc_F1:
-                HelpScreens();
+                // Only where the main menu has "Read This!": its help text's pictures are the
+                // Apogee releases' (id's GT v1.4 and Spear made F1 a boss key instead)
+                if (FindMenuItem(MainMenu, "readthis") != null)
+                    HelpScreens();
                 goto finishup;
             case ScanCodes.sc_F2:
                 CP_SaveGame(0);
