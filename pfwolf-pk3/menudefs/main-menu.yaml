@@ -19,11 +19,11 @@ components:
     type: "Stripe"
     params:
       - y: 10
-  # Window fits the item count: 8 items in the shareware, 7 elsewhere (no "Read This!").
+  # Window fits the item count: 8 items in Apogee's releases, 7 elsewhere (no "Read This!").
   # [wolf3d] takes in the packs built on wolf3d (Spear); "!wolf3d-shareware" leaves that one out.
   -
     type: "Window"
-    game-packs: [ "wolf3d-shareware" ]
+    game-packs: [ "wolf3d-shareware", "wolf3d-apogee" ]
     params:
       - x: 68
       - y: 52
@@ -31,7 +31,7 @@ components:
       - height: 110
   -
     type: "Window"
-    game-packs: [ "wolf3d", "!wolf3d-shareware" ]
+    game-packs: [ "wolf3d", "!wolf3d-shareware", "!wolf3d-apogee" ]
     params:
       - x: 68
       - y: 52
@@ -81,9 +81,9 @@ menu-items:
       short-key: R
       enabled: true
       action: "CP_ReadThis"
-      # Only the shareware (Apogee's layout) has the pictures its help text draws: id's GT v1.4
-      # (wolf3d's files) dropped "Read This!", and Spear has no help screens
-      game-packs: [ "wolf3d-shareware" ]
+      # Only Apogee's releases (their VGAGRAPH layout) have the pictures the help text draws: id's
+      # GT v1.4 (wolf3d's files) dropped "Read This!", and Spear has no help screens
+      game-packs: [ "wolf3d-shareware", "wolf3d-apogee" ]
   # Becomes "End Game" (no action) while a game is in progress
   -
       id: "viewscores"

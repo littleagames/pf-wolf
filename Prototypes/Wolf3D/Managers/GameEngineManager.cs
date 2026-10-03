@@ -19,7 +19,9 @@ internal enum GameType
     [Description("planetstrike")]
     PlanetStrike,
     [Description("wolf3d-shareware")]
-    WolfShareware
+    WolfShareware,
+    [Description("wolf3d-apogee")]
+    WolfApogee
 }
 
 internal class GameEngineManager
@@ -85,6 +87,8 @@ internal class GameEngineManager
     /// The game to run: the one --game asks for when its data files are here, else the first game
     /// whose files are (Wolf3D's shareware first, so asking for Wolf3D with only the shareware's
     /// files plays that). With none, the one asked for (or Wolf3D), which then says what's missing.
+    /// A game's files can be another release's under the same names (Apogee's Wolf3D files are
+    /// named as the GT ones wolf3d is for): then that release, which strict-md5 marks, is played.
     /// </summary>
     private static GameType PickGameType(GameType? requested)
     {
@@ -98,24 +102,62 @@ internal class GameEngineManager
             gamePackInfo = null;        // loading the assets reports it
         }
 
-        bool HasDataFiles(GameType type)
-            => gamePackInfo != null && gamePackInfo.GamePacks.ContainsKey(GetReleaseId(type))
-               && gamePackInfo.FindMissingDataFiles(GetReleaseId(type)).Count == 0;
-
-        if (gamePackInfo == null || (requested is { } asked && HasDataFiles(asked)))
+        if (gamePackInfo == null)
             return requested ?? GameType.Wolf3D;
+
+        bool IsStrict(GameType type) => gamePackInfo.GetGamePack(GetReleaseId(type)).FilePack?.StrictMd5 == true;
+
+        bool HasDataFiles(GameType type)
+            => gamePackInfo.GamePacks.ContainsKey(GetReleaseId(type))
+               && gamePackInfo.FindMissingDataFiles(GetReleaseId(type)).Count == 0
+               && (!IsStrict(type) || gamePackInfo.FindMismatchedDataFiles(GetReleaseId(type)).Count == 0);
+
+        // The game the files here are for, when they're the given game's by name: the game itself,
+        // unless they're another version, and a strict release with the same file names fits them
+        GameType? Playable(GameType type)
+        {
+            if (!HasDataFiles(type))
+                return null;
+            if (IsStrict(type) || gamePackInfo.FindMismatchedDataFiles(GetReleaseId(type)).Count == 0)
+                return type;
+
+            foreach (var other in Enum.GetValues<GameType>())
+            {
+                if (other != type && gamePackInfo.GamePacks.ContainsKey(GetReleaseId(other)) && IsStrict(other)
+                    && gamePackInfo.HasSameDataFileNames(GetReleaseId(type), GetReleaseId(other)) && HasDataFiles(other))
+                    return other;
+            }
+            return type;
+        }
+
+        void NoteSwitch(GameType asked, GameType played, string reason)
+        {
+            if (played != asked)
+                Console.WriteLine($"Running {GetGamePackId(played)}: {reason}");
+        }
+
+        string Description(GameType type)
+        {
+            var gamePack = gamePackInfo.GetGamePack(GetReleaseId(type));
+            return gamePack.FilePack?.Description ?? gamePack.Title ?? GetGamePackId(type);
+        }
+
+        if (requested is { } asked && Playable(asked) is { } game)
+        {
+            NoteSwitch(asked, game, $"the data files here are {Description(game)}'s.");
+            return game;
+        }
 
         // Asked for Wolf3D (or for nothing): its shareware is the closest thing
         var candidates = requested is null or GameType.Wolf3D ? FallbackOrder : [];
         foreach (var type in candidates)
         {
-            if (!HasDataFiles(type))
+            if (Playable(type) is not { } found)
                 continue;
-            if (type != (requested ?? GameType.Wolf3D))
-                Console.WriteLine(requested == null
-                    ? $"Running {GetGamePackId(type)}: its data files are the ones here (--game picks another)."
-                    : $"Running {GetGamePackId(type)}: {GetGamePackId(requested.Value)}'s data files aren't here.");
-            return type;
+            NoteSwitch(requested ?? GameType.Wolf3D, found, requested == null
+                ? $"its data files are the ones here ({Description(found)}; --game picks another)."
+                : $"{GetGamePackId(requested.Value)}'s data files aren't here.");
+            return found;
         }
 
         return requested ?? GameType.Wolf3D;
@@ -157,7 +199,8 @@ internal class GameEngineManager
         GameType.BlakeStone => "blake-aog",
         GameType.PlanetStrike => "blake-ps",
         GameType.WolfShareware => "wolf3d-shareware",
-        _ => "wolf3d-apogee",
+        GameType.WolfApogee => "wolf3d-apogee",
+        _ => "wolf3d",
     };
 
     /// <summary>
@@ -170,7 +213,7 @@ internal class GameEngineManager
         GameType.BlakeStone => "BlakeStone",
         GameType.PlanetStrike => "PlanetStrike",
         GameType.WolfShareware => "Wolfenstein3DShareware",
-        _ => "Wolfenstein3D",
+        _ => "Wolfenstein3D",       // Apogee's release too: the same game, so the same settings
     };
 
     /// <summary>

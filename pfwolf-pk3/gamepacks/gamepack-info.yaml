@@ -1,10 +1,10 @@
-wolf3d-apogee:
+wolf3d:
   title: Wolfenstein 3D
   game-info: wolf3d-game-info
   game-palette: wolfpal
   # The GT/id/Activision v1.4 files: their VGAGRAPH is gfxv_wl6.h's layout, which wolf3d's
   # raw-data-map and alias.yaml follow. (Apogee v1.4's has the same audio, maps and VSWAP, but
-  # a VGAGRAPH with 12 more "Read This" pictures, as the shareware's does.)
+  # a VGAGRAPH with 12 more "Read This" pictures, as the shareware's does: wolf3d-apogee.)
   file-pack:
     description: Wolfenstein 3D v1.4 (GT/id/Activision)
     file-loaders:
@@ -34,6 +34,52 @@ wolf3d-apogee:
         data:
           file: vgagraph.wl6
           md5: f18b07d6ba988b8505415f7446235366
+        map: wolf3d-apogee-map
+      Wolf3DVswapFileLoader:
+        data:
+          file: vswap.wl6
+          md5: a6d901dfb455dfac96db5e4705837cdb
+        map: wolf3d-apogee-map
+
+wolf3d-apogee:
+  title: Wolfenstein 3D
+  game-palette: wolfpal
+  # Apogee's v1.4: the same audio, maps and VSWAP as wolf3d's GT files, under the same names, but
+  # a VGAGRAPH with Apogee's layout (as the shareware's), so its own raw-data-map and alias.yaml.
+  # Everything else comes from wolf3d's files.
+  base-pack: wolf3d
+  file-pack:
+    description: Wolfenstein 3D v1.4 (Apogee)
+    # Its files have wolf3d's names: the md5s are what tell the two apart, and a --game wolf3d
+    # with these files plays this pack (GameEngineManager.PickGameType)
+    strict-md5: true
+    file-loaders:
+      Wolf3DAudioFileLoader:
+        header:
+          file: audiohed.wl6
+          md5: a41af25a2f193e7d4afbcc4301b3d1ce
+        data:
+          file: audiot.wl6
+          md5: 2385b488b18f8721633e5b2bdf054853
+        map: wolf3d-apogee-map
+      Wolf3DMapFileLoader:
+        header:
+          file: maphead.wl6
+          md5: b8d2a78bc7c50da7ec9ab1d94f7975e1
+        data:
+          file: gamemaps.wl6
+          md5: a4e73706e100dc0cadfb02d23de46481
+        map: wolf3d-apogee-map
+      Wolf3DVgaFileLoader:
+        dict:
+          file: vgadict.wl6
+          md5: adb10b0d6fdddba9fcc3d1a7c16937e7
+        header:
+          file: vgahead.wl6
+          md5: a08905e2b0d299b3fad259f90c0efb1a
+        data:
+          file: vgagraph.wl6
+          md5: 4e96d7b4e89a5b3a4beeebf5d7d87eb7
         map: wolf3d-apogee-map
       Wolf3DVswapFileLoader:
         data:

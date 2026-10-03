@@ -95,6 +95,18 @@ internal record GamePackInfoAsset : Asset
             .Select(file => file.File!)
             .ToList();
 
+    /// <summary>
+    /// Whether two releases' data files have the same names, so only their md5s tell them apart
+    /// (wolf3d's GT files and wolf3d-apogee's)
+    /// </summary>
+    public bool HasSameDataFileNames(string releaseId, string otherReleaseId)
+    {
+        static HashSet<string> Names(IEnumerable<FileReference> files)
+            => files.Select(file => file.File!.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return Names(DataFiles(releaseId, includeMaps: true)).SetEquals(Names(DataFiles(otherReleaseId, includeMaps: true)));
+    }
+
     private IEnumerable<FileReference> DataFiles(string releaseId, bool includeMaps)
         => (GetGamePack(releaseId).FilePack?.FileLoaders ?? [])
             .Where(kvp => includeMaps || !kvp.Key.Equals("Wolf3DMapFileLoader", StringComparison.OrdinalIgnoreCase))
