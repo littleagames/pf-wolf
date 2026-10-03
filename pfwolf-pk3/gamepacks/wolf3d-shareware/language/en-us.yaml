@@ -1,0 +1,4 @@
+# Wolfenstein 3D Shareware text, added to wolf3d's and the shared language/en-us.yaml.
+
+# Picking an episode the shareware doesn't have (game-info episodes locked-message)
+$SHAREWARE_EPISODE: "Please select \"Read This!\"\nfrom the Options menu to\nfind out how to order this\nepisode from Apogee."

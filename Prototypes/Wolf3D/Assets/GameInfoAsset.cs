@@ -639,9 +639,17 @@ internal record EpisodeInfo
     public string Name { get; init; } = null!;
 
     /// <summary>
-    /// Map asset value of which map to start the episode
+    /// Map asset value of which map to start the episode (none for a locked one)
     /// </summary>
     public string StartMap { get; init; } = null!;
+
+    /// <summary>
+    /// "locked-message": the episode is listed but can't be played (the shareware's episodes 2-6);
+    /// picking it shows this text (or $LANGUAGE key) instead
+    /// </summary>
+    public string? LockedMessage { get; init; }
+
+    public bool Locked => !string.IsNullOrWhiteSpace(LockedMessage);
 
     /// <summary>
     /// Graphic asset that is used to display on the episode menu

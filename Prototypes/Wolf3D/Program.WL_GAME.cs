@@ -158,6 +158,16 @@ internal partial class Program
             {
                 case playstatetypes.ex_completed:
                 case playstatetypes.ex_secretlevel:
+                    // A level with no next level (a boss floor left by exitlevel, or by a map's own
+                    // exit) ends its cluster, as the victory tile does
+                    var leftInfo = _gameEngineManager.GetGameInfo().Maps[gamestate.mapon];
+                    var nextMap = playstate == playstatetypes.ex_secretlevel ? leftInfo.SecretNext ?? leftInfo.Next : leftInfo.Next;
+                    if (string.IsNullOrEmpty(nextMap))
+                    {
+                        playstate = playstatetypes.ex_victorious;
+                        goto case playstatetypes.ex_victorious;
+                    }
+
                     if (viewsize == 21) DrawPlayScreen();
                     _inventoryManager.ResetForNextLevel();
                     DrawKeys();
@@ -170,16 +180,7 @@ internal partial class Program
                     if (viewsize == 21) DrawPlayScreen();
                     gamestate.oldscore = gamestate.score;
 
-                    var gameInfo = _gameEngineManager.GetGameInfo();
-                    var mapInfo = gameInfo.Maps[gamestate.mapon];
-                    if (playstate == playstatetypes.ex_secretlevel)
-                    {
-                        gamestate.mapon = mapInfo.SecretNext ?? mapInfo.Next; // Falls back if no secretnext defined
-                    }
-                    else
-                    {
-                        gamestate.mapon = mapInfo.Next;
-                    }
+                    gamestate.mapon = nextMap;      // the secret exit falls back to next if there's no secret-next
                     break;
 
                 case playstatetypes.ex_died:
@@ -663,7 +664,7 @@ internal partial class Program
 
     /// <summary>
     /// The level's name for showing to the player: game-info's name for it, else
-    /// "Episode X, Floor Y" ("Floor Y" when there's one episode), else the map's lump name.
+    /// "Episode X, Floor Y" ("Floor Y" when there's one playable episode), else the map's lump name.
     /// </summary>
     internal static string GetMapDisplayName(string mapon)
     {
@@ -677,7 +678,7 @@ internal partial class Program
         if (mapInfo.FloorNumber <= 0)
             return mapon;
 
-        return gameInfo.Episodes.Count > 1
+        return gameInfo.Episodes.Values.Count(episode => !episode.Locked) > 1
             ? string.Format("$STR_MAPEPISODEFLOOR".ToLanguageText(language), mapInfo.Cluster, mapInfo.FloorNumber)
             : string.Format("$STR_MAPFLOOR".ToLanguageText(language), mapInfo.FloorNumber);
     }

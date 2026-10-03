@@ -1,0 +1,7 @@
+# Wolfenstein 3D Shareware's sounds, laid over the shared sounds/sound-seq.yaml: these entries win.
+sound-info:
+  # The shareware has only the first two death screams (id's UPLOAD build picks one of those two)
+  guard/death:
+    random:
+      - guard/death1
+      - guard/death2

@@ -906,29 +906,25 @@ internal partial class Program
                 default:
                     episodeInfo = (EpisodeInfo?)NewEmenu[which].data;
 
+                    string? refusal = null;
                     if (episodeInfo == null)
+                        refusal = "Episode unavailable!";
+                    else if (episodeInfo.Locked)
+                        refusal = episodeInfo.LockedMessage!.ToLanguageText(language);   // the shareware's "Read This!" note
+                    else if (!_gameEngineManager.GetGameInfo().Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
+                        refusal = $"Starting Map \"{episodeInfo.StartMap}\" unavailable!";
+
+                    if (refusal != null)
                     {
                         _audioManager.Play("player/usefail");
-                        Message("Episode unavailable!");
+                        Message(refusal);
                         _inputManager.ClearKeysDown();
                         _inputManager.Ack();
                         DrawNewEpisode();
                         which = 0;
                     }
                     else
-                    {
-                        var gameInfo = _gameEngineManager.GetGameInfo();
-                        if (!gameInfo.Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
-                        {
-                            _audioManager.Play("player/usefail");
-                            Message($"Starting Map \"{episodeInfo.StartMap}\" unavailable!");
-                            _inputManager.ClearKeysDown();
-                            _inputManager.Ack();
-                            DrawNewEpisode();
-                            which = 0;
-                        }
                         which = 1;
-                    }
                     break;
             }
 
@@ -2235,6 +2231,8 @@ internal partial class Program
         (ClassMenu, ClassItems) = LoadMenu("new-class");
 
         (MusicMenu, MusicItems) = LoadMenu("jukebox");
+        // Only the songs the game has (the shareware has 10 of the 27)
+        MusicMenu = MusicMenu.Where(item => item.data is not string song || _assetManager.Exists<Wolf3dImfAudio>(song)).ToArray();
         MusicItems.amount = (short)Math.Min(JukeboxPageSize, MusicMenu.Length);
     }
 

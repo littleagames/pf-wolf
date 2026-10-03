@@ -85,6 +85,11 @@ internal class Wolf3dAudioFileLoader
                 }
                 else if (block == 1) // Music block
                 {
+                    // A song the release leaves out (the shareware's) is a stub whose IMF length is 0,
+                    // followed by the song's name: it gets no asset
+                    if (data.Length >= 2 && BitConverter.ToUInt16(data, 0) == 0)
+                        continue;
+
                     var key = musicDataMap[assetIndex].ToLowerInvariant();
                     assets.Add(key, new Wolf3dImfAudio(data));
                 }

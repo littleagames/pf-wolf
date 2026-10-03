@@ -32,6 +32,10 @@ level-fade-tics: 20
 
 extra-life-score: 40000
 
+# Wolf3D's layout, but the level column is a plain floor number: one episode, so no "E1/L"
+high-scores:
+  show-episode: false
+
 hud-messages:
   enabled: false
   pickup-style: Default
@@ -59,12 +63,39 @@ skills:
 
 demo-skill: HARD
 
+# Every episode is listed, as in the original; picking one with a locked-message (and no
+# start-map) shows the message instead of starting it
 episodes:
   EP01:
     name: "Episode 1\nEscape from Wolfenstein"
     start-map: MAP01
     pic-name: C_EPISODE1
     key: E
+  EP02:
+    name: "Episode 2\nOperation: Eisenfaust"
+    locked-message: $SHAREWARE_EPISODE
+    pic-name: C_EPISODE2
+    key: O
+  EP03:
+    name: "Episode 3\nDie, Fuhrer, Die!"
+    locked-message: $SHAREWARE_EPISODE
+    pic-name: C_EPISODE3
+    key: D
+  EP04:
+    name: "Episode 4\nA Dark Secret"
+    locked-message: $SHAREWARE_EPISODE
+    pic-name: C_EPISODE4
+    key: A
+  EP05:
+    name: "Episode 5\nTrail of the Madman"
+    locked-message: $SHAREWARE_EPISODE
+    pic-name: C_EPISODE5
+    key: T
+  EP06:
+    name: "Episode 6\nConfrontation"
+    locked-message: $SHAREWARE_EPISODE
+    pic-name: C_EPISODE6
+    key: C
 
 clusters:
   1:
