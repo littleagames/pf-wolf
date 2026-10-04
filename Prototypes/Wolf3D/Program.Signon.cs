@@ -95,6 +95,9 @@ internal partial class Program
 
     private static string SoundSummary()
     {
+        if (!_audioManager.IsAvailable)
+            return "Off, OpenAL failed (see warnings)";
+
         var effects = new List<string>();
         if (_audioManager.DigitizedSoundEnabled)
             effects.Add("Digi");

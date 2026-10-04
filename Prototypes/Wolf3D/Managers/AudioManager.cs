@@ -1,6 +1,7 @@
 ﻿using NukedOPL3Sharp;
 using OpenTK.Audio.OpenAL;
 using SDL2;
+using System.Runtime.InteropServices;
 using Wolf3D.Assets;
 using Wolf3D.Assets.Sounds;
 
@@ -92,7 +93,7 @@ internal class AudioManager
         set
         {
             _soundVolume = Math.Clamp(value, 0, MaxVolume);
-            if (_isDisposed)
+            if (!IsActive)
                 return;
             var gain = VolumeGain(_soundVolume);
             foreach (var source in _sources)
@@ -107,7 +108,7 @@ internal class AudioManager
         set
         {
             _musicVolume = Math.Clamp(value, 0, MaxVolume);
-            if (!_isDisposed)
+            if (IsActive)
                 AL.Source(_musicSource, ALSourcef.Gain, MusicGain * VolumeGain(_musicVolume));
         }
     }
@@ -146,17 +147,27 @@ internal class AudioManager
     private bool _isPaused;
     private bool _isDisposed;
 
+    // False when OpenAL couldn't be started: the game runs silent and every call here does nothing
+    private readonly bool _isAvailable;
+
+    /// <summary>Whether sound is working; false when OpenAL couldn't be started (the game runs silent).</summary>
+    public bool IsAvailable => _isAvailable;
+
+    private bool IsActive => _isAvailable && !_isDisposed;
+
     public AudioManager(Lazy<AssetManager> assetManager)
     {
-        _device = ALC.OpenDevice(null);
-        if (_device == ALDevice.Null)
-            throw new InvalidOperationException("OpenAL could not open an audio device.");
-        _context = ALC.CreateContext(_device, (int[])null);
-        if (_context == ALContext.Null || !ALC.MakeContextCurrent(_context))
-            throw new InvalidOperationException("OpenAL could not create an audio context.");
+        _assetManager = assetManager;
+        _sources = [];
 
-        //_buffers = sounds.ToDictionary(pair => pair.Key, pair => CreateBuffer(pair.Value));
-        //_musicTracks = musicTracks;
+        var failure = TryOpenDevice(out _device, out _context);
+        if (failure != null)
+        {
+            // Startup output is shown on the signon screen
+            Console.WriteLine($"Sound is off: {failure}");
+            return;
+        }
+        _isAvailable = true;
 
         _sources = AL.GenSources(SourceCount);
         _musicSource = AL.GenSource();
@@ -168,9 +179,99 @@ internal class AudioManager
             AL.Source(source, ALSourcef.MaxDistance, 16.0f);
             AL.Source(source, ALSourcef.RolloffFactor, 0.35f);
         }
+    }
 
-        _assetManager = assetManager;
+    private const string OpenALFileName = "OpenAL32.dll";
 
+    // Opens the default device and makes a context current; on failure, returns why (null when it worked)
+    private static string? TryOpenDevice(out ALDevice device, out ALContext context)
+    {
+        device = ALDevice.Null;
+        context = ALContext.Null;
+        try
+        {
+            device = ALC.OpenDevice(null);
+        }
+        catch (Exception e) when (e is DllNotFoundException or BadImageFormatException or EntryPointNotFoundException)
+        {
+            return DescribeLibraryFailure(e);
+        }
+
+        if (device == ALDevice.Null)
+            return "OpenAL couldn't open an audio device (no sound output, or it's in use / disabled).";
+
+        context = ALC.CreateContext(device, (int[])null);
+        if (context == ALContext.Null || !ALC.MakeContextCurrent(context))
+        {
+            var error = ALC.GetError(device);
+            if (context != ALContext.Null)
+                ALC.DestroyContext(context);
+            ALC.CloseDevice(device);
+            device = ALDevice.Null;
+            context = ALContext.Null;
+            return $"OpenAL couldn't create an audio context ({error}).";
+        }
+        return null;
+    }
+
+    // Why OpenAL32.dll didn't load. OpenTK only says it couldn't, so load the bundled copy
+    // directly to get the OS's reason, and compare its architecture with this process's.
+    private static string DescribeLibraryFailure(Exception e)
+    {
+        var lines = new List<string> { $"{OpenALFileName} couldn't be loaded ({e.GetType().Name})." };
+        var process = RuntimeInformation.ProcessArchitecture;
+        lines.Add($"  Process: {process}, OS: {RuntimeInformation.OSArchitecture}");
+
+        var path = Path.Combine(AppContext.BaseDirectory, OpenALFileName);
+        if (!File.Exists(path))
+        {
+            lines.Add($"  {path} is missing (deleted, or quarantined by antivirus?)");
+            return string.Join(Environment.NewLine, lines);
+        }
+
+        var dllArchitecture = PortableExecutableArchitecture(path);
+        lines.Add($"  {path}: {new FileInfo(path).Length:N0} bytes, {dllArchitecture ?? "not a readable DLL"}");
+        if (dllArchitecture != null && !string.Equals(dllArchitecture, process.ToString(), StringComparison.OrdinalIgnoreCase))
+            lines.Add($"  This {process} process can't load a DLL built for {dllArchitecture}: replace it with the {process} build of OpenAL Soft");
+
+        try
+        {
+            NativeLibrary.Free(NativeLibrary.Load(path));
+            lines.Add("  Loading it directly works, so OpenTK looked somewhere else for it.");
+        }
+        catch (Exception loadError)
+        {
+            // Carries the OS's reason, e.g. "not a valid Win32 application" or "Access is denied"
+            lines.Add($"  {loadError.Message}");
+        }
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    // The CPU a PE file (DLL/EXE) was built for, read from its COFF header; null when it isn't one
+    private static string? PortableExecutableArchitecture(string path)
+    {
+        try
+        {
+            using var reader = new BinaryReader(File.OpenRead(path));
+            if (reader.ReadUInt16() != 0x5A4D) // "MZ"
+                return null;
+            reader.BaseStream.Position = 0x3C;
+            reader.BaseStream.Position = reader.ReadInt32();
+            if (reader.ReadUInt32() != 0x00004550) // "PE\0\0"
+                return null;
+            return reader.ReadUInt16() switch
+            {
+                0x014C => "X86",
+                0x8664 => "X64",
+                0xAA64 => "Arm64",
+                0x01C4 => "Arm",
+                var machine => $"machine 0x{machine:X4}"
+            };
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -191,7 +292,7 @@ internal class AudioManager
     /// </summary>
     public void SetListener(float x, float y, float angleDegrees)
     {
-        if (_isDisposed)
+        if (!IsActive)
             return;
         var radians = angleDegrees * MathF.PI / 180.0f;
         AL.Listener(ALListener3f.Position, x, 0.0f, y);
@@ -201,6 +302,8 @@ internal class AudioManager
 
     private void Play(string name, (float X, float Y)? position)
     {
+        if (!IsActive)
+            return;
         var requestedName = name;
         var soundSeq = _assetManager.Value.Find<SoundSequenceAsset>("sound-seq");
         // The running pack's own sounds (gamepacks/<pack>/sound-seq.yaml) win over the shared ones
@@ -291,7 +394,7 @@ internal class AudioManager
 
     public void Stop(string name)
     {
-        if (!_lastBufferForSound.TryGetValue(name.ToLowerInvariant(), out var buffer))
+        if (!IsActive || !_lastBufferForSound.TryGetValue(name.ToLowerInvariant(), out var buffer))
             return;
         var source = _sources.FirstOrDefault(s => AL.GetSource(s, ALGetSourcei.Buffer) == buffer);
         if (source != 0)
@@ -300,12 +403,16 @@ internal class AudioManager
 
     public void StopAll()
     {
+        if (!IsActive)
+            return;
         foreach (var source in _sources)
             AL.SourceStop(source);
     }
 
     public void WaitSoundDone()
     {
+        if (!IsActive)
+            return;
         foreach (var source in _sources)
         {
             AL.GetSource(source, ALGetSourcei.SourceState, out int stateInt);
@@ -324,6 +431,8 @@ internal class AudioManager
 
     public bool IsAnySoundPlaying()
     {
+        if (!IsActive)
+            return false;
         foreach (var source in _sources)
         {
             AL.GetSource(source, ALGetSourcei.SourceState, out int stateInt);
@@ -336,7 +445,7 @@ internal class AudioManager
 
     public bool IsPlaying(string name)
     {
-        if (!_lastBufferForSound.TryGetValue(name.ToLowerInvariant(), out var buffer))
+        if (!IsActive || !_lastBufferForSound.TryGetValue(name.ToLowerInvariant(), out var buffer))
             return false;
         var source = _sources.FirstOrDefault(s => AL.GetSource(s, ALGetSourcei.Buffer) == buffer);
         if (source == 0)
@@ -361,7 +470,7 @@ internal class AudioManager
 
         _requestedMusicTrack = name;
         _isPaused = false; // A deliberate request for new music always plays, even if a prior unrelated pause was never lifted.
-        if (!_musicEnabled)
+        if (!_musicEnabled || !IsActive)
             return; // remembered, and started when music is switched back on
 
         AL.Source(_musicSource, ALSourcef.Gain, MusicGain * VolumeGain(_musicVolume));
@@ -380,7 +489,7 @@ internal class AudioManager
     {
         get
         {
-            if (_isDisposed || !_musicEnabled || string.IsNullOrEmpty(_requestedMusicTrack))
+            if (!IsActive || !_musicEnabled || string.IsNullOrEmpty(_requestedMusicTrack))
                 return false;
             if (_musicStreamThread?.IsAlive == true)
                 return true;
@@ -503,6 +612,8 @@ internal class AudioManager
         _musicStreamCts = null;
         _musicStreamThread = null;
 
+        if (!_isAvailable)
+            return;
         AL.SourceStop(_musicSource);
         AL.GetSource(_musicSource, ALGetSourcei.BuffersQueued, out var queued);
         if (queued <= 0)
@@ -532,7 +643,7 @@ internal class AudioManager
     /// </summary>
     public void SetPaused(bool isPaused)
     {
-        if (_isDisposed)
+        if (!IsActive)
             return;
         _isPaused = isPaused;
         if (isPaused)
@@ -546,6 +657,8 @@ internal class AudioManager
         if (_isDisposed)
             return;
         _isDisposed = true;
+        if (!_isAvailable)
+            return;
         StopMusicStream();
         AL.SourceStop(_musicSource);
         foreach (var source in _sources)
