@@ -125,9 +125,9 @@ internal partial class Program
         // looking up and down: only the view, which SetupPitch keeps within what it can show
         //
         if (controlcenterview)
-            viewpitch = 0;
+            playerpitch = 0;
         else if (controlpitch != 0)
-            viewpitch = Math.Clamp(viewpitch + controlpitch, -MaxPitch(), MaxPitch());
+            playerpitch = Math.Clamp(playerpitch + controlpitch, -MaxPitch(), MaxPitch());
 
         if (_inputManager.IsButtonPressed(buttontypes.bt_strafeleft))
         {
@@ -1674,7 +1674,7 @@ internal partial class Program
     internal static void VictorySpin()
     {
         int desty;
-        viewpitch = 0;              // watch BJ straight on
+        playerpitch = 0;            // watch BJ straight on
         if (player.Angle > 270)
         {
             player.Angle -= (short)(tics * 3);

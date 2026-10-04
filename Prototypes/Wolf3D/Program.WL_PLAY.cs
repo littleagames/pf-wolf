@@ -152,7 +152,10 @@ internal partial class Program
                 // Every actor lives in _mapManager._actors. The player is at its head, so it still
                 // thinks before every enemy, projectile and the BJ-victory actor.
                 _mapManager.DoActors(tics);
-                TickLevelSpawners();        // wall outlets and warp sites (Program.BlakeMachines.cs)
+                TouchItems();               // pickups the player walked onto (Program.PlayerSight.cs)
+                TickPlayerBody(tics);       // what others see of the player, and
+                camera.Tick(tics);          // a watched actor's view turning (Program.Camera.cs)
+                TickLevelSpawners();       // wall outlets and warp sites (Program.BlakeMachines.cs)
                 TickZoneLights(tics);       // light zones' fades and effects (Program.ZoneLights.cs)
 
                 _videoManager.UpdatePaletteShifts(tics);

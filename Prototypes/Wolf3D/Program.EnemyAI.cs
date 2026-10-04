@@ -64,7 +64,7 @@ internal partial class Program
 
             if (deltax <= MINACTORDIST && deltay <= MINACTORDIST)
             {
-                if (!ob.Hidden || !_mapManager.spotvis[player.TileX, player.TileY])
+                if (!ob.Hidden || !PlayerTileInView())
                 {
                     // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
                     if (ob.Flags.Contains("TOUCHDAMAGE", StringComparer.OrdinalIgnoreCase))
@@ -1490,33 +1490,30 @@ internal partial class Program
         deathCamSprite = null;      // T_DeathCam builds a fresh one, so the flash starts from its first frame
         NewActorState(player, Entities.Actors.PlayerPawn.DeathCamState);
 
-        player.X = gamestate.killx;
-        player.Y = gamestate.killy;
-
-        dx = ob.X - player.X;
-        dy = player.Y - ob.Y;
+        // The camera, not the player, moves: from where the killing shot came, back from the
+        // boss until it's clear of walls
+        dx = ob.X - gamestate.killx;
+        dy = gamestate.killy - ob.Y;
 
         fangle = (float)Math.Atan2((float)dy, (float)dx);
         if (fangle < 0)
             fangle = (float)(M_PI * 2 + fangle);
 
-        player.Angle = (short)(fangle / (M_PI * 2) * ANGLES);
+        var camangle = (short)(fangle / (M_PI * 2) * ANGLES);
+        int camx, camy;
 
         dist = 0x14000;
         do
         {
-            xmove = MathUtils.FixedMul(dist, costable[player.Angle]);
-            ymove = -MathUtils.FixedMul(dist, sintable[player.Angle]);
+            xmove = MathUtils.FixedMul(dist, costable[camangle]);
+            ymove = -MathUtils.FixedMul(dist, sintable[camangle]);
 
-            player.X = ob.X - xmove;
-            player.Y = ob.Y - ymove;
+            camx = ob.X - xmove;
+            camy = ob.Y - ymove;
             dist += 0x1000;
 
-        } while (!CheckPosition(player));
-        plux = (ushort)(player.X >> UNSIGNEDSHIFT);
-        pluy = (ushort)(player.Y >> UNSIGNEDSHIFT);
-        player.TileX = (byte)(player.X >> MapConstants.TILESHIFT);
-        player.TileY = (byte)(player.Y >> MapConstants.TILESHIFT);
+        } while (!CheckPosition(camx, camy));
+        camera.SetFixed(camx, camy, camangle);
 
         DrawPlayBorder();
 

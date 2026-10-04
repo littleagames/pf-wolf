@@ -685,8 +685,9 @@ internal partial class Program
 
     internal static void SetupGameLevel()
     {
-        viewpitch = 0;                      // each level, and each loaded game, starts looking straight ahead
-        vieweyez = EYEDEFAULT;              // from standing height
+        playerpitch = 0;                    // each level, and each loaded game, starts looking straight ahead
+        playereyez = EYEDEFAULT;            // from standing height
+        camera.FollowPlayer();              // through the player's eyes
 
         if (!loadedgame)
         {
@@ -812,7 +813,8 @@ internal partial class Program
         }
 
         gamestate.weapon = null;                     // take away weapon
-        viewpitch = 0;                               // and face the attacker straight on
+        playerpitch = 0;                             // and face the attacker straight on
+        camera.FollowPlayer();                       // seen through their own eyes
         if (_inventoryManager.GetStringProperty(PlayerClass, "deathsound") is { Length: > 0 } deathSound)
             _audioManager.Play(deathSound);     // the Player class's deathsound
         ShowObituary();
@@ -859,7 +861,7 @@ internal partial class Program
         else if (!rotateclockwise && curangle < iangle)
             curangle += ANGLES;
 
-        int dropto = deathDropHeight ?? vieweyez;
+        int dropto = deathDropHeight ?? playereyez;
         do
         {
             if (curangle != iangle)
@@ -876,13 +878,13 @@ internal partial class Program
                     player.Angle += ANGLES;
             }
 
-            if (vieweyez > dropto)
-                vieweyez = Math.Max(vieweyez - (int)tics * deathDropSpeed, dropto);
+            if (playereyez > dropto)
+                playereyez = Math.Max(playereyez - (int)tics * deathDropSpeed, dropto);
 
             ThreeDRefresh();
             CalcTics();
             _hudMessageManager.Tick((int)tics);
-        } while (curangle != iangle || vieweyez > dropto);
+        } while (curangle != iangle || playereyez > dropto);
 
         //
         // fade to red
@@ -899,7 +901,7 @@ internal partial class Program
         _inputManager.UserInput((uint)deathHoldTics);
         _audioManager.WaitSoundDone();
         ClearMemory();
-        vieweyez = EYEDEFAULT;                       // back on their feet for the restart
+        playereyez = EYEDEFAULT;                     // back on their feet for the restart
 
         gamestate.lives--;
 

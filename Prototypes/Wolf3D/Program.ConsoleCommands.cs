@@ -167,6 +167,9 @@ internal partial class Program
             "flat <floor 0-255> <ceiling 0-255> [tilex tiley]", Cmd_Flat, Cheat | InLevel);
         Register("flats", "Sets the level's default floor and ceiling textures, for tiles the flat plane doesn't give one (not saved).",
             "flats [floor|none] [ceiling|none]", Cmd_Flats, InLevel);
+        Register("spectate", "Watches through another actor's eyes while you play on: the next or previous enemy (default next), the next of a class, or back to the player. Not saved; each level starts on the player.",
+            "spectate [next|prev|player|<class>]", Cmd_Spectate, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? ["next", "prev", "player", .. SpectateCandidates().Select(a => a.Name).Distinct()] : []);
 
         //
         // debugging aids and information
@@ -710,9 +713,9 @@ internal partial class Program
         {
             if (!double.TryParse(args[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double degrees))
                 throw new ArgumentException("usage: pitch [degrees]");
-            viewpitch = Math.Clamp(degrees, -max, max);
+            playerpitch = Math.Clamp(degrees, -max, max);
         }
-        _consoleManager.Print($"Pitch is {viewpitch:0.#} degrees (up to {max:0.#} either way)");
+        _consoleManager.Print($"Pitch is {playerpitch:0.#} degrees (up to {max:0.#} either way)");
     }
 
     private static void Cmd_EyeHeight(string[] args)
@@ -723,7 +726,7 @@ internal partial class Program
                 throw new ArgumentException($"usage: eyeheight [{MINEYE}-{MAXEYE}]");
             SetEyeHeight(z);
         }
-        _consoleManager.Print($"Eye height is {vieweyez} ({MINEYE}-{MAXEYE}, 64 a story, {EYEDEFAULT} standing)");
+        _consoleManager.Print($"Eye height is {playereyez} ({MINEYE}-{MAXEYE}, 64 a story, {EYEDEFAULT} standing)");
     }
 
     private static void Cmd_PlayerClass(string[] args)

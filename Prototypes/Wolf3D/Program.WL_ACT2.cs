@@ -30,7 +30,7 @@ internal partial class Program
     // Projectiles (Rocket/Smoke/Needle/Fire, actordefs/wolf3d/projectiles.yaml) and the
     // BJ-victory end-of-episode cutscene (actordefs/wolf3d/victory.yaml) run on the same type,
     // spawned into MapManager._actors by MapManager.SpawnAtActor. CheckPosition's only caller
-    // is the player pawn in Program.EnemyAI.cs's A_StartDeathCam.
+    // is Program.EnemyAI.cs's A_StartDeathCam, placing the camera.
 
     /*
     =================
@@ -290,16 +290,16 @@ internal partial class Program
     =
     ===============
     */
-    internal static bool CheckPosition(Entities.Actors.Actor ob)
+    internal static bool CheckPosition(int obx, int oby)
     {
         int x, y, xl, yl, xh, yh;
         Actor? check;
 
-        xl = (int)((ob.X - PLAYERSIZE) >> MapConstants.TILESHIFT);
-        yl = (int)((ob.Y - PLAYERSIZE) >> MapConstants.TILESHIFT);
+        xl = (int)((obx - PLAYERSIZE) >> MapConstants.TILESHIFT);
+        yl = (int)((oby - PLAYERSIZE) >> MapConstants.TILESHIFT);
 
-        xh = (int)((ob.X + PLAYERSIZE) >> MapConstants.TILESHIFT);
-        yh = (int)((ob.Y + PLAYERSIZE) >> MapConstants.TILESHIFT);
+        xh = (int)((obx + PLAYERSIZE) >> MapConstants.TILESHIFT);
+        yh = (int)((oby + PLAYERSIZE) >> MapConstants.TILESHIFT);
 
         //
         // check for solid walls

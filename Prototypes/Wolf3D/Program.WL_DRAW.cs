@@ -164,7 +164,7 @@ internal partial class Program
     ====================
     */
 
-    internal static double viewpitch;   // degrees, up positive; reset each level
+    internal static double viewpitch;   // degrees, up positive; this frame's, from the camera
 
     /// <summary>The steepest pitch, in degrees, that keeps the horizon a row inside the view</summary>
     internal static double MaxPitch() =>
@@ -193,9 +193,16 @@ internal partial class Program
 
     internal const int EYEDEFAULT = TEXTURESIZE / 2, MINEYE = 4, MAXEYE = TEXTURESIZE - 4;
 
-    internal static int vieweyez = EYEDEFAULT;  // reset each level
+    internal static int vieweyez = EYEDEFAULT;  // this frame's, from the camera
 
-    internal static void SetEyeHeight(int z) => vieweyez = Math.Clamp(z, MINEYE, MAXEYE);
+    static bool markseen;   // whether this frame's walls and floor go on the automap: only the player's view
+
+    /// <summary>Marks a wall face the rays hit as seen, for the automap, when the view is the player's</summary>
+    static void MarkSeen(int x, int y, SeenFlags face)
+    {
+        if (markseen)
+            _mapManager.seen[x, y] |= face;
+    }
 
     /// <summary>The screen row of the floor line, for a wall where half a story is half pixels high</summary>
     static int FloorRow(int half) => centery + half * vieweyez / (TEXTURESIZE / 2);
@@ -205,16 +212,18 @@ internal partial class Program
 
     internal static void Setup3DView()
     {
-        viewangle = player.Angle;
+        viewangle = camera.Angle;
         midangle = (short)(viewangle * (FINEANGLES / ANGLES));
 
+        viewpitch = camera.Pitch;
+        vieweyez = Math.Clamp(camera.EyeZ, MINEYE, MAXEYE);
         SetupPitch();
 
         viewsin = sintable[viewangle];
         viewcos = costable[viewangle];
 
-        viewx = player.X - MathUtils.FixedMul(focallength, viewcos);
-        viewy = player.Y + MathUtils.FixedMul(focallength, viewsin);
+        viewx = camera.X - MathUtils.FixedMul(focallength, viewcos);
+        viewy = camera.Y + MathUtils.FixedMul(focallength, viewsin);
 
         focaltx = (short)(viewx >> (int)MapConstants.TILESHIFT);
         focalty = (short)(viewy >> (int)MapConstants.TILESHIFT);
@@ -1366,7 +1375,7 @@ internal partial class Program
                     tilehit = _mapManager.tilemap[focaltx, focalty];
                     hitstories = _mapManager.WallStories(focaltx, focalty);
                     HitDiagWall(focalshape, focaltx, focalty);
-                    _mapManager.seen[focaltx, focalty] |= SeenFlags.DiagonalFace;
+                    MarkSeen(focaltx, focalty, SeenFlags.DiagonalFace);
                     focalhit = true;
                 }
             }
@@ -1638,7 +1647,7 @@ internal partial class Program
                     }
 
                     HitDiagWall(shape, xtile, yinttile);
-                    _mapManager.seen[hitx, hity] |= SeenFlags.DiagonalFace;
+                    MarkSeen(hitx, hity, SeenFlags.DiagonalFace);
                     return true;
                 }
                 else
@@ -1649,7 +1658,7 @@ internal partial class Program
                 }
             }
 
-            _mapManager.seen[hitx, hity] |= xtilestep == 1 ? SeenFlags.WestFace : SeenFlags.EastFace;
+            MarkSeen(hitx, hity, xtilestep == 1 ? SeenFlags.WestFace : SeenFlags.EastFace);
             return true;
         }
 
@@ -1882,7 +1891,7 @@ internal partial class Program
                     }
 
                     HitDiagWall(shape, xinttile, ytile);
-                    _mapManager.seen[hitx, hity] |= SeenFlags.DiagonalFace;
+                    MarkSeen(hitx, hity, SeenFlags.DiagonalFace);
                     return true;
                 }
                 else
@@ -1893,7 +1902,7 @@ internal partial class Program
                 }
             }
 
-            _mapManager.seen[hitx, hity] |= ytilestep == 1 ? SeenFlags.NorthFace : SeenFlags.SouthFace;
+            MarkSeen(hitx, hity, ytilestep == 1 ? SeenFlags.NorthFace : SeenFlags.SouthFace);
             return true;
         }
 
@@ -1983,17 +1992,21 @@ internal partial class Program
     // Computes an actor's screen-space hit-testing/scale data (ViewX/TransX/ViewHeight) from
     // the fixed-point X/Y that Program.EnemyAI.cs's movement code maintains, so enemies,
     // projectiles and the BJ-victory actor can be both rendered and (enemies) shot at.
-    internal static void TransformActor(Entities.Actors.Actor ob)
-    {
-        var gx = ob.X - viewx;
-        var gy = ob.Y - viewy;
+    internal static void TransformActor(Entities.Actors.Actor ob) =>
+        TransformActorFrom(ob, viewx, viewy, viewsin, viewcos);
 
-        var gxt = MathUtils.FixedMul(gx, viewcos);
-        var gyt = MathUtils.FixedMul(gy, viewsin);
+    /// <summary>TransformActor from a view other than this frame's (the player's, see PlayerSight)</summary>
+    internal static void TransformActorFrom(Entities.Actors.Actor ob, int fromx, int fromy, int fromsin, int fromcos)
+    {
+        var gx = ob.X - fromx;
+        var gy = ob.Y - fromy;
+
+        var gxt = MathUtils.FixedMul(gx, fromcos);
+        var gyt = MathUtils.FixedMul(gy, fromsin);
         var nx = gxt - gyt - ACTORSIZE;
 
-        gxt = MathUtils.FixedMul(gx, viewsin);
-        gyt = MathUtils.FixedMul(gy, viewcos);
+        gxt = MathUtils.FixedMul(gx, fromsin);
+        gyt = MathUtils.FixedMul(gy, fromcos);
         var ny = gyt + gxt;
 
         ob.TransX = nx;
@@ -2027,11 +2040,11 @@ internal partial class Program
 
     internal static int CalcRotate(Entities.Actors.Actor ob)
     {
-        var viewangle = (int)(player.Angle + (centerx - ob.ViewX) / (8 * projectionwidth / 320.0));
+        var viewangle = (int)(Program.viewangle + (centerx - ob.ViewX) / (8 * projectionwidth / 320.0));
 
         // A projectile (Rocket, the Death Knight's HeavyRocket) has no Dir -- it flies at an
-        // arbitrary angle -- so it rotates by its heading.
-        var angle = ob.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase)
+        // arbitrary angle -- so it rotates by its heading. So does the player's body.
+        var angle = ob.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase) || ob == playerBody
             ? (viewangle - 180) - ob.Angle
             : (viewangle - 180) - dirangle[(byte)ob.Dir];
 
@@ -2056,12 +2069,8 @@ internal partial class Program
         //
         //for (statptr = 0; statptr != laststatobj; statptr++)
         var actorList = _mapManager.GetActors();
+        var looker = camera.Target;
 
-        // Manual node walk instead of foreach: GetBonus() can remove the current
-        // actor from _actors (picked-up inventory), which invalidates a foreach
-        // enumerator on the next MoveNext(). Grabbing the next node before running
-        // any code that might remove the current one keeps traversal safe, since
-        // removing a LinkedList node doesn't touch its neighbors' Next/Previous.
         var node = actorList.First;
         while (node != null)
         {
@@ -2072,7 +2081,13 @@ internal partial class Program
                 continue;                                               // object has been deleted
 
             if (actor is PlayerPawn)
-                continue;                                               // the camera itself, never drawn
+            {
+                if (VisiblePlayerBody() is not { } body)
+                    continue;                                           // looked through, or with no sprites
+                actor = body;                                           // what others see of them (Program.Camera.cs)
+            }
+            else if (actor == looker)
+                continue;                                               // the one looked through
 
             visobj_t visptr_val = new visobj_t();
             //statobj_t statptr_val = statobjlist[statptr];
@@ -2161,13 +2176,8 @@ internal partial class Program
             if (!_mapManager.spotvis[(int)actor.Position.X, (int)actor.Position.Y])
                 continue;                                               // not visable
 
-            if (TransformTile((int)actor.Position.X, (int)actor.Position.Y,
-                ref visptr_val.viewx, ref visptr_val.viewheight) && actor is Inventory inventory)
-            {
-                GetBonus(inventory);
-                if (actorList.Contains(actor) == false)
-                    continue;                                           // object has been taken
-            }
+            // Picking it up is TouchItems' job (Program.PlayerSight.cs), not the renderer's
+            TransformTile((int)actor.Position.X, (int)actor.Position.Y, ref visptr_val.viewx, ref visptr_val.viewheight);
 
             if (visptr_val.viewheight == 0)
                 continue;                                               // to close to the object
@@ -2231,6 +2241,10 @@ internal partial class Program
             return;
         }
 
+        // Only in the player's own view
+        if (!camera.OnPlayer)
+            return;
+
         // The frame the weapon's states are on (Program.PlayerWeapon.cs), in the light of the
         // player's tile but not faded: it's at arm's length
         if (WeaponShapeName() is { } shape)
@@ -2254,9 +2268,9 @@ internal partial class Program
 
         if (!((demorecord || demoplayback)))
         {
-            if (_mapManager.tilemap[player.TileX, player.TileY] == 0 ||
-             (_mapManager.tilemap[player.TileX, player.TileY] & BIT_DOOR) != 0)
-                _mapManager.spotvis[player.TileX, player.TileY] = true;       // Detect all sprites over player fix
+            if (_mapManager.tilemap[camera.TileX, camera.TileY] == 0 ||
+             (_mapManager.tilemap[camera.TileX, camera.TileY] & BIT_DOOR) != 0)
+                _mapManager.spotvis[camera.TileX, camera.TileY] = true;       // Detect all sprites over camera fix
         }
 
 
@@ -2275,14 +2289,17 @@ internal partial class Program
         //
         VGAClearScreen();
 
+        markseen = camera.OnPlayer;     // the automap only learns what the player sees
         WallRefresh();
 
-        _mapManager.MarkSeenFromSpotvis();      // floor the rays crossed, for the automap
+        if (markseen)
+            _mapManager.MarkSeenFromSpotvis();      // floor the rays crossed, for the automap
 
         //
         // draw all the scaled images
         //
         DrawScaleds();                  // draw scaled stuff
+        PlayerSight();                  // what the player sees, when the camera is elsewhere
 
         DrawPlayerWeapon();    // draw player's hands
 

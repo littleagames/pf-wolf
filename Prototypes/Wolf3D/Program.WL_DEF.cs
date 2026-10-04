@@ -502,13 +502,13 @@ internal partial class Program
     internal static void ClearMemory() => _audioManager.StopAll();
 
     // JAB
-    // Positional sounds are placed in tile units; the listener follows the player (see UpdateSoundListener).
+    // Positional sounds are placed in tile units; the listener follows the camera (see UpdateSoundListener).
     internal static void PlaySoundLocTile(string s, int tx, int ty) => _audioManager.PlayAt(s, tx + 0.5f, ty + 0.5f);
     internal static void PlaySoundLocActor(string s, Entities.Actors.Actor ob) =>
         _audioManager.PlayAt(s, FixedToTiles(ob.X), FixedToTiles(ob.Y));
 
     internal static void UpdateSoundListener() =>
-        _audioManager.SetListener(FixedToTiles(player.X), FixedToTiles(player.Y), player.Angle);
+        _audioManager.SetListener(FixedToTiles(camera.X), FixedToTiles(camera.Y), camera.Angle);
 
     private static float FixedToTiles(int value) => value / (float)MapConstants.TILEGLOBAL;
 
