@@ -31,11 +31,11 @@ Player:
         tics-per-frame: 5
     Pain:
       - sprite: PLAY
-        frames: [F]
+        frames: [J]
         tics-per-frame: 10
     Pain1:
       - sprite: PLAY
-        frames: [J]
+        frames: [K]
         tics-per-frame: 10
     Death:
       - sprite: PLAY
