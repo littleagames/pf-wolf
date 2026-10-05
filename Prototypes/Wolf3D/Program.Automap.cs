@@ -323,26 +323,27 @@ internal partial class Program
         }
     }
 
-    /// <summary>A pushwall on the move, as a square outline at its current offset.</summary>
+    /// <summary>The pushwalls on the move, each as a square outline at its current offset.</summary>
     static void DrawAutomapPushwall(AutomapView view, bool reveal)
     {
-        if (pwallstate == 0)
-            return;
-
-        int dx = dirs[(int)pwalldir][0], dy = dirs[(int)pwalldir][1];
-
-        if (!reveal && _mapManager.seen[pwallx, pwally] == SeenFlags.None
-                    && _mapManager.seen[pwallx + dx, pwally + dy] == SeenFlags.None)
-            return;
-
-        float offset = pwallpos / 64f;
-        float x = pwallx + dx * offset, y = pwally + dy * offset;
         string color = AutomapColor("AutomapWall");
 
-        AutomapLine(view, x, y, x + 1, y, color);
-        AutomapLine(view, x, y + 1, x + 1, y + 1, color);
-        AutomapLine(view, x, y, x, y + 1, color);
-        AutomapLine(view, x + 1, y, x + 1, y + 1, color);
+        foreach (var wall in pushwalls)
+        {
+            int dx = dirs[(int)wall.Dir][0], dy = dirs[(int)wall.Dir][1];
+
+            if (!reveal && _mapManager.seen[wall.X, wall.Y] == SeenFlags.None
+                        && _mapManager.seen[wall.X + dx, wall.Y + dy] == SeenFlags.None)
+                continue;
+
+            float offset = wall.Pos / 64f;
+            float x = wall.X + dx * offset, y = wall.Y + dy * offset;
+
+            AutomapLine(view, x, y, x + 1, y, color);
+            AutomapLine(view, x, y + 1, x + 1, y + 1, color);
+            AutomapLine(view, x, y, x, y + 1, color);
+            AutomapLine(view, x + 1, y, x + 1, y + 1, color);
+        }
     }
 
     /// <summary>

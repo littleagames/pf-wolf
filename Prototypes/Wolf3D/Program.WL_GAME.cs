@@ -727,8 +727,7 @@ internal partial class Program
             gamestate.secretcount =
             gamestate.killcount =
             gamestate.treasurecount = 0;
-            pwallstate =
-            pwallpos = 0;
+            ClearPushWalls();
             foreach (var p in players)
             {
                 p.WeaponSprite = null;      // the weapon in hand starts on its Ready state
@@ -948,7 +947,7 @@ internal partial class Program
                 playerstate.health = StartingHealth;
                 GiveStartingInventory();
             }
-            pwallstate = pwallpos = 0;
+            ClearPushWalls();
             weaponSprite = null;            // the weapon in hand starts on its Ready state
 
             if (viewsize != 21)

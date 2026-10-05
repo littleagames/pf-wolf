@@ -594,18 +594,87 @@ internal partial class Program
     =============================================================================
     */
 
-    static ushort pwallstate;
-    static ushort pwallpos;                  // amount a pushable wall has been moved (0-63)
-    static ushort pwallx, pwally;
-    static controldirs pwalldir;
-    static byte pwalltile;
+    /// <summary>
+    /// A pushwall on the move. Any number can move at once, each with its own progress; a
+    /// moving wall's two tiles (the one it's leaving and the one ahead) are bare BIT_WALL.
+    /// </summary>
+    internal sealed class MovingPushWall
+    {
+        public ushort State;                // tics since it started: a tile per 128
+        public ushort Pos;                  // amount it has moved into the tile ahead (0-63)
+        public ushort X, Y;                 // the tile it's leaving
+        public controldirs Dir;
+        public byte Tile;                   // its wall id
+
+        // Who pushed it: the tiles it leaves take their area (not saved: a loaded game's
+        // walls go by the first player, the only one a save has)
+        public Entities.Actors.PlayerPawn? Pusher;
+
+        public void Write(BinaryWriter bw)
+        {
+            bw.Write(State);
+            bw.Write(Pos);
+            bw.Write(X);
+            bw.Write(Y);
+            bw.Write((byte)Dir);
+            bw.Write(Tile);
+        }
+
+        public static MovingPushWall Read(BinaryReader br)
+        {
+            var wall = new MovingPushWall
+            {
+                State = br.ReadUInt16(),
+                Pos = br.ReadUInt16(),
+                X = br.ReadUInt16(),
+                Y = br.ReadUInt16(),
+                Dir = (controldirs)br.ReadByte(),
+                Tile = br.ReadByte(),
+            };
+            if (wall.X >= MapManager.MAPSIZE || wall.Y >= MapManager.MAPSIZE || (int)wall.Dir > (int)controldirs.di_west)
+                throw new InvalidDataException($"Bad moving pushwall at {wall.X},{wall.Y}.");
+            return wall;
+        }
+    }
+
+    // The pushwalls on the move, in the order they were pushed
+    static readonly List<MovingPushWall> pushwalls = [];
+
+    // The moving pushwall the renderer is tracing, picked by SelectPushWall as a trace enters
+    // one of its tiles
+    static MovingPushWall pwall = new();
+    static ushort pwallpos => pwall.Pos;
+    static ushort pwallx => pwall.X;
+    static ushort pwally => pwall.Y;
+    static controldirs pwalldir => pwall.Dir;
+    static byte pwalltile => pwall.Tile;
+
     static int[][] dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
-    // Who pushed the moving wall: the tiles it leaves take their area (not saved: a loaded
-    // game's wall goes by the first player, the only one a save has)
-    static Entities.Actors.PlayerPawn? pwallpusher;
-    static Entities.Actors.PlayerPawn PwallPusher =>
-        pwallpusher is { } p && ReferenceEquals(p.State.Pawn, p) ? p : _mapManager.Players.First();
+    /// <summary>The moving pushwall on a tile, the one it's leaving or the one ahead, or null.</summary>
+    static MovingPushWall? PushWallAt(int x, int y)
+    {
+        foreach (var wall in pushwalls)
+        {
+            if ((wall.X == x && wall.Y == y)
+                || (wall.X + dirs[(int)wall.Dir][0] == x && wall.Y + dirs[(int)wall.Dir][1] == y))
+                return wall;
+        }
+        return null;
+    }
+
+    /// <summary>Points pwall at the moving pushwall on a tile; keeps the last one if there's none.</summary>
+    static void SelectPushWall(int x, int y)
+    {
+        if (PushWallAt(x, y) is { } wall)
+            pwall = wall;
+    }
+
+    /// <summary>Stops every pushwall where it is (a new level, or the player starting over).</summary>
+    internal static void ClearPushWalls() => pushwalls.Clear();
+
+    static Entities.Actors.PlayerPawn PusherOf(MovingPushWall wall) =>
+        wall.Pusher is { } p && ReferenceEquals(p.State.Pawn, p) ? p : _mapManager.Players.First();
 
     // Whether a player's box (PLAYERSIZE each way) reaches into a tile
     static bool PlayerBoxCovers(Entities.Actors.PlayerPawn pawn, int tilex, int tiley) =>
@@ -626,11 +695,12 @@ internal partial class Program
     {
         int oldtile, dx, dy;
 
-        if (pwallstate != 0)
+        // demos keep the original game's one wall at a time, so they play out the same
+        if (pushwalls.Count > 0 && (demoplayback || demorecord))
             return false;
 
         oldtile = _mapManager.tilemap[checkx, checky];
-        if (oldtile == 0)
+        if (oldtile == 0 || oldtile == BIT_WALL)    // nothing there, or a wall already on the move
             return false;
 
         dx = dirs[(int)dir][0];
@@ -647,17 +717,20 @@ internal partial class Program
         _mapManager.tilemap[checkx + dx, checky + dy] = (byte)oldtile;
         _mapManager.actorat[checkx + dx, checky + dy] = new Wall(oldtile);
 
-        pwallx = (ushort)checkx;
-        pwally = (ushort)checky;
-        pwalldir = dir;
-        pwallstate = 1;
-        pwallpos = 0;
-        pwalltile = _mapManager.tilemap[pwallx, pwally];
-        _mapManager.tilemap[pwallx, pwally] = BIT_WALL;
-        _mapManager.tilemap[pwallx + dx, pwally + dy] = BIT_WALL;
-        _mapManager.SetMapSpot(pwallx, pwally, 1,  0);   // remove P tile info
-        _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)_mapManager.MAPSPOT(player.TileX, player.TileY, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
-        pwallpusher = player;
+        pushwalls.Add(new MovingPushWall
+        {
+            X = (ushort)checkx,
+            Y = (ushort)checky,
+            Dir = dir,
+            State = 1,
+            Pos = 0,
+            Tile = (byte)oldtile,
+            Pusher = player,
+        });
+        _mapManager.tilemap[checkx, checky] = BIT_WALL;
+        _mapManager.tilemap[checkx + dx, checky + dy] = BIT_WALL;
+        _mapManager.SetMapSpot(checkx, checky, 1,  0);   // remove P tile info
+        _mapManager.SetMapSpot(checkx, checky, 0, (ushort)_mapManager.MAPSPOT(player.TileX, player.TileY, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
 
         if (!string.IsNullOrEmpty(moveSound))
             _audioManager.Play(moveSound);
@@ -674,66 +747,77 @@ internal partial class Program
 
     internal static void MovePWalls()
     {
+        // in the order they were pushed, so every machine in a net game moves them the same
+        for (int i = 0; i < pushwalls.Count;)
+        {
+            if (MovePWall(pushwalls[i]))
+                i++;
+            else
+                pushwalls.RemoveAt(i);
+        }
+    }
+
+    // Moves one pushwall on by this frame's tics: false once it has stopped
+    static bool MovePWall(MovingPushWall wall)
+    {
         int oldblock, oldtile;
 
-        if (pwallstate == 0)
-            return;
+        oldblock = wall.State / 128;
 
-        oldblock = pwallstate / 128;
+        wall.State += (ushort)tics;
 
-        pwallstate += (ushort)tics;
-
-        if (pwallstate / 128 != oldblock)
+        if (wall.State / 128 != oldblock)
         {
             // block crossed into a new block
-            oldtile = pwalltile;
+            oldtile = wall.Tile;
 
             //
             // the tile can now be walked into
             //
-            _mapManager.tilemap[pwallx, pwally] = 0;
-            _mapManager.actorat[pwallx, pwally] = null;
-            _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)(PwallPusher.AreaNumber + _mapManager.Floors.AreaTile));    // TODO: this is unnecessary, and makes a mess of mapsegs
+            _mapManager.tilemap[wall.X, wall.Y] = 0;
+            _mapManager.actorat[wall.X, wall.Y] = null;
+            _mapManager.SetMapSpot(wall.X, wall.Y, 0, (ushort)(PusherOf(wall).AreaNumber + _mapManager.Floors.AreaTile));    // TODO: this is unnecessary, and makes a mess of mapsegs
 
-            int dx = dirs[(byte)pwalldir][0], dy = dirs[(byte)pwalldir][1];
+            int dx = dirs[(byte)wall.Dir][0], dy = dirs[(byte)wall.Dir][1];
             //
             // see if it should be pushed farther
             //
-            if (pwallstate >= 256)            // only move two tiles fix
+            if (wall.State >= 256)            // only move two tiles fix
             {
                 //
                 // the block has been pushed two tiles
                 //
-                pwallstate = 0;
-                _mapManager.tilemap[pwallx + dx, pwally + dy] = (byte)oldtile;
-                _mapManager.MoveWallStories(pwallx, pwally, pwallx + dx, pwally + dy);
-                _mapManager.MoveTag(pwallx, pwally, pwallx + dx, pwally + dy);
-                return;
+                _mapManager.tilemap[wall.X + dx, wall.Y + dy] = (byte)oldtile;
+                _mapManager.MoveWallStories(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
+                _mapManager.MoveTag(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
+                return false;
             }
             else
             {
-                // the wall's height and tag go with it, on the tile pwallx/pwally name
-                _mapManager.MoveWallStories(pwallx, pwally, pwallx + dx, pwally + dy);
-                _mapManager.MoveTag(pwallx, pwally, pwallx + dx, pwally + dy);
-                pwallx += (ushort)dx;
-                pwally += (ushort)dy;
+                // the wall's height and tag go with it, on the tile wall.X/wall.Y name
+                _mapManager.MoveWallStories(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
+                _mapManager.MoveTag(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
+                wall.X += (ushort)dx;
+                wall.Y += (ushort)dy;
+                int aheadx = wall.X + dx, aheady = wall.Y + dy;
 
-                // stopped by anything in the way, a player included (any of them)
-                if (_mapManager.actorat[pwallx + dx, pwally + dy] != null
-                    || _mapManager.EnemiesAt(pwallx + dx, pwally + dy).Any()
-                    || _mapManager.Players.Any(pawn => PlayerBoxCovers(pawn, pwallx + dx, pwally + dy)))
+                // stopped by anything in the way, a player included (any of them), or another
+                // moving wall's tile
+                if (_mapManager.actorat[aheadx, aheady] != null
+                    || _mapManager.tilemap[aheadx, aheady] == BIT_WALL
+                    || _mapManager.EnemiesAt(aheadx, aheady).Any()
+                    || _mapManager.Players.Any(pawn => PlayerBoxCovers(pawn, aheadx, aheady)))
                 {
-                    pwallstate = 0;
-                    _mapManager.tilemap[pwallx, pwally] = (byte)oldtile;
-                    return;
+                    _mapManager.tilemap[wall.X, wall.Y] = (byte)oldtile;
+                    return false;
                 }
 
-                _mapManager.tilemap[pwallx + dx, pwally + dy] = (byte)oldtile;
-                _mapManager.actorat[pwallx + dx, pwally + dy] = new Wall(oldtile); // the double-assign here is something of pointers, might not be useful here anymore
-                _mapManager.tilemap[pwallx + dx, pwally + dy] = BIT_WALL;
+                _mapManager.actorat[aheadx, aheady] = new Wall(oldtile);
+                _mapManager.tilemap[aheadx, aheady] = BIT_WALL;
             }
         }
 
-        pwallpos = (ushort)((pwallstate / 2) & 63);
+        wall.Pos = (ushort)((wall.State / 2) & 63);
+        return true;
     }
 }

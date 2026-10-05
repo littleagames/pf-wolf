@@ -221,7 +221,12 @@ internal partial class Program
         }
         for (int door = 0; door < doornum; door++)
             Add(doorobjlist[door].position);
-        Add(pwallstate);
+        foreach (var wall in pushwalls)
+        {
+            Add(wall.State);
+            Add(wall.X);
+            Add(wall.Y);
+        }
         return hash;
     }
 

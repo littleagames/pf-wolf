@@ -51,7 +51,8 @@ internal partial class Program
     // 17: actors' Temp3, Ammo, SeekX/Y and TryDir; the weapon charge.
     // 18: the light zones before the weapon; the hub state (levels kept, floors visited) at the end.
     // 19: each actor's carried drops, death link and cloak (mapdefs floors actor-codes), after its light.
-    private const int SaveVersion = 19;
+    // 20: a count of moving pushwalls and each one's state, in place of the one pushwall.
+    private const int SaveVersion = 20;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the
@@ -306,7 +307,7 @@ internal partial class Program
     /// <summary>
     /// The level as it stands, as a save holds it and as a hub keeps a level that's been left:
     /// the map and its actors (MapManager.WriteLevelState), then doors, area connections, the
-    /// moving pushwall, the player's last attacker, the automap's seen tiles and the light zones.
+    /// moving pushwalls, the player's last attacker, the automap's seen tiles and the light zones.
     /// </summary>
     private static void WriteLevelBody(BinaryWriter bw)
     {
@@ -320,12 +321,9 @@ internal partial class Program
         bw.Write(areaconnect);
         bw.Write(areabyplayer);
 
-        bw.Write(pwallstate);
-        bw.Write(pwallpos);
-        bw.Write(pwallx);
-        bw.Write(pwally);
-        bw.Write((byte)pwalldir);
-        bw.Write(pwalltile);
+        bw.Write(pushwalls.Count);
+        foreach (var wall in pushwalls)
+            wall.Write(bw);
 
         // Died() turns the player to face their killer, so keep who that is.
         // (By reference: actors are records, so IndexOf would match a look-alike by value.)
@@ -342,12 +340,7 @@ internal partial class Program
         doorobj_t[] Doors,
         byte[,] AreaConnect,
         byte[] AreaByPlayer,
-        ushort PwallState,
-        ushort PwallPos,
-        ushort PwallX,
-        ushort PwallY,
-        controldirs PwallDir,
-        byte PwallTile,
+        List<MovingPushWall> PushWalls,
         int LastAttacker,
         byte[] Seen,
         Dictionary<int, ZoneState> Zones);
@@ -372,12 +365,7 @@ internal partial class Program
             doors,
             AreaConnect: ReadExactly(br, numareas * numareas).ToFixedArray(numareas, numareas),
             AreaByPlayer: ReadExactly(br, numareas),
-            PwallState: br.ReadUInt16(),
-            PwallPos: br.ReadUInt16(),
-            PwallX: br.ReadUInt16(),
-            PwallY: br.ReadUInt16(),
-            PwallDir: (controldirs)br.ReadByte(),
-            PwallTile: br.ReadByte(),
+            PushWalls: Enumerable.Range(0, br.ReadCount()).Select(_ => MovingPushWall.Read(br)).ToList(),
             LastAttacker: br.ReadInt32(),
             Seen: ReadExactly(br, MapManager.MAPAREA),
             Zones: ReadZoneLights(br));
@@ -405,12 +393,15 @@ internal partial class Program
         areaconnect = body.AreaConnect;
         areabyplayer = body.AreaByPlayer;
 
-        pwallstate = body.PwallState;
-        pwallpos = body.PwallPos;
-        pwallx = body.PwallX;
-        pwally = body.PwallY;
-        pwalldir = body.PwallDir;
-        pwalltile = body.PwallTile;
+        // copies, so a hub level's kept body isn't moved along with the live walls
+        pushwalls.Clear();
+        foreach (var wall in body.PushWalls)
+        {
+            pushwalls.Add(new MovingPushWall
+            {
+                State = wall.State, Pos = wall.Pos, X = wall.X, Y = wall.Y, Dir = wall.Dir, Tile = wall.Tile,
+            });
+        }
 
         _mapManager.SetSeenBytes(body.Seen);
         RestoreZoneLights(body.Zones);

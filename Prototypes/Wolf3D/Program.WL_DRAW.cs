@@ -1318,6 +1318,7 @@ internal partial class Program
             //
             if (_mapManager.tilemap[focaltx, focalty] == BIT_WALL)
             {
+                SelectPushWall(focaltx, focalty);
                 hitstories = _mapManager.WallStories(pwallx, pwally);
                 if ((pwalldir == controldirs.di_east && xtilestep == 1) || (pwalldir == controldirs.di_west && xtilestep == -1))
                 {
@@ -1445,7 +1446,9 @@ internal partial class Program
         CloseArch(VertEdge, yintercept);
         EnterTileLight(xtile - xtilestep, yinttile);
         tilehit = _mapManager.tilemap[xtile, yinttile];
-        hitstories = tilehit == BIT_WALL ? _mapManager.WallStories(pwallx, pwally) : _mapManager.WallStories(hitx, hity);
+        if (tilehit == BIT_WALL)
+            SelectPushWall(hitx, hity);     // which of the moving pushwalls this is
+        hitstories =tilehit == BIT_WALL ? _mapManager.WallStories(pwallx, pwally) : _mapManager.WallStories(hitx, hity);
 
         if (tilehit != 0)
         {
@@ -1687,7 +1690,9 @@ internal partial class Program
         CloseArch(xintercept, HorizEdge);
         EnterTileLight(xinttile, ytile - ytilestep);
         tilehit = _mapManager.tilemap[xinttile, ytile];
-        hitstories = tilehit == BIT_WALL ? _mapManager.WallStories(pwallx, pwally) : _mapManager.WallStories(hitx, hity);
+        if (tilehit == BIT_WALL)
+            SelectPushWall(hitx, hity);     // which of the moving pushwalls this is
+        hitstories =tilehit == BIT_WALL ? _mapManager.WallStories(pwallx, pwally) : _mapManager.WallStories(hitx, hity);
 
         if (tilehit != 0)
         {

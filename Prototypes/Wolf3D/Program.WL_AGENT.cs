@@ -293,24 +293,25 @@ internal partial class Program
                 {
                     if (check is WallSpriteBlocker)
                         nearwallsprite = true;          // only its panel blocks: checked below
-                    else if (_mapManager.tilemap[x, y] == BIT_WALL && x == pwallx && y == pwally)   // back of moving pushwall?
+                    else if (_mapManager.tilemap[x, y] == BIT_WALL
+                        && pushwalls.Find(p => p.X == x && p.Y == y) is { } pw)    // back of a moving pushwall?
                     {
-                        switch (pwalldir)
+                        switch (pw.Dir)
                         {
                             case controldirs.di_north:
-                                if (ob.Y - PUSHWALLMINDIST <= (pwally << (int)MapConstants.TILESHIFT) + ((63 - pwallpos) << 10))
+                                if (ob.Y - PUSHWALLMINDIST <= (pw.Y << (int)MapConstants.TILESHIFT) + ((63 - pw.Pos) << 10))
                                     return false;
                                 break;
                             case controldirs.di_west:
-                                if (ob.X - PUSHWALLMINDIST <= (pwallx << (int)MapConstants.TILESHIFT) + ((63 - pwallpos) << 10))
+                                if (ob.X - PUSHWALLMINDIST <= (pw.X << (int)MapConstants.TILESHIFT) + ((63 - pw.Pos) << 10))
                                     return false;
                                 break;
                             case controldirs.di_east:
-                                if (ob.X + PUSHWALLMINDIST >= (pwallx << (int)MapConstants.TILESHIFT) + (pwallpos << 10))
+                                if (ob.X + PUSHWALLMINDIST >= (pw.X << (int)MapConstants.TILESHIFT) + (pw.Pos << 10))
                                     return false;
                                 break;
                             case controldirs.di_south:
-                                if (ob.Y + PUSHWALLMINDIST >= (pwally << (int)MapConstants.TILESHIFT) + (pwallpos << 10))
+                                if (ob.Y + PUSHWALLMINDIST >= (pw.Y << (int)MapConstants.TILESHIFT) + (pw.Pos << 10))
                                     return false;
                                 break;
                         }

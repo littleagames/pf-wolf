@@ -67,7 +67,7 @@ internal partial class Program
     ===============
     */
 
-    const int NETSTATEVERSION = 1;
+    const int NETSTATEVERSION = 2;     // 2: a pusher per moving pushwall
 
     /// <summary>
     /// Everything a player joining needs to take the game up from here: the level as a save
@@ -119,7 +119,9 @@ internal partial class Program
                 bw.Write(IndexOf(actor.Shooter));
                 bw.Write(actor is Entities.Actors.Monster monster ? monster.TargetNumber : -1);
             }
-            bw.Write(pwallpusher is { } pusher && ReferenceEquals(pusher.State.Pawn, pusher) ? pusher.State.Number : -1);
+            // who pushed each moving pushwall, in the level body's order
+            foreach (var wall in pushwalls)
+                bw.Write(wall.Pusher is { } pusher && ReferenceEquals(pusher.State.Pawn, pusher) ? pusher.State.Number : -1);
 
             bw.Write(itemrespawns.Count);
             foreach (var item in itemrespawns)
@@ -242,8 +244,11 @@ internal partial class Program
                 if (actor is Entities.Actors.Monster monster)
                     monster.TargetNumber = target;
             }
-            int pusher = br.ReadInt32();
-            pwallpusher = pusher >= 0 && pusher < players.Count ? players[pusher].Pawn : null;
+            foreach (var wall in pushwalls)
+            {
+                int pusher = br.ReadInt32();
+                wall.Pusher = pusher >= 0 && pusher < players.Count ? players[pusher].Pawn : null;
+            }
 
             itemrespawns.Clear();
             for (int i = br.ReadInt32(); i > 0; i--)

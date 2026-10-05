@@ -32,10 +32,10 @@ internal partial class Program
                 CloseDoor(door);
         }));
 
-        // A_MoveWall([direction], ["moving sound"], ["blocked sound"]): pushes the first tagged
-        // wall north, east, south or west, or left out (or ""), the way the player faces. Only
-        // one wall moves at a time, as with pushwalls. Its tag goes with it, so it can be
-        // moved again.
+        // A_MoveWall([direction], ["moving sound"], ["blocked sound"]): pushes every tagged
+        // wall north, east, south or west, or left out (or ""), the way the player faces. The
+        // blocked sound plays when none of them could move. Their tag goes with them, so they
+        // can be moved again.
         MapTriggerRegistry.Register("A_MoveWall", MoveWallAction);
 
         // A_SetWall(id): turns the tagged walls into wall id (walls.yaml), e.g. lights on a
@@ -195,9 +195,18 @@ internal partial class Program
                 return false;
         }
 
-        foreach (var (x, y) in TaggedWalls(trigger))
-            return PushWall(x, y, dir, args.ElementAtOrDefault(1), args.ElementAtOrDefault(2));
-        return false;
+        // every tagged wall moves together; one sound for the lot
+        bool moved = false, any = false;
+        foreach (var (x, y) in TaggedWalls(trigger).ToList())
+        {
+            any = true;
+            moved |= PushWall(x, y, dir);
+        }
+
+        var sound = moved ? args.ElementAtOrDefault(1) : any ? args.ElementAtOrDefault(2) : null;
+        if (!string.IsNullOrEmpty(sound))
+            _audioManager.Play(sound);
+        return moved;
     }
 
     private static bool SetWallAction(TriggerActivation trigger, string[] args)

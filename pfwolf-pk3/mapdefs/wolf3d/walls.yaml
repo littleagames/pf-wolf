@@ -121,9 +121,9 @@ walls:
     #                        A_OpenDoor("hold"), A_CloseDoor, A_ToggleDoor("hold"): the tagged
     #                        doors, whatever their lock; with hold, opened doors stay open
     #                        until something closes them.
-    #                        A_MoveWall(direction, "moving sound", "blocked sound"): pushes the
-    #                        first tagged wall north/east/south/west (left out or "": the way
-    #                        the player faces); its tag goes with it.
+    #                        A_MoveWall(direction, "moving sound", "blocked sound"): pushes
+    #                        every tagged wall north/east/south/west (left out or "": the way
+    #                        the player faces); their tag goes with them.
     #                        A_SetWall(id): turns the tagged walls into wall id.
     #                        A_Activate, A_Deactivate: the tagged actors (tagged by the tile
     #                        they spawn on) go to their Active / Inactive state, e.g.

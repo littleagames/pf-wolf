@@ -122,18 +122,17 @@ internal partial class Program
             automapDoorTextures[i] = AutomapTexture(door.vertical ? door.xlat.East : door.xlat.North);
         }
 
-        // The pushwall on the move, if any: its corner on the map and its textures
-        bool pushwall = false;
-        float pushX = 0, pushY = 0;
-        (byte[]? North, byte[]? East) pushTextures = default;
-        if (pwallstate != 0)
+        // The pushwalls on the move that can be seen: each one's corner on the map and textures
+        var pushes = new List<(float X, float Y, byte[]? North, byte[]? East)>();
+        foreach (var wall in pushwalls)
         {
-            int dx = dirs[(int)pwalldir][0], dy = dirs[(int)pwalldir][1];
-            pushwall = reveal || _mapManager.seen[pwallx, pwally] != SeenFlags.None
-                              || _mapManager.seen[pwallx + dx, pwally + dy] != SeenFlags.None;
-            pushX = pwallx + dx * pwallpos / 64f;
-            pushY = pwally + dy * pwallpos / 64f;
-            pushTextures = AutomapWallTextures(mapDefs, pwalltile);
+            int dx = dirs[(int)wall.Dir][0], dy = dirs[(int)wall.Dir][1];
+            if (!reveal && _mapManager.seen[wall.X, wall.Y] == SeenFlags.None
+                        && _mapManager.seen[wall.X + dx, wall.Y + dy] == SeenFlags.None)
+                continue;
+
+            var (north, east) = AutomapWallTextures(mapDefs, wall.Tile);
+            pushes.Add((wall.X + dx * wall.Pos / 64f, wall.Y + dy * wall.Pos / 64f, north, east));
         }
 
         //
@@ -161,11 +160,17 @@ internal partial class Program
 
                 for (int sx = view.ClipX; sx < view.ClipX + view.ClipWidth; sx++, mx += stepX, my += stepY)
                 {
-                    int texel;
+                    int texel = int.MinValue;
 
-                    if (pushwall && mx >= pushX && mx < pushX + 1 && my >= pushY && my < pushY + 1)
-                        texel = AutomapWallTexel(pushTextures.North, pushTextures.East, mx - pushX, my - pushY);
-                    else
+                    foreach (var push in pushes)
+                    {
+                        if (mx >= push.X && mx < push.X + 1 && my >= push.Y && my < push.Y + 1)
+                        {
+                            texel = AutomapWallTexel(push.North, push.East, mx - push.X, my - push.Y);
+                            break;
+                        }
+                    }
+                    if (texel == int.MinValue)
                         texel = AutomapTileTexel(mx, my);
 
                     if (texel >= 0)
