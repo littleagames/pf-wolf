@@ -225,7 +225,16 @@ internal partial class Program
     /// <summary>A typed-in address: "host" or "host:port" (the default port when there's none)</summary>
     static (string Host, int Port)? ParseAddress(string text)
     {
-        text = text.Trim();
+        // Forgive what gets pasted or typed around an address: spaces, a scheme, a trailing slash,
+        // and the lobby's own "LAN: others join at" / "Internet:" wording
+        text = new string(text.Where(c => !char.IsWhiteSpace(c)).ToArray());
+        foreach (var prefix in new[] { "LAN:othersjoinat", "Internet:", "udp://", "http://", "https://" })
+            if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                text = text[prefix.Length..];
+        int note = text.IndexOf('(');
+        if (note >= 0)
+            text = text[..note];
+        text = text.TrimEnd('/');
         if (text.Length == 0)
             return null;
 
@@ -389,7 +398,7 @@ internal partial class Program
                     break;
 
                 if (JoinMenu[which].data is JoinRow { Game: { } game })
-                    ConnectTo(game.Address.Address.ToString(), game.Address.Port);
+                    ConnectTo(game.Address);
                 else
                 {
                     var language = _assetManager.GetText("en-us");
@@ -461,17 +470,24 @@ internal partial class Program
     }
 
     /// <summary>Joins the game at an address: waits to be let in, then its lobby</summary>
-    static void ConnectTo(string host, int port)
+    static void ConnectTo(string host, int port) =>
+        ConnectTo(NetSession.Join(host, port, LocalIdentity(), MpConfig.Name, newGamePlayerClass ?? DefaultPlayerClass, out var error),
+            error, WithPort(host, port));
+
+    /// <summary>Joins a game found on the local network, at the address it answered from</summary>
+    static void ConnectTo(IPEndPoint at) =>
+        ConnectTo(NetSession.Join(at, LocalIdentity(), MpConfig.Name, newGamePlayerClass ?? DefaultPlayerClass, out var error),
+            error, WithPort(at.Address.ToString(), at.Port));
+
+    static void ConnectTo(NetSession? session, string? error, string shown)
     {
         var language = _assetManager.GetText("en-us");
-        var session = NetSession.Join(host, port, LocalIdentity(), MpConfig.Name, newGamePlayerClass ?? DefaultPlayerClass, out var error);
         if (session == null)
         {
             ShowNetMessage(WrapForMessage(error ?? ""));
             return;
         }
 
-        var shown = port == NetProtocol.DefaultPort ? host : $"{host}:{port}";
         DrawMenuComponents("join-game");
         Message("$STR_MP_CONNECTING".ToLanguageText(language).Replace("{ADDRESS}", FitText(shown, 200, SMALL_FONT)));
         MenuFadeIn();

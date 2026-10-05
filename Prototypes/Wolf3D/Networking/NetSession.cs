@@ -107,6 +107,24 @@ internal sealed class NetSession : IDisposable
     /// <summary>Starts joining the game hosted at <paramref name="address"/>: <see cref="IsJoined"/> once the host lets us in</summary>
     public static NetSession? Join(string address, int port, NetIdentity identity, string name, string playerClass, out string? error)
     {
+        // Resolved here rather than by LiteNetLib, which only says "UnknownHost" without the address
+        IPEndPoint endPoint;
+        try
+        {
+            endPoint = new IPEndPoint(NetUtils.ResolveAddress(address), port);
+        }
+        catch (Exception e) when (e is System.Net.Sockets.SocketException or ArgumentException)
+        {
+            error = $"Couldn't find the address \"{address}\". Type an IP address like 192.168.1.12, or a host name.";
+            return null;
+        }
+        return Join(endPoint, identity, name, playerClass, out error);
+    }
+
+    /// <summary>Starts joining the game hosted at <paramref name="endPoint"/></summary>
+    public static NetSession? Join(IPEndPoint endPoint, NetIdentity identity, string name, string playerClass, out string? error)
+    {
+        int port = endPoint.Port;
         Current?.Dispose();
         var session = new NetSession(false, identity, port, 0, new LobbySettings(GameMode.Coop, 0, 0));
         if (!session._net.Start())
@@ -117,13 +135,13 @@ internal sealed class NetSession : IDisposable
 
         try
         {
-            session._host = session._net.Connect(address, port,
+            session._host = session._net.Connect(endPoint,
                 new Hello(NetProtocol.Version, identity, NetProtocol.CleanName(name), playerClass).Write());
         }
         catch (Exception e) when (e is System.Net.Sockets.SocketException or ArgumentException or FormatException)
         {
             session._net.Stop();
-            error = $"Couldn't reach {address}: {e.Message}";
+            error = $"Couldn't reach {endPoint}: {e.Message}";
             return null;
         }
 

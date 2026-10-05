@@ -9,9 +9,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Platforms>AnyCPU;x64</Platforms>
 	<PublishSelfContained>true</PublishSelfContained>
-	<FileVersion>0.3.0.0</FileVersion>
-	<AssemblyVersion>0.3.0.0</AssemblyVersion>
-	<Version>0.3.0</Version>
+	<FileVersion>0.3.1.0</FileVersion>
+	<AssemblyVersion>0.3.1.0</AssemblyVersion>
+	<Version>0.3.1</Version>
 	<Authors>Andrew McCauley</Authors>
 	<Company>Little A Games</Company>
 	<Copyright>Copyright (c) 2026 Little A Games</Copyright>
@@ -37,9 +37,9 @@
 		<InternalsVisibleTo Include="Wolf3D.Tests" />
 	</ItemGroup>
 	<!-- OpenAL Soft 1.23.1 (OpenTK.Audio.OpenAL doesn't ship the native library) -->
-	<ItemGroup>
+	<!--<ItemGroup>
 		<None Include="native\win-x64\OpenAL32.dll" Link="OpenAL32.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-	</ItemGroup>
+	</ItemGroup>-->
 	<ItemGroup>
 		<Content Include="..\..\pfwolf-pk3\**\*">
 			<Link>pk3\%(RecursiveDir)%(FileName)%(Extension)</Link>
