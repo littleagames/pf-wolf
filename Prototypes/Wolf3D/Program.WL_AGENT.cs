@@ -71,11 +71,11 @@ internal partial class Program
         string? newWeapon = null;
         var current = gamestate.weapon != null ? usable.IndexOf(gamestate.weapon) : -1;
 
-        if (_inputManager.IsButtonPressed(buttontypes.bt_nextweapon) && !_inputManager.IsButtonHeld(buttontypes.bt_nextweapon))
+        if (playerinput.IsFreshPress(buttontypes.bt_nextweapon))
         {
             newWeapon = usable[(current + 1) % usable.Count];
         }
-        else if (_inputManager.IsButtonPressed(buttontypes.bt_prevweapon) && !_inputManager.IsButtonHeld(buttontypes.bt_prevweapon))
+        else if (playerinput.IsFreshPress(buttontypes.bt_prevweapon))
         {
             newWeapon = usable[current <= 0 ? usable.Count - 1 : current - 1];
         }
@@ -83,7 +83,7 @@ internal partial class Program
         {
             for (var slot = 0; slot < SlotButtons.Length; slot++)
             {
-                if (!_inputManager.IsButtonPressed(SlotButtons[slot]) || _inputManager.IsButtonHeld(SlotButtons[slot]))
+                if (!playerinput.IsFreshPress(SlotButtons[slot]))
                     continue;
 
                 // The best weapon with ammo in that slot; pressed again with one of the slot's
@@ -124,28 +124,28 @@ internal partial class Program
         //
         // looking up and down: only the view, which SetupPitch keeps within what it can show
         //
-        if (controlcenterview)
+        if (playerinput.CenterView)
             playerpitch = 0;
-        else if (controlpitch != 0)
-            playerpitch = Math.Clamp(playerpitch + controlpitch, -MaxPitch(), MaxPitch());
+        else if (playerinput.Pitch != 0)
+            playerpitch = Math.Clamp(playerpitch + playerinput.Pitch, -MaxPitch(), MaxPitch());
 
-        if (_inputManager.IsButtonPressed(buttontypes.bt_strafeleft))
+        if (playerinput.IsPressed(buttontypes.bt_strafeleft))
         {
             angle = ob.Angle + ANGLES / 4;
             if (angle >= ANGLES)
                 angle -= ANGLES;
-            if (_inputManager.IsButtonPressed(buttontypes.bt_run))
+            if (playerinput.IsPressed(buttontypes.bt_run))
                 Thrust(angle, (int)(RUNMOVE * MOVESCALE * tics * side));
             else
                 Thrust(angle, (int)(BASEMOVE * MOVESCALE * tics * side));
         }
 
-        if (_inputManager.IsButtonPressed(buttontypes.bt_straferight))
+        if (playerinput.IsPressed(buttontypes.bt_straferight))
         {
             angle = ob.Angle - ANGLES / 4;
             if (angle < 0)
                 angle += ANGLES;
-            if (_inputManager.IsButtonPressed(buttontypes.bt_run))
+            if (playerinput.IsPressed(buttontypes.bt_run))
                 Thrust(angle, (int)(RUNMOVE * MOVESCALE * tics * side));
             else
                 Thrust(angle, (int)(BASEMOVE * MOVESCALE * tics * side));
@@ -154,38 +154,38 @@ internal partial class Program
         //
         // a controller stick's strafe, as far as it's pushed
         //
-        if (controlstrafe != 0)
+        if (playerinput.ControlStrafe != 0)
         {
-            angle = ob.Angle + (controlstrafe > 0 ? -ANGLES / 4 : ANGLES / 4);
+            angle = ob.Angle + (playerinput.ControlStrafe > 0 ? -ANGLES / 4 : ANGLES / 4);
             if (angle < 0)
                 angle += ANGLES;
             else if (angle >= ANGLES)
                 angle -= ANGLES;
-            Thrust(angle, (int)(Math.Abs(controlstrafe) * MOVESCALE * side));
+            Thrust(angle, (int)(Math.Abs(playerinput.ControlStrafe) * MOVESCALE * side));
         }
 
         //
         // side to side move
         //
-        if (_inputManager.IsButtonPressed(buttontypes.bt_strafe))
+        if (playerinput.IsPressed(buttontypes.bt_strafe))
         {
             //
             // strafing
             //
             //
-            if (controlx > 0)
+            if (playerinput.ControlX > 0)
             {
                 angle = ob.Angle - ANGLES / 4;
                 if (angle < 0)
                     angle += ANGLES;
-                Thrust(angle, (int)(controlx * MOVESCALE * side));      // move to left
+                Thrust(angle, (int)(playerinput.ControlX * MOVESCALE * side));      // move to left
             }
-            else if (controlx < 0)
+            else if (playerinput.ControlX < 0)
             {
                 angle = ob.Angle + ANGLES / 4;
                 if (angle >= ANGLES)
                     angle -= ANGLES;
-                Thrust(angle, (int)(-controlx * MOVESCALE * side));     // move to right
+                Thrust(angle, (int)(-playerinput.ControlX * MOVESCALE * side));     // move to right
             }
         }
         else
@@ -193,7 +193,7 @@ internal partial class Program
             //
             // not strafing
             //
-            anglefrac += (short)controlx;
+            anglefrac += (short)playerinput.ControlX;
             angleunits = anglefrac / ANGLESCALE;
             anglefrac -= (short)(angleunits * ANGLESCALE);
             ob.Angle -= (short)angleunits;
@@ -207,16 +207,16 @@ internal partial class Program
         //
         // forward/backwards move
         //
-        if (controly < 0)
+        if (playerinput.ControlY < 0)
         {
-            Thrust(ob.Angle, (int)(-controly * MOVESCALE * forward)); // move forwards
+            Thrust(ob.Angle, (int)(-playerinput.ControlY * MOVESCALE * forward)); // move forwards
         }
-        else if (controly > 0)
+        else if (playerinput.ControlY > 0)
         {
             angle = ob.Angle + ANGLES / 2;
             if (angle >= ANGLES)
                 angle -= ANGLES;
-            Thrust(angle, (int)(controly * BACKMOVESCALE * forward));          // move backwards
+            Thrust(angle, (int)(playerinput.ControlY * BACKMOVESCALE * forward));          // move backwards
         }
     }
 
@@ -1482,19 +1482,19 @@ internal partial class Program
             return;
         }
         // A wall beside a door keeps its id under BIT_WALL; a moving pushwall's tiles are bare BIT_WALL
-        if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) == 0
+        if (!playerinput.IsHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) == 0
             && _mapManager.GetMapData().Walls.TryGetValue(cmdtile & ~BIT_WALL, out var switchWall)
             && switchWall.Switch is { } wallSwitch && wallSwitch.UsableFrom(dir))
         {
             //
             // use a switch (a mapdefs wall with a switch, such as the elevator's)
             //
-            _inputManager.SetButtonHeld(buttontypes.bt_use, true);
+            playerinput.SetHeld(buttontypes.bt_use, true);
             UseSwitch(wallSwitch, checkx, checky, dir);
         }
-        else if (!_inputManager.IsButtonHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) != 0)
+        else if (!playerinput.IsHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) != 0)
         {
-            _inputManager.SetButtonHeld(buttontypes.bt_use, true);
+            playerinput.SetHeld(buttontypes.bt_use, true);
             OperateDoor(cmdtile & ~BIT_DOOR);
         }
         else
@@ -1536,7 +1536,7 @@ internal partial class Program
         {
             CheckWeaponChange();
 
-            if (_inputManager.IsButtonPressed(buttontypes.bt_use))
+            if (playerinput.IsPressed(buttontypes.bt_use))
                 Cmd_Use();
             else
                 _mapManager.AI.ResetTalkDelay();
@@ -1545,11 +1545,11 @@ internal partial class Program
         {
             // Mid-attack, a fresh press of use or fire is dropped rather than kept for later
             // (vanilla T_Attack); fire held down from before still counts for A_ReFire.
-            if (_inputManager.IsButtonPressed(buttontypes.bt_use) && !_inputManager.IsButtonHeld(buttontypes.bt_use))
-                _inputManager.SetButtonPressed(buttontypes.bt_use, false);
+            if (playerinput.IsFreshPress(buttontypes.bt_use))
+                playerinput.SetPressed(buttontypes.bt_use, false);
 
-            if (_inputManager.IsButtonPressed(buttontypes.bt_attack) && !_inputManager.IsButtonHeld(buttontypes.bt_attack))
-                _inputManager.SetButtonPressed(buttontypes.bt_attack, false);
+            if (playerinput.IsFreshPress(buttontypes.bt_attack))
+                playerinput.SetPressed(buttontypes.bt_attack, false);
         }
 
         ControlMovement(ob);

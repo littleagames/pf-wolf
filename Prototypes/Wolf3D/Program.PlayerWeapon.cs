@@ -130,9 +130,9 @@ internal partial class Program
             weapon = taken;
         }
 
-        if (_inputManager.IsButtonPressed(buttontypes.bt_attack) && !_inputManager.IsButtonHeld(buttontypes.bt_attack))
+        if (playerinput.IsFreshPress(buttontypes.bt_attack))
         {
-            _inputManager.SetButtonHeld(buttontypes.bt_attack, true);
+            playerinput.SetHeld(buttontypes.bt_attack, true);
 
             // As Cmd_Fire: the attack starts from its first frame's full tics, counted down from
             // the next tic on, not from what's left of this one (or a machine gun's check for
@@ -163,7 +163,7 @@ internal partial class Program
     /// <summary>Fire still held and ammo left: back to Hold (or Fire, for a weapon without one).</summary>
     static void A_ReFire(Entities.Actors.Actor weapon)
     {
-        if (!_inputManager.IsButtonPressed(buttontypes.bt_attack) || !CanFire(gamestate.weapon))
+        if (!playerinput.IsPressed(buttontypes.bt_attack) || !CanFire(gamestate.weapon))
             return;
         if (!JumpWeaponState(weapon, "Hold"))
             JumpWeaponState(weapon, "Fire");

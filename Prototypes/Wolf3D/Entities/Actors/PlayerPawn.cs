@@ -19,6 +19,9 @@ internal record PlayerPawn : Actor
     internal const string SpawnState = "Spawn";
     internal const string DeathCamState = "DeathCam";
 
+    /// <summary>This player's controls as the game reads them each frame (fed by PlayLoop)</summary>
+    internal PlayerInput Input { get; } = new();
+
     [SetsRequiredMembers]
     public PlayerPawn()
     {

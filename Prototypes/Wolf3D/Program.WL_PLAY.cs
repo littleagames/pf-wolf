@@ -20,6 +20,9 @@ internal partial class Program
     internal static Entities.Actors.PlayerPawn player =>
         _mapManager.Player ?? throw new InvalidOperationException("The player has not been spawned for this level yet.");
 
+    // The player's controls this frame: the game reads these, never _inputManager's buttons
+    internal static PlayerInput playerinput => player.Input;
+
     internal static byte singlestep, godmode, noclip, ammocheat, mapreveal;
     internal static int extravbls;
     internal static uint tics;
@@ -40,8 +43,10 @@ internal partial class Program
 
 
     //
-    // current user input
+    // current user input: gathered here each frame by PollControls into localcmd, which is all
+    // the game itself reads (through the player's PlayerInput)
     //
+    static TicCmd localcmd;
     static int controlx, controly;         // range from -100 to 100 per tic
     static int controlstrafe;              // a controller stick's sideways move, the same range (positive is right)
     static int wheelnotches;               // the mouse wheel's turn this frame (positive is away from the user)
@@ -120,6 +125,7 @@ internal partial class Program
         facecount = 0;
         funnyticount = 0;
         _inputManager.InitButtonState();
+        _mapManager.Player?.Input.Reset();
         _videoManager.ClearPaletteShifts();
 
         _inputManager.CenterMouse();
@@ -142,6 +148,9 @@ internal partial class Program
 
             if (!worldPaused)
             {
+                // this frame's controls, for the player to read as it thinks
+                player.Input.Begin(localcmd);
+
                 //
                 // actor thinking
                 //
@@ -400,8 +409,7 @@ internal partial class Program
 
     internal static void PollControls()
     {
-        int max, min, i;
-        byte buttonbits;
+        int max, min;
 
         _inputManager.ProcessEvents();
 
@@ -409,22 +417,11 @@ internal partial class Program
         // get timing info for last frame
         //
         if (demoplayback || demorecord)   // demo recording and playback needs to be constant
-        {
-            // wait up to DEMOTICS Wolf tics
-            uint curtime = SDL_GetTicks();
-            lasttimecount += DEMOTICS;
-            int timediff = (int)((lasttimecount * 100) / 7 - curtime);
-            if (timediff > 0 && !demoTesting)      // demotest doesn't wait
-                GameEngineManager.DelayMs((uint)timediff);
-
-            if (timediff < -2 * DEMOTICS)       // more than 2-times DEMOTICS behind?
-                lasttimecount = (int)((curtime * 7) / 100);    // yes, set to current timecount
-
-            tics = DEMOTICS;
-        }
+            WaitFixedTics(DEMOTICS);
         else
             CalcTics();
 
+        localcmd = default;
         controlx = 0;
         controly = 0;
         controlstrafe = 0;
@@ -436,23 +433,15 @@ internal partial class Program
         if (demoplayback)
         {
             //
-            // read commands from demo buffer
+            // read commands from demo buffer: a byte of buttons (the first eight buttontypes)
+            // and a signed byte each of turning and walking a tic
             //
-            buttonbits = demoData[demoptr++];
-            for (i = 0; i < (int)buttontypes.NUMBUTTONS; i++)
-            {
-                _inputManager.SetButtonPressed((buttontypes)i, (buttonbits & 1) != 0);
-                buttonbits >>= 1;
-            }
-
-            controlx = (sbyte)demoData[demoptr++];
-            controly = (sbyte)demoData[demoptr++];
+            localcmd.Buttons = demoData[demoptr++];
+            localcmd.ControlX = (sbyte)demoData[demoptr++] * (int)tics;
+            localcmd.ControlY = (sbyte)demoData[demoptr++] * (int)tics;
 
             if (demoptr + 3 > lastdemoptr)
                 playstate = playstatetypes.ex_completed;   // demo is done: no whole frame left
-
-            controlx *= (int)tics;
-            controly *= (int)tics;
 
             return;
         }
@@ -506,17 +495,8 @@ internal partial class Program
             controly /= (int)tics;
             controlstrafe = 0;      // a demo has no room for a stick's strafe, so it isn't played either
 
-            buttonbits = 0;
-
-            // TODO: Support 32-bit buttonbits
-            for (i = (int)buttontypes.NUMBUTTONS - 1; i >= 0; i--)
-            {
-                buttonbits <<= 1;
-                if (_inputManager.IsButtonPressed((buttontypes)i))
-                    buttonbits |= 1;
-            }
-
-            demoData[demoptr++] = buttonbits;
+            // the demo format has room for the first eight buttons only
+            demoData[demoptr++] = (byte)LocalButtons();
             demoData[demoptr++] = (byte)controlx; // these might be wrong
             demoData[demoptr++] = (byte)controly;// these might need 4 bytes
 
@@ -528,6 +508,47 @@ internal partial class Program
                 controly *= (int)tics;
             }
         }
+
+        localcmd = new TicCmd
+        {
+            Buttons = LocalButtons(),
+            ControlX = controlx,
+            ControlY = controly,
+            ControlStrafe = controlstrafe,
+            Pitch = controlpitch,
+            CenterView = controlcenterview,
+        };
+    }
+
+    /// <summary>The buttons pressed this frame, a bit each (bit 0 is bt_attack)</summary>
+    static uint LocalButtons()
+    {
+        uint buttons = 0;
+        for (int i = 0; i < (int)buttontypes.NUMBUTTONS; i++)
+        {
+            if (_inputManager.IsButtonPressed((buttontypes)i))
+                buttons |= 1u << i;
+        }
+        return buttons;
+    }
+
+    /// <summary>
+    /// Runs the game a fixed step of tics a frame, as demos need: waits until that much time has
+    /// passed since the last frame (demotest doesn't), and if the game has fallen more than two
+    /// steps behind, gives up on catching up.
+    /// </summary>
+    static void WaitFixedTics(uint step)
+    {
+        uint curtime = SDL_GetTicks();
+        lasttimecount += (int)step;
+        int timediff = (int)((lasttimecount * 100) / 7 - curtime);
+        if (timediff > 0 && !demoTesting)      // demotest doesn't wait
+            GameEngineManager.DelayMs((uint)timediff);
+
+        if (timediff < -2 * step)       // more than 2-times the step behind?
+            lasttimecount = (int)((curtime * 7) / 100);    // yes, set to current timecount
+
+        tics = step;
     }
 
     internal const int MAXX = 320;
