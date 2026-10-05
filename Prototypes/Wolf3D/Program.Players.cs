@@ -57,6 +57,55 @@ internal partial class Program
     /// </summary>
     static bool StatusBarHidden => viewsize == 21 && ingame || !ActingIsLocal;
 
+    /*
+    ====================
+    =
+    = What players see, with several of them
+    =
+    = Alone, what the player sees is what the renderer drew: an enemy on the screen is
+    = FL_VISABLE (enemies aim worse at a player who can see them) and wakes for good. With
+    = others, the screen is just one of them (and on another machine, another one), so it's
+    = worked out from each player's own position instead: InViewOf, the same on every machine.
+    =
+    ====================
+    */
+
+    /// <summary>
+    /// Whether a player could see an actor: in front of them, within the view's width either
+    /// side (the classic field of view, however wide the screen), with nothing in the way
+    /// </summary>
+    internal static bool InViewOf(Entities.Actors.PlayerPawn pawn, Entities.Actors.Actor actor)
+    {
+        int sin = sintable[pawn.Angle], cos = sintable[pawn.Angle + ANGLES / 4];
+        int fromx = pawn.X - MathUtils.FixedMul(focallength, cos), fromy = pawn.Y + MathUtils.FixedMul(focallength, sin);
+        int gx = actor.X - fromx, gy = actor.Y - fromy;
+        int nx = MathUtils.FixedMul(gx, cos) - MathUtils.FixedMul(gy, sin) - ACTORSIZE;
+        int ny = MathUtils.FixedMul(gy, cos) + MathUtils.FixedMul(gx, sin);
+        if (nx < MINDIST)
+            return false;
+
+        // |ny / nx| * scale within half the view: the view's width taken out of both
+        return Math.Abs((long)ny) * (FOCALLENGTH + MINDIST) < (long)nx * (VIEWGLOBAL / 2)
+            && CheckLine(actor, pawn);
+    }
+
+    /// <summary>Whether any living player could see an actor (InViewOf)</summary>
+    internal static bool SeenByAPlayer(Entities.Actors.Actor actor) =>
+        _mapManager.Players.Any(pawn => pawn.State.health > 0 && InViewOf(pawn, actor));
+
+    /// <summary>
+    /// With several players, each frame: enemies a living player could see wake for good, as
+    /// being drawn wakes them alone (MapManager.DoActor lets a sleeping one rest out of reach)
+    /// </summary>
+    internal static void WakeSeenEnemies()
+    {
+        foreach (var actor in _mapManager.GetActors())
+        {
+            if (actor is Entities.Actors.Monster && !actor.IsRemoved && actor.Active == activetypes.ac_no && SeenByAPlayer(actor))
+                actor.Active = activetypes.ac_yes;
+        }
+    }
+
     /// <summary>Hurts a particular player (an enemy's shot, a projectile), as the acting player while it does</summary>
     internal static void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker)
     {
@@ -118,7 +167,7 @@ internal partial class Program
     internal static void SpawnPlayers(int tilex, int tiley, int angle)
     {
         var taken = new List<(int x, int y)>();
-        foreach (var p in players)
+        foreach (var p in players.Where(p => p.Pawn != null))
         {
             var (x, y) = taken.Count == 0 ? (tilex, tiley) : FreeTileNear(tilex, tiley, taken) ?? (tilex, tiley);
             taken.Add((x, y));

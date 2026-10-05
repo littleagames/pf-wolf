@@ -122,13 +122,17 @@ internal partial class Program
         playstate = playstatetypes.ex_stillplaying;
         lasttimecount = (int)GameEngineManager.GetTimeCount();
         frameon = 0;
-        anglefrac = 0;
-        facecount = 0;
         funnyticount = 0;
         _inputManager.InitButtonState();
-        foreach (var p in players)
+        foreach (var p in players)      // every player's, so every machine starts the level alike
+        {
+            p.AngleFrac = 0;
+            p.FaceCount = 0;
             p.Input.Reset();
+        }
         _videoManager.ClearPaletteShifts();
+        if (netgame)
+            NetLevelStart();            // counting frames from 0 (Program.NetPlay.cs)
 
         _inputManager.CenterMouse();
 
@@ -146,14 +150,27 @@ internal partial class Program
             // With con_pause on, an open console freezes the world but keeps drawing it.
             // CalcTics still advances lasttimecount each frame, so no time builds up to be
             // spent all at once when the console closes.
-            bool worldPaused = _consoleManager.IsPausingGame;
+            // Not with others, though: the game goes on for them
+            bool worldPaused = _consoleManager.IsPausingGame && !netgame;
 
             if (!worldPaused)
             {
-                // this frame's controls, for each player to read as they think: this machine's
-                // for the local player, and whatever came for everyone else
-                foreach (var p in players)
-                    p.Input.Begin(ReferenceEquals(p, localplayer) ? localcmd : p.PendingCmd);
+                // this frame's controls, for each player to read as they think: with others,
+                // everyone's as the host sent them (Program.NetPlay.cs); else this machine's for
+                // the local player, and whatever came for everyone else
+                if (netgame)
+                {
+                    if (!NetFrame())
+                    {
+                        playstate = playstatetypes.ex_abort;    // left the game, or the host is gone
+                        continue;
+                    }
+                }
+                else
+                {
+                    foreach (var p in players)
+                        p.Input.Begin(ReferenceEquals(p, localplayer) ? localcmd : p.PendingCmd);
+                }
 
                 //
                 // actor thinking
@@ -175,6 +192,10 @@ internal partial class Program
                 camera.Tick(tics);          // a watched actor's view turning (Program.Camera.cs)
                 _mapManager.AI.Tick();     // wall outlets and warp sites (Managers.LevelAI)
                 TickZoneLights(tics);       // light zones' fades and effects (Program.ZoneLights.cs)
+                if (gamemode != GameMode.Single)
+                    WakeSeenEnemies();      // what the renderer did alone (Program.Players.cs)
+                if (netgame)
+                    NetFrameDone();
 
                 _videoManager.UpdatePaletteShifts(tics);
                 _hudMessageManager.Tick((int)tics);
@@ -237,7 +258,7 @@ internal partial class Program
         //
         // the players are created first, so they sit at the head of _actors and think first
         //
-        foreach (var p in players)
+        foreach (var p in players.Where(p => !p.Gone))     // not anyone who has left the game
             _mapManager.CreatePlayer(p);
     }
 
@@ -294,6 +315,12 @@ internal partial class Program
 
         scan = _inputManager.GetLastKeyPressed();
 
+        // With others: no cheat keys, no pausing and no menus over the game; Esc asks to leave
+        if (netgame)
+        {
+            NetCheckKeys(scan);
+            return;
+        }
 
         //
         // SECRET CHEAT CODE: 'MLI'
@@ -428,6 +455,8 @@ internal partial class Program
         //
         if (demoplayback || demorecord)   // demo recording and playback needs to be constant
             WaitFixedTics(DEMOTICS);
+        else if (netgame)                 // and so does playing with others (Program.NetPlay.cs)
+            WaitFixedTics(NETTICS);
         else
             CalcTics();
 

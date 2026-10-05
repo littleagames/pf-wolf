@@ -70,6 +70,13 @@ internal enum NetMessage : byte
 
     // Either way: a player says something (the host passes it on to everyone)
     Chat,                   // from slot, text
+
+    // Playing (Program.NetPlay.cs): each machine sends its player's controls for a frame; the
+    // host sends everyone's, once it has them all, and every machine plays that frame with them
+    Cmd,                    // player to host: level, step, TicCmd
+    Tics,                   // host to all: TicBundle
+    Checksum,               // player to host: level, step, the game's state summed up
+    Notice,                 // host to all: a line to show (someone left, someone is out of sync)
 }
 
 /// <summary>Why a game couldn't be joined, as the host's refusal or the connection's end says</summary>

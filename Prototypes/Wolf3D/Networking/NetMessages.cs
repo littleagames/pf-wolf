@@ -135,6 +135,67 @@ internal sealed record LobbyPlayer(int Slot, string Name, string PlayerClass, bo
     }
 }
 
+/// <summary>A player's controls for one frame, as they go over the network</summary>
+internal static class TicCmdCodec
+{
+    public static void Write(NetDataWriter w, in Entities.TicCmd cmd)
+    {
+        w.Put(cmd.Buttons);
+        w.Put((short)Math.Clamp(cmd.ControlX, short.MinValue, short.MaxValue));
+        w.Put((short)Math.Clamp(cmd.ControlY, short.MinValue, short.MaxValue));
+        w.Put((short)Math.Clamp(cmd.ControlStrafe, short.MinValue, short.MaxValue));
+        w.Put((float)cmd.Pitch);        // the view only: it needn't be exact
+        w.Put(cmd.CenterView);
+    }
+
+    public static Entities.TicCmd Read(NetDataReader r) => new()
+    {
+        Buttons = r.GetUInt(),
+        ControlX = r.GetShort(),
+        ControlY = r.GetShort(),
+        ControlStrafe = r.GetShort(),
+        Pitch = r.GetFloat(),
+        CenterView = r.GetBool(),
+    };
+
+    /// <summary>What a command comes out as once it has been over the network (the same on every machine)</summary>
+    public static Entities.TicCmd RoundTrip(in Entities.TicCmd cmd)
+    {
+        var w = new NetDataWriter();
+        Write(w, cmd);
+        return Read(new NetDataReader(w));
+    }
+}
+
+/// <summary>
+/// Everyone's controls for one frame (a step) of a level (the level'th one played, counting
+/// from 1): indexed by player, with a bit set in Present for each player still in the game.
+/// </summary>
+internal sealed record TicBundle(int Level, int Step, byte Present, Entities.TicCmd[] Cmds)
+{
+    public void Write(NetDataWriter w)
+    {
+        w.Put(Level);
+        w.Put(Step);
+        w.Put(Present);
+        w.Put((byte)Cmds.Length);
+        foreach (var cmd in Cmds)
+            TicCmdCodec.Write(w, cmd);
+    }
+
+    public static TicBundle Read(NetDataReader r)
+    {
+        int level = r.GetInt(), step = r.GetInt();
+        byte present = r.GetByte();
+        var cmds = new Entities.TicCmd[r.GetByte()];
+        for (int i = 0; i < cmds.Length; i++)
+            cmds[i] = TicCmdCodec.Read(r);
+        return new TicBundle(level, step, present, cmds);
+    }
+
+    public bool IsPresent(int player) => (Present & (1 << player)) != 0;
+}
+
 /// <summary>
 /// The host starting the game: its settings, the random number table's starting place, and
 /// everyone in it, in slot order, which is the order they play in (Program.players).

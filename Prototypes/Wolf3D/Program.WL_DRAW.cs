@@ -2128,8 +2128,9 @@ internal partial class Program
                     continue;
                 }
 
-                // Once near enough to the view, an enemy is awake for good (MapManager.DoActor)
-                if (actor is Entities.Actors.Monster)
+                // Once near enough to the view, an enemy is awake for good (MapManager.DoActor);
+                // with others, what they see wakes it instead (WakeSeenEnemies)
+                if (actor is Entities.Actors.Monster && gamemode == GameMode.Single)
                     actor.Active = activetypes.ac_yes;
 
                 // Too close or far away to draw: as the original, it keeps whether it was
@@ -2333,6 +2334,7 @@ internal partial class Program
             DrawAutomap();
 
             DrawHudMessages();      // over the automap too, but not in the save thumbnail
+            DrawNetOverlay();       // waiting for someone, or asking whether to leave (Program.NetPlay.cs)
 
             if (fpscounter)
             {

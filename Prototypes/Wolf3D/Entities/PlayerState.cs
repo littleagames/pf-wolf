@@ -15,6 +15,9 @@ internal sealed class PlayerState
     /// <summary>Their place in Program.players, 0 for the first</summary>
     public int Number;
 
+    /// <summary>They've left a game played over the network: no pawn, no turn (Program.NetPlay.cs)</summary>
+    public bool Gone;
+
     /// <summary>Their actor on the map; null between levels</summary>
     public Actors.PlayerPawn? Pawn;
 

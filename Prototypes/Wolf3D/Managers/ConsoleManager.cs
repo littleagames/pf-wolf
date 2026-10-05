@@ -11,6 +11,8 @@ internal enum ConsoleCommandFlags
     Cheat = 1,
     /// <summary>Only runs while a level is loaded and the player exists.</summary>
     RequiresLevel = 2,
+    /// <summary>Changes the game itself, so not while playing with others (every machine has to play it alike).</summary>
+    SinglePlayer = 4,
 }
 
 /// <summary>
@@ -59,6 +61,9 @@ internal class ConsoleManager
 
     /// <summary>Whether a level is loaded. Wired to the player's existence at registration.</summary>
     internal Func<bool> LevelLoaded { get; set; } = () => false;
+
+    /// <summary>Whether this is a game with others, where SinglePlayer commands can't run. Wired to Program.netgame.</summary>
+    internal Func<bool> PlayingWithOthers { get; set; } = () => false;
 
     internal bool IsOpen { get; private set; }
 
@@ -468,6 +473,12 @@ internal class ConsoleManager
         if (command.Flags.HasFlag(ConsoleCommandFlags.Cheat) && !CheatsEnabled())
         {
             Print($"\"{command.Name}\" is a cheat; cheats are not enabled.");
+            return;
+        }
+
+        if (command.Flags.HasFlag(ConsoleCommandFlags.SinglePlayer) && PlayingWithOthers())
+        {
+            Print($"\"{command.Name}\" can't be used while playing with others.");
             return;
         }
 

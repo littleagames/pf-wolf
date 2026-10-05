@@ -506,7 +506,12 @@ internal partial class Program
                 (PERCENT100AMT * ((sr >= 100) ? 1 : 0)) +
                 (PERCENT100AMT * ((tr >= 100) ? 1 : 0));
 
-            GivePoints(bonus);
+            // Everyone's bonus, with others: each machine gives each player theirs alike
+            foreach (var p in players)
+            {
+                using var _ = ActAs(p);
+                GivePoints(bonus);
+            }
             tempstr = bonus.ToString();
             WriteValue("bonus", tempstr);
 

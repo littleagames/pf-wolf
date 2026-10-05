@@ -83,7 +83,7 @@ internal partial class Program
             }
 
             // A level being entered, not one loaded or restarted after dying, saves itself
-            autosavePending = !loadedgame && !died && !demoplayback && !demorecord;
+            autosavePending = !loadedgame && !died && !demoplayback && !demorecord && !netgame;
             DrawLevel();
 
             ingame = true;
@@ -112,6 +112,16 @@ internal partial class Program
             DrawLevel ();
 
             PlayLoop();
+
+            // Left the game with others, or lost the host: back to the menus
+            if (NetGameOver)
+            {
+                StopMusic();
+                ingame = false;
+                ClearMemory();
+                _videoManager.FadeOut();
+                return;
+            }
 
             if (playstate is playstatetypes.ex_completed or playstatetypes.ex_secretlevel or playstatetypes.ex_warped)
                 LeaveLevel();               // a hub level is kept as it's left

@@ -117,6 +117,13 @@ internal partial class Program
             return;
         }
 
+        // With others there's no replay: it would move one player's view, on one machine
+        if (gamemode != GameMode.Single)
+        {
+            playstate = playstatetypes.ex_victorious;
+            return;
+        }
+
         gamestate.victoryflag = true;
         uint fadeheight = (uint)(viewsize != 21 ? _videoManager.ScreenYAboveBottom(STATUSLINES) : _videoManager.screenHeight);
         _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, (int)fadeheight, bordercol);

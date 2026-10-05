@@ -834,7 +834,7 @@ internal partial class Program
             // QUIT
             //
             case ScanCodes.sc_F10:
-                string endStr = gameInfo.EndStrings[(US_RndT() & (gameInfo.EndStrings.Count - 2)) + (US_RndT() & 1)];
+                string endStr = gameInfo.EndStrings[(UiRandom() & (gameInfo.EndStrings.Count - 2)) + (UiRandom() & 1)];
                 if (Confirm(endStr, MAXY) != 0)
                 {
                     _videoManager.Update();
@@ -1945,7 +1945,7 @@ internal partial class Program
     internal static int CP_Quit(int _)
     {
         var gameInfo = _gameEngineManager.GetGameInfo();
-        string endStr = gameInfo.EndStrings[(US_RndT() & (gameInfo.EndStrings.Count - 2)) + (US_RndT() & 1)];
+        string endStr = gameInfo.EndStrings[(UiRandom() & (gameInfo.EndStrings.Count - 2)) + (UiRandom() & 1)];
         if (Confirm(endStr) != 0)
         {
             _videoManager.Update();

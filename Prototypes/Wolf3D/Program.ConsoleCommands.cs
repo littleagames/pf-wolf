@@ -11,6 +11,7 @@ internal partial class Program
 {
     const ConsoleCommandFlags Cheat = ConsoleCommandFlags.Cheat;
     const ConsoleCommandFlags InLevel = ConsoleCommandFlags.RequiresLevel;
+    const ConsoleCommandFlags Solo = ConsoleCommandFlags.SinglePlayer;
 
     /// <summary>
     /// Registers the in-game console's commands. Commands that need Program's game state live
@@ -18,7 +19,8 @@ internal partial class Program
     /// </summary>
     internal static void RegisterConsoleCommands()
     {
-        _consoleManager.CheatsEnabled = () => DebugOk != 0;
+        _consoleManager.CheatsEnabled = () => DebugOk != 0 && !netgame;      // never with others: every machine has to play alike
+        _consoleManager.PlayingWithOthers = () => netgame;
         _consoleManager.LevelLoaded = () => _mapManager.Player != null;
 
         //
@@ -95,6 +97,7 @@ internal partial class Program
         Register("msg_clear", "Takes away the messages shown over the view.", "msg_clear", _ => _hudMessageManager.Clear());
         Register("msg_styles", "Lists the message styles and where each puts its messages.", "msg_styles", Cmd_MsgStyles);
         Register("net_find", "Looks for games hosted on the local network (two seconds) and lists them.", "net_find", Cmd_NetFind);
+        Register("net_status", "Shows the game with others: the level and frame, the players, and (hosting) how many checks found every machine agreeing.", "net_status", Cmd_NetStatus);
 
         //
         // video
@@ -185,7 +188,7 @@ internal partial class Program
             "pitch [degrees]", Cmd_Pitch, InLevel);
         Register("eyeheight", $"Sets how high the view is above the floor, in texels (64 a story, {EYEDEFAULT} standing), until the level is left or reloaded.",
             $"eyeheight [{MINEYE}-{MAXEYE}]", Cmd_EyeHeight, InLevel);
-        Register("hurt", "Damages the player.", "hurt [points]", Cmd_Hurt, InLevel);
+        Register("hurt", "Damages the player.", "hurt [points]", Cmd_Hurt, InLevel | Solo);
         Register("playerclass", "Shows the class being played as and the classes there are; with a name, the class new games are played as.",
             "playerclass [class]", Cmd_PlayerClass, complete: (_, i) => i == 0 ? PlayerClasses() : []);
         Register("where", "Shows the player's position and what's at their tile.", "where", Cmd_Where, InLevel, aliases: ["pos"]);
@@ -200,13 +203,13 @@ internal partial class Program
             "exportmap <MAP##|all> [folder]", Cmd_ExportMap,
             complete: (_, i) => i == 0 ? ["all", .. _gameEngineManager.GetGameInfo().Maps.Keys] : []);
         Register("playdemo", "Plays a demo: one recorded with that number (DEMO#.dmo in the demos folder), or else the game's own. Ends the game in progress, then goes back to the title.",
-            "playdemo <0-9>", Cmd_PlayDemo,
+            "playdemo <0-9>", Cmd_PlayDemo, Solo,
             complete: (_, i) => i == 0 ? Enumerable.Range(0, 10).Where(DemoExists).Select(n => n.ToString()) : []);
         Register("demotest", "Plays demos (all of them, or those given) back to back without waiting, and prints how each ended: score, kills, where the player and every actor finished. For checking a change to the game hasn't changed how it plays; run it from --exec.",
-            "demotest [0-9 ...]", Cmd_DemoTest,
+            "demotest [0-9 ...]", Cmd_DemoTest, Solo,
             complete: (_, _) => Enumerable.Range(0, 10).Where(DemoExists).Select(n => n.ToString()));
         Register("recorddemo", "Records a demo on a level, on the hardest skill, until the level ends or you die; saves it as that demo number, or asks for one. Ends the game in progress first.",
-            "recorddemo <MAP##> [0-9]", Cmd_RecordDemo,
+            "recorddemo <MAP##> [0-9]", Cmd_RecordDemo, Solo,
             complete: (_, i) => i switch
             {
                 0 => Enumerable.Range(1, DemoMapCount()).Select(n => $"MAP{n:D2}"),
@@ -217,8 +220,8 @@ internal partial class Program
         Register("autosave", "Whether each new level saves itself as it starts, to the Autosave.", "autosave [0|1]",
             Cmd_AutoSave, complete: Values("0", "1"));
         Register("save", "Saves the game. A name that's already saved is saved over; with none, it's a new save named for the level.",
-            "save [name]", Cmd_Save, InLevel, complete: CompleteSaveName);
-        Register("load", "Loads a saved game, by its number in saves or its name.", "load <number|name>", Cmd_Load, InLevel,
+            "save [name]", Cmd_Save, InLevel | Solo, complete: CompleteSaveName);
+        Register("load", "Loads a saved game, by its number in saves or its name.", "load <number|name>", Cmd_Load, InLevel | Solo,
             complete: CompleteSaveName);
         Register("fps", "Toggles the frame rate counter.", "fps [0|1]", Cmd_Fps, complete: Values("0", "1"));
         Register("slowmo", "Waits extra VBLs every frame (0 = off).", "slowmo [0-50]", Cmd_SlowMo);

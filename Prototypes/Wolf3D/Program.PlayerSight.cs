@@ -85,7 +85,7 @@ internal partial class Program
 
             bool onscreen = actor.ViewHeight > 0
                 && actor.ViewX + actor.ViewHeight >= 0 && actor.ViewX - actor.ViewHeight < viewwidth;
-            if (onscreen && actor is Monster)
+            if (onscreen && actor is Monster && gamemode == GameMode.Single)
                 actor.Active = activetypes.ac_yes;      // seen: awake for good, as when drawn
             if (onscreen && CheckLine(actor))
                 actor.RuntimeFlags |= objflags.FL_VISABLE;
@@ -94,9 +94,13 @@ internal partial class Program
         }
     }
 
-    /// <summary>Whether the player's tile is in view: vanilla read spotvis there, which the camera fix always set</summary>
-    internal static bool PlayerTileInView() =>
-        camera.OnPlayer
-            ? _mapManager.spotvis[player.TileX, player.TileY]
-            : _mapManager.tilemap[player.TileX, player.TileY] == 0 || (_mapManager.tilemap[player.TileX, player.TileY] & BIT_DOOR) != 0;
+    /// <summary>
+    /// Whether a player's tile is in view: vanilla read spotvis there, which the camera fix
+    /// always set. With others (or the camera elsewhere), whether it's open floor or a door,
+    /// which is what that comes to, without asking the screen.
+    /// </summary>
+    internal static bool PlayerTileInView(Entities.Actors.PlayerPawn pawn) =>
+        camera.Target == pawn && gamemode == GameMode.Single
+            ? _mapManager.spotvis[pawn.TileX, pawn.TileY]
+            : _mapManager.tilemap[pawn.TileX, pawn.TileY] == 0 || (_mapManager.tilemap[pawn.TileX, pawn.TileY] & BIT_DOOR) != 0;
 }

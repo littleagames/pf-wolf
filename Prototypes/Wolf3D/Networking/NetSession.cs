@@ -214,6 +214,191 @@ internal sealed class NetSession : IDisposable
 
     /*
     ===============
+    = Playing
+
+    Once the game has started, each player is known by their place in Started.Players (their
+    index), as Program.players has them. Each frame, every machine sends its player's controls
+    for a step a little ahead (SubmitLocal); the host gathers everyone's for a step and sends
+    them all out together (a TicBundle), and every machine plays that step with them
+    (TryTake). Someone who leaves has their bit cleared in the bundles from then on, so every
+    machine takes them out at the same step.
+    ===============
+    */
+
+    // Steps are keyed by level and step together
+    private static long Key(int level, int step) => ((long)level << 32) | (uint)step;
+
+    private readonly Dictionary<long, Entities.TicCmd?[]> _gathering = [];   // host: controls in so far
+    private readonly Dictionary<long, TicBundle> _bundles = [];              // bundles to play
+    private readonly Dictionary<long, uint> _ownSums = [];                   // host: its own checksums
+    private readonly Dictionary<long, Dictionary<int, uint>> _theirSums = [];   // host: others', waiting for its own
+    private readonly HashSet<int> _outOfSync = [];
+    private bool[] _present = [];
+
+    /// <summary>Lines to show while playing (someone left, someone is out of sync), oldest first; taken by the game</summary>
+    public Queue<string> Notices { get; } = new();
+
+    /// <summary>The game's players, by index (in Started.Players order)</summary>
+    public int PlayerCount => Started?.Players.Count ?? 0;
+
+    /// <summary>This machine's player's index</summary>
+    public int LocalIndex => Started?.Players.FindIndex(p => p.Slot == LocalSlot) ?? -1;
+
+    /// <summary>Sets up for playing the game started (BeginNetGame)</summary>
+    public void BeginPlaying()
+    {
+        _present = Enumerable.Repeat(true, PlayerCount).ToArray();
+        _gathering.Clear();
+        _bundles.Clear();
+    }
+
+    /// <summary>Forgets steps from levels before <paramref name="level"/> (a new level has begun)</summary>
+    public void ForgetBefore(int level)
+    {
+        long first = Key(level, 0);
+        foreach (var key in _gathering.Keys.Where(k => k < first).ToList())
+            _gathering.Remove(key);
+        foreach (var key in _bundles.Keys.Where(k => k < first).ToList())
+            _bundles.Remove(key);
+        foreach (var key in _ownSums.Keys.Where(k => k < first).ToList())
+            _ownSums.Remove(key);
+        foreach (var key in _theirSums.Keys.Where(k => k < first).ToList())
+            _theirSums.Remove(key);
+    }
+
+    /// <summary>This machine's player's controls for a step</summary>
+    public void SubmitLocal(int level, int step, in Entities.TicCmd cmd)
+    {
+        if (IsHost)
+            Gather(level, step, LocalIndex, cmd);
+        else if (_host != null)
+        {
+            var w = NetProtocol.Message(NetMessage.Cmd);
+            w.Put(level);
+            w.Put(step);
+            TicCmdCodec.Write(w, cmd);
+            _host.Send(w, DeliveryMethod.ReliableOrdered);
+        }
+    }
+
+    /// <summary>Everyone's controls for a step, once they're here (taking them); null until then</summary>
+    public TicBundle? TryTake(int level, int step) =>
+        _bundles.Remove(Key(level, step), out var bundle) ? bundle : null;
+
+    /// <summary>The names of the players a step is still waiting on (for the "waiting for" message)</summary>
+    public List<string> WaitingFor(int level, int step)
+    {
+        if (!IsHost)
+            return [Started?.Players.FirstOrDefault(p => p.Slot == 0)?.Name ?? "the host"];
+        _gathering.TryGetValue(Key(level, step), out var cmds);
+        return Enumerable.Range(0, PlayerCount)
+            .Where(i => _present[i] && (cmds == null || cmds[i] == null))
+            .Select(i => Started!.Players[i].Name)
+            .ToList();
+    }
+
+    /// <summary>
+    /// The game's state summed up after a step (Program.NetPlay.cs), for the host to compare
+    /// every machine's: they should never differ
+    /// </summary>
+    public void ReportChecksum(int level, int step, uint sum)
+    {
+        if (IsHost)
+        {
+            var key = Key(level, step);
+            _ownSums[key] = sum;
+            if (_theirSums.Remove(key, out var theirs))
+                foreach (var (index, theirSum) in theirs)
+                    CompareSum(index, level, step, sum, theirSum);
+        }
+        else if (_host != null)
+        {
+            var w = NetProtocol.Message(NetMessage.Checksum);
+            w.Put(level);
+            w.Put(step);
+            w.Put(sum);
+            _host.Send(w, DeliveryMethod.ReliableOrdered);
+        }
+    }
+
+    // Host: a player's controls for a step; once everyone still in has sent theirs, out they go
+    private void Gather(int level, int step, int index, in Entities.TicCmd cmd)
+    {
+        if (index < 0 || index >= PlayerCount)
+            return;
+        var key = Key(level, step);
+        if (!_gathering.TryGetValue(key, out var cmds))
+            _gathering[key] = cmds = new Entities.TicCmd?[PlayerCount];
+        cmds[index] = cmd;
+        SendReadySteps();
+    }
+
+    // Host: sends every step that has everyone's controls, in order
+    private void SendReadySteps()
+    {
+        foreach (var key in _gathering.Keys.OrderBy(k => k).ToList())
+        {
+            var cmds = _gathering[key];
+            if (Enumerable.Range(0, PlayerCount).Any(i => _present[i] && cmds[i] == null))
+                return;     // not yet: nor any after it, which have to go out after it
+
+            byte present = 0;
+            for (int i = 0; i < PlayerCount; i++)
+                if (_present[i])
+                    present |= (byte)(1 << i);
+
+            var bundle = new TicBundle((int)(key >> 32), (int)(uint)key, present,
+                cmds.Select(c => TicCmdCodec.RoundTrip(c ?? default)).ToArray());
+            _gathering.Remove(key);
+            _bundles[key] = bundle;
+
+            var w = NetProtocol.Message(NetMessage.Tics);
+            bundle.Write(w);
+            _net.SendToAll(w, DeliveryMethod.ReliableOrdered);
+        }
+    }
+
+    /// <summary>Host: how many of the others' checksums have been compared with its own, and how many matched</summary>
+    public int SumsCompared { get; private set; }
+    public int SumsMatched { get; private set; }
+
+    // Host: a player's checksum against its own for the same step
+    private void CompareSum(int index, int level, int step, uint ours, uint theirs)
+    {
+        SumsCompared++;
+        if (ours == theirs)
+            SumsMatched++;
+        if (ours == theirs || !_outOfSync.Add(index))
+            return;     // fine, or already said
+        var line = $"{Started!.Players[index].Name} is out of sync (level {level}, step {step})";
+        Console.WriteLine($"Network: {line}: host {ours:x8}, theirs {theirs:x8}");
+        Announce(line);
+    }
+
+    // Host: a line every machine shows
+    private void Announce(string line)
+    {
+        Notices.Enqueue(line);
+        var w = NetProtocol.Message(NetMessage.Notice);
+        w.Put(line);
+        _net.SendToAll(w, DeliveryMethod.ReliableOrdered);
+    }
+
+    // Host: a player has gone mid-game; the game goes on without them
+    private void PlayerGone(int slot)
+    {
+        if (Started == null)
+            return;
+        int index = Started.Players.FindIndex(p => p.Slot == slot);
+        if (index < 0 || !_present[index])
+            return;
+        _present[index] = false;
+        Announce($"{Started.Players[index].Name} left the game");
+        SendReadySteps();       // steps waiting only on them can go
+    }
+
+    /*
+    ===============
     = Network events
     ===============
     */
@@ -267,6 +452,7 @@ internal sealed class NetSession : IDisposable
         {
             if (_slotOfPeer.Remove(peer.Id, out var slot))
             {
+                PlayerGone(slot);       // mid-game: out of it, at the same step everywhere
                 Note($"{NameOf(slot)} left");
                 Players.RemoveAll(p => p.Slot == slot);
                 Changed();
@@ -324,6 +510,30 @@ internal sealed class NetSession : IDisposable
                     text = text[..NetProtocol.MaxChatLength];
                 Relay(slot, text);
                 break;
+
+            case NetMessage.Cmd when Started != null:
+            {
+                int level = reader.GetInt(), step = reader.GetInt();
+                Gather(level, step, Started.Players.FindIndex(p => p.Slot == slot), TicCmdCodec.Read(reader));
+                break;
+            }
+
+            case NetMessage.Checksum when Started != null:
+            {
+                int level = reader.GetInt(), step = reader.GetInt();
+                uint sum = reader.GetUInt();
+                int index = Started.Players.FindIndex(p => p.Slot == slot);
+                var key = Key(level, step);
+                if (_ownSums.TryGetValue(key, out var ours))
+                    CompareSum(index, level, step, ours, sum);
+                else
+                {
+                    if (!_theirSums.TryGetValue(key, out var theirs))
+                        _theirSums[key] = theirs = [];
+                    theirs[index] = sum;
+                }
+                break;
+            }
         }
     }
 
@@ -350,6 +560,15 @@ internal sealed class NetSession : IDisposable
             case NetMessage.StartGame:
                 Started = StartGameInfo.Read(reader);
                 Changed();
+                break;
+
+            case NetMessage.Tics:
+                var bundle = TicBundle.Read(reader);
+                _bundles[Key(bundle.Level, bundle.Step)] = bundle;
+                break;
+
+            case NetMessage.Notice:
+                Notices.Enqueue(reader.GetString());
                 break;
         }
     }

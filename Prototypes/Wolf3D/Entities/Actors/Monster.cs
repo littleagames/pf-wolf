@@ -136,7 +136,7 @@ internal record Monster : Actor
 
                 if (deltax <= MINACTORDIST && deltay <= MINACTORDIST)
                 {
-                    if (!Hidden || !PlayerTileInView())
+                    if (!Hidden || !PlayerTileInView(pawn))
                     {
                         // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
                         if (Flags.Contains("TOUCHDAMAGE", StringComparer.OrdinalIgnoreCase))
@@ -412,6 +412,10 @@ internal record Monster : Actor
     internal static bool IsTargetable(PlayerPawn pawn) =>
         gamemode == GameMode.Single || pawn.State.health > 0;
 
+    /// <summary>Whether the player could see it (alone, whether it was drawn; with others, any of them: Program.InViewOf)</summary>
+    private bool SeenByThePlayers() =>
+        gamemode == GameMode.Single ? RuntimeFlags.HasFlag(objflags.FL_VISABLE) : SeenByAPlayer(this);
+
     /// <summary>Hurts the player it's after</summary>
     private void HurtTarget(int points) => Program.TakeDamage(Target, points, this);
 
@@ -465,7 +469,7 @@ internal record Monster : Actor
             else
             {
                 // A NOTICEWHENSEEN actor (Blake Stone's aliens) notices the player once the player can see it
-                bool seen = HasFlag("NOTICEWHENSEEN") && RuntimeFlags.HasFlag(objflags.FL_VISABLE);
+                bool seen = HasFlag("NOTICEWHENSEEN") && SeenByThePlayers();
                 if (!madenoise && !seen && !CheckSight())
                     return false;
             }
@@ -1280,10 +1284,11 @@ internal record Monster : Actor
             dist = dist * 2 / 3;
 
         int hitchance;
+        bool visible = gamemode == GameMode.Single ? RuntimeFlags.HasFlag(objflags.FL_VISABLE) : InViewOf(Target, this);
         if (Target.State.ThrustSpeed >= RUNSPEED)
-            hitchance = RuntimeFlags.HasFlag(objflags.FL_VISABLE) ? 160 - dist * 16 : 160 - dist * 8;
+            hitchance = visible ? 160 - dist * 16 : 160 - dist * 8;
         else
-            hitchance = RuntimeFlags.HasFlag(objflags.FL_VISABLE) ? 256 - dist * 16 : 256 - dist * 8;
+            hitchance = visible ? 256 - dist * 16 : 256 - dist * 8;
 
         if (US_RndT() < hitchance)
         {

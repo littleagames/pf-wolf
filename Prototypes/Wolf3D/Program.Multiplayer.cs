@@ -734,15 +734,23 @@ internal partial class Program
         SetActing(localplayer);
         SetGameMode(start.Settings.Mode);
 
+        godmode = noclip = ammocheat = 0;     // no cheats carried in from playing alone
         netgame = true;
         netseed = start.Seed;
+        netlevel = 0;
+        netLeft = false;
+        session.BeginPlaying();
         StartGame = 1;
     }
 
     /// <summary>A game with others has ended (or never started): back to playing alone</summary>
     internal static void EndNetGame()
     {
+        var error = NetSession.Current?.Error;
         netgame = false;
+        netLeft = false;
         NetSession.Current?.Dispose();
+        if (error != null)
+            ShowNetMessage(WrapForMessage(error));     // the host left, or the connection was lost
     }
 }
