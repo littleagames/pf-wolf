@@ -1,4 +1,4 @@
-﻿using SDL2;
+using SDL2;
 using Wolf3D.Assets;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
@@ -781,7 +781,7 @@ internal partial class Program
         }
 
         InitLevelShading(mapInfo);
-        InitLevelSpawners();        // wall outlets and Goldfire's spawn sites (Program.BlakeMachines.cs)
+        _mapManager.AI.OnLevelStart();      // wall outlets, Goldfire's spawn sites, once-a-level drops (Managers.LevelAI)
 
         //
         // load floor/ceiling textures

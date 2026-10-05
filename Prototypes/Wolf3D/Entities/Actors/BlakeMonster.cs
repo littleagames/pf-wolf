@@ -867,13 +867,10 @@ internal partial record BlakeMonster : Monster
     }
 
     // Shooting an informant warns the player, the first time and now and then after
-    private static bool warnedkilledinformant;
-
     private void WarnKilledInformant()
     {
-        if (warnedkilledinformant && US_RndT() >= 25)
+        if (!_mapManager.AI.ShouldWarnKilledInformant())
             return;
-        warnedkilledinformant = true;
         if (PropertyStrings("talk.killedmessage") is [var message, ..])
             _hudMessageManager.Show(Managers.HudMessageKind.Other, message, PropertyStrings("talk.style").FirstOrDefault());
     }

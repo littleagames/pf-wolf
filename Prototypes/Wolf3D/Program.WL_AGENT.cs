@@ -591,9 +591,9 @@ internal partial class Program
         ActorActionRegistry.Register("A_Victory", A_Victory);
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
 
-        // Goldfire's warp sites (Program.BlakeMachines.cs)
-        ActorActionRegistry.Register("A_WarpSiteGone", A_WarpSiteGone);
-        ActorActionRegistry.Register("A_WarpSitesOff", A_WarpSitesOff);
+        // Goldfire's warp sites (Managers.LevelAI)
+        ActorActionRegistry.Register("A_WarpSiteGone", (Entities.Actors.Actor _) => _mapManager.AI.WarpSiteGone());
+        ActorActionRegistry.Register("A_WarpSitesOff", (Entities.Actors.Actor _) => _mapManager.AI.WarpSitesOff());
 
         // Projectiles and effects (Program.WL_ACT2.cs).
         ActorActionRegistry.Register("A_Projectile", A_Projectile);
@@ -1483,7 +1483,7 @@ internal partial class Program
         else
         {
             // Nothing ahead to use: talk to whoever's there (BlakeMonster.TalkTo)
-            TryInterrogate();
+            _mapManager.AI.TryTalk();
         }
     }
 
@@ -1494,57 +1494,6 @@ internal partial class Program
         gamestate.weapon != null && _inventoryManager.GetProperty(gamestate.weapon, "weapon.silent") is { } silent
         && (silent is true || bool.TryParse(silent.ToString(), out var b) && b);
 
-    // Talking to Blake Stone's TALKATIVE actors (BlakeMonster.TalkTo): how long until the use key
-    // held down talks again
-    static int interrogatedelay;
-
-    /// <summary>The use key held with nothing to use ahead: talk to whoever's there</summary>
-    internal static void TryInterrogate()
-    {
-        if (interrogatedelay > 0)
-        {
-            interrogatedelay = Math.Max(interrogatedelay - (int)tics, 0);
-            return;
-        }
-
-        const int MaxAngle = 45 / 2;
-        Entities.Actors.BlakeMonster? chosen = null;
-        int chosenDist = (int)MINACTORDIST;
-
-        foreach (var ob in _mapManager.GetActors().OfType<Entities.Actors.BlakeMonster>())
-        {
-            if (ob.IsRemoved || !ob.HasFlag("TALKATIVE")
-                || (ob.RuntimeFlags & (objflags.FL_FRIENDLY | objflags.FL_VISABLE)) != (objflags.FL_FRIENDLY | objflags.FL_VISABLE)
-                || Math.Abs(ob.TileX - player.TileX) > 2 || Math.Abs(ob.TileY - player.TileY) > 2)
-                continue;
-
-            int dist = Math.Min(Math.Abs(player.X - ob.X), Math.Abs(player.Y - ob.Y));
-            if (dist >= chosenDist)
-                continue;
-
-            if (ob.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
-            {
-                ob.RuntimeFlags &= ~objflags.FL_FRIENDLY;
-                continue;
-            }
-
-            var angle = Math.Atan2(player.Y - ob.Y, ob.X - player.X);
-            if (angle < 0)
-                angle += Math.PI * 2;
-            int facing = Math.Abs(player.Angle - (int)(angle / (Math.PI * 2) * ANGLES));
-            if (Math.Min(facing, ANGLES - facing) > MaxAngle)
-                continue;
-
-            chosen = ob;
-            chosenDist = dist;
-        }
-
-        if (chosen != null)
-            interrogatedelay = chosen.TalkTo() ? 20 : 120;      // an informant can be asked again sooner
-    }
-
-    /// <summary>Use let go: the next press talks straight away</summary>
-    internal static void ResetInterrogateDelay() => interrogatedelay = 0;
 
     /*
     ===============
@@ -1573,7 +1522,7 @@ internal partial class Program
             if (_inputManager.IsButtonPressed(buttontypes.bt_use))
                 Cmd_Use();
             else
-                ResetInterrogateDelay();
+                _mapManager.AI.ResetTalkDelay();
         }
         else
         {

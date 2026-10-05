@@ -155,7 +155,7 @@ internal partial class Program
                 TouchItems();               // pickups the player walked onto (Program.PlayerSight.cs)
                 TickPlayerBody(tics);       // what others see of the player, and
                 camera.Tick(tics);          // a watched actor's view turning (Program.Camera.cs)
-                TickLevelSpawners();       // wall outlets and warp sites (Program.BlakeMachines.cs)
+                _mapManager.AI.Tick();     // wall outlets and warp sites (Managers.LevelAI)
                 TickZoneLights(tics);       // light zones' fades and effects (Program.ZoneLights.cs)
 
                 _videoManager.UpdatePaletteShifts(tics);

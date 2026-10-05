@@ -722,9 +722,8 @@ internal record Monster : Actor
         // (Goldfire's gold card, on floor 9)
         if (PropertyInt("dropitem.onfloor", -1) is >= 0 and var floor)
         {
-            if (floor != _mapManager.CurrentFloorNumber || floordropgiven)
+            if (floor != _mapManager.CurrentFloorNumber || !_mapManager.AI.TakeFloorDrop())
                 return null;
-            floordropgiven = true;
         }
 
         bool outOfAmmo = Properties.ContainsKey("monster.ammo") && Ammo == 0;
