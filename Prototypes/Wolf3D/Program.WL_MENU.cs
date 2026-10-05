@@ -182,7 +182,11 @@ internal partial class Program
     /// Called with the highlighted item and -1 or +1 when left or right is pressed, for menus
     /// with rows that change in place (sliders, choices). Without it, left/right do nothing.
     /// </param>
-    internal static int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine, Action<int, int>? adjust = null)
+    /// <param name="idle">
+    /// Called again and again while the menu waits (a network game's screens take in what has
+    /// arrived and redraw); returning true leaves the menu at once, with -2.
+    /// </param>
+    internal static int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine, Action<int, int>? adjust = null, Func<bool>? idle = null)
     {
         char key;
         int i, x, y, basey, exit, which;
@@ -254,6 +258,12 @@ internal partial class Program
                 GameEngineManager.DelayMs(5);
 
             CheckPause();
+
+            if (idle?.Invoke() == true)
+            {
+                exit = 3;
+                break;
+            }
 
             //
             // SEE IF ANY KEYS ARE PRESSED FOR INITIAL CHAR FINDING
@@ -438,6 +448,9 @@ internal partial class Program
             case 2:
                 _audioManager.Play("menu/escape");
                 return -1;
+
+            case 3:
+                return -2;      // idle asked to leave
         }
 
         return 0; // JUST TO SHUT UP THE ERROR MESSAGES!
@@ -2341,6 +2354,9 @@ internal partial class Program
             case "mods":
                 return BuildModsPage();
 
+            case "lan-games":
+                return BuildJoinRows();
+
             default:
                 Console.WriteLine($"Menu '{menuName}': unknown items-source '{source}'");
                 return [];
@@ -2489,6 +2505,7 @@ internal partial class Program
         List<Func<int, int>> avaiableFunctions = 
             [
             CP_NewGame,
+            CP_Multiplayer,
             CP_Options,
             CP_Video,
             CP_Mods,

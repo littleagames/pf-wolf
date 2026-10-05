@@ -1,0 +1,35 @@
+music: "WONDERIN"
+type: "wolf3d-menu"
+position:
+  x: 24
+  y: 51
+indent: 24
+# A row for each game found hosted on the local network (refreshed as they come and go), then
+# one to type in an address
+items-source: "lan-games"
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Label"
+    params:
+      - text: "$STR_MP_JOIN"
+      - horizontal-orientation: "center"
+      - y: 30
+      - color: "READHCOLOR"
+  # Window fits 9 rows: 13 per row plus 6
+  -
+    type: "Window"
+    params:
+      - x: 16
+      - y: 48
+      - width: 288
+      - height: 123

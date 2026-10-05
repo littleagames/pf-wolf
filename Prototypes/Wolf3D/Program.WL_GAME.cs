@@ -719,6 +719,8 @@ internal partial class Program
 
         if (demoplayback || demorecord)
             US_InitRndT(false);
+        else if (netgame)
+            rndindex = netseed;         // where the host said, the same on every machine
         else
             US_InitRndT(true);
 

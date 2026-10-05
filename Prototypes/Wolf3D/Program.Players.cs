@@ -91,6 +91,7 @@ internal partial class Program
         consoleplayer = 0;
         SetActing(players[0]);
         SetGameMode(GameMode.Single);
+        netgame = false;        // BeginNetGame says otherwise, after
     }
 
     /// <summary>The most players a game can have</summary>

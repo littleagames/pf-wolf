@@ -1,0 +1,80 @@
+music: "WONDERIN"
+type: "wolf3d-menu"
+position:
+  x: 24
+  y: 26
+indent: 40
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Label"
+    params:
+      - text: "$STR_MP_LOBBY"
+      - horizontal-orientation: "center"
+      - y: 6
+      - color: "READHCOLOR"
+  # The game's settings and what you can do: 7 rows, 13 each plus 6
+  -
+    type: "Window"
+    params:
+      - x: 16
+      - y: 21
+      - width: 288
+      - height: 97
+  # Who's in, and what they've said (drawn by code)
+  -
+    type: "Window"
+    params:
+      - x: 16
+      - y: 121
+      - width: 288
+      - height: 60
+# Handled by Program.Multiplayer.cs, by id. Only the host changes the mode, episode and
+# skill; everyone picks their own class. The host starts the game ("go") once everyone else
+# is ready; for them, "go" is that they're ready. The values are drawn by code.
+menu-items:
+  -
+      id: "mode"
+      type: "ChoiceMenuItem"
+      text: "$STR_MP_MODE"
+      enabled: true
+  -
+      id: "episode"
+      type: "ChoiceMenuItem"
+      text: "$STR_MP_EPISODE"
+      enabled: true
+  -
+      id: "skill"
+      type: "ChoiceMenuItem"
+      text: "$STR_MP_SKILL"
+      enabled: true
+  -
+      id: "class"
+      type: "ChoiceMenuItem"
+      text: "$STR_MP_CLASS"
+      enabled: true
+  -
+      id: "go"
+      type: "ToggleMenuItem"
+      text: "$STR_MP_READY"
+      enabled: true
+  -
+      id: "chat"
+      type: "MenuSwitcher"
+      text: "$STR_MP_CHAT"
+      short-key: T
+      enabled: true
+  -
+      id: "leave"
+      type: "MenuSwitcher"
+      text: "$STR_MP_LEAVE"
+      enabled: true

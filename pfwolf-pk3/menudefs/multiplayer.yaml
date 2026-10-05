@@ -1,0 +1,52 @@
+music: "WONDERIN"
+type: "wolf3d-menu"
+position:
+  x: 24
+  y: 72
+indent: 56
+components:
+  -
+    type: "Background"
+    params:
+      - color: "BORDCOLOR"
+  -
+    type: "Graphic"
+    params:
+      - name: "c_mouselback"
+      - horizontal-orientation: "center"
+      - y: 184
+  -
+    type: "Label"
+    params:
+      - text: "$MENU_MULTIPLAYER"
+      - horizontal-orientation: "center"
+      - y: 48
+      - color: "READHCOLOR"
+  # Window fits the item count: 13 per row plus 6
+  -
+    type: "Window"
+    params:
+      - x: 16
+      - y: 67
+      - width: 288
+      - height: 45
+# Handled by Program.Multiplayer.cs, by id; your name is drawn by code
+menu-items:
+  -
+      id: "host"
+      type: "MenuSwitcher"
+      text: "$STR_MP_HOST"
+      short-key: H
+      enabled: true
+  -
+      id: "join"
+      type: "MenuSwitcher"
+      text: "$STR_MP_JOIN"
+      short-key: J
+      enabled: true
+  -
+      id: "name"
+      type: "ChoiceMenuItem"
+      text: "$STR_MP_NAME"
+      short-key: Y
+      enabled: true

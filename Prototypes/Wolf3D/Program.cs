@@ -148,6 +148,7 @@ internal partial class Program
 
         new Program();
         _gameEngineManager.Init(gameParams);
+        SetNetParams(gameParams);     // --host, --join, --port, --name (Program.Multiplayer.cs)
 
         // The Mods menu's choices (mods.cfg, per game), then the command line's
         var configMods = ModsConfig.Read(_gameEngineManager.GetConfigFilePath(ModsConfig.FileName));
@@ -453,7 +454,11 @@ internal partial class Program
         //
         // main game cycle
         //
-        if (gameInfo.Intro.Count > 0)
+        if (HasPendingNetStart)
+        {
+            // --host or --join: straight to the lobby, with the menu's music
+        }
+        else if (gameInfo.Intro.Count > 0)
         {
             // The game pack's own intro (Blake Stone's), which starts its own music
             if (param_nowait)
@@ -474,6 +479,12 @@ internal partial class Program
 
         while (true)
         {
+            if (RunPendingNetStart())
+            {
+                RunStartedGame();
+                continue;
+            }
+
             // recorddemo and playdemo, from the command line's --exec or a game they ended
             if (RecordPendingDemo())
             {
@@ -554,6 +565,8 @@ internal partial class Program
             return;
 
         GameLoop();
+        if (netgame)
+            EndNetGame();       // a game with others is over: leave it (Program.Multiplayer.cs)
         if (!param_nowait)
         {
             _videoManager.FadeOut();

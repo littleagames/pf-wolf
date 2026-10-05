@@ -94,6 +94,7 @@ internal partial class Program
             "msg_enabled [0|1|default]", Cmd_MsgEnabled, complete: Values("0", "1", "default"));
         Register("msg_clear", "Takes away the messages shown over the view.", "msg_clear", _ => _hudMessageManager.Clear());
         Register("msg_styles", "Lists the message styles and where each puts its messages.", "msg_styles", Cmd_MsgStyles);
+        Register("net_find", "Looks for games hosted on the local network (two seconds) and lists them.", "net_find", Cmd_NetFind);
 
         //
         // video

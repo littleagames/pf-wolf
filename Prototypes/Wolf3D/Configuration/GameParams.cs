@@ -19,6 +19,18 @@ internal class GameParams
     [Option("cheats", Required = false, HelpText = "Turn on the cheat commands and debug keys from the start.")]
     public bool Cheats { get; set; }
 
+    [Option("host", Required = false, HelpText = "Host a game with others: straight to its lobby (on --port, default 10645).")]
+    public bool Host { get; set; }
+
+    [Option("join", Required = false, HelpText = "Join the game hosted at this address (address or address:port): straight to its lobby.")]
+    public string Join { get; set; } = "";
+
+    [Option("port", Required = false, HelpText = "The port --host hosts on.")]
+    public int? Port { get; set; }
+
+    [Option("name", Required = false, HelpText = "Your name in games with others (saved for next time).")]
+    public string Name { get; set; } = "";
+
     [Option("file", Required = false, HelpText = "Mods to load over pfwolf.pk3: pk3 or zip files, or folders, found as given or in the mods folder. Later ones win.")]
     public IEnumerable<string> Files { get; set; } = [];
 
