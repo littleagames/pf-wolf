@@ -19,7 +19,7 @@ internal partial class Program
     */
 
     // Set once a level's `dropitem.onfloor` item has been dropped (DeathDrop)
-    static bool floordropgiven;
+    internal static bool floordropgiven;
 
     /// <summary>Sets up a fresh or loaded level's outlets and warp sites (SetupGameLevel)</summary>
     internal static void InitLevelSpawners()
@@ -50,7 +50,7 @@ internal partial class Program
     /// first if it can). Within a tile of the player it zaps them (`monster.touchdamage`, with
     /// its `touchsound`). It doesn't open doors.
     /// </summary>
-    internal static void T_Bounce(Entities.Actors.Actor ob)
+    internal static void T_Bounce(Entities.Actors.Monster ob)
     {
         if (Math.Max(Math.Abs(player.X - ob.X), Math.Abs(player.Y - ob.Y)) < MapConstants.TILEGLOBAL
             && ob.PropertyInt("monster.touchdamage", 0) is > 0 and var zap)
@@ -71,18 +71,18 @@ internal partial class Program
         {
             if (move < ob.Distance)
             {
-                MoveObj(ob, move);
+                ob.MoveObj(move);
                 break;
             }
 
-            RecenterOnTile(ob);
+            ob.RecenterOnTile();
             move -= ob.Distance;
 
             if (BackToDiagonal(ob))
                 continue;
             if (CanWalk(ob))
             {
-                TryWalk(ob);
+                ob.TryWalk();
                 continue;
             }
 
@@ -105,13 +105,13 @@ internal partial class Program
 
     static bool IsDiagonal(objdirtypes dir) => dir is objdirtypes.northeast or objdirtypes.northwest or objdirtypes.southeast or objdirtypes.southwest;
 
-    static bool TryBounceDir(Entities.Actors.Actor ob, objdirtypes dir)
+    static bool TryBounceDir(Entities.Actors.Monster ob, objdirtypes dir)
     {
         var old = ob.Dir;
         ob.Dir = dir;
         if (CanWalk(ob))
         {
-            TryWalk(ob);
+            ob.TryWalk();
             return true;
         }
         ob.Dir = old;
@@ -122,7 +122,7 @@ internal partial class Program
 
     // A random way for its kind of bounce, or the other way if that's blocked; boxed in, the
     // other kinds in turn (a diagonal one in a corridor goes up and down it)
-    static void BounceStartDir(Entities.Actors.Actor ob)
+    static void BounceStartDir(Entities.Actors.Monster ob)
     {
         var kind = ob.PropertyStrings("monster.bounce").FirstOrDefault()?.ToLowerInvariant() ?? "diagonal";
         int first = Math.Max(Array.IndexOf(BounceKinds, kind), 0);
@@ -141,7 +141,7 @@ internal partial class Program
     }
 
     // A diagonal bouncer going straight (it was boxed in) takes the first diagonal it can, once there's room
-    static bool BackToDiagonal(Entities.Actors.Actor ob)
+    static bool BackToDiagonal(Entities.Actors.Monster ob)
     {
         if (IsDiagonal(ob.Dir) || ob.PropertyStrings("monster.bounce").FirstOrDefault()?.ToLowerInvariant() is "vertical" or "horizontal")
             return false;
@@ -163,7 +163,7 @@ internal partial class Program
     /// A_SetShootable("on"/"off"): makes the actor shootable (and in the way), or not, as the
     /// liquid alien rising out of its puddle and sinking back
     /// </summary>
-    internal static void A_SetShootable(Entities.Actors.Actor ob, string[] args)
+    internal static void A_SetShootable(Entities.Actors.Monster ob, string[] args)
     {
         if (args.FirstOrDefault()?.Equals("off", StringComparison.OrdinalIgnoreCase) == true)
             ob.RuntimeFlags &= ~objflags.FL_SHOOTABLE;
@@ -172,11 +172,11 @@ internal partial class Program
     }
 
     /// <summary>The liquid alien moving as a puddle (Chase): near the player, but not right by them, it rises (Rise)</summary>
-    internal static void T_LiquidMove(Entities.Actors.Actor ob)
+    internal static void T_LiquidMove(Entities.Actors.Monster ob)
     {
         int dx = Math.Abs(ob.TileX - player.TileX), dy = Math.Abs(ob.TileY - player.TileY);
         if (Math.Max(dx, dy) < 6 && dx > 1 && dy > 1)
-            NewActorState(ob, "Rise");
+            ob.SetState("Rise");
         else
             T_BlakeChase(ob);
     }
@@ -186,13 +186,13 @@ internal partial class Program
     /// (Shoot) now and then, up to five times, else (with the player more than a tile off) sinks
     /// back (Fall) when the player can't see it, sometimes anyway, and after its fifth shot
     /// </summary>
-    internal static void T_LiquidStand(Entities.Actors.Actor ob)
+    internal static void T_LiquidStand(Entities.Actors.Monster ob)
     {
         ob.RuntimeFlags |= objflags.FL_SHOOTABLE;
         if (US_RndT() < 80 && ob.Temp2 < 5)
         {
             ob.Temp2++;
-            NewActorState(ob, "Shoot");
+            ob.SetState("Shoot");
             return;
         }
 
@@ -202,7 +202,7 @@ internal partial class Program
             {
                 ob.RuntimeFlags &= ~objflags.FL_SHOOTABLE;
                 ob.Temp2 = 0;
-                NewActorState(ob, "Fall");
+                ob.SetState("Fall");
             }
         }
         else
@@ -224,7 +224,7 @@ internal partial class Program
     /// line), it fires (Attack), more likely the nearer the player is; else a turning one turns
     /// round a step every half second (a STATIONARY one keeps facing its way)
     /// </summary>
-    internal static void T_Seek(Entities.Actors.Actor ob)
+    internal static void T_Seek(Entities.Actors.Monster ob)
     {
         bool found = false;
         if ((player.TileX != ob.TileX || player.TileY != ob.TileY) && CheckView(ob))
@@ -236,7 +236,7 @@ internal partial class Program
                 int chance = dist == 0 || dist == 1 && ob.Distance < 0x4000 ? 300 : US_RndT() / dist;
                 if (US_RndT() < chance)
                 {
-                    NewActorState(ob, "Attack");
+                    ob.SetState("Attack");
                     return;
                 }
                 found = true;
@@ -255,7 +255,7 @@ internal partial class Program
     }
 
     /// <summary>Whether the player is in the actor's eighth of the circle (its facing, 22.5 degrees either side) in a clear line</summary>
-    static bool CheckView(Entities.Actors.Actor ob)
+    static bool CheckView(Entities.Actors.Monster ob)
     {
         if (ob.AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[ob.AreaNumber] == 0)
             return false;
@@ -277,17 +277,17 @@ internal partial class Program
     */
 
     /// <summary>A security light's think: once there's been a noise where the player can hear it, it starts flashing (Alert)</summary>
-    internal static void T_SecurityLight(Entities.Actors.Actor ob)
+    internal static void T_SecurityLight(Entities.Actors.Monster ob)
     {
         if (madenoise && (ob.AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[ob.AreaNumber] != 0))
-            NewActorState(ob, "Alert");
+            ob.SetState("Alert");
     }
 
     /// <summary>
     /// A steam vent's think: while the player can see it, it counts down (Temp2, first four
     /// seconds) and lets off steam (Release), then waits up to 34 seconds for the next
     /// </summary>
-    internal static void T_SteamVent(Entities.Actors.Actor ob)
+    internal static void T_SteamVent(Entities.Actors.Monster ob)
     {
         if (!ob.RuntimeFlags.HasFlag(objflags.FL_VISABLE))
             return;
@@ -300,12 +300,12 @@ internal partial class Program
         if (ob.Temp2 <= 0)
         {
             ob.Temp2 = (short)(US_RndT() << 3);
-            NewActorState(ob, "Release");
+            ob.SetState("Release");
         }
     }
 
     /// <summary>A_HurtPlayerHere(damage[, chance]): the player standing on the actor's tile is hurt, chance times in 256 (ooze)</summary>
-    internal static void A_HurtPlayerHere(Entities.Actors.Actor ob, string[] args)
+    internal static void A_HurtPlayerHere(Entities.Actors.Monster ob, string[] args)
     {
         int damage = args.Length > 0 && int.TryParse(args[0], out var d) ? d : 1;
         int chance = args.Length > 1 && int.TryParse(args[1], out var c) ? c : 256;
@@ -319,7 +319,7 @@ internal partial class Program
     /// its frame doesn't run down, so it can't shut on them, and within half a tile they're
     /// hurt for damage each tic.
     /// </summary>
-    internal static void A_HoldNearPlayer(Entities.Actors.Actor ob, string[] args)
+    internal static void A_HoldNearPlayer(Entities.Actors.Monster ob, string[] args)
     {
         int damage = args.Length > 0 && int.TryParse(args[0], out var d) ? d : 0;
         long dx = Math.Abs(player.X - ob.X), dy = Math.Abs(player.Y - ob.Y);
@@ -335,19 +335,19 @@ internal partial class Program
     /// tag-link) goes to the state (Planet Strike's switchable barriers with no switch cycle by
     /// themselves, as bstone's do)
     /// </summary>
-    internal static void A_JumpIfUntagged(Entities.Actors.Actor ob, string[] args)
+    internal static void A_JumpIfUntagged(Entities.Actors.Monster ob, string[] args)
     {
         if (ob.Tag == 0 && args.Length > 0 && ob.ResolvedStates.TryGetValue(args[0], out var frame))
             ob.JumpTo(frame);
     }
 
     /// <summary>A_SelfDestruct: the actor dies, with its points (the floating bomb, reaching the player, blows itself up)</summary>
-    internal static void A_SelfDestruct(Entities.Actors.Actor ob)
+    internal static void A_SelfDestruct(Entities.Actors.Monster ob)
     {
         if (!ob.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
             return;
         ob.Hitpoints = 0;
-        KillActor(ob, null);
+        ob.Kill(null);
 
         // Called from a state's action: land on the first Death frame, not the one after it
         if (ob.ResolvedStates.TryGetValue("Death", out var death))
@@ -366,7 +366,7 @@ internal partial class Program
     /// A_CountRemaining("message"): shows the message with %n the number of this actor's class
     /// still standing (shootable), as each projection generator goes
     /// </summary>
-    internal static void A_CountRemaining(Entities.Actors.Actor ob, string[] args)
+    internal static void A_CountRemaining(Entities.Actors.Monster ob, string[] args)
     {
         if (args.Length == 0)
             return;
@@ -376,7 +376,7 @@ internal partial class Program
     }
 
     /// <summary>A_VictoryIfLast: the level is won once none of this actor's class still stands (the last projection generator)</summary>
-    internal static void A_VictoryIfLast(Entities.Actors.Actor ob)
+    internal static void A_VictoryIfLast(Entities.Actors.Monster ob)
     {
         if (!_mapManager.GetActors().Any(a => !a.IsRemoved && a.Name == ob.Name && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)))
             playstate = playstatetypes.ex_victorious;
@@ -566,7 +566,7 @@ internal partial class Program
     }
 
     /// <summary>A_WarpSiteGone: the warp site's actor has gone (warped out); the wait for the next starts</summary>
-    internal static void A_WarpSiteGone(Entities.Actors.Actor ob)
+    internal static void A_WarpSiteGone(Entities.Actors.Monster ob)
     {
         if (warpsites.Count > 0)
             warpwait = WarpWait(warpsites[0], first: false);
@@ -574,7 +574,7 @@ internal partial class Program
     }
 
     /// <summary>A_WarpSitesOff: no more comes; the level's warp sites go (Goldfire, morphed)</summary>
-    internal static void A_WarpSitesOff(Entities.Actors.Actor ob)
+    internal static void A_WarpSitesOff(Entities.Actors.Monster ob)
     {
         foreach (var site in warpsites)
             _mapManager.MarkForRemoval(site);
@@ -587,7 +587,7 @@ internal partial class Program
     /// player and, chance times in 256 (lowchance below that health), one either side at each
     /// offset in ANGLES units too (bstone's morphed Goldfire)
     /// </summary>
-    internal static void A_FireSpread(Entities.Actors.Actor ob, string[] args)
+    internal static void A_FireSpread(Entities.Actors.Monster ob, string[] args)
     {
         if (args.Length == 0)
         {
@@ -595,7 +595,7 @@ internal partial class Program
             return;
         }
 
-        A_FireProjectile(ob, [args[0]]);
+        ob.FireProjectile([args[0]]);
 
         int Arg(int i, int fallback) => args.Length > i && int.TryParse(args[i], out var n) ? n : fallback;
         int chance = ob.Hitpoints < Arg(2, 0) ? Arg(3, 0) : Arg(1, 0);
@@ -604,8 +604,8 @@ internal partial class Program
         for (int i = 4; i < args.Length; i++)
         {
             int offset = Arg(i, 0);
-            A_FireProjectile(ob, [args[0], offset.ToString()]);
-            A_FireProjectile(ob, [args[0], (-offset).ToString()]);
+            ob.FireProjectile([args[0], offset.ToString()]);
+            ob.FireProjectile([args[0], (-offset).ToString()]);
         }
     }
 }

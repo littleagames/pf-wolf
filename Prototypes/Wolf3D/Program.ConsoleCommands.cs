@@ -1,4 +1,4 @@
-﻿using SDL2;
+using SDL2;
 using System.Text;
 using Wolf3D.Assets;
 using Wolf3D.Configuration;
@@ -1119,13 +1119,13 @@ internal partial class Program
 
     private static void Cmd_KillAll(string[] args)
     {
-        // Snapshot first: KillActor can drop items, which adds to the actor list.
-        var enemies = _mapManager.GetActors()
+        // Snapshot first: Kill can drop items, which adds to the actor list.
+        var enemies = _mapManager.GetActors().OfType<Entities.Actors.Monster>()
             .Where(a => MapManager.IsEnemy(a) && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
             .ToList();
 
         foreach (var enemy in enemies)
-            KillActor(enemy);
+            enemy.Kill();
 
         _consoleManager.Print($"Killed {enemies.Count} enemies");
     }

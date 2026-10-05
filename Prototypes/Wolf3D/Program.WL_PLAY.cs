@@ -1,4 +1,4 @@
-﻿using Wolf3D.Configuration;
+using Wolf3D.Configuration;
 using Wolf3D.Entities.Actors;
 using Wolf3D.Extensions;
 using Wolf3D.Managers;
@@ -8,7 +8,7 @@ namespace Wolf3D;
 
 internal partial class Program
 {
-    static bool madenoise; // true when shooting or screaming
+    internal static bool madenoise; // true when shooting or screaming
 
     static playstatetypes playstate;
 
@@ -34,7 +34,7 @@ internal partial class Program
 
     internal static int viewsize;
 
-    static bool demorecord, demoplayback;
+    internal static bool demorecord, demoplayback;
     static byte[] demoData;
     static int demoptr, lastdemoptr;
 

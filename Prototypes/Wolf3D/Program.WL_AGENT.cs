@@ -34,7 +34,7 @@ internal partial class Program
     //
     // player state info
     //
-    static int thrustspeed;
+    internal static int thrustspeed;
 
     static ushort plux, pluy;          // player coordinates scaled to unsigned
 
@@ -580,71 +580,51 @@ internal partial class Program
         ActorActionRegistry.Register("A_GiveInventory", GiveInventoryAction);
         ActorActionRegistry.Register("A_ChangeMap", ChangeMapAction);
 
-        // Enemy AI (Program.EnemyAI.cs), ported from Program.WL_STATE.cs / Program.WL_ACT2.cs.
-        ActorActionRegistry.Register("T_Stand", T_Stand);
-        ActorActionRegistry.Register("T_Path", T_Path);
-        ActorActionRegistry.Register("T_Chase", T_Chase);
-        ActorActionRegistry.Register("T_DogChase", T_DogChase);
-        ActorActionRegistry.Register("T_Bite", T_Bite);
-        ActorActionRegistry.Register("T_Ghosts", T_Ghosts);
-        ActorActionRegistry.Register("T_Schabb", T_Schabb);
-        ActorActionRegistry.Register("T_SchabbThrow", T_SchabbThrow);
-        ActorActionRegistry.Register("T_Gift", T_Gift);
-        ActorActionRegistry.Register("T_GiftThrow", T_GiftThrow);
-        ActorActionRegistry.Register("T_Fat", T_Fat);
-        ActorActionRegistry.Register("T_Fake", T_Fake);
-        ActorActionRegistry.Register("T_FakeFire", T_FakeFire);
-        ActorActionRegistry.Register("T_Shoot", T_Shoot);
+        // Enemies' thinks and actions (Entities.Actors.Monster)
+        Entities.Actors.Monster.RegisterActions();
+
+        // Any actor's sounds, and the end of the game (Program.WL_ACT2.cs)
         ActorActionRegistry.Register("A_DeathScream", A_DeathScream);
         ActorActionRegistry.Register("A_ActiveSound", A_ActiveSound);
-        ActorActionRegistry.Register("A_HitlerMorph", A_HitlerMorph);
+        ActorActionRegistry.Register("A_PlaySound", A_PlaySound);
+        ActorActionRegistry.Register("A_Victory", A_Victory);
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
 
-        // Spear of Destiny bosses (Program.EnemyAI.cs)
-        ActorActionRegistry.Register("T_Will", T_Will);
-        ActorActionRegistry.Register("T_UShoot", T_UShoot);
-        ActorActionRegistry.Register("A_FireProjectile", A_FireProjectile);
-        ActorActionRegistry.Register("A_StartAttack", A_StartAttack);
-        ActorActionRegistry.Register("A_Relaunch", A_Relaunch);
-        ActorActionRegistry.Register("A_Victory", A_Victory);
-        ActorActionRegistry.Register("A_PlaySound", A_PlaySound);
-        ActorActionRegistry.Register("A_Dormant", A_Dormant);
-
         // Blake Stone's enemies (Program.BlakeAI.cs)
-        ActorActionRegistry.Register("T_BlakeChase", T_BlakeChase);
-        ActorActionRegistry.Register("T_BlakeShoot", T_BlakeShoot);
-        ActorActionRegistry.Register("T_BlowBack", T_BlowBack);
-        ActorActionRegistry.Register("T_Wounded", T_Wounded);
-        ActorActionRegistry.Register("T_WaitToWake", T_WaitToWake);
-        ActorActionRegistry.Register("A_SpawnEnemy", A_SpawnEnemy);
-        ActorActionRegistry.Register("A_Melee", A_Melee);
+        ActorActionRegistry.RegisterMonster("T_BlakeChase", T_BlakeChase);
+        ActorActionRegistry.RegisterMonster("T_BlakeShoot", T_BlakeShoot);
+        ActorActionRegistry.RegisterMonster("T_BlowBack", T_BlowBack);
+        ActorActionRegistry.RegisterMonster("T_Wounded", T_Wounded);
+        ActorActionRegistry.RegisterMonster("T_WaitToWake", T_WaitToWake);
+        ActorActionRegistry.RegisterMonster("A_SpawnEnemy", A_SpawnEnemy);
+        ActorActionRegistry.RegisterMonster("A_Melee", A_Melee);
 
         // Blake Stone's machines and specials (Program.BlakeMachines.cs)
-        ActorActionRegistry.Register("T_Bounce", T_Bounce);
-        ActorActionRegistry.Register("A_SetShootable", A_SetShootable);
-        ActorActionRegistry.Register("T_LiquidMove", T_LiquidMove);
-        ActorActionRegistry.Register("T_LiquidStand", T_LiquidStand);
-        ActorActionRegistry.Register("T_Seek", T_Seek);
-        ActorActionRegistry.Register("T_SecurityLight", T_SecurityLight);
-        ActorActionRegistry.Register("T_SteamVent", T_SteamVent);
-        ActorActionRegistry.Register("A_HurtPlayerHere", A_HurtPlayerHere);
-        ActorActionRegistry.Register("A_HoldNearPlayer", A_HoldNearPlayer);
-        ActorActionRegistry.Register("A_JumpIfUntagged", A_JumpIfUntagged);
-        ActorActionRegistry.Register("A_SelfDestruct", A_SelfDestruct);
-        ActorActionRegistry.Register("A_CountRemaining", A_CountRemaining);
-        ActorActionRegistry.Register("A_VictoryIfLast", A_VictoryIfLast);
-        ActorActionRegistry.Register("A_WarpSiteGone", A_WarpSiteGone);
-        ActorActionRegistry.Register("A_WarpSitesOff", A_WarpSitesOff);
-        ActorActionRegistry.Register("A_FireSpread", A_FireSpread);
+        ActorActionRegistry.RegisterMonster("T_Bounce", T_Bounce);
+        ActorActionRegistry.RegisterMonster("A_SetShootable", A_SetShootable);
+        ActorActionRegistry.RegisterMonster("T_LiquidMove", T_LiquidMove);
+        ActorActionRegistry.RegisterMonster("T_LiquidStand", T_LiquidStand);
+        ActorActionRegistry.RegisterMonster("T_Seek", T_Seek);
+        ActorActionRegistry.RegisterMonster("T_SecurityLight", T_SecurityLight);
+        ActorActionRegistry.RegisterMonster("T_SteamVent", T_SteamVent);
+        ActorActionRegistry.RegisterMonster("A_HurtPlayerHere", A_HurtPlayerHere);
+        ActorActionRegistry.RegisterMonster("A_HoldNearPlayer", A_HoldNearPlayer);
+        ActorActionRegistry.RegisterMonster("A_JumpIfUntagged", A_JumpIfUntagged);
+        ActorActionRegistry.RegisterMonster("A_SelfDestruct", A_SelfDestruct);
+        ActorActionRegistry.RegisterMonster("A_CountRemaining", A_CountRemaining);
+        ActorActionRegistry.RegisterMonster("A_VictoryIfLast", A_VictoryIfLast);
+        ActorActionRegistry.RegisterMonster("A_WarpSiteGone", A_WarpSiteGone);
+        ActorActionRegistry.RegisterMonster("A_WarpSitesOff", A_WarpSitesOff);
+        ActorActionRegistry.RegisterMonster("A_FireSpread", A_FireSpread);
 
         // Projectiles and effects (Program.WL_ACT2.cs).
         ActorActionRegistry.Register("A_Projectile", A_Projectile);
         ActorActionRegistry.Register("A_SpawnThing", A_SpawnThing);
         ActorActionRegistry.Register("A_Remove", A_Remove);
 
-        // BJ victory cutscene (Program.WL_ACT2.cs).
-        ActorActionRegistry.Register("T_BJRun", T_BJRun);
-        ActorActionRegistry.Register("T_BJJump", T_BJJump);
+        // BJ victory cutscene (Program.WL_ACT2.cs): BJ walks the patrol arrows as a Monster.
+        ActorActionRegistry.RegisterMonster("T_BJRun", T_BJRun);
+        ActorActionRegistry.RegisterMonster("T_BJJump", T_BJJump);
         ActorActionRegistry.Register("T_BJDone", T_BJDone);
 
         // The player's own think states (PlayerPawn), ticked by MapManager.DoActor.
@@ -841,7 +821,7 @@ internal partial class Program
     // Slot order for cycling, as on the keyboard: 1-9, then 0, then weapons with no slot.
     static int WeaponSlotOrder(string weapon) => WeaponSlot(weapon) switch { 0 => 10, < 0 => 11, var slot => slot };
 
-    static int WeaponSelectionOrder(string weapon) =>
+    internal static int WeaponSelectionOrder(string weapon) =>
         _inventoryManager.GetIntProperty(weapon, "weapon.selectionorder", int.MaxValue);
 
     /// <summary>The ammo a weapon shoots, or null for one that needs none (the knife).</summary>
@@ -882,7 +862,7 @@ internal partial class Program
             .ToList();
 
     /// <summary>The best held weapon (lowest selectionorder), optionally only among those with ammo.</summary>
-    static string? BestWeapon(bool canFire = false) =>
+    internal static string? BestWeapon(bool canFire = false) =>
         OwnedWeapons()
             .Where(w => !canFire || CanFire(w))
             .OrderBy(WeaponSelectionOrder)
@@ -1037,7 +1017,7 @@ internal partial class Program
     */
 
     // LastAttacker feeds Died()'s swing-around-to-face-the-killer (Program.WL_GAME.cs) and the
-    // needle-death face in DrawFace. Every attacker -- enemies (Program.EnemyAI.cs) and
+    // needle-death face in DrawFace. Every attacker -- enemies (Entities.Actors.Monster) and
     // projectiles (Program.WL_ACT2.cs) -- is an Entities.Actors.Actor now.
     internal static void TakeDamage(int points, Entities.Actors.Actor attacker)
     {
@@ -1215,7 +1195,7 @@ internal partial class Program
     /// <summary>The score between extra lives (game-info extra-life-score); 0 for none</summary>
     internal static int ExtraLifeScore => Math.Max(_gameEngineManager.GetGameInfo().ExtraLifeScore, 0);
 
-    static void GivePoints(int points)
+    internal static void GivePoints(int points)
     {
         gamestate.score += points;
         while (ExtraLifeScore > 0 && gamestate.score >= gamestate.nextextra)
@@ -1585,13 +1565,13 @@ internal partial class Program
     }
 
     // The player's targets are now exclusively the new Entities.Actors.Actor enemies
-    // (Program.EnemyAI.cs). The player pawn, projectiles and the BJ-victory actor share
+    // (Entities.Actors.Monster). The player pawn, projectiles and the BJ-victory actor share
     // _actors with the enemies but have no "Chase" state, so they never qualify.
-    private static List<Entities.Actors.Actor> FindShootCandidates()
+    private static List<Entities.Actors.Monster> FindShootCandidates()
     {
-        var candidates = new List<Entities.Actors.Actor>();
+        var candidates = new List<Entities.Actors.Monster>();
 
-        foreach (var actor in _mapManager.GetActors())
+        foreach (var actor in _mapManager.GetActors().OfType<Entities.Actors.Monster>())
         {
             if (actor == null || !actor.ResolvedStates.ContainsKey("Chase")) continue;
             if (actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) && actor.RuntimeFlags.HasFlag(objflags.FL_VISABLE)
@@ -1620,7 +1600,7 @@ internal partial class Program
         if (closest == null)
             return; // missed
 
-        DamageActor(closest, PlayerDamage(US_RndT() >> 4), player);
+        closest.Damage(PlayerDamage(US_RndT() >> 4), player);
     }
 
     // A player attack's damage, scaled by the class's player.damagedealt
@@ -1668,7 +1648,7 @@ internal partial class Program
             damage = US_RndT() / far;
         }
 
-        DamageActor(closest, PlayerDamage(damage), player);
+        closest.Damage(PlayerDamage(damage), player);
     }
 
     internal static void VictorySpin()
@@ -1704,7 +1684,7 @@ internal partial class Program
         player.Active = activetypes.ac_yes;
         player.SetPosition(tilex, tiley);       // tile, and the tile-centred world x/y
         player.AreaNumber = _mapManager.SpawnArea(tilex, tiley);
-        NewActorState(player, PlayerPawn.SpawnState);
+        player.SetState(PlayerPawn.SpawnState);
         player.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
         player.RuntimeFlags = objflags.FL_NEVERMARK;
         Thrust(0, 0);                           // set some variables

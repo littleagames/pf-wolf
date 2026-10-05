@@ -60,7 +60,7 @@ internal partial class Program
     const int DEFAULT_KNOCKBACK = 0x5000;
 
     /// <summary>Whether the weapon in hand is a silent one (weapon.silent): its shots don't alert anyone</summary>
-    static bool PlayerWeaponIsSilent() =>
+    internal static bool PlayerWeaponIsSilent() =>
         gamestate.weapon != null && _inventoryManager.GetProperty(gamestate.weapon, "weapon.silent") is { } silent
         && (silent is true || bool.TryParse(silent.ToString(), out var b) && b);
 
@@ -68,7 +68,7 @@ internal partial class Program
     /// Sets up what's Blake Stone's about a freshly spawned actor (MapManager.SpawnThing): its
     /// ammo, its friendliness, an informant's gifts, and a wounding actor's wound stages
     /// </summary>
-    internal static void InitSpawnedActor(Entities.Actors.Actor ob, int tilex, int tiley)
+    internal static void InitSpawnedActor(Entities.Actors.Monster ob, int tilex, int tiley)
     {
         // One number, or [min, max] for one at random
         var ammo = ob.PropertyInts("monster.ammo");
@@ -123,7 +123,7 @@ internal partial class Program
     /// A_SpawnEnemy("ScanAlien"[, "chase"]): an enemy appears on this actor's tile, as if placed
     /// by the map but not added to the kill total; with chase, it's already after the player
     /// </summary>
-    internal static void A_SpawnEnemy(Entities.Actors.Actor ob, string[] args)
+    internal static void A_SpawnEnemy(Entities.Actors.Monster ob, string[] args)
     {
         if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
         {
@@ -144,7 +144,7 @@ internal partial class Program
         spawned.AreaNumber = ob.AreaNumber;
         if (args.Skip(1).Any(a => a.Equals("chase", StringComparison.OrdinalIgnoreCase)) && spawned.ResolvedStates.ContainsKey("Chase"))
         {
-            NewActorState(spawned, "Chase");
+            spawned.SetState("Chase");
             spawned.Dir = objdirtypes.nodir;
         }
     }
@@ -153,7 +153,7 @@ internal partial class Program
     /// The think of a sleeper (Spawn): once the player can see it, it counts down its wake delay
     /// (Temp2) and wakes (its Wake state). One with no delay only wakes when shot.
     /// </summary>
-    internal static void T_WaitToWake(Entities.Actors.Actor ob)
+    internal static void T_WaitToWake(Entities.Actors.Monster ob)
     {
         if (!ob.RuntimeFlags.HasFlag(objflags.FL_VISABLE) || ob.Temp3 <= 0 || ob.Temp3 == 255 * 60)
             return;
@@ -164,14 +164,14 @@ internal partial class Program
         }
         ob.Temp2 = 0;
         ob.RuntimeFlags &= ~objflags.FL_SHOOTABLE;
-        NewActorState(ob, "Wake");
+        ob.SetState("Wake");
     }
 
     /// <summary>
     /// A_Melee(chance, min, max): a blow at the player within reach (two tiles), landing chance
     /// times in 256 for min..max, with the actor's `meleesound`; it alerts the area
     /// </summary>
-    internal static void A_Melee(Entities.Actors.Actor ob, string[] args)
+    internal static void A_Melee(Entities.Actors.Monster ob, string[] args)
     {
         int chance = args.Length > 0 && int.TryParse(args[0], out var c) ? c : 200;
         int min = args.Length > 1 && int.TryParse(args[1], out var a) ? a : 0;
@@ -196,7 +196,7 @@ internal partial class Program
     =============================================================================
     */
 
-    internal static void T_BlakeChase(Entities.Actors.Actor ob)
+    internal static void T_BlakeChase(Entities.Actors.Monster ob)
     {
         ob.RuntimeFlags &= ~objflags.FL_LOCKEDSTATE;
 
@@ -263,11 +263,11 @@ internal partial class Program
 
             if (move < ob.Distance)
             {
-                MoveObj(ob, move);
+                ob.MoveObj(move);
                 break;
             }
 
-            RecenterOnTile(ob);
+            ob.RecenterOnTile();
             move -= ob.Distance;
 
             SelectBlakeChaseDir(ob);
@@ -277,19 +277,19 @@ internal partial class Program
     }
 
     // Closing in dodges, unless it's a CHASEDIR actor (the floating bomb), which comes straight on
-    static void SelectBlakeChaseDir(Entities.Actors.Actor ob)
+    static void SelectBlakeChaseDir(Entities.Actors.Monster ob)
     {
         if (ob.HasFlag("CHASEDIR"))
-            SelectChaseDir(ob);
+            ob.SelectChaseDir();
         else
-            SelectDodgeDir(ob);
+            ob.SelectDodgeDir();
     }
 
     /// <summary>
     /// Switches between shooting and closing in: shooting lasts 1-2 shots' worth of its count,
     /// closing in 60-119 tics. (Blake Stone uses the same count as the actor's ammo.)
     /// </summary>
-    static void ChangeShootMode(Entities.Actors.Actor ob)
+    internal static void ChangeShootMode(Entities.Actors.Monster ob)
     {
         if (ob.RuntimeFlags.HasFlag(objflags.FL_SHOOTMODE))
         {
@@ -309,7 +309,7 @@ internal partial class Program
     /// closer than its `monster.attackmindist`, and only `monster.attackchance` times in 256
     /// (the liquid alien rising).
     /// </summary>
-    static void DoAttack(Entities.Actors.Actor ob)
+    internal static void DoAttack(Entities.Actors.Monster ob)
     {
         int dx = Math.Abs(ob.TileX - player.TileX), dy = Math.Abs(ob.TileY - player.TileY);
         int dist = Math.Max(Math.Max(dx, dy), 1);
@@ -319,7 +319,7 @@ internal partial class Program
             return;
         if (ob.PropertyInt("monster.attackchance", 256) is var chance and < 256 && US_RndT() >= chance)
             return;
-        NewActorState(ob, dist <= 1 && ob.ResolvedStates.ContainsKey("Melee") ? "Melee" : "Attack");
+        ob.SetState(dist <= 1 && ob.ResolvedStates.ContainsKey("Melee") ? "Melee" : "Attack");
     }
 
     /*
@@ -330,7 +330,7 @@ internal partial class Program
     =============================================================================
     */
 
-    internal static void T_BlakeShoot(Entities.Actors.Actor ob)
+    internal static void T_BlakeShoot(Entities.Actors.Monster ob)
     {
         bool smart = ob.HasFlag("SMART");
         if (smart && ob.Ammo == 0)
@@ -341,7 +341,7 @@ internal partial class Program
         if (!CheckLine(ob))
             return;     // the player is behind a wall
 
-        ShotAtPlayer(ob);
+        ob.ShotAtPlayer();
         PlayActorSound(ob, "attacksound");
 
         if (smart)
@@ -364,7 +364,7 @@ internal partial class Program
     /// <summary>
     /// Why a SMART actor should run (RR_ flags), 0 for chasing; starts or stops it running
     /// </summary>
-    static int CheckRunChase(Entities.Actors.Actor ob)
+    static int CheckRunChase(Entities.Actors.Monster ob)
     {
         int reason = 0;
         if (ob.Ammo == 0)
@@ -396,7 +396,7 @@ internal partial class Program
     /// Which way (in tiles) an actor closing in heads: at the player, or, for a SMART actor that
     /// should be running, at the pickup, door or far corner it's running for
     /// </summary>
-    static void SeekDelta(Entities.Actors.Actor ob, out int deltax, out int deltay)
+    internal static void SeekDelta(Entities.Actors.Monster ob, out int deltax, out int deltay)
     {
         if (ob.HasFlag("SMART") && CheckRunChase(ob) is var whyRun and not 0)
         {
@@ -432,7 +432,7 @@ internal partial class Program
     static readonly byte[] SeekPointX = [32, 63, 32, 1];
     static readonly byte[] SeekPointY = [1, 63, 32, 1];
 
-    static void GetCornerSeek(Entities.Actors.Actor ob)
+    static void GetCornerSeek(Entities.Actors.Monster ob)
     {
         int point = US_RndT() & 3;
         ob.RuntimeFlags &= ~objflags.FL_RUNTOSTATIC;
@@ -445,7 +445,7 @@ internal partial class Program
     /// standing on, or, out of the player's sight and area, simply getting some), false when it
     /// has picked an item or a door to head for (SeekX/SeekY) or has nothing new
     /// </summary>
-    static bool LookForGoodies(Entities.Actors.Actor ob, int reason)
+    static bool LookForGoodies(Entities.Actors.Monster ob, int reason)
     {
         // A scientist that turned mean backs off to a door, then (half the time) attacks
         bool justFindDoor = false;
@@ -582,7 +582,7 @@ internal partial class Program
     /// step at a time, one way round, until it can go on. It stops (nodir) for this tic when
     /// that way's blocked too, and carries on turning next time.
     /// </summary>
-    static void TurningPathDir(Entities.Actors.Actor ob)
+    internal static void TurningPathDir(Entities.Actors.Monster ob)
     {
         var point = _mapManager.PatrolPointAt(ob.TileX, ob.TileY);
         if (point != null)
@@ -612,7 +612,7 @@ internal partial class Program
 
         if (ob.Dir != objdirtypes.nodir)
         {
-            TryWalk(ob);
+            ob.TryWalk();
             ob.TryDir = (byte)objdirtypes.nodir;
         }
     }
@@ -621,7 +621,7 @@ internal partial class Program
     /// A STEPBACK actor that has walked into the player (MoveObj): it heads back to the tile it
     /// was coming from, the way it came, as far as it had already come
     /// </summary>
-    static void StepBack(Entities.Actors.Actor ob)
+    internal static void StepBack(Entities.Actors.Monster ob)
     {
         var (dx, dy) = DirOffset(ob.Dir);
         if (dx == 0 && dy == 0)
@@ -648,7 +648,7 @@ internal partial class Program
     };
 
     /// <summary>Whether TryWalk would get anywhere in the actor's direction, without moving it or opening anything</summary>
-    static bool CanWalk(Entities.Actors.Actor ob)
+    static bool CanWalk(Entities.Actors.Monster ob)
     {
         var (dx, dy) = DirOffset(ob.Dir);
         if (dx == 0 && dy == 0)
@@ -685,7 +685,7 @@ internal partial class Program
     /// goes down: its Wounded state, no longer shootable or in the way, for 5 to 24 seconds.
     /// True when it did.
     /// </summary>
-    static bool WoundActor(Entities.Actors.Actor ob, int oldHitpoints)
+    internal static bool WoundActor(Entities.Actors.Monster ob, int oldHitpoints)
     {
         if (!ob.Properties.ContainsKey("monster.woundstages") || !ob.ResolvedStates.ContainsKey("Wounded"))
             return false;
@@ -695,14 +695,14 @@ internal partial class Program
             return false;
 
         PlayActorSound(ob, "woundsound");
-        NewActorState(ob, "Wounded");
+        ob.SetState("Wounded");
         ob.RuntimeFlags &= ~objflags.FL_SHOOTABLE;
         ob.Temp2 = (short)(5 * 60 + US_RndT() % 20 * 60);
         return true;
     }
 
     /// <summary>The think on a wounded actor's last, held frame: when its time's up and the player isn't on top of it, it gets up (Recover)</summary>
-    internal static void T_Wounded(Entities.Actors.Actor ob)
+    internal static void T_Wounded(Entities.Actors.Monster ob)
     {
         if (ob.Temp2 > tics)
         {
@@ -714,7 +714,7 @@ internal partial class Program
         if (Math.Abs(player.X - ob.X) > MapConstants.TILEGLOBAL || Math.Abs(player.Y - ob.Y) > MapConstants.TILEGLOBAL)
         {
             ob.RuntimeFlags |= objflags.FL_SHOOTABLE;
-            NewActorState(ob, "Recover");
+            ob.SetState("Recover");
         }
     }
 
@@ -723,7 +723,7 @@ internal partial class Program
     /// hand's `weapon.knockback` when the player shot it, else the killer's own `knockback`
     /// (an explosion's), else 0x5000
     /// </summary>
-    static void StartBlowBack(Entities.Actors.Actor ob, Entities.Actors.Actor? killer)
+    internal static void StartBlowBack(Entities.Actors.Monster ob, Entities.Actors.Actor? killer)
     {
         if (killer == null)
             return;
@@ -743,7 +743,7 @@ internal partial class Program
     }
 
     /// <summary>The think on Death frames: the body slides back a step each tic until it's gone its distance or hits something</summary>
-    internal static void T_BlowBack(Entities.Actors.Actor ob)
+    internal static void T_BlowBack(Entities.Actors.Monster ob)
     {
         if (!ob.RuntimeFlags.HasFlag(objflags.FL_SLIDING))
             return;
@@ -764,7 +764,7 @@ internal partial class Program
     }
 
     // Moves an actor unless that would put it into a wall, something solid or a door that isn't open
-    static bool ActorClipMove(Entities.Actors.Actor ob, int dx, int dy)
+    static bool ActorClipMove(Entities.Actors.Monster ob, int dx, int dy)
     {
         int nx = ob.X + dx, ny = ob.Y + dy, size = (int)MINDIST;
         foreach (var (cx, cy) in new[] { (nx - size, ny - size), (nx + size, ny - size), (nx - size, ny + size), (nx + size, ny + size) })
@@ -789,7 +789,7 @@ internal partial class Program
     // Shooting an informant warns the player, the first time and now and then after
     static bool warnedkilledinformant;
 
-    static void WarnKilledInformant(Entities.Actors.Actor ob)
+    internal static void WarnKilledInformant(Entities.Actors.Monster ob)
     {
         if (warnedkilledinformant && US_RndT() >= 25)
             return;
@@ -828,10 +828,10 @@ internal partial class Program
         }
 
         const int MaxAngle = 45 / 2;
-        Entities.Actors.Actor? chosen = null;
+        Entities.Actors.Monster? chosen = null;
         int chosenDist = (int)MINACTORDIST;
 
-        foreach (var ob in _mapManager.GetActors())
+        foreach (var ob in _mapManager.GetActors().OfType<Entities.Actors.Monster>())
         {
             if (ob.IsRemoved || !ob.HasFlag("TALKATIVE")
                 || (ob.RuntimeFlags & (objflags.FL_FRIENDLY | objflags.FL_VISABLE)) != (objflags.FL_FRIENDLY | objflags.FL_VISABLE)
@@ -867,7 +867,7 @@ internal partial class Program
     internal static void ResetInterrogateDelay() => interrogatedelay = 0;
 
     /// <summary>Talks to an actor (TryInterrogate); true for an informant</summary>
-    static bool Interrogate(Entities.Actors.Actor ob)
+    static bool Interrogate(Entities.Actors.Monster ob)
     {
         bool informant = ob.HasFlag("INFORMANT");
         string? said = null;
@@ -934,7 +934,7 @@ internal partial class Program
     /// else one of its general ones. It keeps to the one it picked (SeekX for a room's, SeekY
     /// for a general one; Ammo the room it picked it in).
     /// </summary>
-    static string? InformantHint(Entities.Actors.Actor ob)
+    static string? InformantHint(Entities.Actors.Monster ob)
     {
         var listName = ob.PropertyStrings("talk.hints").FirstOrDefault();
         if (string.IsNullOrEmpty(listName))

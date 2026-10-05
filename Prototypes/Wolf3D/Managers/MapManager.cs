@@ -825,7 +825,7 @@ internal class MapManager
                 && !builtActor.HasFlag("NOTCOUNTED"))
                 Program.gamestate.killtotal++;
 
-            // Points only for the first kill (Program.KillActor clears it)
+            // Points only for the first kill (Monster.Kill clears it)
             if (builtActor.Flags.Contains("POINTSONCE", StringComparer.OrdinalIgnoreCase))
                 builtActor.RuntimeFlags |= objflags.FL_BONUS;
 
@@ -866,7 +866,8 @@ internal class MapManager
                 TakeNeighbourArea(builtActor, tilex, tiley);
             }
 
-            Program.InitSpawnedActor(builtActor, tilex, tiley);
+            if (builtActor is Entities.Actors.Monster monster)
+                Program.InitSpawnedActor(monster, tilex, tiley);
         }
 
         // Treasure (ScoreItem and the 1-up) counts toward the level's treasure ratio; GetBonus
@@ -917,7 +918,7 @@ internal class MapManager
     private static int ReadIntProperty(Entities.Actors.Actor actor, string key, int fallback) =>
         actor.Properties.TryGetValue(key, out var value) ? Convert.ToInt32(value) : fallback;
 
-    // Runtime enemy-to-enemy morph (A_HitlerMorph, Program.EnemyAI.cs): spawns a new enemy
+    // Runtime enemy-to-enemy morph (A_HitlerMorph, Monster.HitlerMorph): spawns a new enemy
     // already in its Chase state at the dying source actor's exact position/facing, rather
     // than going through the tile/mapdefs-driven SpawnThing path.
     internal Entities.Actors.Actor? SpawnMorphedEnemy(string className, Entities.Actors.Actor source)
@@ -1058,12 +1059,12 @@ internal class MapManager
 
     /// <summary>True if a living (FL_SHOOTABLE) actor occupies the tile -- corpses don't count.</summary>
     /// <summary>The living (FL_SHOOTABLE) actors on a tile</summary>
-    internal IEnumerable<Entities.Actors.Actor> ShootableActorsAt(int tilex, int tiley) =>
-        _actors.Where(a => !a.IsRemoved && a.TileX == tilex && a.TileY == tiley && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
+    internal IEnumerable<Entities.Actors.Monster> ShootableActorsAt(int tilex, int tiley) =>
+        _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && a.TileX == tilex && a.TileY == tiley && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
 
     /// <summary>The living (FL_SHOOTABLE) actors within <paramref name="reach"/> (global units, each way) of a point, nearest first</summary>
-    internal IEnumerable<Entities.Actors.Actor> ShootableActorsNear(int x, int y, long reach) =>
-        _actors.Where(a => !a.IsRemoved && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)
+    internal IEnumerable<Entities.Actors.Monster> ShootableActorsNear(int x, int y, long reach) =>
+        _actors.OfType<Entities.Actors.Monster>().Where(a => !a.IsRemoved && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)
                 && Math.Abs((long)a.X - x) <= reach && Math.Abs((long)a.Y - y) <= reach)
             .OrderBy(a => Math.Max(Math.Abs((long)a.X - x), Math.Abs((long)a.Y - y)));
 

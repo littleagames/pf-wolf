@@ -80,19 +80,19 @@ internal partial class Program
                     _mapManager.actorat[x, y] = null;
                 _mapManager.MarkForRemoval(thing);
             }
-            else if (thing.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
+            else if (thing is Entities.Actors.Monster monster && monster.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
             {
                 if (switched?.Equals("kill", StringComparison.OrdinalIgnoreCase) == true)
                 {
-                    thing.Hitpoints = 0;
-                    KillActor(thing);
+                    monster.Hitpoints = 0;
+                    monster.Kill();
                 }
                 else
                 {
-                    if (thing.Active == activetypes.ac_no)
-                        thing.Active = activetypes.ac_yes;
-                    if (!thing.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
-                        FirstSighting(thing);
+                    if (monster.Active == activetypes.ac_no)
+                        monster.Active = activetypes.ac_yes;
+                    if (!monster.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
+                        monster.FirstSighting();
                 }
             }
             return true;
@@ -117,7 +117,7 @@ internal partial class Program
     }
 
     /// <summary>A dying actor's floors actor-code work: what it carried, and the tile its death switches</summary>
-    static void CarriedDeathWork(Entities.Actors.Actor ob, int tilex, int tiley)
+    internal static void CarriedDeathWork(Entities.Actors.Actor ob, int tilex, int tiley)
     {
         foreach (var carried in ob.CarriedDrops)
             PlaceItemType(carried, tilex, tiley);

@@ -6,6 +6,7 @@
 
 # MAP05. Stands, chases, and fires volleys like Hans.
 TransGrosse:
+  parent: Monster
   flags: [AMBUSH]
   states:
     Spawn: # s_transstand
@@ -104,6 +105,7 @@ TransGrosse:
 
 # MAP16. Chases like Trans Grosse; its volley also hurts at point-blank range (T_UShoot).
 Ubermutant:
+  parent: Monster
   flags: [AMBUSH]
   states:
     Spawn: # s_uberstand
@@ -200,6 +202,7 @@ Ubermutant:
 
 # MAP10. Dodges and backs off (T_Will); opens each volley with a rocket.
 Wilhelm:
+  parent: Monster
   flags: [AMBUSH]
   states:
     Spawn: # s_willstand
@@ -292,6 +295,7 @@ Wilhelm:
 # MAP18. Dodges and backs off (T_Will); each volley fires two rockets angled either side of
 # the player, each with a burst from its guns.
 DeathKnight:
+  parent: Monster
   flags: [AMBUSH]
   states:
     Spawn: # s_deathstand
@@ -389,6 +393,7 @@ DeathKnight:
 # MAP21. Dodges and backs off (T_Will); fires sparks until it tires after three, then catches
 # its breath. Its death wins the game.
 AngelOfDeath:
+  parent: Monster
   flags: [AMBUSH]
   states:
     Spawn: # s_angelstand
@@ -513,6 +518,7 @@ AngelOfDeath:
 # then come back once nothing is in the way. Points only for the first kill. They drift
 # through doors without opening them (PHASEDOORS) and hurt the player on contact (TOUCHDAMAGE).
 Spectre:
+  parent: Monster
   flags: [AMBUSH, POINTSONCE, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn: # s_spectrewait1..4

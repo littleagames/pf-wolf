@@ -202,7 +202,7 @@ internal partial class Program
             if (playerBody?.ResolvedStates.ContainsKey("Spawn") != true)
                 playerBody = null;
             else
-                NewActorState(playerBody, "Spawn");
+                playerBody.SetState("Spawn");
         }
 
         if (playerBody == null)
@@ -213,7 +213,7 @@ internal partial class Program
 
         var want = moving && playerBody.ResolvedStates.ContainsKey("See") ? "See" : "Spawn";
         if (!InStateGroup(playerBody, want))
-            NewActorState(playerBody, want);
+            playerBody.SetState(want);
 
         playerBody.X = pawn.X;
         playerBody.Y = pawn.Y;

@@ -59,6 +59,7 @@ ElectroShot:
 # tile; one shot pops them. Things go through them, and they don't go through doors.
 # -----------------------------------------------------------------------
 ElectroSphere:
+  parent: Monster
   flags: [NOTSOLID, NODOORS, bright]
   properties:
     "tag": "$BS_ELECTROSPHERE"
@@ -152,6 +153,7 @@ LiquidShot:
 # rapid assault weapon or better hurts it, and it hangs overhead, out of the way.
 # -----------------------------------------------------------------------
 HangingTurret:
+  parent: Monster
   flags: [NOTSOLID]
   properties:
     "tag": "$BS_TURRET"
@@ -287,6 +289,7 @@ VolatileTransportFixed:
 # blowing up, it says how many are left and hurts everything near.
 # -----------------------------------------------------------------------
 ProjectionGenerator:
+  parent: Monster
   flags: [STATIONARY, bright]
   properties:
     "tag": "$BS_GENERATOR"
@@ -323,6 +326,7 @@ ProjectionGenerator:
 
 # A security light: flashes once there's trouble where Blake can hear it
 SecurityLight:
+  parent: Monster
   states:
     Spawn:
       - { sprite: SECL, frames: [A], tics-per-frame: -1, think: T_SecurityLight }
@@ -332,6 +336,7 @@ SecurityLight:
 
 # A floor grate (and a wall pipe) that lets off steam now and then while Blake can see it
 SteamGrate:
+  parent: Monster
   states:
     Spawn:
       - { sprite: GRAT, frames: [A], tics-per-frame: -1, think: T_SteamVent }
@@ -341,6 +346,7 @@ SteamGrate:
       - { sprite: GRAT, frames: [E], tics-per-frame: 16, next-state: Spawn }
 
 SteamVentPipe:
+  parent: Monster
   states:
     Spawn:
       - { sprite: ALCL, frames: [A], tics-per-frame: -1, think: T_SteamVent }

@@ -3,6 +3,7 @@
 # with eighteen things it can hide (bstone's ExpCrateShapes), one class for each; their map
 # numbers (432-485) are in mapdefs/blake/crates.yaml. Not counted as enemies.
 BlakeCrate:
+  parent: Monster
   flags: [NOTCOUNTED, STATIONARY]
   properties:
     "health": 1

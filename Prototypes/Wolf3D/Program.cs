@@ -18,12 +18,12 @@ internal partial class Program
     private static VideoManager _videoManager;
     private static AudioManager _audioManager;
     private static InputManager _inputManager;
-    private static GameEngineManager _gameEngineManager;
+    internal static GameEngineManager _gameEngineManager;
     private static GraphicManager _graphicManager;
     private static FontManager _fontManager;
-    private static MapManager _mapManager;
+    internal static MapManager _mapManager;
     private static AssetManager _assetManager;
-    private static InventoryManager _inventoryManager;
+    internal static InventoryManager _inventoryManager;
     private static ConsoleManager _consoleManager;
     private static AutomapManager _automapManager;
     private static HudMessageManager _hudMessageManager;
@@ -162,6 +162,7 @@ internal partial class Program
             Environment.Exit(1);
         }
         RegisterActorActions();
+        Entities.Actors.Monster.CheckClasses(_assetManager.GetActorMetadata());
         RegisterConsoleCommands();
 
         //CheckParameters(args); // Remove

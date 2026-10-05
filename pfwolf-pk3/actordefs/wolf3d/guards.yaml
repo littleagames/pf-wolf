@@ -70,6 +70,7 @@
 # Guard (classtypes.guardobj / enemytypes.en_guard)
 # -----------------------------------------------------------------------
 Guard:
+  parent: Monster
   states:
     Spawn: # s_grdstand / T_Stand
       - sprite: GARD
@@ -176,6 +177,7 @@ Guard:
 # Officer (classtypes.officerobj / enemytypes.en_officer)
 # -----------------------------------------------------------------------
 Officer:
+  parent: Monster
   states:
     Spawn: # s_ofcstand / T_Stand
       - sprite: OFFI
@@ -283,6 +285,7 @@ Officer:
 # SS (classtypes.ssobj / enemytypes.en_ss)
 # -----------------------------------------------------------------------
 SS:
+  parent: Monster
   states:
     # SS has a dedicated standing pose (SSWVW1..W8) distinct from its first
     # walk frame (SSWVA1..A8) -- unlike Guard/Officer/Mutant, whose Spawn
@@ -425,6 +428,7 @@ SS:
 # Mutant (classtypes.mutantobj / enemytypes.en_mutant)
 # -----------------------------------------------------------------------
 Mutant:
+  parent: Monster
   states:
     Spawn: # s_mutstand / T_Stand
       - sprite: MTNT
@@ -545,6 +549,7 @@ Mutant:
 # group is still defined here since the engine requires one to exist.
 # -----------------------------------------------------------------------
 Dog:
+  parent: Monster
   states:
     Spawn: # reuses the first Path frame; dogs have no dedicated stand pose
       - sprite: DOGY

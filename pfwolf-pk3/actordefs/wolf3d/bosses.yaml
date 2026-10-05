@@ -54,6 +54,7 @@
 # Hans Grosse (classtypes.bossobj / enemytypes.en_boss)
 # -----------------------------------------------------------------------
 Hans:
+  parent: Monster
   flags: [AMBUSH]
   states:
     Spawn: # s_bossstand / T_Stand
@@ -154,6 +155,7 @@ Hans:
 # Gretel Grosse (classtypes.gretelobj / enemytypes.en_gretel)
 # -----------------------------------------------------------------------
 Gretel:
+  parent: Monster
   flags: [AMBUSH]
   states:
     Spawn: # s_gretelstand / T_Stand
@@ -253,6 +255,7 @@ Gretel:
 # and throws a Needle projectile rather than shooting.
 # -----------------------------------------------------------------------
 Schabbs:
+  parent: Monster
   flags: [AMBUSH]
   states:
     Spawn: # s_schabbstand / T_Stand
@@ -345,6 +348,7 @@ Schabbs:
 # Same dodge/retreat pattern as Schabbs (T_Gift), but throws a Rocket.
 # -----------------------------------------------------------------------
 Gift:
+  parent: Monster
   flags: [AMBUSH]
   states:
     Spawn: # s_giftstand / T_Stand
@@ -435,6 +439,7 @@ Gift:
 # regular shot (T_Shoot) later in the same attack.
 # -----------------------------------------------------------------------
 Fat:
+  parent: Monster
   flags: [AMBUSH]
   states:
     Spawn: # s_fatstand / T_Stand
@@ -541,6 +546,7 @@ Fat:
 # gun, and dodges rather than chasing directly (T_Fake).
 # -----------------------------------------------------------------------
 FakeHitler:
+  parent: Monster
   flags: [AMBUSH]
   states:
     Spawn: # s_fakestand / T_Stand
@@ -653,6 +659,7 @@ FakeHitler:
 # dying outright.
 # -----------------------------------------------------------------------
 MechaHitler:
+  parent: Monster
   flags: [AMBUSH]
   states:
     Spawn: # s_mechastand / T_Stand
@@ -754,6 +761,7 @@ MechaHitler:
 # array in A_HitlerMorph, not from `starthitpoints`.
 # -----------------------------------------------------------------------
 RealHitler:
+  parent: Monster
   flags: [AMBUSH]
   states:
     # Only present so the actor initializes cleanly; A_HitlerMorph spawns

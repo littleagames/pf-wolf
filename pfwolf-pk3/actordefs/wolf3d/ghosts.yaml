@@ -16,6 +16,7 @@
 # =============================================================================
 
 Blinky:
+  parent: Monster
   flags: [AMBUSH, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn:
@@ -35,6 +36,7 @@ Blinky:
     "deathsound": "ghost/death"
 
 Inky:
+  parent: Monster
   flags: [AMBUSH, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn:
@@ -54,6 +56,7 @@ Inky:
     "deathsound": "ghost/death"
 
 Pinky:
+  parent: Monster
   flags: [AMBUSH, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn:
@@ -73,6 +76,7 @@ Pinky:
     "deathsound": "ghost/death"
 
 Clyde:
+  parent: Monster
   flags: [AMBUSH, PHASEDOORS, TOUCHDAMAGE]
   states:
     Spawn:

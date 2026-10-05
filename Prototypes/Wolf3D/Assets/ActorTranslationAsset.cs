@@ -87,7 +87,7 @@ internal class ActorMetadata
 
     internal Entities.Actors.Actor CreateActor(string name, ActorData actor)
     {
-        var actorType = Type.GetType($"Entities.Actors.{name}");
+        var actorType = Type.GetType($"Wolf3D.Entities.Actors.{name}");
         if (!string.IsNullOrWhiteSpace(actor.Parent))
         {
             if (!Actors.TryGetValue(actor.Parent, out var parentActor))
@@ -148,7 +148,7 @@ internal class ActorMetadata
         }
 
         // TODO: Eventually they will move into the pk3 scripts folder
-        if (actorType == null || !typeof(Entities.Actors.Actor).IsAssignableFrom(actorType))
+        if (actorType == null || actorType.IsAbstract || !typeof(Entities.Actors.Actor).IsAssignableFrom(actorType))
         {
             actorType = typeof(Entities.Actors.Actor); // Default to base Actor if type not found
         }

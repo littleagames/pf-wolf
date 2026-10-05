@@ -7,6 +7,7 @@
 # What they all share: patrollers turn aside when blocked, none open a door needing a card, and
 # one that walks into Blake turns back
 BlakeEnemy:
+  parent: Monster
   flags: [PATROLTURNS, NOLOCKEDDOORS, STEPBACK]
   properties:
     "speed": 512

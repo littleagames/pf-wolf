@@ -1,4 +1,4 @@
-﻿using SDL2;
+using SDL2;
 using System.Runtime.InteropServices;
 using Wolf3D.Assets;
 using Wolf3D.Constants;
@@ -1990,7 +1990,7 @@ internal partial class Program
     }
 
     // Computes an actor's screen-space hit-testing/scale data (ViewX/TransX/ViewHeight) from
-    // the fixed-point X/Y that Program.EnemyAI.cs's movement code maintains, so enemies,
+    // the fixed-point X/Y that Monster's movement code maintains, so enemies,
     // projectiles and the BJ-victory actor can be both rendered and (enemies) shot at.
     internal static void TransformActor(Entities.Actors.Actor ob) =>
         TransformActorFrom(ob, viewx, viewy, viewsin, viewcos);
@@ -2100,7 +2100,7 @@ internal partial class Program
             if (actor.CurrentState.Sprite == "TNT1" && actor is not Inventory)
                 continue;
 
-            // Enemies (Program.EnemyAI.cs) move between tiles and need 8-way rotation, so
+            // Enemies (Entities.Actors.Monster) move between tiles and need 8-way rotation, so
             // they're transformed like legacy "active objects" (TransformActor/CalcRotate,
             // fixed-point X/Y, checked against all 9 surrounding spotvis tiles) instead of
             // the tile-snapped, always-front-facing path decorations/pickups use below.

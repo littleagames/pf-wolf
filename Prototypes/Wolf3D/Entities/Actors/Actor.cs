@@ -57,7 +57,7 @@ internal record Actor : Thinker
     // unlinks the actor once its tic finishes, since removing it mid-walk would break the iteration.
     public bool IsRemoved { get; internal set; }
 
-    // For a projectile: the actor that fired it (Program.EnemyAI.cs's ThrowProjectile), so a
+    // For a projectile: the actor that fired it (Monster.ThrowProjectile), so a
     // death by it is put down to the shooter (Died's obituary). Not kept in saved games.
     public Actor? Shooter { get; internal set; }
 
@@ -151,6 +151,13 @@ internal record Actor : Thinker
         ArmState(frame);
         if (frame.TicTime == 0 && !_advancingFrames)
             AdvanceFrames();
+    }
+
+    /// <summary>Enters the named state (as <see cref="SetState(ActorStateFrame)"/>); nothing happens when it has none by that name.</summary>
+    internal void SetState(string stateName)
+    {
+        if (ResolvedStates.TryGetValue(stateName, out var state))
+            SetState(state);
     }
 
     /// <summary>

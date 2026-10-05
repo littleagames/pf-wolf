@@ -124,12 +124,12 @@ internal partial class Program
         ob.TileX = (byte)(ob.X >> MapConstants.TILESHIFT);
         ob.TileY = (byte)(ob.Y >> MapConstants.TILESHIFT);
 
-        Entities.Actors.Actor? victim = null;
+        Entities.Actors.Monster? victim = null;
         bool blocked = !ProjectileTryMove(ob);
         if (!blocked)
         {
             victim = _mapManager.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE / 2)
-                .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter) && a is not Entities.Actors.PlayerPawn);
+                .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter));
             if (victim == null)
                 return;
         }
@@ -140,7 +140,7 @@ internal partial class Program
             int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
             int damage = max > min ? min + US_RndT() * (max - min + 1) / 256 : min;
             if (damage > 0)
-                DamageActor(victim, PlayerDamage(damage), ob);
+                victim.Damage(PlayerDamage(damage), ob);
         }
 
         Detonate(ob);
@@ -156,7 +156,7 @@ internal partial class Program
         }
         if (ob.Properties.TryGetValue("deathsound", out var sound) && sound is string name)
             PlaySoundLocActor(name, ob);
-        NewActorState(ob, "Death");
+        ob.SetState("Death");
     }
 
     /// <summary>
@@ -186,8 +186,8 @@ internal partial class Program
             var (x, y) = open.Dequeue();
 
             foreach (var target in _mapManager.ShootableActorsAt(x, y).ToList())
-                if (!ReferenceEquals(target, ob) && target is not Entities.Actors.PlayerPawn)
-                    DamageActor(target, ReferenceEquals(ob.Shooter, player) ? PlayerDamage(damage) : (uint)damage, ob);
+                if (!ReferenceEquals(target, ob))
+                    target.Damage(ReferenceEquals(ob.Shooter, player) ? PlayerDamage(damage) : (uint)damage, ob);
 
             if (hurtPlayer && player.TileX == x && player.TileY == y)
                 TakeDamage(damage, ob);
@@ -197,7 +197,7 @@ internal partial class Program
             foreach (var target in _mapManager.GetActors().Where(a => !a.IsRemoved && a.TileX == x && a.TileY == y
                 && a.Properties.TryGetValue("monster.blastedby", out var by) && string.Equals(by?.ToString(), ob.Name, StringComparison.OrdinalIgnoreCase)
                 && a.CurrentState?.StateName != "Death").ToList())
-                NewActorState(target, "Death");
+                target.SetState("Death");
 
             foreach (var (dx, dy) in new[] { (1, 0), (-1, 0), (0, 1), (0, -1) })
             {

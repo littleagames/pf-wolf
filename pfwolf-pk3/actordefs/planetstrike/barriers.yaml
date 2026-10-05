@@ -82,6 +82,7 @@ PostBarrierOff:
 
 # --- V-spikes: up (H) blocks; switched, they sink (Inactive) or rise (Active)
 VSpikeBarrier:
+  parent: Monster
   radius: 32
   flags: [SOLID]
   states:
@@ -183,6 +184,7 @@ VSpikeCycle:
 
 # --- V-posts: the same, as posts
 VPostBarrier:
+  parent: Monster
   radius: 32
   flags: [SOLID]
   states:

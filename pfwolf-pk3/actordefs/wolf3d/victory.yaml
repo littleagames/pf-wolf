@@ -10,6 +10,7 @@
 # =============================================================================
 
 BJVictory:
+  parent: Monster
   states:
     Spawn: # s_bjrun1 .. s_bjrun4; the group loops back to its first frame
       - sprite: BLAZ
