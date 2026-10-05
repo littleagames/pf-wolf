@@ -273,12 +273,14 @@ internal sealed class NetSession : IDisposable
         }
         _gathering.Clear();
         _bundles.Clear();
+        _forgottenBefore = 0;
     }
 
     /// <summary>Forgets steps from levels before <paramref name="level"/> (a new level has begun)</summary>
     public void ForgetBefore(int level)
     {
         long first = Key(level, 0);
+        _forgottenBefore = Math.Max(_forgottenBefore, first);
         foreach (var key in _gathering.Keys.Where(k => k < first).ToList())
             _gathering.Remove(key);
         foreach (var key in _bundles.Keys.Where(k => k < first).ToList())
@@ -287,7 +289,14 @@ internal sealed class NetSession : IDisposable
             _ownSums.Remove(key);
         foreach (var key in _theirSums.Keys.Where(k => k < first).ToList())
             _theirSums.Remove(key);
+        if (IsHost)
+            SendReadySteps();       // the new level's steps may have been waiting behind them
     }
+
+    // Steps before this (levels already left) are over: anything still coming for them, such as
+    // the controls everyone sent ahead for steps the level ended before, is dropped. Kept, a
+    // step gathered from what arrives late would never fill, and hold up every step after it
+    private long _forgottenBefore;
 
     /// <summary>This machine's player's controls for a step</summary>
     public void SubmitLocal(int level, int step, in Entities.TicCmd cmd)
@@ -307,6 +316,9 @@ internal sealed class NetSession : IDisposable
     /// <summary>Everyone's controls for a step, once they're here (taking them); null until then</summary>
     public TicBundle? TryTake(int level, int step) =>
         _bundles.Remove(Key(level, step), out var bundle) ? bundle : null;
+
+    /// <summary>Whether everyone's controls for a step are here, to be taken</summary>
+    public bool HasBundle(int level, int step) => _bundles.ContainsKey(Key(level, step));
 
     /// <summary>The names of the players a step is still waiting on (for the "waiting for" message)</summary>
     public List<string> WaitingFor(int level, int step)
@@ -370,6 +382,8 @@ internal sealed class NetSession : IDisposable
         if (index < 0 || index >= PlayerCount)
             return;
         var key = Key(level, step);
+        if (key < _forgottenBefore)
+            return;
         if (!_gathering.TryGetValue(key, out var cmds) || cmds.Length < PlayerCount)
         {
             var grown = new Entities.TicCmd?[PlayerCount];
@@ -594,6 +608,8 @@ internal sealed class NetSession : IDisposable
                 if (index < 0)
                     break;
                 var key = Key(level, step);
+                if (key < _forgottenBefore)
+                    break;      // (a level this machine has left: never to be compared)
                 if (_ownSums.TryGetValue(key, out var ours))
                     CompareSum(index, level, step, ours, sum);
                 else
@@ -637,7 +653,8 @@ internal sealed class NetSession : IDisposable
 
             case NetMessage.Tics:
                 var bundle = TicBundle.Read(reader);
-                _bundles[Key(bundle.Level, bundle.Step)] = bundle;
+                if (Key(bundle.Level, bundle.Step) >= _forgottenBefore)
+                    _bundles[Key(bundle.Level, bundle.Step)] = bundle;
                 break;
 
             case NetMessage.Notice:

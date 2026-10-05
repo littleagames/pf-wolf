@@ -105,10 +105,12 @@ internal partial class Program
             if (Environment.TickCount64 - waitStart > 500)
             {
                 var waiting = $"Waiting for {string.Join(", ", session.WaitingFor(netlevel, netstep))}...";
-                if (waiting != netWaiting)
+                if (waiting != netWaiting && !session.HasBundle(netlevel, netstep))
                 {
                     netWaiting = waiting;
                     ThreeDRefresh();
+                    if (_videoManager.screenfaded)
+                        _videoManager.FadeIn();     // a level's first frame: others are still on the intermission
                 }
                 _inputManager.ProcessEvents();
                 if (_inputManager.IsKeyDown(ScanCodes.sc_Escape))
