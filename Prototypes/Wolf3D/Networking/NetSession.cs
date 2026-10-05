@@ -233,21 +233,44 @@ internal sealed class NetSession : IDisposable
     private readonly Dictionary<long, uint> _ownSums = [];                   // host: its own checksums
     private readonly Dictionary<long, Dictionary<int, uint>> _theirSums = [];   // host: others', waiting for its own
     private readonly HashSet<int> _outOfSync = [];
-    private bool[] _present = [];
+
+    // By player index: still in the game, and (host) the first step their controls are needed
+    // for (a player joining mid-game sends theirs from the step after they come in)
+    private readonly List<bool> _present = [];
+    private readonly List<long> _neededFrom = [];
+    private readonly Dictionary<int, int> _indexOfSlot = [];
+
+    // Host: players who've left, for the next bundle to say; players joining, for the next
+    // bundle to bring in; and whom to send the game to once they're in
+    private byte _leaving;
+    private readonly Queue<NetJoin> _joining = new();
+    private readonly Dictionary<int, NetPeer> _joinPeers = [];
+
+    /// <summary>A player joining mid-game: the game as it stands, from the host; null until it comes</summary>
+    public JoinStateInfo? JoinState { get; private set; }
 
     /// <summary>Lines to show while playing (someone left, someone is out of sync), oldest first; taken by the game</summary>
     public Queue<string> Notices { get; } = new();
 
-    /// <summary>The game's players, by index (in Started.Players order)</summary>
+    /// <summary>The game's players, by index (in Started.Players order, with anyone who joined since)</summary>
     public int PlayerCount => Started?.Players.Count ?? 0;
 
     /// <summary>This machine's player's index</summary>
-    public int LocalIndex => Started?.Players.FindIndex(p => p.Slot == LocalSlot) ?? -1;
+    public int LocalIndex => _indexOfSlot.TryGetValue(LocalSlot, out var index) ? index
+        : Started?.Players.FindLastIndex(p => p.Slot == LocalSlot) ?? -1;
 
-    /// <summary>Sets up for playing the game started (BeginNetGame)</summary>
+    /// <summary>Sets up for playing the game started (BeginNetGame), or joined (BeginJoinedGame)</summary>
     public void BeginPlaying()
     {
-        _present = Enumerable.Repeat(true, PlayerCount).ToArray();
+        _present.Clear();
+        _neededFrom.Clear();
+        _indexOfSlot.Clear();
+        for (int i = 0; i < PlayerCount; i++)
+        {
+            _present.Add(true);
+            _neededFrom.Add(0);
+            _indexOfSlot[Started!.Players[i].Slot] = i;     // the latest to have the slot
+        }
         _gathering.Clear();
         _bundles.Clear();
     }
@@ -290,9 +313,10 @@ internal sealed class NetSession : IDisposable
     {
         if (!IsHost)
             return [Started?.Players.FirstOrDefault(p => p.Slot == 0)?.Name ?? "the host"];
-        _gathering.TryGetValue(Key(level, step), out var cmds);
+        var key = Key(level, step);
+        _gathering.TryGetValue(key, out var cmds);
         return Enumerable.Range(0, PlayerCount)
-            .Where(i => _present[i] && (cmds == null || cmds[i] == null))
+            .Where(i => Needed(i, key) && (cmds == null || i >= cmds.Length || cmds[i] == null))
             .Select(i => Started!.Players[i].Name)
             .ToList();
     }
@@ -321,14 +345,37 @@ internal sealed class NetSession : IDisposable
         }
     }
 
+    /// <summary>
+    /// Host: sends a player who has just joined the game as it stands after the step they came
+    /// in at (Program.NetJoin.cs), so they can play on from the next
+    /// </summary>
+    public void SendJoinState(int index, int level, int step, byte[] state)
+    {
+        if (!IsHost || Started == null || !_joinPeers.Remove(index, out var peer))
+            return;
+        var w = NetProtocol.Message(NetMessage.JoinState);
+        Started.Write(w);
+        w.Put(level);
+        w.Put(step);
+        w.Put(state);          // last, as it is: its length can be over 64K, more than PutBytesWithLength holds
+        peer.Send(w, DeliveryMethod.ReliableOrdered);
+    }
+
+    // Host: whether a player's controls are needed for a step
+    private bool Needed(int index, long key) => index < _present.Count && _present[index] && key >= _neededFrom[index];
+
     // Host: a player's controls for a step; once everyone still in has sent theirs, out they go
     private void Gather(int level, int step, int index, in Entities.TicCmd cmd)
     {
         if (index < 0 || index >= PlayerCount)
             return;
         var key = Key(level, step);
-        if (!_gathering.TryGetValue(key, out var cmds))
-            _gathering[key] = cmds = new Entities.TicCmd?[PlayerCount];
+        if (!_gathering.TryGetValue(key, out var cmds) || cmds.Length < PlayerCount)
+        {
+            var grown = new Entities.TicCmd?[PlayerCount];
+            cmds?.CopyTo(grown, 0);
+            _gathering[key] = cmds = grown;
+        }
         cmds[index] = cmd;
         SendReadySteps();
     }
@@ -339,16 +386,23 @@ internal sealed class NetSession : IDisposable
         foreach (var key in _gathering.Keys.OrderBy(k => k).ToList())
         {
             var cmds = _gathering[key];
-            if (Enumerable.Range(0, PlayerCount).Any(i => _present[i] && cmds[i] == null))
+            if (Enumerable.Range(0, PlayerCount).Any(i => Needed(i, key) && (i >= cmds.Length || cmds[i] == null)))
                 return;     // not yet: nor any after it, which have to go out after it
 
-            byte present = 0;
-            for (int i = 0; i < PlayerCount; i++)
-                if (_present[i])
-                    present |= (byte)(1 << i);
+            // Anyone joining comes in at this step, and plays from the next
+            NetJoin? join = null;
+            if (_joining.TryDequeue(out var joining))
+            {
+                join = joining;
+                _neededFrom[joining.Index] = key + 1;
+            }
 
-            var bundle = new TicBundle((int)(key >> 32), (int)(uint)key, present,
-                cmds.Select(c => TicCmdCodec.RoundTrip(c ?? default)).ToArray());
+            var all = new Entities.TicCmd[PlayerCount];
+            for (int i = 0; i < all.Length; i++)
+                all[i] = TicCmdCodec.RoundTrip(i < cmds.Length && Needed(i, key) ? cmds[i] ?? default : default);
+
+            var bundle = new TicBundle((int)(key >> 32), (int)(uint)key, _leaving, join, all);
+            _leaving = 0;
             _gathering.Remove(key);
             _bundles[key] = bundle;
 
@@ -357,7 +411,6 @@ internal sealed class NetSession : IDisposable
             _net.SendToAll(w, DeliveryMethod.ReliableOrdered);
         }
     }
-
     /// <summary>Host: how many of the others' checksums have been compared with its own, and how many matched</summary>
     public int SumsCompared { get; private set; }
     public int SumsMatched { get; private set; }
@@ -387,12 +440,11 @@ internal sealed class NetSession : IDisposable
     // Host: a player has gone mid-game; the game goes on without them
     private void PlayerGone(int slot)
     {
-        if (Started == null)
-            return;
-        int index = Started.Players.FindIndex(p => p.Slot == slot);
-        if (index < 0 || !_present[index])
+        if (Started == null || !_indexOfSlot.Remove(slot, out var index) || !_present[index])
             return;
         _present[index] = false;
+        _leaving |= (byte)(1 << index);     // the next step out says so
+        _joinPeers.Remove(index);
         Announce($"{Started.Players[index].Name} left the game");
         SendReadySteps();       // steps waiting only on them can go
     }
@@ -416,8 +468,8 @@ internal sealed class NetSession : IDisposable
             hello == null ? "That isn't a PFWolf game."
             : hello.Version != NetProtocol.Version ? $"The host plays network version {NetProtocol.Version}; you play {hello.Version}."
             : _identity.Mismatch(hello.Identity)
-            ?? (Started != null ? "The game has already started."
-            : Players.Count >= _maxPlayers ? $"The game is full ({_maxPlayers} players)."
+            ?? (Players.Count >= _maxPlayers ? $"The game is full ({_maxPlayers} players)."
+            : Started != null && PlayerCount >= MaxIndices ? "No more players can join this game."
             : null);
 
         if (refusal != null)
@@ -444,7 +496,23 @@ internal sealed class NetSession : IDisposable
         peer.Send(w, DeliveryMethod.ReliableOrdered);
         Note($"{NameOf(slot)} joined");
         SendLobby();
+
+        // Mid-game: they come in at the next step to go out, as the next player index
+        if (Started != null && Players.FirstOrDefault(p => p.Slot == slot) is { } joiner)
+        {
+            int index = PlayerCount;
+            Started = Started with { Players = [.. Started.Players, joiner with { Ready = true }] };
+            _present.Add(true);
+            _neededFrom.Add(long.MaxValue);     // until their step is set
+            _indexOfSlot[slot] = index;
+            _joinPeers[index] = peer;
+            _joining.Enqueue(new NetJoin(index, joiner.Name, joiner.PlayerClass));
+            Announce($"{joiner.Name} is joining the game");
+        }
     }
+
+    /// <summary>The most players a game can have had, counting those who've left (the bundles' bit masks hold 8)</summary>
+    private const int MaxIndices = 8;
 
     private void OnPeerDisconnected(NetPeer peer, DisconnectInfo info)
     {
@@ -514,7 +582,7 @@ internal sealed class NetSession : IDisposable
             case NetMessage.Cmd when Started != null:
             {
                 int level = reader.GetInt(), step = reader.GetInt();
-                Gather(level, step, Started.Players.FindIndex(p => p.Slot == slot), TicCmdCodec.Read(reader));
+                Gather(level, step, _indexOfSlot.GetValueOrDefault(slot, -1), TicCmdCodec.Read(reader));
                 break;
             }
 
@@ -522,7 +590,9 @@ internal sealed class NetSession : IDisposable
             {
                 int level = reader.GetInt(), step = reader.GetInt();
                 uint sum = reader.GetUInt();
-                int index = Started.Players.FindIndex(p => p.Slot == slot);
+                int index = _indexOfSlot.GetValueOrDefault(slot, -1);
+                if (index < 0)
+                    break;
                 var key = Key(level, step);
                 if (_ownSums.TryGetValue(key, out var ours))
                     CompareSum(index, level, step, ours, sum);
@@ -554,7 +624,10 @@ internal sealed class NetSession : IDisposable
 
             case NetMessage.Chat:
                 int slot = reader.GetByte();
-                Note($"{NameOf(slot)}: {reader.GetString()}");
+                var said = $"{NameOf(slot)}: {reader.GetString()}";
+                Note(said);
+                if (Started != null)
+                    Notices.Enqueue(said);      // over the view, mid-game
                 break;
 
             case NetMessage.StartGame:
@@ -570,6 +643,16 @@ internal sealed class NetSession : IDisposable
             case NetMessage.Notice:
                 Notices.Enqueue(reader.GetString());
                 break;
+
+            case NetMessage.JoinState:
+            {
+                var start = StartGameInfo.Read(reader);
+                int level = reader.GetInt(), step = reader.GetInt();
+                JoinState = new JoinStateInfo(start, level, step, reader.GetRemainingBytes());
+                Started = start;
+                Changed();
+                break;
+            }
         }
     }
 
@@ -625,6 +708,8 @@ internal sealed class NetSession : IDisposable
     private void Relay(int slot, string text)
     {
         Note($"{NameOf(slot)}: {text}");
+        if (Started != null)
+            Notices.Enqueue($"{NameOf(slot)}: {text}");     // over the view, mid-game
         var w = NetProtocol.Message(NetMessage.Chat);
         w.Put((byte)slot);
         w.Put(text);

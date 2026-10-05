@@ -390,6 +390,16 @@ internal record Monster : Actor
         set => _target = value;
     }
 
+    /// <summary>
+    /// The player it's set on going after, as it stands (without picking one, as Target does),
+    /// by player number; -1 for none. For a player joining mid-game (Program.NetJoin.cs).
+    /// </summary>
+    internal int TargetNumber
+    {
+        get => _target is { } t && ReferenceEquals(t.State.Pawn, t) ? t.State.Number : -1;
+        set => _target = value >= 0 && value < players.Count ? players[value].Pawn : null;
+    }
+
     // The nearest player it could go after (in tiles, either way; the first in player order of
     // those as near), or null if there's none
     private PlayerPawn? NearestTarget()
@@ -749,6 +759,8 @@ internal record Monster : Actor
         _mapManager.UnmarkActorTile(TileX, TileY);
 
         AwardKillPoints();
+        if (attacker is PlayerPawn killer)
+            killer.State.Kills++;       // for the scoreboard, with others
         SetState("Death");
         OnKilled(attacker);
 

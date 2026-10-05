@@ -176,6 +176,14 @@ internal class InventoryManager
     /// <summary>Drops the team's shared keys (a new game)</summary>
     public void ClearShared() => _shared.Clear();
 
+    /// <summary>Puts back the team's shared keys as <see cref="SharedItems"/> had them (a player joining mid-game)</summary>
+    public void RestoreShared(IReadOnlyDictionary<string, int> items)
+    {
+        _shared.Clear();
+        foreach (var (type, count) in items)
+            _shared[type] = count;
+    }
+
     /// <summary>Replaces everything held with saved counts, keyed by item type as <see cref="Items"/> is.</summary>
     public void Restore(IReadOnlyDictionary<string, int> items)
     {

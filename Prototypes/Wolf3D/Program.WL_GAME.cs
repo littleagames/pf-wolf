@@ -113,6 +113,16 @@ internal partial class Program
 
             PlayLoop();
 
+            // The deathmatch has been won, or its time is up: who won, then back to the menus
+            if (matchover)
+            {
+                StopMusic();
+                ingame = false;
+                ShowFinalScoreboard();
+                matchover = false;
+                return;
+            }
+
             // Left the game with others, or lost the host: back to the menus
             if (NetGameOver)
             {
@@ -737,6 +747,7 @@ internal partial class Program
         //
         // load the level
         //
+        DeathmatchLevelSetup();         // with or without its enemies (Program.Deathmatch.cs)
         //int mapnum = gamestate.mapon + 10 * gamestate.cluster;
         _mapManager.LoadMap(gamestate.mapon, gamestate.difficulty, CurrentSkill.EnemyHealth,
             _gameEngineManager.GetGameInfo().Maps.TryGetValue(gamestate.mapon, out var loadingMap) ? loadingMap.FloorNumber : -1);

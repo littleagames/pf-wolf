@@ -22,22 +22,22 @@ components:
       - horizontal-orientation: "center"
       - y: 6
       - color: "READHCOLOR"
-  # The game's settings and what you can do: 7 rows, 13 each plus 6
+  # The game's settings and what you can do: 8 rows, 13 each plus 6
   -
     type: "Window"
     params:
       - x: 16
       - y: 21
       - width: 288
-      - height: 97
+      - height: 110
   # Who's in, and what they've said (drawn by code)
   -
     type: "Window"
     params:
       - x: 16
-      - y: 121
+      - y: 134
       - width: 288
-      - height: 60
+      - height: 47
 # Handled by Program.Multiplayer.cs, by id. Only the host changes the mode, episode and
 # skill; everyone picks their own class. The host starts the game ("go") once everyone else
 # is ready; for them, "go" is that they're ready. The values are drawn by code.
@@ -61,6 +61,12 @@ menu-items:
       id: "class"
       type: "ChoiceMenuItem"
       text: "$STR_MP_CLASS"
+      enabled: true
+  # A deathmatch's rules: the host picks them on a screen of their own
+  -
+      id: "rules"
+      type: "ChoiceMenuItem"
+      text: "$STR_MP_RULES"
       enabled: true
   -
       id: "go"

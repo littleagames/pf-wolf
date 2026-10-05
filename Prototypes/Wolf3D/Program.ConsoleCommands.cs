@@ -98,6 +98,7 @@ internal partial class Program
         Register("msg_styles", "Lists the message styles and where each puts its messages.", "msg_styles", Cmd_MsgStyles);
         Register("net_find", "Looks for games hosted on the local network (two seconds) and lists them.", "net_find", Cmd_NetFind);
         Register("net_status", "Shows the game with others: the level and frame, the players, and (hosting) how many checks found every machine agreeing.", "net_status", Cmd_NetStatus);
+        Register("scoreboard", "Shows or hides the scoreboard over the view, playing with others (bind it to a key).", "scoreboard [0|1]", Cmd_Scoreboard, complete: Values("0", "1"));
 
         //
         // video
@@ -179,7 +180,7 @@ internal partial class Program
         Register("controlplayer", "Makes another player yours: your view, status bar and controls.",
             "controlplayer <n>", Cmd_ControlPlayer, Cheat | InLevel);
         Register("gamemode", "Shows or sets how the players play together: co-op (keys shared, no friendly fire) or deathmatch.",
-            "gamemode [coop|deathmatch]", Cmd_GameMode, Cheat | InLevel, complete: (_, i) => i == 0 ? ["coop", "deathmatch"] : []);
+            "gamemode [coop|deathmatch [fraglimit]]", Cmd_GameMode, Cheat | InLevel, complete: (_, i) => i == 0 ? ["coop", "deathmatch"] : []);
 
         //
         // debugging aids and information

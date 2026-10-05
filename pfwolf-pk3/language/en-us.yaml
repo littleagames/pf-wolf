@@ -60,6 +60,14 @@ $STR_MP_NOTREADY: "Everyone else has to\nbe ready first (and\nthere has to be so
 $STR_MP_LEAVECONFIRM: "Leave this game?\n({YESBUTTONNAME} or {NOBUTTONNAME})"
 $STR_MP_HOSTFAILED: "The game couldn't\nbe hosted."
 $STR_MP_WAITING: "Waiting for the host"
+$STR_MP_RULES: "Rules"
+$STR_MP_FRAGLIMIT: "Frag Limit"
+$STR_MP_TIMELIMIT: "Time Limit"
+$STR_MP_MONSTERS: "Monsters"
+$STR_MP_ITEMRESPAWN: "Items Come Back"
+$STR_MP_NONE: "None"
+$STR_MP_ON: "On"
+$STR_MP_OFF: "Off"
 
 # Video
 $STR_FULLSCREEN: "Fullscreen"

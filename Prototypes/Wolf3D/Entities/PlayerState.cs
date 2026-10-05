@@ -40,6 +40,10 @@ internal sealed class PlayerState
     public short faceframe;
     public int killx, killy;                // where what killed them stood
 
+    // Playing with others: other players killed in a deathmatch (less their own deaths by
+    // their own hand), and enemies killed (for the scoreboard)
+    public int Frags, Kills;
+
     /// <summary>Held item counts, keyed by item type (InventoryManager reads the acting player's)</summary>
     public readonly Dictionary<string, int> Items = new(StringComparer.OrdinalIgnoreCase);
 

@@ -20,7 +20,7 @@ game) before they're in; the reason comes back with the refusal.
 internal static class NetProtocol
 {
     /// <summary>Changes whenever a message changes: players with different ones can't play together</summary>
-    public const int Version = 1;
+    public const int Version = 2;
 
     /// <summary>The port games are hosted on, and looked for on the local network</summary>
     public const int DefaultPort = 10645;
@@ -77,6 +77,7 @@ internal enum NetMessage : byte
     Tics,                   // host to all: TicBundle
     Checksum,               // player to host: level, step, the game's state summed up
     Notice,                 // host to all: a line to show (someone left, someone is out of sync)
+    JoinState,              // host to a player joining mid-game: the game, and the game as it stands
 }
 
 /// <summary>Why a game couldn't be joined, as the host's refusal or the connection's end says</summary>

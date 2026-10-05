@@ -76,7 +76,7 @@ internal partial class Program
             ConnectTo(at.Host, at.Port);
 
         MenuFadeOut();
-        return startgame;
+        return startgame || loadedgame;     // (joining a game being played takes it up as a loaded one)
     }
 
     /*
@@ -400,8 +400,8 @@ internal partial class Program
         {
             var info = game.Info;
             var mode = info.Mode == GameMode.Deathmatch ? "$STR_MP_DEATHMATCH" : "$STR_MP_COOP";
-            var text = $"{info.HostName} {info.Players}/{info.MaxPlayers} {mode.ToLanguageText(language)}, {info.Map}";
-            bool canJoin = !info.InGame && info.Players < info.MaxPlayers
+            var text = $"{info.HostName} {info.Players}/{info.MaxPlayers} {mode.ToLanguageText(language)}{(info.InGame ? " (playing)" : "")}, {info.Map}";
+            bool canJoin = info.Players < info.MaxPlayers
                 && string.Equals(info.GamePack, _gameEngineManager.GamePackId, StringComparison.OrdinalIgnoreCase);
             rows.Add(new CP_itemtype((short)(canJoin ? 1 : 0), FitText(text, 240, MENU_FONT), null, new JoinRow(game)));
         }
@@ -477,7 +477,7 @@ internal partial class Program
     static CP_iteminfo LobbyItems = null!;
 
     // The lobby panel's rows: up to MAXPLAYERS players, then the last chat lines
-    const int LobbyPanelX = 24, LobbyPanelY = 124, LobbyPanelRow = 9, LobbyChatLines = 2;
+    const int LobbyPanelX = 24, LobbyPanelY = 137, LobbyPanelRow = 9, LobbyChatLines = 1;
 
     /// <summary>
     /// Waits in a game's lobby: the host sets the game up and starts it once everyone's ready;
@@ -500,6 +500,18 @@ internal partial class Program
                 MenuFadeOut();
                 session.Dispose();
                 ShowNetMessage(WrapForMessage(session.Error));
+                return;
+            }
+
+            // Joined a game already being played: take it up where the host has got to
+            if (session.JoinState is { } joined)
+            {
+                MenuFadeOut();
+                if (BeginJoinedGame(session, joined) is { } problem)
+                {
+                    session.Dispose();
+                    ShowNetMessage(WrapForMessage(problem));
+                }
                 return;
             }
 
@@ -558,6 +570,12 @@ internal partial class Program
                     }
                     break;
 
+                case "rules" when session.IsHost && session.Settings.Mode == GameMode.Deathmatch:
+                    MenuFadeOut();
+                    EditRules(session);
+                    fadeIn = true;
+                    break;
+
                 case "chat":
                     var line = AskLine("$STR_MP_SAY".ToLanguageText(language), "", NetProtocol.MaxChatLength);
                     if (line != null)
@@ -587,6 +605,7 @@ internal partial class Program
         FindMenuItem(LobbyMenu, "episode")?.active = (short)(host && PlayableEpisodes().Count > 1 ? 1 : 0);
         FindMenuItem(LobbyMenu, "skill")?.active = (short)(host ? 1 : 0);
         FindMenuItem(LobbyMenu, "class")?.active = (short)(PlayerClasses().Count > 1 ? 1 : 0);
+        FindMenuItem(LobbyMenu, "rules")?.active = (short)(host && settings.Mode == GameMode.Deathmatch ? 1 : 0);
         if (LobbyMenu[LobbyItems.curpos].active == 0)
             LobbyItems.curpos = (short)Math.Max(0, Array.FindIndex(LobbyMenu, item => item.active != 0));
 
@@ -597,6 +616,7 @@ internal partial class Program
         DrawLobbyValue("episode", EpisodeLabel(settings.Episode));
         DrawLobbyValue("skill", gameInfo.Skills.Values.ElementAtOrDefault(settings.Skill)?.Name.ToLanguageText(language) ?? "?");
         DrawLobbyValue("class", me == null ? "" : PlayerClassLabel(me.PlayerClass));
+        DrawLobbyValue("rules", RulesSummary(settings));
         if (!host)
             DrawMenuCheckbox(LobbyItems, LobbyMenu, "go", me?.Ready == true);
 
@@ -634,6 +654,88 @@ internal partial class Program
         int y = LobbyItems.y + index * LobbyItems.rowHeight;
         _videoManager.Bar(x, y, 300 - x, LobbyItems.rowHeight, "BKGDCOLOR");
         TextAt(x, y + 2, new TextStyle(SMALL_FONT, MenuItemColor(LobbyMenu[index], false))).Print(FitText(value, 300 - x, SMALL_FONT));
+    }
+
+    /// <summary>A deathmatch's rules in a few words, for the lobby: "20 frags, 10 min, monsters"</summary>
+    static string RulesSummary(LobbySettings settings)
+    {
+        if (settings.Mode != GameMode.Deathmatch)
+            return "-";
+        var parts = new List<string>
+        {
+            settings.FragLimit > 0 ? $"{settings.FragLimit} frags" : "no frag limit",
+        };
+        if (settings.TimeLimit > 0)
+            parts.Add($"{settings.TimeLimit} min");
+        if (settings.Monsters)
+            parts.Add("monsters");
+        return string.Join(", ", parts);
+    }
+
+    static readonly int[] FragLimits = [0, 5, 10, 15, 20, 25, 30, 50, 100];
+    static readonly int[] TimeLimits = [0, 5, 10, 15, 20, 30, 45, 60];
+
+    static CP_itemtype[] RulesMenu = [];
+    static CP_iteminfo RulesItems = null!;
+
+    /// <summary>The host sets a deathmatch's rules (left/right, or picking them; Esc goes back)</summary>
+    static void EditRules(NetSession session)
+    {
+        (RulesMenu, RulesItems) = LoadMenu("net-rules");
+        DrawRules(session);
+        MenuFadeIn();
+        WaitKeyUp();
+
+        int which;
+        do
+        {
+            int seen = session.Changes;
+            which = HandleMenu(RulesItems, RulesMenu, null, (w, delta) => StepRule(session, w, delta),
+                idle: () =>
+                {
+                    session.Poll();         // others can still join meanwhile
+                    return false;
+                });
+            if (which >= 0)
+                StepRule(session, which, 1);
+        }
+        while (which >= 0);
+
+        MenuFadeOut();
+    }
+
+    static void StepRule(NetSession session, int which, int delta)
+    {
+        var settings = session.Settings;
+        RulesItems.curpos = (short)which;
+        settings = SelectedId(RulesMenu, which) switch
+        {
+            "fraglimit" => settings with { FragLimit = FragLimits[StepMenuChoice(Math.Max(0, Array.IndexOf(FragLimits, settings.FragLimit)), FragLimits.Length, delta, wrap: true)] },
+            "timelimit" => settings with { TimeLimit = TimeLimits[StepMenuChoice(Math.Max(0, Array.IndexOf(TimeLimits, settings.TimeLimit)), TimeLimits.Length, delta, wrap: true)] },
+            "monsters" => settings with { Monsters = !settings.Monsters },
+            "itemrespawn" => settings with { ItemRespawn = !settings.ItemRespawn },
+            _ => settings,
+        };
+        if (settings == session.Settings)
+            return;
+        session.SetSettings(settings);
+        _audioManager.Play("menu/move1");
+        DrawRules(session);
+    }
+
+    static void DrawRules(NetSession session)
+    {
+        var language = _assetManager.GetText("en-us");
+        var settings = session.Settings;
+        DrawMenuComponents("net-rules");
+        DrawMenu(RulesItems, RulesMenu);
+        var none = "$STR_MP_NONE".ToLanguageText(language);
+        DrawMenuChoice(RulesItems, RulesMenu, "fraglimit", settings.FragLimit > 0 ? settings.FragLimit.ToString() : none);
+        DrawMenuChoice(RulesItems, RulesMenu, "timelimit", settings.TimeLimit > 0 ? $"{settings.TimeLimit} min" : none);
+        DrawMenuCheckbox(RulesItems, RulesMenu, "monsters", settings.Monsters);
+        DrawMenuCheckbox(RulesItems, RulesMenu, "itemrespawn", settings.ItemRespawn);
+        DrawMenuGun(RulesItems);
+        _videoManager.Update();
     }
 
     /// <summary>Steps a lobby setting (left/right, or picking it)</summary>
@@ -737,6 +839,10 @@ internal partial class Program
         godmode = noclip = ammocheat = 0;     // no cheats carried in from playing alone
         netgame = true;
         netseed = start.Seed;
+        var rules = start.Settings;
+        netrules = new NetRules(rules.Monsters || rules.Mode == GameMode.Coop, rules.FragLimit, rules.TimeLimit, rules.ItemRespawn);
+        matchover = false;
+        showscoreboard = false;
         netlevel = 0;
         netLeft = false;
         session.BeginPlaying();

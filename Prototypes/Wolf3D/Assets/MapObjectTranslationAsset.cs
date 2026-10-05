@@ -246,6 +246,9 @@ internal record MapPlayerStartTranslation
 {
     /// <summary>0=east, 90=north, 180=west, 270=south, as for <see cref="MapActorTranslation.Angles"/>.</summary>
     public int Angles { get; set; }
+
+    /// <summary>A deathmatch start: where players come into a deathmatch, not the level's own start</summary>
+    public bool Deathmatch { get; set; }
 }
 
 /// <summary>

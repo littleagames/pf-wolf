@@ -468,6 +468,10 @@ internal partial class Program
         if (!PlayerClassCanPickUp(builtActor.Name))
             return;
 
+        // Deathmatch: a weapon stays where it is, so it's only for a player without it yet
+        if (gamemode == GameMode.Deathmatch && builtActor is Entities.Actors.Weapon weaponPickup && HasWeaponFrom(weaponPickup))
+            return;
+
         // An item the player can't take (health at 100, a key already held) stays on the
         // floor, unless it's flagged ALWAYSPICKUP.
         if (builtActor.Properties.TryGetValue("inventory.amount", out var amount)
@@ -497,8 +501,15 @@ internal partial class Program
         }
 
         if (ActingIsLocal)
-
             _videoManager.StartBonusFlash();
+
+        // Deathmatch (Program.Deathmatch.cs): a weapon stays for everyone else, and anything
+        // else comes back a while after it's taken
+        if (gamemode == GameMode.Deathmatch && builtActor is Entities.Actors.Weapon)
+            return;
+        if (gamemode == GameMode.Deathmatch && netrules.ItemRespawn)
+            QueueItemRespawn(builtActor);
+
         //check.shapenum = "";                   // remove from list
         _mapManager.RemoveActor(builtActor);
     }
@@ -1182,7 +1193,8 @@ internal partial class Program
     static void DrawScore()
     {
         if (StatusBarHidden) return;
-        LatchNumber("score", playerstate.score);
+        // a deathmatch keeps score in frags
+        LatchNumber("score", gamemode == GameMode.Deathmatch ? playerstate.Frags : playerstate.score);
     }
 
     /*

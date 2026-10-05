@@ -169,9 +169,18 @@ internal partial class Program
         var taken = new List<(int x, int y)>();
         foreach (var p in players.Where(p => p.Pawn != null))
         {
+            using var _ = ActAs(p);
+            if (gamemode == GameMode.Deathmatch)
+            {
+                // somewhere random, carrying every key (Program.Deathmatch.cs)
+                var (dx, dy, dangle) = DeathmatchSpot(p.Pawn!);
+                SpawnPlayer(dx, dy, dangle);
+                GiveDeathmatchKeys();
+                continue;
+            }
+
             var (x, y) = taken.Count == 0 ? (tilex, tiley) : FreeTileNear(tilex, tiley, taken) ?? (tilex, tiley);
             taken.Add((x, y));
-            using var _ = ActAs(p);
             SpawnPlayer(x, y, angle);
         }
     }
@@ -242,6 +251,8 @@ internal partial class Program
         playerstate.DeadTics = 0;
         playerstate.DeathAngle = FacingAngle(player, LastAttacker);
         player.SetState(Entities.Actors.PlayerPawn.DeadState);
+        if (gamemode == GameMode.Deathmatch)
+            CountFrag(playerstate, LastAttacker);
 
         if (_inventoryManager.GetStringProperty(PlayerClass, "deathsound") is { Length: > 0 } deathSound)
             PlayPlayerSound(deathSound);
@@ -300,7 +311,9 @@ internal partial class Program
             .Select(pawn => ((int)pawn.TileX, (int)pawn.TileY))
             .ToList();
         int x = player.TileX, y = player.TileY, angle = player.Angle;
-        if (_mapManager.PlayerStart is { } start)
+        if (gamemode == GameMode.Deathmatch)
+            (x, y, angle) = DeathmatchSpot(player);
+        else if (_mapManager.PlayerStart is { } start)
         {
             (x, y) = taken.Contains((start.TileX, start.TileY))
                 ? FreeTileNear(start.TileX, start.TileY, taken) ?? (start.TileX, start.TileY)
@@ -314,6 +327,10 @@ internal partial class Program
         player.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
         Thrust(0, 0);
         ConnectAreas();
+        if (gamemode == GameMode.Deathmatch)
+            GiveDeathmatchKeys();
+        if (ActingIsLocal)
+            camera.FollowPlayer();      // back through their own eyes, from watching someone
 
         // Their screen and status bar, if they're this machine's player
         if (ActingIsLocal)
@@ -371,8 +388,11 @@ internal partial class Program
             {
                 "coop" => GameMode.Coop,
                 "deathmatch" or "dm" => GameMode.Deathmatch,
-                _ => throw new ArgumentException("usage: gamemode [coop|deathmatch]"),
+                _ => throw new ArgumentException("usage: gamemode [coop|deathmatch [fraglimit]]"),
             });
+            if (gamemode == GameMode.Deathmatch && args.Length > 1 && int.TryParse(args[1], out var fragLimit))
+                netrules = netrules with { FragLimit = Math.Max(fragLimit, 0) };
+            matchover = false;
         }
         _consoleManager.Print($"Game mode: {gamemode.ToString().ToLowerInvariant()}, {players.Count} player(s)");
     }

@@ -93,17 +93,27 @@ internal sealed record Hello(int Version, NetIdentity Identity, string Name, str
     }
 }
 
-/// <summary>The game the host has set up: how they'll play, the episode (its place in game-info's) and the skill</summary>
-internal sealed record LobbySettings(GameMode Mode, int Episode, int Skill)
+/// <summary>
+/// The game the host has set up: how they'll play, the episode (its place in game-info's) and
+/// the skill, and a deathmatch's rules (Program.NetRules): its enemies, frag limit, time limit
+/// (minutes; 0 for none) and whether taken items come back
+/// </summary>
+internal sealed record LobbySettings(GameMode Mode, int Episode, int Skill,
+    bool Monsters = false, int FragLimit = 20, int TimeLimit = 0, bool ItemRespawn = true)
 {
     public void Write(NetDataWriter w)
     {
         w.Put((byte)Mode);
         w.Put((byte)Episode);
         w.Put((byte)Skill);
+        w.Put(Monsters);
+        w.Put((byte)FragLimit);
+        w.Put((byte)TimeLimit);
+        w.Put(ItemRespawn);
     }
 
-    public static LobbySettings Read(NetDataReader r) => new((GameMode)r.GetByte(), r.GetByte(), r.GetByte());
+    public static LobbySettings Read(NetDataReader r) =>
+        new((GameMode)r.GetByte(), r.GetByte(), r.GetByte(), r.GetBool(), r.GetByte(), r.GetByte(), r.GetBool());
 }
 
 /// <summary>A player waiting in the lobby, in their slot (the host's is 0)</summary>
@@ -167,17 +177,28 @@ internal static class TicCmdCodec
     }
 }
 
+/// <summary>A player coming into a game already being played: their index (the next one), name and class</summary>
+internal sealed record NetJoin(int Index, string Name, string PlayerClass);
+
 /// <summary>
 /// Everyone's controls for one frame (a step) of a level (the level'th one played, counting
-/// from 1): indexed by player, with a bit set in Present for each player still in the game.
+/// from 1), indexed by player; a bit set in Left for each player who leaves the game at this
+/// frame, and anyone joining it here (Join), who gets their first controls the frame after.
 /// </summary>
-internal sealed record TicBundle(int Level, int Step, byte Present, Entities.TicCmd[] Cmds)
+internal sealed record TicBundle(int Level, int Step, byte Left, NetJoin? Join, Entities.TicCmd[] Cmds)
 {
     public void Write(NetDataWriter w)
     {
         w.Put(Level);
         w.Put(Step);
-        w.Put(Present);
+        w.Put(Left);
+        w.Put(Join != null);
+        if (Join != null)
+        {
+            w.Put((byte)Join.Index);
+            w.Put(Join.Name);
+            w.Put(Join.PlayerClass);
+        }
         w.Put((byte)Cmds.Length);
         foreach (var cmd in Cmds)
             TicCmdCodec.Write(w, cmd);
@@ -186,15 +207,23 @@ internal sealed record TicBundle(int Level, int Step, byte Present, Entities.Tic
     public static TicBundle Read(NetDataReader r)
     {
         int level = r.GetInt(), step = r.GetInt();
-        byte present = r.GetByte();
+        byte left = r.GetByte();
+        var join = r.GetBool() ? new NetJoin(r.GetByte(), r.GetString(), r.GetString()) : null;
         var cmds = new Entities.TicCmd[r.GetByte()];
         for (int i = 0; i < cmds.Length; i++)
             cmds[i] = TicCmdCodec.Read(r);
-        return new TicBundle(level, step, present, cmds);
+        return new TicBundle(level, step, left, join, cmds);
     }
 
-    public bool IsPresent(int player) => (Present & (1 << player)) != 0;
+    public bool HasLeft(int player) => (Left & (1 << player)) != 0;
 }
+
+/// <summary>
+/// What a player joining a game already being played gets from the host: the game (as
+/// StartGame had it, with everyone since), the frame it's at, and the game as it stands
+/// after that frame (Program.NetJoin.cs)
+/// </summary>
+internal sealed record JoinStateInfo(StartGameInfo Start, int Level, int Step, byte[] State);
 
 /// <summary>
 /// The host starting the game: its settings, the random number table's starting place, and

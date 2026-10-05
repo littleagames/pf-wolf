@@ -50,13 +50,23 @@ internal partial class Program
     /// <summary>Starts counting frames for a new level, sending empty controls for the frames before ours can arrive</summary>
     internal static void NetLevelStart()
     {
-        netlevel++;
-        netstep = 0;
         netLeavePrompt = false;
         netWaiting = null;
+        pendingjoinstate = null;        // (someone who came in on a level's last frame is left waiting)
         if (NetSession.Current is not { } session)
             return;
 
+        // Just joined: the game taken up carries on from the frame after the host's (BeginJoinedGame)
+        if (netJoinResume)
+        {
+            netJoinResume = false;
+            for (int step = netstep; step < netstep + NETDELAY; step++)
+                session.SubmitLocal(netlevel, step, default);
+            return;
+        }
+
+        netlevel++;
+        netstep = 0;
         session.ForgetBefore(netlevel);
         for (int step = 0; step < NETDELAY; step++)
             session.SubmitLocal(netlevel, step, default);
@@ -71,6 +81,14 @@ internal partial class Program
     {
         if (NetSession.Current is not { } session || session.Error != null || netLeft)
             return false;
+
+        // A player who came in at the frame just played gets the game as it now stands
+        session.Poll();
+        if (pendingjoinstate is { } joined)
+        {
+            session.SendJoinState(joined.Index, netlevel, joined.Step, WriteNetState());
+            pendingjoinstate = null;
+        }
 
         // While asking about leaving, this player stands still
         session.SubmitLocal(netlevel, netstep + NETDELAY, netLeavePrompt ? default : localcmd);
@@ -109,13 +127,22 @@ internal partial class Program
             lasttimecount = (int)GameEngineManager.GetTimeCount();     // no rush to catch up on the wait
         }
 
-        // Anyone gone leaves at this step on every machine
+        // Anyone leaving leaves, and anyone joining joins, at this step on every machine
+        for (int i = 0; i < players.Count; i++)
+        {
+            if (bundle.HasLeft(i) && !players[i].Gone)
+                RemovePlayer(players[i]);
+        }
+        if (bundle.Join is { } join)
+        {
+            AddNetPlayer(join);
+            if (session.IsHost)
+                pendingjoinstate = (join.Index, netstep);     // the game goes to them once this frame's played
+        }
         for (int i = 0; i < players.Count; i++)
         {
             var p = players[i];
-            if (!bundle.IsPresent(i) && !p.Gone)
-                RemovePlayer(p);
-            p.Input.Begin(bundle.IsPresent(i) && i < bundle.Cmds.Length ? bundle.Cmds[i] : default);
+            p.Input.Begin(!p.Gone && i < bundle.Cmds.Length ? bundle.Cmds[i] : default);
         }
 
         netstep++;
@@ -222,9 +249,77 @@ internal partial class Program
         }
     }
 
-    /// <summary>Esc while playing with others: asks whether to leave (Y), or plays on (N or Esc)</summary>
+    // Typing a line to say to the others (T), and what's typed so far
+    static bool netChatting;
+    static string netChatText = "";
+
+    /// <summary>While typing a chat line: letters go on it, Backspace takes one off, Enter says it, Esc drops it</summary>
+    static void NetChatKeys()
+    {
+        foreach (var c in _inputManager.GetTextInput())
+        {
+            if (c == 0)
+                break;
+            if (c >= ' ' && c < 127 && netChatText.Length < NetProtocol.MaxChatLength)
+                netChatText += c;
+        }
+        _inputManager.ClearTextInput();
+
+        while (_inputManager.TryTakePressedKey(out var key))
+        {
+            switch (key)
+            {
+                case ScanCodes.sc_Enter:
+                    NetSession.Current?.Say(netChatText);
+                    goto case ScanCodes.sc_Escape;
+                case ScanCodes.sc_Escape:
+                    netChatting = false;
+                    netChatText = "";
+                    _inputManager.ClearKeysDown();
+                    return;
+                case ScanCodes.sc_BackSpace when netChatText.Length > 0:
+                    netChatText = netChatText[..^1];
+                    break;
+            }
+        }
+    }
+
+    /// <summary>Dead, with others: watches the next (or previous) living player, until coming back</summary>
+    static void WatchNextPlayer(int step)
+    {
+        var living = _mapManager.Players.Where(pawn => pawn.State != localplayer && pawn.State.health > 0).ToList();
+        if (living.Count == 0)
+        {
+            camera.FollowPlayer();
+            return;
+        }
+        int at = camera.Target is Entities.Actors.PlayerPawn watched ? living.IndexOf(watched) : -1;
+        camera.Follow(living[((at < 0 ? (step > 0 ? -1 : 0) : at) + step + living.Count) % living.Count]);
+    }
+
+    /// <summary>
+    /// The keys, with others: Esc asks whether to leave (then Y leaves, N or Esc plays on), T
+    /// starts a line to say, and while dead, turning left or right watches another player
+    /// </summary>
     static void NetCheckKeys(ScanCodes scan)
     {
+        if (!netLeavePrompt && scan == ScanCodes.sc_T)
+        {
+            netChatting = true;
+            netChatText = "";
+            _inputManager.ClearTextInput();
+            _inputManager.ClearKeysDown();
+            return;
+        }
+
+        if (localplayer.health <= 0 && localplayer.Pawn != null)
+        {
+            if (_inputManager.IsButtonPressed(buttontypes.bt_turnright) && !_inputManager.IsButtonHeld(buttontypes.bt_turnright))
+                WatchNextPlayer(1);
+            else if (_inputManager.IsButtonPressed(buttontypes.bt_turnleft) && !_inputManager.IsButtonHeld(buttontypes.bt_turnleft))
+                WatchNextPlayer(-1);
+        }
+
         if (netLeavePrompt)
         {
             if (scan == ScanCodes.sc_Y)
@@ -252,6 +347,27 @@ internal partial class Program
     {
         if (!netgame)
             return;
+
+        // Dead: everyone's score, who's being watched, and how to come back
+        bool dead = localplayer.health <= 0 && localplayer.Pawn != null;
+        if (showscoreboard || dead)
+            DrawScoreboard(12);
+        if (dead)
+        {
+            var watching = camera.Target is Entities.Actors.PlayerPawn pawn && pawn != localplayer.Pawn
+                ? $"Watching {pawn.State.Name ?? $"Player {pawn.State.Number + 1}"} - " : "";
+            var hint = $"{watching}use or fire to come back, left/right to watch others";
+            CenteredText(0, 320, MAXY - 12, new Fonts.TextStyle(SMALL_FONT, "HIGHLIGHT")).CPrint(FitText(hint, 300, SMALL_FONT));
+        }
+
+        // The line being typed to the others
+        if (netChatting)
+        {
+            _videoManager.Bar(16, MAXY - 24, 288, 11, "BKGDCOLOR");
+            TextAt(20, MAXY - 22, new Fonts.TextStyle(SMALL_FONT, "HIGHLIGHT"))
+                .Print(FitText($"Say: {netChatText}_", 280, SMALL_FONT));
+        }
+
         var text = netLeavePrompt ? "Leave this game?\n(Y or N)" : netWaiting;
         if (text != null)
             Message(text, MAXY);

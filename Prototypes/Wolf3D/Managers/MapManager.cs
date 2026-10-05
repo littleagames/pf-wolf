@@ -264,6 +264,7 @@ internal class MapManager
         _actors.Clear();
         ForgetPawns();
         PlayerStart = null;
+        DeathmatchStarts.Clear();
 
         var data = GetMapData();
         UnhideAreas();
@@ -314,7 +315,10 @@ internal class MapManager
                 // only note where it starts; with several starts, the last one scanned wins.
                 if (data.PlayerStarts.TryGetValue(objtile, out var startXlat))
                 {
-                    PlayerStart = new MapPlayerStart(x, y, startXlat.Angles);
+                    if (startXlat.Deathmatch)
+                        DeathmatchStarts.Add(new MapPlayerStart(x, y, startXlat.Angles));
+                    else
+                        PlayerStart = new MapPlayerStart(x, y, startXlat.Angles);
                     continue;
                 }
 
@@ -748,6 +752,12 @@ internal class MapManager
     /// <summary>Where the loaded map puts the player (its object-plane player start); null if it has none.</summary>
     internal MapPlayerStart? PlayerStart { get; private set; }
 
+    /// <summary>The map's deathmatch starts (mapdefs player-starts with `deathmatch: true`), if it has any</summary>
+    internal List<MapPlayerStart> DeathmatchStarts { get; } = [];
+
+    /// <summary>Whether the map's enemies are left out as it loads (a deathmatch without monsters)</summary>
+    internal bool NoMonsters { get; set; }
+
     /// <summary>The trigger on this tile, if its object-plane tile is one in the mapdefs' triggers.</summary>
     internal MapTriggerTranslation? GetTrigger(int x, int y) =>
         GetMapData().Triggers.TryGetValue(MAPSPOT(x, y, 1), out var trigger) ? trigger : null;
@@ -788,6 +798,10 @@ internal class MapManager
             }
             builtActor = chosenActor;
         }
+
+        // A deathmatch without monsters (Program.Deathmatch.cs) leaves the map's enemies out
+        if (NoMonsters && builtActor is Entities.Actors.Monster)
+            return null;
 
         builtActor.SetPosition(tilex, tiley);
 
@@ -1406,7 +1420,7 @@ internal class MapManager
     /// passed). Returns the restored actors in saved order, so references to them (such as
     /// the player's last attacker) can be looked up by index.
     /// </summary>
-    internal List<Entities.Actors.Actor> RestoreLevelState(LevelSnapshot level)
+    internal List<Entities.Actors.Actor> RestoreLevelState(LevelSnapshot level, Func<int, Entities.PlayerState?>? ownerOf = null)
     {
         mapsegs = level.Planes.Select(plane => (ushort[])plane.Clone()).ToArray();
         tilemap = (byte[,])level.TileMap.Clone();
@@ -1426,8 +1440,8 @@ internal class MapManager
         foreach (var saved in level.Actors)
         {
             Entities.Actors.Actor actor;
-            if (saved.IsPlayer)
-                actor = local.Pawn = new Entities.Actors.PlayerPawn { State = local };
+            if (saved.IsPlayer && (ownerOf?.Invoke(restored.Count) ?? local) is { } owner)
+                actor = owner.Pawn = new Entities.Actors.PlayerPawn { State = owner };
             else
                 actor = CreateRuntimeActor(saved.ClassName)!;
 
@@ -1440,9 +1454,13 @@ internal class MapManager
         foreach (var monster in restored.OfType<Entities.Actors.Monster>())
             MarkActorTile(monster);
 
-        // The player has to think first, as it does after a normal level load.
-        _actors.Remove(local.Pawn!);
-        _actors.AddFirst(local.Pawn!);
+        // The player has to think first, as it does after a normal level load (with several,
+        // they're already first, in the order they think)
+        if (ownerOf == null)
+        {
+            _actors.Remove(local.Pawn!);
+            _actors.AddFirst(local.Pawn!);
+        }
 
         return restored;
     }

@@ -33,6 +33,12 @@ internal sealed class PlayerInput
     /// <summary>Nothing is pressed (as a level starts): the next frame sees every press as fresh</summary>
     public void Reset() => cmd = default;
 
+    /// <summary>This frame's buttons as the game has left them (next frame's held ones), to send a player joining mid-game</summary>
+    public uint Buttons => cmd.Buttons;
+
+    /// <summary>Puts back the buttons <see cref="Buttons"/> gave, as a player joining mid-game takes the game up</summary>
+    public void RestoreButtons(uint buttons) => cmd = new TicCmd { Buttons = buttons };
+
     public bool IsPressed(buttontypes button) => cmd.IsDown(button);
 
     public bool IsHeld(buttontypes button) => (held & (1u << (int)button)) != 0;

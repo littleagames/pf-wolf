@@ -124,11 +124,14 @@ internal partial class Program
         frameon = 0;
         funnyticount = 0;
         _inputManager.InitButtonState();
-        foreach (var p in players)      // every player's, so every machine starts the level alike
+        if (!netJoinResume)             // (just joined mid-level: kept as the host had them)
         {
-            p.AngleFrac = 0;
-            p.FaceCount = 0;
-            p.Input.Reset();
+            foreach (var p in players)  // every player's, so every machine starts the level alike
+            {
+                p.AngleFrac = 0;
+                p.FaceCount = 0;
+                p.Input.Reset();
+            }
         }
         _videoManager.ClearPaletteShifts();
         if (netgame)
@@ -194,6 +197,8 @@ internal partial class Program
                 TickZoneLights(tics);       // light zones' fades and effects (Program.ZoneLights.cs)
                 if (gamemode != GameMode.Single)
                     WakeSeenEnemies();      // what the renderer did alone (Program.Players.cs)
+                if (gamemode == GameMode.Deathmatch)
+                    TickDeathmatch();       // items back, and the time limit (Program.Deathmatch.cs)
                 if (netgame)
                     NetFrameDone();
 
@@ -279,6 +284,13 @@ internal partial class Program
         //
         if (_consoleManager.IsOpen)
             return;
+
+        // Typing something to say to the others: the keys are the line's (Program.NetPlay.cs)
+        if (netChatting)
+        {
+            NetChatKeys();
+            return;
+        }
 
         if (_inputManager.IsKeyDown(ScanCodes.sc_Grave) && !demorecord)
         {
@@ -487,7 +499,7 @@ internal partial class Program
 
         // Keyboard input already bypasses the game while the console is open; the mouse and
         // joystick are polled directly, so skip them too or the player keeps moving and firing.
-        if (_consoleManager.IsOpen)
+        if (_consoleManager.IsOpen || netChatting || netLeavePrompt)
             return;
 
         //

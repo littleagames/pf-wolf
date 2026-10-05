@@ -387,9 +387,10 @@ internal partial class Program
     /// Lays a level body over the level SetupGameLevel just built from the same map (with
     /// loadedgame set, so it didn't count kills, treasure and secrets again)
     /// </summary>
-    private static void ApplyLevelBody(LevelBody body)
+    /// <param name="ownerOf">With several players (one joining mid-game), whose each saved pawn is, by its place among the actors</param>
+    private static List<Entities.Actors.Actor> ApplyLevelBody(LevelBody body, Func<int, Entities.PlayerState?>? ownerOf = null)
     {
-        var actors = _mapManager.RestoreLevelState(body.Level);
+        var actors = _mapManager.RestoreLevelState(body.Level, ownerOf);
 
         // Door positions and orientations come from the map; only the motion is saved.
         for (int i = 0; i < Math.Min(lastdoorobj, body.Doors.Length); i++)
@@ -416,6 +417,7 @@ internal partial class Program
 
         LastAttacker = body.LastAttacker >= 0 && body.LastAttacker < actors.Count ? actors[body.LastAttacker] : null;
         facetimes = 0;
+        return actors;
     }
 
     /// <summary>Everything a save's body holds, read without changing any game state.</summary>
