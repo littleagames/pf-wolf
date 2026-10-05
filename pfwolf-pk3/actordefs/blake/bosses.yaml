@@ -27,12 +27,12 @@ SpiderMutant:
     Spawn:
       - { sprite: MSUP, frames: [A], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: MSUP, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MSUP, frames: [A], tics-per-frame: 10, think: T_Chase }
       - { sprite: MSUP, frames: [A], tics-per-frame: 5 }
-      - { sprite: MSUP, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: MSUP, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MSUP, frames: [B], tics-per-frame: 8, think: T_Chase }
+      - { sprite: MSUP, frames: [C], tics-per-frame: 10, think: T_Chase }
       - { sprite: MSUP, frames: [C], tics-per-frame: 5 }
-      - { sprite: MSUP, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: MSUP, frames: [D], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: MSUP, frames: [H], tics-per-frame: 15, next-state: Chase }
     Attack:
@@ -63,17 +63,17 @@ BreatherBeast:
     Spawn:
       - { sprite: BBST, frames: [A], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: BBST, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: BBST, frames: [A], tics-per-frame: 10, think: T_Chase }
       - { sprite: BBST, frames: [A], tics-per-frame: 5 }
-      - { sprite: BBST, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: BBST, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: BBST, frames: [B], tics-per-frame: 8, think: T_Chase }
+      - { sprite: BBST, frames: [C], tics-per-frame: 10, think: T_Chase }
       - { sprite: BBST, frames: [C], tics-per-frame: 5 }
-      - { sprite: BBST, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: BBST, frames: [D], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: BBST, frames: [H], tics-per-frame: 15, next-state: Chase }
     Attack:
       - { sprite: BBST, frames: [E], tics-per-frame: 10 }
-      - { sprite: BBST, frames: [F], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: BBST, frames: [F], tics-per-frame: 10, action: T_Shoot }
       - { sprite: BBST, frames: [G], tics-per-frame: 10, next-state: Chase }
     Death:
       - { sprite: BBST, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
@@ -100,17 +100,17 @@ CyborgWarrior:
     Spawn:
       - { sprite: CYBW, frames: [A], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: CYBW, frames: [A], tics-per-frame: 10, think: T_BlakeChase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
+      - { sprite: CYBW, frames: [A], tics-per-frame: 10, think: T_Chase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
       - { sprite: CYBW, frames: [A], tics-per-frame: 5 }
-      - { sprite: CYBW, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: CYBW, frames: [C], tics-per-frame: 10, think: T_BlakeChase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
+      - { sprite: CYBW, frames: [B], tics-per-frame: 8, think: T_Chase }
+      - { sprite: CYBW, frames: [C], tics-per-frame: 10, think: T_Chase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
       - { sprite: CYBW, frames: [C], tics-per-frame: 5 }
-      - { sprite: CYBW, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: CYBW, frames: [D], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: CYBW, frames: [H], tics-per-frame: 15, next-state: Chase }
     Attack:
       - { sprite: CYBW, frames: [E], tics-per-frame: 10 }
-      - { sprite: CYBW, frames: [F], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: CYBW, frames: [F], tics-per-frame: 10, action: T_Shoot }
       - { sprite: CYBW, frames: [G], tics-per-frame: 10, next-state: Chase }
     Death:
       - { sprite: CYBW, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
@@ -136,17 +136,17 @@ ReptilianWarrior:
     Spawn:
       - { sprite: REPW, frames: [A], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: REPW, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: REPW, frames: [A], tics-per-frame: 10, think: T_Chase }
       - { sprite: REPW, frames: [A], tics-per-frame: 5 }
-      - { sprite: REPW, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: REPW, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: REPW, frames: [B], tics-per-frame: 8, think: T_Chase }
+      - { sprite: REPW, frames: [C], tics-per-frame: 10, think: T_Chase }
       - { sprite: REPW, frames: [C], tics-per-frame: 5 }
-      - { sprite: REPW, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: REPW, frames: [D], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: REPW, frames: [H], tics-per-frame: 15, next-state: Chase }
     Attack:
       - { sprite: REPW, frames: [E], tics-per-frame: 10 }
-      - { sprite: REPW, frames: [F], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: REPW, frames: [F], tics-per-frame: 10, action: T_Shoot }
       - { sprite: REPW, frames: [G], tics-per-frame: 10, next-state: Chase }
     Death:
       - { sprite: REPW, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
@@ -172,12 +172,12 @@ AcidDragon:
     Spawn:
       - { sprite: ADRG, frames: [A], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: ADRG, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: ADRG, frames: [A], tics-per-frame: 10, think: T_Chase }
       - { sprite: ADRG, frames: [A], tics-per-frame: 5 }
-      - { sprite: ADRG, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: ADRG, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: ADRG, frames: [B], tics-per-frame: 8, think: T_Chase }
+      - { sprite: ADRG, frames: [C], tics-per-frame: 10, think: T_Chase }
       - { sprite: ADRG, frames: [C], tics-per-frame: 5 }
-      - { sprite: ADRG, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: ADRG, frames: [D], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: ADRG, frames: [H], tics-per-frame: 15, next-state: Chase }
     Attack:
@@ -208,17 +208,17 @@ BioMechGuardian:
     Spawn:
       - { sprite: BIOM, frames: [A], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: BIOM, frames: [A], tics-per-frame: 10, think: T_BlakeChase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
+      - { sprite: BIOM, frames: [A], tics-per-frame: 10, think: T_Chase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
       - { sprite: BIOM, frames: [A], tics-per-frame: 5 }
-      - { sprite: BIOM, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: BIOM, frames: [C], tics-per-frame: 10, think: T_BlakeChase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
+      - { sprite: BIOM, frames: [B], tics-per-frame: 8, think: T_Chase }
+      - { sprite: BIOM, frames: [C], tics-per-frame: 10, think: T_Chase, action: 'A_PlaySound("bs/robot_servo", "positional")' }
       - { sprite: BIOM, frames: [C], tics-per-frame: 5 }
-      - { sprite: BIOM, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: BIOM, frames: [D], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: BIOM, frames: [H], tics-per-frame: 15, next-state: Chase }
     Attack:
       - { sprite: BIOM, frames: [E], tics-per-frame: 10 }
-      - { sprite: BIOM, frames: [F], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: BIOM, frames: [F], tics-per-frame: 10, action: T_Shoot }
       - { sprite: BIOM, frames: [G], tics-per-frame: 10, next-state: Chase }
     Death:
       - { sprite: BIOM, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
@@ -290,19 +290,19 @@ Goldfire:
       - { sprite: DGLD, frames: [I], tics-per-frame: 15, next-state: Chase }
     Attack:
       - { sprite: DGLD, frames: [F], tics-per-frame: 20 }
-      - { sprite: DGLD, frames: [G], tics-per-frame: 20, action: T_BlakeShoot }
+      - { sprite: DGLD, frames: [G], tics-per-frame: 20, action: T_Shoot }
       - { sprite: DGLD, frames: [H], tics-per-frame: 10 }
-      - { sprite: DGLD, frames: [G], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: DGLD, frames: [G], tics-per-frame: 10, action: T_Shoot }
       - { sprite: DGLD, frames: [H], tics-per-frame: 10 }
-      - { sprite: DGLD, frames: [G], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: DGLD, frames: [G], tics-per-frame: 10, action: T_Shoot }
       - { sprite: DGLD, frames: [H], tics-per-frame: 10, next-state: Chase }
     Chase:
-      - { sprite: DGLD, frames: [B], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: DGLD, frames: [B], tics-per-frame: 10, think: T_Chase }
       - { sprite: DGLD, frames: [B], tics-per-frame: 3 }
-      - { sprite: DGLD, frames: [C], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: DGLD, frames: [D], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: DGLD, frames: [C], tics-per-frame: 8, think: T_Chase }
+      - { sprite: DGLD, frames: [D], tics-per-frame: 10, think: T_Chase }
       - { sprite: DGLD, frames: [D], tics-per-frame: 3 }
-      - { sprite: DGLD, frames: [E], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: DGLD, frames: [E], tics-per-frame: 8, think: T_Chase }
     # Shot down: laughs, taps his wrist and warps out
     Death:
       - { sprite: DGLD, frames: [A], tics-per-frame: 45, action: 'A_PlaySound("bs/goldsternlaugh", "positional")' }

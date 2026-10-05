@@ -1,6 +1,6 @@
 # Blake Stone's guards and bio-techs, as bstone has them (3d_act2.cpp's states, 3d_state.cpp's
 # AI): health by skill (novice, skilled, expert, veteran), points, reaction delays and sounds are
-# its. They chase dodging (T_BlakeChase), shoot back when hurt (monster.painattack) and slide
+# its. They chase dodging (T_Chase), shoot back when hurt (monster.painattack) and slide
 # back from the shot that kills them (T_BlowBack); see Program.BlakeAI.cs for what the flags and
 # properties do. The map numbers that place them are in mapdefs/blake/enemies.yaml.
 
@@ -80,7 +80,7 @@ RentACop:
       - sprite: RENT
         frames: [G]
         tics-per-frame: 20
-        action: T_BlakeShoot
+        action: T_Shoot
       - sprite: RENT
         frames: [H]
         tics-per-frame: 20
@@ -89,25 +89,25 @@ RentACop:
       - sprite: RENT
         frames: [B]
         tics-per-frame: 10
-        think: T_BlakeChase
+        think: T_Chase
       - sprite: RENT
         frames: [B]
         tics-per-frame: 3
       - sprite: RENT
         frames: [C]
         tics-per-frame: 8
-        think: T_BlakeChase
+        think: T_Chase
       - sprite: RENT
         frames: [D]
         tics-per-frame: 10
-        think: T_BlakeChase
+        think: T_Chase
       - sprite: RENT
         frames: [D]
         tics-per-frame: 3
       - sprite: RENT
         frames: [E]
         tics-per-frame: 8
-        think: T_BlakeChase
+        think: T_Chase
     Death:
       - sprite: RENT
         frames: [J]
@@ -195,21 +195,21 @@ ProGuard:
       - sprite: PROG
         frames: [G]
         tics-per-frame: 20
-        action: T_BlakeShoot
+        action: T_Shoot
       - sprite: PROG
         frames: [H]
         tics-per-frame: 10
       - sprite: PROG
         frames: [G]
         tics-per-frame: 10
-        action: T_BlakeShoot
+        action: T_Shoot
       - sprite: PROG
         frames: [H]
         tics-per-frame: 10
       - sprite: PROG
         frames: [G]
         tics-per-frame: 10
-        action: T_BlakeShoot
+        action: T_Shoot
       - sprite: PROG
         frames: [H]
         tics-per-frame: 10
@@ -218,25 +218,25 @@ ProGuard:
       - sprite: PROG
         frames: [B]
         tics-per-frame: 10
-        think: T_BlakeChase
+        think: T_Chase
       - sprite: PROG
         frames: [B]
         tics-per-frame: 3
       - sprite: PROG
         frames: [C]
         tics-per-frame: 8
-        think: T_BlakeChase
+        think: T_Chase
       - sprite: PROG
         frames: [D]
         tics-per-frame: 10
-        think: T_BlakeChase
+        think: T_Chase
       - sprite: PROG
         frames: [D]
         tics-per-frame: 3
       - sprite: PROG
         frames: [E]
         tics-per-frame: 8
-        think: T_BlakeChase
+        think: T_Chase
     Death:
       - sprite: PROG
         frames: [K]
@@ -328,21 +328,21 @@ SwatGuard:
       - sprite: SWAT
         frames: [G]
         tics-per-frame: 20
-        action: T_BlakeShoot
+        action: T_Shoot
       - sprite: SWAT
         frames: [H]
         tics-per-frame: 10
       - sprite: SWAT
         frames: [G]
         tics-per-frame: 10
-        action: T_BlakeShoot
+        action: T_Shoot
       - sprite: SWAT
         frames: [H]
         tics-per-frame: 10
       - sprite: SWAT
         frames: [G]
         tics-per-frame: 10
-        action: T_BlakeShoot
+        action: T_Shoot
       - sprite: SWAT
         frames: [H]
         tics-per-frame: 10
@@ -351,25 +351,25 @@ SwatGuard:
       - sprite: SWAT
         frames: [B]
         tics-per-frame: 10
-        think: T_BlakeChase
+        think: T_Chase
       - sprite: SWAT
         frames: [B]
         tics-per-frame: 3
       - sprite: SWAT
         frames: [C]
         tics-per-frame: 8
-        think: T_BlakeChase
+        think: T_Chase
       - sprite: SWAT
         frames: [D]
         tics-per-frame: 10
-        think: T_BlakeChase
+        think: T_Chase
       - sprite: SWAT
         frames: [D]
         tics-per-frame: 3
       - sprite: SWAT
         frames: [E]
         tics-per-frame: 8
-        think: T_BlakeChase
+        think: T_Chase
     Wounded:
       - sprite: SWAT
         frames: [K, L, M]
@@ -486,7 +486,7 @@ Scientist:
       - sprite: GSCI
         frames: [G]
         tics-per-frame: 20
-        action: T_BlakeShoot
+        action: T_Shoot
       - sprite: GSCI
         frames: [H]
         tics-per-frame: 10
@@ -495,25 +495,25 @@ Scientist:
       - sprite: GSCI
         frames: [B]
         tics-per-frame: 10
-        think: T_BlakeChase
+        think: T_Chase
       - sprite: GSCI
         frames: [B]
         tics-per-frame: 3
       - sprite: GSCI
         frames: [C]
         tics-per-frame: 8
-        think: T_BlakeChase
+        think: T_Chase
       - sprite: GSCI
         frames: [D]
         tics-per-frame: 10
-        think: T_BlakeChase
+        think: T_Chase
       - sprite: GSCI
         frames: [D]
         tics-per-frame: 3
       - sprite: GSCI
         frames: [E]
         tics-per-frame: 8
-        think: T_BlakeChase
+        think: T_Chase
     Death:
       - sprite: GSCI
         frames: [K]
@@ -538,10 +538,9 @@ Scientist:
 
 # An informant: never attacks, isn't counted as an enemy, and is worth nothing shot. Talked to,
 # it gives a hint (the map's for the room it's in, else a general one); talked to again, its
-# charge pack, then its food tokens.
+# charge pack, then its food tokens. Its class (C#'s Informant, by its name) is what makes it one.
 Informant:
   parent: Scientist
-  flags: [INFORMANT]
   properties:
     "tag": "$BS_INFORMANT"
     "health.baby": 1

@@ -16,8 +16,10 @@ internal partial record BlakeMonster : Monster
     /// <summary>The thinks and actions only a BlakeMonster can run, by their actordefs names.</summary>
     internal static void RegisterActions()
     {
-        ActorActionRegistry.RegisterFor<BlakeMonster>("T_BlakeChase", m => m.BlakeChase());
-        ActorActionRegistry.RegisterFor<BlakeMonster>("T_BlakeShoot", m => m.BlakeShoot());
+        // Its chase and shot are Monster's T_Chase and T_Shoot, overridden; these older names
+        // still work for actordefs written before
+        ActorActionRegistry.RegisterFor<BlakeMonster>("T_BlakeChase", m => m.Chase());
+        ActorActionRegistry.RegisterFor<BlakeMonster>("T_BlakeShoot", m => m.Shoot());
         ActorActionRegistry.RegisterFor<BlakeMonster>("T_BlowBack", m => m.BlowBack());
         ActorActionRegistry.RegisterFor<BlakeMonster>("T_Wounded", m => m.Wounded());
         ActorActionRegistry.RegisterFor<BlakeMonster>("T_WaitToWake", m => m.WaitToWake());
@@ -34,20 +36,17 @@ internal partial record BlakeMonster : Monster
     =============================================================================
     */
 
-    // An INFORMANT never goes after the player, isn't a kill, leaves nothing, and says so when
-    // it dies; hurt (and still alive), it just flinches
-    internal override bool SightPlayer() => !HasFlag("INFORMANT") && base.SightPlayer();
-    internal override bool IsKill => base.IsKill && !HasFlag("INFORMANT");
-    protected override bool LeavesDrops => !HasFlag("INFORMANT");
-    protected override bool NoticesWhenHurt => !HasFlag("INFORMANT");
+    // Shots it has left (`monster.ammo`; an informant: the room it last picked a hint in), the
+    // tile it's heading for when it runs away (an informant: the hints it picked; one that came
+    // out of a wall outlet: that outlet's tile, plus one), and the way a patroller turns when
+    // blocked (a dir, plus 128 for clockwise; nodir when not turning). Kept in saved games.
+    public short Ammo { get; internal set; }
+    public byte SeekX { get; internal set; }
+    public byte SeekY { get; internal set; }
+    public byte TryDir { get; internal set; } = (byte)objdirtypes.nodir;
 
-    protected override void AwardKillPoints()
-    {
-        if (HasFlag("INFORMANT"))
-            WarnKilledInformant();
-        else
-            base.AwardKillPoints();
-    }
+    // Out of the shots it started with: a `dropitem.needsammo` drop isn't left, a `dropitem.alt` one is
+    protected override bool OutOfAmmo => Properties.ContainsKey("monster.ammo") && Ammo == 0;
 
     // The body slides back from what killed it (T_BlowBack)
     protected override void OnKilled(Actor? attacker) => StartBlowBack(attacker);
@@ -106,16 +105,17 @@ internal partial record BlakeMonster : Monster
     The flags and properties below work on any BlakeMonster.
 
     Thinks and actions (actordefs `think:` / `action:`):
-      T_BlakeChase   chase: closes in dodging, shoots only while it has ammo, and (with
+      T_Chase        chase: closes in dodging, shoots only while it has ammo, and (with
                      `monster.shootmode`) takes turns at shooting and closing in
-      T_BlakeShoot   a hitscan shot; SMART actors use up their ammo and alert the area
+                     (T_BlakeChase still works too)
+      T_Shoot        a hitscan shot; SMART actors use up their ammo and alert the area
+                     (T_BlakeShoot still works too)
       T_BlowBack     on Death frames: the body slides back from the shot that killed it
       T_Wounded      on a held Wounded frame: lies there, then gets up (Recover) once the player
                      is more than a tile away
 
     Flags:
       FRIENDLY       starts friendly: patrolling, it only looks for the player after a noise
-      INFORMANT      never goes after the player, isn't a kill, and gives hints when talked to
       TALKATIVE      can be talked to (use, facing it, close by)
       SMART          runs for supplies or a door while out of ammo, at half health or less, or
                      after turning mean when talked to (rent-a-cops, pro guards, scientists)
@@ -134,7 +134,10 @@ internal partial record BlakeMonster : Monster
                             health lost puts it down wounded (a 0xFA value east of it on the
                             object plane picks instead)
       monster.healthgain / monster.ammogain (on an item): a SMART actor standing on it takes it
-      talk.*                what it says when talked to (TryInterrogate)
+      talk.*                what it says when talked to (LevelAI.TryTalk)
+
+    An informant, which never goes after the player, isn't a kill and gives hints when talked
+    to, is its own class (Informant).
 
     =============================================================================
     */
@@ -153,7 +156,7 @@ internal partial record BlakeMonster : Monster
 
     /// <summary>
     /// Sets up what's Blake Stone's about a freshly spawned actor (MapManager.SpawnThing): its
-    /// ammo, its friendliness, an informant's gifts, and a wounding actor's wound stages
+    /// ammo, its friendliness, a sleeper's wake delay, and a wounding actor's wound stages
     /// </summary>
     internal override void OnSpawned(int tilex, int tiley)
     {
@@ -176,12 +179,6 @@ internal partial record BlakeMonster : Monster
             Temp2 = Temp3 = (short)(seconds * 60);
             if (seconds == 255)
                 RuntimeFlags &= ~objflags.FL_SHOOTABLE;
-        }
-
-        if (HasFlag("INFORMANT"))
-        {
-            RuntimeFlags |= objflags.FL_HASAMMO | objflags.FL_HASTOKENS;
-            SeekX = SeekY = 0xff;     // no hint chosen yet
         }
 
         var stages = PropertyInts("monster.woundstages");
@@ -283,7 +280,7 @@ internal partial record BlakeMonster : Monster
     =============================================================================
     */
 
-    internal void BlakeChase()
+    internal override void Chase()
     {
         RuntimeFlags &= ~objflags.FL_LOCKEDSTATE;
 
@@ -417,7 +414,7 @@ internal partial record BlakeMonster : Monster
     =============================================================================
     */
 
-    internal void BlakeShoot()
+    internal override void Shoot()
     {
         bool smart = HasFlag("SMART");
         if (smart && Ammo == 0)
@@ -866,24 +863,14 @@ internal partial record BlakeMonster : Monster
         return true;
     }
 
-    // Shooting an informant warns the player, the first time and now and then after
-    private void WarnKilledInformant()
-    {
-        if (!_mapManager.AI.ShouldWarnKilledInformant())
-            return;
-        if (PropertyStrings("talk.killedmessage") is [var message, ..])
-            _hudMessageManager.Show(Managers.HudMessageKind.Other, message, PropertyStrings("talk.style").FirstOrDefault());
-    }
-
     /*
     =============================================================================
 
                                 TALKING (interrogation)
 
     Holding use near a TALKATIVE actor that's friendly and in view, facing it, talks to it:
-    an INFORMANT gives a hint (one for the room it's in when the map has any there, else one
-    of the map's general ones), and when talked to again its gifts; anyone else says something
-    nice, or something mean and turns on the player.
+    it says something nice, or something mean and turns on the player. (An Informant gives a
+    hint instead, and when talked to again its gifts.)
 
     The hints are messages in a VGAGRAPH text (`talk.hints`, e.g. InformantHints), "^XX"
     between them; the map says which, with mapdefs map-info `hint:<text>` codes (the code's low
@@ -894,102 +881,41 @@ internal partial record BlakeMonster : Monster
     */
 
 
-    /// <summary>Talks to an actor (TryInterrogate); true for an informant</summary>
-    internal bool TalkTo()
+    /// <summary>Talks to it (LevelAI.TryTalk); true when it's an informant, which can be asked again sooner</summary>
+    internal virtual bool TalkTo()
     {
-        bool informant = HasFlag("INFORMANT");
-        string? said = null;
-
-        if (informant)
+        // Asked twice, or half the time anyway, it turns mean
+        string list;
+        if (RuntimeFlags.HasFlag(objflags.FL_MUSTATTACK) || (US_RndT() & 1) != 0)
         {
-            // Asked again, it hands over what it has
-            if (RuntimeFlags.HasFlag(objflags.FL_INTERROGATED))
-            {
-                var gifts = PropertyStrings("talk.gifts");
-                var giftMessages = PropertyStrings("talk.giftmessages");
-                foreach (var (flag, index) in new[] { (objflags.FL_HASAMMO, 0), (objflags.FL_HASTOKENS, 1) })
-                {
-                    if (!RuntimeFlags.HasFlag(flag) || index >= gifts.Count
-                        || _inventoryManager.CreateActor(gifts[index]) is not Entities.Actors.Inventory gift || !CouldTakeInventory(gift))
-                        continue;
-                    int amount = gift.Properties.TryGetValue("inventory.amount", out var a) ? Convert.ToInt32(a) : 1;
-                    if (!TryApplyInventory(gift, amount))
-                        continue;
-                    RuntimeFlags &= ~flag;
-                    said = _hudMessageManager.Localize(giftMessages.ElementAtOrDefault(index) ?? "");
-                    break;
-                }
-            }
-
-            if (said == null)
-            {
-                said = InformantHint();
-                RuntimeFlags |= objflags.FL_INTERROGATED;
-            }
+            RuntimeFlags &= ~objflags.FL_FRIENDLY;
+            RuntimeFlags |= objflags.FL_INTERROGATED;
+            list = PropertyStrings("talk.hostile").FirstOrDefault() ?? "";
         }
         else
         {
-            // Asked twice, or half the time anyway, it turns mean
-            string list;
-            if (RuntimeFlags.HasFlag(objflags.FL_MUSTATTACK) || (US_RndT() & 1) != 0)
-            {
-                RuntimeFlags &= ~objflags.FL_FRIENDLY;
-                RuntimeFlags |= objflags.FL_INTERROGATED;
-                list = PropertyStrings("talk.hostile").FirstOrDefault() ?? "";
-            }
-            else
-            {
-                RuntimeFlags |= objflags.FL_MUSTATTACK;
-                list = PropertyStrings("talk.friendly").FirstOrDefault() ?? "";
-            }
-            said = RandomSaying(list);
+            RuntimeFlags |= objflags.FL_MUSTATTACK;
+            list = PropertyStrings("talk.friendly").FirstOrDefault() ?? "";
         }
-
-        if (!string.IsNullOrEmpty(said))
-        {
-            var header = PropertyStrings("talk.header").FirstOrDefault();
-            var text = string.IsNullOrEmpty(header) ? said : $"{_hudMessageManager.Localize(header)}\n\n{said}";
-            _hudMessageManager.Show(Managers.HudMessageKind.Other, text, PropertyStrings("talk.style").FirstOrDefault());
-            if (PropertyStrings("talk.sound").FirstOrDefault() is { Length: > 0 } sound)
-                _audioManager.Play(sound);
-        }
-
-        return informant;
+        Say(RandomSaying(list));
+        return false;
     }
 
-    /// <summary>
-    /// An informant's hint: one of the map's hints for the room it's in, if the map has any,
-    /// else one of its general ones. It keeps to the one it picked (SeekX for a room's, SeekY
-    /// for a general one; Ammo the room it picked it in).
-    /// </summary>
-    private string? InformantHint()
+    /// <summary>Shows what it says (under its `talk.header`, in its `talk.style`), with its `talk.sound`</summary>
+    protected void Say(string? said)
     {
-        var listName = PropertyStrings("talk.hints").FirstOrDefault();
-        if (string.IsNullOrEmpty(listName))
-            return null;
+        if (string.IsNullOrEmpty(said))
+            return;
 
-        var placed = _mapManager.Hints.GetValueOrDefault(listName) ?? [];
-        var roomHints = placed.Where(h => h.Area == AreaNumber).ToList();
-        if (roomHints.Count > 0)
-        {
-            if (Ammo != AreaNumber)
-                SeekX = 0xff;
-            Ammo = AreaNumber;
-            if (SeekX == 0xff || SeekX >= roomHints.Count)
-                SeekX = (byte)(US_RndT() % roomHints.Count);
-            return HintText(listName, roomHints[SeekX].Message);
-        }
-
-        var general = placed.Where(h => h.Area == 0xff).ToList();
-        if (general.Count == 0)
-            return RandomSaying(listName);
-        if (SeekY == 0xff || SeekY >= general.Count)
-            SeekY = (byte)(US_RndT() % general.Count);
-        return HintText(listName, general[SeekY].Message);
+        var header = PropertyStrings("talk.header").FirstOrDefault();
+        var text = string.IsNullOrEmpty(header) ? said : $"{_hudMessageManager.Localize(header)}\n\n{said}";
+        _hudMessageManager.Show(Managers.HudMessageKind.Other, text, PropertyStrings("talk.style").FirstOrDefault());
+        if (PropertyStrings("talk.sound").FirstOrDefault() is { Length: > 0 } sound)
+            _audioManager.Play(sound);
     }
 
     // One of the map's sayings from a text, or any from the text when the map places none
-    private static string? RandomSaying(string listName)
+    protected static string? RandomSaying(string listName)
     {
         if (string.IsNullOrEmpty(listName))
             return null;
@@ -1003,7 +929,7 @@ internal partial record BlakeMonster : Monster
     private static readonly Dictionary<string, List<string>> hinttexts = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Message <paramref name="number"/> (from 1) of a hint text, or null</summary>
-    private static string? HintText(string listName, int number)
+    protected static string? HintText(string listName, int number)
     {
         var messages = HintMessages(listName);
         return number >= 1 && number <= messages.Count ? messages[number - 1] : null;

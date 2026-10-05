@@ -25,9 +25,9 @@ ElectroAlien:
     Spawn:
       - { sprite: ELCA, frames: [A, B, C], tics-per-frame: 14, next-state: Chase }
     Chase:
-      - { sprite: ELCA, frames: [D], tics-per-frame: 14, think: T_BlakeChase }
+      - { sprite: ELCA, frames: [D], tics-per-frame: 14, think: T_Chase }
       - { sprite: ELCA, frames: [E], tics-per-frame: 14 }
-      - { sprite: ELCA, frames: [F], tics-per-frame: 14, think: T_BlakeChase }
+      - { sprite: ELCA, frames: [F], tics-per-frame: 14, think: T_Chase }
       - { sprite: ELCA, frames: [G], tics-per-frame: 14 }
     Pain:
       - { sprite: ELCA, frames: [H], tics-per-frame: 14, next-state: Chase }
@@ -174,9 +174,9 @@ HangingTurret:
       - { sprite: TURR, frames: [A], tics-per-frame: 10, think: T_Seek }
       - { sprite: TURR, frames: [A], tics-per-frame: 3 }
     Attack:
-      - { sprite: TURR, frames: [B], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: TURR, frames: [B], tics-per-frame: 10, action: T_Shoot }
       - { sprite: TURR, frames: [C], tics-per-frame: 20, modifiers: [bright] }
-      - { sprite: TURR, frames: [B], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: TURR, frames: [B], tics-per-frame: 10, action: T_Shoot }
       - { sprite: TURR, frames: [C], tics-per-frame: 20, modifiers: [bright], next-state: Chase }
     Death:
       - { sprite: TURR, frames: [D], tics-per-frame: 15, action: A_DeathScream, modifiers: [bright] }
@@ -213,13 +213,13 @@ FloatingBomb:
     Path:
       - { sprite: FSCT, frames: [A], tics-per-frame: 15, think: T_Path }
     Chase:
-      - { sprite: FSCT, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: FSCT, frames: [A], tics-per-frame: 10, think: T_Chase }
     Chase2:
-      - { sprite: FSCT, frames: [B], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: FSCT, frames: [B], tics-per-frame: 10, think: T_Chase }
     Chase3:
-      - { sprite: FSCT, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: FSCT, frames: [C], tics-per-frame: 10, think: T_Chase }
     Chase4:
-      - { sprite: FSCT, frames: [D], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: FSCT, frames: [D], tics-per-frame: 10, think: T_Chase }
     Attack:
       - { sprite: FSCT, frames: [A], tics-per-frame: 0, action: A_SelfDestruct }
     Death:

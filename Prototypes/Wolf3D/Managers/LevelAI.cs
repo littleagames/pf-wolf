@@ -106,11 +106,11 @@ internal sealed class LevelAI
         return 60 * min + US_RndT() * 60 * (max - min) / 256;
     }
 
-    // An actor that came out of an outlet keeps its tile (SeekX/SeekY, plus one), so each
-    // outlet knows how many of its own are about
+    // A BlakeMonster that came out of an outlet keeps its tile (SeekX/SeekY, plus one), so each
+    // outlet knows how many of its own are about; of any other class, every one about counts
     private int OutletCount(Outlet outlet) =>
-        _map.GetActors().Count(a => !a.IsRemoved && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)
-            && a.SeekX == outlet.X + 1 && a.SeekY == outlet.Y + 1 && a.Name == outlet.Spec.Class);
+        _map.GetActors().Count(a => !a.IsRemoved && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) && a.Name == outlet.Spec.Class
+            && (a is not BlakeMonster b || b.SeekX == outlet.X + 1 && b.SeekY == outlet.Y + 1));
 
     private void TickOutlets()
     {
@@ -147,13 +147,13 @@ internal sealed class LevelAI
                 continue;
 
             var spawned = _map.SpawnThing(tile.X, tile.Y, new Assets.MapActorTranslation { Class = outlet.Spec.Class, Angles = -1 }, countKill: false);
-            if (spawned != null)
+            if (spawned is BlakeMonster blake)
             {
-                spawned.SeekX = (byte)(outlet.X + 1);
-                spawned.SeekY = (byte)(outlet.Y + 1);
-                if (outlet.Spec.Sound.Length > 0)
-                    PlaySoundLocActor(outlet.Spec.Sound, spawned);
+                blake.SeekX = (byte)(outlet.X + 1);
+                blake.SeekY = (byte)(outlet.Y + 1);
             }
+            if (spawned != null && outlet.Spec.Sound.Length > 0)
+                PlaySoundLocActor(outlet.Spec.Sound, spawned);
             outlet.Delay = OutletDelay(outlet);
             break;
         }

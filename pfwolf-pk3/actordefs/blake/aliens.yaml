@@ -38,17 +38,17 @@ GeneticGuard:
     Spawn:
       - { sprite: GENG, frames: [A], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: GENG, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: GENG, frames: [A], tics-per-frame: 10, think: T_Chase }
       - { sprite: GENG, frames: [A], tics-per-frame: 5 }
-      - { sprite: GENG, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: GENG, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: GENG, frames: [B], tics-per-frame: 8, think: T_Chase }
+      - { sprite: GENG, frames: [C], tics-per-frame: 10, think: T_Chase }
       - { sprite: GENG, frames: [C], tics-per-frame: 5 }
-      - { sprite: GENG, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: GENG, frames: [D], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: GENG, frames: [L], tics-per-frame: 15, next-state: Chase }
     Attack:
       - { sprite: GENG, frames: [I], tics-per-frame: 20 }
-      - { sprite: GENG, frames: [J], tics-per-frame: 20, action: T_BlakeShoot }
+      - { sprite: GENG, frames: [J], tics-per-frame: 20, action: T_Shoot }
       - { sprite: GENG, frames: [K], tics-per-frame: 10, next-state: Chase }
     Melee:
       - { sprite: GENG, frames: [E], tics-per-frame: 20 }
@@ -82,17 +82,17 @@ MutantHuman1:
     Spawn:
       - { sprite: MSEN, frames: [A], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: MSEN, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MSEN, frames: [A], tics-per-frame: 10, think: T_Chase }
       - { sprite: MSEN, frames: [A], tics-per-frame: 5 }
-      - { sprite: MSEN, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: MSEN, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MSEN, frames: [B], tics-per-frame: 8, think: T_Chase }
+      - { sprite: MSEN, frames: [C], tics-per-frame: 10, think: T_Chase }
       - { sprite: MSEN, frames: [C], tics-per-frame: 5 }
-      - { sprite: MSEN, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: MSEN, frames: [D], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: MSEN, frames: [H], tics-per-frame: 15, next-state: Chase }
     Attack:
       - { sprite: MSEN, frames: [E], tics-per-frame: 10 }
-      - { sprite: MSEN, frames: [F], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: MSEN, frames: [F], tics-per-frame: 10, action: T_Shoot }
       - { sprite: MSEN, frames: [G], tics-per-frame: 10, next-state: Chase }
     Death:
       - { sprite: MSEN, frames: [H], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
@@ -122,12 +122,12 @@ MutantHuman2:
     Spawn:
       - { sprite: MHUM, frames: [A], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: MHUM, frames: [A], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MHUM, frames: [A], tics-per-frame: 10, think: T_Chase }
       - { sprite: MHUM, frames: [A], tics-per-frame: 5 }
-      - { sprite: MHUM, frames: [B], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: MHUM, frames: [C], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MHUM, frames: [B], tics-per-frame: 8, think: T_Chase }
+      - { sprite: MHUM, frames: [C], tics-per-frame: 10, think: T_Chase }
       - { sprite: MHUM, frames: [C], tics-per-frame: 5 }
-      - { sprite: MHUM, frames: [D], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: MHUM, frames: [D], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: MHUM, frames: [K], tics-per-frame: 15, next-state: Chase }
     Attack:
@@ -167,12 +167,12 @@ ScanAlien:
     Spawn:
       - { sprite: CNSA, frames: [F], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: CNSA, frames: [F], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: CNSA, frames: [F], tics-per-frame: 10, think: T_Chase }
       - { sprite: CNSA, frames: [F], tics-per-frame: 5 }
-      - { sprite: CNSA, frames: [G], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: CNSA, frames: [H], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: CNSA, frames: [G], tics-per-frame: 8, think: T_Chase }
+      - { sprite: CNSA, frames: [H], tics-per-frame: 10, think: T_Chase }
       - { sprite: CNSA, frames: [H], tics-per-frame: 5 }
-      - { sprite: CNSA, frames: [I], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: CNSA, frames: [I], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: CNSA, frames: [P], tics-per-frame: 15, next-state: Chase }
     Attack:
@@ -208,12 +208,12 @@ LcanAlien:
     Spawn:
       - { sprite: CNTA, frames: [F], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: CNTA, frames: [F], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: CNTA, frames: [F], tics-per-frame: 10, think: T_Chase }
       - { sprite: CNTA, frames: [F], tics-per-frame: 5 }
-      - { sprite: CNTA, frames: [G], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: CNTA, frames: [H], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: CNTA, frames: [G], tics-per-frame: 8, think: T_Chase }
+      - { sprite: CNTA, frames: [H], tics-per-frame: 10, think: T_Chase }
       - { sprite: CNTA, frames: [H], tics-per-frame: 5 }
-      - { sprite: CNTA, frames: [I], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: CNTA, frames: [I], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: CNTA, frames: [P], tics-per-frame: 15, next-state: Chase }
     Attack:
@@ -255,17 +255,17 @@ GurneyMutant:
     Spawn:
       - { sprite: MGUR, frames: [F], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: MGUR, frames: [F], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MGUR, frames: [F], tics-per-frame: 10, think: T_Chase }
       - { sprite: MGUR, frames: [F], tics-per-frame: 5 }
-      - { sprite: MGUR, frames: [G], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: MGUR, frames: [H], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: MGUR, frames: [G], tics-per-frame: 8, think: T_Chase }
+      - { sprite: MGUR, frames: [H], tics-per-frame: 10, think: T_Chase }
       - { sprite: MGUR, frames: [H], tics-per-frame: 5 }
-      - { sprite: MGUR, frames: [I], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: MGUR, frames: [I], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: MGUR, frames: [M], tics-per-frame: 15, next-state: Chase }
     Attack:
       - { sprite: MGUR, frames: [J], tics-per-frame: 10 }
-      - { sprite: MGUR, frames: [K], tics-per-frame: 10, action: T_BlakeShoot }
+      - { sprite: MGUR, frames: [K], tics-per-frame: 10, action: T_Shoot }
       - { sprite: MGUR, frames: [L], tics-per-frame: 10, next-state: Chase }
     Death:
       - { sprite: MGUR, frames: [M], tics-per-frame: 18, think: T_BlowBack, action: A_DeathScream }
@@ -296,12 +296,12 @@ PodAlien:
     Spawn:
       - { sprite: PODA, frames: [E], tics-per-frame: -1, think: T_Stand }
     Chase:
-      - { sprite: PODA, frames: [E], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: PODA, frames: [E], tics-per-frame: 10, think: T_Chase }
       - { sprite: PODA, frames: [E], tics-per-frame: 5 }
-      - { sprite: PODA, frames: [F], tics-per-frame: 8, think: T_BlakeChase }
-      - { sprite: PODA, frames: [G], tics-per-frame: 10, think: T_BlakeChase }
+      - { sprite: PODA, frames: [F], tics-per-frame: 8, think: T_Chase }
+      - { sprite: PODA, frames: [G], tics-per-frame: 10, think: T_Chase }
       - { sprite: PODA, frames: [G], tics-per-frame: 5 }
-      - { sprite: PODA, frames: [H], tics-per-frame: 8, think: T_BlakeChase }
+      - { sprite: PODA, frames: [H], tics-per-frame: 8, think: T_Chase }
     Pain:
       - { sprite: PODA, frames: [O], tics-per-frame: 11, next-state: Chase }
     Attack:

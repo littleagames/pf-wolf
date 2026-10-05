@@ -113,7 +113,7 @@ Monster: {}
 
 # Blake Stone's and Planet Strike's enemies and machines (Entities.Actors.BlakeMonster): a
 # Monster with their ways of chasing, shooting, running, being wounded and talked to, and the
-# thinks and actions that go with them (T_BlakeChase, T_Bounce, A_Melee, ...).
+# thinks and actions that go with them (its own T_Chase and T_Shoot, T_Bounce, A_Melee, ...).
 BlakeMonster:
   parent: Monster
 

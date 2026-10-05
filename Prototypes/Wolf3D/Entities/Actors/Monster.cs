@@ -73,6 +73,25 @@ internal record Monster : Actor
         }
     }
 
+    // The way back from each direction, and the diagonal between two (east/west, then
+    // north/south), in objdirtypes order (from WL_STATE.C)
+    protected static readonly objdirtypes[] opposite = new objdirtypes[9]
+        {objdirtypes.west,objdirtypes.southwest,objdirtypes.south,objdirtypes.southeast,objdirtypes.east,objdirtypes.northeast,objdirtypes.north,objdirtypes.northwest,objdirtypes.nodir};
+
+    protected static readonly objdirtypes[,] diagonal = new objdirtypes[9, 9]
+{
+    /* east */  {objdirtypes.nodir,objdirtypes.nodir,objdirtypes.northeast,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.southeast,objdirtypes.nodir,objdirtypes.nodir
+},
+                {objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir},
+    /* north */ { objdirtypes.northeast,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.northwest,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir},
+                { objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir},
+    /* west */  { objdirtypes.nodir,objdirtypes.nodir,objdirtypes.northwest,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.southwest,objdirtypes.nodir,objdirtypes.nodir},
+                { objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir},
+    /* south */ { objdirtypes.southeast,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.southwest,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir},
+                { objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir},
+                { objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir,objdirtypes.nodir}
+};
+
     internal void RecenterOnTile()
     {
         X = (int)((TileX << MapConstants.TILESHIFT) + MapConstants.TILEGLOBAL / 2);
@@ -673,6 +692,9 @@ internal record Monster : Actor
     /// <summary>Whether dying, it leaves its `dropweapon`/`dropitem`</summary>
     protected virtual bool LeavesDrops => true;
 
+    /// <summary>Whether it has used up the shots it started with (a Monster has no count of them)</summary>
+    protected virtual bool OutOfAmmo => false;
+
     /// <summary>Its `points` for killing it</summary>
     protected virtual void AwardKillPoints()
     {
@@ -726,7 +748,7 @@ internal record Monster : Actor
                 return null;
         }
 
-        bool outOfAmmo = Properties.ContainsKey("monster.ammo") && Ammo == 0;
+        bool outOfAmmo = OutOfAmmo;
         if (outOfAmmo && PropertyBool("dropitem.needsammo"))
             return null;
 

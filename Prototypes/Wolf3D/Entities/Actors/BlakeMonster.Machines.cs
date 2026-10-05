@@ -171,7 +171,7 @@ internal partial record BlakeMonster
         if (Math.Max(dx, dy) < 6 && dx > 1 && dy > 1)
             SetState("Rise");
         else
-            BlakeChase();
+            Chase();
     }
 
     /// <summary>

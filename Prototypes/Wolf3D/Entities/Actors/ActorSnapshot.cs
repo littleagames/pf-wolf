@@ -58,10 +58,11 @@ internal sealed record ActorSnapshot
             Temp1 = actor.Temp1,
             Temp2 = actor.Temp2,
             Temp3 = actor.Temp3,
-            Ammo = actor.Ammo,
-            SeekX = actor.SeekX,
-            SeekY = actor.SeekY,
-            TryDir = actor.TryDir,
+            // Blake Stone's AI's own (BlakeMonster); written for every actor, so saves keep one layout
+            Ammo = (actor as BlakeMonster)?.Ammo ?? 0,
+            SeekX = (actor as BlakeMonster)?.SeekX ?? 0,
+            SeekY = (actor as BlakeMonster)?.SeekY ?? 0,
+            TryDir = (actor as BlakeMonster)?.TryDir ?? (byte)objdirtypes.nodir,
             Hidden = actor.Hidden,
             AreaNumber = actor.AreaNumber,
             X = actor.X,
@@ -91,10 +92,13 @@ internal sealed record ActorSnapshot
         actor.Temp1 = Temp1;
         actor.Temp2 = Temp2;
         actor.Temp3 = Temp3;
-        actor.Ammo = Ammo;
-        actor.SeekX = SeekX;
-        actor.SeekY = SeekY;
-        actor.TryDir = TryDir;
+        if (actor is BlakeMonster blake)
+        {
+            blake.Ammo = Ammo;
+            blake.SeekX = SeekX;
+            blake.SeekY = SeekY;
+            blake.TryDir = TryDir;
+        }
         actor.Hidden = Hidden;
         actor.AreaNumber = AreaNumber;
         actor.X = X;

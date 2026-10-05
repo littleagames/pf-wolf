@@ -30,13 +30,6 @@ internal record Actor : Thinker
     public short Temp3 { get; internal set; }
     public bool Hidden { get; internal set; }
 
-    // Blake Stone's AI (BlakeMonster): shots left (`monster.ammo`), the tile it's heading
-    // for when it runs away or an informant's chosen hints (SeekX/SeekY), and the way a patroller
-    // turns when blocked (TryDir: a dir, plus 128 for clockwise; nodir when not turning)
-    public short Ammo { get; internal set; }
-    public byte SeekX { get; internal set; }
-    public byte SeekY { get; internal set; }
-    public byte TryDir { get; internal set; } = (byte)objdirtypes.nodir;
     public byte AreaNumber { get; internal set; }
 
     // The tag on the tile it spawned on (MapManager.TAGPLANE), 0 for none; a switch with the

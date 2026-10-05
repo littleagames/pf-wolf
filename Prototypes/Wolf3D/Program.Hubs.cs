@@ -95,7 +95,7 @@ internal partial class Program
         if (!RestoreHubLevel(gamestate.mapon))
         {
             SetupGameLevel();
-            informantTotal = _mapManager.GetActors().Count(a => !a.IsRemoved && a.HasFlag("INFORMANT"));
+            informantTotal = _mapManager.GetActors().Count(a => !a.IsRemoved && a is Entities.Actors.Informant);
         }
 
         levelMap = gamestate.mapon;
@@ -331,7 +331,7 @@ internal partial class Program
     static int Ratio(int got, int total) => total == 0 ? 100 : got * 100 / total;
 
     internal static int InformantsAlive() =>
-        _mapManager.GetActors().Count(a => !a.IsRemoved && a.HasFlag("INFORMANT")
+        _mapManager.GetActors().Count(a => !a.IsRemoved && a is Entities.Actors.Informant
             && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
 
     /// <summary>Points, informants and enemies, as (got, total) for the level in play</summary>
@@ -528,8 +528,8 @@ internal partial class Program
         runner.TileX = (byte)(runner.X >> MapConstants.TILESHIFT);
         runner.TileY = (byte)(runner.Y >> MapConstants.TILESHIFT);
         runner.SyncPosition();
-        runner.SeekX = runner.TileX;
-        runner.SeekY = runner.TileY;
+        runner.Temp1 = runner.TileX;       // where it set off from
+        runner.Temp3 = runner.TileY;
         runner.Temp2 = player.Angle;
         return true;
     }
@@ -537,7 +537,7 @@ internal partial class Program
     /// <summary>A_VictoryRun's runner is on its way: the player watches it rather than turning round (T_Player)</summary>
     internal static bool victoryRunning;
 
-    /// <summary>T_VictoryRun: runs the way the player faced (Temp2); six tiles on, or at a wall, the cluster is won</summary>
+    /// <summary>T_VictoryRun: runs the way the player faced (Temp2); six tiles on from where it set off (Temp1, Temp3), or at a wall, the cluster is won</summary>
     internal static void T_VictoryRun(Entities.Actors.Actor ob)
     {
         const int speed = 3000;
@@ -560,7 +560,7 @@ internal partial class Program
             ob.SyncPosition();
         }
 
-        if (blocked || Math.Abs(ob.TileX - ob.SeekX) >= 6 || Math.Abs(ob.TileY - ob.SeekY) >= 6)
+        if (blocked || Math.Abs(ob.TileX - ob.Temp1) >= 6 || Math.Abs(ob.TileY - ob.Temp3) >= 6)
             playstate = playstatetypes.ex_victorious;
     }
 
