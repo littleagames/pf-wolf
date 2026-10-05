@@ -194,7 +194,7 @@ internal partial class Program
             if (extravbls != 0)
                 GameEngineManager.WaitVBL((uint)extravbls);
 
-            if (demoplayback)
+            if (demoplayback && !demoTesting)       // demotest plays each to its end
             {
                 if (_inputManager.CheckAck())
                 {
@@ -414,7 +414,7 @@ internal partial class Program
             uint curtime = SDL_GetTicks();
             lasttimecount += DEMOTICS;
             int timediff = (int)((lasttimecount * 100) / 7 - curtime);
-            if (timediff > 0)
+            if (timediff > 0 && !demoTesting)      // demotest doesn't wait
                 GameEngineManager.DelayMs((uint)timediff);
 
             if (timediff < -2 * DEMOTICS)       // more than 2-times DEMOTICS behind?

@@ -195,6 +195,9 @@ internal partial class Program
         Register("playdemo", "Plays a demo: one recorded with that number (DEMO#.dmo in the demos folder), or else the game's own. Ends the game in progress, then goes back to the title.",
             "playdemo <0-9>", Cmd_PlayDemo,
             complete: (_, i) => i == 0 ? Enumerable.Range(0, 10).Where(DemoExists).Select(n => n.ToString()) : []);
+        Register("demotest", "Plays demos (all of them, or those given) back to back without waiting, and prints how each ended: score, kills, where the player and every actor finished. For checking a change to the game hasn't changed how it plays; run it from --exec.",
+            "demotest [0-9 ...]", Cmd_DemoTest,
+            complete: (_, _) => Enumerable.Range(0, 10).Where(DemoExists).Select(n => n.ToString()));
         Register("recorddemo", "Records a demo on a level, on the hardest skill, until the level ends or you die; saves it as that demo number, or asks for one. Ends the game in progress first.",
             "recorddemo <MAP##> [0-9]", Cmd_RecordDemo,
             complete: (_, i) => i switch
@@ -1249,6 +1252,55 @@ internal partial class Program
         pendingDemo = demonumber;
         if (ingame)
             playstate = playstatetypes.ex_abort;
+    }
+
+    private static void Cmd_DemoTest(string[] args)
+    {
+        if (ingame)
+        {
+            _consoleManager.Print("demotest runs from the title or --exec, not during a game");
+            return;
+        }
+
+        var demos = args.Length > 0
+            ? args.Select(a => int.TryParse(a, out var n) ? n : -1).ToList()
+            : Enumerable.Range(0, 10).Where(DemoExists).ToList();
+
+        demoTesting = true;
+        try
+        {
+            foreach (var demonumber in demos)
+            {
+                if (demonumber < 0 || demonumber > 9 || !DemoExists(demonumber))
+                    Console.WriteLine($"demotest {demonumber}: no such demo");
+                else
+                    PlayDemo(demonumber);
+            }
+        }
+        finally
+        {
+            demoTesting = false;
+        }
+    }
+
+    /// <summary>Set while demotest runs: demos play without waiting, and each prints <see cref="DemoTestReport"/> as it ends</summary>
+    internal static bool demoTesting;
+
+    /// <summary>
+    /// How a demo ended, for demotest: how far it got, the player's stats and spot, and a hash of
+    /// every actor's class, position, health and state, so two builds can be compared line for line
+    /// </summary>
+    internal static string DemoTestReport(int demonumber)
+    {
+        var actors = _mapManager.GetActors().Where(a => !a.IsRemoved && !ReferenceEquals(a, player)).ToList();
+        ulong hash = 14695981039346656037UL;    // FNV-1a
+        foreach (var a in actors)
+            foreach (var c in $"{a.Name},{a.X},{a.Y},{a.Hitpoints},{a.CurrentState?.StateName}|")
+                hash = (hash ^ c) * 1099511628211UL;
+
+        return $"demotest {demonumber}: data {demoptr}/{lastdemoptr} score {gamestate.score} health {gamestate.health} "
+            + $"kills {gamestate.killcount}/{gamestate.killtotal} treasure {gamestate.treasurecount}/{gamestate.treasuretotal} "
+            + $"player {player.X},{player.Y},{player.Angle} actors {actors.Count} hash {hash:x16}";
     }
 
     // Queued like playdemo. The map is MAP## or just its number; a demo can only name MAP01 onwards,

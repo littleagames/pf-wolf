@@ -302,6 +302,8 @@ internal partial class Program
         StartMusic();
 
         PlayLoop();
+        if (demoTesting)
+            Console.WriteLine(DemoTestReport(demonumber));
 
         demoplayback = false;
 
