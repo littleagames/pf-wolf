@@ -2110,26 +2110,33 @@ internal partial class Program
             {
                 var atx = actor.TileX;
                 var aty = actor.TileY;
+
+                // A neighbouring tile only counts while it's open floor: a wall the player
+                // sees isn't somewhere the actor could be showing from
+                bool Seen(int x, int y) => _mapManager.spotvis[x, y] && _mapManager.tilemap[x, y] == 0;
                 if (!(_mapManager.spotvis[atx, aty]
-                    || _mapManager.spotvis[atx - 1, aty]
-                    || _mapManager.spotvis[atx + 1, aty]
-                    || _mapManager.spotvis[atx, aty - 1]
-                    || _mapManager.spotvis[atx - 1, aty - 1]
-                    || _mapManager.spotvis[atx + 1, aty - 1]
-                    || _mapManager.spotvis[atx, aty + 1]
-                    || _mapManager.spotvis[atx - 1, aty + 1]
-                    || _mapManager.spotvis[atx + 1, aty + 1]))
+                    || Seen(atx - 1, aty)
+                    || Seen(atx + 1, aty)
+                    || Seen(atx, aty - 1)
+                    || Seen(atx - 1, aty - 1)
+                    || Seen(atx + 1, aty - 1)
+                    || Seen(atx, aty + 1)
+                    || Seen(atx - 1, aty + 1)
+                    || Seen(atx + 1, aty + 1)))
                 {
                     actor.RuntimeFlags &= ~objflags.FL_VISABLE;
                     continue;
                 }
 
+                // Once near enough to the view, an enemy is awake for good (MapManager.DoActor)
+                if (actor is Entities.Actors.Monster)
+                    actor.Active = activetypes.ac_yes;
+
+                // Too close or far away to draw: as the original, it keeps whether it was
+                // on screen last frame (enemy aim reads that)
                 TransformActor(actor);
                 if (actor.ViewHeight == 0)
-                {
-                    actor.RuntimeFlags &= ~objflags.FL_VISABLE;
                     continue;
-                }
 
                 actor.RuntimeFlags |= objflags.FL_VISABLE;
 
@@ -2266,12 +2273,11 @@ internal partial class Program
         // Fill the span with the value
         data.Fill(false);
 
-        if (!((demorecord || demoplayback)))
-        {
-            if (_mapManager.tilemap[camera.TileX, camera.TileY] == 0 ||
-             (_mapManager.tilemap[camera.TileX, camera.TileY] & BIT_DOOR) != 0)
-                _mapManager.spotvis[camera.TileX, camera.TileY] = true;       // Detect all sprites over camera fix
-        }
+        // Detect all sprites over camera fix. Demos need it too: Wolf4SDL 1.7c, which plays
+        // the games' own demos through, always had it (enemies beside the player stay seen)
+        if (_mapManager.tilemap[camera.TileX, camera.TileY] == 0 ||
+         (_mapManager.tilemap[camera.TileX, camera.TileY] & BIT_DOOR) != 0)
+            _mapManager.spotvis[camera.TileX, camera.TileY] = true;
 
 
         vbuf = 0;

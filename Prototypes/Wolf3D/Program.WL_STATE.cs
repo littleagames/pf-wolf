@@ -16,9 +16,13 @@ internal partial class Program
 
 
 
-    // A diagonal step is blocked by a wall/door (actorat[,]) or by a living actor on the tile.
-    internal static bool CHECKDIAG(int x, int y) =>
-        _mapManager.actorat[x, y] == null && !_mapManager.IsShootableActorAt(x, y);
+    // A diagonal step is blocked by a wall/door (actorat[,]) or by a living actor marked on the tile.
+    internal static bool CHECKDIAG(int x, int y) => _mapManager.actorat[x, y] switch
+    {
+        null => true,
+        ActorMark mark => !Managers.MapManager.IsSolidActor(mark.Who),
+        _ => false,
+    };
 
     // The per-actor movement, sight and combat code (MoveObj/TryWalk/CheckSide, CheckSight/
     // SightPlayer, SelectChaseDir/SelectDodgeDir, Kill/Damage, ...) lives on Entities.Actors.Monster.

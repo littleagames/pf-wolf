@@ -359,6 +359,17 @@ internal class Door: Actor
     public int door;
 }
 
+// An enemy standing on the tile, as the original kept them in actorat[] (MapManager.MarkActorTile)
+internal class ActorMark: Actor
+{
+    public ActorMark(Wolf3D.Entities.Actors.Monster who)
+    {
+        Who = who;
+    }
+
+    public readonly Wolf3D.Entities.Actors.Monster Who;
+}
+
 internal enum playstatetypes
 {
     ex_stillplaying,

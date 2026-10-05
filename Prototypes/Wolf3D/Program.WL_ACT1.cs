@@ -202,10 +202,7 @@ internal partial class Program
         tilex = doorobjlist[door].tilex;
         tiley = doorobjlist[door].tiley;
 
-        if (_mapManager.actorat[tilex, tiley] is Actor)
-            return;
-
-        if (_mapManager.EnemiesAt(tilex, tiley).Any())      // an enemy (or its corpse) in the doorway
+        if (_mapManager.actorat[tilex, tiley] is Actor)     // an enemy (or its corpse) in the doorway
             return;
 
         if (player.TileX == tilex && player.TileY == tiley)
@@ -221,10 +218,10 @@ internal partial class Program
                     return;
             }
 
-            // an enemy on a neighbouring tile, close enough to reach into the doorway
-            if (_mapManager.EnemiesAt(tilex - 1, tiley).Any(e => ((e.X + MINDIST) >> MapConstants.TILESHIFT) == tilex))
+            // an enemy marked on a neighbouring tile, close enough to reach into the doorway
+            if (_mapManager.ActorMarkAt(tilex - 1, tiley) is { } west && ((west.X + MINDIST) >> MapConstants.TILESHIFT) == tilex)
                 return;
-            if (_mapManager.EnemiesAt(tilex + 1, tiley).Any(e => ((e.X - MINDIST) >> MapConstants.TILESHIFT) == tilex))
+            if (_mapManager.ActorMarkAt(tilex + 1, tiley) is { } east && ((east.X - MINDIST) >> MapConstants.TILESHIFT) == tilex)
                 return;
         }
         else
@@ -237,9 +234,9 @@ internal partial class Program
                     return;
             }
 
-            if (_mapManager.EnemiesAt(tilex, tiley - 1).Any(e => ((e.Y + MINDIST) >> MapConstants.TILESHIFT) == tiley))
+            if (_mapManager.ActorMarkAt(tilex, tiley - 1) is { } north && ((north.Y + MINDIST) >> MapConstants.TILESHIFT) == tiley)
                 return;
-            if (_mapManager.EnemiesAt(tilex, tiley + 1).Any(e => ((e.Y - MINDIST) >> MapConstants.TILESHIFT) == tiley))
+            if (_mapManager.ActorMarkAt(tilex, tiley + 1) is { } south && ((south.Y - MINDIST) >> MapConstants.TILESHIFT) == tiley)
                 return;
         }
 

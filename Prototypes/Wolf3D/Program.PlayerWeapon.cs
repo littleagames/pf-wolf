@@ -24,10 +24,56 @@ internal partial class Program
         if (weaponSprite != null && string.Equals(weaponSprite.Name, gamestate.weapon, StringComparison.OrdinalIgnoreCase))
             return weaponSprite;
 
+        var old = weaponSprite;
         weaponSprite = _inventoryManager.CreateActor(gamestate.weapon);
-        if (weaponSprite != null && weaponSprite.ResolvedStates.TryGetValue(WeaponReadyState, out var ready))
+        if (weaponSprite == null)
+            return null;
+
+        // A weapon picked up mid-attack takes over the attack where it had got to, as vanilla's
+        // T_Attack carried on through the new weapon's attackinfo; otherwise it starts Ready
+        if (old != null && AttackStep(old) is { } step && AttackFrame(weaponSprite, step) is { } frame)
+        {
+            weaponSprite.CurrentState = frame;
+            weaponSprite.TicCount = old.TicCount;
+        }
+        else if (weaponSprite.ResolvedStates.TryGetValue(WeaponReadyState, out var ready))
             weaponSprite.ArmState(ready);
         return weaponSprite;
+    }
+
+    /// <summary>How many timed frames into its attack (from Fire's first) a weapon is, or null when it isn't attacking</summary>
+    static int? AttackStep(Entities.Actors.Actor weapon)
+    {
+        if (weapon.CurrentState is not { } current || current.StateName == WeaponReadyState
+            || !weapon.ResolvedStates.TryGetValue("Fire", out var frame))
+            return null;
+
+        for (int step = 0, guard = 0; frame != null && guard < 32; frame = frame.Next, guard++)
+        {
+            if (ReferenceEquals(frame, current))
+                return step;
+            if (frame.TicTime != 0)
+                step++;
+            if (frame.StateName == WeaponReadyState)
+                break;
+        }
+        return null;
+    }
+
+    /// <summary>The timed frame that many into a weapon's attack (AttackStep), if it gets that far</summary>
+    static Entities.Actors.ActorStateFrame? AttackFrame(Entities.Actors.Actor weapon, int step)
+    {
+        if (!weapon.ResolvedStates.TryGetValue("Fire", out var frame))
+            return null;
+
+        for (int guard = 0; frame != null && guard < 32 && frame.StateName != WeaponReadyState; frame = frame.Next, guard++)
+        {
+            if (frame.TicTime == 0)
+                continue;
+            if (step-- == 0)
+                return frame;
+        }
+        return null;
     }
 
     /// <summary>Whether the weapon is idle on its Ready state (not mid-attack).</summary>
@@ -74,14 +120,24 @@ internal partial class Program
         var inHand = CanFire(gamestate.chosenweapon) ? gamestate.chosenweapon : BestWeapon(canFire: true);
         if (inHand != null && inHand != gamestate.weapon)
         {
-            gamestate.weapon = inHand;      // SyncWeaponSprite swaps the sprite next time
+            gamestate.weapon = inHand;
             DrawWeapon();
-            return;
+
+            // A press now fires the weapon taken up (as vanilla, where the knife came out as the
+            // last attack ended), so carry on with its sprite rather than this one
+            if (SyncWeaponSprite() is not { } taken)
+                return;
+            weapon = taken;
         }
 
         if (_inputManager.IsButtonPressed(buttontypes.bt_attack) && !_inputManager.IsButtonHeld(buttontypes.bt_attack))
         {
             _inputManager.SetButtonHeld(buttontypes.bt_attack, true);
+
+            // As Cmd_Fire: the attack starts from its first frame's full tics, counted down from
+            // the next tic on, not from what's left of this one (or a machine gun's check for
+            // fire still being held comes a tic early)
+            weapon.TicCount = 0;
             JumpWeaponState(weapon, "Fire");
         }
     }

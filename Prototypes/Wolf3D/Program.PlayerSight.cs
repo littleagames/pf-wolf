@@ -85,6 +85,8 @@ internal partial class Program
 
             bool onscreen = actor.ViewHeight > 0
                 && actor.ViewX + actor.ViewHeight >= 0 && actor.ViewX - actor.ViewHeight < viewwidth;
+            if (onscreen && actor is Monster)
+                actor.Active = activetypes.ac_yes;      // seen: awake for good, as when drawn
             if (onscreen && CheckLine(actor))
                 actor.RuntimeFlags |= objflags.FL_VISABLE;
             else

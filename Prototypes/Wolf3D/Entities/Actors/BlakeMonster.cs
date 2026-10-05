@@ -13,6 +13,9 @@ namespace Wolf3D.Entities.Actors;
 /// </summary>
 internal partial record BlakeMonster : Monster
 {
+    /// <summary>Blake Stone's actors keep thinking out of the player's areas (their own wake-up rules apply)</summary>
+    internal override bool SleepsOutOfReach => false;
+
     /// <summary>The thinks and actions only a BlakeMonster can run, by their actordefs names.</summary>
     internal static void RegisterActions()
     {

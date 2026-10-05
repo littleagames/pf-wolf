@@ -233,12 +233,17 @@ internal partial class Program
         if (speed >= MINDIST * 2)
             speed = (int)(MINDIST * 2 - 1);
 
-        xmove = //DEMOCHOOSE_ORIG_SDL(
-                 //   FixedByFracOrig(speed, costable[angle]),
-                    MathUtils.FixedMul(speed, costable[angle]);
-        ymove =// DEMOCHOOSE_ORIG_SDL(
-                 //   -FixedByFracOrig(speed, sintable[angle]),
-                    -MathUtils.FixedMul(speed, sintable[angle]);
+        // demos move the player exactly as v1.4 did, or they drift from what was recorded
+        if (demorecord || demoplayback)
+        {
+            xmove = MathUtils.FixedByFracOrig(speed, costable[angle]);
+            ymove = -MathUtils.FixedByFracOrig(speed, sintable[angle]);
+        }
+        else
+        {
+            xmove = MathUtils.FixedMul(speed, costable[angle]);
+            ymove = -MathUtils.FixedMul(speed, sintable[angle]);
+        }
 
         ClipMove(player, xmove, ymove);
 
@@ -290,7 +295,7 @@ internal partial class Program
             for (x = xl; x <= xh; x++)
             {
                 check = _mapManager.actorat[x, y];
-                if (check != null)
+                if (check != null && check is not ActorMark)       // enemies are checked below
                 {
                     if (check is WallSpriteBlocker)
                         nearwallsprite = true;          // only its panel blocks: checked below
@@ -343,8 +348,8 @@ internal partial class Program
         }
 
         //
-        // check for actors: a living actor on a tile near the player, and within
-        // MINACTORDIST of it, blocks the move
+        // check for actors: a living actor marked on a tile near the player
+        // (MapManager.MarkActorTile), and within MINACTORDIST of it, blocks the move
         //
         if (yl > 0)
             yl--;
@@ -355,21 +360,22 @@ internal partial class Program
         if (xh < MapManager.MAPSIZE - 1)
             xh++;
 
-        foreach (var actor in _mapManager.GetActors())
+        for (y = yl; y <= yh; y++)
         {
-            if (actor.IsRemoved || !Managers.MapManager.IsSolidActor(actor))
-                continue;
-            if (actor.TileX < xl || actor.TileX > xh || actor.TileY < yl || actor.TileY > yh)
-                continue;
+            for (x = xl; x <= xh; x++)
+            {
+                if (_mapManager.ActorMarkAt((int)x, (int)y) is not { } actor || !Managers.MapManager.IsSolidActor(actor))
+                    continue;
 
-            var deltax = ob.X - actor.X;
-            if (deltax < -MINACTORDIST || deltax > MINACTORDIST)
-                continue;
-            var deltay = ob.Y - actor.Y;
-            if (deltay < -MINACTORDIST || deltay > MINACTORDIST)
-                continue;
+                var deltax = ob.X - actor.X;
+                if (deltax < -MINACTORDIST || deltax > MINACTORDIST)
+                    continue;
+                var deltay = ob.Y - actor.Y;
+                if (deltay < -MINACTORDIST || deltay > MINACTORDIST)
+                    continue;
 
-            return false;
+                return false;
+            }
         }
 
         return true;
@@ -1034,6 +1040,17 @@ internal partial class Program
         DrawHealth();
         DrawArmor();
         DrawFace();
+
+        // A heavy hit makes BJ wince (Spear of Destiny); demos rely on the face's count restarting.
+        // Vanilla only restarted it with the status bar showing; here it always does, so how a
+        // demo plays doesn't depend on the view size.
+        if (StatusBar.Get("face") is { Ouch.Length: > 0 } face && points > face.OuchDamage
+            && gamestate.health != 0 && godmode == 0 && _assetManager.Exists<Assets.GraphicAsset>(face.Ouch))
+        {
+            if (viewsize != 21)
+                StatusDrawFace(face.Ouch);
+            facecount = 0;
+        }
     }
 
     /// <summary>The most health the player can have: the Player class's `player.maxhealth` (Wolf3D's 100 when left out)</summary>

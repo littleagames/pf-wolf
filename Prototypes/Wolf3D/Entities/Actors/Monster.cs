@@ -269,6 +269,9 @@ internal record Monster : Actor
     internal int CheckSide(int x, int y, ref int doornumtile)
     {
         var temp = _mapManager.actorat[x, y];
+        if (temp is ActorMark mark)
+            return MapManager.IsSolidActor(mark.Who) ? 0 : 2;     // another enemy's there (alive, it's in the way)
+
         if (temp != null)
         {
             if (temp is Wall or BlockingActor)
@@ -295,10 +298,6 @@ internal record Monster : Actor
                     return 1;
                 }
             }
-        }
-        else if (_mapManager.IsShootableActorAt(x, y))
-        {
-            return 0;       // another living actor is standing there
         }
 
         return 2; // continue
@@ -664,6 +663,17 @@ internal record Monster : Actor
             return;
         }
 
+        // As KillActor: it dies on the tile it's over, not the one it was walking to (except
+        // Mecha Hitler, whose Hitler would otherwise jump: MCS's fix), and leaves actorat[]
+        // until its corpse lies on an empty tile
+        if (Name != "MechaHitler")
+        {
+            TileX = (byte)tilex;
+            TileY = (byte)tiley;
+            SyncPosition();
+        }
+        _mapManager.UnmarkActorTile(TileX, TileY);
+
         AwardKillPoints();
         SetState("Death");
         OnKilled(attacker);
@@ -685,6 +695,16 @@ internal record Monster : Actor
         RuntimeFlags &= ~(objflags.FL_SHOOTABLE | objflags.FL_FRIENDLY);
         RuntimeFlags |= objflags.FL_NONMARK;
     }
+
+    /// <summary>
+    /// Whether, until it has been on screen (Active), it does nothing while its area isn't
+    /// connected to the player's, as Wolf3D's DoActor had it
+    /// </summary>
+    internal virtual bool SleepsOutOfReach => true;
+
+    /// <summary>Its entry in actorat[] while it's marked there (MapManager.MarkActorTile)</summary>
+    internal ActorMark Mark => _mark is { } mark && ReferenceEquals(mark.Who, this) ? mark : _mark = new ActorMark(this);   // not a copy's (`with`)
+    private ActorMark? _mark;
 
     /// <summary>Whether it counts toward the level's kills (its total, and the count as each dies); NOTCOUNTED actors don't</summary>
     internal virtual bool IsKill => !HasFlag("NOTCOUNTED");
@@ -800,11 +820,10 @@ internal record Monster : Actor
             int stage = Hitpoints > 3 * fullHealth / 4 ? 0 : Hitpoints > fullHealth / 2 ? 1 : Hitpoints > fullHealth / 4 ? 2 : 3;
             SetState(damageStates[Math.Min(stage, damageStates.Count - 1)]);
         }
-        // Legacy DamageActor alternated between two single-frame Pain variants by hitpoints
-        // parity; the new actordefs' "Pain" group instead plays both frames in sequence
-        // before falling through to Chase -- close enough visually, simpler to drive.
+        // As DamageActor: "Pain" with odd hitpoints left, its "Pain1" variant (when it has one)
+        // with even, so the flinch looks different hit to hit
         else if (ResolvedStates.ContainsKey("Pain") && (!PropertyBool("monster.painonce") || oldHitpoints >= fullHealth))
-            SetState("Pain");
+            SetState((Hitpoints & 1) == 0 && ResolvedStates.ContainsKey("Pain1") ? "Pain1" : "Pain");
 
         OnPain();
     }

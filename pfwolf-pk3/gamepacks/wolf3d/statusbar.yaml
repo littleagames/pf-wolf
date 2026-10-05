@@ -69,6 +69,9 @@ face:
     Needle: mutantbj
   # While the pickup sound of an item flagged WEAPON.ALWAYSGRIN (the chaingun) plays
   grin: gotgatling
+  # Shown on a hit of more than ouch-damage, where the game has the picture (Spear of Destiny)
+  ouch: STFOUCH0
+  ouch-damage: 30
 health:
   x: 168
   y: 16

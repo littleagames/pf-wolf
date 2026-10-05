@@ -14,6 +14,11 @@ Clip:
     "ammo.backpackboostamount": 100
     "ammo.backpackmaxamount": 299
     "inventory.pickupmessage": "$GOTCLIP"
+# The used clip a dead enemy drops (vanilla's bo_clip2): half a full one
+DroppedClip:
+  parent: Clip
+  properties:
+    "inventory.amount": 4
 ClipBox:
   parent: Clip
   states:

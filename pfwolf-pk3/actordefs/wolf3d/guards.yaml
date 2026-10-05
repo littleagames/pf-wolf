@@ -49,7 +49,7 @@
 #    that don't fit the properties schema are left as comments rather than
 #    invented property keys.
 # 6. SS drop either a MachineGun or a Clip depending on the player's current
-#    best weapon (KillActor): `dropitem: Clip` plus `dropweapon: MachineGun`,
+#    best weapon (KillActor): `dropitem: DroppedClip` plus `dropweapon: MachineGun`,
 #    which replaces the dropitem while the player has nothing as good.
 # 7. Frame letters: Attack/Pain/Death originally all pointed at frame "A"
 #    (the rotating Spawn/stand sprite), which produced invalid asset names
@@ -100,13 +100,14 @@ Guard:
         frames: [E]
         tics-per-frame: 15
         think: T_Path
-    # Pain has two variants (s_grdpain / s_grdpain1); DamageActor picks
-    # between them based on hitpoints odd/even. Both just fall into Chase.
+    # Pain has two variants (s_grdpain / s_grdpain1); Monster.Damage picks
+    # Pain with odd hitpoints left, Pain1 with even. Both just fall into Chase.
     Pain:
       - sprite: GARD
         frames: [I]
         tics-per-frame: 10
         next-state: Chase
+    Pain1:
       - sprite: GARD
         frames: [J]
         tics-per-frame: 10
@@ -170,7 +171,7 @@ Guard:
     "seesound": "guard/sight" # inferred, was "HALT"
     "attacksound": "guard/attack" # was "NAZIFIRE" (generic soldier gunfire)
     "deathsound": "guard/death"
-    "dropitem": "Clip"
+    "dropitem": "DroppedClip"
     # Reaction delay after first sighting: 1 + random()/4 tics.
 
 # -----------------------------------------------------------------------
@@ -207,11 +208,12 @@ Officer:
         frames: [E]
         tics-per-frame: 15
         think: T_Path
-    Pain: # s_ofcpain / s_ofcpain1
+    Pain: # s_ofcpain
       - sprite: OFFI
         frames: [I]
         tics-per-frame: 10
         next-state: Chase
+    Pain1: # s_ofcpain1
       - sprite: OFFI
         frames: [J]
         tics-per-frame: 10
@@ -278,7 +280,7 @@ Officer:
     "seesound": "officer/sight" # inferred, was "SPION"
     "attacksound": "officer/attack" # was "NAZIFIRE" (generic soldier gunfire)
     "deathsound": "officer/death"
-    "dropitem": "Clip"
+    "dropitem": "DroppedClip"
     # Reaction delay after first sighting: fixed 2 tics.
 
 # -----------------------------------------------------------------------
@@ -320,11 +322,12 @@ SS:
         frames: [D]
         tics-per-frame: 15
         think: T_Path
-    Pain: # s_sspain / s_sspain1
+    Pain: # s_sspain
       - sprite: SSWV
         frames: [H]
         tics-per-frame: 10
         next-state: Chase
+    Pain1: # s_sspain1
       - sprite: SSWV
         frames: [I]
         tics-per-frame: 10
@@ -415,7 +418,7 @@ SS:
     "seesound": "wolfss/sight" # inferred, was "SCHUTZAD"
     "attacksound": "wolfss/attack" # was "SSFIRE"
     "deathsound": "wolfss/death"
-    "dropitem": "Clip"
+    "dropitem": "DroppedClip"
     # Drops a MachineGun instead of the Clip while the player holds nothing as
     # good (KillActor's bestweapon < wp_machinegun).
     "dropweapon": "MachineGun"
@@ -458,11 +461,12 @@ Mutant:
         frames: [E]
         tics-per-frame: 15
         think: T_Path
-    Pain: # s_mutpain / s_mutpain1
+    Pain: # s_mutpain
       - sprite: MTNT
         frames: [J]
         tics-per-frame: 10
         next-state: Chase
+    Pain1: # s_mutpain1
       - sprite: MTNT
         frames: [K]
         tics-per-frame: 10
@@ -539,7 +543,7 @@ Mutant:
     "points": 700
     "attacksound": "mutant/attack" # was "NAZIFIRE" (generic soldier gunfire); no seesound in source
     "deathsound": "mutant/death"
-    "dropitem": "Clip"
+    "dropitem": "DroppedClip"
     # Reaction delay after first sighting: 1 + random()/6 tics.
 
 # -----------------------------------------------------------------------
@@ -637,9 +641,14 @@ Dog:
       - sprite: DOGY
         frames: [J]
         tics-per-frame: 15
+        next-state: Dead
+    # s_dogdead goes round itself every 15 tics rather than holding (which
+    # demo playback depends on)
+    Dead:
       - sprite: DOGY
         frames: [K]
-        tics-per-frame: -1
+        tics-per-frame: 15
+        next-state: Dead
   properties:
     "tag": "Dog"
     "obituary": "$OB_DOG"

@@ -98,6 +98,16 @@ internal class StatusBarElement
     /// </summary>
     public string? Grin { get; set; }
 
+    /// <summary>
+    /// face: Spear of Destiny's wince, shown in place of the face on a hit of more than
+    /// <see cref="OuchDamage"/> (the face then starts its next look round afresh); only when
+    /// the game has the picture
+    /// </summary>
+    public string? Ouch { get; set; }
+
+    /// <summary>face: how much one hit has to take (more than this) for <see cref="Ouch"/></summary>
+    public int OuchDamage { get; set; } = 30;
+
     /// <summary>Any part: placed on the top status bar (statusbar.yaml top) instead of the bottom one</summary>
     public bool Top { get; set; }
 

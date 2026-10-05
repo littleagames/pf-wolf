@@ -278,9 +278,10 @@ internal class MapManager
                 }
                 else
                 {
-                    // area floor
+                    // area floor (unless a patroller already scanned is heading onto it)
                     tilemap[x, y] = 0;
-                    actorat[x, y] = null;
+                    if (actorat[x, y] is not ActorMark)
+                        actorat[x, y] = null;
                 }
 
                 // TODO: SpawnDoor
@@ -799,6 +800,18 @@ internal class MapManager
         {
             builtActor.ArmState(pathState);
             builtActor.Distance = (int)MapConstants.TILEGLOBAL;
+            builtActor.Active = activetypes.ac_yes;     // a patroller walks wherever the player is
+
+            // As SpawnPatrol did: it's already on its way to the next tile, which is its tile from
+            // now on (it leaves the spawn tile's centre), or reaching it would snap it back a tile
+            switch (builtActor.Dir)
+            {
+                case objdirtypes.east: builtActor.TileX++; break;
+                case objdirtypes.north: builtActor.TileY--; break;
+                case objdirtypes.west: builtActor.TileX--; break;
+                case objdirtypes.south: builtActor.TileY++; break;
+            }
+            builtActor.SyncPosition();
         }
 
         // AMBUSH actors (the bosses, the Pac-Man ghosts) are always spawned ambush-ready,
@@ -872,6 +885,14 @@ internal class MapManager
             (builtActor as Entities.Actors.Monster)?.OnSpawned(tilex, tiley);
         }
 
+        // An enemy starts a random way into its first frame (patrollers out of step), as
+        // SpawnNewObj did; these draws come before play starts, so demos rely on them too
+        if (builtActor is Entities.Actors.Monster spawnedMonster)
+        {
+            builtActor.TicCount = SpawnTicCount(builtActor.CurrentState);
+            MarkActorTile(spawnedMonster);      // a patroller's on the tile it's heading for
+        }
+
         // Treasure (ScoreItem and the 1-up) counts toward the level's treasure ratio; GetBonus
         // (Program.WL_AGENT.cs) bumps treasurecount on pickup off the same flag.
         if (!Program.loadedgame && builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
@@ -923,6 +944,20 @@ internal class MapManager
     // Runtime enemy-to-enemy morph (A_HitlerMorph, Monster.HitlerMorph): spawns a new enemy
     // already in its Chase state at the dying source actor's exact position/facing, rather
     // than going through the tile/mapdefs-driven SpawnThing path.
+    /// <summary>
+    /// SpawnNewObj's first countdown for a new actor's frame: a random part of the frame's tics
+    /// (none for a frame that holds). Demos keep v1.4's 0 to tics-1, which can end the frame on
+    /// the first tic; otherwise 1 to tics, Wolf4SDL's fix for that (Chris' "moonwalk" fix).
+    /// </summary>
+    internal static short SpawnTicCount(Entities.Actors.ActorStateFrame? frame)
+    {
+        if (frame == null || frame.HoldsForever || frame.TicTime <= 0)
+            return (short)Math.Max(frame?.TicTime ?? 0, (short)0);
+
+        var count = Program.US_RndT() % frame.TicTime;
+        return (short)(Program.demorecord || Program.demoplayback ? count : count + 1);
+    }
+
     internal Entities.Actors.Actor? SpawnMorphedEnemy(string className, Entities.Actors.Actor source)
     {
         var actorMetaData = assetManager.Value.GetActorMetadata();
@@ -947,7 +982,10 @@ internal class MapManager
         if (builtActor.ResolvedStates.TryGetValue("Chase", out var chaseState))
         {
             builtActor.ArmState(chaseState);
+            builtActor.TicCount = SpawnTicCount(chaseState);
         }
+        if (builtActor is Entities.Actors.Monster morphed)
+            MarkActorTile(morphed);
 
         _actors.AddLast(builtActor);
         return builtActor;
@@ -1142,9 +1180,22 @@ internal class MapManager
         if (state == null || ob.IsRemoved)
             return;
 
+        // As the original: an enemy that has never been on screen (nor patrols) does nothing
+        // while its area isn't connected to the player's
+        if (ob is Entities.Actors.Monster { SleepsOutOfReach: true } && ob.Active == activetypes.ac_no
+            && ob.AreaNumber < Floors.NumAreas && Program.areabyplayer[ob.AreaNumber] == 0)
+            return;
+
+        // It's lifted off its tile while it thinks, and put back on the one it ends up on
+        bool marks = ob is Entities.Actors.Monster && (ob.RuntimeFlags & (objflags.FL_NONMARK | objflags.FL_NEVERMARK)) == 0;
+        if (marks)
+            UnmarkActorTile(ob.TileX, ob.TileY);
+
         // Mirrors Program.DoActor (Program.WL_PLAY.cs): a frame that holds forever (-1) only
-        // runs its Think each tic; Next is never consulted again.
-        if (!state.HoldsForever)
+        // runs its Think each tic; Next is never consulted again. So does one with no countdown
+        // at all, as the original's ticcount 0: a demo's spawn can leave a patroller that way
+        // (SpawnTicCount), walking on its first frame until it changes state.
+        if (!state.HoldsForever && !(ob.TicCount == 0 && state.TicTime > 0))
         {
             ob.TicCount -= (short)tics;
             ob.AdvanceFrames();
@@ -1154,7 +1205,41 @@ internal class MapManager
         }
 
         Entities.Actors.ActorActionRegistry.Invoke(state.Think, ob);
+
+        if (ob is Entities.Actors.Monster monster && !ob.IsRemoved)
+            MarkActorTile(monster);
     }
+
+    /*
+    The original kept each enemy in actorat[] too, on the tile it was on as of its last think:
+    it overwrote a door's entry there (so a door can't close on it) and a door opening all the
+    way cleared it. Other enemies' moves (Monster.CheckSide, CHECKDIAG), the player's
+    (TryMove), and doors closing all read it from there, which demos depend on.
+    */
+
+    /// <summary>Puts a living or dead enemy in actorat[] where it stands, as DoActor did after its think</summary>
+    internal void MarkActorTile(Entities.Actors.Monster ob)
+    {
+        if (ob.RuntimeFlags.HasFlag(objflags.FL_NEVERMARK))
+            return;
+
+        ref var spot = ref actorat[ob.TileX, ob.TileY];
+        if (spot is Wall or BlockingActor)
+            return;                 // never on a wall or a solid thing (or a wall sprite's tile)
+        if (ob.RuntimeFlags.HasFlag(objflags.FL_NONMARK) && spot != null)
+            return;                 // a corpse only takes an empty tile
+        spot = ob.Mark;
+    }
+
+    /// <summary>Clears an enemy's (or a door's) entry from actorat[], as DoActor and KillActor did</summary>
+    internal void UnmarkActorTile(int tilex, int tiley)
+    {
+        if (actorat[tilex, tiley] is ActorMark or Door)
+            actorat[tilex, tiley] = null;
+    }
+
+    /// <summary>The enemy marked on a tile (MarkActorTile), if any</summary>
+    internal Entities.Actors.Monster? ActorMarkAt(int tilex, int tiley) => (actorat[tilex, tiley] as ActorMark)?.Who;
 
     /*
     =============================================================================
@@ -1312,6 +1397,10 @@ internal class MapManager
             _actors.AddLast(actor);
             restored.Add(actor);
         }
+
+        // Saves don't hold the enemies' actorat[] marks: put them back where they stand
+        foreach (var monster in restored.OfType<Entities.Actors.Monster>())
+            MarkActorTile(monster);
 
         // The player has to think first, as it does after a normal level load.
         _actors.Remove(Player!);

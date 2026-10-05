@@ -208,7 +208,7 @@ internal partial class Program
             for (x = xl; x <= xh; x++)
             {
                 check = _mapManager.actorat[x, y];
-                if (check == null)
+                if (check is null or ActorMark)     // enemies are hit by the projectile's own check
                     continue;
 
                 // a wall sprite only blocks along its panel, unless it lets projectiles through
@@ -391,8 +391,7 @@ internal partial class Program
         bj.AreaNumber = (byte)(_mapManager.MAPSPOT(bj.TileX, bj.TileY, 0) - _mapManager.Floors.AreaTile);
 
         // SpawnNewObj started every actor a random number of tics into its first frame.
-        var firstTicTime = bj.CurrentState?.TicTime ?? 0;
-        bj.TicCount = firstTicTime > 0 ? (short)(US_RndT() % firstTicTime + 1) : (short)0;
+        bj.TicCount = Managers.MapManager.SpawnTicCount(bj.CurrentState);
 
         bj.Dir = objdirtypes.north;
         bj.Temp1 = 6;                      // tiles to run forward
@@ -427,7 +426,7 @@ internal partial class Program
             for (x = xl; x <= xh; x++)
             {
                 check = _mapManager.actorat[x, y];
-                if (check != null)
+                if (check is not (null or ActorMark))     // only walls and solid things
                     return false;
             }
         }
