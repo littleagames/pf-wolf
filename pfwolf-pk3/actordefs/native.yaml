@@ -111,6 +111,12 @@ Weapon:
 # needs it as an ancestor. It adds nothing of its own here; the class is what it brings.
 Monster: {}
 
+# Blake Stone's and Planet Strike's enemies and machines (Entities.Actors.BlakeMonster): a
+# Monster with their ways of chasing, shooting, running, being wounded and talked to, and the
+# thinks and actions that go with them (T_BlakeChase, T_Bounce, A_Melee, ...).
+BlakeMonster:
+  parent: Monster
+
 WeaponGiver:
   parent: Weapon
   properties:

@@ -325,7 +325,7 @@ PodAlien:
 # hatches 5-24 seconds (or the map's time) after Blake first sees it, or when shot.
 # -----------------------------------------------------------------------
 ScanCanister:
-  parent: Monster
+  parent: BlakeMonster
   flags: [STATIONARY]
   properties:
     "tag": "$BS_SCANALIEN"
@@ -364,7 +364,7 @@ LcanCanister:
       - { sprite: CNTA, frames: [E], tics-per-frame: -1 }
 
 GurneySleeper:
-  parent: Monster
+  parent: BlakeMonster
   flags: [STATIONARY]
   properties:
     "tag": "$BS_GURNEYMUTANT"
@@ -386,7 +386,7 @@ GurneySleeper:
       - { sprite: MGUR, frames: [E], tics-per-frame: -1 }
 
 PodEgg:
-  parent: Monster
+  parent: BlakeMonster
   properties:
     "switched": kill      # a smart switch on its tile hatches it (Program.SmartSwitch.cs)
     "tag": "$BS_PODALIEN"

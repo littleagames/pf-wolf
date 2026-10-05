@@ -1,17 +1,109 @@
 using Wolf3D.Constants;
 using Wolf3D.Extensions;
+using Wolf3D.Managers;
+using static Wolf3D.Program;
 
-namespace Wolf3D;
+namespace Wolf3D.Entities.Actors;
 
-internal partial class Program
+/// <summary>
+/// Blake Stone's (and Planet Strike's) enemies: a <see cref="Monster"/> with their ways of
+/// chasing, shooting, running away, being wounded, dying and being talked to, as bstone has
+/// them. An actordefs class is one with `parent: BlakeMonster` (or BlakeEnemy, which has it).
+/// Its machines (electro-spheres, turrets, vents, barriers...) are in BlakeMonster.Machines.cs.
+/// </summary>
+internal partial record BlakeMonster : Monster
 {
+    /// <summary>The thinks and actions only a BlakeMonster can run, by their actordefs names.</summary>
+    internal static void RegisterActions()
+    {
+        ActorActionRegistry.RegisterFor<BlakeMonster>("T_BlakeChase", m => m.BlakeChase());
+        ActorActionRegistry.RegisterFor<BlakeMonster>("T_BlakeShoot", m => m.BlakeShoot());
+        ActorActionRegistry.RegisterFor<BlakeMonster>("T_BlowBack", m => m.BlowBack());
+        ActorActionRegistry.RegisterFor<BlakeMonster>("T_Wounded", m => m.Wounded());
+        ActorActionRegistry.RegisterFor<BlakeMonster>("T_WaitToWake", m => m.WaitToWake());
+        ActorActionRegistry.RegisterFor<BlakeMonster>("A_SpawnEnemy", (m, args) => m.SpawnEnemy(args));
+        ActorActionRegistry.RegisterFor<BlakeMonster>("A_Melee", (m, args) => m.Melee(args));
+        RegisterMachineActions();
+    }
+
+    /*
+    =============================================================================
+
+                        WHERE IT GOES ITS OWN WAY (Monster's hooks)
+
+    =============================================================================
+    */
+
+    // An INFORMANT never goes after the player, isn't a kill, leaves nothing, and says so when
+    // it dies; hurt (and still alive), it just flinches
+    internal override bool SightPlayer() => !HasFlag("INFORMANT") && base.SightPlayer();
+    internal override bool IsKill => base.IsKill && !HasFlag("INFORMANT");
+    protected override bool LeavesDrops => !HasFlag("INFORMANT");
+    protected override bool NoticesWhenHurt => !HasFlag("INFORMANT");
+
+    protected override void AwardKillPoints()
+    {
+        if (HasFlag("INFORMANT"))
+            WarnKilledInformant();
+        else
+            base.AwardKillPoints();
+    }
+
+    // The body slides back from what killed it (T_BlowBack)
+    protected override void OnKilled(Actor? attacker) => StartBlowBack(attacker);
+
+    internal override void Damage(uint damage, Actor? attacker = null)
+    {
+        // A sleeper on a timer (`monster.wakeprotected`, the gurney mutant) can't be shot awake
+        if (PropertyBool("monster.wakeprotected") && Temp3 > 0)
+            return;
+        base.Damage(damage, attacker);
+    }
+
+    // Hurt, a SWAT guard goes down wounded; a `monster.painattack` actor already stunned since it
+    // last chased doesn't flinch again
+    protected override bool OnHurt(int oldHitpoints) =>
+        WoundActor(oldHitpoints)
+        || Properties.ContainsKey("monster.painattack") && RuntimeFlags.HasFlag(objflags.FL_LOCKEDSTATE);
+
+    // ... and a `monster.painattack` actor now and then shoots straight back, and can't be
+    // stunned again until it next chases
+    protected override void OnPain()
+    {
+        if (!Properties.ContainsKey("monster.painattack"))
+            return;
+        if (US_RndT() < PropertyInt("monster.painattack", 0) && !HasFlag("STATIONARY"))
+        {
+            ChangeShootMode();
+            DoAttack();
+        }
+        RuntimeFlags |= objflags.FL_LOCKEDSTATE;
+    }
+
+    // A STEPBACK actor walking into the player turns round and heads back to the tile it came
+    // from, rather than standing stuck against them
+    protected override void OnBumpedPlayer()
+    {
+        if (HasFlag("STEPBACK"))
+            StepBack();
+    }
+
+    // A PATROLTURNS patroller turns when blocked rather than stopping
+    internal override void SelectPathDir()
+    {
+        if (HasFlag("PATROLTURNS"))
+            TurningPathDir();
+        else
+            base.SelectPathDir();
+    }
+
     /*
     =============================================================================
 
                                 BLAKE STONE AI
 
-    Blake Stone's enemies' ways, as bstone has them (3d_act2.cpp, 3d_state.cpp, 3d_agent.cpp),
-    for any actor to use.
+    Blake Stone's enemies' ways, as bstone has them (3d_act2.cpp, 3d_state.cpp, 3d_agent.cpp).
+    The flags and properties below work on any BlakeMonster.
 
     Thinks and actions (actordefs `think:` / `action:`):
       T_BlakeChase   chase: closes in dodging, shoots only while it has ammo, and (with
@@ -48,33 +140,28 @@ internal partial class Program
     */
 
     // Why a SMART actor runs (CheckRunChase)
-    const int RR_AMMO = 1, RR_HEALTH = 2, RR_INTERROGATED = 4;
+    private const int RR_AMMO = 1, RR_HEALTH = 2, RR_INTERROGATED = 4;
 
     // How much faster a SMART actor runs than it chases
-    const int RUNAWAY_SPEED = 1000;
+    private const int RUNAWAY_SPEED = 1000;
 
     // How far a corpse slides back each tic (T_BlowBack)
-    const int SLIDE_SPEED = 0x2000;
+    private const int SLIDE_SPEED = 0x2000;
 
     // How far a body killed by anything but the player's own gun slides
-    const int DEFAULT_KNOCKBACK = 0x5000;
-
-    /// <summary>Whether the weapon in hand is a silent one (weapon.silent): its shots don't alert anyone</summary>
-    internal static bool PlayerWeaponIsSilent() =>
-        gamestate.weapon != null && _inventoryManager.GetProperty(gamestate.weapon, "weapon.silent") is { } silent
-        && (silent is true || bool.TryParse(silent.ToString(), out var b) && b);
+    private const int DEFAULT_KNOCKBACK = 0x5000;
 
     /// <summary>
     /// Sets up what's Blake Stone's about a freshly spawned actor (MapManager.SpawnThing): its
     /// ammo, its friendliness, an informant's gifts, and a wounding actor's wound stages
     /// </summary>
-    internal static void InitSpawnedActor(Entities.Actors.Monster ob, int tilex, int tiley)
+    internal override void OnSpawned(int tilex, int tiley)
     {
         // One number, or [min, max] for one at random
-        var ammo = ob.PropertyInts("monster.ammo");
-        ob.Ammo = (short)(ammo.Count == 0 ? 1 : ammo.Count == 1 ? ammo[0] : ammo[0] + US_RndT() % (ammo[1] - ammo[0] + 1));
-        if (ob.HasFlag("FRIENDLY"))
-            ob.RuntimeFlags |= objflags.FL_FRIENDLY;
+        var ammo = PropertyInts("monster.ammo");
+        Ammo = (short)(ammo.Count == 0 ? 1 : ammo.Count == 1 ? ammo[0] : ammo[0] + US_RndT() % (ammo[1] - ammo[0] + 1));
+        if (HasFlag("FRIENDLY"))
+            RuntimeFlags |= objflags.FL_FRIENDLY;
 
         // The 0xFA value east of it on the object plane, if there is one
         int east = tilex + 1 < MapManager.MAPSIZE ? _mapManager.MAPSPOT(tilex + 1, tiley, 1) : 0;
@@ -82,29 +169,29 @@ internal partial class Program
 
         // A sleeper's wake delay (T_WaitToWake), in tics: the map's value in seconds, else a
         // random [min, max] seconds; 0 wakes it only when shot, 255 never
-        var wake = ob.PropertyInts("monster.wakedelay");
+        var wake = PropertyInts("monster.wakedelay");
         if (wake.Count > 0)
         {
             int seconds = mapValue ?? (wake.Count == 1 ? wake[0] : wake[0] + US_RndT() % (wake[1] - wake[0] + 1));
-            ob.Temp2 = ob.Temp3 = (short)(seconds * 60);
+            Temp2 = Temp3 = (short)(seconds * 60);
             if (seconds == 255)
-                ob.RuntimeFlags &= ~objflags.FL_SHOOTABLE;
+                RuntimeFlags &= ~objflags.FL_SHOOTABLE;
         }
 
-        if (ob.HasFlag("INFORMANT"))
+        if (HasFlag("INFORMANT"))
         {
-            ob.RuntimeFlags |= objflags.FL_HASAMMO | objflags.FL_HASTOKENS;
-            ob.SeekX = ob.SeekY = 0xff;     // no hint chosen yet
+            RuntimeFlags |= objflags.FL_HASAMMO | objflags.FL_HASTOKENS;
+            SeekX = SeekY = 0xff;     // no hint chosen yet
         }
 
-        var stages = ob.PropertyInts("monster.woundstages");
+        var stages = PropertyInts("monster.woundstages");
         if (stages.Count > 0)
-            ob.Temp1 = (short)(mapValue ?? stages[US_RndT() % stages.Count]);
+            Temp1 = (short)(mapValue ?? stages[US_RndT() % stages.Count]);
 
         // `monster.floorhealth: [floor, times]`: that much tougher on that floor (game-info
         // floor-number; Goldfire on floor 9)
-        if (ob.PropertyInts("monster.floorhealth") is [var floor, var times] && floor == _mapManager.CurrentFloorNumber)
-            ob.Hitpoints = (short)Math.Min(ob.Hitpoints * times, short.MaxValue);
+        if (PropertyInts("monster.floorhealth") is [var floor, var times] && floor == _mapManager.CurrentFloorNumber)
+            Hitpoints = (short)Math.Min(Hitpoints * times, short.MaxValue);
     }
 
     /*
@@ -123,7 +210,7 @@ internal partial class Program
     /// A_SpawnEnemy("ScanAlien"[, "chase"]): an enemy appears on this actor's tile, as if placed
     /// by the map but not added to the kill total; with chase, it's already after the player
     /// </summary>
-    internal static void A_SpawnEnemy(Entities.Actors.Monster ob, string[] args)
+    internal void SpawnEnemy(string[] args)
     {
         if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
         {
@@ -131,17 +218,17 @@ internal partial class Program
             return;
         }
 
-        var spawned = _mapManager.SpawnThing(ob.TileX, ob.TileY,
-            new Assets.MapActorTranslation { Class = args[0], Angles = ob.Dir == objdirtypes.nodir ? -1 : (int)ob.Dir * 45 }, countKill: false);
+        var spawned = _mapManager.SpawnThing(TileX, TileY,
+            new Assets.MapActorTranslation { Class = args[0], Angles = Dir == objdirtypes.nodir ? -1 : (int)Dir * 45 }, countKill: false);
         if (spawned == null)
         {
             Console.WriteLine($"A_SpawnEnemy: \"{args[0]}\" isn't an actor.");
             return;
         }
 
-        spawned.X = ob.X;
-        spawned.Y = ob.Y;
-        spawned.AreaNumber = ob.AreaNumber;
+        spawned.X = X;
+        spawned.Y = Y;
+        spawned.AreaNumber = AreaNumber;
         if (args.Skip(1).Any(a => a.Equals("chase", StringComparison.OrdinalIgnoreCase)) && spawned.ResolvedStates.ContainsKey("Chase"))
         {
             spawned.SetState("Chase");
@@ -153,38 +240,38 @@ internal partial class Program
     /// The think of a sleeper (Spawn): once the player can see it, it counts down its wake delay
     /// (Temp2) and wakes (its Wake state). One with no delay only wakes when shot.
     /// </summary>
-    internal static void T_WaitToWake(Entities.Actors.Monster ob)
+    internal void WaitToWake()
     {
-        if (!ob.RuntimeFlags.HasFlag(objflags.FL_VISABLE) || ob.Temp3 <= 0 || ob.Temp3 == 255 * 60)
+        if (!RuntimeFlags.HasFlag(objflags.FL_VISABLE) || Temp3 <= 0 || Temp3 == 255 * 60)
             return;
-        if (ob.Temp2 > tics)
+        if (Temp2 > tics)
         {
-            ob.Temp2 -= (short)tics;
+            Temp2 -= (short)tics;
             return;
         }
-        ob.Temp2 = 0;
-        ob.RuntimeFlags &= ~objflags.FL_SHOOTABLE;
-        ob.SetState("Wake");
+        Temp2 = 0;
+        RuntimeFlags &= ~objflags.FL_SHOOTABLE;
+        SetState("Wake");
     }
 
     /// <summary>
     /// A_Melee(chance, min, max): a blow at the player within reach (two tiles), landing chance
     /// times in 256 for min..max, with the actor's `meleesound`; it alerts the area
     /// </summary>
-    internal static void A_Melee(Entities.Actors.Monster ob, string[] args)
+    internal void Melee(string[] args)
     {
         int chance = args.Length > 0 && int.TryParse(args[0], out var c) ? c : 200;
         int min = args.Length > 1 && int.TryParse(args[1], out var a) ? a : 0;
         int max = args.Length > 2 && int.TryParse(args[2], out var b) ? b : min;
 
-        PlayActorSound(ob, "meleesound");
+        PlayActorSound(this, "meleesound");
         madenoise = true;
 
-        if (Math.Abs(player.X - ob.X) - MapConstants.TILEGLOBAL <= MINACTORDIST
-            && Math.Abs(player.Y - ob.Y) - MapConstants.TILEGLOBAL <= MINACTORDIST
+        if (Math.Abs(player.X - X) - MapConstants.TILEGLOBAL <= MINACTORDIST
+            && Math.Abs(player.Y - Y) - MapConstants.TILEGLOBAL <= MINACTORDIST
             && US_RndT() < chance)
         {
-            TakeDamage(max > min ? min + US_RndT() * (max - min + 1) / 256 : min, ob);
+            TakeDamage(max > min ? min + US_RndT() * (max - min + 1) / 256 : min, this);
         }
     }
 
@@ -196,110 +283,110 @@ internal partial class Program
     =============================================================================
     */
 
-    internal static void T_BlakeChase(Entities.Actors.Monster ob)
+    internal void BlakeChase()
     {
-        ob.RuntimeFlags &= ~objflags.FL_LOCKEDSTATE;
+        RuntimeFlags &= ~objflags.FL_LOCKEDSTATE;
 
-        if (gamestate.victoryflag || ob.HasFlag("STATIONARY"))
+        if (gamestate.victoryflag || HasFlag("STATIONARY"))
             return;
 
-        if (ob.Ammo != 0)
+        if (Ammo != 0)
         {
-            if (CheckLine(ob))
+            if (CheckLine(this))
             {
-                ob.Hidden = false;
-                int dist = Math.Max(Math.Max(Math.Abs(ob.TileX - player.TileX), Math.Abs(ob.TileY - player.TileY)), 1);
-                bool nearAttack = dist == 1 && ob.Distance < 0x4000;
+                Hidden = false;
+                int dist = Math.Max(Math.Max(Math.Abs(TileX - player.TileX), Math.Abs(TileY - player.TileY)), 1);
+                bool nearAttack = dist == 1 && Distance < 0x4000;
 
                 // Shoot-mode actors keep at whichever they're doing until their count runs out
-                bool shootMode = ob.PropertyBool("monster.shootmode");
+                bool shootMode = PropertyBool("monster.shootmode");
                 if (shootMode)
                 {
-                    if (ob.Ammo > tics)
-                        ob.Ammo -= (short)tics;
+                    if (Ammo > tics)
+                        Ammo -= (short)tics;
                     else
                     {
-                        ChangeShootMode(ob);
-                        if (!ob.RuntimeFlags.HasFlag(objflags.FL_SHOOTMODE))
-                            ob.Ammo >>= 1;      // closing in lasts half as long
+                        ChangeShootMode();
+                        if (!RuntimeFlags.HasFlag(objflags.FL_SHOOTMODE))
+                            Ammo >>= 1;      // closing in lasts half as long
                     }
                 }
 
                 int chance = nearAttack || shootMode
-                    ? (ob.RuntimeFlags.HasFlag(objflags.FL_SHOOTMODE) ? 300 : 0)
+                    ? (RuntimeFlags.HasFlag(objflags.FL_SHOOTMODE) ? 300 : 0)
                     : (int)((tics << 4) / dist);
 
-                if (US_RndT() < chance && ob.Ammo != 0 && !ob.RuntimeFlags.HasFlag(objflags.FL_INTERROGATED))
+                if (US_RndT() < chance && Ammo != 0 && !RuntimeFlags.HasFlag(objflags.FL_INTERROGATED))
                 {
-                    DoAttack(ob);
+                    DoAttack();
                     return;
                 }
             }
             else
             {
-                ob.Hidden = true;
-                ChangeShootMode(ob);
+                Hidden = true;
+                ChangeShootMode();
             }
         }
 
-        if (ob.Dir == objdirtypes.nodir)
+        if (Dir == objdirtypes.nodir)
         {
-            SelectBlakeChaseDir(ob);
-            if (ob.Dir == objdirtypes.nodir)
+            SelectBlakeChaseDir();
+            if (Dir == objdirtypes.nodir)
                 return;     // boxed in
         }
 
-        var move = (int)(ob.Speed * tics);
+        var move = (int)(Speed * tics);
         while (move != 0)
         {
-            if (ob.Distance < 0)
+            if (Distance < 0)
             {
                 // waiting for a door to open
-                OpenDoor(-ob.Distance - 1);
-                if (doorobjlist[-ob.Distance - 1].action != dooractiontypes.dr_open)
+                OpenDoor(-Distance - 1);
+                if (doorobjlist[-Distance - 1].action != dooractiontypes.dr_open)
                     return;
-                ob.Distance = (int)MapConstants.TILEGLOBAL;
+                Distance = (int)MapConstants.TILEGLOBAL;
             }
 
-            if (move < ob.Distance)
+            if (move < Distance)
             {
-                ob.MoveObj(move);
+                MoveObj(move);
                 break;
             }
 
-            ob.RecenterOnTile();
-            move -= ob.Distance;
+            RecenterOnTile();
+            move -= Distance;
 
-            SelectBlakeChaseDir(ob);
-            if (ob.Dir == objdirtypes.nodir)
+            SelectBlakeChaseDir();
+            if (Dir == objdirtypes.nodir)
                 return;
         }
     }
 
     // Closing in dodges, unless it's a CHASEDIR actor (the floating bomb), which comes straight on
-    static void SelectBlakeChaseDir(Entities.Actors.Monster ob)
+    private void SelectBlakeChaseDir()
     {
-        if (ob.HasFlag("CHASEDIR"))
-            ob.SelectChaseDir();
+        if (HasFlag("CHASEDIR"))
+            SelectChaseDir();
         else
-            ob.SelectDodgeDir();
+            SelectDodgeDir();
     }
 
     /// <summary>
     /// Switches between shooting and closing in: shooting lasts 1-2 shots' worth of its count,
     /// closing in 60-119 tics. (Blake Stone uses the same count as the actor's ammo.)
     /// </summary>
-    internal static void ChangeShootMode(Entities.Actors.Monster ob)
+    private void ChangeShootMode()
     {
-        if (ob.RuntimeFlags.HasFlag(objflags.FL_SHOOTMODE))
+        if (RuntimeFlags.HasFlag(objflags.FL_SHOOTMODE))
         {
-            ob.RuntimeFlags &= ~objflags.FL_SHOOTMODE;
-            ob.Ammo = (short)(60 + US_RndT() % 60);
+            RuntimeFlags &= ~objflags.FL_SHOOTMODE;
+            Ammo = (short)(60 + US_RndT() % 60);
         }
         else
         {
-            ob.RuntimeFlags |= objflags.FL_SHOOTMODE;
-            ob.Ammo = (short)(1 + US_RndT() % 2);
+            RuntimeFlags |= objflags.FL_SHOOTMODE;
+            Ammo = (short)(1 + US_RndT() % 2);
         }
     }
 
@@ -309,17 +396,17 @@ internal partial class Program
     /// closer than its `monster.attackmindist`, and only `monster.attackchance` times in 256
     /// (the liquid alien rising).
     /// </summary>
-    internal static void DoAttack(Entities.Actors.Monster ob)
+    private void DoAttack()
     {
-        int dx = Math.Abs(ob.TileX - player.TileX), dy = Math.Abs(ob.TileY - player.TileY);
+        int dx = Math.Abs(TileX - player.TileX), dy = Math.Abs(TileY - player.TileY);
         int dist = Math.Max(Math.Max(dx, dy), 1);
-        if (ob.PropertyInt("monster.attackrange", 0) is > 0 and var range && dist > range)
+        if (PropertyInt("monster.attackrange", 0) is > 0 and var range && dist > range)
             return;
-        if (ob.PropertyInt("monster.attackmindist", 0) is > 0 and var mindist && dist < mindist)
+        if (PropertyInt("monster.attackmindist", 0) is > 0 and var mindist && dist < mindist)
             return;
-        if (ob.PropertyInt("monster.attackchance", 256) is var chance and < 256 && US_RndT() >= chance)
+        if (PropertyInt("monster.attackchance", 256) is var chance and < 256 && US_RndT() >= chance)
             return;
-        ob.SetState(dist <= 1 && ob.ResolvedStates.ContainsKey("Melee") ? "Melee" : "Attack");
+        SetState(dist <= 1 && ResolvedStates.ContainsKey("Melee") ? "Melee" : "Attack");
     }
 
     /*
@@ -330,24 +417,24 @@ internal partial class Program
     =============================================================================
     */
 
-    internal static void T_BlakeShoot(Entities.Actors.Monster ob)
+    internal void BlakeShoot()
     {
-        bool smart = ob.HasFlag("SMART");
-        if (smart && ob.Ammo == 0)
+        bool smart = HasFlag("SMART");
+        if (smart && Ammo == 0)
             return;
 
-        if (ob.AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[ob.AreaNumber] == 0)
+        if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
             return;
-        if (!CheckLine(ob))
+        if (!CheckLine(this))
             return;     // the player is behind a wall
 
-        ob.ShotAtPlayer();
-        PlayActorSound(ob, "attacksound");
+        ShotAtPlayer();
+        PlayActorSound(this, "attacksound");
 
         if (smart)
         {
-            ob.Ammo--;
-            CheckRunChase(ob);
+            Ammo--;
+            CheckRunChase();
         }
 
         madenoise = true;   // gunfire alerts the area
@@ -364,29 +451,29 @@ internal partial class Program
     /// <summary>
     /// Why a SMART actor should run (RR_ flags), 0 for chasing; starts or stops it running
     /// </summary>
-    static int CheckRunChase(Entities.Actors.Monster ob)
+    private int CheckRunChase()
     {
         int reason = 0;
-        if (ob.Ammo == 0)
+        if (Ammo == 0)
             reason |= RR_AMMO;
-        if (ob.Hitpoints <= _mapManager.GetScaledHealth(ob) >> 1)
+        if (Hitpoints <= _mapManager.GetScaledHealth(this) >> 1)
             reason |= RR_HEALTH;
-        if ((ob.RuntimeFlags & (objflags.FL_FRIENDLY | objflags.FL_INTERROGATED)) == objflags.FL_INTERROGATED)
+        if ((RuntimeFlags & (objflags.FL_FRIENDLY | objflags.FL_INTERROGATED)) == objflags.FL_INTERROGATED)
             reason |= RR_INTERROGATED;
 
         if (reason != 0)
         {
-            if (!ob.RuntimeFlags.HasFlag(objflags.FL_RUNAWAY))
+            if (!RuntimeFlags.HasFlag(objflags.FL_RUNAWAY))
             {
-                ob.Temp3 = 0;
-                ob.RuntimeFlags |= objflags.FL_RUNAWAY;
-                ob.Speed += RUNAWAY_SPEED;
+                Temp3 = 0;
+                RuntimeFlags |= objflags.FL_RUNAWAY;
+                Speed += RUNAWAY_SPEED;
             }
         }
-        else if (ob.RuntimeFlags.HasFlag(objflags.FL_RUNAWAY))
+        else if (RuntimeFlags.HasFlag(objflags.FL_RUNAWAY))
         {
-            ob.RuntimeFlags &= ~objflags.FL_RUNAWAY;
-            ob.Speed -= RUNAWAY_SPEED;
+            RuntimeFlags &= ~objflags.FL_RUNAWAY;
+            Speed -= RUNAWAY_SPEED;
         }
 
         return reason;
@@ -396,48 +483,48 @@ internal partial class Program
     /// Which way (in tiles) an actor closing in heads: at the player, or, for a SMART actor that
     /// should be running, at the pickup, door or far corner it's running for
     /// </summary>
-    internal static void SeekDelta(Entities.Actors.Monster ob, out int deltax, out int deltay)
+    protected override void SeekDelta(out int deltax, out int deltay)
     {
-        if (ob.HasFlag("SMART") && CheckRunChase(ob) is var whyRun and not 0)
+        if (HasFlag("SMART") && CheckRunChase() is var whyRun and not 0)
         {
-            if (ob.SeekX == 0)
-                GetCornerSeek(ob);
+            if (SeekX == 0)
+                GetCornerSeek();
 
-            if (!LookForGoodies(ob, whyRun))
+            if (!LookForGoodies(whyRun))
             {
-                if (ob.TileX == ob.SeekX && ob.TileY == ob.SeekY)
+                if (TileX == SeekX && TileY == SeekY)
                 {
-                    GetCornerSeek(ob);
-                    ob.RuntimeFlags &= ~objflags.FL_INTERROGATED;
+                    GetCornerSeek();
+                    RuntimeFlags &= ~objflags.FL_INTERROGATED;
                 }
 
-                deltax = ob.SeekX - ob.TileX;
-                deltay = ob.SeekY - ob.TileY;
+                deltax = SeekX - TileX;
+                deltay = SeekY - TileY;
                 return;
             }
 
             // It took something: still short, it stays put this time
-            if (CheckRunChase(ob) != 0)
+            if (CheckRunChase() != 0)
             {
                 deltax = deltay = 0;
                 return;
             }
         }
 
-        deltax = player.TileX - ob.TileX;
-        deltay = player.TileY - ob.TileY;
+        deltax = player.TileX - TileX;
+        deltay = player.TileY - TileY;
     }
 
     // A running actor with nowhere better to go heads for one of these
-    static readonly byte[] SeekPointX = [32, 63, 32, 1];
-    static readonly byte[] SeekPointY = [1, 63, 32, 1];
+    private static readonly byte[] SeekPointX = [32, 63, 32, 1];
+    private static readonly byte[] SeekPointY = [1, 63, 32, 1];
 
-    static void GetCornerSeek(Entities.Actors.Monster ob)
+    private void GetCornerSeek()
     {
         int point = US_RndT() & 3;
-        ob.RuntimeFlags &= ~objflags.FL_RUNTOSTATIC;
-        ob.SeekX = SeekPointX[point];
-        ob.SeekY = SeekPointY[point];
+        RuntimeFlags &= ~objflags.FL_RUNTOSTATIC;
+        SeekX = SeekPointX[point];
+        SeekY = SeekPointY[point];
     }
 
     /// <summary>
@@ -445,7 +532,7 @@ internal partial class Program
     /// standing on, or, out of the player's sight and area, simply getting some), false when it
     /// has picked an item or a door to head for (SeekX/SeekY) or has nothing new
     /// </summary>
-    static bool LookForGoodies(Entities.Actors.Monster ob, int reason)
+    private bool LookForGoodies(int reason)
     {
         // A scientist that turned mean backs off to a door, then (half the time) attacks
         bool justFindDoor = false;
@@ -453,18 +540,18 @@ internal partial class Program
         {
             justFindDoor = true;
             if (US_RndT() < 128)
-                ob.RuntimeFlags &= ~objflags.FL_INTERROGATED;
+                RuntimeFlags &= ~objflags.FL_INTERROGATED;
         }
 
-        int maxHealth = _mapManager.GetScaledHealth(ob);
+        int maxHealth = _mapManager.GetScaledHealth(this);
 
         // Out of the player's area and sight, it cheats
-        if (player.AreaNumber != ob.AreaNumber && !ob.RuntimeFlags.HasFlag(objflags.FL_VISABLE))
+        if (player.AreaNumber != AreaNumber && !RuntimeFlags.HasFlag(objflags.FL_VISABLE))
         {
-            if (ob.Ammo == 0)
-                ob.Ammo += 8;
-            if (ob.Hitpoints <= maxHealth >> 1)
-                ob.Hitpoints += 10;
+            if (Ammo == 0)
+                Ammo += 8;
+            if (Hitpoints <= maxHealth >> 1)
+                Hitpoints += 10;
             return true;
         }
 
@@ -472,7 +559,7 @@ internal partial class Program
         {
             foreach (var item in _mapManager.GetActors())
             {
-                if (item.IsRemoved || item.AreaNumber != ob.AreaNumber)
+                if (item.IsRemoved || item.AreaNumber != AreaNumber)
                     continue;
                 int ammoGain = item.PropertyInt("monster.ammogain", 0);
                 int healthGain = item.PropertyInt("monster.healthgain", 0);
@@ -480,93 +567,86 @@ internal partial class Program
                     continue;
 
                 // Standing on it: take it, if it's needed
-                if (item.TileX == ob.TileX && item.TileY == ob.TileY)
+                if (item.TileX == TileX && item.TileY == TileY)
                 {
                     if (ammoGain > 0)
                     {
-                        if (ob.Ammo != 0)
+                        if (Ammo != 0)
                             continue;
-                        ob.Ammo += (short)ammoGain;
+                        Ammo += (short)ammoGain;
                     }
                     else
                     {
-                        if (ob.Hitpoints > maxHealth >> 1)
+                        if (Hitpoints > maxHealth >> 1)
                             continue;
-                        ob.Hitpoints += (short)healthGain;
+                        Hitpoints += (short)healthGain;
                     }
 
-                    ob.SeekX = 0;
+                    SeekX = 0;
                     item.RunState("Pickup");        // food leaves its wrapper
                     _mapManager.MarkForRemoval(item);
                     return true;
                 }
 
                 // Else maybe head for it
-                if (!ob.RuntimeFlags.HasFlag(objflags.FL_RUNTOSTATIC)
+                if (!RuntimeFlags.HasFlag(objflags.FL_RUNTOSTATIC)
                     && ((reason & RR_AMMO) != 0 && ammoGain > 0 || (reason & RR_HEALTH) != 0 && healthGain > 0))
                 {
-                    ob.RuntimeFlags |= objflags.FL_RUNTOSTATIC;
-                    ob.SeekX = item.TileX;
-                    ob.SeekY = item.TileY;
+                    RuntimeFlags |= objflags.FL_RUNTOSTATIC;
+                    SeekX = item.TileX;
+                    SeekY = item.TileY;
                     return false;
                 }
             }
         }
 
         // Running for a door out of the room, when the room joins the player's
-        if (ob.AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[ob.AreaNumber] != 0)
+        if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] != 0)
         {
-            if (ob.RuntimeFlags.HasFlag(objflags.FL_RUNTOSTATIC))
+            if (RuntimeFlags.HasFlag(objflags.FL_RUNTOSTATIC))
                 return false;   // already heading somewhere
 
             var doors = new List<int>();
             for (int door = 0; door < lastdoorobj && doors.Count < 8; door++)
-                if (DoorLeadsOutOf(door, ob.AreaNumber))
+                if (DoorLeadsOutOf(door, AreaNumber))
                     doors.Add(door);
 
             if (doors.Count > 0)
             {
                 // Not the one it used last, unless it's the only one
                 int index = US_RndT() % doors.Count;
-                if (doors[index] + 1 == ob.Temp3 && doors.Count > 1)
+                if (doors[index] + 1 == Temp3 && doors.Count > 1)
                     index = (index + 1) % doors.Count;
 
                 int chosen = doors[index];
-                ob.Temp3 = (short)(chosen + 1);
-                ob.SeekX = (byte)doorobjlist[chosen].tilex;
-                ob.SeekY = (byte)doorobjlist[chosen].tiley;
-                ob.RuntimeFlags |= objflags.FL_RUNTOSTATIC;
+                Temp3 = (short)(chosen + 1);
+                SeekX = (byte)doorobjlist[chosen].tilex;
+                SeekY = (byte)doorobjlist[chosen].tiley;
+                RuntimeFlags |= objflags.FL_RUNTOSTATIC;
             }
         }
-        else if (ob.RuntimeFlags.HasFlag(objflags.FL_RUNTOSTATIC))
+        else if (RuntimeFlags.HasFlag(objflags.FL_RUNTOSTATIC))
         {
             // What it was after is gone, or it's far off: off to a corner
-            ob.SeekX = 0;
+            SeekX = 0;
         }
 
         return false;
     }
 
     /// <summary>Whether a door joins an area to another and opens without a key (an actor's way out)</summary>
-    static bool DoorLeadsOutOf(int door, int area)
+    private static bool DoorLeadsOutOf(int door, int area)
     {
         var d = doorobjlist[door];
         if (d.Lock.Length > 0)
             return false;
 
         int x = d.tilex, y = d.tiley;
-        var (a, b) = d.vertical ? (AreaAt(x - 1, y), AreaAt(x + 1, y)) : (AreaAt(x, y - 1), AreaAt(x, y + 1));
+        var (a, b) = d.vertical ? (_mapManager.AreaAt(x - 1, y), _mapManager.AreaAt(x + 1, y)) : (_mapManager.AreaAt(x, y - 1), _mapManager.AreaAt(x, y + 1));
         return a == area || b == area;
     }
 
-    // The area on a tile, or -1 for none
-    static int AreaAt(int x, int y)
-    {
-        if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
-            return -1;
-        int spot = _mapManager.MAPSPOT(x, y, 0);
-        return _mapManager.VALIDAREA(spot) ? spot - _mapManager.Floors.AreaTile : -1;
-    }
+
 
     /*
     =============================================================================
@@ -582,38 +662,38 @@ internal partial class Program
     /// step at a time, one way round, until it can go on. It stops (nodir) for this tic when
     /// that way's blocked too, and carries on turning next time.
     /// </summary>
-    internal static void TurningPathDir(Entities.Actors.Monster ob)
+    private void TurningPathDir()
     {
-        var point = _mapManager.PatrolPointAt(ob.TileX, ob.TileY);
+        var point = _mapManager.PatrolPointAt(TileX, TileY);
         if (point != null)
-            ob.Dir = point.Dir;
+            Dir = point.Dir;
 
-        ob.Distance = (int)MapConstants.TILEGLOBAL;
-        bool randomTurn = ob.HasFlag("RANDOMTURN") && US_RndT() > 180;
-        bool cantWalk = !CanWalk(ob);
+        Distance = (int)MapConstants.TILEGLOBAL;
+        bool randomTurn = HasFlag("RANDOMTURN") && US_RndT() > 180;
+        bool cantWalk = !CanWalk();
 
         // A patrol point wins over a random turn
         if (cantWalk || randomTurn && point == null)
         {
-            if (ob.TryDir == (byte)objdirtypes.nodir)
-                ob.TryDir |= (byte)(US_RndT() & 128);      // which way round
+            if (TryDir == (byte)objdirtypes.nodir)
+                TryDir |= (byte)(US_RndT() & 128);      // which way round
             else
-                ob.Dir = (objdirtypes)(ob.TryDir & 127);    // on from the last way tried
+                Dir = (objdirtypes)(TryDir & 127);    // on from the last way tried
 
-            if ((ob.TryDir & 128) != 0)
-                ob.Dir = ob.Dir == objdirtypes.east ? objdirtypes.southeast : ob.Dir - 1;
+            if ((TryDir & 128) != 0)
+                Dir = Dir == objdirtypes.east ? objdirtypes.southeast : Dir - 1;
             else
-                ob.Dir = ob.Dir >= objdirtypes.southeast ? objdirtypes.east : ob.Dir + 1;
+                Dir = Dir >= objdirtypes.southeast ? objdirtypes.east : Dir + 1;
 
-            ob.TryDir = (byte)((ob.TryDir & 128) | (byte)ob.Dir);
-            if (!CanWalk(ob))
-                ob.Dir = objdirtypes.nodir;
+            TryDir = (byte)((TryDir & 128) | (byte)Dir);
+            if (!CanWalk())
+                Dir = objdirtypes.nodir;
         }
 
-        if (ob.Dir != objdirtypes.nodir)
+        if (Dir != objdirtypes.nodir)
         {
-            ob.TryWalk();
-            ob.TryDir = (byte)objdirtypes.nodir;
+            TryWalk();
+            TryDir = (byte)objdirtypes.nodir;
         }
     }
 
@@ -621,20 +701,20 @@ internal partial class Program
     /// A STEPBACK actor that has walked into the player (MoveObj): it heads back to the tile it
     /// was coming from, the way it came, as far as it had already come
     /// </summary>
-    internal static void StepBack(Entities.Actors.Monster ob)
+    private void StepBack()
     {
-        var (dx, dy) = DirOffset(ob.Dir);
+        var (dx, dy) = DirOffset(Dir);
         if (dx == 0 && dy == 0)
             return;
-        ob.TileX = (byte)(ob.TileX - dx);
-        ob.TileY = (byte)(ob.TileY - dy);
-        ob.Dir = opposite[(byte)ob.Dir];
-        ob.Distance = (int)MapConstants.TILEGLOBAL - ob.Distance;
-        ob.SyncPosition();
+        TileX = (byte)(TileX - dx);
+        TileY = (byte)(TileY - dy);
+        Dir = opposite[(byte)Dir];
+        Distance = (int)MapConstants.TILEGLOBAL - Distance;
+        SyncPosition();
     }
 
     // The tile step for a direction, (0, 0) for none
-    static (int Dx, int Dy) DirOffset(objdirtypes dir) => dir switch
+    private static (int Dx, int Dy) DirOffset(objdirtypes dir) => dir switch
     {
         objdirtypes.east => (1, 0),
         objdirtypes.northeast => (1, -1),
@@ -648,25 +728,25 @@ internal partial class Program
     };
 
     /// <summary>Whether TryWalk would get anywhere in the actor's direction, without moving it or opening anything</summary>
-    static bool CanWalk(Entities.Actors.Monster ob)
+    private bool CanWalk()
     {
-        var (dx, dy) = DirOffset(ob.Dir);
+        var (dx, dy) = DirOffset(Dir);
         if (dx == 0 && dy == 0)
             return false;
 
-        int x = ob.TileX + dx, y = ob.TileY + dy;
+        int x = TileX + dx, y = TileY + dy;
         if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
             return false;
         if (dx != 0 && dy != 0)
-            return CHECKDIAG(x, y) && CHECKDIAG(ob.TileX + dx, ob.TileY) && CHECKDIAG(ob.TileX, ob.TileY + dy);
+            return CHECKDIAG(x, y) && CHECKDIAG(TileX + dx, TileY) && CHECKDIAG(TileX, TileY + dy);
 
         switch (_mapManager.actorat[x, y])
         {
             case Wall or BlockingActor:
                 return false;
             case Door door:
-                return ob.HasFlag("PHASEDOORS")
-                    || !ob.HasFlag("NODOORS") && (!ob.HasFlag("NOLOCKEDDOORS") || doorobjlist[door.door].Lock.Length == 0);
+                return HasFlag("PHASEDOORS")
+                    || !HasFlag("NODOORS") && (!HasFlag("NOLOCKEDDOORS") || doorobjlist[door.door].Lock.Length == 0);
             default:
                 return !_mapManager.IsShootableActorAt(x, y);
         }
@@ -685,36 +765,36 @@ internal partial class Program
     /// goes down: its Wounded state, no longer shootable or in the way, for 5 to 24 seconds.
     /// True when it did.
     /// </summary>
-    internal static bool WoundActor(Entities.Actors.Monster ob, int oldHitpoints)
+    private bool WoundActor(int oldHitpoints)
     {
-        if (!ob.Properties.ContainsKey("monster.woundstages") || !ob.ResolvedStates.ContainsKey("Wounded"))
+        if (!Properties.ContainsKey("monster.woundstages") || !ResolvedStates.ContainsKey("Wounded"))
             return false;
 
-        int boundary = _mapManager.GetScaledHealth(ob) / (ob.Temp1 + 1) + 1;
-        if (oldHitpoints / boundary == ob.Hitpoints / boundary)
+        int boundary = _mapManager.GetScaledHealth(this) / (Temp1 + 1) + 1;
+        if (oldHitpoints / boundary == Hitpoints / boundary)
             return false;
 
-        PlayActorSound(ob, "woundsound");
-        ob.SetState("Wounded");
-        ob.RuntimeFlags &= ~objflags.FL_SHOOTABLE;
-        ob.Temp2 = (short)(5 * 60 + US_RndT() % 20 * 60);
+        PlayActorSound(this, "woundsound");
+        SetState("Wounded");
+        RuntimeFlags &= ~objflags.FL_SHOOTABLE;
+        Temp2 = (short)(5 * 60 + US_RndT() % 20 * 60);
         return true;
     }
 
     /// <summary>The think on a wounded actor's last, held frame: when its time's up and the player isn't on top of it, it gets up (Recover)</summary>
-    internal static void T_Wounded(Entities.Actors.Monster ob)
+    internal void Wounded()
     {
-        if (ob.Temp2 > tics)
+        if (Temp2 > tics)
         {
-            ob.Temp2 -= (short)tics;
+            Temp2 -= (short)tics;
             return;
         }
-        ob.Temp2 = 0;
+        Temp2 = 0;
 
-        if (Math.Abs(player.X - ob.X) > MapConstants.TILEGLOBAL || Math.Abs(player.Y - ob.Y) > MapConstants.TILEGLOBAL)
+        if (Math.Abs(player.X - X) > MapConstants.TILEGLOBAL || Math.Abs(player.Y - Y) > MapConstants.TILEGLOBAL)
         {
-            ob.RuntimeFlags |= objflags.FL_SHOOTABLE;
-            ob.SetState("Recover");
+            RuntimeFlags |= objflags.FL_SHOOTABLE;
+            SetState("Recover");
         }
     }
 
@@ -723,7 +803,7 @@ internal partial class Program
     /// hand's `weapon.knockback` when the player shot it, else the killer's own `knockback`
     /// (an explosion's), else 0x5000
     /// </summary>
-    internal static void StartBlowBack(Entities.Actors.Monster ob, Entities.Actors.Actor? killer)
+    private void StartBlowBack(Entities.Actors.Actor? killer)
     {
         if (killer == null)
             return;
@@ -734,39 +814,39 @@ internal partial class Program
         if (distance <= 0)
             return;
 
-        var angle = Math.Atan2(killer.Y - ob.Y, ob.X - killer.X);
+        var angle = Math.Atan2(killer.Y - Y, X - killer.X);
         if (angle < 0)
             angle += Math.PI * 2;
-        ob.Angle = (short)((int)(angle / (Math.PI * 2) * ANGLES) % ANGLES);
-        ob.Temp3 = (short)Math.Min(distance, short.MaxValue);
-        ob.RuntimeFlags |= objflags.FL_SLIDING;
+        Angle = (short)((int)(angle / (Math.PI * 2) * ANGLES) % ANGLES);
+        Temp3 = (short)Math.Min(distance, short.MaxValue);
+        RuntimeFlags |= objflags.FL_SLIDING;
     }
 
     /// <summary>The think on Death frames: the body slides back a step each tic until it's gone its distance or hits something</summary>
-    internal static void T_BlowBack(Entities.Actors.Monster ob)
+    internal void BlowBack()
     {
-        if (!ob.RuntimeFlags.HasFlag(objflags.FL_SLIDING))
+        if (!RuntimeFlags.HasFlag(objflags.FL_SLIDING))
             return;
 
-        int step = Math.Min((int)ob.Temp3, SLIDE_SPEED);
-        ob.Temp3 -= (short)step;
-        if (ob.Temp3 <= 0)
-            ob.RuntimeFlags &= ~objflags.FL_SLIDING;
+        int step = Math.Min((int)Temp3, SLIDE_SPEED);
+        Temp3 -= (short)step;
+        if (Temp3 <= 0)
+            RuntimeFlags &= ~objflags.FL_SLIDING;
 
-        int dx = MathUtils.FixedMul(step, costable[ob.Angle]);
-        int dy = -MathUtils.FixedMul(step, sintable[ob.Angle]);
-        if (!ActorClipMove(ob, dx, dy))
-            ob.RuntimeFlags &= ~objflags.FL_SLIDING;
+        int dx = MathUtils.FixedMul(step, costable[Angle]);
+        int dy = -MathUtils.FixedMul(step, sintable[Angle]);
+        if (!ClipMove(dx, dy))
+            RuntimeFlags &= ~objflags.FL_SLIDING;
 
-        ob.TileX = (byte)(ob.X >> (int)MapConstants.TILESHIFT);
-        ob.TileY = (byte)(ob.Y >> (int)MapConstants.TILESHIFT);
-        ob.SyncPosition();
+        TileX = (byte)(X >> (int)MapConstants.TILESHIFT);
+        TileY = (byte)(Y >> (int)MapConstants.TILESHIFT);
+        SyncPosition();
     }
 
     // Moves an actor unless that would put it into a wall, something solid or a door that isn't open
-    static bool ActorClipMove(Entities.Actors.Monster ob, int dx, int dy)
+    private bool ClipMove(int dx, int dy)
     {
-        int nx = ob.X + dx, ny = ob.Y + dy, size = (int)MINDIST;
+        int nx = X + dx, ny = Y + dy, size = (int)MINDIST;
         foreach (var (cx, cy) in new[] { (nx - size, ny - size), (nx + size, ny - size), (nx - size, ny + size), (nx + size, ny + size) })
         {
             int tx = cx >> (int)MapConstants.TILESHIFT, ty = cy >> (int)MapConstants.TILESHIFT;
@@ -781,21 +861,21 @@ internal partial class Program
             }
         }
 
-        ob.X = nx;
-        ob.Y = ny;
+        X = nx;
+        Y = ny;
         return true;
     }
 
     // Shooting an informant warns the player, the first time and now and then after
-    static bool warnedkilledinformant;
+    private static bool warnedkilledinformant;
 
-    internal static void WarnKilledInformant(Entities.Actors.Monster ob)
+    private void WarnKilledInformant()
     {
         if (warnedkilledinformant && US_RndT() >= 25)
             return;
         warnedkilledinformant = true;
-        if (ob.PropertyStrings("talk.killedmessage") is [var message, ..])
-            _hudMessageManager.Show(Managers.HudMessageKind.Other, message, ob.PropertyStrings("talk.style").FirstOrDefault());
+        if (PropertyStrings("talk.killedmessage") is [var message, ..])
+            _hudMessageManager.Show(Managers.HudMessageKind.Other, message, PropertyStrings("talk.style").FirstOrDefault());
     }
 
     /*
@@ -816,78 +896,29 @@ internal partial class Program
     =============================================================================
     */
 
-    static int interrogatedelay;
-
-    /// <summary>The use key held with nothing to use ahead: talk to whoever's there</summary>
-    internal static void TryInterrogate()
-    {
-        if (interrogatedelay > 0)
-        {
-            interrogatedelay = Math.Max(interrogatedelay - (int)tics, 0);
-            return;
-        }
-
-        const int MaxAngle = 45 / 2;
-        Entities.Actors.Monster? chosen = null;
-        int chosenDist = (int)MINACTORDIST;
-
-        foreach (var ob in _mapManager.GetActors().OfType<Entities.Actors.Monster>())
-        {
-            if (ob.IsRemoved || !ob.HasFlag("TALKATIVE")
-                || (ob.RuntimeFlags & (objflags.FL_FRIENDLY | objflags.FL_VISABLE)) != (objflags.FL_FRIENDLY | objflags.FL_VISABLE)
-                || Math.Abs(ob.TileX - player.TileX) > 2 || Math.Abs(ob.TileY - player.TileY) > 2)
-                continue;
-
-            int dist = Math.Min(Math.Abs(player.X - ob.X), Math.Abs(player.Y - ob.Y));
-            if (dist >= chosenDist)
-                continue;
-
-            if (ob.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
-            {
-                ob.RuntimeFlags &= ~objflags.FL_FRIENDLY;
-                continue;
-            }
-
-            var angle = Math.Atan2(player.Y - ob.Y, ob.X - player.X);
-            if (angle < 0)
-                angle += Math.PI * 2;
-            int facing = Math.Abs(player.Angle - (int)(angle / (Math.PI * 2) * ANGLES));
-            if (Math.Min(facing, ANGLES - facing) > MaxAngle)
-                continue;
-
-            chosen = ob;
-            chosenDist = dist;
-        }
-
-        if (chosen != null)
-            interrogatedelay = Interrogate(chosen) ? 20 : 120;      // an informant can be asked again sooner
-    }
-
-    /// <summary>Use let go: the next press talks straight away</summary>
-    internal static void ResetInterrogateDelay() => interrogatedelay = 0;
 
     /// <summary>Talks to an actor (TryInterrogate); true for an informant</summary>
-    static bool Interrogate(Entities.Actors.Monster ob)
+    internal bool TalkTo()
     {
-        bool informant = ob.HasFlag("INFORMANT");
+        bool informant = HasFlag("INFORMANT");
         string? said = null;
 
         if (informant)
         {
             // Asked again, it hands over what it has
-            if (ob.RuntimeFlags.HasFlag(objflags.FL_INTERROGATED))
+            if (RuntimeFlags.HasFlag(objflags.FL_INTERROGATED))
             {
-                var gifts = ob.PropertyStrings("talk.gifts");
-                var giftMessages = ob.PropertyStrings("talk.giftmessages");
+                var gifts = PropertyStrings("talk.gifts");
+                var giftMessages = PropertyStrings("talk.giftmessages");
                 foreach (var (flag, index) in new[] { (objflags.FL_HASAMMO, 0), (objflags.FL_HASTOKENS, 1) })
                 {
-                    if (!ob.RuntimeFlags.HasFlag(flag) || index >= gifts.Count
+                    if (!RuntimeFlags.HasFlag(flag) || index >= gifts.Count
                         || _inventoryManager.CreateActor(gifts[index]) is not Entities.Actors.Inventory gift || !CouldTakeInventory(gift))
                         continue;
                     int amount = gift.Properties.TryGetValue("inventory.amount", out var a) ? Convert.ToInt32(a) : 1;
                     if (!TryApplyInventory(gift, amount))
                         continue;
-                    ob.RuntimeFlags &= ~flag;
+                    RuntimeFlags &= ~flag;
                     said = _hudMessageManager.Localize(giftMessages.ElementAtOrDefault(index) ?? "");
                     break;
                 }
@@ -895,34 +926,34 @@ internal partial class Program
 
             if (said == null)
             {
-                said = InformantHint(ob);
-                ob.RuntimeFlags |= objflags.FL_INTERROGATED;
+                said = InformantHint();
+                RuntimeFlags |= objflags.FL_INTERROGATED;
             }
         }
         else
         {
             // Asked twice, or half the time anyway, it turns mean
             string list;
-            if (ob.RuntimeFlags.HasFlag(objflags.FL_MUSTATTACK) || (US_RndT() & 1) != 0)
+            if (RuntimeFlags.HasFlag(objflags.FL_MUSTATTACK) || (US_RndT() & 1) != 0)
             {
-                ob.RuntimeFlags &= ~objflags.FL_FRIENDLY;
-                ob.RuntimeFlags |= objflags.FL_INTERROGATED;
-                list = ob.PropertyStrings("talk.hostile").FirstOrDefault() ?? "";
+                RuntimeFlags &= ~objflags.FL_FRIENDLY;
+                RuntimeFlags |= objflags.FL_INTERROGATED;
+                list = PropertyStrings("talk.hostile").FirstOrDefault() ?? "";
             }
             else
             {
-                ob.RuntimeFlags |= objflags.FL_MUSTATTACK;
-                list = ob.PropertyStrings("talk.friendly").FirstOrDefault() ?? "";
+                RuntimeFlags |= objflags.FL_MUSTATTACK;
+                list = PropertyStrings("talk.friendly").FirstOrDefault() ?? "";
             }
             said = RandomSaying(list);
         }
 
         if (!string.IsNullOrEmpty(said))
         {
-            var header = ob.PropertyStrings("talk.header").FirstOrDefault();
+            var header = PropertyStrings("talk.header").FirstOrDefault();
             var text = string.IsNullOrEmpty(header) ? said : $"{_hudMessageManager.Localize(header)}\n\n{said}";
-            _hudMessageManager.Show(Managers.HudMessageKind.Other, text, ob.PropertyStrings("talk.style").FirstOrDefault());
-            if (ob.PropertyStrings("talk.sound").FirstOrDefault() is { Length: > 0 } sound)
+            _hudMessageManager.Show(Managers.HudMessageKind.Other, text, PropertyStrings("talk.style").FirstOrDefault());
+            if (PropertyStrings("talk.sound").FirstOrDefault() is { Length: > 0 } sound)
                 _audioManager.Play(sound);
         }
 
@@ -934,34 +965,34 @@ internal partial class Program
     /// else one of its general ones. It keeps to the one it picked (SeekX for a room's, SeekY
     /// for a general one; Ammo the room it picked it in).
     /// </summary>
-    static string? InformantHint(Entities.Actors.Monster ob)
+    private string? InformantHint()
     {
-        var listName = ob.PropertyStrings("talk.hints").FirstOrDefault();
+        var listName = PropertyStrings("talk.hints").FirstOrDefault();
         if (string.IsNullOrEmpty(listName))
             return null;
 
         var placed = _mapManager.Hints.GetValueOrDefault(listName) ?? [];
-        var roomHints = placed.Where(h => h.Area == ob.AreaNumber).ToList();
+        var roomHints = placed.Where(h => h.Area == AreaNumber).ToList();
         if (roomHints.Count > 0)
         {
-            if (ob.Ammo != ob.AreaNumber)
-                ob.SeekX = 0xff;
-            ob.Ammo = ob.AreaNumber;
-            if (ob.SeekX == 0xff || ob.SeekX >= roomHints.Count)
-                ob.SeekX = (byte)(US_RndT() % roomHints.Count);
-            return HintText(listName, roomHints[ob.SeekX].Message);
+            if (Ammo != AreaNumber)
+                SeekX = 0xff;
+            Ammo = AreaNumber;
+            if (SeekX == 0xff || SeekX >= roomHints.Count)
+                SeekX = (byte)(US_RndT() % roomHints.Count);
+            return HintText(listName, roomHints[SeekX].Message);
         }
 
         var general = placed.Where(h => h.Area == 0xff).ToList();
         if (general.Count == 0)
             return RandomSaying(listName);
-        if (ob.SeekY == 0xff || ob.SeekY >= general.Count)
-            ob.SeekY = (byte)(US_RndT() % general.Count);
-        return HintText(listName, general[ob.SeekY].Message);
+        if (SeekY == 0xff || SeekY >= general.Count)
+            SeekY = (byte)(US_RndT() % general.Count);
+        return HintText(listName, general[SeekY].Message);
     }
 
     // One of the map's sayings from a text, or any from the text when the map places none
-    static string? RandomSaying(string listName)
+    private static string? RandomSaying(string listName)
     {
         if (string.IsNullOrEmpty(listName))
             return null;
@@ -972,10 +1003,10 @@ internal partial class Program
         return count == 0 ? null : HintText(listName, 1 + US_RndT() % count);
     }
 
-    static readonly Dictionary<string, List<string>> hinttexts = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, List<string>> hinttexts = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Message <paramref name="number"/> (from 1) of a hint text, or null</summary>
-    static string? HintText(string listName, int number)
+    private static string? HintText(string listName, int number)
     {
         var messages = HintMessages(listName);
         return number >= 1 && number <= messages.Count ? messages[number - 1] : null;
@@ -985,7 +1016,7 @@ internal partial class Program
     /// A VGAGRAPH text's messages, split at its "^XX"s, with line breaks kept and its formatting
     /// codes (^FC color and the like) left out
     /// </summary>
-    static List<string> HintMessages(string listName)
+    private static List<string> HintMessages(string listName)
     {
         if (hinttexts.TryGetValue(listName, out var cached))
             return cached;

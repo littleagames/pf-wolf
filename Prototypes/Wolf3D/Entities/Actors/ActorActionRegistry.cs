@@ -19,29 +19,32 @@ internal static class ActorActionRegistry
 
     internal static void Register(string name, Action<Actor> action) => _actions[name] = (actor, _) => action(actor);
 
-    // Names only a Monster can run (RegisterMonster), and the classes already warned about
-    // running one without being a Monster
-    private static readonly HashSet<string> _monsterActions = [];
-    private static readonly HashSet<(string Class, string Action)> _warnedNotMonster = [];
+    // The class each name registered with RegisterFor needs, and the actor classes already
+    // warned about running one without being that class
+    private static readonly Dictionary<string, Type> _neededClass = [];
+    private static readonly HashSet<(string Class, string Action)> _warnedWrongClass = [];
 
-    /// <summary>A think or action that runs on a <see cref="Monster"/>; any other actor that hits it is warned about once and skipped.</summary>
-    internal static void RegisterMonster(string name, Action<Monster, string[]> action)
+    /// <summary>
+    /// A think or action that runs on a <typeparamref name="T"/> (a <see cref="Monster"/>, say);
+    /// any other actor that hits it is warned about once and skipped.
+    /// </summary>
+    internal static void RegisterFor<T>(string name, Action<T, string[]> action) where T : Actor
     {
-        _monsterActions.Add(name);
+        _neededClass[name] = typeof(T);
         _actions[name] = (actor, args) =>
         {
-            if (actor is Monster monster)
-                action(monster, args);
-            else if (_warnedNotMonster.Add((actor.Name, name)))
-                Console.WriteLine($"Actor '{actor.Name}' runs {name}, which needs a Monster (`parent: Monster` in its actordefs); skipped.");
+            if (actor is T needed)
+                action(needed, args);
+            else if (_warnedWrongClass.Add((actor.Name, name)))
+                Console.WriteLine($"Actor '{actor.Name}' runs {name}, which needs a {typeof(T).Name} (`parent: {typeof(T).Name}` in its actordefs); skipped.");
         };
     }
 
-    internal static void RegisterMonster(string name, Action<Monster> action) => RegisterMonster(name, (monster, _) => action(monster));
+    internal static void RegisterFor<T>(string name, Action<T> action) where T : Actor => RegisterFor<T>(name, (actor, _) => action(actor));
 
-    /// <summary>Whether a state's think/action call (`T_Chase`, `A_FireProjectile("Rocket")`) needs a Monster to run it.</summary>
-    internal static bool NeedsMonster(string? actionCall) =>
-        !string.IsNullOrWhiteSpace(actionCall) && _monsterActions.Contains(Parse(actionCall).Name);
+    /// <summary>The class a state's think/action call (`T_Chase`, `A_FireProjectile("Rocket")`) needs to run it, or null for any actor.</summary>
+    internal static Type? NeededClass(string? actionCall) =>
+        string.IsNullOrWhiteSpace(actionCall) ? null : _neededClass.GetValueOrDefault(Parse(actionCall).Name);
 
     internal static void Invoke(string? actionCall, Actor actor)
     {

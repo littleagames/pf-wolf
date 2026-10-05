@@ -10,7 +10,7 @@ internal partial class Program
 {
     internal static bool madenoise; // true when shooting or screaming
 
-    static playstatetypes playstate;
+    internal static playstatetypes playstate;
 
     static string lastmusicchunk = "";
 

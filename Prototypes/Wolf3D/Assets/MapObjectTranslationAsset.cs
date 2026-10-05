@@ -126,7 +126,7 @@ internal static class MapInfoCodes
 
     /// <summary>
     /// "hint:Text": a hint (or saying) the map places: message (low byte, from 1) of the VGAGRAPH
-    /// text Text, about the room whose floor it's on, for the actors that talk (Program.BlakeAI.cs)
+    /// text Text, about the room whose floor it's on, for the actors that talk (BlakeMonster.TalkTo)
     /// </summary>
     public const string HintPrefix = "hint:";
 

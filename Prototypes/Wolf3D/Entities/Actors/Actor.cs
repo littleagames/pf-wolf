@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Wolf3D;
 using Wolf3D.Assets;
 using Wolf3D.Constants;
@@ -30,7 +30,7 @@ internal record Actor : Thinker
     public short Temp3 { get; internal set; }
     public bool Hidden { get; internal set; }
 
-    // Blake Stone's AI (Program.BlakeAI.cs): shots left (`monster.ammo`), the tile it's heading
+    // Blake Stone's AI (BlakeMonster): shots left (`monster.ammo`), the tile it's heading
     // for when it runs away or an informant's chosen hints (SeekX/SeekY), and the way a patroller
     // turns when blocked (TryDir: a dir, plus 128 for clockwise; nodir when not turning)
     public short Ammo { get; internal set; }

@@ -580,8 +580,9 @@ internal partial class Program
         ActorActionRegistry.Register("A_GiveInventory", GiveInventoryAction);
         ActorActionRegistry.Register("A_ChangeMap", ChangeMapAction);
 
-        // Enemies' thinks and actions (Entities.Actors.Monster)
+        // Enemies' thinks and actions (Entities.Actors.Monster, BlakeMonster)
         Entities.Actors.Monster.RegisterActions();
+        Entities.Actors.BlakeMonster.RegisterActions();
 
         // Any actor's sounds, and the end of the game (Program.WL_ACT2.cs)
         ActorActionRegistry.Register("A_DeathScream", A_DeathScream);
@@ -590,32 +591,9 @@ internal partial class Program
         ActorActionRegistry.Register("A_Victory", A_Victory);
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
 
-        // Blake Stone's enemies (Program.BlakeAI.cs)
-        ActorActionRegistry.RegisterMonster("T_BlakeChase", T_BlakeChase);
-        ActorActionRegistry.RegisterMonster("T_BlakeShoot", T_BlakeShoot);
-        ActorActionRegistry.RegisterMonster("T_BlowBack", T_BlowBack);
-        ActorActionRegistry.RegisterMonster("T_Wounded", T_Wounded);
-        ActorActionRegistry.RegisterMonster("T_WaitToWake", T_WaitToWake);
-        ActorActionRegistry.RegisterMonster("A_SpawnEnemy", A_SpawnEnemy);
-        ActorActionRegistry.RegisterMonster("A_Melee", A_Melee);
-
-        // Blake Stone's machines and specials (Program.BlakeMachines.cs)
-        ActorActionRegistry.RegisterMonster("T_Bounce", T_Bounce);
-        ActorActionRegistry.RegisterMonster("A_SetShootable", A_SetShootable);
-        ActorActionRegistry.RegisterMonster("T_LiquidMove", T_LiquidMove);
-        ActorActionRegistry.RegisterMonster("T_LiquidStand", T_LiquidStand);
-        ActorActionRegistry.RegisterMonster("T_Seek", T_Seek);
-        ActorActionRegistry.RegisterMonster("T_SecurityLight", T_SecurityLight);
-        ActorActionRegistry.RegisterMonster("T_SteamVent", T_SteamVent);
-        ActorActionRegistry.RegisterMonster("A_HurtPlayerHere", A_HurtPlayerHere);
-        ActorActionRegistry.RegisterMonster("A_HoldNearPlayer", A_HoldNearPlayer);
-        ActorActionRegistry.RegisterMonster("A_JumpIfUntagged", A_JumpIfUntagged);
-        ActorActionRegistry.RegisterMonster("A_SelfDestruct", A_SelfDestruct);
-        ActorActionRegistry.RegisterMonster("A_CountRemaining", A_CountRemaining);
-        ActorActionRegistry.RegisterMonster("A_VictoryIfLast", A_VictoryIfLast);
-        ActorActionRegistry.RegisterMonster("A_WarpSiteGone", A_WarpSiteGone);
-        ActorActionRegistry.RegisterMonster("A_WarpSitesOff", A_WarpSitesOff);
-        ActorActionRegistry.RegisterMonster("A_FireSpread", A_FireSpread);
+        // Goldfire's warp sites (Program.BlakeMachines.cs)
+        ActorActionRegistry.Register("A_WarpSiteGone", A_WarpSiteGone);
+        ActorActionRegistry.Register("A_WarpSitesOff", A_WarpSitesOff);
 
         // Projectiles and effects (Program.WL_ACT2.cs).
         ActorActionRegistry.Register("A_Projectile", A_Projectile);
@@ -623,8 +601,8 @@ internal partial class Program
         ActorActionRegistry.Register("A_Remove", A_Remove);
 
         // BJ victory cutscene (Program.WL_ACT2.cs): BJ walks the patrol arrows as a Monster.
-        ActorActionRegistry.RegisterMonster("T_BJRun", T_BJRun);
-        ActorActionRegistry.RegisterMonster("T_BJJump", T_BJJump);
+        ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("T_BJRun", T_BJRun);
+        ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("T_BJJump", T_BJJump);
         ActorActionRegistry.Register("T_BJDone", T_BJDone);
 
         // The player's own think states (PlayerPawn), ticked by MapManager.DoActor.
@@ -1504,12 +1482,69 @@ internal partial class Program
         }
         else
         {
-            // Nothing ahead to use: talk to whoever's there (Program.BlakeAI.cs)
+            // Nothing ahead to use: talk to whoever's there (BlakeMonster.TalkTo)
             TryInterrogate();
         }
     }
 
     //===========================================================================
+
+    /// <summary>Whether the weapon in hand is a silent one (weapon.silent): its shots don't alert anyone</summary>
+    internal static bool PlayerWeaponIsSilent() =>
+        gamestate.weapon != null && _inventoryManager.GetProperty(gamestate.weapon, "weapon.silent") is { } silent
+        && (silent is true || bool.TryParse(silent.ToString(), out var b) && b);
+
+    // Talking to Blake Stone's TALKATIVE actors (BlakeMonster.TalkTo): how long until the use key
+    // held down talks again
+    static int interrogatedelay;
+
+    /// <summary>The use key held with nothing to use ahead: talk to whoever's there</summary>
+    internal static void TryInterrogate()
+    {
+        if (interrogatedelay > 0)
+        {
+            interrogatedelay = Math.Max(interrogatedelay - (int)tics, 0);
+            return;
+        }
+
+        const int MaxAngle = 45 / 2;
+        Entities.Actors.BlakeMonster? chosen = null;
+        int chosenDist = (int)MINACTORDIST;
+
+        foreach (var ob in _mapManager.GetActors().OfType<Entities.Actors.BlakeMonster>())
+        {
+            if (ob.IsRemoved || !ob.HasFlag("TALKATIVE")
+                || (ob.RuntimeFlags & (objflags.FL_FRIENDLY | objflags.FL_VISABLE)) != (objflags.FL_FRIENDLY | objflags.FL_VISABLE)
+                || Math.Abs(ob.TileX - player.TileX) > 2 || Math.Abs(ob.TileY - player.TileY) > 2)
+                continue;
+
+            int dist = Math.Min(Math.Abs(player.X - ob.X), Math.Abs(player.Y - ob.Y));
+            if (dist >= chosenDist)
+                continue;
+
+            if (ob.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
+            {
+                ob.RuntimeFlags &= ~objflags.FL_FRIENDLY;
+                continue;
+            }
+
+            var angle = Math.Atan2(player.Y - ob.Y, ob.X - player.X);
+            if (angle < 0)
+                angle += Math.PI * 2;
+            int facing = Math.Abs(player.Angle - (int)(angle / (Math.PI * 2) * ANGLES));
+            if (Math.Min(facing, ANGLES - facing) > MaxAngle)
+                continue;
+
+            chosen = ob;
+            chosenDist = dist;
+        }
+
+        if (chosen != null)
+            interrogatedelay = chosen.TalkTo() ? 20 : 120;      // an informant can be asked again sooner
+    }
+
+    /// <summary>Use let go: the next press talks straight away</summary>
+    internal static void ResetInterrogateDelay() => interrogatedelay = 0;
 
     /*
     ===============

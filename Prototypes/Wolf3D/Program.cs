@@ -16,17 +16,17 @@ namespace Wolf3D;
 internal partial class Program
 {
     private static VideoManager _videoManager;
-    private static AudioManager _audioManager;
+    internal static AudioManager _audioManager;
     private static InputManager _inputManager;
     internal static GameEngineManager _gameEngineManager;
     private static GraphicManager _graphicManager;
     private static FontManager _fontManager;
     internal static MapManager _mapManager;
-    private static AssetManager _assetManager;
+    internal static AssetManager _assetManager;
     internal static InventoryManager _inventoryManager;
     private static ConsoleManager _consoleManager;
     private static AutomapManager _automapManager;
-    private static HudMessageManager _hudMessageManager;
+    internal static HudMessageManager _hudMessageManager;
 
     public Program()
     {

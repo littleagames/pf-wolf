@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Wolf3D.Assets;
 using Wolf3D.Constants;
 using static Wolf3D.Program;
@@ -485,7 +485,7 @@ internal partial class Program
         FL_DIR_VERT_FLAG = 0x00000800,
         FL_DIR_MASK = 0x00000e00,
 #endif
-        // Blake Stone's AI (Program.BlakeAI.cs)
+        // Blake Stone's AI (Entities.Actors.BlakeMonster)
         FL_FRIENDLY = 0x00001000,       // doesn't go after the player until it hears or is told to (FRIENDLY actors)
         FL_INTERROGATED = 0x00002000,   // has been talked to: an informant has given its hint, a scientist turned mean
         FL_LOCKEDSTATE = 0x00004000,    // just hurt: no more pain or shooting back until it next chases

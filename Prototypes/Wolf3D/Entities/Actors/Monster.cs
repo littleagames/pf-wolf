@@ -16,32 +16,32 @@ namespace Wolf3D.Entities.Actors;
 /// </summary>
 internal record Monster : Actor
 {
-    /// <summary>The thinks and actions only a Monster can run, by their actordefs names.</summary>
+    /// <summary>The thinks and actions only a Monster can run, by their actordefs names (and its subclasses').</summary>
     internal static void RegisterActions()
     {
-        ActorActionRegistry.RegisterMonster("T_Stand", m => m.Stand());
-        ActorActionRegistry.RegisterMonster("T_Path", m => m.Patrol());
-        ActorActionRegistry.RegisterMonster("T_Chase", m => m.Chase());
-        ActorActionRegistry.RegisterMonster("T_DogChase", m => m.DogChase());
-        ActorActionRegistry.RegisterMonster("T_Bite", m => m.Bite());
-        ActorActionRegistry.RegisterMonster("T_Ghosts", m => m.GhostChase());
-        ActorActionRegistry.RegisterMonster("T_Schabb", m => m.DodgeAndRetreat("Attack"));
-        ActorActionRegistry.RegisterMonster("T_SchabbThrow", m => m.ThrowNeedle());
-        ActorActionRegistry.RegisterMonster("T_Gift", m => m.DodgeAndRetreat("Attack"));
-        ActorActionRegistry.RegisterMonster("T_GiftThrow", m => m.ThrowRocket());
-        ActorActionRegistry.RegisterMonster("T_Fat", m => m.DodgeAndRetreat("Attack"));
-        ActorActionRegistry.RegisterMonster("T_Fake", m => m.FakeChase());
-        ActorActionRegistry.RegisterMonster("T_FakeFire", m => m.ThrowFire());
-        ActorActionRegistry.RegisterMonster("T_Shoot", m => m.Shoot());
-        ActorActionRegistry.RegisterMonster("A_HitlerMorph", m => m.HitlerMorph());
+        ActorActionRegistry.RegisterFor<Monster>("T_Stand", m => m.Stand());
+        ActorActionRegistry.RegisterFor<Monster>("T_Path", m => m.Patrol());
+        ActorActionRegistry.RegisterFor<Monster>("T_Chase", m => m.Chase());
+        ActorActionRegistry.RegisterFor<Monster>("T_DogChase", m => m.DogChase());
+        ActorActionRegistry.RegisterFor<Monster>("T_Bite", m => m.Bite());
+        ActorActionRegistry.RegisterFor<Monster>("T_Ghosts", m => m.GhostChase());
+        ActorActionRegistry.RegisterFor<Monster>("T_Schabb", m => m.DodgeAndRetreat("Attack"));
+        ActorActionRegistry.RegisterFor<Monster>("T_SchabbThrow", m => m.ThrowNeedle());
+        ActorActionRegistry.RegisterFor<Monster>("T_Gift", m => m.DodgeAndRetreat("Attack"));
+        ActorActionRegistry.RegisterFor<Monster>("T_GiftThrow", m => m.ThrowRocket());
+        ActorActionRegistry.RegisterFor<Monster>("T_Fat", m => m.DodgeAndRetreat("Attack"));
+        ActorActionRegistry.RegisterFor<Monster>("T_Fake", m => m.FakeChase());
+        ActorActionRegistry.RegisterFor<Monster>("T_FakeFire", m => m.ThrowFire());
+        ActorActionRegistry.RegisterFor<Monster>("T_Shoot", m => m.Shoot());
+        ActorActionRegistry.RegisterFor<Monster>("A_HitlerMorph", m => m.HitlerMorph());
 
         // Spear of Destiny's bosses
-        ActorActionRegistry.RegisterMonster("T_Will", m => m.DodgeAndRetreat("Attack"));
-        ActorActionRegistry.RegisterMonster("T_UShoot", m => m.UberShoot());
-        ActorActionRegistry.RegisterMonster("A_FireProjectile", (m, args) => m.FireProjectile(args));
-        ActorActionRegistry.RegisterMonster("A_StartAttack", m => m.StartAttack());
-        ActorActionRegistry.RegisterMonster("A_Relaunch", m => m.Relaunch());
-        ActorActionRegistry.RegisterMonster("A_Dormant", m => m.Dormant());
+        ActorActionRegistry.RegisterFor<Monster>("T_Will", m => m.DodgeAndRetreat("Attack"));
+        ActorActionRegistry.RegisterFor<Monster>("T_UShoot", m => m.UberShoot());
+        ActorActionRegistry.RegisterFor<Monster>("A_FireProjectile", (m, args) => m.FireProjectile(args));
+        ActorActionRegistry.RegisterFor<Monster>("A_StartAttack", m => m.StartAttack());
+        ActorActionRegistry.RegisterFor<Monster>("A_Relaunch", m => m.Relaunch());
+        ActorActionRegistry.RegisterFor<Monster>("A_Dormant", m => m.Dormant());
     }
 
     /// <summary>
@@ -62,15 +62,14 @@ internal record Monster : Actor
                 continue;       // a broken parent chain is reported where it's spawned
             }
 
-            if (actor is Monster)
-                continue;
-
-            bool hasHealth = actor.Properties.Keys.Any(k => k == "health" || k.StartsWith("health.", StringComparison.Ordinal));
             var needs = actor.ResolvedStates.Values
                 .SelectMany(f => new[] { f.Think, f.Action })
-                .FirstOrDefault(ActorActionRegistry.NeedsMonster);
-            if (hasHealth || needs != null)
-                Console.WriteLine($"Actor '{name}' {(needs != null ? $"runs {ActorActionRegistry.Parse(needs).Name}" : "has health")} but isn't a Monster: give it `parent: Monster` (or a class descended from it).");
+                .Select(call => (Call: call, Class: ActorActionRegistry.NeededClass(call)))
+                .FirstOrDefault(n => n.Class != null && !n.Class.IsInstanceOfType(actor));
+            if (needs.Class != null)
+                Console.WriteLine($"Actor '{name}' runs {ActorActionRegistry.Parse(needs.Call!).Name} but isn't a {needs.Class.Name}: give it `parent: {needs.Class.Name}` (or a class descended from it).");
+            else if (actor is not Monster && actor.Properties.Keys.Any(k => k == "health" || k.StartsWith("health.", StringComparison.Ordinal)))
+                Console.WriteLine($"Actor '{name}' has health but isn't a Monster: give it `parent: Monster` (or a class descended from it).");
         }
     }
 
@@ -118,11 +117,7 @@ internal record Monster : Actor
                     if (Flags.Contains("TOUCHDAMAGE", StringComparer.OrdinalIgnoreCase))
                         TakeDamage((int)(tics * 2), this);
 
-                    // STEPBACK actors (Blake Stone's) turn round and head back to the tile they
-                    // came from, rather than standing stuck against the player
-                    if (HasFlag("STEPBACK"))
-                        StepBack(this);
-
+                    OnBumpedPlayer();
                     return;
                 }
             }
@@ -351,11 +346,11 @@ internal record Monster : Actor
         };
     }
 
-    internal bool SightPlayer()
+    internal virtual bool SightPlayer()
     {
-        // An INFORMANT never goes after the player, nor does a BLIND actor (Blake Stone's
-        // volatile material transports, which just go their way)
-        if (HasFlag("INFORMANT") || HasFlag("BLIND"))
+        // A BLIND actor (Blake Stone's volatile material transports, which just go their way)
+        // never goes after the player
+        if (HasFlag("BLIND"))
             return false;
 
         if (RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
@@ -431,7 +426,7 @@ internal record Monster : Actor
         else
             turnaround = opposite[(byte)Dir];
 
-        SeekDelta(this, out deltax, out deltay);
+        SeekDelta(out deltax, out deltay);
 
         if (deltax > 0)
         {
@@ -502,7 +497,7 @@ internal record Monster : Actor
         olddir = Dir;
         turnaround = opposite[(byte)olddir];
 
-        SeekDelta(this, out deltax, out deltay);
+        SeekDelta(out deltax, out deltay);
 
         d[1] = objdirtypes.nodir;
         d[2] = objdirtypes.nodir;
@@ -620,13 +615,6 @@ internal record Monster : Actor
     // (actordefs PatrolPoint, placed on the legacy arrow tiles) turns it the way the point faces
     internal virtual void SelectPathDir()
     {
-        // PATROLTURNS patrollers turn when blocked rather than stopping (Program.BlakeAI.cs)
-        if (HasFlag("PATROLTURNS"))
-        {
-            TurningPathDir(this);
-            return;
-        }
-
         if (_mapManager.PatrolPointAt(TileX, TileY) is { } point)
             Dir = point.Dir;
 
@@ -646,7 +634,6 @@ internal record Monster : Actor
     {
         var tilex = X >> (int)MapConstants.TILESHIFT;
         var tiley = Y >> (int)MapConstants.TILESHIFT;
-        bool informant = HasFlag("INFORMANT");
 
         // `monster.floordeath`: on that floor (game-info floor-number) it isn't killed but goes
         // to its FloorDeath state, worth nothing yet (Goldfire morphing on Planet Strike's last)
@@ -658,26 +645,11 @@ internal record Monster : Actor
             return;
         }
 
-        // An informant is worth nothing, and says so (Blake Stone's warning)
-        if (informant)
-            WarnKilledInformant(this);
-        else if (Properties.TryGetValue("points", out var points))
-        {
-            // POINTSONCE actors (Spectres, which come back) only pay out the first time;
-            // FL_BONUS is set at spawn and cleared here, as in the original
-            if (!Flags.Contains("POINTSONCE", StringComparer.OrdinalIgnoreCase))
-                GivePoints(Convert.ToInt32(points));
-            else if (RuntimeFlags.HasFlag(objflags.FL_BONUS))
-            {
-                GivePoints(Convert.ToInt32(points));
-                RuntimeFlags &= ~objflags.FL_BONUS;
-            }
-        }
-
+        AwardKillPoints();
         SetState("Death");
-        StartBlowBack(this, attacker);
+        OnKilled(attacker);
 
-        if (!informant && DeathDrop() is { } drop)
+        if (LeavesDrops && DeathDrop() is { } drop)
             PlaceItemType(drop, tilex, tiley);
         CarriedDeathWork(this, tilex, tiley);
 
@@ -689,11 +661,37 @@ internal record Monster : Actor
 
         // A sleeper that becomes an enemy (`monster.becomes`) isn't the kill; that enemy is.
         // NOTCOUNTED actors (crates, Goldfire, who keeps coming back) aren't enemies to count.
-        if (!informant && !Properties.ContainsKey("monster.becomes") && !HasFlag("NOTCOUNTED"))
+        if (IsKill && !Properties.ContainsKey("monster.becomes"))
             gamestate.killcount++;
         RuntimeFlags &= ~(objflags.FL_SHOOTABLE | objflags.FL_FRIENDLY);
         RuntimeFlags |= objflags.FL_NONMARK;
     }
+
+    /// <summary>Whether it counts toward the level's kills (its total, and the count as each dies); NOTCOUNTED actors don't</summary>
+    internal virtual bool IsKill => !HasFlag("NOTCOUNTED");
+
+    /// <summary>Whether dying, it leaves its `dropweapon`/`dropitem`</summary>
+    protected virtual bool LeavesDrops => true;
+
+    /// <summary>Its `points` for killing it</summary>
+    protected virtual void AwardKillPoints()
+    {
+        if (!Properties.TryGetValue("points", out var points))
+            return;
+
+        // POINTSONCE actors (Spectres, which come back) only pay out the first time;
+        // FL_BONUS is set at spawn and cleared here, as in the original
+        if (!Flags.Contains("POINTSONCE", StringComparer.OrdinalIgnoreCase))
+            GivePoints(Convert.ToInt32(points));
+        else if (RuntimeFlags.HasFlag(objflags.FL_BONUS))
+        {
+            GivePoints(Convert.ToInt32(points));
+            RuntimeFlags &= ~objflags.FL_BONUS;
+        }
+    }
+
+    /// <summary>Just after it has gone to its Death state, killed by <paramref name="attacker"/> (if known)</summary>
+    protected virtual void OnKilled(Actor? attacker) { }
 
     /// <summary>
     /// What a dying actor leaves: its `dropweapon` while the player hasn't got it (by default,
@@ -742,10 +740,6 @@ internal record Monster : Actor
 
     internal virtual void Damage(uint damage, Entities.Actors.Actor? attacker = null)
     {
-        // A sleeper on a timer (`monster.wakeprotected`, the gurney mutant) can't be shot awake
-        if (PropertyBool("monster.wakeprotected") && Temp3 > 0)
-            return;
-
         // `monster.minweapon` (the hanging turret's rapid assault weapon): only that weapon, or a
         // better one (by weapon.selectionorder), in Blake's hand hurts it
         if (Properties.TryGetValue("monster.minweapon", out var minWeapon) && minWeapon is string minWeaponName
@@ -769,17 +763,10 @@ internal record Monster : Actor
             return;
         }
 
-        // Blake Stone's ways when hurt (Program.BlakeAI.cs): a SWAT guard goes down wounded, and
-        // a `monster.painattack` actor shoots straight back and can't be stunned again until it
-        // next chases
-        if (WoundActor(this, oldHitpoints))
-            return;
-        bool counterattacks = Properties.ContainsKey("monster.painattack");
-        if (counterattacks && RuntimeFlags.HasFlag(objflags.FL_LOCKEDSTATE))
+        if (OnHurt(oldHitpoints))
             return;
 
-        // An informant hurt (and still alive) just flinches
-        if (!RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE) && !HasFlag("INFORMANT"))
+        if (!RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE) && NoticesWhenHurt)
             FirstSighting();
 
         // `monster.damagestates: [full, 3/4, 1/2, 1/4]` (the floating bomb, which looks more
@@ -798,15 +785,29 @@ internal record Monster : Actor
         else if (ResolvedStates.ContainsKey("Pain") && (!PropertyBool("monster.painonce") || oldHitpoints >= fullHealth))
             SetState("Pain");
 
-        if (counterattacks)
-        {
-            if (US_RndT() < PropertyInt("monster.painattack", 0) && !HasFlag("STATIONARY"))
-            {
-                ChangeShootMode(this);
-                DoAttack(this);
-            }
-            RuntimeFlags |= objflags.FL_LOCKEDSTATE;
-        }
+        OnPain();
+    }
+
+    /// <summary>Hurt but still alive, before anything else: true when that's taken care of (no noticing the player, no pain)</summary>
+    protected virtual bool OnHurt(int oldHitpoints) => false;
+
+    /// <summary>Whether being hurt makes it go after the player</summary>
+    protected virtual bool NoticesWhenHurt => true;
+
+    /// <summary>Hurt, after it has gone to its pain state</summary>
+    protected virtual void OnPain() { }
+
+    /// <summary>Just spawned on the map at its tile (MapManager.SpawnThing), with its health and flags set</summary>
+    internal virtual void OnSpawned(int tilex, int tiley) { }
+
+    /// <summary>Its move was stopped by the player standing in the way</summary>
+    protected virtual void OnBumpedPlayer() { }
+
+    /// <summary>Which way (in tiles) it heads closing in (SelectDodgeDir, SelectChaseDir): at the player</summary>
+    protected virtual void SeekDelta(out int deltax, out int deltay)
+    {
+        deltax = player.TileX - TileX;
+        deltay = player.TileY - TileY;
     }
 
     /*

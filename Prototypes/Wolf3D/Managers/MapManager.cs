@@ -820,9 +820,8 @@ internal class MapManager
 
             // Every killable enemy counts toward the level's kill ratio (the old SpawnStand/
             // SpawnPatrol/boss spawners each did this); ghosts take the branch above and don't,
-            // and nor do informants, which aren't enemies
-            if (countKill && !Program.loadedgame && !builtActor.HasFlag("INFORMANT")
-                && !builtActor.HasFlag("NOTCOUNTED"))
+            // and nor do those that aren't kills (Monster.IsKill: NOTCOUNTED ones, informants)
+            if (countKill && !Program.loadedgame && (builtActor is not Entities.Actors.Monster m || m.IsKill))
                 Program.gamestate.killtotal++;
 
             // Points only for the first kill (Monster.Kill clears it)
@@ -866,8 +865,7 @@ internal class MapManager
                 TakeNeighbourArea(builtActor, tilex, tiley);
             }
 
-            if (builtActor is Entities.Actors.Monster monster)
-                Program.InitSpawnedActor(monster, tilex, tiley);
+            (builtActor as Entities.Actors.Monster)?.OnSpawned(tilex, tiley);
         }
 
         // Treasure (ScoreItem and the 1-up) counts toward the level's treasure ratio; GetBonus
@@ -998,6 +996,15 @@ internal class MapManager
     }
 
     internal bool VALIDAREA(int x) => (x) >= Floors.AreaTile && (x) < (Floors.AreaTile + Floors.NumAreas);
+
+    /// <summary>The area on a tile, or -1 for none (off the map, or a floor code that isn't an area)</summary>
+    internal int AreaAt(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= MAPSIZE || y >= MAPSIZE)
+            return -1;
+        int spot = MAPSPOT(x, y, 0);
+        return VALIDAREA(spot) ? spot - Floors.AreaTile : -1;
+    }
 
     internal int MAPSPOT(int x, int y, int plane) => (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]);
     internal void SetMapSpot(int x, int y, int plane, ushort value)
