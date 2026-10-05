@@ -32,15 +32,9 @@ internal partial class Program
     */
 
     //
-    // player state info
+    // player state info: thrustspeed, plux/pluy, anglefrac, LastAttacker and the rest are the
+    // acting player's (Program.Players.cs)
     //
-    internal static int thrustspeed;
-
-    static ushort plux, pluy;          // player coordinates scaled to unsigned
-
-    static short anglefrac;
-
-    static Entities.Actors.Actor? LastAttacker;
 
     /*
     =============================================================================
@@ -63,13 +57,13 @@ internal partial class Program
     internal static void CheckWeaponChange()
     {
         var usable = OwnedWeapons().Where(CanFire).ToList();
-        if (!CanFire(gamestate.chosenweapon) && gamestate.weapon != null)
-            usable.Remove(gamestate.weapon);
+        if (!CanFire(playerstate.chosenweapon) && playerstate.weapon != null)
+            usable.Remove(playerstate.weapon);
         if (usable.Count == 0)
             return;
 
         string? newWeapon = null;
-        var current = gamestate.weapon != null ? usable.IndexOf(gamestate.weapon) : -1;
+        var current = playerstate.weapon != null ? usable.IndexOf(playerstate.weapon) : -1;
 
         if (playerinput.IsFreshPress(buttontypes.bt_nextweapon))
         {
@@ -94,11 +88,11 @@ internal partial class Program
                     UseSlotItem(slot);      // Planet Strike's fission detonator (Program.Teleporter.cs)
                     break;
                 }
-                var inHand = gamestate.weapon != null ? inSlot.IndexOf(gamestate.weapon) : -1;
+                var inHand = playerstate.weapon != null ? inSlot.IndexOf(playerstate.weapon) : -1;
                 newWeapon = inHand >= 0
                     ? inSlot[(inHand + 1) % inSlot.Count]
                     : inSlot.OrderBy(WeaponSelectionOrder).First();
-                if (newWeapon == gamestate.weapon)
+                if (newWeapon == playerstate.weapon)
                     newWeapon = null;
                 break;
             }
@@ -106,7 +100,7 @@ internal partial class Program
 
         if (newWeapon != null)
         {
-            gamestate.weapon = gamestate.chosenweapon = newWeapon;
+            playerstate.weapon = playerstate.chosenweapon = newWeapon;
             DrawWeapon();
         }
     }
@@ -403,7 +397,7 @@ internal partial class Program
             return;         // walk through walls
 
         if (!_audioManager.IsAnySoundPlaying())
-             _audioManager.Play("world/hitwall");
+             PlayPlayerSound("world/hitwall");
 
         //
         // ran into a diagonal face: slide along it (the move's part in the face's direction),
@@ -490,7 +484,7 @@ internal partial class Program
 
         if (builtActor.Properties.TryGetValue("inventory.pickupsound", out var pickupSound))
         {
-            _audioManager.Play(pickupSound?.ToString() ?? "");
+            PlayPlayerSound(pickupSound?.ToString() ?? "");
             GrinAtPickup(builtActor, pickupSound?.ToString());
         }
 
@@ -498,10 +492,13 @@ internal partial class Program
         if (builtActor.Properties.TryGetValue("inventory.pickupmessage", out var pickupMessage))
         {
             builtActor.Properties.TryGetValue("inventory.pickupmessagestyle", out var pickupMessageStyle);
-            _hudMessageManager.Show(HudMessageKind.Pickup, pickupMessage?.ToString(), pickupMessageStyle?.ToString());
+            if (ActingIsLocal)
+                _hudMessageManager.Show(HudMessageKind.Pickup, pickupMessage?.ToString(), pickupMessageStyle?.ToString());
         }
 
-        _videoManager.StartBonusFlash();
+        if (ActingIsLocal)
+
+            _videoManager.StartBonusFlash();
         //check.shapenum = "";                   // remove from list
         _mapManager.RemoveActor(builtActor);
     }
@@ -538,7 +535,7 @@ internal partial class Program
             return true;
         int itemMax = _inventoryManager.GetIntProperty(item.Name, "inventory.maxamount", 0);
         int cap = itemMax > 0 ? Math.Min(itemMax, MaxHealth) : MaxHealth;
-        return gamestate.health < cap;
+        return playerstate.health < cap;
     }
 
     internal static bool TryApplyInventory(Inventory item, int amount)
@@ -551,7 +548,7 @@ internal partial class Program
                 // gibs only help when nearly dead); 0 is up to the player's max health
                 int itemMax = _inventoryManager.GetIntProperty(item.Name, "inventory.maxamount", 0);
                 int cap = itemMax > 0 ? Math.Min(itemMax, MaxHealth) : MaxHealth;
-                if (gamestate.health >= cap)
+                if (playerstate.health >= cap)
                     return false;
                 HealSelf(amount, cap);
                 return true;
@@ -614,6 +611,7 @@ internal partial class Program
         // The player's own think states (PlayerPawn), ticked by MapManager.DoActor.
         ActorActionRegistry.Register("T_Player", T_Player);
         ActorActionRegistry.Register("T_DeathCam", T_DeathCam);
+        ActorActionRegistry.Register("T_PlayerDead", T_PlayerDead);
 
         // The weapon in hand's states (Program.PlayerWeapon.cs).
         RegisterWeaponActions();
@@ -830,9 +828,9 @@ internal partial class Program
     /// <summary>Takes one shot's ammo for the weapon in hand (unless the ammo cheat is on).</summary>
     static void UseAmmo()
     {
-        var ammoType = WeaponAmmoType(gamestate.weapon);
+        var ammoType = WeaponAmmoType(playerstate.weapon);
         if (ammoType != null && ammocheat == 0)
-            _inventoryManager.Take(ammoType, _inventoryManager.GetIntProperty(gamestate.weapon!, "weapon.ammouse1", 0));
+            _inventoryManager.Take(ammoType, _inventoryManager.GetIntProperty(playerstate.weapon!, "weapon.ammouse1", 0));
         DrawAmmo();
     }
 
@@ -855,18 +853,18 @@ internal partial class Program
     // The status bar shows the ammo of the weapon the player picked, even while out of ammo
     // forces a fallback; with an ammo-less weapon picked, the ammo of the best one that has some.
     static string? DisplayAmmoType() =>
-        WeaponAmmoType(gamestate.chosenweapon)
+        WeaponAmmoType(playerstate.chosenweapon)
         ?? OwnedWeapons().OrderBy(WeaponSelectionOrder).Select(WeaponAmmoType).FirstOrDefault(t => t != null);
 
     static int GetAmmo() => DisplayAmmoType() is { } type ? _inventoryManager.GetCount(type) : 0;
 
     static void DrawAmmo()
     {
-        if (viewsize == 21 && ingame) return;
+        if (StatusBarHidden) return;
         // only-with-ammo: nothing while the weapon in hand needs none (Blake Stone's auto charge pistol)
-        bool hide = StatusBar.Get("ammo")?.OnlyWithAmmo == true && WeaponAmmoType(gamestate.weapon) == null;
+        bool hide = StatusBar.Get("ammo")?.OnlyWithAmmo == true && WeaponAmmoType(playerstate.weapon) == null;
         // item: what to count while the weapon picked uses none (Planet Strike's charge units)
-        int ammo = WeaponAmmoType(gamestate.chosenweapon) == null && StatusBar.Get("ammo")?.Item is { Length: > 0 } item
+        int ammo = WeaponAmmoType(playerstate.chosenweapon) == null && StatusBar.Get("ammo")?.Item is { Length: > 0 } item
             ? _inventoryManager.GetCount(item)
             : GetAmmo();
         LatchNumber("ammo", ammo, hide);
@@ -899,10 +897,8 @@ internal partial class Program
         return added;
     }
 
-    // The pickup sound of the WEAPON.ALWAYSGRIN item that made the player grin; the face grins
-    // while it plays
-    static string? grinsound;
-
+    // The face grins while grinsound, the pickup sound of the WEAPON.ALWAYSGRIN item that made
+    // the player grin, plays
     static bool Grinning => grinsound != null && _audioManager.IsPlaying(grinsound);
 
     /// <summary>
@@ -928,17 +924,17 @@ internal partial class Program
     // around through its pics, else once dead the one for what killed them
     static void DrawFace()
     {
-        if (viewsize == 21 && ingame) return;
+        if (StatusBarHidden) return;
         if (StatusBar.Get("face") is not { } face) return;
 
         string? pic;
         if (Grinning && !string.IsNullOrEmpty(face.Grin))
             pic = face.Grin;
-        else if (gamestate.health != 0)
+        else if (playerstate.health != 0)
         {
             var faces = face.Faces.OrderByDescending(f => f.Health).ToList();
-            var pics = (faces.FirstOrDefault(f => gamestate.health >= f.Health) ?? faces.LastOrDefault())?.Pics;
-            pic = pics is { Count: > 0 } ? pics[gamestate.faceframe % pics.Count] : null;
+            var pics = (faces.FirstOrDefault(f => playerstate.health >= f.Health) ?? faces.LastOrDefault())?.Pics;
+            pic = pics is { Count: > 0 } ? pics[playerstate.faceframe % pics.Count] : null;
         }
         else
             pic = LastAttacker != null && face.KilledBy.TryGetValue(LastAttacker.Name, out var killedBy) ? killedBy : face.Dead;
@@ -957,13 +953,10 @@ internal partial class Program
     ===============
     */
 
-    static int facecount = 0;
-    static int facetimes = 0;
-
     internal static void UpdateFace()
     {
-        // don't make demo depend on sound playback
-        if (demoplayback || demorecord)
+        // don't make demo depend on sound playback, nor a game every player's machine plays alike
+        if (demoplayback || demorecord || gamemode != GameMode.Single)
         {
             if (facetimes > 0)
             {
@@ -977,9 +970,9 @@ internal partial class Program
         facecount += (int)tics;
         if (facecount > US_RndT())
         {
-            gamestate.faceframe = (short)(US_RndT() >> 6);
-            if (gamestate.faceframe == 3)
-                gamestate.faceframe = 1;
+            playerstate.faceframe = (short)(US_RndT() >> 6);
+            if (playerstate.faceframe == 3)
+                playerstate.faceframe = 1;
 
             facecount = 0;
             DrawFace();
@@ -988,8 +981,8 @@ internal partial class Program
 
     static void DrawHealth()
     {
-        if (viewsize == 21 && ingame) return;
-        LatchNumber("health", gamestate.health);
+        if (StatusBarHidden) return;
+        LatchNumber("health", playerstate.health);
     }
 
     /*
@@ -1013,28 +1006,41 @@ internal partial class Program
     {
         if (gamestate.victoryflag)
             return;
+        // With others playing, a dead player lies there until they come back (T_PlayerDead)
+        if (gamemode != GameMode.Single && playerstate.health <= 0)
+            return;
         // The skill's damage-taken (the easiest skill's 0.25 is vanilla's points >> 2), then the class's
         points = (int)(points * Math.Max(CurrentSkill.DamageTaken, 0) * DamageTakenFactor);
 
         if (godmode == 0)
         {
             // Armor takes its share of the hit off its points, as far as they go
-            int saved = Math.Min(points * gamestate.armorpercent / 100, gamestate.armor);
-            gamestate.armor -= (short)saved;
-            if (gamestate.armor == 0)
-                gamestate.armorpercent = 0;
+            int saved = Math.Min(points * playerstate.armorpercent / 100, playerstate.armor);
+            playerstate.armor -= (short)saved;
+            if (playerstate.armor == 0)
+                playerstate.armorpercent = 0;
             points -= saved;
 
-            gamestate.health -= (short)points;
+            playerstate.health -= (short)points;
         }
 
-        if (gamestate.health <= 0)
+        // How others see it (their body's Pain or Pain1, as an enemy's by its health left)
+        if (points > 0 && playerstate.health > 0)
         {
-            gamestate.health = 0;
-            playstate = playstatetypes.ex_died;
+            playerstate.PainTics = 10;
+            playerstate.PainAlt = (playerstate.health & 1) == 0;
         }
 
-        if (godmode != 2)
+        if (playerstate.health <= 0)
+        {
+            playerstate.health = 0;
+            if (gamemode == GameMode.Single)
+                playstate = playstatetypes.ex_died;     // Died(): the level starts again
+            else
+                PlayerDies();                           // the rest play on (Program.Players.cs)
+        }
+
+        if (godmode != 2 && ActingIsLocal)
             _videoManager.StartDamageFlash(points);
 
         DrawHealth();
@@ -1045,9 +1051,9 @@ internal partial class Program
         // Vanilla only restarted it with the status bar showing; here it always does, so how a
         // demo plays doesn't depend on the view size.
         if (StatusBar.Get("face") is { Ouch.Length: > 0 } face && points > face.OuchDamage
-            && gamestate.health != 0 && godmode == 0 && _assetManager.Exists<Assets.GraphicAsset>(face.Ouch))
+            && playerstate.health != 0 && godmode == 0 && _assetManager.Exists<Assets.GraphicAsset>(face.Ouch))
         {
-            if (viewsize != 21)
+            if (viewsize != 21 && ActingIsLocal)
                 StatusDrawFace(face.Ouch);
             facecount = 0;
         }
@@ -1074,19 +1080,19 @@ internal partial class Program
         if (_inventoryManager.GetProperty(armorClass, "armor.maxsaveamount") != null)
         {
             int cap = Math.Min(_inventoryManager.GetIntProperty(armorClass, "armor.maxsaveamount", 0), MaxArmor);
-            if (gamestate.armor >= cap || amount <= 0)
+            if (playerstate.armor >= cap || amount <= 0)
                 return false;
-            if (gamestate.armor == 0)
-                gamestate.armorpercent = percent;
-            gamestate.armor = (short)Math.Min(gamestate.armor + amount, cap);
+            if (playerstate.armor == 0)
+                playerstate.armorpercent = percent;
+            playerstate.armor = (short)Math.Min(playerstate.armor + amount, cap);
         }
         else
         {
             amount = Math.Min(amount, MaxArmor);
-            if (gamestate.armor >= amount)
+            if (playerstate.armor >= amount)
                 return false;
-            gamestate.armor = (short)amount;
-            gamestate.armorpercent = percent;
+            playerstate.armor = (short)amount;
+            playerstate.armorpercent = percent;
         }
 
         DrawArmor();
@@ -1096,15 +1102,15 @@ internal partial class Program
     // The status bar's optional armor number (statusbar.yaml `armor`)
     static void DrawArmor()
     {
-        if (viewsize == 21 && ingame) return;
-        LatchNumber("armor", gamestate.armor);
+        if (StatusBarHidden) return;
+        LatchNumber("armor", playerstate.armor);
     }
 
     /// <summary>Heals the player by <paramref name="points"/>, up to <paramref name="upTo"/> (their max health when null)</summary>
     internal static void HealSelf(int points, int? upTo = null)
     {
         int cap = Math.Min(upTo ?? MaxHealth, MaxHealth);
-        gamestate.health = (short)Math.Min(gamestate.health + points, Math.Max(cap, gamestate.health));
+        playerstate.health = (short)Math.Min(playerstate.health + points, Math.Max(cap, playerstate.health));
 
         DrawHealth();
         DrawFace();
@@ -1112,7 +1118,7 @@ internal partial class Program
 
     static void DrawKeys()
     {
-        if (viewsize == 21 && ingame) return;
+        if (StatusBarHidden) return;
         if (StatusBar.Get("keys") is not { } layout) return;
         // Each key with a "key.statusbarslot" (0 at the top) has its own spot on the status bar:
         // its "key.statusbarpic" while carried, else "key.statusbaremptypic". Carried keys are
@@ -1146,14 +1152,14 @@ internal partial class Program
         var gameInfo = _gameEngineManager.GetGameInfo();
         var mapInfo = gameInfo.Maps[gamestate.mapon];
         //var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
-        if (viewsize == 21 && ingame) return;
+        if (StatusBarHidden) return;
         LatchNumber("level", mapInfo.FloorNumber);
     }
 
     static void DrawLives()
     {
-        if (viewsize == 21 && ingame) return;
-        LatchNumber("lives", gamestate.lives);
+        if (StatusBarHidden) return;
+        LatchNumber("lives", playerstate.lives);
     }
 
     /*
@@ -1166,17 +1172,17 @@ internal partial class Program
 
     static void GiveExtraMan()
     {
-        if (gamestate.lives < MaxLives)
-            gamestate.lives++;
+        if (playerstate.lives < MaxLives)
+            playerstate.lives++;
         DrawLives();
         if (StatusBar.Get("lives")?.Sound is { Length: > 0 } sound)
-            _audioManager.Play(sound);
+            PlayPlayerSound(sound);
     }
 
     static void DrawScore()
     {
-        if (viewsize == 21 && ingame) return;
-        LatchNumber("score", gamestate.score);
+        if (StatusBarHidden) return;
+        LatchNumber("score", playerstate.score);
     }
 
     /*
@@ -1192,10 +1198,10 @@ internal partial class Program
 
     internal static void GivePoints(int points)
     {
-        gamestate.score += points;
-        while (ExtraLifeScore > 0 && gamestate.score >= gamestate.nextextra)
+        playerstate.score += points;
+        while (ExtraLifeScore > 0 && playerstate.score >= playerstate.nextextra)
         {
-            gamestate.nextextra += ExtraLifeScore;
+            playerstate.nextextra += ExtraLifeScore;
             GiveExtraMan();
         }
         DrawScore();
@@ -1205,7 +1211,7 @@ internal partial class Program
     // that puts it there) and its charge
     static void DrawWeapon()
     {
-        if (viewsize == 21 && ingame) return;
+        if (StatusBarHidden) return;
         DrawWeaponPic();
         if (StatusBar.Get("ammo")?.Behind?.Equals("weapon", StringComparison.OrdinalIgnoreCase) == true
             || StatusBar.Get("ammo")?.OnlyWithAmmo == true || StatusBar.Get("ammo-gauge") != null)
@@ -1215,10 +1221,10 @@ internal partial class Program
 
     static void DrawWeaponPic()
     {
-        if (viewsize == 21 && ingame) return;
-        if (gamestate.weapon == null) return;
+        if (StatusBarHidden) return;
+        if (playerstate.weapon == null) return;
 
-        var icon = _inventoryManager.GetStringProperty(gamestate.weapon, "inventory.icon");
+        var icon = _inventoryManager.GetStringProperty(playerstate.weapon, "inventory.icon");
         if (!string.IsNullOrEmpty(icon) && StatusBar.Get("weapon") is { } element)
         {
             using var _ = StatusBarOrigin(element);
@@ -1231,9 +1237,9 @@ internal partial class Program
     // weapon-corner): its picture for the weapon in hand
     static void DrawWeaponCorner()
     {
-        if (viewsize == 21 && ingame) return;
-        if (gamestate.weapon == null || StatusBar.Get("weapon-corner") is not { } element) return;
-        var pic = element.WeaponPics.GetValueOrDefault(gamestate.weapon);
+        if (StatusBarHidden) return;
+        if (playerstate.weapon == null || StatusBar.Get("weapon-corner") is not { } element) return;
+        var pic = element.WeaponPics.GetValueOrDefault(playerstate.weapon);
         using var _ = StatusBarOrigin(element);
         if (!string.IsNullOrEmpty(pic))
             _graphicManager.DrawPic(pic, element.X, StatusBarTop(element) + element.Y);
@@ -1251,7 +1257,7 @@ internal partial class Program
 
     // The class being played as, for its `player.*` properties (inherited from Player where it
     // leaves them out)
-    private static string PlayerClass => gamestate.playerclass;
+    private static string PlayerClass => playerstate.playerclass;
 
     /// <summary>The classes a new game can be played as: game-info's player-classes, else just Player</summary>
     internal static List<string> PlayerClasses()
@@ -1304,7 +1310,7 @@ internal partial class Program
     internal static void GiveStartingInventory()
     {
         _inventoryManager.Clear();
-        gamestate.armor = gamestate.armorpercent = 0;
+        playerstate.armor = playerstate.armorpercent = 0;
 
         if (_inventoryManager.GetProperty(PlayerClass, "player.startitem") is IDictionary<object, object> items)
         {
@@ -1320,7 +1326,7 @@ internal partial class Program
         else
             Console.WriteLine($"No player.startitem on actordefs class {PlayerClass}: the player starts with nothing.");
 
-        gamestate.weapon = gamestate.chosenweapon = BestWeapon();
+        playerstate.weapon = playerstate.chosenweapon = BestWeapon();
     }
 
     /// <summary>
@@ -1366,7 +1372,7 @@ internal partial class Program
 
         var newBest = BestWeapon();
         if (newBest != null && newBest != oldBest)
-            gamestate.weapon = gamestate.chosenweapon = newBest;
+            playerstate.weapon = playerstate.chosenweapon = newBest;
 
         DrawWeapon();
         DrawAmmo();
@@ -1409,7 +1415,7 @@ internal partial class Program
         }
 
         if (!string.IsNullOrEmpty(wallSwitch.Sound))
-            _audioManager.Play(wallSwitch.Sound);
+            PlayPlayerSound(wallSwitch.Sound);
 
         var activation = new Entities.TriggerActivation(tilex, tiley, dir, player, _mapManager.GetTag(tilex, tiley));
         foreach (var action in wallSwitch.Actions)
@@ -1508,7 +1514,7 @@ internal partial class Program
 
     /// <summary>Whether the weapon in hand is a silent one (weapon.silent): its shots don't alert anyone</summary>
     internal static bool PlayerWeaponIsSilent() =>
-        gamestate.weapon != null && _inventoryManager.GetProperty(gamestate.weapon, "weapon.silent") is { } silent
+        playerstate.weapon != null && _inventoryManager.GetProperty(playerstate.weapon, "weapon.silent") is { } silent
         && (silent is true || bool.TryParse(silent.ToString(), out var b) && b);
 
 
@@ -1565,11 +1571,18 @@ internal partial class Program
         TickWeapon();
     }
 
-    // The player's targets are now exclusively the new Entities.Actors.Actor enemies
-    // (Entities.Actors.Monster). The player pawn, projectiles and the BJ-victory actor share
-    // _actors with the enemies but have no "Chase" state, so they never qualify.
-    private static List<Entities.Actors.Monster> FindShootCandidates()
+    /// <summary>Something a player's shot could hit, and how far in front of them it is (TransX)</summary>
+    private readonly record struct ShotTarget(Entities.Actors.Actor Actor, int Depth);
+
+    // What the acting player's shot could hit, nearest first. Alone, as vanilla: the enemies
+    // (Entities.Actors.Monster) the renderer last drew near the middle of the view -- the player
+    // pawn, projectiles and the BJ-victory actor share _actors with the enemies but have no
+    // "Chase" state, so they never qualify. With others playing, ShootCandidatesFrom.
+    private static List<ShotTarget> FindShootCandidates()
     {
+        if (gamemode != GameMode.Single)
+            return ShootCandidatesFrom(player);
+
         var candidates = new List<Entities.Actors.Monster>();
 
         foreach (var actor in _mapManager.GetActors().OfType<Entities.Actors.Monster>())
@@ -1583,25 +1596,76 @@ internal partial class Program
         }
 
         candidates.Sort((a, b) => a.TransX.CompareTo(b.TransX));
-        return candidates;
+        return candidates.Select(c => new ShotTarget(c, c.TransX)).ToList();
+    }
+
+    /// <summary>
+    /// What a player's shot could hit, worked out from where they stand rather than from what
+    /// any screen shows (another player's machine draws another view, and a game played on
+    /// several machines has to come out the same on each): the living enemies -- and, in
+    /// deathmatch, the other living players -- within the shot's angle either side of straight
+    /// ahead (the renderer's shootdelta, which comes to the same angle however wide the view),
+    /// with a clear line to them. Nearest first.
+    /// </summary>
+    private static List<ShotTarget> ShootCandidatesFrom(Entities.Actors.PlayerPawn shooter)
+    {
+        var (fromx, fromy, fromsin, fromcos) = PlayerViewOrigin();
+        var candidates = new List<ShotTarget>();
+
+        foreach (var actor in _mapManager.GetActors())
+        {
+            bool enemy = actor is Entities.Actors.Monster && !actor.IsRemoved && actor.ResolvedStates.ContainsKey("Chase")
+                && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE);
+            bool rival = gamemode == GameMode.Deathmatch && actor is Entities.Actors.PlayerPawn pawn
+                && pawn != shooter && pawn.State.health > 0;
+            if (!enemy && !rival)
+                continue;
+
+            // As TransformActorFrom: how far in front (nx) and to the side (ny)
+            int gx = actor.X - fromx, gy = actor.Y - fromy;
+            int nx = MathUtils.FixedMul(gx, fromcos) - MathUtils.FixedMul(gy, fromsin) - ACTORSIZE;
+            int ny = MathUtils.FixedMul(gy, fromcos) + MathUtils.FixedMul(gx, fromsin);
+            if (nx < MINDIST)
+                continue;
+
+            // |ny / nx| * scale < shootdelta, with the view's width taken out of both
+            if (Math.Abs((long)ny) * 5 * (FOCALLENGTH + MINDIST) >= (long)nx * (VIEWGLOBAL / 2))
+                continue;
+
+            if (!CheckLine(actor, shooter))
+                continue;
+
+            candidates.Add(new ShotTarget(actor, nx));
+        }
+
+        return candidates.OrderBy(c => c.Depth).ToList();
+    }
+
+    /// <summary>A player's shot or blow lands on an enemy, or (deathmatch) another player</summary>
+    static void HitShotTarget(Entities.Actors.Actor target, uint damage)
+    {
+        if (target is Entities.Actors.PlayerPawn pawn)
+            TakeDamage(pawn, (int)damage, player);
+        else if (target is Entities.Actors.Monster monster)
+            monster.Damage(damage, player);
     }
 
     // The weapon in hand's `attacksound`.
     static void PlayAttackSound()
     {
-        if (gamestate.weapon != null && _inventoryManager.GetStringProperty(gamestate.weapon, "attacksound") is { Length: > 0 } sound)
-            _audioManager.Play(sound);
+        if (playerstate.weapon != null && _inventoryManager.GetStringProperty(playerstate.weapon, "attacksound") is { Length: > 0 } sound)
+            PlayPlayerSound(sound);
     }
 
     internal static void KnifeAttack(Entities.Actors.Actor ob)
     {
         PlayAttackSound();
 
-        var closest = FindShootCandidates().FirstOrDefault(c => c.TransX <= 0x18000L);
+        var closest = FindShootCandidates().FirstOrDefault(c => c.Depth <= 0x18000L).Actor;
         if (closest == null)
             return; // missed
 
-        closest.Damage(PlayerDamage(US_RndT() >> 4), player);
+        HitShotTarget(closest, PlayerDamage(US_RndT() >> 4));
     }
 
     // A player attack's damage, scaled by the class's player.damagedealt
@@ -1626,7 +1690,7 @@ internal partial class Program
         // failed candidate as excluded, re-scanning always finds the same actor again --
         // it only ever gives the single closest actor one shot at passing CheckLine)
         //
-        var closest = FindShootCandidates().FirstOrDefault();
+        var closest = FindShootCandidates().FirstOrDefault().Actor;
         if (closest == null)
             return; // no targets, missed
         if (!CheckLine(closest))
@@ -1649,7 +1713,7 @@ internal partial class Program
             damage = US_RndT() / far;
         }
 
-        closest.Damage(PlayerDamage(damage), player);
+        HitShotTarget(closest, PlayerDamage(damage));
     }
 
     internal static void VictorySpin()

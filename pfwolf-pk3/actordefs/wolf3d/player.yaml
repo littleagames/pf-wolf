@@ -11,6 +11,39 @@
 #       "player.maxamount":
 #         Clip: 150
 Player:
+  # What other players (and the camera, spectating) see of a player: never placed on the map,
+  # just drawn where the player is (Program.Camera.cs TickPlayerBodies). Spawn standing still,
+  # See walking, Missile while their weapon fires, Pain (or Pain1, by whether their health is
+  # odd or even) when hurt, Death once dead. A to E turn with the player (8 views); F to O are
+  # seen from the front only. Don't give it a Chase state: that makes an actor an enemy.
+  states:
+    Spawn:
+      - sprite: PLAY
+        frames: [A]
+        tics-per-frame: -1
+    See:
+      - sprite: PLAY
+        frames: [B, C, D, E]
+        tics-per-frame: 8
+    Missile:
+      - sprite: PLAY
+        frames: [F, G, H, I]
+        tics-per-frame: 5
+    Pain:
+      - sprite: PLAY
+        frames: [F]
+        tics-per-frame: 10
+    Pain1:
+      - sprite: PLAY
+        frames: [J]
+        tics-per-frame: 10
+    Death:
+      - sprite: PLAY
+        frames: [J, K, L, M, N]
+        tics-per-frame: 10
+      - sprite: PLAY
+        frames: [O]
+        tics-per-frame: -1
   properties:
     # The player's name in messages: %o in an obituary
     "tag": "B.J. Blazkowicz"

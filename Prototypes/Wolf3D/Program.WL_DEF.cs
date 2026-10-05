@@ -104,26 +104,15 @@ internal class gametype
 {
     // The skill: its place in game-info's skills, 0 for the first (easiest)
     public short difficulty;
-    // The actordefs class played as (game-info player-classes); its player.* properties
-    public string playerclass = "Player";
     public string mapon;
-    public int oldscore, score, nextextra;
-    public short lives;
-    public short health;
-    // Armor points, and how much of each hit (0-100%) they absorb
-    public short armor, armorpercent;
-    // The weapon in hand and the one the player picked, as held inventory item types (actordefs
-    // Weapon classes, e.g. "Pistol"). They differ while out of ammo forces a fallback; null
-    // means no weapon (dead).
-    public string? weapon, chosenweapon;
 
-    public short faceframe;
+    // The player's own stats (score, lives, health, armor, weapons...) are on each player's
+    // Entities.PlayerState now: Program.playerstate for the acting player
 
     public short cluster, secretcount, treasurecount, killcount,
                 secrettotal, treasuretotal, killtotal;
     public int TimeCount;               // tics on this level
     public int PlayTime;                // tics since the game began, over every level
-    public int killx, killy;
     public bool victoryflag;            // set during victory animations
 
     private static string? ReadWeapon(BinaryReader br)
@@ -132,50 +121,55 @@ internal class gametype
         return name.Length == 0 ? null : name;
     }
 
-    public static gametype Read(BinaryReader br) => new()
+    /// <summary>Reads the game, and the one player's stats a save keeps in among it</summary>
+    public static (gametype Game, Entities.PlayerState Player) Read(BinaryReader br)
     {
-        difficulty = br.ReadInt16(),
-        playerclass = br.ReadString(),
-        mapon = br.ReadString(),
-        oldscore = br.ReadInt32(),
-        score = br.ReadInt32(),
-        nextextra = br.ReadInt32(),
-        lives = br.ReadInt16(),
-        health = br.ReadInt16(),
-        armor = br.ReadInt16(),
-        armorpercent = br.ReadInt16(),
-        weapon = ReadWeapon(br),
-        chosenweapon = ReadWeapon(br),
-        faceframe = br.ReadInt16(),
-        cluster = br.ReadInt16(),
-        secretcount = br.ReadInt16(),
-        treasurecount = br.ReadInt16(),
-        killcount = br.ReadInt16(),
-        secrettotal = br.ReadInt16(),
-        treasuretotal = br.ReadInt16(),
-        killtotal = br.ReadInt16(),
-        TimeCount = br.ReadInt32(),
-        PlayTime = br.ReadInt32(),
-        killx = br.ReadInt32(),
-        killy = br.ReadInt32(),
-        victoryflag = br.ReadBoolean(),
-    };
+        var game = new gametype();
+        var p = new Entities.PlayerState();
+        game.difficulty = br.ReadInt16();
+        p.playerclass = br.ReadString();
+        game.mapon = br.ReadString();
+        p.oldscore = br.ReadInt32();
+        p.score = br.ReadInt32();
+        p.nextextra = br.ReadInt32();
+        p.lives = br.ReadInt16();
+        p.health = br.ReadInt16();
+        p.armor = br.ReadInt16();
+        p.armorpercent = br.ReadInt16();
+        p.weapon = ReadWeapon(br);
+        p.chosenweapon = ReadWeapon(br);
+        p.faceframe = br.ReadInt16();
+        game.cluster = br.ReadInt16();
+        game.secretcount = br.ReadInt16();
+        game.treasurecount = br.ReadInt16();
+        game.killcount = br.ReadInt16();
+        game.secrettotal = br.ReadInt16();
+        game.treasuretotal = br.ReadInt16();
+        game.killtotal = br.ReadInt16();
+        game.TimeCount = br.ReadInt32();
+        game.PlayTime = br.ReadInt32();
+        p.killx = br.ReadInt32();
+        p.killy = br.ReadInt32();
+        game.victoryflag = br.ReadBoolean();
+        return (game, p);
+    }
 
-    public void Write(BinaryWriter bw)
+    /// <summary>Writes the game, with <paramref name="p"/>'s stats in among it</summary>
+    public void Write(BinaryWriter bw, Entities.PlayerState p)
     {
         bw.Write((short)difficulty);
-        bw.Write(playerclass);
+        bw.Write(p.playerclass);
         bw.Write(mapon);
-        bw.Write(oldscore);
-        bw.Write(score);
-        bw.Write(nextextra);
-        bw.Write(lives);
-        bw.Write(health);
-        bw.Write(armor);
-        bw.Write(armorpercent);
-        bw.Write(weapon ?? "");
-        bw.Write(chosenweapon ?? "");
-        bw.Write(faceframe);
+        bw.Write(p.oldscore);
+        bw.Write(p.score);
+        bw.Write(p.nextextra);
+        bw.Write(p.lives);
+        bw.Write(p.health);
+        bw.Write(p.armor);
+        bw.Write(p.armorpercent);
+        bw.Write(p.weapon ?? "");
+        bw.Write(p.chosenweapon ?? "");
+        bw.Write(p.faceframe);
         bw.Write(cluster);
         bw.Write(secretcount);
         bw.Write(treasurecount);
@@ -185,8 +179,8 @@ internal class gametype
         bw.Write(killtotal);
         bw.Write(TimeCount);
         bw.Write(PlayTime);
-        bw.Write(killx);
-        bw.Write(killy);
+        bw.Write(p.killx);
+        bw.Write(p.killy);
         bw.Write(victoryflag);
     }
 }

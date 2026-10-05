@@ -28,7 +28,10 @@ internal partial class Program
     // SightPlayer, SelectChaseDir/SelectDodgeDir, Kill/Damage, ...) lives on Entities.Actors.Monster.
     // CHECKDIAG and CheckLine stay here, since they aren't tied to a mover: CheckLine is whether
     // there's a clear line from any actor to the player (the player's own sight uses it too).
-    internal static bool CheckLine(Entities.Actors.Actor ob)
+    internal static bool CheckLine(Entities.Actors.Actor ob) => CheckLine(ob, player);
+
+    /// <summary>Whether there's a clear line from an actor to a player</summary>
+    internal static bool CheckLine(Entities.Actors.Actor ob, Entities.Actors.PlayerPawn to)
     {
         int x1, y1, xt1, yt1, x2, y2, xt2, yt2;
         int x, y;
@@ -39,7 +42,7 @@ internal partial class Program
         uint value, intercept;
 
         // a wall sprite's panel across the line (Program.WallSprites.cs), unless it's shoot-through
-        if (WallSpriteBlocksLine(ob.X, ob.Y, player.X, player.Y))
+        if (WallSpriteBlocksLine(ob.X, ob.Y, to.X, to.Y))
             return false;
 
         x1 = ob.X >> UNSIGNEDSHIFT;
@@ -47,10 +50,10 @@ internal partial class Program
         xt1 = x1 >> 8;
         yt1 = y1 >> 8;
 
-        x2 = plux;
-        y2 = pluy;
-        xt2 = player.TileX;
-        yt2 = player.TileY;
+        x2 = to.State.PlUX;
+        y2 = to.State.PlUY;
+        xt2 = to.TileX;
+        yt2 = to.TileY;
 
         xdist = Math.Abs(xt2 - xt1);
 
@@ -87,7 +90,7 @@ internal partial class Program
 
                 value = (uint)_mapManager.tilemap[x, y];
                 var shape = _mapManager.wallshape[x, y];
-                if (shape != WallShape.Square && LineHitsDiagonal(shape, x, y, ob.X, ob.Y, player.X, player.Y))
+                if (shape != WallShape.Square && LineHitsDiagonal(shape, x, y, ob.X, ob.Y, to.X, to.Y))
                     return false;
                 x += xstep;
 
@@ -141,7 +144,7 @@ internal partial class Program
 
                 value = (uint)_mapManager.tilemap[x, y];
                 var shape = _mapManager.wallshape[x, y];
-                if (shape != WallShape.Square && LineHitsDiagonal(shape, x, y, ob.X, ob.Y, player.X, player.Y))
+                if (shape != WallShape.Square && LineHitsDiagonal(shape, x, y, ob.X, ob.Y, to.X, to.Y))
                     return false;
                 y += ystep;
 

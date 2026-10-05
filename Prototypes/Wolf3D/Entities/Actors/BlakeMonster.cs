@@ -809,7 +809,7 @@ internal partial record BlakeMonster : Monster
             return;
 
         int distance = ReferenceEquals(killer, player)
-            ? (gamestate.weapon != null && int.TryParse(_inventoryManager.GetProperty(gamestate.weapon, "weapon.knockback")?.ToString(), out var k) ? k : 0)
+            ? (playerstate.weapon != null && int.TryParse(_inventoryManager.GetProperty(playerstate.weapon, "weapon.knockback")?.ToString(), out var k) ? k : 0)
             : killer.PropertyInt("knockback", DEFAULT_KNOCKBACK);
         if (distance <= 0)
             return;

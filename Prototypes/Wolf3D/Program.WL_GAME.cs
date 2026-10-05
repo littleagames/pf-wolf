@@ -70,7 +70,7 @@ internal partial class Program
         do
         {
             if (!loadedgame)
-                gamestate.score = gamestate.oldscore;
+                foreach (var p in players) p.score = p.oldscore;
             if (!died || viewsize != 21) DrawScore();
 
             startgame = false;
@@ -122,7 +122,7 @@ internal partial class Program
                 // carries over, as the level ends without an intermission to bank it
                 if (pendingMapChange.WaitTics > 0)
                     GameEngineManager.WaitVBL((uint)pendingMapChange.WaitTics);
-                gamestate.oldscore = gamestate.score;
+                foreach (var p in players) p.oldscore = p.score;
                 warped = true;
             }
             else
@@ -169,7 +169,11 @@ internal partial class Program
                     }
 
                     if (viewsize == 21) DrawPlayScreen();
-                    _inventoryManager.ResetForNextLevel();
+                    foreach (var p in players)
+                    {
+                        using var _ = ActAs(p);
+                        _inventoryManager.ResetForNextLevel();
+                    }
                     DrawKeys();
                     _videoManager.FadeOut();
 
@@ -178,7 +182,7 @@ internal partial class Program
                     if (!IsHubMap(levelMap))
                         LevelCompleted();          // do the intermission; a hub's levels are just left
                     if (viewsize == 21) DrawPlayScreen();
-                    gamestate.oldscore = gamestate.score;
+                    foreach (var p in players) p.oldscore = p.score;
 
                     gamestate.mapon = nextMap;      // the secret exit falls back to next if there's no secret-next
                     break;
@@ -187,7 +191,7 @@ internal partial class Program
                     Died();
                     died = true;                    // don't "get psyched!"
 
-                    if (gamestate.lives > -1)
+                    if (playerstate.lives > -1)
                         break;                          // more lives left
 
                     _videoManager.FadeOut();
@@ -200,7 +204,7 @@ internal partial class Program
                         ShowLoseScreen(loseScreen);
                     endedFromMenu = false;
 
-                    CheckHighScore(gamestate.score, won: false);
+                    CheckHighScore(playerstate.score, won: false);
                     EnableViewScoresMenuItem();
                     return;
 
@@ -226,7 +230,7 @@ internal partial class Program
                         }
                         ShowBriefing(endBriefing);
 
-                        CheckHighScore(gamestate.score, won: true);
+                        CheckHighScore(playerstate.score, won: true);
                         EnableViewScoresMenuItem();
                         return;
                     }
@@ -244,7 +248,7 @@ internal partial class Program
 
                     ClearMemory();
 
-                    CheckHighScore(gamestate.score, won: true);
+                    CheckHighScore(playerstate.score, won: true);
                     EnableViewScoresMenuItem();
                     return;
 
@@ -687,8 +691,11 @@ internal partial class Program
 
     internal static void SetupGameLevel()
     {
-        playerpitch = 0;                    // each level, and each loaded game, starts looking straight ahead
-        playereyez = EYEDEFAULT;            // from standing height
+        foreach (var p in players)
+        {
+            p.Pitch = 0;                    // each level, and each loaded game, starts looking straight ahead
+            p.EyeZ = EYEDEFAULT;            // from standing height
+        }
         camera.FollowPlayer();              // through the player's eyes
 
         if (!loadedgame)
@@ -700,11 +707,14 @@ internal partial class Program
             gamestate.secretcount =
             gamestate.killcount =
             gamestate.treasurecount = 0;
-            weaponSprite = null;            // the weapon in hand starts on its Ready state
             pwallstate =
             pwallpos = 0;
-            facetimes = 0;
-            LastAttacker = null;
+            foreach (var p in players)
+            {
+                p.WeaponSprite = null;      // the weapon in hand starts on its Ready state
+                p.FaceTimes = 0;
+                p.LastAttacker = null;
+            }
         }
 
         if (demoplayback || demorecord)
@@ -755,7 +765,7 @@ internal partial class Program
         // the secret pushwalls, from the mapdefs)
         //
         if (_mapManager.PlayerStart is { } start)
-            SpawnPlayer(start.TileX, start.TileY, start.Angle);
+            SpawnPlayers(start.TileX, start.TileY, start.Angle);
 
         //
         // take out the ambush markers
@@ -814,7 +824,7 @@ internal partial class Program
             _videoManager.FadeIn();
         }
 
-        gamestate.weapon = null;                     // take away weapon
+        playerstate.weapon = null;                     // take away weapon
         playerpitch = 0;                             // and face the attacker straight on
         camera.FollowPlayer();                       // seen through their own eyes
         if (_inventoryManager.GetStringProperty(PlayerClass, "deathsound") is { Length: > 0 } deathSound)
@@ -905,14 +915,14 @@ internal partial class Program
         ClearMemory();
         playereyez = EYEDEFAULT;                     // back on their feet for the restart
 
-        gamestate.lives--;
+        playerstate.lives--;
 
-        if (gamestate.lives > -1)
+        if (playerstate.lives > -1)
         {
             // Back as they came into the level (Blake Stone), or fresh with the starting items
             if (!_gameEngineManager.GetGameInfo().DeathRestoresLevelStart || !RestoreLevelStart())
             {
-                gamestate.health = StartingHealth;
+                playerstate.health = StartingHealth;
                 GiveStartingInventory();
             }
             pwallstate = pwallpos = 0;

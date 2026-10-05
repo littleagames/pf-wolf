@@ -17,7 +17,7 @@ internal partial class Program
     /// <summary>The top status bar's picture (statusbar.yaml top), across the top of the screen</summary>
     static void DrawTopBar()
     {
-        if (viewsize == 21 && ingame) return;
+        if (StatusBarHidden) return;
         if (StatusBar.Get("top") is { Pic: { Length: > 0 } pic } top)
         {
             FillBarSides(top, atTop: true, TOPLINES);
@@ -47,7 +47,7 @@ internal partial class Program
     /// <summary>The level's name (statusbar.yaml location), as GetMapDisplayName gives it</summary>
     static void DrawLocation()
     {
-        if (viewsize == 21 && ingame) return;
+        if (StatusBarHidden) return;
         if (StatusBar.Get("location") is not { } element)
             return;
         var font = element.Font ?? StatusBar.Get("numbers")?.Font;
@@ -61,8 +61,8 @@ internal partial class Program
     /// </summary>
     static void DrawCharge()
     {
-        if (viewsize == 21 && ingame) return;
-        if (StatusBar.Get("charge") is not { } element || WeaponChargeTics(gamestate.weapon) <= 0)
+        if (StatusBarHidden) return;
+        if (StatusBar.Get("charge") is not { } element || WeaponChargeTics(playerstate.weapon) <= 0)
             return;
         var pic = weaponcharge > 0 ? element.Wait : element.Ready;
         using var _ = StatusBarOrigin(element);
@@ -77,8 +77,8 @@ internal partial class Program
     /// </summary>
     static void DrawAmmoGauge()
     {
-        if (viewsize == 21 && ingame) return;
-        if (StatusBar.Get("ammo-gauge") is not { } gauge || WeaponAmmoType(gamestate.weapon) is not { } ammoType)
+        if (StatusBarHidden) return;
+        if (StatusBar.Get("ammo-gauge") is not { } gauge || WeaponAmmoType(playerstate.weapon) is not { } ammoType)
             return;
         DrawGauge(gauge, ammoType);
     }
@@ -86,7 +86,7 @@ internal partial class Program
     /// <summary>The radar's power gauge (statusbar.yaml radar-gauge): its item's count out of its max</summary>
     static void DrawRadarGauge()
     {
-        if (viewsize == 21 && ingame) return;
+        if (StatusBarHidden) return;
         if (StatusBar.Get("radar-gauge") is { Item: { Length: > 0 } item } gauge)
             DrawGauge(gauge, item);
     }
@@ -206,7 +206,7 @@ internal partial class Program
 
     internal static void DrawHeartMonitor(bool force)
     {
-        if (viewsize == 21 && ingame) return;
+        if (StatusBarHidden) return;
         if (StatusBar.Get("heart-monitor") is not { } monitor)
             return;
         int count = Math.Min(monitor.Count, ecgsegments.Length);
@@ -237,11 +237,11 @@ internal partial class Program
             }
 
             int last = count - 1;
-            if (gamestate.health > 0 && ecglegend[last] == 0)
+            if (playerstate.health > 0 && ecglegend[last] == 0)
             {
-                if (gamestate.health < 33)
+                if (playerstate.health < 33)
                     (ecglegend[last], ecgsegments[last]) = (3, 18);
-                else if (gamestate.health >= 66)
+                else if (playerstate.health >= 66)
                 {
                     if (last == 0 || ecglegend[last - 1] != 1)
                         (ecglegend[last], ecgsegments[last]) = (1, 1);
@@ -253,9 +253,9 @@ internal partial class Program
 
         // The heart: off when dead, bad when low, else a beat every pulse
         string? heart = heartpic;
-        if (gamestate.health <= 0)
+        if (playerstate.health <= 0)
             heart = monitor.HeartOff;
-        else if (gamestate.health < monitor.BadBelow)
+        else if (playerstate.health < monitor.BadBelow)
             heart = monitor.HeartBad;
         else if (hearttics >= monitor.PulseTics / 2 || heart == null || heart == monitor.HeartBad)
         {

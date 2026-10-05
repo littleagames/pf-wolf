@@ -9,6 +9,10 @@ internal class PngSpriteDataLoader
 {
     private const byte AlphaOpaqueThreshold = 128;
 
+    // Wolf3D's see-through color (palette index 255, 152,0,136), which sprite editors fill a
+    // sprite's background with in a picture with no alpha, such as a BMP
+    private static bool IsTransparentKey(Rgba32 color) => color.R == 152 && color.G == 0 && color.B == 136;
+
     internal static SpriteAsset Load(MemoryStream stream, Palette sourcePalette)
     {
         // Using SixLabors.ImageSharp for cross-platform PNG support
@@ -53,7 +57,7 @@ internal class PngSpriteDataLoader
                 {
                     var color = row[x];
                     var destIndex = y * width + x;
-                    if (color.A < AlphaOpaqueThreshold)
+                    if (color.A < AlphaOpaqueThreshold || IsTransparentKey(color))
                         continue; // leave indexedData/opacityMask at 0 (transparent)
 
                     indexedData[destIndex] = (byte)FindClosestPaletteIndex(color);

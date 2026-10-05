@@ -170,6 +170,12 @@ internal partial class Program
         Register("spectate", "Watches through another actor's eyes while you play on: the next or previous enemy (default next), the next of a class, or back to the player. Not saved; each level starts on the player.",
             "spectate [next|prev|player|<class>]", Cmd_Spectate, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["next", "prev", "player", .. SpectateCandidates().Select(a => a.Name).Distinct()] : []);
+        Register("addplayer", $"Adds a co-op player beside you, who stands still until you take them over with controlplayer (up to {MAXPLAYERS}; testing without the network).",
+            "addplayer [class]", Cmd_AddPlayer, Cheat | InLevel, complete: (_, i) => i == 0 ? PlayerClasses() : []);
+        Register("controlplayer", "Makes another player yours: your view, status bar and controls.",
+            "controlplayer <n>", Cmd_ControlPlayer, Cheat | InLevel);
+        Register("gamemode", "Shows or sets how the players play together: co-op (keys shared, no friendly fire) or deathmatch.",
+            "gamemode [coop|deathmatch]", Cmd_GameMode, Cheat | InLevel, complete: (_, i) => i == 0 ? ["coop", "deathmatch"] : []);
 
         //
         // debugging aids and information
@@ -743,7 +749,7 @@ internal partial class Program
         }
 
         if (ingame)
-            _consoleManager.Print($"Playing as {gamestate.playerclass}");
+            _consoleManager.Print($"Playing as {playerstate.playerclass}");
         _consoleManager.Print($"New games are played as {newGamePlayerClass ?? DefaultPlayerClass}");
         _consoleManager.Print($"Classes: {string.Join(", ", classes)}");
     }
@@ -767,12 +773,12 @@ internal partial class Program
 
             case "health":
                 HealSelf(amount ?? MaxHealth);
-                _consoleManager.Print($"Health is {gamestate.health}");
+                _consoleManager.Print($"Health is {playerstate.health}");
                 break;
 
             case "points":
                 GivePoints(amount ?? 100000);
-                _consoleManager.Print($"Score is {gamestate.score}");
+                _consoleManager.Print($"Score is {playerstate.score}");
                 break;
 
             case "keys":
@@ -811,7 +817,7 @@ internal partial class Program
         if (_inventoryManager.FindClass(item, "BasicArmor") != null)
         {
             TryGiveArmor(item);
-            _consoleManager.Print($"Armor is {gamestate.armor} ({gamestate.armorpercent}%)");
+            _consoleManager.Print($"Armor is {playerstate.armor} ({playerstate.armorpercent}%)");
         }
         else if (_inventoryManager.FindClass(item, "Weapon") != null)
         {
@@ -1158,7 +1164,7 @@ internal partial class Program
     private static void Cmd_Hurt(string[] args)
     {
         TakeDamage(args.Length > 0 ? ParseInt(args[0], 1, 1000) : 16, null!);
-        _consoleManager.Print($"Health is {gamestate.health}, armor {gamestate.armor} ({gamestate.armorpercent}%)");
+        _consoleManager.Print($"Health is {playerstate.health}, armor {playerstate.armor} ({playerstate.armorpercent}%)");
     }
 
     private static void Cmd_Where(string[] args)
@@ -1298,7 +1304,7 @@ internal partial class Program
             foreach (var c in $"{a.Name},{a.X},{a.Y},{a.Hitpoints},{a.CurrentState?.StateName}|")
                 hash = (hash ^ c) * 1099511628211UL;
 
-        return $"demotest {demonumber}: data {demoptr}/{lastdemoptr} score {gamestate.score} health {gamestate.health} "
+        return $"demotest {demonumber}: data {demoptr}/{lastdemoptr} score {playerstate.score} health {playerstate.health} "
             + $"kills {gamestate.killcount}/{gamestate.killtotal} treasure {gamestate.treasurecount}/{gamestate.treasuretotal} "
             + $"player {player.X},{player.Y},{player.Angle} actors {actors.Count} hash {hash:x16}";
     }

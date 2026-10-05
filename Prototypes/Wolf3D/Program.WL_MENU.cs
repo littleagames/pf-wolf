@@ -767,7 +767,7 @@ internal partial class Program
                 {
                     playstate = playstatetypes.ex_died;
                     LastAttacker = null;
-                    gamestate.lives = 0;
+                    playerstate.lives = 0;
                 }
 
                 FindMenuItem(MainMenu, "savegame")?.active = 0;
@@ -1919,7 +1919,7 @@ internal partial class Program
         DrawMainMenu();
         if (res == 0) return 0;
 
-        gamestate.lives = 0;
+        playerstate.lives = 0;
         playstate = playstatetypes.ex_died;
         LastAttacker = null;
         endedFromMenu = true;       // no game over screen (bstone's InstantQuit)

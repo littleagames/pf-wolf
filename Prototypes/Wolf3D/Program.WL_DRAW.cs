@@ -2044,7 +2044,7 @@ internal partial class Program
 
         // A projectile (Rocket, the Death Knight's HeavyRocket) has no Dir -- it flies at an
         // arbitrary angle -- so it rotates by its heading. So does the player's body.
-        var angle = ob.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase) || ob == playerBody
+        var angle = ob.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase) || IsPlayerBody(ob)
             ? (viewangle - 180) - ob.Angle
             : (viewangle - 180) - dirangle[(byte)ob.Dir];
 
@@ -2080,9 +2080,9 @@ internal partial class Program
             if (actor == null)
                 continue;                                               // object has been deleted
 
-            if (actor is PlayerPawn)
+            if (actor is PlayerPawn pawn)
             {
-                if (VisiblePlayerBody() is not { } body)
+                if (VisiblePlayerBody(pawn) is not { } body)
                     continue;                                           // looked through, or with no sprites
                 actor = body;                                           // what others see of them (Program.Camera.cs)
             }

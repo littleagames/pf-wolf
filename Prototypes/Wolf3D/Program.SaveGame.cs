@@ -172,9 +172,9 @@ internal partial class Program
             SkillName = skill?.Name.ToLanguageText(language) ?? "",
             LevelTime = gamestate.TimeCount,
             PlayTime = gamestate.PlayTime,
-            Score = gamestate.score,
-            Lives = gamestate.lives,
-            Health = gamestate.health,
+            Score = playerstate.score,
+            Lives = playerstate.lives,
+            Health = playerstate.health,
             Kills = gamestate.killcount,
             KillTotal = gamestate.killtotal,
             Secrets = gamestate.secretcount,
@@ -222,6 +222,13 @@ internal partial class Program
     /// </summary>
     internal static bool SaveTheGame(string path, string name, int x, int y)
     {
+        // A save holds one player (gametype's stats, one inventory, one pawn)
+        if (players.Count > 1)
+        {
+            Console.WriteLine($"Couldn't save the game to {path}: games with more than one player can't be saved yet.");
+            return false;
+        }
+
         var tempPath = path + ".tmp";
         try
         {
@@ -266,7 +273,7 @@ internal partial class Program
     private static void WriteSaveBody(BinaryWriter bw, int x, int y)
     {
         DiskFlopAnim(x, y);
-        gamestate.Write(bw);
+        gamestate.Write(bw, playerstate);
 
         bw.Write(LevelRatios.Count);
         foreach (var (map, ratios) in LevelRatios)
@@ -414,6 +421,7 @@ internal partial class Program
     /// <summary>Everything a save's body holds, read without changing any game state.</summary>
     private sealed record SaveGameData(
         gametype GameState,
+        Entities.PlayerState Player,
         Dictionary<string, LRstruct> LevelRatios,
         Dictionary<string, int> Inventory,
         LevelBody Body,
@@ -423,7 +431,7 @@ internal partial class Program
 
     private static SaveGameData ReadSaveBody(BinaryReader br)
     {
-        var state = gametype.Read(br);
+        var (state, player) = gametype.Read(br);
 
         var ratios = new Dictionary<string, LRstruct>();
         for (int i = br.ReadCount(); i > 0; i--)
@@ -435,6 +443,7 @@ internal partial class Program
 
         return new SaveGameData(
             state,
+            player,
             ratios,
             inventory,
             ReadLevelBody(br),
@@ -512,11 +521,11 @@ internal partial class Program
             if (!_gameEngineManager.GetGameInfo().Maps.ContainsKey(data.GameState.mapon))
                 throw new InvalidDataException($"Map \"{data.GameState.mapon}\" isn't in this game.");
 
-            if (FindPlayerClass(data.GameState.playerclass) is not { } playerClass)
-                throw new InvalidDataException($"Player class \"{data.GameState.playerclass}\" isn't in this game.");
-            data.GameState.playerclass = playerClass;
+            if (FindPlayerClass(data.Player.playerclass) is not { } playerClass)
+                throw new InvalidDataException($"Player class \"{data.Player.playerclass}\" isn't in this game.");
+            data.Player.playerclass = playerClass;
 
-            foreach (var weapon in new[] { data.GameState.weapon, data.GameState.chosenweapon })
+            foreach (var weapon in new[] { data.Player.weapon, data.Player.chosenweapon })
             {
                 if (weapon != null && _inventoryManager.FindClass(weapon, "Weapon") == null)
                     throw new InvalidDataException($"Weapon \"{weapon}\" isn't in this game.");
@@ -547,6 +556,8 @@ internal partial class Program
 
         DiskFlopAnim(x, y);
         gamestate = data.GameState;
+        ResetPlayers();         // a save is a single player's game
+        playerstate.CopyStatsFrom(data.Player);
         LevelRatios = data.LevelRatios;
         _inventoryManager.Restore(data.Inventory);
 
@@ -575,8 +586,8 @@ internal partial class Program
             _inputManager.ClearKeysDown();
             _inputManager.Ack();
 
-            gamestate.oldscore = gamestate.score = 0;
-            gamestate.lives = 1;
+            playerstate.oldscore = playerstate.score = 0;
+            playerstate.lives = 1;
             GiveStartingInventory();
         }
 

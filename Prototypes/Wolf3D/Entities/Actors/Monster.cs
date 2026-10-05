@@ -125,19 +125,26 @@ internal record Monster : Actor
         // A NOTSOLID actor (Blake Stone's electro-spheres) goes right through the player
         if ((AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[AreaNumber] != 0) && !HasFlag("NOTSOLID"))
         {
-            var deltax = Math.Abs(newx - player.X);
-            var deltay = Math.Abs(newy - player.Y);
-
-            if (deltax <= MINACTORDIST && deltay <= MINACTORDIST)
+            // Any player in the way stops it, not just the one it's after
+            foreach (var pawn in _mapManager.Players)
             {
-                if (!Hidden || !PlayerTileInView())
-                {
-                    // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
-                    if (Flags.Contains("TOUCHDAMAGE", StringComparer.OrdinalIgnoreCase))
-                        TakeDamage((int)(tics * 2), this);
+                if (!IsTargetable(pawn))
+                    continue;
 
-                    OnBumpedPlayer();
-                    return;
+                var deltax = Math.Abs(newx - pawn.X);
+                var deltay = Math.Abs(newy - pawn.Y);
+
+                if (deltax <= MINACTORDIST && deltay <= MINACTORDIST)
+                {
+                    if (!Hidden || !PlayerTileInView())
+                    {
+                        // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
+                        if (Flags.Contains("TOUCHDAMAGE", StringComparer.OrdinalIgnoreCase))
+                            Program.TakeDamage(pawn, (int)(tics * 2), this);
+
+                        OnBumpedPlayer();
+                        return;
+                    }
                 }
             }
         }
@@ -303,13 +310,28 @@ internal record Monster : Actor
         return 2; // continue
     }
 
+    /// <summary>Whether it can see a player; the first it sees (in player order) becomes its Target</summary>
     internal bool CheckSight()
     {
         if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
             return false;
 
-        var deltax = player.X - X;
-        var deltay = player.Y - Y;
+        foreach (var pawn in _mapManager.Players)
+        {
+            if (IsTargetable(pawn) && CanSee(pawn))
+            {
+                Target = pawn;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Whether a player is in front of it (or right beside it) with nothing in the way
+    private bool CanSee(PlayerPawn pawn)
+    {
+        var deltax = pawn.X - X;
+        var deltay = pawn.Y - Y;
 
         if (deltax > -MINSIGHT && deltax < MINSIGHT && deltay > -MINSIGHT && deltay < MINSIGHT)
             return true;
@@ -342,8 +364,56 @@ internal record Monster : Actor
                 break;
         }
 
-        return CheckLine(this);
+        return CheckLine(this, pawn);
     }
+
+    /*
+    =============================================================================
+    TARGET: the player it goes after
+    =============================================================================
+    */
+
+    private PlayerPawn? _target;
+
+    /// <summary>
+    /// The player it goes after: the one it last saw (CheckSight), while they're still on the
+    /// level and alive, else the nearest living player. With one player, always them.
+    /// </summary>
+    internal PlayerPawn Target
+    {
+        get
+        {
+            if (_target is { } t && ReferenceEquals(t.State.Pawn, t) && IsTargetable(t))
+                return t;
+            return _target = NearestTarget() ?? _mapManager.Players.First();
+        }
+        set => _target = value;
+    }
+
+    // The nearest player it could go after (in tiles, either way; the first in player order of
+    // those as near), or null if there's none
+    private PlayerPawn? NearestTarget()
+    {
+        PlayerPawn? nearest = null;
+        int best = int.MaxValue;
+        foreach (var pawn in _mapManager.Players)
+        {
+            int dist = Math.Max(Math.Abs(pawn.TileX - TileX), Math.Abs(pawn.TileY - TileY));
+            if (IsTargetable(pawn) && dist < best)
+                (nearest, best) = (pawn, dist);
+        }
+        return nearest;
+    }
+
+    /// <summary>
+    /// Whether a player can be gone after: one alive. A lone player always can (dying ends the
+    /// level there, and the rest of that frame plays on as it always has).
+    /// </summary>
+    internal static bool IsTargetable(PlayerPawn pawn) =>
+        gamemode == GameMode.Single || pawn.State.health > 0;
+
+    /// <summary>Hurts the player it's after</summary>
+    private void HurtTarget(int points) => Program.TakeDamage(Target, points, this);
 
     // How long (tics) an actor takes to react once it has noticed the player: its
     // `monster.reactiondelay: [base, divisor]`, base plus a random 0-255 over divisor (no divisor,
@@ -592,8 +662,8 @@ internal record Monster : Actor
         var d = new objdirtypes[3];
         objdirtypes tdir;
 
-        deltax = player.TileX - TileX;
-        deltay = player.TileY - TileY;
+        deltax = Target.TileX - TileX;
+        deltay = Target.TileY - TileY;
 
         d[1] = deltax < 0 ? objdirtypes.east : objdirtypes.west;
         d[2] = deltay < 0 ? objdirtypes.south : objdirtypes.north;
@@ -684,8 +754,8 @@ internal record Monster : Actor
 
         if (Name is "Schabbs" or "Gift" or "Fat" or "RealHitler")
         {
-            gamestate.killx = player.X;
-            gamestate.killy = player.Y;
+            playerstate.killx = player.X;       // the killer's spot, for the death cam
+            playerstate.killy = player.Y;
         }
 
         // A sleeper that becomes an enemy (`monster.becomes`) isn't the kill; that enemy is.
@@ -784,11 +854,11 @@ internal record Monster : Actor
         // `monster.minweapon` (the hanging turret's rapid assault weapon): only that weapon, or a
         // better one (by weapon.selectionorder), in Blake's hand hurts it
         if (Properties.TryGetValue("monster.minweapon", out var minWeapon) && minWeapon is string minWeaponName
-            && (gamestate.weapon == null || WeaponSelectionOrder(gamestate.weapon) > WeaponSelectionOrder(minWeaponName)))
+            && (playerstate.weapon == null || WeaponSelectionOrder(playerstate.weapon) > WeaponSelectionOrder(minWeaponName)))
             return;
 
         // A silent weapon (weapon.silent, Blake Stone's auto-charge pistol) doesn't alert anyone
-        if (!(ReferenceEquals(attacker, player) && PlayerWeaponIsSilent()))
+        if (!(attacker is PlayerPawn && PlayerWeaponIsSilent()))
             madenoise = true;
 
         if (!RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
@@ -846,8 +916,8 @@ internal record Monster : Actor
     /// <summary>Which way (in tiles) it heads closing in (SelectDodgeDir, SelectChaseDir): at the player</summary>
     protected virtual void SeekDelta(out int deltax, out int deltay)
     {
-        deltax = player.TileX - TileX;
-        deltay = player.TileY - TileY;
+        deltax = Target.TileX - TileX;
+        deltay = Target.TileY - TileY;
     }
 
     /*
@@ -915,11 +985,11 @@ internal record Monster : Actor
 
         var dodge = false;
 
-        if (CheckLine(this))
+        if (CheckLine(this, Target))
         {
             Hidden = false;
-            var dx = Math.Abs(TileX - player.TileX);
-            var dy = Math.Abs(TileY - player.TileY);
+            var dx = Math.Abs(TileX - Target.TileX);
+            var dy = Math.Abs(TileY - Target.TileY);
             var dist = dx > dy ? dx : dy;
             int chance;
 
@@ -933,10 +1003,10 @@ internal record Monster : Actor
 
                 if (dist == 1)
                 {
-                    var target = Math.Abs(X - player.X);
+                    var target = Math.Abs(X - Target.X);
                     if (target < 0x14000L)
                     {
-                        target = Math.Abs(Y - player.Y);
+                        target = Math.Abs(Y - Target.Y);
                         if (target < 0x14000L)
                             chance = 300;
                     }
@@ -1003,12 +1073,12 @@ internal record Monster : Actor
 
         while (move != 0)
         {
-            var dx = player.X - X;
+            var dx = Target.X - X;
             if (dx < 0) dx = -dx;
             dx -= move;
             if (dx <= MINACTORDIST)
             {
-                var dy = player.Y - Y;
+                var dy = Target.Y - Y;
                 if (dy < 0) dy = -dy;
                 dy -= move;
                 if (dy <= MINACTORDIST)
@@ -1038,18 +1108,18 @@ internal record Monster : Actor
         if (Properties.TryGetValue("attacksound", out var sound) && sound is string soundName)
             PlaySoundLocActor(soundName, this);
 
-        var dx = player.X - X;
+        var dx = Target.X - X;
         if (dx < 0) dx = -dx;
         dx -= (int)MapConstants.TILEGLOBAL;
         if (dx <= MINACTORDIST)
         {
-            var dy = player.Y - Y;
+            var dy = Target.Y - Y;
             if (dy < 0) dy = -dy;
             dy -= (int)MapConstants.TILEGLOBAL;
             if (dy <= MINACTORDIST)
             {
                 if (US_RndT() < 180)
-                    TakeDamage(US_RndT() >> 4, this);
+                    HurtTarget(US_RndT() >> 4);
             }
         }
     }
@@ -1086,12 +1156,12 @@ internal record Monster : Actor
     // otherwise dodges toward the player (or runs, once very close).
     private void DodgeAndRetreat(string attackState)
     {
-        var dx = Math.Abs(TileX - player.TileX);
-        var dy = Math.Abs(TileY - player.TileY);
+        var dx = Math.Abs(TileX - Target.TileX);
+        var dy = Math.Abs(TileY - Target.TileY);
         var dist = dx > dy ? dx : dy;
         var dodge = false;
 
-        if (CheckLine(this))
+        if (CheckLine(this, Target))
         {
             Hidden = false;
             if (US_RndT() < (tics << 3))
@@ -1144,7 +1214,7 @@ internal record Monster : Actor
 
     internal void FakeChase()
     {
-        if (CheckLine(this))
+        if (CheckLine(this, Target))
         {
             Hidden = false;
             if (US_RndT() < (tics << 1))
@@ -1187,7 +1257,7 @@ internal record Monster : Actor
         if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
             return;
 
-        if (CheckLine(this))
+        if (CheckLine(this, Target))
             ShotAtPlayer();
 
         // The shooter's own attacksound (vanilla's per-class switch: SSFIRE, BOSSFIRE, ... and
@@ -1202,15 +1272,15 @@ internal record Monster : Actor
     /// </summary>
     internal void ShotAtPlayer()
     {
-        var dx = Math.Abs(TileX - player.TileX);
-        var dy = Math.Abs(TileY - player.TileY);
+        var dx = Math.Abs(TileX - Target.TileX);
+        var dy = Math.Abs(TileY - Target.TileY);
         var dist = dx > dy ? dx : dy;
 
         if (Properties.ContainsKey("monster.sharpshooter"))
             dist = dist * 2 / 3;
 
         int hitchance;
-        if (thrustspeed >= RUNSPEED)
+        if (Target.State.ThrustSpeed >= RUNSPEED)
             hitchance = RuntimeFlags.HasFlag(objflags.FL_VISABLE) ? 160 - dist * 16 : 160 - dist * 8;
         else
             hitchance = RuntimeFlags.HasFlag(objflags.FL_VISABLE) ? 256 - dist * 16 : 256 - dist * 8;
@@ -1218,7 +1288,7 @@ internal record Monster : Actor
         if (US_RndT() < hitchance)
         {
             int damage = dist < 2 ? US_RndT() >> 2 : dist < 4 ? US_RndT() >> 3 : US_RndT() >> 4;
-            TakeDamage(damage, this);
+            HurtTarget(damage);
         }
     }
 
@@ -1229,8 +1299,8 @@ internal record Monster : Actor
     // rockets go 4 either side). With no sound given, the projectile's own attacksound plays.
     private void ThrowProjectile(string className, int speed, string? sound = null, int angleOffset = 0)
     {
-        var deltax = player.X - X;
-        var deltay = Y - player.Y;
+        var deltax = Target.X - X;
+        var deltay = Y - Target.Y;
         var angle = (float)Math.Atan2((float)deltay, (float)deltax);
         if (angle < 0) angle = (float)(M_PI * 2 + angle);
         var iangle = (int)(angle / (M_PI * 2) * ANGLES);
@@ -1275,10 +1345,10 @@ internal record Monster : Actor
     {
         Shoot();
 
-        var dx = Math.Abs(TileX - player.TileX);
-        var dy = Math.Abs(TileY - player.TileY);
+        var dx = Math.Abs(TileX - Target.TileX);
+        var dy = Math.Abs(TileY - Target.TileY);
         if (Math.Max(dx, dy) <= 1)
-            TakeDamage(10, this);
+            HurtTarget(10);
     }
 
     /// <summary>
@@ -1334,10 +1404,13 @@ internal record Monster : Actor
     // it, and the tiles it covers hold no wall, door, blocking object or live enemy
     internal void Dormant()
     {
-        var deltax = X - player.X;
-        var deltay = Y - player.Y;
-        if (deltax >= -MINACTORDIST && deltax <= MINACTORDIST && deltay >= -MINACTORDIST && deltay <= MINACTORDIST)
-            return;
+        foreach (var pawn in _mapManager.Players)
+        {
+            var deltax = X - pawn.X;
+            var deltay = Y - pawn.Y;
+            if (deltax >= -MINACTORDIST && deltax <= MINACTORDIST && deltay >= -MINACTORDIST && deltay <= MINACTORDIST)
+                return;
+        }
 
         var xl = (int)((X - MINDIST) >> (int)MapConstants.TILESHIFT);
         var xh = (int)((X + MINDIST) >> (int)MapConstants.TILESHIFT);

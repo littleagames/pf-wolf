@@ -134,8 +134,8 @@ internal partial class Program
 
         // The camera, not the player, moves: from where the killing shot came, back from the
         // boss until it's clear of walls
-        dx = ob.X - gamestate.killx;
-        dy = gamestate.killy - ob.Y;
+        dx = ob.X - playerstate.killx;
+        dy = playerstate.killy - ob.Y;
 
         fangle = (float)Math.Atan2((float)dy, (float)dx);
         if (fangle < 0)
@@ -260,8 +260,9 @@ internal partial class Program
         ob.X += (int)deltax;
         ob.Y += (int)deltay;
 
-        deltax = Math.Abs(ob.X - player.X);
-        deltay = Math.Abs(ob.Y - player.Y);
+        // the first player (in player order) it's on, if any
+        var hit = _mapManager.Players.FirstOrDefault(pawn => Entities.Actors.Monster.IsTargetable(pawn)
+            && Math.Abs(ob.X - pawn.X) < PROJECTILESIZE && Math.Abs(ob.Y - pawn.Y) < PROJECTILESIZE);
 
         if (!ProjectileTryMove(ob))
         {
@@ -279,7 +280,7 @@ internal partial class Program
             return;
         }
 
-        if (deltax < PROJECTILESIZE && deltay < PROJECTILESIZE)
+        if (hit != null)
         {       // hit the player
             var minDamage = args.Length > 0 && int.TryParse(args[0], out var min) ? min : 0;
             var maxDamage = args.Length > 1 && int.TryParse(args[1], out var max) ? max : minDamage;
@@ -287,7 +288,7 @@ internal partial class Program
                 ? minDamage + US_RndT() * (maxDamage - minDamage + 1) / 256
                 : minDamage;
 
-            TakeDamage(damage, ob);
+            TakeDamage(hit, damage, ob);
 
             // BURSTONPLAYER projectiles (Blake Stone's spit and shots) burst on the player as on a wall
             if (ob.HasFlag("BURSTONPLAYER") && ob.ResolvedStates.ContainsKey("Death"))

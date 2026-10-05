@@ -184,7 +184,7 @@ internal partial class Program
         using var ms = new MemoryStream();
         using (var bw = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
         {
-            gamestate.Write(bw);
+            gamestate.Write(bw, playerstate);
             bw.Write(_inventoryManager.Items.Count);
             foreach (var (item, count) in _inventoryManager.Items)
             {
@@ -206,15 +206,16 @@ internal partial class Program
             return false;
 
         using var br = new BinaryReader(new MemoryStream(levelStart));
-        var state = gametype.Read(br);
+        var (state, player) = gametype.Read(br);
         var inventory = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = br.ReadCount(); i > 0; i--)
             inventory[br.ReadString()] = br.ReadInt32();
         int charge = br.ReadInt32();
 
-        state.lives = gamestate.lives;
-        state.playerclass = gamestate.playerclass;
+        player.lives = playerstate.lives;
+        player.playerclass = playerstate.playerclass;
         gamestate = state;
+        playerstate.CopyStatsFrom(player);
         _inventoryManager.Restore(inventory);
         weaponcharge = charge;
         return true;

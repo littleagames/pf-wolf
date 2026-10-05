@@ -84,18 +84,27 @@ internal partial class Program
         }
     }
 
+    // With several players, an area is "by the player" when it's connected to any of theirs
     internal static void ConnectAreas()
     {
         Array.Fill(areabyplayer, (byte)0);
-        areabyplayer[player.AreaNumber] = 1; // true
-        RecursiveConnect(player.AreaNumber);
+        foreach (var pawn in _mapManager.Players)
+        {
+            if (pawn.AreaNumber >= _mapManager.Floors.NumAreas)
+                continue;
+            areabyplayer[pawn.AreaNumber] = 1; // true
+            RecursiveConnect(pawn.AreaNumber);
+        }
     }
 
     internal static void InitAreas()
     {
         Array.Fill(areabyplayer, (byte)0);
-        if (player.AreaNumber < _mapManager.Floors.NumAreas)
-            areabyplayer[player.AreaNumber] = 1; // true
+        foreach (var pawn in _mapManager.Players)
+        {
+            if (pawn.AreaNumber < _mapManager.Floors.NumAreas)
+                areabyplayer[pawn.AreaNumber] = 1; // true
+        }
     }
 
     /*
@@ -205,19 +214,25 @@ internal partial class Program
         if (_mapManager.actorat[tilex, tiley] is Actor)     // an enemy (or its corpse) in the doorway
             return;
 
-        if (player.TileX == tilex && player.TileY == tiley)
-            return;
+        // any player in the doorway, or close enough to reach into it
+        foreach (var pawn in _mapManager.Players)
+        {
+            if (pawn.TileX == tilex && pawn.TileY == tiley)
+                return;
+
+            if (doorobjlist[door].vertical)
+            {
+                if (pawn.TileY == tiley && (((pawn.X + MINDIST) >> MapConstants.TILESHIFT) == tilex
+                    || ((pawn.X - MINDIST) >> MapConstants.TILESHIFT) == tilex))
+                    return;
+            }
+            else if (pawn.TileX == tilex && (((pawn.Y + MINDIST) >> MapConstants.TILESHIFT) == tiley
+                || ((pawn.Y - MINDIST) >> MapConstants.TILESHIFT) == tiley))
+                return;
+        }
 
         if (doorobjlist[door].vertical)
         {
-            if (player.TileY == tiley)
-            {
-                if (((player.X + MINDIST) >> MapConstants.TILESHIFT) == tilex)
-                    return;
-                if (((player.X - MINDIST) >> MapConstants.TILESHIFT) == tilex)
-                    return;
-            }
-
             // an enemy marked on a neighbouring tile, close enough to reach into the doorway
             if (_mapManager.ActorMarkAt(tilex - 1, tiley) is { } west && ((west.X + MINDIST) >> MapConstants.TILESHIFT) == tilex)
                 return;
@@ -226,14 +241,6 @@ internal partial class Program
         }
         else
         {
-            if (player.TileX == tilex)
-            {
-                if (((player.Y + MINDIST) >> MapConstants.TILESHIFT) == tiley)
-                    return;
-                if (((player.Y - MINDIST) >> MapConstants.TILESHIFT) == tiley)
-                    return;
-            }
-
             if (_mapManager.ActorMarkAt(tilex, tiley - 1) is { } north && ((north.Y + MINDIST) >> MapConstants.TILESHIFT) == tiley)
                 return;
             if (_mapManager.ActorMarkAt(tilex, tiley + 1) is { } south && ((south.Y - MINDIST) >> MapConstants.TILESHIFT) == tiley)
@@ -445,7 +452,7 @@ internal partial class Program
                 areaconnect[area1, area2]++;
                 areaconnect[area2, area1]++;
 
-                if (player.AreaNumber < _mapManager.Floors.NumAreas)
+                if (_mapManager.Players.Any(pawn => pawn.AreaNumber < _mapManager.Floors.NumAreas))
                     ConnectAreas();
 
                 if (areabyplayer[area1] != 0 && doorobjlist[door].xlat.OpenSound is { Length: > 0 } openSound)
@@ -491,7 +498,7 @@ internal partial class Program
         tiley = doorobjlist[door].tiley;
 
         if ((_mapManager.actorat[tilex, tiley] is not Door)//!= (door | BIT_DOOR))
-            || (player.TileX == tilex && player.TileY == tiley))
+            || _mapManager.Players.Any(pawn => pawn.TileX == tilex && pawn.TileY == tiley))
         {                       // something got inside the door
             OpenDoor(door);
             return;
@@ -534,7 +541,7 @@ internal partial class Program
                 areaconnect[area1, area2]--;
                 areaconnect[area2, area1]--;
 
-                if (player.AreaNumber < _mapManager.Floors.NumAreas)
+                if (_mapManager.Players.Any(pawn => pawn.AreaNumber < _mapManager.Floors.NumAreas))
                     ConnectAreas();
             }
         }
@@ -594,6 +601,17 @@ internal partial class Program
     static byte pwalltile;
     static int[][] dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
+    // Who pushed the moving wall: the tiles it leaves take their area (not saved: a loaded
+    // game's wall goes by the first player, the only one a save has)
+    static Entities.Actors.PlayerPawn? pwallpusher;
+    static Entities.Actors.PlayerPawn PwallPusher =>
+        pwallpusher is { } p && ReferenceEquals(p.State.Pawn, p) ? p : _mapManager.Players.First();
+
+    // Whether a player's box (PLAYERSIZE each way) reaches into a tile
+    static bool PlayerBoxCovers(Entities.Actors.PlayerPawn pawn, int tilex, int tiley) =>
+        (int)((pawn.X - PLAYERSIZE) >> MapConstants.TILESHIFT) <= tilex && tilex <= (int)((pawn.X + PLAYERSIZE) >> MapConstants.TILESHIFT)
+        && (int)((pawn.Y - PLAYERSIZE) >> MapConstants.TILESHIFT) <= tiley && tiley <= (int)((pawn.Y + PLAYERSIZE) >> MapConstants.TILESHIFT);
+
     /*
     ===============
     =
@@ -639,6 +657,7 @@ internal partial class Program
         _mapManager.tilemap[pwallx + dx, pwally + dy] = BIT_WALL;
         _mapManager.SetMapSpot(pwallx, pwally, 1,  0);   // remove P tile info
         _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)_mapManager.MAPSPOT(player.TileX, player.TileY, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
+        pwallpusher = player;
 
         if (!string.IsNullOrEmpty(moveSound))
             _audioManager.Play(moveSound);
@@ -674,7 +693,7 @@ internal partial class Program
             //
             _mapManager.tilemap[pwallx, pwally] = 0;
             _mapManager.actorat[pwallx, pwally] = null;
-            _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)(player.AreaNumber + _mapManager.Floors.AreaTile));    // TODO: this is unnecessary, and makes a mess of mapsegs
+            _mapManager.SetMapSpot(pwallx, pwally, 0, (ushort)(PwallPusher.AreaNumber + _mapManager.Floors.AreaTile));    // TODO: this is unnecessary, and makes a mess of mapsegs
 
             int dx = dirs[(byte)pwalldir][0], dy = dirs[(byte)pwalldir][1];
             //
@@ -693,21 +712,16 @@ internal partial class Program
             }
             else
             {
-                int xl, yl, xh, yh;
-                xl = (int)((player.X - PLAYERSIZE) >> MapConstants.TILESHIFT);
-                yl = (int)((player.Y - PLAYERSIZE) >> MapConstants.TILESHIFT);
-                xh = (int)((player.X + PLAYERSIZE) >> MapConstants.TILESHIFT);
-                yh = (int)((player.Y + PLAYERSIZE) >> MapConstants.TILESHIFT);
-
                 // the wall's height and tag go with it, on the tile pwallx/pwally name
                 _mapManager.MoveWallStories(pwallx, pwally, pwallx + dx, pwally + dy);
                 _mapManager.MoveTag(pwallx, pwally, pwallx + dx, pwally + dy);
                 pwallx += (ushort)dx;
                 pwally += (ushort)dy;
 
+                // stopped by anything in the way, a player included (any of them)
                 if (_mapManager.actorat[pwallx + dx, pwally + dy] != null
                     || _mapManager.EnemiesAt(pwallx + dx, pwally + dy).Any()
-                    || (xl <= pwallx + dx && pwallx + dx <= xh && yl <= pwally + dy && pwally + dy <= yh))
+                    || _mapManager.Players.Any(pawn => PlayerBoxCovers(pawn, pwallx + dx, pwally + dy)))
                 {
                     pwallstate = 0;
                     _mapManager.tilemap[pwallx, pwally] = (byte)oldtile;

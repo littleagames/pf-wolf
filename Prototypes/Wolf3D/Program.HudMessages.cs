@@ -90,8 +90,8 @@ internal partial class Program
 
         _hudMessageManager.Show(HudMessageKind.Obituary, text, style, new Dictionary<char, string>
         {
-            ['o'] = ActorTag(player),
-            ['k'] = killer == null ? "" : ActorTag(killer.Shooter ?? killer),
+            ['o'] = PlayerName(player) ?? ActorTag(player),
+            ['k'] = killer == null ? "" : (killer.Shooter ?? killer) is Entities.Actors.PlayerPawn rival ? PlayerName(rival) ?? ActorTag(rival) : ActorTag(killer.Shooter ?? killer),
         });
     }
 

@@ -11,7 +11,10 @@ namespace Wolf3D.Managers;
 internal class InventoryManager
 {
     private readonly Lazy<AssetManager> _assetManager;
-    private readonly Dictionary<string, int> _items = new(StringComparer.OrdinalIgnoreCase);
+    // The acting player's items (Program.ActAs points this at theirs)
+    private Dictionary<string, int> _items = new(StringComparer.OrdinalIgnoreCase);
+    // Items the whole team holds together (co-op keys): see ShareKeys
+    private readonly Dictionary<string, int> _shared = new(StringComparer.OrdinalIgnoreCase);
     private ActorMetadata? _metadata;
     public InventoryManager(Lazy<AssetManager> assetManager)
     {
@@ -21,8 +24,24 @@ internal class InventoryManager
     // AssetManager.GetActorMetadata builds a fresh ActorMetadata every call, so cache it.
     private ActorMetadata Metadata => _metadata ??= _assetManager.Value.GetActorMetadata();
 
-    /// <summary>Held item counts, keyed by item type.</summary>
+    /// <summary>The acting player's own held item counts, keyed by item type (shared keys aren't in it).</summary>
     public IReadOnlyDictionary<string, int> Items => _items;
+
+    /// <summary>Makes the methods below read and change these items: the acting player's (Program.ActAs)</summary>
+    public void SetHolder(Dictionary<string, int> items) => _items = items;
+
+    /// <summary>
+    /// Co-op: keys (Key classes) are the team's, not one player's: whoever picks one up opens
+    /// its doors for everyone. Off in single player, so a lone player's keys are their own.
+    /// </summary>
+    public bool ShareKeys { get; set; }
+
+    /// <summary>The team's shared items (keys, in co-op)</summary>
+    public IReadOnlyDictionary<string, int> SharedItems => _shared;
+
+    // Where an item type is kept: the team's bag for a shared key, else the acting player's
+    private Dictionary<string, int> BagFor(string type) =>
+        ShareKeys && DerivesFrom(type, "Key") ? _shared : _items;
 
     /// <summary>
     /// The item type a class is stored under: its `inventory.type` (inherited from parents),
@@ -78,7 +97,11 @@ internal class InventoryManager
         return false;
     }
 
-    public int GetCount(string item) => _items.GetValueOrDefault(GetItemType(item));
+    public int GetCount(string item)
+    {
+        var type = GetItemType(item);
+        return BagFor(type).GetValueOrDefault(type);
+    }
 
     public bool Has(string item) => GetCount(item) > 0;
 
@@ -119,12 +142,13 @@ internal class InventoryManager
         if (amount <= 0)
             return 0;
 
-        var current = _items.GetValueOrDefault(type);
+        var bag = BagFor(type);
+        var current = bag.GetValueOrDefault(type);
         var added = Math.Min(amount, GetMaxAmount(type) - current);
         if (added <= 0)
             return 0;
 
-        _items[type] = current + added;
+        bag[type] = current + added;
         return added;
     }
 
@@ -132,20 +156,25 @@ internal class InventoryManager
     public int Take(string item, int amount)
     {
         var type = GetItemType(item);
-        var current = _items.GetValueOrDefault(type);
+        var bag = BagFor(type);
+        var current = bag.GetValueOrDefault(type);
         var removed = Math.Min(amount, current);
         if (removed <= 0)
             return 0;
 
         if (removed == current)
-            _items.Remove(type);
+            bag.Remove(type);
         else
-            _items[type] = current - removed;
+            bag[type] = current - removed;
 
         return removed;
     }
 
+    /// <summary>Drops everything the acting player holds (the team's shared keys stay)</summary>
     public void Clear() => _items.Clear();
+
+    /// <summary>Drops the team's shared keys (a new game)</summary>
+    public void ClearShared() => _shared.Clear();
 
     /// <summary>Replaces everything held with saved counts, keyed by item type as <see cref="Items"/> is.</summary>
     public void Restore(IReadOnlyDictionary<string, int> items)
@@ -164,6 +193,7 @@ internal class InventoryManager
     /// </summary>
     public void ResetForNextLevel()
     {
+        _shared.Clear();        // keys, which every level change drops (interhubamount 0)
         foreach (var item in _items.Keys.ToList())
         {
             var keep = Metadata.GetIntProperty(item, "inventory.interhubamount", 0);

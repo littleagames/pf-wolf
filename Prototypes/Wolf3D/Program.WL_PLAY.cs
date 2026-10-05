@@ -16,12 +16,13 @@ internal partial class Program
 
     internal static int DebugOk;
 
-    // The player lives in MapManager._actors like every other actor; this is just a shortcut to it.
+    // The acting player's pawn (Program.Players.cs), which lives in MapManager._actors like
+    // every other actor; this is just a shortcut to it.
     internal static Entities.Actors.PlayerPawn player =>
-        _mapManager.Player ?? throw new InvalidOperationException("The player has not been spawned for this level yet.");
+        playerstate.Pawn ?? throw new InvalidOperationException("The player has not been spawned for this level yet.");
 
-    // The player's controls this frame: the game reads these, never _inputManager's buttons
-    internal static PlayerInput playerinput => player.Input;
+    // The acting player's controls this frame: the game reads these, never _inputManager's buttons
+    internal static PlayerInput playerinput => playerstate.Input;
 
     internal static byte singlestep, godmode, noclip, ammocheat, mapreveal;
     internal static int extravbls;
@@ -125,7 +126,8 @@ internal partial class Program
         facecount = 0;
         funnyticount = 0;
         _inputManager.InitButtonState();
-        _mapManager.Player?.Input.Reset();
+        foreach (var p in players)
+            p.Input.Reset();
         _videoManager.ClearPaletteShifts();
 
         _inputManager.CenterMouse();
@@ -148,8 +150,10 @@ internal partial class Program
 
             if (!worldPaused)
             {
-                // this frame's controls, for the player to read as it thinks
-                player.Input.Begin(localcmd);
+                // this frame's controls, for each player to read as they think: this machine's
+                // for the local player, and whatever came for everyone else
+                foreach (var p in players)
+                    p.Input.Begin(ReferenceEquals(p, localplayer) ? localcmd : p.PendingCmd);
 
                 //
                 // actor thinking
@@ -161,8 +165,13 @@ internal partial class Program
                 // Every actor lives in _mapManager._actors. The player is at its head, so it still
                 // thinks before every enemy, projectile and the BJ-victory actor.
                 _mapManager.DoActors(tics);
-                TouchItems();               // pickups the player walked onto (Program.PlayerSight.cs)
-                TickPlayerBody(tics);       // what others see of the player, and
+                foreach (var p in players)    // pickups each player walked onto (Program.PlayerSight.cs)
+                {
+                    if (p.Pawn is { } pawn && Entities.Actors.Monster.IsTargetable(pawn))
+                        using (ActAs(p))
+                            TouchItems();
+                }
+                TickPlayerBodies(tics);     // what others see of the players, and
                 camera.Tick(tics);          // a watched actor's view turning (Program.Camera.cs)
                 _mapManager.AI.Tick();     // wall outlets and warp sites (Managers.LevelAI)
                 TickZoneLights(tics);       // light zones' fades and effects (Program.ZoneLights.cs)
@@ -226,9 +235,10 @@ internal partial class Program
     internal static void InitActorList()
     {
         //
-        // the player is created first, so it sits at the head of _actors and thinks first
+        // the players are created first, so they sit at the head of _actors and think first
         //
-        _mapManager.CreatePlayer();
+        foreach (var p in players)
+            _mapManager.CreatePlayer(p);
     }
 
     internal static void CheckKeys()
@@ -290,10 +300,10 @@ internal partial class Program
         //
         if (_inputManager.IsKeyDown(ScanCodes.sc_M) && _inputManager.IsKeyDown(ScanCodes.sc_L) && _inputManager.IsKeyDown(ScanCodes.sc_I))
         {
-            gamestate.health = MaxHealth;
+            playerstate.health = MaxHealth;
             _inventoryManager.Give("GoldKey", 1);
             _inventoryManager.Give("SilverKey", 1);
-            gamestate.score = 0;
+            playerstate.score = 0;
             gamestate.TimeCount += (int)42000L;
             // the best weapon there is (the gatling gun)
             if (AllWeapons().OrderBy(WeaponSelectionOrder).FirstOrDefault() is { } bestWeapon)

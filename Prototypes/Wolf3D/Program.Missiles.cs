@@ -21,8 +21,8 @@ internal partial class Program
     =============================================================================
     */
 
-    /// <summary>Tics until the weapon in hand is charged again; 0 when it's ready (weapon.chargetics)</summary>
-    internal static int weaponcharge;
+    // weaponcharge: tics until the acting player's weapon is charged again; 0 when it's ready
+    // (weapon.chargetics). Program.Players.cs
 
     /// <summary>The weapon in hand's `weapon.chargetics`: tics to charge between shots, 0 for none</summary>
     internal static int WeaponChargeTics(string? weapon) =>
@@ -34,7 +34,7 @@ internal partial class Program
     /// </summary>
     static bool TakeCharge()
     {
-        int charge = WeaponChargeTics(gamestate.weapon);
+        int charge = WeaponChargeTics(playerstate.weapon);
         if (charge <= 0)
             return true;
         if (weaponcharge > 0)
@@ -77,7 +77,7 @@ internal partial class Program
             Console.WriteLine("A_FireMissile: no missile given.");
             return;
         }
-        if (!CanFire(gamestate.weapon) || !TakeCharge())
+        if (!CanFire(playerstate.weapon) || !TakeCharge())
             return;
 
         var missile = _mapManager.SpawnAtActor(args[0], player);

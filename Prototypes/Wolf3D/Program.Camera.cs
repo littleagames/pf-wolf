@@ -38,7 +38,7 @@ internal partial class Program
         /// level always does (SetupGameLevel).
         /// </summary>
         internal Entities.Actors.Actor? Target =>
-            isfixed ? null : target is { IsRemoved: false } ? target : _mapManager.Player;
+            isfixed ? null : target is { IsRemoved: false } ? target : localplayer.Pawn;
 
         /// <summary>Looks through the player: the default, set each level</summary>
         internal void FollowPlayer() => (target, isfixed) = (null, false);
@@ -58,10 +58,10 @@ internal partial class Program
         }
 
         /// <summary>Whether the view is the player's own, with their weapon and look</summary>
-        internal bool OnPlayer => Target is { } t && t == _mapManager.Player;
+        internal bool OnPlayer => Target is { } t && t == localplayer.Pawn;
 
         /// <summary>Whether the view is through an actor other than the player</summary>
-        internal bool Spectating => Target is { } t && t != _mapManager.Player;
+        internal bool Spectating => Target is { } t && t != localplayer.Pawn;
 
         /// <summary>Turns a watched actor's view toward the way it now goes, so it doesn't snap 45 degrees at a time</summary>
         internal void Tick(uint tics)
@@ -91,14 +91,14 @@ internal partial class Program
         internal double Pitch => Target switch
         {
             null => fixedpitch,
-            PlayerPawn => playerpitch,
+            PlayerPawn pawn => pawn.State.Pitch,
             _ => 0,
         };
 
         internal int EyeZ => Target switch
         {
             null => fixedeyez,
-            PlayerPawn => playereyez,
+            PlayerPawn pawn => pawn.State.EyeZ,
             _ => EYEDEFAULT,
         };
     }
@@ -113,11 +113,6 @@ internal partial class Program
         actor.Dir == objdirtypes.nodir || actor.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase)
             ? actor.Angle
             : (short)dirangle[(byte)actor.Dir];
-
-    // The player's own look up/down (degrees, up positive) and eye height (texels above the
-    // floor): reset each level, not saved
-    internal static double playerpitch;
-    internal static int playereyez = EYEDEFAULT;
 
     internal static void SetEyeHeight(int z) => playereyez = Math.Clamp(z, MINEYE, MAXEYE);
 
@@ -177,58 +172,73 @@ internal partial class Program
     =
     = Player body
     =
-    = What others see of the player: the player class's own actordefs states, if it has any
-    = (vanilla's Player has none, so it's never drawn). Like the weapon in hand it's never
-    = placed on the map; it stands where the player is, on Spawn when still and See (if
-    = there's one) when moving, and turns with them.
+    = What others see of a player: their class's own actordefs states, if it has any (Wolf3D's
+    = Player has the PLAY sprites; a class with no Spawn state is never drawn). Like the weapon
+    = in hand it's never placed on the map; it stands where the player is and turns with them:
+    = Spawn when still, See walking, Missile while their weapon fires, Pain or Pain1 when hurt
+    = and Death once dead, each where the class has it. Only for show: nothing the game does
+    = depends on it.
     =
     ====================
     */
 
-    static Entities.Actors.Actor? playerBody;
-    static string? playerBodyClass;
-    static int playerBodyLastX, playerBodyLastY;
-
-    /// <summary>Moves and animates the player body, each tic</summary>
-    internal static void TickPlayerBody(uint tics)
+    /// <summary>Moves and animates every player's body, each frame</summary>
+    internal static void TickPlayerBodies(uint tics)
     {
-        if (_mapManager.Player is not { } pawn)
-            return;
-
-        if (playerBodyClass != PlayerClass)
-        {
-            playerBodyClass = PlayerClass;
-            playerBody = _inventoryManager.CreateActor(PlayerClass);
-            if (playerBody?.ResolvedStates.ContainsKey("Spawn") != true)
-                playerBody = null;
-            else
-                playerBody.SetState("Spawn");
-        }
-
-        if (playerBody == null)
-            return;
-
-        bool moving = pawn.X != playerBodyLastX || pawn.Y != playerBodyLastY;
-        (playerBodyLastX, playerBodyLastY) = (pawn.X, pawn.Y);
-
-        var want = moving && playerBody.ResolvedStates.ContainsKey("See") ? "See" : "Spawn";
-        if (!InStateGroup(playerBody, want))
-            playerBody.SetState(want);
-
-        playerBody.X = pawn.X;
-        playerBody.Y = pawn.Y;
-        playerBody.TileX = pawn.TileX;
-        playerBody.TileY = pawn.TileY;
-        playerBody.Angle = pawn.Angle;
-        playerBody.AreaNumber = pawn.AreaNumber;
-        playerBody.Active = activetypes.ac_yes;     // drawn by its exact position, as a moving actor
-        _mapManager.DoActor(playerBody, tics);
+        foreach (var p in players)
+            TickPlayerBody(p, tics);
     }
 
-    /// <summary>The player body to draw this frame, when the camera isn't on the player</summary>
-    static Entities.Actors.Actor? VisiblePlayerBody() =>
-        !camera.OnPlayer && playerBody?.CurrentState is { Sprite.Length: > 0 } state && state.Sprite != "TNT1"
-            ? playerBody : null;
+    static void TickPlayerBody(Entities.PlayerState p, uint tics)
+    {
+        if (p.Pawn is not { } pawn)
+            return;
+
+        if (p.BodyClass != p.playerclass)
+        {
+            p.BodyClass = p.playerclass;
+            p.Body = _inventoryManager.CreateActor(p.playerclass);
+            if (p.Body?.ResolvedStates.ContainsKey("Spawn") != true)
+                p.Body = null;
+            else
+                p.Body.SetState("Spawn");
+        }
+
+        if (p.Body is not { } body)
+            return;
+
+        bool moving = pawn.X != p.BodyLastX || pawn.Y != p.BodyLastY;
+        (p.BodyLastX, p.BodyLastY) = (pawn.X, pawn.Y);
+        bool attacking = p.WeaponSprite?.CurrentState is { } weaponState && weaponState.StateName != WeaponReadyState;
+        p.PainTics = Math.Max(p.PainTics - (int)tics, 0);
+
+        var want = p.health <= 0 ? "Death"
+            : p.PainTics > 0 ? (p.PainAlt && body.ResolvedStates.ContainsKey("Pain1") ? "Pain1" : "Pain")
+            : attacking ? "Missile"
+            : moving ? "See"
+            : "Spawn";
+        if (!body.ResolvedStates.ContainsKey(want))
+            want = moving && body.ResolvedStates.ContainsKey("See") ? "See" : "Spawn";
+        if (!InStateGroup(body, want))
+            body.SetState(want);
+
+        body.X = pawn.X;
+        body.Y = pawn.Y;
+        body.TileX = pawn.TileX;
+        body.TileY = pawn.TileY;
+        body.Angle = pawn.Angle;
+        body.AreaNumber = pawn.AreaNumber;
+        body.Active = activetypes.ac_yes;     // drawn by its exact position, as a moving actor
+        _mapManager.DoActor(body, tics);
+    }
+
+    /// <summary>A player's body to draw this frame: anyone's but the one the camera looks through</summary>
+    static Entities.Actors.Actor? VisiblePlayerBody(PlayerPawn pawn) =>
+        camera.Target != pawn && pawn.State.Body is { CurrentState: { Sprite.Length: > 0 } state } body && state.Sprite != "TNT1"
+            ? body : null;
+
+    /// <summary>Whether an actor is one of the players' bodies (they turn by their Angle, like a projectile)</summary>
+    static bool IsPlayerBody(Entities.Actors.Actor actor) => players.Any(p => ReferenceEquals(p.Body, actor));
 
     static bool InStateGroup(Entities.Actors.Actor actor, string group) =>
         actor.CurrentState?.StateName?.Equals(group, StringComparison.OrdinalIgnoreCase) == true;

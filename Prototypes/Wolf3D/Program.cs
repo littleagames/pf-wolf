@@ -61,7 +61,8 @@ internal partial class Program
         _mapManager = serviceProvider.GetRequiredService<MapManager>();
         _assetManager = serviceProvider.GetRequiredService<AssetManager>();
         _inventoryManager = serviceProvider.GetRequiredService<InventoryManager>();
-        _inventoryManager.PlayerClass = () => gamestate.playerclass;
+        _inventoryManager.PlayerClass = () => playerstate.playerclass;
+        SetActing(playerstate);         // the inventory reads the acting player's items
         _consoleManager = serviceProvider.GetRequiredService<ConsoleManager>();
         _automapManager = serviceProvider.GetRequiredService<AutomapManager>();
         _hudMessageManager = serviceProvider.GetRequiredService<HudMessageManager>();
@@ -595,12 +596,9 @@ internal partial class Program
         LevelRatios = [];       // the win tally averages only this game's floors
         ResetHubs();            // no levels kept, no floors been on (Program.Hubs.cs)
         gamestate.difficulty = difficulty;
-        gamestate.playerclass = playerClass ?? newGamePlayerClass ?? DefaultPlayerClass;
-        GiveStartingInventory();
-
-        gamestate.health = StartingHealth;
-        gamestate.lives = StartingLives;
-        gamestate.nextextra = ExtraLifeScore;
+        ResetPlayers();         // just the local player, until anyone joins (Program.Players.cs)
+        _inventoryManager.ClearShared();
+        StartPlayer(playerClass ?? newGamePlayerClass ?? DefaultPlayerClass);
         gamestate.cluster = mapInfo.Cluster;
         gamestate.mapon = epInfo.StartMap;
 

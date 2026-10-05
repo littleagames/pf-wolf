@@ -88,9 +88,21 @@ internal class MapManager
 
     private readonly LinkedList<Entities.Actors.Actor> _actors = new();
 
-    // The player's pawn, also held in _actors (always at the head). Null until CreatePlayer runs
-    // for the current level -- LoadMap clears _actors, which drops the previous level's pawn.
-    internal Entities.Actors.PlayerPawn? Player { get; private set; }
+    // The acting player's pawn (Program.ActAs), held in _actors with every other player's at
+    // its head, in player order. Null until CreatePlayer runs for the current level -- LoadMap
+    // clears _actors, which drops the previous level's pawns.
+    internal Entities.Actors.PlayerPawn? Player => Program.playerstate.Pawn;
+
+    /// <summary>Every player's pawn on this level, in player order</summary>
+    internal IEnumerable<Entities.Actors.PlayerPawn> Players =>
+        Program.players.Select(p => p.Pawn).OfType<Entities.Actors.PlayerPawn>();
+
+    // Drops every player's pawn (the level's actors are going)
+    private static void ForgetPawns()
+    {
+        foreach (var p in Program.players)
+            p.Pawn = null;
+    }
 
     private int _difficulty;
     private string? _enemyHealthKey;
@@ -250,7 +262,7 @@ internal class MapManager
         // (death with lives left, replaying a level in a new game, etc.) would otherwise pile
         // the new level's actors on top of the previous load's instead of replacing them.
         _actors.Clear();
-        Player = null;
+        ForgetPawns();
         PlayerStart = null;
 
         var data = GetMapData();
@@ -1137,18 +1149,35 @@ internal class MapManager
         actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) && !actor.Flags.Contains("NOTSOLID", StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Creates a fresh player pawn at the head of _actors, replacing any existing one. Head
-    /// placement keeps the player thinking ahead of every other actor, as the legacy
-    /// InitActorList did by allocating the player first.
+    /// Creates a fresh pawn for a player, replacing any they had, at the head of _actors after
+    /// the players before them. Head placement keeps the players thinking ahead of every other
+    /// actor, as the legacy InitActorList did by allocating the player first.
     /// </summary>
-    internal Entities.Actors.PlayerPawn CreatePlayer()
+    internal Entities.Actors.PlayerPawn CreatePlayer(Entities.PlayerState state)
     {
-        if (Player != null)
-            _actors.Remove(Player);
+        if (state.Pawn != null)
+            _actors.Remove(state.Pawn);
 
-        Player = new Entities.Actors.PlayerPawn();
-        _actors.AddFirst(Player);
-        return Player;
+        var pawn = new Entities.Actors.PlayerPawn { State = state };
+        state.Pawn = pawn;
+        PlacePawn(pawn);
+        return pawn;
+    }
+
+    // Puts a pawn at the head of _actors, behind the players before it
+    private void PlacePawn(Entities.Actors.PlayerPawn pawn)
+    {
+        var after = _actors.First;
+        LinkedListNode<Entities.Actors.Actor>? last = null;
+        while (after != null && after.Value is Entities.Actors.PlayerPawn other && other.State.Number < pawn.State.Number)
+        {
+            last = after;
+            after = after.Next;
+        }
+        if (last == null)
+            _actors.AddFirst(pawn);
+        else
+            _actors.AddAfter(last, pawn);
     }
 
     internal void DoActors(uint tics)
@@ -1156,7 +1185,14 @@ internal class MapManager
         var node = _actors.First;
         while (node != null)
         {
-            DoActor(node.Value, tics);
+            // A player thinks as the acting player: the game's player code is then theirs
+            if (node.Value is Entities.Actors.PlayerPawn pawn)
+            {
+                using (Program.ActAs(pawn.State))
+                    DoActor(pawn, tics);
+            }
+            else
+                DoActor(node.Value, tics);
 
             // Read Next only after the actor has run, so anything it appended (a rocket's smoke,
             // a thrown projectile) is still visited this frame -- but before unlinking, since
@@ -1382,14 +1418,16 @@ internal class MapManager
         ZonesVersion++;
 
         _actors.Clear();
-        Player = null;
+        ForgetPawns();
 
+        // A save is a single player's game: its pawn is the local player's
+        var local = Program.localplayer;
         var restored = new List<Entities.Actors.Actor>(level.Actors.Count);
         foreach (var saved in level.Actors)
         {
             Entities.Actors.Actor actor;
             if (saved.IsPlayer)
-                actor = Player = new Entities.Actors.PlayerPawn();
+                actor = local.Pawn = new Entities.Actors.PlayerPawn { State = local };
             else
                 actor = CreateRuntimeActor(saved.ClassName)!;
 
@@ -1403,8 +1441,8 @@ internal class MapManager
             MarkActorTile(monster);
 
         // The player has to think first, as it does after a normal level load.
-        _actors.Remove(Player!);
-        _actors.AddFirst(Player!);
+        _actors.Remove(local.Pawn!);
+        _actors.AddFirst(local.Pawn!);
 
         return restored;
     }

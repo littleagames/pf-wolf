@@ -10,22 +10,22 @@ internal partial class Program
 {
     internal const string WeaponReadyState = "Ready";
 
-    static Entities.Actors.Actor? weaponSprite;
+    // weaponSprite, the weapon in hand's actor, is the acting player's (Program.Players.cs)
 
     /// <summary>
-    /// Makes the weapon sprite match <c>gamestate.weapon</c>: a new weapon in hand starts on its
+    /// Makes the weapon sprite match <c>playerstate.weapon</c>: a new weapon in hand starts on its
     /// Ready state (dropping whatever the old one was doing); no weapon means no sprite.
     /// </summary>
     static Entities.Actors.Actor? SyncWeaponSprite()
     {
-        if (gamestate.weapon == null)
+        if (playerstate.weapon == null)
             return weaponSprite = null;
 
-        if (weaponSprite != null && string.Equals(weaponSprite.Name, gamestate.weapon, StringComparison.OrdinalIgnoreCase))
+        if (weaponSprite != null && string.Equals(weaponSprite.Name, playerstate.weapon, StringComparison.OrdinalIgnoreCase))
             return weaponSprite;
 
         var old = weaponSprite;
-        weaponSprite = _inventoryManager.CreateActor(gamestate.weapon);
+        weaponSprite = _inventoryManager.CreateActor(playerstate.weapon);
         if (weaponSprite == null)
             return null;
 
@@ -117,10 +117,10 @@ internal partial class Program
     /// </summary>
     static void A_WeaponReady(Entities.Actors.Actor weapon)
     {
-        var inHand = CanFire(gamestate.chosenweapon) ? gamestate.chosenweapon : BestWeapon(canFire: true);
-        if (inHand != null && inHand != gamestate.weapon)
+        var inHand = CanFire(playerstate.chosenweapon) ? playerstate.chosenweapon : BestWeapon(canFire: true);
+        if (inHand != null && inHand != playerstate.weapon)
         {
-            gamestate.weapon = inHand;
+            playerstate.weapon = inHand;
             DrawWeapon();
 
             // A press now fires the weapon taken up (as vanilla, where the knife came out as the
@@ -149,7 +149,7 @@ internal partial class Program
     /// </summary>
     static void A_GunAttack(Entities.Actors.Actor weapon, string[] args)
     {
-        if (!CanFire(gamestate.weapon) || !TakeCharge())
+        if (!CanFire(playerstate.weapon) || !TakeCharge())
             return;
         int Divisor(int i, int fallback) => args.Length > i && int.TryParse(args[i], out var d) && d > 0 ? d : fallback;
         GunAttack(player, Divisor(0, 4), Divisor(1, 6), Divisor(2, 6));
@@ -163,7 +163,7 @@ internal partial class Program
     /// <summary>Fire still held and ammo left: back to Hold (or Fire, for a weapon without one).</summary>
     static void A_ReFire(Entities.Actors.Actor weapon)
     {
-        if (!playerinput.IsPressed(buttontypes.bt_attack) || !CanFire(gamestate.weapon))
+        if (!playerinput.IsPressed(buttontypes.bt_attack) || !CanFire(playerstate.weapon))
             return;
         if (!JumpWeaponState(weapon, "Hold"))
             JumpWeaponState(weapon, "Fire");
