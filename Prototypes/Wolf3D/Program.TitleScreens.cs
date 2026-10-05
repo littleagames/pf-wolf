@@ -25,6 +25,21 @@ internal partial class Program
     static int nextTitleDemo;
 
     /// <summary>
+    /// The demo for the title loop to play, of the four: the next one the game has, so one with
+    /// fewer (the Spear demo has only the first) plays the same one each time
+    /// </summary>
+    static int TakeNextTitleDemo()
+    {
+        for (int tries = 0; tries < 4; tries++)
+        {
+            int demonumber = nextTitleDemo++ % 4;
+            if (DemoExists(demonumber))
+                return demonumber;
+        }
+        return nextTitleDemo++ % 4;
+    }
+
+    /// <summary>
     /// Shows the screens in turn. In the title loop, returns true as soon as one is left with a
     /// key; in the intro, a key only skips the screen it's pressed on.
     /// </summary>
@@ -55,7 +70,7 @@ internal partial class Program
             pressed = PlayMovie(screen.Movie);
         else if (screen.Demo)
         {
-            PlayDemo(nextTitleDemo++ % 4);
+            PlayDemo(TakeNextTitleDemo());
             pressed = playstate == playstatetypes.ex_abort;
         }
         else

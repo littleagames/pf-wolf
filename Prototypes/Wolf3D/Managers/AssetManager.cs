@@ -47,7 +47,7 @@ internal class AssetManager
         _gamePackId = gamePackId;
         _gameReleaseId = gameReleaseId;
         var basePk3 = new Pk3AssetSource(BasePk3FileName);
-        BasePackId = PfWolfPk3Loader.ReadBasePackId(basePk3, gameReleaseId);
+        BasePackIds = PfWolfPk3Loader.ReadBasePackIds(basePk3, gameReleaseId);
         LoadedMods = OpenMods(modPaths, gamePackId);
 
         Dictionary<string, Asset> assets = new();
@@ -259,7 +259,7 @@ internal class AssetManager
             var mod = ModSource.TryOpen(fullPath, ModWarnings);
             if (mod == null)
                 continue;
-            if (!mod.IsForGamePack(gamePackId, BasePackId))
+            if (!mod.IsForGamePack(gamePackId, BasePackIds))
             {
                 ModWarnings.Add($"Mod '{mod.DisplayName}' is for {string.Join(", ", mod.Info.GamePacks!)}, not {gamePackId}, so it isn't loaded");
                 continue;
@@ -337,8 +337,8 @@ internal class AssetManager
     /// <summary>The running game pack ("wolf3d", "spear")</summary>
     public string GamePackId => _gamePackId;
 
-    /// <summary>The pack the running one is built on ("wolf3d" for Spear), or null</summary>
-    public string? BasePackId { get; private set; }
+    /// <summary>The packs the running one is built on, nearest first ([spear, wolf3d] for Spear's demo)</summary>
+    public IReadOnlyList<string> BasePackIds { get; private set; } = [];
 
     /// <summary>
     /// Finds an asset belonging to the running game pack, e.g. "alias" -> "wolf3d/alias"

@@ -768,6 +768,14 @@ internal record MapInfo
     //public string Current { get; set; }
     public string Next { get; init; } = null!;
     public string? SecretNext { get; init; } = null;
+
+    /// <summary>
+    /// Text (or a $language key) that makes leaving this level end the game, as the Spear of
+    /// Destiny demo's last floor does: the intermission, then this message, then the high scores.
+    /// The game isn't won, so there's no victory.
+    /// </summary>
+    public string? EndMessage { get; init; } = null;
+
     public int FloorNumber { get; init; }
     public int ParTime { get; init; } = 0;
     public string Music { get; init; } = null!;

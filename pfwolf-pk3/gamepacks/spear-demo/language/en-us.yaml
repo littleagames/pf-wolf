@@ -1,0 +1,4 @@
+# Spear of Destiny demo text, added to Spear's (gamepacks/spear/language/en-us.yaml).
+
+# Shown when the demo's last floor is left (game-info end-message), as id's SPEARDEMO build does
+$SPEARDEMO_END: "This concludes your demo\nof Spear of Destiny! Now,\ngo to your local software\nstore and buy it!"

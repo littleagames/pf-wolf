@@ -182,7 +182,7 @@ internal partial class Program
                     // exit) ends its cluster, as the victory tile does
                     var leftInfo = _gameEngineManager.GetGameInfo().Maps[gamestate.mapon];
                     var nextMap = playstate == playstatetypes.ex_secretlevel ? leftInfo.SecretNext ?? leftInfo.Next : leftInfo.Next;
-                    if (string.IsNullOrEmpty(nextMap))
+                    if (string.IsNullOrEmpty(nextMap) && string.IsNullOrEmpty(leftInfo.EndMessage))
                     {
                         playstate = playstatetypes.ex_victorious;
                         goto case playstatetypes.ex_victorious;
@@ -203,6 +203,18 @@ internal partial class Program
                         LevelCompleted();          // do the intermission; a hub's levels are just left
                     if (viewsize == 21) DrawPlayScreen();
                     foreach (var p in players) p.oldscore = p.score;
+
+                    // The Spear demo's last floor: its message ends the game (shown at the end of
+                    // the intermission), then the high scores
+                    if (!string.IsNullOrEmpty(leftInfo.EndMessage))
+                    {
+                        died = true;                // don't "get psyched!" next time
+                        _videoManager.FadeOut();
+                        ClearMemory();
+                        CheckHighScore(playerstate.score, won: false);
+                        EnableViewScoresMenuItem();
+                        return;
+                    }
 
                     gamestate.mapon = nextMap;      // the secret exit falls back to next if there's no secret-next
                     break;

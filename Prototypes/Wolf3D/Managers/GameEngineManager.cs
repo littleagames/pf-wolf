@@ -21,7 +21,9 @@ internal enum GameType
     [Description("wolf3d-shareware")]
     WolfShareware,
     [Description("wolf3d-apogee")]
-    WolfApogee
+    WolfApogee,
+    [Description("spear-demo")]
+    SpearDemo
 }
 
 internal class GameEngineManager
@@ -81,12 +83,13 @@ internal class GameEngineManager
     /// first of these whose data files are all in the game folder
     /// </summary>
     private static readonly GameType[] FallbackOrder =
-        [GameType.Wolf3D, GameType.WolfShareware, GameType.SpearOfDestiny, GameType.BlakeStone, GameType.PlanetStrike];
+        [GameType.Wolf3D, GameType.WolfShareware, GameType.SpearOfDestiny, GameType.SpearDemo, GameType.BlakeStone, GameType.PlanetStrike];
 
     /// <summary>
     /// The game to run: the one --game asks for when its data files are here, else the first game
     /// whose files are (Wolf3D's shareware first, so asking for Wolf3D with only the shareware's
-    /// files plays that). With none, the one asked for (or Wolf3D), which then says what's missing.
+    /// files plays that; asking for Spear with only its demo's plays the demo). With none, the one
+    /// asked for (or Wolf3D), which then says what's missing.
     /// A game's files can be another release's under the same names (Apogee's Wolf3D files are
     /// named as the GT ones wolf3d is for): then that release, which strict-md5 marks, is played.
     /// </summary>
@@ -148,8 +151,13 @@ internal class GameEngineManager
             return game;
         }
 
-        // Asked for Wolf3D (or for nothing): its shareware is the closest thing
-        var candidates = requested is null or GameType.Wolf3D ? FallbackOrder : [];
+        // Asked for Wolf3D (or for nothing): its shareware is the closest thing; for Spear, its demo
+        var candidates = requested switch
+        {
+            null or GameType.Wolf3D => FallbackOrder,
+            GameType.SpearOfDestiny => [GameType.SpearDemo],
+            _ => [],
+        };
         foreach (var type in candidates)
         {
             if (Playable(type) is not { } found)
@@ -200,6 +208,7 @@ internal class GameEngineManager
         GameType.PlanetStrike => "blake-ps",
         GameType.WolfShareware => "wolf3d-shareware",
         GameType.WolfApogee => "wolf3d-apogee",
+        GameType.SpearDemo => "spear-demo",
         _ => "wolf3d",
     };
 
@@ -213,6 +222,7 @@ internal class GameEngineManager
         GameType.BlakeStone => "BlakeStone",
         GameType.PlanetStrike => "PlanetStrike",
         GameType.WolfShareware => "Wolfenstein3DShareware",
+        GameType.SpearDemo => "SpearOfDestinyDemo",
         _ => "Wolfenstein3D",       // Apogee's release too: the same game, so the same settings
     };
 

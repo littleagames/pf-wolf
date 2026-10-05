@@ -17,7 +17,7 @@ internal partial class Program
         public bool On { get; set; } = on;
 
         /// <summary>Whether it can be switched on here: it's readable and made for the running game</summary>
-        public bool Loadable => Mod != null && Mod.IsForGamePack(_gameEngineManager.GamePackId, _assetManager.BasePackId);
+        public bool Loadable => Mod != null && Mod.IsForGamePack(_gameEngineManager.GamePackId, _assetManager.BasePackIds);
 
         public string Text => Mod == null
             ? Path.GetFileName(FullPath)

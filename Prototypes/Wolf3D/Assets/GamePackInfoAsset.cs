@@ -7,20 +7,27 @@ internal static class GamePackList
 {
     /// <summary>
     /// Whether a game-packs list takes in the running pack: when the list is empty or unset, when
-    /// it names the pack, or when it names the pack's base-pack and doesn't leave the pack out
-    /// with "!pack" (so [wolf3d] is for Wolf3D and the packs built on it, and [wolf3d, "!spear"]
-    /// is for them apart from Spear)
+    /// it names the pack, or when it names one of the packs it's built on (its base-pack, that
+    /// one's base-pack, and so on). The nearest of those the list names decides, and "!pack"
+    /// leaves one out: [wolf3d] is for Wolf3D and every pack built on it, [wolf3d, "!spear"] is
+    /// for them apart from Spear and the packs built on Spear, and [wolf3d, "!spear", spear-demo]
+    /// takes Spear's demo back in.
     /// </summary>
-    public static bool Includes(IReadOnlyCollection<string>? gamePacks, string gamePackId, string? basePackId)
+    /// <param name="basePackIds">The packs the running one is built on, nearest first</param>
+    public static bool Includes(IReadOnlyCollection<string>? gamePacks, string gamePackId, IReadOnlyList<string> basePackIds)
     {
         if (gamePacks == null || gamePacks.Count == 0)
             return true;
-        if (gamePacks.Contains(gamePackId, StringComparer.OrdinalIgnoreCase))
-            return true;
 
-        return !string.IsNullOrWhiteSpace(basePackId)
-            && gamePacks.Contains(basePackId, StringComparer.OrdinalIgnoreCase)
-            && !gamePacks.Contains("!" + gamePackId, StringComparer.OrdinalIgnoreCase);
+        foreach (var pack in basePackIds.Prepend(gamePackId))
+        {
+            if (gamePacks.Contains(pack, StringComparer.OrdinalIgnoreCase))
+                return true;
+            if (gamePacks.Contains("!" + pack, StringComparer.OrdinalIgnoreCase))
+                return false;
+        }
+
+        return false;
     }
 
     /// <summary>A list entry's pack name, without the "!" that leaves a pack out</summary>
@@ -120,6 +127,25 @@ internal record GamePackInfoAsset : Asset
         return Convert.ToHexString(System.Security.Cryptography.MD5.HashData(stream));
     }
 
+    /// <summary>
+    /// The packs a release is built on, nearest first: its base-pack, then that pack's base-pack
+    /// (the release of the pack's name gives it), and so on (spear-demo -> [spear, wolf3d])
+    /// </summary>
+    public List<string> GetBasePackChain(string releaseId)
+    {
+        var chain = new List<string>();
+        var basePack = GamePacks.TryGetValue(releaseId, out var gamePack) ? gamePack.BasePack : null;
+        while (!string.IsNullOrWhiteSpace(basePack)
+               && !basePack.Equals(releaseId, StringComparison.OrdinalIgnoreCase)
+               && !chain.Contains(basePack, StringComparer.OrdinalIgnoreCase))
+        {
+            chain.Add(basePack);
+            basePack = GamePacks.TryGetValue(basePack, out var next) ? next.BasePack : null;
+        }
+
+        return chain;
+    }
+
     public GamePack GetGamePack(string releaseId)
         => GamePacks.TryGetValue(releaseId, out var gamePack)
             ? gamePack
@@ -169,7 +195,8 @@ public record GamePack
     // "game-palette"
     public string? GamePalette { get; init; }
     // "base-pack": game pack whose actordefs/mapdefs/gamepacks files this one starts from,
-    // overriding them with its own. (Every file in mapdefs/{pack}/ is loaded; there's no list.)
+    // overriding them with its own; that pack's own base-pack comes before it, and so on.
+    // (Every file in mapdefs/{pack}/ is loaded; there's no list.)
     public string? BasePack { get; init; }
     // "file-pack"
     public FilePack? FilePack { get; init; }

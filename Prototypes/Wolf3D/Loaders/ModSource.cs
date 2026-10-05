@@ -66,11 +66,11 @@ internal class ModSource
     }
 
     /// <summary>
-    /// Whether the mod can load in this game pack: its modinfo.yaml names it or its base-pack
-    /// (see GamePackList.Includes), or names none
+    /// Whether the mod can load in this game pack: its modinfo.yaml names it or a pack it's built
+    /// on (see GamePackList.Includes), or names none
     /// </summary>
-    public bool IsForGamePack(string gamePackId, string? basePackId)
-        => GamePackList.Includes(Info.GamePacks, gamePackId, basePackId);
+    public bool IsForGamePack(string gamePackId, IReadOnlyList<string> basePackIds)
+        => GamePackList.Includes(Info.GamePacks, gamePackId, basePackIds);
 
     /// <summary>
     /// Every pk3, zip and folder in the mods folder, by name

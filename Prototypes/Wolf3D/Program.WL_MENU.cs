@@ -2402,7 +2402,7 @@ internal partial class Program
     /// Whether a menu item or component with this game-packs list belongs in the running game pack
     /// </summary>
     private static bool InCurrentGamePack(List<string>? gamePacks)
-        => GamePackList.Includes(gamePacks, _gameEngineManager.GamePackId, _assetManager.BasePackId);
+        => GamePackList.Includes(gamePacks, _gameEngineManager.GamePackId, _assetManager.BasePackIds);
 
     /// <summary>
     /// Plays a menu's music. A track that is already playing carries on rather than restarting,

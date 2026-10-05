@@ -20,8 +20,9 @@ internal class PfWolfPk3Loader
     private Dictionary<string, Asset> _assets = [];
     private readonly string? _gamePackId;
     private readonly string _gameReleaseId;
-    // The running release's base-pack, whose folders load first under the running pack's names
-    private readonly string? _basePackId;
+    // The packs the running release is built on, nearest first, whose folders load first (the
+    // farthest first of all) under the running pack's names
+    private readonly List<string> _basePackIds = [];
 
     // Each asset's history, by key, for the assetinfo command
     private readonly Dictionary<string, List<AssetOrigin>> _origins = [];
@@ -85,7 +86,7 @@ internal class PfWolfPk3Loader
         {
             AddAsset("gamepack-info", gamePackInfo);
             if (!string.IsNullOrWhiteSpace(gamePackId) && gamePackInfo.GamePacks.ContainsKey(gameReleaseId))
-                _basePackId = gamePackInfo.GetGamePack(gameReleaseId).BasePack;
+                _basePackIds = gamePackInfo.GetBasePackChain(gameReleaseId);
         }
 
         foreach (var (entry, fullName) in GetEntriesInLoadOrder(sources))
@@ -444,14 +445,11 @@ internal class PfWolfPk3Loader
     }
 
     /// <summary>
-    /// The base-pack gamepack-info gives a release, read ahead of loading, so that mods can be
-    /// picked by it before they're loaded. Null when the release has none.
+    /// The packs gamepack-info builds a release on (its base-pack and theirs, nearest first), read
+    /// ahead of loading, so that mods can be picked by them before they're loaded
     /// </summary>
-    public static string? ReadBasePackId(IAssetSource source, string gameReleaseId)
-    {
-        var gamePackInfo = ReadGamePackInfo(source);
-        return gamePackInfo != null && gamePackInfo.GamePacks.TryGetValue(gameReleaseId, out var gamePack) ? gamePack.BasePack : null;
-    }
+    public static IReadOnlyList<string> ReadBasePackIds(IAssetSource source, string gameReleaseId)
+        => ReadGamePackInfo(source)?.GetBasePackChain(gameReleaseId) ?? [];
 
     /// <summary>
     /// A source's gamepacks/gamepack-info.yaml, read on its own ahead of loading (to pick the game
@@ -483,15 +481,16 @@ internal class PfWolfPk3Loader
 
     /// <summary>
     /// The entries to load, each with the path to load it under. Without a running pack that's
-    /// every entry as-is. With one, other packs' folders are left out, except the base pack's:
-    /// those come first and are renamed into the running pack's folder (actordefs/wolf3d/guards.yaml
-    /// -> actordefs/spear/guards.yaml), so the running pack's own files, loaded after, override or
-    /// merge into them under the same asset names. Within each of those two groups, sources keep
-    /// their order.
+    /// every entry as-is. With one, other packs' folders are left out, except those of the packs
+    /// it's built on: those come first, the farthest pack first (wolf3d, then spear, for
+    /// spear-demo), and are renamed into the running pack's folder (actordefs/wolf3d/guards.yaml
+    /// -> actordefs/spear/guards.yaml), so each nearer pack's files, and the running pack's own
+    /// last of all, override or merge into them under the same asset names. Within each pack's
+    /// group, sources keep their order.
     /// </summary>
     private IEnumerable<(AssetSourceEntry Entry, string FullName)> GetEntriesInLoadOrder(IReadOnlyList<IAssetSource> sources)
     {
-        var basePackEntries = new List<(AssetSourceEntry, string)>();
+        var basePackEntries = _basePackIds.Select(_ => new List<(AssetSourceEntry, string)>()).ToList();
         var entries = new List<(AssetSourceEntry, string)>();
 
         foreach (var entry in sources.SelectMany(source => source.EntryPaths.Select(path => new AssetSourceEntry(source, path))))
@@ -501,15 +500,16 @@ internal class PfWolfPk3Loader
                 || packFolder.Value.Pack.Equals(_gamePackId, StringComparison.OrdinalIgnoreCase))
             {
                 entries.Add((entry, entry.FullName));
+                continue;
             }
-            else if (packFolder.Value.Pack.Equals(_basePackId, StringComparison.OrdinalIgnoreCase))
-            {
-                var (folder, pack) = packFolder.Value;
-                basePackEntries.Add((entry, folder + _gamePackId + entry.FullName.Substring(folder.Length + pack.Length)));
-            }
+
+            var (folder, pack) = packFolder.Value;
+            var depth = _basePackIds.FindIndex(id => id.Equals(pack, StringComparison.OrdinalIgnoreCase));
+            if (depth >= 0)
+                basePackEntries[depth].Add((entry, folder + _gamePackId + entry.FullName.Substring(folder.Length + pack.Length)));
         }
 
-        return basePackEntries.Concat(entries);
+        return basePackEntries.AsEnumerable().Reverse().SelectMany(group => group).Concat(entries);
     }
 
     /// <summary>

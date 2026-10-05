@@ -554,6 +554,15 @@ internal partial class Program
         // done
         //
 
+        // A level whose end-message ends the game (the Spear demo's last floor) shows it here
+        if (!string.IsNullOrEmpty(mapInfo.EndMessage))
+        {
+            _audioManager.Play("misc/1up");
+            Message(mapInfo.EndMessage.ToLanguageText(language));
+            _inputManager.ClearKeysDown();
+            _inputManager.Ack();
+        }
+
         _videoManager.FadeOut();
         DrawPlayBorder();
     }

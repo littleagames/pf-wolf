@@ -538,7 +538,7 @@ internal partial class Program
                 //
                 // demo
                 //
-                PlayDemo(nextTitleDemo++ % 4);
+                PlayDemo(TakeNextTitleDemo());
                 if (playstate == playstatetypes.ex_abort)
                     break;
                 _videoManager.FadeOut();
