@@ -100,6 +100,26 @@ internal record Actor : Thinker
         Position = new Vector2(TileX, TileY);
     }
 
+    /// <summary>Whether its actordefs `flags:` include <paramref name="flag"/> (any case)</summary>
+    internal bool HasFlag(string flag) => Flags.Contains(flag, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A property as a list of strings: one value, or each in a list; empty when it isn't set</summary>
+    internal List<string> PropertyStrings(string key) =>
+        !Properties.TryGetValue(key, out var value) || value == null ? []
+        : value is string one ? [one]
+        : value is IEnumerable<object> many ? many.Select(v => v?.ToString() ?? "").Where(v => v.Length > 0).ToList()
+        : [value.ToString() ?? ""];
+
+    /// <summary>A property as a list of whole numbers (one value or a list); those that aren't numbers are left out</summary>
+    internal List<int> PropertyInts(string key) =>
+        PropertyStrings(key).Select(s => int.TryParse(s, out var n) ? (int?)n : null).OfType<int>().ToList();
+
+    internal int PropertyInt(string key, int fallback) =>
+        Properties.TryGetValue(key, out var value) && int.TryParse(value?.ToString(), out var n) ? n : fallback;
+
+    internal bool PropertyBool(string key) =>
+        Properties.TryGetValue(key, out var value) && (value is true || bool.TryParse(value?.ToString(), out var b) && b);
+
     // A chain of 0-tic frames that loops back on itself would otherwise spin forever inside
     // one tic; ZDoom treats that as a content error, and so do we.
     private const int MaxInstantFrames = 1000;

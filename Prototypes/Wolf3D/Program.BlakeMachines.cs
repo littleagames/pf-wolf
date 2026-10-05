@@ -53,7 +53,7 @@ internal partial class Program
     internal static void T_Bounce(Entities.Actors.Actor ob)
     {
         if (Math.Max(Math.Abs(player.X - ob.X), Math.Abs(player.Y - ob.Y)) < MapConstants.TILEGLOBAL
-            && PropertyInt(ob, "monster.touchdamage", 0) is > 0 and var zap)
+            && ob.PropertyInt("monster.touchdamage", 0) is > 0 and var zap)
         {
             PlayActorSound(ob, "touchsound");
             TakeDamage(zap, ob);
@@ -124,7 +124,7 @@ internal partial class Program
     // other kinds in turn (a diagonal one in a corridor goes up and down it)
     static void BounceStartDir(Entities.Actors.Actor ob)
     {
-        var kind = PropertyStrings(ob, "monster.bounce").FirstOrDefault()?.ToLowerInvariant() ?? "diagonal";
+        var kind = ob.PropertyStrings("monster.bounce").FirstOrDefault()?.ToLowerInvariant() ?? "diagonal";
         int first = Math.Max(Array.IndexOf(BounceKinds, kind), 0);
         for (int i = 0; i < BounceKinds.Length; i++)
         {
@@ -143,7 +143,7 @@ internal partial class Program
     // A diagonal bouncer going straight (it was boxed in) takes the first diagonal it can, once there's room
     static bool BackToDiagonal(Entities.Actors.Actor ob)
     {
-        if (IsDiagonal(ob.Dir) || PropertyStrings(ob, "monster.bounce").FirstOrDefault()?.ToLowerInvariant() is "vertical" or "horizontal")
+        if (IsDiagonal(ob.Dir) || ob.PropertyStrings("monster.bounce").FirstOrDefault()?.ToLowerInvariant() is "vertical" or "horizontal")
             return false;
         foreach (var dir in new[] { objdirtypes.northeast, objdirtypes.northwest, objdirtypes.southwest, objdirtypes.southeast })
             if (TryBounceDir(ob, dir))
@@ -243,7 +243,7 @@ internal partial class Program
             }
         }
 
-        if (ActorHasFlag(ob, "STATIONARY") || found)
+        if (ob.HasFlag("STATIONARY") || found)
             return;
 
         ob.Temp2 -= (short)tics;
@@ -509,8 +509,8 @@ internal partial class Program
     static void InitWarpSites()
     {
         warpsites.Clear();
-        warpsites.AddRange(_mapManager.GetActors().Where(a => ActorHasFlag(a, "WARPSITE")));
-        warpclass = warpsites.Select(s => PropertyStrings(s, "warpsite.class").FirstOrDefault()).FirstOrDefault(c => !string.IsNullOrEmpty(c));
+        warpsites.AddRange(_mapManager.GetActors().Where(a => a.HasFlag("WARPSITE")));
+        warpclass = warpsites.Select(s => s.PropertyStrings("warpsite.class").FirstOrDefault()).FirstOrDefault(c => !string.IsNullOrEmpty(c));
         warpfirst = true;
         warplast = warpchosen = -1;
         warpwait = warpsites.Count > 0 ? WarpWait(warpsites[0], first: true) : 0;
@@ -518,9 +518,9 @@ internal partial class Program
 
     static int WarpWait(Entities.Actors.Actor site, bool first)
     {
-        if (PropertyInt(site, "warpsite.quickfloor", -1) == _mapManager.CurrentFloorNumber)
+        if (site.PropertyInt("warpsite.quickfloor", -1) == _mapManager.CurrentFloorNumber)
             return 60;
-        var range = PropertyInts(site, first ? "warpsite.firstwait" : "warpsite.wait");
+        var range = site.PropertyInts(first ? "warpsite.firstwait" : "warpsite.wait");
         int min = range.ElementAtOrDefault(0), max = Math.Max(range.ElementAtOrDefault(1), min);
         return 60 * min + US_RndT() * 60 * (max - min) / 256;
     }

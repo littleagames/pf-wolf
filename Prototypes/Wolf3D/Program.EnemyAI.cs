@@ -57,7 +57,7 @@ internal partial class Program
         }
 
         // A NOTSOLID actor (Blake Stone's electro-spheres) goes right through the player
-        if ((ob.AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[ob.AreaNumber] != 0) && !ActorHasFlag(ob, "NOTSOLID"))
+        if ((ob.AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[ob.AreaNumber] != 0) && !ob.HasFlag("NOTSOLID"))
         {
             var deltax = Math.Abs(newx - player.X);
             var deltay = Math.Abs(newy - player.Y);
@@ -72,7 +72,7 @@ internal partial class Program
 
                     // STEPBACK actors (Blake Stone's) turn round and head back to the tile they
                     // came from, rather than standing stuck against the player
-                    if (ActorHasFlag(ob, "STEPBACK"))
+                    if (ob.HasFlag("STEPBACK"))
                         StepBack(ob);
 
                     return;
@@ -222,7 +222,7 @@ internal partial class Program
 
                 // NOLOCKEDDOORS actors (Blake Stone's) don't open a door that needs a key, and
                 // NODOORS ones (its liquid alien and electro-spheres) none at all
-                if (ActorHasFlag(ob, "NODOORS") || ActorHasFlag(ob, "NOLOCKEDDOORS") && doorobjlist[door.door].Lock.Length > 0)
+                if (ob.HasFlag("NODOORS") || ob.HasFlag("NOLOCKEDDOORS") && doorobjlist[door.door].Lock.Length > 0)
                     return 0;
 
                 doornumtile = door.door;
@@ -423,7 +423,7 @@ internal partial class Program
     // or 0, for none). Wolf3D's grunts keep their vanilla delays without one.
     private static short GetReactionDelay(Entities.Actors.Actor ob)
     {
-        var delay = PropertyInts(ob, "monster.reactiondelay");
+        var delay = ob.PropertyInts("monster.reactiondelay");
         if (delay.Count > 0)
             return (short)(delay[0] + (delay.Count > 1 && delay[1] > 0 ? US_RndT() / delay[1] : 0));
 
@@ -441,7 +441,7 @@ internal partial class Program
     {
         // An INFORMANT never goes after the player, nor does a BLIND actor (Blake Stone's
         // volatile material transports, which just go their way)
-        if (ActorHasFlag(ob, "INFORMANT") || ActorHasFlag(ob, "BLIND"))
+        if (ob.HasFlag("INFORMANT") || ob.HasFlag("BLIND"))
             return false;
 
         if (ob.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
@@ -468,7 +468,7 @@ internal partial class Program
             else
             {
                 // A NOTICEWHENSEEN actor (Blake Stone's aliens) notices the player once the player can see it
-                bool seen = ActorHasFlag(ob, "NOTICEWHENSEEN") && ob.RuntimeFlags.HasFlag(objflags.FL_VISABLE);
+                bool seen = ob.HasFlag("NOTICEWHENSEEN") && ob.RuntimeFlags.HasFlag(objflags.FL_VISABLE);
                 if (!madenoise && !seen && !CheckSight(ob))
                     return false;
             }
@@ -707,7 +707,7 @@ internal partial class Program
     internal static void SelectPathDir(Entities.Actors.Actor ob)
     {
         // PATROLTURNS patrollers turn when blocked rather than stopping (Program.BlakeAI.cs)
-        if (ActorHasFlag(ob, "PATROLTURNS"))
+        if (ob.HasFlag("PATROLTURNS"))
         {
             TurningPathDir(ob);
             return;
@@ -732,11 +732,11 @@ internal partial class Program
     {
         var tilex = ob.X >> (int)MapConstants.TILESHIFT;
         var tiley = ob.Y >> (int)MapConstants.TILESHIFT;
-        bool informant = ActorHasFlag(ob, "INFORMANT");
+        bool informant = ob.HasFlag("INFORMANT");
 
         // `monster.floordeath`: on that floor (game-info floor-number) it isn't killed but goes
         // to its FloorDeath state, worth nothing yet (Goldfire morphing on Planet Strike's last)
-        if (PropertyInt(ob, "monster.floordeath", -1) is >= 0 and var deathFloor && deathFloor == _mapManager.CurrentFloorNumber
+        if (ob.PropertyInt("monster.floordeath", -1) is >= 0 and var deathFloor && deathFloor == _mapManager.CurrentFloorNumber
             && ob.ResolvedStates.ContainsKey("FloorDeath"))
         {
             NewActorState(ob, "FloorDeath");
@@ -775,7 +775,7 @@ internal partial class Program
 
         // A sleeper that becomes an enemy (`monster.becomes`) isn't the kill; that enemy is.
         // NOTCOUNTED actors (crates, Goldfire, who keeps coming back) aren't enemies to count.
-        if (!informant && !ob.Properties.ContainsKey("monster.becomes") && !ActorHasFlag(ob, "NOTCOUNTED"))
+        if (!informant && !ob.Properties.ContainsKey("monster.becomes") && !ob.HasFlag("NOTCOUNTED"))
             gamestate.killcount++;
         ob.RuntimeFlags &= ~(objflags.FL_SHOOTABLE | objflags.FL_FRIENDLY);
         ob.RuntimeFlags |= objflags.FL_NONMARK;
@@ -793,7 +793,7 @@ internal partial class Program
     {
         if (ob.Properties.TryGetValue("dropweapon", out var dropweapon) && dropweapon is string weaponName)
         {
-            if (PropertyBool(ob, "dropweapon.ifmissing"))
+            if (ob.PropertyBool("dropweapon.ifmissing"))
             {
                 if (!_inventoryManager.Has(weaponName))
                     return weaponName;
@@ -808,7 +808,7 @@ internal partial class Program
 
         // `dropitem.onfloor`: only on that floor (game-info floor-number), and only once a level
         // (Goldfire's gold card, on floor 9)
-        if (PropertyInt(ob, "dropitem.onfloor", -1) is >= 0 and var floor)
+        if (ob.PropertyInt("dropitem.onfloor", -1) is >= 0 and var floor)
         {
             if (floor != _mapManager.CurrentFloorNumber || floordropgiven)
                 return null;
@@ -816,12 +816,12 @@ internal partial class Program
         }
 
         bool outOfAmmo = ob.Properties.ContainsKey("monster.ammo") && ob.Ammo == 0;
-        if (outOfAmmo && PropertyBool(ob, "dropitem.needsammo"))
+        if (outOfAmmo && ob.PropertyBool("dropitem.needsammo"))
             return null;
 
         var drop = ob.Properties.TryGetValue("dropitem", out var dropitem) ? dropitem as string : null;
         if (ob.Properties.TryGetValue("dropitem.alt", out var alt) && alt is string altName
-            && (outOfAmmo || US_RndT() < PropertyInt(ob, "dropitem.altchance", 128)))
+            && (outOfAmmo || US_RndT() < ob.PropertyInt("dropitem.altchance", 128)))
             drop = altName;
         return drop;
     }
@@ -829,7 +829,7 @@ internal partial class Program
     internal static void DamageActor(Entities.Actors.Actor ob, uint damage, Entities.Actors.Actor? attacker = null)
     {
         // A sleeper on a timer (`monster.wakeprotected`, the gurney mutant) can't be shot awake
-        if (PropertyBool(ob, "monster.wakeprotected") && ob.Temp3 > 0)
+        if (ob.PropertyBool("monster.wakeprotected") && ob.Temp3 > 0)
             return;
 
         // `monster.minweapon` (the hanging turret's rapid assault weapon): only that weapon, or a
@@ -865,14 +865,14 @@ internal partial class Program
             return;
 
         // An informant hurt (and still alive) just flinches
-        if (!ob.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE) && !ActorHasFlag(ob, "INFORMANT"))
+        if (!ob.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE) && !ob.HasFlag("INFORMANT"))
             FirstSighting(ob);
 
         // `monster.damagestates: [full, 3/4, 1/2, 1/4]` (the floating bomb, which looks more
         // battered as it's hurt): it goes to the one for the health it has left instead of Pain.
         // A `monster.painonce` actor (the projection generator) only flinches at its first hit.
         int fullHealth = _mapManager.GetScaledHealth(ob);
-        var damageStates = PropertyStrings(ob, "monster.damagestates");
+        var damageStates = ob.PropertyStrings("monster.damagestates");
         if (damageStates.Count > 0)
         {
             int stage = ob.Hitpoints > 3 * fullHealth / 4 ? 0 : ob.Hitpoints > fullHealth / 2 ? 1 : ob.Hitpoints > fullHealth / 4 ? 2 : 3;
@@ -881,12 +881,12 @@ internal partial class Program
         // Legacy DamageActor alternated between two single-frame Pain variants by hitpoints
         // parity; the new actordefs' "Pain" group instead plays both frames in sequence
         // before falling through to Chase -- close enough visually, simpler to drive.
-        else if (ob.ResolvedStates.ContainsKey("Pain") && (!PropertyBool(ob, "monster.painonce") || oldHitpoints >= fullHealth))
+        else if (ob.ResolvedStates.ContainsKey("Pain") && (!ob.PropertyBool("monster.painonce") || oldHitpoints >= fullHealth))
             NewActorState(ob, "Pain");
 
         if (counterattacks)
         {
-            if (US_RndT() < PropertyInt(ob, "monster.painattack", 0) && !ActorHasFlag(ob, "STATIONARY"))
+            if (US_RndT() < ob.PropertyInt("monster.painattack", 0) && !ob.HasFlag("STATIONARY"))
             {
                 ChangeShootMode(ob);
                 DoAttack(ob);
@@ -906,7 +906,7 @@ internal partial class Program
     internal static void T_Path(Entities.Actors.Actor ob)
     {
         // A STATIONARY actor (Blake Stone's parked transports) stays put
-        if (ActorHasFlag(ob, "STATIONARY"))
+        if (ob.HasFlag("STATIONARY"))
             return;
 
         // A friendly patroller only looks for the player once there's been a noise
@@ -1318,7 +1318,7 @@ internal partial class Program
     /// </summary>
     internal static void PlayActorSound(Entities.Actors.Actor ob, string key)
     {
-        var sounds = PropertyStrings(ob, key);
+        var sounds = ob.PropertyStrings(key);
         if (sounds.Count > 0)
             PlaySoundLocActor(sounds[sounds.Count == 1 ? 0 : US_RndT() % sounds.Count], ob);
     }

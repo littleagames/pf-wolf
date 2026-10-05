@@ -761,7 +761,7 @@ internal class MapManager
 
         // A random spawner (`spawn.random: [A, B]`) is one of its classes, picked at random
         // (Blake Stone's bio-techs: half of them informants)
-        if (Program.PropertyStrings(builtActor, "spawn.random") is { Count: > 0 } choices)
+        if (builtActor.PropertyStrings("spawn.random") is { Count: > 0 } choices)
         {
             var choice = choices[Program.US_RndT() % choices.Count];
             if (!actorMetaData.Actors.TryGetValue(choice, out var chosen) || actorMetaData.CreateActor(choice, chosen) is not { } chosenActor)
@@ -821,8 +821,8 @@ internal class MapManager
             // Every killable enemy counts toward the level's kill ratio (the old SpawnStand/
             // SpawnPatrol/boss spawners each did this); ghosts take the branch above and don't,
             // and nor do informants, which aren't enemies
-            if (countKill && !Program.loadedgame && !Program.ActorHasFlag(builtActor, "INFORMANT")
-                && !Program.ActorHasFlag(builtActor, "NOTCOUNTED"))
+            if (countKill && !Program.loadedgame && !builtActor.HasFlag("INFORMANT")
+                && !builtActor.HasFlag("NOTCOUNTED"))
                 Program.gamestate.killtotal++;
 
             // Points only for the first kill (Program.KillActor clears it)

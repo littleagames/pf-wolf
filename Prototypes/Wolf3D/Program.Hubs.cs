@@ -95,7 +95,7 @@ internal partial class Program
         if (!RestoreHubLevel(gamestate.mapon))
         {
             SetupGameLevel();
-            informantTotal = _mapManager.GetActors().Count(a => !a.IsRemoved && ActorHasFlag(a, "INFORMANT"));
+            informantTotal = _mapManager.GetActors().Count(a => !a.IsRemoved && a.HasFlag("INFORMANT"));
         }
 
         levelMap = gamestate.mapon;
@@ -331,7 +331,7 @@ internal partial class Program
     static int Ratio(int got, int total) => total == 0 ? 100 : got * 100 / total;
 
     internal static int InformantsAlive() =>
-        _mapManager.GetActors().Count(a => !a.IsRemoved && ActorHasFlag(a, "INFORMANT")
+        _mapManager.GetActors().Count(a => !a.IsRemoved && a.HasFlag("INFORMANT")
             && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
 
     /// <summary>Points, informants and enemies, as (got, total) for the level in play</summary>

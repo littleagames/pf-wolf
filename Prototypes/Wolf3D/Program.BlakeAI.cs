@@ -59,26 +59,6 @@ internal partial class Program
     // How far a body killed by anything but the player's own gun slides
     const int DEFAULT_KNOCKBACK = 0x5000;
 
-    internal static bool ActorHasFlag(Entities.Actors.Actor ob, string flag) =>
-        ob.Flags.Contains(flag, StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>A property as a list of strings: one value, or each in a list; empty when it isn't set</summary>
-    internal static List<string> PropertyStrings(Entities.Actors.Actor ob, string key) =>
-        !ob.Properties.TryGetValue(key, out var value) || value == null ? []
-        : value is string one ? [one]
-        : value is IEnumerable<object> many ? many.Select(v => v?.ToString() ?? "").Where(v => v.Length > 0).ToList()
-        : [value.ToString() ?? ""];
-
-    /// <summary>A property as a list of whole numbers (one value or a list); those that aren't numbers are left out</summary>
-    internal static List<int> PropertyInts(Entities.Actors.Actor ob, string key) =>
-        PropertyStrings(ob, key).Select(s => int.TryParse(s, out var n) ? (int?)n : null).OfType<int>().ToList();
-
-    internal static int PropertyInt(Entities.Actors.Actor ob, string key, int fallback) =>
-        ob.Properties.TryGetValue(key, out var value) && int.TryParse(value?.ToString(), out var n) ? n : fallback;
-
-    internal static bool PropertyBool(Entities.Actors.Actor ob, string key) =>
-        ob.Properties.TryGetValue(key, out var value) && (value is true || bool.TryParse(value?.ToString(), out var b) && b);
-
     /// <summary>Whether the weapon in hand is a silent one (weapon.silent): its shots don't alert anyone</summary>
     static bool PlayerWeaponIsSilent() =>
         gamestate.weapon != null && _inventoryManager.GetProperty(gamestate.weapon, "weapon.silent") is { } silent
@@ -91,9 +71,9 @@ internal partial class Program
     internal static void InitSpawnedActor(Entities.Actors.Actor ob, int tilex, int tiley)
     {
         // One number, or [min, max] for one at random
-        var ammo = PropertyInts(ob, "monster.ammo");
+        var ammo = ob.PropertyInts("monster.ammo");
         ob.Ammo = (short)(ammo.Count == 0 ? 1 : ammo.Count == 1 ? ammo[0] : ammo[0] + US_RndT() % (ammo[1] - ammo[0] + 1));
-        if (ActorHasFlag(ob, "FRIENDLY"))
+        if (ob.HasFlag("FRIENDLY"))
             ob.RuntimeFlags |= objflags.FL_FRIENDLY;
 
         // The 0xFA value east of it on the object plane, if there is one
@@ -102,7 +82,7 @@ internal partial class Program
 
         // A sleeper's wake delay (T_WaitToWake), in tics: the map's value in seconds, else a
         // random [min, max] seconds; 0 wakes it only when shot, 255 never
-        var wake = PropertyInts(ob, "monster.wakedelay");
+        var wake = ob.PropertyInts("monster.wakedelay");
         if (wake.Count > 0)
         {
             int seconds = mapValue ?? (wake.Count == 1 ? wake[0] : wake[0] + US_RndT() % (wake[1] - wake[0] + 1));
@@ -111,19 +91,19 @@ internal partial class Program
                 ob.RuntimeFlags &= ~objflags.FL_SHOOTABLE;
         }
 
-        if (ActorHasFlag(ob, "INFORMANT"))
+        if (ob.HasFlag("INFORMANT"))
         {
             ob.RuntimeFlags |= objflags.FL_HASAMMO | objflags.FL_HASTOKENS;
             ob.SeekX = ob.SeekY = 0xff;     // no hint chosen yet
         }
 
-        var stages = PropertyInts(ob, "monster.woundstages");
+        var stages = ob.PropertyInts("monster.woundstages");
         if (stages.Count > 0)
             ob.Temp1 = (short)(mapValue ?? stages[US_RndT() % stages.Count]);
 
         // `monster.floorhealth: [floor, times]`: that much tougher on that floor (game-info
         // floor-number; Goldfire on floor 9)
-        if (PropertyInts(ob, "monster.floorhealth") is [var floor, var times] && floor == _mapManager.CurrentFloorNumber)
+        if (ob.PropertyInts("monster.floorhealth") is [var floor, var times] && floor == _mapManager.CurrentFloorNumber)
             ob.Hitpoints = (short)Math.Min(ob.Hitpoints * times, short.MaxValue);
     }
 
@@ -220,7 +200,7 @@ internal partial class Program
     {
         ob.RuntimeFlags &= ~objflags.FL_LOCKEDSTATE;
 
-        if (gamestate.victoryflag || ActorHasFlag(ob, "STATIONARY"))
+        if (gamestate.victoryflag || ob.HasFlag("STATIONARY"))
             return;
 
         if (ob.Ammo != 0)
@@ -232,7 +212,7 @@ internal partial class Program
                 bool nearAttack = dist == 1 && ob.Distance < 0x4000;
 
                 // Shoot-mode actors keep at whichever they're doing until their count runs out
-                bool shootMode = PropertyBool(ob, "monster.shootmode");
+                bool shootMode = ob.PropertyBool("monster.shootmode");
                 if (shootMode)
                 {
                     if (ob.Ammo > tics)
@@ -299,7 +279,7 @@ internal partial class Program
     // Closing in dodges, unless it's a CHASEDIR actor (the floating bomb), which comes straight on
     static void SelectBlakeChaseDir(Entities.Actors.Actor ob)
     {
-        if (ActorHasFlag(ob, "CHASEDIR"))
+        if (ob.HasFlag("CHASEDIR"))
             SelectChaseDir(ob);
         else
             SelectDodgeDir(ob);
@@ -333,11 +313,11 @@ internal partial class Program
     {
         int dx = Math.Abs(ob.TileX - player.TileX), dy = Math.Abs(ob.TileY - player.TileY);
         int dist = Math.Max(Math.Max(dx, dy), 1);
-        if (PropertyInt(ob, "monster.attackrange", 0) is > 0 and var range && dist > range)
+        if (ob.PropertyInt("monster.attackrange", 0) is > 0 and var range && dist > range)
             return;
-        if (PropertyInt(ob, "monster.attackmindist", 0) is > 0 and var mindist && dist < mindist)
+        if (ob.PropertyInt("monster.attackmindist", 0) is > 0 and var mindist && dist < mindist)
             return;
-        if (PropertyInt(ob, "monster.attackchance", 256) is var chance and < 256 && US_RndT() >= chance)
+        if (ob.PropertyInt("monster.attackchance", 256) is var chance and < 256 && US_RndT() >= chance)
             return;
         NewActorState(ob, dist <= 1 && ob.ResolvedStates.ContainsKey("Melee") ? "Melee" : "Attack");
     }
@@ -352,7 +332,7 @@ internal partial class Program
 
     internal static void T_BlakeShoot(Entities.Actors.Actor ob)
     {
-        bool smart = ActorHasFlag(ob, "SMART");
+        bool smart = ob.HasFlag("SMART");
         if (smart && ob.Ammo == 0)
             return;
 
@@ -418,7 +398,7 @@ internal partial class Program
     /// </summary>
     static void SeekDelta(Entities.Actors.Actor ob, out int deltax, out int deltay)
     {
-        if (ActorHasFlag(ob, "SMART") && CheckRunChase(ob) is var whyRun and not 0)
+        if (ob.HasFlag("SMART") && CheckRunChase(ob) is var whyRun and not 0)
         {
             if (ob.SeekX == 0)
                 GetCornerSeek(ob);
@@ -494,8 +474,8 @@ internal partial class Program
             {
                 if (item.IsRemoved || item.AreaNumber != ob.AreaNumber)
                     continue;
-                int ammoGain = PropertyInt(item, "monster.ammogain", 0);
-                int healthGain = PropertyInt(item, "monster.healthgain", 0);
+                int ammoGain = item.PropertyInt("monster.ammogain", 0);
+                int healthGain = item.PropertyInt("monster.healthgain", 0);
                 if (ammoGain <= 0 && healthGain <= 0)
                     continue;
 
@@ -609,7 +589,7 @@ internal partial class Program
             ob.Dir = point.Dir;
 
         ob.Distance = (int)MapConstants.TILEGLOBAL;
-        bool randomTurn = ActorHasFlag(ob, "RANDOMTURN") && US_RndT() > 180;
+        bool randomTurn = ob.HasFlag("RANDOMTURN") && US_RndT() > 180;
         bool cantWalk = !CanWalk(ob);
 
         // A patrol point wins over a random turn
@@ -685,8 +665,8 @@ internal partial class Program
             case Wall or BlockingActor:
                 return false;
             case Door door:
-                return ActorHasFlag(ob, "PHASEDOORS")
-                    || !ActorHasFlag(ob, "NODOORS") && (!ActorHasFlag(ob, "NOLOCKEDDOORS") || doorobjlist[door.door].Lock.Length == 0);
+                return ob.HasFlag("PHASEDOORS")
+                    || !ob.HasFlag("NODOORS") && (!ob.HasFlag("NOLOCKEDDOORS") || doorobjlist[door.door].Lock.Length == 0);
             default:
                 return !_mapManager.IsShootableActorAt(x, y);
         }
@@ -750,7 +730,7 @@ internal partial class Program
 
         int distance = ReferenceEquals(killer, player)
             ? (gamestate.weapon != null && int.TryParse(_inventoryManager.GetProperty(gamestate.weapon, "weapon.knockback")?.ToString(), out var k) ? k : 0)
-            : PropertyInt(killer, "knockback", DEFAULT_KNOCKBACK);
+            : killer.PropertyInt("knockback", DEFAULT_KNOCKBACK);
         if (distance <= 0)
             return;
 
@@ -814,8 +794,8 @@ internal partial class Program
         if (warnedkilledinformant && US_RndT() >= 25)
             return;
         warnedkilledinformant = true;
-        if (PropertyStrings(ob, "talk.killedmessage") is [var message, ..])
-            _hudMessageManager.Show(Managers.HudMessageKind.Other, message, PropertyStrings(ob, "talk.style").FirstOrDefault());
+        if (ob.PropertyStrings("talk.killedmessage") is [var message, ..])
+            _hudMessageManager.Show(Managers.HudMessageKind.Other, message, ob.PropertyStrings("talk.style").FirstOrDefault());
     }
 
     /*
@@ -853,7 +833,7 @@ internal partial class Program
 
         foreach (var ob in _mapManager.GetActors())
         {
-            if (ob.IsRemoved || !ActorHasFlag(ob, "TALKATIVE")
+            if (ob.IsRemoved || !ob.HasFlag("TALKATIVE")
                 || (ob.RuntimeFlags & (objflags.FL_FRIENDLY | objflags.FL_VISABLE)) != (objflags.FL_FRIENDLY | objflags.FL_VISABLE)
                 || Math.Abs(ob.TileX - player.TileX) > 2 || Math.Abs(ob.TileY - player.TileY) > 2)
                 continue;
@@ -889,7 +869,7 @@ internal partial class Program
     /// <summary>Talks to an actor (TryInterrogate); true for an informant</summary>
     static bool Interrogate(Entities.Actors.Actor ob)
     {
-        bool informant = ActorHasFlag(ob, "INFORMANT");
+        bool informant = ob.HasFlag("INFORMANT");
         string? said = null;
 
         if (informant)
@@ -897,8 +877,8 @@ internal partial class Program
             // Asked again, it hands over what it has
             if (ob.RuntimeFlags.HasFlag(objflags.FL_INTERROGATED))
             {
-                var gifts = PropertyStrings(ob, "talk.gifts");
-                var giftMessages = PropertyStrings(ob, "talk.giftmessages");
+                var gifts = ob.PropertyStrings("talk.gifts");
+                var giftMessages = ob.PropertyStrings("talk.giftmessages");
                 foreach (var (flag, index) in new[] { (objflags.FL_HASAMMO, 0), (objflags.FL_HASTOKENS, 1) })
                 {
                     if (!ob.RuntimeFlags.HasFlag(flag) || index >= gifts.Count
@@ -927,22 +907,22 @@ internal partial class Program
             {
                 ob.RuntimeFlags &= ~objflags.FL_FRIENDLY;
                 ob.RuntimeFlags |= objflags.FL_INTERROGATED;
-                list = PropertyStrings(ob, "talk.hostile").FirstOrDefault() ?? "";
+                list = ob.PropertyStrings("talk.hostile").FirstOrDefault() ?? "";
             }
             else
             {
                 ob.RuntimeFlags |= objflags.FL_MUSTATTACK;
-                list = PropertyStrings(ob, "talk.friendly").FirstOrDefault() ?? "";
+                list = ob.PropertyStrings("talk.friendly").FirstOrDefault() ?? "";
             }
             said = RandomSaying(list);
         }
 
         if (!string.IsNullOrEmpty(said))
         {
-            var header = PropertyStrings(ob, "talk.header").FirstOrDefault();
+            var header = ob.PropertyStrings("talk.header").FirstOrDefault();
             var text = string.IsNullOrEmpty(header) ? said : $"{_hudMessageManager.Localize(header)}\n\n{said}";
-            _hudMessageManager.Show(Managers.HudMessageKind.Other, text, PropertyStrings(ob, "talk.style").FirstOrDefault());
-            if (PropertyStrings(ob, "talk.sound").FirstOrDefault() is { Length: > 0 } sound)
+            _hudMessageManager.Show(Managers.HudMessageKind.Other, text, ob.PropertyStrings("talk.style").FirstOrDefault());
+            if (ob.PropertyStrings("talk.sound").FirstOrDefault() is { Length: > 0 } sound)
                 _audioManager.Play(sound);
         }
 
@@ -956,7 +936,7 @@ internal partial class Program
     /// </summary>
     static string? InformantHint(Entities.Actors.Actor ob)
     {
-        var listName = PropertyStrings(ob, "talk.hints").FirstOrDefault();
+        var listName = ob.PropertyStrings("talk.hints").FirstOrDefault();
         if (string.IsNullOrEmpty(listName))
             return null;
 

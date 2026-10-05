@@ -172,7 +172,7 @@ internal partial class Program
             TakeDamage(damage, ob);
 
             // BURSTONPLAYER projectiles (Blake Stone's spit and shots) burst on the player as on a wall
-            if (ActorHasFlag(ob, "BURSTONPLAYER") && ob.ResolvedStates.ContainsKey("Death"))
+            if (ob.HasFlag("BURSTONPLAYER") && ob.ResolvedStates.ContainsKey("Death"))
                 NewActorState(ob, "Death");
             else
                 _mapManager.MarkForRemoval(ob);
