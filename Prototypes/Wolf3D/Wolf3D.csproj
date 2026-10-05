@@ -9,9 +9,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Platforms>AnyCPU;x64</Platforms>
 	<PublishSelfContained>true</PublishSelfContained>
-	<FileVersion>0.1.0.0</FileVersion>
-	<AssemblyVersion>0.1.0.0</AssemblyVersion>
-	<Version>0.1</Version>
+	<FileVersion>0.2.0.0</FileVersion>
+	<AssemblyVersion>0.2.0.0</AssemblyVersion>
+	<Version>0.2.0</Version>
 	<Authors>Andrew McCauley</Authors>
 	<Company>Little A Games</Company>
 	<Copyright>Copyright (c) 2026 Little A Games</Copyright>

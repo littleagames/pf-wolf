@@ -263,26 +263,74 @@ internal partial class Program
             return;
         }
 
-        session.Note($"Others join at {LocalAddresses(session.Port)}");
+        session.Note($"LAN: others join at {WithPort(LocalAddress(), session.Port)}");
+        publicAddressLookup = LookUpPublicAddress();
         Lobby(session);
     }
 
-    /// <summary>Where others can reach this machine on the local network, for the lobby to show</summary>
-    static string LocalAddresses(int port)
+    static string WithPort(string? address, int port) =>
+        address == null ? $"port {port}" : port == NetProtocol.DefaultPort ? address : $"{address}:{port}";
+
+    /// <summary>
+    /// This machine's address on the local network, for the lobby to show: the IPv4 address of
+    /// the interface that is up and has a default gateway (the one actually on the network),
+    /// skipping loopback, link-local (169.254.x.x) and virtual adapters.
+    /// </summary>
+    static string? LocalAddress()
     {
         try
         {
-            var addresses = Dns.GetHostAddresses(Dns.GetHostName())
-                .Where(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && !IPAddress.IsLoopback(a))
-                .Select(a => a.ToString())
-                .ToList();
-            if (addresses.Count > 0)
-                return port == NetProtocol.DefaultPort ? addresses[0] : $"{addresses[0]}:{port}";
+            var best = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+                .Where(n => n.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up
+                    && n.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback
+                    && n.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Tunnel)
+                .Select(n => n.GetIPProperties())
+                .Select(p => new
+                {
+                    HasGateway = p.GatewayAddresses.Any(g => g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                        && !g.Address.Equals(IPAddress.Any)),
+                    Address = p.UnicastAddresses
+                        .Select(u => u.Address)
+                        .FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                            && !IPAddress.IsLoopback(a) && !IsLinkLocal(a)),
+                })
+                .Where(x => x.Address != null)
+                .OrderByDescending(x => x.HasGateway)
+                .FirstOrDefault();
+            return best?.Address?.ToString();
         }
-        catch (System.Net.Sockets.SocketException)
+        catch (System.Net.NetworkInformation.NetworkInformationException)
         {
+            return null;
         }
-        return $"port {port}";
+    }
+
+    static bool IsLinkLocal(IPAddress address)
+    {
+        var bytes = address.GetAddressBytes();
+        return bytes[0] == 169 && bytes[1] == 254;
+    }
+
+    // The host's internet address, looked up in the background while the lobby is up
+    static Task<string?>? publicAddressLookup;
+
+    /// <summary>
+    /// Asks a public "what is my IP" service for the address the internet sees this machine
+    /// (its router) at. Players outside the local network join there, once the router forwards
+    /// the game's UDP port to this machine. Null when offline or the service doesn't answer.
+    /// </summary>
+    static async Task<string?> LookUpPublicAddress()
+    {
+        try
+        {
+            using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            var text = (await http.GetStringAsync("https://api.ipify.org").ConfigureAwait(false)).Trim();
+            return IPAddress.TryParse(text, out _) ? text : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     /*
@@ -522,6 +570,14 @@ internal partial class Program
                 return;
             }
 
+            // The host's internet address has come back: say where players outside the network join
+            if (publicAddressLookup is { IsCompleted: true } lookup)
+            {
+                publicAddressLookup = null;
+                if (lookup.Result is { } address)
+                    session.Note($"Internet: {WithPort(address, session.Port)} (forward UDP {session.Port} on your router)");
+            }
+
             int seen = session.Changes;
             DrawLobby(session);
             if (fadeIn)
@@ -535,7 +591,7 @@ internal partial class Program
                 idle: () =>
                 {
                     session.Poll();
-                    return session.Changes != seen;
+                    return session.Changes != seen || publicAddressLookup is { IsCompleted: true };
                 });
 
             if (which == -2)
