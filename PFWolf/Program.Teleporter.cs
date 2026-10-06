@@ -209,6 +209,7 @@ internal partial class Program
         floorOverheads[gamestate.mapon] = CaptureOverhead();
 
         var font = PresenterFont(layout.Font);
+        byte? mask = layout.MaskColor is >= 0 and <= 255 ? (byte)layout.MaskColor : null;
         _videoManager.FadeOut();
         _videoManager.FillScreen("0");
         foreach (var pic in layout.Background)
@@ -219,7 +220,7 @@ internal partial class Program
             if (floor < 0 || floor >= layout.Floors.Count)
                 return;
             var spot = layout.Floors[floor];
-            _graphicManager.DrawPic(string.Format(on ? layout.OnPic : layout.OffPic, floor + 1), spot.X, spot.Y);
+            _graphicManager.DrawPic(string.Format(on ? layout.OnPic : layout.OffPic, floor + 1), spot.X, spot.Y, mask);
         }
 
         bool Locked(int floor) => !floors.TryGetValue(floor, out var map) || !FloorOpen(map);
@@ -267,9 +268,9 @@ internal partial class Program
         void Buttons(int lit)
         {
             foreach (var s in layout.UpSpots)
-                _graphicManager.DrawPic(lit < 0 ? layout.UpOnPic : layout.UpOffPic, s.X, s.Y);
+                _graphicManager.DrawPic(lit < 0 ? layout.UpOnPic : layout.UpOffPic, s.X, s.Y, mask);
             foreach (var s in layout.DownSpots)
-                _graphicManager.DrawPic(lit > 0 ? layout.DownOnPic : layout.DownOffPic, s.X, s.Y);
+                _graphicManager.DrawPic(lit > 0 ? layout.DownOnPic : layout.DownOffPic, s.X, s.Y, mask);
         }
 
         for (int f = 0; f < layout.Floors.Count && f <= maxFloor; f++)

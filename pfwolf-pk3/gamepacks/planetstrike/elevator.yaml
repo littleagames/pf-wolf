@@ -35,6 +35,8 @@ teleporter:
   down-off-pic: TELEDNOF
   up-spots: [{ x: 34, y: 91 }, { x: 270, y: 91 }]
   down-spots: [{ x: 34, y: 104 }, { x: 270, y: 104 }]
+  # floor and button pics are masked pics: 255 shows the background through
+  mask-color: 255
   bar-x: 54
   bar-y: 101
   bar-width: 212

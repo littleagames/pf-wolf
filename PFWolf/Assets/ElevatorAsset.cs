@@ -161,6 +161,9 @@ internal record TeleporterLayout
     public List<TeleporterSpot> UpSpots { get; set; } = [];
     public List<TeleporterSpot> DownSpots { get; set; } = [];
 
+    /// <summary>Palette index left out of the floor and button pictures (bstone VWB_DrawMPic: 255); -1 for none</summary>
+    public int MaskColor { get; set; } = -1;
+
     /// <summary>The name bar: cleared to bar-color, the floor's name centred at text-y</summary>
     public int BarX { get; set; }
     public int BarY { get; set; }

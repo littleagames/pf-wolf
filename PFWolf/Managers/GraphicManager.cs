@@ -164,6 +164,19 @@ internal class GraphicManager
         DrawPic(x, y, asset);
     }
 
+    /// <summary>Draws a picture leaving out the pixels of a palette index (a masked pic), or all of it with no mask</summary>
+    public void DrawPic(string graphicName, int x, int y, byte? mask)
+    {
+        if (mask == null)
+        {
+            DrawPic(graphicName, x, y);
+            return;
+        }
+        if (string.IsNullOrEmpty(graphicName) || assetManager.Value.Find<GraphicAsset>(graphicName) is not { } asset)
+            return;
+        videoManager.DrawImageRegion(asset.RawData, null, asset.Width, 0, 0, asset.Width, asset.Height, x, y, mask);
+    }
+
     private void DrawPic(int x, int y, GraphicAsset gfxAsset)
     {
         videoManager.MemToScreen(gfxAsset.RawData, gfxAsset.Width, gfxAsset.Height, x, y);
