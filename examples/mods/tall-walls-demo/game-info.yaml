@@ -1,0 +1,9 @@
+# Merged into the game pack's game-info.yaml: the demo level's walls, sky and floor.
+maps:
+  MAP01:
+    # Walls are 1 story unless the map's height plane (plane 3) gives a tile its own height
+    wall-height: 1
+    # A picture in the mod's graphics/ folder, drawn above the horizon in place of the ceiling
+    sky: TWSKY
+    # Packed earth (palette color 218; a color that isn't in the palette gets the nearest one)
+    floor-color: "#5D4020"

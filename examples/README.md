@@ -62,6 +62,63 @@ In game, the `tag` console command (with cheats on) shows or sets a tile's tag, 
 `actors` lists each actor's tag. `zone` shows or sets a tile's light zone, `zonelight`
 lists the zones and how each is lit, and `lights` lists the actors giving off light.
 
+## Tall Walls Demo (`mods/tall-walls-demo`)
+
+A castle courtyard that replaces Floor 1 (Wolfenstein 3D only), to show off walls taller than
+one story, textures drawn for them, arches and a sky.
+
+```
+PFWolf.exe --file tall-walls-demo
+```
+
+It replaces Floor 1 like the Switch Demo does, so switch on only one of the two at a time.
+
+You start in a 1-story gatehouse. Through the door is the courtyard:
+
+- **The curtain wall** around it stands **3 stories** tall, with a 64x192 texture: rough stone
+  at the bottom, a banner across the upper two stories, battlements along the top. The lintel
+  over the door you came through is that same wall, 3 stories up.
+- **The keep** in the middle is **2 stories** (a 64x128 texture with a window in the upper story).
+- **The colonnade** along the west side: brick pillars 2 stories tall with **arches** between
+  them, open floor tiles with a block of wall from story 2 up. Walk under one and look up
+  (`pitch 20` in the console) to see its underside.
+- **The gate** in the north wall: a 3-wide arch, **3 stories**, between 3-story brick pillars.
+  The garden behind it has the elevator.
+- **The stepped wall** on the east side: the game's own grey stone at 1, 2 and 3 stories.
+  A 64x64 texture repeats once per story.
+
+The level has no roof, so `sky` in `game-info.yaml` puts a dusk sky above the walls.
+
+### What's in it
+
+- `textures/`: the tall textures, as PNGs. A picture in a mod's `textures/` folder is a wall
+  texture of that name. It can be any height: each 64 pixels is a story, counted up from the
+  floor, and on a wall taller than the picture it starts again from the bottom. Each comes as
+  `NAME1` (for north and south faces) and a darker `NAME2` (east and west), like the game's own walls.
+  - `TWTOWR1`/`2`: 64x192, the curtain wall
+  - `TWSTON1`/`2`: 64x128, the keep
+  - `TWARCH1`/`2`: 64x128, the brick pillars. A row of pale voussoirs sits at the bottom of
+    the upper story, so an arch beside these pillars has them just over its opening.
+- `graphics/TWSKY.png`: the sky, 512 wide, so it goes around the view twice.
+- `mapdefs/walls.yaml`: walls 50-52, faced with those textures.
+- `game-info.yaml`: the level's `wall-height` (1 story, for every tile the map doesn't raise),
+  its `sky` and its floor color.
+- `maps/MAP01.wad`: the level. **How tall each wall stands is on the map's height plane
+  (plane 3)**, per tile: 0 uses the level's `wall-height`, 1 to 8 is that many stories. A
+  height on an open floor tile makes an arch. The arch's face and underside come from the wall
+  at the end of its row of arch tiles. A door's height is how high its lintel goes.
+
+Everything in the mod (pictures and level) is made by `tools/make-tall-walls-demo.ps1`. The
+pictures are drawn pixel by pixel in the script, and the level comes from an ASCII layout in
+it. Edit either and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-tall-walls-demo.ps1
+```
+
+In game, `where` shows the height of the tile you're facing. With cheats on, `height <0-8>`
+changes it and `wallheight` changes the level's default. `sky <name|none>` swaps the sky.
+
 ## Moody Lights (`mods/moody-lights`)
 
 Darkens every level (Wolfenstein 3D only) and lets the light decorations light the rooms

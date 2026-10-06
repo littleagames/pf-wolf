@@ -1,0 +1,26 @@
+# The demo's walls, faced with the mod's own textures (textures/*.png). A texture taller than
+# 64 pixels spans a story per 64 pixels from the floor up; on a wall taller than the texture
+# it starts again from the bottom. NAME1 is for north and south faces, the darker NAME2 for
+# east and west ones, as with the game's own walls. How tall each wall stands is set per tile
+# on the map's height plane (plane 3), not here.
+walls:
+    # The courtyard's curtain wall: 3 stories (64x192), rough stone, a banner, battlements
+    '50':
+        North: TWTOWR1
+        South: TWTOWR1
+        East: TWTOWR2
+        West: TWTOWR2
+    # The keep: 2 stories (64x128), with a window in the upper one
+    '51':
+        North: TWSTON1
+        South: TWSTON1
+        East: TWSTON2
+        West: TWSTON2
+    # Brick pillars: 2 stories (64x128), with voussoirs at the bottom of the upper story. Arches
+    # take their face from the wall at the end of their run, so arches between these pillars
+    # show the voussoirs just over the opening.
+    '52':
+        North: TWARCH1
+        South: TWARCH1
+        East: TWARCH2
+        West: TWARCH2

@@ -88,8 +88,10 @@ internal partial class Program
     static NetIdentity? localIdentity;
 
     /// <summary>
-    /// What this machine runs, for the host to check a joining player against: the build (the
-    /// exe itself), the game pack and its data files, and the mods, by name and by content
+    /// What this machine runs, for the host to check a joining player against: the engine (its
+    /// version and commit), the game pack and its data files, and the mods, by name and by
+    /// content. Zips are hashed by what's in them, not their bytes: each build zips pfwolf.pk3
+    /// afresh, with that machine's file times, so the same commit built twice differs.
     /// </summary>
     static NetIdentity LocalIdentity()
     {
@@ -97,8 +99,7 @@ internal partial class Program
             return localIdentity;
 
         using var md5 = IncrementalHash.CreateHash(HashAlgorithmName.MD5);
-        md5.AppendData(typeof(Program).Assembly.ManifestModule.ModuleVersionId.ToByteArray());
-        HashFile(md5, "pfwolf.pk3");
+        HashFile(md5, AssetManager.BasePk3FileName);
         foreach (var mod in _assetManager.LoadedMods)
         {
             if (Directory.Exists(mod.FullPath))
@@ -114,8 +115,7 @@ internal partial class Program
                 HashFile(md5, mod.FullPath);
         }
 
-        var version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "?";
-        return localIdentity = new NetIdentity(version, _gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId ?? "",
+        return localIdentity = new NetIdentity(GameEngineManager.EngineVersion, _gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId ?? "",
             string.Join(", ", CurrentSavedMods()), Convert.ToHexString(md5.GetHashAndReset()));
     }
 
@@ -123,6 +123,8 @@ internal partial class Program
     {
         try
         {
+            if (TryHashZip(hash, path))
+                return;
             using var stream = File.OpenRead(path);
             var buffer = new byte[81920];
             int read;
@@ -133,6 +135,43 @@ internal partial class Program
         {
             hash.AppendData(System.Text.Encoding.UTF8.GetBytes($"unreadable {Path.GetFileName(path)}"));
         }
+    }
+
+    /// <summary>
+    /// Hashes a zip (.pk3/.zip) by its files' names and contents, in name order, leaving out
+    /// times, compression and order in the archive: false if the file isn't one
+    /// </summary>
+    static bool TryHashZip(IncrementalHash hash, string path)
+    {
+        var ext = Path.GetExtension(path);
+        if (!ext.Equals(".pk3", StringComparison.OrdinalIgnoreCase) && !ext.Equals(".zip", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        System.IO.Compression.ZipArchive zip;
+        try
+        {
+            zip = System.IO.Compression.ZipFile.OpenRead(path);
+        }
+        catch (InvalidDataException)
+        {
+            return false;
+        }
+
+        using (zip)
+        {
+            var buffer = new byte[81920];
+            foreach (var entry in zip.Entries
+                .Where(e => !e.FullName.EndsWith('/') && !e.FullName.EndsWith('\\'))
+                .OrderBy(e => e.FullName.Replace('\\', '/'), StringComparer.OrdinalIgnoreCase))
+            {
+                hash.AppendData(System.Text.Encoding.UTF8.GetBytes(entry.FullName.Replace('\\', '/').ToLowerInvariant()));
+                using var stream = entry.Open();
+                int read;
+                while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+                    hash.AppendData(buffer, 0, read);
+            }
+        }
+        return true;
     }
 
     /*

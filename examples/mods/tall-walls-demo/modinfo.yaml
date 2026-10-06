@@ -1,0 +1,4 @@
+name: Tall Walls Demo
+version: "1.0"
+description: A castle courtyard (replacing Floor 1) showing off tall walls, tall textures, arches and a sky.
+game-packs: [wolf3d]
