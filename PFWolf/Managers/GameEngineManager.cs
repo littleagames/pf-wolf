@@ -796,6 +796,8 @@ internal class GameEngineManager
             directories = directories with { ConfigDirectory = Path.GetFullPath(args.ConfigDir) };
         if (!string.IsNullOrWhiteSpace(args.SavesDir))
             directories = directories with { SaveGameDirectory = Path.GetFullPath(args.SavesDir) };
+        if (!string.IsNullOrWhiteSpace(args.DemoDir))
+            directories = directories with { DemosDirectory = Path.GetFullPath(args.DemoDir) };
 
         try
         {

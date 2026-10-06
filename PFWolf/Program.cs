@@ -140,6 +140,7 @@ internal partial class Program
             settings.AllowMultiInstance = true;
         });
         var gameParams = parser.ParseArguments<GameParams>(args).Value ?? new GameParams(); // Move into gamemanager, add unit tests
+        param_nowait = gameParams.NoWait;
 
         // Relative mod paths mean the folder the game was started in, so pin them down before
         // UseGameFolder can move away from it

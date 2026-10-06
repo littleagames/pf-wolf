@@ -1,0 +1,4 @@
+demotest 0: data 2077/2077 score 3900 health 0 kills 15/145 treasure 0/14 player 172169,564774,90 actors 438 hash 1e745004c7fcc3d8
+demotest 1: data 5701/5701 score 13600 health 0 kills 51/94 treasure 0/35 player 1314231,3123194,32 actors 348 hash eb4fe154cbfbf3ae
+demotest 2: data 3424/3424 score 7100 health 0 kills 27/142 treasure 0/29 player 1811821,1473648,9 actors 524 hash 3d309c3eb059a8d2
+demotest 3: data 4972/4972 score 5600 health 0 kills 21/51 treasure 0/39 player 2957121,1040720,242 actors 377 hash cade8df330445254

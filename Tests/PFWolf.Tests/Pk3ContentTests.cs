@@ -26,7 +26,7 @@ public class Pk3ContentTests
         Games.Select(game => new TestCaseData(game.Pack, game.Release).SetArgDisplayNames(game.Pack));
 
     private static PfWolfPk3Loader Load(string pack, string release) =>
-        new([new DirectoryAssetSource(ActorDefs.Pk3SourceFolder())], pack, release);
+        new([new DirectoryAssetSource(TestPaths.Pk3SourceFolder())], pack, release);
 
     [TestCaseSource(nameof(GameCases))]
     public void Every_Game_Packs_Files_Load_Without_Warnings(string pack, string release)

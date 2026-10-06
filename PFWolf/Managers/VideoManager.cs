@@ -281,10 +281,13 @@ internal class VideoManager
         return true;
     }
 
+    /// <summary>Running on SDL's dummy video driver: nothing is shown, so no OpenGL, acceleration or vsync</summary>
+    private static bool Headless => SDL.SDL_GetCurrentVideoDriver() == "dummy";
+
     private bool CreateRenderer(VideoSettings settings)
     {
-        var flags = SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED;
-        if (settings.VSync)
+        var flags = Headless ? SDL.SDL_RendererFlags.SDL_RENDERER_SOFTWARE : SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED;
+        if (settings.VSync && !Headless)
             flags |= SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC;
 
         renderer = SDL.SDL_CreateRenderer(window, -1, flags);
@@ -1667,7 +1670,9 @@ internal class VideoManager
         if (string.IsNullOrWhiteSpace(title))
             title = "PFWolf";
 
-        var flags = SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
+        // SDL's dummy driver (SDL_VIDEODRIVER=dummy: no window, for scripted runs such as the
+        // demotest check) has no OpenGL
+        var flags = Headless ? (SDL.SDL_WindowFlags)0 : SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
         if (settings.Fullscreen)
             flags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP;
 

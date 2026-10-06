@@ -10,6 +10,12 @@ internal class GameParams
     [Option("savedir", Required = false, HelpText = "Directory where the game saves are located. Default in %APPDATA%.")]
     public string SavesDir { get; set; } = "";
 
+    [Option("demodir", Required = false, HelpText = "Directory where recorded demos are kept (and played ahead of the game's own). Default in %APPDATA%.")]
+    public string DemoDir { get; set; } = "";
+
+    [Option("nowait", Required = false, HelpText = "Don't wait at the signon screen or show the intro screens; with --exec, for scripted runs.")]
+    public bool NoWait { get; set; }
+
     [Option("exec", Required = false, HelpText = "Console commands to run once the game has started, separated by ';'.")]
     public string Exec { get; set; } = "";
 

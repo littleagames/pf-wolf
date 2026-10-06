@@ -16,18 +16,4 @@ internal static class ActorDefs
             metadata.AddActors(Parse(yaml));
         return metadata;
     }
-
-    /// <summary>The repository's pfwolf-pk3 folder, found by walking up from the test output</summary>
-    public static string Pk3SourceFolder()
-    {
-        for (var dir = new DirectoryInfo(TestContext.CurrentContext.TestDirectory); dir != null; dir = dir.Parent)
-        {
-            var candidate = Path.Combine(dir.FullName, "pfwolf-pk3");
-            if (Directory.Exists(candidate))
-                return candidate;
-        }
-
-        Assert.Ignore("pfwolf-pk3 isn't above the test output folder");
-        return "";
-    }
 }
