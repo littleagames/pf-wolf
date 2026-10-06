@@ -1,0 +1,715 @@
+using PFWolf.Assets;
+using PFWolf.Configuration;
+using PFWolf.Constants;
+using PFWolf.Entities.Actors;
+using PFWolf.Enums;
+using PFWolf.Extensions;
+using PFWolf.Managers;
+
+namespace PFWolf;
+
+internal partial class Program
+{
+    // Theme color names (colors.yaml) and the colors used when a game pack doesn't define them.
+    static readonly Dictionary<string, string> AutomapColorFallbacks = new()
+    {
+        ["AutomapBackground"] = "#000000",
+        ["AutomapWall"] = "#C2C2C2",
+        ["AutomapDoor"] = "#E6DA00",
+        ["AutomapPlayer"] = "#55FF55",
+        ["AutomapEnemy"] = "#FF0000",
+        ["AutomapCorpse"] = "#710000",
+        ["AutomapItem"] = "#20AAFF",
+        ["AutomapDecor"] = "#8D8D8D",
+        ["AutomapWallSprite"] = "#8D8D8D",
+        ["AutomapGrid"] = "#004040",
+        ["AutomapTitle"] = "#FFFF55",
+        ["AutomapStats"] = "#C2C2C2",
+    };
+
+    // Language keys for the compass headings, counterclockwise from east like Wolf3D angles
+    static readonly string[] AutomapHeadings =
+        ["$STR_AM_E", "$STR_AM_NE", "$STR_AM_N", "$STR_AM_NW", "$STR_AM_W", "$STR_AM_SW", "$STR_AM_S", "$STR_AM_SE"];
+
+    static string AutomapText(string key, params object[] args) =>
+        string.Format(key.ToLanguageText(_assetManager.GetText("en-us")), args);
+
+    /// <summary>The keys that work while the automap is open; bound in <see cref="controls"/>.</summary>
+    internal enum automapkeys
+    {
+        am_zoomin,
+        am_zoomout,
+        am_panup,
+        am_pandown,
+        am_panleft,
+        am_panright,
+        am_center,
+        am_follow,
+        am_rotate,
+        am_style,
+        am_overlay,
+        am_grid,
+        am_stats,
+
+        NUMAUTOMAPKEYS
+    }
+
+    // The grid only shows from this zoom (virtual pixels per tile) up; any closer together it's a solid wash
+    const float AUTOMAP_MINGRIDZOOM = 6f;
+
+    // How bright the 3D view stays under the map in Overlay mode
+    const float AUTOMAP_OVERLAYBRIGHTNESS = 0.4f;
+
+    // Map panning speed at the default zoom: 8 tiles a second at walking pace, in virtual pixels a tic
+    const float AUTOMAP_PANSPEED = 8 * AutomapManager.DefaultZoom / 70f;
+
+    // Zoom steps a second while a zoom key is held
+    const float AUTOMAP_KEYZOOMRATE = 5f;
+
+    static bool IsAutomapKeyDown(automapkeys key) =>
+        controls.Get(ControlAction.Of(key)).Any(code => code.Device != InputDevice.MouseWheel && IsInputActive(code));
+
+    static int AutomapWheelNotches(automapkeys key) =>
+        mouseenabled ? controls.Get(ControlAction.Of(key)).Sum(WheelNotches) : 0;
+
+    const string AUTOMAP_FONT = "SmallFont";
+
+    static string AutomapColor(string name) =>
+        _videoManager.IsThemeColor(name) ? name : AutomapColorFallbacks[name];
+
+    // A locked door is drawn in its key's color: the theme's "Automap<lock item>" if it has one
+    // (e.g. AutomapGoldKey), else the door's mapdefs automap-color, else the plain door color.
+    static string AutomapDoorColor(doorobj_t door)
+    {
+        if (!string.IsNullOrEmpty(door.Lock) && _videoManager.IsThemeColor("Automap" + door.Lock))
+            return "Automap" + door.Lock;
+
+        return !string.IsNullOrEmpty(door.xlat.AutomapColor) ? door.xlat.AutomapColor : AutomapColor("AutomapDoor");
+    }
+
+    /// <summary>
+    /// Opens or closes the automap from play (the automap button, or the `automap` command).
+    /// Never during a demo: the map isn't part of what a demo records.
+    /// </summary>
+    internal static void ToggleAutomap()
+    {
+        if (demoplayback || demorecord)
+            return;
+
+        _automapManager.Toggle();       // the play loop's next UpdateAutomap centers it before it's drawn
+    }
+
+    /// <summary>
+    /// Applies the held automap keys and the mouse wheel, then keeps the view on the player.
+    /// Called every frame from the play loop.
+    /// </summary>
+    internal static void UpdateAutomap()
+    {
+        if (_mapManager.Player == null)
+            return;
+
+        if (_automapManager.IsOpen)
+        {
+            // A wheel bound to a zoom key steps once a notch; keys zoom smoothly while held
+            float zoom = AutomapWheelNotches(automapkeys.am_zoomin) - AutomapWheelNotches(automapkeys.am_zoomout);
+            if (IsAutomapKeyDown(automapkeys.am_zoomin) || _inputManager.IsKeyDown(ScanCodes.sc_KeyPadPlus))
+                zoom += AUTOMAP_KEYZOOMRATE * tics / 70f;
+            if (IsAutomapKeyDown(automapkeys.am_zoomout) || _inputManager.IsKeyDown(ScanCodes.sc_KeyPadMinus))
+                zoom -= AUTOMAP_KEYZOOMRATE * tics / 70f;
+            if (zoom != 0)
+                _automapManager.ZoomBy(zoom);
+
+            float pan = AUTOMAP_PANSPEED * tics * (_inputManager.IsButtonPressed(buttontypes.bt_run) ? 2 : 1);
+            float panx = 0, pany = 0;
+            if (IsAutomapKeyDown(automapkeys.am_panup)) pany -= pan;
+            if (IsAutomapKeyDown(automapkeys.am_pandown)) pany += pan;
+            if (IsAutomapKeyDown(automapkeys.am_panleft)) panx -= pan;
+            if (IsAutomapKeyDown(automapkeys.am_panright)) panx += pan;
+            _automapManager.Pan(panx, pany);
+        }
+
+        _automapManager.Update(player.X / (float)MapConstants.TILEGLOBAL, player.Y / (float)MapConstants.TILEGLOBAL, player.Angle);
+    }
+
+    /// <summary>
+    /// Handles a fresh press of a key or button (from CheckKeys) if it's one of the automap's
+    /// toggles and the map is open. Returns true if it's one of the automap's keys, so it doesn't
+    /// also run a console bind.
+    /// </summary>
+    internal static bool HandleAutomapKey(InputCode code)
+    {
+        if (!_automapManager.IsOpen)
+            return false;
+
+        bool Bound(automapkeys automapKey) => controls.IsBound(ControlAction.Of(automapKey), code);
+
+        if (Bound(automapkeys.am_center))
+            _automapManager.SnapToPlayer();
+        else if (Bound(automapkeys.am_follow))
+            _automapManager.ToggleFollow();
+        else if (Bound(automapkeys.am_rotate))
+            _automapManager.ToggleRotate();
+        else if (Bound(automapkeys.am_style))
+            _automapManager.ToggleStyle();
+        else if (Bound(automapkeys.am_overlay))
+            _automapManager.ToggleOverlay();
+        else if (Bound(automapkeys.am_grid))
+            _automapManager.ToggleGrid();
+        else if (Bound(automapkeys.am_stats))
+            _automapManager.ToggleStats();
+        else    // held keys: used in UpdateAutomap, not binds
+            return IsAutomapInput(code);
+
+        return true;
+    }
+
+    /// <summary>
+    /// In pan mode the player's movement controls move the map instead: called from PollControls
+    /// once the movement is gathered, it hands the forward/back, turn and strafe input to the map
+    /// and clears it so the player stands still. Fire, use and weapon buttons are left alone.
+    /// </summary>
+    internal static void RouteMovementToAutomap()
+    {
+        if (!_automapManager.IsOpen || _automapManager.Follow)
+            return;
+
+        // controlx/controly run BASEMOVE a tic at walking pace (RUNMOVE running)
+        float dx = controlx + controlstrafe, dy = controly;
+        int strafe = (_inputManager.IsButtonPressed(buttontypes.bt_run) ? RUNMOVE : BASEMOVE) * (int)tics;
+        if (_inputManager.IsButtonPressed(buttontypes.bt_strafeleft))
+            dx -= strafe;
+        if (_inputManager.IsButtonPressed(buttontypes.bt_straferight))
+            dx += strafe;
+
+        _automapManager.Pan(dx * AUTOMAP_PANSPEED / BASEMOVE, dy * AUTOMAP_PANSPEED / BASEMOVE);
+
+        controlx = controly = controlstrafe = 0;
+        _inputManager.SetButtonPressed(buttontypes.bt_strafeleft, false);
+        _inputManager.SetButtonPressed(buttontypes.bt_straferight, false);
+    }
+
+    /// <summary>
+    /// Where the automap is being drawn this frame: the view rectangle in screen pixels, and the
+    /// map-to-screen transform: offset from the map center, turned by the map's rotation, scaled
+    /// to <see cref="TileSize"/> pixels a tile, then placed at the middle of the view.
+    /// </summary>
+    readonly record struct AutomapView(int ClipX, int ClipY, int ClipWidth, int ClipHeight,
+        float TileSize, float CenterX, float CenterY, float Cos, float Sin, int Pen)
+    {
+        public float MidX => ClipX + ClipWidth / 2f;
+        public float MidY => ClipY + ClipHeight / 2f;
+
+        public (float X, float Y) ToScreen(float mapX, float mapY)
+        {
+            float x = (mapX - CenterX) * TileSize, y = (mapY - CenterY) * TileSize;
+            return (MidX + x * Cos - y * Sin, MidY + x * Sin + y * Cos);
+        }
+    }
+
+    /// <summary>
+    /// Draws the automap over the 3D view: a solid backdrop, the walls, doors and moving pushwall
+    /// the player has seen, the actors worth marking, then the player's arrow and position. Called
+    /// each frame from ThreeDRefresh after the view is drawn and before the console. The map is
+    /// clipped to the view, so the border and status bar are never drawn over.
+    /// </summary>
+    internal static void DrawAutomap()
+    {
+        if (!_automapManager.IsOpen || _mapManager.Player == null)
+            return;
+
+        // Sized with the UI: a layout pixel's worth of screen pixels for the pen, whole
+        float tileSize = _automapManager.Zoom * (float)_videoManager.uiScale;   // screen pixels per tile
+        int pen = Math.Max(1, _videoManager.ToScreenLength(1));
+        var view = new AutomapView(viewscreenx, viewscreeny, viewwidth, viewheight, tileSize,
+            _automapManager.CenterX, _automapManager.CenterY,
+            MathF.Cos(_automapManager.Rotation), MathF.Sin(_automapManager.Rotation), Pen: pen);
+
+        // Overlay: the 3D view just drawn, dimmed, so the game still shows through
+        if (_automapManager.Overlay)
+            _videoManager.ShadeRegionScaledCoord(view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight,
+                _videoManager.GetDarkenTable(AUTOMAP_OVERLAYBRIGHTNESS));
+        else
+            _videoManager.BarScaledCoord(view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight, AutomapColor("AutomapBackground"));
+
+        bool reveal = mapreveal != 0;
+
+        if (_automapManager.ShowGrid && _automapManager.Zoom >= AUTOMAP_MINGRIDZOOM)
+            DrawAutomapGrid(view);
+
+        if (_automapManager.Style == AutomapStyle.Graphic)
+        {
+            DrawAutomapTexels(view, reveal);
+            DrawAutomapWallSprites(view, reveal, graphic: true);
+            DrawAutomapActors(view, reveal, sprites: _automapManager.Zoom >= AUTOMAP_MINSPRITEZOOM);
+        }
+        else
+        {
+            DrawAutomapWalls(view, reveal);
+            DrawAutomapPushwall(view, reveal);
+            DrawAutomapDoors(view, reveal);
+            DrawAutomapWallSprites(view, reveal, graphic: false);
+            DrawAutomapActors(view, reveal, sprites: false);
+        }
+
+        DrawAutomapPlayer(view);
+        DrawAutomapPosition(view);
+
+        if (_automapManager.ShowStats)
+            DrawAutomapStats(view);
+    }
+
+    /// <summary>A faint one-pixel line along every tile edge of the map that reaches the view, under everything else.</summary>
+    static void DrawAutomapGrid(AutomapView view)
+    {
+        var (first, last) = AutomapReach(view.CenterX, view);
+        var (firstY, lastY) = AutomapReach(view.CenterY, view);
+        string color = AutomapColor("AutomapGrid");
+
+        for (int x = first; x <= last + 1; x++)
+            AutomapLine(view, x, firstY, x, lastY + 1, color, pen: 1);
+        for (int y = firstY; y <= lastY + 1; y++)
+            AutomapLine(view, first, y, last + 1, y, color, pen: 1);
+    }
+
+    /// <summary>
+    /// The tiles along one axis that can reach the view: within half its diagonal of the center,
+    /// whichever way the map is turned, and on the map.
+    /// </summary>
+    static (int First, int Last) AutomapReach(float center, AutomapView view)
+    {
+        float reach = MathF.Sqrt(view.ClipWidth * view.ClipWidth + view.ClipHeight * view.ClipHeight) / 2 / view.TileSize + 1;
+        return (Math.Max(0, (int)MathF.Floor(center - reach)), Math.Min(MapManager.MAPSIZE - 1, (int)MathF.Ceiling(center + reach)));
+    }
+
+    /// <summary>
+    /// Every seen wall face that borders open space, as a line along the tile edge. A diagonal
+    /// wall shows its two solid edges and a line corner to corner for its 45 degree face.
+    /// </summary>
+    static void DrawAutomapWalls(AutomapView view, bool reveal)
+    {
+        var (firstX, lastX) = AutomapReach(view.CenterX, view);
+        var (firstY, lastY) = AutomapReach(view.CenterY, view);
+
+        string color = AutomapColor("AutomapWall");
+        const SeenFlags allFaces = SeenFlags.NorthFace | SeenFlags.SouthFace | SeenFlags.WestFace | SeenFlags.EastFace
+            | SeenFlags.DiagonalFace;
+
+        for (int y = firstY; y <= lastY; y++)
+        {
+            for (int x = firstX; x <= lastX; x++)
+            {
+                if (!IsAutomapWall(x, y))
+                    continue;
+
+                // Only the faces the player has looked at, unless the reveal cheat is on
+                var faces = reveal ? allFaces : _mapManager.seen[x, y];
+
+                var shape = _mapManager.wallshape[x, y];
+                if (shape != WallShape.Square)
+                {
+                    faces &= DiagonalSolidEdges(shape) | SeenFlags.DiagonalFace;   // its open edges are empty space
+                    if ((faces & SeenFlags.DiagonalFace) != 0)
+                    {
+                        var (u0, v0, u1, v1) = DiagonalFaceEnds(shape);
+                        AutomapLine(view, x + u0, y + v0, x + u1, y + v1, color);
+                    }
+                }
+
+                if ((faces & SeenFlags.NorthFace) != 0 && !IsAutomapSolidEdge(x, y - 1, SeenFlags.SouthFace)) AutomapLine(view, x, y, x + 1, y, color);
+                if ((faces & SeenFlags.SouthFace) != 0 && !IsAutomapSolidEdge(x, y + 1, SeenFlags.NorthFace)) AutomapLine(view, x, y + 1, x + 1, y + 1, color);
+                if ((faces & SeenFlags.WestFace) != 0 && !IsAutomapSolidEdge(x - 1, y, SeenFlags.EastFace)) AutomapLine(view, x, y, x, y + 1, color);
+                if ((faces & SeenFlags.EastFace) != 0 && !IsAutomapSolidEdge(x + 1, y, SeenFlags.WestFace)) AutomapLine(view, x + 1, y, x + 1, y + 1, color);
+            }
+        }
+    }
+
+    /// <summary>The pushwalls on the move, each as a square outline at its current offset.</summary>
+    static void DrawAutomapPushwall(AutomapView view, bool reveal)
+    {
+        string color = AutomapColor("AutomapWall");
+
+        foreach (var wall in pushwalls)
+        {
+            int dx = dirs[(int)wall.Dir][0], dy = dirs[(int)wall.Dir][1];
+
+            if (!reveal && _mapManager.seen[wall.X, wall.Y] == SeenFlags.None
+                        && _mapManager.seen[wall.X + dx, wall.Y + dy] == SeenFlags.None)
+                continue;
+
+            float offset = wall.Pos / 64f;
+            float x = wall.X + dx * offset, y = wall.Y + dy * offset;
+
+            AutomapLine(view, x, y, x + 1, y, color);
+            AutomapLine(view, x, y + 1, x + 1, y + 1, color);
+            AutomapLine(view, x, y, x, y + 1, color);
+            AutomapLine(view, x + 1, y, x + 1, y + 1, color);
+        }
+    }
+
+    /// <summary>
+    /// Seen doors, as a line through the middle of the door tile covering the part of the door
+    /// that's still closed, so it shortens as the door slides open.
+    /// </summary>
+    static void DrawAutomapDoors(AutomapView view, bool reveal)
+    {
+        for (int i = 0; i < lastdoorobj; i++)
+        {
+            var door = doorobjlist[i];
+            if (!reveal && _mapManager.seen[door.tilex, door.tiley] == SeenFlags.None)
+                continue;
+
+            // The door is solid from `position` (0 = closed .. 0xffff = open) to the far side
+            float open = door.position / 65536f;
+            if (open >= 0.99f)
+                continue;
+
+            string color = AutomapDoorColor(door);
+
+            if (door.xlat.Split)
+            {
+                // Two halves, each solid from its outer edge to half of `open` short of the middle
+                float half = 0.5f - open / 2;
+                if (door.vertical)
+                {
+                    AutomapLine(view, door.tilex + 0.5f, door.tiley, door.tilex + 0.5f, door.tiley + half, color);
+                    AutomapLine(view, door.tilex + 0.5f, door.tiley + 1 - half, door.tilex + 0.5f, door.tiley + 1, color);
+                }
+                else
+                {
+                    AutomapLine(view, door.tilex, door.tiley + 0.5f, door.tilex + half, door.tiley + 0.5f, color);
+                    AutomapLine(view, door.tilex + 1 - half, door.tiley + 0.5f, door.tilex + 1, door.tiley + 0.5f, color);
+                }
+                continue;
+            }
+
+            if (door.vertical)
+                AutomapLine(view, door.tilex + 0.5f, door.tiley + open, door.tilex + 0.5f, door.tiley + 1, color);
+            else
+                AutomapLine(view, door.tilex + open, door.tiley + 0.5f, door.tilex + 1, door.tiley + 0.5f, color);
+        }
+    }
+
+    /// <summary>
+    /// Wall sprites (fences, gates) once their tile or one beside it is seen, as a line along the
+    /// panel: in the theme's AutomapWallSprite color, or in graphic style a strip in the color
+    /// most of its sprite is.
+    /// </summary>
+    static void DrawAutomapWallSprites(AutomapView view, bool reveal, bool graphic)
+    {
+        // In graphic style about as wide as a door's strip, so it reads next to them
+        int pen = graphic ? Math.Max(view.Pen, (int)(view.TileSize * AUTOMAP_DOORWIDTH / 2)) : view.Pen;
+
+        foreach (var actor in _mapManager.GetActors())
+        {
+            if (actor.IsRemoved || actor.CurrentState == null || !IsWallSprite(actor))
+                continue;
+            if (GetWallSpriteSpan(actor) is not { } span)
+                continue;
+
+            int x = actor.TileX, y = actor.TileY;
+            bool seen = reveal || ((_mapManager.seen[x, y] | _mapManager.seen[x + 1, y] | _mapManager.seen[x - 1, y]
+                | _mapManager.seen[x, y + 1] | _mapManager.seen[x, y - 1]) & SeenFlags.Floor) != 0;
+            if (!seen)
+                continue;
+
+            string color = graphic && AutomapSpriteColor(actor.CurrentState.GetShapeName(objdirtypes.nodir)) is { } index
+                ? index.ToString()
+                : AutomapColor("AutomapWallSprite");
+
+            const float T = MapConstants.TILEGLOBAL;
+            AutomapLine(view, (float)(span.X1 / T), (float)(span.Y1 / T), (float)(span.X2 / T), (float)(span.Y2 / T), color, pen);
+        }
+    }
+
+    // What an actor is drawn as, in drawing order: later kinds go on top of earlier ones sharing a
+    // tile (a guard's dropped clip covers its corpse, and a live enemy covers anything).
+    enum AutomapMark { None, Corpse, Decor, Item, Enemy }
+
+    /// <summary>
+    /// Actors worth marking: enemies while they're in view (their corpses once seen), pickups and
+    /// solid decorations once their tile is seen. Projectiles, walk-through decorations and markers
+    /// aren't drawn. The reveal cheat shows them all. Each is drawn as its sprite when
+    /// <paramref name="sprites"/> is set (falling back to a dot if it has none), else as a dot.
+    /// </summary>
+    static void DrawAutomapActors(AutomapView view, bool reveal, bool sprites)
+    {
+        // A dot about a third of a tile, but never smaller than 2 virtual pixels
+        int size = Math.Max(view.Pen * 2, (int)(view.TileSize / 3));
+
+        var marks = new List<(AutomapMark Mark, Entities.Actors.Actor Actor)>();
+        foreach (var actor in _mapManager.GetActors())
+        {
+            var mark = GetAutomapMark(actor, reveal);
+            if (mark != AutomapMark.None)
+                marks.Add((mark, actor));
+        }
+
+        foreach (var (mark, actor) in marks.OrderBy(m => m.Mark))
+        {
+            var (sx, sy) = view.ToScreen(actor.X / (float)MapConstants.TILEGLOBAL, actor.Y / (float)MapConstants.TILEGLOBAL);
+
+            if (sprites && DrawAutomapSprite(view, actor, sx, sy))
+                continue;
+
+            string color = AutomapColor(mark switch
+            {
+                AutomapMark.Corpse => "AutomapCorpse",
+                AutomapMark.Decor => "AutomapDecor",
+                AutomapMark.Item => "AutomapItem",
+                _ => "AutomapEnemy",
+            });
+
+            AutomapFill(view, (int)MathF.Round(sx) - size / 2, (int)MathF.Round(sy) - size / 2, size, size, color);
+        }
+    }
+
+    static AutomapMark GetAutomapMark(Entities.Actors.Actor actor, bool reveal)
+    {
+        if (actor is PlayerPawn || actor.IsRemoved || actor.Hidden || actor.CurrentState == null)
+            return AutomapMark.None;
+
+        bool floorSeen = reveal || (_mapManager.seen[actor.TileX, actor.TileY] & SeenFlags.Floor) != 0;
+
+        if (actor.ResolvedStates.ContainsKey("Chase"))
+        {
+            bool dead = (actor.RuntimeFlags & objflags.FL_SHOOTABLE) == 0 && (actor.RuntimeFlags & objflags.FL_NONMARK) != 0;
+            if (dead)
+                return floorSeen ? AutomapMark.Corpse : AutomapMark.None;
+
+            return reveal || (actor.RuntimeFlags & objflags.FL_VISABLE) != 0 ? AutomapMark.Enemy : AutomapMark.None;
+        }
+
+        if (actor.Active == activetypes.ac_yes || actor.CurrentState.Sprite == "TNT1")
+            return AutomapMark.None;                            // projectiles, smoke, patrol points
+
+        if (!floorSeen)
+            return AutomapMark.None;
+
+        if (actor is Inventory)
+            return AutomapMark.Item;
+
+        if (actor.Flags.Any(f => f.Equals("SOLID", StringComparison.OrdinalIgnoreCase)))
+            return AutomapMark.Decor;
+
+        return AutomapMark.None;                                // decorations you can walk through
+    }
+
+    /// <summary>An arrow on the player, pointing the way they face.</summary>
+    static void DrawAutomapPlayer(AutomapView view)
+    {
+        float x = player.X / (float)MapConstants.TILEGLOBAL;
+        float y = player.Y / (float)MapConstants.TILEGLOBAL;
+
+        // Wolf3D angles run counterclockwise from east, and map Y grows southward
+        float radians = player.Angle * MathF.PI / 180f;
+        float dirX = MathF.Cos(radians), dirY = -MathF.Sin(radians);
+
+        // Most of a tile long, but at least 8 virtual pixels when zoomed far out
+        float length = Math.Max(0.9f, 8f * view.Pen / view.TileSize);
+        float half = length / 2;
+        float head = length * 0.45f;
+
+        float tipX = x + dirX * half, tipY = y + dirY * half;
+        float tailX = x - dirX * half, tailY = y - dirY * half;
+
+        // The two barbs run back from the tip at 30 degrees either side of the shaft
+        const float barb = 150f * MathF.PI / 180f;
+        float leftX = tipX + head * (dirX * MathF.Cos(barb) - dirY * MathF.Sin(barb));
+        float leftY = tipY + head * (dirX * MathF.Sin(barb) + dirY * MathF.Cos(barb));
+        float rightX = tipX + head * (dirX * MathF.Cos(-barb) - dirY * MathF.Sin(-barb));
+        float rightY = tipY + head * (dirX * MathF.Sin(-barb) + dirY * MathF.Cos(-barb));
+
+        string color = AutomapColor("AutomapPlayer");
+        AutomapLine(view, tailX, tailY, tipX, tipY, color);
+        AutomapLine(view, tipX, tipY, leftX, leftY, color);
+        AutomapLine(view, tipX, tipY, rightX, rightY, color);
+    }
+
+    /// <summary>The player's tile and compass heading, in the bottom-left corner of the view.</summary>
+    static void DrawAutomapPosition(AutomapView view)
+    {
+        var font = _fontManager.Find(AUTOMAP_FONT);
+        if (font == null)
+            return;
+
+        int heading = ((player.Angle % ANGLES + ANGLES) % ANGLES + ANGLES / 16) / (ANGLES / 8) % 8;
+        string text = AutomapText("$STR_AM_POSITION", player.TileX, player.TileY, AutomapText(AutomapHeadings[heading]));
+        if (!_automapManager.Follow)
+            text += "  " + AutomapText("$STR_AM_PAN");
+
+        // DrawText and Bar work in 320x200 virtual pixels
+        var (left, top, right, bottom) = LayoutExtent(view);
+        int x = left + 3;
+        int y = bottom - font.Height - 2;
+        int room = right - left - 6;
+
+        // The smallest view sizes can't fit it all: fall back to just the tile, then to nothing
+        int width = font.Measure(text);
+        if (width > room)
+        {
+            text = AutomapText("$STR_AM_POSITIONSHORT", player.TileX, player.TileY);
+            width = font.Measure(text);
+            if (width > room || font.Height + 2 > bottom - top)
+                return;
+        }
+
+        // On a backdrop box, so the map under it doesn't make it hard to read
+        _videoManager.Bar(x - 2, y - 1, width + 4, font.Height + 2, AutomapColor("AutomapBackground"));
+        _graphicManager.DrawText(x, y, text, font, AutomapColor("AutomapPlayer"));
+    }
+
+    /// <summary>
+    /// The 320x200 layout pixels wholly inside the view, for text over the map: the first
+    /// column and row in it, and the column and row just past it.
+    /// </summary>
+    static (int Left, int Top, int Right, int Bottom) LayoutExtent(AutomapView view) => (
+        _videoManager.ToLayoutX(view.ClipX, roundUp: true),
+        _videoManager.ToLayoutY(view.ClipY, roundUp: true),
+        _videoManager.ToLayoutX(view.ClipX + view.ClipWidth),
+        _videoManager.ToLayoutY(view.ClipY + view.ClipHeight));
+
+    /// <summary>
+    /// The level's name, then the kills, treasure and secrets found so far out of the level's
+    /// totals and the time on the level, one to a line down the top-left corner of the view.
+    /// Lines that don't fit the view's width or height are left out.
+    /// </summary>
+    static void DrawAutomapStats(AutomapView view)
+    {
+        var font = _fontManager.Find(AUTOMAP_FONT);
+        if (font == null)
+            return;
+
+        (string Text, string Color)[] lines =
+        [
+            (GetMapDisplayName(gamestate.mapon), AutomapColor("AutomapTitle")),
+            (AutomapText("$STR_AM_KILLS", gamestate.killcount, gamestate.killtotal), AutomapColor("AutomapStats")),
+            (AutomapText("$STR_AM_TREASURE", gamestate.treasurecount, gamestate.treasuretotal), AutomapColor("AutomapStats")),
+            (AutomapText("$STR_AM_SECRETS", gamestate.secretcount, gamestate.secrettotal), AutomapColor("AutomapStats")),
+            (AutomapText("$STR_AM_TIME", FormatPlayTime(gamestate.TimeCount)), AutomapColor("AutomapStats")),
+        ];
+
+        // DrawText and Bar work in 320x200 virtual pixels; the bottom rows are the position line's
+        var (left, top, right, viewBottom) = LayoutExtent(view);
+        int x = left + 3;
+        int y = top + 2;
+        int room = right - left - 6;
+        int bottom = viewBottom - font.Height - 4;
+
+        foreach (var (text, color) in lines)
+        {
+            if (y + font.Height + 1 > bottom)
+                break;
+
+            int width = font.Measure(text);
+            if (width <= room)
+            {
+                // On a backdrop box, like the position line
+                _videoManager.Bar(x - 2, y - 1, width + 4, font.Height + 2, AutomapColor("AutomapBackground"));
+                _graphicManager.DrawText(x, y, text, font, color);
+            }
+
+            y += font.Height + 2;
+        }
+    }
+
+    /// <summary>
+    /// A line between two map positions (in tiles), with the pen centered on it. The pen is one
+    /// virtual pixel wide unless <paramref name="pen"/> gives a width in screen pixels.
+    /// </summary>
+    static void AutomapLine(AutomapView view, float x0, float y0, float x1, float y1, string color, int pen = 0)
+    {
+        if (pen <= 0)
+            pen = view.Pen;
+
+        int offset = pen / 2;
+        var (sx0, sy0) = view.ToScreen(x0, y0);
+        var (sx1, sy1) = view.ToScreen(x1, y1);
+        _videoManager.DrawLineScaledCoord(
+            (int)MathF.Round(sx0) - offset, (int)MathF.Round(sy0) - offset,
+            (int)MathF.Round(sx1) - offset, (int)MathF.Round(sy1) - offset,
+            color, pen, view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight);
+    }
+
+    /// <summary>A filled rectangle in screen pixels, trimmed to the view.</summary>
+    static void AutomapFill(AutomapView view, int x, int y, int width, int height, string color)
+    {
+        int left = Math.Max(x, view.ClipX), top = Math.Max(y, view.ClipY);
+        int right = Math.Min(x + width, view.ClipX + view.ClipWidth);
+        int bottom = Math.Min(y + height, view.ClipY + view.ClipHeight);
+
+        if (right > left && bottom > top)
+            _videoManager.BarScaledCoord(left, top, right - left, bottom - top, color);
+    }
+
+    /// <summary>
+    /// Whether a tile is solid wall. Doors count as open floor, and so do the tiles of a moving
+    /// pushwall (drawn separately at its offset); off the map counts as wall.
+    /// </summary>
+    static bool IsAutomapWall(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+            return true;
+
+        int tile = _mapManager.tilemap[x, y];
+        return tile != 0 && (tile & BIT_DOOR) == 0 && tile != BIT_WALL;
+    }
+
+    /// <summary>
+    /// Whether the tile at (x, y) is solid all along its given edge: a wall, and for a diagonal,
+    /// one of its solid edges (across an open edge its neighbor's face can be seen).
+    /// </summary>
+    static bool IsAutomapSolidEdge(int x, int y, SeenFlags edge)
+    {
+        if (!IsAutomapWall(x, y))
+            return false;
+        if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+            return true;
+
+        return (DiagonalSolidEdges(_mapManager.wallshape[x, y]) & edge) != 0;
+    }
+
+    private static void Cmd_AmStyle(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            _automapManager.Style = args[0].ToLowerInvariant() switch
+            {
+                "graphic" or "0" => AutomapStyle.Graphic,
+                "color" or "1" => AutomapStyle.Color,
+                _ => throw new ArgumentException($"expected graphic or color, got \"{args[0]}\""),
+            };
+        }
+
+        _consoleManager.Print($"am_style is {_automapManager.Style.ToString().ToLowerInvariant()}");
+    }
+
+    private static void Cmd_AmOverlay(string[] args)
+    {
+        if (args.Length > 0)
+            _automapManager.Overlay = ParseBool(args[0]);
+
+        _consoleManager.Print($"am_overlay is {(_automapManager.Overlay ? 1 : 0)}");
+    }
+
+    private static void Cmd_AmGrid(string[] args)
+    {
+        if (args.Length > 0)
+            _automapManager.ShowGrid = ParseBool(args[0]);
+
+        _consoleManager.Print($"am_grid is {(_automapManager.ShowGrid ? 1 : 0)}");
+    }
+
+    private static void Cmd_AmStats(string[] args)
+    {
+        if (args.Length > 0)
+            _automapManager.ShowStats = ParseBool(args[0]);
+
+        _consoleManager.Print($"am_stats is {(_automapManager.ShowStats ? 1 : 0)}");
+    }
+
+    private static void Cmd_AmReveal(string[] args)
+    {
+        mapreveal = (byte)(Toggle(args, mapreveal != 0) ? 1 : 0);
+        _consoleManager.Print(mapreveal != 0 ? "Automap reveal ON" : "Automap reveal OFF");
+    }
+}
