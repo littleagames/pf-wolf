@@ -167,6 +167,13 @@ internal partial class Program
                 case "name":
                     EditName();
                     break;
+                case "portcheck":
+                    CheckPort();
+                    break;
+                case "openport":
+                    MpConfig.OpenPort = !MpConfig.OpenPort;
+                    MpConfig.Write(MpConfigPath);
+                    break;
             }
 
             if (StartGame != 0)
@@ -188,8 +195,94 @@ internal partial class Program
         DrawMenuComponents("multiplayer");
         DrawMenu(MultiplayerItems, MultiplayerMenu);
         DrawMenuChoice(MultiplayerItems, MultiplayerMenu, "name", FitText(MpConfig.Name, MenuChoiceWidth, MENU_FONT));
+        DrawMenuChoice(MultiplayerItems, MultiplayerMenu, "openport",
+            (MpConfig.OpenPort ? "$STR_MP_ON" : "$STR_MP_OFF").ToLanguageText(_assetManager.GetText("en-us")));
         DrawMenuGun(MultiplayerItems);
         _videoManager.Update();
+    }
+
+    /// <summary>The Multiplayer menu's "Check Internet Port": can players on the internet reach a game hosted here?</summary>
+    static void CheckPort()
+    {
+        var language = _assetManager.GetText("en-us");
+        DrawMenuComponents("multiplayer");
+        Message("$STR_MP_CHECKING".ToLanguageText(language).Replace("{PORT}", hostPort.ToString()));
+        MenuFadeIn();
+
+        // Checking takes a few seconds (several servers, at worst): keep the window alive, Esc gives up
+        using var cancel = new CancellationTokenSource();
+        var check = Task.Run(() => CheckPortAsync(hostPort, cancel.Token));
+        _inputManager.ClearKeysDown();
+        while (!check.IsCompleted)
+        {
+            _inputManager.ProcessEvents();
+            if (_inputManager.IsKeyDown(ScanCodes.sc_Escape))
+            {
+                cancel.Cancel();
+                _inputManager.ClearKeysDown();
+                MenuFadeOut();
+                return;
+            }
+            GameEngineManager.DelayMs(10);
+        }
+
+        MenuFadeOut();
+        var (result, mapping) = check.Result;
+        ShowNetMessage(WrapForMessage(DescribePortCheck(result, mapping, hostPort)));
+    }
+
+    /// <summary>
+    /// The check as hosting would find it: the router asked to open the port first (when that's
+    /// on), then the port checked, then the router's forward taken down again
+    /// </summary>
+    static async Task<(PortCheck.Result Result, PortMapper.Result? Mapping)> CheckPortAsync(int port, CancellationToken cancel)
+    {
+        try
+        {
+            var mapping = MpConfig.OpenPort ? await PortMapper.OpenAsync(port).ConfigureAwait(false) : null;
+            var result = await PortCheck.RunAsync(port, cancel).ConfigureAwait(false);
+            return (result, mapping);
+        }
+        finally
+        {
+            PortMapper.Close();
+        }
+    }
+
+    /// <summary>`net_portcheck [port]`: can players on the internet reach a game hosted here?</summary>
+    static void Cmd_NetPortCheck(string[] args)
+    {
+        int port = args.Length > 1 && int.TryParse(args[1], out var p) && p is > 0 and < 65536 ? p : hostPort;
+        _consoleManager.Print($"Checking UDP port {port} from the internet...");
+        var (result, mapping) = CheckPortAsync(port, CancellationToken.None).GetAwaiter().GetResult();
+        if (mapping != null)
+            _consoleManager.Print(DescribePortMapping(mapping));
+        _consoleManager.Print(DescribePortCheck(result, mapping, port));
+        if (result.Server != null)
+            _consoleManager.Print($"  (checked with {result.Server}; the router sent us out on port {result.MappedPort})");
+    }
+
+    static string DescribePortCheck(PortCheck.Result result, PortMapper.Result? mapping, int port)
+    {
+        var here = LocalAddress() ?? "this computer";
+        bool opened = mapping?.Outcome == PortMapper.Outcome.Opened;
+        return result.Outcome switch
+        {
+            PortCheck.Outcome.Open =>
+                $"Port {port} is open{(opened ? $" (your router opened it: {mapping!.Detail})" : "")}. "
+                + $"Players on the internet can join at {WithPort(result.PublicAddress!.ToString(), port)}",
+            PortCheck.Outcome.Closed when opened =>
+                $"Your router opened port {port} ({mapping!.Detail}), but nothing from the internet got in. "
+                + "Let PFWolf through Windows Firewall.",
+            PortCheck.Outcome.Closed =>
+                $"Port {port} is closed. "
+                + (mapping == null ? "" : "Your router didn't open it (UPnP off?). ")
+                + $"Forward UDP {port} to {here}, and let PFWolf through Windows Firewall.",
+            PortCheck.Outcome.InUse =>
+                $"Port {port} is in use here. Is a game already being hosted?",
+            _ =>
+                "Couldn't check: no checking server answered. Is this computer online?",
+        };
     }
 
     static void EditName()
@@ -272,10 +365,51 @@ internal partial class Program
             return;
         }
 
-        session.Note($"LAN: others join at {WithPort(LocalAddress(), session.Port)}");
+        hostLan = WithPort(LocalAddress(), session.Port);
+        hostPublic = null;
+        hostRouter = null;
+        hostNote = null;
         publicAddressLookup = LookUpPublicAddress();
+        portMapping = MpConfig.OpenPort ? PortMapper.OpenAsync(session.Port) : null;
+        if (portMapping == null)
+            hostRouter = new PortMapper.Result(PortMapper.Outcome.NoRouter, session.Port, "off in the Multiplayer menu");
+        _consoleManager.Print($"LAN: others join at {hostLan}");
+        if (hostRouter != null)
+            _consoleManager.Print(DescribePortMapping(hostRouter));
+        UpdateHostNote(session);
         Lobby(session);
     }
+
+    // Asking the router to open the port, while the lobby is up
+    static Task<PortMapper.Result>? portMapping;
+
+    // Where others join a game hosted here, as found so far: the lobby has room for one line of
+    // notes, so it's one line, filled in as the answers come back (the details go to the console)
+    static string hostLan = "";
+    static string? hostPublic, hostNote;
+    static PortMapper.Result? hostRouter;
+
+    static void UpdateHostNote(NetSession session)
+    {
+        var line = $"LAN {hostLan}";
+        if (hostPublic != null)
+            line += $", net {hostPublic}";
+        if (hostRouter != null)
+            line += !MpConfig.OpenPort ? " (UPnP off)"
+                : hostRouter.Outcome == PortMapper.Outcome.Opened ? " (UPnP ok)"
+                : " (no UPnP)";
+        session.ReplaceNote(hostNote, line);
+        hostNote = line;
+    }
+
+    /// <summary>The console's line on what the router said about opening the port</summary>
+    static string DescribePortMapping(PortMapper.Result result) => result.Outcome switch
+    {
+        PortMapper.Outcome.Opened => $"Router: opened UDP {result.Port} for this game ({result.Detail})",
+        PortMapper.Outcome.NoRouter => $"Router: not opened ({result.Detail ?? "no UPnP or NAT-PMP answered"}); "
+            + $"forward UDP {result.Port} to {LocalAddress() ?? "this computer"} by hand",
+        _ => $"Router: wouldn't open UDP {result.Port} ({result.Detail}); forward it by hand",
+    };
 
     static string WithPort(string? address, int port) =>
         address == null ? $"port {port}" : port == NetProtocol.DefaultPort ? address : $"{address}:{port}";
@@ -591,7 +725,20 @@ internal partial class Program
             {
                 publicAddressLookup = null;
                 if (lookup.Result is { } address)
-                    session.Note($"Internet: {WithPort(address, session.Port)} (forward UDP {session.Port} on your router)");
+                {
+                    hostPublic = WithPort(address, session.Port);
+                    _consoleManager.Print($"Internet: others join at {hostPublic}");
+                    UpdateHostNote(session);
+                }
+            }
+
+            // The router has answered (or not) about opening the port
+            if (portMapping is { IsCompleted: true } mapped)
+            {
+                portMapping = null;
+                hostRouter = mapped.Result;
+                _consoleManager.Print(DescribePortMapping(hostRouter));
+                UpdateHostNote(session);
             }
 
             int seen = session.Changes;
@@ -607,7 +754,8 @@ internal partial class Program
                 idle: () =>
                 {
                     session.Poll();
-                    return session.Changes != seen || publicAddressLookup is { IsCompleted: true };
+                    return session.Changes != seen || publicAddressLookup is { IsCompleted: true }
+                        || portMapping is { IsCompleted: true };
                 });
 
             if (which == -2)

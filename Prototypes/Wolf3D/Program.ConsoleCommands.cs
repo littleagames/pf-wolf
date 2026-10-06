@@ -97,6 +97,7 @@ internal partial class Program
         Register("msg_clear", "Takes away the messages shown over the view.", "msg_clear", _ => _hudMessageManager.Clear());
         Register("msg_styles", "Lists the message styles and where each puts its messages.", "msg_styles", Cmd_MsgStyles);
         Register("net_find", "Looks for games hosted on the local network (two seconds) and lists them.", "net_find", Cmd_NetFind);
+        Register("net_portcheck", "Checks whether players on the internet can reach a game hosted here (the UDP port, default 10645): needs the port free, so not while hosting.", "net_portcheck [port]", Cmd_NetPortCheck);
         Register("net_status", "Shows the game with others: the level and frame, the players, and (hosting) how many checks found every machine agreeing.", "net_status", Cmd_NetStatus);
         Register("scoreboard", "Shows or hides the scoreboard over the view, playing with others (bind it to a key).", "scoreboard [0|1]", Cmd_Scoreboard, complete: Values("0", "1"));
 

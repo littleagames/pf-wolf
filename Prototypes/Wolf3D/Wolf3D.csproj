@@ -9,9 +9,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Platforms>AnyCPU;x64</Platforms>
 	<PublishSelfContained>true</PublishSelfContained>
-	<FileVersion>0.3.1.0</FileVersion>
-	<AssemblyVersion>0.3.1.0</AssemblyVersion>
-	<Version>0.3.1</Version>
+	<FileVersion>0.3.2.0</FileVersion>
+	<AssemblyVersion>0.3.2.0</AssemblyVersion>
+	<Version>0.3.2</Version>
 	<Authors>Andrew McCauley</Authors>
 	<Company>Little A Games</Company>
 	<Copyright>Copyright (c) 2026 Little A Games</Copyright>
@@ -20,6 +20,7 @@
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="LiteNetLib" Version="2.1.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
+    <PackageReference Include="Mono.Nat" Version="3.0.4" />
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>

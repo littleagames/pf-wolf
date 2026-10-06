@@ -15,6 +15,9 @@ internal sealed class MultiplayerConfig
     /// <summary>The address last typed in to join, with its port if it isn't the default</summary>
     public string LastAddress { get; set; } = "";
 
+    /// <summary>Whether hosting asks the router (UPnP or NAT-PMP) to open the game's port for players on the internet</summary>
+    public bool OpenPort { get; set; } = true;
+
     private readonly List<string> _otherLines = [];
 
     public static MultiplayerConfig Read(string path)
@@ -38,6 +41,7 @@ internal sealed class MultiplayerConfig
                 {
                     case "name": config.Name = value; break;
                     case "last-address": config.LastAddress = value; break;
+                    case "open-port": config.OpenPort = value is not ("false" or "0" or "off"); break;
                     default: config._otherLines.Add(line); break;
                 }
             }
@@ -56,9 +60,10 @@ internal sealed class MultiplayerConfig
         {
             File.WriteAllLines(path,
             [
-                "# Playing with others: your name, and the address you last joined",
+                "# Playing with others: your name, the address you last joined, and whether hosting opens the router's port",
                 $"name {Name}",
                 $"last-address {LastAddress}",
+                $"open-port {(OpenPort ? "true" : "false")}",
                 .. _otherLines,
             ]);
             return true;

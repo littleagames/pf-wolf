@@ -29,7 +29,7 @@ components:
       - x: 16
       - y: 67
       - width: 288
-      - height: 45
+      - height: 71
 # Handled by Program.Multiplayer.cs, by id; your name is drawn by code
 menu-items:
   -
@@ -49,4 +49,17 @@ menu-items:
       type: "ChoiceMenuItem"
       text: "$STR_MP_NAME"
       short-key: Y
+      enabled: true
+  # Whether hosting asks the router (UPnP / NAT-PMP) to open the port; drawn by code
+  -
+      id: "openport"
+      type: "ChoiceMenuItem"
+      text: "$STR_MP_OPENPORT"
+      short-key: O
+      enabled: true
+  -
+      id: "portcheck"
+      type: "MenuSwitcher"
+      text: "$STR_MP_PORTCHECK"
+      short-key: C
       enabled: true

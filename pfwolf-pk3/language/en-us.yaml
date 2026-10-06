@@ -38,6 +38,11 @@ $MENU_MULTIPLAYER: "Multiplayer"
 $STR_MP_HOST: "Host a Game"
 $STR_MP_JOIN: "Join a Game"
 $STR_MP_NAME: "Your Name"
+$STR_MP_PORTCHECK: "Check Internet Port"
+# Whether hosting asks the router to open the port (UPnP)
+$STR_MP_OPENPORT: "Open Port"
+# {PORT} is replaced with the port being checked
+$STR_MP_CHECKING: "Checking whether the\ninternet can reach\nport {PORT}...\n\n(Esc to stop)"
 $STR_MP_LOBBY: "Multiplayer Game"
 $STR_MP_MODE: "Game"
 $STR_MP_COOP: "Co-op"

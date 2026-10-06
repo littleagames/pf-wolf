@@ -155,6 +155,8 @@ internal sealed class NetSession : IDisposable
     public void Dispose()
     {
         _net.Stop();
+        if (IsHost)
+            PortMapper.Close();     // the router's forward goes with the game
         if (Current == this)
             Current = null;
     }
@@ -564,7 +566,9 @@ internal sealed class NetSession : IDisposable
         Error = info.Reason switch
         {
             DisconnectReason.ConnectionRejected => NetRefusal.Read(info.AdditionalData) ?? "The host turned you away.",
-            DisconnectReason.ConnectionFailed => "Couldn't reach the host.",
+            DisconnectReason.ConnectionFailed =>
+                $"No answer from {peer.Address}:{peer.Port}.Is the host's firewall letting PFWolf in? "
+                + "On the same network, use the host's LAN address; its internet one needs port forwarding.",
             DisconnectReason.Timeout => "Lost the connection to the host.",
             DisconnectReason.RemoteConnectionClose => "The host left the game.",
             _ => $"Disconnected ({info.Reason}).",
@@ -754,6 +758,19 @@ internal sealed class NetSession : IDisposable
     private string NameOf(int slot) => Players.FirstOrDefault(p => p.Slot == slot)?.Name ?? $"Player {slot + 1}";
 
     /// <summary>Adds a line to the chat (comings and goings, and the like)</summary>
+    /// <summary>Changes a line noted before (or notes it, if it has gone): for a line that fills in as answers come back</summary>
+    internal void ReplaceNote(string? old, string line)
+    {
+        int at = old == null ? -1 : Chat.LastIndexOf(old);
+        if (at < 0)
+        {
+            Note(line);
+            return;
+        }
+        Chat[at] = line;
+        Changed();
+    }
+
     internal void Note(string line)
     {
         const int Kept = 20;
