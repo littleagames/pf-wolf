@@ -61,3 +61,30 @@ The exit room has the usual elevator switch, now just a switch whose action is `
 In game, the `tag` console command (with cheats on) shows or sets a tile's tag, and
 `actors` lists each actor's tag. `zone` shows or sets a tile's light zone, `zonelight`
 lists the zones and how each is lit, and `lights` lists the actors giving off light.
+
+## Moody Lights (`mods/moody-lights`)
+
+Darkens every level (Wolfenstein 3D only) and lets the light decorations light the rooms
+around them, each in its own color. It's all data: no maps, no pictures, two YAML files.
+
+```
+PFWolf.exe --file moody-lights
+```
+
+- `game-info.yaml`: `default-map` shading for every level: the light drops to 64 (of 255)
+  and fades to black from 3 tiles out to 18. A map can still set its own shading.
+- `actordefs/moody-lights.yaml`: `light.*` properties added to the base game's lights.
+  Mod YAML merges into the base actors key by key, so naming an actor and its `properties`
+  is enough; sprites and states stay as they were. Inherited lights come along too
+  (`CeilingLight2`, `Chandelier2`, `TallFloorLamp`, the switch demo's `SwitchLight`).
+
+  | Actor | Light |
+  | --- | --- |
+  | `CeilingLight` | warm white, steady |
+  | `Chandelier` | amber, flickering gently like candles |
+  | `FloorLamp` | soft yellow |
+  | `RedCeilingLight` | red, pulsing slowly like a warning light |
+  | `BareLightBulb` | pale, stuttering now and then; its sprite is also made `bright` |
+
+Your weapon's muzzle flashes light the dark too. To try other values without restarting,
+use `light 0-255` and `fog` in the console (cheats on), and `lights` to list each light.

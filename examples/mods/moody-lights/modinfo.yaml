@@ -1,0 +1,4 @@
+name: Moody Lights
+version: "1.0"
+description: Darker levels lit by the lamps, chandeliers and bulbs themselves, each with its own color and glow.
+game-packs: [wolf3d]

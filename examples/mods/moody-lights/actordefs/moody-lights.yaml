@@ -1,0 +1,56 @@
+# Every light decoration gives off colored light (light.* properties, described in
+# pfwolf-pk3's actordefs/wolf3d/decorations.yaml). Mod YAML merges into the base actors key by
+# key, so these only add properties; the sprites and states stay as they were (except
+# BareLightBulb's, whose sprite is now drawn at full light).
+# Light only shows where the level is darker than full light: game-info.yaml dims it.
+
+# Ceiling lamps: a steady pool of warm white light (CeilingLight2 inherits it). A green tint
+# to match the shades comes out olive on the grey floors: the palette has no pale greens.
+CeilingLight:
+  properties:
+    "light.intensity": 150
+    "light.radius": 3
+    "light.color": "#FFF0D0"
+
+# Candle chandeliers: amber, gently flickering (Chandelier2 and SwitchLight inherit it)
+Chandelier:
+  properties:
+    "light.intensity": 180
+    "light.radius": 3.5
+    "light.color": "#FFC070"
+    "light.effect": flicker
+    "light.low": 150
+    "light.tics": 10
+
+# Floor lamps: a soft yellow pool around the shade (TallFloorLamp inherits it)
+FloorLamp:
+  properties:
+    "light.intensity": 160
+    "light.radius": 2.5
+    "light.color": "#FFD8A0"
+
+# Red ceiling lamps: a slow red pulse, like a warning light
+RedCeilingLight:
+  properties:
+    "light.intensity": 170
+    "light.radius": 3
+    "light.color": "#FF3020"
+    "light.effect": pulse
+    "light.low": 80
+    "light.tics": 140
+
+# Bare bulbs: a pale, failing light that stutters now and then
+BareLightBulb:
+  properties:
+    "light.intensity": 140
+    "light.radius": 2.5
+    "light.color": "#FFF4D0"
+    "light.effect": flicker
+    "light.low": 50
+    "light.tics": 40
+  states:
+    Spawn:
+      - sprite: BULB
+        frames: [A]
+        modifiers: [bright]
+        tics-per-frame: -1
