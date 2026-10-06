@@ -21,6 +21,13 @@ internal class InventoryManager
         _assetManager = assetManager;
     }
 
+    /// <summary>Items ruled by these actordefs rather than the asset manager's (for tests)</summary>
+    internal InventoryManager(ActorMetadata metadata)
+        : this(new Lazy<AssetManager>(() => throw new InvalidOperationException("This inventory has no asset manager")))
+    {
+        _metadata = metadata;
+    }
+
     // AssetManager.GetActorMetadata builds a fresh ActorMetadata every call, so cache it.
     private ActorMetadata Metadata => _metadata ??= _assetManager.Value.GetActorMetadata();
 
