@@ -2260,13 +2260,13 @@ internal partial class Program
 
         // The frame the weapon's states are on (Program.PlayerWeapon.cs), in the light of the
         // player's tile but not faded: it's at arm's length. Scaled by game-info weapon-scale, it
-        // still stands on the view's bottom edge
+        // still stands on the view's bottom edge (less any weapon-bob)
         if (WeaponShapeName() is { } shape)
         {
             int height = (int)((viewheight + 1) * weaponScale);
             SimpleScaleShape(viewwidth / 2, shape, height,
                 weaponSprite != null && IsBright(weaponSprite) ? noshade : LightAt(TileIndex(player.TileX, player.TileY), player.X, player.Y),
-                ((viewheight + 1) >> 1) - (height >> 1));
+                ((viewheight + 1) >> 1) - (height >> 1) + WeaponBobDrop());
         }
 
         if (demorecord || demoplayback)

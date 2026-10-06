@@ -109,16 +109,47 @@ internal partial class Program
     /// <summary>An empty weapon slot's key uses an item held for that slot (`inventory.useslot`, `inventory.use`)</summary>
     static void UseSlotItem(int slot)
     {
-        foreach (var (item, count) in _inventoryManager.Items.ToList())
+        if (HeldUsableItem(item => _inventoryManager.GetIntProperty(item, "inventory.useslot", -1) == slot) is { } action)
+            UseItemAction(action);
+    }
+
+    // How long use has been held with nothing to use or talk to
+    static int useHeldTics;
+
+    /// <summary>
+    /// Use held with nothing ahead to use or talk to: every `inventory.useholdtics` tics of it,
+    /// an item held with that property is used (bstone drops the fission detonator this way,
+    /// every 60 tics)
+    /// </summary>
+    static void UseHeldItem()
+    {
+        int hold = 0;
+        if (HeldUsableItem(item => (hold = _inventoryManager.GetIntProperty(item, "inventory.useholdtics", 0)) > 0) is not { } action)
         {
-            if (count <= 0 || _inventoryManager.GetIntProperty(item, "inventory.useslot", -1) != slot
-                || _inventoryManager.GetStringProperty(item, "inventory.use") is not { Length: > 0 } action)
-                continue;
-            Entities.MapTriggerRegistry.Invoke(action,
-                new Entities.TriggerActivation(player.TileX, player.TileY, FacingDir(player.Angle), player, 0));
+            useHeldTics = 0;
             return;
         }
+        useHeldTics += (int)tics;
+        if (useHeldTics < hold)
+            return;
+        useHeldTics = 0;
+        UseItemAction(action);
     }
+
+    static void ResetUseHeld() => useHeldTics = 0;
+
+    /// <summary>The `inventory.use` action of the first item held that matches</summary>
+    static string? HeldUsableItem(Func<string, bool> match)
+    {
+        foreach (var (item, count) in _inventoryManager.Items.ToList())
+            if (count > 0 && match(item) && _inventoryManager.GetStringProperty(item, "inventory.use") is { Length: > 0 } action)
+                return action;
+        return null;
+    }
+
+    static void UseItemAction(string action) =>
+        Entities.MapTriggerRegistry.Invoke(action,
+            new Entities.TriggerActivation(player.TileX, player.TileY, FacingDir(player.Angle), player, 0));
 
     /*
     =============================================================================

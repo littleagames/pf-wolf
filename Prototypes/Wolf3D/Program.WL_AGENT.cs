@@ -1497,6 +1497,7 @@ internal partial class Program
             //
             // mapdefs use trigger (a pushable wall)
             //
+            ResetUseHeld();
             ActivateTrigger(trigger, checkx, checky, dir);
             return;
         }
@@ -1518,9 +1519,15 @@ internal partial class Program
         }
         else
         {
-            // Nothing ahead to use: talk to whoever's there (BlakeMonster.TalkTo)
-            _mapManager.AI.TryTalk();
+            // Nothing ahead to use: talk to whoever's there (BlakeMonster.TalkTo), else held
+            // long enough, use an item that's used that way (Planet Strike's fission detonator)
+            if (_mapManager.AI.TryTalk())
+                ResetUseHeld();
+            else
+                UseHeldItem();
+            return;
         }
+        ResetUseHeld();
     }
 
     //===========================================================================
@@ -1558,7 +1565,10 @@ internal partial class Program
             if (playerinput.IsPressed(buttontypes.bt_use))
                 Cmd_Use();
             else
+            {
                 _mapManager.AI.ResetTalkDelay();
+                ResetUseHeld();
+            }
         }
         else
         {
@@ -1572,6 +1582,7 @@ internal partial class Program
         }
 
         ControlMovement(ob);
+        UpdateWeaponBob();
         if (gamestate.victoryflag)              // watching the BJ actor
             return;
 

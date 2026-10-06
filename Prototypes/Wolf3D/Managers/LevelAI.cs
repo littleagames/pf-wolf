@@ -268,13 +268,13 @@ internal sealed class LevelAI
     // How long until the use key held down talks again
     private int _talkDelay;
 
-    /// <summary>The use key held with nothing to use ahead: talk to whoever's there</summary>
-    internal void TryTalk()
+    /// <summary>The use key held with nothing to use ahead: talk to whoever's there. False if no one was talked to.</summary>
+    internal bool TryTalk()
     {
         if (_talkDelay > 0)
         {
             _talkDelay = Math.Max(_talkDelay - (int)tics, 0);
-            return;
+            return false;
         }
 
         const int MaxAngle = 45 / 2;
@@ -309,8 +309,10 @@ internal sealed class LevelAI
             chosenDist = dist;
         }
 
-        if (chosen != null)
-            _talkDelay = chosen.TalkTo() ? 20 : 120;      // an informant can be asked again sooner
+        if (chosen == null)
+            return false;
+        _talkDelay = chosen.TalkTo() ? 20 : 120;      // an informant can be asked again sooner
+        return true;
     }
 
     /// <summary>Use let go: the next press talks straight away</summary>

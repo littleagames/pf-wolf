@@ -127,6 +127,12 @@ internal record GameInfoAsset : Asset
     public double? WeaponScale { get; init; }
 
     /// <summary>
+    /// Whether the weapon in hand bobs as the player walks forwards or back, as Planet Strike's
+    /// (default false)
+    /// </summary>
+    public bool? WeaponBob { get; init; }
+
+    /// <summary>
     /// How long the death fade's color stays up before the level restarts or the game ends,
     /// in tics, unless a key is pressed (default 100)
     /// </summary>

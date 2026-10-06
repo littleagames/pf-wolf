@@ -13,6 +13,8 @@ default-map:
 # Planet Strike's weapon sprites fill more of their 64x64 than Aliens of Gold's, so bstone draws
 # them 88 high where AOG's are 128 (the 3D view's height)
 weapon-scale: 0.6875
+# ...and bob it while Blake walks forwards or back (Aliens of Gold's doesn't)
+weapon-bob: true
 
 signon:
   press-a-key: false

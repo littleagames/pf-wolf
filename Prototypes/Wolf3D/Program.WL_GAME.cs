@@ -729,6 +729,7 @@ internal partial class Program
             p.EyeZ = EYEDEFAULT;            // from standing height
         }
         camera.FollowPlayer();              // through the player's eyes
+        InitWeaponBob();
 
         if (!loadedgame)
         {

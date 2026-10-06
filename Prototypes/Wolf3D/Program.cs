@@ -346,6 +346,7 @@ internal partial class Program
         deathDropHeight = gameInfo.DeathDropHeight is { } drop ? Math.Clamp(drop, MINEYE, MAXEYE) : null;
         deathDropSpeed = Math.Max(gameInfo.DeathDropSpeed ?? 1, 1);     // 0 would never finish dropping
         weaponScale = Math.Clamp(gameInfo.WeaponScale ?? 1, 0.1, 2);
+        weaponBob = gameInfo.WeaponBob ?? false;
         levelFadeStyle = ParseFadeStyle(gameInfo.LevelFadeStyle, "level-fade-style", FadeStyle.Fizzle);
         levelFadeTics = ParseFadeTics(gameInfo.LevelFadeTics, "level-fade-tics") ?? 20;
     }
