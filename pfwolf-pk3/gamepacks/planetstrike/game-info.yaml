@@ -10,6 +10,10 @@ default-map:
     max-fade: 80
     fade-curve: inverse
 
+# Planet Strike's weapon sprites fill more of their 64x64 than Aliens of Gold's, so bstone draws
+# them 88 high where AOG's are 128 (the 3D view's height)
+weapon-scale: 0.6875
+
 signon:
   press-a-key: false
 

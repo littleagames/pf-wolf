@@ -161,11 +161,11 @@ internal partial class Program
     = NO CLIPPING, height in pixels
     =
     = Draws a sprite's indexed bitmap at [height] pixels high, through shade
-    = (unshaded when left out)
+    = (unshaded when left out), [dropy] pixels below the view's centre
     =
     ===================
     */
-    internal static void SimpleScaleShape (int dispx, string shapenum, int dispheight, byte[]? shade = null)
+    internal static void SimpleScaleShape (int dispx, string shapenum, int dispheight, byte[]? shade = null, int dropy = 0)
     {
         shade ??= noshade;
         int height, toppix;
@@ -182,7 +182,7 @@ internal partial class Program
         frac = 0;
 
         xcenter = dispx - height;
-        toppix = basecentery - height;      // the weapon in hand doesn't move with the view's pitch
+        toppix = basecentery - height + dropy;      // the weapon in hand doesn't move with the view's pitch
 
         x2 = xcenter;
 

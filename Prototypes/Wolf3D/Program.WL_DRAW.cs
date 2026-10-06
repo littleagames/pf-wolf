@@ -2259,10 +2259,15 @@ internal partial class Program
             return;
 
         // The frame the weapon's states are on (Program.PlayerWeapon.cs), in the light of the
-        // player's tile but not faded: it's at arm's length
+        // player's tile but not faded: it's at arm's length. Scaled by game-info weapon-scale, it
+        // still stands on the view's bottom edge
         if (WeaponShapeName() is { } shape)
-            SimpleScaleShape(viewwidth / 2, shape, viewheight + 1,
-                weaponSprite != null && IsBright(weaponSprite) ? noshade : LightAt(TileIndex(player.TileX, player.TileY), player.X, player.Y));
+        {
+            int height = (int)((viewheight + 1) * weaponScale);
+            SimpleScaleShape(viewwidth / 2, shape, height,
+                weaponSprite != null && IsBright(weaponSprite) ? noshade : LightAt(TileIndex(player.TileX, player.TileY), player.X, player.Y),
+                ((viewheight + 1) >> 1) - (height >> 1));
+        }
 
         if (demorecord || demoplayback)
             SimpleScaleShape(viewwidth / 2, "DEMOA0", viewheight + 1);

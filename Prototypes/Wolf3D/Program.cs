@@ -328,6 +328,7 @@ internal partial class Program
     // The dead view's drop toward the floor: the eye height it ends at (null: no drop) and texels a tic
     internal static int? deathDropHeight;
     internal static int deathDropSpeed = 1;
+    internal static double weaponScale = 1;     // game-info weapon-scale
 
     private static void ReadFadeStyles()
     {
@@ -344,6 +345,7 @@ internal partial class Program
         deathHoldTics = Math.Max(gameInfo.DeathHoldTics ?? 100, 0);
         deathDropHeight = gameInfo.DeathDropHeight is { } drop ? Math.Clamp(drop, MINEYE, MAXEYE) : null;
         deathDropSpeed = Math.Max(gameInfo.DeathDropSpeed ?? 1, 1);     // 0 would never finish dropping
+        weaponScale = Math.Clamp(gameInfo.WeaponScale ?? 1, 0.1, 2);
         levelFadeStyle = ParseFadeStyle(gameInfo.LevelFadeStyle, "level-fade-style", FadeStyle.Fizzle);
         levelFadeTics = ParseFadeTics(gameInfo.LevelFadeTics, "level-fade-tics") ?? 20;
     }

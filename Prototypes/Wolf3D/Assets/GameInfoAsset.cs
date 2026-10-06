@@ -121,6 +121,12 @@ internal record GameInfoAsset : Asset
     public int? DeathDropSpeed { get; init; }
 
     /// <summary>
+    /// The weapon in hand's height as a share of the view's, standing on the view's bottom edge
+    /// (default 1, as Wolf3D; Planet Strike's are drawn at 88 of Aliens of Gold's 128)
+    /// </summary>
+    public double? WeaponScale { get; init; }
+
+    /// <summary>
     /// How long the death fade's color stays up before the level restarts or the game ends,
     /// in tics, unless a key is pressed (default 100)
     /// </summary>
