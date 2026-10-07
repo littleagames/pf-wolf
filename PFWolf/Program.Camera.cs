@@ -179,6 +179,11 @@ internal partial class Program
     = and Death once dead, each where the class has it. Only for show: nothing the game does
     = depends on it.
     =
+    = The weapon in hand can change how they look: its weapon.bodysprite (weapons.yaml) is drawn
+    = in place of the body's Spawn sprite wherever a frame uses it (PLKN for PLAY with the knife),
+    = so one set of states serves every weapon. Frames using any other sprite (deaths) are kept,
+    = as is any frame the weapon's sprite doesn't have.
+    =
     ====================
     */
 
@@ -239,6 +244,34 @@ internal partial class Program
 
     /// <summary>Whether an actor is one of the players' bodies (they turn by their Angle, like a projectile)</summary>
     static bool IsPlayerBody(Entities.Actors.Actor actor) => players.Any(p => ReferenceEquals(p.Body, actor));
+
+    /// <summary>
+    /// The sprite to draw for an actor's frame: its own, except a player's body, which shows their
+    /// weapon's weapon.bodysprite in place of its Spawn sprite (when that sprite has the frame)
+    /// </summary>
+    internal static string DrawnSprite(Entities.Actors.Actor actor)
+    {
+        var state = actor.CurrentState!;
+        if (players.FirstOrDefault(p => ReferenceEquals(p.Body, actor)) is not { weapon: { } weapon }
+            || !actor.ResolvedStates.TryGetValue("Spawn", out var spawn)
+            || !string.Equals(state.Sprite, spawn.Sprite, StringComparison.OrdinalIgnoreCase)
+            || _inventoryManager.GetStringProperty(weapon, "weapon.bodysprite") is not { Length: > 0 } swap)
+            return state.Sprite;
+
+        return HasDirectionalSprites(swap, state.FrameLetter) || HasFrontSprite(swap, state.FrameLetter)
+            ? swap : state.Sprite;
+    }
+
+    static readonly Dictionary<string, bool> _frontSpriteCache = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Whether a sprite has a front-only (rotation 0) picture for a frame</summary>
+    static bool HasFrontSprite(string sprite, string frameLetter)
+    {
+        var name = $"{sprite}{frameLetter}0";
+        if (!_frontSpriteCache.TryGetValue(name, out var exists))
+            _frontSpriteCache[name] = exists = _assetManager.Exists<Assets.SpriteAsset>(name);
+        return exists;
+    }
 
     static bool InStateGroup(Entities.Actors.Actor actor, string group) =>
         actor.CurrentState?.StateName?.Equals(group, StringComparison.OrdinalIgnoreCase) == true;

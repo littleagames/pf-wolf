@@ -16,6 +16,10 @@ Player:
   # See walking, Missile while their weapon fires, Pain (or Pain1, by whether their health is
   # odd or even) when hurt, Death once dead. A to E turn with the player (8 views); F to O are
   # seen from the front only. Don't give it a Chase state: that makes an actor an enemy.
+  # The weapon in hand's weapon.bodysprite (weapons.yaml) is drawn in place of the Spawn
+  # sprite, PLAY, wherever a frame uses it: PLKN with the knife, PLPS the pistol, PLMP the
+  # machine gun, PLCG the gatling gun. PLAY is what shows when a weapon doesn't name one (or its
+  # sprite lacks the frame); give a state another sprite to keep it the same whatever's held.
   states:
     Spawn:
       - sprite: PLAY

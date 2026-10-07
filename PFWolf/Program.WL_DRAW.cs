@@ -2146,10 +2146,11 @@ internal partial class Program
 
                 actor.RuntimeFlags |= objflags.FL_VISABLE;
 
-                var rotationDigit = HasDirectionalSprites(actor.CurrentState.Sprite, actor.CurrentState.FrameLetter)
+                var sprite = DrawnSprite(actor);                        // a player's body shows their weapon
+                var rotationDigit = HasDirectionalSprites(sprite, actor.CurrentState.FrameLetter)
                     ? CalcRotate(actor)
                     : 0;
-                visptr_val.shapenum = $"{actor.CurrentState.Sprite}{actor.CurrentState.FrameLetter}{rotationDigit}";
+                visptr_val.shapenum = $"{sprite}{actor.CurrentState.FrameLetter}{rotationDigit}";
                 visptr_val.viewx = actor.ViewX;
                 visptr_val.viewheight = (short)actor.ViewHeight;
 
