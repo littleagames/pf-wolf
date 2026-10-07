@@ -11,3 +11,17 @@ player-starts:
     angles: 270
   22:
     angles: 180
+  # Deathmatch starts: where players come into a deathmatch (and come back after dying), a
+  # free one at random. Single-player levels don't use them.
+  410:
+    angles: 90
+    deathmatch: true
+  411:
+    angles: 0
+    deathmatch: true
+  412:
+    angles: 270
+    deathmatch: true
+  413:
+    angles: 180
+    deathmatch: true

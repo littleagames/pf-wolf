@@ -556,6 +556,34 @@ maps:
     music: FUNKYOU
     cluster: 6
 
+  # Deathmatch arenas (maps/DM01.wad..., made by examples/tools/make-deathmatch-maps.ps1):
+  # picked by name in the multiplayer lobby; in no episode, but `map DM01` warps to one to try
+  # it out. No exits: a match ends on its frag or time limit.
+  DM01:
+    name: "The Courtyard"
+    deathmatch: true
+    floor-number: 1
+    music: GETTHEM
+    cluster: 1
+  DM02:
+    name: "Cellblock"
+    deathmatch: true
+    floor-number: 2
+    music: SUSPENSE
+    cluster: 1
+  DM03:
+    name: "Wooden Halls"
+    deathmatch: true
+    floor-number: 3
+    music: WARMARCH
+    cluster: 1
+  DM04:
+    name: "The Red Pit"
+    deathmatch: true
+    floor-number: 4
+    music: NAZI_RAP
+    cluster: 1
+
 end-strings:
   - $ENDSTR1
   - $ENDSTR2

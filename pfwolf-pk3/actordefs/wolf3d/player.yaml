@@ -14,36 +14,40 @@ Player:
   # What other players (and the camera, spectating) see of a player: never placed on the map,
   # just drawn where the player is (Program.Camera.cs TickPlayerBodies). Spawn standing still,
   # See walking, Missile while their weapon fires, Pain (or Pain1, by whether their health is
-  # odd or even) when hurt, Death once dead. A to E turn with the player (8 views); F to O are
+  # odd or even) when hurt, Death once dead. A to K turn with the player (8 views); L to O are
   # seen from the front only. Don't give it a Chase state: that makes an actor an enemy.
   # The weapon in hand's weapon.bodysprite (weapons.yaml) is drawn in place of the Spawn
-  # sprite, PLAY, wherever a frame uses it: PLKN with the knife, PLPS the pistol, PLMP the
-  # machine gun, PLCG the gatling gun. PLAY is what shows when a weapon doesn't name one (or its
-  # sprite lacks the frame); give a state another sprite to keep it the same whatever's held.
+  # sprite, PLMP, wherever a frame uses it: PLKN with the knife, PLPS the pistol, PLCG the
+  # gatling gun. PLMP (the machine gun) is what shows when a weapon doesn't name one (or its
+  # sprite lacks the frame); frames with another sprite (PLAY's death frames) stay the same
+  # whatever's held.
   states:
     Spawn:
-      - sprite: PLAY
+      - sprite: PLMP
         frames: [A]
         tics-per-frame: -1
     See:
-      - sprite: PLAY
+      - sprite: PLMP
         frames: [B, C, D, E]
         tics-per-frame: 8
     Missile:
-      - sprite: PLAY
+      - sprite: PLMP
         frames: [F, G, H, I]
         tics-per-frame: 5
     Pain:
-      - sprite: PLAY
+      - sprite: PLMP
         frames: [J]
         tics-per-frame: 10
     Pain1:
-      - sprite: PLAY
+      - sprite: PLMP
         frames: [K]
         tics-per-frame: 10
     Death:
+      - sprite: PLMP
+        frames: [J, K]
+        tics-per-frame: 10
       - sprite: PLAY
-        frames: [J, K, L, M, N]
+        frames: [L, M, N]
         tics-per-frame: 10
       - sprite: PLAY
         frames: [O]

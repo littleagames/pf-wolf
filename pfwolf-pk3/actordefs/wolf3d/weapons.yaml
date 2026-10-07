@@ -7,7 +7,7 @@
 # The muzzle flash frames light the room around the player (state `light:`, see
 # Program.ActorLights.cs); that only shows where the level is darker than full light.
 # weapon.bodysprite is how other players see someone holding the weapon: it's drawn in place of
-# the player class's Spawn sprite (PLAY, player.yaml) in every frame that uses it, when the
+# the player class's Spawn sprite (PLMP, player.yaml) in every frame that uses it, when the
 # weapon's sprite has that frame. Variants inherit their parent's (BluePistol shows PLPS).
 WolfWeapon:
   parent: "Weapon"

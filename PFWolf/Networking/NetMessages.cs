@@ -96,10 +96,11 @@ internal sealed record Hello(int Version, NetIdentity Identity, string Name, str
 /// <summary>
 /// The game the host has set up: how they'll play, the episode (its place in game-info's) and
 /// the skill, and a deathmatch's rules (Program.NetRules): its enemies, frag limit, time limit
-/// (minutes; 0 for none) and whether taken items come back
+/// (minutes; 0 for none) and whether taken items come back, and the deathmatch arena played
+/// (a game-info map with `deathmatch: true`; empty when the game has none: the episode's start)
 /// </summary>
 internal sealed record LobbySettings(GameMode Mode, int Episode, int Skill,
-    bool Monsters = false, int FragLimit = 20, int TimeLimit = 0, bool ItemRespawn = true)
+    bool Monsters = false, int FragLimit = 20, int TimeLimit = 0, bool ItemRespawn = true, string Map = "")
 {
     public void Write(NetDataWriter w)
     {
@@ -110,10 +111,11 @@ internal sealed record LobbySettings(GameMode Mode, int Episode, int Skill,
         w.Put((byte)FragLimit);
         w.Put((byte)TimeLimit);
         w.Put(ItemRespawn);
+        w.Put(Map);
     }
 
     public static LobbySettings Read(NetDataReader r) =>
-        new((GameMode)r.GetByte(), r.GetByte(), r.GetByte(), r.GetBool(), r.GetByte(), r.GetByte(), r.GetBool());
+        new((GameMode)r.GetByte(), r.GetByte(), r.GetByte(), r.GetBool(), r.GetByte(), r.GetByte(), r.GetBool(), r.GetString());
 }
 
 /// <summary>A player waiting in the lobby, in their slot (the host's is 0)</summary>

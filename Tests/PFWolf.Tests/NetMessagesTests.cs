@@ -122,7 +122,7 @@ public class NetMessagesTests
     public void LobbySettings_Round_Trip()
     {
         // Arrange
-        var settings = new LobbySettings(GameMode.Deathmatch, 2, 3, Monsters: true, FragLimit: 50, TimeLimit: 15, ItemRespawn: false);
+        var settings = new LobbySettings(GameMode.Deathmatch, 2, 3, Monsters: true, FragLimit: 50, TimeLimit: 15, ItemRespawn: false, Map: "DM03");
 
         // Act / Assert
         Assert.That(RoundTrip(settings.Write, LobbySettings.Read), Is.EqualTo(settings));

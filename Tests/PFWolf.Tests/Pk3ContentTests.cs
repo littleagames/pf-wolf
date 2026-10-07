@@ -98,4 +98,34 @@ public class Pk3ContentTests
         // Assert
         Assert.That(problems, Is.Empty);
     }
+
+    [Test]
+    public void Every_Wolf3d_Deathmatch_Arena_Has_A_Map_With_Starts()
+    {
+        // Arrange
+        var loader = Load("wolf3d", "wolf3d");
+        var gameInfo = loader.Load<GameInfoAsset>("wolf3d/game-info");
+        var mapdefs = loader.Load<MapObjectTranslationAsset>("wolf3d/mapdefs");
+        var arenas = gameInfo.Maps.Where(m => m.Value.Deathmatch).Select(m => m.Key).ToList();
+        Assert.That(arenas, Is.Not.Empty, "wolf3d's game-info should list deathmatch arenas");
+
+        // Act
+        var problems = new List<string>();
+        foreach (var name in arenas)
+        {
+            var map = loader.Load<MapAsset>(name);
+            var objects = map.MapData[1];
+            int deathmatchStarts = objects.Count(o => mapdefs.PlayerStarts.TryGetValue(o, out var s) && s.Deathmatch);
+            int ownStarts = objects.Count(o => mapdefs.PlayerStarts.TryGetValue(o, out var s) && !s.Deathmatch);
+            if (deathmatchStarts < 4)
+                problems.Add($"{name}: {deathmatchStarts} deathmatch starts, fewer than 4 players");
+            if (ownStarts != 1)
+                problems.Add($"{name}: {ownStarts} player starts of its own, not 1");
+            if (gameInfo.Episodes.Values.Any(e => e.StartMap == name))
+                problems.Add($"{name}: an episode starts on it");
+        }
+
+        // Assert
+        Assert.That(problems, Is.Empty);
+    }
 }

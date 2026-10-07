@@ -173,14 +173,14 @@ internal partial class Program
     = Player body
     =
     = What others see of a player: their class's own actordefs states, if it has any (Wolf3D's
-    = Player has the PLAY sprites; a class with no Spawn state is never drawn). Like the weapon
+    = Player has the PLMP sprites; a class with no Spawn state is never drawn). Like the weapon
     = in hand it's never placed on the map; it stands where the player is and turns with them:
     = Spawn when still, See walking, Missile while their weapon fires, Pain or Pain1 when hurt
     = and Death once dead, each where the class has it. Only for show: nothing the game does
     = depends on it.
     =
     = The weapon in hand can change how they look: its weapon.bodysprite (weapons.yaml) is drawn
-    = in place of the body's Spawn sprite wherever a frame uses it (PLKN for PLAY with the knife),
+    = in place of the body's Spawn sprite wherever a frame uses it (PLKN for PLMP with the knife),
     = so one set of states serves every weapon. Frames using any other sprite (deaths) are kept,
     = as is any frame the weapon's sprite doesn't have.
     =
@@ -247,7 +247,8 @@ internal partial class Program
 
     /// <summary>
     /// The sprite to draw for an actor's frame: its own, except a player's body, which shows their
-    /// weapon's weapon.bodysprite in place of its Spawn sprite (when that sprite has the frame)
+    /// weapon's weapon.bodysprite in place of its Spawn sprite (when that sprite has the picture
+    /// for the frame from this side: a half-drawn set falls back view by view). After TransformActor.
     /// </summary>
     internal static string DrawnSprite(Entities.Actors.Actor actor)
     {
@@ -258,18 +259,17 @@ internal partial class Program
             || _inventoryManager.GetStringProperty(weapon, "weapon.bodysprite") is not { Length: > 0 } swap)
             return state.Sprite;
 
-        return HasDirectionalSprites(swap, state.FrameLetter) || HasFrontSprite(swap, state.FrameLetter)
-            ? swap : state.Sprite;
+        var rotation = HasDirectionalSprites(swap, state.FrameLetter) ? CalcRotate(actor) : 0;
+        return SpriteExists($"{swap}{state.FrameLetter}{rotation}") ? swap : state.Sprite;
     }
 
-    static readonly Dictionary<string, bool> _frontSpriteCache = new(StringComparer.OrdinalIgnoreCase);
+    static readonly Dictionary<string, bool> _spriteExistsCache = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Whether a sprite has a front-only (rotation 0) picture for a frame</summary>
-    static bool HasFrontSprite(string sprite, string frameLetter)
+    /// <summary>Whether there's a sprite picture of that name (PLPSA1)</summary>
+    static bool SpriteExists(string name)
     {
-        var name = $"{sprite}{frameLetter}0";
-        if (!_frontSpriteCache.TryGetValue(name, out var exists))
-            _frontSpriteCache[name] = exists = _assetManager.Exists<Assets.SpriteAsset>(name);
+        if (!_spriteExistsCache.TryGetValue(name, out var exists))
+            _spriteExistsCache[name] = exists = _assetManager.Exists<Assets.SpriteAsset>(name);
         return exists;
     }
 

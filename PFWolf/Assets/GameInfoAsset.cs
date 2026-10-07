@@ -777,6 +777,12 @@ internal record MapInfo
     /// </summary>
     public string? Name { get; init; }
 
+    /// <summary>
+    /// A deathmatch arena: picked by name in the multiplayer lobby. It's in no episode, so it's
+    /// only played alone by warping to it (the map command), to try it out
+    /// </summary>
+    public bool Deathmatch { get; init; }
+
     //public string Current { get; set; }
     public string Next { get; init; } = null!;
     public string? SecretNext { get; init; } = null;

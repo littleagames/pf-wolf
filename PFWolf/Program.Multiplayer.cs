@@ -394,7 +394,8 @@ internal partial class Program
         var language = _assetManager.GetText("en-us");
         var episodes = PlayableEpisodes();
         var settings = new LobbySettings(GameMode.Coop, episodes.Count > 0 ? episodes[0] : 0,
-            Math.Min(2, _gameEngineManager.GetGameInfo().Skills.Count - 1));     // the third skill, as the menus start on
+            Math.Min(2, _gameEngineManager.GetGameInfo().Skills.Count - 1),     // the third skill, as the menus start on
+            Map: DeathmatchMaps().FirstOrDefault() ?? "");
 
         var session = NetSession.Host(hostPort, LocalIdentity(), MpConfig.Name, newGamePlayerClass ?? DefaultPlayerClass,
             MAXPLAYERS, settings, out var error);
@@ -860,8 +861,14 @@ internal partial class Program
 
         // Only the host changes the game; a class to pick only when there's more than one
         bool host = session.IsHost;
+        bool arenas = PicksArena(settings);
         FindMenuItem(LobbyMenu, "mode")?.active = (short)(host ? 1 : 0);
-        FindMenuItem(LobbyMenu, "episode")?.active = (short)(host && PlayableEpisodes().Count > 1 ? 1 : 0);
+        if (FindMenuItem(LobbyMenu, "episode") is { } episodeRow)
+        {
+            // A deathmatch is played on an arena: the episode row picks it instead
+            episodeRow.text = (arenas ? "$STR_MP_MAP" : "$STR_MP_EPISODE").ToLanguageText(language);
+            episodeRow.active = (short)(host && (arenas ? DeathmatchMaps().Count : PlayableEpisodes().Count) > 1 ? 1 : 0);
+        }
         FindMenuItem(LobbyMenu, "skill")?.active = (short)(host ? 1 : 0);
         FindMenuItem(LobbyMenu, "class")?.active = (short)(PlayerClasses().Count > 1 ? 1 : 0);
         FindMenuItem(LobbyMenu, "rules")?.active = (short)(host && settings.Mode == GameMode.Deathmatch ? 1 : 0);
@@ -872,7 +879,7 @@ internal partial class Program
         DrawMenu(LobbyItems, LobbyMenu);
 
         DrawLobbyValue("mode", (settings.Mode == GameMode.Deathmatch ? "$STR_MP_DEATHMATCH" : "$STR_MP_COOP").ToLanguageText(language));
-        DrawLobbyValue("episode", EpisodeLabel(settings.Episode));
+        DrawLobbyValue("episode", arenas ? MapLabel(settings.Map) : EpisodeLabel(settings.Episode));
         DrawLobbyValue("skill", gameInfo.Skills.Values.ElementAtOrDefault(settings.Skill)?.Name.ToLanguageText(language) ?? "?");
         DrawLobbyValue("class", me == null ? "" : PlayerClassLabel(me.PlayerClass));
         DrawLobbyValue("rules", RulesSummary(settings));
@@ -898,7 +905,7 @@ internal partial class Program
             y += LobbyPanelRow;
         }
 
-        session.MapLabel = EpisodeLabel(settings.Episode);
+        session.MapLabel = arenas ? MapLabel(settings.Map) : EpisodeLabel(settings.Episode);
         DrawMenuGun(LobbyItems);
         _videoManager.Update();
     }
@@ -1010,6 +1017,12 @@ internal partial class Program
                 session.SetSettings(settings with { Mode = settings.Mode == GameMode.Coop ? GameMode.Deathmatch : GameMode.Coop });
                 break;
 
+            case "episode" when session.IsHost && PicksArena(settings):
+                var arenas = DeathmatchMaps();
+                int arena = Math.Max(0, arenas.FindIndex(m => string.Equals(m, settings.Map, StringComparison.OrdinalIgnoreCase)));
+                session.SetSettings(settings with { Map = arenas[StepMenuChoice(arena, arenas.Count, delta, wrap: true)] });
+                break;
+
             case "episode" when session.IsHost:
                 var episodes = PlayableEpisodes();
                 if (episodes.Count == 0)
@@ -1044,6 +1057,29 @@ internal partial class Program
             .Where(e => !e.episode.Locked && _gameEngineManager.GetGameInfo().Maps.ContainsKey(e.episode.StartMap))
             .Select(e => e.i)
             .ToList();
+
+    /// <summary>The deathmatch arenas (game-info maps with `deathmatch: true`), in game-info's order</summary>
+    static List<string> DeathmatchMaps() =>
+        _gameEngineManager.GetGameInfo().Maps
+            .Where(m => m.Value.Deathmatch)
+            .Select(m => m.Key)
+            .ToList();
+
+    /// <summary>
+    /// The game is a deathmatch on an arena the host picks: its game has arenas. Without any, a
+    /// deathmatch starts on an episode, as a co-op game does.
+    /// </summary>
+    static bool PicksArena(LobbySettings settings) =>
+        settings.Mode == GameMode.Deathmatch && DeathmatchMaps().Count > 0;
+
+    /// <summary>An arena's name for the lobby and the LAN list: its game-info name, else its map name</summary>
+    static string MapLabel(string map)
+    {
+        var language = _assetManager.GetText("en-us");
+        return _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) && !string.IsNullOrWhiteSpace(info.Name)
+            ? info.Name.ToLanguageText(language)
+            : string.IsNullOrEmpty(map) ? "?" : map;
+    }
 
     static string EpisodeLabel(int episode)
     {
@@ -1082,6 +1118,14 @@ internal partial class Program
         // The game as one player's, then everyone in it
         NewGame((short)Math.Clamp(start.Settings.Skill, 0, gameInfo.Skills.Count - 1), episode, mapInfo,
             ClassOrDefault(start.Players[0].PlayerClass));
+
+        // A deathmatch on an arena starts there, not on the episode's first floor
+        if (start.Settings.Mode == GameMode.Deathmatch
+            && gameInfo.Maps.TryGetValue(start.Settings.Map, out var arena) && arena.Deathmatch)
+        {
+            gamestate.mapon = start.Settings.Map;
+            gamestate.cluster = arena.Cluster;
+        }
 
         players.Clear();
         for (int i = 0; i < start.Players.Count; i++)

@@ -40,7 +40,8 @@ components:
       - height: 47
 # Handled by Program.Multiplayer.cs, by id. Only the host changes the mode, episode and
 # skill; everyone picks their own class. The host starts the game ("go") once everyone else
-# is ready; for them, "go" is that they're ready. The values are drawn by code.
+# is ready; for them, "go" is that they're ready. The values are drawn by code. In a deathmatch
+# the episode row is "Map" and picks the arena (game-info maps with `deathmatch: true`).
 menu-items:
   -
       id: "mode"
