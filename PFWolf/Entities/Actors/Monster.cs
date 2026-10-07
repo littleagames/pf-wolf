@@ -390,6 +390,9 @@ internal record Monster : Actor
         set => _target = value;
     }
 
+    /// <summary>The player it's set on going after, as it stands (without picking one, as Target does), or null</summary>
+    internal PlayerPawn? TargetIfAny => _target is { } t && ReferenceEquals(t.State.Pawn, t) ? t : null;
+
     /// <summary>
     /// The player it's set on going after, as it stands (without picking one, as Target does),
     /// by player number; -1 for none. For a player joining mid-game (Program.NetJoin.cs).
@@ -759,8 +762,8 @@ internal record Monster : Actor
         _mapManager.UnmarkActorTile(TileX, TileY);
 
         AwardKillPoints();
-        if (attacker is PlayerPawn killer)
-            killer.State.Kills++;       // for the scoreboard, with others
+        if ((attacker?.Shooter ?? attacker) is PlayerPawn killer)
+            killer.State.Kills++;       // for the scoreboard, with others (a missile's: who fired it)
         SetState("Death");
         OnKilled(attacker);
 

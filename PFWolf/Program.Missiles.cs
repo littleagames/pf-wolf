@@ -124,12 +124,13 @@ internal partial class Program
         ob.TileX = (byte)(ob.X >> MapConstants.TILESHIFT);
         ob.TileY = (byte)(ob.Y >> MapConstants.TILESHIFT);
 
-        Entities.Actors.Monster? victim = null;
+        Entities.Actors.Actor? victim = null;
         bool blocked = !ProjectileTryMove(ob);
         if (!blocked)
         {
-            victim = _mapManager.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE / 2)
-                .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter));
+            victim = (Entities.Actors.Actor?)_mapManager.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE / 2)
+                .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter))
+                ?? RivalHitBy(ob);
             if (victim == null)
                 return;
         }
@@ -140,10 +141,39 @@ internal partial class Program
             int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
             int damage = max > min ? min + US_RndT() * (max - min + 1) / 256 : min;
             if (damage > 0)
-                victim.Damage(PlayerDamage(damage), ob);
+            {
+                using var _ = ActAsShooter(ob);
+                HurtByMissile(victim, PlayerDamage(damage), ob);
+            }
         }
 
         Detonate(ob);
+    }
+
+    // In deathmatch, another living player a player's missile has flown into (as an enemy's
+    // projectile hits a player: within PROJECTILESIZE), else null. Co-op missiles fly through.
+    static Entities.Actors.PlayerPawn? RivalHitBy(Entities.Actors.Actor ob) =>
+        gamemode != GameMode.Deathmatch ? null
+        : _mapManager.Players.FirstOrDefault(pawn => !ReferenceEquals(pawn, ob.Shooter) && pawn.State.health > 0
+            && Math.Abs((long)pawn.X - ob.X) < PROJECTILESIZE && Math.Abs((long)pawn.Y - ob.Y) < PROJECTILESIZE);
+
+    /// <summary>
+    /// Makes the player who fired a missile the acting player while it does its damage, so the
+    /// points, kills and their class's damage factor are theirs whichever machine runs it (with
+    /// others, the acting player outside their own think is just this machine's). No change for
+    /// a missile no player fired.
+    /// </summary>
+    static ActingScope ActAsShooter(Entities.Actors.Actor ob) =>
+        ActAs(ob.Shooter is Entities.Actors.PlayerPawn { State: { } shooter } ? shooter : playerstate);
+
+    // A missile's (or its blast's) damage landing: on an enemy, or a player (deathmatch rivals,
+    // or someone caught in a blast), with the missile as the attacker (frags go to its Shooter)
+    static void HurtByMissile(Entities.Actors.Actor victim, uint damage, Entities.Actors.Actor missile)
+    {
+        if (victim is Entities.Actors.PlayerPawn pawn)
+            TakeDamage(pawn, (int)damage, missile);
+        else if (victim is Entities.Actors.Monster monster)
+            monster.Damage(damage, missile);
     }
 
     /// <summary>Sends a missile to its Death state (with its deathsound), or takes it away if it has none</summary>
@@ -162,9 +192,10 @@ internal partial class Program
     /// <summary>
     /// A_Explode(min, max[, radius[, "hurtplayer"]]): a blast spreading from the actor's tile
     /// through open floor (not walls or shut doors) up to radius tiles away (default 2): each
-    /// shootable thing in it takes min..max, rolled once. With hurtplayer the player takes it
-    /// too, if standing in it. A thing whose `monster.blastedby` names the actor's class breaks
-    /// (goes to its Death state).
+    /// shootable thing in it takes min..max, rolled once. With hurtplayer the players take it
+    /// too, if standing in it: from a player's missile, the one who fired it (and in deathmatch
+    /// everyone else; co-op has no friendly fire). A thing whose `monster.blastedby` names the
+    /// actor's class breaks (goes to its Death state).
     /// </summary>
     static void A_Explode(Entities.Actors.Actor ob, string[] args)
     {
@@ -178,6 +209,12 @@ internal partial class Program
         if (IsSolidForBlast(cx, cy))
             return;
 
+        var shooter = ob.Shooter as Entities.Actors.PlayerPawn;
+        var blasted = !hurtPlayer ? []
+            : _mapManager.Players.Where(pawn => (gamemode == GameMode.Single || pawn.State.health > 0) && (shooter == null
+                || ReferenceEquals(pawn, shooter) || gamemode == GameMode.Deathmatch)).ToList();
+        using var _ = ActAsShooter(ob);
+
         var seen = new HashSet<(int, int)> { (cx, cy) };
         var open = new Queue<(int X, int Y)>();
         open.Enqueue((cx, cy));
@@ -187,10 +224,10 @@ internal partial class Program
 
             foreach (var target in _mapManager.ShootableActorsAt(x, y).ToList())
                 if (!ReferenceEquals(target, ob))
-                    target.Damage(ReferenceEquals(ob.Shooter, player) ? PlayerDamage(damage) : (uint)damage, ob);
+                    target.Damage(shooter != null ? PlayerDamage(damage) : (uint)damage, ob);
 
-            if (hurtPlayer && player.TileX == x && player.TileY == y)
-                TakeDamage(damage, ob);
+            foreach (var pawn in blasted.Where(p => p.TileX == x && p.TileY == y))
+                HurtByMissile(pawn, shooter != null ? PlayerDamage(damage) : (uint)damage, ob);
 
             // `monster.blastedby: Class`: only a blast from that class breaks it (Planet Strike's
             // security cube, by the fission detonator): it goes to its Death state

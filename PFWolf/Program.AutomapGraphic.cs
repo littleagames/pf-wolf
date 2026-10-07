@@ -256,7 +256,7 @@ internal partial class Program
     {
         var state = actor.CurrentState!;
         string shape = HasDirectionalSprites(state.Sprite, state.FrameLetter)
-            ? $"{state.Sprite}{state.FrameLetter}1"
+            ? FrontShapeName(state.Sprite, state.FrameLetter)
             : state.GetShapeName(objdirtypes.nodir);
 
         var sprite = FindAutomapSprite(shape);

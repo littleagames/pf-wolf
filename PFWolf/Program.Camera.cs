@@ -259,8 +259,7 @@ internal partial class Program
             || _inventoryManager.GetStringProperty(weapon, "weapon.bodysprite") is not { Length: > 0 } swap)
             return state.Sprite;
 
-        var rotation = HasDirectionalSprites(swap, state.FrameLetter) ? CalcRotate(actor) : 0;
-        return SpriteExists($"{swap}{state.FrameLetter}{rotation}") ? swap : state.Sprite;
+        return SpriteExists(ActorShapeName(swap, state.FrameLetter, actor)) ? swap : state.Sprite;
     }
 
     static readonly Dictionary<string, bool> _spriteExistsCache = new(StringComparer.OrdinalIgnoreCase);

@@ -1,0 +1,17 @@
+# The multiplayer weapons and their ammo (actordefs/weapons.yaml), by object-plane number
+things:
+  420:
+    class: RocketLauncher
+    angles: 0
+  421:
+    class: FlameThrower
+    angles: 0
+  422:
+    class: RocketAmmo
+    angles: 0
+  423:
+    class: RocketBox
+    angles: 0
+  424:
+    class: Gas
+    angles: 0

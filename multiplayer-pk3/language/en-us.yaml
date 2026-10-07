@@ -1,0 +1,8 @@
+# The multiplayer weapons' messages (actordefs/weapons.yaml)
+$GOTROCKETLAUNCHER: "You got the rocket launcher!"
+$GOTFLAMETHROWER: "You got the flamethrower!"
+$GOTROCKETS: "Picked up some rockets."
+$GOTROCKETBOX: "Picked up a box of rockets."
+$GOTGAS: "Picked up a can of gas."
+$OB_ROCKET: "You caught %k's rocket."
+$OB_FLAME: "You were roasted by %k."

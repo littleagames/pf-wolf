@@ -77,10 +77,25 @@
 		<Copy SourceFiles="@(ExampleModFiles)" DestinationFiles="@(ExampleModFiles->'$(TargetDir)mods\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
 	</Target>
 
-	<!-- Publish carries the pk3 and example mods too (they're made in the build folder, not as content) -->
+	<!-- multiplayer.pk3 (multiplayer-pk3): a mod, off until switched on in the Mods screen -->
+	<PropertyGroup>
+		<MultiplayerPk3SourceDir>$(MSBuildProjectDirectory)\..\multiplayer-pk3\</MultiplayerPk3SourceDir>
+	</PropertyGroup>
+	<ItemGroup>
+		<MultiplayerPk3SourceFiles Include="$(MultiplayerPk3SourceDir)**\*.*" />
+	</ItemGroup>
+	<Target Name="BuildMultiplayerPk3" AfterTargets="CreateModsFolder" Inputs="@(MultiplayerPk3SourceFiles)" Outputs="$(TargetDir)mods\multiplayer.pk3">
+		<ZipDirectory SourceDirectory="$(MultiplayerPk3SourceDir)" DestinationFile="$(TargetDir)mods\multiplayer.pk3" Overwrite="true" />
+		<ItemGroup>
+			<FileWrites Include="$(TargetDir)mods\multiplayer.pk3" />
+		</ItemGroup>
+	</Target>
+
+	<!-- Publish carries the pk3s and example mods too (they're made in the build folder, not as content) -->
 	<Target Name="PublishPfWolfExtras" AfterTargets="ComputeResolvedFilesToPublishList">
 		<ItemGroup>
 			<ResolvedFileToPublish Include="$(TargetDir)pfwolf.pk3" RelativePath="pfwolf.pk3" CopyToPublishDirectory="PreserveNewest" />
+			<ResolvedFileToPublish Include="$(TargetDir)mods\multiplayer.pk3" RelativePath="mods\multiplayer.pk3" CopyToPublishDirectory="PreserveNewest" />
 			<ResolvedFileToPublish Include="@(ExampleModFiles)" RelativePath="mods\%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
 		</ItemGroup>
 	</Target>

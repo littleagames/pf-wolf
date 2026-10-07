@@ -2031,17 +2031,38 @@ internal partial class Program
     // There's no per-frame "rotate" flag in the actordefs schema -- the engine infers it
     // from how many sprite variants actually exist. Walk-cycle sprites (e.g. GARDB1..B8)
     // have 8-directional rotation frames; bosses like Hans only have a single front-facing
-    // frame per letter (HANSA0, HANSB0, ...) with no "1" rotation, so they default to 0.
+    // frame per letter (HANSA0, HANSB0, ...) with no rotations, so they default to 0.
+    // Any of the 8 views counts: a mod can add views 2-8 to a frame and leave the front to
+    // the game's own single view (multiplayer.pk3's shooting guards, GARDF2..F8 beside GARDF0).
     internal static bool HasDirectionalSprites(string sprite, string frameLetter)
     {
         var cacheKey = $"{sprite}{frameLetter}";
         if (_directionalSpriteCache.TryGetValue(cacheKey, out var cached))
             return cached;
 
-        var hasRotations = _assetManager.Exists<SpriteAsset>($"{sprite}{frameLetter}1");
+        var hasRotations = Enumerable.Range(1, 8).Any(r => SpriteExists($"{sprite}{frameLetter}{r}"));
         _directionalSpriteCache[cacheKey] = hasRotations;
         return hasRotations;
     }
+
+    /// <summary>
+    /// The picture of an actor's frame from where it's seen (after TransformActor): the view
+    /// for its rotation when the frame has views, else its single view (letter 0). A view the
+    /// frame lacks falls back to the single view, when there is one.
+    /// </summary>
+    internal static string ActorShapeName(string sprite, string frameLetter, Entities.Actors.Actor actor)
+    {
+        var single = $"{sprite}{frameLetter}0";
+        if (!HasDirectionalSprites(sprite, frameLetter))
+            return single;
+
+        var view = $"{sprite}{frameLetter}{CalcRotate(actor)}";
+        return SpriteExists(view) || !SpriteExists(single) ? view : single;
+    }
+
+    /// <summary>The picture of a frame seen from the front: view 1, else its single view</summary>
+    internal static string FrontShapeName(string sprite, string frameLetter) =>
+        SpriteExists($"{sprite}{frameLetter}1") ? $"{sprite}{frameLetter}1" : $"{sprite}{frameLetter}0";
 
     internal static int CalcRotate(Entities.Actors.Actor ob)
     {
@@ -2049,15 +2070,39 @@ internal partial class Program
 
         // A projectile (Rocket, the Death Knight's HeavyRocket) has no Dir -- it flies at an
         // arbitrary angle -- so it rotates by its heading. So does the player's body.
-        var angle = ob.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase) || IsPlayerBody(ob)
-            ? (viewangle - 180) - ob.Angle
-            : (viewangle - 180) - dirangle[(byte)ob.Dir];
+        int angle;
+        if (ob.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase) || IsPlayerBody(ob))
+            angle = (viewangle - 180) - ob.Angle;
+        else if (AimAngle(ob) is { } facing)
+            angle = (viewangle - 180) - facing;
+        else if (ob.Dir == objdirtypes.nodir)
+            return 1;                                   // facing no way: toward whoever looks
+        else
+            angle = (viewangle - 180) - dirangle[(byte)ob.Dir];
 
         angle += ANGLES / 16;
         while (angle >= ANGLES) angle -= ANGLES;
         while (angle < 0) angle += ANGLES;
 
         return (angle / (ANGLES / 8)) + 1;
+    }
+
+    /// <summary>
+    /// The way an enemy is drawn facing, when not the way it's going: at the player it's after
+    /// while it attacks. The original only drew attacks from the front (it always faced you);
+    /// with views for them (multiplayer.pk3) the others see it aim at whoever it shoots. Only
+    /// for show: reads the target without picking one (Monster.Target would).
+    /// </summary>
+    static int? AimAngle(Entities.Actors.Actor ob)
+    {
+        if (ob is not Entities.Actors.Monster { TargetIfAny: { } target }
+            || ob.CurrentState?.StateName?.Equals("Attack", StringComparison.OrdinalIgnoreCase) != true)
+            return null;
+
+        var fangle = Math.Atan2(ob.Y - target.Y, target.X - ob.X);
+        if (fangle < 0)
+            fangle += M_PI * 2;
+        return (int)(fangle / (M_PI * 2) * ANGLES) % ANGLES;
     }
 
     internal static void DrawScaleds()
@@ -2147,10 +2192,7 @@ internal partial class Program
                 actor.RuntimeFlags |= objflags.FL_VISABLE;
 
                 var sprite = DrawnSprite(actor);                        // a player's body shows their weapon
-                var rotationDigit = HasDirectionalSprites(sprite, actor.CurrentState.FrameLetter)
-                    ? CalcRotate(actor)
-                    : 0;
-                visptr_val.shapenum = $"{sprite}{actor.CurrentState.FrameLetter}{rotationDigit}";
+                visptr_val.shapenum = ActorShapeName(sprite, actor.CurrentState.FrameLetter, actor);
                 visptr_val.viewx = actor.ViewX;
                 visptr_val.viewheight = (short)actor.ViewHeight;
 

@@ -1,0 +1,4 @@
+name: Multiplayer
+version: "1.0"
+description: Enemies seen shooting, hurt and (bosses) walking from every side, for co-op, plus the flamethrower and rocket launcher sprites.
+game-packs: [wolf3d, spear]

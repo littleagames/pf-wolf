@@ -1,0 +1,202 @@
+# The multiplayer weapons, after SplitWolf's DM edition: a rocket launcher and a flamethrower.
+# They follow the game's own weapons (pfwolf-pk3 actordefs/wolf3d/weapons.yaml: 70Hz tics, an
+# action runs as its frame ends). Both throw missiles (A_FireMissile) rather than shooting
+# straight at what's in front: the missile flies until it meets a wall, a solid thing or an
+# enemy (in deathmatch, another player too) and hurts what it hits (A_Missile).
+#
+# Pickups are placed by object number (mapdefs/things.yaml); `give RocketLauncher` etc. with
+# cheats on. Ranked above the gatling gun (weapon.selectionorder), so picking one up takes it
+# in hand; out of its ammo, the next best with ammo comes up.
+
+# Slot 5. One rocket every 30 tics; holding fire keeps firing.
+RocketLauncher:
+  parent: "WolfWeapon"
+  properties:
+    "attacksound": "missile/fire"
+    "inventory.type": RocketLauncher
+    "weapon.slot": 5
+    "weapon.bodysprite": PLRL
+    "inventory.icon": "RocketLauncher"
+    "inventory.pickupsound": "weapon/machine/pickup"
+    "inventory.pickupmessage": "$GOTROCKETLAUNCHER"
+    "weapon.selectionorder": 500
+    "weapon.ammotype1": "RocketAmmo"
+    "weapon.ammouse1": 1
+    "weapon.ammogive1": 5
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: RLPK
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: RLAU
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: RLAU
+        frames: [B]
+        tics-per-frame: 6
+        next-state: Hold
+    Hold:
+      - sprite: RLAU
+        frames: [C]
+        tics-per-frame: 6
+        modifiers: [bright]
+        light: { intensity: 220, radius: 3, color: "#FFC080" }
+        action: A_FireMissile("PlayerRocket")
+      - sprite: RLAU
+        frames: [D]
+        tics-per-frame: 6
+      - sprite: RLAU
+        frames: [E]
+        tics-per-frame: 12
+        action: A_ReFire
+        next-state: Ready
+
+# Slot 6. A spray of short-lived flames, one every 6 tics while fire is held.
+FlameThrower:
+  parent: "WolfWeapon"
+  properties:
+    "attacksound": "flame/fire"
+    "inventory.type": FlameThrower
+    "weapon.slot": 6
+    "weapon.bodysprite": PLFL
+    "inventory.icon": "FlameThrower"
+    "inventory.pickupsound": "weapon/machine/pickup"
+    "inventory.pickupmessage": "$GOTFLAMETHROWER"
+    "weapon.selectionorder": 600
+    "weapon.ammotype1": "Gas"
+    "weapon.ammouse1": 1
+    "weapon.ammogive1": 40
+  flags: [INVENTORY.ALWAYSPICKUP]
+  states:
+    Spawn:
+      - sprite: FTPK
+        frames: [A]
+        tics-per-frame: -1
+    Ready:
+      - sprite: FLAM
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: FLAM
+        frames: [B]
+        tics-per-frame: 4
+        next-state: Hold
+    Hold:
+      - sprite: FLAM
+        frames: [C]
+        tics-per-frame: 3
+        modifiers: [bright]
+        light: { intensity: 220, radius: 4, color: "#FFA040" }
+        action: A_FireMissile("PlayerFlame", 3)
+      - sprite: FLAM
+        frames: [D]
+        tics-per-frame: 3
+        modifiers: [bright]
+        light: { intensity: 200, radius: 4, color: "#FFA040" }
+        action: A_ReFire
+      - sprite: FLAM
+        frames: [E]
+        tics-per-frame: 6
+        next-state: Ready
+
+# Ammo. RocketAmmo and Gas are separate stacks, each with its own cap.
+RocketAmmo:
+  parent: Ammo
+  states:
+    Spawn:
+      - sprite: RCKT
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    "inventory.type": RocketAmmo
+    "inventory.amount": 2
+    "inventory.maxamount": 50
+    "inventory.pickupmessage": "$GOTROCKETS"
+RocketBox:
+  parent: RocketAmmo
+  states:
+    Spawn:
+      - sprite: RBOX
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    "inventory.amount": 10
+    "inventory.pickupsound": "misc/ammobox_pkup"
+    "inventory.pickupmessage": "$GOTROCKETBOX"
+Gas:
+  parent: Ammo
+  states:
+    Spawn:
+      - sprite: GASC
+        frames: [A]
+        tics-per-frame: -1
+  properties:
+    "inventory.type": Gas
+    "inventory.amount": 40
+    "inventory.maxamount": 200
+    "inventory.pickupsound": "misc/ammobox_pkup"
+    "inventory.pickupmessage": "$GOTGAS"
+
+# The missiles. A_Missile(min, max) is the damage to what one flies into; the rocket's blast
+# (A_Explode) then hurts everything within a tile, the one who fired it too ("hurtplayer"; in
+# deathmatch everyone). `obituary` is what a player killed by one is told (%k: who fired it).
+PlayerRocket:
+  flags: [PROJECTILE]
+  properties:
+    "speed": 8192            # as the bosses' rockets (0x2000), in 1/65536 tile a tic
+    "deathsound": "missile/hit"
+    "obituary": "$OB_ROCKET"
+  states:
+    Spawn:
+      - sprite: ROCK
+        frames: [A]
+        tics-per-frame: 3
+        think: A_Missile(20, 40)
+        action: A_SpawnThing("Smoke")
+    Death:
+      - sprite: BOOM
+        frames: [A]
+        tics-per-frame: 6
+        modifiers: [bright]
+        light: { intensity: 255, radius: 4, color: "#FFC080" }
+        action: A_Explode(30, 90, 1, "hurtplayer")
+      - sprite: BOOM
+        frames: [B, C]
+        tics-per-frame: 6
+        modifiers: [bright]
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_Remove
+
+# About four tiles of flight before it burns out
+PlayerFlame:
+  properties:
+    "speed": 12288
+    "speed.random": 2048
+    "obituary": "$OB_FLAME"
+  states:
+    Spawn:
+      - sprite: PFLM
+        frames: [A, B, C, D, A, B]
+        tics-per-frame: 4
+        modifiers: [bright]
+        light: { intensity: 160, radius: 2, color: "#FFA040" }
+        think: A_Missile(6, 14)
+        next-state: Death
+    Death:
+      - sprite: PFLB
+        frames: [A, B, C]
+        tics-per-frame: 4
+        modifiers: [bright]
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_Remove
