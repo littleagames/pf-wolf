@@ -17,9 +17,8 @@ internal class AudioManager
     private const float MusicSampleGain = 3.0f;
     private const float MusicGain = 0.75f;
 
-    // Streaming playback: how much audio (in frames) each queued OpenAL buffer holds,
-    // how many buffers to prime before starting playback, and the max look-ahead depth.
-    private const int MusicStreamFramesPerChunk = MusicSampleRate / 10; // 100ms per buffer
+    // Streaming playback: how many buffers (100ms each) to prime before starting playback,
+    // and the max look-ahead depth.
     private const int MusicStreamPrimedBuffers = 2;
     private const int MusicStreamQueueDepth = 6;
 
@@ -109,9 +108,12 @@ internal class AudioManager
         {
             _musicVolume = Math.Clamp(value, 0, MaxVolume);
             if (IsActive)
-                AL.Source(_musicSource, ALSourcef.Gain, MusicGain * VolumeGain(_musicVolume));
+                AL.Source(_musicSource, ALSourcef.Gain, _musicSourceGain * VolumeGain(_musicVolume));
         }
     }
+
+    // The playing track's own gain, under the volume setting (see PlayMusic)
+    private float _musicSourceGain = MusicGain;
 
     // Loudness is heard roughly logarithmically, so a squared curve makes each step sound
     // about as big as the last; a straight line would bunch the audible change at the bottom.
@@ -319,8 +321,13 @@ internal class AudioManager
         {
             if (!(packSeq.SoundInfo.TryGetValue(name, out soundProfile) || soundSeq?.SoundInfo.TryGetValue(name, out soundProfile) == true)
                 || soundProfile == null)
-                // not found
-                return;
+            {
+                // A sound file or digitized sound of that name plays without a sound-seq entry
+                if (!_assetManager.Value.Exists<SoundFileAsset>(name) && !_assetManager.Value.Exists<Wolf3dDigitizedAudio>(name))
+                    return;
+                soundProfile = new SoundProfile { Digitized = name };
+                break;
+            }
 
             if (soundProfile.Random.Count > 0)
             {
@@ -341,7 +348,7 @@ internal class AudioManager
             return;
 
         // Best variant first, skipping devices that are switched off. With none left, it's silent.
-        var buffer = (_digitizedSoundEnabled ? FindBuffer<Wolf3dDigitizedAudio>("digi", soundProfile.Digitized, CreateBuffer) : null)
+        var buffer = (_digitizedSoundEnabled ? FindDigitizedBuffer(soundProfile.Digitized) : null)
             ?? (_adLibSoundEnabled ? FindBuffer<AdLibSound>("adlib", soundProfile.AdLib, CreateBuffer) : null)
             ?? (_pcSoundEnabled ? FindBuffer<PcSound>("pc", soundProfile.PC, CreateBuffer) : null);
         if (buffer is not int playBuffer)
@@ -352,6 +359,12 @@ internal class AudioManager
         _lastBufferForSound[requestedName.ToLowerInvariant()] = playBuffer;
         StartSource(source, playBuffer, position);
     }
+
+    // A pk3's sound file (sounds/NAME.ogg) wins over the game's own digitized sound of that name
+    private int? FindDigitizedBuffer(string? assetName)
+        => !string.IsNullOrWhiteSpace(assetName) && _assetManager.Value.Exists<SoundFileAsset>(assetName)
+            ? FindBuffer<SoundFileAsset>("file", assetName, CreateBuffer)
+            : FindBuffer<Wolf3dDigitizedAudio>("digi", assetName, CreateBuffer);
 
     // The cached buffer for one variant of a sound, created on first use; null when the sound
     // has no such variant.
@@ -461,9 +474,13 @@ internal class AudioManager
     /// <param name="loop">false plays the track once (Blake Stone's Apogee fanfare); see IsMusicPlaying</param>
     public void PlayMusic(string name, bool loop = true)
     {
+        // A pk3's music file (music/NAME.ogg) wins over the game's own IMF song of that name
         var assetManager = _assetManager.Value;
-        var imfTrack = assetManager.Find<Wolf3dImfAudio>(name);
-        if (imfTrack == null)
+        var musicFile = !string.IsNullOrWhiteSpace(name) && assetManager.Exists<MusicFileAsset>(name)
+            ? assetManager.Find<MusicFileAsset>(name)
+            : null;
+        var imfTrack = musicFile == null ? assetManager.Find<Wolf3dImfAudio>(name) : null;
+        if (musicFile == null && imfTrack == null)
             return;
 
         StopMusicStream();
@@ -473,13 +490,34 @@ internal class AudioManager
         if (!_musicEnabled || !IsActive)
             return; // remembered, and started when music is switched back on
 
-        AL.Source(_musicSource, ALSourcef.Gain, MusicGain * VolumeGain(_musicVolume));
+        // OPL output is quiet and boosted (MusicSampleGain), then brought back down here; a
+        // recording is already mastered, so it plays as it is
+        _musicSourceGain = musicFile != null ? 1.0f : MusicGain;
+        AL.Source(_musicSource, ALSourcef.Gain, _musicSourceGain * VolumeGain(_musicVolume));
 
         var cts = new CancellationTokenSource();
         _musicStreamCts = cts;
-        _musicStreamThread = new Thread(() => StreamMusic(imfTrack, loop, cts.Token)) { IsBackground = true, Name = "MusicStream" };
+        _musicStreamThread = new Thread(() =>
+        {
+            MusicSource source;
+            try
+            {
+                source = musicFile != null ? new FileMusicSource(musicFile) : new ImfMusicSource(imfTrack!);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Music '{name}' can't be played: {e.Message}");
+                return;
+            }
+            using (source)
+                StreamMusic(source, loop, cts.Token);
+        }) { IsBackground = true, Name = "MusicStream" };
         _musicStreamThread.Start();
     }
+
+    /// <summary>Whether there's a song of this name, as a music file or an IMF song</summary>
+    public bool HasMusic(string name)
+        => _assetManager.Value.Exists<MusicFileAsset>(name) || _assetManager.Value.Exists<Wolf3dImfAudio>(name);
 
     /// <summary>
     /// Whether music is still sounding: false once a track played without looping has finished,
@@ -498,66 +536,36 @@ internal class AudioManager
         }
     }
 
-    // Synthesizes the IMF track a small chunk at a time and feeds it to the music source as
-    // queued OpenAL buffers, so playback can start after the first couple of chunks instead of
-    // waiting for the whole (often minutes-long) track to be rendered up front. A track that
-    // doesn't loop stops being fed at its end; what's queued plays out.
-    private void StreamMusic(Wolf3dImfAudio track, bool loop, CancellationToken token)
+    // Renders the track a small chunk at a time and feeds it to the music source as queued
+    // OpenAL buffers, so playback can start after the first couple of chunks instead of waiting
+    // for the whole (often minutes-long) track to be rendered up front. A track that doesn't
+    // loop stops being fed at its end; what's queued plays out.
+    private void StreamMusic(MusicSource source, bool loop, CancellationToken token)
     {
-        var commands = track.Commands;
-        if (commands.Count == 0 || commands.Sum(command => command.Delay) == 0)
-            return;
-
-        var chip = new Opl3Chip();
-        chip.Reset(MusicSampleRate);
-        chip.WriteRegister(0x01, 0x20);
-
-        const int framesPerTick = MusicSampleRate / MusicTicksPerSecond;
-        var commandIndex = 0;
-        var framesRemainingInCommand = 0;
+        var sampleRate = source.SampleRate;
+        // 100ms per buffer
+        var framesPerChunk = Math.Max(1, sampleRate / 10);
         var buffersPrimed = 0;
         var ended = false;
 
         while (!token.IsCancellationRequested && !ended)
         {
-            var chunk = new short[MusicStreamFramesPerChunk * 2];
-            var framesWritten = 0;
-
-            while (framesWritten < MusicStreamFramesPerChunk && !ended)
-            {
-                while (framesRemainingInCommand == 0)
-                {
-                    if (commandIndex >= commands.Count)
-                    {
-                        if (!loop)
-                        {
-                            ended = true;   // the rest of this chunk stays silent
-                            break;
-                        }
-                        commandIndex = 0;   // loop the track
-                    }
-                    var command = commands[commandIndex];
-                    chip.WriteRegister(command.Register, command.Value);
-                    framesRemainingInCommand = command.Delay * framesPerTick;
-                    commandIndex++;
-                }
-                if (ended)
-                    break;
-
-                var framesToGenerate = Math.Min(framesRemainingInCommand, MusicStreamFramesPerChunk - framesWritten);
-                chip.GenerateStream(chunk.AsSpan(framesWritten * 2, framesToGenerate * 2));
-                framesWritten += framesToGenerate;
-                framesRemainingInCommand -= framesToGenerate;
-            }
+            var chunk = new short[framesPerChunk * 2];
+            var framesWritten = source.Read(chunk, loop);
+            ended = framesWritten < framesPerChunk;
 
             if (token.IsCancellationRequested)
                 return;
 
-            ApplyMusicGain(chunk);
+            if (framesWritten > 0)
+            {
+                if (framesWritten < framesPerChunk)
+                    Array.Resize(ref chunk, framesWritten * 2);
 
-            var bufferId = AL.GenBuffer();
-            AL.BufferData(bufferId, ALFormat.Stereo16, chunk, MusicSampleRate);
-            AL.SourceQueueBuffers(_musicSource, 1, [bufferId]);
+                var bufferId = AL.GenBuffer();
+                AL.BufferData(bufferId, ALFormat.Stereo16, chunk, sampleRate);
+                AL.SourceQueueBuffers(_musicSource, 1, [bufferId]);
+            }
 
             // Before the source has actually started playing, a Stopped/Initial source reports
             // every queued buffer as immediately "processed" (nothing is consuming them yet), so
@@ -571,6 +579,12 @@ internal class AudioManager
                 // A short track that ended before priming plays what it has
                 if ((buffersPrimed == MusicStreamPrimedBuffers || ended) && !_isPaused)
                     AL.SourcePlay(_musicSource);
+            }
+            else if (!_isPaused && framesWritten > 0 && !IsMusicSourceActive())
+            {
+                // Starved (decoding fell behind, or a long hitch): OpenAL stops a source that
+                // runs out of buffers, so start it again on what's now queued
+                AL.SourcePlay(_musicSource);
             }
 
             while (!token.IsCancellationRequested)
@@ -623,13 +637,136 @@ internal class AudioManager
         AL.DeleteBuffers(queuedBuffers);
     }
 
-    private static void ApplyMusicGain(Span<short> samples)
+    /// <summary>Music as 16-bit stereo, read a chunk at a time by <see cref="StreamMusic"/></summary>
+    internal abstract class MusicSource : IDisposable
     {
-        for (var index = 0; index < samples.Length; index++)
+        public abstract int SampleRate { get; }
+
+        /// <summary>
+        /// Fills <paramref name="stereo"/> (interleaved left/right) and returns the frames written,
+        /// fewer than it holds only at the end of a track that doesn't loop
+        /// </summary>
+        public abstract int Read(short[] stereo, bool loop);
+
+        public virtual void Dispose() { }
+    }
+
+    /// <summary>An IMF song, synthesized on an emulated OPL3</summary>
+    internal sealed class ImfMusicSource : MusicSource
+    {
+        private readonly IReadOnlyList<Wolf3dImfAudio.WolfensteinMusicCommand> _commands;
+        private readonly Opl3Chip _chip = new();
+        private int _commandIndex;
+        private int _framesRemainingInCommand;
+
+        public ImfMusicSource(Wolf3dImfAudio track)
         {
-            var amplified = samples[index] * MusicSampleGain;
-            samples[index] = (short)Math.Clamp(amplified, short.MinValue, short.MaxValue);
+            _commands = track.Commands;
+            if (_commands.Count == 0 || _commands.Sum(command => command.Delay) == 0)
+                throw new InvalidDataException("the song is empty");
+            _chip.Reset(MusicSampleRate);
+            _chip.WriteRegister(0x01, 0x20);
         }
+
+        public override int SampleRate => MusicSampleRate;
+
+        public override int Read(short[] stereo, bool loop)
+        {
+            const int framesPerTick = MusicSampleRate / MusicTicksPerSecond;
+            var frames = stereo.Length / 2;
+            var framesWritten = 0;
+            while (framesWritten < frames)
+            {
+                while (_framesRemainingInCommand == 0)
+                {
+                    if (_commandIndex >= _commands.Count)
+                    {
+                        if (!loop)
+                            return Finish(stereo, framesWritten);
+                        _commandIndex = 0;   // loop the track
+                    }
+                    var command = _commands[_commandIndex];
+                    _chip.WriteRegister(command.Register, command.Value);
+                    _framesRemainingInCommand = command.Delay * framesPerTick;
+                    _commandIndex++;
+                }
+
+                var framesToGenerate = Math.Min(_framesRemainingInCommand, frames - framesWritten);
+                _chip.GenerateStream(stereo.AsSpan(framesWritten * 2, framesToGenerate * 2));
+                framesWritten += framesToGenerate;
+                _framesRemainingInCommand -= framesToGenerate;
+            }
+            return Finish(stereo, framesWritten);
+        }
+
+        private static int Finish(short[] stereo, int framesWritten)
+        {
+            var samples = stereo.AsSpan(0, framesWritten * 2);
+            for (var index = 0; index < samples.Length; index++)
+            {
+                var amplified = samples[index] * MusicSampleGain;
+                samples[index] = (short)Math.Clamp(amplified, short.MinValue, short.MaxValue);
+            }
+            return framesWritten;
+        }
+    }
+
+    /// <summary>
+    /// An OGG, MP3 or WAV song, decoded as it plays. Mono is played on both sides; past two
+    /// channels, only the front left and right are kept.
+    /// </summary>
+    internal sealed class FileMusicSource : MusicSource
+    {
+        private readonly MusicFileAsset _file;
+        private AudioFileDecoder _decoder;
+        private float[] _samples = [];
+
+        public FileMusicSource(MusicFileAsset file)
+        {
+            _file = file;
+            _decoder = file.OpenDecoder();
+        }
+
+        public override int SampleRate => _decoder.SampleRate;
+
+        public override int Read(short[] stereo, bool loop)
+        {
+            var channels = _decoder.Channels;
+            var frames = stereo.Length / 2;
+            if (_samples.Length < frames * channels)
+                _samples = new float[frames * channels];
+
+            var framesWritten = 0;
+            var restarted = false;
+            while (framesWritten < frames)
+            {
+                var read = _decoder.Read(_samples, 0, (frames - framesWritten) * channels) / channels;
+                if (read == 0)
+                {
+                    // Reopened rather than seeked, which every format supports alike. A file
+                    // that gives nothing right after being reopened has nothing to loop.
+                    if (!loop || restarted)
+                        break;
+                    _decoder.Dispose();
+                    _decoder = _file.OpenDecoder();
+                    restarted = true;
+                    continue;
+                }
+                restarted = false;
+
+                for (var frame = 0; frame < read; frame++)
+                {
+                    var left = _samples[frame * channels];
+                    var right = channels > 1 ? _samples[frame * channels + 1] : left;
+                    stereo[(framesWritten + frame) * 2] = AudioFileDecoder.ToPcm16(left);
+                    stereo[(framesWritten + frame) * 2 + 1] = AudioFileDecoder.ToPcm16(right);
+                }
+                framesWritten += read;
+            }
+            return framesWritten;
+        }
+
+        public override void Dispose() => _decoder.Dispose();
     }
 
     public void StopMusic()
@@ -676,6 +813,12 @@ internal class AudioManager
         var buffer = AL.GenBuffer();
         var data = sound.ToPcm16(44100);
         AL.BufferData(buffer, ALFormat.Mono16, data, 44100);
+        return buffer;
+    }
+    private static int CreateBuffer(SoundFileAsset sound)
+    {
+        var buffer = AL.GenBuffer();
+        AL.BufferData(buffer, ALFormat.Mono16, sound.Samples, sound.SampleRate);
         return buffer;
     }
     private static int CreateBuffer(AdLibSound sound)

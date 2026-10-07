@@ -117,8 +117,8 @@ internal partial class Program
         int sprites = _assetManager.CountNames(typeof(SpriteAsset));
         // Every sound has an AdLib version (named alNAME, as its PC one is pcNAME), and some a digitized one
         int sounds = _assetManager.CountNames(typeof(AdLibSound));
-        int digitized = _assetManager.CountNames(typeof(Wolf3dDigitizedAudio));
-        int songs = _assetManager.CountNames(typeof(Wolf3dImfAudio));
+        int digitized = _assetManager.CountNames(typeof(Wolf3dDigitizedAudio), typeof(SoundFileAsset));
+        int songs = _assetManager.CountNames(typeof(Wolf3dImfAudio), typeof(MusicFileAsset));
         SignonLine(area, "Content:", $"{maps} maps, {walls} walls, {sprites} sprites");
         SignonLine(area, null, $"{sounds} sounds ({digitized} digitized), {songs} songs");
     }

@@ -280,6 +280,21 @@ internal class PfWolfPk3Loader
             return;
         }
 
+        if (fullName.StartsWith("sounds/"))
+        {
+            // sounds/NAME.wav (or .ogg, .mp3) is the digitized sound NAME, in place of the game's
+            // own of that name, or a new one for sound-seq to name
+            AddReference(assetName, () => new SoundFileAsset(entry.Open().ToArray()));
+            return;
+        }
+
+        if (fullName.StartsWith("music/"))
+        {
+            // music/NAME.ogg (or .mp3, .wav) plays in place of the IMF song NAME, or as a new song
+            AddReference(assetName, () => new MusicFileAsset(entry.Open().ToArray()));
+            return;
+        }
+
         if (fullName.StartsWith("sprites/"))
         {
             AddReference(assetName, () => PngSpriteDataLoader.Load(entry.Open(), sourcePalette: Load<Palette>(GamePalette)));

@@ -21,6 +21,8 @@
     <PackageReference Include="LiteNetLib" Version="2.1.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
     <PackageReference Include="Mono.Nat" Version="3.0.4" />
+    <PackageReference Include="NLayer" Version="3.0.0" />
+    <PackageReference Include="NVorbis" Version="0.10.5" />
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>

@@ -1,6 +1,7 @@
 using SDL2;
 using System.Text;
 using PFWolf.Assets;
+using PFWolf.Assets.Sounds;
 using PFWolf.Configuration;
 using PFWolf.Enums;
 using PFWolf.Loaders;
@@ -201,7 +202,11 @@ internal partial class Program
         Register("mods", "Lists the mods loaded over pfwolf.pk3, in load order, and anything wrong with them.", "mods", Cmd_Mods);
         Register("assetinfo", "Shows where an asset came from: each file that added, replaced or merged into it, in order.",
             "assetinfo <name>", Cmd_AssetInfo, complete: (_, i) => i == 0 ? _assetManager.AssetNames : []);
-        Register("exportmap", "Writes a level, or all of them, as ECWolf binary maps (NAME.wad) for a mod's maps/ folder: to the exports folder, or the folder given.",
+        Register("playsound", "Plays a sound: a sound-seq name (doors/open), or a sound file's or digitized sound's name.",
+            "playsound <name>", Cmd_PlaySound);
+        Register("changemus", "Plays a song, from a pk3's music/ folder or the game's own; with no name, shows what's playing. A song that ends stops instead of looping with 'once'.",
+            "changemus [name] [once]", Cmd_ChangeMus, complete: (_, i) => i == 1 ? ["once"] : []);
+        Register("exportmap","Writes a level, or all of them, as ECWolf binary maps (NAME.wad) for a mod's maps/ folder: to the exports folder, or the folder given.",
             "exportmap <MAP##|all> [folder]", Cmd_ExportMap,
             complete: (_, i) => i == 0 ? ["all", .. _gameEngineManager.GetGameInfo().Maps.Keys] : []);
         Register("playdemo", "Plays a demo: one recorded with that number (DEMO#.dmo in the demos folder), or else the game's own. Ends the game in progress, then goes back to the title.",
@@ -1530,6 +1535,35 @@ internal partial class Program
             || tiles < 0 || tiles > MapManager.MAPSIZE)
             throw new ArgumentException($"expected a number of tiles from 0 to {MapManager.MAPSIZE}, got \"{arg}\"");
         return tiles;
+    }
+
+    private static void Cmd_PlaySound(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: playsound <name>");
+
+        _audioManager.Play(args[0]);
+        _consoleManager.Print(_audioManager.IsPlaying(args[0])
+            ? $"Playing {args[0]}"
+            : $"{args[0]} didn't play: there's no such sound, or the sound devices it has are off");
+    }
+
+    private static void Cmd_ChangeMus(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            var playing = _audioManager.CurrentMusicTrack;
+            _consoleManager.Print(string.IsNullOrEmpty(playing) ? "No music" : $"Music: {playing}{(_audioManager.IsMusicPlaying ? "" : " (not playing)")}");
+            return;
+        }
+
+        var name = args[0];
+        if (!_audioManager.HasMusic(name))
+            throw new ArgumentException($"There's no song named {name}");
+
+        _audioManager.PlayMusic(name, loop: !(args.Length > 1 && args[1].Equals("once", StringComparison.OrdinalIgnoreCase)));
+        var kind = _assetManager.Exists<MusicFileAsset>(name) ? "music file" : "IMF";
+        _consoleManager.Print(_audioManager.MusicEnabled ? $"Playing {name} ({kind})" : $"{name} ({kind}) plays when music is switched on");
     }
 
     private static void Cmd_Fps(string[] args)

@@ -2223,7 +2223,7 @@ internal partial class Program
                 continue;
 
             var music = _gameEngineManager.GetGameInfo().MenuMusic ?? menu.Music;
-            if (!string.IsNullOrEmpty(music) && !_assetManager.Exists<Wolf3dImfAudio>(music))
+            if (!string.IsNullOrEmpty(music) && !_audioManager.HasMusic(music))
                 Console.WriteLine($"Menu '{menuName}': unknown music '{music}'");
 
             var packLists = menu.MenuItems.Select(item => item.GamePacks)
@@ -2248,7 +2248,7 @@ internal partial class Program
 
         (MusicMenu, MusicItems) = LoadMenu("jukebox");
         // Only the songs the game has (the shareware has 10 of the 27)
-        MusicMenu = MusicMenu.Where(item => item.data is not string song || _assetManager.Exists<Wolf3dImfAudio>(song)).ToArray();
+        MusicMenu = MusicMenu.Where(item => item.data is not string song || _audioManager.HasMusic(song)).ToArray();
         MusicItems.amount = (short)Math.Min(JukeboxPageSize, MusicMenu.Length);
     }
 
