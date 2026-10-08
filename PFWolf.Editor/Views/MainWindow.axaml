@@ -1,0 +1,74 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:r="using:PFWolf.Editor.Rendering"
+        x:Class="PFWolf.Editor.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="PFWolf Editor"
+        Width="1280" Height="800" MinWidth="800" MinHeight="500">
+
+  <DockPanel>
+    <!-- The game: its folder, which game, and loading it -->
+    <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
+        <TextBlock Grid.Column="0" Text="Game folder" VerticalAlignment="Center" />
+        <TextBox Grid.Column="1" Text="{Binding GameFolder}" PlaceholderText="The folder PFWolf.exe and pfwolf.pk3 are in" />
+        <Button Grid.Column="2" Content="Browse…" Click="BrowseGameFolder" />
+        <ComboBox Grid.Column="3" ItemsSource="{Binding GameChoices}" SelectedItem="{Binding SelectedGame}" MinWidth="200" />
+        <Button Grid.Column="4" Content="Load" Command="{Binding LoadCommand}" Classes="accent" />
+      </Grid>
+    </Border>
+
+    <!-- What's under the pointer, and how the load went -->
+    <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <StackPanel Spacing="2">
+        <TextBlock Text="{Binding HoverInfo}" TextTrimming="CharacterEllipsis" MinHeight="18" />
+        <TextBlock Text="{Binding Status}" Opacity="0.7" />
+      </StackPanel>
+    </Border>
+
+    <Expander DockPanel.Dock="Bottom" HorizontalAlignment="Stretch" Padding="0">
+      <Expander.Header>
+        <TextBlock>
+          <Run Text="Problems: " /><Run Text="{Binding Problems.Count}" />
+        </TextBlock>
+      </Expander.Header>
+      <ListBox ItemsSource="{Binding Problems}" Height="140" />
+    </Expander>
+
+    <!-- Levels and mods -->
+    <Grid DockPanel.Dock="Left" Width="260" RowDefinitions="Auto,*,Auto,Auto,Auto" Margin="8">
+      <TextBlock Grid.Row="0" Text="Levels" FontWeight="SemiBold" Margin="0,0,0,4" />
+      <ListBox Grid.Row="1" ItemsSource="{Binding Maps}" SelectedItem="{Binding SelectedMap}" />
+      <TextBlock Grid.Row="2" Text="Mods (loaded over pfwolf.pk3, later ones win)" FontWeight="SemiBold" Margin="0,12,0,4" TextWrapping="Wrap" />
+      <ListBox Grid.Row="3" ItemsSource="{Binding Mods}" SelectedItem="{Binding SelectedMod}" Height="100" />
+      <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+        <Button Content="Add pk3…" Click="AddModFile" />
+        <Button Content="Add folder…" Click="AddModFolder" />
+        <Button Content="Remove" Command="{Binding RemoveModCommand}" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Layers -->
+    <StackPanel DockPanel.Dock="Right" Width="180" Margin="8" Spacing="4">
+      <TextBlock Text="Layers" FontWeight="SemiBold" Margin="0,0,0,4" />
+      <CheckBox Content="Walls and doors" IsChecked="{Binding ShowWalls}" />
+      <CheckBox Content="Things" IsChecked="{Binding ShowThings}" />
+      <CheckBox Content="Flats (plane 2)" IsChecked="{Binding ShowFlats}" />
+      <CheckBox Content="Heights (plane 3)" IsChecked="{Binding ShowHeights}" />
+      <CheckBox Content="Tags (plane 4)" IsChecked="{Binding ShowTags}" />
+      <CheckBox Content="Light zones (plane 5)" IsChecked="{Binding ShowZones}" />
+      <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" />
+      <TextBlock Margin="0,16,0,0" TextWrapping="Wrap" Opacity="0.7"
+                 Text="Wheel to zoom, drag to pan, Home to fit the level." />
+    </StackPanel>
+
+    <r:MapCanvas x:Name="Canvas"
+                 Tiles="{Binding Tiles}" Art="{Binding Art}"
+                 ShowWalls="{Binding ShowWalls}" ShowThings="{Binding ShowThings}"
+                 ShowFlats="{Binding ShowFlats}" ShowHeights="{Binding ShowHeights}"
+                 ShowTags="{Binding ShowTags}" ShowZones="{Binding ShowZones}"
+                 ShowGrid="{Binding ShowGrid}"
+                 TileHovered="OnTileHovered" />
+  </DockPanel>
+</Window>

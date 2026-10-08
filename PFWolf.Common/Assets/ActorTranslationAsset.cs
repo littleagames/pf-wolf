@@ -48,7 +48,7 @@ public class ActorData
     public bool Extend { get; internal set; }
 
     /// <summary>What a class loaded over <paramref name="existing"/> makes of it (see <see cref="Extend"/>).</summary>
-    internal static ActorData Combine(ActorData? existing, ActorData incoming)
+    public static ActorData Combine(ActorData? existing, ActorData incoming)
     {
         if (!incoming.Extend || existing == null)
             return incoming;

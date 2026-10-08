@@ -9,7 +9,7 @@ namespace PFWolf.Assets
     /// VSWAP walls are 64x64. Ones from a pack's textures/ folder can be any size: a taller one
     /// spans a story per 64 pixels, from the floor up.
     /// </summary>
-    internal record TextureAsset : Asset
+    public record TextureAsset : Asset
     {
         public const int StorySize = 64;
 

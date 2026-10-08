@@ -24,7 +24,7 @@ public class AssetManager
         this.strict = strict;
     }
 
-    internal const string BasePk3FileName = "pfwolf.pk3";
+    public const string BasePk3FileName = "pfwolf.pk3";
 
     // Each asset's history, by key: which sources added, replaced or merged into it
     private Dictionary<string, List<AssetOrigin>> _origins = [];
