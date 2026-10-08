@@ -22,6 +22,7 @@
     <KeyBinding Gesture="F6" Command="{Binding ShowArtCommand}" />
     <KeyBinding Gesture="F8" Command="{Binding ShowSoundsCommand}" />
     <KeyBinding Gesture="F9" Command="{Binding ShowPalettesCommand}" />
+    <KeyBinding Gesture="F2" Command="{Binding ShowTextsCommand}" />
   </Window.KeyBindings>
 
   <DockPanel>
@@ -74,6 +75,8 @@
                 ToolTip.Tip="F8: every sound and song, to listen to, with where it comes from and what plays it" />
         <Button Content="Palettes…" Command="{Binding ShowPalettesCommand}"
                 ToolTip.Tip="F9: every palette, to look at and edit, with where it comes from and what's drawn in it" />
+        <Button Content="Texts…" Command="{Binding ShowTextsCommand}"
+                ToolTip.Tip="F2: the help screens, end texts and briefings, each article page as the game shows it, with what's wrong with it" />
         <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
         <Button Content="▶ Play" Command="{Binding PlayCommand}" Classes="accent"
                 ToolTip.Tip="F5: saves the level if it's changed, then starts PFWolf on it with the mods" />

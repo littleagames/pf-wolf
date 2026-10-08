@@ -33,4 +33,7 @@ public interface IEditorDialogs
 
     /// <summary>Shows the palette browser beside the editor, or brings it to the front</summary>
     void ShowPaletteBrowser(PaletteBrowserViewModel browser);
+
+    /// <summary>Shows the text browser beside the editor, or brings it to the front</summary>
+    void ShowTextBrowser(TextBrowserViewModel browser);
 }

@@ -195,12 +195,35 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             if (value != null)
                 _artBrowser?.Recolor(value);
+            _textBrowser?.Recolor();
             return;
         }
 
         _artBrowser?.Load(Content, value);
         _soundBrowser?.Load(Content);
         _paletteBrowser?.Load(Content);
+        _textBrowser?.Load(Content);
+    }
+
+    //
+    // The text browser
+    //
+
+    private TextBrowserViewModel? _textBrowser;
+
+    /// <summary>Opens the text browser, on the first article the first time</summary>
+    [RelayCommand]
+    private void ShowTexts()
+    {
+        if (Dialogs == null)
+            return;
+
+        if (_textBrowser == null)
+        {
+            _textBrowser = new TextBrowserViewModel();
+            _textBrowser.Load(Content);
+        }
+        Dialogs.ShowTextBrowser(_textBrowser);
     }
 
     //

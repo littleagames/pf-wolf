@@ -1,0 +1,104 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:data="using:PFWolf.Editor.Data"
+        x:Class="PFWolf.Editor.Views.TextBrowserWindow"
+        x:DataType="vm:TextBrowserViewModel"
+        Title="{Binding Title}"
+        Width="1440" Height="800" MinWidth="1000" MinHeight="560"
+        WindowStartupLocation="CenterOwner">
+
+  <DockPanel>
+    <!-- What's listed -->
+    <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <TextBox x:Name="Search" Text="{Binding Filter}" VerticalAlignment="Center"
+                 PlaceholderText="Find by name or what shows it (helpart, cluster 2, briefing)" />
+        <TextBlock Grid.Column="1" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="100" />
+      </Grid>
+    </Border>
+
+    <!-- Every text listed -->
+    <ListBox x:Name="List" DockPanel.Dock="Left" Width="230" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" Margin="8,8,0,8">
+      <ListBox.Styles>
+        <Style Selector="ListBoxItem">
+          <Setter Property="Padding" Value="8,3" />
+        </Style>
+      </ListBox.Styles>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:TextItem">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6" ToolTip.Tip="{Binding ToolTip}">
+            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding FormatText}" Opacity="0.6" FontSize="12" VerticalAlignment="Center" />
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <Grid ColumnDefinitions="Auto,*" Margin="8" ColumnSpacing="12" IsVisible="{Binding HasSelection}">
+      <!-- The page as the game shows it, and what's wrong with the text -->
+      <ScrollViewer Grid.Column="0" Width="660" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="6">
+          <SelectableTextBlock Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" />
+
+          <StackPanel Spacing="6" IsVisible="{Binding HasPreview}">
+            <Border BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" HorizontalAlignment="Left">
+              <Image x:Name="Page" Source="{Binding PageImage}" Width="640" Height="400" Stretch="Fill"
+                     RenderOptions.BitmapInterpolationMode="None" Cursor="Hand"
+                     ToolTip.Tip="The page at twice the game's 320x200. Click a word or picture to find it in the text" />
+            </Border>
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+              <Button Content="◀ Page" Command="{Binding PreviousPageCommand}" ToolTip.Tip="Page Up" />
+              <TextBlock Grid.Column="1" Text="{Binding PageText}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              <Button Grid.Column="2" Content="Page ▶" Command="{Binding NextPageCommand}" ToolTip.Tip="Page Down" />
+            </Grid>
+            <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" FontWeight="SemiBold" />
+            <ListBox x:Name="ProblemList" ItemsSource="{Binding Problems}" MaxHeight="150" IsVisible="{Binding HasProblems}"
+                     SelectionChanged="OnProblemPicked">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="data:ArticleProblem">
+                  <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding Label}" TextWrapping="Wrap" FontSize="12" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </StackPanel>
+
+          <TextBlock Text="Shown by" FontWeight="SemiBold" Margin="0,6,0,0" />
+          <ItemsControl ItemsSource="{Binding Uses}" IsVisible="{Binding HasUses}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="12" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Text="Nothing in game-info shows it (the engine itself may)." Opacity="0.6" FontSize="12"
+                     TextWrapping="Wrap" IsVisible="{Binding !HasUses}" />
+
+          <TextBlock Text="Where it comes from (the last one is used)" FontWeight="SemiBold" Margin="0,6,0,0" />
+          <ItemsControl ItemsSource="{Binding Origins}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <TextBlock Text="{Binding}" ToolTip.Tip="{Binding}" TextTrimming="CharacterEllipsis" FontSize="12" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- The text itself, to try changes in -->
+      <DockPanel Grid.Column="1">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,0,0,6">
+          <TextBlock Text="Text" FontWeight="SemiBold" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Text="Changed: only the preview shows it, it isn't saved" Opacity="0.7" FontSize="12"
+                     VerticalAlignment="Center" IsVisible="{Binding IsChanged}" />
+          <Button Grid.Column="2" Content="Revert" Command="{Binding RevertCommand}"
+                  ToolTip.Tip="Back to the text as the game has it" />
+        </Grid>
+        <TextBox x:Name="SourceBox" Text="{Binding Source}" AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap"
+                 FontFamily="Consolas,Menlo,monospace" FontSize="13"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</Window>

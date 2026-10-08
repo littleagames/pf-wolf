@@ -96,6 +96,20 @@ public partial class MainWindow : Window, IEditorDialogs
             _paletteBrowser.Activate();
     }
 
+    private TextBrowserWindow? _textBrowser;
+
+    public void ShowTextBrowser(TextBrowserViewModel browser)
+    {
+        if (_textBrowser == null)
+        {
+            _textBrowser = new TextBrowserWindow { DataContext = browser };
+            _textBrowser.Closed += (_, _) => _textBrowser = null;
+            _textBrowser.Show(this);
+        }
+        else
+            _textBrowser.Activate();
+    }
+
     protected override async void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosing(e);
