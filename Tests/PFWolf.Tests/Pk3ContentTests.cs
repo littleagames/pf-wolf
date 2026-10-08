@@ -163,7 +163,7 @@ public class Pk3ContentTests
         var problems = new List<string>();
         foreach (var file in files)
         {
-            using var image = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(file);
+            var image = ImageDecoder.Decode(file);
             var corner = image[0, 0];
             if (corner.R != 152 || corner.G != 0 || corner.B != 136)
                 problems.Add($"{Path.GetFileName(file)}: {corner.R},{corner.G},{corner.B} behind it, which is drawn");

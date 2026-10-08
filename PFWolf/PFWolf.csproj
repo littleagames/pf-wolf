@@ -23,7 +23,6 @@
     <PackageReference Include="Mono.Nat" Version="3.0.4" />
     <PackageReference Include="NLayer" Version="3.0.0" />
     <PackageReference Include="NVorbis" Version="0.10.5" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
 	<ItemGroup>
@@ -69,11 +68,6 @@
 	<!-- The example mods (examples/mods), ready to switch on in the Mods screen -->
 	<ItemGroup>
 		<ExampleModFiles Include="$(MSBuildProjectDirectory)\..\examples\mods\**\*.*" />
-	</ItemGroup>
-	<ItemGroup>
-	  <Compile Remove="Models\**" />
-	  <EmbeddedResource Remove="Models\**" />
-	  <None Remove="Models\**" />
 	</ItemGroup>
 	<Target Name="CopyExampleMods" AfterTargets="CreateModsFolder">
 		<Copy SourceFiles="@(ExampleModFiles)" DestinationFiles="@(ExampleModFiles->'$(TargetDir)mods\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />

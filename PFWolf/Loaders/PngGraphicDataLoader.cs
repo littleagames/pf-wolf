@@ -1,7 +1,5 @@
 ﻿using PFWolf.Assets;
 using System;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace PFWolf.Loaders;
 
@@ -11,11 +9,11 @@ internal class PngGraphicDataLoader
 
     internal static GraphicAsset Load(MemoryStream stream, Palette sourcePalette)
     {
-        // Using SixLabors.ImageSharp for cross-platform PNG support
         stream.Position = 0;
-        using var image = Image.Load<Rgba32>(stream);
+        var image = ImageDecoder.Decode(stream);
         int width = image.Width;
         int height = image.Height;
+        var pixels = image.Pixels;
         var indexedData = new byte[width * height];
 
         // Prepare palette color array for fast lookup
@@ -23,17 +21,17 @@ internal class PngGraphicDataLoader
         int paletteSize = paletteColors.Length;
 
         // Helper to find closest palette index
-        int FindClosestPaletteIndex(Rgba32 color)
+        int FindClosestPaletteIndex(int r, int g, int b, int a)
         {
             int minDist = int.MaxValue;
             int minIdx = 0;
             for (int i = 0; i < paletteSize; i++)
             {
                 var p = paletteColors[i];
-                int dr = color.R - p.Red;
-                int dg = color.G - p.Green;
-                int db = color.B - p.Blue;
-                int da = color.A - p.Alpha;
+                int dr = r - p.Red;
+                int dg = g - p.Green;
+                int db = b - p.Blue;
+                int da = a - p.Alpha;
                 int dist = dr * dr + dg * dg + db * db + da * da;
                 if (dist < minDist)
                 {
@@ -47,23 +45,15 @@ internal class PngGraphicDataLoader
         var opacityMask = new byte[width * height];
         bool anyClear = false;
 
-        image.ProcessPixelRows(accessor =>
+        for (int i = 0; i < width * height; i++)
         {
-            for (int y = 0; y < height; y++)
-            {
-                var row = accessor.GetRowSpan(y);
-                for (int x = 0; x < width; x++)
-                {
-                    var color = row[x];
-                    int idx = FindClosestPaletteIndex(color);
-                    indexedData[y * width + x] = (byte)idx;
-                    if (color.A < AlphaOpaqueThreshold)
-                        anyClear = true;
-                    else
-                        opacityMask[y * width + x] = 1;
-                }
-            }
-        });
+            int alpha = pixels[i * 4 + 3];
+            indexedData[i] = (byte)FindClosestPaletteIndex(pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2], alpha);
+            if (alpha < AlphaOpaqueThreshold)
+                anyClear = true;
+            else
+                opacityMask[i] = 1;
+        }
 
         // Try to extract grAb chunk (offset)
         Point offset = Point.Zero;
