@@ -228,6 +228,16 @@ public sealed class ToolController
         Clear(edit, selection, CopyAllPlanes ? null : Plane);
     }
 
+    /// <summary>Clears one tile on the plane being edited (Delete over the 3D view)</summary>
+    public void EraseTile(int x, int y)
+    {
+        if (_document is not { } document || !document.Contains(x, y))
+            return;
+        CancelGesture();
+        using var edit = document.BeginEdit("Erase");
+        edit.Set(Plane, x, y, EraseValue(Plane));
+    }
+
     /// <summary>Picks up the clipboard: it follows the pointer from (x, y) until a click puts it down</summary>
     public void StartPaste(int x, int y)
     {

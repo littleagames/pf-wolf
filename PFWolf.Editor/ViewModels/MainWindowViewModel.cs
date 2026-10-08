@@ -25,6 +25,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private List<PaletteItem> _allPaletteItems = [];
     private (int X, int Y) _hover = (-1, -1);
+    // What the pointer was last on in the 3D view, while it's there (redescribed after an edit)
+    private (SurfaceHit? Hit, (int X, int Y) Target)? _hover3D;
 
     public MainWindowViewModel(EditorSettings settings)
     {
@@ -300,7 +302,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(WindowTitle));
         UndoCommand.NotifyCanExecuteChanged();
         RedoCommand.NotifyCanExecuteChanged();
-        if (_hover.X >= 0)
+        if (_hover3D is var (hit, target))
+            Hover3D(hit, target);
+        else if (_hover.X >= 0)
             Hover(_hover.X, _hover.Y);
     }
 
@@ -813,6 +817,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public void Hover(int x, int y)
     {
         _hover = (x, y);
+        _hover3D = null;
         HoverInfo = Tiles == null || x < 0
             ? ""
             : $"({x}, {y})   " + string.Join("   ·   ", Tiles.Describe(x, y));
@@ -837,17 +842,21 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Camera.PlaceOn(tiles.Width / 2, tiles.Height / 2, 90);
     }
 
-    /// <summary>Shows what the pointer is on in the 3D view: the surface, then the tile as the map does</summary>
-    public void Hover3D(SurfaceHit? hit)
+    /// <summary>
+    /// Shows what the pointer is on in the 3D view: the surface, then the tile an edit there goes
+    /// to as the map does (it's also where Play from here starts)
+    /// </summary>
+    public void Hover3D(SurfaceHit? hit, (int X, int Y) target)
     {
-        if (hit is not { } surface || Tiles == null)
+        if (hit is not { } surface || Tiles == null || target.X < 0)
         {
             Hover(-1, -1);
             return;
         }
 
-        var (x, y) = (surface.Ref.X, surface.Ref.Y);
+        var (x, y) = target;
         _hover = (x, y);
+        _hover3D = (hit, target);
         var what = surface.Ref.Kind switch
         {
             SurfaceKind.Wall when surface.Ref.Face == Face.Top => "top of the wall",
@@ -860,6 +869,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         };
         if (surface.Texture.Source == TextureSource.Texture)
             what += $" ({surface.Texture.Name})";
+        if (target != (surface.Ref.X, surface.Ref.Y))
+            what += $", editing the tile in front";
         HoverInfo = $"3D: {what}   ({x}, {y})   " + string.Join("   ·   ", Tiles.Describe(x, y));
     }
 

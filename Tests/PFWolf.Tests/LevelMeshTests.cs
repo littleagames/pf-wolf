@@ -197,6 +197,71 @@ public class LevelMeshTests
         Assert.That(floor.Points, Has.Some.EqualTo(new Vector3(11, 0, 11)));
     }
 
+    [TestCase(Face.North, 10, 9)]
+    [TestCase(Face.South, 10, 11)]
+    [TestCase(Face.East, 11, 10)]
+    [TestCase(Face.West, 9, 10)]
+    public void In_Front_Of_A_Wall_Face_Is_The_Tile_It_Looks_Onto(Face face, int x, int y)
+    {
+        // Act
+        var target = LevelMesh.TargetTile(new SurfaceRef(SurfaceKind.Wall, 10, 10, face), inFront: true);
+
+        // Assert
+        Assert.That(target, Is.EqualTo((x, y)));
+    }
+
+    [TestCase(SurfaceKind.Wall, Face.West, false)]
+    [TestCase(SurfaceKind.Wall, Face.Top, true)]
+    [TestCase(SurfaceKind.Floor, Face.None, true)]
+    [TestCase(SurfaceKind.Thing, Face.None, true)]
+    public void Other_Surfaces_Edit_Their_Own_Tile(SurfaceKind kind, Face face, bool inFront)
+    {
+        // Act
+        var target = LevelMesh.TargetTile(new SurfaceRef(kind, 10, 10, face), inFront);
+
+        // Assert
+        Assert.That(target, Is.EqualTo((10, 10)));
+    }
+
+    [Test]
+    public void Painting_A_Picked_Wall_Changes_That_Wall_And_Undoes()
+    {
+        // Arrange: looking north from (5, 5) at a wall at (5, 3)
+        var document = Room();
+        EditorMaps.Set(document, 0, 5, 3, Wall);
+        var camera = new Camera3D();
+        camera.PlaceOn(5, 5, 90);
+        var (origin, direction) = camera.Ray(0, 0, 1.5f);
+        var hit = Build(document).Pick(origin, direction, camera)!.Value;
+        var controller = new ToolController { Document = document, Plane = 0, Value = 2 };
+
+        // Act
+        var (x, y) = LevelMesh.TargetTile(hit.Ref, inFront: false);
+        controller.Press(x, y);
+        controller.Release();
+
+        // Assert
+        Assert.That(document[0, 5, 3], Is.EqualTo(2));
+        document.Undo();
+        Assert.That(document[0, 5, 3], Is.EqualTo(Wall));
+    }
+
+    [Test]
+    public void Erasing_A_Tile_Clears_The_Plane_Being_Edited()
+    {
+        // Arrange
+        var document = Room();
+        EditorMaps.Set(document, 1, 5, 5, Start);
+        var controller = new ToolController { Document = document, Plane = 1 };
+
+        // Act
+        controller.EraseTile(5, 5);
+
+        // Assert
+        Assert.That(document[1, 5, 5], Is.EqualTo(0));
+        Assert.That(document.UndoDescription, Is.EqualTo("Erase"));
+    }
+
     [Test]
     public void Picking_Finds_The_Wall_In_Front_Of_The_Player_Start()
     {

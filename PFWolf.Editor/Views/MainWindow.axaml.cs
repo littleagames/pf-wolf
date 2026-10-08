@@ -42,7 +42,7 @@ public partial class MainWindow : Window, IEditorDialogs
             View3D.Focus();
     }
 
-    private void OnSurfaceHovered(object? sender, SurfaceHoverEventArgs e) => ViewModel.Hover3D(e.Hit);
+    private void OnSurfaceHovered(object? sender, SurfaceHoverEventArgs e) => ViewModel.Hover3D(e.Hit, e.Target);
 
     private void On3DFailed(object? sender, string message)
     {

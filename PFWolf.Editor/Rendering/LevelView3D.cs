@@ -13,21 +13,25 @@ namespace PFWolf.Editor.Rendering;
 // Inside the namespace, so it beats the game's PFWolf.Point
 using Point = Avalonia.Point;
 
-/// <summary>What the pointer is over in the 3D view, or nothing</summary>
-public sealed class SurfaceHoverEventArgs(SurfaceHit? hit) : EventArgs
+/// <summary>What the pointer is over in the 3D view, or nothing, and the tile an edit there goes to</summary>
+public sealed class SurfaceHoverEventArgs(SurfaceHit? hit, (int X, int Y) target) : EventArgs
 {
     public SurfaceHit? Hit { get; } = hit;
+    public (int X, int Y) Target { get; } = target;
 }
 
 /// <summary>
 /// The level in 3D through OpenGL, built by <see cref="LevelMesh"/> and rebuilt whenever the
 /// level changes. Fly with WASD (Q and E down and up, Shift faster), look by dragging with the
 /// right button, slide by dragging with the middle one, and move along the view with the wheel.
+/// The left button works the map's tools on the tile under the pointer (see
+/// <see cref="LevelMesh.TargetTile"/>): things go in front of a wall face, and so does
+/// anything with Shift held.
 /// </summary>
 public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomHitTest
 {
-    // The OpenGL picture isn't something Avalonia hit-tests, so the whole area takes the pointer
-    public bool HitTest(Point point) => true;
+    // The OpenGL picture isn't something Avalonia hit-tests, so the view's whole area takes the pointer
+    public bool HitTest(Point point) => IsVisible && new Rect(Bounds.Size).Contains(point);
 
     public static readonly StyledProperty<MapTiles?> TilesProperty = AvaloniaProperty.Register<LevelView3D, MapTiles?>(nameof(Tiles));
     public static readonly StyledProperty<ArtCache?> ArtProperty = AvaloniaProperty.Register<LevelView3D, ArtCache?>(nameof(Art));
@@ -54,6 +58,9 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     /// <summary>OpenGL couldn't be set up: why, for the status line</summary>
     public event EventHandler<string>? Failed;
 
+    /// <summary>A tool's key letter was pressed over the view (not one used for flying)</summary>
+    public event EventHandler<string>? ToolKeyPressed;
+
     private const int FloatsPerVertex = 9;   // position 3, texture 2, color 4
 
     private Gl? _gl;
@@ -69,7 +76,14 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     private readonly List<(TextureRef Texture, int First, int Count)> _batches = [];
 
     private SurfaceHit? _hover;
+    private (int X, int Y) _target = (-1, -1);
     private Point? _pointer;
+    private bool _shift;
+
+    // Working a tool with the left button: picks go against the level as it was when the
+    // button went down, so a wall painted under the pointer doesn't move the next tile along
+    private bool _toolDown;
+    private LevelMesh? _gestureMesh;
 
     // Flying: the keys held, and when the camera last moved
     private readonly HashSet<Key> _held = [];
@@ -83,7 +97,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         if (change.Property == TilesProperty)
         {
             _meshDirty = true;
-            SetHover(null);
+            SetHover(null, (-1, -1));
             Redraw();
         }
         else if (change.Property == ArtProperty)
@@ -391,12 +405,27 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     }
 
     private static readonly Vector4 HoverColor = new(1f, 0.85f, 0.25f, 0.35f);
+    private static readonly Vector4 TargetColor = new(0.3f, 0.95f, 1f, 0.45f);
+    private static readonly Vector4 SelectionColor = new(0.31f, 0.78f, 1f, 0.3f);
+    private static readonly Vector2[] SquareUvs = [new(0, 1), new(1, 1), new(1, 0), new(0, 0)];
 
-    /// <summary>A translucent copy of the surfaces the pointer's on (a wall face may be more than one)</summary>
+    /// <summary>
+    /// Tints over the selection's tiles, the surfaces the pointer's on (a wall face may be more
+    /// than one), and the tile an edit there goes to when that's another one
+    /// </summary>
     private void AddHoverOverlay(List<float> vertices, Camera3D camera)
     {
+        if (Controller?.Selection is { } selection && Tiles != null)
+        {
+            for (int y = selection.Top; y <= selection.Bottom; y++)
+                for (int x = selection.Left; x <= selection.Right; x++)
+                    AddQuad(vertices, TileMarker(x, y, 0.03f), SquareUvs, SelectionColor);
+        }
+
         if (_hover is not { } hover || _mesh == null)
             return;
+        if (_target != (hover.Ref.X, hover.Ref.Y) && _target.X >= 0)
+            AddQuad(vertices, TileMarker(_target.X, _target.Y, 0.02f), SquareUvs, TargetColor);
 
         if (hover.Ref.Kind == SurfaceKind.Thing)
         {
@@ -405,6 +434,15 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         }
         foreach (var surface in _mesh.Surfaces.Where(surface => surface.Ref == hover.Ref))
             AddPolygon(vertices, surface.Points, surface.Uvs, HoverColor);
+    }
+
+    /// <summary>A tile's square, facing up, on its floor or on top of its wall or door, just above it</summary>
+    private Vector3[] TileMarker(int x, int y, float lift)
+    {
+        float height = lift;
+        if (Tiles is { } tiles && tiles.IsSolid(x, y))
+            height += tiles.Stories(x, y);
+        return [new(x, height, y + 1), new(x + 1, height, y + 1), new(x + 1, height, y), new(x, height, y)];
     }
 
     //
@@ -445,20 +483,58 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
-        if (e.KeyModifiers.HasFlag(KeyModifiers.Control) || !IsFlyKey(e.Key))
-            return;
-        if (_held.Add(e.Key))
+        bool ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+        if (e.Key is Key.LeftShift or Key.RightShift)
+            SetShift(true);
+
+        if (!ctrl && IsFlyKey(e.Key))
         {
-            _lastFrame = _clock.Elapsed.TotalSeconds;
-            Redraw();
+            if (_held.Add(e.Key))
+            {
+                _lastFrame = _clock.Elapsed.TotalSeconds;
+                Redraw();
+            }
+            e.Handled = true;
+            return;
         }
+
+        // The map's keys, on the tile under the pointer
         e.Handled = true;
+        switch (e.Key)
+        {
+            case Key.Delete when _target.X >= 0:
+                Controller?.EraseTile(_target.X, _target.Y);
+                break;
+            case Key.Delete:
+                Controller?.Delete();
+                break;
+            case Key.Escape:
+                Controller?.Escape();
+                break;
+            case Key.C when ctrl:
+                Controller?.Copy();
+                break;
+            case Key.X when ctrl:
+                Controller?.Cut();
+                break;
+            case Key.V when ctrl && _target.X >= 0:
+                Controller?.StartPaste(_target.X, _target.Y);
+                break;
+            case >= Key.A and <= Key.Z when e.KeyModifiers == KeyModifiers.None:
+                ToolKeyPressed?.Invoke(this, e.Key.ToString());
+                break;
+            default:
+                e.Handled = false;
+                break;
+        }
     }
 
     protected override void OnKeyUp(KeyEventArgs e)
     {
         base.OnKeyUp(e);
         _held.Remove(e.Key);
+        if (e.Key is Key.LeftShift or Key.RightShift)
+            SetShift(false);
     }
 
     protected override void OnLostFocus(FocusChangedEventArgs e)
@@ -467,17 +543,36 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         _held.Clear();
     }
 
+    /// <summary>Shift moves the target in front of the wall face under the pointer</summary>
+    private void SetShift(bool shift)
+    {
+        if (_shift == shift)
+            return;
+        _shift = shift;
+        if (_pointer is { } pointer && !_toolDown)
+            UpdateHover(pointer);
+    }
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
         Focus();
         var point = e.GetCurrentPoint(this);
+        _shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
         if (point.Properties.IsRightButtonPressed)
             _lookStart = point.Position;
         else if (point.Properties.IsMiddleButtonPressed)
             _panStart = point.Position;
-        else if (point.Properties.IsLeftButtonPressed && _hover is { } hover)
-            Controller?.SelectTile(hover.Ref.X, hover.Ref.Y);
+        else if (point.Properties.IsLeftButtonPressed && Controller is { } controller)
+        {
+            UpdateHover(point.Position);
+            if (_target.X >= 0)
+            {
+                _toolDown = true;
+                _gestureMesh = _mesh;
+                controller.Press(_target.X, _target.Y);
+            }
+        }
         e.Pointer.Capture(this);
         e.Handled = true;
     }
@@ -485,14 +580,25 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
-        _lookStart = _panStart = null;
+        EndGesture();
         e.Pointer.Capture(null);
     }
 
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
+        EndGesture();
+    }
+
+    private void EndGesture()
+    {
         _lookStart = _panStart = null;
+        if (_toolDown)
+        {
+            _toolDown = false;
+            _gestureMesh = null;
+            Controller?.Release();
+        }
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
@@ -517,15 +623,19 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         }
 
         _pointer = position;
+        if (!_toolDown)
+            _shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
         UpdateHover(position);
+        if (Controller is { } controller && _target.X >= 0 && (_toolDown || controller.IsPasting))
+            controller.Move(_target.X, _target.Y);
     }
 
     protected override void OnPointerExited(PointerEventArgs e)
     {
         base.OnPointerExited(e);
         _pointer = null;
-        if (_lookStart == null && _panStart == null)
-            SetHover(null);
+        if (_lookStart == null && _panStart == null && !_toolDown)
+            SetHover(null, (-1, -1));
     }
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
@@ -536,37 +646,49 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         e.Handled = true;
     }
 
+    /// <summary>Whether a surface is showing, and so can be picked</summary>
+    private bool Shown(SurfaceRef surface)
+        => (ShowThings || surface.Kind != SurfaceKind.Thing) && (ShowCeilings || surface.Kind != SurfaceKind.Ceiling);
+
     private void UpdateHover(Point position)
     {
         if (Camera is not { } camera || Bounds.Width <= 0 || Bounds.Height <= 0)
             return;
         if (_meshDirty)
             EnsureMesh();
-        if (_mesh == null)
+        var mesh = _gestureMesh ?? _mesh;
+        if (mesh == null)
         {
-            SetHover(null);
+            SetHover(null, (-1, -1));
             return;
         }
 
         float aspect = (float)(Bounds.Width / Bounds.Height);
         var (origin, direction) = camera.Ray((float)(position.X / Bounds.Width * 2 - 1), (float)(1 - position.Y / Bounds.Height * 2), aspect);
-        var hit = _mesh.Pick(origin, direction, camera);
-        // Things hidden: only the level's surfaces
-        if (hit is { Ref.Kind: SurfaceKind.Thing } && !ShowThings || hit is { Ref.Kind: SurfaceKind.Ceiling } && !ShowCeilings)
-            hit = null;
-        SetHover(hit);
-    }
-
-    private void SetHover(SurfaceHit? hit)
-    {
-        if (_hover?.Ref == hit?.Ref)
+        var hit = mesh.Pick(origin, direction, camera, Shown);
+        if (hit is not { } surface)
         {
-            _hover = hit;
+            SetHover(null, (-1, -1));
             return;
         }
+
+        // Things stand in front of a wall, not in it
+        bool inFront = _shift || Controller?.Plane == 1;
+        var target = LevelMesh.TargetTile(surface.Ref, inFront);
+        if (Tiles is { } tiles && (target.X < 0 || target.Y < 0 || target.X >= tiles.Width || target.Y >= tiles.Height))
+            target = (surface.Ref.X, surface.Ref.Y);
+        SetHover(hit, target);
+    }
+
+    private void SetHover(SurfaceHit? hit, (int X, int Y) target)
+    {
+        bool same = _hover?.Ref == hit?.Ref && _target == target;
         _hover = hit;
+        _target = target;
+        if (same)
+            return;
         Redraw();
-        SurfaceHovered?.Invoke(this, new SurfaceHoverEventArgs(hit));
+        SurfaceHovered?.Invoke(this, new SurfaceHoverEventArgs(hit, target));
     }
 
     private const string VertexShader = """

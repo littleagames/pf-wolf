@@ -219,8 +219,8 @@
         <r:LevelView3D x:Name="View3D"
                        Tiles="{Binding Tiles}" Art="{Binding Art}" Controller="{Binding Controller}" Camera="{Binding Camera}"
                        ShowThings="{Binding Show3DThings}" ShowCeilings="{Binding Show3DCeilings}"
-                       SurfaceHovered="OnSurfaceHovered" Failed="On3DFailed" />
-        <TextBlock Text="WASD fly · Q/E down/up · Shift faster · right drag look · middle drag slide · wheel forward · V on the map moves the camera"
+                       SurfaceHovered="OnSurfaceHovered" Failed="On3DFailed" ToolKeyPressed="OnToolKeyPressed" />
+        <TextBlock Text="Left button: the tool on the tile under the pointer (things, and anything with Shift, go in front of a wall face) · Delete erases it · WASD fly · Q/E down/up · Shift faster · right drag look · middle drag slide · wheel forward · V on the map moves the camera"
                    Margin="8,6" FontSize="11" Opacity="0.75" Foreground="White" TextWrapping="Wrap"
                    VerticalAlignment="Bottom" IsHitTestVisible="False" />
       </Panel>

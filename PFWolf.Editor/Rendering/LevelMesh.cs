@@ -506,13 +506,34 @@ public sealed class LevelMesh
     // Picking
     //
 
-    /// <summary>The nearest surface or sprite along a ray, or null when it meets none</summary>
-    public SurfaceHit? Pick(Vector3 origin, Vector3 direction, Camera3D camera)
+    /// <summary>
+    /// The tile an edit made on a surface goes to: the surface's own, or with
+    /// <paramref name="inFront"/> the open tile a wall or door face looks onto (where a thing
+    /// would stand, or a wall built out from it). Tops, floors, ceilings and things are their own tile.
+    /// </summary>
+    public static (int X, int Y) TargetTile(SurfaceRef surface, bool inFront)
+    {
+        if (!inFront || surface.Kind is not (SurfaceKind.Wall or SurfaceKind.Door))
+            return (surface.X, surface.Y);
+        return surface.Face switch
+        {
+            Face.North => (surface.X, surface.Y - 1),
+            Face.South => (surface.X, surface.Y + 1),
+            Face.East => (surface.X + 1, surface.Y),
+            Face.West => (surface.X - 1, surface.Y),
+            _ => (surface.X, surface.Y),
+        };
+    }
+
+    /// <summary>The nearest surface or sprite along a ray, or null when it meets none; <paramref name="include"/> leaves out hidden ones</summary>
+    public SurfaceHit? Pick(Vector3 origin, Vector3 direction, Camera3D camera, Func<SurfaceRef, bool>? include = null)
     {
         SurfaceHit? best = null;
 
         foreach (var surface in Surfaces)
         {
+            if (include?.Invoke(surface.Ref) == false)
+                continue;
             var normal = surface.Normal;
             float facing = Vector3.Dot(direction, normal);
             if (facing >= 0 && !surface.TwoSided || MathF.Abs(facing) < 1e-6f)
@@ -532,6 +553,8 @@ public sealed class LevelMesh
         var back = -camera.FlatForward;
         foreach (var sprite in Billboards)
         {
+            if (include?.Invoke(sprite.Ref) == false)
+                continue;
             float facing = Vector3.Dot(direction, back);
             if (facing >= -1e-6f)
                 continue;
