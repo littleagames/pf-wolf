@@ -187,8 +187,35 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Dialogs.ShowArtBrowser(_artBrowser);
     }
 
-    // A game loaded again: the browser lists its pictures (the old ones' bitmaps are gone)
-    partial void OnArtChanged(ArtCache? value) => _artBrowser?.Load(Content, value);
+    // A game loaded again: the browsers list its pictures (the old ones' bitmaps are gone) and sounds
+    partial void OnArtChanged(ArtCache? value)
+    {
+        _artBrowser?.Load(Content, value);
+        _soundBrowser?.Load(Content);
+    }
+
+    //
+    // The sound browser
+    //
+
+    private SoundBrowserViewModel? _soundBrowser;
+
+    /// <summary>Opens the sound browser, on the level's music the first time</summary>
+    [RelayCommand]
+    private void ShowSounds()
+    {
+        if (Dialogs == null)
+            return;
+
+        if (_soundBrowser == null)
+        {
+            _soundBrowser = new SoundBrowserViewModel();
+            _soundBrowser.Load(Content);
+            if (Document?.Properties.Music is { Length: > 0 } music)
+                _soundBrowser.Show(SoundKind.Music, music);
+        }
+        Dialogs.ShowSoundBrowser(_soundBrowser);
+    }
 
     /// <summary>Picks what uses a picture in the browser (a wall, a door, a flat, a thing) to put down</summary>
     public void UseInPalette(ArtUse use)

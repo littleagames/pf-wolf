@@ -1,4 +1,4 @@
-﻿using NukedOPL3Sharp;
+using NukedOPL3Sharp;
 using OpenTK.Audio.OpenAL;
 using SDL2;
 using System.Runtime.InteropServices;
@@ -12,9 +12,7 @@ internal class AudioManager
     // Number of sound channels to use
     private const int SourceCount = 16;
 
-    private const int MusicSampleRate = 44100;
-    private const int MusicTicksPerSecond = 700;
-    private const float MusicSampleGain = 3.0f;
+    // IMF music is boosted as it's synthesized (ImfMusicSource), then brought back down here
     private const float MusicGain = 0.75f;
 
     // Streaming playback: how many buffers (100ms each) to prime before starting playback,
@@ -635,138 +633,6 @@ internal class AudioManager
         var queuedBuffers = new int[queued];
         AL.SourceUnqueueBuffers(_musicSource, queued, queuedBuffers);
         AL.DeleteBuffers(queuedBuffers);
-    }
-
-    /// <summary>Music as 16-bit stereo, read a chunk at a time by <see cref="StreamMusic"/></summary>
-    internal abstract class MusicSource : IDisposable
-    {
-        public abstract int SampleRate { get; }
-
-        /// <summary>
-        /// Fills <paramref name="stereo"/> (interleaved left/right) and returns the frames written,
-        /// fewer than it holds only at the end of a track that doesn't loop
-        /// </summary>
-        public abstract int Read(short[] stereo, bool loop);
-
-        public virtual void Dispose() { }
-    }
-
-    /// <summary>An IMF song, synthesized on an emulated OPL3</summary>
-    internal sealed class ImfMusicSource : MusicSource
-    {
-        private readonly IReadOnlyList<Wolf3dImfAudio.WolfensteinMusicCommand> _commands;
-        private readonly Opl3Chip _chip = new();
-        private int _commandIndex;
-        private int _framesRemainingInCommand;
-
-        public ImfMusicSource(Wolf3dImfAudio track)
-        {
-            _commands = track.Commands;
-            if (_commands.Count == 0 || _commands.Sum(command => command.Delay) == 0)
-                throw new InvalidDataException("the song is empty");
-            _chip.Reset(MusicSampleRate);
-            _chip.WriteRegister(0x01, 0x20);
-        }
-
-        public override int SampleRate => MusicSampleRate;
-
-        public override int Read(short[] stereo, bool loop)
-        {
-            const int framesPerTick = MusicSampleRate / MusicTicksPerSecond;
-            var frames = stereo.Length / 2;
-            var framesWritten = 0;
-            while (framesWritten < frames)
-            {
-                while (_framesRemainingInCommand == 0)
-                {
-                    if (_commandIndex >= _commands.Count)
-                    {
-                        if (!loop)
-                            return Finish(stereo, framesWritten);
-                        _commandIndex = 0;   // loop the track
-                    }
-                    var command = _commands[_commandIndex];
-                    _chip.WriteRegister(command.Register, command.Value);
-                    _framesRemainingInCommand = command.Delay * framesPerTick;
-                    _commandIndex++;
-                }
-
-                var framesToGenerate = Math.Min(_framesRemainingInCommand, frames - framesWritten);
-                _chip.GenerateStream(stereo.AsSpan(framesWritten * 2, framesToGenerate * 2));
-                framesWritten += framesToGenerate;
-                _framesRemainingInCommand -= framesToGenerate;
-            }
-            return Finish(stereo, framesWritten);
-        }
-
-        private static int Finish(short[] stereo, int framesWritten)
-        {
-            var samples = stereo.AsSpan(0, framesWritten * 2);
-            for (var index = 0; index < samples.Length; index++)
-            {
-                var amplified = samples[index] * MusicSampleGain;
-                samples[index] = (short)Math.Clamp(amplified, short.MinValue, short.MaxValue);
-            }
-            return framesWritten;
-        }
-    }
-
-    /// <summary>
-    /// An OGG, MP3 or WAV song, decoded as it plays. Mono is played on both sides; past two
-    /// channels, only the front left and right are kept.
-    /// </summary>
-    internal sealed class FileMusicSource : MusicSource
-    {
-        private readonly MusicFileAsset _file;
-        private AudioFileDecoder _decoder;
-        private float[] _samples = [];
-
-        public FileMusicSource(MusicFileAsset file)
-        {
-            _file = file;
-            _decoder = file.OpenDecoder();
-        }
-
-        public override int SampleRate => _decoder.SampleRate;
-
-        public override int Read(short[] stereo, bool loop)
-        {
-            var channels = _decoder.Channels;
-            var frames = stereo.Length / 2;
-            if (_samples.Length < frames * channels)
-                _samples = new float[frames * channels];
-
-            var framesWritten = 0;
-            var restarted = false;
-            while (framesWritten < frames)
-            {
-                var read = _decoder.Read(_samples, 0, (frames - framesWritten) * channels) / channels;
-                if (read == 0)
-                {
-                    // Reopened rather than seeked, which every format supports alike. A file
-                    // that gives nothing right after being reopened has nothing to loop.
-                    if (!loop || restarted)
-                        break;
-                    _decoder.Dispose();
-                    _decoder = _file.OpenDecoder();
-                    restarted = true;
-                    continue;
-                }
-                restarted = false;
-
-                for (var frame = 0; frame < read; frame++)
-                {
-                    var left = _samples[frame * channels];
-                    var right = channels > 1 ? _samples[frame * channels + 1] : left;
-                    stereo[(framesWritten + frame) * 2] = AudioFileDecoder.ToPcm16(left);
-                    stereo[(framesWritten + frame) * 2 + 1] = AudioFileDecoder.ToPcm16(right);
-                }
-                framesWritten += read;
-            }
-            return framesWritten;
-        }
-
-        public override void Dispose() => _decoder.Dispose();
     }
 
     public void StopMusic()

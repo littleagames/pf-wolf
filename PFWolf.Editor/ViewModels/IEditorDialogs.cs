@@ -27,4 +27,7 @@ public interface IEditorDialogs
 
     /// <summary>Shows the texture and sprite browser beside the editor, or brings it to the front</summary>
     void ShowArtBrowser(ArtBrowserViewModel browser);
+
+    /// <summary>Shows the sound browser beside the editor, or brings it to the front</summary>
+    void ShowSoundBrowser(SoundBrowserViewModel browser);
 }

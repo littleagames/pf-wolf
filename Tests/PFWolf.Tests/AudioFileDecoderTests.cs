@@ -137,7 +137,7 @@ public class AudioFileDecoderTests
     {
         // Arrange: three mono frames, played on both sides
         var music = new MusicFileAsset(Wav(1, 1, 8000, 16, Int16s(100, 200, 300)));
-        using var source = new AudioManager.FileMusicSource(music);
+        using var source = new FileMusicSource(music);
         var stereo = new short[8 * 2];
 
         // Act
@@ -157,7 +157,7 @@ public class AudioFileDecoderTests
     {
         // Arrange
         var music = new MusicFileAsset(Wav(1, 2, 8000, 16, Int16s(1, 2, 3, 4)));
-        using var source = new AudioManager.FileMusicSource(music);
+        using var source = new FileMusicSource(music);
         var stereo = new short[8 * 2];
 
         // Act / Assert: two frames, then nothing

@@ -1,0 +1,110 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:data="using:PFWolf.Editor.Data"
+        xmlns:r="using:PFWolf.Editor.Rendering"
+        x:Class="PFWolf.Editor.Views.SoundBrowserWindow"
+        x:DataType="vm:SoundBrowserViewModel"
+        Title="{Binding Title}"
+        Width="1100" Height="720" MinWidth="760" MinHeight="460"
+        WindowStartupLocation="CenterOwner">
+
+  <DockPanel>
+    <!-- What's listed -->
+    <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
+        <ComboBox Grid.Column="0" ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}" MinWidth="190" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding Shows}" SelectedItem="{Binding SelectedShow}" MinWidth="140"
+                  ToolTip.Tip="In use: actordefs, mapdefs, sound-seq or game-info plays it" />
+        <TextBox x:Name="Search" Grid.Column="2" Text="{Binding Filter}" VerticalAlignment="Center"
+                 PlaceholderText="Find by name, what it plays or what plays it (guard, door 1, DSDROPN)" />
+        <TextBlock Grid.Column="3" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="120" />
+      </Grid>
+    </Border>
+
+    <!-- The sound picked: play it, its details, where it came from, what plays it -->
+    <ScrollViewer DockPanel.Dock="Right" Width="440" Margin="8" IsVisible="{Binding HasSelection}">
+      <StackPanel Spacing="6">
+        <SelectableTextBlock Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" />
+
+        <!-- A sound-seq entry: how it's played, and what it's made of -->
+        <StackPanel Spacing="4" IsVisible="{Binding IsSequence}">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+            <ComboBox ItemsSource="{Binding Variants}" SelectedItem="{Binding SelectedVariant}" HorizontalAlignment="Stretch"
+                      ToolTip.Tip="The game plays the digitized sound when there is one, else AdLib, else the PC speaker; pick one to hear it" />
+            <Button Grid.Column="1" Content="Go to" Click="GoToVariant"
+                    ToolTip.Tip="Shows the sound picked on the left (or the sound this one is an alias of)" />
+          </Grid>
+          <SelectableTextBlock Text="{Binding Definition}" FontFamily="Consolas,Menlo,monospace" FontSize="12" Opacity="0.85"
+                               IsVisible="{Binding HasDefinition}" />
+        </StackPanel>
+
+        <r:WaveformView x:Name="Waveform" Height="120" Samples="{Binding Samples}" Progress="{Binding Progress}"
+                        IsVisible="{Binding HasWaveform}" Cursor="Hand"
+                        ToolTip.Tip="Click to play from there" />
+
+        <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
+          <Button Content="{Binding PlayLabel}" Command="{Binding PlayCommand}" Classes="accent" MinWidth="90"
+                  ToolTip.Tip="Space, or Enter or a double-click in the list" />
+          <CheckBox Grid.Column="1" Content="Loop" IsChecked="{Binding Loop}" VerticalAlignment="Center"
+                    ToolTip.Tip="Plays it again from the start when it ends (songs loop in the game)" />
+          <TextBlock Grid.Column="3" Text="{Binding PositionText}" VerticalAlignment="Center" FontFamily="Consolas,Menlo,monospace" />
+        </Grid>
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+          <TextBlock Text="Volume" VerticalAlignment="Center" />
+          <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding Volume}" VerticalAlignment="Center" />
+        </Grid>
+        <TextBlock Text="Sound only plays on Windows for now." Opacity="0.6" FontSize="12"
+                   IsVisible="{x:Static vm:SoundBrowserViewModel.CannotPlay}" />
+
+        <TextBlock Text="Where it comes from (the last one is used)" FontWeight="SemiBold" Margin="0,6,0,0" />
+        <ListBox ItemsSource="{Binding Origins}" MaxHeight="90">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding}" ToolTip.Tip="{Binding}" TextTrimming="CharacterEllipsis" FontSize="12" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+
+        <TextBlock Text="Played by" FontWeight="SemiBold" Margin="0,6,0,0" />
+        <ListBox ItemsSource="{Binding Uses}" SelectedItem="{Binding SelectedUse}" MaxHeight="180" DoubleTapped="OnUseDoubleTapped"
+                 IsVisible="{Binding HasUses}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="data:SoundUse">
+              <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding Label}" TextTrimming="CharacterEllipsis" FontSize="12" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBlock Text="Nothing in actordefs, mapdefs, sound-seq or game-info plays it (the engine itself may)." Opacity="0.6" FontSize="12"
+                   TextWrapping="Wrap" IsVisible="{Binding !HasUses}" />
+
+        <WrapPanel ItemSpacing="6" LineSpacing="6" Margin="0,6,0,0">
+          <Button Content="Go to sound" Command="{Binding GoToUseCommand}"
+                  ToolTip.Tip="Shows the sound-seq sound picked under Played by (or double-click it)" />
+          <Button Content="Copy name" Click="CopyName" />
+          <Button Content="Export WAV…" Click="ExportWav" IsEnabled="{Binding HasWaveform}"
+                  ToolTip.Tip="Saves the sound shown as a 16-bit WAV, as the game plays it" />
+        </WrapPanel>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Every sound listed -->
+    <ListBox x:Name="List" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" Margin="8,8,0,8"
+             DoubleTapped="OnItemDoubleTapped">
+      <ListBox.Styles>
+        <Style Selector="ListBoxItem">
+          <Setter Property="Padding" Value="8,3" />
+        </Style>
+      </ListBox.Styles>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:SoundItem">
+          <Grid ColumnDefinitions="*,110" ToolTip.Tip="{Binding ToolTip}">
+            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding KindText}" Opacity="0.6" FontSize="12" VerticalAlignment="Center" />
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</Window>

@@ -68,6 +68,20 @@ public partial class MainWindow : Window, IEditorDialogs
             _artBrowser.Activate();
     }
 
+    private SoundBrowserWindow? _soundBrowser;
+
+    public void ShowSoundBrowser(SoundBrowserViewModel browser)
+    {
+        if (_soundBrowser == null)
+        {
+            _soundBrowser = new SoundBrowserWindow { DataContext = browser };
+            _soundBrowser.Closed += (_, _) => _soundBrowser = null;
+            _soundBrowser.Show(this);
+        }
+        else
+            _soundBrowser.Activate();
+    }
+
     protected override async void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosing(e);
