@@ -47,7 +47,11 @@ public sealed class GameContent
     public string PackId => GameTypes.GetGamePackId(Game);
     public MapObjectTranslationAsset MapDefs { get; }
     public GameInfoAsset? GameInfo { get; }
-    public PaletteColor[] Palette { get; }
+    /// <summary>The game palette the editor draws in: as loaded, or as the palette browser is editing it</summary>
+    public PaletteColor[] Palette { get; private set; }
+
+    /// <summary>Draws in these colors from now on (pictures made before keep the old ones: make a new ArtCache)</summary>
+    public void SetPalette(PaletteColor[] colors) => Palette = (PaletteColor[])colors.Clone();
     public IReadOnlyList<MapEntry> Maps { get; }
 
     /// <summary>The game's title from gamepack-info ("Spear of Destiny"), or its pack id</summary>

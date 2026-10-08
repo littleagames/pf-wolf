@@ -231,6 +231,24 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Shows the same pictures drawn by another art cache (the game palette changed), keeping
+    /// what's picked, its side and the zoom
+    /// </summary>
+    public void Recolor(ArtCache art)
+    {
+        if (_content == null)
+            return;
+        _art = art;
+        var (picked, side, zoom) = (SelectedItem?.Entry, SelectedRotation?.AssetName, Zoom);
+        _all = _all.Select(item => new ArtItem(item.Entry, art)).ToList();
+        Refilter();
+        SelectedItem = picked != null ? Items.FirstOrDefault(item => item.Entry == picked) : SelectedItem;
+        if (side != null && Rotations.FirstOrDefault(rotation => rotation.AssetName == side) is { } turned)
+            SelectedRotation = turned;
+        Zoom = zoom;
+    }
+
+    /// <summary>
     /// Shows a picture by name, of the kind asked for when there's one of each; a side of a
     /// rotating sprite ("GARDA3") shows its frame turned to that side
     /// </summary>

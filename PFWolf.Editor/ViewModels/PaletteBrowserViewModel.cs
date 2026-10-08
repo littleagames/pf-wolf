@@ -56,6 +56,9 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
     /// <summary>A palette was saved into this mod folder (the editor adds it to the mods)</summary>
     public event EventHandler<string>? Saved;
 
+    /// <summary>The game palette's colors changed (an edit, undo, revert or import): the editor redraws in them</summary>
+    public event EventHandler<PaletteColor[]>? GamePaletteChanged;
+
     public ObservableCollection<PaletteListItem> Items { get; } = [];
     public ObservableCollection<string> Origins { get; } = [];
     public ObservableCollection<PaletteUse> Uses { get; } = [];
@@ -183,7 +186,11 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
     private void OnDocumentChanged(object? sender, EventArgs e)
     {
         if (Items.FirstOrDefault(item => item.Document == sender) is { } item)
+        {
             item.IsDirty = item.Document.IsDirty;
+            if (item.Entry.IsGamePalette)
+                GamePaletteChanged?.Invoke(this, (PaletteColor[])item.Document.Colors.Clone());
+        }
         if (sender == Document)
             Refresh();
     }
@@ -473,8 +480,7 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
         try
         {
             var path = document.Save(folder);
-            var isGamePalette = Items.Any(item => item.Document == document && item.Entry.IsGamePalette);
-            Status = $"Saved {path}" + (isGamePalette ? ". Load the game again to see the map and pictures in it." : "");
+            Status = $"Saved {path}";
             Saved?.Invoke(this, folder);
             return true;
         }

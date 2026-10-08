@@ -190,6 +190,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
     // A game loaded again: the browsers list its pictures (the old ones' bitmaps are gone) and sounds
     partial void OnArtChanged(ArtCache? value)
     {
+        // The same game in new colors: only the pictures change
+        if (_recoloring)
+        {
+            if (value != null)
+                _artBrowser?.Recolor(value);
+            return;
+        }
+
         _artBrowser?.Load(Content, value);
         _soundBrowser?.Load(Content);
         _paletteBrowser?.Load(Content);
@@ -215,10 +223,66 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 PickModFolder = title => Dialogs.PickModFolder(title),
             };
             _paletteBrowser.Saved += (_, folder) => AddModFolder(folder);
+            _paletteBrowser.GamePaletteChanged += (_, colors) => QueueRecolor(colors);
             _paletteBrowser.Load(Content);
         }
         Dialogs.ShowPaletteBrowser(_paletteBrowser);
     }
+
+    // Set while the art is swapped for the same pictures in new colors
+    private bool _recoloring;
+    private PFWolf.Assets.PaletteColor[]? _pendingPalette;
+    private DispatcherTimer? _recolorTimer;
+
+    // The map, 3D view, palette and texture browser redraw in the game palette being edited;
+    // a slider being dragged redraws them a few times a second, not on every step
+    private void QueueRecolor(PFWolf.Assets.PaletteColor[] colors)
+    {
+        _pendingPalette = colors;
+        if (_recolorTimer == null)
+        {
+            _recolorTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
+            _recolorTimer.Tick += (_, _) =>
+            {
+                _recolorTimer.Stop();
+                if (_pendingPalette is { } pending)
+                    Recolor(pending);
+                _pendingPalette = null;
+            };
+        }
+        if (!_recolorTimer.IsEnabled)
+            _recolorTimer.Start();
+    }
+
+    /// <summary>Draws the loaded game in these colors: the map, 3D view, palette and texture browser</summary>
+    public void Recolor(PFWolf.Assets.PaletteColor[] colors)
+    {
+        if (Content is not { } content)
+            return;
+
+        content.SetPalette(colors);
+        var oldArt = Art;
+        _recoloring = true;
+        try
+        {
+            Art = new ArtCache(content);
+
+            // The palette's pictures, keeping what's picked (and the thing's facing and skill)
+            var selected = SelectedPaletteItem?.Entry;
+            _allPaletteItems = _allPaletteItems.Select(item => item with { Icon = PaletteIcon(item.Entry) }).ToList();
+            FilterPalette();
+            if (selected != null)
+                SelectedPaletteItem = PaletteItems.FirstOrDefault(item => item.Entry == selected);
+        }
+        finally
+        {
+            _recoloring = false;
+        }
+        oldArt?.Dispose();
+    }
+
+    private Avalonia.Media.Imaging.Bitmap? PaletteIcon(PaletteEntry entry)
+        => entry.Texture != null ? Art?.Texture(entry.Texture) : entry.ThingClass != null ? Art?.ThingSprite(entry.ThingClass) : null;
 
     // The game only sees what's saved in a mod folder with the mod loaded
     private bool AddModFolder(string folder)
@@ -448,7 +512,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     partial void OnSelectedPaletteItemChanged(PaletteItem? value)
     {
-        if (value == null)
+        // Recolor puts back the same entry with a new picture: nothing to set again
+        if (value == null || _recoloring)
             return;
 
         Controller.Value = value.Entry.Value;
@@ -566,8 +631,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 _syncing = false;
             }
             _allPaletteItems = PaletteEntries.ForPlane(content.MapDefs, plane)
-                .Select(entry => new PaletteItem(entry,
-                    entry.Texture != null ? Art?.Texture(entry.Texture) : entry.ThingClass != null ? Art?.ThingSprite(entry.ThingClass) : null))
+                .Select(entry => new PaletteItem(entry, PaletteIcon(entry)))
                 .ToList();
         }
         else
