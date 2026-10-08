@@ -295,6 +295,14 @@ public class PfWolfPk3Loader
             return;
         }
 
+        if (fullName.StartsWith("texts/"))
+        {
+            // texts/NAME.txt is the text NAME (HELPART, ENDART1, a Blake briefing): in place of the
+            // data files' own of that name, or a new one for game-info to show
+            AddAsset(assetName, TextAsset.FromFile(entry.Open().ToArray()));
+            return;
+        }
+
         if (fullName.StartsWith("sprites/"))
         {
             AddReference(assetName, () => PngSpriteDataLoader.Load(entry.Open(), sourcePalette: Load<Palette>(GamePalette)));
@@ -442,7 +450,7 @@ public class PfWolfPk3Loader
                 return null;
 
             default:
-                // graphics/, sprites/, fonts/, palettes/, sounds/: named by file name, as in pfwolf.pk3
+                // graphics/, sprites/, fonts/, palettes/, sounds/, texts/: named by file name, as in pfwolf.pk3
                 return folder + rest;
         }
     }

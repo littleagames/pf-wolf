@@ -71,6 +71,41 @@ public static class TextCatalog
     /// <summary>A text as the game reads it, or null when there's none of that name</summary>
     public static string? Read(GameContent content, string name) => content.Find<TextAsset>(name)?.ToText();
 
+    /// <summary>
+    /// Writes a text to {modFolder}/texts/name.txt, where the game reads it in place of the text
+    /// of that name, or as a new one. Returns the file's path.
+    /// </summary>
+    public static string Save(string modFolder, string name, string text)
+    {
+        var folder = Path.Combine(modFolder, "texts");
+        Directory.CreateDirectory(folder);
+        var path = Path.Combine(folder, $"{name.ToLowerInvariant()}.txt");
+
+        // Written beside it first, so a failed write leaves the old one
+        var temp = path + ".tmp";
+        File.WriteAllBytes(temp, System.Text.Encoding.ASCII.GetBytes(text));
+        File.Move(temp, path, overwrite: true);
+        return path;
+    }
+
+    /// <summary>What's wrong with a name for a new text, or null when it will do</summary>
+    public static string? CheckNewName(GameContent content, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "Give it a name";
+        if (!name.All(ch => char.IsAsciiLetterOrDigit(ch) || ch is '_' or '-'))
+            return "Letters, digits, - and _ only: it's the file name in texts/";
+        if (content.Assets.Exists<TextAsset>(name))
+            return $"There's a text called {name.ToUpperInvariant()} already: pick it in the list to change it";
+        return null;
+    }
+
+    /// <summary>A two-page article to start a new text from</summary>
+    public const string NewArticle = "^P\r\nThe first page's text goes here.\r\n^P\r\nAnd the next page's.\r\n^E\r\n";
+
+    /// <summary>A Blake Stone presenter script to start a new text from</summary>
+    public const string NewPresenterScript = "The text goes here.\r\n^XX\r\n";
+
     /// <summary>What shows each text, by its upper-case name: the help screens, game-info's clusters and episodes</summary>
     public static Dictionary<string, List<string>> Uses(GameContent content)
     {

@@ -222,6 +222,32 @@ public class PfWolfPk3LoaderTests
         }));
     }
 
+    [Test]
+    public void Texts_Load_By_File_Name_And_A_Mods_Replace_Them()
+    {
+        // Arrange: the base pk3 adds a text, a mod replaces it and adds another, with a byte order mark
+        var basePk3 = new MemoryAssetSource("pfwolf.pk3", new()
+        {
+            ["gamepacks/gamepack-info.yaml"] = GamePackInfo,
+            ["texts/ENDART1.txt"] = "^P\nbase\n^E\n",
+        });
+        var mod = new MemoryAssetSource("mymod.pk3", new() { ["texts/endart1.txt"] = "^P\nmod\n^E\n" },
+            new() { ["texts/MYSTORY.txt"] = [0xEF, 0xBB, 0xBF, .. "^P\nnew\n^E\n"u8.ToArray()] });
+
+        // Act
+        var loader = new PfWolfPk3Loader([basePk3], "alpha", "alpha", [mod]);
+
+        // Assert
+        Assert.That(loader.Load<TextAsset>("ENDART1").ToText(), Is.EqualTo("^P\nmod\n^E\n"));
+        Assert.That(loader.Load<TextAsset>("mystory").ToText(), Is.EqualTo("^P\nnew\n^E\n"));
+        Assert.That(loader.GetAssetOrigins()["textasset:endart1"].Select(o => (o.Source, o.Action)), Is.EqualTo(new[]
+        {
+            ("pfwolf.pk3", "added"),
+            ("mymod.pk3", "replaced"),
+        }));
+        Assert.That(loader.Warnings, Is.Empty);
+    }
+
     [TestCase("actordefs/wolf3d/guards.yaml", "wolf3d/actordefs")]
     [TestCase("actordefs/native.yaml", "actordefs")]
     [TestCase("mapdefs/spear/things.yaml", "spear/mapdefs")]

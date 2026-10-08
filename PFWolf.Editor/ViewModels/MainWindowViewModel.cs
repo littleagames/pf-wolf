@@ -220,7 +220,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         if (_textBrowser == null)
         {
-            _textBrowser = new TextBrowserViewModel();
+            _textBrowser = new TextBrowserViewModel
+            {
+                PickModFolder = title => Dialogs.PickModFolder(title),
+                AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
+            };
+            _textBrowser.Saved += (_, folder) => AddModFolder(folder);
             _textBrowser.Load(Content);
         }
         Dialogs.ShowTextBrowser(_textBrowser);

@@ -14,7 +14,7 @@ public class TextCatalogGameTests
             .FirstOrDefault(folder => !string.IsNullOrWhiteSpace(folder) && File.Exists(Path.Combine(folder, "pfwolf.pk3")));
     }
 
-    private static GameContent Load(string game)
+    private static GameContent Load(string game, params string[] mods)
     {
         var folder = GameFolder();
         if (folder == null)
@@ -23,7 +23,7 @@ public class TextCatalogGameTests
         var workingFolder = Directory.GetCurrentDirectory();
         try
         {
-            return GameContent.Load(folder!, game, []);
+            return GameContent.Load(folder!, game, mods);
         }
         catch (PFWolf.Exceptions.DataFilesException)
         {
@@ -77,5 +77,40 @@ public class TextCatalogGameTests
         Assert.That(entries["ENDART1"].Uses, Has.Some.Contains("Cluster 1"));
         Assert.That(entries["ENDART6"].Uses, Has.Some.Contains("Cluster 6"));
         Assert.That(entries["HELPART"].Uses, Has.Some.Contains("Read This!"));
+    }
+
+    [Test]
+    public void Saved_Texts_Replace_And_Add_To_The_Games_Through_A_Mod()
+    {
+        // Arrange: ENDART1 changed and a new text saved into a mod folder
+        var modFolder = Path.Combine(Path.GetTempPath(), $"pfwolf-texts-{Guid.NewGuid():N}");
+        try
+        {
+            var path = TextCatalog.Save(modFolder, "ENDART1", "^P\r\nChanged.\r\n^E\r\n");
+            TextCatalog.Save(modFolder, "MYSTORY", TextCatalog.NewArticle);
+
+            // Act
+            var content = Load("wolf3d", modFolder);
+            var entries = TextCatalog.Build(content).ToDictionary(entry => entry.Name);
+
+            // Assert
+            Assert.That(path, Is.EqualTo(Path.Combine(modFolder, "texts", "endart1.txt")));
+            Assert.That(TextCatalog.Read(content, "ENDART1"), Is.EqualTo("^P\r\nChanged.\r\n^E\r\n"));
+            Assert.That(entries["ENDART1"].Origins[^1], Does.StartWith("replaced by").And.Contain("texts/endart1.txt"));
+            Assert.That(entries["MYSTORY"].Format, Is.EqualTo(TextFormat.Article));
+            Assert.That(content.ModFolderOf("MYSTORY", nameof(PFWolf.Assets.TextAsset)), Is.EqualTo(Path.GetFullPath(modFolder)));
+            Assert.That(TextCatalog.CheckNewName(content, "MYSTORY"), Is.Not.Null);
+            Assert.That(TextCatalog.CheckNewName(content, "my story"), Is.Not.Null);
+            Assert.That(TextCatalog.CheckNewName(content, "ENDART7"), Is.Null);
+
+            var layout = ArticleLayout.Build(TextCatalog.Read(content, "MYSTORY")!, TextCatalog.Art(content, out _, out _));
+            Assert.That(layout.Problems.Where(problem => problem.IsError), Is.Empty);
+            Assert.That(layout.Pages, Has.Count.EqualTo(2));
+        }
+        finally
+        {
+            if (Directory.Exists(modFolder))
+                Directory.Delete(modFolder, recursive: true);
+        }
     }
 }

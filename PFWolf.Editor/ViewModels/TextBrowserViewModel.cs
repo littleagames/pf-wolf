@@ -20,9 +20,10 @@ public sealed class TextItem(TextEntry entry)
 }
 
 /// <summary>
-/// The text browser: every text in the loaded game's data files, an article (the help screens,
-/// an episode's end text) shown page by page as the game shows it, with what's wrong with it.
-/// The text can be changed to see how it lays out; that isn't saved.
+/// The text browser: every text in the loaded game (its data files' and the pk3s' texts/), an
+/// article (the help screens, an episode's end text) shown page by page as the game shows it,
+/// with what's wrong with it. A text can be changed, or a new one made, and saved to a mod's
+/// texts/ folder, where the game reads it in place of its own.
 /// </summary>
 public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
 {
@@ -35,6 +36,18 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
     private string _original = "";
     // Set while the text shown is swapped for another's, so it isn't taken for an edit
     private bool _loadingSource;
+    // Texts saved, by name, and the mod folder each went to: the game loaded still has the old
+    // ones until it's loaded again
+    private readonly Dictionary<string, (string Text, string Folder)> _saved = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Asks for a mod folder to save in; null when none is picked</summary>
+    public Func<string, Task<string?>>? PickModFolder { get; set; }
+
+    /// <summary>Asks for a line of text (title, prompt, initial, check); null when cancelled</summary>
+    public Func<string, string, string, Func<string, string?>, Task<string?>>? AskText { get; set; }
+
+    /// <summary>A text was saved into this mod folder (the editor adds it to the mods)</summary>
+    public event EventHandler<string>? Saved;
 
     public ObservableCollection<TextItem> Items { get; } = [];
     public ObservableCollection<string> Origins { get; } = [];
@@ -45,8 +58,11 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _countText = "";
     [ObservableProperty] private string _title = "Texts";
 
+    [ObservableProperty] private string _status = "";
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand), nameof(SaveToCommand))]
     private TextItem? _selectedItem;
 
     /// <summary>The text shown, as changed in the box</summary>
@@ -83,6 +99,9 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
     {
         _content = content;
         var picked = SelectedItem?.Name;
+        // What was saved is in the game now, as long as its mod is loaded; what was new and unsaved is gone
+        _saved.Clear();
+        Status = "";
 
         if (content == null)
         {
@@ -153,7 +172,9 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
         }
         OnPropertyChanged(nameof(HasUses));
 
-        _original = value != null && _content != null ? TextCatalog.Read(_content, value.Name) ?? "" : "";
+        _original = value == null || _content == null ? ""
+            : _saved.TryGetValue(value.Name, out var saved) ? saved.Text
+            : TextCatalog.Read(_content, value.Name) ?? "";
         _loadingSource = true;
         try
         {
@@ -295,9 +316,90 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
         return end - index;
     }
 
-    /// <summary>Back to the text as the game has it</summary>
+    /// <summary>Back to the text as the game has it (or as it was last saved)</summary>
     [RelayCommand(CanExecute = nameof(IsChanged))]
     private void Revert() => Source = _original;
+
+    //
+    // Saving
+    //
+
+    /// <summary>Saves the text to its mod folder: the one it comes from or was saved to (asking for one the first time)</summary>
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private async Task SaveAsync()
+    {
+        if (SelectedItem is { } item)
+            await SaveText(item, SaveFolderOf(item.Name));
+    }
+
+    /// <summary>Saves the text to a mod folder picked now</summary>
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private async Task SaveToAsync()
+    {
+        if (SelectedItem is { } item)
+            await SaveText(item, null);
+    }
+
+    // The mod folder a text was saved to, else the one it comes from (null for the game's own, or a zipped mod's)
+    private string? SaveFolderOf(string name)
+        => _saved.TryGetValue(name, out var saved) ? saved.Folder : _content?.ModFolderOf(name, nameof(TextAsset));
+
+    /// <summary>Saves a text to {folder}/texts/NAME.txt, asking for a folder when there's none; false when it isn't saved</summary>
+    public async Task<bool> SaveText(TextItem item, string? folder)
+    {
+        folder ??= PickModFolder == null ? null : await PickModFolder($"A mod folder to save {item.Name} in (it goes in its texts folder)");
+        if (folder == null)
+            return false;
+
+        var text = Source;
+        try
+        {
+            var path = TextCatalog.Save(folder, item.Name, text);
+            _saved[item.Name] = (text, folder);
+            _original = text;
+            IsChanged = false;
+            Status = $"Saved {path}" + (item.Entry.Uses.Count == 0
+                ? $". Nothing shows it yet: name {item.Name} in game-info (a cluster's end-text, say)"
+                : "");
+            Saved?.Invoke(this, folder);
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Status = $"Couldn't save {item.Name}: {e.Message}";
+            return false;
+        }
+    }
+
+    /// <summary>Starts a new text, by a name asked for, from a page to fill in: saving it adds it to a mod</summary>
+    [RelayCommand]
+    private async Task NewTextAsync()
+    {
+        if (_content is not { } content || AskText == null)
+            return;
+
+        var name = await AskText("New text", "Its name, which game-info shows it by (a cluster's end-text, say), and its file in texts/:",
+            "", candidate => TextCatalog.CheckNewName(content, candidate.Trim())
+                ?? (_all.Any(item => item.Name.Equals(candidate.Trim(), StringComparison.OrdinalIgnoreCase)) ? $"There's a {candidate.Trim().ToUpperInvariant()} already" : null));
+        if (string.IsNullOrWhiteSpace(name))
+            return;
+
+        name = name.Trim().ToUpperInvariant();
+        var isBlake = TextCatalog.IsBlake(content);
+        var entry = new TextEntry(name, isBlake ? TextFormat.Presenter : TextFormat.Article, ["new: not saved yet"],
+            TextCatalog.Uses(content).GetValueOrDefault(name, []))
+        {
+            Source = "new",
+        };
+        var item = new TextItem(entry);
+        _all.Add(item);
+        _all.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
+        Filter = "";
+        Refilter();
+        SelectedItem = item;
+        Source = isBlake ? TextCatalog.NewPresenterScript : TextCatalog.NewArticle;
+        Status = $"{name} is new: Save puts it in a mod's texts folder";
+    }
 
     public void Dispose()
     {

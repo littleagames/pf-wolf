@@ -8,13 +8,20 @@
         Width="1440" Height="800" MinWidth="1000" MinHeight="560"
         WindowStartupLocation="CenterOwner">
 
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+    <KeyBinding Gesture="Ctrl+N" Command="{Binding NewTextCommand}" />
+  </Window.KeyBindings>
+
   <DockPanel>
     <!-- What's listed -->
     <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
         <TextBox x:Name="Search" Text="{Binding Filter}" VerticalAlignment="Center"
                  PlaceholderText="Find by name or what shows it (helpart, cluster 2, briefing)" />
         <TextBlock Grid.Column="1" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="100" />
+        <Button Grid.Column="2" Content="New…" Command="{Binding NewTextCommand}"
+                ToolTip.Tip="Ctrl+N: a new text, to save to a mod's texts folder and name in game-info" />
       </Grid>
     </Border>
 
@@ -88,13 +95,18 @@
 
       <!-- The text itself, to try changes in -->
       <DockPanel Grid.Column="1">
-        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,0,0,6">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,0,0,6">
           <TextBlock Text="Text" FontWeight="SemiBold" VerticalAlignment="Center" />
-          <TextBlock Grid.Column="1" Text="Changed: only the preview shows it, it isn't saved" Opacity="0.7" FontSize="12"
+          <TextBlock Grid.Column="1" Text="Changed, not saved" Opacity="0.7" FontSize="12"
                      VerticalAlignment="Center" IsVisible="{Binding IsChanged}" />
-          <Button Grid.Column="2" Content="Revert" Command="{Binding RevertCommand}"
-                  ToolTip.Tip="Back to the text as the game has it" />
+          <Button Grid.Column="2" Content="Save" Command="{Binding SaveCommand}" Classes="accent"
+                  ToolTip.Tip="Ctrl+S: to texts/NAME.txt in the text's mod folder, where the game reads it in place of its own" />
+          <Button Grid.Column="3" Content="Save to…" Command="{Binding SaveToCommand}" ToolTip.Tip="To another mod folder's texts folder" />
+          <Button Grid.Column="4" Content="Revert" Command="{Binding RevertCommand}"
+                  ToolTip.Tip="Back to the text as the game has it (or as it was last saved)" />
         </Grid>
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" TextWrapping="Wrap" Opacity="0.8" FontSize="12" Margin="0,6,0,0"
+                   IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         <TextBox x:Name="SourceBox" Text="{Binding Source}" AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap"
                  FontFamily="Consolas,Menlo,monospace" FontSize="13"
                  ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" />

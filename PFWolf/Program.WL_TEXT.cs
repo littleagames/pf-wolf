@@ -121,6 +121,8 @@ internal partial class Program
         ControlInfo ci;
 
         text = article;
+        // From the start, not where the last article shown was left (the original pointed at the new text)
+        textIndex = 0;
         // Where the layout has got to on the page, and the color ^C last set
         var page = TextWindow.FullScreen(_graphicManager, new TextStyle(SMALL_FONT, "Black", "BACKCOLOR"));
         _videoManager.FillScreen("BACKCOLOR");
@@ -265,7 +267,7 @@ internal partial class Program
             else
                 textIndex++;
 
-        } while (textIndex < bombpoint);
+        } while (textIndex < bombpoint && textIndex < text.Length - 1);
 
         _gameEngineManager.Quit("CacheLayout: No ^E to terminate file!");
     }
