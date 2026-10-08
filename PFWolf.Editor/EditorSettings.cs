@@ -17,6 +17,9 @@ public sealed class EditorSettings
     /// <summary>Mods loaded over pfwolf.pk3, in load order</summary>
     public List<string> Mods { get; set; } = [];
 
+    /// <summary>The skill Play starts on, 1 for the easiest; 0 for the game's default</summary>
+    public int PlaySkill { get; set; }
+
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PFWolf", "Editor", "editor.json");
 

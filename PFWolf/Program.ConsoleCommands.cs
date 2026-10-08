@@ -874,20 +874,40 @@ internal partial class Program
 
         int x = ParseInt(args[0], 0, _mapManager.mapwidth - 1);
         int y = ParseInt(args[1], 0, _mapManager.mapheight - 1);
+        int? angle = args.Length > 2 ? ParseInt(args[2], 0, ANGLES - 1) : null;
 
-        // Only onto open floor: a solid tile, a door or a blocking object would trap the player,
-        // and an area number is needed for the sight/sound area bookkeeping.
+        if (!TryTeleportPlayer(x, y, angle, out var problem))
+            throw new ArgumentException(problem);
+
+        _consoleManager.Print($"Teleported to {x},{y}");
+    }
+
+    /// <summary>
+    /// Moves the player to a tile, facing <paramref name="angle"/> (degrees, 0 east) when given.
+    /// Only onto open floor: a solid tile, a door or a blocking object would trap the player, and
+    /// an area number is needed for the sight/sound area bookkeeping.
+    /// </summary>
+    internal static bool TryTeleportPlayer(int x, int y, int? angle, out string problem)
+    {
+        problem = "";
+        if (x < 0 || y < 0 || x >= _mapManager.mapwidth || y >= _mapManager.mapheight)
+        {
+            problem = $"tile {x},{y} is off the level";
+            return false;
+        }
         if (_mapManager.tilemap[x, y] != 0 || _mapManager.actorat[x, y] != null
             || !_mapManager.VALIDAREA(_mapManager.MAPSPOT(x, y, 0)))
-            throw new ArgumentException($"tile {x},{y} is not open floor");
+        {
+            problem = $"tile {x},{y} is not open floor";
+            return false;
+        }
 
         player.SetPosition(x, y);
         player.AreaNumber = (byte)(_mapManager.MAPSPOT(x, y, 0) - _mapManager.Floors.AreaTile);
-        if (args.Length > 2)
-            player.Angle = (short)ParseInt(args[2], 0, ANGLES - 1);
+        if (angle is { } degrees)
+            player.Angle = (short)(((degrees % ANGLES) + ANGLES) % ANGLES);
         ConnectAreas();
-
-        _consoleManager.Print($"Teleported to {x},{y}");
+        return true;
     }
 
     private static void Cmd_Diag(string[] args)

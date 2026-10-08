@@ -109,7 +109,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WindowTitle))]
-    [NotifyCanExecuteChangedFor(nameof(UndoCommand), nameof(RedoCommand), nameof(SaveCommand), nameof(SaveAsCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UndoCommand), nameof(RedoCommand), nameof(SaveCommand), nameof(SaveAsCommand),
+        nameof(PlayCommand), nameof(PlayHereCommand))]
     private MapDocument? _document;
 
     public ObservableCollection<string> Problems { get; } = [];
@@ -225,6 +226,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             foreach (var map in content.Maps)
                 Maps.Add(new MapItem(map.Name, map.Title));
             BuildPalette();
+            FillPlaySkills(content);
             SelectedMap = Maps.FirstOrDefault();
 
             Status = $"{content.Title}: {content.Maps.Count} levels" + mods.Count switch { 0 => "", 1 => ", 1 mod", _ => $", {mods.Count} mods" };
@@ -685,6 +687,87 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Controller.SelectTile(value.X, value.Y);
             GoToTile?.Invoke(this, (value.X, value.Y));
             Hover(value.X, value.Y);
+        }
+    }
+
+    //
+    // Play: the game started on the level being edited
+    //
+
+    /// <summary>The skills Play can start on, from game-info (1 is the easiest)</summary>
+    public ObservableCollection<ChoiceOption> PlaySkills { get; } = [];
+
+    [ObservableProperty] private ChoiceOption? _selectedPlaySkill;
+
+    partial void OnSelectedPlaySkillChanged(ChoiceOption? value)
+    {
+        if (value != null)
+            _settings.PlaySkill = value.Value;
+    }
+
+    private void FillPlaySkills(GameContent content)
+    {
+        PlaySkills.Clear();
+        int index = 0;
+        foreach (var (key, skill) in content.GameInfo?.Skills ?? [])
+        {
+            index++;
+            var name = string.IsNullOrWhiteSpace(skill.Name) || skill.Name.StartsWith('$') ? key : skill.Name;
+            PlaySkills.Add(new ChoiceOption(index, $"{index}  {name}"));
+        }
+
+        // The last one played, else the game's own default for --warp: the third
+        SelectedPlaySkill = PlaySkills.FirstOrDefault(option => option.Value == _settings.PlaySkill)
+                            ?? PlaySkills.ElementAtOrDefault(Math.Min(2, PlaySkills.Count - 1));
+    }
+
+    /// <summary>Saves the level if it needs it, then starts PFWolf on it from its player start (F5)</summary>
+    [RelayCommand(CanExecute = nameof(HasDocument))]
+    private Task PlayAsync() => Play(null);
+
+    /// <summary>The same, starting on the tile under the pointer, or else the selection's (Shift+F5)</summary>
+    [RelayCommand(CanExecute = nameof(HasDocument))]
+    private Task PlayHereAsync()
+    {
+        (int X, int Y)? tile = _hover.X >= 0 ? _hover
+            : Controller.Selection is { } selection ? (selection.Left, selection.Top)
+            : null;
+        return Play(tile);
+    }
+
+    private async Task Play((int X, int Y)? start)
+    {
+        if (Document is not { } document || Content is not { } content)
+            return;
+
+        // The game reads the level from its mod folder, so it has to be saved there first
+        if (document.IsDirty && !await SaveDocument(document, document.SaveFolder))
+        {
+            Status = "Not played: the level has to be saved for the game to see the changes";
+            return;
+        }
+
+        var exe = Path.Combine(GameFolder, OperatingSystem.IsWindows() ? "PFWolf.exe" : "PFWolf");
+        if (!File.Exists(exe))
+        {
+            Problems.Add($"Play: there's no {Path.GetFileName(exe)} in {GameFolder}");
+            Status = "Couldn't start the game.";
+            return;
+        }
+
+        var arguments = GameLaunch.Arguments(content.PackId, document.AssetName, SelectedPlaySkill?.Value, start, Mods);
+        try
+        {
+            GameLaunch.Start(exe, GameFolder, arguments);
+            Status = $"Started PFWolf on {document.AssetName.ToUpperInvariant()}"
+                     + (SelectedPlaySkill != null ? $", skill {SelectedPlaySkill.Value}" : "")
+                     + (start is { } tile ? $", from {tile.X},{tile.Y}" : "");
+            SaveSettings();
+        }
+        catch (Exception e) when (e is System.ComponentModel.Win32Exception or IOException)
+        {
+            Problems.Add($"Play: {e.Message}");
+            Status = "Couldn't start the game.";
         }
     }
 

@@ -78,6 +78,7 @@ internal partial class Program
             {
                 EnterLevel();               // a kept hub level as it was left, or the map afresh (Program.Hubs.cs)
                 ApplyPendingMapChange();
+                ApplyPendingWarpStart();    // --start's tile, the first time (Program.Warp.cs)
                 if (!died)
                     MarkLevelStart();       // what dying puts the player back to, with death-restores-level-start
             }

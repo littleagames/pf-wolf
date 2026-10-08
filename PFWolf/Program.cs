@@ -150,6 +150,7 @@ internal partial class Program
         new Program();
         _gameEngineManager.Init(gameParams);
         SetNetParams(gameParams);     // --host, --join, --port, --name (Program.Multiplayer.cs)
+        SetWarpParams(gameParams);    // --warp, --skill, --start (Program.Warp.cs)
 
         // The Mods menu's choices (mods.cfg, per game), then the command line's
         var configMods = ModsConfig.Read(_gameEngineManager.GetConfigFilePath(ModsConfig.FileName));
@@ -483,7 +484,7 @@ internal partial class Program
 
         while (true)
         {
-            if (RunPendingNetStart())
+            if (RunPendingNetStart() || RunPendingWarp())
             {
                 RunStartedGame();
                 continue;

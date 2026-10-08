@@ -25,6 +25,15 @@ internal class GameParams
     [Option("cheats", Required = false, HelpText = "Turn on the cheat commands and debug keys from the start.")]
     public bool Cheats { get; set; }
 
+    [Option("warp", Required = false, HelpText = "Start a new game on this level (one game-info lists, e.g. MAP01), straight from the command line.")]
+    public string Warp { get; set; } = "";
+
+    [Option("skill", Required = false, HelpText = "With --warp: the skill, 1 (the easiest) and up. Default: the third (Wolf3D's Bring 'em on).")]
+    public int? Skill { get; set; }
+
+    [Option("start", Required = false, HelpText = "With --warp: start on this tile instead of the level's player start, as x,y or x,y,angle (0 east, 90 north).")]
+    public string Start { get; set; } = "";
+
     [Option("host", Required = false, HelpText = "Host a game with others: straight to its lobby (on --port, default 10645).")]
     public bool Host { get; set; }
 

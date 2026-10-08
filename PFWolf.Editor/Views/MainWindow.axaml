@@ -16,6 +16,8 @@
     <KeyBinding Gesture="Ctrl+N" Command="{Binding NewMapCommand}" />
     <KeyBinding Gesture="F4" Command="{Binding EditPropertiesCommand}" />
     <KeyBinding Gesture="F7" Command="{Binding CheckLevelCommand}" />
+    <KeyBinding Gesture="F5" Command="{Binding PlayCommand}" />
+    <KeyBinding Gesture="Shift+F5" Command="{Binding PlayHereCommand}" />
   </Window.KeyBindings>
 
   <DockPanel>
@@ -30,9 +32,9 @@
       </Grid>
     </Border>
 
-    <!-- Editing: tools, undo, saving -->
+    <!-- Editing: tools, undo, saving, playing (wraps onto a second line in a narrow window) -->
     <Border DockPanel.Dock="Top" Padding="8,4" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <StackPanel Orientation="Horizontal" Spacing="8">
+      <WrapPanel ItemSpacing="8" LineSpacing="4">
         <ListBox ItemsSource="{Binding Tools}" SelectedItem="{Binding SelectedTool}" Padding="0">
           <ListBox.ItemsPanel>
             <ItemsPanelTemplate>
@@ -60,7 +62,14 @@
                 ToolTip.Tip="Name, music, next level, colors, height, sky, flats, shading and light zones (F4)" />
         <Button Content="Check level" Command="{Binding CheckLevelCommand}"
                 ToolTip.Tip="F7: player starts, unknown values, doors, switches and tags, zones, the level's edge, rooms the player can't reach" />
-      </StackPanel>
+        <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+        <Button Content="▶ Play" Command="{Binding PlayCommand}" Classes="accent"
+                ToolTip.Tip="F5: saves the level if it's changed, then starts PFWolf on it with the mods" />
+        <Button Content="Play from here" Command="{Binding PlayHereCommand}"
+                ToolTip.Tip="Shift+F5 over the map: start on the tile under the pointer (the button: the selected tile)" />
+        <ComboBox ItemsSource="{Binding PlaySkills}" SelectedItem="{Binding SelectedPlaySkill}" MinWidth="150"
+                  ToolTip.Tip="The skill Play starts on" VerticalAlignment="Center" />
+      </WrapPanel>
     </Border>
 
     <!-- What's under the pointer, and how things went -->
