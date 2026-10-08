@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.OpenGL;
 using Avalonia.OpenGL.Controls;
+using PFWolf.Constants;
 using PFWolf.Editor.Data;
 using PFWolf.Editor.Editing;
 
@@ -39,6 +40,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     public static readonly StyledProperty<Camera3D?> CameraProperty = AvaloniaProperty.Register<LevelView3D, Camera3D?>(nameof(Camera));
     public static readonly StyledProperty<bool> ShowThingsProperty = AvaloniaProperty.Register<LevelView3D, bool>(nameof(ShowThings), true);
     public static readonly StyledProperty<bool> ShowCeilingsProperty = AvaloniaProperty.Register<LevelView3D, bool>(nameof(ShowCeilings), true);
+    public static readonly StyledProperty<bool> ShowShadingProperty = AvaloniaProperty.Register<LevelView3D, bool>(nameof(ShowShading), true);
+    public static readonly StyledProperty<bool> ShowMarkersProperty = AvaloniaProperty.Register<LevelView3D, bool>(nameof(ShowMarkers), true);
 
     static LevelView3D()
     {
@@ -52,6 +55,12 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     public bool ShowThings { get => GetValue(ShowThingsProperty); set => SetValue(ShowThingsProperty, value); }
     public bool ShowCeilings { get => GetValue(ShowCeilingsProperty); set => SetValue(ShowCeilingsProperty, value); }
 
+    /// <summary>Light the level by its light and light zones and fade it with distance, as the game does</summary>
+    public bool ShowShading { get => GetValue(ShowShadingProperty); set => SetValue(ShowShadingProperty, value); }
+
+    /// <summary>Tint push walls and switches</summary>
+    public bool ShowMarkers { get => GetValue(ShowMarkersProperty); set => SetValue(ShowMarkersProperty, value); }
+
     /// <summary>The pointer moved onto another surface, or off them all</summary>
     public event EventHandler<SurfaceHoverEventArgs>? SurfaceHovered;
 
@@ -64,8 +73,10 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     private const int FloatsPerVertex = 9;   // position 3, texture 2, color 4
 
     private Gl? _gl;
-    private int _program, _viewProjection, _mode, _texture;
+    private int _program, _viewProjection, _mode, _texture, _eye, _forward, _fog, _fadeColor;
     private int _staticVao, _staticVbo, _dynamicVao, _dynamicVbo;
+    // The sky: a picture behind everything, drawn by a pass of its own over the whole view
+    private int _skyProgram, _skyInverse, _skyEye, _skyScale, _skyTanHalf, _skyTexture, _skyVao, _skyVbo;
     private int _white, _missing;
     private readonly Dictionary<TextureRef, int> _glTextures = [];
     private bool _texturesStale;
@@ -125,6 +136,13 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             _uploadPending = true;
             Redraw();
         }
+        else if (change.Property == ShowShadingProperty)
+        {
+            _meshDirty = true;
+            Redraw();
+        }
+        else if (change.Property == ShowMarkersProperty)
+            Redraw();
     }
 
     private void OnLevelChanged(object? sender, EventArgs e)
@@ -153,6 +171,26 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             _viewProjection = gl.GetUniformLocation(_program, "uViewProjection");
             _mode = gl.GetUniformLocation(_program, "uMode");
             _texture = gl.GetUniformLocation(_program, "uTexture");
+            _eye = gl.GetUniformLocation(_program, "uEye");
+            _forward = gl.GetUniformLocation(_program, "uForward");
+            _fog = gl.GetUniformLocation(_program, "uFog");
+            _fadeColor = gl.GetUniformLocation(_program, "uFadeColor");
+
+            _skyProgram = gl.MakeProgram(header + SkyVertexShader, header + SkyFragmentShader, "aPosition");
+            _skyInverse = gl.GetUniformLocation(_skyProgram, "uInverseViewProjection");
+            _skyEye = gl.GetUniformLocation(_skyProgram, "uEye");
+            _skyScale = gl.GetUniformLocation(_skyProgram, "uScale");
+            _skyTanHalf = gl.GetUniformLocation(_skyProgram, "uTanHalf");
+            _skyTexture = gl.GetUniformLocation(_skyProgram, "uSky");
+            _skyVao = gl.GenVertexArray();
+            _skyVbo = gl.GenBuffer();
+            gl.BindVertexArray(_skyVao);
+            gl.BindBuffer(Gl.ARRAY_BUFFER, _skyVbo);
+            // One triangle over the whole view
+            gl.BufferData(Gl.ARRAY_BUFFER, [-1f, -1f, 3f, -1f, -1f, 3f], Gl.STATIC_DRAW);
+            gl.VertexAttribPointer(0, 2, 2 * sizeof(float), 0);
+            gl.EnableVertexAttribArray(0);
+            gl.BindVertexArray(0);
 
             (_staticVao, _staticVbo) = MakeVertexArray(gl);
             (_dynamicVao, _dynamicVbo) = MakeVertexArray(gl);
@@ -179,7 +217,10 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             gl.DeleteBuffer(_dynamicVbo);
             gl.DeleteVertexArray(_staticVao);
             gl.DeleteVertexArray(_dynamicVao);
+            gl.DeleteBuffer(_skyVbo);
+            gl.DeleteVertexArray(_skyVao);
             gl.DeleteProgram(_program);
+            gl.DeleteProgram(_skyProgram);
         }
         _gl = null;
         base.OnOpenGlDeinit(glInterface);
@@ -262,15 +303,26 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         if (_mesh == null || Camera is not { } camera)
             return;
 
+        var viewProjection = camera.View * Camera3D.Projection((float)(Bounds.Width / Math.Max(1, Bounds.Height)));
+        gl.ActiveTexture(Gl.TEXTURE0);
+        if (_mesh.Sky is { } sky)
+            DrawSky(gl, sky, viewProjection, camera);
+
         gl.Enable(Gl.DEPTH_TEST);
         gl.DepthFunc(Gl.LEQUAL);
         gl.DepthMask(true);
         gl.Disable(Gl.BLEND);
         gl.UseProgram(_program);
-        gl.UniformMatrix4(_viewProjection, camera.View * Camera3D.Projection((float)(Bounds.Width / Math.Max(1, Bounds.Height))));
+        gl.UniformMatrix4(_viewProjection, viewProjection);
         gl.Uniform1(_texture, 0);
         gl.Uniform1(_mode, 0);
-        gl.ActiveTexture(Gl.TEXTURE0);
+
+        // The fade with distance along the view (Program.ShadeOffset)
+        var fog = _mesh.Fog;
+        gl.Uniform3(_eye, camera.Position);
+        gl.Uniform3(_forward, camera.FlatForward);
+        gl.Uniform4(_fog, fog?.Start ?? 0, fog?.End ?? 1, fog?.MaxFade ?? 0, fog is { Inverse: true } ? 1 : 0);
+        gl.Uniform3(_fadeColor, fog?.Color ?? Vector3.Zero);
 
         // The level: one-sided faces, each texture's in one go
         gl.Enable(Gl.CULL_FACE);
@@ -296,7 +348,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             {
                 int first = vertices.Count / FloatsPerVertex;
                 foreach (var sprite in group)
-                    AddQuad(vertices, BillboardCorners(sprite, camera), [new(0, 1), new(1, 1), new(1, 0), new(0, 0)], Vector4.One);
+                    AddQuad(vertices, BillboardCorners(sprite, camera), SquareUvs, sprite.Color);
                 spriteBatches.Add((group.Key, first, vertices.Count / FloatsPerVertex - first));
             }
         }
@@ -339,12 +391,40 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             RequestNextFrameRendering();
     }
 
+    /// <summary>
+    /// The sky over the whole view, unshaded, behind everything (Program.DrawSky): it goes round
+    /// once every 1024 of its pixels, and stretches from the top of a level view down to the horizon
+    /// </summary>
+    private void DrawSky(Gl gl, string sky, Matrix4x4 viewProjection, Camera3D camera)
+    {
+        var texture = new TextureRef(TextureSource.Picture, sky);
+        int id = TextureId(gl, texture);
+        if (id == _missing || !Matrix4x4.Invert(viewProjection, out var inverse))
+            return;
+        int width = _skyWidths.TryGetValue(sky, out var known) ? known : _skyWidths[sky] = Art?.Pixels(texture)?.Width ?? 1024;
+
+        gl.Disable(Gl.DEPTH_TEST);
+        gl.Disable(Gl.CULL_FACE);
+        gl.UseProgram(_skyProgram);
+        gl.UniformMatrix4(_skyInverse, inverse);
+        gl.Uniform3(_skyEye, camera.Position);
+        gl.Uniform1(_skyScale, 1024f / Math.Max(width, 1));
+        gl.Uniform1(_skyTanHalf, MathF.Tan(Camera3D.FieldOfViewY * MathF.PI / 360));
+        gl.Uniform1(_skyTexture, 0);
+        gl.BindTexture(Gl.TEXTURE_2D, id);
+        gl.BindVertexArray(_skyVao);
+        gl.DrawArrays(Gl.TRIANGLES, 0, 3);
+        gl.BindVertexArray(0);
+    }
+
+    private readonly Dictionary<string, int> _skyWidths = new(StringComparer.OrdinalIgnoreCase);
+
     private void EnsureMesh()
     {
         if (!_meshDirty)
             return;
         _meshDirty = false;
-        _mesh = Tiles is { } tiles ? LevelMesh.Build(tiles) : null;
+        _mesh = Tiles is { } tiles ? LevelMesh.Build(tiles, ShowShading) : null;
         _uploadPending = true;
 
         // What's under the pointer may have changed
@@ -407,14 +487,27 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     private static readonly Vector4 HoverColor = new(1f, 0.85f, 0.25f, 0.35f);
     private static readonly Vector4 TargetColor = new(0.3f, 0.95f, 1f, 0.45f);
     private static readonly Vector4 SelectionColor = new(0.31f, 0.78f, 1f, 0.3f);
+    private static readonly Vector4 PushWallColor = new(0.75f, 0.35f, 1f, 0.35f);
+    private static readonly Vector4 SwitchColor = new(0.3f, 1f, 0.45f, 0.35f);
+    private static readonly Vector4 TagColor = new(1f, 0.55f, 0.1f, 0.4f);
     private static readonly Vector2[] SquareUvs = [new(0, 1), new(1, 1), new(1, 0), new(0, 0)];
 
     /// <summary>
-    /// Tints over the selection's tiles, the surfaces the pointer's on (a wall face may be more
-    /// than one), and the tile an edit there goes to when that's another one
+    /// Tints over push walls and switches, the selection's tiles, everything sharing a tag with
+    /// the tile under the pointer, the surfaces the pointer's on (a wall face may be more than
+    /// one), and the tile an edit there goes to when that's another one
     /// </summary>
     private void AddHoverOverlay(List<float> vertices, Camera3D camera)
     {
+        if (_mesh == null)
+            return;
+
+        if (ShowMarkers)
+        {
+            foreach (var ((x, y), kind) in _mesh.Markers)
+                AddTile(vertices, x, y, kind == MarkerKind.PushWall ? PushWallColor : SwitchColor, camera, faces: true);
+        }
+
         if (Controller?.Selection is { } selection && Tiles != null)
         {
             for (int y = selection.Top; y <= selection.Bottom; y++)
@@ -422,18 +515,42 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
                     AddQuad(vertices, TileMarker(x, y, 0.03f), SquareUvs, SelectionColor);
         }
 
-        if (_hover is not { } hover || _mesh == null)
+        if (_hover is not { } hover)
             return;
+
+        // What a switch acts on, or what acts on it: the tiles with the same tag (plane 4)
+        if (Tiles is { } tiles && _target.X >= 0 && tiles[MapConstants.TAGPLANE, _target.X, _target.Y] is var tag and not 0
+            && tiles.TaggedTiles().TryGetValue(tag, out var tagged))
+        {
+            foreach (var (x, y) in tagged)
+                AddTile(vertices, x, y, TagColor, camera, faces: false);
+        }
+
         if (_target != (hover.Ref.X, hover.Ref.Y) && _target.X >= 0)
             AddQuad(vertices, TileMarker(_target.X, _target.Y, 0.02f), SquareUvs, TargetColor);
 
         if (hover.Ref.Kind == SurfaceKind.Thing)
         {
             foreach (var sprite in _mesh.Billboards.Where(sprite => sprite.Ref == hover.Ref))
-                AddQuad(vertices, BillboardCorners(sprite, camera), [new(0, 1), new(1, 1), new(1, 0), new(0, 0)], HoverColor);
+                AddQuad(vertices, BillboardCorners(sprite, camera), SquareUvs, HoverColor);
         }
-        foreach (var surface in _mesh.Surfaces.Where(surface => surface.Ref == hover.Ref))
+        foreach (var surface in _mesh.SurfacesAt(hover.Ref.X, hover.Ref.Y).Where(surface => surface.Ref == hover.Ref))
             AddPolygon(vertices, surface.Points, surface.Uvs, HoverColor);
+    }
+
+    /// <summary>A tint over a tile's walls, doors, arch and things (faces), or everything on it, floor included</summary>
+    private void AddTile(List<float> vertices, int x, int y, Vector4 color, Camera3D camera, bool faces)
+    {
+        if (_mesh == null)
+            return;
+        foreach (var surface in _mesh.SurfacesAt(x, y))
+        {
+            if (faces && surface.Ref.Kind is SurfaceKind.Floor or SurfaceKind.Ceiling)
+                continue;
+            AddPolygon(vertices, surface.Points, surface.Uvs, color);
+        }
+        foreach (var sprite in _mesh.Billboards.Where(sprite => sprite.Ref.X == x && sprite.Ref.Y == y))
+            AddQuad(vertices, BillboardCorners(sprite, camera), SquareUvs, color);
     }
 
     /// <summary>A tile's square, facing up, on its floor or on top of its wall or door, just above it</summary>
@@ -691,27 +808,37 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         SurfaceHovered?.Invoke(this, new SurfaceHoverEventArgs(hit, target));
     }
 
+    // vDepth: how far along the view, level, as the game measures distance for its fade
     private const string VertexShader = """
         in vec3 aPosition;
         in vec2 aUv;
         in vec4 aColor;
         uniform mat4 uViewProjection;
+        uniform vec3 uEye;
+        uniform vec3 uForward;
         out vec2 vUv;
         out vec4 vColor;
+        out float vDepth;
         void main()
         {
             gl_Position = uViewProjection * vec4(aPosition, 1.0);
             vUv = aUv;
             vColor = aColor;
+            vDepth = dot(aPosition - uEye, uForward);
         }
         """;
 
-    // Mode 0: the texture (see-through texels cut out) times the color; 1: just the color, blended
+    // Mode 0: the texture (see-through texels cut out) times the color (its light), faded toward
+    // the fade color with distance; 1: just the color, blended (the tints). uFog: fade start and
+    // end in tiles, max fade 0 to 1, 1 for the inverse curve (Program.ShadeOffset)
     private const string FragmentShader = """
         in vec2 vUv;
         in vec4 vColor;
+        in float vDepth;
         uniform sampler2D uTexture;
         uniform int uMode;
+        uniform vec4 uFog;
+        uniform vec3 uFadeColor;
         out vec4 fragColor;
         void main()
         {
@@ -723,7 +850,49 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
             vec4 texel = texture(uTexture, vUv);
             if (texel.a < 0.5)
                 discard;
-            fragColor = vec4(texel.rgb * vColor.rgb, 1.0);
+            vec3 color = texel.rgb * vColor.rgb;
+
+            float fade = 0.0;
+            if (uFog.z > 0.0 && vDepth > uFog.x)
+            {
+                if (uFog.w > 0.5)
+                    fade = uFog.z * (1.0 - uFog.x / vDepth);
+                else
+                    fade = uFog.z * clamp((vDepth - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0);
+            }
+            fragColor = vec4(mix(color, uFadeColor, fade), 1.0);
+        }
+        """;
+
+    private const string SkyVertexShader = """
+        in vec2 aPosition;
+        out vec2 vView;
+        void main()
+        {
+            gl_Position = vec4(aPosition, 0.0, 1.0);
+            vView = aPosition;
+        }
+        """;
+
+    // The way through each pixel: across the picture by the game's angle (0 east, growing to
+    // the left, the picture running left to right), down it from a level view's top to the horizon
+    private const string SkyFragmentShader = """
+        in vec2 vView;
+        uniform mat4 uInverseViewProjection;
+        uniform vec3 uEye;
+        uniform float uScale;
+        uniform float uTanHalf;
+        uniform sampler2D uSky;
+        out vec4 fragColor;
+        void main()
+        {
+            vec4 far = uInverseViewProjection * vec4(vView, 1.0, 1.0);
+            vec3 way = normalize(far.xyz / far.w - uEye);
+            float angle = mod(atan(-way.z, way.x), 6.2831853);
+            float u = (1.0 - angle / 6.2831853) * uScale;
+            float rise = way.y / max(length(way.xz), 0.00001);
+            float v = clamp(1.0 - rise / uTanHalf, 0.001, 0.999);
+            fragColor = vec4(texture(uSky, vec2(u, v)).rgb, 1.0);
         }
         """;
 }

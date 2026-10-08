@@ -57,6 +57,7 @@ public sealed unsafe class Gl
     private readonly delegate* unmanaged<int, int, void> _uniform1i;
     private readonly delegate* unmanaged<int, float, void> _uniform1f;
     private readonly delegate* unmanaged<int, float, float, float, float, void> _uniform4f;
+    private readonly delegate* unmanaged<int, float, float, float, void> _uniform3f;
     private readonly delegate* unmanaged<int, int*, void> _genTextures;
     private readonly delegate* unmanaged<int, int*, void> _deleteTextures;
     private readonly delegate* unmanaged<int, int, void> _bindTexture;
@@ -113,6 +114,7 @@ public sealed unsafe class Gl
         _uniform1i = (delegate* unmanaged<int, int, void>)Get("glUniform1i");
         _uniform1f = (delegate* unmanaged<int, float, void>)Get("glUniform1f");
         _uniform4f = (delegate* unmanaged<int, float, float, float, float, void>)Get("glUniform4f");
+        _uniform3f = (delegate* unmanaged<int, float, float, float, void>)Get("glUniform3f");
         _genTextures = (delegate* unmanaged<int, int*, void>)Get("glGenTextures");
         _deleteTextures = (delegate* unmanaged<int, int*, void>)Get("glDeleteTextures");
         _bindTexture = (delegate* unmanaged<int, int, void>)Get("glBindTexture");
@@ -244,6 +246,7 @@ public sealed unsafe class Gl
     public void Uniform1(int location, int value) => _uniform1i(location, value);
     public void Uniform1(int location, float value) => _uniform1f(location, value);
     public void Uniform4(int location, float x, float y, float z, float w) => _uniform4f(location, x, y, z, w);
+    public void Uniform3(int location, System.Numerics.Vector3 v) => _uniform3f(location, v.X, v.Y, v.Z);
 
     public int GenTexture()
     {

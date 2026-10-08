@@ -2,6 +2,7 @@ using System.Numerics;
 using PFWolf.Assets;
 using PFWolf.Constants;
 using PFWolf.Editor.Data;
+using PFWolf.Editor.Editing;
 using PFWolf.Enums;
 
 namespace PFWolf.Editor.Rendering;
@@ -15,6 +16,8 @@ public enum TextureSource
     Sprite,
     /// <summary>No picture: the surface's color</summary>
     Solid,
+    /// <summary>A picture (GraphicAsset, else a wall texture) by name: the sky</summary>
+    Picture,
 }
 
 public readonly record struct TextureRef(TextureSource Source, string Name)
@@ -31,6 +34,8 @@ public enum SurfaceKind
     Ceiling,
     Thing,
     PlayerStart,
+    /// <summary>An arch's block over open floor: its faces, underside and top</summary>
+    Arch,
 }
 
 /// <summary>Which side of its tile a surface is on</summary>
@@ -43,6 +48,8 @@ public enum Face
     West,
     Diagonal,
     Top,
+    /// <summary>An arch's underside</summary>
+    Bottom,
 }
 
 /// <summary>A surface's tile and what it is there, for picking</summary>
@@ -74,6 +81,18 @@ public sealed class Billboard
     public float Height { get; init; }
     public TextureRef Texture { get; init; }
     public SurfaceRef Ref { get; init; }
+    /// <summary>The light of the tile it stands on</summary>
+    public Vector4 Color { get; init; } = Vector4.One;
+}
+
+/// <summary>The level's distance fade, for the view to apply: fade start and end in tiles, max fade 0 to 1</summary>
+public sealed record LevelFog(Vector3 Color, float Start, float End, float MaxFade, bool Inverse);
+
+/// <summary>Tiles the 3D view tints to stand out</summary>
+public enum MarkerKind
+{
+    PushWall,
+    Switch,
 }
 
 /// <summary>What the pointer is on in the 3D view</summary>
@@ -88,23 +107,80 @@ public readonly record struct SurfaceHit(SurfaceRef Ref, Vector3 Point, float Di
 public sealed class LevelMesh
 {
     private readonly MapTiles _tiles;
+    private readonly bool _shade;
     private readonly Dictionary<string, float> _textureStories = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<int, ZoneProperties> _zones;
+    private readonly int _levelLight;
 
     public List<Surface> Surfaces { get; } = [];
     public List<Billboard> Billboards { get; } = [];
+
+    /// <summary>The sky picture shown in place of the ceiling color, or null</summary>
+    public string? Sky { get; }
+
+    /// <summary>How the level fades with distance, or null for no fade</summary>
+    public LevelFog? Fog { get; }
+
+    /// <summary>Push walls and switches, for the view to tint</summary>
+    public Dictionary<(int X, int Y), MarkerKind> Markers { get; } = [];
+
+    private ILookup<(int X, int Y), Surface>? _byTile;
+
+    /// <summary>The surfaces belonging to a tile</summary>
+    public IEnumerable<Surface> SurfacesAt(int x, int y)
+        => (_byTile ??= Surfaces.ToLookup(surface => (surface.Ref.X, surface.Ref.Y)))[(x, y)];
 
     // How much a wall's top is darkened, so the tops read apart from the faces
     private static readonly Vector4 TopShade = new(0.55f, 0.55f, 0.55f, 1);
     private static readonly Vector4 StartColor = new(0.25f, 0.86f, 0.38f, 1);
     private static readonly Vector4 UnknownColor = new(0.86f, 0.16f, 0.16f, 1);
 
-    private LevelMesh(MapTiles tiles) => _tiles = tiles;
-
-    public static LevelMesh Build(MapTiles tiles)
+    private LevelMesh(MapTiles tiles, bool shade)
     {
-        var mesh = new LevelMesh(tiles);
+        _tiles = tiles;
+        _shade = shade;
+        _zones = shade ? tiles.Zones : [];
+        var shading = shade ? tiles.Shading : null;
+        _levelLight = shading?.Light ?? 255;
+        if (shading is { MaxFade: > 0 })
+        {
+            Fog = new LevelFog(ParseColor(shading.FadeColor) is { } fade ? new Vector3(fade.X, fade.Y, fade.Z) : Vector3.Zero,
+                (float)Math.Max(shading.FadeStart, 0), (float)Math.Max(shading.FadeEnd, shading.FadeStart + 1 / 64.0),
+                Math.Clamp(shading.MaxFade, 0, 100) / 100f, shading.InverseFade);
+        }
+
+        // Only a sky that's there to show
+        if (tiles.Sky is { } sky && (tiles.Content.Find<GraphicAsset>(sky) != null || tiles.Content.Find<TextureAsset>(sky) != null))
+            Sky = sky;
+    }
+
+    /// <param name="shade">Light the surfaces by the level's light and light zones, and fade them with distance</param>
+    public static LevelMesh Build(MapTiles tiles, bool shade = true)
+    {
+        var mesh = new LevelMesh(tiles, shade);
         mesh.Build();
         return mesh;
+    }
+
+    /// <summary>
+    /// The light a tile's surfaces get: its zone's (tinted), else the level's, as a color to
+    /// multiply by (Program's light rows darken toward black, then the tint multiplies)
+    /// </summary>
+    private Vector4 Light(int x, int y)
+    {
+        if (!_shade || !InMap(x, y))
+            return Vector4.One;
+        var (light, tint) = _tiles.LightAt(x, y, _zones, _levelLight);
+        var color = ParseColor(tint) ?? Vector4.One;
+        float level = light / 255f;
+        return new Vector4(color.X * level, color.Y * level, color.Z * level, 1);
+    }
+
+    /// <summary>The light a face gets: the open tile it's seen from, across its edge</summary>
+    private Vector4 FaceLight(int x, int y, Face face)
+    {
+        var (nx, ny) = Step(x, y, face);
+        return Light(nx, ny);
     }
 
     private void Build()
@@ -134,7 +210,10 @@ public sealed class LevelMesh
                         break;
 
                     default:
-                        AddFloorAndCeiling(x, y, floorColor, ceilingColor, ceiling, null);
+                        bool arch = _tiles.IsArch(x, y) && AddArch(x, y);
+                        // An arch at least as high as the ceiling hides it
+                        bool ceilingShows = !arch || _tiles.Stories(x, y) < ceiling;
+                        AddFloorAndCeiling(x, y, floorColor, ceilingColor, ceilingShows ? ceiling : null, null);
                         AddThing(x, y);
                         break;
                 }
@@ -151,6 +230,10 @@ public sealed class LevelMesh
         var wall = _tiles.Wall(x, y)!;
         int stories = _tiles.Stories(x, y);
         var diagonal = _tiles.Diagonal(x, y);
+        if (_tiles.IsPushWall(x, y))
+            Markers[(x, y)] = MarkerKind.PushWall;
+        else if (wall.Switch != null)
+            Markers[(x, y)] = MarkerKind.Switch;
 
         foreach (var face in SquareFaces)
         {
@@ -174,21 +257,23 @@ public sealed class LevelMesh
             var (a, b) = Edge(x, y, face);
             var texture = face is Face.North or Face.South ? wall.North : wall.East;
             var faceRef = new SurfaceRef(SurfaceKind.Wall, x, y, face);
+            var light = Light(nx, ny);
 
             if (_tiles.KindAt(nx, ny) == TileKind.Door)
             {
                 // The door's frame: its side texture for the door's story, the wall above (the
                 // face's direction is the way a ray travels from the door into the wall)
                 var door = _tiles.Door(nx, ny)!;
-                AddWall(faceRef, a, b, 0, 1, DoorFace(door, nx, ny, TravelName(Opposite(face))));
+                AddWall(faceRef, a, b, 0, 1, DoorFace(door, nx, ny, TravelName(Opposite(face))), light);
                 if (stories > 1)
-                    AddWall(faceRef, a, b, 1, stories, texture);
+                    AddWall(faceRef, a, b, 1, stories, texture, light);
             }
             else
-                AddWall(faceRef, a, b, bottom, stories, texture);
+                AddWall(faceRef, a, b, bottom, stories, texture, light);
         }
 
         var topRef = new SurfaceRef(SurfaceKind.Wall, x, y, Face.Top);
+        var topColor = TopShade * Light(x, y);
         if (diagonal != null)
         {
             // The slanted face, toward the open half, which has floor and ceiling
@@ -196,17 +281,17 @@ public sealed class LevelMesh
             var (p, q) = Slant(x, y, diagonal.Shape);
             var (a, b) = Ordered(p, q, OpenDirection(diagonal.Shape));
             var texture = string.IsNullOrEmpty(diagonal.Texture) ? wall.North : diagonal.Texture;
-            AddWall(new SurfaceRef(SurfaceKind.Wall, x, y, Face.Diagonal), a, b, 0, stories, texture);
+            AddWall(new SurfaceRef(SurfaceKind.Wall, x, y, Face.Diagonal), a, b, 0, stories, texture, Light(x, y));
 
-            AddFlat(topRef, solid, stories, up: true, Texture(wall.North), TopShade, TextureStories(wall.North));
+            AddFlat(topRef, solid, stories, up: true, Texture(wall.North), topColor, TextureStories(wall.North));
             AddFloorAndCeiling(x, y, floorColor, ceilingColor, ceiling, OpenHalf(x, y, diagonal.Shape));
         }
         else
-            AddFlat(topRef, Corners(x, y), stories, up: true, Texture(wall.North), TopShade, TextureStories(wall.North));
+            AddFlat(topRef, Corners(x, y), stories, up: true, Texture(wall.North), topColor, TextureStories(wall.North));
     }
 
     /// <summary>A wall face from a to b (left to right seen from its front) between two heights</summary>
-    private void AddWall(SurfaceRef faceRef, Vector2 a, Vector2 b, float bottom, float top, string texture,
+    private void AddWall(SurfaceRef faceRef, Vector2 a, Vector2 b, float bottom, float top, string texture, Vector4 light,
         float u0 = 0, float u1 = 1, bool twoSided = false)
     {
         // The texture's stories repeat up the wall from the floor
@@ -217,9 +302,56 @@ public sealed class LevelMesh
             Points = [new(a.X, bottom, a.Y), new(b.X, bottom, b.Y), new(b.X, top, b.Y), new(a.X, top, a.Y)],
             Uvs = [new(u0, v0), new(u1, v0), new(u1, v1), new(u0, v1)],
             Texture = Texture(texture),
+            Color = light,
             Ref = faceRef,
             TwoSided = twoSided,
         });
+    }
+
+    //
+    // Arches
+    //
+
+    /// <summary>
+    /// An arch: a block over the walkway from story 2 up to the tile's height, its faces and
+    /// underside textured from the walls ending its run (Program.OpenArch); false when there's
+    /// no wall to take a texture from, which the game leaves open
+    /// </summary>
+    private bool AddArch(int x, int y)
+    {
+        int stories = _tiles.Stories(x, y);
+        var underside = _tiles.ArchUndersideTexture(x, y);
+        var faces = SquareFaces.Select(face => (Face: face, Texture: _tiles.ArchFaceTexture(x, y, face is Face.East or Face.West))).ToList();
+        underside ??= faces.Select(face => face.Texture).FirstOrDefault(texture => texture != null);
+        if (underside == null)
+            return false;
+
+        foreach (var (face, texture) in faces)
+        {
+            if (texture == null)
+                continue;
+            var (nx, ny) = Step(x, y, face);
+            if (!InMap(nx, ny))
+                continue;
+
+            // Hidden by an arch or wall beside it as tall; a shorter one leaves its top showing
+            float bottom = 1;
+            if (_tiles.IsArch(nx, ny) || _tiles.KindAt(nx, ny) == TileKind.Wall && CoversEdge(nx, ny, Opposite(face)))
+            {
+                bottom = Math.Max(1, _tiles.Stories(nx, ny));
+                if (bottom >= stories)
+                    continue;
+            }
+
+            var (a, b) = Edge(x, y, face);
+            AddWall(new SurfaceRef(SurfaceKind.Arch, x, y, face), a, b, bottom, stories, texture, Light(nx, ny));
+        }
+
+        var light = Light(x, y);
+        float undersideStories = TextureStories(underside);
+        AddFlat(new SurfaceRef(SurfaceKind.Arch, x, y, Face.Bottom), Corners(x, y), 1, up: false, Texture(underside), light, undersideStories);
+        AddFlat(new SurfaceRef(SurfaceKind.Arch, x, y, Face.Top), Corners(x, y), stories, up: true, Texture(underside), TopShade * light, undersideStories);
+        return true;
     }
 
     /// <summary>How many stories tall a wall texture is: 64 rows each (TextureAsset)</summary>
@@ -248,25 +380,27 @@ public sealed class LevelMesh
             // Across the tile north to south, at its middle; both faces map the texture from
             // the north, so one side shows it mirrored, as in the game
             Vector2 north = new(x + 0.5f, y), south = new(x + 0.5f, y + 1);
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 0, 1, DoorFace(door, x, y, "west"));
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 0, 1, DoorFace(door, x, y, "east"), 1, 0);
+            Vector4 westLight = FaceLight(x, y, Face.West), eastLight = FaceLight(x, y, Face.East);
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 0, 1, DoorFace(door, x, y, "west"), westLight);
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 0, 1, DoorFace(door, x, y, "east"), eastLight, 1, 0);
             if (stories > 1)
             {
                 var texture = lintel ?? DoorFace(door, x, y, "west");
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 1, stories, texture);
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 1, stories, texture);
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 1, stories, texture, westLight);
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 1, stories, texture, eastLight);
             }
         }
         else
         {
             Vector2 west = new(x, y + 0.5f), east = new(x + 1, y + 0.5f);
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 0, 1, DoorFace(door, x, y, "north"), 1, 0);
-            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 0, 1, DoorFace(door, x, y, "south"));
+            Vector4 northLight = FaceLight(x, y, Face.North), southLight = FaceLight(x, y, Face.South);
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 0, 1, DoorFace(door, x, y, "north"), northLight, 1, 0);
+            AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 0, 1, DoorFace(door, x, y, "south"), southLight);
             if (stories > 1)
             {
                 var texture = lintel ?? DoorFace(door, x, y, "north");
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 1, stories, texture);
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 1, stories, texture);
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 1, stories, texture, northLight);
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 1, stories, texture, southLight);
             }
         }
     }
@@ -310,16 +444,22 @@ public sealed class LevelMesh
     // Floors, ceilings, things
     //
 
-    private void AddFloorAndCeiling(int x, int y, Vector4 floorColor, Vector4 ceilingColor, float ceiling, Vector2[]? polygon)
+    /// <param name="ceiling">The ceiling's height, or null for none</param>
+    private void AddFloorAndCeiling(int x, int y, Vector4 floorColor, Vector4 ceilingColor, float? ceiling, Vector2[]? polygon)
     {
         polygon ??= Corners(x, y);
+        var light = Light(x, y);
         var floor = _tiles.FloorFlat(x, y);
         AddFlat(new SurfaceRef(SurfaceKind.Floor, x, y), polygon, 0, up: true,
-            floor != null ? Texture(floor) : TextureRef.Solid, floor != null ? Vector4.One : floorColor);
+            floor != null ? Texture(floor) : TextureRef.Solid, (floor != null ? Vector4.One : floorColor) * light);
 
+        // The sky shows in place of the ceiling color, but not of a ceiling flat
         var top = _tiles.CeilingFlat(x, y);
-        AddFlat(new SurfaceRef(SurfaceKind.Ceiling, x, y), polygon, ceiling, up: false,
-            top != null ? Texture(top) : TextureRef.Solid, top != null ? Vector4.One : ceilingColor);
+        if (ceiling is { } height && (top != null || Sky == null))
+        {
+            AddFlat(new SurfaceRef(SurfaceKind.Ceiling, x, y), polygon, height, up: false,
+                top != null ? Texture(top) : TextureRef.Solid, (top != null ? Vector4.One : ceilingColor) * light);
+        }
     }
 
     /// <summary>
@@ -357,7 +497,12 @@ public sealed class LevelMesh
             if (content.IsWallSprite(thing.Class))
                 AddWallSprite(x, y, thing.Angles, content.WallSpriteOffset(thing.Class), width, height, texture, thingRef);
             else
-                Billboards.Add(new Billboard { Base = new Vector3(x + 0.5f, 0, y + 0.5f), Width = width, Height = height, Texture = texture, Ref = thingRef });
+            {
+                Billboards.Add(new Billboard
+                {
+                    Base = new Vector3(x + 0.5f, 0, y + 0.5f), Width = width, Height = height, Texture = texture, Ref = thingRef, Color = Light(x, y),
+                });
+            }
         }
         else if (_tiles.PlayerStart(x, y) is { } start)
         {
@@ -390,6 +535,7 @@ public sealed class LevelMesh
             Points = [new(a.X, 0, a.Y), new(b.X, 0, b.Y), new(b.X, height, b.Y), new(a.X, height, a.Y)],
             Uvs = [new(0, 1), new(1, 1), new(1, 0), new(0, 0)],
             Texture = texture,
+            Color = Light(x, y),
             Ref = thingRef,
             TwoSided = true,
         });
@@ -513,7 +659,7 @@ public sealed class LevelMesh
     /// </summary>
     public static (int X, int Y) TargetTile(SurfaceRef surface, bool inFront)
     {
-        if (!inFront || surface.Kind is not (SurfaceKind.Wall or SurfaceKind.Door))
+        if (!inFront || surface.Kind is not (SurfaceKind.Wall or SurfaceKind.Door or SurfaceKind.Arch))
             return (surface.X, surface.Y);
         return surface.Face switch
         {

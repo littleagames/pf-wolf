@@ -14,6 +14,9 @@ public enum TileKind
     Unknown,
 }
 
+/// <summary>A level's shading with every value filled in (the game's ShadingSettings): fade start and end in tiles, max fade in percent, light 0 to 255</summary>
+public sealed record ShadingValues(string FadeColor, double FadeStart, double FadeEnd, int MaxFade, int Light, bool InverseFade);
+
 /// <summary>
 /// Reads a level's planes the way the game does when it loads one (MapManager.LoadMap): which
 /// plane 0 values are walls, doors and floor codes, and what each object-plane value places
@@ -69,6 +72,78 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
 
     /// <summary>An open floor tile with a height over 1: a block from story 2 up to it, over the walkway</summary>
     public bool IsArch(int x, int y) => KindAt(x, y) == TileKind.Floor && this[MapConstants.HEIGHTPLANE, x, y] is > 1 and <= MaxStories;
+
+    /// <summary>The level's sky picture name (game-info sky), or null for its ceiling color</summary>
+    public string? Sky => (Properties.Sky ?? content.DefaultMapInfo.Sky) is { Length: > 0 } sky ? sky : null;
+
+    /// <summary>
+    /// The level's distance fade and light, each value from its game-info entry, else the default
+    /// map's, else the game's defaults (Program.ResolveShading); null when neither sets any
+    /// </summary>
+    public ShadingValues? Shading
+    {
+        get
+        {
+            var map = Properties;
+            var fallback = content.DefaultMapInfo.Shading;
+            if (!map.HasShading && fallback == null)
+                return null;
+            return new ShadingValues(
+                map.FadeColor ?? fallback?.FadeColor ?? "#000000",
+                map.FadeStart ?? fallback?.FadeStart ?? 0,
+                map.FadeEnd ?? fallback?.FadeEnd ?? 16,
+                map.MaxFade ?? fallback?.MaxFade ?? 100,
+                map.Light ?? fallback?.Light ?? 255,
+                string.Equals(fallback?.FadeCurve, "inverse", StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    /// <summary>
+    /// How a tile is lit, 0 to 255, and the zone's tint (#RRGGBB) if it has one: its light
+    /// zone's when game-info defines the zone, else the level's light
+    /// </summary>
+    public (int Light, string? Tint) LightAt(int x, int y, IReadOnlyDictionary<int, ZoneProperties> zones, int levelLight)
+    {
+        int zone = this[MapConstants.ZONEPLANE, x, y];
+        if (zone != 0 && zones.TryGetValue(zone, out var properties))
+            return (Math.Clamp(properties.Light ?? 255, 0, 255), properties.Color);
+        return (levelLight, null);
+    }
+
+    /// <summary>The wall closing off a run of arch tiles from (x, y) going (dx, dy): its East texture for a vertical face, else North (Program.ArchEndTexture)</summary>
+    public string? ArchEndTexture(int x, int y, int dx, int dy, bool vertical)
+    {
+        do
+        {
+            x += dx;
+            y += dy;
+            if (x < 0 || y < 0 || x >= Width || y >= Height)
+                return null;
+        }
+        while (IsArch(x, y));
+
+        return Wall(x, y) is { } wall ? vertical ? wall.East : wall.North : null;
+    }
+
+    /// <summary>An arch tile's underside: from a wall ending its run north or south first, else west or east (Program.ArchUndersideTexture)</summary>
+    public string? ArchUndersideTexture(int x, int y)
+        => ArchEndTexture(x, y, 0, -1, false) ?? ArchEndTexture(x, y, 0, 1, false)
+           ?? ArchEndTexture(x, y, -1, 0, true) ?? ArchEndTexture(x, y, 1, 0, true);
+
+    /// <summary>
+    /// An arch face's texture, vertical for a face along x = constant: the wall ending the run
+    /// of arch tiles in line with the face, else across it (Program.OpenArch); null leaves the arch open
+    /// </summary>
+    public string? ArchFaceTexture(int x, int y, bool vertical)
+    {
+        int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
+        return ArchEndTexture(x, y, -dx, -dy, vertical) ?? ArchEndTexture(x, y, dx, dy, vertical)
+            ?? ArchEndTexture(x, y, -dy, -dx, vertical) ?? ArchEndTexture(x, y, dy, dx, vertical);
+    }
+
+    /// <summary>A wall the player can push (its object-plane trigger runs A_PushWall)</summary>
+    public bool IsPushWall(int x, int y)
+        => KindAt(x, y) == TileKind.Wall && Trigger(x, y)?.Action.Contains("PushWall", StringComparison.OrdinalIgnoreCase) == true;
 
     /// <summary>The tiles of each tag on plane 4, for the switches' links</summary>
     public Dictionary<int, List<(int X, int Y)>> TaggedTiles()

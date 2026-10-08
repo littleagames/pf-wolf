@@ -263,6 +263,97 @@ public class LevelMeshTests
     }
 
     [Test]
+    public void An_Arch_Is_A_Block_From_Story_Two_With_The_Wall_Ending_Its_Run_As_Texture()
+    {
+        // Arrange: a 3-story arch across the room's width at row 10, walls at each end (the room's edge)
+        var document = Room();
+        for (int x = 1; x < 63; x++)
+            EditorMaps.Set(document, MapConstants.HEIGHTPLANE, x, 10, 3);
+
+        // Act
+        var arch = At(Build(document), SurfaceKind.Arch, 20, 10).ToList();
+
+        // Assert: north and south faces from story 1 to 3 in the end walls' North texture, an
+        // underside at story 1 facing down; no east or west faces inside the run
+        Assert.That(arch.Select(s => s.Ref.Face), Is.EquivalentTo(new[] { Face.North, Face.South, Face.Bottom, Face.Top }));
+        var north = arch.Single(s => s.Ref.Face == Face.North);
+        Assert.That(north.Texture.Name, Is.EqualTo("WALLNS"));
+        Assert.That((north.Points.Min(p => p.Y), north.Points.Max(p => p.Y)), Is.EqualTo((1f, 3f)));
+        var underside = arch.Single(s => s.Ref.Face == Face.Bottom);
+        Assert.That(underside.Points.All(p => p.Y == 1) && Vector3.Dot(underside.Normal, -Vector3.UnitY) > 0.99f);
+    }
+
+    [Test]
+    public void An_Arch_With_No_Wall_To_Take_A_Texture_From_Is_Left_Open()
+    {
+        // Arrange: a single arch tile in the middle of the room: its runs end on open floor
+        var document = Room();
+        EditorMaps.Set(document, MapConstants.HEIGHTPLANE, 20, 20, 3);
+
+        // Act
+        var mesh = Build(document);
+
+        // Assert
+        Assert.That(At(mesh, SurfaceKind.Arch, 20, 20), Is.Empty);
+    }
+
+    [Test]
+    public void Surfaces_Take_The_Light_Of_Their_Zone_And_Faces_Of_The_Tile_They_Face()
+    {
+        // Arrange: a pillar with zone 1 (light 51, red) on the floor west of it
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, Wall);
+        EditorMaps.Set(document, MapConstants.ZONEPLANE, 9, 10, 1);
+        document.SetProperties(new MapProperties { Light = 255, Zones = [new ZoneProperties(1, Light: 51, Color: "#FF0000")] });
+
+        // Act
+        var mesh = Build(document);
+
+        // Assert: the west face and the zoned floor are a fifth lit and red; the east face is full light
+        var dim = new Vector4(0.2f, 0, 0, 1);
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.West).Single().Color, Is.EqualTo(dim).Using<Vector4>(Near));
+        Assert.That(At(mesh, SurfaceKind.Floor, 9, 10).Single().Color.X, Is.EqualTo(0.2f * 0.44f).Within(0.01));
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.East).Single().Color, Is.EqualTo(Vector4.One));
+    }
+
+    [Test]
+    public void The_Level_Fades_By_Its_Shading_And_Shading_Can_Be_Turned_Off()
+    {
+        // Arrange
+        var document = Room();
+        document.SetProperties(new MapProperties { FadeColor = "#808080", FadeStart = 2, FadeEnd = 10, MaxFade = 50, Light = 128 });
+        var tiles = new MapTiles(Content(), document.Map, () => document.Properties);
+
+        // Act
+        var shaded = LevelMesh.Build(tiles);
+        var plain = LevelMesh.Build(tiles, shade: false);
+
+        // Assert
+        Assert.That(shaded.Fog, Is.EqualTo(new LevelFog(new Vector3(128 / 255f), 2, 10, 0.5f, false)).Using<LevelFog>(
+            (a, b) => Vector3.Distance(a.Color, b.Color) < 1e-4f && a with { Color = b.Color } == b));
+        Assert.That(At(shaded, SurfaceKind.Wall, 0, 5).First().Color.X, Is.EqualTo(128 / 255f).Within(1e-4));
+        Assert.That(plain.Fog, Is.Null);
+        Assert.That(At(plain, SurfaceKind.Wall, 0, 5).First().Color, Is.EqualTo(Vector4.One));
+    }
+
+    [Test]
+    public void A_Sky_The_Game_Has_Replaces_The_Ceiling_Color_But_Not_A_Missing_One()
+    {
+        // Arrange: no picture of that name here, so the ceiling stays
+        var document = Room();
+        document.SetProperties(new MapProperties { Sky = "NOSUCHSKY" });
+
+        // Act
+        var mesh = Build(document);
+
+        // Assert
+        Assert.That(mesh.Sky, Is.Null);
+        Assert.That(At(mesh, SurfaceKind.Ceiling, 5, 5), Is.Not.Empty);
+    }
+
+    private static bool Near(Vector4 a, Vector4 b) => Vector4.Distance(a, b) < 1e-4f;
+
+    [Test]
     public void Picking_Finds_The_Wall_In_Front_Of_The_Player_Start()
     {
         // Arrange: start at (5, 5) facing north, a wall two tiles ahead

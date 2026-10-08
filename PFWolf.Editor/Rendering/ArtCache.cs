@@ -60,6 +60,14 @@ public sealed class ArtCache(GameContent content) : IDisposable
     {
         switch (texture.Source)
         {
+            case TextureSource.Picture when content.Find<GraphicAsset>(texture.Name) is { Width: > 0, Height: > 0 } picture:
+            {
+                // Stored row by row
+                int width = picture.Width;
+                return (width, picture.Height, MakeRgba(width, picture.Height, (x, y) => picture.RawData[y * width + x], null));
+            }
+            case TextureSource.Picture:
+                return Pixels(texture with { Source = TextureSource.Texture });
             case TextureSource.Texture when content.Find<TextureAsset>(texture.Name) is { Width: > 0, Height: > 0 } wall:
             {
                 // Stored column by column

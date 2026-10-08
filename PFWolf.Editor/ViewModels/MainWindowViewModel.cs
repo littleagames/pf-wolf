@@ -142,6 +142,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private bool _show3D;
     [ObservableProperty] private bool _show3DThings = true;
     [ObservableProperty] private bool _show3DCeilings = true;
+    [ObservableProperty] private bool _show3DShading = true;
+    [ObservableProperty] private bool _show3DMarkers = true;
 
     /// <summary>Where the 3D view looks from; the map shows it too</summary>
     public Camera3D Camera { get; } = new();

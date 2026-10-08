@@ -197,6 +197,10 @@
           <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" MinWidth="130" />
           <CheckBox Content="3D: things" IsChecked="{Binding Show3DThings}" MinWidth="130" IsVisible="{Binding Show3D}" />
           <CheckBox Content="3D: ceilings" IsChecked="{Binding Show3DCeilings}" MinWidth="130" IsVisible="{Binding Show3D}" />
+          <CheckBox Content="3D: shading" IsChecked="{Binding Show3DShading}" MinWidth="130" IsVisible="{Binding Show3D}"
+                    ToolTip.Tip="The level's light, light zones and distance fade, as the game shows them" />
+          <CheckBox Content="3D: markers" IsChecked="{Binding Show3DMarkers}" MinWidth="130" IsVisible="{Binding Show3D}"
+                    ToolTip.Tip="Push walls in purple, switches in green; hovering a tagged tile shows everything with its tag in orange" />
         </WrapPanel>
         <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12" Margin="0,4,0,0"
                    Text="Left button: the tool. Middle or right drag: pan. Wheel: zoom. Home: fit. Select tool: drag inside the selection to move it; Ctrl+C/X/V, Delete, Esc." />
@@ -219,6 +223,7 @@
         <r:LevelView3D x:Name="View3D"
                        Tiles="{Binding Tiles}" Art="{Binding Art}" Controller="{Binding Controller}" Camera="{Binding Camera}"
                        ShowThings="{Binding Show3DThings}" ShowCeilings="{Binding Show3DCeilings}"
+                       ShowShading="{Binding Show3DShading}" ShowMarkers="{Binding Show3DMarkers}"
                        SurfaceHovered="OnSurfaceHovered" Failed="On3DFailed" ToolKeyPressed="OnToolKeyPressed" />
         <TextBlock Text="Left button: the tool on the tile under the pointer (things, and anything with Shift, go in front of a wall face) · Delete erases it · WASD fly · Q/E down/up · Shift faster · right drag look · middle drag slide · wheel forward · V on the map moves the camera"
                    Margin="8,6" FontSize="11" Opacity="0.75" Foreground="White" TextWrapping="Wrap"
