@@ -1,0 +1,161 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:data="using:PFWolf.Editor.Data"
+        xmlns:r="using:PFWolf.Editor.Rendering"
+        x:Class="PFWolf.Editor.Views.PaletteBrowserWindow"
+        x:DataType="vm:PaletteBrowserViewModel"
+        Title="{Binding Title}"
+        Width="1240" Height="800" MinWidth="980" MinHeight="560"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+    <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
+    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+    <KeyBinding Gesture="Ctrl+G" Command="{Binding GradientCommand}" />
+  </Window.KeyBindings>
+
+  <DockPanel>
+    <!-- What's being done -->
+    <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" Opacity="0.8" ToolTip.Tip="{Binding Status}" />
+    </Border>
+
+    <!-- Every palette -->
+    <DockPanel DockPanel.Dock="Left" Width="230" Margin="8,8,0,8">
+      <TextBlock DockPanel.Dock="Top" Text="Palettes" FontWeight="SemiBold" Margin="0,0,0,4" />
+      <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
+        <ListBox.Styles>
+          <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="8,4" />
+          </Style>
+        </ListBox.Styles>
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:PaletteListItem">
+            <StackPanel ToolTip.Tip="{Binding ToolTip}">
+              <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+              <TextBlock Text="{Binding Note}" FontSize="11" Opacity="0.6" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </DockPanel>
+
+    <!-- The palette picked: the color being edited, a picture in it, where it comes from, what uses it -->
+    <ScrollViewer DockPanel.Dock="Right" Width="420" Margin="8" IsVisible="{Binding HasSelection}">
+      <StackPanel Spacing="6" Margin="0,0,12,0">
+        <SelectableTextBlock Text="{Binding ColorTitle}" FontSize="18" FontWeight="SemiBold" />
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+          <!-- The color now, over the color as loaded -->
+          <Border Width="72" Height="72" CornerRadius="4" BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" ClipToBounds="True"
+                  ToolTip.Tip="Top: the color now. Bottom: as the game loaded it">
+            <Grid RowDefinitions="2*,*">
+              <Border Background="{Binding CurrentBrush}" />
+              <Border Grid.Row="1" Background="{Binding LoadedBrush}" />
+            </Grid>
+          </Border>
+          <Grid Grid.Column="1" ColumnDefinitions="Auto,*,52" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="2">
+            <TextBlock Text="R" VerticalAlignment="Center" />
+            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding Red}" IsSnapToTickEnabled="True" TickFrequency="1" VerticalAlignment="Center" />
+            <TextBox Grid.Column="2" Text="{Binding Red}" VerticalAlignment="Center" />
+            <TextBlock Grid.Row="1" Text="G" VerticalAlignment="Center" />
+            <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding Green}" IsSnapToTickEnabled="True" TickFrequency="1" VerticalAlignment="Center" />
+            <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding Green}" VerticalAlignment="Center" />
+            <TextBlock Grid.Row="2" Text="B" VerticalAlignment="Center" />
+            <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding Blue}" IsSnapToTickEnabled="True" TickFrequency="1" VerticalAlignment="Center" />
+            <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding Blue}" VerticalAlignment="Center" />
+          </Grid>
+        </Grid>
+        <Grid ColumnDefinitions="Auto,110,*" ColumnSpacing="6">
+          <TextBlock Text="Hex" VerticalAlignment="Center" />
+          <TextBox x:Name="Hex" Grid.Column="1" Text="{Binding HexText}" FontFamily="Consolas,Menlo,monospace"
+                   ToolTip.Tip="#RRGGBB; Enter sets it" />
+        </Grid>
+        <TextBlock Text="{Binding ColorDetails}" TextWrapping="Wrap" Opacity="0.8" FontSize="12" />
+
+        <!-- A picture drawn in the palette as it's edited -->
+        <TextBlock Text="Preview" FontWeight="SemiBold" Margin="0,8,0,0" />
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+          <ComboBox ItemsSource="{Binding PreviewKinds}" SelectedItem="{Binding SelectedPreviewKind}" MinWidth="170" />
+          <ComboBox Grid.Column="1" ItemsSource="{Binding PreviewNames}" SelectedItem="{Binding SelectedPreviewName}"
+                    HorizontalAlignment="Stretch" IsTextSearchEnabled="True" MaxDropDownHeight="400" />
+        </Grid>
+        <Border Background="#202020" CornerRadius="4" Height="260" ClipToBounds="True">
+          <Image x:Name="Preview" Source="{Binding PreviewBitmap}" Stretch="Uniform" Margin="6"
+                 RenderOptions.BitmapInterpolationMode="None" Cursor="Cross"
+                 ToolTip.Tip="Click a pixel to pick its color (Shift: extend the run picked)" />
+        </Border>
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+          <CheckBox Content="Only the colors picked" IsChecked="{Binding HighlightPicked}"
+                    ToolTip.Tip="Greys out every other color, to see where the ones picked are used" />
+          <TextBlock Grid.Column="1" Text="{Binding PreviewDetails}" VerticalAlignment="Center" HorizontalAlignment="Right" Opacity="0.7" FontSize="12" />
+        </Grid>
+
+        <TextBlock Text="Used by" FontWeight="SemiBold" Margin="0,8,0,0" />
+        <ListBox ItemsSource="{Binding Uses}" SelectedItem="{Binding SelectedUse}" MaxHeight="140" DoubleTapped="OnUseDoubleTapped"
+                 IsVisible="{Binding HasUses}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="data:PaletteUse">
+              <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding Label}" TextTrimming="CharacterEllipsis" FontSize="12" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBlock Text="Nothing in game-info or the movies draws in it (the engine itself may)." Opacity="0.6" FontSize="12"
+                   TextWrapping="Wrap" IsVisible="{Binding !HasUses}" />
+        <Button Content="Show its picture" Command="{Binding UsePictureCommand}" IsVisible="{Binding HasUses}"
+                ToolTip.Tip="Previews the picture the use picked is drawn with (or double-click it)" />
+
+        <TextBlock Text="Where it comes from (the last one is used)" FontWeight="SemiBold" Margin="0,8,0,0" />
+        <ListBox ItemsSource="{Binding Origins}" MaxHeight="90">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding}" ToolTip.Tip="{Binding}" TextTrimming="CharacterEllipsis" FontSize="12" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+
+        <WrapPanel ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
+          <Button Content="Save" Command="{Binding SaveCommand}" Classes="accent"
+                  ToolTip.Tip="Ctrl+S: to palettes/NAME.pal in the palette's mod folder, where the game reads it in place of its own" />
+          <Button Content="Save to…" Command="{Binding SaveToCommand}" ToolTip.Tip="To another mod folder's palettes folder" />
+          <Button Content="Import…" Click="Import"
+                  ToolTip.Tip="Replaces the colors with a palette file's: raw 768 bytes (0-255, or 6-bit 0-63), JASC-PAL or GIMP .gpl" />
+          <Button Content="Export ▾" ToolTip.Tip="Saves the colors to a file to use elsewhere">
+            <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Raw .pal (as palettes/ holds them)…" Click="ExportRaw" />
+                <MenuItem Header="JASC-PAL .pal (paint programs)…" Click="ExportJasc" />
+                <MenuItem Header="GIMP palette .gpl…" Click="ExportGimp" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+          <Button Content="Copy name" Click="CopyName" />
+        </WrapPanel>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- The colors -->
+    <DockPanel Margin="8">
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="6" Margin="0,0,0,6">
+        <TextBox x:Name="FindBox" Text="{Binding FindText}" PlaceholderText="Find a color: its number (37) or the closest to #RRGGBB" />
+        <Button Grid.Column="1" Content="Find" Command="{Binding FindCommand}" />
+      </Grid>
+      <WrapPanel DockPanel.Dock="Bottom" ItemSpacing="6" LineSpacing="6" Margin="0,6,0,0">
+        <Button Content="Undo" Command="{Binding UndoCommand}" ToolTip.Tip="Ctrl+Z" />
+        <Button Content="Redo" Command="{Binding RedoCommand}" ToolTip.Tip="Ctrl+Y" />
+        <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+        <Button Content="Gradient" Command="{Binding GradientCommand}"
+                ToolTip.Tip="Ctrl+G: blends the colors picked evenly from the first to the last (pick three or more)" />
+        <Button Content="Copy" Command="{Binding CopyCommand}" ToolTip.Tip="Ctrl+C: the colors picked" />
+        <Button Content="Paste" Command="{Binding PasteCommand}" ToolTip.Tip="Ctrl+V: over the colors from the first picked on" />
+        <Button Content="Revert" Command="{Binding RevertCommand}" ToolTip.Tip="Puts the colors picked back as the game loaded them" />
+        <Button Content="Revert all" Command="{Binding RevertAllCommand}" ToolTip.Tip="Puts every color back as the game loaded it" />
+      </WrapPanel>
+      <TextBlock DockPanel.Dock="Bottom" Text="{Binding HoverText}" FontFamily="Consolas,Menlo,monospace" FontSize="12" Margin="0,6,0,0" MinHeight="32"
+                 TextWrapping="Wrap" />
+      <r:PaletteGrid x:Name="Grid" Colors="{Binding GridColors}" Anchor="{Binding Anchor}" Current="{Binding Current}" Marked="{Binding Marked}" />
+    </DockPanel>
+  </DockPanel>
+</Window>

@@ -102,10 +102,13 @@ public sealed class GameContent
     /// The mod folder a level comes from (its maps/NAME.wad), or null when it's the game's own or
     /// a zipped mod's, which the editor doesn't write into
     /// </summary>
-    public string? ModFolderOf(string mapName)
+    public string? ModFolderOf(string mapName) => ModFolderOf(mapName, nameof(MapAsset));
+
+    /// <summary>The mod folder an asset of this type comes from, or null when it's the game's own or a zipped mod's</summary>
+    public string? ModFolderOf(string assetName, string assetType)
     {
-        var origin = Assets.FindAssetOrigins(mapName)
-            .Where(asset => asset.Type == nameof(MapAsset))
+        var origin = Assets.FindAssetOrigins(assetName)
+            .Where(asset => asset.Type == assetType)
             .SelectMany(asset => asset.Origins)
             .LastOrDefault(origin => origin.Action != AssetOrigin.LeftOut);
         if (origin == null)

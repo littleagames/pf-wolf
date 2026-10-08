@@ -192,6 +192,42 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         _artBrowser?.Load(Content, value);
         _soundBrowser?.Load(Content);
+        _paletteBrowser?.Load(Content);
+    }
+
+    //
+    // The palette browser
+    //
+
+    private PaletteBrowserViewModel? _paletteBrowser;
+
+    /// <summary>Opens the palette browser, on the game palette the first time</summary>
+    [RelayCommand]
+    private void ShowPalettes()
+    {
+        if (Dialogs == null)
+            return;
+
+        if (_paletteBrowser == null)
+        {
+            _paletteBrowser = new PaletteBrowserViewModel
+            {
+                PickModFolder = title => Dialogs.PickModFolder(title),
+            };
+            _paletteBrowser.Saved += (_, folder) => AddModFolder(folder);
+            _paletteBrowser.Load(Content);
+        }
+        Dialogs.ShowPaletteBrowser(_paletteBrowser);
+    }
+
+    // The game only sees what's saved in a mod folder with the mod loaded
+    private bool AddModFolder(string folder)
+    {
+        if (Mods.Any(mod => Path.GetFullPath(mod).TrimEnd('\\', '/').Equals(Path.GetFullPath(folder).TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase)))
+            return false;
+        Mods.Add(folder);
+        SaveSettings();
+        return true;
     }
 
     //
@@ -646,13 +682,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             var path = MapFiles.Save(document, folder);
             Status = $"Saved {path}";
 
-            // The game only sees the level with the mod loaded
-            if (!Mods.Any(mod => Path.GetFullPath(mod).TrimEnd('\\', '/').Equals(Path.GetFullPath(folder).TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase)))
-            {
-                Mods.Add(folder);
-                SaveSettings();
+            if (AddModFolder(folder))
                 Status += "; its folder is in the mods now, so the next load reads it";
-            }
             return true;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or YamlDotNet.Core.YamlException)
@@ -709,16 +740,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public async Task<bool> ResolveUnsaved(string what)
     {
         var dirty = DirtyDocuments.ToList();
-        if (dirty.Count == 0 || Dialogs == null)
+        var palettes = _paletteBrowser?.DirtyDocuments.ToList() ?? [];
+        if (dirty.Count + palettes.Count == 0 || Dialogs == null)
             return true;
 
-        var names = string.Join(", ", dirty.Select(document => document.AssetName.ToUpperInvariant()));
+        var names = string.Join(", ", dirty.Select(document => document.AssetName.ToUpperInvariant())
+            .Concat(palettes.Select(palette => $"palette {palette.Name}")));
         switch (await Dialogs.AskUnsaved($"{what} {names}. Save first?"))
         {
             case UnsavedChoice.Save:
                 foreach (var document in dirty)
                 {
                     if (!await SaveDocument(document, document.SaveFolder))
+                        return false;
+                }
+                foreach (var palette in palettes)
+                {
+                    if (!await _paletteBrowser!.SaveDocument(palette, palette.SaveFolder))
                         return false;
                 }
                 return true;

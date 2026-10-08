@@ -82,6 +82,20 @@ public partial class MainWindow : Window, IEditorDialogs
             _soundBrowser.Activate();
     }
 
+    private PaletteBrowserWindow? _paletteBrowser;
+
+    public void ShowPaletteBrowser(PaletteBrowserViewModel browser)
+    {
+        if (_paletteBrowser == null)
+        {
+            _paletteBrowser = new PaletteBrowserWindow { DataContext = browser };
+            _paletteBrowser.Closed += (_, _) => _paletteBrowser = null;
+            _paletteBrowser.Show(this);
+        }
+        else
+            _paletteBrowser.Activate();
+    }
+
     protected override async void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosing(e);

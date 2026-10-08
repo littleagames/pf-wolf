@@ -21,6 +21,7 @@
     <KeyBinding Gesture="F3" Command="{Binding Toggle3DCommand}" />
     <KeyBinding Gesture="F6" Command="{Binding ShowArtCommand}" />
     <KeyBinding Gesture="F8" Command="{Binding ShowSoundsCommand}" />
+    <KeyBinding Gesture="F9" Command="{Binding ShowPalettesCommand}" />
   </Window.KeyBindings>
 
   <DockPanel>
@@ -71,6 +72,8 @@
                 ToolTip.Tip="F6: every wall texture, flat, sprite and picture, where it comes from and what uses it" />
         <Button Content="Sounds and music…" Command="{Binding ShowSoundsCommand}"
                 ToolTip.Tip="F8: every sound and song, to listen to, with where it comes from and what plays it" />
+        <Button Content="Palettes…" Command="{Binding ShowPalettesCommand}"
+                ToolTip.Tip="F9: every palette, to look at and edit, with where it comes from and what's drawn in it" />
         <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
         <Button Content="▶ Play" Command="{Binding PlayCommand}" Classes="accent"
                 ToolTip.Tip="F5: saves the level if it's changed, then starts PFWolf on it with the mods" />

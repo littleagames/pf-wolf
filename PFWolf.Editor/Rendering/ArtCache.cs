@@ -7,6 +7,9 @@ using PFWolf.Editor.Data;
 
 namespace PFWolf.Editor.Rendering;
 
+/// <summary>A picture as palette indices, row by row from the top; Opaque says which pixels show (null: every one)</summary>
+public sealed record IndexedPicture(int Width, int Height, byte[] Indices, bool[]? Opaque);
+
 /// <summary>
 /// The game's wall textures and sprites as bitmaps in its palette, each made once
 /// </summary>
@@ -163,6 +166,67 @@ public sealed class ArtCache(GameContent content) : IDisposable
                 var color = i < palette.Length ? palette[i] : new PaletteColor(255, 0, 255);
                 argb[y * width + x] = (255 << 24) | (color.Red << 16) | (color.Green << 8) | color.Blue;
             }
+        }
+
+        var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
+        using (var buffer = bitmap.Lock())
+        {
+            for (int y = 0; y < height; y++)
+                Marshal.Copy(argb, y * width, buffer.Address + y * buffer.RowBytes, width);
+        }
+        return bitmap;
+    }
+
+    /// <summary>
+    /// A picture's palette indices row by row from the top, with which pixels show (null: all
+    /// of them), for drawing in a palette other than the game's: the palette browser's preview
+    /// </summary>
+    public static IndexedPicture? Indexed(GameContent content, ArtKind kind, string name)
+    {
+        switch (kind)
+        {
+            case ArtKind.Texture or ArtKind.Flat when content.Find<TextureAsset>(name) is { Width: > 0, Height: > 0 } texture:
+            {
+                // Stored column by column
+                int width = texture.Width, height = texture.Height;
+                var indices = new byte[width * height];
+                for (int y = 0; y < height; y++)
+                    for (int x = 0; x < width; x++)
+                        indices[y * width + x] = texture.RawData[x * height + y];
+                return new IndexedPicture(width, height, indices, null);
+            }
+            case ArtKind.Sprite when content.Find<SpriteAsset>(name) is { Width: > 0, Height: > 0 } sprite:
+                return new IndexedPicture(sprite.Width, sprite.Height, sprite.RawData.ToArray(),
+                    sprite.OpacityMask.Length > 0 ? sprite.OpacityMask.Select(mask => mask != 0).ToArray() : null);
+            case ArtKind.Picture when content.Find<GraphicAsset>(name) is { Width: > 0, Height: > 0 } picture:
+                return new IndexedPicture(picture.Width, picture.Height, picture.RawData.ToArray(),
+                    picture.OpacityMask is { Length: > 0 } mask ? mask.Select(value => value != 0).ToArray() : null);
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// Draws a picture in a palette. With <paramref name="highlight"/>, pixels of the colors it
+    /// doesn't pick are dimmed to a dark grey, so the ones it picks stand out.
+    /// </summary>
+    public static WriteableBitmap Render(IndexedPicture picture, IReadOnlyList<PaletteColor> palette, Func<byte, bool>? highlight = null)
+    {
+        int width = picture.Width, height = picture.Height;
+        var argb = new int[width * height];
+        for (int i = 0; i < argb.Length; i++)
+        {
+            if (i >= picture.Indices.Length || picture.Opaque != null && (i >= picture.Opaque.Length || !picture.Opaque[i]))
+                continue;   // transparent black, premultiplied
+            var index = picture.Indices[i];
+            var color = index < palette.Count ? palette[index] : new PaletteColor(255, 0, 255);
+            if (highlight != null && !highlight(index))
+            {
+                int grey = (color.Red * 3 + color.Green * 6 + color.Blue) / 10 / 5 + 16;
+                argb[i] = (255 << 24) | (grey << 16) | (grey << 8) | grey;
+            }
+            else
+                argb[i] = (255 << 24) | (color.Red << 16) | (color.Green << 8) | color.Blue;
         }
 
         var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
