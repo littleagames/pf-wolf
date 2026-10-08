@@ -21,4 +21,7 @@ public interface IEditorDialogs
     Task<string?> AskText(string title, string prompt, string initial, Func<string, string?> check);
 
     Task<UnsavedChoice> AskUnsaved(string message);
+
+    /// <summary>Shows the level properties dialog; true when it's closed with OK (and the properties build)</summary>
+    Task<bool> EditProperties(MapPropertiesViewModel properties);
 }

@@ -1,4 +1,5 @@
 using PFWolf.Assets;
+using PFWolf.Assets.Sounds;
 using PFWolf.Loaders;
 using PFWolf.Managers;
 
@@ -18,23 +19,27 @@ public sealed class GameContent
 {
     private readonly Dictionary<string, SpriteAsset?> _thingSprites = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ActorData> _actors = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _rotating = new(StringComparer.OrdinalIgnoreCase);
 
-    private GameContent(AssetManager assets, GameType game, MapObjectTranslationAsset mapDefs)
+    private GameContent(AssetManager assets, GameType game, MapObjectTranslationAsset mapDefs, GameInfoAsset? gameInfo,
+        PaletteColor[] palette, IEnumerable<Dictionary<string, ActorData>> actorDefs)
     {
         Assets = assets;
         Game = game;
         MapDefs = mapDefs;
-        GameInfo = assets.FindInGamePack<GameInfoAsset>("game-info");
+        GameInfo = gameInfo;
+        Palette = palette;
 
-        var palette = assets.Find<Palette>(assets.GetGamePaletteName());
-        Palette = palette?.Colors ?? [];
-
-        // Files directly in actordefs/ belong to every pack; the pack's own come after, as in the game
-        foreach (var actors in new[] { Find<ActorTranslationAsset>("actordefs"), Find<ActorTranslationAsset>($"{PackId}/actordefs") })
-            foreach (var (name, data) in actors?.Actors ?? [])
+        foreach (var actors in actorDefs)
+            foreach (var (name, data) in actors)
                 _actors[name] = ActorData.Combine(_actors.GetValueOrDefault(name), data);
 
         Maps = ListMaps();
+        MusicNames = assets.AssetNames
+            .Where(name => !name.Contains('/') && (assets.Exists<Wolf3dImfAudio>(name) || assets.Exists<MusicFileAsset>(name)))
+            .Select(name => name.ToUpperInvariant())
+            .Order(StringComparer.Ordinal)
+            .ToList();
     }
 
     public AssetManager Assets { get; }
@@ -67,10 +72,25 @@ public sealed class GameContent
         foreach (var warning in assets.ModWarnings)
             WarningLog.Write(warning);
 
+        var packId = GameTypes.GetGamePackId(game);
         var mapDefs = assets.FindInGamePack<MapObjectTranslationAsset>("mapdefs")
-            ?? throw new InvalidDataException($"{GameTypes.GetGamePackId(game)} has no mapdefs");
-        return new GameContent(assets, game, mapDefs);
+            ?? throw new InvalidDataException($"{packId} has no mapdefs");
+        var palette = assets.Find<Palette>(assets.GetGamePaletteName())?.Colors ?? [];
+
+        // Files directly in actordefs/ belong to every pack; the pack's own come after, as in the game
+        var actorDefs = new[] { "actordefs", $"{packId}/actordefs" }
+            .Where(assets.Exists<ActorTranslationAsset>)
+            .Select(name => assets.Find<ActorTranslationAsset>(name)!.Actors);
+        return new GameContent(assets, game, mapDefs, assets.FindInGamePack<GameInfoAsset>("game-info"), palette, actorDefs);
     }
+
+    /// <summary>
+    /// A game made of just these definitions, with no pictures or levels of its own: for
+    /// reading levels against mapdefs without a game folder (the tests)
+    /// </summary>
+    public static GameContent FromDefinitions(MapObjectTranslationAsset mapDefs, GameInfoAsset? gameInfo = null,
+        Dictionary<string, ActorData>? actors = null)
+        => new(new AssetManager(), GameType.Wolf3D, mapDefs, gameInfo, [], actors != null ? [actors] : []);
 
     /// <summary>An asset, or null without the "not found" warning AssetManager.Find gives</summary>
     public T? Find<T>(string name) where T : Asset
@@ -113,12 +133,74 @@ public sealed class GameContent
         {
             // 0 for a thing that looks the same from every side; one that turns has 1 (its front) to 8
             var name = $"{frame.Sprite}{frame.Frames[0]}";
-            sprite = Find<SpriteAsset>(name + "0") ?? Find<SpriteAsset>(name + "1");
+            sprite = Find<SpriteAsset>(name + "0");
+            if (sprite == null && Find<SpriteAsset>(name + "1") is { } front)
+            {
+                sprite = front;
+                _rotating.Add(className);
+            }
         }
 
         _thingSprites[className] = sprite;
         return sprite;
     }
+
+    /// <summary>A thing seen differently from each side (an enemy), so which way it faces matters</summary>
+    public bool IsRotating(string className)
+    {
+        ThingSprite(className);
+        return _rotating.Contains(className);
+    }
+
+    /// <summary>How many skills game-info has (mapdefs min-skill counts them from 0, easiest first)</summary>
+    public int SkillCount => GameInfo?.Skills.Count ?? 4;
+
+    /// <summary>A class's flags, its parents' included (flags are inherited), upper-cased</summary>
+    public HashSet<string> ClassFlags(string className)
+    {
+        var flags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var visited = new HashSet<string>();
+        for (var name = className; !string.IsNullOrWhiteSpace(name) && visited.Add(name) && _actors.TryGetValue(name, out var actor); name = actor.Parent)
+            flags.UnionWith(actor.Flags);
+        return flags;
+    }
+
+    /// <summary>A class property, from the class or its nearest parent that has it</summary>
+    public object? ClassProperty(string className, string key)
+    {
+        var visited = new HashSet<string>();
+        for (var name = className; !string.IsNullOrWhiteSpace(name) && visited.Add(name) && _actors.TryGetValue(name, out var actor); name = actor.Parent)
+        {
+            if (actor.Properties.TryGetValue(key, out var value))
+                return value;
+        }
+        return null;
+    }
+
+    /// <summary>A flat panel standing in its tile (actordefs WALLSPRITE), not a billboard</summary>
+    public bool IsWallSprite(string className)
+    {
+        if (!_wallSprites.TryGetValue(className, out var isWallSprite))
+            _wallSprites[className] = isWallSprite = ClassFlags(className).Contains("WALLSPRITE");
+        return isWallSprite;
+    }
+
+    private readonly Dictionary<string, bool> _wallSprites = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>How far a wall sprite's panel sits toward its front, in texels (32 = the tile's edge)</summary>
+    public int WallSpriteOffset(string className)
+        => int.TryParse(Convert.ToString(ClassProperty(className, "wallsprite.offset"), System.Globalization.CultureInfo.InvariantCulture), out var offset)
+            ? Math.Clamp(offset, 0, 32)
+            : 0;
+
+    /// <summary>The level's game-info entry as loaded (the base game's, with the mods' merged in), or null when it has none</summary>
+    public MapInfo? MapInfoOf(string mapName)
+        => GameInfo?.Maps.FirstOrDefault(map => map.Key.Equals(mapName, StringComparison.OrdinalIgnoreCase)).Value;
+
+    public DefaultMapInfo DefaultMapInfo => GameInfo?.DefaultMap ?? new DefaultMapInfo();
+
+    /// <summary>The names of every music asset, for the level properties</summary>
+    public IReadOnlyList<string> MusicNames { get; private set; } = [];
 
     private ActorStatesData? SpawnFrame(string className)
     {

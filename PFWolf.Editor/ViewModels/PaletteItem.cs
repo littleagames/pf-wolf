@@ -17,6 +17,12 @@ public sealed record ToolOption(EditTool Tool, string Label, string Key)
     public string ToolTip => $"{Label} ({Key})";
 }
 
+/// <summary>A choice in one of the palette's drop-downs: a facing, a skill, a flat</summary>
+public sealed record ChoiceOption(int Value, string Label)
+{
+    public override string ToString() => Label;
+}
+
 /// <summary>A plane the tools can edit</summary>
 public sealed record PlaneOption(int Plane, string Label)
 {

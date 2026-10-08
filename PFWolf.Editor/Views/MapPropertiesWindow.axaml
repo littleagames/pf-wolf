@@ -1,0 +1,113 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        x:Class="PFWolf.Editor.Views.MapPropertiesWindow"
+        x:DataType="vm:MapPropertiesViewModel"
+        Title="{Binding Title}"
+        Width="760" Height="720" MinWidth="640" MinHeight="480"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.heading">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,12,0,4" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,12,0,0">
+      <TextBlock Text="{Binding Error}" Foreground="OrangeRed" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+        <Button Content="OK" IsDefault="True" Classes="accent" Click="OnOk" />
+        <Button Content="Cancel" IsCancel="True" Click="OnCancel" />
+      </StackPanel>
+    </StackPanel>
+
+    <ScrollViewer>
+      <StackPanel Spacing="4" Margin="0,0,12,0">
+        <TextBlock TextWrapping="Wrap" Opacity="0.7"
+                   Text="Saved into the mod's game-info.yaml with the level. A field left empty uses the default map's value (shown faded)." />
+
+        <TextBlock Classes="heading" Text="The level" />
+        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
+          <TextBlock Classes="label" Grid.Row="0" Text="Name" />
+          <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Name}" PlaceholderText="Episode X, Floor Y" />
+          <TextBlock Classes="label" Grid.Row="1" Text="Music" />
+          <AutoCompleteBox Grid.Row="1" Grid.Column="1" Text="{Binding Music}" ItemsSource="{Binding MusicNames}" FilterMode="ContainsOrdinal" />
+          <TextBlock Classes="label" Grid.Row="2" Text="Next level" />
+          <AutoCompleteBox Grid.Row="2" Grid.Column="1" Text="{Binding Next}" ItemsSource="{Binding MapNames}" FilterMode="StartsWith"
+                           ToolTip.Tip="Empty: finishing this level ends the episode" />
+          <TextBlock Classes="label" Grid.Row="3" Text="Secret next level" />
+          <AutoCompleteBox Grid.Row="3" Grid.Column="1" Text="{Binding SecretNext}" ItemsSource="{Binding MapNames}" FilterMode="StartsWith" />
+          <TextBlock Classes="label" Grid.Row="4" Text="Par time (seconds)" />
+          <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ParTime}" />
+        </Grid>
+
+        <TextBlock Classes="heading" Text="How it looks" />
+        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
+          <TextBlock Classes="label" Grid.Row="0" Text="Floor color" />
+          <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding FloorColor}" PlaceholderText="{Binding FloorColorDefault}" />
+          <TextBlock Classes="label" Grid.Row="1" Text="Ceiling color" />
+          <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding CeilingColor}" PlaceholderText="{Binding CeilingColorDefault}" />
+          <TextBlock Classes="label" Grid.Row="2" Text="Wall height (stories)" />
+          <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding WallHeight}" PlaceholderText="{Binding WallHeightDefault}" />
+          <TextBlock Classes="label" Grid.Row="3" Text="Sky" />
+          <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Sky}" PlaceholderText="{Binding SkyDefault}" />
+          <TextBlock Classes="label" Grid.Row="4" Text="Default floor flat" />
+          <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding DefaultFloor}" PlaceholderText="{Binding DefaultFloorDefault}" />
+          <TextBlock Classes="label" Grid.Row="5" Text="Default ceiling flat" />
+          <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding DefaultCeiling}" PlaceholderText="{Binding DefaultCeilingDefault}" />
+        </Grid>
+
+        <TextBlock Classes="heading" Text="Shading (night, fog)" />
+        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
+          <TextBlock Classes="label" Grid.Row="0" Text="Light (0-255)" />
+          <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Light}" PlaceholderText="{Binding LightDefault}" />
+          <TextBlock Classes="label" Grid.Row="1" Text="Fade color" />
+          <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FadeColor}" PlaceholderText="{Binding FadeColorDefault}" />
+          <TextBlock Classes="label" Grid.Row="2" Text="Fade start (tiles)" />
+          <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding FadeStart}" PlaceholderText="{Binding FadeStartDefault}" />
+          <TextBlock Classes="label" Grid.Row="3" Text="Fade end (tiles)" />
+          <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding FadeEnd}" PlaceholderText="{Binding FadeEndDefault}" />
+          <TextBlock Classes="label" Grid.Row="4" Text="Max fade (%)" />
+          <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding MaxFade}" PlaceholderText="{Binding MaxFadeDefault}" />
+        </Grid>
+
+        <TextBlock Classes="heading" Text="Light zones (plane 5)" />
+        <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12"
+                   Text="Tiles with a zone's id on plane 5 are lit by it. Light 0-255; color #RRGGBB tints it; an effect moves between low and the light every tics (70 a second)." />
+        <Grid ColumnDefinitions="60,70,100,100,60,60,80,Auto" ColumnSpacing="6" Margin="0,4,0,0">
+          <TextBlock Grid.Column="0" Text="Id" Opacity="0.7" />
+          <TextBlock Grid.Column="1" Text="Light" Opacity="0.7" />
+          <TextBlock Grid.Column="2" Text="Color" Opacity="0.7" />
+          <TextBlock Grid.Column="3" Text="Effect" Opacity="0.7" />
+          <TextBlock Grid.Column="4" Text="Low" Opacity="0.7" />
+          <TextBlock Grid.Column="5" Text="Tics" Opacity="0.7" />
+          <TextBlock Grid.Column="6" Text="Bright tics" Opacity="0.7" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Zones}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ZoneRow">
+              <Grid ColumnDefinitions="60,70,100,100,60,60,80,Auto" ColumnSpacing="6" Margin="0,2">
+                <TextBox Grid.Column="0" Text="{Binding Id}" />
+                <TextBox Grid.Column="1" Text="{Binding Light}" />
+                <TextBox Grid.Column="2" Text="{Binding Color}" PlaceholderText="white" />
+                <ComboBox Grid.Column="3" ItemsSource="{x:Static vm:ZoneRow.Effects}" SelectedItem="{Binding Effect}" HorizontalAlignment="Stretch" />
+                <TextBox Grid.Column="4" Text="{Binding Low}" />
+                <TextBox Grid.Column="5" Text="{Binding Tics}" />
+                <TextBox Grid.Column="6" Text="{Binding BrightTics}" />
+                <Button Grid.Column="7" Content="Remove"
+                        Command="{Binding $parent[ItemsControl].((vm:MapPropertiesViewModel)DataContext).RemoveZoneCommand}"
+                        CommandParameter="{Binding}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Button Content="Add a zone" Command="{Binding AddZoneCommand}" Margin="0,4,0,0" />
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

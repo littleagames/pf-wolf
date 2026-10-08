@@ -22,12 +22,54 @@ public sealed class MapDocument
     private int _savedAt;
 
     /// <param name="isNew">A level made in the editor, which is unsaved until it's written out</param>
-    public MapDocument(string assetName, MapAsset map, bool isNew = false)
+    /// <param name="properties">Its game-info entry as loaded; null when game-info doesn't list it</param>
+    public MapDocument(string assetName, MapAsset map, bool isNew = false, MapProperties? properties = null)
     {
         AssetName = assetName;
         Map = map.DeepCopy();
         if (isNew)
             _savedAt = -1;
+
+        InGameInfo = properties != null;
+        LoadedProperties = SavedProperties = Properties = properties ?? new MapProperties();
+    }
+
+    /// <summary>Whether game-info lists the level (the game can't finish one it doesn't)</summary>
+    public bool InGameInfo { get; private set; }
+
+    /// <summary>The level's game-info entry as the game loaded it, before any editing</summary>
+    public MapProperties LoadedProperties { get; }
+
+    /// <summary>The level's game-info entry as last saved (or loaded)</summary>
+    public MapProperties SavedProperties { get; private set; }
+
+    /// <summary>The level's game-info entry as edited</summary>
+    public MapProperties Properties { get; private set; }
+
+    public void SetProperties(MapProperties properties)
+    {
+        Properties = properties;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// The game-info keys saving writes: what differs from the loaded entry or the last save;
+    /// for a level game-info doesn't list yet, its name too, so that it does
+    /// </summary>
+    public IReadOnlyList<string> PropertyKeysToWrite()
+    {
+        var keys = Properties.ChangedKeys(LoadedProperties).Union(Properties.ChangedKeys(SavedProperties)).ToList();
+        if (!InGameInfo && !keys.Contains("name"))
+            keys.Add("name");
+        return keys;
+    }
+
+    public bool PropertiesDirty => Properties.ChangedKeys(SavedProperties).Count > 0;
+
+    internal void MarkPropertiesSaved()
+    {
+        SavedProperties = Properties;
+        InGameInfo = true;
     }
 
     /// <summary>The level's asset name ("map01"): its file is maps/MAP01.wad</summary>
@@ -42,7 +84,7 @@ public sealed class MapDocument
     /// <summary>The mod folder the level was last saved to (or came from), or null for none yet</summary>
     public string? SaveFolder { get; set; }
 
-    public bool IsDirty => _savedAt != _undo.Count;
+    public bool IsDirty => _savedAt != _undo.Count || PropertiesDirty || !InGameInfo;
     public bool CanUndo => _undo.Count > 0;
     public bool CanRedo => _redo.Count > 0;
     public string? UndoDescription => _undo.Count > 0 ? _undo[^1].Description : null;

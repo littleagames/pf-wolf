@@ -1,5 +1,6 @@
 using PFWolf.Assets;
 using PFWolf.Constants;
+using PFWolf.Editor.Editing;
 
 namespace PFWolf.Editor.Data;
 
@@ -17,12 +18,55 @@ public enum TileKind
 /// Reads a level's planes the way the game does when it loads one (MapManager.LoadMap): which
 /// plane 0 values are walls, doors and floor codes, and what each object-plane value places
 /// </summary>
-public sealed class MapTiles(GameContent content, MapAsset map)
+public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperties>? properties = null)
 {
     private MapObjectTranslationAsset Defs => content.MapDefs;
     private MapFloorsTranslation Floors => content.MapDefs.Floors;
 
+    public GameContent Content => content;
     public MapAsset Map => map;
+
+    /// <summary>The level's game-info entry as edited</summary>
+    public MapProperties Properties => properties?.Invoke() ?? new MapProperties();
+
+    /// <summary>The light zones that apply to the level: the default map's, with its own over them</summary>
+    public Dictionary<int, ZoneProperties> Zones => Properties.EffectiveZones(content.DefaultMapInfo);
+
+    public bool IsAmbush(int x, int y) => Floors.Ambush is { } ambush and >= 0 && this[0, x, y] == ambush;
+
+    /// <summary>
+    /// The texture a floor tile shows: its flat-plane floor index's (mapdefs flats), else the
+    /// level's default floor; null for the floor color
+    /// </summary>
+    public string? FloorFlat(int x, int y)
+    {
+        int index = this[MapConstants.FLATPLANE, x, y] & 0xff;
+        if (Defs.Flats.Floor.TryGetValue(index, out var flat))
+            return flat;
+        return Properties.DefaultFloor ?? content.DefaultMapInfo.DefaultFloor;
+    }
+
+    /// <summary>The tiles of each tag on plane 4, for the switches' links</summary>
+    public Dictionary<int, List<(int X, int Y)>> TaggedTiles()
+    {
+        var tags = new Dictionary<int, List<(int, int)>>();
+        for (int y = 0; y < Height; y++)
+        {
+            for (int x = 0; x < Width; x++)
+            {
+                int tag = this[MapConstants.TAGPLANE, x, y];
+                if (tag == 0)
+                    continue;
+                if (!tags.TryGetValue(tag, out var tiles))
+                    tags[tag] = tiles = [];
+                tiles.Add((x, y));
+            }
+        }
+        return tags;
+    }
+
+    /// <summary>A wall the player uses to set things off (mapdefs walls switch)</summary>
+    public bool IsSwitch(int x, int y) => Wall(x, y)?.Switch != null;
 
     public int Width => map.Width;
     public int Height => map.Height;
@@ -124,7 +168,7 @@ public sealed class MapTiles(GameContent content, MapAsset map)
             if (thing.Patrol != 0)
                 details.Add("patrols");
             if (thing.MinSkill > 0)
-                details.Add($"skill {thing.MinSkill}+");
+                details.Add($"skill {thing.MinSkill + 1}+");
             return string.Join(", ", details);
         }
         if (PlayerStart(x, y) is { } start)

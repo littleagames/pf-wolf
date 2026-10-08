@@ -12,6 +12,9 @@ public sealed record PaletteEntry(ushort Value, string Group, string Label, stri
     public override string ToString() => Label;
 }
 
+/// <summary>One object-plane code for a thing class: which way it faces, whether it patrols, the skill it starts at</summary>
+public sealed record ThingVariant(ushort Id, int Angles, bool Patrols, int MinSkill);
+
 /// <summary>The palette for each plane, from the game pack's mapdefs</summary>
 public static class PaletteEntries
 {
@@ -68,16 +71,11 @@ public static class PaletteEntries
             entries.Add(new PaletteEntry((ushort)id, "Player starts",
                 $"{(start.Deathmatch ? "Deathmatch start" : "Player start")}, {Facing(start.Angles)}  ({id})"));
 
-        foreach (var (id, thing) in defs.Things.OrderBy(thing => thing.Key))
+        // One entry per class; which way it faces, its skills and patrolling pick among its codes (ThingVariants)
+        foreach (var (thingClass, variants) in ThingVariants(defs).OrderBy(group => group.Value[0].Id))
         {
-            var label = thing.Class;
-            if (thing.Angles != 0 || thing.Patrol != 0)
-                label += $", {Facing(thing.Angles)}";
-            if (thing.Patrol != 0)
-                label += ", patrols";
-            if (thing.MinSkill > 0)
-                label += $", skill {thing.MinSkill}+";
-            entries.Add(new PaletteEntry((ushort)id, "Things", $"{label}  ({id})", ThingClass: thing.Class));
+            var label = variants.Count == 1 ? $"{thingClass}  ({variants[0].Id})" : $"{thingClass}  ({variants.Count} ways)";
+            entries.Add(new PaletteEntry(variants[0].Id, "Things", label, ThingClass: thingClass));
         }
 
         foreach (var (id, trigger) in defs.Triggers.OrderBy(trigger => trigger.Key))
@@ -88,6 +86,28 @@ public static class PaletteEntries
 
         return entries;
     }
+
+    /// <summary>Each thing class's object-plane codes, lowest first: one per facing, skill and patrolling it comes in</summary>
+    public static Dictionary<string, List<ThingVariant>> ThingVariants(MapObjectTranslationAsset defs)
+    {
+        var variants = new Dictionary<string, List<ThingVariant>>(StringComparer.Ordinal);
+        foreach (var (id, thing) in defs.Things.OrderBy(thing => thing.Key))
+        {
+            if (id is < 0 or > ushort.MaxValue)
+                continue;
+            if (!variants.TryGetValue(thing.Class, out var list))
+                variants[thing.Class] = list = [];
+            list.Add(new ThingVariant((ushort)id, thing.Angles, thing.Patrol != 0, thing.MinSkill));
+        }
+        return variants;
+    }
+
+    /// <summary>
+    /// The code for a thing that faces, patrols and starts at the skill asked for, or the nearest
+    /// it comes in: the skill and patrolling as asked if it can, then the facing
+    /// </summary>
+    public static ThingVariant Closest(IReadOnlyList<ThingVariant> variants, int angles, bool patrols, int minSkill)
+        => variants.OrderBy(v => (v.Angles == angles ? 0 : 1) + (v.Patrols == patrols ? 0 : 2) + (v.MinSkill == minSkill ? 0 : 4)).First();
 
     /// <summary>The way an angle points: 0 east, 90 north, as mapdefs give them</summary>
     public static string Facing(int angles) => (((angles % 360) + 360) % 360) switch

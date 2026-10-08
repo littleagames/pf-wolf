@@ -17,7 +17,8 @@ internal static class EditorMaps
         return new MapAsset { Width = MapConstants.MAPSIZE, Height = MapConstants.MAPSIZE, Name = name, MapData = planes };
     }
 
-    public static MapDocument Document(string assetName = "MAP01") => new(assetName, Blank());
+    /// <summary>A level game-info lists, with nothing set in its entry</summary>
+    public static MapDocument Document(string assetName = "MAP01") => new(assetName, Blank(), properties: new MapProperties());
 
     /// <summary>Sets one tile as its own undo step</summary>
     public static void Set(MapDocument document, int plane, int x, int y, ushort value)

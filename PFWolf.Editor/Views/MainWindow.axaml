@@ -14,6 +14,8 @@
     <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
     <KeyBinding Gesture="Ctrl+N" Command="{Binding NewMapCommand}" />
+    <KeyBinding Gesture="F4" Command="{Binding EditPropertiesCommand}" />
+    <KeyBinding Gesture="F7" Command="{Binding CheckLevelCommand}" />
   </Window.KeyBindings>
 
   <DockPanel>
@@ -53,6 +55,11 @@
         <Button Content="Save" Command="{Binding SaveCommand}" ToolTip.Tip="Ctrl+S: to maps/NAME.wad in the level's mod folder" />
         <Button Content="Save to…" Command="{Binding SaveAsCommand}" ToolTip.Tip="Ctrl+Shift+S: to another mod folder" />
         <Button Content="New level…" Command="{Binding NewMapCommand}" ToolTip.Tip="Ctrl+N" />
+        <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+        <Button Content="Level properties…" Command="{Binding EditPropertiesCommand}"
+                ToolTip.Tip="Name, music, next level, colors, height, sky, flats, shading and light zones (F4)" />
+        <Button Content="Check level" Command="{Binding CheckLevelCommand}"
+                ToolTip.Tip="F7: player starts, unknown values, doors, switches and tags, zones, the level's edge, rooms the player can't reach" />
       </StackPanel>
     </Border>
 
@@ -67,10 +74,19 @@
     <Expander DockPanel.Dock="Bottom" HorizontalAlignment="Stretch" Padding="0">
       <Expander.Header>
         <TextBlock>
-          <Run Text="Problems: " /><Run Text="{Binding Problems.Count}" />
+          <Run Text="Problems loading: " /><Run Text="{Binding Problems.Count}" />
         </TextBlock>
       </Expander.Header>
       <ListBox ItemsSource="{Binding Problems}" Height="140" />
+    </Expander>
+
+    <Expander DockPanel.Dock="Bottom" HorizontalAlignment="Stretch" Padding="0" IsExpanded="{Binding ChecksExpanded}">
+      <Expander.Header>
+        <TextBlock>
+          <Run Text="Level checks: " /><Run Text="{Binding Checks.Count}" /><Run Text="  (pick one to go to its tile)" Foreground="Gray" />
+        </TextBlock>
+      </Expander.Header>
+      <ListBox ItemsSource="{Binding Checks}" SelectedItem="{Binding SelectedCheck}" Height="160" />
     </Expander>
 
     <!-- Levels and mods -->
@@ -108,11 +124,33 @@
       <TextBox Grid.Row="1" Text="{Binding PaletteFilter}" PlaceholderText="Find in the palette" Margin="0,8,0,4"
                IsVisible="{Binding HasPalette}" />
 
-      <StackPanel Grid.Row="2" Spacing="4" Margin="0,8,0,0" IsVisible="{Binding !HasPalette}">
-        <TextBlock Text="Value" />
-        <NumericUpDown Value="{Binding PlaneValue}" Minimum="0" Maximum="65535" Increment="1" FormatString="0" />
-        <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12"
-                   Text="0 clears a tile. Flats: the low byte is the floor's flat, the high byte the ceiling's (ceiling × 256 + floor)." />
+      <StackPanel Grid.Row="2" Spacing="4" Margin="0,8,0,0">
+        <!-- Planes 2 to 5: a number (the flats picked from their tables) -->
+        <StackPanel Spacing="4" IsVisible="{Binding !HasPalette}">
+          <StackPanel Spacing="4" IsVisible="{Binding IsFlatsPlane}">
+            <TextBlock Text="Floor flat" />
+            <ComboBox ItemsSource="{Binding FlatFloorOptions}" SelectedItem="{Binding SelectedFlatFloor}" HorizontalAlignment="Stretch" />
+            <TextBlock Text="Ceiling flat" />
+            <ComboBox ItemsSource="{Binding FlatCeilingOptions}" SelectedItem="{Binding SelectedFlatCeiling}" HorizontalAlignment="Stretch" />
+          </StackPanel>
+          <TextBlock Text="Value" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+            <NumericUpDown Value="{Binding PlaneValue}" Minimum="0" Maximum="65535" Increment="1" FormatString="0" />
+            <Button Grid.Column="1" Content="Next unused" Command="{Binding NextUnusedCommand}" IsVisible="{Binding HasNextUnused}" />
+          </Grid>
+          <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12" Text="{Binding PlaneHint}" />
+        </StackPanel>
+
+        <!-- A thing class: which way it faces, its skills, patrolling -->
+        <StackPanel Spacing="4" IsVisible="{Binding HasThingOptions}">
+          <Grid ColumnDefinitions="60,*" RowDefinitions="Auto,Auto" RowSpacing="4">
+            <TextBlock Text="Facing" VerticalAlignment="Center" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding FacingOptions}" SelectedItem="{Binding SelectedFacing}" HorizontalAlignment="Stretch" />
+            <TextBlock Grid.Row="1" Text="Skill" VerticalAlignment="Center" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding SkillOptions}" SelectedItem="{Binding SelectedSkill}" HorizontalAlignment="Stretch" />
+          </Grid>
+          <CheckBox Content="Patrols" IsChecked="{Binding ThingPatrols}" IsVisible="{Binding CanPatrol}" />
+        </StackPanel>
       </StackPanel>
 
       <ListBox Grid.Row="3" ItemsSource="{Binding PaletteItems}" SelectedItem="{Binding SelectedPaletteItem}"

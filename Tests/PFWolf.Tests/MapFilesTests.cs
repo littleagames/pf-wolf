@@ -57,6 +57,39 @@ public class MapFilesTests
         Assert.That(Directory.GetFiles(Path.Combine(_folder, "maps")), Has.Length.EqualTo(1), "no temporary file is left");
     }
 
+    [Test]
+    public void Save_Writes_Changed_Properties_Into_The_Mods_Game_Info()
+    {
+        // Arrange
+        var document = EditorMaps.Document("MAP03");
+        document.SetProperties(document.Properties with { Name = "Cellar", Zones = [new ZoneProperties(1, Light: 40)] });
+
+        // Act
+        MapFiles.Save(document, _folder);
+        var gameInfo = YamlDataEntryLoader.Deserialize<PFWolf.Assets.GameInfoAsset>(File.ReadAllText(Path.Combine(_folder, "game-info.yaml")));
+
+        // Assert
+        Assert.That(gameInfo.Maps["MAP03"].Name, Is.EqualTo("Cellar"));
+        Assert.That(gameInfo.Maps["MAP03"].Zones![1].Light, Is.EqualTo(40));
+        Assert.That(document.IsDirty, Is.False);
+    }
+
+    [Test]
+    public void Saving_A_Level_Game_Info_Lacks_Lists_It_There()
+    {
+        // Arrange
+        var document = new MapDocument("MAP61", MapFiles.NewMap("MAP61", 1, 107), isNew: true);
+
+        // Act
+        MapFiles.Save(document, _folder);
+        var gameInfo = YamlDataEntryLoader.Deserialize<PFWolf.Assets.GameInfoAsset>(File.ReadAllText(Path.Combine(_folder, "game-info.yaml")));
+
+        // Assert
+        Assert.That(gameInfo.Maps["MAP61"].Name, Is.EqualTo("MAP61"));
+        Assert.That(document.InGameInfo, Is.True);
+        Assert.That(document.IsDirty, Is.False);
+    }
+
     [TestCase("MAP61", true)]
     [TestCase("e1m1_x", true)]
     [TestCase("TOOLONGNAME", false)]

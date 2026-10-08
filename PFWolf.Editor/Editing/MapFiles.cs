@@ -12,11 +12,25 @@ public static partial class MapFiles
     public static string PathIn(string modFolder, string assetName)
         => Path.Combine(modFolder, "maps", assetName.ToUpperInvariant() + ".wad");
 
-    /// <summary>Writes the level to maps/NAME.wad in the mod folder; returns the file's path</summary>
+    /// <summary>
+    /// Writes the level to maps/NAME.wad in the mod folder, and its changed properties into the
+    /// mod's game-info.yaml; returns the level file's path
+    /// </summary>
     public static string Save(MapDocument document, string modFolder)
     {
         var path = PathIn(modFolder, document.AssetName);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        // The properties first: they're what can fail on a mod's hand-written YAML, and then
+        // nothing's been written
+        var keys = document.PropertyKeysToWrite();
+        var properties = document.Properties;
+        if (keys.Count > 0)
+        {
+            if (properties.Name == null && keys.Contains("name"))
+                properties = properties with { Name = document.Map.Name };
+            GameInfoFile.Save(modFolder, document.AssetName.ToUpperInvariant(), properties, keys);
+        }
 
         // Written beside the old file first, so a failed write leaves the old one whole
         var temp = path + ".tmp";
@@ -24,6 +38,9 @@ public static partial class MapFiles
         File.Move(temp, path, overwrite: true);
 
         document.SaveFolder = modFolder;
+        if (properties != document.Properties)
+            document.SetProperties(properties);
+        document.MarkPropertiesSaved();
         document.MarkSaved();
         return path;
     }

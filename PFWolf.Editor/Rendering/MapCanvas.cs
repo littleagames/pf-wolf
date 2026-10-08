@@ -8,6 +8,7 @@ using PFWolf.Constants;
 using PFWolf.Editor.Data;
 using PFWolf.Editor.Editing;
 using PFWolf.Enums;
+using Colors = Avalonia.Media.Colors;
 
 namespace PFWolf.Editor.Rendering;
 
@@ -93,6 +94,15 @@ public sealed class MapCanvas : Control
     private static readonly IPen MapEdgePen = new Pen(new SolidColorBrush(Color.FromArgb(96, 255, 255, 255)), 1);
     private static readonly IPen SelectionPen = new Pen(new SolidColorBrush(Color.FromRgb(80, 200, 255)), 2, new DashStyle([3, 2], 0));
     private static readonly IBrush SelectionBrush = new SolidColorBrush(Color.FromArgb(40, 80, 200, 255));
+    private static readonly IBrush FacingBrush = new SolidColorBrush(Color.FromRgb(255, 90, 60));
+    private static readonly IBrush PatrolBrush = new SolidColorBrush(Color.FromRgb(80, 220, 255));
+    private static readonly IBrush SkillBadgeBrush = new SolidColorBrush(Color.FromArgb(200, 120, 60, 160));
+    private static readonly IBrush AmbushBadgeBrush = new SolidColorBrush(Color.FromArgb(210, 180, 40, 40));
+    private static readonly IBrush ZoneBadgeBrush = new SolidColorBrush(Color.FromArgb(170, 30, 30, 30));
+    private static readonly IPen WallSpritePen = new Pen(new SolidColorBrush(Color.FromRgb(196, 150, 90)), 3);
+    private static readonly IPen WallSpriteTickPen = new Pen(new SolidColorBrush(Color.FromRgb(196, 150, 90)), 2);
+    private static readonly IPen SwitchLinkPen = new Pen(new SolidColorBrush(Color.FromArgb(220, 255, 220, 60)), 2);
+    private static readonly IPen TagHighlightPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 220, 60)), 2);
     private static readonly Typeface LabelFont = new(FontFamily.Default, FontStyle.Normal, FontWeight.SemiBold);
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -113,6 +123,16 @@ public sealed class MapCanvas : Control
     }
 
     private void OnControllerChanged(object? sender, EventArgs e) => InvalidateVisual();
+
+    /// <summary>Scrolls a tile to the middle, zooming in if the level's too small to make it out</summary>
+    public void CenterOn(int x, int y)
+    {
+        if (_fitPending)
+            Fit();
+        _zoom = Math.Max(_zoom, 24);
+        _origin = new Point(Bounds.Width / 2 - (x + 0.5) * _zoom, Bounds.Height / 2 - (y + 0.5) * _zoom);
+        InvalidateVisual();
+    }
 
     /// <summary>Zooms so the whole level fits, centred</summary>
     public void FitToView()
@@ -151,10 +171,23 @@ public sealed class MapCanvas : Control
                     DrawTile(context, tiles, x, y);
         }
 
-        if (ShowFlats) DrawPlaneValues(context, tiles, MapConstants.FLATPLANE, x0, y0, x1, y1);
+        // Flats are drawn in place of the floor (DrawTile); here only their numbers
+        if (ShowFlats) DrawPlaneValues(context, tiles, MapConstants.FLATPLANE, x0, y0, x1, y1, fill: false);
         if (ShowHeights) DrawPlaneValues(context, tiles, MapConstants.HEIGHTPLANE, x0, y0, x1, y1);
-        if (ShowTags) DrawPlaneValues(context, tiles, MapConstants.TAGPLANE, x0, y0, x1, y1);
-        if (ShowZones) DrawPlaneValues(context, tiles, MapConstants.ZONEPLANE, x0, y0, x1, y1);
+        if (ShowZones) DrawZones(context, tiles, x0, y0, x1, y1);
+        if (ShowTags)
+        {
+            DrawPlaneValues(context, tiles, MapConstants.TAGPLANE, x0, y0, x1, y1);
+            DrawSwitchLinks(context, tiles);
+        }
+
+        // Everything that shares the tag of the tile under the pointer
+        if (_hover.X >= 0 && tiles[MapConstants.TAGPLANE, _hover.X, _hover.Y] is var hoverTag and not 0
+            && tiles.TaggedTiles().TryGetValue(hoverTag, out var sameTag))
+        {
+            foreach (var (tx, ty) in sameTag)
+                context.DrawRectangle(null, TagHighlightPen, TileRect(tx, ty).Deflate(1.5));
+        }
 
         if (ShowGrid && _zoom >= 8)
         {
@@ -182,7 +215,13 @@ public sealed class MapCanvas : Control
         var kind = tiles.KindAt(x, y);
 
         if (!ShowWalls || kind == TileKind.Floor)
-            context.FillRectangle(FloorBrush, rect);
+        {
+            // With flats showing, the floor's own texture
+            if (ShowFlats && kind == TileKind.Floor && tiles.FloorFlat(x, y) is { } flat && Art?.Texture(flat) is { } flatTexture)
+                context.DrawImage(flatTexture, new Rect(flatTexture.Size), rect);
+            else
+                context.FillRectangle(FloorBrush, rect);
+        }
 
         if (ShowWalls)
         {
@@ -226,23 +265,141 @@ public sealed class MapCanvas : Control
 
         if (tiles.Thing(x, y) is { } thing)
         {
-            if (Art?.ThingSprite(thing.Class) is { } sprite)
+            var content = tiles.Content;
+            if (content.IsWallSprite(thing.Class))
+                DrawWallSprite(context, rect, thing.Angles, content.WallSpriteOffset(thing.Class));
+            else if (Art?.ThingSprite(thing.Class) is { } sprite)
             {
                 if (_zoom >= 6)
                     context.DrawImage(sprite, new Rect(sprite.Size), rect);
                 else
                     context.DrawEllipse(ThingDotBrush, null, rect.Center, rect.Width * 0.2, rect.Height * 0.2);
+
+                // Which way an enemy faces, and whether it patrols
+                if (_zoom >= 10 && content.IsRotating(thing.Class))
+                    context.DrawGeometry(thing.Patrol != 0 ? PatrolBrush : FacingBrush, null, FacingMark(rect, thing.Angles));
             }
             else
             {
                 // Nothing to see in the game (a patrol point): the way it points
                 context.DrawGeometry(ThingDotBrush, null, Arrow(rect.Deflate(rect.Width * 0.2), thing.Angles));
             }
+
+            // The skills it's on, when it's not on all of them
+            if (thing.MinSkill > 0 && _zoom >= 16)
+                DrawBadge(context, rect, (thing.MinSkill + 1).ToString(CultureInfo.InvariantCulture) + "+", SkillBadgeBrush, bottom: true);
         }
         else if (tiles.PlayerStart(x, y) is { } start)
             context.DrawGeometry(StartBrush, null, Arrow(rect, start.Angles));
         else if (tiles.Trigger(x, y) is not null)
             context.DrawRectangle(null, TriggerPen, rect.Deflate(2));
+
+        // An ambush floor: whoever stands on it waits deaf until they see the player
+        if (ShowWalls && _zoom >= 12 && tiles.IsAmbush(x, y))
+            DrawBadge(context, rect, "A", AmbushBadgeBrush, bottom: false);
+    }
+
+    /// <summary>A small labelled box in a corner of the tile</summary>
+    private void DrawBadge(DrawingContext context, Rect rect, string label, IBrush background, bool bottom)
+    {
+        var text = new FormattedText(label, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, LabelFont,
+            Math.Clamp(_zoom * 0.28, 8, 13), Brushes.White);
+        var box = new Rect(bottom ? rect.Right - text.Width - 4 : rect.X + 1, bottom ? rect.Bottom - text.Height - 1 : rect.Y + 1,
+            text.Width + 3, text.Height);
+        context.FillRectangle(background, box);
+        context.DrawText(text, new Point(box.X + 1.5, box.Y));
+    }
+
+    /// <summary>A notch on the tile's edge the way the thing faces (0 east, 90 north)</summary>
+    private static StreamGeometry FacingMark(Rect rect, int angles)
+    {
+        double radians = angles * Math.PI / 180, r = rect.Width / 2;
+        Point At(double angle, double length) => new(rect.Center.X + Math.Cos(angle) * length, rect.Center.Y - Math.Sin(angle) * length);
+        return Polygon([At(radians, r), At(radians + 0.45, r * 0.62), At(radians - 0.45, r * 0.62)]);
+    }
+
+    /// <summary>
+    /// A wall sprite's panel: across the tile, at right angles to the way it faces, moved
+    /// toward its front by its offset (32 texels is the tile's edge), with a tick on its front
+    /// </summary>
+    private void DrawWallSprite(DrawingContext context, Rect rect, int angles, int offset)
+    {
+        double radians = angles * Math.PI / 180;
+        var front = new Vector(Math.Cos(radians), -Math.Sin(radians));
+        var along = new Vector(-front.Y, front.X);
+        var middle = rect.Center + front * (offset / 64.0 * rect.Width);
+        double half = rect.Width * (angles % 90 == 0 ? 0.5 : 0.7071);
+
+        using (context.PushClip(rect))
+        {
+            context.DrawLine(WallSpritePen, middle - along * half, middle + along * half);
+            context.DrawLine(WallSpriteTickPen, middle, middle + front * rect.Width * 0.18);
+        }
+    }
+
+    /// <summary>
+    /// The light zones: each tile dimmed to its zone's light and tinted with its color, with the
+    /// zone's number when there's room
+    /// </summary>
+    private void DrawZones(DrawingContext context, MapTiles tiles, int x0, int y0, int x1, int y1)
+    {
+        var zones = tiles.Zones;
+        for (int y = y0; y <= y1; y++)
+        {
+            for (int x = x0; x <= x1; x++)
+            {
+                int id = tiles[MapConstants.ZONEPLANE, x, y];
+                if (id == 0)
+                    continue;
+
+                var rect = TileRect(x, y);
+                context.FillRectangle(ZoneBrush(zones.GetValueOrDefault(id)), rect);
+                if (_zoom >= 40)
+                    DrawBadge(context, rect, $"z{id}", ZoneBadgeBrush, bottom: false);
+            }
+        }
+    }
+
+    private readonly Dictionary<ZoneProperties, IBrush> _zoneBrushes = [];
+    private static readonly IBrush UndefinedZoneBrush = new SolidColorBrush(Color.FromArgb(90, 255, 0, 255));
+
+    private IBrush ZoneBrush(ZoneProperties? zone)
+    {
+        if (zone == null)
+            return UndefinedZoneBrush;     // a zone game-info doesn't define: lit as the level
+        if (_zoneBrushes.TryGetValue(zone, out var brush))
+            return brush;
+
+        // Dark as the zone is dark, in its tint
+        double light = Math.Clamp(zone.Light ?? 255, 0, 255) / 255.0;
+        var tint = TryParseColor(zone.Color) ?? Colors.White;
+        byte alpha = (byte)Math.Clamp(40 + (1 - light) * 180, 0, 230);
+        var color = Color.FromArgb(alpha, (byte)(tint.R * light), (byte)(tint.G * light), (byte)(tint.B * light));
+        return _zoneBrushes[zone] = new SolidColorBrush(color);
+    }
+
+    private static Color? TryParseColor(string? text)
+        => !string.IsNullOrWhiteSpace(text) && Color.TryParse(text.Trim(), out var color) ? color : null;
+
+    /// <summary>A line from each switch to everything that shares its tag: what it sets off</summary>
+    private void DrawSwitchLinks(DrawingContext context, MapTiles tiles)
+    {
+        var tagged = tiles.TaggedTiles();
+        foreach (var (tag, tagTiles) in tagged)
+        {
+            foreach (var (sx, sy) in tagTiles.Where(tile => tiles.IsSwitch(tile.X, tile.Y)))
+            {
+                var from = TileRect(sx, sy).Center;
+                foreach (var (tx, ty) in tagTiles)
+                {
+                    if ((tx, ty) == (sx, sy))
+                        continue;
+                    var to = TileRect(tx, ty).Center;
+                    context.DrawLine(SwitchLinkPen, from, to);
+                    context.DrawEllipse(SwitchLinkPen.Brush, null, to, 3, 3);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -297,7 +454,7 @@ public sealed class MapCanvas : Control
     }
 
     /// <summary>A plane's non-zero values: each value its own color, with its number when there's room</summary>
-    private void DrawPlaneValues(DrawingContext context, MapTiles tiles, int plane, int x0, int y0, int x1, int y1)
+    private void DrawPlaneValues(DrawingContext context, MapTiles tiles, int plane, int x0, int y0, int x1, int y1, bool fill = true)
     {
         for (int y = y0; y <= y1; y++)
         {
@@ -308,11 +465,14 @@ public sealed class MapCanvas : Control
                     continue;
 
                 var rect = TileRect(x, y);
-                context.FillRectangle(ValueBrush(plane, value), rect);
+                if (fill)
+                    context.FillRectangle(ValueBrush(plane, value), rect);
                 if (_zoom < 20)
                     continue;
 
-                var text = new FormattedText(value.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture,
+                // Flats read as floor/ceiling indices
+                var label = plane == MapConstants.FLATPLANE ? $"{value & 0xff}/{value >> 8}" : value.ToString(CultureInfo.InvariantCulture);
+                var text = new FormattedText(label, CultureInfo.InvariantCulture,
                     FlowDirection.LeftToRight, LabelFont, Math.Min(_zoom * 0.35, 16), Brushes.White);
                 context.DrawText(text, new Point(rect.Center.X - text.Width / 2, rect.Center.Y - text.Height / 2));
             }

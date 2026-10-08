@@ -259,6 +259,16 @@ public sealed class ToolController
         RaiseChanged();
     }
 
+    /// <summary>Selects one tile (a level check's)</summary>
+    public void SelectTile(int x, int y)
+    {
+        if (_document == null || !_document.Contains(x, y))
+            return;
+        CancelGesture();
+        Selection = new TileRect(x, y, x, y);
+        RaiseChanged();
+    }
+
     public void SelectAll()
     {
         if (_document == null)

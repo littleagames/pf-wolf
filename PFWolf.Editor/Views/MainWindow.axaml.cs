@@ -22,8 +22,14 @@ public partial class MainWindow : Window, IEditorDialogs
     {
         base.OnDataContextChanged(e);
         if (DataContext is MainWindowViewModel viewModel)
+        {
             viewModel.Dialogs = this;
+            viewModel.GoToTile += (_, tile) => Canvas.CenterOn(tile.X, tile.Y);
+        }
     }
+
+    public async Task<bool> EditProperties(MapPropertiesViewModel properties)
+        => await new MapPropertiesWindow { DataContext = properties }.ShowDialog<bool>(this);
 
     protected override async void OnClosing(WindowClosingEventArgs e)
     {

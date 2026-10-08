@@ -176,7 +176,7 @@ public class MapDocumentTests
     public void A_New_Level_Is_Unsaved_Until_Saved()
     {
         // Arrange
-        var document = new MapDocument("MAP61", EditorMaps.Blank(), isNew: true);
+        var document = new MapDocument("MAP61", EditorMaps.Blank(), isNew: true, properties: new MapProperties());
 
         // Act
         var before = document.IsDirty;
@@ -185,5 +185,56 @@ public class MapDocumentTests
         // Assert
         Assert.That(before, Is.True);
         Assert.That(document.IsDirty, Is.False);
+    }
+
+    [Test]
+    public void A_Level_Game_Info_Lacks_Writes_Its_Name()
+    {
+        // Arrange
+        var document = new MapDocument("MAP61", EditorMaps.Blank(), isNew: true);
+
+        // Act
+        var keys = document.PropertyKeysToWrite();
+
+        // Assert
+        Assert.That(document.InGameInfo, Is.False);
+        Assert.That(keys, Is.EqualTo(new[] { "name" }));
+    }
+
+    [Test]
+    public void Changed_Properties_Make_The_Level_Unsaved_And_Are_Written()
+    {
+        // Arrange
+        var document = EditorMaps.Document();
+
+        // Act
+        document.SetProperties(document.Properties with { Music = "GETTHEM", WallHeight = 2 });
+
+        // Assert
+        Assert.That(document.IsDirty, Is.True);
+        Assert.That(document.PropertyKeysToWrite(), Is.EquivalentTo(new[] { "music", "wall-height" }));
+    }
+
+    [Test]
+    public void A_Property_Changed_Back_After_A_Save_Is_Written_Again()
+    {
+        // Arrange: saved with music, then the music set back to what the game had
+        var folder = Path.Combine(Path.GetTempPath(), "pfwolf-props-" + Guid.NewGuid().ToString("N"));
+        var document = EditorMaps.Document();
+        document.SetProperties(document.Properties with { Music = "GETTHEM" });
+        try
+        {
+            MapFiles.Save(document, folder);
+
+            // Act
+            document.SetProperties(document.Properties with { Music = null });
+
+            // Assert: the mod's file still says GETTHEM, so it has to be taken out
+            Assert.That(document.PropertyKeysToWrite(), Is.EqualTo(new[] { "music" }));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
     }
 }
