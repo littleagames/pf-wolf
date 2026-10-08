@@ -11,7 +11,9 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <!-- The 3D view calls OpenGL through function pointers -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Version>0.1.0</Version>
+	<FileVersion>0.4.0.0</FileVersion>
+	<AssemblyVersion>0.4.0.0</AssemblyVersion>
+    <Version>0.4.0</Version>
     <Authors>Andrew McCauley</Authors>
     <Company>Little A Games</Company>
     <Copyright>Copyright (c) 2026 Little A Games</Copyright>
