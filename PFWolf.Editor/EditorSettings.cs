@@ -20,6 +20,9 @@ public sealed class EditorSettings
     /// <summary>The skill Play starts on, 1 for the easiest; 0 for the game's default</summary>
     public int PlaySkill { get; set; }
 
+    /// <summary>Whether the 3D view shows beside the map</summary>
+    public bool Show3D { get; set; }
+
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PFWolf", "Editor", "editor.json");
 

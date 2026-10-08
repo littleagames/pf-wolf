@@ -33,6 +33,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _selectedGame = GameChoices.FirstOrDefault(choice => choice.Id.Equals(settings.Game, StringComparison.OrdinalIgnoreCase)) ?? GameChoices[0];
         _selectedTool = Tools[0];
         _selectedPlane = Planes[0];
+        _show3D = settings.Show3D;
         foreach (var mod in settings.Mods)
             Mods.Add(mod);
 
@@ -134,6 +135,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private bool _showTags;
     [ObservableProperty] private bool _showZones;
     [ObservableProperty] private bool _showGrid = true;
+
+    // The 3D view beside the map, and what it shows
+    [ObservableProperty] private bool _show3D;
+    [ObservableProperty] private bool _show3DThings = true;
+    [ObservableProperty] private bool _show3DCeilings = true;
+
+    /// <summary>Where the 3D view looks from; the map shows it too</summary>
+    public Camera3D Camera { get; } = new();
+
+    partial void OnShow3DChanged(bool value)
+    {
+        _settings.Show3D = value;
+        _settings.Save();
+    }
+
+    [RelayCommand]
+    private void Toggle3D() => Show3D = !Show3D;
 
     // The tools
     [ObservableProperty] private ToolOption _selectedTool;
@@ -250,6 +268,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Controller.Document = Document;
         var document = Document;
         Tiles = document != null && Content != null ? new MapTiles(Content, document.Map, () => document.Properties) : null;
+        PlaceCameraAtStart();
         HoverInfo = "";
         OnPropertyChanged(nameof(PlaneHint));
         EditPropertiesCommand.NotifyCanExecuteChanged();
@@ -797,6 +816,51 @@ public sealed partial class MainWindowViewModel : ObservableObject
         HoverInfo = Tiles == null || x < 0
             ? ""
             : $"({x}, {y})   " + string.Join("   ·   ", Tiles.Describe(x, y));
+    }
+
+    /// <summary>The 3D camera where the player starts, facing the same way (else the level's middle)</summary>
+    private void PlaceCameraAtStart()
+    {
+        if (Tiles is not { } tiles)
+            return;
+        for (int y = 0; y < tiles.Height; y++)
+        {
+            for (int x = 0; x < tiles.Width; x++)
+            {
+                if (tiles.PlayerStart(x, y) is { Deathmatch: false } start)
+                {
+                    Camera.PlaceOn(x, y, start.Angles);
+                    return;
+                }
+            }
+        }
+        Camera.PlaceOn(tiles.Width / 2, tiles.Height / 2, 90);
+    }
+
+    /// <summary>Shows what the pointer is on in the 3D view: the surface, then the tile as the map does</summary>
+    public void Hover3D(SurfaceHit? hit)
+    {
+        if (hit is not { } surface || Tiles == null)
+        {
+            Hover(-1, -1);
+            return;
+        }
+
+        var (x, y) = (surface.Ref.X, surface.Ref.Y);
+        _hover = (x, y);
+        var what = surface.Ref.Kind switch
+        {
+            SurfaceKind.Wall when surface.Ref.Face == Face.Top => "top of the wall",
+            SurfaceKind.Wall => $"{surface.Ref.Face.ToString().ToLowerInvariant()} face",
+            SurfaceKind.Door => $"door, {surface.Ref.Face.ToString().ToLowerInvariant()} side",
+            SurfaceKind.Floor => "floor",
+            SurfaceKind.Ceiling => "ceiling",
+            SurfaceKind.PlayerStart => "player start",
+            _ => "thing",
+        };
+        if (surface.Texture.Source == TextureSource.Texture)
+            what += $" ({surface.Texture.Name})";
+        HoverInfo = $"3D: {what}   ({x}, {y})   " + string.Join("   ·   ", Tiles.Describe(x, y));
     }
 
     public void SaveSettings()

@@ -46,6 +46,30 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         return Properties.DefaultFloor ?? content.DefaultMapInfo.DefaultFloor;
     }
 
+    /// <summary>The texture a tile's ceiling shows, like <see cref="FloorFlat"/>: null for the ceiling color</summary>
+    public string? CeilingFlat(int x, int y)
+    {
+        int index = this[MapConstants.FLATPLANE, x, y] >> 8;
+        if (Defs.Flats.Ceiling.TryGetValue(index, out var flat))
+            return flat;
+        return Properties.DefaultCeiling ?? content.DefaultMapInfo.DefaultCeiling;
+    }
+
+    /// <summary>The level's floor and ceiling colors (#RRGGBB), from its game-info entry or the default map's</summary>
+    public string? FloorColor => Properties.FloorColor ?? content.DefaultMapInfo.FloorColor;
+    public string? CeilingColor => Properties.CeilingColor ?? content.DefaultMapInfo.CeilingColor;
+
+    public const int MaxStories = 8;
+
+    /// <summary>How tall the level's walls are, in stories, unless a tile says otherwise</summary>
+    public int LevelStories => Math.Clamp(Properties.WallHeight ?? content.DefaultMapInfo.WallHeight, 1, MaxStories);
+
+    /// <summary>How tall a tile's wall is: its height-plane value when that's 1 to 8, else the level's (MapManager.WallStories)</summary>
+    public int Stories(int x, int y) => this[MapConstants.HEIGHTPLANE, x, y] is var stories and >= 1 and <= MaxStories ? stories : LevelStories;
+
+    /// <summary>An open floor tile with a height over 1: a block from story 2 up to it, over the walkway</summary>
+    public bool IsArch(int x, int y) => KindAt(x, y) == TileKind.Floor && this[MapConstants.HEIGHTPLANE, x, y] is > 1 and <= MaxStories;
+
     /// <summary>The tiles of each tag on plane 4, for the switches' links</summary>
     public Dictionary<int, List<(int X, int Y)>> TaggedTiles()
     {

@@ -9,6 +9,8 @@
     <Nullable>enable</Nullable>
     <Platforms>AnyCPU;x64</Platforms>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- The 3D view calls OpenGL through function pointers -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Version>0.1.0</Version>
     <Authors>Andrew McCauley</Authors>
     <Company>Little A Games</Company>

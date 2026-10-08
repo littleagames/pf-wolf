@@ -25,7 +25,29 @@ public partial class MainWindow : Window, IEditorDialogs
         {
             viewModel.Dialogs = this;
             viewModel.GoToTile += (_, tile) => Canvas.CenterOn(tile.X, tile.Y);
+            viewModel.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(MainWindowViewModel.Show3D))
+                    Arrange3D(viewModel.Show3D);
+            };
+            Arrange3D(viewModel.Show3D);
         }
+    }
+
+    /// <summary>The map takes the whole width without the 3D view, and half with it</summary>
+    private void Arrange3D(bool show)
+    {
+        Views.ColumnDefinitions[2].Width = show ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        if (show)
+            View3D.Focus();
+    }
+
+    private void OnSurfaceHovered(object? sender, SurfaceHoverEventArgs e) => ViewModel.Hover3D(e.Hit);
+
+    private void On3DFailed(object? sender, string message)
+    {
+        ViewModel.Problems.Add($"3D view: {message}");
+        ViewModel.Status = "The 3D view couldn't start OpenGL.";
     }
 
     public async Task<bool> EditProperties(MapPropertiesViewModel properties)

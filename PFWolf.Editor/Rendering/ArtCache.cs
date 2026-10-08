@@ -52,6 +52,53 @@ public sealed class ArtCache(GameContent content) : IDisposable
         return bitmap;
     }
 
+    /// <summary>
+    /// A surface's whole picture as RGBA rows from the top, for the 3D view: every story of a
+    /// wall texture, or a thing's sprite with its see-through pixels clear; null when there's none
+    /// </summary>
+    public (int Width, int Height, byte[] Rgba)? Pixels(TextureRef texture)
+    {
+        switch (texture.Source)
+        {
+            case TextureSource.Texture when content.Find<TextureAsset>(texture.Name) is { Width: > 0, Height: > 0 } wall:
+            {
+                // Stored column by column
+                int width = wall.Width, height = wall.Height;
+                return (width, height, MakeRgba(width, height, (x, y) => wall.RawData[x * height + y], null));
+            }
+            case TextureSource.Sprite when content.ThingSprite(texture.Name) is { Width: > 0, Height: > 0 } sprite:
+            {
+                int width = sprite.Width;
+                return (width, sprite.Height, MakeRgba(width, sprite.Height, (x, y) => sprite.RawData[y * width + x],
+                    sprite.OpacityMask.Length > 0 ? (x, y) => sprite.OpacityMask[y * width + x] != 0 : null));
+            }
+            default:
+                return null;
+        }
+    }
+
+    private byte[] MakeRgba(int width, int height, Func<int, int, byte> index, Func<int, int, bool>? opaque)
+    {
+        var palette = content.Palette;
+        var rgba = new byte[width * height * 4];
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                if (opaque != null && !opaque(x, y))
+                    continue;
+                var i = index(x, y);
+                var color = i < palette.Length ? palette[i] : new PaletteColor(255, 0, 255);
+                int at = (y * width + x) * 4;
+                rgba[at] = color.Red;
+                rgba[at + 1] = color.Green;
+                rgba[at + 2] = color.Blue;
+                rgba[at + 3] = 255;
+            }
+        }
+        return rgba;
+    }
+
     private WriteableBitmap MakeBitmap(int width, int height, Func<int, int, byte> index, Func<int, int, bool>? opaque)
     {
         var palette = content.Palette;

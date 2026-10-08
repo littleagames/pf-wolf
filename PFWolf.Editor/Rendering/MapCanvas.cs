@@ -41,11 +41,13 @@ public sealed class MapCanvas : Control
     public static readonly StyledProperty<bool> ShowTagsProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowTags));
     public static readonly StyledProperty<bool> ShowZonesProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowZones));
     public static readonly StyledProperty<bool> ShowGridProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowGrid), true);
+    public static readonly StyledProperty<Camera3D?> CameraProperty = AvaloniaProperty.Register<MapCanvas, Camera3D?>(nameof(Camera));
+    public static readonly StyledProperty<bool> ShowCameraProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowCamera));
 
     static MapCanvas()
     {
         AffectsRender<MapCanvas>(TilesProperty, ArtProperty, ShowWallsProperty, ShowThingsProperty, ShowFlatsProperty,
-            ShowHeightsProperty, ShowTagsProperty, ShowZonesProperty, ShowGridProperty);
+            ShowHeightsProperty, ShowTagsProperty, ShowZonesProperty, ShowGridProperty, ShowCameraProperty);
         FocusableProperty.OverrideDefaultValue<MapCanvas>(true);
         ClipToBoundsProperty.OverrideDefaultValue<MapCanvas>(true);
     }
@@ -60,6 +62,10 @@ public sealed class MapCanvas : Control
     public bool ShowTags { get => GetValue(ShowTagsProperty); set => SetValue(ShowTagsProperty, value); }
     public bool ShowZones { get => GetValue(ShowZonesProperty); set => SetValue(ShowZonesProperty, value); }
     public bool ShowGrid { get => GetValue(ShowGridProperty); set => SetValue(ShowGridProperty, value); }
+
+    /// <summary>The 3D view's camera, drawn on the map while <see cref="ShowCamera"/> is set; V puts it on the tile under the pointer</summary>
+    public Camera3D? Camera { get => GetValue(CameraProperty); set => SetValue(CameraProperty, value); }
+    public bool ShowCamera { get => GetValue(ShowCameraProperty); set => SetValue(ShowCameraProperty, value); }
 
     /// <summary>The pointer moved onto another tile, or off the map</summary>
     public event EventHandler<TileEventArgs>? TileHovered;
@@ -120,6 +126,19 @@ public sealed class MapCanvas : Control
             if (change.NewValue is ToolController controller)
                 controller.Changed += OnControllerChanged;
         }
+        else if (change.Property == CameraProperty)
+        {
+            if (change.OldValue is Camera3D old)
+                old.Changed -= OnCameraChanged;
+            if (change.NewValue is Camera3D camera)
+                camera.Changed += OnCameraChanged;
+        }
+    }
+
+    private void OnCameraChanged(object? sender, EventArgs e)
+    {
+        if (ShowCamera)
+            InvalidateVisual();
     }
 
     private void OnControllerChanged(object? sender, EventArgs e) => InvalidateVisual();
@@ -205,6 +224,28 @@ public sealed class MapCanvas : Control
         }
         if (_hover.X >= 0)
             context.DrawRectangle(null, HoverPen, TileRect(_hover.X, _hover.Y));
+        if (ShowCamera && Camera is { } camera)
+            DrawCamera(context, camera);
+    }
+
+    private static readonly IBrush CameraBrush = new SolidColorBrush(Color.FromRgb(255, 120, 200));
+    private static readonly IPen CameraPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 255, 120, 200)), 1.5);
+
+    /// <summary>The 3D view's eye: a dot, and the edges of what it sees along the ground</summary>
+    private void DrawCamera(DrawingContext context, Camera3D camera)
+    {
+        var eye = new Point(_origin.X + camera.Position.X * _zoom, _origin.Y + camera.Position.Z * _zoom);
+        double reach = Math.Max(_zoom * 3, 30);
+
+        // The view is wider than it is tall; about the editor's usual 3D pane
+        double half = Math.Atan(Math.Tan(Camera3D.FieldOfViewY * Math.PI / 360) * 1.4);
+        double yaw = camera.Yaw * Math.PI / 180;
+        Point Toward(double angle) => new(eye.X + Math.Cos(angle) * reach, eye.Y - Math.Sin(angle) * reach);
+
+        context.DrawLine(CameraPen, eye, Toward(yaw + half));
+        context.DrawLine(CameraPen, eye, Toward(yaw - half));
+        context.DrawLine(CameraPen, Toward(yaw + half), Toward(yaw - half));
+        context.DrawEllipse(CameraBrush, null, eye, 5, 5);
     }
 
     private Rect TileRect(int x, int y) => new(_origin.X + x * _zoom, _origin.Y + y * _zoom, _zoom, _zoom);
@@ -610,6 +651,10 @@ public sealed class MapCanvas : Control
                 break;
             case Key.Escape:
                 Controller?.Escape();
+                break;
+            case Key.V when e.KeyModifiers == KeyModifiers.None && ShowCamera && _hover.X >= 0:
+                // The 3D view's camera onto the tile, still facing the same way
+                Camera?.PlaceOn(_hover.X, _hover.Y, Camera.Yaw);
                 break;
             case >= Key.A and <= Key.Z when e.KeyModifiers == KeyModifiers.None:
                 ToolKeyPressed?.Invoke(this, e.Key.ToString());

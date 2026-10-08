@@ -18,6 +18,7 @@
     <KeyBinding Gesture="F7" Command="{Binding CheckLevelCommand}" />
     <KeyBinding Gesture="F5" Command="{Binding PlayCommand}" />
     <KeyBinding Gesture="Shift+F5" Command="{Binding PlayHereCommand}" />
+    <KeyBinding Gesture="F3" Command="{Binding Toggle3DCommand}" />
   </Window.KeyBindings>
 
   <DockPanel>
@@ -62,6 +63,8 @@
                 ToolTip.Tip="Name, music, next level, colors, height, sky, flats, shading and light zones (F4)" />
         <Button Content="Check level" Command="{Binding CheckLevelCommand}"
                 ToolTip.Tip="F7: player starts, unknown values, doors, switches and tags, zones, the level's edge, rooms the player can't reach" />
+        <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+        <ToggleButton Content="3D view" IsChecked="{Binding Show3D}" ToolTip.Tip="F3: the level in 3D beside the map" />
         <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
         <Button Content="▶ Play" Command="{Binding PlayCommand}" Classes="accent"
                 ToolTip.Tip="F5: saves the level if it's changed, then starts PFWolf on it with the mods" />
@@ -192,18 +195,35 @@
           <CheckBox Content="Tags" IsChecked="{Binding ShowTags}" MinWidth="130" />
           <CheckBox Content="Light zones" IsChecked="{Binding ShowZones}" MinWidth="130" />
           <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" MinWidth="130" />
+          <CheckBox Content="3D: things" IsChecked="{Binding Show3DThings}" MinWidth="130" IsVisible="{Binding Show3D}" />
+          <CheckBox Content="3D: ceilings" IsChecked="{Binding Show3DCeilings}" MinWidth="130" IsVisible="{Binding Show3D}" />
         </WrapPanel>
         <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12" Margin="0,4,0,0"
                    Text="Left button: the tool. Middle or right drag: pan. Wheel: zoom. Home: fit. Select tool: drag inside the selection to move it; Ctrl+C/X/V, Delete, Esc." />
       </StackPanel>
     </Grid>
 
-    <r:MapCanvas x:Name="Canvas"
-                 Tiles="{Binding Tiles}" Art="{Binding Art}" Controller="{Binding Controller}"
-                 ShowWalls="{Binding ShowWalls}" ShowThings="{Binding ShowThings}"
-                 ShowFlats="{Binding ShowFlats}" ShowHeights="{Binding ShowHeights}"
-                 ShowTags="{Binding ShowTags}" ShowZones="{Binding ShowZones}"
-                 ShowGrid="{Binding ShowGrid}"
-                 TileHovered="OnTileHovered" ToolKeyPressed="OnToolKeyPressed" />
+    <!-- The map, and the 3D view beside it (F3) -->
+    <Grid x:Name="Views" ColumnDefinitions="*,Auto,*">
+      <r:MapCanvas x:Name="Canvas" Grid.Column="0"
+                   Tiles="{Binding Tiles}" Art="{Binding Art}" Controller="{Binding Controller}"
+                   ShowWalls="{Binding ShowWalls}" ShowThings="{Binding ShowThings}"
+                   ShowFlats="{Binding ShowFlats}" ShowHeights="{Binding ShowHeights}"
+                   ShowTags="{Binding ShowTags}" ShowZones="{Binding ShowZones}"
+                   ShowGrid="{Binding ShowGrid}"
+                   Camera="{Binding Camera}" ShowCamera="{Binding Show3D}"
+                   TileHovered="OnTileHovered" ToolKeyPressed="OnToolKeyPressed" />
+      <GridSplitter Grid.Column="1" Width="5" ResizeDirection="Columns" IsVisible="{Binding Show3D}"
+                    Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+      <Panel Grid.Column="2" IsVisible="{Binding Show3D}">
+        <r:LevelView3D x:Name="View3D"
+                       Tiles="{Binding Tiles}" Art="{Binding Art}" Controller="{Binding Controller}" Camera="{Binding Camera}"
+                       ShowThings="{Binding Show3DThings}" ShowCeilings="{Binding Show3DCeilings}"
+                       SurfaceHovered="OnSurfaceHovered" Failed="On3DFailed" />
+        <TextBlock Text="WASD fly · Q/E down/up · Shift faster · right drag look · middle drag slide · wheel forward · V on the map moves the camera"
+                   Margin="8,6" FontSize="11" Opacity="0.75" Foreground="White" TextWrapping="Wrap"
+                   VerticalAlignment="Bottom" IsHitTestVisible="False" />
+      </Panel>
+    </Grid>
   </DockPanel>
 </Window>
