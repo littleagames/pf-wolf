@@ -53,6 +53,48 @@ public sealed class ArtCache(GameContent content) : IDisposable
     }
 
     /// <summary>
+    /// A picture whole, as the art browser shows it: every story of a wall texture or flat, a
+    /// sprite by its own name with its see-through pixels clear, a VGA picture; null when there's none
+    /// </summary>
+    public Bitmap? Whole(ArtKind kind, string name)
+    {
+        var key = (kind, name.ToLowerInvariant());
+        if (_whole.TryGetValue(key, out var bitmap))
+            return bitmap;
+
+        switch (kind)
+        {
+            case ArtKind.Texture or ArtKind.Flat when content.Find<TextureAsset>(name) is { Width: > 0, Height: > 0 } texture:
+            {
+                // Stored column by column
+                int height = texture.Height;
+                bitmap = MakeBitmap(texture.Width, height, (x, y) => texture.RawData[x * height + y], null);
+                break;
+            }
+            case ArtKind.Sprite when content.Find<SpriteAsset>(name) is { Width: > 0, Height: > 0 } sprite:
+            {
+                int width = sprite.Width;
+                bitmap = MakeBitmap(width, sprite.Height, (x, y) => sprite.RawData[y * width + x],
+                    sprite.OpacityMask.Length > 0 ? (x, y) => sprite.OpacityMask[y * width + x] != 0 : null);
+                break;
+            }
+            case ArtKind.Picture when content.Find<GraphicAsset>(name) is { Width: > 0, Height: > 0 } picture:
+            {
+                int width = picture.Width;
+                var mask = picture.OpacityMask;
+                bitmap = MakeBitmap(width, picture.Height, (x, y) => picture.RawData[y * width + x],
+                    mask is { Length: > 0 } ? (x, y) => mask[y * width + x] != 0 : null);
+                break;
+            }
+        }
+
+        _whole[key] = bitmap;
+        return bitmap;
+    }
+
+    private readonly Dictionary<(ArtKind, string), Bitmap?> _whole = [];
+
+    /// <summary>
     /// A surface's whole picture as RGBA rows from the top, for the 3D view: every story of a
     /// wall texture, or a thing's sprite with its see-through pixels clear; null when there's none
     /// </summary>
@@ -134,9 +176,10 @@ public sealed class ArtCache(GameContent content) : IDisposable
 
     public void Dispose()
     {
-        foreach (var bitmap in _textures.Values.Concat(_sprites.Values))
+        foreach (var bitmap in _textures.Values.Concat(_sprites.Values).Concat(_whole.Values))
             bitmap?.Dispose();
         _textures.Clear();
         _sprites.Clear();
+        _whole.Clear();
     }
 }

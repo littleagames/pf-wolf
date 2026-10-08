@@ -157,6 +157,53 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void Toggle3D() => Show3D = !Show3D;
 
+    //
+    // The texture and sprite browser
+    //
+
+    private ArtBrowserViewModel? _artBrowser;
+
+    /// <summary>Opens the texture and sprite browser on what the palette has picked</summary>
+    [RelayCommand]
+    private void ShowArt()
+    {
+        if (Dialogs == null)
+            return;
+
+        if (_artBrowser == null)
+        {
+            _artBrowser = new ArtBrowserViewModel();
+            _artBrowser.UseRequested += (_, use) => UseInPalette(use);
+            _artBrowser.Load(Content, Art);
+        }
+
+        if (SelectedPaletteItem?.Entry is { } entry && HasPalette)
+        {
+            if (entry.Texture != null)
+                _artBrowser.Show(ArtKind.Texture, entry.Texture);
+            else if (entry.ThingClass != null && Content?.ThingSpriteName(entry.ThingClass) is { } sprite)
+                _artBrowser.Show(ArtKind.Sprite, sprite);
+        }
+        Dialogs.ShowArtBrowser(_artBrowser);
+    }
+
+    // A game loaded again: the browser lists its pictures (the old ones' bitmaps are gone)
+    partial void OnArtChanged(ArtCache? value) => _artBrowser?.Load(Content, value);
+
+    /// <summary>Picks what uses a picture in the browser (a wall, a door, a flat, a thing) to put down</summary>
+    public void UseInPalette(ArtUse use)
+    {
+        if (use.Target is not { } target || Planes.FirstOrDefault(option => option.Plane == target.Plane) is not { } plane)
+            return;
+
+        SelectedPlane = plane;
+        if (HasPalette)
+            SelectValue(target.Value);
+        else
+            PlaneValue = ((int)(PlaneValue ?? 0) & target.Keep) | target.Value;
+        Status = $"Putting down: {use.Label}";
+    }
+
     // The tools
     [ObservableProperty] private ToolOption _selectedTool;
     [ObservableProperty] private bool _outline;

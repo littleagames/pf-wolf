@@ -134,10 +134,12 @@ public sealed class GameContent
             // 0 for a thing that looks the same from every side; one that turns has 1 (its front) to 8
             var name = $"{frame.Sprite}{frame.Frames[0]}";
             sprite = Find<SpriteAsset>(name + "0");
+            _thingSpriteNames[className] = name + "0";
             if (sprite == null && Find<SpriteAsset>(name + "1") is { } front)
             {
                 sprite = front;
                 _rotating.Add(className);
+                _thingSpriteNames[className] = name + "1";
             }
         }
 
@@ -145,12 +147,21 @@ public sealed class GameContent
         return sprite;
     }
 
+    private readonly Dictionary<string, string> _thingSpriteNames = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The name of the sprite <see cref="ThingSprite"/> shows ("GARDA1"), or null when it has none</summary>
+    public string? ThingSpriteName(string className)
+        => ThingSprite(className) != null ? _thingSpriteNames.GetValueOrDefault(className) : null;
+
     /// <summary>A thing seen differently from each side (an enemy), so which way it faces matters</summary>
     public bool IsRotating(string className)
     {
         ThingSprite(className);
         return _rotating.Contains(className);
     }
+
+    /// <summary>The actordefs classes, the pack's own over the shared ones</summary>
+    public IReadOnlyDictionary<string, ActorData> Actors => _actors;
 
     /// <summary>How many skills game-info has (mapdefs min-skill counts them from 0, easiest first)</summary>
     public int SkillCount => GameInfo?.Skills.Count ?? 4;

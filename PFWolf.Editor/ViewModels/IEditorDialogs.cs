@@ -24,4 +24,7 @@ public interface IEditorDialogs
 
     /// <summary>Shows the level properties dialog; true when it's closed with OK (and the properties build)</summary>
     Task<bool> EditProperties(MapPropertiesViewModel properties);
+
+    /// <summary>Shows the texture and sprite browser beside the editor, or brings it to the front</summary>
+    void ShowArtBrowser(ArtBrowserViewModel browser);
 }

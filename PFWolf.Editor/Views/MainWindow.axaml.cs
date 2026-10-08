@@ -53,6 +53,21 @@ public partial class MainWindow : Window, IEditorDialogs
     public async Task<bool> EditProperties(MapPropertiesViewModel properties)
         => await new MapPropertiesWindow { DataContext = properties }.ShowDialog<bool>(this);
 
+    private ArtBrowserWindow? _artBrowser;
+
+    public void ShowArtBrowser(ArtBrowserViewModel browser)
+    {
+        if (_artBrowser == null)
+        {
+            // Owned, so it stays above the editor and closes with it; not modal, so both can be used
+            _artBrowser = new ArtBrowserWindow { DataContext = browser };
+            _artBrowser.Closed += (_, _) => _artBrowser = null;
+            _artBrowser.Show(this);
+        }
+        else
+            _artBrowser.Activate();
+    }
+
     protected override async void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosing(e);

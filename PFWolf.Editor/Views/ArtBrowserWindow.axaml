@@ -1,0 +1,113 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:data="using:PFWolf.Editor.Data"
+        x:Class="PFWolf.Editor.Views.ArtBrowserWindow"
+        x:DataType="vm:ArtBrowserViewModel"
+        Title="{Binding Title}"
+        Width="1180" Height="760" MinWidth="760" MinHeight="460"
+        WindowStartupLocation="CenterOwner">
+
+  <DockPanel>
+    <!-- What's listed -->
+    <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto,140,Auto" ColumnSpacing="8">
+        <ComboBox Grid.Column="0" ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}" MinWidth="170" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding Shows}" SelectedItem="{Binding SelectedShow}" MinWidth="140"
+                  ToolTip.Tip="In use: a mapdefs wall, door or flat, an actordefs class or a level's sky shows it" />
+        <TextBox x:Name="Search" Grid.Column="2" Text="{Binding Filter}" VerticalAlignment="Center"
+                 PlaceholderText="Find by name, or by what uses it (guard, door 90, floor flat)" />
+        <TextBlock Grid.Column="3" Text="Size" VerticalAlignment="Center" />
+        <Slider Grid.Column="4" Minimum="32" Maximum="160" Value="{Binding ThumbSize}" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="5" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="120" />
+      </Grid>
+    </Border>
+
+    <!-- The picture picked: big, its details, where it came from, what uses it -->
+    <Grid DockPanel.Dock="Right" Width="380" Margin="8" RowDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto"
+          IsVisible="{Binding HasSelection}">
+      <Border Grid.Row="0" Background="{Binding SelectedBackground.Brush}" CornerRadius="4" ClipToBounds="True">
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+          <Image Source="{Binding Preview}" Width="{Binding PreviewWidth}" Height="{Binding PreviewHeight}" Margin="8"
+                 Stretch="Fill" RenderOptions.BitmapInterpolationMode="None"
+                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </ScrollViewer>
+      </Border>
+
+      <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,Auto,*" ColumnSpacing="6" Margin="0,6,0,0">
+        <TextBlock Text="Zoom" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding Zooms}" SelectedItem="{Binding Zoom}" MinWidth="70">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="x:Int32">
+              <TextBlock Text="{Binding StringFormat='{}{0}×'}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <ComboBox Grid.Column="2" ItemsSource="{Binding Backgrounds}" SelectedItem="{Binding SelectedBackground}" MinWidth="120"
+                  ToolTip.Tip="The colour behind the picture, which shows through a sprite's see-through pixels" />
+      </Grid>
+
+      <SelectableTextBlock Grid.Row="2" Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
+      <TextBlock Grid.Row="3" Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" />
+
+      <StackPanel Grid.Row="4" Spacing="4" Margin="0,8,0,0">
+        <TextBlock Text="Where it comes from (the last one is used)" FontWeight="SemiBold" />
+        <ListBox ItemsSource="{Binding Origins}" MaxHeight="90">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding}" ToolTip.Tip="{Binding}" TextTrimming="CharacterEllipsis" FontSize="12" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </StackPanel>
+
+      <StackPanel Grid.Row="5" Spacing="4" Margin="0,8,0,0">
+        <TextBlock Text="Used by" FontWeight="SemiBold" />
+        <ListBox ItemsSource="{Binding Uses}" SelectedItem="{Binding SelectedUse}" MaxHeight="150" DoubleTapped="OnUseDoubleTapped">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="data:ArtUse">
+              <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" FontSize="12" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBlock Text="Nothing in mapdefs, actordefs or game-info shows it." Opacity="0.6" FontSize="12"
+                   IsVisible="{Binding !HasUses}" />
+      </StackPanel>
+
+      <WrapPanel Grid.Row="6" ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
+        <Button Content="Use in palette" Command="{Binding UseInPaletteCommand}" Classes="accent"
+                ToolTip.Tip="Picks the wall, door, flat or thing chosen under Used by to put down on the map (or double-click it)" />
+        <Button Content="Copy name" Click="CopyName" />
+        <Button Content="Export PNG…" Click="ExportPng" ToolTip.Tip="Saves the picture in the game's palette as a PNG" />
+      </WrapPanel>
+    </Grid>
+
+    <!-- Every picture listed -->
+    <ListBox x:Name="Thumbs" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" Margin="8,8,0,8"
+             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <WrapPanel />
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.Styles>
+        <Style Selector="ListBoxItem">
+          <Setter Property="Padding" Value="4" />
+          <Setter Property="Margin" Value="2" />
+        </Style>
+      </ListBox.Styles>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:ArtItem">
+          <StackPanel Spacing="2" ToolTip.Tip="{Binding ToolTip}"
+                      Width="{Binding $parent[ListBox].((vm:ArtBrowserViewModel)DataContext).ThumbSize}">
+            <Border Background="{Binding $parent[ListBox].((vm:ArtBrowserViewModel)DataContext).SelectedBackground.Brush}"
+                    Height="{Binding $parent[ListBox].((vm:ArtBrowserViewModel)DataContext).ThumbSize}">
+              <Image Source="{Binding Thumbnail}" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="None" />
+            </Border>
+            <TextBlock Text="{Binding Name}" FontSize="11" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center" />
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</Window>
