@@ -54,15 +54,21 @@ public class ArtCatalogGameTests
         }
 
         // ... and every thing the palette shows has its sprite listed, used by its class
-        var sprites = entries.Where(entry => entry.Kind == ArtKind.Sprite).ToDictionary(entry => entry.Name);
+        var sprites = entries.Where(entry => entry.Kind == ArtKind.Sprite).ToList();
         foreach (var thingClass in content.MapDefs.Things.Values.Select(thing => thing.Class).Distinct())
         {
             if (content.ThingSpriteName(thingClass) is not { } name)
                 continue;
-            Assert.That(sprites, Does.ContainKey(name.ToUpperInvariant()), thingClass);
+            var entry = sprites.SingleOrDefault(sprite => sprite.Holds(name));
+            Assert.That(entry, Is.Not.Null, thingClass);
             // (by the class, or the parent whose Spawn state it has)
-            Assert.That(sprites[name.ToUpperInvariant()].Uses, Is.Not.Empty, thingClass);
+            Assert.That(entry!.Uses, Is.Not.Empty, thingClass);
         }
+
+        // ... with a guard's walking frame as one entry of 8 sides
+        var walking = sprites.Single(sprite => sprite.Name == "GARDB");
+        Assert.That(walking.Rotations, Is.EqualTo(Enumerable.Range(1, 8).Select(side => $"GARDB{side}")));
+        Assert.That(sprites.Any(sprite => sprite.Name == "GARDB1"), Is.False);
 
         Assert.That(entries.Count(entry => entry.Kind == ArtKind.Picture), Is.GreaterThan(50), "the VGA pictures");
         TestContext.Out.WriteLine(string.Join(", ", entries.GroupBy(entry => entry.Kind).Select(kind => $"{kind.Key}: {kind.Count()}")));

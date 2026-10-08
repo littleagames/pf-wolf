@@ -24,7 +24,7 @@
     </Border>
 
     <!-- The picture picked: big, its details, where it came from, what uses it -->
-    <Grid DockPanel.Dock="Right" Width="380" Margin="8" RowDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto"
+    <Grid DockPanel.Dock="Right" Width="380" Margin="8" RowDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
           IsVisible="{Binding HasSelection}">
       <Border Grid.Row="0" Background="{Binding SelectedBackground.Brush}" CornerRadius="4" ClipToBounds="True">
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
@@ -47,10 +47,42 @@
                   ToolTip.Tip="The colour behind the picture, which shows through a sprite's see-through pixels" />
       </Grid>
 
-      <SelectableTextBlock Grid.Row="2" Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
-      <TextBlock Grid.Row="3" Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" />
+      <!-- A rotating sprite's sides: pick one, or turn it with the arrows (comma and full stop) -->
+      <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="4" Margin="0,6,0,0" IsVisible="{Binding HasRotations}">
+        <Button Content="◀" Command="{Binding TurnCommand}" CommandParameter="-1" VerticalAlignment="Stretch"
+                ToolTip.Tip="The side before (,)" />
+        <ListBox Grid.Column="1" ItemsSource="{Binding Rotations}" SelectedItem="{Binding SelectedRotation}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto" Padding="0"
+                 ToolTip.Tip="Which side of the frame shows: 1 faces you, 5 faces away, the others turn in between">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBox.Styles>
+            <Style Selector="ListBoxItem">
+              <Setter Property="Padding" Value="2" />
+            </Style>
+          </ListBox.Styles>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:RotationItem">
+              <StackPanel Width="34" Spacing="1">
+                <Border Background="{Binding $parent[Window].((vm:ArtBrowserViewModel)DataContext).SelectedBackground.Brush}" Height="34">
+                  <Image Source="{Binding Thumbnail}" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="None" />
+                </Border>
+                <TextBlock Text="{Binding Side}" FontSize="11" HorizontalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <Button Grid.Column="2" Content="▶" Command="{Binding TurnCommand}" CommandParameter="1" VerticalAlignment="Stretch"
+                ToolTip.Tip="The side after (.)" />
+      </Grid>
 
-      <StackPanel Grid.Row="4" Spacing="4" Margin="0,8,0,0">
+      <SelectableTextBlock Grid.Row="3" Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
+      <TextBlock Grid.Row="4" Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" />
+
+      <StackPanel Grid.Row="5" Spacing="4" Margin="0,8,0,0">
         <TextBlock Text="Where it comes from (the last one is used)" FontWeight="SemiBold" />
         <ListBox ItemsSource="{Binding Origins}" MaxHeight="90">
           <ListBox.ItemTemplate>
@@ -61,7 +93,7 @@
         </ListBox>
       </StackPanel>
 
-      <StackPanel Grid.Row="5" Spacing="4" Margin="0,8,0,0">
+      <StackPanel Grid.Row="6" Spacing="4" Margin="0,8,0,0">
         <TextBlock Text="Used by" FontWeight="SemiBold" />
         <ListBox ItemsSource="{Binding Uses}" SelectedItem="{Binding SelectedUse}" MaxHeight="150" DoubleTapped="OnUseDoubleTapped">
           <ListBox.ItemTemplate>
@@ -74,7 +106,7 @@
                    IsVisible="{Binding !HasUses}" />
       </StackPanel>
 
-      <WrapPanel Grid.Row="6" ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
+      <WrapPanel Grid.Row="7" ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
         <Button Content="Use in palette" Command="{Binding UseInPaletteCommand}" Classes="accent"
                 ToolTip.Tip="Picks the wall, door, flat or thing chosen under Used by to put down on the map (or double-click it)" />
         <Button Content="Copy name" Click="CopyName" />
@@ -105,6 +137,7 @@
               <Image Source="{Binding Thumbnail}" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="None" />
             </Border>
             <TextBlock Text="{Binding Name}" FontSize="11" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding SidesText}" FontSize="10" Opacity="0.6" HorizontalAlignment="Center" IsVisible="{Binding IsRotating}" />
           </StackPanel>
         </DataTemplate>
       </ListBox.ItemTemplate>

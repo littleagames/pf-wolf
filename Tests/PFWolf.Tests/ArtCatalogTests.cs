@@ -70,6 +70,19 @@ public class ArtCatalogTests
         Assert.That(uses["LAMPA"].Single().Target, Is.Null);
     }
 
+    [Test]
+    public void A_Frames_Sides_Group_Into_One_Entry()
+    {
+        // Act
+        var grouped = ArtCatalog.GroupRotations(["GARDA3", "garda1", "GARDA2", "GARDF0", "LAMPA0", "TITLE1"]);
+
+        // Assert: sides in order under the frame; still pictures, and a lone side 1, stay as they are
+        var guard = grouped.Single(group => group.Name == "GARDA");
+        Assert.That(guard.Rotations, Is.EqualTo(new[] { "GARDA1", "GARDA2", "GARDA3" }));
+        Assert.That(grouped.Where(group => group.Rotations.Count == 0).Select(group => group.Name),
+            Is.EquivalentTo(new[] { "GARDF0", "LAMPA0", "TITLE1" }));
+    }
+
     [TestCase("flats/FLOOR1.png", true)]
     [TestCase("textures/FLOOR1.png", false)]
     [TestCase("flats.png", false)]

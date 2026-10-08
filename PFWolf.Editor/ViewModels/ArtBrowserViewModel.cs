@@ -14,10 +14,29 @@ public sealed class ArtItem(ArtEntry entry, ArtCache art)
 {
     public ArtEntry Entry { get; } = entry;
     public string Name => Entry.Name;
-    public Bitmap? Thumbnail => art.Whole(Entry.Kind, Entry.Name);
+    public Bitmap? Thumbnail => art.Whole(Entry.Kind, Entry.AssetName);
 
-    public string ToolTip => $"{Entry.Name}  {Entry.Width} × {Entry.Height}  ({ArtBrowserViewModel.KindName(Entry.Kind)}, {Entry.Source})"
+    /// <summary>"8 sides" under a rotating sprite frame's thumbnail</summary>
+    public string SidesText => Entry.Rotations.Count > 0 ? $"{Entry.Rotations.Count} sides" : "";
+    public bool IsRotating => Entry.Rotations.Count > 0;
+
+    /// <summary>A rotating frame's sides for the picker</summary>
+    public List<RotationItem> MakeRotations()
+        => Entry.Rotations.Select(name => new RotationItem(name, name[^1] - '0', art.Whole(Entry.Kind, name))).ToList();
+
+    public string ToolTip => $"{Entry.Name}{(IsRotating ? $" ({SidesText})" : "")}  {Entry.Width} × {Entry.Height}  ({ArtBrowserViewModel.KindName(Entry.Kind)}, {Entry.Source})"
         + (Entry.Uses.Count > 0 ? "" : "\nNot used by mapdefs, actordefs or game-info");
+}
+
+/// <summary>One side of a rotating sprite frame: 1 faces the viewer, 5 faces away</summary>
+public sealed record RotationItem(string AssetName, int Side, Bitmap? Thumbnail)
+{
+    public string Label => Side switch
+    {
+        1 => "1 front",
+        5 => "5 back",
+        _ => Side.ToString(),
+    };
 }
 
 /// <summary>Which kinds of picture the browser lists</summary>
@@ -124,11 +143,25 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     public ObservableCollection<string> Origins { get; } = [];
     public ObservableCollection<ArtUse> Uses { get; } = [];
 
+    /// <summary>The sides of the rotating sprite frame picked, for the rotation picker</summary>
+    public ObservableCollection<RotationItem> Rotations { get; } = [];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Preview), nameof(PreviewWidth), nameof(PreviewHeight), nameof(Details), nameof(CurrentAssetName))]
+    private RotationItem? _selectedRotation;
+
     public bool HasSelection => SelectedItem != null;
     public bool HasUses => Uses.Count > 0;
-    public Bitmap? Preview => SelectedItem?.Thumbnail;
-    public double PreviewWidth => (SelectedItem?.Entry.Width ?? 0) * Zoom;
-    public double PreviewHeight => (SelectedItem?.Entry.Height ?? 0) * Zoom;
+    public bool HasRotations => Rotations.Count > 0;
+
+    /// <summary>The picture shown: the entry's, or the side of a rotating frame picked</summary>
+    public Bitmap? Preview => SelectedRotation?.Thumbnail ?? SelectedItem?.Thumbnail;
+
+    /// <summary>The asset the preview shows ("GARDA3" for side 3 of GARDA): what Copy name and Export PNG take</summary>
+    public string CurrentAssetName => SelectedRotation?.AssetName ?? SelectedItem?.Entry.AssetName ?? "";
+
+    public double PreviewWidth => (Preview?.PixelSize.Width ?? 0) * Zoom;
+    public double PreviewHeight => (Preview?.PixelSize.Height ?? 0) * Zoom;
 
     /// <summary>What the picture is, its size and anything particular to its kind</summary>
     public string Details
@@ -138,17 +171,20 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
             if (SelectedItem?.Entry is not { } entry)
                 return "";
 
+            if (entry.Kind == ArtKind.Sprite && _content?.Find<SpriteAsset>(CurrentAssetName) is { } sprite)
+            {
+                var name = CurrentAssetName;
+                var sprites = $"Sprite {name}, {sprite.Width} × {sprite.Height}, offset {sprite.Offset.x}, {sprite.Offset.y}";
+                if (SelectedRotation is { } side)
+                    return sprites + $"\nFrame {entry.Name[^1]} from side {side.Side} of {Rotations.Count} (1 faces you, 5 faces away)";
+                return name.Length >= 2 && name[^1] == '0' ? sprites + "\nThe same from every side" : sprites;
+            }
+
             var details = $"{KindName(entry.Kind)}, {entry.Width} × {entry.Height}";
             if (entry.Kind is ArtKind.Texture && entry.Height > TextureAsset.StorySize)
             {
                 var stories = (double)entry.Height / Math.Max(1, entry.Width);
                 details += $", {stories:0.##} stories tall";
-            }
-            if (entry.Kind == ArtKind.Sprite && _content?.Find<SpriteAsset>(entry.Name) is { } sprite)
-            {
-                details += $", offset {sprite.Offset.x}, {sprite.Offset.y}";
-                if (ArtCatalog.SpriteFrame(entry.Name) is { } frame)
-                    details += entry.Name[^1] == '0' ? ", seen the same from every side" : $", frame {frame[^1]} seen from side {entry.Name[^1]}";
             }
             return details;
         }
@@ -194,11 +230,14 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         SelectedItem ??= Items.FirstOrDefault();
     }
 
-    /// <summary>Shows a picture by name, of the kind asked for when there's one of each</summary>
+    /// <summary>
+    /// Shows a picture by name, of the kind asked for when there's one of each; a side of a
+    /// rotating sprite ("GARDA3") shows its frame turned to that side
+    /// </summary>
     public void Show(ArtKind kind, string name)
     {
-        var found = _all.FirstOrDefault(item => item.Entry.Kind == kind && item.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-            ?? _all.FirstOrDefault(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        var found = _all.FirstOrDefault(item => item.Entry.Kind == kind && item.Entry.Holds(name))
+            ?? _all.FirstOrDefault(item => item.Entry.Holds(name));
         if (found == null)
             return;
 
@@ -210,6 +249,33 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
                 SelectedKind = Kinds.First(option => option.Kind == found.Entry.Kind);
         }
         SelectedItem = found;
+        if (Rotations.FirstOrDefault(side => side.AssetName.Equals(name, StringComparison.OrdinalIgnoreCase)) is { } turned)
+            SelectedRotation = turned;
+    }
+
+    /// <summary>Turns a rotating sprite to the side before or after, round from 8 back to 1</summary>
+    [RelayCommand]
+    private void Turn(string step)
+    {
+        if (Rotations.Count == 0)
+            return;
+        int at = SelectedRotation != null ? Rotations.IndexOf(SelectedRotation) : 0;
+        int by = int.TryParse(step, out var parsed) ? parsed : 1;
+        SelectedRotation = Rotations[((at + by) % Rotations.Count + Rotations.Count) % Rotations.Count];
+    }
+
+    partial void OnSelectedRotationChanged(RotationItem? value)
+    {
+        // The side shown may come from somewhere else (a mod replacing just some sides)
+        if (value != null && _content != null)
+            ShowOrigins(ArtCatalog.Origins(_content, value.AssetName, nameof(SpriteAsset)));
+    }
+
+    private void ShowOrigins(IEnumerable<PFWolf.Loaders.AssetOrigin> origins)
+    {
+        Origins.Clear();
+        foreach (var origin in origins)
+            Origins.Add($"{origin.Action} by {origin.Source}: {origin.Path}");
     }
 
     private ArtItem? Find(ArtKind kind, string name)
@@ -246,6 +312,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
 
             // Every word is in the name, or in something that uses it ("guard", "door 90")
             return shown && words.All(word => entry.Name.Contains(word, StringComparison.OrdinalIgnoreCase)
+                || entry.Rotations.Any(side => side.Contains(word, StringComparison.OrdinalIgnoreCase))
                 || entry.Uses.Any(use => use.Label.Contains(word, StringComparison.OrdinalIgnoreCase)));
         }
     }
@@ -254,14 +321,23 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     {
         Origins.Clear();
         Uses.Clear();
+        Rotations.Clear();
+        SelectedRotation = null;
         if (value == null)
         {
             OnPropertyChanged(nameof(HasUses));
+            OnPropertyChanged(nameof(HasRotations));
             return;
         }
 
-        foreach (var origin in value.Entry.Origins)
-            Origins.Add($"{origin.Action} by {origin.Source}: {origin.Path}");
+        foreach (var side in value.MakeRotations())
+            Rotations.Add(side);
+        OnPropertyChanged(nameof(HasRotations));
+        SelectedRotation = Rotations.FirstOrDefault();
+        OnPropertyChanged(nameof(CurrentAssetName));
+
+        if (SelectedRotation == null)
+            ShowOrigins(value.Entry.Origins);
         foreach (var use in value.Entry.Uses)
             Uses.Add(use);
         OnPropertyChanged(nameof(HasUses));

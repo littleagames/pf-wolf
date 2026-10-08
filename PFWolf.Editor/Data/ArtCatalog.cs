@@ -27,9 +27,24 @@ public sealed record ArtUse(string Label, PaletteTarget? Target = null)
     public override string ToString() => Label;
 }
 
-/// <summary>One picture in the game's assets, where it came from and what shows it</summary>
+/// <summary>
+/// One picture in the game's assets, where it came from and what shows it. A sprite frame seen
+/// differently from each side is one entry named by its frame ("GARDA"), its sprites ("GARDA1" to
+/// "GARDA8") in <see cref="Rotations"/>, and its size and origins those of the first.
+/// </summary>
 public sealed record ArtEntry(ArtKind Kind, string Name, int Width, int Height, IReadOnlyList<AssetOrigin> Origins, IReadOnlyList<ArtUse> Uses)
 {
+    /// <summary>A rotating sprite frame's sprites, side 1 (facing the viewer) first; empty for anything else</summary>
+    public IReadOnlyList<string> Rotations { get; init; } = [];
+
+    /// <summary>The asset shown for the entry: the picture itself, or a rotating frame's first side</summary>
+    public string AssetName => Rotations.Count > 0 ? Rotations[0] : Name;
+
+    /// <summary>Whether this is the entry for a picture of this name, or has it among its sides</summary>
+    public bool Holds(string assetName)
+        => Name.Equals(assetName, StringComparison.OrdinalIgnoreCase)
+            || Rotations.Any(rotation => rotation.Equals(assetName, StringComparison.OrdinalIgnoreCase));
+
     /// <summary>The file or pack the picture in use comes from</summary>
     public string Source => Origins.LastOrDefault(origin => origin.Action != AssetOrigin.LeftOut)?.Source ?? "";
 
@@ -50,6 +65,7 @@ public static class ArtCatalog
         var uses = Uses(content);
         var spriteUses = SpriteUses(content);
         var entries = new List<ArtEntry>();
+        var spriteNames = new List<string>();
 
         foreach (var name in content.Assets.AssetNames.Order(StringComparer.OrdinalIgnoreCase))
         {
@@ -60,11 +76,8 @@ public static class ArtCatalog
                 var kind = origins.Any(origin => IsFlatPath(origin.Path)) ? ArtKind.Flat : ArtKind.Texture;
                 entries.Add(new ArtEntry(kind, display, texture.Width, texture.Height, origins, uses.GetValueOrDefault(display, [])));
             }
-            if (content.Find<SpriteAsset>(name) is { } sprite)
-            {
-                entries.Add(new ArtEntry(ArtKind.Sprite, display, sprite.Width, sprite.Height, Origins(content, name, nameof(SpriteAsset)),
-                    SpriteFrame(display) is { } frame ? spriteUses.GetValueOrDefault(frame, []) : []));
-            }
+            if (content.Assets.Exists<SpriteAsset>(name))
+                spriteNames.Add(display);
             if (content.Find<GraphicAsset>(name) is { } picture)
             {
                 entries.Add(new ArtEntry(ArtKind.Picture, display, picture.Width, picture.Height, Origins(content, name, nameof(GraphicAsset)),
@@ -72,8 +85,53 @@ public static class ArtCatalog
             }
         }
 
-        return entries;
+        // A rotating frame's sides make one entry
+        foreach (var (name, rotations) in GroupRotations(spriteNames))
+        {
+            var first = rotations.Count > 0 ? rotations[0] : name;
+            if (content.Find<SpriteAsset>(first) is not { } sprite)
+                continue;
+            var frame = rotations.Count > 0 ? name : SpriteFrame(name);
+            entries.Add(new ArtEntry(ArtKind.Sprite, name, sprite.Width, sprite.Height, Origins(content, first, nameof(SpriteAsset)),
+                frame != null ? spriteUses.GetValueOrDefault(frame, []) : []) { Rotations = rotations });
+        }
+
+        return entries.OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase).ThenBy(entry => entry.Kind).ToList();
     }
+
+    /// <summary>
+    /// Sprite names as the browser lists them: a frame seen from sides 1 to 8 ("GARDA1"…"GARDA8")
+    /// as one, named by its frame ("GARDA") with its sides in order; anything else on its own with none
+    /// </summary>
+    public static List<(string Name, IReadOnlyList<string> Rotations)> GroupRotations(IEnumerable<string> spriteNames)
+    {
+        var names = spriteNames.Select(name => name.ToUpperInvariant()).Distinct().ToList();
+        var rotating = names
+            .Where(name => name.Length >= 2 && name[^1] is >= '1' and <= '8')
+            .GroupBy(name => name[..^1])
+            .ToDictionary(group => group.Key, group => (IReadOnlyList<string>)group.OrderBy(name => name[^1]).ToList());
+
+        var grouped = new List<(string, IReadOnlyList<string>)>();
+        foreach (var name in names)
+        {
+            if (name.Length >= 2 && name[^1] is >= '1' and <= '8')
+                continue;
+            grouped.Add((name, []));
+        }
+        foreach (var (frame, rotations) in rotating)
+        {
+            // A lone "1" isn't a set of sides (a sprite that's just numbered), so it stays as it is
+            if (rotations.Count > 1)
+                grouped.Add((frame, rotations));
+            else
+                grouped.Add((rotations[0], []));
+        }
+        return grouped;
+    }
+
+    /// <summary>Where a picture of this name and asset type came from: the data files, then each pack that replaced it</summary>
+    public static IReadOnlyList<AssetOrigin> Origins(GameContent content, string name, string type)
+        => content.Assets.FindAssetOrigins(name).FirstOrDefault(asset => asset.Type == type).Origins ?? [];
 
     /// <summary>A sprite's name without the rotation digit on the end ("GARDA1" → "GARDA"): what actordefs names a frame by</summary>
     public static string? SpriteFrame(string spriteName)
@@ -82,9 +140,6 @@ public static class ArtCatalog
     /// <summary>Whether a pack file is in a flats/ folder ("flats/FLOOR1.png"), not textures/</summary>
     public static bool IsFlatPath(string path)
         => path.Replace('\\', '/').Split('/').SkipLast(1).Any(folder => folder.Equals("flats", StringComparison.OrdinalIgnoreCase));
-
-    private static IReadOnlyList<AssetOrigin> Origins(GameContent content, string name, string type)
-        => content.Assets.FindAssetOrigins(name).FirstOrDefault(asset => asset.Type == type).Origins ?? [];
 
     /// <summary>Textures and pictures by name: the walls, doors and flats of mapdefs, and game-info's skies and default flats</summary>
     public static Dictionary<string, List<ArtUse>> Uses(GameContent content)
