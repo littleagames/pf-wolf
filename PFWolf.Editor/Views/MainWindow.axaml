@@ -4,8 +4,17 @@
         xmlns:r="using:PFWolf.Editor.Rendering"
         x:Class="PFWolf.Editor.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="PFWolf Editor"
-        Width="1280" Height="800" MinWidth="800" MinHeight="500">
+        Title="{Binding WindowTitle}"
+        Width="1400" Height="860" MinWidth="900" MinHeight="560">
+
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
+    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+    <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
+    <KeyBinding Gesture="Ctrl+N" Command="{Binding NewMapCommand}" />
+  </Window.KeyBindings>
 
   <DockPanel>
     <!-- The game: its folder, which game, and loading it -->
@@ -19,11 +28,39 @@
       </Grid>
     </Border>
 
-    <!-- What's under the pointer, and how the load went -->
+    <!-- Editing: tools, undo, saving -->
+    <Border DockPanel.Dock="Top" Padding="8,4" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <ListBox ItemsSource="{Binding Tools}" SelectedItem="{Binding SelectedTool}" Padding="0">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:ToolOption">
+              <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding ToolTip}" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <CheckBox Content="Outline only" IsChecked="{Binding Outline}" ToolTip.Tip="The rectangle tool draws only the edge" VerticalAlignment="Center" />
+        <CheckBox Content="Copy all planes" IsChecked="{Binding CopyAllPlanes}" VerticalAlignment="Center"
+                  ToolTip.Tip="Copy, cut, move and delete take every plane, not just the one being edited" />
+        <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+        <Button Content="Undo" Command="{Binding UndoCommand}" ToolTip.Tip="Ctrl+Z" />
+        <Button Content="Redo" Command="{Binding RedoCommand}" ToolTip.Tip="Ctrl+Y" />
+        <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+        <Button Content="Save" Command="{Binding SaveCommand}" ToolTip.Tip="Ctrl+S: to maps/NAME.wad in the level's mod folder" />
+        <Button Content="Save to…" Command="{Binding SaveAsCommand}" ToolTip.Tip="Ctrl+Shift+S: to another mod folder" />
+        <Button Content="New level…" Command="{Binding NewMapCommand}" ToolTip.Tip="Ctrl+N" />
+      </StackPanel>
+    </Border>
+
+    <!-- What's under the pointer, and how things went -->
     <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <StackPanel Spacing="2">
         <TextBlock Text="{Binding HoverInfo}" TextTrimming="CharacterEllipsis" MinHeight="18" />
-        <TextBlock Text="{Binding Status}" Opacity="0.7" />
+        <TextBlock Text="{Binding Status}" Opacity="0.7" TextTrimming="CharacterEllipsis" />
       </StackPanel>
     </Border>
 
@@ -37,38 +74,89 @@
     </Expander>
 
     <!-- Levels and mods -->
-    <Grid DockPanel.Dock="Left" Width="260" RowDefinitions="Auto,*,Auto,Auto,Auto" Margin="8">
+    <Grid DockPanel.Dock="Left" Width="250" RowDefinitions="Auto,*,Auto,Auto,Auto" Margin="8">
       <TextBlock Grid.Row="0" Text="Levels" FontWeight="SemiBold" Margin="0,0,0,4" />
-      <ListBox Grid.Row="1" ItemsSource="{Binding Maps}" SelectedItem="{Binding SelectedMap}" />
+      <ListBox Grid.Row="1" ItemsSource="{Binding Maps}" SelectedItem="{Binding SelectedMap}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:MapItem">
+            <TextBlock Text="{Binding Display}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
       <TextBlock Grid.Row="2" Text="Mods (loaded over pfwolf.pk3, later ones win)" FontWeight="SemiBold" Margin="0,12,0,4" TextWrapping="Wrap" />
-      <ListBox Grid.Row="3" ItemsSource="{Binding Mods}" SelectedItem="{Binding SelectedMod}" Height="100" />
-      <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+      <ListBox Grid.Row="3" ItemsSource="{Binding Mods}" SelectedItem="{Binding SelectedMod}" Height="90">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="x:String">
+            <TextBlock Text="{Binding}" ToolTip.Tip="{Binding}" TextTrimming="LeadingCharacterEllipsis" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
         <Button Content="Add pk3…" Click="AddModFile" />
         <Button Content="Add folder…" Click="AddModFolder" />
         <Button Content="Remove" Command="{Binding RemoveModCommand}" />
       </StackPanel>
     </Grid>
 
-    <!-- Layers -->
-    <StackPanel DockPanel.Dock="Right" Width="180" Margin="8" Spacing="4">
-      <TextBlock Text="Layers" FontWeight="SemiBold" Margin="0,0,0,4" />
-      <CheckBox Content="Walls and doors" IsChecked="{Binding ShowWalls}" />
-      <CheckBox Content="Things" IsChecked="{Binding ShowThings}" />
-      <CheckBox Content="Flats (plane 2)" IsChecked="{Binding ShowFlats}" />
-      <CheckBox Content="Heights (plane 3)" IsChecked="{Binding ShowHeights}" />
-      <CheckBox Content="Tags (plane 4)" IsChecked="{Binding ShowTags}" />
-      <CheckBox Content="Light zones (plane 5)" IsChecked="{Binding ShowZones}" />
-      <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" />
-      <TextBlock Margin="0,16,0,0" TextWrapping="Wrap" Opacity="0.7"
-                 Text="Wheel to zoom, drag to pan, Home to fit the level." />
-    </StackPanel>
+    <!-- The plane being edited, what's put down, and which layers show -->
+    <Grid DockPanel.Dock="Right" Width="280" Margin="8" RowDefinitions="Auto,Auto,Auto,*,Auto">
+      <StackPanel Grid.Row="0" Spacing="4">
+        <TextBlock Text="Edit" FontWeight="SemiBold" />
+        <ComboBox ItemsSource="{Binding Planes}" SelectedItem="{Binding SelectedPlane}" HorizontalAlignment="Stretch" />
+      </StackPanel>
+
+      <TextBox Grid.Row="1" Text="{Binding PaletteFilter}" PlaceholderText="Find in the palette" Margin="0,8,0,4"
+               IsVisible="{Binding HasPalette}" />
+
+      <StackPanel Grid.Row="2" Spacing="4" Margin="0,8,0,0" IsVisible="{Binding !HasPalette}">
+        <TextBlock Text="Value" />
+        <NumericUpDown Value="{Binding PlaneValue}" Minimum="0" Maximum="65535" Increment="1" FormatString="0" />
+        <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12"
+                   Text="0 clears a tile. Flats: the low byte is the floor's flat, the high byte the ceiling's (ceiling × 256 + floor)." />
+      </StackPanel>
+
+      <ListBox Grid.Row="3" ItemsSource="{Binding PaletteItems}" SelectedItem="{Binding SelectedPaletteItem}"
+               IsVisible="{Binding HasPalette}">
+        <ListBox.Styles>
+          <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="6,2" />
+          </Style>
+        </ListBox.Styles>
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:PaletteItem">
+            <Grid ColumnDefinitions="36,*" ColumnSpacing="8">
+              <Image Grid.Column="0" Source="{Binding Icon}" Width="32" Height="32" RenderOptions.BitmapInterpolationMode="None" />
+              <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Group}" FontSize="11" Opacity="0.6" />
+              </StackPanel>
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <StackPanel Grid.Row="4" Spacing="2" Margin="0,8,0,0">
+        <TextBlock Text="Show" FontWeight="SemiBold" Margin="0,0,0,2" />
+        <WrapPanel>
+          <CheckBox Content="Walls" IsChecked="{Binding ShowWalls}" MinWidth="130" />
+          <CheckBox Content="Things" IsChecked="{Binding ShowThings}" MinWidth="130" />
+          <CheckBox Content="Flats" IsChecked="{Binding ShowFlats}" MinWidth="130" />
+          <CheckBox Content="Heights" IsChecked="{Binding ShowHeights}" MinWidth="130" />
+          <CheckBox Content="Tags" IsChecked="{Binding ShowTags}" MinWidth="130" />
+          <CheckBox Content="Light zones" IsChecked="{Binding ShowZones}" MinWidth="130" />
+          <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" MinWidth="130" />
+        </WrapPanel>
+        <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12" Margin="0,4,0,0"
+                   Text="Left button: the tool. Middle or right drag: pan. Wheel: zoom. Home: fit. Select tool: drag inside the selection to move it; Ctrl+C/X/V, Delete, Esc." />
+      </StackPanel>
+    </Grid>
 
     <r:MapCanvas x:Name="Canvas"
-                 Tiles="{Binding Tiles}" Art="{Binding Art}"
+                 Tiles="{Binding Tiles}" Art="{Binding Art}" Controller="{Binding Controller}"
                  ShowWalls="{Binding ShowWalls}" ShowThings="{Binding ShowThings}"
                  ShowFlats="{Binding ShowFlats}" ShowHeights="{Binding ShowHeights}"
                  ShowTags="{Binding ShowTags}" ShowZones="{Binding ShowZones}"
                  ShowGrid="{Binding ShowGrid}"
-                 TileHovered="OnTileHovered" />
+                 TileHovered="OnTileHovered" ToolKeyPressed="OnToolKeyPressed" />
   </DockPanel>
 </Window>

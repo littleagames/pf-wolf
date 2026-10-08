@@ -1,16 +1,43 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using PFWolf.Editor.Rendering;
 using PFWolf.Editor.ViewModels;
 
 namespace PFWolf.Editor.Views;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, IEditorDialogs
 {
+    // Set once the unsaved changes have been dealt with, so the second Close goes through
+    private bool _closeConfirmed;
+
     public MainWindow() => InitializeComponent();
 
     private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext!;
+
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+        if (DataContext is MainWindowViewModel viewModel)
+            viewModel.Dialogs = this;
+    }
+
+    protected override async void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+        if (_closeConfirmed || DataContext is not MainWindowViewModel viewModel)
+            return;
+
+        e.Cancel = true;
+        if (await viewModel.ResolveUnsaved("Closing the editor drops the changes to"))
+        {
+            _closeConfirmed = true;
+            Close();
+        }
+    }
 
     private async void BrowseGameFolder(object? sender, RoutedEventArgs e)
     {
@@ -45,17 +72,101 @@ public partial class MainWindow : Window
 
     private async void AddModFolder(object? sender, RoutedEventArgs e)
     {
-        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-        {
-            Title = "A mod folder to load over pfwolf.pk3",
-            SuggestedStartLocation = await FolderOrNull(Path.Combine(ViewModel.GameFolder, "mods")),
-        });
-        if (folders is [var folder, ..] && folder.TryGetLocalPath() is { } path)
+        if (await PickModFolder("A mod folder to load over pfwolf.pk3") is { } path)
             ViewModel.AddMod(path);
     }
 
     private void OnTileHovered(object? sender, TileEventArgs e) => ViewModel.Hover(e.X, e.Y);
 
+    private void OnToolKeyPressed(object? sender, string key) => ViewModel.SelectToolByKey(key);
+
     private async Task<IStorageFolder?> FolderOrNull(string path)
         => !string.IsNullOrWhiteSpace(path) && Directory.Exists(path) ? await StorageProvider.TryGetFolderFromPathAsync(path) : null;
+
+    //
+    // IEditorDialogs
+    //
+
+    public async Task<string?> PickModFolder(string title)
+    {
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = title,
+            SuggestedStartLocation = await FolderOrNull(Path.Combine(ViewModel.GameFolder, "mods")),
+        });
+        return folders is [var folder, ..] ? folder.TryGetLocalPath() : null;
+    }
+
+    public async Task<string?> AskText(string title, string prompt, string initial, Func<string, string?> check)
+    {
+        var input = new TextBox { Text = initial };
+        var error = new TextBlock { Foreground = Brushes.OrangeRed, TextWrapping = TextWrapping.Wrap };
+        var ok = new Button { Content = "OK", IsDefault = true, Classes = { "accent" } };
+        var cancel = new Button { Content = "Cancel", IsCancel = true };
+        var dialog = MakeDialog(title, new StackPanel
+        {
+            Spacing = 8,
+            Children = { new TextBlock { Text = prompt, TextWrapping = TextWrapping.Wrap }, input, error, Buttons(ok, cancel) },
+        });
+
+        string? answer = null;
+        ok.Click += (_, _) =>
+        {
+            var text = input.Text?.Trim() ?? "";
+            if (check(text) is { } problem)
+            {
+                error.Text = problem;
+                return;
+            }
+            answer = text;
+            dialog.Close();
+        };
+        cancel.Click += (_, _) => dialog.Close();
+        dialog.Opened += (_, _) =>
+        {
+            input.Focus();
+            input.SelectAll();
+        };
+
+        await dialog.ShowDialog(this);
+        return answer;
+    }
+
+    public async Task<UnsavedChoice> AskUnsaved(string message)
+    {
+        var save = new Button { Content = "Save", IsDefault = true, Classes = { "accent" } };
+        var discard = new Button { Content = "Don't save" };
+        var cancel = new Button { Content = "Cancel", IsCancel = true };
+        var dialog = MakeDialog("Unsaved changes", new StackPanel
+        {
+            Spacing = 12,
+            Children = { new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap }, Buttons(save, discard, cancel) },
+        });
+
+        var choice = UnsavedChoice.Cancel;
+        save.Click += (_, _) => { choice = UnsavedChoice.Save; dialog.Close(); };
+        discard.Click += (_, _) => { choice = UnsavedChoice.Discard; dialog.Close(); };
+        cancel.Click += (_, _) => dialog.Close();
+
+        await dialog.ShowDialog(this);
+        return choice;
+    }
+
+    private static Window MakeDialog(string title, Control content) => new()
+    {
+        Title = title,
+        Width = 420,
+        SizeToContent = SizeToContent.Height,
+        CanResize = false,
+        WindowStartupLocation = WindowStartupLocation.CenterOwner,
+        ShowInTaskbar = false,
+        Content = new Border { Padding = new Thickness(16), Child = content },
+    };
+
+    private static StackPanel Buttons(params Button[] buttons)
+    {
+        var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right };
+        panel.Children.AddRange(buttons);
+        return panel;
+    }
 }

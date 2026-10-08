@@ -1,0 +1,24 @@
+namespace PFWolf.Editor.ViewModels;
+
+/// <summary>What to do with levels that have changes nobody saved</summary>
+public enum UnsavedChoice
+{
+    Save,
+    Discard,
+    Cancel,
+}
+
+/// <summary>The questions the editor asks, which the window answers with its dialogs</summary>
+public interface IEditorDialogs
+{
+    /// <summary>A mod folder to save levels in, or null when none is picked</summary>
+    Task<string?> PickModFolder(string title);
+
+    /// <summary>
+    /// A line of text, or null when cancelled. <paramref name="check"/> says what's wrong with
+    /// an answer, or returns null for one that will do.
+    /// </summary>
+    Task<string?> AskText(string title, string prompt, string initial, Func<string, string?> check);
+
+    Task<UnsavedChoice> AskUnsaved(string message);
+}

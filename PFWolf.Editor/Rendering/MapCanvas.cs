@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using PFWolf.Constants;
 using PFWolf.Editor.Data;
+using PFWolf.Editor.Editing;
 using PFWolf.Enums;
 
 namespace PFWolf.Editor.Rendering;
@@ -23,12 +24,14 @@ public sealed class TileEventArgs(int x, int y) : EventArgs
 
 /// <summary>
 /// A level from above: walls and doors in their textures, things as their sprites, and the
-/// other planes (flats, heights, tags, light zones) as numbered overlays. The wheel zooms
-/// around the pointer; dragging pans.
+/// other planes (flats, heights, tags, light zones) as numbered overlays. The left button works
+/// the tools (through the <see cref="Controller"/>); the wheel zooms around the pointer, and
+/// dragging with the middle or right button pans.
 /// </summary>
 public sealed class MapCanvas : Control
 {
     public static readonly StyledProperty<MapTiles?> TilesProperty = AvaloniaProperty.Register<MapCanvas, MapTiles?>(nameof(Tiles));
+    public static readonly StyledProperty<ToolController?> ControllerProperty = AvaloniaProperty.Register<MapCanvas, ToolController?>(nameof(Controller));
     public static readonly StyledProperty<ArtCache?> ArtProperty = AvaloniaProperty.Register<MapCanvas, ArtCache?>(nameof(Art));
     public static readonly StyledProperty<bool> ShowWallsProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowWalls), true);
     public static readonly StyledProperty<bool> ShowThingsProperty = AvaloniaProperty.Register<MapCanvas, bool>(nameof(ShowThings), true);
@@ -47,6 +50,7 @@ public sealed class MapCanvas : Control
     }
 
     public MapTiles? Tiles { get => GetValue(TilesProperty); set => SetValue(TilesProperty, value); }
+    public ToolController? Controller { get => GetValue(ControllerProperty); set => SetValue(ControllerProperty, value); }
     public ArtCache? Art { get => GetValue(ArtProperty); set => SetValue(ArtProperty, value); }
     public bool ShowWalls { get => GetValue(ShowWallsProperty); set => SetValue(ShowWallsProperty, value); }
     public bool ShowThings { get => GetValue(ShowThingsProperty); set => SetValue(ShowThingsProperty, value); }
@@ -59,6 +63,9 @@ public sealed class MapCanvas : Control
     /// <summary>The pointer moved onto another tile, or off the map</summary>
     public event EventHandler<TileEventArgs>? TileHovered;
 
+    /// <summary>A tool's key letter was pressed over the map</summary>
+    public event EventHandler<string>? ToolKeyPressed;
+
     private const double MinZoom = 2, MaxZoom = 128;
 
     // Screen pixels per tile, and where the map's top left corner is on screen
@@ -66,8 +73,11 @@ public sealed class MapCanvas : Control
     private Point _origin;
     private bool _fitPending = true;
 
+    // Panning with the middle or right button
     private Point? _dragStart;
     private Point _dragOrigin;
+    // The left button is down, working a tool
+    private bool _toolDown;
     private (int X, int Y) _hover = (-1, -1);
 
     private static readonly IBrush Backdrop = new SolidColorBrush(Color.FromRgb(24, 24, 28));
@@ -81,6 +91,8 @@ public sealed class MapCanvas : Control
     private static readonly IPen HoverPen = new Pen(Brushes.White, 2);
     private static readonly IPen TriggerPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 160, 32)), 2, new DashStyle([2, 2], 0));
     private static readonly IPen MapEdgePen = new Pen(new SolidColorBrush(Color.FromArgb(96, 255, 255, 255)), 1);
+    private static readonly IPen SelectionPen = new Pen(new SolidColorBrush(Color.FromRgb(80, 200, 255)), 2, new DashStyle([3, 2], 0));
+    private static readonly IBrush SelectionBrush = new SolidColorBrush(Color.FromArgb(40, 80, 200, 255));
     private static readonly Typeface LabelFont = new(FontFamily.Default, FontStyle.Normal, FontWeight.SemiBold);
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -91,7 +103,16 @@ public sealed class MapCanvas : Control
             _fitPending = true;
             SetHover(-1, -1);
         }
+        else if (change.Property == ControllerProperty)
+        {
+            if (change.OldValue is ToolController old)
+                old.Changed -= OnControllerChanged;
+            if (change.NewValue is ToolController controller)
+                controller.Changed += OnControllerChanged;
+        }
     }
+
+    private void OnControllerChanged(object? sender, EventArgs e) => InvalidateVisual();
 
     /// <summary>Zooms so the whole level fits, centred</summary>
     public void FitToView()
@@ -144,6 +165,11 @@ public sealed class MapCanvas : Control
         }
 
         context.DrawRectangle(null, MapEdgePen, new Rect(_origin, new Size(tiles.Width * _zoom, tiles.Height * _zoom)));
+        if (Controller?.Selection is { } selection)
+        {
+            var rect = new Rect(_origin.X + selection.Left * _zoom, _origin.Y + selection.Top * _zoom, selection.Width * _zoom, selection.Height * _zoom);
+            context.DrawRectangle(SelectionBrush, SelectionPen, rect);
+        }
         if (_hover.X >= 0)
             context.DrawRectangle(null, HoverPen, TileRect(_hover.X, _hover.Y));
     }
@@ -310,17 +336,48 @@ public sealed class MapCanvas : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        _dragStart = e.GetPosition(this);
-        _dragOrigin = _origin;
-        e.Pointer.Capture(this);
         Focus();
+        var point = e.GetCurrentPoint(this);
+        var position = point.Position;
+
+        if (point.Properties.IsLeftButtonPressed && Controller != null && !e.KeyModifiers.HasFlag(KeyModifiers.Alt))
+        {
+            var (x, y) = TileAt(position);
+            _toolDown = true;
+            e.Pointer.Capture(this);
+            Controller.Press(x, y);
+        }
+        else
+        {
+            // Middle or right button (or Alt with the left): pan
+            _dragStart = position;
+            _dragOrigin = _origin;
+            e.Pointer.Capture(this);
+        }
+        e.Handled = true;
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        if (_toolDown)
+        {
+            _toolDown = false;
+            Controller?.Release();
+        }
         _dragStart = null;
         e.Pointer.Capture(null);
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        if (_toolDown)
+        {
+            _toolDown = false;
+            Controller?.Release();
+        }
+        _dragStart = null;
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
@@ -334,14 +391,23 @@ public sealed class MapCanvas : Control
         }
 
         UpdateHover(position);
+        if (Controller != null && (_toolDown || Controller.IsPasting))
+        {
+            var (x, y) = TileAt(position);
+            Controller.Move(x, y);
+        }
     }
 
     protected override void OnPointerExited(PointerEventArgs e)
     {
         base.OnPointerExited(e);
-        if (_dragStart == null)
+        if (_dragStart == null && !_toolDown)
             SetHover(-1, -1);
     }
+
+    /// <summary>The tile under a point, which may be off the level</summary>
+    private (int X, int Y) TileAt(Point position)
+        => ((int)Math.Floor((position.X - _origin.X) / _zoom), (int)Math.Floor((position.Y - _origin.Y) / _zoom));
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
@@ -360,10 +426,37 @@ public sealed class MapCanvas : Control
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
-        if (e.Key == Key.Home)
+        bool ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+        e.Handled = true;
+        switch (e.Key)
         {
-            FitToView();
-            e.Handled = true;
+            case Key.Home:
+                FitToView();
+                break;
+            case Key.C when ctrl:
+                Controller?.Copy();
+                break;
+            case Key.X when ctrl:
+                Controller?.Cut();
+                break;
+            case Key.V when ctrl:
+                Controller?.StartPaste(Math.Max(_hover.X, 0), Math.Max(_hover.Y, 0));
+                break;
+            case Key.A when ctrl:
+                Controller?.SelectAll();
+                break;
+            case Key.Delete:
+                Controller?.Delete();
+                break;
+            case Key.Escape:
+                Controller?.Escape();
+                break;
+            case >= Key.A and <= Key.Z when e.KeyModifiers == KeyModifiers.None:
+                ToolKeyPressed?.Invoke(this, e.Key.ToString());
+                break;
+            default:
+                e.Handled = false;
+                break;
         }
     }
 

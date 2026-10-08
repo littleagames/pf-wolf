@@ -129,12 +129,26 @@ public class Wolf3dMapFileLoaderTests
         var map = loader.CacheMap(0);
 
         // Assert
-        Assert.That(map.Name.TrimEnd('\0'), Is.EqualTo("Test Map"));
+        Assert.That(map.Name, Is.EqualTo("Test Map"));
         Assert.That(map.MapData, Has.Length.EqualTo(MapManager.LEVELPLANES));
         Assert.That(map.MapData[0], Has.Length.EqualTo(MapManager.MAPAREA).And.All.EqualTo(1));
         Assert.That(map.MapData[1], Has.All.EqualTo(2));
         for (int plane = 2; plane < MapManager.LEVELPLANES; plane++)
             Assert.That(map.MapData[plane], Has.All.EqualTo(0), $"plane {plane}");
+    }
+
+    [Test]
+    public void CacheMap_Name_Ends_At_The_First_NUL()
+    {
+        // Arrange: the 16-character name buffer has leftovers after its NUL, as id's levels do
+        var (mapHead, gameMaps) = BuildMapPair(1, 2, "Wolf3 Map3\0t");
+        var loader = new Wolf3dMapFileLoader(mapHead, gameMaps);
+
+        // Act
+        var map = loader.CacheMap(0);
+
+        // Assert
+        Assert.That(map.Name, Is.EqualTo("Wolf3 Map3"));
     }
 
     [Test]

@@ -179,7 +179,8 @@ public class Wolf3dMapFileLoader
             {
                 Width = level.width,
                 Height = level.height,
-                Name = new string(level.name),
+                // A 16-character buffer: the name ends at its first NUL, with whatever was in memory after it
+                Name = new string(level.name).Split('\0')[0],
                 MapData = mapsegs
             };
         }

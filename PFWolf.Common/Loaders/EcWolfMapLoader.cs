@@ -97,7 +97,7 @@ public static class EcWolfMapLoader
             bw.Write((ushort)SavedNameLength);
 
             var name = new byte[SavedNameLength];
-            var mapName = (map.Name ?? "").TrimEnd('\0');
+            var mapName = (map.Name ?? "").Split('\0')[0];
             Encoding.ASCII.GetBytes(mapName, 0, Math.Min(mapName.Length, SavedNameLength), name, 0);
             bw.Write(name);
 

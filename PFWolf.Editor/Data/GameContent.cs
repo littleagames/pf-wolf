@@ -1,4 +1,5 @@
 using PFWolf.Assets;
+using PFWolf.Loaders;
 using PFWolf.Managers;
 
 namespace PFWolf.Editor.Data;
@@ -76,6 +77,27 @@ public sealed class GameContent
         => Assets.Exists<T>(name) ? Assets.Find<T>(name) : null;
 
     public MapAsset? FindMap(string name) => Find<MapAsset>(name);
+
+    /// <summary>
+    /// The mod folder a level comes from (its maps/NAME.wad), or null when it's the game's own or
+    /// a zipped mod's, which the editor doesn't write into
+    /// </summary>
+    public string? ModFolderOf(string mapName)
+    {
+        var origin = Assets.FindAssetOrigins(mapName)
+            .Where(asset => asset.Type == nameof(MapAsset))
+            .SelectMany(asset => asset.Origins)
+            .LastOrDefault(origin => origin.Action != AssetOrigin.LeftOut);
+        if (origin == null)
+            return null;
+
+        return Assets.LoadedMods
+            .LastOrDefault(mod => mod.Source.Name.Equals(origin.Source, StringComparison.OrdinalIgnoreCase) && Directory.Exists(mod.FullPath))
+            ?.FullPath;
+    }
+
+    /// <summary>Whether the mods hold a level of this name, or the game does</summary>
+    public bool HasMap(string name) => Assets.Exists<MapAsset>(name);
 
     /// <summary>
     /// The picture a thing's class shows when it spawns: the first frame of its Spawn state
