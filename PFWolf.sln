@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.3.11312.210
@@ -10,6 +10,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PFWolf.Tests", "Tests\PFWolf.Tests\PFWolf.Tests.csproj", "{E7F538D5-4DB4-4517-ABE2-BFC0E6D18AC8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PFWolf", "PFWolf\PFWolf.csproj", "{46947E1F-A7B5-ACBA-B582-C7C4775DDB96}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PFWolf.Common", "PFWolf.Common\PFWolf.Common.csproj", "{F1243BF0-E122-45FC-A915-E9A5228AC10E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,6 +59,18 @@ Global
 		{46947E1F-A7B5-ACBA-B582-C7C4775DDB96}.Release|x64.Build.0 = Release|x64
 		{46947E1F-A7B5-ACBA-B582-C7C4775DDB96}.Release|x86.ActiveCfg = Release|Any CPU
 		{46947E1F-A7B5-ACBA-B582-C7C4775DDB96}.Release|x86.Build.0 = Release|Any CPU
+		{F1243BF0-E122-45FC-A915-E9A5228AC10E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1243BF0-E122-45FC-A915-E9A5228AC10E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1243BF0-E122-45FC-A915-E9A5228AC10E}.Debug|x64.ActiveCfg = Debug|x64
+		{F1243BF0-E122-45FC-A915-E9A5228AC10E}.Debug|x64.Build.0 = Debug|x64
+		{F1243BF0-E122-45FC-A915-E9A5228AC10E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F1243BF0-E122-45FC-A915-E9A5228AC10E}.Debug|x86.Build.0 = Debug|Any CPU
+		{F1243BF0-E122-45FC-A915-E9A5228AC10E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1243BF0-E122-45FC-A915-E9A5228AC10E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1243BF0-E122-45FC-A915-E9A5228AC10E}.Release|x64.ActiveCfg = Release|x64
+		{F1243BF0-E122-45FC-A915-E9A5228AC10E}.Release|x64.Build.0 = Release|x64
+		{F1243BF0-E122-45FC-A915-E9A5228AC10E}.Release|x86.ActiveCfg = Release|Any CPU
+		{F1243BF0-E122-45FC-A915-E9A5228AC10E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

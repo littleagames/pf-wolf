@@ -49,42 +49,21 @@ internal enum SeenFlags : byte
     DiagonalFace = 32,
 }
 
-struct maptype
-{
-    public int[] planestart;
-    public UInt16[] planelength;
-    public UInt16 width;
-    public UInt16 height;
-    public char[] name;
-
-    public maptype()
-    {
-        planestart = new Int32[MapManager.MAPPLANES];
-        planelength = new UInt16[MapManager.MAPPLANES];
-        name = new char[16];
-    }
-}
-
 internal class MapManager
 {
-    internal const int MAPSHIFT = 6;
-    internal const int MAPSIZE = (1 << MAPSHIFT);
-    internal const int MAPAREA = MAPSIZE * MAPSIZE;
+    internal const int MAPSHIFT = MapConstants.MAPSHIFT;
+    internal const int MAPSIZE = MapConstants.MAPSIZE;
+    internal const int MAPAREA = MapConstants.MAPAREA;
 
     public const int NUMMAPS = 60;
-    public const int MAPPLANES = 3;         // planes in a GAMEMAPS level
+    public const int MAPPLANES = MapConstants.MAPPLANES;
 
-    /// <summary>
-    /// Planes every loaded level has: walls, objects, flats (ECWolf's floor and ceiling, see
-    /// <see cref="FLATPLANE"/>), wall heights, tags and light zones. A GAMEMAPS level has none
-    /// of the last three, so they're empty.
-    /// </summary>
-    public const int LEVELPLANES = 6;
+    /// <inheritdoc cref="MapConstants.LEVELPLANES"/>
+    public const int LEVELPLANES = MapConstants.LEVELPLANES;
 
     private readonly Lazy<AssetManager> assetManager;
 
     private UInt16[][] mapsegs = new ushort[LEVELPLANES][];
-    private maptype[] mapheaderseg = new maptype[NUMMAPS];
 
     private readonly LinkedList<Entities.Actors.Actor> _actors = new();
 
@@ -133,19 +112,19 @@ internal class MapManager
     internal byte[,] storymap = new byte[MAPSIZE, MAPSIZE];
     private int maxtilestories;
 
-    internal const int HEIGHTPLANE = 3;
+    internal const int HEIGHTPLANE = MapConstants.HEIGHTPLANE;
 
     /// <summary>
     /// Each tile's tag, 0 for none: a switch acts on the doors, walls and actors that share its
     /// tag. An actor takes its tag from the tile it spawns on (<see cref="Entities.Actors.Actor.Tag"/>).
     /// </summary>
-    internal const int TAGPLANE = 4;
+    internal const int TAGPLANE = MapConstants.TAGPLANE;
 
     /// <summary>
     /// Each tile's light zone, 0 for none (the map's light): the map's game-info zones say how
     /// each is lit (Program.WL_SHADE.cs).
     /// </summary>
-    internal const int ZONEPLANE = 5;
+    internal const int ZONEPLANE = MapConstants.ZONEPLANE;
 
     /// <summary>Goes up whenever the zone plane may have changed: a level loaded or restored, or a zone set.</summary>
     internal int ZonesVersion { get; private set; }
@@ -154,7 +133,7 @@ internal class MapManager
     /// ECWolf's floor and ceiling plane: the low byte of a tile's value picks its floor flat and
     /// the high byte its ceiling flat, through the mapdefs flats table (see <see cref="floorflat"/>).
     /// </summary>
-    internal const int FLATPLANE = 2;
+    internal const int FLATPLANE = MapConstants.FLATPLANE;
 
     /// <summary>
     /// Each tile's floor and ceiling texture: its flat plane indices through the mapdefs flats

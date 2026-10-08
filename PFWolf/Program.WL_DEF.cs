@@ -5,13 +5,6 @@ using static PFWolf.Program;
 
 namespace PFWolf;
 
-internal struct Point
-{
-    public int x, y;
-
-    public static Point Zero => new Point { x = 0, y = 0 };
-}
-
 internal class visobj_t
 {
     public byte tilex, tiley;
@@ -67,13 +60,6 @@ internal enum buttontypes
     NUMBUTTONS
 };
 
-internal enum controldirs
-{
-    di_north,
-    di_east,
-    di_south,
-    di_west,
-}
 internal enum activetypes
 {
     ac_no,
@@ -182,35 +168,6 @@ internal class gametype
         bw.Write(p.killx);
         bw.Write(p.killy);
         bw.Write(victoryflag);
-    }
-}
-
-internal struct compshape_t
-{
-    public ushort leftpix, rightpix;
-    public ushort[] dataofs;
-    // table data after dataofs[rightpix-leftpix+1]
-
-    public compshape_t()
-    {
-        dataofs = new ushort[64];
-    }
-
-    public compshape_t(byte[] data)
-    {
-        var offset = 0;
-        leftpix = BitConverter.ToUInt16(data);
-        offset += sizeof(ushort);
-
-        rightpix = BitConverter.ToUInt16(data.Skip(offset).ToArray());
-        offset += sizeof(ushort);
-
-        dataofs = new ushort[64];
-        for (int i = 0; i < 64; i++)
-        {
-            dataofs[i] = BitConverter.ToUInt16(data.Skip(offset).ToArray());
-            offset += sizeof(ushort);
-        }
     }
 }
 

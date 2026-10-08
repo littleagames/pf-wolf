@@ -33,6 +33,9 @@
 		<PackageReference Include="ppy.SDL2-CS" Version="1.0.82" />
 	</ItemGroup>
 	<ItemGroup>
+		<ProjectReference Include="..\PFWolf.Common\PFWolf.Common.csproj" />
+	</ItemGroup>
+	<ItemGroup>
 		<InternalsVisibleTo Include="PFWolf.Tests" />
 	</ItemGroup>
 	<ItemGroup>
