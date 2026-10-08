@@ -402,7 +402,9 @@ internal record MapOutletTranslation
 /// <see cref="To"/>, plays <see cref="Sound"/> and runs <see cref="Actions"/> through
 /// Entities.MapTriggerRegistry, which act on whatever shares the switch tile's tag. If wall
 /// <see cref="To"/> has a switch of its own (back to this one, say), it's a toggle; if not, the
-/// switch is thrown once and stays that way.
+/// switch is thrown once and stays that way. Other walls with the switch's tag that are this
+/// wall or wall <see cref="To"/> turn into <see cref="To"/> with it, without running their
+/// actions, so switches linked to the same things stay in step (Blake Stone's barrier switches).
 /// </summary>
 internal record MapSwitchTranslation
 {

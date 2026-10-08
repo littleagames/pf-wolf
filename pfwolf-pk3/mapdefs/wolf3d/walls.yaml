@@ -105,7 +105,9 @@ walls:
     # The elevator switch. A switch block makes a wall one the player can use, like a door:
     #   to:                  the wall id it turns into (the switch thrown); left out, it stays
     #                        as it is. If that wall has a switch of its own (back to this one,
-    #                        say), it's a toggle; if not, it's thrown once.
+    #                        say), it's a toggle; if not, it's thrown once. Other switches
+    #                        with the same tag that are this wall or its `to` wall flip with
+    #                        it (their actions don't run), so linked switches stay in step.
     #   sides:               the faces it can be used from, e.g. [east, west] (using it while
     #                        facing east presses its west face); left out, any
     #   sound:               played as it's thrown

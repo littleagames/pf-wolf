@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -35,10 +35,6 @@
 	<ItemGroup>
 		<InternalsVisibleTo Include="PFWolf.Tests" />
 	</ItemGroup>
-	<!-- OpenAL Soft 1.23.1 (OpenTK.Audio.OpenAL doesn't ship the native library) -->
-	<!--<ItemGroup>
-		<None Include="native\win-x64\OpenAL32.dll" Link="OpenAL32.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-	</ItemGroup>-->
 	<ItemGroup>
 		<Content Include="..\pfwolf-pk3\**\*">
 			<Link>pk3\%(RecursiveDir)%(FileName)%(Extension)</Link>

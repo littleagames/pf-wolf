@@ -1410,7 +1410,9 @@ internal partial class Program
 
     /// <summary>
     /// Throws a switch wall: refused without its lock item, else it turns into its `to` wall,
-    /// plays its sound and runs its actions on whatever shares its tile's tag.
+    /// plays its sound and runs its actions on whatever shares its tile's tag. The other switches
+    /// with its tag that are either way of the same switch flip with it (as Blake Stone's
+    /// barrier switches do), without running their actions.
     /// </summary>
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, controldirs dir)
     {
@@ -1420,17 +1422,28 @@ internal partial class Program
             return;
         }
 
+        var tag = _mapManager.GetTag(tilex, tiley);
         if (wallSwitch.To is > 0 and < BIT_WALL && _mapManager.GetMapData().Walls.ContainsKey(wallSwitch.To))
         {
             // flip the switch, keeping the door-side mark on a wall beside a door
             var tile = _mapManager.tilemap[tilex, tiley];
+            int from = tile & ~BIT_WALL;
             _mapManager.tilemap[tilex, tiley] = (byte)(wallSwitch.To | (tile & BIT_WALL));
+
+            // and the linked ones: set to the new way, not toggled, so any out of step come back
+            foreach (var (x, y) in _mapManager.TaggedTiles(tag))
+            {
+                var other = _mapManager.tilemap[x, y];
+                int id = other & ~BIT_WALL;
+                if ((other & BIT_DOOR) == 0 && (id == from || id == wallSwitch.To))
+                    _mapManager.tilemap[x, y] = (byte)(wallSwitch.To | (other & BIT_WALL));
+            }
         }
 
         if (!string.IsNullOrEmpty(wallSwitch.Sound))
             PlayPlayerSound(wallSwitch.Sound);
 
-        var activation = new Entities.TriggerActivation(tilex, tiley, dir, player, _mapManager.GetTag(tilex, tiley));
+        var activation = new Entities.TriggerActivation(tilex, tiley, dir, player, tag);
         foreach (var action in wallSwitch.Actions)
             Entities.MapTriggerRegistry.Invoke(action, activation);
     }
