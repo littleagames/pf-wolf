@@ -10,6 +10,18 @@ public enum UnsavedChoice
     Cancel,
 }
 
+/// <summary>
+/// What the import dialog offers: the file's levels, the level's planes to put them on, the
+/// level being edited (null for none) and a name for a new one, checked by <see cref="CheckName"/>
+/// </summary>
+public sealed record ImportSetup(
+    string FileName,
+    IReadOnlyList<PFWolf.Loaders.WdcMap> Maps,
+    IReadOnlyList<PlaneOption> Planes,
+    string? CurrentLevel,
+    string SuggestedName,
+    Func<string, string?> CheckName);
+
 /// <summary>The questions the editor asks, which the window answers with its dialogs</summary>
 public interface IEditorDialogs
 {
@@ -29,6 +41,12 @@ public interface IEditorDialogs
     Task<string?> AskText(string title, string prompt, string initial, Func<string, string?> check);
 
     Task<UnsavedChoice> AskUnsaved(string message);
+
+    /// <summary>A map file to import (.map or .wad), or null when none is picked</summary>
+    Task<string?> PickMapFile();
+
+    /// <summary>Asks which level of the file, which planes onto which, and where to; null when cancelled</summary>
+    Task<ImportRequest?> AskImport(ImportSetup setup);
 
     /// <summary>Shows the level properties dialog; true when it's closed with OK (and the properties build)</summary>
     Task<bool> EditProperties(MapPropertiesViewModel properties);

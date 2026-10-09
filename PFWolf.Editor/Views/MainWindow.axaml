@@ -14,6 +14,7 @@
     <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
     <KeyBinding Gesture="Ctrl+N" Command="{Binding NewMapCommand}" />
+    <KeyBinding Gesture="Ctrl+I" Command="{Binding ImportMapCommand}" />
     <KeyBinding Gesture="F4" Command="{Binding EditPropertiesCommand}" />
     <KeyBinding Gesture="F7" Command="{Binding CheckLevelCommand}" />
     <KeyBinding Gesture="F5" Command="{Binding PlayCommand}" />
@@ -62,6 +63,8 @@
         <Button Content="Save" Command="{Binding SaveCommand}" ToolTip.Tip="Ctrl+S: to maps/NAME.wad in the level's mod (a folder or a pk3)" />
         <Button Content="Save to…" Command="{Binding SaveAsCommand}" ToolTip.Tip="Ctrl+Shift+S: to another mod (a folder or a pk3)" />
         <Button Content="New level…" Command="{Binding NewMapCommand}" ToolTip.Tip="Ctrl+N" />
+        <Button Content="Import map…" Command="{Binding ImportMapCommand}"
+                ToolTip.Tip="Ctrl+I: planes from a WDC .map (or an ECWolf .wad) onto this level, or as a new level; pick which planes" />
         <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
         <Button Content="Level properties…" Command="{Binding EditPropertiesCommand}"
                 ToolTip.Tip="Name, music, next level, colors, height, sky, flats, shading and light zones (F4)" />

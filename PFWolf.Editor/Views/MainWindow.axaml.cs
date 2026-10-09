@@ -422,6 +422,168 @@ public partial class MainWindow : Window, IEditorDialogs
         return choice;
     }
 
+    public async Task<string?> PickMapFile()
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "A map to import",
+            SuggestedStartLocation = await FolderOrNull(ViewModel.GameFolder),
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Maps (WDC .map, ECWolf .wad)") { Patterns = ["*.map", "*.wad"] },
+                new FilePickerFileType("All files") { Patterns = ["*"] },
+            ],
+        });
+        return files is [var file, ..] ? file.TryGetLocalPath() : null;
+    }
+
+    public async Task<Editing.ImportRequest?> AskImport(ImportSetup setup)
+    {
+        var level = new ComboBox
+        {
+            ItemsSource = setup.Maps.Select((map, i) => $"{i + 1}. {Editing.MapImport.Label(map)}  ({map.Width}x{map.Height}, {map.Planes.Length} planes)").ToList(),
+            SelectedIndex = 0,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        var planeRows = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,260"), ColumnSpacing = 8, RowSpacing = 4 };
+        var all = new Button { Content = "All" };
+        var none = new Button { Content = "None" };
+        var intoCurrent = new RadioButton
+        {
+            Content = new TextBlock
+            {
+                Text = setup.CurrentLevel != null
+                    ? $"Onto {setup.CurrentLevel}, the level being edited (replaces those planes; Ctrl+Z undoes it)"
+                    : "Onto the level being edited (none is open)",
+                TextWrapping = TextWrapping.Wrap,
+            },
+            GroupName = "into",
+            IsEnabled = setup.CurrentLevel != null,
+            IsChecked = setup.CurrentLevel != null,
+        };
+        var intoNew = new RadioButton { Content = "As a new level named:", GroupName = "into", IsChecked = setup.CurrentLevel == null };
+        var name = new TextBox { Text = setup.SuggestedName, Width = 120, IsEnabled = setup.CurrentLevel == null };
+        var error = new TextBlock { Foreground = Brushes.OrangeRed, TextWrapping = TextWrapping.Wrap };
+        var ok = new Button { Content = "Import", IsDefault = true, Classes = { "accent" } };
+        var cancel = new Button { Content = "Cancel", IsCancel = true };
+        intoNew.IsCheckedChanged += (_, _) => name.IsEnabled = intoNew.IsChecked == true;
+
+        // One row per plane the file's level has: whether it's imported, and onto which plane
+        var rows = new List<(int From, CheckBox Use, ComboBox To)>();
+        void ShowPlanes()
+        {
+            planeRows.Children.Clear();
+            planeRows.RowDefinitions.Clear();
+            rows.Clear();
+            error.Text = "";
+            var map = setup.Maps[Math.Max(level.SelectedIndex, 0)];
+            if (Editing.MapImport.Check(map) is { } problem)
+            {
+                error.Text = problem;
+                ok.IsEnabled = false;
+                return;
+            }
+            ok.IsEnabled = true;
+
+            foreach (var plane in Editing.MapImport.ImportablePlanes(map))
+            {
+                int used = Editing.MapImport.TilesInUse(map, plane);
+                var use = new CheckBox
+                {
+                    Content = $"Plane {plane}",
+                    IsChecked = used > 0,
+                };
+                var count = new TextBlock
+                {
+                    Text = used == 0 ? "empty" : $"{used} tiles",
+                    Opacity = 0.7, VerticalAlignment = VerticalAlignment.Center,
+                };
+                var to = new ComboBox
+                {
+                    ItemsSource = setup.Planes,
+                    SelectedItem = setup.Planes.FirstOrDefault(option => option.Plane == plane),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    [ToolTip.TipProperty] = "The level's plane it goes onto",
+                };
+                use.IsCheckedChanged += (_, _) => to.IsEnabled = use.IsChecked == true;
+                to.IsEnabled = use.IsChecked == true;
+
+                int row = planeRows.RowDefinitions.Count;
+                planeRows.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+                Grid.SetRow(use, row);
+                Grid.SetRow(count, row);
+                Grid.SetColumn(count, 1);
+                Grid.SetRow(to, row);
+                Grid.SetColumn(to, 2);
+                planeRows.Children.AddRange([use, count, to]);
+                rows.Add((plane, use, to));
+            }
+
+            var extra = map.Planes.Length - rows.Count;
+            if (extra > 0)
+                error.Text = $"The file's last {extra} plane{(extra == 1 ? " is" : "s are")} past the {setup.Planes.Count} a level has, so {(extra == 1 ? "it's" : "they're")} left out.";
+        }
+        ShowPlanes();
+        level.SelectionChanged += (_, _) => ShowPlanes();
+        all.Click += (_, _) => rows.ForEach(row => row.Use.IsChecked = true);
+        none.Click += (_, _) => rows.ForEach(row => row.Use.IsChecked = false);
+
+        var dialog = MakeDialog($"Import {setup.FileName}", new StackPanel
+        {
+            Spacing = 8,
+            Children =
+            {
+                new TextBlock { Text = "Level in the file:" },
+                level,
+                new DockPanel
+                {
+                    Children =
+                    {
+                        DockRight(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { all, none } }),
+                        new TextBlock { Text = "Planes to import, and onto which:", VerticalAlignment = VerticalAlignment.Center },
+                    },
+                },
+                planeRows,
+                intoCurrent,
+                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { intoNew, name } },
+                new TextBlock
+                {
+                    Text = "A plane imported replaces the whole plane. A new level gets a walled square on the planes not imported.",
+                    TextWrapping = TextWrapping.Wrap, Opacity = 0.7,
+                },
+                error,
+                Buttons(ok, cancel),
+            },
+        });
+        dialog.Width = 560;
+        level.IsEnabled = setup.Maps.Count > 1;
+
+        Editing.ImportRequest? answer = null;
+        ok.Click += (_, _) =>
+        {
+            var picked = rows.Where(row => row.Use.IsChecked == true)
+                .Select(row => new Editing.PlaneImport(row.From, (row.To.SelectedItem as PlaneOption)?.Plane ?? row.From))
+                .ToList();
+            string? newName = intoNew.IsChecked == true ? name.Text?.Trim() ?? "" : null;
+            var problem = picked.Count == 0 ? "Pick at least one plane to import."
+                : picked.GroupBy(p => p.To).FirstOrDefault(g => g.Count() > 1) is { } clash ? $"Two planes go onto plane {clash.Key}; pick another for one of them."
+                : newName != null ? setup.CheckName(newName)
+                : null;
+            if (problem != null)
+            {
+                error.Text = problem;
+                return;
+            }
+
+            answer = new Editing.ImportRequest(setup.Maps[Math.Max(level.SelectedIndex, 0)], picked, newName);
+            dialog.Close();
+        };
+        cancel.Click += (_, _) => dialog.Close();
+
+        await dialog.ShowDialog(this);
+        return answer;
+    }
+
     private static Window MakeDialog(string title, Control content) => new()
     {
         Title = title,

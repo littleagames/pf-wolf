@@ -17,7 +17,7 @@ namespace PFWolf.Loaders;
 /// </summary>
 public static class EcWolfMapLoader
 {
-    private const string Magic = "WDC3.1";
+    private const string Magic = WdcMapFile.Magic;
     private const string PlanesLump = "PLANES";
     private const int SavedNameLength = 16;
 
@@ -33,50 +33,40 @@ public static class EcWolfMapLoader
         if (!mapLump.Name.Equals(PlanesLump, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException($"its map lump is {mapLump.Name}, not PLANES");
 
-        using var br = new BinaryReader(new MemoryStream(mapLump.Data));
+        WdcMap map;
         try
         {
-            if (Encoding.ASCII.GetString(br.ReadBytes(Magic.Length)) != Magic)
-                throw new InvalidDataException($"its PLANES lump doesn't start with {Magic}");
-
-            br.ReadInt32();     // number of maps: one per lump
-            int planes = br.ReadUInt16();
-            int nameLength = br.ReadUInt16();
-            var name = Encoding.ASCII.GetString(br.ReadBytes(nameLength));
-            var nul = name.IndexOf('\0');
-            if (nul >= 0)
-                name = name.Substring(0, nul);
-
-            int width = br.ReadUInt16(), height = br.ReadUInt16();
-            if (width != MapConstants.MAPSIZE || height != MapConstants.MAPSIZE)
-                throw new InvalidDataException($"it's {width}x{height}; PFWolf maps are {MapConstants.MAPSIZE}x{MapConstants.MAPSIZE}");
-
-            // The fourth plane (ECWolf's info plane) holds PFWolf's wall heights, the fifth its
-            // tags and the sixth its light zones; planes past them are left out, and missing ones
-            // are empty
-            var mapData = new ushort[MapConstants.LEVELPLANES][];
-            for (var plane = 0; plane < MapConstants.LEVELPLANES; plane++)
-            {
-                mapData[plane] = new ushort[MapConstants.MAPAREA];
-                if (plane >= planes)
-                    continue;
-
-                for (var i = 0; i < MapConstants.MAPAREA; i++)
-                    mapData[plane][i] = br.ReadUInt16();
-            }
-
-            return new MapAsset
-            {
-                Width = (ushort)width,
-                Height = (ushort)height,
-                Name = name,
-                MapData = mapData,
-            };
+            // One map per lump
+            map = WdcMapFile.Read(mapLump.Data)[0];
         }
-        catch (EndOfStreamException)
+        catch (InvalidDataException e)
         {
-            throw new InvalidDataException("its PLANES lump ends too soon");
+            throw new InvalidDataException($"its PLANES lump: {e.Message}");
         }
+        return ToMapAsset(map);
+    }
+
+    /// <summary>
+    /// A WDC map as a level: the fourth plane (ECWolf's info plane) holds PFWolf's wall heights,
+    /// the fifth its tags and the sixth its light zones; planes past them are left out, and
+    /// missing ones are empty
+    /// </summary>
+    public static MapAsset ToMapAsset(WdcMap map)
+    {
+        if (map.Width != MapConstants.MAPSIZE || map.Height != MapConstants.MAPSIZE)
+            throw new InvalidDataException($"it's {map.Width}x{map.Height}; PFWolf maps are {MapConstants.MAPSIZE}x{MapConstants.MAPSIZE}");
+
+        var mapData = new ushort[MapConstants.LEVELPLANES][];
+        for (var plane = 0; plane < MapConstants.LEVELPLANES; plane++)
+            mapData[plane] = plane < map.Planes.Length ? (ushort[])map.Planes[plane].Clone() : new ushort[MapConstants.MAPAREA];
+
+        return new MapAsset
+        {
+            Width = (ushort)map.Width,
+            Height = (ushort)map.Height,
+            Name = map.Name,
+            MapData = mapData,
+        };
     }
 
     /// <summary>A map as maps/NAME.wad, with <paramref name="markerName"/> as its marker lump</summary>

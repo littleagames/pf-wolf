@@ -127,7 +127,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private MapItem? _selectedMap;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(NewMapCommand))]
+    [NotifyCanExecuteChangedFor(nameof(NewMapCommand), nameof(ImportMapCommand))]
     private GameContent? _content;
 
     [ObservableProperty]
@@ -822,15 +822,71 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (Content is not { } content || Dialogs == null)
             return;
 
-        var name = await Dialogs.AskText("New level", "Level name (it's saved as maps/NAME.wad):", NextFreeMapName(),
-            text => MapFiles.CheckName(text) ?? (_documents.ContainsKey(text) || content.HasMap(text) ? $"There's already a level called {text}." : null));
+        var name = await Dialogs.AskText("New level", "Level name (it's saved as maps/NAME.wad):", NextFreeMapName(), CheckNewMapName);
         if (name == null)
             return;
 
         var wall = (ushort)(content.MapDefs.Walls.Keys.Where(id => id is > 0 and <= MapConstants.MAXWALLID).DefaultIfEmpty(1).Min());
         var map = MapFiles.NewMap(name.ToUpperInvariant(), wall, PaletteEntries.EraseValue(content.MapDefs, 0));
-        // Unsaved until it's written somewhere
-        var document = new MapDocument(name.ToUpperInvariant(), map, isNew: true);
+        AddNewDocument(name.ToUpperInvariant(), map);
+        Status = $"New level {map.Name}: saving it into a mod lists it in the mod's game-info too (warp there with the map command)";
+    }
+
+    /// <summary>
+    /// Planes from a WDC map file (.map) or an ECWolf binary map (.wad): picked ones onto the
+    /// level being edited (one undo step), or a new level made of them
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanMakeMap))]
+    private async Task ImportMapAsync()
+    {
+        if (Content is not { } content || Dialogs == null || await Dialogs.PickMapFile() is not { } path)
+            return;
+
+        IReadOnlyList<PFWolf.Loaders.WdcMap> maps;
+        try
+        {
+            maps = MapImport.ReadFile(path);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            Status = "Couldn't import the map.";
+            Problems.Add($"Importing {Path.GetFileName(path)}: {e.Message}");
+            return;
+        }
+
+        Controller.CancelGesture();
+        var setup = new ImportSetup(Path.GetFileName(path), maps, Planes, Document?.AssetName.ToUpperInvariant(),
+            NextFreeMapName(), CheckNewMapName);
+        if (await Dialogs.AskImport(setup) is not { } request || request.Planes.Count == 0)
+            return;
+
+        var planes = string.Join(", ", request.Planes.Select(p => p.From == p.To ? $"{p.From}" : $"{p.From}→{p.To}"));
+        var from = $"{Path.GetFileName(path)} ({MapImport.Label(request.Source)})";
+        if (request.NewLevelName is not { } name)
+        {
+            if (Document is not { } document)
+                return;
+            int changed = MapImport.Apply(document, request.Source, request.Planes,
+                $"Import of plane{(request.Planes.Count == 1 ? "" : "s")} {planes}");
+            Status = $"Imported plane{(request.Planes.Count == 1 ? "" : "s")} {planes} from {from}: {changed} tiles changed (Ctrl+Z undoes it)";
+            return;
+        }
+
+        name = name.ToUpperInvariant();
+        var title = string.IsNullOrWhiteSpace(request.Source.Name) ? name : request.Source.Name;
+        var wall = (ushort)(content.MapDefs.Walls.Keys.Where(id => id is > 0 and <= MapConstants.MAXWALLID).DefaultIfEmpty(1).Min());
+        var map = MapImport.NewLevel(title, request.Source, request.Planes, wall, PaletteEntries.EraseValue(content.MapDefs, 0));
+        AddNewDocument(name, map);
+        Status = $"New level {name} from {from}, plane{(request.Planes.Count == 1 ? "" : "s")} {planes}: saving it into a mod lists it in the mod's game-info too";
+    }
+
+    private string? CheckNewMapName(string text)
+        => MapFiles.CheckName(text) ?? (_documents.ContainsKey(text) || Content?.HasMap(text) == true ? $"There's already a level called {text}." : null);
+
+    /// <summary>A level made in the editor, unsaved until it's written somewhere, shown now</summary>
+    private void AddNewDocument(string name, PFWolf.Assets.MapAsset map)
+    {
+        var document = new MapDocument(name, map, isNew: true);
         document.SetProperties(new MapProperties { Name = map.Name });
         document.Changed += OnDocumentChanged;
         _documents[document.AssetName] = document;
@@ -838,7 +894,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var item = new MapItem(document.AssetName, map.Name) { IsDirty = true };
         Maps.Add(item);
         SelectedMap = item;
-        Status = $"New level {map.Name}: saving it into a mod lists it in the mod's game-info too (warp there with the map command)";
     }
 
     private string NextFreeMapName()
