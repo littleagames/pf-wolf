@@ -1059,13 +1059,13 @@ internal class MapManager
         (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]) = value;
     }
 
+    // A game with no mapdefs yet (a new stand-alone game's bare skeleton): its levels are open floor
+    private static readonly MapObjectTranslationAsset NoMapData = new();
+
     internal MapObjectTranslationAsset GetMapData()
     {
         //var mapSpecific = assetManager.Value.Find<MapObjectTranslationAsset>("map01/mapdefs");
-        var gameInfo = assetManager.Value.FindInGamePack<MapObjectTranslationAsset>("mapdefs");
-        if (gameInfo == null)
-            throw new Exception("Map data not found");
-        return gameInfo;
+        return assetManager.Value.FindInGamePackIfAny<MapObjectTranslationAsset>("mapdefs") ?? NoMapData;
     }
 
     internal void RemoveActor(Entities.Actors.Inventory builtActor)

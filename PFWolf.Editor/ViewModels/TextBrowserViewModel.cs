@@ -36,17 +36,17 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
     private string _original = "";
     // Set while the text shown is swapped for another's, so it isn't taken for an edit
     private bool _loadingSource;
-    // Texts saved, by name, and the mod folder each went to: the game loaded still has the old
+    // Texts saved, by name, and the mod each went to: the game loaded still has the old
     // ones until it's loaded again
     private readonly Dictionary<string, (string Text, string Folder)> _saved = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Asks for a mod folder to save in; null when none is picked</summary>
-    public Func<string, Task<string?>>? PickModFolder { get; set; }
+    /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
+    public Func<string, Task<string?>>? PickMod { get; set; }
 
     /// <summary>Asks for a line of text (title, prompt, initial, check); null when cancelled</summary>
     public Func<string, string, string, Func<string, string?>, Task<string?>>? AskText { get; set; }
 
-    /// <summary>A text was saved into this mod folder (the editor adds it to the mods)</summary>
+    /// <summary>A text was saved into this mod (the editor adds it to the mods)</summary>
     public event EventHandler<string>? Saved;
 
     public ObservableCollection<TextItem> Items { get; } = [];
@@ -324,7 +324,7 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
     // Saving
     //
 
-    /// <summary>Saves the text to its mod folder: the one it comes from or was saved to (asking for one the first time)</summary>
+    /// <summary>Saves the text to its mod (a folder or a pk3): the one it comes from or was saved to (asking for one the first time)</summary>
     [RelayCommand(CanExecute = nameof(HasSelection))]
     private async Task SaveAsync()
     {
@@ -332,7 +332,7 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
             await SaveText(item, SaveFolderOf(item.Name));
     }
 
-    /// <summary>Saves the text to a mod folder picked now</summary>
+    /// <summary>Saves the text to a mod picked now</summary>
     [RelayCommand(CanExecute = nameof(HasSelection))]
     private async Task SaveToAsync()
     {
@@ -340,14 +340,14 @@ public sealed partial class TextBrowserViewModel : ObservableObject, IDisposable
             await SaveText(item, null);
     }
 
-    // The mod folder a text was saved to, else the one it comes from (null for the game's own, or a zipped mod's)
+    // The mod a text was saved to, else the one it comes from (null for the game's own)
     private string? SaveFolderOf(string name)
-        => _saved.TryGetValue(name, out var saved) ? saved.Folder : _content?.ModFolderOf(name, nameof(TextAsset));
+        => _saved.TryGetValue(name, out var saved) ? saved.Folder : _content?.ModPathOf(name, nameof(TextAsset));
 
     /// <summary>Saves a text to {folder}/texts/NAME.txt, asking for a folder when there's none; false when it isn't saved</summary>
     public async Task<bool> SaveText(TextItem item, string? folder)
     {
-        folder ??= PickModFolder == null ? null : await PickModFolder($"A mod folder to save {item.Name} in (it goes in its texts folder)");
+        folder ??= PickMod == null ? null : await PickMod($"A mod to save {item.Name} in (it goes in its texts folder)");
         if (folder == null)
             return false;
 

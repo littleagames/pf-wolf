@@ -5,39 +5,40 @@ using PFWolf.Loaders;
 
 namespace PFWolf.Editor.Editing;
 
-/// <summary>Levels as files in a mod folder: maps/NAME.wad, as the game reads them</summary>
+/// <summary>Levels as files in a mod (a folder or a pk3): maps/NAME.wad, as the game reads them</summary>
 public static partial class MapFiles
 {
+    /// <summary>Where a level of this asset name goes in a mod</summary>
+    public static string EntryPath(string assetName) => "maps/" + assetName.ToUpperInvariant() + ".wad";
+
     /// <summary>Where a level of this asset name goes in a mod folder</summary>
-    public static string PathIn(string modFolder, string assetName)
-        => Path.Combine(modFolder, "maps", assetName.ToUpperInvariant() + ".wad");
+    public static string PathIn(string modFolder, string assetName) => Path.Combine(modFolder, "maps", assetName.ToUpperInvariant() + ".wad");
 
     /// <summary>
-    /// Writes the level to maps/NAME.wad in the mod folder, and its changed properties into the
-    /// mod's game-info.yaml; returns the level file's path
+    /// Writes the level to maps/NAME.wad in the mod (a folder or a pk3), and its changed
+    /// properties into the mod's game-info.yaml; returns where the level went
     /// </summary>
-    public static string Save(MapDocument document, string modFolder)
+    public static string Save(MapDocument document, string modPath)
     {
-        var path = PathIn(modFolder, document.AssetName);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-
-        // The properties first: they're what can fail on a mod's hand-written YAML, and then
-        // nothing's been written
+        // All worked out before anything's written: the properties are what can fail on a mod's
+        // hand-written YAML, and then nothing has been
+        var files = new List<(string, byte[])>
+        {
+            (EntryPath(document.AssetName), EcWolfMapLoader.Save(document.Map, document.AssetName.ToUpperInvariant())),
+        };
         var keys = document.PropertyKeysToWrite();
         var properties = document.Properties;
         if (keys.Count > 0)
         {
             if (properties.Name == null && keys.Contains("name"))
                 properties = properties with { Name = document.Map.Name };
-            GameInfoFile.Save(modFolder, document.AssetName.ToUpperInvariant(), properties, keys);
+            files.Add(GameInfoFile.Updated(modPath, document.AssetName.ToUpperInvariant(), properties, keys));
         }
 
-        // Written beside the old file first, so a failed write leaves the old one whole
-        var temp = path + ".tmp";
-        File.WriteAllBytes(temp, EcWolfMapLoader.Save(document.Map, document.AssetName.ToUpperInvariant()));
-        File.Move(temp, path, overwrite: true);
+        // In one go: a pk3 is rewritten once, with both
+        var path = ModFiles.Write(modPath, [.. files]);
 
-        document.SaveFolder = modFolder;
+        document.SaveFolder = modPath;
         if (properties != document.Properties)
             document.SetProperties(properties);
         document.MarkPropertiesSaved();

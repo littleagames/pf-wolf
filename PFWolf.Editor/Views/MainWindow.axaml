@@ -59,8 +59,8 @@
         <Button Content="Undo" Command="{Binding UndoCommand}" ToolTip.Tip="Ctrl+Z" />
         <Button Content="Redo" Command="{Binding RedoCommand}" ToolTip.Tip="Ctrl+Y" />
         <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
-        <Button Content="Save" Command="{Binding SaveCommand}" ToolTip.Tip="Ctrl+S: to maps/NAME.wad in the level's mod folder" />
-        <Button Content="Save to…" Command="{Binding SaveAsCommand}" ToolTip.Tip="Ctrl+Shift+S: to another mod folder" />
+        <Button Content="Save" Command="{Binding SaveCommand}" ToolTip.Tip="Ctrl+S: to maps/NAME.wad in the level's mod (a folder or a pk3)" />
+        <Button Content="Save to…" Command="{Binding SaveAsCommand}" ToolTip.Tip="Ctrl+Shift+S: to another mod (a folder or a pk3)" />
         <Button Content="New level…" Command="{Binding NewMapCommand}" ToolTip.Tip="Ctrl+N" />
         <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
         <Button Content="Level properties…" Command="{Binding EditPropertiesCommand}"
@@ -131,11 +131,13 @@
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
-      <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
+      <WrapPanel Grid.Row="4" Orientation="Horizontal" ItemSpacing="6" LineSpacing="4" Margin="0,4,0,0">
+        <Button Content="New mod…" Command="{Binding NewModCommand}"
+                ToolTip.Tip="A new pk3: a stand-alone game (needing no other game's files) or a mod of one of PFWolf's games" />
         <Button Content="Add pk3…" Click="AddModFile" />
         <Button Content="Add folder…" Click="AddModFolder" />
         <Button Content="Remove" Command="{Binding RemoveModCommand}" />
-      </StackPanel>
+      </WrapPanel>
     </Grid>
 
     <!-- The plane being edited, what's put down, and which layers show -->

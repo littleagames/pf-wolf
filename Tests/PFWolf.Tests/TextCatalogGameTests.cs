@@ -98,7 +98,7 @@ public class TextCatalogGameTests
             Assert.That(TextCatalog.Read(content, "ENDART1"), Is.EqualTo("^P\r\nChanged.\r\n^E\r\n"));
             Assert.That(entries["ENDART1"].Origins[^1], Does.StartWith("replaced by").And.Contain("texts/endart1.txt"));
             Assert.That(entries["MYSTORY"].Format, Is.EqualTo(TextFormat.Article));
-            Assert.That(content.ModFolderOf("MYSTORY", nameof(PFWolf.Assets.TextAsset)), Is.EqualTo(Path.GetFullPath(modFolder)));
+            Assert.That(content.ModPathOf("MYSTORY", nameof(PFWolf.Assets.TextAsset)), Is.EqualTo(Path.GetFullPath(modFolder)));
             Assert.That(TextCatalog.CheckNewName(content, "MYSTORY"), Is.Not.Null);
             Assert.That(TextCatalog.CheckNewName(content, "my story"), Is.Not.Null);
             Assert.That(TextCatalog.CheckNewName(content, "ENDART7"), Is.Null);

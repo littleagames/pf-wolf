@@ -50,10 +50,10 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
         _selectedPreviewKind = PreviewKinds[0];
     }
 
-    /// <summary>Asks for a mod folder to save in; null when none is picked</summary>
-    public Func<string, Task<string?>>? PickModFolder { get; set; }
+    /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
+    public Func<string, Task<string?>>? PickMod { get; set; }
 
-    /// <summary>A palette was saved into this mod folder (the editor adds it to the mods)</summary>
+    /// <summary>A palette was saved into this mod (the editor adds it to the mods)</summary>
     public event EventHandler<string>? Saved;
 
     /// <summary>The game palette's colors changed (an edit, undo, revert or import): the editor redraws in them</summary>
@@ -142,7 +142,7 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
         {
             foreach (var entry in PaletteCatalog.Build(content))
             {
-                var document = new PaletteDocument(entry.Name, entry.Colors, content.ModFolderOf(entry.Name, nameof(Palette)));
+                var document = new PaletteDocument(entry.Name, entry.Colors, content.ModPathOf(entry.Name, nameof(Palette)));
                 document.Changed += OnDocumentChanged;
                 Items.Add(new PaletteListItem(entry, document));
             }
@@ -454,7 +454,7 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
     // Saving
     //
 
-    /// <summary>Saves the palette to its mod folder (asking for one the first time)</summary>
+    /// <summary>Saves the palette to its mod (a folder or a pk3), asking for one the first time)</summary>
     [RelayCommand(CanExecute = nameof(HasSelection))]
     private async Task SaveAsync()
     {
@@ -462,7 +462,7 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
             await SaveDocument(document, document.SaveFolder);
     }
 
-    /// <summary>Saves the palette to a mod folder picked now</summary>
+    /// <summary>Saves the palette to a mod picked now</summary>
     [RelayCommand(CanExecute = nameof(HasSelection))]
     private async Task SaveToAsync()
     {
@@ -473,7 +473,7 @@ public sealed partial class PaletteBrowserViewModel : ObservableObject
     /// <summary>Saves a palette to {folder}/palettes/NAME.pal, asking for a folder when there's none; false when it isn't saved</summary>
     public async Task<bool> SaveDocument(PaletteDocument document, string? folder)
     {
-        folder ??= PickModFolder == null ? null : await PickModFolder($"A mod folder to save {document.Name} in (it goes in its palettes folder)");
+        folder ??= PickMod == null ? null : await PickMod($"A mod to save {document.Name} in (it goes in its palettes folder)");
         if (folder == null)
             return false;
 

@@ -10,8 +10,11 @@ using PFWolf.Exceptions;
 
 namespace PFWolf.Editor.ViewModels;
 
-/// <summary>A game the editor can open: a game pack id, or empty to pick by the data files</summary>
-public sealed record GameChoice(string Id, string Label)
+/// <summary>
+/// A game the editor can open: a game pack id, or empty to pick by the data files. FromMod: a
+/// game one of the mods adds (a stand-alone game).
+/// </summary>
+public sealed record GameChoice(string Id, string Label, bool FromMod = false)
 {
     public override string ToString() => Label;
 }
@@ -32,12 +35,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         _settings = settings;
         _gameFolder = settings.GameFolder;
-        _selectedGame = GameChoices.FirstOrDefault(choice => choice.Id.Equals(settings.Game, StringComparison.OrdinalIgnoreCase)) ?? GameChoices[0];
         _selectedTool = Tools[0];
         _selectedPlane = Planes[0];
         _show3D = settings.Show3D;
         foreach (var mod in settings.Mods)
             Mods.Add(mod);
+        RefreshModGames();
+        _selectedGame = GameChoices.FirstOrDefault(choice => choice.Id.Equals(settings.Game, StringComparison.OrdinalIgnoreCase)) ?? GameChoices[0];
 
         Controller.ValuePicked += (_, value) => SelectValue(value);
 
@@ -51,10 +55,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public ToolController Controller { get; } = new();
 
     /// <summary>
-    /// Wolf3D and Spear for now; Blake Stone's games come later. The first also picks a game a
-    /// mod adds (a standalone game, which needs no data files) when one of the mods does.
+    /// Wolf3D and Spear for now; Blake Stone's games come later. Then the games the mods add
+    /// (stand-alone games, which need no data files); the first choice picks one of those too.
     /// </summary>
-    public IReadOnlyList<GameChoice> GameChoices { get; } =
+    public ObservableCollection<GameChoice> GameChoices { get; } =
     [
         new("", "By the data files or mods"),
         new("wolf3d", "Wolfenstein 3D"),
@@ -63,6 +67,25 @@ public sealed partial class MainWindowViewModel : ObservableObject
         new("spear", "Spear of Destiny"),
         new("spear-demo", "Spear of Destiny (demo)"),
     ];
+
+    /// <summary>PFWolf's own games, which a new mod can be made for</summary>
+    public IReadOnlyList<GameChoice> BaseGameChoices => GameChoices.Where(choice => choice.Id.Length > 0 && !choice.FromMod).ToList();
+
+    /// <summary>Lists the games the mods add after PFWolf's own, keeping the one picked when it's still there</summary>
+    private void RefreshModGames()
+    {
+        var picked = SelectedGame?.Id;
+        foreach (var choice in GameChoices.Where(choice => choice.FromMod).ToList())
+            GameChoices.Remove(choice);
+
+        foreach (var mod in PFWolf.Loaders.ModSource.OpenGameMods(Mods))
+            foreach (var (id, game) in mod.Games!.GamePacks)
+                if (GameChoices.All(choice => !choice.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
+                    GameChoices.Add(new GameChoice(id, $"{game.Title ?? id} ({mod.DisplayName})", FromMod: true));
+
+        if (picked != null)
+            SelectedGame = GameChoices.FirstOrDefault(choice => choice.Id.Equals(picked, StringComparison.OrdinalIgnoreCase)) ?? GameChoices[0];
+    }
 
     public IReadOnlyList<ToolOption> Tools { get; } =
     [
@@ -225,7 +248,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             _textBrowser = new TextBrowserViewModel
             {
-                PickModFolder = title => Dialogs.PickModFolder(title),
+                PickMod = PickModToSaveIn,
                 AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
             };
             _textBrowser.Saved += (_, folder) => AddModFolder(folder);
@@ -251,7 +274,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             _paletteBrowser = new PaletteBrowserViewModel
             {
-                PickModFolder = title => Dialogs.PickModFolder(title),
+                PickMod = PickModToSaveIn,
             };
             _paletteBrowser.Saved += (_, folder) => AddModFolder(folder);
             _paletteBrowser.GamePaletteChanged += (_, colors) => QueueRecolor(colors);
@@ -315,12 +338,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private Avalonia.Media.Imaging.Bitmap? PaletteIcon(PaletteEntry entry)
         => entry.Texture != null ? Art?.Texture(entry.Texture) : entry.ThingClass != null ? Art?.ThingSprite(entry.ThingClass) : null;
 
-    // The game only sees what's saved in a mod folder with the mod loaded
+    // The game only sees what's saved in a mod (a folder or a pk3) with the mod loaded
     private bool AddModFolder(string folder)
     {
         if (Mods.Any(mod => Path.GetFullPath(mod).TrimEnd('\\', '/').Equals(Path.GetFullPath(folder).TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase)))
             return false;
         Mods.Add(folder);
+        RefreshModGames();
         SaveSettings();
         return true;
     }
@@ -493,7 +517,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return null;
 
         var info = Content.MapInfoOf(name);
-        document = new MapDocument(name, map, properties: info != null ? MapProperties.From(info) : null) { SaveFolder = Content.ModFolderOf(name) };
+        document = new MapDocument(name, map, properties: info != null ? MapProperties.From(info) : null) { SaveFolder = Content.ModPathOf(name) };
         document.Changed += OnDocumentChanged;
         _documents[name] = document;
         return document;
@@ -749,7 +773,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private bool HasDocument => Document != null;
 
-    /// <summary>Saves the level to its mod folder, asking for one the first time</summary>
+    /// <summary>Saves the level to its mod (a folder or a pk3), asking for one the first time</summary>
     [RelayCommand(CanExecute = nameof(HasDocument))]
     private async Task SaveAsync()
     {
@@ -757,7 +781,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             await SaveDocument(Document, Document.SaveFolder);
     }
 
-    /// <summary>Saves the level to a mod folder picked now</summary>
+    /// <summary>Saves the level to a mod picked now</summary>
     [RelayCommand(CanExecute = nameof(HasDocument))]
     private async Task SaveAsAsync()
     {
@@ -767,7 +791,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private async Task<bool> SaveDocument(MapDocument document, string? folder)
     {
-        folder ??= Dialogs == null ? null : await Dialogs.PickModFolder($"A mod folder to save {document.AssetName.ToUpperInvariant()} in (it goes in its maps folder)");
+        folder ??= await PickModToSaveIn($"A mod to save {document.AssetName.ToUpperInvariant()} in (it goes in its maps folder)");
         if (folder == null)
             return false;
 
@@ -778,7 +802,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Status = $"Saved {path}";
 
             if (AddModFolder(folder))
-                Status += "; its folder is in the mods now, so the next load reads it";
+                Status += "; it's in the mods now, so the next load reads it";
             return true;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or YamlDotNet.Core.YamlException)
@@ -814,7 +838,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var item = new MapItem(document.AssetName, map.Name) { IsDirty = true };
         Maps.Add(item);
         SelectedMap = item;
-        Status = $"New level {map.Name}: saving it into a mod folder lists it in the mod's game-info too (warp there with the map command)";
+        Status = $"New level {map.Name}: saving it into a mod lists it in the mod's game-info too (warp there with the map command)";
     }
 
     private string NextFreeMapName()
@@ -972,7 +996,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (Document is not { } document || Content is not { } content)
             return;
 
-        // The game reads the level from its mod folder, so it has to be saved there first
+        // The game reads the level from its mod, so it has to be saved there first
         if (document.IsDirty && !await SaveDocument(document, document.SaveFolder))
         {
             Status = "Not played: the level has to be saved for the game to see the changes";
@@ -1010,7 +1034,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public void AddMod(string path)
     {
         if (!Mods.Contains(path, StringComparer.OrdinalIgnoreCase))
+        {
             Mods.Add(path);
+            RefreshModGames();
+        }
     }
 
     private bool CanRemoveMod => SelectedMod != null;
@@ -1019,7 +1046,51 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private void RemoveMod()
     {
         if (SelectedMod != null)
+        {
             Mods.Remove(SelectedMod);
+            RefreshModGames();
+        }
+    }
+
+    /// <summary>
+    /// Asks for a mod to save something in: one of those loaded (a folder or a pk3), or another
+    /// picked now; null when none is
+    /// </summary>
+    private Task<string?> PickModToSaveIn(string title)
+        => Dialogs == null ? Task.FromResult<string?>(null) : Dialogs.PickModToSaveIn(title, Mods.ToList());
+
+    /// <summary>
+    /// Makes a new mod as a pk3: a stand-alone game (its bare skeleton) or a mod of one of
+    /// PFWolf's games. It's added to the mods, and the editor loads it as that game.
+    /// </summary>
+    [RelayCommand]
+    private async Task NewModAsync()
+    {
+        if (Dialogs == null || await Dialogs.AskNewMod(BaseGameChoices, Path.Combine(GameFolder, "mods")) is not { } request)
+            return;
+
+        try
+        {
+            NewMod.Create(request);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Status = "Couldn't make the mod.";
+            Problems.Add($"New mod {request.Path}: {e.Message}");
+            return;
+        }
+
+        AddMod(request.Path);
+        var game = request.IsStandalone ? request.GameId : request.BasePack!;
+        SelectedGame = GameChoices.FirstOrDefault(choice => choice.Id.Equals(game, StringComparison.OrdinalIgnoreCase)) ?? GameChoices[0];
+        SaveSettings();
+        Status = $"Made {request.Path}";
+        if (CanLoad)
+        {
+            await LoadAsync();
+            if (!IsLoading && Content != null)
+                Status = $"Made {request.Path}; saving puts what's changed in it (the last version kept as {Path.GetFileName(request.Path)}{ModFiles.BackupExtension})";
+        }
     }
 
     /// <summary>Shows what's on the tile under the pointer</summary>

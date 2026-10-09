@@ -92,7 +92,7 @@ public class PaletteCatalogGameTests
             Assert.That(PaletteCatalog.Hex(modded.Palette[0]), Is.EqualTo("#0C2238"));
             var entry = PaletteCatalog.Build(modded)[0];
             Assert.That(entry.Origins.Count(origin => origin.Action != PFWolf.Loaders.AssetOrigin.LeftOut), Is.GreaterThan(1));
-            Assert.That(modded.ModFolderOf("wolfpal", nameof(Palette)), Is.EqualTo(Path.GetFullPath(mod)).IgnoreCase.Or.EqualTo(mod).IgnoreCase);
+            Assert.That(modded.ModPathOf("wolfpal", nameof(Palette)), Is.EqualTo(Path.GetFullPath(mod)).IgnoreCase.Or.EqualTo(mod).IgnoreCase);
         }
         finally
         {

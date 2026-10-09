@@ -138,6 +138,12 @@ The editor opens it the same way: pick the PFWolf folder, add the mod and load w
 files or mods" (or start it as `PFWolf.Editor.exe <PFWolf folder> <mod folder>`). Play (F5)
 runs it with `--game standalone-demo`.
 
+To start a game of your own, the editor's **New mod…** makes a pk3: a stand-alone game (the bare
+skeleton: `gamepack-info.yaml`, `modinfo.yaml`, `game-info.yaml` and an empty MAP01; it plays
+once it has mapdefs, fonts and the rest, as this demo does) or a mod of one of PFWolf's games
+(just its `modinfo.yaml`). The editor saves levels, palettes and texts straight into a pk3,
+keeping the version before each save as `NAME.pk3.bak`.
+
 ### What makes it a game of its own
 
 - `gamepack-info.yaml` at the mod's root adds a game, built on `standalone`:

@@ -30,7 +30,7 @@ public sealed class PaletteDocument
     /// <summary>The colors as the game loaded them</summary>
     public PaletteColor[] Loaded { get; }
 
-    /// <summary>The mod folder it was loaded from or last saved to; null until one is picked</summary>
+    /// <summary>The mod (a folder or a pk3) it was loaded from or last saved to; null until one is picked</summary>
     public string? SaveFolder { get; set; }
 
     public bool IsDirty => !Same(Colors, _saved);

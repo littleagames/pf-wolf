@@ -72,21 +72,11 @@ public static class TextCatalog
     public static string? Read(GameContent content, string name) => content.Find<TextAsset>(name)?.ToText();
 
     /// <summary>
-    /// Writes a text to {modFolder}/texts/name.txt, where the game reads it in place of the text
-    /// of that name, or as a new one. Returns the file's path.
+    /// Writes a text to texts/name.txt in the mod (a folder or a pk3), where the game reads it in
+    /// place of the text of that name, or as a new one. Returns where it went.
     /// </summary>
-    public static string Save(string modFolder, string name, string text)
-    {
-        var folder = Path.Combine(modFolder, "texts");
-        Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, $"{name.ToLowerInvariant()}.txt");
-
-        // Written beside it first, so a failed write leaves the old one
-        var temp = path + ".tmp";
-        File.WriteAllBytes(temp, System.Text.Encoding.ASCII.GetBytes(text));
-        File.Move(temp, path, overwrite: true);
-        return path;
-    }
+    public static string Save(string modPath, string name, string text)
+        => Editing.ModFiles.Write(modPath, ($"texts/{name.ToLowerInvariant()}.txt", System.Text.Encoding.ASCII.GetBytes(text)));
 
     /// <summary>What's wrong with a name for a new text, or null when it will do</summary>
     public static string? CheckNewName(GameContent content, string name)

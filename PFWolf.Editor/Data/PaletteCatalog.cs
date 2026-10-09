@@ -287,19 +287,9 @@ public static class PaletteCatalog
     }
 
     /// <summary>
-    /// Writes a palette to {modFolder}/palettes/name.pal, where the game reads it in place of the
-    /// palette of that name. Returns the file's path.
+    /// Writes a palette to palettes/name.pal in the mod (a folder or a pk3), where the game reads
+    /// it in place of the palette of that name. Returns where it went.
     /// </summary>
-    public static string Save(string modFolder, string name, IReadOnlyList<PaletteColor> colors)
-    {
-        var folder = Path.Combine(modFolder, "palettes");
-        Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, $"{name.ToLowerInvariant()}.pal");
-
-        // Written beside it first, so a failed write leaves the old one
-        var temp = path + ".tmp";
-        File.WriteAllBytes(temp, ToRaw(colors));
-        File.Move(temp, path, overwrite: true);
-        return path;
-    }
+    public static string Save(string modPath, string name, IReadOnlyList<PaletteColor> colors)
+        => Editing.ModFiles.Write(modPath, ($"palettes/{name.ToLowerInvariant()}.pal", ToRaw(colors)));
 }

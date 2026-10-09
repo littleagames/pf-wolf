@@ -80,8 +80,8 @@ public sealed class GameContent
             WarningLog.Write(warning);
 
         var packId = game.PackId;
-        var mapDefs = assets.FindInGamePack<MapObjectTranslationAsset>("mapdefs")
-            ?? throw new InvalidDataException($"{packId} has no mapdefs");
+        // A new standalone game has none yet: its levels are plain numbers until it gives some
+        var mapDefs = assets.FindInGamePackIfAny<MapObjectTranslationAsset>("mapdefs") ?? new MapObjectTranslationAsset();
         var palette = assets.Find<Palette>(assets.GetGamePaletteName())?.Colors ?? [];
 
         // Files directly in actordefs/ belong to every pack; the pack's own come after, as in the game
@@ -106,13 +106,13 @@ public sealed class GameContent
     public MapAsset? FindMap(string name) => Find<MapAsset>(name);
 
     /// <summary>
-    /// The mod folder a level comes from (its maps/NAME.wad), or null when it's the game's own or
-    /// a zipped mod's, which the editor doesn't write into
+    /// The mod a level comes from (its maps/NAME.wad), a folder or a pk3, which saving it writes
+    /// back into; null when it's the game's own
     /// </summary>
-    public string? ModFolderOf(string mapName) => ModFolderOf(mapName, nameof(MapAsset));
+    public string? ModPathOf(string mapName) => ModPathOf(mapName, nameof(MapAsset));
 
-    /// <summary>The mod folder an asset of this type comes from, or null when it's the game's own or a zipped mod's</summary>
-    public string? ModFolderOf(string assetName, string assetType)
+    /// <summary>The mod (a folder or a pk3) an asset of this type comes from, or null when it's the game's own</summary>
+    public string? ModPathOf(string assetName, string assetType)
     {
         var origin = Assets.FindAssetOrigins(assetName)
             .Where(asset => asset.Type == assetType)
@@ -122,7 +122,7 @@ public sealed class GameContent
             return null;
 
         return Assets.LoadedMods
-            .LastOrDefault(mod => mod.Source.Name.Equals(origin.Source, StringComparison.OrdinalIgnoreCase) && Directory.Exists(mod.FullPath))
+            .LastOrDefault(mod => mod.Source.Name.Equals(origin.Source, StringComparison.OrdinalIgnoreCase))
             ?.FullPath;
     }
 

@@ -127,7 +127,7 @@ public class StandaloneGameTests
         Assert.That(content.PackId, Is.EqualTo("standalone-demo"));
         Assert.That(content.Title, Is.EqualTo("Standalone Demo"));
         Assert.That(content.Maps.Select(map => map.Name), Is.EqualTo(new[] { "MAP01" }));
-        Assert.That(content.ModFolderOf("MAP01"), Is.EqualTo(ModPath));
+        Assert.That(content.ModPathOf("MAP01"), Is.EqualTo(ModPath));
         Assert.That(content.MapDefs.Walls.Keys, Is.EquivalentTo(new[] { 1, 2, 3, 4 }));
         Assert.That(content.ThingSpriteName("Lamp"), Is.EqualTo("LAMPA0"));
         Assert.That(content.Find<TextureAsset>("SDSTON1"), Is.Not.Null);
@@ -162,6 +162,47 @@ public class StandaloneGameTests
         Assert.That(output, Has.None.Contains("aren't in the game folder"));
     }
 
+    [Test]
+    public void A_New_Bare_Game_Loads_In_The_Editor_And_Saves_Back_Into_Its_Pk3()
+    {
+        // Arrange
+        var request = new PFWolf.Editor.Editing.NewModRequest(Path.Combine(_workFolder, "mods", "bare-game.pk3"), "Bare Game", "bare-game", BasePack: null);
+        PFWolf.Editor.Editing.NewMod.Create(request);
+
+        // Act: load it, change a tile, save, and load again
+        var content = GameContent.Load(_workFolder, "", [request.Path]);
+        var document = new PFWolf.Editor.Editing.MapDocument("MAP01", content.FindMap("MAP01")!.DeepCopy()) { SaveFolder = content.ModPathOf("MAP01") };
+        EditorMaps.Set(document, 0, 10, 10, 7);
+        PFWolf.Editor.Editing.MapFiles.Save(document, document.SaveFolder!);
+        var reloaded = GameContent.Load(_workFolder, "", [request.Path]);
+
+        // Assert
+        Assert.That(content.PackId, Is.EqualTo("bare-game"));
+        Assert.That(content.MapDefs.Walls, Is.Empty, "no mapdefs yet");
+        Assert.That(document.SaveFolder, Is.EqualTo(request.Path));
+        Assert.That(reloaded.FindMap("MAP01")!.MapData[0][10 * 64 + 10], Is.EqualTo(7));
+        Assert.That(File.Exists(request.Path + PFWolf.Editor.Editing.ModFiles.BackupExtension), Is.True);
+    }
+
+    [Test]
+    public void A_New_Bare_Game_Starts_And_Says_What_Its_Level_Lacks()
+    {
+        // Arrange: a few tics walking about its empty level, which can't be played until the mod
+        // gives mapdefs floors (the skeleton is bare: nothing's taken from another game)
+        var request = new PFWolf.Editor.Editing.NewModRequest(Path.Combine(_workFolder, "bare-game.pk3"), "Bare Game", "bare-game", BasePack: null);
+        PFWolf.Editor.Editing.NewMod.Create(request);
+        var demos = Directory.CreateDirectory(Path.Combine(_workFolder, "demos")).FullName;
+        File.WriteAllBytes(Path.Combine(demos, "DEMO0.dmo"), ScriptedDemo((0, -35, 40), (Use, 0, 2), (0, 0, 20)));
+
+        // Act
+        var (exitCode, output) = RunGame("demotest 0; quit", demos, request.Path);
+
+        // Assert
+        Assert.That(exitCode, Is.Zero, string.Join(Environment.NewLine, output.TakeLast(30)));
+        Assert.That(output, Has.Some.Contains("mapdefs floors need an area-start"), string.Join(Environment.NewLine, output.TakeLast(30)));
+        Assert.That(output, Has.None.Contains("aren't in the game folder"));
+    }
+
     private const byte Attack = 1, Use = 8;
 
     /// <summary>id's demo format: MAP01, the length, then each tic's buttons and forward/back move</summary>
@@ -178,8 +219,9 @@ public class StandaloneGameTests
     }
 
     /// <summary>The game built beside the tests, run headless with the mod in the work folder</summary>
-    private (int ExitCode, List<string> Output) RunGame(string commands, string demos)
+    private (int ExitCode, List<string> Output) RunGame(string commands, string demos, string? mod = null)
     {
+        mod ??= ModPath;
         var exe = Path.Combine(TestContext.CurrentContext.TestDirectory, "PFWolf.exe");
         Assert.That(File.Exists(exe), Is.True, $"{exe} wasn't built beside the tests");
 
@@ -192,7 +234,7 @@ public class StandaloneGameTests
         };
         foreach (var arg in new[]
         {
-            "--nowait", "--file", ModPath,
+            "--nowait", "--file", mod,
             "--configdir", Path.Combine(_workFolder, "config"),
             "--savedir", Path.Combine(_workFolder, "saves"),
             "--demodir", demos,

@@ -81,7 +81,7 @@ public sealed class MapDocument
     public int Height => Map.Height;
     public int Planes => Map.MapData.Length;
 
-    /// <summary>The mod folder the level was last saved to (or came from), or null for none yet</summary>
+    /// <summary>The mod (a folder or a pk3) the level was last saved to (or came from), or null for none yet</summary>
     public string? SaveFolder { get; set; }
 
     public bool IsDirty => _savedAt != _undo.Count || PropertiesDirty || !InGameInfo;

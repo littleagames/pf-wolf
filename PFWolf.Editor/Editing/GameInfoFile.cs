@@ -22,16 +22,14 @@ public static class GameInfoFile
         "sky", "default-floor", "default-ceiling", "shading", "zones",
     ];
 
-    /// <summary>Writes <paramref name="keys"/> of the level's properties into its block of the mod's game-info.yaml</summary>
-    public static void Save(string modFolder, string mapName, MapProperties properties, IReadOnlyCollection<string> keys)
+    /// <summary>
+    /// The mod's game-info.yaml (in a folder or a pk3) with <paramref name="keys"/> of the
+    /// level's properties written into its block, ready to write back
+    /// </summary>
+    public static (string EntryPath, byte[] Data) Updated(string modPath, string mapName, MapProperties properties, IReadOnlyCollection<string> keys)
     {
-        var path = Path.Combine(modFolder, FileName);
-        var text = File.Exists(path) ? File.ReadAllText(path) : null;
-        var updated = Apply(text, mapName, properties, keys);
-
-        var temp = path + ".tmp";
-        File.WriteAllText(temp, updated, new UTF8Encoding(false));
-        File.Move(temp, path, overwrite: true);
+        var updated = Apply(ModFiles.ReadText(modPath, FileName), mapName, properties, keys);
+        return (FileName, new UTF8Encoding(false).GetBytes(updated));
     }
 
     /// <summary>

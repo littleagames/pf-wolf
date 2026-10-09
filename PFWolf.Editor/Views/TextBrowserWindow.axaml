@@ -100,8 +100,8 @@
           <TextBlock Grid.Column="1" Text="Changed, not saved" Opacity="0.7" FontSize="12"
                      VerticalAlignment="Center" IsVisible="{Binding IsChanged}" />
           <Button Grid.Column="2" Content="Save" Command="{Binding SaveCommand}" Classes="accent"
-                  ToolTip.Tip="Ctrl+S: to texts/NAME.txt in the text's mod folder, where the game reads it in place of its own" />
-          <Button Grid.Column="3" Content="Save to…" Command="{Binding SaveToCommand}" ToolTip.Tip="To another mod folder's texts folder" />
+                  ToolTip.Tip="Ctrl+S: to texts/NAME.txt in the text's mod (a folder or a pk3), where the game reads it in place of its own" />
+          <Button Grid.Column="3" Content="Save to…" Command="{Binding SaveToCommand}" ToolTip.Tip="To another mod's texts folder" />
           <Button Grid.Column="4" Content="Revert" Command="{Binding RevertCommand}"
                   ToolTip.Tip="Back to the text as the game has it (or as it was last saved)" />
         </Grid>

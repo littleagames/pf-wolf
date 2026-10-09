@@ -118,8 +118,8 @@
 
         <WrapPanel ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
           <Button Content="Save" Command="{Binding SaveCommand}" Classes="accent"
-                  ToolTip.Tip="Ctrl+S: to palettes/NAME.pal in the palette's mod folder, where the game reads it in place of its own" />
-          <Button Content="Save to…" Command="{Binding SaveToCommand}" ToolTip.Tip="To another mod folder's palettes folder" />
+                  ToolTip.Tip="Ctrl+S: to palettes/NAME.pal in the palette's mod (a folder or a pk3), where the game reads it in place of its own" />
+          <Button Content="Save to…" Command="{Binding SaveToCommand}" ToolTip.Tip="To another mod's palettes folder" />
           <Button Content="Import…" Click="Import"
                   ToolTip.Tip="Replaces the colors with a palette file's: raw 768 bytes (0-255, or 6-bit 0-63), JASC-PAL or GIMP .gpl" />
           <Button Content="Export ▾" ToolTip.Tip="Saves the colors to a file to use elsewhere">
