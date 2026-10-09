@@ -15,13 +15,4 @@ public record LanguageAsset : Asset
     }
 
     public Dictionary<string, string> Strings { get; set; } = [];
-
-    public override void Merge(Asset other)
-    {
-        if (other is LanguageAsset otherAsset)
-        {
-            foreach (var item in otherAsset.Strings)
-                this.Strings[item.Key] = item.Value;
-        }
-    }
 }

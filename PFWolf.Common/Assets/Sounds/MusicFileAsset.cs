@@ -14,9 +14,4 @@ public record MusicFileAsset : Asset
     }
 
     public AudioFileDecoder OpenDecoder() => AudioFileDecoder.Open(RawData);
-
-    public override void Merge(Asset other)
-    {
-        // For now, do nothing
-    }
 }

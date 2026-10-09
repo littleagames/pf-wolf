@@ -19,9 +19,4 @@ public record MapAsset : Asset
 
     /// <summary>A copy whose planes can be changed without touching this one</summary>
     public MapAsset DeepCopy() => this with { MapData = MapData.Select(plane => (ushort[])plane.Clone()).ToArray() };
-
-    public override void Merge(Asset other)
-    {
-        // For now, do nothing
-    }
 }

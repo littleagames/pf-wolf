@@ -217,11 +217,6 @@ public record GameInfoAsset : Asset
     /// Wolf3D window when unset
     /// </summary>
     public MenuMessageInfo? MenuMessage { get; init; }
-
-    public override void Merge(Asset other)
-    {
-        // TODO: Overwrite or merge the data
-    }
 }
 
 /// <summary>

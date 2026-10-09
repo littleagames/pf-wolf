@@ -1,4 +1,5 @@
-# Blake Stone: Aliens of Gold
+# Blake Stone: Aliens of Gold. Planet Strike (gamepacks/planetstrike) starts from this file and
+# changes only what differs (see gamepacks/gamepack-info.yaml for how files combine).
 default-map:
   # A map's own colors (its map-info code, mapdefs/blake/mapinfo.yaml) win over these
   ceiling-color: "#383838"

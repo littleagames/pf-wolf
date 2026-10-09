@@ -22,20 +22,6 @@ public record PresenterAsset : Asset
 
     /// <summary>The window briefings are shown in</summary>
     public PresenterBriefing? Briefing { get; set; }
-
-    public override void Merge(Asset other)
-    {
-        if (other is PresenterAsset otherAsset)
-        {
-            Fonts = otherAsset.Fonts ?? Fonts;
-            foreach (var (number, shape) in otherAsset.Shapes)
-                Shapes[number] = shape;
-            foreach (var (number, sound) in otherAsset.Sounds)
-                Sounds[number] = sound;
-            MessageBox = otherAsset.MessageBox ?? MessageBox;
-            Briefing = otherAsset.Briefing ?? Briefing;
-        }
-    }
 }
 
 /// <summary>

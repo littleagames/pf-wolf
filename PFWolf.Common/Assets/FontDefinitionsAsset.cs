@@ -17,15 +17,6 @@ public record FontDefinitionsAsset : Asset
     }
 
     public Dictionary<string, FontDefinition> Fonts { get; } = new(StringComparer.OrdinalIgnoreCase);
-
-    public override void Merge(Asset other)
-    {
-        if (other is FontDefinitionsAsset otherAsset)
-        {
-            foreach (var (name, font) in otherAsset.Fonts)
-                Fonts[name] = font;
-        }
-    }
 }
 
 /// <summary>A font's shadow in fonts.yaml; `shadow: {}` is one pixel right and down, in black</summary>

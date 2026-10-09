@@ -16,13 +16,4 @@ public record ColorThemeAsset : Asset
     }
 
     public Dictionary<string, Color> Colors { get; set; } = [];
-
-    public override void Merge(Asset other)
-    {
-        if (other is ColorThemeAsset otherAsset)
-        {
-            foreach (var item in otherAsset.Colors)
-                this.Colors[item.Key] = item.Value;
-        }
-    }
 }

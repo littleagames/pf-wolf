@@ -140,11 +140,6 @@ public record Wolf3dDigitizedAudio : Asset
         return wavebuffer;
     }
 
-    public override void Merge(Asset other)
-    {
-        // For now, do nothing
-    }
-
     private static short GetSample(float csample, byte[] samples, int size)
     {
         int cursample = (int)csample;

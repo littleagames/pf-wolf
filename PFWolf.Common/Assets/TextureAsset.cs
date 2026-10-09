@@ -47,10 +47,5 @@ namespace PFWolf.Assets
             }
             return story;
         }
-
-        public override void Merge(Asset other)
-        {
-            // For now, do nothing
-        }
     }
 }

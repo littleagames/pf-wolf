@@ -14,9 +14,4 @@ public record SoundFileAsset : Asset
         RawData = data;
         (Samples, SampleRate) = AudioFileDecoder.DecodeMono16(data);
     }
-
-    public override void Merge(Asset other)
-    {
-        // For now, do nothing
-    }
 }

@@ -17,15 +17,6 @@ public record HudMessageStylesAsset : Asset
     }
 
     public Dictionary<string, HudMessageStyleDefinition> Styles { get; } = new(StringComparer.OrdinalIgnoreCase);
-
-    public override void Merge(Asset other)
-    {
-        if (other is HudMessageStylesAsset otherAsset)
-        {
-            foreach (var (name, style) in otherAsset.Styles)
-                Styles[name] = style;
-        }
-    }
 }
 
 /// <summary>

@@ -37,24 +37,6 @@ public record IntermissionAsset : Asset
     /// font and color
     /// </summary>
     public DeathCamScreen? DeathCam { get; set; }
-
-    public override void Merge(Asset other)
-    {
-        if (other is IntermissionAsset otherAsset)
-        {
-            Victory = otherAsset.Victory ?? Victory;
-            DeathCam = otherAsset.DeathCam ?? DeathCam;
-            Music = otherAsset.Music ?? Music;
-            Font = otherAsset.Font ?? Font;
-            Color = otherAsset.Color ?? Color;
-            Bj = otherAsset.Bj ?? Bj;
-            Labels = otherAsset.Labels ?? Labels;
-            foreach (var (name, value) in otherAsset.Values)
-                Values[name] = value;
-            Sounds = Sounds.MergedWith(otherAsset.Sounds);
-            Scoring = Scoring.MergedWith(otherAsset.Scoring);
-        }
-    }
 }
 
 /// <summary>The level-end bonus. Any left out is 0.</summary>
@@ -65,12 +47,6 @@ public record IntermissionScoring
 
     /// <summary>Points for each ratio (kill, secret, treasure) at 100%</summary>
     public int? PerfectBonus { get; set; }
-
-    public IntermissionScoring MergedWith(IntermissionScoring other) => new()
-    {
-        TimeBonus = other.TimeBonus ?? TimeBonus,
-        PerfectBonus = other.PerfectBonus ?? PerfectBonus,
-    };
 }
 
 /// <summary>BJ on the level-end screen: drawn at (x, y), turning to the next pic every breath-tics</summary>
@@ -157,13 +133,4 @@ public record IntermissionSounds
 
     /// <summary>Milliseconds of silence, the tally cut off, before <see cref="Perfect"/> or <see cref="None"/></summary>
     public int? PauseMs { get; set; }
-
-    public IntermissionSounds MergedWith(IntermissionSounds other) => new()
-    {
-        Tally = other.Tally ?? Tally,
-        TallyDone = other.TallyDone ?? TallyDone,
-        Perfect = other.Perfect ?? Perfect,
-        None = other.None ?? None,
-        PauseMs = other.PauseMs ?? PauseMs,
-    };
 }

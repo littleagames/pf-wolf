@@ -10,9 +10,4 @@ public record DemoAsset : Asset
     {
         RawData = data;
     }
-
-    public override void Merge(Asset other)
-    {
-        // For now, do nothing
-    }
 }

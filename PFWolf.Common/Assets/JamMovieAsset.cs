@@ -31,10 +31,6 @@ public record JamMovieAsset : Asset
                 break;
         }
     }
-
-    public override void Merge(Asset other)
-    {
-    }
 }
 
 /// <summary>
@@ -44,15 +40,6 @@ public record JamMovieAsset : Asset
 public record MoviesAsset : Asset
 {
     public Dictionary<string, MovieInfo> Movies { get; set; } = [];
-
-    public override void Merge(Asset other)
-    {
-        if (other is MoviesAsset movies)
-        {
-            foreach (var (name, movie) in movies.Movies)
-                Movies[name] = movie;
-        }
-    }
 }
 
 public record MovieInfo

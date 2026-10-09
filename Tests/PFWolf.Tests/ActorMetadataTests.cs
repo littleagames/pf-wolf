@@ -168,19 +168,4 @@ public class ActorMetadataTests
         // Act / Assert
         Assert.That(metadata.Actors["New"].Radius, Is.EqualTo(10));
     }
-
-    [Test]
-    public void Merging_Translation_Assets_Honours_Extend()
-    {
-        // Arrange
-        var base_ = new ActorTranslationAsset(ActorDefs.Parse(Yaml));
-        var overlay = new ActorTranslationAsset(ActorDefs.Parse("Guard:\n  extend: true\n  radius: 40\n"));
-
-        // Act
-        base_.Merge(overlay);
-
-        // Assert
-        Assert.That(base_.Actors["Guard"].Radius, Is.EqualTo(40));
-        Assert.That(base_.Actors["Guard"].Parent, Is.EqualTo("Monster"));
-    }
 }

@@ -19,11 +19,6 @@ public record MenuAsset : Asset
     public bool? SpacerRows { get; init; }
     public MenuPoint? SelectionPic { get; init; }
     public MenuPoint? CheckboxOffset { get; init; }
-
-    public override void Merge(Asset other)
-    {
-        // For now, do nothing
-    }
 }
 
 /// <summary>

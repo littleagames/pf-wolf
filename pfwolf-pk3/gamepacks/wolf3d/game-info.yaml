@@ -1,3 +1,7 @@
+# Wolfenstein 3D, and where each game-info setting is described. The packs built on it (spear,
+# wolf3d-shareware, wolf3d-apogee, spear-demo through spear) start from this file, and theirs
+# change only what differs; a mod's game-info.yaml works the same way. See
+# gamepacks/gamepack-info.yaml for how files combine, and for !remove and !replace.
 default-map:
   ceiling-color: "#383838"
   floor-color: "#717171"

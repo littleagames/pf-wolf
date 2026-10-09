@@ -22,9 +22,4 @@ public record TextAsset : Asset
     {
         return new string(System.Text.Encoding.ASCII.GetString(RawData).ToCharArray());
     }
-
-    public override void Merge(Asset other)
-    {
-        // For now, do nothing
-    }
 }

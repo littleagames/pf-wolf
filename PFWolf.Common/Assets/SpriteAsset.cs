@@ -17,9 +17,4 @@ public record SpriteAsset : Asset
     public short Height { get; init; }
     public Point Offset { get; init; } = Point.Zero;
     public byte[] OpacityMask { get; init; } = [];
-
-    public override void Merge(Asset other)
-    {
-        // For now, do nothing
-    }
 }

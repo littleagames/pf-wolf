@@ -29,70 +29,6 @@ public record MapObjectTranslationAsset : Asset
     /// to one of them tags the whole group touching it (Blake Stone's barriers)
     /// </summary>
     public List<int> LinkedThings { get; internal set; } = [];
-
-    public override void Merge(Asset other)
-    {
-        if (other is MapObjectTranslationAsset otherAsset)
-        {
-            foreach (var item in otherAsset.Things)
-            {
-                this.Things[item.Key] = item.Value;
-            }
-
-            foreach (var item in otherAsset.Walls)
-            {
-                this.Walls[item.Key] = item.Value;
-            }
-
-            foreach (var item in otherAsset.Doors)
-            {
-                this.Doors[item.Key] = item.Value;
-            }
-
-            foreach (var item in otherAsset.PlayerStarts)
-            {
-                this.PlayerStarts[item.Key] = item.Value;
-            }
-
-            foreach (var item in otherAsset.Triggers)
-            {
-                this.Triggers[item.Key] = item.Value;
-            }
-
-            foreach (var item in otherAsset.Diagonals)
-            {
-                this.Diagonals[item.Key] = item.Value;
-            }
-
-            foreach (var item in otherAsset.Flats.Floor)
-            {
-                this.Flats.Floor[item.Key] = item.Value;
-            }
-
-            foreach (var item in otherAsset.Flats.Ceiling)
-            {
-                this.Flats.Ceiling[item.Key] = item.Value;
-            }
-
-            foreach (var item in otherAsset.MapInfo)
-            {
-                this.MapInfo[item.Key] = item.Value;
-            }
-
-            foreach (var item in otherAsset.DoorLocks)
-            {
-                this.DoorLocks[item.Key] = item.Value;
-            }
-
-            foreach (var item in otherAsset.LinkedThings)
-            {
-                if (!this.LinkedThings.Contains(item))
-                    this.LinkedThings.Add(item);
-            }
-
-            this.Floors = this.Floors.MergedWith(otherAsset.Floors);
-        }
-    }
 }
 
 /// <summary>
@@ -184,17 +120,6 @@ public record MapFloorsTranslation
     /// floor takes on a neighbouring area's code, as under an ambush.
     /// </summary>
     public Dictionary<int, MapActorCodeTranslation>? ActorCodes { get; set; }
-
-    public MapFloorsTranslation MergedWith(MapFloorsTranslation other) => new()
-    {
-        AreaStart = other.AreaStart ?? AreaStart,
-        AreaCount = other.AreaCount ?? AreaCount,
-        Ambush = other.Ambush ?? Ambush,
-        SecretExit = other.SecretExit ?? SecretExit,
-        HiddenAreaStart = other.HiddenAreaStart ?? HiddenAreaStart,
-        Triggers = other.Triggers ?? Triggers,
-        ActorCodes = other.ActorCodes ?? ActorCodes,
-    };
 }
 
 /// <summary>What a floors actor-code does to the enemy standing on it. See <see cref="MapFloorsTranslation.ActorCodes"/>.</summary>

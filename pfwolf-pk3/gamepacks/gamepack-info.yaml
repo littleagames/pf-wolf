@@ -1,3 +1,33 @@
+# The game packs, by release. A release with a `base-pack` starts from that pack's actordefs,
+# mapdefs, menudefs and gamepacks files (and its base pack's, and so on), loaded under its own
+# pack's names; its own files are then laid over them, and a mod's files over all of that.
+#
+# How the YAML files combine, file over file (a pack's over its base pack's, or several files of
+# one asset, such as actordefs/wolf3d/guards.yaml and bosses.yaml):
+#   game-info            key by key, all the way down: a pack gives only what it changes
+#   actordefs            class by class: a class replaces one of the same name whole, unless it
+#                        says `extend: true`, when it changes that one instead: its properties
+#                        and states replace those of the same name, its flags are added to the
+#                        class's (written ~FLAG, one is taken away), and its parent and radius,
+#                        when given, replace the class's
+#   mapdefs              entry by entry in each table (things:, walls:, doors:, ...)
+#   sound-seq, intermission, presenter, elevator
+#                        entry by entry in each section (sound-info:, values:, ...)
+#   language, colors, fonts, hud-messages, statusbar, movies, raw-data-map
+#                        entry by entry (a string, a color, a font, a status bar part, ...)
+#   alias, sounds/sound-seq.yaml
+#                        the later file replaces the earlier whole
+#   menudefs             a pack's own menu (menudefs/{pack}/NAME.yaml) is used in place of the
+#                        shared one; menus don't merge
+# A mod's files (it can't carry menudefs) merge key by key all the way down, whichever they are,
+# a class without extend too. Lists are always replaced whole. At any level a merge reaches, a
+# value can be tagged:
+#   key: !remove         takes the key out (a class, a property, a state, a map, a setting...)
+#   key: !replace        followed by its own value: replaces what's there whole rather than
+#                        merging into it (spear's game-info gives its own maps: this way)
+# Where files merge, a key that's left out keeps what's there; to put a setting back to its
+# default, !remove it.
+
 wolf3d:
   title: Wolfenstein 3D
   game-info: wolf3d-game-info
@@ -91,7 +121,7 @@ wolf3d-shareware:
   title: "Wolfenstein 3D Shareware"
   game-palette: wolfpal
   # Episode 1 of Wolf3D: starts from wolf3d's actordefs, mapdefs, menudefs and gamepacks files;
-  # wolf3d-shareware's own files override them. Its data has the v1.4 layout, with what
+  # wolf3d-shareware's own files are laid over them (see the top). Its data has the v1.4 layout, with what
   # shareware leaves out as empty chunks, so wolf3d's raw-data-map fits it.
   base-pack: wolf3d
   file-pack:
@@ -134,7 +164,7 @@ wolf3d-shareware:
 spear:
   title: "Spear of Destiny"
   game-palette: spearpal
-  # Starts from wolf3d's actordefs, mapdefs and gamepacks files; spear's own files override them
+  # Starts from wolf3d's files; spear's own are laid over them (see the top)
   base-pack: wolf3d
   starting-scene: "spear:SignonScene"
   game-pack-asset-reference: spear-map
@@ -177,7 +207,7 @@ spear-demo:
   title: "Spear of Destiny Demo"
   game-palette: spearpal
   # Spear's first two floors: starts from spear's files (and so from wolf3d's, which spear is
-  # built on); spear-demo's own files override them
+  # built on); spear-demo's own are laid over them (see the top)
   base-pack: spear
   file-pack:
     description: Spear of Destiny Demo
@@ -270,7 +300,7 @@ blake-ps:
   title: "Blake Stone: Planet Strike"
   game-palette: blake
   # Starts from blake's actordefs, mapdefs, menudefs and gamepacks files; planetstrike's own
-  # files override them
+  # are laid over them (see the top)
   base-pack: blake
   file-pack:
     description: Blake Stone - Planet Strike

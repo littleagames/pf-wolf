@@ -17,22 +17,6 @@ public record ActorTranslationAsset : Asset
 
     public Dictionary<string, ActorData> Actors { get; set; } = [];
 
-    public override void Merge(Asset other)
-    {
-        if (other is ActorTranslationAsset otherAsset)
-        {
-            Merge(otherAsset);
-        }
-    }
-
-    public void Merge(ActorTranslationAsset other)
-    {
-        foreach (var item in other.Actors)
-        {
-            this.Actors[item.Key] = ActorData.Combine(this.Actors.GetValueOrDefault(item.Key), item.Value);
-        }
-    }
-
     /// <summary>
     /// Lays an actordefs file over the document of the classes loaded before it, as the loader
     /// combines them. A class replaces one of the same name whole (or, from a mod, merges into it
@@ -134,11 +118,17 @@ public class ActorData
     /// <summary>
     /// `extend: true`: rather than replacing a class of the same name loaded before it (a base
     /// pack's, say), it changes that one: its properties and states replace those of the same
-    /// name, its flags are added, and its parent and radius, when given, replace those.
+    /// name, its flags are added, and its parent and radius, when given, replace those. The
+    /// loader applies it to the YAML (ActorTranslationAsset.MergeYaml), where !remove, !replace
+    /// and ~FLAG can also take parts away.
     /// </summary>
     public bool Extend { get; internal set; }
 
-    /// <summary>What a class loaded over <paramref name="existing"/> makes of it (see <see cref="Extend"/>).</summary>
+    /// <summary>
+    /// What a class loaded over <paramref name="existing"/> makes of it (see <see cref="Extend"/>),
+    /// where classes from different assets meet: a pack's actordefs over the shared ones
+    /// (ActorMetadata.AddActors). Within one asset the loader merges them as YAML (MergeYaml).
+    /// </summary>
     public static ActorData Combine(ActorData? existing, ActorData incoming)
     {
         if (!incoming.Extend || existing == null)

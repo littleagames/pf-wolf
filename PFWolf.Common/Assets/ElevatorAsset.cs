@@ -51,25 +51,6 @@ public record ElevatorAsset : Asset
     public string Style { get; set; } = "panel";
 
     public TeleporterLayout? Teleporter { get; set; }
-
-    public override void Merge(Asset other)
-    {
-        if (other is ElevatorAsset o)
-        {
-            Style = o.Style;
-            Teleporter = o.Teleporter ?? Teleporter;
-            UnlockItem = o.UnlockItem ?? UnlockItem;
-            Buttons = o.Buttons;
-            Frame = o.Frame ?? Frame;
-            Panel = o.Panel ?? Panel;
-            ButtonLayout = o.ButtonLayout;
-            Messages = o.Messages;
-            Prompt = o.Prompt ?? Prompt;
-            Stats = o.Stats ?? Stats;
-            ButtonSound = o.ButtonSound ?? ButtonSound;
-            MessageTics = o.MessageTics;
-        }
-    }
 }
 
 /// <summary>Two bevelled boxes, the inner one pressed in: an outer one from (x, y) and an inner one inset by inset-x, inset-y</summary>

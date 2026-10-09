@@ -150,11 +150,6 @@ public record GamePackInfoAsset : Asset
         => GamePacks.TryGetValue(releaseId, out var gamePack)
             ? gamePack
             : throw new KeyNotFoundException($"No '{releaseId}' entry in gamepacks/gamepack-info.yaml");
-
-    public override void Merge(Asset other)
-    {
-        // TODO: Overwrite or merge the data
-    }
 }
 
 public record FileReference

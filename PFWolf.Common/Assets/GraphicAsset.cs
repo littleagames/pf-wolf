@@ -17,9 +17,4 @@ public record GraphicAsset : Asset
     /// where it doesn't; null when every pixel shows. Only fonts use it so far.
     /// </summary>
     public byte[]? OpacityMask { get; init; }
-
-    public override void Merge(Asset other)
-    {
-        // For now, do nothing
-    }
 }

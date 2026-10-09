@@ -21,15 +21,6 @@ public record StatusBarAsset : Asset
 
     /// <summary>A part of the layout, or null if the status bar doesn't have it (it isn't drawn).</summary>
     public StatusBarElement? Get(string name) => Elements.GetValueOrDefault(name);
-
-    public override void Merge(Asset other)
-    {
-        if (other is StatusBarAsset otherAsset)
-        {
-            foreach (var (name, element) in otherAsset.Elements)
-                Elements[name] = element;
-        }
-    }
 }
 
 /// <summary>

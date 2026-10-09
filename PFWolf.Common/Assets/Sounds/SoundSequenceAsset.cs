@@ -5,13 +5,6 @@ namespace PFWolf.Assets.Sounds;
 public record SoundSequenceAsset : Asset
 {
     public Dictionary<string, SoundProfile> SoundInfo { get; set; } = [];
-    // A later file's entries replace these, name by name
-    public override void Merge(Asset other)
-    {
-        if (other is SoundSequenceAsset sequence)
-            foreach (var (name, profile) in sequence.SoundInfo)
-                SoundInfo[name] = profile;
-    }
 }
 
 public record SoundProfile

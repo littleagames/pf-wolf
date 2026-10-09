@@ -24,11 +24,6 @@ public record AdLibSound : Asset
         return RenderAdLib(instrument, block, dataReader.ReadBytes((int)length));
     }
 
-    public override void Merge(Asset other)
-    {
-        // For now, do nothing
-    }
-
     private static byte[] RenderAdLib(byte[] instrument, byte block, byte[] tones)
     {
         const int modifier = 0;
