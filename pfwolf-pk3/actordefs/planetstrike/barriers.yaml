@@ -5,11 +5,11 @@
 # (A_ToggleActive); cycling ones, and switchable ones no switch is linked to (bstone's, not in its
 # barrier table), go up and down by themselves, 90 tics up, 90 down. A rising one
 # waits while the player is within 1.5 tiles, hurting them within half a tile (A_HoldNearPlayer).
-# The off variants start on InactiveIdle, which A_ToggleActive counts as off.
+# The off variants start on InactiveIdle, which A_ToggleActive counts as off. The arc and post
+# barriers extend blake's (`extend: true`): only the states given here differ.
 
 ArcBarrier:
-  radius: 32
-  flags: [SOLID]
+  extend: true
   states:
     Spawn:
       - sprite: ELCK
@@ -17,12 +17,6 @@ ArcBarrier:
         tics-per-frame: 4
         modifiers: [bright]
         think: A_ShockNearby(4, 1.375, 16, "bs/elecarcdamage")
-    Active:
-      - sprite: ELCK
-        frames: [A]
-        tics-per-frame: 0
-        action: A_BlockTile
-        next-state: Spawn
     Inactive:
       - sprite: ELCK
         frames: [D]
@@ -45,20 +39,13 @@ ArcBarrierOff:
         next-state: InactiveIdle
 
 PostBarrier:
-  radius: 32
-  flags: [SOLID]
+  extend: true
   states:
     Spawn:
       - sprite: ELCP
         frames: [A, B, C]
         tics-per-frame: 4
         modifiers: [bright]
-    Active:
-      - sprite: ELCP
-        frames: [A]
-        tics-per-frame: 0
-        action: A_BlockTile
-        next-state: Spawn
     Inactive:
       - sprite: ELCP
         frames: [D]

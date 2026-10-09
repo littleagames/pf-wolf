@@ -1,15 +1,15 @@
 # Planet Strike's status bar where it differs from Aliens of Gold's (gamepacks/blake/statusbar.yaml,
-# which this pack starts from; a part here replaces blake's whole, and ~ takes one away), as bstone
-# draws it (3d_agent.cpp, 3d_draw.cpp). Its bottom bar has no heart monitor: health is in big
-# digits, the three cards are pictures, the weapon sits right with its corner under it, and there's
-# a radar with its own power gauge.
+# which this pack starts from; a part here replaces blake's whole, and !remove, or ~, takes one
+# away), as bstone draws it (3d_agent.cpp, 3d_draw.cpp). Its bottom bar has no heart monitor:
+# health is in big digits, the three cards are pictures, the weapon sits right with its corner
+# under it, and there's a radar with its own power gauge.
 #
 # Parts Aliens of Gold's bar doesn't have:
 #   weapon-corner:  a picture under the weapon's, for the weapon in hand (weapon-pics, by class)
 #   radar-gauge:    a gauge like ammo-gauge, of an item's count out of its max (item)
 #   radar:          the map around the player (Program.Radar.cs), tiles across at 1x from x, y;
 #                   zoom-pics (1x, 2x, 4x) at zoom-x, zoom-y; zooming in uses up item; colors
-heart-monitor: ~
+heart-monitor: !remove
 
 health:
   x: 128

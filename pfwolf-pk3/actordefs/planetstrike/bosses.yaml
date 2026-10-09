@@ -190,7 +190,7 @@ Goldfire:
     "health.easy": 100
     "health.normal": 150
     "health.hard": 250
-    "dropitem": ""
+    "dropitem": !remove
     "monster.floordeath": 19
   states:
     FloorDeath:

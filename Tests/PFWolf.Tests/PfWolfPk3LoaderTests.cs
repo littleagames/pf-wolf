@@ -136,6 +136,26 @@ public class PfWolfPk3LoaderTests
     }
 
     [Test]
+    public void A_Packs_Status_Bar_Takes_A_Base_Packs_Part_Away_With_Remove_Or_Tilde()
+    {
+        // Arrange
+        var pk3 = new MemoryAssetSource("pfwolf.pk3", new()
+        {
+            ["gamepacks/gamepack-info.yaml"] = GamePackInfo,
+            ["gamepacks/alpha/statusbar.yaml"] = "score: { x: 1 }\nlives: { x: 2 }\nammo: { x: 3 }\n",
+            ["gamepacks/beta/statusbar.yaml"] = "score: !remove\nlives: ~\n",
+        });
+
+        // Act
+        var statusBar = new PfWolfPk3Loader([pk3], "beta", "beta").Load<StatusBarAsset>("beta/statusbar");
+
+        // Assert
+        Assert.That(statusBar.Get("score"), Is.Null);
+        Assert.That(statusBar.Get("lives"), Is.Null);
+        Assert.That(statusBar.Get("ammo")!.X, Is.EqualTo(3));
+    }
+
+    [Test]
     public void Extend_Changes_A_Base_Packs_Class_And_Can_Take_Parts_Away()
     {
         // Arrange

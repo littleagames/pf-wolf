@@ -53,7 +53,7 @@ FloatingBomb:
 
 BlakeBoss:
   extend: true
-  properties: { "dropitem": "" }
+  properties: { "dropitem": !remove }
 SpiderMutant:
   extend: true
   properties: { "health.baby": 60, "health.easy": 100, "health.normal": 150, "health.hard": 200 }
