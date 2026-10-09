@@ -260,29 +260,28 @@ public partial class MainWindow : Window, IEditorDialogs
         var based = new RadioButton { Content = "A mod of:", GroupName = "kind" };
         var game = new ComboBox { ItemsSource = games, SelectedIndex = 0, MinWidth = 220, IsEnabled = false };
         var name = new TextBox { Text = "My Game" };
-        var id = new TextBox { Text = Editing.NewMod.IdFrom("My Game") };
+        var id = new TextBox();
         var path = new TextBox();
         var browse = new Button { Content = "Browse…" };
         var error = new TextBlock { Foreground = Brushes.OrangeRed, TextWrapping = TextWrapping.Wrap };
         var ok = new Button { Content = "Make it", IsDefault = true, Classes = { "accent" } };
         var cancel = new Button { Content = "Cancel", IsCancel = true };
 
-        // The id and the file follow the name until they're typed over
-        bool idTyped = false, pathTyped = false, settingText = false;
+        // The id follows the name ("Deep  Blue Sea" -> deep-blue-sea), and the pk3's file name the
+        // id, each until it's typed over: one that still reads as it was last filled in follows.
+        // (Avalonia raises TextChanged after the change, so it's the text that says, not a flag.)
+        string followedId = "", followedPath = "";
         string DefaultPath() => Path.Combine(modsFolder, (id.Text is { Length: > 0 } text ? text : "my-mod") + ".pk3");
         void Follow()
         {
-            settingText = true;
-            if (!idTyped)
-                id.Text = Editing.NewMod.IdFrom(name.Text ?? "");
-            if (!pathTyped)
-                path.Text = DefaultPath();
-            settingText = false;
+            if ((id.Text ?? "") == followedId)
+                id.Text = followedId = Editing.NewMod.IdFrom(name.Text ?? "");
+            if ((path.Text ?? "") == followedPath)
+                path.Text = followedPath = DefaultPath();
         }
         Follow();
         name.TextChanged += (_, _) => Follow();
-        id.TextChanged += (_, _) => { if (!settingText) { idTyped = true; Follow(); } };
-        path.TextChanged += (_, _) => { if (!settingText) pathTyped = true; };
+        id.TextChanged += (_, _) => Follow();
         standalone.IsCheckedChanged += (_, _) =>
         {
             id.IsEnabled = standalone.IsChecked == true;

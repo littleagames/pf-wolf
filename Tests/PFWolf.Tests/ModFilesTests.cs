@@ -114,6 +114,9 @@ public class ModFilesTests
 
     [TestCase("My Game!", "my-game")]
     [TestCase("  Deep  Blue 2 ", "deep-blue-2")]
+    [TestCase("Deep   Blue Sea", "deep-blue-sea")]
+    [TestCase("Bob's Game", "bobs-game")]
+    [TestCase("Already-a - name", "already-a-name")]
     public void IdFrom_Makes_A_Game_Id_From_A_Name(string name, string id)
         => Assert.That(NewMod.IdFrom(name), Is.EqualTo(id));
 

@@ -26,9 +26,15 @@ public static partial class NewMod
     /// <summary>The level a stand-alone game starts with</summary>
     public const string FirstMap = "MAP01";
 
-    /// <summary>A stand-alone game's id made from its name: "My Game" -> "my-game"</summary>
+    /// <summary>
+    /// A stand-alone game's id (and its pk3's file name) made from its name: lower case, one dash
+    /// for each run of spaces, anything else left out ("Bob's  Deep Sea!" -> "bobs-deep-sea")
+    /// </summary>
     public static string IdFrom(string name)
-        => NotIdCharacters().Replace(name.Trim().ToLowerInvariant(), "-").Trim('-');
+    {
+        var kept = NotIdCharacters().Replace(name.ToLowerInvariant(), "");
+        return Gaps().Replace(kept, "-").Trim('-');
+    }
 
     /// <summary>What's wrong with a stand-alone game's id, or null when it will do</summary>
     public static string? CheckGameId(string id)
@@ -155,8 +161,12 @@ public static partial class NewMod
 
     private static string Quote(string text) => "\"" + text.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
 
-    [GeneratedRegex("[^a-z0-9]+")]
+    // What an id can't hold, apart from the spaces and dashes that become its dashes
+    [GeneratedRegex(@"[^a-z0-9\s-]+")]
     private static partial Regex NotIdCharacters();
+
+    [GeneratedRegex(@"[\s-]+")]
+    private static partial Regex Gaps();
 
     [GeneratedRegex("^[a-z0-9]+(-[a-z0-9]+)*$")]
     private static partial Regex GameId();
