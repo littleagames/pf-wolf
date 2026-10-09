@@ -17,8 +17,9 @@ public sealed record NewModRequest(string Path, string Name, string GameId, stri
 /// <summary>
 /// A new mod as a pk3. A stand-alone game is the bare skeleton of one (see examples/mods/
 /// standalone-demo for one that plays): its gamepack-info.yaml (built on `standalone`), a
-/// modinfo.yaml, a game-info.yaml with one episode of one level, and that level, an empty
-/// MAP01. A mod of one of PFWolf's games is just its modinfo.yaml, naming that game.
+/// modinfo.yaml, a game-info.yaml with one episode of one level, that level, an empty MAP01, and
+/// its own copy of Wolf3D's palette (palettes/wolfpal.pal). A mod of one of PFWolf's games is just
+/// its modinfo.yaml, naming that game.
 /// </summary>
 public static partial class NewMod
 {
@@ -40,11 +41,38 @@ public static partial class NewMod
         return null;
     }
 
-    /// <summary>Makes the mod's pk3 (which mustn't be there already), and its folder if need be</summary>
-    public static void Create(NewModRequest request)
+    /// <summary>The palette a stand-alone game starts with: Wolf3D's, which standalone's game-palette names</summary>
+    public const string DefaultPalette = "wolfpal";
+
+    /// <summary>The palette's file in a pk3 (pfwolf.pk3's, and the new game's copy)</summary>
+    public static string PaletteEntryPath => $"palettes/{DefaultPalette}.pal";
+
+    /// <summary>
+    /// The default palette's file from the game folder's pfwolf.pk3, for a new stand-alone game to
+    /// carry its own copy of; null when it can't be read
+    /// </summary>
+    public static byte[]? ReadDefaultPalette(string gameFolder)
+    {
+        try
+        {
+            var source = new PFWolf.Loaders.Pk3AssetSource(System.IO.Path.Combine(gameFolder, AssetManager.BasePk3FileName));
+            return source.EntryPaths.Contains(PaletteEntryPath) ? source.Open(PaletteEntryPath).ToArray() : null;
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Makes the mod's pk3 (which mustn't be there already), and its folder if need be. A
+    /// stand-alone game gets <paramref name="palette"/> (a palette file's bytes) as its own copy
+    /// of the default palette, when there is one.
+    /// </summary>
+    public static void Create(NewModRequest request, byte[]? palette = null)
     {
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(request.Path))!);
-        ModFiles.CreateArchive(request.Path, Files(request));
+        ModFiles.CreateArchive(request.Path, Files(request, palette));
     }
 
     /// <summary>What's wrong with where the new pk3 is to go, or null when it will do</summary>
@@ -61,8 +89,11 @@ public static partial class NewMod
         return null;
     }
 
-    /// <summary>The files the new mod starts with, by their path in it</summary>
-    public static List<(string EntryPath, byte[] Data)> Files(NewModRequest request)
+    /// <summary>
+    /// The files the new mod starts with, by their path in it; a stand-alone game's include
+    /// <paramref name="palette"/> as palettes/wolfpal.pal when it's given
+    /// </summary>
+    public static List<(string EntryPath, byte[] Data)> Files(NewModRequest request, byte[]? palette = null)
     {
         var name = Quote(request.Name);
         var files = new List<(string, string)>();
@@ -88,7 +119,10 @@ public static partial class NewMod
             "# rest all come from this mod. --game names it by its id.\n" +
             $"{request.GameId}:\n" +
             $"  title: {name}\n" +
-            "  base-pack: standalone\n"));
+            "  base-pack: standalone\n" +
+            "  # The palette its pictures are matched to and drawn in: Wolf3D's, whose copy is in this\n" +
+            "  # mod's palettes/ (the editor's palette browser edits it there)\n" +
+            $"  game-palette: {DefaultPalette}\n"));
         files.Add(("game-info.yaml",
             "# The whole game-info: a stand-alone game has none to start from. pfwolf.pk3's\n" +
             "# gamepacks/wolf3d/game-info.yaml describes every setting; examples/mods/standalone-demo is\n" +
@@ -114,6 +148,8 @@ public static partial class NewMod
         // An empty level: what its numbers mean comes once the mod has mapdefs
         result.Add((MapFiles.EntryPath(FirstMap),
             PFWolf.Loaders.EcWolfMapLoader.Save(MapFiles.NewMap("Level 1", wall: 1, floor: 0), FirstMap)));
+        if (palette != null)
+            result.Add((PaletteEntryPath, palette));
         return result;
     }
 

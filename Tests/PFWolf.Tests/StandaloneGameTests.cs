@@ -167,7 +167,7 @@ public class StandaloneGameTests
     {
         // Arrange
         var request = new PFWolf.Editor.Editing.NewModRequest(Path.Combine(_workFolder, "mods", "bare-game.pk3"), "Bare Game", "bare-game", BasePack: null);
-        PFWolf.Editor.Editing.NewMod.Create(request);
+        PFWolf.Editor.Editing.NewMod.Create(request, PFWolf.Editor.Editing.NewMod.ReadDefaultPalette(_workFolder));
 
         // Act: load it, change a tile, save, and load again
         var content = GameContent.Load(_workFolder, "", [request.Path]);
@@ -179,6 +179,8 @@ public class StandaloneGameTests
         // Assert
         Assert.That(content.PackId, Is.EqualTo("bare-game"));
         Assert.That(content.MapDefs.Walls, Is.Empty, "no mapdefs yet");
+        Assert.That(content.Palette, Has.Length.EqualTo(256));
+        Assert.That(content.ModPathOf("wolfpal", nameof(PFWolf.Assets.Palette)), Is.EqualTo(request.Path), "its own copy of the palette");
         Assert.That(document.SaveFolder, Is.EqualTo(request.Path));
         Assert.That(reloaded.FindMap("MAP01")!.MapData[0][10 * 64 + 10], Is.EqualTo(7));
         Assert.That(File.Exists(request.Path + PFWolf.Editor.Editing.ModFiles.BackupExtension), Is.True);

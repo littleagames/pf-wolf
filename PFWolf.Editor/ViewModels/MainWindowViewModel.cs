@@ -1071,7 +1071,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         try
         {
-            NewMod.Create(request);
+            NewMod.Create(request, request.IsStandalone ? NewMod.ReadDefaultPalette(GameFolder) : null);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

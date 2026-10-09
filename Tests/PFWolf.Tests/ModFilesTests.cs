@@ -131,19 +131,37 @@ public class ModFilesTests
     {
         // Arrange
         var request = new NewModRequest(Path.Combine(_folder, "mods", "my-game.pk3"), "My \"Game\"", "my-game", BasePack: null);
+        var palette = File.ReadAllBytes(Path.Combine(TestPaths.Pk3SourceFolder(), "palettes", "wolfpal.pal"));
 
         // Act
-        NewMod.Create(request);
+        NewMod.Create(request, palette);
 
         // Assert
         var source = new Pk3AssetSource(request.Path);
-        Assert.That(source.EntryPaths, Is.EquivalentTo(new[] { "modinfo.yaml", "gamepack-info.yaml", "game-info.yaml", "maps/MAP01.wad" }));
+        Assert.That(source.EntryPaths, Is.EquivalentTo(new[] { "modinfo.yaml", "gamepack-info.yaml", "game-info.yaml", "maps/MAP01.wad", "palettes/wolfpal.pal" }));
+        Assert.That(source.Open("palettes/wolfpal.pal").ToArray(), Is.EqualTo(palette));
         var games = ModSource.ReadGames(source, []);
         Assert.That(games!.GamePacks["my-game"].BasePack, Is.EqualTo("standalone"));
+        Assert.That(games.GamePacks["my-game"].GamePalette, Is.EqualTo("wolfpal"));
         Assert.That(games.GamePacks["my-game"].Title, Is.EqualTo("My \"Game\""));
         var gameInfo = YamlDataEntryLoader.Deserialize<PFWolf.Assets.GameInfoAsset>(ModFiles.ReadText(request.Path, "game-info.yaml")!);
         Assert.That(gameInfo.Episodes["EP01"].StartMap, Is.EqualTo("MAP01"));
         Assert.That(EcWolfMapLoader.Load(source.Open("maps/MAP01.wad").ToArray()).Width, Is.EqualTo(MapConstants.MAPSIZE));
+    }
+
+    [Test]
+    public void The_Default_Palette_Comes_From_The_Game_Folders_Pfwolf_Pk3()
+    {
+        // Arrange
+        ZipFile.CreateFromDirectory(TestPaths.Pk3SourceFolder(), Path.Combine(_folder, "pfwolf.pk3"));
+
+        // Act
+        var palette = NewMod.ReadDefaultPalette(_folder);
+        var none = NewMod.ReadDefaultPalette(Path.Combine(_folder, "nowhere"));
+
+        // Assert
+        Assert.That(palette, Is.EqualTo(File.ReadAllBytes(Path.Combine(TestPaths.Pk3SourceFolder(), "palettes", "wolfpal.pal"))));
+        Assert.That(none, Is.Null);
     }
 
     [Test]

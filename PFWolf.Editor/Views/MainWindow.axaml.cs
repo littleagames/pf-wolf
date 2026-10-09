@@ -304,7 +304,8 @@ public partial class MainWindow : Window, IEditorDialogs
                 new DockPanel { Children = { DockRight(browse), path } },
                 new TextBlock
                 {
-                    Text = "A stand-alone game starts as a bare skeleton: gamepack-info, modinfo, game-info and an empty MAP01. "
+                    Text = "A stand-alone game starts as a bare skeleton: gamepack-info, modinfo, game-info, an empty MAP01 "
+                           + "and a copy of Wolf3D's palette. "
                            + "A mod of a game starts with just its modinfo.",
                     TextWrapping = TextWrapping.Wrap, Opacity = 0.7,
                 },
