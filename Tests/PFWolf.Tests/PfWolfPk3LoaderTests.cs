@@ -95,6 +95,104 @@ public class PfWolfPk3LoaderTests
         Assert.That(strings["BYE"], Is.EqualTo("alpha bye"));
     }
 
+    // alpha's classes and strings, which beta's files change in the tests below
+    private static MemoryAssetSource LayeredPk3(string betaActors, string betaStrings = "") => new("pfwolf.pk3", new()
+    {
+        ["gamepacks/gamepack-info.yaml"] = GamePackInfo,
+        ["actordefs/alpha/guards.yaml"] = """
+            Guard:
+              parent: Monster
+              radius: 10
+              flags: [SOLID, SHOOTABLE]
+              properties:
+                hp: 25
+                speed: 512
+              states:
+                Spawn:
+                  - { sprite: GARD, frames: [A], tics-per-frame: -1 }
+                Path:
+                  - { sprite: GARD, frames: [B], tics-per-frame: 20 }
+            Dog:
+              radius: 11
+            """,
+        ["actordefs/beta/guards.yaml"] = betaActors,
+        ["gamepacks/alpha/language/en-us.yaml"] = "HELLO: alpha hello\nBYE: alpha bye\n",
+        ["gamepacks/beta/language/en-us.yaml"] = betaStrings,
+    });
+
+    [Test]
+    public void A_Packs_Files_Can_Remove_Its_Base_Packs_Keys()
+    {
+        // Arrange
+        var pk3 = LayeredPk3("Dog: !remove\n", betaStrings: "BYE: !remove\n");
+
+        // Act
+        var loader = new PfWolfPk3Loader([pk3], "beta", "beta");
+
+        // Assert
+        Assert.That(Actors(loader, "beta/actordefs").Keys, Is.EqualTo(new[] { "Guard" }));
+        Assert.That(Strings(loader, "beta/language/en-us").Keys, Is.EqualTo(new[] { "HELLO" }));
+        Assert.That(loader.Warnings, Is.Empty);
+    }
+
+    [Test]
+    public void Extend_Changes_A_Base_Packs_Class_And_Can_Take_Parts_Away()
+    {
+        // Arrange
+        var pk3 = LayeredPk3("""
+            Guard:
+              extend: true
+              radius: 20
+              flags: [~SOLID, AMBUSH]
+              properties:
+                hp: 50
+                speed: !remove
+              states:
+                Path: !remove
+            """);
+
+        // Act
+        var guard = Actors(new PfWolfPk3Loader([pk3], "beta", "beta"), "beta/actordefs")["Guard"];
+
+        // Assert
+        Assert.That(guard.Parent, Is.EqualTo("Monster"));
+        Assert.That(guard.Radius, Is.EqualTo(20));
+        Assert.That(guard.Flags, Is.EqualTo(new[] { "SHOOTABLE", "AMBUSH" }));
+        Assert.That(guard.Properties.Keys, Is.EqualTo(new[] { "hp" }));
+        Assert.That(guard.Properties["hp"].ToString(), Is.EqualTo("50"));
+        Assert.That(guard.States.Keys, Is.EqualTo(new[] { "Spawn" }));
+        Assert.That(guard.Extend, Is.False, "it stays as the class it changed was");
+    }
+
+    [Test]
+    public void Without_Extend_A_Base_Packs_Class_Is_Replaced_Whole()
+    {
+        // Act
+        var guard = Actors(new PfWolfPk3Loader([LayeredPk3("Guard:\n  radius: 20\n")], "beta", "beta"), "beta/actordefs")["Guard"];
+
+        // Assert
+        Assert.That(guard.Parent, Is.Null.Or.Empty);
+        Assert.That(guard.Flags, Is.Empty);
+        Assert.That(guard.States, Is.Empty);
+    }
+
+    [Test]
+    public void A_Mods_Extend_Adds_Flags_Rather_Than_Replacing_Them()
+    {
+        // Arrange
+        var mod = new MemoryAssetSource("mymod", new()
+        {
+            ["actordefs/x.yaml"] = "Guard:\n  extend: true\n  flags: [~SHOOTABLE, AMBUSH]\n",
+        });
+
+        // Act
+        var guard = Actors(new PfWolfPk3Loader([LayeredPk3("")], "beta", "beta", [mod]), "beta/actordefs")["Guard"];
+
+        // Assert
+        Assert.That(guard.Flags, Is.EqualTo(new[] { "SOLID", "AMBUSH" }));
+        Assert.That(guard.Properties["speed"].ToString(), Is.EqualTo("512"));
+    }
+
     [Test]
     public void No_Running_Pack_Loads_Every_Pack()
     {

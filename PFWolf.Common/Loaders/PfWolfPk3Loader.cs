@@ -29,10 +29,11 @@ public class PfWolfPk3Loader
     // The file being loaded, so AddAsset and MergeAsset can record it
     private AssetSourceEntry? _currentEntry;
 
-    // Every YAML asset's document so far, by key, so a mod's file can be laid over it.
-    // Only kept when there are mods to load.
+    // Every YAML asset's document so far, by key, which the asset is read from and later files
+    // merge into
     private readonly Dictionary<string, YamlMappingNode> _yamlTrees = [];
-    private readonly bool _keepYamlTrees;
+    // Assets whose documents base files have merged into since they were read, with how to read them
+    private readonly Dictionary<string, Func<string, Asset>> _unreadTrees = [];
 
     // Files directly in maps/ other than .wad levels, in load order
     private readonly List<AssetSourceEntry> _mapDataFiles = [];
@@ -75,7 +76,6 @@ public class PfWolfPk3Loader
         _gamePackId = gamePackId;
         _gameReleaseId = gameReleaseId;
         modSources ??= [];
-        _keepYamlTrees = modSources.Count > 0;
 
         // Read first: the running release's base-pack decides which pack folders load, and in what order
         _currentEntry = sources
@@ -91,6 +91,7 @@ public class PfWolfPk3Loader
 
         foreach (var (entry, fullName) in GetEntriesInLoadOrder(sources))
             LoadEntry(entry, fullName, isMod: false);
+        ReadMergedTrees();
 
         LoadModEntries(modSources);
         _currentEntry = null;
@@ -204,7 +205,8 @@ public class PfWolfPk3Loader
             // (native.yaml, deathcam.yaml) -> "actordefs", shared by every pack
             var uniqueName = GetPackUniqueAssetName(fullName);
             LoadYaml(entry, uniqueName, isMod, mergeLevels: 1,
-                yaml => new ActorTranslationAsset(YamlDataEntryLoader.Deserialize<Dictionary<string, ActorData>>(yaml)));
+                yaml => new ActorTranslationAsset(YamlDataEntryLoader.Deserialize<Dictionary<string, ActorData>>(yaml)),
+                ActorTranslationAsset.MergeYaml);
             return;
         }
 
@@ -322,64 +324,82 @@ public class PfWolfPk3Loader
     }
 
     /// <summary>
-    /// Reads a YAML file into an asset. From the base pk3, with <paramref name="mergeLevels"/> it
-    /// merges into an earlier asset of the same name through that asset's Merge, which combines
-    /// that many levels down (see YamlTree.MergeLevels); with 0 it replaces it. A mod's file is
-    /// laid over the document loaded under that name so far (see YamlTree), and what that reads
-    /// as replaces the asset, so a mod only has to give what it changes, and can tag keys
-    /// !remove to take them out (see YamlTree.DeepMerge).
+    /// Reads a YAML file into an asset. Every YAML asset is kept as a document (see YamlTree), and
+    /// read from it. From the base pk3, with <paramref name="mergeLevels"/> a file merges into
+    /// the document loaded under that name before it that many levels down (see
+    /// YamlTree.MergeLevels; <paramref name="merge"/> in its place for one with its own rule);
+    /// with 0 it replaces it. A mod's file is laid over the document loaded under that name so
+    /// far all the way down (see YamlTree.DeepMerge), and what that reads as replaces the asset,
+    /// so a mod only has to give what it changes. Either can tag keys !remove to take them out.
     /// </summary>
-    private void LoadYaml(AssetSourceEntry entry, string assetName, bool isMod, int mergeLevels, Func<string, Asset> read)
+    private void LoadYaml(AssetSourceEntry entry, string assetName, bool isMod, int mergeLevels, Func<string, Asset> read,
+        Action<YamlMappingNode, YamlMappingNode, bool>? merge = null)
     {
         var yaml = YamlDataEntryLoader.ReadText(entry.Open());
-        var tree = _keepYamlTrees ? YamlTree.Parse(yaml) : null;
+        var tree = YamlTree.Parse(yaml) ?? (YamlTree.IsEmptyDocument(yaml) ? new YamlMappingNode() : null);
 
-        // A mod's !remove keys only mean something against the document they're laid over, so
-        // the file is read (checked) without them
-        var asset = isMod && tree != null && YamlTree.HasRemovals(tree)
+        // !remove keys only mean something against the document they're laid over, so the file
+        // is read (checked) without them
+        var asset = tree != null && YamlTree.HasRemovals(tree)
             ? read(YamlTree.ToText(YamlTree.WithoutRemovals(tree)))
             : read(yaml);
-        if (!_keepYamlTrees)
+        var key = GetKey(assetName, GetAssetTypeName(asset));
+
+        if (tree == null)
         {
-            if (mergeLevels > 0)
-                MergeAsset(assetName, asset);
-            else
-                AddAsset(assetName, asset);
+            // Not a mapping, so there's nothing to merge: it replaces the asset
+            _yamlTrees.Remove(key);
+            _unreadTrees.Remove(key);
+            AddAsset(assetName, asset);
             return;
         }
-
-        var key = GetKey(assetName, GetAssetTypeName(asset));
 
         if (!isMod)
         {
-            if (mergeLevels > 0)
-                MergeAsset(assetName, asset);
-            else
-                AddAsset(assetName, asset);
-
-            if (tree == null)
-                return;
             if (mergeLevels > 0 && _yamlTrees.TryGetValue(key, out var existingTree))
-                YamlTree.MergeLevels(existingTree, tree, mergeLevels);
-            else
-                _yamlTrees[key] = tree;
+            {
+                if (merge != null)
+                    merge(existingTree, tree, false);
+                else
+                    YamlTree.MergeLevels(existingTree, tree, mergeLevels);
+                RecordOrigin(key, "merged");
+                _unreadTrees[key] = read;   // read once every base file is in (ReadMergedTrees)
+                return;
+            }
+
+            _yamlTrees[key] = YamlTree.WithoutRemovals(tree);
+            _unreadTrees.Remove(key);
+            AddAsset(assetName, asset);
             return;
         }
 
-        if (tree != null && _yamlTrees.TryGetValue(key, out var baseTree))
+        if (_yamlTrees.TryGetValue(key, out var baseTree))
         {
             // Merged into a copy, so a file that doesn't read as the asset leaves the tree as it was
             var merged = YamlTree.Clone(baseTree);
-            YamlTree.DeepMerge(merged, tree);
+            if (merge != null)
+                merge(merged, tree, true);
+            else
+                YamlTree.DeepMerge(merged, tree);
             asset = read(YamlTree.ToText(merged));
             _yamlTrees[key] = merged;
             AddAsset(assetName, asset, action: "merged");
             return;
         }
 
-        if (tree != null)
-            _yamlTrees[key] = YamlTree.WithoutRemovals(tree);
+        _yamlTrees[key] = YamlTree.WithoutRemovals(tree);
         AddAsset(assetName, asset);
+    }
+
+    /// <summary>
+    /// Reads each asset that base files merged into from its document, as it stands once all of
+    /// pfwolf.pk3's files are in
+    /// </summary>
+    private void ReadMergedTrees()
+    {
+        foreach (var (key, read) in _unreadTrees)
+            _assets[key] = read(YamlTree.ToText(_yamlTrees[key]));
+        _unreadTrees.Clear();
     }
 
     /// <summary>
@@ -608,20 +628,6 @@ public class PfWolfPk3Loader
         }
 
         RecordOrigin(key, action ?? "added");
-    }
-
-    private void MergeAsset(string assetName, Asset asset, bool overwrite = true)
-    {
-        var key = GetKey(assetName, GetAssetTypeName(asset));
-
-        if (_assets.TryGetValue(key, out var existingAsset))
-        {
-            existingAsset.Merge(asset);
-            RecordOrigin(key, "merged");
-            return;
-        }
-
-        AddAsset(assetName, asset);
     }
 
     private void RecordOrigin(string key, string action)

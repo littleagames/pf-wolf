@@ -3,11 +3,12 @@ using YamlDotNet.RepresentationModel;
 namespace PFWolf.Loaders;
 
 /// <summary>
-/// YAML documents as trees, so a mod's file can change just part of an asset. Laid over another
-/// document, its mappings merge in key by key, all the way down; anything else (a value, a list)
-/// replaces what was there. Keys match exactly, as they do in the assets' dictionaries.
-/// A key tagged <c>!remove</c> (<c>health: !remove</c>, <c>guard: !remove</c>) takes that key
-/// out of the document instead.
+/// YAML documents as trees, which is how every YAML asset's files combine: pfwolf.pk3's files of
+/// an asset (and a base pack's under the running pack's names) a set number of levels down (see
+/// MergeLevels), a mod's file all the way down (see DeepMerge), and the asset is read from what
+/// that makes. Keys match exactly, as they do in the assets' dictionaries. A key tagged
+/// <c>!remove</c> (<c>health: !remove</c>, <c>guard: !remove</c>) takes that key out of the
+/// document instead.
 /// </summary>
 public static class YamlTree
 {
@@ -19,6 +20,14 @@ public static class YamlTree
         var stream = new YamlStream();
         stream.Load(new StringReader(yaml));
         return stream.Documents.Count > 0 ? stream.Documents[0].RootNode as YamlMappingNode : null;
+    }
+
+    /// <summary>Whether the text holds no document at all (nothing, or only comments)</summary>
+    public static bool IsEmptyDocument(string yaml)
+    {
+        var stream = new YamlStream();
+        stream.Load(new StringReader(yaml));
+        return stream.Documents.Count == 0;
     }
 
     public static string ToText(YamlMappingNode node)
@@ -35,13 +44,21 @@ public static class YamlTree
     /// <summary>
     /// Replaces or adds the overlay's keys the way the base pk3's files of the same asset
     /// combine: at the top level (actordefs/wolf3d/guards.yaml then bosses.yaml, actor by actor),
-    /// or with <paramref name="levels"/> 2 one level down (mapdefs, thing by thing inside things:)
+    /// or with <paramref name="levels"/> 2 one level down (mapdefs, thing by thing inside things:).
+    /// The overlay's keys tagged !remove take the target's out, at any of those levels.
     /// </summary>
     public static void MergeLevels(YamlMappingNode target, YamlMappingNode overlay, int levels)
     {
         foreach (var (key, value) in overlay.Children)
         {
             var existingKey = FindKey(target, key);
+            if (IsRemove(value))
+            {
+                if (existingKey != null)
+                    target.Children.Remove(existingKey);
+                continue;
+            }
+
             if (levels > 1 && existingKey != null && target.Children[existingKey] is YamlMappingNode targetChild
                 && value is YamlMappingNode overlayChild)
             {
@@ -49,7 +66,7 @@ public static class YamlTree
                 continue;
             }
 
-            Set(target, key, value);
+            Set(target, key, WithoutRemovals(value));
         }
     }
 
@@ -110,11 +127,15 @@ public static class YamlTree
         return (T)stripped;
     }
 
-    private static bool IsRemove(YamlNode value)
+    /// <summary>Whether the value is tagged !remove</summary>
+    public static bool IsRemove(YamlNode value)
         => !value.Tag.IsEmpty && value.Tag.Value == RemoveTag;
 
-    // Replacing an existing key keeps its place, so the merged document reads in the base's order
-    private static void Set(YamlMappingNode target, YamlNode key, YamlNode value)
+    /// <summary>
+    /// Replaces the key's value, or adds it at the end. Replacing an existing key keeps its place,
+    /// so the merged document reads in the base's order.
+    /// </summary>
+    public static void Set(YamlMappingNode target, YamlNode key, YamlNode value)
     {
         var existingKey = FindKey(target, key);
         if (existingKey != null)
@@ -123,12 +144,13 @@ public static class YamlTree
             target.Children.Add(key, value);
     }
 
-    private static YamlNode? FindKey(YamlMappingNode node, YamlNode key)
+    /// <summary>The node's own key matching <paramref name="key"/>, or null</summary>
+    public static YamlNode? FindKey(YamlMappingNode node, YamlNode key, StringComparison comparison = StringComparison.Ordinal)
     {
         if (key is not YamlScalarNode scalarKey)
             return node.Children.ContainsKey(key) ? key : null;
 
         return node.Children.Keys.FirstOrDefault(existing =>
-            existing is YamlScalarNode scalar && string.Equals(scalar.Value, scalarKey.Value, StringComparison.Ordinal));
+            existing is YamlScalarNode scalar && string.Equals(scalar.Value, scalarKey.Value, comparison));
     }
 }

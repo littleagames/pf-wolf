@@ -1,4 +1,6 @@
 ﻿using PFWolf.Entities.Actors;
+using PFWolf.Loaders;
+using YamlDotNet.RepresentationModel;
 
 namespace PFWolf.Assets;
 
@@ -28,6 +30,86 @@ public record ActorTranslationAsset : Asset
         foreach (var item in other.Actors)
         {
             this.Actors[item.Key] = ActorData.Combine(this.Actors.GetValueOrDefault(item.Key), item.Value);
+        }
+    }
+
+    /// <summary>
+    /// Lays an actordefs file over the document of the classes loaded before it, as the loader
+    /// combines them. A class replaces one of the same name whole (or, from a mod, merges into it
+    /// key by key, see YamlTree.DeepMerge), unless it says `extend: true`: then it changes that
+    /// one as ActorData.Combine does, its properties and states replacing those of the same name
+    /// (or taking them out, tagged !remove), its flags added (or, written ~FLAG, taken away), and
+    /// its other keys, parent and radius, replacing those. A class tagged !remove is taken out.
+    /// </summary>
+    public static void MergeYaml(YamlMappingNode target, YamlMappingNode overlay, bool deep)
+    {
+        foreach (var (name, value) in overlay.Children)
+        {
+            var existingName = YamlTree.FindKey(target, name);
+            if (existingName != null && target.Children[existingName] is YamlMappingNode existing
+                && value is YamlMappingNode incoming && IsExtend(incoming))
+            {
+                ExtendYaml(existing, incoming);
+                continue;
+            }
+
+            var entry = new YamlMappingNode { { name, value } };
+            if (deep)
+                YamlTree.DeepMerge(target, entry);
+            else
+                YamlTree.MergeLevels(target, entry, 1);
+        }
+    }
+
+    // ActorData's own keys are matched as its properties are read: ignoring case
+    private const StringComparison KeyCase = StringComparison.OrdinalIgnoreCase;
+
+    private static bool IsExtend(YamlMappingNode actor)
+        => YamlTree.FindKey(actor, new YamlScalarNode("extend"), KeyCase) is { } key
+            && actor.Children[key] is YamlScalarNode { Value: var value } && bool.TryParse(value, out var extend) && extend;
+
+    private static void ExtendYaml(YamlMappingNode existing, YamlMappingNode incoming)
+    {
+        foreach (var (key, value) in incoming.Children)
+        {
+            var keyName = (key as YamlScalarNode)?.Value ?? "";
+            var existingKey = YamlTree.FindKey(existing, key, KeyCase);
+            if (YamlTree.IsRemove(value))
+            {
+                if (existingKey != null)
+                    existing.Children.Remove(existingKey);
+                continue;
+            }
+
+            switch (keyName.ToLowerInvariant())
+            {
+                case "extend":
+                    // Extended or not stays as the class it changes was
+                    continue;
+
+                case "properties" or "states" when existingKey != null
+                    && existing.Children[existingKey] is YamlMappingNode existingEntries && value is YamlMappingNode incomingEntries:
+                    YamlTree.MergeLevels(existingEntries, incomingEntries, 1);
+                    continue;
+
+                case "flags" when value is YamlSequenceNode incomingFlags:
+                    var flags = (existingKey != null ? existing.Children[existingKey] as YamlSequenceNode : null)?
+                        .Children.OfType<YamlScalarNode>().Select(flag => flag.Value!).ToList() ?? [];
+                    foreach (var flag in incomingFlags.Children.OfType<YamlScalarNode>().Select(flag => flag.Value!))
+                    {
+                        if (flag.StartsWith('~'))
+                            flags.RemoveAll(f => string.Equals(f, flag[1..], StringComparison.OrdinalIgnoreCase));
+                        else if (!flags.Contains(flag))
+                            flags.Add(flag);
+                    }
+                    YamlTree.Set(existing, existingKey ?? key,
+                        new YamlSequenceNode(flags.Select(flag => new YamlScalarNode(flag))) { Style = incomingFlags.Style });
+                    continue;
+
+                default:
+                    YamlTree.Set(existing, existingKey ?? key, YamlTree.WithoutRemovals(value));
+                    continue;
+            }
         }
     }
 }

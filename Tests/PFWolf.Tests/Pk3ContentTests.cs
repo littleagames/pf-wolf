@@ -181,7 +181,6 @@ public class Pk3ContentTests
     }
 
     [Test]
-    [Explicit("Fails until the YAML merge rework's phase 1: the mods' YAML trees merge base actordefs without extend")]
     public void A_Mod_Leaves_Extended_Actors_As_They_Were()
     {
         // Arrange: a mod that only adds an actor, so the pack's actordefs are rebuilt from YAML
