@@ -126,22 +126,68 @@ public class YamlTreeTests
         // Assert
         var officer = (YamlMappingNode)target.Children[new YamlScalarNode("officer")];
         Assert.That(officer.Children, Has.Count.EqualTo(1));
-        Assert.That(YamlTree.HasRemovals(target), Is.False);
+        Assert.That(YamlTree.HasMergeTags(target), Is.False);
     }
 
     [Test]
-    public void WithoutRemovals_Reads_As_Plain_Yaml()
+    public void WithoutMergeTags_Reads_As_Plain_Yaml()
     {
         // Arrange
         var node = Parse("guard:\n  health: 50\n  speed: !remove\n");
 
         // Act
-        var stripped = YamlTree.WithoutRemovals(node);
+        var stripped = YamlTree.WithoutMergeTags(node);
 
         // Assert
-        Assert.That(YamlTree.HasRemovals(node), Is.True);
+        Assert.That(YamlTree.HasMergeTags(node), Is.True);
         Assert.That(YamlTree.ToText(stripped), Does.Not.Contain("remove"));
         Assert.That(Scalar(stripped, "guard", "health"), Is.EqualTo("50"));
+    }
+
+    [Test]
+    public void DeepMerge_Replace_Tag_Replaces_A_Mapping_Whole()
+    {
+        // Arrange
+        var target = Parse("maps:\n  MAP01:\n    par: 90\n  MAP02:\n    par: 120\nother: 1\n");
+        var overlay = Parse("maps: !replace\n  MAP01:\n    next: MAP02\n");
+
+        // Act
+        YamlTree.DeepMerge(target, overlay);
+
+        // Assert: MAP02 and MAP01's par are gone; the rest of the document is as it was
+        var maps = (YamlMappingNode)target.Children[new YamlScalarNode("maps")];
+        Assert.That(maps.Children.Keys.Select(k => ((YamlScalarNode)k).Value), Is.EqualTo(new[] { "MAP01" }));
+        Assert.That(Scalar(target, "maps", "MAP01", "next"), Is.EqualTo("MAP02"));
+        Assert.That(((YamlMappingNode)maps.Children[new YamlScalarNode("MAP01")]).Children, Has.Count.EqualTo(1));
+        Assert.That(Scalar(target, "other"), Is.EqualTo("1"));
+        Assert.That(YamlTree.HasMergeTags(target), Is.False, "the tag doesn't stay in the merged document");
+    }
+
+    [Test]
+    public void MergeLevels_Replace_Tag_Stops_The_Merge_At_Its_Key()
+    {
+        // Arrange: mapdefs merge two levels down, but this thing is replaced whole
+        var target = Parse("things:\n  guard:\n    id: 108\n    angle: 0\n");
+        var overlay = Parse("things: !replace\n  dog:\n    id: 138\n");
+
+        // Act
+        YamlTree.MergeLevels(target, overlay, 2);
+
+        // Assert
+        var things = (YamlMappingNode)target.Children[new YamlScalarNode("things")];
+        Assert.That(things.Children.Keys.Select(k => ((YamlScalarNode)k).Value), Is.EqualTo(new[] { "dog" }));
+    }
+
+    [Test]
+    public void WithoutMergeTags_Takes_Off_Replace_Tags()
+    {
+        // Act
+        var stripped = YamlTree.WithoutMergeTags(Parse("maps: !replace\n  MAP01: { par: 90 }\nname: !replace x\n"));
+
+        // Assert
+        Assert.That(YamlTree.ToText(stripped), Does.Not.Contain("!replace"));
+        Assert.That(Scalar(stripped, "maps", "MAP01", "par"), Is.EqualTo("90"));
+        Assert.That(Scalar(stripped, "name"), Is.EqualTo("x"));
     }
 
     [Test]

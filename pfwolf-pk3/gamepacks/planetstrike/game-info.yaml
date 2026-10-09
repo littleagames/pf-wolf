@@ -1,25 +1,13 @@
-# Blake Stone: Planet Strike. Starts from gamepacks/blake (base-pack), but a game-info replaces
-# the base pack's whole, so this one has everything.
-default-map:
-  ceiling-color: "#383838"
-  floor-color: "#717171"
-  # Blake Stone's distance lighting (as Aliens of Gold's for now)
-  shading:
-    fade-color: "#000000"
-    fade-start: 4.52
-    max-fade: 80
-    fade-curve: inverse
+# Blake Stone: Planet Strike where it differs from Aliens of Gold: laid over
+# gamepacks/blake/game-info.yaml (the release's base-pack). Anything not here is Aliens of
+# Gold's, and `!replace` gives Planet Strike its own whole block in place of Aliens of Gold's
+# rather than merging into it. (Lists, such as intro, are always replaced whole.)
 
 # Planet Strike's weapon sprites fill more of their 64x64 than Aliens of Gold's, so bstone draws
 # them 88 high where AOG's are 128 (the 3D view's height)
 weapon-scale: 0.6875
 # ...and bob it while Blake walks forwards or back (Aliens of Gold's doesn't)
 weapon-bob: true
-
-signon:
-  press-a-key: false
-
-non-shareware-notice: false
 
 title-pics:
   - TITLE1
@@ -71,106 +59,10 @@ title-loop:
     seconds: 6
   - high-scores: true
     seconds: 9
-menu-fade-color: "#000000"
-
-menu-backdrop: LincScreen
-menu-message:
-  font: LargeFont
-  color: "175"
-  shadow: "128"
-  hi: "133"
-  med: "130"
-  lo: "128"
-
-help-text: HelpText
-
-high-scores:
-  frame: high-scores
-  pic: ""
-  headers: []
-  labels:
-    - { text: "NAME", x: 86, y: 60, color: "86" }
-    - { text: "SCORE", x: 175, y: 60, color: "86" }
-    - { text: "MISSION", x: 247, y: 53, color: "86" }
-    - { text: "RATIO", x: 254, y: 60, color: "86" }
-  font: BlakeSmall
-  color: "88"
-  shadow: "1"
-  row-y: 68
-  row-height: 7
-  name-x: 45
-  show-level: false
-  score-right: 205
-  ratio-right: 272
-  entry-color: "89"
-  entry-background: "2"
-  entry-width: 120
-  count: 10
-  defaults:
-    - { name: "JAM PRODUCTIONS INC." }
-    - { name: "" }
-    - { name: "JERRY JONES" }
-    - { name: "MICHAEL MAYNARD" }
-    - { name: "JAMES T. ROW" }
-    - { name: "" }
-    - { name: "" }
-    - { name: "TO REGISTER CALL" }
-    - { name: " 1-800-GAME123" }
-    - { name: "" }
-
-lose-screen:
-  pic: GoldfireScreen
-  script: Transmission
-  x1: 14
-  y1: 141
-  x2: 307
-  y2: 173
-  font: 2
-  light: 15
-  background: 0
-  dark: 1
-  shadow: 1
-  print-delay: 2
-  type-sound: bs/term_type
-
-screen-fade-style: palette
-menu-fade-style: palette
-menu-fade-tics: 20
-death-fade-style: fizzle
-death-fade-tics: 70
-death-fade-color: Maroon
-death-turn-speed: 2
-death-hold-tics: 100
-level-fade-style: fizzle
-level-fade-tics: 20
-
-hud-messages:
-  enabled: true
-  pickup-style: Default
-  lock-style: Default
-  obituary-style: Obituary
-
-skills:
-  NOVICE:
-    name: "Level 1:\nNovice Agent"
-    pic-name: C_BabyMode
-    enemy-health: health.baby
-  SKILLED:
-    name: "Level 2:\nSkilled Agent"
-    pic-name: C_Easy
-    enemy-health: health.easy
-  EXPERT:
-    name: "Level 3:\nExpert Agent"
-    pic-name: C_Normal
-    enemy-health: health.normal
-  VETERAN:
-    name: "Level 4:\nVeteran Agent"
-    pic-name: C_Hard
-    enemy-health: health.hard
 
 # One mission: areas 0 to 19 (MAP01-MAP20) and four secret areas (MAP21-MAP24), all kept as
 # they're left. It starts in area 0, after its briefing.
-episodes:
+episodes: !replace
   PLANETSTRIKE:
     name: "Planet Strike"
     start-map: MAP01
@@ -178,15 +70,11 @@ episodes:
     end-briefing: Mission1End
     end-movie: EndMovie
 
-clusters:
+clusters: !replace
   1: { hub: true }
 
-level-start-message: "^ST1^CEGet Ready, Blake!\r^XX"
-mission-won-message: MissionCompleteText
-death-restores-level-start: true
-
 # Area names are the game's own (its LEVEL_DESCS text); music is bstone's songs table
-maps:
+maps: !replace
   MAP01:
     name: "TRANSPORT ARRIVAL AREA"
     next: MAP02
@@ -326,9 +214,3 @@ maps:
     floor-number: 23
     cluster: 1
     music: VACCINAP
-
-end-strings:
-  - $BS_ENDSTR1
-  - $BS_ENDSTR2
-  - $BS_ENDSTR3
-  - $BS_ENDSTR4

@@ -1,4 +1,4 @@
-﻿using PFWolf.Entities.Actors;
+using PFWolf.Entities.Actors;
 using PFWolf.Loaders;
 using YamlDotNet.RepresentationModel;
 
@@ -39,7 +39,9 @@ public record ActorTranslationAsset : Asset
     /// key by key, see YamlTree.DeepMerge), unless it says `extend: true`: then it changes that
     /// one as ActorData.Combine does, its properties and states replacing those of the same name
     /// (or taking them out, tagged !remove), its flags added (or, written ~FLAG, taken away), and
-    /// its other keys, parent and radius, replacing those. A class tagged !remove is taken out.
+    /// its other keys, parent and radius, replacing those; properties, states or flags tagged
+    /// !replace replace the class's whole. A class tagged !remove is taken out, and one tagged
+    /// !replace replaces the class whole even from a mod.
     /// </summary>
     public static void MergeYaml(YamlMappingNode target, YamlMappingNode overlay, bool deep)
     {
@@ -47,7 +49,7 @@ public record ActorTranslationAsset : Asset
         {
             var existingName = YamlTree.FindKey(target, name);
             if (existingName != null && target.Children[existingName] is YamlMappingNode existing
-                && value is YamlMappingNode incoming && IsExtend(incoming))
+                && value is YamlMappingNode incoming && !YamlTree.IsReplace(incoming) && IsExtend(incoming))
             {
                 ExtendYaml(existing, incoming);
                 continue;
@@ -81,6 +83,13 @@ public record ActorTranslationAsset : Asset
                 continue;
             }
 
+            if (YamlTree.IsReplace(value))
+            {
+                // All of its properties, states or flags in place of the class's
+                YamlTree.Set(existing, existingKey ?? key, YamlTree.WithoutMergeTags(value));
+                continue;
+            }
+
             switch (keyName.ToLowerInvariant())
             {
                 case "extend":
@@ -107,7 +116,7 @@ public record ActorTranslationAsset : Asset
                     continue;
 
                 default:
-                    YamlTree.Set(existing, existingKey ?? key, YamlTree.WithoutRemovals(value));
+                    YamlTree.Set(existing, existingKey ?? key, YamlTree.WithoutMergeTags(value));
                     continue;
             }
         }

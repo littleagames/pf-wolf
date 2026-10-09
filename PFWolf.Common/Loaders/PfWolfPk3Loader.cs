@@ -111,8 +111,10 @@ public class PfWolfPk3Loader
         }
         if (fullName.StartsWith("gamepacks/") && fullName.Contains("game-info"))
         {
+            // A pack's game-info is laid over its base pack's all the way down, so it gives only
+            // what it changes (and tags what it doesn't have !remove)
             var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
-            LoadYaml(entry, uniqueName, isMod, mergeLevels: 0, YamlDataEntryLoader.Deserialize<GameInfoAsset>);
+            LoadYaml(entry, uniqueName, isMod, mergeLevels: AllLevels, YamlDataEntryLoader.Deserialize<GameInfoAsset>);
             return;
         }
         if (fullName.StartsWith("gamepacks/") && fullName.Contains("raw-data-map"))
@@ -332,6 +334,9 @@ public class PfWolfPk3Loader
     /// far all the way down (see YamlTree.DeepMerge), and what that reads as replaces the asset,
     /// so a mod only has to give what it changes. Either can tag keys !remove to take them out.
     /// </summary>
+    // mergeLevels for files that merge all the way down, as a mod's do
+    private const int AllLevels = int.MaxValue;
+
     private void LoadYaml(AssetSourceEntry entry, string assetName, bool isMod, int mergeLevels, Func<string, Asset> read,
         Action<YamlMappingNode, YamlMappingNode, bool>? merge = null)
     {
@@ -340,8 +345,8 @@ public class PfWolfPk3Loader
 
         // !remove keys only mean something against the document they're laid over, so the file
         // is read (checked) without them
-        var asset = tree != null && YamlTree.HasRemovals(tree)
-            ? read(YamlTree.ToText(YamlTree.WithoutRemovals(tree)))
+        var asset = tree != null && YamlTree.HasMergeTags(tree)
+            ? read(YamlTree.ToText(YamlTree.WithoutMergeTags(tree)))
             : read(yaml);
         var key = GetKey(assetName, GetAssetTypeName(asset));
 
@@ -367,7 +372,7 @@ public class PfWolfPk3Loader
                 return;
             }
 
-            _yamlTrees[key] = YamlTree.WithoutRemovals(tree);
+            _yamlTrees[key] = YamlTree.WithoutMergeTags(tree);
             _unreadTrees.Remove(key);
             AddAsset(assetName, asset);
             return;
@@ -387,7 +392,7 @@ public class PfWolfPk3Loader
             return;
         }
 
-        _yamlTrees[key] = YamlTree.WithoutRemovals(tree);
+        _yamlTrees[key] = YamlTree.WithoutMergeTags(tree);
         AddAsset(assetName, asset);
     }
 

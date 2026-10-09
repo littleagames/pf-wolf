@@ -1,174 +1,38 @@
-# Wolfenstein 3D Shareware: episode 1 of wolf3d's game-info (see gamepacks/wolf3d/game-info.yaml
-# for what each setting does). game-info isn't merged with the base pack's, so this is all of it.
-default-map:
-  ceiling-color: "#383838"
-  floor-color: "#717171"
-
-signon:
-  pic: wolf3d-signon
-  press-a-key: true
-  text-area: { x: 16, y: 79, width: 290, height: 101 }
+# Wolfenstein 3D Shareware: episode 1 of Wolf3D. Laid over gamepacks/wolf3d/game-info.yaml
+# (the release's base-pack), which says what each setting does; anything not here is Wolf3D's,
+# and `!remove` takes one of Wolf3D's out.
 
 # Shareware: no "This game is NOT shareware" notice
 non-shareware-notice: false
-
-title-pics:
-  - Title
-
-intro-music: NAZI_NOR
-high-scores-music: ROSTER
-menu-fade-color: "#AE0000"
-
-screen-fade-style: palette
-menu-fade-style: palette
-menu-fade-tics: 20
-death-fade-style: fizzle
-death-fade-tics: 70
-death-fade-color: Maroon
-death-turn-speed: 2
-death-hold-tics: 100
-level-fade-style: fizzle
-level-fade-tics: 20
-
-extra-life-score: 40000
 
 # Wolf3D's layout, but the level column is a plain floor number: one episode, so no "E1/L"
 high-scores:
   show-episode: false
 
-hud-messages:
-  enabled: false
-  pickup-style: Default
-  lock-style: Center
-  obituary-style: Obituary
-
-skills:
-  BABY:
-    name: "Can I play, Daddy?"
-    pic-name: C_BABYMODE
-    damage-taken: 0.25
-    enemy-health: health.baby
-  EASY:
-    name: "Don't hurt me."
-    pic-name: C_EASY
-    enemy-health: health.easy
-  MEDIUM:
-    name: "Bring 'em on!"
-    pic-name: C_NORMAL
-    enemy-health: health.normal
-  HARD:
-    name: "I am Death incarnate!"
-    pic-name: C_HARD
-    enemy-health: health.hard
-
-demo-skill: HARD
-
 # Every episode is listed, as in the original; picking one with a locked-message (and no
 # start-map) shows the message instead of starting it
 episodes:
-  EP01:
-    name: "Episode 1\nEscape from Wolfenstein"
-    start-map: MAP01
-    pic-name: C_EPISODE1
-    key: E
-  EP02:
-    name: "Episode 2\nOperation: Eisenfaust"
-    locked-message: $SHAREWARE_EPISODE
-    pic-name: C_EPISODE2
-    key: O
-  EP03:
-    name: "Episode 3\nDie, Fuhrer, Die!"
-    locked-message: $SHAREWARE_EPISODE
-    pic-name: C_EPISODE3
-    key: D
-  EP04:
-    name: "Episode 4\nA Dark Secret"
-    locked-message: $SHAREWARE_EPISODE
-    pic-name: C_EPISODE4
-    key: A
-  EP05:
-    name: "Episode 5\nTrail of the Madman"
-    locked-message: $SHAREWARE_EPISODE
-    pic-name: C_EPISODE5
-    key: T
-  EP06:
-    name: "Episode 6\nConfrontation"
-    locked-message: $SHAREWARE_EPISODE
-    pic-name: C_EPISODE6
-    key: C
+  EP02: { locked-message: $SHAREWARE_EPISODE, start-map: !remove }
+  EP03: { locked-message: $SHAREWARE_EPISODE, start-map: !remove }
+  EP04: { locked-message: $SHAREWARE_EPISODE, start-map: !remove }
+  EP05: { locked-message: $SHAREWARE_EPISODE, start-map: !remove }
+  EP06: { locked-message: $SHAREWARE_EPISODE, start-map: !remove }
 
-clusters:
-  1:
-    end-text: ENDART1
+clusters: { 2: !remove , 3: !remove , 4: !remove , 5: !remove , 6: !remove }
 
+# Episode 1's floors (MAP01-MAP10) are Wolf3D's; the other episodes' aren't in the shareware
+# data, and neither are the deathmatch arenas
 maps:
-  MAP01:
-    next: MAP02
-    secret-next: MAP10
-    floor-number: 1
-    par-time: 90
-    music: GETTHEM
-    cluster: 1
-  MAP02:
-    next: MAP03
-    floor-number: 2
-    par-time: 120
-    music: SEARCHN
-    cluster: 1
-  MAP03:
-    next: MAP04
-    floor-number: 3
-    par-time: 120
-    music: POW
-    cluster: 1
-  MAP04:
-    next: MAP05
-    floor-number: 4
-    par-time: 210
-    music: SUSPENSE
-    cluster: 1
-  MAP05:
-    next: MAP06
-    floor-number: 5
-    par-time: 180
-    music: GETTHEM
-    cluster: 1
-  MAP06:
-    next: MAP07
-    floor-number: 6
-    par-time: 180
-    music: SEARCHN
-    cluster: 1
-  MAP07:
-    next: MAP08
-    floor-number: 7
-    par-time: 150
-    music: POW
-    cluster: 1
-  MAP08:
-    next: MAP09
-    floor-number: 8
-    par-time: 150
-    music: SUSPENSE
-    cluster: 1
-  MAP09:
-    floor-number: 9
-    music: WARMARCH
-    cluster: 1
-  MAP10:
-    next: MAP02
-    floor-number: 10
-    music: CORNER
-    cluster: 1
-    ceiling-color: "#400040"
-
-end-strings:
-  - $ENDSTR1
-  - $ENDSTR2
-  - $ENDSTR3
-  - $ENDSTR4
-  - $ENDSTR5
-  - $ENDSTR6
-  - $ENDSTR7
-  - $ENDSTR8
-  - $ENDSTR9
+  {
+    MAP11: !remove , MAP12: !remove , MAP13: !remove , MAP14: !remove , MAP15: !remove ,
+    MAP16: !remove , MAP17: !remove , MAP18: !remove , MAP19: !remove , MAP20: !remove ,
+    MAP21: !remove , MAP22: !remove , MAP23: !remove , MAP24: !remove , MAP25: !remove ,
+    MAP26: !remove , MAP27: !remove , MAP28: !remove , MAP29: !remove , MAP30: !remove ,
+    MAP31: !remove , MAP32: !remove , MAP33: !remove , MAP34: !remove , MAP35: !remove ,
+    MAP36: !remove , MAP37: !remove , MAP38: !remove , MAP39: !remove , MAP40: !remove ,
+    MAP41: !remove , MAP42: !remove , MAP43: !remove , MAP44: !remove , MAP45: !remove ,
+    MAP46: !remove , MAP47: !remove , MAP48: !remove , MAP49: !remove , MAP50: !remove ,
+    MAP51: !remove , MAP52: !remove , MAP53: !remove , MAP54: !remove , MAP55: !remove ,
+    MAP56: !remove , MAP57: !remove , MAP58: !remove , MAP59: !remove , MAP60: !remove ,
+    DM01: !remove , DM02: !remove , DM03: !remove , DM04: !remove ,
+  }
