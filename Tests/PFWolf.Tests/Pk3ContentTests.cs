@@ -152,6 +152,35 @@ public class Pk3ContentTests
     }
 
     [Test]
+    public void A_Mod_Can_Remove_Actordefs_And_Mapdefs_Keys()
+    {
+        // Arrange: a mod taking out the Guard's Path state and the puddle's things: entry
+        var modFolder = Path.Combine(Path.GetTempPath(), $"pfwolf-remove-mod-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(Path.Combine(modFolder, "actordefs"));
+        Directory.CreateDirectory(Path.Combine(modFolder, "mapdefs"));
+        File.WriteAllText(Path.Combine(modFolder, "actordefs", "guards.yaml"), "Guard:\n  states:\n    Path: !remove\n");
+        File.WriteAllText(Path.Combine(modFolder, "mapdefs", "decorations.yaml"), "things:\n  23: !remove\n");
+
+        try
+        {
+            // Act
+            var loader = new PfWolfPk3Loader([new DirectoryAssetSource(TestPaths.Pk3SourceFolder())], "wolf3d", "wolf3d",
+                [new DirectoryAssetSource(modFolder)]);
+            var guard = loader.Load<ActorTranslationAsset>("wolf3d/actordefs").Actors["Guard"];
+            var mapdefs = loader.Load<MapObjectTranslationAsset>("wolf3d/mapdefs");
+
+            // Assert
+            Assert.That(loader.Warnings, Is.Empty);
+            Assert.That(guard.States.Keys, Does.Contain("Spawn").And.Not.Contain("Path"));
+            Assert.That(mapdefs.Things.Keys, Does.Not.Contain(23).And.Contain(24));
+        }
+        finally
+        {
+            Directory.Delete(modFolder, recursive: true);
+        }
+    }
+
+    [Test]
     public void Multiplayer_Pk3_Sprites_Have_The_See_Through_Color_Behind_Them()
     {
         // Arrange: SplitWolf's pictures, BMPs with a background color for see-through (152,0,136)

@@ -326,12 +326,19 @@ public class PfWolfPk3Loader
     /// merges into an earlier asset of the same name through that asset's Merge, which combines
     /// that many levels down (see YamlTree.MergeLevels); with 0 it replaces it. A mod's file is
     /// laid over the document loaded under that name so far (see YamlTree), and what that reads
-    /// as replaces the asset, so a mod only has to give what it changes.
+    /// as replaces the asset, so a mod only has to give what it changes, and can tag keys
+    /// !remove to take them out (see YamlTree.DeepMerge).
     /// </summary>
     private void LoadYaml(AssetSourceEntry entry, string assetName, bool isMod, int mergeLevels, Func<string, Asset> read)
     {
         var yaml = YamlDataEntryLoader.ReadText(entry.Open());
-        var asset = read(yaml);
+        var tree = _keepYamlTrees ? YamlTree.Parse(yaml) : null;
+
+        // A mod's !remove keys only mean something against the document they're laid over, so
+        // the file is read (checked) without them
+        var asset = isMod && tree != null && YamlTree.HasRemovals(tree)
+            ? read(YamlTree.ToText(YamlTree.WithoutRemovals(tree)))
+            : read(yaml);
         if (!_keepYamlTrees)
         {
             if (mergeLevels > 0)
@@ -342,7 +349,6 @@ public class PfWolfPk3Loader
         }
 
         var key = GetKey(assetName, GetAssetTypeName(asset));
-        var tree = YamlTree.Parse(yaml);
 
         if (!isMod)
         {
@@ -372,7 +378,7 @@ public class PfWolfPk3Loader
         }
 
         if (tree != null)
-            _yamlTrees[key] = tree;
+            _yamlTrees[key] = YamlTree.WithoutRemovals(tree);
         AddAsset(assetName, asset);
     }
 

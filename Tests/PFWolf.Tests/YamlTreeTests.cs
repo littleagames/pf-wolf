@@ -98,6 +98,53 @@ public class YamlTreeTests
     }
 
     [Test]
+    public void DeepMerge_Remove_Tag_Takes_Keys_Out_At_Any_Depth()
+    {
+        // Arrange
+        var target = Parse("guard:\n  health: 25\n  speed: 512\ndog:\n  health: 1\n");
+        var overlay = Parse("guard:\n  speed: !remove\ndog: !remove\nmissing: !remove\n");
+
+        // Act
+        YamlTree.DeepMerge(target, overlay);
+
+        // Assert
+        var guard = (YamlMappingNode)target.Children[new YamlScalarNode("guard")];
+        Assert.That(guard.Children.Keys.Select(k => ((YamlScalarNode)k).Value), Is.EqualTo(new[] { "health" }));
+        Assert.That(target.Children.Keys.Select(k => ((YamlScalarNode)k).Value), Is.EqualTo(new[] { "guard" }));
+    }
+
+    [Test]
+    public void DeepMerge_Leaves_Remove_Tags_Out_Of_New_Entries()
+    {
+        // Arrange
+        var target = Parse("guard:\n  health: 25\n");
+        var overlay = Parse("officer:\n  health: 50\n  speed: !remove\n");
+
+        // Act
+        YamlTree.DeepMerge(target, overlay);
+
+        // Assert
+        var officer = (YamlMappingNode)target.Children[new YamlScalarNode("officer")];
+        Assert.That(officer.Children, Has.Count.EqualTo(1));
+        Assert.That(YamlTree.HasRemovals(target), Is.False);
+    }
+
+    [Test]
+    public void WithoutRemovals_Reads_As_Plain_Yaml()
+    {
+        // Arrange
+        var node = Parse("guard:\n  health: 50\n  speed: !remove\n");
+
+        // Act
+        var stripped = YamlTree.WithoutRemovals(node);
+
+        // Assert
+        Assert.That(YamlTree.HasRemovals(node), Is.True);
+        Assert.That(YamlTree.ToText(stripped), Does.Not.Contain("remove"));
+        Assert.That(Scalar(stripped, "guard", "health"), Is.EqualTo("50"));
+    }
+
+    [Test]
     public void MergeLevels_One_Replaces_Whole_Top_Level_Entries()
     {
         // Arrange
