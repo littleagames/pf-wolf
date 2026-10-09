@@ -181,6 +181,36 @@ public class Pk3ContentTests
     }
 
     [Test]
+    [Explicit("Fails until the YAML merge rework's phase 1: the mods' YAML trees merge base actordefs without extend")]
+    public void A_Mod_Leaves_Extended_Actors_As_They_Were()
+    {
+        // Arrange: a mod that only adds an actor, so the pack's actordefs are rebuilt from YAML
+        var modFolder = Path.Combine(Path.GetTempPath(), $"pfwolf-extend-mod-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(Path.Combine(modFolder, "actordefs"));
+        File.WriteAllText(Path.Combine(modFolder, "actordefs", "probe.yaml"), "ZzProbe:\n  radius: 32\n");
+        var serializer = new YamlDotNet.Serialization.SerializerBuilder().DisableAliases().Build();
+
+        try
+        {
+            // Act: Planet Strike's actors, whose extend: true classes build on Blake's
+            var plain = Load("planetstrike", "blake-ps").Load<ActorTranslationAsset>("planetstrike/actordefs").Actors;
+            var modded = new PfWolfPk3Loader([new DirectoryAssetSource(TestPaths.Pk3SourceFolder())], "planetstrike", "blake-ps",
+                [new DirectoryAssetSource(modFolder)]).Load<ActorTranslationAsset>("planetstrike/actordefs").Actors;
+
+            // Assert
+            var changed = plain.Keys
+                .Where(name => !modded.TryGetValue(name, out var actor) || serializer.Serialize(actor) != serializer.Serialize(plain[name]))
+                .ToList();
+            Assert.That(changed, Is.Empty);
+            Assert.That(modded.Keys, Does.Contain("ZzProbe"));
+        }
+        finally
+        {
+            Directory.Delete(modFolder, recursive: true);
+        }
+    }
+
+    [Test]
     public void Multiplayer_Pk3_Sprites_Have_The_See_Through_Color_Behind_Them()
     {
         // Arrange: SplitWolf's pictures, BMPs with a background color for see-through (152,0,136)

@@ -659,6 +659,9 @@ public class PfWolfPk3Loader
     /// <summary>Each asset's history, by the same keys as GetAssets</summary>
     public Dictionary<string, List<AssetOrigin>> GetAssetOrigins() => _origins;
 
+    /// <summary>The assets by key as they stand, references not loaded (for the tests' snapshots)</summary>
+    internal IReadOnlyDictionary<string, Asset> PeekAssets() => _assets;
+
     private static string GetKey(string assetName, string assetType)
         => $"{assetType}:{assetName}".ToLowerInvariant();
 
