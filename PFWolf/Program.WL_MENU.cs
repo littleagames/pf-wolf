@@ -2230,7 +2230,7 @@ internal partial class Program
                 .Concat(menu.Components.Select(component => component.GamePacks));
             foreach (var pack in packLists.Where(list => list != null).SelectMany(list => list!).Distinct())
             {
-                if (!GameEngineManager.KnownGamePackIds.Contains(GamePackList.PackName(pack), StringComparer.OrdinalIgnoreCase))
+                if (pack != GamePackList.AnyPack && !_gameEngineManager.KnownGamePackIds.Contains(GamePackList.PackName(pack), StringComparer.OrdinalIgnoreCase))
                     Console.WriteLine($"Menu '{menuName}': unknown game pack '{pack}' in game-packs");
             }
         }
@@ -2289,6 +2289,8 @@ internal partial class Program
         {
             if (selection >= 0 && selection < items.Length)
                 curpos = (short)selection;
+            else if (menuAsset.ItemsSource != null)
+                curpos = (short)Math.Max(0, items.Length - 1);    // the game has fewer (one skill, say): the last
             else
                 Console.WriteLine($"Menu '{name}': default-selection {selection} is out of range (0-{items.Length - 1})");
         }

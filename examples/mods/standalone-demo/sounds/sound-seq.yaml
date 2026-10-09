@@ -1,0 +1,28 @@
+# The mod's own sounds (sounds/*.wav, made by examples/tools/make-standalone-demo.ps1), by the
+# names actordefs, mapdefs, the shared menus and the engine play them by. pfwolf.pk3's
+# sounds/sound-seq.yaml names Wolf3D's sounds for them, which a standalone game doesn't have.
+sound-info:
+  standalone/blaster:
+    digitized: BLASTER
+  switches/elevbutn:
+    digitized: SWITCH
+  menu/move1:
+    digitized: CLICK
+  menu/move2:
+    digitized: CLICK
+  menu/activate:
+    digitized: SELECT
+  world/hitwall:
+    digitized: THUD
+  player/usefail:
+    digitized: THUD
+  doors/open:
+    digitized: DOOR
+  doors/close:
+    digitized: DOOR
+  misc/ammo_pkup:
+    digitized: PICKUP
+  misc/health_pkup:
+    digitized: PICKUP
+  misc/i_pkup:
+    digitized: PICKUP

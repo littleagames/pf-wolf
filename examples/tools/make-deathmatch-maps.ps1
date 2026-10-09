@@ -1,4 +1,4 @@
-# Builds Wolf3D's deathmatch arenas, pfwolf-pk3/maps/DM01.wad to DM04.wad, from the layouts
+# Builds Wolf3D's deathmatch arenas, pfwolf-pk3/maps/wolf3d/DM01.wad to DM04.wad, from the layouts
 # drawn below. Run it after changing a layout:
 #
 #   powershell -ExecutionPolicy Bypass -File examples/tools/make-deathmatch-maps.ps1
@@ -243,7 +243,7 @@ function Write-Arena($arena) {
     if ($Show) { $layout; '' }
 }
 
-$mapsDir = Join-Path $PSScriptRoot '..\..\pfwolf-pk3\maps'
+$mapsDir = Join-Path $PSScriptRoot '..\..\pfwolf-pk3\maps\wolf3d'
 New-Item -ItemType Directory -Force $mapsDir | Out-Null
 $mapsDir = (Resolve-Path $mapsDir).Path
 foreach ($arena in $Arenas) { Write-Arena $arena }

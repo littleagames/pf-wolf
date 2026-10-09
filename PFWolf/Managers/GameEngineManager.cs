@@ -44,7 +44,8 @@ internal class GameEngineManager
     
     public ConfigDirectories ConfigDirectories { get; private set; }
 
-    public GameType GameType { get; set; }
+    /// <summary>The running game: one of PFWolf's own, or one a mod adds (a standalone game)</summary>
+    public GameSelection Game { get; private set; } = GameSelection.Of(GameType.Wolf3D);
 
 
     internal bool Paused;
@@ -52,41 +53,34 @@ internal class GameEngineManager
     internal const string ConfigFileName = "config.cfg";
     private const ushort ConfigSignature = 0xfefa;
 
-    public void Init(GameParams args)
+    /// <param name="modPaths">The command line's mods, one of which can add the game to run</param>
+    public void Init(GameParams args, IEnumerable<string> modPaths)
     {
         // First: the settings and save folders depend on which game is running
-        GameType = PickGameType(ParseGameType(args.Game));
+        Game = GameTypes.PickGame(args.Game, modPaths);
         ReadConfigData(args);
     }
-
-    /// <inheritdoc cref="GameTypes.PickGameType"/>
-    private static GameType PickGameType(GameType? requested) => GameTypes.PickGameType(requested);
-
-    /// <inheritdoc cref="GameTypes.ParseGameType"/>
-    private static GameType? ParseGameType(string gamePackId) => GameTypes.ParseGameType(gamePackId);
 
     /// <summary>
     /// Name of the running game pack ("wolf3d", "spear"): the gamepacks/ folder name,
     /// and what menudefs list under game-packs
     /// </summary>
-    public string GamePackId => GetGamePackId(GameType);
+    public string GamePackId => Game.PackId;
 
     /// <summary>
     /// Key of the running release in gamepacks/gamepack-info.yaml, which names its data files
     /// and palette. Fixed per game until the release is detected from the data files.
     /// </summary>
-    public string GameReleaseId => GetReleaseId(GameType);
-
-    private static string GetReleaseId(GameType type) => GameTypes.GetReleaseId(type);
-
-    private static string GetGamePackId(GameType type) => GameTypes.GetGamePackId(type);
+    public string GameReleaseId => Game.ReleaseId;
 
     /// <summary>
     /// Folder under %APPDATA%\PFWolf holding this game's settings, high scores and saves,
-    /// so games don't share them. Wolf3D keeps the folder it has always used.
+    /// so games don't share them. Wolf3D keeps the folder it has always used; a game a mod adds
+    /// has one named after it.
     /// </summary>
-    private string GameDataFolderName => GameType switch
+    private string GameDataFolderName => Game.Type switch
     {
+        null => SafeFolderName(Game.PackId),
         GameType.SpearOfDestiny => "SpearOfDestiny",
         GameType.BlakeStone => "BlakeStone",
         GameType.PlanetStrike => "PlanetStrike",
@@ -95,10 +89,21 @@ internal class GameEngineManager
         _ => "Wolfenstein3D",       // Apogee's release too: the same game, so the same settings
     };
 
+    private static string SafeFolderName(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var safe = new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray()).Trim('.', ' ');
+        return safe.Length == 0 ? "Game" : safe;
+    }
+
     /// <summary>
-    /// Every game pack name the engine knows about
+    /// Every game pack name the engine knows about: PFWolf's own, and those the running game's
+    /// gamepack-info lists (a mod's game among them)
     /// </summary>
-    public static IEnumerable<string> KnownGamePackIds => GameTypes.KnownGamePackIds;
+    public IEnumerable<string> KnownGamePackIds
+        => GameTypes.KnownGamePackIds
+            .Concat(assetManager.Value.Find<GamePackInfoAsset>("gamepack-info")?.GamePacks.Keys ?? Enumerable.Empty<string>())
+            .Distinct(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// The engine's version from the build (Version in Wolf3D.csproj): "0.1", followed by the
@@ -677,7 +682,8 @@ internal class GameEngineManager
         }
 
         ConfigDirectories = directories;
-        CopyLegacyConfigFiles();
+        if (Game.Type != null)      // the old settings beside the exe are PFWolf's own games'
+            CopyLegacyConfigFiles();
     }
 
     /// <summary>
@@ -755,6 +761,8 @@ internal class GameEngineManager
     public void Restart()
     {
         var args = new List<string> { "--game", GamePackId };
+        if (Game.ModPath != null)       // the mod a standalone game comes from
+            args.AddRange(["--file", Game.ModPath]);
         if (!string.IsNullOrWhiteSpace(GameParams.ConfigDir))
             args.AddRange(["--configdir", GameParams.ConfigDir]);
         if (!string.IsNullOrWhiteSpace(GameParams.SavesDir))

@@ -1,0 +1,61 @@
+# The whole game-info: a standalone game has no other to start from. See pfwolf.pk3's
+# gamepacks/wolf3d/game-info.yaml for what each setting does.
+default-map:
+  ceiling-color: "#303848"
+  floor-color: "#5A5048"
+  # Dim, so the lamps' light shows
+  shading:
+    light: 150
+    fade-start: 2
+    fade-end: 18
+    max-fade: 70
+
+# The startup info is printed in the signon picture's dark panel
+signon:
+  pic: SDSIGNON
+  press-a-key: true
+  text-area: { x: 18, y: 46, width: 284, height: 134 }
+
+# Until a key goes to the menu: the title, then the high scores
+title-pics:
+  - SDTITLE
+title-loop:
+  - title: true
+    seconds: 8
+  - high-scores: true
+    seconds: 6
+
+# No music: an empty name keeps the menus from asking for the shared menus' WONDERIN
+menu-music: ""
+
+# The high scores in the mod's own fonts, with no pictures (Wolf3D's are pictures from its
+# VGAGRAPH), and the table a new player starts with
+high-scores:
+  pic: ""
+  headers: []
+  labels:
+    - { text: "High scores", x: 92, y: 30, font: LargeFont, color: READHCOLOR }
+    - { text: "Name", x: 32, y: 62, color: READCOLOR }
+    - { text: "Floor", x: 148, y: 62, color: READCOLOR }
+    - { text: "Score", x: 228, y: 62, color: READCOLOR }
+  show-episode: false
+  defaults:
+    - { name: "The Diver", score: 5000 }
+    - { name: "Deep Blue", score: 4000 }
+    - { name: "Anglerfish", score: 3000 }
+    - { name: "Barnacle", score: 2000 }
+    - { name: "Plankton", score: 1000 }
+
+skills:
+  NORMAL:
+    name: "Normal"
+
+episodes:
+  EP01:
+    name: "The Vault"
+    start-map: MAP01
+
+maps:
+  MAP01:
+    name: "The Vault"
+    floor-number: 1

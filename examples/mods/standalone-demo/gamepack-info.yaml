@@ -1,0 +1,8 @@
+# A game of its own: built on `standalone`, it needs no game's data files, and starts from no
+# game's actordefs, mapdefs or gamepacks files: everything it has is in this folder (apart from
+# the shared menus and language strings in pfwolf.pk3). Run it with
+#   PFWolf --file examples/mods/standalone-demo
+# (or drop the folder on PFWolf.exe); --game standalone-demo picks it out from other mods.
+standalone-demo:
+  title: Standalone Demo
+  base-pack: standalone

@@ -21,7 +21,7 @@ public sealed class GameContent
     private readonly Dictionary<string, ActorData> _actors = new(StringComparer.Ordinal);
     private readonly HashSet<string> _rotating = new(StringComparer.OrdinalIgnoreCase);
 
-    private GameContent(AssetManager assets, GameType game, MapObjectTranslationAsset mapDefs, GameInfoAsset? gameInfo,
+    private GameContent(AssetManager assets, GameSelection game, MapObjectTranslationAsset mapDefs, GameInfoAsset? gameInfo,
         PaletteColor[] palette, IEnumerable<Dictionary<string, ActorData>> actorDefs)
     {
         Assets = assets;
@@ -43,8 +43,9 @@ public sealed class GameContent
     }
 
     public AssetManager Assets { get; }
-    public GameType Game { get; }
-    public string PackId => GameTypes.GetGamePackId(Game);
+    /// <summary>The game loaded: one of PFWolf's own, or a game a mod adds (a standalone game)</summary>
+    public GameSelection Game { get; }
+    public string PackId => Game.PackId;
     public MapObjectTranslationAsset MapDefs { get; }
     public GameInfoAsset? GameInfo { get; }
     /// <summary>The game palette the editor draws in: as loaded, or as the palette browser is editing it</summary>
@@ -62,21 +63,23 @@ public sealed class GameContent
     /// game, it reads them from the working folder, which it changes to that one. Warnings go to
     /// WarningLog; a game that can't load throws (DataFilesException for missing data files).
     /// </summary>
-    /// <param name="requestedPack">A game pack id ("spear"), or empty to pick by the data files</param>
+    /// <param name="requestedPack">A game pack id ("spear", or a game a mod adds), or empty to pick by
+    /// the data files, or by the mods when one adds a game (a standalone game needs no data files)</param>
     public static GameContent Load(string gameFolder, string requestedPack, IEnumerable<string> mods)
     {
         if (!File.Exists(Path.Combine(gameFolder, AssetManager.BasePk3FileName)))
             throw new FileNotFoundException($"There's no {AssetManager.BasePk3FileName} in {gameFolder}: pick the folder PFWolf is in");
 
         Directory.SetCurrentDirectory(gameFolder);
-        var game = GameTypes.PickGameType(GameTypes.ParseGameType(requestedPack));
+        var modList = mods.ToList();
+        var game = GameTypes.PickGame(requestedPack, modList);
 
         var assets = new AssetManager();
-        assets.Load(GameTypes.GetGamePackId(game), GameTypes.GetReleaseId(game), mods);
+        assets.Load(game.PackId, game.ReleaseId, modList);
         foreach (var warning in assets.ModWarnings)
             WarningLog.Write(warning);
 
-        var packId = GameTypes.GetGamePackId(game);
+        var packId = game.PackId;
         var mapDefs = assets.FindInGamePack<MapObjectTranslationAsset>("mapdefs")
             ?? throw new InvalidDataException($"{packId} has no mapdefs");
         var palette = assets.Find<Palette>(assets.GetGamePaletteName())?.Colors ?? [];
@@ -94,7 +97,7 @@ public sealed class GameContent
     /// </summary>
     public static GameContent FromDefinitions(MapObjectTranslationAsset mapDefs, GameInfoAsset? gameInfo = null,
         Dictionary<string, ActorData>? actors = null)
-        => new(new AssetManager(), GameType.Wolf3D, mapDefs, gameInfo, [], actors != null ? [actors] : []);
+        => new(new AssetManager(), GameSelection.Of(GameType.Wolf3D), mapDefs, gameInfo, [], actors != null ? [actors] : []);
 
     /// <summary>An asset, or null without the "not found" warning AssetManager.Find gives</summary>
     public T? Find<T>(string name) where T : Asset

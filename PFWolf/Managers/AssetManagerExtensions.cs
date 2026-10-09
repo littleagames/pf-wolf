@@ -54,7 +54,7 @@ internal static class AssetManagerExtensions
         var languageAssets = new[]
         {
             assets.Find<LanguageAsset>($"language/{normalizedName}"),
-            assets.FindInGamePack<LanguageAsset>($"language/{normalizedName}"),
+            assets.FindInGamePackIfAny<LanguageAsset>($"language/{normalizedName}"),
         };
         foreach (var asset in languageAssets)
         {

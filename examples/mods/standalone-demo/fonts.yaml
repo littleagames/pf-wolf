@@ -1,0 +1,31 @@
+# The fonts, from picture sheets in graphics/ (made by examples/tools/make-standalone-demo.ps1):
+# a standalone game has no VGAGRAPH to take Wolf3D's from. See pfwolf.pk3's
+# gamepacks/wolf3d/fonts.yaml for the settings. The menus print in SmallFont and LargeFont.
+SmallFont:
+  type: sheet
+  image: SDFONTS
+  cell-width: 8
+  cell-height: 10
+  proportional: true
+  upper-case: true
+  colorize: true
+
+LargeFont:
+  type: sheet
+  image: SDFONTL
+  cell-width: 12
+  cell-height: 13
+  proportional: true
+  upper-case: true
+  spacing: 2
+  colorize: true
+
+HudMessage:
+  type: sheet
+  image: SDFONTS
+  cell-width: 8
+  cell-height: 10
+  proportional: true
+  upper-case: true
+  colorize: true
+  shadow: {}

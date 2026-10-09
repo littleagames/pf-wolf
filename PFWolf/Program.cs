@@ -148,7 +148,7 @@ internal partial class Program
         UseGameFolder();
 
         new Program();
-        _gameEngineManager.Init(gameParams);
+        _gameEngineManager.Init(gameParams, modPaths);
         SetNetParams(gameParams);     // --host, --join, --port, --name (Program.Multiplayer.cs)
         SetWarpParams(gameParams);    // --warp, --skill, --start (Program.Warp.cs)
 
@@ -478,7 +478,7 @@ internal partial class Program
 
             StartCPMusic(INTROSONG);
 
-            if (!param_nowait)
+            if (!param_nowait && _assetManager.Exists<GraphicAsset>("pg13"))    // a standalone game may have none
                 PG13();
         }
 

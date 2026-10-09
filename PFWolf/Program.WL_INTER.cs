@@ -70,7 +70,8 @@ internal partial class Program
             DrawStripes(10);
         }
 
-        _graphicManager.DrawPic(layout.Pic, layout.PicX, layout.PicY);
+        if (!string.IsNullOrEmpty(layout.Pic))      // pic: "" for none (labels can head the screen)
+            _graphicManager.DrawPic(layout.Pic, layout.PicX, layout.PicY);
         foreach (var header in layout.Headers)
             _graphicManager.DrawPic(header.Pic, header.X, header.Y);
         var language = _assetManager.GetText("en-us");
@@ -245,7 +246,8 @@ internal partial class Program
         // Centered over the screen above the status bar
         int boxX = (_videoManager.screenWidth - _videoManager.ToScreenLength(224)) / 2;
         int boxY = (_videoManager.ScreenYAboveBottom(STATUSLINES) - _videoManager.ToScreenLength(48)) / 2;
-        _graphicManager.DrawPicScaledCoord("getpsyched", boxX, boxY);
+        if (_assetManager.Exists<GraphicAsset>("getpsyched"))     // a standalone game may have none
+            _graphicManager.DrawPicScaledCoord("getpsyched", boxX, boxY);
 
         _videoManager.Update();
         _videoManager.FadeIn();
@@ -264,7 +266,7 @@ internal partial class Program
 
     /// <summary>The game pack's level-end screen settings (intermission.yaml); empty if it has none.</summary>
     static IntermissionAsset Intermission =>
-        intermission ?? (intermission = _assetManager.FindInGamePack<IntermissionAsset>("intermission")) ?? NoIntermission;
+        intermission ?? (intermission = _assetManager.FindInGamePackIfAny<IntermissionAsset>("intermission")) ?? NoIntermission;
 
     /// <summary>Plays one of the intermission's sounds; one it leaves out is silent.</summary>
     static void PlayIntermissionSound(string? name)

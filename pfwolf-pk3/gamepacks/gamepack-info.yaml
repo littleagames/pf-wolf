@@ -27,6 +27,25 @@
 #                        merging into it (spear's game-info gives its own maps: this way)
 # Where files merge, a key that's left out keeps what's there; to put a setting back to its
 # default, !remove it.
+#
+# A release with no file-pack plays the nearest base pack's data files; with none along the way it
+# has no data files at all, and everything it has comes from the pk3s.
+#
+# Mods can add games of their own: a gamepack-info.yaml at a mod's root lists them as here (it
+# can't change the ones below). A standalone game, which needs no game's data files, is built on
+# `standalone`:
+#   my-game:
+#     title: My Game
+#     base-pack: standalone
+# --game my-game --file my-game.pk3 runs it, and so does the mod on its own (dropped on the exe).
+# Its files load in my-game's folders, so it starts from nothing: no actordefs, mapdefs or
+# gamepacks files but its own (and the shared ones directly in actordefs/, language/, sounds/ and
+# menudefs/, the menus every game starts from).
+
+standalone:
+  title: PFWolf
+  # A mod's own palettes/NAME.pal can replace it, or its game can give its own game-palette
+  game-palette: wolfpal
 
 wolf3d:
   title: Wolfenstein 3D

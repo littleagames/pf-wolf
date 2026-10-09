@@ -560,7 +560,7 @@ maps:
     music: FUNKYOU
     cluster: 6
 
-  # Deathmatch arenas (maps/DM01.wad..., made by examples/tools/make-deathmatch-maps.ps1):
+  # Deathmatch arenas (maps/wolf3d/DM01.wad..., made by examples/tools/make-deathmatch-maps.ps1):
   # picked by name in the multiplayer lobby; in no episode, but `map DM01` warps to one to try
   # it out. No exits: a match ends on its frag or time limit.
   DM01:

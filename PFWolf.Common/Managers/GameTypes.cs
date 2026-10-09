@@ -24,10 +24,54 @@ public enum GameType
 }
 
 /// <summary>
+/// The game that runs: its pack ("wolf3d", the gamepacks/ folder name menudefs and mods list) and
+/// release (its key in gamepack-info.yaml, "wolf3d-apogee"). Type is null for a game a mod adds,
+/// whose pack and release are both its key in the mod's gamepack-info.yaml, and ModPath that mod's
+/// full path (so the game can be started again with it).
+/// </summary>
+public sealed record GameSelection(string PackId, string ReleaseId, GameType? Type, string? ModPath = null)
+{
+    public static GameSelection Of(GameType type) => new(GameTypes.GetGamePackId(type), GameTypes.GetReleaseId(type), type);
+
+    /// <summary>A game a mod adds</summary>
+    public static GameSelection ModGame(string id, string modPath) => new(id, id, null, modPath);
+}
+
+/// <summary>
 /// The games PFWolf runs, and which one the data files in the game folder are for
 /// </summary>
 public static class GameTypes
 {
+    /// <summary>
+    /// The game to run: one --game names that a mod on the command line adds (a standalone
+    /// game), else one of PFWolf's own (see PickGameType). With no --game, a mod that adds a game
+    /// runs the first game it adds, so a standalone mod dropped on the exe plays.
+    /// </summary>
+    /// <param name="requestedPack">--game's pack id, or empty</param>
+    /// <param name="modPaths">The command line's mods (paths, or names in the mods folder)</param>
+    public static GameSelection PickGame(string? requestedPack, IEnumerable<string> modPaths)
+    {
+        var modGames = ModSource.OpenGameMods(modPaths)
+            .SelectMany(mod => mod.Games!.GamePacks.Keys.Select(id => (Id: id, Mod: mod)))
+            .Where(game => !KnownGamePackIds.Concat(Enum.GetValues<GameType>().Select(GetReleaseId))
+                .Contains(game.Id, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+
+        var requested = requestedPack?.Trim();
+        if (!string.IsNullOrEmpty(requested))
+        {
+            var modGame = modGames.FirstOrDefault(game => game.Id.Equals(requested, StringComparison.OrdinalIgnoreCase));
+            if (modGame.Id != null)
+                return GameSelection.ModGame(modGame.Id, modGame.Mod.FullPath);
+            return GameSelection.Of(PickGameType(ParseGameType(requested)));
+        }
+
+        if (modGames.Count > 0)
+            return GameSelection.ModGame(modGames[0].Id, modGames[0].Mod.FullPath);
+
+        return GameSelection.Of(PickGameType(null));
+    }
+
     /// <summary>
     /// What's played when no game is asked for, or the one asked for has no data files here: the
     /// first of these whose data files are all in the game folder

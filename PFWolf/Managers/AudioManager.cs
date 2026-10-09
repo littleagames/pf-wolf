@@ -477,7 +477,8 @@ internal class AudioManager
         var musicFile = !string.IsNullOrWhiteSpace(name) && assetManager.Exists<MusicFileAsset>(name)
             ? assetManager.Find<MusicFileAsset>(name)
             : null;
-        var imfTrack = musicFile == null ? assetManager.Find<Wolf3dImfAudio>(name) : null;
+        // No name: a level or screen without music (a standalone game may have none)
+        var imfTrack = musicFile == null && !string.IsNullOrWhiteSpace(name) ? assetManager.Find<Wolf3dImfAudio>(name) : null;
         if (musicFile == null && imfTrack == null)
             return;
 

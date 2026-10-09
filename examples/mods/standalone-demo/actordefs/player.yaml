@@ -1,0 +1,100 @@
+# The player, its weapon and what it picks up. A standalone game starts from none of Wolf3D's
+# classes, only the engine's own (pfwolf.pk3's actordefs/native.yaml: Inventory, Ammo, Health,
+# Weapon...). See pfwolf.pk3's actordefs/wolf3d/ for what each property does.
+Player:
+  properties:
+    "tag": "The Diver"
+    "player.startitem":
+      Blaster: 1
+      Cell: 20
+    "player.starthealth": 100
+    "player.startlives": 3
+    "player.maxhealth": 100
+    "player.maxlives": 9
+
+# Fires a hitscan bolt every 12 tics while the trigger is held
+Blaster:
+  parent: Weapon
+  properties:
+    "inventory.type": Blaster
+    "weapon.slot": 1
+    "weapon.selectionorder": 100
+    "weapon.ammotype1": Cell
+    "weapon.ammouse1": 1
+    "weapon.ammogive1": 10
+    "weapon.yadjust": 19
+    "attacksound": "standalone/blaster"
+  flags: [WEAPON.NOGRIN, WEAPON.DONTBOB]
+  states:
+    Select:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 1
+        action: A_Raise
+        next-state: Select
+    Deselect:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 1
+        action: A_Lower
+        next-state: Deselect
+    Ready:
+      - sprite: BLST
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: BLST
+        frames: [B]
+        tics-per-frame: 6
+        modifiers: [bright]
+        light: { intensity: 200, radius: 3, color: "#80C0FF" }
+        action: A_GunAttack
+      - sprite: BLST
+        frames: [C]
+        tics-per-frame: 6
+        action: A_ReFire
+      - sprite: BLST
+        frames: [A]
+        tics-per-frame: 6
+        next-state: Ready
+
+Cell:
+  parent: Ammo
+  properties:
+    "inventory.type": Cell
+    "inventory.amount": 10
+    "inventory.maxamount": 99
+    "inventory.pickupmessage": "Picked up energy cells"
+  states:
+    Spawn:
+      - sprite: CELL
+        frames: [A]
+        tics-per-frame: -1
+
+Medkit:
+  parent: Health
+  properties:
+    "inventory.amount": 25
+    "inventory.pickupmessage": "Picked up a medkit"
+  states:
+    Spawn:
+      - sprite: MEDK
+        frames: [A]
+        tics-per-frame: -1
+
+# A glowing lamp standing on the floor: solid, and lighting the room round it
+Lamp:
+  radius: 32
+  flags: [SOLID]
+  properties:
+    "light.intensity": 255
+    "light.radius": 4
+    "light.color": "#FFE0A0"
+  states:
+    Spawn:
+      - sprite: LAMP
+        frames: [A]
+        tics-per-frame: -1
+        modifiers: [bright]

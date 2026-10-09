@@ -1,0 +1,69 @@
+# What the level's tile numbers mean. A standalone game starts from no game's mapdefs, so every
+# number the map uses is given here. See pfwolf.pk3's mapdefs/wolf3d/ for each table's settings.
+walls:
+  '1':                          # the vault's stone
+    North: SDSTON1
+    South: SDSTON1
+    East: SDSTON2
+    West: SDSTON2
+  '2':                          # its metal panels
+    North: SDPANL1
+    South: SDPANL1
+    East: SDPANL2
+    West: SDPANL2
+  '3':                          # the exit switch: ends the level
+    North: SDEXIT1
+    South: SDEXIT1
+    East: SDEXIT2
+    West: SDEXIT2
+    switch:
+      to: 4
+      sound: switches/elevbutn
+      actions:
+        - A_Exit
+  '4':                          # the switch thrown
+    North: SDEXON1
+    South: SDEXON1
+    East: SDEXON2
+    West: SDEXON2
+
+doors:
+  '90':
+    open-sound: doors/open
+    close-sound: doors/close
+    Vertical: true
+    East: SDDOOR2
+    West: SDDOOR2
+    North: SDSLOT1
+    South: SDSLOT1
+  '91':
+    open-sound: doors/open
+    close-sound: doors/close
+    North: SDDOOR1
+    South: SDDOOR1
+    East: SDSLOT2
+    West: SDSLOT2
+
+floors:
+  area-start: 107
+  area-count: 37
+  ambush: 106
+  secret-exit: -1
+
+player-starts:
+  19:
+    angles: 90
+  20:
+    angles: 0
+  21:
+    angles: 270
+  22:
+    angles: 180
+
+things:
+  23:
+    class: Lamp
+  24:
+    class: Cell
+  25:
+    class: Medkit

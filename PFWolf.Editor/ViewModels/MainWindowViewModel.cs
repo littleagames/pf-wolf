@@ -50,10 +50,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public ToolController Controller { get; } = new();
 
-    /// <summary>Wolf3D and Spear for now; Blake Stone's games come later</summary>
+    /// <summary>
+    /// Wolf3D and Spear for now; Blake Stone's games come later. The first also picks a game a
+    /// mod adds (a standalone game, which needs no data files) when one of the mods does.
+    /// </summary>
     public IReadOnlyList<GameChoice> GameChoices { get; } =
     [
-        new("", "By the data files"),
+        new("", "By the data files or mods"),
         new("wolf3d", "Wolfenstein 3D"),
         new("wolf3d-apogee", "Wolfenstein 3D (Apogee)"),
         new("wolf3d-shareware", "Wolfenstein 3D (shareware)"),

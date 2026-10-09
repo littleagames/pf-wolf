@@ -1,0 +1,25 @@
+# The level-end and victory screens (see pfwolf.pk3's gamepacks/wolf3d/intermission.yaml for
+# every setting). A standalone game has none of Wolf3D's: without this file a level ends on a
+# blank screen. The text is in the mod's own LargeFont.
+font: LargeFont
+color: HIGHLIGHT
+
+labels:
+  - { text: "Floor complete", x: 64, y: 24 }
+  - { text: "Time", x: 64, y: 72 }
+  - { text: "Kills", x: 64, y: 96 }
+  - { text: "Secrets", x: 64, y: 120 }
+  - { text: "Treasure", x: 64, y: 144 }
+values:
+  time: { x: 200, y: 72 }
+  kill: { right: 256, y: 96 }
+  secret: { right: 256, y: 120 }
+  treasure: { right: 256, y: 144 }
+
+victory:
+  labels:
+    - { text: "You escaped", x: 64, y: 48 }
+    - { text: "the vault!", x: 64, y: 72 }
+    - { text: "Total time", x: 64, y: 120 }
+  values:
+    time: { x: 200, y: 120 }

@@ -43,8 +43,13 @@ public class AssetManager
         _gamePackId = gamePackId;
         _gameReleaseId = gameReleaseId;
         var basePk3 = new Pk3AssetSource(BasePk3FileName);
-        BasePackIds = PfWolfPk3Loader.ReadBasePackIds(basePk3, gameReleaseId);
-        LoadedMods = OpenMods(modPaths, gamePackId);
+        LoadedMods = OpenMods(modPaths, gamePackId, mods =>
+        {
+            // The release can be a game a mod adds, so its base packs are known once the mods are open
+            var info = PfWolfPk3Loader.ReadGamePackInfo(basePk3)
+                ?.WithModGames(mods.Where(mod => mod.HasGames).Select(mod => (mod.DisplayName, mod.Games!)));
+            BasePackIds = info?.GamePacks.ContainsKey(gameReleaseId) == true ? info.GetBasePackChain(gameReleaseId) : [];
+        });
 
         Dictionary<string, Asset> assets = new();
         var pfWolfBasePk3Loader = new PfWolfPk3Loader([basePk3], gamePackId, gameReleaseId,
@@ -58,13 +63,22 @@ public class AssetManager
                 _assets[kvp.Key] = kvp.Value;
         }
 
-        var rawDataMap = FindInGamePack<RawDataMapAsset>("raw-data-map");
+        var rawDataMap = FindInGamePackIfAny<RawDataMapAsset>("raw-data-map");
 
         // The release's data files, named by its file-pack in gamepack-info
         var gamePackInfo = Find<GamePackInfoAsset>("gamepack-info")
             ?? throw new KeyNotFoundException("gamepacks/gamepack-info.yaml is missing from pfwolf.pk3");
         string DataFile(string loaderName, Func<FileLoaderDetails, FileReference?> selectFile)
             => gamePackInfo.GetDataFile(gameReleaseId, loaderName, selectFile);
+
+        // A standalone game has no data files: everything it has is in the pk3s
+        if (!gamePackInfo.HasDataFiles(gameReleaseId))
+        {
+            LoadLevels(pfWolfBasePk3Loader, rawDataMap?.Maps ?? [], headerFile: null, dataFile: null);
+            ModWarnings.AddRange(pfWolfBasePk3Loader.Warnings);
+            return;
+        }
+
         CheckDataFiles(gamePackInfo, gameReleaseId);
 
         var audioLoader = new Wolf3dAudioFileLoader(
@@ -102,13 +116,14 @@ public class AssetManager
     private static void CheckDataFiles(GamePackInfoAsset gamePackInfo, string gameReleaseId)
     {
         var gamePack = gamePackInfo.GetGamePack(gameReleaseId);
-        var release = gamePack.FilePack?.Description ?? gamePack.Title ?? gameReleaseId;
+        var filePack = gamePackInfo.GetFilePack(gameReleaseId);
+        var release = filePack?.Description ?? gamePack.Title ?? gameReleaseId;
 
         var missing = gamePackInfo.FindMissingDataFiles(gameReleaseId);
         if (missing.Count > 0)
             throw new DataFilesException($"{release}: these data files aren't in the game folder: {string.Join(", ", missing)}");
 
-        if (gamePack.FilePack?.StrictMd5 == true)
+        if (filePack?.StrictMd5 == true)
         {
             var mismatched = gamePackInfo.FindMismatchedDataFiles(gameReleaseId);
             if (mismatched.Count > 0)
@@ -172,9 +187,10 @@ public class AssetManager
     /// <summary>
     /// The levels in GAMEMAPS/MAPHEAD pairs, beneath the pk3s' maps/*.wad levels: the game's
     /// own pair, then level by level a pk3's pair under maps/ (named like the game's own). The
-    /// game's own pair isn't needed when a pk3 supplies the levels game-info plays.
+    /// game's own pair isn't needed when a pk3 supplies the levels game-info plays. A standalone
+    /// game has no pair (null file names): only the pk3s' maps/*.wad.
     /// </summary>
-    private void LoadLevels(PfWolfPk3Loader pk3Loader, List<string> levelNames, string headerFile, string dataFile)
+    private void LoadLevels(PfWolfPk3Loader pk3Loader, List<string> levelNames, string? headerFile, string? dataFile)
     {
         var levels = new Dictionary<string, (Asset Map, List<AssetOrigin> History)>();
         void AddPair(Wolf3dMapFileLoader loader, string source, Func<string, string> path, Action<string> warn)
@@ -190,10 +206,10 @@ public class AssetManager
 
         var ownPair = File.Exists(headerFile) && File.Exists(dataFile);
         if (ownPair)
-            AddPair(Wolf3dMapFileLoader.FromFiles(headerFile, dataFile), dataFile.ToLowerInvariant(), name => name,
+            AddPair(Wolf3dMapFileLoader.FromFiles(headerFile!, dataFile!), dataFile!.ToLowerInvariant(), name => name,
                 warning => ModWarnings.Add($"{dataFile}: {warning}"));
 
-        var pk3Pair = pk3Loader.FindMapFilePair(headerFile, dataFile);
+        var pk3Pair = headerFile != null && dataFile != null ? pk3Loader.FindMapFilePair(headerFile, dataFile) : null;
         if (pk3Pair is { } pair)
         {
             var where = $"{pair.Data.Source.Name}: {pair.Data.FullName}";
@@ -212,7 +228,7 @@ public class AssetManager
             AddBeneathPk3s(GetKey(name, nameof(MapAsset)), level.Map, level.History);
 
         // Levels game-info sends the player to that nothing supplied
-        var gameInfo = FindInGamePack<GameInfoAsset>("game-info");
+        var gameInfo = FindInGamePackIfAny<GameInfoAsset>("game-info");
         if (gameInfo == null)
             return;
 
@@ -226,7 +242,7 @@ public class AssetManager
             return;
 
         var list = string.Join(", ", missing.Take(8)) + (missing.Count > 8 ? $" and {missing.Count - 8} more" : "");
-        if (!ownPair && pk3Pair == null)
+        if (headerFile != null && !ownPair && pk3Pair == null)
             throw new PfWolfMapException("Cannot open file: {0}. File does not exist, and no pk3 has these levels: " + list,
                 File.Exists(headerFile) ? dataFile : headerFile);
 
@@ -237,9 +253,10 @@ public class AssetManager
     /// Finds and opens the mods to load, leaving out any that are missing, repeated, can't be
     /// read or aren't for this game pack (each with a warning)
     /// </summary>
-    private List<ModSource> OpenMods(IEnumerable<string> modPaths, string gamePackId)
+    /// <param name="opened">Called with every mod that opened, before they're picked by game pack</param>
+    private List<ModSource> OpenMods(IEnumerable<string> modPaths, string gamePackId, Action<List<ModSource>> opened)
     {
-        var mods = new List<ModSource>();
+        var openMods = new List<ModSource>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { Path.GetFullPath(BasePk3FileName) };
         foreach (var modPath in modPaths.Where(path => !string.IsNullOrWhiteSpace(path)))
         {
@@ -252,12 +269,17 @@ public class AssetManager
             if (!seen.Add(fullPath))
                 continue;
 
-            var mod = ModSource.TryOpen(fullPath, ModWarnings);
-            if (mod == null)
-                continue;
+            if (ModSource.TryOpen(fullPath, ModWarnings) is { } mod)
+                openMods.Add(mod);
+        }
+
+        opened(openMods);
+        var mods = new List<ModSource>();
+        foreach (var mod in openMods)
+        {
             if (!mod.IsForGamePack(gamePackId, BasePackIds))
             {
-                ModWarnings.Add($"Mod '{mod.DisplayName}' is for {string.Join(", ", mod.Info.GamePacks!)}, not {gamePackId}, so it isn't loaded");
+                ModWarnings.Add($"Mod '{mod.DisplayName}' is for {string.Join(", ", mod.ForGamePacks!)}, not {gamePackId}, so it isn't loaded");
                 continue;
             }
 
@@ -326,9 +348,13 @@ public class AssetManager
         if (_assets.TryGetValue(key, out var foundAsset))
             return foundAsset as T;
 
-        WarningLog.Write($"Asset not found: {assetName} (Type: {assetType})");
+        // Once per asset: the renderer looks up a missing wall texture every frame
+        if (_reportedMissing.Add(key))
+            WarningLog.Write($"Asset not found: {assetName} (Type: {assetType})");
         return null;
     }
+
+    private readonly HashSet<string> _reportedMissing = [];
 
     /// <summary>The running game pack ("wolf3d", "spear")</summary>
     public string GamePackId => _gamePackId;
@@ -341,6 +367,13 @@ public class AssetManager
     /// </summary>
     public T? FindInGamePack<T>(string assetName) where T : Asset
         => Find<T>($"{_gamePackId}/{assetName}");
+
+    /// <summary>
+    /// The running game pack's asset, or null without a warning: for files a game can go
+    /// without (a standalone game may have no status bar, raw-data-map or language strings)
+    /// </summary>
+    public T? FindInGamePackIfAny<T>(string assetName) where T : Asset
+        => Exists<T>($"{_gamePackId}/{assetName}") ? FindInGamePack<T>(assetName) : null;
 
     /// <summary>
     /// Palette asset name the running release uses (its game-palette in gamepack-info)

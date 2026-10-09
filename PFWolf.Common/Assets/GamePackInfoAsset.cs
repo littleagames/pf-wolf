@@ -11,7 +11,8 @@ public static class GamePackList
     /// one's base-pack, and so on). The nearest of those the list names decides, and "!pack"
     /// leaves one out: [wolf3d] is for Wolf3D and every pack built on it, [wolf3d, "!spear"] is
     /// for them apart from Spear and the packs built on Spear, and [wolf3d, "!spear", spear-demo]
-    /// takes Spear's demo back in.
+    /// takes Spear's demo back in. "*" takes in every pack the list doesn't otherwise decide:
+    /// ["*", "!wolf3d-shareware"] is for every game but the shareware, standalone ones too.
     /// </summary>
     /// <param name="basePackIds">The packs the running one is built on, nearest first</param>
     public static bool Includes(IReadOnlyCollection<string>? gamePacks, string gamePackId, IReadOnlyList<string> basePackIds)
@@ -27,8 +28,11 @@ public static class GamePackList
                 return false;
         }
 
-        return false;
+        return gamePacks.Contains(AnyPack);
     }
+
+    /// <summary>The game-packs entry for every pack</summary>
+    public const string AnyPack = "*";
 
     /// <summary>A list entry's pack name, without the "!" that leaves a pack out</summary>
     public static string PackName(string entry) => entry.TrimStart('!');
@@ -44,15 +48,56 @@ public record GamePackInfoAsset : Asset
     public Dictionary<string, GamePack> GamePacks { get; init; } = [];
 
     /// <summary>
-    /// Palette asset name (game-palette) of a game release entry, e.g. "wolf3d-apogee" -> "wolfpal"
+    /// This list with the games mods give in their own gamepack-info.yaml added. A mod can only
+    /// add games: one already listed is left as it is (with a warning).
+    /// </summary>
+    public GamePackInfoAsset WithModGames(IEnumerable<(string ModName, GamePackInfoAsset Info)> modGames, Action<string>? warn = null)
+    {
+        var gamePacks = new Dictionary<string, GamePack>(GamePacks, StringComparer.OrdinalIgnoreCase);
+        foreach (var (modName, info) in modGames)
+        {
+            foreach (var (id, gamePack) in info.GamePacks)
+            {
+                if (!gamePacks.TryAdd(id, gamePack))
+                    warn?.Invoke($"Mod '{modName}': gamepack-info.yaml gives a game '{id}' there already is, so it's left out");
+            }
+        }
+        return new GamePackInfoAsset(gamePacks);
+    }
+
+    /// <summary>
+    /// Palette asset name (game-palette) of a game release entry, e.g. "wolf3d-apogee" -> "wolfpal":
+    /// its own, else the nearest of its base packs' (a standalone game's is standalone's)
     /// </summary>
     public string GetGamePalette(string releaseId)
     {
-        var gamePack = GetGamePack(releaseId);
-        if (string.IsNullOrWhiteSpace(gamePack.GamePalette))
+        var palette = WithBasePacks(releaseId).Select(gamePack => gamePack.GamePalette).FirstOrDefault(name => !string.IsNullOrWhiteSpace(name));
+        if (string.IsNullOrWhiteSpace(palette))
             throw new KeyNotFoundException($"'{releaseId}' in gamepacks/gamepack-info.yaml has no game-palette");
 
-        return gamePack.GamePalette;
+        return palette;
+    }
+
+    /// <summary>
+    /// The data files a release plays from: its own file-pack, else the nearest of its base packs'
+    /// (a mod's game built on wolf3d plays wolf3d's files). Null when none has one, as for a
+    /// standalone game, which has every asset in its pk3s.
+    /// </summary>
+    public FilePack? GetFilePack(string releaseId)
+        => WithBasePacks(releaseId).Select(gamePack => gamePack.FilePack).FirstOrDefault(filePack => filePack != null);
+
+    /// <summary>Whether a release plays from data files in the game folder (one built on standalone doesn't)</summary>
+    public bool HasDataFiles(string releaseId) => GetFilePack(releaseId) != null;
+
+    // The release's entry, then its base packs' that gamepack-info lists, nearest first
+    private IEnumerable<GamePack> WithBasePacks(string releaseId)
+    {
+        yield return GetGamePack(releaseId);
+        foreach (var basePack in GetBasePackChain(releaseId))
+        {
+            if (GamePacks.TryGetValue(basePack, out var gamePack))
+                yield return gamePack;
+        }
     }
 
     /// <summary>
@@ -70,13 +115,13 @@ public record GamePackInfoAsset : Asset
 
     /// <summary>A release's file-pack entry for one of its loaders, or null when it has none</summary>
     public FileLoaderDetails? FindFileLoader(string releaseId, string loaderName)
-        => (GetGamePack(releaseId).FilePack?.FileLoaders ?? [])
+        => (GetFilePack(releaseId)?.FileLoaders ?? [])
             .FirstOrDefault(kvp => kvp.Key.Equals(loaderName, StringComparison.OrdinalIgnoreCase)).Value;
 
     /// <summary>A release's file-pack entry for one of its loaders</summary>
     public FileLoaderDetails GetFileLoader(string releaseId, string loaderName)
     {
-        var fileLoaders = GetGamePack(releaseId).FilePack?.FileLoaders ?? [];
+        var fileLoaders = GetFilePack(releaseId)?.FileLoaders ?? [];
         return fileLoaders.FirstOrDefault(kvp => kvp.Key.Equals(loaderName, StringComparison.OrdinalIgnoreCase)).Value
             ?? throw new KeyNotFoundException($"'{releaseId}' in gamepacks/gamepack-info.yaml has no file-pack entry for {loaderName}");
     }
@@ -115,7 +160,7 @@ public record GamePackInfoAsset : Asset
     }
 
     private IEnumerable<FileReference> DataFiles(string releaseId, bool includeMaps)
-        => (GetGamePack(releaseId).FilePack?.FileLoaders ?? [])
+        => (GetFilePack(releaseId)?.FileLoaders ?? [])
             .Where(kvp => includeMaps || !kvp.Key.Equals("Wolf3DMapFileLoader", StringComparison.OrdinalIgnoreCase))
             .SelectMany(kvp => new[] { kvp.Value.Header, kvp.Value.Data, kvp.Value.Dict })
             .Where(file => !string.IsNullOrWhiteSpace(file?.File))

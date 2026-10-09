@@ -711,7 +711,7 @@ internal partial class Program
     /// that was found is kept, so a look before the assets are loaded doesn't stick.
     /// </summary>
     internal static StatusBarAsset StatusBar =>
-        statusbar ?? (statusbar = _assetManager?.FindInGamePack<StatusBarAsset>("statusbar")) ?? NoStatusBar;
+        statusbar ?? (statusbar = _assetManager?.FindInGamePackIfAny<StatusBarAsset>("statusbar")) ?? NoStatusBar;
 
     /// <summary>Draws a picture at a status bar position (320x200 pixels from its top left corner).</summary>
     static void StatusDrawPic(string picName, int x, int y)

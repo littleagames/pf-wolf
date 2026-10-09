@@ -40,9 +40,12 @@ public class PfWolfPk3Loader
 
     /// <summary>
     /// Folders holding one subfolder per game pack (actordefs/wolf3d/, gamepacks/spear/,
-    /// menudefs/blake/; the menus directly in menudefs/ are every pack's)
+    /// menudefs/blake/; the menus directly in menudefs/ are every pack's). In pfwolf.pk3, levels
+    /// and sprites that belong to one game (Wolf3D's deathmatch arenas, its players' sprites) are
+    /// in maps/wolf3d/ and sprites/wolf3d/, so a game that isn't built on it (a standalone one)
+    /// doesn't get them.
     /// </summary>
-    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/", "menudefs/"];
+    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/", "menudefs/", "maps/", "sprites/"];
 
     /// <summary>
     /// Files a mod keeps at its root that pfwolf.pk3 keeps in gamepacks/{pack}/
@@ -84,6 +87,14 @@ public class PfWolfPk3Loader
         var gamePackInfo = _currentEntry == null ? null : ReadGamePackInfo(_currentEntry);
         if (gamePackInfo != null)
         {
+            // The games mods add (a standalone game's own), so its base-pack chain is known. One
+            // that can't be read was already warned about when the mod was opened.
+            gamePackInfo = gamePackInfo.WithModGames(
+                modSources.Select(source => (source.Name, Games: ModSource.ReadGames(source, [])))
+                    .Where(mod => mod.Games != null)
+                    .Select(mod => (mod.Name, mod.Games!)),
+                Warn);
+
             AddAsset("gamepack-info", gamePackInfo);
             if (!string.IsNullOrWhiteSpace(gamePackId) && gamePackInfo.GamePacks.ContainsKey(gameReleaseId))
                 _basePackIds = gamePackInfo.GetBasePackChain(gameReleaseId);
@@ -452,6 +463,7 @@ public class PfWolfPk3Loader
         var path = entry.FullName;
         var slash = path.IndexOf('/');
         if (slash < 0)
+            // (gamepack-info.yaml, the games a mod adds, was read before anything loaded)
             return ModRootGamePackFiles.Contains(path) ? $"gamepacks/{_gamePackId}/{path.ToLowerInvariant()}" : null;
 
         var folder = path.Substring(0, slash + 1).ToLowerInvariant();
