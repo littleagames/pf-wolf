@@ -1018,9 +1018,9 @@ internal partial class Program
     = Sky
     =
     = A level can have a sky: a picture drawn above the horizon in place of the ceiling color,
-    = behind any ceiling flats (it shows where they're missing or see-through). It's stretched to fill the view above the horizon when looking straight ahead, and repeats
-    = around the full circle every SKYCIRCLE pixels, turning with the view but not moving as the
-    = player walks. Its bottom stays on the horizon as the view pitches; looking up past its top
+    = behind any ceiling flats (it shows where they're missing or see-through). It's stretched
+    = to fill the view above the horizon when looking straight ahead, and repeats around the
+    = full circle every SKYCIRCLE pixels, turning with the view but not moving as the player walks. Its bottom stays on the horizon as the view pitches; looking up past its top
     = shows its top row.
     =
     ====================

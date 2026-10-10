@@ -538,7 +538,7 @@ public record DefaultMapInfo
 
     /// <summary>
     /// Texture on every ceiling tile the flat plane doesn't give one; null leaves them the
-    /// ceiling color. A sky shows in place of ceiling flats.
+    /// ceiling color (or the sky). A sky is behind ceiling flats, so this covers it but for see-through pixels.
     /// </summary>
     public string? DefaultCeiling { get; init; } = null;
 

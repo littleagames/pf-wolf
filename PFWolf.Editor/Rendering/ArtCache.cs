@@ -147,7 +147,7 @@ public sealed class ArtCache(GameContent content) : IDisposable
             }
             case TextureSource.Flat when content.Find<TextureAsset>(texture.Name) is { Width: > 0, Height: > 0 } flat:
             {
-                // Stored column by column; FlatMask pixels take the floor or ceiling color
+                // Stored column by column; FlatMask pixels take the floor or ceiling color, or are clear over a sky
                 int width = flat.Width, height = flat.Height;
                 var rgba = MakeRgba(width, height, (x, y) => flat.RawData[x * height + y], null);
                 var fill = texture.Fill;
@@ -161,6 +161,7 @@ public sealed class ArtCache(GameContent content) : IDisposable
                         rgba[at] = (byte)(fill.X * 255);
                         rgba[at + 1] = (byte)(fill.Y * 255);
                         rgba[at + 2] = (byte)(fill.Z * 255);
+                        rgba[at + 3] = (byte)(fill.W * 255);
                     }
                 }
                 return (width, height, rgba);

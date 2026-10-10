@@ -20,10 +20,12 @@ namespace PFWolf.Assets
         public static TextureAsset FromGraphic(GraphicAsset graphic)
         {
             int width = graphic.Width, height = graphic.Height;
+            // Clear pixels become 0xFF, which flats show through (as sprites do)
             var columns = new byte[width * height];
+            var mask = graphic.OpacityMask;
             for (int x = 0; x < width; x++)
                 for (int y = 0; y < height; y++)
-                    columns[x * height + y] = graphic.RawData[y * width + x];
+                    columns[x * height + y] = mask != null && mask[y * width + x] == 0 ? (byte)0xff : graphic.RawData[y * width + x];
 
             return new TextureAsset { RawData = columns, Width = width, Height = height };
         }

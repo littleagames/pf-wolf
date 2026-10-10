@@ -22,7 +22,7 @@ public enum TextureSource
     Flat,
 }
 
-/// <param name="Fill">A Flat's color where it's see-through</param>
+/// <param name="Fill">A Flat's color where it's see-through; with no alpha (default), they're clear (the sky shows)</param>
 public readonly record struct TextureRef(TextureSource Source, string Name, Vector4 Fill = default)
 {
     public static readonly TextureRef Solid = new(TextureSource.Solid, "");
@@ -456,12 +456,12 @@ public sealed class LevelMesh
         AddFlat(new SurfaceRef(SurfaceKind.Floor, x, y), polygon, 0, up: true,
             floor != null ? Flat(floor, floorColor) : TextureRef.Solid, (floor != null ? Vector4.One : floorColor) * light);
 
-        // The sky shows in place of the ceiling color, but not of a ceiling flat
+        // The sky shows in place of the ceiling color, and behind a ceiling flat's see-through pixels
         var top = _tiles.CeilingFlat(x, y);
         if (ceiling is { } height && (top != null || Sky == null))
         {
             AddFlat(new SurfaceRef(SurfaceKind.Ceiling, x, y), polygon, height, up: false,
-                top != null ? Flat(top, ceilingColor) : TextureRef.Solid, (top != null ? Vector4.One : ceilingColor) * light);
+                top != null ? Flat(top, Sky == null ? ceilingColor : default) : TextureRef.Solid, (top != null ? Vector4.One : ceilingColor) * light);
         }
     }
 
