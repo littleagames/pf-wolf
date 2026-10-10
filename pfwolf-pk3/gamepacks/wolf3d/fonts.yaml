@@ -5,7 +5,8 @@
 # type: vga       A Wolf3D font: one-bit glyphs drawn in the text's color
 #   source:       A VGAGRAPH font chunk's name in raw-data-map, or a Wolf3D-format font file's
 #                 name in the pk3's fonts/ folder (defaults to the font's own name). A file in
-#                 fonts/ named like a chunk (SmallFont.fnt) replaces the chunk.
+#                 fonts/ named like a chunk (SmallFont.fnt) replaces the chunk. WDC's .wsf
+#                 font files work there too.
 #
 # type: graphic   A picture for each character, drawn in the picture's own colors
 #   pattern:      Picture name for each of chars, {code} standing for the character's code
