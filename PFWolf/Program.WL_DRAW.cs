@@ -1017,8 +1017,8 @@ internal partial class Program
     =
     = Sky
     =
-    = A level can have a sky: a picture drawn above the horizon in place of the ceiling color.
-    = It's stretched to fill the view above the horizon when looking straight ahead, and repeats
+    = A level can have a sky: a picture drawn above the horizon in place of the ceiling color,
+    = behind any ceiling flats (it shows where they're missing or see-through). It's stretched to fill the view above the horizon when looking straight ahead, and repeats
     = around the full circle every SKYCIRCLE pixels, turning with the view but not moving as the
     = player walks. Its bottom stays on the horizon as the view pitches; looking up past its top
     = shows its top row.
@@ -1135,16 +1135,16 @@ internal partial class Program
         }
 
         // In light zones or actors' light, even the plain colors change from place to place, so
-        // they're cast too
+        // they're cast too. A sky stays behind the ceiling flats, showing where there are none.
         bool floorflats = _mapManager.hasfloorflats || haszones || haslights;
-        bool ceilingflats = (_mapManager.hasceilingflats || haszones || haslights) && !sky;
+        bool ceilingflats = _mapManager.hasceilingflats || (haszones || haslights) && !sky;
         if (floorflats || ceilingflats)
         {
             SetupFlatColumns();
             if (floorflats)
-                DrawFlats(_mapManager.floorflat, floorColor, centery, viewheight - 1, FloorHalves);
+                DrawFlats(_mapManager.floorflat, floorColor, centery, viewheight - 1, FloorHalves, false);
             if (ceilingflats)
-                DrawFlats(_mapManager.ceilingflat, ceilingColor, 0, centery - 1, CeilingHalves);
+                DrawFlats(_mapManager.ceilingflat, ceilingColor, 0, centery - 1, CeilingHalves, sky);
         }
     }
 
@@ -1162,6 +1162,9 @@ internal partial class Program
     */
 
     static long[] flatdirx = [], flatdiry = [];
+
+    // A flat's see-through palette index, as sprites use: the floor or ceiling color shows there
+    const byte FLATMASK = 0xff;
 
     // Each column's ray, per unit of distance along the view (as CalcHeight measures it), in 1/65536ths
     static void SetupFlatColumns()
@@ -1184,10 +1187,11 @@ internal partial class Program
 
     /// <summary>
     /// Draws rows from to to (inclusive) of a flat whose surface is halves half stories from the
-    /// eye (FloorHalves or CeilingHalves), each pixel in its tile's light. Tiles with no texture
-    /// are color, or with no light zones or actor light, keep what's there.
+    /// eye (FloorHalves or CeilingHalves), each pixel in its tile's light. Tiles with no texture,
+    /// and a texture's see-through (FLATMASK) pixels, are color, or with no light zones or actor
+    /// light, or over the sky (behind), keep what's there.
     /// </summary>
-    static void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, double halves)
+    static void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, double halves, bool behind)
     {
         int pitch = (int)_videoManager.bufferPitch;
         double numerator = heightnumerator * 32.0 * halves;
@@ -1213,17 +1217,25 @@ internal partial class Program
 
                     long tile = (tiley << MapManager.MAPSHIFT) + tilex;
                     var texture = flats[tile];
-                    if (texture == null)
+                    byte pixel = color;
+                    if (texture != null)
                     {
-                        if (haszones || haslights)
+                        int u = (int)(px >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
+                        int v = (int)(py >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
+                        int height = texture.Height;
+                        pixel = texture.RawData[u * texture.Width / TEXTURESIZE * height + v * height / TEXTURESIZE];
+                    }
+
+                    // No texture, or a see-through pixel (FLATMASK, as sprites have): the color, or
+                    // the sky, shows
+                    if (texture == null || pixel == FLATMASK)
+                    {
+                        if ((haszones || haslights) && !behind)
                             row[x] = LightAt((int)tile, px, py)[shadeofs + color];
                         continue;
                     }
 
-                    int u = (int)(px >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
-                    int v = (int)(py >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
-                    int height = texture.Height;
-                    row[x] = LightAt((int)tile, px, py)[shadeofs + texture.RawData[u * texture.Width / TEXTURESIZE * height + v * height / TEXTURESIZE]];
+                    row[x] = LightAt((int)tile, px, py)[shadeofs + pixel];
                 }
             }
         }

@@ -38,6 +38,31 @@ public sealed class ArtCache(GameContent content) : IDisposable
         return bitmap;
     }
 
+    /// <summary>A flat's see-through palette index (as the engine's FLATMASK and sprites have)</summary>
+    public const byte FlatMask = 0xff;
+
+    private readonly Dictionary<string, Bitmap?> _flats = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A texture as a flat (its bottom story, see-through where it's FlatMask), or null when there's no such texture</summary>
+    public Bitmap? Flat(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return null;
+        if (_flats.TryGetValue(name, out var bitmap))
+            return bitmap;
+
+        if (content.Find<TextureAsset>(name) is { } texture)
+        {
+            // Stored column by column
+            var pixels = texture.BottomStory();
+            int size = TextureAsset.StorySize;
+            bitmap = MakeBitmap(size, size, (x, y) => pixels[x * size + y], (x, y) => pixels[x * size + y] != FlatMask);
+        }
+
+        _flats[name] = bitmap;
+        return bitmap;
+    }
+
     /// <summary>The picture a thing's class spawns with, or null when it has none</summary>
     public Bitmap? ThingSprite(string className)
     {
@@ -69,9 +94,10 @@ public sealed class ArtCache(GameContent content) : IDisposable
         {
             case ArtKind.Texture or ArtKind.Flat when content.Find<TextureAsset>(name) is { Width: > 0, Height: > 0 } texture:
             {
-                // Stored column by column
+                // Stored column by column; a flat's FlatMask pixels are see-through
                 int height = texture.Height;
-                bitmap = MakeBitmap(texture.Width, height, (x, y) => texture.RawData[x * height + y], null);
+                bitmap = MakeBitmap(texture.Width, height, (x, y) => texture.RawData[x * height + y],
+                    kind == ArtKind.Flat ? (x, y) => texture.RawData[x * height + y] != FlatMask : null);
                 break;
             }
             case ArtKind.Sprite when content.Find<SpriteAsset>(name) is { Width: > 0, Height: > 0 } sprite:
@@ -118,6 +144,26 @@ public sealed class ArtCache(GameContent content) : IDisposable
                 // Stored column by column
                 int width = wall.Width, height = wall.Height;
                 return (width, height, MakeRgba(width, height, (x, y) => wall.RawData[x * height + y], null));
+            }
+            case TextureSource.Flat when content.Find<TextureAsset>(texture.Name) is { Width: > 0, Height: > 0 } flat:
+            {
+                // Stored column by column; FlatMask pixels take the floor or ceiling color
+                int width = flat.Width, height = flat.Height;
+                var rgba = MakeRgba(width, height, (x, y) => flat.RawData[x * height + y], null);
+                var fill = texture.Fill;
+                for (int x = 0; x < width; x++)
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        if (flat.RawData[x * height + y] != FlatMask)
+                            continue;
+                        int at = (y * width + x) * 4;
+                        rgba[at] = (byte)(fill.X * 255);
+                        rgba[at + 1] = (byte)(fill.Y * 255);
+                        rgba[at + 2] = (byte)(fill.Z * 255);
+                    }
+                }
+                return (width, height, rgba);
             }
             case TextureSource.Sprite when content.ThingSprite(texture.Name) is { Width: > 0, Height: > 0 } sprite:
             {

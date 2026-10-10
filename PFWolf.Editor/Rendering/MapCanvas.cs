@@ -257,11 +257,10 @@ public sealed class MapCanvas : Control
 
         if (!ShowWalls || kind == TileKind.Floor)
         {
-            // With flats showing, the floor's own texture
-            if (ShowFlats && kind == TileKind.Floor && tiles.FloorFlat(x, y) is { } flat && Art?.Texture(flat) is { } flatTexture)
+            // With flats showing, the floor's own texture, over the floor where it's see-through
+            context.FillRectangle(FloorBrush, rect);
+            if (ShowFlats && kind == TileKind.Floor && tiles.FloorFlat(x, y) is { } flat && Art?.Flat(flat) is { } flatTexture)
                 context.DrawImage(flatTexture, new Rect(flatTexture.Size), rect);
-            else
-                context.FillRectangle(FloorBrush, rect);
         }
 
         if (ShowWalls)

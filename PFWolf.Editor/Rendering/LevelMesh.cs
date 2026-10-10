@@ -18,9 +18,12 @@ public enum TextureSource
     Solid,
     /// <summary>A picture (GraphicAsset, else a wall texture) by name: the sky</summary>
     Picture,
+    /// <summary>A floor or ceiling texture by name, its see-through (0xFF) pixels in the Fill color</summary>
+    Flat,
 }
 
-public readonly record struct TextureRef(TextureSource Source, string Name)
+/// <param name="Fill">A Flat's color where it's see-through</param>
+public readonly record struct TextureRef(TextureSource Source, string Name, Vector4 Fill = default)
 {
     public static readonly TextureRef Solid = new(TextureSource.Solid, "");
 }
@@ -451,14 +454,14 @@ public sealed class LevelMesh
         var light = Light(x, y);
         var floor = _tiles.FloorFlat(x, y);
         AddFlat(new SurfaceRef(SurfaceKind.Floor, x, y), polygon, 0, up: true,
-            floor != null ? Texture(floor) : TextureRef.Solid, (floor != null ? Vector4.One : floorColor) * light);
+            floor != null ? Flat(floor, floorColor) : TextureRef.Solid, (floor != null ? Vector4.One : floorColor) * light);
 
         // The sky shows in place of the ceiling color, but not of a ceiling flat
         var top = _tiles.CeilingFlat(x, y);
         if (ceiling is { } height && (top != null || Sky == null))
         {
             AddFlat(new SurfaceRef(SurfaceKind.Ceiling, x, y), polygon, height, up: false,
-                top != null ? Texture(top) : TextureRef.Solid, (top != null ? Vector4.One : ceilingColor) * light);
+                top != null ? Flat(top, ceilingColor) : TextureRef.Solid, (top != null ? Vector4.One : ceilingColor) * light);
         }
     }
 
@@ -640,6 +643,8 @@ public sealed class LevelMesh
     private static float Cross(Vector2 a, Vector2 b) => a.X * b.Y - a.Y * b.X;
 
     private static TextureRef Texture(string name) => new(TextureSource.Texture, name);
+
+    private static TextureRef Flat(string name, Vector4 fill) => new(TextureSource.Flat, name, fill);
 
     private static Vector4? ParseColor(string? text)
     {

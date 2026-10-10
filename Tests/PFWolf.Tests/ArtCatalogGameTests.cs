@@ -74,6 +74,22 @@ public class ArtCatalogGameTests
         TestContext.Out.WriteLine(string.Join(", ", entries.GroupBy(entry => entry.Kind).Select(kind => $"{kind.Key}: {kind.Count()}")));
     }
 
+    [TestCase("wolf3d")]
+    [TestCase("blake-aog")]
+    public void Stock_Flats_Have_No_See_Through_Pixels(string game)
+    {
+        // Arrange
+        var content = Load(game);
+        var flats = content.MapDefs.Flats.Floor.Values.Concat(content.MapDefs.Flats.Ceiling.Values).Distinct(StringComparer.OrdinalIgnoreCase);
+
+        // Act
+        var holed = flats.Where(name => content.Find<PFWolf.Assets.TextureAsset>(name) is { } texture
+            && texture.RawData.Contains(PFWolf.Editor.Rendering.ArtCache.FlatMask)).ToList();
+
+        // Assert: 0xFF in a flat is see-through, so the games' own flats mustn't use it
+        Assert.That(holed, Is.Empty);
+    }
+
     [Test]
     public void A_Mods_Tall_Textures_Have_Their_Size_And_Its_Sky_Is_Used()
     {

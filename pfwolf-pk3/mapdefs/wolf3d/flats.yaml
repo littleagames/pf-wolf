@@ -1,11 +1,13 @@
 # Floor and ceiling textures ("flats") for the flat plane, map plane 2, as ECWolf has them: the
 # low byte of a tile's value is its floor's index here and the high byte its ceiling's (so a
 # tile of 0x0302 has floor 2 and ceiling 3). Any texture works: a VSWAP wall, or a picture in
-# the pk3's textures/ or flats/ folder, tiled once per map tile.
+# the pk3's textures/ or flats/ folder, tiled once per map tile. Palette index 0xFF is
+# see-through, as in sprites: the floor or ceiling color (or the level's sky) shows there.
 #
 # An index with no entry uses the map's default-floor / default-ceiling (game-info), and with no
 # default the floor or ceiling color shows. Stock maps leave plane 2 at 0, so index 0 is left out
-# to keep them looking as they always have. A sky is drawn in place of ceiling flats.
+# to keep them looking as they always have. A level's sky (game-info sky:) is drawn
+# behind the ceiling flats: it shows on tiles with no ceiling flat and through see-through pixels.
 #
 # Keep the whole table in this one file: a mod's flats.yaml merges over it entry by entry.
 flats:

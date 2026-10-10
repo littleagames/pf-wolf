@@ -1202,7 +1202,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             SurfaceKind.PlayerStart => "player start",
             _ => "thing",
         };
-        if (surface.Texture.Source == TextureSource.Texture)
+        if (surface.Texture.Source is TextureSource.Texture or TextureSource.Flat)
             what += $" ({surface.Texture.Name})";
         if (target != (surface.Ref.X, surface.Ref.Y))
             what += $", editing the tile in front";
