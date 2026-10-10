@@ -1115,7 +1115,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         => Dialogs == null ? Task.FromResult<string?>(null) : Dialogs.PickModToSaveIn(title, Mods.ToList());
 
     /// <summary>
-    /// Makes a new mod as a pk3: a stand-alone game (its bare skeleton) or a mod of one of
+    /// Makes a new mod as a pk3: a stand-alone game (ready to play) or a mod of one of
     /// PFWolf's games. It's added to the mods, and the editor loads it as that game.
     /// </summary>
     [RelayCommand]

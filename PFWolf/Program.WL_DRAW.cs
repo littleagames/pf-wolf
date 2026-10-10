@@ -1097,11 +1097,11 @@ internal partial class Program
         gameInfo.Maps.TryGetValue(gamestate.mapon, out var mapInfo);
 
         // game-info's colors for the map, else the map's own (mapdefs map-info), else the default map's
-        byte ceilingColor = mapInfo?.CeilingColor is { } ceiling ? _videoManager.ParseColor(ceiling)
-            : _mapManager.MapCeilingColor ?? _videoManager.ParseColor(gameInfo.DefaultMap.CeilingColor);
+        byte ceilingColor = mapInfo?.CeilingColor is { } ceiling ? _videoManager.ParseColorOr(ceiling, 0x1d)
+            : _mapManager.MapCeilingColor ?? _videoManager.ParseColorOr(gameInfo.DefaultMap.CeilingColor, 0x1d);
         ceilingcolor = ceilingColor;
-        byte floorColor = mapInfo?.FloorColor is { } floor ? _videoManager.ParseColor(floor)
-            : _mapManager.MapFloorColor ?? _videoManager.ParseColor(gameInfo.DefaultMap.FloorColor);
+        byte floorColor = mapInfo?.FloorColor is { } floor ? _videoManager.ParseColorOr(floor, 0x19)
+            : _mapManager.MapFloorColor ?? _videoManager.ParseColorOr(gameInfo.DefaultMap.FloorColor, 0x19);
 
         var destIndex = vbuf;
         int y;

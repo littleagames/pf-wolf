@@ -186,6 +186,21 @@ internal partial class Program
     }
 
     /// <summary>
+    /// Where the players go on a level with no player start: the empty tile nearest the middle
+    /// of the map (one in an area first), else the middle itself
+    /// </summary>
+    internal static (int x, int y) StandInStart()
+    {
+        int midx = _mapManager.mapwidth / 2, midy = _mapManager.mapheight / 2;
+        var tiles = from y in Enumerable.Range(1, Math.Max(_mapManager.mapheight - 2, 0))
+                    from x in Enumerable.Range(1, Math.Max(_mapManager.mapwidth - 2, 0))
+                    where _mapManager.tilemap[x, y] == 0 && _mapManager.actorat[x, y] == null
+                    orderby IsFreeFloor(x, y) ? 0 : 1, (x - midx) * (x - midx) + (y - midy) * (y - midy)
+                    select (x, y);
+        return tiles.Cast<(int, int)?>().FirstOrDefault() ?? (midx, midy);
+    }
+
+    /// <summary>
     /// The nearest open floor tile to a spot (by steps across open floor, so never through a
     /// wall), that isn't one of <paramref name="taken"/> and has nothing standing on it; null
     /// if there's none within reach.

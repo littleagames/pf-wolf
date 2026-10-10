@@ -130,18 +130,23 @@ public class ModFilesTests
         => Assert.That(NewMod.CheckGameId(id) == null, Is.EqualTo(fine));
 
     [Test]
-    public void A_New_Stand_Alone_Game_Is_A_Bare_Skeleton()
+    public void A_New_Stand_Alone_Game_Starts_From_The_Example_Game_Under_Its_Own_Name()
     {
         // Arrange
         var request = new NewModRequest(Path.Combine(_folder, "mods", "my-game.pk3"), "My \"Game\"", "my-game", BasePack: null);
         var palette = File.ReadAllBytes(Path.Combine(TestPaths.Pk3SourceFolder(), "palettes", "wolfpal.pal"));
+        var example = Path.Combine(TestPaths.RepoRoot(), "examples", "mods", "standalone-demo");
+        var exampleFiles = Directory.GetFiles(example, "*", SearchOption.AllDirectories)
+            .Select(file => Path.GetRelativePath(example, file).Replace('\\', '/'))
+            .Where(file => !file.EndsWith(".zip") && file is not ("gamepack-info.yaml" or "modinfo.yaml" or "game-info.yaml"));
 
         // Act
         NewMod.Create(request, palette);
 
         // Assert
         var source = new Pk3AssetSource(request.Path);
-        Assert.That(source.EntryPaths, Is.EquivalentTo(new[] { "modinfo.yaml", "gamepack-info.yaml", "game-info.yaml", "maps/MAP01.wad", "palettes/wolfpal.pal" }));
+        Assert.That(source.EntryPaths, Is.EquivalentTo(exampleFiles.Concat(["modinfo.yaml", "gamepack-info.yaml", "game-info.yaml", "palettes/wolfpal.pal"])));
+        Assert.That(source.Open("mapdefs/map.yaml").ToArray(), Is.EqualTo(File.ReadAllBytes(Path.Combine(example, "mapdefs", "map.yaml"))));
         Assert.That(source.Open("palettes/wolfpal.pal").ToArray(), Is.EqualTo(palette));
         var games = ModSource.ReadGames(source, []);
         Assert.That(games!.GamePacks["my-game"].BasePack, Is.EqualTo("standalone"));

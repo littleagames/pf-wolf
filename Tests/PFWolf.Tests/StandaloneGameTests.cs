@@ -163,10 +163,10 @@ public class StandaloneGameTests
     }
 
     [Test]
-    public void A_New_Bare_Game_Loads_In_The_Editor_And_Saves_Back_Into_Its_Pk3()
+    public void A_New_Game_Loads_In_The_Editor_And_Saves_Back_Into_Its_Pk3()
     {
         // Arrange
-        var request = new PFWolf.Editor.Editing.NewModRequest(Path.Combine(_workFolder, "mods", "bare-game.pk3"), "Bare Game", "bare-game", BasePack: null);
+        var request = new PFWolf.Editor.Editing.NewModRequest(Path.Combine(_workFolder, "mods", "new-game.pk3"), "New Game", "new-game", BasePack: null);
         PFWolf.Editor.Editing.NewMod.Create(request, PFWolf.Editor.Editing.NewMod.ReadDefaultPalette(_workFolder));
 
         // Act: load it, change a tile, save, and load again
@@ -177,8 +177,10 @@ public class StandaloneGameTests
         var reloaded = GameContent.Load(_workFolder, "", [request.Path]);
 
         // Assert
-        Assert.That(content.PackId, Is.EqualTo("bare-game"));
-        Assert.That(content.MapDefs.Walls, Is.Empty, "no mapdefs yet");
+        Assert.That(content.PackId, Is.EqualTo("new-game"));
+        Assert.That(content.Title, Is.EqualTo("New Game"));
+        Assert.That(content.MapDefs.Walls.Keys, Is.EquivalentTo(new[] { 1, 2, 3, 4 }), "the example game's walls");
+        Assert.That(content.ThingSpriteName("Lamp"), Is.EqualTo("LAMPA0"));
         Assert.That(content.Palette, Has.Length.EqualTo(256));
         Assert.That(content.ModPathOf("wolfpal", nameof(PFWolf.Assets.Palette)), Is.EqualTo(request.Path), "its own copy of the palette");
         Assert.That(document.SaveFolder, Is.EqualTo(request.Path));
@@ -187,22 +189,56 @@ public class StandaloneGameTests
     }
 
     [Test]
-    public void A_New_Bare_Game_Starts_And_Says_What_Its_Level_Lacks()
+    public void A_New_Game_Plays_Its_Level_Through_To_The_Exit_As_It_Is_Made()
     {
-        // Arrange: a few tics walking about its empty level, which can't be played until the mod
-        // gives mapdefs floors (the skeleton is bare: nothing's taken from another game)
-        var request = new PFWolf.Editor.Editing.NewModRequest(Path.Combine(_workFolder, "bare-game.pk3"), "Bare Game", "bare-game", BasePack: null);
-        PFWolf.Editor.Editing.NewMod.Create(request);
+        // Arrange: what the editor's New mod makes, with the example game's walk to the exit
+        var request = new PFWolf.Editor.Editing.NewModRequest(Path.Combine(_workFolder, "mods", "new-game.pk3"), "New Game", "new-game", BasePack: null);
+        PFWolf.Editor.Editing.NewMod.Create(request, PFWolf.Editor.Editing.NewMod.ReadDefaultPalette(_workFolder));
         var demos = Directory.CreateDirectory(Path.Combine(_workFolder, "demos")).FullName;
-        File.WriteAllBytes(Path.Combine(demos, "DEMO0.dmo"), ScriptedDemo((0, -35, 40), (Use, 0, 2), (0, 0, 20)));
+        File.WriteAllBytes(Path.Combine(demos, "DEMO0.dmo"), ScriptedDemo(
+            (0, -35, 60), (Use, 0, 2), (0, 0, 80),
+            (0, -35, 70), (Attack, 0, 3), (0, 0, 20),
+            (0, -35, 90), (Use, 0, 2), (0, 0, 80),
+            (0, -35, 60), (Use, 0, 2), (0, 0, 200)));
 
         // Act
         var (exitCode, output) = RunGame("demotest 0; quit", demos, request.Path);
+        var result = output.FirstOrDefault(line => line.StartsWith("demotest 0:"));
 
         // Assert
         Assert.That(exitCode, Is.Zero, string.Join(Environment.NewLine, output.TakeLast(30)));
-        Assert.That(output, Has.Some.Contains("mapdefs floors need an area-start"), string.Join(Environment.NewLine, output.TakeLast(30)));
-        Assert.That(output, Has.None.Contains("aren't in the game folder"));
+        Assert.That(result, Is.Not.Null, string.Join(Environment.NewLine, output.TakeLast(30)));
+        var data = result!.Split(' ')[3].Split('/').Select(int.Parse).ToArray();
+        Assert.That(data[0], Is.LessThan(data[1]), $"The level didn't end before the demo ran out: {result}");
+        Assert.That(output, Has.None.Contains("Exception"));
+    }
+
+    [Test]
+    public void A_Game_With_No_Mapdefs_Still_Plays_Its_Level()
+    {
+        // Arrange: a level whose numbers mean nothing: no walls (so not even its edge is solid),
+        // no floor areas, no player start; a few tics walking about it, using and firing
+        var mod = Path.Combine(_workFolder, "bare-game.pk3");
+        PFWolf.Editor.Editing.ModFiles.CreateArchive(mod,
+        [
+            ("gamepack-info.yaml", "bare-game:\n  title: Bare Game\n  base-pack: standalone\n"u8.ToArray()),
+            ("game-info.yaml", "skills:\n  NORMAL:\n    name: Normal\nepisodes:\n  EP01:\n    name: Bare\n    start-map: MAP01\nmaps:\n  MAP01:\n    name: Level 1\n    floor-number: 1\nmenu-music: \"\"\n"u8.ToArray()),
+            (PFWolf.Editor.Editing.MapFiles.EntryPath("MAP01"),
+                EcWolfMapLoader.Save(PFWolf.Editor.Editing.MapFiles.NewMap("Level 1", wall: 1, floor: 0), "MAP01")),
+        ]);
+        var demos = Directory.CreateDirectory(Path.Combine(_workFolder, "demos")).FullName;
+        File.WriteAllBytes(Path.Combine(demos, "DEMO0.dmo"), ScriptedDemo((0, -35, 200), (Use, 0, 2), (Attack, 0, 3), (0, 0, 20)));
+
+        // Act
+        var (exitCode, output) = RunGame("demotest 0; quit", demos, mod);
+
+        // Assert
+        var log = string.Join(Environment.NewLine, output.TakeLast(30));
+        Assert.That(exitCode, Is.Zero, log);
+        Assert.That(output, Has.Some.StartsWith("demotest 0: data"), log);
+        Assert.That(output, Has.Some.Contains("has no mapdefs player start"), log);
+        Assert.That(output, Has.Some.Contains("made solid"), log);
+        Assert.That(output, Has.None.Contains("Exception"), log);
     }
 
     private const byte Attack = 1, Use = 8;

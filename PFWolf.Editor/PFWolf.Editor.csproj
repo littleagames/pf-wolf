@@ -31,4 +31,13 @@
     <ProjectReference Include="..\PFWolf.Common\PFWolf.Common.csproj" />
   </ItemGroup>
 
+  <!-- What New mod's stand-alone game starts with (Editing/NewMod.cs): the example game's art,
+       sounds, definitions and level. NewMod writes its own gamepack-info, modinfo and game-info. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\examples\mods\standalone-demo\**\*"
+                      Exclude="..\examples\mods\standalone-demo\*.zip;..\examples\mods\standalone-demo\gamepack-info.yaml;..\examples\mods\standalone-demo\modinfo.yaml;..\examples\mods\standalone-demo\game-info.yaml"
+                      LogicalName="StandaloneStarter/%(RecursiveDir)%(Filename)%(Extension)"
+                      Visible="false" />
+  </ItemGroup>
+
 </Project>

@@ -1815,6 +1815,20 @@ internal class VideoManager
         return FindClosestPaletteIndex(r, g, b);
     }
 
+    /// <summary>
+    /// A #RRGGBB color from game data drawn every frame, or <paramref name="fallback"/> (with one
+    /// warning) when it isn't one, rather than stopping the game
+    /// </summary>
+    internal byte ParseColorOr(string? colorValue, byte fallback)
+    {
+        if (colorValue is { Length: 7 } && colorValue[0] == '#'
+            && int.TryParse(colorValue.AsSpan(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _))
+            return ParseColor(colorValue);
+        if (_unknownColors.Add(colorValue ?? ""))
+            Console.WriteLine($"Expected a color in #RRGGBB format, got '{colorValue}'; drawing palette index {fallback} instead");
+        return fallback;
+    }
+
     internal byte ParseColor(Color color)
         => FindClosestPaletteIndex(color.Red, color.Green, color.Blue);
 

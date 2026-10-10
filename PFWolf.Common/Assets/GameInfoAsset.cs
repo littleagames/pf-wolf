@@ -516,8 +516,9 @@ public record SignonTextArea
 
 public record DefaultMapInfo
 {
-    public string FloorColor { get; init; } = null!;
-    public string CeilingColor { get; init; } = null!;
+    // Wolf3D's, for a game-info that doesn't say (a new stand-alone game's)
+    public string FloorColor { get; init; } = "#717171";
+    public string CeilingColor { get; init; } = "#383838";
 
     /// <summary>
     /// How many 64 unit stories tall the walls are

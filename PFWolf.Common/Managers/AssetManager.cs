@@ -339,7 +339,9 @@ public class AssetManager
                 throw new ArgumentException($"Asset name cannot be empty. Asset Type: {assetType}", nameof(assetName));
             }
 
-            WarningLog.Write($"Asset name cannot be empty. Asset Type: {assetType}");
+            // Once per type, as below: a wall with no texture for a side is looked up every frame
+            if (_reportedMissing.Add("\0" + assetType))
+                WarningLog.Write($"Asset name cannot be empty. Asset Type: {assetType}");
             return null;
         }
 

@@ -15,11 +15,11 @@ public sealed record NewModRequest(string Path, string Name, string GameId, stri
 }
 
 /// <summary>
-/// A new mod as a pk3. A stand-alone game is the bare skeleton of one (see examples/mods/
-/// standalone-demo for one that plays): its gamepack-info.yaml (built on `standalone`), a
-/// modinfo.yaml, a game-info.yaml with one episode of one level, that level, an empty MAP01, and
-/// its own copy of Wolf3D's palette (palettes/wolfpal.pal). A mod of one of PFWolf's games is just
-/// its modinfo.yaml, naming that game.
+/// A new mod as a pk3. A stand-alone game plays as it's made: it starts as a copy of examples/mods/
+/// standalone-demo (its fonts, menu pictures, colors, sounds, player, walls, doors and one level,
+/// embedded in the editor), with its own gamepack-info.yaml (built on `standalone`), modinfo.yaml
+/// and game-info.yaml, and its own copy of Wolf3D's palette (palettes/wolfpal.pal) when one's
+/// given. A mod of one of PFWolf's games is just its modinfo.yaml, naming that game.
 /// </summary>
 public static partial class NewMod
 {
@@ -130,9 +130,53 @@ public static partial class NewMod
             "  # mod's palettes/ (the editor's palette browser edits it there)\n" +
             $"  game-palette: {DefaultPalette}\n"));
         files.Add(("game-info.yaml",
-            "# The whole game-info: a stand-alone game has none to start from. pfwolf.pk3's\n" +
-            "# gamepacks/wolf3d/game-info.yaml describes every setting; examples/mods/standalone-demo is\n" +
-            "# a stand-alone game that plays.\n" +
+            "# The whole game-info: a stand-alone game has none to start from. See pfwolf.pk3's\n" +
+            "# gamepacks/wolf3d/game-info.yaml for what each setting does.\n" +
+            "default-map:\n" +
+            "  ceiling-color: \"#303848\"\n" +
+            "  floor-color: \"#5A5048\"\n" +
+            "  # Dim, so the lamps' light shows\n" +
+            "  shading:\n" +
+            "    light: 150\n" +
+            "    fade-start: 2\n" +
+            "    fade-end: 18\n" +
+            "    max-fade: 70\n" +
+            "\n" +
+            "# The startup info is printed in the signon picture's dark panel\n" +
+            "signon:\n" +
+            "  pic: SDSIGNON\n" +
+            "  press-a-key: true\n" +
+            "  text-area: { x: 18, y: 46, width: 284, height: 134 }\n" +
+            "\n" +
+            "# Until a key goes to the menu: the title, then the high scores\n" +
+            "title-pics:\n" +
+            "  - SDTITLE\n" +
+            "title-loop:\n" +
+            "  - title: true\n" +
+            "    seconds: 8\n" +
+            "  - high-scores: true\n" +
+            "    seconds: 6\n" +
+            "\n" +
+            "# No music until it has some (an empty name keeps the shared menus from asking for Wolf3D's)\n" +
+            "menu-music: \"\"\n" +
+            "\n" +
+            "# The high scores in the game's own fonts, with no pictures, and the table a new player starts with\n" +
+            "high-scores:\n" +
+            "  pic: \"\"\n" +
+            "  headers: []\n" +
+            "  labels:\n" +
+            "    - { text: \"High scores\", x: 92, y: 30, font: LargeFont, color: READHCOLOR }\n" +
+            "    - { text: \"Name\", x: 32, y: 62, color: READCOLOR }\n" +
+            "    - { text: \"Floor\", x: 148, y: 62, color: READCOLOR }\n" +
+            "    - { text: \"Score\", x: 228, y: 62, color: READCOLOR }\n" +
+            "  show-episode: false\n" +
+            "  defaults:\n" +
+            "    - { name: \"Player\", score: 5000 }\n" +
+            "    - { name: \"Player\", score: 4000 }\n" +
+            "    - { name: \"Player\", score: 3000 }\n" +
+            "    - { name: \"Player\", score: 2000 }\n" +
+            "    - { name: \"Player\", score: 1000 }\n" +
+            "\n" +
             "skills:\n" +
             "  NORMAL:\n" +
             "    name: \"Normal\"\n" +
@@ -145,18 +189,31 @@ public static partial class NewMod
             "maps:\n" +
             $"  {FirstMap}:\n" +
             "    name: \"Level 1\"\n" +
-            "    floor-number: 1\n" +
-            "\n" +
-            "# No music until it has some (an empty name keeps the shared menus from asking for Wolf3D's)\n" +
-            "menu-music: \"\"\n"));
+            "    floor-number: 1\n"));
 
         var result = files.Select(file => (file.Item1, Encoding.UTF8.GetBytes(file.Item2))).ToList();
-        // An empty level: what its numbers mean comes once the mod has mapdefs
-        result.Add((MapFiles.EntryPath(FirstMap),
-            PFWolf.Loaders.EcWolfMapLoader.Save(MapFiles.NewMap("Level 1", wall: 1, floor: 0), FirstMap)));
+        result.AddRange(StarterFiles());
         if (palette != null)
             result.Add((PaletteEntryPath, palette));
         return result;
+    }
+
+    private const string StarterPrefix = "StandaloneStarter/";
+
+    /// <summary>
+    /// The example game's files a stand-alone game starts with, by their path in the mod (the
+    /// editor's embedded copy of examples/mods/standalone-demo, but for the files Files writes)
+    /// </summary>
+    public static IEnumerable<(string EntryPath, byte[] Data)> StarterFiles()
+    {
+        var assembly = typeof(NewMod).Assembly;
+        foreach (var resource in assembly.GetManifestResourceNames().Where(name => name.StartsWith(StarterPrefix, StringComparison.Ordinal)).Order())
+        {
+            using var stream = assembly.GetManifestResourceStream(resource)!;
+            using var data = new MemoryStream();
+            stream.CopyTo(data);
+            yield return (resource[StarterPrefix.Length..].Replace('\\', '/'), data.ToArray());
+        }
     }
 
     private static string Quote(string text) => "\"" + text.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";

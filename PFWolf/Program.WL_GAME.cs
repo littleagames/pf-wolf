@@ -802,6 +802,12 @@ internal partial class Program
         //
         if (_mapManager.PlayerStart is { } start)
             SpawnPlayers(start.TileX, start.TileY, start.Angle);
+        else
+        {
+            var (standx, standy) = StandInStart();
+            Console.WriteLine($"{gamestate.mapon} has no mapdefs player start; starting on {standx},{standy}");
+            SpawnPlayers(standx, standy, 90);
+        }
 
         //
         // take out the ambush markers

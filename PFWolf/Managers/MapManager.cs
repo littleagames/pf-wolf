@@ -16,10 +16,23 @@ internal sealed record FloorCodes(int AreaTile, int NumAreas, int AmbushTile, in
     /// <summary>Floor codes that do something to the enemy standing on them (MapFloorsTranslation.ActorCodes)</summary>
     public IReadOnlyDictionary<int, Assets.MapActorCodeTranslation> ActorCodes { get; init; } = new Dictionary<int, Assets.MapActorCodeTranslation>();
 
+    /// <summary>
+    /// No floor codes at all (mapdefs with no floors, as in a new stand-alone game): no tile is
+    /// an area, so every enemy hears and wakes as though it were in the player's area
+    /// </summary>
+    public static readonly FloorCodes NoAreas = new(-1, 0, -1, -1, -1);
+
+    private static bool _warnedNoAreas;
+
     public static FloorCodes From(MapFloorsTranslation floors)
     {
         if (floors.AreaStart is not { } start || floors.AreaCount is not { } count)
-            throw new Exception("The mapdefs floors need an area-start and an area-count");
+        {
+            if (!_warnedNoAreas)
+                Console.WriteLine("The mapdefs floors have no area-start and area-count: the level has no areas, so sound carries everywhere");
+            _warnedNoAreas = true;
+            return NoAreas;
+        }
         if (start < 1 || count is < 1 or > 255)
             throw new Exception($"The mapdefs floors' area-start ({start}) must be 1 or more and area-count ({count}) 1 to 255");
         return new FloorCodes(start, count, floors.Ambush ?? -1, floors.SecretExit ?? -1, floors.HiddenAreaStart ?? -1)
@@ -310,9 +323,35 @@ internal class MapManager
             }
         }
 
+        SealEdge(mapName, data);
         BuildWallShapes();
         BuildWallHeights();
         ZonesVersion++;
+    }
+
+    /// <summary>
+    /// Makes the open tiles round the map's edge solid: view traces and movement only stop at
+    /// walls, and would run off the map. They're a wall id the mapdefs don't give, so they're
+    /// drawn as nothing (the floor and ceiling show through) but can't be crossed.
+    /// </summary>
+    private void SealEdge(string mapName, MapObjectTranslationAsset data)
+    {
+        int edgeWall = Enumerable.Range(1, Program.BIT_WALL - 1).Reverse().FirstOrDefault(id => !data.Walls.ContainsKey(id), 1);
+        int sealedTiles = 0;
+        for (int y = 0; y < mapheight; y++)
+        {
+            for (int x = 0; x < mapwidth; x++)
+            {
+                if ((x != 0 && y != 0 && x != mapwidth - 1 && y != mapheight - 1) || tilemap[x, y] != 0)
+                    continue;
+                tilemap[x, y] = (byte)edgeWall;
+                actorat[x, y] = new Wall(edgeWall);
+                sealedTiles++;
+            }
+        }
+
+        if (sealedTiles > 0)
+            Console.WriteLine($"{mapName}: {sealedTiles} tiles round the map's edge aren't mapdefs walls or doors; they're made solid");
     }
 
     /// <summary>Turns the hidden area codes on plane 0 into the plain area codes (mapdefs floors hidden-area-start).</summary>
@@ -1059,7 +1098,8 @@ internal class MapManager
         (mapsegs[(plane)][((y) << MAPSHIFT) + (x)]) = value;
     }
 
-    // A game with no mapdefs yet (a new stand-alone game's bare skeleton): its levels are open floor
+    // A game with no mapdefs (a stand-alone game whose mapdefs/ were taken out): its levels are
+    // open floor, sealed at the edge, with the player in the middle
     private static readonly MapObjectTranslationAsset NoMapData = new();
 
     internal MapObjectTranslationAsset GetMapData()
