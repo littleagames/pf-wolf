@@ -261,6 +261,42 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Dialogs.ShowDefinitions(_definitions);
     }
 
+    /// <summary>Opens the definitions window on the mapdefs entry of what the palette has picked</summary>
+    [RelayCommand]
+    private void EditPaletteDefinition()
+    {
+        if (SelectedPaletteItem?.Entry is not { } entry)
+            return;
+        var id = entry.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        IReadOnlyList<string>? path = entry.Group switch
+        {
+            "Walls" => ["walls", id],
+            "Doors" => ["doors", id],
+            "Floor" => ["floors"],
+            "Player starts" => ["player-starts", id],
+            "Things" => ["things", id],
+            "Triggers" => ["triggers", id],
+            "Diagonals" => ["diagonals", id],
+            _ => null,
+        };
+        if (path == null)
+            return;
+        ShowDefinitions();
+        _definitions?.ShowEntry(Definitions.DefinitionKind.MapDefs, path);
+    }
+
+    private bool PaletteHasClass => SelectedPaletteItem?.Entry.ThingClass != null;
+
+    /// <summary>Opens the definitions window on the actordefs class of the thing the palette has picked</summary>
+    [RelayCommand(CanExecute = nameof(PaletteHasClass))]
+    private void EditPaletteClass()
+    {
+        if (SelectedPaletteItem?.Entry.ThingClass is not { } thingClass)
+            return;
+        ShowDefinitions();
+        _definitions?.ShowEntry(Definitions.DefinitionKind.Actors, [thingClass]);
+    }
+
     //
     // The text browser
     //
@@ -429,7 +465,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<PaletteItem> PaletteItems { get; } = [];
 
-    [ObservableProperty] private PaletteItem? _selectedPaletteItem;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(EditPaletteClassCommand))]
+    private PaletteItem? _selectedPaletteItem;
     [ObservableProperty] private string _paletteFilter = "";
 
     /// <summary>What the tools put down on planes 2 to 5, which take any number</summary>

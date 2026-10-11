@@ -173,6 +173,25 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     /// <summary>The definitions were saved: the tabs show them again</summary>
     public event EventHandler? DefinitionsChanged;
 
+    /// <summary>Asks the window to show a kind's tab</summary>
+    public event EventHandler<DefinitionKind>? ShowTabRequested;
+
+    /// <summary>Shows a definition in its tab</summary>
+    public void ShowEntry(DefinitionKind kind, IReadOnlyList<string> path)
+    {
+        var editor = kind switch
+        {
+            DefinitionKind.GameInfo => GameInfo,
+            DefinitionKind.GamePackInfo => GamePacks,
+            DefinitionKind.Actors => Actors,
+            _ => MapDefs,
+        };
+        ShowTabRequested?.Invoke(this, kind);
+        editor.Activate();
+        if (!editor.Select(path))
+            Status = $"There's no {YamlNodes.Describe(path)} in the {DefinitionKinds.Title(kind).ToLowerInvariant()}";
+    }
+
     /// <summary>Shows a file in the YAML tab, at a definition's line</summary>
     public void ShowYaml(DefinitionFile file, IReadOnlyList<string> path)
     {

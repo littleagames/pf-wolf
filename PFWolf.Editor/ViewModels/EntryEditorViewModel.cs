@@ -137,6 +137,11 @@ public sealed partial class EntryEditorViewModel : ObservableObject
 
     public ObservableCollection<OriginItem> Origins { get; } = [];
 
+    /// <summary>For a class: what it has from its parents (and what places it on a map)</summary>
+    public ObservableCollection<string> Inherited { get; } = [];
+
+    public bool HasInherited => Inherited.Count > 0;
+
     [ObservableProperty] private string _heading = "";
     [ObservableProperty] private string _subheading = "";
     [ObservableProperty] private string _description = "";
@@ -278,6 +283,8 @@ public sealed partial class EntryEditorViewModel : ObservableObject
     {
         Rows.Clear();
         Origins.Clear();
+        Inherited.Clear();
+        OnPropertyChanged(nameof(HasInherited));
         Error = "";
         IsChanged = false;
         IsDeleted = false;
@@ -327,6 +334,8 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             var file = defining[i];
             Origins.Add(new OriginItem(file, file.Label, i == defining.Count - 1 ? "Its say is the last, so it's what the game uses (or merges last)" : "Laid over by the files after it"));
         }
+        if (Kind == DefinitionKind.Actors)
+            FillInherited(item.Name, baseOnly ? set.MergedBase : set.Merged);
         UpdateChanged();
     }
 
@@ -339,6 +348,47 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             : FieldSchema.For(typeof(object), path[0]),
         _ => DefinitionSchemas.Actor,
     };
+
+    // A class's flags, properties and states from its parents that it doesn't set itself, nearest
+    // parent first, and the map things that place it
+    private void FillInherited(string className, YamlMappingNode merged)
+    {
+        static IEnumerable<string> Keys(YamlNode? node)
+            => (node as YamlMappingNode)?.Children.Keys.OfType<YamlScalarNode>().Select(key => key.Value ?? "") ?? [];
+        static IEnumerable<string> Flags(YamlNode? node)
+            => (node as YamlSequenceNode)?.Children.OfType<YamlScalarNode>().Select(flag => flag.Value ?? "") ?? [];
+
+        var own = YamlNodes.Get(merged, [className]);
+        var flags = new HashSet<string>(Flags(YamlNodes.Get(own, ["flags"])), StringComparer.OrdinalIgnoreCase);
+        var properties = new HashSet<string>(Keys(YamlNodes.Get(own, ["properties"])), StringComparer.OrdinalIgnoreCase);
+        var states = new HashSet<string>(Keys(YamlNodes.Get(own, ["states"])), StringComparer.OrdinalIgnoreCase);
+        var seen = new HashSet<string>(StringComparer.Ordinal) { className };
+
+        var parent = (YamlNodes.Get(own, ["parent"]) as YamlScalarNode)?.Value;
+        while (!string.IsNullOrEmpty(parent) && seen.Add(parent) && YamlNodes.Get(merged, [parent]) is YamlMappingNode parentClass)
+        {
+            var newFlags = Flags(YamlNodes.Get(parentClass, ["flags"])).Where(flags.Add).ToList();
+            if (newFlags.Count > 0)
+                Inherited.Add($"{parent}: flags {string.Join(", ", newFlags)}");
+            if (YamlNodes.Get(parentClass, ["properties"]) is YamlMappingNode parentProperties)
+            {
+                foreach (var (key, value) in parentProperties.Children)
+                {
+                    if (key is YamlScalarNode { Value: { } name } && properties.Add(name))
+                        Inherited.Add($"{parent}: {name} = {YamlText.Inline(value)}");
+                }
+            }
+            var newStates = Keys(YamlNodes.Get(parentClass, ["states"])).Where(states.Add).ToList();
+            if (newStates.Count > 0)
+                Inherited.Add($"{parent}: states {string.Join(", ", newStates)}");
+            parent = (YamlNodes.Get(parentClass, ["parent"]) as YamlScalarNode)?.Value;
+        }
+
+        if (_owner.Content?.MapDefs.Things.Where(thing => thing.Value.Class.Equals(className, StringComparison.OrdinalIgnoreCase))
+                .Select(thing => thing.Key).Order().ToList() is { Count: > 0 } placedBy)
+            Inherited.Add($"Placed by map things {string.Join(", ", placedBy.Take(24))}{(placedBy.Count > 24 ? $" and {placedBy.Count - 24} more" : "")}");
+        OnPropertyChanged(nameof(HasInherited));
+    }
 
     // Walls and doors are read as one type, whose fields say which they're for ("Doors only: ...")
     private void HideFieldsThatDoNotApply(FieldNode root, IReadOnlyList<string> path)
@@ -534,6 +584,20 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         while (used.Contains(id))
             id++;
         return id;
+    }
+
+    /// <summary>Picks a definition by its key path; false when there's none</summary>
+    public bool Select(IReadOnlyList<string> path)
+    {
+        var key = KeyOf(path);
+        var item = _all.FirstOrDefault(candidate => candidate.Key == key)
+                   ?? _all.FirstOrDefault(candidate => candidate.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+        if (item == null)
+            return false;
+        if (!Items.Contains(item))
+            Filter = "";
+        SelectedItem = item;
+        return true;
     }
 
     /// <summary>Opens a file the definition comes from in the YAML tab, at the definition</summary>

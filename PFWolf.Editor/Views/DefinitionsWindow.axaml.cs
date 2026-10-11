@@ -29,14 +29,24 @@ public partial class DefinitionsWindow : Window
         {
             _viewModel.Files.GoToLineRequested -= OnGoToLine;
             _viewModel.ShowFilesRequested -= OnShowFiles;
+            _viewModel.ShowTabRequested -= OnShowTab;
         }
         _viewModel = DataContext as DefinitionsViewModel;
         if (_viewModel != null)
         {
             _viewModel.Files.GoToLineRequested += OnGoToLine;
             _viewModel.ShowFilesRequested += OnShowFiles;
+            _viewModel.ShowTabRequested += OnShowTab;
         }
     }
+
+    private void OnShowTab(object? sender, Definitions.DefinitionKind kind) => Tabs.SelectedItem = kind switch
+    {
+        Definitions.DefinitionKind.GameInfo => GameInfoTab,
+        Definitions.DefinitionKind.GamePackInfo => GamePacksTab,
+        Definitions.DefinitionKind.Actors => ActorsTab,
+        _ => MapDefsTab,
+    };
 
     private void OnShowFiles(object? sender, EventArgs e) => Tabs.SelectedItem = FilesTab;
 
@@ -97,7 +107,14 @@ public partial class DefinitionsWindow : Window
         e.Handled = true;
     }
 
+    // After the text box has the file just picked (its text is bound, so it changes a moment later)
     private void OnGoToLine(object? sender, int line)
+    {
+        Tabs.SelectedItem = FilesTab;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => SelectLine(line), Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    private void SelectLine(int line)
     {
         var text = SourceBox.Text ?? "";
         int index = 0;

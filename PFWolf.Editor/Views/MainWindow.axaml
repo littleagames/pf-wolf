@@ -197,6 +197,14 @@
 
       <ListBox Grid.Row="3" ItemsSource="{Binding PaletteItems}" SelectedItem="{Binding SelectedPaletteItem}"
                IsVisible="{Binding HasPalette}">
+        <ListBox.ContextMenu>
+          <ContextMenu>
+            <MenuItem Header="Edit its map definition…" Command="{Binding EditPaletteDefinitionCommand}"
+                      ToolTip.Tip="Opens the definitions window on the mapdefs entry for what's picked" />
+            <MenuItem Header="Edit its actor class…" Command="{Binding EditPaletteClassCommand}"
+                      ToolTip.Tip="Opens the definitions window on the thing's actordefs class" />
+          </ContextMenu>
+        </ListBox.ContextMenu>
         <ListBox.Styles>
           <Style Selector="ListBoxItem">
             <Setter Property="Padding" Value="6,2" />

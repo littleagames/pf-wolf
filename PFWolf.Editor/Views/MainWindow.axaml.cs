@@ -121,7 +121,11 @@ public partial class MainWindow : Window, IEditorDialogs
             _definitions.Show(this);
         }
         else
+        {
+            if (_definitions.WindowState == WindowState.Minimized)
+                _definitions.WindowState = WindowState.Normal;
             _definitions.Activate();
+        }
     }
     protected override async void OnClosing(WindowClosingEventArgs e)
     {

@@ -82,7 +82,8 @@
       </StackPanel>
 
       <!-- Where it comes from -->
-      <Expander DockPanel.Dock="Bottom" Header="Where it comes from" Margin="0,6,0,0" HorizontalAlignment="Stretch">
+      <Expander DockPanel.Dock="Bottom" Header="Where it comes from" Margin="0,6,0,0" HorizontalAlignment="Stretch"
+                IsExpanded="True">
         <ItemsControl ItemsSource="{Binding Origins}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:OriginItem">
@@ -95,6 +96,20 @@
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
+      </Expander>
+
+      <!-- A class's flags, properties and states from its parents -->
+      <Expander DockPanel.Dock="Bottom" Header="From its parents" Margin="0,6,0,0" HorizontalAlignment="Stretch"
+                IsVisible="{Binding HasInherited}">
+        <ScrollViewer MaxHeight="160">
+          <ItemsControl ItemsSource="{Binding Inherited}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <TextBlock Text="{Binding}" FontSize="12" TextWrapping="Wrap" Margin="0,1" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
       </Expander>
 
       <!-- Its fields -->
