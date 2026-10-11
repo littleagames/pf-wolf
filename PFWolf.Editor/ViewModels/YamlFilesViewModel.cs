@@ -324,16 +324,22 @@ public sealed partial class YamlFilesViewModel : ObservableObject
 
     /// <summary>Saves the file: into its mod, or in base mode into pfwolf.pk3 (and pfwolf-pk3)</summary>
     [RelayCommand(CanExecute = nameof(CanSave))]
-    private void Save()
+    private void Save() => SaveChanges();
+
+    /// <summary>The file changed in the box and not saved, as it's named to a person, or null</summary>
+    public string? UnsavedName => SelectedItem != null && IsChanged ? $"YAML: {FileTitle}" : null;
+
+    /// <summary>Saves the file in the box; false (with why in the status) when it isn't saved</summary>
+    public bool SaveChanges()
     {
-        if (SelectedItem is not { } item || _owner.Content is not { } content)
-            return;
+        if (SelectedItem is not { } item || _owner.Content is not { } content || IsReadOnly)
+            return false;
 
         var error = YamlFileTypes.Check(item.EntryPath, !item.IsBase, Source);
         if (item.IsBase && error != null)
         {
             _owner.Status = $"Not saved: pfwolf.pk3's own file has to read, or the game won't start. {error}";
-            return;
+            return false;
         }
 
         try
@@ -346,10 +352,12 @@ public sealed partial class YamlFilesViewModel : ObservableObject
             IsChanged = false;
             item.Error = error;
             _owner.FileSaved(item.ModPath, places, error != null ? [$"It still has a problem, so the game leaves it out: {error}"] : []);
+            return true;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             _owner.Status = $"Couldn't save {item.EntryPath}: {e.Message}";
+            return false;
         }
     }
 }

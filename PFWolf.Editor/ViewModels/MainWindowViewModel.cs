@@ -983,14 +983,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         var dirty = DirtyDocuments.ToList();
         var palettes = _paletteBrowser?.DirtyDocuments.ToList() ?? [];
-        if (dirty.Count + palettes.Count == 0 || Dialogs == null)
+        var definitions = _definitions?.UnsavedNames ?? [];
+        if (dirty.Count + palettes.Count + definitions.Count == 0 || Dialogs == null)
             return true;
 
         var names = string.Join(", ", dirty.Select(document => document.AssetName.ToUpperInvariant())
-            .Concat(palettes.Select(palette => $"palette {palette.Name}")));
+            .Concat(palettes.Select(palette => $"palette {palette.Name}"))
+            .Concat(definitions));
         switch (await Dialogs.AskUnsaved($"{what} {names}. Save first?"))
         {
             case UnsavedChoice.Save:
+                // The definitions first: what they save is what the levels are loaded with next
+                if (definitions.Count > 0 && !await _definitions!.SaveAllAsync())
+                {
+                    Status = "Not everything in the definitions window could be saved: " + _definitions.Status;
+                    ShowDefinitions();
+                    return false;
+                }
                 foreach (var document in dirty)
                 {
                     if (!await SaveDocument(document, document.SaveFolder))

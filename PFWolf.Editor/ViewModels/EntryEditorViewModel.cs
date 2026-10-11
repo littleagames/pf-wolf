@@ -439,33 +439,66 @@ public sealed partial class EntryEditorViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(IsChanged))]
     private async Task SaveAsync()
     {
-        if (SelectedItem is not { } item || _owner.Set(Kind) is not { } set || _owner.Content is not { } content
-            || !_open.TryGetValue(item.Key, out var open))
-            return;
+        if (SelectedItem is { } item)
+            await SaveEntry(item.Key);
+    }
+
+    /// <summary>The definitions changed here and not saved, as they're named to a person ("Actors: Guard")</summary>
+    public IReadOnlyList<string> UnsavedNames
+        => _open.Where(open => Changed(open.Value)).Select(open => $"{Title}: {YamlNodes.Describe(open.Key.Split('\u001f'))}").ToList();
+
+    /// <summary>Saves every definition changed here; false (with what's wrong shown) when one isn't saved</summary>
+    public async Task<bool> SaveAllAsync()
+    {
+        foreach (var key in _open.Where(open => Changed(open.Value)).Select(open => open.Key).ToList())
+        {
+            if (!await SaveEntry(key))
+                return false;
+        }
+        return true;
+    }
+
+    // Saves one definition's edits; false when they aren't saved
+    private async Task<bool> SaveEntry(string key)
+    {
+        if (_owner.Set(Kind) is not { } set || _owner.Content is not { } content || !_open.TryGetValue(key, out var open))
+            return false;
+        var path = key.Split('\u001f');
+        var name = YamlNodes.Describe(path);
+
+        void Fail(string message)
+        {
+            if (SelectedItem?.Key == key)
+                Error = message;
+            _owner.Status = $"{Title}: {name} isn't saved. {message}";
+        }
 
         var errors = new List<string>();
         var edited = open.Root?.Build(errors);
         if (errors.Count > 0)
         {
-            Error = "Not saved: " + string.Join("\n", errors);
-            return;
+            Fail("Not saved: " + string.Join("\n", errors));
+            return false;
         }
 
         string? mod = null;
         if (!_owner.BaseMode && (mod = await _owner.ModToSaveIn()) == null)
-            return;
+            return false;
 
         try
         {
-            var write = set.PlanWrite(item.Entry.Path, edited, mod);
+            var write = set.PlanWrite(path, edited, mod);
             var places = DefinitionSaver.Save(write, content.GameFolder, _owner.BaseSourceFolder);
-            _open.Remove(item.Key);
-            item.HasEdits = false;
+            _open.Remove(key);
+            if (_all.FirstOrDefault(item => item.Key == key) is { } item)
+                item.HasEdits = false;
             _owner.FileSaved(mod, places, write.Notes);
+            return true;
         }
         catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException)
         {
-            Error = $"Not saved: {e.Message}";
+            Fail($"Not saved: {e.Message}");
+            return false;
         }
     }
 

@@ -173,6 +173,26 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     /// <summary>The definitions were saved: the tabs show them again</summary>
     public event EventHandler? DefinitionsChanged;
 
+    private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, GamePacks];
+
+    /// <summary>
+    /// What's changed here and not saved (definitions in the tabs, the file in the YAML tab), as
+    /// it's named to a person: loading the game again, or closing the editor, would lose it
+    /// </summary>
+    public IReadOnlyList<string> UnsavedNames
+        => [.. Editors.SelectMany(editor => editor.UnsavedNames), .. Files.UnsavedName is { } file ? [file] : Array.Empty<string>()];
+
+    /// <summary>Saves everything changed here; false when something isn't saved (the status says why)</summary>
+    public async Task<bool> SaveAllAsync()
+    {
+        foreach (var editor in Editors)
+        {
+            if (!await editor.SaveAllAsync())
+                return false;
+        }
+        return Files.UnsavedName == null || Files.SaveChanges();
+    }
+
     /// <summary>Asks the window to show a kind's tab</summary>
     public event EventHandler<DefinitionKind>? ShowTabRequested;
 
