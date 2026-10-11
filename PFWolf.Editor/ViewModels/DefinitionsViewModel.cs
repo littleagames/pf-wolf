@@ -25,10 +25,25 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     public DefinitionsViewModel()
     {
         Files = new YamlFilesViewModel(this);
+        GameInfo = new EntryEditorViewModel(this, DefinitionKind.GameInfo);
+        GamePacks = new EntryEditorViewModel(this, DefinitionKind.GamePackInfo);
+        Actors = new EntryEditorViewModel(this, DefinitionKind.Actors);
+        MapDefs = new EntryEditorViewModel(this, DefinitionKind.MapDefs);
     }
 
     /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
     public Func<string, Task<string?>>? PickMod { get; set; }
+
+    /// <summary>Asks for a line of text (title, prompt, initial, check); null when cancelled</summary>
+    public Func<string, string, string, Func<string, string?>, Task<string?>>? AskText { get; set; }
+
+    /// <summary>A picture for a name: a texture's, or a class's sprite (FieldHint.Class); null when there's none</summary>
+    public Func<FieldHint, string, Avalonia.Media.Imaging.Bitmap?>? Art { get; set; }
+
+    public EntryEditorViewModel GameInfo { get; }
+    public EntryEditorViewModel GamePacks { get; }
+    public EntryEditorViewModel Actors { get; }
+    public EntryEditorViewModel MapDefs { get; }
 
     /// <summary>Something was saved into this mod (the editor adds it to the mods)</summary>
     public event EventHandler<string>? SavedToMod;

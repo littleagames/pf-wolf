@@ -1,0 +1,131 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PFWolf.Editor.ViewModels"
+             x:Class="PFWolf.Editor.Views.EntryEditorView"
+             x:DataType="vm:EntryEditorViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Opacity" Value="0.7" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="Button.small">
+      <Setter Property="Padding" Value="6,1" />
+      <Setter Property="MinWidth" Value="26" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TreeViewItem" x:DataType="vm:FieldNode">
+      <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+      <Setter Property="Padding" Value="0,1" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel>
+    <!-- The definitions -->
+    <DockPanel DockPanel.Dock="Left" Width="300" Margin="0,8,8,8">
+      <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,6">
+        <TextBox Text="{Binding Filter}" PlaceholderText="Find by name" />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+          <TextBlock Text="{Binding CountText}" Classes="hint" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Content="New…" Command="{Binding NewEntryCommand}" IsVisible="{Binding CanAddEntries}" Classes="small"
+                  ToolTip.Tip="A new definition (a map entry goes in the picked one's table; a class takes the picked one as its parent)" />
+        </Grid>
+      </StackPanel>
+      <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
+        <ListBox.Styles>
+          <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="8,3" />
+          </Style>
+        </ListBox.Styles>
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:EntryItem">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="6" ToolTip.Tip="{Binding ToolTip}" Opacity="{Binding Opacity}">
+              <Image Source="{Binding Icon}" Width="24" Height="24" IsVisible="{Binding HasIcon}" RenderOptions.BitmapInterpolationMode="None" />
+              <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Detail}" FontSize="11" Opacity="0.65" TextTrimming="CharacterEllipsis"
+                           IsVisible="{Binding Detail, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+              <TextBlock Grid.Column="2" Text="{Binding Group}" FontSize="11" Opacity="0.6" VerticalAlignment="Center" MaxWidth="120"
+                         TextTrimming="CharacterEllipsis" />
+              <TextBlock Grid.Column="3" Text="●" Foreground="Orange" IsVisible="{Binding HasEdits}" VerticalAlignment="Center"
+                         ToolTip.Tip="Changed, not saved" />
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </DockPanel>
+
+    <!-- The definition picked -->
+    <DockPanel Margin="0,8,0,8" IsVisible="{Binding HasSelection}">
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,6">
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+          <StackPanel>
+            <SelectableTextBlock Text="{Binding Heading}" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Subheading}" Classes="hint" />
+          </StackPanel>
+          <TextBlock Grid.Column="1" Text="Changed, not saved" Classes="hint" VerticalAlignment="Center" IsVisible="{Binding IsChanged}" />
+          <Button Grid.Column="2" Content="Save" Command="{Binding SaveCommand}" Classes="accent" VerticalAlignment="Center"
+                  ToolTip.Tip="Ctrl+S: into the mod (just what's changed), or in base mode into the pfwolf.pk3 file it comes from" />
+          <Button Grid.Column="3" Content="Revert" Command="{Binding RevertCommand}" VerticalAlignment="Center"
+                  ToolTip.Tip="Back to the definition as the files have it" />
+          <Button Grid.Column="4" Content="Delete" Command="{Binding DeleteEntryCommand}" VerticalAlignment="Center" IsVisible="{Binding CanAddEntries}"
+                  ToolTip.Tip="Take the definition out (when it's saved): from the mod, it's written !remove" />
+          <Button Grid.Column="5" Content="Take out the mod's change" Command="{Binding TakeOutCommand}" VerticalAlignment="Center"
+                  ToolTip.Tip="Takes the mod's own part in this definition out of its file, so it's what the game (and the mods before) make it" />
+        </Grid>
+        <TextBlock Text="{Binding Description}" Classes="hint"
+                   IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Text="{Binding Error}" Foreground="OrangeRed" TextWrapping="Wrap" IsVisible="{Binding HasError}" />
+        <TextBlock Text="Taken out: save to take it out of the files, or revert." FontStyle="Italic" IsVisible="{Binding IsDeleted}" />
+      </StackPanel>
+
+      <!-- Where it comes from -->
+      <Expander DockPanel.Dock="Bottom" Header="Where it comes from" Margin="0,6,0,0" HorizontalAlignment="Stretch">
+        <ItemsControl ItemsSource="{Binding Origins}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:OriginItem">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,2" ToolTip.Tip="{Binding ToolTip}">
+                <TextBlock Text="{Binding Label}" TextTrimming="LeadingCharacterEllipsis" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Content="Edit YAML" Classes="small"
+                        Command="{Binding $parent[UserControl].((vm:EntryEditorViewModel)DataContext).EditYamlCommand}"
+                        CommandParameter="{Binding}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Expander>
+
+      <!-- Its fields -->
+      <TreeView ItemsSource="{Binding Rows}">
+        <TreeView.ItemTemplate>
+          <TreeDataTemplate x:DataType="vm:FieldNode" ItemsSource="{Binding Children}">
+            <Grid ColumnDefinitions="220,*,Auto" ColumnSpacing="8" MinHeight="30">
+              <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" ToolTip.Tip="{Binding ToolTip}" Background="Transparent">
+                <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" MaxWidth="200" />
+                <TextBlock Text="●" FontSize="9" Foreground="DodgerBlue" VerticalAlignment="Center" IsVisible="{Binding IsModified}" />
+              </StackPanel>
+              <TextBox Grid.Column="1" Text="{Binding Text}" PlaceholderText="{Binding Placeholder}" IsVisible="{Binding IsText}"
+                       MinWidth="200" VerticalAlignment="Center" />
+              <AutoCompleteBox Grid.Column="1" Text="{Binding Text}" ItemsSource="{Binding Suggestions}" IsVisible="{Binding IsSuggested}"
+                               FilterMode="ContainsOrdinal" MinimumPrefixLength="1" MinWidth="200" VerticalAlignment="Center"
+                               ToolTip.Tip="{Binding Placeholder}" />
+              <ComboBox Grid.Column="1" ItemsSource="{Binding Choices}" SelectedItem="{Binding Text}" PlaceholderText="{Binding Placeholder}"
+                        IsVisible="{Binding IsChoice}" MinWidth="200" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding Summary}" IsVisible="{Binding IsGroup}" Opacity="0.6" VerticalAlignment="Center" />
+              <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                <Button Content="+" Classes="small" Command="{Binding AddCommand}" IsVisible="{Binding CanAdd}" ToolTip.Tip="Add an entry" />
+                <Button Content="↑" Classes="small" Command="{Binding MoveUpCommand}" IsVisible="{Binding CanMove}" ToolTip.Tip="Move up" />
+                <Button Content="↓" Classes="small" Command="{Binding MoveDownCommand}" IsVisible="{Binding CanMove}" ToolTip.Tip="Move down" />
+                <Button Content="✕" Classes="small" Command="{Binding RemoveCommand}" IsVisible="{Binding CanRemove}" ToolTip.Tip="Take this out" />
+                <Button Content="⟲" Classes="small" Command="{Binding ResetCommand}" IsVisible="{Binding CanReset}"
+                        ToolTip.Tip="Empty it, so the game uses its default (or what's there before the mod)" />
+              </StackPanel>
+            </Grid>
+          </TreeDataTemplate>
+        </TreeView.ItemTemplate>
+      </TreeView>
+    </DockPanel>
+  </DockPanel>
+</UserControl>

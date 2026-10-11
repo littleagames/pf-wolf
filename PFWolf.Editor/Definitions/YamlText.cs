@@ -304,6 +304,9 @@ public static class YamlText
         return tag + "[" + string.Join(", ", sequence.Children.Select(FlowValue)) + "]";
     }
 
+    /// <summary>A value written on one line, with { } and [ ] for mappings and lists</summary>
+    public static string Inline(YamlNode node) => FlowValue(node);
+
     private static string FlowValue(YamlNode node) => node switch
     {
         YamlScalarNode scalar => Scalar(scalar, inFlow: true),

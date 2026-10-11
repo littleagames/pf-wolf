@@ -9,6 +9,9 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Platforms>AnyCPU;x64</Platforms>
+    <!-- The editor's definitions window shows the asset types' doc comments beside their fields -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1570;CS1572;CS1573;CS1574;CS1584;CS1587;CS1591;CS1658;CS1711;CS1712;CS1734</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

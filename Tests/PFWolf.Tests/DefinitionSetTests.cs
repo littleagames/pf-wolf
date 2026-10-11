@@ -229,6 +229,60 @@ public class DefinitionSetTests
     }
 
     [Test]
+    public void Base_Mode_Saves_Into_The_Pk3_And_Its_Source_Folder()
+    {
+        // Arrange
+        var root = Path.Combine(Path.GetTempPath(), "pfwolf-base-" + Guid.NewGuid().ToString("N"));
+        var gameFolder = Path.Combine(root, "game");
+        var sourceFolder = Path.Combine(root, DefinitionSaver.BaseSourceFolderName);
+        Directory.CreateDirectory(gameFolder);
+        Directory.CreateDirectory(Path.Combine(sourceFolder, "gamepacks"));
+        Directory.CreateDirectory(Path.Combine(sourceFolder, "mapdefs", "wolf3d"));
+        File.WriteAllText(Path.Combine(sourceFolder, "gamepacks", "gamepack-info.yaml"), "wolf3d:\n  title: Wolfenstein 3D\n");
+        // The source has a comment the built pk3 doesn't yet: the change goes into each as it is
+        const string built = "walls:\n  '1': { North: A, South: A }\n";
+        File.WriteAllText(Path.Combine(sourceFolder, "mapdefs", "wolf3d", "walls.yaml"), "# Walls\n" + built);
+        Editor.Editing.ModFiles.CreateArchive(Path.Combine(gameFolder, "pfwolf.pk3"), [("mapdefs/wolf3d/walls.yaml", System.Text.Encoding.UTF8.GetBytes(built))]);
+        try
+        {
+            var set = new DefinitionSet(DefinitionKind.MapDefs, "wolf3d", [new DefinitionFile(null, "mapdefs/wolf3d/walls.yaml", "", built)]);
+            var edited = new YamlMappingNode { { "North", "B" }, { "South", "A" } };
+            edited.Style = YamlDotNet.Core.Events.MappingStyle.Flow;
+
+            // Act
+            var write = set.PlanWrite(["walls", "1"], edited, modPath: null);
+            var places = DefinitionSaver.Save(write, gameFolder, DefinitionSaver.FindBaseSourceFolder(gameFolder));
+
+            // Assert
+            Assert.That(places, Has.Count.EqualTo(2));
+            Assert.That(Editor.Editing.ModFiles.ReadText(Path.Combine(gameFolder, "pfwolf.pk3"), "mapdefs/wolf3d/walls.yaml"),
+                Is.EqualTo("walls:\n  '1': { North: B, South: A }\n"));
+            Assert.That(File.ReadAllText(Path.Combine(sourceFolder, "mapdefs", "wolf3d", "walls.yaml")),
+                Is.EqualTo("# Walls\nwalls:\n  '1': { North: B, South: A }\n"));
+            Assert.That(File.Exists(Path.Combine(gameFolder, "pfwolf.pk3.bak")), Is.True);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
+    public void Taking_Out_A_Mods_Change_Leaves_The_Rest_Of_Its_File()
+    {
+        // Arrange
+        var mod = new DefinitionFile(Mod, "actordefs/tweaks.yaml", "", "Guard:\n  properties:\n    health: 40\nHans:\n  properties:\n    health: 1\n");
+        var set = Actors(mod);
+
+        // Act
+        var write = set.PlanTakeOut(["Guard"], Mod);
+
+        // Assert
+        Assert.That(write.NewText, Is.EqualTo("Hans:\n  properties:\n    health: 1\n"));
+        Assert.That(set.ModChanges(["Hans"], Mod), Is.True);
+    }
+
+    [Test]
     public void Mapdefs_Entries_Go_In_A_File_Named_For_Their_Table()
     {
         // Arrange

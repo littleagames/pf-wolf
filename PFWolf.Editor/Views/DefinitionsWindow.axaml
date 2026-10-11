@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:v="using:PFWolf.Editor.Views"
         x:Class="PFWolf.Editor.Views.DefinitionsWindow"
         x:DataType="vm:DefinitionsViewModel"
         Title="{Binding Title}"
@@ -41,7 +42,19 @@
     <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Classes="hint" Margin="8,4,8,8"
                IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-    <TabControl x:Name="Tabs" Margin="4,0,4,0">
+    <TabControl x:Name="Tabs" Margin="4,0,4,0" SelectionChanged="OnTabChanged">
+      <TabItem x:Name="GameInfoTab" Header="Game info">
+        <v:EntryEditorView DataContext="{Binding GameInfo}" />
+      </TabItem>
+      <TabItem x:Name="ActorsTab" Header="Actors">
+        <v:EntryEditorView DataContext="{Binding Actors}" />
+      </TabItem>
+      <TabItem x:Name="MapDefsTab" Header="Map definitions">
+        <v:EntryEditorView DataContext="{Binding MapDefs}" />
+      </TabItem>
+      <TabItem x:Name="GamePacksTab" Header="Game packs">
+        <v:EntryEditorView DataContext="{Binding GamePacks}" />
+      </TabItem>
       <TabItem x:Name="FilesTab" Header="YAML files">
         <DockPanel DataContext="{Binding Files}" x:DataType="vm:YamlFilesViewModel">
           <!-- Every file -->

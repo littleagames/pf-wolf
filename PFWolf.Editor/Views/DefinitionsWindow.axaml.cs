@@ -40,11 +40,43 @@ public partial class DefinitionsWindow : Window
 
     private void OnShowFiles(object? sender, EventArgs e) => Tabs.SelectedItem = FilesTab;
 
+    // The tab shown, when it's one of the definitions tabs
+    private EntryEditorViewModel? ShownEditor => _viewModel == null ? null
+        : Tabs.SelectedItem == GameInfoTab ? _viewModel.GameInfo
+        : Tabs.SelectedItem == ActorsTab ? _viewModel.Actors
+        : Tabs.SelectedItem == MapDefsTab ? _viewModel.MapDefs
+        : Tabs.SelectedItem == GamePacksTab ? _viewModel.GamePacks
+        : null;
+
+    // Each tab reads its definitions once it's shown
+    private void OnTabChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_viewModel == null || e.Source != Tabs)
+            return;
+        foreach (var editor in new[] { _viewModel.GameInfo, _viewModel.Actors, _viewModel.MapDefs, _viewModel.GamePacks })
+        {
+            if (editor != ShownEditor)
+                editor.Deactivate();
+        }
+        ShownEditor?.Activate();
+    }
+
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        ShownEditor?.Activate();
+    }
+
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Key != Key.S || e.KeyModifiers != KeyModifiers.Control || _viewModel == null)
             return;
-        if (Tabs.SelectedItem == FilesTab && _viewModel.Files.SaveCommand.CanExecute(null))
+        if (ShownEditor is { } editor)
+        {
+            if (editor.SaveCommand.CanExecute(null))
+                editor.SaveCommand.Execute(null);
+        }
+        else if (Tabs.SelectedItem == FilesTab && _viewModel.Files.SaveCommand.CanExecute(null))
             _viewModel.Files.SaveCommand.Execute(null);
         e.Handled = true;
     }

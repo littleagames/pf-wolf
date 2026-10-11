@@ -247,7 +247,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         if (_definitions == null)
         {
-            _definitions = new DefinitionsViewModel { PickMod = PickModToSaveIn };
+            _definitions = new DefinitionsViewModel
+            {
+                PickMod = PickModToSaveIn,
+                AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
+                Art = (hint, name) => hint == Definitions.FieldHint.Class ? Art?.ThingSprite(name) : Art?.Texture(name),
+            };
             _definitions.SavedToMod += (_, folder) => AddModFolder(folder);
             _definitions.ReloadRequested += async (_, _) => await LoadAsync();
             Mods.CollectionChanged += (_, _) => _definitions.SetMods(Mods.ToList());

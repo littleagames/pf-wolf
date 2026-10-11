@@ -280,6 +280,28 @@ public sealed class DefinitionSet
         else
             value = ActorOverlay(existing, baseValue, edited, path) ?? edited;   // a class, or a mapdefs entry, replaces the earlier files' whole
 
+        return Finish(target, path, value, modPath, notes);
+    }
+
+    /// <summary>
+    /// Works out taking a mod's own say in a definition out of it (its file's part, not a
+    /// !remove), so the definition is what the files before the mod make it
+    /// </summary>
+    public DefinitionWrite PlanTakeOut(IReadOnlyList<string> path, string modPath)
+    {
+        var target = ModTarget(path, modPath);
+        if (target.IsNew || YamlNodes.Get(target.Tree, path) == null)
+            throw new InvalidDataException($"{Path.GetFileName(modPath.TrimEnd('\\', '/'))} doesn't change {YamlNodes.Describe(path)}");
+        return Finish(target, path, null, modPath, []);
+    }
+
+    /// <summary>Whether a mod has a say in a definition</summary>
+    public bool ModChanges(IReadOnlyList<string> path, string modPath)
+        => Files.Any(file => DefinitionFile.SameMod(file.ModPath, modPath) && file.Error == null && YamlNodes.Get(file.Tree, path) != null);
+
+    // The file's new text with the value set, checked as the game would read it
+    private DefinitionWrite Finish(DefinitionFile target, IReadOnlyList<string> path, YamlNode? value, string? modPath, List<string> notes)
+    {
         var newText = YamlText.Sync(target.Text, path, value);
         var changed = target.WithText(newText);
         if (changed.Error != null)
