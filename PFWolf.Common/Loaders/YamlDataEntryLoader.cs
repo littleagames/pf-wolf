@@ -18,15 +18,25 @@ public class YamlDataEntryLoader
         return System.Text.Encoding.UTF8.GetString(ms.ToArray()).TrimStart('﻿');
     }
 
-    public static T Deserialize<T>(string encoded) where T : new()
-    {
-        var deserializer = new DeserializerBuilder()
+    private static IDeserializer BuildDeserializer()
+        => new DeserializerBuilder()
             .WithNamingConvention(HyphenatedNamingConvention.Instance)
             //.WithDuplicateKeyChecking()
             .IgnoreUnmatchedProperties()
             .WithCaseInsensitivePropertyMatching()
             .WithNodeDeserializer(new StateDataNodeDeserializer(), s => s.OnTop())
             .Build();
+
+    /// <summary>
+    /// Reads YAML as <typeparamref name="T"/> as <see cref="Deserialize{T}"/> does, but without
+    /// writing the text to the warning log when it can't (the editor checks files as they're typed)
+    /// </summary>
+    public static T DeserializeQuietly<T>(string encoded) where T : new()
+        => BuildDeserializer().Deserialize<T>(encoded);
+
+    public static T Deserialize<T>(string encoded) where T : new()
+    {
+        var deserializer = BuildDeserializer();
 
         try
         {

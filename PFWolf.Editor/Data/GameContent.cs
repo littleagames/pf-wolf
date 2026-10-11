@@ -88,8 +88,14 @@ public sealed class GameContent
         var actorDefs = new[] { "actordefs", $"{packId}/actordefs" }
             .Where(assets.Exists<ActorTranslationAsset>)
             .Select(name => assets.Find<ActorTranslationAsset>(name)!.Actors);
-        return new GameContent(assets, game, mapDefs, assets.FindInGamePack<GameInfoAsset>("game-info"), palette, actorDefs);
+        return new GameContent(assets, game, mapDefs, assets.FindInGamePack<GameInfoAsset>("game-info"), palette, actorDefs)
+        {
+            GameFolder = Path.GetFullPath(gameFolder),
+        };
     }
+
+    /// <summary>The folder PFWolf and its pfwolf.pk3 are in; empty for a game made of definitions alone</summary>
+    public string GameFolder { get; private init; } = "";
 
     /// <summary>
     /// A game made of just these definitions, with no pictures or levels of its own: for
