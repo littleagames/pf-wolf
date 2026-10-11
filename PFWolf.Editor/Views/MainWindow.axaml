@@ -62,9 +62,6 @@
         <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
         <Button Content="Save" Command="{Binding SaveCommand}" ToolTip.Tip="Ctrl+S: to maps/NAME.wad in the level's mod (a folder or a pk3)" />
         <Button Content="Save to…" Command="{Binding SaveAsCommand}" ToolTip.Tip="Ctrl+Shift+S: to another mod (a folder or a pk3)" />
-        <Button Content="New level…" Command="{Binding NewMapCommand}" ToolTip.Tip="Ctrl+N" />
-        <Button Content="Import map…" Command="{Binding ImportMapCommand}"
-                ToolTip.Tip="Ctrl+I: planes from a WDC .map (or an ECWolf .wad) onto this level, or as a new level; pick which planes" />
         <Separator Width="1" Height="24" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
         <Button Content="Level properties…" Command="{Binding EditPropertiesCommand}"
                 ToolTip.Tip="Name, music, next level, colors, height, sky, flats, shading and light zones (F4)" />
@@ -125,7 +122,7 @@
     </Expander>
 
     <!-- Levels and mods -->
-    <Grid DockPanel.Dock="Left" Width="250" RowDefinitions="Auto,*,Auto,Auto,Auto" Margin="8">
+    <Grid DockPanel.Dock="Left" Width="250" RowDefinitions="Auto,*,Auto,Auto,Auto,Auto" Margin="8">
       <TextBlock Grid.Row="0" Text="Levels" FontWeight="SemiBold" Margin="0,0,0,4" />
       <ListBox Grid.Row="1" ItemsSource="{Binding Maps}" SelectedItem="{Binding SelectedMap}">
         <ListBox.ItemTemplate>
@@ -134,15 +131,20 @@
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
-      <TextBlock Grid.Row="2" Text="Mods (loaded over pfwolf.pk3, later ones win)" FontWeight="SemiBold" Margin="0,12,0,4" TextWrapping="Wrap" />
-      <ListBox Grid.Row="3" ItemsSource="{Binding Mods}" SelectedItem="{Binding SelectedMod}" Height="90">
+      <WrapPanel Grid.Row="2" Orientation="Horizontal" ItemSpacing="6" LineSpacing="4" Margin="0,4,0,0">
+        <Button Content="New level…" Command="{Binding NewMapCommand}" ToolTip.Tip="Ctrl+N" />
+        <Button Content="Import map…" Command="{Binding ImportMapCommand}"
+                ToolTip.Tip="Ctrl+I: planes from a WDC .map (or an ECWolf .wad) onto this level, or as a new level; pick which planes" />
+      </WrapPanel>
+      <TextBlock Grid.Row="3" Text="Mods (loaded over pfwolf.pk3, later ones win)" FontWeight="SemiBold" Margin="0,12,0,4" TextWrapping="Wrap" />
+      <ListBox Grid.Row="4" ItemsSource="{Binding Mods}" SelectedItem="{Binding SelectedMod}" Height="90">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="x:String">
             <TextBlock Text="{Binding}" ToolTip.Tip="{Binding}" TextTrimming="LeadingCharacterEllipsis" />
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
-      <WrapPanel Grid.Row="4" Orientation="Horizontal" ItemSpacing="6" LineSpacing="4" Margin="0,4,0,0">
+      <WrapPanel Grid.Row="5" Orientation="Horizontal" ItemSpacing="6" LineSpacing="4" Margin="0,4,0,0">
         <Button Content="New mod…" Command="{Binding NewModCommand}"
                 ToolTip.Tip="A new pk3: a stand-alone game (needing no other game's files) or a mod of one of PFWolf's games" />
         <Button Content="Add pk3…" Click="AddModFile" />

@@ -23,6 +23,7 @@ public class LevelMeshTests
         Floors = new MapFloorsTranslation { AreaStart = Floor, AreaCount = 37, Ambush = -1, SecretExit = -1 },
         PlayerStarts = { [Start] = new MapPlayerStartTranslation { Angles = 90 } },
         Diagonals = { [Diagonal] = new MapDiagonalTranslation { Shape = WallShape.SolidNW } },
+        Flats = new MapFlatsTranslation { Ceiling = { [2] = "CEIL2" } },
     });
 
     /// <summary>Open floor walled in all round</summary>
@@ -281,6 +282,25 @@ public class LevelMeshTests
         Assert.That((north.Points.Min(p => p.Y), north.Points.Max(p => p.Y)), Is.EqualTo((1f, 3f)));
         var underside = arch.Single(s => s.Ref.Face == Face.Bottom);
         Assert.That(underside.Points.All(p => p.Y == 1) && Vector3.Dot(underside.Normal, -Vector3.UnitY) > 0.99f);
+    }
+
+    [TestCase(0, TextureSource.Texture, "WALLEW")]
+    [TestCase(2, TextureSource.Flat, "CEIL2")]
+    public void An_Arches_Underside_Is_Its_Ceiling_Flat_Unless_The_Ceiling_Index_Is_0(int ceiling, TextureSource source, string name)
+    {
+        // Arrange: a 3-story arch across the room at row 10
+        var document = Room();
+        for (int x = 1; x < 63; x++)
+            EditorMaps.Set(document, MapConstants.HEIGHTPLANE, x, 10, 3);
+        EditorMaps.Set(document, MapConstants.FLATPLANE, 20, 10, (ushort)(ceiling << 8));
+
+        // Act
+        var arch = At(Build(document), SurfaceKind.Arch, 20, 10).ToList();
+
+        // Assert: the underside's texture; the top keeps the wall's
+        var underside = arch.Single(s => s.Ref.Face == Face.Bottom);
+        Assert.That((underside.Texture.Source, underside.Texture.Name), Is.EqualTo((source, name)));
+        Assert.That(arch.Single(s => s.Ref.Face == Face.Top).Texture.Name, Is.EqualTo("WALLEW"));
     }
 
     [Test]

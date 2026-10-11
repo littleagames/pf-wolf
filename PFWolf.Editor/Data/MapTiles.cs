@@ -131,6 +131,13 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
            ?? ArchEndTexture(x, y, -1, 0, true) ?? ArchEndTexture(x, y, 1, 0, true);
 
     /// <summary>
+    /// The ceiling flat an arch tile shows underneath in place of <see cref="ArchUndersideTexture"/>:
+    /// its <see cref="CeilingFlat"/> when the flat-plane ceiling index isn't 0, else null (Program.UseArchCeilingFlat)
+    /// </summary>
+    public string? ArchCeilingFlat(int x, int y)
+        => this[MapConstants.FLATPLANE, x, y] >> 8 == 0 ? null : CeilingFlat(x, y);
+
+    /// <summary>
     /// An arch face's texture, vertical for a face along x = constant: the wall ending the run
     /// of arch tiles in line with the face, else across it (Program.OpenArch); null leaves the arch open
     /// </summary>

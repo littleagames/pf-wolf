@@ -213,7 +213,7 @@ public sealed class LevelMesh
                         break;
 
                     default:
-                        bool arch = _tiles.IsArch(x, y) && AddArch(x, y);
+                        bool arch = _tiles.IsArch(x, y) && AddArch(x, y, ceilingColor);
                         // An arch at least as high as the ceiling hides it
                         bool ceilingShows = !arch || _tiles.Stories(x, y) < ceiling;
                         AddFloorAndCeiling(x, y, floorColor, ceilingColor, ceilingShows ? ceiling : null, null);
@@ -317,10 +317,10 @@ public sealed class LevelMesh
 
     /// <summary>
     /// An arch: a block over the walkway from story 2 up to the tile's height, its faces and
-    /// underside textured from the walls ending its run (Program.OpenArch); false when there's
-    /// no wall to take a texture from, which the game leaves open
+    /// underside textured from the walls ending its run (Program.OpenArch), or from its ceiling
+    /// flat; false when there's no wall to take a texture from, which the game leaves open
     /// </summary>
-    private bool AddArch(int x, int y)
+    private bool AddArch(int x, int y, Vector4 ceilingColor)
     {
         int stories = _tiles.Stories(x, y);
         var underside = _tiles.ArchUndersideTexture(x, y);
@@ -352,8 +352,12 @@ public sealed class LevelMesh
 
         var light = Light(x, y);
         float undersideStories = TextureStories(underside);
-        AddFlat(new SurfaceRef(SurfaceKind.Arch, x, y, Face.Bottom), Corners(x, y), 1, up: false, Texture(underside), light, undersideStories);
-        AddFlat(new SurfaceRef(SurfaceKind.Arch, x, y, Face.Top), Corners(x, y), stories, up: true, Texture(underside), TopShade * light, undersideStories);
+        var topTexture = Texture(underside);
+        // A ceiling flat on the tile shows underneath, its see-through pixels the ceiling color
+        var flat = _tiles.ArchCeilingFlat(x, y);
+        AddFlat(new SurfaceRef(SurfaceKind.Arch, x, y, Face.Bottom), Corners(x, y), 1, up: false,
+            flat != null ? Flat(flat, ceilingColor) : topTexture, light, flat != null ? 1 : undersideStories);
+        AddFlat(new SurfaceRef(SurfaceKind.Arch, x, y, Face.Top), Corners(x, y), stories, up: true, topTexture, TopShade * light, undersideStories);
         return true;
     }
 

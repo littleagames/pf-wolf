@@ -260,6 +260,7 @@ internal partial class Program
     static readonly int[] postupperofs = new int[MAXPOSTS];
     static readonly short[] postunderside = new short[MAXPOSTS];   // an arch's: the height where the trace leaves it, 0 for none
     static readonly TextureAsset?[] postundertexture = new TextureAsset?[MAXPOSTS];
+    static readonly bool[] postunderflat = new bool[MAXPOSTS];             // the underside's texture is a ceiling flat
     static readonly byte[][] postlight = new byte[MAXPOSTS][];              // its face's light row
 
     // The open tile the trace last came from (a TileIndex): walls and doors it hits are seen from
@@ -315,13 +316,14 @@ internal partial class Program
     }
 
     static void QueuePost(short height, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
-        short underside = 0, TextureAsset? undertexture = null, byte[]? light = null)
+        short underside = 0, TextureAsset? undertexture = null, byte[]? light = null, bool underflat = false)
     {
         if (postcount == MAXPOSTS)
             return;
         postlight[postcount] = light ?? WallLight(xintercept, yintercept);
         postunderside[postcount] = underside;
         postundertexture[postcount] = undertexture;
+        postunderflat[postcount] = underflat;
         postheights[postcount] = height;
         postfirststory[postcount] = (byte)firststory;
         poststories[postcount] = (byte)stories;
@@ -342,7 +344,8 @@ internal partial class Program
                 postlower[postcount], postlowerofs[postcount], postupper[postcount], postupperofs[postcount],
                 postlight[postcount], ShadeOffsetForHeight(postheights[postcount]));
             if (postunderside[postcount] != 0)
-                DrawUnderside(pixx, postheights[postcount] >> 3, postunderside[postcount] >> 3, postundertexture[postcount]);
+                DrawUnderside(pixx, postheights[postcount] >> 3, postunderside[postcount] >> 3, postundertexture[postcount],
+                    postunderflat[postcount]);
         }
     }
 
@@ -350,9 +353,10 @@ internal partial class Program
     /// Draws an arch's underside, one story up, between where the trace enters it (half a story
     /// is entryhalf pixels there) and where it leaves (exithalf). It's a flat surface, so each
     /// row is textured from where the view ray meets it, from the texture's bottom story
-    /// laid flat: one tile of it per tile. With no texture, it's the ceiling color.
+    /// laid flat: one tile of it per tile. A ceiling flat (flat) is sampled as DrawFlats does,
+    /// its see-through pixels the ceiling color. With no texture, it's the ceiling color.
     /// </summary>
-    static void DrawUnderside(int x, int entryhalf, int exithalf, TextureAsset? texture)
+    static void DrawUnderside(int x, int entryhalf, int exithalf, TextureAsset? texture, bool flat)
     {
         // one story up from the floor line, as DrawPost puts the top of the arch's first story
         int from = Math.Max(FloorRow(entryhalf) - 2 * entryhalf, 0);
@@ -394,8 +398,11 @@ internal partial class Program
 
                 int u = (int)(px >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
                 int v = (int)(py >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
-                int row = height >= TEXTURESIZE ? height - TEXTURESIZE + v : v * height / TEXTURESIZE;
-                dest[y * pitch] = light[shadeofs + data[u * width / TEXTURESIZE * height + row]];
+                int row = flat || height < TEXTURESIZE ? v * height / TEXTURESIZE : height - TEXTURESIZE + v;
+                byte pixel = data[u * width / TEXTURESIZE * height + row];
+                if (flat && pixel == FLATMASK)
+                    pixel = ceilingcolor;
+                dest[y * pitch] = light[shadeofs + pixel];
             }
         }
     }
@@ -408,7 +415,8 @@ internal partial class Program
     = An open floor tile with a height (plane 3) above one story is an arch: a block from the
     = second story up to that height, that can be walked under. The trace opens one as it
     = enters the tile and queues it as it leaves, once it knows how deep the underside runs.
-    = Its faces and its textured underside take the texture of a wall beside it.
+    = Its faces take the texture of a wall beside it, and its underside the tile's ceiling flat
+    = (a non-zero flat-plane ceiling index), else the wall's texture too.
     =
     ====================
     */
@@ -418,6 +426,7 @@ internal partial class Program
     static int archstories;
     static TextureAsset? archtexture;
     static TextureAsset? archunderside;
+    static bool archunderflat;          // archunderside is the tile's ceiling flat
     static int archofs;
     static byte[] archlight = noshade;  // its face's light row: where the trace entered it, seen from the tile before
 
@@ -440,6 +449,7 @@ internal partial class Program
         archopen = true;
         archlight = WallLight(edgex, edgey);
         archunderside = ArchUndersideTexture(tilex, tiley) ?? archtexture;
+        UseArchCeilingFlat(tilex, tiley);
         archstories = _mapManager.storymap[tilex, tiley];
         archheight = HeightAt(edgex, edgey);
         archofs = vertical
@@ -471,12 +481,29 @@ internal partial class Program
         ArchEndTexture(tilex, tiley, 0, -1, false) ?? ArchEndTexture(tilex, tiley, 0, 1, false)
         ?? ArchEndTexture(tilex, tiley, -1, 0, true) ?? ArchEndTexture(tilex, tiley, 1, 0, true);
 
+    /// <summary>
+    /// An arch tile with a ceiling flat (a non-zero ceiling index on the flat plane, its flat
+    /// from mapdefs or the level's default ceiling) shows it underneath, in place of the wall texture
+    /// </summary>
+    static void UseArchCeilingFlat(int tilex, int tiley)
+    {
+        archunderflat = false;
+        if (_mapManager.MAPSPOT(tilex, tiley, MapManager.FLATPLANE) >> 8 == 0)
+            return;
+        var flat = _mapManager.ceilingflat[(tiley << MapManager.MAPSHIFT) + tilex];
+        if (flat == null)
+            return;
+        archunderside = flat;
+        archunderflat = true;
+    }
+
     // The view starts under an arch: there's no face, only the underside from above the view
     static void OpenFocalArch()
     {
         archunderside = ArchUndersideTexture(focaltx, focalty);
         if (archunderside == null)
             return;                     // as OpenArch: nothing to texture it from
+        UseArchCeilingFlat(focaltx, focalty);
         archtexture = notexture;
         archopen = true;
         archlight = LightAt(hittile, viewx, viewy);
@@ -495,7 +522,7 @@ internal partial class Program
         short exitheight = HeightAt(edgex, edgey);
         if (exitheight == 0)
             exitheight = 1;             // 0 means no underside
-        QueuePost(archheight, 1, archstories, archtexture!, archofs, archtexture!, archofs, exitheight, archunderside, archlight);
+        QueuePost(archheight, 1, archstories, archtexture!, archofs, archtexture!, archofs, exitheight, archunderside, archlight, archunderflat);
     }
 
     // The height (as wallheight) of a wall at (x, y)
