@@ -352,7 +352,11 @@ public sealed partial class FieldNode : ObservableObject
                     return IsEntry ? new YamlScalarNode("") : null;
                 if (_original is YamlScalarNode original && original.Value == text)
                     return YamlNodes.Clone(original);
-                return Scalar(text, Schema!, errors);
+                var scalar = Scalar(text, Schema!, errors);
+                // Quoted as it was ("#383838" stays in double quotes), so the file's line changes only in its value
+                if (_original is YamlScalarNode { Style: ScalarStyle.SingleQuoted or ScalarStyle.DoubleQuoted } quoted)
+                    scalar.Style = quoted.Style;
+                return scalar;
             }
 
             default:

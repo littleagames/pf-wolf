@@ -57,6 +57,20 @@ public class FieldNodeTests
     }
 
     [Test]
+    public void A_Changed_Value_Keeps_Its_Quotes()
+    {
+        // Arrange
+        var node = Fields(typeof(DefaultMapInfo), "ceiling-color: \"#383838\"\nfloor-color: '#717171'\n");
+
+        // Act
+        Child(node, "ceiling-color").Text = "#202020";
+        var text = YamlText.Sync("ceiling-color: \"#383838\"\nfloor-color: '#717171'\n", [], (YamlMappingNode)node.Build([])!);
+
+        // Assert
+        Assert.That(text, Is.EqualTo("ceiling-color: \"#202020\"\nfloor-color: '#717171'\n"));
+    }
+
+    [Test]
     public void A_Word_Where_A_Number_Goes_Is_An_Error()
     {
         // Arrange

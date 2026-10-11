@@ -52,20 +52,36 @@ public static class ModFiles
             return files.Length > 0 ? PathIn(modPath, files[0].EntryPath) : modPath;
         }
 
-        // The whole pk3 is rewritten as a copy, which then takes its place
+        // The whole pk3 is written again as a copy, which then takes its place. Each file stays
+        // where it was in it: the game loads a pk3's files in that order, and a later file of an
+        // asset (actordefs, mapdefs) wins over an earlier one, so moving one could change what wins.
         var copy = modPath + ".tmp";
-        File.Copy(modPath, copy, overwrite: true);
         try
         {
-            using (var archive = ZipFile.Open(copy, ZipArchiveMode.Update))
+            using (var source = ZipFile.OpenRead(modPath))
+            using (var target = ZipFile.Open(copy, ZipArchiveMode.Create))
             {
-                foreach (var (entryPath, data) in files)
+                var written = new bool[files.Length];
+                foreach (var entry in source.Entries)
                 {
-                    // Replacing one stored with another case or '\' (some Windows tools write those)
-                    while (FindEntry(archive, entryPath) is { } old)
-                        old.Delete();
-                    using var stream = archive.CreateEntry(entryPath.Replace('\\', '/'), CompressionLevel.Optimal).Open();
-                    stream.Write(data);
+                    // Matched with another case or '\' too (some Windows tools write those)
+                    int index = Array.FindIndex(files, file => SamePath(entry.FullName, file.EntryPath));
+                    if (index < 0)
+                    {
+                        CopyEntry(entry, target);
+                        continue;
+                    }
+                    if (written[index])
+                        continue;   // a second copy of a file replaced already
+                    WriteEntry(target, files[index].EntryPath, files[index].Data);
+                    written[index] = true;
+                }
+
+                // New files after the rest
+                for (int i = 0; i < files.Length; i++)
+                {
+                    if (!written[i] && !files.Take(i).Any(earlier => SamePath(earlier.EntryPath, files[i].EntryPath)))
+                        WriteEntry(target, files[i].EntryPath, files[i].Data);
                 }
             }
             File.Replace(copy, modPath, modPath + BackupExtension);
@@ -92,6 +108,25 @@ public static class ModFiles
     // A file's path in a mod folder, from its path in the mod (maps/MAP01.wad)
     private static string PathIn(string modFolder, string entryPath)
         => Path.Combine(modFolder, entryPath.Replace('/', Path.DirectorySeparatorChar));
+
+    private static bool SamePath(string a, string b)
+        => a.Replace('\\', '/').Equals(b.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase);
+
+    private static void WriteEntry(ZipArchive archive, string entryPath, byte[] data)
+    {
+        using var stream = archive.CreateEntry(entryPath.Replace('\\', '/'), CompressionLevel.Optimal).Open();
+        stream.Write(data);
+    }
+
+    // An entry as it was: its name (as stored), contents and time
+    private static void CopyEntry(ZipArchiveEntry entry, ZipArchive target)
+    {
+        var copy = target.CreateEntry(entry.FullName, CompressionLevel.Optimal);
+        copy.LastWriteTime = entry.LastWriteTime;
+        using var from = entry.Open();
+        using var to = copy.Open();
+        from.CopyTo(to);
+    }
 
     private static ZipArchiveEntry? FindEntry(ZipArchive archive, string entryPath)
     {

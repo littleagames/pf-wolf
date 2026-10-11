@@ -60,6 +60,22 @@ public class ModFilesTests
     }
 
     [Test]
+    public void Writing_Into_A_Pk3_Keeps_Each_File_In_Its_Place()
+    {
+        // Arrange: the game loads a pk3's files in order, and a later one of an asset wins
+        var pk3 = MakePk3(("actordefs/a.yaml", "a"), ("actordefs/b.yaml", "b"), ("actordefs/c.yaml", "c"));
+
+        // Act
+        ModFiles.Write(pk3, ("actordefs/b.yaml", Encoding.UTF8.GetBytes("b2")), ("actordefs/d.yaml", Encoding.UTF8.GetBytes("d")));
+
+        // Assert
+        using var archive = ZipFile.OpenRead(pk3);
+        Assert.That(archive.Entries.Select(entry => entry.FullName),
+            Is.EqualTo(new[] { "actordefs/a.yaml", "actordefs/b.yaml", "actordefs/c.yaml", "actordefs/d.yaml" }));
+        Assert.That(new Pk3AssetSource(pk3).EntryPaths, Is.EqualTo(new[] { "actordefs/a.yaml", "actordefs/b.yaml", "actordefs/c.yaml", "actordefs/d.yaml" }));
+    }
+
+    [Test]
     public void Writing_Into_A_Pk3_Keeps_The_Last_Version_As_Bak()
     {
         // Arrange
