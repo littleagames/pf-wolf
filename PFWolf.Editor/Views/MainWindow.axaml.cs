@@ -16,6 +16,12 @@ public partial class MainWindow : Window, IEditorDialogs
 
     public MainWindow() => InitializeComponent();
 
+    /// <summary>
+    /// The window a question is asked over: the browser or definitions window in use when it's
+    /// one of those asking, so the question isn't hidden behind it, else the editor
+    /// </summary>
+    private Window DialogOwner => OwnedWindows.FirstOrDefault(window => window.IsActive) ?? this;
+
     private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext!;
 
     protected override void OnDataContextChanged(EventArgs e)
@@ -267,7 +273,7 @@ public partial class MainWindow : Window, IEditorDialogs
         };
         cancel.Click += (_, _) => dialog.Close();
 
-        await dialog.ShowDialog(this);
+        await dialog.ShowDialog(DialogOwner);
         return answer;
     }
 
@@ -367,7 +373,7 @@ public partial class MainWindow : Window, IEditorDialogs
         cancel.Click += (_, _) => dialog.Close();
         dialog.Opened += (_, _) => { name.Focus(); name.SelectAll(); };
 
-        await dialog.ShowDialog(this);
+        await dialog.ShowDialog(DialogOwner);
         return answer;
     }
 
@@ -415,7 +421,7 @@ public partial class MainWindow : Window, IEditorDialogs
             input.SelectAll();
         };
 
-        await dialog.ShowDialog(this);
+        await dialog.ShowDialog(DialogOwner);
         return answer;
     }
 
@@ -435,7 +441,7 @@ public partial class MainWindow : Window, IEditorDialogs
         discard.Click += (_, _) => { choice = UnsavedChoice.Discard; dialog.Close(); };
         cancel.Click += (_, _) => dialog.Close();
 
-        await dialog.ShowDialog(this);
+        await dialog.ShowDialog(DialogOwner);
         return choice;
     }
 
@@ -597,7 +603,7 @@ public partial class MainWindow : Window, IEditorDialogs
         };
         cancel.Click += (_, _) => dialog.Close();
 
-        await dialog.ShowDialog(this);
+        await dialog.ShowDialog(DialogOwner);
         return answer;
     }
 

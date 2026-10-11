@@ -252,6 +252,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 PickMod = PickModToSaveIn,
                 AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
                 Art = (hint, name) => hint == Definitions.FieldHint.Class ? Art?.ThingSprite(name) : Art?.Texture(name),
+                AskUnsaved = message => Dialogs.AskUnsaved(message),
             };
             _definitions.SavedToMod += (_, folder) => AddModFolder(folder);
             _definitions.ReloadRequested += async (_, _) => await LoadAsync();

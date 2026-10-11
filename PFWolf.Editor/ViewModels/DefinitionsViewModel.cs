@@ -175,6 +175,39 @@ public sealed partial class DefinitionsViewModel : ObservableObject
 
     private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, GamePacks];
 
+    /// <summary>Asks whether to save changes before they're lost; the editor answers with its dialog</summary>
+    public Func<string, Task<UnsavedChoice>>? AskUnsaved { get; set; }
+
+    /// <summary>
+    /// Turns base mode on or off. The tabs then show pfwolf.pk3's own definitions, or the mods'
+    /// over them, so their unsaved edits would be lost: it asks to save them first (where they'd
+    /// have gone before the switch)
+    /// </summary>
+    [RelayCommand]
+    private async Task ToggleBaseModeAsync()
+    {
+        var unsaved = Editors.SelectMany(editor => editor.UnsavedNames).ToList();
+        if (unsaved.Count > 0 && AskUnsaved != null)
+        {
+            var question = $"Turning base mode {(BaseMode ? "off" : "on")} drops the changes to {string.Join(", ", unsaved)}. Save first?";
+            switch (await AskUnsaved(question))
+            {
+                case UnsavedChoice.Save:
+                    foreach (var editor in Editors)
+                    {
+                        if (!await editor.SaveAllAsync())
+                            return;     // the status says why; base mode stays as it was
+                    }
+                    break;
+                case UnsavedChoice.Discard:
+                    break;
+                default:
+                    return;
+            }
+        }
+        BaseMode = !BaseMode;
+    }
+
     /// <summary>
     /// What's changed here and not saved (definitions in the tabs, the file in the YAML tab), as
     /// it's named to a person: loading the game again, or closing the editor, would lose it
