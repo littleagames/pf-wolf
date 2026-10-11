@@ -366,6 +366,39 @@ public class PfWolfPk3LoaderTests
         Assert.That(loader.Warnings, Is.Empty);
     }
 
+    [Test]
+    public void Pictures_Load_By_File_Name_In_Any_Subfolder()
+    {
+        // Arrange: sprites/{pack}/ is still a pack's own, but any other subfolder is just for order
+        var basePk3 = new MemoryAssetSource("pfwolf.pk3", new()
+        {
+            ["gamepacks/gamepack-info.yaml"] = GamePackInfo,
+            ["sprites/alpha/GARDA1.png"] = "png",
+            ["sprites/alpha/dogs/DOGYA1.png"] = "png",
+            ["sprites/gamma/ROBOA1.png"] = "png",
+            ["sprites/guards/officers/OFFIA1.png"] = "png",
+            ["textures/castle/stone/WALL1.png"] = "png",
+            ["flats/tech/FLOOR1.png"] = "png",
+        });
+        var mod = new MemoryAssetSource("mymod", new()
+        {
+            ["sprites/enemies/MUTAA1.png"] = "png",
+            ["textures/a/b/MODWALL.png"] = "png",
+            ["flats/x/MODFLAT.png"] = "png",
+        });
+
+        // Act
+        var origins = new PfWolfPk3Loader([basePk3], "alpha", "alpha", [mod]).GetAssetOrigins();
+
+        // Assert
+        Assert.That(origins.Keys, Is.SupersetOf(new[]
+        {
+            "spriteasset:garda1", "spriteasset:dogya1", "spriteasset:offia1", "spriteasset:mutaa1",
+            "textureasset:wall1", "textureasset:floor1", "textureasset:modwall", "textureasset:modflat",
+        }));
+        Assert.That(origins.Keys, Has.None.EqualTo("spriteasset:roboa1"), "gamma's sprites aren't alpha's");
+    }
+
     [TestCase("actordefs/wolf3d/guards.yaml", "wolf3d/actordefs")]
     [TestCase("actordefs/native.yaml", "actordefs")]
     [TestCase("mapdefs/spear/things.yaml", "spear/mapdefs")]

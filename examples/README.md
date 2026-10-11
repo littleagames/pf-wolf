@@ -92,7 +92,8 @@ The level has no roof, so `sky` in `game-info.yaml` puts a dusk sky above the wa
 ### What's in it
 
 - `textures/`: the tall textures, as PNGs. A picture in a mod's `textures/` folder is a wall
-  texture of that name. It can be any height: each 64 pixels is a story, counted up from the
+  texture of that name, even in a subfolder (`textures/castle/`; the same goes for `flats/` and
+  `sprites/`). It can be any height: each 64 pixels is a story, counted up from the
   floor, and on a wall taller than the picture it starts again from the bottom. Each comes as
   `NAME1` (for north and south faces) and a darker `NAME2` (east and west), like the game's own walls.
   - `TWTOWR1`/`2`: 64x192, the curtain wall

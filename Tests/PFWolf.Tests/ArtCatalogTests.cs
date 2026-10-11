@@ -84,7 +84,9 @@ public class ArtCatalogTests
     }
 
     [TestCase("flats/FLOOR1.png", true)]
+    [TestCase("flats/tech/blue/FLOOR1.png", true)]
     [TestCase("textures/FLOOR1.png", false)]
+    [TestCase("textures/flats/FLOOR1.png", false)]
     [TestCase("flats.png", false)]
     public void Flats_Come_From_A_Flats_Folder(string path, bool flat)
         => Assert.That(ArtCatalog.IsFlatPath(path), Is.EqualTo(flat));

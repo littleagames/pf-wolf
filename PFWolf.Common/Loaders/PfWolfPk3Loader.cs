@@ -48,6 +48,16 @@ public class PfWolfPk3Loader
     private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/", "menudefs/", "maps/", "sprites/"];
 
     /// <summary>
+    /// Picture folders whose subfolders are only for keeping files in order (sprites/guards/,
+    /// textures/castle/): a file there is named by its file name, however deep. In sprites/, a
+    /// subfolder named after a game pack is still that pack's (GamePackFolders).
+    /// </summary>
+    private static readonly string[] NestableFolders = ["textures/", "flats/", "sprites/"];
+
+    // Every game pack gamepack-info lists, so sprites/{pack}/ can be told from any other subfolder
+    private readonly HashSet<string> _packIds = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Files a mod keeps at its root that pfwolf.pk3 keeps in gamepacks/{pack}/
     /// </summary>
     private static readonly HashSet<string> ModRootGamePackFiles = new(StringComparer.OrdinalIgnoreCase)
@@ -96,6 +106,7 @@ public class PfWolfPk3Loader
                 Warn);
 
             AddAsset("gamepack-info", gamePackInfo);
+            _packIds.UnionWith(gamePackInfo.GamePacks.Keys);
             if (!string.IsNullOrWhiteSpace(gamePackId) && gamePackInfo.GamePacks.ContainsKey(gameReleaseId))
                 _basePackIds = gamePackInfo.GetBasePackChain(gameReleaseId);
         }
@@ -274,10 +285,11 @@ public class PfWolfPk3Loader
             return;
         }
 
-        if (fullName.StartsWith("textures/") || fullName.StartsWith("flats/"))
+        if (IsIn(fullName, "textures/") || IsIn(fullName, "flats/"))
         {
             // wall textures of any size (a VSWAP wall of the same name is replaced); flats/ is
-            // ECWolf's folder for floor and ceiling textures, which are textures like any other
+            // ECWolf's folder for floor and ceiling textures, which are textures like any other.
+            // Named by file name, in whatever subfolders (NestableFolders).
             AddReference(assetName, () => TextureAsset.FromGraphic(
                 GraphicDataLoader.Load(entry.Open(), sourcePalette: Load<Palette>(GamePalette))));
             return;
@@ -318,8 +330,9 @@ public class PfWolfPk3Loader
             return;
         }
 
-        if (fullName.StartsWith("sprites/"))
+        if (IsIn(fullName, "sprites/"))
         {
+            // Named by file name, in whatever subfolders (NestableFolders)
             AddReference(assetName, () => PngSpriteDataLoader.Load(entry.Open(), sourcePalette: Load<Palette>(GamePalette)));
             return;
         }
@@ -581,9 +594,10 @@ public class PfWolfPk3Loader
     /// <summary>
     /// For an entry inside a per-pack folder's pack subfolder (actordefs/wolf3d/guards.yaml),
     /// that folder ("actordefs/") and pack ("wolf3d"). Null otherwise, including files directly
-    /// in those folders (gamepacks/gamepack-info.yaml), which belong to every pack.
+    /// in those folders (gamepacks/gamepack-info.yaml), which belong to every pack, and those in
+    /// a picture folder's subfolder that isn't named after a pack (sprites/guards/GARDA1.png).
     /// </summary>
-    private static (string Folder, string Pack)? GetGamePackFolder(string fullName)
+    private (string Folder, string Pack)? GetGamePackFolder(string fullName)
     {
         foreach (var folder in GamePackFolders)
         {
@@ -594,11 +608,21 @@ public class PfWolfPk3Loader
             if (packFolderEnd < 0)
                 return null;
 
-            return (folder, fullName.Substring(folder.Length, packFolderEnd - folder.Length));
+            var pack = fullName.Substring(folder.Length, packFolderEnd - folder.Length);
+            if (IsNestable(folder) && !_packIds.Contains(pack))
+                return null;
+            return (folder, pack);
         }
 
         return null;
     }
+
+    private static bool IsNestable(string folder)
+        => NestableFolders.Contains(folder, StringComparer.OrdinalIgnoreCase);
+
+    // Whether a file is somewhere in a picture folder (textures/castle/WALL1.png counts as textures/)
+    private static bool IsIn(string fullName, string folder)
+        => fullName.StartsWith(folder, StringComparison.OrdinalIgnoreCase);
 
     private void AddReference<T>(string assetName, Func<T> assetLoader) where T : Asset
     {

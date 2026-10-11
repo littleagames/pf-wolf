@@ -137,9 +137,9 @@ public static class ArtCatalog
     public static string? SpriteFrame(string spriteName)
         => spriteName.Length >= 2 && char.IsAsciiDigit(spriteName[^1]) ? spriteName[..^1].ToUpperInvariant() : null;
 
-    /// <summary>Whether a pack file is in a flats/ folder ("flats/FLOOR1.png"), not textures/</summary>
+    /// <summary>Whether a pack file is somewhere in the flats/ folder ("flats/FLOOR1.png", "flats/tech/FLOOR2.png"), not textures/</summary>
     public static bool IsFlatPath(string path)
-        => path.Replace('\\', '/').Split('/').SkipLast(1).Any(folder => folder.Equals("flats", StringComparison.OrdinalIgnoreCase));
+        => path.Replace('\\', '/').StartsWith("flats/", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Textures and pictures by name: the walls, doors and flats of mapdefs, and game-info's skies and default flats</summary>
     public static Dictionary<string, List<ArtUse>> Uses(GameContent content)
