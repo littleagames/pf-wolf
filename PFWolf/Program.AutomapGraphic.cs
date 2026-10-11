@@ -63,8 +63,9 @@ internal partial class Program
     /// <summary>The textures a wall tile shows on its north/south and east/west faces.</summary>
     static (byte[]? North, byte[]? East) AutomapWallTextures(MapObjectTranslationAsset? mapDefs, int tile)
     {
+        // A wall beside a door carries the door-side mark (BIT_WALL), which isn't part of its id
         MapTextureTranslation? textures = null;
-        if (mapDefs == null || !mapDefs.Walls.TryGetValue(tile, out textures))
+        if (mapDefs == null || !mapDefs.Walls.TryGetValue(tile & ~BIT_WALL, out textures))
             return (null, null);
 
         return (AutomapTexture(textures.North), AutomapTexture(textures.East));
