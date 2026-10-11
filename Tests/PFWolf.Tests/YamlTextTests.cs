@@ -105,7 +105,7 @@ public class YamlTextTests
     public void Set_Writes_Lists_Under_Their_Key_And_Keeps_The_Keys_Comment()
     {
         // Arrange
-        const string actors = """
+        var actors = """
             Guard:
               parent: Monster
               states:
@@ -115,7 +115,7 @@ public class YamlTextTests
                     tics-per-frame: -1
                 Path:
                   - sprite: GARD
-            """;
+            """.Replace("\r\n", "\n");
         var spawn = new YamlSequenceNode(
             new YamlMappingNode { { "sprite", "GARD" }, { "frames", new YamlSequenceNode(new YamlScalarNode("A"), new YamlScalarNode("B")) }, { "tics-per-frame", "10" } },
             new YamlMappingNode { { "goto", "Spawn" } });

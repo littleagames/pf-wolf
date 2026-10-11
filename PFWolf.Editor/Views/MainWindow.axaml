@@ -24,6 +24,7 @@
     <KeyBinding Gesture="F8" Command="{Binding ShowSoundsCommand}" />
     <KeyBinding Gesture="F9" Command="{Binding ShowPalettesCommand}" />
     <KeyBinding Gesture="F2" Command="{Binding ShowTextsCommand}" />
+    <KeyBinding Gesture="F11" Command="{Binding ShowDefinitionsCommand}" />
   </Window.KeyBindings>
 
   <DockPanel>
@@ -41,6 +42,9 @@
                         ToolTip.Tip="Every palette, to look at and edit, with where it comes from and what's drawn in it" />
               <MenuItem Header="Texts…" Command="{Binding ShowTextsCommand}" InputGesture="F2"
                         ToolTip.Tip="The help screens, end texts and briefings, each article page as the game shows it, with what's wrong with it" />
+              <Separator />
+              <MenuItem Header="Definitions…" Command="{Binding ShowDefinitionsCommand}" InputGesture="F11"
+                        ToolTip.Tip="Game info, game packs, actor classes and map definitions, in fields or as YAML, saved into a mod or (base mode) pfwolf.pk3" />
             </MenuFlyout>
           </DropDownButton.Flyout>
         </DropDownButton>

@@ -1,0 +1,113 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        x:Class="PFWolf.Editor.Views.DefinitionsWindow"
+        x:DataType="vm:DefinitionsViewModel"
+        Title="{Binding Title}"
+        Width="1440" Height="860" MinWidth="1000" MinHeight="560"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Opacity" Value="0.7" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.problem">
+      <Setter Property="Foreground" Value="OrangeRed" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+    <!-- Where changes go -->
+    <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" ColumnSpacing="8">
+        <TextBlock Text="Save into" VerticalAlignment="Center" IsVisible="{Binding IsModMode}" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding SaveTargets}" SelectedItem="{Binding SaveTarget}" MinWidth="220"
+                  IsVisible="{Binding IsModMode}" PlaceholderText="A mod" VerticalAlignment="Center"
+                  ToolTip.Tip="The mod changes are saved into, as just what they change over the game's (and the mods before it)" />
+        <Button Grid.Column="2" Content="Other mod…" Command="{Binding PickSaveTargetCommand}" IsVisible="{Binding IsModMode}"
+                ToolTip.Tip="Save into another mod folder or pk3 (the editor loads it with the others)" />
+        <CheckBox Grid.Column="3" Content="Base mode" IsChecked="{Binding BaseMode}" Margin="12,0,0,0"
+                  ToolTip.Tip="Change pfwolf.pk3's own files (in the game folder, and the pfwolf-pk3 folder it's built from) instead of a mod. Mods aren't shown while it's on." />
+        <TextBlock Grid.Column="4" Text="{Binding TargetText}" Classes="hint" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                   TextWrapping="NoWrap" ToolTip.Tip="{Binding TargetText}" />
+        <Button Grid.Column="5" Content="Load the game again" Command="{Binding ReloadCommand}" Classes="accent" IsVisible="{Binding NeedsReload}"
+                ToolTip.Tip="The levels, palette and the rest of the editor have what's saved once the game's loaded again" />
+      </Grid>
+    </Border>
+
+    <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Classes="hint" Margin="8,4,8,8"
+               IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <TabControl x:Name="Tabs" Margin="4,0,4,0">
+      <TabItem x:Name="FilesTab" Header="YAML files">
+        <DockPanel DataContext="{Binding Files}" x:DataType="vm:YamlFilesViewModel">
+          <!-- Every file -->
+          <DockPanel DockPanel.Dock="Left" Width="330" Margin="0,8,8,8">
+            <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,6">
+              <TextBox Text="{Binding Filter}" PlaceholderText="Find by path, mod or what it is (actor, colors)" />
+              <WrapPanel>
+                <CheckBox Content="pfwolf.pk3's files" IsChecked="{Binding ShowBase}" Margin="0,0,12,0" />
+                <CheckBox Content="Only problems" IsChecked="{Binding OnlyProblems}" />
+              </WrapPanel>
+              <TextBlock Text="{Binding CountText}" Classes="hint" />
+            </StackPanel>
+            <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
+              <ListBox.Styles>
+                <Style Selector="ListBoxItem">
+                  <Setter Property="Padding" Value="8,3" />
+                </Style>
+              </ListBox.Styles>
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:YamlFileItem">
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6" ToolTip.Tip="{Binding ToolTip}">
+                    <TextBlock Text="⚠" Foreground="OrangeRed" IsVisible="{Binding HasError}" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1">
+                      <TextBlock Text="{Binding EntryPath}" TextTrimming="LeadingCharacterEllipsis" />
+                      <TextBlock Text="{Binding SourceName}" FontSize="11" Opacity="0.6" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+
+          <!-- The file picked -->
+          <DockPanel Margin="0,8,0,8" IsVisible="{Binding HasSelection}">
+            <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,6">
+              <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+                <StackPanel>
+                  <SelectableTextBlock Text="{Binding FileTitle}" FontSize="16" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding FileWhat}" Classes="hint" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="Changed, not saved" Classes="hint" VerticalAlignment="Center" IsVisible="{Binding IsChanged}" />
+                <Button Grid.Column="2" Content="Save" Command="{Binding SaveCommand}" Classes="accent" VerticalAlignment="Center"
+                        ToolTip.Tip="Ctrl+S: back into its mod, or in base mode into pfwolf.pk3 and pfwolf-pk3" />
+                <Button Grid.Column="3" Content="Revert" Command="{Binding RevertCommand}" VerticalAlignment="Center"
+                        ToolTip.Tip="Back to the file as it was read (or last saved)" />
+              </Grid>
+              <TextBlock Text="{Binding ReadOnlyText}" Classes="hint" FontStyle="Italic"
+                         IsVisible="{Binding IsReadOnly}" />
+              <TextBlock Text="{Binding Note}" Classes="hint"
+                         IsVisible="{Binding Note, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              <Button Command="{Binding GoToProblemCommand}" IsVisible="{Binding HasProblem}" Padding="6,3"
+                      Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Left"
+                      ToolTip.Tip="Go to the line">
+                <TextBlock Text="{Binding Problem}" Classes="problem" />
+              </Button>
+              <TextBlock Text="Reads as the game reads it." Classes="hint" Foreground="SeaGreen" Opacity="1"
+                         IsVisible="{Binding !HasProblem}" />
+            </StackPanel>
+            <TextBlock DockPanel.Dock="Bottom" Text="{Binding CaretText}" Classes="hint" Margin="0,4,0,0" />
+            <TextBox x:Name="SourceBox" Text="{Binding Source}" AcceptsReturn="True" AcceptsTab="False" TextWrapping="NoWrap"
+                     IsReadOnly="{Binding IsReadOnly}"
+                     FontFamily="Consolas,Menlo,monospace" FontSize="13"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+          </DockPanel>
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</Window>

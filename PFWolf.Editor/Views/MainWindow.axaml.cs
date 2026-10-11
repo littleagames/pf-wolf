@@ -110,6 +110,19 @@ public partial class MainWindow : Window, IEditorDialogs
             _textBrowser.Activate();
     }
 
+    private DefinitionsWindow? _definitions;
+
+    public void ShowDefinitions(DefinitionsViewModel definitions)
+    {
+        if (_definitions == null)
+        {
+            _definitions = new DefinitionsWindow { DataContext = definitions };
+            _definitions.Closed += (_, _) => _definitions = null;
+            _definitions.Show(this);
+        }
+        else
+            _definitions.Activate();
+    }
     protected override async void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosing(e);

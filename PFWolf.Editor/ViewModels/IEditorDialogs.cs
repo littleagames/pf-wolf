@@ -62,4 +62,7 @@ public interface IEditorDialogs
 
     /// <summary>Shows the text browser beside the editor, or brings it to the front</summary>
     void ShowTextBrowser(TextBrowserViewModel browser);
+
+    /// <summary>Shows the definitions window beside the editor, or brings it to the front</summary>
+    void ShowDefinitions(DefinitionsViewModel definitions);
 }

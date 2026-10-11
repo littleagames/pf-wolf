@@ -229,6 +229,31 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _soundBrowser?.Load(Content);
         _paletteBrowser?.Load(Content);
         _textBrowser?.Load(Content);
+        _definitions?.Load(Content, Mods.ToList());
+    }
+
+    //
+    // The definitions window
+    //
+
+    private DefinitionsViewModel? _definitions;
+
+    /// <summary>Opens the definitions window: game info, game packs, actors and map definitions</summary>
+    [RelayCommand]
+    private void ShowDefinitions()
+    {
+        if (Dialogs == null)
+            return;
+
+        if (_definitions == null)
+        {
+            _definitions = new DefinitionsViewModel { PickMod = PickModToSaveIn };
+            _definitions.SavedToMod += (_, folder) => AddModFolder(folder);
+            _definitions.ReloadRequested += async (_, _) => await LoadAsync();
+            Mods.CollectionChanged += (_, _) => _definitions.SetMods(Mods.ToList());
+            _definitions.Load(Content, Mods.ToList());
+        }
+        Dialogs.ShowDefinitions(_definitions);
     }
 
     //
