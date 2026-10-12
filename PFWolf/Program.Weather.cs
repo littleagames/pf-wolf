@@ -11,11 +11,13 @@ internal partial class Program
 
                                     WEATHER
 
-    Rain and snow, as Wolf4SDL's wl_atmos has them: a fixed set of particles in a box around the
-    view, two Distance tiles across and as tall as the level's walls. Each one's place is worked
-    out from the level's clock alone (falling, blown by the wind, wrapped around the box), so
-    there's nothing to save or keep in step: the game's own random numbers aren't touched, and
-    demos and net games play the same with or without it.
+    Rain and snow, as Wolf4SDL's wl_atmos has them: a set of particles in a box around the view,
+    two Distance tiles across and as tall as the level's walls (and some in a smaller box close
+    by). Each falls at its own speed, and every time it starts again from the top it's somewhere
+    new, from a hash of its number and how many times it has fallen. So its place is worked out
+    from the level's clock and the view's own seed (falling, blown by the wind, wrapped around
+    the box), there's nothing to save or keep in step, and the game's own random numbers aren't
+    touched: demos and net games play the same with or without it.
 
     A particle isn't drawn under a ceiling flat (any, even one that's all see-through) or an arch,
     in a door's tile, or inside a wall below its top. Walls hide it per screen column (the posts
@@ -30,11 +32,20 @@ internal partial class Program
 
     const int MAXWEATHER = 10000;
     const int TEXELGLOBAL = (int)MapConstants.TILEGLOBAL / TEXTURESIZE;    // global units a texel
-    const long NEARWEATHER = MapConstants.TILEGLOBAL / 2;                  // nothing's drawn nearer the view than this
+    const long NEARWEATHER = MapConstants.TILEGLOBAL / 4;                  // nothing's drawn nearer the view than this
 
-    // Each particle's place in the box at time 0: x, y in global units, z as a share of the height
-    static int[] weatherx = [], weathery = [];
-    static float[] weatherz = [], weatherphase = [];
+    //
+    // A share of the particles fall in a smaller box close around the view, so there's rain right
+    // in front of you even with a wall a tile or two away: in the big box, most fall out of sight
+    // behind the walls.
+    //
+    const double NEARSHARE = 0.3;
+    const int NEARBOXTILES = 6;
+
+    // Each particle: where it starts falling (a share of the height), how it sways, how much
+    // faster or slower than the rest it falls, and the seed for where each fall of it lands
+    static float[] weatherz = [], weatherphase = [], weatherspeed = [];
+    static int weatherseed;
 
     /// <summary>The kinds of weather there are: the built-in ones and game-info's weather-types</summary>
     internal static Dictionary<string, WeatherInfo> WeatherTypes() => WeatherInfo.TypesOf(_gameEngineManager.GetGameInfo());
@@ -55,27 +66,45 @@ internal partial class Program
         levelweather = info;
         levelweathername = name;
 
-        // Always the same particles for a kind, from its own seed
+        // The view's own random numbers, never the game's: demos and net games don't see them
         int count = Math.Clamp(info.Count, 0, MAXWEATHER);
-        int box = WeatherBox(info);
-        var random = new Random(StringComparer.OrdinalIgnoreCase.GetHashCode(name) & 0x7fff ^ count);
-        weatherx = new int[count];
-        weathery = new int[count];
+        var random = new Random();
+        weatherseed = random.Next();
         weatherz = new float[count];
         weatherphase = new float[count];
+        weatherspeed = new float[count];
         for (int i = 0; i < count; i++)
         {
-            weatherx[i] = random.Next(box);
-            weathery[i] = random.Next(box);
             weatherz[i] = random.NextSingle();
             weatherphase[i] = random.NextSingle() * MathF.PI * 2;
+            weatherspeed[i] = 0.75f + random.NextSingle() * 0.5f;     // 75% to 125% of fall-speed
         }
     }
 
-    // How far across the box is, in global units
-    static int WeatherBox(WeatherInfo info) => Math.Clamp(info.Distance, 1, 32) * 2 * (int)MapConstants.TILEGLOBAL;
+    // How far across particle i's box is, in global units: the near ones' is smaller
+    static int WeatherBox(WeatherInfo info, int i) => i < weatherz.Length * NEARSHARE
+        ? Math.Min(NEARBOXTILES, Math.Clamp(info.Distance, 1, 32) * 2) * (int)MapConstants.TILEGLOBAL
+        : Math.Clamp(info.Distance, 1, 32) * 2 * (int)MapConstants.TILEGLOBAL;
 
-    static bool weatheron;          // this frame has weather: the posts are noted as they're drawn
+    /// <summary>
+    /// Where particle i lands on its fall'th fall, somewhere in a box across (0 to box - 1, each
+    /// way): a new place each time, the same every frame of that fall.
+    /// </summary>
+    static (int X, int Y) WeatherSpot(int i, long fall, int box)
+    {
+        ulong h = Mix((ulong)(uint)weatherseed << 32 ^ (ulong)(uint)i ^ (ulong)fall * 0x9E3779B97F4A7C15UL);
+        return ((int)((h & 0xFFFFFFFF) % (ulong)box), (int)((h >> 32) % (ulong)box));
+    }
+
+    // SplitMix64's finaliser: every bit of the input stirs every bit of the output
+    static ulong Mix(ulong z)
+    {
+        z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL;
+        z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL;
+        return z ^ (z >> 31);
+    }
+
+    static bool weatheron;        // this frame has weather: the posts are noted as they're drawn
 
     //
     // Each column's walls, as the trace queued them: how high each is (as wallheight, so nearer
@@ -87,7 +116,7 @@ internal partial class Program
     /// <summary>Gets the frame's weather ready, before the walls are traced</summary>
     static void SetupWeather()
     {
-        weatheron = levelweather != null && weatherx.Length > 0;
+        weatheron = levelweather != null && weatherz.Length > 0;
         if (!weatheron || occcount.Length == viewwidth)
             return;
         occcount = new byte[viewwidth];
@@ -224,7 +253,7 @@ internal partial class Program
         if (!weatheron || levelweather is not { } info)
             return;
 
-        int count = weatherx.Length;
+        int count = weatherz.Length;
         if (weatherdrops.Length < count * 2)
         {
             weatherdrops = new WeatherDrop[count * 2];      // each drop, and its splash
@@ -234,7 +263,6 @@ internal partial class Program
         bool snow = info.Kind.Equals("snow", StringComparison.OrdinalIgnoreCase);
         bool splashes = !snow && info.Splashes;
         int time = gamestate.TimeCount;
-        int box = WeatherBox(info);
         long maxdist = (long)Math.Clamp(info.Distance, 1, 32) * MapConstants.TILEGLOBAL;
 
         // Below the ceiling, if any tile has a ceiling flat it could show over; otherwise up past the tallest walls
@@ -244,27 +272,30 @@ internal partial class Program
         double fall = Math.Max(info.FallSpeed, 0.01);
         var (windx, windy) = WindDrift(info, time);
 
-        // A rain streak trails back along the way it's going (with the wind as it is now), length texels
         double gust = WindStrength(info, time);
         double nowx = info.WindX * gust, nowy = info.WindY * gust;
-        double speed = Math.Sqrt(nowx * nowx + nowy * nowy + fall * fall);
-        double tailx = -nowx / speed * info.Length * TEXELGLOBAL;
-        double taily = -nowy / speed * info.Length * TEXELGLOBAL;
-        double tailz = fall / speed * info.Length;
 
         byte basecolor = _videoManager.ParseColorOr(info.Color, 0x0f);
         var dim = _videoManager.GetLightRow(LIGHTLEVELS - 1, LIGHTLEVELS, FADESTEPS, 0, 0, 0);
-        long originx = camera.X - box / 2, originy = camera.Y - box / 2;
+        int maxstreak = Math.Max(viewheight / 4, 4);     // a streak right by the view is cut to this many rows
 
         for (int i = 0; i < count; i++)
         {
-            // how far it has fallen since it last started from the top
-            double fallen = PositiveMod(weatherz[i] * top + fall * time, top);
-            if (splashes && fallen < fall * SPLASHTICS)
-                AddSplash(info, i, time - fallen / fall, fallen / fall, originx, originy, box, basecolor, dim, maxdist);
+            int box = WeatherBox(info, i);
+            long originx = camera.X - box / 2, originy = camera.Y - box / 2;
+
+            // How far it has fallen since it last started from the top, and how many times it has
+            // fallen: each time from a new place
+            double dropfall = fall * weatherspeed[i];
+            double travelled = weatherz[i] * top + dropfall * time;
+            long falls = (long)Math.Floor(travelled / top);
+            double fallen = travelled - falls * top;
+            if (splashes && fallen < dropfall * SPLASHTICS)
+                AddSplash(info, i, falls - 1, time - fallen / dropfall, fallen / dropfall, originx, originy, box, basecolor, dim, maxdist);
 
             double z = top - fallen;
-            long gx = weatherx[i] + windx, gy = weathery[i] + windy;
+            var (spotx, spoty) = WeatherSpot(i, falls, box);
+            long gx = spotx + windx, gy = spoty + windy;
             if (snow && info.Drift != 0)
             {
                 // each flake sways on its own
@@ -284,8 +315,20 @@ internal partial class Program
                 size = Math.Clamp((int)(info.Size * half / (TEXTURESIZE / 2) + 0.5), 1, 8);
             else
             {
-                if (!ProjectPoint(gx + (long)tailx, gy + (long)taily, z + tailz, out x1, out y1, out _, out _))
+                // It trails back along the way it's going (with the wind as it is now): faster
+                // drops make longer streaks
+                double speed = Math.Sqrt(nowx * nowx + nowy * nowy + dropfall * dropfall);
+                double length = info.Length * weatherspeed[i];
+                if (!ProjectPoint(gx - (long)(nowx / speed * length * TEXELGLOBAL), gy - (long)(nowy / speed * length * TEXELGLOBAL),
+                        z + dropfall / speed * length, out x1, out y1, out _, out _))
                     continue;
+
+                int rows = Math.Abs(y1 - y0);
+                if (rows > maxstreak)
+                {
+                    x1 = x0 + (x1 - x0) * maxstreak / rows;
+                    y1 = y0 + (y1 - y0) * maxstreak / rows;
+                }
                 size = Math.Clamp((int)(half / (TEXTURESIZE * 2)), 1, 3);
             }
 
@@ -299,11 +342,12 @@ internal partial class Program
     /// Drop i's splash: it landed at tic landed, age tics ago, where the wind had carried it then.
     /// Only on open floor: not in a wall or door, nor under a roof (it never got there), nor off the map.
     /// </summary>
-    static void AddSplash(WeatherInfo info, int i, double landed, double age, long originx, long originy, int box,
+    static void AddSplash(WeatherInfo info, int i, long fall, double landed, double age, long originx, long originy, int box,
         byte basecolor, byte[] dim, long maxdist)
     {
         var (windx, windy) = WindDrift(info, landed);
-        var (gx, gy) = InWeatherBox(weatherx[i] + windx, weathery[i] + windy, originx, originy, box);
+        var (spotx, spoty) = WeatherSpot(i, fall, box);
+        var (gx, gy) = InWeatherBox(spotx + windx, spoty + windy, originx, originy, box);
         long tx = gx >> MapConstants.TILESHIFT, ty = gy >> MapConstants.TILESHIFT;
         if ((ulong)tx >= (ulong)_mapManager.mapwidth || (ulong)ty >= (ulong)_mapManager.mapheight || WeatherCovered(gx, gy, 0))
             return;
