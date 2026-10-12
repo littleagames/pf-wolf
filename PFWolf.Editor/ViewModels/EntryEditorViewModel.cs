@@ -181,6 +181,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
                 _open.Remove(key);
         }
 
+        OnPropertyChanged(nameof(CanCopyToMod));
         _all = ListEntries();
         foreach (var item in _all)
             item.HasEdits = _open.ContainsKey(item.Key);
@@ -630,6 +631,48 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         while (used.Contains(id))
             id++;
         return id;
+    }
+
+    /// <summary>Copy to mod applies: a definition the game has, out of base mode, and not one of pfwolf.pk3's games</summary>
+    public bool CanCopyToMod => Kind != DefinitionKind.GamePackInfo && !_owner.BaseMode;
+
+    /// <summary>
+    /// Copies the definition picked whole, as the game has it, into the mod picked to save into
+    /// (its file of the kind: game-info.yaml, actordefs/actors.yaml, mapdefs/TABLE.yaml), and
+    /// opens it there in the YAML tab to change. One the mod has its own of already is just opened.
+    /// </summary>
+    [RelayCommand]
+    private async Task CopyToModAsync()
+    {
+        if (SelectedItem is not { } item || _owner.Set(Kind) is not { } set || _owner.Content is not { } content)
+            return;
+        if (_owner.BaseMode)
+        {
+            _owner.Status = "Base mode is on: turn it off to copy to a mod";
+            return;
+        }
+        if (await _owner.ModToSaveIn() is not { } mod)
+            return;
+
+        var path = item.Entry.Path;
+        if (set.ModFileDefining(path, mod) is { } existing)
+        {
+            _owner.Status = $"{existing.SourceName} has its own {YamlNodes.Describe(path)} already: here it is";
+            _owner.ShowYaml(existing, path);
+            return;
+        }
+
+        try
+        {
+            var write = set.PlanCopyToMod(path, mod);
+            var places = DefinitionSaver.Save(write, content.GameFolder, null);
+            _owner.FileSaved(mod, places, write.Notes);
+            _owner.ShowYaml(write.File.WithText(write.NewText), path);
+        }
+        catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            _owner.Status = $"Not copied: {e.Message}";
+        }
     }
 
     /// <summary>Picks a definition by its key path; false when there's none</summary>

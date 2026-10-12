@@ -33,6 +33,12 @@
         </Grid>
       </StackPanel>
       <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
+        <ListBox.ContextMenu>
+          <ContextMenu>
+            <MenuItem Header="Copy to mod" Command="{Binding CopyToModCommand}" IsEnabled="{Binding CanCopyToMod}"
+                      ToolTip.Tip="Copies the whole definition, as the game has it now, into the mod picked to save into, and opens it there in the YAML tab to change (a mod with its own of it already just opens that)" />
+          </ContextMenu>
+        </ListBox.ContextMenu>
         <ListBox.Styles>
           <Style Selector="ListBoxItem">
             <Setter Property="Padding" Value="8,3" />

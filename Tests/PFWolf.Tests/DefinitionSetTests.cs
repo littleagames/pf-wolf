@@ -283,6 +283,53 @@ public class DefinitionSetTests
     }
 
     [Test]
+    public void Copy_To_Mod_Writes_The_Definition_Whole_Into_The_Mods_File()
+    {
+        // Arrange
+        var set = new DefinitionSet(DefinitionKind.GameInfo, "wolf3d",
+        [
+            new DefinitionFile(null, "gamepacks/wolf3d/game-info.yaml", "", "default-map:\n  floor-color: '#717171'\n  ceiling-color: '#383838'\nskills:\n  baby: { name: Baby }\n"),
+            new DefinitionFile(Mod, "game-info.yaml", "", "# my game info\nskills:\n  baby: { name: Tiny }\n"),
+        ]);
+
+        // Act
+        var write = set.PlanCopyToMod(["default-map"], Mod);
+
+        // Assert
+        Assert.That(write.File.EntryPath, Is.EqualTo("game-info.yaml"));
+        Assert.That(write.NewText, Is.EqualTo("# my game info\nskills:\n  baby: { name: Tiny }\ndefault-map:\n  floor-color: '#717171'\n  ceiling-color: '#383838'\n"));
+    }
+
+    [Test]
+    public void Copy_To_Mod_Of_One_The_Mod_Has_Is_Refused_So_Nothing_It_Wrote_Is_Lost()
+    {
+        // Arrange
+        var mod = new DefinitionFile(Mod, "actordefs/tweaks.yaml", "", "Guard:\n  properties:\n    speed: !remove\n");
+        var set = Actors(mod);
+
+        // Act, Assert
+        Assert.That(set.ModFileDefining(["Guard"], Mod), Is.SameAs(mod));
+        Assert.Throws<InvalidDataException>(() => set.PlanCopyToMod(["Guard"], Mod));
+    }
+
+    [Test]
+    public void Copy_To_Mod_Of_A_Class_Is_All_Of_It_In_A_New_File()
+    {
+        // Arrange
+        var set = Actors();
+
+        // Act
+        var write = set.PlanCopyToMod(["Officer"], Mod);
+        var after = set.With(write.File.WithText(write.NewText));
+
+        // Assert
+        Assert.That(write.File.IsNew, Is.True);
+        Assert.That(write.File.EntryPath, Is.EqualTo("actordefs/actors.yaml"));
+        Assert.That(YamlNodes.Equal(YamlNodes.Get(YamlTree.Parse(write.NewText), ["Officer"]), set.ValueOf(["Officer"], baseOnly: true)), Is.True);
+        Assert.That(YamlNodes.Equal(after.Merged, set.Merged), Is.True, "the copy changes nothing until it's edited");
+    }
+
+    [Test]
     public void Mapdefs_Entries_Go_In_A_File_Named_For_Their_Table()
     {
         // Arrange

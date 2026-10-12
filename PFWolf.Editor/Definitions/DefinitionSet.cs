@@ -295,6 +295,31 @@ public sealed class DefinitionSet
         return Finish(target, path, null, modPath, []);
     }
 
+    /// <summary>
+    /// Works out copying a definition whole, as the game has it now, into a mod (the file of it
+    /// the mod would save it in), so it can be changed there. Throws InvalidDataException when it
+    /// can't be: the mod has its own of it already (that's what to edit), the game has none, or
+    /// it's one of pfwolf.pk3's games, which a mod can't change.
+    /// </summary>
+    public DefinitionWrite PlanCopyToMod(IReadOnlyList<string> path, string modPath)
+    {
+        if (path.Count == 0)
+            throw new ArgumentException("A definition needs a key path", nameof(path));
+        var modName = Path.GetFileName(modPath.TrimEnd('\\', '/'));
+        if (ModChanges(path, modPath))
+            throw new InvalidDataException($"{modName} has its own {YamlNodes.Describe(path)} already");
+        if (YamlNodes.Get(Merged, path) is not { } value)
+            throw new InvalidDataException($"The game has no {YamlNodes.Describe(path)} to copy");
+        if (Kind == DefinitionKind.GamePackInfo)
+            throw new InvalidDataException("A mod can't change pfwolf.pk3's games; its own gamepack-info.yaml adds games of its own (New…)");
+
+        return Finish(ModTarget(path, modPath), path, YamlNodes.Clone(YamlTree.WithoutMergeTags(value)), modPath, []);
+    }
+
+    /// <summary>The mod's file with its own of a definition, or null when it has none</summary>
+    public DefinitionFile? ModFileDefining(IReadOnlyList<string> path, string modPath)
+        => Files.LastOrDefault(file => DefinitionFile.SameMod(file.ModPath, modPath) && file.Error == null && YamlNodes.Get(file.Tree, path) != null);
+
     /// <summary>Whether a mod has a say in a definition</summary>
     public bool ModChanges(IReadOnlyList<string> path, string modPath)
         => Files.Any(file => DefinitionFile.SameMod(file.ModPath, modPath) && file.Error == null && YamlNodes.Get(file.Tree, path) != null);
