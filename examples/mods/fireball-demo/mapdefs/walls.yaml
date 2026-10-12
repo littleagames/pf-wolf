@@ -1,0 +1,24 @@
+# The switch that turns the switched shooter off and on (see the switch block's fields at wall
+# 21 in pfwolf-pk3's mapdefs/wolf3d/walls.yaml). It acts on whatever shares its tile's tag:
+# tag 1, the SwitchedFireballShooter. A toggle: 50 and 51 switch to each other.
+walls:
+    '50':
+        North: ELEV1_2
+        South: ELEV1_2
+        East: ELEV1_2
+        West: ELEV1_2
+        switch:
+            to: 51
+            sound: switches/elevbutn
+            actions:
+                - A_Deactivate
+    '51':
+        North: ELEV2_2
+        South: ELEV2_2
+        East: ELEV2_2
+        West: ELEV2_2
+        switch:
+            to: 50
+            sound: switches/elevbutn
+            actions:
+                - A_Activate

@@ -203,6 +203,47 @@ Things a standalone game can't change yet: the shared menus themselves (mods can
 `menudefs/`), and the "DEMO" sprite (`DEMOA0`) drawn while a demo plays, which it can only give
 as `sprites/DEMOA0.png`.
 
+## Fireball Demo (`mods/fireball-demo`)
+
+A short gauntlet that replaces Floor 1 (Wolfenstein 3D only): walls that spit fireballs. It's
+all data, with no engine code: actor and map definitions, plus a level.
+
+```
+PFWolf.exe --file fireball-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+Run north from the start to the exit, past four trap walls (the eagles):
+
+- **First pair:** one fireball at you every second and a half (west), and a fan of three
+  (east).
+- **Second pair:** a quick burst of three, then a long rest (west), and a shooter (east) that
+  the switch on the east wall, a few steps before it, turns off and on.
+
+### What's in it
+
+- `actordefs/fireball-traps.yaml`: `Fireball`, a glowing projectile (Fake Hitler's flame,
+  bursting on walls), and the shooters. A shooter is an invisible actor (`TNT1` frames) on the
+  floor tile in front of a trap wall, with `parent: Monster` so it can use
+  `A_FireProjectile`. It has no health, so it can't be shot and isn't a kill. Its `Spawn`
+  frames time the shots; the switched one has `Active` and `Inactive` states for the switch.
+- `mapdefs/things.yaml`: objects 510-513, the four shooters.
+- `mapdefs/walls.yaml`: walls 50 and 51, the switch (a toggle: `A_Deactivate` /
+  `A_Activate` on tag 1).
+- `game-info.yaml`: dims the level a little, so the fireballs' light shows.
+- `maps/MAP01.wad`: the level, built by `tools/make-fireball-demo-map.ps1` from an ASCII
+  layout:
+
+  ```
+  powershell -ExecutionPolicy Bypass -File examples/tools/make-fireball-demo-map.ps1
+  ```
+
+What actordefs alone can't do yet (the header of `fireball-traps.yaml` lists them too): fire
+in a fixed direction (`A_FireProjectile` always aims at the player, turned by an offset),
+stand inside the wall (a projectile spawned in a wall tile is removed at once), fire only when
+the player is near or in sight, or hurt enemies.
+
 ## Moody Lights (`mods/moody-lights`)
 
 Darkens every level (Wolfenstein 3D only) and lets the light decorations light the rooms

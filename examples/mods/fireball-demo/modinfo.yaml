@@ -1,0 +1,4 @@
+name: Fireball Demo
+version: "1.0"
+description: A gauntlet (replacing Floor 1) of walls that spit fireballs, made only of actordefs and mapdefs YAML.
+game-packs: [wolf3d]

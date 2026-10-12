@@ -81,8 +81,7 @@ internal sealed record ActorSnapshot
     /// <summary>Copies the saved runtime state onto a freshly created actor of the same class.</summary>
     public void ApplyTo(Actor actor)
     {
-        actor.CurrentState = FindState(actor, StateName, StateFrame) ?? actor.CurrentState;
-        actor.TicCount = TicCount;
+        actor.CurrentState = FindState(actor, StateName, StateFrame) ?? actor.CurrentState;        actor.TicCount = TicCount;
         actor.Active = Active;
         actor.Dir = Dir;
         actor.Angle = Angle;

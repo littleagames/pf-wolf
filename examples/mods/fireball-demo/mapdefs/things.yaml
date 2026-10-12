@@ -1,0 +1,15 @@
+# The fireball shooters (this mod's actordefs/fireball-traps.yaml). They aim at the player,
+# so the map facing doesn't matter.
+things:
+  510:
+    class: FireballShooter
+    angles: 0
+  511:
+    class: FireballSpreader
+    angles: 0
+  512:
+    class: FireballBurster
+    angles: 0
+  513:
+    class: SwitchedFireballShooter
+    angles: 0

@@ -1,0 +1,104 @@
+# Fireball traps: walls that spit fireballs, made of actordefs alone (no engine code).
+#
+# A shooter is an invisible actor (TNT1 draws nothing) standing on the floor tile in front of
+# a trap wall. It's a Monster so it can use A_FireProjectile, but with no health it can't be
+# shot and doesn't count as a kill. A frame's action runs as the frame ends, so "wait, then
+# fire" is one frame with the wait as its tics; 0-tic frames fire in the same tic.
+#
+# What these can't do yet (no engine support):
+#   - fire in a fixed direction: A_FireProjectile always aims at the player, turned by its
+#     angle offset (ANGLES units, 360 to a turn)
+#   - stand inside the wall: a projectile spawned in a wall tile is removed at once
+#   - fire only when the player is near or in sight
+#   - hurt enemies: A_Projectile only hurts players
+# Like other enemies, a shooter sleeps until the player is in an area connected to its own.
+
+# The fireball: Fake Hitler's flame (FIRE), glowing, bursting (BOOM) on a wall.
+# A_Projectile(min, max) is its damage on a player hit.
+Fireball:
+  flags: [PROJECTILE]
+  states:
+    Spawn:
+      - sprite: FIRE
+        frames: [A, B]
+        tics-per-frame: 6
+        modifiers: [bright]
+        think: A_Projectile(3, 10)
+    Death:
+      - sprite: BOOM
+        frames: [A, B]
+        tics-per-frame: 6
+        modifiers: [bright]
+      - sprite: BOOM
+        frames: [C]
+        tics-per-frame: 6
+        modifiers: [bright]
+        action: A_Remove
+  properties:
+    "speed": 4608 # 1/65536 tile a tic: a little over half a rocket's (8192), so it can be dodged
+    "attacksound": "flame/fire"
+    "deathsound": "missile/hit"
+    "light.intensity": 160
+    "light.radius": 2
+    "light.color": "#FF8030"
+
+# One fireball at the player every second and a half
+FireballShooter:
+  parent: Monster
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 105
+        action: A_FireProjectile("Fireball")
+
+# Three at once, fanned out (about 8 degrees apart) around the player
+FireballSpreader:
+  parent: Monster
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 140
+        action: A_FireProjectile("Fireball", -8)
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_FireProjectile("Fireball")
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_FireProjectile("Fireball", 8)
+
+# A burst of three in quick succession, then a long rest
+FireballBurster:
+  parent: Monster
+  states:
+    Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 175
+        action: A_FireProjectile("Fireball")
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 12
+        action: A_FireProjectile("Fireball")
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 12
+        action: A_FireProjectile("Fireball")
+
+# A shooter a switch turns off and on (A_Deactivate / A_Activate on its tile's tag): Inactive
+# holds still, Active fires as FireballShooter does
+SwitchedFireballShooter:
+  parent: FireballShooter
+  states:
+    Active:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 105
+        action: A_FireProjectile("Fireball")
+    Inactive:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: -1
