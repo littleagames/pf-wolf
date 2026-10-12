@@ -86,6 +86,26 @@ public partial class ArtBrowserWindow : Window
         bitmap.Save(stream);
     }
 
+    private async void PickImageEditor(object? sender, RoutedEventArgs e)
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "The paint program to edit pictures in (Aseprite, Paint.NET, GIMP…)",
+            FileTypeFilter = [new FilePickerFileType("Programs") { Patterns = ["*.exe"] }],
+        });
+        if (files is [var file, ..] && file.TryGetLocalPath() is { } path)
+        {
+            ViewModel.ImageEditor = path;
+            ViewModel.Status = $"Edit outside opens pictures in {path}";
+        }
+    }
+
+    private void UseDefaultImageEditor(object? sender, RoutedEventArgs e)
+    {
+        ViewModel.ImageEditor = "";
+        ViewModel.Status = "Edit outside opens pictures in the program Windows edits PNGs with";
+    }
+
     private static readonly FilePickerFileType PictureFiles = new("Pictures (PNG, BMP)") { Patterns = ["*.png", "*.bmp"] };
 
     private async void ReplacePicture(object? sender, RoutedEventArgs e)

@@ -203,6 +203,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 PickMod = PickModToSaveIn,
                 AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
                 Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
+                ImageEditor = _settings.ImageEditor,
+            };
+            _artBrowser.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(ArtBrowserViewModel.ImageEditor))
+                {
+                    _settings.ImageEditor = _artBrowser.ImageEditor;
+                    _settings.Save();
+                }
             };
             _artBrowser.UseRequested += (_, use) => UseInPalette(use);
             _artBrowser.Changed += async (_, change) => await OnArtFilesChanged(change);

@@ -150,6 +150,21 @@ public static class ArtFiles
         return new ArtChange(mod, [(entryPath, data)], deletes, ArtKind.Sprite, spriteName, $"Set {spriteName.ToUpperInvariant()}'s offset to {x}, {y}");
     }
 
+    /// <summary>
+    /// A picture as a PNG to edit: the mod's own file when it's a PNG (as it was drawn, in its own
+    /// colors), else the picture written in the game palette, with a sprite's offset
+    /// </summary>
+    public static byte[] ToPng(GameContent content, ArtKind kind, string assetName)
+    {
+        if (InMod(content, kind, assetName) is { } file && ModFiles.ReadBytes(file.ModPath, file.EntryPath) is { } data && PngFile.IsPng(data))
+            return data;
+
+        var picture = ArtCache.Indexed(content, kind, assetName)
+                      ?? throw new InvalidOperationException($"There's no {assetName}");
+        (int, int)? offset = kind == ArtKind.Sprite && content.Find<SpriteAsset>(assetName) is { } sprite ? (sprite.Offset.x, sprite.Offset.y) : null;
+        return PngFile.Write(picture, content.LoadedPalette, offset);
+    }
+
     /// <summary>A mod's picture under another name, in the same folder</summary>
     public static ArtChange Rename(ArtFile file, ArtKind kind, string newName)
     {

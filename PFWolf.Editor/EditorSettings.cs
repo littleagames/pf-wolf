@@ -23,6 +23,9 @@ public sealed class EditorSettings
     /// <summary>Whether the 3D view shows beside the map</summary>
     public bool Show3D { get; set; }
 
+    /// <summary>The paint program the art browser opens pictures in; empty for the one Windows edits PNGs with</summary>
+    public string ImageEditor { get; set; } = "";
+
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PFWolf", "Editor", "editor.json");
 

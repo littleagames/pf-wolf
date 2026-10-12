@@ -25,10 +25,27 @@
       </Grid>
     </Border>
 
-    <!-- What the last change did -->
-    <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-            IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-      <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Status}" FontSize="12" />
+    <!-- What the last change did, and the pictures open in other programs -->
+    <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+        <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Status}" FontSize="12" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="{Binding WatchingText}" FontSize="12" Opacity="0.7" VerticalAlignment="Center" />
+        <Button Grid.Column="2" Content="Stop watching" Command="{Binding StopWatchingCommand}" FontSize="12" Padding="8,2"
+                IsVisible="{Binding IsWatching}"
+                ToolTip.Tip="Stops watching the pictures opened in other programs (their copies in the temp folder are removed)" />
+      </Grid>
+    </Border>
+
+    <!-- A picture was saved in the other program -->
+    <Border DockPanel.Dock="Bottom" Padding="8,6" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" IsVisible="{Binding HasSavedOutside}">
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+        <TextBlock Text="{Binding SavedOutsideText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+        <CheckBox Grid.Column="1" Content="Bring saves in at once" IsChecked="{Binding BringInAtOnce}"
+                  ToolTip.Tip="Each save in the other program goes into the mod straight away (the game loads again each time)" />
+        <Button Grid.Column="2" Content="Bring it in" Command="{Binding BringInCommand}" Classes="accent"
+                ToolTip.Tip="Puts the picture saved there in its mod, in place of the one it was opened from" />
+        <Button Grid.Column="3" Content="Not now" Command="{Binding NotNowCommand}" />
+      </Grid>
     </Border>
 
     <!-- The picture picked: big, its details, where it came from, what uses it -->
@@ -137,6 +154,17 @@
                 ToolTip.Tip="Renames its file in its mod (only a mod's own pictures)" />
         <Button Content="Delete" Command="{Binding DeleteCommand}"
                 ToolTip.Tip="Takes its file out of its mod (only a mod's own pictures); the game's own of that name shows again" />
+        <Button Content="Edit outside" Command="{Binding EditOutsideCommand}"
+                ToolTip.Tip="{Binding ImageEditorText, StringFormat='{}Opens it as a PNG in a paint program and watches for it being saved there. {0}.'}" />
+        <Button Content="Paint program ▾"
+                ToolTip.Tip="{Binding ImageEditorText, StringFormat='{}The program Edit outside opens pictures in. {0}.'}">
+          <Button.Flyout>
+            <MenuFlyout>
+              <MenuItem Header="Pick a program…" Click="PickImageEditor" />
+              <MenuItem Header="The one Windows edits PNGs with" Click="UseDefaultImageEditor" />
+            </MenuFlyout>
+          </Button.Flyout>
+        </Button>
       </WrapPanel>
     </Grid>
 

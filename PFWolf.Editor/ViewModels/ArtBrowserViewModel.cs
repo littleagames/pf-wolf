@@ -524,6 +524,143 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         await Make(_ => ArtFiles.Delete(file, entry.Kind, name), null);
     }
 
+    //
+    // Editing in another program
+    //
+
+    // Made the first time a picture's opened outside; its watchers end with the editor
+    private ExternalArtEdits? _external;
+
+    /// <summary>The paint program pictures open in; empty for the one Windows edits PNGs with</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ImageEditorText))]
+    private string _imageEditor = "";
+
+    public string ImageEditorText => string.IsNullOrWhiteSpace(ImageEditor)
+        ? "Opens in the program Windows edits PNGs with"
+        : $"Opens in {Path.GetFileNameWithoutExtension(ImageEditor)}";
+
+    /// <summary>Pictures saved in the other program and not brought in yet, the oldest first</summary>
+    public ObservableCollection<ExternalArt> SavedOutside { get; } = [];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SavedOutsideText), nameof(HasSavedOutside))]
+    private int _savedOutsideCount;
+
+    public bool HasSavedOutside => SavedOutsideCount > 0;
+
+    public string SavedOutsideText => SavedOutside.Count switch
+    {
+        0 => "",
+        1 => $"{SavedOutside[0].AssetName} was saved in the other program.",
+        _ => $"{SavedOutside[0].AssetName} and {SavedOutside.Count - 1} more were saved in the other program.",
+    };
+
+    /// <summary>Whether a save in the other program is brought in at once (the game loads again each time)</summary>
+    [ObservableProperty] private bool _bringInAtOnce;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(WatchingText), nameof(IsWatching))]
+    private int _watchingCount;
+
+    public bool IsWatching => WatchingCount > 0;
+
+    public string WatchingText => WatchingCount switch
+    {
+        0 => "",
+        1 => "Watching 1 picture open in another program",
+        _ => $"Watching {WatchingCount} pictures open in other programs",
+    };
+
+    private ExternalArtEdits External
+    {
+        get
+        {
+            if (_external == null)
+            {
+                _external = new ExternalArtEdits(Path.Combine(Path.GetTempPath(), "PFWolf.Editor", "art"),
+                    action => Avalonia.Threading.Dispatcher.UIThread.Post(action));
+                _external.Saved += async (_, art) => await OnSavedOutside(art);
+            }
+            return _external;
+        }
+    }
+
+    /// <summary>Opens the picture shown in the paint program, and watches for it being saved there</summary>
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void EditOutside()
+    {
+        if (_content is not { } content || SelectedItem?.Entry is not { } entry)
+            return;
+        var name = CurrentAssetName;
+        try
+        {
+            var art = External.Start(entry.Kind, name, () => ArtFiles.ToPng(content, entry.Kind, name));
+            ExternalArtEdits.Open(art.FilePath, ImageEditor);
+            WatchingCount = External.Watched.Count;
+            Status = $"Opened {art.FileName}: save it there, then bring it in here ({art.FilePath})";
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            Status = $"Couldn't open {name} in another program: {e.Message}";
+        }
+    }
+
+    private async Task OnSavedOutside(ExternalArt art)
+    {
+        if (!SavedOutside.Contains(art))
+            SavedOutside.Add(art);
+        SavedOutsideCount = SavedOutside.Count;
+        if (BringInAtOnce)
+            await BringInAsync();
+    }
+
+    /// <summary>Brings the first picture saved in the other program into its mod (in place of the picture it was opened from)</summary>
+    [RelayCommand]
+    private async Task BringInAsync()
+    {
+        if (_content is not { } content || SavedOutside.Count == 0)
+            return;
+        var art = SavedOutside[0];
+        SavedOutside.RemoveAt(0);
+        SavedOutsideCount = SavedOutside.Count;
+
+        byte[] data;
+        try
+        {
+            data = ExternalArtEdits.Read(art);
+            ArtFiles.Check(data);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or NotSupportedException or IndexOutOfRangeException)
+        {
+            Status = $"{art.FileName} can't be read: {e.Message}";
+            return;
+        }
+
+        var inMod = ArtFiles.InMod(content, art.Kind, art.AssetName) != null;
+        await Make(mod => ArtFiles.Replace(content, art.Kind, art.AssetName, data, mod),
+            inMod ? null : $"A mod to put the {art.AssetName} drawn in the other program in (it goes in its {ArtFiles.Folder(art.Kind)} folder)");
+    }
+
+    /// <summary>Leaves the pictures saved in the other program as they are (they're still watched)</summary>
+    [RelayCommand]
+    private void NotNow()
+    {
+        SavedOutside.Clear();
+        SavedOutsideCount = 0;
+    }
+
+    /// <summary>Stops watching every picture open in another program</summary>
+    [RelayCommand]
+    private void StopWatching()
+    {
+        foreach (var art in External.Watched)
+            External.Stop(art);
+        NotNow();
+        WatchingCount = 0;
+        Status = "Stopped watching the pictures open in other programs";
+    }
+
     private static string UsesText(ArtEntry entry) => entry.Uses.Count == 1 ? entry.Uses[0].Label : $"{entry.Uses.Count} things";
 
     // Works out a change (with a mod picked first when it asks for one), makes it and says so;
