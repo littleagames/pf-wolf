@@ -29,9 +29,9 @@ internal partial class Program
     static readonly Dictionary<string, WeatherInfo> BuiltInWeather = new(StringComparer.OrdinalIgnoreCase)
     {
         ["rain"] = new() { Kind = "rain", Count = 500, FallSpeed = 7, Length = 12, Color = "#A0A8B8" },
-        ["heavy-rain"] = new() { Kind = "rain", Count = 1500, FallSpeed = 9, WindX = 1.5, Length = 20, Color = "#A8B0C0" },
+        ["heavy-rain"] = new() { Kind = "rain", Count = 1500, FallSpeed = 9, WindX = 1.5, Gust = 0.6, Length = 20, Color = "#A8B0C0" },
         ["snow"] = new() { Kind = "snow", Count = 800, FallSpeed = 0.7, Size = 1.5, Drift = 6, Color = "#E8E8F0" },
-        ["blizzard"] = new() { Kind = "snow", Count = 4000, FallSpeed = 1.4, WindX = 5, WindY = 1.5, Size = 1.5, Drift = 4, Color = "#F0F0F8", Distance = 6 },
+        ["blizzard"] = new() { Kind = "snow", Count = 4000, FallSpeed = 1.4, WindX = 5, WindY = 1.5, Gust = 0.7, GustTics = 200, Size = 1.5, Drift = 4, Color = "#F0F0F8", Distance = 6 },
     };
 
     internal static WeatherInfo? levelweather;      // the level's rain or snow, null for none
@@ -90,7 +90,7 @@ internal partial class Program
     // How far across the box is, in global units
     static int WeatherBox(WeatherInfo info) => Math.Clamp(info.Distance, 1, 32) * 2 * (int)MapConstants.TILEGLOBAL;
 
-    static bool weatheron;            // this frame has weather: the posts are noted as they're drawn
+    static bool weatheron;          // this frame has weather: the posts are noted as they're drawn
 
     //
     // Each column's walls, as the trace queued them: how high each is (as wallheight, so nearer
@@ -172,8 +172,60 @@ internal partial class Program
     struct WeatherDrop
     {
         public short X0, Y0, X1, Y1;    // the head, and a streak's tail (a flake's the same)
-        public byte Size;               // pixels across
+        public byte Size;               // pixels across (a splash's: how far it has spread)
         public byte Color;
+        public bool Splash;
+    }
+
+    const int SPLASHTICS = 8;           // how long a splash lasts
+
+    /// <summary>
+    /// How far the wind has carried things by tic t, in global units. Gusts make it rise and fall
+    /// around its strength, so this is its integral: steady drift less a wave.
+    /// </summary>
+    static (long X, long Y) WindDrift(WeatherInfo info, double t)
+    {
+        double travel = t;
+        if (info.Gust != 0 && info.GustTics > 0)
+        {
+            double w = 2 * Math.PI / info.GustTics;
+            travel -= info.Gust * Math.Cos(w * t) / w;
+        }
+        return ((long)(info.WindX * TEXELGLOBAL * travel), (long)(info.WindY * TEXELGLOBAL * travel));
+    }
+
+    // The wind's strength at tic t, as a share of wind-x/wind-y
+    static double WindStrength(WeatherInfo info, double t) =>
+        info.Gust != 0 && info.GustTics > 0 ? 1 + info.Gust * Math.Sin(2 * Math.PI / info.GustTics * t) : 1;
+
+    // Puts (gx, gy) back in the box around the view
+    static (long X, long Y) InWeatherBox(long gx, long gy, long originx, long originy, int box) =>
+        (originx + PositiveMod(gx - originx, box), originy + PositiveMod(gy - originy, box));
+
+    // Its color at (gx, gy), nx along the view: in the light there, and dimmed toward black with distance (to half)
+    static byte WeatherColor(byte basecolor, byte[] dim, long gx, long gy, long nx, long maxdist)
+    {
+        byte color = LightAt(TileIndex((int)(gx >> MapConstants.TILESHIFT), (int)(gy >> MapConstants.TILESHIFT)), gx, gy)
+            [ShadeOffset(nx) + basecolor];
+        int step = (int)(nx * (FADESTEPS / 2) / maxdist);
+        return dim[Math.Min(step, FADESTEPS - 1) * 256 + color];
+    }
+
+    static void AddWeatherDrop(int x0, int y0, int x1, int y1, int size, byte color, long nx, bool splash)
+    {
+        // Off the screen altogether
+        if (Math.Max(x0, x1) + size < 0 || Math.Min(x0, x1) - size >= viewwidth
+            || Math.Max(y0, y1) + size < 0 || Math.Min(y0, y1) - size >= viewheight)
+            return;
+
+        weatherdrops[weathercount] = new WeatherDrop
+        {
+            X0 = (short)Math.Clamp(x0, short.MinValue, short.MaxValue), Y0 = (short)Math.Clamp(y0, short.MinValue, short.MaxValue),
+            X1 = (short)Math.Clamp(x1, short.MinValue, short.MaxValue), Y1 = (short)Math.Clamp(y1, short.MinValue, short.MaxValue),
+            Size = (byte)size, Color = color, Splash = splash,
+        };
+        weatherkeys[weathercount] = (int)Math.Min(heightnumerator * 256L / nx, int.MaxValue);
+        weathercount++;
     }
 
     static WeatherDrop[] weatherdrops = [];
@@ -188,13 +240,14 @@ internal partial class Program
             return;
 
         int count = weatherx.Length;
-        if (weatherdrops.Length < count)
+        if (weatherdrops.Length < count * 2)
         {
-            weatherdrops = new WeatherDrop[count];
-            weatherkeys = new int[count];
+            weatherdrops = new WeatherDrop[count * 2];      // each drop, and its splash
+            weatherkeys = new int[count * 2];
         }
 
         bool snow = info.Kind.Equals("snow", StringComparison.OrdinalIgnoreCase);
+        bool splashes = !snow && info.Splashes;
         int time = gamestate.TimeCount;
         int box = WeatherBox(info);
         long maxdist = (long)Math.Clamp(info.Distance, 1, 32) * MapConstants.TILEGLOBAL;
@@ -204,12 +257,14 @@ internal partial class Program
             ? wallstories * TEXTURESIZE
             : (_mapManager.MaxWallStories + 1) * TEXTURESIZE;
         double fall = Math.Max(info.FallSpeed, 0.01);
-        long windx = (long)(info.WindX * TEXELGLOBAL * time), windy = (long)(info.WindY * TEXELGLOBAL * time);
+        var (windx, windy) = WindDrift(info, time);
 
-        // A rain streak trails back along the way it's going, length texels
-        double speed = Math.Sqrt(info.WindX * info.WindX + info.WindY * info.WindY + fall * fall);
-        double tailx = -info.WindX / speed * info.Length * TEXELGLOBAL;
-        double taily = -info.WindY / speed * info.Length * TEXELGLOBAL;
+        // A rain streak trails back along the way it's going (with the wind as it is now), length texels
+        double gust = WindStrength(info, time);
+        double nowx = info.WindX * gust, nowy = info.WindY * gust;
+        double speed = Math.Sqrt(nowx * nowx + nowy * nowy + fall * fall);
+        double tailx = -nowx / speed * info.Length * TEXELGLOBAL;
+        double taily = -nowy / speed * info.Length * TEXELGLOBAL;
         double tailz = fall / speed * info.Length;
 
         byte basecolor = _videoManager.ParseColorOr(info.Color, 0x0f);
@@ -218,7 +273,12 @@ internal partial class Program
 
         for (int i = 0; i < count; i++)
         {
-            double z = top - PositiveMod(weatherz[i] * top + fall * time, top);
+            // how far it has fallen since it last started from the top
+            double fallen = PositiveMod(weatherz[i] * top + fall * time, top);
+            if (splashes && fallen < fall * SPLASHTICS)
+                AddSplash(info, i, time - fallen / fall, fallen / fall, originx, originy, box, basecolor, dim, maxdist);
+
+            double z = top - fallen;
             long gx = weatherx[i] + windx, gy = weathery[i] + windy;
             if (snow && info.Drift != 0)
             {
@@ -226,8 +286,7 @@ internal partial class Program
                 gx += (long)(info.Drift * TEXELGLOBAL * Math.Sin(time * 0.031 + weatherphase[i]));
                 gy += (long)(info.Drift * TEXELGLOBAL * Math.Cos(time * 0.023 + weatherphase[i] * 1.7));
             }
-            gx = originx + PositiveMod(gx - originx, box);
-            gy = originy + PositiveMod(gy - originy, box);
+            (gx, gy) = InWeatherBox(gx, gy, originx, originy, box);
 
             if (WeatherCovered(gx, gy, z))
                 continue;
@@ -245,28 +304,30 @@ internal partial class Program
                 size = Math.Clamp((int)(half / (TEXTURESIZE * 2)), 1, 3);
             }
 
-            // Off the screen altogether
-            if (Math.Max(x0, x1) + size < 0 || Math.Min(x0, x1) - size >= viewwidth
-                || Math.Max(y0, y1) + size < 0 || Math.Min(y0, y1) - size >= viewheight)
-                continue;
-
-            // In the light where it is, and dimmed toward black with distance (to half)
-            byte color = LightAt(TileIndex((int)(gx >> MapConstants.TILESHIFT), (int)(gy >> MapConstants.TILESHIFT)), gx, gy)
-                [ShadeOffset(nx) + basecolor];
-            int step = (int)(nx * (FADESTEPS / 2) / maxdist);
-            color = dim[Math.Min(step, FADESTEPS - 1) * 256 + color];
-
-            weatherdrops[weathercount] = new WeatherDrop
-            {
-                X0 = (short)Math.Clamp(x0, short.MinValue, short.MaxValue), Y0 = (short)Math.Clamp(y0, short.MinValue, short.MaxValue),
-                X1 = (short)Math.Clamp(x1, short.MinValue, short.MaxValue), Y1 = (short)Math.Clamp(y1, short.MinValue, short.MaxValue),
-                Size = (byte)size, Color = color,
-            };
-            weatherkeys[weathercount] = (int)Math.Min(heightnumerator * 256L / nx, int.MaxValue);
-            weathercount++;
+            AddWeatherDrop(x0, y0, x1, y1, size, WeatherColor(basecolor, dim, gx, gy, nx, maxdist), nx, false);
         }
 
         Array.Sort(weatherkeys, weatherdrops, 0, weathercount);
+    }
+
+    /// <summary>
+    /// Drop i's splash: it landed at tic landed, age tics ago, where the wind had carried it then.
+    /// Only on open floor: not in a wall or door, nor under a roof (it never got there), nor off the map.
+    /// </summary>
+    static void AddSplash(WeatherInfo info, int i, double landed, double age, long originx, long originy, int box,
+        byte basecolor, byte[] dim, long maxdist)
+    {
+        var (windx, windy) = WindDrift(info, landed);
+        var (gx, gy) = InWeatherBox(weatherx[i] + windx, weathery[i] + windy, originx, originy, box);
+        long tx = gx >> MapConstants.TILESHIFT, ty = gy >> MapConstants.TILESHIFT;
+        if ((ulong)tx >= (ulong)_mapManager.mapwidth || (ulong)ty >= (ulong)_mapManager.mapheight || WeatherCovered(gx, gy, 0))
+            return;
+        if (!ProjectPoint(gx, gy, 0, out int sx, out int sy, out long nx, out double half) || nx > maxdist || nx < NEARWEATHER)
+            return;
+
+        // it spreads to about 3 texels across as it goes
+        int spread = Math.Clamp((int)(3 * half / (TEXTURESIZE / 2) * (age + 1) / SPLASHTICS + 0.5), 1, 12);
+        AddWeatherDrop(sx, sy, sx, sy, spread, WeatherColor(basecolor, dim, gx, gy, nx, maxdist), nx, true);
     }
 
     static long PositiveMod(long value, long modulus)
@@ -318,14 +379,21 @@ internal partial class Program
             {
                 ref var drop = ref weatherdrops[weathernext];
                 int key = weatherkeys[weathernext];
+                if (drop.Splash)
+                {
+                    // droplets thrown out to each side and up from where it landed
+                    int r = drop.Size, dot = Math.Max(r / 4, 1);
+                    DrawWeatherDot(dest, pitch, drop.X0 - r, drop.Y0 - (r + 1) / 2, dot, drop.Color, key);
+                    DrawWeatherDot(dest, pitch, drop.X0 + r - dot + 1, drop.Y0 - (r + 1) / 2, dot, drop.Color, key);
+                    if (r > 2)
+                        DrawWeatherDot(dest, pitch, drop.X0, drop.Y0 - r, dot, drop.Color, key);
+                    continue;
+                }
+
                 if (drop.X0 == drop.X1 && drop.Y0 == drop.Y1)
                 {
                     // a flake: a square around its middle
-                    int left = drop.X0 - (drop.Size >> 1), topy = drop.Y0 - (drop.Size >> 1);
-                    for (int y = Math.Max(topy, 0); y < Math.Min(topy + drop.Size, viewheight); y++)
-                        for (int x = Math.Max(left, 0); x < Math.Min(left + drop.Size, viewwidth); x++)
-                            if (!Occluded(x, y, key))
-                                dest[y * pitch + x] = drop.Color;
+                    DrawWeatherDot(dest, pitch, drop.X0 - (drop.Size >> 1), drop.Y0 - (drop.Size >> 1), drop.Size, drop.Color, key);
                     continue;
                 }
 
@@ -344,5 +412,14 @@ internal partial class Program
                 }
             }
         }
+    }
+
+    // A size by size square from (left, top), where no wall nearer than height covers it
+    static unsafe void DrawWeatherDot(byte* dest, int pitch, int left, int top, int size, byte color, int height)
+    {
+        for (int y = Math.Max(top, 0); y < Math.Min(top + size, viewheight); y++)
+            for (int x = Math.Max(left, 0); x < Math.Min(left + size, viewwidth); x++)
+                if (!Occluded(x, y, height))
+                    dest[y * pitch + x] = color;
     }
 }

@@ -19,6 +19,9 @@ public class WeatherInfoTests
             "    fall-speed: 4.5\n" +
             "    wind-x: -1\n" +
             "    wind-y: 0.5\n" +
+            "    gust: 0.4\n" +
+            "    gust-tics: 140\n" +
+            "    splashes: false\n" +
             "    length: 8\n" +
             "    color: \"#808890\"\n" +
             "    distance: 6\n" +
@@ -40,6 +43,9 @@ public class WeatherInfoTests
         Assert.That(drizzle.FallSpeed, Is.EqualTo(4.5));
         Assert.That(drizzle.WindX, Is.EqualTo(-1));
         Assert.That(drizzle.WindY, Is.EqualTo(0.5));
+        Assert.That(drizzle.Gust, Is.EqualTo(0.4));
+        Assert.That(drizzle.GustTics, Is.EqualTo(140));
+        Assert.That(drizzle.Splashes, Is.False);
         Assert.That(drizzle.Length, Is.EqualTo(8));
         Assert.That(drizzle.Color, Is.EqualTo("#808890"));
         Assert.That(drizzle.Distance, Is.EqualTo(6));
@@ -50,6 +56,8 @@ public class WeatherInfoTests
         Assert.That(flurry.Size, Is.EqualTo(2));
         Assert.That(flurry.Drift, Is.EqualTo(3));
         Assert.That(flurry.Count, Is.EqualTo(new WeatherInfo().Count));
+        Assert.That(flurry.Gust, Is.Zero);
+        Assert.That(flurry.Splashes, Is.True);
     }
 
     [Test]

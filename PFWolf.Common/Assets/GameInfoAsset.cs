@@ -587,6 +587,15 @@ public record WeatherInfo
     /// <summary>How fast the wind carries them south (negative: north)</summary>
     public double WindY { get; init; }
 
+    /// <summary>How much the wind rises and falls, as a share of it: 0 steady, 1 from still to twice as strong</summary>
+    public double Gust { get; init; }
+
+    /// <summary>How long a gust takes to come and go, in tics</summary>
+    public int GustTics { get; init; } = 280;
+
+    /// <summary>Rain only: whether drops splash where they land on open floor</summary>
+    public bool Splashes { get; init; } = true;
+
     /// <summary>Rain only: how long a streak is, in texels</summary>
     public double Length { get; init; } = 12;
 
