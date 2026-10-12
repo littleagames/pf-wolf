@@ -1429,6 +1429,7 @@ internal partial class Program
             var tile = _mapManager.tilemap[tilex, tiley];
             int from = tile & ~BIT_WALL;
             _mapManager.tilemap[tilex, tiley] = (byte)(wallSwitch.To | (tile & BIT_WALL));
+            _mapManager.RestartAnimations(tilex, tiley, gamestate.TimeCount);   // a `to` wall's play-once animation starts now
 
             // and the linked ones: set to the new way, not toggled, so any out of step come back
             foreach (var (x, y) in _mapManager.TaggedTiles(tag))
@@ -1436,7 +1437,10 @@ internal partial class Program
                 var other = _mapManager.tilemap[x, y];
                 int id = other & ~BIT_WALL;
                 if ((other & BIT_DOOR) == 0 && (id == from || id == wallSwitch.To))
+                {
                     _mapManager.tilemap[x, y] = (byte)(wallSwitch.To | (other & BIT_WALL));
+                    _mapManager.RestartAnimations(x, y, gamestate.TimeCount);
+                }
             }
         }
 

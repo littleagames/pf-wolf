@@ -127,6 +127,11 @@ walls:
     #                        every tagged wall north/east/south/west (left out or "": the way
     #                        the player faces); their tag goes with them.
     #                        A_SetWall(id): turns the tagged walls into wall id.
+    #                        A_ChangeTexture("FROM", "TO"): the switch's own tile (tagged or
+    #                        not) and the tagged ones show texture TO where they showed FROM:
+    #                        wall and door faces, floors and ceilings. TO can be an animation
+    #                        (animdefs/animdefs.yaml); one that plays once starts as it changes,
+    #                        as it does on a switch that turns into a wall showing one.
     #                        A_Activate, A_Deactivate: the tagged actors (tagged by the tile
     #                        they spawn on) go to their Active / Inactive state, e.g.
     #                        SwitchLight in actordefs decorations.

@@ -49,7 +49,7 @@ walls:
                 - A_Deactivate
 
     # Station 3, tag 3: pushes the brick wall west into a secret room. Thrown once: wall 55
-    # has no switch of its own.
+    # has no switch of its own. Its lever sticks before it goes up (STICKYLEVER, animdefs/).
     '54':
         North: ELEV1_2
         South: ELEV1_2
@@ -61,10 +61,10 @@ walls:
             actions:
                 - A_MoveWall("west", "world/pushwall")
     '55':
-        North: ELEV2_2
-        South: ELEV2_2
-        East: ELEV2_2
-        West: ELEV2_2
+        North: STICKYLEVER
+        South: STICKYLEVER
+        East: STICKYLEVER
+        West: STICKYLEVER
 
     # Station 4, tag 4: hangs flags on a row of walls (wall 3), and takes them down (wall 1)
     '56':
@@ -133,7 +133,10 @@ walls:
                 - A_SetZoneLight(1, 24, 35)
 
     # Station 7, in the light room: the hall's alarm, red strobing light (zone 2, timed by its
-    # low, tics and bright-tics in game-info.yaml), and back to its plain light
+    # low, tics and bright-tics in game-info.yaml), and back to its plain light. While it's on,
+    # the lever flicks up and down: A_ChangeTexture swaps the thrown lever's texture on the
+    # switch's own tile for ALARMLEVER (animdefs/). Turned off, the switch is wall 62 again, whose
+    # lever is down (ELEV1_2), which the swap doesn't touch; turned on, it flicks again.
     '62':
         North: ELEV1_2
         South: ELEV1_2
@@ -145,6 +148,7 @@ walls:
             actions:
                 - A_SetZoneLight(2, 255, 0, "#FF4040")
                 - A_SetZoneEffect(2, "strobe")
+                - A_ChangeTexture("ELEV2_2", "ALARMLEVER")
     '63':
         North: ELEV2_2
         South: ELEV2_2

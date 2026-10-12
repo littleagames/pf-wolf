@@ -1,4 +1,5 @@
-﻿using PFWolf.Entities;
+﻿using PFWolf.Assets;
+using PFWolf.Entities;
 
 namespace PFWolf;
 
@@ -12,7 +13,8 @@ internal partial class Program
     Actions for mapdefs switches (walls.yaml `switch:`) and triggers that act on
     whatever shares the tag (map plane 4) of the tile that set them off. Tag 0 is
     no tag, so an untagged switch's actions find nothing. The switch's own tile is
-    never a target, though it carries the same tag.
+    never a target, though it carries the same tag, except for A_ChangeTexture,
+    which changes it, tagged or not.
 
     =============================================================================
     */
@@ -41,6 +43,12 @@ internal partial class Program
         // A_SetWall(id): turns the tagged walls into wall id (walls.yaml), e.g. lights on a
         // panel coming on
         MapTriggerRegistry.Register("A_SetWall", SetWallAction);
+
+        // A_ChangeTexture("FROM", "TO"): the switch's own tile and the tagged ones show texture TO
+        // wherever they showed FROM: wall and door faces, floors and ceilings. TO can be an animation
+        // (animdefs); one that plays once starts as it's changed. Changing it back takes another
+        // A_ChangeTexture("TO", "FROM").
+        MapTriggerRegistry.Register("A_ChangeTexture", ChangeTextureAction);
 
         // A_Activate / A_Deactivate: the tagged actors go to their Active / Inactive state
         // (actordefs), e.g. a light coming on; actors without that state are left alone
@@ -223,8 +231,73 @@ internal partial class Program
         {
             // keeping the door-side mark on a wall beside a door
             _mapManager.tilemap[x, y] = (byte)(id | (_mapManager.tilemap[x, y] & BIT_WALL));
+            _mapManager.RestartAnimations(x, y, gamestate.TimeCount);
             any = true;
         }
         return any;
+    }
+
+    private static bool ChangeTextureAction(TriggerActivation trigger, string[] args)
+    {
+        var from = args.ElementAtOrDefault(0);
+        var to = args.ElementAtOrDefault(1);
+        if (string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(to))
+        {
+            Console.WriteLine("A_ChangeTexture: needs the texture to change and the one to change it to.");
+            return false;
+        }
+
+        // The switch's own tile, then the others with its tag: those showing FROM anywhere
+        var tiles = new List<(int X, int Y)> { (trigger.TileX, trigger.TileY) };
+        if (trigger.Tag != 0)
+            tiles.AddRange(_mapManager.TaggedTiles(trigger.Tag).Where(t => t != (trigger.TileX, trigger.TileY)));
+
+        bool any = false, flats = false;
+        foreach (var (x, y) in tiles)
+        {
+            var (walls, floor, ceiling) = TileTextures(x, y);
+            bool onFlat = Shows(floor, from) || Shows(ceiling, from);
+            if (!onFlat && !walls.Any(name => Shows(name, from)))
+                continue;
+
+            _mapManager.ChangeTexture(x, y, from, to, gamestate.TimeCount);
+            any = true;
+            flats |= onFlat;
+        }
+
+        if (flats)
+            _mapManager.RebuildFlats();
+        return any;
+    }
+
+    private static bool Shows(string? name, string texture) => name != null && name.Equals(texture, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The textures a tile shows now (through any A_ChangeTexture on it): its wall's faces, or its
+    /// door's (and its locked ones), and its floor and ceiling
+    /// </summary>
+    private static (IEnumerable<string> Walls, string? Floor, string? Ceiling) TileTextures(int x, int y)
+    {
+        var tile = _mapManager.tilemap[x, y];
+        MapTextureTranslation? faces = null;
+        MapTextureTranslation? locked = null;
+        if ((tile & BIT_DOOR) != 0)
+        {
+            var door = doorobjlist[tile & ~BIT_DOOR];
+            faces = door.xlat;
+            locked = door.xlat?.Locked;
+        }
+        else if ((tile & ~BIT_WALL) != 0)
+            _mapManager.GetMapData().Walls.TryGetValue(tile & ~BIT_WALL, out faces);
+
+        var names = new[] { faces, locked }
+            .Where(f => f != null)
+            .SelectMany(f => new[] { f!.North, f.South, f.East, f.West })
+            .Where(name => !string.IsNullOrEmpty(name))
+            .Select(name => _mapManager.ChangedTexture(x, y, name));
+        if (_mapManager.GetDiagonal(x, y)?.Texture is { Length: > 0 } diagonal)
+            names = names.Append(_mapManager.ChangedTexture(x, y, diagonal));
+
+        return (names, _mapManager.FlatTextureName(x, y, ceiling: false), _mapManager.FlatTextureName(x, y, ceiling: true));
     }
 }

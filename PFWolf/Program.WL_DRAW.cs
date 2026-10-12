@@ -681,7 +681,7 @@ internal partial class Program
                 // the door's jamb on the side the ray left it from
                 var door = doorobjlist[doortile & ~BIT_DOOR];
                 wallpic = DoorFace(door, xtilestep == 1 ? "east" : "west");
-                SetUpperPost((mapTexture ?? MapTextureTranslation.None).East, texture);   // the wall above the door frame
+                SetUpperPost((mapTexture ?? MapTextureTranslation.None).East, texture, xtile, yinttile);   // the wall above the door frame
             }
             else
             {
@@ -694,7 +694,7 @@ internal partial class Program
             wallpic = (mapTexture ?? MapTextureTranslation.None).East;
         }
 
-        var textureAsset = WorldTexture(wallpic);
+        var textureAsset = WorldTexture(wallpic, xtile, yinttile);
         if (textureAsset == null)
         {
             uppersource = null;
@@ -745,7 +745,7 @@ internal partial class Program
             {
                 var door = doorobjlist[doortile & ~BIT_DOOR];
                 wallpic = DoorFace(door, ytilestep == 1 ? "south" : "north");
-                SetUpperPost((mapTexture ?? MapTextureTranslation.None).North, texture);  // the wall above the door frame
+                SetUpperPost((mapTexture ?? MapTextureTranslation.None).North, texture, xinttile, ytile);  // the wall above the door frame
             }
             else
             {
@@ -758,7 +758,7 @@ internal partial class Program
             wallpic = (mapTexture ?? MapTextureTranslation.None).North;
         }
 
-        var textureAsset = WorldTexture(wallpic);
+        var textureAsset = WorldTexture(wallpic, xinttile, ytile);
         if (textureAsset == null)
         {
             uppersource = null;
@@ -786,7 +786,7 @@ internal partial class Program
         var door = doorobjlist[doornumtile];
         doorpage = DoorFace(door, xtilestep == 1 ? "west" : "east");
 
-        var doorTextureAsset = WorldTexture(doorpage);
+        var doorTextureAsset = WorldTexture(doorpage, door.tilex, door.tiley);
         if (doorTextureAsset == null)
             return;
         postsource = doorTextureAsset;
@@ -811,7 +811,7 @@ internal partial class Program
         // heading south, the ray meets the door's north face
         var door = doorobjlist[doornumtile];
         doorpage = DoorFace(door, ytilestep == 1 ? "north" : "south");
-        var doorTextureAsset = WorldTexture(doorpage);
+        var doorTextureAsset = WorldTexture(doorpage, door.tilex, door.tiley);
         if (doorTextureAsset == null)
             return;
         postsource = doorTextureAsset;
@@ -839,12 +839,21 @@ internal partial class Program
     /// </summary>
     internal static TextureAsset? WorldTexture(string name) => _assetManager.Find<TextureAsset>(name, gamestate.TimeCount);
 
+    /// <summary>
+    /// A texture on a tile's wall or door: in place of any A_ChangeTexture swapped on the tile, and
+    /// an animation that plays once from when the tile last changed (a looping one in step with
+    /// every other tile)
+    /// </summary>
+    static TextureAsset? WorldTexture(string name, int tilex, int tiley)
+        => _assetManager.Find<TextureAsset>(_mapManager.ChangedTexture(tilex, tiley, name), gamestate.TimeCount,
+            _mapManager.animstart[(tiley << MapManager.MAPSHIFT) + tilex]);
+
     // Points the stories above the first at the named wall texture, for the post being drawn
-    static void SetUpperPost(string wallpic, int texture)
+    static void SetUpperPost(string wallpic, int texture, int tilex, int tiley)
     {
         if (hitstories == 1)
             return;
-        uppersource = WorldTexture(wallpic);
+        uppersource = WorldTexture(wallpic, tilex, tiley);
         upperofs = texture;
     }
 
@@ -868,7 +877,7 @@ internal partial class Program
         MapTextureTranslation? mapTexture = null;
         if (_mapManager.GetMapData()?.Walls.TryGetValue(tile & ~BIT_WALL, out mapTexture) != true || mapTexture == null)
             return null;
-        return WorldTexture(vertical ? mapTexture.East : mapTexture.North);
+        return WorldTexture(vertical ? mapTexture.East : mapTexture.North, tilex, tiley);
     }
 
     // The lintel column where the trace meets the door plane at along (y for a vertical door, x
@@ -1024,7 +1033,7 @@ internal partial class Program
             wallpic = (mapTexture ?? MapTextureTranslation.None).North;
         }
 
-        var textureAsset = WorldTexture(wallpic);
+        var textureAsset = WorldTexture(wallpic, tilex, tiley);
         if (textureAsset == null)
             return;
         postsource = textureAsset;

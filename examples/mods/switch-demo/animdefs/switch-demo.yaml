@@ -1,0 +1,17 @@
+# The demo's animations (see pfwolf-pk3's animdefs/animdefs.yaml for the fields). Both are made
+# of the game's own elevator lever textures, so the demo needs no art of its own.
+
+# Station 3's lever, once thrown (wall 55): it sticks for half a second before it goes up, and
+# stays up. It plays once from when the switch turns into wall 55.
+STICKYLEVER:
+  frames:
+    - { name: ELEV1_2, tics: 35 }
+    - ELEV2_2
+    - stop
+
+# Station 7's lever while the alarm is on: A_ChangeTexture swaps the thrown lever (ELEV2_2) for
+# this, flicking up and down, on the switch's own tile. It loops, in step with any other tile
+# showing it.
+ALARMLEVER:
+  tics: 10
+  frames: [ELEV2_2, ELEV1_2]

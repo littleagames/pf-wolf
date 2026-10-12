@@ -447,6 +447,19 @@ public class AssetManager
     }
 
     /// <summary>
+    /// The asset of this name; for an animation, its frame at <paramref name="tics"/> on a shared
+    /// clock if it loops (so everything showing it is in step), else <paramref name="tics"/> less
+    /// <paramref name="startedTics"/>, when the thing showing it changed to it (it plays once from there)
+    /// </summary>
+    public T? Find<T>(string assetName, int tics, int startedTics) where T : Asset
+    {
+        var found = FindAsset<T>(assetName);
+        return found is IAnimatedAsset animation
+            ? animation.FrameAssetAt(animation.Loops ? tics : tics - startedTics) as T
+            : found as T;
+    }
+
+    /// <summary>
     /// The animation of this name and kind (an AnimatedAsset&lt;T&gt;), or null when it's a plain
     /// asset or there's none, without a warning
     /// </summary>

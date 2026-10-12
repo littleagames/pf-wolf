@@ -240,6 +240,7 @@ internal class MapManager
         hasfloorflats = hasceilingflats = false;
         animatedfloors.Clear();
         animatedceilings.Clear();
+        ClearTextureChanges();
 
 #if USE_FEATUREFLAGS
     const int MXX = MAPSIZE - 1;
@@ -665,16 +666,9 @@ internal class MapManager
         defaultfloor = defaultFloor;
         defaultceiling = defaultCeiling;
 
-        var flats = GetMapData().Flats;
-        var floors = new Asset?[256];
-        var ceilings = new Asset?[256];
-        var floorDefault = FindFlat(defaultFloor);
-        var ceilingDefault = FindFlat(defaultCeiling);
-        for (int i = 0; i < 256; i++)
-        {
-            floors[i] = (flats.Floor.TryGetValue(i, out var floor) ? FindFlat(floor) : null) ?? floorDefault;
-            ceilings[i] = (flats.Ceiling.TryGetValue(i, out var ceiling) ? FindFlat(ceiling) : null) ?? ceilingDefault;
-        }
+        var found = new Dictionary<string, Asset?>(StringComparer.OrdinalIgnoreCase);
+        Asset? Flat(string? name) => name == null ? null
+            : found.TryGetValue(name, out var flat) ? flat : found[name] = FindFlat(name);
 
         floorflat = new TextureAsset?[MAPAREA];
         ceilingflat = new TextureAsset?[MAPAREA];
@@ -684,10 +678,9 @@ internal class MapManager
         for (int y = 0; y < mapheight; y++)
             for (int x = 0; x < mapwidth; x++)
             {
-                int spot = MAPSPOT(x, y, FLATPLANE);
                 int i = (y << MAPSHIFT) + x;
-                floorflat[i] = SetFlat(floors[spot & 0xff], i, animatedfloors);
-                ceilingflat[i] = SetFlat(ceilings[spot >> 8], i, animatedceilings);
+                floorflat[i] = SetFlat(Flat(FlatTextureName(x, y, ceiling: false)), i, animatedfloors);
+                ceilingflat[i] = SetFlat(Flat(FlatTextureName(x, y, ceiling: true)), i, animatedceilings);
                 hasfloorflats |= floorflat[i] != null;
                 hasceilingflats |= ceilingflat[i] != null;
             }
@@ -704,14 +697,31 @@ internal class MapManager
 
     /// <summary>
     /// Sets the tiles with an animated floor or ceiling (animdefs) to its frame <paramref name="tics"/>
-    /// into the level: every tile showing one is on the same frame. Once a frame, before the view is drawn.
+    /// into the level: a looping one on the same frame on every tile, one that plays once from when
+    /// its tile last changed (<see cref="animstart"/>). Once a frame, before the view is drawn.
     /// </summary>
     internal void AnimateFlats(int tics)
     {
         foreach (var (i, animation) in animatedfloors)
-            floorflat[i] = animation.FrameAt(tics);
+            floorflat[i] = animation.FrameAt(animation.Loops ? tics : tics - animstart[i]);
         foreach (var (i, animation) in animatedceilings)
-            ceilingflat[i] = animation.FrameAt(tics);
+            ceilingflat[i] = animation.FrameAt(animation.Loops ? tics : tics - animstart[i]);
+    }
+
+    /// <summary>
+    /// The texture on a tile's floor or ceiling: its flat plane index through the mapdefs flats
+    /// table, else the map's default, through any A_ChangeTexture on the tile; null when it has
+    /// none (the floor or ceiling color shows)
+    /// </summary>
+    internal string? FlatTextureName(int x, int y, bool ceiling)
+    {
+        int spot = MAPSPOT(x, y, FLATPLANE);
+        int index = ceiling ? spot >> 8 : spot & 0xff;
+        var table = ceiling ? GetMapData().Flats.Ceiling : GetMapData().Flats.Floor;
+        var defaultName = ceiling ? defaultceiling : defaultfloor;
+        var name = table.TryGetValue(index, out var listed) && FindFlat(listed) != null ? listed
+            : FindFlat(defaultName) != null ? defaultName : null;
+        return name == null ? null : ChangedTexture(x, y, name);
     }
 
     /// <summary>The name of the texture on a tile's floor or ceiling, for the console.</summary>
@@ -719,10 +729,113 @@ internal class MapManager
     {
         int spot = MAPSPOT(x, y, FLATPLANE);
         int index = ceiling ? spot >> 8 : spot & 0xff;
-        var table = ceiling ? GetMapData().Flats.Ceiling : GetMapData().Flats.Floor;
-        var name = table.TryGetValue(index, out var listed) && FindFlat(listed) != null ? listed
-            : ceiling ? defaultceiling : defaultfloor;
-        return $"{index} {(FindFlat(name) != null ? name : "(color)")}";
+        var name = FlatTextureName(x, y, ceiling);
+        return $"{index} {(name != null && FindFlat(name) != null ? name : "(color)")}";
+    }
+
+    /*
+    =============================================================================
+
+                        TEXTURE CHANGES AND ANIMATION STARTS
+
+    A_ChangeTexture("FROM", "TO") swaps one texture for another on a tile's wall faces, door
+    faces and floor and ceiling, by name, whatever walls.yaml, doors.yaml or the flats give it.
+    Whenever a tile changes (a switch flips, A_SetWall, A_ChangeTexture), it notes the level tic:
+    an animation that plays once (animdefs, ending in stop) starts there on that tile. A looping
+    one goes by the level's clock alone, in step everywhere. Both are saved with the level.
+
+    =============================================================================
+    */
+
+    // Per tile ((y << MAPSHIFT) + x): the textures changed on it, from -> to
+    private Dictionary<int, Dictionary<string, string>> texturechanges = [];
+
+    /// <summary>Per tile ((y &lt;&lt; MAPSHIFT) + x): the level tic it last changed, 0 for never.</summary>
+    internal int[] animstart = new int[MAPAREA];
+
+    /// <summary>The texture a tile shows in place of <paramref name="name"/> (itself, unless A_ChangeTexture swapped it).</summary>
+    internal string ChangedTexture(int x, int y, string name)
+        => texturechanges.Count == 0 || !texturechanges.TryGetValue((y << MAPSHIFT) + x, out var changes)
+            ? name
+            : changes.GetValueOrDefault(name, name);
+
+    /// <summary>Notes a tile changed at level tic <paramref name="tic"/>: an animation that plays once on it starts over.</summary>
+    internal void RestartAnimations(int x, int y, int tic) => animstart[(y << MAPSHIFT) + x] = tic;
+
+    /// <summary>
+    /// Makes a tile show <paramref name="to"/> where it showed <paramref name="from"/> (as it is
+    /// now, after earlier changes), from level tic <paramref name="tic"/>. Its flats are rebuilt
+    /// by the caller (<see cref="RebuildFlats"/>).
+    /// </summary>
+    internal void ChangeTexture(int x, int y, string from, string to, int tic)
+    {
+        int i = (y << MAPSHIFT) + x;
+        if (!texturechanges.TryGetValue(i, out var changes))
+            texturechanges[i] = changes = new(StringComparer.OrdinalIgnoreCase);
+
+        // What showed as FROM shows as TO now, whether FROM was the original or a change already
+        foreach (var original in changes.Where(c => c.Value.Equals(from, StringComparison.OrdinalIgnoreCase)).Select(c => c.Key).ToList())
+            changes[original] = to;
+        if (!changes.ContainsKey(from))
+            changes[from] = to;
+        animstart[i] = tic;
+    }
+
+    /// <summary>Rebuilds the flats, after A_ChangeTexture changed some.</summary>
+    internal void RebuildFlats() => BuildFlats(defaultfloor, defaultceiling);
+
+    private void ClearTextureChanges()
+    {
+        texturechanges = [];
+        animstart = new int[MAPAREA];
+    }
+
+    // Saved after the actors: the tiles that have changed, with when and what
+    internal void WriteTextureChanges(BinaryWriter bw)
+    {
+        var starts = Enumerable.Range(0, MAPAREA).Where(i => animstart[i] != 0).ToList();
+        bw.Write(starts.Count);
+        foreach (var i in starts)
+        {
+            bw.Write(i);
+            bw.Write(animstart[i]);
+        }
+
+        bw.Write(texturechanges.Count);
+        foreach (var (i, changes) in texturechanges)
+        {
+            bw.Write(i);
+            bw.Write(changes.Count);
+            foreach (var (from, to) in changes)
+            {
+                bw.Write(from);
+                bw.Write(to);
+            }
+        }
+    }
+
+    internal static (int[] Starts, Dictionary<int, Dictionary<string, string>> Changes) ReadTextureChanges(BinaryReader br)
+    {
+        static int Tile(BinaryReader br)
+        {
+            int i = br.ReadInt32();
+            if (i is < 0 or >= MAPAREA)
+                throw new InvalidDataException($"Bad tile {i} in the texture changes.");
+            return i;
+        }
+
+        var starts = new int[MAPAREA];
+        for (int n = br.ReadCount(); n > 0; n--)
+            starts[Tile(br)] = br.ReadInt32();
+
+        var changes = new Dictionary<int, Dictionary<string, string>>();
+        for (int n = br.ReadCount(); n > 0; n--)
+        {
+            var tile = changes[Tile(br)] = new(StringComparer.OrdinalIgnoreCase);
+            for (int m = br.ReadCount(); m > 0; m--)
+                tile[br.ReadString()] = br.ReadString();
+        }
+        return (starts, changes);
     }
 
     private readonly HashSet<string> missingflats = new(StringComparer.OrdinalIgnoreCase);
@@ -1413,6 +1526,8 @@ internal class MapManager
         bw.Write(actors.Count);
         foreach (var actor in actors)
             Entities.Actors.ActorSnapshot.Capture(actor).Write(bw);
+
+        WriteTextureChanges(bw);
     }
 
     /// <summary>Parses what <see cref="WriteLevelState"/> wrote, without touching the loaded level.</summary>
@@ -1449,7 +1564,8 @@ internal class MapManager
         for (int i = br.ReadCount(); i > 0; i--)
             actors.Add(Entities.Actors.ActorSnapshot.Read(br));
 
-        return new LevelSnapshot(planes, tiles, blocking, actors);
+        var (starts, changes) = ReadTextureChanges(br);
+        return new LevelSnapshot(planes, tiles, blocking, actors, starts, changes);
     }
 
     /// <summary>
@@ -1487,6 +1603,10 @@ internal class MapManager
         mapsegs = level.Planes.Select(plane => (ushort[])plane.Clone()).ToArray();
         tilemap = (byte[,])level.TileMap.Clone();
         actorat = (Actor?[,])level.ActorAt.Clone();
+        // copies, so a hub level's kept snapshot doesn't change with the live level
+        animstart = (int[])level.AnimationStarts.Clone();
+        texturechanges = level.TextureChanges.ToDictionary(c => c.Key,
+            c => new Dictionary<string, string>(c.Value, StringComparer.OrdinalIgnoreCase));
         ReadMapInfo(fillFlats: false);      // the saved flat plane already has the map's flats
         BuildWallShapes();
         BuildWallHeights();
@@ -1532,4 +1652,6 @@ internal sealed record LevelSnapshot(
     ushort[][] Planes,
     byte[,] TileMap,
     Actor?[,] ActorAt,
-    List<Entities.Actors.ActorSnapshot> Actors);
+    List<Entities.Actors.ActorSnapshot> Actors,
+    int[] AnimationStarts,
+    Dictionary<int, Dictionary<string, string>> TextureChanges);

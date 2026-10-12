@@ -19,14 +19,16 @@ The hall has seven switch stations (the elevator's lever panels):
 2. **North wall, right:** turns the hall's lights on and off (`A_Activate` / `A_Deactivate` on
    `SwitchLightOff` actors).
 3. **West wall, top:** pushes the brick wall below it into a secret room, once
-   (`A_MoveWall`). The silver key is in there.
+   (`A_MoveWall`). The silver key is in there. Its lever sticks for a moment before it goes
+   up: the thrown switch's texture is an animation that plays once.
 4. **West wall, bottom:** hangs flags on the south wall and takes them down (`A_SetWall`).
 5. **East wall:** locked until you have the silver key; then it opens the way to the exit.
 6. **North wall, right of station 2:** fades the lights in the dark room behind the archway
    next to it up and down (`A_SetZoneLight` on light zone 1).
 7. **Inside that room, on its far wall:** sets off the hall's alarm, red light strobing across
    the hall (`A_SetZoneLight` with a tint, then `A_SetZoneEffect` on light zone 2), and turns
-   it off again.
+   it off again. While the alarm is on, its lever flicks up and down (`A_ChangeTexture` swaps
+   the lever's texture for a looping animation).
 
 Stations 6 and 7 work on **light zones**: each tile's zone is its value on the zone plane
 (plane 5), and the mod's `game-info.yaml` says how each zone is lit. Unlike the other
@@ -42,6 +44,8 @@ The exit room has the usual elevator switch, now just a switch whose action is `
 
 - `mapdefs/walls.yaml`: the switch walls (ids 50-63), each with its `switch:` block. Every
   field and action is described at wall 21 in `pfwolf-pk3/mapdefs/wolf3d/walls.yaml`.
+- `animdefs/switch-demo.yaml`: the two lever animations, made of the game's own lever
+  textures. Animations are described in `pfwolf-pk3/animdefs/animdefs.yaml`.
 - `mapdefs/things.yaml`: object 500, a `SwitchLightOff`, and 501, the light room's
   `FlickeringLamp`.
 - `actordefs/demo-lights.yaml`: `FlickeringLamp`, a floor lamp with an amber, flickering
