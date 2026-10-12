@@ -30,6 +30,8 @@ public sealed record DefinitionWrite(DefinitionFile File, IReadOnlyList<string> 
 /// </summary>
 public sealed class DefinitionSet
 {
+    private static readonly FieldSchema MapDefsSchema = FieldSchema.For(typeof(MapObjectTranslationAsset));
+
     private YamlMappingNode? _merged, _mergedBase;
 
     public DefinitionSet(DefinitionKind kind, string packId, IReadOnlyList<DefinitionFile> files)
@@ -212,8 +214,10 @@ public sealed class DefinitionSet
             if (key is not YamlScalarNode { Value: { } name })
                 continue;
 
+            // flats is a record of tables (floor, ceiling), listed whole so they show inside it
             if (Kind == DefinitionKind.MapDefs && value is YamlMappingNode { Children.Count: > 0 } table
-                && table.Children.Values.All(child => child is YamlMappingNode))
+                && table.Children.Values.All(child => child is YamlMappingNode)
+                && MapDefsSchema.Field(name) is not { Type: FieldType.Record })
             {
                 foreach (var (entryKey, _) in table.Children)
                 {
