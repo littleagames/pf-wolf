@@ -85,26 +85,31 @@ public class Wolf3dMapFileLoader
     }
 
     /// <summary>
-    /// The levels, named by <paramref name="dataMap"/> in order (raw-data-map's maps). A level
-    /// the pair doesn't have is left out, and so is one that can't be read (with a warning).
+    /// The levels, named by <paramref name="dataMap"/> in order (raw-data-map's maps); one past
+    /// its names is MAP#### (its level number), with a warning. A level the pair doesn't have
+    /// is left out, and so is one that can't be read (with a warning).
     /// </summary>
     public Dictionary<string, Asset> GetAssets(List<string> dataMap, Action<string>? warn = null)
     {
         var assets = new Dictionary<string, Asset>();
-        for (int i = 0; i < dataMap.Count && i < _levels.Length; i++)
+        var names = new DataMapNames(dataMap, "levels", "MAP");
+        for (int i = 0; i < _levels.Length; i++)
         {
             if (_levels[i] == null)
                 continue;
 
+            var name = names.NameAt(i, i + 1);
             try
             {
-                assets[dataMap[i].ToLowerInvariant()] = CacheMap(i);
+                assets[name.ToLowerInvariant()] = CacheMap(i);
             }
             catch (Exception e) when (e is PfWolfMapException or InvalidDataException or IndexOutOfRangeException or ArgumentException)
             {
-                warn?.Invoke($"{dataMap[i]} can't be read, so it's left out: {e.Message}");
+                warn?.Invoke($"{name} can't be read, so it's left out: {e.Message}");
             }
         }
+
+        names.Warn(warn);
 
         return assets;
     }

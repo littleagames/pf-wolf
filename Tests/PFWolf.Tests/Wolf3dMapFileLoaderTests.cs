@@ -166,6 +166,21 @@ public class Wolf3dMapFileLoaderTests
     }
 
     [Test]
+    public void GetAssets_Makes_Up_A_Name_For_A_Level_Past_The_Names()
+    {
+        // Arrange: a GAMEMAPS edited to have a level raw-data-map doesn't name
+        var (mapHead, gameMaps) = BuildMapPair(1, 2, "Extra");
+        var warnings = new List<string>();
+
+        // Act
+        var assets = new Wolf3dMapFileLoader(mapHead, gameMaps).GetAssets([], warnings.Add);
+
+        // Assert
+        Assert.That(assets.Keys, Is.EqualTo(new[] { "map0001" }));
+        Assert.That(warnings, Has.Count.EqualTo(1));
+    }
+
+    [Test]
     public void GetAssets_Warns_About_And_Skips_A_Damaged_Level()
     {
         // Arrange: plane 0's length runs past the end of GAMEMAPS

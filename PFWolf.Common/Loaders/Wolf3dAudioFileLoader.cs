@@ -35,7 +35,8 @@ public class Wolf3dAudioFileLoader
         }
     }
 
-    public Dictionary<string, Asset> GetAssets(List<string> audioDataMap, List<string> musicDataMap)
+    /// <param name="warn">Told when the file has a different number of sounds or songs than the names</param>
+    public Dictionary<string, Asset> GetAssets(List<string> audioDataMap, List<string> musicDataMap, Action<string>? warn = null)
     {
 
         if (!File.Exists(audioDataFileName))
@@ -44,42 +45,62 @@ public class Wolf3dAudioFileLoader
         using (FileStream fs = File.OpenRead(audioDataFileName))
         using (BinaryReader br = new BinaryReader(fs))
         {
+            const string tag = "!ID!";
+            var tagBytes = Encoding.ASCII.GetBytes(tag);
+            bool IsTag(int chunk, out byte[] data)
+            {
+                int pos = audiostarts[chunk];
+                int size = audiostarts[chunk + 1] - pos;
+                data = [];
+                if (size <= 0 || pos < 0 || pos + size > fs.Length)
+                    return false;
+                fs.Seek(pos, SeekOrigin.Begin);
+                data = br.ReadBytes(size);
+                return size == tagBytes.Length && data.SequenceEqual(tagBytes);
+            }
+
+            // How many chunks each block has, to name the ones past the map's names
+            var blockCounts = new List<int> { 0 };
+            for (int i = 0; i < audiostarts.Length - 1; i++)
+            {
+                if (IsTag(i, out _))
+                    blockCounts.Add(0);
+                else
+                    blockCounts[^1]++;
+            }
+
+            var soundNames = new SoundNames(audioDataMap, blockCounts[0]);
+            var musicNames = new DataMapNames(musicDataMap, "songs", "MUSIC");
+
             int block = 0;
             for (int i = 0, assetIndex = 0; i < audiostarts.Length - 1; i++, assetIndex++)
             {
                 //var currentType = i / AudioMappings.SoundMappingKeys.Count; // Determine this count value based on the file alone
-                int pos = audiostarts[i];
-                int size = audiostarts[i + 1] - pos;
-                fs.Seek(pos, SeekOrigin.Begin);
-
-                if (size == 0)
-                {
-                    continue;
-                }
-
-                var data = br.ReadBytes(size);
-                const string tag = "!ID!";
-                var tagBytes = Encoding.ASCII.GetBytes(tag);
-                if (size == tagBytes.Length && data.SequenceEqual(tagBytes))
+                if (IsTag(i, out var data))
                 {
                     block++;
                     assetIndex = -1;
                     continue;
                 }
 
+                if (data.Length == 0)
+                {
+                    continue;
+                }
+
                 if (block == 0) // audio block
                 {
-                    var key = audioDataMap[assetIndex].ToLowerInvariant();
-                    switch (key.Substring(0, 2).ToLowerInvariant())
+                    var key = soundNames.NameAt(assetIndex).ToLowerInvariant();
+                    switch (key.Length >= 2 ? key[..2] : key)
                     {
                         case "pc":
-                            assets.Add(key, new PcSound(data));
+                            assets[key] = new PcSound(data);
                             break;
                         case "al":
-                            assets.Add(key, new AdLibSound(data));
+                            assets[key] = new AdLibSound(data);
                             break;
                         case "ds":
-                            assets.Add(key, new Wolf3dDigitizedAudio { RawData = data });
+                            assets[key] = new Wolf3dDigitizedAudio { RawData = data };
                             break;
                     }
                 }
@@ -90,11 +111,50 @@ public class Wolf3dAudioFileLoader
                     if (data.Length >= 2 && BitConverter.ToUInt16(data, 0) == 0)
                         continue;
 
-                    var key = musicDataMap[assetIndex].ToLowerInvariant();
-                    assets.Add(key, new Wolf3dImfAudio(data));
+                    var key = musicNames.NameAt(assetIndex).ToLowerInvariant();
+                    assets[key] = new Wolf3dImfAudio(data);
                 }
             }
+
+            soundNames.Warn(warn);
+            musicNames.Warn(warn);
         }
         return assets;
+    }
+
+    /// <summary>
+    /// Names for the sound block's chunks. It holds every sound three times over, PC speaker,
+    /// AdLib, then digitized (the last of those slots being the !ID! tag), so a file with sounds
+    /// added has more in each third than the map names. Each third goes by the map's names of
+    /// its kind (PC*, AL*, DS*), and those past them are PCSND####, ALSND####, DSSND#### (by number
+    /// within the third), so the names still say which kind they are.
+    /// </summary>
+    private sealed class SoundNames
+    {
+        private readonly (string Prefix, DataMapNames Names)[] _kinds;
+        private readonly int _perKind;
+
+        public SoundNames(List<string> names, int inFile)
+        {
+            _perKind = Math.Max(1, (inFile + 2) / 3);
+            _kinds = [Kind("PC"), Kind("AL"), Kind("DS")];
+
+            (string, DataMapNames) Kind(string prefix)
+                => (prefix + "SND", new DataMapNames(
+                    names.Where(name => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToList(),
+                    $"{prefix} sounds", prefix + "SND"));
+        }
+
+        public string NameAt(int index)
+        {
+            var kind = Math.Min(index / _perKind, 2);
+            return _kinds[kind].Names.NameAt(index - kind * _perKind);
+        }
+
+        public void Warn(Action<string>? warn)
+        {
+            foreach (var (_, names) in _kinds)
+                names.Warn(warn);
+        }
     }
 }

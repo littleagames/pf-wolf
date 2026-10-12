@@ -84,7 +84,8 @@ public class AssetManager
         var audioLoader = new Wolf3dAudioFileLoader(
             DataFile("Wolf3DAudioFileLoader", d => d.Data),
             DataFile("Wolf3DAudioFileLoader", d => d.Header));
-        AddDataFileAssets(audioLoader.GetAssets(rawDataMap?.Audio ?? [], rawDataMap?.Music ?? []),
+        AddDataFileAssets(audioLoader.GetAssets(rawDataMap?.Audio ?? [], rawDataMap?.Music ?? [],
+                DataFileWarning(DataFile("Wolf3DAudioFileLoader", d => d.Data))),
             DataFile("Wolf3DAudioFileLoader", d => d.Data));
 
         LoadLevels(pfWolfBasePk3Loader, rawDataMap?.Maps ?? [],
@@ -97,10 +98,12 @@ public class AssetManager
             DataFile("Wolf3DVgaFileLoader", d => d.Data),
             DataFile("Wolf3DVgaFileLoader", d => d.Dict),
             numFonts: gamePackInfo.GetFileLoader(gameReleaseId, "Wolf3DVgaFileLoader").FontCount ?? 2);
-        AddDataFileAssets(vgaGraphicLoader.GetAssets(rawDataMap?.Graphics ?? []), DataFile("Wolf3DVgaFileLoader", d => d.Data));
+        AddDataFileAssets(vgaGraphicLoader.GetAssets(rawDataMap?.Graphics ?? [], DataFileWarning(DataFile("Wolf3DVgaFileLoader", d => d.Data))),
+            DataFile("Wolf3DVgaFileLoader", d => d.Data));
 
         var vswapLoader = new Wolf3dVswapFileLoader(DataFile("Wolf3DVswapFileLoader", d => d.Data));
-        AddDataFileAssets(vswapLoader.GetAssets(rawDataMap?.Walls ?? [], rawDataMap?.Sprites ?? [], rawDataMap?.DigitizedAudio ?? []),
+        AddDataFileAssets(vswapLoader.GetAssets(rawDataMap?.Walls ?? [], rawDataMap?.Sprites ?? [], rawDataMap?.DigitizedAudio ?? [],
+                DataFileWarning(DataFile("Wolf3DVswapFileLoader", d => d.Data))),
             DataFile("Wolf3DVswapFileLoader", d => d.Data));
 
         LoadMovies(gamePackInfo.FindFileLoader(gameReleaseId, "JamMovieFileLoader")?.Movies);
@@ -156,6 +159,11 @@ public class AssetManager
             }
         }
     }
+
+    /// <summary>
+    /// Where a data file's loader says it doesn't match raw-data-map (a WDC-edited VSWAP with walls added)
+    /// </summary>
+    private static Action<string> DataFileWarning(string dataFile) => warning => WarningLog.Write($"{dataFile}: {warning}");
 
     /// <summary>
     /// Adds the assets read from one of the game's data files (VSWAP.WL6), apart from those the

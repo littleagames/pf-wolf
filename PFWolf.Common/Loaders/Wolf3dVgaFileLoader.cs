@@ -389,49 +389,73 @@ public class Wolf3dVgaFileLoader
         return dest.ToArray();
     }
 
-    public Dictionary<string, Asset> GetAssets(List<string> dataMap)
+    /// <param name="warn">Told when the file has a different number of pics or externs than the names</param>
+    public Dictionary<string, Asset> GetAssets(List<string> dataMap, Action<string>? warn = null)
     {
         var assets = new Dictionary<string, Asset>();
-        int i = 1; // skip STRUCTPIC
+
+        // The map's names line up with the file's chunks only up to its pics: a file with pics
+        // added or taken out (WDC, ChaosEdit) moves the tile8 and externs, so those go by where
+        // the map's Tile8 is
+        var mapTile8 = dataMap.FindIndex(name => name.Equals("Tile8", StringComparison.OrdinalIgnoreCase));
+        var mapPics = mapTile8 >= 0 ? mapTile8 - StartPics : Math.Max(0, dataMap.Count - StartPics);
+        var fontNames = new DataMapNames(dataMap, "fonts", "FONT");
+        var picNames = new DataMapNames(dataMap.Skip(StartPics).Take(mapPics).ToList(), "pics", "PIC");
+        var externNames = new DataMapNames(mapTile8 >= 0 ? dataMap[(mapTile8 + 1)..] : [], "externs", "EXTERN");
+
         // fonts
-        for (int h = 0; h < numFonts; h++, i++)
+        for (int h = 0; h < numFonts; h++)
         {
             var data = grsegs[StartFont + h];
-            var asset = new FontAsset(data);
-            assets[dataMap[i].ToLowerInvariant()] = asset;
+            if (data == null)
+                continue;
+            assets[fontNames.NameAt(StartFont + h, h).ToLowerInvariant()] = new FontAsset(data);
         }
 
         // graphic chunks
-        for (int j = 0; j < numPics; j++,i++)
+        for (int j = 0; j < numPics; j++)
         {
             var data = grsegs[StartPics + j];
-            var asset = new GraphicAsset(data, pictable[j].width, pictable[j].height);
-            assets[dataMap[i].ToLowerInvariant()] = asset;
+            if (data == null)
+                continue;
+            assets[picNames.NameAt(j).ToLowerInvariant()] = new GraphicAsset(data, pictable[j].width, pictable[j].height);
         }
 
         // Tile8
-        var tile8Data = grsegs[StartTile8];
-        var tile8Asset = new Tile8Asset(tile8Data);
-        assets[dataMap[i].ToLowerInvariant()] = tile8Asset;
-        i++;
+        if (StartTile8 < numChunks && grsegs[StartTile8] != null)
+            assets[(mapTile8 >= 0 ? dataMap[mapTile8] : "Tile8").ToLowerInvariant()] = new Tile8Asset(grsegs[StartTile8]);
 
         // Externs: which ones a release has, and in what order, differs (Wolf3D: screens, help text,
         // demos, end texts; Spear: screens, palettes, demos, end text), so go by their data map names:
-        // Demo0-3 are demos, *PAL are palettes, and the rest is text
-        for (; i < dataMap.Count && i < numChunks; i++)
+        // Demo0-3 are demos, *PAL are palettes, and the rest is text. One the map has no name for
+        // is read as text.
+        for (int chunk = StartExterns, e = 0; chunk < numChunks; chunk++, e++)
         {
-            var name = dataMap[i];
-            var data = grsegs[i];
-            if (data == null || IsSkippedExtern(name))
+            var data = grsegs[chunk];
+            if (data == null)
+                continue;
+            var name = externNames.NameAt(e);
+            if (IsSkippedExtern(name))
                 continue;
 
-            if (name.StartsWith("Demo", StringComparison.OrdinalIgnoreCase))
-                assets[name.ToLowerInvariant()] = new DemoAsset(data);
-            else if (name.EndsWith("PAL", StringComparison.OrdinalIgnoreCase))
-                assets[name.ToLowerInvariant()] = ToPalette(data);
-            else
-                assets[name.ToLowerInvariant()] = new TextAsset(data);
+            try
+            {
+                if (name.StartsWith("Demo", StringComparison.OrdinalIgnoreCase))
+                    assets[name.ToLowerInvariant()] = new DemoAsset(data);
+                else if (name.EndsWith("PAL", StringComparison.OrdinalIgnoreCase))
+                    assets[name.ToLowerInvariant()] = ToPalette(data);
+                else
+                    assets[name.ToLowerInvariant()] = new TextAsset(data);
+            }
+            catch (PfWolfGraphicException ex)
+            {
+                warn?.Invoke($"{name} can't be read, so it's left out: {ex.Message}");
+            }
         }
+
+        fontNames.Warn(warn);
+        picNames.Warn(warn);
+        externNames.Warn(warn);
         return assets;
     }
 

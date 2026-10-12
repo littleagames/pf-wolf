@@ -152,12 +152,18 @@ public class Wolf3dVswapFileLoader
         }
     }
 
-    public Dictionary<string, Asset> GetAssets(List<string> textures, List<string> sprites, List<string> digitizedAudio)
+    /// <param name="warn">Told when the file has a different number of walls, sprites or sounds than the names</param>
+    public Dictionary<string, Asset> GetAssets(List<string> textures, List<string> sprites, List<string> digitizedAudio,
+        Action<string>? warn = null)
     {
         var assets = new Dictionary<string, Asset>();
         // 1) Get wall texture mapping
         // 2) Get sprite mapping
         // 3) Get digi sound mapping
+
+        var wallNames = new DataMapNames(textures, "walls", "WALL");
+        var spriteNames = new DataMapNames(sprites, "sprites", "SPR");
+        var digiNames = new DataMapNames(digitizedAudio, "digitized sounds", "DIGI");
 
         // A sparse page (empty) is one the release leaves out, as shareware does the registered
         // episodes' walls and sprites: it gets no asset
@@ -166,7 +172,7 @@ public class Wolf3dVswapFileLoader
             byte[] textureData = PM_GetPage(i);
             if (textureData.Length == 0)
                 continue;
-            assets.Add(textures[i].ToLowerInvariant(), new TextureAsset { RawData = textureData });
+            assets[wallNames.NameAt(i).ToLowerInvariant()] = new TextureAsset { RawData = textureData };
             // Use SDL_SetupSprite to get sprite data
         }
 
@@ -175,7 +181,7 @@ public class Wolf3dVswapFileLoader
             byte[] spriteData = PM_GetPage(i);
             if (spriteData.Length == 0)
                 continue;
-            assets.Add(sprites[i-PMSpriteStart].ToLowerInvariant(), Wolf3dCompiledSpriteConverter.Convert(spriteData));
+            assets[spriteNames.NameAt(i - PMSpriteStart).ToLowerInvariant()] = Wolf3dCompiledSpriteConverter.Convert(spriteData);
             // Use SDL_SetupSprite to get sprite data
         }
         // Use SDL_SetupDigi to get sound data
@@ -226,18 +232,33 @@ public class Wolf3dVswapFileLoader
             digiList[i].length = (uint)size;
         }
 
-        // The sound info page's size can take in padding past the last entry, read as a sound
-        // the data map has no name for
-        for (int i = 0; i < numDigi && i < digitizedAudio.Count; i++)
+        for (int i = 0; i < numDigi; i++)
         {
+            // The sound info page's size can take in padding past the last entry (shareware's is
+            // a whole page of them): past the map's names, an entry that doesn't start after the
+            // one before it is that padding, not a sound
+            if (i >= digitizedAudio.Count && i > 0 && digiList[i].startpage <= digiList[i - 1].startpage)
+                break;
+
             // Left out of the release (shareware's): its pages are sparse
             if (PM_GetPage((int)(PMSoundStart + digiList[i].startpage)).Length == 0)
                 continue;
 
-            byte[] soundData = PM_GetSoundPage(digiList[i].startpage, digiList[i].length);
-            assets.Add(digitizedAudio[i].ToLowerInvariant(), new Wolf3dDigitizedAudio { RawData = soundData });
+            byte[] soundData;
+            try
+            {
+                soundData = PM_GetSoundPage(digiList[i].startpage, digiList[i].length);
+            }
+            catch (PfWolfFileLoaderException) when (i >= digitizedAudio.Count)
+            {
+                break; // padding whose made-up length runs past the sound pages
+            }
+            assets[digiNames.NameAt(i).ToLowerInvariant()] = new Wolf3dDigitizedAudio { RawData = soundData };
         }
 
+        wallNames.Warn(warn);
+        spriteNames.Warn(warn);
+        digiNames.Warn(warn);
         return assets;
     }
 
