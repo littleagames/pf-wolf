@@ -646,6 +646,7 @@ internal partial class Program
         RegisterTeleporterActions();    // A_UnlockFloor, A_DropDetonator (Program.Teleporter.cs)
         RegisterZoneLightActions(); // light zone actions, for switches and actors (Program.ZoneLights.cs)
         RegisterActorLightActions(); // actors' own lights (Program.ActorLights.cs)
+        RegisterProjectileActions(); // projectiles and jumps for any actor, traps (Program.ProjectileActions.cs)
     }
 
     /// <summary>

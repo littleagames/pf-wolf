@@ -17,6 +17,21 @@
 # from sounds/sound-seq.yaml, replacing old raw identifiers still used in
 # the source ("MISSILEFIRE", "MISSILEHIT", "SCHABBSTHROW", "FLAMETHROWER")
 # -- see the header comment in bosses.yaml for how those were inferred.
+#
+# Projectile flags: BURSTONPLAYER goes to its Death state on whoever it hits, as on a wall
+# (without it, a projectile that hits someone just vanishes); HURTMONSTERS hurts the enemies
+# it flies into too, not only the players (never its own shooter).
+#
+# Any actor, not only an enemy, can fire one (Program.ProjectileActions.cs), which makes traps:
+#   A_SpawnProjectile("Rocket"[, angle[, "relative"|"absolute"|"aim"]])
+#       in degrees, positive turning left: relative to its facing (the default), absolute
+#       from east (90 north), or aimed at the nearest player and turned by the angle. The
+#       projectile's speed, speed.random, spread and attacksound apply. One standing inside a
+#       wall (mapdefs `in-wall: true`) fires from just beyond the face it looks out of.
+#   A_Jump(chance, "State"[, "State2"...])   chance in 256, to one of the states at random
+#   A_JumpIfPlayerWithin(tiles, "State")     a player within that many tiles each way
+#   A_JumpIfInSight("State"[, tiles])        a clear line to a player (in a wall: in front of its face)
+# examples/mods/fireball-demo uses them all.
 # =============================================================================
 
 # Thrown by Gift/Fat (T_GiftThrow); trails Smoke, explodes (its Death state)

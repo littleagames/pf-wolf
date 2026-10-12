@@ -205,8 +205,9 @@ as `sprites/DEMOA0.png`.
 
 ## Fireball Demo (`mods/fireball-demo`)
 
-A short gauntlet that replaces Floor 1 (Wolfenstein 3D only): walls that spit fireballs. It's
-all data, with no engine code: actor and map definitions, plus a level.
+A short gauntlet that replaces Floor 1 (Wolfenstein 3D only): walls that spit fireballs. The
+traps are all data, actor and map definitions plus a level; the engine gives any actor the
+actions they use.
 
 ```
 PFWolf.exe --file fireball-demo
@@ -214,21 +215,31 @@ PFWolf.exe --file fireball-demo
 
 It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
 
-Run north from the start to the exit, past four trap walls (the eagles):
+Work north from the start to the exit. The trap shooters sit inside eagle walls and fire out
+of their faces once they see you:
 
-- **First pair:** one fireball at you every second and a half (west), and a fan of three
-  (east).
-- **Second pair:** a quick burst of three, then a long rest (west), and a shooter (east) that
-  the switch on the east wall, a few steps before it, turns off and on.
+- **The fire lanes:** four walls fire straight across the passage every second and a half.
+- **The bone room:** with you within 4 tiles, the pile of bones in the middle throws a ring
+  of eight fireballs every way. The fireballs burn the two guards beside it too.
+- **The corridor:** a wall at its west end fires along it. The switch at its east end, where
+  you come in, turns it off and on.
+- **The passage north:** a wall either side fires at you, two at a time and now and then a third.
+- **The exit room:** the north wall fans out three at a time.
 
 ### What's in it
 
-- `actordefs/fireball-traps.yaml`: `Fireball`, a glowing projectile (Fake Hitler's flame,
-  bursting on walls), and the shooters. A shooter is an invisible actor (`TNT1` frames) on the
-  floor tile in front of a trap wall, with `parent: Monster` so it can use
-  `A_FireProjectile`. It has no health, so it can't be shot and isn't a kill. Its `Spawn`
-  frames time the shots; the switched one has `Active` and `Inactive` states for the switch.
-- `mapdefs/things.yaml`: objects 510-513, the four shooters.
+- `actordefs/fireball-traps.yaml`: `Fireball`, a glowing projectile (Fake Hitler's flame)
+  that bursts on whatever it hits and, with the `HURTMONSTERS` flag, hurts enemies as well as
+  you. Then the traps: `WallFireball` (straight out), `WallFireballFan`, `WallFireballAimed`,
+  `SwitchedWallFireball` (its `Active` and `Inactive` states are for the switch) and
+  `FireballRing`. The wall ones are plain actors drawn as nothing (`TNT1`); they wait with
+  `A_JumpIfInSight` and fire with `A_SpawnProjectile` (`relative` to their facing, or `aim`).
+  The ring waits with `A_JumpIfPlayerWithin` and fires at `absolute` angles. The aimed one
+  uses `A_Jump` for its odd third shot. The actions are described in pfwolf-pk3's
+  `actordefs/wolf3d/projectiles.yaml`.
+- `mapdefs/things.yaml`: objects 510-525, the wall traps, each facing east, north, west and
+  south. They have `in-wall: true`, so they're placed on wall tiles, and fire out of the face
+  their facing points out of. 526 is the ring, on open floor.
 - `mapdefs/walls.yaml`: walls 50 and 51, the switch (a toggle: `A_Deactivate` /
   `A_Activate` on tag 1).
 - `game-info.yaml`: dims the level a little, so the fireballs' light shows.
@@ -238,11 +249,6 @@ Run north from the start to the exit, past four trap walls (the eagles):
   ```
   powershell -ExecutionPolicy Bypass -File examples/tools/make-fireball-demo-map.ps1
   ```
-
-What actordefs alone can't do yet (the header of `fireball-traps.yaml` lists them too): fire
-in a fixed direction (`A_FireProjectile` always aims at the player, turned by an offset),
-stand inside the wall (a projectile spawned in a wall tile is removed at once), fire only when
-the player is near or in sight, or hurt enemies.
 
 ## Moody Lights (`mods/moody-lights`)
 

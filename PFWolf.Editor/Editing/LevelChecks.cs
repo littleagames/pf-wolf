@@ -108,7 +108,8 @@ public static class LevelChecks
 
         if (defs.Things.TryGetValue(obj, out var thing))
         {
-            if (solid)
+            // an `in-wall` thing (a trap shooter) is placed on a wall, though not on a door
+            if (solid && !(thing.InWall && kind == TileKind.Wall))
                 problems.Add(new(CheckSeverity.Warning, $"{thing.Class} is on a {(kind == TileKind.Door ? "door" : "wall")}, so it isn't placed", x, y));
             return;
         }

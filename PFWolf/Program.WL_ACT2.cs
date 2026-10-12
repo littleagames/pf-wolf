@@ -246,8 +246,9 @@ internal partial class Program
     */
 
     // A_Projectile(min[, max]): flies the projectile along its Angle; hitting the player deals
-    // min..max damage (just min without a max). The roll scales one US_RndT() across the range,
-    // so a 32-wide range is exactly the legacy (US_RndT()>>3) + base.
+    // min..max damage (just min without a max), and with the HURTMONSTERS flag so does hitting
+    // an enemy. The roll scales one US_RndT() across the range, so a 32-wide range is exactly
+    // the legacy (US_RndT()>>3) + base.
     internal static void A_Projectile(Entities.Actors.Actor ob, string[] args)
     {
         long deltax, deltay;
@@ -287,17 +288,27 @@ internal partial class Program
             return;
         }
 
-        if (hit != null)
-        {       // hit the player
+        // A HURTMONSTERS projectile (a trap's fireball) hurts the enemies it flies into too, not
+        // only the players: the nearest one within half a projectile's reach, never its shooter
+        var monster = hit == null && ob.HasFlag("HURTMONSTERS")
+            ? _mapManager.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE / 2).FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter))
+            : null;
+
+        if (hit != null || monster != null)
+        {       // hit the player (or an enemy)
             var minDamage = args.Length > 0 && int.TryParse(args[0], out var min) ? min : 0;
             var maxDamage = args.Length > 1 && int.TryParse(args[1], out var max) ? max : minDamage;
             damage = maxDamage > minDamage
                 ? minDamage + US_RndT() * (maxDamage - minDamage + 1) / 256
                 : minDamage;
 
-            TakeDamage(hit, damage, ob);
+            if (hit != null)
+                TakeDamage(hit, damage, ob);
+            else if (damage > 0)
+                monster!.Damage((uint)damage, ob);
 
-            // BURSTONPLAYER projectiles (Blake Stone's spit and shots) burst on the player as on a wall
+            // BURSTONPLAYER projectiles (Blake Stone's spit and shots) burst on the player (or
+            // the enemy) as on a wall
             if (ob.HasFlag("BURSTONPLAYER") && ob.ResolvedStates.ContainsKey("Death"))
                 ob.SetState("Death");
             else

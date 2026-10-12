@@ -20,6 +20,7 @@ public class LevelChecksGameTests
     [TestCase("wolf3d", "")]
     [TestCase("spear", "")]
     [TestCase("wolf3d", "examples/mods/switch-demo")]
+    [TestCase("wolf3d", "examples/mods/fireball-demo")]
     public void The_Games_Own_Levels_Have_No_Errors(string game, string mod)
     {
         // Arrange

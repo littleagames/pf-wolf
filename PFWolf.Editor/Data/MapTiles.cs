@@ -218,8 +218,14 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         => Defs.Doors.GetValueOrDefault(this[0, x, y]);
 
     /// <summary>The thing placed on the tile; things only stand on open floor, as in the game</summary>
+    /// <summary>The thing placed on the tile: on open floor, or (an `in-wall` one) on a wall</summary>
     public MapActorTranslation? Thing(int x, int y)
-        => !IsSolid(x, y) ? Defs.Things.GetValueOrDefault(this[1, x, y]) : null;
+        => Defs.Things.GetValueOrDefault(this[1, x, y]) is { } thing && KindAt(x, y) switch
+        {
+            TileKind.Door => false,
+            TileKind.Wall => thing.InWall,
+            _ => true,
+        } ? thing : null;
 
     public MapPlayerStartTranslation? PlayerStart(int x, int y)
         => Defs.PlayerStarts.GetValueOrDefault(this[1, x, y]);
@@ -288,7 +294,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         if (Defs.DoorLocks.TryGetValue(obj, out var item))
             return $"door lock: {item}";
         if (Defs.Things.ContainsKey(obj))
-            return "a thing, but on a wall or door, so it isn't placed";
+            return "a thing, but on a wall or door, so it isn't placed (only `in-wall` ones go on walls)";
         return "not in the mapdefs";
     }
 

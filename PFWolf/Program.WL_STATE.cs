@@ -31,7 +31,10 @@ internal partial class Program
     internal static bool CheckLine(Entities.Actors.Actor ob) => CheckLine(ob, player);
 
     /// <summary>Whether there's a clear line from an actor to a player</summary>
-    internal static bool CheckLine(Entities.Actors.Actor ob, Entities.Actors.PlayerPawn to)
+    internal static bool CheckLine(Entities.Actors.Actor ob, Entities.Actors.PlayerPawn to) => CheckLine(ob.X, ob.Y, to);
+
+    /// <summary>Whether there's a clear line from a point (global coordinates) to a player; the point's own tile isn't checked</summary>
+    internal static bool CheckLine(int fromX, int fromY, Entities.Actors.PlayerPawn to)
     {
         int x1, y1, xt1, yt1, x2, y2, xt2, yt2;
         int x, y;
@@ -42,11 +45,11 @@ internal partial class Program
         uint value, intercept;
 
         // a wall sprite's panel across the line (Program.WallSprites.cs), unless it's shoot-through
-        if (WallSpriteBlocksLine(ob.X, ob.Y, to.X, to.Y))
+        if (WallSpriteBlocksLine(fromX, fromY, to.X, to.Y))
             return false;
 
-        x1 = ob.X >> UNSIGNEDSHIFT;
-        y1 = ob.Y >> UNSIGNEDSHIFT;
+        x1 = fromX >> UNSIGNEDSHIFT;
+        y1 = fromY >> UNSIGNEDSHIFT;
         xt1 = x1 >> 8;
         yt1 = y1 >> 8;
 
@@ -90,7 +93,7 @@ internal partial class Program
 
                 value = (uint)_mapManager.tilemap[x, y];
                 var shape = _mapManager.wallshape[x, y];
-                if (shape != WallShape.Square && LineHitsDiagonal(shape, x, y, ob.X, ob.Y, to.X, to.Y))
+                if (shape != WallShape.Square && LineHitsDiagonal(shape, x, y, fromX, fromY, to.X, to.Y))
                     return false;
                 x += xstep;
 
@@ -144,7 +147,7 @@ internal partial class Program
 
                 value = (uint)_mapManager.tilemap[x, y];
                 var shape = _mapManager.wallshape[x, y];
-                if (shape != WallShape.Square && LineHitsDiagonal(shape, x, y, ob.X, ob.Y, to.X, to.Y))
+                if (shape != WallShape.Square && LineHitsDiagonal(shape, x, y, fromX, fromY, to.X, to.Y))
                     return false;
                 y += ystep;
 

@@ -210,6 +210,14 @@ public record MapActorTranslation
     /// plain canisters on easier skills); nothing when empty
     /// </summary>
     public string Else { get; set; } = "";
+
+    /// <summary>
+    /// Placed on a wall tile too (`in-wall: true`), not only on open floor: something that
+    /// works from inside a wall, such as a trap shooting out of the face it looks out of (its
+    /// <see cref="Angles"/>). Other things on walls are left out, since an object-plane value
+    /// there is often something else (Blake Stone's door locks, switch and teleporter data).
+    /// </summary>
+    public bool InWall { get; set; }
 }
 
 public record MapTextureTranslation

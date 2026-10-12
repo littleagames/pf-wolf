@@ -1,22 +1,19 @@
-# Fireball traps: walls that spit fireballs, made of actordefs alone (no engine code).
+# Fireball traps: walls (and a pile of bones) that spit fireballs.
 #
-# A shooter is an invisible actor (TNT1 draws nothing) standing on the floor tile in front of
-# a trap wall. It's a Monster so it can use A_FireProjectile, but with no health it can't be
-# shot and doesn't count as a kill. A frame's action runs as the frame ends, so "wait, then
-# fire" is one frame with the wait as its tics; 0-tic frames fire in the same tic.
+# The wall shooters stand inside their walls (mapdefs `in-wall: true`) and fire out of the face
+# their map facing points out of. They're plain actors (no health, nothing to shoot) drawn as
+# nothing (TNT1). Each waits until a player is in sight in front of its face
+# (A_JumpIfInSight), then fires with A_SpawnProjectile: straight out, fanned, or aimed.
 #
-# What these can't do yet (no engine support):
-#   - fire in a fixed direction: A_FireProjectile always aims at the player, turned by its
-#     angle offset (ANGLES units, 360 to a turn)
-#   - stand inside the wall: a projectile spawned in a wall tile is removed at once
-#   - fire only when the player is near or in sight
-#   - hurt enemies: A_Projectile only hurts players
-# Like other enemies, a shooter sleeps until the player is in an area connected to its own.
+# A frame's action runs as the frame ends, so "wait, then fire" is one frame with the wait as
+# its tics; 0-tic frames run in the same tic. A state's frames loop unless next-state says
+# where to go.
 
-# The fireball: Fake Hitler's flame (FIRE), glowing, bursting (BOOM) on a wall.
-# A_Projectile(min, max) is its damage on a player hit.
+# The fireball: Fake Hitler's flame (FIRE), glowing. A_Projectile(min, max) is its damage on a
+# hit. HURTMONSTERS: it burns enemies too, not only players. BURSTONPLAYER: it bursts (its
+# Death state) on whoever it hits, as on a wall.
 Fireball:
-  flags: [PROJECTILE]
+  flags: [PROJECTILE, HURTMONSTERS, BURSTONPLAYER]
   states:
     Spawn:
       - sprite: FIRE
@@ -42,63 +39,108 @@ Fireball:
     "light.radius": 2
     "light.color": "#FF8030"
 
-# One fireball at the player every second and a half
-FireballShooter:
-  parent: Monster
+# Straight out of its face every second and a half, while a player is in sight within 8 tiles
+WallFireball:
   states:
     Spawn:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 10
+        action: A_JumpIfInSight("Fire", 8)
+    Fire:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnProjectile("Fireball")
       - sprite: TNT1
         frames: [A]
         tics-per-frame: 105
-        action: A_FireProjectile("Fireball")
+        next-state: Spawn
 
-# Three at once, fanned out (about 8 degrees apart) around the player
-FireballSpreader:
-  parent: Monster
+# Three at once, 20 degrees apart, out of its face
+WallFireballFan:
+  parent: WallFireball
   states:
-    Spawn:
+    Fire:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnProjectile("Fireball", -20)
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnProjectile("Fireball")
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnProjectile("Fireball", 20)
       - sprite: TNT1
         frames: [A]
         tics-per-frame: 140
-        action: A_FireProjectile("Fireball", -8)
-      - sprite: TNT1
-        frames: [A]
-        tics-per-frame: 0
-        action: A_FireProjectile("Fireball")
-      - sprite: TNT1
-        frames: [A]
-        tics-per-frame: 0
-        action: A_FireProjectile("Fireball", 8)
+        next-state: Spawn
 
-# A burst of three in quick succession, then a long rest
-FireballBurster:
-  parent: Monster
+# At the player, a quick burst of two, then a rest; now and then (64 in 256) a third
+WallFireballAimed:
+  parent: WallFireball
   states:
-    Spawn:
+    Fire:
       - sprite: TNT1
         frames: [A]
-        tics-per-frame: 175
-        action: A_FireProjectile("Fireball")
+        tics-per-frame: 0
+        action: A_SpawnProjectile("Fireball", 0, "aim")
       - sprite: TNT1
         frames: [A]
-        tics-per-frame: 12
-        action: A_FireProjectile("Fireball")
+        tics-per-frame: 14
+        action: A_SpawnProjectile("Fireball", 0, "aim")
       - sprite: TNT1
         frames: [A]
-        tics-per-frame: 12
-        action: A_FireProjectile("Fireball")
+        tics-per-frame: 14
+        action: A_Jump(64, "Third")
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 120
+        next-state: Spawn
+    Third:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnProjectile("Fireball", 0, "aim")
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 120
+        next-state: Spawn
 
-# A shooter a switch turns off and on (A_Deactivate / A_Activate on its tile's tag): Inactive
-# holds still, Active fires as FireballShooter does
-SwitchedFireballShooter:
-  parent: FireballShooter
+# A WallFireball a switch turns off and on (A_Deactivate / A_Activate on its tile's tag).
+# Active waits for a player as Spawn does; Inactive holds still.
+SwitchedWallFireball:
+  parent: WallFireball
   states:
     Active:
       - sprite: TNT1
         frames: [A]
-        tics-per-frame: 105
-        action: A_FireProjectile("Fireball")
+        tics-per-frame: 10
+        action: A_JumpIfInSight("Fire", 12)
     Inactive:
       - sprite: TNT1
         frames: [A]
         tics-per-frame: -1
+
+# A pile of bones on the floor that, with a player within 4 tiles, throws a ring of eight
+# fireballs every way (absolute angles, 0 east, 90 north) every two seconds
+FireballRing:
+  states:
+    Spawn:
+      - sprite: BON1
+        frames: [A]
+        tics-per-frame: 10
+        action: A_JumpIfPlayerWithin(4, "Fire")
+    Fire:
+      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 0, "absolute")' }
+      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 45, "absolute")' }
+      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 90, "absolute")' }
+      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 135, "absolute")' }
+      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 180, "absolute")' }
+      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 225, "absolute")' }
+      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 270, "absolute")' }
+      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 315, "absolute")' }
+      - { sprite: BON1, frames: [A], tics-per-frame: 140, next-state: Spawn }

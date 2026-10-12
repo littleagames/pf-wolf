@@ -1,6 +1,10 @@
 # Scenery by object-plane tile: lights, furniture, plants, bones and the rest. Whether one
 # blocks movement comes from its actordefs class (SOLID). Pickups are in items.yaml; both
 # files fill the same things: table.
+#
+# A thing only goes on open floor, unless it has `in-wall: true`: then it goes on walls too
+# (never doors), for something that works from inside a wall, such as a trap that fires out
+# of the face its `angles` points out of (A_SpawnProjectile, actordefs/wolf3d/projectiles.yaml).
 things:
   23:
     class: Puddle

@@ -1,15 +1,21 @@
-# The fireball shooters (this mod's actordefs/fireball-traps.yaml). They aim at the player,
-# so the map facing doesn't matter.
+# The fireball traps (this mod's actordefs/fireball-traps.yaml). The wall shooters are placed
+# on wall tiles (`in-wall: true`) and fire out of the face their facing points out of, so
+# each comes in four: facing east, north, west and south. The ring stands on open floor.
 things:
-  510:
-    class: FireballShooter
-    angles: 0
-  511:
-    class: FireballSpreader
-    angles: 0
-  512:
-    class: FireballBurster
-    angles: 0
-  513:
-    class: SwitchedFireballShooter
-    angles: 0
+  510: { class: WallFireball, angles: 0, in-wall: true }
+  511: { class: WallFireball, angles: 90, in-wall: true }
+  512: { class: WallFireball, angles: 180, in-wall: true }
+  513: { class: WallFireball, angles: 270, in-wall: true }
+  514: { class: WallFireballFan, angles: 0, in-wall: true }
+  515: { class: WallFireballFan, angles: 90, in-wall: true }
+  516: { class: WallFireballFan, angles: 180, in-wall: true }
+  517: { class: WallFireballFan, angles: 270, in-wall: true }
+  518: { class: WallFireballAimed, angles: 0, in-wall: true }
+  519: { class: WallFireballAimed, angles: 90, in-wall: true }
+  520: { class: WallFireballAimed, angles: 180, in-wall: true }
+  521: { class: WallFireballAimed, angles: 270, in-wall: true }
+  522: { class: SwitchedWallFireball, angles: 0, in-wall: true }
+  523: { class: SwitchedWallFireball, angles: 90, in-wall: true }
+  524: { class: SwitchedWallFireball, angles: 180, in-wall: true }
+  525: { class: SwitchedWallFireball, angles: 270, in-wall: true }
+  526: { class: FireballRing, angles: 0 }

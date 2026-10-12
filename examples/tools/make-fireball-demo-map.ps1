@@ -10,46 +10,58 @@
 $ErrorActionPreference = 'Stop'
 
 # The layout, one character per tile, placed with its top-left corner at tile ($Left, $Top).
-# Every tile outside it is plain wall. You start at the south end and run north to the exit,
-# past trap walls (eagles) with a fireball shooter on the floor in front of each.
-$Left = 28
+# Every tile outside it is plain wall. You start at the south end and work north to the exit.
+# The trap shooters sit inside eagle walls (mapdefs things with `in-wall: true`) and fire out
+# of the face they look out of.
+$Left = 25
 $Top = 20
 $Layout = @(
-    '#########'   # y=20
-    '##....X##'   #      the exit (used from the west)
-    '##..+..##'
-    '##.....##'
-    '#Ea...bE#'   # y=24 a single shooter (west), a spreader (east)
-    '##.....##'
-    '##..+..##'
-    '##.....##'
-    '#Ec...dE#'   # y=28 a burster (west), the switched shooter (east)
-    '##.....##'
-    '##.....##'
-    '##.....S#'   # y=31 the switch that turns the switched shooter off and on
-    '##.....##'
-    '##..P..##'   # y=33 the player start
-    '#########'
+    '#######F#######'   # y=20 a fan shooter in the north wall, looking south into the exit room
+    '#####.....X####'   #      the exit (used from the west)
+    '#####.....#####'
+    '#####..+..#####'
+    '#######.#######'
+    '######A.B######'   # y=25 aimed shooters either side of the passage
+    '#######.#######'
+    '####T......S###'   # y=27 the switched shooter, firing east along the corridor, and its switch
+    '##########.####'
+    '######.......##'   # y=29 the bone room
+    '######.......##'
+    '######.g.R...##'   #      the fireball ring, with a guard two tiles west of it
+    '######.......##'
+    '######.....h.##'   #      and another two tiles southeast
+    '########...####'
+    '#######e...####'   # y=35 the fire lanes: straight shooters across the passage
+    '########...w###'
+    '#######e...####'
+    '########...w###'
+    '########.+.####'
+    '########.P.####'   # y=40 the player start
+    '###############'
 )
 
 # What each character puts on plane 0 (walls and floor codes), plane 1 (objects) and the tag
 # plane. Floor code 108 is area 1 (mapdefs floors: area n is 107 + n); walls and objects are
-# mapdefs ids (pfwolf-pk3's mapdefs/wolf3d, and the mod's own walls 50-51 and things 510-513).
+# mapdefs ids (pfwolf-pk3's mapdefs/wolf3d, and the mod's own walls 50-51 and things 510-526).
 $Hall = 108
+$Eagle = 6                                      # grey stone with an eagle: a trap wall
 $Tiles = @{
     '#' = @{ Plane0 = 1 }                       # grey stone
-    'E' = @{ Plane0 = 6 }                       # grey stone with an eagle: a trap wall
     '.' = @{ Plane0 = $Hall }
     '+' = @{ Plane0 = $Hall; Plane1 = 48 }      # first aid kit
     'P' = @{ Plane0 = $Hall; Plane1 = 19 }      # player start, facing north
-    'a' = @{ Plane0 = $Hall; Plane1 = 510 }     # FireballShooter
-    'b' = @{ Plane0 = $Hall; Plane1 = 511 }     # FireballSpreader
-    'c' = @{ Plane0 = $Hall; Plane1 = 512 }     # FireballBurster
-    'd' = @{ Plane0 = $Hall; Plane1 = 513; Tag = 1 }  # SwitchedFireballShooter
+    'e' = @{ Plane0 = $Eagle; Plane1 = 510 }    # WallFireball, looking east
+    'w' = @{ Plane0 = $Eagle; Plane1 = 512 }    # WallFireball, looking west
+    'F' = @{ Plane0 = $Eagle; Plane1 = 517 }    # WallFireballFan, looking south
+    'A' = @{ Plane0 = $Eagle; Plane1 = 518 }    # WallFireballAimed, looking east
+    'B' = @{ Plane0 = $Eagle; Plane1 = 520 }    # WallFireballAimed, looking west
+    'T' = @{ Plane0 = $Eagle; Plane1 = 522; Tag = 1 }  # SwitchedWallFireball, looking east
     'S' = @{ Plane0 = 50; Tag = 1 }             # its switch
+    'R' = @{ Plane0 = $Hall; Plane1 = 526 }     # FireballRing
+    'g' = @{ Plane0 = $Hall; Plane1 = 108 }     # guard, standing, facing east
+    'h' = @{ Plane0 = $Hall; Plane1 = 110 }     # guard, standing, facing west
     'X' = @{ Plane0 = 21 }                      # elevator switch: ends the level
 }
-
 $Size = 64
 $PlaneCount = 6
 $TagPlane = 4

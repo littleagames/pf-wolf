@@ -302,9 +302,10 @@ internal class MapManager
                     continue;
 
                 // Things only stand on open floor: an object-plane value on a wall or door is
-                // something else (Blake Stone's door locks, switch and teleporter data)
+                // something else (Blake Stone's door locks, switch and teleporter data), unless
+                // the thing is one made to sit in a wall (`in-wall: true`, a trap shooter)
                 int objtile = MAPSPOT(x, y, 1);
-                if (!solid && data.Things.TryGetValue(objtile, out var thingXlat))
+                if (data.Things.TryGetValue(objtile, out var thingXlat) && (!solid || thingXlat.InWall && !data.Doors.ContainsKey(tile)))
                 {
                     SpawnThing(x, y, thingXlat);
                     continue;
