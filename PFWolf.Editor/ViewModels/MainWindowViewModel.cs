@@ -387,6 +387,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
             };
             _scriptBrowser.Saved += (_, folder) => AddModFolder(folder);
+            // An action's caller: the actor class in the Definitions window, opened at the state's frame
+            _scriptBrowser.ShowCaller += (_, caller) =>
+            {
+                ShowDefinitions();
+                _definitions?.ShowEntry(Definitions.DefinitionKind.Actors, [caller.Actor],
+                    ["states", caller.State, caller.Frame.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
+            };
             _scriptBrowser.Load(Content);
         }
         Dialogs.ShowScriptBrowser(_scriptBrowser);

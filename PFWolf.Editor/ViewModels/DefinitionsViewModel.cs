@@ -180,8 +180,11 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     /// <summary>Asks the window to show a kind's tab</summary>
     public event EventHandler<DefinitionKind>? ShowTabRequested;
 
-    /// <summary>Shows a definition in its tab</summary>
-    public void ShowEntry(DefinitionKind kind, IReadOnlyList<string> path)
+    /// <summary>
+    /// Shows a definition in its tab, with its fields opened down <paramref name="fieldPath"/> to
+    /// one picked (an actor's states, Fire, 2)
+    /// </summary>
+    public void ShowEntry(DefinitionKind kind, IReadOnlyList<string> path, IReadOnlyList<string>? fieldPath = null)
     {
         var editor = kind switch
         {
@@ -195,6 +198,8 @@ public sealed partial class DefinitionsViewModel : ObservableObject
         editor.Activate();
         if (!editor.Select(path))
             Status = $"There's no {YamlNodes.Describe(path)} in the {DefinitionKinds.Title(kind).ToLowerInvariant()}";
+        else if (fieldPath != null && !editor.SelectField(fieldPath))
+            Status = $"{YamlNodes.Describe(path)} has no {string.Join(" ", fieldPath)}";
     }
 
     /// <summary>Shows a file in the YAML tab, at a definition's line</summary>

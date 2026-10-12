@@ -16,6 +16,15 @@ public sealed record ScriptEntry(string Name, int Order, IReadOnlyList<string> O
     public override string ToString() => Name;
 }
 
+/// <summary>An actordefs state that calls an action: the actor, the state, and the frame (from 0) in its list</summary>
+public sealed record CallerSite(string Actor, string State, int Frame)
+{
+    /// <summary>"FireballRing: Fire"</summary>
+    public string Label => $"{Actor}: {State}";
+
+    public override string ToString() => Label;
+}
+
 /// <summary>Something a script defines or adds, with the line it's on (1 for the first)</summary>
 public sealed record ScriptItem(string Name, int Line);
 
@@ -191,14 +200,24 @@ public static partial class ScriptCatalog
     /// one per actor and state (the state's frames may call it more than once)
     /// </summary>
     public static Dictionary<string, List<string>> Callers(GameContent content)
+        => CallerSites(content).ToDictionary(caller => caller.Key, caller => caller.Value.Select(site => site.Label).ToList(), StringComparer.Ordinal);
+
+    /// <summary>
+    /// The actordefs states that call each action or think, by its name: the actor, the state
+    /// and the first of its frames that calls it (its place in the state's list, from 0), one per
+    /// actor and state, to show in the Definitions window
+    /// </summary>
+    public static Dictionary<string, List<CallerSite>> CallerSites(GameContent content)
     {
-        var callers = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var callers = new Dictionary<string, List<CallerSite>>(StringComparer.Ordinal);
         foreach (var (actorName, actor) in content.Actors.OrderBy(actor => actor.Key, StringComparer.OrdinalIgnoreCase))
         {
             foreach (var (stateName, frames) in actor.States)
             {
-                foreach (var frame in frames.OfType<ActorStatesData>())
+                for (int i = 0; i < frames.Count; i++)
                 {
+                    if (frames[i] is not ActorStatesData frame)
+                        continue;
                     foreach (var call in new[] { frame.Action, frame.Think })
                     {
                         if (string.IsNullOrWhiteSpace(call))
@@ -206,9 +225,8 @@ public static partial class ScriptCatalog
                         var name = CallName(call);
                         if (!callers.TryGetValue(name, out var list))
                             callers[name] = list = [];
-                        var label = $"{actorName}: {stateName}";
-                        if (!list.Contains(label))
-                            list.Add(label);
+                        if (!list.Any(site => site.Actor == actorName && site.State == stateName))
+                            list.Add(new CallerSite(actorName, stateName, i));
                     }
                 }
             }

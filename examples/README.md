@@ -339,7 +339,13 @@ are as a word is typed, and in strings the game's names (actor classes for `spaw
 switch actions for `game.trigger(tag, "`, states for `jump("`...). Ctrl+Space asks for it
 anywhere; Enter, Tab or `(` takes the one picked. Rest the pointer on a name for what it is: the
 game's functions, an actor's methods and fields, Lua's, an action (the line it's defined on and
-what calls it), or a class, state or switch action in a string. A script can be
+what calls it), or a class, state or switch action in a string. F12 or Ctrl+click on an action
+goes to its definition: the one the game runs, which is the last script to define it, in
+whichever script that is (a function of the script's own goes to its line); Alt+Left goes back.
+The other way, each action's callers in the list beside the script are links that open that
+actor class in the Definitions window, at the state's frame that calls it; Shift+F12 on an
+action in the script lists them by the caret.
+Changes not saved stay with each script while another's shown. A script can be
 changed and saved back into its mod, or a new one made (New…, Ctrl+N); pfwolf.pk3's go into a
 mod picked, in their place. The game runs scripts as it starts, so Play (F5) to try one.
 

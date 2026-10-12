@@ -35,7 +35,7 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
     // old ones until it's loaded again
     private readonly Dictionary<string, (string Text, string Folder, string EntryPath)> _saved = new(StringComparer.OrdinalIgnoreCase);
     // Each action's callers in actordefs, and the scripts that define it (in the order they run)
-    private Dictionary<string, List<string>> _callers = [];
+    private Dictionary<string, List<CallerSite>> _callers = [];
     private Dictionary<string, List<string>> _definedIn = [];
 
     /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
@@ -87,6 +87,8 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
         var picked = SelectedItem?.Name;
         // What was saved is in the game now, as long as its mod is loaded; what was new and unsaved is gone
         _saved.Clear();
+        _drafts.Clear();
+        _back.Clear();
         Status = "";
 
         if (content == null)
@@ -99,7 +101,7 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
         else
         {
             _all = ScriptCatalog.Build(content).Select(entry => new ScriptListItem(entry)).ToList();
-            _callers = ScriptCatalog.Callers(content);
+            _callers = ScriptCatalog.CallerSites(content);
             _completion = CompletionSources.From(content);
             Title = $"Scripts - {content.Title}";
         }
@@ -145,6 +147,16 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
         SelectedItem = selected != null && Items.Contains(selected) ? selected : Items.FirstOrDefault();
     }
 
+    // Scripts changed and not saved, by name, kept while another is shown (picking another script
+    // in the list, or going to a definition in one)
+    private readonly Dictionary<string, string> _drafts = new(StringComparer.OrdinalIgnoreCase);
+
+    partial void OnSelectedItemChanging(ScriptListItem? oldValue, ScriptListItem? newValue)
+    {
+        if (oldValue != null && IsChanged)
+            _drafts[oldValue.Name] = Source;
+    }
+
     partial void OnSelectedItemChanged(ScriptListItem? value)
     {
         Origins.Clear();
@@ -153,17 +165,120 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
                 Origins.Add(origin);
 
         _original = value == null ? "" : TextOf(value.Name);
+        var draft = value != null && _drafts.Remove(value.Name, out var kept) ? kept : null;
         _loadingSource = true;
         try
         {
-            Source = _original;
+            Source = draft ?? _original;
         }
         finally
         {
             _loadingSource = false;
         }
-        IsChanged = false;
+        IsChanged = draft != null && draft != _original;
         Recheck();
+    }
+
+    /// <summary>Whether a script has changes not saved, shown or not</summary>
+    public bool HasUnsavedChanges => IsChanged || _drafts.Count > 0;
+
+    //
+    // Go to callers
+    //
+
+    /// <summary>Asks the editor to show an actordefs state that calls an action, in the Definitions window</summary>
+    public event EventHandler<CallerSite>? ShowCaller;
+
+    /// <summary>Shows an actordefs state that calls an action, in the Definitions window (at the frame that calls it)</summary>
+    [RelayCommand]
+    private void GoToCaller(CallerSite? caller)
+    {
+        if (caller == null)
+            return;
+        ShowCaller?.Invoke(this, caller);
+        Status = $"{caller.Label}, frame {caller.Frame + 1}: in the Definitions window";
+    }
+
+    /// <summary>
+    /// The actordefs states that call the action at <paramref name="column"/> of <paramref name="line"/>
+    /// (Shift+F12), with its name; null, with the status saying why, when there's none to go to
+    /// </summary>
+    public (string Name, IReadOnlyList<CallerSite> Callers)? CallersAt(string line, int column)
+    {
+        if (ScriptNavigation.NameAt(line, column) is not { } name || !name.StartsWith("A_", StringComparison.Ordinal) && !name.StartsWith("T_", StringComparison.Ordinal))
+        {
+            Status = "Put the caret on an action's name (A_..., T_...) to find the actordefs states that call it";
+            return null;
+        }
+        var callers = _callers.GetValueOrDefault(name, []);
+        if (callers.Count == 0)
+        {
+            Status = $"No actordefs state calls {name}";
+            return null;
+        }
+        return (name, callers);
+    }
+
+    //
+    // Go to definition
+    //
+
+    // Where go-to-definition came from, to go back to (Alt+Left): the script and line
+    private readonly Stack<(string Script, int Line)> _back = new();
+
+    /// <summary>
+    /// Goes to where the name at <paramref name="column"/> of <paramref name="line"/> is defined (F12,
+    /// Ctrl+click): an action's script function, the one the game runs, in whichever script that
+    /// is; another function's in this script. <paramref name="fromLine"/> is the line it's asked
+    /// from, to come back to. The status says what happened.
+    /// </summary>
+    public bool GoToDefinition(string line, int column, int fromLine)
+    {
+        if (SelectedItem is not { } current)
+            return false;
+        if (ScriptNavigation.NameAt(line, column) is not { } name)
+        {
+            Status = "Put the caret on an action's name (A_..., T_...) or a function's to go to its definition";
+            return false;
+        }
+
+        var scripts = _all.Select(item => new ScriptSource(item.Name, item.Entry.Order,
+            item == current ? Source : _drafts.TryGetValue(item.Name, out var draft) ? draft : TextOf(item.Name))).ToList();
+        if (ScriptNavigation.Find(name, current.Name, scripts, out var why) is not { } target)
+        {
+            Status = why;
+            return false;
+        }
+
+        _back.Push((current.Name, fromLine));
+        GoTo(target.Script, target.Line);
+        Status = target.Note ?? $"{name}: {target.Script}, line {target.Line} (Alt+Left goes back)";
+        return true;
+    }
+
+    /// <summary>Back to where the last go-to-definition came from (Alt+Left)</summary>
+    public bool GoBack()
+    {
+        if (!_back.TryPop(out var from))
+            return false;
+        GoTo(from.Script, from.Line);
+        Status = "";
+        return true;
+    }
+
+    // Shows a script (keeping the one shown's changes) and selects a line of it
+    private void GoTo(string script, int line)
+    {
+        if (!SelectedItem?.Name.Equals(script, StringComparison.OrdinalIgnoreCase) ?? true)
+        {
+            var item = _all.FirstOrDefault(i => i.Name.Equals(script, StringComparison.OrdinalIgnoreCase));
+            if (item == null)
+                return;
+            if (!Items.Contains(item))
+                Filter = "";
+            SelectedItem = item;
+        }
+        SelectLine?.Invoke(this, line);
     }
 
     partial void OnSourceChanged(string value)
@@ -243,7 +358,13 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
     /// tooltip over it; null when it's nothing of the game's or Lua's
     /// </summary>
     public HoverInfo? Describe(string line, int column)
-        => ScriptHover.Describe(line, column, _completion, Actions.Select(action => new ScriptItem(action.Name, action.Line)));
+    {
+        var info = ScriptHover.Describe(line, column, _completion, Actions.Select(action => new ScriptItem(action.Name, action.Line)));
+        // An action a script defines can be gone to
+        if (info is { Kind: "action" } && (_definedIn.ContainsKey(info.Signature) || Actions.Any(action => action.Name == info.Signature)))
+            info = info with { Summary = info.Summary + ". F12 or Ctrl+click goes to its definition" };
+        return info;
+    }
 
     /// <summary>Goes to a line of the script: a problem, action or hook picked</summary>
     public void GoTo(int line) => SelectLine?.Invoke(this, line);
@@ -346,11 +467,13 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
 }
 
 /// <summary>An action a script defines, with the actordefs states that call it</summary>
-public sealed record ScriptActionRow(string Name, int Line, IReadOnlyList<string> Callers, string? Overridden)
+public sealed record ScriptActionRow(string Name, int Line, IReadOnlyList<CallerSite> Callers, string? Overridden)
 {
     public string CallersText => Callers.Count == 0
         ? "No actordefs state calls it"
-        : $"Called by {string.Join(", ", Callers)}";
+        : $"Called by {string.Join(", ", Callers.Select(caller => caller.Label))}";
+
+    public bool HasCallers => Callers.Count > 0;
 
     public bool IsOverridden => Overridden != null;
 }

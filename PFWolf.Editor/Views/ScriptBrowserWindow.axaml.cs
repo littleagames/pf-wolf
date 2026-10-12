@@ -1,5 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -66,7 +68,66 @@ public partial class ScriptBrowserWindow : Window
                 ShowCompletion(asked: true);
                 e.Handled = true;
             }
+            else if (e.Key == Key.F12 && e.KeyModifiers == KeyModifiers.Shift)
+            {
+                // The actordefs states that call the action at the caret, to pick one to show
+                var caret = SourceBox.CaretOffset;
+                var line = SourceBox.Document.GetLineByOffset(caret);
+                if (ViewModel.CallersAt(SourceBox.Document.GetText(line), caret - line.Offset) is { } found)
+                    ShowCallers(found.Name, found.Callers);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.F12 && e.KeyModifiers == KeyModifiers.None)
+            {
+                // Go to definition, from the caret
+                var caret = SourceBox.CaretOffset;
+                var line = SourceBox.Document.GetLineByOffset(caret);
+                ViewModel.GoToDefinition(SourceBox.Document.GetText(line), caret - line.Offset, line.LineNumber);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Left && e.KeyModifiers == KeyModifiers.Alt)
+            {
+                ViewModel.GoBack();
+                e.Handled = true;
+            }
         }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+
+        // Ctrl+click: go to the definition of what's clicked
+        SourceBox.TextArea.AddHandler(PointerPressedEvent, (_, e) =>
+        {
+            if (e.KeyModifiers != KeyModifiers.Control || !e.GetCurrentPoint(SourceBox).Properties.IsLeftButtonPressed)
+                return;
+            if (SourceBox.GetPositionFromPoint(e.GetPosition(SourceBox)) is not { } at)
+                return;
+            var line = SourceBox.Document.GetLineByNumber(at.Line);
+            if (ViewModel.GoToDefinition(SourceBox.Document.GetText(line), at.Column - 1, line.LineNumber))
+                e.Handled = true;
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+    }
+
+    // A menu of an action's callers by the caret: picking one shows it in the Definitions window
+    private void ShowCallers(string name, IReadOnlyList<CallerSite> callers)
+    {
+        // (a menu header's '_' marks its access key, so names' are doubled to show)
+        static string Shown(string text) => text.Replace("_", "__");
+        var menu = new MenuFlyout();
+        menu.Items.Add(new MenuItem { Header = Shown($"{name} is called by"), IsEnabled = false });
+        foreach (var caller in callers)
+            menu.Items.Add(new MenuItem
+            {
+                Header = Shown($"{caller.Label} (frame {caller.Frame + 1})"),
+                Command = ViewModel.GoToCallerCommand,
+                CommandParameter = caller,
+            });
+        // by the caret, not the pointer: it's asked for from the keyboard
+        var caretAt = SourceBox.TextArea.Caret.CalculateCaretRectangle();
+        var at = SourceBox.TextArea.TextView.TranslatePoint(new Avalonia.Point(caretAt.X - SourceBox.TextArea.TextView.ScrollOffset.X,
+            caretAt.Bottom - SourceBox.TextArea.TextView.ScrollOffset.Y), SourceBox) ?? new Avalonia.Point(0, 0);
+        // just under the caret's line: placed below the editor, then moved up to there
+        menu.Placement = PlacementMode.BottomEdgeAlignedLeft;
+        menu.HorizontalOffset = at.X;
+        menu.VerticalOffset = at.Y - SourceBox.Bounds.Height;
+        menu.ShowAt(SourceBox);
     }
 
     // What's under the pointer, shown as a tooltip while it rests there

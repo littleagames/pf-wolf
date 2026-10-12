@@ -96,6 +96,93 @@ public class ScriptCatalogGameTests
         }
     }
 
+    [Test]
+    public void Go_To_Definition_Goes_To_The_Script_The_Game_Uses_Keeps_Changes_And_Comes_Back()
+    {
+        // Arrange: a second mod, loaded after the demo, whose script replaces A_FireRing
+        var mod = Path.Combine(Path.GetTempPath(), "pfwolf-override-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(mod, "scripts"));
+        File.WriteAllText(Path.Combine(mod, "modinfo.yaml"), "name: Override\nversion: \"1.0\"\ngame-packs: [wolf3d]\n");
+        File.WriteAllText(Path.Combine(mod, "scripts", "override.lua"), "-- a change\n\nfunction A_FireRing(self) end\n");
+        try
+        {
+            var browser = new PFWolf.Editor.ViewModels.ScriptBrowserViewModel();
+            browser.Load(Load(ModPath, mod));
+            var lines = new List<int>();
+            browser.SelectLine += (_, line) => lines.Add(line);
+            browser.SelectedItem = browser.Items.Single(item => item.Name == "fireball-patterns");
+            browser.Source = "-- not saved\n" + browser.Source;
+
+            // Act: from a call to A_FireRing in the demo's script
+            bool went = browser.GoToDefinition("        A_FireRing(pile, \"Fireball\", 12)", 10, fromLine: 36);
+            var there = (browser.SelectedItem?.Name, browser.Status);
+            bool back = browser.GoBack();
+
+            // Assert
+            Assert.That(went, Is.True);
+            Assert.That(there.Name, Is.EqualTo("override"));
+            Assert.That(there.Status, Does.Contain("the one the game uses"));
+            Assert.That(back, Is.True);
+            Assert.That(browser.SelectedItem?.Name, Is.EqualTo("fireball-patterns"));
+            Assert.That(lines, Is.EqualTo(new[] { 3, 36 }));
+            Assert.That(browser.Source, Does.StartWith("-- not saved\n"), "the change made before going is kept");
+            Assert.That(browser.IsChanged, Is.True);
+        }
+        finally
+        {
+            Directory.Delete(mod, recursive: true);
+        }
+    }
+
+    [Test]
+    public void Caller_Sites_Say_The_Actor_State_And_Frame()
+    {
+        // Act
+        var sites = ScriptCatalog.CallerSites(Load(ModPath));
+
+        // Assert: FireballRing's Fire state calls A_FireRing on its first frame; WallFireballAimed's
+        // Fire calls A_Jump on its third (frame 2, from 0)
+        Assert.That(sites["A_FireRing"], Does.Contain(new CallerSite("FireballRing", "Fire", 0)));
+        Assert.That(sites["A_Home"], Does.Contain(new CallerSite("HomingFireball", "Spawn", 0)));
+        Assert.That(sites["A_Sweep"], Does.Contain(new CallerSite("WallFireballSweep", "Fire", 0)));
+        Assert.That(sites["A_Jump"], Does.Contain(new CallerSite("WallFireballAimed", "Fire", 2)));
+        Assert.That(sites["A_JumpIfInSight"].Select(site => site.Label), Does.Contain("WallFireball: Spawn"));
+    }
+
+    [Test]
+    public void The_Definitions_Window_Opens_A_Caller_At_Its_Frame()
+    {
+        // Arrange
+        var definitions = new PFWolf.Editor.ViewModels.DefinitionsViewModel();
+        definitions.Load(Load(ModPath), [ModPath]);
+
+        // Act: as the script browser asks for A_FireBurst's caller (WallFireballFan's Fire, frame 0)
+        definitions.ShowEntry(PFWolf.Editor.Definitions.DefinitionKind.Actors, ["WallFireballFan"], ["states", "Fire", "0"]);
+
+        // Assert: the class picked, its states and Fire opened, the frame picked
+        var actors = definitions.Actors;
+        Assert.That(actors.SelectedItem?.Name, Is.EqualTo("WallFireballFan"));
+        var row = actors.SelectedRow;
+        Assert.That(row?.Key, Is.EqualTo("0"));
+        Assert.That(row!.Parent?.Key, Is.EqualTo("Fire"));
+        Assert.That(row.Parent!.IsExpanded && row.Parent.Parent!.IsExpanded, Is.True);
+        Assert.That(definitions.Status, Is.Empty);
+    }
+
+    [Test]
+    public void A_Frame_That_Is_Not_There_Says_So()
+    {
+        // Arrange
+        var definitions = new PFWolf.Editor.ViewModels.DefinitionsViewModel();
+        definitions.Load(Load(ModPath), [ModPath]);
+
+        // Act
+        definitions.ShowEntry(PFWolf.Editor.Definitions.DefinitionKind.Actors, ["WallFireballFan"], ["nostates"]);
+
+        // Assert
+        Assert.That(definitions.Status, Does.Contain("has no nostates"));
+    }
+
     private static void CopyFolder(string from, string to)
     {
         foreach (var file in Directory.GetFiles(from, "*", SearchOption.AllDirectories))

@@ -12,6 +12,28 @@ public partial class EntryEditorView : UserControl
 {
     public EntryEditorView() => InitializeComponent();
 
+    private EntryEditorViewModel? _watched;
+
+    // A field picked from elsewhere (a script's caller gone to) is scrolled to, once its opened
+    // parents have their rows
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+        if (_watched != null)
+            _watched.PropertyChanged -= OnViewModelChanged;
+        _watched = DataContext as EntryEditorViewModel;
+        if (_watched != null)
+            _watched.PropertyChanged += OnViewModelChanged;
+    }
+
+    private void OnViewModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(EntryEditorViewModel.SelectedRow) || _watched?.SelectedRow is not { } row)
+            return;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => Fields.TreeContainerFromItem(row)?.BringIntoView(),
+            Avalonia.Threading.DispatcherPriority.Background);
+    }
+
     // A name picked from a field's list goes in the field, and the list closes
     private void OnNamePicked(object? sender, SelectionChangedEventArgs e)
     {

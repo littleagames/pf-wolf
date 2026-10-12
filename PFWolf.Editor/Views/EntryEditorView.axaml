@@ -129,7 +129,7 @@
       </Expander>
 
       <!-- Its fields -->
-      <TreeView ItemsSource="{Binding Rows}">
+      <TreeView x:Name="Fields" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow, Mode=TwoWay}">
         <TreeView.ItemTemplate>
           <TreeDataTemplate x:DataType="vm:FieldNode" ItemsSource="{Binding Children}">
             <Grid ColumnDefinitions="220,*,Auto" ColumnSpacing="8" MinHeight="30" Background="Transparent">

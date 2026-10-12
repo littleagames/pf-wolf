@@ -80,7 +80,23 @@
                 <DataTemplate x:DataType="vm:ScriptActionRow">
                   <StackPanel Spacing="1">
                     <TextBlock Text="{Binding Name}" FontFamily="Consolas,Menlo,monospace" FontSize="13" />
-                    <TextBlock Text="{Binding CallersText}" TextWrapping="Wrap" FontSize="12" Opacity="0.75" />
+                    <TextBlock Text="No actordefs state calls it" FontSize="12" Opacity="0.75" IsVisible="{Binding !HasCallers}" />
+                    <!-- Each caller opens its state in the Definitions window -->
+                    <ItemsControl ItemsSource="{Binding Callers}" IsVisible="{Binding HasCallers}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="data:CallerSite">
+                          <HyperlinkButton Content="{Binding Label}" FontSize="12" Padding="0,0,10,0"
+                                           Command="{Binding $parent[Window].((vm:ScriptBrowserViewModel)DataContext).GoToCallerCommand}"
+                                           CommandParameter="{Binding}"
+                                           ToolTip.Tip="Show this state in the Definitions window, at the frame that calls it" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <TextBlock Text="{Binding Overridden}" TextWrapping="Wrap" FontSize="12" Foreground="DarkOrange"
                                IsVisible="{Binding IsOverridden}" />
                   </StackPanel>

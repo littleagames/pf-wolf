@@ -798,6 +798,38 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         return true;
     }
 
+    /// <summary>The field picked in the tree (a state's frame gone to from a script)</summary>
+    [ObservableProperty] private FieldNode? _selectedRow;
+
+    /// <summary>
+    /// Opens the shown definition's fields down a path of keys (states, Fire, 2: a list item by its
+    /// number from 0) and picks the last; as far as it gets when a key isn't there. False when
+    /// the first isn't.
+    /// </summary>
+    public bool SelectField(IReadOnlyList<string> fieldPath)
+    {
+        if (fieldPath.Count == 0)
+            return true;
+        FieldNode? node = null;
+        IEnumerable<FieldNode> level = Rows;
+        foreach (var key in fieldPath)
+        {
+            var next = level.FirstOrDefault(row => row.Key == key)
+                       ?? level.FirstOrDefault(row => row.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+            if (next == null)
+                break;
+            node = next;
+            node.EnsureChildren();
+            node.IsExpanded = true;
+            level = node.Children;
+        }
+        if (node == null)
+            return false;
+        // (it's opened too: a frame shows its action and think)
+        SelectedRow = node;
+        return true;
+    }
+
     /// <summary>Opens a file the definition comes from in the YAML tab, at the definition</summary>
     [RelayCommand]
     private void EditYaml(OriginItem? origin)
