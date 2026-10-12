@@ -271,6 +271,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _soundBrowser?.Load(Content);
         _paletteBrowser?.Load(Content);
         _textBrowser?.Load(Content);
+        _scriptBrowser?.Load(Content);
         _definitions?.Load(Content, Mods.ToList());
     }
 
@@ -363,6 +364,32 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _textBrowser.Load(Content);
         }
         Dialogs.ShowTextBrowser(_textBrowser);
+    }
+
+    //
+    // The script browser
+    //
+
+    private ScriptBrowserViewModel? _scriptBrowser;
+
+    /// <summary>Opens the script browser, on the first script the first time</summary>
+    [RelayCommand]
+    private void ShowScripts()
+    {
+        if (Dialogs == null)
+            return;
+
+        if (_scriptBrowser == null)
+        {
+            _scriptBrowser = new ScriptBrowserViewModel
+            {
+                PickMod = PickModToSaveIn,
+                AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
+            };
+            _scriptBrowser.Saved += (_, folder) => AddModFolder(folder);
+            _scriptBrowser.Load(Content);
+        }
+        Dialogs.ShowScriptBrowser(_scriptBrowser);
     }
 
     //

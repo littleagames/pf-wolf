@@ -129,6 +129,20 @@ public partial class MainWindow : Window, IEditorDialogs
             _textBrowser.Activate();
     }
 
+    private ScriptBrowserWindow? _scriptBrowser;
+
+    public void ShowScriptBrowser(ScriptBrowserViewModel browser)
+    {
+        if (_scriptBrowser == null)
+        {
+            _scriptBrowser = new ScriptBrowserWindow { DataContext = browser };
+            _scriptBrowser.Closed += (_, _) => _scriptBrowser = null;
+            _scriptBrowser.Show(this);
+        }
+        else
+            _scriptBrowser.Activate();
+    }
+
     private DefinitionsWindow? _definitions;
 
     public void ShowDefinitions(DefinitionsViewModel definitions)

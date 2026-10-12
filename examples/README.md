@@ -328,6 +328,13 @@ saved. Keep anything a saved game should remember in `temp1`..`temp3`. A script 
 reported on the console with its file and line (and at startup, on the signon screen); one that
 runs over a million instructions in one call is stopped.
 
+In the editor, **Resources → Scripts…** (F12) lists the scripts the game runs, in that order,
+with the actions each gives and the actordefs states that call them, its hooks, and what's wrong
+with it, checked as you type: whether it compiles (the game leaves out one that doesn't), and
+anything the game's scripts haven't got (`math.random`, `io`, `require`...). A script can be
+changed and saved back into its mod, or a new one made (New…, Ctrl+N); pfwolf.pk3's go into a
+mod picked, in their place. The game runs scripts as it starts, so Play (F5) to try one.
+
 In the console, `scripts` lists the scripts that loaded, any that didn't and why, and the
 actions they give. With cheats on, `lua <code>` runs Lua in the scripts' state, with `me` as
 the player: `lua print(me.health, me:nearestplayer())`. Use 'single quotes' for strings there.

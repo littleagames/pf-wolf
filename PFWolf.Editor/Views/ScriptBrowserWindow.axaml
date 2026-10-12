@@ -1,0 +1,133 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:data="using:PFWolf.Editor.Data"
+        x:Class="PFWolf.Editor.Views.ScriptBrowserWindow"
+        x:DataType="vm:ScriptBrowserViewModel"
+        Title="{Binding Title}"
+        Width="1360" Height="800" MinWidth="900" MinHeight="520"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+    <KeyBinding Gesture="Ctrl+N" Command="{Binding NewScriptCommand}" />
+  </Window.KeyBindings>
+
+  <DockPanel>
+    <!-- What's listed -->
+    <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+        <TextBox x:Name="Search" Text="{Binding Filter}" VerticalAlignment="Center"
+                 PlaceholderText="Find by name, mod or an action it gives (A_FireRing)" />
+        <TextBlock Grid.Column="1" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="100" />
+        <Button Grid.Column="2" Content="New…" Command="{Binding NewScriptCommand}"
+                ToolTip.Tip="Ctrl+N: a new script, to save to a mod's scripts folder" />
+      </Grid>
+    </Border>
+
+    <!-- Every script, in the order the game runs them -->
+    <ListBox x:Name="List" DockPanel.Dock="Left" Width="230" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" Margin="8,8,0,8">
+      <ListBox.ContextMenu>
+        <ContextMenu>
+          <MenuItem Header="Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
+          <MenuItem Header="Save to…" Command="{Binding SaveToCommand}" />
+          <MenuItem Header="Revert" Command="{Binding RevertCommand}" />
+          <Separator />
+          <MenuItem Header="New…" Command="{Binding NewScriptCommand}" InputGesture="Ctrl+N" />
+        </ContextMenu>
+      </ListBox.ContextMenu>
+      <ListBox.Styles>
+        <Style Selector="ListBoxItem">
+          <Setter Property="Padding" Value="8,3" />
+        </Style>
+      </ListBox.Styles>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:ScriptListItem">
+          <StackPanel ToolTip.Tip="{Binding ToolTip}">
+            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+            <TextBlock Text="{Binding SourceText}" Opacity="0.6" FontSize="12" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <Grid>
+      <TextBlock Margin="16" TextWrapping="Wrap" Opacity="0.7" IsVisible="{Binding HasNoScripts}"
+                 Text="No scripts are loaded. A mod's scripts/*.lua are Lua the game runs as it starts: New… makes one, to save in a mod." />
+
+      <Grid ColumnDefinitions="360,*" Margin="8" ColumnSpacing="12" IsVisible="{Binding HasSelection}">
+        <!-- What the script gives, what calls it, and what's wrong with it -->
+        <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="6">
+            <SelectableTextBlock Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" FontWeight="SemiBold" />
+
+            <ListBox x:Name="ProblemList" ItemsSource="{Binding Problems}" MaxHeight="180" IsVisible="{Binding HasProblems}"
+                     SelectionChanged="OnProblemPicked" ToolTip.Tip="Pick one to go to its line">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="data:ScriptProblem">
+                  <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding Label}" TextWrapping="Wrap" FontSize="12" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+
+            <TextBlock Text="Actions it gives" FontWeight="SemiBold" Margin="0,6,0,0" />
+            <TextBlock Text="None: only global functions named A_... or T_... are actions." Opacity="0.6" FontSize="12"
+                       TextWrapping="Wrap" IsVisible="{Binding !HasActions}" />
+            <ListBox x:Name="ActionList" ItemsSource="{Binding Actions}" IsVisible="{Binding HasActions}" SelectionChanged="OnActionPicked">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:ScriptActionRow">
+                  <StackPanel Spacing="1">
+                    <TextBlock Text="{Binding Name}" FontFamily="Consolas,Menlo,monospace" FontSize="13" />
+                    <TextBlock Text="{Binding CallersText}" TextWrapping="Wrap" FontSize="12" Opacity="0.75" />
+                    <TextBlock Text="{Binding Overridden}" TextWrapping="Wrap" FontSize="12" Foreground="DarkOrange"
+                               IsVisible="{Binding IsOverridden}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+
+            <TextBlock Text="Hooks it adds" FontWeight="SemiBold" Margin="0,6,0,0" />
+            <TextBlock Text="None (game.onlevel and game.ontick add them)." Opacity="0.6" FontSize="12"
+                       TextWrapping="Wrap" IsVisible="{Binding !HasHooks}" />
+            <ListBox x:Name="HookList" ItemsSource="{Binding Hooks}" IsVisible="{Binding HasHooks}" SelectionChanged="OnHookPicked">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="data:ScriptItem">
+                  <TextBlock FontSize="12"><Run Text="{Binding Name}" FontFamily="Consolas,Menlo,monospace" /><Run Text=", line " Foreground="Gray" /><Run Text="{Binding Line}" Foreground="Gray" /></TextBlock>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+
+            <TextBlock Text="Where it comes from (the last one is used)" FontWeight="SemiBold" Margin="0,6,0,0" />
+            <ItemsControl ItemsSource="{Binding Origins}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Text="{Binding}" ToolTip.Tip="{Binding}" TextTrimming="CharacterEllipsis" FontSize="12" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- The script itself -->
+        <DockPanel Grid.Column="1">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,0,0,6">
+            <TextBlock Text="Lua" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Changed, not saved" Opacity="0.7" FontSize="12"
+                       VerticalAlignment="Center" IsVisible="{Binding IsChanged}" />
+            <Button Grid.Column="2" Content="Save" Command="{Binding SaveCommand}" Classes="accent"
+                    ToolTip.Tip="Ctrl+S: back into the script's mod (a folder or a pk3); pfwolf.pk3's go in a mod picked, in their place" />
+            <Button Grid.Column="3" Content="Save to…" Command="{Binding SaveToCommand}" ToolTip.Tip="To another mod's scripts folder" />
+            <Button Grid.Column="4" Content="Revert" Command="{Binding RevertCommand}"
+                    ToolTip.Tip="Back to the script as the game has it (or as it was last saved)" />
+          </Grid>
+          <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" TextWrapping="Wrap" Opacity="0.8" FontSize="12" Margin="0,6,0,0"
+                     IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <TextBox x:Name="SourceBox" Text="{Binding Source}" AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap"
+                   FontFamily="Consolas,Menlo,monospace" FontSize="13"
+                   ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+        </DockPanel>
+      </Grid>
+    </Grid>
+  </DockPanel>
+</Window>

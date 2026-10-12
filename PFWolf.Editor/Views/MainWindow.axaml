@@ -25,13 +25,14 @@
     <KeyBinding Gesture="F9" Command="{Binding ShowPalettesCommand}" />
     <KeyBinding Gesture="F2" Command="{Binding ShowTextsCommand}" />
     <KeyBinding Gesture="F11" Command="{Binding ShowDefinitionsCommand}" />
+    <KeyBinding Gesture="F12" Command="{Binding ShowScriptsCommand}" />
   </Window.KeyBindings>
 
   <DockPanel>
     <!-- The game's resources (each in its own browser window), then the game: its folder, which game, and loading it -->
     <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
-        <DropDownButton Grid.Column="0" Content="Resources" ToolTip.Tip="Browse the game's textures, sounds, palettes and texts">
+        <DropDownButton Grid.Column="0" Content="Resources" ToolTip.Tip="Browse the game's textures, sounds, palettes, texts and scripts">
           <DropDownButton.Flyout>
             <MenuFlyout Placement="BottomEdgeAlignedLeft">
               <MenuItem Header="Textures and sprites…" Command="{Binding ShowArtCommand}" InputGesture="F6"
@@ -42,6 +43,8 @@
                         ToolTip.Tip="Every palette, to look at and edit, with where it comes from and what's drawn in it" />
               <MenuItem Header="Texts…" Command="{Binding ShowTextsCommand}" InputGesture="F2"
                         ToolTip.Tip="The help screens, end texts and briefings, each article page as the game shows it, with what's wrong with it" />
+              <MenuItem Header="Scripts…" Command="{Binding ShowScriptsCommand}" InputGesture="F12"
+                        ToolTip.Tip="The Lua scripts the game runs (scripts/*.lua), with the actions they give, what calls them and what's wrong with them" />
               <Separator />
               <MenuItem Header="Definitions…" Command="{Binding ShowDefinitionsCommand}" InputGesture="F11"
                         ToolTip.Tip="Game info, game packs, actor classes and map definitions, in fields or as YAML, saved into a mod (pfwolf.pk3 is read-only)" />
