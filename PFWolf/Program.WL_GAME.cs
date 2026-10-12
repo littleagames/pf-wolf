@@ -773,6 +773,7 @@ internal partial class Program
         wallstories = Math.Clamp(mapInfo?.WallHeight ?? _gameEngineManager.GetGameInfo().DefaultMap.WallHeight,
             1, MAXWALLSTORIES);
         levelsky = mapInfo?.Sky ?? _gameEngineManager.GetGameInfo().DefaultMap.Sky;
+        SetWeather(mapInfo?.Weather ?? _gameEngineManager.GetGameInfo().DefaultMap.Weather);
         _mapManager.BuildFlats(mapInfo?.DefaultFloor ?? _gameEngineManager.GetGameInfo().DefaultMap.DefaultFloor,
             mapInfo?.DefaultCeiling ?? _gameEngineManager.GetGameInfo().DefaultMap.DefaultCeiling);
 

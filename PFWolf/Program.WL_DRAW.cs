@@ -337,6 +337,9 @@ internal partial class Program
     // Draws the column's queued posts, farthest first
     static void DrawPosts()
     {
+        if (weatheron)
+            NoteOccluders();            // what hides rain and snow in this column (Program.Weather.cs)
+
         while (postcount > 0)
         {
             postcount--;
@@ -2315,8 +2318,8 @@ internal partial class Program
         //
         numvisable = (int)(visptr);
 
-        if (numvisable == 0)
-            return;                                                                 // no visable objects
+        // Rain and snow go in among the sprites by distance (Program.Weather.cs)
+        ProjectWeather();
 
         for (i = 0; i < numvisable; i++)
         {
@@ -2337,6 +2340,7 @@ internal partial class Program
             if (farthest != -1)
             {
                 visobj_t farthest_obj = vislist[farthest];
+                DrawWeatherBeyond(farthest_obj.viewheight);
                 if (farthest_obj.wallsprite != null)
                     ScaleWallSprite(farthest_obj);
                 else
@@ -2345,6 +2349,8 @@ internal partial class Program
                 farthest_obj.viewheight = 32000;
             }
         }
+
+        DrawWeatherBeyond(int.MaxValue);    // and what's nearer than every sprite
     }
 
     internal static void DrawPlayerWeapon()
@@ -2412,6 +2418,7 @@ internal partial class Program
         VGAClearScreen();
 
         markseen = camera.OnPlayer;     // the automap only learns what the player sees
+        SetupWeather();
         WallRefresh();
 
         if (markseen)

@@ -16,6 +16,12 @@ public record GameInfoAsset : Asset
     public Dictionary<string, MapInfo> Maps { get; init; } = [];
     public List<string> EndStrings { get; init; } = [];
 
+    /// <summary>
+    /// Kinds of rain and snow a level's weather can name, added to (or replacing) the built-in
+    /// rain, heavy-rain, snow and blizzard
+    /// </summary>
+    public Dictionary<string, WeatherInfo> WeatherTypes { get; init; } = [];
+
     public SignonInfo Signon { get; init; } = new();
 
     /// <summary>
@@ -543,6 +549,12 @@ public record DefaultMapInfo
     public string? DefaultCeiling { get; init; } = null;
 
     /// <summary>
+    /// Rain or snow falling on every level: a name in weather-types (or a built-in one: rain,
+    /// heavy-rain, snow, blizzard); null or none for clear weather
+    /// </summary>
+    public string? Weather { get; init; } = null;
+
+    /// <summary>
     /// Distance shading (night, fog) on every level; null leaves levels unshaded
     /// </summary>
     public ShadingInfo? Shading { get; init; } = null;
@@ -552,6 +564,43 @@ public record DefaultMapInfo
     /// override these value by value
     /// </summary>
     public Dictionary<int, ZoneInfo> Zones { get; init; } = [];
+}
+
+/// <summary>
+/// Rain or snow: particles falling all around the view, but not under a ceiling flat or an
+/// arch, nor inside walls. Speeds are in texels a tic (64 a story, 70 tics a second).
+/// </summary>
+public record WeatherInfo
+{
+    /// <summary>rain (streaks) or snow (flakes)</summary>
+    public string Kind { get; init; } = "rain";
+
+    /// <summary>How many particles fall in the box around the view (2 x distance tiles across)</summary>
+    public int Count { get; init; } = 600;
+
+    /// <summary>How fast they fall</summary>
+    public double FallSpeed { get; init; } = 6;
+
+    /// <summary>How fast the wind carries them east (negative: west)</summary>
+    public double WindX { get; init; }
+
+    /// <summary>How fast the wind carries them south (negative: north)</summary>
+    public double WindY { get; init; }
+
+    /// <summary>Rain only: how long a streak is, in texels</summary>
+    public double Length { get; init; } = 12;
+
+    /// <summary>Snow only: how big a flake is, in texels</summary>
+    public double Size { get; init; } = 1.5;
+
+    /// <summary>Snow only: how far a flake sways from side to side, in texels</summary>
+    public double Drift { get; init; }
+
+    /// <summary>A color name, #RRGGBB or palette index; dimmed with distance</summary>
+    public string Color { get; init; } = "#B0B8C8";
+
+    /// <summary>How far away, in tiles, they're drawn</summary>
+    public int Distance { get; init; } = 8;
 }
 
 /// <summary>
@@ -817,6 +866,11 @@ public record MapInfo
     /// Texture for ceiling tiles the flat plane doesn't give one; null uses the default map's
     /// </summary>
     public string? DefaultCeiling { get; init; } = null;
+
+    /// <summary>
+    /// Rain or snow (a weather-types name); null uses the default map's, none for clear weather
+    /// </summary>
+    public string? Weather { get; init; } = null;
 
     /// <summary>
     /// Distance shading; each value left out uses the default map's (see ShadingInfo)

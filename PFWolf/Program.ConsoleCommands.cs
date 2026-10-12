@@ -152,6 +152,9 @@ internal partial class Program
             $"wallheight [1-{MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
         Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
             "sky [name|none]", Cmd_Sky, InLevel);
+        Register("weather", "Makes it rain or snow (a game-info weather-types name, or rain, heavy-rain, snow or blizzard) until the level is left or reloaded; none for clear weather.",
+            "weather [name|none]", Cmd_Weather, InLevel,
+            complete: (_, i) => i == 0 ? WeatherTypes().Keys.Append("none") : []);
         Register("fog", "Fades the view toward a color with distance, from start to end tiles away, up to max percent, until the level is left or reloaded; none for no shading.",
             "fog [#RRGGBB|none] [start] [end] [max 0-100]", Cmd_Fog, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["none", "#000000", "#707070"] : []);
@@ -1549,6 +1552,17 @@ internal partial class Program
             levelsky = name;
         }
         _consoleManager.Print(levelsky == null ? "No sky: the ceiling is a color" : $"Sky: {levelsky}");
+    }
+
+    private static void Cmd_Weather(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            if (!args[0].Equals("none", StringComparison.OrdinalIgnoreCase) && !WeatherTypes().ContainsKey(args[0]))
+                throw new ArgumentException($"no weather named {args[0]}");
+            SetWeather(args[0]);
+        }
+        _consoleManager.Print(levelweather == null ? "No weather" : $"Weather: {levelweathername}");
     }
 
     // The level's shading, or what shading starts from when it has none
