@@ -40,7 +40,8 @@ public sealed class PixelDocument
         var clear = fill == Clear && kind != ArtKind.Texture;
         var picture = new IndexedPicture(width, height, Enumerable.Repeat((byte)Math.Max(fill, 0), width * height).ToArray(),
             clear ? new bool[width * height] : null);
-        return new PixelDocument(kind, name, picture, kind == ArtKind.Sprite ? (0, 0) : null, isNew: true);
+        // A new sprite stands on the middle of its bottom row
+        return new PixelDocument(kind, name, picture, kind == ArtKind.Sprite ? (width / 2, height) : null, isNew: true);
     }
 
     public ArtKind Kind { get; }

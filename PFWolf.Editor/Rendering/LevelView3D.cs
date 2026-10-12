@@ -481,7 +481,8 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     {
         var half = camera.Right * (sprite.Width / 2);
         var up = Vector3.UnitY * sprite.Height;
-        return [sprite.Base - half, sprite.Base + half, sprite.Base + half + up, sprite.Base - half + up];
+        var bottom = sprite.Base + camera.Right * sprite.Shift;
+        return [bottom - half, bottom + half, bottom + half + up, bottom - half + up];
     }
 
     private static readonly Vector4 HoverColor = new(1f, 0.85f, 0.25f, 0.35f);

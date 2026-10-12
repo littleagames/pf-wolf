@@ -15,6 +15,25 @@ public record SpriteAsset : Asset
 {
     public short Width { get; init; }
     public short Height { get; init; }
+
+    /// <summary>
+    /// The sprite's own offset, from a PNG's grAb chunk (as ZDoom and SLADE write it): the pixel,
+    /// counted from its top-left corner, that sits on the actor's spot on the floor. Only meant
+    /// when <see cref="HasOffset"/>; see <see cref="Origin"/>.
+    /// </summary>
     public Point Offset { get; init; } = Point.Zero;
+
+    /// <summary>Whether the sprite gives an offset (a PNG with a grAb chunk)</summary>
+    public bool HasOffset { get; init; }
+
     public byte[] OpacityMask { get; init; } = [];
+
+    /// <summary>
+    /// Where one without an offset stands: a Wolf3D sprite's middle of the bottom of 64 × 64, so
+    /// it's drawn 32 texels either side of the actor, its top 64 above the floor (any size)
+    /// </summary>
+    public const int DefaultOriginX = 32, DefaultOriginY = 64;
+
+    /// <summary>The pixel (from the top-left corner) that sits on the actor's spot on the floor</summary>
+    public (int X, int Y) Origin => HasOffset ? (Offset.x, Offset.y) : (DefaultOriginX, DefaultOriginY);
 }

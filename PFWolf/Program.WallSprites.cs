@@ -222,8 +222,10 @@ internal partial class Program
             if (half == 0)
                 continue;
 
+            // Stretched across the panel, so only its offset's height counts: that row on the floor
             int column = Math.Min((int)(t * spriteAsset.Width), spriteAsset.Width - 1);
-            ScaleColumn((short)x, (short)(FloorRow(half) - 2 * half), MathUtils.FixedDiv(half, TEXTURESIZE / 2), spriteAsset, column,
+            int top = FloorRow(half) - TexelsToPixels(spriteAsset.Origin.Y, half);
+            ScaleColumn((short)x, (short)top, MathUtils.FixedDiv(half, TEXTURESIZE / 2), spriteAsset, column,
                 vis.bright ? noshade : LightAt(TileIndex(vis.tilex, vis.tiley), vis.worldx, vis.worldy),
                 vis.bright ? 0 : ShadeOffsetForHeight(height));
         }

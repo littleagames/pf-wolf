@@ -113,7 +113,7 @@
         <!-- A sprite's offset: its PNG's grAb chunk -->
         <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsSprite}">
           <TextBlock Text="Offset" VerticalAlignment="Center"
-                     ToolTip.Tip="The sprite's X, Y offset, kept in its PNG's grAb chunk as ZDoom and SLADE write it" />
+                     ToolTip.Tip="The point (from the sprite's top-left) the game stands on the thing's spot on the floor, kept in its PNG's grAb chunk as ZDoom and SLADE write it. Without one a sprite stands as Wolf3D's do: 32, 64." />
           <NumericUpDown Value="{Binding OffsetX}" Minimum="-4096" Maximum="4096" Increment="1" FormatString="0" Width="110" />
           <NumericUpDown Value="{Binding OffsetY}" Minimum="-4096" Maximum="4096" Increment="1" FormatString="0" Width="110" />
           <Button Content="Set" Command="{Binding ApplyOffsetCommand}"

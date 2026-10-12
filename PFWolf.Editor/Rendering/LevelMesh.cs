@@ -78,8 +78,11 @@ public sealed class Surface
 /// <summary>A sprite standing on the floor that always turns to face the view, as the game's things do</summary>
 public sealed class Billboard
 {
-    /// <summary>The middle of its bottom edge</summary>
+    /// <summary>The thing's spot, at the height of the sprite's bottom edge</summary>
     public Vector3 Base { get; init; }
+
+    /// <summary>How far right of the spot (as seen) the middle of the sprite is, in tiles: its offset's</summary>
+    public float Shift { get; init; }
     public float Width { get; init; }
     public float Height { get; init; }
     public TextureRef Texture { get; init; }
@@ -501,13 +504,20 @@ public sealed class LevelMesh
             var texture = new TextureRef(TextureSource.Sprite, thing.Class);
             var thingRef = new SurfaceRef(SurfaceKind.Thing, x, y);
 
+            // As the game places it: its origin pixel (a Wolf3D sprite's middle of the bottom of
+            // 64 × 64) on the thing's spot on the floor
+            var (originX, originY) = sprite.Origin;
+            float lift = (originY - sprite.Height) / (float)TextureAsset.StorySize;
+            float shift = (sprite.Width / 2f - originX) / TextureAsset.StorySize;
+
             if (content.IsWallSprite(thing.Class))
-                AddWallSprite(x, y, thing.Angles, content.WallSpriteOffset(thing.Class), width, height, texture, thingRef);
+                AddWallSprite(x, y, thing.Angles, content.WallSpriteOffset(thing.Class), width, height, lift, texture, thingRef);
             else
             {
                 Billboards.Add(new Billboard
                 {
-                    Base = new Vector3(x + 0.5f, 0, y + 0.5f), Width = width, Height = height, Texture = texture, Ref = thingRef, Color = Light(x, y),
+                    Base = new Vector3(x + 0.5f, lift, y + 0.5f), Shift = shift, Width = width, Height = height, Texture = texture, Ref = thingRef,
+                    Color = Light(x, y),
                 });
             }
         }
@@ -527,7 +537,7 @@ public sealed class LevelMesh
     /// A flat panel across its tile at right angles to the way it faces, moved toward its front
     /// by its offset (Program.WallSprites); its back shows the picture mirrored
     /// </summary>
-    private void AddWallSprite(int x, int y, int angles, int offset, float width, float height, TextureRef texture, SurfaceRef thingRef)
+    private void AddWallSprite(int x, int y, int angles, int offset, float width, float height, float lift, TextureRef texture, SurfaceRef thingRef)
     {
         float radians = angles * MathF.PI / 180;
         Vector2 front = new(MathF.Cos(radians), -MathF.Sin(radians));
@@ -539,7 +549,8 @@ public sealed class LevelMesh
 
         Surfaces.Add(new Surface
         {
-            Points = [new(a.X, 0, a.Y), new(b.X, 0, b.Y), new(b.X, height, b.Y), new(a.X, height, a.Y)],
+            // Stretched across its tile, as the game draws it: only its offset's height counts
+            Points = [new(a.X, lift, a.Y), new(b.X, lift, b.Y), new(b.X, lift + height, b.Y), new(a.X, lift + height, a.Y)],
             Uvs = [new(0, 1), new(1, 1), new(1, 0), new(0, 0)],
             Texture = texture,
             Color = Light(x, y),
@@ -718,8 +729,8 @@ public sealed class LevelMesh
                 continue;
 
             var point = origin + direction * t;
-            float across = Vector3.Dot(point - sprite.Base, right);
-            if (MathF.Abs(across) <= sprite.Width / 2 && point.Y >= 0 && point.Y <= sprite.Height)
+            float across = Vector3.Dot(point - sprite.Base, right) - sprite.Shift;
+            if (MathF.Abs(across) <= sprite.Width / 2 && point.Y >= sprite.Base.Y && point.Y <= sprite.Base.Y + sprite.Height)
                 best = new SurfaceHit(sprite.Ref, point, t, sprite.Texture);
         }
 

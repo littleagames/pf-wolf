@@ -110,7 +110,8 @@ public sealed class PixelCanvas : Control
 
         if (Mark is { } mark)
         {
-            double mx = mark.X * zoom + zoom / 2.0, my = mark.Y * zoom + zoom / 2.0, arm = Math.Max(6, zoom * 1.5);
+            // A point between pixels: the game puts it on the thing's spot on the floor
+            double mx = mark.X * zoom, my = mark.Y * zoom, arm = Math.Max(6, zoom * 1.5);
             context.DrawLine(MarkPen, new Point(mx - arm, my), new Point(mx + arm, my));
             context.DrawLine(MarkPen, new Point(mx, my - arm), new Point(mx, my + arm));
         }

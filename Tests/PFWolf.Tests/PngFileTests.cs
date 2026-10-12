@@ -56,6 +56,22 @@ public class PngFileTests
     }
 
     [Test]
+    public void A_Sprite_Stands_On_Its_Offset_Or_Else_As_Wolf3Ds_Do()
+    {
+        // Arrange
+        var palette = new Palette { Colors = Palette() };
+        var picture = new IndexedPicture(32, 16, new byte[32 * 16], null);
+
+        // Act
+        var with = PngSpriteDataLoader.Load(new MemoryStream(PngFile.Write(picture, palette.Colors, (16, 50))), palette);
+        var without = PngSpriteDataLoader.Load(new MemoryStream(PngFile.Write(picture, palette.Colors)), palette);
+
+        // Assert
+        Assert.That((with.HasOffset, with.Origin), Is.EqualTo((true, (16, 50))));
+        Assert.That((without.HasOffset, without.Origin), Is.EqualTo((false, (SpriteAsset.DefaultOriginX, SpriteAsset.DefaultOriginY))));
+    }
+
+    [Test]
     public void The_Offset_Is_Written_Read_And_Replaced()
     {
         // Arrange

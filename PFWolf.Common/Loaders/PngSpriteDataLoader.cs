@@ -58,6 +58,7 @@ public class PngSpriteDataLoader
 
         // Try to extract grAb chunk (offset)
         Point offset = Point.Zero;
+        bool hasOffset = false;
         stream.Position = 8; // Skip PNG signature
         while (stream.Position < stream.Length)
         {
@@ -75,6 +76,7 @@ public class PngSpriteDataLoader
                     int x = (grAbBuf[0] << 24) | (grAbBuf[1] << 16) | (grAbBuf[2] << 8) | grAbBuf[3];
                     int y = (grAbBuf[4] << 24) | (grAbBuf[5] << 16) | (grAbBuf[6] << 8) | grAbBuf[7];
                     offset = new Point { x = x, y = y };
+                    hasOffset = true;
                 }
                 stream.Position += 4; // Skip CRC
                 break;
@@ -91,7 +93,8 @@ public class PngSpriteDataLoader
             OpacityMask = opacityMask,
             Width = (short)width,
             Height = (short)height,
-            Offset = offset
+            Offset = offset,
+            HasOffset = hasOffset,
         };
     }
 }

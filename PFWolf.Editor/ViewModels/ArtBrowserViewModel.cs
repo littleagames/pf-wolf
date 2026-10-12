@@ -221,7 +221,9 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
             if (entry.Kind == ArtKind.Sprite && _content?.Find<SpriteAsset>(CurrentAssetName) is { } sprite)
             {
                 var name = CurrentAssetName;
-                var sprites = $"Sprite {name}, {sprite.Width} × {sprite.Height}, offset {sprite.Offset.x}, {sprite.Offset.y}";
+                var (originX, originY) = sprite.Origin;
+                var sprites = $"Sprite {name}, {sprite.Width} × {sprite.Height}, offset {originX}, {originY}"
+                              + (sprite.HasOffset ? "" : " (it has none: it stands as Wolf3D's do)");
                 if (SelectedRotation is { } side)
                     return sprites + $"\nFrame {entry.Name[^1]} from side {side.Side} of {Rotations.Count} (1 faces you, 5 faces away)";
                 return name.Length >= 2 && name[^1] == '0' ? sprites + "\nThe same from every side" : sprites;
@@ -347,8 +349,8 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         OnPropertyChanged(nameof(IsSprite));
         OnPropertyChanged(nameof(CurrentKind));
         var sprite = IsSprite ? _content?.Find<SpriteAsset>(CurrentAssetName) : null;
-        OffsetX = sprite?.Offset.x;
-        OffsetY = sprite?.Offset.y;
+        OffsetX = sprite?.Origin.X;
+        OffsetY = sprite?.Origin.Y;
     }
 
     private void ShowOrigins(IEnumerable<PFWolf.Loaders.AssetOrigin> origins)
@@ -546,7 +548,8 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
             Status = $"There's no {name} to draw";
             return;
         }
-        (int, int)? offset = entry.Kind == ArtKind.Sprite && content.Find<SpriteAsset>(name) is { } sprite ? (sprite.Offset.x, sprite.Offset.y) : null;
+        // The point it stands on (where it has no offset, Wolf3D's), which saving writes as its offset
+        (int, int)? offset = entry.Kind == ArtKind.Sprite && content.Find<SpriteAsset>(name) is { } sprite ? sprite.Origin : null;
         OpenPixelEditor(new PixelDocument(entry.Kind, name, picture, offset));
     }
 

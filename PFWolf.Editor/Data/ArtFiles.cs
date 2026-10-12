@@ -114,7 +114,7 @@ public static class ArtFiles
     {
         var (_, _, extension) = Check(data);
         if (kind == ArtKind.Sprite && PngFile.IsPng(data) && PngFile.ReadOffset(data) == null
-            && content.Find<SpriteAsset>(assetName) is { } sprite && (sprite.Offset.x != 0 || sprite.Offset.y != 0))
+            && content.Find<SpriteAsset>(assetName) is { HasOffset: true } sprite)
             data = PngFile.WithOffset(data, sprite.Offset.x, sprite.Offset.y);
 
         var (mod, entryPath, deletes) = Target(content, kind, assetName, extension, modPath);
@@ -161,7 +161,7 @@ public static class ArtFiles
 
         var picture = ArtCache.Indexed(content, kind, assetName)
                       ?? throw new InvalidOperationException($"There's no {assetName}");
-        (int, int)? offset = kind == ArtKind.Sprite && content.Find<SpriteAsset>(assetName) is { } sprite ? (sprite.Offset.x, sprite.Offset.y) : null;
+        (int, int)? offset = kind == ArtKind.Sprite && content.Find<SpriteAsset>(assetName) is { HasOffset: true } sprite ? (sprite.Offset.x, sprite.Offset.y) : null;
         return PngFile.Write(picture, content.LoadedPalette, offset);
     }
 

@@ -217,7 +217,7 @@ public sealed partial class PixelEditorViewModel : ObservableObject, IDisposable
             HoverText = "";
             return;
         }
-        var offset = Document.Offset is { } o ? $"   (from the offset {at.X - o.X}, {at.Y - o.Y})" : "";
+        var offset = Document.Offset is { } o ? $"   (from where it stands {at.X - o.X}, {at.Y - o.Y})" : "";
         HoverText = $"{at.X}, {at.Y}:  {Describe(Document.ValueAt(at.X, at.Y))}{offset}";
     }
 

@@ -132,6 +132,6 @@ public class PixelDocumentTests
         Assert.That(dirty, Is.True);
         Assert.That((document.IsNew, document.IsDirty), Is.EqualTo((false, false)));
         Assert.That(Rows(document), Is.EqualTo(new[] { "..", ".3" }));
-        Assert.That(document.Offset, Is.EqualTo((0, 0)));
+        Assert.That(document.Offset, Is.EqualTo((1, 2)), "a new sprite stands on the middle of its bottom");
     }
 }

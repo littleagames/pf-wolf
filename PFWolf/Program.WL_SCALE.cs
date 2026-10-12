@@ -103,8 +103,11 @@ internal partial class Program
         fracstep = MathUtils.FixedDiv(height, TEXTURESIZE / 2);
         frac = 0;
 
-        xcenter = sprite.viewx - height;
-        toppix = FloorRow(height) - 2 * height;     // standing on the floor, a story tall
+        // Its origin pixel on the actor's spot on the floor (a Wolf3D sprite: the middle of its
+        // bottom row, so a story tall)
+        var (originx, originy) = spriteAsset.Origin;
+        xcenter = sprite.viewx - TexelsToPixels(originx, height);
+        toppix = FloorRow(height) - TexelsToPixels(originy, height);
 
         byte[] shade = sprite.bright ? noshade : LightAt(TileIndex(sprite.tilex, sprite.tiley), sprite.worldx, sprite.worldy);
         int shadeofs = sprite.bright ? 0 : ShadeOffsetForHeight(sprite.viewheight);
@@ -181,8 +184,11 @@ internal partial class Program
         fracstep = MathUtils.FixedDiv(height, TEXTURESIZE / 2);
         frac = 0;
 
-        xcenter = dispx - height;
-        toppix = basecentery - height + dropy;      // the weapon in hand doesn't move with the view's pitch
+        // Its origin pixel on the view's bottom edge, in the middle (a Wolf3D sprite: the middle of
+        // its bottom row); the weapon in hand doesn't move with the view's pitch
+        var (originx, originy) = spriteAsset.Origin;
+        xcenter = dispx - TexelsToPixels(originx, height);
+        toppix = basecentery + height + dropy - TexelsToPixels(originy, height);
 
         x2 = xcenter;
 
@@ -193,15 +199,20 @@ internal partial class Program
             //
             x1 = x2;
 
+            if (x1 >= viewwidth)
+                break;                // off the right side (an offset can put it there)
+
             frac += fracstep;
             x2 = (frac >> MathUtils.FRACBITS) + xcenter;
 
-            while (x1 < x2)
-            {
+            for (x1 = Math.Max(x1, 0); x1 < Math.Min(x2, viewwidth); x1++)
                 ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, 0);
-
-                x1++;
-            }
         }
     }
+
+    /// <summary>
+    /// A distance in a sprite's texels as screen pixels, for a sprite drawn <paramref name="half"/>
+    /// pixels to 32 texels (half a story)
+    /// </summary>
+    internal static int TexelsToPixels(int texels, int half) => (int)Math.Floor(texels * (double)half / (TEXTURESIZE / 2));
 }
