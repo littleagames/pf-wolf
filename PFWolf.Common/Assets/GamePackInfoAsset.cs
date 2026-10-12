@@ -240,8 +240,4 @@ public record GamePack
     public string? BasePack { get; init; }
     // "file-pack"
     public FilePack? FilePack { get; init; }
-    // "starting-scene"
-    public string? StartingScene { get; init; }
-    // "game-pack-asset-reference"
-    public string? GamePackAssetReference { get; init; }
 }

@@ -200,8 +200,6 @@ spear:
   game-palette: spearpal
   # Starts from wolf3d's files; spear's own are laid over them (see the top)
   base-pack: wolf3d
-  starting-scene: "spear:SignonScene"
-  game-pack-asset-reference: spear-map
   file-pack:
     description: Spear of Destiny
     file-loaders:
