@@ -134,8 +134,25 @@ public sealed partial class FieldNode : ObservableObject
         get => _text;
         set
         {
-            if (SetProperty(ref _text, value ?? ""))
-                OnTextChanged();
+            if (!SetProperty(ref _text, value ?? ""))
+                return;
+            OnPropertyChanged(nameof(ChoiceText));
+            OnTextChanged();
+        }
+    }
+
+    /// <summary>
+    /// <see cref="Text"/> for a Choice's box; null for any other field. Every row has the box,
+    /// hidden unless it's a Choice: bound to Text, a text field's (whose only choice is "") put
+    /// "" back when a name it doesn't list was picked into an empty field.
+    /// </summary>
+    public string? ChoiceText
+    {
+        get => IsChoice ? Text : null;
+        set
+        {
+            if (IsChoice)
+                Text = value ?? "";
         }
     }
 

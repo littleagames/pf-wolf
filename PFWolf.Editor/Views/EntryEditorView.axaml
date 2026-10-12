@@ -160,7 +160,7 @@
                   </Button.Flyout>
                 </Button>
               </Grid>
-              <ComboBox Grid.Column="1" ItemsSource="{Binding Choices}" SelectedItem="{Binding Text}" PlaceholderText="{Binding Placeholder}"
+              <ComboBox Grid.Column="1" ItemsSource="{Binding Choices}" SelectedItem="{Binding ChoiceText}" PlaceholderText="{Binding Placeholder}"
                         IsVisible="{Binding IsChoice}" MinWidth="200" VerticalAlignment="Center" />
               <TextBlock Grid.Column="1" Text="{Binding Summary}" IsVisible="{Binding IsGroup}" Opacity="0.6" VerticalAlignment="Center" />
               <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
