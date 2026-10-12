@@ -2395,6 +2395,7 @@ internal partial class Program
         Setup3DView();
         UpdateLightGrid();
         CastActorLights();
+        _mapManager.AnimateFlats(gamestate.TimeCount);     // animated floors and ceilings, on the level's clock as walls are
 
         //
         // follow the walls from there to the right, drawing as we go

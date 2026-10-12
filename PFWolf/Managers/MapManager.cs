@@ -152,9 +152,13 @@ internal class MapManager
     /// Each tile's floor and ceiling texture: its flat plane indices through the mapdefs flats
     /// table, else the map's default-floor and default-ceiling; null where there's none (the
     /// floor or ceiling color shows). Indexed (y &lt;&lt; MAPSHIFT) + x. Flats don't move, so these
-    /// are only built when a level is loaded or restored.
+    /// are only built when a level is loaded or restored; an animated flat's tiles are set to its
+    /// frame each frame (AnimateFlats).
     /// </summary>
     internal TextureAsset?[] floorflat = new TextureAsset?[MAPAREA], ceilingflat = new TextureAsset?[MAPAREA];
+
+    // The tiles whose floor or ceiling is an animation (animdefs), with it
+    private readonly List<(int Index, AnimatedAsset<TextureAsset> Animation)> animatedfloors = [], animatedceilings = [];
 
     /// <summary>Whether any tile has a floor flat, or a ceiling flat.</summary>
     internal bool hasfloorflats, hasceilingflats;
@@ -234,6 +238,8 @@ internal class MapManager
         floorflat = new TextureAsset?[MAPAREA];     // BuildFlats fills these in, once the level's defaults are known
         ceilingflat = new TextureAsset?[MAPAREA];
         hasfloorflats = hasceilingflats = false;
+        animatedfloors.Clear();
+        animatedceilings.Clear();
 
 #if USE_FEATUREFLAGS
     const int MXX = MAPSIZE - 1;
@@ -660,8 +666,8 @@ internal class MapManager
         defaultceiling = defaultCeiling;
 
         var flats = GetMapData().Flats;
-        var floors = new TextureAsset?[256];
-        var ceilings = new TextureAsset?[256];
+        var floors = new Asset?[256];
+        var ceilings = new Asset?[256];
         var floorDefault = FindFlat(defaultFloor);
         var ceilingDefault = FindFlat(defaultCeiling);
         for (int i = 0; i < 256; i++)
@@ -673,16 +679,39 @@ internal class MapManager
         floorflat = new TextureAsset?[MAPAREA];
         ceilingflat = new TextureAsset?[MAPAREA];
         hasfloorflats = hasceilingflats = false;
+        animatedfloors.Clear();
+        animatedceilings.Clear();
         for (int y = 0; y < mapheight; y++)
             for (int x = 0; x < mapwidth; x++)
             {
                 int spot = MAPSPOT(x, y, FLATPLANE);
                 int i = (y << MAPSHIFT) + x;
-                floorflat[i] = floors[spot & 0xff];
-                ceilingflat[i] = ceilings[spot >> 8];
+                floorflat[i] = SetFlat(floors[spot & 0xff], i, animatedfloors);
+                ceilingflat[i] = SetFlat(ceilings[spot >> 8], i, animatedceilings);
                 hasfloorflats |= floorflat[i] != null;
                 hasceilingflats |= ceilingflat[i] != null;
             }
+    }
+
+    // A tile's flat to start with: an animation's first frame, the tile noted to animate
+    private static TextureAsset? SetFlat(Asset? flat, int index, List<(int, AnimatedAsset<TextureAsset>)> animated)
+    {
+        if (flat is not AnimatedAsset<TextureAsset> animation)
+            return flat as TextureAsset;
+        animated.Add((index, animation));
+        return animation.FrameAt(0);
+    }
+
+    /// <summary>
+    /// Sets the tiles with an animated floor or ceiling (animdefs) to its frame <paramref name="tics"/>
+    /// into the level: every tile showing one is on the same frame. Once a frame, before the view is drawn.
+    /// </summary>
+    internal void AnimateFlats(int tics)
+    {
+        foreach (var (i, animation) in animatedfloors)
+            floorflat[i] = animation.FrameAt(tics);
+        foreach (var (i, animation) in animatedceilings)
+            ceilingflat[i] = animation.FrameAt(tics);
     }
 
     /// <summary>The name of the texture on a tile's floor or ceiling, for the console.</summary>
@@ -698,13 +727,27 @@ internal class MapManager
 
     private readonly HashSet<string> missingflats = new(StringComparer.OrdinalIgnoreCase);
 
-    // A flat is any texture: a VSWAP wall, or a picture in the pk3's textures/ or flats/
-    private TextureAsset? FindFlat(string? name)
+    // A flat is any texture: a VSWAP wall, or a picture in the pk3's textures/ or flats/; or an
+    // animation of them (animdefs), returned as the AnimatedAsset when every frame will do
+    private Asset? FindFlat(string? name)
     {
         if (string.IsNullOrEmpty(name))
             return null;
+
+        static bool Usable(TextureAsset? texture)
+            => texture is { Width: > 0, Height: > 0 } && texture.RawData.Length >= texture.Width * texture.Height;
+
+        if (assetManager.Value.FindAnimation<TextureAsset>(name) is { } animation)
+        {
+            if (animation.Frames.All(frame => Usable(frame.Asset)))
+                return animation;
+            if (missingflats.Add(name))
+                Console.WriteLine($"Flat animation \"{name}\" has a frame that isn't a usable texture");
+            return null;
+        }
+
         var texture = assetManager.Value.Find<TextureAsset>(name);
-        if (texture is { Width: > 0, Height: > 0 } && texture.RawData.Length >= texture.Width * texture.Height)
+        if (Usable(texture))
             return texture;
         if (missingflats.Add(name))
             Console.WriteLine($"Flat texture \"{name}\" wasn't found");
