@@ -72,20 +72,23 @@ public sealed class GameContent
     /// </summary>
     /// <param name="requestedPack">A game pack id ("spear", or a game a mod adds), or empty to pick by
     /// the data files, or by the mods when one adds a game (a standalone game needs no data files)</param>
-    public static GameContent Load(string gameFolder, string requestedPack, IEnumerable<string> mods)
+    /// <param name="progress">Told each step as it starts, for a loading screen; on the loading thread</param>
+    public static GameContent Load(string gameFolder, string requestedPack, IEnumerable<string> mods, Action<string>? progress = null)
     {
         if (!File.Exists(Path.Combine(gameFolder, AssetManager.BasePk3FileName)))
             throw new FileNotFoundException($"There's no {AssetManager.BasePk3FileName} in {gameFolder}: pick the folder PFWolf is in");
 
         Directory.SetCurrentDirectory(gameFolder);
         var modList = mods.ToList();
+        progress?.Invoke("Picking the game");
         var game = GameTypes.PickGame(requestedPack, modList);
 
         var assets = new AssetManager();
-        assets.Load(game.PackId, game.ReleaseId, modList);
+        assets.Load(game.PackId, game.ReleaseId, modList, progress);
         foreach (var warning in assets.ModWarnings)
             WarningLog.Write(warning);
 
+        progress?.Invoke("Reading the definitions");
         var packId = game.PackId;
         // A new standalone game has none yet: its levels are plain numbers until it gives some
         var mapDefs = assets.FindInGamePackIfAny<MapObjectTranslationAsset>("mapdefs") ?? new MapObjectTranslationAsset();

@@ -155,6 +155,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
     private bool _isLoading;
 
+    /// <summary>What loading the game is doing now, shown over the map while it loads</summary>
+    [ObservableProperty]
+    private string _loadingStep = "";
+
     // Which layers the map shows
     [ObservableProperty] private bool _showWalls = true;
     [ObservableProperty] private bool _showThings = true;
@@ -562,6 +566,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
 
         IsLoading = true;
+        LoadingStep = "Starting";
         Problems.Clear();
         Status = $"Loading {GameFolder}...";
 
@@ -569,7 +574,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var mods = Mods.ToList();
         try
         {
-            var content = await Task.Run(() => GameContent.Load(folder, game, mods));
+            // The loading thread's steps come back here to be shown
+            IProgress<string> progress = new Progress<string>(step => LoadingStep = step);
+            var content = await Task.Run(() => GameContent.Load(folder, game, mods, progress.Report));
 
             var oldArt = Art;
             Document = null;
@@ -583,9 +590,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Maps.Clear();
             foreach (var map in content.Maps)
                 Maps.Add(new MapItem(map.Name, map.Title));
+
+            // The rest is on this thread: each step is shown before it starts
+            LoadingStep = "Drawing the palette's pictures";
+            await ShowLoadingStep();
             BuildPalette();
             FillPlaySkills(content);
+
+            LoadingStep = Maps.Count > 0 ? $"Opening {Maps[0].Name.ToUpperInvariant()}" : "Finishing";
+            await ShowLoadingStep();
             SelectedMap = Maps.FirstOrDefault();
+            // The map and the 3D view draw it before the loading screen goes
+            await ShowLoadingStep();
 
             Status = $"{content.Title}: {content.Maps.Count} levels" + mods.Count switch { 0 => "", 1 => ", 1 mod", _ => $", {mods.Count} mods" };
             SaveSettings();
@@ -599,8 +615,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
         finally
         {
             IsLoading = false;
+            LoadingStep = "";
         }
     }
+
+    // Lets the window draw (the loading step, a level just opened) before more work on this thread
+    private static async Task ShowLoadingStep()
+        => await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
 
     partial void OnSelectedMapChanged(MapItem? value)
     {

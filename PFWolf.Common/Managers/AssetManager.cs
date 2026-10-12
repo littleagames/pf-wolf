@@ -38,10 +38,12 @@ public class AssetManager
     /// <param name="gamePackId">The running game pack ("wolf3d", "spear"), whose gamepacks/ assets override the shared ones</param>
     /// <param name="gameReleaseId">The running release's key in gamepacks/gamepack-info.yaml ("wolf3d-apogee")</param>
     /// <param name="modPaths">Mods to load over pfwolf.pk3, in load order: paths, or names in the mods folder</param>
-    public void Load(string gamePackId, string gameReleaseId, IEnumerable<string> modPaths)
+    /// <param name="progress">Told each step as it starts ("Reading the levels"), for a loading screen; on this thread</param>
+    public void Load(string gamePackId, string gameReleaseId, IEnumerable<string> modPaths, Action<string>? progress = null)
     {
         _gamePackId = gamePackId;
         _gameReleaseId = gameReleaseId;
+        progress?.Invoke("Opening the mods");
         var basePk3 = new Pk3AssetSource(BasePk3FileName);
         LoadedMods = OpenMods(modPaths, gamePackId, mods =>
         {
@@ -51,6 +53,7 @@ public class AssetManager
             BasePackIds = info?.GamePacks.ContainsKey(gameReleaseId) == true ? info.GetBasePackChain(gameReleaseId) : [];
         });
 
+        progress?.Invoke(LoadedMods.Count > 0 ? "Reading pfwolf.pk3 and the mods" : "Reading pfwolf.pk3");
         Dictionary<string, Asset> assets = new();
         var pfWolfBasePk3Loader = new PfWolfPk3Loader([basePk3], gamePackId, gameReleaseId,
             LoadedMods.Select(mod => mod.Source).ToList());
@@ -74,6 +77,7 @@ public class AssetManager
         // A standalone game has no data files: everything it has is in the pk3s
         if (!gamePackInfo.HasDataFiles(gameReleaseId))
         {
+            progress?.Invoke("Reading the levels");
             LoadLevels(pfWolfBasePk3Loader, rawDataMap?.Maps ?? [], headerFile: null, dataFile: null);
             ModWarnings.AddRange(pfWolfBasePk3Loader.Warnings);
             BuildAnimations();
@@ -82,6 +86,8 @@ public class AssetManager
 
         CheckDataFiles(gamePackInfo, gameReleaseId);
 
+        progress?.Invoke("Reading the sounds and music");
+
         var audioLoader = new Wolf3dAudioFileLoader(
             DataFile("Wolf3DAudioFileLoader", d => d.Data),
             DataFile("Wolf3DAudioFileLoader", d => d.Header));
@@ -89,10 +95,12 @@ public class AssetManager
                 DataFileWarning(DataFile("Wolf3DAudioFileLoader", d => d.Data))),
             DataFile("Wolf3DAudioFileLoader", d => d.Data));
 
+        progress?.Invoke("Reading the levels");
         LoadLevels(pfWolfBasePk3Loader, rawDataMap?.Maps ?? [],
             DataFile("Wolf3DMapFileLoader", d => d.Header),
             DataFile("Wolf3DMapFileLoader", d => d.Data));
 
+        progress?.Invoke("Reading the pictures");
         // numFonts isn't stored in the VGAGRAPH file itself, so the file-pack gives it (font-count)
         var vgaGraphicLoader = new Wolf3dVgaFileLoader(
             DataFile("Wolf3DVgaFileLoader", d => d.Header),
@@ -102,6 +110,7 @@ public class AssetManager
         AddDataFileAssets(vgaGraphicLoader.GetAssets(rawDataMap?.Graphics ?? [], DataFileWarning(DataFile("Wolf3DVgaFileLoader", d => d.Data))),
             DataFile("Wolf3DVgaFileLoader", d => d.Data));
 
+        progress?.Invoke("Reading the walls and sprites");
         var vswapLoader = new Wolf3dVswapFileLoader(DataFile("Wolf3DVswapFileLoader", d => d.Data));
         AddDataFileAssets(vswapLoader.GetAssets(rawDataMap?.Walls ?? [], rawDataMap?.Sprites ?? [], rawDataMap?.DigitizedAudio ?? [],
                 DataFileWarning(DataFile("Wolf3DVswapFileLoader", d => d.Data))),
