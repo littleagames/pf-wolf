@@ -330,6 +330,26 @@ public class DefinitionSetTests
     }
 
     [Test]
+    public void A_Game_Built_On_One_Of_Pfwolfs_Goes_In_The_Mods_Gamepack_Info()
+    {
+        // Arrange
+        var set = new DefinitionSet(DefinitionKind.GamePackInfo, "wolf3d",
+        [
+            new DefinitionFile(null, "gamepacks/gamepack-info.yaml", "", "wolf3d:\n  title: Wolfenstein 3D\n  game-palette: wolfpal\n"),
+        ]);
+        var game = new YamlMappingNode { { "title", "Wolfenstein 3D (wolf3d-mod)" }, { "base-pack", "wolf3d" } };
+
+        // Act
+        var write = set.PlanWrite(["wolf3d-mod"], game, Mod);
+        var after = set.With(write.File.WithText(write.NewText));
+
+        // Assert
+        Assert.That(write.File.EntryPath, Is.EqualTo("gamepack-info.yaml"));
+        Assert.That(write.NewText, Is.EqualTo("wolf3d-mod:\n  title: Wolfenstein 3D (wolf3d-mod)\n  base-pack: wolf3d\n"));
+        Assert.That(after.Entries(baseOnly: false).Select(entry => entry.Name), Is.EqualTo(new[] { "wolf3d", "wolf3d-mod" }));
+    }
+
+    [Test]
     public void Mapdefs_Entries_Go_In_A_File_Named_For_Their_Table()
     {
         // Arrange

@@ -633,8 +633,15 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         return id;
     }
 
-    /// <summary>Copy to mod applies: a definition the game has, out of base mode, and not one of pfwolf.pk3's games</summary>
-    public bool CanCopyToMod => Kind != DefinitionKind.GamePackInfo && !_owner.BaseMode;
+    /// <summary>Copy to mod applies: out of base mode</summary>
+    public bool CanCopyToMod => !_owner.BaseMode;
+
+    /// <summary>The right-click menu's Copy to mod: a game is copied as a new game of the mod's, built on it</summary>
+    public string CopyToModHeader => Kind == DefinitionKind.GamePackInfo ? "Copy to mod as a new game…" : "Copy to mod";
+
+    public string CopyToModToolTip => Kind == DefinitionKind.GamePackInfo
+        ? "A mod can't change pfwolf.pk3's games, but it can add one built on it: it plays that game's data files and definitions, with the mod's over them. Asks for its id; a game the mod has already is just opened."
+        : "Copies the whole definition, as the game has it now, into the mod picked to save into, and opens it there in the YAML tab to change (a mod with its own of it already just opens that)";
 
     /// <summary>
     /// Copies the definition picked whole, as the game has it, into the mod picked to save into
@@ -662,12 +669,60 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             return;
         }
 
+        if (Kind == DefinitionKind.GamePackInfo)
+        {
+            await CopyGameToModAsync(set, path[0], mod);
+            return;
+        }
+
         try
         {
             var write = set.PlanCopyToMod(path, mod);
             var places = DefinitionSaver.Save(write, content.GameFolder, null);
             _owner.FileSaved(mod, places, write.Notes);
             _owner.ShowYaml(write.File.WithText(write.NewText), path);
+        }
+        catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            _owner.Status = $"Not copied: {e.Message}";
+        }
+    }
+
+    /// <summary>
+    /// A game added to the mod's gamepack-info.yaml, built on the one picked (base-pack), by an id
+    /// asked for: it has that game's data files, definitions and look, and the mod's files over them
+    /// </summary>
+    private async Task CopyGameToModAsync(DefinitionSet set, string baseId, string mod)
+    {
+        if (_owner.AskText == null || _owner.Content is not { } content)
+            return;
+
+        var taken = set.Merged.Children.Keys.OfType<YamlScalarNode>().Select(key => key.Value ?? "").ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var suggested = $"{baseId}-mod";
+        for (int n = 2; taken.Contains(suggested); n++)
+            suggested = $"{baseId}-mod{n}";
+
+        var id = await _owner.AskText("Copy to mod as a new game",
+            $"A mod can't change {baseId}, but it can add a game built on it. The new game's id (what --game names it):", suggested,
+            candidate =>
+            {
+                var trimmed = candidate.Trim();
+                if (trimmed.Length == 0 || trimmed.Any(c => !(char.IsLetterOrDigit(c) || c == '-')))
+                    return "Letters, digits and dashes";
+                return taken.Contains(trimmed) ? $"There's a game {trimmed} already" : null;
+            });
+        if (id == null)
+            return;
+        id = id.Trim().ToLowerInvariant();
+
+        var title = (YamlNodes.Get(set.Merged, [baseId, "title"]) as YamlScalarNode)?.Value ?? baseId;
+        var game = new YamlMappingNode { { "title", $"{title} ({id})" }, { "base-pack", baseId } };
+        try
+        {
+            var write = set.PlanWrite([id], game, mod);
+            var places = DefinitionSaver.Save(write, content.GameFolder, null);
+            _owner.FileSaved(mod, places, [$"{id} plays {baseId}'s data files and definitions with this mod's over them: pick it in the editor's games once it's loaded again, or run PFWolf with --game {id}"]);
+            _owner.ShowYaml(write.File.WithText(write.NewText), [id]);
         }
         catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException)
         {
