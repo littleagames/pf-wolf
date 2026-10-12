@@ -45,6 +45,58 @@ public static class YamlFileTypes
         };
     }
 
+    /// <summary>
+    /// Where a mod keeps its own of one of pfwolf.pk3's files, to lay over it (gamepacks/wolf3d/colors.yaml
+    /// is a mod's colors.yaml, actordefs/wolf3d/guards.yaml its actordefs/guards.yaml), or null with
+    /// <paramref name="why"/> for a file a mod can't change
+    /// </summary>
+    public static string? ModPathFor(string baseEntryPath, out string why)
+    {
+        why = "";
+        var path = baseEntryPath.Replace('\\', '/');
+        var parts = path.Split('/');
+        var name = parts[^1].ToLowerInvariant();
+
+        if (path.StartsWith("menudefs/", StringComparison.OrdinalIgnoreCase))
+            why = "Mods can't change menus yet";
+        else if (path.Equals("gamepacks/gamepack-info.yaml", StringComparison.OrdinalIgnoreCase))
+            why = "A mod can't change pfwolf.pk3's games; its own gamepack-info.yaml adds games of its own (the Game packs tab's New…)";
+        else if (path.StartsWith("gamepacks/", StringComparison.OrdinalIgnoreCase))
+        {
+            // gamepacks/{pack}/language/en-us.yaml, gamepacks/{pack}/colors.yaml
+            if (parts.Length == 4 && parts[2].Equals("language", StringComparison.OrdinalIgnoreCase))
+                return $"language/{parts[3]}";
+            if (parts.Length == 3 && ModRootGamePackFiles.Contains(name))
+                return name;
+            why = $"Mods can't carry a game pack's {parts[^1]} yet";
+        }
+        else if (path.StartsWith("actordefs/", StringComparison.OrdinalIgnoreCase)
+                 || path.StartsWith("mapdefs/", StringComparison.OrdinalIgnoreCase))
+            return $"{parts[0].ToLowerInvariant()}/{parts[^1]}";      // a pack's own, or the shared ones: flat in a mod
+        else if (path.StartsWith("language/", StringComparison.OrdinalIgnoreCase) && parts.Length == 2)
+            return path;
+        else if (path.StartsWith("sounds/", StringComparison.OrdinalIgnoreCase) && name.Contains("sound-seq"))
+            return path;
+        else
+            why = "The game doesn't read this file from a mod";
+        return null;
+    }
+
+    /// <summary>
+    /// A mod's new file laid over one of pfwolf.pk3's: empty but for a note saying how it works,
+    /// or the whole of pfwolf.pk3's to trim down to what changes
+    /// </summary>
+    public static string ModCopyText(string baseEntryPath, string baseText, bool whole)
+    {
+        var newline = baseText.Contains("\r\n") ? "\r\n" : "\n";
+        var note = whole
+            ? $"# A copy of pfwolf.pk3's {baseEntryPath}, laid over it key by key. Take out what you{newline}"
+              + $"# don't change: what's left out keeps pfwolf.pk3's (and `key: !remove` takes one out).{newline}"
+            : $"# Laid over pfwolf.pk3's {baseEntryPath}, key by key: give only what you change, and{newline}"
+              + $"# what's left out keeps pfwolf.pk3's (`key: !remove` takes one out).{newline}";
+        return whole ? note + newline + baseText.TrimStart('﻿') : note;
+    }
+
     /// <summary>What the file holds, in a word or two ("actor classes", "colors"), or null for one the game doesn't read</summary>
     public static string? Describe(string entryPath, bool isMod)
     {

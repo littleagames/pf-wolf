@@ -77,7 +77,8 @@ public sealed partial class YamlFilesViewModel : ObservableObject
     [ObservableProperty] private string _countText = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelection), nameof(IsReadOnly), nameof(ReadOnlyText), nameof(FileTitle), nameof(FileWhat))]
+    [NotifyPropertyChangedFor(nameof(HasSelection), nameof(IsReadOnly), nameof(ReadOnlyText), nameof(FileTitle), nameof(FileWhat),
+        nameof(CanCopyToMod), nameof(CopyToModText), nameof(IsBaseFile))]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private YamlFileItem? _selectedItem;
 
@@ -106,9 +107,11 @@ public sealed partial class YamlFilesViewModel : ObservableObject
     public bool HasProblem => Problem.Length > 0;
     public bool IsReadOnly => SelectedItem is { IsBase: true } && !_owner.BaseMode;
 
-    public string ReadOnlyText => IsReadOnly
-        ? "pfwolf.pk3's own file: turn on base mode to change it here, or change what it defines in a mod with the other tabs"
-        : "";
+    public string ReadOnlyText => !IsReadOnly ? ""
+        : CanCopyToMod ? "pfwolf.pk3's own file: turn on base mode to change it here, change what it defines with the other tabs, or Copy to mod for a mod's own to change"
+        : $"pfwolf.pk3's own file: turn on base mode to change it here. It can't be copied to a mod: {LowerFirst(CopyToModText.TrimEnd('.'))}.";
+
+    private static string LowerFirst(string text) => text.Length == 0 ? text : char.ToLowerInvariant(text[0]) + text[1..];
 
     public string FileTitle => SelectedItem == null ? "" : $"{SelectedItem.SourceName}: {SelectedItem.EntryPath}";
 
@@ -319,6 +322,62 @@ public sealed partial class YamlFilesViewModel : ObservableObject
 
     [RelayCommand(CanExecute = nameof(IsChanged))]
     private void Revert() => Source = _original;
+
+    public bool IsBaseFile => SelectedItem is { IsBase: true };
+
+    /// <summary>pfwolf.pk3's file picked, which a mod can have its own of</summary>
+    public bool CanCopyToMod => SelectedItem is { IsBase: true } item && YamlFileTypes.ModPathFor(item.EntryPath, out _) != null;
+
+    /// <summary>Why pfwolf.pk3's file picked can't be copied to a mod, or empty</summary>
+    public string CopyToModText
+    {
+        get
+        {
+            if (SelectedItem is not { IsBase: true } item)
+                return "";
+            return YamlFileTypes.ModPathFor(item.EntryPath, out var why) is { } modPath
+                ? $"Makes {modPath} in the mod picked to save into, laid over this file key by key"
+                : why;
+        }
+    }
+
+    /// <summary>
+    /// Makes a mod's own of pfwolf.pk3's file picked, where the mod keeps it ("whole": a copy of
+    /// it to trim down; else just a note), and opens it. One the mod has already is opened as it is.
+    /// </summary>
+    [RelayCommand]
+    private async Task CopyToModAsync(string? whole)
+    {
+        if (SelectedItem is not { IsBase: true } item || _owner.Content is not { } content)
+            return;
+        if (YamlFileTypes.ModPathFor(item.EntryPath, out var why) is not { } entryPath)
+        {
+            _owner.Status = why;
+            return;
+        }
+        if (await _owner.ModToSaveIn() is not { } mod)
+            return;
+
+        try
+        {
+            if (Editing.ModFiles.ReadText(mod, entryPath) != null)
+            {
+                _owner.Status = $"{Path.GetFileName(mod.TrimEnd('\\', '/'))} has its own {entryPath} already: here it is";
+                Show(mod, entryPath, []);
+                return;
+            }
+
+            var text = YamlFileTypes.ModCopyText(item.EntryPath, _original, whole == "whole");
+            var file = new DefinitionFile(mod, entryPath, "", "", isNew: true);
+            var places = DefinitionSaver.SaveText(file, text, content.GameFolder, null);
+            _owner.FileSaved(mod, places, []);
+            Show(mod, entryPath, []);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            _owner.Status = $"Couldn't make {entryPath}: {e.Message}";
+        }
+    }
 
     private bool CanSave => SelectedItem != null && IsChanged && !IsReadOnly;
 

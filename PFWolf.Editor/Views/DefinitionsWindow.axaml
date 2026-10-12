@@ -91,15 +91,28 @@
           <!-- The file picked -->
           <DockPanel Margin="0,8,0,8" IsVisible="{Binding HasSelection}">
             <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,6">
-              <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+              <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
                 <StackPanel>
                   <SelectableTextBlock Text="{Binding FileTitle}" FontSize="16" FontWeight="SemiBold" />
                   <TextBlock Text="{Binding FileWhat}" Classes="hint" />
                 </StackPanel>
                 <TextBlock Grid.Column="1" Text="Changed, not saved" Classes="hint" VerticalAlignment="Center" IsVisible="{Binding IsChanged}" />
-                <Button Grid.Column="2" Content="Save" Command="{Binding SaveCommand}" Classes="accent" VerticalAlignment="Center"
+                <!-- pfwolf.pk3's own: a mod's file of it to change it in -->
+                <DropDownButton Grid.Column="2" Content="Copy to mod" VerticalAlignment="Center"
+                                IsVisible="{Binding IsBaseFile}" IsEnabled="{Binding CanCopyToMod}" ToolTip.Tip="{Binding CopyToModText}"
+                                ToolTip.ShowOnDisabled="True">
+                  <DropDownButton.Flyout>
+                    <MenuFlyout Placement="BottomEdgeAlignedRight">
+                      <MenuItem Header="As an empty file" Command="{Binding CopyToModCommand}" CommandParameter="empty"
+                                ToolTip.Tip="Just a note: give it only the keys you change, and the rest stays pfwolf.pk3's" />
+                      <MenuItem Header="As a whole copy" Command="{Binding CopyToModCommand}" CommandParameter="whole"
+                                ToolTip.Tip="All of it, to trim down to what you change (what's left in it that's the same changes nothing)" />
+                    </MenuFlyout>
+                  </DropDownButton.Flyout>
+                </DropDownButton>
+                <Button Grid.Column="3" Content="Save" Command="{Binding SaveCommand}" Classes="accent" VerticalAlignment="Center"
                         ToolTip.Tip="Ctrl+S: back into its mod, or in base mode into pfwolf.pk3 and pfwolf-pk3" />
-                <Button Grid.Column="3" Content="Revert" Command="{Binding RevertCommand}" VerticalAlignment="Center"
+                <Button Grid.Column="4" Content="Revert" Command="{Binding RevertCommand}" VerticalAlignment="Center"
                         ToolTip.Tip="Back to the file as it was read (or last saved)" />
               </Grid>
               <TextBlock Text="{Binding ReadOnlyText}" Classes="hint" FontStyle="Italic"
