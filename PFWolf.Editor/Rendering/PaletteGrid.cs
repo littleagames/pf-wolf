@@ -67,6 +67,9 @@ public sealed class PaletteGrid : Control
     /// <summary>The color under the pointer, or -1 when it's off the grid</summary>
     public event EventHandler<int>? Hovered;
 
+    /// <summary>A color was right-clicked (the pixel editor's right-button color)</summary>
+    public event EventHandler<int>? RightPicked;
+
     private bool _dragging;
     private int _hovered = -1;
 
@@ -138,6 +141,12 @@ public sealed class PaletteGrid : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+        if (e.GetCurrentPoint(this).Properties.IsRightButtonPressed && IndexAt(e.GetPosition(this)) is >= 0 and var right)
+        {
+            RightPicked?.Invoke(this, right);
+            e.Handled = true;
+            return;
+        }
         if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             return;
         Focus();

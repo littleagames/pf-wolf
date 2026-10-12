@@ -28,6 +28,53 @@ public partial class ArtBrowserWindow : Window
 
     private ArtBrowserViewModel ViewModel => (ArtBrowserViewModel)DataContext!;
 
+    // The pixel editors open, by kind and picture name
+    private readonly Dictionary<(ArtKind, string), PixelEditorWindow> _pixelEditors = [];
+
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+        if (DataContext is ArtBrowserViewModel viewModel)
+            viewModel.PixelEditRequested += OpenPixelEditor;
+    }
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+
+        // The pixel editors close with it: one with changes nobody saved has to be dealt with first
+        if (_pixelEditors.Values.FirstOrDefault(window => window.DataContext is PixelEditorViewModel { IsDirty: true }) is { } unsaved)
+        {
+            e.Cancel = true;
+            ViewModel.Status = "A pixel editor has changes that aren't saved: save it or close it first";
+            unsaved.Activate();
+        }
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+        if (DataContext is ArtBrowserViewModel viewModel)
+            viewModel.PixelEditRequested -= OpenPixelEditor;
+    }
+
+    private void OpenPixelEditor(object? sender, PixelEditorViewModel editor)
+    {
+        // One window a picture: one already open comes to the front, with what's drawn in it
+        var key = (editor.Document.Kind, editor.Document.Name);
+        if (_pixelEditors.TryGetValue(key, out var open))
+        {
+            editor.Dispose();
+            open.Activate();
+            return;
+        }
+
+        var window = new PixelEditorWindow { DataContext = editor };
+        window.Closed += (_, _) => _pixelEditors.Remove(key);
+        _pixelEditors[key] = window;
+        window.Show(this);
+    }
+
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
@@ -187,15 +234,8 @@ public partial class ArtBrowserWindow : Window
     private async Task<(ArtKind Kind, List<(string Name, byte[] Data)> Pictures)?> AskAdd(
         List<(string Name, byte[] Data, string Size)> pictures, List<string> unreadable)
     {
-        KindChoice[] kinds =
-        [
-            new(ArtKind.Texture, "Wall textures (textures/)"),
-            new(ArtKind.Flat, "Flats (flats/)"),
-            new(ArtKind.Sprite, "Sprites (sprites/)"),
-            new(ArtKind.Picture, "Pictures (graphics/)"),
-        ];
         var startKind = ViewModel.SelectedKind?.Kind ?? ViewModel.CurrentKind ?? ArtKind.Texture;
-        var kind = new ComboBox { ItemsSource = kinds, SelectedItem = kinds.First(choice => choice.Kind == startKind), MinWidth = 240 };
+        var kind = new ComboBox { ItemsSource = Kinds, SelectedItem = Kinds.First(choice => choice.Kind == startKind), MinWidth = 240 };
         var name = new TextBox { Text = pictures[0].Name, IsVisible = pictures.Count == 1 };
         var info = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap, Opacity = 0.8 };
         var error = new TextBlock { Foreground = Avalonia.Media.Brushes.OrangeRed, TextWrapping = Avalonia.Media.TextWrapping.Wrap };
@@ -222,35 +262,14 @@ public partial class ArtBrowserWindow : Window
         name.TextChanged += (_, _) => Describe();
         Describe();
 
-        var buttons = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
-        buttons.Children.AddRange([ok, cancel]);
-        var dialog = new Window
-        {
-            Title = pictures.Count == 1 ? $"Add {pictures[0].Name}" : $"Add {pictures.Count} pictures",
-            Width = 440,
-            SizeToContent = SizeToContent.Height,
-            CanResize = false,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            ShowInTaskbar = false,
-            Content = new Border
-            {
-                Padding = new Avalonia.Thickness(16),
-                Child = new StackPanel
-                {
-                    Spacing = 8,
-                    Children =
-                    {
-                        new TextBlock { Text = "They go in a mod picked next, named by their file names:", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
-                        kind,
-                        new TextBlock { Text = "Name", IsVisible = pictures.Count == 1 },
-                        name,
-                        info,
-                        error,
-                        buttons,
-                    },
-                },
-            },
-        };
+        var dialog = MakeDialog(pictures.Count == 1 ? $"Add {pictures[0].Name}" : $"Add {pictures.Count} pictures",
+            new TextBlock { Text = "They go in a mod picked next, named by their file names:", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+            kind,
+            new TextBlock { Text = "Name", IsVisible = pictures.Count == 1 },
+            name,
+            info,
+            error,
+            Buttons(ok, cancel));
 
         (ArtKind, List<(string, byte[])>)? answer = null;
         ok.Click += (_, _) =>
@@ -264,5 +283,97 @@ public partial class ArtBrowserWindow : Window
         cancel.Click += (_, _) => dialog.Close();
         await dialog.ShowDialog(this);
         return answer;
+    }
+
+    private static readonly KindChoice[] Kinds =
+    [
+        new(ArtKind.Texture, "Wall texture (textures/)"),
+        new(ArtKind.Flat, "Flat (flats/)"),
+        new(ArtKind.Sprite, "Sprite (sprites/)"),
+        new(ArtKind.Picture, "Picture (graphics/)"),
+    ];
+
+    // Asks what to draw: its kind, name and size; then opens it in the pixel editor
+    private async void NewPicture(object? sender, RoutedEventArgs e)
+    {
+        var startKind = ViewModel.SelectedKind?.Kind ?? ViewModel.CurrentKind ?? ArtKind.Texture;
+        var kind = new ComboBox { ItemsSource = Kinds, SelectedItem = Kinds.First(choice => choice.Kind == startKind), MinWidth = 240 };
+        var name = new TextBox { Text = "NEW" };
+        var width = new NumericUpDown { Minimum = 1, Maximum = 1024, Value = 64, FormatString = "0", Width = 130 };
+        var height = new NumericUpDown { Minimum = 1, Maximum = 1024, Value = 64, FormatString = "0", Width = 130 };
+        var clear = new CheckBox { Content = "See-through to start with", IsChecked = startKind == ArtKind.Sprite };
+        var note = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap, Opacity = 0.7, FontSize = 12 };
+        var error = new TextBlock { Foreground = Avalonia.Media.Brushes.OrangeRed, TextWrapping = Avalonia.Media.TextWrapping.Wrap };
+        var ok = new Button { Content = "Draw it", IsDefault = true, Classes = { "accent" } };
+        var cancel = new Button { Content = "Cancel", IsCancel = true };
+
+        void KindChanged()
+        {
+            var picked = ((KindChoice)kind.SelectedItem!).Kind;
+            clear.IsEnabled = picked != ArtKind.Texture;
+            if (picked == ArtKind.Texture)
+                clear.IsChecked = false;
+            note.Text = picked switch
+            {
+                ArtKind.Texture => "Wall textures are 64 wide; taller ones are tall walls, 64 a story.",
+                ArtKind.Flat => "Flats are 64 × 64; see-through pixels show the floor or ceiling color.",
+                ArtKind.Sprite => "Wolf3D's sprites are 64 × 64, standing on the bottom row.",
+                _ => "The screen is 320 × 200.",
+            };
+        }
+        kind.SelectionChanged += (_, _) =>
+        {
+            KindChanged();
+            if (((KindChoice)kind.SelectedItem!).Kind == ArtKind.Picture && width.Value == 64 && height.Value == 64)
+                (width.Value, height.Value) = (320, 200);
+        };
+        KindChanged();
+
+        var size = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8 };
+        size.Children.AddRange([width, new TextBlock { Text = "×", VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center }, height]);
+        var dialog = MakeDialog("New picture", kind, new TextBlock { Text = "Name" }, name, new TextBlock { Text = "Size" }, size, clear, note, error,
+            Buttons(ok, cancel));
+
+        bool drawn = false;
+        ok.Click += (_, _) =>
+        {
+            var picked = ((KindChoice)kind.SelectedItem!).Kind;
+            if (ViewModel.CheckNewName(picked, (name.Text ?? "").Trim()) is { } problem)
+            {
+                error.Text = problem;
+                return;
+            }
+            drawn = true;
+            dialog.Close();
+        };
+        cancel.Click += (_, _) => dialog.Close();
+        await dialog.ShowDialog(this);
+
+        if (drawn)
+            ViewModel.NewPicture(((KindChoice)kind.SelectedItem!).Kind, (name.Text ?? "").Trim(), (int)(width.Value ?? 64), (int)(height.Value ?? 64),
+                clear.IsChecked == true);
+    }
+
+    private static Window MakeDialog(string title, params Control[] children)
+    {
+        var panel = new StackPanel { Spacing = 8 };
+        panel.Children.AddRange(children);
+        return new Window
+        {
+            Title = title,
+            Width = 440,
+            SizeToContent = SizeToContent.Height,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ShowInTaskbar = false,
+            Content = new Border { Padding = new Avalonia.Thickness(16), Child = panel },
+        };
+    }
+
+    private static StackPanel Buttons(params Button[] buttons)
+    {
+        var panel = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
+        panel.Children.AddRange(buttons);
+        return panel;
     }
 }

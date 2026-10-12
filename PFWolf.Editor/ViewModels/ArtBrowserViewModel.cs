@@ -99,6 +99,12 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     /// <summary>Asks whether to go ahead (title, message, yes button)</summary>
     public Func<string, string, string, Task<bool>>? Confirm { get; set; }
 
+    /// <summary>Asks whether to save changes before they're lost (a pixel editor closing)</summary>
+    public Func<string, Task<UnsavedChoice>>? AskUnsaved { get; set; }
+
+    /// <summary>A picture is to be drawn in the pixel editor: the window opens one for it</summary>
+    public event EventHandler<PixelEditorViewModel>? PixelEditRequested;
+
     private static readonly (ArtKind? Kind, string Label)[] KindLabels =
     [
         (null, "All"),
@@ -522,6 +528,49 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
                 + (ModFiles.IsArchive(file.ModPath) ? $"\n\nThe pk3's last version is kept as {Path.GetFileName(file.ModPath)}{ModFiles.BackupExtension}." : ""), "Delete"))
             return;
         await Make(_ => ArtFiles.Delete(file, entry.Kind, name), null);
+    }
+
+    //
+    // The pixel editor
+    //
+
+    /// <summary>Opens the picture shown in the pixel editor</summary>
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void EditPixels()
+    {
+        if (_content is not { } content || SelectedItem?.Entry is not { } entry)
+            return;
+        var name = CurrentAssetName;
+        if (ArtCache.Indexed(content, entry.Kind, name) is not { } picture)
+        {
+            Status = $"There's no {name} to draw";
+            return;
+        }
+        (int, int)? offset = entry.Kind == ArtKind.Sprite && content.Find<SpriteAsset>(name) is { } sprite ? (sprite.Offset.x, sprite.Offset.y) : null;
+        OpenPixelEditor(new PixelDocument(entry.Kind, name, picture, offset));
+    }
+
+    /// <summary>What's wrong with a new picture's name, or null when it will do</summary>
+    public string? CheckNewName(ArtKind kind, string name)
+        => ArtFiles.CheckName(name)
+           ?? (_content != null && ArtFiles.Exists(_content, kind, name) ? $"The game has a {name.ToUpperInvariant()} already: draw on that one instead." : null);
+
+    /// <summary>Opens a new blank picture in the pixel editor (it's added to a mod when it's saved)</summary>
+    public void NewPicture(ArtKind kind, string name, int width, int height, bool clear)
+    {
+        if (_content == null)
+            return;
+        OpenPixelEditor(PixelDocument.Blank(kind, name, width, height, clear ? PixelDocument.Clear : 0));
+    }
+
+    private void OpenPixelEditor(PixelDocument document)
+    {
+        var editor = new PixelEditorViewModel(document, _content!.LoadedPalette,
+            saving => SavePictureAsync(saving.Kind, saving.Name, saving.Picture, saving.Offset))
+        {
+            AskUnsaved = AskUnsaved,
+        };
+        PixelEditRequested?.Invoke(this, editor);
     }
 
     //

@@ -1,0 +1,92 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PFWolf.Editor.ViewModels"
+        xmlns:r="using:PFWolf.Editor.Rendering"
+        x:Class="PFWolf.Editor.Views.PixelEditorWindow"
+        x:DataType="vm:PixelEditorViewModel"
+        Title="{Binding Title}"
+        Width="1100" Height="760" MinWidth="760" MinHeight="480"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+    <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
+    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+    <KeyBinding Gesture="B" Command="{Binding SetToolCommand}" CommandParameter="Pencil" />
+    <KeyBinding Gesture="E" Command="{Binding SetToolCommand}" CommandParameter="Eraser" />
+    <KeyBinding Gesture="F" Command="{Binding SetToolCommand}" CommandParameter="Fill" />
+    <KeyBinding Gesture="I" Command="{Binding SetToolCommand}" CommandParameter="Picker" />
+    <KeyBinding Gesture="X" Command="{Binding SwapColorsCommand}" />
+    <KeyBinding Gesture="OemPlus" Command="{Binding ZoomByCommand}" CommandParameter="1" />
+    <KeyBinding Gesture="Add" Command="{Binding ZoomByCommand}" CommandParameter="1" />
+    <KeyBinding Gesture="OemMinus" Command="{Binding ZoomByCommand}" CommandParameter="-1" />
+    <KeyBinding Gesture="Subtract" Command="{Binding ZoomByCommand}" CommandParameter="-1" />
+  </Window.KeyBindings>
+
+  <DockPanel>
+    <!-- Tools -->
+    <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <RadioButton Content="Pencil (B)" GroupName="tool" IsChecked="{Binding IsPencil}" />
+        <RadioButton Content="Eraser (E)" GroupName="tool" IsChecked="{Binding IsEraser}" IsEnabled="{Binding CanBeClear}"
+                     ToolTip.Tip="Makes pixels see-through (not on a wall texture)" />
+        <RadioButton Content="Fill (F)" GroupName="tool" IsChecked="{Binding IsFill}"
+                     ToolTip.Tip="Fills the pixels joined to the one clicked that are its color; with Ctrl, every pixel of that color" />
+        <RadioButton Content="Picker (I)" GroupName="tool" IsChecked="{Binding IsPicker}"
+                     ToolTip.Tip="Picks a pixel's color: left button for the left color, right for the right" />
+        <Border Width="12" />
+        <Button Content="Undo" Command="{Binding UndoCommand}" ToolTip.Tip="Ctrl+Z" />
+        <Button Content="Redo" Command="{Binding RedoCommand}" ToolTip.Tip="Ctrl+Y" />
+        <Border Width="12" />
+        <TextBlock Text="Zoom" VerticalAlignment="Center" />
+        <ComboBox ItemsSource="{Binding Zooms}" SelectedItem="{Binding Zoom}" MinWidth="80">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="x:Int32">
+              <TextBlock Text="{Binding StringFormat='{}{0}×'}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" />
+        <Border Width="12" />
+        <Button Content="Save" Command="{Binding SaveCommand}" Classes="accent"
+                ToolTip.Tip="Saves it as a PNG in its mod, or, for the game's own or a new picture, in a mod picked (Ctrl+S)" />
+      </StackPanel>
+    </Border>
+
+    <!-- What happened -->
+    <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+        <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" FontSize="12" />
+        <TextBlock Grid.Column="1" Text="{Binding HoverText}" FontFamily="Consolas,Menlo,monospace" FontSize="12" />
+      </Grid>
+    </Border>
+
+    <!-- The colors -->
+    <DockPanel DockPanel.Dock="Right" Width="300" Margin="8">
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+        <Border Width="40" Height="28" BorderThickness="1" BorderBrush="Gray" Background="{Binding PrimaryBrush}" />
+        <TextBlock Grid.Column="1" Text="{Binding PrimaryText, StringFormat='{}Left: {0}'}" VerticalAlignment="Center" />
+        <Border Grid.Row="1" Width="40" Height="28" BorderThickness="1" BorderBrush="Gray" Background="{Binding SecondaryBrush}" />
+        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SecondaryText, StringFormat='{}Right: {0}'}" VerticalAlignment="Center" />
+      </Grid>
+      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,8">
+        <Button Content="Swap (X)" Command="{Binding SwapColorsCommand}" />
+        <Button Content="See-through" Command="{Binding ClearColorCommand}" IsEnabled="{Binding CanBeClear}"
+                ToolTip.Tip="Draws see-through with the left button (or use the eraser)" />
+      </StackPanel>
+      <TextBlock DockPanel.Dock="Bottom" Text="{Binding Help}" TextWrapping="Wrap" FontSize="12" Opacity="0.7" Margin="0,8,0,0" />
+      <TextBlock DockPanel.Dock="Bottom" Text="Click a color for the left button, right-click for the right. Dots: colors in the picture."
+                 TextWrapping="Wrap" FontSize="12" Opacity="0.7" Margin="0,6,0,0" />
+      <r:PaletteGrid x:Name="Colors" Colors="{Binding Palette}" Anchor="{Binding GridCurrent}" Current="{Binding GridCurrent}"
+                     Marked="{Binding UsedColors}" />
+    </DockPanel>
+
+    <!-- The picture -->
+    <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Margin="8"
+                  Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+      <r:PixelCanvas x:Name="Canvas" Picture="{Binding Bitmap}" Zoom="{Binding Zoom}" ShowGrid="{Binding ShowGrid}" Mark="{Binding Mark}"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16" />
+    </ScrollViewer>
+  </DockPanel>
+</Window>

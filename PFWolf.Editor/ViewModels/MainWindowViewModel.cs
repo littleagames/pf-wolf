@@ -203,6 +203,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 PickMod = PickModToSaveIn,
                 AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
                 Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
+                AskUnsaved = message => Dialogs.AskUnsaved(message),
                 ImageEditor = _settings.ImageEditor,
             };
             _artBrowser.PropertyChanged += (_, args) =>

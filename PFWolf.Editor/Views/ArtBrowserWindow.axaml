@@ -11,7 +11,7 @@
   <DockPanel>
     <!-- What's listed -->
     <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <Grid ColumnDefinitions="Auto,Auto,*,Auto,140,Auto,Auto" ColumnSpacing="8">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto,140,Auto,Auto,Auto" ColumnSpacing="8">
         <ComboBox Grid.Column="0" ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}" MinWidth="170" />
         <ComboBox Grid.Column="1" ItemsSource="{Binding Shows}" SelectedItem="{Binding SelectedShow}" MinWidth="140"
                   ToolTip.Tip="In use: a mapdefs wall, door or flat, an actordefs class or a level's sky shows it" />
@@ -22,6 +22,8 @@
         <TextBlock Grid.Column="5" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="120" />
         <Button Grid.Column="6" Content="Add…" Click="AddPictures"
                 ToolTip.Tip="Puts PNG or BMP files in a mod as wall textures, flats, sprites or pictures, named by their file names" />
+        <Button Grid.Column="7" Content="New…" Click="NewPicture"
+                ToolTip.Tip="Draws a new picture in the pixel editor; saving it puts it in a mod" />
       </Grid>
     </Border>
 
@@ -154,6 +156,8 @@
                 ToolTip.Tip="Renames its file in its mod (only a mod's own pictures)" />
         <Button Content="Delete" Command="{Binding DeleteCommand}"
                 ToolTip.Tip="Takes its file out of its mod (only a mod's own pictures); the game's own of that name shows again" />
+        <Button Content="Edit pixels" Command="{Binding EditPixelsCommand}"
+                ToolTip.Tip="Draws on it in the pixel editor, in the game palette; saving puts it in its mod (or, for the game's own, a mod picked)" />
         <Button Content="Edit outside" Command="{Binding EditOutsideCommand}"
                 ToolTip.Tip="{Binding ImageEditorText, StringFormat='{}Opens it as a PNG in a paint program and watches for it being saved there. {0}.'}" />
         <Button Content="Paint program ▾"

@@ -20,7 +20,20 @@ public partial class MainWindow : Window, IEditorDialogs
     /// The window a question is asked over: the browser or definitions window in use when it's
     /// one of those asking, so the question isn't hidden behind it, else the editor
     /// </summary>
-    private Window DialogOwner => OwnedWindows.FirstOrDefault(window => window.IsActive) ?? this;
+    private Window DialogOwner => ActiveOwned(this) ?? this;
+
+    // The active window among those a window owns, and theirs (a pixel editor the art browser opened)
+    private static Window? ActiveOwned(Window window)
+    {
+        foreach (var owned in window.OwnedWindows)
+        {
+            if (owned.IsActive)
+                return owned;
+            if (ActiveOwned(owned) is { } inner)
+                return inner;
+        }
+        return null;
+    }
 
     private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext!;
 
