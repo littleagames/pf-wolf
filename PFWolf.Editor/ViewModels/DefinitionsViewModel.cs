@@ -16,7 +16,7 @@ public sealed record SaveTarget(string Path)
 /// <summary>
 /// The definitions window: the game's game-info, game packs, actor classes and map definitions,
 /// each in fields, and every YAML file as text. Changes are saved into a mod as just what they
-/// change, or in base mode into pfwolf.pk3's own files (and the pfwolf-pk3 folder it's built from).
+/// change: pfwolf.pk3's own files are read-only.
 /// </summary>
 public sealed partial class DefinitionsViewModel : ObservableObject
 {
@@ -67,37 +67,15 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(TargetText))]
     private SaveTarget? _saveTarget;
 
-    /// <summary>Changes go into pfwolf.pk3's own files, not a mod</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(TargetText), nameof(IsModMode))]
-    private bool _baseMode;
-
-    /// <summary>The pfwolf-pk3 folder pfwolf.pk3 is built from, which base mode saves into too; null when there's none</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(TargetText))]
-    private string? _baseSourceFolder;
-
     [ObservableProperty] private string _title = "Definitions";
     [ObservableProperty] private string _status = "";
 
     /// <summary>Something's been saved that the levels, palette and game loaded don't have until it's loaded again</summary>
     [ObservableProperty] private bool _needsReload;
 
-    public bool IsModMode => !BaseMode;
-
-    public string TargetText => BaseMode
-        ? "Saving into pfwolf.pk3 in the game folder" + (BaseSourceFolder != null ? $" and {BaseSourceFolder}" : " (no pfwolf-pk3 folder found to save into too: the next build puts the old files back)")
-        : SaveTarget != null ? $"Saving into {SaveTarget.Path}" : "Saving into a mod picked when it's saved";
-
-    partial void OnBaseModeChanged(bool value)
-    {
-        _sets.Clear();
-        Files.Refresh();
-        ModeChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    /// <summary>Base mode was turned on or off: what's shown is pfwolf.pk3's own, or the mods' over it</summary>
-    public event EventHandler? ModeChanged;
+    public string TargetText => SaveTarget != null
+        ? $"Saving into {SaveTarget.Path} (pfwolf.pk3 is read-only)"
+        : "Saving into a mod picked when it's saved (pfwolf.pk3 is read-only)";
 
     /// <summary>A game was loaded (or loaded again, with what was saved)</summary>
     public void Load(GameContent? content, IReadOnlyList<string> mods)
@@ -107,7 +85,6 @@ public sealed partial class DefinitionsViewModel : ObservableObject
         NeedsReload = false;
         Status = "";
         Title = content == null ? "Definitions" : $"Definitions - {content.Title}";
-        BaseSourceFolder = content == null ? null : DefinitionSaver.FindBaseSourceFolder(content.GameFolder);
         SetMods(mods);
         Files.Refresh();
         Reloaded?.Invoke(this, EventArgs.Empty);
@@ -121,7 +98,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     {
         var picked = SaveTarget?.Path;
         SaveTargets.Clear();
-        foreach (var mod in mods)
+        foreach (var mod in mods.Where(mod => Editing.ModFiles.WhyReadOnly(mod) == null))
             SaveTargets.Add(new SaveTarget(mod));
         SaveTarget = SaveTargets.FirstOrDefault(target => DefinitionFile.SameMod(target.Path, picked)) ?? SaveTargets.LastOrDefault();
     }
@@ -142,6 +119,11 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     {
         if (PickMod == null || await PickMod("A mod to save definitions in") is not { } path)
             return;
+        if (Editing.ModFiles.WhyReadOnly(path) is { } why)
+        {
+            Status = $"Not picked: {why}.";
+            return;
+        }
         if (SaveTargets.FirstOrDefault(target => DefinitionFile.SameMod(target.Path, path)) is not { } target)
             SaveTargets.Add(target = new SaveTarget(path));
         SaveTarget = target;
@@ -176,39 +158,6 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     public event EventHandler? DefinitionsChanged;
 
     private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, Animations, GamePacks];
-
-    /// <summary>Asks whether to save changes before they're lost; the editor answers with its dialog</summary>
-    public Func<string, Task<UnsavedChoice>>? AskUnsaved { get; set; }
-
-    /// <summary>
-    /// Turns base mode on or off. The tabs then show pfwolf.pk3's own definitions, or the mods'
-    /// over them, so their unsaved edits would be lost: it asks to save them first (where they'd
-    /// have gone before the switch)
-    /// </summary>
-    [RelayCommand]
-    private async Task ToggleBaseModeAsync()
-    {
-        var unsaved = Editors.SelectMany(editor => editor.UnsavedNames).ToList();
-        if (unsaved.Count > 0 && AskUnsaved != null)
-        {
-            var question = $"Turning base mode {(BaseMode ? "off" : "on")} drops the changes to {string.Join(", ", unsaved)}. Save first?";
-            switch (await AskUnsaved(question))
-            {
-                case UnsavedChoice.Save:
-                    foreach (var editor in Editors)
-                    {
-                        if (!await editor.SaveAllAsync())
-                            return;     // the status says why; base mode stays as it was
-                    }
-                    break;
-                case UnsavedChoice.Discard:
-                    break;
-                default:
-                    return;
-            }
-        }
-        BaseMode = !BaseMode;
-    }
 
     /// <summary>
     /// What's changed here and not saved (definitions in the tabs, the file in the YAML tab), as

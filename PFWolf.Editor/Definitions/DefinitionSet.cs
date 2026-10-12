@@ -25,8 +25,8 @@ public sealed record DefinitionWrite(DefinitionFile File, IReadOnlyList<string> 
 /// class by class, mapdefs entry by entry, game-info all the way down) and a mod's laid over
 /// those all the way down. Every file's part in a definition can be found, and a change to a
 /// definition worked out as the least that does it: in a mod, the keys that differ from what
-/// the files before it make (keys taken out tagged !remove); in pfwolf.pk3 (base mode), the
-/// definition in the file it comes from.
+/// the files before it make (keys taken out tagged !remove). pfwolf.pk3's own files are
+/// read-only: changes only ever go in a mod.
 /// </summary>
 public sealed class DefinitionSet
 {
@@ -127,7 +127,7 @@ public sealed class DefinitionSet
     /// <summary>What every file makes, mods and all: what the game plays</summary>
     public YamlMappingNode Merged => _merged ??= Replay(Files);
 
-    /// <summary>What pfwolf.pk3's files make on their own: what base mode edits</summary>
+    /// <summary>What pfwolf.pk3's files make on their own, which the mods change</summary>
     public YamlMappingNode MergedBase => _mergedBase ??= Replay(Files.Where(file => file.IsBase));
 
     /// <summary>What these files make, merged as the game merges them</summary>
@@ -237,7 +237,7 @@ public sealed class DefinitionSet
         return entries;
     }
 
-    /// <summary>The value a definition has: as the game has it, or (base only) as pfwolf.pk3's files make it</summary>
+    /// <summary>The value a definition has: as the game has it, or (base only) as pfwolf.pk3's files alone make it</summary>
     public YamlNode? ValueOf(IReadOnlyList<string> path, bool baseOnly) => YamlNodes.Get(baseOnly ? MergedBase : Merged, path);
 
     /// <summary>The files that have a part in a definition, in load order (the last one's is used, or merged over the rest)</summary>
@@ -266,46 +266,38 @@ public sealed class DefinitionSet
     //
 
     /// <summary>
-    /// Works out how to save a definition as edited (null: taken out): into the mod
-    /// <paramref name="modPath"/>, or with null into pfwolf.pk3's own files (base mode). Throws
+    /// Works out how to save a definition as edited (null: taken out) into the mod
+    /// <paramref name="modPath"/> (pfwolf.pk3's own files are read-only). Throws
     /// InvalidDataException when the result wouldn't read as the game reads it.
     /// </summary>
-    /// <param name="edited">The definition as it should be: in a mod, all of it as the game would have it; in base mode, as pfwolf.pk3's files would</param>
-    public DefinitionWrite PlanWrite(IReadOnlyList<string> path, YamlNode? edited, string? modPath)
+    /// <param name="edited">The definition as it should be: all of it as the game would have it</param>
+    public DefinitionWrite PlanWrite(IReadOnlyList<string> path, YamlNode? edited, string modPath)
     {
         if (path.Count == 0)
             throw new ArgumentException("A definition needs a key path", nameof(path));
 
-        var target = modPath != null ? ModTarget(path, modPath) : BaseTarget(path, edited);
+        var target = ModTarget(path, modPath);
         if (target.Error != null && !target.IsNew)
             throw new InvalidDataException($"{target.Label} doesn't read, so the editor can't change it: fix it in its YAML first. {target.Error}");
 
         var notes = new List<string>();
-        var before = FilesBefore(target).Where(file => modPath != null || file.IsBase).ToList();
+        var before = FilesBefore(target).ToList();
         var existing = YamlNodes.Get(target.Tree, path);
         // What the files before it make of the definition (for extend: true, what it changes)
         var baseValue = YamlNodes.Get(Replay(before), path);
         YamlNode? value;
         if (Kind == DefinitionKind.GamePackInfo)
             value = edited;
-        else if (modPath != null)
+        else
         {
-            // In a mod: what differs from the files before it; for a class, from the pack's own
+            // What differs from the files before it; for a class, from the pack's own
             // (a pack class of the name replaces a shared one whole)
             // (and for an animation: a mod's go in with the pack's, whose replace shared ones whole)
             var overlayBase = Kind is DefinitionKind.Actors or DefinitionKind.Animations ? YamlNodes.Get(ReplayLayers(before).Pack, path) : baseValue;
             value = ActorOverlay(existing, baseValue, edited, path) ?? YamlNodes.Overlay(overlayBase, edited, path.Count);
         }
-        else if (edited == null)
-            value = baseValue != null ? YamlNodes.Remove() : null;
-        else if (Kind == DefinitionKind.GameInfo)
-            value = YamlNodes.Overlay(baseValue, edited, path.Count);
-        else if (Kind == DefinitionKind.MapDefs && path.Count < 2)
-            value = YamlNodes.Overlay(baseValue, edited, path.Count, wholeAtDepth: 2);
-        else
-            value = ActorOverlay(existing, baseValue, edited, path) ?? edited;   // a class, or a mapdefs entry, replaces the earlier files' whole
 
-        return Finish(target, path, value, modPath, notes);
+        return Finish(target, path, value, notes);
     }
 
     /// <summary>
@@ -317,7 +309,7 @@ public sealed class DefinitionSet
         var target = ModTarget(path, modPath);
         if (target.IsNew || YamlNodes.Get(target.Tree, path) == null)
             throw new InvalidDataException($"{Path.GetFileName(modPath.TrimEnd('\\', '/'))} doesn't change {YamlNodes.Describe(path)}");
-        return Finish(target, path, null, modPath, []);
+        return Finish(target, path, null, []);
     }
 
     /// <summary>
@@ -338,13 +330,13 @@ public sealed class DefinitionSet
             // A game-info section the game doesn't set (a standalone game has none of Wolf3D's):
             // the mod gets one to fill in
             if (Kind == DefinitionKind.GameInfo && path.Count == 1 && GameInfoSchema.Field(path[0]) is { } section)
-                return Finish(ModTarget(path, modPath), path, section.StarterValue(), modPath, [$"The game had no {path[0]}: it's started in {modName} for you to fill in"]);
+                return Finish(ModTarget(path, modPath), path, section.StarterValue(), [$"The game had no {path[0]}: it's started in {modName} for you to fill in"]);
             throw new InvalidDataException($"The game has no {YamlNodes.Describe(path)} to copy");
         }
         if (Kind == DefinitionKind.GamePackInfo)
             throw new InvalidDataException("A mod can't change pfwolf.pk3's games; its own gamepack-info.yaml adds games of its own (New…)");
 
-        return Finish(ModTarget(path, modPath), path, YamlNodes.Clone(YamlTree.WithoutMergeTags(value)), modPath, []);
+        return Finish(ModTarget(path, modPath), path, YamlNodes.Clone(YamlTree.WithoutMergeTags(value)), []);
     }
 
     private static FieldSchema? _gameInfoSchema;
@@ -359,7 +351,7 @@ public sealed class DefinitionSet
         => Files.Any(file => DefinitionFile.SameMod(file.ModPath, modPath) && file.Error == null && YamlNodes.Get(file.Tree, path) != null);
 
     // The file's new text with the value set, checked as the game would read it
-    private DefinitionWrite Finish(DefinitionFile target, IReadOnlyList<string> path, YamlNode? value, string? modPath, List<string> notes)
+    private DefinitionWrite Finish(DefinitionFile target, IReadOnlyList<string> path, YamlNode? value, List<string> notes)
     {
         var newText = YamlText.Sync(target.Text, path, value);
         var changed = target.WithText(newText);
@@ -371,18 +363,16 @@ public sealed class DefinitionSet
         var savedFile = after.Files.First(file => file.Is(changed.ModPath, changed.EntryPath));
         if (savedFile.Error != null)
             throw new InvalidDataException($"{target.Label} wouldn't read as {DefinitionKinds.Title(Kind).ToLowerInvariant()}: {savedFile.Error}");
-        if (DefinitionKinds.Check(Kind, YamlTree.ToText(modPath != null ? after.Merged : after.MergedBase)) is { } error)
+        if (DefinitionKinds.Check(Kind, YamlTree.ToText(after.Merged)) is { } error)
             throw new InvalidDataException($"With the change, the {DefinitionKinds.Title(Kind).ToLowerInvariant()} wouldn't read: {error}");
 
         // A file loaded after it that has its own say
         int targetIndex = after.Files.ToList().IndexOf(savedFile);
         foreach (var later in after.Files.Skip(targetIndex + 1))
         {
-            if ((modPath != null || later.IsBase) && later.Error == null && YamlNodes.Get(later.Tree, path) != null)
+            if (later.Error == null && YamlNodes.Get(later.Tree, path) != null)
                 notes.Add($"{later.Label} is loaded after it and changes {YamlNodes.Describe(path)} too, so that's what the game has");
         }
-        if (modPath == null && Files.Any(file => !file.IsBase && file.Error == null && YamlNodes.Get(file.Tree, path) != null))
-            notes.Add($"A mod loaded now changes {YamlNodes.Describe(path)} too, over pfwolf.pk3's");
 
         return new DefinitionWrite(target, path, value, newText, notes);
     }
@@ -469,31 +459,5 @@ public sealed class DefinitionSet
     {
         var name = new string(key.Select(c => char.IsLetterOrDigit(c) || c == '-' ? char.ToLowerInvariant(c) : '-').ToArray()).Trim('-');
         return name.Length > 0 ? name : "mapdefs";
-    }
-
-    /// <summary>
-    /// The pfwolf.pk3 file a definition goes in, in base mode: the last that has it (a class's,
-    /// the mapdefs table's), else for a new class its parent's file or the pack's last
-    /// </summary>
-    private DefinitionFile BaseTarget(IReadOnlyList<string> path, YamlNode? edited)
-    {
-        var baseFiles = Files.Where(file => file.IsBase).ToList();
-        if (baseFiles.Count == 0)
-            throw new InvalidDataException($"pfwolf.pk3 has no {DefinitionKinds.Title(Kind).ToLowerInvariant()} files for {PackId} to change");
-
-        if (Kind == DefinitionKind.GameInfo)
-            return baseFiles[^1];   // the running pack's own, over its base packs'
-
-        if (LastFileDefining(path, baseOnly: true) is { } defining)
-            return defining;
-
-        if (Kind == DefinitionKind.MapDefs && LastFileDefining([path[0]], baseOnly: true) is { } table)
-            return table;
-
-        if (Kind == DefinitionKind.Actors && YamlNodes.Get(edited, ["parent"]) is YamlScalarNode { Value: { Length: > 0 } parent }
-            && LastFileDefining([parent], baseOnly: true) is { } parentFile)
-            return parentFile;
-
-        return baseFiles.LastOrDefault(file => file.Layer != DefinitionFile.SharedLayer) ?? baseFiles[^1];
     }
 }

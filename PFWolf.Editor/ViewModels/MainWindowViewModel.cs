@@ -294,7 +294,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 PickMod = PickModToSaveIn,
                 AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
                 Art = (hint, name) => hint == Definitions.FieldHint.Class ? Art?.ThingSprite(name) : Art?.Texture(name),
-                AskUnsaved = message => Dialogs.AskUnsaved(message),
             };
             _definitions.SavedToMod += (_, folder) => AddModFolder(folder);
             _definitions.ReloadRequested += async (_, _) => await LoadAsync();
@@ -1225,6 +1224,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public void AddMod(string path)
     {
+        // pfwolf.pk3 is loaded under every mod already, and the editor mustn't save into it
+        if (ModFiles.WhyReadOnly(path) is { } why)
+        {
+            Status = $"Not added: {why}";
+            return;
+        }
         if (!Mods.Contains(path, StringComparer.OrdinalIgnoreCase))
         {
             Mods.Add(path);
@@ -1248,8 +1253,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// Asks for a mod to save something in: one of those loaded (a folder or a pk3), or another
     /// picked now; null when none is
     /// </summary>
-    private Task<string?> PickModToSaveIn(string title)
-        => Dialogs == null ? Task.FromResult<string?>(null) : Dialogs.PickModToSaveIn(title, Mods.ToList());
+    private async Task<string?> PickModToSaveIn(string title)
+    {
+        if (Dialogs == null)
+            return null;
+        var path = await Dialogs.PickModToSaveIn(title, Mods.Where(mod => ModFiles.WhyReadOnly(mod) == null).ToList());
+        if (path != null && ModFiles.WhyReadOnly(path) is { } why)
+        {
+            Status = $"Not saved: {why}";
+            return null;
+        }
+        return path;
+    }
 
     /// <summary>
     /// Makes a new mod as a pk3: a stand-alone game (ready to play) or a mod of one of

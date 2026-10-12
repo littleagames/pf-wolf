@@ -92,6 +92,8 @@ public static partial class NewMod
             return "Give the pk3's full path.";
         if (File.Exists(path) || Directory.Exists(path))
             return $"{System.IO.Path.GetFileName(path)} is there already; pick another name.";
+        if (ModFiles.WhyReadOnly(path) is { } why)
+            return why + ".";
         return null;
     }
 

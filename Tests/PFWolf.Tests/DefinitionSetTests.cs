@@ -136,36 +136,6 @@ public class DefinitionSetTests
     }
 
     [Test]
-    public void Base_Mode_Changes_The_File_The_Class_Comes_From()
-    {
-        // Arrange
-        var set = Actors();
-        var edited = Edit(set, "Hans", hans => YamlNodes.Set(hans, ["properties", "health"], new YamlScalarNode("900")), baseOnly: true);
-
-        // Act
-        var write = set.PlanWrite(["Hans"], edited, modPath: null);
-
-        // Assert
-        Assert.That(write.File.EntryPath, Is.EqualTo("actordefs/wolf3d/bosses.yaml"));
-        Assert.That(write.NewText, Is.EqualTo(Bosses.Replace("850", "900")));
-    }
-
-    [Test]
-    public void Base_Mode_Puts_A_New_Class_With_Its_Parent()
-    {
-        // Arrange
-        var set = Actors();
-        var sergeant = new YamlMappingNode { { "parent", "Officer" } };
-
-        // Act
-        var write = set.PlanWrite(["Sergeant"], sergeant, modPath: null);
-
-        // Assert
-        Assert.That(write.File.EntryPath, Is.EqualTo("actordefs/wolf3d/guards.yaml"));
-        Assert.That(write.NewText, Does.EndWith("    health: 50\nSergeant:\n  parent: Officer\n"));
-    }
-
-    [Test]
     public void A_Change_That_Would_Not_Read_Is_Refused()
     {
         // Arrange
@@ -229,37 +199,22 @@ public class DefinitionSetTests
     }
 
     [Test]
-    public void Base_Mode_Saves_Into_The_Pk3_And_Its_Source_Folder()
+    public void A_Change_To_PfWolfPk3s_Own_File_Is_Refused()
     {
         // Arrange
         var root = Path.Combine(Path.GetTempPath(), "pfwolf-base-" + Guid.NewGuid().ToString("N"));
-        var gameFolder = Path.Combine(root, "game");
-        var sourceFolder = Path.Combine(root, DefinitionSaver.BaseSourceFolderName);
-        Directory.CreateDirectory(gameFolder);
-        Directory.CreateDirectory(Path.Combine(sourceFolder, "gamepacks"));
-        Directory.CreateDirectory(Path.Combine(sourceFolder, "mapdefs", "wolf3d"));
-        File.WriteAllText(Path.Combine(sourceFolder, "gamepacks", "gamepack-info.yaml"), "wolf3d:\n  title: Wolfenstein 3D\n");
-        // The source has a comment the built pk3 doesn't yet: the change goes into each as it is
+        Directory.CreateDirectory(root);
         const string built = "walls:\n  '1': { North: A, South: A }\n";
-        File.WriteAllText(Path.Combine(sourceFolder, "mapdefs", "wolf3d", "walls.yaml"), "# Walls\n" + built);
-        Editor.Editing.ModFiles.CreateArchive(Path.Combine(gameFolder, "pfwolf.pk3"), [("mapdefs/wolf3d/walls.yaml", System.Text.Encoding.UTF8.GetBytes(built))]);
+        var pk3 = Path.Combine(root, "pfwolf.pk3");
+        Editor.Editing.ModFiles.CreateArchive(pk3, [("mapdefs/wolf3d/walls.yaml", System.Text.Encoding.UTF8.GetBytes(built))]);
         try
         {
-            var set = new DefinitionSet(DefinitionKind.MapDefs, "wolf3d", [new DefinitionFile(null, "mapdefs/wolf3d/walls.yaml", "", built)]);
-            var edited = new YamlMappingNode { { "North", "B" }, { "South", "A" } };
-            edited.Style = YamlDotNet.Core.Events.MappingStyle.Flow;
+            var file = new DefinitionFile(null, "mapdefs/wolf3d/walls.yaml", "", built);
 
-            // Act
-            var write = set.PlanWrite(["walls", "1"], edited, modPath: null);
-            var places = DefinitionSaver.Save(write, gameFolder, DefinitionSaver.FindBaseSourceFolder(gameFolder));
-
-            // Assert
-            Assert.That(places, Has.Count.EqualTo(2));
-            Assert.That(Editor.Editing.ModFiles.ReadText(Path.Combine(gameFolder, "pfwolf.pk3"), "mapdefs/wolf3d/walls.yaml"),
-                Is.EqualTo("walls:\n  '1': { North: B, South: A }\n"));
-            Assert.That(File.ReadAllText(Path.Combine(sourceFolder, "mapdefs", "wolf3d", "walls.yaml")),
-                Is.EqualTo("# Walls\nwalls:\n  '1': { North: B, South: A }\n"));
-            Assert.That(File.Exists(Path.Combine(gameFolder, "pfwolf.pk3.bak")), Is.True);
+            // Act, Assert
+            Assert.Throws<UnauthorizedAccessException>(() => DefinitionSaver.SaveText(file, "walls:\n  '1': { North: B, South: A }\n"));
+            Assert.That(Editor.Editing.ModFiles.ReadText(pk3, "mapdefs/wolf3d/walls.yaml"), Is.EqualTo(built));
+            Assert.That(File.Exists(pk3 + ".bak"), Is.False);
         }
         finally
         {

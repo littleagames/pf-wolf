@@ -40,7 +40,7 @@
             <MenuItem Header="Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
             <MenuItem Header="Revert" Command="{Binding RevertCommand}" />
             <Separator />
-            <MenuItem Header="{Binding CopyToModHeader}" Command="{Binding CopyToModCommand}" IsEnabled="{Binding CanCopyToMod}"
+            <MenuItem Header="{Binding CopyToModHeader}" Command="{Binding CopyToModCommand}"
                       ToolTip.Tip="{Binding CopyToModToolTip}" />
             <MenuItem Header="Take out the mod's change" Command="{Binding TakeOutCommand}" />
             <MenuItem Header="Delete" Command="{Binding DeleteEntryCommand}" IsVisible="{Binding CanAddEntries}" />
@@ -83,7 +83,7 @@
           </StackPanel>
           <TextBlock Grid.Column="1" Text="Changed, not saved" Classes="hint" VerticalAlignment="Center" IsVisible="{Binding IsChanged}" />
           <Button Grid.Column="2" Content="Save" Command="{Binding SaveCommand}" Classes="accent" VerticalAlignment="Center"
-                  ToolTip.Tip="Ctrl+S: into the mod (just what's changed), or in base mode into the pfwolf.pk3 file it comes from" />
+                  ToolTip.Tip="Ctrl+S: into the mod (just what's changed)" />
           <Button Grid.Column="3" Content="Revert" Command="{Binding RevertCommand}" VerticalAlignment="Center"
                   ToolTip.Tip="Back to the definition as the files have it" />
           <Button Grid.Column="4" Content="Delete" Command="{Binding DeleteEntryCommand}" VerticalAlignment="Center" IsVisible="{Binding CanAddEntries}"

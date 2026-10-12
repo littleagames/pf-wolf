@@ -43,7 +43,7 @@ public sealed partial class YamlFileItem : ObservableObject
 
 /// <summary>
 /// The YAML tab: every YAML file in pfwolf.pk3 and the mods, each checked as the game reads it,
-/// and one at a time as text to fix or change. pfwolf.pk3's own can only be changed in base mode.
+/// and one at a time as text to fix or change. pfwolf.pk3's own are read-only (Copy to mod makes a mod's own).
 /// </summary>
 public sealed partial class YamlFilesViewModel : ObservableObject
 {
@@ -97,7 +97,7 @@ public sealed partial class YamlFilesViewModel : ObservableObject
     /// <summary>The line (from 1) the problem is on, or 0</summary>
     [ObservableProperty] private int _problemLine;
 
-    /// <summary>A note about the file: pfwolf-pk3's copy differs from pfwolf.pk3's, say</summary>
+    /// <summary>A note about the file</summary>
     [ObservableProperty] private string _note = "";
 
     /// <summary>Where the caret is ("Line 12, column 4"), which the window keeps up to date</summary>
@@ -105,11 +105,12 @@ public sealed partial class YamlFilesViewModel : ObservableObject
 
     public bool HasSelection => SelectedItem != null;
     public bool HasProblem => Problem.Length > 0;
-    public bool IsReadOnly => SelectedItem is { IsBase: true } && !_owner.BaseMode;
+    /// <summary>pfwolf.pk3's own files are read-only: a mod changes them</summary>
+    public bool IsReadOnly => SelectedItem is { IsBase: true };
 
     public string ReadOnlyText => !IsReadOnly ? ""
-        : CanCopyToMod ? "pfwolf.pk3's own file: turn on base mode to change it here, change what it defines with the other tabs, or Copy to mod for a mod's own to change"
-        : $"pfwolf.pk3's own file: turn on base mode to change it here. It can't be copied to a mod: {LowerFirst(CopyToModText.TrimEnd('.'))}.";
+        : CanCopyToMod ? "pfwolf.pk3's own file, which is read-only: change what it defines with the other tabs, or Copy to mod for a mod's own to change"
+        : $"pfwolf.pk3's own file, which is read-only. It can't be copied to a mod: {LowerFirst(CopyToModText.TrimEnd('.'))}.";
 
     private static string LowerFirst(string text) => text.Length == 0 ? text : char.ToLowerInvariant(text[0]) + text[1..];
 
@@ -246,15 +247,6 @@ public sealed partial class YamlFilesViewModel : ObservableObject
                 _texts[value] = text;
             }
             _original = text.TrimStart('﻿');
-
-            if (value.IsBase && _owner.BaseSourceFolder != null)
-            {
-                var source = DefinitionSaver.ReadSource(_owner.BaseSourceFolder, value.EntryPath);
-                if (source == null)
-                    Note = $"There's no {value.EntryPath} in {_owner.BaseSourceFolder}: base mode saves it into pfwolf.pk3 only";
-                else if (source.ReplaceLineEndings() != _original.ReplaceLineEndings())
-                    Note = $"{DefinitionSaver.BaseSourceFolderName}'s copy differs from pfwolf.pk3's (it's changed since the game was built): this is pfwolf.pk3's, and saving it puts it in both";
-            }
         }
 
         _loadingSource = true;
@@ -369,7 +361,7 @@ public sealed partial class YamlFilesViewModel : ObservableObject
 
             var text = YamlFileTypes.ModCopyText(item.EntryPath, _original, whole == "whole");
             var file = new DefinitionFile(mod, entryPath, "", "", isNew: true);
-            var places = DefinitionSaver.SaveText(file, text, content.GameFolder, null);
+            var places = DefinitionSaver.SaveText(file, text);
             _owner.FileSaved(mod, places, []);
             Show(mod, entryPath, []);
         }
@@ -381,7 +373,7 @@ public sealed partial class YamlFilesViewModel : ObservableObject
 
     private bool CanSave => SelectedItem != null && IsChanged && !IsReadOnly;
 
-    /// <summary>Saves the file: into its mod, or in base mode into pfwolf.pk3 (and pfwolf-pk3)</summary>
+    /// <summary>Saves the file into its mod (pfwolf.pk3's own are read-only)</summary>
     [RelayCommand(CanExecute = nameof(CanSave))]
     private void Save() => SaveChanges();
 
@@ -391,21 +383,15 @@ public sealed partial class YamlFilesViewModel : ObservableObject
     /// <summary>Saves the file in the box; false (with why in the status) when it isn't saved</summary>
     public bool SaveChanges()
     {
-        if (SelectedItem is not { } item || _owner.Content is not { } content || IsReadOnly)
+        if (SelectedItem is not { } item || IsReadOnly)
             return false;
 
         var error = YamlFileTypes.Check(item.EntryPath, !item.IsBase, Source);
-        if (item.IsBase && error != null)
-        {
-            _owner.Status = $"Not saved: pfwolf.pk3's own file has to read, or the game won't start. {error}";
-            return false;
-        }
-
         try
         {
             var file = new DefinitionFile(item.ModPath, item.EntryPath, "", _original);
             var text = Source;
-            var places = DefinitionSaver.SaveText(file, text, content.GameFolder, _owner.BaseSourceFolder);
+            var places = DefinitionSaver.SaveText(file, text);
             _original = text;
             _texts[item] = text;
             IsChanged = false;

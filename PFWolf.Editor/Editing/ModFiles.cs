@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using PFWolf.Managers;
 
 namespace PFWolf.Editor.Editing;
 
@@ -13,8 +14,42 @@ public static class ModFiles
     /// <summary>The extension added to a pk3's last version when it's saved over</summary>
     public const string BackupExtension = ".bak";
 
+    /// <summary>The folder pfwolf.pk3 is built from (PFWolf.csproj zips it), named so in the repository</summary>
+    public const string BaseSourceFolderName = "pfwolf-pk3";
+
     /// <summary>Whether the mod is a pk3 (or zip) file, not a folder</summary>
     public static bool IsArchive(string modPath) => File.Exists(modPath);
+
+    /// <summary>
+    /// Why the editor won't write into a path, or null when it will. pfwolf.pk3, and the pfwolf-pk3
+    /// folder it's built from, are read-only: the game's own definitions and art are what it's
+    /// tested with, and a change to them can't be supported. Mods lay changes over them instead.
+    /// </summary>
+    public static string? WhyReadOnly(string modPath)
+    {
+        if (string.IsNullOrWhiteSpace(modPath))
+            return null;
+        var full = Path.GetFullPath(modPath.TrimEnd('\\', '/'));
+        if (Path.GetFileName(full).Equals(AssetManager.BasePk3FileName, StringComparison.OrdinalIgnoreCase))
+            return $"{AssetManager.BasePk3FileName} is read-only: put changes in a mod, which is laid over it";
+        for (var dir = new DirectoryInfo(full); dir != null; dir = dir.Parent)
+        {
+            if (dir.Name.Equals(BaseSourceFolderName, StringComparison.OrdinalIgnoreCase) || IsBaseSourceFolder(dir.FullName))
+                return $"{dir.FullName} is what {AssetManager.BasePk3FileName} is built from, and read-only: put changes in a mod, which is laid over it";
+        }
+        return null;
+    }
+
+    /// <summary>Whether a folder looks like pfwolf.pk3's source (it has gamepacks/gamepack-info.yaml)</summary>
+    public static bool IsBaseSourceFolder(string folder)
+        => File.Exists(Path.Combine(folder, "gamepacks", "gamepack-info.yaml"));
+
+    // Refuses a write into pfwolf.pk3 or its source folder (UnauthorizedAccessException, which every save reports)
+    private static void CheckWritable(string modPath)
+    {
+        if (WhyReadOnly(modPath) is { } why)
+            throw new UnauthorizedAccessException(why);
+    }
 
     /// <summary>A file in the mod as text, or null when it has none of that path</summary>
     public static string? ReadText(string modPath, string entryPath)
@@ -66,6 +101,8 @@ public static class ModFiles
     /// </summary>
     public static string Change(string modPath, IReadOnlyList<(string EntryPath, byte[] Data)> files, IReadOnlyList<string> deletes)
     {
+        CheckWritable(modPath);
+
         // A file both written and taken out is written
         var removed = deletes.Where(path => !files.Any(file => SamePath(file.EntryPath, path))).ToList();
 

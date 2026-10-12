@@ -91,6 +91,39 @@ public class ModFilesTests
     }
 
     [Test]
+    public void PfWolf_Pk3_Is_Never_Written()
+    {
+        // Arrange
+        var pk3 = Path.Combine(_folder, "PFWOLF.pk3");
+        ModFiles.CreateArchive(pk3, [("game-info.yaml", Encoding.UTF8.GetBytes("first"))]);
+
+        // Act, Assert
+        Assert.Throws<UnauthorizedAccessException>(() => ModFiles.Write(pk3, ("game-info.yaml", Encoding.UTF8.GetBytes("second"))));
+        Assert.Throws<UnauthorizedAccessException>(() => ModFiles.Delete(pk3, "game-info.yaml"));
+        Assert.That(Entries(pk3)["game-info.yaml"], Is.EqualTo("first"));
+        Assert.That(File.Exists(pk3 + ModFiles.BackupExtension), Is.False);
+    }
+
+    [Test]
+    public void The_Folder_PfWolf_Pk3_Is_Built_From_Is_Never_Written()
+    {
+        // Arrange: named pfwolf-pk3, or (renamed) with gamepacks/gamepack-info.yaml in it
+        var named = Path.Combine(_folder, ModFiles.BaseSourceFolderName);
+        var renamed = Path.Combine(_folder, "base-copy");
+        Directory.CreateDirectory(Path.Combine(named, "actordefs"));
+        Directory.CreateDirectory(Path.Combine(renamed, "gamepacks"));
+        File.WriteAllText(Path.Combine(renamed, "gamepacks", "gamepack-info.yaml"), "wolf3d:\n");
+
+        // Act, Assert: a folder inside it too
+        Assert.Throws<UnauthorizedAccessException>(() => ModFiles.Write(named, ("game-info.yaml", [1])));
+        Assert.Throws<UnauthorizedAccessException>(() => ModFiles.Write(Path.Combine(named, "actordefs"), ("x.yaml", [1])));
+        Assert.Throws<UnauthorizedAccessException>(() => ModFiles.Write(renamed, ("game-info.yaml", [1])));
+        Assert.That(File.Exists(Path.Combine(named, "game-info.yaml")), Is.False);
+        Assert.That(ModFiles.WhyReadOnly(Path.Combine(_folder, "my-mod")), Is.Null);
+        Assert.That(NewMod.CheckPath(Path.Combine(_folder, "mods", "pfwolf.pk3")), Is.Not.Null);
+    }
+
+    [Test]
     public void Change_Renames_And_Deletes_In_A_Pk3_As_One_Rewrite()
     {
         // Arrange

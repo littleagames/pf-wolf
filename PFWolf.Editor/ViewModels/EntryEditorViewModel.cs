@@ -60,7 +60,7 @@ public sealed record OriginItem(DefinitionFile File, string Label, string Part)
 /// A tab of the definitions window: the definitions of one kind (game-info's sections, the
 /// releases, the mapdefs entries), and the one picked as fields. Edits are kept for each
 /// definition until they're saved or reverted; saving writes just what changed, into the mod
-/// picked or (base mode) the pfwolf.pk3 file the definition comes from.
+/// picked (pfwolf.pk3 is read-only).
 /// </summary>
 public sealed partial class EntryEditorViewModel : ObservableObject
 {
@@ -78,7 +78,6 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         NewChoices = kind == DefinitionKind.MapDefs ? MapDefsTables() : [];
         _context = MakeContext();
         owner.DefinitionsChanged += (_, _) => Invalidate(keepEdits: true);
-        owner.ModeChanged += (_, _) => Invalidate(keepEdits: false);
         owner.Reloaded += (_, _) =>
         {
             // The old game's pictures are gone
@@ -180,7 +179,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
     // Listing
     //
 
-    /// <summary>Lists the definitions again: the game loaded again, something saved, base mode turned on or off</summary>
+    /// <summary>Lists the definitions again: the game loaded again, or something saved</summary>
     public void Refresh(bool keepEdits)
     {
         var picked = SelectedItem?.Key;
@@ -193,7 +192,6 @@ public sealed partial class EntryEditorViewModel : ObservableObject
                 _open.Remove(key);
         }
 
-        OnPropertyChanged(nameof(CanCopyToMod));
         _all = ListEntries();
         foreach (var item in _all)
             item.HasEdits = _open.ContainsKey(item.Key);
@@ -208,12 +206,10 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         var set = _owner.Set(Kind);
         if (set == null)
             return [];
-        var baseOnly = _owner.BaseMode;
-
         if (Kind == DefinitionKind.GameInfo)
         {
             // Every section the game reads, set or not, then any other key the files have
-            var merged = baseOnly ? set.MergedBase : set.Merged;
+            var merged = set.Merged;
             var items = DefinitionSchemas.GameInfo.Fields
                 .Select(field => new EntryItem(new DefinitionEntry([field.Key], field.Key, ""), YamlNodes.Get(merged, [field.Key]) != null, field.Description))
                 .ToList();
@@ -225,14 +221,12 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             return items;
         }
 
-        var entries = set.Entries(baseOnly).Select(entry =>
+        var entries = set.Entries(baseOnly: false).Select(entry =>
         {
-            var value = set.ValueOf(entry.Path, baseOnly);
+            var value = set.ValueOf(entry.Path, baseOnly: false);
             var (detail, icon) = Describe(entry, value);
             return new EntryItem(entry, true, DescriptionOf(entry), detail, icon);
         }).ToList();
-        if (baseOnly)
-            return entries;
 
         // pfwolf.pk3's that a mod takes out (!remove): listed still, so that can be taken back out of the mod
         var listed = entries.Select(item => item.Key).ToHashSet();
@@ -339,11 +333,10 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             return;
 
         var path = item.Entry.Path;
-        var baseOnly = _owner.BaseMode;
         if (!_open.TryGetValue(item.Key, out var open))
         {
-            var value = set.ValueOf(path, baseOnly);
-            var baseValue = baseOnly ? value : set.ValueOf(path, baseOnly: true);
+            var value = set.ValueOf(path, baseOnly: false);
+            var baseValue = set.ValueOf(path, baseOnly: true);
             var root = new FieldNode(SchemaFor(path), path[^1], value is null ? null : YamlNodes.Clone(value), baseValue, null, _context,
                 isEntry: Kind != DefinitionKind.GameInfo);
             root.EnsureChildren();
@@ -375,7 +368,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             _ => item.Name,
         };
         Description = item.Description ?? "";
-        var defining = set.FilesDefining(path, baseOnly);
+        var defining = set.FilesDefining(path);
         Subheading = defining.Count == 0
             ? (Kind == DefinitionKind.GameInfo && !item.IsSet ? "Not set: the game uses its default" : "Not saved yet")
             : defining.Count == 1 ? $"From {defining[0].Label}" : $"From {defining[^1].Label}, over {defining.Count - 1} more";
@@ -385,7 +378,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             Origins.Add(new OriginItem(file, file.Label, i == defining.Count - 1 ? "Its say is the last, so it's what the game uses (or merges last)" : "Laid over by the files after it"));
         }
         if (Kind == DefinitionKind.Actors)
-            FillInherited(item.Name, baseOnly ? set.MergedBase : set.Merged);
+            FillInherited(item.Name, set.Merged);
         UpdateChanged();
     }
 
@@ -486,7 +479,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         Open(SelectedItem);
     }
 
-    /// <summary>Saves the definition: into the mod picked, or (base mode) the pfwolf.pk3 file it comes from</summary>
+    /// <summary>Saves the definition into the mod picked (pfwolf.pk3 is read-only)</summary>
     [RelayCommand(CanExecute = nameof(IsChanged))]
     private async Task SaveAsync()
     {
@@ -532,14 +525,13 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             return false;
         }
 
-        string? mod = null;
-        if (!_owner.BaseMode && (mod = await _owner.ModToSaveIn()) == null)
+        if (await _owner.ModToSaveIn() is not { } mod)
             return false;
 
         try
         {
             var write = set.PlanWrite(path, edited, mod);
-            var places = DefinitionSaver.Save(write, content.GameFolder, _owner.BaseSourceFolder);
+            var places = DefinitionSaver.Save(write);
             _open.Remove(key);
             if (_all.FirstOrDefault(item => item.Key == key) is { } item)
                 item.HasEdits = false;
@@ -565,7 +557,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         Open(item);
     }
 
-    private bool CanTakeOut => SelectedItem != null && !_owner.BaseMode && _owner.SaveTarget is { } target
+    private bool CanTakeOut => SelectedItem != null && _owner.SaveTarget is { } target
                                && _owner.Set(Kind)?.ModChanges(SelectedItem.Entry.Path, target.Path) == true;
 
     /// <summary>Takes the mod's own say in the definition out, so it's what pfwolf.pk3 (and the mods before) make it</summary>
@@ -577,7 +569,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         try
         {
             var write = set.PlanTakeOut(item.Entry.Path, target.Path);
-            var places = DefinitionSaver.Save(write, content.GameFolder, _owner.BaseSourceFolder);
+            var places = DefinitionSaver.Save(write);
             _open.Remove(item.Key);
             item.HasEdits = false;
             _owner.FileSaved(target.Path, places, write.Notes);
@@ -604,7 +596,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
     {
         if (!CanAddEntries || _owner.Set(Kind) is not { } set || _owner.AskText == null)
             return;
-        var merged = _owner.BaseMode ? set.MergedBase : set.Merged;
+        var merged = set.Merged;
 
         IReadOnlyList<string> path;
         YamlNode value;
@@ -703,9 +695,6 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         return id;
     }
 
-    /// <summary>Copy to mod applies: out of base mode</summary>
-    public bool CanCopyToMod => !_owner.BaseMode;
-
     /// <summary>The right-click menu's Copy to mod: a game is copied as a new game of the mod's, built on it</summary>
     public string CopyToModHeader => Kind == DefinitionKind.GamePackInfo ? "Copy to mod as a new game…" : "Copy to mod";
 
@@ -723,11 +712,6 @@ public sealed partial class EntryEditorViewModel : ObservableObject
     {
         if (SelectedItem is not { } item || _owner.Set(Kind) is not { } set || _owner.Content is not { } content)
             return;
-        if (_owner.BaseMode)
-        {
-            _owner.Status = "Base mode is on: turn it off to copy to a mod";
-            return;
-        }
         if (await _owner.ModToSaveIn() is not { } mod)
             return;
 
@@ -748,7 +732,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         try
         {
             var write = set.PlanCopyToMod(path, mod);
-            var places = DefinitionSaver.Save(write, content.GameFolder, null);
+            var places = DefinitionSaver.Save(write);
             _owner.FileSaved(mod, places, write.Notes);
             _owner.ShowYaml(write.File.WithText(write.NewText), path);
         }
@@ -790,7 +774,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         try
         {
             var write = set.PlanWrite([id], game, mod);
-            var places = DefinitionSaver.Save(write, content.GameFolder, null);
+            var places = DefinitionSaver.Save(write);
             _owner.FileSaved(mod, places, [$"{id} plays {baseId}'s data files and definitions with this mod's over them: pick it in the editor's games once it's loaded again, or run PFWolf with --game {id}"]);
             _owner.ShowYaml(write.File.WithText(write.NewText), [id]);
         }

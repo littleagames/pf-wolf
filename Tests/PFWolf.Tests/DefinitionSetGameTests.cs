@@ -161,7 +161,7 @@ public class DefinitionSetGameTests
 
             // Act
             var write = set.PlanWrite(["Guard"], edited, mod);
-            DefinitionSaver.Save(write, content.GameFolder, baseSourceFolder: null);
+            DefinitionSaver.Save(write);
             var reloaded = Load("wolf3d", mod);
 
             // Assert
