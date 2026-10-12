@@ -74,14 +74,17 @@ internal partial class Program
             if (!died || viewsize != 21) DrawScore();
 
             startgame = false;
+            string levelStart = "loaded";
             if (!loadedgame)
             {
-                EnterLevel();               // a kept hub level as it was left, or the map afresh (Program.Hubs.cs)
+                bool kept = EnterLevel();   // a kept hub level as it was left, or the map afresh (Program.Hubs.cs)
                 ApplyPendingMapChange();
                 ApplyPendingWarpStart();    // --start's tile, the first time (Program.Warp.cs)
                 if (!died)
                     MarkLevelStart();       // what dying puts the player back to, with death-restores-level-start
+                levelStart = died ? "restarted" : kept ? "returned" : "new";
             }
+            RunLevelHooks(levelStart);      // the scripts' game.onlevel hooks (Program.Scripting.cs)
 
             // A level being entered, not one loaded or restarted after dying, saves itself
             autosavePending = !loadedgame && !died && !demoplayback && !demorecord && !netgame;
@@ -336,6 +339,7 @@ internal partial class Program
         demoplayback = true;
 
         SetupGameLevel();
+        RunLevelHooks("new");       // as when it was recorded (RecordDemo)
         StartMusic();
 
         PlayLoop();
@@ -542,6 +546,7 @@ internal partial class Program
         demorecord = true;
 
         SetupGameLevel();
+        RunLevelHooks("new");       // as when it's played back (PlayDemo)
         StartMusic();
 
         fizzlein = true;

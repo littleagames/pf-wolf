@@ -195,6 +195,7 @@ internal partial class Program
                 camera.Tick(tics);          // a watched actor's view turning (Program.Camera.cs)
                 _mapManager.AI.Tick();     // wall outlets and warp sites (Managers.LevelAI)
                 TickZoneLights(tics);       // light zones' fades and effects (Program.ZoneLights.cs)
+                RunTickHooks();             // the scripts' game.ontick hooks (Program.Scripting.cs)
                 if (gamemode != GameMode.Single)
                     WakeSeenEnemies();      // what the renderer did alone (Program.Players.cs)
                 if (gamemode == GameMode.Deathmatch)

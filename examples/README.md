@@ -247,7 +247,8 @@ of their faces once they see you:
   `A_FireRing(projectile, count, turn)` (the bone room), `A_FireSpiral(projectile, step, arms)`,
   `A_FireBurst(projectile, count, spread)` (the exit room's, centred on you),
   `A_Sweep(projectile, arc, step)`, and `A_Home(turn, frames)`, which `HomingFireball` runs
-  on itself each frame to steer. Each keeps what it must remember between calls (how far a
+  on itself each frame to steer. Its hooks show a message as a level starts and make the piles
+  erupt every 12 seconds. Each keeps what it must remember between calls (how far a
   spiral has turned, which way a sweep is going) in the actor's `temp1`..`temp3`, so saved
   games keep it.
 - `mapdefs/things.yaml`: objects 510-534, the wall traps, each facing east, north, west and
@@ -290,7 +291,25 @@ What a script can use:
 | Fields it can set | `temp1`..`temp3` (whole numbers, kept in saved games), `angle`, `speed` |
 | Actor methods | `jump(state)`, `spawnprojectile(class[, angle[, "relative"\|"absolute"\|"aim"]])` (returns the projectile), `spawn(class)`, `playsound(sound[, positional])`, `property(key)`, `hasflag(flag)`, `distanceto(other)` (tiles), `angleto(other)`, `cansee(player[, tiles])`, `nearestplayer()`, `remove()` |
 | `game` | `random()` (0-255), `random(n)` (1 to n), `random(m, n)`, `players()`, `actors([class])` (every actor, or those of a class, in the order they think), `time()`, `tics()`, `map()`, `skill()`, `message(text[, style])` |
+| Hooks | `game.onlevel(function(reason, map) ... end)` and `game.ontick(function(tics) ... end)` (below) |
 | Lua | the basic, `string`, `table`, `math` and `bit32` libraries, and `print` (to the console) |
+
+Hooks are functions the game calls itself, not from a state. Add them when the script loads
+(at its top level); each mod's run, in load order:
+
+- `game.onlevel(fn)`: as each level starts, once it's built and the players are on it, before
+  its first tic: `fn(reason, map)`. `reason` is `"new"` (entered afresh, including a demo),
+  `"returned"` (a hub level come back to, as it was left), `"restarted"` (again after dying) or
+  `"loaded"` (a saved game loaded, or a network game joined). Only the loading machine sees
+  `"loaded"`, so it mustn't change the game; it's for rebuilding anything the script keeps in
+  Lua variables.
+- `game.ontick(fn)`: each frame the world moves (not while it's paused), after the actors:
+  `fn(tics)`, the tics going by (70 a second; usually 1 or 2). `game.time()` is the level's
+  time as they began.
+
+A hook that errors three times is switched off. The demo's script uses both: a word for the
+player as a level starts, and an eruption of fireballs from the bone and skull piles every 12
+seconds, worked out from `game.time()` alone so that nothing needs saving.
 
 So that demos, network games and saved games come out the same everywhere, a script works only
 from what's on the actors and the game's own random numbers: there's no `math.random`, nothing

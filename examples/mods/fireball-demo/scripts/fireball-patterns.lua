@@ -6,6 +6,37 @@
 -- turned, which way a sweep is going) is kept in the actor's temp1..temp3, which saved games
 -- keep: Lua variables aren't saved, and every actor has its own temps.
 
+-- Hooks: functions the game calls as each level starts, and each tic.
+
+-- A word for the player as they come into a level afresh (not on coming back to it, dying or
+-- loading). It shows with in-game messages on (Options, or msg_enabled 1 in the console).
+game.onlevel(function(reason, map)
+  if reason == "new" then
+    game.message("Mind the eagles: they spit fire.")
+  end
+end)
+
+-- Every 12 seconds of the level's time, each skull pile and bone pile with a player within 6
+-- tiles of it erupts: a ring of 12 fireballs at once, besides its usual pattern. Whether it's
+-- time is worked out from game.time() alone, which saved games keep, so nothing has to be
+-- remembered in Lua. game.time() is the level's time as this tic began; tics are about to pass.
+local ERUPTION_TICS = 12 * 70
+
+game.ontick(function(tics)
+  local now = game.time()
+  if math.floor((now + tics) / ERUPTION_TICS) == math.floor(now / ERUPTION_TICS) then
+    return
+  end
+  for _, class in ipairs({ "FireballRing", "FireballSpiral" }) do
+    for _, pile in ipairs(game.actors(class)) do
+      local player = pile:nearestplayer()
+      if player and pile:distanceto(player) <= 6 then
+        A_FireRing(pile, "Fireball", 12)    -- the action below, called as a Lua function
+      end
+    end
+  end
+end)
+
 -- A_FireRing(projectile, count[, turn]): count projectiles evenly spaced all the way round.
 -- With a turn (degrees), each ring starts that much further round than the last (temp1).
 function A_FireRing(self, projectile, count, turn)

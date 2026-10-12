@@ -75,9 +75,17 @@ internal sealed partial class ScriptHost
         }), "", HookInterval);
     }
 
+    /// <summary>
+    /// Where the code running now came from, while a script file's top level runs (its Load) or
+    /// a line typed in the console does ("console"); null the rest of the time, when only its
+    /// functions are called
+    /// </summary>
+    public string? Running { get; private set; }
+
     /// <summary>Runs a script file's top level (defining its functions); false, with the reason in Failed, if it can't</summary>
     public bool Load(string text, string where)
     {
+        Running = where;
         try
         {
             Run(() => _state.DoStringAsync(text, where));
@@ -89,11 +97,16 @@ internal sealed partial class ScriptHost
             Failed.Add(Describe(e));
             return false;
         }
+        finally
+        {
+            Running = null;
+        }
     }
 
     /// <summary>Runs a line of Lua typed in the console, returning what it printed as an error, or null</summary>
     public string? Execute(string text)
     {
+        Running = "console";
         try
         {
             Run(() => _state.DoStringAsync(text, "console"));
@@ -102,6 +115,10 @@ internal sealed partial class ScriptHost
         catch (Exception e) when (e is LuaRuntimeException or LuaCompileException or LuaParseException or OperationCanceledException)
         {
             return Describe(e);
+        }
+        finally
+        {
+            Running = null;
         }
     }
 
@@ -120,9 +137,14 @@ internal sealed partial class ScriptHost
     /// Calls a script function by name. An error is shown (the first few times for each
     /// function) and the call skipped; false then.
     /// </summary>
-    public bool Call(string name, ReadOnlySpan<LuaValue> arguments)
+    public bool Call(string name, ReadOnlySpan<LuaValue> arguments) => Call(Globals[name], name, arguments);
+
+    /// <summary>
+    /// Calls a script function (a hook a script gave), named for its error messages; as
+    /// Call(name, arguments) otherwise
+    /// </summary>
+    public bool Call(LuaValue function, string name, ReadOnlySpan<LuaValue> arguments)
     {
-        var function = Globals[name];
         if (function.Type != LuaValueType.Function)
             return false;
 

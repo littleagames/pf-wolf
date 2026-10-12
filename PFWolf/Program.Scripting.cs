@@ -32,7 +32,7 @@ internal partial class Program
         playsound(sound[, positional]), property(key), hasflag(flag), distanceto(other),
         angleto(other), cansee(player[, tiles]), nearestplayer(), remove()
       game.random([m[, n]]), game.players(), game.actors([class]), game.time(), game.tics(), game.map(), game.skill(),
-        game.message(text[, style])
+        game.message(text[, style]), and the hooks game.onlevel(fn) and game.ontick(fn) (HOOKS below)
     and print, to the console.
 
     Scripts must leave the outcome to the game's own random numbers (game.random) and to what's
@@ -232,6 +232,8 @@ internal partial class Program
                 list[i++] = LuaActor.Of(actor);
             return new(c.Return(list));
         });
+        game["onlevel"] = new LuaFunction("game.onlevel", (c, _) => new(c.Return(AddHook(c, host, levelHooks, "game.onlevel"))));
+        game["ontick"] = new LuaFunction("game.ontick", (c, _) => new(c.Return(AddHook(c, host, tickHooks, "game.ontick"))));
         game["time"] = new LuaFunction("game.time", (c, _) => new(c.Return(gamestate.TimeCount)));
         game["tics"] = new LuaFunction("game.tics", (c, _) => new(c.Return(tics)));
         game["map"] = new LuaFunction("game.map", (c, _) => new(c.Return(gamestate.mapon ?? "")));
@@ -242,6 +244,77 @@ internal partial class Program
             return new(c.Return());
         });
         host.Globals["game"] = game;
+    }
+
+    /*
+    =============================================================================
+    HOOKS
+
+    game.onlevel(function(reason, map) ... end): called as each level starts, once it's built
+    and the players are on it, before its first tic. reason is
+        "new"        the level entered afresh (a new game, the next level, a demo)
+        "returned"   a hub level come back to, as it was left (Blake Stone's floors)
+        "restarted"  the level again after the player died
+        "loaded"     a saved game loaded, or a network game joined. Only this machine runs it,
+                     so it mustn't change the game: it's for rebuilding what the script keeps
+                     in Lua variables, which saves don't hold.
+    game.ontick(function(tics) ... end): called each frame the world moves (not while it's
+        paused), after the actors, with the tics that went by (70 a second; usually 1 or 2).
+
+    Hooks are added when a script loads (at its top level), never later, so that every machine
+    and every demo run has the same ones; each mod's run, in load order. A hook that errors
+    three times is switched off.
+
+    =============================================================================
+    */
+
+    sealed class ScriptHook(LuaValue function, string name)
+    {
+        public LuaValue Function { get; } = function;
+        public string Name { get; } = name;
+        public int Errors { get; set; }
+    }
+
+    static readonly List<ScriptHook> levelHooks = [];
+    static readonly List<ScriptHook> tickHooks = [];
+
+    // Errors a hook may have before it's switched off
+    const int HookErrorLimit = 3;
+
+    static int AddHook(LuaFunctionExecutionContext c, ScriptHost host, List<ScriptHook> hooks, string what)
+    {
+        var function = Arg(c, 0);
+        if (function.Type != LuaValueType.Function)
+            throw new LuaRuntimeException(c.State, (LuaValue)$"{what} takes a function", 1);
+        if (host.Running == null)
+            throw new LuaRuntimeException(c.State, (LuaValue)$"{what}: hooks are added when a script loads (at its top level), not later", 1);
+        hooks.Add(new ScriptHook(function, $"{what} hook {hooks.Count + 1} ({host.Running})"));
+        return c.Return();
+    }
+
+    /// <summary>The scripts' level hooks, as a level starts (GameLoop, PlayDemo, RecordDemo)</summary>
+    static void RunLevelHooks(string reason) =>
+        RunHooks(levelHooks, [reason, gamestate.mapon ?? ""]);
+
+    /// <summary>The scripts' tick hooks, each frame the world moves (PlayLoop)</summary>
+    static void RunTickHooks()
+    {
+        if (tickHooks.Count > 0)
+            RunHooks(tickHooks, [tics]);
+    }
+
+    static void RunHooks(List<ScriptHook> hooks, LuaValue[] arguments)
+    {
+        if (_scripts == null)
+            return;
+        for (int i = 0; i < hooks.Count; i++)
+        {
+            var hook = hooks[i];
+            if (_scripts.Call(hook.Function, hook.Name, arguments) || ++hook.Errors < HookErrorLimit)
+                continue;
+            _consoleManager.Print($"Script {hook.Name} is switched off after {HookErrorLimit} errors");
+            hooks.RemoveAt(i--);
+        }
     }
 
     // 0 to count - 1 from the game's random numbers: one draw for up to 256, more beyond

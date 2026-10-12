@@ -82,9 +82,9 @@ internal partial class Program
 
     /// <summary>
     /// Builds the level for gamestate.mapon (GameLoop): a kept hub level as it was left, or the
-    /// map afresh. Moving to another cluster forgets the kept levels.
+    /// map afresh. Moving to another cluster forgets the kept levels. True when it's a kept level.
     /// </summary>
-    internal static void EnterLevel()
+    internal static bool EnterLevel()
     {
         if (levelMap != null && ClusterOf(levelMap) != ClusterOf(gamestate.mapon))
         {
@@ -92,7 +92,8 @@ internal partial class Program
             floorScores.Clear();
         }
 
-        if (!RestoreHubLevel(gamestate.mapon))
+        bool restored = RestoreHubLevel(gamestate.mapon);
+        if (!restored)
         {
             SetupGameLevel();
             informantTotal = _mapManager.GetActors().Count(a => !a.IsRemoved && a is Entities.Actors.Informant);
@@ -101,6 +102,7 @@ internal partial class Program
         levelMap = gamestate.mapon;
         visitedMaps.Add(gamestate.mapon);
         victoryRunning = false;
+        return restored;
     }
 
     /// <summary>Keeps the level being left, if it's a hub level (GameLoop, after PlayLoop)</summary>

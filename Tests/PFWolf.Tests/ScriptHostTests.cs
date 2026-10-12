@@ -134,6 +134,45 @@ public class ScriptHostTests
     }
 
     [Test]
+    public void Running_Is_Where_The_Top_Level_Code_Came_From_And_Null_In_Calls()
+    {
+        // Arrange: a function that reports Running each time it's called
+        var host = NewHost();
+        var seen = new List<string?>();
+        host.Globals["where"] = new LuaFunction("where", (c, _) =>
+        {
+            seen.Add(host.Running);
+            return new(c.Return());
+        });
+        host.Load("where()\nfunction A_Later() where() end\n", "mymod: scripts/hooks.lua");
+
+        // Act
+        host.Call("A_Later", []);
+        host.Execute("where()");
+
+        // Assert: hooks may only be added while a script loads, or from the console
+        Assert.That(seen, Is.EqualTo(new[] { "mymod: scripts/hooks.lua", null, "console" }));
+        Assert.That(host.Running, Is.Null);
+    }
+
+    [Test]
+    public void Call_Takes_A_Function_Value_Named_For_Its_Errors()
+    {
+        // Arrange: a hook handed over the way game.ontick gets one
+        var host = NewHost();
+        host.Load("hook = function(n) if n > 1 then error('too big') end print('tick', n) end", "test");
+
+        // Act
+        bool small = host.Call(host.Globals["hook"], "game.ontick hook 1 (test)", [1]);
+        bool big = host.Call(host.Globals["hook"], "game.ontick hook 1 (test)", [2]);
+
+        // Assert
+        Assert.That(small, Is.True);
+        Assert.That(big, Is.False);
+        Assert.That(_printed, Is.EqualTo(new[] { "tick\t1", "Script game.ontick hook 1 (test): test:1: too big" }));
+    }
+
+    [Test]
     public void Calling_A_Missing_Function_Does_Nothing()
     {
         // Arrange
