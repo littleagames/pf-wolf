@@ -47,6 +47,9 @@ public sealed partial class EntryItem : ObservableObject
     public string Key => EntryEditorViewModel.KeyOf(Entry.Path);
 }
 
+/// <summary>A kind of definition New… can make: a mapdefs table (walls, doors, things...)</summary>
+public sealed record NewEntryChoice(string Key, string? Description);
+
 /// <summary>A file with a part in a definition, as the tab lists it</summary>
 public sealed record OriginItem(DefinitionFile File, string Label, string Part)
 {
@@ -72,6 +75,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
     {
         _owner = owner;
         Kind = kind;
+        NewChoices = kind == DefinitionKind.MapDefs ? MapDefsTables() : [];
         _context = MakeContext();
         owner.DefinitionsChanged += (_, _) => Invalidate(keepEdits: true);
         owner.ModeChanged += (_, _) => Invalidate(keepEdits: false);
@@ -161,6 +165,14 @@ public sealed partial class EntryEditorViewModel : ObservableObject
     public bool HasSelection => SelectedItem != null;
     public bool HasError => Error.Length > 0;
     public bool CanAddEntries => Kind is DefinitionKind.GamePackInfo or DefinitionKind.MapDefs or DefinitionKind.Actors or DefinitionKind.Animations;
+
+    /// <summary>What New… can make, when it's asked (mapdefs: its tables of entries, walls, doors, things...); empty when there's one kind</summary>
+    public IReadOnlyList<NewEntryChoice> NewChoices { get; }
+
+    public bool HasNewChoices => NewChoices.Count > 0;
+
+    /// <summary>New… makes its one kind straight away</summary>
+    public bool CanAddWithoutChoice => CanAddEntries && !HasNewChoices;
 
     public static string KeyOf(IReadOnlyList<string> path) => string.Join("\u001f", path);
 
@@ -576,9 +588,19 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         }
     }
 
-    /// <summary>Starts a new definition (a game, a mapdefs entry in the picked one's table, a class), saved like any other</summary>
+    // The mapdefs tables New… can add an entry to: those of numbered entries with fields (walls, doors, things...)
+    private static List<NewEntryChoice> MapDefsTables()
+        => DefinitionSchemas.MapDefs.Fields
+            .Where(table => table.Type == FieldType.Dictionary && table.Item?.Type == FieldType.Record)
+            .Select(table => new NewEntryChoice(table.Key, table.Description))
+            .ToList();
+
+    /// <summary>
+    /// Starts a new definition (a game, a mapdefs entry in the table picked from New…'s list, a class),
+    /// saved like any other
+    /// </summary>
     [RelayCommand]
-    private async Task NewEntryAsync()
+    private async Task NewEntryAsync(string? choice)
     {
         if (!CanAddEntries || _owner.Set(Kind) is not { } set || _owner.AskText == null)
             return;
@@ -590,12 +612,15 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         {
             case DefinitionKind.MapDefs:
             {
-                var table = SelectedItem?.Entry.Path[0] ?? "things";
-                if (DefinitionSchemas.MapDefs.Field(table) is not { Type: FieldType.Dictionary } tableSchema || tableSchema.Item?.Type != FieldType.Record)
+                var table = choice ?? SelectedItem?.Entry.Path[0] ?? "things";
+                if (NewChoices.FirstOrDefault(known => known.Key.Equals(table, StringComparison.OrdinalIgnoreCase)) is not { } picked)
                 {
-                    _owner.Status = $"{table} isn't a table of entries: pick a wall, door, thing... to add one beside it";
+                    _owner.Status = $"{table} isn't a table of entries: pick walls, doors, things... from New…";
                     return;
                 }
+                // Named as the files name it, so it's listed with the table's others
+                table = merged.Children.Keys.OfType<YamlScalarNode>().Select(key => key.Value)
+                    .FirstOrDefault(name => picked.Key.Equals(name, StringComparison.OrdinalIgnoreCase)) ?? picked.Key;
                 var used = (YamlNodes.Get(merged, [table]) as YamlMappingNode)?.Children.Keys.OfType<YamlScalarNode>()
                     .Select(key => int.TryParse(key.Value, out var id) ? id : -1).ToHashSet() ?? [];
                 var free = FreeId(table, used);
@@ -657,7 +682,11 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         root.EnsureChildren();
         HideFieldsThatDoNotApply(root, path);
         _open[item.Key] = (root, null);
-        _all.Add(item);
+        // A mapdefs entry goes with its table's (after its last), not at the end of the list
+        var lastOfTable = Kind == DefinitionKind.MapDefs
+            ? _all.FindLastIndex(other => other.Group.Equals(entry.Group, StringComparison.OrdinalIgnoreCase))
+            : -1;
+        _all.Insert(lastOfTable >= 0 ? lastOfTable + 1 : _all.Count, item);
         Filter = "";
         Refilter();
         SelectedItem = item;

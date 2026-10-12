@@ -28,13 +28,15 @@
         <TextBox Text="{Binding Filter}" PlaceholderText="Find by name" />
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
           <TextBlock Text="{Binding CountText}" Classes="hint" VerticalAlignment="Center" />
-          <Button Grid.Column="1" Content="New…" Command="{Binding NewEntryCommand}" IsVisible="{Binding CanAddEntries}" Classes="small"
-                  ToolTip.Tip="A new definition (a map entry goes in the picked one's table; a class takes the picked one as its parent)" />
+          <Button Grid.Column="1" Content="New…" Command="{Binding NewEntryCommand}" IsVisible="{Binding CanAddWithoutChoice}" Classes="small"
+                  ToolTip.Tip="A new definition (a class takes the picked one as its parent)" />
+          <Button Grid.Column="1" Content="New…" IsVisible="{Binding HasNewChoices}" Classes="small" Click="ShowNewChoices"
+                  ToolTip.Tip="A new entry: pick its table (walls, doors, things...)" />
         </Grid>
       </StackPanel>
       <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
         <ListBox.ContextMenu>
-          <ContextMenu>
+          <ContextMenu Opening="OnListMenuOpening">
             <MenuItem Header="Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
             <MenuItem Header="Revert" Command="{Binding RevertCommand}" />
             <Separator />
@@ -43,7 +45,8 @@
             <MenuItem Header="Take out the mod's change" Command="{Binding TakeOutCommand}" />
             <MenuItem Header="Delete" Command="{Binding DeleteEntryCommand}" IsVisible="{Binding CanAddEntries}" />
             <Separator IsVisible="{Binding CanAddEntries}" />
-            <MenuItem Header="New…" Command="{Binding NewEntryCommand}" IsVisible="{Binding CanAddEntries}" />
+            <MenuItem Header="New…" Command="{Binding NewEntryCommand}" IsVisible="{Binding CanAddWithoutChoice}" />
+            <MenuItem Header="New" IsVisible="{Binding HasNewChoices}" Tag="new-choices" />
           </ContextMenu>
         </ListBox.ContextMenu>
         <ListBox.Styles>
