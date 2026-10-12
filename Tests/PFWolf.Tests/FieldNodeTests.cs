@@ -71,6 +71,28 @@ public class FieldNodeTests
     }
 
     [Test]
+    public async Task A_Group_Counts_What_Is_Added_And_Taken_Out()
+    {
+        // Arrange
+        var node = new FieldNode(DefinitionSchemas.Actor, "Guard", YamlTree.Parse("states:\n  Spawn:\n    - sprite: GARD\n"), null, null, Context, isEntry: true);
+        node.EnsureChildren();
+        var spawn = Child(Child(node, "states"), "Spawn");
+        var summaries = new List<string>();
+        spawn.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(FieldNode.Summary))
+                summaries.Add(spawn.Summary);
+        };
+
+        // Act
+        await spawn.AddCommand.ExecuteAsync(null);
+        spawn.Children[0].RemoveCommand.Execute(null);
+
+        // Assert
+        Assert.That(summaries, Is.EqualTo(new[] { "2 items", "1 item" }));
+    }
+
+    [Test]
     public void A_Word_Where_A_Number_Goes_Is_An_Error()
     {
         // Arrange

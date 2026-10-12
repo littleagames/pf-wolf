@@ -212,12 +212,24 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             return items;
         }
 
-        return set.Entries(baseOnly).Select(entry =>
+        var entries = set.Entries(baseOnly).Select(entry =>
         {
             var value = set.ValueOf(entry.Path, baseOnly);
             var (detail, icon) = Describe(entry, value);
             return new EntryItem(entry, true, DescriptionOf(entry), detail, icon);
         }).ToList();
+        if (baseOnly)
+            return entries;
+
+        // pfwolf.pk3's that a mod takes out (!remove): listed still, so that can be taken back out of the mod
+        var listed = entries.Select(item => item.Key).ToHashSet();
+        foreach (var entry in set.Entries(baseOnly: true).Where(entry => !listed.Contains(KeyOf(entry.Path))))
+        {
+            var (_, icon) = Describe(entry, set.ValueOf(entry.Path, baseOnly: true));
+            entries.Add(new EntryItem(entry, false,
+                "Taken out by a mod (written !remove). \"Take out the mod's change\" brings pfwolf.pk3's back.", "taken out by a mod", icon));
+        }
+        return entries;
     }
 
     // What an entry is, in a word, and its picture: a thing's class and sprite, a wall's texture
@@ -305,7 +317,8 @@ public sealed partial class EntryEditorViewModel : ObservableObject
                 isEntry: Kind != DefinitionKind.GameInfo);
             root.EnsureChildren();
             HideFieldsThatDoNotApply(root, path);
-            open = (root, value);
+            // One the game doesn't have (taken out by a mod) starts as its empty fields, which isn't a change
+            open = (root, value ?? root.Build([]));
             _open[item.Key] = open;
         }
 

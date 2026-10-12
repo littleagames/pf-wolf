@@ -123,8 +123,21 @@ public sealed partial class FieldNode : ObservableObject
 
     public ObservableCollection<FieldNode> Children { get; } = [];
 
-    /// <summary>The field's text: its value, or a list of values with commas between</summary>
-    [ObservableProperty] private string _text;
+    private string _text;
+
+    /// <summary>
+    /// The field's text: its value, or a list of values with commas between. Never null: a box
+    /// that sets null (an editable ComboBox emptied) leaves it empty.
+    /// </summary>
+    public string Text
+    {
+        get => _text;
+        set
+        {
+            if (SetProperty(ref _text, value ?? ""))
+                OnTextChanged();
+        }
+    }
 
     [ObservableProperty] private bool _isExpanded;
 
@@ -168,6 +181,16 @@ public sealed partial class FieldNode : ObservableObject
     public IReadOnlyList<string> Suggestions => Schema == null ? []
         : _context.Suggestions(Schema.Type == FieldType.List ? Schema.Item?.Hint ?? FieldHint.None : Schema.Hint);
 
+    /// <summary>What the field's list of names is narrowed to</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PickerItems))]
+    private string _pickerFilter = "";
+
+    /// <summary>The names to pick from, narrowed by <see cref="PickerFilter"/></summary>
+    public IReadOnlyList<string> PickerItems => string.IsNullOrWhiteSpace(PickerFilter)
+        ? Suggestions
+        : Suggestions.Where(name => name.Contains(PickerFilter.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+
     private bool HasSuggestions => Schema != null && !Schema.IsInlineList && Schema.Hint is not (FieldHint.None or FieldHint.Color)
                                    && Suggestions.Count > 0;
 
@@ -205,7 +228,7 @@ public sealed partial class FieldNode : ObservableObject
 
     public bool HasModified => IsModified;
 
-    partial void OnTextChanged(string value)
+    private void OnTextChanged()
     {
         if (_loading)
             return;
@@ -215,7 +238,8 @@ public sealed partial class FieldNode : ObservableObject
 
     private void NotifyChanged()
     {
-        for (var node = Parent; node != null; node = node.Parent)
+        // Its own summary too: an entry added to or taken out of it changes its count
+        for (var node = this; node != null; node = node.Parent)
         {
             node.OnPropertyChanged(nameof(Summary));
             node.OnPropertyChanged(nameof(CanReset));

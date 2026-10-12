@@ -123,9 +123,21 @@
               </StackPanel>
               <TextBox Grid.Column="1" Text="{Binding Text}" PlaceholderText="{Binding Placeholder}" IsVisible="{Binding IsText}"
                        MinWidth="200" VerticalAlignment="Center" />
-              <AutoCompleteBox Grid.Column="1" Text="{Binding Text}" ItemsSource="{Binding Suggestions}" IsVisible="{Binding IsSuggested}"
-                               FilterMode="ContainsOrdinal" MinimumPrefixLength="1" MinWidth="200" VerticalAlignment="Center"
-                               ToolTip.Tip="{Binding Placeholder}" />
+              <!-- Typed, or picked from the names the game has. (An AutoCompleteBox here lost the first key
+                   typed, and an editable ComboBox emptied the field when an item was picked.) -->
+              <Grid Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="4" IsVisible="{Binding IsSuggested}" VerticalAlignment="Center">
+                <TextBox Text="{Binding Text}" PlaceholderText="{Binding Placeholder}" MinWidth="200" />
+                <Button Grid.Column="1" Content="…" Classes="small" VerticalAlignment="Stretch" ToolTip.Tip="Pick from the names the game has">
+                  <Button.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedRight">
+                      <DockPanel Width="320" Height="360">
+                        <TextBox DockPanel.Dock="Top" Text="{Binding PickerFilter}" PlaceholderText="Find" Margin="0,0,0,6" />
+                        <ListBox ItemsSource="{Binding PickerItems}" SelectionChanged="OnNamePicked" />
+                      </DockPanel>
+                    </Flyout>
+                  </Button.Flyout>
+                </Button>
+              </Grid>
               <ComboBox Grid.Column="1" ItemsSource="{Binding Choices}" SelectedItem="{Binding Text}" PlaceholderText="{Binding Placeholder}"
                         IsVisible="{Binding IsChoice}" MinWidth="200" VerticalAlignment="Center" />
               <TextBlock Grid.Column="1" Text="{Binding Summary}" IsVisible="{Binding IsGroup}" Opacity="0.6" VerticalAlignment="Center" />
