@@ -317,8 +317,18 @@ public class PfWolfPk3Loader
 
         if (fullName.StartsWith("music/"))
         {
-            // music/NAME.ogg (or .mp3, .wav) plays in place of the IMF song NAME, or as a new song
-            AddReference(assetName, () => new MusicFileAsset(entry.Open().ToArray()));
+            // music/NAME.ogg (or .mp3, .wav) plays in place of the IMF song NAME, or as a new song.
+            // music/NAME.imf (or .wlf), a Wolf3D IMF song, replaces the song NAME too: told by its
+            // name, since an IMF has no signature
+            if (entry.Name.EndsWith(".imf", StringComparison.OrdinalIgnoreCase)
+                || entry.Name.EndsWith(".wlf", StringComparison.OrdinalIgnoreCase))
+            {
+                // A music file of the name, from a pack beneath, would be played over it
+                _assets.Remove(GetKey(assetName, nameof(MusicFileAsset)));
+                AddReference(assetName, () => Wolf3dImfAudio.FromFile(entry.Open().ToArray()));
+            }
+            else
+                AddReference(assetName, () => new MusicFileAsset(entry.Open().ToArray()));
             return;
         }
 

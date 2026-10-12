@@ -189,4 +189,69 @@ public class AudioFileDecoderTests
         Assert.That(decoder.Channels, Is.EqualTo(2));
         Assert.That(decoder.SampleRate, Is.EqualTo(44100));
     }
+
+    // IMF commands: register, value, then a 16-bit delay in 700 Hz ticks
+    private static byte[] ImfCommands(params (byte Register, byte Value, ushort Delay)[] commands)
+        => commands.SelectMany(command => new[] { command.Register, command.Value }
+            .Concat(BitConverter.GetBytes(command.Delay))).ToArray();
+
+    [Test]
+    public void Type_1_Imf_File_Reads_Its_Length_And_Skips_The_Tag()
+    {
+        // Arrange: the byte length, two commands, then a tag
+        var commands = ImfCommands((0xB0, 0x20, 7), (0xA0, 0x44, 700));
+        var file = BitConverter.GetBytes((ushort)commands.Length).Concat(commands).Concat("tag"u8.ToArray()).ToArray();
+
+        // Act
+        var song = Wolf3dImfAudio.FromFile(file);
+
+        // Assert
+        Assert.That(song.Commands, Has.Count.EqualTo(2));
+        Assert.That(song.Commands[1], Is.EqualTo(new Wolf3dImfAudio.WolfensteinMusicCommand(0xA0, 0x44, 700)));
+        Assert.That(ImfMusicSource.Length(song), Is.EqualTo(TimeSpan.FromSeconds(1.01)));
+    }
+
+    [Test]
+    public void Type_0_Imf_File_Is_All_Commands()
+    {
+        // Arrange: starts with register 0 set to 0, so no length
+        var file = ImfCommands((0, 0, 0), (0xB0, 0x20, 350), (0xA0, 0x44, 350));
+
+        // Act
+        var song = Wolf3dImfAudio.FromFile(file);
+
+        // Assert
+        Assert.That(song.Commands, Has.Count.EqualTo(3));
+        Assert.That(ImfMusicSource.Length(song), Is.EqualTo(TimeSpan.FromSeconds(1)));
+    }
+
+    [Test]
+    public void Imf_File_Without_Timing_Is_Refused()
+    {
+        Assert.Throws<InvalidDataException>(() => Wolf3dImfAudio.FromFile(ImfCommands((0, 0, 0), (0xB0, 0x20, 0))));
+        Assert.Throws<InvalidDataException>(() => Wolf3dImfAudio.FromFile([1]));
+    }
+
+    [Test]
+    public void Pk3_Imf_Music_Loads_By_Name_And_Replaces_A_Music_File_Beneath()
+    {
+        // Arrange: the base pk3 has CORNER as a WAV and a new IMF song; a mod gives CORNER as an IMF
+        var song = ImfCommands((0, 0, 0), (0xB0, 0x20, 700));
+        var basePk3 = new MemoryAssetSource("pfwolf.pk3",
+            new() { ["gamepacks/gamepack-info.yaml"] = "alpha:\n  title: Alpha\n  game-palette: pal\n" },
+            new()
+            {
+                ["music/CORNER.ogg"] = Wav(1, 2, 44100, 16, Int16s(1, 2, 3, 4)),
+                ["music/NEWSONG.imf"] = song,
+            });
+        var mod = new MemoryAssetSource("mod.pk3", new(), new() { ["music/CORNER.wlf"] = song });
+
+        // Act
+        var loader = new PfWolfPk3Loader([basePk3], "alpha", "alpha", [mod]);
+
+        // Assert
+        Assert.That(loader.Load<Wolf3dImfAudio>("newsong").Commands, Has.Count.EqualTo(2));
+        Assert.That(loader.Load<Wolf3dImfAudio>("corner").Commands, Has.Count.EqualTo(2));
+        Assert.That(loader.GetAssets().Keys, Has.None.EqualTo("musicfileasset:corner"));
+    }
 }
