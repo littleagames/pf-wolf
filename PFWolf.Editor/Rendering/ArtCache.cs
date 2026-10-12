@@ -90,9 +90,45 @@ public sealed class ArtCache(GameContent content) : IDisposable
         if (_whole.TryGetValue(key, out var bitmap))
             return bitmap;
 
+        Asset? asset = kind switch
+        {
+            ArtKind.Texture or ArtKind.Flat => content.Find<TextureAsset>(name),
+            ArtKind.Sprite => content.Find<SpriteAsset>(name),
+            _ => content.Find<GraphicAsset>(name),
+        };
+        bitmap = MakeWhole(kind, asset);
+        _whole[key] = bitmap;
+        return bitmap;
+    }
+
+    private readonly Dictionary<Asset, Bitmap?> _frames = new(ReferenceEqualityComparer.Instance);
+
+    /// <summary>
+    /// An animation's frames drawn whole (as <see cref="Whole"/> draws a picture), first to last;
+    /// empty when the name isn't an animation of that kind
+    /// </summary>
+    public IReadOnlyList<Bitmap?> AnimationFrames(ArtKind kind, string name)
+    {
+        IEnumerable<Asset> frames = kind == ArtKind.Picture
+            ? content.Assets.FindAnimation<GraphicAsset>(name)?.Frames.Select(frame => (Asset)frame.Asset) ?? []
+            : kind is ArtKind.Texture or ArtKind.Flat
+                ? content.Assets.FindAnimation<TextureAsset>(name)?.Frames.Select(frame => (Asset)frame.Asset) ?? []
+                : [];
+        return frames.Select(frame =>
+        {
+            // The frames themselves, not by name: a frame can have the animation's own name
+            if (!_frames.TryGetValue(frame, out var bitmap))
+                _frames[frame] = bitmap = MakeWhole(kind, frame);
+            return bitmap;
+        }).ToList();
+    }
+
+    private Bitmap? MakeWhole(ArtKind kind, Asset? asset)
+    {
+        Bitmap? bitmap = null;
         switch (kind)
         {
-            case ArtKind.Texture or ArtKind.Flat when content.Find<TextureAsset>(name) is { Width: > 0, Height: > 0 } texture:
+            case ArtKind.Texture or ArtKind.Flat when asset is TextureAsset { Width: > 0, Height: > 0 } texture:
             {
                 // Stored column by column; a flat's FlatMask pixels are see-through
                 int height = texture.Height;
@@ -100,14 +136,14 @@ public sealed class ArtCache(GameContent content) : IDisposable
                     kind == ArtKind.Flat ? (x, y) => texture.RawData[x * height + y] != FlatMask : null);
                 break;
             }
-            case ArtKind.Sprite when content.Find<SpriteAsset>(name) is { Width: > 0, Height: > 0 } sprite:
+            case ArtKind.Sprite when asset is SpriteAsset { Width: > 0, Height: > 0 } sprite:
             {
                 int width = sprite.Width;
                 bitmap = MakeBitmap(width, sprite.Height, (x, y) => sprite.RawData[y * width + x],
                     sprite.OpacityMask.Length > 0 ? (x, y) => sprite.OpacityMask[y * width + x] != 0 : null);
                 break;
             }
-            case ArtKind.Picture when content.Find<GraphicAsset>(name) is { Width: > 0, Height: > 0 } picture:
+            case ArtKind.Picture when asset is GraphicAsset { Width: > 0, Height: > 0 } picture:
             {
                 int width = picture.Width;
                 var mask = picture.OpacityMask;
@@ -116,8 +152,6 @@ public sealed class ArtCache(GameContent content) : IDisposable
                 break;
             }
         }
-
-        _whole[key] = bitmap;
         return bitmap;
     }
 
@@ -288,10 +322,11 @@ public sealed class ArtCache(GameContent content) : IDisposable
 
     public void Dispose()
     {
-        foreach (var bitmap in _textures.Values.Concat(_sprites.Values).Concat(_whole.Values))
+        foreach (var bitmap in _textures.Values.Concat(_sprites.Values).Concat(_whole.Values).Concat(_frames.Values))
             bitmap?.Dispose();
         _textures.Clear();
         _sprites.Clear();
         _whole.Clear();
+        _frames.Clear();
     }
 }

@@ -160,7 +160,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
 
     public bool HasSelection => SelectedItem != null;
     public bool HasError => Error.Length > 0;
-    public bool CanAddEntries => Kind is DefinitionKind.GamePackInfo or DefinitionKind.MapDefs or DefinitionKind.Actors;
+    public bool CanAddEntries => Kind is DefinitionKind.GamePackInfo or DefinitionKind.MapDefs or DefinitionKind.Actors or DefinitionKind.Animations;
 
     public static string KeyOf(IReadOnlyList<string> path) => string.Join("\u001f", path);
 
@@ -251,6 +251,19 @@ public sealed partial class EntryEditorViewModel : ObservableObject
                 if (Field("north", "east", "south", "west", "texture") is { } texture)
                     return (texture, _owner.Art?.Invoke(FieldHint.Texture, texture));
                 return (Field("action", "shape") ?? (value is YamlScalarNode scalar ? scalar.Value ?? "" : ""), null);
+            case DefinitionKind.Animations:
+            {
+                // "3 frames, loops", its first frame as the picture; one the game left out says so
+                var frames = (YamlNodes.Get(value, ["frames"]) as YamlSequenceNode)?.Children ?? [];
+                var names = frames.Select(frame => frame is YamlScalarNode s ? s.Value : (YamlNodes.Get(frame, ["name"]) as YamlScalarNode)?.Value)
+                    .Where(name => !string.IsNullOrEmpty(name)).ToList();
+                bool once = names.Count > 0 && names[^1]!.Equals(AnimationDefinition.Stop, StringComparison.OrdinalIgnoreCase);
+                int count = names.Count - (once ? 1 : 0);
+                var detail = $"{count} frame{(count == 1 ? "" : "s")}, {(once ? "plays once" : "loops")}";
+                if (_owner.Content?.Assets.AnimationProblems.ContainsKey(entry.Name) == true)
+                    detail = "⚠ " + detail;
+                return (detail, count > 0 ? _owner.Art?.Invoke(FieldHint.Texture, names[0]!) : null);
+            }
             default:
                 return ("", null);
         }
@@ -259,6 +272,10 @@ public sealed partial class EntryEditorViewModel : ObservableObject
     private string? DescriptionOf(DefinitionEntry entry) => Kind switch
     {
         DefinitionKind.MapDefs => DefinitionSchemas.MapDefs.Field(entry.Path[0])?.Description,
+        // What the game made of it when it loaded
+        DefinitionKind.Animations => _owner.Content?.Assets.AnimationProblems.GetValueOrDefault(entry.Name) is { } problem
+            ? $"When the game loaded: {problem}"
+            : null,
         _ => null,
     };
 
@@ -283,6 +300,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         DefinitionKind.GameInfo => "sections",
         DefinitionKind.GamePackInfo => "games",
         DefinitionKind.Actors => "classes",
+        DefinitionKind.Animations => "animations",
         _ => "entries",
     };
 
@@ -366,6 +384,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         DefinitionKind.MapDefs => DefinitionSchemas.MapDefs.Field(path[0]) is { } table
             ? path.Count > 1 && table.Type == FieldType.Dictionary ? table.Item! : table
             : FieldSchema.For(typeof(object), path[0]),
+        DefinitionKind.Animations => DefinitionSchemas.Animation,
         _ => DefinitionSchemas.Actor,
     };
 
@@ -601,6 +620,22 @@ public sealed partial class EntryEditorViewModel : ObservableObject
                 value = new YamlMappingNode { { "title", id.Trim() }, { "base-pack", "standalone" } };
                 break;
             }
+            case DefinitionKind.Animations:
+            {
+                var name = await _owner.AskText("New animation", "Its name (as walls, flats and pictures use it; a texture's own name animates it everywhere):", "",
+                    candidate => candidate.Trim().Length == 0 || candidate.Trim().Any(c => char.IsWhiteSpace(c) || c is '/' or '\\' or ':')
+                        ? "A name without spaces, slashes or colons"
+                        : YamlNodes.Get(merged, [candidate.Trim()]) != null ? $"There's a {candidate.Trim()} already" : null);
+                if (name == null)
+                    return;
+                path = [name.Trim().ToUpperInvariant()];
+                value = new YamlMappingNode
+                {
+                    { "tics", AnimationDefinition.DefaultTics.ToString(CultureInfo.InvariantCulture) },
+                    { "frames", new YamlSequenceNode() },
+                };
+                break;
+            }
             default:
             {
                 var name = await _owner.AskText("New class", "Its name (as mapdefs and other classes name it):", "",
@@ -766,4 +801,5 @@ public static class DefinitionSchemas
     public static FieldSchema GamePack { get; } = FieldSchema.For(typeof(PFWolf.Assets.GamePack));
     public static FieldSchema MapDefs { get; } = FieldSchema.For(typeof(MapObjectTranslationAsset));
     public static FieldSchema Actor { get; } = ActorSchema.Build();
+    public static FieldSchema Animation { get; } = AnimationSchema.Build();
 }

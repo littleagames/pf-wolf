@@ -115,10 +115,11 @@ public sealed class FieldSchema
     public bool IsScalar => Type is FieldType.Text or FieldType.Integer or FieldType.Number or FieldType.Boolean or FieldType.Choice;
 
     /// <summary>A list of numbers or names, edited as one line ("1, 2, 3") rather than a row each</summary>
-    public bool IsInlineList => Type == FieldType.List && (_inline || Item is { Type: FieldType.Integer or FieldType.Number or FieldType.Choice or FieldType.Boolean }
-                                                       || Item is { Type: FieldType.Text, Hint: not FieldHint.None });
+    public bool IsInlineList => Type == FieldType.List && (_inline ?? (Item is { Type: FieldType.Integer or FieldType.Number or FieldType.Choice or FieldType.Boolean }
+                                                                    || Item is { Type: FieldType.Text, Hint: not FieldHint.None }));
 
-    private bool _inline;
+    // Whether a list is edited on one line: null works it out from its items
+    private bool? _inline;
 
     /// <summary>A field of a hand-made schema: a value</summary>
     public static FieldSchema Value(string key, FieldType type, string? description, string? defaultText = null, FieldHint hint = FieldHint.None,
@@ -133,8 +134,11 @@ public sealed class FieldSchema
     public static FieldSchema Entries(string key, string? description, FieldSchema item)
         => new(key, LabelFor(key), description, FieldType.Dictionary, typeof(object), [], null, FieldHint.None, () => item, keyType: typeof(string));
 
-    /// <summary>A field of a hand-made schema: a list of <paramref name="item"/>, inline (A, B, C) or a row each</summary>
-    public static FieldSchema List(string key, string? description, FieldSchema item, bool inline = false, string? defaultText = null)
+    /// <summary>
+    /// A field of a hand-made schema: a list of <paramref name="item"/>, inline (A, B, C) or a row
+    /// each; left out, inline for numbers, choices and names
+    /// </summary>
+    public static FieldSchema List(string key, string? description, FieldSchema item, bool? inline = null, string? defaultText = null)
         => new(key, LabelFor(key), description, FieldType.List, typeof(object), [], defaultText, item.Hint, () => item) { _inline = inline };
 
     /// <summary>

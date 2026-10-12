@@ -17,9 +17,20 @@ public sealed class ArtItem(ArtEntry entry, ArtCache art)
     public string Name => Entry.Name;
     public Bitmap? Thumbnail => art.Whole(Entry.Kind, Entry.AssetName);
 
-    /// <summary>"8 sides" under a rotating sprite frame's thumbnail</summary>
-    public string SidesText => Entry.Rotations.Count > 0 ? $"{Entry.Rotations.Count} sides" : "";
+    /// <summary>"8 sides" under a rotating sprite frame's thumbnail, "3 frames" under an animation's</summary>
+    public string SidesText => Entry.Rotations.Count > 0 ? $"{Entry.Rotations.Count} sides"
+        : Entry.Animation is { } animation ? $"{animation.Frames.Count} frames" : "";
     public bool IsRotating => Entry.Rotations.Count > 0;
+    public bool HasSidesText => SidesText.Length > 0;
+
+    /// <summary>An animation's frames for the frame strip</summary>
+    public List<AnimationFrameItem> MakeFrames()
+    {
+        if (Entry.Animation is not { } animation)
+            return [];
+        var bitmaps = art.AnimationFrames(Entry.Kind, Entry.Name);
+        return animation.Frames.Select((frame, i) => new AnimationFrameItem(frame.Name, frame.Tics, i, i < bitmaps.Count ? bitmaps[i] : null)).ToList();
+    }
 
     /// <summary>A rotating frame's sides for the picker</summary>
     public List<RotationItem> MakeRotations()
@@ -38,6 +49,13 @@ public sealed record RotationItem(string AssetName, int Side, Bitmap? Thumbnail)
         5 => "5 back",
         _ => Side.ToString(),
     };
+}
+
+/// <summary>One frame of an animation, for the frame strip</summary>
+public sealed record AnimationFrameItem(string Name, int Tics, int Index, Bitmap? Thumbnail)
+{
+    public string Label => $"{Index + 1}";
+    public string ToolTip => $"{Name}, {Tics} tics (double-click to go to it)";
 }
 
 /// <summary>Which kinds of picture the browser lists</summary>
@@ -156,9 +174,11 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     public bool HasModFile => ModFile != null;
 
     /// <summary>Where a change to the picture shown goes</summary>
-    public string FileText => ModFile != null
-        ? $"In {ModFile}: changes are saved there"
-        : SelectedItem != null ? "The game's own: a change puts a picture of the same name in a mod" : "";
+    public string FileText => IsAnimation
+        ? "Its frames are pictures of their own (change those); animdefs says how it plays (Definitions, F11: Animations)"
+        : ModFile != null
+            ? $"In {ModFile}: changes are saved there"
+            : SelectedItem != null ? "The game's own: a change puts a picture of the same name in a mod" : "";
 
     // The sprite's offset, as its PNG's grAb chunk gives it
     [ObservableProperty]
@@ -175,9 +195,12 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     public ArtKind? CurrentKind => SelectedItem?.Entry.Kind;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelection), nameof(Preview), nameof(PreviewWidth), nameof(PreviewHeight), nameof(Details))]
+    [NotifyPropertyChangedFor(nameof(HasSelection), nameof(Preview), nameof(PreviewWidth), nameof(PreviewHeight), nameof(Details), nameof(CanReplace))]
     [NotifyCanExecuteChangedFor(nameof(UseInPaletteCommand))]
     private ArtItem? _selectedItem;
+
+    /// <summary>Replace… applies: a picture is picked that isn't an animation</summary>
+    public bool CanReplace => HasSelection && !IsAnimation;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PreviewWidth), nameof(PreviewHeight))]
@@ -201,11 +224,124 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     public bool HasUses => Uses.Count > 0;
     public bool HasRotations => Rotations.Count > 0;
 
-    /// <summary>The picture shown: the entry's, or the side of a rotating frame picked</summary>
-    public Bitmap? Preview => SelectedRotation?.Thumbnail ?? SelectedItem?.Thumbnail;
+    /// <summary>The frames of the animation picked, for the frame strip</summary>
+    public ObservableCollection<AnimationFrameItem> Frames { get; } = [];
 
-    /// <summary>The asset the preview shows ("GARDA3" for side 3 of GARDA): what Copy name and Export PNG take</summary>
-    public string CurrentAssetName => SelectedRotation?.AssetName ?? SelectedItem?.Entry.AssetName ?? "";
+    public bool HasFrames => Frames.Count > 0;
+
+    /// <summary>The animation picked is an animation (animdefs): its pictures are its frames', which are edited as themselves</summary>
+    public bool IsAnimation => SelectedItem?.Entry.Animation != null;
+
+    /// <summary>The frame shown while it isn't playing; picking one stops it</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Preview), nameof(PreviewWidth), nameof(PreviewHeight), nameof(CurrentAssetName))]
+    private AnimationFrameItem? _selectedFrame;
+
+    /// <summary>The animation picked plays in the preview</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PlayText))]
+    private bool _isPlaying;
+
+    public string PlayText => IsPlaying ? "❚❚ Pause" : "▶ Play";
+
+    // The frame playing shows, and the clock it plays by
+    private AnimationFrameItem? _playingFrame;
+    private readonly System.Diagnostics.Stopwatch _playClock = new();
+    private Avalonia.Threading.DispatcherTimer? _playTimer;
+
+    /// <summary>The picture shown: the entry's, the side of a rotating frame picked, or an animation's frame</summary>
+    public Bitmap? Preview => (IsPlaying ? _playingFrame : SelectedFrame)?.Thumbnail ?? SelectedRotation?.Thumbnail ?? SelectedItem?.Thumbnail;
+
+    /// <summary>The asset the preview shows ("GARDA3" for side 3 of GARDA, an animation's frame): what Copy name and Export PNG take</summary>
+    public string CurrentAssetName => (IsPlaying ? null : SelectedFrame)?.Name ?? SelectedRotation?.AssetName ?? SelectedItem?.Entry.AssetName ?? "";
+
+    /// <summary>Plays the animation picked, or pauses it on the frame showing</summary>
+    [RelayCommand]
+    private void TogglePlay()
+    {
+        if (IsPlaying)
+        {
+            var showing = _playingFrame;
+            IsPlaying = false;
+            SelectedFrame = showing;
+        }
+        else if (HasFrames)
+            Play();
+    }
+
+    private void Play()
+    {
+        SelectedFrame = null;
+        _playClock.Restart();
+        _playingFrame = Frames.FirstOrDefault();
+        IsPlaying = true;
+        _playTimer ??= new Avalonia.Threading.DispatcherTimer(TimeSpan.FromMilliseconds(1000.0 / 70), Avalonia.Threading.DispatcherPriority.Render, (_, _) => PlayTick());
+        _playTimer.Start();
+        OnPreviewChanged();
+    }
+
+    /// <summary>Stops the animation playing (the window closing, another picture picked)</summary>
+    public void StopPlaying()
+    {
+        _playTimer?.Stop();
+        IsPlaying = false;
+        _playingFrame = null;
+    }
+
+    partial void OnIsPlayingChanged(bool value)
+    {
+        if (!value)
+            _playTimer?.Stop();
+        OnPreviewChanged();
+        OnPropertyChanged(nameof(CurrentAssetName));
+    }
+
+    // Shows the frame the animation's at, 70 tics a second as the game plays it
+    private void PlayTick()
+    {
+        if (!IsPlaying || SelectedItem?.Entry.Animation is not { } animation || Frames.Count == 0)
+        {
+            StopPlaying();
+            return;
+        }
+        int tics = (int)(_playClock.ElapsedMilliseconds * 70 / 1000);
+        var frame = Frames[Math.Min(animation.FrameAt(tics), Frames.Count - 1)];
+        if (frame == _playingFrame)
+            return;
+        _playingFrame = frame;
+        OnPreviewChanged();
+    }
+
+    // Frames can differ in size, so the preview's size goes with it
+    private void OnPreviewChanged()
+    {
+        OnPropertyChanged(nameof(Preview));
+        OnPropertyChanged(nameof(PreviewWidth));
+        OnPropertyChanged(nameof(PreviewHeight));
+    }
+
+    partial void OnSelectedFrameChanged(AnimationFrameItem? value)
+    {
+        if (value != null && IsPlaying)
+        {
+            _playTimer?.Stop();
+            IsPlaying = false;
+        }
+    }
+
+    /// <summary>Goes to a frame's own texture or picture</summary>
+    public void ShowFrame(AnimationFrameItem frame)
+    {
+        if (SelectedItem?.Entry is not { } entry)
+            return;
+        // A frame with the animation's own name is the animation's entry; its picture is the first frame
+        if (frame.Name.Equals(entry.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            Status = $"{frame.Name} is the animation's own name: its first frame is the {KindName(entry.Kind).ToLowerInvariant()} it animates";
+            return;
+        }
+        Show(entry.Kind, frame.Name);
+    }
 
     public double PreviewWidth => (Preview?.PixelSize.Width ?? 0) * Zoom;
     public double PreviewHeight => (Preview?.PixelSize.Height ?? 0) * Zoom;
@@ -234,6 +370,12 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
             {
                 var stories = (double)entry.Height / Math.Max(1, entry.Width);
                 details += $", {stories:0.##} stories tall";
+            }
+            if (entry.Animation is { } animation)
+            {
+                details += $"\nAn animation (animdefs): {animation.Frames.Count} frames, {animation.TotalTics} tics ({animation.TotalTics / 70.0:0.##} s), "
+                           + (animation.Loops ? "over and over" : "once, holding the last frame (the preview starts it over)")
+                           + ". The map and 3D view show its first frame. Its frames are edited as themselves: double-click one to go to it.";
             }
             return details;
         }
@@ -405,10 +547,17 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         Uses.Clear();
         Rotations.Clear();
         SelectedRotation = null;
+        StopPlaying();
+        SelectedFrame = null;
+        Frames.Clear();
+        OnPropertyChanged(nameof(IsAnimation));
+        EditPixelsCommand.NotifyCanExecuteChanged();
+        EditOutsideCommand.NotifyCanExecuteChanged();
         if (value == null)
         {
             OnPropertyChanged(nameof(HasUses));
             OnPropertyChanged(nameof(HasRotations));
+            OnPropertyChanged(nameof(HasFrames));
             RefreshFile();
             return;
         }
@@ -416,6 +565,11 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         foreach (var side in value.MakeRotations())
             Rotations.Add(side);
         OnPropertyChanged(nameof(HasRotations));
+        foreach (var frame in value.MakeFrames())
+            Frames.Add(frame);
+        OnPropertyChanged(nameof(HasFrames));
+        if (HasFrames)
+            Play();
         SelectedRotation = Rotations.FirstOrDefault();
         OnPropertyChanged(nameof(CurrentAssetName));
 
@@ -471,6 +625,11 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     {
         if (_content is not { } content || SelectedItem?.Entry is not { } entry)
             return;
+        if (entry.Animation != null)
+        {
+            Status = $"{entry.Name} is an animation: replace its frames (double-click one to go to it)";
+            return;
+        }
         var name = CurrentAssetName;
         await Make(mod => ArtFiles.Replace(content, entry.Kind, name, data, mod),
             ModFile == null ? $"A mod to put {fileName} in, in place of the game's {name} (it goes in its {ArtFiles.Folder(entry.Kind)} folder)" : null);
@@ -536,8 +695,11 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     // The pixel editor
     //
 
+    /// <summary>A picture that can be drawn on or replaced: picked, and not an animation (its frames are)</summary>
+    private bool CanEditPicture => HasSelection && !IsAnimation;
+
     /// <summary>Opens the picture shown in the pixel editor</summary>
-    [RelayCommand(CanExecute = nameof(HasSelection))]
+    [RelayCommand(CanExecute = nameof(CanEditPicture))]
     private void EditPixels()
     {
         if (_content is not { } content || SelectedItem?.Entry is not { } entry)
@@ -639,7 +801,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     }
 
     /// <summary>Opens the picture shown in the paint program, and watches for it being saved there</summary>
-    [RelayCommand(CanExecute = nameof(HasSelection))]
+    [RelayCommand(CanExecute = nameof(CanEditPicture))]
     private void EditOutside()
     {
         if (_content is not { } content || SelectedItem?.Entry is not { } entry)

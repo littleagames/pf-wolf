@@ -35,6 +35,30 @@ public class ArtCatalogGameTests
         }
     }
 
+    [Test]
+    public void The_Switch_Demos_Animations_Are_Listed_With_Their_Frames()
+    {
+        // Arrange
+        var content = Load("wolf3d", Path.Combine("examples", "mods", "switch-demo"));
+
+        // Act
+        var entries = ArtCatalog.Build(content);
+
+        // Assert
+        var alarm = entries.Single(entry => entry.Name == "ALARMLEVER");
+        Assert.That(alarm.Kind, Is.EqualTo(ArtKind.Texture));
+        Assert.That(alarm.Animation!.Frames.Select(frame => frame.Name), Is.EqualTo(new[] { "ELEV2_2", "ELEV1_2" }));
+        Assert.That(alarm.Animation.Loops, Is.True);
+        Assert.That(alarm.Origins.Select(origin => origin.Action), Does.Contain("animated"));
+        var sticky = entries.Single(entry => entry.Name == "STICKYLEVER");
+        Assert.That(sticky.Animation!.Loops, Is.False);
+        Assert.That(sticky.Uses.Select(use => use.Label), Has.Some.StartsWith("Wall 55"));
+        // A frame stays a plain texture, used by the animations it's in
+        var frame = entries.Single(entry => entry.Name == "ELEV1_2" && entry.Kind == ArtKind.Texture);
+        Assert.That(frame.Animation, Is.Null);
+        Assert.That(frame.Uses.Select(use => use.Label), Does.Contain("Animation STICKYLEVER, frame 1").And.Contain("Animation ALARMLEVER, frame 2"));
+    }
+
     [TestCase("wolf3d")]
     [TestCase("spear")]
     public void Every_Wall_And_Thing_Picture_Is_Listed_And_Used(string game)

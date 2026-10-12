@@ -29,6 +29,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
         GamePacks = new EntryEditorViewModel(this, DefinitionKind.GamePackInfo);
         Actors = new EntryEditorViewModel(this, DefinitionKind.Actors);
         MapDefs = new EntryEditorViewModel(this, DefinitionKind.MapDefs);
+        Animations = new EntryEditorViewModel(this, DefinitionKind.Animations);
     }
 
     /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
@@ -44,6 +45,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     public EntryEditorViewModel GamePacks { get; }
     public EntryEditorViewModel Actors { get; }
     public EntryEditorViewModel MapDefs { get; }
+    public EntryEditorViewModel Animations { get; }
 
     /// <summary>Something was saved into this mod (the editor adds it to the mods)</summary>
     public event EventHandler<string>? SavedToMod;
@@ -173,7 +175,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     /// <summary>The definitions were saved: the tabs show them again</summary>
     public event EventHandler? DefinitionsChanged;
 
-    private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, GamePacks];
+    private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, Animations, GamePacks];
 
     /// <summary>Asks whether to save changes before they're lost; the editor answers with its dialog</summary>
     public Func<string, Task<UnsavedChoice>>? AskUnsaved { get; set; }
@@ -237,6 +239,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
             DefinitionKind.GameInfo => GameInfo,
             DefinitionKind.GamePackInfo => GamePacks,
             DefinitionKind.Actors => Actors,
+            DefinitionKind.Animations => Animations,
             _ => MapDefs,
         };
         ShowTabRequested?.Invoke(this, kind);

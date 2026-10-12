@@ -224,6 +224,7 @@ public class FieldNodeGameTests
                     DefinitionKind.GameInfo => DefinitionSchemas.GameInfo.Field(path[0]),
                     DefinitionKind.GamePackInfo => DefinitionSchemas.GamePack,
                     DefinitionKind.Actors => DefinitionSchemas.Actor,
+                    DefinitionKind.Animations => DefinitionSchemas.Animation,
                     _ => DefinitionSchemas.MapDefs.Field(path[0]) is { } table && path.Count > 1 ? table.Item : DefinitionSchemas.MapDefs.Field(path[0]),
                 };
 

@@ -40,7 +40,7 @@ public static class YamlFileTypes
         return folder switch
         {
             "language/" => $"gamepacks/{packId}/language/{rest}",
-            "actordefs/" or "mapdefs/" => $"{folder}{packId}/{rest}",
+            "actordefs/" or "mapdefs/" or "animdefs/" => $"{folder}{packId}/{rest}",
             _ => path,
         };
     }
@@ -71,7 +71,8 @@ public static class YamlFileTypes
             why = $"Mods can't carry a game pack's {parts[^1]} yet";
         }
         else if (path.StartsWith("actordefs/", StringComparison.OrdinalIgnoreCase)
-                 || path.StartsWith("mapdefs/", StringComparison.OrdinalIgnoreCase))
+                 || path.StartsWith("mapdefs/", StringComparison.OrdinalIgnoreCase)
+                 || path.StartsWith("animdefs/", StringComparison.OrdinalIgnoreCase))
             return $"{parts[0].ToLowerInvariant()}/{parts[^1]}";      // a pack's own, or the shared ones: flat in a mod
         else if (path.StartsWith("language/", StringComparison.OrdinalIgnoreCase) && parts.Length == 2)
             return path;
@@ -140,6 +141,8 @@ public static class YamlFileTypes
             return "actor classes";
         if (path.StartsWith("mapdefs/", StringComparison.OrdinalIgnoreCase))
             return "map definitions";
+        if (path.StartsWith("animdefs/", StringComparison.OrdinalIgnoreCase))
+            return "animations";
         if (path.StartsWith("menudefs/", StringComparison.OrdinalIgnoreCase))
             return isMod ? null : "menu";
         if (path.StartsWith("sounds/", StringComparison.OrdinalIgnoreCase) && name.Contains("sound-seq"))
@@ -161,6 +164,8 @@ public static class YamlFileTypes
             return DefinitionKind.Actors;
         if (path.StartsWith("mapdefs/", StringComparison.OrdinalIgnoreCase))
             return DefinitionKind.MapDefs;
+        if (path.StartsWith("animdefs/", StringComparison.OrdinalIgnoreCase))
+            return DefinitionKind.Animations;
         return null;
     }
 

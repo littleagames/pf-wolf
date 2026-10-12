@@ -55,7 +55,16 @@ public partial class ArtBrowserWindow : Window
     {
         base.OnClosed(e);
         if (DataContext is ArtBrowserViewModel viewModel)
+        {
             viewModel.PixelEditRequested -= OpenPixelEditor;
+            viewModel.StopPlaying();
+        }
+    }
+
+    private void OnFrameDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (ViewModel.SelectedFrame is { } frame)
+            ViewModel.ShowFrame(frame);
     }
 
     private void OpenPixelEditor(object? sender, PixelEditorViewModel editor)

@@ -53,6 +53,9 @@
       <TabItem x:Name="MapDefsTab" Header="Map definitions">
         <v:EntryEditorView DataContext="{Binding MapDefs}" />
       </TabItem>
+      <TabItem x:Name="AnimationsTab" Header="Animations">
+        <v:EntryEditorView DataContext="{Binding Animations}" />
+      </TabItem>
       <TabItem x:Name="GamePacksTab" Header="Game packs">
         <v:EntryEditorView DataContext="{Binding GamePacks}" />
       </TabItem>

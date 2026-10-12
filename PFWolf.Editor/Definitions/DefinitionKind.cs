@@ -18,6 +18,9 @@ public enum DefinitionKind
 
     /// <summary>mapdefs/: what each map value is (walls, doors, things, floors...)</summary>
     MapDefs,
+
+    /// <summary>animdefs/: animated textures and pictures</summary>
+    Animations,
 }
 
 public static class DefinitionKinds
@@ -29,6 +32,7 @@ public static class DefinitionKinds
         DefinitionKind.GameInfo => "Game info",
         DefinitionKind.GamePackInfo => "Game packs",
         DefinitionKind.Actors => "Actors",
+        DefinitionKind.Animations => "Animations",
         _ => "Map definitions",
     };
 
@@ -45,6 +49,7 @@ public static class DefinitionKinds
     {
         DefinitionKind.Actors => "actordefs/",
         DefinitionKind.MapDefs => "mapdefs/",
+        DefinitionKind.Animations => "animdefs/",
         _ => null,
     };
 
@@ -77,6 +82,9 @@ public static class DefinitionKinds
                 break;
             case DefinitionKind.Actors:
                 YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, ActorData>>(yaml);
+                break;
+            case DefinitionKind.Animations:
+                YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, AnimationDefinition>>(yaml);
                 break;
             default:
                 YamlDataEntryLoader.DeserializeQuietly<MapObjectTranslationAsset>(yaml);

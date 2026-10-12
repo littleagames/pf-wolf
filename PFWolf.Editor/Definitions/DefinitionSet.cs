@@ -101,6 +101,11 @@ public sealed class DefinitionSet
             ($"{packId}/actordefs", nameof(ActorTranslationAsset), ""),
         ],
         DefinitionKind.MapDefs => [($"{packId}/mapdefs", nameof(MapObjectTranslationAsset), "")],
+        DefinitionKind.Animations =>
+        [
+            ("animdefs", nameof(AnimationDefinitionsAsset), DefinitionFile.SharedLayer),
+            ($"{packId}/animdefs", nameof(AnimationDefinitionsAsset), ""),
+        ],
         _ => [],
     };
 
@@ -127,6 +132,14 @@ public sealed class DefinitionSet
     public YamlMappingNode Replay(IEnumerable<DefinitionFile> files)
     {
         var (shared, pack) = ReplayLayers(files);
+        if (Kind == DefinitionKind.Animations)
+        {
+            // The pack's animation replaces a shared one of the same name (AssetManager.BuildAnimations)
+            var animations = (YamlMappingNode)YamlNodes.Clone(shared);
+            foreach (var (key, value) in pack.Children)
+                YamlTree.Set(animations, key, value);
+            return animations;
+        }
         if (Kind != DefinitionKind.Actors)
             return pack;
 
@@ -156,6 +169,13 @@ public sealed class DefinitionSet
                 case DefinitionKind.MapDefs:
                     if (file.IsBase)
                         YamlTree.MergeLevels(target, tree, 2);
+                    else
+                        YamlTree.DeepMerge(target, tree);
+                    break;
+                case DefinitionKind.Animations:
+                    // pfwolf.pk3's files replace animations name by name; a mod's merge all the way down
+                    if (file.IsBase)
+                        YamlTree.MergeLevels(target, tree, 1);
                     else
                         YamlTree.DeepMerge(target, tree);
                     break;
@@ -205,7 +225,7 @@ public sealed class DefinitionSet
 
             var group = Kind switch
             {
-                DefinitionKind.Actors or DefinitionKind.GamePackInfo => LastFileDefining([name], baseOnly)?.SourceName ?? "",
+                DefinitionKind.Actors or DefinitionKind.GamePackInfo or DefinitionKind.Animations => LastFileDefining([name], baseOnly)?.SourceName ?? "",
                 _ => "",
             };
             entries.Add(new DefinitionEntry([name], name, group));
@@ -268,7 +288,8 @@ public sealed class DefinitionSet
         {
             // In a mod: what differs from the files before it; for a class, from the pack's own
             // (a pack class of the name replaces a shared one whole)
-            var overlayBase = Kind == DefinitionKind.Actors ? YamlNodes.Get(ReplayLayers(before).Pack, path) : baseValue;
+            // (and for an animation: a mod's go in with the pack's, whose replace shared ones whole)
+            var overlayBase = Kind is DefinitionKind.Actors or DefinitionKind.Animations ? YamlNodes.Get(ReplayLayers(before).Pack, path) : baseValue;
             value = ActorOverlay(existing, baseValue, edited, path) ?? YamlNodes.Overlay(overlayBase, edited, path.Count);
         }
         else if (edited == null)
@@ -431,7 +452,12 @@ public sealed class DefinitionSet
         if (defining != null)
             return defining;
 
-        var name = Kind == DefinitionKind.Actors ? "actordefs/actors.yaml" : $"mapdefs/{FileNameFor(path[0])}.yaml";
+        var name = Kind switch
+        {
+            DefinitionKind.Actors => "actordefs/actors.yaml",
+            DefinitionKind.Animations => "animdefs/animdefs.yaml",
+            _ => $"mapdefs/{FileNameFor(path[0])}.yaml",
+        };
         return modFiles.FirstOrDefault(file => file.Is(modPath, name)) ?? new DefinitionFile(modPath, name, "", "", isNew: true);
     }
 

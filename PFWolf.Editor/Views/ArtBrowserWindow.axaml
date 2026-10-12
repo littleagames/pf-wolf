@@ -106,6 +106,35 @@
                 ToolTip.Tip="The side after (.)" />
       </Grid>
 
+      <!-- An animation's frames: it plays in the preview; pick a frame to stop on it, double-click one to go to it -->
+      <Grid Grid.Row="2" ColumnDefinitions="Auto,*" ColumnSpacing="4" Margin="0,6,0,0" IsVisible="{Binding HasFrames}">
+        <Button Content="{Binding PlayText}" Command="{Binding TogglePlayCommand}" VerticalAlignment="Stretch" MinWidth="76"
+                ToolTip.Tip="Plays it as the game does (70 tics a second), or stops on the frame showing" />
+        <ListBox Grid.Column="1" ItemsSource="{Binding Frames}" SelectedItem="{Binding SelectedFrame}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto" Padding="0" DoubleTapped="OnFrameDoubleTapped">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBox.Styles>
+            <Style Selector="ListBoxItem">
+              <Setter Property="Padding" Value="2" />
+            </Style>
+          </ListBox.Styles>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:AnimationFrameItem">
+              <StackPanel Width="34" Spacing="1" ToolTip.Tip="{Binding ToolTip}">
+                <Border Background="{Binding $parent[Window].((vm:ArtBrowserViewModel)DataContext).SelectedBackground.Brush}" Height="34">
+                  <Image Source="{Binding Thumbnail}" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="None" />
+                </Border>
+                <TextBlock Text="{Binding Label}" FontSize="11" HorizontalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
+
       <SelectableTextBlock Grid.Row="3" Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
       <StackPanel Grid.Row="4" Spacing="4">
         <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" />
@@ -150,7 +179,7 @@
                 ToolTip.Tip="Picks the wall, door, flat or thing chosen under Used by to put down on the map (or double-click it)" />
         <Button Content="Copy name" Click="CopyName" />
         <Button Content="Export PNG…" Click="ExportPng" ToolTip.Tip="Saves the picture in the game's palette as a PNG" />
-        <Button Content="Replace…" Click="ReplacePicture"
+        <Button Content="Replace…" Click="ReplacePicture" IsEnabled="{Binding CanReplace}"
                 ToolTip.Tip="Puts a PNG or BMP in its place: over its file in its mod, or, for the game's own, as a file of the same name in a mod" />
         <Button Content="Rename…" Command="{Binding RenameCommand}"
                 ToolTip.Tip="Renames its file in its mod (only a mod's own pictures)" />
@@ -195,7 +224,7 @@
               <Image Source="{Binding Thumbnail}" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="None" />
             </Border>
             <TextBlock Text="{Binding Name}" FontSize="11" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center" />
-            <TextBlock Text="{Binding SidesText}" FontSize="10" Opacity="0.6" HorizontalAlignment="Center" IsVisible="{Binding IsRotating}" />
+            <TextBlock Text="{Binding SidesText}" FontSize="10" Opacity="0.6" HorizontalAlignment="Center" IsVisible="{Binding HasSidesText}" />
           </StackPanel>
         </DataTemplate>
       </ListBox.ItemTemplate>

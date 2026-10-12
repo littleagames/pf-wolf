@@ -129,6 +129,10 @@ public class AssetManager
     public IReadOnlyDictionary<string, IReadOnlyList<IAnimatedAsset>> Animations => _animations;
     private readonly Dictionary<string, IReadOnlyList<IAnimatedAsset>> _animations = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>What's wrong with animdefs' animations, by name: left out, or with frames left out</summary>
+    public IReadOnlyDictionary<string, string> AnimationProblems => _animationProblems;
+    private readonly Dictionary<string, string> _animationProblems = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// Turns animdefs' animations into assets, once every other asset is in (the data files'
     /// walls and pictures are frames too). An animation is added as each kind of asset (texture,
@@ -144,13 +148,21 @@ public class AssetManager
                 foreach (var (animation, definition) in Find<AnimationDefinitionsAsset>(name)!.Animations)
                     definitions[animation] = definition;
 
+        _animations.Clear();
+        _animationProblems.Clear();
         var built = new List<(string Key, Asset Animation)>();
         foreach (var (name, definition) in definitions)
         {
-            var (frames, loops) = definition.Read(problem => WarningLog.Write($"Animation {name}: {problem}"));
+            void Problem(string problem)
+            {
+                WarningLog.Write($"Animation {name}: {problem}");
+                _animationProblems[name] = _animationProblems.TryGetValue(name, out var earlier) ? $"{earlier}; {problem}" : problem;
+            }
+
+            var (frames, loops) = definition.Read(Problem);
             if (frames.Count == 0)
             {
-                WarningLog.Write($"Animation {name} has no frames, so it's left out");
+                Problem("it has no frames, so it's left out");
                 continue;
             }
 
@@ -172,9 +184,9 @@ public class AssetManager
                 var missing = frames.Select(frame => frame.Name)
                     .Where(frame => !AnimatableTypes.Any(type => _assets.ContainsKey(GetKey(frame, type.Name))))
                     .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-                WarningLog.Write(missing.Count > 0
-                    ? $"Animation {name}: these frames aren't textures or pictures, so it's left out: {string.Join(", ", missing)}"
-                    : $"Animation {name}: its frames have to all be textures or all be pictures, so it's left out");
+                Problem(missing.Count > 0
+                    ? $"these frames aren't textures or pictures, so it's left out: {string.Join(", ", missing)}"
+                    : "its frames have to all be textures or all be pictures, so it's left out");
                 continue;
             }
             _animations[name] = kinds;

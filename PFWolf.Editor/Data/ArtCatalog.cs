@@ -37,6 +37,9 @@ public sealed record ArtEntry(ArtKind Kind, string Name, int Width, int Height, 
     /// <summary>A rotating sprite frame's sprites, side 1 (facing the viewer) first; empty for anything else</summary>
     public IReadOnlyList<string> Rotations { get; init; } = [];
 
+    /// <summary>For an animdefs animation, its frames; null for a picture that isn't one</summary>
+    public ArtAnimation? Animation { get; init; }
+
     /// <summary>The asset shown for the entry: the picture itself, or a rotating frame's first side</summary>
     public string AssetName => Rotations.Count > 0 ? Rotations[0] : Name;
 
@@ -52,6 +55,45 @@ public sealed record ArtEntry(ArtKind Kind, string Name, int Width, int Height, 
     public bool IsReplaced => Origins.Count(origin => origin.Action != AssetOrigin.LeftOut) > 1;
 
     public override string ToString() => Name;
+}
+
+/// <summary>An animdefs animation as the art browser shows it: its frames' names and tics, and whether it loops</summary>
+public sealed record ArtAnimation(IReadOnlyList<(string Name, int Tics)> Frames, bool Loops)
+{
+    /// <summary>How long a preview holds the last frame of one that plays once, before it starts over</summary>
+    public const int HoldTics = 70;
+
+    public int TotalTics => Frames.Sum(frame => frame.Tics);
+
+    /// <summary>
+    /// The frame a preview shows <paramref name="tics"/> after it started: round and round, or
+    /// for one that plays once, through to its last frame, held a moment, then over again
+    /// </summary>
+    public int FrameAt(int tics)
+    {
+        int length = TotalTics + (Loops ? 0 : HoldTics);
+        if (length <= 0 || Frames.Count == 0)
+            return 0;
+        tics %= length;
+        for (int i = 0; i < Frames.Count; i++)
+        {
+            tics -= Frames[i].Tics;
+            if (tics < 0)
+                return i;
+        }
+        return Frames.Count - 1;
+    }
+
+    /// <summary>The animation of this name and kind (a texture's or a picture's), or null when it's a plain one</summary>
+    public static ArtAnimation? Of(GameContent content, string name, bool picture)
+    {
+        static ArtAnimation Make<T>(AnimatedAsset<T> animation) where T : Asset
+            => new(animation.Frames.Select(frame => (frame.Name.ToUpperInvariant(), frame.Tics)).ToList(), animation.Loops);
+
+        if (picture)
+            return content.Assets.FindAnimation<GraphicAsset>(name) is { } pictures ? Make(pictures) : null;
+        return content.Assets.FindAnimation<TextureAsset>(name) is { } textures ? Make(textures) : null;
+    }
 }
 
 /// <summary>
@@ -73,15 +115,18 @@ public static class ArtCatalog
             if (content.Find<TextureAsset>(name) is { } texture)
             {
                 var origins = Origins(content, name, nameof(TextureAsset));
-                var kind = origins.Any(origin => IsFlatPath(origin.Path)) ? ArtKind.Flat : ArtKind.Texture;
-                entries.Add(new ArtEntry(kind, display, texture.Width, texture.Height, origins, uses.GetValueOrDefault(display, [])));
+                // An animation (the editor shows its first frame) is a flat when its first frame is one
+                var animation = ArtAnimation.Of(content, name, picture: false);
+                var kindOrigins = animation != null ? Origins(content, animation.Frames[0].Name, nameof(TextureAsset)) : origins;
+                var kind = kindOrigins.Any(origin => IsFlatPath(origin.Path)) ? ArtKind.Flat : ArtKind.Texture;
+                entries.Add(new ArtEntry(kind, display, texture.Width, texture.Height, origins, uses.GetValueOrDefault(display, [])) { Animation = animation });
             }
             if (content.Assets.Exists<SpriteAsset>(name))
                 spriteNames.Add(display);
             if (content.Find<GraphicAsset>(name) is { } picture)
             {
                 entries.Add(new ArtEntry(ArtKind.Picture, display, picture.Width, picture.Height, Origins(content, name, nameof(GraphicAsset)),
-                    uses.GetValueOrDefault(display, [])));
+                    uses.GetValueOrDefault(display, [])) { Animation = ArtAnimation.Of(content, name, picture: true) });
             }
         }
 
@@ -131,7 +176,8 @@ public static class ArtCatalog
 
     /// <summary>Where a picture of this name and asset type came from: the data files, then each pack that replaced it</summary>
     public static IReadOnlyList<AssetOrigin> Origins(GameContent content, string name, string type)
-        => content.Assets.FindAssetOrigins(name).FirstOrDefault(asset => asset.Type == type).Origins ?? [];
+        => content.Assets.FindAssetOrigins(name)
+               .FirstOrDefault(asset => asset.Type == type || asset.Type == $"{type} (animated)").Origins ?? [];
 
     /// <summary>A sprite's name without the rotation digit on the end ("GARDA1" → "GARDA"): what actordefs names a frame by</summary>
     public static string? SpriteFrame(string spriteName)
@@ -180,6 +226,14 @@ public static class ArtCatalog
             Add(name, new ArtUse($"Floor flat {index}", new PaletteTarget(MapFlatPlane, (ushort)index, Keep: 0xff00)));
         foreach (var (index, name) in defs.Flats.Ceiling.Where(flat => flat.Key is >= 0 and <= 255).OrderBy(flat => flat.Key))
             Add(name, new ArtUse($"Ceiling flat {index}", new PaletteTarget(MapFlatPlane, (ushort)(index << 8), Keep: 0x00ff)));
+
+        // An animation's frames are used by it
+        foreach (var name in content.Assets.Animations.Keys.Order(StringComparer.OrdinalIgnoreCase))
+        {
+            var animation = ArtAnimation.Of(content, name, picture: false) ?? ArtAnimation.Of(content, name, picture: true);
+            for (int i = 0; i < (animation?.Frames.Count ?? 0); i++)
+                Add(animation!.Frames[i].Name, new ArtUse($"Animation {name.ToUpperInvariant()}, frame {i + 1}"));
+        }
 
         var defaults = content.DefaultMapInfo;
         Add(defaults.Sky, new ArtUse("Every level's sky"));

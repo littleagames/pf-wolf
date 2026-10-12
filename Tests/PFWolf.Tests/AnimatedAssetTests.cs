@@ -178,6 +178,8 @@ public class AnimatedAssetTests
         // Assert
         Assert.That(assets.Animations.ContainsKey("BROKEN"), Is.False);
         Assert.That(assets.Exists<TextureAsset>("BROKEN"), Is.False);
+        Assert.That(assets.AnimationProblems["BROKEN"], Does.Contain("NOPE"));
+        Assert.That(assets.AnimationProblems.ContainsKey("SLIME"), Is.False);
     }
 
     [Test]

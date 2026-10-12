@@ -114,6 +114,25 @@ public class DefinitionSetGameTests
     }
 
     [Test]
+    public void Merged_Animations_Are_The_Games_With_The_Switch_Demo()
+    {
+        // Arrange
+        var content = Load("wolf3d", Path.Combine(TestPaths.RepoRoot(), "examples", "mods", "switch-demo"));
+
+        // Act
+        var set = DefinitionSet.Load(content, DefinitionKind.Animations);
+        var merged = YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, AnimationDefinition>>(YamlTree.ToText(set.Merged));
+
+        // Assert
+        Assert.That(set.Files.Where(file => file.Error != null), Is.Empty);
+        Assert.That(merged.Keys, Is.EquivalentTo(content.Assets.Animations.Keys.Concat(content.Assets.AnimationProblems.Keys)));
+        Assert.That(merged.Keys, Is.SupersetOf(new[] { "STICKYLEVER", "ALARMLEVER" }));
+        Assert.That(content.Assets.AnimationProblems, Is.Empty);
+        foreach (var (name, definition) in merged)
+            Assert.That(content.Assets.Animations[name][0].TotalTics, Is.EqualTo(definition.Read(_ => { }).Frames.Sum(frame => frame.Tics)), name);
+    }
+
+    [Test]
     public void Game_Packs_List_Every_Release()
     {
         // Arrange
