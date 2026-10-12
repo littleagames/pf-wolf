@@ -40,6 +40,7 @@ public sealed class DefinitionSuggestions
             FieldHint.Sound => new[] { "sound-seq", $"{content.PackId}/sound-seq" }
                 .Where(assets.Exists<SoundSequenceAsset>)
                 .SelectMany(name => assets.Find<SoundSequenceAsset>(name)!.SoundInfo.Keys),
+            FieldHint.Weather => content.WeatherNames,
             _ => [],
         };
         return names.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();

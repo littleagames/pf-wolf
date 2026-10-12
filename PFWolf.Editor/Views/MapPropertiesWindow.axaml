@@ -47,7 +47,7 @@
         </Grid>
 
         <TextBlock Classes="heading" Text="How it looks" />
-        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
+        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
           <TextBlock Classes="label" Grid.Row="0" Text="Floor color" />
           <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding FloorColor}" PlaceholderText="{Binding FloorColorDefault}" />
           <TextBlock Classes="label" Grid.Row="1" Text="Ceiling color" />
@@ -60,6 +60,10 @@
           <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding DefaultFloor}" PlaceholderText="{Binding DefaultFloorDefault}" />
           <TextBlock Classes="label" Grid.Row="5" Text="Default ceiling flat" />
           <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding DefaultCeiling}" PlaceholderText="{Binding DefaultCeilingDefault}" />
+          <TextBlock Classes="label" Grid.Row="6" Text="Weather" />
+          <AutoCompleteBox Grid.Row="6" Grid.Column="1" Text="{Binding Weather}" ItemsSource="{Binding WeatherNames}" FilterMode="Contains"
+                           Watermark="{Binding WeatherDefault}"
+                           ToolTip.Tip="Rain or snow; none in place of the default map's. It doesn't fall under ceiling flats or arches. Kinds are game-info weather-types (Definitions window) and the built-in rain, heavy-rain, snow and blizzard." />
         </Grid>
 
         <TextBlock Classes="heading" Text="Shading (night, fog)" />

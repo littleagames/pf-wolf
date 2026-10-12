@@ -84,10 +84,21 @@ public static class LevelChecks
 
         CheckTags(tiles, problems);
         CheckZones(tiles, problems);
+        CheckWeather(tiles, problems);
         if (starts.Count > 0)
             CheckReach(tiles, problems, starts[^1]);
 
         return problems.OrderBy(problem => problem.Severity).ToList();
+    }
+
+    // A weather name the game has no kind of: the level has none, with a warning in the game's log
+    private static void CheckWeather(MapTiles tiles, List<LevelProblem> problems)
+    {
+        var weather = tiles.Properties.Weather ?? tiles.Content.DefaultMapInfo.Weather;
+        if (string.IsNullOrWhiteSpace(weather) || weather.Equals(WeatherInfo.None, StringComparison.OrdinalIgnoreCase))
+            return;
+        if (!WeatherInfo.TypesOf(tiles.Content.GameInfo).ContainsKey(weather))
+            problems.Add(new(CheckSeverity.Warning, $"weather '{weather}' isn't a kind game-info's weather-types or the built-in ones have, so the level has none"));
     }
 
     private static void CheckObject(MapTiles tiles, List<LevelProblem> problems, Dictionary<int, (int, int, int)> unknown, int x, int y, int obj, TileKind kind)

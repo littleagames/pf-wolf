@@ -66,6 +66,18 @@ public class GameInfoFileTests
     }
 
     [Test]
+    public void A_Levels_Weather_Is_Written_And_Read_Back()
+    {
+        // Act
+        var text = GameInfoFile.Apply(SwitchDemo, "MAP02", new MapProperties { Music = "SEARCHN", Weather = "blizzard" }, ["weather"]);
+
+        // Assert
+        Assert.That(text, Does.Contain("    weather: \"blizzard\"\n"));
+        Assert.That(Parse(text).Maps["MAP02"].Weather, Is.EqualTo("blizzard"));
+        Assert.That(MapProperties.From(Parse(text).Maps["MAP02"]).Weather, Is.EqualTo("blizzard"));
+    }
+
+    [Test]
     public void Writing_Nothing_For_A_Level_The_File_Lacks_Changes_Nothing()
     {
         // Act

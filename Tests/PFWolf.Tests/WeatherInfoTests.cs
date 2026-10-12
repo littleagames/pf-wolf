@@ -1,4 +1,6 @@
 using PFWolf.Assets;
+using PFWolf.Editor.Editing;
+using PFWolf.Editor.ViewModels;
 using PFWolf.Loaders;
 
 namespace PFWolf.Tests;
@@ -58,6 +60,54 @@ public class WeatherInfoTests
         Assert.That(flurry.Count, Is.EqualTo(new WeatherInfo().Count));
         Assert.That(flurry.Gust, Is.Zero);
         Assert.That(flurry.Splashes, Is.True);
+    }
+
+    [Test]
+    public void Game_Info_Kinds_Are_Added_To_The_Built_In_Ones_And_Can_Replace_Them()
+    {
+        // Arrange
+        var info = new GameInfoAsset
+        {
+            WeatherTypes = new() { ["drizzle"] = new() { Count = 100 }, ["Snow"] = new() { Kind = "snow", Count = 50 } },
+        };
+
+        // Act
+        var types = WeatherInfo.TypesOf(info);
+
+        // Assert
+        Assert.That(types.Keys, Is.SupersetOf(new[] { "rain", "heavy-rain", "blizzard", "drizzle" }));
+        Assert.That(types["snow"].Count, Is.EqualTo(50), "names match whatever their case");
+        Assert.That(WeatherInfo.BuiltIn["snow"].Count, Is.Not.EqualTo(50), "the built-in ones aren't changed");
+    }
+
+    [TestCase("", null)]
+    [TestCase("HEAVY-RAIN", "heavy-rain")]
+    [TestCase("none", "none")]
+    public void The_Level_Properties_Take_A_Kind_There_Is(string entered, string? saved)
+    {
+        // Arrange
+        var dialog = new MapPropertiesViewModel("MAP01", new MapProperties(), new DefaultMapInfo(), [], []) { Weather = entered };
+
+        // Act
+        var properties = dialog.Build();
+
+        // Assert
+        Assert.That(properties, Is.Not.Null, dialog.Error);
+        Assert.That(properties!.Weather, Is.EqualTo(saved));
+    }
+
+    [Test]
+    public void The_Level_Properties_Refuse_A_Kind_There_Is_Not()
+    {
+        // Arrange
+        var dialog = new MapPropertiesViewModel("MAP01", new MapProperties(), new DefaultMapInfo(), [], [], ["rain", "none"]) { Weather = "snow" };
+
+        // Act
+        var properties = dialog.Build();
+
+        // Assert
+        Assert.That(properties, Is.Null);
+        Assert.That(dialog.Error, Does.Contain("no weather named snow"));
     }
 
     [Test]

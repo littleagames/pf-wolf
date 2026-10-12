@@ -27,6 +27,7 @@ public sealed record MapProperties
     public string? Sky { get; init; }
     public string? DefaultFloor { get; init; }
     public string? DefaultCeiling { get; init; }
+    public string? Weather { get; init; }
 
     // Shading
     public string? FadeColor { get; init; }
@@ -52,6 +53,7 @@ public sealed record MapProperties
         Sky = info.Sky,
         DefaultFloor = info.DefaultFloor,
         DefaultCeiling = info.DefaultCeiling,
+        Weather = info.Weather,
         FadeColor = info.Shading?.FadeColor,
         FadeStart = info.Shading?.FadeStart,
         FadeEnd = info.Shading?.FadeEnd,
@@ -81,6 +83,7 @@ public sealed record MapProperties
         Check("sky", Sky == other.Sky);
         Check("default-floor", DefaultFloor == other.DefaultFloor);
         Check("default-ceiling", DefaultCeiling == other.DefaultCeiling);
+        Check("weather", Weather == other.Weather);
         Check("shading", FadeColor == other.FadeColor && FadeStart == other.FadeStart && FadeEnd == other.FadeEnd
                          && MaxFade == other.MaxFade && Light == other.Light);
         Check("zones", Zones.SequenceEqual(other.Zones));

@@ -572,6 +572,28 @@ public record DefaultMapInfo
 /// </summary>
 public record WeatherInfo
 {
+    /// <summary>The kinds every game has, which game-info weather-types can add to or replace</summary>
+    public static IReadOnlyDictionary<string, WeatherInfo> BuiltIn { get; } = new Dictionary<string, WeatherInfo>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["rain"] = new() { Kind = "rain", Count = 500, FallSpeed = 7, Length = 12, Color = "#A0A8B8" },
+        ["heavy-rain"] = new() { Kind = "rain", Count = 1500, FallSpeed = 9, WindX = 1.5, Gust = 0.6, Length = 20, Color = "#A8B0C0" },
+        ["snow"] = new() { Kind = "snow", Count = 800, FallSpeed = 0.7, Size = 1.5, Drift = 6, Color = "#E8E8F0" },
+        ["blizzard"] = new() { Kind = "snow", Count = 4000, FallSpeed = 1.4, WindX = 5, WindY = 1.5, Gust = 0.7, GustTics = 200, Size = 1.5, Drift = 4,
+            Color = "#F0F0F8", Distance = 6 },
+    };
+
+    /// <summary>What "none" is called: no weather, in place of the default map's</summary>
+    public const string None = "none";
+
+    /// <summary>The kinds a game's levels can name: the built-in ones, with its game-info's weather-types over them</summary>
+    public static Dictionary<string, WeatherInfo> TypesOf(GameInfoAsset? gameInfo)
+    {
+        var types = new Dictionary<string, WeatherInfo>(BuiltIn, StringComparer.OrdinalIgnoreCase);
+        foreach (var (name, info) in gameInfo?.WeatherTypes ?? [])
+            types[name] = info;
+        return types;
+    }
+
     /// <summary>rain (streaks) or snow (flakes)</summary>
     public string Kind { get; init; } = "rain";
 

@@ -1069,7 +1069,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
 
         var dialog = new MapPropertiesViewModel(document.AssetName.ToUpperInvariant(), document.Properties, content.DefaultMapInfo,
-            content.MusicNames, Maps.Select(map => map.Name.ToUpperInvariant()).ToList());
+            content.MusicNames, Maps.Select(map => map.Name.ToUpperInvariant()).ToList(), content.WeatherNames);
         if (!await Dialogs.EditProperties(dialog) || dialog.Build() is not { } properties)
             return;
 

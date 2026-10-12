@@ -29,12 +29,13 @@ public sealed partial class ZoneRow : ObservableObject
 public sealed partial class MapPropertiesViewModel : ObservableObject
 {
     public MapPropertiesViewModel(string mapName, MapProperties properties, DefaultMapInfo defaults, IReadOnlyList<string> music,
-        IReadOnlyList<string> maps)
+        IReadOnlyList<string> maps, IReadOnlyList<string>? weather = null)
     {
         MapName = mapName;
         Defaults = defaults;
         MusicNames = music;
         MapNames = maps;
+        WeatherNames = weather ?? WeatherInfo.BuiltIn.Keys.Append(WeatherInfo.None).ToList();
 
         _name = properties.Name ?? "";
         _music = properties.Music ?? "";
@@ -47,6 +48,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
         _sky = properties.Sky ?? "";
         _defaultFloor = properties.DefaultFloor ?? "";
         _defaultCeiling = properties.DefaultCeiling ?? "";
+        _weather = properties.Weather ?? "";
         _fadeColor = properties.FadeColor ?? "";
         _fadeStart = Text(properties.FadeStart);
         _fadeEnd = Text(properties.FadeEnd);
@@ -68,6 +70,9 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     public IReadOnlyList<string> MusicNames { get; }
     public IReadOnlyList<string> MapNames { get; }
 
+    /// <summary>The kinds of weather a level can have (built in and game-info weather-types), and none</summary>
+    public IReadOnlyList<string> WeatherNames { get; }
+
     [ObservableProperty] private string _name;
     [ObservableProperty] private string _music;
     [ObservableProperty] private string _next;
@@ -79,6 +84,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     [ObservableProperty] private string _sky;
     [ObservableProperty] private string _defaultFloor;
     [ObservableProperty] private string _defaultCeiling;
+    [ObservableProperty] private string _weather;
     [ObservableProperty] private string _fadeColor;
     [ObservableProperty] private string _fadeStart;
     [ObservableProperty] private string _fadeEnd;
@@ -96,6 +102,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     public string SkyDefault => Defaults.Sky ?? "none";
     public string DefaultFloorDefault => Defaults.DefaultFloor ?? "the floor color";
     public string DefaultCeilingDefault => Defaults.DefaultCeiling ?? "the ceiling color";
+    public string WeatherDefault => Defaults.Weather ?? WeatherInfo.None;
     public string FadeColorDefault => Defaults.Shading?.FadeColor ?? "#000000";
     public string FadeStartDefault => Text(Defaults.Shading?.FadeStart) is { Length: > 0 } text ? text : "0";
     public string FadeEndDefault => Text(Defaults.Shading?.FadeEnd) is { Length: > 0 } text ? text : "16";
@@ -142,6 +149,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                 Sky = Optional(Sky),
                 DefaultFloor = Optional(DefaultFloor),
                 DefaultCeiling = Optional(DefaultCeiling),
+                Weather = WeatherName(Weather),
                 FadeColor = Color(FadeColor, "fade color"),
                 FadeStart = Double(FadeStart, "fade start"),
                 FadeEnd = Double(FadeEnd, "fade end"),
@@ -158,6 +166,15 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     }
 
     private static string? Optional(string text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+
+    // A kind of weather there is, written as the list has it
+    private string? WeatherName(string text)
+    {
+        if (Optional(text) is not { } value)
+            return null;
+        return WeatherNames.FirstOrDefault(name => name.Equals(value, StringComparison.OrdinalIgnoreCase))
+               ?? throw new FormatException($"there's no weather named {value}: it's one of {string.Join(", ", WeatherNames)}");
+    }
 
     private static int? Int(string text, string what, int min, int max)
     {

@@ -25,15 +25,6 @@ internal partial class Program
     =============================================================================
     */
 
-    // The kinds a level gets without game-info listing any
-    static readonly Dictionary<string, WeatherInfo> BuiltInWeather = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["rain"] = new() { Kind = "rain", Count = 500, FallSpeed = 7, Length = 12, Color = "#A0A8B8" },
-        ["heavy-rain"] = new() { Kind = "rain", Count = 1500, FallSpeed = 9, WindX = 1.5, Gust = 0.6, Length = 20, Color = "#A8B0C0" },
-        ["snow"] = new() { Kind = "snow", Count = 800, FallSpeed = 0.7, Size = 1.5, Drift = 6, Color = "#E8E8F0" },
-        ["blizzard"] = new() { Kind = "snow", Count = 4000, FallSpeed = 1.4, WindX = 5, WindY = 1.5, Gust = 0.7, GustTics = 200, Size = 1.5, Drift = 4, Color = "#F0F0F8", Distance = 6 },
-    };
-
     internal static WeatherInfo? levelweather;      // the level's rain or snow, null for none
     internal static string? levelweathername;
 
@@ -46,20 +37,14 @@ internal partial class Program
     static float[] weatherz = [], weatherphase = [];
 
     /// <summary>The kinds of weather there are: the built-in ones and game-info's weather-types</summary>
-    internal static Dictionary<string, WeatherInfo> WeatherTypes()
-    {
-        var types = new Dictionary<string, WeatherInfo>(BuiltInWeather, StringComparer.OrdinalIgnoreCase);
-        foreach (var (name, info) in _gameEngineManager.GetGameInfo().WeatherTypes)
-            types[name] = info;
-        return types;
-    }
+    internal static Dictionary<string, WeatherInfo> WeatherTypes() => WeatherInfo.TypesOf(_gameEngineManager.GetGameInfo());
 
     /// <summary>Starts the named weather (null, empty or none for none); a name there's no kind of is warned about</summary>
     internal static void SetWeather(string? name)
     {
         levelweather = null;
         levelweathername = null;
-        if (string.IsNullOrWhiteSpace(name) || name.Equals("none", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(name) || name.Equals(WeatherInfo.None, StringComparison.OrdinalIgnoreCase))
             return;
         if (!WeatherTypes().TryGetValue(name, out var info))
         {

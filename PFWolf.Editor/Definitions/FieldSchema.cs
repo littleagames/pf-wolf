@@ -41,6 +41,8 @@ public enum FieldHint
     Flag,
     /// <summary>A sprite's four-letter name (GARD)</summary>
     Sprite,
+    /// <summary>A kind of rain or snow (game-info weather-types, or a built-in one)</summary>
+    Weather,
 }
 
 /// <summary>
@@ -278,6 +280,8 @@ public sealed class FieldSchema
             return FieldHint.Font;
         if (name.Contains("color"))
             return FieldHint.Color;
+        if (name is "weather")
+            return FieldHint.Weather;
         return FieldHint.None;
     }
 }

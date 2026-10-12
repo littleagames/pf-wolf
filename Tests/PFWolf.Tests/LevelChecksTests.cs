@@ -101,6 +101,37 @@ public class LevelChecksTests
         Assert.That(problems.Single().Message, Does.Contain("game-info doesn't list"));
     }
 
+    [TestCase("heavy-rain")]
+    [TestCase("Blizzard")]
+    [TestCase("none")]
+    public void Built_In_Weather_And_None_Are_Fine(string weather)
+    {
+        // Arrange
+        var map = Room().Map;
+        var document = new MapDocument("MAP01", map, properties: new MapProperties { Weather = weather });
+
+        // Act
+        var problems = Check(document);
+
+        // Assert
+        Assert.That(problems, Is.Empty);
+    }
+
+    [Test]
+    public void Weather_There_Is_No_Kind_Of_Is_Warned_About()
+    {
+        // Arrange
+        var map = Room().Map;
+        var document = new MapDocument("MAP01", map, properties: new MapProperties { Weather = "hail" });
+
+        // Act
+        var problem = Check(document).Single();
+
+        // Assert
+        Assert.That(problem.Severity, Is.EqualTo(CheckSeverity.Warning));
+        Assert.That(problem.Message, Does.Contain("'hail'"));
+    }
+
     [Test]
     public void Unknown_Plane_0_Values_Are_Counted_Once()
     {

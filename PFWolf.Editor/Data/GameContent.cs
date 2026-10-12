@@ -233,6 +233,10 @@ public sealed class GameContent
 
     public DefaultMapInfo DefaultMapInfo => GameInfo?.DefaultMap ?? new DefaultMapInfo();
 
+    /// <summary>The kinds of weather a level can name (built in and game-info weather-types), then none</summary>
+    public IReadOnlyList<string> WeatherNames => WeatherInfo.TypesOf(GameInfo).Keys
+        .Order(StringComparer.OrdinalIgnoreCase).Append(WeatherInfo.None).ToList();
+
     /// <summary>The names of every music asset, for the level properties</summary>
     public IReadOnlyList<string> MusicNames { get; private set; } = [];
 
