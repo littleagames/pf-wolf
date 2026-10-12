@@ -76,6 +76,7 @@ public class AssetManager
         {
             LoadLevels(pfWolfBasePk3Loader, rawDataMap?.Maps ?? [], headerFile: null, dataFile: null);
             ModWarnings.AddRange(pfWolfBasePk3Loader.Warnings);
+            BuildAnimations();
             return;
         }
 
@@ -109,7 +110,100 @@ public class AssetManager
         LoadMovies(gamePackInfo.FindFileLoader(gameReleaseId, "JamMovieFileLoader")?.Movies);
 
         ModWarnings.AddRange(pfWolfBasePk3Loader.Warnings);
+        BuildAnimations();
     }
+
+    /// <summary>For the tests: these assets (by name) in place of loading any, then their animations</summary>
+    internal void UseAssets(string gamePackId, IEnumerable<(string Name, Asset Asset)> assets)
+    {
+        _gamePackId = gamePackId;
+        foreach (var (name, asset) in assets)
+            _assets[GetKey(name, asset.GetType().Name)] = asset;
+        BuildAnimations();
+    }
+
+    /// <summary>The kinds of asset an animation's frames can be</summary>
+    private static readonly Type[] AnimatableTypes = [typeof(TextureAsset), typeof(GraphicAsset)];
+
+    /// <summary>The animations, by name (animdefs, the shared ones and the running pack's)</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<IAnimatedAsset>> Animations => _animations;
+    private readonly Dictionary<string, IReadOnlyList<IAnimatedAsset>> _animations = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Turns animdefs' animations into assets, once every other asset is in (the data files'
+    /// walls and pictures are frames too). An animation is added as each kind of asset (texture,
+    /// picture) that has all its frames, under its own name, so it's found like one; it replaces
+    /// an asset of that name, which can be one of its own frames. Frames are looked up before any
+    /// animation is added, so a frame is never another animation.
+    /// </summary>
+    internal void BuildAnimations()
+    {
+        var definitions = new Dictionary<string, AnimationDefinition>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in new[] { "animdefs", $"{_gamePackId}/animdefs" })
+            if (Exists<AnimationDefinitionsAsset>(name))
+                foreach (var (animation, definition) in Find<AnimationDefinitionsAsset>(name)!.Animations)
+                    definitions[animation] = definition;
+
+        var built = new List<(string Key, Asset Animation)>();
+        foreach (var (name, definition) in definitions)
+        {
+            var (frames, loops) = definition.Read(problem => WarningLog.Write($"Animation {name}: {problem}"));
+            if (frames.Count == 0)
+            {
+                WarningLog.Write($"Animation {name} has no frames, so it's left out");
+                continue;
+            }
+
+            var kinds = new List<IAnimatedAsset>();
+            foreach (var type in AnimatableTypes)
+            {
+                var assets = frames.Select(frame => _assets.GetValueOrDefault(GetKey(frame.Name, type.Name))).ToList();
+                if (assets.Any(asset => asset == null))
+                    continue;
+
+                var animation = (IAnimatedAsset)Activator.CreateInstance(typeof(AnimatedAsset<>).MakeGenericType(type),
+                    MakeFrames(type, frames, assets!), loops)!;
+                kinds.Add(animation);
+                built.Add((GetKey(name, type.Name), (Asset)animation));
+            }
+
+            if (kinds.Count == 0)
+            {
+                var missing = frames.Select(frame => frame.Name)
+                    .Where(frame => !AnimatableTypes.Any(type => _assets.ContainsKey(GetKey(frame, type.Name))))
+                    .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                WarningLog.Write(missing.Count > 0
+                    ? $"Animation {name}: these frames aren't textures or pictures, so it's left out: {string.Join(", ", missing)}"
+                    : $"Animation {name}: its frames have to all be textures or all be pictures, so it's left out");
+                continue;
+            }
+            _animations[name] = kinds;
+        }
+
+        foreach (var (key, animation) in built)
+        {
+            _assets[key] = animation;
+            if (!_origins.TryGetValue(key, out var origins))
+                _origins[key] = origins = [];
+            origins.Add(new AssetOrigin("animdefs", key.Substring(key.IndexOf(':') + 1), "animated"));
+        }
+    }
+
+    // A typed frame list for AnimatedAsset<type>, from the frames' assets
+    private static object MakeFrames(Type type, List<(string Name, int Tics)> frames, List<Asset> assets)
+    {
+        var frameType = typeof(AnimationFrame<>).MakeGenericType(type);
+        var list = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(frameType))!;
+        for (int i = 0; i < frames.Count; i++)
+            list.Add(Activator.CreateInstance(frameType, frames[i].Name, assets[i], frames[i].Tics));
+        return list;
+    }
+
+    /// <summary>
+    /// The clock (in tics, 70 a second) that <see cref="Find{T}(string)"/> plays animations by;
+    /// none (the editor) shows each animation's first frame
+    /// </summary>
+    public Func<int>? AnimationClock { get; set; }
 
     /// <summary>
     /// Stops with the names of the release's data files that aren't there (its movies apart,
@@ -308,7 +402,7 @@ public class AssetManager
         var name = assetName.ToLowerInvariant();
         foreach (var key in _assets.Keys.Where(key => key.EndsWith(":" + name)).OrderBy(key => key, StringComparer.Ordinal))
         {
-            var type = _assets[key].GetType().Name;
+            var type = _assets[key] is IAnimatedAsset animation ? $"{animation.FrameType.Name} (animated)" : _assets[key].GetType().Name;
             yield return (type, name, _origins.TryGetValue(key, out var origins) ? origins : []);
         }
     }
@@ -336,7 +430,30 @@ public class AssetManager
         return _assets.ContainsKey(GetKey(assetName, typeof(T).Name));
     }
 
+    /// <summary>
+    /// The asset of this name; for an animation, its frame showing now by <see cref="AnimationClock"/>
+    /// </summary>
     public T? Find<T>(string assetName) where T : Asset
+        => Find<T>(assetName, AnimationClock?.Invoke() ?? 0);
+
+    /// <summary>
+    /// The asset of this name; for an animation, its frame showing <paramref name="elapsedTics"/>
+    /// after it started (the level's clock, for walls and flats)
+    /// </summary>
+    public T? Find<T>(string assetName, int elapsedTics) where T : Asset
+    {
+        var found = FindAsset<T>(assetName);
+        return found is IAnimatedAsset animation ? animation.FrameAssetAt(elapsedTics) as T : found as T;
+    }
+
+    /// <summary>
+    /// The animation of this name and kind (an AnimatedAsset&lt;T&gt;), or null when it's a plain
+    /// asset or there's none, without a warning
+    /// </summary>
+    public AnimatedAsset<T>? FindAnimation<T>(string assetName) where T : Asset
+        => string.IsNullOrWhiteSpace(assetName) ? null : _assets.GetValueOrDefault(GetKey(assetName, typeof(T).Name)) as AnimatedAsset<T>;
+
+    private Asset? FindAsset<T>(string assetName) where T : Asset
     {
         string assetType = typeof(T).Name;
 
@@ -356,7 +473,7 @@ public class AssetManager
         var key = GetKey(assetName, assetType);
 
         if (_assets.TryGetValue(key, out var foundAsset))
-            return foundAsset as T;
+            return foundAsset;
 
         // Once per asset: the renderer looks up a missing wall texture every frame
         if (_reportedMissing.Add(key))

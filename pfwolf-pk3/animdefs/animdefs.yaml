@@ -1,0 +1,23 @@
+# Animations: each entry makes a name that walls (mapdefs walls.yaml), doors, flats, a level's
+# sky and pictures (menus, the status bar) can use like any texture or picture, and that shows
+# its frames one after another.
+#
+# animdefs/*.yaml are every game pack's; animdefs/{pack}/*.yaml are that pack's own, and replace
+# a shared animation of the same name. A mod keeps its files directly in animdefs/; they merge
+# into the running pack's, and `NAME: !remove` takes one out.
+#
+#   SLIME:                          # the animation's name
+#     tics: 8                       # how long each frame shows, unless it says (70 tics a second; default 8)
+#     frames:
+#       - SLIME1                    # a texture (VSWAP wall, textures/, flats/) or a picture (graphics/)
+#       - { name: SLIME2, tics: 16 }
+#       - SLIME3
+#       - stop                      # optional, last: play once and hold the last frame, instead of looping
+#
+# Frames are all textures or all pictures. An animation can take the name of one of its own
+# frames (GSTONEA1: frames [GSTONEA1, ...]) to animate a texture everywhere it's used; frames are
+# always the textures and pictures themselves, never other animations.
+#
+# Walls, doors, flats and skies go by the level's clock: every tile showing an animation is on
+# the same frame, and they stop while the game is paused. Pictures go by real time, and change
+# whenever the screen they're on is drawn again. The automap shows a wall's first frame.

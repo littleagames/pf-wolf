@@ -45,7 +45,7 @@ public class PfWolfPk3Loader
     /// in maps/wolf3d/ and sprites/wolf3d/, so a game that isn't built on it (a standalone one)
     /// doesn't get them.
     /// </summary>
-    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/", "menudefs/", "maps/", "sprites/"];
+    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/", "animdefs/", "menudefs/", "maps/", "sprites/"];
 
     /// <summary>
     /// Picture folders whose subfolders are only for keeping files in order (sprites/guards/,
@@ -249,6 +249,16 @@ public class PfWolfPk3Loader
             // If there is no folders, then it is the base/default
             var uniqueName = GetPackUniqueAssetName(fullName);
             LoadYaml(entry, uniqueName, isMod, mergeLevels: 2, YamlDataEntryLoader.Deserialize<MapObjectTranslationAsset>);
+            return;
+        }
+
+        if (fullName.StartsWith("animdefs/"))
+        {
+            // animdefs/*.yaml -> "animdefs", every pack's; animdefs/{pack}/*.yaml -> "{pack}/animdefs",
+            // whose animations replace the shared ones of the same name (AssetManager.BuildAnimations)
+            var uniqueName = GetPackUniqueAssetName(fullName);
+            LoadYaml(entry, uniqueName, isMod, mergeLevels: 1,
+                yaml => new AnimationDefinitionsAsset(YamlDataEntryLoader.Deserialize<Dictionary<string, AnimationDefinition>>(yaml)));
             return;
         }
 
@@ -495,11 +505,12 @@ public class PfWolfPk3Loader
         {
             case "actordefs/":
             case "mapdefs/":
+            case "animdefs/":
             case "language/":
                 if (rest.Contains('/'))
                 {
                     WarnOnce(entry.Source, skippedFolders, path.Substring(0, path.LastIndexOf('/') + 1),
-                        "mods keep these files directly in actordefs/, mapdefs/ and language/, without subfolders");
+                        "mods keep these files directly in actordefs/, mapdefs/, animdefs/ and language/, without subfolders");
                     return null;
                 }
                 return folder == "language/"

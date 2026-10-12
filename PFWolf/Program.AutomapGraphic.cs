@@ -51,7 +51,8 @@ internal partial class Program
 
         if (!automapTextures.TryGetValue(name, out var pixels))
         {
-            pixels = _assetManager.Find<TextureAsset>(name)?.BottomStory();
+            // an animated one (animdefs) shows its first frame
+            pixels = _assetManager.Find<TextureAsset>(name, 0)?.BottomStory();
             if (pixels != null && pixels.Length < AUTOMAP_TEXSIZE * AUTOMAP_TEXSIZE)
                 pixels = null;
             automapTextures[name] = pixels;

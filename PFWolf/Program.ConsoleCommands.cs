@@ -202,6 +202,8 @@ internal partial class Program
         Register("mods", "Lists the mods loaded over pfwolf.pk3, in load order, and anything wrong with them.", "mods", Cmd_Mods);
         Register("assetinfo", "Shows where an asset came from: each file that added, replaced or merged into it, in order.",
             "assetinfo <name>", Cmd_AssetInfo, complete: (_, i) => i == 0 ? _assetManager.AssetNames : []);
+        Register("anims", "Lists the animations (animdefs): what they animate, how long they run, and whether they loop; with a name, its frames too.",
+            "anims [name]", Cmd_Anims, complete: (_, i) => i == 0 ? _assetManager.Animations.Keys : []);
         Register("playsound", "Plays a sound: a sound-seq name (doors/open), or a sound file's or digitized sound's name.",
             "playsound <name>", Cmd_PlaySound);
         Register("changemus", "Plays a song, from a pk3's music/ folder or the game's own; with no name, shows what's playing. A song that ends stops instead of looping with 'once'.",
@@ -573,6 +575,38 @@ internal partial class Program
 
         if (!found)
             _consoleManager.Print($"No asset named {args[0]}");
+    }
+
+    private static void Cmd_Anims(string[] args)
+    {
+        var animations = _assetManager.Animations
+            .Where(a => args.Length == 0 || a.Key.Equals(args[0], StringComparison.OrdinalIgnoreCase))
+            .OrderBy(a => a.Key, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (animations.Count == 0)
+        {
+            _consoleManager.Print(args.Length == 0 ? "There are no animations (animdefs)" : $"No animation named {args[0]}");
+            return;
+        }
+
+        foreach (var (name, kinds) in animations)
+        {
+            var first = kinds[0];
+            var kindNames = string.Join(", ", kinds.Select(k => k.FrameType == typeof(TextureAsset) ? "texture" : "picture"));
+            _consoleManager.Print($"{name} ({kindNames}): {first.TotalTics} tics, {(first.Loops ? "loops" : "plays once")}");
+            if (args.Length == 0)
+                continue;
+
+            // The frames are the same names whatever the kind
+            var frames = first switch
+            {
+                AnimatedAsset<TextureAsset> texture => texture.Frames.Select(f => (f.Name, f.Tics)),
+                AnimatedAsset<GraphicAsset> picture => picture.Frames.Select(f => (f.Name, f.Tics)),
+                _ => [],
+            };
+            foreach (var (frame, tics) in frames)
+                _consoleManager.Print($"  {frame}: {tics} tics");
+        }
     }
 
     private static void Cmd_ExportMap(string[] args)

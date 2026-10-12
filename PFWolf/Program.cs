@@ -157,6 +157,9 @@ internal partial class Program
         try
         {
             _assetManager.Load(_gameEngineManager.GamePackId, _gameEngineManager.GameReleaseId, configMods.Concat(modPaths));
+            // Animated pictures in menus and the status bar play in real time; the view's walls,
+            // flats and sky go by the level's clock instead (WorldTexture)
+            _assetManager.AnimationClock = () => (int)GameEngineManager.GetTimeCount();
         }
         catch (DataFilesException e)
         {

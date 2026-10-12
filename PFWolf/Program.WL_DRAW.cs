@@ -694,7 +694,7 @@ internal partial class Program
             wallpic = (mapTexture ?? MapTextureTranslation.None).East;
         }
 
-        var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
+        var textureAsset = WorldTexture(wallpic);
         if (textureAsset == null)
         {
             uppersource = null;
@@ -758,7 +758,7 @@ internal partial class Program
             wallpic = (mapTexture ?? MapTextureTranslation.None).North;
         }
 
-        var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
+        var textureAsset = WorldTexture(wallpic);
         if (textureAsset == null)
         {
             uppersource = null;
@@ -786,7 +786,7 @@ internal partial class Program
         var door = doorobjlist[doornumtile];
         doorpage = DoorFace(door, xtilestep == 1 ? "west" : "east");
 
-        var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
+        var doorTextureAsset = WorldTexture(doorpage);
         if (doorTextureAsset == null)
             return;
         postsource = doorTextureAsset;
@@ -811,7 +811,7 @@ internal partial class Program
         // heading south, the ray meets the door's north face
         var door = doorobjlist[doornumtile];
         doorpage = DoorFace(door, ytilestep == 1 ? "north" : "south");
-        var doorTextureAsset = _assetManager.Find<TextureAsset>(doorpage);
+        var doorTextureAsset = WorldTexture(doorpage);
         if (doorTextureAsset == null)
             return;
         postsource = doorTextureAsset;
@@ -833,12 +833,18 @@ internal partial class Program
     ====================
     */
 
+    /// <summary>
+    /// A wall, door or sky texture as it shows now: an animation (animdefs) on the frame the
+    /// level's clock is at, so every tile showing it is in step, and it stops while the game does
+    /// </summary>
+    internal static TextureAsset? WorldTexture(string name) => _assetManager.Find<TextureAsset>(name, gamestate.TimeCount);
+
     // Points the stories above the first at the named wall texture, for the post being drawn
     static void SetUpperPost(string wallpic, int texture)
     {
         if (hitstories == 1)
             return;
-        uppersource = _assetManager.Find<TextureAsset>(wallpic);
+        uppersource = WorldTexture(wallpic);
         upperofs = texture;
     }
 
@@ -862,7 +868,7 @@ internal partial class Program
         MapTextureTranslation? mapTexture = null;
         if (_mapManager.GetMapData()?.Walls.TryGetValue(tile & ~BIT_WALL, out mapTexture) != true || mapTexture == null)
             return null;
-        return _assetManager.Find<TextureAsset>(vertical ? mapTexture.East : mapTexture.North);
+        return WorldTexture(vertical ? mapTexture.East : mapTexture.North);
     }
 
     // The lintel column where the trace meets the door plane at along (y for a vertical door, x
@@ -1018,7 +1024,7 @@ internal partial class Program
             wallpic = (mapTexture ?? MapTextureTranslation.None).North;
         }
 
-        var textureAsset = _assetManager.Find<TextureAsset>(wallpic);
+        var textureAsset = WorldTexture(wallpic);
         if (textureAsset == null)
             return;
         postsource = textureAsset;
@@ -1056,22 +1062,29 @@ internal partial class Program
     const int SKYCIRCLE = 1024;         // sky pixels all the way round: a 256 wide picture shows 4 times
 
     internal static string? levelsky;   // the level's sky graphic (or wall texture), null for none
-    static string? skyname;             // the one skycolumns holds
+    static Asset? skysource;            // the picture or texture skycolumns holds (an animation's frame)
     static byte[] skycolumns = [];      // its pixels, column by column
     static int skywidth, skyheight;
 
-    /// <summary>Makes skycolumns hold the level's sky; false if it has none, or it can't be found.</summary>
+    /// <summary>
+    /// Makes skycolumns hold the level's sky (an animated one's frame by the level's clock);
+    /// false if it has none, or it can't be found.
+    /// </summary>
     static bool LoadSky()
     {
         if (string.IsNullOrEmpty(levelsky))
             return false;
-        if (levelsky == skyname)
+
+        Asset? source = _assetManager.Exists<GraphicAsset>(levelsky)
+            ? _assetManager.Find<GraphicAsset>(levelsky, gamestate.TimeCount)
+            : WorldTexture(levelsky);
+        if (ReferenceEquals(source, skysource))
             return skycolumns.Length > 0;
 
-        skyname = levelsky;
+        skysource = source;
         skycolumns = [];
 
-        if (_assetManager.Find<GraphicAsset>(levelsky) is { Width: > 0, Height: > 0 } pic)
+        if (source is GraphicAsset { Width: > 0, Height: > 0 } pic)
         {
             // pictures are stored row by row
             skywidth = pic.Width;
@@ -1081,7 +1094,7 @@ internal partial class Program
                 for (int y = 0; y < skyheight; y++)
                     skycolumns[x * skyheight + y] = pic.RawData[y * skywidth + x];
         }
-        else if (_assetManager.Find<TextureAsset>(levelsky) is { } texture && texture.RawData.Length >= texture.Width * texture.Height)
+        else if (source is TextureAsset texture && texture.RawData.Length >= texture.Width * texture.Height)
         {
             // wall textures already are column by column
             skywidth = texture.Width;
