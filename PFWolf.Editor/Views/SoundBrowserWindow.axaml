@@ -70,6 +70,11 @@
         <TextBlock Text="Played by" FontWeight="SemiBold" Margin="0,6,0,0" />
         <ListBox ItemsSource="{Binding Uses}" SelectedItem="{Binding SelectedUse}" MaxHeight="180" DoubleTapped="OnUseDoubleTapped"
                  IsVisible="{Binding HasUses}">
+          <ListBox.ContextMenu>
+            <ContextMenu>
+              <MenuItem Header="Go to sound" Command="{Binding GoToUseCommand}" />
+            </ContextMenu>
+          </ListBox.ContextMenu>
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="data:SoundUse">
               <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding Label}" TextTrimming="CharacterEllipsis" FontSize="12" />
@@ -92,6 +97,14 @@
     <!-- Every sound listed -->
     <ListBox x:Name="List" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" Margin="8,8,0,8"
              DoubleTapped="OnItemDoubleTapped">
+      <ListBox.ContextMenu>
+        <ContextMenu>
+          <MenuItem Header="{Binding PlayLabel}" Command="{Binding PlayCommand}" InputGesture="Space" />
+          <Separator />
+          <MenuItem Header="Copy name" Click="CopyName" />
+          <MenuItem Header="Export WAV…" Click="ExportWav" IsEnabled="{Binding HasWaveform}" />
+        </ContextMenu>
+      </ListBox.ContextMenu>
       <ListBox.Styles>
         <Style Selector="ListBoxItem">
           <Setter Property="Padding" Value="8,3" />

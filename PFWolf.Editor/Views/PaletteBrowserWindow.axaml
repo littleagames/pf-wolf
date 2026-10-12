@@ -27,6 +27,21 @@
     <DockPanel DockPanel.Dock="Left" Width="230" Margin="8,8,0,8">
       <TextBlock DockPanel.Dock="Top" Text="Palettes" FontWeight="SemiBold" Margin="0,0,0,4" />
       <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
+        <ListBox.ContextMenu>
+          <ContextMenu>
+            <MenuItem Header="Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
+            <MenuItem Header="Save to…" Command="{Binding SaveToCommand}" />
+            <MenuItem Header="Revert all" Command="{Binding RevertAllCommand}" />
+            <Separator />
+            <MenuItem Header="Import…" Click="Import" />
+            <MenuItem Header="Export">
+              <MenuItem Header="Raw .pal (as palettes/ holds them)…" Click="ExportRaw" />
+              <MenuItem Header="JASC-PAL .pal (paint programs)…" Click="ExportJasc" />
+              <MenuItem Header="GIMP palette .gpl…" Click="ExportGimp" />
+            </MenuItem>
+            <MenuItem Header="Copy name" Click="CopyName" />
+          </ContextMenu>
+        </ListBox.ContextMenu>
         <ListBox.Styles>
           <Style Selector="ListBoxItem">
             <Setter Property="Padding" Value="8,4" />
@@ -96,6 +111,11 @@
         <TextBlock Text="Used by" FontWeight="SemiBold" Margin="0,8,0,0" />
         <ListBox ItemsSource="{Binding Uses}" SelectedItem="{Binding SelectedUse}" MaxHeight="140" DoubleTapped="OnUseDoubleTapped"
                  IsVisible="{Binding HasUses}">
+          <ListBox.ContextMenu>
+            <ContextMenu>
+              <MenuItem Header="Show its picture" Command="{Binding UsePictureCommand}" />
+            </ContextMenu>
+          </ListBox.ContextMenu>
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="data:PaletteUse">
               <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding Label}" TextTrimming="CharacterEllipsis" FontSize="12" />

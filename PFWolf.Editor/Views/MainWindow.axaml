@@ -128,6 +128,19 @@
     <Grid DockPanel.Dock="Left" Width="250" RowDefinitions="Auto,*,Auto,Auto,Auto,Auto" Margin="8">
       <TextBlock Grid.Row="0" Text="Levels" FontWeight="SemiBold" Margin="0,0,0,4" />
       <ListBox Grid.Row="1" ItemsSource="{Binding Maps}" SelectedItem="{Binding SelectedMap}">
+        <ListBox.ContextMenu>
+          <ContextMenu>
+            <MenuItem Header="▶ Play" Command="{Binding PlayCommand}" InputGesture="F5" />
+            <MenuItem Header="Level properties…" Command="{Binding EditPropertiesCommand}" InputGesture="F4" />
+            <MenuItem Header="Check level" Command="{Binding CheckLevelCommand}" InputGesture="F7" />
+            <Separator />
+            <MenuItem Header="Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
+            <MenuItem Header="Save to…" Command="{Binding SaveAsCommand}" InputGesture="Ctrl+Shift+S" />
+            <Separator />
+            <MenuItem Header="New level…" Command="{Binding NewMapCommand}" InputGesture="Ctrl+N" />
+            <MenuItem Header="Import map…" Command="{Binding ImportMapCommand}" InputGesture="Ctrl+I" />
+          </ContextMenu>
+        </ListBox.ContextMenu>
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="vm:MapItem">
             <TextBlock Text="{Binding Display}" />
@@ -141,6 +154,15 @@
       </WrapPanel>
       <TextBlock Grid.Row="3" Text="Mods (loaded over pfwolf.pk3, later ones win)" FontWeight="SemiBold" Margin="0,12,0,4" TextWrapping="Wrap" />
       <ListBox Grid.Row="4" ItemsSource="{Binding Mods}" SelectedItem="{Binding SelectedMod}" Height="90">
+        <ListBox.ContextMenu>
+          <ContextMenu>
+            <MenuItem Header="Remove" Command="{Binding RemoveModCommand}" />
+            <Separator />
+            <MenuItem Header="New mod…" Command="{Binding NewModCommand}" />
+            <MenuItem Header="Add pk3…" Click="AddModFile" />
+            <MenuItem Header="Add folder…" Click="AddModFolder" />
+          </ContextMenu>
+        </ListBox.ContextMenu>
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="x:String">
             <TextBlock Text="{Binding}" ToolTip.Tip="{Binding}" TextTrimming="LeadingCharacterEllipsis" />

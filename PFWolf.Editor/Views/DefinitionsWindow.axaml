@@ -72,6 +72,18 @@
               <TextBlock Text="{Binding CountText}" Classes="hint" />
             </StackPanel>
             <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
+              <ListBox.ContextMenu>
+                <ContextMenu>
+                  <MenuItem Header="Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
+                  <MenuItem Header="Revert" Command="{Binding RevertCommand}" />
+                  <MenuItem Header="Go to the problem" Command="{Binding GoToProblemCommand}" IsVisible="{Binding HasProblem}" />
+                  <Separator IsVisible="{Binding IsBaseFile}" />
+                  <MenuItem Header="Copy to mod" IsVisible="{Binding IsBaseFile}" IsEnabled="{Binding CanCopyToMod}">
+                    <MenuItem Header="As an empty file" Command="{Binding CopyToModCommand}" CommandParameter="empty" />
+                    <MenuItem Header="As a whole copy" Command="{Binding CopyToModCommand}" CommandParameter="whole" />
+                  </MenuItem>
+                </ContextMenu>
+              </ListBox.ContextMenu>
               <ListBox.Styles>
                 <Style Selector="ListBoxItem">
                   <Setter Property="Padding" Value="8,3" />

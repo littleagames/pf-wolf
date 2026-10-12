@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.LogicalTree;
@@ -18,5 +19,12 @@ public partial class EntryEditorView : UserControl
         field.Text = name;
         list.SelectedItem = null;
         list.FindLogicalAncestorOfType<Popup>()?.Close();
+    }
+
+    // A field's right-click menu has its row buttons; one with none doesn't open
+    private void OnFieldMenuOpening(object? sender, CancelEventArgs e)
+    {
+        if (sender is ContextMenu { DataContext: FieldNode field })
+            e.Cancel = !(field.CanAdd || field.CanMove || field.CanRemove || field.CanReset);
     }
 }

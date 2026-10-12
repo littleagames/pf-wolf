@@ -164,6 +164,11 @@
       <StackPanel Grid.Row="6" Spacing="4" Margin="0,8,0,0">
         <TextBlock Text="Used by" FontWeight="SemiBold" />
         <ListBox ItemsSource="{Binding Uses}" SelectedItem="{Binding SelectedUse}" MaxHeight="150" DoubleTapped="OnUseDoubleTapped">
+          <ListBox.ContextMenu>
+            <ContextMenu>
+              <MenuItem Header="Use in palette" Command="{Binding UseInPaletteCommand}" />
+            </ContextMenu>
+          </ListBox.ContextMenu>
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="data:ArtUse">
               <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" FontSize="12" />
@@ -204,6 +209,18 @@
     <!-- Every picture listed -->
     <ListBox x:Name="Thumbs" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" Margin="8,8,0,8"
              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+      <ListBox.ContextMenu>
+        <ContextMenu>
+          <MenuItem Header="Copy name" Click="CopyName" />
+          <MenuItem Header="Export PNG…" Click="ExportPng" />
+          <Separator />
+          <MenuItem Header="Edit pixels" Command="{Binding EditPixelsCommand}" />
+          <MenuItem Header="Edit outside" Command="{Binding EditOutsideCommand}" />
+          <MenuItem Header="Replace…" Click="ReplacePicture" IsEnabled="{Binding CanReplace}" />
+          <MenuItem Header="Rename…" Command="{Binding RenameCommand}" />
+          <MenuItem Header="Delete" Command="{Binding DeleteCommand}" />
+        </ContextMenu>
+      </ListBox.ContextMenu>
       <ListBox.ItemsPanel>
         <ItemsPanelTemplate>
           <WrapPanel />

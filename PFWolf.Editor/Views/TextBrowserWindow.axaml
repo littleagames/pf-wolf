@@ -27,6 +27,15 @@
 
     <!-- Every text listed -->
     <ListBox x:Name="List" DockPanel.Dock="Left" Width="230" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" Margin="8,8,0,8">
+      <ListBox.ContextMenu>
+        <ContextMenu>
+          <MenuItem Header="Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
+          <MenuItem Header="Save to…" Command="{Binding SaveToCommand}" />
+          <MenuItem Header="Revert" Command="{Binding RevertCommand}" />
+          <Separator />
+          <MenuItem Header="New…" Command="{Binding NewTextCommand}" InputGesture="Ctrl+N" />
+        </ContextMenu>
+      </ListBox.ContextMenu>
       <ListBox.Styles>
         <Style Selector="ListBoxItem">
           <Setter Property="Padding" Value="8,3" />
