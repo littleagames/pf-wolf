@@ -45,4 +45,7 @@ internal static class MapTriggerRegistry
 
     /// <summary>Whether a trigger or switch action of that name has a handler</summary>
     internal static bool IsRegistered(string name) => _actions.ContainsKey(name);
+
+    /// <summary>Every trigger and switch action's name (for the tests, against the scripting API's list)</summary>
+    internal static IEnumerable<string> Names => _actions.Keys;
 }

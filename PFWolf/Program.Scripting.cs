@@ -94,7 +94,7 @@ internal partial class Program
     =============================================================================
     */
 
-    static void InstallScriptApi(ScriptHost host)
+    internal static void InstallScriptApi(ScriptHost host)
     {
         var methods = new Dictionary<string, LuaFunction>(StringComparer.Ordinal)
         {
@@ -375,7 +375,7 @@ internal partial class Program
 
     // Switch actions that work on the switch's own tile rather than its tag, which game.trigger
     // can't run, with what to use instead (if there's one)
-    static readonly Dictionary<string, string> OwnTileActions = new(StringComparer.Ordinal)
+    internal static readonly Dictionary<string, string> OwnTileActions = new(StringComparer.Ordinal)
     {
         ["A_PushWall"] = " (A_MoveWall pushes the tagged walls)",
         ["A_Vend"] = "",

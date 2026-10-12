@@ -93,12 +93,14 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
         {
             _all = [];
             _callers = [];
+            _completion = CompletionSources.Empty;
             Title = "Scripts";
         }
         else
         {
             _all = ScriptCatalog.Build(content).Select(entry => new ScriptListItem(entry)).ToList();
             _callers = ScriptCatalog.Callers(content);
+            _completion = CompletionSources.From(content);
             Title = $"Scripts - {content.Title}";
         }
         FindDefinitions();
@@ -224,6 +226,24 @@ public sealed partial class ScriptBrowserViewModel : ObservableObject
         OnPropertyChanged(nameof(HasHooks));
         OnPropertyChanged(nameof(HasProblems));
     }
+
+    // The game's names the autocomplete offers (actor classes, states...)
+    private CompletionSources _completion = CompletionSources.Empty;
+
+    /// <summary>
+    /// What the autocomplete offers with the caret after <paramref name="before"/> (its line up to
+    /// it): the game API, Lua, the actions there are (this script's as it stands too), and in
+    /// strings the game's names; null for nothing. <paramref name="asked"/>: Ctrl+Space.
+    /// </summary>
+    public CompletionContext? Complete(string before, bool asked)
+        => ScriptCompletion.Find(before, _completion, Actions.Select(action => action.Name), asked);
+
+    /// <summary>
+    /// What the word at <paramref name="column"/> (from 0) of <paramref name="line"/> is, for the
+    /// tooltip over it; null when it's nothing of the game's or Lua's
+    /// </summary>
+    public HoverInfo? Describe(string line, int column)
+        => ScriptHover.Describe(line, column, _completion, Actions.Select(action => new ScriptItem(action.Name, action.Line)));
 
     /// <summary>Goes to a line of the script: a problem, action or hook picked</summary>
     public void GoTo(int line) => SelectLine?.Invoke(this, line);

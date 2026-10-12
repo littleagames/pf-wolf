@@ -331,7 +331,15 @@ runs over a million instructions in one call is stopped.
 In the editor, **Resources → Scripts…** (F12) lists the scripts the game runs, in that order,
 with the actions each gives and the actordefs states that call them, its hooks, and what's wrong
 with it, checked as you type: whether it compiles (the game leaves out one that doesn't), and
-anything the game's scripts haven't got (`math.random`, `io`, `require`...). A script can be
+anything the game's scripts haven't got (`math.random`, `io`, `require`...). It's colored as Lua,
+and offers what can come next as you type, with each one's signature and what it does: after
+`game.` the game's functions, after `actor:` an actor's methods and after `actor.` its fields, the
+library functions after `string.`, `math.` and the rest, Lua's own names and the actions there
+are as a word is typed, and in strings the game's names (actor classes for `spawnprojectile("`,
+switch actions for `game.trigger(tag, "`, states for `jump("`...). Ctrl+Space asks for it
+anywhere; Enter, Tab or `(` takes the one picked. Rest the pointer on a name for what it is: the
+game's functions, an actor's methods and fields, Lua's, an action (the line it's defined on and
+what calls it), or a class, state or switch action in a string. A script can be
 changed and saved back into its mod, or a new one made (New…, Ctrl+N); pfwolf.pk3's go into a
 mod picked, in their place. The game runs scripts as it starts, so Play (F5) to try one.
 

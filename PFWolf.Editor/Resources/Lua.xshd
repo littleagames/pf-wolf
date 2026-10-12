@@ -108,7 +108,6 @@
       <Word>rawset</Word>
       <Word>rawequal</Word>
       <Word>rawlen</Word>
-      <Word>unpack</Word>
     </Keywords>
 
     <!-- the actions and thinks scripts define (and call), which actordefs states use by name -->

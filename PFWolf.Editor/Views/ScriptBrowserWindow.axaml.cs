@@ -1,6 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Threading;
+using AvaloniaEdit.CodeCompletion;
 using PFWolf.Editor.Data;
 using PFWolf.Editor.Rendering;
 using PFWolf.Editor.ViewModels;
@@ -35,6 +38,89 @@ public partial class ScriptBrowserWindow : Window
             if (!_showingSource && DataContext is ScriptBrowserViewModel viewModel && viewModel.Source != SourceBox.Text)
                 viewModel.Source = SourceBox.Text;
         };
+
+        // Tooltips: what the game's names and Lua's are, with the pointer over them
+        SourceBox.PointerHover += OnSourceHover;
+        SourceBox.PointerHoverStopped += OnSourceHoverStopped;
+
+        // Autocomplete: offered after '.', ':', a quote or two letters of a word, and on Ctrl+Space
+        SourceBox.TextArea.TextEntered += (_, e) =>
+        {
+            if (_completion == null && e.Text is { Length: 1 } typed && (char.IsLetter(typed[0]) || typed[0] is '_' or '.' or ':' or '"' or '\''))
+                ShowCompletion(asked: false);
+        };
+        SourceBox.TextArea.TextEntering += (_, e) =>
+        {
+            // '(' takes the name picked and goes on; anything else that can't be in a name closes the list
+            if (_completion == null || e.Text is not { Length: > 0 } typed || char.IsLetterOrDigit(typed[0]) || typed[0] == '_')
+                return;
+            if (typed[0] == '(')
+                _completion.CompletionList.RequestInsertion(e);
+            else
+                _completion.Close();
+        };
+        SourceBox.TextArea.AddHandler(KeyDownEvent, (_, e) =>
+        {
+            if (e.Key == Key.Space && e.KeyModifiers == KeyModifiers.Control)
+            {
+                ShowCompletion(asked: true);
+                e.Handled = true;
+            }
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+    }
+
+    // What's under the pointer, shown as a tooltip while it rests there
+    private void OnSourceHover(object? sender, PointerEventArgs e)
+    {
+        var position = SourceBox.GetPositionFromPoint(e.GetPosition(SourceBox));
+        if (position is not { IsAtEndOfLine: false } at || _completion != null)
+            return;
+        var line = SourceBox.Document.GetLineByNumber(at.Line);
+        if (ViewModel.Describe(SourceBox.Document.GetText(line), at.Column - 1) is not { } info)
+            return;
+
+        ToolTip.SetTip(SourceBox, new StackPanel
+        {
+            MaxWidth = 460,
+            Spacing = 4,
+            Children =
+            {
+                new TextBlock { Text = info.Signature, FontFamily = new FontFamily("Consolas,Menlo,monospace"), TextWrapping = TextWrapping.Wrap },
+                new TextBlock { Text = info.Summary, TextWrapping = TextWrapping.Wrap, Opacity = 0.85 },
+                new TextBlock { Text = info.Kind, FontSize = 11, Opacity = 0.55 },
+            },
+        });
+        ToolTip.SetIsOpen(SourceBox, true);
+        e.Handled = true;
+    }
+
+    private void OnSourceHoverStopped(object? sender, PointerEventArgs e)
+    {
+        ToolTip.SetIsOpen(SourceBox, false);
+        ToolTip.SetTip(SourceBox, null);
+    }
+
+    private CompletionWindow? _completion;
+
+    // Opens the autocomplete list for the caret, when there's something to offer
+    private void ShowCompletion(bool asked)
+    {
+        var caret = SourceBox.CaretOffset;
+        var line = SourceBox.Document.GetLineByOffset(caret);
+        var before = SourceBox.Document.GetText(line.Offset, caret - line.Offset);
+        if (ViewModel.Complete(before, asked) is not { } context)
+            return;
+
+        _completion?.Close();
+        var window = new CompletionWindow(SourceBox.TextArea) { StartOffset = caret - context.PrefixLength, CloseWhenCaretAtBeginning = true };
+        foreach (var option in context.Options)
+            window.CompletionList.CompletionData.Add(new ScriptCompletionData(option));
+        window.Closed += (_, _) => _completion = null;
+        _completion = window;
+        window.Show();
+        // with part of the word typed, the list starts on the first that fits
+        if (context.PrefixLength > 0)
+            window.CompletionList.SelectItem(before[^context.PrefixLength..]);
     }
 
     // Set while the view model's Source is put in the editor, so it isn't sent back as an edit
