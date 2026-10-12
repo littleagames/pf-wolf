@@ -31,7 +31,9 @@ internal partial class Program
       its methods: jump(state), spawnprojectile(class[, angle[, mode]]), spawn(class),
         playsound(sound[, positional]), property(key), hasflag(flag), distanceto(other),
         angleto(other), cansee(player[, tiles]), nearestplayer(), remove()
-      game.random([m[, n]]), game.players(), game.actors([class]), game.time(), game.tics(), game.map(), game.skill(),
+      game.random([m[, n]]), game.players(), game.actors([class]), game.tagged(tag[, class]),
+        game.taggedtiles(tag) (each {x, y}), game.tag(x, y), game.trigger(tag, action, ...) (a
+        switch action on a tag: game.trigger(3, "A_OpenDoor", "hold")), game.time(), game.tics(), game.map(), game.skill(),
         game.message(text[, style]), and the hooks game.onlevel(fn) and game.ontick(fn) (HOOKS below)
     and print, to the console.
 
@@ -232,6 +234,60 @@ internal partial class Program
                 list[i++] = LuaActor.Of(actor);
             return new(c.Return(list));
         });
+        game["tagged"] = new LuaFunction("game.tagged", (c, _) =>
+        {
+            var tag = TagArg(c, 0);
+            var className = OptionalString(c, 1);
+            var list = new LuaTable();
+            int i = 1;
+            foreach (var actor in _mapManager.TaggedActors(tag)
+                .Where(a => className == null || a.Name.Equals(className, StringComparison.OrdinalIgnoreCase)))
+                list[i++] = LuaActor.Of(actor);
+            return new(c.Return(list));
+        });
+        game["taggedtiles"] = new LuaFunction("game.taggedtiles", (c, _) =>
+        {
+            var list = new LuaTable();
+            int i = 1;
+            foreach (var (x, y) in _mapManager.TaggedTiles(TagArg(c, 0)))
+            {
+                var tile = new LuaTable();
+                tile["x"] = x;
+                tile["y"] = y;
+                list[i++] = tile;
+            }
+            return new(c.Return(list));
+        });
+        game["tag"] = new LuaFunction("game.tag", (c, _) =>
+        {
+            int x = (int)NumberArg(c, 0, -1), y = (int)NumberArg(c, 1, -1);
+            if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+                throw new LuaRuntimeException(c.State, (LuaValue)$"game.tag: {x},{y} isn't a tile on the map", 1);
+            return new(c.Return(_mapManager.GetTag(x, y)));
+        });
+        game["trigger"] = new LuaFunction("game.trigger", (c, _) =>
+        {
+            var tag = TagArg(c, 0);
+            var name = StringArg(c, 1);
+            string[] args;
+            if (c.ArgumentCount <= 2 && name.Contains('('))
+                (name, args) = Entities.Actors.ActorActionRegistry.Parse(name);     // a whole call: 'A_OpenDoor("hold")'
+            else
+                args = [.. Enumerable.Range(2, Math.Max(c.ArgumentCount - 2, 0)).Select(i => OptionalString(c, i) ?? "")];
+
+            if (!Entities.MapTriggerRegistry.IsRegistered(name))
+                throw new LuaRuntimeException(c.State, (LuaValue)$"game.trigger: {name} isn't a switch action", 1);
+            if (OwnTileActions.TryGetValue(name, out var instead))
+                throw new LuaRuntimeException(c.State, (LuaValue)$"game.trigger: {name} works on a switch's own tile, which a script hasn't got{instead}", 1);
+
+            // As if the first player had used a switch with that tag, from nowhere on the map: the
+            // same player on every machine, so a network game stays in step
+            var activator = _mapManager.Players.FirstOrDefault();
+            if (activator == null)
+                return new(c.Return(false));
+            var activation = new Entities.TriggerActivation(-1, -1, FacingDir(activator.Angle), activator, tag);
+            return new(c.Return(Entities.MapTriggerRegistry.Invoke(name, args, activation)));
+        });
         game["onlevel"] = new LuaFunction("game.onlevel", (c, _) => new(c.Return(AddHook(c, host, levelHooks, "game.onlevel"))));
         game["ontick"] = new LuaFunction("game.ontick", (c, _) => new(c.Return(AddHook(c, host, tickHooks, "game.ontick"))));
         game["time"] = new LuaFunction("game.time", (c, _) => new(c.Return(gamestate.TimeCount)));
@@ -317,6 +373,17 @@ internal partial class Program
         }
     }
 
+    // Switch actions that work on the switch's own tile rather than its tag, which game.trigger
+    // can't run, with what to use instead (if there's one)
+    static readonly Dictionary<string, string> OwnTileActions = new(StringComparer.Ordinal)
+    {
+        ["A_PushWall"] = " (A_MoveWall pushes the tagged walls)",
+        ["A_Vend"] = "",
+        ["A_SmartSwitch"] = "",
+        ["A_FloorSelect"] = "",
+        ["A_Teleport"] = "",
+    };
+
     // 0 to count - 1 from the game's random numbers: one draw for up to 256, more beyond
     static int GameRandom(int count)
     {
@@ -358,6 +425,15 @@ internal partial class Program
         { Type: LuaValueType.String } value when double.TryParse(value.Read<string>(), NumberStyles.Float, CultureInfo.InvariantCulture, out var n) => n,
         _ => throw new LuaRuntimeException(c.State, (LuaValue)$"argument {index + 1} should be a number", 1),
     };
+
+    // A tag on the tag plane: 1 to 65535 (0 is no tag, and finds nothing)
+    static ushort TagArg(LuaFunctionExecutionContext c, int index)
+    {
+        double tag = NumberArg(c, index, -1);
+        if (tag < 0 || tag > ushort.MaxValue || tag != Math.Floor(tag))
+            throw new LuaRuntimeException(c.State, (LuaValue)$"argument {index + 1} should be a tag: a whole number, 1 to {ushort.MaxValue}", 1);
+        return (ushort)tag;
+    }
 
     static short ShortArg(LuaFunctionExecutionContext c, int index) =>
         (short)Math.Clamp(Math.Round(NumberArg(c, index, 0)), short.MinValue, short.MaxValue);

@@ -247,8 +247,11 @@ internal partial class Program
             return false;
         }
 
-        // The switch's own tile, then the others with its tag: those showing FROM anywhere
-        var tiles = new List<(int X, int Y)> { (trigger.TileX, trigger.TileY) };
+        // The switch's own tile (a script's game.trigger has none), then the others with its tag:
+        // those showing FROM anywhere
+        var tiles = new List<(int X, int Y)>();
+        if (trigger.TileX >= 0 && trigger.TileY >= 0)
+            tiles.Add((trigger.TileX, trigger.TileY));
         if (trigger.Tag != 0)
             tiles.AddRange(_mapManager.TaggedTiles(trigger.Tag).Where(t => t != (trigger.TileX, trigger.TileY)));
 

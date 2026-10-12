@@ -290,9 +290,19 @@ What a script can use:
 | Actor fields | `name`, `x`, `y` (in tiles; a tile's middle is n + 0.5), `tilex`, `tiley`, `angle` (degrees, 0 east, 90 north: the way it faces, or a projectile flies), `health`, `speed`, `state`, `tag`, `inwall`, `removed`, `isplayer`, `shooter` (who fired a projectile), `temp1`..`temp3` |
 | Fields it can set | `temp1`..`temp3` (whole numbers, kept in saved games), `angle`, `speed` |
 | Actor methods | `jump(state)`, `spawnprojectile(class[, angle[, "relative"\|"absolute"\|"aim"]])` (returns the projectile), `spawn(class)`, `playsound(sound[, positional])`, `property(key)`, `hasflag(flag)`, `distanceto(other)` (tiles), `angleto(other)`, `cansee(player[, tiles])`, `nearestplayer()`, `remove()` |
-| `game` | `random()` (0-255), `random(n)` (1 to n), `random(m, n)`, `players()`, `actors([class])` (every actor, or those of a class, in the order they think), `time()`, `tics()`, `map()`, `skill()`, `message(text[, style])` |
+| `game` | `random()` (0-255), `random(n)` (1 to n), `random(m, n)`, `players()`, `actors([class])` (every actor, or those of a class, in the order they think), `tagged(tag[, class])` (the actors with that tag on the map's tag plane, as switches find them), `taggedtiles(tag)` (the tiles with it, each `{x, y}`: tagged doors and walls), `tag(x, y)` (a tile's tag, 0 for none), `trigger(tag, action, ...)` (below), `time()`, `tics()`, `map()`, `skill()`, `message(text[, style])` |
 | Hooks | `game.onlevel(function(reason, map) ... end)` and `game.ontick(function(tics) ... end)` (below) |
 | Lua | the basic, `string`, `table`, `math` and `bit32` libraries, and `print` (to the console) |
+
+`game.trigger(tag, action, ...)` runs a switch action on a tag, as a switch with that tag
+would: `game.trigger(3, "A_OpenDoor", "hold")`, or the whole call as walls.yaml has it,
+`game.trigger(3, 'A_OpenDoor("hold")')`. It returns whether the action did anything. The
+actions are the ones listed at wall 21 in `pfwolf-pk3/mapdefs/wolf3d/walls.yaml` (doors,
+`A_MoveWall`, `A_SetWall`, `A_ChangeTexture`, `A_Activate`/`A_Deactivate`, light zones,
+`A_Message`, `A_Exit`...). It acts as if the first player had used the switch (their facing is
+`A_MoveWall`'s direction when none is given). A script has no switch tile of its own, so
+`A_ChangeTexture` changes only the tagged tiles, and the actions that work on the switch's own
+tile (`A_PushWall`, `A_Vend`, `A_SmartSwitch`, `A_FloorSelect`, `A_Teleport`) aren't allowed.
 
 Hooks are functions the game calls itself, not from a state. Add them when the script loads
 (at its top level); each mod's run, in load order:

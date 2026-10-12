@@ -30,10 +30,19 @@ internal static class MapTriggerRegistry
             return false;
 
         var (name, args) = ActorActionRegistry.Parse(actionCall);
+        return Invoke(name, args, activation);
+    }
+
+    /// <summary>Runs an action by name with its arguments already split (a script's game.trigger)</summary>
+    internal static bool Invoke(string name, string[] args, TriggerActivation activation)
+    {
         if (_actions.TryGetValue(name, out var action))
             return action(activation, args);
 
         Console.WriteLine($"No handler registered for trigger action '{name}'.");
         return false;
     }
+
+    /// <summary>Whether a trigger or switch action of that name has a handler</summary>
+    internal static bool IsRegistered(string name) => _actions.ContainsKey(name);
 }
