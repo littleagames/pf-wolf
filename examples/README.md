@@ -206,8 +206,8 @@ as `sprites/DEMOA0.png`.
 ## Fireball Demo (`mods/fireball-demo`)
 
 A short gauntlet that replaces Floor 1 (Wolfenstein 3D only): walls that spit fireballs. The
-traps are all data, actor and map definitions plus a level; the engine gives any actor the
-actions they use.
+traps are actor and map definitions, a level and one small Lua script; the engine gives any
+actor the actions they use.
 
 ```
 PFWolf.exe --file fireball-demo
@@ -220,7 +220,8 @@ of their faces once they see you:
 
 - **The fire lanes:** four walls fire straight across the passage every second and a half.
 - **The bone room:** with you within 4 tiles, the pile of bones in the middle throws a ring
-  of eight fireballs every way. The fireballs burn the two guards beside it too.
+  of eight fireballs every way, each ring turned a little from the last (a Lua script). The
+  fireballs burn the two guards beside it too.
 - **The corridor:** a wall at its west end fires along it. The switch at its east end, where
   you come in, turns it off and on.
 - **The passage north:** a wall either side fires at you, two at a time and now and then a third.
@@ -234,9 +235,12 @@ of their faces once they see you:
   `SwitchedWallFireball` (its `Active` and `Inactive` states are for the switch) and
   `FireballRing`. The wall ones are plain actors drawn as nothing (`TNT1`); they wait with
   `A_JumpIfInSight` and fire with `A_SpawnProjectile` (`relative` to their facing, or `aim`).
-  The ring waits with `A_JumpIfPlayerWithin` and fires at `absolute` angles. The aimed one
-  uses `A_Jump` for its odd third shot. The actions are described in pfwolf-pk3's
-  `actordefs/wolf3d/projectiles.yaml`.
+  The aimed one uses `A_Jump` for its odd third shot. The actions are described in
+  pfwolf-pk3's `actordefs/wolf3d/projectiles.yaml`. The ring waits with
+  `A_JumpIfPlayerWithin`, then fires with `A_FireRing("Fireball", 8, 22)`, an action of the
+  mod's own script:
+- `scripts/fireball-patterns.lua`: `A_FireRing(projectile, count, turn)`, written in Lua (see
+  [Scripting](#scripting) below).
 - `mapdefs/things.yaml`: objects 510-525, the wall traps, each facing east, north, west and
   south. They have `in-wall: true`, so they're placed on wall tiles, and fire out of the face
   their facing points out of. 526 is the ring, on open floor.
@@ -249,6 +253,46 @@ of their faces once they see you:
   ```
   powershell -ExecutionPolicy Bypass -File examples/tools/make-fireball-demo-map.ps1
   ```
+
+### Scripting
+
+A mod (or pfwolf.pk3) can carry Lua scripts: `scripts/*.lua`, in any subfolders. They all run
+when the game starts, pfwolf.pk3's first, then each mod's in load order; a mod's script of the
+same file name replaces the one before. Each global function a script defines whose name
+starts with `A_` or `T_` becomes an action (or think) that actordefs states call like a
+built-in one:
+
+```lua
+function A_FireRing(self, projectile, count, turn) ... end
+```
+
+```yaml
+action: A_FireRing("Fireball", 8, 22)
+```
+
+`self` is the actor running the state; the rest are the state's arguments (numbers arrive as
+numbers). A built-in action of the same name wins, and the script's is ignored with a warning.
+
+What a script can use:
+
+| | |
+| --- | --- |
+| Actor fields | `name`, `x`, `y` (in tiles; a tile's middle is n + 0.5), `tilex`, `tiley`, `angle` (degrees, 0 east, 90 north: the way it faces, or a projectile flies), `health`, `speed`, `state`, `tag`, `inwall`, `removed`, `isplayer`, `shooter` (who fired a projectile), `temp1`..`temp3` |
+| Fields it can set | `temp1`..`temp3` (whole numbers, kept in saved games), `angle`, `speed` |
+| Actor methods | `jump(state)`, `spawnprojectile(class[, angle[, "relative"\|"absolute"\|"aim"]])` (returns the projectile), `spawn(class)`, `playsound(sound[, positional])`, `property(key)`, `hasflag(flag)`, `distanceto(other)` (tiles), `angleto(other)`, `cansee(player[, tiles])`, `nearestplayer()`, `remove()` |
+| `game` | `random()` (0-255), `random(n)` (1 to n), `random(m, n)`, `players()`, `time()`, `tics()`, `map()`, `skill()`, `message(text[, style])` |
+| Lua | the basic, `string`, `table`, `math` and `bit32` libraries, and `print` (to the console) |
+
+So that demos, network games and saved games come out the same everywhere, a script works only
+from what's on the actors and the game's own random numbers: there's no `math.random`, nothing
+reaching outside the game (`io`, `os`, `require`, `dofile`, `load`), and Lua variables aren't
+saved. Keep anything a saved game should remember in `temp1`..`temp3`. A script that errors is
+reported on the console with its file and line (and at startup, on the signon screen); one that
+runs over a million instructions in one call is stopped.
+
+In the console, `scripts` lists the scripts that loaded, any that didn't and why, and the
+actions they give. With cheats on, `lua <code>` runs Lua in the scripts' state, with `me` as
+the player: `lua print(me.health, me:nearestplayer())`. Use 'single quotes' for strings there.
 
 ## Moody Lights (`mods/moody-lights`)
 

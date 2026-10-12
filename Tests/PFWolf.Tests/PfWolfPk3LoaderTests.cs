@@ -367,6 +367,39 @@ public class PfWolfPk3LoaderTests
     }
 
     [Test]
+    public void Scripts_Load_In_Order_And_A_Mods_Replace_Them_By_Name()
+    {
+        // Arrange: shared and per-pack scripts in the base pk3 (another pack's left out), and a
+        // mod replacing one and adding one in a subfolder; other files in scripts/ aren't scripts
+        var basePk3 = new MemoryAssetSource("pfwolf.pk3", new()
+        {
+            ["gamepacks/gamepack-info.yaml"] = GamePackInfo,
+            ["scripts/common.lua"] = "-- common",
+            ["scripts/alpha/traps.lua"] = "-- alpha traps",
+            ["scripts/beta/other.lua"] = "-- beta only",
+            ["scripts/readme.txt"] = "not a script",
+        });
+        var mod = new MemoryAssetSource("mymod.pk3", new()
+        {
+            ["scripts/common.lua"] = "-- mod common",
+            ["scripts/more/extra.lua"] = "-- extra",
+        });
+
+        // Act
+        var loader = new PfWolfPk3Loader([basePk3], "alpha", "alpha", [mod]);
+        var scripts = loader.GetAssets().Values.OfType<ScriptAsset>().OrderBy(script => script.Order).ToList();
+
+        // Assert
+        Assert.That(scripts.Select(script => (script.Text, script.Where)), Is.EqualTo(new[]
+        {
+            ("-- alpha traps", "pfwolf.pk3: scripts/alpha/traps.lua"),
+            ("-- mod common", "mymod.pk3: scripts/common.lua"),
+            ("-- extra", "mymod.pk3: scripts/more/extra.lua"),
+        }));
+        Assert.That(loader.Warnings, Is.Empty);
+    }
+
+    [Test]
     public void Pictures_Load_By_File_Name_In_Any_Subfolder()
     {
         // Arrange: sprites/{pack}/ is still a pack's own, but any other subfolder is just for order

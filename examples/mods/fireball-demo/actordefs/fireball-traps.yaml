@@ -126,7 +126,8 @@ SwitchedWallFireball:
         tics-per-frame: -1
 
 # A pile of bones on the floor that, with a player within 4 tiles, throws a ring of eight
-# fireballs every way (absolute angles, 0 east, 90 north) every two seconds
+# fireballs every way every two seconds, each ring turned 22 degrees from the last.
+# A_FireRing is a Lua script's action: this mod's scripts/fireball-patterns.lua.
 FireballRing:
   states:
     Spawn:
@@ -135,12 +136,11 @@ FireballRing:
         tics-per-frame: 10
         action: A_JumpIfPlayerWithin(4, "Fire")
     Fire:
-      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 0, "absolute")' }
-      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 45, "absolute")' }
-      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 90, "absolute")' }
-      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 135, "absolute")' }
-      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 180, "absolute")' }
-      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 225, "absolute")' }
-      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 270, "absolute")' }
-      - { sprite: BON1, frames: [A], tics-per-frame: 0, action: 'A_SpawnProjectile("Fireball", 315, "absolute")' }
-      - { sprite: BON1, frames: [A], tics-per-frame: 140, next-state: Spawn }
+      - sprite: BON1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_FireRing("Fireball", 8, 22)
+      - sprite: BON1
+        frames: [A]
+        tics-per-frame: 140
+        next-state: Spawn

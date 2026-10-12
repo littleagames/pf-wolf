@@ -202,6 +202,9 @@ internal partial class Program
         Register("actors", "Lists actors, optionally only those whose name contains the filter.", "actors [filter]", Cmd_Actors, InLevel,
             complete: (_, i) => i == 0 ? _mapManager.GetActors().Select(a => a.Name) : []);
         Register("maps", "Lists the levels that map can warp to.", "maps", Cmd_Maps);
+        Register("scripts", "Lists the Lua scripts that loaded (scripts/*.lua), those left out and why, and the actions they give.", "scripts", Cmd_Scripts);
+        Register("lua", "Runs Lua in the scripts' state (`me` is the player). Strings take 'single quotes'; separate statements with spaces, not ;.",
+            "lua <code>", Cmd_Lua, Cheat);
         Register("mods", "Lists the mods loaded over pfwolf.pk3, in load order, and anything wrong with them.", "mods", Cmd_Mods);
         Register("assetinfo", "Shows where an asset came from: each file that added, replaced or merged into it, in order.",
             "assetinfo <name>", Cmd_AssetInfo, complete: (_, i) => i == 0 ? _assetManager.AssetNames : []);

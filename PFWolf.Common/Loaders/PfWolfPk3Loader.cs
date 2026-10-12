@@ -38,6 +38,9 @@ public class PfWolfPk3Loader
     // Files directly in maps/ other than .wad levels, in load order
     private readonly List<AssetSourceEntry> _mapDataFiles = [];
 
+    // The next script's place in load order (ScriptAsset.Order)
+    private int _scriptOrder;
+
     /// <summary>
     /// Folders holding one subfolder per game pack (actordefs/wolf3d/, gamepacks/spear/,
     /// menudefs/blake/; the menus directly in menudefs/ are every pack's). In pfwolf.pk3, levels
@@ -45,7 +48,7 @@ public class PfWolfPk3Loader
     /// in maps/wolf3d/ and sprites/wolf3d/, so a game that isn't built on it (a standalone one)
     /// doesn't get them.
     /// </summary>
-    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/", "animdefs/", "menudefs/", "maps/", "sprites/"];
+    private static readonly string[] GamePackFolders = ["gamepacks/", "actordefs/", "mapdefs/", "animdefs/", "menudefs/", "maps/", "sprites/", "scripts/"];
 
     /// <summary>
     /// Picture folders whose subfolders are only for keeping files in order (sprites/guards/,
@@ -354,6 +357,15 @@ public class PfWolfPk3Loader
         {
             // Named by file name, in whatever subfolders (NestableFolders)
             AddReference(assetName, () => PngSpriteDataLoader.Load(entry.Open(), sourcePalette: Load<Palette>(GamePalette)));
+            return;
+        }
+
+        if (fullName.StartsWith("scripts/"))
+        {
+            // scripts/NAME.lua, a Lua script, in whatever subfolders: they all run, in load
+            // order; a later file of the same name in place of the earlier
+            if (entry.Name.EndsWith(".lua", StringComparison.OrdinalIgnoreCase))
+                AddAsset(assetName, ScriptAsset.FromFile(entry.Open().ToArray(), $"{entry.Source.Name}: {entry.FullName}", _scriptOrder++));
             return;
         }
 

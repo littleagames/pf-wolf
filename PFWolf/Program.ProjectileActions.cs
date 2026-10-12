@@ -49,13 +49,18 @@ internal partial class Program
         }
 
         int angle = args.Length > 1 && int.TryParse(args[1], out var a) ? a : 0;
-        string mode = args.Length > 2 ? args[2].Trim() : "relative";
+        SpawnProjectile(ob, args[0], angle, args.Length > 2 ? args[2].Trim() : "relative");
+    }
+
+    /// <summary>A_SpawnProjectile's work (scripts' actor:spawnprojectile too): the projectile, or null if none was fired</summary>
+    internal static Entities.Actors.Actor? SpawnProjectile(Entities.Actors.Actor ob, string className, int angle, string mode)
+    {
         var (x, y) = LookoutPoint(ob);
 
         if (mode.Equals("aim", StringComparison.OrdinalIgnoreCase))
         {
             if (NearestPlayer(x, y) is not { } target)
-                return;
+                return null;
             angle += AngleTo(x, y, target.X, target.Y);
         }
         else if (!mode.Equals("absolute", StringComparison.OrdinalIgnoreCase))
@@ -65,11 +70,11 @@ internal partial class Program
             angle += FacingAngle(ob);
         }
 
-        var missile = _mapManager.SpawnAtActor(args[0], ob);
+        var missile = _mapManager.SpawnAtActor(className, ob);
         if (missile == null)
         {
-            Console.WriteLine($"A_SpawnProjectile: \"{args[0]}\" isn't an actor.");
-            return;
+            Console.WriteLine($"A_SpawnProjectile: \"{className}\" isn't an actor.");
+            return null;
         }
 
         int spread = PropertyInt(missile, "spread", 0);
@@ -90,6 +95,7 @@ internal partial class Program
         missile.TicCount = 1;       // its first frame ends on the next tic, as a thrown one's (Monster.ThrowProjectile)
 
         PlayActorSound(missile, "attacksound");
+        return missile;
     }
 
     /// <summary>
@@ -126,24 +132,27 @@ internal partial class Program
         if (args.Length == 0)
             return;
         long reach = args.Length > 1 && TryParseTiles(args[1], out var r) ? r : long.MaxValue;
-        var (x, y) = LookoutPoint(ob);
-        bool inWall = IsInWall(ob);
-        int facing = FacingAngle(ob);
-        int cos = sintable[facing + ANGLES / 4], sin = sintable[facing];
+        if (_mapManager.Players.Any(pawn => Entities.Actors.Monster.IsTargetable(pawn) && CanSee(ob, pawn, reach)))
+            JumpToState(ob, args[0], "A_JumpIfInSight");
+    }
 
-        foreach (var pawn in _mapManager.Players)
+    /// <summary>
+    /// Whether there's a clear line from the actor to a player, within reach (global units,
+    /// each way); one in a wall only sees in front of the face it looks out of
+    /// </summary>
+    internal static bool CanSee(Entities.Actors.Actor ob, Entities.Actors.PlayerPawn pawn, long reach = long.MaxValue)
+    {
+        var (x, y) = LookoutPoint(ob);
+        if (Reach(pawn, x, y) > reach)
+            return false;
+        if (IsInWall(ob))
         {
-            if (!Entities.Actors.Monster.IsTargetable(pawn) || Reach(pawn, x, y) > reach)
-                continue;
-            // in front of the face it looks out of, not behind the wall
-            if (inWall && (long)(pawn.X - x) * cos - (long)(pawn.Y - y) * sin <= 0)
-                continue;
-            if (CheckLine(x, y, pawn))
-            {
-                JumpToState(ob, args[0], "A_JumpIfInSight");
-                return;
-            }
+            int facing = FacingAngle(ob);
+            int cos = sintable[facing + ANGLES / 4], sin = sintable[facing];
+            if ((long)(pawn.X - x) * cos - (long)(pawn.Y - y) * sin <= 0)
+                return false;
         }
+        return CheckLine(x, y, pawn);
     }
 
     /// <summary>Whether the actor stands inside a wall (a map thing with `in-wall: true`)</summary>

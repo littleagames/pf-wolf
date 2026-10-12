@@ -19,6 +19,9 @@ internal static class ActorActionRegistry
 
     internal static void Register(string name, Action<Actor> action) => _actions[name] = (actor, _) => action(actor);
 
+    /// <summary>Whether a think or action of that name has a handler (a built-in one, or a script's)</summary>
+    internal static bool IsRegistered(string name) => _actions.ContainsKey(name);
+
     // The class each name registered with RegisterFor needs, and the actor classes already
     // warned about running one without being that class
     private static readonly Dictionary<string, Type> _neededClass = [];

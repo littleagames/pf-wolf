@@ -432,6 +432,9 @@ public class AssetManager
     public IEnumerable<string> AssetNames
         => _assets.Keys.Select(key => key.Substring(key.IndexOf(':') + 1)).Distinct();
 
+    /// <summary>The Lua scripts (scripts/*.lua in pfwolf.pk3 and the mods), in the order they run</summary>
+    public IReadOnlyList<ScriptAsset> GetScripts() => _assets.Values.OfType<ScriptAsset>().OrderBy(script => script.Order).ToList();
+
     /// <summary>How many differently named assets there are of any of these types</summary>
     public int CountNames(params Type[] assetTypes)
     {

@@ -31,7 +31,8 @@
 #   A_Jump(chance, "State"[, "State2"...])   chance in 256, to one of the states at random
 #   A_JumpIfPlayerWithin(tiles, "State")     a player within that many tiles each way
 #   A_JumpIfInSight("State"[, tiles])        a clear line to a player (in a wall: in front of its face)
-# examples/mods/fireball-demo uses them all.
+# examples/mods/fireball-demo uses them all, and a Lua script's action (scripts/*.lua: see
+# Program.Scripting.cs and examples/README.md) for its ring of fireballs.
 # =============================================================================
 
 # Thrown by Gift/Fat (T_GiftThrow); trails Smoke, explodes (its Death state)

@@ -120,7 +120,8 @@ internal partial class Program
         int digitized = _assetManager.CountNames(typeof(Wolf3dDigitizedAudio), typeof(SoundFileAsset));
         int songs = _assetManager.CountNames(typeof(Wolf3dImfAudio), typeof(MusicFileAsset));
         SignonLine(area, "Content:", $"{maps} maps, {walls} walls, {sprites} sprites");
-        SignonLine(area, null, $"{sounds} sounds ({digitized} digitized), {songs} songs");
+        int scripts = _scripts?.Loaded.Count ?? 0;
+        SignonLine(area, null, $"{sounds} sounds ({digitized} digitized), {songs} songs{(scripts > 0 ? $", {scripts} {(scripts == 1 ? "script" : "scripts")}" : "")}");
     }
 
     /// <summary>How many lines startup printed, then as many of them as there's room for</summary>

@@ -169,6 +169,7 @@ internal partial class Program
             Environment.Exit(1);
         }
         RegisterActorActions();
+        LoadScripts();      // after the built-in actions, which a script's can't replace (Program.Scripting.cs)
         Entities.Actors.Monster.CheckClasses(_assetManager.GetActorMetadata());
         RegisterConsoleCommands();
 
