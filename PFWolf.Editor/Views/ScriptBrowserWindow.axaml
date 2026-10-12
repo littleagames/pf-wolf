@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:PFWolf.Editor.ViewModels"
         xmlns:data="using:PFWolf.Editor.Data"
+        xmlns:avaloniaEdit="https://github.com/avaloniaui/avaloniaedit"
         x:Class="PFWolf.Editor.Views.ScriptBrowserWindow"
         x:DataType="vm:ScriptBrowserViewModel"
         Title="{Binding Title}"
@@ -123,9 +124,12 @@
           </Grid>
           <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" TextWrapping="Wrap" Opacity="0.8" FontSize="12" Margin="0,6,0,0"
                      IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-          <TextBox x:Name="SourceBox" Text="{Binding Source}" AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap"
-                   FontFamily="Consolas,Menlo,monospace" FontSize="13"
-                   ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+          <!-- Lua's colors (Resources/Lua.xshd), set with the text in code: TextEditor.Text doesn't bind -->
+          <Border BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" CornerRadius="4">
+            <avaloniaEdit:TextEditor x:Name="SourceBox" ShowLineNumbers="True" WordWrap="False"
+                                     FontFamily="Consolas,Menlo,monospace" FontSize="13" Padding="4"
+                                     HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
+          </Border>
         </DockPanel>
       </Grid>
     </Grid>

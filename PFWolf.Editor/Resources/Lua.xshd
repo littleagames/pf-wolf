@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<!--
+  Lua 5.2 as the game's scripts are written (PFWolf's Scripting/ScriptHost.cs), for the editor's
+  script browser, in colors for its dark theme. Besides Lua itself: the libraries the game gives
+  scripts (game, string, table, math, bit32), the actions and thinks scripts define and actordefs
+  call (A_..., T_...), and in red what the game's scripts haven't got (io, os, require,
+  math.random...), as the browser's warnings say.
+-->
+<SyntaxDefinition name="Lua" extensions=".lua" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+  <Color name="Comment" foreground="#6A9955" exampleText="-- a comment" />
+  <Color name="String" foreground="#CE9178" exampleText="&quot;Fireball&quot;" />
+  <Color name="Number" foreground="#B5CEA8" exampleText="360" />
+  <Color name="Keyword" foreground="#569CD6" exampleText="function" />
+  <Color name="Literal" foreground="#569CD6" fontStyle="italic" exampleText="nil" />
+  <Color name="Library" foreground="#4EC9B0" exampleText="game" />
+  <Color name="BuiltIn" foreground="#DCDCAA" exampleText="print" />
+  <Color name="Action" foreground="#C586C0" fontWeight="bold" exampleText="A_FireRing" />
+  <Color name="Self" foreground="#9CDCFE" exampleText="self" />
+  <Color name="Missing" foreground="#F44747" exampleText="math.random" />
+
+  <RuleSet ignoreCase="false">
+    <!-- block comments (before line comments, which they start like) and long strings -->
+    <Span color="Comment" multiline="true">
+      <Begin>--\[\[</Begin>
+      <End>\]\]</End>
+    </Span>
+    <Span color="Comment">
+      <Begin>--</Begin>
+    </Span>
+    <Span color="String" multiline="true">
+      <Begin>\[\[</Begin>
+      <End>\]\]</End>
+    </Span>
+    <Span color="String">
+      <Begin>"</Begin>
+      <End>"</End>
+      <RuleSet>
+        <Span begin="\\" end="." />
+      </RuleSet>
+    </Span>
+    <Span color="String">
+      <Begin>'</Begin>
+      <End>'</End>
+      <RuleSet>
+        <Span begin="\\" end="." />
+      </RuleSet>
+    </Span>
+
+    <!-- first, so math.random isn't taken for the math library -->
+    <Rule color="Missing">\bmath\s*\.\s*random(?:seed)?\b|\b(?:os|io|debug|package)\b|\b(?:require|dofile|loadfile|loadstring|load|collectgarbage)\b</Rule>
+
+    <Keywords color="Keyword">
+      <Word>and</Word>
+      <Word>break</Word>
+      <Word>do</Word>
+      <Word>else</Word>
+      <Word>elseif</Word>
+      <Word>end</Word>
+      <Word>for</Word>
+      <Word>function</Word>
+      <Word>goto</Word>
+      <Word>if</Word>
+      <Word>in</Word>
+      <Word>local</Word>
+      <Word>not</Word>
+      <Word>or</Word>
+      <Word>repeat</Word>
+      <Word>return</Word>
+      <Word>then</Word>
+      <Word>until</Word>
+      <Word>while</Word>
+    </Keywords>
+
+    <Keywords color="Literal">
+      <Word>nil</Word>
+      <Word>true</Word>
+      <Word>false</Word>
+    </Keywords>
+
+    <Keywords color="Self">
+      <Word>self</Word>
+    </Keywords>
+
+    <Keywords color="Library">
+      <Word>game</Word>
+      <Word>string</Word>
+      <Word>table</Word>
+      <Word>math</Word>
+      <Word>bit32</Word>
+    </Keywords>
+
+    <Keywords color="BuiltIn">
+      <Word>print</Word>
+      <Word>pairs</Word>
+      <Word>ipairs</Word>
+      <Word>next</Word>
+      <Word>select</Word>
+      <Word>type</Word>
+      <Word>tostring</Word>
+      <Word>tonumber</Word>
+      <Word>error</Word>
+      <Word>assert</Word>
+      <Word>pcall</Word>
+      <Word>xpcall</Word>
+      <Word>setmetatable</Word>
+      <Word>getmetatable</Word>
+      <Word>rawget</Word>
+      <Word>rawset</Word>
+      <Word>rawequal</Word>
+      <Word>rawlen</Word>
+      <Word>unpack</Word>
+    </Keywords>
+
+    <!-- the actions and thinks scripts define (and call), which actordefs states use by name -->
+    <Rule color="Action">\b[AT]_\w+</Rule>
+
+    <Rule color="Number">\b0[xX][0-9a-fA-F]+\b|\b\d+(?:\.\d*)?(?:[eE][+-]?\d+)?\b|\.\d+(?:[eE][+-]?\d+)?\b</Rule>
+  </RuleSet>
+</SyntaxDefinition>

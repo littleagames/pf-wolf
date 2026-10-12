@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
 using PFWolf.Editor.Data;
+using PFWolf.Editor.Rendering;
 using PFWolf.Editor.ViewModels;
 
 namespace PFWolf.Editor.Views;
@@ -22,15 +23,55 @@ public partial class ScriptBrowserWindow : Window
                 e.Handled = true;
             }
         }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+
+        SourceBox.SyntaxHighlighting = LuaHighlighting.Definition;
+        SourceBox.Options.ConvertTabsToSpaces = true;
+        SourceBox.Options.IndentationSize = 2;
+
+        // The editor's text and the view model's Source, kept the same both ways (TextEditor.Text
+        // doesn't bind)
+        SourceBox.TextChanged += (_, _) =>
+        {
+            if (!_showingSource && DataContext is ScriptBrowserViewModel viewModel && viewModel.Source != SourceBox.Text)
+                viewModel.Source = SourceBox.Text;
+        };
     }
+
+    // Set while the view model's Source is put in the editor, so it isn't sent back as an edit
+    private bool _showingSource;
 
     private ScriptBrowserViewModel ViewModel => (ScriptBrowserViewModel)DataContext!;
 
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
-        if (DataContext is ScriptBrowserViewModel viewModel)
-            viewModel.SelectLine += (_, line) => SelectLine(line);
+        if (DataContext is not ScriptBrowserViewModel viewModel)
+            return;
+
+        viewModel.SelectLine += (_, line) => SelectLine(line);
+        viewModel.PropertyChanged += (_, change) =>
+        {
+            if (change.PropertyName == nameof(ScriptBrowserViewModel.Source))
+                ShowSource(viewModel.Source);
+        };
+        ShowSource(viewModel.Source);
+    }
+
+    // Puts the view model's text in the editor when it's another (a script picked, Revert, New)
+    private void ShowSource(string source)
+    {
+        if (SourceBox.Text == source)
+            return;
+        _showingSource = true;
+        try
+        {
+            SourceBox.Text = source;
+            SourceBox.ScrollToHome();
+        }
+        finally
+        {
+            _showingSource = false;
+        }
     }
 
     // Selects a line of the script and scrolls to it
@@ -38,24 +79,15 @@ public partial class ScriptBrowserWindow : Window
     {
         Dispatcher.UIThread.Post(() =>
         {
-            var text = SourceBox.Text ?? "";
-            int start = 0;
-            for (int i = 1; i < line && start < text.Length; i++)
-            {
-                int next = text.IndexOf('\n', start);
-                if (next < 0)
-                    break;
-                start = next + 1;
-            }
-            int end = start;
-            while (end < text.Length && text[end] is not ('\r' or '\n'))
-                end++;
+            var document = SourceBox.Document;
+            if (document.LineCount == 0)
+                return;
+            var docLine = document.GetLineByNumber(Math.Clamp(line, 1, document.LineCount));
 
             SourceBox.Focus();
-            SourceBox.SelectionStart = start;
-            // The caret goes to the selection's end with it (setting CaretIndex would undo the selection)
-            SourceBox.SelectionEnd = end;
-            SourceBox.ScrollToLine(Math.Max(line - 1, 0));
+            SourceBox.Select(docLine.Offset, docLine.Length);
+            SourceBox.TextArea.Caret.Line = docLine.LineNumber;
+            SourceBox.ScrollToLine(docLine.LineNumber);
         });
     }
 

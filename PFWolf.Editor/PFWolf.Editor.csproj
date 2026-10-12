@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.3" />
+    <PackageReference Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
     <PackageReference Include="Avalonia.Desktop" Version="12.1.3" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.3" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.3" />
@@ -34,6 +35,10 @@
 
   <!-- What New mod's stand-alone game starts with (Editing/NewMod.cs): the example game's art,
        sounds, definitions and level. NewMod writes its own gamepack-info, modinfo and game-info. -->
+  <!-- The script browser's Lua highlighting (Rendering/LuaHighlighting) -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Lua.xshd" LogicalName="Lua.xshd" />
+  </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\examples\mods\standalone-demo\**\*" Exclude="..\examples\mods\standalone-demo\*.zip;..\examples\mods\standalone-demo\gamepack-info.yaml;..\examples\mods\standalone-demo\modinfo.yaml;..\examples\mods\standalone-demo\game-info.yaml" LogicalName="StandaloneStarter/%(RecursiveDir)%(Filename)%(Extension)" Visible="false" />
   </ItemGroup>
