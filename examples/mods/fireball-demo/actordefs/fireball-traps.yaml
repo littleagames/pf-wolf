@@ -57,7 +57,8 @@ WallFireball:
         tics-per-frame: 105
         next-state: Spawn
 
-# Three at once, 20 degrees apart, out of its face
+# Five at once, fanned across 60 degrees centred on the player (A_FireBurst, this mod's
+# scripts/fireball-patterns.lua)
 WallFireballFan:
   parent: WallFireball
   states:
@@ -65,18 +66,85 @@ WallFireballFan:
       - sprite: TNT1
         frames: [A]
         tics-per-frame: 0
-        action: A_SpawnProjectile("Fireball", -20)
-      - sprite: TNT1
-        frames: [A]
-        tics-per-frame: 0
-        action: A_SpawnProjectile("Fireball")
-      - sprite: TNT1
-        frames: [A]
-        tics-per-frame: 0
-        action: A_SpawnProjectile("Fireball", 20)
+        action: A_FireBurst("Fireball", 5, 60)
       - sprite: TNT1
         frames: [A]
         tics-per-frame: 140
+        next-state: Spawn
+
+# While a player is in sight, about three a second, sweeping back and forth across 90 degrees
+# (45 either side of straight out of its face) (A_Sweep)
+WallFireballSweep:
+  parent: WallFireball
+  states:
+    Fire:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 12
+        action: A_Sweep("Fireball", 90, 15)
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        next-state: Spawn
+
+# A HomingFireball straight out of its face every two and a half seconds
+WallFireballHoming:
+  parent: WallFireball
+  states:
+    Fire:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 0
+        action: A_SpawnProjectile("HomingFireball")
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 175
+        next-state: Spawn
+
+# A fireball that steers toward the player it can see, up to 12 degrees each frame for its
+# first 30 frames (A_Home), then flies straight on. Slower, and redder, so it can be outrun.
+HomingFireball:
+  parent: Fireball
+  states:
+    Spawn:
+      - sprite: FIRE
+        frames: [A, B]
+        tics-per-frame: 6
+        modifiers: [bright]
+        think: A_Projectile(3, 10)
+        action: A_Home(12, 30)
+  properties:
+    "speed": 3584
+    "light.color": "#FF3020"
+
+# Slower fireballs for the spiral, so its arms can be seen winding out
+SpiralFireball:
+  parent: Fireball
+  properties:
+    "speed": 3072
+
+# A pile of skulls that, with a player within 4 tiles, sprays a two-armed spiral: a pair of
+# fireballs every 8 tics, each pair turned 20 degrees on (A_FireSpiral). Once the player is
+# out of reach it rests for half a second before looking again.
+FireballSpiral:
+  states:
+    Spawn:
+      - sprite: SKPI
+        frames: [A]
+        tics-per-frame: 10
+        action: A_JumpIfPlayerWithin(4, "Fire")
+    Fire:
+      - sprite: SKPI
+        frames: [A]
+        tics-per-frame: 8
+        action: A_FireSpiral("SpiralFireball", 20, 2)
+      - sprite: SKPI
+        frames: [A]
+        tics-per-frame: 0
+        action: A_JumpIfPlayerWithin(4, "Fire")
+      - sprite: SKPI
+        frames: [A]
+        tics-per-frame: 35
         next-state: Spawn
 
 # At the player, a quick burst of two, then a rest; now and then (64 in 256) a third

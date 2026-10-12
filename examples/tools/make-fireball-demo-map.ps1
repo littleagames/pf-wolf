@@ -36,13 +36,22 @@ $Layout = @(
     '#######e...####'
     '########...w###'
     '########.+.####'
-    '########.P.####'   # y=40 the player start
+    '########...####'   # y=40
+    '##...........##'   #      the pattern hall (the scripts' patterns)
+    '##...........##'
+    '#>...........<#'   #      sweepers either side, fanning back and forth
+    '##.....*.....##'   # y=44 the skull pile's spiral
+    '#>...........<#'
+    '##...........##'
+    '##...........##'
+    '####^#...######'   # y=48 the homing launcher, looking north into the hall; the start alcove
+    '######.P.######'   #      the player start
     '###############'
 )
 
 # What each character puts on plane 0 (walls and floor codes), plane 1 (objects) and the tag
 # plane. Floor code 108 is area 1 (mapdefs floors: area n is 107 + n); walls and objects are
-# mapdefs ids (pfwolf-pk3's mapdefs/wolf3d, and the mod's own walls 50-51 and things 510-526).
+# mapdefs ids (pfwolf-pk3's mapdefs/wolf3d, and the mod's own walls 50-51 and things 510-535).
 $Hall = 108
 $Eagle = 6                                      # grey stone with an eagle: a trap wall
 $Tiles = @{
@@ -61,6 +70,10 @@ $Tiles = @{
     'g' = @{ Plane0 = $Hall; Plane1 = 108 }     # guard, standing, facing east
     'h' = @{ Plane0 = $Hall; Plane1 = 110 }     # guard, standing, facing west
     'X' = @{ Plane0 = 21 }                      # elevator switch: ends the level
+    '>' = @{ Plane0 = $Eagle; Plane1 = 527 }    # WallFireballSweep, looking east
+    '<' = @{ Plane0 = $Eagle; Plane1 = 529 }    # WallFireballSweep, looking west
+    '^' = @{ Plane0 = $Eagle; Plane1 = 532 }    # WallFireballHoming, looking north
+    '*' = @{ Plane0 = $Hall; Plane1 = 535 }     # FireballSpiral
 }
 $Size = 64
 $PlaneCount = 6

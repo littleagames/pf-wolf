@@ -206,8 +206,8 @@ as `sprites/DEMOA0.png`.
 ## Fireball Demo (`mods/fireball-demo`)
 
 A short gauntlet that replaces Floor 1 (Wolfenstein 3D only): walls that spit fireballs. The
-traps are actor and map definitions, a level and one small Lua script; the engine gives any
-actor the actions they use.
+traps are actor and map definitions, a level and a Lua script of fireball patterns; the engine
+gives any actor the actions they use.
 
 ```
 PFWolf.exe --file fireball-demo
@@ -218,6 +218,10 @@ It replaces Floor 1 like the other level demos, so switch on only one of them at
 Work north from the start to the exit. The trap shooters sit inside eagle walls and fire out
 of their faces once they see you:
 
+- **The pattern hall,** where you start, shows the script's patterns: the skull pile in the
+  middle sprays a two-armed spiral while you're within 4 tiles, the walls either side sweep
+  their fire back and forth across the hall, and the wall by the start launches homing
+  fireballs that steer after you for a while, then fly straight on.
 - **The fire lanes:** four walls fire straight across the passage every second and a half.
 - **The bone room:** with you within 4 tiles, the pile of bones in the middle throws a ring
   of eight fireballs every way, each ring turned a little from the last (a Lua script). The
@@ -225,25 +229,30 @@ of their faces once they see you:
 - **The corridor:** a wall at its west end fires along it. The switch at its east end, where
   you come in, turns it off and on.
 - **The passage north:** a wall either side fires at you, two at a time and now and then a third.
-- **The exit room:** the north wall fans out three at a time.
+- **The exit room:** the north wall fans five at a time across you.
 
 ### What's in it
 
 - `actordefs/fireball-traps.yaml`: `Fireball`, a glowing projectile (Fake Hitler's flame)
   that bursts on whatever it hits and, with the `HURTMONSTERS` flag, hurts enemies as well as
   you. Then the traps: `WallFireball` (straight out), `WallFireballFan`, `WallFireballAimed`,
-  `SwitchedWallFireball` (its `Active` and `Inactive` states are for the switch) and
-  `FireballRing`. The wall ones are plain actors drawn as nothing (`TNT1`); they wait with
+  `SwitchedWallFireball` (its `Active` and `Inactive` states are for the switch),
+  `WallFireballSweep`, `WallFireballHoming`, `FireballRing` and `FireballSpiral`, with
+  `HomingFireball` and the slower `SpiralFireball` (both `parent: Fireball`). The wall ones are plain actors drawn as nothing (`TNT1`); they wait with
   `A_JumpIfInSight` and fire with `A_SpawnProjectile` (`relative` to their facing, or `aim`).
   The aimed one uses `A_Jump` for its odd third shot. The actions are described in
-  pfwolf-pk3's `actordefs/wolf3d/projectiles.yaml`. The ring waits with
-  `A_JumpIfPlayerWithin`, then fires with `A_FireRing("Fireball", 8, 22)`, an action of the
-  mod's own script:
-- `scripts/fireball-patterns.lua`: `A_FireRing(projectile, count, turn)`, written in Lua (see
-  [Scripting](#scripting) below).
-- `mapdefs/things.yaml`: objects 510-525, the wall traps, each facing east, north, west and
+  pfwolf-pk3's `actordefs/wolf3d/projectiles.yaml`. The ring and the
+  spiral wait with `A_JumpIfPlayerWithin`. The patterns are actions of the mod's own script:
+- `scripts/fireball-patterns.lua`, in Lua (see [Scripting](#scripting) below):
+  `A_FireRing(projectile, count, turn)` (the bone room), `A_FireSpiral(projectile, step, arms)`,
+  `A_FireBurst(projectile, count, spread)` (the exit room's, centred on you),
+  `A_Sweep(projectile, arc, step)`, and `A_Home(turn, frames)`, which `HomingFireball` runs
+  on itself each frame to steer. Each keeps what it must remember between calls (how far a
+  spiral has turned, which way a sweep is going) in the actor's `temp1`..`temp3`, so saved
+  games keep it.
+- `mapdefs/things.yaml`: objects 510-534, the wall traps, each facing east, north, west and
   south. They have `in-wall: true`, so they're placed on wall tiles, and fire out of the face
-  their facing points out of. 526 is the ring, on open floor.
+  their facing points out of. 526 is the ring and 535 the spiral, on open floor.
 - `mapdefs/walls.yaml`: walls 50 and 51, the switch (a toggle: `A_Deactivate` /
   `A_Activate` on tag 1).
 - `game-info.yaml`: dims the level a little, so the fireballs' light shows.
@@ -280,7 +289,7 @@ What a script can use:
 | Actor fields | `name`, `x`, `y` (in tiles; a tile's middle is n + 0.5), `tilex`, `tiley`, `angle` (degrees, 0 east, 90 north: the way it faces, or a projectile flies), `health`, `speed`, `state`, `tag`, `inwall`, `removed`, `isplayer`, `shooter` (who fired a projectile), `temp1`..`temp3` |
 | Fields it can set | `temp1`..`temp3` (whole numbers, kept in saved games), `angle`, `speed` |
 | Actor methods | `jump(state)`, `spawnprojectile(class[, angle[, "relative"\|"absolute"\|"aim"]])` (returns the projectile), `spawn(class)`, `playsound(sound[, positional])`, `property(key)`, `hasflag(flag)`, `distanceto(other)` (tiles), `angleto(other)`, `cansee(player[, tiles])`, `nearestplayer()`, `remove()` |
-| `game` | `random()` (0-255), `random(n)` (1 to n), `random(m, n)`, `players()`, `time()`, `tics()`, `map()`, `skill()`, `message(text[, style])` |
+| `game` | `random()` (0-255), `random(n)` (1 to n), `random(m, n)`, `players()`, `actors([class])` (every actor, or those of a class, in the order they think), `time()`, `tics()`, `map()`, `skill()`, `message(text[, style])` |
 | Lua | the basic, `string`, `table`, `math` and `bit32` libraries, and `print` (to the console) |
 
 So that demos, network games and saved games come out the same everywhere, a script works only

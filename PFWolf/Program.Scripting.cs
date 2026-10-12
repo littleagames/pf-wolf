@@ -31,7 +31,7 @@ internal partial class Program
       its methods: jump(state), spawnprojectile(class[, angle[, mode]]), spawn(class),
         playsound(sound[, positional]), property(key), hasflag(flag), distanceto(other),
         angleto(other), cansee(player[, tiles]), nearestplayer(), remove()
-      game.random([m[, n]]), game.players(), game.time(), game.tics(), game.map(), game.skill(),
+      game.random([m[, n]]), game.players(), game.actors([class]), game.time(), game.tics(), game.map(), game.skill(),
         game.message(text[, style])
     and print, to the console.
 
@@ -220,6 +220,16 @@ internal partial class Program
             int i = 1;
             foreach (var pawn in _mapManager.Players.Where(Entities.Actors.Monster.IsTargetable))
                 list[i++] = LuaActor.Of(pawn);
+            return new(c.Return(list));
+        });
+        game["actors"] = new LuaFunction("game.actors", (c, _) =>
+        {
+            var className = OptionalString(c, 0);
+            var list = new LuaTable();
+            int i = 1;
+            foreach (var actor in _mapManager.GetActors().Where(a => !a.IsRemoved
+                && (className == null || a.Name.Equals(className, StringComparison.OrdinalIgnoreCase))))
+                list[i++] = LuaActor.Of(actor);
             return new(c.Return(list));
         });
         game["time"] = new LuaFunction("game.time", (c, _) => new(c.Return(gamestate.TimeCount)));

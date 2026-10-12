@@ -1,6 +1,7 @@
 # The fireball traps (this mod's actordefs/fireball-traps.yaml). The wall shooters are placed
 # on wall tiles (`in-wall: true`) and fire out of the face their facing points out of, so
-# each comes in four: facing east, north, west and south. The ring stands on open floor.
+# each comes in four: facing east, north, west and south. The ring (526) and the spiral (535)
+# stand on open floor.
 things:
   510: { class: WallFireball, angles: 0, in-wall: true }
   511: { class: WallFireball, angles: 90, in-wall: true }
@@ -19,3 +20,12 @@ things:
   524: { class: SwitchedWallFireball, angles: 180, in-wall: true }
   525: { class: SwitchedWallFireball, angles: 270, in-wall: true }
   526: { class: FireballRing, angles: 0 }
+  527: { class: WallFireballSweep, angles: 0, in-wall: true }
+  528: { class: WallFireballSweep, angles: 90, in-wall: true }
+  529: { class: WallFireballSweep, angles: 180, in-wall: true }
+  530: { class: WallFireballSweep, angles: 270, in-wall: true }
+  531: { class: WallFireballHoming, angles: 0, in-wall: true }
+  532: { class: WallFireballHoming, angles: 90, in-wall: true }
+  533: { class: WallFireballHoming, angles: 180, in-wall: true }
+  534: { class: WallFireballHoming, angles: 270, in-wall: true }
+  535: { class: FireballSpiral, angles: 0 }
