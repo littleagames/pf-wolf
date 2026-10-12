@@ -91,6 +91,51 @@ public class ModFilesTests
     }
 
     [Test]
+    public void Change_Renames_And_Deletes_In_A_Pk3_As_One_Rewrite()
+    {
+        // Arrange
+        var pk3 = MakePk3(("textures/A.png", "a"), ("SPRITES/B.png", "b"), ("modinfo.yaml", "name: Mod"));
+
+        // Act: A renamed to C (written new, the old taken out), and B deleted (named in another case)
+        ModFiles.Change(pk3, [("textures/C.png", Encoding.UTF8.GetBytes("a"))], ["textures/A.png"]);
+        ModFiles.Delete(pk3, "sprites/b.PNG");
+
+        // Assert
+        var entries = Entries(pk3);
+        Assert.That(entries.Keys, Is.EquivalentTo(new[] { "modinfo.yaml", "textures/C.png" }));
+        Assert.That(Entries(pk3 + ModFiles.BackupExtension).Keys, Does.Contain("SPRITES/B.png"), "the .bak is the version before the delete");
+    }
+
+    [Test]
+    public void Change_Writes_A_File_It_Is_Also_Told_To_Delete()
+    {
+        // Arrange
+        var pk3 = MakePk3(("graphics/X.png", "old"));
+
+        // Act
+        ModFiles.Change(pk3, [("graphics/X.png", Encoding.UTF8.GetBytes("new"))], ["graphics/x.png"]);
+
+        // Assert
+        Assert.That(Entries(pk3)["graphics/X.png"], Is.EqualTo("new"));
+    }
+
+    [Test]
+    public void Change_In_A_Folder_Writes_And_Deletes_Files()
+    {
+        // Arrange
+        var mod = Path.Combine(_folder, "folder-mod");
+        Directory.CreateDirectory(Path.Combine(mod, "sprites"));
+        File.WriteAllText(Path.Combine(mod, "sprites", "OLD.png"), "old");
+
+        // Act
+        ModFiles.Change(mod, [("sprites/NEW.png", Encoding.UTF8.GetBytes("new"))], ["sprites/OLD.png"]);
+
+        // Assert
+        Assert.That(File.Exists(Path.Combine(mod, "sprites", "OLD.png")), Is.False);
+        Assert.That(ModFiles.ReadBytes(mod, "sprites/NEW.png"), Is.EqualTo(Encoding.UTF8.GetBytes("new")));
+    }
+
+    [Test]
     public void ReadText_Reads_A_Folder_Or_A_Pk3_And_Gives_Null_For_A_Missing_File()
     {
         // Arrange

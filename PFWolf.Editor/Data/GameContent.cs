@@ -29,6 +29,7 @@ public sealed class GameContent
         MapDefs = mapDefs;
         GameInfo = gameInfo;
         Palette = palette;
+        LoadedPalette = palette;
 
         foreach (var actors in actorDefs)
             foreach (var (name, data) in actors)
@@ -50,6 +51,12 @@ public sealed class GameContent
     public GameInfoAsset? GameInfo { get; }
     /// <summary>The game palette the editor draws in: as loaded, or as the palette browser is editing it</summary>
     public PaletteColor[] Palette { get; private set; }
+
+    /// <summary>
+    /// The game palette as the game loads it (not as the palette browser is editing it): what
+    /// the game matches a picture file's colors to, so what the editor writes pictures in
+    /// </summary>
+    public PaletteColor[] LoadedPalette { get; }
 
     /// <summary>Draws in these colors from now on (pictures made before keep the old ones: make a new ArtCache)</summary>
     public void SetPalette(PaletteColor[] colors) => Palette = (PaletteColor[])colors.Clone();

@@ -234,13 +234,14 @@ public sealed class ArtCache(GameContent content) : IDisposable
         {
             case ArtKind.Texture or ArtKind.Flat when content.Find<TextureAsset>(name) is { Width: > 0, Height: > 0 } texture:
             {
-                // Stored column by column
+                // Stored column by column; a flat's FlatMask pixels are see-through
                 int width = texture.Width, height = texture.Height;
                 var indices = new byte[width * height];
                 for (int y = 0; y < height; y++)
                     for (int x = 0; x < width; x++)
                         indices[y * width + x] = texture.RawData[x * height + y];
-                return new IndexedPicture(width, height, indices, null);
+                var opaque = kind == ArtKind.Flat && indices.Contains(FlatMask) ? indices.Select(index => index != FlatMask).ToArray() : null;
+                return new IndexedPicture(width, height, indices, opaque);
             }
             case ArtKind.Sprite when content.Find<SpriteAsset>(name) is { Width: > 0, Height: > 0 } sprite:
                 return new IndexedPicture(sprite.Width, sprite.Height, sprite.RawData.ToArray(),

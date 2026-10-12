@@ -445,6 +445,24 @@ public partial class MainWindow : Window, IEditorDialogs
         return choice;
     }
 
+    public async Task<bool> Confirm(string title, string message, string yes)
+    {
+        var ok = new Button { Content = yes, Classes = { "accent" } };
+        var cancel = new Button { Content = "Cancel", IsDefault = true, IsCancel = true };
+        var dialog = MakeDialog(title, new StackPanel
+        {
+            Spacing = 12,
+            Children = { new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap }, Buttons(ok, cancel) },
+        });
+
+        bool answer = false;
+        ok.Click += (_, _) => { answer = true; dialog.Close(); };
+        cancel.Click += (_, _) => dialog.Close();
+
+        await dialog.ShowDialog(DialogOwner);
+        return answer;
+    }
+
     public async Task<string?> PickMapFile()
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions

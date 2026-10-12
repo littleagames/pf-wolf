@@ -39,7 +39,7 @@ public static class ImageDecoder
 
     internal static RgbaImage Decode(string path) => Decode(File.ReadAllBytes(path));
 
-    internal static RgbaImage Decode(byte[] data)
+    public static RgbaImage Decode(byte[] data)
     {
         if (data.AsSpan().StartsWith(PngSignature))
             return DecodePng(data);

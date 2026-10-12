@@ -11,7 +11,7 @@
   <DockPanel>
     <!-- What's listed -->
     <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <Grid ColumnDefinitions="Auto,Auto,*,Auto,140,Auto" ColumnSpacing="8">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto,140,Auto,Auto" ColumnSpacing="8">
         <ComboBox Grid.Column="0" ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}" MinWidth="170" />
         <ComboBox Grid.Column="1" ItemsSource="{Binding Shows}" SelectedItem="{Binding SelectedShow}" MinWidth="140"
                   ToolTip.Tip="In use: a mapdefs wall, door or flat, an actordefs class or a level's sky shows it" />
@@ -20,7 +20,15 @@
         <TextBlock Grid.Column="3" Text="Size" VerticalAlignment="Center" />
         <Slider Grid.Column="4" Minimum="32" Maximum="160" Value="{Binding ThumbSize}" VerticalAlignment="Center" />
         <TextBlock Grid.Column="5" Text="{Binding CountText}" VerticalAlignment="Center" Opacity="0.7" MinWidth="120" />
+        <Button Grid.Column="6" Content="Add…" Click="AddPictures"
+                ToolTip.Tip="Puts PNG or BMP files in a mod as wall textures, flats, sprites or pictures, named by their file names" />
       </Grid>
+    </Border>
+
+    <!-- What the last change did -->
+    <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Status}" FontSize="12" />
     </Border>
 
     <!-- The picture picked: big, its details, where it came from, what uses it -->
@@ -80,7 +88,19 @@
       </Grid>
 
       <SelectableTextBlock Grid.Row="3" Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
-      <TextBlock Grid.Row="4" Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" />
+      <StackPanel Grid.Row="4" Spacing="4">
+        <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" />
+        <TextBlock Text="{Binding FileText}" TextWrapping="Wrap" Opacity="0.6" FontSize="12" />
+        <!-- A sprite's offset: its PNG's grAb chunk -->
+        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsSprite}">
+          <TextBlock Text="Offset" VerticalAlignment="Center"
+                     ToolTip.Tip="The sprite's X, Y offset, kept in its PNG's grAb chunk as ZDoom and SLADE write it" />
+          <NumericUpDown Value="{Binding OffsetX}" Minimum="-4096" Maximum="4096" Increment="1" FormatString="0" Width="110" />
+          <NumericUpDown Value="{Binding OffsetY}" Minimum="-4096" Maximum="4096" Increment="1" FormatString="0" Width="110" />
+          <Button Content="Set" Command="{Binding ApplyOffsetCommand}"
+                  ToolTip.Tip="Saves the offset in the sprite's PNG (grAb), in its mod or, for the game's own, in a mod picked" />
+        </StackPanel>
+      </StackPanel>
 
       <StackPanel Grid.Row="5" Spacing="4" Margin="0,8,0,0">
         <TextBlock Text="Where it comes from (the last one is used)" FontWeight="SemiBold" />
@@ -111,6 +131,12 @@
                 ToolTip.Tip="Picks the wall, door, flat or thing chosen under Used by to put down on the map (or double-click it)" />
         <Button Content="Copy name" Click="CopyName" />
         <Button Content="Export PNG…" Click="ExportPng" ToolTip.Tip="Saves the picture in the game's palette as a PNG" />
+        <Button Content="Replace…" Click="ReplacePicture"
+                ToolTip.Tip="Puts a PNG or BMP in its place: over its file in its mod, or, for the game's own, as a file of the same name in a mod" />
+        <Button Content="Rename…" Command="{Binding RenameCommand}"
+                ToolTip.Tip="Renames its file in its mod (only a mod's own pictures)" />
+        <Button Content="Delete" Command="{Binding DeleteCommand}"
+                ToolTip.Tip="Takes its file out of its mod (only a mod's own pictures); the game's own of that name shows again" />
       </WrapPanel>
     </Grid>
 

@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PFWolf.Assets;
 using PFWolf.Editor.Data;
+using PFWolf.Editor.Editing;
 using PFWolf.Editor.Rendering;
 
 namespace PFWolf.Editor.ViewModels;
@@ -86,6 +87,18 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     /// <summary>"Use in palette" picked: the main window puts it in the palette</summary>
     public event EventHandler<ArtUse>? UseRequested;
 
+    /// <summary>A mod's pictures changed: the editor adds the mod, loads the game again and shows the picture</summary>
+    public event EventHandler<ArtChange>? Changed;
+
+    /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
+    public Func<string, Task<string?>>? PickMod { get; set; }
+
+    /// <summary>Asks for a line of text (title, prompt, initial, check); null when cancelled</summary>
+    public Func<string, string, string, Func<string, string?>, Task<string?>>? AskText { get; set; }
+
+    /// <summary>Asks whether to go ahead (title, message, yes button)</summary>
+    public Func<string, string, string, Task<bool>>? Confirm { get; set; }
+
     private static readonly (ArtKind? Kind, string Label)[] KindLabels =
     [
         (null, "All"),
@@ -126,6 +139,34 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     [ObservableProperty] private ArtBackgroundOption _selectedBackground;
     [ObservableProperty] private string _countText = "";
     [ObservableProperty] private string _title = "Textures and sprites";
+    [ObservableProperty] private string _status = "";
+
+    /// <summary>The mod file the picture shown comes from; null for the game's own</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasModFile), nameof(FileText))]
+    [NotifyCanExecuteChangedFor(nameof(RenameCommand), nameof(DeleteCommand))]
+    private ArtFile? _modFile;
+
+    public bool HasModFile => ModFile != null;
+
+    /// <summary>Where a change to the picture shown goes</summary>
+    public string FileText => ModFile != null
+        ? $"In {ModFile}: changes are saved there"
+        : SelectedItem != null ? "The game's own: a change puts a picture of the same name in a mod" : "";
+
+    // The sprite's offset, as its PNG's grAb chunk gives it
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ApplyOffsetCommand))]
+    private decimal? _offsetX;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ApplyOffsetCommand))]
+    private decimal? _offsetY;
+
+    public bool IsSprite => SelectedItem?.Entry.Kind == ArtKind.Sprite;
+
+    /// <summary>The kind of the picture shown (null when none is)</summary>
+    public ArtKind? CurrentKind => SelectedItem?.Entry.Kind;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection), nameof(Preview), nameof(PreviewWidth), nameof(PreviewHeight), nameof(Details))]
@@ -286,7 +327,22 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     {
         // The side shown may come from somewhere else (a mod replacing just some sides)
         if (value != null && _content != null)
+        {
             ShowOrigins(ArtCatalog.Origins(_content, value.AssetName, nameof(SpriteAsset)));
+            RefreshFile();
+        }
+    }
+
+    // Where the picture shown comes from, and a sprite's offset
+    private void RefreshFile()
+    {
+        ModFile = _content != null && SelectedItem != null ? ArtFiles.InMod(_content, SelectedItem.Entry.Kind, CurrentAssetName) : null;
+        OnPropertyChanged(nameof(FileText));
+        OnPropertyChanged(nameof(IsSprite));
+        OnPropertyChanged(nameof(CurrentKind));
+        var sprite = IsSprite ? _content?.Find<SpriteAsset>(CurrentAssetName) : null;
+        OffsetX = sprite?.Offset.x;
+        OffsetY = sprite?.Offset.y;
     }
 
     private void ShowOrigins(IEnumerable<PFWolf.Loaders.AssetOrigin> origins)
@@ -345,6 +401,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(HasUses));
             OnPropertyChanged(nameof(HasRotations));
+            RefreshFile();
             return;
         }
 
@@ -364,6 +421,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         // Big pictures (title screens) start smaller, so they fit
         int largest = Math.Max(value.Entry.Width, value.Entry.Height);
         Zoom = largest switch { > 256 => 1, > 128 => 2, _ => Zoom < 3 ? 4 : Zoom };
+        RefreshFile();
     }
 
     private bool CanUseInPalette => SelectedUse?.Target != null;
@@ -373,5 +431,125 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     {
         if (SelectedUse is { Target: not null } use)
             UseRequested?.Invoke(this, use);
+    }
+
+    //
+    // Changing the mods' pictures
+    //
+
+    /// <summary>
+    /// What adding a picture of this kind and name would do to one the game has already, for the
+    /// add dialog; null when there's none
+    /// </summary>
+    public string? WhatAddingReplaces(ArtKind kind, string name)
+    {
+        if (_content == null || !ArtFiles.Exists(_content, kind, name))
+            return null;
+        var from = ArtCatalog.Origins(_content, name, ArtFiles.AssetType(kind)).LastOrDefault(origin => origin.Action != PFWolf.Loaders.AssetOrigin.LeftOut)?.Source;
+        return $"It replaces the {name.ToUpperInvariant()} the game has{(from != null ? $" (from {from})" : "")}.";
+    }
+
+    /// <summary>Puts new pictures (or ones in place of the game's of those names) in a mod picked now</summary>
+    public async Task AddAsync(ArtKind kind, IReadOnlyList<(string Name, byte[] Data)> pictures)
+    {
+        if (_content == null || pictures.Count == 0)
+            return;
+        var what = pictures.Count == 1 ? pictures[0].Name.ToUpperInvariant() : $"{pictures.Count} pictures";
+        await Make(mod => ArtFiles.Add(kind, pictures, mod!), $"A mod to add {what} to (it goes in its {ArtFiles.Folder(kind)} folder)");
+    }
+
+    /// <summary>Puts a picture file in place of the picture shown: over its mod file, or in a mod picked now for the game's own</summary>
+    public async Task ReplaceAsync(string fileName, byte[] data)
+    {
+        if (_content is not { } content || SelectedItem?.Entry is not { } entry)
+            return;
+        var name = CurrentAssetName;
+        await Make(mod => ArtFiles.Replace(content, entry.Kind, name, data, mod),
+            ModFile == null ? $"A mod to put {fileName} in, in place of the game's {name} (it goes in its {ArtFiles.Folder(entry.Kind)} folder)" : null);
+    }
+
+    /// <summary>Saves a picture drawn in the game palette (from the pixel editor) over its mod file, or in a mod picked now</summary>
+    public async Task<bool> SavePictureAsync(ArtKind kind, string name, IndexedPicture picture, (int X, int Y)? offset)
+    {
+        if (_content is not { } content)
+            return false;
+        var inMod = ArtFiles.InMod(content, kind, name) != null;
+        return await Make(mod => ArtFiles.Save(content, kind, name, picture, offset, mod),
+            inMod ? null : $"A mod to save {name.ToUpperInvariant()} in (it goes in its {ArtFiles.Folder(kind)} folder)");
+    }
+
+    private bool CanApplyOffset => IsSprite && OffsetX != null && OffsetY != null;
+
+    /// <summary>Gives the sprite shown the offset typed in (its PNG's grAb chunk)</summary>
+    [RelayCommand(CanExecute = nameof(CanApplyOffset))]
+    private async Task ApplyOffsetAsync()
+    {
+        if (_content is not { } content || OffsetX is not { } x || OffsetY is not { } y)
+            return;
+        var name = CurrentAssetName;
+        await Make(mod => ArtFiles.SetOffset(content, name, (int)x, (int)y, mod),
+            ModFile == null ? $"A mod to save {name} with its new offset in (it goes in its sprites folder)" : null);
+    }
+
+    /// <summary>Renames the mod's picture shown (what uses it by name doesn't follow)</summary>
+    [RelayCommand(CanExecute = nameof(HasModFile))]
+    private async Task RenameAsync()
+    {
+        if (_content is not { } content || ModFile is not { } file || SelectedItem?.Entry is not { } entry || AskText == null)
+            return;
+        var name = CurrentAssetName;
+        var uses = entry.Uses.Count > 0 ? $" {UsesText(entry)} use it by its name, and won't follow." : "";
+        var newName = await AskText($"Rename {name}", $"A new name for {name} in {file}.{uses}", name, typed =>
+            ArtFiles.CheckName(typed)
+            ?? (typed.Equals(name, StringComparison.OrdinalIgnoreCase) ? "That's its name now." : null)
+            ?? (ArtFiles.Exists(content, entry.Kind, typed) ? $"The game has a {typed.ToUpperInvariant()} already." : null));
+        if (newName != null)
+            await Make(_ => ArtFiles.Rename(file, entry.Kind, newName), null);
+    }
+
+    /// <summary>Takes the mod's picture shown out of its mod (the game's own of that name shows again)</summary>
+    [RelayCommand(CanExecute = nameof(HasModFile))]
+    private async Task DeleteAsync()
+    {
+        if (_content is not { } content || ModFile is not { } file || SelectedItem?.Entry is not { } entry || Confirm == null)
+            return;
+        var name = CurrentAssetName;
+        var under = ArtCatalog.Origins(content, name, ArtFiles.AssetType(entry.Kind)).Count(origin => origin.Action != PFWolf.Loaders.AssetOrigin.LeftOut) > 1;
+        var after = under
+            ? $"The {name} it replaced shows again."
+            : entry.Uses.Count > 0 ? $"Nothing else is named {name}: {UsesText(entry)} will show nothing." : "Nothing uses it.";
+        if (!await Confirm($"Delete {name}", $"Take {file.EntryPath} out of {Path.GetFileName(file.ModPath.TrimEnd('\\', '/'))}? {after}"
+                + (ModFiles.IsArchive(file.ModPath) ? $"\n\nThe pk3's last version is kept as {Path.GetFileName(file.ModPath)}{ModFiles.BackupExtension}." : ""), "Delete"))
+            return;
+        await Make(_ => ArtFiles.Delete(file, entry.Kind, name), null);
+    }
+
+    private static string UsesText(ArtEntry entry) => entry.Uses.Count == 1 ? entry.Uses[0].Label : $"{entry.Uses.Count} things";
+
+    // Works out a change (with a mod picked first when it asks for one), makes it and says so;
+    // false when it isn't made
+    private async Task<bool> Make(Func<string?, ArtChange> plan, string? pickModPrompt)
+    {
+        string? mod = null;
+        if (pickModPrompt != null)
+        {
+            mod = PickMod == null ? null : await PickMod(pickModPrompt);
+            if (mod == null)
+                return false;
+        }
+
+        try
+        {
+            var change = plan(mod);
+            var where = change.Apply();
+            Status = $"{change.Summary}: {(change.Writes.Count > 0 ? where : change.ModPath)}";
+            Changed?.Invoke(this, change);
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or NotSupportedException or InvalidOperationException)
+        {
+            Status = $"Couldn't do it: {e.Message}";
+            return false;
+        }
     }
 }

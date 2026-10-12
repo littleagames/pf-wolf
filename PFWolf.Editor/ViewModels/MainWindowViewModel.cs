@@ -198,8 +198,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         if (_artBrowser == null)
         {
-            _artBrowser = new ArtBrowserViewModel();
+            _artBrowser = new ArtBrowserViewModel
+            {
+                PickMod = PickModToSaveIn,
+                AskText = (title, prompt, initial, check) => Dialogs.AskText(title, prompt, initial, check),
+                Confirm = (title, message, yes) => Dialogs.Confirm(title, message, yes),
+            };
             _artBrowser.UseRequested += (_, use) => UseInPalette(use);
+            _artBrowser.Changed += async (_, change) => await OnArtFilesChanged(change);
             _artBrowser.Load(Content, Art);
         }
 
@@ -211,6 +217,28 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 _artBrowser.Show(ArtKind.Sprite, sprite);
         }
         Dialogs.ShowArtBrowser(_artBrowser);
+    }
+
+    // A mod's pictures changed: the game is loaded again with the mod, so everything shows the change
+    private async Task OnArtFilesChanged(ArtChange change)
+    {
+        AddModFolder(change.ModPath);
+        var (status, before, level) = (_artBrowser?.Status, Content, SelectedMap?.Name);
+        if (CanLoad)
+            await LoadAsync();
+        if (_artBrowser == null)
+            return;
+        if (Content == before || Content == null)
+        {
+            _artBrowser.Status = status + "  (load the game again to see it)";
+            return;
+        }
+
+        // Back on the level that was open
+        if (Maps.FirstOrDefault(map => map.Name.Equals(level, StringComparison.OrdinalIgnoreCase)) is { } map)
+            SelectedMap = map;
+        _artBrowser.Show(change.Kind, change.ShowName);
+        _artBrowser.Status = status ?? "";
     }
 
     // A game loaded again: the browsers list its pictures (the old ones' bitmaps are gone) and sounds

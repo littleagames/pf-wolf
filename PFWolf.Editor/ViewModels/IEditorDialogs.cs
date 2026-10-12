@@ -42,6 +42,9 @@ public interface IEditorDialogs
 
     Task<UnsavedChoice> AskUnsaved(string message);
 
+    /// <summary>Asks whether to go ahead with something that can't be taken back; true for <paramref name="yes"/></summary>
+    Task<bool> Confirm(string title, string message, string yes);
+
     /// <summary>A map file to import (.map or .wad), or null when none is picked</summary>
     Task<string?> PickMapFile();
 

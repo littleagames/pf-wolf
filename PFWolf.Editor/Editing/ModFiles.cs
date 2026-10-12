@@ -32,12 +32,43 @@ public static class ModFiles
         return reader.ReadToEnd();
     }
 
+    /// <summary>A file in the mod as bytes, or null when it has none of that path</summary>
+    public static byte[]? ReadBytes(string modPath, string entryPath)
+    {
+        if (!IsArchive(modPath))
+        {
+            var path = PathIn(modPath, entryPath);
+            return File.Exists(path) ? File.ReadAllBytes(path) : null;
+        }
+
+        using var archive = ZipFile.OpenRead(modPath);
+        if (FindEntry(archive, entryPath) is not { } entry)
+            return null;
+        using var stream = entry.Open();
+        using var copy = new MemoryStream();
+        stream.CopyTo(copy);
+        return copy.ToArray();
+    }
+
     /// <summary>
     /// Writes files into the mod (into a pk3, all of them or, when something fails, none); returns
     /// where the first went: a file's path in a folder, or "mod.pk3: entry" in a pk3
     /// </summary>
     public static string Write(string modPath, params (string EntryPath, byte[] Data)[] files)
+        => Change(modPath, files, []);
+
+    /// <summary>Takes files out of the mod (out of a pk3, all of them or, when something fails, none)</summary>
+    public static void Delete(string modPath, params string[] entryPaths) => Change(modPath, [], entryPaths);
+
+    /// <summary>
+    /// Writes some files into the mod and takes others out, as one change to a pk3 (a rename is
+    /// the new file written and the old one taken out); returns where the first written went
+    /// </summary>
+    public static string Change(string modPath, IReadOnlyList<(string EntryPath, byte[] Data)> files, IReadOnlyList<string> deletes)
     {
+        // A file both written and taken out is written
+        var removed = deletes.Where(path => !files.Any(file => SamePath(file.EntryPath, path))).ToList();
+
         if (!IsArchive(modPath))
         {
             // Each written beside the old file first, so a failed write leaves the old one whole
@@ -49,7 +80,13 @@ public static class ModFiles
                 File.WriteAllBytes(temp, data);
                 File.Move(temp, path, overwrite: true);
             }
-            return files.Length > 0 ? PathIn(modPath, files[0].EntryPath) : modPath;
+            foreach (var entryPath in removed)
+            {
+                var path = PathIn(modPath, entryPath);
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            return files.Count > 0 ? PathIn(modPath, files[0].EntryPath) : modPath;
         }
 
         // The whole pk3 is written again as a copy, which then takes its place. Each file stays
@@ -61,11 +98,14 @@ public static class ModFiles
             using (var source = ZipFile.OpenRead(modPath))
             using (var target = ZipFile.Open(copy, ZipArchiveMode.Create))
             {
-                var written = new bool[files.Length];
+                var written = new bool[files.Count];
                 foreach (var entry in source.Entries)
                 {
+                    if (removed.Any(path => SamePath(entry.FullName, path)))
+                        continue;
+
                     // Matched with another case or '\' too (some Windows tools write those)
-                    int index = Array.FindIndex(files, file => SamePath(entry.FullName, file.EntryPath));
+                    int index = IndexOf(files, entry.FullName);
                     if (index < 0)
                     {
                         CopyEntry(entry, target);
@@ -78,7 +118,7 @@ public static class ModFiles
                 }
 
                 // New files after the rest
-                for (int i = 0; i < files.Length; i++)
+                for (int i = 0; i < files.Count; i++)
                 {
                     if (!written[i] && !files.Take(i).Any(earlier => SamePath(earlier.EntryPath, files[i].EntryPath)))
                         WriteEntry(target, files[i].EntryPath, files[i].Data);
@@ -91,7 +131,7 @@ public static class ModFiles
             File.Delete(copy);
             throw;
         }
-        return files.Length > 0 ? $"{modPath}: {files[0].EntryPath}" : modPath;
+        return files.Count > 0 ? $"{modPath}: {files[0].EntryPath}" : modPath;
     }
 
     /// <summary>A new pk3 holding these files (it mustn't be there already)</summary>
@@ -109,7 +149,18 @@ public static class ModFiles
     private static string PathIn(string modFolder, string entryPath)
         => Path.Combine(modFolder, entryPath.Replace('/', Path.DirectorySeparatorChar));
 
-    private static bool SamePath(string a, string b)
+    private static int IndexOf(IReadOnlyList<(string EntryPath, byte[] Data)> files, string entryPath)
+    {
+        for (int i = 0; i < files.Count; i++)
+        {
+            if (SamePath(files[i].EntryPath, entryPath))
+                return i;
+        }
+        return -1;
+    }
+
+    /// <summary>Whether two paths in a mod are the same file (case and '\' or '/' aside)</summary>
+    public static bool SamePath(string a, string b)
         => a.Replace('\\', '/').Equals(b.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase);
 
     private static void WriteEntry(ZipArchive archive, string entryPath, byte[] data)
