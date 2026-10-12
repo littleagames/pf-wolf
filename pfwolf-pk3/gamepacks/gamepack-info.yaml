@@ -28,6 +28,21 @@
 # Where files merge, a key that's left out keeps what's there; to put a setting back to its
 # default, !remove it.
 #
+# To start a table fresh, with none of what's there, !replace it with your own entries (or
+# !remove it to leave it empty). A mod with its own levels in place of the game's, in its
+# game-info.yaml:
+#   skills: !replace
+#     NORMAL: { name: "Normal" }
+#   demo-skill: NORMAL          # the game's own names one of the skills just taken out
+#   episodes: !replace
+#     EP01: { name: "My Episode", start-map: MAP01 }
+#   clusters: !remove
+#   maps: !replace
+#     MAP01: { name: "My First Level", floor-number: 1 }
+# The same works in any table a merge reaches, such as mapdefs' things: or a class's states:.
+# Only a file's top level (actordefs' classes, language's strings, ...) has nothing to tag;
+# remove those one by one.
+#
 # A release with no file-pack plays the nearest base pack's data files; with none along the way it
 # has no data files at all, and everything it has comes from the pk3s.
 #
