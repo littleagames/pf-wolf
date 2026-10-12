@@ -309,12 +309,21 @@ public sealed class DefinitionSet
         if (ModChanges(path, modPath))
             throw new InvalidDataException($"{modName} has its own {YamlNodes.Describe(path)} already");
         if (YamlNodes.Get(Merged, path) is not { } value)
+        {
+            // A game-info section the game doesn't set (a standalone game has none of Wolf3D's):
+            // the mod gets one to fill in
+            if (Kind == DefinitionKind.GameInfo && path.Count == 1 && GameInfoSchema.Field(path[0]) is { } section)
+                return Finish(ModTarget(path, modPath), path, section.StarterValue(), modPath, [$"The game had no {path[0]}: it's started in {modName} for you to fill in"]);
             throw new InvalidDataException($"The game has no {YamlNodes.Describe(path)} to copy");
+        }
         if (Kind == DefinitionKind.GamePackInfo)
             throw new InvalidDataException("A mod can't change pfwolf.pk3's games; its own gamepack-info.yaml adds games of its own (New…)");
 
         return Finish(ModTarget(path, modPath), path, YamlNodes.Clone(YamlTree.WithoutMergeTags(value)), modPath, []);
     }
+
+    private static FieldSchema? _gameInfoSchema;
+    private static FieldSchema GameInfoSchema => _gameInfoSchema ??= FieldSchema.For(typeof(GameInfoAsset));
 
     /// <summary>The mod's file with its own of a definition, or null when it has none</summary>
     public DefinitionFile? ModFileDefining(IReadOnlyList<string> path, string modPath)

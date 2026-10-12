@@ -330,6 +330,25 @@ public class DefinitionSetTests
     }
 
     [Test]
+    public void Copy_To_Mod_Of_A_Section_The_Game_Does_Not_Set_Starts_One_To_Fill_In()
+    {
+        // Arrange: a standalone game's, with nothing from pfwolf.pk3
+        var set = new DefinitionSet(DefinitionKind.GameInfo, "my-game",
+        [
+            new DefinitionFile(Mod, "game-info.yaml", "", "# my game\ndefault-map:\n  floor-color: '#202020'\n"),
+        ]);
+
+        // Act
+        var list = set.PlanCopyToMod(["end-strings"], Mod);
+        var record = set.PlanCopyToMod(["menu-stripe"], Mod);
+
+        // Assert
+        Assert.That(list.NewText, Is.EqualTo("# my game\ndefault-map:\n  floor-color: '#202020'\nend-strings: []\n"));
+        Assert.That(list.Notes, Has.Some.Contains("fill in"));
+        Assert.That(((YamlScalarNode)YamlNodes.Get(YamlTree.Parse(record.NewText), ["menu-stripe", "height"])!).Value, Is.EqualTo("24"));
+    }
+
+    [Test]
     public void A_Game_Built_On_One_Of_Pfwolfs_Goes_In_The_Mods_Gamepack_Info()
     {
         // Arrange

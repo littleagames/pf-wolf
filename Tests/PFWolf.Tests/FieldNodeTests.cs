@@ -93,6 +93,23 @@ public class FieldNodeTests
     }
 
     [Test]
+    public async Task A_Section_That_Is_A_List_Can_Be_Added_To()
+    {
+        // Arrange: game-info's end-strings, as Copy to mod starts it
+        var node = new FieldNode(DefinitionSchemas.GameInfo.Field("end-strings"), "end-strings", new YamlSequenceNode(), null, null, Context);
+        node.EnsureChildren();
+
+        // Act
+        await node.AddCommand.ExecuteAsync(null);
+        node.Children[0].Text = "Leaving so soon?";
+        var built = node.Build([]);
+
+        // Assert
+        Assert.That(node.Children, Has.Count.EqualTo(1));
+        Assert.That(YamlNodes.Equal(built, new YamlSequenceNode(new YamlScalarNode("Leaving so soon?"))), Is.True);
+    }
+
+    [Test]
     public void A_Word_Where_A_Number_Goes_Is_An_Error()
     {
         // Arrange

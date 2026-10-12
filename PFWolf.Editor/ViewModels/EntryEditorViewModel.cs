@@ -325,10 +325,16 @@ public sealed partial class EntryEditorViewModel : ObservableObject
 
         if (open.Root == null)
             IsDeleted = true;
-        else if (open.Root.IsGroup)
+        else if (open.Root.IsGroup && open.Root.Schema?.Type == FieldType.Record)
         {
             foreach (var row in open.Root.Children)
                 Rows.Add(row);
+        }
+        else if (open.Root.IsGroup)
+        {
+            // A list or dictionary as itself, opened, so it can be added to (end-strings, maps...)
+            open.Root.IsExpanded = true;
+            Rows.Add(open.Root);
         }
         else
             Rows.Add(open.Root);

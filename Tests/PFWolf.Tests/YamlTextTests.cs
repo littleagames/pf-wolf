@@ -136,6 +136,18 @@ public class YamlTextTests
     }
 
     [Test]
+    public void Short_Words_Go_On_One_Line_And_Sentences_A_Line_Each()
+    {
+        // Act
+        var words = YamlText.Set("", ["flags"], new YamlSequenceNode(new YamlScalarNode("SHOOTABLE"), new YamlScalarNode("COUNTKILL")));
+        var sentences = YamlText.Set("", ["end-strings"], new YamlSequenceNode(new YamlScalarNode("Leaving so soon?"), new YamlScalarNode("Bye, then.")));
+
+        // Assert
+        Assert.That(words, Is.EqualTo("flags: [SHOOTABLE, COUNTKILL]\n"));
+        Assert.That(sentences, Is.EqualTo("end-strings:\n  - Leaving so soon?\n  - Bye, then.\n"));
+    }
+
+    [Test]
     public void Remove_Tag_Is_Written_Bare()
     {
         // Act

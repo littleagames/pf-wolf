@@ -389,7 +389,11 @@ public sealed partial class FieldNode : ObservableObject
 
                 if (Schema!.Type == FieldType.List)
                 {
-                    var list = new YamlSequenceNode { Style = (_original as YamlSequenceNode)?.Style ?? SequenceStyle.Any };
+                    // As it was written, unless it was empty ([]): one started empty is written as its items suit
+                    var list = new YamlSequenceNode
+                    {
+                        Style = _original is YamlSequenceNode { Children.Count: > 0 } written ? written.Style : SequenceStyle.Any,
+                    };
                     foreach (var child in Children)
                         list.Add(child.Build(errors) ?? new YamlScalarNode(""));
                     return list.Children.Count > 0 || IsEntry || _original != null ? list : null;

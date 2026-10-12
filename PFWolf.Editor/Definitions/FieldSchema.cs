@@ -137,6 +137,34 @@ public sealed class FieldSchema
     public static FieldSchema List(string key, string? description, FieldSchema item, bool inline = false, string? defaultText = null)
         => new(key, LabelFor(key), description, FieldType.List, typeof(object), [], defaultText, item.Hint, () => item) { _inline = inline };
 
+    /// <summary>
+    /// A value to start a field the game doesn't set from, to fill in: a list or dictionary
+    /// empty, a record its fields that have defaults (at those defaults), a value its default
+    /// (or empty text)
+    /// </summary>
+    public YamlDotNet.RepresentationModel.YamlNode StarterValue()
+    {
+        switch (Type)
+        {
+            case FieldType.List:
+                return new YamlDotNet.RepresentationModel.YamlSequenceNode();
+            case FieldType.Dictionary:
+                return new YamlDotNet.RepresentationModel.YamlMappingNode();
+            case FieldType.Record:
+            {
+                var mapping = new YamlDotNet.RepresentationModel.YamlMappingNode();
+                foreach (var field in Fields.Where(field => field.IsScalar && field.Default != null))
+                    mapping.Add(field.Key, field.StarterValue());
+                return mapping;
+            }
+            default:
+                return new YamlDotNet.RepresentationModel.YamlScalarNode(Default ?? "")
+                {
+                    Style = Default == null ? YamlDotNet.Core.ScalarStyle.SingleQuoted : YamlDotNet.Core.ScalarStyle.Any,
+                };
+        }
+    }
+
     /// <summary>A Record's field by its key, ignoring case (as the game reads them)</summary>
     public FieldSchema? Field(string key) => Fields.FirstOrDefault(field => field.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
 

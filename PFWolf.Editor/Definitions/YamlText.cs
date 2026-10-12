@@ -282,12 +282,14 @@ public static class YamlText
         }
     }
 
-    // { } and [ ] as written, or empty; a list of plain values is written [ ] too, as the files write frames: [A]
+    // { } and [ ] as written, or empty; a list of short words is written [ ] too, as the files write
+    // frames: [A] and flags (a list of sentences, a line each)
     private static bool IsFlowWritten(YamlMappingNode mapping) => mapping.Style == MappingStyle.Flow || mapping.Children.Count == 0;
 
     private static bool IsFlowWritten(YamlSequenceNode sequence)
         => sequence.Style == SequenceStyle.Flow || sequence.Children.Count == 0
-           || sequence.Style == SequenceStyle.Any && sequence.Children.All(item => item is YamlScalarNode);
+           || sequence.Style == SequenceStyle.Any && sequence.Children.All(item => item is YamlScalarNode { Value: var value }
+                                                                                    && (value ?? "").Length <= 24 && !(value ?? "").Any(char.IsWhiteSpace));
 
     private static string Flow(YamlMappingNode mapping)
     {
