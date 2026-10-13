@@ -30,11 +30,15 @@ internal partial class Program
     // there's a clear line from any actor to the player (the player's own sight uses it too).
     internal static bool CheckLine(Entities.Actors.Actor ob) => CheckLine(ob, player);
 
-    /// <summary>Whether there's a clear line from an actor to a player</summary>
-    internal static bool CheckLine(Entities.Actors.Actor ob, Entities.Actors.PlayerPawn to) => CheckLine(ob.X, ob.Y, to);
+    /// <summary>Whether there's a clear line from an actor to another (a player, or any actor)</summary>
+    internal static bool CheckLine(Entities.Actors.Actor ob, Entities.Actors.Actor to) => CheckLine(ob.X, ob.Y, to);
 
-    /// <summary>Whether there's a clear line from a point (global coordinates) to a player; the point's own tile isn't checked</summary>
-    internal static bool CheckLine(int fromX, int fromY, Entities.Actors.PlayerPawn to)
+    /// <summary>
+    /// Whether there's a clear line from a point (global coordinates) to an actor; the point's own
+    /// tile isn't checked. A player is aimed at where their last move left them (PlUX/PlUY and
+    /// their tile, as vanilla), anything else at where it is.
+    /// </summary>
+    internal static bool CheckLine(int fromX, int fromY, Entities.Actors.Actor to)
     {
         int x1, y1, xt1, yt1, x2, y2, xt2, yt2;
         int x, y;
@@ -53,10 +57,22 @@ internal partial class Program
         xt1 = x1 >> 8;
         yt1 = y1 >> 8;
 
-        x2 = to.State.PlUX;
-        y2 = to.State.PlUY;
-        xt2 = to.TileX;
-        yt2 = to.TileY;
+        if (to is Entities.Actors.PlayerPawn pawn)
+        {
+            x2 = pawn.State.PlUX;
+            y2 = pawn.State.PlUY;
+            xt2 = pawn.TileX;
+            yt2 = pawn.TileY;
+        }
+        else
+        {
+            // An actor's TileX/TileY jump to the tile it's stepping onto as the step begins: the
+            // line goes to the tile it's actually over
+            x2 = (ushort)(to.X >> UNSIGNEDSHIFT);
+            y2 = (ushort)(to.Y >> UNSIGNEDSHIFT);
+            xt2 = x2 >> 8;
+            yt2 = y2 >> 8;
+        }
 
         xdist = Math.Abs(xt2 - xt1);
 

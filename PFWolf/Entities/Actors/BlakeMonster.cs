@@ -256,7 +256,7 @@ internal partial record BlakeMonster : Monster
     }
 
     /// <summary>
-    /// A_Melee(chance, min, max): a blow at the player within reach (two tiles), landing chance
+    /// A_Melee(chance, min, max): a blow at what it's after within reach (two tiles), landing chance
     /// times in 256 for min..max, with the actor's `meleesound`; it alerts the area
     /// </summary>
     internal void Melee(string[] args)
@@ -268,11 +268,12 @@ internal partial record BlakeMonster : Monster
         PlayActorSound(this, "meleesound");
         madenoise = true;
 
-        if (Math.Abs(player.X - X) - MapConstants.TILEGLOBAL <= MINACTORDIST
-            && Math.Abs(player.Y - Y) - MapConstants.TILEGLOBAL <= MINACTORDIST
+        var target = Target;
+        if (Math.Abs(target.X - X) - MapConstants.TILEGLOBAL <= MINACTORDIST
+            && Math.Abs(target.Y - Y) - MapConstants.TILEGLOBAL <= MINACTORDIST
             && US_RndT() < chance)
         {
-            TakeDamage(max > min ? min + US_RndT() * (max - min + 1) / 256 : min, this);
+            HurtTarget(max > min ? min + US_RndT() * (max - min + 1) / 256 : min);
         }
     }
 
@@ -293,10 +294,10 @@ internal partial record BlakeMonster : Monster
 
         if (Ammo != 0)
         {
-            if (CheckLine(this))
+            if (CheckLine(this, Target))
             {
                 Hidden = false;
-                int dist = Math.Max(Math.Max(Math.Abs(TileX - player.TileX), Math.Abs(TileY - player.TileY)), 1);
+                int dist = Math.Max(Math.Max(Math.Abs(TileX - Target.TileX), Math.Abs(TileY - Target.TileY)), 1);
                 bool nearAttack = dist == 1 && Distance < 0x4000;
 
                 // Shoot-mode actors keep at whichever they're doing until their count runs out
@@ -399,7 +400,7 @@ internal partial record BlakeMonster : Monster
     /// </summary>
     private void DoAttack()
     {
-        int dx = Math.Abs(TileX - player.TileX), dy = Math.Abs(TileY - player.TileY);
+        int dx = Math.Abs(TileX - Target.TileX), dy = Math.Abs(TileY - Target.TileY);
         int dist = Math.Max(Math.Max(dx, dy), 1);
         if (PropertyInt("monster.attackrange", 0) is > 0 and var range && dist > range)
             return;
@@ -426,8 +427,8 @@ internal partial record BlakeMonster : Monster
 
         if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
             return;
-        if (!CheckLine(this))
-            return;     // the player is behind a wall
+        if (!CheckLine(this, Target))
+            return;     // what it's after is behind a wall
 
         ShotAtPlayer();
         PlayActorSound(this, "attacksound");
@@ -512,8 +513,8 @@ internal partial record BlakeMonster : Monster
             }
         }
 
-        deltax = player.TileX - TileX;
-        deltay = player.TileY - TileY;
+        deltax = Target.TileX - TileX;
+        deltay = Target.TileY - TileY;
     }
 
     // A running actor with nowhere better to go heads for one of these

@@ -167,7 +167,7 @@ internal partial record BlakeMonster
     /// <summary>The liquid alien moving as a puddle (Chase): near the player, but not right by them, it rises (Rise)</summary>
     internal void LiquidMove()
     {
-        int dx = Math.Abs(TileX - player.TileX), dy = Math.Abs(TileY - player.TileY);
+        int dx = Math.Abs(TileX - Target.TileX), dy = Math.Abs(TileY - Target.TileY);
         if (Math.Max(dx, dy) < 6 && dx > 1 && dy > 1)
             SetState("Rise");
         else
@@ -189,7 +189,7 @@ internal partial record BlakeMonster
             return;
         }
 
-        if (Math.Abs(TileX - player.TileX) > 1 || Math.Abs(TileY - player.TileY) > 1)
+        if (Math.Abs(TileX - Target.TileX) > 1 || Math.Abs(TileY - Target.TileY) > 1)
         {
             if (!RuntimeFlags.HasFlag(objflags.FL_VISABLE) || US_RndT() < 40 || Temp2 == 5)
             {
@@ -220,9 +220,10 @@ internal partial record BlakeMonster
     internal void Seek()
     {
         bool found = false;
-        if ((player.TileX != TileX || player.TileY != TileY) && CheckView())
+        var target = Target;
+        if ((target.TileX != TileX || target.TileY != TileY) && CheckView())
         {
-            int dx = Math.Abs(TileX - player.TileX), dy = Math.Abs(TileY - player.TileY);
+            int dx = Math.Abs(TileX - target.TileX), dy = Math.Abs(TileY - target.TileY);
             if (dx < 15 && dy < 15)
             {
                 int dist = Math.Max(dx, dy);
@@ -247,18 +248,19 @@ internal partial record BlakeMonster
         }
     }
 
-    /// <summary>Whether the player is in the actor's eighth of the circle (its facing, 22.5 degrees either side) in a clear line</summary>
+    /// <summary>Whether what it's after is in the actor's eighth of the circle (its facing, 22.5 degrees either side) in a clear line</summary>
     private bool CheckView()
     {
         if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
             return false;
+        var target = Target;
         if (Dir == objdirtypes.nodir)
-            return CheckLine(this);
+            return CheckLine(this, target);
 
-        var angle = Math.Atan2(Y - player.Y, player.X - X) * 180 / Math.PI;
+        var angle = Math.Atan2(Y - target.Y, target.X - X) * 180 / Math.PI;
         double facing = (int)Dir * 45;
         double diff = Math.Abs((angle - facing + 540) % 360 - 180);
-        return diff <= 22.5 && CheckLine(this);
+        return diff <= 22.5 && CheckLine(this, target);
     }
 
     /*

@@ -327,11 +327,12 @@ internal record Monster : Actor
         return false;
     }
 
-    // Whether a player is in front of it (or right beside it) with nothing in the way
-    private bool CanSee(PlayerPawn pawn)
+    // Whether an actor (a player, or another it could go after) is in front of it (or right
+    // beside it) with nothing in the way
+    internal bool CanSee(Actor other)
     {
-        var deltax = pawn.X - X;
-        var deltay = pawn.Y - Y;
+        var deltax = other.X - X;
+        var deltay = other.Y - Y;
 
         if (deltax > -MINSIGHT && deltax < MINSIGHT && deltay > -MINSIGHT && deltay < MINSIGHT)
             return true;
@@ -364,44 +365,54 @@ internal record Monster : Actor
                 break;
         }
 
-        return CheckLine(this, pawn);
+        return CheckLine(this, other);
     }
 
     /*
     =============================================================================
-    TARGET: the player it goes after
+    TARGET: the actor it goes after
     =============================================================================
     */
 
-    private PlayerPawn? _target;
+    private Actor? _target;
 
     /// <summary>
-    /// The player it goes after: the one it last saw (CheckSight), while they're still on the
-    /// level and alive, else the nearest living player. With one player, always them.
+    /// The actor it goes after: the one it last saw (CheckSight) or was hurt by, while they're
+    /// still on the level and alive, else the nearest living player. With one player and no
+    /// other sides, always them.
     /// </summary>
-    internal PlayerPawn Target
+    internal Actor Target
     {
         get
         {
-            if (_target is { } t && ReferenceEquals(t.State.Pawn, t) && IsTargetable(t))
+            if (_target is { } t && IsStillTarget(t))
                 return t;
             return _target = NearestTarget() ?? _mapManager.Players.First();
         }
         set => _target = value;
     }
 
-    /// <summary>The player it's set on going after, as it stands (without picking one, as Target does), or null</summary>
-    internal PlayerPawn? TargetIfAny => _target is { } t && ReferenceEquals(t.State.Pawn, t) ? t : null;
+    /// <summary>The actor it's set on going after, as it stands (without picking one, as Target does), or null</summary>
+    internal Actor? TargetIfAny => _target is { } t && IsOnLevel(t) ? t : null;
 
     /// <summary>
     /// The player it's set on going after, as it stands (without picking one, as Target does),
-    /// by player number; -1 for none. For a player joining mid-game (Program.NetJoin.cs).
+    /// by player number; -1 for none, or for an actor that isn't a player. For a player joining
+    /// mid-game (Program.NetJoin.cs).
     /// </summary>
     internal int TargetNumber
     {
-        get => _target is { } t && ReferenceEquals(t.State.Pawn, t) ? t.State.Number : -1;
+        get => TargetIfAny is PlayerPawn pawn ? pawn.State.Number : -1;
         set => _target = value >= 0 && value < players.Count ? players[value].Pawn : null;
     }
+
+    // Whether an actor it was after is still one to go after: on the level, and alive
+    private static bool IsStillTarget(Actor actor) => IsOnLevel(actor) && IsTargetable(actor);
+
+    // Whether an actor is still on the level: a player's pawn they still have (one that left, or
+    // was replaced coming into a level, isn't), anything else not taken off it
+    private static bool IsOnLevel(Actor actor) =>
+        actor is PlayerPawn pawn ? ReferenceEquals(pawn.State.Pawn, pawn) : !actor.IsRemoved;
 
     // The nearest player it could go after (in tiles, either way; the first in player order of
     // those as near), or null if there's none
@@ -425,12 +436,54 @@ internal record Monster : Actor
     internal static bool IsTargetable(PlayerPawn pawn) =>
         gamemode == GameMode.Single || pawn.State.health > 0;
 
+    /// <summary>
+    /// Whether an actor can be gone after: a player as above, anything else while it's alive
+    /// (shootable) and on the level
+    /// </summary>
+    internal static bool IsTargetable(Actor actor) => actor is PlayerPawn pawn
+        ? IsTargetable(pawn)
+        : !actor.IsRemoved && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE);
+
     /// <summary>Whether the player could see it (alone, whether it was drawn; with others, any of them: Program.InViewOf)</summary>
     private bool SeenByThePlayers() =>
         gamemode == GameMode.Single ? RuntimeFlags.HasFlag(objflags.FL_VISABLE) : SeenByAPlayer(this);
 
-    /// <summary>Hurts the player it's after</summary>
-    private void HurtTarget(int points) => Program.TakeDamage(Target, points, this);
+    /// <summary>Hurts the actor it's after: a player as their enemies' shots do, anything else as the player's shots</summary>
+    protected void HurtTarget(int points)
+    {
+        switch (Target)
+        {
+            case PlayerPawn pawn:
+                Program.TakeDamage(pawn, points, this);
+                break;
+            case Monster monster when points > 0:
+                monster.Damage((uint)points, this);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Whether what it's after can see it coming (and so dodge its shots): alone, whether it was
+    /// drawn; another player, from where they stand (Program.InViewOf); an actor, whether it's
+    /// looking its way with nothing between
+    /// </summary>
+    private bool TargetSeesMe() => Target switch
+    {
+        PlayerPawn pawn => gamemode == GameMode.Single ? RuntimeFlags.HasFlag(objflags.FL_VISABLE) : InViewOf(pawn, this),
+        Monster monster => monster.CanSee(this),
+        _ => false,
+    };
+
+    /// <summary>
+    /// Whether what it's after is on the run (harder to hit): a player running, an actor
+    /// chasing someone down
+    /// </summary>
+    private bool TargetIsRunning() => Target switch
+    {
+        PlayerPawn pawn => pawn.State.ThrustSpeed >= RUNSPEED,
+        Monster monster => monster.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE) && monster.Dir != objdirtypes.nodir,
+        _ => false,
+    };
 
     // How long (tics) an actor takes to react once it has noticed the player: its
     // `monster.reactiondelay: [base, divisor]`, base plus a random 0-255 over divisor (no divisor,
@@ -871,8 +924,10 @@ internal record Monster : Actor
     internal virtual void Damage(uint damage, Entities.Actors.Actor? attacker = null)
     {
         // `monster.minweapon` (the hanging turret's rapid assault weapon): only that weapon, or a
-        // better one (by weapon.selectionorder), in Blake's hand hurts it
-        if (Properties.TryGetValue("monster.minweapon", out var minWeapon) && minWeapon is string minWeaponName
+        // better one (by weapon.selectionorder), in Blake's hand hurts it -- when it's Blake (or
+        // something he fired) that hurts it, not another actor
+        bool byPlayer = (attacker?.Shooter ?? attacker) is null or PlayerPawn;
+        if (byPlayer && Properties.TryGetValue("monster.minweapon", out var minWeapon) && minWeapon is string minWeaponName
             && (playerstate.weapon == null || WeaponSelectionOrder(playerstate.weapon) > WeaponSelectionOrder(minWeaponName)))
             return;
 
@@ -1299,8 +1354,8 @@ internal record Monster : Actor
             dist = dist * 2 / 3;
 
         int hitchance;
-        bool visible = gamemode == GameMode.Single ? RuntimeFlags.HasFlag(objflags.FL_VISABLE) : InViewOf(Target, this);
-        if (Target.State.ThrustSpeed >= RUNSPEED)
+        bool visible = TargetSeesMe();
+        if (TargetIsRunning())
             hitchance = visible ? 160 - dist * 16 : 160 - dist * 8;
         else
             hitchance = visible ? 256 - dist * 16 : 256 - dist * 8;
