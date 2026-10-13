@@ -89,6 +89,67 @@ internal partial class Program
         // use-fail sound. Otherwise one currency is taken and the item given, with its pickup
         // sound and message.
         MapTriggerRegistry.Register("A_Vend", VendAction);
+
+        // A_GiveInventory("Item"[, amount]): gives the player who set it off an inventory item
+        // (actordefs), as picking it up would, with its pickup sound and message; amount left out
+        // is the item's own. Refused, with the use-fail sound, when it would do nothing (health
+        // full, no room for the ammo), so a patch switch giving it stays as it is.
+        MapTriggerRegistry.Register("A_GiveInventory", GiveInventoryTrigger);
+
+        // A_SpawnItem("Class"): puts a thing (an item, or any actordefs class) on the floor in
+        // front of the switch, on the side it was used from (from a script, where the player is)
+        MapTriggerRegistry.Register("A_SpawnItem", SpawnItemTrigger);
+    }
+
+    private static bool GiveInventoryTrigger(TriggerActivation trigger, string[] args)
+    {
+        if (args.Length == 0 || _inventoryManager.CreateActor(args[0]) is not Entities.Actors.Inventory item)
+        {
+            Console.WriteLine($"A_GiveInventory: '{args.ElementAtOrDefault(0)}' isn't an inventory item.");
+            return false;
+        }
+
+        int amount = args.Length > 1 && int.TryParse(args[1], out var given) ? given
+            : item.Properties.TryGetValue("inventory.amount", out var a) ? Convert.ToInt32(a) : 1;
+        if (!CouldTakeInventory(item) || !TryApplyInventory(item, amount))
+        {
+            _audioManager.Play("player/usefail");
+            return false;
+        }
+
+        AnnouncePickup(item);
+        return true;
+    }
+
+    private static bool SpawnItemTrigger(TriggerActivation trigger, string[] args)
+    {
+        if (args.Length == 0)
+            return false;
+
+        // the floor the switch was used from: one tile back from it the way the player faced
+        int x = trigger.Activator.TileX, y = trigger.Activator.TileY;
+        if (trigger.TileX >= 0)
+        {
+            int dx = dirs[(int)trigger.Dir][0], dy = dirs[(int)trigger.Dir][1];
+            (x, y) = (trigger.TileX - dx, trigger.TileY - dy);
+        }
+
+        if (_mapManager.SpawnThing(x, y, new MapActorTranslation { Class = args[0] }, countKill: false) == null)
+        {
+            Console.WriteLine($"A_SpawnItem: '{args[0]}' isn't an actor.");
+            return false;
+        }
+        return true;
+    }
+
+    // An item's pickup sound and message, as the player takes it
+    private static void AnnouncePickup(Entities.Actors.Inventory item)
+    {
+        if (item.Properties.TryGetValue("inventory.pickupsound", out var sound) && sound?.ToString() is { Length: > 0 } soundName)
+            _audioManager.Play(soundName);
+        if (item.Properties.TryGetValue("inventory.pickupmessage", out var message))
+            _hudMessageManager.Show(Managers.HudMessageKind.Pickup, message?.ToString(),
+                item.Properties.TryGetValue("inventory.pickupmessagestyle", out var style) ? style?.ToString() : null);
     }
 
     private static bool VendAction(TriggerActivation trigger, string[] args)
@@ -127,11 +188,7 @@ internal partial class Program
         _inventoryManager.Take(args[0], 1);
         if (usesCode >= 0)
             _mapManager.SetMapSpot(trigger.TileX, trigger.TileY, 1, (ushort)(usesCode << 8 | (usesLeft - 1)));
-        if (item.Properties.TryGetValue("inventory.pickupsound", out var sound) && sound?.ToString() is { Length: > 0 } soundName)
-            _audioManager.Play(soundName);
-        if (item.Properties.TryGetValue("inventory.pickupmessage", out var message))
-            _hudMessageManager.Show(Managers.HudMessageKind.Pickup, message?.ToString(),
-                item.Properties.TryGetValue("inventory.pickupmessagestyle", out var style) ? style?.ToString() : null);
+        AnnouncePickup(item);
         return true;
     }
 

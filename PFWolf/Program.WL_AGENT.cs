@@ -1451,11 +1451,8 @@ internal partial class Program
     /// </summary>
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, controldirs dir)
     {
-        if (!string.IsNullOrEmpty(wallSwitch.Lock) && !_inventoryManager.Has(wallSwitch.Lock))
-        {
-            RefuseLocked(wallSwitch.Lock, wallSwitch.LockedSound, wallSwitch.LockMessage, wallSwitch.LockMessageStyle, isSwitch: true);
+        if (RefuseSwitchLock(wallSwitch))
             return;
-        }
 
         var tag = _mapManager.GetTag(tilex, tiley);
         if (wallSwitch.To is > 0 and < BIT_WALL && _mapManager.GetMapData().Walls.ContainsKey(wallSwitch.To))
@@ -1485,6 +1482,83 @@ internal partial class Program
         var activation = new Entities.TriggerActivation(tilex, tiley, dir, player, tag);
         foreach (var action in wallSwitch.Actions)
             Entities.MapTriggerRegistry.Invoke(action, activation);
+    }
+
+    // Refuses a switch the player lacks the lock item for: true if it did
+    private static bool RefuseSwitchLock(MapSwitchTranslation sw)
+    {
+        if (string.IsNullOrEmpty(sw.Lock) || _inventoryManager.Has(sw.Lock))
+            return false;
+        RefuseLocked(sw.Lock, sw.LockedSound, sw.LockMessage, sw.LockMessageStyle, isSwitch: true);
+        return true;
+    }
+
+    /// <summary>
+    /// The switch of the patch on the wall tile (tilex, tiley) the player faces going dir, if
+    /// it's on the face they press (facing east presses the west face) and usable from there
+    /// </summary>
+    private static MapSwitchTranslation? PatchSwitchAt(int tilex, int tiley, controldirs dir)
+    {
+        int tile = _mapManager.tilemap[tilex, tiley];
+        if ((tile & BIT_DOOR) != 0 || (tile & ~BIT_WALL) == 0)
+            return null;                // open floor, a door or a moving pushwall
+        int id = _mapManager.GetPatch(tilex, tiley);
+        if (id == 0 || !_mapManager.GetMapData().Patches.TryGetValue(id, out var patch) || patch.Switch is not { } patchSwitch)
+            return null;
+
+        var face = dir switch
+        {
+            controldirs.di_east => "west",
+            controldirs.di_west => "east",
+            controldirs.di_north => "south",
+            _ => "north",
+        };
+        return patch.IsOn(face) && patchSwitch.UsableFrom(dir) ? patchSwitch : null;
+    }
+
+    /// <summary>
+    /// Throws a patch's switch (patches.yaml): refused without its lock item, else it plays its
+    /// sound and runs its actions on whatever shares the tile's tag, as a wall's switch does.
+    /// Then, unless all its actions came to nothing (an item the player has no room for, say),
+    /// the patch turns into its `to` patch, or comes off with `remove`; and so do the other
+    /// patches with the tag that are either way of the same switch, so linked ones stay in step.
+    /// </summary>
+    private static void UsePatchSwitch(MapSwitchTranslation patchSwitch, int tilex, int tiley, controldirs dir)
+    {
+        if (RefuseSwitchLock(patchSwitch))
+            return;
+
+        if (!string.IsNullOrEmpty(patchSwitch.Sound))
+            PlayPlayerSound(patchSwitch.Sound);
+
+        var tag = _mapManager.GetTag(tilex, tiley);
+        var activation = new Entities.TriggerActivation(tilex, tiley, dir, player, tag);
+        bool wentOff = patchSwitch.Actions.Count == 0;
+        foreach (var action in patchSwitch.Actions)
+            wentOff |= Entities.MapTriggerRegistry.Invoke(action, activation);
+        if (!wentOff)
+            return;
+
+        int from = _mapManager.GetPatch(tilex, tiley);
+        int to = patchSwitch.Remove ? 0
+            : patchSwitch.To is > 0 and <= 255 && _mapManager.GetMapData().Patches.ContainsKey(patchSwitch.To) ? patchSwitch.To
+            : from;
+        if (to == from)
+            return;
+
+        void Flip(int x, int y)
+        {
+            _mapManager.SetPatch(x, y, (byte)to);
+            _mapManager.RestartAnimations(x, y, gamestate.TimeCount);    // a `to` patch's play-once animation starts now
+        }
+
+        Flip(tilex, tiley);
+        foreach (var (x, y) in _mapManager.TaggedTiles(tag))
+        {
+            int other = _mapManager.GetPatch(x, y);
+            if (other != 0 && (other == from || other == to))
+                Flip(x, y);
+        }
     }
 
     /// <summary>
@@ -1553,8 +1627,16 @@ internal partial class Program
             ActivateTrigger(trigger, checkx, checky, dir);
             return;
         }
+        if (!playerinput.IsHeld(buttontypes.bt_use) && PatchSwitchAt(checkx, checky, dir) is { } patchSwitch)
+        {
+            //
+            // use a patch that's a switch (patches.yaml), over the wall's own
+            //
+            playerinput.SetHeld(buttontypes.bt_use, true);
+            UsePatchSwitch(patchSwitch, checkx, checky, dir);
+        }
         // A wall beside a door keeps its id under BIT_WALL; a moving pushwall's tiles are bare BIT_WALL
-        if (!playerinput.IsHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) == 0
+        else if (!playerinput.IsHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) == 0
             && _mapManager.GetMapData().Walls.TryGetValue(cmdtile & ~BIT_WALL, out var switchWall)
             && switchWall.Switch is { } wallSwitch && wallSwitch.UsableFrom(dir))
         {

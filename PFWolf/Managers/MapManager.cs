@@ -283,6 +283,13 @@ internal class MapManager
             if (wall.Switch is { To: not 0 } wallSwitch && !(IsWallId(wallSwitch.To) && data.Walls.ContainsKey(wallSwitch.To))
                 && badswitches.Add(id))
                 Console.WriteLine($"mapdefs wall {id}'s switch goes to {wallSwitch.To}, which isn't a wall; it won't change when used");
+        foreach (var id in data.Patches.Keys.Where(id => id is < 1 or > 255))
+            if (badpatches.Add(id))
+                Console.WriteLine($"mapdefs patch {id} is ignored: patch ids are 1 to 255");
+        foreach (var (id, patch) in data.Patches)
+            if (patch.Switch is { To: not 0, Remove: false } patchSwitch && !data.Patches.ContainsKey(patchSwitch.To)
+                && badpatchswitches.Add(id))
+                Console.WriteLine($"mapdefs patch {id}'s switch goes to {patchSwitch.To}, which isn't a patch; it won't change when used");
 
         for (int y = 0; y < mapheight; y++)
         {
@@ -660,7 +667,7 @@ internal class MapManager
         }
     }
 
-    private readonly HashSet<int> badpatches = new();
+    private readonly HashSet<int> badpatches = new(), badpatchswitches = new();
     private readonly HashSet<string> misplacedpatches = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>

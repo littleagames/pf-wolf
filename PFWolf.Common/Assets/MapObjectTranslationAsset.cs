@@ -409,8 +409,14 @@ public record MapOutletTranslation
 /// </summary>
 public record MapSwitchTranslation
 {
-    /// <summary>The wall id it turns into when used (1 to 63); 0 leaves the wall as it is.</summary>
+    /// <summary>
+    /// The wall id it turns into when used (1 to 63); 0 leaves the wall as it is. On a patch's
+    /// switch, the patch id it turns into (1 to 255).
+    /// </summary>
     public int To { get; init; }
+
+    /// <summary>Patches only: once used, the patch comes off the wall (a switch that works once, say, or an item taken off a shelf)</summary>
+    public bool Remove { get; init; }
 
     /// <summary>
     /// The faces it can be used from (north, south, east, west): using it while facing east

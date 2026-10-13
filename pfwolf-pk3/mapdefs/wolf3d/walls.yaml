@@ -142,6 +142,9 @@ walls:
     #                        color left out keep theirs); with no arguments, their own light
     #                        back. A_LightOff: puts their light out. Actor states can run both
     #                        too, on the actor itself (see actordefs decorations light.*).
+    #                        A_GiveInventory("Item", [amount]): gives the player an item, as
+    #                        picking it up would. A_SpawnItem("Class"): puts a thing on the
+    #                        floor in front of the switch. See patches.yaml.
     #                        The switch's own tile is never a target, though it has the tag.
     #                        Light zone actions name their zone (plane 5), not a tag; actor
     #                        states can run them too:
