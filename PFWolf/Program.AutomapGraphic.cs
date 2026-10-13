@@ -277,6 +277,7 @@ internal partial class Program
             return true;                                    // off the view: nothing to draw, but not missing
 
         var asset = sprite.Asset;
+        var translation = _translationManager.TableOf(actor);      // in its colors (an ally's, a player's)
 
         IntPtr destPtr = _videoManager.LockSurface();
         if (destPtr == IntPtr.Zero)
@@ -302,7 +303,7 @@ internal partial class Program
                         continue;
 
                     if (asset.OpacityMask[srcRow + u] != 0)
-                        row[x] = asset.RawData[srcRow + u];
+                        row[x] = translation == null ? asset.RawData[srcRow + u] : translation[asset.RawData[srcRow + u]];
                 }
             }
         }

@@ -35,6 +35,19 @@ internal record Monster : Actor
         ActorActionRegistry.RegisterFor<Monster>("T_Shoot", m => m.Shoot());
         ActorActionRegistry.RegisterFor<Monster>("A_HitlerMorph", m => m.HitlerMorph());
 
+        // Factions (factions.yaml): A_SetFaction("allies"[, "follow"]) puts it on a side (with
+        // follow, going about with the players from now on); A_Follow / A_Follow("off") starts
+        // or stops it following them
+        ActorActionRegistry.RegisterFor<Monster>("A_SetFaction", (m, args) =>
+        {
+            if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
+                Console.WriteLine($"A_SetFaction ({m.Name}): no faction given.");
+            else
+                m.SetFaction(args[0].Trim(), args.Skip(1).Any(a => a.Trim().Equals("follow", StringComparison.OrdinalIgnoreCase)));
+        });
+        ActorActionRegistry.RegisterFor<Monster>("A_Follow", (m, args) =>
+            m.Follows = !args.Any(a => a.Trim().Equals("off", StringComparison.OrdinalIgnoreCase)));
+
         // Spear of Destiny's bosses
         ActorActionRegistry.RegisterFor<Monster>("T_Will", m => m.DodgeAndRetreat("Attack"));
         ActorActionRegistry.RegisterFor<Monster>("T_UShoot", m => m.UberShoot());
@@ -136,6 +149,12 @@ internal record Monster : Actor
 
                 if (deltax <= MINACTORDIST && deltay <= MINACTORDIST)
                 {
+                    // An ally walking after a player (or out of their way) is only stopped
+                    // getting nearer them, not moving off past or away from them
+                    if (RuntimeFlags.HasFlag(objflags.FL_FOLLOWING)
+                        && Math.Max(deltax, deltay) >= Math.Max(Math.Abs(X - pawn.X), Math.Abs(Y - pawn.Y)))
+                        continue;
+
                     if (!Hidden || !PlayerTileInView(pawn))
                     {
                         // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
@@ -143,6 +162,10 @@ internal record Monster : Actor
                             Program.TakeDamage(pawn, (int)(tics * 2), this);
 
                         OnBumpedPlayer();
+
+                        // Walking after a player (or out of their way), it waits once it's up against one
+                        if (RuntimeFlags.HasFlag(objflags.FL_FOLLOWING))
+                            StopWalking();
                         return;
                     }
                 }
@@ -504,13 +527,244 @@ internal record Monster : Actor
     /// </summary>
     internal void GiveUp()
     {
-        RuntimeFlags &= ~(objflags.FL_ATTACKMODE | objflags.FL_FIRSTATTACK);
+        RuntimeFlags &= ~(objflags.FL_ATTACKMODE | objflags.FL_FIRSTATTACK | objflags.FL_FOLLOWING);
         _target = null;
         Temp2 = 0;
         Speed = PropertyInt("speed", SPDPATROL);
         if (Distance < 0)
             Distance = 0;
         SetState("Spawn");
+    }
+
+    /*
+    =============================================================================
+    FOLLOWING: an ally of the players going about with them
+    =============================================================================
+
+    An actor that follows (FL_FOLLOWS: its `monster.follow: true` once it has seen an allied
+    player, or A_SetFaction's "follow") walks after the nearest living player on its side when
+    they get more than FollowFar tiles away, in its Chase state at its chasing speed, and stops
+    within FollowNear. Anyone it's hostile to that it sees on the way, it goes after instead.
+    Walked into by a player, it steps a couple of tiles out of their way.
+    */
+    private const int FollowNear = 2, FollowFar = 3;
+
+    // The tile it's walking to (SelectChaseDir heads there instead of at its target), while it
+    // follows; and, stepping out of the way, where to (both just for a move, not saved)
+    private (int X, int Y)? _walkGoal;
+    private (int X, int Y)? _stepAside;
+
+    /// <summary>Whether it goes about with the players (FL_FOLLOWS)</summary>
+    internal bool Follows
+    {
+        get => RuntimeFlags.HasFlag(objflags.FL_FOLLOWS);
+        set
+        {
+            if (value)
+                RuntimeFlags |= objflags.FL_FOLLOWS;
+            else
+            {
+                if (RuntimeFlags.HasFlag(objflags.FL_FOLLOWING))
+                    StopWalking();
+                RuntimeFlags &= ~objflags.FL_FOLLOWS;
+            }
+        }
+    }
+
+    // The nearest living player on its side, if any
+    private PlayerPawn? Leader
+    {
+        get
+        {
+            PlayerPawn? nearest = null;
+            int best = int.MaxValue;
+            foreach (var pawn in _mapManager.Players)
+            {
+                int dist = TileDistance(pawn);
+                if (pawn.State.health > 0 && dist < best && IsAllyOf(pawn))
+                    (nearest, best) = (pawn, dist);
+            }
+            return nearest;
+        }
+    }
+
+    /// <summary>
+    /// Run (MapManager.DoActor) after BeforeThink and in place of its think, for an ally that
+    /// follows: true when it saw to itself this tic (walking after a player, or out of their
+    /// way), so its own think isn't run
+    /// </summary>
+    internal bool ThinkInstead(uint tics)
+    {
+        if (RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE) || !RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
+            return false;
+
+        // `monster.follow`: it falls in with a player on its side once it sees them
+        if (!Follows && PropertyBool("monster.follow") && Leader is { } met && CanSee(met))
+            Follows = true;
+        if (!Follows)
+            return false;
+
+        bool walking = RuntimeFlags.HasFlag(objflags.FL_FOLLOWING);
+        if (walking && CheckSight())
+        {
+            // Someone to go after: that comes first
+            StopWalking(stand: false);
+            FirstSighting();
+            return true;
+        }
+
+        if (_stepAside == null && (Leader is not { } leader || !walking && TileDistance(leader) <= FollowFar))
+        {
+            if (walking)
+                StopWalking();
+            return false;           // standing by: its own think looks out for enemies
+        }
+
+        if (!walking)
+            StartWalking();
+        WalkStep(tics);
+        return true;
+    }
+
+    /// <summary>A player walked into it standing by: it steps a couple of tiles out of their way</summary>
+    internal void ShovedBy(PlayerPawn pawn)
+    {
+        if (!Follows || RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE) || _stepAside != null || !IsAllyOf(pawn))
+            return;
+
+        // To one side of the way they face (two tiles if there's room), else straight away from them
+        bool facingAcross = Math.Abs(costable[pawn.Angle]) >= Math.Abs(sintable[pawn.Angle]);
+        (int X, int Y)[] ways = facingAcross ? [(0, 1), (0, -1)] : [(1, 0), (-1, 0)];
+        ways = [.. ways, (Math.Sign(TileX - pawn.TileX), Math.Sign(TileY - pawn.TileY))];
+        foreach (var (dx, dy) in ways)
+        {
+            if ((dx, dy) == (0, 0) || !OpenForStep(TileX + dx, TileY + dy, pawn))
+                continue;
+            _stepAside = OpenForStep(TileX + dx * 2, TileY + dy * 2, pawn) ? (TileX + dx * 2, TileY + dy * 2) : (TileX + dx, TileY + dy);
+            return;
+        }
+    }
+
+    // Open floor nothing stands on (nor the player shoving it)
+    private bool OpenForStep(int x, int y, PlayerPawn shover) =>
+        x is > 0 and < MapManager.MAPSIZE - 1 && y is > 0 and < MapManager.MAPSIZE - 1
+        && _mapManager.tilemap[x, y] == 0 && _mapManager.actorat[x, y] is null
+        && !(shover.TileX == x && shover.TileY == y);
+
+    private void StartWalking()
+    {
+        RuntimeFlags |= objflags.FL_FOLLOWING;
+        Speed = ChaseSpeed();
+        if (Distance < 0)
+            Distance = 0;
+        SetState("Chase");
+    }
+
+    private void StopWalking(bool stand = true)
+    {
+        RuntimeFlags &= ~objflags.FL_FOLLOWING;
+        _stepAside = null;
+        Speed = PropertyInt("speed", SPDPATROL);
+        if (stand)
+            SetState("Spawn");
+    }
+
+    // Its speed going after someone (as FirstSighting sets it)
+    private int ChaseSpeed()
+    {
+        int speed = PropertyInt("speed", SPDPATROL);
+        if (Properties.TryGetValue("monster.chasespeed", out var chaseSpeed))
+            return Convert.ToInt32(chaseSpeed);
+        if (Properties.TryGetValue("monster.chasespeedmultiplier", out var mult))
+            return speed * Convert.ToInt32(mult);
+        return speed;
+    }
+
+    // Where it's walking: out of the way, else to its leader
+    private (int X, int Y)? WalkGoal() =>
+        _stepAside ?? (Leader is { } leader ? (leader.TileX, leader.TileY) : null);
+
+    // Whether it's where it was walking to: out of the way, or near enough its leader
+    private bool Arrived() =>
+        _stepAside is { } aside ? TileX == aside.X && TileY == aside.Y
+        : Leader is not { } leader || TileDistance(leader) <= FollowNear;
+
+    // A tic's walk towards WalkGoal, as Chase moves (doors and all), stopping on a tile's middle
+    // once it's there
+    private void WalkStep(uint tics)
+    {
+        if (Dir == objdirtypes.nodir && !SelectWalkDir())
+        {
+            StopWalking();      // boxed in
+            return;
+        }
+
+        var move = (int)(Speed * tics);
+        while (move != 0)
+        {
+            if (Distance < 0)
+            {
+                OpenDoor(-Distance - 1);
+                if (doorobjlist[-Distance - 1].action != (byte)dooractiontypes.dr_open)
+                    return;
+                Distance = (int)MapConstants.TILEGLOBAL;
+                if (!(demorecord || demoplayback))
+                    TryWalk();
+            }
+
+            if (move < Distance)
+            {
+                MoveObj(move);
+                break;
+            }
+
+            RecenterOnTile();
+            move -= Distance;
+            Distance = 0;
+
+            if (Arrived() || !SelectWalkDir())
+            {
+                StopWalking();
+                return;
+            }
+        }
+    }
+
+    // Picks the way to WalkGoal (SelectChaseDir, towards it); false when there's none
+    private bool SelectWalkDir()
+    {
+        _walkGoal = WalkGoal();
+        if (_walkGoal == null)
+            return false;
+        try
+        {
+            SelectChaseDir();
+        }
+        finally
+        {
+            _walkGoal = null;
+        }
+        return Dir != objdirtypes.nodir;
+    }
+
+    /// <summary>
+    /// Puts it on another side (A_SetFaction, a script's actor.faction, the setfaction command):
+    /// the level's kill total takes it in or out as it becomes the players' enemy or ally, and
+    /// with <paramref name="follow"/> it goes about with them from now on. Whoever was after it
+    /// lets it be once it's on their side, and it them.
+    /// </summary>
+    internal void SetFaction(string? faction, bool follow = false)
+    {
+        bool alive = RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE);
+        bool counted = alive && CountsAsKill;
+        Faction = faction;
+        if (alive && counted != CountsAsKill)
+            gamestate.killtotal += (short)(CountsAsKill ? 1 : -1);
+
+        if (follow)
+            Follows = true;
+        else if (Follows && Leader == null && !_mapManager.Players.Any(IsAllyOf))
+            Follows = false;            // not on the players' side any more
     }
 
     /// <summary>
@@ -743,7 +997,11 @@ internal record Monster : Actor
         olddir = Dir;
         turnaround = opposite[(byte)olddir];
 
-        SeekDelta(out deltax, out deltay);
+        // Following (FollowStep): towards the tile it's walking to, not what it's after
+        if (_walkGoal is { } goal)
+            (deltax, deltay) = (goal.X - TileX, goal.Y - TileY);
+        else
+            SeekDelta(out deltax, out deltay);
 
         d[1] = objdirtypes.nodir;
         d[2] = objdirtypes.nodir;
@@ -910,6 +1168,13 @@ internal record Monster : Actor
             killer.State.Kills++;       // for the scoreboard, with others (a missile's: who fired it)
         SetState("Death");
         OnKilled(attacker);
+
+        // One of the player's own side down: they hear of it (as an obituary)
+        if (localplayer.Pawn is { } local && IsAllyOf(local))
+        {
+            _hudMessageManager.Show(HudMessageKind.Obituary, killedBy == null ? "$OB_ALLYDIED" : "$OB_ALLYKILLED", null,
+                new Dictionary<char, string> { ['o'] = ActorTag(this), ['k'] = killedBy == null ? "" : ActorTag(killedBy) });
+        }
 
         if (LeavesDrops && DeathDrop() is { } drop)
             PlaceItemType(drop, tilex, tiley);

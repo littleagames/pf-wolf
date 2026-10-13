@@ -18,6 +18,7 @@ internal partial class Program
         ["AutomapDoor"] = "#E6DA00",
         ["AutomapPlayer"] = "#55FF55",
         ["AutomapEnemy"] = "#FF0000",
+        ["AutomapAlly"] = "#55FFFF",
         ["AutomapCorpse"] = "#710000",
         ["AutomapItem"] = "#20AAFF",
         ["AutomapDecor"] = "#8D8D8D",
@@ -423,7 +424,7 @@ internal partial class Program
 
     // What an actor is drawn as, in drawing order: later kinds go on top of earlier ones sharing a
     // tile (a guard's dropped clip covers its corpse, and a live enemy covers anything).
-    enum AutomapMark { None, Corpse, Decor, Item, Enemy }
+    enum AutomapMark { None, Corpse, Decor, Item, Ally, Enemy }
 
     /// <summary>
     /// Actors worth marking: enemies while they're in view (their corpses once seen), pickups and
@@ -456,6 +457,7 @@ internal partial class Program
                 AutomapMark.Corpse => "AutomapCorpse",
                 AutomapMark.Decor => "AutomapDecor",
                 AutomapMark.Item => "AutomapItem",
+                AutomapMark.Ally => "AutomapAlly",
                 _ => "AutomapEnemy",
             });
 
@@ -475,6 +477,12 @@ internal partial class Program
             bool dead = (actor.RuntimeFlags & objflags.FL_SHOOTABLE) == 0 && (actor.RuntimeFlags & objflags.FL_NONMARK) != 0;
             if (dead)
                 return floorSeen ? AutomapMark.Corpse : AutomapMark.None;
+
+            // The player's own side (factions.yaml) in its own color; one following them is
+            // always shown, wherever it is
+            if (_factionManager.IsAlly(actor, player))
+                return reveal || (actor.RuntimeFlags & objflags.FL_VISABLE) != 0
+                    || actor is Entities.Actors.Monster { Follows: true } ? AutomapMark.Ally : AutomapMark.None;
 
             return reveal || (actor.RuntimeFlags & objflags.FL_VISABLE) != 0 ? AutomapMark.Enemy : AutomapMark.None;
         }

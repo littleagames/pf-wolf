@@ -459,6 +459,8 @@ internal partial class Program
         FL_HASAMMO = 0x00080000,        // an informant still has its charge pack to give
         FL_HASTOKENS = 0x00100000,      // ... and its food tokens
         FL_SLIDING = 0x00200000,        // a corpse sliding back from the shot that killed it (T_BlowBack)
+        FL_FOLLOWS = 0x00400000,        // an ally that follows the players about (Monster.Follows: `monster.follow`, A_SetFaction "follow")
+        FL_FOLLOWING = 0x00800000,      // ... walking after them now, or out of their way (Monster.ThinkInstead)
         // next free bit is   0x00400000
     }
 

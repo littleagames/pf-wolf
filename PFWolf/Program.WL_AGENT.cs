@@ -369,6 +369,9 @@ internal partial class Program
                 if (deltay < -MINACTORDIST || deltay > MINACTORDIST)
                     continue;
 
+                // An ally following the player gets out of their way
+                if (ob is Entities.Actors.PlayerPawn pawn)
+                    actor.ShovedBy(pawn);
                 return false;
             }
         }
@@ -1537,15 +1540,55 @@ internal partial class Program
         }
         else
         {
-            // Nothing ahead to use: talk to whoever's there (BlakeMonster.TalkTo), else held
-            // long enough, use an item that's used that way (Planet Strike's fission detonator)
-            if (_mapManager.AI.TryTalk())
+            // Nothing ahead to use: use an actor that's there to be used (its Use state), else
+            // talk to whoever's there (BlakeMonster.TalkTo), else held long enough, use an item
+            // that's used that way (Planet Strike's fission detonator)
+            if (TryUseActor() || _mapManager.AI.TryTalk())
                 ResetUseHeld();
             else
                 UseHeldItem();
             return;
         }
         ResetUseHeld();
+    }
+
+    /// <summary>
+    /// The use key pressed facing a living actor with a Use state (actordefs), within a tile and
+    /// a half and half a right angle either side of straight ahead: it goes to that state (a
+    /// prisoner's could be A_SetFaction("allies", "follow")). Not one going after someone.
+    /// </summary>
+    static bool TryUseActor()
+    {
+        if (playerinput.IsHeld(buttontypes.bt_use))
+            return false;
+
+        const long Reach = MapConstants.TILEGLOBAL * 3 / 2;
+        Entities.Actors.Monster? chosen = null;
+        long best = Reach;
+        foreach (var actor in _mapManager.GetActors().OfType<Entities.Actors.Monster>())
+        {
+            if (actor.IsRemoved || !actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)
+                || actor.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE) || !actor.ResolvedStates.ContainsKey("Use"))
+                continue;
+
+            long dx = actor.X - player.X, dy = player.Y - actor.Y;     // y grows southward
+            long dist = Math.Max(Math.Abs(dx), Math.Abs(dy));
+            if (dist >= best)
+                continue;
+
+            int toward = (int)((Math.Atan2(dy, dx) + Math.PI * 2) % (Math.PI * 2) / (Math.PI * 2) * ANGLES);
+            int off = Math.Abs(player.Angle - toward) % ANGLES;
+            if (Math.Min(off, ANGLES - off) > ANGLES / 8)
+                continue;
+
+            (chosen, best) = (actor, dist);
+        }
+
+        if (chosen == null)
+            return false;
+        playerinput.SetHeld(buttontypes.bt_use, true);
+        chosen.SetState("Use");
+        return true;
     }
 
     //===========================================================================

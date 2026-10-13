@@ -40,7 +40,8 @@ public class FactionGameTests
     // The arena's things (mapdefs things of the mod): guards on the players' side facing either
     // way, and a tough guard of a side that's neutral to everyone
     private const int AllyFacingEast = 500, AllyFacingWest = 501, NeutralFacingWest = 502;
-    private const int AxisGuardEast = 108, AxisGuardWest = 110, PlayerFacingEast = 20;
+    private const int FollowerFacingWest = 503, PrisonerFacingEast = 504;
+    private const int AxisGuardEast = 108, AxisGuardWest = 110, PlayerFacingEast = 20, PlayerFacingWest = 22;
 
     [Test]
     public void Guards_On_Opposite_Sides_Fight_When_They_See_Each_Other()
@@ -104,6 +105,48 @@ public class FactionGameTests
         Assert.That(Health(last, "Player:allies"), Is.LessThan(100), $"It never fought back: {last}");
     }
 
+    [Test]
+    public void An_Ally_That_Follows_Keeps_Up_With_The_Player()
+    {
+        // Arrange: the player at the east end facing west, a following ally just behind them
+        // (facing them, so it sees them); the player walks to the west end and waits there
+        var mod = WriteArena((20, PlayerFacingWest), (21, FollowerFacingWest));
+
+        // Act
+        var (census, _) = Play(mod, new DemoStep(0, 0, 0, 20), new DemoStep(0, 0, -35, 230), new DemoStep(0, 0, 0, 350));
+
+        // Assert: it came along, and stands near them
+        var last = census[^1];
+        int player = TileX(last, "Player:allies"), ally = TileX(last, "Follower:allies");
+        Assert.That(player, Is.LessThanOrEqualTo(13), $"The player didn't walk west: {last}");
+        Assert.That(Math.Abs(ally - player), Is.LessThanOrEqualTo(3), $"It didn't keep up: {last}");
+        Assert.That(last, Does.Contain("Follower:allies:25:Spawn"), $"It should be standing by: {last}");
+    }
+
+    [Test]
+    public void A_Prisoner_The_Player_Uses_Joins_Their_Side_And_Follows()
+    {
+        // Arrange: a prisoner (neutral, in the kill total) a tile in front of the player; the
+        // player uses them, then walks to the west end
+        var mod = WriteArena((20, PlayerFacingWest), (19, PrisonerFacingEast));
+
+        // Act
+        var (census, result) = Play(mod,
+            new DemoStep(0, 0, 0, 20), new DemoStep(Use, 0, 0, 3), new DemoStep(0, 0, 0, 60),
+            new DemoStep(0, 0, -35, 300), new DemoStep(0, 0, 0, 350));
+
+        // Assert: on the player's side now, out of the kill total, out of their way (they got
+        // past it) and following
+        var start = census[0];
+        Assert.That(start, Does.Contain("Prisoner:prisoners"), start);
+        var last = census[^1];
+        Assert.That(last, Does.Contain("Prisoner:allies"), last);
+        Assert.That(KillTotal(result), Is.Zero, "an ally isn't a kill to make");
+        Assert.That(TileX(last, "Player:allies"), Is.LessThanOrEqualTo(13), $"It stayed in the player's way: {last}");
+        Assert.That(Math.Abs(TileX(last, "Prisoner:allies") - TileX(last, "Player:allies")), Is.LessThanOrEqualTo(3), last);
+        Assert.That(last, Does.Contain("Prisoner:allies:25:Spawn"), $"It should be standing by: {last}");
+    }
+
     /// <summary>
     /// A mod in the work folder: MAP01 as one room (x 10-22, y 30-34) with the things given along
     /// its middle row (y 32), at their x; the mod's things, factions and census script
@@ -125,14 +168,38 @@ public class FactionGameTests
         File.WriteAllBytes(Path.Combine(mod, "maps", "MAP01.wad"), EcWolfMapLoader.Save(map, "MAP01"));
 
         File.WriteAllText(Path.Combine(mod, "modinfo.yaml"), "name: Arena\nversion: \"1\"\ngame-packs: [wolf3d]\n");
-        File.WriteAllText(Path.Combine(mod, "factions.yaml"), "factions:\n  wanderers:\n    default: neutral\n");
-        File.WriteAllText(Path.Combine(mod, "actordefs", "brute.yaml"),
-            "Brute:\n  parent: Guard\n  properties:\n    health: 400\n    faction: wanderers\n");
+        File.WriteAllText(Path.Combine(mod, "factions.yaml"),
+            "factions:\n  wanderers:\n    default: neutral\n  prisoners:\n    default: neutral\n");
+        File.WriteAllText(Path.Combine(mod, "actordefs", "brute.yaml"), """
+            Brute:
+              parent: Guard
+              properties:
+                health: 400
+                faction: wanderers
+            Follower:
+              parent: Guard
+              properties:
+                faction: allies
+                monster.follow: true
+            Prisoner:
+              parent: Guard
+              properties:
+                faction: prisoners
+              states:
+                Use:
+                  - sprite: GARD
+                    frames: [A]
+                    tics-per-frame: 1
+                    action: A_SetFaction("allies", "follow")
+                    next-state: Spawn
+            """);
         File.WriteAllText(Path.Combine(mod, "mapdefs", "arena.yaml"), $$"""
             things:
               {{AllyFacingEast}}: { class: Guard, angles: 0, faction: allies }
               {{AllyFacingWest}}: { class: Guard, angles: 180, faction: allies }
               {{NeutralFacingWest}}: { class: Brute, angles: 180 }
+              {{FollowerFacingWest}}: { class: Follower, angles: 180 }
+              {{PrisonerFacingEast}}: { class: Prisoner, angles: 0 }
             """);
         File.WriteAllText(Path.Combine(mod, "scripts", "census.lua"), """
             local due = 0
@@ -142,7 +209,7 @@ public class FactionGameTests
               local parts = {}
               for _, a in ipairs(game.actors()) do
                 if a.faction ~= nil then
-                  parts[#parts + 1] = a.name .. ":" .. a.faction .. ":" .. a.health .. ":" .. tostring(a.state)
+                  parts[#parts + 1] = a.name .. ":" .. a.faction .. ":" .. a.health .. ":" .. tostring(a.state) .. ":" .. a.tilex
                 end
               end
               print("CENSUS t=" .. game.time() .. " " .. table.concat(parts, " "))
@@ -174,8 +241,13 @@ public class FactionGameTests
     // A census line's time, and an actor's health in it ("Guard:allies" -> its number; the first such)
     private static int Time(string census) => int.Parse(census.Split(' ')[1]["t=".Length..]);
 
-    private static int Health(string census, string who) =>
-        census.Split(' ').Where(part => part.StartsWith(who + ":")).Select(part => int.Parse(part.Split(':')[2])).First();
+    private static int Health(string census, string who) => Part(census, who, 2);
+
+    private static int TileX(string census, string who) => Part(census, who, 4);
+
+    // A field (name:faction:health:state:tilex) of an actor in a census line
+    private static int Part(string census, string who, int field) =>
+        census.Split(' ').Where(part => part.StartsWith(who + ":")).Select(part => int.Parse(part.Split(':')[field])).First();
 
     // demotest's "kills 1/2" and "score 100"
     private static string[] Field(string result, string name)

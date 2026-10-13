@@ -317,3 +317,6 @@ $SWITCHNEEDSILVERKEY: "You need the silver key to use this switch."
 # %k (the killer's tag, or its class) and %% (a percent sign).
 $OB_DIED: "You died."
 $OB_KILLED: "You were killed by %k."
+# One of the player's allies (factions.yaml) killed: %o the ally, %k who killed them
+$OB_ALLYKILLED: "Your ally %o was killed by %k."
+$OB_ALLYDIED: "Your ally %o was killed."

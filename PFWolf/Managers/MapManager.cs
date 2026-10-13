@@ -1475,7 +1475,9 @@ internal class MapManager
         if (ob is Entities.Actors.Monster fighter && fighter.BeforeThink(tics))
             state = ob.CurrentState ?? state;
 
-        Entities.Actors.ActorActionRegistry.Invoke(state.Think, ob);
+        // An ally following the players walks after them in place of its think
+        if (ob is not Entities.Actors.Monster follower || !follower.ThinkInstead(tics))
+            Entities.Actors.ActorActionRegistry.Invoke(state.Think, ob);
 
         if (ob is Entities.Actors.Monster monster && !ob.IsRemoved)
             MarkActorTile(monster);

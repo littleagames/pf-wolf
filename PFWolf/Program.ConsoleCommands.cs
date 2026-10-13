@@ -1054,7 +1054,7 @@ internal partial class Program
 
         var chosen = ChosenActors(args.Skip(1).FirstOrDefault());
         foreach (var monster in chosen)
-            monster.Faction = faction;
+            monster.SetFaction(faction);
         _consoleManager.Print(chosen.Count == 1
             ? $"{chosen[0].Name} at {chosen[0].TileX},{chosen[0].TileY} is now {faction}"
             : $"{chosen.Count} {chosen[0].Name}s are now {faction}");
