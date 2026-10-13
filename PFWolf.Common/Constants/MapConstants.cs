@@ -39,4 +39,13 @@ public static class MapConstants
 
     /// <summary>Each tile's light zone, 0 for none (the map's light)</summary>
     public const int ZONEPLANE = 5;
+
+    /// <summary>
+    /// A wall tile's patch (mapdefs patches, 1 to 255; 0 for none) is the high byte of its plane 0
+    /// value, the wall id the low byte: plane 0 value = wall | patch &lt;&lt; PATCHSHIFT
+    /// </summary>
+    public const int PATCHSHIFT = 8;
+
+    /// <summary>The plane 0 bits that hold the tile's own code (wall, door, floor), below its patch</summary>
+    public const int PLANE0CODEMASK = 0xff;
 }

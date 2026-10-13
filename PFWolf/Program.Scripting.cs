@@ -280,6 +280,13 @@ internal partial class Program
                 throw new LuaRuntimeException(c.State, (LuaValue)$"game.tag: {x},{y} isn't a tile on the map", 1);
             return new(c.Return(_mapManager.GetTag(x, y)));
         });
+        game["patch"] = new LuaFunction("game.patch", (c, _) =>
+        {
+            int x = (int)NumberArg(c, 0, -1), y = (int)NumberArg(c, 1, -1);
+            if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+                throw new LuaRuntimeException(c.State, (LuaValue)$"game.patch: {x},{y} isn't a tile on the map", 1);
+            return new(c.Return(_mapManager.GetPatch(x, y)));
+        });
         game["trigger"] = new LuaFunction("game.trigger", (c, _) =>
         {
             var tag = TagArg(c, 0);

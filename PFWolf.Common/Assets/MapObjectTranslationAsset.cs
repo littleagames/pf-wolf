@@ -8,6 +8,10 @@ public record MapObjectTranslationAsset : Asset
     public Dictionary<int, MapPlayerStartTranslation> PlayerStarts { get; internal set; } = new();
     public Dictionary<int, MapTriggerTranslation> Triggers { get; internal set; } = new();
     public Dictionary<int, MapDiagonalTranslation> Diagonals { get; internal set; } = new();
+
+    /// <summary>Wall patches by id (1 to 255): the high byte of a wall tile's plane 0 value (MapConstants.PATCHSHIFT)</summary>
+    public Dictionary<int, MapPatchTranslation> Patches { get; internal set; } = new();
+
     public MapFlatsTranslation Flats { get; internal set; } = new();
     public MapFloorsTranslation Floors { get; internal set; } = new();
 
@@ -164,6 +168,33 @@ public record MapDiagonalTranslation
 
     /// <summary>The diagonal face's texture. Empty means the wall's own North texture.</summary>
     public string Texture { get; set; } = "";
+}
+
+/// <summary>
+/// A wall patch: a picture with see-through pixels (palette index 0xFF) drawn over a wall's face,
+/// such as a sign, a switch or a crack, so one wall can carry any decoration. A wall tile gets
+/// one by the high byte of its plane 0 value (MapConstants.PATCHSHIFT); it moves with the wall
+/// when it's pushed. Patches on doors and open floor are ignored.
+/// </summary>
+public record MapPatchTranslation
+{
+    /// <summary>The picture: a texture as wide as a wall's (any height), or an animdefs animation</summary>
+    public string Texture { get; init; } = "";
+
+    /// <summary>The wall faces it's on (north, south, east, west: the way the face looks out). Empty means all four.</summary>
+    public List<string> Sides { get; init; } = [];
+
+    /// <summary>
+    /// The story of a tall wall it's on, 1 (the bottom one, the default) and up; 0 repeats it on
+    /// every story, as the wall's own texture does
+    /// </summary>
+    public int Story { get; init; } = 1;
+
+    /// <summary>Makes the patch a switch the player can use (see <see cref="MapSwitchTranslation"/>)</summary>
+    public MapSwitchTranslation? Switch { get; init; }
+
+    /// <summary>Whether it's on the face ("north", "south", "east" or "west")</summary>
+    public bool IsOn(string face) => Sides.Count == 0 || Sides.Contains(face, StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>An object-plane tile the player starts the level on, facing <see cref="Angles"/>.</summary>

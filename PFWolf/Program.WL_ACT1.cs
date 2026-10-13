@@ -780,13 +780,15 @@ internal partial class Program
                 _mapManager.tilemap[wall.X + dx, wall.Y + dy] = (byte)oldtile;
                 _mapManager.MoveWallStories(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 _mapManager.MoveTag(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
+                _mapManager.MovePatch(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 return false;
             }
             else
             {
-                // the wall's height and tag go with it, on the tile wall.X/wall.Y name
+                // the wall's height, tag and patch go with it, on the tile wall.X/wall.Y name
                 _mapManager.MoveWallStories(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 _mapManager.MoveTag(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
+                _mapManager.MovePatch(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 wall.X += (ushort)dx;
                 wall.Y += (ushort)dy;
                 int aheadx = wall.X + dx, aheady = wall.Y + dy;

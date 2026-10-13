@@ -43,6 +43,7 @@ public static class ScriptApi
         Fn("tagged", "game.tagged(tag[, class])", "The actors with that tag on the map's tag plane (as switches find them), or those of a class"),
         Fn("taggedtiles", "game.taggedtiles(tag)", "The tiles with that tag, each {x, y}: tagged doors and walls"),
         Fn("tag", "game.tag(x, y)", "A tile's tag, 0 for none"),
+        Fn("patch", "game.patch(x, y)", "The patch (mapdefs patches) on a wall tile, 0 for none"),
         Fn("trigger", "game.trigger(tag, action, ...)", "Runs a switch action on a tag, as a switch with it would: game.trigger(3, \"A_OpenDoor\", \"hold\"). True if it did anything"),
         Fn("onlevel", "game.onlevel(function(reason, map) ... end)", "Adds a hook run as each level starts; reason is \"new\", \"returned\", \"restarted\" or \"loaded\". Add hooks at a script's top level"),
         Fn("ontick", "game.ontick(function(tics) ... end)", "Adds a hook run each frame the world moves, with the tics that went by (70 a second). Add hooks at a script's top level"),

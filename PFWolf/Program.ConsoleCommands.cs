@@ -183,6 +183,9 @@ internal partial class Program
             $"height <0-{MAXWALLSTORIES}> [tilex tiley]", Cmd_Height, Cheat | InLevel);
         Register("tag", "Shows or sets a tile's tag on the tag plane (default: the one you face), and the tag of any actors on it; 0 clears it.",
             "tag [0-65535 [tilex tiley]]", Cmd_Tag, Cheat | InLevel);
+        Register("patch", "Shows or sets the patch (mapdefs patches) on a wall tile (default: the one you face); 0 takes it off.",
+            "patch [0-255 [tilex tiley]]", Cmd_Patch, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? _mapManager.GetMapData().Patches.Keys.Order().Select(id => id.ToString()) : []);
         Register("flat", "Sets a tile's floor and ceiling flat indices (mapdefs flats) on the flat plane (default: the tile you stand on).",
             "flat <floor 0-255> <ceiling 0-255> [tilex tiley]", Cmd_Flat, Cheat | InLevel);
         Register("flats", "Sets the level's default floor and ceiling textures, for tiles the flat plane doesn't give one (not saved).",
@@ -1171,6 +1174,35 @@ internal partial class Program
         _consoleManager.Print($"Tile {x},{y}: tag {_mapManager.GetTag(x, y)}{tagged}");
     }
 
+    private static void Cmd_Patch(string[] args)
+    {
+        if (args.Length is 2 or > 3)
+            throw new ArgumentException("usage: patch [0-255 [tilex tiley]]");
+
+        var (x, y) = TileArg(args, 1);
+        if (args.Length > 0)
+        {
+            var patch = (byte)ParseInt(args[0], 0, 255);
+            int tile = _mapManager.tilemap[x, y];
+            if (patch != 0 && ((tile & BIT_DOOR) != 0 || (tile & ~BIT_WALL) == 0))
+                throw new ArgumentException($"Tile {x},{y} isn't a wall: patches go on walls only");
+            _mapManager.SetPatch(x, y, patch);
+        }
+
+        _consoleManager.Print($"Tile {x},{y}: {DescribePatch(_mapManager.GetPatch(x, y))}");
+    }
+
+    // A patch id as the console shows it: its texture and faces, or that mapdefs doesn't list it
+    private static string DescribePatch(int patch)
+    {
+        if (patch == 0)
+            return "no patch";
+        if (!_mapManager.GetMapData().Patches.TryGetValue(patch, out var def))
+            return $"patch {patch} (not in the mapdefs patches)";
+        var sides = def.Sides.Count == 0 ? "all faces" : string.Join("/", def.Sides);
+        return $"patch {patch} ({def.Texture}, {sides}{(def.Switch != null ? ", switch" : "")})";
+    }
+
     private static void Cmd_Flat(string[] args)
     {
         if (args.Length < 2)
@@ -1361,6 +1393,7 @@ internal partial class Program
             + $"(plane 2: {_mapManager.MAPSPOT(x, y, MapManager.FLATPLANE)})");
 
         _consoleManager.Print($"tags (plane 4): tile {_mapManager.GetTag(x, y)}  faced tile {fx},{fy}: {_mapManager.GetTag(fx, fy)}");
+        _consoleManager.Print($"faced tile {fx},{fy}: {DescribePatch(_mapManager.GetPatch(fx, fy))}");
 
         int zone = _mapManager.GetZone(x, y);
         _consoleManager.Print($"light zone (plane 5): {zone} ({DescribeZone(zone)})");

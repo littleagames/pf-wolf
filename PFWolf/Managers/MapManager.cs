@@ -125,6 +125,13 @@ internal class MapManager
     internal byte[,] storymap = new byte[MAPSIZE, MAPSIZE];
     private int maxtilestories;
 
+    /// <summary>
+    /// Each wall tile's patch (mapdefs patches), 0 for none. A map keeps it in the high byte of
+    /// plane 0 (MapConstants.PATCHSHIFT), which LoadMap takes off into here, so plane 0 holds only
+    /// the tiles' own codes. Saved with the level.
+    /// </summary>
+    internal byte[,] patchmap = new byte[MAPSIZE, MAPSIZE];
+
     internal const int HEIGHTPLANE = MapConstants.HEIGHTPLANE;
 
     /// <summary>
@@ -235,6 +242,7 @@ internal class MapManager
         mapsegs = new ushort[mapAsset.MapData.Length][];
         for (int i = 0; i < mapAsset.MapData.Length; i++)
             mapsegs[i] = (ushort[])mapAsset.MapData[i].Clone();
+        SplitPatches();
         floorflat = new TextureAsset?[MAPAREA];     // BuildFlats fills these in, once the level's defaults are known
         ceilingflat = new TextureAsset?[MAPAREA];
         hasfloorflats = hasceilingflats = false;
@@ -282,6 +290,7 @@ internal class MapManager
             {
                 int tile = MAPSPOT(x, y, 0);
                 bool solid = IsWallId(tile) && data.Walls.ContainsKey(tile) || data.Doors.ContainsKey(tile);
+                CheckPatch(mapName, x, y, isWall: solid && !data.Doors.ContainsKey(tile), data);
                 if (solid)
                 {
                     // solid wall (a door's tile is made a door by SpawnDoor)
@@ -634,6 +643,62 @@ internal class MapManager
             for (int x = 0; x < mapwidth; x++)
                 if (GetTag(x, y) == tag)
                     yield return (x, y);
+    }
+
+    /// <summary>
+    /// Takes each tile's patch off the high byte of plane 0 into <see cref="patchmap"/>, leaving
+    /// plane 0 its own codes (walls, doors, floors), as everything else reads them
+    /// </summary>
+    private void SplitPatches()
+    {
+        patchmap = new byte[MAPSIZE, MAPSIZE];
+        var plane = mapsegs[0];
+        for (int i = 0; i < plane.Length && i < MAPAREA; i++)
+        {
+            patchmap[i % MAPSIZE, i / MAPSIZE] = (byte)(plane[i] >> MapConstants.PATCHSHIFT);
+            plane[i] &= MapConstants.PLANE0CODEMASK;
+        }
+    }
+
+    private readonly HashSet<int> badpatches = new();
+    private readonly HashSet<string> misplacedpatches = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Drops a patch from a tile that isn't a wall (open floor or a door), and says so once a
+    /// map; one mapdefs doesn't list is kept (a mod may add it) but reported once.
+    /// </summary>
+    private void CheckPatch(string mapName, int x, int y, bool isWall, MapObjectTranslationAsset data)
+    {
+        int patch = patchmap[x, y];
+        if (patch == 0)
+            return;
+
+        if (!isWall)
+        {
+            patchmap[x, y] = 0;
+            if (misplacedpatches.Add(mapName))
+                Console.WriteLine($"{mapName}: a patch on {x},{y}, which isn't a wall, is ignored (patches go on walls only)");
+            return;
+        }
+
+        if (!data.Patches.ContainsKey(patch) && badpatches.Add(patch))
+            Console.WriteLine($"{mapName}: patch {patch} on {x},{y} isn't in the mapdefs patches; it's drawn as nothing");
+    }
+
+    /// <summary>The patch on a tile, 0 for none.</summary>
+    internal byte GetPatch(int x, int y) => patchmap[x, y];
+
+    /// <summary>Puts a patch on a tile, so it's saved with the level; 0 takes it off.</summary>
+    internal void SetPatch(int x, int y, byte patch) => patchmap[x, y] = patch;
+
+    /// <summary>Moves a tile's patch to another tile, as a pushwall slides.</summary>
+    internal void MovePatch(int fromx, int fromy, int tox, int toy)
+    {
+        var patch = patchmap[fromx, fromy];
+        if (patch == 0)
+            return;
+        patchmap[fromx, fromy] = 0;
+        patchmap[tox, toy] = patch;
     }
 
     /// <summary>Moves a tile's height to another tile, as a pushwall slides.</summary>
@@ -1585,6 +1650,10 @@ internal class MapManager
         }
 
         WriteTextureChanges(bw);
+
+        for (int x = 0; x < MAPSIZE; x++)
+            for (int y = 0; y < MAPSIZE; y++)
+                bw.Write(patchmap[x, y]);
     }
 
     /// <summary>Parses what <see cref="WriteLevelState"/> wrote, without touching the loaded level.</summary>
@@ -1623,7 +1692,13 @@ internal class MapManager
         var links = actors.Select(_ => (Target: br.ReadInt32(), Shooter: br.ReadInt32())).ToList();
 
         var (starts, changes) = ReadTextureChanges(br);
-        return new LevelSnapshot(planes, tiles, blocking, actors, links, starts, changes);
+
+        var patches = new byte[MAPSIZE, MAPSIZE];
+        for (int x = 0; x < MAPSIZE; x++)
+            for (int y = 0; y < MAPSIZE; y++)
+                patches[x, y] = br.ReadByte();
+
+        return new LevelSnapshot(planes, tiles, blocking, actors, links, starts, changes, patches);
     }
 
     /// <summary>
@@ -1660,6 +1735,7 @@ internal class MapManager
     {
         mapsegs = level.Planes.Select(plane => (ushort[])plane.Clone()).ToArray();
         tilemap = (byte[,])level.TileMap.Clone();
+        patchmap = (byte[,])level.Patches.Clone();
         actorat = (Actor?[,])level.ActorAt.Clone();
         // copies, so a hub level's kept snapshot doesn't change with the live level
         animstart = (int[])level.AnimationStarts.Clone();
@@ -1722,4 +1798,5 @@ internal sealed record LevelSnapshot(
     List<Entities.Actors.ActorSnapshot> Actors,
     List<(int Target, int Shooter)> Links,
     int[] AnimationStarts,
-    Dictionary<int, Dictionary<string, string>> TextureChanges);
+    Dictionary<int, Dictionary<string, string>> TextureChanges,
+    byte[,] Patches);

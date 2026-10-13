@@ -55,7 +55,8 @@ internal partial class Program
     // 21: after the actors, when tiles last changed (animation starts) and A_ChangeTexture's swaps.
     // 22: each actor's faction, after its cloak; after the actors, each one's target and shooter.
     // 23: each actor's own translation, after its faction.
-    private const int SaveVersion = 23;
+    // 24: each tile's wall patch, at the end of the level (plane 0 is saved without them).
+    private const int SaveVersion = 24;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the

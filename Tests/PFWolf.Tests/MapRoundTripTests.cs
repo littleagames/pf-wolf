@@ -64,6 +64,30 @@ public class MapRoundTripTests
         }
     }
 
+    [TestCase("GAMEMAPS.WL6", "MAPHEAD.WL6")]
+    [TestCase("GAMEMAPS.WL1", "MAPHEAD.WL1")]
+    [TestCase("GAMEMAPS.SOD", "MAPHEAD.SOD")]
+    [TestCase("gamemaps.sdm", "maphead.sdm")]
+    [TestCase("MAPTEMP.BS6", "MAPHEAD.BS6")]
+    [TestCase("MAPTEMP.VSI", "MAPHEAD.VSI")]
+    [Category("GameData")]
+    public void No_Game_Level_Uses_The_High_Byte_Of_Plane_0(string gameMaps, string mapHead)
+    {
+        // Arrange: wall patches are kept there (MapConstants.PATCHSHIFT)
+        var folder = DataFolderCandidates().FirstOrDefault(folder => File.Exists(Path.Combine(folder, gameMaps)) && File.Exists(Path.Combine(folder, mapHead)));
+        if (folder == null)
+            Assert.Ignore($"{gameMaps} isn't in {string.Join(" or ", DataFolderCandidates())}; set PFWOLF_GAMEDATA to a folder that has it");
+        var loader = Wolf3dMapFileLoader.FromFiles(Path.Combine(folder!, mapHead), Path.Combine(folder!, gameMaps));
+
+        // Act
+        var levels = loader.GetAssets(Enumerable.Range(1, 200).Select(n => $"MAP{n:00}").ToList());
+
+        // Assert
+        Assert.That(levels, Is.Not.Empty);
+        foreach (var (name, level) in levels)
+            Assert.That(((MapAsset)level).MapData[0], Has.All.LessThan(0x100), name);
+    }
+
     /// <summary>The bytes MapFiles.Save writes for the level</summary>
     private static byte[] SaveThroughEditor(string name, MapAsset map)
     {

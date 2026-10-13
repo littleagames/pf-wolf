@@ -1,0 +1,13 @@
+# Wall patches by id (1 to 255): a picture drawn over a wall's face, its see-through pixels
+# (palette index 0xFF, or transparent in a PNG) showing the wall behind, so one wall can carry
+# any sign, switch or crack. A wall tile gets one by the high byte of its plane 0 value
+# (plane 0 = wall id + patch id * 256); it goes with the wall when the wall is pushed. Patches
+# on doors and open floor are ignored. The `patch` console command shows or sets one.
+#   texture:  the picture, as wide as a wall texture and any height (a textures/ PNG or a VSWAP
+#             texture), or an animdefs animation
+#   sides:    the faces it's on, e.g. [south] (a face is named the way it looks out: the north
+#             face is seen from the tile north of the wall); left out, all four
+#   story:    the story of a tall wall it's on, 1 (the bottom one, the default) and up; 0 repeats
+#             it on every story, as the wall's texture does
+#   switch:   makes it a switch the player can use, as a walls.yaml switch block
+patches: {}
