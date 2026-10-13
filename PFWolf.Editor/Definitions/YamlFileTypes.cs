@@ -15,7 +15,7 @@ public static class YamlFileTypes
     private static readonly HashSet<string> ModRootGamePackFiles = new(StringComparer.OrdinalIgnoreCase)
     {
         "game-info.yaml", "colors.yaml", "fonts.yaml", "hud-messages.yaml", "statusbar.yaml", "intermission.yaml", "alias.yaml", "raw-data-map.yaml",
-        "movies.yaml",
+        "movies.yaml", "factions.yaml",
     };
 
     public static bool IsYaml(string entryPath)
@@ -126,6 +126,7 @@ public static class YamlFileTypes
                 "colors.yaml" => "colors",
                 "fonts.yaml" => "fonts",
                 "hud-messages.yaml" => "message styles",
+                "factions.yaml" => "factions",
                 "statusbar.yaml" => "status bar",
                 "sound-seq.yaml" => "sounds",
                 "intermission.yaml" => "intermission",
@@ -241,6 +242,7 @@ public static class YamlFileTypes
             "colors.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, string>>(yaml),
             "fonts.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, FontDefinition>>(yaml),
             "hud-messages.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, HudMessageStyleDefinition>>(yaml),
+            "factions.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<FactionsAsset>(yaml),
             "statusbar.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, StatusBarElement>>(yaml),
             "sound-seq.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<SoundSequenceAsset>(yaml),
             "intermission.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<IntermissionAsset>(yaml),

@@ -64,9 +64,9 @@ public class ScriptApiTests
         var names = string.Join(", ", fields.Select(field => $"'{field.Name}'"));
 
         // Act
-        host.Execute($"for _, name in ipairs({{{names}}}) do print(name, a[name] ~= nil or name == 'shooter' or name == 'state') end");
+        host.Execute($"for _, name in ipairs({{{names}}}) do print(name, a[name] ~= nil or name == 'shooter' or name == 'state' or name == 'faction') end");
 
-        // Assert: shooter and state are nil for an actor that has none, but don't error
+        // Assert: shooter, state and faction are nil for an actor that has none, but don't error
         Assert.That(_printed, Is.EqualTo(fields.Select(field => $"{field.Name}\ttrue")));
     }
 

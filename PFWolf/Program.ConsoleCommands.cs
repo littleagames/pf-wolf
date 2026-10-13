@@ -148,6 +148,8 @@ internal partial class Program
         Register("summon", "Spawns an actor on an open tile (default: the one you face), facing an angle (default: back at you).",
             "summon <class> [angle] [tilex tiley]", Cmd_Summon, Cheat | InLevel,
             complete: (_, i) => i == 0 ? _assetManager.GetActorMetadata().Actors.Keys : i == 1 ? ["0", "45", "90", "135", "180", "225", "270", "315"] : []);
+        Register("factions", "Lists the factions (factions.yaml), how each treats the others, and who's on each in the level.",
+            "factions", Cmd_Factions);
         Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
             $"wallheight [1-{MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
         Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
@@ -998,6 +1000,37 @@ internal partial class Program
             throw new ArgumentException($"{className} can't be spawned");
 
         _consoleManager.Print($"Spawned {className} at {x},{y} facing {angle}{WallSpriteDescription(actor.Value)}");
+    }
+
+    private static void Cmd_Factions(string[] args)
+    {
+        var table = _factionManager.Table;
+
+        // Who's on what side in the level: the living players and enemies, by faction
+        var members = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        if (_mapManager.Player != null)
+        {
+            foreach (var actor in _mapManager.GetActors())
+            {
+                bool alive = actor is Entities.Actors.PlayerPawn pawn ? pawn.State.health > 0
+                    : actor is Entities.Actors.Monster && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE);
+                if (alive && !actor.IsRemoved && actor.Faction != null)
+                    members[actor.Faction] = members.GetValueOrDefault(actor.Faction) + 1;
+            }
+        }
+
+        var names = table.Names.Concat(members.Keys).Append(table.PlayerFaction).Append(table.MonsterFaction)
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        _consoleManager.Print($"Players are {table.PlayerFaction} and enemies {table.MonsterFaction} unless their class says otherwise"
+            + (table.Names.Count == 0 ? " (no factions.yaml)" : ""));
+        foreach (var faction in names)
+        {
+            var relations = names.Where(other => !other.Equals(faction, StringComparison.OrdinalIgnoreCase))
+                .Select(other => $"{other} {table.Relation(faction, other).ToString().ToLowerInvariant()}");
+            var shown = table.DisplayName(faction);
+            _consoleManager.Print($"  {faction}{(shown != faction ? $" ({shown})" : "")}: {members.GetValueOrDefault(faction)} in the level"
+                + (relations.Any() ? $"; {string.Join(", ", relations)}" : ""));
+        }
     }
 
     /// <summary>"  panel ..." for a wall sprite, else nothing.</summary>

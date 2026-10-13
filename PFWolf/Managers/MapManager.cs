@@ -978,6 +978,7 @@ internal class MapManager
         if (NoMonsters && builtActor is Entities.Actors.Monster)
             return null;
 
+        builtActor.Faction = Program._factionManager.SpawnFaction(builtActor, thing.Faction);
         builtActor.SetPosition(tilex, tiley);
 
         // SpawnNewObj (Program.WL_STATE.cs) always set areanumber from the spawn tile for
@@ -1179,6 +1180,7 @@ internal class MapManager
         // actor must remain markable even if the dying source had FL_NONMARK set.
         builtActor.RuntimeFlags = (source.RuntimeFlags & ~objflags.FL_NONMARK) | objflags.FL_SHOOTABLE;
         builtActor.Hitpoints = GetScaledHealth(builtActor);
+        builtActor.Faction = Program._factionManager.InheritedFaction(builtActor, source);
 
         if (builtActor.ResolvedStates.TryGetValue("Chase", out var chaseState))
         {
@@ -1214,6 +1216,7 @@ internal class MapManager
         builtActor.Dir = objdirtypes.nodir;
         builtActor.Active = activetypes.ac_yes;
         builtActor.RuntimeFlags = objflags.FL_NEVERMARK;
+        builtActor.Faction = Program._factionManager.InheritedFaction(builtActor, source);
 
         _actors.AddLast(builtActor);
         return builtActor;
@@ -1349,6 +1352,7 @@ internal class MapManager
             _actors.Remove(state.Pawn);
 
         var pawn = new Entities.Actors.PlayerPawn { State = state };
+        pawn.Faction = Program._factionManager.PlayerFaction(state.playerclass);
         state.Pawn = pawn;
         PlacePawn(pawn);
         return pawn;
@@ -1629,6 +1633,11 @@ internal class MapManager
                 actor = CreateRuntimeActor(saved.ClassName)!;
 
             saved.ApplyTo(actor);
+            // Saves don't hold sides yet: each is back on its class's (a map thing's own
+            // faction:, or a projectile's shooter's, isn't kept)
+            actor.Faction = actor is Entities.Actors.PlayerPawn pawn
+                ? Program._factionManager.PlayerFaction(pawn.State.playerclass)
+                : Program._factionManager.SpawnFaction(actor);
             _actors.AddLast(actor);
             restored.Add(actor);
         }

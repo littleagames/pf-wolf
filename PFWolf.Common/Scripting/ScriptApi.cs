@@ -69,6 +69,7 @@ public static class ScriptApi
         Field("removed", "Whether it's gone from the level"),
         Field("isplayer", "Whether it's a player"),
         Field("shooter", "For a projectile, the actor that fired it"),
+        Field("faction", "The side it's on (factions.yaml), nil for none"),
         Field("temp1", "A whole number of its own, kept in saved games: a script's state for the actor", settable: true),
         Field("temp2", "A whole number of its own, kept in saved games", settable: true),
         Field("temp3", "A whole number of its own, kept in saved games", settable: true),

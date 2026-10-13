@@ -27,6 +27,7 @@ internal partial class Program
     private static ConsoleManager _consoleManager;
     private static AutomapManager _automapManager;
     internal static HudMessageManager _hudMessageManager;
+    internal static FactionManager _factionManager;
 
     public Program()
     {
@@ -44,6 +45,7 @@ internal partial class Program
         services.AddSingleton<ConsoleManager>();
         services.AddSingleton<AutomapManager>();
         services.AddSingleton<HudMessageManager>();
+        services.AddSingleton<FactionManager>();
 
         // Build the service provider
         var serviceProvider = services.BuildServiceProvider();
@@ -66,6 +68,7 @@ internal partial class Program
         _consoleManager = serviceProvider.GetRequiredService<ConsoleManager>();
         _automapManager = serviceProvider.GetRequiredService<AutomapManager>();
         _hudMessageManager = serviceProvider.GetRequiredService<HudMessageManager>();
+        _factionManager = serviceProvider.GetRequiredService<FactionManager>();
 
         // TODO: Remove circular dependencies here
         //_videoManager = new();
@@ -171,6 +174,7 @@ internal partial class Program
         RegisterActorActions();
         LoadScripts();      // after the built-in actions, which a script's can't replace (Program.Scripting.cs)
         Entities.Actors.Monster.CheckClasses(_assetManager.GetActorMetadata());
+        _factionManager.CheckClasses(_assetManager.GetActorMetadata());
         RegisterConsoleCommands();
 
         //CheckParameters(args); // Remove

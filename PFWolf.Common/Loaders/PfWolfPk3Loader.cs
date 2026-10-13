@@ -66,7 +66,7 @@ public class PfWolfPk3Loader
     private static readonly HashSet<string> ModRootGamePackFiles = new(StringComparer.OrdinalIgnoreCase)
     {
         "game-info.yaml", "colors.yaml", "fonts.yaml", "hud-messages.yaml", "statusbar.yaml", "intermission.yaml", "alias.yaml", "raw-data-map.yaml",
-        "movies.yaml",
+        "movies.yaml", "factions.yaml",
     };
 
     /// <summary>
@@ -175,6 +175,13 @@ public class PfWolfPk3Loader
             var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
             LoadYaml(entry, uniqueName, isMod, mergeLevels: 1,
                 yaml => new HudMessageStylesAsset(YamlDataEntryLoader.Deserialize<Dictionary<string, HudMessageStyleDefinition>>(yaml)));
+            return;
+        }
+        if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("factions.yaml", StringComparison.OrdinalIgnoreCase))
+        {
+            // A pack's factions are laid over its base pack's all the way down, as game-info is
+            var uniqueName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
+            LoadYaml(entry, uniqueName, isMod, mergeLevels: AllLevels, YamlDataEntryLoader.Deserialize<FactionsAsset>);
             return;
         }
         if (fullName.StartsWith("gamepacks/") && entry.Name.Equals("statusbar.yaml", StringComparison.OrdinalIgnoreCase))

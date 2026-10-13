@@ -218,6 +218,12 @@ public record MapActorTranslation
     /// there is often something else (Blake Stone's door locks, switch and teleporter data).
     /// </summary>
     public bool InWall { get; set; }
+
+    /// <summary>
+    /// The side it's on (a factions.yaml faction), in place of its class's: a guard placed as
+    /// one of the player's allies. Empty: its class's.
+    /// </summary>
+    public string Faction { get; set; } = "";
 }
 
 public record MapTextureTranslation

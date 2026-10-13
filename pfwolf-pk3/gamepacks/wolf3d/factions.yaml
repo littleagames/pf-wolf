@@ -1,0 +1,31 @@
+# The sides actors are on, and how each treats the others (Managers/FactionManager.cs).
+#
+# An actor's side is, first to last:
+#   - a mapdefs thing's `faction:` (things: 400: { class: Guard, faction: allies }), for one
+#     placed on another side than its class;
+#   - its actordefs class's `faction` property (inherited through parent:, as any property),
+#     for a player class too;
+#   - player-faction below for a player, monster-faction for an enemy (a Monster).
+# What an actor brings into being (a projectile it throws, an alien out of its canister, Hitler
+# out of his armor) is on its side, unless that class has a `faction` of its own.
+#
+# How a faction treats another: its `relations:` entry for it, else its `default:`, else
+# default-relation below. Each can be
+#   hostile  goes after them on sight (and they're who its shots and projectiles are for)
+#   neutral  leaves them be unless they hurt it
+#   ally     never goes after them; its shots and projectiles pass them by
+# A faction's own members are always its allies. Relations are one way: for two factions to
+# be allies, each says so of the other.
+#
+# Without a factions.yaml, players are "players" and enemies "monsters", hostile to each other.
+# A pack built on this one (spear, wolf3d-shareware, ...) starts from this file, and a mod's
+# factions.yaml is laid over it key by key (`key: !remove` takes one out).
+player-faction: allies
+monster-faction: axis
+default-relation: hostile
+
+factions:
+  allies:
+    name: Allies
+  axis:
+    name: Axis

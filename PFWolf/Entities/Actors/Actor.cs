@@ -36,6 +36,11 @@ internal record Actor : Thinker
     // same tag acts on it wherever it has since moved.
     public ushort Tag { get; internal set; }
 
+    // The side it's on (factions.yaml, Managers/FactionManager.cs): its class's `faction`, a
+    // mapdefs thing's `faction:`, or the pack's player-faction/monster-faction; null for none
+    // (decorations, pickups, projectiles until fired). Set as it spawns.
+    public string? Faction { get; internal set; }
+
     // From the floor code it spawned on (mapdefs floors actor-codes, Planet Strike's): what it
     // drops when it dies besides its class's drops, the tile (x << 8 | y, 0 for none) its death
     // works as a smart switch (A_SmartSwitch), and whether it's cloaked (drawn shimmering)

@@ -229,6 +229,7 @@ internal partial record BlakeMonster : Monster
         spawned.X = X;
         spawned.Y = Y;
         spawned.AreaNumber = AreaNumber;
+        spawned.Faction = _factionManager.InheritedFaction(spawned, this);
         if (args.Skip(1).Any(a => a.Equals("chase", StringComparison.OrdinalIgnoreCase)) && spawned.ResolvedStates.ContainsKey("Chase"))
         {
             spawned.SetState("Chase");

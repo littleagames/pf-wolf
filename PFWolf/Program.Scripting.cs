@@ -172,6 +172,7 @@ internal partial class Program
                 "removed" => c.Return(self.IsRemoved),
                 "isplayer" => c.Return(self is Entities.Actors.PlayerPawn),
                 "shooter" => c.Return(LuaActor.Of(self.Shooter)),
+                "faction" => c.Return(self.Faction is { } faction ? faction : LuaValue.Nil),
                 "temp1" => c.Return(self.Temp1),
                 "temp2" => c.Return(self.Temp2),
                 "temp3" => c.Return(self.Temp3),

@@ -1,0 +1,14 @@
+# The sides actors are on, and how each treats the others: see gamepacks/wolf3d/factions.yaml
+# for how it works. Planet Strike (blake-ps) starts from this file.
+#
+# Blake Stone's informants and other FRIENDLY actors are goldfire's like the rest: they're
+# friendly until there's a noise (FL_FRIENDLY), not on the player's side.
+player-faction: agents
+monster-faction: goldfire
+default-relation: hostile
+
+factions:
+  agents:
+    name: Agents
+  goldfire:
+    name: Goldfire's forces
