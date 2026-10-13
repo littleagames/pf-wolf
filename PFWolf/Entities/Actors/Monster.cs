@@ -310,22 +310,71 @@ internal record Monster : Actor
         return 2; // continue
     }
 
-    /// <summary>Whether it can see a player; the first it sees (in player order) becomes its Target</summary>
+    /// <summary>
+    /// Whether it can see someone it's hostile to (factions.yaml), who becomes its Target: the
+    /// first player it sees (in player order), or with rivals about (MapManager.HasRivalries) the
+    /// nearest player or enemy of another side it sees, players first of those as near
+    /// </summary>
     internal bool CheckSight()
     {
         if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
             return false;
 
-        foreach (var pawn in _mapManager.Players)
+        if (!_mapManager.HasRivalries)
         {
-            if (IsTargetable(pawn) && CanSee(pawn))
+            foreach (var pawn in _mapManager.Players)
             {
-                Target = pawn;
-                return true;
+                if (IsTargetable(pawn) && IsHostileTo(pawn) && CanSee(pawn))
+                {
+                    Target = pawn;
+                    return true;
+                }
             }
+            return false;
         }
-        return false;
+
+        if (NearestFoe(CanSee) is not { } seen)
+            return false;
+        Target = seen;
+        return true;
     }
+
+    /// <summary>Whether its side goes after <paramref name="other"/>'s on sight</summary>
+    internal bool IsHostileTo(Actor other) => _factionManager.IsHostile(this, other);
+
+    /// <summary>Whether <paramref name="other"/> is on its side (or one it's allied to)</summary>
+    internal bool IsAllyOf(Actor other) => _factionManager.IsAlly(this, other);
+
+    // Everyone it could go after: the players, then (with rivals about) the other enemies
+    private IEnumerable<Actor> FoeCandidates()
+    {
+        foreach (var pawn in _mapManager.Players)
+            yield return pawn;
+        if (!_mapManager.HasRivalries)
+            yield break;
+        foreach (var other in _mapManager.Combatants)
+        {
+            if (!ReferenceEquals(other, this))
+                yield return other;
+        }
+    }
+
+    // The nearest (in tiles, either way) living one it's hostile to that passes the test; the
+    // first in FoeCandidates' order of those as near
+    private Actor? NearestFoe(Func<Actor, bool>? test = null)
+    {
+        Actor? nearest = null;
+        int best = int.MaxValue;
+        foreach (var candidate in FoeCandidates())
+        {
+            int dist = TileDistance(candidate);
+            if (dist < best && IsTargetable(candidate) && IsHostileTo(candidate) && (test == null || test(candidate)))
+                (nearest, best) = (candidate, dist);
+        }
+        return nearest;
+    }
+
+    private int TileDistance(Actor other) => Math.Max(Math.Abs(other.TileX - TileX), Math.Abs(other.TileY - TileY));
 
     // Whether an actor (a player, or another it could go after) is in front of it (or right
     // beside it) with nothing in the way
@@ -378,8 +427,11 @@ internal record Monster : Actor
 
     /// <summary>
     /// The actor it goes after: the one it last saw (CheckSight) or was hurt by, while they're
-    /// still on the level and alive, else the nearest living player. With one player and no
-    /// other sides, always them.
+    /// still on the level, alive and not on its side; else the nearest living one it's hostile
+    /// to; else the first player it's hostile to, alive or not. With one player and no other
+    /// sides, always them. With nobody at all to go after (an ally of the players with no
+    /// enemies about), the first player: <see cref="HasFoe"/> says so first, and BeforeThink
+    /// makes it give up.
     /// </summary>
     internal Actor Target
     {
@@ -387,7 +439,7 @@ internal record Monster : Actor
         {
             if (_target is { } t && IsStillTarget(t))
                 return t;
-            return _target = NearestTarget() ?? _mapManager.Players.First();
+            return _target = NearestFoe() ?? FirstHostilePlayer() ?? _mapManager.Players.First();
         }
         set => _target = value;
     }
@@ -395,38 +447,70 @@ internal record Monster : Actor
     /// <summary>The actor it's set on going after, as it stands (without picking one, as Target does), or null</summary>
     internal Actor? TargetIfAny => _target is { } t && IsOnLevel(t) ? t : null;
 
-    /// <summary>
-    /// The player it's set on going after, as it stands (without picking one, as Target does),
-    /// by player number; -1 for none, or for an actor that isn't a player. For a player joining
-    /// mid-game (Program.NetJoin.cs).
-    /// </summary>
-    internal int TargetNumber
-    {
-        get => TargetIfAny is PlayerPawn pawn ? pawn.State.Number : -1;
-        set => _target = value >= 0 && value < players.Count ? players[value].Pawn : null;
-    }
+    /// <summary>Whether it has anyone to go after: Target would be someone it's hostile to (or who hurt it)</summary>
+    internal bool HasFoe =>
+        _target is { } t && IsStillTarget(t) || NearestFoe() != null || FirstHostilePlayer() != null;
 
-    // Whether an actor it was after is still one to go after: on the level, and alive
-    private static bool IsStillTarget(Actor actor) => IsOnLevel(actor) && IsTargetable(actor);
+    // Whether an actor it was after is still one to go after: on the level, alive, and not (or
+    // no longer) on its side
+    private bool IsStillTarget(Actor actor) => IsOnLevel(actor) && IsTargetable(actor) && !IsAllyOf(actor);
 
     // Whether an actor is still on the level: a player's pawn they still have (one that left, or
     // was replaced coming into a level, isn't), anything else not taken off it
     private static bool IsOnLevel(Actor actor) =>
         actor is PlayerPawn pawn ? ReferenceEquals(pawn.State.Pawn, pawn) : !actor.IsRemoved;
 
-    // The nearest player it could go after (in tiles, either way; the first in player order of
-    // those as near), or null if there's none
-    private PlayerPawn? NearestTarget()
+    // The first player (in player order) it's hostile to, living or not, or null
+    private PlayerPawn? FirstHostilePlayer() => _mapManager.Players.FirstOrDefault(IsHostileTo);
+
+    /*
+    With rivals about, an enemy after someone looks round now and then (RetargetTics) for
+    someone nearer, or for anyone at all in sight when it has lost sight of who it's after.
+    */
+    private const int RetargetTics = 35;
+    private int _retargetIn;
+
+    /// <summary>
+    /// Run (MapManager.DoActor) before each think: an enemy going after someone (FL_ATTACKMODE)
+    /// with no one left to go after gives up and stands; with rivals about, it may turn on
+    /// someone nearer. True when it changed state.
+    /// </summary>
+    internal bool BeforeThink(uint tics)
     {
-        PlayerPawn? nearest = null;
-        int best = int.MaxValue;
-        foreach (var pawn in _mapManager.Players)
+        if (!RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
+            return false;
+
+        if (!HasFoe)
         {
-            int dist = Math.Max(Math.Abs(pawn.TileX - TileX), Math.Abs(pawn.TileY - TileY));
-            if (IsTargetable(pawn) && dist < best)
-                (nearest, best) = (pawn, dist);
+            GiveUp();
+            return true;
         }
-        return nearest;
+
+        if (_mapManager.HasRivalries && (_retargetIn -= (int)tics) <= 0)
+        {
+            _retargetIn = RetargetTics;
+            var current = Target;
+            bool inSight = CheckLine(this, current);
+            if (NearestFoe(foe => CheckLine(this, foe)) is { } seen && !ReferenceEquals(seen, current)
+                && (!inSight || TileDistance(seen) < TileDistance(current)))
+                Target = seen;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Stops going after anyone: back to its Spawn state at its walking speed, waiting to see
+    /// someone again (as an ally of the players does once its enemies are dead)
+    /// </summary>
+    internal void GiveUp()
+    {
+        RuntimeFlags &= ~(objflags.FL_ATTACKMODE | objflags.FL_FIRSTATTACK);
+        _target = null;
+        Temp2 = 0;
+        Speed = PropertyInt("speed", SPDPATROL);
+        if (Distance < 0)
+            Distance = 0;
+        SetState("Spawn");
     }
 
     /// <summary>
@@ -537,6 +621,10 @@ internal record Monster : Actor
                 // A NOTICEWHENSEEN actor (Blake Stone's aliens) notices the player once the player can see it
                 bool seen = HasFlag("NOTICEWHENSEEN") && SeenByThePlayers();
                 if (!madenoise && !seen && !CheckSight())
+                    return false;
+
+                // A noise (or being seen) only rouses it when there's someone for it to go after
+                if (!HasFoe)
                     return false;
             }
 
@@ -814,8 +902,11 @@ internal record Monster : Actor
         }
         _mapManager.UnmarkActorTile(TileX, TileY);
 
-        AwardKillPoints();
-        if ((attacker?.Shooter ?? attacker) is PlayerPawn killer)
+        // Points for the player's kills (and a trap's), not for one enemy killing another
+        var killedBy = attacker?.Shooter ?? attacker;
+        if (killedBy is not Monster)
+            AwardKillPoints();
+        if (killedBy is PlayerPawn killer)
             killer.State.Kills++;       // for the scoreboard, with others (a missile's: who fired it)
         SetState("Death");
         OnKilled(attacker);
@@ -832,7 +923,8 @@ internal record Monster : Actor
 
         // A sleeper that becomes an enemy (`monster.becomes`) isn't the kill; that enemy is.
         // NOTCOUNTED actors (crates, Goldfire, who keeps coming back) aren't enemies to count.
-        if (IsKill && !Properties.ContainsKey("monster.becomes"))
+        // Whoever killed it, as the kill ratio counts the players' enemies however they die
+        if (CountsAsKill && !Properties.ContainsKey("monster.becomes"))
             gamestate.killcount++;
         RuntimeFlags &= ~(objflags.FL_SHOOTABLE | objflags.FL_FRIENDLY);
         RuntimeFlags |= objflags.FL_NONMARK;
@@ -850,6 +942,16 @@ internal record Monster : Actor
 
     /// <summary>Whether it counts toward the level's kills (its total, and the count as each dies); NOTCOUNTED actors don't</summary>
     internal virtual bool IsKill => !HasFlag("NOTCOUNTED");
+
+    /// <summary>
+    /// Whether it's in the level's kill total and counted as it dies: a kill (IsKill) that isn't
+    /// on the players' side (factions.yaml: it doesn't count them its allies)
+    /// </summary>
+    internal bool CountsAsKill => IsKill && !_factionManager.Table.IsAlly(Faction, PlayersFaction);
+
+    // The local player's side (their pawn's, or their class's before they have one)
+    private static string PlayersFaction =>
+        localplayer.Pawn?.Faction ?? _factionManager.PlayerFaction(localplayer.playerclass);
 
     /// <summary>Whether dying, it leaves its `dropweapon`/`dropitem`</summary>
     protected virtual bool LeavesDrops => true;
@@ -926,10 +1028,16 @@ internal record Monster : Actor
         // `monster.minweapon` (the hanging turret's rapid assault weapon): only that weapon, or a
         // better one (by weapon.selectionorder), in Blake's hand hurts it -- when it's Blake (or
         // something he fired) that hurts it, not another actor
-        bool byPlayer = (attacker?.Shooter ?? attacker) is null or PlayerPawn;
+        var source = attacker?.Shooter ?? attacker;
+        bool byPlayer = source is null or PlayerPawn;
         if (byPlayer && Properties.TryGetValue("monster.minweapon", out var minWeapon) && minWeapon is string minWeaponName
             && (playerstate.weapon == null || WeaponSelectionOrder(playerstate.weapon) > WeaponSelectionOrder(minWeaponName)))
             return;
+
+        // It turns on whoever hurt it (or fired what did), unless they're on its side: a neutral
+        // side's actor joins a fight this way
+        if (source is Monster or PlayerPawn && !ReferenceEquals(source, this) && IsTargetable(source) && !IsAllyOf(source))
+            _target = source;
 
         // A silent weapon (weapon.silent, Blake Stone's auto-charge pistol) doesn't alert anyone
         if (!(attacker is PlayerPawn && PlayerWeaponIsSilent()))
@@ -1513,7 +1621,7 @@ internal record Monster : Actor
 
         newActor.Speed = SPDPATROL * 5;
 
-        if (!loadedgame)
+        if (!loadedgame && newActor is Monster { CountsAsKill: true })
             gamestate.killtotal++;
     }
 }

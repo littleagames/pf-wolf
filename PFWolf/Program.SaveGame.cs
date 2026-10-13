@@ -53,7 +53,8 @@ internal partial class Program
     // 19: each actor's carried drops, death link and cloak (mapdefs floors actor-codes), after its light.
     // 20: a count of moving pushwalls and each one's state, in place of the one pushwall.
     // 21: after the actors, when tiles last changed (animation starts) and A_ChangeTexture's swaps.
-    private const int SaveVersion = 21;
+    // 22: each actor's faction, after its cloak; after the actors, each one's target and shooter.
+    private const int SaveVersion = 22;
     private const int OldestLoadableSaveVersion = SaveVersion;
 
     // Thumbnails are taken this wide (less if the view is narrower), their height from the

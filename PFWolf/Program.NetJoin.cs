@@ -67,7 +67,7 @@ internal partial class Program
     ===============
     */
 
-    const int NETSTATEVERSION = 2;     // 2: a pusher per moving pushwall
+    const int NETSTATEVERSION = 3;     // 2: a pusher per moving pushwall; 3: targets and shooters in the level body
 
     /// <summary>
     /// Everything a player joining needs to take the game up from here: the level as a save
@@ -113,12 +113,7 @@ internal partial class Program
 
             WriteLevelBody(bw);
 
-            // What a save doesn't keep, by the same places
-            foreach (var actor in actors)
-            {
-                bw.Write(IndexOf(actor.Shooter));
-                bw.Write(actor is Entities.Actors.Monster monster ? monster.TargetNumber : -1);
-            }
+            // What a save doesn't keep (each actor's target and shooter are in the level body):
             // who pushed each moving pushwall, in the level body's order
             foreach (var wall in pushwalls)
                 bw.Write(wall.Pusher is { } pusher && ReferenceEquals(pusher.State.Pawn, pusher) ? pusher.State.Number : -1);
@@ -237,13 +232,6 @@ internal partial class Program
             var actors = ApplyLevelBody(body, i => i < owners.Length && owners[i] >= 0 && owners[i] < players.Count ? players[owners[i]] : null);
 
             Entities.Actors.Actor? At(int index) => index >= 0 && index < actors.Count ? actors[index] : null;
-            foreach (var actor in actors)
-            {
-                actor.Shooter = At(br.ReadInt32());
-                int target = br.ReadInt32();
-                if (actor is Entities.Actors.Monster monster)
-                    monster.TargetNumber = target;
-            }
             foreach (var wall in pushwalls)
             {
                 int pusher = br.ReadInt32();

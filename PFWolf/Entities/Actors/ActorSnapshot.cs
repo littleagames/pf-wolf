@@ -38,6 +38,7 @@ internal sealed record ActorSnapshot
     public List<string> CarriedDrops { get; init; } = [];
     public ushort DeathLink { get; init; }
     public bool Cloaked { get; init; }
+    public string? Faction { get; init; }
 
     public static ActorSnapshot Capture(Actor actor)
     {
@@ -75,6 +76,7 @@ internal sealed record ActorSnapshot
             CarriedDrops = [.. actor.CarriedDrops],
             DeathLink = actor.DeathLink,
             Cloaked = actor.Cloaked,
+            Faction = actor.Faction,
         };
     }
 
@@ -111,6 +113,7 @@ internal sealed record ActorSnapshot
         actor.CarriedDrops = [.. CarriedDrops];
         actor.DeathLink = DeathLink;
         actor.Cloaked = Cloaked;
+        actor.Faction = Faction;
         actor.SyncPosition();
     }
 
@@ -149,6 +152,7 @@ internal sealed record ActorSnapshot
             bw.Write(drop);
         bw.Write(DeathLink);
         bw.Write(Cloaked);
+        bw.Write(Faction ?? "");
     }
 
     public static ActorSnapshot Read(BinaryReader br)
@@ -188,6 +192,7 @@ internal sealed record ActorSnapshot
             CarriedDrops = [.. Enumerable.Range(0, br.ReadInt32()).Select(_ => br.ReadString())],
             DeathLink = br.ReadUInt16(),
             Cloaked = br.ReadBoolean(),
+            Faction = br.ReadString() is { Length: > 0 } faction ? faction : null,
         };
     }
 

@@ -150,6 +150,9 @@ internal partial class Program
             complete: (_, i) => i == 0 ? _assetManager.GetActorMetadata().Actors.Keys : i == 1 ? ["0", "45", "90", "135", "180", "225", "270", "315"] : []);
         Register("factions", "Lists the factions (factions.yaml), how each treats the others, and who's on each in the level.",
             "factions", Cmd_Factions);
+        Register("setfaction", "Puts the nearest living enemy, or every actor of a class, on a faction (for trying factions out).",
+            "setfaction <faction> [class]", Cmd_SetFaction, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? _factionManager.Table.Names : i == 1 ? _assetManager.GetActorMetadata().Actors.Keys : []);
         Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
             $"wallheight [1-{MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
         Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
@@ -1031,6 +1034,29 @@ internal partial class Program
             _consoleManager.Print($"  {faction}{(shown != faction ? $" ({shown})" : "")}: {members.GetValueOrDefault(faction)} in the level"
                 + (relations.Any() ? $"; {string.Join(", ", relations)}" : ""));
         }
+    }
+
+    private static void Cmd_SetFaction(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: setfaction <faction> [class]");
+        var faction = args[0];
+        if (!_factionManager.Table.IsKnown(faction))
+            _consoleManager.Print($"{faction} isn't in factions.yaml; it's a side of its own");
+
+        var living = _mapManager.GetActors().OfType<Entities.Actors.Monster>()
+            .Where(m => !m.IsRemoved && m.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
+        var chosen = args.Length > 1
+            ? living.Where(m => m.Name.Equals(args[1], StringComparison.OrdinalIgnoreCase)).ToList()
+            : living.OrderBy(m => Math.Max(Math.Abs(m.X - player.X), Math.Abs(m.Y - player.Y))).Take(1).ToList();
+        if (chosen.Count == 0)
+            throw new ArgumentException(args.Length > 1 ? $"no living {args[1]} on the level" : "no living enemy on the level");
+
+        foreach (var monster in chosen)
+            monster.Faction = faction;
+        _consoleManager.Print(chosen.Count == 1
+            ? $"{chosen[0].Name} at {chosen[0].TileX},{chosen[0].TileY} is now {faction}"
+            : $"{chosen.Count} {chosen[0].Name}s are now {faction}");
     }
 
     /// <summary>"  panel ..." for a wall sprite, else nothing.</summary>

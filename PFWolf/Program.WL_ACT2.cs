@@ -268,9 +268,11 @@ internal partial class Program
         ob.X += (int)deltax;
         ob.Y += (int)deltay;
 
-        // the first player (in player order) it's on, if any
+        // the first player (in player order) it's on, if any, unless they're on its side (it's
+        // on its thrower's: Actor.Faction)
         var hit = _mapManager.Players.FirstOrDefault(pawn => Entities.Actors.Monster.IsTargetable(pawn)
-            && Math.Abs(ob.X - pawn.X) < PROJECTILESIZE && Math.Abs(ob.Y - pawn.Y) < PROJECTILESIZE);
+            && Math.Abs(ob.X - pawn.X) < PROJECTILESIZE && Math.Abs(ob.Y - pawn.Y) < PROJECTILESIZE
+            && !_factionManager.IsAlly(ob, pawn));
 
         if (!ProjectileTryMove(ob))
         {
@@ -289,10 +291,14 @@ internal partial class Program
         }
 
         // A HURTMONSTERS projectile (a trap's fireball) hurts the enemies it flies into too, not
-        // only the players: the nearest one within half a projectile's reach, never its shooter
-        var monster = hit == null && ob.HasFlag("HURTMONSTERS")
-            ? _mapManager.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE / 2).FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter))
-            : null;
+        // only the players: the nearest one within half a projectile's reach, never its shooter.
+        // Any other hits an enemy of another side (factions.yaml) it flies into, as it would a
+        // player; its own side's it passes by.
+        var monster = hit != null ? null
+            : ob.HasFlag("HURTMONSTERS")
+                ? _mapManager.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE / 2).FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter))
+                : _mapManager.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE - 1)
+                    .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter) && !_factionManager.IsAlly(ob, a));
 
         if (hit != null || monster != null)
         {       // hit the player (or an enemy)

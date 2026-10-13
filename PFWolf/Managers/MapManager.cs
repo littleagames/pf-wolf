@@ -1040,7 +1040,7 @@ internal class MapManager
             // Every killable enemy counts toward the level's kill ratio (the old SpawnStand/
             // SpawnPatrol/boss spawners each did this); ghosts take the branch above and don't,
             // and nor do those that aren't kills (Monster.IsKill: NOTCOUNTED ones, informants)
-            if (countKill && !Program.loadedgame && (builtActor is not Entities.Actors.Monster m || m.IsKill))
+            if (countKill && !Program.loadedgame && (builtActor is not Entities.Actors.Monster m || m.CountsAsKill))
                 Program.gamestate.killtotal++;
 
             // Points only for the first kill (Monster.Kill clears it)
@@ -1374,8 +1374,41 @@ internal class MapManager
             _actors.AddAfter(last, pawn);
     }
 
+    /// <summary>
+    /// The living enemies (shootable Monsters on a side), as of the start of this frame: who
+    /// else an enemy could go after besides the players, when <see cref="HasRivalries"/>
+    /// </summary>
+    internal List<Entities.Actors.Monster> Combatants { get; } = [];
+
+    /// <summary>
+    /// Whether, this frame, any of the enemies is hostile to another (factions.yaml): only then
+    /// do enemies look for each other. Without, they go after the players alone, as they always have.
+    /// </summary>
+    internal bool HasRivalries { get; private set; }
+
+    // Lists the frame's combatants, and whether any side among them is hostile to another
+    private void FindCombatants()
+    {
+        Combatants.Clear();
+        var sides = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var actor in _actors)
+        {
+            if (actor is Entities.Actors.Monster monster && !actor.IsRemoved && actor.Faction != null
+                && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
+            {
+                Combatants.Add(monster);
+                sides.Add(actor.Faction);
+            }
+        }
+
+        var table = Program._factionManager.Table;
+        HasRivalries = sides.Count > 1 && sides.Any(side => sides.Any(other => table.IsHostile(side, other)));
+    }
+
     internal void DoActors(uint tics)
     {
+        FindCombatants();
+
         var node = _actors.First;
         while (node != null)
         {
@@ -1433,6 +1466,11 @@ internal class MapManager
                 return;
             state = ob.CurrentState ?? state;
         }
+
+        // An enemy after someone checks it still has someone to be after (and, with rivals
+        // about, whether someone else is nearer)
+        if (ob is Entities.Actors.Monster fighter && fighter.BeforeThink(tics))
+            state = ob.CurrentState ?? state;
 
         Entities.Actors.ActorActionRegistry.Invoke(state.Think, ob);
 
@@ -1532,6 +1570,15 @@ internal class MapManager
         foreach (var actor in actors)
             Entities.Actors.ActorSnapshot.Capture(actor).Write(bw);
 
+        // Who each is after (an enemy's target) and who fired it (a projectile's shooter), by
+        // their places in the list above; -1 for none
+        int IndexOf(Entities.Actors.Actor? other) => other == null ? -1 : actors.IndexOf(other);
+        foreach (var actor in actors)
+        {
+            bw.Write(IndexOf((actor as Entities.Actors.Monster)?.TargetIfAny));
+            bw.Write(IndexOf(actor.Shooter));
+        }
+
         WriteTextureChanges(bw);
     }
 
@@ -1568,9 +1615,10 @@ internal class MapManager
         var actors = new List<Entities.Actors.ActorSnapshot>();
         for (int i = br.ReadCount(); i > 0; i--)
             actors.Add(Entities.Actors.ActorSnapshot.Read(br));
+        var links = actors.Select(_ => (Target: br.ReadInt32(), Shooter: br.ReadInt32())).ToList();
 
         var (starts, changes) = ReadTextureChanges(br);
-        return new LevelSnapshot(planes, tiles, blocking, actors, starts, changes);
+        return new LevelSnapshot(planes, tiles, blocking, actors, links, starts, changes);
     }
 
     /// <summary>
@@ -1633,13 +1681,17 @@ internal class MapManager
                 actor = CreateRuntimeActor(saved.ClassName)!;
 
             saved.ApplyTo(actor);
-            // Saves don't hold sides yet: each is back on its class's (a map thing's own
-            // faction:, or a projectile's shooter's, isn't kept)
-            actor.Faction = actor is Entities.Actors.PlayerPawn pawn
-                ? Program._factionManager.PlayerFaction(pawn.State.playerclass)
-                : Program._factionManager.SpawnFaction(actor);
             _actors.AddLast(actor);
             restored.Add(actor);
+        }
+
+        // Who each was after, and who fired each projectile
+        Entities.Actors.Actor? At(int index) => index >= 0 && index < restored.Count ? restored[index] : null;
+        for (int i = 0; i < restored.Count && i < level.Links.Count; i++)
+        {
+            if (restored[i] is Entities.Actors.Monster monster)
+                monster.Target = At(level.Links[i].Target)!;
+            restored[i].Shooter = At(level.Links[i].Shooter);
         }
 
         // Saves don't hold the enemies' actorat[] marks: put them back where they stand
@@ -1663,5 +1715,6 @@ internal sealed record LevelSnapshot(
     byte[,] TileMap,
     Actor?[,] ActorAt,
     List<Entities.Actors.ActorSnapshot> Actors,
+    List<(int Target, int Shooter)> Links,
     int[] AnimationStarts,
     Dictionary<int, Dictionary<string, string>> TextureChanges);

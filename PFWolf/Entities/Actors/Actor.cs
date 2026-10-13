@@ -38,7 +38,7 @@ internal record Actor : Thinker
 
     // The side it's on (factions.yaml, Managers/FactionManager.cs): its class's `faction`, a
     // mapdefs thing's `faction:`, or the pack's player-faction/monster-faction; null for none
-    // (decorations, pickups, projectiles until fired). Set as it spawns.
+    // (decorations, pickups). Set as it spawns; kept in saved games.
     public string? Faction { get; internal set; }
 
     // From the floor code it spawned on (mapdefs floors actor-codes, Planet Strike's): what it
@@ -56,7 +56,7 @@ internal record Actor : Thinker
     public bool IsRemoved { get; internal set; }
 
     // For a projectile: the actor that fired it (Monster.ThrowProjectile), so a
-    // death by it is put down to the shooter (Died's obituary). Not kept in saved games.
+    // death by it is put down to the shooter (Died's obituary, kill credit, being turned on).
     public Actor? Shooter { get; internal set; }
 
     // Its light (actordefs `light.*` properties and state `light:`, Program.ActorLights.cs):

@@ -128,8 +128,9 @@ internal partial class Program
         bool blocked = !ProjectileTryMove(ob);
         if (!blocked)
         {
+            // the player's side's (factions.yaml) it flies past: no friendly fire
             victim = (Entities.Actors.Actor?)_mapManager.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE / 2)
-                .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter))
+                .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter) && !_factionManager.IsAlly(ob, a))
                 ?? RivalHitBy(ob);
             if (victim == null)
                 return;
@@ -222,8 +223,9 @@ internal partial class Program
         {
             var (x, y) = open.Dequeue();
 
+            // a player's blast leaves their side's be (no friendly fire)
             foreach (var target in _mapManager.ShootableActorsAt(x, y).ToList())
-                if (!ReferenceEquals(target, ob))
+                if (!ReferenceEquals(target, ob) && !(shooter != null && _factionManager.IsAlly(shooter, target)))
                     target.Damage(shooter != null ? PlayerDamage(damage) : (uint)damage, ob);
 
             foreach (var pawn in blasted.Where(p => p.TileX == x && p.TileY == y))

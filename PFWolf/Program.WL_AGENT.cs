@@ -1616,7 +1616,8 @@ internal partial class Program
     /// <summary>Something a player's shot could hit, and how far in front of them it is (TransX)</summary>
     private readonly record struct ShotTarget(Entities.Actors.Actor Actor, int Depth);
 
-    // What the acting player's shot could hit, nearest first. Alone, as vanilla: the enemies
+    // What the acting player's shot could hit, nearest first, leaving out their own side's
+    // (factions.yaml: no friendly fire; a shot passes them by). Alone, as vanilla: the enemies
     // (Entities.Actors.Monster) the renderer last drew near the middle of the view -- the player
     // pawn, projectiles and the BJ-victory actor share _actors with the enemies but have no
     // "Chase" state, so they never qualify. With others playing, ShootCandidatesFrom.
@@ -1630,6 +1631,7 @@ internal partial class Program
         foreach (var actor in _mapManager.GetActors().OfType<Entities.Actors.Monster>())
         {
             if (actor == null || !actor.ResolvedStates.ContainsKey("Chase")) continue;
+            if (_factionManager.IsAlly(player, actor)) continue;     // the player's side: shots pass them by
             if (actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) && actor.RuntimeFlags.HasFlag(objflags.FL_VISABLE)
                 && Math.Abs(actor.ViewX - centerx) < shootdelta)
             {
@@ -1657,7 +1659,7 @@ internal partial class Program
         foreach (var actor in _mapManager.GetActors())
         {
             bool enemy = actor is Entities.Actors.Monster && !actor.IsRemoved && actor.ResolvedStates.ContainsKey("Chase")
-                && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE);
+                && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) && !_factionManager.IsAlly(shooter, actor);
             bool rival = gamemode == GameMode.Deathmatch && actor is Entities.Actors.PlayerPawn pawn
                 && pawn != shooter && pawn.State.health > 0;
             if (!enemy && !rival)

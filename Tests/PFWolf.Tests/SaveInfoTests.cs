@@ -3,7 +3,7 @@ namespace PFWolf.Tests;
 public class SaveInfoTests
 {
     // Program.SaveVersion: a save's header can only be read at the current format
-    private const int CurrentVersion = 21;
+    private const int CurrentVersion = 22;
 
     private string _folder = "";
 
