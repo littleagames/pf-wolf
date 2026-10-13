@@ -25,6 +25,34 @@ public record TranslationsAsset : Asset
 }
 
 /// <summary>
+/// A built translation: the table of 256 palette indices each band of a sprite's rows is drawn
+/// through, the first band starting at its top row and each other at its "below N" (rows down
+/// from the top). Most have one band, the same table for every row.
+/// </summary>
+public sealed class SpriteTranslation(IReadOnlyList<int> starts, IReadOnlyList<byte[]> tables)
+{
+    /// <summary>Where each band starts, in rows below the sprite's top, the first 0</summary>
+    public IReadOnlyList<int> Starts { get; } = starts;
+
+    /// <summary>Each band's table</summary>
+    public IReadOnlyList<byte[]> Tables { get; } = tables;
+
+    /// <summary>Whether it differs by row (some range has a "below N")</summary>
+    public bool IsBanded => Tables.Count > 1;
+
+    /// <summary>The table for a row so many rows below the sprite's top (above it, the first)</summary>
+    public byte[] ForRow(int rowsBelowTop)
+    {
+        for (int band = Tables.Count - 1; band > 0; band--)
+        {
+            if (rowsBelowTop >= Starts[band])
+                return Tables[band];
+        }
+        return Tables[0];
+    }
+}
+
+/// <summary>
 /// Builds a translation: a table of 256 palette indices, what each index of a sprite is drawn
 /// as. Every index starts as itself; each range then recolors some, from the index's own color
 /// in the palette (not what an earlier range made of it). A range is ZDoom's:
@@ -34,7 +62,11 @@ public record TranslationsAsset : Asset
 ///   "208:223=%[0,0,0]:[2,0,0]"   desaturated: each index's own lightness picks the color
 ///                                between the two (each 0 to 2, 1 being full), keeping its
 ///                                shading whatever color it was
-/// One index on its own ("15=31") is a range of one.
+/// One index on its own ("15=31") is a range of one. A range ending "below N" only recolors the
+/// sprite from N rows below its top (its first row with anything drawn) down: for colors a sprite
+/// wears both on its head and its body, such as a Wolf3D guard's face and his tan uniform
+/// ("198:206=97:101 below 10" recolors the uniform's light tones but not the face). Such a
+/// translation is then a table for each band of rows (SpriteTranslation).
 /// </summary>
 public static class TranslationTable
 {
@@ -42,24 +74,65 @@ public static class TranslationTable
     public static byte[] Identity() => Enumerable.Range(0, 256).Select(i => (byte)i).ToArray();
 
     /// <summary>
-    /// The table the ranges make against the palette; a range that can't be read is left out,
-    /// with a warning (naming <paramref name="name"/>)
+    /// The table the ranges make against the palette, for the rows of a sprite every range
+    /// recolors (its lowest); a range that can't be read is left out, with a warning (naming
+    /// <paramref name="name"/>)
     /// </summary>
     public static byte[] Build(IEnumerable<string> ranges, IReadOnlyList<PaletteColor> palette, string name, List<string> warnings)
+        => BuildTranslation(ranges, palette, name, warnings).Tables[^1];
+
+    /// <summary>
+    /// The tables the ranges make against the palette: one for the rows above any range's
+    /// "below N", and one more from each N down, each with every range that recolors there
+    /// </summary>
+    public static SpriteTranslation BuildTranslation(IEnumerable<string> ranges, IReadOnlyList<PaletteColor> palette, string name, List<string> warnings)
     {
-        var table = Identity();
+        var parsed = new List<(string Range, int Below)>();
         foreach (var range in ranges)
         {
             try
             {
-                Apply(table, range, palette);
+                parsed.Add(SplitBelow(range));
             }
             catch (FormatException e)
             {
                 warnings.Add($"translations.yaml: {name}'s \"{range}\" is left out: {e.Message}");
             }
         }
-        return table;
+
+        var starts = parsed.Select(p => p.Below).Append(0).Distinct().Order().ToList();
+        var tables = new List<byte[]>();
+        for (int band = 0; band < starts.Count; band++)
+        {
+            var table = Identity();
+            foreach (var (range, below) in parsed)
+            {
+                if (below > starts[band])
+                    continue;
+                try
+                {
+                    Apply(table, range, palette);
+                }
+                catch (FormatException e)
+                {
+                    if (below == starts[band])     // warned about once, in the band it starts
+                        warnings.Add($"translations.yaml: {name}'s \"{range}\" is left out: {e.Message}");
+                }
+            }
+            tables.Add(table);
+        }
+        return new SpriteTranslation(starts, tables);
+    }
+
+    // A range and its "below N" (0 without one)
+    private static (string Range, int Below) SplitBelow(string range)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(range, @"^(.*?)\s+below\s+(\S+)\s*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (!match.Success)
+            return (range, 0);
+        if (!int.TryParse(match.Groups[2].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var rows) || rows < 0)
+            throw new FormatException($"\"below {match.Groups[2].Value}\" needs a number of rows, 0 or more");
+        return (match.Groups[1].Value, rows);
     }
 
     private static void Apply(byte[] table, string range, IReadOnlyList<PaletteColor> palette)

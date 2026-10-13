@@ -13,17 +13,20 @@
 #                                 color to each step; "#FF0000:#400000" works too
 #   "1:254=%[0,0,0]:[2,0,0]"      desaturated: each index's lightness picks the color between the
 #                                 two (each 0 to 2, 1 being full), keeping the sprite's shading
+# Any range can end "below N": it then only recolors from N rows below the sprite's top (its
+# first row with anything drawn) down, for colors a sprite wears on its head and its body both.
 #
 # Wolf3D's palette has 16-step ramps, light to dark: greys 16:31, red 32:47, yellow 64:79, green
-# 96:111, cyan 112:127, blue 144:159, magenta 176:191, and skin to brown 192:223. A guard's
-# uniform is 207:223 (its face is just above, 198:206), an SS's 144:159, an officer's 16:31, and
-# the player's shirt (sprites/wolf3d/player) 96:111.
+# 96:111, cyan 112:127, blue 144:159, magenta 176:191, and skin to brown 192:223. A guard's tan
+# uniform is that skin-to-brown ramp, 198:223, the same colors as his face, so his light tones
+# (198:206) are only recolored below his head (the top 10 rows of the sprite); an SS's uniform
+# is 144:159, an officer's 16:31, and the player's shirt (sprites/wolf3d/player) 96:111.
 #
 # A pack built on this one (spear, wolf3d-shareware, ...) starts from this file, and a mod's
 # translations.yaml is laid over it name by name (`name: !remove` takes one out).
 
 # The player's allies (factions.yaml allies), in the player's green
-allies: ["207:223=101:111"]
+allies: ["207:223=102:111", "198:206=97:101 below 10"]
 allies-ss: ["144:159=97:111"]
 allies-officer: ["16:31=98:111"]
 

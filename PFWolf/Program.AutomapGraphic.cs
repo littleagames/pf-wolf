@@ -303,7 +303,8 @@ internal partial class Program
                         continue;
 
                     if (asset.OpacityMask[srcRow + u] != 0)
-                        row[x] = translation == null ? asset.RawData[srcRow + u] : translation[asset.RawData[srcRow + u]];
+                        row[x] = translation == null ? asset.RawData[srcRow + u]
+                            : translation.ForRow(sprite.Top + v - asset.TopRow)[asset.RawData[srcRow + u]];
                 }
             }
         }

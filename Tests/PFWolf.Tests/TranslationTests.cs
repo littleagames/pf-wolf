@@ -84,7 +84,53 @@ public class TranslationTests
         Assert.That(table[64], Is.EqualTo(11), "64 lightness x 2 = dark red");
     }
 
+    [Test]
+    public void A_Range_Below_N_Only_Recolors_From_That_Many_Rows_Down()
+    {
+        // Arrange
+        var warnings = new List<string>();
+
+        // Act: 50 everywhere, 60 from row 10 down, 70 from row 20 down
+        var translation = TranslationTable.BuildTranslation(["50=51", "60=61 below 10", "70=71 below 20"], Palette(), "test", warnings);
+
+        // Assert
+        Assert.That(warnings, Is.Empty);
+        Assert.That(translation.IsBanded, Is.True);
+        Assert.That(translation.Starts, Is.EqualTo(new[] { 0, 10, 20 }));
+        Assert.That((translation.ForRow(0)[50], translation.ForRow(0)[60], translation.ForRow(0)[70]), Is.EqualTo(((byte)51, (byte)60, (byte)70)));
+        Assert.That((translation.ForRow(9)[60], translation.ForRow(10)[60], translation.ForRow(10)[70]), Is.EqualTo(((byte)60, (byte)61, (byte)70)));
+        Assert.That((translation.ForRow(25)[50], translation.ForRow(25)[60], translation.ForRow(25)[70]), Is.EqualTo(((byte)51, (byte)61, (byte)71)));
+        Assert.That(translation.ForRow(-3)[50], Is.EqualTo(51), "above the top is the first band");
+        Assert.That(TranslationTable.Build(["60=61 below 10"], Palette(), "test", warnings)[60], Is.EqualTo(61), "Build is the lowest rows'");
+    }
+
+    [Test]
+    public void A_Translation_Without_Below_Is_One_Table()
+    {
+        // Act
+        var translation = TranslationTable.BuildTranslation(["50=51"], Palette(), "test", []);
+
+        // Assert
+        Assert.That(translation.IsBanded, Is.False);
+        Assert.That(translation.ForRow(40)[50], Is.EqualTo(51));
+    }
+
+    [Test]
+    public void A_Sprites_Top_Is_Its_First_Drawn_Row()
+    {
+        // Arrange: 4 wide, drawn from row 2
+        var mask = new byte[4 * 5];
+        mask[2 * 4 + 1] = 1;
+        mask[4 * 4 + 3] = 1;
+
+        // Act / Assert
+        Assert.That(new SpriteAsset { Width = 4, Height = 5, OpacityMask = mask }.TopRow, Is.EqualTo(2));
+        Assert.That(new SpriteAsset { Width = 4, Height = 5, OpacityMask = new byte[20] }.TopRow, Is.Zero, "blank");
+    }
+
     [TestCase("100:103")]
+    [TestCase("1=2 below x")]
+    [TestCase("1=2 below -3")]
     [TestCase("100:300=1:2")]
     [TestCase("a:b=1:2")]
     [TestCase("1:2=[1,2]:[3,4,5]")]

@@ -36,4 +36,22 @@ public record SpriteAsset : Asset
 
     /// <summary>The pixel (from the top-left corner) that sits on the actor's spot on the floor</summary>
     public (int X, int Y) Origin => HasOffset ? (Offset.x, Offset.y) : (DefaultOriginX, DefaultOriginY);
+
+    // Each opacity mask's first drawn row, worked out once (by the mask, so a copy made `with` a
+    // new one gets its own)
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<byte[], object> TopRows = new();
+
+    /// <summary>
+    /// Its top: the first row with anything drawn (0 for a blank sprite), which translations'
+    /// "below N" counts down from (SpriteTranslation)
+    /// </summary>
+    public int TopRow => (int)TopRows.GetValue(OpacityMask, mask =>
+    {
+        for (int i = 0; i < mask.Length; i++)
+        {
+            if (mask[i] != 0)
+                return Width > 0 ? i / Width : 0;
+        }
+        return 0;
+    });
 }

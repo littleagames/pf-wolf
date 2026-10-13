@@ -25,14 +25,18 @@ internal partial class Program
     ===================
     */
 
-    // translation, if any, recolors each index first (Managers/TranslationManager.cs)
+    // translation, if any, recolors each index first (Managers/TranslationManager.cs), by its
+    // row's band when it has more than one ("below N")
     internal static void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column, byte[] shade, int shadeofs,
-        bool cloaked = false, byte[]? translation = null)
+        bool cloaked = false, SpriteTranslation? translation = null)
     {
         int height = sprite.Height;
         int width = sprite.Width;
         byte[] indices = sprite.RawData;
         byte[] mask = sprite.OpacityMask;
+        byte[]? table = translation?.Tables[0];
+        bool banded = translation is { IsBanded: true };
+        int top = banded ? sprite.TopRow : 0;
 
         int frac = 0;
         int startpix;
@@ -62,7 +66,9 @@ internal partial class Program
                 continue;                       // transparent pixel
 
             byte index = indices[srcIndex];
-            byte color = shade[shadeofs + (translation == null ? index : translation[index])];
+            if (banded)
+                table = translation!.ForRow(row - top);
+            byte color = shade[shadeofs + (table == null ? index : table[index])];
 
             var destIndex = _videoManager.ylookup[startpix] + x;
             unsafe

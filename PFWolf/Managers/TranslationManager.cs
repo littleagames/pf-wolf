@@ -21,7 +21,7 @@ internal class TranslationManager
     private readonly Lazy<AssetManager> assetManager;
     private TranslationsAsset? definitions;
     private IReadOnlyList<PaletteColor>? palette;
-    private readonly Dictionary<string, byte[]?> tables = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, SpriteTranslation?> tables = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, List<string>> ancestries = new(StringComparer.OrdinalIgnoreCase);
 
     private TranslationsAsset Definitions =>
@@ -36,7 +36,7 @@ internal class TranslationManager
     /// A translation's table, or null for none (no name, or one translations.yaml doesn't have,
     /// warned about once)
     /// </summary>
-    internal byte[]? Table(string? name)
+    internal SpriteTranslation? Table(string? name)
     {
         if (string.IsNullOrWhiteSpace(name))
             return null;
@@ -50,7 +50,7 @@ internal class TranslationManager
         }
 
         var warnings = new List<string>();
-        table = TranslationTable.Build(ranges, Palette, name, warnings);
+        table = TranslationTable.BuildTranslation(ranges, Palette, name, warnings);
         foreach (var warning in warnings)
             Console.WriteLine(warning);
         return tables[name] = table;
@@ -106,7 +106,7 @@ internal class TranslationManager
     }
 
     /// <summary>The table an actor is drawn through (TranslationOf), or null to draw it as it is</summary>
-    internal byte[]? TableOf(Entities.Actors.Actor actor) => Table(TranslationOf(actor));
+    internal SpriteTranslation? TableOf(Entities.Actors.Actor actor) => Table(TranslationOf(actor));
 
     // A class, then its parent, and so on (actordefs parent:)
     private List<string> Ancestry(string className)
