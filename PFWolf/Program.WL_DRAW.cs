@@ -262,6 +262,8 @@ internal partial class Program
     static readonly TextureAsset?[] postundertexture = new TextureAsset?[MAXPOSTS];
     static readonly bool[] postunderflat = new bool[MAXPOSTS];             // the underside's texture is a ceiling flat
     static readonly byte[][] postlight = new byte[MAXPOSTS][];              // its face's light row
+    static readonly TextureAsset?[] postpatch = new TextureAsset?[MAXPOSTS];    // a wall patch over it (mapdefs patches), drawn at postlowerofs
+    static readonly byte[] postpatchstory = new byte[MAXPOSTS];              // the patch's story (MapPatchTranslation.Story)
 
     // The open tile the trace last came from (a TileIndex): walls and doors it hits are seen from
     // there, so take its base light. A wall or door tile keeps the one before it (a wall the
@@ -297,8 +299,10 @@ internal partial class Program
     internal static void ScalePost()
     {
         var upper = uppersource ?? postsource;
-        QueuePost(postheight, 0, hitstories, postsource, postofs, upper, uppersource != null ? upperofs : postofs);
+        QueuePost(postheight, 0, hitstories, postsource, postofs, upper, uppersource != null ? upperofs : postofs,
+            patch: patchsource, patchstory: patchstory);
         uppersource = null;
+        patchsource = null;
 
         //
         // sprites clip against the nearest wall: nothing behind it is taller than it
@@ -316,10 +320,13 @@ internal partial class Program
     }
 
     static void QueuePost(short height, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
-        short underside = 0, TextureAsset? undertexture = null, byte[]? light = null, bool underflat = false)
+        short underside = 0, TextureAsset? undertexture = null, byte[]? light = null, bool underflat = false,
+        TextureAsset? patch = null, int patchstory = 0)
     {
         if (postcount == MAXPOSTS)
             return;
+        postpatch[postcount] = patch;
+        postpatchstory[postcount] = (byte)patchstory;
         postlight[postcount] = light ?? WallLight(xintercept, yintercept);
         postunderside[postcount] = underside;
         postundertexture[postcount] = undertexture;
@@ -346,6 +353,9 @@ internal partial class Program
             DrawPost(pixx, postheights[postcount] >> 3, postfirststory[postcount], poststories[postcount],
                 postlower[postcount], postlowerofs[postcount], postupper[postcount], postupperofs[postcount],
                 postlight[postcount], ShadeOffsetForHeight(postheights[postcount]));
+            if (postpatch[postcount] is { } patch)
+                DrawPatch(pixx, postheights[postcount] >> 3, poststories[postcount], patch, postlowerofs[postcount],
+                    postpatchstory[postcount], postlight[postcount], ShadeOffsetForHeight(postheights[postcount]));
             if (postunderside[postcount] != 0)
                 DrawUnderside(pixx, postheights[postcount] >> 3, postunderside[postcount] >> 3, postundertexture[postcount],
                     postunderflat[postcount]);
@@ -641,6 +651,63 @@ internal partial class Program
         }
     }
 
+    const byte PATCHMASK = 0xff;        // a wall patch's see-through pixels, as a flat's
+
+    /// <summary>
+    /// Draws one screen column of a wall patch over the wall post just drawn (DrawPost), its
+    /// texels laid out the same way: from the floor of story <paramref name="story"/> (1 up) for
+    /// as many stories as the patch is tall, or (story 0) on every story of the wall, repeating as
+    /// the wall's texture does. Its see-through pixels leave the wall showing.
+    /// </summary>
+    static void DrawPatch(int x, int half, int stories, TextureAsset patch, int ofs, int story, byte[] shade, int shadeofs)
+    {
+        if (half <= 0) half = 100;
+
+        int height = patch.Height;
+        int first = story == 0 ? 0 : story - 1;
+        int last = story == 0 ? stories : Math.Min(stories, first + (height + TEXTURESIZE - 1) / TEXTURESIZE);
+        if (first >= last)
+            return;                     // on a story the wall doesn't reach
+
+        int floor = FloorRow(half);
+        int bottom = floor - 1 - first * 2 * half;
+        int top = floor - last * 2 * half;
+        int y = Math.Min(bottom, viewheight - 1);
+        if (top < 0) top = 0;
+        if (y < top) return;
+
+        // texels up from the patch's bottom, stepped as DrawPost steps the wall's
+        long num = (long)(bottom - y) * (TEXTURESIZE / 2);
+        long t = num / half;
+        long rem = num % half;
+        int pitch = (int)_videoManager.bufferPitch;
+
+        byte[] data = patch.RawData;
+        int column = TextureColumn(patch, ofs);
+
+        unsafe
+        {
+            byte* dest = (byte*)vbufPtr + screenofs + x;
+            for (; y >= top; y--)
+            {
+                long row = story == 0 ? t % height : t;
+                if (row < height)
+                {
+                    byte pixel = data[column + height - 1 - (int)row];
+                    if (pixel != PATCHMASK)
+                        dest[y * pitch] = shade[shadeofs + pixel];
+                }
+
+                rem += TEXTURESIZE / 2;
+                while (rem >= half)
+                {
+                    rem -= half;
+                    t++;
+                }
+            }
+        }
+    }
+
     // Where the column the trace found (0 to 63, times 64) starts in the texture's pixels
     static int TextureColumn(TextureAsset texture, int ofs) =>
         (ofs >> TEXTURESHIFT) * texture.Width / TEXTURESIZE * texture.Height;
@@ -673,6 +740,7 @@ internal partial class Program
         postx = pixx;
         var mapDefs = _mapManager.GetMapData();
         var face = SeenFace(vertical: true);
+        bool jamb = false;
         MapTextureTranslation? mapTexture = MapTextureTranslation.None;
         if ((tilehit & BIT_WALL) != 0)
         {
@@ -687,6 +755,7 @@ internal partial class Program
                 var door = doorobjlist[doortile & ~BIT_DOOR];
                 wallpic = DoorFace(door, xtilestep == 1 ? "east" : "west");
                 SetUpperPost((mapTexture ?? MapTextureTranslation.None).WallFace(face), texture, xtile, yinttile);   // the wall above the door frame
+                jamb = true;
             }
             else
             {
@@ -707,6 +776,8 @@ internal partial class Program
         }
         postsource = textureAsset;
         postofs = texture;
+        if (!jamb)                      // a door's jamb takes no patch
+            SetPatchPost(xtile, yinttile, face);
         ScalePost();
     }
 
@@ -738,6 +809,7 @@ internal partial class Program
 
         var mapDefs = _mapManager.GetMapData();
         var face = SeenFace(vertical: false);
+        bool jamb = false;
         MapTextureTranslation? mapTexture = MapTextureTranslation.None;
 
         if ((tilehit & BIT_WALL) != 0)
@@ -752,6 +824,7 @@ internal partial class Program
                 var door = doorobjlist[doortile & ~BIT_DOOR];
                 wallpic = DoorFace(door, ytilestep == 1 ? "south" : "north");
                 SetUpperPost((mapTexture ?? MapTextureTranslation.None).WallFace(face), texture, xinttile, ytile);  // the wall above the door frame
+                jamb = true;
             }
             else
             {
@@ -773,6 +846,8 @@ internal partial class Program
 
         postsource = textureAsset;
         postofs = texture;
+        if (!jamb)                      // a door's jamb takes no patch
+            SetPatchPost(xinttile, ytile, face);
         ScalePost();
     }
 
@@ -853,6 +928,28 @@ internal partial class Program
     static TextureAsset? WorldTexture(string name, int tilex, int tiley)
         => _assetManager.Find<TextureAsset>(_mapManager.ChangedTexture(tilex, tiley, name), gamestate.TimeCount,
             _mapManager.animstart[(tiley << MapManager.MAPSHIFT) + tilex]);
+
+    static TextureAsset? patchsource;   // the wall patch for the post ScalePost queues, if it has one
+    static int patchstory;
+    static bool hitpushwall;            // the wall being hit is a moving pushwall: its tile is pwallx, pwally
+
+    /// <summary>
+    /// Sets the patch (mapdefs patches) on the face the trace sees of the wall tile it hit, for
+    /// the post being drawn: none if the tile has none or it isn't on that face. A moving
+    /// pushwall's patch is on its own tile, whatever tile the trace is in.
+    /// </summary>
+    static void SetPatchPost(int tilex, int tiley, string face)
+    {
+        patchsource = null;
+        if (hitpushwall)
+            (tilex, tiley) = (pwallx, pwally);
+
+        int id = _mapManager.GetPatch(tilex, tiley);
+        if (id == 0 || _mapManager.GetMapData()?.Patches.TryGetValue(id, out var patch) != true || !patch!.IsOn(face))
+            return;
+        patchsource = WorldTexture(patch.Texture, tilex, tiley);
+        patchstory = patch.Story;
+    }
 
     // Points the stories above the first at the named wall texture, for the post being drawn
     static void SetUpperPost(string wallpic, int texture, int tilex, int tiley)
@@ -1393,7 +1490,8 @@ internal partial class Program
             //
             // special treatment when player is in back tile of pushwall
             //
-            if (_mapManager.tilemap[focaltx, focalty] == BIT_WALL)
+            hitpushwall = _mapManager.tilemap[focaltx, focalty] == BIT_WALL;
+            if (hitpushwall)
             {
                 SelectPushWall(focaltx, focalty);
                 hitstories = _mapManager.WallStories(pwallx, pwally);
@@ -1523,7 +1621,8 @@ internal partial class Program
         CloseArch(VertEdge, yintercept);
         EnterTileLight(xtile - xtilestep, yinttile);
         tilehit = _mapManager.tilemap[xtile, yinttile];
-        if (tilehit == BIT_WALL)
+        hitpushwall = tilehit == BIT_WALL;
+        if (hitpushwall)
             SelectPushWall(hitx, hity);     // which of the moving pushwalls this is
         hitstories =tilehit == BIT_WALL ? _mapManager.WallStories(pwallx, pwally) : _mapManager.WallStories(hitx, hity);
 
@@ -1767,7 +1866,8 @@ internal partial class Program
         CloseArch(xintercept, HorizEdge);
         EnterTileLight(xinttile, ytile - ytilestep);
         tilehit = _mapManager.tilemap[xinttile, ytile];
-        if (tilehit == BIT_WALL)
+        hitpushwall = tilehit == BIT_WALL;
+        if (hitpushwall)
             SelectPushWall(hitx, hity);     // which of the moving pushwalls this is
         hitstories =tilehit == BIT_WALL ? _mapManager.WallStories(pwallx, pwally) : _mapManager.WallStories(hitx, hity);
 

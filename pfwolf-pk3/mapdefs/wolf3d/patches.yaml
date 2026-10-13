@@ -4,7 +4,10 @@
 # (plane 0 = wall id + patch id * 256); it goes with the wall when the wall is pushed. Patches
 # on doors and open floor are ignored. The `patch` console command shows or sets one.
 #   texture:  the picture, as wide as a wall texture and any height (a textures/ PNG or a VSWAP
-#             texture), or an animdefs animation
+#             texture), or an animdefs animation. It's lit, shaded and mirrored as the wall's
+#             own texture is. 64 rows cover a story, from its floor up, so a 128-row picture
+#             covers two; one shorter than 64 rows sits at the bottom of its story. Not drawn on
+#             the face of a door's frame toward the door.
 #   sides:    the faces it's on, e.g. [south] (a face is named the way it looks out: the north
 #             face is seen from the tile north of the wall); left out, all four
 #   story:    the story of a tall wall it's on, 1 (the bottom one, the default) and up; 0 repeats
