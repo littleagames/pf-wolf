@@ -262,7 +262,8 @@ internal partial class Program
     static readonly TextureAsset?[] postundertexture = new TextureAsset?[MAXPOSTS];
     static readonly bool[] postunderflat = new bool[MAXPOSTS];             // the underside's texture is a ceiling flat
     static readonly byte[][] postlight = new byte[MAXPOSTS][];              // its face's light row
-    static readonly TextureAsset?[] postpatch = new TextureAsset?[MAXPOSTS];    // a wall patch over it (mapdefs patches), drawn at postlowerofs
+    static readonly TextureAsset?[] postpatch = new TextureAsset?[MAXPOSTS];    // a wall patch over it (mapdefs patches)
+    static readonly int[] postpatchofs = new int[MAXPOSTS];                   // the patch's column: postlowerofs, unless the wall's face is flipped
     static readonly byte[] postpatchstory = new byte[MAXPOSTS];              // the patch's story (MapPatchTranslation.Story)
 
     // The open tile the trace last came from (a TileIndex): walls and doors it hits are seen from
@@ -300,7 +301,7 @@ internal partial class Program
     {
         var upper = uppersource ?? postsource;
         QueuePost(postheight, 0, hitstories, postsource, postofs, upper, uppersource != null ? upperofs : postofs,
-            patch: patchsource, patchstory: patchstory);
+            patch: patchsource, patchofs: patchofs, patchstory: patchstory);
         uppersource = null;
         patchsource = null;
 
@@ -321,11 +322,12 @@ internal partial class Program
 
     static void QueuePost(short height, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
         short underside = 0, TextureAsset? undertexture = null, byte[]? light = null, bool underflat = false,
-        TextureAsset? patch = null, int patchstory = 0)
+        TextureAsset? patch = null, int patchofs = 0, int patchstory = 0)
     {
         if (postcount == MAXPOSTS)
             return;
         postpatch[postcount] = patch;
+        postpatchofs[postcount] = patchofs;
         postpatchstory[postcount] = (byte)patchstory;
         postlight[postcount] = light ?? WallLight(xintercept, yintercept);
         postunderside[postcount] = underside;
@@ -354,7 +356,7 @@ internal partial class Program
                 postlower[postcount], postlowerofs[postcount], postupper[postcount], postupperofs[postcount],
                 postlight[postcount], ShadeOffsetForHeight(postheights[postcount]));
             if (postpatch[postcount] is { } patch)
-                DrawPatch(pixx, postheights[postcount] >> 3, poststories[postcount], patch, postlowerofs[postcount],
+                DrawPatch(pixx, postheights[postcount] >> 3, poststories[postcount], patch, postpatchofs[postcount],
                     postpatchstory[postcount], postlight[postcount], ShadeOffsetForHeight(postheights[postcount]));
             if (postunderside[postcount] != 0)
                 DrawUnderside(pixx, postheights[postcount] >> 3, postunderside[postcount] >> 3, postundertexture[postcount],
@@ -455,8 +457,8 @@ internal partial class Program
         // else at either end of the run across it (a face on the end of a run, entered along it)
         int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
         var face = SeenFace(vertical);
-        archtexture = ArchEndTexture(tilex, tiley, -dx, -dy, face) ?? ArchEndTexture(tilex, tiley, dx, dy, face)
-            ?? ArchEndTexture(tilex, tiley, -dy, -dx, face) ?? ArchEndTexture(tilex, tiley, dy, dx, face);
+        archtexture = ArchEndTexture(tilex, tiley, -dx, -dy, face, out bool mirrored) ?? ArchEndTexture(tilex, tiley, dx, dy, face, out mirrored)
+            ?? ArchEndTexture(tilex, tiley, -dy, -dx, face, out mirrored) ?? ArchEndTexture(tilex, tiley, dy, dx, face, out mirrored);
         if (archtexture == null)
             return;                     // nothing to texture it from: leave it open
 
@@ -467,13 +469,14 @@ internal partial class Program
         archstories = _mapManager.storymap[tilex, tiley];
         archheight = HeightAt(edgex, edgey);
         archofs = vertical
-            ? LintelColumn(edgey, xtilestep == -1)
-            : LintelColumn(edgex, ytilestep == 1);
+            ? LintelColumn(edgey, (xtilestep == -1) != mirrored)
+            : LintelColumn(edgex, (ytilestep == 1) != mirrored);
     }
 
     // The texture on face of the wall that ends the run of arch tiles from (tilex, tiley) going (dx, dy)
-    static TextureAsset? ArchEndTexture(int tilex, int tiley, int dx, int dy, string face)
+    static TextureAsset? ArchEndTexture(int tilex, int tiley, int dx, int dy, string face, out bool mirrored)
     {
+        mirrored = false;
         do
         {
             tilex += dx;
@@ -483,7 +486,7 @@ internal partial class Program
         }
         while (IsArch(tilex, tiley));
 
-        return WallTexture(tilex, tiley, face);
+        return WallTexture(tilex, tiley, face, out mirrored);
     }
 
     /// <summary>
@@ -754,7 +757,8 @@ internal partial class Program
                 // the door's jamb on the side the ray left it from
                 var door = doorobjlist[doortile & ~BIT_DOOR];
                 wallpic = DoorFace(door, xtilestep == 1 ? "east" : "west");
-                SetUpperPost((mapTexture ?? MapTextureTranslation.None).WallFace(face), texture, xtile, yinttile);   // the wall above the door frame
+                SetUpperPost((mapTexture ?? MapTextureTranslation.None).WallFace(face),
+                    FlipColumn(mapTexture, face, texture), xtile, yinttile);   // the wall above the door frame
                 jamb = true;
             }
             else
@@ -775,11 +779,15 @@ internal partial class Program
             return;
         }
         postsource = textureAsset;
-        postofs = texture;
+        postofs = jamb ? texture : FlipColumn(mapTexture, face, texture);
         if (!jamb)                      // a door's jamb takes no patch
-            SetPatchPost(xtile, yinttile, face);
+            SetPatchPost(xtile, yinttile, face, texture);
         ScalePost();
     }
+
+    // A wall face's texture column, mirrored when the wall flips that face (mapdefs walls flip)
+    static int FlipColumn(MapTextureTranslation? mapTexture, string face, int texture) =>
+        mapTexture != null && mapTexture.IsFlipped(face) ? TEXTUREMASK - texture : texture;
 
     /*
     ====================
@@ -823,7 +831,8 @@ internal partial class Program
             {
                 var door = doorobjlist[doortile & ~BIT_DOOR];
                 wallpic = DoorFace(door, ytilestep == 1 ? "south" : "north");
-                SetUpperPost((mapTexture ?? MapTextureTranslation.None).WallFace(face), texture, xinttile, ytile);  // the wall above the door frame
+                SetUpperPost((mapTexture ?? MapTextureTranslation.None).WallFace(face),
+                    FlipColumn(mapTexture, face, texture), xinttile, ytile);  // the wall above the door frame
                 jamb = true;
             }
             else
@@ -845,9 +854,9 @@ internal partial class Program
         }
 
         postsource = textureAsset;
-        postofs = texture;
+        postofs = jamb ? texture : FlipColumn(mapTexture, face, texture);
         if (!jamb)                      // a door's jamb takes no patch
-            SetPatchPost(xinttile, ytile, face);
+            SetPatchPost(xinttile, ytile, face, texture);
         ScalePost();
     }
 
@@ -930,16 +939,19 @@ internal partial class Program
             _mapManager.animstart[(tiley << MapManager.MAPSHIFT) + tilex]);
 
     static TextureAsset? patchsource;   // the wall patch for the post ScalePost queues, if it has one
+    static int patchofs;                // its column (never mirrored with a flipped face)
     static int patchstory;
     static bool hitpushwall;            // the wall being hit is a moving pushwall: its tile is pwallx, pwally
 
     /// <summary>
     /// Sets the patch (mapdefs patches) on the face the trace sees of the wall tile it hit, for
     /// the post being drawn: none if the tile has none or it isn't on that face. A moving
-    /// pushwall's patch is on its own tile, whatever tile the trace is in.
+    /// pushwall's patch is on its own tile, whatever tile the trace is in. ofs is the face's
+    /// column before any flip, so a patch reads the right way round on a flipped face.
     /// </summary>
-    static void SetPatchPost(int tilex, int tiley, string face)
+    static void SetPatchPost(int tilex, int tiley, string face, int ofs)
     {
+        patchofs = ofs;
         patchsource = null;
         if (hitpushwall)
             (tilex, tiley) = (pwallx, pwally);
@@ -971,18 +983,20 @@ internal partial class Program
     /// <summary>
     /// The texture of the wall a door is set into, from the wall tile on either side of it in
     /// line with the door, on the face the trace sees; null if neither side is a plain wall.
+    /// mirrored: that wall flips the face (mapdefs walls flip).
     /// </summary>
-    static TextureAsset? LintelTexture(doorobj_t door)
+    static TextureAsset? LintelTexture(doorobj_t door, out bool mirrored)
     {
         int dx = door.vertical ? 0 : 1, dy = door.vertical ? 1 : 0;
         var face = SeenFace(door.vertical);
-        return WallTexture(door.tilex - dx, door.tiley - dy, face)
-            ?? WallTexture(door.tilex + dx, door.tiley + dy, face);
+        return WallTexture(door.tilex - dx, door.tiley - dy, face, out mirrored)
+            ?? WallTexture(door.tilex + dx, door.tiley + dy, face, out mirrored);
     }
 
-    // A wall tile's texture on face ("north", "south", "east" or "west")
-    static TextureAsset? WallTexture(int tilex, int tiley, string face)
+    // A wall tile's texture on face ("north", "south", "east" or "west"), and whether it flips it
+    static TextureAsset? WallTexture(int tilex, int tiley, string face, out bool mirrored)
     {
+        mirrored = false;
         var tile = _mapManager.tilemap[tilex, tiley];
         if ((tile & BIT_DOOR) != 0 || (tile & ~BIT_WALL) == 0)
             return null;                // open floor, a door or a pushwall
@@ -990,6 +1004,7 @@ internal partial class Program
         MapTextureTranslation? mapTexture = null;
         if (_mapManager.GetMapData()?.Walls.TryGetValue(tile & ~BIT_WALL, out mapTexture) != true || mapTexture == null)
             return null;
+        mirrored = mapTexture.IsFlipped(face);
         return WorldTexture(mapTexture.WallFace(face), tilex, tiley);
     }
 
@@ -1006,8 +1021,9 @@ internal partial class Program
     {
         if (hitstories == 1)
             return;
-        uppersource = LintelTexture(door) ?? postsource;
-        upperofs = LintelColumn(along, flip);
+        var lintel = LintelTexture(door, out bool mirrored);
+        uppersource = lintel ?? postsource;
+        upperofs = LintelColumn(along, lintel != null && mirrored ? !flip : flip);
     }
 
     /// <summary>
@@ -1020,14 +1036,14 @@ internal partial class Program
         if (stories == 1)
             return;
 
-        var texture = LintelTexture(door);
+        var texture = LintelTexture(door, out bool mirrored);
         if (texture == null)
             return;                     // set into nothing: leave the view above it open
 
         short height = HeightAt(planex, planey);
         int ofs = door.vertical
-            ? LintelColumn(planey, xtilestep == -1)
-            : LintelColumn(planex, ytilestep == 1);
+            ? LintelColumn(planey, (xtilestep == -1) != mirrored)
+            : LintelColumn(planex, (ytilestep == 1) != mirrored);
         QueuePost(height, 1, stories, texture, ofs, texture, ofs, light: WallLight(planex, planey));
     }
 

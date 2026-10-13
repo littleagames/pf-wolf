@@ -296,6 +296,16 @@ public record MapTextureTranslation
     }
 
     /// <summary>
+    /// Walls only: the faces (north, south, east, west: the way the face looks out) whose texture
+    /// is drawn mirrored left to right, such as the two sides of a truck from one texture. A
+    /// patch on a flipped face isn't mirrored. Empty: none.
+    /// </summary>
+    public List<string> Flip { get; init; } = [];
+
+    /// <summary>Whether the face ("north", "south", "east" or "west") is drawn mirrored (<see cref="Flip"/>)</summary>
+    public bool IsFlipped(string face) => Flip.Contains(face, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Doors only: the inventory item class (e.g. "GoldKey") the player must carry to open
     /// this door. Empty means unlocked.
     /// </summary>

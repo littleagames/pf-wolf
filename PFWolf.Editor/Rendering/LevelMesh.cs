@@ -265,6 +265,8 @@ public sealed class LevelMesh
             var texture = wall.WallFace(FaceName(face));
             var faceRef = new SurfaceRef(SurfaceKind.Wall, x, y, face);
             var light = Light(nx, ny);
+            bool flip = wall.IsFlipped(FaceName(face));
+            float flipU0 = flip ? 1 : 0, flipU1 = flip ? 0 : 1;   // a flipped face's texture runs right to left
 
             if (_tiles.KindAt(nx, ny) == TileKind.Door)
             {
@@ -273,11 +275,11 @@ public sealed class LevelMesh
                 var door = _tiles.Door(nx, ny)!;
                 AddWall(faceRef, a, b, 0, 1, DoorFace(door, nx, ny, TravelName(Opposite(face))), light);
                 if (stories > 1)
-                    AddWall(faceRef, a, b, 1, stories, texture, light);
+                    AddWall(faceRef, a, b, 1, stories, texture, light, flipU0, flipU1);
             }
             else
             {
-                AddWall(faceRef, a, b, bottom, stories, texture, light);
+                AddWall(faceRef, a, b, bottom, stories, texture, light, flipU0, flipU1);
                 if (patch != null && patch.IsOn(FaceName(face)))
                     AddPatch(faceRef, a, b, new Vector2(nx - x, ny - y), bottom, stories, patch, light);
             }

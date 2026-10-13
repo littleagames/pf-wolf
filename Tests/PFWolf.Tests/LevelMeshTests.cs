@@ -10,7 +10,7 @@ namespace PFWolf.Tests;
 
 public class LevelMeshTests
 {
-    private const ushort Wall = 1, FourSided = 2, TwoSided = 3, Floor = 107, VerticalDoor = 90, HorizontalDoor = 91, Start = 19, Diagonal = 400;
+    private const ushort Wall = 1, FourSided = 2, TwoSided = 3, Flipped = 4, Floor = 107, VerticalDoor = 90, HorizontalDoor = 91, Start = 19, Diagonal = 400;
 
     private static GameContent Content() => GameContent.FromDefinitions(new MapObjectTranslationAsset
     {
@@ -19,6 +19,7 @@ public class LevelMeshTests
             [Wall] = new() { North = "WALLNS", East = "WALLEW", South = "WALLNS", West = "WALLEW" },
             [FourSided] = new() { North = "WALLN", South = "WALLS", East = "WALLE", West = "WALLW" },
             [TwoSided] = new() { North = "WALLNS", East = "WALLEW" },
+            [Flipped] = new() { North = "WALLNS", East = "WALLEW", Flip = ["South", "west"] },
         },
         Doors =
         {
@@ -123,6 +124,24 @@ public class LevelMeshTests
         // Assert
         Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.South).Single().Texture.Name, Is.EqualTo("WALLNS"));
         Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.West).Single().Texture.Name, Is.EqualTo("WALLEW"));
+    }
+
+    [Test]
+    public void A_Flipped_Face_Runs_Its_Texture_Right_To_Left()
+    {
+        // Arrange: a pillar flipping its south and west faces
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, Flipped);
+
+        // Act
+        var mesh = Build(document);
+
+        // Assert: u goes 0 to 1 across a face from its left, the other way on a flipped one
+        float U(Face face) => At(mesh, SurfaceKind.Wall, 10, 10, face).Single().Uvs[0].X;
+        Assert.That(U(Face.North), Is.EqualTo(0));
+        Assert.That(U(Face.East), Is.EqualTo(0));
+        Assert.That(U(Face.South), Is.EqualTo(1));
+        Assert.That(U(Face.West), Is.EqualTo(1));
     }
 
     [Test]
