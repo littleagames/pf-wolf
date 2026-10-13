@@ -21,6 +21,9 @@ public enum DefinitionKind
 
     /// <summary>animdefs/: animated textures and pictures</summary>
     Animations,
+
+    /// <summary>The game pack's factions.yaml (a mod's at its root): the sides actors are on, and how each treats the others</summary>
+    Factions,
 }
 
 public static class DefinitionKinds
@@ -33,7 +36,22 @@ public static class DefinitionKinds
         DefinitionKind.GamePackInfo => "Game packs",
         DefinitionKind.Actors => "Actors",
         DefinitionKind.Animations => "Animations",
+        DefinitionKind.Factions => "Factions",
         _ => "Map definitions",
+    };
+
+    /// <summary>
+    /// Whether the kind is one file read as one record (game-info, factions), listed by its
+    /// sections (its fields), set or not, rather than by entries
+    /// </summary>
+    public static bool IsSections(DefinitionKind kind) => kind is DefinitionKind.GameInfo or DefinitionKind.Factions;
+
+    /// <summary>The record a sections kind's file is read as</summary>
+    public static Type? SectionsType(DefinitionKind kind) => kind switch
+    {
+        DefinitionKind.GameInfo => typeof(GameInfoAsset),
+        DefinitionKind.Factions => typeof(FactionsAsset),
+        _ => null,
     };
 
     /// <summary>The file a mod keeps these in at its root, for the kinds that have one</summary>
@@ -41,6 +59,7 @@ public static class DefinitionKinds
     {
         DefinitionKind.GameInfo => "game-info.yaml",
         DefinitionKind.GamePackInfo => "gamepack-info.yaml",
+        DefinitionKind.Factions => "factions.yaml",
         _ => null,
     };
 
@@ -85,6 +104,9 @@ public static class DefinitionKinds
                 break;
             case DefinitionKind.Animations:
                 YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, AnimationDefinition>>(yaml);
+                break;
+            case DefinitionKind.Factions:
+                YamlDataEntryLoader.DeserializeQuietly<FactionsAsset>(yaml);
                 break;
             default:
                 YamlDataEntryLoader.DeserializeQuietly<MapObjectTranslationAsset>(yaml);

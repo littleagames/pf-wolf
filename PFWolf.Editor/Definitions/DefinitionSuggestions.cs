@@ -41,6 +41,8 @@ public sealed class DefinitionSuggestions
                 .Where(assets.Exists<SoundSequenceAsset>)
                 .SelectMany(name => assets.Find<SoundSequenceAsset>(name)!.SoundInfo.Keys),
             FieldHint.Weather => content.WeatherNames,
+            FieldHint.Faction => content.FactionNames,
+            FieldHint.Translation => content.TranslationNames,
             _ => [],
         };
         return names.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();

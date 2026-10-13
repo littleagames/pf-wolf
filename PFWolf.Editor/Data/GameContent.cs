@@ -240,6 +240,21 @@ public sealed class GameContent
     public IReadOnlyList<string> WeatherNames => WeatherInfo.TypesOf(GameInfo).Keys
         .Order(StringComparer.OrdinalIgnoreCase).Append(WeatherInfo.None).ToList();
 
+    /// <summary>The factions a thing or class can be on (factions.yaml's, and the pack's player-faction and monster-faction)</summary>
+    public IReadOnlyList<string> FactionNames
+    {
+        get
+        {
+            var table = new FactionTable(Assets.FindInGamePackIfAny<FactionsAsset>("factions"));
+            return table.Names.Append(table.PlayerFaction).Append(table.MonsterFaction)
+                .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();
+        }
+    }
+
+    /// <summary>The sprite color translations (translations.yaml) a thing, class, faction or player color can name</summary>
+    public IReadOnlyList<string> TranslationNames =>
+        Assets.FindInGamePackIfAny<TranslationsAsset>("translations")?.Translations.Keys.Order(StringComparer.OrdinalIgnoreCase).ToList() ?? [];
+
     /// <summary>The names of every music asset, for the level properties</summary>
     public IReadOnlyList<string> MusicNames { get; private set; } = [];
 

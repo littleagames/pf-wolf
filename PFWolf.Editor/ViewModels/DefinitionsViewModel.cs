@@ -30,6 +30,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
         Actors = new EntryEditorViewModel(this, DefinitionKind.Actors);
         MapDefs = new EntryEditorViewModel(this, DefinitionKind.MapDefs);
         Animations = new EntryEditorViewModel(this, DefinitionKind.Animations);
+        Factions = new EntryEditorViewModel(this, DefinitionKind.Factions);
     }
 
     /// <summary>Asks for a mod (a folder or a pk3) to save in; null when none is picked</summary>
@@ -46,6 +47,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     public EntryEditorViewModel Actors { get; }
     public EntryEditorViewModel MapDefs { get; }
     public EntryEditorViewModel Animations { get; }
+    public EntryEditorViewModel Factions { get; }
 
     /// <summary>Something was saved into this mod (the editor adds it to the mods)</summary>
     public event EventHandler<string>? SavedToMod;
@@ -157,7 +159,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
     /// <summary>The definitions were saved: the tabs show them again</summary>
     public event EventHandler? DefinitionsChanged;
 
-    private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, Animations, GamePacks];
+    private IEnumerable<EntryEditorViewModel> Editors => [GameInfo, Actors, MapDefs, Animations, Factions, GamePacks];
 
     /// <summary>
     /// What's changed here and not saved (definitions in the tabs, the file in the YAML tab), as
@@ -192,6 +194,7 @@ public sealed partial class DefinitionsViewModel : ObservableObject
             DefinitionKind.GamePackInfo => GamePacks,
             DefinitionKind.Actors => Actors,
             DefinitionKind.Animations => Animations,
+            DefinitionKind.Factions => Factions,
             _ => MapDefs,
         };
         ShowTabRequested?.Invoke(this, kind);

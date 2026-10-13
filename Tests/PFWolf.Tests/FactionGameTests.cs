@@ -147,6 +147,52 @@ public class FactionGameTests
         Assert.That(last, Does.Contain("Prisoner:allies:25:Spawn"), $"It should be standing by: {last}");
     }
 
+    [Test]
+    public void The_Faction_Demo_Puts_Everyone_On_Their_Side()
+    {
+        // Arrange: examples/mods/faction-demo, with a census of its own alongside
+        var demo = Path.Combine(TestPaths.RepoRoot(), "examples", "mods", "faction-demo");
+        var census = Path.Combine(_workFolder, "census");
+        Directory.CreateDirectory(Path.Combine(census, "scripts"));
+        File.WriteAllText(Path.Combine(census, "modinfo.yaml"), "name: Census\nversion: \"1\"\ngame-packs: [wolf3d]\n");
+        File.WriteAllText(Path.Combine(census, "scripts", "census.lua"), CensusScript);
+        var demos = Directory.CreateDirectory(Path.Combine(_workFolder, "demos")).FullName;
+        File.WriteAllBytes(Path.Combine(demos, "DEMO1.dmo"), ScriptedDemo(0, new DemoStep(0, 0, 0, 140)));
+
+        // Act
+        var (exitCode, output) = HeadlessGame.Run(_workFolder, "wolf3d", "demotest 1; quit", Timeout, demo, census);
+
+        // Assert
+        var log = string.Join(Environment.NewLine, output.TakeLast(30));
+        Assert.That(exitCode, Is.Zero, log);
+        Assert.That(output, Has.None.Contains("isn't in factions.yaml").And.None.Contains("isn't in translations.yaml")
+            .And.None.Contains("left out").And.None.Contains("Exception"), log);
+        var first = output.First(line => line.StartsWith("CENSUS "));
+        int Count(string who) => first.Split(' ').Count(part => part.StartsWith(who + ":"));
+        Assert.That(Count("SquadGuard:allies"), Is.EqualTo(2), first);
+        Assert.That(Count("Prisoner:prisoners"), Is.EqualTo(4), first);
+        Assert.That(Count("Mutant:mutants"), Is.EqualTo(4), first);
+        Assert.That(Count("Guard:axis") + Count("SS:axis"), Is.EqualTo(4), first);
+        var result = output.First(line => line.StartsWith("demotest 1:"));
+        Assert.That(KillTotal(result), Is.EqualTo(8), "the axis and the mutants, not the squad or the prisoners");
+    }
+
+    // Prints, each second, every actor on a side: class:faction:health:state:tilex
+    private const string CensusScript = """
+        local due = 0
+        game.ontick(function(tics)
+          if game.time() < due then return end
+          due = game.time() + 70
+          local parts = {}
+          for _, a in ipairs(game.actors()) do
+            if a.faction ~= nil then
+              parts[#parts + 1] = a.name .. ":" .. a.faction .. ":" .. a.health .. ":" .. tostring(a.state) .. ":" .. a.tilex
+            end
+          end
+          print("CENSUS t=" .. game.time() .. " " .. table.concat(parts, " "))
+        end)
+        """;
+
     /// <summary>
     /// A mod in the work folder: MAP01 as one room (x 10-22, y 30-34) with the things given along
     /// its middle row (y 32), at their x; the mod's things, factions and census script
@@ -201,20 +247,7 @@ public class FactionGameTests
               {{FollowerFacingWest}}: { class: Follower, angles: 180 }
               {{PrisonerFacingEast}}: { class: Prisoner, angles: 0 }
             """);
-        File.WriteAllText(Path.Combine(mod, "scripts", "census.lua"), """
-            local due = 0
-            game.ontick(function(tics)
-              if game.time() < due then return end
-              due = game.time() + 70
-              local parts = {}
-              for _, a in ipairs(game.actors()) do
-                if a.faction ~= nil then
-                  parts[#parts + 1] = a.name .. ":" .. a.faction .. ":" .. a.health .. ":" .. tostring(a.state) .. ":" .. a.tilex
-                end
-              end
-              print("CENSUS t=" .. game.time() .. " " .. table.concat(parts, " "))
-            end)
-            """);
+        File.WriteAllText(Path.Combine(mod, "scripts", "census.lua"), CensusScript);
         return mod;
     }
 

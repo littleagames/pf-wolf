@@ -43,6 +43,10 @@ public enum FieldHint
     Sprite,
     /// <summary>A kind of rain or snow (game-info weather-types, or a built-in one)</summary>
     Weather,
+    /// <summary>A side actors are on (factions.yaml)</summary>
+    Faction,
+    /// <summary>A sprite color translation (translations.yaml)</summary>
+    Translation,
 }
 
 /// <summary>
@@ -282,6 +286,10 @@ public sealed class FieldSchema
             return FieldHint.Color;
         if (name is "weather")
             return FieldHint.Weather;
+        if (name.EndsWith("faction"))
+            return FieldHint.Faction;
+        if (name.Contains("translation") || name is "playercolors")
+            return FieldHint.Translation;
         return FieldHint.None;
     }
 }

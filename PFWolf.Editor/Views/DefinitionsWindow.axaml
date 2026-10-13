@@ -53,6 +53,9 @@
       <TabItem x:Name="AnimationsTab" Header="Animations">
         <v:EntryEditorView DataContext="{Binding Animations}" />
       </TabItem>
+      <TabItem x:Name="FactionsTab" Header="Factions">
+        <v:EntryEditorView DataContext="{Binding Factions}" />
+      </TabItem>
       <TabItem x:Name="GamePacksTab" Header="Game packs">
         <v:EntryEditorView DataContext="{Binding GamePacks}" />
       </TabItem>

@@ -1,0 +1,7 @@
+# The level's own things (examples/tools/make-faction-demo-map.ps1 places them): the squad, the
+# prisoners, and mutants put on the mutants' side by the thing (`faction:`), so Wolf3D's own
+# mutants elsewhere stay axis.
+things:
+  540: { class: SquadGuard, angles: 90 }
+  541: { class: Prisoner, angles: 270 }
+  545: { class: Mutant, angles: 180, faction: mutants }

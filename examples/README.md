@@ -379,3 +379,86 @@ PFWolf.exe --file moody-lights
 
 Your weapon's muzzle flashes light the dark too. To try other values without restarting,
 use `light 0-255` and `fog` in the console (cheats on), and `lights` to list each light.
+
+## Faction Demo (`mods/faction-demo`)
+
+A level that replaces Floor 1 (Wolfenstein 3D only) where it isn't just you against everyone:
+a squad follows you, prisoners you free join it, and in the hall ahead the axis and a third
+side, the mutants, are already fighting each other. It's YAML, a level and a small script.
+
+```
+PFWolf.exe --file faction-demo
+```
+
+It replaces Floor 1 like the other level demos, so switch on only one of them at a time.
+
+- **The start room:** your squad, two guards drawn in your green. Once they've seen you they
+  go about with you: they walk after you when you get more than 3 tiles away, stand by when
+  you stop, step aside when you walk into them, and fight whatever they see. Your shots pass
+  them by, and they're not in the kill count.
+- **The cell block:** four prisoners, drawn grey. Face one and press use: they turn green,
+  join your squad and follow you.
+- **The hall:** guards and SS (the axis) at the west end, red mutants at the east. Open the
+  door and they're at it, each side going after the other, and you and your squad, whoever is
+  nearest in sight. What one side's shots and rockets hit, the other side pays for; enemies
+  killed by others still count toward your kill ratio, but only your own kills score.
+- **The exit room,** past the hall.
+
+On the automap your side shows in cyan, and your followers always show.
+
+### What's in it
+
+- `factions.yaml`: the sides, laid over the base game's (`allies`, the player's side, and
+  `axis`, every enemy): `prisoners`, neutral to everyone but counting the allies as allies
+  (so they're out of the kill total and the squad leaves them be), drawn `grayscale`; and
+  `mutants`, hostile to everyone, drawn `mutants-red`.
+- `translations.yaml`: `mutants-red`, a desaturated recolor (each pixel's lightness picks a
+  shade of red), so the mutants' green clothes can't be taken for your allies.
+- `actordefs/faction-demo.yaml`: `SquadGuard` (`faction: allies`, `monster.follow: true`) and
+  `Prisoner` (`faction: prisoners`, with a `Use` state running
+  `A_SetFaction("allies", "follow")` and the script's `A_Freed`).
+- `mapdefs/things.yaml`: objects 540 (the squad), 541 (a prisoner) and 545, a mutant put on
+  the mutants' side by the thing itself (`faction: mutants`), so Wolf3D's own mutants elsewhere
+  stay axis.
+- `scripts/faction-demo.lua`: a hint as the level starts, and `A_Freed`'s thanks.
+- `game-info.yaml`: turns messages over the view on, for those.
+- `maps/MAP01.wad`: the level, built by `tools/make-faction-demo-map.ps1` from an ASCII layout:
+
+  ```
+  powershell -ExecutionPolicy Bypass -File examples/tools/make-faction-demo-map.ps1
+  ```
+
+### Factions and color translations
+
+Every actor is on a side, a faction. The rules are written at the top of pfwolf-pk3's
+`gamepacks/wolf3d/factions.yaml`; in short:
+
+- An actor's faction is a map thing's `faction:` (mapdefs `things`), else its class's
+  `faction` property, else the game pack's `player-faction` (for a player) or
+  `monster-faction` (for an enemy). What it throws, or turns into, is on its side.
+- A faction treats another as `hostile` (goes after it on sight), `neutral` (leaves it be
+  until hurt by it) or `ally` (never goes after it; its shots pass it by): its `relations:`
+  entry for it, else its `default:`, else the file's `default-relation`. Its own members are
+  always allies. Relations go one way: for two sides to be allies, both say so.
+- Enemies only act in rooms joined to yours by open doors, as they always have, so sides
+  meeting out of your reach don't fight until you get there.
+- `A_SetFaction("allies"[, "follow"])` changes an actor's side (the kill total follows), and
+  `A_Follow` / `A_Follow("off")` start and stop it following you. Scripts can set
+  `actor.faction` and `actor.follows`. An actor with a `Use` state goes to it when you face it
+  and press use.
+- In the console, `factions` lists the sides, how each treats the others, and who's on each;
+  with cheats on, `setfaction <faction> [class]` moves the nearest enemy (or a class) over.
+
+A translation recolors a sprite as it's drawn, so one set of sprites can come in several colors.
+The rules are at the top of pfwolf-pk3's `gamepacks/wolf3d/translations.yaml`:
+
+- Each is a list of ZDoom-style ranges: `"207:223=101:111"` (palette indices onto others),
+  `"96:111=[255,0,0]:[64,0,0]"` (onto a gradient) or `"1:254=%[0,0,0]:[2,0,0]"` (desaturated,
+  by each pixel's lightness, so it works on any sprite).
+- An actor is drawn through a map thing's `translation:`, else its class's `translation`
+  property (or a script's `actor.translation`), else for an enemy its faction's `translation`
+  (or `class-translations`, one per class, since each sprite wears its own colors), else for a
+  player their color.
+- Playing with others, everyone picks a color in the lobby (game-info `player-colors`).
+- In the console, `translations` lists them; with cheats on, `settranslation <name|none> [class]`
+  and `playercolor <name|none> [n]` try them out.

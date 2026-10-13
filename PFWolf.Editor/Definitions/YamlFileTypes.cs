@@ -162,6 +162,8 @@ public static class YamlFileTypes
             return DefinitionKind.GamePackInfo;
         if (path.StartsWith("gamepacks/", StringComparison.OrdinalIgnoreCase) && path.Contains("game-info"))
             return DefinitionKind.GameInfo;
+        if (path.StartsWith("gamepacks/", StringComparison.OrdinalIgnoreCase) && path.EndsWith("/factions.yaml", StringComparison.OrdinalIgnoreCase))
+            return DefinitionKind.Factions;
         if (path.StartsWith("actordefs/", StringComparison.OrdinalIgnoreCase))
             return DefinitionKind.Actors;
         if (path.StartsWith("mapdefs/", StringComparison.OrdinalIgnoreCase))
@@ -243,7 +245,6 @@ public static class YamlFileTypes
             "colors.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, string>>(yaml),
             "fonts.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, FontDefinition>>(yaml),
             "hud-messages.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, HudMessageStyleDefinition>>(yaml),
-            "factions.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<FactionsAsset>(yaml),
             "translations.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, List<string>>>(yaml),
             "statusbar.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<Dictionary<string, StatusBarElement>>(yaml),
             "sound-seq.yaml" => yaml => YamlDataEntryLoader.DeserializeQuietly<SoundSequenceAsset>(yaml),

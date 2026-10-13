@@ -1,0 +1,5 @@
+# Laid over pfwolf-pk3's gamepacks/wolf3d/translations.yaml (whose top says how translations
+# work). The mutants' side is drawn blood red, so it can't be taken for the player's green allies
+# (a Wolf3D mutant's own clothes are green): desaturated, each pixel's lightness picking a shade
+# between black and red, which keeps the sprite's shading whatever its colors.
+mutants-red: ["1:254=%[0,0,0]:[1.8,0.35,0.3]"]

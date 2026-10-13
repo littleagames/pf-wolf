@@ -46,6 +46,7 @@ public partial class DefinitionsWindow : Window
         Definitions.DefinitionKind.GamePackInfo => GamePacksTab,
         Definitions.DefinitionKind.Actors => ActorsTab,
         Definitions.DefinitionKind.Animations => AnimationsTab,
+        Definitions.DefinitionKind.Factions => FactionsTab,
         _ => MapDefsTab,
     };
 
@@ -57,6 +58,7 @@ public partial class DefinitionsWindow : Window
         : Tabs.SelectedItem == ActorsTab ? _viewModel.Actors
         : Tabs.SelectedItem == MapDefsTab ? _viewModel.MapDefs
         : Tabs.SelectedItem == AnimationsTab ? _viewModel.Animations
+        : Tabs.SelectedItem == FactionsTab ? _viewModel.Factions
         : Tabs.SelectedItem == GamePacksTab ? _viewModel.GamePacks
         : null;
 
@@ -65,7 +67,7 @@ public partial class DefinitionsWindow : Window
     {
         if (_viewModel == null || e.Source != Tabs)
             return;
-        foreach (var editor in new[] { _viewModel.GameInfo, _viewModel.Actors, _viewModel.MapDefs, _viewModel.Animations, _viewModel.GamePacks })
+        foreach (var editor in new[] { _viewModel.GameInfo, _viewModel.Actors, _viewModel.MapDefs, _viewModel.Animations, _viewModel.Factions, _viewModel.GamePacks })
         {
             if (editor != ShownEditor)
                 editor.Deactivate();

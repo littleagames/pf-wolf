@@ -206,16 +206,16 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         var set = _owner.Set(Kind);
         if (set == null)
             return [];
-        if (Kind == DefinitionKind.GameInfo)
+        if (DefinitionSchemas.Sections(Kind) is { } sections)
         {
             // Every section the game reads, set or not, then any other key the files have
             var merged = set.Merged;
-            var items = DefinitionSchemas.GameInfo.Fields
+            var items = sections.Fields
                 .Select(field => new EntryItem(new DefinitionEntry([field.Key], field.Key, ""), YamlNodes.Get(merged, [field.Key]) != null, field.Description))
                 .ToList();
             foreach (var (key, _) in merged.Children)
             {
-                if (key is YamlScalarNode { Value: { } name } && DefinitionSchemas.GameInfo.Field(name) == null)
+                if (key is YamlScalarNode { Value: { } name } && sections.Field(name) == null)
                     items.Add(new EntryItem(new DefinitionEntry([name], name, ""), true, "Not a key the game reads"));
             }
             return items;
@@ -303,7 +303,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
 
     private string Noun => Kind switch
     {
-        DefinitionKind.GameInfo => "sections",
+        DefinitionKind.GameInfo or DefinitionKind.Factions => "sections",
         DefinitionKind.GamePackInfo => "games",
         DefinitionKind.Actors => "classes",
         DefinitionKind.Animations => "animations",
@@ -338,7 +338,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
             var value = set.ValueOf(path, baseOnly: false);
             var baseValue = set.ValueOf(path, baseOnly: true);
             var root = new FieldNode(SchemaFor(path), path[^1], value is null ? null : YamlNodes.Clone(value), baseValue, null, _context,
-                isEntry: Kind != DefinitionKind.GameInfo);
+                isEntry: !DefinitionKinds.IsSections(Kind));
             root.EnsureChildren();
             HideFieldsThatDoNotApply(root, path);
             // One the game doesn't have (taken out by a mod) starts as its empty fields, which isn't a change
@@ -370,7 +370,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         Description = item.Description ?? "";
         var defining = set.FilesDefining(path);
         Subheading = defining.Count == 0
-            ? (Kind == DefinitionKind.GameInfo && !item.IsSet ? "Not set: the game uses its default" : "Not saved yet")
+            ? (DefinitionKinds.IsSections(Kind) && !item.IsSet ? "Not set: the game uses its default" : "Not saved yet")
             : defining.Count == 1 ? $"From {defining[0].Label}" : $"From {defining[^1].Label}, over {defining.Count - 1} more";
         for (int i = 0; i < defining.Count; i++)
         {
@@ -384,7 +384,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
 
     private FieldSchema SchemaFor(IReadOnlyList<string> path) => Kind switch
     {
-        DefinitionKind.GameInfo => DefinitionSchemas.GameInfo.Field(path[0]) ?? FieldSchema.For(typeof(object), path[0]),
+        DefinitionKind.GameInfo or DefinitionKind.Factions => DefinitionSchemas.Sections(Kind)!.Field(path[0]) ?? FieldSchema.For(typeof(object), path[0]),
         DefinitionKind.GamePackInfo => DefinitionSchemas.GamePack,
         DefinitionKind.MapDefs => DefinitionSchemas.MapDefs.Field(path[0]) is { } table
             ? path.Count > 1 && table.Type == FieldType.Dictionary ? table.Item! : table
@@ -545,7 +545,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         }
     }
 
-    private bool CanDelete => SelectedItem != null && Kind != DefinitionKind.GameInfo;
+    private bool CanDelete => SelectedItem != null && !DefinitionKinds.IsSections(Kind);
 
     /// <summary>Marks the definition to be taken out when it's saved</summary>
     [RelayCommand(CanExecute = nameof(CanDelete))]
@@ -843,6 +843,15 @@ public sealed partial class EntryEditorViewModel : ObservableObject
 public static class DefinitionSchemas
 {
     public static FieldSchema GameInfo { get; } = FieldSchema.For(typeof(GameInfoAsset));
+    public static FieldSchema Factions { get; } = FieldSchema.For(typeof(FactionsAsset));
+
+    /// <summary>The record a sections kind's file is (game-info, factions), or null for one of entries</summary>
+    public static FieldSchema? Sections(DefinitionKind kind) => kind switch
+    {
+        DefinitionKind.GameInfo => GameInfo,
+        DefinitionKind.Factions => Factions,
+        _ => null,
+    };
     public static FieldSchema GamePack { get; } = FieldSchema.For(typeof(PFWolf.Assets.GamePack));
     public static FieldSchema MapDefs { get; } = FieldSchema.For(typeof(MapObjectTranslationAsset));
     public static FieldSchema Actor { get; } = ActorSchema.Build();

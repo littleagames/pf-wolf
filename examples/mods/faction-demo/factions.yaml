@@ -1,0 +1,18 @@
+# Laid over pfwolf-pk3's gamepacks/wolf3d/factions.yaml (allies, the player's side, drawn
+# green; axis, the enemies), which says how factions work at its top. This adds two sides:
+#   prisoners  neutral to everyone, but counting the allies as their allies, so they're out of
+#              the kill total and the player's squad leaves them be; drawn in grey until freed
+#              (their Use state puts them on the allies' side: actordefs/faction-demo.yaml)
+#   mutants    a third side, hostile to the axis and the allies alike (default-relation), drawn
+#              blood red (the mod's translations.yaml)
+factions:
+  allies:
+    relations: { prisoners: neutral }
+  prisoners:
+    name: Prisoners
+    default: neutral
+    relations: { allies: ally }
+    translation: grayscale
+  mutants:
+    name: Mutants
+    translation: mutants-red

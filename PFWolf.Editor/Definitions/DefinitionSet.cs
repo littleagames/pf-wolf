@@ -97,6 +97,7 @@ public sealed class DefinitionSet
     private static IEnumerable<(string Name, string Type, string Layer)> BaseAssets(DefinitionKind kind, string packId) => kind switch
     {
         DefinitionKind.GameInfo => [($"{packId}/game-info", nameof(GameInfoAsset), "")],
+        DefinitionKind.Factions => [($"{packId}/factions", nameof(FactionsAsset), "")],
         DefinitionKind.Actors =>
         [
             ("actordefs", nameof(ActorTranslationAsset), DefinitionFile.SharedLayer),
@@ -166,6 +167,8 @@ public sealed class DefinitionSet
             switch (Kind)
             {
                 case DefinitionKind.GameInfo:
+                case DefinitionKind.Factions:
+                    // laid over its base pack's all the way down, as the loader does
                     YamlTree.DeepMerge(target, tree);
                     break;
                 case DefinitionKind.MapDefs:
@@ -329,7 +332,7 @@ public sealed class DefinitionSet
         {
             // A game-info section the game doesn't set (a standalone game has none of Wolf3D's):
             // the mod gets one to fill in
-            if (Kind == DefinitionKind.GameInfo && path.Count == 1 && GameInfoSchema.Field(path[0]) is { } section)
+            if (DefinitionKinds.SectionsType(Kind) is { } record && path.Count == 1 && SectionsSchema(record).Field(path[0]) is { } section)
                 return Finish(ModTarget(path, modPath), path, section.StarterValue(), [$"The game had no {path[0]}: it's started in {modName} for you to fill in"]);
             throw new InvalidDataException($"The game has no {YamlNodes.Describe(path)} to copy");
         }
@@ -339,8 +342,9 @@ public sealed class DefinitionSet
         return Finish(ModTarget(path, modPath), path, YamlNodes.Clone(YamlTree.WithoutMergeTags(value)), []);
     }
 
-    private static FieldSchema? _gameInfoSchema;
-    private static FieldSchema GameInfoSchema => _gameInfoSchema ??= FieldSchema.For(typeof(GameInfoAsset));
+    private static readonly Dictionary<Type, FieldSchema> _sectionsSchemas = [];
+    private static FieldSchema SectionsSchema(Type record) =>
+        _sectionsSchemas.TryGetValue(record, out var schema) ? schema : _sectionsSchemas[record] = FieldSchema.For(record);
 
     /// <summary>The mod's file with its own of a definition, or null when it has none</summary>
     public DefinitionFile? ModFileDefining(IReadOnlyList<string> path, string modPath)

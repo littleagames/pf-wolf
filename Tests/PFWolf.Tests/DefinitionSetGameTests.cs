@@ -113,6 +113,28 @@ public class DefinitionSetGameTests
             Assert.That((merged.Maps[name].Next, merged.Maps[name].Music, merged.Maps[name].ParTime), Is.EqualTo((map.Next, map.Music, map.ParTime)), name);
     }
 
+    [TestCase("wolf3d")]
+    [TestCase("spear")]
+    public void Merged_Factions_Read_As_The_Games(string game)
+    {
+        // Arrange
+        var content = Load(game);
+
+        // Act
+        var set = DefinitionSet.Load(content, DefinitionKind.Factions);
+        var merged = new FactionTable(YamlDataEntryLoader.DeserializeQuietly<FactionsAsset>(YamlTree.ToText(set.Merged)));
+
+        // Assert: spear has no factions.yaml of its own, so it's Wolf3D's
+        var loaded = new FactionTable(content.Assets.FindInGamePackIfAny<FactionsAsset>("factions"));
+        Assert.That(set.Files, Is.Not.Empty);
+        Assert.That(set.Files.Where(file => file.Error != null), Is.Empty);
+        Assert.That(merged.Names, Is.EquivalentTo(loaded.Names));
+        Assert.That((merged.PlayerFaction, merged.MonsterFaction), Is.EqualTo((loaded.PlayerFaction, loaded.MonsterFaction)));
+        Assert.That(merged.Translation("allies", ["SS"]), Is.EqualTo(loaded.Translation("allies", ["SS"])));
+        Assert.That(content.FactionNames, Is.SupersetOf(new[] { "allies", "axis" }));
+        Assert.That(content.TranslationNames, Does.Contain("allies"));
+    }
+
     [Test]
     public void Merged_Animations_Are_The_Games_With_The_Switch_Demo()
     {

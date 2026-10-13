@@ -1,0 +1,29 @@
+# The level's own guards, built on Wolf3D's (actordefs/wolf3d/guards.yaml):
+#   SquadGuard  one of the player's squad: on the allies' side (drawn green by the faction's
+#               translation) and, with monster.follow, going about with the player once it's
+#               seen them: it walks after them, stands by when they stop, fights what it sees,
+#               and steps out of their way when walked into
+#   Prisoner    neutral (factions.yaml prisoners) until the player faces them and presses use:
+#               their Use state puts them on the allies' side, following the player
+#               (A_SetFaction "follow"), and says so (the script's A_Freed)
+SquadGuard:
+  parent: Guard
+  properties:
+    faction: allies
+    monster.follow: true
+
+Prisoner:
+  parent: Guard
+  properties:
+    faction: prisoners
+  states:
+    Use:
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 1
+        action: A_SetFaction("allies", "follow")
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: 1
+        action: A_Freed
+        next-state: Spawn

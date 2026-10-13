@@ -1,0 +1,4 @@
+name: Faction Demo
+version: "1.0"
+description: A level (replacing Floor 1) where your squad follows you, prisoners you free join you, and the axis and the mutants fight each other as well as you.
+game-packs: [wolf3d]
