@@ -55,6 +55,23 @@ public sealed class ToolController
     /// <summary>What the tools put down</summary>
     public ushort Value { get; set; }
 
+    /// <summary>
+    /// What a tile's value becomes when the tools put down a value over it (its old value, the
+    /// value): when a layer is only part of a plane's value, as the patches are of plane 0's.
+    /// Null: the value as it is.
+    /// </summary>
+    public Func<ushort, ushort, ushort>? Combine { get; set; }
+
+    /// <summary>The part of a tile's value the layer being edited holds, for the eyedropper and fill. Null: all of it.</summary>
+    public Func<ushort, ushort>? Read { get; set; }
+
+    // Puts a value down on the plane being edited, through Combine
+    private void Put(MapEdit edit, int x, int y, ushort value)
+        => edit.Set(Plane, x, y, Combine is { } combine && edit.Document.Contains(x, y) ? combine(edit.Document[Plane, x, y], value) : value);
+
+    private ushort ReadAt(MapDocument document, int x, int y)
+        => Read is { } read ? read(document[Plane, x, y]) : document[Plane, x, y];
+
     /// <summary>What clearing a tile puts on each plane: open floor on plane 0, nothing on the rest</summary>
     public Func<int, ushort> EraseValue { get; set; } = _ => 0;
 
@@ -101,7 +118,7 @@ public sealed class ToolController
         {
             case EditTool.Paint:
                 _edit = document.BeginEdit("Paint");
-                _edit.Set(Plane, x, y, Value);
+                Put(_edit, x, y, Value);
                 _edit.Refresh();
                 break;
 
@@ -114,14 +131,14 @@ public sealed class ToolController
             case EditTool.Fill:
                 using (var fill = document.BeginEdit("Fill"))
                 {
-                    foreach (var (fx, fy) in TileShapes.FloodFill(document, Plane, x, y))
-                        fill.Set(Plane, fx, fy, Value);
+                    foreach (var (fx, fy) in TileShapes.FloodFill(document, Plane, x, y, Read))
+                        Put(fill, fx, fy, Value);
                 }
                 _pressed = false;
                 break;
 
             case EditTool.Pick:
-                ValuePicked?.Invoke(this, document[Plane, x, y]);
+                ValuePicked?.Invoke(this, ReadAt(document, x, y));
                 _pressed = false;
                 break;
 
@@ -161,7 +178,7 @@ public sealed class ToolController
             case EditTool.Paint when _edit != null:
                 // Fill the gap a quick stroke leaves between pointer events
                 foreach (var (lx, ly) in TileShapes.Line(_last.X, _last.Y, x, y))
-                    _edit.Set(Plane, lx, ly, Value);
+                    Put(_edit, lx, ly, Value);
                 _edit.Refresh();
                 break;
 
@@ -203,7 +220,7 @@ public sealed class ToolController
             ? TileShapes.Line(_anchor.X, _anchor.Y, x, y)
             : TileShapes.Rectangle(TileRect.FromCorners(_anchor.X, _anchor.Y, x, y), Outline);
         foreach (var (tx, ty) in tiles)
-            _edit.Set(Plane, tx, ty, Value);
+            Put(_edit, tx, ty, Value);
         _edit.Refresh();
     }
 
@@ -235,7 +252,7 @@ public sealed class ToolController
             return;
         CancelGesture();
         using var edit = document.BeginEdit("Erase");
-        edit.Set(Plane, x, y, EraseValue(Plane));
+        Put(edit, x, y, EraseValue(Plane));
     }
 
     /// <summary>Picks up the clipboard: it follows the pointer from (x, y) until a click puts it down</summary>
@@ -304,7 +321,12 @@ public sealed class ToolController
             if (plane != null && plane != p)
                 continue;
             foreach (var (x, y) in TileShapes.Rectangle(rect, outline: false))
-                edit.Set(p, x, y, EraseValue(p));
+            {
+                if (plane == null)
+                    edit.Set(p, x, y, EraseValue(p));
+                else
+                    Put(edit, x, y, EraseValue(p));     // only the layer being edited
+            }
         }
     }
 

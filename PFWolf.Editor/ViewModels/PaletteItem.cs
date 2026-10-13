@@ -23,8 +23,11 @@ public sealed record ChoiceOption(int Value, string Label)
     public override string ToString() => Label;
 }
 
-/// <summary>A plane the tools can edit</summary>
-public sealed record PlaneOption(int Plane, string Label)
+/// <summary>
+/// A plane the tools can edit. Patches: the wall patches, plane 0's high byte, which the tools
+/// change without touching the tiles' own codes below it.
+/// </summary>
+public sealed record PlaneOption(int Plane, string Label, bool Patches = false)
 {
     public override string ToString() => Label;
 }

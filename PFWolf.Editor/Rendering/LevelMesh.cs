@@ -106,9 +106,9 @@ public readonly record struct SurfaceHit(SurfaceRef Ref, Vector3 Point, float Di
 
 /// <summary>
 /// A level as 3D surfaces, built the way the game draws it (Program.WL_DRAW): walls show their
-/// mapdefs East texture on east and west faces and North on north and south ones, the faces
-/// beside a door show the door's side, tall walls repeat their texture story by story from the
-/// floor, and things stand as sprites turned to the view.
+/// mapdefs texture for each face (a face left out, the opposite one's) with any patch over it,
+/// the faces beside a door show the door's side, tall walls repeat their texture story by story
+/// from the floor, and things stand as sprites turned to the view.
 /// </summary>
 public sealed class LevelMesh
 {
@@ -236,9 +236,10 @@ public sealed class LevelMesh
         var wall = _tiles.Wall(x, y)!;
         int stories = _tiles.Stories(x, y);
         var diagonal = _tiles.Diagonal(x, y);
+        var patch = _tiles.PatchDef(x, y);
         if (_tiles.IsPushWall(x, y))
             Markers[(x, y)] = MarkerKind.PushWall;
-        else if (wall.Switch != null)
+        else if (_tiles.IsSwitch(x, y))
             Markers[(x, y)] = MarkerKind.Switch;
 
         foreach (var face in SquareFaces)
@@ -275,7 +276,11 @@ public sealed class LevelMesh
                     AddWall(faceRef, a, b, 1, stories, texture, light);
             }
             else
+            {
                 AddWall(faceRef, a, b, bottom, stories, texture, light);
+                if (patch != null && patch.IsOn(FaceName(face)))
+                    AddPatch(faceRef, a, b, new Vector2(nx - x, ny - y), bottom, stories, patch, light);
+            }
         }
 
         var topRef = new SurfaceRef(SurfaceKind.Wall, x, y, Face.Top);
@@ -311,6 +316,39 @@ public sealed class LevelMesh
             Color = light,
             Ref = faceRef,
             TwoSided = twoSided,
+        });
+    }
+
+    // How far in front of its wall face a patch is drawn, in tiles, so the two don't fight
+    private const float PatchLift = 1 / 512f;
+
+    /// <summary>
+    /// A wall patch over the face from a to b (Program.DrawPatch): from the floor of its story for
+    /// as many stories as the picture is tall, or on every story (story 0) repeating as the wall's
+    /// texture does; the part below <paramref name="bottom"/> is behind the wall in front. Its
+    /// see-through pixels are clear, so the wall shows. Lifted off the face toward <paramref name="outward"/>.
+    /// </summary>
+    private void AddPatch(SurfaceRef faceRef, Vector2 a, Vector2 b, Vector2 outward, float bottom, int stories,
+        MapPatchTranslation patch, Vector4 light)
+    {
+        float patchStories = TextureStories(patch.Texture);
+        float first = patch.Story == 0 ? 0 : patch.Story - 1;
+        float top = patch.Story == 0 ? stories : Math.Min(stories, first + patchStories);
+        float from = Math.Max(first, bottom);
+        if (from >= top)
+            return;                     // on a story the wall doesn't reach, or hidden
+
+        // Its texture's stories from the floor of its own story up (repeating for story 0)
+        float v0 = 1 - (from - first) / patchStories, v1 = 1 - (top - first) / patchStories;
+        var lift = outward * PatchLift;
+        Vector2 pa = a + lift, pb = b + lift;
+        Surfaces.Add(new Surface
+        {
+            Points = [new(pa.X, from, pa.Y), new(pb.X, from, pb.Y), new(pb.X, top, pb.Y), new(pa.X, top, pa.Y)],
+            Uvs = [new(0, v0), new(1, v0), new(1, v1), new(0, v1)],
+            Texture = Flat(patch.Texture, default),
+            Color = light,
+            Ref = faceRef,
         });
     }
 

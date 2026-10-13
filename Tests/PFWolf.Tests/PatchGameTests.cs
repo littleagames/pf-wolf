@@ -131,6 +131,35 @@ public class PatchGameTests
         Assert.That(last, Does.Contain("faced=0").And.EndsWith("kits=10,32"), last);
     }
 
+    [Test]
+    public void The_Patch_Demo_Loads_With_Its_Patches_And_Nothing_Wrong()
+    {
+        // Arrange: examples/mods/patch-demo, with a probe of its own alongside reading its lever
+        // (tag 1), button, first aid and the alarm lamp's tiles
+        var demo = Path.Combine(TestPaths.RepoRoot(), "examples", "mods", "patch-demo");
+        var probe = Path.Combine(_workFolder, "probe");
+        Directory.CreateDirectory(Path.Combine(probe, "scripts"));
+        File.WriteAllText(Path.Combine(probe, "modinfo.yaml"), "name: Probe\nversion: \"1\"\ngame-packs: [wolf3d]\n");
+        File.WriteAllText(Path.Combine(probe, "scripts", "probe.lua"), """
+            game.ontick(function(tics)
+              if game.time() > 35 then return end
+              print("DEMO lever=" .. game.patch(30, 27) .. " button=" .. game.patch(28, 27) .. " firstaid=" .. game.patch(24, 27)
+                .. " alarm=" .. game.patch(30, 21) .. " push=" .. game.patch(20, 23) .. " tagged=" .. #game.taggedtiles(1))
+            end)
+            """);
+        var demos = Directory.CreateDirectory(Path.Combine(_workFolder, "demos")).FullName;
+        File.WriteAllBytes(Path.Combine(demos, "DEMO1.dmo"), ScriptedDemo(0, new DemoStep(0, 0, 0, 70)));
+
+        // Act
+        var (exitCode, output) = HeadlessGame.Run(_workFolder, "wolf3d", "demotest 1; quit", Timeout, demo, probe);
+
+        // Assert
+        var log = string.Join(Environment.NewLine, output.TakeLast(30));
+        Assert.That(exitCode, Is.Zero, log);
+        Assert.That(output, Has.None.Contains("Exception").And.None.Contains("patch").And.None.Contains("left out"), log);
+        Assert.That(output, Has.Some.EqualTo("DEMO lever=9 button=7 firstaid=5 alarm=4 push=2 tagged=2"), log);
+    }
+
     // Prints, each half second: the patches on the tiles the tests look at, and the first aid
     // kits lying about (their tiles)
     private const string ProbeScript = """

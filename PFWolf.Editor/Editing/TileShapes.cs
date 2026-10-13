@@ -58,14 +58,16 @@ public static class TileShapes
 
     /// <summary>
     /// The tiles joined to (x, y) through edges that hold the same value on the plane as it does
+    /// (the same part of it, through <paramref name="read"/>)
     /// </summary>
-    public static List<(int X, int Y)> FloodFill(MapDocument document, int plane, int x, int y)
+    public static List<(int X, int Y)> FloodFill(MapDocument document, int plane, int x, int y, Func<ushort, ushort>? read = null)
     {
         var tiles = new List<(int, int)>();
         if (!document.Contains(x, y))
             return tiles;
 
-        var value = document[plane, x, y];
+        read ??= value => value;
+        var value = read(document[plane, x, y]);
         var seen = new bool[document.Width * document.Height];
         var queue = new Queue<(int X, int Y)>();
         queue.Enqueue((x, y));
@@ -76,7 +78,7 @@ public static class TileShapes
             tiles.Add((tx, ty));
             foreach (var (nx, ny) in new[] { (tx - 1, ty), (tx + 1, ty), (tx, ty - 1), (tx, ty + 1) })
             {
-                if (!document.Contains(nx, ny) || seen[ny * document.Width + nx] || document[plane, nx, ny] != value)
+                if (!document.Contains(nx, ny) || seen[ny * document.Width + nx] || read(document[plane, nx, ny]) != value)
                     continue;
                 seen[ny * document.Width + nx] = true;
                 queue.Enqueue((nx, ny));

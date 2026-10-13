@@ -63,6 +63,39 @@ public static class PaletteEntries
         return entries;
     }
 
+    /// <summary>The patches palette's group (its "No patch" entry is in another)</summary>
+    public const string PatchGroup = "Patches";
+
+    /// <summary>
+    /// The wall patches layer's palette: no patch, then each mapdefs patch, its value the patch id
+    /// in plane 0's high byte
+    /// </summary>
+    public static List<PaletteEntry> Patches(MapObjectTranslationAsset defs)
+    {
+        var entries = new List<PaletteEntry> { new(0, "Nothing", "No patch  (0)") };
+        foreach (var (id, patch) in defs.Patches.Where(patch => patch.Key is >= 1 and <= 255).OrderBy(patch => patch.Key))
+            entries.Add(new PaletteEntry((ushort)(id << MapConstants.PATCHSHIFT), PatchGroup,
+                $"{id}  {MapTiles.PatchDescription(patch)}", Texture: patch.Texture));
+        return entries;
+    }
+
+    private static bool IsWall(MapObjectTranslationAsset defs, int code) => code is > 0 and <= MapConstants.MAXWALLID && defs.Walls.ContainsKey(code);
+
+    /// <summary>
+    /// How the walls, doors and floors layer puts a code down on plane 0, and reads it: a wall
+    /// put over a wall keeps its patch; anything else drops it, since only walls have patches
+    /// </summary>
+    public static (Func<ushort, ushort, ushort> Combine, Func<ushort, ushort> Read) TileLayer(MapObjectTranslationAsset defs)
+        => ((old, code) => IsWall(defs, code) ? (ushort)((old & ~MapConstants.PLANE0CODEMASK) | code) : code,
+            value => (ushort)(value & MapConstants.PLANE0CODEMASK));
+
+    /// <summary>How the wall patches layer puts a patch down on plane 0 (on walls only, keeping the wall), and reads it</summary>
+    public static (Func<ushort, ushort, ushort> Combine, Func<ushort, ushort> Read) PatchLayer(MapObjectTranslationAsset defs)
+        => ((old, patch) => IsWall(defs, old & MapConstants.PLANE0CODEMASK)
+                ? (ushort)((old & MapConstants.PLANE0CODEMASK) | (patch & ~MapConstants.PLANE0CODEMASK))
+                : old,
+            value => (ushort)(value & ~MapConstants.PLANE0CODEMASK));
+
     private static List<PaletteEntry> Plane1(MapObjectTranslationAsset defs)
     {
         var entries = new List<PaletteEntry> { new(0, "Nothing", "Nothing  (0)") };

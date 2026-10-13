@@ -1,0 +1,4 @@
+name: Patch Demo
+version: "1.0"
+description: A small level (replacing Floor 1) showing off wall patches, pictures over a wall's faces that decorate it, work as switches or hand out items.
+game-packs: [wolf3d]

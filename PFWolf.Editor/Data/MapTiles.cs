@@ -176,14 +176,27 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         return tags;
     }
 
-    /// <summary>A wall the player uses to set things off (mapdefs walls switch)</summary>
-    public bool IsSwitch(int x, int y) => Wall(x, y)?.Switch != null;
+    /// <summary>A wall the player uses to set things off (mapdefs walls switch), or one with a patch that's a switch</summary>
+    public bool IsSwitch(int x, int y) => Wall(x, y)?.Switch != null || PatchDef(x, y)?.Switch != null;
 
     public int Width => map.Width;
     public int Height => map.Height;
 
+    /// <summary>
+    /// A tile's value on a plane. On plane 0, the tile's own code (wall, door or floor), without
+    /// the patch the high byte holds (<see cref="Patch"/>), as the game reads it.
+    /// </summary>
     public ushort this[int plane, int x, int y]
-        => plane < map.MapData.Length ? map.MapData[plane][y * map.Width + x] : (ushort)0;
+        => plane >= map.MapData.Length ? (ushort)0
+            : plane == 0 ? (ushort)(map.MapData[0][y * map.Width + x] & MapConstants.PLANE0CODEMASK)
+            : map.MapData[plane][y * map.Width + x];
+
+    /// <summary>The patch id on the tile (plane 0's high byte), 0 for none; the game only draws one on a wall</summary>
+    public int Patch(int x, int y) => map.MapData[0][y * map.Width + x] >> MapConstants.PATCHSHIFT;
+
+    /// <summary>The patch on a wall tile, when the mapdefs define it</summary>
+    public MapPatchTranslation? PatchDef(int x, int y)
+        => KindAt(x, y) == TileKind.Wall && Patch(x, y) is var id and not 0 ? Defs.Patches.GetValueOrDefault(id) : null;
 
     public TileKind KindAt(int x, int y)
     {
@@ -254,6 +267,10 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
             _ => $"Plane 0: {tile} (not in the mapdefs)",
         };
 
+        int patch = Patch(x, y);
+        if (patch != 0)
+            yield return $"Patch {patch}: {PatchText(x, y, patch)}";
+
         int obj = this[1, x, y];
         if (obj != 0)
             yield return $"Object {obj}: {ObjectText(x, y, obj)}";
@@ -301,6 +318,28 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         if (Defs.Things.ContainsKey(obj))
             return "a thing, but on a wall or door, so it isn't placed (only `in-wall` ones go on walls)";
         return "not in the mapdefs";
+    }
+
+    private string PatchText(int x, int y, int patch)
+    {
+        if (!Defs.Patches.TryGetValue(patch, out var def))
+            return "not in the mapdefs";
+        if (KindAt(x, y) != TileKind.Wall)
+            return $"{def.Texture}, but not on a wall, so it isn't drawn";
+        return PatchDescription(def);
+    }
+
+    /// <summary>A patch's texture, faces, story and switch, as the status bar and palette show it</summary>
+    public static string PatchDescription(MapPatchTranslation patch)
+    {
+        var details = new List<string> { patch.Texture };
+        if (patch.Sides.Count > 0)
+            details.Add(string.Join("/", patch.Sides));
+        if (patch.Story != 1)
+            details.Add(patch.Story == 0 ? "every story" : $"story {patch.Story}");
+        if (patch.Switch is { } patchSwitch)
+            details.Add(patchSwitch.Remove ? "switch, once" : "switch");
+        return string.Join(", ", details);
     }
 
     private static string Faces(MapTextureTranslation textures)

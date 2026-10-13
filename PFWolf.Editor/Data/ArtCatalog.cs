@@ -19,7 +19,7 @@ public enum ArtKind
 /// Where the palette can put down what uses a picture: a plane and the value on it. Keep is the
 /// bits of the value picked before that stay (a flat's other half: the ceiling for a floor).
 /// </summary>
-public sealed record PaletteTarget(int Plane, ushort Value, ushort Keep = 0);
+public sealed record PaletteTarget(int Plane, ushort Value, ushort Keep = 0, bool Patch = false);
 
 /// <summary>Something that shows a picture: a mapdefs wall or door, a flat index, a thing class, a level's sky</summary>
 public sealed record ArtUse(string Label, PaletteTarget? Target = null)
@@ -187,7 +187,7 @@ public static class ArtCatalog
     public static bool IsFlatPath(string path)
         => path.Replace('\\', '/').StartsWith("flats/", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Textures and pictures by name: the walls, doors and flats of mapdefs, and game-info's skies and default flats</summary>
+    /// <summary>Textures and pictures by name: the walls, doors, patches and flats of mapdefs, and game-info's skies and default flats</summary>
     public static Dictionary<string, List<ArtUse>> Uses(GameContent content)
     {
         var uses = new Dictionary<string, List<ArtUse>>(StringComparer.OrdinalIgnoreCase);
@@ -220,6 +220,12 @@ public static class ArtCatalog
                 foreach (var side in Sides(locked))
                     Add(side.Texture, new ArtUse($"Door {id} while locked, {side.Name}", target));
             }
+        }
+
+        foreach (var (id, patch) in defs.Patches.Where(patch => patch.Key is >= 1 and <= 255).OrderBy(patch => patch.Key))
+        {
+            var target = new PaletteTarget(0, (ushort)(id << PFWolf.Constants.MapConstants.PATCHSHIFT), Patch: true);
+            Add(patch.Texture, new ArtUse(patch.Switch != null ? $"Switch patch {id}" : $"Patch {id}", target));
         }
 
         foreach (var (index, name) in defs.Flats.Floor.Where(flat => flat.Key is >= 0 and <= 255).OrderBy(flat => flat.Key))

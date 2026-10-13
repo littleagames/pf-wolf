@@ -434,19 +434,20 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         OnPropertyChanged(nameof(HasInherited));
     }
 
-    // Walls and doors are read as one type, whose fields say which they're for ("Doors only: ...")
+    // Walls and doors are read as one type, and a wall's switch as a patch's, whose fields say
+    // which they're for ("Doors only: ...", "Patches only: ...")
     private void HideFieldsThatDoNotApply(FieldNode root, IReadOnlyList<string> path)
     {
         if (Kind != DefinitionKind.MapDefs || path.Count < 2)
             return;
-        var other = path[0].ToLowerInvariant() switch
+        string[] others = path[0].ToLowerInvariant() switch
         {
-            "walls" => "Doors only",
-            "doors" => "Walls only",
-            _ => null,
+            "walls" => ["Doors only", "Patches only"],
+            "doors" => ["Walls only", "Patches only"],
+            _ => [],
         };
-        if (other != null)
-            root.HideUnset(field => field.Description?.StartsWith(other, StringComparison.OrdinalIgnoreCase) == true);
+        if (others.Length > 0)
+            root.HideUnset(field => others.Any(other => field.Description?.StartsWith(other, StringComparison.OrdinalIgnoreCase) == true));
     }
 
     private void OnFieldChanged() => UpdateChanged();

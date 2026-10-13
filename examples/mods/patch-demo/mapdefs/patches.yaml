@@ -1,0 +1,51 @@
+# The demo's wall patches (every field is described in pfwolf-pk3's mapdefs/wolf3d/patches.yaml).
+# A wall tile gets one by its plane 0 value: wall id + patch id * 256. The pictures are the
+# mod's textures/ (made by examples/tools/make-patch-demo.ps1).
+patches:
+  # Decorations: the same plaque goes on any kind of wall
+  1: { texture: PDPLAQ }
+  2: { texture: PDCRACK }
+  # 64x128: from the floor of the first story up through the second
+  3: { texture: PDBANR }
+  # An animation (animdefs/patch-demo.yaml)
+  4: { texture: PDALARM }
+
+  # Used once, it comes off the wall, but only once the item does the player some good
+  5:
+    texture: PDMEDK
+    switch:
+      remove: true
+      actions:
+        - A_GiveInventory("FirstAidKit")
+  6:
+    texture: PDAMMO
+    switch:
+      remove: true
+      actions:
+        - A_GiveInventory("Clip", 8)
+
+  # Pressed once, it stays in (patch 8 isn't a switch) and drops a chalice where the player stands
+  7:
+    texture: PDBTN1
+    switch:
+      to: 8
+      sound: switches/elevbutn
+      actions:
+        - A_SpawnItem("Chalice")
+  8: { texture: PDBTN2 }
+
+  # A lever: each way is a switch to the other, and both open or close the door with its tag
+  9:
+    texture: PDLEVR1
+    switch:
+      to: 10
+      sound: switches/elevbutn
+      actions:
+        - A_ToggleDoor
+  10:
+    texture: PDLEVR2
+    switch:
+      to: 9
+      sound: switches/elevbutn
+      actions:
+        - A_ToggleDoor

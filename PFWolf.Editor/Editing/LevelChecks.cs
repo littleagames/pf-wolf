@@ -21,9 +21,9 @@ public sealed record LevelProblem(CheckSeverity Severity, string Message, int X 
 
 /// <summary>
 /// What's wrong with a level that the game would trip over or that's likely a mistake: player
-/// starts, values the mapdefs don't know, doors without walls, switches and tags that link to
-/// nothing, light zones with no definition, floor on the level's edge and rooms the player
-/// can't reach
+/// starts, values the mapdefs don't know, doors without walls, patches off walls, switches and
+/// tags that link to nothing, light zones with no definition, floor on the level's edge and rooms
+/// the player can't reach
 /// </summary>
 public static class LevelChecks
 {
@@ -44,6 +44,7 @@ public static class LevelChecks
         var starts = new List<(int X, int Y)>();
         var unknownFloor = new Dictionary<int, (int X, int Y, int Count)>();
         var unknownObjects = new Dictionary<int, (int X, int Y, int Count)>();
+        var unknownPatches = new Dictionary<int, (int X, int Y, int Count)>();
         for (int y = 0; y < tiles.Height; y++)
         {
             for (int x = 0; x < tiles.Width; x++)
@@ -63,6 +64,9 @@ public static class LevelChecks
                 if (kind == TileKind.Door)
                     CheckDoor(tiles, problems, x, y);
 
+                if (tiles.Patch(x, y) is var patch and not 0)
+                    CheckPatch(tiles, problems, unknownPatches, x, y, patch, kind);
+
                 int height = tiles[MapConstants.HEIGHTPLANE, x, y];
                 if (height > 8)
                     problems.Add(new(CheckSeverity.Warning, $"height {height}: walls are 1 to 8 stories, so it's the level's height", x, y));
@@ -81,6 +85,8 @@ public static class LevelChecks
             problems.Add(new(CheckSeverity.Error, $"plane 0 value {value} isn't a wall, door or floor code in the mapdefs ({count} {Tiles(count)})", x, y));
         foreach (var (value, (x, y, count)) in unknownObjects)
             problems.Add(new(CheckSeverity.Warning, $"object code {value} isn't in the mapdefs, so nothing's placed ({count} {Tiles(count)})", x, y));
+        foreach (var (value, (x, y, count)) in unknownPatches)
+            problems.Add(new(CheckSeverity.Warning, $"patch {value} isn't in the mapdefs patches, so nothing's drawn ({count} {Tiles(count)})", x, y));
 
         CheckTags(tiles, problems);
         CheckZones(tiles, problems);
@@ -130,6 +136,38 @@ public static class LevelChecks
         Count(unknown, obj, x, y);
     }
 
+    /// <summary>
+    /// A patch (plane 0's high byte) only goes on a wall, and only shows on its faces that look
+    /// out onto open floor (not the side of a door's frame toward the door)
+    /// </summary>
+    private static void CheckPatch(MapTiles tiles, List<LevelProblem> problems, Dictionary<int, (int, int, int)> unknown, int x, int y, int patch, TileKind kind)
+    {
+        if (kind != TileKind.Wall)
+        {
+            problems.Add(new(CheckSeverity.Warning, $"patch {patch} is on {(kind == TileKind.Door ? "a door" : "open floor")}: patches only go on walls, so it's left out", x, y));
+            return;
+        }
+        if (!tiles.Content.MapDefs.Patches.TryGetValue(patch, out var def))
+        {
+            Count(unknown, patch, x, y);
+            return;
+        }
+
+        var faces = new[] { ("north", x, y - 1), ("east", x + 1, y), ("south", x, y + 1), ("west", x - 1, y) };
+        if (!faces.Any(face => def.IsOn(face.Item1) && face.Item2 >= 0 && face.Item3 >= 0 && face.Item2 < tiles.Width && face.Item3 < tiles.Height
+                               && tiles.KindAt(face.Item2, face.Item3) == TileKind.Floor))
+            problems.Add(new(CheckSeverity.Warning, $"patch {patch} isn't on a face that looks onto open floor, so it never shows", x, y));
+    }
+
+    /// <summary>The switches on a tile: its wall's and its patch's</summary>
+    private static IEnumerable<MapSwitchTranslation> Switches(MapTiles tiles, int x, int y)
+    {
+        if (tiles.Wall(x, y)?.Switch is { } wallSwitch)
+            yield return wallSwitch;
+        if (tiles.PatchDef(x, y)?.Switch is { } patchSwitch)
+            yield return patchSwitch;
+    }
+
     /// <summary>A door slides into the walls on either side of it</summary>
     private static void CheckDoor(MapTiles tiles, List<LevelProblem> problems, int x, int y)
     {
@@ -152,14 +190,15 @@ public static class LevelChecks
         {
             for (int x = 0; x < tiles.Width; x++)
             {
-                if (tiles.Wall(x, y)?.Switch is not { } wallSwitch)
+                var switches = Switches(tiles, x, y).ToList();
+                if (switches.Count == 0)
                     continue;
 
                 int tag = tiles[MapConstants.TAGPLANE, x, y];
-                bool needsTag = wallSwitch.Actions.Any(action => TaggedActions.Any(name => action.StartsWith(name, StringComparison.OrdinalIgnoreCase)));
+                bool needsTag = switches.Any(sw => sw.Actions.Any(action => TaggedActions.Any(name => action.StartsWith(name, StringComparison.OrdinalIgnoreCase))));
                 if (tag == 0)
                 {
-                    if (needsTag && string.IsNullOrEmpty(wallSwitch.Link))
+                    if (needsTag && switches.All(sw => string.IsNullOrEmpty(sw.Link)))
                         problems.Add(new(CheckSeverity.Warning, "switch without a tag: its actions have nothing to act on", x, y));
                     continue;
                 }
@@ -203,8 +242,8 @@ public static class LevelChecks
         {
             for (int x = 0; x < tiles.Width; x++)
             {
-                if (tiles.Wall(x, y)?.Switch is { } wallSwitch && tiles[MapConstants.TAGPLANE, x, y] is var tag and not 0
-                    && wallSwitch.Actions.Any(action => WallMovingActions.Any(name => action.StartsWith(name, StringComparison.OrdinalIgnoreCase))))
+                if (tiles[MapConstants.TAGPLANE, x, y] is var tag and not 0
+                    && Switches(tiles, x, y).Any(sw => sw.Actions.Any(action => WallMovingActions.Any(name => action.StartsWith(name, StringComparison.OrdinalIgnoreCase)))))
                     movedTags.Add(tag);
             }
         }

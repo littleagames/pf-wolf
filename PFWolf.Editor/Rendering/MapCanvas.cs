@@ -282,6 +282,10 @@ public sealed class MapCanvas : Control
                         if (Buried(tiles, x, y))
                             context.FillRectangle(BuriedBrush, rect);
                     }
+
+                    // Its patch over it, the wall showing through where the patch is see-through
+                    if (tiles.PatchDef(x, y) is { } patch && Art?.Flat(patch.Texture) is { } patchPicture)
+                        context.DrawImage(patchPicture, new Rect(patchPicture.Size), rect);
                     break;
 
                 case TileKind.Door:

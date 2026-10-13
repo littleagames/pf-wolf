@@ -100,6 +100,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public IReadOnlyList<PlaneOption> Planes { get; } =
     [
         new(0, "Walls, doors and floors (plane 0)"),
+        new(0, "Wall patches (plane 0, high byte)", Patches: true),
         new(1, "Things (plane 1)"),
         new(MapConstants.FLATPLANE, "Flats (plane 2)"),
         new(MapConstants.HEIGHTPLANE, "Heights (plane 3)"),
@@ -320,6 +321,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             "Things" => ["things", id],
             "Triggers" => ["triggers", id],
             "Diagonals" => ["diagonals", id],
+            PaletteEntries.PatchGroup => ["patches", (entry.Value >> MapConstants.PATCHSHIFT).ToString(System.Globalization.CultureInfo.InvariantCulture)],
             _ => null,
         };
         if (path == null)
@@ -478,7 +480,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     private Avalonia.Media.Imaging.Bitmap? PaletteIcon(PaletteEntry entry)
-        => entry.Texture != null ? Art?.Texture(entry.Texture) : entry.ThingClass != null ? Art?.ThingSprite(entry.ThingClass) : null;
+        => entry.Texture == null ? entry.ThingClass != null ? Art?.ThingSprite(entry.ThingClass) : null
+            : entry.Group == PaletteEntries.PatchGroup ? Art?.Flat(entry.Texture)     // see-through where the wall shows
+            : Art?.Texture(entry.Texture);
 
     // The game only sees what's saved in a mod (a folder or a pk3) with the mod loaded
     private bool AddModFolder(string folder)
@@ -517,7 +521,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Picks what uses a picture in the browser (a wall, a door, a flat, a thing) to put down</summary>
     public void UseInPalette(ArtUse use)
     {
-        if (use.Target is not { } target || Planes.FirstOrDefault(option => option.Plane == target.Plane) is not { } plane)
+        if (use.Target is not { } target
+            || Planes.FirstOrDefault(option => option.Plane == target.Plane && option.Patches == target.Patch) is not { } plane)
             return;
 
         SelectedPlane = plane;
@@ -572,7 +577,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public bool HasNextUnused => SelectedPlane.Plane is MapConstants.TAGPLANE or MapConstants.ZONEPLANE;
 
     /// <summary>What a plane's number means</summary>
-    public string PlaneHint => SelectedPlane.Plane switch
+    public string PlaneHint => SelectedPlane.Patches
+        ? "A picture over a wall's faces (mapdefs patches). Patches only go on walls; the walls themselves stay as they are."
+        : SelectedPlane.Plane switch
     {
         MapConstants.FLATPLANE => "Ceiling × 256 + floor: the mapdefs flats indices. 0 is the level's default floor and ceiling.",
         MapConstants.HEIGHTPLANE => $"The wall's height in stories, 1 to 8. 0 uses the level's height ({LevelWallHeight}). Taller than 1 on open floor makes an arch.",
@@ -838,6 +845,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (Content is { } content)
         {
             Controller.EraseValue = p => PaletteEntries.EraseValue(content.MapDefs, p);
+            (Controller.Combine, Controller.Read) = plane != 0 ? (null, null)
+                : SelectedPlane.Patches ? PaletteEntries.PatchLayer(content.MapDefs) : PaletteEntries.TileLayer(content.MapDefs);
             _thingVariants = PaletteEntries.ThingVariants(content.MapDefs);
             if (plane == MapConstants.FLATPLANE)
             {
@@ -846,7 +855,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 FillFlatOptions(FlatCeilingOptions, content.MapDefs.Flats.Ceiling);
                 _syncing = false;
             }
-            _allPaletteItems = PaletteEntries.ForPlane(content.MapDefs, plane)
+            _allPaletteItems = (SelectedPlane.Patches ? PaletteEntries.Patches(content.MapDefs) : PaletteEntries.ForPlane(content.MapDefs, plane))
                 .Select(entry => new PaletteItem(entry, PaletteIcon(entry)))
                 .ToList();
         }
@@ -855,7 +864,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         FilterPalette();
         if (HasPalette)
-            SelectedPaletteItem = PaletteItems.FirstOrDefault(item => item.Entry.Group == "Walls") ?? PaletteItems.FirstOrDefault();
+            SelectedPaletteItem = PaletteItems.FirstOrDefault(item => item.Entry.Group is "Walls" or "Patches") ?? PaletteItems.FirstOrDefault();
         else
             OnPlaneValueChanged(PlaneValue);
     }
@@ -1016,7 +1025,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         Controller.CancelGesture();
-        var setup = new ImportSetup(Path.GetFileName(path), maps, Planes, Document?.AssetName.ToUpperInvariant(),
+        var setup = new ImportSetup(Path.GetFileName(path), maps, Planes.Where(option => !option.Patches).ToList(), Document?.AssetName.ToUpperInvariant(),
             NextFreeMapName(), CheckNewMapName);
         if (await Dialogs.AskImport(setup) is not { } request || request.Planes.Count == 0)
             return;

@@ -124,6 +124,54 @@ powershell -ExecutionPolicy Bypass -File examples/tools/make-tall-walls-demo.ps1
 In game, `where` shows the height of the tile you're facing. With cheats on, `height <0-8>`
 changes it and `wallheight` changes the level's default. `sky <name|none>` swaps the sky.
 
+## Patch Demo (`mods/patch-demo`)
+
+A hall that replaces Floor 1 (Wolfenstein 3D only), to show off **wall patches**: pictures
+drawn over a wall's faces, their see-through pixels letting the wall show. One wall id can
+carry any decoration, and a patch can be a switch the player uses.
+
+```
+PFWolf.exe --file patch-demo
+```
+
+It replaces Floor 1 like the Switch Demo does, so switch on only one of them at a time.
+
+- **North wall:** the same brass plaque on grey stone, blue stone, wood and brick: one patch
+  on four kinds of wall. Further along, an alarm lamp blinking (a patch whose picture is an
+  animdefs animation) and two 2-story walls hung with banners (a 64x128 picture covers two
+  stories).
+- **South wall**, left to right:
+  - cracks, just decoration;
+  - a first aid cabinet: use it to take it off the wall, but only when you're hurt; at full
+    health it stays where it is (`remove: true` with `A_GiveInventory("FirstAidKit")`);
+  - a box of ammo on a shelf, taken the same way;
+  - a button: pressed once, it stays in and drops a chalice at your feet (`to:` a patch with
+    no switch of its own, and `A_SpawnItem("Chalice")`);
+  - a lever: opens and closes the door to the exit (`to:` each other, `A_ToggleDoor` on the
+    lever's tag, 1).
+- **West wall:** the cracked wall next to where you start is a pushwall. Its cracks go with it
+  into the secret room.
+
+### What's in it
+
+- `mapdefs/patches.yaml`: the patches, 1 to 10. Every field is described in
+  `pfwolf-pk3/mapdefs/wolf3d/patches.yaml`.
+- `textures/`: the patch pictures, as PNGs with clear backgrounds (clear pixels are see-through).
+- `animdefs/patch-demo.yaml`: the alarm lamp's two frames.
+- `maps/MAP01.wad`: the level. **A wall's patch is the high byte of its plane 0 value**: wall
+  id + patch id × 256. The game ignores a patch that isn't on a wall.
+
+The pictures and the level are made by `tools/make-patch-demo.ps1` (the layout is an ASCII
+drawing in it). Edit it and run it again:
+
+```
+powershell -ExecutionPolicy Bypass -File examples/tools/make-patch-demo.ps1
+```
+
+In the editor, the **Wall patches** layer (in the plane list) puts patches on walls without
+changing the walls, and its palette lists the mapdefs patches. In game, `where` shows the patch
+on the wall you face; with cheats on, `patch <0-255>` puts one on it.
+
 ## Standalone Demo (`mods/standalone-demo`)
 
 A tiny game of its own that **needs no other game's files**: no WL6, SOD or any other data

@@ -137,15 +137,15 @@ public class LevelChecksTests
     {
         // Arrange
         var document = Room();
-        EditorMaps.Set(document, 0, 10, 10, 999);
-        EditorMaps.Set(document, 0, 11, 10, 999);
+        EditorMaps.Set(document, 0, 10, 10, 250);
+        EditorMaps.Set(document, 0, 11, 10, 250);
 
         // Act
         var problem = Check(document).Single();
 
         // Assert
         Assert.That(problem.Severity, Is.EqualTo(CheckSeverity.Error));
-        Assert.That(problem.Message, Does.Contain("999").And.Contain("2 tiles"));
+        Assert.That(problem.Message, Does.Contain("250").And.Contain("2 tiles"));
         Assert.That((problem.X, problem.Y), Is.EqualTo((10, 10)));
     }
 
