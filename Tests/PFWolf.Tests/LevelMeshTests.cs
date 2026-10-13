@@ -10,11 +10,16 @@ namespace PFWolf.Tests;
 
 public class LevelMeshTests
 {
-    private const ushort Wall = 1, Floor = 107, VerticalDoor = 90, HorizontalDoor = 91, Start = 19, Diagonal = 400;
+    private const ushort Wall = 1, FourSided = 2, TwoSided = 3, Floor = 107, VerticalDoor = 90, HorizontalDoor = 91, Start = 19, Diagonal = 400;
 
     private static GameContent Content() => GameContent.FromDefinitions(new MapObjectTranslationAsset
     {
-        Walls = { [Wall] = new() { North = "WALLNS", East = "WALLEW", South = "WALLNS", West = "WALLEW" } },
+        Walls =
+        {
+            [Wall] = new() { North = "WALLNS", East = "WALLEW", South = "WALLNS", West = "WALLEW" },
+            [FourSided] = new() { North = "WALLN", South = "WALLS", East = "WALLE", West = "WALLW" },
+            [TwoSided] = new() { North = "WALLNS", East = "WALLEW" },
+        },
         Doors =
         {
             [VerticalDoor] = new() { East = "DOOR", West = "DOOR", North = "DOORSIDE", South = "DOORSIDE", Vertical = true },
@@ -86,6 +91,57 @@ public class LevelMeshTests
         Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.South).Single().Texture.Name, Is.EqualTo("WALLNS"));
         Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.East).Single().Texture.Name, Is.EqualTo("WALLEW"));
         Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.West).Single().Texture.Name, Is.EqualTo("WALLEW"));
+    }
+
+    [Test]
+    public void Each_Face_Shows_Its_Own_Texture()
+    {
+        // Arrange: a pillar with a different texture on every face
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, FourSided);
+
+        // Act
+        var mesh = Build(document);
+
+        // Assert
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.North).Single().Texture.Name, Is.EqualTo("WALLN"));
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.South).Single().Texture.Name, Is.EqualTo("WALLS"));
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.East).Single().Texture.Name, Is.EqualTo("WALLE"));
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.West).Single().Texture.Name, Is.EqualTo("WALLW"));
+    }
+
+    [Test]
+    public void A_Face_The_Wall_Does_Not_Give_Shows_The_Opposite_One()
+    {
+        // Arrange: a pillar giving only North and East
+        var document = Room();
+        EditorMaps.Set(document, 0, 10, 10, TwoSided);
+
+        // Act
+        var mesh = Build(document);
+
+        // Assert
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.South).Single().Texture.Name, Is.EqualTo("WALLNS"));
+        Assert.That(At(mesh, SurfaceKind.Wall, 10, 10, Face.West).Single().Texture.Name, Is.EqualTo("WALLEW"));
+    }
+
+    [Test]
+    public void A_Lintel_Shows_The_Face_Of_The_Wall_On_Its_Side()
+    {
+        // Arrange: a 2-story horizontal door set into four-sided walls
+        var document = Room();
+        EditorMaps.Set(document, 0, 9, 10, FourSided);
+        EditorMaps.Set(document, 0, 11, 10, FourSided);
+        EditorMaps.Set(document, 0, 10, 10, HorizontalDoor);
+        EditorMaps.Set(document, MapConstants.HEIGHTPLANE, 10, 10, 2);
+
+        // Act
+        var mesh = Build(document);
+
+        // Assert
+        static string Lintel(IEnumerable<Surface> door) => door.Single(s => s.Points.Min(p => p.Y) == 1).Texture.Name;
+        Assert.That(Lintel(At(mesh, SurfaceKind.Door, 10, 10, Face.North)), Is.EqualTo("WALLN"));
+        Assert.That(Lintel(At(mesh, SurfaceKind.Door, 10, 10, Face.South)), Is.EqualTo("WALLS"));
     }
 
     [Test]

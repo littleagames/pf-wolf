@@ -347,25 +347,15 @@ internal partial class Program
     /// </summary>
     internal static string DoorFace(doorobj_t door, string face)
     {
-        static string Face(MapTextureTranslation? xlat, string face) => xlat == null ? "" : face switch
-        {
-            "north" => xlat.North,
-            "south" => xlat.South,
-            "east" => xlat.East,
-            _ => xlat.West,
-        };
-        static string Opposite(string face) => face switch { "north" => "south", "south" => "north", "east" => "west", _ => "east" };
-
         var xlat = door.xlat;
         if (!string.IsNullOrEmpty(door.Lock) && xlat.Locked != null)
         {
-            var locked = Face(xlat.Locked, face);
+            var locked = xlat.Locked.Side(face);
             if (locked.Length > 0)
                 return locked;
         }
 
-        var own = Face(xlat, face);
-        return own.Length > 0 ? own : Face(xlat, Opposite(face));
+        return xlat.WallFace(face);
     }
 
     /// <summary>

@@ -37,9 +37,14 @@ internal partial class Program
     sealed record AutomapSprite(SpriteAsset Asset, int Left, int Top, int Width, int Height);
 
     // Filled each frame so the per-pixel loop never looks anything up by name: the textures of each
-    // seen wall tile's north/south and east/west faces, and which seen door (index + 1) a tile holds.
-    static readonly byte[]?[,] automapWallNorth = new byte[]?[MapManager.MAPSIZE, MapManager.MAPSIZE];
-    static readonly byte[]?[,] automapWallEast = new byte[]?[MapManager.MAPSIZE, MapManager.MAPSIZE];
+    // seen wall tile's four faces, and which seen door (index + 1) a tile holds.
+    static readonly AutomapFaces[,] automapWalls = new AutomapFaces[MapManager.MAPSIZE, MapManager.MAPSIZE];
+
+    /// <summary>The textures on a wall tile's four faces, as the automap draws them</summary>
+    readonly record struct AutomapFaces(byte[]? North, byte[]? South, byte[]? East, byte[]? West)
+    {
+        public bool Any => North != null || South != null || East != null || West != null;
+    }
     static readonly int[,] automapDoorAt = new int[MapManager.MAPSIZE, MapManager.MAPSIZE];
     static byte[]?[] automapDoorTextures = [];
 
@@ -61,15 +66,16 @@ internal partial class Program
         return pixels;
     }
 
-    /// <summary>The textures a wall tile shows on its north/south and east/west faces.</summary>
-    static (byte[]? North, byte[]? East) AutomapWallTextures(MapObjectTranslationAsset? mapDefs, int tile)
+    /// <summary>The textures a wall tile shows on its four faces.</summary>
+    static AutomapFaces AutomapWallTextures(MapObjectTranslationAsset? mapDefs, int tile)
     {
         // A wall beside a door carries the door-side mark (BIT_WALL), which isn't part of its id
         MapTextureTranslation? textures = null;
         if (mapDefs == null || !mapDefs.Walls.TryGetValue(tile & ~BIT_WALL, out textures))
-            return (null, null);
+            return default;
 
-        return (AutomapTexture(textures.North), AutomapTexture(textures.East));
+        return new AutomapFaces(AutomapTexture(textures.WallFace("north")), AutomapTexture(textures.WallFace("south")),
+            AutomapTexture(textures.WallFace("east")), AutomapTexture(textures.WallFace("west")));
     }
 
     /// <summary>
@@ -82,12 +88,12 @@ internal partial class Program
         //
         // what each tile shows this frame
         //
-        var wallTextures = new Dictionary<int, (byte[]? North, byte[]? East)>();
+        var wallTextures = new Dictionary<int, AutomapFaces>();
         for (int x = 0; x < MapManager.MAPSIZE; x++)
         {
             for (int y = 0; y < MapManager.MAPSIZE; y++)
             {
-                automapWallNorth[x, y] = automapWallEast[x, y] = null;
+                automapWalls[x, y] = default;
                 automapDoorAt[x, y] = 0;
 
                 if (!IsAutomapWall(x, y))
@@ -107,7 +113,7 @@ internal partial class Program
                 if (!wallTextures.TryGetValue(tile, out var textures))
                     wallTextures[tile] = textures = AutomapWallTextures(mapDefs, tile);
 
-                (automapWallNorth[x, y], automapWallEast[x, y]) = textures;
+                automapWalls[x, y] = textures;
             }
         }
 
@@ -125,7 +131,7 @@ internal partial class Program
         }
 
         // The pushwalls on the move that can be seen: each one's corner on the map and textures
-        var pushes = new List<(float X, float Y, byte[]? North, byte[]? East)>();
+        var pushes = new List<(float X, float Y, AutomapFaces Faces)>();
         foreach (var wall in pushwalls)
         {
             int dx = dirs[(int)wall.Dir][0], dy = dirs[(int)wall.Dir][1];
@@ -133,8 +139,7 @@ internal partial class Program
                         && _mapManager.seen[wall.X + dx, wall.Y + dy] == SeenFlags.None)
                 continue;
 
-            var (north, east) = AutomapWallTextures(mapDefs, wall.Tile);
-            pushes.Add((wall.X + dx * wall.Pos / 64f, wall.Y + dy * wall.Pos / 64f, north, east));
+            pushes.Add((wall.X + dx * wall.Pos / 64f, wall.Y + dy * wall.Pos / 64f, AutomapWallTextures(mapDefs, wall.Tile)));
         }
 
         //
@@ -168,7 +173,7 @@ internal partial class Program
                     {
                         if (mx >= push.X && mx < push.X + 1 && my >= push.Y && my < push.Y + 1)
                         {
-                            texel = AutomapWallTexel(push.North, push.East, mx - push.X, my - push.Y);
+                            texel = AutomapWallTexel(push.Faces, mx - push.X, my - push.Y);
                             break;
                         }
                     }
@@ -196,16 +201,15 @@ internal partial class Program
 
         float fx = mx - tx, fy = my - ty;
 
-        var north = automapWallNorth[tx, ty];
-        var east = automapWallEast[tx, ty];
-        if (north != null || east != null)
+        var faces = automapWalls[tx, ty];
+        if (faces.Any)
         {
             // a diagonal wall fills only its solid half; the backdrop shows through the open one
             var shape = _mapManager.wallshape[tx, ty];
             if (shape != WallShape.Square && !InDiagonalSolid(shape, fx, fy))
                 return -1;
 
-            return AutomapWallTexel(north, east, fx, fy);
+            return AutomapWallTexel(faces, fx, fy);
         }
 
         int door = automapDoorAt[tx, ty];
@@ -233,14 +237,16 @@ internal partial class Program
     }
 
     /// <summary>
-    /// A wall tile's color at (fx, fy) within it. The tile is split corner to corner: the parts
-    /// nearest its north and south edges use the north/south face texture, the parts nearest east
-    /// and west the (darker) east/west one, so each block reads as raised with shaded sides.
+    /// A wall tile's color at (fx, fy) within it. The tile is split corner to corner: each part
+    /// uses the texture of the face on its nearest edge (a face with none, the other axis's), so
+    /// with Wolf3D's darker east/west faces each block reads as raised with shaded sides.
     /// </summary>
-    static int AutomapWallTexel(byte[]? north, byte[]? east, float fx, float fy)
+    static int AutomapWallTexel(AutomapFaces faces, float fx, float fy)
     {
         bool nearNorthSouth = MathF.Min(fy, 1 - fy) < MathF.Min(fx, 1 - fx);
-        var texture = nearNorthSouth ? north ?? east : east ?? north;
+        var northSouth = fy < 0.5f ? faces.North : faces.South;
+        var eastWest = fx < 0.5f ? faces.West : faces.East;
+        var texture = nearNorthSouth ? northSouth ?? eastWest : eastWest ?? northSouth;
         if (texture == null)
             return -1;
 

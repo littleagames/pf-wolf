@@ -437,15 +437,16 @@ internal partial class Program
 
     /// <summary>
     /// The trace enters the arch at (tilex, tiley), crossing its edge at (edgex, edgey); vertical
-    /// says whether that's an edge along x = constant (the face then shows its East texture).
+    /// says whether that's an edge along x = constant (an east or west face).
     /// </summary>
     static void OpenArch(int tilex, int tiley, int edgex, int edgey, bool vertical)
     {
-        // the wall at either end of the run of arch tiles in line with the face, else at either
-        // end of the run across it (a face on the end of a run, entered along it)
+        // the same face of the wall at either end of the run of arch tiles in line with the face,
+        // else at either end of the run across it (a face on the end of a run, entered along it)
         int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
-        archtexture = ArchEndTexture(tilex, tiley, -dx, -dy, vertical) ?? ArchEndTexture(tilex, tiley, dx, dy, vertical)
-            ?? ArchEndTexture(tilex, tiley, -dy, -dx, vertical) ?? ArchEndTexture(tilex, tiley, dy, dx, vertical);
+        var face = SeenFace(vertical);
+        archtexture = ArchEndTexture(tilex, tiley, -dx, -dy, face) ?? ArchEndTexture(tilex, tiley, dx, dy, face)
+            ?? ArchEndTexture(tilex, tiley, -dy, -dx, face) ?? ArchEndTexture(tilex, tiley, dy, dx, face);
         if (archtexture == null)
             return;                     // nothing to texture it from: leave it open
 
@@ -460,8 +461,8 @@ internal partial class Program
             : LintelColumn(edgex, ytilestep == 1);
     }
 
-    // The texture of the wall that ends the run of arch tiles from (tilex, tiley) going (dx, dy)
-    static TextureAsset? ArchEndTexture(int tilex, int tiley, int dx, int dy, bool vertical)
+    // The texture on face of the wall that ends the run of arch tiles from (tilex, tiley) going (dx, dy)
+    static TextureAsset? ArchEndTexture(int tilex, int tiley, int dx, int dy, string face)
     {
         do
         {
@@ -472,17 +473,17 @@ internal partial class Program
         }
         while (IsArch(tilex, tiley));
 
-        return WallTexture(tilex, tiley, vertical);
+        return WallTexture(tilex, tiley, face);
     }
 
     /// <summary>
     /// The texture of an arch tile's underside: the same one whichever way the trace enters it,
     /// so it doesn't change as the view moves under it. It's from a wall ending the run of arch
-    /// tiles it's in, north or south first, else west or east.
+    /// tiles it's in, north or south first, else west or east: its face toward the arch.
     /// </summary>
     static TextureAsset? ArchUndersideTexture(int tilex, int tiley) =>
-        ArchEndTexture(tilex, tiley, 0, -1, false) ?? ArchEndTexture(tilex, tiley, 0, 1, false)
-        ?? ArchEndTexture(tilex, tiley, -1, 0, true) ?? ArchEndTexture(tilex, tiley, 1, 0, true);
+        ArchEndTexture(tilex, tiley, 0, -1, "south") ?? ArchEndTexture(tilex, tiley, 0, 1, "north")
+        ?? ArchEndTexture(tilex, tiley, -1, 0, "east") ?? ArchEndTexture(tilex, tiley, 1, 0, "west");
 
     /// <summary>
     /// An arch tile with a ceiling flat (a non-zero ceiling index on the flat plane, its flat
@@ -671,6 +672,7 @@ internal partial class Program
         postheight = CalcHeight();
         postx = pixx;
         var mapDefs = _mapManager.GetMapData();
+        var face = SeenFace(vertical: true);
         MapTextureTranslation? mapTexture = MapTextureTranslation.None;
         if ((tilehit & BIT_WALL) != 0)
         {
@@ -684,17 +686,17 @@ internal partial class Program
                 // the door's jamb on the side the ray left it from
                 var door = doorobjlist[doortile & ~BIT_DOOR];
                 wallpic = DoorFace(door, xtilestep == 1 ? "east" : "west");
-                SetUpperPost((mapTexture ?? MapTextureTranslation.None).East, texture, xtile, yinttile);   // the wall above the door frame
+                SetUpperPost((mapTexture ?? MapTextureTranslation.None).WallFace(face), texture, xtile, yinttile);   // the wall above the door frame
             }
             else
             {
-                wallpic = (mapTexture ?? MapTextureTranslation.None).East;
+                wallpic = (mapTexture ?? MapTextureTranslation.None).WallFace(face);
             }
         }
         else
         {
             mapDefs?.Walls.TryGetValue(tilehit, out mapTexture);
-            wallpic = (mapTexture ?? MapTextureTranslation.None).East;
+            wallpic = (mapTexture ?? MapTextureTranslation.None).WallFace(face);
         }
 
         var textureAsset = WorldTexture(wallpic, xtile, yinttile);
@@ -735,6 +737,7 @@ internal partial class Program
         postx = pixx;
 
         var mapDefs = _mapManager.GetMapData();
+        var face = SeenFace(vertical: false);
         MapTextureTranslation? mapTexture = MapTextureTranslation.None;
 
         if ((tilehit & BIT_WALL) != 0)
@@ -748,17 +751,17 @@ internal partial class Program
             {
                 var door = doorobjlist[doortile & ~BIT_DOOR];
                 wallpic = DoorFace(door, ytilestep == 1 ? "south" : "north");
-                SetUpperPost((mapTexture ?? MapTextureTranslation.None).North, texture, xinttile, ytile);  // the wall above the door frame
+                SetUpperPost((mapTexture ?? MapTextureTranslation.None).WallFace(face), texture, xinttile, ytile);  // the wall above the door frame
             }
             else
             {
-                wallpic = (mapTexture ?? MapTextureTranslation.None).North;
+                wallpic = (mapTexture ?? MapTextureTranslation.None).WallFace(face);
             }
         }
         else
         {
             mapDefs?.Walls.TryGetValue(tilehit, out mapTexture);
-            wallpic = (mapTexture ?? MapTextureTranslation.None).North;
+            wallpic = (mapTexture ?? MapTextureTranslation.None).WallFace(face);
         }
 
         var textureAsset = WorldTexture(wallpic, xinttile, ytile);
@@ -861,17 +864,27 @@ internal partial class Program
     }
 
     /// <summary>
+    /// The face ("north", "south", "east" or "west") the trace sees on what it hits: vertical for
+    /// an edge along x = constant. Heading east, it meets a wall's west face, and so on.
+    /// </summary>
+    static string SeenFace(bool vertical) => vertical
+        ? xtilestep == 1 ? "west" : "east"
+        : ytilestep == 1 ? "north" : "south";
+
+    /// <summary>
     /// The texture of the wall a door is set into, from the wall tile on either side of it in
-    /// line with the door; null if neither side is a plain wall.
+    /// line with the door, on the face the trace sees; null if neither side is a plain wall.
     /// </summary>
     static TextureAsset? LintelTexture(doorobj_t door)
     {
         int dx = door.vertical ? 0 : 1, dy = door.vertical ? 1 : 0;
-        return WallTexture(door.tilex - dx, door.tiley - dy, door.vertical)
-            ?? WallTexture(door.tilex + dx, door.tiley + dy, door.vertical);
+        var face = SeenFace(door.vertical);
+        return WallTexture(door.tilex - dx, door.tiley - dy, face)
+            ?? WallTexture(door.tilex + dx, door.tiley + dy, face);
     }
 
-    static TextureAsset? WallTexture(int tilex, int tiley, bool vertical)
+    // A wall tile's texture on face ("north", "south", "east" or "west")
+    static TextureAsset? WallTexture(int tilex, int tiley, string face)
     {
         var tile = _mapManager.tilemap[tilex, tiley];
         if ((tile & BIT_DOOR) != 0 || (tile & ~BIT_WALL) == 0)
@@ -880,7 +893,7 @@ internal partial class Program
         MapTextureTranslation? mapTexture = null;
         if (_mapManager.GetMapData()?.Walls.TryGetValue(tile & ~BIT_WALL, out mapTexture) != true || mapTexture == null)
             return null;
-        return WorldTexture(vertical ? mapTexture.East : mapTexture.North, tilex, tiley);
+        return WorldTexture(mapTexture.WallFace(face), tilex, tiley);
     }
 
     // The lintel column where the trace meets the door plane at along (y for a vertical door, x

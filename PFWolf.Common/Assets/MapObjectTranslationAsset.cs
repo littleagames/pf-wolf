@@ -240,6 +240,31 @@ public record MapTextureTranslation
     public string West { get; init; } = "";
 
     /// <summary>
+    /// The texture on one face: "north", "south", "east" or "west", the way the face looks out
+    /// (a wall's north face is seen from the tile north of it). Empty if it doesn't give one.
+    /// </summary>
+    public string Side(string face) => face switch
+    {
+        "north" => North,
+        "south" => South,
+        "east" => East,
+        _ => West,
+    };
+
+    /// <summary>The face opposite <paramref name="face"/> ("north" for "south" and so on)</summary>
+    public static string OppositeFace(string face) => face switch { "north" => "south", "south" => "north", "east" => "west", _ => "east" };
+
+    /// <summary>
+    /// A wall's texture on one face (<see cref="Side"/>): a face it doesn't give falls back to the
+    /// one opposite, so a wall that only gives North and East shows them on all four faces.
+    /// </summary>
+    public string WallFace(string face)
+    {
+        var texture = Side(face);
+        return texture.Length > 0 ? texture : Side(OppositeFace(face));
+    }
+
+    /// <summary>
     /// Doors only: the inventory item class (e.g. "GoldKey") the player must carry to open
     /// this door. Empty means unlocked.
     /// </summary>

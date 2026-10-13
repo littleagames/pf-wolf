@@ -261,7 +261,7 @@ public sealed class LevelMesh
             }
 
             var (a, b) = Edge(x, y, face);
-            var texture = face is Face.North or Face.South ? wall.North : wall.East;
+            var texture = wall.WallFace(FaceName(face));
             var faceRef = new SurfaceRef(SurfaceKind.Wall, x, y, face);
             var light = Light(nx, ny);
 
@@ -327,7 +327,7 @@ public sealed class LevelMesh
     {
         int stories = _tiles.Stories(x, y);
         var underside = _tiles.ArchUndersideTexture(x, y);
-        var faces = SquareFaces.Select(face => (Face: face, Texture: _tiles.ArchFaceTexture(x, y, face is Face.East or Face.West))).ToList();
+        var faces = SquareFaces.Select(face => (Face: face, Texture: _tiles.ArchFaceTexture(x, y, FaceName(face)))).ToList();
         underside ??= faces.Select(face => face.Texture).FirstOrDefault(texture => texture != null);
         if (underside == null)
             return false;
@@ -383,7 +383,6 @@ public sealed class LevelMesh
     {
         var door = _tiles.Door(x, y)!;
         int stories = _tiles.Stories(x, y);
-        var lintel = LintelTexture(x, y, door.Vertical);
 
         if (door.Vertical)
         {
@@ -395,9 +394,11 @@ public sealed class LevelMesh
             AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 0, 1, DoorFace(door, x, y, "east"), eastLight, 1, 0);
             if (stories > 1)
             {
-                var texture = lintel ?? DoorFace(door, x, y, "west");
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 1, stories, texture, westLight);
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 1, stories, texture, eastLight);
+                var fallback = DoorFace(door, x, y, "west");
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.West), north, south, 1, stories,
+                    LintelTexture(x, y, true, "west") ?? fallback, westLight);
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.East), south, north, 1, stories,
+                    LintelTexture(x, y, true, "east") ?? fallback, eastLight);
             }
         }
         else
@@ -408,9 +409,11 @@ public sealed class LevelMesh
             AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 0, 1, DoorFace(door, x, y, "south"), southLight);
             if (stories > 1)
             {
-                var texture = lintel ?? DoorFace(door, x, y, "north");
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 1, stories, texture, northLight);
-                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 1, stories, texture, southLight);
+                var fallback = DoorFace(door, x, y, "north");
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.North), east, west, 1, stories,
+                    LintelTexture(x, y, false, "north") ?? fallback, northLight);
+                AddWall(new SurfaceRef(SurfaceKind.Door, x, y, Face.South), west, east, 1, stories,
+                    LintelTexture(x, y, false, "south") ?? fallback, southLight);
             }
         }
     }
@@ -421,31 +424,24 @@ public sealed class LevelMesh
     /// </summary>
     private string DoorFace(MapTextureTranslation door, int x, int y, string face)
     {
-        static string Face(MapTextureTranslation? textures, string face) => textures == null ? "" : face switch
-        {
-            "north" => textures.North,
-            "south" => textures.South,
-            "east" => textures.East,
-            _ => textures.West,
-        };
-        static string Opposite(string face) => face switch { "north" => "south", "south" => "north", "east" => "west", _ => "east" };
-
         bool locked = !string.IsNullOrEmpty(door.Lock) || _tiles.Content.MapDefs.DoorLocks.ContainsKey(_tiles[1, x, y]);
-        if (locked && Face(door.Locked, face) is { Length: > 0 } lockedFace)
+        if (locked && door.Locked?.Side(face) is { Length: > 0 } lockedFace)
             return lockedFace;
 
-        var own = Face(door, face);
-        return own.Length > 0 ? own : Face(door, Opposite(face));
+        return door.WallFace(face);
     }
 
-    /// <summary>The wall a door is set into, on either side in line with it (Program.LintelTexture)</summary>
-    private string? LintelTexture(int x, int y, bool vertical)
+    /// <summary>
+    /// The wall a door is set into, on either side in line with it, as seen on the lintel's
+    /// <paramref name="face"/> (Program.LintelTexture)
+    /// </summary>
+    private string? LintelTexture(int x, int y, bool vertical, string face)
     {
         int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
         foreach (var (tx, ty) in new[] { (x - dx, y - dy), (x + dx, y + dy) })
         {
             if (InMap(tx, ty) && _tiles.Wall(tx, ty) is { } wall)
-                return vertical ? wall.East : wall.North;
+                return wall.WallFace(face);
         }
         return null;
     }
@@ -584,9 +580,11 @@ public sealed class LevelMesh
     };
 
     /// <summary>The way a ray heads to cross onto this side's face, named as the game's door faces are</summary>
-    private static string TravelName(Face side) => side switch
+    private static string TravelName(Face side) => FaceName(side);   // leaving the door toward its north wall heads north, and so on
+
+    /// <summary>A square face's name in mapdefs (MapTextureTranslation.Side): the way it looks out</summary>
+    private static string FaceName(Face face) => face switch
     {
-        // Leaving the door toward its north wall heads north, and so on
         Face.North => "north",
         Face.South => "south",
         Face.East => "east",

@@ -110,8 +110,8 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         return (levelLight, null);
     }
 
-    /// <summary>The wall closing off a run of arch tiles from (x, y) going (dx, dy): its East texture for a vertical face, else North (Program.ArchEndTexture)</summary>
-    public string? ArchEndTexture(int x, int y, int dx, int dy, bool vertical)
+    /// <summary>The wall closing off a run of arch tiles from (x, y) going (dx, dy): its texture on <paramref name="face"/> (Program.ArchEndTexture)</summary>
+    public string? ArchEndTexture(int x, int y, int dx, int dy, string face)
     {
         do
         {
@@ -122,13 +122,16 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         }
         while (IsArch(x, y));
 
-        return Wall(x, y) is { } wall ? vertical ? wall.East : wall.North : null;
+        return Wall(x, y)?.WallFace(face);
     }
 
-    /// <summary>An arch tile's underside: from a wall ending its run north or south first, else west or east (Program.ArchUndersideTexture)</summary>
+    /// <summary>
+    /// An arch tile's underside: from a wall ending its run north or south first (the face
+    /// toward the arch), else west or east (Program.ArchUndersideTexture)
+    /// </summary>
     public string? ArchUndersideTexture(int x, int y)
-        => ArchEndTexture(x, y, 0, -1, false) ?? ArchEndTexture(x, y, 0, 1, false)
-           ?? ArchEndTexture(x, y, -1, 0, true) ?? ArchEndTexture(x, y, 1, 0, true);
+        => ArchEndTexture(x, y, 0, -1, "south") ?? ArchEndTexture(x, y, 0, 1, "north")
+           ?? ArchEndTexture(x, y, -1, 0, "east") ?? ArchEndTexture(x, y, 1, 0, "west");
 
     /// <summary>
     /// The ceiling flat an arch tile shows underneath in place of <see cref="ArchUndersideTexture"/>:
@@ -138,14 +141,16 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         => this[MapConstants.FLATPLANE, x, y] >> 8 == 0 ? null : CeilingFlat(x, y);
 
     /// <summary>
-    /// An arch face's texture, vertical for a face along x = constant: the wall ending the run
-    /// of arch tiles in line with the face, else across it (Program.OpenArch); null leaves the arch open
+    /// An arch face's texture (its face "north", "south", "east" or "west"): that face of the wall
+    /// ending the run of arch tiles in line with the face, else across it (Program.OpenArch); null
+    /// leaves the arch open
     /// </summary>
-    public string? ArchFaceTexture(int x, int y, bool vertical)
+    public string? ArchFaceTexture(int x, int y, string face)
     {
+        bool vertical = face is "east" or "west";
         int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
-        return ArchEndTexture(x, y, -dx, -dy, vertical) ?? ArchEndTexture(x, y, dx, dy, vertical)
-            ?? ArchEndTexture(x, y, -dy, -dx, vertical) ?? ArchEndTexture(x, y, dy, dx, vertical);
+        return ArchEndTexture(x, y, -dx, -dy, face) ?? ArchEndTexture(x, y, dx, dy, face)
+            ?? ArchEndTexture(x, y, -dy, -dx, face) ?? ArchEndTexture(x, y, dy, dx, face);
     }
 
     /// <summary>A wall the player can push (its object-plane trigger runs A_PushWall)</summary>
