@@ -41,6 +41,12 @@ internal record Actor : Thinker
     // (decorations, pickups). Set as it spawns; kept in saved games.
     public string? Faction { get; internal set; }
 
+    // The sprite color translation it's drawn through of its own (translations.yaml,
+    // Managers/TranslationManager.cs): a mapdefs thing's `translation:`, its class's
+    // `translation` property, or a script's or the console's; null to take its faction's (an
+    // enemy) or its player's color. Kept in saved games.
+    public string? Translation { get; internal set; }
+
     // From the floor code it spawned on (mapdefs floors actor-codes, Planet Strike's): what it
     // drops when it dies besides its class's drops, the tile (x << 8 | y, 0 for none) its death
     // works as a smart switch (A_SmartSwitch), and whether it's cloaked (drawn shimmering)

@@ -18,6 +18,9 @@ internal sealed class MultiplayerConfig
     /// <summary>Whether hosting asks the router (UPnP or NAT-PMP) to open the game's port for players on the internet</summary>
     public bool OpenPort { get; set; } = true;
 
+    /// <summary>The color others see you in (a game-info player-colors translation); empty for your class's own</summary>
+    public string Color { get; set; } = "";
+
     private readonly List<string> _otherLines = [];
 
     public static MultiplayerConfig Read(string path)
@@ -42,6 +45,7 @@ internal sealed class MultiplayerConfig
                     case "name": config.Name = value; break;
                     case "last-address": config.LastAddress = value; break;
                     case "open-port": config.OpenPort = value is not ("false" or "0" or "off"); break;
+                    case "color": config.Color = value; break;
                     default: config._otherLines.Add(line); break;
                 }
             }
@@ -60,10 +64,11 @@ internal sealed class MultiplayerConfig
         {
             File.WriteAllLines(path,
             [
-                "# Playing with others: your name, the address you last joined, and whether hosting opens the router's port",
+                "# Playing with others: your name, the address you last joined, whether hosting opens the router's port, and your color",
                 $"name {Name}",
                 $"last-address {LastAddress}",
                 $"open-port {(OpenPort ? "true" : "false")}",
+                $"color {Color}",
                 .. _otherLines,
             ]);
             return true;

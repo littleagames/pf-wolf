@@ -70,6 +70,7 @@ public static class ScriptApi
         Field("isplayer", "Whether it's a player"),
         Field("shooter", "For a projectile, the actor that fired it"),
         Field("faction", "The side it's on (factions.yaml), nil for none"),
+        Field("translation", "The color translation it's drawn through (translations.yaml), nil for its own colors; set nil for its faction's", settable: true),
         Field("temp1", "A whole number of its own, kept in saved games: a script's state for the actor", settable: true),
         Field("temp2", "A whole number of its own, kept in saved games", settable: true),
         Field("temp3", "A whole number of its own, kept in saved games", settable: true),

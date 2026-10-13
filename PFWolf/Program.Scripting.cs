@@ -173,6 +173,7 @@ internal partial class Program
                 "isplayer" => c.Return(self is Entities.Actors.PlayerPawn),
                 "shooter" => c.Return(LuaActor.Of(self.Shooter)),
                 "faction" => c.Return(self.Faction is { } faction ? faction : LuaValue.Nil),
+                "translation" => c.Return((_translationManager?.TranslationOf(self) ?? self.Translation) is { } translation ? translation : LuaValue.Nil),
                 "temp1" => c.Return(self.Temp1),
                 "temp2" => c.Return(self.Temp2),
                 "temp3" => c.Return(self.Temp3),
@@ -189,13 +190,14 @@ internal partial class Program
                 case "temp2": self.Temp2 = ShortArg(c, 2); break;
                 case "temp3": self.Temp3 = ShortArg(c, 2); break;
                 case "speed": self.Speed = (int)Math.Round(NumberArg(c, 2, 0)); break;
+                case "translation": self.Translation = OptionalString(c, 2) is { Length: > 0 } translation ? translation : null; break;
                 case "angle":
                     self.Angle = (short)(((int)Math.Round(NumberArg(c, 2, 0)) % ANGLES + ANGLES) % ANGLES);
                     if (self is not Entities.Actors.Monster and not Entities.Actors.PlayerPawn)
                         self.Dir = objdirtypes.nodir;       // its facing is its angle from now on
                     break;
                 default:
-                    throw new LuaRuntimeException(c.State, (LuaValue)$"an actor's {key} can't be set (temp1..temp3, angle and speed can)", 1);
+                    throw new LuaRuntimeException(c.State, (LuaValue)$"an actor's {key} can't be set (temp1..temp3, angle, speed and translation can)", 1);
             }
             return new(c.Return());
         });

@@ -50,6 +50,7 @@ public class SaveDataTests
         DeathLink = 3,
         Cloaked = true,
         Faction = "allies",
+        Translation = "ally-green",
     };
 
     [Test]
@@ -70,7 +71,7 @@ public class SaveDataTests
     public void ActorSnapshot_Round_Trips_Without_State_Or_Light()
     {
         // Arrange
-        var snapshot = FullSnapshot() with { StateName = null, Light = null, CarriedDrops = [], Faction = null };
+        var snapshot = FullSnapshot() with { StateName = null, Light = null, CarriedDrops = [], Faction = null, Translation = null };
 
         // Act
         var read = RoundTrip(snapshot.Write, ActorSnapshot.Read);
@@ -80,6 +81,7 @@ public class SaveDataTests
         Assert.That(read.Light, Is.Null);
         Assert.That(read.CarriedDrops, Is.Empty);
         Assert.That(read.Faction, Is.Null);
+        Assert.That(read.Translation, Is.Null);
     }
 
     [Test]

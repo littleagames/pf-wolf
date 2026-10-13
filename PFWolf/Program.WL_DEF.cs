@@ -16,6 +16,7 @@ internal class visobj_t
     public bool bright;                         // drawn unshaded (Program.IsBright)
     public bool cloaked;                        // drawn as a dark shimmer of what's behind it (Actor.Cloaked)
     public int worldx, worldy;                  // where it stands (global units), for its light
+    public byte[]? translation;                 // its colors remapped (Managers/TranslationManager.cs), or null
 }
 
 internal enum buttontypes

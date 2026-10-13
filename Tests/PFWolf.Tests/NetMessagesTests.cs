@@ -69,7 +69,7 @@ public class NetMessagesTests
     public void Hello_Round_Trips()
     {
         // Arrange
-        var hello = new Hello(NetProtocol.Version, Identity, "Player", "Soldier");
+        var hello = new Hello(NetProtocol.Version, Identity, "Player", "Soldier", "red");
 
         // Act
         var read = Hello.Read(new NetDataReader(hello.Write()));
@@ -132,7 +132,7 @@ public class NetMessagesTests
     public void LobbyPlayer_List_Round_Trips_In_Order()
     {
         // Arrange
-        List<LobbyPlayer> players = [new(0, "Host", "Soldier", true), new(1, "Guest", "Medic", false), new(3, "Late", "", true)];
+        List<LobbyPlayer> players = [new(0, "Host", "Soldier", true, "blue"), new(1, "Guest", "Medic", false), new(3, "Late", "", true, "red")];
 
         // Act
         var read = RoundTrip(w => LobbyPlayer.WriteList(w, players), LobbyPlayer.ReadList);
@@ -181,7 +181,7 @@ public class NetMessagesTests
     public void TicBundle_Round_Trips_With_A_Join()
     {
         // Arrange
-        var bundle = new TicBundle(3, 1234, 0b0100, new NetJoin(2, "Newcomer", "Soldier"),
+        var bundle = new TicBundle(3, 1234, 0b0100, new NetJoin(2, "Newcomer", "Soldier", "yellow"),
             [Cmd(1, 2, 3, 4), Cmd(0, 0, 0, 0), Cmd(uint.MaxValue, -5, -6, -7)]);
 
         // Act

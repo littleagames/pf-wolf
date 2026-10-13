@@ -60,8 +60,8 @@ internal sealed record HostInfo(int HostId, string HostName, string GamePack, in
         new(r.GetInt(), r.GetString(), r.GetString(), r.GetByte(), r.GetByte(), r.GetBool(), (GameMode)r.GetByte(), r.GetString());
 }
 
-/// <summary>What a player joining sends with their connection</summary>
-internal sealed record Hello(int Version, NetIdentity Identity, string Name, string PlayerClass)
+/// <summary>What a player joining sends with their connection (Color: a game-info player-colors translation, or empty for their class's own)</summary>
+internal sealed record Hello(int Version, NetIdentity Identity, string Name, string PlayerClass, string Color = "")
 {
     public NetDataWriter Write()
     {
@@ -71,6 +71,7 @@ internal sealed record Hello(int Version, NetIdentity Identity, string Name, str
         Identity.Write(w);
         w.Put(Name);
         w.Put(PlayerClass);
+        w.Put(Color);
         return w;
     }
 
@@ -84,7 +85,7 @@ internal sealed record Hello(int Version, NetIdentity Identity, string Name, str
             int version = r.GetInt();
             if (version != NetProtocol.Version)
                 return new Hello(version, new NetIdentity("", "", "", "", ""), "", "");
-            return new Hello(version, NetIdentity.Read(r), r.GetString(), r.GetString());
+            return new Hello(version, NetIdentity.Read(r), r.GetString(), r.GetString(), r.GetString());
         }
         catch (Exception)
         {
@@ -118,8 +119,8 @@ internal sealed record LobbySettings(GameMode Mode, int Episode, int Skill,
         new((GameMode)r.GetByte(), r.GetByte(), r.GetByte(), r.GetBool(), r.GetByte(), r.GetByte(), r.GetBool(), r.GetString());
 }
 
-/// <summary>A player waiting in the lobby, in their slot (the host's is 0)</summary>
-internal sealed record LobbyPlayer(int Slot, string Name, string PlayerClass, bool Ready)
+/// <summary>A player waiting in the lobby, in their slot (the host's is 0), with their class and color (empty: their class's own)</summary>
+internal sealed record LobbyPlayer(int Slot, string Name, string PlayerClass, bool Ready, string Color = "")
 {
     public void Write(NetDataWriter w)
     {
@@ -127,9 +128,10 @@ internal sealed record LobbyPlayer(int Slot, string Name, string PlayerClass, bo
         w.Put(Name);
         w.Put(PlayerClass);
         w.Put(Ready);
+        w.Put(Color);
     }
 
-    public static LobbyPlayer Read(NetDataReader r) => new(r.GetByte(), r.GetString(), r.GetString(), r.GetBool());
+    public static LobbyPlayer Read(NetDataReader r) => new(r.GetByte(), r.GetString(), r.GetString(), r.GetBool(), r.GetString());
 
     public static void WriteList(NetDataWriter w, IReadOnlyList<LobbyPlayer> players)
     {
@@ -179,8 +181,8 @@ internal static class TicCmdCodec
     }
 }
 
-/// <summary>A player coming into a game already being played: their index (the next one), name and class</summary>
-internal sealed record NetJoin(int Index, string Name, string PlayerClass);
+/// <summary>A player coming into a game already being played: their index (the next one), name, class and color</summary>
+internal sealed record NetJoin(int Index, string Name, string PlayerClass, string Color = "");
 
 /// <summary>
 /// Everyone's controls for one frame (a step) of a level (the level'th one played, counting
@@ -200,6 +202,7 @@ internal sealed record TicBundle(int Level, int Step, byte Left, NetJoin? Join, 
             w.Put((byte)Join.Index);
             w.Put(Join.Name);
             w.Put(Join.PlayerClass);
+            w.Put(Join.Color);
         }
         w.Put((byte)Cmds.Length);
         foreach (var cmd in Cmds)
@@ -210,7 +213,7 @@ internal sealed record TicBundle(int Level, int Step, byte Left, NetJoin? Join, 
     {
         int level = r.GetInt(), step = r.GetInt();
         byte left = r.GetByte();
-        var join = r.GetBool() ? new NetJoin(r.GetByte(), r.GetString(), r.GetString()) : null;
+        var join = r.GetBool() ? new NetJoin(r.GetByte(), r.GetString(), r.GetString(), r.GetString()) : null;
         var cmds = new Entities.TicCmd[r.GetByte()];
         for (int i = 0; i < cmds.Length; i++)
             cmds[i] = TicCmdCodec.Read(r);

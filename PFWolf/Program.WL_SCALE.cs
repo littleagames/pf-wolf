@@ -25,7 +25,9 @@ internal partial class Program
     ===================
     */
 
-    internal static void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column, byte[] shade, int shadeofs, bool cloaked = false)
+    // translation, if any, recolors each index first (Managers/TranslationManager.cs)
+    internal static void ScaleColumn(short x, short toppix, int fracstep, SpriteAsset sprite, int column, byte[] shade, int shadeofs,
+        bool cloaked = false, byte[]? translation = null)
     {
         int height = sprite.Height;
         int width = sprite.Width;
@@ -59,7 +61,8 @@ internal partial class Program
             if (mask[srcIndex] == 0)
                 continue;                       // transparent pixel
 
-            byte color = shade[shadeofs + indices[srcIndex]];
+            byte index = indices[srcIndex];
+            byte color = shade[shadeofs + (translation == null ? index : translation[index])];
 
             var destIndex = _videoManager.ylookup[startpix] + x;
             unsafe
@@ -148,7 +151,7 @@ internal partial class Program
             {
                 if (wallheight[x1] < sprite.viewheight)
                 {
-                    ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, shadeofs, sprite.cloaked);
+                    ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, shadeofs, sprite.cloaked, sprite.translation);
                 }
 
                 x1++;

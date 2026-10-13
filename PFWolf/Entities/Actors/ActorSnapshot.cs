@@ -39,6 +39,7 @@ internal sealed record ActorSnapshot
     public ushort DeathLink { get; init; }
     public bool Cloaked { get; init; }
     public string? Faction { get; init; }
+    public string? Translation { get; init; }
 
     public static ActorSnapshot Capture(Actor actor)
     {
@@ -77,6 +78,7 @@ internal sealed record ActorSnapshot
             DeathLink = actor.DeathLink,
             Cloaked = actor.Cloaked,
             Faction = actor.Faction,
+            Translation = actor.Translation,
         };
     }
 
@@ -114,6 +116,7 @@ internal sealed record ActorSnapshot
         actor.DeathLink = DeathLink;
         actor.Cloaked = Cloaked;
         actor.Faction = Faction;
+        actor.Translation = Translation;
         actor.SyncPosition();
     }
 
@@ -153,6 +156,7 @@ internal sealed record ActorSnapshot
         bw.Write(DeathLink);
         bw.Write(Cloaked);
         bw.Write(Faction ?? "");
+        bw.Write(Translation ?? "");
     }
 
     public static ActorSnapshot Read(BinaryReader br)
@@ -193,6 +197,7 @@ internal sealed record ActorSnapshot
             DeathLink = br.ReadUInt16(),
             Cloaked = br.ReadBoolean(),
             Faction = br.ReadString() is { Length: > 0 } faction ? faction : null,
+            Translation = br.ReadString() is { Length: > 0 } translation ? translation : null,
         };
     }
 

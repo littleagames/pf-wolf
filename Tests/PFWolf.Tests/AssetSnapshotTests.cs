@@ -37,7 +37,7 @@ public class AssetSnapshotTests
         typeof(FontDefinitionsAsset), typeof(HudMessageStylesAsset), typeof(StatusBarAsset),
         typeof(SoundSequenceAsset), typeof(IntermissionAsset), typeof(PresenterAsset), typeof(MoviesAsset),
         typeof(ElevatorAsset), typeof(LanguageAsset), typeof(ActorTranslationAsset),
-        typeof(MapObjectTranslationAsset), typeof(MenuAsset), typeof(GamePackInfoAsset), typeof(FactionsAsset),
+        typeof(MapObjectTranslationAsset), typeof(MenuAsset), typeof(GamePackInfoAsset), typeof(FactionsAsset), typeof(TranslationsAsset),
     ];
 
     private static IEnumerable<TestCaseData> GameCases() =>
@@ -119,6 +119,7 @@ public class AssetSnapshotTests
         Write("movies.yaml", "zz-probe: {}\n");
         Write("alias.yaml", "zz-probe: 1\n");
         Write("factions.yaml", "zz-probe: 1\n");
+        Write("translations.yaml", "zz-probe: []\n");
         Write("language/en-us.yaml", "$ZZ_PROBE: \"probe\"\n");
         return folder;
     }

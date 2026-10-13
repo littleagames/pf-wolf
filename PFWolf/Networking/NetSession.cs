@@ -87,7 +87,7 @@ internal sealed class NetSession : IDisposable
     /// Hosts a game on <paramref name="port"/>, with this machine's player in slot 0. Null, with
     /// the reason in <paramref name="error"/>, if the port can't be used.
     /// </summary>
-    public static NetSession? Host(int port, NetIdentity identity, string name, string playerClass, int maxPlayers,
+    public static NetSession? Host(int port, NetIdentity identity, string name, string playerClass, string color, int maxPlayers,
         LobbySettings settings, out string? error)
     {
         Current?.Dispose();
@@ -99,13 +99,13 @@ internal sealed class NetSession : IDisposable
         }
 
         session.LocalSlot = 0;
-        session.Players = [new LobbyPlayer(0, NetProtocol.CleanName(name), playerClass, Ready: true)];
+        session.Players = [new LobbyPlayer(0, NetProtocol.CleanName(name), playerClass, Ready: true, color)];
         error = null;
         return Current = session;
     }
 
     /// <summary>Starts joining the game hosted at <paramref name="address"/>: <see cref="IsJoined"/> once the host lets us in</summary>
-    public static NetSession? Join(string address, int port, NetIdentity identity, string name, string playerClass, out string? error)
+    public static NetSession? Join(string address, int port, NetIdentity identity, string name, string playerClass, string color, out string? error)
     {
         // Resolved here rather than by LiteNetLib, which only says "UnknownHost" without the address
         IPEndPoint endPoint;
@@ -118,11 +118,11 @@ internal sealed class NetSession : IDisposable
             error = $"Couldn't find the address \"{address}\". Type an IP address like 192.168.1.12, or a host name.";
             return null;
         }
-        return Join(endPoint, identity, name, playerClass, out error);
+        return Join(endPoint, identity, name, playerClass, color, out error);
     }
 
     /// <summary>Starts joining the game hosted at <paramref name="endPoint"/></summary>
-    public static NetSession? Join(IPEndPoint endPoint, NetIdentity identity, string name, string playerClass, out string? error)
+    public static NetSession? Join(IPEndPoint endPoint, NetIdentity identity, string name, string playerClass, string color, out string? error)
     {
         int port = endPoint.Port;
         Current?.Dispose();
@@ -136,7 +136,7 @@ internal sealed class NetSession : IDisposable
         try
         {
             session._host = session._net.Connect(endPoint,
-                new Hello(NetProtocol.Version, identity, NetProtocol.CleanName(name), playerClass).Write());
+                new Hello(NetProtocol.Version, identity, NetProtocol.CleanName(name), playerClass, color).Write());
         }
         catch (Exception e) when (e is System.Net.Sockets.SocketException or ArgumentException or FormatException)
         {
@@ -177,15 +177,15 @@ internal sealed class NetSession : IDisposable
         SendLobby();
     }
 
-    /// <summary>This machine's player picks a class or says they're ready</summary>
-    public void SetLocal(string playerClass, bool ready)
+    /// <summary>This machine's player picks a class or a color, or says they're ready</summary>
+    public void SetLocal(string playerClass, string color, bool ready)
     {
-        if (LocalPlayer is not { } me || (me.PlayerClass == playerClass && me.Ready == ready))
+        if (LocalPlayer is not { } me || (me.PlayerClass == playerClass && me.Color == color && me.Ready == ready))
             return;
 
         if (IsHost)
         {
-            ReplacePlayer(me with { PlayerClass = playerClass, Ready = true });
+            ReplacePlayer(me with { PlayerClass = playerClass, Color = color, Ready = true });
             SendLobby();
         }
         else if (_host != null)
@@ -193,6 +193,7 @@ internal sealed class NetSession : IDisposable
             var w = NetProtocol.Message(NetMessage.LobbyChange);
             w.Put(playerClass);
             w.Put(ready);
+            w.Put(color);
             _host.Send(w, DeliveryMethod.ReliableOrdered);
         }
     }
@@ -515,7 +516,7 @@ internal sealed class NetSession : IDisposable
         int slot = Enumerable.Range(0, _maxPlayers).First(s => Players.All(p => p.Slot != s));
         var peer = request.Accept();
         _slotOfPeer[peer.Id] = slot;
-        AddPlayer(new LobbyPlayer(slot, NetProtocol.CleanName(hello!.Name), hello.PlayerClass, Ready: false));
+        AddPlayer(new LobbyPlayer(slot, NetProtocol.CleanName(hello!.Name), hello.PlayerClass, Ready: false, hello.Color));
     }
 
     private void OnPeerConnected(NetPeer peer)
@@ -540,7 +541,7 @@ internal sealed class NetSession : IDisposable
             _neededFrom.Add(long.MaxValue);     // until their step is set
             _indexOfSlot[slot] = index;
             _joinPeers[index] = peer;
-            _joining.Enqueue(new NetJoin(index, joiner.Name, joiner.PlayerClass));
+            _joining.Enqueue(new NetJoin(index, joiner.Name, joiner.PlayerClass, joiner.Color));
             Announce($"{joiner.Name} is joining the game");
         }
     }
@@ -603,7 +604,7 @@ internal sealed class NetSession : IDisposable
         switch (type)
         {
             case NetMessage.LobbyChange:
-                ReplacePlayer(player with { PlayerClass = reader.GetString(), Ready = reader.GetBool() });
+                ReplacePlayer(player with { PlayerClass = reader.GetString(), Ready = reader.GetBool(), Color = reader.GetString() });
                 SendLobby();
                 break;
 

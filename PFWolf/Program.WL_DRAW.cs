@@ -2194,6 +2194,9 @@ internal partial class Program
             if (actor == null)
                 continue;                                               // object has been deleted
 
+            // Its colors (the pawn's, for a player's body)
+            var translation = _translationManager.TableOf(actor);
+
             if (actor is PlayerPawn pawn)
             {
                 if (VisiblePlayerBody(pawn) is not { } body)
@@ -2204,6 +2207,7 @@ internal partial class Program
                 continue;                                               // the one looked through
 
             visobj_t visptr_val = new visobj_t();
+            visptr_val.translation = translation;
             //statobj_t statptr_val = statobjlist[statptr];
             if (actor.CurrentState == null)
                 continue;

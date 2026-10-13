@@ -11,6 +11,13 @@ public record GameInfoAsset : Asset
     /// </summary>
     public Dictionary<string, PlayerClassInfo> PlayerClasses { get; init; } = [];
 
+    /// <summary>
+    /// The colors a player can pick to be seen in, playing with others: translations from
+    /// translations.yaml, which recolor the player's sprites, in menu order. The first is the
+    /// default; none means players are seen in their class's own colors.
+    /// </summary>
+    public List<string> PlayerColors { get; init; } = [];
+
     public Dictionary<string, EpisodeInfo> Episodes { get; init; } = [];
     public Dictionary<int, ClusterInfo> Clusters { get; init; } = [];
     public Dictionary<string, MapInfo> Maps { get; init; } = [];

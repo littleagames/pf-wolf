@@ -24,8 +24,15 @@ player-faction: allies
 monster-faction: axis
 default-relation: hostile
 
+#
+# A faction's `translation` (translations.yaml) is what its enemies are drawn through when
+# nothing of their own says otherwise, so the player's allies can be told from the axis;
+# `class-translations` gives one by class (or a class descended from it) in its place, since
+# each sprite wears its own colors. Players and projectiles aren't drawn through it.
 factions:
   allies:
     name: Allies
+    translation: allies
+    class-translations: { SS: allies-ss, Officer: allies-officer }
   axis:
     name: Axis

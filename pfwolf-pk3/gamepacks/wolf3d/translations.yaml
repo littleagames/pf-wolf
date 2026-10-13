@@ -1,0 +1,41 @@
+# Sprite color translations (Managers/TranslationManager.cs): each recolors a sprite's palette
+# indices as it's drawn, so one set of sprites can come in several colors. An actor is drawn
+# through, first to last:
+#   - its own: a mapdefs thing's `translation:` (things: 400: { class: Guard, translation: x }),
+#     its actordefs class's `translation` property, or a script's (actor.translation = "x");
+#   - for an enemy, its faction's (factions.yaml translation, or class-translations by class);
+#   - for a player, their color (multiplayer), else their class's `translation`.
+#
+# Each translation is a list of ranges (ZDoom's), applied in order, each from the palette's own
+# colors rather than what an earlier range made of them:
+#   "208:223=144:159"             those indices onto these, spread evenly (either way round)
+#   "208:223=[255,0,0]:[64,0,0]"  onto a gradient between two colors (0-255), the nearest palette
+#                                 color to each step; "#FF0000:#400000" works too
+#   "1:254=%[0,0,0]:[2,0,0]"      desaturated: each index's lightness picks the color between the
+#                                 two (each 0 to 2, 1 being full), keeping the sprite's shading
+#
+# Wolf3D's palette has 16-step ramps, light to dark: greys 16:31, red 32:47, yellow 64:79, green
+# 96:111, cyan 112:127, blue 144:159, magenta 176:191, and skin to brown 192:223. A guard's
+# uniform is 207:223 (its face is just above, 198:206), an SS's 144:159, an officer's 16:31, and
+# the player's shirt (sprites/wolf3d/player) 96:111.
+#
+# A pack built on this one (spear, wolf3d-shareware, ...) starts from this file, and a mod's
+# translations.yaml is laid over it name by name (`name: !remove` takes one out).
+
+# The player's allies (factions.yaml allies), in the player's green
+allies: ["207:223=101:111"]
+allies-ss: ["144:159=97:111"]
+allies-officer: ["16:31=98:111"]
+
+# Player colors (game-info player-colors), recoloring the player's green shirt; green is it as it is
+green: []
+red: ["96:111=32:47"]
+blue: ["96:111=144:159"]
+yellow: ["96:111=64:79"]
+cyan: ["96:111=112:127"]
+magenta: ["96:111=176:191"]
+gray: ["96:111=16:31"]
+brown: ["96:111=208:223"]
+
+# Any sprite in shades of grey (a ghostly or stone look)
+grayscale: ["1:254=%[0,0,0]:[1,1,1]"]

@@ -224,6 +224,12 @@ public record MapActorTranslation
     /// one of the player's allies. Empty: its class's.
     /// </summary>
     public string Faction { get; set; } = "";
+
+    /// <summary>
+    /// The sprite color translation (translations.yaml) it's drawn with, in place of its class's
+    /// or its faction's. Empty: theirs.
+    /// </summary>
+    public string Translation { get; set; } = "";
 }
 
 public record MapTextureTranslation

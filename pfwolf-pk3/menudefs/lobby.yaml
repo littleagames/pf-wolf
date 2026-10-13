@@ -4,6 +4,7 @@ position:
   x: 24
   y: 26
 indent: 40
+row-height: 12
 components:
   -
     type: "Background"
@@ -22,24 +23,24 @@ components:
       - horizontal-orientation: "center"
       - y: 6
       - color: "READHCOLOR"
-  # The game's settings and what you can do: 8 rows, 13 each plus 6
+  # The game's settings and what you can do: 9 rows, 12 each plus 6
   -
     type: "Window"
     params:
       - x: 16
       - y: 21
       - width: 288
-      - height: 110
-  # Who's in, and what they've said (drawn by code)
+      - height: 114
+  # Who's in, and what they've said (drawn by code: Program.Multiplayer.cs LobbyPanelY)
   -
     type: "Window"
     params:
       - x: 16
-      - y: 134
+      - y: 137
       - width: 288
-      - height: 47
+      - height: 46
 # Handled by Program.Multiplayer.cs, by id. Only the host changes the mode, episode and
-# skill; everyone picks their own class. The host starts the game ("go") once everyone else
+# skill; everyone picks their own class and color. The host starts the game ("go") once everyone else
 # is ready; for them, "go" is that they're ready. The values are drawn by code. In a deathmatch
 # the episode row is "Map" and picks the arena (game-info maps with `deathmatch: true`).
 menu-items:
@@ -62,6 +63,12 @@ menu-items:
       id: "class"
       type: "ChoiceMenuItem"
       text: "$STR_MP_CLASS"
+      enabled: true
+  # Your color (game-info player-colors), as the others see you
+  -
+      id: "color"
+      type: "ChoiceMenuItem"
+      text: "$STR_MP_COLOR"
       enabled: true
   # A deathmatch's rules: the host picks them on a screen of their own
   -

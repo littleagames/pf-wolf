@@ -52,8 +52,19 @@ public class FactionDefinition
     /// </summary>
     public Dictionary<string, string> Relations { get; set; } = [];
 
-    /// <summary>The sprite color translation its members are drawn with when their own doesn't say (not yet used)</summary>
+    /// <summary>
+    /// The sprite color translation (translations.yaml) its enemies (not players, not their
+    /// projectiles) are drawn with when nothing of their own gives one: a mapdefs thing's
+    /// `translation:` or their class's `translation` property
+    /// </summary>
     public string? Translation { get; set; }
+
+    /// <summary>
+    /// In place of <see cref="Translation"/>, the one for a class (or a class descended from it,
+    /// the nearest named winning): one recolor rarely suits every sprite, since each wears its
+    /// own colors (Wolf3D's guards brown, its SS blue)
+    /// </summary>
+    public Dictionary<string, string> ClassTranslations { get; set; } = [];
 }
 
 /// <summary>
@@ -127,9 +138,26 @@ public class FactionTable
     public string DisplayName(string faction) =>
         _factions.TryGetValue(faction, out var definition) && !string.IsNullOrWhiteSpace(definition.Name) ? definition.Name : faction;
 
-    /// <summary>The translation a faction's members are drawn with, or null</summary>
-    public string? Translation(string faction) =>
-        _factions.TryGetValue(faction, out var definition) && !string.IsNullOrWhiteSpace(definition.Translation) ? definition.Translation : null;
+    /// <summary>
+    /// The translation a faction's enemies are drawn with, or null: for a class with an ancestry
+    /// (itself first, then its parent, and so on), the first its class-translations names, else
+    /// its translation
+    /// </summary>
+    public string? Translation(string faction, IEnumerable<string>? classAncestry = null)
+    {
+        if (!_factions.TryGetValue(faction, out var definition))
+            return null;
+        if (definition.ClassTranslations is { Count: > 0 } byClass)
+        {
+            foreach (var className in classAncestry ?? [])
+            {
+                var match = byClass.FirstOrDefault(entry => entry.Key.Equals(className, StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrWhiteSpace(match.Value))
+                    return match.Value;
+            }
+        }
+        return string.IsNullOrWhiteSpace(definition.Translation) ? null : definition.Translation;
+    }
 
     /// <summary>
     /// How a member of <paramref name="from"/> treats one of <paramref name="to"/>: its own side

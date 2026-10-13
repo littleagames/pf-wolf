@@ -227,7 +227,7 @@ internal partial class Program
             int top = FloorRow(half) - TexelsToPixels(spriteAsset.Origin.Y, half);
             ScaleColumn((short)x, (short)top, MathUtils.FixedDiv(half, TEXTURESIZE / 2), spriteAsset, column,
                 vis.bright ? noshade : LightAt(TileIndex(vis.tilex, vis.tiley), vis.worldx, vis.worldy),
-                vis.bright ? 0 : ShadeOffsetForHeight(height));
+                vis.bright ? 0 : ShadeOffsetForHeight(height), translation: vis.translation);
         }
     }
 

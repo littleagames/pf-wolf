@@ -398,7 +398,7 @@ internal partial class Program
             Map: DeathmatchMaps().FirstOrDefault() ?? "");
 
         var session = NetSession.Host(hostPort, LocalIdentity(), MpConfig.Name, newGamePlayerClass ?? DefaultPlayerClass,
-            MAXPLAYERS, settings, out var error);
+            LocalColor(), MAXPLAYERS, settings, out var error);
         if (session == null)
         {
             ShowNetMessage($"{"$STR_MP_HOSTFAILED".ToLanguageText(language)}\n\n{WrapForMessage(error ?? "")}");
@@ -645,13 +645,27 @@ internal partial class Program
 
     /// <summary>Joins the game at an address: waits to be let in, then its lobby</summary>
     static void ConnectTo(string host, int port) =>
-        ConnectTo(NetSession.Join(host, port, LocalIdentity(), MpConfig.Name, newGamePlayerClass ?? DefaultPlayerClass, out var error),
+        ConnectTo(NetSession.Join(host, port, LocalIdentity(), MpConfig.Name, newGamePlayerClass ?? DefaultPlayerClass, LocalColor(), out var error),
             error, WithPort(host, port));
 
     /// <summary>Joins a game found on the local network, at the address it answered from</summary>
     static void ConnectTo(IPEndPoint at) =>
-        ConnectTo(NetSession.Join(at, LocalIdentity(), MpConfig.Name, newGamePlayerClass ?? DefaultPlayerClass, out var error),
+        ConnectTo(NetSession.Join(at, LocalIdentity(), MpConfig.Name, newGamePlayerClass ?? DefaultPlayerClass, LocalColor(), out var error),
             error, WithPort(at.Address.ToString(), at.Port));
+
+    /// <summary>The colors players pick from (game-info player-colors)</summary>
+    static List<string> PlayerColors() => _gameEngineManager.GetGameInfo().PlayerColors;
+
+    /// <summary>The color this machine's player is seen in: multiplayer.cfg's, if the game offers it, else the game's first; empty for none</summary>
+    static string LocalColor()
+    {
+        var colors = PlayerColors();
+        return colors.FirstOrDefault(c => c.Equals(MpConfig.Color, StringComparison.OrdinalIgnoreCase)) ?? colors.FirstOrDefault() ?? "";
+    }
+
+    /// <summary>A color's name for the lobby: "Red" for red; "-" for none</summary>
+    static string ColorLabel(string color) =>
+        string.IsNullOrEmpty(color) ? "-" : char.ToUpperInvariant(color[0]) + color[1..].Replace('-', ' ');
 
     static void ConnectTo(NetSession? session, string? error, string shown)
     {
@@ -715,7 +729,7 @@ internal partial class Program
     static CP_iteminfo LobbyItems = null!;
 
     // The lobby panel's rows: up to MAXPLAYERS players, then the last chat lines
-    const int LobbyPanelX = 24, LobbyPanelY = 137, LobbyPanelRow = 9, LobbyChatLines = 1;
+    const int LobbyPanelX = 24, LobbyPanelY = 140, LobbyPanelRow = 9, LobbyChatLines = 1;
 
     /// <summary>
     /// Waits in a game's lobby: the host sets the game up and starts it once everyone's ready;
@@ -826,7 +840,7 @@ internal partial class Program
                     else if (session.LocalPlayer is { } me)
                     {
                         ShootSnd();
-                        session.SetLocal(me.PlayerClass, !me.Ready);
+                        session.SetLocal(me.PlayerClass, me.Color, !me.Ready);
                     }
                     break;
 
@@ -846,6 +860,7 @@ internal partial class Program
                 case "episode":
                 case "skill":
                 case "class":
+                case "color":
                     StepLobbyChoice(session, which, 1);
                     break;
             }
@@ -871,6 +886,7 @@ internal partial class Program
         }
         FindMenuItem(LobbyMenu, "skill")?.active = (short)(host ? 1 : 0);
         FindMenuItem(LobbyMenu, "class")?.active = (short)(PlayerClasses().Count > 1 ? 1 : 0);
+        FindMenuItem(LobbyMenu, "color")?.active = (short)(PlayerColors().Count > 1 ? 1 : 0);
         FindMenuItem(LobbyMenu, "rules")?.active = (short)(host && settings.Mode == GameMode.Deathmatch ? 1 : 0);
         if (LobbyMenu[LobbyItems.curpos].active == 0)
             LobbyItems.curpos = (short)Math.Max(0, Array.FindIndex(LobbyMenu, item => item.active != 0));
@@ -882,6 +898,7 @@ internal partial class Program
         DrawLobbyValue("episode", arenas ? MapLabel(settings.Map) : EpisodeLabel(settings.Episode));
         DrawLobbyValue("skill", gameInfo.Skills.Values.ElementAtOrDefault(settings.Skill)?.Name.ToLanguageText(language) ?? "?");
         DrawLobbyValue("class", me == null ? "" : PlayerClassLabel(me.PlayerClass));
+        DrawLobbyValue("color", me == null ? "" : ColorLabel(me.Color));
         DrawLobbyValue("rules", RulesSummary(settings));
         if (!host)
             DrawMenuCheckbox(LobbyItems, LobbyMenu, "go", me?.Ready == true);
@@ -893,7 +910,9 @@ internal partial class Program
         {
             var p = session.Players.FirstOrDefault(pl => pl.Slot == slot);
             string text = p == null ? "-"
-                : $"{p.Name}{(slot == 0 ? " (host)" : "")}  {PlayerClassLabel(p.PlayerClass)}  {(slot == 0 ? "" : p.Ready ? "ready" : "not ready")}";
+                : $"{p.Name}{(slot == 0 ? " (host)" : "")}  {PlayerClassLabel(p.PlayerClass)}"
+                  + (string.IsNullOrEmpty(p.Color) ? "" : $" ({ColorLabel(p.Color)})")
+                  + $"  {(slot == 0 ? "" : p.Ready ? "ready" : "not ready")}";
             var style = p != null && p.Slot == session.LocalSlot ? new TextStyle(SMALL_FONT, "HIGHLIGHT") : panel;
             TextAt(LobbyPanelX, y, style).Print(FitText($"{slot + 1}. {text}", 272, SMALL_FONT));
             y += LobbyPanelRow;
@@ -1041,7 +1060,15 @@ internal partial class Program
                 int current = Math.Max(0, classes.FindIndex(c => string.Equals(c, me.PlayerClass, StringComparison.OrdinalIgnoreCase)));
                 var next = classes[StepMenuChoice(current, classes.Count, delta, wrap: true)];
                 newGamePlayerClass = next;      // the next game played alone starts as it too
-                session.SetLocal(next, me.Ready);
+                session.SetLocal(next, me.Color, me.Ready);
+                break;
+
+            case "color" when session.LocalPlayer is { } me && PlayerColors() is { Count: > 1 } colors:
+                int color = Math.Max(0, colors.FindIndex(c => string.Equals(c, me.Color, StringComparison.OrdinalIgnoreCase)));
+                var picked = colors[StepMenuChoice(color, colors.Count, delta, wrap: true)];
+                MpConfig.Color = picked;        // remembered for the next game (multiplayer.cfg)
+                MpConfig.Write(MpConfigPath);
+                session.SetLocal(me.PlayerClass, picked, me.Ready);
                 break;
 
             default:
@@ -1130,7 +1157,7 @@ internal partial class Program
         players.Clear();
         for (int i = 0; i < start.Players.Count; i++)
         {
-            var p = new Entities.PlayerState { Number = i, Name = start.Players[i].Name };
+            var p = new Entities.PlayerState { Number = i, Name = start.Players[i].Name, Color = PlayerColor(start.Players[i].Color) };
             players.Add(p);
             using (ActAs(p))
                 StartPlayer(ClassOrDefault(start.Players[i].PlayerClass));
@@ -1151,6 +1178,10 @@ internal partial class Program
         session.BeginPlaying();
         StartGame = 1;
     }
+
+    /// <summary>A player's color as it came over the network, if it's one this game has; else null (their class's own)</summary>
+    internal static string? PlayerColor(string color) =>
+        !string.IsNullOrEmpty(color) && _translationManager.Exists(color) ? color : null;
 
     /// <summary>A game with others has ended (or never started): back to playing alone</summary>
     internal static void EndNetGame()

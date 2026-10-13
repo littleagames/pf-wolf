@@ -153,6 +153,11 @@ internal partial class Program
         Register("setfaction", "Puts the nearest living enemy, or every actor of a class, on a faction (for trying factions out).",
             "setfaction <faction> [class]", Cmd_SetFaction, Cheat | InLevel,
             complete: (_, i) => i == 0 ? _factionManager.Table.Names : i == 1 ? _assetManager.GetActorMetadata().Actors.Keys : []);
+        Register("settranslation", "Draws the nearest living enemy, or every actor of a class, through a color translation (translations.yaml); none goes back to its own (or its faction's).",
+            "settranslation <translation|none> [class]", Cmd_SetTranslation, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? _translationManager.Names.Append("none") : i == 1 ? _assetManager.GetActorMetadata().Actors.Keys : []);
+        Register("translations", "Lists the color translations (translations.yaml).", "translations",
+            _ => _consoleManager.Print(string.Join(", ", _translationManager.Names.DefaultIfEmpty("(none)"))));
         Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
             $"wallheight [1-{MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
         Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
@@ -187,6 +192,9 @@ internal partial class Program
             complete: (_, i) => i == 0 ? ["next", "prev", "player", .. SpectateCandidates().Select(a => a.Name).Distinct()] : []);
         Register("addplayer", $"Adds a co-op player beside you, who stands still until you take them over with controlplayer (up to {MAXPLAYERS}; testing without the network).",
             "addplayer [class]", Cmd_AddPlayer, Cheat | InLevel, complete: (_, i) => i == 0 ? PlayerClasses() : []);
+        Register("playercolor", "Shows a player (default: you) in a color (a translation, as game-info player-colors offers); none for their class's own.",
+            "playercolor <color|none> [n]", Cmd_PlayerColor, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? _translationManager.Names.Append("none") : []);
         Register("controlplayer", "Makes another player yours: your view, status bar and controls.",
             "controlplayer <n>", Cmd_ControlPlayer, Cheat | InLevel);
         Register("gamemode", "Shows or sets how the players play together: co-op (keys shared, no friendly fire) or deathmatch.",
@@ -1044,19 +1052,52 @@ internal partial class Program
         if (!_factionManager.Table.IsKnown(faction))
             _consoleManager.Print($"{faction} isn't in factions.yaml; it's a side of its own");
 
-        var living = _mapManager.GetActors().OfType<Entities.Actors.Monster>()
-            .Where(m => !m.IsRemoved && m.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
-        var chosen = args.Length > 1
-            ? living.Where(m => m.Name.Equals(args[1], StringComparison.OrdinalIgnoreCase)).ToList()
-            : living.OrderBy(m => Math.Max(Math.Abs(m.X - player.X), Math.Abs(m.Y - player.Y))).Take(1).ToList();
-        if (chosen.Count == 0)
-            throw new ArgumentException(args.Length > 1 ? $"no living {args[1]} on the level" : "no living enemy on the level");
-
+        var chosen = ChosenActors(args.Skip(1).FirstOrDefault());
         foreach (var monster in chosen)
             monster.Faction = faction;
         _consoleManager.Print(chosen.Count == 1
             ? $"{chosen[0].Name} at {chosen[0].TileX},{chosen[0].TileY} is now {faction}"
             : $"{chosen.Count} {chosen[0].Name}s are now {faction}");
+    }
+
+    private static void Cmd_SetTranslation(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: settranslation <translation|none> [class]");
+        string? translation = args[0].Equals("none", StringComparison.OrdinalIgnoreCase) ? null : args[0];
+        if (translation != null && !_translationManager.Exists(translation))
+            throw new ArgumentException($"no translation {translation} in translations.yaml ({string.Join(", ", _translationManager.Names)})");
+
+        var chosen = ChosenActors(args.Skip(1).FirstOrDefault());
+        foreach (var monster in chosen)
+            monster.Translation = translation;
+        _consoleManager.Print($"{(chosen.Count == 1 ? $"{chosen[0].Name} at {chosen[0].TileX},{chosen[0].TileY} is" : $"{chosen.Count} {chosen[0].Name}s are")} "
+            + (translation == null ? "back to their own colors" : $"drawn through {translation}"));
+    }
+
+    private static void Cmd_PlayerColor(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException("usage: playercolor <color|none> [n]");
+        string? color = args[0].Equals("none", StringComparison.OrdinalIgnoreCase) ? null : args[0];
+        if (color != null && !_translationManager.Exists(color))
+            throw new ArgumentException($"no translation {color} in translations.yaml ({string.Join(", ", _translationManager.Names)})");
+        int n = args.Length > 1 ? ParseInt(args[1], 1, players.Count) : consoleplayer + 1;
+
+        players[n - 1].Color = color;
+        _consoleManager.Print($"Player {n} is {(color == null ? "in their class's own colors" : $"drawn in {color}")}");
+    }
+
+    // Every living enemy of a class, or (no class) the nearest living one
+    private static List<Entities.Actors.Monster> ChosenActors(string? className)
+    {
+        var living = _mapManager.GetActors().OfType<Entities.Actors.Monster>()
+            .Where(m => !m.IsRemoved && m.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
+        var chosen = className != null
+            ? living.Where(m => m.Name.Equals(className, StringComparison.OrdinalIgnoreCase)).ToList()
+            : living.OrderBy(m => Math.Max(Math.Abs(m.X - player.X), Math.Abs(m.Y - player.Y))).Take(1).ToList();
+        return chosen.Count > 0 ? chosen
+            : throw new ArgumentException(className != null ? $"no living {className} on the level" : "no living enemy on the level");
     }
 
     /// <summary>"  panel ..." for a wall sprite, else nothing.</summary>

@@ -119,6 +119,11 @@ skills:
 #   Player:
 #     name: "B.J. Blazkowicz"
 
+# The colors a player picks to be seen in by the others, playing with others (the lobby's Color):
+# translations (translations.yaml) recoloring the player's sprites, in menu order; the first is
+# the default. "green" is the player sprites' own shirt.
+player-colors: [green, red, blue, yellow, cyan, magenta, gray, brown]
+
 # The skill demos are recorded and played back on (left out: the hardest). A demo only replays
 # right on the skill it was recorded on, and id's were recorded on HARD.
 demo-skill: HARD

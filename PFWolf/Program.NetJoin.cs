@@ -35,7 +35,7 @@ internal partial class Program
             return;
         }
 
-        var p = new Entities.PlayerState { Number = join.Index, Name = join.Name };
+        var p = new Entities.PlayerState { Number = join.Index, Name = join.Name, Color = PlayerColor(join.Color) };
         players.Add(p);
         using (ActAs(p))
         {
@@ -67,7 +67,7 @@ internal partial class Program
     ===============
     */
 
-    const int NETSTATEVERSION = 3;     // 2: a pusher per moving pushwall; 3: targets and shooters in the level body
+    const int NETSTATEVERSION = 4;     // 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
 
     /// <summary>
     /// Everything a player joining needs to take the game up from here: the level as a save
@@ -135,6 +135,7 @@ internal partial class Program
         bw.Write(p.Name ?? "");
         bw.Write(p.Gone);
         bw.Write(p.playerclass);
+        bw.Write(p.Color ?? "");
         bw.Write(p.oldscore);
         bw.Write(p.score);
         bw.Write(p.nextextra);
@@ -277,6 +278,7 @@ internal partial class Program
         p.Name = NullIfEmpty(br.ReadString());
         p.Gone = br.ReadBoolean();
         p.playerclass = br.ReadString();
+        p.Color = PlayerColor(br.ReadString());
         p.oldscore = br.ReadInt32();
         p.score = br.ReadInt32();
         p.nextextra = br.ReadInt32();
