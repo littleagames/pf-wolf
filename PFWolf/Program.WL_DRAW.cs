@@ -495,8 +495,8 @@ internal partial class Program
     /// tiles it's in, north or south first, else west or east: its face toward the arch.
     /// </summary>
     static TextureAsset? ArchUndersideTexture(int tilex, int tiley) =>
-        ArchEndTexture(tilex, tiley, 0, -1, "south") ?? ArchEndTexture(tilex, tiley, 0, 1, "north")
-        ?? ArchEndTexture(tilex, tiley, -1, 0, "east") ?? ArchEndTexture(tilex, tiley, 1, 0, "west");
+        ArchEndTexture(tilex, tiley, 0, -1, "south", out _) ?? ArchEndTexture(tilex, tiley, 0, 1, "north", out _)
+        ?? ArchEndTexture(tilex, tiley, -1, 0, "east", out _) ?? ArchEndTexture(tilex, tiley, 1, 0, "west", out _);
 
     /// <summary>
     /// An arch tile with a ceiling flat (a non-zero ceiling index on the flat plane, its flat
@@ -782,7 +782,28 @@ internal partial class Program
         postofs = jamb ? texture : FlipColumn(mapTexture, face, texture);
         if (!jamb)                      // a door's jamb takes no patch
             SetPatchPost(xtile, yinttile, face, texture);
+        else
+            SeeThroughJamb(mapTexture, face, texture, xtile, yinttile);
         ScalePost();
+    }
+
+    /// <summary>
+    /// A door jamb with clear pixels (a masked texture from a pk3) is drawn over the face of the
+    /// wall it's on, as a patch is, so the wall shows through it. Call with the jamb as postsource.
+    /// </summary>
+    static void SeeThroughJamb(MapTextureTranslation? mapTexture, string face, int texture, int tilex, int tiley)
+    {
+        if (!postsource.Masked)
+            return;
+        var wall = WorldTexture((mapTexture ?? MapTextureTranslation.None).WallFace(face), tilex, tiley);
+        if (wall == null)
+            return;                     // nothing behind it: the jamb as it is
+
+        patchsource = postsource;
+        patchofs = texture;
+        patchstory = 1;
+        postsource = wall;
+        postofs = FlipColumn(mapTexture, face, texture);
     }
 
     // A wall face's texture column, mirrored when the wall flips that face (mapdefs walls flip)
@@ -857,6 +878,8 @@ internal partial class Program
         postofs = jamb ? texture : FlipColumn(mapTexture, face, texture);
         if (!jamb)                      // a door's jamb takes no patch
             SetPatchPost(xinttile, ytile, face, texture);
+        else
+            SeeThroughJamb(mapTexture, face, texture, xinttile, ytile);
         ScalePost();
     }
 

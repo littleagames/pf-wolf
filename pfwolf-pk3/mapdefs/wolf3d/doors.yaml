@@ -1,7 +1,8 @@
 # Doors by map tile number: every plane 0 tile listed here is a door. Each has the texture on
 # each face, and for a locked door the item that opens it. The two faces across the doorway are
 # the door (East/West for a vertical door, North/South otherwise); the other two are the slot
-# drawn on the walls either side of it.
+# (jamb) drawn on the walls either side of it. A jamb texture from a pk3 with clear pixels is
+# drawn over the wall's own face, which shows through them.
 #   vertical:            true: the door runs north-south, passed through going east or west (its
 #                        East/West faces are the door, North/South the slot beside it); left out,
 #                        it runs east-west

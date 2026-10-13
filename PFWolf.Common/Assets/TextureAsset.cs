@@ -16,6 +16,12 @@ namespace PFWolf.Assets
         public int Width { get; init; } = StorySize;
         public int Height { get; init; } = StorySize;
 
+        /// <summary>
+        /// Made from a picture with clear pixels (now 0xFF), which a door jamb shows its wall
+        /// through. VSWAP walls never are: 0xFF is an ordinary color in them.
+        /// </summary>
+        public bool Masked { get; init; }
+
         /// <summary>A texture from a picture, which is stored row by row.</summary>
         public static TextureAsset FromGraphic(GraphicAsset graphic)
         {
@@ -23,11 +29,16 @@ namespace PFWolf.Assets
             // Clear pixels become 0xFF, which flats show through (as sprites do)
             var columns = new byte[width * height];
             var mask = graphic.OpacityMask;
+            bool masked = false;
             for (int x = 0; x < width; x++)
                 for (int y = 0; y < height; y++)
-                    columns[x * height + y] = mask != null && mask[y * width + x] == 0 ? (byte)0xff : graphic.RawData[y * width + x];
+                {
+                    bool clear = mask != null && mask[y * width + x] == 0;
+                    masked |= clear;
+                    columns[x * height + y] = clear ? (byte)0xff : graphic.RawData[y * width + x];
+                }
 
-            return new TextureAsset { RawData = columns, Width = width, Height = height };
+            return new TextureAsset { RawData = columns, Width = width, Height = height, Masked = masked };
         }
 
         /// <summary>

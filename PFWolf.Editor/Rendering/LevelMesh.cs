@@ -273,7 +273,15 @@ public sealed class LevelMesh
                 // The door's frame: its side texture for the door's story, the wall above (the
                 // face's direction is the way a ray travels from the door into the wall)
                 var door = _tiles.Door(nx, ny)!;
-                AddWall(faceRef, a, b, 0, 1, DoorFace(door, nx, ny, TravelName(Opposite(face))), light);
+                var jamb = DoorFace(door, nx, ny, TravelName(Opposite(face)));
+                if (_tiles.Content.Find<TextureAsset>(jamb) is { Masked: true } && texture.Length > 0)
+                {
+                    // a see-through jamb is over the wall's own face, as a patch is (Program.SeeThroughJamb)
+                    AddWall(faceRef, a, b, 0, 1, texture, light, flipU0, flipU1);
+                    AddPatch(faceRef, a, b, new Vector2(nx - x, ny - y), 0, stories, new MapPatchTranslation { Texture = jamb }, light);
+                }
+                else
+                    AddWall(faceRef, a, b, 0, 1, jamb, light);
                 if (stories > 1)
                     AddWall(faceRef, a, b, 1, stories, texture, light, flipU0, flipU1);
             }
