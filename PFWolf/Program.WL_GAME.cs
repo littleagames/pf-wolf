@@ -732,7 +732,7 @@ internal partial class Program
         foreach (var p in players)
         {
             p.Pitch = 0;                    // each level, and each loaded game, starts looking straight ahead
-            p.EyeZ = EYEDEFAULT;            // from standing height
+            p.EyeZ = StandingEyeZ(p);       // from standing height
         }
         camera.FollowPlayer();              // through the player's eyes
         InitWeaponBob();
@@ -961,7 +961,7 @@ internal partial class Program
         _inputManager.UserInput((uint)deathHoldTics);
         _audioManager.WaitSoundDone();
         ClearMemory();
-        playereyez = EYEDEFAULT;                     // back on their feet for the restart
+        playereyez = StandingEyeZ(playerstate);      // back on their feet for the restart
 
         playerstate.lives--;
 

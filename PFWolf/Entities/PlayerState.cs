@@ -62,6 +62,7 @@ internal sealed class PlayerState
     // What others see of them (Program.Camera.cs): their class's sprites, drawn where they are
     public Actors.Actor? Body;
     public string? BodyClass;               // the class Body was made for
+    public bool BodyHoldsWeapon;            // Body is drawn with Player's sprites, so the weapon's weapon.bodysprite stands in for them
     public string? Color;                   // the translation (translations.yaml) Body is drawn through; null for the class's own
     public int BodyLastX, BodyLastY;        // where they were last tic, to tell if they're walking
     public int PainTics;                    // tics left showing them hurt

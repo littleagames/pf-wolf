@@ -1,0 +1,223 @@
+# Playing as one of the enemies: player classes (pfwolf-pk3 actordefs/wolf3d/player.yaml) that
+# look like a Guard, Officer, SS, Mutant or Dog to the other players (and the camera, spectating).
+# Picked in the lobby's "Play as" or the new-game class menu (game-info.yaml player-classes).
+#
+# Only the look changes: each plays as B.J. does (health, speed, weapons), except the dog, which
+# bites (DogBite) and nothing else, and sees from lower down. Its player.weapons keeps every
+# other weapon, and the ammo for them, on the floor for the others.
+#
+# Each body's states use the enemy's own frames, seen from all 8 sides with this mod's SplitWolf
+# sprites (sprites/enemies/): Spawn standing, See walking, Missile while the weapon fires, Pain or
+# Pain1 when hurt, Death once dead. A class with its own body sprites keeps them whatever weapon
+# it holds (weapon.bodysprite only stands in for Player's PLMP), and every state is given, since
+# one left out would be Player's (B.J.'s) own.
+
+GuardPlayer:
+  parent: "Player"
+  states:
+    Spawn:
+      - sprite: GARD
+        frames: [A]
+        tics-per-frame: -1
+    See:
+      - sprite: GARD
+        frames: [B, C, D, E]
+        tics-per-frame: 8
+    Missile:
+      - sprite: GARD
+        frames: [F, G, H]
+        tics-per-frame: 6
+    Pain:
+      - sprite: GARD
+        frames: [I]
+        tics-per-frame: 10
+    Pain1:
+      - sprite: GARD
+        frames: [J]
+        tics-per-frame: 10
+    Death:
+      - sprite: GARD
+        frames: [K, L, M]
+        tics-per-frame: 15
+      - sprite: GARD
+        frames: [N]
+        tics-per-frame: -1
+  properties:
+    "tag": "Guard"
+    "deathsound": "guard/death"
+
+OfficerPlayer:
+  parent: "Player"
+  states:
+    Spawn:
+      - sprite: OFFI
+        frames: [A]
+        tics-per-frame: -1
+    See:
+      - sprite: OFFI
+        frames: [B, C, D, E]
+        tics-per-frame: 8
+    Missile:
+      - sprite: OFFI
+        frames: [F, G, H]
+        tics-per-frame: 6
+    Pain:
+      - sprite: OFFI
+        frames: [I]
+        tics-per-frame: 10
+    Pain1:
+      - sprite: OFFI
+        frames: [J]
+        tics-per-frame: 10
+    Death:
+      - sprite: OFFI
+        frames: [K, L, M, N]
+        tics-per-frame: 11
+      - sprite: OFFI
+        frames: [O]
+        tics-per-frame: -1
+  properties:
+    "tag": "Officer"
+    "deathsound": "officer/death"
+
+# The SS stands feet together (W); A to D is its walk
+SSPlayer:
+  parent: "Player"
+  states:
+    Spawn:
+      - sprite: SSWV
+        frames: [W]
+        tics-per-frame: -1
+    See:
+      - sprite: SSWV
+        frames: [A, B, C, D]
+        tics-per-frame: 8
+    Missile:
+      - sprite: SSWV
+        frames: [E, F, G]
+        tics-per-frame: 6
+    Pain:
+      - sprite: SSWV
+        frames: [H]
+        tics-per-frame: 10
+    Pain1:
+      - sprite: SSWV
+        frames: [I]
+        tics-per-frame: 10
+    Death:
+      - sprite: SSWV
+        frames: [J, K, L]
+        tics-per-frame: 15
+      - sprite: SSWV
+        frames: [M]
+        tics-per-frame: -1
+  properties:
+    "tag": "SS Guard"
+    "deathsound": "wolfss/death"
+
+MutantPlayer:
+  parent: "Player"
+  states:
+    Spawn:
+      - sprite: MTNT
+        frames: [A]
+        tics-per-frame: -1
+    See:
+      - sprite: MTNT
+        frames: [B, C, D, E]
+        tics-per-frame: 8
+    Missile:
+      - sprite: MTNT
+        frames: [F, G, H, I]
+        tics-per-frame: 5
+    Pain:
+      - sprite: MTNT
+        frames: [J]
+        tics-per-frame: 10
+    Pain1:
+      - sprite: MTNT
+        frames: [K]
+        tics-per-frame: 10
+    Death:
+      - sprite: MTNT
+        frames: [L, M, N, O]
+        tics-per-frame: 7
+      - sprite: MTNT
+        frames: [P]
+        tics-per-frame: -1
+  properties:
+    "tag": "Mutant"
+    "deathsound": "mutant/death"
+
+# The dog has no stand or pain frames: it stands, and flinches, on its first walk frame. E to G
+# is its leap and bite.
+DogPlayer:
+  parent: "Player"
+  states:
+    Spawn:
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: -1
+    See:
+      - sprite: DOGY
+        frames: [A, B, C, D]
+        tics-per-frame: 8
+    Missile:
+      - sprite: DOGY
+        frames: [E, F, G]
+        tics-per-frame: 6
+    Pain:
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 10
+    Pain1:
+      - sprite: DOGY
+        frames: [A]
+        tics-per-frame: 10
+    Death:
+      - sprite: DOGY
+        frames: [H, I, J]
+        tics-per-frame: 15
+      - sprite: DOGY
+        frames: [K]
+        tics-per-frame: -1
+  properties:
+    "tag": "Dog"
+    "deathsound": "dog/death"
+    # Eyes a quarter of a story up, not half (texels, 64 a story)
+    "player.eyeheight": 16
+    # Bites, and never picks up a weapon or ammo
+    "player.weapons": [DogBite]
+    "player.startitem":
+      DogBite: 1
+
+# The dog's only weapon: a knife's bite (0-15, as an enemy dog's), with nothing in hand to see.
+# Never on the map; DogPlayer starts with it.
+DogBite:
+  parent: "WolfWeapon"
+  properties:
+    "inventory.type": DogBite
+    "weapon.slot": 1
+    "weapon.ammouse1": 0
+    "weapon.selectionorder": 3800
+    "attacksound": "dog/attack"
+  flags: [WEAPON.NOAUTOFIRE, WEAPON.NOALERT]
+  states:
+    Ready:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 1
+        action: A_WeaponReady
+        next-state: Ready
+    Fire:
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 6
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 6
+        action: "A_CustomPunch(random(0,15), true, CPF_ALWAYSPLAYSOUND)"
+      - sprite: TNT1
+        frames: [A]
+        tics-per-frame: 12
+        next-state: Ready

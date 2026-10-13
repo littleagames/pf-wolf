@@ -207,6 +207,8 @@ internal partial class Program
                 p.Body = null;
             else
                 p.Body.SetState("Spawn");
+            p.BodyHoldsWeapon = p.Body != null && SpawnSprite(p.Body) is { } own
+                && string.Equals(own, SpawnSprite(_inventoryManager.CreateActor(BasePlayerClass)), StringComparison.OrdinalIgnoreCase);
         }
 
         if (p.Body is not { } body)
@@ -248,12 +250,14 @@ internal partial class Program
     /// <summary>
     /// The sprite to draw for an actor's frame: its own, except a player's body, which shows their
     /// weapon's weapon.bodysprite in place of its Spawn sprite (when that sprite has the picture
-    /// for the frame from this side: a half-drawn set falls back view by view). After TransformActor.
+    /// for the frame from this side: a half-drawn set falls back view by view). Only a body drawn
+    /// with Player's own Spawn sprite: a class with its own look (a Guard) keeps it whatever it
+    /// holds. After TransformActor.
     /// </summary>
     internal static string DrawnSprite(Entities.Actors.Actor actor)
     {
         var state = actor.CurrentState!;
-        if (players.FirstOrDefault(p => ReferenceEquals(p.Body, actor)) is not { weapon: { } weapon }
+        if (players.FirstOrDefault(p => ReferenceEquals(p.Body, actor)) is not { weapon: { } weapon, BodyHoldsWeapon: true }
             || !actor.ResolvedStates.TryGetValue("Spawn", out var spawn)
             || !string.Equals(state.Sprite, spawn.Sprite, StringComparison.OrdinalIgnoreCase)
             || _inventoryManager.GetStringProperty(weapon, "weapon.bodysprite") is not { Length: > 0 } swap)
@@ -261,6 +265,9 @@ internal partial class Program
 
         return SpriteExists(ActorShapeName(swap, state.FrameLetter, actor)) ? swap : state.Sprite;
     }
+
+    static string? SpawnSprite(Entities.Actors.Actor? actor) =>
+        actor != null && actor.ResolvedStates.TryGetValue("Spawn", out var spawn) ? spawn.Sprite : null;
 
     static readonly Dictionary<string, bool> _spriteExistsCache = new(StringComparer.OrdinalIgnoreCase);
 

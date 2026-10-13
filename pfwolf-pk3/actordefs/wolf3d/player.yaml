@@ -20,7 +20,9 @@ Player:
   # sprite, PLMP, wherever a frame uses it: PLKN with the knife, PLPS the pistol, PLCG the
   # gatling gun. PLMP (the machine gun) is what shows when a weapon doesn't name one (or its
   # sprite lacks the frame); frames with another sprite (PLAY's death frames) stay the same
-  # whatever's held.
+  # whatever's held. A class with states of its own whose Spawn sprite isn't PLMP (looking like
+  # a Guard, say) keeps its sprites whatever it holds; give it every state, as one it leaves out
+  # is Player's.
   states:
     Spawn:
       - sprite: PLMP
@@ -83,3 +85,8 @@ Player:
     # "player.sidemove": 1
     # The most armor points the player can have (left out: only each armor's own amount)
     # "player.maxarmor": 200
+    # How high the eyes are standing, in texels (64 a story; left out: 32, half way up)
+    # "player.eyeheight": 32
+    # The only weapons the class picks up (or classes descended from them), and only the ammo
+    # they use; every other weapon and ammo stays on the floor. Left out: any.
+    # "player.weapons": [Knife, Pistol]

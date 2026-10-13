@@ -1,0 +1,16 @@
+# Merged into the game pack's game-info.yaml: the classes a game can be played as (the lobby's
+# "Play as", and the class menu between episode and skill), B.J. first as the default. The
+# enemy classes are in actordefs/players.yaml.
+player-classes:
+  Player:
+    name: "B.J. Blazkowicz"
+  GuardPlayer:
+    name: "Guard"
+  OfficerPlayer:
+    name: "Officer"
+  SSPlayer:
+    name: "SS Guard"
+  MutantPlayer:
+    name: "Mutant"
+  DogPlayer:
+    name: "Dog"

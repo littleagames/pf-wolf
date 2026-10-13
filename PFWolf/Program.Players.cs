@@ -314,7 +314,7 @@ internal partial class Program
         GiveStartingInventory();
         playerstate.health = StartingHealth;
         playerstate.Pitch = 0;
-        playerstate.EyeZ = EYEDEFAULT;
+        playerstate.EyeZ = StandingEyeZ(playerstate);
         playerstate.WeaponSprite = null;
         playerstate.WeaponCharge = 0;
         playerstate.LastAttacker = null;

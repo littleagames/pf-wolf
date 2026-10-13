@@ -520,8 +520,9 @@ internal partial class Program
 
     /// <summary>
     /// Whether the player class may pick up an item: not when it's in the item's
-    /// `inventory.forbiddento`, or the item has an `inventory.restrictedto` it isn't in. A class
-    /// counts as in a list that names it or a class it descends from.
+    /// `inventory.forbiddento`, or the item has an `inventory.restrictedto` it isn't in, or it's a
+    /// weapon or ammo outside the class's `player.weapons`. A class counts as in a list that names
+    /// it or a class it descends from.
     /// </summary>
     internal static bool PlayerClassCanPickUp(string item)
     {
@@ -535,6 +536,8 @@ internal partial class Program
         bool In(string[] classes) => _inventoryManager.FindClass(PlayerClass, classes) != null;
 
         if (Classes("inventory.forbiddento") is { } forbidden && In(forbidden))
+            return false;
+        if (!PlayerClassUsesItem(item))
             return false;
         return Classes("inventory.restrictedto") is not { } restricted || In(restricted);
     }
@@ -1319,6 +1322,34 @@ internal partial class Program
 
     /// <summary>A new game's lives: the Player class's `player.startlives` (Wolf3D's 3 when left out)</summary>
     internal static short StartingLives => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.startlives", 3), 0, short.MaxValue);
+
+    /// <summary>How high a player's eyes are standing, in texels: their class's `player.eyeheight` (EYEDEFAULT when left out)</summary>
+    internal static int StandingEyeZ(Entities.PlayerState p) =>
+        Math.Clamp(_inventoryManager.GetIntProperty(p.playerclass, "player.eyeheight", EYEDEFAULT), MINEYE, MAXEYE);
+
+    /// <summary>
+    /// Whether the class may pick up a weapon or ammo: with a `player.weapons` list, only the
+    /// weapons in it (or descended from them) and the ammo they use. Anything else, and every
+    /// item for a class without the list, may be.
+    /// </summary>
+    static bool PlayerClassUsesItem(string item)
+    {
+        if (_inventoryManager.GetProperty(PlayerClass, "player.weapons") is not { } property)
+            return true;
+        string[] weapons = property switch
+        {
+            IEnumerable<object> list => list.Select(w => w.ToString() ?? "").ToArray(),
+            _ => [property.ToString() ?? ""],
+        };
+
+        if (_inventoryManager.FindClass(item, "Weapon") != null)
+            return _inventoryManager.FindClass(item, weapons) != null;
+        if (_inventoryManager.FindClass(item, "Ammo") != null)
+            return weapons.Any(w => _inventoryManager.GetIntProperty(w, "weapon.ammouse1", 0) > 0     // the knife's Clip isn't used
+                && _inventoryManager.GetStringProperty(w, "weapon.ammotype1") is { Length: > 0 } ammo
+                && (_inventoryManager.FindClass(item, ammo) != null || _inventoryManager.GetItemType(ammo) == _inventoryManager.GetItemType(item)));
+        return true;
+    }
 
     /// <summary>
     /// New game / respawn loadout: the Player class's `player.startitem` (item: amount), with
