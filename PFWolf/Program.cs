@@ -251,6 +251,13 @@ internal partial class Program
             _graphicManager, menuDrawing, ui, session, MakeIntermissionHooks());
         loadSaveScreen = new LoadSaveScreen(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
             _graphicManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, lineInput, MakeLoadSaveHooks());
+        changeViewScreen = new ChangeViewScreen(_assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop, menuInput, ui,
+            new ChangeViewHooks(() => viewsize, ShowViewSize, NewViewSize, () => bordercol));
+        optionsMenu = new OptionsMenu(_videoManager, _hudMessageManager, _automapManager, menuDrawing, menuLoop, menuInput, menuDefs);
+        newGameMenu = new NewGameMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, _graphicManager,
+            menuDrawing, menuLoop, menuInput, menuDefs, textPresenter, () => ingame, StartNewGame);
+        controlPanel = new ControlPanel(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop,
+            menuDefs, articleReader, highScoresScreen, soundMenu, controlMenus, changeViewScreen, () => gameInfoSettings, MakeControlPanelHooks());
         moviePlayer = new MoviePlayer(_assetManager, _videoManager, _inputManager, _audioManager, menuInput);
         titleScreens = new TitleScreens(_videoManager, _audioManager, _inputManager, _graphicManager, _assetManager, menuDrawing, ui, moviePlayer,
             new TitleScreenHooks(

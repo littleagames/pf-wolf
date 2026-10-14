@@ -28,50 +28,97 @@ internal partial class Program
     internal const int CTL_W = 284;
     internal const int CTL_H = 60;
 
-    // Control panel song: the main menu's music in menudefs/main-menu
-    internal static string MENUSONG => _gameEngineManager.GetGameInfo().MenuMusic ?? _assetManager.GetMenu("main-menu")?.Music ?? "WONDERIN";
-    internal static string INTROSONG => _gameEngineManager.GetGameInfo().IntroMusic ?? "";
-    internal static string HIGHSCORESSONG => _gameEngineManager.GetGameInfo().HighScoresMusic ?? "";
+    /*
+    =============================================================================
 
-    internal static CP_itemtype[] MainMenu = [];
-    internal static CP_itemtype[] OptMenu = [];
-    internal static CP_itemtype[] NewEmenu = [];
-    internal static CP_itemtype[] NewMenu = [];
-    internal static CP_itemtype[] ClassMenu = [];
+                                THE CONTROL PANEL
+
+    The main menu loop and its screens are Ui/ControlPanel.cs, Ui/NewGameMenu.cs,
+    Ui/OptionsMenu.cs and Ui/ChangeViewScreen.cs (made in InitServices); the in-play F7 to F10
+    (CP_CheckQuick) are here. The CP_ routines keep their names: menudefs name the actions.
+
+    =============================================================================
+    */
+
+    static ControlPanel controlPanel = null!;
+    static NewGameMenu newGameMenu = null!;
+    static OptionsMenu optionsMenu = null!;
+    static ChangeViewScreen changeViewScreen = null!;
+
+    // Control panel song: the main menu's music in menudefs/main-menu
+    internal static string MENUSONG => controlPanel.MENUSONG;
+    internal static string INTROSONG => controlPanel.INTROSONG;
+    internal static string HIGHSCORESSONG => controlPanel.HIGHSCORESSONG;
+
+    internal static CP_itemtype[] MainMenu { get => controlPanel.MainMenu; set => controlPanel.MainMenu = value; }
+    internal static CP_iteminfo MainItems { get => controlPanel.MainItems; set => controlPanel.MainItems = value; }
+    internal static CP_itemtype[] OptMenu { get => optionsMenu.OptMenu; set => optionsMenu.OptMenu = value; }
+    internal static CP_iteminfo OptItems { get => optionsMenu.OptItems; set => optionsMenu.OptItems = value; }
+    internal static CP_itemtype[] NewEmenu { get => newGameMenu.NewEmenu; set => newGameMenu.NewEmenu = value; }
+    internal static CP_iteminfo NewEitems { get => newGameMenu.NewEitems; set => newGameMenu.NewEitems = value; }
+    internal static CP_itemtype[] NewMenu { get => newGameMenu.NewMenu; set => newGameMenu.NewMenu = value; }
+    internal static CP_iteminfo NewItems { get => newGameMenu.NewItems; set => newGameMenu.NewItems = value; }
+    internal static CP_itemtype[] ClassMenu { get => newGameMenu.ClassMenu; set => newGameMenu.ClassMenu = value; }
+    internal static CP_iteminfo ClassItems { get => newGameMenu.ClassItems; set => newGameMenu.ClassItems = value; }
+
+    internal static int StartGame { get => controlPanel.StartGame; set => controlPanel.StartGame = value; }
+
+    /// <summary>The game was ended with End Game in the menu, so the game over screen is skipped</summary>
+    internal static bool endedFromMenu { get => controlPanel.endedFromMenu; set => controlPanel.endedFromMenu = value; }
+
+    internal static void EnableViewScoresMenuItem() => controlPanel.EnableViewScoresMenuItem();
+    internal static void DrawMainMenu() => controlPanel.DrawMainMenu();
+
+    internal static void US_ControlPanel(ScanCodes scancode)
+    {
+        if (ingame)
+        {
+            if (CP_CheckQuick(scancode) != 0)
+                return;
+            lastgamemusicoffset = StartCPMusic(MENUSONG);
+        }
+        else
+            StartCPMusic(MENUSONG);
+
+        controlPanel.Run(scancode);
+    }
+
+    internal static int CP_NewGame(int _) => newGameMenu.Run();
+    internal static int CP_Options(int _) => optionsMenu.Run();
+    internal static int CP_ChangeView(int _) => changeViewScreen.Run();
+    internal static int CP_ReadThis(int _) => controlPanel.ReadThis();
+    internal static int CP_ViewScores(int _) => controlPanel.ViewScores();
+    internal static int CP_EndGame(int _) => controlPanel.EndGame();
+    internal static int CP_Quit(int _) => controlPanel.Quit();
+
+    static ControlPanelHooks MakeControlPanelHooks() => new(
+        InGame: () => ingame,
+        GameStarted: () => startgame || loadedgame,
+        SaveGame: CP_SaveGame,
+        LoadGame: CP_LoadGame,
+        EndGame: () =>
+        {
+            playerstate.lives = 0;
+            playstate = playstatetypes.ex_died;
+            LastAttacker = null;
+        },
+        Random: UiRandom);
+
+    /// <summary>Starts a game from New Game; the control panel then leaves, and "Read This!" goes back to its normal color</summary>
+    static void StartNewGame(short difficulty, EpisodeInfo episode, MapInfo? mapInfo, string? playerClass)
+    {
+        NewGame(difficulty, episode, mapInfo!, playerClass);
+        StartGame = 1;
+        FindMenuItem(MainMenu, "readthis")?.active = 1;
+    }
+
 
     internal static CP_itemtype[] MusicMenu = [];
     // The jukebox shows one page of songs at a time
     internal const int JukeboxPageSize = 6;
 
     // Loaded from menudefs/ in CheckForEpisodes
-    internal static CP_iteminfo MainItems;
-    internal static CP_iteminfo OptItems;
-    internal static CP_iteminfo NewEitems;
-    internal static CP_iteminfo NewItems;
-    internal static CP_iteminfo ClassItems;
     internal static CP_iteminfo MusicItems;
-    internal static int StartGame;
-
-    /// <summary>The game was ended with End Game in the menu, so the game over screen is skipped</summary>
-    internal static bool endedFromMenu;
-    private static void EnableEndGameMenuItem()
-    {
-        var language = _assetManager.GetText("en-us");
-        var item = FindMenuItem(MainMenu, "viewscores");
-        if (item == null) return;
-        item.routine = null;
-        item.text = "$MENU_ENDGAME".ToLanguageText(language);
-    }
-
-    internal static void EnableViewScoresMenuItem()
-    {
-        var language = _assetManager.GetText("en-us");
-        var item = FindMenuItem(MainMenu, "viewscores");
-        if (item == null) return;
-        item.routine = CP_ViewScores;
-        item.text = "$MENU_VIEWSCORES".ToLanguageText(language);
-    }
-
     /*
     =============================================================================
 
@@ -143,134 +190,6 @@ internal partial class Program
         return 0;
     }
 
-
-    internal static void SetupControlPanel()
-    {
-        //
-        // CACHE SOUNDS
-        //
-        if (_videoManager.HasMargins)
-            _videoManager.ClearScreen(0);
-
-        if (!ingame)
-        { }// CA_LoadAllSounds();
-        else
-            FindMenuItem(MainMenu, "savegame")?.active = 1;
-
-        _inputManager.CenterMouse();
-    }
-
-    internal static void US_ControlPanel(ScanCodes scancode)
-    {
-        int which;
-
-        if (ingame)
-        {
-            if (CP_CheckQuick(scancode) != 0)
-                return;
-            lastgamemusicoffset = StartCPMusic(MENUSONG);
-        }
-        else
-            StartCPMusic(MENUSONG);
-        SetupControlPanel();
-
-        //
-        // F-KEYS FROM WITHIN GAME
-        //
-        switch (scancode)
-        {
-            case ScanCodes.sc_F1:
-                // Only where the main menu has "Read This!": its help text's pictures are the
-                // Apogee releases' (id's GT v1.4 and Spear made F1 a boss key instead)
-                if (FindMenuItem(MainMenu, "readthis") != null)
-                    HelpScreens();
-                goto finishup;
-            case ScanCodes.sc_F2:
-                CP_SaveGame(0);
-                goto finishup;
-
-            case ScanCodes.sc_F3:
-                CP_LoadGame(0);
-                goto finishup;
-
-            case ScanCodes.sc_F4:
-                CP_Sound(0);
-                goto finishup;
-
-            case ScanCodes.sc_F5:
-                CP_ChangeView(0);
-                goto finishup;
-
-            case ScanCodes.sc_F6:
-                CP_Control(0);
-                goto finishup;
-
-            finishup:
-                CleanupControlPanel();
-                return;
-        }
-
-        DrawMainMenu();
-        MenuFadeIn();
-        StartGame = 0;
-
-        //
-        // MAIN MENU LOOP
-        //
-        do
-        {
-            which = HandleMenu(MainItems, MainMenu, null);
-            switch (which < 0 ? "quit" : SelectedId(MainMenu, which))
-            {
-                case "viewscores":
-                    if (MainMenu[which].routine == null)
-                    {
-                        if (CP_EndGame(0) != 0)
-                            StartGame = 1;
-                    }
-                    else
-                    {
-                        DrawMainMenu();
-                        MenuFadeIn();
-                    }
-                    break;
-
-                case "backtodemo":
-                    StartGame = 1;
-                    if (!ingame)
-                        StartCPMusic(INTROSONG);
-                    _videoManager.FadeOut(menuFadeStyle, new Color { Alpha = 255 }, 10, menuFadeTics);
-                    break;
-
-                case "quit":
-                    CP_Quit(0);
-                    break;
-
-                default:
-                    if (StartGame == 0)
-                    {
-                        DrawMainMenu();
-                        MenuFadeIn();
-                    }
-                    break;
-            }
-            //
-            // "EXIT OPTIONS" OR "NEW GAME" EXITS
-            //
-        }
-        while (StartGame == 0);
-
-        //
-        // DEALLOCATE EVERYTHING
-        //
-        CleanupControlPanel();
-
-        //
-        // CHANGE MAINMENU ITEM
-        //
-        if (startgame || loadedgame)
-            EnableEndGameMenuItem();
-    }
 
     internal static int CP_CheckQuick(ScanCodes scancode)
     {
@@ -358,300 +277,6 @@ internal partial class Program
         return 0;
     }
 
-    internal static void DrawMainMenu()
-    {
-        var language = _assetManager.GetText("en-us");
-
-        DrawMenuComponents("main-menu");
-
-        //
-        // CHANGE "GAME" AND "DEMO"
-        //
-        var backToDemo = FindMenuItem(MainMenu, "backtodemo");
-        if (backToDemo != null)
-        {
-            if (ingame)
-            {
-                backToDemo.text = "$MENU_BACKTOGAME".ToLanguageText(language);
-                backToDemo.active = 2;
-            }
-            else
-            {
-                backToDemo.text = "$MENU_BACKTODEMO".ToLanguageText(language);
-                backToDemo.active = 1;
-            }
-        }
-
-        DrawMenu(MainItems, MainMenu);
-        _videoManager.Update();
-    }
-
-    internal static int CP_NewGame(int _)
-    {
-        var language = _assetManager.GetText("en-us");
-        int which;
-        MapInfo? mapInfo = null;
-        EpisodeInfo? episodeInfo = null;
-        // Episode, then class (only when there's a choice), then skill; Esc steps back one
-        bool chooseClass = ClassMenu.Length > 1;
-        string? playerClass = null;
-
-        // A game with one episode (Spear) has no episode menu: straight to the class or difficulty menu
-        var episodes = _gameEngineManager.GetGameInfo().Episodes;
-        bool singleEpisode = episodes.Count == 1;
-        if (singleEpisode)
-        {
-            episodeInfo = episodes.Values.First();
-            if (!_gameEngineManager.GetGameInfo().Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
-            {
-                _audioManager.Play("player/usefail");
-                Message($"Starting Map \"{episodeInfo.StartMap}\" unavailable!");
-                _inputManager.ClearKeysDown();
-                _inputManager.Ack();
-                MenuFadeOut();
-                return 0;
-            }
-            goto confirm;
-        }
-
-    firstpart:
-        DrawNewEpisode();
-        do
-        {
-            which = HandleMenu(NewEitems, NewEmenu, NewEitems.selectionPic != null ? DrawNewEpisodePic : null);
-            switch (which)
-            {
-                case -1:
-                    MenuFadeOut();
-                    return 0;
-
-                default:
-                    episodeInfo = (EpisodeInfo?)NewEmenu[which].data;
-
-                    string? refusal = null;
-                    if (episodeInfo == null)
-                        refusal = "Episode unavailable!";
-                    else if (episodeInfo.Locked)
-                        refusal = episodeInfo.LockedMessage!.ToLanguageText(language);   // the shareware's "Read This!" note
-                    else if (!_gameEngineManager.GetGameInfo().Maps.TryGetValue(episodeInfo.StartMap, out mapInfo))
-                        refusal = $"Starting Map \"{episodeInfo.StartMap}\" unavailable!";
-
-                    if (refusal != null)
-                    {
-                        _audioManager.Play("player/usefail");
-                        Message(refusal);
-                        _inputManager.ClearKeysDown();
-                        _inputManager.Ack();
-                        DrawNewEpisode();
-                        which = 0;
-                    }
-                    else
-                        which = 1;
-                    break;
-            }
-
-        }
-        while (which == 0);
-
-        ShootSnd();
-
-    confirm:
-        //
-        // ALREADY IN A GAME?
-        //
-        if (ingame)
-            if (Confirm($"$CURGAME".ToLanguageText(language)) == 0)
-            {
-                MenuFadeOut();
-                return 0;
-            }
-
-    classpart:
-        if (chooseClass)
-        {
-            MenuFadeOut();
-            DrawNewClass();
-            which = HandleMenu(ClassItems, ClassMenu, DrawNewClassPic);
-            if (which < 0)
-            {
-                MenuFadeOut();
-                if (singleEpisode)
-                    return 0;
-                goto firstpart;
-            }
-
-            playerClass = ((PlayerClassChoice)ClassMenu[which].data!).Class;
-            ShootSnd();
-        }
-
-    skillpart:
-        MenuFadeOut();
-        DrawNewGame();
-        which = HandleMenu(NewItems, NewMenu, DrawNewGameDiff);
-        if (which < 0)
-        {
-            if (chooseClass)
-                goto classpart;
-            MenuFadeOut();
-            if (singleEpisode)
-                return 0;
-            goto firstpart;
-        }
-
-        ShootSnd();
-
-        // The episode's briefing (Blake Stone's missions); Esc there goes back to the skills
-        if (!string.IsNullOrEmpty(episodeInfo!.Briefing))
-        {
-            MenuFadeOut();
-            if (ShowBriefing(episodeInfo.Briefing))
-                goto skillpart;
-        }
-
-        NewGame((short)which, episodeInfo, mapInfo, playerClass);     // one menu item per skill, in order
-        StartGame = 1;
-        MenuFadeOut();
-
-        //
-        // CHANGE "READ THIS!" TO NORMAL COLOR
-        //
-        FindMenuItem(MainMenu, "readthis")?.active = 1;
-
-        return 0;
-    }
-
-    internal static void DrawNewEpisode()
-    {
-        DrawMenuComponents("new-episode");
-        DrawMenu(NewEitems, NewEmenu);
-
-        // Each episode's picture (pic-name in game-info) sits between the cursor and the name,
-        // or the highlighted one's at the menu's selection-pic
-        if (NewEitems.selectionPic != null)
-            DrawNewEpisodePic(NewEitems.curpos);
-        else
-        {
-            for (int i = 0; i < NewEmenu.Length; i++)
-            {
-                if (NewEmenu[i].data is EpisodeInfo episode && !string.IsNullOrEmpty(episode.PicName))
-                    _graphicManager.DrawPic(episode.PicName, NewEitems.x + 32, MenuItemY(NewEitems, i));
-            }
-        }
-
-        _videoManager.Update();
-        MenuFadeIn();
-        WaitKeyUp();
-    }
-
-    /// <summary>The highlighted episode's picture at the menu's selection-pic, when it has one</summary>
-    internal static void DrawNewEpisodePic(int w)
-    {
-        if (NewEitems.selectionPic is { } at && w >= 0 && w < NewEmenu.Length
-            && NewEmenu[w].data is EpisodeInfo { PicName: { Length: > 0 } pic })
-            _graphicManager.DrawPic(pic, at.X, at.Y);
-    }
-
-    internal static void DrawNewGame()
-    {
-        DrawMenuComponents("new-game");
-
-        DrawMenu(NewItems, NewMenu);
-        DrawNewGameDiff(NewItems.curpos);
-        _videoManager.Update();
-        MenuFadeIn();
-        WaitKeyUp();
-    }
-
-    internal static void DrawNewGameDiff(int w)
-    {
-        // Face picture for the highlighted skill (pic-name in game-info), at the menu's
-        // selection-pic or beside the skills
-        if (w >= 0 && w < NewMenu.Length && NewMenu[w].data is SkillInfo skill)
-        {
-            if (NewItems.selectionPic is { } at)
-                _graphicManager.DrawPic(skill.PicName, at.X, at.Y);
-            else
-                _graphicManager.DrawPic(skill.PicName, NewItems.x + 185, NewItems.y + 7);
-        }
-    }
-
-    /// <summary>A class menu item: the actordefs class and its picture (game-info pic-name)</summary>
-    internal sealed record PlayerClassChoice(string Class, string? PicName);
-
-    internal static void DrawNewClass()
-    {
-        DrawMenuComponents("new-class");
-        DrawMenu(ClassItems, ClassMenu);
-        DrawNewClassPic(ClassItems.curpos);
-        _videoManager.Update();
-        MenuFadeIn();
-        WaitKeyUp();
-    }
-
-    internal static void DrawNewClassPic(int w)
-    {
-        // The highlighted class's picture; pictures can differ in size, so the last one is cleared first
-        int x = ClassItems.x + 175, y = ClassItems.y - 6;
-        _videoManager.Bar(x, y, 96, 100, "BKGDCOLOR");
-        if (w >= 0 && w < ClassMenu.Length && ClassMenu[w].data is PlayerClassChoice { PicName: { Length: > 0 } pic })
-            _graphicManager.DrawPic(pic, x, y);
-    }
-
-    /// <summary>
-    /// The Options submenu. Most items run their own screen (Sound, Control, Change View,
-    /// Video), and this menu is drawn again when that screen is left; Messages and Automap Stats
-    /// switch on and off in place.
-    /// </summary>
-    internal static int CP_Options(int _)
-    {
-        int which;
-
-        DrawOptionsMenu();
-        MenuFadeIn();
-        WaitKeyUp();
-
-        do
-        {
-            which = HandleMenu(OptItems, OptMenu, null);
-            if (SelectedId(OptMenu, which) == "messages")
-            {
-                // The player's own choice from now on, over the game pack's default (msg_enabled)
-                _hudMessageManager.EnabledSetting = !_hudMessageManager.Enabled;
-                if (!_hudMessageManager.Enabled)
-                    _hudMessageManager.Clear();
-                DrawOptionsMenu();
-                ShootSnd();
-            }
-            else if (SelectedId(OptMenu, which) == "automapstats")
-            {
-                _automapManager.ShowStats = !_automapManager.ShowStats;
-                DrawOptionsMenu();
-                ShootSnd();
-            }
-            else if (which >= 0)
-            {
-                DrawOptionsMenu();
-                MenuFadeIn();
-                WaitKeyUp();
-            }
-        }
-        while (which >= 0);
-
-        MenuFadeOut();
-
-        return 0;
-    }
-
-    internal static void DrawOptionsMenu()
-    {
-        DrawMenuComponents("options");
-        DrawMenu(OptItems, OptMenu);
-        DrawMenuCheckbox(OptItems, OptMenu, "messages", _hudMessageManager.Enabled);
-        DrawMenuCheckbox(OptItems, OptMenu, "automapstats", _automapManager.ShowStats);
-        DrawMenuGun(OptItems);
-        _videoManager.Update();
-    }
-
     /*
     =============================================================================
 
@@ -681,163 +306,6 @@ internal partial class Program
     internal static int CP_Control(int _) => controlMenus.RunControl();
     internal static int CP_ControllerSettings(int _) => controlMenus.RunControllerSettings();
     internal static int MouseSensitivity(int _) => controlMenus.RunMouseSensitivity();
-
-    internal static int CP_ChangeView(int _)
-    {
-        var language = _assetManager.GetText("en-us");
-        int exit = 0, oldview, newview;
-        ControlInfo ci;
-
-        newview = oldview = viewsize;
-        DrawChangeView(oldview);
-        MenuFadeIn();
-
-        do
-        {
-            CheckPause();
-            GameEngineManager.DelayMs(5);
-            ReadAnyControl(out ci);
-            switch (ci.dir)
-            {
-                case Direction.South:
-                case Direction.West:
-                    newview--;
-                    if (newview < 4)
-                        newview = 4;
-                    if (newview >= 19) DrawChangeView(newview);
-                    else ShowViewSize(newview);
-                    _videoManager.Update();
-                    _audioManager.Play("world/hitwall");
-                    TicDelay(10);
-                    break;
-
-                case Direction.North:
-                case Direction.East:
-                    newview++;
-                    if (newview >= 21)
-                    {
-                        newview = 21;
-                        DrawChangeView(newview);
-                    }
-                    else ShowViewSize(newview);
-                    _videoManager.Update();
-                    _audioManager.Play("world/hitwall");
-                    TicDelay(10);
-                    break;
-            }
-
-            if (ci.button0 || _inputManager.IsKeyDown(ScanCodes.sc_Enter))
-                exit = 1;
-            else if (ci.button1 || _inputManager.IsKeyDown(ScanCodes.sc_Escape))
-            {
-                _audioManager.Play("menu/escape");
-                MenuFadeOut();
-                if (_videoManager.HasMargins)
-                    _videoManager.ClearScreen(0);
-                return 0;
-            }
-        }
-        while (exit == 0);
-
-        if (oldview != newview)
-        {
-            _audioManager.Play("menu/activate");
-            Message("$STR_THINK".ToLanguageText(language) + "...");
-            NewViewSize(newview);
-        }
-
-        ShootSnd();
-        MenuFadeOut();
-        if (_videoManager.HasMargins)
-            _videoManager.ClearScreen(0);
-
-        return 0;
-    }
-
-    internal static void DrawChangeView(int view)
-    {
-        var language = _assetManager.GetText("en-us");
-        // The help goes in the bottom 40 lines of the screen, where the status bar is
-        int top = _videoManager.ScreenYAboveBottom(40);
-        if (view != 21)
-            _videoManager.BarScaledCoord(0, top, _videoManager.screenWidth, _videoManager.screenHeight - top, bordercol);
-
-        ShowViewSize(view);
-
-        using var _ = _videoManager.UseUiOrigin(UiAnchor.Bottom);
-        var help = CenteredText(0, 320, 200 - 39, MenuStyle("HIGHLIGHT"));
-        help.CPrint("$STR_SIZE1".ToLanguageText(language) + "\n");
-        help.CPrint("$STR_SIZE2".ToLanguageText(language) + "\n");
-        help.CPrint("$STR_SIZE3".ToLanguageText(language));
-        _videoManager.Update();
-    }
-
-    internal static int CP_ReadThis(int _)
-    {
-        StartCPMusic("CORNER");
-        HelpScreens();
-        StartCPMusic(MENUSONG);
-        return 1;
-    }
-
-    internal static int CP_ViewScores(int _)
-    {
-        StartCPMusic(HIGHSCORESSONG);
-
-        DrawHighScores();
-        _videoManager.Update();
-        MenuFadeIn();
-
-        _inputManager.Ack();
-
-        StartCPMusic(MENUSONG);
-        MenuFadeOut();
-
-        return 0;
-    }
-
-    internal static int CP_EndGame(int _)
-    {
-        var language = _assetManager.GetText("en-us");
-        int res = Confirm("$ENDGAMESTR".ToLanguageText(language));
-
-        DrawMainMenu();
-        if (res == 0) return 0;
-
-        playerstate.lives = 0;
-        playstate = playstatetypes.ex_died;
-        LastAttacker = null;
-        endedFromMenu = true;       // no game over screen (bstone's InstantQuit)
-
-        FindMenuItem(MainMenu, "savegame")?.active = 0;
-        EnableViewScoresMenuItem();
-        return 1;
-    }
-
-    internal static int CP_Quit(int _)
-    {
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        string endStr = gameInfo.EndStrings[(UiRandom() & (gameInfo.EndStrings.Count - 2)) + (UiRandom() & 1)];
-        if (Confirm(endStr) != 0)
-        {
-            _videoManager.Update();
-            _audioManager.SetPaused(true);
-            _audioManager.StopAll();
-            MenuFadeOut();
-            _gameEngineManager.Quit("");
-            return 0;
-        }
-
-        DrawMainMenu();
-        return 0;
-    }
-
-    internal static void CleanupControlPanel()
-    {
-        // Keep whatever was changed in the menus (view size, controls, sensitivity) even if the
-        // game doesn't get to exit cleanly.
-        _gameEngineManager.WriteConfig();
-    }
 
     internal static void FreeMusic()
     {
