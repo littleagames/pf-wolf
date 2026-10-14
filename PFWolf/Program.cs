@@ -236,6 +236,8 @@ internal partial class Program
             new DoorHooks(PlaySoundLocTile, DrawKeys));
         pushWalls = new PushWalls(_mapManager, _audioManager, session, () => demoplayback || demorecord);
         lineOfSight = new LineOfSight(_mapManager, doors, session, WallSpriteBlocksLine);
+        switchActions = MakeSwitchActions();
+        smartSwitches = MakeSmartSwitches();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,

@@ -1,6 +1,11 @@
-namespace PFWolf;
+using PFWolf.Assets;
 
-internal partial class Program
+namespace PFWolf.Gameplay;
+
+internal enum SmartSwitchOp { Off, On, Toggle }
+
+/// <param name="useSwitch">Throws a wall switch on a tile, as the player using it from where they face</param>
+internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession session, Action<MapSwitchTranslation, int, int> useSwitch)
 {
     /*
     =============================================================================
@@ -20,9 +25,7 @@ internal partial class Program
     =============================================================================
     */
 
-    internal enum SmartSwitchOp { Off, On, Toggle }
-
-    private static void RegisterSmartSwitchActions()
+    internal void Register()
     {
         // A_SmartSwitch(["off" | "on" | "toggle"][, "remove"]): works the tile the trigger's
         // object-plane value names (toggle by default); with "remove", the trigger goes once
@@ -35,52 +38,52 @@ internal partial class Program
                 "on" => SmartSwitchOp.On,
                 _ => SmartSwitchOp.Toggle,
             };
-            int target = _mapManager.MAPSPOT(trigger.TileX, trigger.TileY, 1);
+            int target = map.MAPSPOT(trigger.TileX, trigger.TileY, 1);
             if (target == 0)
                 return false;
             bool done = OperateSmartSwitch(target >> 8, target & 0xff, op);
             if (done && args.Any(a => a.Equals("remove", StringComparison.OrdinalIgnoreCase)))
             {
-                _mapManager.ClearFloorCode(trigger.TileX, trigger.TileY);
-                _mapManager.SetMapSpot(trigger.TileX, trigger.TileY, 1, 0);
+                map.ClearFloorCode(trigger.TileX, trigger.TileY);
+                map.SetMapSpot(trigger.TileX, trigger.TileY, 1, 0);
             }
             return true;
         });
     }
 
     /// <summary>Works whatever is on tile (x, y). True when it found an actor or thing there, or nothing at all.</summary>
-    internal static bool OperateSmartSwitch(int x, int y, SmartSwitchOp op)
+    internal bool OperateSmartSwitch(int x, int y, SmartSwitchOp op)
     {
         if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
             return true;
 
-        int tile = _mapManager.tilemap[x, y];
+        int tile = map.tilemap[x, y];
 
         // A door: unlocked and opened
-        if ((tile & BIT_DOOR) != 0 && (tile & BIT_WALL) == 0)
+        if ((tile & Program.BIT_DOOR) != 0 && (tile & Program.BIT_WALL) == 0)
         {
-            int door = tile & ~BIT_DOOR;
-            if (door < lastdoorobj)
+            int door = tile & ~Program.BIT_DOOR;
+            if (door < doors.lastdoorobj)
             {
-                doorobjlist[door].unlocked = true;
-                OpenDoor(door);
+                doors.doorobjlist[door].unlocked = true;
+                doors.OpenDoor(door);
             }
             return false;
         }
 
         // An actor or thing standing there
-        var thing = _mapManager.GetActors().FirstOrDefault(a => !a.IsRemoved && a != player && a.TileX == x && a.TileY == y
-            && (a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) || a.Properties.ContainsKey("switched")));
+        var thing = map.GetActors().FirstOrDefault(a => !a.IsRemoved && a != session.player && a.TileX == x && a.TileY == y
+            && (a.RuntimeFlags.HasFlag(Program.objflags.FL_SHOOTABLE) || a.Properties.ContainsKey("switched")));
         if (thing != null)
         {
             var switched = thing.Properties.TryGetValue("switched", out var how) ? how?.ToString() : null;
             if (switched?.Equals("remove", StringComparison.OrdinalIgnoreCase) == true)
             {
-                if (_mapManager.actorat[x, y] is BlockingActor)
-                    _mapManager.actorat[x, y] = null;
-                _mapManager.MarkForRemoval(thing);
+                if (map.actorat[x, y] is BlockingActor)
+                    map.actorat[x, y] = null;
+                map.MarkForRemoval(thing);
             }
-            else if (thing is Entities.Actors.Monster monster && monster.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
+            else if (thing is Entities.Actors.Monster monster && monster.RuntimeFlags.HasFlag(Program.objflags.FL_SHOOTABLE))
             {
                 if (switched?.Equals("kill", StringComparison.OrdinalIgnoreCase) == true)
                 {
@@ -91,7 +94,7 @@ internal partial class Program
                 {
                     if (monster.Active == activetypes.ac_no)
                         monster.Active = activetypes.ac_yes;
-                    if (!monster.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
+                    if (!monster.RuntimeFlags.HasFlag(Program.objflags.FL_ATTACKMODE))
                         monster.FirstSighting();
                 }
             }
@@ -101,13 +104,13 @@ internal partial class Program
         // A wall switch: thrown, unless it's already the way it's told to turn
         if (tile != 0)
         {
-            int id = tile & ~BIT_WALL;
-            if (_mapManager.GetMapData().Walls.TryGetValue(id, out var wall) && wall.Switch is { } wallSwitch)
+            int id = tile & ~Program.BIT_WALL;
+            if (map.GetMapData().Walls.TryGetValue(id, out var wall) && wall.Switch is { } wallSwitch)
             {
                 bool isOn = wallSwitch.State.Equals("on", StringComparison.OrdinalIgnoreCase);
                 bool isOff = wallSwitch.State.Equals("off", StringComparison.OrdinalIgnoreCase);
                 if (!(op == SmartSwitchOp.Off && isOff) && !(op == SmartSwitchOp.On && isOn))
-                    UseSwitch(wallSwitch, x, y, FacingDir(player.Angle));
+                    useSwitch(wallSwitch, x, y);
             }
             return false;
         }
@@ -117,10 +120,10 @@ internal partial class Program
     }
 
     /// <summary>A dying actor's floors actor-code work: what it carried, and the tile its death switches</summary>
-    internal static void CarriedDeathWork(Entities.Actors.Actor ob, int tilex, int tiley)
+    internal void CarriedDeathWork(Entities.Actors.Actor ob, int tilex, int tiley)
     {
         foreach (var carried in ob.CarriedDrops)
-            PlaceItemType(carried, tilex, tiley);
+            map.SpawnThing(tilex, tiley, carried);     // PlaceItemType
         ob.CarriedDrops.Clear();
 
         if (ob.DeathLink != 0)

@@ -89,4 +89,31 @@ internal partial class Program
     internal static bool PushWall(int checkx, int checky, controldirs dir, string? moveSound = null, string? blockedSound = null)
         => pushWalls.PushWall(checkx, checky, dir, moveSound, blockedSound);
     internal static void MovePWalls() => pushWalls.MovePWalls();
+
+    /*
+    =============================================================================
+
+                                    SWITCHES
+
+    The switch and trigger actions and Blake Stone's smart switches are Gameplay/SwitchActions.cs
+    and Gameplay/SmartSwitches.cs (made in InitServices); these forward to them.
+
+    =============================================================================
+    */
+
+    static SwitchActions switchActions = null!;
+    static SmartSwitches smartSwitches = null!;
+
+    // Made in InitServices. Registering only binds the handlers, so a test that lists the action
+    // names (ScriptApiTests) can register them before any services exist: then they're made here.
+    static SwitchActions MakeSwitchActions() => new(_audioManager, _mapManager, _inventoryManager, _hudMessageManager, doors, pushWalls, session,
+        new SwitchHooks(CouldTakeInventory, TryApplyInventory));
+    static SmartSwitches MakeSmartSwitches() => new(_mapManager, doors, session, (wallSwitch, x, y) => UseSwitch(wallSwitch, x, y, FacingDir(player.Angle)));
+
+    private static void RegisterSwitchActions() => (switchActions ??= MakeSwitchActions()).Register();
+    private static void RegisterSmartSwitchActions() => (smartSwitches ??= MakeSmartSwitches()).Register();
+    internal static bool OperateSmartSwitch(int x, int y, SmartSwitchOp op) => smartSwitches.OperateSmartSwitch(x, y, op);
+
+    /// <summary>A dying actor's floors actor-code work: what it carried, and the tile its death switches</summary>
+    internal static void CarriedDeathWork(Entities.Actors.Actor ob, int tilex, int tiley) => smartSwitches.CarriedDeathWork(ob, tilex, tiley);
 }

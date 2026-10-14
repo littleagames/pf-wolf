@@ -1,9 +1,15 @@
-﻿using PFWolf.Assets;
+using PFWolf.Assets;
 using PFWolf.Entities;
 
-namespace PFWolf;
+namespace PFWolf.Gameplay;
 
-internal partial class Program
+/// <summary>What the switch actions need from the player's code</summary>
+/// <param name="CouldTakeInventory">Whether the player could take an item (it would do something)</param>
+/// <param name="TryApplyInventory">Gives the player an item, so many of it: false if it did nothing</param>
+internal sealed record SwitchHooks(Func<Entities.Actors.Inventory, bool> CouldTakeInventory, Func<Entities.Actors.Inventory, int, bool> TryApplyInventory);
+
+internal sealed class SwitchActions(AudioManager audio, MapManager map, InventoryManager inventory, HudMessageManager messages,
+    Doors doors, PushWalls pushWalls, GameSession session, SwitchHooks hooks)
 {
     /*
     =============================================================================
@@ -19,19 +25,19 @@ internal partial class Program
     =============================================================================
     */
 
-    private static void RegisterSwitchActions()
+    internal void Register()
     {
         // A_OpenDoor(["hold"]): opens the tagged doors; with hold they stay open until closed
         MapTriggerRegistry.Register("A_OpenDoor", (trigger, args) => ForTaggedDoors(trigger, door => SwitchOpenDoor(door, Hold(args))));
         // A_CloseDoor: closes the tagged doors (not on anything standing in the doorway)
-        MapTriggerRegistry.Register("A_CloseDoor", (trigger, _) => ForTaggedDoors(trigger, CloseDoor));
+        MapTriggerRegistry.Register("A_CloseDoor", (trigger, _) => ForTaggedDoors(trigger, doors.CloseDoor));
         // A_ToggleDoor(["hold"]): opens the tagged doors that are shut or shutting, closes the rest
         MapTriggerRegistry.Register("A_ToggleDoor", (trigger, args) => ForTaggedDoors(trigger, door =>
         {
-            if (doorobjlist[door].action is dooractiontypes.dr_closed or dooractiontypes.dr_closing)
+            if (doors.doorobjlist[door].action is dooractiontypes.dr_closed or dooractiontypes.dr_closing)
                 SwitchOpenDoor(door, Hold(args));
             else
-                CloseDoor(door);
+                doors.CloseDoor(door);
         }));
 
         // A_MoveWall([direction], ["moving sound"], ["blocked sound"]): pushes every tagged
@@ -59,7 +65,7 @@ internal partial class Program
         MapTriggerRegistry.Register("A_ToggleActive", (trigger, _) =>
         {
             bool any = false;
-            foreach (var actor in _mapManager.TaggedActors(trigger.Tag).ToList())
+            foreach (var actor in map.TaggedActors(trigger.Tag).ToList())
             {
                 bool inactive = actor.CurrentState?.StateName?.StartsWith("Inactive", StringComparison.Ordinal) == true;
                 var stateName = inactive ? "Active" : "Inactive";
@@ -77,7 +83,7 @@ internal partial class Program
         {
             if (args.Length == 0)
                 return false;
-            _hudMessageManager.Show(Managers.HudMessageKind.Lock, args[0], args.ElementAtOrDefault(1));
+            messages.Show(Managers.HudMessageKind.Lock, args[0], args.ElementAtOrDefault(1));
             return true;
         });
 
@@ -101,9 +107,9 @@ internal partial class Program
         MapTriggerRegistry.Register("A_SpawnItem", SpawnItemTrigger);
     }
 
-    private static bool GiveInventoryTrigger(TriggerActivation trigger, string[] args)
+    private bool GiveInventoryTrigger(TriggerActivation trigger, string[] args)
     {
-        if (args.Length == 0 || _inventoryManager.CreateActor(args[0]) is not Entities.Actors.Inventory item)
+        if (args.Length == 0 || inventory.CreateActor(args[0]) is not Entities.Actors.Inventory item)
         {
             Console.WriteLine($"A_GiveInventory: '{args.ElementAtOrDefault(0)}' isn't an inventory item.");
             return false;
@@ -111,9 +117,9 @@ internal partial class Program
 
         int amount = args.Length > 1 && int.TryParse(args[1], out var given) ? given
             : item.Properties.TryGetValue("inventory.amount", out var a) ? Convert.ToInt32(a) : 1;
-        if (!CouldTakeInventory(item) || !TryApplyInventory(item, amount))
+        if (!hooks.CouldTakeInventory(item) || !hooks.TryApplyInventory(item, amount))
         {
-            _audioManager.Play("player/usefail");
+            audio.Play("player/usefail");
             return false;
         }
 
@@ -121,7 +127,7 @@ internal partial class Program
         return true;
     }
 
-    private static bool SpawnItemTrigger(TriggerActivation trigger, string[] args)
+    private bool SpawnItemTrigger(TriggerActivation trigger, string[] args)
     {
         if (args.Length == 0)
             return false;
@@ -130,11 +136,11 @@ internal partial class Program
         int x = trigger.Activator.TileX, y = trigger.Activator.TileY;
         if (trigger.TileX >= 0)
         {
-            int dx = dirs[(int)trigger.Dir][0], dy = dirs[(int)trigger.Dir][1];
+            int dx = PushWalls.dirs[(int)trigger.Dir][0], dy = PushWalls.dirs[(int)trigger.Dir][1];
             (x, y) = (trigger.TileX - dx, trigger.TileY - dy);
         }
 
-        if (_mapManager.SpawnThing(x, y, new MapActorTranslation { Class = args[0] }, countKill: false) == null)
+        if (map.SpawnThing(x, y, new MapActorTranslation { Class = args[0] }, countKill: false) == null)
         {
             Console.WriteLine($"A_SpawnItem: '{args[0]}' isn't an actor.");
             return false;
@@ -143,18 +149,18 @@ internal partial class Program
     }
 
     // An item's pickup sound and message, as the player takes it
-    private static void AnnouncePickup(Entities.Actors.Inventory item)
+    private void AnnouncePickup(Entities.Actors.Inventory item)
     {
         if (item.Properties.TryGetValue("inventory.pickupsound", out var sound) && sound?.ToString() is { Length: > 0 } soundName)
-            _audioManager.Play(soundName);
+            audio.Play(soundName);
         if (item.Properties.TryGetValue("inventory.pickupmessage", out var message))
-            _hudMessageManager.Show(Managers.HudMessageKind.Pickup, message?.ToString(),
+            messages.Show(Managers.HudMessageKind.Pickup, message?.ToString(),
                 item.Properties.TryGetValue("inventory.pickupmessagestyle", out var style) ? style?.ToString() : null);
     }
 
-    private static bool VendAction(TriggerActivation trigger, string[] args)
+    private bool VendAction(TriggerActivation trigger, string[] args)
     {
-        if (args.Length < 2 || _inventoryManager.CreateActor(args[1]) is not Entities.Actors.Inventory item)
+        if (args.Length < 2 || inventory.CreateActor(args[1]) is not Entities.Actors.Inventory item)
         {
             Console.WriteLine($"A_Vend: needs a currency and an inventory item to give ('{args.ElementAtOrDefault(1)}' isn't one).");
             return false;
@@ -162,41 +168,41 @@ internal partial class Program
 
         bool Refuse(string? message)
         {
-            _audioManager.Play("player/usefail");
+            audio.Play("player/usefail");
             if (!string.IsNullOrEmpty(message))
-                _hudMessageManager.Show(Managers.HudMessageKind.Lock, message);
+                messages.Show(Managers.HudMessageKind.Lock, message);
             return false;
         }
 
         // With a uses code, the machine's object-plane value (code << 8 | uses left) says how many
         // more times it works; any other value, or none left, and it's out of order
         int usesCode = int.TryParse(args.ElementAtOrDefault(5), out var code) ? code : -1;
-        int spot = _mapManager.MAPSPOT(trigger.TileX, trigger.TileY, 1);
+        int spot = map.MAPSPOT(trigger.TileX, trigger.TileY, 1);
         int usesLeft = usesCode >= 0 && spot >> 8 == usesCode ? spot & 0xff : usesCode >= 0 ? 0 : int.MaxValue;
         if (usesLeft <= 0)
             return Refuse(args.ElementAtOrDefault(4));
 
-        if (!CouldTakeInventory(item))
+        if (!hooks.CouldTakeInventory(item))
             return Refuse(args.ElementAtOrDefault(3));
-        if (!_inventoryManager.Has(args[0]))
+        if (!inventory.Has(args[0]))
             return Refuse(args.ElementAtOrDefault(2));
 
         int amount = item.Properties.TryGetValue("inventory.amount", out var a) ? Convert.ToInt32(a) : 1;
-        if (!TryApplyInventory(item, amount))
+        if (!hooks.TryApplyInventory(item, amount))
             return Refuse(args.ElementAtOrDefault(3));
 
-        _inventoryManager.Take(args[0], 1);
+        inventory.Take(args[0], 1);
         if (usesCode >= 0)
-            _mapManager.SetMapSpot(trigger.TileX, trigger.TileY, 1, (ushort)(usesCode << 8 | (usesLeft - 1)));
+            map.SetMapSpot(trigger.TileX, trigger.TileY, 1, (ushort)(usesCode << 8 | (usesLeft - 1)));
         AnnouncePickup(item);
         return true;
     }
 
-    private static bool SetTaggedActorsState(TriggerActivation trigger, string stateName)
+    private bool SetTaggedActorsState(TriggerActivation trigger, string stateName)
     {
         bool any = false;
         // Listed first: a state's action could spawn or remove actors
-        foreach (var actor in _mapManager.TaggedActors(trigger.Tag).ToList())
+        foreach (var actor in map.TaggedActors(trigger.Tag).ToList())
         {
             if (actor.IsRemoved || !actor.ResolvedStates.TryGetValue(stateName, out var frame))
                 continue;
@@ -206,27 +212,27 @@ internal partial class Program
         return any;
     }
 
-    private static bool Hold(string[] args) => args.Any(a => a.Equals("hold", StringComparison.OrdinalIgnoreCase));
+    internal static bool Hold(string[] args) => args.Any(a => a.Equals("hold", StringComparison.OrdinalIgnoreCase));
 
     // A switch opens a door whatever its lock: the lock is for opening it by hand (put a lock
     // on the switch to need a key for it)
-    private static void SwitchOpenDoor(int door, bool hold)
+    private void SwitchOpenDoor(int door, bool hold)
     {
-        OpenDoor(door);
+        doors.OpenDoor(door);
         if (hold)
-            doorobjlist[door].held = true;
+            doors.doorobjlist[door].held = true;
     }
 
     /// <summary>Runs <paramref name="act"/> on each door on a tile with the trigger's tag; false if there are none.</summary>
-    private static bool ForTaggedDoors(TriggerActivation trigger, Action<int> act)
+    private bool ForTaggedDoors(TriggerActivation trigger, Action<int> act)
     {
         bool any = false;
         if (trigger.Tag == 0)
             return false;
 
-        for (int door = 0; door < lastdoorobj; door++)
+        for (int door = 0; door < doors.lastdoorobj; door++)
         {
-            if (_mapManager.GetTag(doorobjlist[door].tilex, doorobjlist[door].tiley) != trigger.Tag)
+            if (map.GetTag(doors.doorobjlist[door].tilex, doors.doorobjlist[door].tiley) != trigger.Tag)
                 continue;
             act(door);
             any = true;
@@ -238,13 +244,13 @@ internal partial class Program
     /// The wall tiles with the trigger's tag, besides its own: solid walls (a wall beside a door
     /// too), not doors or a moving pushwall's tiles.
     /// </summary>
-    private static IEnumerable<(int X, int Y)> TaggedWalls(TriggerActivation trigger) =>
-        _mapManager.TaggedTiles(trigger.Tag).Where(t =>
+    private IEnumerable<(int X, int Y)> TaggedWalls(TriggerActivation trigger) =>
+        map.TaggedTiles(trigger.Tag).Where(t =>
             (t.X, t.Y) != (trigger.TileX, trigger.TileY)
-            && (_mapManager.tilemap[t.X, t.Y] & BIT_DOOR) == 0
-            && (_mapManager.tilemap[t.X, t.Y] & ~BIT_WALL) != 0);
+            && (map.tilemap[t.X, t.Y] & Program.BIT_DOOR) == 0
+            && (map.tilemap[t.X, t.Y] & ~Program.BIT_WALL) != 0);
 
-    private static bool MoveWallAction(TriggerActivation trigger, string[] args)
+    private bool MoveWallAction(TriggerActivation trigger, string[] args)
     {
         var dirName = args.ElementAtOrDefault(0);
         controldirs dir;
@@ -265,19 +271,19 @@ internal partial class Program
         foreach (var (x, y) in TaggedWalls(trigger).ToList())
         {
             any = true;
-            moved |= PushWall(x, y, dir);
+            moved |= pushWalls.PushWall(x, y, dir);
         }
 
         var sound = moved ? args.ElementAtOrDefault(1) : any ? args.ElementAtOrDefault(2) : null;
         if (!string.IsNullOrEmpty(sound))
-            _audioManager.Play(sound);
+            audio.Play(sound);
         return moved;
     }
 
-    private static bool SetWallAction(TriggerActivation trigger, string[] args)
+    private bool SetWallAction(TriggerActivation trigger, string[] args)
     {
-        if (!int.TryParse(args.ElementAtOrDefault(0), out var id) || id is <= 0 or >= BIT_WALL
-            || !_mapManager.GetMapData().Walls.ContainsKey(id))
+        if (!int.TryParse(args.ElementAtOrDefault(0), out var id) || id is <= 0 or >= Program.BIT_WALL
+            || !map.GetMapData().Walls.ContainsKey(id))
         {
             Console.WriteLine($"A_SetWall: '{args.ElementAtOrDefault(0)}' isn't a walls.yaml wall id.");
             return false;
@@ -287,14 +293,14 @@ internal partial class Program
         foreach (var (x, y) in TaggedWalls(trigger))
         {
             // keeping the door-side mark on a wall beside a door
-            _mapManager.tilemap[x, y] = (byte)(id | (_mapManager.tilemap[x, y] & BIT_WALL));
-            _mapManager.RestartAnimations(x, y, gamestate.TimeCount);
+            map.tilemap[x, y] = (byte)(id | (map.tilemap[x, y] & Program.BIT_WALL));
+            map.RestartAnimations(x, y, session.gamestate.TimeCount);
             any = true;
         }
         return any;
     }
 
-    private static bool ChangeTextureAction(TriggerActivation trigger, string[] args)
+    private bool ChangeTextureAction(TriggerActivation trigger, string[] args)
     {
         var from = args.ElementAtOrDefault(0);
         var to = args.ElementAtOrDefault(1);
@@ -310,7 +316,7 @@ internal partial class Program
         if (trigger.TileX >= 0 && trigger.TileY >= 0)
             tiles.Add((trigger.TileX, trigger.TileY));
         if (trigger.Tag != 0)
-            tiles.AddRange(_mapManager.TaggedTiles(trigger.Tag).Where(t => t != (trigger.TileX, trigger.TileY)));
+            tiles.AddRange(map.TaggedTiles(trigger.Tag).Where(t => t != (trigger.TileX, trigger.TileY)));
 
         bool any = false, flats = false;
         foreach (var (x, y) in tiles)
@@ -320,44 +326,44 @@ internal partial class Program
             if (!onFlat && !walls.Any(name => Shows(name, from)))
                 continue;
 
-            _mapManager.ChangeTexture(x, y, from, to, gamestate.TimeCount);
+            map.ChangeTexture(x, y, from, to, session.gamestate.TimeCount);
             any = true;
             flats |= onFlat;
         }
 
         if (flats)
-            _mapManager.RebuildFlats();
+            map.RebuildFlats();
         return any;
     }
 
-    private static bool Shows(string? name, string texture) => name != null && name.Equals(texture, StringComparison.OrdinalIgnoreCase);
+    internal static bool Shows(string? name, string texture) => name != null && name.Equals(texture, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// The textures a tile shows now (through any A_ChangeTexture on it): its wall's faces, or its
     /// door's (and its locked ones), and its floor and ceiling
     /// </summary>
-    private static (IEnumerable<string> Walls, string? Floor, string? Ceiling) TileTextures(int x, int y)
+    private (IEnumerable<string> Walls, string? Floor, string? Ceiling) TileTextures(int x, int y)
     {
-        var tile = _mapManager.tilemap[x, y];
+        var tile = map.tilemap[x, y];
         MapTextureTranslation? faces = null;
         MapTextureTranslation? locked = null;
-        if ((tile & BIT_DOOR) != 0)
+        if ((tile & Program.BIT_DOOR) != 0)
         {
-            var door = doorobjlist[tile & ~BIT_DOOR];
+            var door = doors.doorobjlist[tile & ~Program.BIT_DOOR];
             faces = door.xlat;
             locked = door.xlat?.Locked;
         }
-        else if ((tile & ~BIT_WALL) != 0)
-            _mapManager.GetMapData().Walls.TryGetValue(tile & ~BIT_WALL, out faces);
+        else if ((tile & ~Program.BIT_WALL) != 0)
+            map.GetMapData().Walls.TryGetValue(tile & ~Program.BIT_WALL, out faces);
 
         var names = new[] { faces, locked }
             .Where(f => f != null)
             .SelectMany(f => new[] { f!.North, f.South, f.East, f.West })
             .Where(name => !string.IsNullOrEmpty(name))
-            .Select(name => _mapManager.ChangedTexture(x, y, name));
-        if (_mapManager.GetDiagonal(x, y)?.Texture is { Length: > 0 } diagonal)
-            names = names.Append(_mapManager.ChangedTexture(x, y, diagonal));
+            .Select(name => map.ChangedTexture(x, y, name));
+        if (map.GetDiagonal(x, y)?.Texture is { Length: > 0 } diagonal)
+            names = names.Append(map.ChangedTexture(x, y, diagonal));
 
-        return (names, _mapManager.FlatTextureName(x, y, ceiling: false), _mapManager.FlatTextureName(x, y, ceiling: true));
+        return (names, map.FlatTextureName(x, y, ceiling: false), map.FlatTextureName(x, y, ceiling: true));
     }
 }
