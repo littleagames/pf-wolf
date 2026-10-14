@@ -238,6 +238,7 @@ internal partial class Program
         lineOfSight = new LineOfSight(_mapManager, doors, session, WallSpriteBlocksLine);
         switchActions = MakeSwitchActions();
         smartSwitches = MakeSmartSwitches();
+        hubs = new Hubs(_gameEngineManager, _mapManager, session);
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
