@@ -102,5 +102,8 @@ internal sealed class GameSession
 
     internal gametype gamestate = new gametype();
 
+    /// <summary>id's random numbers, which every machine and every demo has to step through alike</summary>
+    internal readonly RandomTable random = new();
+
     internal readonly Camera camera;
 }

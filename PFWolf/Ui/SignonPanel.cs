@@ -1,55 +1,38 @@
 using PFWolf.Assets;
 using PFWolf.Assets.Sounds;
 using PFWolf.Fonts;
-using PFWolf.Managers;
 
-namespace PFWolf;
+namespace PFWolf.Ui;
 
 /// <summary>
 /// The signon screen's startup info, printed in the open area of its pic (game-info signon
 /// text-area): what's running, how it's set up, and whether startup printed any warnings
 /// </summary>
-internal partial class Program
-{
-    // Everything written to stdout from the start until the signon screen is done
-    private static StartupOutput? startupOutput;
-
-    // The next line's top in the text area; lines past its bottom are left out
-    private static int signonY;
+/// <param name="mouseEnabled">Whether the mouse is on (the Control menu's setting)</param>
+/// <param name="scriptCount">How many Lua scripts loaded</param>
+internal sealed class SignonPanel(GameEngineManager engine, AssetManager assets, VideoManager video, InputManager input,
+    AudioManager audio, GraphicManager graphics, FontManager fonts, UiText ui, Func<bool> mouseEnabled, Func<int> scriptCount)
+{    // The next line's top in the text area; lines past its bottom are left out
+    private int signonY;
 
     private static readonly string[] SignonLabels = ["Engine:", "Game:", "Mods:", "Video:", "Input:", "Sound:", "Content:", "Warnings:"];
 
-    private static SignonTextArea? SignonArea => _gameEngineManager.GetGameInfo().Signon.TextArea;
-
-    private static void CaptureStartupOutput() => startupOutput = StartupOutput.Capture();
-
-    /// <summary>
-    /// Stops keeping stdout and returns what startup wrote to it, which the console's
-    /// scrollback starts with
-    /// </summary>
-    private static List<string> StopCapturingStartupOutput()
-    {
-        var lines = startupOutput?.Stop() ?? [];
-        startupOutput = null;
-        _consoleManager.AddToScrollback(lines);
-        return lines;
-    }
-
+    private SignonTextArea? SignonArea => engine.GetGameInfo().Signon.TextArea;
     /// <summary>The lines known as soon as the signon is drawn: what's running and how it's shown</summary>
-    private static void PrintSignonInfo()
+    internal void PrintSignonInfo()
     {
         if (SignonArea is not { } area)
             return;
 
         signonY = area.Y;
         SignonLine(area, "Engine:", $"PFWolf v{GameEngineManager.EngineVersion}");
-        SignonLine(area, "Game:", _assetManager.GetGameDescription() ?? _gameEngineManager.GamePackId);
+        SignonLine(area, "Game:", assets.GetGameDescription() ?? engine.GamePackId);
         SignonLine(area, "Mods:", ModsSummary(area));
         SignonLine(area, "Video:", VideoSummary());
     }
 
     /// <summary>The lines that need the config read, then the warnings startup printed</summary>
-    private static void FinishSignonInfo(List<string> startupLines)
+    internal void FinishSignonInfo(List<string> startupLines)
     {
         if (SignonArea is not { } area)
             return;
@@ -60,9 +43,9 @@ internal partial class Program
         PrintSignonWarnings(area, startupLines);
     }
 
-    private static string ModsSummary(SignonTextArea area)
+    private string ModsSummary(SignonTextArea area)
     {
-        var names = _assetManager.LoadedMods.Select(mod => mod.DisplayName).ToList();
+        var names = assets.LoadedMods.Select(mod => mod.DisplayName).ToList();
         if (names.Count == 0)
             return "none";
 
@@ -78,53 +61,53 @@ internal partial class Program
     }
 
     // The window's size, and the size the game draws at when that's different
-    private static string VideoSummary()
+    private string VideoSummary()
     {
-        var settings = _videoManager.Settings;
+        var settings = video.Settings;
         var shownIn = settings.Fullscreen ? "Fullscreen" : $"Window {settings.WindowWidth}x{settings.WindowHeight}";
-        var drawnAt = $"{_videoManager.screenWidth}x{_videoManager.screenHeight}";
+        var drawnAt = $"{video.screenWidth}x{video.screenHeight}";
         return settings.Fullscreen || drawnAt != $"{settings.WindowWidth}x{settings.WindowHeight}"
             ? $"{shownIn}, drawn {drawnAt}"
             : shownIn;
     }
 
     // The keyboard always works, so only the mouse and controller are named
-    private static string InputSummary()
-        => $"{(mouseenabled ? "Mouse" : "No mouse")}, {_inputManager.ControllerName ?? "no controller"}";
+    private string InputSummary()
+        => $"{(mouseEnabled() ? "Mouse" : "No mouse")}, {input.ControllerName ?? "no controller"}";
 
-    private static string SoundSummary()
+    private string SoundSummary()
     {
-        if (!_audioManager.IsAvailable)
+        if (!audio.IsAvailable)
             return "Off, OpenAL failed (see warnings)";
 
         var effects = new List<string>();
-        if (_audioManager.DigitizedSoundEnabled)
+        if (audio.DigitizedSoundEnabled)
             effects.Add("Digi");
-        if (_audioManager.AdLibSoundEnabled)
+        if (audio.AdLibSoundEnabled)
             effects.Add("AdLib");
-        if (_audioManager.PcSoundEnabled)
+        if (audio.PcSoundEnabled)
             effects.Add("PC");
 
         var sound = effects.Count == 0 ? "No effects" : string.Join(", ", effects);
-        return $"{sound}; music {(_audioManager.MusicEnabled ? "on" : "off")}";
+        return $"{sound}; music {(audio.MusicEnabled ? "on" : "off")}";
     }
 
-    private static void PrintContentSummary(SignonTextArea area)
+    private void PrintContentSummary(SignonTextArea area)
     {
-        int maps = _assetManager.CountNames(typeof(MapAsset));
-        int walls = _assetManager.CountNames(typeof(TextureAsset));
-        int sprites = _assetManager.CountNames(typeof(SpriteAsset));
+        int maps = assets.CountNames(typeof(MapAsset));
+        int walls = assets.CountNames(typeof(TextureAsset));
+        int sprites = assets.CountNames(typeof(SpriteAsset));
         // Every sound has an AdLib version (named alNAME, as its PC one is pcNAME), and some a digitized one
-        int sounds = _assetManager.CountNames(typeof(AdLibSound));
-        int digitized = _assetManager.CountNames(typeof(Wolf3dDigitizedAudio), typeof(SoundFileAsset));
-        int songs = _assetManager.CountNames(typeof(Wolf3dImfAudio), typeof(MusicFileAsset));
+        int sounds = assets.CountNames(typeof(AdLibSound));
+        int digitized = assets.CountNames(typeof(Wolf3dDigitizedAudio), typeof(SoundFileAsset));
+        int songs = assets.CountNames(typeof(Wolf3dImfAudio), typeof(MusicFileAsset));
         SignonLine(area, "Content:", $"{maps} maps, {walls} walls, {sprites} sprites");
-        int scripts = _scripts?.Loaded.Count ?? 0;
+        int scripts = scriptCount();
         SignonLine(area, null, $"{sounds} sounds ({digitized} digitized), {songs} songs{(scripts > 0 ? $", {scripts} {(scripts == 1 ? "script" : "scripts")}" : "")}");
     }
 
     /// <summary>How many lines startup printed, then as many of them as there's room for</summary>
-    private static void PrintSignonWarnings(SignonTextArea area, List<string> startupLines)
+    private void PrintSignonWarnings(SignonTextArea area, List<string> startupLines)
     {
         var warnings = startupLines.Where(line => !string.IsNullOrWhiteSpace(line)).Select(line => line.Trim()).ToList();
         if (warnings.Count == 0)
@@ -142,42 +125,42 @@ internal partial class Program
     /// A line of the text area: its name, and its value beside it (cut short with "..." when it's
     /// too long). Nothing is printed once the area is full.
     /// </summary>
-    private static void SignonLine(SignonTextArea area, string? label, string value, string? color = null)
+    private void SignonLine(SignonTextArea area, string? label, string value, string? color = null)
     {
-        MeasureText(value, area.Font, out _, out int height);
+        ui.MeasureText(value, area.Font, out _, out int height);
         if (height <= 0 || signonY + height > area.Y + area.Height)
             return;
 
         var style = new TextStyle(area.Font, area.LabelColor, area.Background);
         if (label != null)
-            _graphicManager.DrawText(area.X, signonY, label, style);
+            graphics.DrawText(area.X, signonY, label, style);
 
         int valueX = SignonValueX(area);
-        _graphicManager.DrawText(valueX, signonY, FitSignonText(area, value, area.X + area.Width - valueX),
+        graphics.DrawText(valueX, signonY, FitSignonText(area, value, area.X + area.Width - valueX),
             style with { Color = color ?? area.Color });
         signonY += height;
     }
 
     /// <summary>Where values start: past the longest name</summary>
-    private static int SignonValueX(SignonTextArea area)
-        => area.X + SignonLabels.Max(label => TextWidth(label, area.Font)) + 4;
+    private int SignonValueX(SignonTextArea area)
+        => area.X + SignonLabels.Max(label => ui.TextWidth(label, area.Font)) + 4;
 
-    private static int SignonLinesLeft(SignonTextArea area)
+    private int SignonLinesLeft(SignonTextArea area)
     {
-        MeasureText("A", area.Font, out _, out int height);
+        ui.MeasureText("A", area.Font, out _, out int height);
         return height <= 0 ? 0 : (area.Y + area.Height - signonY) / height;
     }
 
-    private static bool SignonTextFits(SignonTextArea area, string text)
-        => TextWidth(text, area.Font) <= area.X + area.Width - SignonValueX(area);
+    private bool SignonTextFits(SignonTextArea area, string text)
+        => ui.TextWidth(text, area.Font) <= area.X + area.Width - SignonValueX(area);
 
-    private static string FitSignonText(SignonTextArea area, string text, int width)
+    private string FitSignonText(SignonTextArea area, string text, int width)
     {
-        if (TextWidth(text, area.Font) <= width)
+        if (ui.TextWidth(text, area.Font) <= width)
             return text;
 
         const string ellipsis = "...";
-        var font = _fontManager.Find(area.Font);
+        var font = fonts.Find(area.Font);
         if (font == null)
             return text;
 

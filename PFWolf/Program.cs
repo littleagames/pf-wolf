@@ -31,6 +31,87 @@ internal partial class Program
     // Who's playing, the acting player, tics, gamestate and the camera (Gameplay/GameSession.cs)
     internal static readonly GameSession session = new();
 
+    /*
+    =============================================================================
+
+                        TEXT, WINDOWS, LINE INPUT, RANDOM NUMBERS
+
+    What ID_US gave the rest of the game, now in Ui/ (text and line input), Gameplay/RandomTable.cs
+    and Gameplay/HighScore.cs; these forward to them.
+
+    =============================================================================
+    */
+
+    static UiText ui = null!;               // made in InitServices
+    static LineInput lineInput = null!;
+
+    internal const string SMALL_FONT = UiFonts.SMALL_FONT;
+    internal const string LARGE_FONT = UiFonts.LARGE_FONT;
+    internal const string MENU_FONT = UiFonts.MENU_FONT;
+    internal static TextStyle MenuStyle(string color) => UiFonts.MenuStyle(color);
+
+    internal const int MaxX = 320;
+    internal const int MaxY = 200;
+    internal const int MaxHelpLines = 500;
+    internal const int MaxHighName = HighScore.MaxHighName;
+    internal const int LegacyScoreCount = HighScore.LegacyScoreCount;
+    internal const int MaxGameName = 32;    // a save's name, as typed in the save menu, is one less
+    internal const int MaxString = LineInput.MaxString;
+
+    internal static TextWindow TextAt(int x, int y, TextStyle style) => ui.TextAt(x, y, style);
+    internal static TextWindow CenteredText(int x, int width, int y, TextStyle style) => ui.CenteredText(x, width, y, style);
+    internal static void MeasureText(string text, string font, out int width, out int height) => ui.MeasureText(text, font, out width, out height);
+    internal static int TextWidth(string text, string font) => ui.TextWidth(text, font);
+    internal static string FitText(string text, int width, string font) => ui.FitText(text, width, font);
+    internal static TextWindow US_DrawWindow(int x, int y, int w, int h, TextStyle style) => ui.DrawWindow(x, y, w, h, style);
+    internal static void USL_XORICursor(int x, int y, string s, int cursor, TextStyle style) => ui.XORICursor(x, y, s, cursor, style);
+    internal static bool US_LineInput(int x, int y, ref string buf, string def, bool escok, int maxchars, int maxwidth, TextStyle style)
+        => lineInput.Run(x, y, ref buf, def, escok, maxchars, maxwidth, style);
+    internal static char USL_RotateChar(char ch, int dir) => LineInput.RotateChar(ch, dir);
+
+    // The high score table: Wolf3D's, until InitHighScores puts in the game pack's
+    internal static HighScore[] Scores = HighScore.WolfDefaults();
+    internal static int MaxScores => Scores.Length;
+    internal static void InitHighScores() => Scores = HighScore.TableFor(_gameEngineManager.GetGameInfo().HighScores, Scores);
+
+    internal static int rndindex { get => session.random.rndindex; set => session.random.rndindex = value; }
+    internal static void US_InitRndT(bool randomize) => session.random.InitRndT(randomize);
+    internal static int US_RndT() => session.random.RndT();
+
+    // Everything written to stdout from the start until the signon screen is done
+    private static StartupOutput? startupOutput;
+
+    // The signon screen's startup info (Ui/SignonPanel.cs)
+    static SignonPanel signonPanel = null!;   // made in InitServices
+    private static void PrintSignonInfo() => signonPanel.PrintSignonInfo();
+    private static void FinishSignonInfo(List<string> startupLines) => signonPanel.FinishSignonInfo(startupLines);
+
+    private static void CaptureStartupOutput() => startupOutput = StartupOutput.Capture();
+
+    /// <summary>
+    /// Stops keeping stdout and returns what startup wrote to it, which the console's
+    /// scrollback starts with
+    /// </summary>
+    private static List<string> StopCapturingStartupOutput()
+    {
+        var lines = startupOutput?.Stop() ?? [];
+        startupOutput = null;
+        _consoleManager.AddToScrollback(lines);
+        return lines;
+    }
+
+    static bool US_Started;
+
+    internal static void US_Startup()
+    {
+        if (US_Started)
+            return;
+
+        US_InitRndT(true);
+
+        US_Started = true;
+    }
+
     /// <summary>Builds the managers (Startup/GameServices.cs) and hooks them up</summary>
     private static void InitServices()
     {
@@ -54,6 +135,11 @@ internal partial class Program
         _hudMessageManager = serviceProvider.GetRequiredService<HudMessageManager>();
         _factionManager = serviceProvider.GetRequiredService<FactionManager>();
         _translationManager = serviceProvider.GetRequiredService<TranslationManager>();
+
+        ui = new UiText(_graphicManager, _fontManager);
+        lineInput = new LineInput(_graphicManager, _inputManager, _videoManager, ui, ReadAnyControl);
+        signonPanel = new SignonPanel(_gameEngineManager, _assetManager, _videoManager, _inputManager, _audioManager,
+            _graphicManager, _fontManager, ui, () => mouseenabled, () => _scripts?.Loaded.Count ?? 0);
 
         // TODO: Remove circular dependencies here
     }
