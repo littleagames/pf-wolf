@@ -100,6 +100,42 @@ internal partial class Program
         return lines;
     }
 
+    // The high scores, and the level-end and victory screens (Ui/HighScoresScreen.cs,
+    // Ui/IntermissionScreen.cs, made in InitServices)
+    static HighScoresScreen highScoresScreen = null!;
+    static IntermissionScreen intermissionScreen = null!;
+    internal static Dictionary<string, LRstruct> LevelRatios { get => session.LevelRatios; set => session.LevelRatios = value; }
+    internal static void DrawHighScores() => highScoresScreen.DrawHighScores();
+    internal static void CheckHighScore(int score, bool won) => highScoresScreen.CheckHighScore(score, won);
+    internal static void LevelCompleted() => intermissionScreen.LevelCompleted();
+    internal static ClusterInfo WonCluster() => intermissionScreen.WonCluster();
+    internal static Entities.Color VictoryFadeColor(ClusterInfo cluster) => IntermissionScreen.VictoryFadeColor(cluster);
+    internal static void Victory() => intermissionScreen.Victory();
+    static IntermissionAsset Intermission => intermissionScreen.Intermission;           // the death cam's text uses these too
+    static TextStyle IntermissionTextStyle => intermissionScreen.IntermissionTextStyle;
+    internal static void NonShareware() => titleScreens.NonShareware();
+    internal static void PG13() => titleScreens.PG13();
+
+    static IntermissionHooks MakeIntermissionHooks() => new(
+        ViewColorBorder: () =>
+        {
+            if (bordercol != "VIEWCOLOR")
+                DrawStatusBorder("VIEWCOLOR");
+        },
+        GiveEveryone: bonus =>
+        {
+            // Everyone's bonus, with others: each machine gives each player theirs alike
+            foreach (var p in players)
+            {
+                using var _ = ActAs(p);
+                GivePoints(bonus);
+            }
+        },
+        DrawScore: DrawScore,
+        DrawPlayBorder: DrawPlayBorder,
+        GameWon: () => { FindMenuItem(MainMenu, "savegame")?.active = 0; },
+        EndText: EndText);
+
     // game-info's intro and title-loop screens, and Blake Stone's movies (Ui/TitleScreens.cs,
     // Ui/MoviePlayer.cs)
     static MoviePlayer moviePlayer = null!;     // made in InitServices
@@ -178,10 +214,14 @@ internal partial class Program
             menuDrawing, menuLoop, menuInput, menuDefs, ui, () => ingame);
         customizeScreen = new CustomizeControlsScreen(_assetManager, _inputManager, _audioManager, _videoManager,
             menuDrawing, menuLoop, menuInput, menuDefs, ui, controls);
+        highScoresScreen = new HighScoresScreen(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
+            _graphicManager, menuDrawing, menuDefs, ui, lineInput, session, () => Scores, FloorScore);
+        intermissionScreen = new IntermissionScreen(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
+            _graphicManager, menuDrawing, ui, session, MakeIntermissionHooks());
         loadSaveScreen = new LoadSaveScreen(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
             _graphicManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, lineInput, MakeLoadSaveHooks());
         moviePlayer = new MoviePlayer(_assetManager, _videoManager, _inputManager, _audioManager, menuInput);
-        titleScreens = new TitleScreens(_videoManager, _audioManager, _inputManager, _graphicManager, _assetManager, moviePlayer,
+        titleScreens = new TitleScreens(_videoManager, _audioManager, _inputManager, _graphicManager, _assetManager, menuDrawing, ui, moviePlayer,
             new TitleScreenHooks(
                 DemoExists,
                 demonumber => { PlayDemo(demonumber); return playstate == playstatetypes.ex_abort; },

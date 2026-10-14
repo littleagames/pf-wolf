@@ -9,6 +9,12 @@ internal class HighScore
     /// <summary>How many high scores config.cfg's original block holds; a longer table is appended after the settings</summary>
     internal const int LegacyScoreCount = 7;
 
+    /// <summary>
+    /// Set in a high score's completed level when the game was won, so it ranks above a score
+    /// that ended part way and can show the game-info high-scores won-pic
+    /// </summary>
+    internal const ushort Won = 0x8000;
+
     public string name;
     public int score;
     public ushort completed, episode;
@@ -53,6 +59,30 @@ internal class HighScore
                 : new HighScore { name = d.Name, score = d.Score, completed = (ushort)d.Level };
         }
         return table;
+    }
+
+    /// <summary>
+    /// Puts <paramref name="myscore"/> in its place in the table, the ones below it moving down
+    /// (the last falling off): its row, or -1 when it didn't make the table. A tie goes to the
+    /// one that got further.
+    /// </summary>
+    internal static int Insert(HighScore[] scores, HighScore myscore)
+    {
+        ushort i, j;
+        int n;
+        for (i = 0, n = -1; i < scores.Length; i++)
+        {
+            if ((myscore.score > scores[i].score)
+                || ((myscore.score == scores[i].score) && (myscore.completed > scores[i].completed)))
+            {
+                for (j = (ushort)scores.Length; --j > i;)
+                    scores[j] = scores[j - 1];
+                scores[i] = myscore;
+                n = i;
+                break;
+            }
+        }
+        return n;
     }
 
     // The name is a fixed, zero-padded run of Latin-1 bytes. (Written as chars it was UTF-8,

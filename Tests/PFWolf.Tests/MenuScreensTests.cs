@@ -179,7 +179,7 @@ public class MoviePlayerTests
 public class TitleScreensTests
 {
     private static TitleScreens WithDemos(params int[] demos) =>
-        new(null!, null!, null!, null!, null!, null!,
+        new(null!, null!, null!, null!, null!, null!, null!, null!,
             new TitleScreenHooks(demos.Contains, _ => false, () => { }, () => { }, () => { }, _ => { }));
 
     [Test]

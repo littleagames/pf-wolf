@@ -1,0 +1,577 @@
+using PFWolf.Assets;
+using PFWolf.Constants;
+using PFWolf.Extensions;
+using PFWolf.Fonts;
+
+namespace PFWolf.Ui;
+
+/// <summary>What the level-end and victory screens need from the game</summary>
+/// <param name="ViewColorBorder">Paints the status bar's border in the view color, if it isn't already</param>
+/// <param name="GiveEveryone">Gives every player the level's bonus points (each machine gives each player theirs alike)</param>
+/// <param name="DrawScore">Draws the score on the status bar</param>
+/// <param name="DrawPlayBorder">Draws the border round the view again</param>
+/// <param name="GameWon">After the victory tally: the menu's Save Game goes grey</param>
+/// <param name="EndText">The won game's end text</param>
+internal sealed record IntermissionHooks(Action ViewColorBorder, Action<int> GiveEveryone, Action DrawScore, Action DrawPlayBorder,
+    Action GameWon, Action EndText);
+
+/// <summary>
+/// The level-end screen (intermission.yaml): the floor, time and par, the time bonus and the
+/// kill, secret and treasure ratios counted up, with BJ breathing; and the won game's victory
+/// tally, victory frames and end screens
+/// </summary>
+internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio,
+    VideoManager video, GraphicManager graphics, MenuDrawing draw, UiText ui, GameSession session, IntermissionHooks hooks)
+{
+    int lastBreathTime = 0;
+
+    /// <summary>
+    /// Fills the screen in the view color from the top down to the bottom status bar's first
+    /// line, for the level-end screens drawn over the play area
+    /// </summary>
+    private void ClearAboveStatusBar() =>
+        video.BarScaledCoord(0, 0, video.screenWidth,
+            video.ScreenYAboveBottom(Program.STATUSLINES - 1), "VIEWCOLOR");
+
+    private IntermissionAsset? intermission;
+    private static readonly IntermissionAsset NoIntermission = new();
+
+    /// <summary>The game pack's level-end screen settings (intermission.yaml); empty if it has none.</summary>
+    internal IntermissionAsset Intermission =>
+        intermission ?? (intermission = assets.FindInGamePackIfAny<IntermissionAsset>("intermission")) ?? NoIntermission;
+
+    /// <summary>Plays one of the intermission's sounds; one it leaves out is silent.</summary>
+    private void PlayIntermissionSound(string? name)
+    {
+        if (!string.IsNullOrEmpty(name))
+            audio.Play(name);
+    }
+
+    internal void LevelCompleted()
+    {
+        var language = assets.GetText("en-us");
+        // intermission.yaml sounds pause-ms
+        uint PAUSE_MS = (uint)Math.Max(Intermission.Sounds.PauseMs ?? 0, 0);
+        // intermission.yaml scoring
+        int PAR_AMOUNT = Math.Max(Intermission.Scoring.TimeBonus ?? 0, 0);
+        int PERCENT100AMT = Math.Max(Intermission.Scoring.PerfectBonus ?? 0, 0);
+
+        int i, min, sec, ratio, kr, sr, tr;
+        string tempstr = "";
+        int bonus, timeleft = 0;
+
+        ClearAboveStatusBar();
+
+        hooks.ViewColorBorder();
+
+        // Laid out in the screen above the status bar, however tall
+        using var origin = video.UseUiOriginAboveBottom(Program.STATUSLINES);
+
+        if (!string.IsNullOrEmpty(Intermission.Music))
+            audio.PlayMusic(Intermission.Music);
+
+        //
+        // do the intermission
+        //
+        input.ClearKeysDown();
+        input.StartAck();
+        bj_which = 0;
+        DrawBJ();
+
+        var gameInfo = engine.GetGameInfo();
+        var mapInfo = gameInfo.Maps[session.gamestate.mapon];
+        //if (session.gamestate.mapon < LRpack)
+        {
+            foreach (var label in Intermission.Labels ?? [])
+                ui.TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
+            WriteValue("bonus", "0");
+            WriteValue("floor", mapInfo.FloorNumber.ToString());
+            WriteValue("par", int.SecondsAsTime(mapInfo.ParTime));
+            //
+            // PRINT TIME
+            //
+            sec = session.gamestate.TimeCount / 70;
+
+            if (sec > 99 * 60)      // 99 minutes max
+                sec = 99 * 60;
+            if (session.gamestate.TimeCount < mapInfo.ParTime * 70)
+                timeleft = mapInfo.ParTime - sec;
+
+            min = sec / 60;
+            sec %= 60;
+            WriteValue("time", $"{min:00}:{sec:00}");
+
+            video.Update();
+            video.FadeIn();
+
+
+            //
+            // FIGURE RATIOS OUT BEFOREHAND
+            //
+            (kr, sr, tr) = Ratios(session.gamestate);
+
+
+            //
+            // PRINT TIME BONUS
+            //
+            bonus = timeleft * PAR_AMOUNT;
+            if (bonus != 0)
+            {
+                for (i = 0; i <= timeleft; i++)
+                {
+                    tempstr = (i * PAR_AMOUNT).ToString();
+                    WriteValue("bonus", tempstr);
+                    if ((i % Math.Max(PAR_AMOUNT / 10, 1)) == 0)
+                        PlayIntermissionSound(Intermission.Sounds.Tally);
+                    video.Update();
+                    while (audio.IsAnySoundPlaying())
+                        BJ_Breathe();
+                    if (input.CheckAck())
+                        goto done;
+                }
+
+                video.Update();
+
+                PlayIntermissionSound(Intermission.Sounds.TallyDone);
+                while (audio.IsAnySoundPlaying())
+                    BJ_Breathe();
+            }
+
+            //
+            // KILL RATIO
+            //
+            ratio = kr;
+            for (i = 0; i <= ratio; i++)
+            {
+                tempstr = i.ToString();
+                WriteValue("kill", tempstr);
+                if ((i % 10) == 0)
+                    PlayIntermissionSound(Intermission.Sounds.Tally);
+                video.Update();
+                while (audio.IsAnySoundPlaying())
+                    BJ_Breathe();
+
+                if (input.CheckAck())
+                    goto done;
+            }
+            if (ratio >= 100)
+            {
+                GameEngineManager.DelayMs(PAUSE_MS);
+                audio.StopAll();
+                bonus += PERCENT100AMT;
+                tempstr = bonus.ToString();
+                WriteValue("bonus", tempstr);
+                video.Update();
+                PlayIntermissionSound(Intermission.Sounds.Perfect);
+            }
+            else if (ratio == 0)
+            {
+                GameEngineManager.DelayMs(PAUSE_MS);
+                audio.StopAll();
+                PlayIntermissionSound(Intermission.Sounds.None);
+            }
+            else
+                PlayIntermissionSound(Intermission.Sounds.TallyDone);
+
+            video.Update();
+            while (audio.IsAnySoundPlaying())
+                BJ_Breathe();
+
+            //
+            // SECRET RATIO
+            //
+            ratio = sr;
+            for (i = 0; i <= ratio; i++)
+            {
+                tempstr = i.ToString();
+                WriteValue("secret", tempstr);
+                if ((i % 10) == 0)
+                    PlayIntermissionSound(Intermission.Sounds.Tally);
+                video.Update();
+                while (audio.IsAnySoundPlaying())
+                    BJ_Breathe();
+
+                if (input.CheckAck())
+                    goto done;
+            }
+            if (ratio >= 100)
+            {
+                GameEngineManager.DelayMs(PAUSE_MS);
+                audio.StopAll();
+                bonus += PERCENT100AMT;
+                tempstr = bonus.ToString();
+                WriteValue("bonus", tempstr);
+                video.Update();
+                PlayIntermissionSound(Intermission.Sounds.Perfect);
+            }
+            else if (ratio == 0)
+            {
+                GameEngineManager.DelayMs(PAUSE_MS);
+                audio.StopAll();
+                PlayIntermissionSound(Intermission.Sounds.None);
+            }
+            else
+                PlayIntermissionSound(Intermission.Sounds.TallyDone);
+            video.Update();
+            while (audio.IsAnySoundPlaying())
+                BJ_Breathe();
+
+            //
+            // TREASURE RATIO
+            //
+            ratio = tr;
+            for (i = 0; i <= ratio; i++)
+            {
+                tempstr = i.ToString();
+                WriteValue("treasure", tempstr);
+                if ((i % 10) == 0)
+                    PlayIntermissionSound(Intermission.Sounds.Tally);
+                video.Update();
+                while (audio.IsAnySoundPlaying())
+                    BJ_Breathe();
+                if (input.CheckAck())
+                    goto done;
+            }
+            if (ratio >= 100)
+            {
+                GameEngineManager.DelayMs(PAUSE_MS);
+                audio.StopAll();
+                bonus += PERCENT100AMT;
+                tempstr = bonus.ToString();
+                WriteValue("bonus", tempstr);
+                video.Update();
+                PlayIntermissionSound(Intermission.Sounds.Perfect);
+            }
+            else if (ratio == 0)
+            {
+                GameEngineManager.DelayMs(PAUSE_MS);
+                audio.StopAll();
+                PlayIntermissionSound(Intermission.Sounds.None);
+            }
+            else
+                PlayIntermissionSound(Intermission.Sounds.TallyDone);
+            video.Update();
+            while (audio.IsAnySoundPlaying())
+                BJ_Breathe();
+
+
+            //
+            // JUMP STRAIGHT HERE IF KEY PRESSED
+            //
+        done:
+            tempstr = kr.ToString();
+            WriteValue("kill", tempstr);
+
+            tempstr = sr.ToString();
+            WriteValue("secret", tempstr);
+
+            tempstr = tr.ToString();
+            WriteValue("treasure", tempstr);
+
+            bonus = LevelBonus(timeleft, PAR_AMOUNT, PERCENT100AMT, kr, sr, tr);
+
+            // Everyone's bonus, with others: each machine gives each player theirs alike
+            hooks.GiveEveryone(bonus);
+            tempstr = bonus.ToString();
+            WriteValue("bonus", tempstr);
+
+            //
+            // SAVE RATIO INFORMATION FOR ENDGAME
+            //
+            // The latest run through a floor counts; the win tally averages the won cluster's floors
+            session.LevelRatios[session.gamestate.mapon] =
+                new Program.LRstruct
+            {
+                kill = (short)kr,
+                secret = (short)sr,
+                treasure = (short)tr,
+                time = min * 60 + sec
+            };
+
+            // TODO This should be set up as different LevelCompleted "screens"???
+        }
+        //else
+        //{
+        //    Write(14, 4, "secret floor\n completed!");
+        //    Write(10, 16, "15000 bonus!");
+
+        //    video.Update();
+        //    video.FadeIn();
+
+        //    GivePoints(15000);
+        //}
+
+
+        hooks.DrawScore();
+        video.Update();
+
+        lastBreathTime = (int)GameEngineManager.GetTimeCount();
+        input.StartAck();
+        while (!input.CheckAck())
+            BJ_Breathe();
+
+        //
+        // done
+        //
+
+        // A level whose end-message ends the game (the Spear demo's last floor) shows it here
+        if (!string.IsNullOrEmpty(mapInfo.EndMessage))
+        {
+            audio.Play("misc/1up");
+            draw.Message(mapInfo.EndMessage.ToLanguageText(language));
+            input.ClearKeysDown();
+            input.Ack();
+        }
+
+        video.FadeOut();
+        hooks.DrawPlayBorder();
+    }
+
+    /// <summary>
+    /// What the game-info shows when the current cluster is won; an empty one when it has no entry
+    /// </summary>
+    internal ClusterInfo WonCluster()
+        => engine.GetGameInfo().Clusters.GetValueOrDefault(session.gamestate.cluster) ?? new();
+
+    /// <summary>
+    /// The color a won cluster fades to (its victory-fade-color), or black
+    /// </summary>
+    internal static Entities.Color VictoryFadeColor(ClusterInfo cluster)
+        => string.IsNullOrEmpty(cluster.VictoryFadeColor)
+            ? new Entities.Color { Alpha = 255 }
+            : Entities.Color.FromHexRGBA(cluster.VictoryFadeColor);
+
+    /// <summary>A level's kill, secret and treasure ratios in percent; one with none of something is 0</summary>
+    internal static (int Kill, int Secret, int Treasure) Ratios(gametype gamestate)
+    {
+        int kr = 0, sr = 0, tr = 0;
+        if (gamestate.killtotal != 0)
+            kr = (gamestate.killcount * 100) / gamestate.killtotal;
+        if (gamestate.secrettotal != 0)
+            sr = (gamestate.secretcount * 100) / gamestate.secrettotal;
+        if (gamestate.treasuretotal != 0)
+            tr = (gamestate.treasurecount * 100) / gamestate.treasuretotal;
+        return (kr, sr, tr);
+    }
+
+    /// <summary>The level's bonus: the time left under par at so much a second, and so much for each ratio at 100%</summary>
+    internal static int LevelBonus(int timeleft, int parAmount, int perfectAmount, int kr, int sr, int tr)
+        => timeleft * parAmount +
+            (perfectAmount * ((kr >= 100) ? 1 : 0)) +
+            (perfectAmount * ((sr >= 100) ? 1 : 0)) +
+            (perfectAmount * ((tr >= 100) ? 1 : 0));
+
+    /// <summary>
+    /// Total time (minutes and seconds, 99:99 at most) and average ratios over the floors of the
+    /// won cluster that were completed. id divided by a fixed floor count (8, or 20 in Spear),
+    /// counting floors never played (Spear's boss floors, a skipped secret floor) as 0%; this
+    /// averages the ones played.
+    /// </summary>
+    internal static (int Min, int Sec, int Kill, int Secret, int Treasure) ClusterTotals(
+        Dictionary<string, Program.LRstruct> levelRatios, Dictionary<string, MapInfo> maps, int cluster)
+    {
+        var floors = levelRatios
+            .Where(lr => maps.TryGetValue(lr.Key, out var map) && map.Cluster == cluster)
+            .Select(lr => lr.Value)
+            .ToList();
+
+        int sec = floors.Sum(f => f.time);
+        int kr = 0, sr = 0, tr = 0;
+        if (floors.Count > 0)
+        {
+            kr = floors.Sum(f => f.kill) / floors.Count;
+            sr = floors.Sum(f => f.secret) / floors.Count;
+            tr = floors.Sum(f => f.treasure) / floors.Count;
+        }
+
+        int min = sec / 60;
+        sec %= 60;
+
+        if (min > 99)
+            min = sec = 99;
+        return (min, sec, kr, sr, tr);
+    }
+
+    internal void Victory()
+    {
+        var language = assets.GetText("en-us");
+        int sec;
+        int min, kr, sr, tr;
+        var screen = Intermission.Victory ?? new VictoryScreen();
+
+        var cluster = WonCluster();
+        VictoryFrames(cluster);
+
+        if (!string.IsNullOrEmpty(screen.Music))
+            audio.PlayMusic(screen.Music);
+
+        ClearAboveStatusBar();
+        hooks.ViewColorBorder();
+
+        // Laid out in the screen above the status bar, until the end text and screens take over
+        var origin = video.UseUiOriginAboveBottom(Program.STATUSLINES);
+
+        // intermission.yaml victory
+        foreach (var label in screen.Labels)
+            ui.TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
+        foreach (var pic in screen.Pics)
+            graphics.DrawPic(pic.Pic, pic.X, pic.Y);
+        (min, sec, kr, sr, tr) = ClusterTotals(session.LevelRatios, engine.GetGameInfo().Maps, session.gamestate.cluster);
+
+        WriteValue(screen.Values, "time", $"{min:00}:{sec:00}");
+        video.Update();
+
+        WriteValue(screen.Values, "kill", kr.ToString());
+        WriteValue(screen.Values, "secret", sr.ToString());
+        WriteValue(screen.Values, "treasure", tr.ToString());
+
+        //
+        // TOTAL TIME VERIFICATION CODE
+        //
+        //if (session.gamestate.difficulty >= 2)   // medium or harder
+        //{
+        //    graphics.DrawPic(30 * 8, TIMEY * 8, graphicnums.C_TIMECODEPIC);
+        //    fontnumber = "SmallFont";
+        //    fontcolor = READHCOLOR;
+        //    PrintX = 30 * 8 - 3;
+        //    PrintY = TIMEY * 8 + 8;
+        //    PrintX += 4;
+        //    char a = (char)((((min / 10) ^ (min % 10)) ^ 0xa) + 'A');
+        //    char b = (char)((((sec / 10) ^ (sec % 10)) ^ 0xa) + 'A');
+        //    char c = (char)((tempstr[0] ^ tempstr[1]) + 'A');
+        //    tempstr = $"{a}{b}{c}";
+        //    US_Print(tempstr);
+        //}
+
+
+        video.Update();
+        video.FadeIn();
+
+        input.Ack();
+        origin.Dispose();
+
+        video.FadeOut();
+        if (video.HasMargins)
+            video.ClearScreen(0);
+
+        hooks.GameWon();
+
+        hooks.EndText();
+        EndScreens(cluster);
+    }
+
+    /// <summary>
+    /// The cluster's victory-frames, each on the view color for its tics (Spear's BJ collapsing),
+    /// ending in a quick fade to the victory-fade-color
+    /// </summary>
+    private void VictoryFrames(ClusterInfo cluster)
+    {
+        if (cluster.VictoryFrames.Count == 0)
+            return;
+
+        if (!string.IsNullOrEmpty(cluster.VictoryMusic))
+            audio.PlayMusic(cluster.VictoryMusic);
+
+        for (int i = 0; i < cluster.VictoryFrames.Count; i++)
+        {
+            var frame = cluster.VictoryFrames[i];
+            video.FillScreen("VIEWCOLOR");
+            graphics.DrawPic(frame.Pic, frame.X, frame.Y);
+            video.Update();
+            if (i == 0)
+                video.FadeIn();
+            GameEngineManager.WaitVBL((uint)frame.Tics);
+        }
+
+        video.FadeOut(VictoryFadeColor(cluster), 5);
+    }
+
+    /// <summary>
+    /// The cluster's end-screens (Spear's EndSpear): each picture fades in with its palette,
+    /// shows its captions in turn along the bottom (or waits for a key), then fades out
+    /// </summary>
+    private void EndScreens(ClusterInfo cluster)
+    {
+        var language = assets.GetText("en-us");
+
+        foreach (var screen in cluster.EndScreens)
+        {
+            graphics.DrawPic(screen.Pic, 0, 0);
+            video.Update();
+
+            var palette = string.IsNullOrEmpty(screen.Palette) ? null : assets.Find<Palette>(screen.Palette);
+            if (palette == null)
+                video.FadeIn();
+            else
+                video.FadeIn(new GamePalette { Colors = palette.ToSDLColors() }, 30);
+
+            if (screen.Captions.Count == 0)
+            {
+                input.ClearKeysDown();
+                input.Ack();
+            }
+
+            var style = new TextStyle(UiFonts.SMALL_FONT, screen.CaptionColor, screen.CaptionBackground);
+            foreach (var caption in screen.Captions)
+            {
+                video.Bar(0, screen.CaptionY, 320, 200 - screen.CaptionY, screen.CaptionBackground);
+                ui.CenteredText(0, 320, screen.CaptionY, style).CPrint(caption.ToLanguageText(language));
+                video.Update();
+                input.UserInput((uint)screen.CaptionTics);
+            }
+
+            video.FadeOut();
+        }
+    }
+
+    //
+    // Breathe Mr. BJ!!!
+    //
+    // The first breath comes sooner, once per run, as in the original
+    int bj_which = 0, bj_max = 10;
+    internal void BJ_Breathe()
+    {
+        GameEngineManager.DelayMs(5);
+
+        if (Intermission.Bj is not { Pics.Count: > 1 } bj)
+            return;
+
+        if ((int)GameEngineManager.GetTimeCount() - lastBreathTime > bj_max)
+        {
+            bj_which = (bj_which + 1) % bj.Pics.Count;
+            DrawBJ();
+            video.Update();
+            lastBreathTime = (int)GameEngineManager.GetTimeCount();
+            bj_max = bj.BreathTics;
+        }
+    }
+
+    /// <summary>BJ on the level-end screen (intermission.yaml bj), in his current breath</summary>
+    private void DrawBJ()
+    {
+        if (Intermission.Bj is { Pics.Count: > 0 } bj)
+            graphics.DrawPic(bj.Pics[bj_which % bj.Pics.Count], bj.X, bj.Y);
+    }
+
+    /// <summary>The level-end screen's text style: intermission.yaml's font and color, else the intermission font's</summary>
+    internal TextStyle IntermissionTextStyle =>
+        new(Intermission.Font ?? IntermissionStyle.Font, Intermission.Color ?? IntermissionStyle.Color);
+
+    /// <summary>
+    /// A number (or time) on the level-end screen, where intermission.yaml's values put it: from
+    /// its x, or with its right edge at its right. Left out of the layout, it isn't shown.
+    /// </summary>
+    private void WriteValue(string name, string text) => WriteValue(Intermission.Values, name, text);
+
+    private void WriteValue(Dictionary<string, IntermissionValue> values, string name, string text)
+    {
+        if (!values.TryGetValue(name, out var value))
+            return;
+        var style = IntermissionTextStyle;
+        int x = value.Right is { } right ? right - ui.TextWidth(text, style.Font) : value.X;
+        ui.TextAt(x, value.Y, style).Print(text);
+    }
+
+    /// <summary>The intermission, victory and death cam text when intermission.yaml doesn't set a font or color</summary>
+    internal static readonly TextStyle IntermissionStyle = new("IntermissionFont", "White");
+}

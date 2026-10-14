@@ -30,8 +30,45 @@ gets Wolf3D's: the notice, PG-13, then title, credits, high scores and a demo.
 */
 
 internal sealed class TitleScreens(VideoManager video, AudioManager audio, InputManager input, GraphicManager graphics,
-    AssetManager assets, MoviePlayer movies, TitleScreenHooks hooks)
+    AssetManager assets, MenuDrawing draw, UiText ui, MoviePlayer movies, TitleScreenHooks hooks)
 {
+    /// <summary>Wolf3D's notice that the game isn't shareware (game-info non-shareware-notice)</summary>
+    internal void NonShareware()
+    {
+        video.FadeOut();
+
+        draw.ClearMScreen();
+        draw.DrawStripes(10);
+
+        ui.TextAt(110, 15, UiFonts.MenuStyle("READHCOLOR")).Print("Attention");
+
+        var notice = ui.TextAt(40, 60, UiFonts.MenuStyle("HIGHLIGHT"));
+        notice.Print("This game is NOT shareware.\n");
+        notice.Print("Please do not distribute it.\n");
+        notice.Print("Thanks.\n\n");
+
+        notice.Print("        Id Software\n");
+
+        video.Update();
+        video.FadeIn();
+        input.Ack();
+    }
+
+    /// <summary>Wolf3D's PG-13 rating screen</summary>
+    internal void PG13()
+    {
+        video.FadeOut();
+        video.FillScreen("Light Blue");     // background
+
+        graphics.DrawPic("pg13", 216, 110);
+        video.Update();
+
+        video.FadeIn();
+        input.UserInput(Timing.TickBase * 7);
+
+        video.FadeOut();
+    }
+
     /// <summary>The demo the title loop plays next</summary>
     int nextTitleDemo;
 
