@@ -8,6 +8,11 @@ internal sealed class ControlSettings
 {
     internal const int JOYTURNSPEEDS = 10;
 
+    // Whether the mouse and the controller are used at all (the Control menu, config.cfg), and
+    // the mouse's sensitivity, 0 to 9 (the mouse sensitivity screen)
+    internal bool mouseenabled, joystickenabled;
+    internal int mouseadjustment;
+
     // Mouse look: moving the mouse up and down looks up and down rather than walking, the other
     // way round if inverted
     internal bool mouselook, mouseinvert;

@@ -236,6 +236,9 @@ internal partial class Program
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
             menuDrawing, menuLoop, menuInput, menuDefs, ui, () => ingame);
+        videoMenu = new VideoMenu(_assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs);
+        soundMenu = new SoundMenu(_audioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs);
+        controlMenus = new ControlMenus(_assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, controlSettings);
         customizeScreen = new CustomizeControlsScreen(_assetManager, _inputManager, _audioManager, _videoManager,
             menuDrawing, menuLoop, menuInput, menuDefs, ui, controls);
         textPresenter = new TextPresenter(_assetManager, _inputManager, _audioManager, _videoManager,
@@ -304,7 +307,7 @@ internal partial class Program
 
     static bool startgame;
     internal static bool loadedgame;
-    internal static int mouseadjustment;
+    internal static int mouseadjustment { get => controlSettings.mouseadjustment; set => controlSettings.mouseadjustment = value; }
 
     //
     // Command line parameter variables

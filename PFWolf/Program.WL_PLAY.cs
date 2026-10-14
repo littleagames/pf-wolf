@@ -27,7 +27,8 @@ internal partial class Program
     //
     // control info
     //
-    internal static bool mouseenabled, joystickenabled;
+    internal static bool mouseenabled { get => controlSettings.mouseenabled; set => controlSettings.mouseenabled = value; }
+    internal static bool joystickenabled { get => controlSettings.joystickenabled; set => controlSettings.joystickenabled = value; }
 
     /// <summary>The keys, mouse buttons and joystick buttons bound to each button and automap key (saved to controls.cfg).</summary>
     internal static readonly ControlBindings controls = new();
