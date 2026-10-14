@@ -100,6 +100,37 @@ internal partial class Program
         return lines;
     }
 
+    // game-info's intro and title-loop screens, and Blake Stone's movies (Ui/TitleScreens.cs,
+    // Ui/MoviePlayer.cs)
+    static MoviePlayer moviePlayer = null!;     // made in InitServices
+    static TitleScreens titleScreens = null!;
+    internal static bool RunTitleScreens(List<TitleScreenInfo> screens, bool titleLoop) => titleScreens.RunTitleScreens(screens, titleLoop);
+    static int TakeNextTitleDemo() => titleScreens.TakeNextTitleDemo();
+    internal static bool PlayMovie(string name) => moviePlayer.PlayMovie(name);
+
+    /// <summary>A title screen's presenter text, printed into its window</summary>
+    static void DrawTitleText(TitleTextInfo text)
+    {
+        if (PresenterScript(text.Script) is not { } script)
+            return;
+
+        TP_Presenter(new PresenterInfo
+        {
+            Flags = PresenterFlags.CacheNoGfx,
+            Script = script,
+            X1 = text.X1,
+            Y1 = text.Y1,
+            X2 = text.X2,
+            Y2 = text.Y2,
+            Font = text.Font,
+            FontColor = text.Color,
+            Background = text.Background,
+            Light = text.Light,
+            Dark = text.Dark,
+            Shadow = text.Shadow,
+        });
+    }
+
     static bool US_Started;
 
     internal static void US_Startup()
@@ -141,6 +172,19 @@ internal partial class Program
         menuDrawing = new MenuDrawing(_graphicManager, _videoManager, _assetManager, _fontManager, _gameEngineManager, ui, () => gameInfoSettings);
         menuLoop = new MenuLoop(menuDrawing, menuInput, _graphicManager, _videoManager, _inputManager, _audioManager, _assetManager);
         lineInput = new LineInput(_graphicManager, _inputManager, _videoManager, ui, menuInput.ReadAnyControl);
+        menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
+        RegisterMenuDefs();
+        modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
+            menuDrawing, menuLoop, menuInput, menuDefs, ui, () => ingame);
+        moviePlayer = new MoviePlayer(_assetManager, _videoManager, _inputManager, _audioManager, menuInput);
+        titleScreens = new TitleScreens(_videoManager, _audioManager, _inputManager, _graphicManager, _assetManager, moviePlayer,
+            new TitleScreenHooks(
+                DemoExists,
+                demonumber => { PlayDemo(demonumber); return playstate == playstatetypes.ex_abort; },
+                ClearMargins,
+                DrawHighScores,
+                DrawTitle,
+                DrawTitleText));
         signonPanel = new SignonPanel(_gameEngineManager, _assetManager, _videoManager, _inputManager, _audioManager,
             _graphicManager, _fontManager, ui, () => mouseenabled, () => _scripts?.Loaded.Count ?? 0);
 

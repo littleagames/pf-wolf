@@ -1549,260 +1549,32 @@ internal partial class Program
         MusicItems.amount = (short)Math.Min(JukeboxPageSize, MusicMenu.Length);
     }
 
-    /// <summary>
-    /// Builds the item list and layout for a menu defined in menudefs/
-    /// </summary>
-    private static (CP_itemtype[] items, CP_iteminfo info) LoadMenu(string name, short curpos = 0)
-    {
-        var menuAsset = _assetManager.GetMenu(name)
-            ?? throw new InvalidOperationException($"Menu '{name}' not found in menudefs");
-        var language = _assetManager.GetText("en-us");
+    /*
+    =============================================================================
 
-        CP_itemtype[] items;
-        if (menuAsset.ItemsSource != null)
-        {
-            if (menuAsset.MenuItems.Count > 0)
-                Console.WriteLine($"Menu '{name}': has items-source '{menuAsset.ItemsSource}', so its menu-items are ignored");
-            items = BuildSourceItems(name, menuAsset.ItemsSource);
-        }
-        else
-        {
-            items = menuAsset.MenuItems
-                    .Where(mi => InCurrentGamePack(mi.GamePacks))
-                    .Select(mi =>
-                    new CP_itemtype(
-                        (short)(mi.Enabled && mi is not BlankMenuItem ? (mi.Highlighted ? 2 : 1) : 0),
-                        (mi.Text ?? "").ToLanguageText(language),
-                        MapFunction(name, mi as MenuSwitcher))
-                    {
-                        id = mi.Id,
-                        shortKey = string.IsNullOrEmpty(mi.ShortKey) ? '\0' : mi.ShortKey[0],
-                        data = (mi as MusicMenuItem)?.Music
-                    })
-                    .ToArray();
-        }
+                                    MENUDEFS
 
-        if (menuAsset.DefaultSelection is int selection)
-        {
-            if (selection >= 0 && selection < items.Length)
-                curpos = (short)selection;
-            else if (menuAsset.ItemsSource != null)
-                curpos = (short)Math.Max(0, items.Length - 1);    // the game has fewer (one skill, say): the last
-            else
-                Console.WriteLine($"Menu '{name}': default-selection {selection} is out of range (0-{items.Length - 1})");
-        }
+    The menus menudefs/ defines are loaded and drawn by Ui/MenuDefs.cs (made in InitServices);
+    these forward to it, and RegisterMenuDefs gives it the actions and items-sources that
+    need the game.
 
-        var info = new CP_iteminfo(
-            (short)menuAsset.Position.X,
-            (short)menuAsset.Position.Y,
-            amount: (short)items.Length,
-            curpos: curpos,
-            indent: (short)menuAsset.Indent)
-        {
-            rowHeight = menuAsset.RowHeight is > 0 and int rowHeight ? rowHeight : 13,
-            font = menuAsset.Font,
-            itemShadow = menuAsset.ItemShadow,
-            cursor = menuAsset.Cursor,
-            selectionPic = menuAsset.SelectionPic,
-            checkboxX = menuAsset.CheckboxOffset?.X ?? -24,
-            checkboxY = menuAsset.CheckboxOffset?.Y ?? 3,
-        };
+    =============================================================================
+    */
 
-        return (items, info);
-    }
+    static MenuDefs menuDefs = null!;
 
-    /// <summary>
-    /// Builds menu items from game data for a menu's items-source
-    /// </summary>
-    private static CP_itemtype[] BuildSourceItems(string menuName, string source)
-    {
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        var language = _assetManager.GetText("en-us");
+    private static (CP_itemtype[] items, CP_iteminfo info) LoadMenu(string name, short curpos = 0) => menuDefs.LoadMenu(name, curpos);
+    internal static CP_itemtype? FindMenuItem(CP_itemtype[] items, string id) => MenuDefs.FindMenuItem(items, id);
+    private static string? SelectedId(CP_itemtype[] items, int which) => MenuDefs.SelectedId(items, which);
+    internal static void DrawMenuComponents(string name) => menuDefs.DrawMenuComponents(name);
+    private static bool InCurrentGamePack(List<string>? gamePacks) => menuDefs.InCurrentGamePack(gamePacks);
 
-        switch (source.ToLowerInvariant())
-        {
-            case "episodes":
-                // Episode names are two lines, so a blank row follows each one, unless the menu's
-                // rows are tall enough for both (spacer-rows: false)
-                if (_assetManager.GetMenu(menuName)?.SpacerRows == false)
-                    return gameInfo.Episodes.Values
-                        .Select(ep => new CP_itemtype(1, ep.Name.ToLanguageText(language), null, ep) { shortKey = ep.Key })
-                        .ToArray();
-                return gameInfo.Episodes.Values.SelectMany(ep =>
-                    new CP_itemtype[]
-                    {
-                        new CP_itemtype(1, ep.Name.ToLanguageText(language), null, ep) { shortKey = ep.Key },
-                        new CP_itemtype(0, "", null)
-                    }).SkipLast(1)
-                    .ToArray();
-
-            case "skills":
-                return gameInfo.Skills.Values
-                    .Select(skill => new CP_itemtype(1, skill.Name.ToLanguageText(language), null, skill))
-                    .ToArray();
-
-            case "player-classes":
-                // Named by game-info, else by the class's tag (the name obituaries use), else the class
-                return PlayerClasses().Select(playerClass =>
-                {
-                    var info = gameInfo.PlayerClasses.FirstOrDefault(c => string.Equals(c.Key, playerClass, StringComparison.OrdinalIgnoreCase)).Value;
-                    var name = info?.Name ?? _inventoryManager.GetStringProperty(playerClass, "tag") ?? playerClass;
-                    return new CP_itemtype(1, name.ToLanguageText(language), null, new PlayerClassChoice(playerClass, info?.PicName));
-                }).ToArray();
-
-            case "mods":
-                return BuildModsPage();
-
-            case "lan-games":
-                return BuildJoinRows();
-
-            default:
-                Console.WriteLine($"Menu '{menuName}': unknown items-source '{source}'");
-                return [];
-        }
-    }
-
-    /// <summary>
-    /// Finds a menu item by its YAML id, or null if the menu has no such item (or isn't loaded yet)
-    /// </summary>
-    internal static CP_itemtype? FindMenuItem(CP_itemtype[] items, string id)
-        => items.FirstOrDefault(item => item.id == id);
-
-    /// <summary>
-    /// Id of the chosen item from HandleMenu's result, or null for escape / an item without an id
-    /// </summary>
-    private static string? SelectedId(CP_itemtype[] items, int which)
-        => which >= 0 && which < items.Length ? items[which].id : null;
-
-    /// <summary>
-    /// Draws the non-interactive parts of a menu (background, windows, graphics, labels)
-    /// </summary>
-    internal static void DrawMenuComponents(string name)
-    {
-        var menu = _assetManager.GetMenu(name);
-        if (menu == null)
-            return;
-
-        StartMenuMusic(menu);
-
-        foreach (var component in menu.Components)
-        {
-            if (!InCurrentGamePack(component.GamePacks))
-                continue;
-
-            if (component is Label label)
-                DrawLabel(label);
-            else
-                _graphicManager.DrawComponent(component);
-        }
-    }
-
-    /// <summary>
-    /// Whether a menu item or component with this game-packs list belongs in the running game pack
-    /// </summary>
-    private static bool InCurrentGamePack(List<string>? gamePacks)
-        => GamePackList.Includes(gamePacks, _gameEngineManager.GamePackId, _assetManager.BasePackIds);
-
-    /// <summary>
-    /// Plays a menu's music. A track that is already playing carries on rather than restarting,
-    /// and a menu without music leaves the current track alone.
-    /// </summary>
-    private static void StartMenuMusic(MenuMetadata menu)
-    {
-        if (string.IsNullOrEmpty(menu.Music))
-            return;
-
-        var music = _gameEngineManager.GetGameInfo().MenuMusic ?? menu.Music;
-        if (string.Equals(_audioManager.CurrentMusicTrack, music, StringComparison.OrdinalIgnoreCase))
-        {
-            _audioManager.SetPaused(false);
-            return;
-        }
-
-        StartCPMusic(music);
-    }
-
-    /// <summary>A label's shadow: its own, none, or null to keep the font's</summary>
-    private static FontShadow? LabelShadow(Label label)
-    {
-        if (label.Shadow == false)
-            return FontShadow.None;
-
-        if (label.Shadow == true || label.ShadowX != null || label.ShadowY != null || label.ShadowColor != null)
-        {
-            var d = FontShadow.Default;
-            return new FontShadow(label.ShadowX ?? d.X, label.ShadowY ?? d.Y, label.ShadowColor ?? d.Color);
-        }
-
-        return null;
-    }
-
-    /// <summary>A label's gradient: its own, none, or null to keep the font's</summary>
-    private static FontGradient? LabelGradient(Label label)
-    {
-        if (label.Gradient == false)
-            return FontGradient.None;
-
-        if (label.Gradient == true || label.GradientTop != null || label.GradientBottom != null)
-        {
-            var d = FontGradient.Default;
-            return new FontGradient(label.GradientTop ?? d.Top, label.GradientBottom ?? d.Bottom);
-        }
-
-        return null;
-    }
-
-    /// <summary>A label's outline: its own, none, or null to keep the font's</summary>
-    private static FontOutline? LabelOutline(Label label)
-    {
-        if (label.Outline == false)
-            return FontOutline.None;
-
-        if (label.Outline == true || label.OutlineColor != null || label.OutlineThickness != null)
-        {
-            var d = FontOutline.Default;
-            return new FontOutline(label.OutlineColor ?? d.Color, Math.Max(label.OutlineThickness ?? d.Thickness, 1));
-        }
-
-        return null;
-    }
-
-    /// <summary>A label's glow: its own, none, or null to keep the font's</summary>
-    private static FontGlow? LabelGlow(Label label)
-    {
-        if (label.Glow == false)
-            return FontGlow.None;
-
-        if (label.Glow == true || label.GlowColor != null || label.GlowRadius != null || label.GlowStrength != null)
-        {
-            var d = FontGlow.Default;
-            return new FontGlow(label.GlowColor ?? d.Color, Math.Max(label.GlowRadius ?? d.Radius, 1),
-                Math.Clamp(label.GlowStrength ?? d.Strength, 0, 100));
-        }
-
-        return null;
-    }
-
-    private static void DrawLabel(Label label)
-    {
-        var language = _assetManager.GetText("en-us");
-        var style = new TextStyle(label.Font, label.Color, Shadow: LabelShadow(label), Gradient: LabelGradient(label),
-            Outline: LabelOutline(label), Glow: LabelGlow(label));
-
-        var text = label.Text.ToLanguageText(language);
-        if (label.HorizontalOrientation == HorizontalOrientation.Center && label.Width > 0)
-            CenteredText(label.X, label.Width, label.Y, style).CPrint(text);
-        else if (label.HorizontalOrientation == HorizontalOrientation.Center)
-            CenteredText(0, 320, label.Y, style).CPrint(text);
-        else
-            TextAt(label.X, label.Y, style).Print(text);
-    }
-
-    private static Func<int, int>? MapFunction(string menuName, MenuSwitcher? mi)
+    /// <summary>What menudefs' items can do, and the menus built from the game's data</summary>
+    private static void RegisterMenuDefs()
     {
         // This list will be built with attributes or scripting on the pk3
-        List<Func<int, int>> avaiableFunctions = 
-            [
+        Func<int, int>[] actions =
+        [
             CP_NewGame,
             CP_Multiplayer,
             CP_Options,
@@ -1821,30 +1593,31 @@ internal partial class Program
             MouseSensitivity,
             CustomControls
         ];
+        foreach (var action in actions)
+            menuDefs.RegisterAction(action.Method.Name, action);
+        menuDefs.TextScreen = script => _ => CP_TextScreen(script);
 
-        var funcDict = avaiableFunctions.ToDictionary(f => f.Method.Name, f => f);
+        menuDefs.RegisterSource("player-classes", PlayerClassRows);
+        menuDefs.RegisterSource("mods", BuildModsPage);
+        menuDefs.RegisterSource("lan-games", BuildJoinRows);
+    }
 
-        if (mi == null || string.IsNullOrEmpty(mi.Action))
-            return null;
+    // The Mods screen (Ui/ModsMenu.cs, made in InitServices). CP_Mods keeps its name: menudefs
+    // name the action
+    static ModsMenu modsMenu = null!;
+    internal static int CP_Mods(int _) => modsMenu.Run();
+    private static CP_itemtype[] BuildModsPage() => modsMenu.BuildModsPage();
 
-        // A page of presenter text (Blake Stone's instructions, story and ordering info)
-        if (mi.Action == nameof(CP_TextScreen))
+    /// <summary>The new-class menu's rows: named by game-info, else by the class's tag (the name obituaries use), else the class</summary>
+    private static CP_itemtype[] PlayerClassRows()
+    {
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        var language = _assetManager.GetText("en-us");
+        return PlayerClasses().Select(playerClass =>
         {
-            var script = mi.Script;
-            if (string.IsNullOrEmpty(script))
-            {
-                Console.WriteLine($"Menu '{menuName}': item '{mi.Id ?? mi.Text}' is a CP_TextScreen without a script");
-                return null;
-            }
-            return _ => CP_TextScreen(script);
-        }
-
-        if (!funcDict.TryGetValue(mi.Action, out var func))
-        {
-            Console.WriteLine($"Menu '{menuName}': unknown action '{mi.Action}' on item '{mi.Id ?? mi.Text}'");
-            return null;
-        }
-
-        return func;
+            var info = gameInfo.PlayerClasses.FirstOrDefault(c => string.Equals(c.Key, playerClass, StringComparison.OrdinalIgnoreCase)).Value;
+            var name = info?.Name ?? _inventoryManager.GetStringProperty(playerClass, "tag") ?? playerClass;
+            return new CP_itemtype(1, name.ToLanguageText(language), null, new PlayerClassChoice(playerClass, info?.PicName));
+        }).ToArray();
     }
 }
