@@ -40,10 +40,10 @@ internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, Game
     /// <summary>Floors unlocked without having been on them (A_UnlockFloor: Planet Strike's security cubes)</summary>
     internal readonly HashSet<string> unlockedMaps = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Each floor's overhead map (64x64 palette colors) as last seen, for the teleporter (Program.Teleporter.cs)</summary>
+    /// <summary>Each floor's overhead map (64x64 palette colors) as last seen, for the teleporter (Ui/ElevatorScreens.cs)</summary>
     internal readonly Dictionary<string, byte[]> floorOverheads = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Each floor's overall score (0 to 300) as last left, for the mission ratio (Program.Elevator.cs)</summary>
+    /// <summary>Each floor's overall score (0 to 300) as last left, for the mission ratio (Ui/ElevatorScreens.cs)</summary>
     internal readonly Dictionary<string, int> floorScores = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The map the level in play came from</summary>
@@ -65,6 +65,19 @@ internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, Game
 
     internal short ClusterOf(string? map) =>
         map != null && engine.GetGameInfo().Maps.TryGetValue(map, out var info) ? info.Cluster : (short)-1;
+
+    /// <summary>The map of the level's cluster with this floor number, if any</summary>
+    internal string? ClusterFloorMap(int floor)
+    {
+        var cluster = ClusterOf(session.gamestate.mapon);
+        return engine.GetGameInfo().Maps.FirstOrDefault(m => m.Value.Cluster == cluster && m.Value.FloorNumber == floor).Key;
+    }
+
+    internal int CurrentFloorNumber() =>
+        engine.GetGameInfo().Maps.TryGetValue(session.gamestate.mapon, out var info) ? info.FloorNumber : 0;
+
+    /// <summary>Whether a floor is open in the teleporter: been on, or unlocked</summary>
+    internal bool FloorOpen(string map) => visitedMaps.Contains(map) || unlockedMaps.Contains(map);
 
     /// <summary>A new game: nothing kept, nowhere been</summary>
     internal void ResetHubs()

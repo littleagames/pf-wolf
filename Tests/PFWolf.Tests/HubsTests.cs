@@ -104,6 +104,15 @@ public class HubsTests
         Assert.That(hubs.levelStart, Is.Null);
     }
 
+    [TestCase("MAP01", true)]       // been on
+    [TestCase("MAP05", true)]       // unlocked (Planet Strike's security cube)
+    [TestCase("MAP03", false)]
+    [TestCase("map01", true)]       // whatever the case
+    public void A_Floor_Is_Open_Once_Been_On_Or_Unlocked(string map, bool open)
+    {
+        Assert.That(Played().FloorOpen(map), Is.EqualTo(open));
+    }
+
     [TestCase(3, 4, 75)]
     [TestCase(0, 4, 0)]
     [TestCase(0, 0, 100)]       // nothing to get counts as all of it
