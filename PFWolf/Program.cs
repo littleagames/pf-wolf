@@ -234,6 +234,8 @@ internal partial class Program
         lineInput = new LineInput(_graphicManager, _inputManager, _videoManager, ui, menuInput.ReadAnyControl);
         doors = new Doors(_gameEngineManager, _audioManager, _mapManager, _inventoryManager, _hudMessageManager, session,
             new DoorHooks(PlaySoundLocTile, DrawKeys));
+        pushWalls = new PushWalls(_mapManager, _audioManager, session, () => demoplayback || demorecord);
+        lineOfSight = new LineOfSight(_mapManager, doors, session, WallSpriteBlocksLine);
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
