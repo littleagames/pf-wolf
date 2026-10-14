@@ -1,7 +1,7 @@
 music: "WONDERIN"
 type: "wolf3d-menu"
 # Load Game: the list of saves, the highlighted one's picture and progress, and the help line
-# are drawn by code (Program.LoadSaveScreen.cs) inside the window below: the list in its left
+# are drawn by code (Ui/LoadSaveScreen.cs) inside the window below: the list in its left
 # half from y 49, the preview in its right half, the help line at the bottom. Keep the window
 # where it is, and the same as save-game's.
 components:

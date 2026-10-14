@@ -248,4 +248,11 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
         video.Bar(x, y2, 1, 1, corner);
         video.Bar(x2, y, 1, 1, corner);
     }
+
+    /// <summary>A small arrow saying a list scrolls further up or down (the customize and load/save screens)</summary>
+    internal void DrawCustomArrow(int x, int y, bool up)
+    {
+        for (int i = 0; i < 4; i++)
+            video.HorizontalLine(x - i, x + i, up ? y + i : y + 3 - i, "READCOLOR");
+    }
 }

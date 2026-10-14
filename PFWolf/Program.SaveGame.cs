@@ -419,6 +419,83 @@ internal partial class Program
         return true;
     }
 
+    /*
+    =============================================================================
+
+                            LOAD AND SAVE FROM THE MENU
+
+    The load and save screens are Ui/LoadSaveScreen.cs (made in InitServices); quickload
+    and quicksave (F9, F8) are here. CP_LoadGame and CP_SaveGame keep their names: menudefs
+    name the actions.
+
+    =============================================================================
+    */
+
+    static LoadSaveScreen loadSaveScreen = null!;
+
+    internal static int CP_LoadGame(int quick)
+    {
+        //
+        // QUICKLOAD: THE QUICKSAVE, IN PLACE, SO PLAY CARRIES STRAIGHT ON IN THE RESTORED LEVEL
+        //
+        if (quick != 0)
+        {
+            loadedgame = true;
+            var loaded = LoadTheGame(QuickSavePath, 0, 0);
+            loadedgame = false;
+            if (!loaded)
+                return 0;
+
+            if (viewsize != 21)
+                DrawPlayScreen();
+            ContinueMusic(lastgamemusicoffset);
+            return 1;
+        }
+
+        return loadSaveScreen.Run(saving: false);
+    }
+
+    internal static int CP_SaveGame(int quick)
+    {
+        //
+        // QUICKSAVE: OVER THE QUICKSAVE, WITHOUT ASKING
+        //
+        if (quick != 0)
+        {
+            if (!SaveTheGame(QuickSavePath, "$STR_LS_QUICK".ToLanguageText(_assetManager.GetText("en-us")), 0, 0))
+                ShowSaveFailed();
+            return 1;
+        }
+
+        return loadSaveScreen.Run(saving: true);
+    }
+
+    /// <summary>What the load/save screen needs from the game</summary>
+    private static LoadSaveHooks MakeLoadSaveHooks() => new(
+        CurrentSave: () => CurrentSaveInfo("", ""),
+        CurrentThumbnail: () => _videoManager.MakeThumbnail(ThumbnailWidth),
+        ListSaves: ListSaveGames,
+        NewSavePath: NewSaveGamePath,
+        NewSaveName: () => GetMapDisplayName(gamestate.mapon),
+        HasOtherMods: HasOtherMods,
+        Load: (path, x, y) =>
+        {
+            loadedgame = true;
+            if (LoadTheGame(path, x, y))
+                return true;
+            loadedgame = false;
+            return false;
+        },
+        Save: SaveTheGame,
+        Loaded: () =>
+        {
+            StartGame = 1;
+            //
+            // CHANGE "READ THIS!" TO NORMAL COLOR
+            //
+            FindMenuItem(MainMenu, "readthis")?.active = 1;
+        },
+        SaveFailed: ShowSaveFailed);
     private static void ShowSaveFailed()
     {
         Message("The game couldn't\nbe saved.");

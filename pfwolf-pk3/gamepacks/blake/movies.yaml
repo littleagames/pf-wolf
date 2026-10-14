@@ -1,4 +1,4 @@
-# JAM's movies (gamepack-info's JamMovieFileLoader names their files), as Program.TitleScreens.cs
+# JAM's movies (gamepack-info's JamMovieFileLoader names their files), as Ui/MoviePlayer.cs
 # plays them: each frame stays up frame-tics (70 a second), and a movie's sound numbers are
 # Blake Stone's sounds by their place in its sound list (bstone's audio.h).
 

@@ -52,7 +52,7 @@ public record GameInfoAsset : Asset
     public string? IntroMusic { get; init; }
 
     /// <summary>
-    /// Screens shown once as the game starts (Program.TitleScreens.cs), in place of Wolf3D's
+    /// Screens shown once as the game starts (Ui/TitleScreens.cs), in place of Wolf3D's
     /// notice and PG-13 screen; a key skips the one it's pressed on
     /// </summary>
     public List<TitleScreenInfo> Intro { get; init; } = [];

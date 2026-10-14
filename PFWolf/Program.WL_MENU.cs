@@ -127,6 +127,7 @@ internal partial class Program
     private static void DrawMenuCheckbox(CP_iteminfo iteminfo, int index, bool on, bool highlighted = false) => menuDrawing.DrawMenuCheckbox(iteminfo, index, on, highlighted);
     internal static void DrawMenuGun(CP_iteminfo iteminfo) => menuDrawing.DrawMenuGun(iteminfo);
     internal static TextWindow Message(string text, int areaHeight = 200) => menuDrawing.Message(text, areaHeight);
+    private static void DrawCustomArrow(int x, int y, bool up) => menuDrawing.DrawCustomArrow(x, y, up);
 
     internal static int redrawitem { get => menuLoop.redrawitem; set => menuLoop.redrawitem = value; }
     internal static int lastitem { get => menuLoop.lastitem; set => menuLoop.lastitem = value; }
@@ -1538,7 +1539,7 @@ internal partial class Program
         (SndMenu, SndItems) = LoadMenu("sound");
         (CtlMenu, CtlItems) = LoadMenu("control", curpos: -1);
         (JoyMenu, JoyItems) = LoadMenu("controller");
-        customizeRows = LoadCustomizeRows();
+        customizeScreen.Rows = customizeScreen.LoadCustomizeRows();
         (NewEmenu, NewEitems) = LoadMenu("new-episode");
         (NewMenu, NewItems) = LoadMenu("new-game");
         (ClassMenu, ClassItems) = LoadMenu("new-class");
@@ -1605,6 +1606,10 @@ internal partial class Program
     // The Mods screen (Ui/ModsMenu.cs, made in InitServices). CP_Mods keeps its name: menudefs
     // name the action
     static ModsMenu modsMenu = null!;
+
+    // Customize controls (Ui/CustomizeControlsScreen.cs); CustomControls keeps its name for menudefs
+    static CustomizeControlsScreen customizeScreen = null!;
+    internal static int CustomControls(int _) => customizeScreen.Run();
     internal static int CP_Mods(int _) => modsMenu.Run();
     private static CP_itemtype[] BuildModsPage() => modsMenu.BuildModsPage();
 
