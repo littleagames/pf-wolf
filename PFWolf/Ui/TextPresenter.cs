@@ -1,8 +1,7 @@
 using PFWolf.Assets;
 using PFWolf.Extensions;
-using PFWolf.Managers;
 
-namespace PFWolf;
+namespace PFWolf.Ui;
 
 /// <summary>How a <see cref="PresenterInfo"/> is presented (JAM's TPF_ flags)</summary>
 [Flags]
@@ -74,23 +73,24 @@ internal sealed class PresenterInfo
     public bool Escaped;
 }
 
-internal partial class Program
+/*
+=============================================================================
+
+                            TEXT PRESENTER
+
+JAM Productions' text presenter, as Blake Stone uses it for its briefings, elevator messages
+and message boxes (bstone jm_tp.cpp). A script is text with ^ codes, two letters and a fixed
+number of hex digits (^FC3a sets the color, ^CE centers the line, ^EP ends a page, ^XX the
+script). Lines word wrap within the region; a line of nothing but codes takes no room.
+Fonts and shapes come from gamepacks/{pack}/presenter.yaml. Not done: animations (^AN),
+display strings (^DS), music and sounds by number (^PM, ^PS) and scaled sprite or wall shapes.
+
+=============================================================================
+*/
+
+internal sealed class TextPresenter(AssetManager assets, InputManager input, AudioManager audio,
+    VideoManager video, GraphicManager graphics, FontManager fonts, MenuDrawing draw, MenuInput menuInput)
 {
-    /*
-    =============================================================================
-
-                                TEXT PRESENTER
-
-    JAM Productions' text presenter, as Blake Stone uses it for its briefings, elevator messages
-    and message boxes (bstone jm_tp.cpp). A script is text with ^ codes, two letters and a fixed
-    number of hex digits (^FC3a sets the color, ^CE centers the line, ^EP ends a page, ^XX the
-    script). Lines word wrap within the region; a line of nothing but codes takes no room.
-    Fonts and shapes come from gamepacks/{pack}/presenter.yaml. Not done: animations (^AN),
-    display strings (^DS), music and sounds by number (^PM, ^PS) and scaled sprite or wall shapes.
-
-    =============================================================================
-    */
-
     const char TP_RETURN = '\r';
     const char TP_CONTROL = '^';
     const int TP_MARGIN = 1;
@@ -100,44 +100,44 @@ internal partial class Program
         fl_startofline = 0x0020, fl_upreleased = 0x0040, fl_dnreleased = 0x0080, fl_shadowpic = 0x0400,
         fl_clearscback = 0x0800;
 
-    static PresenterAsset? presenterAsset;
-    static PresenterAsset Presenter =>
-        presenterAsset ??= _assetManager.FindInGamePack<PresenterAsset>("presenter") ?? new PresenterAsset();
+    PresenterAsset? presenterAsset;
+    PresenterAsset Presenter =>
+        presenterAsset ??= assets.FindInGamePack<PresenterAsset>("presenter") ?? new PresenterAsset();
 
-    static PresenterInfo tp = new();
-    static int tpflags;
-    static int tpbg, tplt, tpdk, tpsh;
-    static int tpxl, tpyl, tpxh, tpyh;
-    static int tpcurx, tpcury, tplastx, tplasty;
-    static int tppx, tppy;
-    static string tptext = "";
-    static int tppos;
-    static int tpfontnumber;
-    static Fonts.Font? tpfont;
-    static int tpfontcolor;
-    static bool tpjustifyright;
-    static readonly int[] tpsavex = new int[TP_CURSOR_SAVES + 1], tpsavey = new int[TP_CURSOR_SAVES + 1];
-    static readonly int[] tppagex = new int[2], tppagey = new int[2];
+    PresenterInfo tp = new();
+    int tpflags;
+    int tpbg, tplt, tpdk, tpsh;
+    int tpxl, tpyl, tpxh, tpyh;
+    int tpcurx, tpcury, tplastx, tplasty;
+    int tppx, tppy;
+    string tptext = "";
+    int tppos;
+    int tpfontnumber;
+    Fonts.Font? tpfont;
+    int tpfontcolor;
+    bool tpjustifyright;
+    readonly int[] tpsavex = new int[TP_CURSOR_SAVES + 1], tpsavey = new int[TP_CURSOR_SAVES + 1];
+    readonly int[] tppagex = new int[2], tppagey = new int[2];
 
-    static char TpAt(int i) => i >= 0 && i < tptext.Length ? tptext[i] : '\0';
+    char TpAt(int i) => i >= 0 && i < tptext.Length ? tptext[i] : '\0';
 
-    static Fonts.Font? PresenterFont(int number)
+    internal Fonts.Font? PresenterFont(int number)
     {
-        var fonts = Presenter.Fonts;
-        return fonts != null && number >= 0 && number < fonts.Count ? _fontManager.Find(fonts[number]) : null;
+        var names = Presenter.Fonts;
+        return names != null && number >= 0 && number < names.Count ? fonts.Find(names[number]) : null;
     }
 
-    static int TpWidth(char ch) => tpfont?.Advance(ch) ?? 0;
-    static int TpFontHeight => tpfont?.Height ?? 8;
-    static int TpShadowed => (tpflags & fl_shadowtext) != 0 ? 1 : 0;
+    int TpWidth(char ch) => tpfont?.Advance(ch) ?? 0;
+    int TpFontHeight => tpfont?.Height ?? 8;
+    int TpShadowed => (tpflags & fl_shadowtext) != 0 ? 1 : 0;
 
     /// <summary>
     /// A VGAGRAPH text as a presenter script: up to and including its ^XX, the end marker. Null
     /// if there's no such text.
     /// </summary>
-    internal static string? PresenterScript(string textName)
+    internal string? PresenterScript(string textName)
     {
-        if (_assetManager.Find<TextAsset>(textName) is not { } asset)
+        if (assets.Find<TextAsset>(textName) is not { } asset)
         {
             Console.WriteLine($"Presenter text \"{textName}\" wasn't found");
             return null;
@@ -149,7 +149,7 @@ internal partial class Program
     }
 
     /// <summary>Finds the script's pages: each ^EP starts one (the one after the last isn't a page)</summary>
-    static void TpInitScript(PresenterInfo pi)
+    internal void TpInitScript(PresenterInfo pi)
     {
         pi.Pages = [0];
         tptext = pi.Script;
@@ -174,7 +174,7 @@ internal partial class Program
     }
 
     /// <summary>A line starting with a semicolon is a comment: how far to skip past it, or 0</summary>
-    static int TpLineCommented(int pos)
+    int TpLineCommented(int pos)
     {
         if (TpAt(pos) != ';' || TpAt(pos - 2) != TP_RETURN)
             return 0;
@@ -186,7 +186,7 @@ internal partial class Program
     }
 
     /// <summary>Presents a script (TP_Presenter): prints it into its region, page by page</summary>
-    internal static void TP_Presenter(PresenterInfo pi)
+    internal void TP_Presenter(PresenterInfo pi)
     {
         tp = pi;
         if (pi.Pages.Count == 0)
@@ -243,7 +243,7 @@ internal partial class Program
 
             tppx = tpxl;
             tppy = tpyh + TP_MARGIN + 1;
-            _videoManager.Bar(tpxl - TP_MARGIN, tppy, tpxh - tpxl + 1 + TP_MARGIN * 2, 8, tpbg.ToString());
+            video.Bar(tpxl - TP_MARGIN, tppy, tpxh - tpxl + 1 + TP_MARGIN * 2, 8, tpbg.ToString());
             TpShadowPrint(pi.InfoLine, tpsh);
 
             if (pi.Flags.HasFlag(PresenterFlags.ShowPages) && pi.PageX >= 0)
@@ -265,7 +265,7 @@ internal partial class Program
 
         tpfont = PresenterFont(tpfontnumber);
         if (!pi.Flags.HasFlag(PresenterFlags.UseCurrent))
-            _videoManager.Bar(tpxl - TP_MARGIN, tpyl - TP_MARGIN, tpxh - tpxl + 1 + TP_MARGIN * 2, tpyh - tpyl + 1 + TP_MARGIN * 2, tpbg.ToString());
+            video.Bar(tpxl - TP_MARGIN, tpyl - TP_MARGIN, tpxh - tpxl + 1 + TP_MARGIN * 2, tpyh - tpyl + 1 + TP_MARGIN * 2, tpbg.ToString());
 
         while ((tpflags & fl_presenting) != 0 && tppos <= tptext.Length)
         {
@@ -282,7 +282,7 @@ internal partial class Program
     }
 
     /// <summary>Prints as much of the line as fits, and moves to the next line where it should</summary>
-    static void TpWrapText()
+    void TpWrapText()
     {
         tpflags &= ~fl_startofline;
 
@@ -356,7 +356,7 @@ internal partial class Program
             if (tp.Flags.HasFlag(PresenterFlags.ScrollRegion) && tpcury + TpFontHeight * 2 > tpyh)
             {
                 // No scrolling yet: start again at the top of a cleared region
-                _videoManager.Bar(tpxl, tpyl, tpxh - tpxl + 1, tpyh - tpyl + 1, tpbg.ToString());
+                video.Bar(tpxl, tpyl, tpxh - tpxl + 1, tpyh - tpyl + 1, tpbg.ToString());
                 tpcury = tpyl;
             }
             else if (tp.CustomLineHeight > 0)
@@ -366,7 +366,7 @@ internal partial class Program
         }
     }
 
-    static int TpValue(int pos, int digits)
+    int TpValue(int pos, int digits)
     {
         int value = 0;
         for (int i = 0; i < digits; i++)
@@ -382,7 +382,7 @@ internal partial class Program
     }
 
     /// <summary>How many hex digits a code takes</summary>
-    static int TpCodeDigits(string code) => code switch
+    internal static int TpCodeDigits(string code) => code switch
     {
         "SX" or "RX" or "SY" or "RY" or "FN" or "ST" or "BX" or "SP" or "SB" => 1,
         "FC" or "BC" or "SC" or "LC" or "DC" or "AX" or "AY" or "HC" or "AN" or "DS" or "PM" or "PS" => 2,
@@ -390,7 +390,7 @@ internal partial class Program
         _ => 0,
     };
 
-    static void TpHandleCodes()
+    void TpHandleCodes()
     {
         if (TpAt(tppos - 2) == TP_RETURN && TpAt(tppos - 1) == '\n')
             tpflags |= fl_startofline;
@@ -537,16 +537,16 @@ internal partial class Program
                     break;
 
                 case "BE":
-                    _audioManager.Play("bs/term_beep");
+                    audio.Play("bs/term_beep");
                     break;
 
                 case "PS":
                     if (Presenter.Sounds.TryGetValue(value, out var sound))
-                        _audioManager.Play(sound);
+                        audio.Play(sound);
                     break;
 
                 case "PA":
-                    _videoManager.Update();
+                    video.Update();
                     GameEngineManager.DelayTics(30);
                     break;
 
@@ -560,7 +560,7 @@ internal partial class Program
 
                 case "XX":
                     tpflags &= ~fl_presenting;
-                    _videoManager.Update();
+                    video.Update();
                     break;
 
                 // ^ZZ, ^HI, and those not done (^AN, ^DS, ^PM, ^PS): nothing
@@ -571,7 +571,7 @@ internal partial class Program
             tppos += 2;
     }
 
-    static int TpValueAt(int pos, int digits)
+    int TpValueAt(int pos, int digits)
     {
         int old = tppos;
         int value = TpValue(pos, digits);
@@ -585,10 +585,10 @@ internal partial class Program
     /// </summary>
     sealed record TpShape(byte[] Pixels, byte[]? Mask, int Width, int Height, bool IsPic);
 
-    static readonly Dictionary<int, TpShape?> tpShapes = [];
+    readonly Dictionary<int, TpShape?> tpShapes = [];
 
     /// <summary>What presenter.yaml gives shape <paramref name="number"/>: a picture, sprite or wall; null if none</summary>
-    static TpShape? ShapePic(int number)
+    TpShape? ShapePic(int number)
     {
         if (tpShapes.TryGetValue(number, out var cached))
             return cached;
@@ -596,11 +596,11 @@ internal partial class Program
         TpShape? found = null;
         if (Presenter.Shapes.TryGetValue(number, out var shape))
         {
-            if (!string.IsNullOrEmpty(shape.Pic) && _assetManager.Find<GraphicAsset>(shape.Pic) is { } pic)
+            if (!string.IsNullOrEmpty(shape.Pic) && assets.Find<GraphicAsset>(shape.Pic) is { } pic)
                 found = new TpShape(pic.RawData, null, pic.Width, pic.Height, true);
-            else if (!string.IsNullOrEmpty(shape.Sprite) && _assetManager.Find<SpriteAsset>(shape.Sprite) is { } sprite)
+            else if (!string.IsNullOrEmpty(shape.Sprite) && assets.Find<SpriteAsset>(shape.Sprite) is { } sprite)
                 found = new TpShape(sprite.RawData, sprite.OpacityMask, sprite.Width, sprite.Height, false);
-            else if (!string.IsNullOrEmpty(shape.Wall) && _assetManager.Find<TextureAsset>(shape.Wall) is { } wall)
+            else if (!string.IsNullOrEmpty(shape.Wall) && assets.Find<TextureAsset>(shape.Wall) is { } wall)
             {
                 // Walls are kept column by column
                 var story = wall.BottomStory();
@@ -618,7 +618,7 @@ internal partial class Program
     }
 
     /// <summary>Draws a shape at the print position (pictures snap to 8 pixels across) and moves past it</summary>
-    static void TpDrawShape(int x, int y, TpShape? shape)
+    void TpDrawShape(int x, int y, TpShape? shape)
     {
         if (shape == null)
             return;
@@ -627,18 +627,18 @@ internal partial class Program
             x = (x + 7) & ~7;
         int width = TpBoxAroundShape(x, y, shape);
         if (shape.Mask == null)
-            _videoManager.MemToScreen(shape.Pixels, shape.Width, shape.Height, x, y);
+            video.MemToScreen(shape.Pixels, shape.Width, shape.Height, x, y);
         else
         {
             if ((tpflags & fl_clearscback) != 0)
-                _videoManager.Bar(x, y, shape.Width, shape.Height, tpbg.ToString());
-            _videoManager.DrawImageRegion(shape.Pixels, shape.Mask, shape.Width, 0, 0, shape.Width, shape.Height, x, y);
+                video.Bar(x, y, shape.Width, shape.Height, tpbg.ToString());
+            video.DrawImageRegion(shape.Pixels, shape.Mask, shape.Width, 0, 0, shape.Width, shape.Height, x, y);
         }
         tpcurx += width;
     }
 
     /// <summary>A shape's width, with its box and shadow if they're on; draws them unless x is -1</summary>
-    static int TpBoxAroundShape(int x1, int y1, TpShape? shape)
+    int TpBoxAroundShape(int x1, int y1, TpShape? shape)
     {
         if (shape == null)
             return 0;
@@ -652,10 +652,10 @@ internal partial class Program
             y2++;
             if (x1 >= 0 && y1 >= 0)
             {
-                _videoManager.HorizontalLine(x1, x2, y1, tplt.ToString());
-                _videoManager.HorizontalLine(x1, x2, y2, tpdk.ToString());
-                _videoManager.VerticalLine(y1, y2, x1, tplt.ToString());
-                _videoManager.VerticalLine(y1, y2, x2, tpdk.ToString());
+                video.HorizontalLine(x1, x2, y1, tplt.ToString());
+                video.HorizontalLine(x1, x2, y2, tpdk.ToString());
+                video.VerticalLine(y1, y2, x1, tplt.ToString());
+                video.VerticalLine(y1, y2, x2, tpdk.ToString());
             }
         }
 
@@ -665,8 +665,8 @@ internal partial class Program
             y2++;
             if (x1 >= 0 && y1 >= 0)
             {
-                _videoManager.HorizontalLine(x1 + 1, x2, y2, tpsh.ToString());
-                _videoManager.VerticalLine(y1 + 1, y2, x2, tpsh.ToString());
+                video.HorizontalLine(x1 + 1, x2, y2, tpsh.ToString());
+                video.VerticalLine(y1 + 1, y2, x2, tpsh.ToString());
             }
         }
 
@@ -674,7 +674,7 @@ internal partial class Program
     }
 
     /// <summary>Prints at (px, py), moving px past it (with its shadow, when shadowed text is on)</summary>
-    static void TpPrint(string text)
+    void TpPrint(string text)
     {
         tplastx = tpcurx;
         tplasty = tpcury;
@@ -689,7 +689,7 @@ internal partial class Program
     }
 
     /// <summary>Text with a shadow one pixel right and down (bstone's ShPrint)</summary>
-    static void TpShadowPrint(string text, int shadowColor)
+    void TpShadowPrint(string text, int shadowColor)
     {
         int x = tppx;
         tppx = x + 1;
@@ -700,36 +700,36 @@ internal partial class Program
         TpDraw(text, tpfontcolor);
     }
 
-    static void TpDraw(string text, int color)
+    void TpDraw(string text, int color)
     {
         if (tpfont == null || text.Length == 0)
             return;
-        _graphicManager.DrawText(tppx, tppy, text, tpfont, color.ToString());
+        graphics.DrawText(tppx, tppy, text, tpfont, color.ToString());
         tppx += tpfont.Measure(text);
     }
 
     /// <summary>Prints a character at a time, delay tics apart; a key (if abortable) prints the rest at once</summary>
-    static void TpSlowPrint(string text, int delay)
+    void TpSlowPrint(string text, int delay)
     {
         for (int i = 0; i < text.Length; i++)
         {
             TpPrint(text[i].ToString());
             tppx = tpcurx;
-            _videoManager.Update();
+            video.Update();
 
             if (tp.Flags.HasFlag(PresenterFlags.TermSound) && text[i] != ' ' && !string.IsNullOrEmpty(tp.TypeSound))
-                _audioManager.Play(tp.TypeSound);
+                audio.Play(tp.TypeSound);
 
-            _inputManager.ClearLastKey();
+            input.ClearLastKey();
             var start = GameEngineManager.GetTimeCount();
             while (GameEngineManager.GetTimeCount() - start < delay)
             {
                 GameEngineManager.DelayMs(5);
-                _inputManager.ProcessEvents();
-                if (tp.Flags.HasFlag(PresenterFlags.Abortable) && _inputManager.GetLastKeyPressed() != ScanCodes.sc_None)
+                input.ProcessEvents();
+                if (tp.Flags.HasFlag(PresenterFlags.Abortable) && input.GetLastKeyPressed() != ScanCodes.sc_None)
                 {
                     TpPrint(text[(i + 1)..]);
-                    _videoManager.Update();
+                    video.Update();
                     tpflags &= ~fl_presenting;
                     return;
                 }
@@ -738,51 +738,51 @@ internal partial class Program
     }
 
     /// <summary>^MO: prints &lt;MORE&gt;, waits for anything, and clears the line</summary>
-    static void TpMore()
+    void TpMore()
     {
         tppx = tpcurx;
         tppy = tpcury;
         TpPrint("<MORE>");
-        _videoManager.Update();
+        video.Update();
 
-        _inputManager.ClearKeysDown();
-        _inputManager.Ack();
-        tp.Escaped = _inputManager.GetLastKeyPressed() == ScanCodes.sc_Escape;
+        input.ClearKeysDown();
+        input.Ack();
+        tp.Escaped = input.GetLastKeyPressed() == ScanCodes.sc_Escape;
         if (tp.Escaped)
             tpflags &= ~fl_presenting;
 
         tpcurx = tpxl;
-        _videoManager.Bar(tpcurx, tpcury, tpxh - tpxl + 1 + TP_MARGIN * 2, TpFontHeight + TpShadowed, tpbg.ToString());
+        video.Bar(tpcurx, tpcury, tpxh - tpxl + 1 + TP_MARGIN * 2, TpFontHeight + TpShadowed, tpbg.ToString());
     }
 
     /// <summary>^EP: shows the page and waits to go to the one before or after, or to finish</summary>
-    static void TpEndPage()
+    void TpEndPage()
     {
-        _videoManager.Update();
-        if (_videoManager.screenfaded)
-            _videoManager.FadeIn();
+        video.Update();
+        if (video.screenfaded)
+            video.FadeIn();
 
-        _inputManager.ClearKeysDown();
+        input.ClearKeysDown();
         tpflags |= fl_upreleased | fl_dnreleased;
         while (true)
         {
             GameEngineManager.DelayMs(5);
-            ReadAnyControl(out var ci);
+            menuInput.ReadAnyControl(out var ci);
             var dir = ci.dir;
-            if (_inputManager.IsKeyDown(ScanCodes.sc_PgUp))
+            if (input.IsKeyDown(ScanCodes.sc_PgUp))
                 dir = Direction.North;
-            else if (_inputManager.IsKeyDown(ScanCodes.sc_PgDn))
+            else if (input.IsKeyDown(ScanCodes.sc_PgDn))
                 dir = Direction.South;
 
             if (tp.Flags.HasFlag(PresenterFlags.Continue)
-                && (ci.button0 || _inputManager.IsKeyDown(ScanCodes.sc_Space) || _inputManager.IsKeyDown(ScanCodes.sc_Enter)))
+                && (ci.button0 || input.IsKeyDown(ScanCodes.sc_Space) || input.IsKeyDown(ScanCodes.sc_Enter)))
             {
                 tp.Escaped = false;
                 tpflags &= ~fl_presenting;
                 break;
             }
 
-            if (ci.button1 || _inputManager.IsKeyDown(ScanCodes.sc_Escape))
+            if (ci.button1 || input.IsKeyDown(ScanCodes.sc_Escape))
             {
                 tp.Escaped = true;
                 tpflags &= ~fl_presenting;
@@ -817,7 +817,7 @@ internal partial class Program
 
         if ((tpflags & fl_presenting) == 0)
         {
-            _inputManager.ClearKeysDown();
+            input.ClearKeysDown();
             return;
         }
 
@@ -832,20 +832,20 @@ internal partial class Program
             TpHandleCodes();
             tpflags &= ~fl_startofline;
         }
-        _videoManager.Bar(tpxl, tpyl, tpxh - tpxl + 1, tpyh - tpyl + 1, tpbg.ToString());
+        video.Bar(tpxl, tpyl, tpxh - tpxl + 1, tpyh - tpyl + 1, tpbg.ToString());
         TpPrintPageNumber();
 
         // A held key doesn't flip page after page
-        while (_inputManager.IsKeyDown(ScanCodes.sc_UpArrow) || _inputManager.IsKeyDown(ScanCodes.sc_DownArrow)
-            || _inputManager.IsKeyDown(ScanCodes.sc_PgUp) || _inputManager.IsKeyDown(ScanCodes.sc_PgDn)
-            || _inputManager.IsKeyDown(ScanCodes.sc_LeftArrow) || _inputManager.IsKeyDown(ScanCodes.sc_RightArrow))
+        while (input.IsKeyDown(ScanCodes.sc_UpArrow) || input.IsKeyDown(ScanCodes.sc_DownArrow)
+            || input.IsKeyDown(ScanCodes.sc_PgUp) || input.IsKeyDown(ScanCodes.sc_PgDn)
+            || input.IsKeyDown(ScanCodes.sc_LeftArrow) || input.IsKeyDown(ScanCodes.sc_RightArrow))
         {
             GameEngineManager.DelayMs(5);
-            _inputManager.ProcessEvents();
+            input.ProcessEvents();
         }
     }
 
-    static void TpPrintPageNumber()
+    void TpPrintPageNumber()
     {
         if (!tp.Flags.HasFlag(PresenterFlags.ShowPages) || tp.PageX < 0)
             return;
@@ -857,12 +857,12 @@ internal partial class Program
 
         tppx = tppagex[0];
         tppy = tppagey[0];
-        _videoManager.Bar(tppx, tppy, 12, 7, tpbg.ToString());
+        video.Bar(tppx, tppy, 12, 7, tpbg.ToString());
         TpShadowPrint($"{tp.PageNum + 1,2}", tpsh);
 
         tppx = tppagex[1];
         tppy = tppagey[1];
-        _videoManager.Bar(tppx, tppy, 12, 7, tpbg.ToString());
+        video.Bar(tppx, tppy, 12, 7, tpbg.ToString());
         TpShadowPrint($"{tp.Pages.Count,2}", tpsh);
 
         tpfont = oldFont;
@@ -881,14 +881,14 @@ internal partial class Program
     /// Presents a script in presenter.yaml's message box (bstone's BMAmsg), its lines centered up
     /// and down in it. Nothing if the pack has no message box.
     /// </summary>
-    internal static void PresenterMessageBox(string script)
+    internal void PresenterMessageBox(string script)
     {
         if (Presenter.MessageBox is not { } box)
             return;
 
         int x2 = box.X + 7, y2 = box.Y + 4, w2 = box.Width - 14, h2 = box.Height - 8;
-        BevelBox(box.X, box.Y, box.Width, box.Height, box.Hi, box.Med, box.Lo);
-        BevelBox(x2, y2, w2, h2, box.Lo, box.Med, box.Hi);
+        draw.BevelBox(box.X, box.Y, box.Width, box.Height, box.Hi, box.Med, box.Lo);
+        draw.BevelBox(x2, y2, w2, h2, box.Lo, box.Med, box.Hi);
 
         var font = PresenterFont(box.Font);
         int lines = 1 + script.Count(c => c == TP_RETURN);
@@ -916,24 +916,24 @@ internal partial class Program
     /// Shows a briefing (a VGAGRAPH text) in presenter.yaml's briefing window, page by page,
     /// until it's finished or left. Returns whether it was left with Esc.
     /// </summary>
-    internal static bool ShowBriefing(string textName) => ShowTextPages(textName, fromMenu: false);
+    internal bool ShowBriefing(string textName) => ShowTextPages(textName, fromMenu: false);
 
     /// <summary>
     /// game-info's lose-screen (bstone's LoseScreen): its picture, and its text typed out a
     /// letter at a time into its window, scrolling as it fills, until a key
     /// </summary>
-    internal static void ShowLoseScreen(LoseScreenInfo lose)
+    internal void ShowLoseScreen(LoseScreenInfo lose)
     {
         if (PresenterScript(lose.Script) is not { } script)
             return;
 
-        _videoManager.FadeOut();
-        _audioManager.StopMusic();
-        _videoManager.ClearScreen(0);
+        video.FadeOut();
+        audio.StopMusic();
+        video.ClearScreen(0);
         if (!string.IsNullOrEmpty(lose.Pic))
-            _graphicManager.DrawPic(lose.Pic, 0, 0);
-        _videoManager.Update();
-        _videoManager.FadeIn();
+            graphics.DrawPic(lose.Pic, 0, 0);
+        video.Update();
+        video.FadeIn();
 
         TP_Presenter(new PresenterInfo
         {
@@ -954,40 +954,29 @@ internal partial class Program
             TypeSound = lose.TypeSound,
         });
 
-        _videoManager.FadeOut();
-        _inputManager.ClearKeysDown();
-    }
-
-    /// <summary>
-    /// A menu item's pages of presenter text (Blake Stone's instructions, story and ordering
-    /// info) in the briefing window, with its pages-info-line and pages-music, until Esc
-    /// </summary>
-    internal static int CP_TextScreen(string textName)
-    {
-        ShowTextPages(textName, fromMenu: true);
-        StartCPMusic(MENUSONG);
-        return 0;
+        video.FadeOut();
+        input.ClearKeysDown();
     }
 
     /// <summary>
     /// Presenter text in the briefing window, page by page. From the menu only Esc leaves it;
     /// a briefing is also finished with Enter. Returns whether it was left with Esc.
     /// </summary>
-    static bool ShowTextPages(string textName, bool fromMenu)
+    internal bool ShowTextPages(string textName, bool fromMenu)
     {
         if (Presenter.Briefing is not { } briefing || PresenterScript(textName) is not { } script)
             return false;
 
-        _videoManager.FadeOut();
-        _videoManager.ClearScreen(0);
+        video.FadeOut();
+        video.ClearScreen(0);
         foreach (var pic in briefing.Pics)
-            _graphicManager.DrawPic(pic.Pic, pic.X, pic.Y);
+            graphics.DrawPic(pic.Pic, pic.X, pic.Y);
 
         var music = fromMenu ? briefing.PagesMusic : briefing.Music;
         if (!string.IsNullOrEmpty(music))
-            StartCPMusic(music);
+            audio.PlayMusic(music);
 
-        var language = _assetManager.GetText("en-us");
+        var language = assets.GetText("en-us");
         var infoLine = fromMenu ? briefing.PagesInfoLine ?? briefing.InfoLine : briefing.InfoLine;
         var pi = new PresenterInfo
         {
@@ -1010,8 +999,8 @@ internal partial class Program
         };
         TP_Presenter(pi);
 
-        _videoManager.FadeOut();
-        _inputManager.ClearKeysDown();
+        video.FadeOut();
+        input.ClearKeysDown();
         return pi.Escaped;
     }
 }

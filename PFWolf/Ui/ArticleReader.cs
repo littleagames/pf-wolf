@@ -1,25 +1,26 @@
-﻿using PFWolf.Assets;
+using PFWolf.Assets;
 using PFWolf.Fonts;
-using PFWolf.Managers;
 
-namespace PFWolf;
+namespace PFWolf.Ui;
 
-internal partial class Program
+/*
+=============================================================================
+
+TEXT FORMATTING COMMANDS
+------------------------
+^C<hex digit>           Change text color
+^E[enter]               End of layout (all pages)
+^G<y>,<x>,<pic>[enter]  Draw a graphic and push margins
+^P[enter]               start new page, must be the first chars in a layout
+^L<x>,<y>[ENTER]        Locate to a specific spot, x in pixels, y in lines
+
+=============================================================================
+*/
+
+/// <summary>Wolf3D's articles (WL_TEXT): the help screens and a won episode's end text, page by page</summary>
+internal sealed class ArticleReader(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio, VideoManager video,
+    GraphicManager graphics, MenuInput menuInput, GameSession session, TextPresenter presenter)
 {
-    /*
-    =============================================================================
-
-    TEXT FORMATTING COMMANDS
-    ------------------------
-    ^C<hex digit>           Change text color
-    ^E[enter]               End of layout (all pages)
-    ^G<y>,<x>,<pic>[enter]  Draw a graphic and push margins
-    ^P[enter]               start new page, must be the first chars in a layout
-    ^L<x>,<y>[ENTER]        Locate to a specific spot, x in pixels, y in lines
-
-    =============================================================================
-    */
-
     /*
     =============================================================================
 
@@ -48,31 +49,31 @@ internal partial class Program
     =============================================================================
     */
 
-    static int pagenum;
-    static int numpages;
+    int pagenum;
+    int numpages;
 
-    static uint[] leftmargin = new uint[TEXTROWS];
-    static uint[] rightmargin = new uint[TEXTROWS];
-    static string text = "";
-    static int textIndex = 0;
-    static uint rowon;
+    uint[] leftmargin = new uint[TEXTROWS];
+    uint[] rightmargin = new uint[TEXTROWS];
+    string text = "";
+    int textIndex = 0;
+    uint rowon;
 
-    static int picx;
-    static int picy;
-    static string? picName;
-    static int picdelay;
-    static bool layoutdone;
+    int picx;
+    int picy;
+    string? picName;
+    int picdelay;
+    bool layoutdone;
 
-    internal static void HelpScreens()
+    internal void HelpScreens()
     {
         // A pack with presenter help (Blake Stone's) shows it in the briefing window
-        if (_gameEngineManager.GetGameInfo().HelpText is { Length: > 0 } helpText)
+        if (engine.GetGameInfo().HelpText is { Length: > 0 } helpText)
         {
-            ShowTextPages(helpText, fromMenu: true);
+            presenter.ShowTextPages(helpText, fromMenu: true);
             return;
         }
 
-        var textAsset = _assetManager.Find<TextAsset>("HELPART");
+        var textAsset = assets.Find<TextAsset>("HELPART");
         if (textAsset == null)
             return;
         var text = textAsset.ToText();
@@ -81,23 +82,21 @@ internal partial class Program
             return;
         }
         ShowArticle(text);
-        _videoManager.FadeOut();
-
-        FreeMusic();
+        video.FadeOut();
     }
 
-    internal static void EndText()
+    internal void EndText()
     {
-        ClearMemory();
+        audio.StopAll();        // ClearMemory
 
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        if (!gameInfo.Clusters.TryGetValue(gamestate.cluster, out var clusterInfo)
+        var gameInfo = engine.GetGameInfo();
+        if (!gameInfo.Clusters.TryGetValue(session.gamestate.cluster, out var clusterInfo)
             || string.IsNullOrEmpty(clusterInfo?.EndText))
         {
             return;
         }
 
-        var textAsset = _assetManager.Find<TextAsset>(clusterInfo.EndText);
+        var textAsset = assets.Find<TextAsset>(clusterInfo.EndText);
         if (textAsset == null)
             return;
         var text = textAsset.ToText();
@@ -108,14 +107,12 @@ internal partial class Program
 
         ShowArticle(text);
 
-        _videoManager.FadeOut();
-        _inputManager.ClearKeysDown();
-        _inputManager.CenterMouse();
-
-        FreeMusic();
+        video.FadeOut();
+        input.ClearKeysDown();
+        input.CenterMouse();
     }
 
-    internal static void ShowArticle(string article)
+    internal void ShowArticle(string article)
     {
         bool newpage, firstpage;
         ControlInfo ci;
@@ -124,8 +121,8 @@ internal partial class Program
         // From the start, not where the last article shown was left (the original pointed at the new text)
         textIndex = 0;
         // Where the layout has got to on the page, and the color ^C last set
-        var page = TextWindow.FullScreen(_graphicManager, new TextStyle(SMALL_FONT, "Black", "BACKCOLOR"));
-        _videoManager.FillScreen("BACKCOLOR");
+        var page = TextWindow.FullScreen(graphics, new TextStyle(UiFonts.SMALL_FONT, "Black", "BACKCOLOR"));
+        video.FillScreen("BACKCOLOR");
         CacheLayout();
 
         newpage = true;
@@ -136,17 +133,17 @@ internal partial class Program
             {
                 newpage = false;
                 PageLayout(page, true);
-                _videoManager.Update();
+                video.Update();
                 if (firstpage)
                 {
-                    _videoManager.FadeIn(10);
+                    video.FadeIn(10);
                     firstpage = false;
                 }
             }
             GameEngineManager.DelayMs(5);
 
-            _inputManager.ClearLastKey();
-            ReadAnyControl(out ci);
+            input.ClearLastKey();
+            menuInput.ReadAnyControl(out ci);
             Direction dir = ci.dir;
             switch (dir)
             {
@@ -157,7 +154,7 @@ internal partial class Program
                 default:
                     if (ci.button0)
                         dir = Direction.South;
-                    switch (_inputManager.GetLastKeyPressed())
+                    switch (input.GetLastKeyPressed())
                     {
                         case ScanCodes.sc_UpArrow:
                         case ScanCodes.sc_PgUp:
@@ -185,7 +182,7 @@ internal partial class Program
                         BackPage();
                         newpage = true;
                     }
-                    TicDelay(20);
+                    menuInput.TicDelay(20);
                     break;
 
                 case Direction.South:
@@ -194,12 +191,12 @@ internal partial class Program
                     {
                         newpage = true;
                     }
-                    TicDelay(20);
+                    menuInput.TicDelay(20);
                     break;
             }
-        } while (_inputManager.GetLastKeyPressed() != ScanCodes.sc_Escape && !ci.button1);
+        } while (input.GetLastKeyPressed() != ScanCodes.sc_Escape && !ci.button1);
 
-        _inputManager.ClearKeysDown();
+        input.ClearKeysDown();
     }
 
     /*
@@ -212,7 +209,7 @@ internal partial class Program
 =====================
 */
 
-    private static void BackPage()
+    private void BackPage()
     {
         pagenum--;
         do
@@ -236,7 +233,7 @@ internal partial class Program
     =====================
     */
 
-    private static void CacheLayout()
+    private void CacheLayout()
     {
         int textstart = 0;
         char ch;
@@ -269,24 +266,24 @@ internal partial class Program
 
         } while (textIndex < bombpoint && textIndex < text.Length - 1);
 
-        _gameEngineManager.Quit("CacheLayout: No ^E to terminate file!");
+        engine.Quit("CacheLayout: No ^E to terminate file!");
     }
 
-    private static void ParsePicCommand()
+    private void ParsePicCommand()
     {
         picy = ParseNumber();
         picx = ParseNumber();
-        var alias = _assetManager.FindInGamePack<AliasAsset>("alias");
+        var alias = assets.FindInGamePack<AliasAsset>("alias");
         alias.ArtExtern.TryGetValue(ParseNumber(), out picName);
         RipToEOL();
     }
 
 
-    private static void ParseTimedCommand()
+    private void ParseTimedCommand()
     {
         picy = ParseNumber();
         picx = ParseNumber();
-        var alias = _assetManager.FindInGamePack<AliasAsset>("alias");
+        var alias = assets.FindInGamePack<AliasAsset>("alias");
         alias.ArtExtern.TryGetValue(ParseNumber(), out picName);
         picdelay = ParseNumber();
         RipToEOL();
@@ -302,14 +299,14 @@ internal partial class Program
 =====================
 */
 
-    private static void TimedPicCommand()
+    private void TimedPicCommand()
     {
         ParseTimedCommand();
 
         //
         // update the screen, and wait for time delay
         //
-        _videoManager.Update();
+        video.Update();
 
         //
         // wait for time
@@ -319,7 +316,7 @@ internal partial class Program
         //
         // draw pic
         //
-        _graphicManager.DrawPic(picName, picx & ~7, picy);
+        graphics.DrawPic(picName, picx & ~7, picy);
     }
 
     /*
@@ -330,7 +327,7 @@ internal partial class Program
 =====================
 */
 
-    private static void RipToEOL()
+    private void RipToEOL()
     {
         while (text[textIndex++] != '\n')         // scan to end of line
             ;
@@ -344,7 +341,7 @@ internal partial class Program
     =====================
     */
 
-    private static int ParseNumber()
+    private int ParseNumber()
     {
         char ch;
         char[] num = new char[80];
@@ -381,7 +378,7 @@ internal partial class Program
 =====================
 */
 
-    private static void PageLayout(TextWindow page, bool shownumber)
+    private void PageLayout(TextWindow page, bool shownumber)
     {
         int i;
         char ch;
@@ -391,11 +388,11 @@ internal partial class Program
         //
         // clear the screen
         //
-        _videoManager.FillScreen("BACKCOLOR");
-        _graphicManager.DrawPic("h_topwindow", 0, 0);
-        _graphicManager.DrawPic("h_leftwindow", 0, 8);
-        _graphicManager.DrawPic("h_rightwindow", 312, 8);
-        _graphicManager.DrawPic("h_bottominfo", 8, 176);
+        video.FillScreen("BACKCOLOR");
+        graphics.DrawPic("h_topwindow", 0, 0);
+        graphics.DrawPic("h_leftwindow", 0, 8);
+        graphics.DrawPic("h_rightwindow", 312, 8);
+        graphics.DrawPic("h_bottominfo", 8, 176);
 
 
         for (i = 0; i < TEXTROWS; i++)
@@ -416,7 +413,7 @@ internal partial class Program
             textIndex++;
 
         if (text[textIndex] != '^' || Char.ToUpper(text[++textIndex]) != 'P')
-            _gameEngineManager.Quit("PageLayout: Text not headed with ^P");
+            engine.Quit("PageLayout: Text not headed with ^P");
 
         while (text[textIndex++] != '\n')
             ;
@@ -449,7 +446,7 @@ internal partial class Program
         if (shownumber)
         {
             var str = $"pg {pagenum} of {numpages}";
-            _graphicManager.DrawText(213, 183, str, page.Style with { Color = "Dark Yellow" });    //12^BACKCOLOR;
+            graphics.DrawText(213, 183, str, page.Style with { Color = "Dark Yellow" });    //12^BACKCOLOR;
         }
     }
 
@@ -462,7 +459,7 @@ internal partial class Program
     =====================
     */
 
-    private static void HandleCommand(TextWindow page)
+    private void HandleCommand(TextWindow page)
     {
         int i, margin, top, bottom;
         int picwidth, picheight, picmid;
@@ -474,7 +471,7 @@ internal partial class Program
                 picx = ParseNumber();
                 picwidth = ParseNumber();
                 picheight = ParseNumber();
-                _videoManager.Bar(picx, picy, picwidth, picheight, "BACKCOLOR");
+                video.Bar(picx, picy, picwidth, picheight, "BACKCOLOR");
                 RipToEOL();
                 break;
             case ';':               // comment
@@ -526,8 +523,8 @@ internal partial class Program
 
             case 'G':               // ^Gyyy,xxx,ppp draws graphic
                 ParsePicCommand();
-                _graphicManager.DrawPic(picName, picx & ~7, picy);
-                var graphicAsset = _assetManager.Find<GraphicAsset>(picName);
+                graphics.DrawPic(picName, picx & ~7, picy);
+                var graphicAsset = assets.Find<GraphicAsset>(picName);
                 if (graphicAsset == null)
                     return;
 
@@ -573,7 +570,7 @@ internal partial class Program
     =====================
     */
 
-    private static void HandleCtrls(TextWindow page)
+    private void HandleCtrls(TextWindow page)
     {
         char ch;
 
@@ -595,7 +592,7 @@ internal partial class Program
     =====================
     */
 
-    private static void HandleWord(TextWindow page)
+    private void HandleWord(TextWindow page)
     {
         char[] wword = new char[WORDLIMIT];
         int wordindex;
@@ -610,7 +607,7 @@ internal partial class Program
         {
             wword[wordindex] = text[textIndex++];
             if (++wordindex == WORDLIMIT)
-                _gameEngineManager.Quit("PageLayout: Word limit exceeded");
+                engine.Quit("PageLayout: Word limit exceeded");
         }
         string word = new string(wword, 0, wordindex);
 
@@ -649,7 +646,7 @@ internal partial class Program
     =====================
     */
 
-    private static void NewLine(TextWindow page)
+    private void NewLine(TextWindow page)
     {
         char ch;
 

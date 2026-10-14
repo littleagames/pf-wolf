@@ -73,7 +73,7 @@ public sealed class ArticleArt
 
 /// <summary>
 /// A Wolf3D article (the help text "Read This!", and the ENDARTn texts after an episode) laid out
-/// page by page, the way the game's Program.WL_TEXT does: each page starts with ^P and the text
+/// page by page, the way the game's Ui/ArticleReader.cs does: each page starts with ^P and the text
 /// ends with ^E; words wrap between the margins, which ^G pictures push in. Where the game would
 /// quit or crash on the text, this carries on and says so in <see cref="Problems"/>.
 ///

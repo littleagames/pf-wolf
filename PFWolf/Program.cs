@@ -100,6 +100,30 @@ internal partial class Program
         return lines;
     }
 
+    // Blake Stone's text presenter and Wolf3D's articles (Ui/TextPresenter.cs, Ui/ArticleReader.cs,
+    // made in InitServices)
+    static TextPresenter textPresenter = null!;
+    static ArticleReader articleReader = null!;
+    internal static string? PresenterScript(string textName) => textPresenter.PresenterScript(textName);
+    internal static void TP_Presenter(PresenterInfo pi) => textPresenter.TP_Presenter(pi);
+    internal static Fonts.Font? PresenterFont(int number) => textPresenter.PresenterFont(number);
+    internal static void PresenterMessageBox(string script) => textPresenter.PresenterMessageBox(script);
+    internal static bool ShowBriefing(string textName) => textPresenter.ShowBriefing(textName);
+    internal static void ShowLoseScreen(LoseScreenInfo lose) => textPresenter.ShowLoseScreen(lose);
+    internal static void HelpScreens() => articleReader.HelpScreens();
+    internal static void EndText() => articleReader.EndText();
+    internal static void ShowArticle(string article) => articleReader.ShowArticle(article);
+
+    /// <summary>
+    /// A menu item's pages of presenter text (Blake Stone's instructions, story and ordering
+    /// info) in the briefing window, with its pages-info-line and pages-music, until Esc
+    /// </summary>
+    internal static int CP_TextScreen(string textName)
+    {
+        textPresenter.ShowTextPages(textName, fromMenu: true);
+        StartCPMusic(MENUSONG);
+        return 0;
+    }
     // The high scores, and the level-end and victory screens (Ui/HighScoresScreen.cs,
     // Ui/IntermissionScreen.cs, made in InitServices)
     static HighScoresScreen highScoresScreen = null!;
@@ -214,6 +238,10 @@ internal partial class Program
             menuDrawing, menuLoop, menuInput, menuDefs, ui, () => ingame);
         customizeScreen = new CustomizeControlsScreen(_assetManager, _inputManager, _audioManager, _videoManager,
             menuDrawing, menuLoop, menuInput, menuDefs, ui, controls);
+        textPresenter = new TextPresenter(_assetManager, _inputManager, _audioManager, _videoManager,
+            _graphicManager, _fontManager, menuDrawing, menuInput);
+        articleReader = new ArticleReader(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
+            _graphicManager, menuInput, session, textPresenter);
         highScoresScreen = new HighScoresScreen(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
             _graphicManager, menuDrawing, menuDefs, ui, lineInput, session, () => Scores, FloorScore);
         intermissionScreen = new IntermissionScreen(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,

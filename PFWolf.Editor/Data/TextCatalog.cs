@@ -8,7 +8,7 @@ public enum TextFormat
 {
     /// <summary>A Wolf3D article (^P pages, ^E at the end): the help screens and the episode end texts</summary>
     Article,
-    /// <summary>A Blake Stone presenter script (Program.TextPresenter): briefings and the instructions</summary>
+    /// <summary>A Blake Stone presenter script (Ui/TextPresenter.cs): briefings and the instructions</summary>
     Presenter,
     /// <summary>Anything else a data file's text chunk holds</summary>
     Other,
@@ -30,7 +30,7 @@ public sealed record TextEntry(string Name, TextFormat Format, IReadOnlyList<str
 /// </summary>
 public static class TextCatalog
 {
-    /// <summary>The font articles are printed in (Program.SMALL_FONT)</summary>
+    /// <summary>The font articles are printed in (UiFonts.SMALL_FONT)</summary>
     public const string ArticleFont = "SmallFont";
 
     public static string FormatName(TextFormat format) => format switch
