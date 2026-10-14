@@ -11,65 +11,25 @@ internal partial class Program
 
                                     SAVE GAMES
 
-    Every *.dat in the save folder is a save; there are no slots. A save file is:
-
-        byte[4]   "PFWS"
-        int       format version
-        int       header length, then the header (SaveInfo: name, when, where, progress)
-                  -- the load/save menus list saves from this alone
-        int, int  thumbnail width and height, then that many palette indices
-        int       body length, then the body
-        int       checksum of the body
-
-    The body holds the game (gamestate, level ratios, inventory), the level as it
-    stands (WriteLevelBody), the weapon, and the hub clusters' levels kept as they
-    were left (Program.Hubs.cs). Nothing is restored until the whole file has been read and
-    checked against the current map and actordefs, so a save that can't be loaded
-    leaves the game as it was.
+    The file around a save (header, thumbnail, checksum) is SaveGames/SaveFile.cs's. Its body
+    holds the game (gamestate, level ratios, inventory), the level as it stands
+    (WriteLevelBody), the weapon, and the hub clusters' levels kept as they were left
+    (Program.Hubs.cs). Nothing is restored until the whole file has been read and checked
+    against the current map and actordefs, so a save that can't be loaded leaves the game as
+    it was.
 
     =============================================================================
     */
 
-    internal const string SaveExtension = ".dat";
-    internal const string QuickSaveFile = "quicksave" + SaveExtension;
-    internal const string AutoSaveFile = "autosave" + SaveExtension;
-
-    private static readonly byte[] SaveSignature = "PFWS"u8.ToArray();
-    // Still in development, so a layout change bumps SaveVersion and older saves are refused
-    // rather than converted. 6: the header (SaveInfo) and thumbnail ahead of the body, no slots.
-    // 7: the mods loaded when it was saved, at the end of the header.
-    // 8: a fourth map plane, wall heights moved from plane 2 to it (plane 2 is flats).
-    // 9: the area count (mapdefs floors) ahead of the area tables.
-    // 10: the player class, after the skill in gamestate.
-    // 11: armor points and percent, after health in gamestate.
-    // 12: a fifth map plane (tags), each actor's tag after its tile, and whether each door is
-    //     held open by a switch.
-    // 13: a sixth map plane (light zones).
-    // 14: the light zones' lights, tints, fades and effects, at the end.
-    // 15: each actor's light as A_SetLight / A_LightOff left it, after its runtime flags.
-    // 16: whether each door has been unlocked (doors.yaml takes-key), after held.
-    // 17: actors' Temp3, Ammo, SeekX/Y and TryDir; the weapon charge.
-    // 18: the light zones before the weapon; the hub state (levels kept, floors visited) at the end.
-    // 19: each actor's carried drops, death link and cloak (mapdefs floors actor-codes), after its light.
-    // 20: a count of moving pushwalls and each one's state, in place of the one pushwall.
-    // 21: after the actors, when tiles last changed (animation starts) and A_ChangeTexture's swaps.
-    // 22: each actor's faction, after its cloak; after the actors, each one's target and shooter.
-    // 23: each actor's own translation, after its faction.
-    // 24: each tile's wall patch, at the end of the level (plane 0 is saved without them).
-    private const int SaveVersion = 24;
-    private const int OldestLoadableSaveVersion = SaveVersion;
-
     // Thumbnails are taken this wide (less if the view is narrower), their height from the
     // view's shape; big enough to stay sharp in the menus at a few times 320x200
     private const int ThumbnailWidth = 256;
-    // Anything claiming more than this is garbage
-    private const int MaxThumbnailPixels = 1024 * 1024;
 
     private static string SaveDirectory => _gameEngineManager.ConfigDirectories.SaveGameDirectory;
 
     // F8 saves over this one and F9 loads it; the level start autosave is the other
-    internal static string QuickSavePath => Path.Combine(SaveDirectory, QuickSaveFile);
-    internal static string AutoSavePath => Path.Combine(SaveDirectory, AutoSaveFile);
+    internal static string QuickSavePath => Path.Combine(SaveDirectory, SaveFile.QuickSaveFile);
+    internal static string AutoSavePath => Path.Combine(SaveDirectory, SaveFile.AutoSaveFile);
 
     // Whether a new level saves itself as it starts (the `autosave` setting, saved in the config)
     internal static bool autosaveEnabled = true;
@@ -86,78 +46,17 @@ internal partial class Program
             SaveTheGame(AutoSavePath, "$STR_LS_AUTO".ToLanguageText(_assetManager.GetText("en-us")), 0, 0);
     }
 
-    /// <summary>
-    /// A path for a new save, named for when it was made (the save's own name is inside the
-    /// file, so it can be anything).
-    /// </summary>
-    internal static string NewSaveGamePath()
-    {
-        var stem = Path.Combine(SaveDirectory, $"save_{DateTime.Now:yyyyMMdd_HHmmss}");
-        var path = stem + SaveExtension;
-        for (int i = 2; File.Exists(path); i++)
-            path = $"{stem}_{i}{SaveExtension}";
-        return path;
-    }
+    /// <summary>A path for a new save in the save folder, named for when it was made.</summary>
+    internal static string NewSaveGamePath() => SaveFile.NewPath(SaveDirectory, DateTime.Now);
 
-    /// <summary>A time in tics as m:ss, or h:mm:ss from an hour up.</summary>
-    internal static string FormatPlayTime(int tics)
-    {
-        var time = TimeSpan.FromSeconds(Math.Max(tics, 0) / 70);
-        return time.TotalHours >= 1 ? $"{(int)time.TotalHours}:{time:mm\\:ss}" : $"{time.Minutes}:{time:ss}";
-    }
+    internal static string FormatPlayTime(int tics) => SaveFile.FormatPlayTime(tics);
 
     /// <summary>Every save in the save folder that this build can read, newest first.</summary>
-    internal static List<SaveInfo> ListSaveGames()
-    {
-        var saves = new List<SaveInfo>();
-        try
-        {
-            if (!Directory.Exists(SaveDirectory))
-                return saves;
+    internal static List<SaveInfo> ListSaveGames() => SaveFile.List(SaveDirectory);
 
-            foreach (var path in Directory.EnumerateFiles(SaveDirectory, "*" + SaveExtension))
-            {
-                if (ReadSaveInfo(path) is { } info)
-                    saves.Add(info);
-            }
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            Console.WriteLine($"Couldn't list the saves in {SaveDirectory}: {e.Message}");
-        }
-
-        saves.Sort((a, b) => b.SavedAt.CompareTo(a.SavedAt));
-        return saves;
-    }
-
-    /// <summary>The save's header, or null (having said why) if it isn't a save this build reads.</summary>
-    internal static SaveInfo? ReadSaveInfo(string path)
-    {
-        try
-        {
-            using var br = new BinaryReader(File.OpenRead(path));
-            ReadSaveVersion(br);
-            using var header = new BinaryReader(new MemoryStream(ReadExactly(br, br.ReadCount())));
-            return SaveInfo.Read(header) with { Path = path };
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or FormatException)
-        {
-            Console.WriteLine($"Skipping {path}: {e.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>Checks the signature and reads the format version, refusing one this build can't read.</summary>
-    private static int ReadSaveVersion(BinaryReader br)
-    {
-        if (!br.ReadBytes(SaveSignature.Length).AsSpan().SequenceEqual(SaveSignature))
-            throw new InvalidDataException("It isn't a PFWolf save game.");
-
-        var version = br.ReadInt32();
-        if (version < OldestLoadableSaveVersion || version > SaveVersion)
-            throw new InvalidDataException($"It was saved in format {version}; this build reads {OldestLoadableSaveVersion} to {SaveVersion}.");
-        return version;
-    }
+    internal static SaveInfo? ReadSaveInfo(string path) => SaveFile.ReadInfo(path);
+    internal static SaveThumbnail? ReadSaveThumbnail(SaveInfo save) => SaveFile.ReadThumbnail(save);
+    private static byte[] ReadExactly(BinaryReader br, int count) => SaveFile.ReadExactly(br, count);
 
     /// <summary>The header for a save of the game as it stands.</summary>
     private static SaveInfo CurrentSaveInfo(string path, string name)
@@ -234,43 +133,18 @@ internal partial class Program
             return false;
         }
 
-        var tempPath = path + ".tmp";
         try
         {
             using var body = new MemoryStream();
             using (var bw = new BinaryWriter(body, Encoding.UTF8, leaveOpen: true))
                 WriteSaveBody(bw, x, y);
-            var bodyBytes = body.ToArray();
 
-            using var header = new MemoryStream();
-            using (var bw = new BinaryWriter(header, Encoding.UTF8, leaveOpen: true))
-                CurrentSaveInfo(path, name).Write(bw);
-            var headerBytes = header.ToArray();
-            var thumbnail = _videoManager.MakeThumbnail(ThumbnailWidth);
-
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            using (var bw = new BinaryWriter(File.Create(tempPath)))
-            {
-                bw.Write(SaveSignature);
-                bw.Write(SaveVersion);
-                bw.Write(headerBytes.Length);
-                bw.Write(headerBytes);
-                bw.Write(thumbnail?.Width ?? 0);
-                bw.Write(thumbnail?.Height ?? 0);
-                if (thumbnail != null)
-                    bw.Write(thumbnail.Pixels);
-                bw.Write(bodyBytes.Length);
-                bw.Write(bodyBytes);
-                bw.Write(DoChecksum(bodyBytes, 0));
-            }
-
-            File.Move(tempPath, path, overwrite: true);
+            SaveFile.Write(path, CurrentSaveInfo(path, name), _videoManager.MakeThumbnail(ThumbnailWidth), body.ToArray());
             return true;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             Console.WriteLine($"Couldn't save the game to {path}: {e.Message}");
-            try { File.Delete(tempPath); } catch (Exception cleanup) when (cleanup is IOException or UnauthorizedAccessException) { }
             return false;
         }
     }
@@ -449,44 +323,6 @@ internal partial class Program
             Hubs: ReadHubState(br));
     }
 
-    // BinaryReader.ReadBytes quietly returns fewer bytes at the end of the stream.
-    private static byte[] ReadExactly(BinaryReader br, int count)
-    {
-        var bytes = br.ReadBytes(count);
-        if (bytes.Length != count)
-            throw new EndOfStreamException();
-        return bytes;
-    }
-
-    private static SaveThumbnail? ReadThumbnail(BinaryReader br)
-    {
-        int width = br.ReadInt32(), height = br.ReadInt32();
-        if (width < 0 || height < 0 || (long)width * height > MaxThumbnailPixels)
-            throw new InvalidDataException($"Bad thumbnail size {width}x{height}.");
-        var pixels = ReadExactly(br, width * height);
-        return width > 0 && height > 0 ? new SaveThumbnail(width, height, pixels) : null;
-    }
-
-    /// <summary>
-    /// The picture of the game kept with a save, read only when the menu shows it; null if it
-    /// has none or can't be read.
-    /// </summary>
-    internal static SaveThumbnail? ReadSaveThumbnail(SaveInfo save)
-    {
-        try
-        {
-            using var br = new BinaryReader(File.OpenRead(save.Path));
-            ReadSaveVersion(br);
-            ReadExactly(br, br.ReadCount());
-            return ReadThumbnail(br);
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
-        {
-            Console.WriteLine($"Couldn't read the picture in {save.Path}: {e.Message}");
-            return null;
-        }
-    }
-
     /// <summary>
     /// Loads a save over whatever is running. The caller sets <c>loadedgame</c> first, so the
     /// level rebuild doesn't re-count kills, treasure and secrets. Returns false, having shown
@@ -500,16 +336,8 @@ internal partial class Program
         try
         {
             DiskFlopAnim(x, y);
-            using var br = new BinaryReader(File.OpenRead(path));
-            ReadSaveVersion(br);
-            // The header is for the menus, and for saying whether it was saved with other mods
-            using (var header = new BinaryReader(new MemoryStream(ReadExactly(br, br.ReadCount()))))
-                info = SaveInfo.Read(header);
-            ReadThumbnail(br);
-
-            var body = br.ReadBytes(br.ReadCount());
-            checksumOk = br.BaseStream.Length - br.BaseStream.Position >= sizeof(int)
-                && br.ReadInt32() == DoChecksum(body, 0);
+            byte[] body;
+            (body, checksumOk) = SaveFile.ReadBody(path, out info);
 
             DiskFlopAnim(x, y);
             using var bodyReader = new BinaryReader(new MemoryStream(body));
@@ -632,150 +460,4 @@ internal partial class Program
         diskflopanim_which ^= 1;
     }
 
-    internal static int DoChecksum(byte[] source, int checksum)
-    {
-        for (int i = 0; i < source.Length - 1; i++)
-            checksum += source[i] ^ source[i + 1];
-
-        return checksum;
-    }
-}
-
-internal enum SaveKind { Normal, Quick, Auto }
-
-/// <summary>
-/// A mod a save was made with: its modinfo.yaml name (or file name) and version, and the file
-/// or folder it was loaded from
-/// </summary>
-internal sealed record SavedMod(string Name, string Version, string FileName)
-{
-    public override string ToString() => Version.Length == 0 ? Name : $"{Name} {Version}";
-
-    /// <summary>
-    /// Whether two lists name the same mods, by name and version, in the same order (a
-    /// different order can change which mod's files win)
-    /// </summary>
-    public static bool SameMods(IReadOnlyList<SavedMod> a, IReadOnlyList<SavedMod> b)
-        => a.Count == b.Count && a.Zip(b).All(pair =>
-            string.Equals(pair.First.Name, pair.Second.Name, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(pair.First.Version, pair.Second.Version, StringComparison.OrdinalIgnoreCase));
-}
-
-/// <summary>A save's picture of the game: game palette indices, a row at a time.</summary>
-internal sealed record SaveThumbnail(int Width, int Height, byte[] Pixels);
-
-/// <summary>
-/// A save's header: what the load/save menus show about it, read without loading the game.
-/// Map and skill names are kept as they read when saved, so a save from another game pack
-/// or mod still shows them.
-/// </summary>
-internal sealed record SaveInfo
-{
-    /// <summary>The file it was read from; not stored in it.</summary>
-    public string Path { get; init; } = "";
-
-    public string Name { get; init; } = "";
-    public DateTime SavedAt { get; init; }      // UTC
-    public string GamePack { get; init; } = "";
-    public string MapOn { get; init; } = "";
-    public string MapName { get; init; } = "";
-    public short Difficulty { get; init; }      // the skill's place in game-info's skills
-    public string SkillName { get; init; } = "";
-    public int LevelTime { get; init; }         // tics on this level
-    public int PlayTime { get; init; }          // tics since the game began
-    public int Score { get; init; }
-    public short Lives { get; init; }
-    public short Health { get; init; }
-    public short Kills { get; init; }
-    public short KillTotal { get; init; }
-    public short Secrets { get; init; }
-    public short SecretTotal { get; init; }
-    public short Treasure { get; init; }
-    public short TreasureTotal { get; init; }
-
-    /// <summary>The mods loaded when it was saved, in load order</summary>
-    public List<SavedMod> Mods { get; init; } = [];
-
-    // Anything claiming more than this is garbage
-    private const int MaxMods = 1000;
-
-    public SaveKind Kind => System.IO.Path.GetFileName(Path).ToLowerInvariant() switch
-    {
-        Program.QuickSaveFile => SaveKind.Quick,
-        Program.AutoSaveFile => SaveKind.Auto,
-        _ => SaveKind.Normal,
-    };
-
-    public void Write(BinaryWriter bw)
-    {
-        bw.Write(Name);
-        bw.Write(SavedAt.ToUniversalTime().Ticks);
-        bw.Write(GamePack);
-        bw.Write(MapOn);
-        bw.Write(MapName);
-        bw.Write((short)Difficulty);
-        bw.Write(SkillName);
-        bw.Write(LevelTime);
-        bw.Write(PlayTime);
-        bw.Write(Score);
-        bw.Write(Lives);
-        bw.Write(Health);
-        bw.Write(Kills);
-        bw.Write(KillTotal);
-        bw.Write(Secrets);
-        bw.Write(SecretTotal);
-        bw.Write(Treasure);
-        bw.Write(TreasureTotal);
-
-        bw.Write(Mods.Count);
-        foreach (var mod in Mods)
-        {
-            bw.Write(mod.Name);
-            bw.Write(mod.Version);
-            bw.Write(mod.FileName);
-        }
-    }
-
-    public static SaveInfo Read(BinaryReader br)
-    {
-        var name = br.ReadString();
-        var ticks = br.ReadInt64();
-        if (ticks < DateTime.MinValue.Ticks || ticks > DateTime.MaxValue.Ticks)
-            throw new InvalidDataException($"Bad save time {ticks}.");
-
-        var info = ReadStats(br, name, ticks);
-
-        var modCount = br.ReadInt32();
-        if (modCount < 0 || modCount > MaxMods)
-            throw new InvalidDataException($"Bad mod count {modCount}.");
-        for (int i = 0; i < modCount; i++)
-            info.Mods.Add(new SavedMod(br.ReadString(), br.ReadString(), br.ReadString()));
-
-        return info;
-    }
-
-    private static SaveInfo ReadStats(BinaryReader br, string name, long ticks)
-    {
-        return new SaveInfo
-        {
-            Name = name,
-            SavedAt = new DateTime(ticks, DateTimeKind.Utc),
-            GamePack = br.ReadString(),
-            MapOn = br.ReadString(),
-            MapName = br.ReadString(),
-            Difficulty = br.ReadInt16(),
-            SkillName = br.ReadString(),
-            LevelTime = br.ReadInt32(),
-            PlayTime = br.ReadInt32(),
-            Score = br.ReadInt32(),
-            Lives = br.ReadInt16(),
-            Health = br.ReadInt16(),
-            Kills = br.ReadInt16(),
-            KillTotal = br.ReadInt16(),
-            Secrets = br.ReadInt16(),
-            SecretTotal = br.ReadInt16(),
-            Treasure = br.ReadInt16(),
-            TreasureTotal = br.ReadInt16(),
-        };
-    }
 }

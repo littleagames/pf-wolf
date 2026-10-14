@@ -2,8 +2,8 @@ namespace PFWolf.Tests;
 
 public class SaveInfoTests
 {
-    // Program.SaveVersion: a save's header can only be read at the current format
-    private const int CurrentVersion = 24;
+    // SaveFile.SaveVersion: a save's header can only be read at the current format
+    private const int CurrentVersion = SaveFile.SaveVersion;
 
     private string _folder = "";
 
@@ -68,7 +68,7 @@ public class SaveInfoTests
         var path = WriteSave("save_1.dat", bw => WriteHeader(bw, info));
 
         // Act
-        var read = Program.ReadSaveInfo(path);
+        var read = SaveFile.ReadInfo(path);
 
         // Assert
         Assert.That(read, Is.Not.Null);
@@ -84,7 +84,7 @@ public class SaveInfoTests
         var path = WriteSave("other.dat", bw => WriteHeader(bw, SampleInfo(), signature: "WOLF"));
 
         // Act / Assert
-        Assert.That(Program.ReadSaveInfo(path), Is.Null);
+        Assert.That(SaveFile.ReadInfo(path), Is.Null);
     }
 
     [TestCase(CurrentVersion - 1)]
@@ -95,7 +95,7 @@ public class SaveInfoTests
         var path = WriteSave("old.dat", bw => WriteHeader(bw, SampleInfo(), version: version));
 
         // Act / Assert
-        Assert.That(Program.ReadSaveInfo(path), Is.Null);
+        Assert.That(SaveFile.ReadInfo(path), Is.Null);
     }
 
     [Test]
@@ -111,7 +111,7 @@ public class SaveInfoTests
         });
 
         // Act / Assert
-        Assert.That(Program.ReadSaveInfo(path), Is.Null);
+        Assert.That(SaveFile.ReadInfo(path), Is.Null);
     }
 
     [Test]
@@ -127,7 +127,7 @@ public class SaveInfoTests
         });
 
         // Act / Assert
-        Assert.That(Program.ReadSaveInfo(path), Is.Null);
+        Assert.That(SaveFile.ReadInfo(path), Is.Null);
     }
 
     [Test]
@@ -137,7 +137,7 @@ public class SaveInfoTests
         var path = WriteSave("empty.dat", _ => { });
 
         // Act / Assert
-        Assert.That(Program.ReadSaveInfo(path), Is.Null);
+        Assert.That(SaveFile.ReadInfo(path), Is.Null);
     }
 
     [Test]

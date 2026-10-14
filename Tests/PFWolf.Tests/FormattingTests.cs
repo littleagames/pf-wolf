@@ -13,7 +13,7 @@ public class FormattingTests
     [TestCase(-70, "0:00")]
     public void FormatPlayTime_Is_Minutes_Or_Hours(int tics, string expected)
     {
-        Assert.That(Program.FormatPlayTime(tics), Is.EqualTo(expected));
+        Assert.That(SaveFile.FormatPlayTime(tics), Is.EqualTo(expected));
     }
 
     [TestCase("Alice", "Alice")]
@@ -34,8 +34,8 @@ public class FormattingTests
     public void DoChecksum_Sums_Xors_Of_Neighbouring_Bytes()
     {
         // (1^2) + (2^4) + (4^8) = 3 + 6 + 12
-        Assert.That(Program.DoChecksum([1, 2, 4, 8], 100), Is.EqualTo(121));
-        Assert.That(Program.DoChecksum([], 7), Is.EqualTo(7));
+        Assert.That(SaveFile.DoChecksum([1, 2, 4, 8], 100), Is.EqualTo(121));
+        Assert.That(SaveFile.DoChecksum([], 7), Is.EqualTo(7));
     }
 
     [Test]
