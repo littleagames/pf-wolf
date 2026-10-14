@@ -1,5 +1,4 @@
 using LiteNetLib.Utils;
-using GameMode = PFWolf.Program.GameMode;
 
 namespace PFWolf.Networking;
 

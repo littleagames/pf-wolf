@@ -164,7 +164,7 @@ internal partial class Program
     /// others, the acting player outside their own think is just this machine's). No change for
     /// a missile no player fired.
     /// </summary>
-    static ActingScope ActAsShooter(Entities.Actors.Actor ob) =>
+    static GameSession.ActingScope ActAsShooter(Entities.Actors.Actor ob) =>
         ActAs(ob.Shooter is Entities.Actors.PlayerPawn { State: { } shooter } ? shooter : playerstate);
 
     // A missile's (or its blast's) damage landing: on an enemy, or a player (deathmatch rivals,

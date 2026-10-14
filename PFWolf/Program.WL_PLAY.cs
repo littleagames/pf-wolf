@@ -16,17 +16,13 @@ internal partial class Program
 
     internal static int DebugOk;
 
-    // The acting player's pawn (Program.Players.cs), which lives in MapManager._actors like
-    // every other actor; this is just a shortcut to it.
-    internal static Entities.Actors.PlayerPawn player =>
-        playerstate.Pawn ?? throw new InvalidOperationException("The player has not been spawned for this level yet.");
-
-    // The acting player's controls this frame: the game reads these, never _inputManager's buttons
-    internal static PlayerInput playerinput => playerstate.Input;
+    // The acting player's pawn and controls, and this frame's tics (Gameplay/GameSession.cs)
+    internal static Entities.Actors.PlayerPawn player => session.player;
+    internal static PlayerInput playerinput => session.playerinput;
+    internal static uint tics { get => session.tics; set => session.tics = value; }
 
     internal static byte singlestep, godmode, noclip, ammocheat, mapreveal;
     internal static int extravbls;
-    internal static uint tics;
 
     //
     // control info

@@ -9,47 +9,21 @@ internal partial class Program
     =
     = Players
     =
-    = Everyone in the game, each with their own PlayerState. The game's player code is written
-    = for one player: it reads player, playerstate, playerinput and the player globals below,
-    = which are always the acting player's. MapManager.DoActors makes each pawn the acting player
-    = while it thinks, ActAs does it for anything else done to a particular player (hurting
-    = them, say), and the rest of the time it's the local player: the one whose view, status
-    = bar, flashes and sounds this machine shows.
+    = Everyone in the game, each with their own PlayerState, and who's acting now: the
+    = GameSession (Gameplay/GameSession.cs), which these forward to.
     =
     ====================
     */
 
-    /// <summary>Everyone in the game, in the order they think; never empty once a game has started</summary>
-    internal static readonly List<Entities.PlayerState> players = [new()];
-
-    /// <summary>Which of players is this machine's: what the screen shows and the controls drive</summary>
-    internal static int consoleplayer;
-
-    /// <summary>This machine's player</summary>
-    internal static Entities.PlayerState localplayer => players[consoleplayer];
-
-    /// <summary>The player acting now: see ActAs</summary>
-    internal static Entities.PlayerState playerstate { get; private set; } = players[0];
-
-    /// <summary>Whether the acting player is this machine's, so their screen, status bar and sounds are shown</summary>
-    internal static bool ActingIsLocal => ReferenceEquals(playerstate, localplayer);
-
-    /// <summary>
-    /// Makes <paramref name="p"/> the acting player until the returned scope is disposed: the
-    /// game's player code (player, playerstate, the inventory...) then reads and changes theirs.
-    /// </summary>
-    internal static ActingScope ActAs(Entities.PlayerState p)
-    {
-        var scope = new ActingScope(playerstate);
-        SetActing(p);
-        return scope;
-    }
-
-    static void SetActing(Entities.PlayerState p)
-    {
-        playerstate = p;
-        _inventoryManager?.SetHolder(p.Items);
-    }
+    internal static List<Entities.PlayerState> players => session.players;
+    internal static int consoleplayer { get => session.consoleplayer; set => session.consoleplayer = value; }
+    internal static Entities.PlayerState localplayer => session.localplayer;
+    internal static Entities.PlayerState playerstate => session.playerstate;
+    internal static bool ActingIsLocal => session.ActingIsLocal;
+    internal static GameSession.ActingScope ActAs(Entities.PlayerState p) => session.ActAs(p);
+    static void SetActing(Entities.PlayerState p) => session.SetActing(p);
+    internal static GameMode gamemode => session.gamemode;
+    internal static void SetGameMode(GameMode mode) => session.SetGameMode(mode);
 
     /// <summary>
     /// Whether the status bar's parts aren't drawn now: with the view full screen, or for a
@@ -125,11 +99,6 @@ internal partial class Program
             PlaySoundLocActor(name, pawn);
     }
 
-    internal readonly struct ActingScope(Entities.PlayerState previous) : IDisposable
-    {
-        public void Dispose() => SetActing(previous);
-    }
-
     /// <summary>
     /// A new game's players: just the local one, fresh. Anyone else is added after (addplayer).
     /// </summary>
@@ -145,20 +114,6 @@ internal partial class Program
 
     /// <summary>The most players a game can have</summary>
     internal const int MAXPLAYERS = 4;
-
-    internal enum GameMode { Single, Coop, Deathmatch }
-
-    /// <summary>
-    /// How the players play together: Single (just one), Coop (together against the level,
-    /// keys shared) or Deathmatch (against each other)
-    /// </summary>
-    internal static GameMode gamemode { get; private set; } = GameMode.Single;
-
-    internal static void SetGameMode(GameMode mode)
-    {
-        gamemode = mode;
-        _inventoryManager.ShareKeys = mode == GameMode.Coop;
-    }
 
     /// <summary>
     /// Puts every player on the level: the first on the map's start, the rest on the nearest

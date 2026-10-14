@@ -15,7 +15,7 @@ internal partial class Program
 =============================================================================
 */
     static bool ingame, fizzlein;
-    internal static gametype gamestate = new gametype();
+    internal static gametype gamestate { get => session.gamestate; set => session.gamestate = value; }
     static string bordercol = "VIEWCOLOR"; // color of the Change View/Ingame border
     /// <summary>
     /// A map switch asked for by A_ChangeMap (Spear's pickup), an elevator or a teleporter:

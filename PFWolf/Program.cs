@@ -30,6 +30,9 @@ internal partial class Program
     internal static FactionManager _factionManager;
     internal static TranslationManager _translationManager;
 
+    // Who's playing, the acting player, tics, gamestate and the camera (Gameplay/GameSession.cs)
+    internal static readonly GameSession session = new();
+
     public Program()
     {
         var services = new ServiceCollection();
@@ -66,6 +69,8 @@ internal partial class Program
         _assetManager = serviceProvider.GetRequiredService<AssetManager>();
         _inventoryManager = serviceProvider.GetRequiredService<InventoryManager>();
         _inventoryManager.PlayerClass = () => playerstate.playerclass;
+        session.ActingChanged = p => _inventoryManager.SetHolder(p.Items);
+        session.GameModeChanged = mode => _inventoryManager.ShareKeys = mode == GameMode.Coop;
         SetActing(playerstate);         // the inventory reads the acting player's items
         _consoleManager = serviceProvider.GetRequiredService<ConsoleManager>();
         _automapManager = serviceProvider.GetRequiredService<AutomapManager>();
@@ -102,7 +107,7 @@ internal partial class Program
     =============================================================================
     */
 
-    static readonly int[] dirangle = {0,ANGLES/8,2*ANGLES/8,3*ANGLES/8,4*ANGLES/8,
+    internal static readonly int[] dirangle ={0,ANGLES/8,2*ANGLES/8,3*ANGLES/8,4*ANGLES/8,
                        5*ANGLES/8,6*ANGLES/8,7*ANGLES/8,ANGLES};
 
     //

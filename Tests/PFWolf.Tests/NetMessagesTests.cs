@@ -1,7 +1,6 @@
 using LiteNetLib.Utils;
 using PFWolf.Entities;
 using PFWolf.Networking;
-using GameMode = PFWolf.Program.GameMode;
 
 namespace PFWolf.Tests;
 
