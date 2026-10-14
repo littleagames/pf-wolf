@@ -111,5 +111,8 @@ internal sealed class GameSession
     /// <summary>id's random numbers, which every machine and every demo has to step through alike</summary>
     internal readonly RandomTable random = new();
 
+    /// <summary>Which of the level's areas are connected, by open doors, to the players' (Gameplay/AreaConnections.cs)</summary>
+    internal readonly AreaConnections areas = new();
+
     internal readonly Camera camera;
 }
