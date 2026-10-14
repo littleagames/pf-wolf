@@ -50,23 +50,20 @@ internal partial class Program
     static double controlpitch;            // how far to look up (down if negative) this frame, in degrees
     static bool controlcenterview;         // look straight ahead again this frame
 
-    // Mouse look (m_look, m_invert in controls.cfg): moving the mouse up and down looks up and
-    // down rather than walking, the other way round if inverted
-    internal static bool mouselook, mouseinvert;
+    // The mouse look and controller settings (Configuration/ControlSettings.cs)
+    internal static readonly ControlSettings controlSettings = new();
+    internal static bool mouselook { get => controlSettings.mouselook; set => controlSettings.mouselook = value; }
+    internal static bool mouseinvert { get => controlSettings.mouseinvert; set => controlSettings.mouseinvert = value; }
 
     // Degrees a tic the look keys (and a stick pushed all the way) look up or down: level to
     // the steepest the view allows (about 19 degrees) in half a second, like Heretic's keys
     const double LOOKSPEED = 0.6;
 
-    // The controller settings (the Controller Settings menu, and joy_* in controls.cfg):
-    // how much of a stick's travel around the middle is ignored, in percent; how fast a stick
-    // turns, as a step of JoyTurnSpeed; and whether the left stick turns, with the right
-    // strafing (classic), rather than the right stick turning (modern).
-    internal static int joydeadzone = 20;
-    internal static int joyturnspeed = 4;
-    internal static bool joyclassicsticks;
+    internal static int joydeadzone { get => controlSettings.joydeadzone; set => controlSettings.joydeadzone = value; }
+    internal static int joyturnspeed { get => controlSettings.joyturnspeed; set => controlSettings.joyturnspeed = value; }
+    internal static bool joyclassicsticks { get => controlSettings.joyclassicsticks; set => controlSettings.joyclassicsticks = value; }
 
-    internal const int JOYTURNSPEEDS = 10;
+    internal const int JOYTURNSPEEDS = ControlSettings.JOYTURNSPEEDS;
 
     // Turning speed with a stick pushed all the way, per tic: 50 to 140, 90 by default (the
     // arrow keys turn at BASEMOVE, RUNMOVE running)

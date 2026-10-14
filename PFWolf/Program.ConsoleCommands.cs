@@ -5,14 +5,12 @@ using PFWolf.Assets.Sounds;
 using PFWolf.Configuration;
 using PFWolf.Enums;
 using PFWolf.Loaders;
+using static PFWolf.Commands.ConsoleArgs;
 
 namespace PFWolf;
 
 internal partial class Program
 {
-    const ConsoleCommandFlags Cheat = ConsoleCommandFlags.Cheat;
-    const ConsoleCommandFlags InLevel = ConsoleCommandFlags.RequiresLevel;
-    const ConsoleCommandFlags Solo = ConsoleCommandFlags.SinglePlayer;
 
     /// <summary>
     /// Registers the in-game console's commands. Commands that need Program's game state live
@@ -24,54 +22,12 @@ internal partial class Program
         _consoleManager.PlayingWithOthers = () => netgame;
         _consoleManager.LevelLoaded = () => _mapManager.Player != null;
 
-        //
-        // console
-        //
-        Register("help", "Lists commands, or describes one.", "help [command]", Cmd_Help, aliases: ["?"],
-            complete: (_, i) => i == 0 ? CommandNames() : []);
-        Register("echo", "Prints its arguments.", "echo <text...>",
-            args => _consoleManager.Print(string.Join(' ', args)));
-        Register("clear", "Clears the console output.", "clear", _ => _consoleManager.Clear(), aliases: ["cls"]);
-        Register("history", "Lists previously entered lines.", "history", Cmd_History);
-        Register("con_pause", "Whether the game pauses while the console is open.", "con_pause [0|1]", Cmd_ConPause,
-            complete: Values("0", "1"));
-        Register("exec", "Runs the commands in a script file (in the config folder unless a full path is given).",
-            "exec <file>", Cmd_Exec, complete: (_, i) => i == 0 ? ConfigScriptNames() : []);
-
-        //
-        // binds (saved to binds.cfg on exit)
-        //
-        Register("bind", "Binds a key, mouse button, wheel turn or controller button to a command run when it's pressed in play, or shows its bind.",
-            "bind <key or button> [command]", Cmd_Bind, complete: CompleteBind);
-        Register("unbind", "Removes a key or button's bind.", "unbind <key or button>", Cmd_Unbind,
-            complete: (_, i) => i == 0 ? _consoleManager.Binds.Keys.Select(input => input.ToString()) : []);
-        Register("unbindall", "Removes every bind.", "unbindall", _ =>
-        {
-            _consoleManager.UnbindAll();
-            _consoleManager.Print("All binds removed");
-        });
-        Register("binds", "Lists the key binds.", "binds", Cmd_Binds);
-
-        //
-        // controls (saved to controls.cfg on exit)
-        //
-        Register("bindaction", "Sets a control's keys and buttons: up to two keys, mouse buttons or wheel turns and one controller button. Lists them all with no control.",
-            "bindaction [control] [key|\"Mouse 1-5\"|\"Wheel Up\"|\"Pad A\"|\"Joy 1-32\"...|none]", Cmd_BindAction, complete: CompleteBindAction);
-        Register("resetcontrols", "Puts every control back to its default keys and buttons.", "resetcontrols", _ =>
-        {
-            controls.SetDefaults();
-            _consoleManager.Print("Every control is back to its default");
-        });
-        Register("joy_deadzone", "How much of a controller stick's travel around the middle is ignored, in percent.",
-            "joy_deadzone [0-50]", args => SetOrShow("joy_deadzone", args, ref joydeadzone, 0, 50));
-        Register("joy_turnspeed", "How fast a controller's stick turns you, pushed all the way.",
-            "joy_turnspeed [0-9]", args => SetOrShow("joy_turnspeed", args, ref joyturnspeed, 0, JOYTURNSPEEDS - 1));
-        Register("m_look", "Whether moving the mouse up and down looks up and down (1) or walks (0).",
-            "m_look [0|1]", args => ToggleOrShow("m_look", args, ref mouselook), complete: Values("0", "1"));
-        Register("m_invert", "Whether mouse look is upside down: pushing the mouse away looks down.",
-            "m_invert [0|1]", args => ToggleOrShow("m_invert", args, ref mouseinvert), complete: Values("0", "1"));
-        Register("joy_sticks", "Which controller stick turns: the right (modern) or the left, with the right strafing (classic).",
-            "joy_sticks [modern|classic]", Cmd_JoySticks, complete: Values("modern", "classic"));
+        // the console itself, binds and controls, video, messages and assets (Commands/)
+        new CoreCommands(_consoleManager, _gameEngineManager.GetConfigFilePath).Register();
+        new BindCommands(_consoleManager, controls, controlSettings).Register();
+        new VideoCommands(_consoleManager, _videoManager, RedrawAfterVideoChange).Register();
+        new MessageCommands(_consoleManager, _hudMessageManager).Register();
+        new AssetCommands(_consoleManager, _assetManager, _audioManager, _gameEngineManager).Register();
 
         //
         // automap
@@ -90,40 +46,10 @@ internal partial class Program
 
         //
         // messages over the view
-        //
-        Register("msg", "Shows a message over the view, in a style from hud-messages.yaml if the first word names one.",
-            "msg [style] <text...>", Cmd_Msg, InLevel, complete: (_, i) => i == 0 ? _hudMessageManager.StyleNames : []);
-        Register("msg_enabled", "Whether item pickups, locked doors and deaths show messages over the view; default goes back to the game's own choice.",
-            "msg_enabled [0|1|default]", Cmd_MsgEnabled, complete: Values("0", "1", "default"));
-        Register("msg_clear", "Takes away the messages shown over the view.", "msg_clear", _ => _hudMessageManager.Clear());
-        Register("msg_styles", "Lists the message styles and where each puts its messages.", "msg_styles", Cmd_MsgStyles);
         Register("net_find", "Looks for games hosted on the local network (two seconds) and lists them.", "net_find", Cmd_NetFind);
         Register("net_portcheck", "Checks whether players on the internet can reach a game hosted here (the UDP port, default 10645): needs the port free, so not while hosting.", "net_portcheck [port]", Cmd_NetPortCheck);
         Register("net_status", "Shows the game with others: the level and frame, the players, and (hosting) how many checks found every machine agreeing.", "net_status", Cmd_NetStatus);
         Register("scoreboard", "Shows or hides the scoreboard over the view, playing with others (bind it to a key).", "scoreboard [0|1]", Cmd_Scoreboard, complete: Values("0", "1"));
-
-        //
-        // video
-        //
-        Register("vid_mode", "Shows the video mode.", "vid_mode", _ => PrintVideoMode());
-        Register("vid_fullscreen", "Borderless fullscreen (1) or a window (0).", "vid_fullscreen [0|1]",
-            args => ApplyVideo(s => s with { Fullscreen = Toggle(args, s.Fullscreen) }), complete: Values("0", "1"));
-        Register("vid_scale", "Draws the game at 320x200 times this: sharper, not bigger.", "vid_scale <1-8>",
-            args => ApplyVideo(s => s with { RenderScale = args.Length > 0 ? ParseInt(args[0], 1, 8) : throw new ArgumentException("usage: vid_scale <1-8>"), RenderSize = null, MatchWindow = false }),
-            complete: Values("1", "2", "3", "4", "5", "6"));
-        Register("vid_render", "Draws the game at any size and shape in place of 320x200 times vid_scale: auto follows the window (or the desktop when fullscreen); default goes back to vid_scale.",
-            "vid_render <width> <height> | auto | default", Cmd_VidRender, complete: Values("auto", "default"));
-        Register("vid_uiscale", "How big the menus, text and status bar are: screen pixels to each of their 320x200 pixels (2.5 is fine), or auto for the most whole number that fits.",
-            "vid_uiscale <n|auto>", Cmd_VidUiScale, complete: Values("auto", "1", "1.5", "2", "2.5", "3", "4"));
-        Register("vid_window", "The window's size when it isn't fullscreen.", "vid_window <width> <height>", Cmd_VidWindow);
-        Register("vid_vsync", "Waits for the display's refresh before showing each frame.", "vid_vsync [0|1]",
-            args => ApplyVideo(s => s with { VSync = Toggle(args, s.VSync) }), complete: Values("0", "1"));
-        Register("vid_aspect", "Shows the picture at 4:3, the shape it had on a CRT (1), or with square pixels (0).",
-            "vid_aspect [0|1]", args => ApplyVideo(s => s with { AspectCorrect = Toggle(args, s.AspectCorrect) }),
-            complete: Values("0", "1"));
-        Register("vid_filter", "How the picture is smoothed when scaled up to the window.", "vid_filter [nearest|linear]",
-            args => ApplyVideo(s => s with { Filter = args.Length > 0 ? ParseFilter(args[0]) : s.Filter == ScaleFilter.Nearest ? ScaleFilter.Linear : ScaleFilter.Nearest }),
-            complete: Values("nearest", "linear"));
 
         //
         // cheats (the old Tab debug keys, plus a few new ones)
@@ -221,18 +147,6 @@ internal partial class Program
         Register("scripts", "Lists the Lua scripts that loaded (scripts/*.lua), those left out and why, and the actions they give.", "scripts", Cmd_Scripts);
         Register("lua", "Runs Lua in the scripts' state (`me` is the player). Strings take 'single quotes'; separate statements with spaces, not ;.",
             "lua <code>", Cmd_Lua, Cheat);
-        Register("mods", "Lists the mods loaded over pfwolf.pk3, in load order, and anything wrong with them.", "mods", Cmd_Mods);
-        Register("assetinfo", "Shows where an asset came from: each file that added, replaced or merged into it, in order.",
-            "assetinfo <name>", Cmd_AssetInfo, complete: (_, i) => i == 0 ? _assetManager.AssetNames : []);
-        Register("anims", "Lists the animations (animdefs): what they animate, how long they run, and whether they loop; with a name, its frames too.",
-            "anims [name]", Cmd_Anims, complete: (_, i) => i == 0 ? _assetManager.Animations.Keys : []);
-        Register("playsound", "Plays a sound: a sound-seq name (doors/open), or a sound file's or digitized sound's name.",
-            "playsound <name>", Cmd_PlaySound);
-        Register("changemus", "Plays a song, from a pk3's music/ folder or the game's own; with no name, shows what's playing. A song that ends stops instead of looping with 'once'.",
-            "changemus [name] [once]", Cmd_ChangeMus, complete: (_, i) => i == 1 ? ["once"] : []);
-        Register("exportmap","Writes a level, or all of them, as ECWolf binary maps (NAME.wad) for a mod's maps/ folder: to the exports folder, or the folder given.",
-            "exportmap <MAP##|all> [folder]", Cmd_ExportMap,
-            complete: (_, i) => i == 0 ? ["all", .. _gameEngineManager.GetGameInfo().Maps.Keys] : []);
         Register("playdemo", "Plays a demo: one recorded with that number (DEMO#.dmo in the demos folder), or else the game's own. Ends the game in progress, then goes back to the title.",
             "playdemo <0-9>", Cmd_PlayDemo, Solo,
             complete: (_, i) => i == 0 ? Enumerable.Range(0, 10).Where(DemoExists).Select(n => n.ToString()) : []);
@@ -266,494 +180,23 @@ internal partial class Program
 
     static void Register(string name, string help, string usage, Action<string[]> run,
         ConsoleCommandFlags flags = ConsoleCommandFlags.None, string[]? aliases = null, ConsoleCompleter? complete = null) =>
-        _consoleManager.Register(new ConsoleCommand(name, help, usage, run, flags, aliases, complete));
+        _consoleManager.Register(name, help, usage, run, flags, aliases, complete);
 
-    /*
-    =============================================================================
+    /// <summary>The play screen round the view, drawn again after a video mode change blanks it</summary>
+    static void RedrawAfterVideoChange()
+    {
+        if (_mapManager.Player != null && viewsize != 21)
+            DrawPlayScreen();
+    }
 
-                                TAB COMPLETION
-
-    =============================================================================
-    */
-
-    /// <summary>A completer offering a fixed set of values for the first argument.</summary>
-    static ConsoleCompleter Values(params string[] values) => (_, i) => i == 0 ? values : [];
-
-    static IEnumerable<string> CommandNames() => _consoleManager.Commands.Select(c => c.Name);
+    /// <summary>The mouse look and controller settings as console commands, for saving to controls.cfg.</summary>
+    internal static IEnumerable<string> GetControllerSettingCommands() => controlSettings.SettingCommands();
 
     /// <summary>The item classes `give` accepts by name (see GiveItem).</summary>
     static IEnumerable<string> GivableItems() =>
         new[] { "Weapon", "Ammo", "Key", "BasicArmor" }
             .SelectMany(_inventoryManager.GetClassesDerivedFrom)
             .Where(item => _inventoryManager.FindClass(item, "WeaponGiver") == null);
-
-    static IEnumerable<string> CompleteBind(string[] args, int index) => index switch
-    {
-        0 => InputCode.AllNames(),
-        1 => CommandNames(),
-        _ => [],
-    };
-
-    static IEnumerable<string> CompleteBindAction(string[] args, int index) =>
-        index == 0 ? ControlAction.All.Select(action => action.Name) : ["none", .. InputCode.AllNames()];
-
-    static IEnumerable<string> ConfigScriptNames()
-    {
-        var dir = Path.GetDirectoryName(Path.GetFullPath(_gameEngineManager.GetConfigFilePath("x.cfg")));
-        return dir != null && Directory.Exists(dir)
-            ? Directory.GetFiles(dir, "*.cfg").Select(Path.GetFileName).OfType<string>()
-            : [];
-    }
-
-    /*
-    =============================================================================
-
-                                KEY AND BUTTON NAMES
-
-    Binds and controls use SDL's key names ("F5", "Keypad 1", "Left Shift"),
-    "Mouse 1", "Wheel Up", "Joy 1" and "Pad A" (see InputCode), matched without
-    regard to case, so they read the same in the .cfg files as on screen.
-
-    =============================================================================
-    */
-
-    /// <summary>
-    /// A key or button by name. Keys are folded as InputManager reports them: right-hand
-    /// modifiers into left-hand ones, keypad Enter into Enter. Not the keypad arrows, which
-    /// InputManager only folds while Num Lock is off: a keypad key stays itself, and works as
-    /// that key when it's pressed with Num Lock on.
-    /// </summary>
-    static InputCode ParseInput(string name)
-    {
-        if (!InputCode.TryParse(name, out var code))
-            throw new ArgumentException($"unknown key or button \"{name}\"");
-
-        return code.Device == InputDevice.Key ? InputCode.FromKey(InputManager.FoldKey(code.Key)) : code;
-    }
-
-    /// <summary>Quotes an argument if Tokenize would otherwise split it.</summary>
-    static string QuoteArg(string arg) =>
-        arg.Length == 0 || arg.Any(c => char.IsWhiteSpace(c) || c == ';') ? $"\"{arg}\"" : arg;
-
-    /*
-    =============================================================================
-
-                                ARGUMENT PARSING
-
-    Throwing ArgumentException is the way to reject bad input: ConsoleManager
-    prints the message and the command does nothing else.
-
-    =============================================================================
-    */
-
-    static int ParseInt(string arg, int min, int max)
-    {
-        if (!int.TryParse(arg, out var value) || value < min || value > max)
-            throw new ArgumentException($"expected a number from {min} to {max}, got \"{arg}\"");
-        return value;
-    }
-
-    static bool ParseBool(string arg) => arg.ToLowerInvariant() switch
-    {
-        "1" or "on" or "true" => true,
-        "0" or "off" or "false" => false,
-        _ => throw new ArgumentException($"expected 0 or 1, got \"{arg}\""),
-    };
-
-    /// <summary>Sets a toggle from args[0] if given, otherwise flips it.</summary>
-    static bool Toggle(string[] args, bool current) => args.Length > 0 ? ParseBool(args[0]) : !current;
-
-    /*
-    =============================================================================
-
-                                    CONSOLE
-
-    =============================================================================
-    */
-
-    private static void Cmd_Help(string[] args)
-    {
-        if (args.Length > 0)
-        {
-            if (!_consoleManager.TryGetCommand(args[0], out var command))
-            {
-                _consoleManager.Print($"Unknown command \"{args[0]}\".");
-                return;
-            }
-
-            _consoleManager.Print($"{command.Name} - {command.Help}");
-            _consoleManager.Print($"  usage: {command.Usage}");
-            if (command.Aliases is { Length: > 0 })
-                _consoleManager.Print($"  aliases: {string.Join(", ", command.Aliases)}");
-            if (command.Flags.HasFlag(ConsoleCommandFlags.Cheat))
-                _consoleManager.Print("  (cheat)");
-            return;
-        }
-
-        foreach (var command in _consoleManager.Commands)
-        {
-            var cheat = command.Flags.HasFlag(ConsoleCommandFlags.Cheat) ? " (cheat)" : "";
-            _consoleManager.Print($"{command.Name,-12}{command.Help}{cheat}");
-        }
-    }
-
-    private static void Cmd_History(string[] args)
-    {
-        var history = _consoleManager.History;
-        for (int i = 0; i < history.Count; i++)
-            _consoleManager.Print($"{i + 1,3}  {history[i]}");
-    }
-
-    private static void Cmd_ConPause(string[] args)
-    {
-        if (args.Length > 0)
-            _consoleManager.PauseWhenOpen = ParseBool(args[0]);
-
-        _consoleManager.Print($"con_pause is {(_consoleManager.PauseWhenOpen ? 1 : 0)}");
-    }
-
-    private static void Cmd_Exec(string[] args)
-    {
-        if (args.Length == 0)
-            throw new ArgumentException("exec which file?");
-
-        var path = Path.IsPathRooted(args[0]) ? args[0] : _gameEngineManager.GetConfigFilePath(args[0]);
-        if (!_consoleManager.ExecFile(path))
-            throw new ArgumentException($"couldn't find \"{path}\"");
-    }
-
-    /*
-    =============================================================================
-
-                                    KEY BINDS
-
-    =============================================================================
-    */
-
-    private static void Cmd_Bind(string[] args)
-    {
-        if (args.Length == 0)
-            throw new ArgumentException("usage: bind <key or button> [command]");
-
-        var input = ParseInput(args[0]);
-
-        if (args.Length == 1)
-        {
-            _consoleManager.Print(_consoleManager.Binds.TryGetValue(input, out var bound)
-                ? $"\"{input}\" = \"{bound}\""
-                : $"\"{input}\" is not bound");
-            return;
-        }
-
-        // ` always toggles the console and Escape always opens the menu, before binds are seen.
-        if (input.Key is ScanCodes.sc_Grave or ScanCodes.sc_Escape)
-            throw new ArgumentException($"\"{input}\" is reserved");
-
-        // One argument is the command line as-is (`bind F5 "god; noclip"`); several are
-        // rejoined, re-quoting any that need it (`bind F5 give GoldKey`).
-        var command = args.Length == 2 ? args[1] : string.Join(' ', args[1..].Select(QuoteArg));
-
-        _consoleManager.Bind(input, command);
-        _consoleManager.Print($"\"{input}\" = \"{command}\"");
-    }
-
-    private static void Cmd_Unbind(string[] args)
-    {
-        if (args.Length == 0)
-            throw new ArgumentException("usage: unbind <key or button>");
-
-        var input = ParseInput(args[0]);
-        _consoleManager.Print(_consoleManager.Unbind(input)
-            ? $"\"{input}\" unbound"
-            : $"\"{input}\" is not bound");
-    }
-
-    private static void Cmd_BindAction(string[] args)
-    {
-        if (args.Length == 0)
-        {
-            foreach (var each in ControlAction.All)
-                _consoleManager.Print($"{each.Name} = {controls.FormatInputs(each)}");
-            return;
-        }
-
-        if (!ControlAction.TryParse(args[0], out var action))
-            throw new ArgumentException($"unknown control \"{args[0]}\"");
-
-        if (args.Length > 1)
-        {
-            // All read before any is set, so a bad name leaves the control as it was
-            List<InputCode> codes = args[1..] is ["none"] ? [] : args[1..].Select(ParseInput).ToList();
-            if (codes.Count(code => !code.IsController) > ControlBindings.KeySlots || codes.Count(code => code.IsController) > 1)
-                throw new ArgumentException($"a control takes up to {ControlBindings.KeySlots} keys or mouse buttons and one joystick button");
-
-            controls.Clear(action);
-            foreach (var code in codes)
-                controls.Add(action, code);
-
-            if (_consoleManager.IsRunningScript)    // controls.cfg sets every control at startup
-                return;
-        }
-
-        _consoleManager.Print($"{action.Name} = {controls.FormatInputs(action)}");
-    }
-
-    /// <summary>
-    /// Sets a number setting from args[0] if given, then shows it (quietly when controls.cfg
-    /// sets it at startup).
-    /// </summary>
-    static void SetOrShow(string name, string[] args, ref int setting, int min, int max)
-    {
-        if (args.Length > 0)
-        {
-            setting = ParseInt(args[0], min, max);
-            if (_consoleManager.IsRunningScript)
-                return;
-        }
-
-        _consoleManager.Print($"{name} = {setting}");
-    }
-
-    /// <summary>
-    /// Sets an on/off setting from args[0] if given (with none, shows it), quietly when
-    /// controls.cfg sets it at startup.
-    /// </summary>
-    static void ToggleOrShow(string name, string[] args, ref bool setting)
-    {
-        if (args.Length > 0)
-        {
-            setting = Toggle(args, setting);
-            if (_consoleManager.IsRunningScript)
-                return;
-        }
-
-        _consoleManager.Print($"{name} = {(setting ? 1 : 0)}");
-    }
-
-    private static void Cmd_JoySticks(string[] args)
-    {
-        if (args.Length > 0)
-        {
-            joyclassicsticks = args[0].ToLowerInvariant() switch
-            {
-                "modern" => false,
-                "classic" => true,
-                _ => throw new ArgumentException($"expected modern or classic, got \"{args[0]}\""),
-            };
-            if (_consoleManager.IsRunningScript)
-                return;
-        }
-
-        _consoleManager.Print($"joy_sticks = {JoySticksName}");
-    }
-
-    static string JoySticksName => joyclassicsticks ? "classic" : "modern";
-
-    /// <summary>The mouse look and controller settings as console commands, for saving to controls.cfg.</summary>
-    internal static IEnumerable<string> GetControllerSettingCommands() =>
-    [
-        $"m_look {(mouselook ? 1 : 0)}",
-        $"m_invert {(mouseinvert ? 1 : 0)}",
-        $"joy_deadzone {joydeadzone}",
-        $"joy_turnspeed {joyturnspeed}",
-        $"joy_sticks {JoySticksName}",
-    ];
-
-    private static void Cmd_Mods(string[] args)
-    {
-        var mods = _assetManager.LoadedMods;
-        if (mods.Count == 0)
-            _consoleManager.Print("No mods loaded");
-
-        for (var i = 0; i < mods.Count; i++)
-        {
-            var mod = mods[i];
-            var version = string.IsNullOrWhiteSpace(mod.Info.Version) ? "" : $" {mod.Info.Version}";
-            var author = string.IsNullOrWhiteSpace(mod.Info.Author) ? "" : $" by {mod.Info.Author}";
-            _consoleManager.Print($"{i + 1}. {mod.DisplayName}{version}{author} ({mod.FullPath})");
-        }
-
-        foreach (var warning in _assetManager.ModWarnings)
-            _consoleManager.Print(warning);
-    }
-
-    private static void Cmd_AssetInfo(string[] args)
-    {
-        if (args.Length == 0)
-            throw new ArgumentException("usage: assetinfo <name>");
-
-        var found = false;
-        foreach (var (type, name, origins) in _assetManager.FindAssetOrigins(args[0]))
-        {
-            found = true;
-            _consoleManager.Print($"{name} ({type})");
-            foreach (var origin in origins)
-            {
-                _consoleManager.Print(origin.Action == AssetOrigin.LeftOut
-                    ? $"  left out, couldn't be loaded: {origin.Source}: {origin.Path}"
-                    : $"  {origin.Action} by {origin.Source}: {origin.Path}");
-            }
-        }
-
-        if (!found)
-            _consoleManager.Print($"No asset named {args[0]}");
-    }
-
-    private static void Cmd_Anims(string[] args)
-    {
-        var animations = _assetManager.Animations
-            .Where(a => args.Length == 0 || a.Key.Equals(args[0], StringComparison.OrdinalIgnoreCase))
-            .OrderBy(a => a.Key, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        if (animations.Count == 0)
-        {
-            _consoleManager.Print(args.Length == 0 ? "There are no animations (animdefs)" : $"No animation named {args[0]}");
-            return;
-        }
-
-        foreach (var (name, kinds) in animations)
-        {
-            var first = kinds[0];
-            var kindNames = string.Join(", ", kinds.Select(k => k.FrameType == typeof(TextureAsset) ? "texture" : "picture"));
-            _consoleManager.Print($"{name} ({kindNames}): {first.TotalTics} tics, {(first.Loops ? "loops" : "plays once")}");
-            if (args.Length == 0)
-                continue;
-
-            // The frames are the same names whatever the kind
-            var frames = first switch
-            {
-                AnimatedAsset<TextureAsset> texture => texture.Frames.Select(f => (f.Name, f.Tics)),
-                AnimatedAsset<GraphicAsset> picture => picture.Frames.Select(f => (f.Name, f.Tics)),
-                _ => [],
-            };
-            foreach (var (frame, tics) in frames)
-                _consoleManager.Print($"  {frame}: {tics} tics");
-        }
-    }
-
-    private static void Cmd_ExportMap(string[] args)
-    {
-        if (args.Length == 0)
-            throw new ArgumentException("usage: exportmap <MAP##|all> [folder]");
-
-        var mapNames = args[0].Equals("all", StringComparison.OrdinalIgnoreCase)
-            ? _gameEngineManager.GetGameInfo().Maps.Keys.ToList()
-            : [args[0]];
-        var folder = args.Length > 1 ? args[1] : _gameEngineManager.ConfigDirectories.ExportsDirectory;
-        Directory.CreateDirectory(folder);
-
-        var written = 0;
-        foreach (var mapName in mapNames)
-        {
-            // The level as loaded, before a game changes it
-            var map = _assetManager.Find<MapAsset>(mapName);
-            if (map == null)
-            {
-                _consoleManager.Print($"No level named {mapName}");
-                continue;
-            }
-
-            File.WriteAllBytes(Path.Combine(folder, $"{mapName.ToUpperInvariant()}.wad"), EcWolfMapLoader.Save(map, mapName));
-            written++;
-        }
-
-        _consoleManager.Print($"Wrote {written} level{(written == 1 ? "" : "s")} to {Path.GetFullPath(folder)}");
-    }
-
-    private static void Cmd_Binds(string[] args)
-    {
-        if (_consoleManager.Binds.Count == 0)
-        {
-            _consoleManager.Print("Nothing is bound");
-            return;
-        }
-
-        foreach (var (input, command) in _consoleManager.Binds.OrderBy(b => b.Key.ToString(), StringComparer.OrdinalIgnoreCase))
-            _consoleManager.Print($"\"{input}\" = \"{command}\"");
-    }
-
-    /*
-    =============================================================================
-
-                                    VIDEO
-
-    =============================================================================
-    */
-
-    /// <summary>Switches to the video mode <paramref name="change"/> makes of the current one, then shows it.</summary>
-    static void ApplyVideo(Func<VideoSettings, VideoSettings> change)
-    {
-        var next = change(_videoManager.Settings);
-        if (!_videoManager.ApplyVideoSettings(next))
-            _consoleManager.Print("Couldn't switch to that mode; kept the old one");
-
-        // A new screen buffer starts blank; the view redraws itself every frame, the rest doesn't
-        if (_mapManager.Player != null && viewsize != 21)
-            DrawPlayScreen();
-
-        PrintVideoMode();
-    }
-
-    static void PrintVideoMode()
-    {
-        var s = _videoManager.Settings;
-        var shown = s.Fullscreen ? "fullscreen" : $"{s.WindowWidth}x{s.WindowHeight} window";
-        var size = s.MatchWindow ? "auto" : s.RenderSize != null ? "custom size" : $"scale {s.RenderScale}";
-        var effective = VideoSettings.FormatScale(s.EffectiveUiScale);
-        var ui = s.UiScale <= 0 ? $"auto ({effective})" : effective;
-        _consoleManager.Print($"{s.RenderWidth}x{s.RenderHeight} ({size}) in a {shown}, ui scale {ui}");
-        _consoleManager.Print($"vsync {(s.VSync ? 1 : 0)}  aspect {(s.AspectCorrect ? 1 : 0)}  filter {s.Filter.ToString().ToLowerInvariant()}");
-    }
-
-    private static void Cmd_VidWindow(string[] args)
-    {
-        if (args.Length < 2)
-            throw new ArgumentException("usage: vid_window <width> <height>");
-
-        int width = ParseInt(args[0], VideoSettings.BaseWidth, 16384);
-        int height = ParseInt(args[1], VideoSettings.BaseHeight, 16384);
-        ApplyVideo(s => s with { WindowWidth = width, WindowHeight = height });
-    }
-
-    private static void Cmd_VidRender(string[] args)
-    {
-        if (args.Length == 1 && args[0].Equals("default", StringComparison.OrdinalIgnoreCase))
-        {
-            ApplyVideo(s => s with { RenderSize = null, MatchWindow = false });
-            return;
-        }
-        if (args.Length == 1 && args[0].Equals("auto", StringComparison.OrdinalIgnoreCase))
-        {
-            ApplyVideo(s => s with { MatchWindow = true });
-            return;
-        }
-        if (args.Length < 2)
-            throw new ArgumentException("usage: vid_render <width> <height> | auto | default");
-
-        int width = ParseInt(args[0], VideoSettings.BaseWidth, VideoSettings.MaxRenderWidth);
-        int height = ParseInt(args[1], VideoSettings.BaseHeight, VideoSettings.MaxRenderHeight);
-        ApplyVideo(s => s with { RenderSize = (width, height), MatchWindow = false });
-    }
-
-    private static void Cmd_VidUiScale(string[] args)
-    {
-        if (args.Length == 0)
-            throw new ArgumentException("usage: vid_uiscale <n|auto>");
-
-        double scale = 0;
-        if (!args[0].Equals("auto", StringComparison.OrdinalIgnoreCase)
-            && !(double.TryParse(args[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out scale)
-                 && scale >= 1 && scale <= 32))
-            throw new ArgumentException($"expected auto or a scale from 1 to 32 (2.5, say), got \"{args[0]}\"");
-
-        // Kept to hundredths, as config.cfg saves it
-        ApplyVideo(s => s with { UiScale = Math.Round(scale, 2) });
-    }
-
-    static ScaleFilter ParseFilter(string arg) =>
-        Enum.TryParse<ScaleFilter>(arg, ignoreCase: true, out var filter) && Enum.IsDefined(filter)
-            ? filter
-            : throw new ArgumentException($"expected nearest or linear, got \"{arg}\"");
 
     /*
     =============================================================================
@@ -1576,41 +1019,6 @@ internal partial class Program
         }
     }
 
-    private static void Cmd_Msg(string[] args)
-    {
-        if (args.Length == 0)
-            throw new ArgumentException("usage: msg [style] <text...>");
-
-        // A first word naming a style is the style, as long as there's text after it
-        if (args.Length > 1 && _hudMessageManager.StyleExists(args[0]))
-            _hudMessageManager.Show(HudMessageKind.Other, string.Join(' ', args[1..]), args[0]);
-        else
-            _hudMessageManager.Show(HudMessageKind.Other, string.Join(' ', args));
-    }
-
-    private static void Cmd_MsgEnabled(string[] args)
-    {
-        if (args.Length > 0)
-        {
-            _hudMessageManager.EnabledSetting = args[0].Equals("default", StringComparison.OrdinalIgnoreCase)
-                ? null
-                : ParseBool(args[0]);
-            if (!_hudMessageManager.Enabled)
-                _hudMessageManager.Clear();
-        }
-        _consoleManager.Print($"msg_enabled is {(_hudMessageManager.Enabled ? 1 : 0)}" +
-            (_hudMessageManager.EnabledSetting == null ? " (the game's default)" : ""));
-    }
-
-    private static void Cmd_MsgStyles(string[] args)
-    {
-        foreach (var name in _hudMessageManager.StyleNames.OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
-        {
-            var s = _hudMessageManager.FindStyle(name);
-            _consoleManager.Print($"{s.Name}: {s.Anchor} {s.X:+0;-0;0},{s.Y:+0;-0;0} margin {s.Margin}, {s.Font} in {s.Color}, " +
-                $"{s.Duration} tics, {s.MaxLines} line{(s.MaxLines == 1 ? "" : "s")}");
-        }
-    }
 
     private static void Cmd_AutoSave(string[] args)
     {
@@ -1733,42 +1141,7 @@ internal partial class Program
         _consoleManager.Print($"Light: {levelshading?.Light ?? 255}");
     }
 
-    static double ParseTiles(string arg)
-    {
-        if (!double.TryParse(arg, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var tiles)
-            || tiles < 0 || tiles > MapManager.MAPSIZE)
-            throw new ArgumentException($"expected a number of tiles from 0 to {MapManager.MAPSIZE}, got \"{arg}\"");
-        return tiles;
-    }
 
-    private static void Cmd_PlaySound(string[] args)
-    {
-        if (args.Length == 0)
-            throw new ArgumentException("usage: playsound <name>");
-
-        _audioManager.Play(args[0]);
-        _consoleManager.Print(_audioManager.IsPlaying(args[0])
-            ? $"Playing {args[0]}"
-            : $"{args[0]} didn't play: there's no such sound, or the sound devices it has are off");
-    }
-
-    private static void Cmd_ChangeMus(string[] args)
-    {
-        if (args.Length == 0)
-        {
-            var playing = _audioManager.CurrentMusicTrack;
-            _consoleManager.Print(string.IsNullOrEmpty(playing) ? "No music" : $"Music: {playing}{(_audioManager.IsMusicPlaying ? "" : " (not playing)")}");
-            return;
-        }
-
-        var name = args[0];
-        if (!_audioManager.HasMusic(name))
-            throw new ArgumentException($"There's no song named {name}");
-
-        _audioManager.PlayMusic(name, loop: !(args.Length > 1 && args[1].Equals("once", StringComparison.OrdinalIgnoreCase)));
-        var kind = _assetManager.Exists<MusicFileAsset>(name) ? "music file" : "IMF";
-        _consoleManager.Print(_audioManager.MusicEnabled ? $"Playing {name} ({kind})" : $"{name} ({kind}) plays when music is switched on");
-    }
 
     private static void Cmd_Fps(string[] args)
     {

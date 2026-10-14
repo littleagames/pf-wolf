@@ -1,10 +1,11 @@
-﻿using PFWolf.Assets;
+using PFWolf.Assets;
 using PFWolf.Configuration;
 using PFWolf.Constants;
 using PFWolf.Entities.Actors;
 using PFWolf.Enums;
 using PFWolf.Extensions;
 using PFWolf.Managers;
+using static PFWolf.Commands.ConsoleArgs;
 
 namespace PFWolf;
 
