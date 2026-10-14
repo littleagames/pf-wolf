@@ -1,4 +1,4 @@
-using PFWolf.Assets;
+﻿using PFWolf.Assets;
 using PFWolf.Configuration;
 using PFWolf.Constants;
 using PFWolf.Entities.Actors;
@@ -308,10 +308,10 @@ internal partial class Program
                 var shape = _mapManager.wallshape[x, y];
                 if (shape != WallShape.Square)
                 {
-                    faces &= DiagonalSolidEdges(shape) | SeenFlags.DiagonalFace;   // its open edges are empty space
+                    faces &= Diagonals.DiagonalSolidEdges(shape) | SeenFlags.DiagonalFace;   // its open edges are empty space
                     if ((faces & SeenFlags.DiagonalFace) != 0)
                     {
-                        var (u0, v0, u1, v1) = DiagonalFaceEnds(shape);
+                        var (u0, v0, u1, v1) = Diagonals.DiagonalFaceEnds(shape);
                         AutomapLine(view, x + u0, y + v0, x + u1, y + v1, color);
                     }
                 }
@@ -673,7 +673,7 @@ internal partial class Program
         if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
             return true;
 
-        return (DiagonalSolidEdges(_mapManager.wallshape[x, y]) & edge) != 0;
+        return (Diagonals.DiagonalSolidEdges(_mapManager.wallshape[x, y]) & edge) != 0;
     }
 
     private static void Cmd_AmStyle(string[] args)

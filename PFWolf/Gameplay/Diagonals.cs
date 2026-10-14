@@ -1,32 +1,25 @@
-using PFWolf.Constants;
-using PFWolf.Enums;
-using PFWolf.Managers;
+namespace PFWolf.Gameplay;
 
-namespace PFWolf;
+/*
+=============================================================================
 
-internal partial class Program
+                    DIAGONAL WALL COLLISION AND SIGHT
+
+A diagonal tile (MapManager.wallshape) is only solid on its named corner's side of the
+45 degree face. It keeps its actorat entry, so enemies never path into one; the player,
+projectiles and sight lines use these tests to get into and see through the open half.
+Coordinates are 16.16 global fixed point; u and v are tile-local (0..TILEGLOBAL).
+
+=============================================================================
+*/
+
+internal static class Diagonals
 {
-    /*
-    =============================================================================
-
-                        DIAGONAL WALL COLLISION AND SIGHT
-
-    A diagonal tile (MapManager.wallshape) is only solid on its named corner's side of the
-    45 degree face. It keeps its actorat entry, so enemies never path into one; the player,
-    projectiles and sight lines use these tests to get into and see through the open half.
-    Coordinates are 16.16 global fixed point; u and v are tile-local (0..TILEGLOBAL).
-
-    =============================================================================
-    */
-
-    // The shape the player last ran into in TryMove, for ClipMove to slide along
-    static WallShape diagonalblock;
-
     /// <summary>
     /// How far tile-local (u, v) is into the solid side of the face: positive is solid, zero is
     /// on the face (scaled by root 2, which doesn't matter for the sign).
     /// </summary>
-    private static double DiagonalDepth(WallShape shape, double u, double v) => shape switch
+    internal static double DiagonalDepth(WallShape shape, double u, double v) => shape switch
     {
         WallShape.SolidNE => u - v,
         WallShape.SolidSW => v - u,

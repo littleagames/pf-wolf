@@ -1,4 +1,4 @@
-using PFWolf.Assets;
+﻿using PFWolf.Assets;
 using PFWolf.Entities.Actors;
 using PFWolf.Enums;
 
@@ -206,7 +206,7 @@ internal partial class Program
         {
             // a diagonal wall fills only its solid half; the backdrop shows through the open one
             var shape = _mapManager.wallshape[tx, ty];
-            if (shape != WallShape.Square && !InDiagonalSolid(shape, fx, fy))
+            if (shape != WallShape.Square && !Diagonals.InDiagonalSolid(shape, fx, fy))
                 return -1;
 
             return AutomapWallTexel(faces, fx, fy);

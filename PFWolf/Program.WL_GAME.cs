@@ -79,7 +79,7 @@ internal partial class Program
             {
                 bool kept = EnterLevel();   // a kept hub level as it was left, or the map afresh (Program.Hubs.cs)
                 ApplyPendingMapChange();
-                ApplyPendingWarpStart();    // --start's tile, the first time (Program.Warp.cs)
+                ApplyPendingWarpStart();    // --start's tile, the first time (Program.cs)
                 if (!died)
                     MarkLevelStart();       // what dying puts the player back to, with death-restores-level-start
                 levelStart = died ? "restarted" : kept ? "returned" : "new";

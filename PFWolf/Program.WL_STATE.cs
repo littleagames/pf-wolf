@@ -1,4 +1,4 @@
-using PFWolf.Constants;
+﻿using PFWolf.Constants;
 using PFWolf.Enums;
 using PFWolf.Managers;
 
@@ -109,7 +109,7 @@ internal partial class Program
 
                 value = (uint)_mapManager.tilemap[x, y];
                 var shape = _mapManager.wallshape[x, y];
-                if (shape != WallShape.Square && LineHitsDiagonal(shape, x, y, fromX, fromY, to.X, to.Y))
+                if (shape != WallShape.Square && Diagonals.LineHitsDiagonal(shape, x, y, fromX, fromY, to.X, to.Y))
                     return false;
                 x += xstep;
 
@@ -163,7 +163,7 @@ internal partial class Program
 
                 value = (uint)_mapManager.tilemap[x, y];
                 var shape = _mapManager.wallshape[x, y];
-                if (shape != WallShape.Square && LineHitsDiagonal(shape, x, y, fromX, fromY, to.X, to.Y))
+                if (shape != WallShape.Square && Diagonals.LineHitsDiagonal(shape, x, y, fromX, fromY, to.X, to.Y))
                     return false;
                 y += ystep;
 

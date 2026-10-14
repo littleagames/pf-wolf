@@ -1,4 +1,4 @@
-using PFWolf.Assets;
+﻿using PFWolf.Assets;
 using PFWolf.Constants;
 using PFWolf.Enums;
 using PFWolf.Entities.Actors;
@@ -267,6 +267,9 @@ internal partial class Program
         }
     }
 
+    // The diagonal shape the player last ran into in TryMove, for ClipMove to slide along
+    static WallShape diagonalblock;
+
     internal static bool TryMove(Entities.Actors.Actor ob)
     {
         uint xl, yl, xh, yh, x, y;
@@ -321,7 +324,7 @@ internal partial class Program
                         //
                         // a diagonal only blocks on its solid side of the face
                         //
-                        if (BoxHitsDiagonal(shape, (int)x, (int)y, ob.X, ob.Y, PLAYERSIZE))
+                        if (Diagonals.BoxHitsDiagonal(shape, (int)x, (int)y, ob.X, ob.Y, PLAYERSIZE))
                         {
                             diagonalblock = shape;
                             return false;

@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using PFWolf.Constants;
 using PFWolf.Enums;
 using PFWolf.Extensions;
@@ -228,7 +228,7 @@ internal partial class Program
 
                 // a diagonal only blocks on its solid side of the face
                 if (_mapManager.wallshape[x, y] is var shape and not WallShape.Square
-                    && !BoxHitsDiagonal(shape, x, y, ob.X, ob.Y, PROJSIZE))
+                    && !Diagonals.BoxHitsDiagonal(shape, x, y, ob.X, ob.Y, PROJSIZE))
                     continue;
 
                 return false;

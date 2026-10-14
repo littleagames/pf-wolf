@@ -130,6 +130,7 @@ internal partial class Program
     internal static bool param_nowait = false;
     internal static int param_mission = 0;
     internal static bool param_goodtimes = false;
+    static readonly WarpRequest warpRequest = new();    // --warp, --skill, --start
 
     private static void Main(string[] args)
     {
@@ -156,7 +157,7 @@ internal partial class Program
         new Program();
         _gameEngineManager.Init(gameParams, modPaths);
         SetNetParams(gameParams);     // --host, --join, --port, --name (Program.Multiplayer.cs)
-        SetWarpParams(gameParams);    // --warp, --skill, --start (Program.Warp.cs)
+        warpRequest.SetParams(gameParams);  // --warp, --skill, --start (Gameplay/WarpRequest.cs)
 
         // The Mods menu's choices (mods.cfg, per game), then the command line's
         var configMods = ModsConfig.Read(_gameEngineManager.GetConfigFilePath(ModsConfig.FileName));
@@ -612,6 +613,31 @@ internal partial class Program
                 Console.WriteLine($"game-info demo-skill '{gameInfo.DemoSkill}' isn't one of the skills; using the hardest");
             return (short)(index >= 0 ? index : Math.Max(keys.Count - 1, 0));
         }
+    }
+
+    /// <summary>Starts the new game --warp asked for (once): true if it did, for the demo loop to play</summary>
+    internal static bool RunPendingWarp()
+    {
+        var gameInfo = _gameEngineManager.GetGameInfo();
+        if (warpRequest.TakeWarp(gameInfo, map => _assetManager.Exists<MapAsset>(map)) is not { } warp)
+            return false;
+
+        NewGame(warp.Difficulty, warp.Episode, gameInfo.Maps[warp.Map]);
+        gamestate.mapon = warp.Map;
+        Console.WriteLine($"Warping to {warp.Map}, skill {warp.Difficulty + 1}");
+        return true;
+    }
+
+    /// <summary>Puts the player where --start said, once, after the warped-to level has loaded</summary>
+    static void ApplyPendingWarpStart()
+    {
+        if (warpRequest.TakeStart() is not { } start)
+            return;
+
+        if (TryTeleportPlayer(start.X, start.Y, start.Angle, out var problem))
+            Console.WriteLine($"Starting on {start.X},{start.Y}");
+        else
+            Console.WriteLine($"--start {start.X},{start.Y}: {problem}; starting on the level's player start");
     }
 
     /// <summary>The class the next new game is played as (the `playerclass` command); null for the default</summary>

@@ -2,7 +2,7 @@ using System.Globalization;
 using PFWolf.Assets;
 using PFWolf.Configuration;
 
-namespace PFWolf;
+namespace PFWolf.Gameplay;
 
 /*
 =============================================================================
@@ -13,19 +13,22 @@ namespace PFWolf;
     the title and menus: what the editor's Play does. --skill picks the skill
     and --start a tile to begin on in place of the level's player start.
 
+    This holds what was asked for until it's used; Program starts the game
+    (RunPendingWarp) and puts the player on the tile (ApplyPendingWarpStart).
+
 =============================================================================
 */
 
-internal partial class Program
+internal sealed class WarpRequest
 {
     // The level --warp asked for, until the demo loop starts it
-    static string? pendingWarp;
-    static int? pendingWarpSkill;
+    string? pendingWarp;
+    int? pendingWarpSkill;
 
     // --start: where the player begins once the level has loaded (its angle in degrees, if given)
-    static (int X, int Y, int? Angle)? pendingWarpStart;
+    (int X, int Y, int? Angle)? pendingWarpStart;
 
-    static void SetWarpParams(GameParams gameParams)
+    internal void SetParams(GameParams gameParams)
     {
         if (string.IsNullOrWhiteSpace(gameParams.Warp))
             return;
@@ -48,24 +51,24 @@ internal partial class Program
     }
 
     /// <summary>
-    /// Starts the new game --warp asked for (once): true if it did, for the demo loop to play. A
-    /// level game-info doesn't list, or that nothing supplies, is reported and the menus come up.
+    /// The new game --warp asked for (once): its level, skill and episode, or null when there's
+    /// none to start. A level game-info doesn't list, or that nothing supplies
+    /// (<paramref name="levelExists"/>), is reported and the menus come up.
     /// </summary>
-    internal static bool RunPendingWarp()
+    internal (string Map, short Difficulty, EpisodeInfo Episode)? TakeWarp(GameInfoAsset gameInfo, Func<string, bool> levelExists)
     {
         if (pendingWarp is not { } name)
-            return false;
+            return null;
         pendingWarp = null;
 
-        var gameInfo = _gameEngineManager.GetGameInfo();
         var map = gameInfo.Maps.Keys.FirstOrDefault(key => key.Equals(name, StringComparison.OrdinalIgnoreCase));
-        if (map == null || !_assetManager.Exists<MapAsset>(map))
+        if (map == null || !levelExists(map))
         {
             Console.WriteLine(map == null
                 ? $"--warp {name}: game-info doesn't list a level of that name"
                 : $"--warp {name}: no level file supplies it");
             pendingWarpStart = null;
-            return false;
+            return null;
         }
 
         // 1 is the easiest; left out, the third, as Wolf3D's Bring 'em on
@@ -76,22 +79,14 @@ internal partial class Program
         var episode = gameInfo.Episodes.Values.FirstOrDefault(ep => map.Equals(ep.StartMap, StringComparison.OrdinalIgnoreCase))
                       ?? gameInfo.Episodes.Values.FirstOrDefault()
                       ?? new EpisodeInfo { StartMap = map, Name = "" };
-        NewGame(difficulty, episode, gameInfo.Maps[map]);
-        gamestate.mapon = map;
-        Console.WriteLine($"Warping to {map}, skill {difficulty + 1}");
-        return true;
+        return (map, difficulty, episode);
     }
 
-    /// <summary>Puts the player where --start said, once, after the warped-to level has loaded</summary>
-    static void ApplyPendingWarpStart()
+    /// <summary>The tile --start asked for (once), for after the warped-to level has loaded</summary>
+    internal (int X, int Y, int? Angle)? TakeStart()
     {
-        if (pendingWarpStart is not { } start)
-            return;
+        var start = pendingWarpStart;
         pendingWarpStart = null;
-
-        if (TryTeleportPlayer(start.X, start.Y, start.Angle, out var problem))
-            Console.WriteLine($"Starting on {start.X},{start.Y}");
-        else
-            Console.WriteLine($"--start {start.X},{start.Y}: {problem}; starting on the level's player start");
+        return start;
     }
 }
