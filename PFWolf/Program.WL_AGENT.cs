@@ -1756,7 +1756,8 @@ internal partial class Program
         }
 
         ControlMovement(ob);
-        UpdateWeaponBob();
+        if (ActingIsLocal)                      // only the local player's view bobs
+            weaponBob.Update(playerinput.ControlY, tics);
         if (gamestate.victoryflag)              // watching the BJ actor
             return;
 

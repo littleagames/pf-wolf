@@ -2532,7 +2532,7 @@ internal partial class Program
             int height = (int)((viewheight + 1) * weaponScale);
             SimpleScaleShape(viewwidth / 2, shape, height,
                 weaponSprite != null && IsBright(weaponSprite) ? noshade : LightAt(TileIndex(player.TileX, player.TileY), player.X, player.Y),
-                ((viewheight + 1) >> 1) - (height >> 1) + WeaponBobDrop());
+                ((viewheight + 1) >> 1) - (height >> 1) + weaponBob.Drop(viewheight));
         }
 
         if (demorecord || demoplayback)
