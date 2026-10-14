@@ -503,26 +503,7 @@ internal partial class Program
         _inputManager.Ack();
     }
 
-    // Message boxes don't wrap, so break a long reason onto lines of about 28 characters.
-    private static string WrapForMessage(string text)
-    {
-        var lines = new List<string>();
-        var line = new StringBuilder();
-        foreach (var word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-        {
-            if (line.Length > 0 && line.Length + 1 + word.Length > 28)
-            {
-                lines.Add(line.ToString());
-                line.Clear();
-            }
-            if (line.Length > 0)
-                line.Append(' ');
-            line.Append(word);
-        }
-        if (line.Length > 0)
-            lines.Add(line.ToString());
-        return string.Join('\n', lines);
-    }
+    private static string WrapForMessage(string text) => MenuDrawing.WrapForMessage(text);
 
     static byte diskflopanim_which = 0;
     internal static void DiskFlopAnim(int x, int y)

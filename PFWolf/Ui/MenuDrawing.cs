@@ -255,4 +255,25 @@ internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, A
         for (int i = 0; i < 4; i++)
             video.HorizontalLine(x - i, x + i, up ? y + i : y + 3 - i, "READCOLOR");
     }
+
+    // Message boxes don't wrap, so break a long reason onto lines of about 28 characters.
+    internal static string WrapForMessage(string text)
+    {
+        var lines = new List<string>();
+        var line = new System.Text.StringBuilder();
+        foreach (var word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (line.Length > 0 && line.Length + 1 + word.Length > 28)
+            {
+                lines.Add(line.ToString());
+                line.Clear();
+            }
+            if (line.Length > 0)
+                line.Append(' ');
+            line.Append(word);
+        }
+        if (line.Length > 0)
+            lines.Add(line.ToString());
+        return string.Join('\n', lines);
+    }
 }
