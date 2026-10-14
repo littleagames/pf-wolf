@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using SDL2;
 using PFWolf.Assets;
 using PFWolf.Assets.Sounds;
@@ -33,8 +33,6 @@ internal partial class Program
     internal static string INTROSONG => _gameEngineManager.GetGameInfo().IntroMusic ?? "";
     internal static string HIGHSCORESSONG => _gameEngineManager.GetGameInfo().HighScoresMusic ?? "";
 
-    internal static int SENSITIVE = 60;
-
     internal static CP_itemtype[] MainMenu = [];
     internal static CP_itemtype[] OptMenu = [];
     internal static CP_itemtype[] VidMenu = [];
@@ -60,28 +58,10 @@ internal partial class Program
     internal static CP_iteminfo NewItems;
     internal static CP_iteminfo ClassItems;
     internal static CP_iteminfo MusicItems;
-    static string[] color_hlite =
-    {
-        "DEACTIVE",
-        "HIGHLIGHT",
-        "READHCOLOR",
-        "Green" // 4 165 0 (used for disabled episodes)
-    };
-
-    static string[] color_norml =
-    {
-        "DEACTIVE",
-        "TEXTCOLOR",
-        "READCOLOR",
-        "DarkGreen" // 4 113 0 (used for disabled episodes)
-    };
-
     internal static int StartGame;
 
     /// <summary>The game was ended with End Game in the menu, so the game over screen is skipped</summary>
     internal static bool endedFromMenu;
-    internal static int SoundStatus = 1;
-
     private static void EnableEndGameMenuItem()
     {
         var language = _assetManager.GetText("en-us");
@@ -100,69 +80,64 @@ internal partial class Program
         item.text = "$MENU_VIEWSCORES".ToLanguageText(language);
     }
 
-    internal static void ClearMScreen()
-    {
-        _graphicManager.DrawMenuBackground("BORDCOLOR");
-    }
+    /*
+    =============================================================================
 
-    internal static void DrawStripes(int y)
-    {
-        _graphicManager.DrawStripe(y);
-    }
+                            MENU INPUT, DRAWING AND LOOP
 
-    internal static void DrawWindow(int x, int y, int w, int h, string wcolor)
-    {
-        _videoManager.Bar(x, y, w, h, wcolor);
-        DrawOutline(x, y, w, h, "BORD2COLOR", "DEACTIVE");
-    }
+    In Ui/MenuInput.cs, Ui/MenuDrawing.cs and Ui/MenuLoop.cs (made in InitServices); these
+    forward to them.
 
-    internal static void DrawOutline(int x, int y, int w, int h, string color1, string color2)
-    {
-        _videoManager.HorizontalLine(x, x + w, y, color2);
-        _videoManager.VerticalLine(y, y + h, x, color2);
-        _videoManager.HorizontalLine(x, x + w, y + h, color1);
-        _videoManager.VerticalLine(y, y + h, x + w, color1);
-    }
+    =============================================================================
+    */
 
-    internal static void MenuFadeOut()
-    {
-        var fadeColor = _gameEngineManager.GetGameInfo().MenuFadeColor;
-        _videoManager.FadeOut(menuFadeStyle, string.IsNullOrEmpty(fadeColor) ? new Color { Alpha = 255 } : Color.FromHexRGBA(fadeColor), 10, menuFadeTics);
-    }
-    internal static void MenuFadeIn() => _videoManager.FadeIn(menuFadeStyle, 10, menuFadeTics);
+    static MenuInput menuInput = null!;
+    static MenuDrawing menuDrawing = null!;
+    static MenuLoop menuLoop = null!;
 
-    internal static void DrawMenu(CP_iteminfo item_i, CP_itemtype[] items)
-    {
-        int which = item_i.curpos;
+    private const int MenuSliderWidth = MenuDrawing.MenuSliderWidth;
+    private const int MenuSliderOffset = MenuDrawing.MenuSliderOffset;
+    private const int MenuChoiceWidth = MenuDrawing.MenuChoiceWidth;
 
-        for (int i = 0; i < item_i.amount; i++)
-            PrintMenuItem(item_i, items, i, items[i].active > 0 ? MenuItemColor(items[i], which == i) : "DEACTIVE");
-    }
+    internal static int SENSITIVE { get => menuInput.SENSITIVE; set => menuInput.SENSITIVE = value; }
+    internal static int SoundStatus { get => menuInput.SoundStatus; set => menuInput.SoundStatus = value; }
+    internal static void CheckPause() => menuInput.CheckPause();
+    internal static void TicDelay(int count) => menuInput.TicDelay(count);
+    internal static void ReadAnyControl(out ControlInfo ci) => menuInput.ReadAnyControl(out ci);
+    internal static void WaitKeyUp() => menuInput.WaitKeyUp();
 
-    /// <summary>An item's text in its row; a newline in it goes on under the start of the text</summary>
-    internal static void PrintMenuItem(CP_iteminfo item_i, CP_itemtype[] items, int which, string color)
-        => TextAt(item_i.x + item_i.indent, MenuItemY(item_i, which), MenuItemStyle(item_i, color)).Print(items[which].text);
+    internal static void ClearMScreen() => menuDrawing.ClearMScreen();
+    internal static void DrawStripes(int y) => menuDrawing.DrawStripes(y);
+    internal static void DrawWindow(int x, int y, int w, int h, string wcolor) => menuDrawing.DrawWindow(x, y, w, h, wcolor);
+    internal static void DrawOutline(int x, int y, int w, int h, string color1, string color2) => menuDrawing.DrawOutline(x, y, w, h, color1, color2);
+    internal static void BevelBox(int x, int y, int width, int height, int hi, int med, int lo) => menuDrawing.BevelBox(x, y, width, height, hi, med, lo);
+    internal static void BevelBox(int x, int y, int width, int height, string hi, string med, string lo) => menuDrawing.BevelBox(x, y, width, height, hi, med, lo);
+    internal static void MenuFadeOut() => menuDrawing.MenuFadeOut();
+    internal static void MenuFadeIn() => menuDrawing.MenuFadeIn();
+    internal static void DrawMenu(CP_iteminfo item_i, CP_itemtype[] items) => menuDrawing.DrawMenu(item_i, items);
+    internal static void PrintMenuItem(CP_iteminfo item_i, CP_itemtype[] items, int which, string color) => menuDrawing.PrintMenuItem(item_i, items, which, color);
+    internal static int MenuItemY(CP_iteminfo item_i, int which) => MenuDrawing.MenuItemY(item_i, which);
+    internal static TextStyle MenuItemStyle(CP_iteminfo item_i, string color) => menuDrawing.MenuItemStyle(item_i, color);
+    internal static void DrawMenuBar(CP_iteminfo item_i, CP_itemtype[] items, int which, bool on) => menuDrawing.DrawMenuBar(item_i, items, which, on);
+    internal static string MenuItemColor(CP_itemtype item, bool hlight) => MenuDrawing.MenuItemColor(item, hlight);
+    private static void DrawMenuSlider(CP_iteminfo iteminfo, CP_itemtype[] items, string id, int value, int max) => menuDrawing.DrawMenuSlider(iteminfo, items, id, value, max);
+    private static void DrawMenuChoice(CP_iteminfo iteminfo, CP_itemtype[] items, string id, string value) => menuDrawing.DrawMenuChoice(iteminfo, items, id, value);
+    private static int StepMenuChoice(int current, int count, int delta, bool wrap) => MenuDrawing.StepMenuChoice(current, count, delta, wrap);
+    private static void DrawMenuCheckbox(CP_iteminfo iteminfo, CP_itemtype[] items, string id, bool on) => menuDrawing.DrawMenuCheckbox(iteminfo, items, id, on);
+    private static void DrawMenuCheckbox(CP_iteminfo iteminfo, int index, bool on, bool highlighted = false) => menuDrawing.DrawMenuCheckbox(iteminfo, index, on, highlighted);
+    internal static void DrawMenuGun(CP_iteminfo iteminfo) => menuDrawing.DrawMenuGun(iteminfo);
+    internal static TextWindow Message(string text, int areaHeight = 200) => menuDrawing.Message(text, areaHeight);
 
-    /// <summary>The top of an item's row</summary>
-    internal static int MenuItemY(CP_iteminfo item_i, int which) => item_i.y + which * item_i.rowHeight;
-
-    /// <summary>The menu's text style for its items: its font and shadow (menudef font, item-shadow)</summary>
-    internal static TextStyle MenuItemStyle(CP_iteminfo item_i, string color)
-        => new(item_i.font ?? MENU_FONT, color,
-            Shadow: item_i.itemShadow is { } shadow ? new FontShadow(1, 1, shadow) : null);
-
-    /// <summary>
-    /// Draws or erases a menu's highlight bar (menudef cursor) behind the item, printing the item
-    /// over it highlighted, or plain when the bar is off
-    /// </summary>
-    internal static void DrawMenuBar(CP_iteminfo item_i, CP_itemtype[] items, int which, bool on)
-    {
-        var bar = item_i.cursor!;
-        _videoManager.Bar(bar.X, MenuItemY(item_i, which) + bar.YOffset, bar.Width, bar.Height, on ? bar.Color : bar.EraseColor);
-        PrintMenuItem(item_i, items, which, MenuItemColor(items[which], on));
-        if (items[which].checkbox is bool checkedOn)
-            DrawMenuCheckbox(item_i, which, checkedOn, highlighted: on);
-    }
+    internal static int redrawitem { get => menuLoop.redrawitem; set => menuLoop.redrawitem = value; }
+    internal static int lastitem { get => menuLoop.lastitem; set => menuLoop.lastitem = value; }
+    internal static int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine, Action<int, int>? adjust = null, Func<bool>? idle = null)
+        => menuLoop.HandleMenu(item_i, items, routine, adjust, idle);
+    internal static void EraseGun(CP_iteminfo item_i, CP_itemtype[] items, int x, int y, int which) => menuLoop.EraseGun(item_i, items, x, y, which);
+    internal static void DrawHalfStep(int x, int y) => menuLoop.DrawHalfStep(x, y);
+    internal static void DrawGun(CP_iteminfo item_i, CP_itemtype[] items, int x, ref int y, int which, int basey, Action<int>? routine)
+        => menuLoop.DrawGun(item_i, items, x, ref y, which, basey, routine);
+    internal static void ShootSnd() => menuLoop.ShootSnd();
+    internal static int Confirm(string text, int areaHeight = 200) => menuLoop.Confirm(text, areaHeight);
 
     internal static int StartCPMusic(string song)
     {
@@ -175,468 +150,6 @@ internal partial class Program
         return 0;
     }
 
-
-    internal static int redrawitem = 1, lastitem = -1;
-
-    /// <param name="adjust">
-    /// Called with the highlighted item and -1 or +1 when left or right is pressed, for menus
-    /// with rows that change in place (sliders, choices). Without it, left/right do nothing.
-    /// </param>
-    /// <param name="idle">
-    /// Called again and again while the menu waits (a network game's screens take in what has
-    /// arrived and redraw); returning true leaves the menu at once, with -2.
-    /// </param>
-    internal static int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine, Action<int, int>? adjust = null, Func<bool>? idle = null)
-    {
-        char key;
-        int i, x, y, basey, exit, which;
-        string shape;
-        int lastBlinkTime, timer;
-        ControlInfo ci;
-
-        which = item_i.curpos;
-        x = item_i.x & -8;
-        basey = item_i.y - 2;
-        y = basey + which * item_i.rowHeight;
-        // A highlight bar (Blake Stone's) flashes on and off, where the gun blinks its shape
-        bool bar = item_i.cursor != null, barOn = true;
-
-        if (bar)
-            DrawMenuBar(item_i, items, which, true);
-        else
-        {
-            _graphicManager.DrawPic("c_cursor1", x, y);
-            if (redrawitem != 0)
-                PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
-        }
-        //
-        // CALL CUSTOM ROUTINE IF IT IS NEEDED
-        //
-        routine?.Invoke(which);
-
-        _videoManager.Update();
-
-        shape = "c_cursor1";
-        timer = bar ? item_i.cursor!.FlashTics : 8;
-        exit = 0;
-        lastBlinkTime = (int)GameEngineManager.GetTimeCount();
-        _inputManager.ClearKeysDown();
-        _inputManager.ClearTextInput();
-
-        do
-        {
-            //
-            // CHANGE GUN SHAPE
-            //
-            if ((int)GameEngineManager.GetTimeCount() - lastBlinkTime > timer)
-            {
-                lastBlinkTime = (int)GameEngineManager.GetTimeCount();
-                if (bar)
-                {
-                    barOn = !barOn;
-                    DrawMenuBar(item_i, items, which, barOn);
-                }
-                else
-                {
-                    if (shape == "c_cursor1")
-                    {
-                        shape = "c_cursor2";
-                        timer = 8;
-                    }
-                    else
-                    {
-                        shape = "c_cursor1";
-                        timer = 70;
-                    }
-
-                    _graphicManager.DrawPic(shape, x, y);
-                }
-                routine?.Invoke(which);
-                _videoManager.Update();
-            }
-            else
-                GameEngineManager.DelayMs(5);
-
-            CheckPause();
-
-            if (idle?.Invoke() == true)
-            {
-                exit = 3;
-                break;
-            }
-
-            //
-            // SEE IF ANY KEYS ARE PRESSED FOR INITIAL CHAR FINDING
-            //
-
-            key = _inputManager.GetTextInput()[0];
-
-            _inputManager.ClearTextInput();
-
-            if (key != 0)
-            {
-                int ok = 0;
-
-                if (key >= 'a')
-                    key -= (char)('a' - 'A');
-
-                for (i = which + 1; i < item_i.amount; i++)
-                {
-                    if (items[i].active != 0 && ItemKey(items[i]) == key)
-                    {
-                        EraseGun(item_i, items, x, y, which);
-                        which = i;
-                        DrawGun(item_i, items, x, ref y, which, basey, routine);
-                        ok = 1;
-                        _inputManager.ClearKeysDown();
-                        break;
-                    }
-                }
-
-                //
-                // DIDN'T FIND A MATCH FIRST TIME THRU. CHECK AGAIN.
-                //
-                if (ok == 0)
-                {
-                    for (i = 0; i < which; i++)
-                        if (items[i].active != 0 && ItemKey(items[i]) == key)
-                        {
-                            EraseGun(item_i, items, x, y, which);
-                            which = i;
-                            DrawGun(item_i, items, x, ref y, which, basey, routine);
-                            _inputManager.ClearKeysDown();
-                            break;
-                        }
-                }
-            }
-
-            //
-            // GET INPUT
-            //
-            ReadAnyControl(out ci);
-            switch (ci.dir)
-            {
-                ////////////////////////////////////////////////
-                //
-                // MOVE UP
-                //
-                case Direction.North:
-
-                    EraseGun(item_i, items, x, y, which);
-
-                    //
-                    // ANIMATE HALF-STEP
-                    //
-                    if (!bar && which != 0 && items[which - 1].active != 0)
-                    {
-                        y -= 6;
-                        DrawHalfStep(x, y);
-                    }
-
-                    //
-                    // MOVE TO NEXT AVAILABLE SPOT
-                    //
-                    do
-                    {
-                        if (which == 0)
-                            which = item_i.amount - 1;
-                        else
-                            which--;
-                    }
-                    while (items[which].active == 0);
-
-                    DrawGun(item_i, items, x, ref y, which, basey, routine);
-                    //
-                    // WAIT FOR BUTTON-UP OR DELAY NEXT MOVE
-                    //
-                    TicDelay(20);
-                    break;
-
-                ////////////////////////////////////////////////
-                //
-                // MOVE DOWN
-                //
-                case Direction.South:
-
-                    EraseGun(item_i, items, x, y, which);
-                    //
-                    // ANIMATE HALF-STEP
-                    //
-                    if (!bar && which != item_i.amount - 1 && items[which + 1].active != 0)
-                    {
-                        y += 6;
-                        DrawHalfStep(x, y);
-                    }
-
-                    do
-                    {
-                        if (which == item_i.amount - 1)
-                            which = 0;
-                        else
-                            which++;
-                    }
-                    while (items[which].active == 0);
-
-                    DrawGun(item_i, items, x, ref y, which, basey, routine);
-
-                    //
-                    // WAIT FOR BUTTON-UP OR DELAY NEXT MOVE
-                    //
-                    TicDelay(20);
-                    break;
-
-                ////////////////////////////////////////////////
-                //
-                // ADJUST THE HIGHLIGHTED ITEM
-                //
-                case Direction.West when adjust != null:
-                    adjust(which, -1);
-                    TicDelay(20);
-                    break;
-
-                case Direction.East when adjust != null:
-                    adjust(which, 1);
-                    TicDelay(20);
-                    break;
-            }
-
-            if (ci.button0 || _inputManager.IsKeyDown(ScanCodes.sc_Space) || _inputManager.IsKeyDown(ScanCodes.sc_Enter))
-                exit = 1;
-
-            if (ci.button1 && !_inputManager.IsKeyDown(ScanCodes.sc_Alt) || _inputManager.IsKeyDown(ScanCodes.sc_Escape))
-                exit = 2;
-
-        }
-        while (exit == 0);
-        _inputManager.ClearKeysDown();
-        WaitKeyUp();        // or a held button picks in, or backs out of, the next menu too
-
-        //
-        // ERASE EVERYTHING
-        //
-        if (bar)
-            DrawMenuBar(item_i, items, which, false);
-        else if (lastitem != which)
-        {
-            _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
-            PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
-            redrawitem = 1;
-        }
-        else
-            redrawitem = 0;
-
-        routine?.Invoke(which);
-        _videoManager.Update();
-
-        item_i.curpos = (short)which;
-
-        lastitem = which;
-        switch (exit)
-        {
-            case 1:
-                //
-                // CALL THE ROUTINE
-                //
-                if (items[which].routine != null)
-                {
-                    ShootSnd();
-                    MenuFadeOut();
-                    items[which].routine!.Invoke(0);
-                }
-                return which;
-
-            case 2:
-                _audioManager.Play("menu/escape");
-                return -1;
-
-            case 3:
-                return -2;      // idle asked to leave
-        }
-
-        return 0; // JUST TO SHUT UP THE ERROR MESSAGES!
-    }
-
-    private static char ItemKey(CP_itemtype item)
-    {
-        if (item.shortKey != '\0')
-            return char.ToUpperInvariant(item.shortKey);
-
-        return string.IsNullOrWhiteSpace(item.text) ? '\0' : item.text[0];
-    }
-
-    internal static void EraseGun(CP_iteminfo item_i, CP_itemtype[] items, int x, int y, int which)
-    {
-        if (item_i.cursor != null)
-            DrawMenuBar(item_i, items, which, false);
-        else
-        {
-            _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
-            PrintMenuItem(item_i, items, which, MenuItemColor(items[which], false));
-        }
-        _videoManager.Update();
-    }
-
-    //
-    // DRAW HALF STEP OF GUN TO NEXT POSITION
-    //
-    internal static void DrawHalfStep(int x, int y)
-    {
-        _graphicManager.DrawPic("c_cursor1", x, y);
-        _videoManager.Update();
-        _audioManager.Play("menu/move1");
-        GameEngineManager.DelayMs(8 * 100 / 7);
-    }
-
-    internal static void DrawGun(CP_iteminfo item_i, CP_itemtype[] items, int x, ref int y, int which, int basey, Action<int>? routine)
-    {
-        if (item_i.cursor != null)
-        {
-            y = basey + which * item_i.rowHeight;
-            DrawMenuBar(item_i, items, which, true);
-        }
-        else
-        {
-            _videoManager.Bar(x - 1, y, 25, 16, "BKGDCOLOR");
-            y = basey + which * item_i.rowHeight;
-            _graphicManager.DrawPic("c_cursor1", x, y);
-            PrintMenuItem(item_i, items, which, MenuItemColor(items[which], true));
-        }
-
-        //
-        // CALL CUSTOM ROUTINE IF IT IS NEEDED
-        //
-        routine?.Invoke(which);
-        _videoManager.Update();
-        _audioManager.Play("menu/move2");
-    }
-
-    internal static void CheckPause()
-    {
-        if (_gameEngineManager.IsPaused())
-        {
-            switch (SoundStatus)
-            {
-                case 0:
-                    _audioManager.SetPaused(false);
-                    break;
-                case 1:
-                    _audioManager.SetPaused(true);
-                    break;
-            }
-
-            SoundStatus ^= 1;
-            GameEngineManager.WaitVBL(3);
-            _inputManager.ClearKeysDown();
-            _gameEngineManager.SetPaused(false);
-        }
-    }
-
-    internal static string MenuItemColor(CP_itemtype item, bool hlight)
-        => hlight ? color_hlite[item.active] : color_norml[item.active];
-
-    internal static void ShootSnd()
-    {
-        _audioManager.Play("menu/activate"); // TODO: "shoot" is something else now
-    }
-
-    internal static void TicDelay(int count)
-    {
-        ControlInfo ci;
-
-        int startTime = (int)GameEngineManager.GetTimeCount();
-
-        do
-        {
-            GameEngineManager.DelayMs(5);
-            ReadAnyControl(out ci);
-        }
-        while ((int)GameEngineManager.GetTimeCount() - startTime < count && ci.dir != Direction.None);
-    }
-
-    static int totalMousex = 0, totalMousey = 0;
-    internal static void ReadAnyControl(out ControlInfo ci)
-    {
-        int mouseactive = 0;
-        _inputManager.ReadControl(out ci);
-        if (mouseenabled && _inputManager.IsMouseInputGrabbed())
-        {
-            int mousex, mousey, buttons;
-
-            buttons = (int)SDL.SDL_GetRelativeMouseState(out mousex, out mousey);
-
-
-            int middlePressed = (int)(buttons & SDL.SDL_BUTTON(SDL.SDL_BUTTON_MIDDLE));
-            int rightPressed = (int)(buttons & SDL.SDL_BUTTON(SDL.SDL_BUTTON_RIGHT));
-            buttons &= (int)~(SDL.SDL_BUTTON(SDL.SDL_BUTTON_MIDDLE) | SDL.SDL_BUTTON(SDL.SDL_BUTTON_RIGHT));
-            if (middlePressed != 0) buttons |= 1 << 2;
-            if (rightPressed != 0) buttons |= 1 << 1;
-
-            totalMousex += mousex;
-            totalMousey += mousey;
-
-            if (totalMousey < -SENSITIVE)
-            {
-                ci.dir = Direction.North;
-                mouseactive = 1;
-            }
-            else if (totalMousey > SENSITIVE)
-            {
-                ci.dir = Direction.South;
-                mouseactive = 1;
-            }
-
-            if (totalMousex < -SENSITIVE)
-            {
-                ci.dir = Direction.West;
-                mouseactive = 1;
-            }
-            else if (totalMousex > SENSITIVE)
-            {
-                ci.dir = Direction.East;
-                mouseactive = 1;
-            }
-
-            if (mouseactive != 0)
-            {
-                totalMousex = 0;
-                totalMousey = 0;
-            }
-
-            if (buttons != 0)
-            {
-                ci.button0 = (buttons & 1) != 0;
-                ci.button1 = (buttons & 2) != 0;
-                ci.button2 = (buttons & 4) != 0;
-                ci.button3 = false;
-                mouseactive = 1;
-            }
-        }
-
-        if (joystickenabled && mouseactive == 0)
-        {
-            int jx, jy, jb;
-
-            _inputManager.GetJoyDelta(out jx, out jy);
-            if (jy < -SENSITIVE)
-                ci.dir = Direction.North;
-            else if (jy > SENSITIVE)
-                ci.dir = Direction.South;
-
-            if (jx < -SENSITIVE)
-                ci.dir = Direction.West;
-            else if (jx > SENSITIVE)
-                ci.dir = Direction.East;
-
-            jb = _inputManager.JoyButtons();
-            if (jb != 0)
-            {
-                ci.button0 = (jb & 1) != 0;
-                ci.button1 = (jb & 2) != 0;
-                ci.button2 = (jb & 4) != 0;
-                ci.button3 = (jb & 8) != 0;
-            }
-        }
-    }
 
     internal static void SetupControlPanel()
     {
@@ -1546,55 +1059,6 @@ internal partial class Program
         _audioManager.Play("menu/move1");
     }
 
-    private const int MenuSliderWidth = 88;
-    private const int MenuSliderOffset = 120; // from the start of the row's text, clear of "Sound Volume"; choices use it too
-
-    // A level bar to the right of a SliderMenuItem's text, drawn like the mouse sensitivity bar:
-    // a track with a highlighted knob at the current value (0 to max).
-    private static void DrawMenuSlider(CP_iteminfo iteminfo, CP_itemtype[] items, string id, int value, int max)
-    {
-        int index = Array.FindIndex(items, item => item.id == id);
-        if (index < 0)
-            return;
-
-        int knobWidth = MenuSliderWidth / (max + 1);
-        int x = iteminfo.x + iteminfo.indent + MenuSliderOffset;
-        int y = iteminfo.y + index * iteminfo.rowHeight + 2;
-        _videoManager.Bar(x, y, knobWidth * (max + 1), 9, "TEXTCOLOR");
-        DrawOutline(x, y, knobWidth * (max + 1), 9, "Black", "HIGHLIGHT");
-        DrawOutline(x + knobWidth * value, y, knobWidth, 9, "Black", "READCOLOR");
-        _videoManager.Bar(x + knobWidth * value + 1, y + 1, knobWidth - 1, 8, "READHCOLOR");
-    }
-
-    private const int MenuChoiceWidth = 96; // room for the widest value, like "1920x1200"
-
-    // A ChoiceMenuItem's current value, in the same column as the sliders. Greyed out with the row.
-    private static void DrawMenuChoice(CP_iteminfo iteminfo, CP_itemtype[] items, string id, string value)
-    {
-        int index = Array.FindIndex(items, item => item.id == id);
-        if (index < 0)
-            return;
-
-        int x = iteminfo.x + iteminfo.indent + MenuSliderOffset;
-        int y = iteminfo.y + index * iteminfo.rowHeight;
-        _videoManager.Bar(x, y, MenuChoiceWidth, iteminfo.rowHeight, "BKGDCOLOR");
-
-        TextAt(x, y, MenuItemStyle(iteminfo, MenuItemColor(items[index], false))).Print(value);
-    }
-
-    /// <summary>
-    /// The choice after stepping a ChoiceMenuItem by delta. Left/right stop at the ends of the
-    /// list; Enter wraps round, so it can reach every value on its own.
-    /// </summary>
-    private static int StepMenuChoice(int current, int count, int delta, bool wrap)
-    {
-        if (count <= 0)
-            return 0;
-
-        int next = current + delta;
-        return wrap ? ((next % count) + count) % count : Math.Clamp(next, 0, count - 1);
-    }
-
     internal static int CP_Control(int _)
     {
         int which;
@@ -1786,28 +1250,6 @@ internal partial class Program
         DrawControllerValues();
         _videoManager.Update();
         _audioManager.Play("menu/move1");
-    }
-
-    // The on/off box to the left of a ToggleMenuItem's text
-    private static void DrawMenuCheckbox(CP_iteminfo iteminfo, CP_itemtype[] items, string id, bool on)
-    {
-        int index = Array.FindIndex(items, item => item.id == id);
-        if (index >= 0)
-        {
-            items[index].checkbox = on;
-            DrawMenuCheckbox(iteminfo, index, on);
-        }
-    }
-
-    /// <param name="highlighted">Under a highlight bar: the pack's c_selected_hi / c_notselected_hi, when it has them</param>
-    private static void DrawMenuCheckbox(CP_iteminfo iteminfo, int index, bool on, bool highlighted = false)
-    {
-        int x = iteminfo.x + iteminfo.indent + iteminfo.checkboxX;
-        int y = iteminfo.y + index * iteminfo.rowHeight + iteminfo.checkboxY;
-        var pic = on ? "c_selected" : "c_notselected";
-        if (highlighted && _assetManager.Exists<GraphicAsset>(pic + "_hi"))
-            pic += "_hi";
-        _graphicManager.DrawPic(pic, x, y);
     }
 
     internal static int CP_ChangeView(int _)
@@ -2045,151 +1487,6 @@ internal partial class Program
         // Keep whatever was changed in the menus (view size, controls, sensitivity) even if the
         // game doesn't get to exit cleanly.
         _gameEngineManager.WriteConfig();
-    }
-
-    internal static void DrawMenuGun(CP_iteminfo iteminfo)
-    {
-        int x, y;
-
-        // A highlight bar goes on with its item's text when HandleMenu starts
-        if (iteminfo.cursor != null)
-            return;
-
-        x = iteminfo.x & -8;    // same column HandleMenu draws and erases the gun in
-        y = iteminfo.y + iteminfo.curpos * iteminfo.rowHeight - 2;
-        _graphicManager.DrawPic("c_cursor1", x, y);
-    }
-
-    /// <param name="areaHeight">Height of the screen area the question is centered in: the play view (MAXY) in a game</param>
-    internal static int Confirm(string text, int areaHeight = 200)
-    {
-        var language = _assetManager.GetText("en-us");
-        int xit = 0, x, y, tick = 0, lastBlinkTime;
-        string[] whichsnd = ["menu/escape", "menu/activate"];
-        ControlInfo ci;
-
-        var message = Message(text.ToLanguageText(language), areaHeight);
-        _inputManager.ClearKeysDown();
-        WaitKeyUp();
-
-        //
-        // BLINK CURSOR
-        //
-        x = message.PrintX;
-        y = message.PrintY;
-        lastBlinkTime = (int)GameEngineManager.GetTimeCount();
-
-        do
-        {
-            ReadAnyControl(out ci);
-
-            if (GameEngineManager.GetTimeCount() - lastBlinkTime >= 10)
-            {
-                switch (tick)
-                {
-                    case 0:
-                        _videoManager.Bar(x, y, 8, 13, message.Style.Background);
-                        break;
-                    case 1:
-                        _graphicManager.DrawText(x, y, "_", message.Style);
-                        break;
-                }
-                _videoManager.Update();
-                tick ^= 1;
-                lastBlinkTime = (int)GameEngineManager.GetTimeCount();
-            }
-            else GameEngineManager.DelayMs(5);
-        }
-        while (!_inputManager.IsKeyDown(ScanCodes.sc_Y) && !_inputManager.IsKeyDown(ScanCodes.sc_N) && !_inputManager.IsKeyDown(ScanCodes.sc_Escape) && !ci.button0 && !ci.button1);
-
-        if (_inputManager.IsKeyDown(ScanCodes.sc_Y) || ci.button0)
-        {
-            xit = 1;
-            ShootSnd();
-        }
-        _inputManager.ClearKeysDown();
-        WaitKeyUp();
-
-        _audioManager.Play(whichsnd[xit]);
-
-        return xit;
-    }
-
-    /// <summary>
-    /// Waits for the select and back buttons, Space, Enter and Escape to be let go, so one press
-    /// isn't taken again by the next screen. Matters most for a controller, whose buttons are read
-    /// as they are rather than as presses that ClearKeysDown can throw away.
-    /// </summary>
-    internal static void WaitKeyUp()
-    {
-        ControlInfo ci;
-        while (true)
-        {
-            ReadAnyControl(out ci);
-            bool keyPressed =
-               ci.button0 ||
-               ci.button1 ||
-               ci.button2 ||
-               ci.button3 ||
-               _inputManager.IsKeyDown(ScanCodes.sc_Space) ||
-               _inputManager.IsKeyDown(ScanCodes.sc_Enter) ||
-               _inputManager.IsKeyDown(ScanCodes.sc_Escape);
-
-            if (!keyPressed)
-                break;
-
-            GameEngineManager.DelayMs(5);
-        }
-    }
-
-    /// <summary>
-    /// Shows text in a box in the middle of the screen, and returns the box's text window with its
-    /// print position just after the text
-    /// </summary>
-    /// <param name="areaHeight">Height of the screen area the box is centered in: the play view (MAXY) in a game</param>
-    internal static TextWindow Message(string text, int areaHeight = 200)
-    {
-        int h = 0, w = 0, mw = 0, i, len = text.Length;
-        var box = _gameEngineManager.GetGameInfo().MenuMessage;
-        var style = box == null
-            ? new TextStyle(LARGE_FONT, "Black", "TEXTCOLOR")
-            : new TextStyle(box.Font, box.Color, box.Med, Shadow: new FontShadow(1, 1, box.Shadow));
-
-        var font = _fontManager.Find(style.Font);
-        if (font == null)
-            return TextWindow.FullScreen(_graphicManager, style);
-        h = font.LineHeight;
-
-        for (i = 0; i < len; i++)
-        {
-            if (text[i] == '\n')
-            {
-                if (w > mw)
-                    mw = w;
-                w = 0;
-                h += font.LineHeight;
-            }
-            else
-                w += font.Advance(text[i]);
-        }
-
-        if (w + 10 > mw)
-            mw = w + 10;
-
-        int x = 160 - (mw / 2);
-        int y = (areaHeight / 2) - (h / 2);
-
-        if (box != null)
-            BevelBox(x - 5, y - 5, mw + 10, h + 10, box.Hi, box.Med, box.Lo);
-        else
-        {
-            DrawWindow(x - 5, y - 5, mw + 10, h + 10, "TEXTCOLOR");
-            DrawOutline(x - 5, y - 5, mw + 10, h + 10, "Black", "HIGHLIGHT");
-        }
-        var window = new TextWindow(_graphicManager, x, y, mw, h, style);
-        window.Print(text);
-        _videoManager.Update();
-        return window;
     }
 
     internal static void FreeMusic()

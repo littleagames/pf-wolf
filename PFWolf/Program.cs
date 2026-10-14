@@ -137,7 +137,10 @@ internal partial class Program
         _translationManager = serviceProvider.GetRequiredService<TranslationManager>();
 
         ui = new UiText(_graphicManager, _fontManager);
-        lineInput = new LineInput(_graphicManager, _inputManager, _videoManager, ui, ReadAnyControl);
+        menuInput = new MenuInput(_inputManager, _audioManager, _gameEngineManager, () => mouseenabled, () => joystickenabled);
+        menuDrawing = new MenuDrawing(_graphicManager, _videoManager, _assetManager, _fontManager, _gameEngineManager, ui, () => gameInfoSettings);
+        menuLoop = new MenuLoop(menuDrawing, menuInput, _graphicManager, _videoManager, _inputManager, _audioManager, _assetManager);
+        lineInput = new LineInput(_graphicManager, _inputManager, _videoManager, ui, menuInput.ReadAnyControl);
         signonPanel = new SignonPanel(_gameEngineManager, _assetManager, _videoManager, _inputManager, _audioManager,
             _graphicManager, _fontManager, ui, () => mouseenabled, () => _scripts?.Loaded.Count ?? 0);
 

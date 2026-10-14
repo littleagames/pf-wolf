@@ -877,27 +877,6 @@ internal partial class Program
     =============================================================================
     */
 
-    /// <summary>A bevelled box: the face, its light top and left edges and dark bottom and right ones</summary>
-    internal static void BevelBox(int x, int y, int width, int height, int hi, int med, int lo)
-        => BevelBox(x, y, width, height, hi.ToString(), med.ToString(), lo.ToString());
-
-    /// <summary>
-    /// A bevelled box in colors by name or palette index. Its two mixed corners are the palette
-    /// color after the face's, when that's an index.
-    /// </summary>
-    internal static void BevelBox(int x, int y, int width, int height, string hi, string med, string lo)
-    {
-        int x2 = x + width - 1, y2 = y + height - 1;
-        _videoManager.Bar(x, y, width, height, med);
-        _videoManager.HorizontalLine(x, x2, y, hi);
-        _videoManager.HorizontalLine(x, x2, y2, lo);
-        _videoManager.VerticalLine(y, y2, x, hi);
-        _videoManager.VerticalLine(y, y2, x2, lo);
-        var corner = int.TryParse(med, out int index) ? (index + 1).ToString() : med;
-        _videoManager.Bar(x, y2, 1, 1, corner);
-        _videoManager.Bar(x2, y, 1, 1, corner);
-    }
-
     /// <summary>
     /// Presents a script in presenter.yaml's message box (bstone's BMAmsg), its lines centered up
     /// and down in it. Nothing if the pack has no message box.
