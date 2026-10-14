@@ -4,3 +4,4 @@ global using PFWolf.Enums;
 global using PFWolf.Exceptions;
 global using PFWolf.Gameplay;
 global using PFWolf.Managers;
+global using PFWolf.Startup;

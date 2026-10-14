@@ -1,11 +1,9 @@
-using CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using SDL2;
 using System;
 using PFWolf.Assets;
 using PFWolf.Configuration;
 using PFWolf.Constants;
-using PFWolf.DependencyInjection;
 using PFWolf.Extensions;
 using PFWolf.Fonts;
 using PFWolf.Loaders;
@@ -33,31 +31,10 @@ internal partial class Program
     // Who's playing, the acting player, tics, gamestate and the camera (Gameplay/GameSession.cs)
     internal static readonly GameSession session = new();
 
-    public Program()
+    /// <summary>Builds the managers (Startup/GameServices.cs) and hooks them up</summary>
+    private static void InitServices()
     {
-        var services = new ServiceCollection();
-        services.AddTransient(typeof(Lazy<>), typeof(Lazier<>));
-        services.AddSingleton<GameEngineManager>();
-        services.AddSingleton<VideoManager>();
-        services.AddSingleton<AudioManager>();
-        services.AddSingleton<InputManager>();
-        services.AddSingleton<GraphicManager>();
-        services.AddSingleton<FontManager>();
-        services.AddSingleton<MapManager>();
-        services.AddSingleton<AssetManager>();
-        services.AddSingleton<InventoryManager>();
-        services.AddSingleton<ConsoleManager>();
-        services.AddSingleton<AutomapManager>();
-        services.AddSingleton<HudMessageManager>();
-        services.AddSingleton<FactionManager>();
-        services.AddSingleton<TranslationManager>();
-
-        // Build the service provider
-        var serviceProvider = services.BuildServiceProvider();
-
-        //_audioManager = new AudioManager(
-       //     new Lazy<AssetManager>(
-       //         () => serviceProvider.GetRequiredService<AssetManager>()));
+        var serviceProvider = GameServices.Build();
 
         _gameEngineManager = serviceProvider.GetRequiredService<GameEngineManager>();
         _videoManager = serviceProvider.GetRequiredService<VideoManager>();
@@ -79,11 +56,6 @@ internal partial class Program
         _translationManager = serviceProvider.GetRequiredService<TranslationManager>();
 
         // TODO: Remove circular dependencies here
-        //_videoManager = new();
-        //_mapManager = new();
-        //_gameEngineManager = new(_videoManager, _inputManager);
-        //_inputManager = new();
-        //_graphicManager = new(_videoManager);
     }
 
     /*
@@ -139,27 +111,18 @@ internal partial class Program
 
     private static void Main(string[] args)
     {
-        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+        CrashReport.Install();
 
         // What startup prints is shown on the signon screen as warnings
         CaptureStartupOutput();
 
-        // Bad arguments are reported by the parser and otherwise ignored: run with the defaults.
-        // --file can be given more than once.
-        using var parser = new Parser(settings =>
-        {
-            settings.HelpWriter = Console.Error;
-            settings.AllowMultiInstance = true;
-        });
-        var gameParams = parser.ParseArguments<GameParams>(args).Value ?? new GameParams(); // Move into gamemanager, add unit tests
+        // Relative mod paths are made full here, before GameFolder.Use can move away from the
+        // folder they mean
+        var (gameParams, modPaths) = StartupArgs.Parse(args, Console.Error);
         param_nowait = gameParams.NoWait;
+        GameFolder.Use();
 
-        // Relative mod paths mean the folder the game was started in, so pin them down before
-        // UseGameFolder can move away from it
-        var modPaths = gameParams.Files.Concat(gameParams.Paths).Select(ModSource.FullPathIfExists).ToList();
-        UseGameFolder();
-
-        new Program();
+        InitServices();
         _gameEngineManager.Init(gameParams, modPaths);
         SetNetParams(gameParams);     // --host, --join, --port, --name (Program.Multiplayer.cs)
         warpRequest.SetParams(gameParams);  // --warp, --skill, --start (Gameplay/WarpRequest.cs)
@@ -210,57 +173,6 @@ internal partial class Program
         DemoLoop();
 
         _gameEngineManager.Quit("Demo loop exited???");
-    }
-
-    /// <summary>
-    /// A crash writes the error to crash.log beside the exe (or in the temp folder when that can't
-    /// be written) and keeps the console open, so a double-clicked exe doesn't vanish with it.
-    /// </summary>
-    private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
-    {
-        var report = $"PFWolf crashed at {DateTime.Now:yyyy-MM-dd HH:mm:ss}{Environment.NewLine}{e.ExceptionObject}{Environment.NewLine}";
-        string? logPath = null;
-        foreach (var folder in new[] { AppContext.BaseDirectory, Path.GetTempPath() })
-        {
-            try
-            {
-                logPath = Path.Combine(folder, "crash.log");
-                File.WriteAllText(logPath, report);
-                break;
-            }
-            catch
-            {
-                logPath = null;
-            }
-        }
-
-        try
-        {
-            Console.Error.WriteLine(report);
-            if (logPath != null)
-                Console.Error.WriteLine($"Saved to {logPath}");
-            if (!Console.IsInputRedirected)
-            {
-                Console.Error.WriteLine("Press any key to exit.");
-                Console.ReadKey(true);
-            }
-        }
-        catch
-        {
-            // No console to report to: the log is all there is
-        }
-    }
-
-    /// <summary>
-    /// Files dropped on the exe start it in some other folder (often the dropped files' own), but
-    /// pfwolf.pk3 and the game's data files are read from the working folder. When they aren't
-    /// there and are beside the exe, work from there instead.
-    /// </summary>
-    private static void UseGameFolder()
-    {
-        const string basePk3 = "pfwolf.pk3";
-        if (!File.Exists(basePk3) && File.Exists(Path.Combine(AppContext.BaseDirectory, basePk3)))
-            Directory.SetCurrentDirectory(AppContext.BaseDirectory);
     }
 
     private static void InitGame()
@@ -338,60 +250,29 @@ internal partial class Program
             _inputManager.SetMouseGrab(current.Fullscreen);
     }
 
-    // Fade styles and lengths (tics) from game-info; ordinary fades use _videoManager.FadeStyle
-    // and FadeTics (screen-fade-style, screen-fade-tics)
-    internal static FadeStyle menuFadeStyle, deathFadeStyle, levelFadeStyle;
-    internal static int menuFadeTics, deathFadeTics, levelFadeTics;
-    internal static string deathFadeColor = "Maroon";
-    // The death screen's turn to face the killer (degrees a tic) and hold on the color (tics)
-    internal static int deathTurnSpeed = 2, deathHoldTics = 100;
-    // The dead view's drop toward the floor: the eye height it ends at (null: no drop) and texels a tic
-    internal static int? deathDropHeight;
-    internal static int deathDropSpeed = 1;
-    internal static double weaponScale = 1;     // game-info weapon-scale
+    // Fade styles and lengths, the death screen and the weapon in hand, from game-info
+    // (Gameplay/GameInfoSettings.cs); ordinary fades use _videoManager.FadeStyle and FadeTics
+    static GameInfoSettings gameInfoSettings = new();
+    internal static FadeStyle menuFadeStyle => gameInfoSettings.menuFadeStyle;
+    internal static FadeStyle deathFadeStyle => gameInfoSettings.deathFadeStyle;
+    internal static FadeStyle levelFadeStyle => gameInfoSettings.levelFadeStyle;
+    internal static int menuFadeTics => gameInfoSettings.menuFadeTics;
+    internal static int deathFadeTics => gameInfoSettings.deathFadeTics;
+    internal static int levelFadeTics => gameInfoSettings.levelFadeTics;
+    internal static string deathFadeColor => gameInfoSettings.deathFadeColor;
+    internal static int deathTurnSpeed => gameInfoSettings.deathTurnSpeed;
+    internal static int deathHoldTics => gameInfoSettings.deathHoldTics;
+    internal static int? deathDropHeight => gameInfoSettings.deathDropHeight;
+    internal static int deathDropSpeed => gameInfoSettings.deathDropSpeed;
+    internal static double weaponScale => gameInfoSettings.weaponScale;
     internal static readonly WeaponBob weaponBob = new();
 
     private static void ReadFadeStyles()
     {
-        var gameInfo = _gameEngineManager.GetGameInfo();
-
-        _videoManager.FadeStyle = ParseFadeStyle(gameInfo.ScreenFadeStyle, "screen-fade-style", FadeStyle.Palette);
-        _videoManager.FadeTics = ParseFadeTics(gameInfo.ScreenFadeTics, "screen-fade-tics");
-        menuFadeStyle = ParseFadeStyle(gameInfo.MenuFadeStyle, "menu-fade-style", _videoManager.FadeStyle);
-        menuFadeTics = ParseFadeTics(gameInfo.MenuFadeTics, "menu-fade-tics") ?? 20;
-        deathFadeStyle = ParseFadeStyle(gameInfo.DeathFadeStyle, "death-fade-style", FadeStyle.Fizzle);
-        deathFadeTics = ParseFadeTics(gameInfo.DeathFadeTics, "death-fade-tics") ?? 70;
-        deathFadeColor = string.IsNullOrWhiteSpace(gameInfo.DeathFadeColor) ? "Maroon" : gameInfo.DeathFadeColor;
-        deathTurnSpeed = Math.Max(gameInfo.DeathTurnSpeed ?? 2, 1);     // 0 would never finish turning
-        deathHoldTics = Math.Max(gameInfo.DeathHoldTics ?? 100, 0);
-        deathDropHeight = gameInfo.DeathDropHeight is { } drop ? Math.Clamp(drop, MINEYE, MAXEYE) : null;
-        deathDropSpeed = Math.Max(gameInfo.DeathDropSpeed ?? 1, 1);     // 0 would never finish dropping
-        weaponScale = Math.Clamp(gameInfo.WeaponScale ?? 1, 0.1, 2);
-        weaponBob.Enabled = gameInfo.WeaponBob ?? false;
-        levelFadeStyle = ParseFadeStyle(gameInfo.LevelFadeStyle, "level-fade-style", FadeStyle.Fizzle);
-        levelFadeTics = ParseFadeTics(gameInfo.LevelFadeTics, "level-fade-tics") ?? 20;
-    }
-
-    private static int? ParseFadeTics(int? value, string key)
-    {
-        if (value is null or > 0)
-            return value;
-
-        Console.WriteLine($"{key} must be more than 0 tics in game-info, not {value}; using the default");
-        return null;
-    }
-
-    private static FadeStyle ParseFadeStyle(string? value, string key, FadeStyle fallback)
-    {
-        if (string.IsNullOrEmpty(value))
-            return fallback;
-
-        // By name only: Enum.TryParse would also take numbers
-        if (Enum.GetNames<FadeStyle>().Contains(value, StringComparer.OrdinalIgnoreCase))
-            return Enum.Parse<FadeStyle>(value, ignoreCase: true);
-
-        Console.WriteLine($"Unknown {key} '{value}' in game-info, using {fallback.ToString().ToLowerInvariant()} instead");
-        return fallback;
+        gameInfoSettings = GameInfoSettings.Read(_gameEngineManager.GetGameInfo());
+        _videoManager.FadeStyle = gameInfoSettings.screenFadeStyle;
+        _videoManager.FadeTics = gameInfoSettings.screenFadeTics;
+        weaponBob.Enabled = gameInfoSettings.weaponBob;
     }
 
     private static void SignonScreen()
