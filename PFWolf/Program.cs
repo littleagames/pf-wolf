@@ -250,6 +250,7 @@ internal partial class Program
         wallPosts = MakeWallPosts();
         wallHits = MakeWallHits();
         rayTrace = MakeRayTrace();
+        spriteDrawing = MakeSpriteDrawing();
         playerView = MakePlayerView();
         statusBarDrawing = MakeStatusBarDrawing();
         deathmatch = MakeDeathmatch();
