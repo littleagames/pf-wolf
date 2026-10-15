@@ -31,7 +31,6 @@ internal partial class Program
     static uint GameChecksum() => netPlay.GameChecksum();
 
     /// <summary>Whether the game with others is over for this machine: it left, or lost the host</summary>
-    internal static bool NetGameOver => netPlay.NetGameOver;
 
     static bool netChatting => netOverlay.netChatting;
     static void NetChatKeys() => netOverlay.NetChatKeys();

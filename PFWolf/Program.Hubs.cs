@@ -31,7 +31,6 @@ internal partial class Program
     internal static int informantTotal { get => hubs.informantTotal; set => hubs.informantTotal = value; }
 
     static bool IsHubMap(string? map) => hubs.IsHubMap(map);
-    internal static EpisodeInfo? CurrentEpisode() => hubs.CurrentEpisode();
     static short ClusterOf(string? map) => hubs.ClusterOf(map);
     internal static void ResetHubs() => hubs.ResetHubs();
     private static void WriteHubState(BinaryWriter bw) => hubs.WriteHubState(bw);

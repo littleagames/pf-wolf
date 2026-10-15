@@ -64,9 +64,7 @@ internal partial class Program
     internal static int StartGame { get => controlPanel.StartGame; set => controlPanel.StartGame = value; }
 
     /// <summary>The game was ended with End Game in the menu, so the game over screen is skipped</summary>
-    internal static bool endedFromMenu { get => controlPanel.endedFromMenu; set => controlPanel.endedFromMenu = value; }
 
-    internal static void EnableViewScoresMenuItem() => controlPanel.EnableViewScoresMenuItem();
     internal static void DrawMainMenu() => controlPanel.DrawMainMenu();
 
     internal static void US_ControlPanel(ScanCodes scancode)

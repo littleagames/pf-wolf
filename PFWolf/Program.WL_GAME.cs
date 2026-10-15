@@ -17,284 +17,21 @@ internal partial class Program
     static bool ingame, fizzlein;
     internal static gametype gamestate { get => session.gamestate; set => session.gamestate = value; }
     static string bordercol = "VIEWCOLOR"; // color of the Change View/Ingame border
-    /// <summary>
-    /// A map switch asked for by A_ChangeMap (Spear's pickup), an elevator or a teleporter:
-    /// GameLoop waits WaitTics (Spear lets the pickup sound play out), loads the map without an
-    /// intermission and, with KeepPosition, puts the player back where they stood, facing the
-    /// same way. With ElevatorWall, they're then moved into the elevator by that panel wall.
-    /// </summary>
-    private record PendingMapChange(string Map, bool KeepPosition, int X, int Y, short Angle, int WaitTics = 150, int ElevatorWall = 0);
-    private static PendingMapChange? pendingMapChange;
 
-    //
-    // ELEVATOR BACK MAPS - REMEMBER (-1)!!
-    //
-    private static int[] ElevatorBackTo = { 1, 1, 7, 3, 5, 3 };
+    // The game from its first level to its end (Gameplay/MainGameLoop.cs)
+    static MainGameLoop mainGameLoop = null!;       // made in InitServices
 
-    //===========================================================================
+    static MainGameLoop MakeMainGameLoop() => new(_gameEngineManager, _assetManager, _videoManager, _audioManager, _inputManager,
+        _inventoryManager, statusBarDrawing, playScreen, levelMusic, levelLoop, playerMovement, playerDeath, demos, deathmatch, scoreboard,
+        netPlay, gameScripts, hubs, controlPanel, intermissionScreen, highScoresScreen, textPresenter, moviePlayer, session,
+        new MainGameLoopHooks(() => playstate, s => playstate = s, () => startgame, on => startgame = on, () => loadedgame,
+            on => loadedgame = on, on => ingame = on, () => fizzlein = true, on => autosavePending = on, () => viewsize,
+            () => demoplayback || demorecord, () => demorecord, () => netgame, () => lastgamemusicoffset, EnterLevel, LeaveLevel,
+            MarkLevelStart, ApplyPendingWarpStart, AlignPlayerInElevator, ShowLevelStartMessage));
 
+    static PendingMapChange? pendingMapChange { get => mainGameLoop.pendingMapChange; set => mainGameLoop.pendingMapChange = value; }
 
-    /// <summary>
-    /// After an A_ChangeMap map loads: with KeepPosition, moves the player to where they were
-    /// on the old map, facing the same way.
-    /// </summary>
-    private static void ApplyPendingMapChange()
-    {
-        if (pendingMapChange is not { } change)
-            return;
-
-        pendingMapChange = null;
-        if (!change.KeepPosition)
-            return;
-
-        player.SetPosition(change.X >> (int)MapConstants.TILESHIFT, change.Y >> (int)MapConstants.TILESHIFT);
-        player.X = change.X;
-        player.Y = change.Y;
-        player.Angle = change.Angle;
-        Thrust(0, 0); // settles the player's tile and area at the new position
-
-        if (change.ElevatorWall > 0)
-            AlignPlayerInElevator(player.TileX, player.TileY, change.ElevatorWall);
-    }
-
-    internal static void GameLoop()
-    {
-        var language = _assetManager.GetText("en-us");
-        bool died;
-        bool warped = false;
-
-        ClearMemory();
-        _videoManager.FadeOut();
-        DrawPlayScreen();
-        died = false;
-        do
-        {
-            if (!loadedgame)
-                foreach (var p in players) p.score = p.oldscore;
-            if (!died || viewsize != 21) DrawScore();
-
-            startgame = false;
-            string levelStart = "loaded";
-            if (!loadedgame)
-            {
-                bool kept = EnterLevel();   // a kept hub level as it was left, or the map afresh (Program.Hubs.cs)
-                ApplyPendingMapChange();
-                ApplyPendingWarpStart();    // --start's tile, the first time (Program.cs)
-                if (!died)
-                    MarkLevelStart();       // what dying puts the player back to, with death-restores-level-start
-                levelStart = died ? "restarted" : kept ? "returned" : "new";
-            }
-            RunLevelHooks(levelStart);      // the scripts' game.onlevel hooks (Program.Scripting.cs)
-
-            // A level being entered, not one loaded or restarted after dying, saves itself
-            autosavePending = !loadedgame && !died && !demoplayback && !demorecord && !netgame;
-            DrawLevel();
-
-            ingame = true;
-            if (loadedgame)
-            {
-                ContinueMusic(lastgamemusicoffset);
-                loadedgame = false;
-            }
-            else StartMusic();
-
-            var levelStartMessage = _gameEngineManager.GetGameInfo().LevelStartMessage;
-            if (warped)
-            {
-                warped = false;                 // an A_ChangeMap switch loads silently, no "get psyched!"
-                if (!string.IsNullOrEmpty(levelStartMessage))
-                    ShowLevelStartMessage(levelStartMessage);
-            }
-            else if (!died)
-                PreloadGraphics();             // TODO: Let this do something useful!
-            else
-            {
-                died = false;
-                fizzlein = true;
-            }
-
-            DrawLevel ();
-
-            PlayLoop();
-
-            // The deathmatch has been won, or its time is up: who won, then back to the menus
-            if (matchover)
-            {
-                StopMusic();
-                ingame = false;
-                ShowFinalScoreboard();
-                matchover = false;
-                return;
-            }
-
-            // Left the game with others, or lost the host: back to the menus
-            if (NetGameOver)
-            {
-                StopMusic();
-                ingame = false;
-                ClearMemory();
-                _videoManager.FadeOut();
-                return;
-            }
-
-            if (playstate is playstatetypes.ex_completed or playstatetypes.ex_secretlevel or playstatetypes.ex_warped)
-                LeaveLevel();               // a hub level is kept as it's left
-
-            if (playstate == playstatetypes.ex_warped && pendingMapChange != null)
-            {
-                // Spear waits 150 tics for its pickup sound before the new map loads; the score
-                // carries over, as the level ends without an intermission to bank it
-                if (pendingMapChange.WaitTics > 0)
-                    GameEngineManager.WaitVBL((uint)pendingMapChange.WaitTics);
-                foreach (var p in players) p.oldscore = p.score;
-                warped = true;
-            }
-            else
-                pendingMapChange = null;
-
-            StopMusic();
-            ingame = false;
-
-            if (demorecord && playstate != playstatetypes.ex_warped)
-                FinishDemoRecord();
-
-            if (pendingDemo != null || pendingRecord != null)
-            {
-                // playdemo or recorddemo ended the game: back to the title loop, which starts the demo
-                ClearMemory();
-                _videoManager.FadeOut();
-                FindMenuItem(MainMenu, "savegame")?.active = 0;
-                EnableViewScoresMenuItem();
-                return;
-            }
-
-            if (startgame || loadedgame)
-            {
-                ClearMemory();
-                _videoManager.FadeOut();
-                DrawPlayScreen();
-                died = false;
-                warped = false;
-                continue;
-            }
-
-            switch (playstate)
-            {
-                case playstatetypes.ex_completed:
-                case playstatetypes.ex_secretlevel:
-                    // A level with no next level (a boss floor left by exitlevel, or by a map's own
-                    // exit) ends its cluster, as the victory tile does
-                    var leftInfo = _gameEngineManager.GetGameInfo().Maps[gamestate.mapon];
-                    var nextMap = playstate == playstatetypes.ex_secretlevel ? leftInfo.SecretNext ?? leftInfo.Next : leftInfo.Next;
-                    if (string.IsNullOrEmpty(nextMap) && string.IsNullOrEmpty(leftInfo.EndMessage))
-                    {
-                        playstate = playstatetypes.ex_victorious;
-                        goto case playstatetypes.ex_victorious;
-                    }
-
-                    if (viewsize == 21) DrawPlayScreen();
-                    foreach (var p in players)
-                    {
-                        using var _ = ActAs(p);
-                        _inventoryManager.ResetForNextLevel();
-                    }
-                    DrawKeys();
-                    _videoManager.FadeOut();
-
-                    ClearMemory();
-
-                    if (!IsHubMap(levelMap))
-                        LevelCompleted();          // do the intermission; a hub's levels are just left
-                    if (viewsize == 21) DrawPlayScreen();
-                    foreach (var p in players) p.oldscore = p.score;
-
-                    // The Spear demo's last floor: its message ends the game (shown at the end of
-                    // the intermission), then the high scores
-                    if (!string.IsNullOrEmpty(leftInfo.EndMessage))
-                    {
-                        died = true;                // don't "get psyched!" next time
-                        _videoManager.FadeOut();
-                        ClearMemory();
-                        CheckHighScore(playerstate.score, won: false);
-                        EnableViewScoresMenuItem();
-                        return;
-                    }
-
-                    gamestate.mapon = nextMap;      // the secret exit falls back to next if there's no secret-next
-                    break;
-
-                case playstatetypes.ex_died:
-                    Died();
-                    died = true;                    // don't "get psyched!"
-
-                    if (playerstate.lives > -1)
-                        break;                          // more lives left
-
-                    _videoManager.FadeOut();
-                    if (_videoManager.HasMargins)
-                        _videoManager.ClearScreen(0);
-                    ClearMemory();
-
-                    // The pack's game over screen, unless the game was ended from the menu
-                    if (!endedFromMenu && _gameEngineManager.GetGameInfo().LoseScreen is { } loseScreen)
-                        ShowLoseScreen(loseScreen);
-                    endedFromMenu = false;
-
-                    CheckHighScore(playerstate.score, won: false);
-                    EnableViewScoresMenuItem();
-                    return;
-
-                case playstatetypes.ex_victorious:
-                    if (CurrentEpisode()?.EndBriefing is { Length: > 0 } endBriefing)
-                    {
-                        // Blake Stone: the mission's won message over the status bar, then its
-                        // end briefing, then the high scores
-                        if (_gameEngineManager.GetGameInfo().MissionWonMessage is { Length: > 0 } wonMessage
-                            && PresenterScript(wonMessage) is { } wonScript)
-                        {
-                            PresenterMessageBox(wonScript);
-                            _videoManager.Update();
-                            _audioManager.Play("bs/bonus1");
-                            _inputManager.UserInput(5 * 70);
-                        }
-                        _videoManager.FadeOut();
-                        ClearMemory();
-                        if (CurrentEpisode()?.EndMovie is { Length: > 0 } endMovie)
-                        {
-                            PlayMovie(endMovie);
-                            _videoManager.FadeOut();
-                        }
-                        ShowBriefing(endBriefing);
-
-                        CheckHighScore(playerstate.score, won: true);
-                        EnableViewScoresMenuItem();
-                        return;
-                    }
-
-                    if (viewsize == 21) DrawPlayScreen();
-                    // A cluster with a victory-fade-color fades to it slowly, as Spear does when the Angel falls
-                    var wonCluster = WonCluster();
-                    if (string.IsNullOrEmpty(wonCluster.VictoryFadeColor))
-                        _videoManager.FadeOut();
-                    else
-                        _videoManager.FadeOut(VictoryFadeColor(wonCluster), 300);
-                    ClearMemory();
-
-                    Victory();
-
-                    ClearMemory();
-
-                    CheckHighScore(playerstate.score, won: true);
-                    EnableViewScoresMenuItem();
-                    return;
-
-                default:
-                    if (viewsize == 21) DrawPlayScreen();
-                    ClearMemory();
-                    break;
-            }
-        } while (true);
-    }
+    internal static void GameLoop() => mainGameLoop.GameLoop();
 
     // Demos: played, recorded and asked for from the console (Gameplay/Demos.cs)
     static Demos demos = null!;     // made in InitServices
@@ -310,7 +47,6 @@ internal partial class Program
     internal static void PlayDemo(int demonumber) => demos.PlayDemo(demonumber);
     internal static bool DemoExists(int demonumber) => demos.DemoExists(demonumber);
     internal static void PlayPendingDemo() => demos.PlayPendingDemo();
-    internal static void FinishDemoRecord(int? demonumber = null) => demos.FinishDemoRecord(demonumber);
     internal static void RecordDemo() => demos.RecordDemo();
     internal static int DemoMapCount() => demos.DemoMapCount();
     internal static bool RecordPendingDemo() => demos.RecordPendingDemo();
@@ -328,7 +64,6 @@ internal partial class Program
     internal static void DrawPlayBorderSides() => playScreen.DrawPlayBorderSides();
     internal static void DrawStatusBorder(string color) => playScreen.DrawStatusBorder(color);
     internal static string GetMapDisplayName(string mapon) => playScreen.GetMapDisplayName(mapon);
-    internal static void PreloadGraphics() => playScreen.PreloadGraphics();
 
     // Setting up a level to play (Gameplay/LevelSetup.cs)
     static LevelSetup levelSetup = null!;       // made in InitServices
@@ -348,7 +83,6 @@ internal partial class Program
         new PlayerDeathHooks(() => gameInfoSettings, ShowObituary, DrawHudMessages, RestoreLevelStart, s => playstate = s,
             () => viewsize, () => bordercol, () => fizzlein = true));
 
-    internal static void Died() => playerDeath.Died();
     internal static void A_StartDeathCam(Entities.Actors.Actor ob) => playerDeath.A_StartDeathCam(ob);
     internal static void T_DeathCam(Entities.Actors.Actor ob) => playerDeath.T_DeathCam(ob);
     static Entities.Actors.Actor? deathCamSprite => playerDeath.deathCamSprite;

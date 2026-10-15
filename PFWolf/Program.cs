@@ -108,8 +108,6 @@ internal partial class Program
     internal static void TP_Presenter(PresenterInfo pi) => textPresenter.TP_Presenter(pi);
     internal static Fonts.Font? PresenterFont(int number) => textPresenter.PresenterFont(number);
     internal static void PresenterMessageBox(string script) => textPresenter.PresenterMessageBox(script);
-    internal static bool ShowBriefing(string textName) => textPresenter.ShowBriefing(textName);
-    internal static void ShowLoseScreen(LoseScreenInfo lose) => textPresenter.ShowLoseScreen(lose);
     internal static void HelpScreens() => articleReader.HelpScreens();
     internal static void EndText() => articleReader.EndText();
     internal static void ShowArticle(string article) => articleReader.ShowArticle(article);
@@ -130,11 +128,6 @@ internal partial class Program
     static IntermissionScreen intermissionScreen = null!;
     internal static Dictionary<string, LRstruct> LevelRatios { get => session.LevelRatios; set => session.LevelRatios = value; }
     internal static void DrawHighScores() => highScoresScreen.DrawHighScores();
-    internal static void CheckHighScore(int score, bool won) => highScoresScreen.CheckHighScore(score, won);
-    internal static void LevelCompleted() => intermissionScreen.LevelCompleted();
-    internal static ClusterInfo WonCluster() => intermissionScreen.WonCluster();
-    internal static Entities.Color VictoryFadeColor(ClusterInfo cluster) => IntermissionScreen.VictoryFadeColor(cluster);
-    internal static void Victory() => intermissionScreen.Victory();
     static IntermissionAsset Intermission => intermissionScreen.Intermission;           // the death cam's text uses these too
     static TextStyle IntermissionTextStyle => intermissionScreen.IntermissionTextStyle;
     internal static void NonShareware() => titleScreens.NonShareware();
@@ -166,7 +159,6 @@ internal partial class Program
     static TitleScreens titleScreens = null!;
     internal static bool RunTitleScreens(List<TitleScreenInfo> screens, bool titleLoop) => titleScreens.RunTitleScreens(screens, titleLoop);
     static int TakeNextTitleDemo() => titleScreens.TakeNextTitleDemo();
-    internal static bool PlayMovie(string name) => moviePlayer.PlayMovie(name);
 
     /// <summary>A title screen's presenter text, printed into its window</summary>
     static void DrawTitleText(TitleTextInfo text)
@@ -314,6 +306,7 @@ internal partial class Program
         controlPanel = new ControlPanel(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop,
             menuDefs, articleReader, highScoresScreen, soundMenu, controlMenus, changeViewScreen, () => gameInfoSettings, MakeControlPanelHooks());
         moviePlayer = new MoviePlayer(_assetManager, _videoManager, _inputManager, _audioManager, menuInput);
+        mainGameLoop = MakeMainGameLoop();
         titleScreens = new TitleScreens(_videoManager, _audioManager, _inputManager, _graphicManager, _assetManager, menuDrawing, ui, moviePlayer,
             new TitleScreenHooks(
                 DemoExists,

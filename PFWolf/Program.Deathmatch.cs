@@ -36,6 +36,5 @@ internal partial class Program
     static bool showscoreboard { get => scoreboard.showscoreboard; set => scoreboard.showscoreboard = value; }
 
     static void DrawScoreboard(int y, string? title = null) => scoreboard.DrawScoreboard(y, title);
-    static void ShowFinalScoreboard() => scoreboard.ShowFinalScoreboard();
     static void Cmd_Scoreboard(string[] args) => scoreboard.Cmd_Scoreboard(args);
 }

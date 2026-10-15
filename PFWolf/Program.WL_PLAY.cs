@@ -86,9 +86,7 @@ internal partial class Program
     // The level's song (Gameplay/LevelMusic.cs)
     static LevelMusic levelMusic = null!;       // made in InitServices
 
-    internal static void StartMusic() => levelMusic.StartMusic();
     internal static void ContinueMusic(int offs) => levelMusic.ContinueMusic(offs);
-    internal static int StopMusic() => levelMusic.StopMusic();
 
     // The keys during play (Ui/PlayKeys.cs)
     static PlayKeys playKeys = null!;       // made in InitServices
@@ -109,7 +107,6 @@ internal partial class Program
             () => madenoise = false, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => autosavePending, AutoSaveGame,
             () => singlestep, () => extravbls));
 
-    internal static void PlayLoop() => levelLoop.PlayLoop();
     internal static void InitActorList() => levelLoop.InitActorList();
 
     internal const int MAXX = 320;
