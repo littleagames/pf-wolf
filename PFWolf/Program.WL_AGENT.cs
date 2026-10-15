@@ -67,72 +67,15 @@ internal partial class Program
     }
 
 
-    internal static void GetBonus(Inventory builtActor)
-    {
-        if (playstate == playstatetypes.ex_died) 
-            return;
+    // Picking items up (Gameplay/Pickups.cs)
+    static Pickups pickups = null!;     // made in InitServices
 
-        //if (string.IsNullOrWhiteSpace(check.item_class))
-        //    return;
+    static Pickups MakePickups() =>
+        new(_mapManager, _videoManager, _hudMessageManager, playerClassRules, playerStats, session,
+            new PickupHooks(() => playstate == playstatetypes.ex_died, PlayPlayerSound, HasWeaponFrom,
+                () => netrules.ItemRespawn, QueueItemRespawn));
 
-        //var actors = _assetManager.GetActorMetadata();
-        //if (!actors.Actors.TryGetValue(check.item_class, out var actor))
-        //    return;
-        //var builtActor = actors.BuildActor(check.item_class, actor); // TODO: Should this just create objects?
-
-        if (builtActor.Properties.Count == 0)
-            return;
-
-        // An item for other player classes stays on the floor
-        if (!PlayerClassCanPickUp(builtActor.Name))
-            return;
-
-        // Deathmatch: a weapon stays where it is, so it's only for a player without it yet
-        if (gamemode == GameMode.Deathmatch && builtActor is Entities.Actors.Weapon weaponPickup && HasWeaponFrom(weaponPickup))
-            return;
-
-        // An item the player can't take (health at 100, a key already held) stays on the
-        // floor, unless it's flagged ALWAYSPICKUP.
-        if (builtActor.Properties.TryGetValue("inventory.amount", out var amount)
-            && !TryApplyInventory(builtActor, Convert.ToInt32(amount))
-            && !builtActor.Flags.Contains("INVENTORY.ALWAYSPICKUP", StringComparer.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        if (builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
-            gamestate.treasurecount++;
-
-        builtActor.RunState("Pickup");
-
-        if (builtActor.Properties.TryGetValue("inventory.pickupsound", out var pickupSound))
-        {
-            PlayPlayerSound(pickupSound?.ToString() ?? "");
-            GrinAtPickup(builtActor, pickupSound?.ToString());
-        }
-
-        // Shown over the view in the item's message style (hud-messages.yaml), or game-info's for pickups
-        if (builtActor.Properties.TryGetValue("inventory.pickupmessage", out var pickupMessage))
-        {
-            builtActor.Properties.TryGetValue("inventory.pickupmessagestyle", out var pickupMessageStyle);
-            if (ActingIsLocal)
-                _hudMessageManager.Show(HudMessageKind.Pickup, pickupMessage?.ToString(), pickupMessageStyle?.ToString());
-        }
-
-        if (ActingIsLocal)
-            _videoManager.StartBonusFlash();
-
-        // Deathmatch (Program.Deathmatch.cs): a weapon stays for everyone else, and anything
-        // else comes back a while after it's taken
-        if (gamemode == GameMode.Deathmatch && builtActor is Entities.Actors.Weapon)
-            return;
-        if (gamemode == GameMode.Deathmatch && netrules.ItemRespawn)
-            QueueItemRespawn(builtActor);
-
-        //check.shapenum = "";                   // remove from list
-        _mapManager.RemoveActor(builtActor);
-    }
-
+    internal static void GetBonus(Inventory builtActor) => pickups.GetBonus(builtActor);
     // The player classes' rules (Gameplay/PlayerClassRules.cs) and the acting player's health,
     // armor, lives, score and loadout (Gameplay/PlayerStats.cs)
     static PlayerClassRules playerClassRules = null!;   // made in InitServices
@@ -167,6 +110,7 @@ internal partial class Program
     internal static void GiveStartingInventory() => playerStats.GiveStartingInventory();
     internal static bool CouldTakeInventory(Inventory item) => playerStats.CouldTakeInventory(item);
     internal static bool TryApplyInventory(Inventory item, int amount) => playerStats.TryApplyInventory(item, amount);
+
     /// <summary>
     /// Registers the C# handlers for the actor-state `action:` names authored in actordefs
     /// YAML. Called once at startup (see Main). Names with no handler here (e.g. the weapon
@@ -322,104 +266,13 @@ internal partial class Program
     internal static void Cmd_Use() => playerUse.Cmd_Use();
     static void UseSlotItem(int slot) => playerUse.UseSlotItem(slot);
     static void ResetUseHeld() => playerUse.ResetUseHeld();
-    //===========================================================================
 
-    /*
-    ===============
-    =
-    = T_Player
-    =
-    ===============
-    */
-    internal static void T_Player(Entities.Actors.Actor ob)
-    {
-        if (gamestate.victoryflag)              // watching the BJ actor
-        {
-            if (!victoryRunning)                // A_VictoryRun's runner goes the way the player faces
-                VictorySpin();
-            return;
-        }
+    // The player's think each tic, and putting them at a start (Gameplay/PlayerThink.cs)
+    static PlayerThink playerThink = null!;     // made in InitServices
 
-        UpdateFace();
-        UpdateHeartMonitor();
-        UpdateRadar();
+    static PlayerThink MakePlayerThink() =>
+        new(_mapManager, statusBarDrawing, playerStats, playerWeapons, weaponInHand, playerUse, playerMovement, weaponBob, session,
+            new PlayerThinkHooks(UpdateRadar, () => victoryRunning, InitAreas));
 
-        if (IsWeaponReady())
-        {
-            CheckWeaponChange();
-
-            if (playerinput.IsPressed(buttontypes.bt_use))
-                Cmd_Use();
-            else
-            {
-                _mapManager.AI.ResetTalkDelay();
-                ResetUseHeld();
-            }
-        }
-        else
-        {
-            // Mid-attack, a fresh press of use or fire is dropped rather than kept for later
-            // (vanilla T_Attack); fire held down from before still counts for A_ReFire.
-            if (playerinput.IsFreshPress(buttontypes.bt_use))
-                playerinput.SetPressed(buttontypes.bt_use, false);
-
-            if (playerinput.IsFreshPress(buttontypes.bt_attack))
-                playerinput.SetPressed(buttontypes.bt_attack, false);
-        }
-
-        ControlMovement(ob);
-        if (ActingIsLocal)                      // only the local player's view bobs
-            weaponBob.Update(playerinput.ControlY, tics);
-        if (gamestate.victoryflag)              // watching the BJ actor
-            return;
-
-        plux = (ushort)(player.X >> UNSIGNEDSHIFT);                     // scale to fit in unsigned
-        pluy = (ushort)(player.Y >> UNSIGNEDSHIFT);
-        player.TileX = (byte)(player.X >> (int)MapConstants.TILESHIFT);                // scale to tile values
-        player.TileY = (byte)(player.Y >> (int)MapConstants.TILESHIFT);
-
-        // The weapon's Ready/Fire states (Program.PlayerWeapon.cs): starts and plays attacks
-        TickWeapon();
-    }
-
-    internal static void VictorySpin()
-    {
-        int desty;
-        playerpitch = 0;            // watch BJ straight on
-        if (player.Angle > 270)
-        {
-            player.Angle -= (short)(tics * 3);
-            if (player.Angle < 270)
-                player.Angle = 270;
-        }
-        else if (player.Angle < 270)
-        {
-            player.Angle += (short)(tics * 3);
-            if (player.Angle > 270)
-                player.Angle = 270;
-        }
-
-        desty = ((player.TileY - 5) << (int)MapConstants.TILESHIFT) - 0x3000;
-
-        if (player.Y > desty)
-        {
-            player.Y -= (int)(tics * 4096);
-            if (player.Y < desty)
-                player.Y = desty;
-        }
-    }
-
-    // angle: the mapdefs player start's facing, 0=east, 90=north, 180=west, 270=south
-    internal static void SpawnPlayer(int tilex, int tiley, int angle)
-    {
-        player.Active = activetypes.ac_yes;
-        player.SetPosition(tilex, tiley);       // tile, and the tile-centred world x/y
-        player.AreaNumber = _mapManager.SpawnArea(tilex, tiley);
-        player.SetState(PlayerPawn.SpawnState);
-        player.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
-        player.RuntimeFlags = objflags.FL_NEVERMARK;
-        Thrust(0, 0);                           // set some variables
-
-        InitAreas();
-    }
-}
+    internal static void T_Player(Entities.Actors.Actor ob) => playerThink.T_Player(ob);
+    internal static void SpawnPlayer(int tilex, int tiley, int angle) => playerThink.SpawnPlayer(tilex, tiley, angle);}
