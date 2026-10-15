@@ -67,19 +67,10 @@ internal partial class Program
 
     internal static void DrawMainMenu() => controlPanel.DrawMainMenu();
 
-    internal static void US_ControlPanel(ScanCodes scancode)
-    {
-        if (ingame)
-        {
-            if (CP_CheckQuick(scancode) != 0)
-                return;
-            lastgamemusicoffset = StartCPMusic(MENUSONG);
-        }
-        else
-            StartCPMusic(MENUSONG);
+    // The menu from play, and F7-F10 (Ui/QuickKeys.cs)
+    static QuickKeys quickKeys = null!;     // made in InitServices
 
-        controlPanel.Run(scancode);
-    }
+    internal static void US_ControlPanel(ScanCodes scancode) => quickKeys.US_ControlPanel(scancode);
 
     internal static int CP_NewGame(int _) => newGameMenu.Run();
     internal static int CP_Options(int _) => optionsMenu.Run();
@@ -177,103 +168,7 @@ internal partial class Program
     internal static void ShootSnd() => menuLoop.ShootSnd();
     internal static int Confirm(string text, int areaHeight = 200) => menuLoop.Confirm(text, areaHeight);
 
-    internal static int StartCPMusic(string song)
-    {
-        //int lastoffs;
-
-        //lastoffs = _audioManager.SetPaused(true);
-
-        _audioManager.PlayMusic(song);
-        //return lastoffs;
-        return 0;
-    }
-
-
-    internal static int CP_CheckQuick(ScanCodes scancode)
-    {
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        var language = _assetManager.GetText("en-us");
-        switch (scancode)
-        {
-            //
-            // END GAME
-            //
-            case ScanCodes.sc_F7:
-                if (Confirm("$ENDGAMESTR".ToLanguageText(language), MAXY) != 0)
-                {
-                    playstate = playstatetypes.ex_died;
-                    LastAttacker = null;
-                    playerstate.lives = 0;
-                }
-
-                FindMenuItem(MainMenu, "savegame")?.active = 0;
-                return 1;
-            //
-            // QUICKSAVE
-            //
-            // Always the quicksave file, never a save picked in the menus
-            case ScanCodes.sc_F8:
-                Message("$STR_SAVING".ToLanguageText(language) + "...", MAXY);
-                CP_SaveGame(1);
-                return 1;
-
-            //
-            // QUICKLOAD
-            //
-            // The quicksave, or the load screen until there is one
-            case ScanCodes.sc_F9:
-                if (File.Exists(QuickSavePath))
-                {
-                    if (Confirm("$STR_LS_QUICKLOAD".ToLanguageText(language), MAXY) != 0)
-                        CP_LoadGame(1);
-                }
-                else
-                {
-                    _videoManager.FadeOut();
-                    if (_videoManager.HasMargins)
-                        _videoManager.ClearScreen(0);
-
-                    lastgamemusicoffset = StartCPMusic(MENUSONG);
-                    CP_LoadGame(0);    // loads lastgamemusicoffs
-
-                    _inputManager.ClearKeysDown();
-                    _videoManager.FadeOut();
-                    if (viewsize != 21)
-                        DrawPlayScreen();
-
-                    if (!startgame && !loadedgame)
-                        ContinueMusic(lastgamemusicoffset);
-
-                    if (loadedgame)
-                        playstate = playstatetypes.ex_abort;
-
-                    lasttimecount = (int)GameEngineManager.GetTimeCount();
-
-                    _inputManager.CenterMouse();
-                }
-                return 1;
-
-            //
-            // QUIT
-            //
-            case ScanCodes.sc_F10:
-                string endStr = gameInfo.EndStrings[(UiRandom() & (gameInfo.EndStrings.Count - 2)) + (UiRandom() & 1)];
-                if (Confirm(endStr, MAXY) != 0)
-                {
-                    _videoManager.Update();
-                    _audioManager.SetPaused(true);
-                    _audioManager.StopAll();
-                    MenuFadeOut();
-
-                    _gameEngineManager.Quit("");
-                }
-
-                DrawPlayBorder();
-                return 1;
-        }
-
-        return 0;
-    }
+    internal static int StartCPMusic(string song) => quickKeys.StartCPMusic(song);
 
     /*
     =============================================================================

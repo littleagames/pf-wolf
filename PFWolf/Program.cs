@@ -324,6 +324,10 @@ internal partial class Program
             menuDefs, articleReader, highScoresScreen, soundMenu, controlMenus, changeViewScreen, () => gameInfoSettings, MakeControlPanelHooks());
         moviePlayer = new MoviePlayer(_assetManager, _videoManager, _inputManager, _audioManager, menuInput);
         mainGameLoop = MakeMainGameLoop();
+        quickKeys = new QuickKeys(_gameEngineManager, _assetManager, _videoManager, _audioManager, _inputManager, menuDrawing, menuLoop,
+            controlPanel, gameSaves, levelMusic, frameRefresh, playScreen, session,
+            new QuickKeysHooks(() => ingame, offset => lastgamemusicoffset = offset, () => lastgamemusicoffset, s => playstate = s,
+                () => viewsize, () => startgame, () => loadedgame, UiRandom));
         hubActions = MakeHubActions();
         titleScreens = new TitleScreens(_videoManager, _audioManager, _inputManager, _graphicManager, _assetManager, menuDrawing, ui, moviePlayer,
             new TitleScreenHooks(
