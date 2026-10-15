@@ -266,6 +266,7 @@ internal partial class Program
         pickups = MakePickups();
         playerThink = MakePlayerThink();
         playersManager = MakePlayers();
+        hudMessageDrawing = MakeHudMessageDrawing();
         scoreboard = MakeScoreboard();
         netPlay = MakeNetPlay();
         netOverlay = MakeNetOverlay();
