@@ -330,138 +330,14 @@ internal partial class Program
     internal static string GetMapDisplayName(string mapon) => playScreen.GetMapDisplayName(mapon);
     internal static void PreloadGraphics() => playScreen.PreloadGraphics();
 
-    internal static void SetupGameLevel()
-    {
-        foreach (var p in players)
-        {
-            p.Pitch = 0;                    // each level, and each loaded game, starts looking straight ahead
-            p.EyeZ = StandingEyeZ(p);       // from standing height
-        }
-        camera.FollowPlayer();              // through the player's eyes
-        weaponBob.Init();
+    // Setting up a level to play (Gameplay/LevelSetup.cs)
+    static LevelSetup levelSetup = null!;       // made in InitServices
 
-        if (!loadedgame)
-        {
-            gamestate.TimeCount =
-            gamestate.secrettotal =
-            gamestate.killtotal =
-            gamestate.treasuretotal =
-            gamestate.secretcount =
-            gamestate.killcount =
-            gamestate.treasurecount = 0;
-            ClearPushWalls();
-            foreach (var p in players)
-            {
-                p.WeaponSprite = null;      // the weapon in hand starts on its Ready state
-                p.FaceTimes = 0;
-                p.LastAttacker = null;
-            }
-        }
+    static LevelSetup MakeLevelSetup() => new(_gameEngineManager, _mapManager, render, skyAndFlats, weather, lighting, doors, pushWalls,
+        deathmatch, playersManager, playerClassRules, levelLoop, weaponBob, session,
+        new LevelSetupHooks(() => loadedgame, () => demoplayback || demorecord, () => netgame, () => netseed, () => CurrentSkill));
 
-        if (demoplayback || demorecord)
-            US_InitRndT(false);
-        else if (netgame)
-            rndindex = netseed;         // where the host said, the same on every machine
-        else
-            US_InitRndT(true);
-
-        //
-        // load the level
-        //
-        DeathmatchLevelSetup();         // with or without its enemies (Program.Deathmatch.cs)
-        //int mapnum = gamestate.mapon + 10 * gamestate.cluster;
-        _mapManager.LoadMap(gamestate.mapon, gamestate.difficulty, CurrentSkill.EnemyHealth,
-            _gameEngineManager.GetGameInfo().Maps.TryGetValue(gamestate.mapon, out var loadingMap) ? loadingMap.FloorNumber : -1);
-
-        // The cluster follows the map, however it was reached: a new game, the next/secret
-        // level, a map-change trigger or the console's "map" warp
-        if (_gameEngineManager.GetGameInfo().Maps.TryGetValue(gamestate.mapon, out var mapInfo))
-            gamestate.cluster = mapInfo.Cluster;
-
-        wallstories = Math.Clamp(mapInfo?.WallHeight ?? _gameEngineManager.GetGameInfo().DefaultMap.WallHeight,
-            1, MAXWALLSTORIES);
-        levelsky = mapInfo?.Sky ?? _gameEngineManager.GetGameInfo().DefaultMap.Sky;
-        SetWeather(mapInfo?.Weather ?? _gameEngineManager.GetGameInfo().DefaultMap.Weather);
-        _mapManager.BuildFlats(mapInfo?.DefaultFloor ?? _gameEngineManager.GetGameInfo().DefaultMap.DefaultFloor,
-            mapInfo?.DefaultCeiling ?? _gameEngineManager.GetGameInfo().DefaultMap.DefaultCeiling);
-
-        //
-        // spawn doors
-        //
-        InitActorList();                       // start spawning things with a clean slate
-        InitDoorList();
-        //InitStaticList();
-
-
-        int x, y;
-        var doors = _mapManager.GetMapData().Doors;
-        for (y = 0; y < _mapManager.mapheight; y++)
-        {
-            for (x = 0; x < _mapManager.mapwidth; x++)
-            {
-                // door (a plane 0 tile listed in the mapdefs doors)
-                if (doors.TryGetValue(_mapManager.MAPSPOT(x, y, 0), out var doorXlat))
-                    SpawnDoor(x, y, doorXlat.Vertical, doorXlat);
-            }
-        }
-
-        //
-        // spawn the player (MapManager.LoadMap already spawned every other thing and counted
-        // the secret pushwalls, from the mapdefs)
-        //
-        if (_mapManager.PlayerStart is { } start)
-            SpawnPlayers(start.TileX, start.TileY, start.Angle);
-        else
-        {
-            var (standx, standy) = StandInStart();
-            Console.WriteLine($"{gamestate.mapon} has no mapdefs player start; starting on {standx},{standy}");
-            SpawnPlayers(standx, standy, 90);
-        }
-
-        //
-        // take out the ambush markers
-        //
-        for (y = 0; y < _mapManager.mapheight; y++)
-        {
-            for (x = 0; x < _mapManager.mapwidth; x++)
-            {
-                var tile = _mapManager.MAPSPOT(x, y, 0);
-
-                if (tile == _mapManager.Floors.AmbushTile)
-                {
-                    if (_mapManager.VALIDAREA(_mapManager.MAPSPOT(x + 1, y, 0)))
-                        tile = (ushort)_mapManager.MAPSPOT(x + 1, y, 0);
-                    if (_mapManager.VALIDAREA(_mapManager.MAPSPOT(x, y - 1, 0)))
-                        tile = (ushort)_mapManager.MAPSPOT(x, y - 1, 0);
-                    if (_mapManager.VALIDAREA(_mapManager.MAPSPOT(x, y + 1, 0)))
-                        tile = (ushort)_mapManager.MAPSPOT(x, y + 1, 0);
-                    if (_mapManager.VALIDAREA(_mapManager.MAPSPOT(x - 1, y, 0)))
-                        tile = (ushort)_mapManager.MAPSPOT(x - 1, y, 0);
-
-                    _mapManager.SetMapSpot(x, y, 1, 0);
-                }
-            }
-        }
-
-        InitLevelShading(mapInfo);
-        _mapManager.AI.OnLevelStart();      // wall outlets, Goldfire's spawn sites, once-a-level drops (Managers.LevelAI)
-
-        //
-        // load floor/ceiling textures
-        //
-#if USE_FLOORCEILINGTEXT && !USE_MULTIFLATS
-        GetFlatTextures();
-#endif
-
-#if USE_PARALLAX
-    SetParallaxStartTexture();
-#endif
-        //
-        // have the caching manager load and purge stuff to make sure all marks
-        // are in memory
-        //
-        //CA_LoadAllSounds();
-    }
+    internal static void SetupGameLevel() => levelSetup.SetupGameLevel();
 
     // A player's death, and the death cam (Gameplay/PlayerDeath.cs)
     static PlayerDeath playerDeath = null!;     // made in InitServices

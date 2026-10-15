@@ -280,6 +280,7 @@ internal partial class Program
         levelMusic = new LevelMusic(_gameEngineManager, _audioManager, session);
         playKeys = MakePlayKeys();
         levelLoop = MakeLevelLoop();
+        levelSetup = MakeLevelSetup();
         demos = MakeDemos();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
