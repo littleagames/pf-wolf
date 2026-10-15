@@ -12,7 +12,7 @@ public class LightingTests
     private readonly List<uint> _actorTicks = [];
 
     // A VideoManager with a grey ramp for its palette (set up by SDL in the game), so light rows can be made
-    private static VideoManager GreyVideo()
+    internal static VideoManager GreyVideo()
     {
         var video = new VideoManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")));
         var property = typeof(VideoManager).GetProperty("gamepal", BindingFlags.NonPublic | BindingFlags.Instance)!;
