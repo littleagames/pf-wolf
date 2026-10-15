@@ -182,112 +182,13 @@ internal partial class Program
         WriteHubState(bw);
     }
 
-    /// <summary>
-    /// The level as it stands, as a save holds it and as a hub keeps a level that's been left:
-    /// the map and its actors (MapManager.WriteLevelState), then doors, area connections, the
-    /// moving pushwalls, the player's last attacker, the automap's seen tiles and the light zones.
-    /// </summary>
-    private static void WriteLevelBody(BinaryWriter bw)
-    {
-        _mapManager.WriteLevelState(bw);
+    // The level as it stands, as saves, hub levels and joining players hold it (SaveGames/LevelBodies.cs)
+    static LevelBodies levelBodies = null!;     // made in InitServices
 
-        bw.Write(lastdoorobj);
-        for (int i = 0; i < lastdoorobj; i++)
-            doorobjlist[i].WriteState(bw);
-
-        bw.Write(areabyplayer.Length);
-        bw.Write(areaconnect);
-        bw.Write(areabyplayer);
-
-        bw.Write(pushwalls.Count);
-        foreach (var wall in pushwalls)
-            wall.Write(bw);
-
-        // Died() turns the player to face their killer, so keep who that is.
-        // (By reference: actors are records, so IndexOf would match a look-alike by value.)
-        bw.Write(_mapManager.GetSavedActors().FindIndex(a => ReferenceEquals(a, LastAttacker)));
-
-        bw.Write(_mapManager.GetSeenBytes());
-
-        WriteZoneLights(bw);
-    }
-
-    /// <summary>What <see cref="WriteLevelBody"/> wrote, read without changing any game state.</summary>
-    internal sealed record LevelBody(
-        LevelSnapshot Level,
-        doorobj_t[] Doors,
-        byte[,] AreaConnect,
-        byte[] AreaByPlayer,
-        List<MovingPushWall> PushWalls,
-        int LastAttacker,
-        byte[] Seen,
-        Dictionary<int, ZoneState> Zones);
-
-    private static LevelBody ReadLevelBody(BinaryReader br)
-    {
-        var level = MapManager.ReadLevelState(br);
-
-        var doors = new doorobj_t[br.ReadCount()];
-        for (int i = 0; i < doors.Length; i++)
-        {
-            doors[i] = new doorobj_t();
-            doors[i].ReadState(br);
-        }
-
-        var numareas = br.ReadInt32();
-        if (numareas != _mapManager.Floors.NumAreas)
-            throw new InvalidDataException($"It was saved with {numareas} map areas; this game has {_mapManager.Floors.NumAreas}.");
-
-        return new LevelBody(
-            level,
-            doors,
-            AreaConnect: ReadExactly(br, numareas * numareas).ToFixedArray(numareas, numareas),
-            AreaByPlayer: ReadExactly(br, numareas),
-            PushWalls: Enumerable.Range(0, br.ReadCount()).Select(_ => MovingPushWall.Read(br)).ToList(),
-            LastAttacker: br.ReadInt32(),
-            Seen: ReadExactly(br, MapManager.MAPAREA),
-            Zones: ReadZoneLights(br));
-    }
-
-    /// <summary>
-    /// Lays a level body over the level SetupGameLevel just built from the same map (with
-    /// loadedgame set, so it didn't count kills, treasure and secrets again)
-    /// </summary>
-    /// <param name="ownerOf">With several players (one joining mid-game), whose each saved pawn is, by its place among the actors</param>
-    private static List<Entities.Actors.Actor> ApplyLevelBody(LevelBody body, Func<int, Entities.PlayerState?>? ownerOf = null)
-    {
-        var actors = _mapManager.RestoreLevelState(body.Level, ownerOf);
-
-        // Door positions and orientations come from the map; only the motion is saved.
-        for (int i = 0; i < Math.Min(lastdoorobj, body.Doors.Length); i++)
-        {
-            doorobjlist[i].action = body.Doors[i].action;
-            doorobjlist[i].ticcount = body.Doors[i].ticcount;
-            doorobjlist[i].position = body.Doors[i].position;
-            doorobjlist[i].held = body.Doors[i].held;
-            doorobjlist[i].unlocked = body.Doors[i].unlocked;
-        }
-
-        areaconnect = body.AreaConnect;
-        areabyplayer = body.AreaByPlayer;
-
-        // copies, so a hub level's kept body isn't moved along with the live walls
-        pushwalls.Clear();
-        foreach (var wall in body.PushWalls)
-        {
-            pushwalls.Add(new MovingPushWall
-            {
-                State = wall.State, Pos = wall.Pos, X = wall.X, Y = wall.Y, Dir = wall.Dir, Tile = wall.Tile,
-            });
-        }
-
-        _mapManager.SetSeenBytes(body.Seen);
-        RestoreZoneLights(body.Zones);
-
-        LastAttacker = body.LastAttacker >= 0 && body.LastAttacker < actors.Count ? actors[body.LastAttacker] : null;
-        facetimes = 0;
-        return actors;
-    }
+    static void WriteLevelBody(BinaryWriter bw) => levelBodies.WriteLevelBody(bw);
+    static LevelBody ReadLevelBody(BinaryReader br) => levelBodies.ReadLevelBody(br);
+    static List<Entities.Actors.Actor> ApplyLevelBody(LevelBody body, Func<int, Entities.PlayerState?>? ownerOf = null) =>
+        levelBodies.ApplyLevelBody(body, ownerOf);
 
     /// <summary>Everything a save's body holds, read without changing any game state.</summary>
     private sealed record SaveGameData(

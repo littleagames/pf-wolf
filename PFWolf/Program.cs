@@ -234,6 +234,7 @@ internal partial class Program
         hubs = new Hubs(_gameEngineManager, _mapManager, session);
         projectileActions = MakeProjectileActions();
         lighting = MakeLighting();
+        levelBodies = new LevelBodies(_mapManager, doors, pushWalls, lighting, session);
         actorLights = MakeActorLights();
         weather = MakeWeather();
         spriteScaler = MakeSpriteScaler();

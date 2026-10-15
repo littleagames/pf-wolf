@@ -8,7 +8,7 @@ namespace PFWolf.Gameplay;
 /// <param name="SetLoadedGame">Builds a kept level as a loaded one would be (nothing counted again)</param>
 /// <param name="ClearVictoryRun">A new level has no victory run going</param>
 /// <param name="CaptureOverhead">The level's overhead map, for the elevator's floor list (Ui/ElevatorScreens.cs)</param>
-/// <param name="WriteLevelBody">The level as it is: its tiles, doors, actors (Program.SaveGame.cs)</param>
+/// <param name="WriteLevelBody">The level as it is: its tiles, doors, actors (SaveGames/LevelBodies.cs)</param>
 /// <param name="ReadLevelBody">Reads one back</param>
 /// <param name="ApplyLevelBody">Lays one over the level just built from its map</param>
 internal sealed record LevelEntryHooks(
@@ -17,8 +17,8 @@ internal sealed record LevelEntryHooks(
     Action ClearVictoryRun,
     Func<byte[]> CaptureOverhead,
     Action<BinaryWriter> WriteLevelBody,
-    Func<BinaryReader, Program.LevelBody> ReadLevelBody,
-    Action<Program.LevelBody> ApplyLevelBody);
+    Func<BinaryReader, SaveGames.LevelBody> ReadLevelBody,
+    Action<SaveGames.LevelBody> ApplyLevelBody);
 
 /// <summary>
 /// Entering and leaving a level: a hub level kept as it was left and built again as it was
@@ -91,7 +91,7 @@ internal sealed class LevelEntry(
             return false;
 
         int timeCount, killCount, killTotal, secretCount, secretTotal, treasureCount, treasureTotal, informants;
-        Program.LevelBody body;
+        SaveGames.LevelBody body;
         try
         {
             using var br = new BinaryReader(new MemoryStream(data));
