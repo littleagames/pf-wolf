@@ -270,6 +270,10 @@ internal partial class Program
             new DebugCommandsHooks(() => viewsize, () => singlestep, step => singlestep = step, () => extravbls, vbls => extravbls = vbls));
         playerStats = MakePlayerStats();
         playerActions = MakePlayerActions();
+        cheatCommands = new CheatCommands(_consoleManager, _gameEngineManager, _assetManager, _inventoryManager, _mapManager, doors, statusBarDrawing,
+            playerWeapons, playerClassRules, playerStats, frameRefresh, consoleTargets, session,
+            new CheatCommandsHooks(() => godmode, on => godmode = on, () => noclip, on => noclip = on, () => ingame, s => playstate = s,
+                () => newGamePlayerClass, playerClass => newGamePlayerClass = playerClass, SetEyeHeight));
         playerUse = MakePlayerUse();
         playerMovement = MakePlayerMovement();
         playerAttacks = MakePlayerAttacks();
