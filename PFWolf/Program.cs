@@ -260,6 +260,7 @@ internal partial class Program
         playScreen = MakePlayScreen();
         consoleDrawing = new ConsoleDrawing(_videoManager, _graphicManager, _fontManager, _consoleManager, playScreen, statusBarDrawing);
         playerStats = MakePlayerStats();
+        playerActions = MakePlayerActions();
         playerUse = MakePlayerUse();
         playerMovement = MakePlayerMovement();
         playerAttacks = MakePlayerAttacks();
