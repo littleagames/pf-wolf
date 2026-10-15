@@ -247,6 +247,7 @@ internal partial class Program
         spriteScaler = MakeSpriteScaler();
         wallSpriteDrawing = MakeWallSpriteDrawing();
         skyAndFlats = MakeSkyAndFlats();
+        wallPosts = MakeWallPosts();
         playerView = MakePlayerView();
         statusBarDrawing = MakeStatusBarDrawing();
         deathmatch = MakeDeathmatch();

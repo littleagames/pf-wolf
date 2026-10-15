@@ -135,35 +135,6 @@ internal partial class Program
             tics = MAXTICS;
     }
 
-    internal static short CalcHeight()
-    {
-        short height;
-        int gx, gy, gxt, gyt, nx;
-
-
-        //
-        // translate point to view centered coordinates
-        //
-        gx = xintercept - viewx;
-        gy = yintercept - viewy;
-
-        //
-        // calculate nx
-        //
-        gxt = MathUtils.FixedMul(gx, viewcos);
-        gyt = MathUtils.FixedMul(gy, viewsin);
-        nx = gxt - gyt;
-
-        //
-        // calculate perspective ratio
-        //
-        if (nx < MINDIST)
-            nx = (int)MINDIST;             // don't let divide overflow
-
-        height = (short)(heightnumerator / (nx >> 8));
-        return height;
-    }
-
     /*
     ====================
     =
@@ -217,8 +188,6 @@ internal partial class Program
             _mapManager.seen[x, y] |= face;
     }
 
-    /// <summary>The screen row of the floor line, for a wall where half a story is half pixels high</summary>
-    static int FloorRow(int half) => centery + half * vieweyez / (TEXTURESIZE / 2);
 
     /// <summary>How many half stories a floor or ceiling z texels up is from the eye</summary>
     static double EyeHalves(int z) => skyAndFlats.EyeHalves(z);
@@ -284,170 +253,40 @@ internal partial class Program
     // trace passes, an open door).
     static int hittile { get => render.hittile; set => render.hittile = value; }
 
-    static void EnterTileLight(int x, int y)
-    {
-        if (_mapManager.tilemap[x, y] == 0)
-            hittile = TileIndex(x, y);
-    }
-
-    // Half a light cell, in global units
-    const int HALFCELL = 1 << (CELLGLOBALSHIFT - 1);
-
-    /// <summary>
-    /// The light on a wall face at (x, y) (global units), seen from hittile: from the light cell
-    /// just in front of it, half a cell toward the view, not the one inside the wall.
-    /// </summary>
-    static byte[] WallLight(int x, int y)
-    {
-        long gx = x + (viewx > x ? HALFCELL : viewx < x ? -HALFCELL : 0);
-        long gy = y + (viewy > y ? HALFCELL : viewy < y ? -HALFCELL : 0);
-        return LightAt(hittile, gx, gy);
-    }
-
     internal static short postheight { get => render.postheight; set => render.postheight = value; }   // the height (as wallheight) of the post ScalePost queues
     static int hitstories { get => render.hitstories; set => render.hitstories = value; }   // how many stories tall the wall the trace just hit is
     static bool columnhit { get => render.columnhit; set => render.columnhit = value; }   // this column's trace has hit a wall: wallheight is set
     static int columntallest { get => render.columntallest; set => render.columntallest = value; }   // the most stories of any wall it has hit
     static int columntop { get => render.columntop; set => render.columntop = value; }   // the highest screen row any of them reach
 
-    internal static void ScalePost()
-    {
-        var upper = uppersource ?? postsource;
-        QueuePost(postheight, 0, hitstories, postsource, postofs, upper, uppersource != null ? upperofs : postofs,
-            patch: patchsource, patchofs: patchofs, patchstory: patchstory);
-        uppersource = null;
-        patchsource = null;
+    // A column's posts and the arches the trace passes under (Rendering/WallPosts.cs)
+    static WallPosts wallPosts = null!;     // made in InitServices
 
-        //
-        // sprites clip against the nearest wall: nothing behind it is taller than it
-        // on screen, since every wall stands at least a story high and sprites don't
-        //
-        if (!columnhit)
-        {
-            wallheight[pixx] = postheight;
-            columnhit = true;
-        }
+    static WallPosts MakeWallPosts() =>
+        new(_videoManager, _mapManager, lighting, skyAndFlats, render, weather, session, WallTexture);
 
-        int half = Math.Max(postheight >> 3, 1);
-        columntop = Math.Min(columntop, FloorRow(half) - hitstories * 2 * half);
-        columntallest = Math.Max(columntallest, hitstories);
-    }
-
+    static void EnterTileLight(int x, int y) => wallPosts.EnterTileLight(x, y);
+    static byte[] WallLight(int x, int y) => wallPosts.WallLight(x, y);
+    internal static void ScalePost() => wallPosts.ScalePost();
     static void QueuePost(short height, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
         short underside = 0, TextureAsset? undertexture = null, byte[]? light = null, bool underflat = false,
-        TextureAsset? patch = null, int patchofs = 0, int patchstory = 0)
-    {
-        if (postcount == MAXPOSTS)
-            return;
-        postpatch[postcount] = patch;
-        postpatchofs[postcount] = patchofs;
-        postpatchstory[postcount] = (byte)patchstory;
-        postlight[postcount] = light ?? WallLight(xintercept, yintercept);
-        postunderside[postcount] = underside;
-        postundertexture[postcount] = undertexture;
-        postunderflat[postcount] = underflat;
-        postheights[postcount] = height;
-        postfirststory[postcount] = (byte)firststory;
-        poststories[postcount] = (byte)stories;
-        postlower[postcount] = lower;
-        postlowerofs[postcount] = lowerofs;
-        postupper[postcount] = upper;
-        postupperofs[postcount] = upperofs;
-        postcount++;
-    }
-
-    // Draws the column's queued posts, farthest first
-    static void DrawPosts()
-    {
-        if (weatheron)
-            NoteOccluders();            // what hides rain and snow in this column (Program.Weather.cs)
-
-        while (postcount > 0)
-        {
-            postcount--;
-            DrawPost(pixx, postheights[postcount] >> 3, postfirststory[postcount], poststories[postcount],
-                postlower[postcount], postlowerofs[postcount], postupper[postcount], postupperofs[postcount],
-                postlight[postcount], ShadeOffsetForHeight(postheights[postcount]));
-            if (postpatch[postcount] is { } patch)
-                DrawPatch(pixx, postheights[postcount] >> 3, poststories[postcount], patch, postpatchofs[postcount],
-                    postpatchstory[postcount], postlight[postcount], ShadeOffsetForHeight(postheights[postcount]));
-            if (postunderside[postcount] != 0)
-                DrawUnderside(pixx, postheights[postcount] >> 3, postunderside[postcount] >> 3, postundertexture[postcount],
-                    postunderflat[postcount]);
-        }
-    }
-
-    /// <summary>
-    /// Draws an arch's underside, one story up, between where the trace enters it (half a story
-    /// is entryhalf pixels there) and where it leaves (exithalf). It's a flat surface, so each
-    /// row is textured from where the view ray meets it, from the texture's bottom story
-    /// laid flat: one tile of it per tile. A ceiling flat (flat) is sampled as DrawFlats does,
-    /// its see-through pixels the ceiling color. With no texture, it's the ceiling color.
-    /// </summary>
-    static void DrawUnderside(int x, int entryhalf, int exithalf, TextureAsset? texture, bool flat)
-    {
-        // one story up from the floor line, as DrawPost puts the top of the arch's first story
-        int from = Math.Max(FloorRow(entryhalf) - 2 * entryhalf, 0);
-        int to = Math.Min(FloorRow(exithalf) - 2 * exithalf - 1, viewheight - 1);
-        if (from > to)
-            return;
-        int pitch = (int)_videoManager.bufferPitch;
-
-        unsafe
-        {
-            byte* dest = (byte*)vbufPtr + screenofs + x;
-            double numerator = heightnumerator * 32.0 * EyeHalves(TEXTURESIZE);
-
-            //
-            // The underside, h half stories above the eye, shows on row y where its edge would at
-            // a distance (along the view, as CalcHeight measures it) with h half stories centery - y
-            // pixels high: nx = heightnumerator * 32 * h / (centery - y). Going that far along the
-            // view means going nx / cos(offset) along the ray. That point's tile also gives its light.
-            //
-            const double TORADIANS = 2 * Math.PI / FINEANGLES;
-            double angle = (midangle + pixelangle[x]) * TORADIANS;
-            double perview = 1 / Math.Cos(pixelangle[x] * TORADIANS);
-            double stepx = Math.Cos(angle) * perview, stepy = -Math.Sin(angle) * perview;
-
-            byte[]? data = texture?.RawData;
-            int width = texture?.Width ?? 0, height = texture?.Height ?? 0;
-
-            for (int y = from; y <= to; y++)
-            {
-                double nx = numerator / (centery - y - 0.5);
-                long px = (long)(viewx + nx * stepx), py = (long)(viewy + nx * stepy);
-                var light = LightAt(TileIndex((int)(px >> MapConstants.TILESHIFT), (int)(py >> MapConstants.TILESHIFT)), px, py);
-                int shadeofs = ShadeOffset((long)nx);
-                if (data == null)
-                {
-                    dest[y * pitch] = light[shadeofs + ceilingcolor];
-                    continue;
-                }
-
-                int u = (int)(px >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
-                int v = (int)(py >> (MapConstants.TILESHIFT - TEXTURESHIFT)) & (TEXTURESIZE - 1);
-                int row = flat || height < TEXTURESIZE ? v * height / TEXTURESIZE : height - TEXTURESIZE + v;
-                byte pixel = data[u * width / TEXTURESIZE * height + row];
-                if (flat && pixel == FLATMASK)
-                    pixel = ceilingcolor;
-                dest[y * pitch] = light[shadeofs + pixel];
-            }
-        }
-    }
-
-    /*
-    ====================
-    =
-    = Arches
-    =
-    = An open floor tile with a height (plane 3) above one story is an arch: a block from the
-    = second story up to that height, that can be walked under. The trace opens one as it
-    = enters the tile and queues it as it leaves, once it knows how deep the underside runs.
-    = Its faces take the texture of a wall beside it, and its underside the tile's ceiling flat
-    = (a non-zero flat-plane ceiling index), else the wall's texture too.
-    =
-    ====================
-    */
+        TextureAsset? patch = null, int patchofs = 0, int patchstory = 0) =>
+        wallPosts.QueuePost(height, firststory, stories, lower, lowerofs, upper, upperofs, underside, undertexture, light, underflat, patch, patchofs, patchstory);
+    static void DrawPosts() => wallPosts.DrawPosts();
+    static bool IsArch(int tilex, int tiley) => wallPosts.IsArch(tilex, tiley);
+    static void OpenArch(int tilex, int tiley, int edgex, int edgey, bool vertical) => wallPosts.OpenArch(tilex, tiley, edgex, edgey, vertical);
+    static void OpenFocalArch() => wallPosts.OpenFocalArch();
+    static void CloseArch(int edgex, int edgey) => wallPosts.CloseArch(edgex, edgey);
+    static short HeightAt(int x, int y) => wallPosts.HeightAt(x, y);
+    static int VertEdge => wallPosts.VertEdge;
+    static int HorizEdge => wallPosts.HorizEdge;
+    static bool TracePastWall(int tilex, int tiley) => wallPosts.TracePastWall(tilex, tiley);
+    static void SaveTrace() => wallPosts.SaveTrace();
+    static void RestoreTrace() => wallPosts.RestoreTrace();
+    internal static short CalcHeight() => wallPosts.CalcHeight();
+    static int FloorRow(int half) => wallPosts.FloorRow(half);
+    static string SeenFace(bool vertical) => wallPosts.SeenFace(vertical);
+    static int LintelColumn(int along, bool flip) => WallPosts.LintelColumn(along, flip);
 
     static bool archopen { get => render.archopen; set => render.archopen = value; }
     static short archheight { get => render.archheight; set => render.archheight = value; }   // where the trace entered it (short.MaxValue: the view is inside)
@@ -457,131 +296,6 @@ internal partial class Program
     static bool archunderflat { get => render.archunderflat; set => render.archunderflat = value; }   // archunderside is the tile's ceiling flat
     static int archofs { get => render.archofs; set => render.archofs = value; }
     static byte[] archlight { get => render.archlight; set => render.archlight = value; }   // its face's light row: where the trace entered it, seen from the tile before
-
-    static bool IsArch(int tilex, int tiley) => _mapManager.tilemap[tilex, tiley] == 0 && _mapManager.storymap[tilex, tiley] > 1;
-
-    /// <summary>
-    /// The trace enters the arch at (tilex, tiley), crossing its edge at (edgex, edgey); vertical
-    /// says whether that's an edge along x = constant (an east or west face).
-    /// </summary>
-    static void OpenArch(int tilex, int tiley, int edgex, int edgey, bool vertical)
-    {
-        // the same face of the wall at either end of the run of arch tiles in line with the face,
-        // else at either end of the run across it (a face on the end of a run, entered along it)
-        int dx = vertical ? 0 : 1, dy = vertical ? 1 : 0;
-        var face = SeenFace(vertical);
-        archtexture = ArchEndTexture(tilex, tiley, -dx, -dy, face, out bool mirrored) ?? ArchEndTexture(tilex, tiley, dx, dy, face, out mirrored)
-            ?? ArchEndTexture(tilex, tiley, -dy, -dx, face, out mirrored) ?? ArchEndTexture(tilex, tiley, dy, dx, face, out mirrored);
-        if (archtexture == null)
-            return;                     // nothing to texture it from: leave it open
-
-        archopen = true;
-        archlight = WallLight(edgex, edgey);
-        archunderside = ArchUndersideTexture(tilex, tiley) ?? archtexture;
-        UseArchCeilingFlat(tilex, tiley);
-        archstories = _mapManager.storymap[tilex, tiley];
-        archheight = HeightAt(edgex, edgey);
-        archofs = vertical
-            ? LintelColumn(edgey, (xtilestep == -1) != mirrored)
-            : LintelColumn(edgex, (ytilestep == 1) != mirrored);
-    }
-
-    // The texture on face of the wall that ends the run of arch tiles from (tilex, tiley) going (dx, dy)
-    static TextureAsset? ArchEndTexture(int tilex, int tiley, int dx, int dy, string face, out bool mirrored)
-    {
-        mirrored = false;
-        do
-        {
-            tilex += dx;
-            tiley += dy;
-            if (tilex < 0 || tiley < 0 || tilex >= _mapManager.mapwidth || tiley >= _mapManager.mapheight)
-                return null;
-        }
-        while (IsArch(tilex, tiley));
-
-        return WallTexture(tilex, tiley, face, out mirrored);
-    }
-
-    /// <summary>
-    /// The texture of an arch tile's underside: the same one whichever way the trace enters it,
-    /// so it doesn't change as the view moves under it. It's from a wall ending the run of arch
-    /// tiles it's in, north or south first, else west or east: its face toward the arch.
-    /// </summary>
-    static TextureAsset? ArchUndersideTexture(int tilex, int tiley) =>
-        ArchEndTexture(tilex, tiley, 0, -1, "south", out _) ?? ArchEndTexture(tilex, tiley, 0, 1, "north", out _)
-        ?? ArchEndTexture(tilex, tiley, -1, 0, "east", out _) ?? ArchEndTexture(tilex, tiley, 1, 0, "west", out _);
-
-    /// <summary>
-    /// An arch tile with a ceiling flat (a non-zero ceiling index on the flat plane, its flat
-    /// from mapdefs or the level's default ceiling) shows it underneath, in place of the wall texture
-    /// </summary>
-    static void UseArchCeilingFlat(int tilex, int tiley)
-    {
-        archunderflat = false;
-        if (_mapManager.MAPSPOT(tilex, tiley, MapManager.FLATPLANE) >> 8 == 0)
-            return;
-        var flat = _mapManager.ceilingflat[(tiley << MapManager.MAPSHIFT) + tilex];
-        if (flat == null)
-            return;
-        archunderside = flat;
-        archunderflat = true;
-    }
-
-    // The view starts under an arch: there's no face, only the underside from above the view
-    static void OpenFocalArch()
-    {
-        archunderside = ArchUndersideTexture(focaltx, focalty);
-        if (archunderside == null)
-            return;                     // as OpenArch: nothing to texture it from
-        UseArchCeilingFlat(focaltx, focalty);
-        archtexture = notexture;
-        archopen = true;
-        archlight = LightAt(hittile, viewx, viewy);
-        archstories = _mapManager.storymap[focaltx, focalty];
-        archheight = short.MaxValue;
-        archofs = 0;
-    }
-
-    // The trace leaves the open arch, crossing its edge at (edgex, edgey)
-    static void CloseArch(int edgex, int edgey)
-    {
-        if (!archopen)
-            return;
-        archopen = false;
-
-        short exitheight = HeightAt(edgex, edgey);
-        if (exitheight == 0)
-            exitheight = 1;             // 0 means no underside
-        QueuePost(archheight, 1, archstories, archtexture!, archofs, archtexture!, archofs, exitheight, archunderside, archlight, archunderflat);
-    }
-
-    // The height (as wallheight) of a wall at (x, y)
-    static short HeightAt(int x, int y)
-    {
-        int savex = xintercept, savey = yintercept;
-        xintercept = x;
-        yintercept = y;
-        short height = CalcHeight();
-        xintercept = savex;
-        yintercept = savey;
-        return height;
-    }
-
-    // Where the trace meets the vertical edge it enters xtile by, and the horizontal one it enters ytile by
-    static int VertEdge => (xtilestep == 1 ? xtile : xtile + 1) << MapConstants.TILESHIFT;
-    static int HorizEdge => (ytilestep == 1 ? ytile : ytile + 1) << MapConstants.TILESHIFT;
-
-    /// <summary>
-    /// Whether the trace should go on past the wall it just hit, on the tile (tilex, tiley): only
-    /// while a taller wall somewhere on the level could still show above everything it has hit.
-    /// </summary>
-    static bool TracePastWall(int tilex, int tiley)
-    {
-        if (columntallest >= _mapManager.MaxWallStories || columntop <= 0 || postcount >= MAXPOSTS - 1)
-            return false;
-        // a trace never leaves the map through its edge
-        return tilex > 0 && tiley > 0 && tilex < _mapManager.mapwidth - 1 && tiley < _mapManager.mapheight - 1;
-    }
 
     //
     // the trace's position, kept from before it enters a tile, to carry on past a wall it hits there
@@ -594,143 +308,6 @@ internal partial class Program
     static int savedyinttile { get => render.savedyinttile; set => render.savedyinttile = value; }
     static ushort savedtexdelta { get => render.savedtexdelta; set => render.savedtexdelta = value; }
     static bool pastwall { get => render.pastwall; set => render.pastwall = value; }   // tracing on past the nearest wall: tiles aren't visible
-
-    static void SaveTrace()
-    {
-        savedxtile = xtile; savedytile = ytile;
-        savedxintercept = xintercept; savedyintercept = yintercept;
-        savedxinttile = xinttile; savedyinttile = yinttile;
-        savedtexdelta = texdelta;
-    }
-
-    static void RestoreTrace()
-    {
-        xtile = savedxtile; ytile = savedytile;
-        xintercept = savedxintercept; yintercept = savedyintercept;
-        xinttile = savedxinttile; yinttile = savedyinttile;
-        texdelta = savedtexdelta;
-        pastwall = true;
-    }
-
-    /// <summary>
-    /// Draws one screen column of a wall, standing on the floor, stories tall. Stories
-    /// firststory and up are drawn: the first story from lower, the ones above it from upper.
-    /// A texture covers a story per 64 texels of its height, from the floor up, and repeats
-    /// above that. half is half a story's height in pixels; lowerofs and upperofs are the
-    /// column to draw, times 64, as the trace finds it across a tile. Each texel is remapped
-    /// through shade from shadeofs (a light row and fade step, see Program.WL_SHADE.cs).
-    /// </summary>
-    static void DrawPost(int x, int half, int firststory, int stories, TextureAsset lower, int lowerofs, TextureAsset upper, int upperofs,
-        byte[] shade, int shadeofs)
-    {
-        if (half <= 0) half = 100;
-
-        //
-        // row k up from the floor line shows texel k * 32 / half up the wall; step that
-        // along as whole texels (t) plus a remainder, so it matches the old ScalePost exactly
-        //
-        int floor = FloorRow(half);
-        int bottom = floor - 1 - firststory * 2 * half;
-        int top = floor - stories * 2 * half;
-        int y = Math.Min(bottom, viewheight - 1);
-        if (top < 0) top = 0;
-        if (y < top) return;
-
-        long num = (long)(bottom - y) * (TEXTURESIZE / 2);
-        long t = num / half + firststory * TEXTURESIZE;
-        long rem = num % half;
-        int pitch = (int)_videoManager.bufferPitch;
-
-        byte[] lowerdata = lower.RawData, upperdata = upper.RawData;
-        int lowerheight = lower.Height, upperheight = upper.Height;
-        int lowercolumn = TextureColumn(lower, lowerofs), uppercolumn = TextureColumn(upper, upperofs);
-
-        unsafe
-        {
-            byte* dest = (byte*)vbufPtr + screenofs + x;
-            byte col = 0;
-            long colt = -1;             // the t col is for
-            for (; y >= top; y--)
-            {
-                if (t != colt)
-                {
-                    col = shade[shadeofs + (t < TEXTURESIZE
-                        ? lowerdata[lowercolumn + lowerheight - 1 - (int)(t % lowerheight)]
-                        : upperdata[uppercolumn + upperheight - 1 - (int)(t % upperheight)])];
-                    colt = t;
-                }
-                dest[y * pitch] = col;
-
-                rem += TEXTURESIZE / 2;
-                while (rem >= half)
-                {
-                    rem -= half;
-                    t++;
-                }
-            }
-        }
-    }
-
-    const byte PATCHMASK = 0xff;        // a wall patch's see-through pixels, as a flat's
-
-    /// <summary>
-    /// Draws one screen column of a wall patch over the wall post just drawn (DrawPost), its
-    /// texels laid out the same way: from the floor of story <paramref name="story"/> (1 up) for
-    /// as many stories as the patch is tall, or (story 0) on every story of the wall, repeating as
-    /// the wall's texture does. Its see-through pixels leave the wall showing.
-    /// </summary>
-    static void DrawPatch(int x, int half, int stories, TextureAsset patch, int ofs, int story, byte[] shade, int shadeofs)
-    {
-        if (half <= 0) half = 100;
-
-        int height = patch.Height;
-        int first = story == 0 ? 0 : story - 1;
-        int last = story == 0 ? stories : Math.Min(stories, first + (height + TEXTURESIZE - 1) / TEXTURESIZE);
-        if (first >= last)
-            return;                     // on a story the wall doesn't reach
-
-        int floor = FloorRow(half);
-        int bottom = floor - 1 - first * 2 * half;
-        int top = floor - last * 2 * half;
-        int y = Math.Min(bottom, viewheight - 1);
-        if (top < 0) top = 0;
-        if (y < top) return;
-
-        // texels up from the patch's bottom, stepped as DrawPost steps the wall's
-        long num = (long)(bottom - y) * (TEXTURESIZE / 2);
-        long t = num / half;
-        long rem = num % half;
-        int pitch = (int)_videoManager.bufferPitch;
-
-        byte[] data = patch.RawData;
-        int column = TextureColumn(patch, ofs);
-
-        unsafe
-        {
-            byte* dest = (byte*)vbufPtr + screenofs + x;
-            for (; y >= top; y--)
-            {
-                long row = story == 0 ? t % height : t;
-                if (row < height)
-                {
-                    byte pixel = data[column + height - 1 - (int)row];
-                    if (pixel != PATCHMASK)
-                        dest[y * pitch] = shade[shadeofs + pixel];
-                }
-
-                rem += TEXTURESIZE / 2;
-                while (rem >= half)
-                {
-                    rem -= half;
-                    t++;
-                }
-            }
-        }
-    }
-
-    // Where the column the trace found (0 to 63, times 64) starts in the texture's pixels
-    static int TextureColumn(TextureAsset texture, int ofs) =>
-        (ofs >> TEXTURESHIFT) * texture.Width / TEXTURESIZE * texture.Height;
 
 
     /*
@@ -1016,9 +593,6 @@ internal partial class Program
     /// The face ("north", "south", "east" or "west") the trace sees on what it hits: vertical for
     /// an edge along x = constant. Heading east, it meets a wall's west face, and so on.
     /// </summary>
-    static string SeenFace(bool vertical) => vertical
-        ? xtilestep == 1 ? "west" : "east"
-        : ytilestep == 1 ? "north" : "south";
 
     /// <summary>
     /// The texture of the wall a door is set into, from the wall tile on either side of it in
@@ -1050,11 +624,6 @@ internal partial class Program
 
     // The lintel column where the trace meets the door plane at along (y for a vertical door, x
     // for a horizontal one); flip mirrors it like the wall faces seen from the same side
-    static int LintelColumn(int along, bool flip)
-    {
-        int texture = (along >> FIXED2TEXSHIFT) & TEXTUREMASK;
-        return flip ? TEXTUREMASK - texture : texture;
-    }
 
     // Caps the door post being drawn with its lintel (the door texture again if it has no wall)
     static void SetLintelPost(doorobj_t door, int along, bool flip)

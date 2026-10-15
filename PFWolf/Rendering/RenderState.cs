@@ -118,8 +118,11 @@ internal sealed class RenderState
     internal int archofs;
     internal byte[] archlight;          // its face's light row: where the trace entered it
 
+    internal readonly TextureAsset notexture;    // what a post shows with no texture: nothing
+
     internal RenderState(TextureAsset notexture, byte[] noshade)
     {
+        this.notexture = notexture;
         postsource = notexture;
         archlight = noshade;
     }
