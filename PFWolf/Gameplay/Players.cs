@@ -14,6 +14,7 @@ namespace PFWolf.Gameplay;
 /// <param name="DeathDropHeight">How low a dead player's view sinks, or null for not at all (game-info death-drop-height)</param>
 /// <param name="DeathDropSpeed">How fast it sinks (game-info death-drop-speed)</param>
 /// <param name="ClearNetGame">A new game isn't a network one (until it says otherwise)</param>
+/// <param name="PlayerColor">A player's color as this machine has it: the translation, or null if there's no such one</param>
 internal sealed record PlayersHooks(
     Action<string, Entities.Actors.Actor> PlaySoundAt,
     Func<Entities.Actors.PlayerPawn, (int x, int y, int angle)> DeathmatchSpot,
@@ -24,7 +25,8 @@ internal sealed record PlayersHooks(
     Func<int> DeathTurnSpeed,
     Func<int?> DeathDropHeight,
     Func<int> DeathDropSpeed,
-    Action ClearNetGame);
+    Action ClearNetGame,
+    Func<string, string?> PlayerColor);
 
 /// <summary>
 /// Everyone in the game coming and going: a new game's players, putting them on a level, a
@@ -36,6 +38,7 @@ internal sealed class Players(
     AudioManager audio,
     VideoManager video,
     InventoryManager inventory,
+    HudMessageManager hudMessages,
     StatusBarDrawing statusBar,
     PlayerClassRules classes,
     PlayerStats stats,
@@ -299,5 +302,44 @@ internal sealed class Players(
         playerstate.health = classes.StartingHealth;
         playerstate.lives = classes.StartingLives;
         playerstate.nextextra = stats.ExtraLifeScore;
+    }
+
+    /// <summary>
+    /// A player joins a network game at this frame, on every machine alike (Program.NetJoin.cs):
+    /// at the start, or the nearest free spot to it, or (deathmatch) somewhere random
+    /// </summary>
+    internal void AddNetPlayer(Networking.NetJoin join)
+    {
+        var players = session.players;
+        if (join.Index != players.Count)
+        {
+            Console.WriteLine($"Network: {join.Name} joined as player {join.Index + 1}, but there are {players.Count} players here");
+            return;
+        }
+
+        var p = new Entities.PlayerState { Number = join.Index, Name = join.Name, Color = hooks.PlayerColor(join.Color) };
+        players.Add(p);
+        using (session.ActAs(p))
+        {
+            StartPlayer(classes.FindPlayerClass(join.PlayerClass) ?? classes.DefaultPlayerClass);
+            var pawn = map.CreatePlayer(p);
+            if (session.gamemode == GameMode.Deathmatch)
+            {
+                var (x, y, angle) = hooks.DeathmatchSpot(pawn);
+                think.SpawnPlayer(x, y, angle);
+                hooks.GiveDeathmatchKeys();
+            }
+            else if (map.PlayerStart is { } start)
+            {
+                var taken = map.Players.Where(other => other != pawn && other.State.health > 0)
+                    .Select(other => ((int)other.TileX, (int)other.TileY)).ToList();
+                var (x, y) = taken.Contains((start.TileX, start.TileY))
+                    ? FreeTileNear(start.TileX, start.TileY, taken) ?? (start.TileX, start.TileY)
+                    : (start.TileX, start.TileY);
+                think.SpawnPlayer(x, y, start.Angle);
+            }
+        }
+        hooks.ConnectAreas();     // SpawnPlayer started the areas afresh; it's mid-level
+        hudMessages.Show(HudMessageKind.Other, $"{join.Name} joined the game");
     }
 }

@@ -78,10 +78,10 @@ internal partial class Program
     static Players playersManager = null!;      // made in InitServices
 
     static Players MakePlayers() =>
-        new(_mapManager, _audioManager, _videoManager, _inventoryManager, statusBarDrawing, playerClassRules, playerStats,
+        new(_mapManager, _audioManager, _videoManager, _inventoryManager, _hudMessageManager, statusBarDrawing, playerClassRules, playerStats,
             playerWeapons, playerMovement, playerThink, session,
             new PlayersHooks(PlaySoundLocActor, DeathmatchSpot, GiveDeathmatchKeys, CountFrag, ShowObituary, ConnectAreas,
-                () => deathTurnSpeed, () => deathDropHeight, () => deathDropSpeed, () => netgame = false));
+                () => deathTurnSpeed, () => deathDropHeight, () => deathDropSpeed, () => netgame = false, PlayerColor));
 
     internal static void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker) => playersManager.TakeDamage(victim, points, attacker);
     internal static void PlayPlayerSound(string name) => playersManager.PlayPlayerSound(name);
@@ -94,6 +94,7 @@ internal partial class Program
     internal static void T_PlayerDead(Entities.Actors.Actor ob) => playersManager.T_PlayerDead(ob);
     static string? PlayerName(Entities.Actors.PlayerPawn pawn) => playersManager.PlayerName(pawn);
     internal static void StartPlayer(string playerClass) => playersManager.StartPlayer(playerClass);
+    static void AddNetPlayer(Networking.NetJoin join) => playersManager.AddNetPlayer(join);
 
     /// <summary>The most players a game can have</summary>
     internal const int MAXPLAYERS = 4;

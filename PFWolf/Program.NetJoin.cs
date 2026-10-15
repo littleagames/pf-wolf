@@ -26,40 +26,7 @@ internal partial class Program
     // A player joining: the game they've just taken up carries on, rather than a level starting
     static bool netJoinResume;
 
-    /// <summary>A player joins the game at this frame, on every machine alike</summary>
-    static void AddNetPlayer(NetJoin join)
-    {
-        if (join.Index != players.Count)
-        {
-            Console.WriteLine($"Network: {join.Name} joined as player {join.Index + 1}, but there are {players.Count} players here");
-            return;
-        }
-
-        var p = new Entities.PlayerState { Number = join.Index, Name = join.Name, Color = PlayerColor(join.Color) };
-        players.Add(p);
-        using (ActAs(p))
-        {
-            StartPlayer(FindPlayerClass(join.PlayerClass) ?? DefaultPlayerClass);
-            var pawn = _mapManager.CreatePlayer(p);
-            if (gamemode == GameMode.Deathmatch)
-            {
-                var (x, y, angle) = DeathmatchSpot(pawn);
-                SpawnPlayer(x, y, angle);
-                GiveDeathmatchKeys();
-            }
-            else if (_mapManager.PlayerStart is { } start)
-            {
-                var taken = _mapManager.Players.Where(other => other != pawn && other.State.health > 0)
-                    .Select(other => ((int)other.TileX, (int)other.TileY)).ToList();
-                var (x, y) = taken.Contains((start.TileX, start.TileY))
-                    ? FreeTileNear(start.TileX, start.TileY, taken) ?? (start.TileX, start.TileY)
-                    : (start.TileX, start.TileY);
-                SpawnPlayer(x, y, start.Angle);
-            }
-        }
-        ConnectAreas();     // SpawnPlayer started the areas afresh; it's mid-level
-        _hudMessageManager.Show(Managers.HudMessageKind.Other, $"{join.Name} joined the game");
-    }
+    // A player joins the game at this frame, on every machine alike: AddNetPlayer (Gameplay/Players.cs)
 
     /*
     ===============
@@ -130,49 +97,9 @@ internal partial class Program
         return ms.ToArray();
     }
 
-    static void WriteNetPlayer(BinaryWriter bw, Entities.PlayerState p, Func<Entities.Actors.Actor?, int> indexOf)
-    {
-        bw.Write(p.Name ?? "");
-        bw.Write(p.Gone);
-        bw.Write(p.playerclass);
-        bw.Write(p.Color ?? "");
-        bw.Write(p.oldscore);
-        bw.Write(p.score);
-        bw.Write(p.nextextra);
-        bw.Write(p.lives);
-        bw.Write(p.health);
-        bw.Write(p.armor);
-        bw.Write(p.armorpercent);
-        bw.Write(p.weapon ?? "");
-        bw.Write(p.chosenweapon ?? "");
-        bw.Write(p.faceframe);
-        bw.Write(p.killx);
-        bw.Write(p.killy);
-        bw.Write(p.Frags);
-        bw.Write(p.Kills);
-        bw.Write(p.Items.Count);
-        foreach (var (item, count) in p.Items)
-        {
-            bw.Write(item);
-            bw.Write(count);
-        }
-        bw.Write(p.ThrustSpeed);
-        bw.Write(p.PlUX);
-        bw.Write(p.PlUY);
-        bw.Write(p.AngleFrac);
-        bw.Write(indexOf(p.LastAttacker));
-        bw.Write(p.FaceCount);
-        bw.Write(p.FaceTimes);
-        bw.Write(p.WeaponCharge);
-        bw.Write(p.Pitch);
-        bw.Write(p.EyeZ);
-        bw.Write(p.DeadTics);
-        bw.Write(p.DeathAngle);
-        bw.Write(p.Input.Buttons);
-        bw.Write(p.WeaponSprite != null);
-        if (p.WeaponSprite != null)
-            Entities.Actors.ActorSnapshot.Capture(p.WeaponSprite).Write(bw);
-    }
+    // One player in full (Networking/NetPlayerState.cs)
+    static void WriteNetPlayer(BinaryWriter bw, Entities.PlayerState p, Func<Entities.Actors.Actor?, int> indexOf) =>
+        NetPlayerState.Write(bw, p, indexOf);
 
     /// <summary>
     /// Takes up a game already being played, as the host sent it: the players (this machine's
@@ -271,43 +198,6 @@ internal partial class Program
         }
     }
 
-    static void ReadNetPlayer(BinaryReader br, Entities.PlayerState p, out int lastAttacker, out Entities.Actors.ActorSnapshot? weapon)
-    {
-        string? NullIfEmpty(string s) => s.Length == 0 ? null : s;
-
-        p.Name = NullIfEmpty(br.ReadString());
-        p.Gone = br.ReadBoolean();
-        p.playerclass = br.ReadString();
-        p.Color = PlayerColor(br.ReadString());
-        p.oldscore = br.ReadInt32();
-        p.score = br.ReadInt32();
-        p.nextextra = br.ReadInt32();
-        p.lives = br.ReadInt16();
-        p.health = br.ReadInt16();
-        p.armor = br.ReadInt16();
-        p.armorpercent = br.ReadInt16();
-        p.weapon = NullIfEmpty(br.ReadString());
-        p.chosenweapon = NullIfEmpty(br.ReadString());
-        p.faceframe = br.ReadInt16();
-        p.killx = br.ReadInt32();
-        p.killy = br.ReadInt32();
-        p.Frags = br.ReadInt32();
-        p.Kills = br.ReadInt32();
-        for (int i = br.ReadInt32(); i > 0; i--)
-            p.Items[br.ReadString()] = br.ReadInt32();
-        p.ThrustSpeed = br.ReadInt32();
-        p.PlUX = br.ReadUInt16();
-        p.PlUY = br.ReadUInt16();
-        p.AngleFrac = br.ReadInt16();
-        lastAttacker = br.ReadInt32();
-        p.FaceCount = br.ReadInt32();
-        p.FaceTimes = br.ReadInt32();
-        p.WeaponCharge = br.ReadInt32();
-        p.Pitch = br.ReadDouble();
-        p.EyeZ = br.ReadInt32();
-        p.DeadTics = br.ReadInt32();
-        p.DeathAngle = br.ReadInt16();
-        p.Input.RestoreButtons(br.ReadUInt32());
-        weapon = br.ReadBoolean() ? Entities.Actors.ActorSnapshot.Read(br) : null;
-    }
+    static void ReadNetPlayer(BinaryReader br, Entities.PlayerState p, out int lastAttacker, out Entities.Actors.ActorSnapshot? weapon) =>
+        NetPlayerState.Read(br, p, PlayerColor, out lastAttacker, out weapon);
 }

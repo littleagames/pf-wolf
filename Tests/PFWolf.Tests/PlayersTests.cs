@@ -47,9 +47,9 @@ public class PlayersTests
             var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(() => false, _ => { }));
             var stats = new PlayerStats(null!, null!, null!, Inventory, bar, classes, weapons, Session,
                 new PlayerStatsHooks(() => 0, () => false, () => false, () => 1, () => { }, () => Players!.PlayerDies(), _ => { }));
-            Players = new Players(null!, null!, null!, Inventory, bar, classes, stats, weapons, null!, null!, Session,
+            Players = new Players(null!, null!, null!, Inventory, null!, bar, classes, stats, weapons, null!, null!, Session,
                 new PlayersHooks((sound, _) => SoundsAtPawns.Add(sound), _ => (0, 0, 0), () => { }, (victim, killer) => Frags.Add((victim, killer)),
-                    () => Obituaries++, () => { }, () => 5, () => DropTo, () => 4, () => NetGameCleared = true));
+                    () => Obituaries++, () => { }, () => 5, () => DropTo, () => 4, () => NetGameCleared = true, color => color));
         }
 
         public Entities.PlayerState Second => Session.players[1];
