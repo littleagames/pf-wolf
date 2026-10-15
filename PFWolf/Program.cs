@@ -243,6 +243,7 @@ internal partial class Program
         projectileActions = MakeProjectileActions();
         lighting = MakeLighting();
         actorLights = MakeActorLights();
+        weather = MakeWeather();
         playerView = MakePlayerView();
         statusBarDrawing = MakeStatusBarDrawing();
         deathmatch = MakeDeathmatch();
