@@ -244,6 +244,7 @@ internal partial class Program
         lighting = MakeLighting();
         actorLights = MakeActorLights();
         weather = MakeWeather();
+        spriteScaler = MakeSpriteScaler();
         playerView = MakePlayerView();
         statusBarDrawing = MakeStatusBarDrawing();
         deathmatch = MakeDeathmatch();
