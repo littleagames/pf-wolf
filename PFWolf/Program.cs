@@ -264,6 +264,7 @@ internal partial class Program
         playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);
         playerWeapons = MakePlayerWeapons();
         playScreen = MakePlayScreen();
+        viewSetup = new ViewSetup(_videoManager, playScreen, render, new ViewSetupHooks(() => viewsize, size => viewsize = size));
         consoleDrawing = new ConsoleDrawing(_videoManager, _graphicManager, _fontManager, _consoleManager, playScreen, statusBarDrawing);
         debugCommands = new DebugCommands(_consoleManager, _gameEngineManager, _videoManager, _mapManager, doors, frameRefresh, debugScreens,
             playScreen, render, consoleTargets, session,
@@ -873,140 +874,15 @@ internal partial class Program
     }
 
 
-    internal static void NewViewSize(int width)
-    {
-        viewsize = width;
-        if (viewsize == 21)
-            SetViewSize((uint)_videoManager.screenWidth, (uint)_videoManager.screenHeight);
-        else if (viewsize == 20)
-            SetViewSize((uint)_videoManager.screenWidth, (uint)PlayAreaHeight);
-        else
-            SetViewSize((uint)(width * 16 * _videoManager.screenWidth / 320), (uint)BorderedViewHeight(width));
-    }
+    // The view's size and the projection (Rendering/ViewSetup.cs)
+    static ViewSetup viewSetup = null!;     // made in InitServices
 
-    /// <summary>The screen lines between the top status bar (if any) and the bottom one, in screen pixels</summary>
-    internal static int PlayAreaHeight => _videoManager.ScreenYAboveBottom(STATUSLINES) - PlayAreaTop;
-
-    /// <summary>The play area's height and the bottom status bar's first line, in screen pixels</summary>
-    internal static int PlayAreaAndStatusLine => _videoManager.ScreenYAboveBottom(STATUSLINES - 1) - PlayAreaTop;
-
-    /// <summary>Where the play area (view and border) starts down the screen, in screen pixels: below any top status bar</summary>
-    internal static int PlayAreaTop => _videoManager.ToScreenLength(TOPLINES);
-
-    /// <summary>
-    /// A bordered view's height at view size <paramref name="width"/>. The sizes are laid out for
-    /// Wolf3D's 40 line status bar: with a taller one (Blake Stone's), the view stops short of it,
-    /// leaving room for the border lines round it.
-    /// </summary>
-    private static int BorderedViewHeight(int width)
-    {
-        int height = (int)(width * 16 * HEIGHTRATIO * _videoManager.screenHeight / 200);
-        int room = PlayAreaHeight - _videoManager.ToScreenLength(2);
-        return Math.Min(height, room);
-    }
-
-    internal static bool SetViewSize(uint width, uint height)
-    {
-        viewwidth = (int)(width & ~15);                  // must be divisable by 16
-        viewheight = (int)(height & ~1);                 // must be even
-        centerx = (short)(viewwidth / 2 - 1);
-        centery = basecentery = (short)(viewheight / 2);
-        projectionwidth = ProjectionWidth(viewwidth, viewheight);
-        shootdelta = projectionwidth / 10;               // the same angle either side, however wide the view
-        if (viewheight == _videoManager.screenHeight)
-            viewscreenx = viewscreeny = (int)(screenofs = 0);
-        else
-        {
-            viewscreenx = (_videoManager.screenWidth - viewwidth) / 2;
-            viewscreeny = PlayAreaTop + (PlayAreaHeight - viewheight) / 2;
-            screenofs = (uint)(viewscreeny * _videoManager.screenWidth + viewscreenx);
-        }
-
-        //
-        // calculate trace angles and projection constants
-        //
-        CalcProjection(FOCALLENGTH);
-
-        return true;
-    }
-
-    /*
-    ====================
-    =
-    = CalcProjection
-    =
-    = Uses focallength
-    =
-    ====================
-    */
-
-    static void CalcProjection(long focal)
-    {
-        int i;
-        int intang;
-        float angle;
-        double tang;
-        int halfview;
-        double facedist;
-
-        focallength = (int)focal;
-        facedist = focal + MINDIST;
-        halfview = viewwidth / 2;                                 // half view in pixels
-
-        //
-        // calculate scale value for vertical height calculations
-        // and sprite x calculations: from the projection width, so a view wider than the
-        // classic shape sees further to the sides rather than having its walls made taller
-        //
-        scale = (int) (projectionwidth / 2 * facedist / (VIEWGLOBAL / 2));
-
-        //
-        // divide heightnumerator by a posts distance to get the posts height for
-        // the heightbuffer.  The pixel height is height>>2
-        //
-        heightnumerator = (int)((MapConstants.TILEGLOBAL * scale) >> 6);
-
-        //
-        // calculate the angle offset from view angle of each pixel's ray
-        //
-
-        for (i = 0; i < halfview; i++)
-        {
-            // start 1/2 pixel over, so viewangle bisects two middle pixels
-            tang = (int)i * VIEWGLOBAL / projectionwidth / facedist;
-            angle = (float)Math.Atan(tang);
-            intang = (int)(angle * radtoint);
-            pixelangle[halfview - 1 - i] = (short)intang;
-            pixelangle[halfview + i] = (short)-intang;
-        }
-    }
-
-    /// <summary>
-    /// The width a view's field of view is worked out for. Up to the shape the view size has on
-    /// a 320x200 screen, that's the view's own width, as it always was: a narrower screen (4:3)
-    /// shows the same across and more above and below. A wider view is worked out from its
-    /// height instead, so it shows the same above and below and more to the sides (Hor+).
-    /// </summary>
-    static int ProjectionWidth(int width, int height)
-    {
-        // SetViewSize rounds the height down to even, so allow for the line that may lose:
-        // otherwise a classic layout could come out a hair too wide and change
-        int classicWidth = (int)Math.Ceiling((height + 1) * ClassicViewAspect(viewsize) - 1e-9);
-        return Math.Max(1, Math.Min(width, classicWidth));
-    }
-
-    /// <summary>A view size's width over its height on a 320x200 screen, as NewViewSize lays it out there.</summary>
-    static double ClassicViewAspect(int size)
-    {
-        int playArea = VideoSettings.BaseHeight - STATUSLINES - TOPLINES;
-        if (size >= 21)
-            return (double)VideoSettings.BaseWidth / VideoSettings.BaseHeight;
-        if (size == 20)
-            return (double)VideoSettings.BaseWidth / Math.Max(playArea, 1);
-
-        double height = Math.Min(size * 16 * HEIGHTRATIO, playArea - 2);
-        return size * 16 / Math.Max(height, 1);
-    }
+    internal static void NewViewSize(int width) => viewSetup.NewViewSize(width);
+    internal static int PlayAreaHeight => viewSetup.PlayAreaHeight;
+    internal static int PlayAreaAndStatusLine => viewSetup.PlayAreaAndStatusLine;
+    internal static int PlayAreaTop => viewSetup.PlayAreaTop;
+    internal static bool SetViewSize(uint width, uint height) => viewSetup.SetViewSize(width, height);
+    internal static void ShowViewSize(int width) => viewSetup.ShowViewSize(width);
 
     internal static void DoJukebox()
     {
@@ -1091,35 +967,5 @@ internal partial class Program
 
         //defined(USE_STARSKY) || defined(USE_RAIN) || defined(USE_SNOW)
         //Init3DPoints();
-    }
-
-    internal static void ShowViewSize(int width)
-    {
-        int oldwidth, oldheight;
-
-        oldwidth = viewwidth;
-        oldheight = viewheight;
-
-        if (width == 21)
-        {
-            viewwidth = _videoManager.screenWidth;
-            viewheight = _videoManager.screenHeight;
-            _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, _videoManager.screenHeight, "Black");
-        }
-        else if (width == 20)
-        {
-            viewwidth = _videoManager.screenWidth;
-            viewheight = PlayAreaHeight;
-            DrawPlayBorder();
-        }
-        else
-        {
-            viewwidth = width * 16 * _videoManager.screenWidth / 320;
-            viewheight = BorderedViewHeight(width);
-            DrawPlayBorder();
-        }
-
-        viewwidth = oldwidth;
-        viewheight = oldheight;
     }
 }
