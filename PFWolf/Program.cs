@@ -244,6 +244,7 @@ internal partial class Program
         wallHits = MakeWallHits();
         rayTrace = MakeRayTrace();
         spriteDrawing = MakeSpriteDrawing();
+        playerBodies = new PlayerBodies(_assetManager, _mapManager, _inventoryManager, spriteDrawing, session);
         playerView = MakePlayerView();
         frameRefresh = MakeFrameRefresh();
         inputPolling = MakeInputPolling();
@@ -267,6 +268,7 @@ internal partial class Program
         playerThink = MakePlayerThink();
         playersManager = MakePlayers();
         hudMessageDrawing = MakeHudMessageDrawing();
+        spectating = new Spectating(_mapManager, _consoleManager, _hudMessageManager, hudMessageDrawing, session);
         scoreboard = MakeScoreboard();
         netPlay = MakeNetPlay();
         netOverlay = MakeNetOverlay();
