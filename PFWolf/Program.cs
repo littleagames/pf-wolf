@@ -246,6 +246,8 @@ internal partial class Program
         playerView = MakePlayerView();
         statusBarDrawing = MakeStatusBarDrawing();
         deathmatch = MakeDeathmatch();
+        radar = MakeRadar();
+        automapDrawing = MakeAutomapDrawing();
         playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);
         playerWeapons = MakePlayerWeapons();
         playerStats = MakePlayerStats();

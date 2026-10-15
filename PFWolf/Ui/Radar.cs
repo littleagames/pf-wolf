@@ -1,0 +1,171 @@
+using PFWolf.Managers;
+
+namespace PFWolf.Ui;
+
+/// <summary>
+/// statusbar.yaml radar (Planet Strike's, bstone's DrawRadar and ShowOverhead): a small map
+/// of the tiles around the player, turned so the way they face is up, of what they've seen
+/// (the automap's seen tiles). It always shows at 1x; zooming in (2x, 4x: radar zoom in and
+/// out) uses up its item, the radar's power, and shows enemies. When the power runs out it
+/// goes back to 1x. (bstone also shows pushwalls at 4x; not done.)
+/// </summary>
+/// <param name="fullScreenView">Whether the view fills the screen in a game, with no status bar</param>
+/// <param name="godMode">The god mode cheat (0 off): it keeps the radar's power</param>
+internal sealed class Radar(
+    MapManager map,
+    InventoryManager inventory,
+    InputManager input,
+    HudMessageManager hudMessages,
+    VideoManager video,
+    GraphicManager graphics,
+    StatusBarDrawing statusBar,
+    Doors doors,
+    GameSession session,
+    Func<bool> fullScreenView,
+    Func<int> godMode)
+{
+    /// <summary>The radar's zoom: 0 for 1x, 1 for 2x, 2 for 4x</summary>
+    internal int radarzoom;
+
+    // Counts the frames, so its power goes every other one as bstone's does
+    int radarframe;
+
+    /// <summary>Each tic: the radar's zoom keys, its power going while it's zoomed in, and the radar drawn</summary>
+    internal void UpdateRadar()
+    {
+        if (statusBar.StatusBar.Get("radar") is not { } radar || fullScreenView())
+            return;
+
+        int power = string.IsNullOrEmpty(radar.Item) ? 0 : inventory.GetCount(radar.Item);
+        int maxzoom = Math.Max(radar.ZoomPics.Count - 1, 0);
+
+        if (input.IsButtonPressed(buttontypes.bt_radarzoomin) && !input.IsButtonHeld(buttontypes.bt_radarzoomin))
+        {
+            input.SetButtonHeld(buttontypes.bt_radarzoomin, true);
+            if (power > 0 && radarzoom < maxzoom)
+                radarzoom++;
+        }
+        if (input.IsButtonPressed(buttontypes.bt_radarzoomout) && !input.IsButtonHeld(buttontypes.bt_radarzoomout))
+        {
+            input.SetButtonHeld(buttontypes.bt_radarzoomout, true);
+            if (radarzoom > 0)
+                radarzoom--;
+        }
+
+        // Zoomed in, it uses tics << zoom of its power every other frame
+        radarframe++;
+        if (power > 0 && radarzoom > 0 && godMode() == 0 && (radarframe & 1) != 0)
+        {
+            int left = Math.Max(power - ((int)session.tics << radarzoom), 0);
+            inventory.Take(radar.Item!, power - left);
+            if (left == 0)
+            {
+                radarzoom = 0;
+                if (!string.IsNullOrEmpty(radar.EmptyMessage))
+                    hudMessages.Show(HudMessageKind.Other, radar.EmptyMessage);
+            }
+        }
+        else if (power <= 0)
+            radarzoom = 0;
+
+        statusBar.DrawRadarGauge();
+        DrawRadar(radar);
+    }
+
+    internal void DrawRadar(Assets.StatusBarElement radar)
+    {
+        if (map.Player == null)     // the status bar is drawn before a level is loaded too
+            return;
+
+        using var _ = statusBar.StatusBarOrigin(radar);
+        int top = statusBar.StatusBarTop(radar);
+        int zoompic = Math.Min(radarzoom, radar.ZoomPics.Count - 1);
+        if (zoompic >= 0)
+            graphics.DrawPic(radar.ZoomPics[zoompic], radar.ZoomX, top + radar.ZoomY);
+
+        string Color(string name, string fallback) => radar.Colors.GetValueOrDefault(name) ?? fallback;
+        string unmapped = Color("unmapped", "82"), floor = Color("floor", "85"), door = Color("door", "88"),
+            locked = Color("locked", "24"), playerColor = Color("player", "240"), key = Color("key", "243"),
+            enemy = Color("enemy", "24");
+
+        int scale = 1 << radarzoom;
+        double radius = radar.Tiles / 2.0 / scale;
+        int diameter = (int)(radius * 2);
+
+        // Keys lying about, and (zoomed in) living enemies, by tile
+        var keys = new HashSet<int>();
+        var enemies = new HashSet<int>();
+        foreach (var thing in map.GetActors())
+        {
+            if (thing.IsRemoved || thing == session.player)
+                continue;
+            if (inventory.FindClass(thing.Name, "Key") != null)
+                keys.Add(thing.TileX << 8 | thing.TileY);
+            else if (scale > 1 && thing.Hitpoints > 0 && MapManager.IsEnemy(thing))
+                enemies.Add(thing.TileX << 8 | thing.TileY);
+        }
+
+        // The map turned so the player's facing is up, as bstone walks it
+        double px = session.player.X / 65536.0, py = session.player.Y / 65536.0;
+        double angle = session.player.Angle * Math.PI / 180;
+        // The sine with the sign that keeps the way the player faces at the top (checked against
+        // the automap; bstone's own sign put it at the bottom here)
+        double psin = -Math.Sin(angle), pcos = Math.Cos(angle);
+        double baselmx = px + (radius * pcos - radius * psin);
+        double baselmy = py - (radius * psin + radius * pcos);
+        double xinc = -pcos, yinc = psin;
+        bool drawnplayer = false;
+
+        for (int x = 0; x < diameter; x++)
+        {
+            double lmx = baselmx, lmy = baselmy;
+            for (int y = 0; y < diameter; y++)
+            {
+                string color = unmapped;
+                int mx = (int)Math.Floor(lmx), my = (int)Math.Floor(lmy);
+                if (mx >= 0 && mx < MapManager.MAPSIZE && my >= 0 && my < MapManager.MAPSIZE)
+                {
+                    if (!drawnplayer && mx == session.player.TileX && my == session.player.TileY)
+                    {
+                        color = playerColor;
+                        drawnplayer = true;
+                    }
+                    else if (map.seen[mx, my] != SeenFlags.None)
+                    {
+                        color = RadarTileColor(mx, my, unmapped, floor, door, locked);
+                        if (keys.Contains(mx << 8 | my))
+                            color = key;
+                        if (enemies.Contains(mx << 8 | my))
+                            color = enemy;
+                    }
+                }
+
+                video.Bar(radar.X + x * scale, top + radar.Y + y * scale, scale, scale, color);
+                lmx += xinc;
+                lmy += yinc;
+            }
+            baselmx += yinc;
+            baselmy -= xinc;
+        }
+    }
+
+    // What a seen tile shows as: open floor, a door (closed, or locked), or a wall (as unmapped)
+    internal string RadarTileColor(int x, int y, string unmapped, string floor, string door, string locked)
+    {
+        int tile = map.tilemap[x, y];
+        string color;
+        if ((tile & Program.BIT_DOOR) != 0 && (tile & Program.BIT_WALL) == 0)
+        {
+            var d = doors.doorobjlist[tile & ~Program.BIT_DOOR];
+            // As bstone: a door with a lock (none once a key has unlocked it) is locked, open or shut
+            color = !string.IsNullOrEmpty(d.Lock) ? locked
+                : d.action == dooractiontypes.dr_closed ? door
+                : floor;
+        }
+        else if (tile != 0)
+            color = unmapped;
+        else
+            color = floor;
+        return color;
+    }
+}
