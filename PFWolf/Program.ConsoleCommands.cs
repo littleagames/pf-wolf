@@ -154,6 +154,15 @@ internal partial class Program
         Register("quit", "Quits the game immediately.", "quit", _ => _gameEngineManager.Quit(""));
     }
 
+    // What commands act on, and how they describe it (Commands/ConsoleTargets.cs)
+    static ConsoleTargets consoleTargets = null!;       // made in InitServices
+
+    static (int x, int y) TileArg(string[] args, int index) => consoleTargets.TileArg(args, index);
+    static List<Entities.Actors.Monster> ChosenActors(string? className) => consoleTargets.ChosenActors(className);
+    static string WallSpriteDescription(Entities.Actors.Actor actor) => consoleTargets.WallSpriteDescription(actor);
+    static string DescribePatch(int patch) => consoleTargets.DescribePatch(patch);
+    static string DescribeZone(int zone) => consoleTargets.DescribeZone(zone);
+
     static void Register(string name, string help, string usage, Action<string[]> run,
         ConsoleCommandFlags flags = ConsoleCommandFlags.None, string[]? aliases = null, ConsoleCompleter? complete = null) =>
         _consoleManager.Register(name, help, usage, run, flags, aliases, complete);
@@ -510,51 +519,6 @@ internal partial class Program
         _consoleManager.Print($"Player {n} is {(color == null ? "in their class's own colors" : $"drawn in {color}")}");
     }
 
-    // Every living enemy of a class, or (no class) the nearest living one
-    private static List<Entities.Actors.Monster> ChosenActors(string? className)
-    {
-        var living = _mapManager.GetActors().OfType<Entities.Actors.Monster>()
-            .Where(m => !m.IsRemoved && m.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
-        var chosen = className != null
-            ? living.Where(m => m.Name.Equals(className, StringComparison.OrdinalIgnoreCase)).ToList()
-            : living.OrderBy(m => Math.Max(Math.Abs(m.X - player.X), Math.Abs(m.Y - player.Y))).Take(1).ToList();
-        return chosen.Count > 0 ? chosen
-            : throw new ArgumentException(className != null ? $"no living {className} on the level" : "no living enemy on the level");
-    }
-
-    /// <summary>"  panel ..." for a wall sprite, else nothing.</summary>
-    private static string WallSpriteDescription(Entities.Actors.Actor actor)
-    {
-        if (!IsWallSprite(actor))
-            return "";
-        if (GetWallSpriteSpan(actor) is not { } span)
-            return "  panel (off its tile)";
-
-        static string Point(double x, double y) =>
-            $"{x / MapConstants.TILEGLOBAL:0.##},{y / MapConstants.TILEGLOBAL:0.##}";
-        return $"  panel {WallSpriteAxis(actor.Dir)} facing {actor.Dir}, {Point(span.X1, span.Y1)} to {Point(span.X2, span.Y2)}";
-    }
-
-    /// <summary>
-    /// The tile named by args[index] and args[index + 1], or when they aren't given, the tile in
-    /// front of the player, as Cmd_Use picks it.
-    /// </summary>
-    private static (int x, int y) TileArg(string[] args, int index)
-    {
-        if (args.Length >= index + 2)
-            return (ParseInt(args[index], 0, _mapManager.mapwidth - 1), ParseInt(args[index + 1], 0, _mapManager.mapheight - 1));
-
-        int x = player.TileX, y = player.TileY;
-        switch (FacingDir(player.Angle))
-        {
-            case controldirs.di_east: x++; break;
-            case controldirs.di_north: y--; break;
-            case controldirs.di_west: x--; break;
-            default: y++; break;
-        }
-        return (x, y);
-    }
-
     private static void Cmd_Height(string[] args)
     {
         if (args.Length == 0)
@@ -609,17 +573,6 @@ internal partial class Program
         }
 
         _consoleManager.Print($"Tile {x},{y}: {DescribePatch(_mapManager.GetPatch(x, y))}");
-    }
-
-    // A patch id as the console shows it: its texture and faces, or that mapdefs doesn't list it
-    private static string DescribePatch(int patch)
-    {
-        if (patch == 0)
-            return "no patch";
-        if (!_mapManager.GetMapData().Patches.TryGetValue(patch, out var def))
-            return $"patch {patch} (not in the mapdefs patches)";
-        var sides = def.Sides.Count == 0 ? "all faces" : string.Join("/", def.Sides);
-        return $"patch {patch} ({def.Texture}, {sides}{(def.Switch != null ? ", switch" : "")})";
     }
 
     private static void Cmd_Flat(string[] args)
@@ -728,24 +681,6 @@ internal partial class Program
         if (args.Length > 4) state.BrightTics = ParseInt(args[4], 0, 7000);
         SetZoneEffect(zone, effect);
         _consoleManager.Print($"Zone {zone}: {DescribeZone(zone)}");
-    }
-
-    static string DescribeZone(int zone)
-    {
-        if (zone == 0)
-            return $"the level's light, {levelshading?.Light ?? 255}";
-        if (!levelzones.TryGetValue(zone, out var z))
-            return "not in the map's zones: the level's light";
-
-        var text = $"light {z.Light}";
-        if (z.FadeLeft > 0)
-            text += $" (fading, now {z.BaseLight}, {z.FadeLeft} tics to go)";
-        if (z.Color != null)
-            text += $", tinted {z.Color}";
-        if (z.Effect != ZoneEffect.None)
-            text += $", {z.Effect.ToString().ToLowerInvariant()} to {z.Low} every {z.Tics} tics"
-                + (z.Effect == ZoneEffect.Strobe ? $" ({z.BrightTics} bright)" : "");
-        return text;
     }
 
     private static void Cmd_KillAll(string[] args)

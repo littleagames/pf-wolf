@@ -239,6 +239,7 @@ internal partial class Program
         projectileActions = MakeProjectileActions();
         lighting = MakeLighting();
         levelBodies = new LevelBodies(_mapManager, doors, pushWalls, lighting, session);
+        consoleTargets = new ConsoleTargets(_mapManager, lighting, session);
         actorLights = MakeActorLights();
         weather = MakeWeather();
         spriteScaler = MakeSpriteScaler();
