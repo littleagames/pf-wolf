@@ -160,28 +160,7 @@ internal partial class Program
     internal static bool RunTitleScreens(List<TitleScreenInfo> screens, bool titleLoop) => titleScreens.RunTitleScreens(screens, titleLoop);
     static int TakeNextTitleDemo() => titleScreens.TakeNextTitleDemo();
 
-    /// <summary>A title screen's presenter text, printed into its window</summary>
-    static void DrawTitleText(TitleTextInfo text)
-    {
-        if (PresenterScript(text.Script) is not { } script)
-            return;
-
-        TP_Presenter(new PresenterInfo
-        {
-            Flags = PresenterFlags.CacheNoGfx,
-            Script = script,
-            X1 = text.X1,
-            Y1 = text.Y1,
-            X2 = text.X2,
-            Y2 = text.Y2,
-            Font = text.Font,
-            FontColor = text.Color,
-            Background = text.Background,
-            Light = text.Light,
-            Dark = text.Dark,
-            Shadow = text.Shadow,
-        });
-    }
+    static void DrawTitleText(TitleTextInfo text) => textPresenter.DrawTitleText(text);
 
     static bool US_Started;
 
@@ -309,6 +288,7 @@ internal partial class Program
         demoCommands = new DemoCommands(_consoleManager, _mapManager, demos, demoBuffer, session,
             new DemoCommandsHooks(() => ingame, s => playstate = s));
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
+        jukebox = new Jukebox(_inputManager, _videoManager, _audioManager, menuDrawing, menuLoop, menuDefs);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
             menuDrawing, menuLoop, menuInput, menuDefs, ui, () => ingame);
@@ -637,53 +617,8 @@ internal partial class Program
     internal static bool SetViewSize(uint width, uint height) => viewSetup.SetViewSize(width, height);
     internal static void ShowViewSize(int width) => viewSetup.ShowViewSize(width);
 
-    internal static void DoJukebox()
-    {
-        int which, lastsong = -1;
+    internal static void DoJukebox() => jukebox.DoJukebox();
 
-        _inputManager.ClearKeysDown();
-        //if (!AdLibPresent && !SoundBlasterPresent)
-        //    return;
-
-        MenuFadeOut();
-
-        // Show a random page of songs
-        int pages = Math.Max(1, (MusicMenu.Length + JukeboxPageSize - 1) / JukeboxPageSize);
-        int start = (int)((SDL.SDL_GetTicks() / 10) % (uint)pages) * JukeboxPageSize;
-        var page = MusicMenu.Skip(start).Take(JukeboxPageSize).ToArray();
-        MusicItems.amount = (short)page.Length;
-        MusicItems.curpos = 0;
-
-        //CA_LoadAllSounds();
-
-        DrawMenuComponents("jukebox");
-
-        DrawMenu(MusicItems, page);
-
-        _videoManager.Update();
-        MenuFadeIn();
-
-        do
-        {
-            which = HandleMenu(MusicItems, page, null);
-            if (which >= 0)
-            {
-                if (lastsong >= 0)
-                    page[lastsong].active = 1;
-
-                if (page[which].data is string song)
-                    StartCPMusic(song);
-                page[which].active = 2;
-                DrawMenu(MusicItems, page);
-                _videoManager.Update();
-                lastsong = which;
-            }
-        } while (which >= 0);
-
-        MenuFadeOut();
-        _inputManager.ClearKeysDown();
-    }
-    
     const float radtoint = FINEANGLES / 2 / PI;
     internal static void BuildTables()
     {

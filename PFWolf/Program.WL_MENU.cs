@@ -102,12 +102,11 @@ internal partial class Program
     }
 
 
-    internal static CP_itemtype[] MusicMenu = [];
-    // The jukebox shows one page of songs at a time
-    internal const int JukeboxPageSize = 6;
-
-    // Loaded from menudefs/ in CheckForEpisodes
-    internal static CP_iteminfo MusicItems;
+    // The jukebox (Ui/Jukebox.cs); its songs are loaded from menudefs/ in CheckForEpisodes
+    static Jukebox jukebox = null!;     // made in InitServices
+    internal static CP_itemtype[] MusicMenu { get => jukebox.MusicMenu; set => jukebox.MusicMenu = value; }
+    internal const int JukeboxPageSize = Jukebox.JukeboxPageSize;
+    internal static CP_iteminfo MusicItems { get => jukebox.MusicItems; set => jukebox.MusicItems = value; }
     /*
     =============================================================================
 

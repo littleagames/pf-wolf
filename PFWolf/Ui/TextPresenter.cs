@@ -1003,4 +1003,27 @@ internal sealed class TextPresenter(AssetManager assets, InputManager input, Aud
         input.ClearKeysDown();
         return pi.Escaped;
     }
+
+    /// <summary>A title screen's presenter text, printed into its window</summary>
+    internal void DrawTitleText(TitleTextInfo text)
+    {
+        if (PresenterScript(text.Script) is not { } script)
+            return;
+
+        TP_Presenter(new PresenterInfo
+        {
+            Flags = PresenterFlags.CacheNoGfx,
+            Script = script,
+            X1 = text.X1,
+            Y1 = text.Y1,
+            X2 = text.X2,
+            Y2 = text.Y2,
+            Font = text.Font,
+            FontColor = text.Color,
+            Background = text.Background,
+            Light = text.Light,
+            Dark = text.Dark,
+            Shadow = text.Shadow,
+        });
+    }
 }
