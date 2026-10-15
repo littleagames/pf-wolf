@@ -253,6 +253,7 @@ internal partial class Program
         spriteDrawing = MakeSpriteDrawing();
         playerView = MakePlayerView();
         frameRefresh = MakeFrameRefresh();
+        inputPolling = MakeInputPolling();
         statusBarDrawing = MakeStatusBarDrawing();
         deathmatch = MakeDeathmatch();
         radar = MakeRadar();

@@ -246,7 +246,7 @@ internal sealed class ControlBindings
         for (int i = 0; i < DefaultAutomapKeys.Length; i++)
             Add(ControlAction.Of((Program.automapkeys)i), Key(DefaultAutomapKeys[i]));
 
-        // While the map is open the wheel zooms it rather than changing weapons (see Program.IsControlDown)
+        // While the map is open the wheel zooms it rather than changing weapons (see InputPolling.IsControlDown)
         Add(ControlAction.Of(Program.automapkeys.am_zoomin), InputCode.WheelUp);
         Add(ControlAction.Of(Program.automapkeys.am_zoomout), InputCode.WheelDown);
     }
