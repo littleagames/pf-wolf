@@ -274,6 +274,8 @@ internal partial class Program
         playersManager = MakePlayers();
         hudMessageDrawing = MakeHudMessageDrawing();
         spectating = new Spectating(_mapManager, _consoleManager, _hudMessageManager, hudMessageDrawing, session);
+        playerCommands = new PlayerCommands(_consoleManager, _mapManager, doors, playerClassRules, playersManager, playerThink, deathmatch, session,
+            new PlayerCommandsHooks(() => viewsize, DrawPlayScreen));
         scoreboard = MakeScoreboard();
         netPlay = MakeNetPlay();
         netOverlay = MakeNetOverlay();

@@ -47,73 +47,11 @@ internal partial class Program
     internal static void StartPlayer(string playerClass) => playersManager.StartPlayer(playerClass);
     static void AddNetPlayer(Networking.NetJoin join) => playersManager.AddNetPlayer(join);
 
+    // addplayer, gamemode and controlplayer (Commands/PlayerCommands.cs)
+    static PlayerCommands playerCommands = null!;       // made in InitServices
+
     /// <summary>The most players a game can have</summary>
-    internal const int MAXPLAYERS = 4;
-
-    /// <summary>`addplayer [class]`: a player who stands still (nothing drives them yet), beside you</summary>
-    static void Cmd_AddPlayer(string[] args)
-    {
-        if (players.Count >= MAXPLAYERS)
-            throw new ArgumentException($"there can only be {MAXPLAYERS} players");
-
-        var playerClass = args.Length > 0
-            ? FindPlayerClass(args[0]) ?? throw new ArgumentException($"no player class {args[0]}")
-            : localplayer.playerclass;
-
-        var p = new Entities.PlayerState { Number = players.Count };
-        players.Add(p);
-        if (gamemode == GameMode.Single)
-            SetGameMode(GameMode.Coop);
-
-        var at = localplayer.Pawn;
-        using (ActAs(p))
-        {
-            StartPlayer(playerClass);
-            _mapManager.CreatePlayer(p);
-            var taken = _mapManager.Players.Where(pawn => pawn != p.Pawn).Select(pawn => ((int)pawn.TileX, (int)pawn.TileY)).ToList();
-            var (x, y) = at != null ? FreeTileNear(at.TileX, at.TileY, taken) ?? (at.TileX, at.TileY) : (1, 1);
-            SpawnPlayer(x, y, at?.Angle ?? 0);
-        }
-        ConnectAreas();
-
-        _consoleManager.Print($"Player {p.Number + 1} ({playerClass}) is at {p.Pawn!.TileX},{p.Pawn.TileY}; "
-            + $"{players.Count} players, {gamemode.ToString().ToLowerInvariant()}");
-    }
-
-    /// <summary>`gamemode [coop|deathmatch]`: how the players here play together (with more than one)</summary>
-    static void Cmd_GameMode(string[] args)
-    {
-        if (args.Length > 0)
-        {
-            if (players.Count < 2)
-                throw new ArgumentException("there's only one player: addplayer first");
-            SetGameMode(args[0].ToLowerInvariant() switch
-            {
-                "coop" => GameMode.Coop,
-                "deathmatch" or "dm" => GameMode.Deathmatch,
-                _ => throw new ArgumentException("usage: gamemode [coop|deathmatch [fraglimit]]"),
-            });
-            if (gamemode == GameMode.Deathmatch && args.Length > 1 && int.TryParse(args[1], out var fragLimit))
-                netrules = netrules with { FragLimit = Math.Max(fragLimit, 0) };
-            matchover = false;
-        }
-        _consoleManager.Print($"Game mode: {gamemode.ToString().ToLowerInvariant()}, {players.Count} player(s)");
-    }
-
-    /// <summary>`controlplayer &lt;n&gt;`: your view, status bar and controls become player n's</summary>
-    static void Cmd_ControlPlayer(string[] args)
-    {
-        if (args.Length == 0 || !int.TryParse(args[0], out var n) || n < 1 || n > players.Count)
-            throw new ArgumentException($"usage: controlplayer <1-{players.Count}>");
-
-        localplayer.PendingCmd = default;   // the one left behind stands still
-        consoleplayer = n - 1;
-        SetActing(localplayer);
-        camera.FollowPlayer();
-        if (viewsize != 21)
-            DrawPlayScreen();
-        _consoleManager.Print($"You're player {n} ({localplayer.playerclass})");
-    }
+    internal const int MAXPLAYERS = PlayerCommands.MAXPLAYERS;
 
     //
     // The acting player's state, under the names the game has always used for it

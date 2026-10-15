@@ -119,15 +119,10 @@ internal partial class Program
         Register("spectate", "Watches through another actor's eyes while you play on: the next or previous enemy (default next), the next of a class, or back to the player. Not saved; each level starts on the player.",
             "spectate [next|prev|player|<class>]", Cmd_Spectate, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["next", "prev", "player", .. SpectateCandidates().Select(a => a.Name).Distinct()] : []);
-        Register("addplayer", $"Adds a co-op player beside you, who stands still until you take them over with controlplayer (up to {MAXPLAYERS}; testing without the network).",
-            "addplayer [class]", Cmd_AddPlayer, Cheat | InLevel, complete: (_, i) => i == 0 ? PlayerClasses() : []);
+        playerCommands.Register();      // addplayer, controlplayer, gamemode (Commands/PlayerCommands.cs)
         Register("playercolor", "Shows a player (default: you) in a color (a translation, as game-info player-colors offers); none for their class's own.",
             "playercolor <color|none> [n]", Cmd_PlayerColor, Cheat | InLevel,
             complete: (_, i) => i == 0 ? _translationManager.Names.Append("none") : []);
-        Register("controlplayer", "Makes another player yours: your view, status bar and controls.",
-            "controlplayer <n>", Cmd_ControlPlayer, Cheat | InLevel);
-        Register("gamemode", "Shows or sets how the players play together: co-op (keys shared, no friendly fire) or deathmatch.",
-            "gamemode [coop|deathmatch [fraglimit]]", Cmd_GameMode, Cheat | InLevel, complete: (_, i) => i == 0 ? ["coop", "deathmatch"] : []);
 
         //
         // debugging aids and information

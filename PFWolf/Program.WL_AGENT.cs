@@ -212,4 +212,5 @@ internal partial class Program
             new PlayerThinkHooks(UpdateRadar, () => victoryRunning, InitAreas));
 
     internal static void T_Player(Entities.Actors.Actor ob) => playerThink.T_Player(ob);
-    internal static void SpawnPlayer(int tilex, int tiley, int angle) => playerThink.SpawnPlayer(tilex, tiley, angle);}
+    internal static void SpawnPlayer(int tilex, int tiley, int angle) => playerThink.SpawnPlayer(tilex, tiley, angle);
+}
