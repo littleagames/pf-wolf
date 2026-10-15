@@ -276,6 +276,8 @@ internal partial class Program
         netPlay = MakeNetPlay();
         netOverlay = MakeNetOverlay();
         gameScripts = MakeGameScripts();
+        levelMusic = new LevelMusic(_gameEngineManager, _audioManager, session);
+        playKeys = MakePlayKeys();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,

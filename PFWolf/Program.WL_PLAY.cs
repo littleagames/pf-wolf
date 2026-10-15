@@ -12,8 +12,6 @@ internal partial class Program
 
     internal static playstatetypes playstate;
 
-    static string lastmusicchunk = "";
-
     internal static int DebugOk;
 
     // The acting player's pawn and controls, and this frame's tics (Gameplay/GameSession.cs)
@@ -65,18 +63,17 @@ internal partial class Program
     internal static bool IsInputActive(InputCode code) => inputPolling.IsInputActive(code);
     static List<InputCode> TakeFreshPresses() => inputPolling.TakeFreshPresses();
     static int WheelNotches(InputCode code) => inputPolling.WheelNotches(code);
+
     // The mouse look and controller settings (Configuration/ControlSettings.cs)
     internal static readonly ControlSettings controlSettings = new();
     internal static bool mouselook { get => controlSettings.mouselook; set => controlSettings.mouselook = value; }
     internal static bool mouseinvert { get => controlSettings.mouseinvert; set => controlSettings.mouseinvert = value; }
-
 
     internal static int joydeadzone { get => controlSettings.joydeadzone; set => controlSettings.joydeadzone = value; }
     internal static int joyturnspeed { get => controlSettings.joyturnspeed; set => controlSettings.joyturnspeed = value; }
     internal static bool joyclassicsticks { get => controlSettings.joyclassicsticks; set => controlSettings.joyclassicsticks = value; }
 
     internal const int JOYTURNSPEEDS = ControlSettings.JOYTURNSPEEDS;
-
 
     static int lastgamemusicoffset = 0;
 
@@ -88,34 +85,24 @@ internal partial class Program
     =============================================================================
     */
 
-    internal static void StartMusic()
-    {
-        //_audioManager.SetPaused(true);
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        var song = gameInfo.Maps[gamestate.mapon].Music;
-        lastmusicchunk = song;
-        if (!string.IsNullOrEmpty(song))        // a map with no music keeps quiet
-            _audioManager.PlayMusic(lastmusicchunk);
-    }
+    // The level's song (Gameplay/LevelMusic.cs)
+    static LevelMusic levelMusic = null!;       // made in InitServices
 
-    // Music offsets aren't tracked, so this resumes the level's song if it's the one paused, and
-    // otherwise (after the menu or a loaded game replaced it) starts it over.
-    internal static void ContinueMusic(int offs)
-    {
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        var song = gameInfo.Maps[gamestate.mapon].Music;
-        lastmusicchunk = song;
-        if (string.Equals(_audioManager.CurrentMusicTrack, song, StringComparison.OrdinalIgnoreCase))
-            _audioManager.SetPaused(false);
-        else if (!string.IsNullOrEmpty(song))
-            _audioManager.PlayMusic(song);
-    }
+    internal static void StartMusic() => levelMusic.StartMusic();
+    internal static void ContinueMusic(int offs) => levelMusic.ContinueMusic(offs);
+    internal static int StopMusic() => levelMusic.StopMusic();
 
-    internal static int StopMusic()
-    {
-        _audioManager.SetPaused(true);
-        return 0;
-    }
+    // The keys during play (Ui/PlayKeys.cs)
+    static PlayKeys playKeys = null!;       // made in InitServices
+
+    static PlayKeys MakePlayKeys() => new(_assetManager, _videoManager, _inputManager, _audioManager, _graphicManager, _gameEngineManager,
+        _consoleManager, _automapManager, _inventoryManager, menuDrawing, inputPolling, statusBarDrawing, playerWeapons, playerClassRules,
+        levelMusic, frameRefresh, session,
+        new PlayKeysHooks(() => demoplayback, () => demorecord, () => netgame, () => netChatting, NetChatKeys, NetCheckKeys,
+            ToggleAutomap, HandleAutomapKey, () => viewsize, DrawPlayBorder, DrawPlayBorderSides, () => DebugOk = 1,
+            US_ControlPanel, DrawPlayScreen, () => startgame, () => loadedgame, s => playstate = s));
+
+    internal static void CheckKeys() => playKeys.CheckKeys();
 
     static int funnyticount;
 
@@ -268,195 +255,6 @@ internal partial class Program
         //
         foreach (var p in players.Where(p => !p.Gone))     // not anyone who has left the game
             _mapManager.CreatePlayer(p);
-    }
-
-    internal static void CheckKeys()
-    {
-        var language = _assetManager.GetText("en-us");
-        ScanCodes scan;
-
-        if (_videoManager.screenfaded || demoplayback)    // don't do anything with a faded screen
-        {
-            while (_inputManager.TryTakePressedKey(out _)) { }     // nor fire binds for these keys later
-            return;
-        }
-
-        //
-        // command console: it only opens from here, so it's never up during a blocking menu or
-        // screen with nothing drawing it. Once open, InputManager routes all keys to it.
-        //
-        if (_consoleManager.IsOpen)
-            return;
-
-        // Typing something to say to the others: the keys are the line's (Program.NetPlay.cs)
-        if (netChatting)
-        {
-            NetChatKeys();
-            return;
-        }
-
-        if (_inputManager.IsKeyDown(ScanCodes.sc_Grave) && !demorecord)
-        {
-            _inputManager.ClearKeysDown();
-            _inputManager.ClearTextInput();
-            _automapManager.Close();
-            _consoleManager.Open();
-            return;
-        }
-
-        //
-        // automap
-        //
-        if (_inputManager.IsButtonPressed(buttontypes.bt_automap) && !_inputManager.IsButtonHeld(buttontypes.bt_automap))
-            ToggleAutomap();
-
-        //
-        // console binds: run the command bound to each key or button pressed since the last
-        // frame (never while recording, or the demo wouldn't match what was played)
-        //
-        var pressedInputs = new List<InputCode>();
-        while (_inputManager.TryTakePressedKey(out var pressed))
-            pressedInputs.Add(InputCode.FromKey(pressed));
-        pressedInputs.AddRange(TakeFreshPresses());
-
-        foreach (var input in pressedInputs)
-        {
-            if (HandleAutomapKey(input))        // the automap's own keys, while it's open
-                continue;
-
-            if (!demorecord && _consoleManager.Binds.TryGetValue(input, out var boundCommand))
-                _consoleManager.Execute(boundCommand);
-        }
-
-        scan = _inputManager.GetLastKeyPressed();
-
-        // With others: no cheat keys, no pausing and no menus over the game; Esc asks to leave
-        if (netgame)
-        {
-            NetCheckKeys(scan);
-            return;
-        }
-
-        //
-        // SECRET CHEAT CODE: 'MLI'
-        //
-        if (_inputManager.IsKeyDown(ScanCodes.sc_M) && _inputManager.IsKeyDown(ScanCodes.sc_L) && _inputManager.IsKeyDown(ScanCodes.sc_I))
-        {
-            playerstate.health = MaxHealth;
-            _inventoryManager.Give("GoldKey", 1);
-            _inventoryManager.Give("SilverKey", 1);
-            playerstate.score = 0;
-            gamestate.TimeCount += (int)42000L;
-            // the best weapon there is (the gatling gun)
-            if (AllWeapons().OrderBy(WeaponSelectionOrder).FirstOrDefault() is { } bestWeapon)
-                GiveWeapon(bestWeapon);
-            GiveAllAmmo(99);
-            DrawWeapon();
-            DrawHealth();
-            DrawKeys();
-            DrawAmmo();
-            DrawScore();
-
-            ClearMemory();
-
-            Message("$STR_CHEATER1".ToLanguageText(language) + "\n" +
-                    "$STR_CHEATER2".ToLanguageText(language) + "\n\n" +
-                    "$STR_CHEATER3".ToLanguageText(language) + "\n" +
-                    "$STR_CHEATER4".ToLanguageText(language) + "\n" +
-                    "$STR_CHEATER5".ToLanguageText(language), MAXY);
-
-            _inputManager.ClearKeysDown();
-            _inputManager.Ack();
-
-            if (viewsize < 17)
-                DrawPlayBorder();
-        }
-
-        //
-        // OPEN UP DEBUG KEYS
-        //
-        if (_inputManager.IsKeyDown(ScanCodes.sc_BackSpace) && _inputManager.IsKeyDown(ScanCodes.sc_LShift) && _inputManager.IsKeyDown(ScanCodes.sc_Alt))
-        {
-            ClearMemory();
-
-            Message("Cheat commands are\nnow available!\nPress ` for the console.", MAXY);
-            _inputManager.ClearKeysDown();
-            _inputManager.Ack();
-
-            DrawPlayBorderSides();
-            DebugOk = 1;
-        }
-
-        //
-        // TRYING THE KEEN CHEAT CODE!
-        //
-        if (_inputManager.IsKeyDown(ScanCodes.sc_B) && _inputManager.IsKeyDown(ScanCodes.sc_A) && _inputManager.IsKeyDown(ScanCodes.sc_T))
-        {
-            ClearMemory();
-
-            Message("Commander Keen is also\n" +
-                        "available from Apogee, but\n" +
-                        "then, you already know\n" +
-                        "that - right, Cheatmeister?!", MAXY);
-
-            _inputManager.ClearKeysDown();
-            _inputManager.Ack();
-
-            if (viewsize < 18)
-                DrawPlayBorder();
-        }
-
-        //
-        // pause key weirdness can't be checked as a scan code
-        //
-        if (_inputManager.IsButtonPressed(buttontypes.bt_pause))
-            _gameEngineManager.SetPaused(true);
-        if (_gameEngineManager.IsPaused())
-        {
-            int lastoffs = StopMusic();
-            _graphicManager.DrawPic("paused", 16 * 8, 80 - 2 * 8);
-            _videoManager.Update();
-            _inputManager.Ack();
-            _gameEngineManager.SetPaused(false);
-            ContinueMusic(lastoffs);
-            _inputManager.CenterMouse();
-            lasttimecount = (int)GameEngineManager.GetTimeCount();
-            return;
-        }
-        if (scan == ScanCodes.sc_F10 ||
-            scan == ScanCodes.sc_F9 || scan == ScanCodes.sc_F7 || scan == ScanCodes.sc_F8)     // pop up quit dialog
-        {
-            _automapManager.Close();
-            ClearMemory();
-            US_ControlPanel(scan);
-
-            DrawPlayBorderSides();
-
-            _inputManager.ClearKeysDown();
-            return;
-        }
-
-        if ((scan >= ScanCodes.sc_F1 && scan <= ScanCodes.sc_F9) || scan == ScanCodes.sc_Escape || _inputManager.IsButtonPressed(buttontypes.bt_esc))
-        {
-            int lastoffs = StopMusic();
-            _automapManager.Close();
-            ClearMemory();
-            _videoManager.FadeOut();
-
-            US_ControlPanel(_inputManager.IsButtonPressed(buttontypes.bt_esc) ? ScanCodes.sc_Escape : scan);
-
-            _inputManager.ClearKeysDown();
-            _videoManager.FadeOut();
-            if (viewsize != 21)
-                DrawPlayScreen();
-            if (!startgame && !loadedgame)
-                ContinueMusic(lastoffs);
-            if (loadedgame)
-                playstate = playstatetypes.ex_abort;
-            lasttimecount = (int)GameEngineManager.GetTimeCount();
-            _inputManager.CenterMouse();
-            return;
-        }
     }
 
 
