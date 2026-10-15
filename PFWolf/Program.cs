@@ -241,6 +241,7 @@ internal partial class Program
         hubs = new Hubs(_gameEngineManager, _mapManager, session);
         projectileActions = MakeProjectileActions();
         statusBarDrawing = MakeStatusBarDrawing();
+        deathmatch = MakeDeathmatch();
         playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);
         playerWeapons = MakePlayerWeapons();
         playerStats = MakePlayerStats();
@@ -255,6 +256,7 @@ internal partial class Program
         pickups = MakePickups();
         playerThink = MakePlayerThink();
         playersManager = MakePlayers();
+        scoreboard = MakeScoreboard();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
