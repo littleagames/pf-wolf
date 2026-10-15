@@ -133,78 +133,40 @@ internal partial class Program
         _mapManager.RemoveActor(builtActor);
     }
 
-    /// <summary>
-    /// Whether the player class may pick up an item: not when it's in the item's
-    /// `inventory.forbiddento`, or the item has an `inventory.restrictedto` it isn't in, or it's a
-    /// weapon or ammo outside the class's `player.weapons`. A class counts as in a list that names
-    /// it or a class it descends from.
-    /// </summary>
-    internal static bool PlayerClassCanPickUp(string item)
-    {
-        // A list of classes, or one class on its own; null when the item doesn't say
-        string[]? Classes(string key) => _inventoryManager.GetProperty(item, key) switch
-        {
-            string one => [one],
-            IEnumerable<object> list => list.Select(c => c.ToString() ?? "").ToArray(),
-            _ => null,
-        };
-        bool In(string[] classes) => _inventoryManager.FindClass(PlayerClass, classes) != null;
+    // The player classes' rules (Gameplay/PlayerClassRules.cs) and the acting player's health,
+    // armor, lives, score and loadout (Gameplay/PlayerStats.cs)
+    static PlayerClassRules playerClassRules = null!;   // made in InitServices
+    static PlayerStats playerStats = null!;
 
-        if (Classes("inventory.forbiddento") is { } forbidden && In(forbidden))
-            return false;
-        if (!PlayerClassUsesItem(item))
-            return false;
-        return Classes("inventory.restrictedto") is not { } restricted || In(restricted);
-    }
+    static PlayerStats MakePlayerStats() =>
+        new(_gameEngineManager, _assetManager, _videoManager, _inventoryManager, statusBarDrawing, playerClassRules, playerWeapons, session,
+            new PlayerStatsHooks(() => godmode, () => demoplayback || demorecord, () => viewsize == 21,
+                () => CurrentSkill.DamageTaken, () => playstate = playstatetypes.ex_died, PlayerDies, PlayPlayerSound));
 
-    /// <summary>
-    /// Gives the player <paramref name="amount"/> of <paramref name="item"/>. Returns false
-    /// when nothing could be taken, so the pickup should be left where it is.
-    /// </summary>
-    /// <summary>Whether giving the item would do anything now (a health item, unless health is full); without giving it</summary>
-    internal static bool CouldTakeInventory(Inventory item)
-    {
-        if (item is not Entities.Actors.Health)
-            return true;
-        int itemMax = _inventoryManager.GetIntProperty(item.Name, "inventory.maxamount", 0);
-        int cap = itemMax > 0 ? Math.Min(itemMax, MaxHealth) : MaxHealth;
-        return playerstate.health < cap;
-    }
+    private const string BasePlayerClass = PlayerClassRules.BasePlayerClass;
+    private static string PlayerClass => playerstate.playerclass;
+    internal static bool PlayerClassCanPickUp(string item) => playerClassRules.PlayerClassCanPickUp(item);
+    internal static List<string> PlayerClasses() => playerClassRules.PlayerClasses();
+    internal static string DefaultPlayerClass => playerClassRules.DefaultPlayerClass;
+    internal static string? FindPlayerClass(string name) => playerClassRules.FindPlayerClass(name);
+    private static double PlayerFactor(string key) => playerClassRules.PlayerFactor(key);
+    internal static double DamageDealt => playerClassRules.DamageDealt;
+    internal static short StartingHealth => playerClassRules.StartingHealth;
+    internal static short StartingLives => playerClassRules.StartingLives;
+    internal static short MaxHealth => playerClassRules.MaxHealth;
+    internal static int StandingEyeZ(Entities.PlayerState p) => playerClassRules.StandingEyeZ(p);
 
-    internal static bool TryApplyInventory(Inventory item, int amount)
-    {
-        switch (item)
-        {
-            case Entities.Actors.Health:
-            {
-                // A health item's inventory.maxamount is the most it heals to (Wolf3D's blood and
-                // gibs only help when nearly dead); 0 is up to the player's max health
-                int itemMax = _inventoryManager.GetIntProperty(item.Name, "inventory.maxamount", 0);
-                int cap = itemMax > 0 ? Math.Min(itemMax, MaxHealth) : MaxHealth;
-                if (playerstate.health >= cap)
-                    return false;
-                HealSelf(amount, cap);
-                return true;
-            }
-            case Entities.Actors.Ammo:
-                return GiveAmmo(item.Name, amount) > 0;
-            case Entities.Actors.BasicArmor:
-                return TryGiveArmor(item.Name);
-            case Entities.Actors.Weapon weapon:
-                return TryGiveWeapon(weapon);
-            case Entities.Actors.Key:
-                if (_inventoryManager.Give(item.Name, amount) == 0)
-                    return false;
-                DrawKeys();
-                return true;
-            case Entities.Actors.ScoreItem:
-                GivePoints(amount);
-                return true;
-            default:
-                return true;
-        }
-    }
-
+    static void GrinAtPickup(Inventory item, string? pickupSound) => playerStats.GrinAtPickup(item, pickupSound);
+    internal static void UpdateFace() => playerStats.UpdateFace();
+    internal static void TakeDamage(int points, Entities.Actors.Actor attacker) => playerStats.TakeDamage(points, attacker);
+    internal static bool TryGiveArmor(string armorClass) => playerStats.TryGiveArmor(armorClass);
+    internal static void HealSelf(int points, int? upTo = null) => playerStats.HealSelf(points, upTo);
+    static void GiveExtraMan() => playerStats.GiveExtraMan();
+    internal static int ExtraLifeScore => playerStats.ExtraLifeScore;
+    internal static void GivePoints(int points) => playerStats.GivePoints(points);
+    internal static void GiveStartingInventory() => playerStats.GiveStartingInventory();
+    internal static bool CouldTakeInventory(Inventory item) => playerStats.CouldTakeInventory(item);
+    internal static bool TryApplyInventory(Inventory item, int amount) => playerStats.TryApplyInventory(item, amount);
     /// <summary>
     /// Registers the C# handlers for the actor-state `action:` names authored in actordefs
     /// YAML. Called once at startup (see Main). Names with no handler here (e.g. the weapon
@@ -346,337 +308,6 @@ internal partial class Program
     static bool TakeCharge() => playerWeapons.TakeCharge();
     static void TickWeaponCharge() => playerWeapons.TickWeaponCharge();
     static void DrawCharge() => playerWeapons.DrawCharge();
-
-    /// <summary>
-    /// Starts the grin if the item, or the weapon it gives, is flagged WEAPON.ALWAYSGRIN: the
-    /// status bar's face grin shows while the item's pickup sound plays.
-    /// </summary>
-    static void GrinAtPickup(Inventory item, string? pickupSound)
-    {
-        const string AlwaysGrin = "WEAPON.ALWAYSGRIN";
-        var given = item.Properties.TryGetValue("weapongiver.weapon", out var weapon) ? weapon?.ToString() : null;
-        if (string.IsNullOrEmpty(pickupSound)
-            || !(item.Flags.Contains(AlwaysGrin, StringComparer.OrdinalIgnoreCase)
-                || given != null && _inventoryManager.CreateActor(given)?.Flags.Contains(AlwaysGrin, StringComparer.OrdinalIgnoreCase) == true))
-            return;
-
-        grinsound = pickupSound;
-        facetimes = 38;     // how long demos hold it, as they can't depend on the sound playing
-        facecount = 0;
-        DrawFace();
-    }
-
-    /*
-    ===============
-    =
-    = UpdateFace
-    =
-    = Calls draw face if time to change
-    =
-    ===============
-    */
-
-    internal static void UpdateFace()
-    {
-        // don't make demo depend on sound playback, nor a game every player's machine plays alike
-        if (demoplayback || demorecord || gamemode != GameMode.Single)
-        {
-            if (facetimes > 0)
-            {
-                facetimes--;
-                return;
-            }
-        }
-        else if (Grinning)
-            return;
-
-        facecount += (int)tics;
-        if (facecount > US_RndT())
-        {
-            playerstate.faceframe = (short)(US_RndT() >> 6);
-            if (playerstate.faceframe == 3)
-                playerstate.faceframe = 1;
-
-            facecount = 0;
-            DrawFace();
-        }
-    }
-
-    /*
-    ===============
-    =
-    = TakeDamage
-    =
-    ===============
-    */
-
-    // LastAttacker feeds Died()'s swing-around-to-face-the-killer (Program.WL_GAME.cs) and the
-    // needle-death face in DrawFace. Every attacker -- enemies (Entities.Actors.Monster) and
-    // projectiles (Program.WL_ACT2.cs) -- is an Entities.Actors.Actor now.
-    internal static void TakeDamage(int points, Entities.Actors.Actor attacker)
-    {
-        LastAttacker = attacker;
-        ApplyDamageToPlayer(points);
-    }
-
-    private static void ApplyDamageToPlayer(int points)
-    {
-        if (gamestate.victoryflag)
-            return;
-        // With others playing, a dead player lies there until they come back (T_PlayerDead)
-        if (gamemode != GameMode.Single && playerstate.health <= 0)
-            return;
-        // The skill's damage-taken (the easiest skill's 0.25 is vanilla's points >> 2), then the class's
-        points = (int)(points * Math.Max(CurrentSkill.DamageTaken, 0) * DamageTakenFactor);
-
-        if (godmode == 0)
-        {
-            // Armor takes its share of the hit off its points, as far as they go
-            int saved = Math.Min(points * playerstate.armorpercent / 100, playerstate.armor);
-            playerstate.armor -= (short)saved;
-            if (playerstate.armor == 0)
-                playerstate.armorpercent = 0;
-            points -= saved;
-
-            playerstate.health -= (short)points;
-        }
-
-        // How others see it (their body's Pain or Pain1, as an enemy's by its health left)
-        if (points > 0 && playerstate.health > 0)
-        {
-            playerstate.PainTics = 10;
-            playerstate.PainAlt = (playerstate.health & 1) == 0;
-        }
-
-        if (playerstate.health <= 0)
-        {
-            playerstate.health = 0;
-            if (gamemode == GameMode.Single)
-                playstate = playstatetypes.ex_died;     // Died(): the level starts again
-            else
-                PlayerDies();                           // the rest play on (Program.Players.cs)
-        }
-
-        if (godmode != 2 && ActingIsLocal)
-            _videoManager.StartDamageFlash(points);
-
-        DrawHealth();
-        DrawArmor();
-        DrawFace();
-
-        // A heavy hit makes BJ wince (Spear of Destiny); demos rely on the face's count restarting.
-        // Vanilla only restarted it with the status bar showing; here it always does, so how a
-        // demo plays doesn't depend on the view size.
-        if (StatusBar.Get("face") is { Ouch.Length: > 0 } face && points > face.OuchDamage
-            && playerstate.health != 0 && godmode == 0 && _assetManager.Exists<Assets.GraphicAsset>(face.Ouch))
-        {
-            if (viewsize != 21 && ActingIsLocal)
-                StatusDrawFace(face.Ouch);
-            facecount = 0;
-        }
-    }
-
-    /// <summary>The most health the player can have: the Player class's `player.maxhealth` (Wolf3D's 100 when left out)</summary>
-    internal static short MaxHealth => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.maxhealth", 100), 1, short.MaxValue);
-
-    /// <summary>The most lives the player can have: the Player class's `player.maxlives` (Wolf3D's 9 when left out)</summary>
-    internal static short MaxLives => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.maxlives", 9), 0, short.MaxValue);
-
-    /// <summary>The most armor points the player can have: the Player class's `player.maxarmor` (no cap but the armor's own when left out)</summary>
-    internal static short MaxArmor => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.maxarmor", short.MaxValue), 0, short.MaxValue);
-
-    /// <summary>
-    /// Puts on a BasicArmor class (native.yaml): an armor replaces the player's when it has more
-    /// points; a bonus (armor.maxsaveamount) adds to it. False when it would change nothing.
-    /// </summary>
-    internal static bool TryGiveArmor(string armorClass)
-    {
-        int amount = _inventoryManager.GetIntProperty(armorClass, "armor.saveamount", 0);
-        short percent = (short)Math.Clamp(_inventoryManager.GetIntProperty(armorClass, "armor.savepercent", 0), 0, 100);
-
-        if (_inventoryManager.GetProperty(armorClass, "armor.maxsaveamount") != null)
-        {
-            int cap = Math.Min(_inventoryManager.GetIntProperty(armorClass, "armor.maxsaveamount", 0), MaxArmor);
-            if (playerstate.armor >= cap || amount <= 0)
-                return false;
-            if (playerstate.armor == 0)
-                playerstate.armorpercent = percent;
-            playerstate.armor = (short)Math.Min(playerstate.armor + amount, cap);
-        }
-        else
-        {
-            amount = Math.Min(amount, MaxArmor);
-            if (playerstate.armor >= amount)
-                return false;
-            playerstate.armor = (short)amount;
-            playerstate.armorpercent = percent;
-        }
-
-        DrawArmor();
-        return true;
-    }
-
-    /// <summary>Heals the player by <paramref name="points"/>, up to <paramref name="upTo"/> (their max health when null)</summary>
-    internal static void HealSelf(int points, int? upTo = null)
-    {
-        int cap = Math.Min(upTo ?? MaxHealth, MaxHealth);
-        playerstate.health = (short)Math.Min(playerstate.health + points, Math.Max(cap, playerstate.health));
-
-        DrawHealth();
-        DrawFace();
-    }
-
-    /*
-    ===============
-    =
-    = GiveExtraMan
-    =
-    ===============
-    */
-
-    static void GiveExtraMan()
-    {
-        if (playerstate.lives < MaxLives)
-            playerstate.lives++;
-        DrawLives();
-        if (StatusBar.Get("lives")?.Sound is { Length: > 0 } sound)
-            PlayPlayerSound(sound);
-    }
-
-    /*
-    ===============
-    =
-    = GivePoints
-    =
-    ===============
-    */
-
-    /// <summary>The score between extra lives (game-info extra-life-score); 0 for none</summary>
-    internal static int ExtraLifeScore => Math.Max(_gameEngineManager.GetGameInfo().ExtraLifeScore, 0);
-
-    internal static void GivePoints(int points)
-    {
-        playerstate.score += points;
-        while (ExtraLifeScore > 0 && playerstate.score >= playerstate.nextextra)
-        {
-            playerstate.nextextra += ExtraLifeScore;
-            GiveExtraMan();
-        }
-        DrawScore();
-    }
-/*
-==================
-=
-= GiveWeapon
-=
-==================
-*/
-
-    // The base player class (actordefs/wolf3d/player.yaml); every player class is it or descends from it
-    private const string BasePlayerClass = "Player";
-
-    // The class being played as, for its `player.*` properties (inherited from Player where it
-    // leaves them out)
-    private static string PlayerClass => playerstate.playerclass;
-
-    /// <summary>The classes a new game can be played as: game-info's player-classes, else just Player</summary>
-    internal static List<string> PlayerClasses()
-    {
-        var classes = _gameEngineManager.GetGameInfo().PlayerClasses.Keys
-            .Select(name => (Name: name, Class: FindPlayerClass(name)))
-            .Where(c =>
-            {
-                if (c.Class == null)
-                    Console.WriteLine($"game-info player-classes: '{c.Name}' isn't Player or an actordefs class with Player as a parent");
-                return c.Class != null;
-            })
-            .Select(c => c.Class!)
-            .ToList();
-        return classes.Count > 0 ? classes : [BasePlayerClass];
-    }
-
-    /// <summary>The class a new game is played as when none is picked: the first in game-info's player-classes</summary>
-    internal static string DefaultPlayerClass => PlayerClasses()[0];
-
-    /// <summary>A player class's exact actordefs spelling, or null if the name isn't Player or a class descended from it</summary>
-    internal static string? FindPlayerClass(string name) =>
-        string.Equals(name, BasePlayerClass, StringComparison.OrdinalIgnoreCase)
-            ? BasePlayerClass
-            : _inventoryManager.FindClass(name, BasePlayerClass);
-
-    /// <summary>A factor from the player class (e.g. `player.damagedealt`), 1 when left out; never below 0</summary>
-    private static double PlayerFactor(string key) =>
-        _inventoryManager.GetProperty(PlayerClass, key) is { } value
-        && double.TryParse(value.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var factor)
-            ? Math.Max(factor, 0)
-            : 1;
-
-    /// <summary>How much of the damage their weapons would do the player deals: the class's `player.damagedealt`</summary>
-    internal static double DamageDealt => PlayerFactor("player.damagedealt");
-
-    /// <summary>How much of the damage they're dealt the player takes, before the skill's: the class's `player.damagetaken`</summary>
-    internal static double DamageTakenFactor => PlayerFactor("player.damagetaken");
-
-    /// <summary>A new game's and a respawn's health: the Player class's `player.starthealth` (Wolf3D's 100 when left out)</summary>
-    internal static short StartingHealth => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.starthealth", 100), 1, short.MaxValue);
-
-    /// <summary>A new game's lives: the Player class's `player.startlives` (Wolf3D's 3 when left out)</summary>
-    internal static short StartingLives => (short)Math.Clamp(_inventoryManager.GetIntProperty(PlayerClass, "player.startlives", 3), 0, short.MaxValue);
-
-    /// <summary>How high a player's eyes are standing, in texels: their class's `player.eyeheight` (EYEDEFAULT when left out)</summary>
-    internal static int StandingEyeZ(Entities.PlayerState p) =>
-        Math.Clamp(_inventoryManager.GetIntProperty(p.playerclass, "player.eyeheight", EYEDEFAULT), MINEYE, MAXEYE);
-
-    /// <summary>
-    /// Whether the class may pick up a weapon or ammo: with a `player.weapons` list, only the
-    /// weapons in it (or descended from them) and the ammo they use. Anything else, and every
-    /// item for a class without the list, may be.
-    /// </summary>
-    static bool PlayerClassUsesItem(string item)
-    {
-        if (_inventoryManager.GetProperty(PlayerClass, "player.weapons") is not { } property)
-            return true;
-        string[] weapons = property switch
-        {
-            IEnumerable<object> list => list.Select(w => w.ToString() ?? "").ToArray(),
-            _ => [property.ToString() ?? ""],
-        };
-
-        if (_inventoryManager.FindClass(item, "Weapon") != null)
-            return _inventoryManager.FindClass(item, weapons) != null;
-        if (_inventoryManager.FindClass(item, "Ammo") != null)
-            return weapons.Any(w => _inventoryManager.GetIntProperty(w, "weapon.ammouse1", 0) > 0     // the knife's Clip isn't used
-                && _inventoryManager.GetStringProperty(w, "weapon.ammotype1") is { Length: > 0 } ammo
-                && (_inventoryManager.FindClass(item, ammo) != null || _inventoryManager.GetItemType(ammo) == _inventoryManager.GetItemType(item)));
-        return true;
-    }
-
-    /// <summary>
-    /// New game / respawn loadout: the Player class's `player.startitem` (item: amount), with
-    /// the best weapon in it selected.
-    /// </summary>
-    internal static void GiveStartingInventory()
-    {
-        _inventoryManager.Clear();
-        playerstate.armor = playerstate.armorpercent = 0;
-
-        if (_inventoryManager.GetProperty(PlayerClass, "player.startitem") is IDictionary<object, object> items)
-        {
-            foreach (var (item, amount) in items)
-            {
-                // Armor isn't held: it's put on (the amount doesn't matter)
-                if (_inventoryManager.FindClass(item.ToString() ?? "", "BasicArmor") is { } armor)
-                    TryGiveArmor(armor);
-                else
-                    _inventoryManager.Give(item.ToString() ?? "", Convert.ToInt32(amount));
-            }
-        }
-        else
-            Console.WriteLine($"No player.startitem on actordefs class {PlayerClass}: the player starts with nothing.");
-
-        playerstate.weapon = playerstate.chosenweapon = BestWeapon();
-    }
-
 
     /// <summary>
     /// Runs a mapdefs trigger's action. If it goes off, a secret trigger counts as found, and the

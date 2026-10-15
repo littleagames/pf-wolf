@@ -241,7 +241,9 @@ internal partial class Program
         hubs = new Hubs(_gameEngineManager, _mapManager, session);
         projectileActions = MakeProjectileActions();
         statusBarDrawing = MakeStatusBarDrawing();
+        playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);
         playerWeapons = MakePlayerWeapons();
+        playerStats = MakePlayerStats();
         playerMovement = MakePlayerMovement();
         playerAttacks = MakePlayerAttacks();
         weaponInHand = MakeWeaponInHand();
