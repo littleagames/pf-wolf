@@ -55,31 +55,4 @@ internal partial class Program
         new HubActionsHooks(change => pendingMapChange = change, s => playstate = s, PlaySoundLocActor));
 
     internal static bool victoryRunning { get => hubActions.victoryRunning; set => hubActions.victoryRunning = value; }
-
-    /*
-    =============================================================================
-
-                                LEVEL START MESSAGE
-
-    =============================================================================
-    */
-
-    /// <summary>
-    /// game-info's level-start-message in presenter.yaml's message box as the level comes up
-    /// (Blake Stone's "Get Ready, Blake!"), in place of the "get psyched" picture
-    /// </summary>
-    internal static void ShowLevelStartMessage(string script)
-    {
-        DrawPlayScreen();       // the new level's bars, then the view blacked out under the message
-        _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaAndStatusLine, "0");
-        using (_videoManager.UseUiOriginAboveBottom(STATUSLINES))
-            PresenterMessageBox(script.Replace("\\r", "\r").Replace("\n", "\r\n"));
-        _videoManager.Update();
-        if (_videoManager.screenfaded)
-            _videoManager.FadeIn();
-        _inputManager.UserInput(35);
-        _videoManager.FadeOut();
-        DrawPlayScreen();
-        _videoManager.Update();
-    }
 }

@@ -7,17 +7,18 @@ namespace PFWolf.Ui;
 /// <param name="ViewSize">The view's size setting (21: the full screen, no border)</param>
 /// <param name="InGame">Whether a level is being played (a full screen view hides the radar then)</param>
 /// <param name="BorderColor">The view border's color (Change View sets another)</param>
-/// <param name="ShowLevelStartMessage">A game's level start message in place of "get psyched" (Blake Stone)</param>
+/// <param name="PresenterMessageBox">Shows a presenter.yaml message box script (Ui/TextPresenter.cs)</param>
 internal sealed record PlayScreenHooks(
     Func<int> ViewSize,
     Func<bool> InGame,
     Func<string> BorderColor,
-    Action<string> ShowLevelStartMessage);
+    Action<string> PresenterMessageBox);
 
 /// <summary>
 /// The screen around the view: the status bar with everything on it (DrawPlayScreen), the view's
 /// border (DrawPlayBorder, DrawPlayBorderSides, DrawStatusBorder), the level's name as the player
-/// sees it (GetMapDisplayName), and the "get psyched" screen a level starts behind (PreloadGraphics).
+/// sees it (GetMapDisplayName), and the "get psyched" screen a level starts behind (PreloadGraphics), or a
+/// game's level start message in its place (ShowLevelStartMessage).
 /// </summary>
 internal sealed class PlayScreen(
     AssetManager assets,
@@ -234,7 +235,7 @@ internal sealed class PlayScreen(
         // A game with a level start message (Blake Stone) shows it instead of "get psyched"
         if (engine.GetGameInfo().LevelStartMessage is { Length: > 0 } message)
         {
-            hooks.ShowLevelStartMessage(message);
+            ShowLevelStartMessage(message);
             return;
         }
 
@@ -258,6 +259,25 @@ internal sealed class PlayScreen(
         video.FadeOut();
 
         DrawPlayBorder();
+        video.Update();
+    }
+
+    /// <summary>
+    /// game-info's level-start-message in presenter.yaml's message box as the level comes up
+    /// (Blake Stone's "Get Ready, Blake!"), in place of the "get psyched" picture
+    /// </summary>
+    internal void ShowLevelStartMessage(string script)
+    {
+        DrawPlayScreen();       // the new level's bars, then the view blacked out under the message
+        video.BarScaledCoord(0, Program.PlayAreaTop, video.screenWidth, Program.PlayAreaAndStatusLine, "0");
+        using (video.UseUiOriginAboveBottom(Program.STATUSLINES))
+            hooks.PresenterMessageBox(script.Replace("\\r", "\r").Replace("\n", "\r\n"));
+        video.Update();
+        if (video.screenfaded)
+            video.FadeIn();
+        input.UserInput(35);
+        video.FadeOut();
+        DrawPlayScreen();
         video.Update();
     }
 }

@@ -57,13 +57,14 @@ internal partial class Program
 
     static PlayScreen MakePlayScreen() => new(_assetManager, _gameEngineManager, _videoManager, _graphicManager, _inputManager,
         statusBarDrawing, playerWeapons, radar, render,
-        new PlayScreenHooks(() => viewsize, () => ingame, () => bordercol, ShowLevelStartMessage));
+        new PlayScreenHooks(() => viewsize, () => ingame, () => bordercol, PresenterMessageBox));
 
     internal static void DrawPlayScreen() => playScreen.DrawPlayScreen();
     internal static void DrawPlayBorder() => playScreen.DrawPlayBorder();
     internal static void DrawPlayBorderSides() => playScreen.DrawPlayBorderSides();
     internal static void DrawStatusBorder(string color) => playScreen.DrawStatusBorder(color);
     internal static string GetMapDisplayName(string mapon) => playScreen.GetMapDisplayName(mapon);
+    internal static void ShowLevelStartMessage(string script) => playScreen.ShowLevelStartMessage(script);
 
     // Setting up a level to play (Gameplay/LevelSetup.cs)
     static LevelSetup levelSetup = null!;       // made in InitServices
