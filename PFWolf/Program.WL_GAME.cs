@@ -52,6 +52,13 @@ internal partial class Program
     internal static bool RecordPendingDemo() => demos.RecordPendingDemo();
     internal static void RecordDemo(int level, int? demonumber = null) => demos.RecordDemo(level, demonumber);
 
+    // playdemo, demotest and recorddemo (Commands/DemoCommands.cs)
+    static DemoCommands demoCommands = null!;       // made in InitServices
+
+    /// <summary>Set while demotest runs: demos play without waiting, and each prints its report as it ends</summary>
+    internal static bool demoTesting { get => demoCommands.demoTesting; set => demoCommands.demoTesting = value; }
+    internal static string DemoTestReport(int demonumber) => demoCommands.DemoTestReport(demonumber);
+
     // The screen around the view: status bar, border and "get psyched" (Ui/PlayScreen.cs)
     static PlayScreen playScreen = null!;       // made in InitServices
 

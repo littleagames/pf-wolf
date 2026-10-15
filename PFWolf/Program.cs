@@ -292,6 +292,8 @@ internal partial class Program
             new SaveCommandsHooks(on => loadedgame = on, s => playstate = s));
         midGameJoin = MakeMidGameJoin();
         demos = MakeDemos();
+        demoCommands = new DemoCommands(_consoleManager, _mapManager, demos, demoBuffer, session,
+            new DemoCommandsHooks(() => ingame, s => playstate = s));
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
