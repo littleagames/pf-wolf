@@ -242,6 +242,7 @@ internal partial class Program
         projectileActions = MakeProjectileActions();
         lighting = MakeLighting();
         actorLights = MakeActorLights();
+        playerView = MakePlayerView();
         statusBarDrawing = MakeStatusBarDrawing();
         deathmatch = MakeDeathmatch();
         playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);
