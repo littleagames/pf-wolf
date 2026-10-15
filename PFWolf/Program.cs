@@ -246,6 +246,7 @@ internal partial class Program
         weather = MakeWeather();
         spriteScaler = MakeSpriteScaler();
         wallSpriteDrawing = MakeWallSpriteDrawing();
+        skyAndFlats = MakeSkyAndFlats();
         playerView = MakePlayerView();
         statusBarDrawing = MakeStatusBarDrawing();
         deathmatch = MakeDeathmatch();
