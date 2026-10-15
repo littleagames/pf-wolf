@@ -11,10 +11,9 @@ namespace PFWolf;
 
 internal partial class Program
 {
-
     /// <summary>
-    /// Registers the in-game console's commands. Commands that need Program's game state live
-    /// here so they can reach it directly, the same way the actor actions do.
+    /// Registers the in-game console's commands: each group in Commands/ registers its own, and a few
+    /// that belong to their screens or systems are registered here.
     /// </summary>
     internal static void RegisterConsoleCommands()
     {
@@ -79,14 +78,9 @@ internal partial class Program
 
     internal static bool TryTeleportPlayer(int x, int y, int? angle, out string problem) => cheatCommands.TryTeleportPlayer(x, y, angle, out problem);
     static void GiveAllKeys() => cheatCommands.GiveAllKeys();
+
     // What commands act on, and how they describe it (Commands/ConsoleTargets.cs)
     static ConsoleTargets consoleTargets = null!;       // made in InitServices
-
-    static (int x, int y) TileArg(string[] args, int index) => consoleTargets.TileArg(args, index);
-    static List<Entities.Actors.Monster> ChosenActors(string? className) => consoleTargets.ChosenActors(className);
-    static string WallSpriteDescription(Entities.Actors.Actor actor) => consoleTargets.WallSpriteDescription(actor);
-    static string DescribePatch(int patch) => consoleTargets.DescribePatch(patch);
-    static string DescribeZone(int zone) => consoleTargets.DescribeZone(zone);
 
     static void Register(string name, string help, string usage, Action<string[]> run,
         ConsoleCommandFlags flags = ConsoleCommandFlags.None, string[]? aliases = null, ConsoleCompleter? complete = null) =>
@@ -101,22 +95,4 @@ internal partial class Program
 
     /// <summary>The mouse look and controller settings as console commands, for saving to controls.cfg.</summary>
     internal static IEnumerable<string> GetControllerSettingCommands() => controlSettings.SettingCommands();
-
-    /*
-    =============================================================================
-
-                                    CHEATS
-
-    =============================================================================
-    */
-
-    /*
-    =============================================================================
-
-                            DEBUGGING AIDS AND INFORMATION
-
-    =============================================================================
-    */
-
-
 }
