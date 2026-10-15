@@ -1664,6 +1664,30 @@ internal class VideoManager
         }
     }
 
+    /// <summary>The title bar and taskbar icon: the embedded icons/pfwolf-64.png</summary>
+    private void SetWindowIcon()
+    {
+        using var stream = typeof(VideoManager).Assembly.GetManifestResourceStream("pfwolf-icon.png");
+        if (stream == null)
+            return;
+        using var bytes = new MemoryStream();
+        stream.CopyTo(bytes);
+        var image = PFWolf.Loaders.ImageDecoder.Decode(bytes.ToArray());
+        unsafe
+        {
+            fixed (byte* pixels = image.Pixels)
+            {
+                // ABGR8888 is R, G, B, A in memory on little-endian machines
+                var surface = SDL.SDL_CreateRGBSurfaceWithFormatFrom((IntPtr)pixels, image.Width, image.Height,
+                    32, image.Width * 4, SDL.SDL_PIXELFORMAT_ABGR8888);
+                if (surface == IntPtr.Zero)
+                    return;
+                SDL.SDL_SetWindowIcon(window, surface);
+                SDL.SDL_FreeSurface(surface);
+            }
+        }
+    }
+
     private void InitializeSDLVideo(VideoSettings settings)
     {
         var title = _assetManager.Value.GetGameTitle();
@@ -1681,6 +1705,7 @@ internal class VideoManager
         if (window == IntPtr.Zero)
             throw new PfWolfVideoException("Unable to create the window: {0}", SDL.SDL_GetError());
 
+        SetWindowIcon();
         SDL.SDL_ShowCursor(SDL.SDL_DISABLE);
 
         Array.Copy(gamepal, curpal, 256);

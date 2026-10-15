@@ -17,7 +17,13 @@
     <Authors>Andrew McCauley</Authors>
     <Company>Little A Games</Company>
     <Copyright>Copyright (c) 2026 Little A Games</Copyright>
+    <ApplicationIcon>..\icons\pfwolf-editor.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <!-- The window icon (App.axaml); the source art is icons/pfwolf-editor.svg -->
+  <ItemGroup>
+    <AvaloniaResource Include="..\icons\pfwolf-editor.ico" Link="Assets\pfwolf-editor.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.3" />

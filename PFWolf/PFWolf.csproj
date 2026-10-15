@@ -15,7 +15,12 @@
 	<Authors>Andrew McCauley</Authors>
 	<Company>Little A Games</Company>
 	<Copyright>Copyright (c) 2026 Little A Games</Copyright>
+	<ApplicationIcon>..\icons\pfwolf.ico</ApplicationIcon>
   </PropertyGroup>
+	<!-- The SDL window's icon (VideoManager.SetWindowIcon); the source art is icons/pfwolf.svg -->
+	<ItemGroup>
+		<EmbeddedResource Include="..\icons\pfwolf-64.png" LogicalName="pfwolf-icon.png" />
+	</ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="LiteNetLib" Version="2.1.4" />

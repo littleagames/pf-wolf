@@ -6,5 +6,9 @@
     <FluentTheme />
     <!-- AvaloniaEdit's code editor (the script browser's) -->
     <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
+    <!-- Every window, browsers and code-built dialogs too, wears the editor icon (icons/) -->
+    <Style Selector=":is(Window)">
+      <Setter Property="Icon" Value="/Assets/pfwolf-editor.ico" />
+    </Style>
   </Application.Styles>
 </Application>
