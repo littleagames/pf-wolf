@@ -252,6 +252,7 @@ internal partial class Program
         rayTrace = MakeRayTrace();
         spriteDrawing = MakeSpriteDrawing();
         playerView = MakePlayerView();
+        frameRefresh = MakeFrameRefresh();
         statusBarDrawing = MakeStatusBarDrawing();
         deathmatch = MakeDeathmatch();
         radar = MakeRadar();

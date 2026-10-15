@@ -1,0 +1,253 @@
+using SDL2;
+using System.Runtime.InteropServices;
+using PFWolf.Constants;
+
+namespace PFWolf.Rendering;
+
+/// <summary>What drawing a frame needs from the game</summary>
+/// <param name="FizzleIn">Whether this frame fades the level in (a new level, a restart)</param>
+/// <param name="ClearFizzleIn">The fade in is done</param>
+/// <param name="LevelFadeStyle">How a level fades in (game-info level-fade)</param>
+/// <param name="LevelFadeTics">How long that takes</param>
+/// <param name="RestoreBorderAfterConsole">Redraws the border the console covered, once it's shut</param>
+/// <param name="DrawAutomap">The automap, when it's open</param>
+/// <param name="DrawHudMessages">The HUD messages and info area</param>
+/// <param name="DrawNetOverlay">Waiting for someone, or asking whether to leave</param>
+/// <param name="DrawConsole">The console, when it's open</param>
+/// <param name="BorderColor">The view border's color (the fps counter sits on it)</param>
+/// <param name="ScreenshotPending">Whether the screenshot command asked for a shot</param>
+/// <param name="ClearScreenshotPending">The shot's been taken</param>
+/// <param name="TakeScreenshot">Saves the screen and says where it went</param>
+internal sealed record FrameRefreshHooks(
+    Func<bool> FizzleIn,
+    Action ClearFizzleIn,
+    Func<FadeStyle> LevelFadeStyle,
+    Func<int> LevelFadeTics,
+    Action RestoreBorderAfterConsole,
+    Action DrawAutomap,
+    Action DrawHudMessages,
+    Action DrawNetOverlay,
+    Action DrawConsole,
+    Func<string> BorderColor,
+    Func<bool> ScreenshotPending,
+    Action ClearScreenshotPending,
+    Func<string> TakeScreenshot);
+
+/// <summary>
+/// One frame of the 3D view: the tics since the last (CalcTics), the view from the camera
+/// (Setup3DView, with its pitch), then the lights, the floor and ceiling, the walls, the sprites
+/// and the weapon in hand, and over them the automap, messages, fps counter and console
+/// (ThreeDRefresh).
+/// </summary>
+internal sealed class FrameRefresh(
+    VideoManager video,
+    GraphicManager graphics,
+    MapManager map,
+    ConsoleManager console,
+    Lighting lighting,
+    ActorLights actorLights,
+    Weather weather,
+    SkyAndFlats skyAndFlats,
+    RayTrace rayTrace,
+    SpriteDrawing spriteDrawing,
+    PlayerView playerView,
+    RenderState render,
+    GameSession session,
+    FrameRefreshHooks hooks)
+{
+    internal int lasttimecount;
+    internal int frameon;
+    internal bool fpscounter = false;
+
+    internal int fps_frames = 0, fps_time = 0, fps = 0;
+
+    /*
+=====================
+=
+= CalcTics
+=
+=====================
+*/
+
+    internal void CalcTics()
+    {
+        //
+        // calculate tics since last refresh for adaptive timing
+        //
+        if (lasttimecount > (int)GameEngineManager.GetTimeCount())
+            lasttimecount = (int)GameEngineManager.GetTimeCount();    // if the game was paused a LONG time
+
+        uint curtime = SDL.SDL_GetTicks();
+        session.tics = (uint)((curtime * 7) / 100 - lasttimecount); // TODO: Rounding?
+        if (session.tics == 0)
+        {
+            // wait until end of current tic
+            GameEngineManager.DelayMs((uint)(((lasttimecount + 1) * 100) / 7 - curtime)); // TODO: Rounding error?
+            session.tics = 1;
+        }
+
+        lasttimecount += (int)session.tics;
+
+        if (session.tics > Program.MAXTICS)
+            session.tics = Program.MAXTICS;
+    }
+
+    /*
+    ====================
+    =
+    = Pitch (y-shearing)
+    =
+    = Looking up or down doesn't tilt the view: it moves the horizon (centery) down or up the
+    = screen, by as many pixels as the pitch's tangent at the projection's focal length (scale,
+    = in pixels). Walls stay upright, so everything draws as before, only measured from the
+    = moved horizon. It's kept on the screen, which limits how far the view can look.
+    =
+    ====================
+    */
+
+    /// <summary>The steepest pitch, in degrees, that keeps the horizon a row inside the view</summary>
+    internal double MaxPitch() =>
+        render.scale > 0 ? Math.Atan((render.basecentery - 1) / (double)render.scale) * 180 / Math.PI : 0;
+
+    internal void SetupPitch()
+    {
+        double max = MaxPitch();
+        render.viewpitch = Math.Clamp(render.viewpitch, -max, max);
+        int offset = (int)Math.Round(render.scale * Math.Tan(render.viewpitch * Math.PI / 180));
+        offset = Math.Clamp(offset, 1 - render.basecentery, render.basecentery - 1);
+        render.centery = (short)(render.basecentery + offset);
+    }
+
+    internal void Setup3DView()
+    {
+        var camera = session.camera;
+        render.viewangle = camera.Angle;
+        render.midangle = (short)(render.viewangle * (Program.FINEANGLES / Program.ANGLES));
+
+        render.viewpitch = camera.Pitch;
+        render.vieweyez = Math.Clamp(camera.EyeZ, Program.MINEYE, Program.MAXEYE);
+        SetupPitch();
+
+        render.viewsin = Program.sintable[render.viewangle];
+        render.viewcos = Program.costable[render.viewangle];
+
+        render.viewx = camera.X - MathUtils.FixedMul(render.focallength, render.viewcos);
+        render.viewy = camera.Y + MathUtils.FixedMul(render.focallength, render.viewsin);
+
+        render.focaltx = (short)(render.viewx >> (int)MapConstants.TILESHIFT);
+        render.focalty = (short)(render.viewy >> (int)MapConstants.TILESHIFT);
+
+        render.xpartialdown = (uint)(render.viewx & (MapConstants.TILEGLOBAL - 1));
+        render.xpartialup = (uint)(render.xpartialdown ^ (MapConstants.TILEGLOBAL - 1));
+        render.ypartialdown = (uint)(render.viewy & (MapConstants.TILEGLOBAL - 1));
+        render.ypartialup = (uint)(render.ypartialdown ^ (MapConstants.TILEGLOBAL - 1));
+    }
+
+    internal void ThreeDRefresh()
+    {
+        var camera = session.camera;
+
+        // Create a Span<T> from the multidimensional array's data reference
+        Span<bool> data = MemoryMarshal.CreateSpan(
+            ref map.spotvis[0, 0], // Reference to the first element
+            map.spotvis.Length     // Total number of elements
+        );
+
+        // Fill the span with the value
+        data.Fill(false);
+
+        // Detect all sprites over camera fix. Demos need it too: Wolf4SDL 1.7c, which plays
+        // the games' own demos through, always had it (enemies beside the player stay seen)
+        if (map.tilemap[camera.TileX, camera.TileY] == 0 ||
+         (map.tilemap[camera.TileX, camera.TileY] & Program.BIT_DOOR) != 0)
+            map.spotvis[camera.TileX, camera.TileY] = true;
+
+
+        render.vbuf = 0;
+        render.vbufPtr = video.LockSurface();
+        if (render.vbufPtr == IntPtr.Zero) return;
+
+        render.vbuf += (int)render.screenofs;
+
+        Setup3DView();
+        lighting.UpdateLightGrid();
+        actorLights.CastActorLights();
+        map.AnimateFlats(session.gamestate.TimeCount);     // animated floors and ceilings, on the level's clock as walls are
+
+        //
+        // follow the walls from there to the right, drawing as we go
+        //
+        skyAndFlats.VGAClearScreen();
+
+        render.markseen = camera.OnPlayer;     // the automap only learns what the player sees
+        weather.SetupWeather();
+        rayTrace.WallRefresh();
+
+        if (render.markseen)
+            map.MarkSeenFromSpotvis();      // floor the rays crossed, for the automap
+
+        //
+        // draw all the scaled images
+        //
+        spriteDrawing.DrawScaleds();                  // draw scaled stuff
+        playerView.PlayerSight();                  // what the player sees, when the camera is elsewhere
+
+        spriteDrawing.DrawPlayerWeapon();    // draw player's hands
+
+        video.UnlockSurface();
+        render.vbuf = 0;
+
+        // For the next save's thumbnail, before the automap or console is drawn over the view
+        video.KeepViewCopy(render.viewscreenx, render.viewscreeny, render.viewwidth, render.viewheight);
+
+        //
+        // show screen and time last cycle
+        //
+
+        if (hooks.FizzleIn())
+        {
+            video.Transition(hooks.LevelFadeStyle(), 0, 0, video.screenWidth, video.screenHeight, (uint)hooks.LevelFadeTics());
+            hooks.ClearFizzleIn();
+
+            lasttimecount = (int)GameEngineManager.GetTimeCount();          // don't make a big tic count
+        }
+        else
+        {
+            hooks.RestoreBorderAfterConsole();
+
+            hooks.DrawAutomap();
+
+            hooks.DrawHudMessages();      // over the automap too, but not in the save thumbnail
+            hooks.DrawNetOverlay();       // waiting for someone, or asking whether to leave (Ui/NetOverlay.cs)
+
+            if (fpscounter)
+            {
+                video.Bar(0, 0, 40, 10, hooks.BorderColor());
+                graphics.DrawText(4, 1, $"{fps} fps", new Fonts.TextStyle(Program.SMALL_FONT, "Grey", "VIEWCOLOR"));
+            }
+
+            // Taken here, before the console is drawn, so it never shows in the shot.
+            if (hooks.ScreenshotPending())
+            {
+                hooks.ClearScreenshotPending();
+                console.Print(hooks.TakeScreenshot());
+            }
+
+            hooks.DrawConsole();
+            video.Update();
+        }
+
+        if (fpscounter)
+        {
+            fps_frames++;
+            fps_time += (int)session.tics;
+
+            if (fps_time > 35)
+            {
+                fps_time -= 35;
+                fps = fps_frames << 1;
+                fps_frames = 0;
+            }
+        }
+    }
+}

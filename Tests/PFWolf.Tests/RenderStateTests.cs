@@ -26,15 +26,15 @@ public class RenderStateTests
     public void Program_Reads_And_Writes_The_Same_State()
     {
         // The renderer's old names are Program's forwards onto its one RenderState
-        int before = Program.render.pixx;
+        int before = Program.render.viewx;
         try
         {
-            Program.render.pixx = 123;
-            Assert.That(Program.pixx, Is.EqualTo(123));
+            Program.render.viewx = 123;
+            Assert.That(Program.viewx, Is.EqualTo(123));
         }
         finally
         {
-            Program.render.pixx = before;
+            Program.render.viewx = before;
         }
     }
 }
