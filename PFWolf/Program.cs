@@ -251,6 +251,8 @@ internal partial class Program
         spriteDrawing = MakeSpriteDrawing();
         playerBodies = new PlayerBodies(_assetManager, _mapManager, _inventoryManager, spriteDrawing, session);
         playerView = MakePlayerView();
+        levelEditCommands = new LevelEditCommands(_consoleManager, _assetManager, _mapManager, lighting, actorLights, weather, skyAndFlats, render,
+            consoleTargets, session);
         frameRefresh = MakeFrameRefresh();
         inputPolling = MakeInputPolling();
         automapInput = MakeAutomapInput();

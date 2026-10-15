@@ -1,0 +1,282 @@
+using PFWolf.Assets;
+using static PFWolf.Commands.ConsoleArgs;
+
+namespace PFWolf.Commands;
+
+/// <summary>
+/// Changing the level as it's played, from the console (not saved): its wall height, sky,
+/// weather, fog and light, the light zones, and a tile's height, tag, patch and flats
+/// </summary>
+internal sealed class LevelEditCommands(
+    ConsoleManager console,
+    AssetManager assets,
+    MapManager map,
+    Lighting lighting,
+    ActorLights actorLights,
+    Weather weather,
+    SkyAndFlats skyAndFlats,
+    RenderState render,
+    ConsoleTargets targets,
+    GameSession session)
+{
+    internal void Register()
+    {
+        console.Register("wallheight", "How many stories tall the level's walls are, until the level is left or reloaded.",
+            $"wallheight [1-{Program.MAXWALLSTORIES}]", Cmd_WallHeight, Cheat | InLevel);
+        console.Register("sky", "Draws a graphic (or wall texture) as the level's sky, until the level is left or reloaded; none for the ceiling color.",
+            "sky [name|none]", Cmd_Sky, InLevel);
+        console.Register("weather", "Makes it rain or snow (a game-info weather-types name, or rain, heavy-rain, snow or blizzard) until the level is left or reloaded; none for clear weather.",
+            "weather [name|none]", Cmd_Weather, InLevel,
+            complete: (_, i) => i == 0 ? weather.WeatherTypes().Keys.Append("none") : []);
+        console.Register("fog", "Fades the view toward a color with distance, from start to end tiles away, up to max percent, until the level is left or reloaded; none for no shading.",
+            "fog [#RRGGBB|none] [start] [end] [max 0-100]", Cmd_Fog, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? ["none", "#000000", "#707070"] : []);
+        console.Register("light", "Sets the level's light, 0 (black) to 255 (full), until the level is left or reloaded.",
+            "light [0-255]", Cmd_Light, Cheat | InLevel);
+        console.Register("lights", "Lists the actors giving off light (actordefs light.*, A_SetLight), and their light now.",
+            "lights", Cmd_Lights, InLevel);
+        console.Register("zone", "Shows or sets the light zone (plane 5) of the tile you stand on, a tile, or a rectangle of tiles; 0 takes them out of any zone.",
+            "zone [0-65535 [tilex tiley [tilex2 tiley2]]]", Cmd_Zone, Cheat | InLevel);
+        console.Register("zonelight", "Lists the level's light zones, or shows or sets how one is lit (light 0-255, optional #RRGGBB tint or none, optional fade tics; none as the light removes the zone).",
+            "zonelight [zone [0-255|none] [#RRGGBB|none] [tics]]", Cmd_ZoneLight, Cheat | InLevel);
+        console.Register("zoneeffect", "Makes a light zone flicker, pulse or strobe (none stops it), down to low, timed in tics (70 a second).",
+            "zoneeffect <zone> <none|flicker|pulse|strobe> [low 0-255] [tics] [bright-tics]", Cmd_ZoneEffect, Cheat | InLevel,
+            complete: (_, i) => i == 1 ? ["none", "flicker", "pulse", "strobe"] : []);
+        console.Register("height","Sets how many stories tall a tile's wall is (default: the one you face); 0 uses the level's height. On open floor, 2 or more makes an arch.",
+            $"height <0-{Program.MAXWALLSTORIES}> [tilex tiley]", Cmd_Height, Cheat | InLevel);
+        console.Register("tag", "Shows or sets a tile's tag on the tag plane (default: the one you face), and the tag of any actors on it; 0 clears it.",
+            "tag [0-65535 [tilex tiley]]", Cmd_Tag, Cheat | InLevel);
+        console.Register("patch", "Shows or sets the patch (mapdefs patches) on a wall tile (default: the one you face); 0 takes it off.",
+            "patch [0-255 [tilex tiley]]", Cmd_Patch, Cheat | InLevel,
+            complete: (_, i) => i == 0 ? map.GetMapData().Patches.Keys.Order().Select(id => id.ToString()) : []);
+        console.Register("flat", "Sets a tile's floor and ceiling flat indices (mapdefs flats) on the flat plane (default: the tile you stand on).",
+            "flat <floor 0-255> <ceiling 0-255> [tilex tiley]", Cmd_Flat, Cheat | InLevel);
+        console.Register("flats", "Sets the level's default floor and ceiling textures, for tiles the flat plane doesn't give one (not saved).",
+            "flats [floor|none] [ceiling|none]", Cmd_Flats, InLevel);
+    }
+    internal void Cmd_Height(string[] args)
+    {
+        if (args.Length == 0)
+            throw new ArgumentException($"usage: height <0-{Program.MAXWALLSTORIES}> [tilex tiley]");
+
+        int stories = ParseInt(args[0], 0, Program.MAXWALLSTORIES);
+        var (x, y) = targets.TileArg(args, 1);
+
+        map.SetWallStories(x, y, stories);
+        console.Print(stories == 0
+            ? $"Tile {x},{y} is back to the level's height ({render.wallstories})"
+            : $"Tile {x},{y} is now {stories} {(stories == 1 ? "story" : "stories")} tall");
+    }
+
+    internal void Cmd_Tag(string[] args)
+    {
+        if (args.Length is 2 or > 3)
+            throw new ArgumentException("usage: tag [0-65535 [tilex tiley]]");
+
+        var (x, y) = targets.TileArg(args, 1);
+        // The actors standing on the tile (not the player), which keep the tag they spawned with
+        var actors = map.GetActors()
+            .Where(a => a is not Entities.Actors.PlayerPawn && !a.IsRemoved && a.TileX == x && a.TileY == y)
+            .ToList();
+
+        if (args.Length > 0)
+        {
+            var tag = (ushort)ParseInt(args[0], 0, ushort.MaxValue);
+            map.SetTag(x, y, tag);
+            foreach (var actor in actors)
+                actor.Tag = tag;
+        }
+
+        var tagged = actors.Count == 0 ? ""
+            : "  actors: " + string.Join(", ", actors.Select(a => $"{a.Name} {a.Tag}"));
+        console.Print($"Tile {x},{y}: tag {map.GetTag(x, y)}{tagged}");
+    }
+
+    internal void Cmd_Patch(string[] args)
+    {
+        if (args.Length is 2 or > 3)
+            throw new ArgumentException("usage: patch [0-255 [tilex tiley]]");
+
+        var (x, y) = targets.TileArg(args, 1);
+        if (args.Length > 0)
+        {
+            var patch = (byte)ParseInt(args[0], 0, 255);
+            int tile = map.tilemap[x, y];
+            if (patch != 0 && ((tile & Program.BIT_DOOR) != 0 || (tile & ~Program.BIT_WALL) == 0))
+                throw new ArgumentException($"Tile {x},{y} isn't a wall: patches go on walls only");
+            map.SetPatch(x, y, patch);
+        }
+
+        console.Print($"Tile {x},{y}: {targets.DescribePatch(map.GetPatch(x, y))}");
+    }
+
+    internal void Cmd_Flat(string[] args)
+    {
+        if (args.Length < 2)
+            throw new ArgumentException("usage: flat <floor 0-255> <ceiling 0-255> [tilex tiley]");
+
+        int floor = ParseInt(args[0], 0, 255), ceiling = ParseInt(args[1], 0, 255);
+        var (x, y) = args.Length >= 4 ? targets.TileArg(args, 2) : (session.player.TileX, session.player.TileY);
+
+        map.SetFlats(x, y, (ushort)(floor | ceiling << 8));
+        console.Print($"Tile {x},{y}: floor {map.FlatName(x, y, false)}, ceiling {map.FlatName(x, y, true)}");
+    }
+
+    internal void Cmd_Flats(string[] args)
+    {
+        string? Texture(int i)
+        {
+            if (args[i].Equals("none", StringComparison.OrdinalIgnoreCase))
+                return null;
+            if (assets.Find<TextureAsset>(args[i]) == null)
+                throw new ArgumentException($"no texture named {args[i]}");
+            return args[i];
+        }
+
+        if (args.Length > 0)
+            map.BuildFlats(Texture(0), args.Length > 1 ? Texture(1) : map.DefaultCeiling);
+        console.Print($"Default floor: {map.DefaultFloor ?? "(color)"}  ceiling: {map.DefaultCeiling ?? "(color)"}");
+    }
+
+    internal void Cmd_Zone(string[] args)
+    {
+        if (args.Length is 2 or 4 or > 5)
+            throw new ArgumentException("usage: zone [0-65535 [tilex tiley [tilex2 tiley2]]]");
+
+        // the tile stood on, one given, or a rectangle between two
+        var (x1, y1) = args.Length >= 3 ? targets.TileArg(args, 1) : (session.player.TileX, session.player.TileY);
+        var (x2, y2) = args.Length == 5 ? targets.TileArg(args, 3) : (x1, y1);
+        if (args.Length > 0)
+        {
+            var zone = (ushort)ParseInt(args[0], 0, ushort.MaxValue);
+            for (int y = Math.Min(y1, y2); y <= Math.Max(y1, y2); y++)
+                for (int x = Math.Min(x1, x2); x <= Math.Max(x1, x2); x++)
+                    map.SetZone(x, y, zone);
+        }
+
+        int shown = map.GetZone(x1, y1);
+        var tiles = (x1, y1) == (x2, y2) ? $"Tile {x1},{y1}" : $"Tiles {x1},{y1} to {x2},{y2}";
+        console.Print($"{tiles}: zone {shown} ({targets.DescribeZone(shown)})");
+    }
+
+    internal void Cmd_ZoneLight(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            if (lighting.levelzones.Count == 0)
+                console.Print("The level has no light zones");
+            foreach (var id in lighting.levelzones.Keys.Order())
+                console.Print($"Zone {id}: {targets.DescribeZone(id)}");
+            return;
+        }
+
+        int zone = ParseInt(args[0], 1, ushort.MaxValue);
+        if (args.Length > 1)
+        {
+            if (args[1].Equals("none", StringComparison.OrdinalIgnoreCase))
+                lighting.RemoveZone(zone);
+            else
+            {
+                int light = ParseInt(args[1], 0, 255);
+                if (args.Length > 2)
+                {
+                    if (args[2].Equals("none", StringComparison.OrdinalIgnoreCase))
+                        lighting.SetZoneColor(zone, null);
+                    else if (Lighting.IsRgb(args[2]))
+                        lighting.SetZoneColor(zone, args[2]);
+                    else
+                        throw new ArgumentException($"expected a #RRGGBB color or none, got \"{args[2]}\"");
+                }
+                lighting.FadeZoneLight(zone, light, args.Length > 3 ? ParseInt(args[3], 0, 7000) : 0);
+            }
+        }
+        console.Print($"Zone {zone}: {targets.DescribeZone(zone)}");
+    }
+
+    internal void Cmd_Lights(string[] args)
+    {
+        var lights = actorLights.DescribeActorLights().ToList();
+        if (lights.Count == 0)
+            console.Print("Nothing on the level gives off light");
+        foreach (var line in lights)
+            console.Print(line);
+        if (lights.Count > 0 && !lighting.shading)
+            console.Print("(the level is at full light, so they don't show)");
+    }
+
+    internal void Cmd_ZoneEffect(string[] args)
+    {
+        if (args.Length < 2 || !Lighting.TryParseZoneEffect(args[1], out var effect))
+            throw new ArgumentException("usage: zoneeffect <zone> <none|flicker|pulse|strobe> [low 0-255] [tics] [bright-tics]");
+
+        int zone = ParseInt(args[0], 1, ushort.MaxValue);
+        var state = lighting.ZoneFor(zone);
+        if (args.Length > 2) state.LowSetting = ParseInt(args[2], 0, 255);
+        if (args.Length > 3) state.TicsSetting = ParseInt(args[3], 1, 7000);
+        if (args.Length > 4) state.BrightTics = ParseInt(args[4], 0, 7000);
+        lighting.SetZoneEffect(zone, effect);
+        console.Print($"Zone {zone}: {targets.DescribeZone(zone)}");
+    }
+
+    internal void Cmd_WallHeight(string[] args)
+    {
+        if (args.Length > 0)
+            render.wallstories = ParseInt(args[0], 1, Program.MAXWALLSTORIES);
+        console.Print($"Walls are {render.wallstories} {(render.wallstories == 1 ? "story" : "stories")} tall");
+    }
+
+    internal void Cmd_Sky(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            var name = args[0].Equals("none", StringComparison.OrdinalIgnoreCase) ? null : args[0];
+            if (name != null && assets.Find<GraphicAsset>(name) == null && assets.Find<TextureAsset>(name) == null)
+                throw new ArgumentException($"no graphic or texture named {name}");
+            skyAndFlats.levelsky = name;
+        }
+        console.Print(skyAndFlats.levelsky == null ? "No sky: the ceiling is a color" : $"Sky: {skyAndFlats.levelsky}");
+    }
+
+    internal void Cmd_Weather(string[] args)
+    {
+        if (args.Length > 0)
+        {
+            if (!args[0].Equals("none", StringComparison.OrdinalIgnoreCase) && !weather.WeatherTypes().ContainsKey(args[0]))
+                throw new ArgumentException($"no weather named {args[0]}");
+            weather.SetWeather(args[0]);
+        }
+        console.Print(weather.levelweather == null ? "No weather" : $"Weather: {weather.levelweathername}");
+    }
+
+    // The level's shading, or what shading starts from when it has none
+    internal ShadingSettings CurrentShading => lighting.levelshading ?? new ShadingSettings("#000000", 0, 16, 0, 255);
+
+    internal void Cmd_Fog(string[] args)
+    {
+        if (args.Length > 0 && args[0].Equals("none", StringComparison.OrdinalIgnoreCase))
+            lighting.SetShading(null);
+        else if (args.Length > 0)
+        {
+            var color = args[0];
+            try { Entities.Color.FromHexRGBA(color); }
+            catch (Exception) { throw new ArgumentException($"expected a #RRGGBB color, got \"{color}\""); }
+
+            var s = CurrentShading with { FadeColor = color, MaxFade = 100 };
+            if (args.Length > 1) s = s with { FadeStart = ParseTiles(args[1]) };
+            if (args.Length > 2) s = s with { FadeEnd = ParseTiles(args[2]) };
+            if (args.Length > 3) s = s with { MaxFade = ParseInt(args[3], 0, 100) };
+            lighting.SetShading(s);
+        }
+
+        console.Print(lighting.levelshading is { MaxFade: > 0 } f
+            ? $"Fog: {f.FadeColor} from {f.FadeStart} to {f.FadeEnd} tiles, up to {f.MaxFade}%"
+            : "No fog");
+    }
+
+    internal void Cmd_Light(string[] args)
+    {
+        if (args.Length > 0)
+            lighting.SetShading(CurrentShading with { Light = ParseInt(args[0], 0, 255) });
+        console.Print($"Light: {lighting.levelshading?.Light ?? 255}");
+    }
+}
