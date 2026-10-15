@@ -74,24 +74,12 @@ internal partial class Program
         Register("summon", "Spawns an actor on an open tile (default: the one you face), facing an angle (default: back at you).",
             "summon <class> [angle] [tilex tiley]", Cmd_Summon, Cheat | InLevel,
             complete: (_, i) => i == 0 ? _assetManager.GetActorMetadata().Actors.Keys : i == 1 ? ["0", "45", "90", "135", "180", "225", "270", "315"] : []);
-        Register("factions", "Lists the factions (factions.yaml), how each treats the others, and who's on each in the level.",
-            "factions", Cmd_Factions);
-        Register("setfaction", "Puts the nearest living enemy, or every actor of a class, on a faction (for trying factions out).",
-            "setfaction <faction> [class]", Cmd_SetFaction, Cheat | InLevel,
-            complete: (_, i) => i == 0 ? _factionManager.Table.Names : i == 1 ? _assetManager.GetActorMetadata().Actors.Keys : []);
-        Register("settranslation", "Draws the nearest living enemy, or every actor of a class, through a color translation (translations.yaml); none goes back to its own (or its faction's).",
-            "settranslation <translation|none> [class]", Cmd_SetTranslation, Cheat | InLevel,
-            complete: (_, i) => i == 0 ? _translationManager.Names.Append("none") : i == 1 ? _assetManager.GetActorMetadata().Actors.Keys : []);
-        Register("translations", "Lists the color translations (translations.yaml).", "translations",
-            _ => _consoleManager.Print(string.Join(", ", _translationManager.Names.DefaultIfEmpty("(none)"))));
+        factionCommands.Register();     // factions, setfaction, settranslation, translations, playercolor (Commands/FactionCommands.cs)
         levelEditCommands.Register();       // wallheight, sky, weather, fog, light(s), zone*, height, tag, patch, flat(s) (Commands/LevelEditCommands.cs)
         Register("spectate", "Watches through another actor's eyes while you play on: the next or previous enemy (default next), the next of a class, or back to the player. Not saved; each level starts on the player.",
             "spectate [next|prev|player|<class>]", Cmd_Spectate, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["next", "prev", "player", .. SpectateCandidates().Select(a => a.Name).Distinct()] : []);
         playerCommands.Register();      // addplayer, controlplayer, gamemode (Commands/PlayerCommands.cs)
-        Register("playercolor", "Shows a player (default: you) in a color (a translation, as game-info player-colors offers); none for their class's own.",
-            "playercolor <color|none> [n]", Cmd_PlayerColor, Cheat | InLevel,
-            complete: (_, i) => i == 0 ? _translationManager.Names.Append("none") : []);
 
         //
         // debugging aids and information
@@ -399,81 +387,6 @@ internal partial class Program
             throw new ArgumentException($"{className} can't be spawned");
 
         _consoleManager.Print($"Spawned {className} at {x},{y} facing {angle}{WallSpriteDescription(actor.Value)}");
-    }
-
-    private static void Cmd_Factions(string[] args)
-    {
-        var table = _factionManager.Table;
-
-        // Who's on what side in the level: the living players and enemies, by faction
-        var members = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        if (_mapManager.Player != null)
-        {
-            foreach (var actor in _mapManager.GetActors())
-            {
-                bool alive = actor is Entities.Actors.PlayerPawn pawn ? pawn.State.health > 0
-                    : actor is Entities.Actors.Monster && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE);
-                if (alive && !actor.IsRemoved && actor.Faction != null)
-                    members[actor.Faction] = members.GetValueOrDefault(actor.Faction) + 1;
-            }
-        }
-
-        var names = table.Names.Concat(members.Keys).Append(table.PlayerFaction).Append(table.MonsterFaction)
-            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        _consoleManager.Print($"Players are {table.PlayerFaction} and enemies {table.MonsterFaction} unless their class says otherwise"
-            + (table.Names.Count == 0 ? " (no factions.yaml)" : ""));
-        foreach (var faction in names)
-        {
-            var relations = names.Where(other => !other.Equals(faction, StringComparison.OrdinalIgnoreCase))
-                .Select(other => $"{other} {table.Relation(faction, other).ToString().ToLowerInvariant()}");
-            var shown = table.DisplayName(faction);
-            _consoleManager.Print($"  {faction}{(shown != faction ? $" ({shown})" : "")}: {members.GetValueOrDefault(faction)} in the level"
-                + (relations.Any() ? $"; {string.Join(", ", relations)}" : ""));
-        }
-    }
-
-    private static void Cmd_SetFaction(string[] args)
-    {
-        if (args.Length == 0)
-            throw new ArgumentException("usage: setfaction <faction> [class]");
-        var faction = args[0];
-        if (!_factionManager.Table.IsKnown(faction))
-            _consoleManager.Print($"{faction} isn't in factions.yaml; it's a side of its own");
-
-        var chosen = ChosenActors(args.Skip(1).FirstOrDefault());
-        foreach (var monster in chosen)
-            monster.SetFaction(faction);
-        _consoleManager.Print(chosen.Count == 1
-            ? $"{chosen[0].Name} at {chosen[0].TileX},{chosen[0].TileY} is now {faction}"
-            : $"{chosen.Count} {chosen[0].Name}s are now {faction}");
-    }
-
-    private static void Cmd_SetTranslation(string[] args)
-    {
-        if (args.Length == 0)
-            throw new ArgumentException("usage: settranslation <translation|none> [class]");
-        string? translation = args[0].Equals("none", StringComparison.OrdinalIgnoreCase) ? null : args[0];
-        if (translation != null && !_translationManager.Exists(translation))
-            throw new ArgumentException($"no translation {translation} in translations.yaml ({string.Join(", ", _translationManager.Names)})");
-
-        var chosen = ChosenActors(args.Skip(1).FirstOrDefault());
-        foreach (var monster in chosen)
-            monster.Translation = translation;
-        _consoleManager.Print($"{(chosen.Count == 1 ? $"{chosen[0].Name} at {chosen[0].TileX},{chosen[0].TileY} is" : $"{chosen.Count} {chosen[0].Name}s are")} "
-            + (translation == null ? "back to their own colors" : $"drawn through {translation}"));
-    }
-
-    private static void Cmd_PlayerColor(string[] args)
-    {
-        if (args.Length == 0)
-            throw new ArgumentException("usage: playercolor <color|none> [n]");
-        string? color = args[0].Equals("none", StringComparison.OrdinalIgnoreCase) ? null : args[0];
-        if (color != null && !_translationManager.Exists(color))
-            throw new ArgumentException($"no translation {color} in translations.yaml ({string.Join(", ", _translationManager.Names)})");
-        int n = args.Length > 1 ? ParseInt(args[1], 1, players.Count) : consoleplayer + 1;
-
-        players[n - 1].Color = color;
-        _consoleManager.Print($"Player {n} is {(color == null ? "in their class's own colors" : $"drawn in {color}")}");
     }
 
     private static void Cmd_KillAll(string[] args)

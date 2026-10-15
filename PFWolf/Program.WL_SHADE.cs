@@ -9,6 +9,7 @@ internal partial class Program
 
     // The level-editing console commands (Commands/LevelEditCommands.cs)
     static LevelEditCommands levelEditCommands = null!;     // made in InitServices
+    static FactionCommands factionCommands = null!;     // (Commands/FactionCommands.cs)
 
     static Lighting MakeLighting() =>
         new(_gameEngineManager, _videoManager, _mapManager,

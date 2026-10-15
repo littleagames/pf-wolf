@@ -253,6 +253,7 @@ internal partial class Program
         playerView = MakePlayerView();
         levelEditCommands = new LevelEditCommands(_consoleManager, _assetManager, _mapManager, lighting, actorLights, weather, skyAndFlats, render,
             consoleTargets, session);
+        factionCommands = new FactionCommands(_consoleManager, _assetManager, _mapManager, _factionManager, _translationManager, consoleTargets, session);
         frameRefresh = MakeFrameRefresh();
         inputPolling = MakeInputPolling();
         automapInput = MakeAutomapInput();
