@@ -220,6 +220,8 @@ internal partial class Program
         _translationManager = serviceProvider.GetRequiredService<TranslationManager>();
 
         ui = new UiText(_graphicManager, _fontManager);
+
+        debugScreens = new DebugScreens(_gameEngineManager, _videoManager, _inputManager, _mapManager, session);
         menuInput = new MenuInput(_inputManager, _audioManager, _gameEngineManager, () => mouseenabled, () => joystickenabled);
         menuDrawing = new MenuDrawing(_graphicManager, _videoManager, _assetManager, _fontManager, _gameEngineManager, ui, () => gameInfoSettings);
         menuLoop = new MenuLoop(menuDrawing, menuInput, _graphicManager, _videoManager, _inputManager, _audioManager, _assetManager);
