@@ -463,132 +463,17 @@ internal partial class Program
         //CA_LoadAllSounds();
     }
 
-    internal static void Died()
-    {
-        float fangle;
-        int dx, dy;
-        int iangle, curangle, clockwise, counter, change;
+    // A player's death, and the death cam (Gameplay/PlayerDeath.cs)
+    static PlayerDeath playerDeath = null!;     // made in InitServices
 
-        if (_videoManager.screenfaded)
-        {
-            ThreeDRefresh();
-            _videoManager.FadeIn();
-        }
+    static PlayerDeath MakePlayerDeath() => new(_assetManager, _gameEngineManager, _videoManager, _inputManager, _audioManager,
+        _inventoryManager, _hudMessageManager, _mapManager, ui, frameRefresh, render, playerClassRules, playerStats, playerWeapons,
+        statusBarDrawing, pushWalls, projectiles, playScreen, intermissionScreen, session,
+        new PlayerDeathHooks(() => gameInfoSettings, ShowObituary, DrawHudMessages, RestoreLevelStart, s => playstate = s,
+            () => viewsize, () => bordercol, () => fizzlein = true));
 
-        playerstate.weapon = null;                     // take away weapon
-        playerpitch = 0;                             // and face the attacker straight on
-        camera.FollowPlayer();                       // seen through their own eyes
-        if (_inventoryManager.GetStringProperty(PlayerClass, "deathsound") is { Length: > 0 } deathSound)
-            _audioManager.Play(deathSound);     // the Player class's deathsound
-        ShowObituary();
-
-        //
-        // swing around to face attacker
-        //
-        if (LastAttacker != null)
-        {
-            dx = LastAttacker.X - player.X;
-            dy = player.Y - LastAttacker.Y;
-
-            fangle = (float)Math.Atan2((float)dy, (float)dx);     // returns -pi to pi
-            if (fangle < 0)
-                fangle = (float)(M_PI * 2 + fangle);
-
-            iangle = (int)(fangle / (M_PI * 2) * ANGLES);
-        }
-        else
-        {
-            iangle = player.Angle + ANGLES / 2;
-            if (iangle >= ANGLES) iangle -= ANGLES;
-        }
-
-        if (player.Angle > iangle)
-        {
-            counter = player.Angle - iangle;
-            clockwise = ANGLES - player.Angle + iangle;
-        }
-        else
-        {
-            clockwise = iangle - player.Angle;
-            counter = player.Angle + ANGLES - iangle;
-        }
-
-        curangle = player.Angle;
-
-        //
-        // rotate the shorter way round, while the view drops (game-info death-drop-height)
-        //
-        bool rotateclockwise = clockwise < counter;
-        if (rotateclockwise && curangle > iangle)
-            curangle -= ANGLES;
-        else if (!rotateclockwise && curangle < iangle)
-            curangle += ANGLES;
-
-        int dropto = deathDropHeight ?? playereyez;
-        do
-        {
-            if (curangle != iangle)
-            {
-                change = rotateclockwise ? (int)(tics * deathTurnSpeed) : -(int)tics * deathTurnSpeed;
-                if (rotateclockwise ? curangle + change > iangle : curangle + change < iangle)
-                    change = iangle - curangle;
-
-                curangle += change;
-                player.Angle += (short)change;
-                if (player.Angle >= ANGLES)
-                    player.Angle -= ANGLES;
-                else if (player.Angle < 0)
-                    player.Angle += ANGLES;
-            }
-
-            if (playereyez > dropto)
-                playereyez = Math.Max(playereyez - (int)tics * deathDropSpeed, dropto);
-
-            ThreeDRefresh();
-            CalcTics();
-            _hudMessageManager.Tick((int)tics);
-        } while (curangle != iangle || playereyez > dropto);
-
-        //
-        // fade to red
-        //
-        _videoManager.FinishPaletteShifts();
-
-        _videoManager.BarScaledCoord(viewscreenx, viewscreeny, viewwidth, viewheight, deathFadeColor);
-        DrawHudMessages();      // the obituary stays up on the red, through the fade and the wait after it
-
-        _inputManager.ClearKeysDown();
-
-        _videoManager.Transition(deathFadeStyle, viewscreenx, viewscreeny, viewwidth, viewheight, (uint)deathFadeTics);
-
-        _inputManager.UserInput((uint)deathHoldTics);
-        _audioManager.WaitSoundDone();
-        ClearMemory();
-        playereyez = StandingEyeZ(playerstate);      // back on their feet for the restart
-
-        playerstate.lives--;
-
-        if (playerstate.lives > -1)
-        {
-            // Back as they came into the level (Blake Stone), or fresh with the starting items
-            if (!_gameEngineManager.GetGameInfo().DeathRestoresLevelStart || !RestoreLevelStart())
-            {
-                playerstate.health = StartingHealth;
-                GiveStartingInventory();
-            }
-            ClearPushWalls();
-            weaponSprite = null;            // the weapon in hand starts on its Ready state
-
-            if (viewsize != 21)
-            {
-                DrawKeys();
-                DrawWeapon();
-                DrawAmmo();
-                DrawHealth();
-                DrawArmor();
-                DrawFace();
-                DrawLives();
-            }
-        }
-    }
+    internal static void Died() => playerDeath.Died();
+    internal static void A_StartDeathCam(Entities.Actors.Actor ob) => playerDeath.A_StartDeathCam(ob);
+    internal static void T_DeathCam(Entities.Actors.Actor ob) => playerDeath.T_DeathCam(ob);
+    static Entities.Actors.Actor? deathCamSprite => playerDeath.deathCamSprite;
 }

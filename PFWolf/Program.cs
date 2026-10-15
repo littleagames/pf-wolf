@@ -307,6 +307,7 @@ internal partial class Program
         changeViewScreen = new ChangeViewScreen(_assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop, menuInput, ui,
             new ChangeViewHooks(() => viewsize, ShowViewSize, NewViewSize, () => bordercol));
         optionsMenu = new OptionsMenu(_videoManager, _hudMessageManager, _automapManager, menuDrawing, menuLoop, menuInput, menuDefs);
+        playerDeath = MakePlayerDeath();
         newGameMenu = new NewGameMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, _graphicManager,
             menuDrawing, menuLoop, menuInput, menuDefs, textPresenter, () => ingame, StartNewGame);
         controlPanel = new ControlPanel(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop,
