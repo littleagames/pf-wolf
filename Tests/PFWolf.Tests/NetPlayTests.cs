@@ -1,0 +1,211 @@
+using PFWolf.Constants;
+using PFWolf.Entities.Actors;
+using PFWolf.Enums;
+using PFWolf.Networking;
+
+namespace PFWolf.Tests;
+
+public class NetPlayTests
+{
+    private const int Tile = 1 << MapConstants.TILESHIFT;
+
+    private MapManager _map = null!;
+    private Doors _doors = null!;
+    private PushWalls _pushWalls = null!;
+    private GameSession _game = null!;
+    private bool _netGame;
+    private int _areasConnected;
+
+    private NetPlay NetPlay() =>
+        new(_map, null!, null!, null!, _doors, _pushWalls, _game,
+            new NetPlayHooks(() => default, () => [], () => { }, () => { }, _ => { }, () => _areasConnected++, () => _netGame));
+
+    [SetUp]
+    public void MakeLevel()
+    {
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        {
+            tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+        };
+        _game = new GameSession();
+        _doors = new Doors(null!, null!, _map, null!, null!, _game, null!);
+        _pushWalls = new PushWalls(null!, null!, null!, () => false);
+        _netGame = false;
+        _areasConnected = 0;
+    }
+
+    private Monster Guard(int x)
+    {
+        var guard = new Monster { Name = "Guard", X = x, Y = 10 * Tile };
+        _map.GetActors().AddLast(guard);
+        return guard;
+    }
+
+    [Test]
+    public void The_Same_Game_Sums_Up_The_Same()
+    {
+        // Arrange
+        Guard(5 * Tile);
+        var netPlay = NetPlay();
+
+        // Act / Assert
+        Assert.That(netPlay.GameChecksum(), Is.EqualTo(netPlay.GameChecksum()));
+    }
+
+    [Test]
+    public void Anything_The_Game_Depends_On_Changes_The_Sum()
+    {
+        // Arrange
+        var guard = Guard(5 * Tile);
+        var netPlay = NetPlay();
+        var sums = new HashSet<uint> { netPlay.GameChecksum() };
+
+        // Act: each change makes a sum not seen before
+        guard.X += 1;
+        Assert.That(sums.Add(netPlay.GameChecksum()), Is.True, "an actor moving");
+        guard.Hitpoints -= 1;
+        Assert.That(sums.Add(netPlay.GameChecksum()), Is.True, "an actor hurt");
+        _game.playerstate.health -= 1;
+        Assert.That(sums.Add(netPlay.GameChecksum()), Is.True, "a player hurt");
+        _game.random.RndT();
+        Assert.That(sums.Add(netPlay.GameChecksum()), Is.True, "the random numbers moving on");
+        _doors.doornum = 1;
+        _doors.doorobjlist[0] = new doorobj_t { position = 0x8000 };
+        Assert.That(sums.Add(netPlay.GameChecksum()), Is.True, "a door opening");
+    }
+
+    [Test]
+    public void An_Actor_Gone_From_The_Level_Isnt_Summed()
+    {
+        // Arrange
+        var netPlay = NetPlay();
+        var before = netPlay.GameChecksum();
+        var guard = Guard(5 * Tile);
+
+        // Act
+        guard.IsRemoved = true;
+
+        // Assert
+        Assert.That(netPlay.GameChecksum(), Is.EqualTo(before));
+    }
+
+    [Test]
+    public void A_Player_Who_Leaves_Is_Gone_From_The_Level_And_The_Camera_Moves_Off_Them()
+    {
+        // Arrange
+        var p = new Entities.PlayerState { Number = 1 };
+        p.Pawn = new PlayerPawn { State = p };
+        _game.players.Add(p);
+        _game.camera.Follow(p.Pawn);
+
+        // Act
+        var pawn = p.Pawn;
+        NetPlay().RemovePlayer(p);
+
+        // Assert
+        Assert.That(p.Gone, Is.True);
+        Assert.That(p.Pawn, Is.Null);
+        Assert.That(pawn.IsRemoved, Is.True);
+        Assert.That(_game.camera.Target, Is.Not.SameAs(pawn));
+        Assert.That(_areasConnected, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Without_A_Network_Game_A_Frame_Doesnt_Play_And_A_Level_Isnt_Counted()
+    {
+        // Arrange
+        var netPlay = NetPlay();
+        netPlay.netLeavePrompt = true;
+        netPlay.netWaiting = "Waiting for Drew...";
+        netPlay.pendingjoinstate = (1, 5);
+
+        // Act
+        netPlay.NetLevelStart();
+
+        // Assert
+        Assert.That(netPlay.NetFrame(), Is.False);
+        Assert.That((netPlay.netlevel, netPlay.netLeavePrompt, netPlay.netWaiting, netPlay.pendingjoinstate), Is.EqualTo((0, false, (string?)null, ((int, int)?)null)));
+    }
+
+    [Test]
+    public void A_Network_Game_Is_Over_For_A_Machine_That_Left()
+    {
+        // Arrange
+        var netPlay = NetPlay();
+
+        // Act / Assert
+        Assert.That(netPlay.NetGameOver, Is.False);         // playing alone
+        _netGame = true;
+        Assert.That(netPlay.NetGameOver, Is.True);          // no session: the host is lost
+    }
+}
+
+public class NetOverlayTests
+{
+    private static (NetOverlay Overlay, NetPlay NetPlay, List<playstatetypes> Ends) Overlay()
+    {
+        var game = new GameSession();
+        var netPlay = new NetPlay(null!, null!, null!, null!, null!, null!, game,
+            new NetPlayHooks(() => default, () => [], () => { }, () => { }, _ => { }, () => { }, () => true));
+        var ends = new List<playstatetypes>();
+        var input = new InputManager(new Lazy<ConsoleManager>(() => new ConsoleManager()));
+        return (new NetOverlay(input, null!, null!, null!, null!, null!, netPlay, game, () => true, ends.Add), netPlay, ends);
+    }
+
+    [Test]
+    public void Esc_Asks_Whether_To_Leave()
+    {
+        var (overlay, netPlay, _) = Overlay();
+        overlay.NetCheckKeys(ScanCodes.sc_Escape);
+        Assert.That(netPlay.netLeavePrompt, Is.True);
+    }
+
+    [Test]
+    public void Then_Y_Leaves()
+    {
+        // Arrange
+        var (overlay, netPlay, ends) = Overlay();
+        netPlay.netLeavePrompt = true;
+
+        // Act
+        overlay.NetCheckKeys(ScanCodes.sc_Y);
+
+        // Assert
+        Assert.That(netPlay.netLeft, Is.True);
+        Assert.That(netPlay.netLeavePrompt, Is.False);
+        Assert.That(ends, Is.EqualTo(new[] { playstatetypes.ex_abort }));
+    }
+
+    [TestCase("sc_N")]
+    [TestCase("sc_Escape")]
+    public void And_N_Or_Esc_Plays_On(string key)
+    {
+        // Arrange
+        var (overlay, netPlay, ends) = Overlay();
+        netPlay.netLeavePrompt = true;
+
+        // Act
+        overlay.NetCheckKeys(Enum.Parse<ScanCodes>(key));
+
+        // Assert
+        Assert.That((netPlay.netLeft, netPlay.netLeavePrompt), Is.EqualTo((false, false)));
+        Assert.That(ends, Is.Empty);
+    }
+
+    [Test]
+    public void T_Starts_A_Line_To_Say_But_Not_While_Asking_About_Leaving()
+    {
+        // Arrange
+        var (overlay, netPlay, _) = Overlay();
+
+        // Act / Assert
+        overlay.NetCheckKeys(ScanCodes.sc_T);
+        Assert.That(overlay.netChatting, Is.True);
+
+        overlay.netChatting = false;
+        netPlay.netLeavePrompt = true;
+        overlay.NetCheckKeys(ScanCodes.sc_T);
+        Assert.That(overlay.netChatting, Is.False);
+    }
+}

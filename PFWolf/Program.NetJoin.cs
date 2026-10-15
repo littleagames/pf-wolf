@@ -20,11 +20,7 @@ internal partial class Program
     =============================================================================
     */
 
-    // Host: a player who came in at the frame just played, to send the game to before the next
-    static (int Index, int Step)? pendingjoinstate;
-
-    // A player joining: the game they've just taken up carries on, rather than a level starting
-    static bool netJoinResume;
+    // pendingjoinstate and netJoinResume are NetPlay's (Networking/NetPlay.cs)
 
     // A player joins the game at this frame, on every machine alike: AddNetPlayer (Gameplay/Players.cs)
 
