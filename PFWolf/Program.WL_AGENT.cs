@@ -60,13 +60,6 @@ internal partial class Program
     internal static void ClipMove(Entities.Actors.Actor ob, int xmove, int ymove) => playerMovement.ClipMove(ob, xmove, ymove);
     static controldirs FacingDir(int angle) => PlayerMovement.FacingDir(angle);
 
-    internal static void VictoryTile()
-    {
-        SpawnBJVictory();
-        gamestate.victoryflag = true;
-    }
-
-
     // Picking items up (Gameplay/Pickups.cs)
     static Pickups pickups = null!;     // made in InitServices
 

@@ -247,6 +247,10 @@ internal partial class Program
         playerUse = MakePlayerUse();
         playerMovement = MakePlayerMovement();
         playerAttacks = MakePlayerAttacks();
+        projectiles = MakeProjectiles();
+        actorSounds = new ActorSounds(_mapManager, _audioManager, session, PlaySoundLocActor);
+        bjVictory = new BJVictory(_mapManager, session, state => playstate = state);
+        missiles = MakeMissiles();
         weaponInHand = MakeWeaponInHand();
         pickups = MakePickups();
         playerThink = MakePlayerThink();

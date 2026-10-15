@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using PFWolf.Constants;
 using PFWolf.Enums;
 using PFWolf.Extensions;
@@ -32,71 +32,36 @@ internal partial class Program
     // spawned into MapManager._actors by MapManager.SpawnAtActor. CheckPosition's only caller
     // is A_StartDeathCam below, placing the camera.
 
-    /*
-    =================
-    =
-    = A_SpawnThing
-    =
-    =================
-    */
+    internal const int PROJSIZE = 0x2000;        // a projectile's box, either way (ProjectileTryMove)
 
-    // A_SpawnThing("Smoke"): spawns the given actor at this one's position (a rocket's smoke trail)
-    // A_SpawnThing("GreenOoze", 128): with a chance, only that many times in 256
-    internal static void A_SpawnThing(Entities.Actors.Actor ob, string[] args)
-    {
-        if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
-        {
-            Console.WriteLine("A_SpawnThing: no actor given.");
-            return;
-        }
+    // Enemies' projectiles and their effects (Gameplay/Projectiles.cs), actors' sounds
+    // (Gameplay/ActorSounds.cs) and BJ's victory run (Gameplay/BJVictory.cs)
+    static Projectiles projectiles = null!;     // made in InitServices
+    static ActorSounds actorSounds = null!;
+    static BJVictory bjVictory = null!;
 
-        if (args.Length > 1 && int.TryParse(args[1], out var chance) && US_RndT() >= chance)
-            return;
+    static Projectiles MakeProjectiles() =>
+        new(_mapManager, _factionManager, session, new ProjectileHooks(
+            (xl, yl, xh, yh, x, y, size) => WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player: false),
+            PlaySoundLocActor, TakeDamage));
 
-        _mapManager.SpawnAtActor(args[0], ob);
-    }
+    internal static void A_SpawnThing(Entities.Actors.Actor ob, string[] args) => projectiles.A_SpawnThing(ob, args);
+    internal static void A_Remove(Entities.Actors.Actor ob) => projectiles.A_Remove(ob);
+    internal static bool ProjectileTryMove(Entities.Actors.Actor ob) => projectiles.ProjectileTryMove(ob);
+    internal static void A_Projectile(Entities.Actors.Actor ob, string[] args) => projectiles.A_Projectile(ob, args);
+    internal static bool CheckPosition(int obx, int oby) => projectiles.CheckPosition(obx, oby);
 
-    // Terminal action for one-shot effects (Smoke, a rocket's Death): the legacy chain ended on a null
-    // next state, which removed the object once its last frame's tics ran out.
-    internal static void A_Remove(Entities.Actors.Actor ob) => _mapManager.MarkForRemoval(ob);
+    internal static void A_DeathScream(Entities.Actors.Actor ob) => actorSounds.A_DeathScream(ob);
+    internal static void PlayActorSound(Entities.Actors.Actor ob, string key) => actorSounds.PlayActorSound(ob, key);
+    internal static void A_ActiveSound(Entities.Actors.Actor ob) => actorSounds.A_ActiveSound(ob);
+    internal static void A_PlaySound(Entities.Actors.Actor ob, string[] args) => actorSounds.A_PlaySound(ob, args);
 
-    internal static void A_DeathScream(Entities.Actors.Actor ob) => PlayActorSound(ob, "deathsound");
-
-    /// <summary>
-    /// Plays an actor's sound property from where it is: one sound, or a list to pick one from
-    /// at random (Blake Stone's guards have more than one death cry)
-    /// </summary>
-    internal static void PlayActorSound(Entities.Actors.Actor ob, string key)
-    {
-        var sounds = ob.PropertyStrings(key);
-        if (sounds.Count > 0)
-            PlaySoundLocActor(sounds[sounds.Count == 1 ? 0 : US_RndT() % sounds.Count], ob);
-    }
-
-    // A_ActiveSound: the actor's "activesound" (Mecha Hitler's stomp), only where the player can
-    // hear it -- in an area connected to theirs, as vanilla's A_MechaSound was
-    internal static void A_ActiveSound(Entities.Actors.Actor ob)
-    {
-        if (ob.Properties.TryGetValue("activesound", out var sound) && sound is string soundName
-            && (ob.AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[ob.AreaNumber] != 0))
-            PlaySoundLocActor(soundName, ob);
-    }
-
-    // Ends the game in victory (the Angel of Death's last death frame)
-    internal static void A_Victory(Entities.Actors.Actor ob) => playstate = playstatetypes.ex_victorious;
-
-    // A_PlaySound("angel/breath"): plays a sound, not placed in the world; with "positional"
-    // (A_PlaySound("misc/yeah", "positional")), from where the actor is
-    internal static void A_PlaySound(Entities.Actors.Actor ob, string[] args)
-    {
-        if (args.Length == 0)
-            return;
-        if (args.Skip(1).Any(a => a.Equals("positional", StringComparison.OrdinalIgnoreCase)))
-            PlaySoundLocActor(args[0], ob);
-        else
-            _audioManager.Play(args[0]);
-    }
-
+    internal static void VictoryTile() => bjVictory.VictoryTile();
+    internal static void A_Victory(Entities.Actors.Actor ob) => bjVictory.A_Victory(ob);
+    internal static void T_BJRun(Entities.Actors.Monster ob) => bjVictory.T_BJRun(ob);
+    internal static void T_BJJump(Entities.Actors.Monster ob) => bjVictory.T_BJJump(ob);
+    internal static void T_BJDone(Entities.Actors.Actor ob) => bjVictory.T_BJDone(ob);
+    internal static void SpawnBJVictory() => bjVictory.SpawnBJVictory();
     internal static void A_StartDeathCam(Entities.Actors.Actor ob)
     {
         var language = _assetManager.GetText("en-us");
@@ -183,279 +148,5 @@ internal partial class Program
         deathCamSprite ??= _inventoryManager.CreateActor("DeathCam");
         if (deathCamSprite != null)
             _mapManager.DoActor(deathCamSprite, tics);
-    }
-
-
-    /*
-    ===================
-    =
-    = ProjectileTryMove
-    =
-    = returns true if move ok
-    ===================
-    */
-
-    internal const int PROJSIZE = 0x2000;
-
-    internal static bool ProjectileTryMove(Entities.Actors.Actor ob)
-    {
-        int xl, yl, xh, yh, x, y;
-        Actor? check;
-
-        xl = (ob.X - PROJSIZE) >> MapConstants.TILESHIFT;
-        yl = (ob.Y - PROJSIZE) >> MapConstants.TILESHIFT;
-
-        xh = (ob.X + PROJSIZE) >> MapConstants.TILESHIFT;
-        yh = (ob.Y + PROJSIZE) >> MapConstants.TILESHIFT;
-
-        //
-        // check for solid walls
-        //
-        for (y = yl; y <= yh; y++)
-            for (x = xl; x <= xh; x++)
-            {
-                check = _mapManager.actorat[x, y];
-                if (check is null or ActorMark)     // enemies are hit by the projectile's own check
-                    continue;
-
-                // a wall sprite only blocks along its panel, unless it lets projectiles through
-                if (check is WallSpriteBlocker)
-                {
-                    if (WallSpriteHitByBox(x, y, x, y, ob.X, ob.Y, PROJSIZE, player: false) != null)
-                        return false;
-                    continue;
-                }
-
-                // a diagonal only blocks on its solid side of the face
-                if (_mapManager.wallshape[x, y] is var shape and not WallShape.Square
-                    && !Diagonals.BoxHitsDiagonal(shape, x, y, ob.X, ob.Y, PROJSIZE))
-                    continue;
-
-                return false;
-            }
-
-        return true;
-    }
-
-    /*
-    =================
-    =
-    = A_Projectile
-    =
-    =================
-    */
-
-    // A_Projectile(min[, max]): flies the projectile along its Angle; hitting the player deals
-    // min..max damage (just min without a max), and with the HURTMONSTERS flag so does hitting
-    // an enemy. The roll scales one US_RndT() across the range, so a 32-wide range is exactly
-    // the legacy (US_RndT()>>3) + base.
-    internal static void A_Projectile(Entities.Actors.Actor ob, string[] args)
-    {
-        long deltax, deltay;
-        int damage = 0;
-        int speed;
-
-        speed = (int)(ob.Speed * tics);
-
-        deltax = MathUtils.FixedMul(speed, costable[ob.Angle]);
-        deltay = -MathUtils.FixedMul(speed, sintable[ob.Angle]);
-
-        if (deltax > 0x10000L)
-            deltax = 0x10000L;
-        if (deltay > 0x10000L)
-            deltay = 0x10000L;
-
-        ob.X += (int)deltax;
-        ob.Y += (int)deltay;
-
-        // the first player (in player order) it's on, if any, unless they're on its side (it's
-        // on its thrower's: Actor.Faction)
-        var hit = _mapManager.Players.FirstOrDefault(pawn => Entities.Actors.Monster.IsTargetable(pawn)
-            && Math.Abs(ob.X - pawn.X) < PROJECTILESIZE && Math.Abs(ob.Y - pawn.Y) < PROJECTILESIZE
-            && !_factionManager.IsAlly(ob, pawn));
-
-        if (!ProjectileTryMove(ob))
-        {
-            // A projectile with a Death state (rockets) blows up against the wall with its
-            // deathsound, like the legacy switch to s_boom1; the rest (needles, flames, sparks)
-            // just vanish
-            if (ob.ResolvedStates.ContainsKey("Death"))
-            {
-                if (ob.Properties.TryGetValue("deathsound", out var hitSound) && hitSound is string hitSoundName)
-                    PlaySoundLocActor(hitSoundName, ob);
-                ob.SetState("Death");
-            }
-            else
-                _mapManager.MarkForRemoval(ob);
-            return;
-        }
-
-        // A HURTMONSTERS projectile (a trap's fireball) hurts the enemies it flies into too, not
-        // only the players: the nearest one within half a projectile's reach, never its shooter.
-        // Any other hits an enemy of another side (factions.yaml) it flies into, as it would a
-        // player; its own side's it passes by.
-        var monster = hit != null ? null
-            : ob.HasFlag("HURTMONSTERS")
-                ? _mapManager.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE / 2).FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter))
-                : _mapManager.ShootableActorsNear(ob.X, ob.Y, PROJECTILESIZE - 1)
-                    .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter) && !_factionManager.IsAlly(ob, a));
-
-        if (hit != null || monster != null)
-        {       // hit the player (or an enemy)
-            var minDamage = args.Length > 0 && int.TryParse(args[0], out var min) ? min : 0;
-            var maxDamage = args.Length > 1 && int.TryParse(args[1], out var max) ? max : minDamage;
-            damage = maxDamage > minDamage
-                ? minDamage + US_RndT() * (maxDamage - minDamage + 1) / 256
-                : minDamage;
-
-            if (hit != null)
-                TakeDamage(hit, damage, ob);
-            else if (damage > 0)
-                monster!.Damage((uint)damage, ob);
-
-            // BURSTONPLAYER projectiles (Blake Stone's spit and shots) burst on the player (or
-            // the enemy) as on a wall
-            if (ob.HasFlag("BURSTONPLAYER") && ob.ResolvedStates.ContainsKey("Death"))
-                ob.SetState("Death");
-            else
-                _mapManager.MarkForRemoval(ob);
-            return;
-        }
-
-        ob.TileX = (byte)(ob.X >> MapConstants.TILESHIFT);
-        ob.TileY = (byte)(ob.Y >> MapConstants.TILESHIFT);
-    }
-
-    /*
-    ============================================================================
-
-                                        BJ VICTORY
-
-    ============================================================================
-    */
-
-    // The BJVictory actor (actordefs/wolf3d/victory.yaml) runs along the map's arrow icons for
-    // a few tiles, jumps, and then ends the level.
-
-    /*
-    ===============
-    =
-    = T_BJRun
-    =
-    ===============
-    */
-
-    internal static void T_BJRun(Entities.Actors.Monster ob)
-    {
-        int move;
-
-        move = (int)(BJRUNSPEED * tics);
-
-        while (move != 0)
-        {
-            if (move < ob.Distance)
-            {
-                ob.MoveObj(move);
-                break;
-            }
-
-            ob.RecenterOnTile();
-            move -= ob.Distance;
-
-            ob.SelectPathDir();
-
-            if ((--ob.Temp1) == 0)
-            {
-                ob.SetState("Jump");
-                return;
-            }
-        }
-    }
-
-    /*
-    ===============
-    =
-    = T_BJJump
-    =
-    ===============
-    */
-
-    internal static void T_BJJump(Entities.Actors.Monster ob)
-    {
-        int move;
-
-        move = (int)(BJJUMPSPEED * tics);
-        ob.MoveObj(move);
-    }
-
-
-    /*
-    ===============
-    =
-    = T_BJDone
-    =
-    ===============
-    */
-
-    internal static void T_BJDone(Entities.Actors.Actor ob)
-    {
-        playstate = playstatetypes.ex_victorious;                              // exit castle tile
-    }
-
-
-    internal static void SpawnBJVictory()
-    {
-        // Same spot the legacy SpawnNewObj used: BJ's tile is the one south of the player's, but
-        // he starts at the player's exact position (SpawnAtActor copies the player's x/y).
-        var bj = _mapManager.SpawnAtActor("BJVictory", player);
-        if (bj == null)
-            return;
-
-        bj.TileY = (byte)(player.TileY + 1);
-        bj.SyncPosition();
-        bj.AreaNumber = (byte)(_mapManager.MAPSPOT(bj.TileX, bj.TileY, 0) - _mapManager.Floors.AreaTile);
-
-        // SpawnNewObj started every actor a random number of tics into its first frame.
-        bj.TicCount = Managers.MapManager.SpawnTicCount(bj.CurrentState);
-
-        bj.Dir = objdirtypes.north;
-        bj.Temp1 = 6;                      // tiles to run forward
-    }
-
-    //===========================================================================
-
-
-    /*
-    ===============
-    =
-    = CheckPosition
-    =
-    ===============
-    */
-    internal static bool CheckPosition(int obx, int oby)
-    {
-        int x, y, xl, yl, xh, yh;
-        Actor? check;
-
-        xl = (int)((obx - PLAYERSIZE) >> MapConstants.TILESHIFT);
-        yl = (int)((oby - PLAYERSIZE) >> MapConstants.TILESHIFT);
-
-        xh = (int)((obx + PLAYERSIZE) >> MapConstants.TILESHIFT);
-        yh = (int)((oby + PLAYERSIZE) >> MapConstants.TILESHIFT);
-
-        //
-        // check for solid walls
-        //
-        for (y = yl; y <= yh; y++)
-        {
-            for (x = xl; x <= xh; x++)
-            {
-                check = _mapManager.actorat[x, y];
-                if (check is not (null or ActorMark))     // only walls and solid things
-                    return false;
-            }
-        }
-
-        return true;
     }
 }
