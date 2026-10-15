@@ -1,4 +1,4 @@
-﻿using PFWolf.Assets;
+using PFWolf.Assets;
 using PFWolf.Constants;
 using PFWolf.Enums;
 using PFWolf.Entities.Actors;
@@ -713,98 +713,6 @@ internal partial class Program
     }
 
 
-    private static StatusBarAsset? statusbar;
-    private static readonly StatusBarAsset NoStatusBar = new();
-
-    /// <summary>
-    /// The game pack's status bar layout (statusbar.yaml); empty if it has none. Only a layout
-    /// that was found is kept, so a look before the assets are loaded doesn't stick.
-    /// </summary>
-    internal static StatusBarAsset StatusBar =>
-        statusbar ?? (statusbar = _assetManager?.FindInGamePackIfAny<StatusBarAsset>("statusbar")) ?? NoStatusBar;
-
-    /// <summary>Draws a picture at a status bar position (320x200 pixels from its top left corner).</summary>
-    static void StatusDrawPic(string picName, int x, int y)
-    {
-        using var _ = _videoManager.UseUiOrigin(UiAnchor.Bottom);
-        _graphicManager.DrawPic(picName, x, 200 - STATUSLINES + y);
-    }
-
-    /// <summary>Draws a picture at the named part of the status bar, if the layout has it.</summary>
-    static void StatusDrawPic(string picName, string part)
-    {
-        if (StatusBar.Get(part) is { } element)
-            StatusDrawPic(picName, element.X, element.Y);
-    }
-
-    static void StatusDrawFace(string picName) => StatusDrawPic(picName, "face");
-
-    /// <summary>
-    /// A number right-aligned in the named part's digits, blanking the rest; a number too long
-    /// to fit shows its last digits. In the part's font and color, else the layout's numbers'.
-    /// </summary>
-    static void LatchNumber(string part, int number, bool hide = false)
-    {
-        if (StatusBar.Get(part) is not { } element)
-            return;
-        var numbers = StatusBar.Get("numbers");
-        var font = element.Font ?? numbers?.Font;
-        if (string.IsNullOrEmpty(font))
-            return;
-
-        // What the number is drawn over: a part under it, or a box to clear the old one
-        if (element.Behind is { Length: > 0 } behind)
-            DrawStatusPart(behind);
-        if (element.Box.Count == 4)
-        {
-            using var _ = StatusBarOrigin(element);
-            _videoManager.Bar(element.Box[0], StatusBarTop(element) + element.Box[1], element.Box[2], element.Box[3],
-                element.BoxColor ?? "Black");
-        }
-        if (hide)
-            return;
-
-        // digits 0: as long as the number is, else right-aligned in that many (its last digits if longer)
-        string str = number.ToString();
-        if (element.Digits > 0)
-            str = str.Length <= element.Digits ? str.PadLeft(element.Digits) : str[^element.Digits..];
-        str = element.Prefix + str + element.Suffix;
-
-        DrawStatusText(element, str, font, element.Color ?? numbers?.Color ?? "White");
-    }
-
-    /// <summary>Text at a status bar part, lined up as its align says</summary>
-    static void DrawStatusText(Assets.StatusBarElement element, string text, string font, string color)
-    {
-        int x = element.Align.ToLowerInvariant() switch
-        {
-            "right" => element.X - TextWidth(text, font),
-            "center" => element.X - TextWidth(text, font) / 2,
-            _ => element.X,
-        };
-        using var _ = StatusBarOrigin(element);
-        _graphicManager.DrawText(x, StatusBarTop(element) + element.Y, text, new Fonts.TextStyle(font, color));
-    }
-
-    /// <summary>Where a part's bar starts down the screen (320x200): the top bar's, or the bottom one's</summary>
-    static int StatusBarTop(Assets.StatusBarElement element) => element.Top ? 0 : 200 - STATUSLINES;
-
-    /// <summary>
-    /// Lines the 320x200 layout up with the edge of the screen a part's bar is on, until
-    /// disposed, so the bars stay at the top and bottom of a screen taller than 320x200.
-    /// </summary>
-    static VideoManager.UiOriginScope StatusBarOrigin(Assets.StatusBarElement element) =>
-        _videoManager.UseUiOrigin(element.Top ? UiAnchor.Top : UiAnchor.Bottom);
-
-    /// <summary>Draws a part that a number can sit on (statusbar.yaml behind)</summary>
-    static void DrawStatusPart(string part)
-    {
-        if (part.Equals("weapon", StringComparison.OrdinalIgnoreCase))
-            DrawWeaponPic();
-        else if (part.Equals("weapon-corner", StringComparison.OrdinalIgnoreCase))
-            DrawWeaponCorner();
-    }
-
     /*
     =============================================================================
 
@@ -919,10 +827,6 @@ internal partial class Program
         return added;
     }
 
-    // The face grins while grinsound, the pickup sound of the WEAPON.ALWAYSGRIN item that made
-    // the player grin, plays
-    static bool Grinning => grinsound != null && _audioManager.IsPlaying(grinsound);
-
     /// <summary>
     /// Starts the grin if the item, or the weapon it gives, is flagged WEAPON.ALWAYSGRIN: the
     /// status bar's face grin shows while the item's pickup sound plays.
@@ -940,29 +844,6 @@ internal partial class Program
         facetimes = 38;     // how long demos hold it, as they can't depend on the sound playing
         facecount = 0;
         DrawFace();
-    }
-
-    // The face (statusbar.yaml face): the grin, else the one for the player's health, looking
-    // around through its pics, else once dead the one for what killed them
-    static void DrawFace()
-    {
-        if (StatusBarHidden) return;
-        if (StatusBar.Get("face") is not { } face) return;
-
-        string? pic;
-        if (Grinning && !string.IsNullOrEmpty(face.Grin))
-            pic = face.Grin;
-        else if (playerstate.health != 0)
-        {
-            var faces = face.Faces.OrderByDescending(f => f.Health).ToList();
-            var pics = (faces.FirstOrDefault(f => playerstate.health >= f.Health) ?? faces.LastOrDefault())?.Pics;
-            pic = pics is { Count: > 0 } ? pics[playerstate.faceframe % pics.Count] : null;
-        }
-        else
-            pic = LastAttacker != null && face.KilledBy.TryGetValue(LastAttacker.Name, out var killedBy) ? killedBy : face.Dead;
-
-        if (!string.IsNullOrEmpty(pic))
-            StatusDrawFace(pic);
     }
 
     /*
@@ -999,12 +880,6 @@ internal partial class Program
             facecount = 0;
             DrawFace();
         }
-    }
-
-    static void DrawHealth()
-    {
-        if (StatusBarHidden) return;
-        LatchNumber("health", playerstate.health);
     }
 
     /*
@@ -1121,13 +996,6 @@ internal partial class Program
         return true;
     }
 
-    // The status bar's optional armor number (statusbar.yaml `armor`)
-    static void DrawArmor()
-    {
-        if (StatusBarHidden) return;
-        LatchNumber("armor", playerstate.armor);
-    }
-
     /// <summary>Heals the player by <paramref name="points"/>, up to <paramref name="upTo"/> (their max health when null)</summary>
     internal static void HealSelf(int points, int? upTo = null)
     {
@@ -1136,52 +1004,6 @@ internal partial class Program
 
         DrawHealth();
         DrawFace();
-    }
-
-    static void DrawKeys()
-    {
-        if (StatusBarHidden) return;
-        if (StatusBar.Get("keys") is not { } layout) return;
-        // Each key with a "key.statusbarslot" (0 at the top) has its own spot on the status bar:
-        // its "key.statusbarpic" while carried, else "key.statusbaremptypic". Carried keys are
-        // drawn last, so one wins a slot it shares with a key that isn't.
-        var keys = _inventoryManager.GetClassesDerivedFrom("Key")
-            .Select(key => (Key: key, Slot: _inventoryManager.GetIntProperty(key, "key.statusbarslot", -1), Has: _inventoryManager.Has(key)))
-            .Where(key => key.Slot >= 0)
-            .OrderBy(key => key.Has);
-        using var _ = StatusBarOrigin(layout);
-        foreach (var (key, slot, has) in keys)
-        {
-            int x = layout.X + layout.SpacingX * slot, y = layout.Y + layout.Spacing * slot;
-
-            // size: a colored square for each key ("key.statusbarcolor" / "key.statusbaremptycolor")
-            if (layout.Size.Count == 2)
-            {
-                var color = _inventoryManager.GetStringProperty(key, has ? "key.statusbarcolor" : "key.statusbaremptycolor");
-                if (!string.IsNullOrEmpty(color))
-                    _videoManager.Bar(x, StatusBarTop(layout) + y, layout.Size[0], layout.Size[1], color);
-                continue;
-            }
-
-            var pic = _inventoryManager.GetStringProperty(key, has ? "key.statusbarpic" : "key.statusbaremptypic");
-            if (!string.IsNullOrEmpty(pic))
-                _graphicManager.DrawPic(pic, x, StatusBarTop(layout) + y);
-        }
-    }
-
-    static void DrawLevel()
-    {
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        var mapInfo = gameInfo.Maps[gamestate.mapon];
-        //var mapInfo = MapInfoMappings.GameInfo.Maps[gamestate.mapon];
-        if (StatusBarHidden) return;
-        LatchNumber("level", mapInfo.FloorNumber);
-    }
-
-    static void DrawLives()
-    {
-        if (StatusBarHidden) return;
-        LatchNumber("lives", playerstate.lives);
     }
 
     /*
@@ -1199,13 +1021,6 @@ internal partial class Program
         DrawLives();
         if (StatusBar.Get("lives")?.Sound is { Length: > 0 } sound)
             PlayPlayerSound(sound);
-    }
-
-    static void DrawScore()
-    {
-        if (StatusBarHidden) return;
-        // a deathmatch keeps score in frags
-        LatchNumber("score", gamemode == GameMode.Deathmatch ? playerstate.Frags : playerstate.score);
     }
 
     /*
@@ -1240,32 +1055,6 @@ internal partial class Program
             || StatusBar.Get("ammo")?.OnlyWithAmmo == true || StatusBar.Get("ammo-gauge") != null)
             DrawAmmo();
         DrawCharge();
-    }
-
-    static void DrawWeaponPic()
-    {
-        if (StatusBarHidden) return;
-        if (playerstate.weapon == null) return;
-
-        var icon = _inventoryManager.GetStringProperty(playerstate.weapon, "inventory.icon");
-        if (!string.IsNullOrEmpty(icon) && StatusBar.Get("weapon") is { } element)
-        {
-            using var _ = StatusBarOrigin(element);
-            _graphicManager.DrawPic(icon, element.X, StatusBarTop(element) + element.Y);
-        }
-        DrawWeaponCorner();
-    }
-
-    // Planet Strike's corner under the weapon's picture, with the ammo on it (statusbar.yaml
-    // weapon-corner): its picture for the weapon in hand
-    static void DrawWeaponCorner()
-    {
-        if (StatusBarHidden) return;
-        if (playerstate.weapon == null || StatusBar.Get("weapon-corner") is not { } element) return;
-        var pic = element.WeaponPics.GetValueOrDefault(playerstate.weapon);
-        using var _ = StatusBarOrigin(element);
-        if (!string.IsNullOrEmpty(pic))
-            _graphicManager.DrawPic(pic, element.X, StatusBarTop(element) + element.Y);
     }
 /*
 ==================

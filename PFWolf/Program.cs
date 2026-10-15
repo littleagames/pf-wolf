@@ -240,6 +240,7 @@ internal partial class Program
         smartSwitches = MakeSmartSwitches();
         hubs = new Hubs(_gameEngineManager, _mapManager, session);
         projectileActions = MakeProjectileActions();
+        statusBarDrawing = MakeStatusBarDrawing();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,

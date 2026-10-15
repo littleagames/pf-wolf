@@ -25,12 +25,6 @@ internal partial class Program
     internal static GameMode gamemode => session.gamemode;
     internal static void SetGameMode(GameMode mode) => session.SetGameMode(mode);
 
-    /// <summary>
-    /// Whether the status bar's parts aren't drawn now: with the view full screen, or for a
-    /// player other than this machine's (the bar is the local player's)
-    /// </summary>
-    static bool StatusBarHidden => viewsize == 21 && ingame || !ActingIsLocal;
-
     /*
     ====================
     =
