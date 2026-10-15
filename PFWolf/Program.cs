@@ -249,6 +249,7 @@ internal partial class Program
         skyAndFlats = MakeSkyAndFlats();
         wallPosts = MakeWallPosts();
         wallHits = MakeWallHits();
+        rayTrace = MakeRayTrace();
         playerView = MakePlayerView();
         statusBarDrawing = MakeStatusBarDrawing();
         deathmatch = MakeDeathmatch();
