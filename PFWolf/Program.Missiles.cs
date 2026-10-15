@@ -21,39 +21,6 @@ internal partial class Program
     =============================================================================
     */
 
-    // weaponcharge: tics until the acting player's weapon is charged again; 0 when it's ready
-    // (weapon.chargetics). Program.Players.cs
-
-    /// <summary>The weapon in hand's `weapon.chargetics`: tics to charge between shots, 0 for none</summary>
-    internal static int WeaponChargeTics(string? weapon) =>
-        weapon == null ? 0 : _inventoryManager.GetIntProperty(weapon, "weapon.chargetics", 0);
-
-    /// <summary>
-    /// Whether the weapon in hand can shoot now as far as its charge goes; if it can and it
-    /// charges, starts the next charge (the shot empties it)
-    /// </summary>
-    static bool TakeCharge()
-    {
-        int charge = WeaponChargeTics(playerstate.weapon);
-        if (charge <= 0)
-            return true;
-        if (weaponcharge > 0)
-            return false;
-        weaponcharge = charge;
-        DrawCharge();
-        return true;
-    }
-
-    /// <summary>Counts the weapon's charge down, redrawing the status bar's charge light once it's ready</summary>
-    static void TickWeaponCharge()
-    {
-        if (weaponcharge <= 0)
-            return;
-        weaponcharge = Math.Max(weaponcharge - (int)tics, 0);
-        if (weaponcharge == 0)
-            DrawCharge();
-    }
-
     static void RegisterMissileActions()
     {
         Entities.Actors.ActorActionRegistry.Register("A_FireMissile", A_FireMissile);
