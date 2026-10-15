@@ -244,6 +244,7 @@ internal partial class Program
         playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);
         playerWeapons = MakePlayerWeapons();
         playerStats = MakePlayerStats();
+        playerUse = MakePlayerUse();
         playerMovement = MakePlayerMovement();
         playerAttacks = MakePlayerAttacks();
         weaponInHand = MakeWeaponInHand();

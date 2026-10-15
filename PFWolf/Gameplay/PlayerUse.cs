@@ -1,0 +1,354 @@
+using PFWolf.Assets;
+using PFWolf.Constants;
+using PFWolf.Enums;
+using PFWolf.Managers;
+
+namespace PFWolf.Gameplay;
+
+/// <summary>What the player's use key needs from the game</summary>
+/// <param name="PlayPlayerSound">A sound the acting player makes (a switch's)</param>
+/// <param name="SetPlayState">Ends the level, the way A_Exit and A_SecretExit say</param>
+internal sealed record PlayerUseHooks(Action<string> PlayPlayerSound, Action<playstatetypes> SetPlayState);
+
+/// <summary>
+/// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
+/// a switch wall, a door -- else an actor there to be used or talked to, else an item held to be
+/// used that way. Also the switches themselves, mapdefs triggers, the exits and the items an
+/// empty weapon slot's key uses.
+/// </summary>
+internal sealed class PlayerUse(
+    MapManager map,
+    AudioManager audio,
+    InventoryManager inventory,
+    Doors doors,
+    GameSession session,
+    PlayerUseHooks hooks)
+{
+    const int BIT_WALL = Program.BIT_WALL;
+    const int BIT_DOOR = Program.BIT_DOOR;
+
+    // How long use has been held with nothing to use or talk to
+    int useHeldTics;
+
+    /// <summary>
+    /// Runs a mapdefs trigger's action. If it goes off, a secret trigger counts as found, and the
+    /// trigger's tile is cleared so it can't go off again.
+    /// </summary>
+    internal void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, controldirs dir)
+    {
+        var activation = new Entities.TriggerActivation(tilex, tiley, dir, session.player, map.GetTag(tilex, tiley));
+        if (!Entities.MapTriggerRegistry.Invoke(trigger.Action, activation))
+            return;
+
+        if (trigger.Secret)
+            session.gamestate.secretcount++;
+        map.SetMapSpot(tilex, tiley, 1, 0);
+    }
+
+    /// <summary>
+    /// Throws a switch wall: refused without its lock item, else it turns into its `to` wall,
+    /// plays its sound and runs its actions on whatever shares its tile's tag. The other switches
+    /// with its tag that are either way of the same switch flip with it (as Blake Stone's
+    /// barrier switches do), without running their actions.
+    /// </summary>
+    internal void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, controldirs dir)
+    {
+        if (RefuseSwitchLock(wallSwitch))
+            return;
+
+        var gamestate = session.gamestate;
+        var tag = map.GetTag(tilex, tiley);
+        if (wallSwitch.To is > 0 and < BIT_WALL && map.GetMapData().Walls.ContainsKey(wallSwitch.To))
+        {
+            // flip the switch, keeping the door-side mark on a wall beside a door
+            var tile = map.tilemap[tilex, tiley];
+            int from = tile & ~BIT_WALL;
+            map.tilemap[tilex, tiley] = (byte)(wallSwitch.To | (tile & BIT_WALL));
+            map.RestartAnimations(tilex, tiley, gamestate.TimeCount);   // a `to` wall's play-once animation starts now
+
+            // and the linked ones: set to the new way, not toggled, so any out of step come back
+            foreach (var (x, y) in map.TaggedTiles(tag))
+            {
+                var other = map.tilemap[x, y];
+                int id = other & ~BIT_WALL;
+                if ((other & BIT_DOOR) == 0 && (id == from || id == wallSwitch.To))
+                {
+                    map.tilemap[x, y] = (byte)(wallSwitch.To | (other & BIT_WALL));
+                    map.RestartAnimations(x, y, gamestate.TimeCount);
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(wallSwitch.Sound))
+            hooks.PlayPlayerSound(wallSwitch.Sound);
+
+        var activation = new Entities.TriggerActivation(tilex, tiley, dir, session.player, tag);
+        foreach (var action in wallSwitch.Actions)
+            Entities.MapTriggerRegistry.Invoke(action, activation);
+    }
+
+    // Refuses a switch the player lacks the lock item for: true if it did
+    internal bool RefuseSwitchLock(MapSwitchTranslation sw)
+    {
+        if (string.IsNullOrEmpty(sw.Lock) || inventory.Has(sw.Lock))
+            return false;
+        doors.RefuseLocked(sw.Lock, sw.LockedSound, sw.LockMessage, sw.LockMessageStyle, isSwitch: true);
+        return true;
+    }
+
+    /// <summary>
+    /// The switch of the patch on the wall tile (tilex, tiley) the player faces going dir, if
+    /// it's on the face they press (facing east presses the west face) and usable from there
+    /// </summary>
+    internal MapSwitchTranslation? PatchSwitchAt(int tilex, int tiley, controldirs dir)
+    {
+        int tile = map.tilemap[tilex, tiley];
+        if ((tile & BIT_DOOR) != 0 || (tile & ~BIT_WALL) == 0)
+            return null;                // open floor, a door or a moving pushwall
+        int id = map.GetPatch(tilex, tiley);
+        if (id == 0 || !map.GetMapData().Patches.TryGetValue(id, out var patch) || patch.Switch is not { } patchSwitch)
+            return null;
+
+        var face = dir switch
+        {
+            controldirs.di_east => "west",
+            controldirs.di_west => "east",
+            controldirs.di_north => "south",
+            _ => "north",
+        };
+        return patch.IsOn(face) && patchSwitch.UsableFrom(dir) ? patchSwitch : null;
+    }
+
+    /// <summary>
+    /// Throws a patch's switch (patches.yaml): refused without its lock item, else it plays its
+    /// sound and runs its actions on whatever shares the tile's tag, as a wall's switch does.
+    /// Then, unless all its actions came to nothing (an item the player has no room for, say),
+    /// the patch turns into its `to` patch, or comes off with `remove`; and so do the other
+    /// patches with the tag that are either way of the same switch, so linked ones stay in step.
+    /// </summary>
+    internal void UsePatchSwitch(MapSwitchTranslation patchSwitch, int tilex, int tiley, controldirs dir)
+    {
+        if (RefuseSwitchLock(patchSwitch))
+            return;
+
+        if (!string.IsNullOrEmpty(patchSwitch.Sound))
+            hooks.PlayPlayerSound(patchSwitch.Sound);
+
+        var tag = map.GetTag(tilex, tiley);
+        var activation = new Entities.TriggerActivation(tilex, tiley, dir, session.player, tag);
+        bool wentOff = patchSwitch.Actions.Count == 0;
+        foreach (var action in patchSwitch.Actions)
+            wentOff |= Entities.MapTriggerRegistry.Invoke(action, activation);
+        if (!wentOff)
+            return;
+
+        int from = map.GetPatch(tilex, tiley);
+        int to = patchSwitch.Remove ? 0
+            : patchSwitch.To is > 0 and <= 255 && map.GetMapData().Patches.ContainsKey(patchSwitch.To) ? patchSwitch.To
+            : from;
+        if (to == from)
+            return;
+
+        void Flip(int x, int y)
+        {
+            map.SetPatch(x, y, (byte)to);
+            map.RestartAnimations(x, y, session.gamestate.TimeCount);    // a `to` patch's play-once animation starts now
+        }
+
+        Flip(tilex, tiley);
+        foreach (var (x, y) in map.TaggedTiles(tag))
+        {
+            int other = map.GetPatch(x, y);
+            if (other != 0 && (other == from || other == to))
+                Flip(x, y);
+        }
+    }
+
+    /// <summary>
+    /// A_Exit ends the level, going to the secret level when the player stands on the floors'
+    /// secret-exit code (as the elevator always did); A_SecretExit always goes to the secret
+    /// level. Either waits for a sound that's playing (the switch's) to finish first.
+    /// </summary>
+    internal bool ExitAction(bool secret)
+    {
+        var player = session.player;
+        if (secret || map.MAPSPOT(player.TileX, player.TileY, 0) == map.Floors.SecretExitTile)
+            hooks.SetPlayState(playstatetypes.ex_secretlevel);
+        else
+            hooks.SetPlayState(playstatetypes.ex_completed);
+
+        audio.WaitSoundDone();
+        return true;
+    }
+
+    internal void Cmd_Use()
+    {
+        const int ANGLES = Program.ANGLES;
+        var playerinput = session.playerinput;
+        var player = session.player;
+        int checkx, checky, cmdtile;
+        controldirs dir;
+
+        //
+        // find which cardinal direction the player is facing
+        //
+        if (player.Angle < ANGLES / 8 || player.Angle > 7 * ANGLES / 8)
+        {
+            checkx = player.TileX + 1;
+            checky = player.TileY;
+            dir = controldirs.di_east;
+        }
+        else if (player.Angle < 3 * ANGLES / 8)
+        {
+            checkx = player.TileX;
+            checky = player.TileY - 1;
+            dir = controldirs.di_north;
+        }
+        else if (player.Angle < 5 * ANGLES / 8)
+        {
+            checkx = player.TileX - 1;
+            checky = player.TileY;
+            dir = controldirs.di_west;
+        }
+        else
+        {
+            checkx = player.TileX;
+            checky = player.TileY + 1;
+            dir = controldirs.di_south;
+        }
+
+        cmdtile = map.tilemap[checkx, checky];
+        if (map.GetTrigger(checkx, checky) is { IsWalkOver: false } trigger)
+        {
+            //
+            // mapdefs use trigger (a pushable wall)
+            //
+            ResetUseHeld();
+            ActivateTrigger(trigger, checkx, checky, dir);
+            return;
+        }
+        if (!playerinput.IsHeld(buttontypes.bt_use) && PatchSwitchAt(checkx, checky, dir) is { } patchSwitch)
+        {
+            //
+            // use a patch that's a switch (patches.yaml), over the wall's own
+            //
+            playerinput.SetHeld(buttontypes.bt_use, true);
+            UsePatchSwitch(patchSwitch, checkx, checky, dir);
+        }
+        // A wall beside a door keeps its id under BIT_WALL; a moving pushwall's tiles are bare BIT_WALL
+        else if (!playerinput.IsHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) == 0
+            && map.GetMapData().Walls.TryGetValue(cmdtile & ~BIT_WALL, out var switchWall)
+            && switchWall.Switch is { } wallSwitch && wallSwitch.UsableFrom(dir))
+        {
+            //
+            // use a switch (a mapdefs wall with a switch, such as the elevator's)
+            //
+            playerinput.SetHeld(buttontypes.bt_use, true);
+            UseSwitch(wallSwitch, checkx, checky, dir);
+        }
+        else if (!playerinput.IsHeld(buttontypes.bt_use) && (cmdtile & BIT_DOOR) != 0)
+        {
+            playerinput.SetHeld(buttontypes.bt_use, true);
+            doors.OperateDoor(cmdtile & ~BIT_DOOR);
+        }
+        else
+        {
+            // Nothing ahead to use: use an actor that's there to be used (its Use state), else
+            // talk to whoever's there (BlakeMonster.TalkTo), else held long enough, use an item
+            // that's used that way (Planet Strike's fission detonator)
+            if (TryUseActor() || map.AI.TryTalk())
+                ResetUseHeld();
+            else
+                UseHeldItem();
+            return;
+        }
+        ResetUseHeld();
+    }
+
+    /// <summary>
+    /// The use key pressed facing a living actor with a Use state (actordefs), within a tile and
+    /// a half and half a right angle either side of straight ahead: it goes to that state (a
+    /// prisoner's could be A_SetFaction("allies", "follow")). Not one going after someone.
+    /// </summary>
+    internal bool TryUseActor()
+    {
+        const int ANGLES = Program.ANGLES;
+        var playerinput = session.playerinput;
+        var player = session.player;
+        if (playerinput.IsHeld(buttontypes.bt_use))
+            return false;
+
+        const long Reach = MapConstants.TILEGLOBAL * 3 / 2;
+        Entities.Actors.Monster? chosen = null;
+        long best = Reach;
+        foreach (var actor in map.GetActors().OfType<Entities.Actors.Monster>())
+        {
+            if (actor.IsRemoved || !actor.RuntimeFlags.HasFlag(Program.objflags.FL_SHOOTABLE)
+                || actor.RuntimeFlags.HasFlag(Program.objflags.FL_ATTACKMODE) || !actor.ResolvedStates.ContainsKey("Use"))
+                continue;
+
+            long dx = actor.X - player.X, dy = player.Y - actor.Y;     // y grows southward
+            long dist = Math.Max(Math.Abs(dx), Math.Abs(dy));
+            if (dist >= best)
+                continue;
+
+            int toward = (int)((Math.Atan2(dy, dx) + Math.PI * 2) % (Math.PI * 2) / (Math.PI * 2) * ANGLES);
+            int off = Math.Abs(player.Angle - toward) % ANGLES;
+            if (Math.Min(off, ANGLES - off) > ANGLES / 8)
+                continue;
+
+            (chosen, best) = (actor, dist);
+        }
+
+        if (chosen == null)
+            return false;
+        playerinput.SetHeld(buttontypes.bt_use, true);
+        chosen.SetState("Use");
+        return true;
+    }
+
+    /// <summary>An empty weapon slot's key uses an item held for that slot (`inventory.useslot`, `inventory.use`)</summary>
+    internal void UseSlotItem(int slot)
+    {
+        if (HeldUsableItem(item => inventory.GetIntProperty(item, "inventory.useslot", -1) == slot) is { } action)
+            UseItemAction(action);
+    }
+
+    /// <summary>
+    /// Use held with nothing ahead to use or talk to: every `inventory.useholdtics` tics of it,
+    /// an item held with that property is used (bstone drops the fission detonator this way,
+    /// every 60 tics)
+    /// </summary>
+    internal void UseHeldItem()
+    {
+        int hold = 0;
+        if (HeldUsableItem(item => (hold = inventory.GetIntProperty(item, "inventory.useholdtics", 0)) > 0) is not { } action)
+        {
+            useHeldTics = 0;
+            return;
+        }
+        useHeldTics += (int)session.tics;
+        if (useHeldTics < hold)
+            return;
+        useHeldTics = 0;
+        UseItemAction(action);
+    }
+
+    internal void ResetUseHeld() => useHeldTics = 0;
+
+    /// <summary>The `inventory.use` action of the first item held that matches</summary>
+    internal string? HeldUsableItem(Func<string, bool> match)
+    {
+        foreach (var (item, count) in inventory.Items.ToList())
+            if (count > 0 && match(item) && inventory.GetStringProperty(item, "inventory.use") is { Length: > 0 } action)
+                return action;
+        return null;
+    }
+
+    void UseItemAction(string action)
+    {
+        var player = session.player;
+        Entities.MapTriggerRegistry.Invoke(action,
+            new Entities.TriggerActivation(player.TileX, player.TileY, PlayerMovement.FacingDir(player.Angle), player, 0));
+    }
+}
