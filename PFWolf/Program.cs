@@ -338,17 +338,19 @@ internal partial class Program
     //
     // proejection variables
     //
-    static int focallength;
-    static uint screenofs;
-    static int viewscreenx, viewscreeny;
-    static int viewwidth;
-    static int viewheight;
-    static short centerx, centery;   // centery is this frame's horizon: basecentery moved by viewpitch
-    static short basecentery;        // the horizon looking straight ahead, mid view
-    static int shootdelta;          // pixels away from centerx a target can be
-    static int projectionwidth;     // the view width the field of view is worked out for (see ProjectionWidth)
-    static int scale;
-    static int heightnumerator;
+    static int focallength { get => render.focallength; set => render.focallength = value; }
+    static uint screenofs { get => render.screenofs; set => render.screenofs = value; }
+    static int viewscreenx { get => render.viewscreenx; set => render.viewscreenx = value; }
+    static int viewscreeny { get => render.viewscreeny; set => render.viewscreeny = value; }
+    static int viewwidth { get => render.viewwidth; set => render.viewwidth = value; }
+    static int viewheight { get => render.viewheight; set => render.viewheight = value; }
+    static short centerx { get => render.centerx; set => render.centerx = value; }
+    static short centery { get => render.centery; set => render.centery = value; }   // centery is this frame's horizon: basecentery moved by viewpitch
+    static short basecentery { get => render.basecentery; set => render.basecentery = value; }   // the horizon looking straight ahead, mid view
+    static int shootdelta { get => render.shootdelta; set => render.shootdelta = value; }   // pixels away from centerx a target can be
+    static int projectionwidth { get => render.projectionwidth; set => render.projectionwidth = value; }   // the view width the field of view is worked out for (see ProjectionWidth)
+    static int scale { get => render.scale; set => render.scale = value; }
+    static int heightnumerator { get => render.heightnumerator; set => render.heightnumerator = value; }
 
     static bool startgame;
     internal static bool loadedgame;

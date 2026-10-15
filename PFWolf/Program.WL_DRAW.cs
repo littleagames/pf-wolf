@@ -28,8 +28,8 @@ internal partial class Program
     =============================================================================
     */
 
-    static int vbuf; // pointer index
-    static IntPtr vbufPtr = IntPtr.Zero;
+    static int vbuf { get => render.vbuf; set => render.vbuf = value; }   // pointer index
+    static IntPtr vbufPtr { get => render.vbufPtr; set => render.vbufPtr = value; }
 
     static visobj_t[] vislist = new visobj_t[MAXVISABLE];
 
@@ -43,52 +43,65 @@ internal partial class Program
     short[] spanstart;
 #endif
 
-    internal static short[] wallheight;
+    internal static short[] wallheight { get => render.wallheight; set => render.wallheight = value; }
 
     //
     // math tables
     //
-    internal static short[] pixelangle;
+    internal static short[] pixelangle { get => render.pixelangle; set => render.pixelangle = value; }
     internal static int[] finetangent = new int[FINEANGLES / 4];
     internal static int[] sintable = new int[ANGLES + ANGLES / 4];
     internal static int[] costable => sintable[(ANGLES/4) ..]; // same as sintable, just offset by ANGLES/4
 
     //
     // refresh variables
-    internal static int viewx, viewy;
-    internal static short viewangle;
-    internal static int viewsin, viewcos;
+    internal static int viewx { get => render.viewx; set => render.viewx = value; }
+    internal static int viewy { get => render.viewy; set => render.viewy = value; }
+    internal static short viewangle { get => render.viewangle; set => render.viewangle = value; }
+    internal static int viewsin { get => render.viewsin; set => render.viewsin = value; }
+    internal static int viewcos { get => render.viewcos; set => render.viewcos = value; }
 
-    internal static int postx;
+    internal static int postx { get => render.postx; set => render.postx = value; }
     static readonly TextureAsset notexture = new() { RawData = new byte[TEXTURESIZE * TEXTURESIZE] };
 
-    internal static TextureAsset postsource = notexture;    // the texture of the post ScalePost draws
-    internal static int postofs;                // its column, times 64 (as the texture's across a tile)
-    static TextureAsset? uppersource;           // stories above the first, if not postsource (door lintels)
-    static int upperofs;
+    // The renderer's shared per-frame state (Rendering/RenderState.cs): the fields below, under their old names, are its
+    internal static readonly RenderState render = new(notexture, Lighting.noshade);
+
+    internal static TextureAsset postsource { get => render.postsource; set => render.postsource = value; }   // the texture of the post ScalePost draws
+    internal static int postofs { get => render.postofs; set => render.postofs = value; }   // its column, times 64 (as the texture's across a tile)
+    static TextureAsset? uppersource { get => render.uppersource; set => render.uppersource = value; }   // stories above the first, if not postsource (door lintels)
+    static int upperofs { get => render.upperofs; set => render.upperofs = value; }
 
     //
     // tall walls: every wall is wallstories 64 unit stories tall, built up from the floor
     //
     internal const int MAXWALLSTORIES = 8;
-    internal static int wallstories = 1;
+    internal static int wallstories { get => render.wallstories; set => render.wallstories = value; }
 
     //
     // ray tracing variables
     //
-    internal static short focaltx, focalty;
-    internal static uint xpartialup, xpartialdown, ypartialup, ypartialdown;
+    internal static short focaltx { get => render.focaltx; set => render.focaltx = value; }
+    internal static short focalty { get => render.focalty; set => render.focalty = value; }
+    internal static uint xpartialup { get => render.xpartialup; set => render.xpartialup = value; }
+    internal static uint xpartialdown { get => render.xpartialdown; set => render.xpartialdown = value; }
+    internal static uint ypartialup { get => render.ypartialup; set => render.ypartialup = value; }
+    internal static uint ypartialdown { get => render.ypartialdown; set => render.ypartialdown = value; }
 
-    internal static short midangle;
+    internal static short midangle { get => render.midangle; set => render.midangle = value; }
 
-    internal static ushort tilehit;
-    internal static int pixx;
+    internal static ushort tilehit { get => render.tilehit; set => render.tilehit = value; }
+    internal static int pixx { get => render.pixx; set => render.pixx = value; }
 
-    internal static short xtile, ytile;
-    internal static short xtilestep, ytilestep;
-    internal static int xintercept, yintercept;
-    internal static int xinttile, yinttile;
-    internal static ushort texdelta;
+    internal static short xtile { get => render.xtile; set => render.xtile = value; }
+    internal static short ytile { get => render.ytile; set => render.ytile = value; }
+    internal static short xtilestep { get => render.xtilestep; set => render.xtilestep = value; }
+    internal static short ytilestep { get => render.ytilestep; set => render.ytilestep = value; }
+    internal static int xintercept { get => render.xintercept; set => render.xintercept = value; }
+    internal static int yintercept { get => render.yintercept; set => render.yintercept = value; }
+    internal static int xinttile { get => render.xinttile; set => render.xinttile = value; }
+    internal static int yinttile { get => render.yinttile; set => render.yinttile = value; }
+    internal static ushort texdelta { get => render.texdelta; set => render.texdelta = value; }
 
 
     /*
@@ -164,7 +177,7 @@ internal partial class Program
     ====================
     */
 
-    internal static double viewpitch;   // degrees, up positive; this frame's, from the camera
+    internal static double viewpitch { get => render.viewpitch; set => render.viewpitch = value; }   // degrees, up positive; this frame's, from the camera
 
     /// <summary>The steepest pitch, in degrees, that keeps the horizon a row inside the view</summary>
     internal static double MaxPitch() =>
@@ -193,9 +206,9 @@ internal partial class Program
 
     internal const int EYEDEFAULT = TEXTURESIZE / 2, MINEYE = 4, MAXEYE = TEXTURESIZE - 4;
 
-    internal static int vieweyez = EYEDEFAULT;  // this frame's, from the camera
+    internal static int vieweyez { get => render.vieweyez; set => render.vieweyez = value; }   // this frame's, from the camera
 
-    static bool markseen;   // whether this frame's walls and floor go on the automap: only the player's view
+    static bool markseen { get => render.markseen; set => render.markseen = value; }   // whether this frame's walls and floor go on the automap: only the player's view
 
     /// <summary>Marks a wall face the rays hit as seen, for the automap, when the view is the player's</summary>
     static void MarkSeen(int x, int y, SeenFlags face)
@@ -249,27 +262,27 @@ internal partial class Program
     // lintel) nearest first, and the queue is drawn farthest first: in one screen column, that
     // puts everything in front of what's behind it.
     //
-    const int MAXPOSTS = 16;
-    static int postcount;
-    static readonly short[] postheights = new short[MAXPOSTS];
-    static readonly byte[] postfirststory = new byte[MAXPOSTS];
-    static readonly byte[] poststories = new byte[MAXPOSTS];
-    static readonly TextureAsset[] postlower = new TextureAsset[MAXPOSTS];
-    static readonly int[] postlowerofs = new int[MAXPOSTS];
-    static readonly TextureAsset[] postupper = new TextureAsset[MAXPOSTS];
-    static readonly int[] postupperofs = new int[MAXPOSTS];
-    static readonly short[] postunderside = new short[MAXPOSTS];   // an arch's: the height where the trace leaves it, 0 for none
-    static readonly TextureAsset?[] postundertexture = new TextureAsset?[MAXPOSTS];
-    static readonly bool[] postunderflat = new bool[MAXPOSTS];             // the underside's texture is a ceiling flat
-    static readonly byte[][] postlight = new byte[MAXPOSTS][];              // its face's light row
-    static readonly TextureAsset?[] postpatch = new TextureAsset?[MAXPOSTS];    // a wall patch over it (mapdefs patches)
-    static readonly int[] postpatchofs = new int[MAXPOSTS];                   // the patch's column: postlowerofs, unless the wall's face is flipped
-    static readonly byte[] postpatchstory = new byte[MAXPOSTS];              // the patch's story (MapPatchTranslation.Story)
+    const int MAXPOSTS = RenderState.MAXPOSTS;
+    static int postcount { get => render.postcount; set => render.postcount = value; }
+    static short[] postheights => render.postheights;
+    static byte[] postfirststory => render.postfirststory;
+    static byte[] poststories => render.poststories;
+    static TextureAsset[] postlower => render.postlower;
+    static int[] postlowerofs => render.postlowerofs;
+    static TextureAsset[] postupper => render.postupper;
+    static int[] postupperofs => render.postupperofs;
+    static short[] postunderside => render.postunderside;   // an arch's: the height where the trace leaves it, 0 for none
+    static TextureAsset?[] postundertexture => render.postundertexture;
+    static bool[] postunderflat => render.postunderflat;   // the underside's texture is a ceiling flat
+    static byte[][] postlight => render.postlight;   // its face's light row
+    static TextureAsset?[] postpatch => render.postpatch;   // a wall patch over it (mapdefs patches)
+    static int[] postpatchofs => render.postpatchofs;   // the patch's column: postlowerofs, unless the wall's face is flipped
+    static byte[] postpatchstory => render.postpatchstory;   // the patch's story (MapPatchTranslation.Story)
 
     // The open tile the trace last came from (a TileIndex): walls and doors it hits are seen from
     // there, so take its base light. A wall or door tile keeps the one before it (a wall the
     // trace passes, an open door).
-    static int hittile = -1;
+    static int hittile { get => render.hittile; set => render.hittile = value; }
 
     static void EnterTileLight(int x, int y)
     {
@@ -291,11 +304,11 @@ internal partial class Program
         return LightAt(hittile, gx, gy);
     }
 
-    internal static short postheight;   // the height (as wallheight) of the post ScalePost queues
-    static int hitstories;              // how many stories tall the wall the trace just hit is
-    static bool columnhit;              // this column's trace has hit a wall: wallheight is set
-    static int columntallest;           // the most stories of any wall it has hit
-    static int columntop;               // the highest screen row any of them reach
+    internal static short postheight { get => render.postheight; set => render.postheight = value; }   // the height (as wallheight) of the post ScalePost queues
+    static int hitstories { get => render.hitstories; set => render.hitstories = value; }   // how many stories tall the wall the trace just hit is
+    static bool columnhit { get => render.columnhit; set => render.columnhit = value; }   // this column's trace has hit a wall: wallheight is set
+    static int columntallest { get => render.columntallest; set => render.columntallest = value; }   // the most stories of any wall it has hit
+    static int columntop { get => render.columntop; set => render.columntop = value; }   // the highest screen row any of them reach
 
     internal static void ScalePost()
     {
@@ -436,14 +449,14 @@ internal partial class Program
     ====================
     */
 
-    static bool archopen;
-    static short archheight;            // where the trace entered it (short.MaxValue: the view is inside)
-    static int archstories;
-    static TextureAsset? archtexture;
-    static TextureAsset? archunderside;
-    static bool archunderflat;          // archunderside is the tile's ceiling flat
-    static int archofs;
-    static byte[] archlight = noshade;  // its face's light row: where the trace entered it, seen from the tile before
+    static bool archopen { get => render.archopen; set => render.archopen = value; }
+    static short archheight { get => render.archheight; set => render.archheight = value; }   // where the trace entered it (short.MaxValue: the view is inside)
+    static int archstories { get => render.archstories; set => render.archstories = value; }
+    static TextureAsset? archtexture { get => render.archtexture; set => render.archtexture = value; }
+    static TextureAsset? archunderside { get => render.archunderside; set => render.archunderside = value; }
+    static bool archunderflat { get => render.archunderflat; set => render.archunderflat = value; }   // archunderside is the tile's ceiling flat
+    static int archofs { get => render.archofs; set => render.archofs = value; }
+    static byte[] archlight { get => render.archlight; set => render.archlight = value; }   // its face's light row: where the trace entered it, seen from the tile before
 
     static bool IsArch(int tilex, int tiley) => _mapManager.tilemap[tilex, tiley] == 0 && _mapManager.storymap[tilex, tiley] > 1;
 
@@ -573,10 +586,14 @@ internal partial class Program
     //
     // the trace's position, kept from before it enters a tile, to carry on past a wall it hits there
     //
-    static short savedxtile, savedytile;
-    static int savedxintercept, savedyintercept, savedxinttile, savedyinttile;
-    static ushort savedtexdelta;
-    static bool pastwall;               // tracing on past the nearest wall: tiles aren't visible
+    static short savedxtile { get => render.savedxtile; set => render.savedxtile = value; }
+    static short savedytile { get => render.savedytile; set => render.savedytile = value; }
+    static int savedxintercept { get => render.savedxintercept; set => render.savedxintercept = value; }
+    static int savedyintercept { get => render.savedyintercept; set => render.savedyintercept = value; }
+    static int savedxinttile { get => render.savedxinttile; set => render.savedxinttile = value; }
+    static int savedyinttile { get => render.savedyinttile; set => render.savedyinttile = value; }
+    static ushort savedtexdelta { get => render.savedtexdelta; set => render.savedtexdelta = value; }
+    static bool pastwall { get => render.pastwall; set => render.pastwall = value; }   // tracing on past the nearest wall: tiles aren't visible
 
     static void SaveTrace()
     {
@@ -961,10 +978,10 @@ internal partial class Program
         => _assetManager.Find<TextureAsset>(_mapManager.ChangedTexture(tilex, tiley, name), gamestate.TimeCount,
             _mapManager.animstart[(tiley << MapManager.MAPSHIFT) + tilex]);
 
-    static TextureAsset? patchsource;   // the wall patch for the post ScalePost queues, if it has one
-    static int patchofs;                // its column (never mirrored with a flipped face)
-    static int patchstory;
-    static bool hitpushwall;            // the wall being hit is a moving pushwall: its tile is pwallx, pwally
+    static TextureAsset? patchsource { get => render.patchsource; set => render.patchsource = value; }   // the wall patch for the post ScalePost queues, if it has one
+    static int patchofs { get => render.patchofs; set => render.patchofs = value; }   // its column (never mirrored with a flipped face)
+    static int patchstory { get => render.patchstory; set => render.patchstory = value; }
+    static bool hitpushwall { get => render.hitpushwall; set => render.hitpushwall = value; }   // the wall being hit is a moving pushwall: its tile is pwallx, pwally
 
     /// <summary>
     /// Sets the patch (mapdefs patches) on the face the trace sees of the wall tile it hit, for
@@ -1114,7 +1131,7 @@ internal partial class Program
     ====================
     */
 
-    static int diaghitu;    // where the last TraceDiagonal hit, as the tile-local x (0..TILEGLOBAL)
+    static int diaghitu { get => render.diaghitu; set => render.diaghitu = value; }   // where the last TraceDiagonal hit, as the tile-local x (0..TILEGLOBAL)
 
     // Whether the tile edge a trace enters by is one of the diagonal's two solid edges
     private static bool IsSolidEdge(WallShape shape, controldirs edge) => edge switch
