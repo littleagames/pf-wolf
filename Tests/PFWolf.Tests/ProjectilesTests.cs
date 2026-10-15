@@ -28,7 +28,7 @@ public class ProjectilesTests
         _session = new GameSession();
         _wallSpriteInTheWay = false;
         _projectiles = new Projectiles(_map, null!, _session, new ProjectileHooks(
-            (_, _, _, _, _, _, _) => _wallSpriteInTheWay ? new Program.WallSpriteSpan(0, 0, 1, 0) : null,
+            (_, _, _, _, _, _, _) => _wallSpriteInTheWay ? new WallSpriteSpan(0, 0, 1, 0) : null,
             (_, _) => { }, (_, _, _) => { }));
     }
 

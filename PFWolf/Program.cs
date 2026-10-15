@@ -235,6 +235,7 @@ internal partial class Program
         doors = new Doors(_gameEngineManager, _audioManager, _mapManager, _inventoryManager, _hudMessageManager, session,
             new DoorHooks(PlaySoundLocTile, DrawKeys));
         pushWalls = new PushWalls(_mapManager, _audioManager, session, () => demoplayback || demorecord);
+        wallSpriteBlocking = new WallSpriteBlocking(_mapManager);
         lineOfSight = new LineOfSight(_mapManager, doors, session, WallSpriteBlocksLine);
         switchActions = MakeSwitchActions();
         smartSwitches = MakeSmartSwitches();

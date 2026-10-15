@@ -20,7 +20,7 @@ internal sealed record PlayerMovementHooks(
     Func<bool> DemoActive,
     Func<bool> NoClip,
     Action<string> PlayPlayerSound,
-    Func<int, int, int, int, int, int, long, Program.WallSpriteSpan?> WallSpriteHit,
+    Func<int, int, int, int, int, int, long, WallSpriteSpan?> WallSpriteHit,
     Action<int, int> WallSpriteMoveFrom,
     Action<MapTriggerTranslation, int, int, controldirs> ActivateTrigger);
 
@@ -40,7 +40,7 @@ internal sealed class PlayerMovement(
     WallShape diagonalblock;
 
     // The panel the player last ran into in TryMove, for ClipMove to slide along
-    Program.WallSpriteSpan? wallspriteblock;
+    WallSpriteSpan? wallspriteblock;
 
     /// <summary>The cardinal direction the player faces, as Cmd_Use reckons it</summary>
     internal static controldirs FacingDir(int angle) =>

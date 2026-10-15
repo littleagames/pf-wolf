@@ -8,7 +8,7 @@ namespace PFWolf.Gameplay;
 /// <param name="PlaySoundAt">A sound from where an actor is</param>
 /// <param name="HurtPlayer">Hurts a particular player, as the acting player while it does</param>
 internal sealed record ProjectileHooks(
-    Func<int, int, int, int, int, int, long, Program.WallSpriteSpan?> WallSpriteHit,
+    Func<int, int, int, int, int, int, long, WallSpriteSpan?> WallSpriteHit,
     Action<string, Entities.Actors.Actor> PlaySoundAt,
     Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer);
 
