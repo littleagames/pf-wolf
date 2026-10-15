@@ -240,6 +240,7 @@ internal partial class Program
         smartSwitches = MakeSmartSwitches();
         hubs = new Hubs(_gameEngineManager, _mapManager, session);
         projectileActions = MakeProjectileActions();
+        lighting = MakeLighting();
         statusBarDrawing = MakeStatusBarDrawing();
         deathmatch = MakeDeathmatch();
         playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);

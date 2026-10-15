@@ -1,4 +1,4 @@
-﻿global using PFWolf.Constants;
+global using PFWolf.Constants;
 global using PFWolf.Entities;
 global using PFWolf.Enums;
 global using PFWolf.Exceptions;
@@ -8,3 +8,4 @@ global using PFWolf.Startup;
 global using PFWolf.Commands;
 global using PFWolf.SaveGames;
 global using PFWolf.Ui;
+global using PFWolf.Rendering;
