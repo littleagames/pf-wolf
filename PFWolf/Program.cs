@@ -264,6 +264,9 @@ internal partial class Program
         playerWeapons = MakePlayerWeapons();
         playScreen = MakePlayScreen();
         consoleDrawing = new ConsoleDrawing(_videoManager, _graphicManager, _fontManager, _consoleManager, playScreen, statusBarDrawing);
+        debugCommands = new DebugCommands(_consoleManager, _gameEngineManager, _videoManager, _mapManager, doors, frameRefresh, debugScreens,
+            playScreen, render, consoleTargets, session,
+            new DebugCommandsHooks(() => viewsize, () => singlestep, step => singlestep = step, () => extravbls, vbls => extravbls = vbls));
         playerStats = MakePlayerStats();
         playerActions = MakePlayerActions();
         playerUse = MakePlayerUse();

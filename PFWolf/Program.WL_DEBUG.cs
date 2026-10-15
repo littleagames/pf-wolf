@@ -5,6 +5,7 @@ namespace PFWolf;
 internal partial class Program
 {
     static DebugScreens debugScreens = null!;       // made in InitServices
+    static DebugCommands debugCommands = null!;     // (Commands/DebugCommands.cs)
 
     // Set by the "screenshot" command; ThreeDRefresh takes the shot before drawing the console.
     static bool screenshotPending { get => debugScreens.screenshotPending; set => debugScreens.screenshotPending = value; }

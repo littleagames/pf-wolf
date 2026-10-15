@@ -1,0 +1,196 @@
+using System.Text;
+using PFWolf.Constants;
+using static PFWolf.Commands.ConsoleArgs;
+
+namespace PFWolf.Commands;
+
+/// <summary>What the debugging commands need from the game</summary>
+/// <param name="ViewSize">The view's size setting (a border to redraw under 20)</param>
+/// <param name="SingleStep">VBLs waited each frame (slowmo)</param>
+/// <param name="SetSingleStep">Sets them</param>
+/// <param name="ExtraVbls">Extra VBLs a frame (vbls)</param>
+/// <param name="SetExtraVbls">Sets them</param>
+internal sealed record DebugCommandsHooks(
+    Func<int> ViewSize,
+    Func<byte> SingleStep,
+    Action<byte> SetSingleStep,
+    Func<int> ExtraVbls,
+    Action<int> SetExtraVbls);
+
+/// <summary>
+/// Debugging aids and information from the console: overhead, where, count, actors, maps, fps,
+/// slowmo, vbls, fade and screenshot
+/// </summary>
+internal sealed class DebugCommands(
+    ConsoleManager console,
+    GameEngineManager engine,
+    VideoManager video,
+    MapManager map,
+    Doors doors,
+    FrameRefresh frame,
+    DebugScreens debugScreens,
+    PlayScreen playScreen,
+    RenderState render,
+    ConsoleTargets targets,
+    GameSession session,
+    DebugCommandsHooks hooks)
+{
+    internal void Register()
+    {
+        console.Register("overhead", "Shows the raw and filtered map overview.", "overhead", Cmd_Overhead, Cheat | InLevel);
+        console.Register("where", "Shows the player's position and what's at their tile.", "where", Cmd_Where, InLevel, aliases: ["pos"]);
+        console.Register("count", "Counts doors and actors.", "count", Cmd_Count, InLevel);
+        console.Register("actors", "Lists actors, optionally only those whose name contains the filter.", "actors [filter]", Cmd_Actors, InLevel,
+            complete: (_, i) => i == 0 ? map.GetActors().Select(a => a.Name) : []);
+        console.Register("maps", "Lists the levels that map can warp to.", "maps", Cmd_Maps);
+        console.Register("fps", "Toggles the frame rate counter.", "fps [0|1]", Cmd_Fps, complete: Values("0", "1"));
+        console.Register("slowmo", "Waits extra VBLs every frame (0 = off).", "slowmo [0-50]", Cmd_SlowMo);
+        console.Register("vbls", "Adds extra VBLs per frame (0 = off).", "vbls [0-8]", Cmd_Vbls);
+        console.Register("fade", "Fades the view out to black and back in, to try a fade style.",
+            "fade <palette|fizzle|melt|mosaic> [tics]", Cmd_Fade, InLevel,
+            complete: Values(Enum.GetNames<FadeStyle>().Select(n => n.ToLowerInvariant()).ToArray()));
+        console.Register("screenshot","Saves the screen, without the console, to WSHOT###.BMP in the screenshots folder.", "screenshot", _ => debugScreens.screenshotPending = true);
+    }
+    internal void Cmd_Overhead(string[] args)
+    {
+        // BasicOverhead is a blocking screen that waits for a key, so it can't run while the
+        // console owns the keyboard. Close it and run the view from the play loop instead.
+        console.Close();
+        console.Defer(() =>
+        {
+            debugScreens.BasicOverhead();
+            if (hooks.ViewSize() < 20)
+                playScreen.DrawPlayBorder();
+            frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
+        });
+    }
+
+    internal void Cmd_Where(string[] args)
+    {
+        int x = session.player.TileX, y = session.player.TileY;
+
+        console.Print($"X: {session.player.X} ({session.player.X % MapConstants.TILEGLOBAL})  Y: {session.player.Y} ({session.player.Y % MapConstants.TILEGLOBAL})  Angle: {session.player.Angle}");
+        console.Print($"Tile: {x},{y}  Area: {session.player.AreaNumber}  Map: {session.gamestate.mapon}");
+        console.Print($"tilemap: {map.tilemap[x, y]}  plane 1: {map.MAPSPOT(x, y, 1)}  spotvis: {map.spotvis[x, y]}");
+        console.Print($"actorat: {map.actorat[x, y]?.GetType().Name ?? "(nothing)"}");
+
+        var diagonals = new[] { (x + 1, y), (x, y - 1), (x - 1, y), (x, y + 1) }
+            .Where(t => map.wallshape[t.Item1, t.Item2] != WallShape.Square)
+            .Select(t => $"{t.Item1},{t.Item2} {map.wallshape[t.Item1, t.Item2]}");
+        if (diagonals.Any())
+            console.Print($"diagonal walls beside: {string.Join("  ", diagonals)}");
+
+        var (fx, fy) = targets.TileArg([], 0);
+        console.Print($"wall heights: level {render.wallstories}  tallest {map.MaxWallStories}  "
+            + $"faced tile {fx},{fy}: {map.WallStories(fx, fy)} (plane 3: {map.MAPSPOT(fx, fy, MapManager.HEIGHTPLANE)})");
+
+        console.Print($"flats: floor {map.FlatName(x, y, false)}  ceiling {map.FlatName(x, y, true)}  "
+            + $"(plane 2: {map.MAPSPOT(x, y, MapManager.FLATPLANE)})");
+
+        console.Print($"tags (plane 4): tile {map.GetTag(x, y)}  faced tile {fx},{fy}: {map.GetTag(fx, fy)}");
+        console.Print($"faced tile {fx},{fy}: {targets.DescribePatch(map.GetPatch(fx, fy))}");
+
+        int zone = map.GetZone(x, y);
+        console.Print($"light zone (plane 5): {zone} ({targets.DescribeZone(zone)})");
+    }
+
+    internal void Cmd_Count(string[] args)
+    {
+        var actors = map.GetActors();
+        int enemies = actors.Count(MapManager.IsEnemy);
+        int alive = actors.Count(a => MapManager.IsEnemy(a) && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
+        int active = actors.Count(a => a.Active != activetypes.ac_no);
+
+        console.Print($"Doors: {doors.doornum}");
+        for (int i = 0; i < doors.doornum; i++)
+        {
+            var door = doors.doorobjlist[i];
+            if (!string.IsNullOrEmpty(door.Lock))
+                console.Print($"  locked ({door.Lock}) at {door.tilex},{door.tiley}");
+        }
+        console.Print($"Actors: {actors.Count}  active: {active}");
+        console.Print($"Enemies: {enemies}  alive: {alive}");
+        console.Print($"Kills: {session.gamestate.killcount}/{session.gamestate.killtotal}  Secrets: {session.gamestate.secretcount}/{session.gamestate.secrettotal}  Treasure: {session.gamestate.treasurecount}/{session.gamestate.treasuretotal}");
+    }
+
+    internal void Cmd_Actors(string[] args)
+    {
+        string filter = args.Length > 0 ? args[0] : "";
+        int shown = 0;
+
+        foreach (var actor in map.GetActors())
+        {
+            if (!actor.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var line = new StringBuilder($"{actor.Name} at {actor.TileX},{actor.TileY}");
+            if (actor.CurrentState != null)
+                line.Append($"  state {actor.CurrentState.StateName}");
+            if (MapManager.IsEnemy(actor))
+                line.Append($"  hp {actor.Hitpoints}");
+            if (actor.Active != activetypes.ac_no)
+                line.Append("  active");
+            if (actor.Tag != 0)
+                line.Append($"  tag {actor.Tag}");
+            line.Append(targets.WallSpriteDescription(actor));
+
+            console.Print(line.ToString());
+            shown++;
+        }
+
+        console.Print($"{shown} actor(s)");
+    }
+
+    internal void Cmd_Maps(string[] args)
+    {
+        // Ten to a row (an episode's worth in Wolf3D) so a whole game fits in the console.
+        var names = engine.GetGameInfo().Maps.Keys
+            .Select(name => name == session.gamestate?.mapon ? $"[{name}]" : name)
+            .ToList();
+
+        for (int i = 0; i < names.Count; i += 10)
+            console.Print(string.Join(' ', names.Skip(i).Take(10)));
+
+        if (map.Player != null)
+            console.Print($"Current map is {session.gamestate.mapon}");
+    }
+
+    internal void Cmd_Fps(string[] args)
+    {
+        frame.fpscounter = Toggle(args, frame.fpscounter);
+        console.Print(frame.fpscounter ? "FPS counter ON" : "FPS counter OFF");
+    }
+
+    internal void Cmd_Fade(string[] args)
+    {
+        if (args.Length == 0 || !Enum.TryParse<FadeStyle>(args[0], ignoreCase: true, out var style))
+            throw new ArgumentException("usage: fade <palette|fizzle|melt|mosaic> [tics]");
+
+        // Without a length, as long as a screen fade
+        int? tics = args.Length > 1 ? ParseInt(args[1], 1, 700) : video.FadeTics;
+
+        // Fading blocks, so run it from the play loop with the console out of the picture.
+        console.Close();
+        console.Defer(() =>
+        {
+            frame.ThreeDRefresh();
+            video.FadeOut(style, new Color { Alpha = 255 }, 30, tics);
+            video.FadeIn(style, 30, tics);
+            frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
+        });
+    }
+
+    internal void Cmd_SlowMo(string[] args)
+    {
+        if (args.Length > 0)
+            hooks.SetSingleStep((byte)ParseInt(args[0], 0, 50));
+        console.Print($"slowmo is {hooks.SingleStep()}");
+    }
+
+    internal void Cmd_Vbls(string[] args)
+    {
+        if (args.Length > 0)
+            hooks.SetExtraVbls(ParseInt(args[0], 0, 8));
+        console.Print($"vbls is {hooks.ExtraVbls()}");
+    }
+}

@@ -67,7 +67,7 @@ internal partial class Program
             _ => playstate = playstatetypes.ex_completed, Cheat | InLevel);
         Register("tp", "Teleports to a tile.", "tp <tilex> <tiley> [angle]", Cmd_Teleport, Cheat | InLevel);
         Register("killall", "Kills every enemy on the level.", "killall", Cmd_KillAll, Cheat | InLevel);
-        Register("overhead", "Shows the raw and filtered map overview.", "overhead", Cmd_Overhead, Cheat | InLevel);
+        debugCommands.Register();       // overhead, where, count, actors, maps, fps, slowmo, vbls, fade, screenshot (Commands/DebugCommands.cs)
         Register("diag", "Makes a wall tile (default: the one you face) a 45 degree wall, named by its solid corner.",
             "diag <square|solidnw|solidne|solidsw|solidse> [tilex tiley]", Cmd_Diag, Cheat | InLevel,
             complete: (_, i) => i == 0 ? Enum.GetNames<WallShape>().Select(n => n.ToLowerInvariant()) : []);
@@ -103,23 +103,11 @@ internal partial class Program
         Register("hurt", "Damages the player.", "hurt [points]", Cmd_Hurt, InLevel | Solo);
         Register("playerclass", "Shows the class being played as and the classes there are; with a name, the class new games are played as.",
             "playerclass [class]", Cmd_PlayerClass, complete: (_, i) => i == 0 ? PlayerClasses() : []);
-        Register("where", "Shows the player's position and what's at their tile.", "where", Cmd_Where, InLevel, aliases: ["pos"]);
-        Register("count", "Counts doors and actors.", "count", Cmd_Count, InLevel);
-        Register("actors", "Lists actors, optionally only those whose name contains the filter.", "actors [filter]", Cmd_Actors, InLevel,
-            complete: (_, i) => i == 0 ? _mapManager.GetActors().Select(a => a.Name) : []);
-        Register("maps", "Lists the levels that map can warp to.", "maps", Cmd_Maps);
         Register("scripts", "Lists the Lua scripts that loaded (scripts/*.lua), those left out and why, and the actions they give.", "scripts", Cmd_Scripts);
         Register("lua", "Runs Lua in the scripts' state (`me` is the player). Strings take 'single quotes'; separate statements with spaces, not ;.",
             "lua <code>", Cmd_Lua, Cheat);
         demoCommands.Register();        // playdemo, demotest, recorddemo (Commands/DemoCommands.cs)
         saveCommands.Register();        // saves, autosave, save, load (Commands/SaveCommands.cs)
-        Register("fps", "Toggles the frame rate counter.", "fps [0|1]", Cmd_Fps, complete: Values("0", "1"));
-        Register("slowmo", "Waits extra VBLs every frame (0 = off).", "slowmo [0-50]", Cmd_SlowMo);
-        Register("vbls", "Adds extra VBLs per frame (0 = off).", "vbls [0-8]", Cmd_Vbls);
-        Register("fade", "Fades the view out to black and back in, to try a fade style.",
-            "fade <palette|fizzle|melt|mosaic> [tics]", Cmd_Fade, InLevel,
-            complete: Values(Enum.GetNames<FadeStyle>().Select(n => n.ToLowerInvariant()).ToArray()));
-        Register("screenshot","Saves the screen, without the console, to WSHOT###.BMP in the screenshots folder.", "screenshot", _ => screenshotPending = true);
         Register("quit", "Quits the game immediately.", "quit", _ => _gameEngineManager.Quit(""));
     }
 
@@ -501,20 +489,6 @@ internal partial class Program
         _consoleManager.Print($"Killed {enemies.Count} enemies");
     }
 
-    private static void Cmd_Overhead(string[] args)
-    {
-        // BasicOverhead is a blocking screen that waits for a key, so it can't run while the
-        // console owns the keyboard. Close it and run the view from the play loop instead.
-        _consoleManager.Close();
-        _consoleManager.Defer(() =>
-        {
-            BasicOverhead();
-            if (viewsize < 20)
-                DrawPlayBorder();
-            lasttimecount = (int)GameEngineManager.GetTimeCount();
-        });
-    }
-
     /*
     =============================================================================
 
@@ -529,133 +503,5 @@ internal partial class Program
         _consoleManager.Print($"Health is {playerstate.health}, armor {playerstate.armor} ({playerstate.armorpercent}%)");
     }
 
-    private static void Cmd_Where(string[] args)
-    {
-        int x = player.TileX, y = player.TileY;
 
-        _consoleManager.Print($"X: {player.X} ({player.X % MapConstants.TILEGLOBAL})  Y: {player.Y} ({player.Y % MapConstants.TILEGLOBAL})  Angle: {player.Angle}");
-        _consoleManager.Print($"Tile: {x},{y}  Area: {player.AreaNumber}  Map: {gamestate.mapon}");
-        _consoleManager.Print($"tilemap: {_mapManager.tilemap[x, y]}  plane 1: {_mapManager.MAPSPOT(x, y, 1)}  spotvis: {_mapManager.spotvis[x, y]}");
-        _consoleManager.Print($"actorat: {_mapManager.actorat[x, y]?.GetType().Name ?? "(nothing)"}");
-
-        var diagonals = new[] { (x + 1, y), (x, y - 1), (x - 1, y), (x, y + 1) }
-            .Where(t => _mapManager.wallshape[t.Item1, t.Item2] != WallShape.Square)
-            .Select(t => $"{t.Item1},{t.Item2} {_mapManager.wallshape[t.Item1, t.Item2]}");
-        if (diagonals.Any())
-            _consoleManager.Print($"diagonal walls beside: {string.Join("  ", diagonals)}");
-
-        var (fx, fy) = TileArg([], 0);
-        _consoleManager.Print($"wall heights: level {wallstories}  tallest {_mapManager.MaxWallStories}  "
-            + $"faced tile {fx},{fy}: {_mapManager.WallStories(fx, fy)} (plane 3: {_mapManager.MAPSPOT(fx, fy, MapManager.HEIGHTPLANE)})");
-
-        _consoleManager.Print($"flats: floor {_mapManager.FlatName(x, y, false)}  ceiling {_mapManager.FlatName(x, y, true)}  "
-            + $"(plane 2: {_mapManager.MAPSPOT(x, y, MapManager.FLATPLANE)})");
-
-        _consoleManager.Print($"tags (plane 4): tile {_mapManager.GetTag(x, y)}  faced tile {fx},{fy}: {_mapManager.GetTag(fx, fy)}");
-        _consoleManager.Print($"faced tile {fx},{fy}: {DescribePatch(_mapManager.GetPatch(fx, fy))}");
-
-        int zone = _mapManager.GetZone(x, y);
-        _consoleManager.Print($"light zone (plane 5): {zone} ({DescribeZone(zone)})");
-    }
-
-    private static void Cmd_Count(string[] args)
-    {
-        var actors = _mapManager.GetActors();
-        int enemies = actors.Count(MapManager.IsEnemy);
-        int alive = actors.Count(a => MapManager.IsEnemy(a) && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
-        int active = actors.Count(a => a.Active != activetypes.ac_no);
-
-        _consoleManager.Print($"Doors: {doornum}");
-        for (int i = 0; i < doornum; i++)
-        {
-            var door = doorobjlist[i];
-            if (!string.IsNullOrEmpty(door.Lock))
-                _consoleManager.Print($"  locked ({door.Lock}) at {door.tilex},{door.tiley}");
-        }
-        _consoleManager.Print($"Actors: {actors.Count}  active: {active}");
-        _consoleManager.Print($"Enemies: {enemies}  alive: {alive}");
-        _consoleManager.Print($"Kills: {gamestate.killcount}/{gamestate.killtotal}  Secrets: {gamestate.secretcount}/{gamestate.secrettotal}  Treasure: {gamestate.treasurecount}/{gamestate.treasuretotal}");
-    }
-
-    private static void Cmd_Actors(string[] args)
-    {
-        string filter = args.Length > 0 ? args[0] : "";
-        int shown = 0;
-
-        foreach (var actor in _mapManager.GetActors())
-        {
-            if (!actor.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            var line = new StringBuilder($"{actor.Name} at {actor.TileX},{actor.TileY}");
-            if (actor.CurrentState != null)
-                line.Append($"  state {actor.CurrentState.StateName}");
-            if (MapManager.IsEnemy(actor))
-                line.Append($"  hp {actor.Hitpoints}");
-            if (actor.Active != activetypes.ac_no)
-                line.Append("  active");
-            if (actor.Tag != 0)
-                line.Append($"  tag {actor.Tag}");
-            line.Append(WallSpriteDescription(actor));
-
-            _consoleManager.Print(line.ToString());
-            shown++;
-        }
-
-        _consoleManager.Print($"{shown} actor(s)");
-    }
-
-    private static void Cmd_Maps(string[] args)
-    {
-        // Ten to a row (an episode's worth in Wolf3D) so a whole game fits in the console.
-        var names = _gameEngineManager.GetGameInfo().Maps.Keys
-            .Select(name => name == gamestate?.mapon ? $"[{name}]" : name)
-            .ToList();
-
-        for (int i = 0; i < names.Count; i += 10)
-            _consoleManager.Print(string.Join(' ', names.Skip(i).Take(10)));
-
-        if (_mapManager.Player != null)
-            _consoleManager.Print($"Current map is {gamestate.mapon}");
-    }
-
-
-    private static void Cmd_Fps(string[] args)
-    {
-        fpscounter = Toggle(args, fpscounter);
-        _consoleManager.Print(fpscounter ? "FPS counter ON" : "FPS counter OFF");
-    }
-
-    private static void Cmd_Fade(string[] args)
-    {
-        if (args.Length == 0 || !Enum.TryParse<FadeStyle>(args[0], ignoreCase: true, out var style))
-            throw new ArgumentException("usage: fade <palette|fizzle|melt|mosaic> [tics]");
-
-        // Without a length, as long as a screen fade
-        int? tics = args.Length > 1 ? ParseInt(args[1], 1, 700) : _videoManager.FadeTics;
-
-        // Fading blocks, so run it from the play loop with the console out of the picture.
-        _consoleManager.Close();
-        _consoleManager.Defer(() =>
-        {
-            ThreeDRefresh();
-            _videoManager.FadeOut(style, new Color { Alpha = 255 }, 30, tics);
-            _videoManager.FadeIn(style, 30, tics);
-            lasttimecount = (int)GameEngineManager.GetTimeCount();
-        });
-    }
-
-    private static void Cmd_SlowMo(string[] args)
-    {
-        if (args.Length > 0)
-            singlestep = (byte)ParseInt(args[0], 0, 50);
-        _consoleManager.Print($"slowmo is {singlestep}");
-    }
-
-    private static void Cmd_Vbls(string[] args)
-    {
-        if (args.Length > 0)
-            extravbls = ParseInt(args[0], 0, 8);
-        _consoleManager.Print($"vbls is {extravbls}");
-    }
 }
