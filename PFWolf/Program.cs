@@ -260,6 +260,7 @@ internal partial class Program
         automapDrawing = MakeAutomapDrawing();
         playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);
         playerWeapons = MakePlayerWeapons();
+        playScreen = MakePlayScreen();
         playerStats = MakePlayerStats();
         playerUse = MakePlayerUse();
         playerMovement = MakePlayerMovement();

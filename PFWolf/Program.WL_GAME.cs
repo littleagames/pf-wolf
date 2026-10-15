@@ -316,170 +316,19 @@ internal partial class Program
     internal static bool RecordPendingDemo() => demos.RecordPendingDemo();
     internal static void RecordDemo(int level, int? demonumber = null) => demos.RecordDemo(level, demonumber);
 
-    internal static void DrawPlayScreen()
-    {
-        if (StatusBar.Get("background") is { Pic: { Length: > 0 } statusbarpic } background)
-        {
-            FillBarSides(background, atTop: false, STATUSLINES);
-            using var _ = _videoManager.UseUiOrigin(UiAnchor.Bottom);
-            _graphicManager.DrawPic(statusbarpic, 0, 200 - STATUSLINES);
-        }
-        DrawTopBar();
-        DrawPlayBorder();
+    // The screen around the view: status bar, border and "get psyched" (Ui/PlayScreen.cs)
+    static PlayScreen playScreen = null!;       // made in InitServices
 
-        DrawFace();
-        DrawHealth();
-        DrawArmor();
-        DrawLives();
-        DrawLevel();
-        DrawWeapon();
-        DrawAmmo();
-        DrawCharge();
-        DrawKeys();
-        DrawScore();
-        DrawLocation();
-        DrawHeartMonitor(force: true);
-        DrawRadarGauge();
-        if (StatusBar.Get("radar") is { } radar && !(viewsize == 21 && ingame))
-            DrawRadar(radar);
-        DrawInfoArea(force: true);
-    }
+    static PlayScreen MakePlayScreen() => new(_assetManager, _gameEngineManager, _videoManager, _graphicManager, _inputManager,
+        statusBarDrawing, playerWeapons, radar, render,
+        new PlayScreenHooks(() => viewsize, () => ingame, () => bordercol, ShowLevelStartMessage));
 
-    /// <summary>The thickness of the view border's lines: a layout pixel's worth of screen pixels, at least one</summary>
-    static int BorderLinePixels => Math.Max(1, _videoManager.ToScreenLength(1));
-
-    internal static void DrawPlayBorder()
-    {
-        int px = BorderLinePixels;
-
-        if (bordercol != "VIEWCOLOR")
-            DrawStatusBorder(bordercol);
-        else
-        {
-            // Beside the status bar: from each screen edge to the border's sides into the picture.
-            // A bar with no border (Blake Stone's) keeps its side-color there instead.
-            int sides = StatusBar.Get("border") is { } border ? _videoManager.ScreenX(border.Sides) : 0;
-            int top = _videoManager.ScreenYAboveBottom(STATUSLINES);
-            if (sides > 0 && STATUSLINES > 0)
-            {
-                _videoManager.BarScaledCoord(0, top, sides, _videoManager.screenHeight - top, bordercol);
-                _videoManager.BarScaledCoord(_videoManager.screenWidth - sides, top, sides, _videoManager.screenHeight - top, bordercol);
-            }
-        }
-
-        if (viewheight == _videoManager.screenHeight) return;
-
-        _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaHeight, bordercol);
-
-        int xl = _videoManager.screenWidth / 2 - viewwidth / 2;
-        int yl = PlayAreaTop + (PlayAreaHeight - viewheight) / 2;
-        _videoManager.BarScaledCoord(xl, yl, viewwidth, viewheight, "Black");
-
-        if (xl != 0)
-        {
-            // Paint game view border lines
-            _videoManager.BarScaledCoord(xl - px, yl - px, viewwidth + px, px, "Black");                      // upper border
-            _videoManager.BarScaledCoord(xl, yl + viewheight, viewwidth + px, px, bordercol);// - 2);       // lower border
-            _videoManager.BarScaledCoord(xl - px, yl - px, px, viewheight + px, "Black");                     // left border
-            _videoManager.BarScaledCoord(xl + viewwidth, yl - px, px, viewheight + 2 * px, bordercol);// - 2);  // right border
-            _videoManager.BarScaledCoord(xl - px, yl + viewheight, px, px, bordercol);// - 3);              // lower left highlight
-        }
-        else
-        {
-            // Just paint a lower border line
-            _videoManager.BarScaledCoord(0, yl + viewheight, viewwidth, px, bordercol);// - 2);       // lower border
-        }
-    }
-
-    internal static void DrawPlayBorderSides()
-    {
-        if (viewsize == 21) return;
-
-        int sw = _videoManager.screenWidth;
-        int sh = _videoManager.screenHeight;
-        int vw = viewwidth;
-        int vh = viewheight;
-        int px = BorderLinePixels;
-
-        int top = PlayAreaTop;                  // below any top status bar
-        int h = PlayAreaHeight;
-        int xl = sw / 2 - vw / 2;
-        int yl = top + (h - vh) / 2;
-
-        if (xl != 0)
-        {
-            _videoManager.BarScaledCoord(0, top, xl - px, h, bordercol);                 // left side
-            _videoManager.BarScaledCoord(xl + vw + px, top, sw - (xl + vw + px), h, bordercol);          // right side, out to the screen edge
-        }
-
-        if (yl != top)
-        {
-            _videoManager.BarScaledCoord(0, top, sw, yl - px - top, bordercol);                    // upper side
-            _videoManager.BarScaledCoord(0, yl + vh + px, sw, top + h - (yl + vh + px), bordercol);         // lower side, down to the status bar
-        }
-
-        if (xl != 0)
-        {
-            // Paint game view border lines
-            _videoManager.BarScaledCoord(xl - px, yl - px, vw + px, px, "Black");                      // upper border
-            _videoManager.BarScaledCoord(xl, yl + vh, vw + px, px, bordercol);// - 2);          // lower border
-            _videoManager.BarScaledCoord(xl - px, yl - px, px, vh + px, "Black");                      // left border
-            _videoManager.BarScaledCoord(xl + vw, yl - px, px, vh + px * 2, bordercol);// - 2);          // right border
-            _videoManager.BarScaledCoord(xl - px, yl + vh, px, px, bordercol);// - 3);          // lower left highlight
-        }
-        else
-        {
-            // Just paint a lower border line
-            _videoManager.BarScaledCoord(0, yl + vh, vw, px, bordercol);// - 2);       // lower border
-        }
-    }
-
-    /// <summary>
-    /// Paints the view border and the status bar's own border-colored areas (statusbar.yaml
-    /// border rects) in <paramref name="color"/>.
-    /// </summary>
-    internal static void DrawStatusBorder(string color)
-    {
-        _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaHeight, color);
-
-        foreach (var rect in StatusBar.Get("border")?.Rects ?? [])
-        {
-            if (rect.Count != 4)
-                continue;
-            int x = _videoManager.ScreenX(rect[0]), width = _videoManager.ScreenX(rect[0] + rect[2]) - x;
-            if (rect[0] <= 0)
-            {
-                width += x;             // out to the left edge
-                x = 0;
-            }
-            if (rect[0] + rect[2] >= 320)
-                width = _videoManager.screenWidth - x;  // out to the right edge
-            // Down from the status bar's top, which sits on the screen's bottom
-            int y = _videoManager.ScreenYAboveBottom(STATUSLINES - rect[1]);
-            _videoManager.BarScaledCoord(x, y, width, _videoManager.ScreenYAboveBottom(STATUSLINES - rect[1] - rect[3]) - y, color);
-        }
-    }
-
-    /// <summary>
-    /// The level's name for showing to the player: game-info's name for it, else
-    /// "Episode X, Floor Y" ("Floor Y" when there's one playable episode), else the map's lump name.
-    /// </summary>
-    internal static string GetMapDisplayName(string mapon)
-    {
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        if (!gameInfo.Maps.TryGetValue(mapon, out var mapInfo))
-            return mapon;
-
-        var language = _assetManager.GetText("en-us");
-        if (!string.IsNullOrEmpty(mapInfo.Name))
-            return mapInfo.Name.ToLanguageText(language);
-        if (mapInfo.FloorNumber <= 0)
-            return mapon;
-
-        return gameInfo.Episodes.Values.Count(episode => !episode.Locked) > 1
-            ? string.Format("$STR_MAPEPISODEFLOOR".ToLanguageText(language), mapInfo.Cluster, mapInfo.FloorNumber)
-            : string.Format("$STR_MAPFLOOR".ToLanguageText(language), mapInfo.FloorNumber);
-    }
+    internal static void DrawPlayScreen() => playScreen.DrawPlayScreen();
+    internal static void DrawPlayBorder() => playScreen.DrawPlayBorder();
+    internal static void DrawPlayBorderSides() => playScreen.DrawPlayBorderSides();
+    internal static void DrawStatusBorder(string color) => playScreen.DrawStatusBorder(color);
+    internal static string GetMapDisplayName(string mapon) => playScreen.GetMapDisplayName(mapon);
+    internal static void PreloadGraphics() => playScreen.PreloadGraphics();
 
     internal static void SetupGameLevel()
     {
@@ -741,70 +590,5 @@ internal partial class Program
                 DrawLives();
             }
         }
-    }
-
-    // GET PSYCHED: the screen a level starts behind
-
-    /// <summary>
-    /// The "get psyched" progress bar, along the bottom of a box drawn at the UI scale from a
-    /// screen position; its width and height are in layout pixels
-    /// </summary>
-    internal static bool PreloadUpdate(uint current, uint total, int boxX, int boxY, int boxW, int boxH)
-    {
-        // Edges at the UI scale from the box's corner, as the picture's are
-        int L(int n) => _videoManager.ToScreenLength(n);
-        int x = boxX + L(5);
-        int y = boxY + L(boxH - 3);
-        int h = L(boxH - 1) - L(boxH - 3), line = L(boxH - 2) - L(boxH - 3);
-        uint w = (uint)(L(boxW - 5) - L(5));
-
-        _videoManager.BarScaledCoord(x, y, (int)w, h, "Black");
-        w = (uint)((int)w * current / total);
-        if (w != 0)
-        {
-            _videoManager.BarScaledCoord(x, y, (int)w, h, "SECONDCOLOR");       //SECONDCOLOR 0x37);
-            _videoManager.BarScaledCoord(x, y, (int)w - L(1), line, "FIRSTCOLOR"); // 0x32
-
-        }
-        _videoManager.Update();
-        //      if (LastScan == sc_Escape)
-        //      {
-        //              _inputManager.ClearKeysDown();
-        //              return(true);
-        //      }
-        //      else
-        return (false);
-    }
-
-    internal static void PreloadGraphics()
-    {
-        // A game with a level start message (Blake Stone) shows it instead of "get psyched"
-        if (_gameEngineManager.GetGameInfo().LevelStartMessage is { Length: > 0 } message)
-        {
-            ShowLevelStartMessage(message);
-            return;
-        }
-
-        DrawLevel();
-
-        // the play area, below any top status bar, down to the bottom one's first line
-        _videoManager.BarScaledCoord(0, PlayAreaTop, _videoManager.screenWidth, PlayAreaAndStatusLine, bordercol);
-
-        // Centered over the screen above the status bar
-        int boxX = (_videoManager.screenWidth - _videoManager.ToScreenLength(224)) / 2;
-        int boxY = (_videoManager.ScreenYAboveBottom(STATUSLINES) - _videoManager.ToScreenLength(48)) / 2;
-        if (_assetManager.Exists<GraphicAsset>("getpsyched"))     // a standalone game may have none
-            _graphicManager.DrawPicScaledCoord("getpsyched", boxX, boxY);
-
-        _videoManager.Update();
-        _videoManager.FadeIn();
-
-        //      PM_Preload (PreloadUpdate);
-        PreloadUpdate(10, 10, boxX, boxY, 28 * 8, 48);
-        _inputManager.UserInput(70);
-        _videoManager.FadeOut();
-
-        DrawPlayBorder();
-        _videoManager.Update();
     }
 }
