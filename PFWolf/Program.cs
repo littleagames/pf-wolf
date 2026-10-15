@@ -286,6 +286,8 @@ internal partial class Program
         pickups = MakePickups();
         playerThink = MakePlayerThink();
         playersManager = MakePlayers();
+        newGames = new NewGames(_gameEngineManager, _inventoryManager, hubs, playersManager, playerClassRules, session,
+            new NewGamesHooks(() => startgame = true));
         hudMessageDrawing = MakeHudMessageDrawing();
         spectating = new Spectating(_mapManager, _consoleManager, _hudMessageManager, hudMessageDrawing, session);
         playerCommands = new PlayerCommands(_consoleManager, _mapManager, doors, playerClassRules, playersManager, playerThink, deathmatch, session,
@@ -593,50 +595,15 @@ internal partial class Program
     private static void DemoLoop() => titleLoop.DemoLoop();
     static void ApplyPendingWarpStart() => titleLoop.ApplyPendingWarpStart();
 
-    /// <summary>The skill being played (game-info skills, by gamestate.difficulty); an ordinary one if it's missing</summary>
-    internal static SkillInfo CurrentSkill =>
-        _gameEngineManager.GetGameInfo().Skills.Values.ElementAtOrDefault(gamestate.difficulty) ?? new SkillInfo();
+    // Starting a new game, and the skills (Gameplay/NewGames.cs)
+    static NewGames newGames = null!;       // made in InitServices
 
-    /// <summary>
-    /// The skill demos are recorded and played back on (they only replay right on the skill they
-    /// were made on): game-info's demo-skill, else the hardest (last) skill
-    /// </summary>
-    internal static short DemoSkill
-    {
-        get
-        {
-            var gameInfo = _gameEngineManager.GetGameInfo();
-            var keys = gameInfo.Skills.Keys.ToList();
-            var index = gameInfo.DemoSkill == null ? -1
-                : keys.FindIndex(k => k.Equals(gameInfo.DemoSkill, StringComparison.OrdinalIgnoreCase));
-            if (index < 0 && gameInfo.DemoSkill != null)
-                Console.WriteLine($"game-info demo-skill '{gameInfo.DemoSkill}' isn't one of the skills; using the hardest");
-            return (short)(index >= 0 ? index : Math.Max(keys.Count - 1, 0));
-        }
-    }
-
+    internal static SkillInfo CurrentSkill => newGames.CurrentSkill;
+    internal static short DemoSkill => newGames.DemoSkill;
     /// <summary>The class the next new game is played as (the `playerclass` command); null for the default</summary>
-    internal static string? newGamePlayerClass;
-
-    /// <summary>
-    /// Starts a game as <paramref name="playerClass"/>: when null, the `playerclass` command's pick,
-    /// else game-info's first player class
-    /// </summary>
-    internal static void NewGame(short difficulty, EpisodeInfo epInfo, MapInfo mapInfo, string? playerClass = null)
-    {
-        gamestate = new gametype();
-        LevelRatios = [];       // the win tally averages only this game's floors
-        ResetHubs();            // no levels kept, no floors been on (Program.Hubs.cs)
-        gamestate.difficulty = difficulty;
-        ResetPlayers();         // just the local player, until anyone joins (Program.Players.cs)
-        _inventoryManager.ClearShared();
-        StartPlayer(playerClass ?? newGamePlayerClass ?? DefaultPlayerClass);
-        gamestate.cluster = mapInfo.Cluster;
-        gamestate.mapon = epInfo.StartMap;
-
-        startgame = true;
-    }
-
+    internal static string? newGamePlayerClass { get => newGames.newGamePlayerClass; set => newGames.newGamePlayerClass = value; }
+    internal static void NewGame(short difficulty, EpisodeInfo epInfo, MapInfo mapInfo, string? playerClass = null) =>
+        newGames.NewGame(difficulty, epInfo, mapInfo, playerClass);
     private record digimap
     {
         public digimap(string sound, int index, int channel)
