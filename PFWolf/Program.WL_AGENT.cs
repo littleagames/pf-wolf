@@ -55,7 +55,6 @@ internal partial class Program
             ActivateTrigger));
 
     internal static void ControlMovement(Entities.Actors.Actor ob) => playerMovement.ControlMovement(ob);
-    internal static void Thrust(int angle, int speed) => playerMovement.Thrust(angle, speed);
     internal static bool TryMove(Entities.Actors.Actor ob) => playerMovement.TryMove(ob);
     internal static void ClipMove(Entities.Actors.Actor ob, int xmove, int ymove) => playerMovement.ClipMove(ob, xmove, ymove);
     static controldirs FacingDir(int angle) => PlayerMovement.FacingDir(angle);
@@ -156,14 +155,10 @@ internal partial class Program
         Entities.MapTriggerRegistry.Register("A_VictoryTile", (_, _) => { VictoryTile(); return true; });
         Entities.MapTriggerRegistry.Register("A_Exit", (_, _) => ExitAction(secret: false));
         Entities.MapTriggerRegistry.Register("A_SecretExit", (_, _) => ExitAction(secret: true));
-        // Hub clusters' ways between levels (Program.Elevator.cs, Program.Hubs.cs)
-        Entities.MapTriggerRegistry.Register("A_FloorSelect", FloorSelectAction);
-        Entities.MapTriggerRegistry.Register("A_Teleport", TeleportAction);
-        Entities.MapTriggerRegistry.Register("A_VictoryRun", VictoryRunAction);
-        ActorActionRegistry.Register("T_VictoryRun", T_VictoryRun);
+        // Hub clusters' ways between levels, the teleporter's floors and the victory run (Gameplay/HubActions.cs)
+        (hubActions ??= MakeHubActions()).Register();
         RegisterSwitchActions();    // tag-targeted door and wall actions (Program.SwitchActions.cs)
         RegisterSmartSwitchActions();   // A_SmartSwitch (Program.SmartSwitch.cs)
-        RegisterTeleporterActions();    // A_UnlockFloor, A_DropDetonator (Program.Teleporter.cs)
         RegisterZoneLightActions(); // light zone actions, for switches and actors (Program.ZoneLights.cs)
         RegisterActorLightActions(); // actors' own lights (Program.ActorLights.cs)
         RegisterProjectileActions(); // projectiles and jumps for any actor, traps (Program.ProjectileActions.cs)

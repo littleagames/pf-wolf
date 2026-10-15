@@ -308,6 +308,7 @@ internal partial class Program
             menuDefs, articleReader, highScoresScreen, soundMenu, controlMenus, changeViewScreen, () => gameInfoSettings, MakeControlPanelHooks());
         moviePlayer = new MoviePlayer(_assetManager, _videoManager, _inputManager, _audioManager, menuInput);
         mainGameLoop = MakeMainGameLoop();
+        hubActions = MakeHubActions();
         titleScreens = new TitleScreens(_videoManager, _audioManager, _inputManager, _graphicManager, _assetManager, menuDrawing, ui, moviePlayer,
             new TitleScreenHooks(
                 DemoExists,

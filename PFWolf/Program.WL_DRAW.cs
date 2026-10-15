@@ -122,7 +122,6 @@ internal partial class Program
     static int lasttimecount { get => frameRefresh.lasttimecount; set => frameRefresh.lasttimecount = value; }
     static bool fpscounter { get => frameRefresh.fpscounter; set => frameRefresh.fpscounter = value; }
 
-    internal static void CalcTics() => frameRefresh.CalcTics();
     internal static double MaxPitch() => frameRefresh.MaxPitch();
     internal static void ThreeDRefresh() => frameRefresh.ThreeDRefresh();
 }
