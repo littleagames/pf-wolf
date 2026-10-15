@@ -209,7 +209,7 @@ internal sealed class GameSaves(
     internal sealed record SaveGameData(
         gametype GameState,
         Entities.PlayerState Player,
-        Dictionary<string, Program.LRstruct> LevelRatios,
+        Dictionary<string, LRstruct> LevelRatios,
         Dictionary<string, int> Inventory,
         LevelBody Body,
         Entities.Actors.ActorSnapshot? Weapon,
@@ -220,9 +220,9 @@ internal sealed class GameSaves(
     {
         var (state, player) = gametype.Read(br);
 
-        var ratios = new Dictionary<string, Program.LRstruct>();
+        var ratios = new Dictionary<string, LRstruct>();
         for (int i = br.ReadCount(); i > 0; i--)
-            ratios[br.ReadString()] = Program.LRstruct.Read(br);
+            ratios[br.ReadString()] = LRstruct.Read(br);
 
         var inventory = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = br.ReadCount(); i > 0; i--)

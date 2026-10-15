@@ -1,7 +1,7 @@
 using PFWolf.Assets;
 using PFWolf.Constants;
 using PFWolf.Enums;
-using objflags = PFWolf.Program.objflags;
+
 
 namespace PFWolf.Managers;
 

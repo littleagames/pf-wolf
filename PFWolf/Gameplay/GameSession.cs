@@ -106,7 +106,7 @@ internal sealed class GameSession
     /// Each floor's ratios and time as last completed, by map, for the win tally (saved with
     /// the game); a new game starts it empty
     /// </summary>
-    internal Dictionary<string, Program.LRstruct> LevelRatios = new();
+    internal Dictionary<string, LRstruct> LevelRatios = new();
 
     /// <summary>id's random numbers, which every machine and every demo has to step through alike</summary>
     internal readonly RandomTable random = new();

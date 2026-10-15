@@ -129,7 +129,7 @@ internal sealed class PlayerThink(
         player.AreaNumber = map.SpawnArea(tilex, tiley);
         player.SetState(PlayerPawn.SpawnState);
         player.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
-        player.RuntimeFlags = Program.objflags.FL_NEVERMARK;
+        player.RuntimeFlags = objflags.FL_NEVERMARK;
         movement.Thrust(0, 0);                  // set some variables
 
         hooks.InitAreas();

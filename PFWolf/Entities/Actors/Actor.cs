@@ -79,7 +79,7 @@ internal record Actor : Thinker
 
     // Runtime combat/AI bookkeeping (FL_SHOOTABLE, FL_AMBUSH, FL_ATTACKMODE, etc. --
     // Program.WL_DEF.cs's objflags), distinct from the static, YAML-declared `Flags` above.
-    public Program.objflags RuntimeFlags { get; internal set; }
+    public objflags RuntimeFlags { get; internal set; }
 
     // Screen-space hit-testing data, recomputed every frame in Program.WL_DRAW.cs's
     // DrawScaleds (set there by TransformActor) so Program.WL_AGENT.cs's

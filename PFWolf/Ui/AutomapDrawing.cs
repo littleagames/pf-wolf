@@ -372,17 +372,17 @@ internal sealed class AutomapDrawing(
 
         if (actor.ResolvedStates.ContainsKey("Chase"))
         {
-            bool dead = (actor.RuntimeFlags & Program.objflags.FL_SHOOTABLE) == 0 && (actor.RuntimeFlags & Program.objflags.FL_NONMARK) != 0;
+            bool dead = (actor.RuntimeFlags & objflags.FL_SHOOTABLE) == 0 && (actor.RuntimeFlags & objflags.FL_NONMARK) != 0;
             if (dead)
                 return floorSeen ? AutomapMark.Corpse : AutomapMark.None;
 
             // The player's own side (factions.yaml) in its own color; one following them is
             // always shown, wherever it is
             if (factions.IsAlly(actor, session.player))
-                return reveal || (actor.RuntimeFlags & Program.objflags.FL_VISABLE) != 0
+                return reveal || (actor.RuntimeFlags & objflags.FL_VISABLE) != 0
                     || actor is Entities.Actors.Monster { Follows: true } ? AutomapMark.Ally : AutomapMark.None;
 
-            return reveal || (actor.RuntimeFlags & Program.objflags.FL_VISABLE) != 0 ? AutomapMark.Enemy : AutomapMark.None;
+            return reveal || (actor.RuntimeFlags & objflags.FL_VISABLE) != 0 ? AutomapMark.Enemy : AutomapMark.None;
         }
 
         if (actor.Active == activetypes.ac_yes || actor.CurrentState.Sprite == "TNT1")

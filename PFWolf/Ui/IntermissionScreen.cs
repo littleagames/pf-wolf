@@ -280,7 +280,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             //
             // The latest run through a floor counts; the win tally averages the won cluster's floors
             session.LevelRatios[session.gamestate.mapon] =
-                new Program.LRstruct
+                new LRstruct
             {
                 kill = (short)kr,
                 secret = (short)sr,
@@ -368,7 +368,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     /// averages the ones played.
     /// </summary>
     internal static (int Min, int Sec, int Kill, int Secret, int Treasure) ClusterTotals(
-        Dictionary<string, Program.LRstruct> levelRatios, Dictionary<string, MapInfo> maps, int cluster)
+        Dictionary<string, LRstruct> levelRatios, Dictionary<string, MapInfo> maps, int cluster)
     {
         var floors = levelRatios
             .Where(lr => maps.TryGetValue(lr.Key, out var map) && map.Cluster == cluster)

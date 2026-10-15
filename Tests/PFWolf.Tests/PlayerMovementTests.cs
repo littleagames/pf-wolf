@@ -143,13 +143,13 @@ public class PlayerMovementTests
     {
         // Arrange: a guard marked on the next tile, within MINACTORDIST
         var guard = new Monster { Name = "Guard", X = 11 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2 };
-        guard.RuntimeFlags |= Program.objflags.FL_SHOOTABLE;
+        guard.RuntimeFlags |= objflags.FL_SHOOTABLE;
         _map.actorat[11, 10] = guard.Mark;
 
         // Act / Assert
         Assert.That(_movement.TryMove(Player()), Is.False);
 
-        guard.RuntimeFlags &= ~Program.objflags.FL_SHOOTABLE;      // dead
+        guard.RuntimeFlags &= ~objflags.FL_SHOOTABLE;      // dead
         Assert.That(_movement.TryMove(Player()), Is.True);
     }
 

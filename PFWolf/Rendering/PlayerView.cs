@@ -110,9 +110,9 @@ internal sealed class PlayerView(
             if (onscreen && actor is Monster && session.gamemode == GameMode.Single)
                 actor.Active = activetypes.ac_yes;      // seen: awake for good, as when drawn
             if (onscreen && lineOfSight.CheckLine(actor))
-                actor.RuntimeFlags |= Program.objflags.FL_VISABLE;
+                actor.RuntimeFlags |= objflags.FL_VISABLE;
             else
-                actor.RuntimeFlags &= ~Program.objflags.FL_VISABLE;
+                actor.RuntimeFlags &= ~objflags.FL_VISABLE;
         }
     }
 

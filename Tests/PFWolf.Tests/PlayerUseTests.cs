@@ -77,7 +77,7 @@ public class PlayerUseTests
     {
         var prisoner = (Monster)_inventory.CreateActor("Prisoner")!;
         (prisoner.X, prisoner.Y) = (_session.player.X + dx, _session.player.Y + dy);
-        prisoner.RuntimeFlags |= Program.objflags.FL_SHOOTABLE;
+        prisoner.RuntimeFlags |= objflags.FL_SHOOTABLE;
         prisoner.SetState(prisoner.ResolvedStates["Spawn"]);
         _map.GetActors().AddLast(prisoner);
         return prisoner;
@@ -131,11 +131,11 @@ public class PlayerUseTests
     {
         // Arrange
         var prisoner = Prisoner(Tile, 0);
-        prisoner.RuntimeFlags |= Program.objflags.FL_ATTACKMODE;
+        prisoner.RuntimeFlags |= objflags.FL_ATTACKMODE;
 
         // Act / Assert
         Assert.That(_use.TryUseActor(), Is.False);
-        prisoner.RuntimeFlags &= ~Program.objflags.FL_ATTACKMODE;
+        prisoner.RuntimeFlags &= ~objflags.FL_ATTACKMODE;
         _session.playerinput.SetHeld(buttontypes.bt_use, true);
         Assert.That(_use.TryUseActor(), Is.False);
     }

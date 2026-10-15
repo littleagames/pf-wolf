@@ -58,7 +58,7 @@ internal sealed class PlayerAttacks(
         {
             if (actor == null || !actor.ResolvedStates.ContainsKey("Chase")) continue;
             if (factions.IsAlly(session.player, actor)) continue;     // the player's side: shots pass them by
-            if (actor.RuntimeFlags.HasFlag(Program.objflags.FL_SHOOTABLE) && actor.RuntimeFlags.HasFlag(Program.objflags.FL_VISABLE)
+            if (actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) && actor.RuntimeFlags.HasFlag(objflags.FL_VISABLE)
                 && Math.Abs(actor.ViewX - hooks.CenterX()) < hooks.ShootDelta())
             {
                 candidates.Add(actor);
@@ -85,7 +85,7 @@ internal sealed class PlayerAttacks(
         foreach (var actor in map.GetActors())
         {
             bool enemy = actor is Entities.Actors.Monster && !actor.IsRemoved && actor.ResolvedStates.ContainsKey("Chase")
-                && actor.RuntimeFlags.HasFlag(Program.objflags.FL_SHOOTABLE) && !factions.IsAlly(shooter, actor);
+                && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) && !factions.IsAlly(shooter, actor);
             bool rival = session.gamemode == GameMode.Deathmatch && actor is Entities.Actors.PlayerPawn pawn
                 && pawn != shooter && pawn.State.health > 0;
             if (!enemy && !rival)

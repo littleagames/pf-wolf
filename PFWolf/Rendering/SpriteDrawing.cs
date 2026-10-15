@@ -293,7 +293,7 @@ internal sealed class SpriteDrawing(
                     || Seen(atx - 1, aty + 1)
                     || Seen(atx + 1, aty + 1)))
                 {
-                    actor.RuntimeFlags &= ~Program.objflags.FL_VISABLE;
+                    actor.RuntimeFlags &= ~objflags.FL_VISABLE;
                     continue;
                 }
 
@@ -308,7 +308,7 @@ internal sealed class SpriteDrawing(
                 if (actor.ViewHeight == 0)
                     continue;
 
-                actor.RuntimeFlags |= Program.objflags.FL_VISABLE;
+                actor.RuntimeFlags |= objflags.FL_VISABLE;
 
                 var sprite = hooks.DrawnSprite(actor);                        // a player's body shows their weapon
                 visptr_val.shapenum = ActorShapeName(sprite, actor.CurrentState.FrameLetter, actor);

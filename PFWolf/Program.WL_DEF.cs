@@ -336,6 +336,76 @@ internal enum playstatetypes
     ex_secretlevel,
 }
 
+[Flags]
+internal enum objflags
+{
+    FL_SHOOTABLE = 0x00000001,
+    FL_BONUS = 0x00000002,
+    FL_NEVERMARK = 0x00000004,
+    FL_VISABLE = 0x00000008,
+    FL_ATTACKMODE = 0x00000010,
+    FL_FIRSTATTACK = 0x00000020,
+    FL_AMBUSH = 0x00000040,
+    FL_NONMARK = 0x00000080,
+    FL_FULLBRIGHT = 0x00000100,
+#if USE_DIR3DSPR
+    // you can choose one of the following values in wl_act1.cpp
+    // to make a static sprite a directional 3d sprite
+    // (see example at the end of the statinfo array)
+    FL_DIR_HORIZ_MID = 0x00000200,
+    FL_DIR_HORIZ_FW = 0x00000400,
+    FL_DIR_HORIZ_BW = 0x00000600,
+    FL_DIR_VERT_MID = 0x00000a00,
+    FL_DIR_VERT_FW = 0x00000c00,
+    FL_DIR_VERT_BW = 0x00000e00,
+
+    // these values are just used to improve readability of code
+    FL_DIR_NONE = 0x00000000,
+    FL_DIR_POS_MID = 0x00000200,
+    FL_DIR_POS_FW = 0x00000400,
+    FL_DIR_POS_BW = 0x00000600,
+    FL_DIR_POS_MASK = 0x00000600,
+    FL_DIR_VERT_FLAG = 0x00000800,
+    FL_DIR_MASK = 0x00000e00,
+#endif
+    // Blake Stone's AI (Entities.Actors.BlakeMonster)
+    FL_FRIENDLY = 0x00001000,       // doesn't go after the player until it hears or is told to (FRIENDLY actors)
+    FL_INTERROGATED = 0x00002000,   // has been talked to: an informant has given its hint, a scientist turned mean
+    FL_LOCKEDSTATE = 0x00004000,    // just hurt: no more pain or shooting back until it next chases
+    FL_SHOOTMODE = 0x00008000,      // `monster.shootmode` actors: shooting rather than closing in
+    FL_RUNAWAY = 0x00010000,        // a SMART actor running for supplies or a door
+    FL_RUNTOSTATIC = 0x00020000,    // ... heading for a pickup or door (SeekX/SeekY) rather than a far corner
+    FL_MUSTATTACK = 0x00040000,     // a scientist asked once already: the next asking makes it mean
+    FL_HASAMMO = 0x00080000,        // an informant still has its charge pack to give
+    FL_HASTOKENS = 0x00100000,      // ... and its food tokens
+    FL_SLIDING = 0x00200000,        // a corpse sliding back from the shot that killed it (T_BlowBack)
+    FL_FOLLOWS = 0x00400000,        // an ally that follows the players about (Monster.Follows: `monster.follow`, A_SetFaction "follow")
+    FL_FOLLOWING = 0x00800000,      // ... walking after them now, or out of their way (Monster.ThinkInstead)
+    // next free bit is   0x00400000
+}
+
+internal class LRstruct
+{
+    public short kill, secret, treasure;
+    public int time;
+
+    public static LRstruct Read(BinaryReader br) => new()
+    {
+        kill = br.ReadInt16(),
+        secret = br.ReadInt16(),
+        treasure = br.ReadInt16(),
+        time = br.ReadInt32(),
+    };
+
+    public void Write(BinaryWriter bw)
+    {
+        bw.Write(kill);
+        bw.Write(secret);
+        bw.Write(treasure);
+        bw.Write(time);
+    }
+}
+
 internal partial class Program
 {
     /*
@@ -416,98 +486,15 @@ internal partial class Program
     // Lines a status bar across the top of the screen takes (statusbar.yaml top; Blake Stone's)
     internal static int TOPLINES => StatusBar.Get("top")?.Height ?? 0;
 
-    [Flags]
-    internal enum objflags
-    {
-        FL_SHOOTABLE = 0x00000001,
-        FL_BONUS = 0x00000002,
-        FL_NEVERMARK = 0x00000004,
-        FL_VISABLE = 0x00000008,
-        FL_ATTACKMODE = 0x00000010,
-        FL_FIRSTATTACK = 0x00000020,
-        FL_AMBUSH = 0x00000040,
-        FL_NONMARK = 0x00000080,
-        FL_FULLBRIGHT = 0x00000100,
-#if USE_DIR3DSPR
-        // you can choose one of the following values in wl_act1.cpp
-        // to make a static sprite a directional 3d sprite
-        // (see example at the end of the statinfo array)
-        FL_DIR_HORIZ_MID = 0x00000200,
-        FL_DIR_HORIZ_FW = 0x00000400,
-        FL_DIR_HORIZ_BW = 0x00000600,
-        FL_DIR_VERT_MID = 0x00000a00,
-        FL_DIR_VERT_FW = 0x00000c00,
-        FL_DIR_VERT_BW = 0x00000e00,
-
-        // these values are just used to improve readability of code
-        FL_DIR_NONE = 0x00000000,
-        FL_DIR_POS_MID = 0x00000200,
-        FL_DIR_POS_FW = 0x00000400,
-        FL_DIR_POS_BW = 0x00000600,
-        FL_DIR_POS_MASK = 0x00000600,
-        FL_DIR_VERT_FLAG = 0x00000800,
-        FL_DIR_MASK = 0x00000e00,
-#endif
-        // Blake Stone's AI (Entities.Actors.BlakeMonster)
-        FL_FRIENDLY = 0x00001000,       // doesn't go after the player until it hears or is told to (FRIENDLY actors)
-        FL_INTERROGATED = 0x00002000,   // has been talked to: an informant has given its hint, a scientist turned mean
-        FL_LOCKEDSTATE = 0x00004000,    // just hurt: no more pain or shooting back until it next chases
-        FL_SHOOTMODE = 0x00008000,      // `monster.shootmode` actors: shooting rather than closing in
-        FL_RUNAWAY = 0x00010000,        // a SMART actor running for supplies or a door
-        FL_RUNTOSTATIC = 0x00020000,    // ... heading for a pickup or door (SeekX/SeekY) rather than a far corner
-        FL_MUSTATTACK = 0x00040000,     // a scientist asked once already: the next asking makes it mean
-        FL_HASAMMO = 0x00080000,        // an informant still has its charge pack to give
-        FL_HASTOKENS = 0x00100000,      // ... and its food tokens
-        FL_SLIDING = 0x00200000,        // a corpse sliding back from the shot that killed it (T_BlowBack)
-        FL_FOLLOWS = 0x00400000,        // an ally that follows the players about (Monster.Follows: `monster.follow`, A_SetFaction "follow")
-        FL_FOLLOWING = 0x00800000,      // ... walking after them now, or out of their way (Monster.ThinkInstead)
-        // next free bit is   0x00400000
-    }
-
     internal static void ClearMemory() => _audioManager.StopAll();
 
-    // JAB
-    // Positional sounds are placed in tile units; the listener follows the camera (see UpdateSoundListener).
-    internal static void PlaySoundLocTile(string s, int tx, int ty) => _audioManager.PlayAt(s, tx + 0.5f, ty + 0.5f);
-    internal static void PlaySoundLocActor(string s, Entities.Actors.Actor ob) =>
-        _audioManager.PlayAt(s, FixedToTiles(ob.X), FixedToTiles(ob.Y));
+    // Sounds placed where things are, heard from the camera (Gameplay/PositionalSounds.cs)
+    static PositionalSounds positionalSounds = null!;       // made in InitServices
 
-    internal static void UpdateSoundListener() =>
-        _audioManager.SetListener(FixedToTiles(camera.X), FixedToTiles(camera.Y), camera.Angle);
+    internal static void PlaySoundLocTile(string s, int tx, int ty) => positionalSounds.PlaySoundLocTile(s, tx, ty);
+    internal static void PlaySoundLocActor(string s, Entities.Actors.Actor ob) => positionalSounds.PlaySoundLocActor(s, ob);
+    internal static void UpdateSoundListener() => positionalSounds.UpdateSoundListener();
 
-    private static float FixedToTiles(int value) => value / (float)MapConstants.TILEGLOBAL;
-
-
-    /*
-    =============================================================================
-
-                                    WL_INTER
-
-    =============================================================================
-    */
-
-
-    internal class LRstruct
-    {
-        public short kill, secret, treasure;
-        public int time;
-
-        public static LRstruct Read(BinaryReader br) => new()
-        {
-            kill = br.ReadInt16(),
-            secret = br.ReadInt16(),
-            treasure = br.ReadInt16(),
-            time = br.ReadInt32(),
-        };
-
-        public void Write(BinaryWriter bw)
-        {
-            bw.Write(kill);
-            bw.Write(secret);
-            bw.Write(treasure);
-            bw.Write(time);
-        }
-    }
 
     /*
     =============================================================================

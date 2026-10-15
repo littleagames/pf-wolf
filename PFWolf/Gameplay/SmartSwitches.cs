@@ -73,7 +73,7 @@ internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession ses
 
         // An actor or thing standing there
         var thing = map.GetActors().FirstOrDefault(a => !a.IsRemoved && a != session.player && a.TileX == x && a.TileY == y
-            && (a.RuntimeFlags.HasFlag(Program.objflags.FL_SHOOTABLE) || a.Properties.ContainsKey("switched")));
+            && (a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) || a.Properties.ContainsKey("switched")));
         if (thing != null)
         {
             var switched = thing.Properties.TryGetValue("switched", out var how) ? how?.ToString() : null;
@@ -83,7 +83,7 @@ internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession ses
                     map.actorat[x, y] = null;
                 map.MarkForRemoval(thing);
             }
-            else if (thing is Entities.Actors.Monster monster && monster.RuntimeFlags.HasFlag(Program.objflags.FL_SHOOTABLE))
+            else if (thing is Entities.Actors.Monster monster && monster.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE))
             {
                 if (switched?.Equals("kill", StringComparison.OrdinalIgnoreCase) == true)
                 {
@@ -94,7 +94,7 @@ internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession ses
                 {
                     if (monster.Active == activetypes.ac_no)
                         monster.Active = activetypes.ac_yes;
-                    if (!monster.RuntimeFlags.HasFlag(Program.objflags.FL_ATTACKMODE))
+                    if (!monster.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE))
                         monster.FirstSighting();
                 }
             }

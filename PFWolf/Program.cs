@@ -221,6 +221,8 @@ internal partial class Program
 
         ui = new UiText(_graphicManager, _fontManager);
 
+        positionalSounds = new PositionalSounds(_audioManager, session);
+
         debugScreens = new DebugScreens(_gameEngineManager, _videoManager, _inputManager, _mapManager, session);
         menuInput = new MenuInput(_inputManager, _audioManager, _gameEngineManager, () => mouseenabled, () => joystickenabled);
         menuDrawing = new MenuDrawing(_graphicManager, _videoManager, _assetManager, _fontManager, _gameEngineManager, ui, () => gameInfoSettings);

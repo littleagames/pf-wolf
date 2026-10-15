@@ -203,7 +203,7 @@ internal sealed class Hubs(GameEngineManager engine, MapManager mapManager, Game
 
     internal int InformantsAlive() =>
         mapManager.GetActors().Count(a => !a.IsRemoved && a is Entities.Actors.Informant
-            && a.RuntimeFlags.HasFlag(Program.objflags.FL_SHOOTABLE));
+            && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE));
 
     /// <summary>Points, informants and enemies, as (got, total) for the level in play</summary>
     internal (int Got, int Total)[] FloorStats() =>

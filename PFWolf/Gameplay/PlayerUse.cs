@@ -283,8 +283,8 @@ internal sealed class PlayerUse(
         long best = Reach;
         foreach (var actor in map.GetActors().OfType<Entities.Actors.Monster>())
         {
-            if (actor.IsRemoved || !actor.RuntimeFlags.HasFlag(Program.objflags.FL_SHOOTABLE)
-                || actor.RuntimeFlags.HasFlag(Program.objflags.FL_ATTACKMODE) || !actor.ResolvedStates.ContainsKey("Use"))
+            if (actor.IsRemoved || !actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)
+                || actor.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE) || !actor.ResolvedStates.ContainsKey("Use"))
                 continue;
 
             long dx = actor.X - player.X, dy = player.Y - actor.Y;     // y grows southward

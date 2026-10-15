@@ -33,7 +33,7 @@ internal sealed record ActorSnapshot
     public byte TileX { get; init; }
     public byte TileY { get; init; }
     public ushort Tag { get; init; }
-    public Program.objflags RuntimeFlags { get; init; }
+    public objflags RuntimeFlags { get; init; }
     public LightOverride? Light { get; init; }
     public List<string> CarriedDrops { get; init; } = [];
     public ushort DeathLink { get; init; }
@@ -191,7 +191,7 @@ internal sealed record ActorSnapshot
             TileX = br.ReadByte(),
             TileY = br.ReadByte(),
             Tag = br.ReadUInt16(),
-            RuntimeFlags = (Program.objflags)br.ReadInt32(),
+            RuntimeFlags = (objflags)br.ReadInt32(),
             Light = br.ReadBoolean() ? LightOverride.Read(br) : null,
             CarriedDrops = [.. Enumerable.Range(0, br.ReadInt32()).Select(_ => br.ReadString())],
             DeathLink = br.ReadUInt16(),

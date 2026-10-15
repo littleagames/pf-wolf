@@ -44,7 +44,7 @@ public class SaveDataTests
         TileX = 18,
         TileY = 101 & 63,
         Tag = 9,
-        RuntimeFlags = Program.objflags.FL_SHOOTABLE | Program.objflags.FL_ATTACKMODE,
+        RuntimeFlags = objflags.FL_SHOOTABLE | objflags.FL_ATTACKMODE,
         Light = new LightOverride(false, 200, 2.5, "#FFD080"),
         CarriedDrops = ["GoldKey", "Clip"],
         DeathLink = 3,
