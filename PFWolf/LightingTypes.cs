@@ -3,6 +3,9 @@ using PFWolf.Entities;
 
 namespace PFWolf;
 
+/// <summary>A level's shading, with every value filled in (see ShadingInfo)</summary>
+internal record struct ShadingSettings(string FadeColor, double FadeStart, double FadeEnd, int MaxFade, int Light, bool InverseFade = false);
+
 internal enum ZoneEffect : byte { None, Flicker, Pulse, Strobe }
 
 /// <summary>

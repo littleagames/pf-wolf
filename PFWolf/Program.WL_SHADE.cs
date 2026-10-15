@@ -2,9 +2,6 @@ using PFWolf.Assets;
 
 namespace PFWolf;
 
-/// <summary>A level's shading, with every value filled in (see ShadingInfo)</summary>
-internal record struct ShadingSettings(string FadeColor, double FadeStart, double FadeEnd, int MaxFade, int Light, bool InverseFade = false);
-
 internal partial class Program
 {
     // The level's shading, light grid and light zones (Rendering/Lighting.cs)
