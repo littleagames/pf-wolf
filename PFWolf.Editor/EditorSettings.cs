@@ -26,6 +26,9 @@ public sealed class EditorSettings
     /// <summary>The paint program the art browser opens pictures in; empty for the one Windows edits PNGs with</summary>
     public string ImageEditor { get; set; } = "";
 
+    /// <summary>Whether the splash screen shows at startup; --nosplash skips it for one run</summary>
+    public bool ShowSplash { get; set; } = true;
+
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PFWolf", "Editor", "editor.json");
 

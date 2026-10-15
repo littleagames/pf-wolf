@@ -1,0 +1,3 @@
+Wolfenstein 3-D and Spear of Destiny by id Software
+Built on the work of Wolf4SDL and ECWolf
+Avalonia UI and AvaloniaEdit

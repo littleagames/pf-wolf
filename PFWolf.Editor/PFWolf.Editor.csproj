@@ -20,9 +20,21 @@
     <ApplicationIcon>..\icons\pfwolf-editor.ico</ApplicationIcon>
   </PropertyGroup>
 
-  <!-- The window icon (App.axaml); the source art is icons/pfwolf-editor.svg -->
+  <!-- The splash screen's authors and website (EditorInfo); the version and copyright are already attributes -->
+  <ItemGroup>
+    <AssemblyMetadata Include="Authors" Value="$(Authors)" />
+    <AssemblyMetadata Include="Website" Value="https://www.littleagames.com" />
+  </ItemGroup>
+
+  <!-- The window icon (App.axaml) and the splash screen's logo; the source art is icons/pfwolf-editor.svg -->
   <ItemGroup>
     <AvaloniaResource Include="..\icons\pfwolf-editor.ico" Link="Assets\pfwolf-editor.ico" />
+    <AvaloniaResource Include="..\icons\pfwolf-editor-256.png" Link="Assets\pfwolf-editor-256.png" />
+  </ItemGroup>
+
+  <!-- The splash screen's credits (EditorInfo): one line each, edited freely -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\credits.txt" LogicalName="credits.txt" />
   </ItemGroup>
 
   <ItemGroup>
