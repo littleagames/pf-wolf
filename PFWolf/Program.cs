@@ -276,6 +276,7 @@ internal partial class Program
         levelSetup = MakeLevelSetup();
         levelEntry = MakeLevelEntry();
         gameSaves = MakeGameSaves();
+        midGameJoin = MakeMidGameJoin();
         demos = MakeDemos();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
