@@ -288,6 +288,8 @@ internal partial class Program
         levelSetup = MakeLevelSetup();
         levelEntry = MakeLevelEntry();
         gameSaves = MakeGameSaves();
+        saveCommands = new SaveCommands(_consoleManager, _gameEngineManager, gameSaves, playScreen, session,
+            new SaveCommandsHooks(on => loadedgame = on, s => playstate = s));
         midGameJoin = MakeMidGameJoin();
         demos = MakeDemos();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);

@@ -65,5 +65,8 @@ internal partial class Program
     static List<Entities.Actors.Actor> ApplyLevelBody(LevelBody body, Func<int, Entities.PlayerState?>? ownerOf = null) =>
         levelBodies.ApplyLevelBody(body, ownerOf);
 
+    // saves, autosave, save and load (Commands/SaveCommands.cs)
+    static SaveCommands saveCommands = null!;       // made in InitServices
+
     private static string WrapForMessage(string text) => MenuDrawing.WrapForMessage(text);
 }
