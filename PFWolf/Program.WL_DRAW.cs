@@ -120,7 +120,6 @@ internal partial class Program
             () => screenshotPending, () => screenshotPending = false, TakeScreenshot));
 
     static int lasttimecount { get => frameRefresh.lasttimecount; set => frameRefresh.lasttimecount = value; }
-    static int frameon { get => frameRefresh.frameon; set => frameRefresh.frameon = value; }
     static bool fpscounter { get => frameRefresh.fpscounter; set => frameRefresh.fpscounter = value; }
 
     internal static void CalcTics() => frameRefresh.CalcTics();

@@ -12,10 +12,8 @@ internal partial class Program
             () => focallength, () => viewwidth, TransformActorFrom, IsWallSprite, GetBonus));
 
     static (int x, int y, int sin, int cos) PlayerViewOrigin() => playerView.PlayerViewOrigin();
-    internal static void TouchItems() => playerView.TouchItems();
     internal static void PlayerSight() => playerView.PlayerSight();
     internal static bool PlayerTileInView(PlayerPawn pawn) => playerView.PlayerTileInView(pawn);
     internal static bool InViewOf(PlayerPawn pawn, Entities.Actors.Actor actor) => playerView.InViewOf(pawn, actor);
     internal static bool SeenByAPlayer(Entities.Actors.Actor actor) => playerView.SeenByAPlayer(actor);
-    internal static void WakeSeenEnemies() => playerView.WakeSeenEnemies();
 }

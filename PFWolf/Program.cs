@@ -278,6 +278,7 @@ internal partial class Program
         gameScripts = MakeGameScripts();
         levelMusic = new LevelMusic(_gameEngineManager, _audioManager, session);
         playKeys = MakePlayKeys();
+        levelLoop = MakeLevelLoop();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,

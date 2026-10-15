@@ -40,7 +40,6 @@ internal partial class Program
     static int demoptr { get => demoBuffer.demoptr; set => demoBuffer.demoptr = value; }
     static int lastdemoptr { get => demoBuffer.lastdemoptr; set => demoBuffer.lastdemoptr = value; }
 
-
     //
     // current user input: gathered each frame by PollControls into localcmd, which is all the
     // game itself reads (through the player's PlayerInput) (Gameplay/InputPolling.cs)
@@ -58,7 +57,6 @@ internal partial class Program
     static int controlstrafe { get => inputPolling.controlstrafe; set => inputPolling.controlstrafe = value; }
     static int wheelnotches => inputPolling.wheelnotches;
 
-    internal static void PollControls() => inputPolling.PollControls();
     static bool IsAutomapInput(InputCode code) => inputPolling.IsAutomapInput(code);
     internal static bool IsInputActive(InputCode code) => inputPolling.IsInputActive(code);
     static List<InputCode> TakeFreshPresses() => inputPolling.TakeFreshPresses();
@@ -102,161 +100,17 @@ internal partial class Program
             ToggleAutomap, HandleAutomapKey, () => viewsize, DrawPlayBorder, DrawPlayBorderSides, () => DebugOk = 1,
             US_ControlPanel, DrawPlayScreen, () => startgame, () => loadedgame, s => playstate = s));
 
-    internal static void CheckKeys() => playKeys.CheckKeys();
+    // Playing a level, a frame at a time (Gameplay/LevelLoop.cs)
+    static LevelLoop levelLoop = null!;     // made in InitServices
 
-    static int funnyticount;
+    static LevelLoop MakeLevelLoop() => new(_inputManager, _videoManager, _consoleManager, _automapManager, _hudMessageManager, _mapManager,
+        frameRefresh, inputPolling, playKeys, doors, pushWalls, playerView, lighting, gameScripts, deathmatch, netPlay, session,
+        new LevelLoopHooks(() => playstate, s => playstate = s, () => startgame, () => netgame, () => demoplayback, () => demoTesting,
+            () => madenoise = false, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => autosavePending, AutoSaveGame,
+            () => singlestep, () => extravbls));
 
-    internal static void PlayLoop()
-    {
-        playstate = playstatetypes.ex_stillplaying;
-        lasttimecount = (int)GameEngineManager.GetTimeCount();
-        frameon = 0;
-        funnyticount = 0;
-        _inputManager.InitButtonState();
-        if (!netJoinResume)             // (just joined mid-level: kept as the host had them)
-        {
-            foreach (var p in players)  // every player's, so every machine starts the level alike
-            {
-                p.AngleFrac = 0;
-                p.FaceCount = 0;
-                p.Input.Reset();
-            }
-        }
-        _videoManager.ClearPaletteShifts();
-        if (netgame)
-            NetLevelStart();            // counting frames from 0 (Program.NetPlay.cs)
-
-        _inputManager.CenterMouse();
-
-        _hudMessageManager.Clear();     // nothing left over from the last level, life or saved game
-
-        if (demoplayback)
-            _inputManager.StartAck();
-
-        UpdateSoundListener();
-
-        do
-        {
-            PollControls();
-
-            // With con_pause on, an open console freezes the world but keeps drawing it.
-            // CalcTics still advances lasttimecount each frame, so no time builds up to be
-            // spent all at once when the console closes.
-            // Not with others, though: the game goes on for them
-            bool worldPaused = _consoleManager.IsPausingGame && !netgame;
-
-            if (!worldPaused)
-            {
-                // this frame's controls, for each player to read as they think: with others,
-                // everyone's as the host sent them (Program.NetPlay.cs); else this machine's for
-                // the local player, and whatever came for everyone else
-                if (netgame)
-                {
-                    if (!NetFrame())
-                    {
-                        playstate = playstatetypes.ex_abort;    // left the game, or the host is gone
-                        continue;
-                    }
-                }
-                else
-                {
-                    foreach (var p in players)
-                        p.Input.Begin(ReferenceEquals(p, localplayer) ? localcmd : p.PendingCmd);
-                }
-
-                //
-                // actor thinking
-                //
-                madenoise = false;
-                MoveDoors();
-                MovePWalls();
-
-                // Every actor lives in _mapManager._actors. The player is at its head, so it still
-                // thinks before every enemy, projectile and the BJ-victory actor.
-                _mapManager.DoActors(tics);
-                foreach (var p in players)    // pickups each player walked onto (Program.PlayerSight.cs)
-                {
-                    if (p.Pawn is { } pawn && Entities.Actors.Monster.IsTargetable(pawn))
-                        using (ActAs(p))
-                            TouchItems();
-                }
-                TickPlayerBodies(tics);     // what others see of the players, and
-                camera.Tick(tics);          // a watched actor's view turning (Program.Camera.cs)
-                _mapManager.AI.Tick();     // wall outlets and warp sites (Managers.LevelAI)
-                TickZoneLights(tics);       // light zones' fades and effects (Program.ZoneLights.cs)
-                RunTickHooks();             // the scripts' game.ontick hooks (Program.Scripting.cs)
-                if (gamemode != GameMode.Single)
-                    WakeSeenEnemies();      // what the renderer did alone (Program.Players.cs)
-                if (gamemode == GameMode.Deathmatch)
-                    TickDeathmatch();       // items back, and the time limit (Program.Deathmatch.cs)
-                if (netgame)
-                    NetFrameDone();
-
-                _videoManager.UpdatePaletteShifts(tics);
-                _hudMessageManager.Tick((int)tics);
-            }
-
-            UpdateAutomap();
-
-            ThreeDRefresh();
-
-            if (autosavePending)
-                AutoSaveGame();         // now there's a picture of the level for it
-
-            if (!worldPaused)
-            {
-                gamestate.TimeCount += (int)tics;
-                gamestate.PlayTime += (int)tics;
-            }
-
-            UpdateSoundListener();      // JAB
-            if (_videoManager.screenfaded)
-                _videoManager.FadeIn();
-
-            CheckKeys();
-
-            _consoleManager.RunDeferred();      // console commands that need to run between frames
-
-            //
-            // debug aids
-            //
-            if (singlestep != 0)
-            {
-                GameEngineManager.WaitVBL(singlestep);
-                lasttimecount = (int)GameEngineManager.GetTimeCount();
-            }
-            if (extravbls != 0)
-                GameEngineManager.WaitVBL((uint)extravbls);
-
-            if (demoplayback && !demoTesting)       // demotest plays each to its end
-            {
-                if (_inputManager.CheckAck())
-                {
-                    _inputManager.ClearKeysDown();
-                    playstate = playstatetypes.ex_abort;
-                }
-            }
-        }
-        while (playstate == 0 && !startgame);
-
-        // Intermission, death and menu screens don't draw the console, so don't leave it
-        // capturing keys behind them (e.g. after a "map" command ends the level).
-        _consoleManager.Close();
-        _automapManager.Close();
-
-        if (playstate != playstatetypes.ex_died)
-            _videoManager.FinishPaletteShifts();
-    }
-
-    internal static void InitActorList()
-    {
-        //
-        // the players are created first, so they sit at the head of _actors and think first
-        //
-        foreach (var p in players.Where(p => !p.Gone))     // not anyone who has left the game
-            _mapManager.CreatePlayer(p);
-    }
-
+    internal static void PlayLoop() => levelLoop.PlayLoop();
+    internal static void InitActorList() => levelLoop.InitActorList();
 
     internal const int MAXX = 320;
     internal const int MAXY = 160;
@@ -267,13 +121,4 @@ internal partial class Program
     /// <summary>A framed window of w by h tiles, centered in the play view</summary>
     internal static Fonts.TextWindow CenterWindow(int w, int h, Fonts.TextStyle style)
         => US_DrawWindow(((MAXX / 8) - w) / 2, ((MAXY / 8) - h) / 2, w, h, style);
-
-/*
-=============================================================================
-
-                               USER CONTROL
-
-=============================================================================
-*/
-
 }

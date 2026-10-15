@@ -30,7 +30,6 @@ internal partial class Program
     static void GiveDeathmatchKeys() => deathmatch.GiveDeathmatchKeys();
     static bool HasWeaponFrom(Weapon pickup) => deathmatch.HasWeaponFrom(pickup);
     static void QueueItemRespawn(Inventory item) => deathmatch.QueueItemRespawn(item);
-    internal static void TickDeathmatch() => deathmatch.TickDeathmatch();
     static void CountFrag(Entities.PlayerState victim, Entities.Actors.Actor? killer) => deathmatch.CountFrag(victim, killer);
 
     /// <summary>Whether the scoreboard is up over the view (the `scoreboard` command toggles it)</summary>

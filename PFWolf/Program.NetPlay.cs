@@ -28,9 +28,6 @@ internal partial class Program
     static (int Index, int Step)? pendingjoinstate { get => netPlay.pendingjoinstate; set => netPlay.pendingjoinstate = value; }
     static bool netJoinResume { get => netPlay.netJoinResume; set => netPlay.netJoinResume = value; }
 
-    internal static void NetLevelStart() => netPlay.NetLevelStart();
-    internal static bool NetFrame() => netPlay.NetFrame();
-    internal static void NetFrameDone() => netPlay.NetFrameDone();
     static uint GameChecksum() => netPlay.GameChecksum();
 
     /// <summary>Whether the game with others is over for this machine: it left, or lost the host</summary>

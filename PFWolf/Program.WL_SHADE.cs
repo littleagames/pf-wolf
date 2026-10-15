@@ -50,7 +50,6 @@ internal partial class Program
     static void UpdateLightGrid() => lighting.UpdateLightGrid();
 
     internal static bool TryParseZoneEffect(string name, out ZoneEffect effect) => Lighting.TryParseZoneEffect(name, out effect);
-    static void TickZoneLights(uint tics) => lighting.TickZoneLights(tics);
     internal static void FadeZoneLight(int id, int light, int tics) => lighting.FadeZoneLight(id, light, tics);
     internal static void SetZoneColor(int id, string? color) => lighting.SetZoneColor(id, color);
     internal static void SetZoneEffect(int id, ZoneEffect effect) => lighting.SetZoneEffect(id, effect);

@@ -54,7 +54,6 @@ internal partial class Program
     internal static string DoorFace(doorobj_t door, string face) => Doors.DoorFace(door, face);
     static void RefuseLocked(string lockItem, string lockedSound, string lockMessage, string lockMessageStyle, bool isSwitch = false)
         => doors.RefuseLocked(lockItem, lockedSound, lockMessage, lockMessageStyle, isSwitch);
-    internal static void MoveDoors() => doors.MoveDoors();
 
 
     /*
@@ -88,7 +87,6 @@ internal partial class Program
     internal static void ClearPushWalls() => pushWalls.ClearPushWalls();
     internal static bool PushWall(int checkx, int checky, controldirs dir, string? moveSound = null, string? blockedSound = null)
         => pushWalls.PushWall(checkx, checky, dir, moveSound, blockedSound);
-    internal static void MovePWalls() => pushWalls.MovePWalls();
 
     /*
     =============================================================================
