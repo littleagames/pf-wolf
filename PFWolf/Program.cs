@@ -255,6 +255,7 @@ internal partial class Program
         playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);
         playerWeapons = MakePlayerWeapons();
         playScreen = MakePlayScreen();
+        consoleDrawing = new ConsoleDrawing(_videoManager, _graphicManager, _fontManager, _consoleManager, playScreen, statusBarDrawing);
         playerStats = MakePlayerStats();
         playerUse = MakePlayerUse();
         playerMovement = MakePlayerMovement();
