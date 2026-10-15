@@ -619,41 +619,6 @@ internal partial class Program
 
     internal static void DoJukebox() => jukebox.DoJukebox();
 
-    const float radtoint = FINEANGLES / 2 / PI;
-    internal static void BuildTables()
-    {
-
-        //
-        // calculate fine tangents
-        //
-
-        int i;
-        for (i = 0; i < FINEANGLES / 8; i++)
-        {
-            double tang = Math.Tan((i + 0.5d) / radtoint);
-            finetangent[i] = (int)(tang * MapConstants.GLOBAL1);
-            finetangent[FINEANGLES / 4 - 1 - i] = (int)((1 / tang) * MapConstants.GLOBAL1);
-        }
-
-        //
-        // costable overlays sintable with a quarter phase shift
-        // ANGLES is assumed to be divisable by four
-        //
-
-        float angle = 0;
-        float anglestep = (float)(PI / 2 / ANGLEQUAD);
-        for (i = 0; i < ANGLEQUAD; i++)
-        {
-            int value= (int)(MapConstants.GLOBAL1 * Math.Sin(angle));
-            sintable[i] = sintable[i + ANGLES] = sintable[ANGLES / 2 - i] = value;
-            sintable[ANGLES - i] = sintable[ANGLES / 2 + i] = -value;
-            angle += anglestep;
-        }
-        sintable[ANGLEQUAD] = 65536;
-        sintable[3 * ANGLEQUAD] = -65536;
-        Array.Copy(sintable, ANGLES / 4, costable, 0, costable.Length);
-
-        //defined(USE_STARSKY) || defined(USE_RAIN) || defined(USE_SNOW)
-        //Init3DPoints();
-    }
+    // The sine, cosine and fine tangent tables (Rendering/TrigTables.cs)
+    internal static void BuildTables() => TrigTables.BuildTables();
 }

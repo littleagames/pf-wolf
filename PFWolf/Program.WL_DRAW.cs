@@ -32,9 +32,9 @@ internal partial class Program
     // math tables
     //
     internal static short[] pixelangle { get => render.pixelangle; set => render.pixelangle = value; }
-    internal static int[] finetangent = new int[FINEANGLES / 4];
-    internal static int[] sintable = new int[ANGLES + ANGLES / 4];
-    internal static int[] costable = new int[ANGLES];   // sintable from ANGLES/4 on (filled with it in BuildTables)
+    internal static int[] finetangent => TrigTables.finetangent;   // (Rendering/TrigTables.cs)
+    internal static int[] sintable => TrigTables.sintable;
+    internal static int[] costable => TrigTables.costable;
 
     //
     // refresh variables
