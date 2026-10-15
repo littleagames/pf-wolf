@@ -1040,6 +1040,7 @@ internal partial class Program
         }
         sintable[ANGLEQUAD] = 65536;
         sintable[3 * ANGLEQUAD] = -65536;
+        Array.Copy(sintable, ANGLES / 4, costable, 0, costable.Length);
 
         //defined(USE_STARSKY) || defined(USE_RAIN) || defined(USE_SNOW)
         //Init3DPoints();

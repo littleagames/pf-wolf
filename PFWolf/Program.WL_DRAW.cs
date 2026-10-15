@@ -51,7 +51,7 @@ internal partial class Program
     internal static short[] pixelangle { get => render.pixelangle; set => render.pixelangle = value; }
     internal static int[] finetangent = new int[FINEANGLES / 4];
     internal static int[] sintable = new int[ANGLES + ANGLES / 4];
-    internal static int[] costable => sintable[(ANGLES/4) ..]; // same as sintable, just offset by ANGLES/4
+    internal static int[] costable = new int[ANGLES];   // sintable from ANGLES/4 on (filled with it in BuildTables)
 
     //
     // refresh variables
