@@ -1,0 +1,105 @@
+namespace PFWolf.Gameplay;
+
+/// <summary>
+/// The game's constants from id's WL_DEF.H (and WL_PLAY's and WL_STATE's): tics, tile bits, sizes,
+/// angles, texture sizes, directions and speeds. Program has same-named forwards.
+/// </summary>
+internal static class GameConstants
+{
+    /*
+    =============================================================================
+
+                                MACROS
+
+    =============================================================================
+    */
+
+    internal const string YESBUTTONNAME = "Y";
+    internal const string NOBUTTONNAME = "N";
+
+    /*
+    =============================================================================
+
+                                GLOBAL CONSTANTS
+
+    =============================================================================
+    */
+    internal const int MAXTICS = 10;
+    internal const int DEMOTICS = 4;
+
+    internal const int WALLSHIFT = 6;
+    internal const int BIT_WALL = (1 << WALLSHIFT);
+    internal const int BIT_DOOR = (1 << (WALLSHIFT + 1));
+    internal const int BIT_ALLTILES = (1 << (WALLSHIFT + 2));
+
+    internal const int MAXACTORS = 150;
+    internal const int MAXSTATS = 400;
+    internal const int MAXDOORS = 64;
+    internal const int MAXVISABLE = 250;
+
+    internal const int NUMBERCHARS = 9;
+
+    //----------------
+
+    internal const int RUNSPEED = 6000;
+
+    internal const float HEIGHTRATIO = 0.50f;
+
+    internal const long PLAYERSIZE = MINDIST;// player radius
+    internal const long MINACTORDIST = 0x10000L;// minimum dist from player center
+                                                // to any actor center
+
+    internal const float PI = 3.141592657f;
+    internal const float M_PI = PI;
+    internal const int UNSIGNEDSHIFT = 8;
+
+    internal const int ANGLES = 360;
+    internal const int ANGLEQUAD = (ANGLES / 4);
+    internal const int FINEANGLES = 3600;
+    internal const int ANG90 = (FINEANGLES / 4);
+    internal const int ANG180 = ANG90 * 2;
+    internal const int ANG270 = ANG90 * 3;
+    internal const int ANG360 = ANG90 * 4;
+    internal const int VANG90 = (ANGLES / 4);
+    internal const int VANG180 = VANG90 * 2;
+    internal const int VANG270 = VANG90 * 3;
+    internal const int VANG360 = VANG90 * 4;
+
+    internal const long MINDIST = 0x5800L;
+
+    internal const int TEXTURESHIFT = 6;
+    internal const int FIXED2TEXSHIFT = (TEXTURESHIFT == 8) ? 0 : (TEXTURESHIFT == 7 ? 2 : 4);
+    internal const int TEXTURESIZE = (1 << TEXTURESHIFT);
+    internal const int TEXTUREMASK = (TEXTURESIZE * (TEXTURESIZE - 1));
+
+    internal const int NORTH = 0;
+    internal const int EAST = 1;
+    internal const int SOUTH = 2;
+    internal const int WEST = 3;
+
+    /*
+    =============================================================================
+
+                                WL_PLAY DEFINITIONS
+
+    =============================================================================
+    */
+
+    internal const int BASEMOVE  = 35;
+    internal const int RUNMOVE   = 70;
+    internal const int BASETURN  = 35;
+    internal const int RUNTURN = 70;
+
+    internal const int JOYSCALE = 2;
+
+    /*
+    =============================================================================
+
+                                 WL_STATE DEFINITIONS
+
+    =============================================================================
+    */
+    internal const int TURNTICS = 10;
+    internal const int SPDPATROL = 512;
+    internal const int SPDDOG = 1500;
+}

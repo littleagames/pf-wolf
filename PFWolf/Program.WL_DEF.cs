@@ -408,78 +408,39 @@ internal class LRstruct
 
 internal partial class Program
 {
-    /*
-    =============================================================================
-
-                                MACROS
-
-    =============================================================================
-    */
-
-    internal const string YESBUTTONNAME = "Y";
-    internal const string NOBUTTONNAME = "N";
-
-    /*
-    =============================================================================
-
-                                GLOBAL CONSTANTS
-
-    =============================================================================
-    */
-    internal const int MAXTICS = 10;
-    internal const int DEMOTICS = 4;
-
-    internal const int WALLSHIFT = 6;
-    internal const int BIT_WALL = (1 << WALLSHIFT);
-    internal const int BIT_DOOR = (1 << (WALLSHIFT + 1));
-    internal const int BIT_ALLTILES = (1 << (WALLSHIFT + 2));
-
-    internal const int MAXACTORS = 150;
-    internal const int MAXSTATS = 400;
-    internal const int MAXDOORS = 64;
-    internal const int MAXVISABLE = 250;
-
-    internal const int NUMBERCHARS = 9;
-
-
-    //----------------
-
-
-    internal const int RUNSPEED = 6000;
-
-    internal const float HEIGHTRATIO = 0.50f;
-
-    internal const long PLAYERSIZE = MINDIST;// player radius
-    internal const long MINACTORDIST = 0x10000L;// minimum dist from player center
-                                                // to any actor center
-
-    internal const float PI = 3.141592657f;
-    internal const float M_PI = PI;
-    internal const int UNSIGNEDSHIFT = 8;
-
-    internal const int ANGLES = 360;
-    internal const int ANGLEQUAD = (ANGLES / 4);
-    internal const int FINEANGLES = 3600;
-    internal const int ANG90 = (FINEANGLES / 4);
-    internal const int ANG180 = ANG90 * 2;
-    internal const int ANG270 = ANG90 * 3;
-    internal const int ANG360 = ANG90 * 4;
-    internal const int VANG90 = (ANGLES / 4);
-    internal const int VANG180 = VANG90 * 2;
-    internal const int VANG270 = VANG90 * 3;
-    internal const int VANG360 = VANG90 * 4;
-
-    internal const long MINDIST = 0x5800L;
-
-    internal const int TEXTURESHIFT = 6;
-    internal const int FIXED2TEXSHIFT = (TEXTURESHIFT == 8) ? 0 : (TEXTURESHIFT == 7 ? 2 : 4);
-    internal const int TEXTURESIZE = (1 << TEXTURESHIFT);
-    internal const int TEXTUREMASK = (TEXTURESIZE * (TEXTURESIZE - 1));
-
-    internal const int NORTH = 0;
-    internal const int EAST = 1;
-    internal const int SOUTH = 2;
-    internal const int WEST = 3;
+    // The game's constants (Gameplay/GameConstants.cs)
+    internal const string YESBUTTONNAME = GameConstants.YESBUTTONNAME;
+    internal const string NOBUTTONNAME = GameConstants.NOBUTTONNAME;
+    internal const int MAXTICS = GameConstants.MAXTICS;
+    internal const int DEMOTICS = GameConstants.DEMOTICS;
+    internal const int BIT_WALL = GameConstants.BIT_WALL;
+    internal const int BIT_DOOR = GameConstants.BIT_DOOR;
+    internal const int BIT_ALLTILES = GameConstants.BIT_ALLTILES;
+    internal const int MAXDOORS = GameConstants.MAXDOORS;
+    internal const int MAXVISABLE = GameConstants.MAXVISABLE;
+    internal const int RUNSPEED = GameConstants.RUNSPEED;
+    internal const float HEIGHTRATIO = GameConstants.HEIGHTRATIO;
+    internal const long PLAYERSIZE = GameConstants.PLAYERSIZE;
+    internal const long MINACTORDIST = GameConstants.MINACTORDIST;
+    internal const float PI = GameConstants.PI;
+    internal const float M_PI = GameConstants.M_PI;
+    internal const int UNSIGNEDSHIFT = GameConstants.UNSIGNEDSHIFT;
+    internal const int ANGLES = GameConstants.ANGLES;
+    internal const int ANGLEQUAD = GameConstants.ANGLEQUAD;
+    internal const int FINEANGLES = GameConstants.FINEANGLES;
+    internal const int ANG90 = GameConstants.ANG90;
+    internal const int ANG180 = GameConstants.ANG180;
+    internal const int ANG270 = GameConstants.ANG270;
+    internal const int ANG360 = GameConstants.ANG360;
+    internal const long MINDIST = GameConstants.MINDIST;
+    internal const int TEXTURESHIFT = GameConstants.TEXTURESHIFT;
+    internal const int FIXED2TEXSHIFT = GameConstants.FIXED2TEXSHIFT;
+    internal const int TEXTURESIZE = GameConstants.TEXTURESIZE;
+    internal const int TEXTUREMASK = GameConstants.TEXTUREMASK;
+    internal const int BASEMOVE = GameConstants.BASEMOVE;
+    internal const int RUNMOVE = GameConstants.RUNMOVE;
+    internal const int SPDPATROL = GameConstants.SPDPATROL;
+    internal const int SPDDOG = GameConstants.SPDDOG;
 
     // The status bar's height in 320x200 lines (statusbar.yaml background), 0 with none
     internal static int STATUSLINES => StatusBar.Get("background")?.Height ?? 0;
@@ -494,35 +455,4 @@ internal partial class Program
     internal static void PlaySoundLocTile(string s, int tx, int ty) => positionalSounds.PlaySoundLocTile(s, tx, ty);
     internal static void PlaySoundLocActor(string s, Entities.Actors.Actor ob) => positionalSounds.PlaySoundLocActor(s, ob);
     internal static void UpdateSoundListener() => positionalSounds.UpdateSoundListener();
-
-
-    /*
-    =============================================================================
-
-                                WL_PLAY DEFINITIONS
-
-    =============================================================================
-    */
-
-    internal const int BASEMOVE  = 35;
-    internal const int RUNMOVE   = 70;
-    internal const int BASETURN  = 35;
-    internal const int RUNTURN = 70;
-
-    internal const int JOYSCALE = 2;
-
-
-
-
-
-    /*
-    =============================================================================
-
-                                 WL_STATE DEFINITIONS
-
-    =============================================================================
-    */
-    internal const int TURNTICS = 10;
-    internal const int SPDPATROL = 512;
-    internal const int SPDDOG = 1500;
 }
