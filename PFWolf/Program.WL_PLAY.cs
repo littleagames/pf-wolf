@@ -52,15 +52,6 @@ internal partial class Program
             () => demoplayback, () => demorecord, () => demoTesting, RouteMovementToAutomap));
 
     static TicCmd localcmd => inputPolling.localcmd;
-    static int controlx { get => inputPolling.controlx; set => inputPolling.controlx = value; }
-    static int controly { get => inputPolling.controly; set => inputPolling.controly = value; }
-    static int controlstrafe { get => inputPolling.controlstrafe; set => inputPolling.controlstrafe = value; }
-    static int wheelnotches => inputPolling.wheelnotches;
-
-    static bool IsAutomapInput(InputCode code) => inputPolling.IsAutomapInput(code);
-    internal static bool IsInputActive(InputCode code) => inputPolling.IsInputActive(code);
-    static List<InputCode> TakeFreshPresses() => inputPolling.TakeFreshPresses();
-    static int WheelNotches(InputCode code) => inputPolling.WheelNotches(code);
 
     // The mouse look and controller settings (Configuration/ControlSettings.cs)
     internal static readonly ControlSettings controlSettings = new();
