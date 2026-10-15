@@ -74,242 +74,29 @@ internal partial class Program
         }
     }
 
-    /// <summary>Hurts a particular player (an enemy's shot, a projectile), as the acting player while it does</summary>
-    internal static void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker)
-    {
-        using var _ = ActAs(victim.State);
-        TakeDamage(points, attacker);
-    }
+    // Everyone in the game coming and going (Gameplay/Players.cs)
+    static Players playersManager = null!;      // made in InitServices
 
-    /// <summary>
-    /// A sound the acting player makes (a pickup, a shot): the local player hears their own
-    /// as ever, anyone else's from where that player stands
-    /// </summary>
-    internal static void PlayPlayerSound(string name)
-    {
-        if (ActingIsLocal || playerstate.Pawn is not { } pawn)
-            _audioManager.Play(name);
-        else
-            PlaySoundLocActor(name, pawn);
-    }
+    static Players MakePlayers() =>
+        new(_mapManager, _audioManager, _videoManager, _inventoryManager, statusBarDrawing, playerClassRules, playerStats,
+            playerWeapons, playerMovement, playerThink, session,
+            new PlayersHooks(PlaySoundLocActor, DeathmatchSpot, GiveDeathmatchKeys, CountFrag, ShowObituary, ConnectAreas,
+                () => deathTurnSpeed, () => deathDropHeight, () => deathDropSpeed, () => netgame = false));
 
-    /// <summary>
-    /// A new game's players: just the local one, fresh. Anyone else is added after (addplayer).
-    /// </summary>
-    internal static void ResetPlayers()
-    {
-        players.Clear();
-        players.Add(new Entities.PlayerState());
-        consoleplayer = 0;
-        SetActing(players[0]);
-        SetGameMode(GameMode.Single);
-        netgame = false;        // BeginNetGame says otherwise, after
-    }
+    internal static void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker) => playersManager.TakeDamage(victim, points, attacker);
+    internal static void PlayPlayerSound(string name) => playersManager.PlayPlayerSound(name);
+    internal static void ResetPlayers() => playersManager.ResetPlayers();
+    internal static void SpawnPlayers(int tilex, int tiley, int angle) => playersManager.SpawnPlayers(tilex, tiley, angle);
+    internal static (int x, int y) StandInStart() => playersManager.StandInStart();
+    static (int x, int y)? FreeTileNear(int tilex, int tiley, List<(int x, int y)> taken) => playersManager.FreeTileNear(tilex, tiley, taken);
+    static bool IsFreeFloor(int x, int y) => playersManager.IsFreeFloor(x, y);
+    internal static void PlayerDies() => playersManager.PlayerDies();
+    internal static void T_PlayerDead(Entities.Actors.Actor ob) => playersManager.T_PlayerDead(ob);
+    static string? PlayerName(Entities.Actors.PlayerPawn pawn) => playersManager.PlayerName(pawn);
+    internal static void StartPlayer(string playerClass) => playersManager.StartPlayer(playerClass);
 
     /// <summary>The most players a game can have</summary>
     internal const int MAXPLAYERS = 4;
-
-    /// <summary>
-    /// Puts every player on the level: the first on the map's start, the rest on the nearest
-    /// free floor tiles around it, all facing the start's way.
-    /// </summary>
-    internal static void SpawnPlayers(int tilex, int tiley, int angle)
-    {
-        var taken = new List<(int x, int y)>();
-        foreach (var p in players.Where(p => p.Pawn != null))
-        {
-            using var _ = ActAs(p);
-            if (gamemode == GameMode.Deathmatch)
-            {
-                // somewhere random, carrying every key (Program.Deathmatch.cs)
-                var (dx, dy, dangle) = DeathmatchSpot(p.Pawn!);
-                SpawnPlayer(dx, dy, dangle);
-                GiveDeathmatchKeys();
-                continue;
-            }
-
-            var (x, y) = taken.Count == 0 ? (tilex, tiley) : FreeTileNear(tilex, tiley, taken) ?? (tilex, tiley);
-            taken.Add((x, y));
-            SpawnPlayer(x, y, angle);
-        }
-    }
-
-    /// <summary>
-    /// Where the players go on a level with no player start: the empty tile nearest the middle
-    /// of the map (one in an area first), else the middle itself
-    /// </summary>
-    internal static (int x, int y) StandInStart()
-    {
-        int midx = _mapManager.mapwidth / 2, midy = _mapManager.mapheight / 2;
-        var tiles = from y in Enumerable.Range(1, Math.Max(_mapManager.mapheight - 2, 0))
-                    from x in Enumerable.Range(1, Math.Max(_mapManager.mapwidth - 2, 0))
-                    where _mapManager.tilemap[x, y] == 0 && _mapManager.actorat[x, y] == null
-                    orderby IsFreeFloor(x, y) ? 0 : 1, (x - midx) * (x - midx) + (y - midy) * (y - midy)
-                    select (x, y);
-        return tiles.Cast<(int, int)?>().FirstOrDefault() ?? (midx, midy);
-    }
-
-    /// <summary>
-    /// The nearest open floor tile to a spot (by steps across open floor, so never through a
-    /// wall), that isn't one of <paramref name="taken"/> and has nothing standing on it; null
-    /// if there's none within reach.
-    /// </summary>
-    static (int x, int y)? FreeTileNear(int tilex, int tiley, List<(int x, int y)> taken)
-    {
-        const int Reach = 6;     // steps from the start
-        var seen = new HashSet<(int, int)> { (tilex, tiley) };
-        var frontier = new Queue<(int x, int y, int steps)>();
-        frontier.Enqueue((tilex, tiley, 0));
-
-        while (frontier.Count > 0)
-        {
-            var (x, y, steps) = frontier.Dequeue();
-            if (!taken.Contains((x, y)) && IsFreeFloor(x, y))
-                return (x, y);
-            if (steps == Reach)
-                continue;
-
-            foreach (var (dx, dy) in new[] { (1, 0), (0, -1), (-1, 0), (0, 1) })
-            {
-                int nx = x + dx, ny = y + dy;
-                if (nx <= 0 || ny <= 0 || nx >= _mapManager.mapwidth - 1 || ny >= _mapManager.mapheight - 1
-                    || !seen.Add((nx, ny)) || !IsOpenFloor(nx, ny))
-                    continue;
-                frontier.Enqueue((nx, ny, steps + 1));
-            }
-        }
-        return null;
-    }
-
-    // Floor a player can walk on: no wall, door or solid thing, and in an area
-    static bool IsOpenFloor(int x, int y) =>
-        _mapManager.tilemap[x, y] == 0 && _mapManager.actorat[x, y] == null
-        && _mapManager.VALIDAREA(_mapManager.MAPSPOT(x, y, 0));
-
-    // Open floor nobody stands on: no enemy, and no player already put there
-    static bool IsFreeFloor(int x, int y) =>
-        IsOpenFloor(x, y) && !_mapManager.EnemiesAt(x, y).Any()
-        && !_mapManager.Players.Any(pawn => pawn.TileX == x && pawn.TileY == y && pawn.Active == activetypes.ac_yes);
-
-    /*
-    ====================
-    =
-    = Dying with others playing
-    =
-    = Alone, dying ends the level (Died). With others, the game plays on: the dead player lies
-    = where they fell, turning to face their killer as their view sinks (game-info
-    = death-turn-speed, death-drop-height and death-drop-speed, as Died), and a press of use or
-    = fire once RESPAWNTICS have passed brings them back at the level's start with the class's
-    = starting loadout: whatever else they carried is lost. Their score stays; lives don't count.
-    =
-    ====================
-    */
-
-    /// <summary>How long a dead player lies before they can come back (tics)</summary>
-    const int RESPAWNTICS = 70;
-
-    /// <summary>The acting player has just been killed, with others playing on</summary>
-    internal static void PlayerDies()
-    {
-        playerstate.weapon = null;              // take away weapon, as Died
-        playerstate.DeadTics = 0;
-        playerstate.DeathAngle = FacingAngle(player, LastAttacker);
-        player.SetState(Entities.Actors.PlayerPawn.DeadState);
-        if (gamemode == GameMode.Deathmatch)
-            CountFrag(playerstate, LastAttacker);
-
-        if (_inventoryManager.GetStringProperty(PlayerClass, "deathsound") is { Length: > 0 } deathSound)
-            PlayPlayerSound(deathSound);
-        ShowObituary();
-    }
-
-    // The angle from a player to an actor (the way they turn to face their killer), else behind them
-    static short FacingAngle(Entities.Actors.PlayerPawn from, Entities.Actors.Actor? to)
-    {
-        if (to == null)
-            return (short)((from.Angle + ANGLES / 2) % ANGLES);
-
-        var fangle = (float)Math.Atan2((float)(from.Y - to.Y), (float)(to.X - from.X));
-        if (fangle < 0)
-            fangle = (float)(M_PI * 2 + fangle);
-        return (short)((int)(fangle / (M_PI * 2) * ANGLES) % ANGLES);
-    }
-
-    /// <summary>A dead player's think: turning to face their killer, sinking, and waiting to come back</summary>
-    internal static void T_PlayerDead(Entities.Actors.Actor ob)
-    {
-        playerstate.DeadTics += (int)tics;
-
-        // Turn the shorter way round toward the killer
-        int diff = ((playerstate.DeathAngle - player.Angle) % ANGLES + ANGLES) % ANGLES;
-        if (diff != 0)
-        {
-            int step = Math.Min((int)tics * deathTurnSpeed, diff <= ANGLES / 2 ? diff : ANGLES - diff);
-            player.Angle = (short)(((player.Angle + (diff <= ANGLES / 2 ? step : -step)) % ANGLES + ANGLES) % ANGLES);
-        }
-
-        // and the view sinks (only with a death-drop-height)
-        if (deathDropHeight is { } dropto && playereyez > dropto)
-            playereyez = Math.Max(playereyez - (int)tics * deathDropSpeed, dropto);
-
-        if (playerstate.DeadTics >= RESPAWNTICS
-            && (playerinput.IsFreshPress(buttontypes.bt_use) || playerinput.IsFreshPress(buttontypes.bt_attack)))
-            Respawn();
-    }
-
-    /// <summary>Brings the acting player back at the level's start, with the class's starting loadout</summary>
-    static void Respawn()
-    {
-        GiveStartingInventory();
-        playerstate.health = StartingHealth;
-        playerstate.Pitch = 0;
-        playerstate.EyeZ = StandingEyeZ(playerstate);
-        playerstate.WeaponSprite = null;
-        playerstate.WeaponCharge = 0;
-        playerstate.LastAttacker = null;
-        playerstate.PainTics = playerstate.FaceTimes = 0;
-
-        // The start, or the nearest free spot to it with someone already there
-        var taken = _mapManager.Players
-            .Where(pawn => pawn != player && pawn.State.health > 0)
-            .Select(pawn => ((int)pawn.TileX, (int)pawn.TileY))
-            .ToList();
-        int x = player.TileX, y = player.TileY, angle = player.Angle;
-        if (gamemode == GameMode.Deathmatch)
-            (x, y, angle) = DeathmatchSpot(player);
-        else if (_mapManager.PlayerStart is { } start)
-        {
-            (x, y) = taken.Contains((start.TileX, start.TileY))
-                ? FreeTileNear(start.TileX, start.TileY, taken) ?? (start.TileX, start.TileY)
-                : (start.TileX, start.TileY);
-            angle = start.Angle;
-        }
-
-        player.SetPosition(x, y);
-        player.AreaNumber = _mapManager.SpawnArea(x, y);
-        player.SetState(Entities.Actors.PlayerPawn.SpawnState);
-        player.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
-        Thrust(0, 0);
-        ConnectAreas();
-        if (gamemode == GameMode.Deathmatch)
-            GiveDeathmatchKeys();
-        if (ActingIsLocal)
-            camera.FollowPlayer();      // back through their own eyes, from watching someone
-
-        // Their screen and status bar, if they're this machine's player
-        if (ActingIsLocal)
-            _videoManager.ClearPaletteShifts();     // the red of the killing blow
-        DrawFace();
-        DrawHealth();
-        DrawArmor();
-        DrawWeapon();
-        DrawAmmo();
-        DrawKeys();
-    }
-
-    /// <summary>What messages call a player: their name, else "Player n" (the class's tag, alone)</summary>
-    static string? PlayerName(Entities.Actors.PlayerPawn pawn) =>
-        gamemode == GameMode.Single ? null : pawn.State.Name ?? $"Player {pawn.State.Number + 1}";
 
     /// <summary>`addplayer [class]`: a player who stands still (nothing drives them yet), beside you</summary>
     static void Cmd_AddPlayer(string[] args)
@@ -374,17 +161,6 @@ internal partial class Program
         if (viewsize != 21)
             DrawPlayScreen();
         _consoleManager.Print($"You're player {n} ({localplayer.playerclass})");
-    }
-
-    /// <summary>The acting player starts the game afresh as <paramref name="playerClass"/>: their loadout, health and lives</summary>
-    internal static void StartPlayer(string playerClass)
-    {
-        playerstate.playerclass = playerClass;
-        GiveStartingInventory();
-
-        playerstate.health = StartingHealth;
-        playerstate.lives = StartingLives;
-        playerstate.nextextra = ExtraLifeScore;
     }
 
     //

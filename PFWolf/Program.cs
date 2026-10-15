@@ -254,6 +254,7 @@ internal partial class Program
         weaponInHand = MakeWeaponInHand();
         pickups = MakePickups();
         playerThink = MakePlayerThink();
+        playersManager = MakePlayers();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
