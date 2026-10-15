@@ -259,6 +259,7 @@ internal partial class Program
         scoreboard = MakeScoreboard();
         netPlay = MakeNetPlay();
         netOverlay = MakeNetOverlay();
+        gameScripts = MakeGameScripts();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
