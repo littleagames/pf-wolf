@@ -306,6 +306,7 @@ internal partial class Program
             _graphicManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, lineInput, MakeLoadSaveHooks());
         multiplayerMenu = new MultiplayerMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
             _inventoryManager, _consoleManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, lineInput, session, netStart, MakeMultiplayerHooks());
+        netGames = MakeNetGames();
         elevatorScreens = new ElevatorScreens(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, _graphicManager,
             _inventoryManager, _mapManager, menuDrawing, textPresenter, hubs, session, new ElevatorHooks(RadarTileColor, GetMapDisplayName));
         changeViewScreen = new ChangeViewScreen(_assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop, menuInput, ui,
