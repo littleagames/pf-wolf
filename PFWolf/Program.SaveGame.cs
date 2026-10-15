@@ -213,7 +213,7 @@ internal partial class Program
     }
 
     /// <summary>What <see cref="WriteLevelBody"/> wrote, read without changing any game state.</summary>
-    private sealed record LevelBody(
+    internal sealed record LevelBody(
         LevelSnapshot Level,
         doorobj_t[] Doors,
         byte[,] AreaConnect,

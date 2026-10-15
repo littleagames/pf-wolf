@@ -273,6 +273,7 @@ internal partial class Program
         playKeys = MakePlayKeys();
         levelLoop = MakeLevelLoop();
         levelSetup = MakeLevelSetup();
+        levelEntry = MakeLevelEntry();
         demos = MakeDemos();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();

@@ -14,242 +14,34 @@ internal partial class Program
 
     The hub state (the levels kept, the floors been on or unlocked, their stats) is
     Gameplay/Hubs.cs (made in InitServices); these forward to it. Entering and leaving a level,
-    and the level start death goes back to, are here.
+    and the level start death goes back to, are Gameplay/LevelEntry.cs.
 
     =============================================================================
     */
 
     static Hubs hubs = null!;
 
-    static Dictionary<string, byte[]> hubLevels => hubs.hubLevels;
-    internal static HashSet<string> visitedMaps => hubs.visitedMaps;
     internal static HashSet<string> unlockedMaps => hubs.unlockedMaps;
-    internal static Dictionary<string, byte[]> floorOverheads => hubs.floorOverheads;
-    static Dictionary<string, int> floorScores => hubs.floorScores;
-    static string? levelMap { get => hubs.levelMap; set => hubs.levelMap = value; }
-    static byte[]? levelStart { get => hubs.levelStart; set => hubs.levelStart = value; }
-    internal static int informantTotal { get => hubs.informantTotal; set => hubs.informantTotal = value; }
 
-    static bool IsHubMap(string? map) => hubs.IsHubMap(map);
     static short ClusterOf(string? map) => hubs.ClusterOf(map);
     internal static void ResetHubs() => hubs.ResetHubs();
     private static void WriteHubState(BinaryWriter bw) => hubs.WriteHubState(bw);
     private static HubState ReadHubState(BinaryReader br) => Hubs.ReadHubState(br);
     private static void RestoreHubState(HubState state) => hubs.RestoreHubState(state);
-    static int Ratio(int got, int total) => Hubs.Ratio(got, total);
-    internal static int InformantsAlive() => hubs.InformantsAlive();
-    internal static (int Got, int Total)[] FloorStats() => hubs.FloorStats();
     static int FloorScore() => hubs.FloorScore();
-    internal static int MissionRatio() => hubs.MissionRatio();
 
-    /// <summary>
-    /// Builds the level for gamestate.mapon (GameLoop): a kept hub level as it was left, or the
-    /// map afresh. Moving to another cluster forgets the kept levels. True when it's a kept level.
-    /// </summary>
-    internal static bool EnterLevel()
-    {
-        if (levelMap != null && ClusterOf(levelMap) != ClusterOf(gamestate.mapon))
-        {
-            hubLevels.Clear();
-            floorScores.Clear();
-        }
+    // Entering and leaving levels, and the level start death goes back to (Gameplay/LevelEntry.cs)
+    static LevelEntry levelEntry = null!;       // made in InitServices
 
-        bool restored = RestoreHubLevel(gamestate.mapon);
-        if (!restored)
-        {
-            SetupGameLevel();
-            informantTotal = _mapManager.GetActors().Count(a => !a.IsRemoved && a is Entities.Actors.Informant);
-        }
+    static LevelEntry MakeLevelEntry() => new(_mapManager, _inventoryManager, hubs, levelSetup, playerMovement, session,
+        new LevelEntryHooks(() => loadedgame, on => loadedgame = on, () => victoryRunning = false, CaptureOverhead,
+            WriteLevelBody, ReadLevelBody, body => ApplyLevelBody(body)));
 
-        levelMap = gamestate.mapon;
-        visitedMaps.Add(gamestate.mapon);
-        victoryRunning = false;
-        return restored;
-    }
-
-    /// <summary>Keeps the level being left, if it's a hub level (GameLoop, after PlayLoop)</summary>
-    internal static void LeaveLevel()
-    {
-        if (levelMap == null || !IsHubMap(levelMap))
-            return;
-
-        floorScores[levelMap] = FloorScore();
-        floorOverheads[levelMap] = CaptureOverhead();
-
-        using var ms = new MemoryStream();
-        using (var bw = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
-        {
-            bw.Write((int)gamestate.TimeCount);
-            bw.Write((int)gamestate.killcount);
-            bw.Write((int)gamestate.killtotal);
-            bw.Write((int)gamestate.secretcount);
-            bw.Write((int)gamestate.secrettotal);
-            bw.Write((int)gamestate.treasurecount);
-            bw.Write((int)gamestate.treasuretotal);
-            bw.Write(informantTotal);
-            WriteLevelBody(bw);
-        }
-        hubLevels[levelMap] = ms.ToArray();
-    }
-
-    /// <summary>Rebuilds a kept hub level as it was left; false if there's none (or it can't be)</summary>
-    static bool RestoreHubLevel(string map)
-    {
-        if (!hubLevels.TryGetValue(map, out var data))
-            return false;
-
-        int timeCount, killCount, killTotal, secretCount, secretTotal, treasureCount, treasureTotal, informants;
-        LevelBody body;
-        try
-        {
-            using var br = new BinaryReader(new MemoryStream(data));
-            timeCount = br.ReadInt32();
-            killCount = br.ReadInt32();
-            killTotal = br.ReadInt32();
-            secretCount = br.ReadInt32();
-            secretTotal = br.ReadInt32();
-            treasureCount = br.ReadInt32();
-            treasureTotal = br.ReadInt32();
-            informants = br.ReadInt32();
-            body = ReadLevelBody(br);
-
-            if (_mapManager.CheckLevelState(body.Level, map) is { } problem)
-                throw new InvalidDataException(problem);
-        }
-        catch (Exception e) when (e is IOException or InvalidDataException or FormatException)
-        {
-            Console.WriteLine($"The kept level {map} couldn't be restored, so it starts afresh: {e.Message}");
-            hubLevels.Remove(map);
-            return false;
-        }
-
-        // Built from the map without counting anything again, then laid over as it was
-        var wasLoaded = loadedgame;
-        loadedgame = true;
-        SetupGameLevel();
-        loadedgame = wasLoaded;
-        ApplyLevelBody(body);
-
-        gamestate.TimeCount = timeCount;
-        gamestate.killcount = (short)killCount;
-        gamestate.killtotal = (short)killTotal;
-        gamestate.secretcount = (short)secretCount;
-        gamestate.secrettotal = (short)secretTotal;
-        gamestate.treasurecount = (short)treasureCount;
-        gamestate.treasuretotal = (short)treasureTotal;
-        informantTotal = informants;
-        weaponSprite = null;
-        return true;
-    }
-
-    /// <summary>Remembers the player as they come into the level (GameLoop), for death-restores-level-start</summary>
-    internal static void MarkLevelStart()
-    {
-        using var ms = new MemoryStream();
-        using (var bw = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
-        {
-            gamestate.Write(bw, playerstate);
-            bw.Write(_inventoryManager.Items.Count);
-            foreach (var (item, count) in _inventoryManager.Items)
-            {
-                bw.Write(item);
-                bw.Write(count);
-            }
-            bw.Write(weaponcharge);
-        }
-        levelStart = ms.ToArray();
-    }
-
-    /// <summary>
-    /// Puts the player back as they came into the level, but with the lives they have now
-    /// (Died, with death-restores-level-start). False if there's nothing to go back to.
-    /// </summary>
-    internal static bool RestoreLevelStart()
-    {
-        if (levelStart == null)
-            return false;
-
-        using var br = new BinaryReader(new MemoryStream(levelStart));
-        var (state, player) = gametype.Read(br);
-        var inventory = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        for (int i = br.ReadCount(); i > 0; i--)
-            inventory[br.ReadString()] = br.ReadInt32();
-        int charge = br.ReadInt32();
-
-        player.lives = playerstate.lives;
-        player.playerclass = playerstate.playerclass;
-        gamestate = state;
-        playerstate.CopyStatsFrom(player);
-        _inventoryManager.Restore(inventory);
-        weaponcharge = charge;
-        return true;
-    }
-
-    /*
-    =============================================================================
-
-                            ARRIVING ON A FLOOR
-
-    =============================================================================
-    */
-
-    /// <summary>
-    /// Puts the player in the elevator they arrive in (bstone's AlignPlayerInElevator): every
-    /// floor's elevator is where the last floor's was, so from the tile the player left from,
-    /// beside the panel wall, it finds the spot inside facing the doors.
-    /// </summary>
-    static void AlignPlayerInElevator(int lastx, int lasty, int panelWall)
-    {
-        bool Panel(int x, int y) => x >= 0 && y >= 0 && x < MapManager.MAPSIZE && y < MapManager.MAPSIZE
-            && _mapManager.tilemap[x, y] != 0 && (_mapManager.tilemap[x, y] & BIT_DOOR) == 0
-            && _mapManager.MAPSPOT(x, y, 0) == panelWall;
-        bool IsDoor(int x, int y) => x >= 0 && y >= 0 && x < MapManager.MAPSIZE && y < MapManager.MAPSIZE
-            && (_mapManager.tilemap[x, y] & BIT_DOOR) != 0;
-
-        int tilex = 0, ox = lastx, oy = lasty;
-        if (!Panel(ox + 1, oy) && !Panel(ox - 1, oy))
-        {
-            if (!Panel(ox - 2, oy))
-            {
-                for (tilex = ox - 1; tilex > 0; tilex--)
-                {
-                    if (!Panel(tilex, oy))
-                        continue;
-                    tilex += Panel(tilex - 1, oy - 1) || Panel(tilex - 1, oy + 1) ? -1 : 1;
-                    break;
-                }
-            }
-
-            if (!Panel(ox + 2, oy) && tilex == 0)
-            {
-                for (tilex = ox + 1; tilex < MapManager.MAPSIZE; tilex++)
-                {
-                    if (!Panel(tilex, oy))
-                        continue;
-                    tilex += Panel(tilex + 1, oy - 1) || Panel(tilex + 1, oy + 1) ? 1 : -1;
-                    break;
-                }
-            }
-        }
-
-        if (tilex == 0)
-            tilex = lastx;
-
-        short angle = player.Angle;
-        if (tilex < MapManager.MAPSIZE)
-        {
-            if (IsDoor(tilex + 1, oy + 1)) { oy++; tilex--; angle = 0; }
-            else if (IsDoor(tilex + 1, oy - 1)) { oy--; tilex--; angle = 0; }
-            else if (IsDoor(tilex - 1, oy + 1)) { oy++; tilex++; angle = 180; }
-            else if (IsDoor(tilex - 1, oy - 1)) { oy--; tilex++; angle = 180; }
-        }
-        else
-            tilex = ox;
-
-        player.SetPosition(tilex, oy);
-        player.Angle = angle;
-        Thrust(0, 0);       // settles the player's tile and area
-    }
+    internal static bool EnterLevel() => levelEntry.EnterLevel();
+    internal static void LeaveLevel() => levelEntry.LeaveLevel();
+    internal static void MarkLevelStart() => levelEntry.MarkLevelStart();
+    internal static bool RestoreLevelStart() => levelEntry.RestoreLevelStart();
+    static void AlignPlayerInElevator(int lastx, int lasty, int panelWall) => levelEntry.AlignPlayerInElevator(lastx, lasty, panelWall);
 
     /*
     =============================================================================
