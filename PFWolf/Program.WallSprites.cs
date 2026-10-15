@@ -239,9 +239,6 @@ internal partial class Program
     =============================================================================
     */
 
-    // The panel the player last ran into in TryMove, for ClipMove to slide along
-    static WallSpriteSpan? wallspriteblock;
-
     // Where ClipMove's move starts: a panel the player already overlaps there (one spawned on
     // top of them) doesn't block, so they can always step off it
     static int wallspritefromx, wallspritefromy;

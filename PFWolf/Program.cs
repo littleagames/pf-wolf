@@ -242,6 +242,7 @@ internal partial class Program
         projectileActions = MakeProjectileActions();
         statusBarDrawing = MakeStatusBarDrawing();
         playerWeapons = MakePlayerWeapons();
+        playerMovement = MakePlayerMovement();
         playerAttacks = MakePlayerAttacks();
         weaponInHand = MakeWeaponInHand();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
