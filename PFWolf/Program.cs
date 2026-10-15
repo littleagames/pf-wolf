@@ -356,6 +356,11 @@ internal partial class Program
         signonPanel = new SignonPanel(_gameEngineManager, _assetManager, _videoManager, _inputManager, _audioManager,
             _graphicManager, _fontManager, ui, () => mouseenabled, () => _scripts?.Loaded.Count ?? 0);
 
+        titleLoop = new TitleLoop(_gameEngineManager, _assetManager, _videoManager, _graphicManager, _inputManager, _audioManager, ui,
+            signonPanel, titleScreens, highScoresScreen, demos, netGames, quickKeys, mainGameLoop, cheatCommands, warpRequest, session,
+            new TitleLoopHooks(() => param_nowait, () => INTROSONG, () => startgame, () => loadedgame, () => netgame, () => playstate,
+                (skill, episode, map) => NewGame(skill, episode, map)));
+
         // TODO: Remove circular dependencies here
     }
 
@@ -578,209 +583,15 @@ internal partial class Program
         weaponBob.Enabled = gameInfoSettings.weaponBob;
     }
 
-    private static void SignonScreen()
-    {
-        _graphicManager.DrawPic(_gameEngineManager.GetGameInfo().Signon.Pic ?? "", 0, 0);
-        PrintSignonInfo();
-    }
+    // From the signon through the title loop to the games it starts (Ui/TitleLoop.cs)
+    static TitleLoop titleLoop = null!;     // made in InitServices
 
-    /// <summary>
-    /// Blanks the screen to black when it's bigger than the 320x200 layout, so a full-screen
-    /// picture about to be drawn in the middle doesn't keep the last screen round its edges
-    /// </summary>
-    internal static void ClearMargins()
-    {
-        if (_videoManager.HasMargins)
-            _videoManager.ClearScreen(0);
-    }
-
-    /// <summary>
-    /// The game-info title-pics, each drawn below the one before
-    /// </summary>
-    private static void DrawTitle()
-    {
-        ClearMargins();
-        int y = 0;
-        foreach (var pic in _gameEngineManager.GetGameInfo().TitlePics)
-        {
-            var graphic = _assetManager.Find<GraphicAsset>(pic);
-            if (graphic == null)
-                continue;
-
-            _graphicManager.DrawPic(pic, 0, y);
-            y += graphic.Height;
-        }
-    }
-
-    /// <summary>
-    /// Fades the title in with its own palette (game-info title-palette), or the game palette.
-    /// The next screen's fade-in puts the game palette back.
-    /// </summary>
-    private static void FadeInTitle()
-    {
-        var paletteName = _gameEngineManager.GetGameInfo().TitlePalette;
-        var palette = string.IsNullOrEmpty(paletteName) ? null : _assetManager.Find<Palette>(paletteName);
-        if (palette == null)
-            _videoManager.FadeIn();
-        else
-            _videoManager.FadeIn(new GamePalette { Colors = palette.ToSDLColors() }, 30);
-    }
-
-    /// <param name="startupLines">What startup printed, shown as warnings in the signon's text area</param>
-    private static void FinishSignon(List<string> startupLines)
-    {
-        FinishSignonInfo(startupLines);
-
-        if (!_gameEngineManager.GetGameInfo().Signon.PressAKey)
-        {
-            _videoManager.Update();
-
-            if (!param_nowait)
-                GameEngineManager.WaitVBL(3 * 70);
-        }
-        else
-        {
-            _videoManager.Bar(0, 189, 300, 11, "Maroon");
-            CenteredText(0, 320, 190, new TextStyle(SMALL_FONT, "Bright Yellow", "Maroon")).CPrint("Press a key"); // "Oprima una tecla"
-
-            _videoManager.Update();
-
-            if (!param_nowait)
-                _inputManager.Ack();
-
-            _videoManager.Bar(0, 189, 300, 11, "Maroon");
-            CenteredText(0, 320, 190, new TextStyle(SMALL_FONT, "Lime", "Maroon")).CPrint("Working..."); // "pensando..."
-
-            _videoManager.Update();
-        }
-    }
-
-    private static void DemoLoop()
-    {
-        var gameInfo = _gameEngineManager.GetGameInfo();
-
-        //
-        // main game cycle
-        //
-        if (HasPendingNetStart)
-        {
-            // --host or --join: straight to the lobby, with the menu's music
-        }
-        else if (gameInfo.Intro.Count > 0)
-        {
-            // The game pack's own intro (Blake Stone's), which starts its own music
-            if (param_nowait)
-                StartCPMusic(INTROSONG);
-            else
-                RunTitleScreens(gameInfo.Intro, titleLoop: false);
-        }
-        else
-        {
-            if (!param_nowait && gameInfo.NonSharewareNotice)
-                NonShareware();
-
-            StartCPMusic(INTROSONG);
-
-            if (!param_nowait && _assetManager.Exists<GraphicAsset>("pg13"))    // a standalone game may have none
-                PG13();
-        }
-
-        while (true)
-        {
-            if (RunPendingNetStart() || RunPendingWarp())
-            {
-                RunStartedGame();
-                continue;
-            }
-
-            // recorddemo and playdemo, from the command line's --exec or a game they ended
-            if (RecordPendingDemo())
-            {
-                RunStartedGame();       // New Game from the menu ends a recording and starts one
-                continue;
-            }
-            PlayPendingDemo();
-
-            while (!param_nowait && gameInfo.TitleLoop.Count > 0)
-            {
-                if (string.IsNullOrEmpty(_audioManager.CurrentMusicTrack))
-                    StartCPMusic(INTROSONG);
-                if (RunTitleScreens(gameInfo.TitleLoop, titleLoop: true))
-                    break;
-            }
-
-            while (!param_nowait && gameInfo.TitleLoop.Count == 0)
-            {
-                //
-                // title page
-                //
-                DrawTitle();
-                _videoManager.Update();
-                FadeInTitle();
-
-                if (_inputManager.UserInput(Timing.TickBase * 15))
-                    break;
-                _videoManager.FadeOut();
-
-                //
-                // credits page
-                //
-                ClearMargins();
-                _graphicManager.DrawPic("credits", 0, 0);
-                _videoManager.Update();
-                _videoManager.FadeIn();
-                if (_inputManager.UserInput(Timing.TickBase * 10))
-                    break;
-                _videoManager.FadeOut();
-
-                //
-                // high scores
-                //
-                DrawHighScores();
-                _videoManager.Update();
-                _videoManager.FadeIn();
-
-                if (_inputManager.UserInput(Timing.TickBase * 10))
-                    break;
-
-                //
-                // demo
-                //
-                PlayDemo(TakeNextTitleDemo());
-                if (playstate == playstatetypes.ex_abort)
-                    break;
-                _videoManager.FadeOut();
-                if (_videoManager.HasMargins)
-                    _videoManager.ClearScreen(0x00); // 0x00 = Black
-                StartCPMusic(INTROSONG);
-            }
-
-            _videoManager.FadeOut();
-
-            if (_inputManager.IsKeyDown(ScanCodes.sc_Tab))
-                RecordDemo();
-            else
-                US_ControlPanel(0);
-
-            RunStartedGame();
-        }
-    }
-
-    /// <summary>Plays the game the menu started or loaded, if it did, then puts the title music back</summary>
-    private static void RunStartedGame()
-    {
-        if (!startgame && !loadedgame)
-            return;
-
-        GameLoop();
-        if (netgame)
-            EndNetGame();       // a game with others is over: leave it (Program.Multiplayer.cs)
-        if (!param_nowait)
-        {
-            _videoManager.FadeOut();
-            StartCPMusic(INTROSONG);
-        }
-    }
+    private static void SignonScreen() => titleLoop.SignonScreen();
+    internal static void ClearMargins() => titleLoop.ClearMargins();
+    private static void DrawTitle() => titleLoop.DrawTitle();
+    private static void FinishSignon(List<string> startupLines) => titleLoop.FinishSignon(startupLines);
+    private static void DemoLoop() => titleLoop.DemoLoop();
+    static void ApplyPendingWarpStart() => titleLoop.ApplyPendingWarpStart();
 
     /// <summary>The skill being played (game-info skills, by gamestate.difficulty); an ordinary one if it's missing</summary>
     internal static SkillInfo CurrentSkill =>
@@ -802,31 +613,6 @@ internal partial class Program
                 Console.WriteLine($"game-info demo-skill '{gameInfo.DemoSkill}' isn't one of the skills; using the hardest");
             return (short)(index >= 0 ? index : Math.Max(keys.Count - 1, 0));
         }
-    }
-
-    /// <summary>Starts the new game --warp asked for (once): true if it did, for the demo loop to play</summary>
-    internal static bool RunPendingWarp()
-    {
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        if (warpRequest.TakeWarp(gameInfo, map => _assetManager.Exists<MapAsset>(map)) is not { } warp)
-            return false;
-
-        NewGame(warp.Difficulty, warp.Episode, gameInfo.Maps[warp.Map]);
-        gamestate.mapon = warp.Map;
-        Console.WriteLine($"Warping to {warp.Map}, skill {warp.Difficulty + 1}");
-        return true;
-    }
-
-    /// <summary>Puts the player where --start said, once, after the warped-to level has loaded</summary>
-    static void ApplyPendingWarpStart()
-    {
-        if (warpRequest.TakeStart() is not { } start)
-            return;
-
-        if (TryTeleportPlayer(start.X, start.Y, start.Angle, out var problem))
-            Console.WriteLine($"Starting on {start.X},{start.Y}");
-        else
-            Console.WriteLine($"--start {start.X},{start.Y}: {problem}; starting on the level's player start");
     }
 
     /// <summary>The class the next new game is played as (the `playerclass` command); null for the default</summary>
