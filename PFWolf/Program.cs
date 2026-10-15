@@ -242,6 +242,8 @@ internal partial class Program
         projectileActions = MakeProjectileActions();
         statusBarDrawing = MakeStatusBarDrawing();
         playerWeapons = MakePlayerWeapons();
+        playerAttacks = MakePlayerAttacks();
+        weaponInHand = MakeWeaponInHand();
         menuDefs = new MenuDefs(_assetManager, _gameEngineManager, _graphicManager, _audioManager, ui);
         RegisterMenuDefs();
         modsMenu = new ModsMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
@@ -294,8 +296,8 @@ internal partial class Program
 
     =============================================================================
     */
-    const long FOCALLENGTH = (0x5700L);               // in global coordinates
-    const int VIEWGLOBAL = 0x10000;               // globals visable flush to wall
+    internal const long FOCALLENGTH = (0x5700L);               // in global coordinates
+    internal const int VIEWGLOBAL = 0x10000;               // globals visable flush to wall
 
     const int VIEWWIDTH = 256;                   // size of view window
     const int VIEWHEIGHT = 144;

@@ -1,0 +1,254 @@
+using PFWolf.Enums;
+
+namespace PFWolf.Tests;
+
+public class WeaponInHandTests
+{
+    // A knife and two guns with Wolf3D's Ready/Fire states (no actions run until a frame ends,
+    // and the tests never tick the weapon); the machine gun holds while fire stays down
+    private const string Yaml = """
+        Inventory:
+          properties:
+            "inventory.amount": 1
+            "inventory.maxamount": 1
+        Ammo:
+          parent: Inventory
+        Clip:
+          parent: Ammo
+          properties:
+            "inventory.maxamount": 99
+        Weapon:
+          parent: Inventory
+        Knife:
+          parent: Weapon
+          properties:
+            "weapon.slot": 1
+            "weapon.selectionorder": 3700
+          states:
+            Ready:
+              - sprite: KNFG
+                frames: [A]
+                tics-per-frame: 1
+                next-state: Ready
+            Fire:
+              - sprite: KNFG
+                frames: [B, C, D, E]
+                tics-per-frame: 6
+                next-state: Ready
+        Pistol:
+          parent: Weapon
+          properties:
+            "weapon.slot": 2
+            "weapon.selectionorder": 1900
+            "weapon.ammotype1": Clip
+            "weapon.ammouse1": 1
+          states:
+            Ready:
+              - sprite: PISG
+                frames: [A]
+                tics-per-frame: 1
+                next-state: Ready
+            Fire:
+              - sprite: PISG
+                frames: [B, C, D, E]
+                tics-per-frame: 6
+                next-state: Ready
+        MachineGun:
+          parent: Weapon
+          properties:
+            "weapon.slot": 3
+            "weapon.selectionorder": 1500
+            "weapon.ammotype1": Clip
+            "weapon.ammouse1": 1
+          states:
+            Ready:
+              - sprite: MCHG
+                frames: [A]
+                tics-per-frame: 1
+                next-state: Ready
+            Fire:
+              - sprite: MCHG
+                frames: [B, C]
+                tics-per-frame: 6
+            Hold:
+              - sprite: MCHG
+                frames: [D, E]
+                tics-per-frame: 6
+                next-state: Ready
+        """;
+
+    private sealed class Rig
+    {
+        public readonly GameSession Session = new();
+        public readonly InventoryManager Inventory = new(ActorDefs.Metadata(Yaml));
+        public readonly WeaponInHand Hand;
+
+        public Rig(params string[] held)
+        {
+            Inventory.SetHolder(Session.playerstate.Items);
+            foreach (var item in held)
+                Inventory.Give(item, 1);
+            var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
+                new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
+            var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(() => false, _ => { }));
+            Hand = new WeaponInHand(Inventory, null!, Session, weapons, null!, () => { });
+        }
+
+        public string? InHand
+        {
+            get => Session.playerstate.weapon;
+            set => Session.playerstate.weapon = Session.playerstate.chosenweapon = value;
+        }
+
+        public Entities.Actors.Actor Sprite => Hand.SyncWeaponSprite()!;
+    }
+
+    [Test]
+    public void No_Weapon_In_Hand_Means_No_Sprite()
+    {
+        var rig = new Rig();
+        Assert.That(rig.Hand.SyncWeaponSprite(), Is.Null);
+        Assert.That(rig.Hand.WeaponShapeName(), Is.Null);
+        Assert.That(rig.Hand.IsWeaponReady(), Is.True);
+    }
+
+    [Test]
+    public void A_Weapon_Taken_Up_Starts_Ready_And_Keeps_Its_Sprite()
+    {
+        // Arrange
+        var rig = new Rig("Pistol") { InHand = "Pistol" };
+
+        // Act
+        var sprite = rig.Sprite;
+
+        // Assert
+        Assert.That(sprite.CurrentState!.StateName, Is.EqualTo(WeaponInHand.WeaponReadyState));
+        Assert.That(rig.Hand.SyncWeaponSprite(), Is.SameAs(sprite));
+        Assert.That(rig.Hand.WeaponShapeName(), Is.EqualTo("PISGA0"));
+        Assert.That(rig.Session.playerstate.WeaponSprite, Is.SameAs(sprite));
+    }
+
+    [Test]
+    public void Attack_Steps_Count_The_Timed_Frames_From_Fires_First()
+    {
+        // Arrange
+        var rig = new Rig("Pistol") { InHand = "Pistol" };
+        var sprite = rig.Sprite;
+
+        // Act / Assert
+        Assert.That(WeaponInHand.AttackStep(sprite), Is.Null);      // Ready isn't attacking
+        WeaponInHand.JumpWeaponState(sprite, "Fire");
+        Assert.That(WeaponInHand.AttackStep(sprite), Is.EqualTo(0));
+        sprite.CurrentState = sprite.CurrentState!.Next;
+        Assert.That(WeaponInHand.AttackStep(sprite), Is.EqualTo(1));
+        Assert.That(WeaponInHand.AttackFrame(sprite, 1), Is.SameAs(sprite.CurrentState));
+        Assert.That(WeaponInHand.AttackFrame(sprite, 9), Is.Null);
+        Assert.That(rig.Hand.IsWeaponReady(), Is.False);
+    }
+
+    [Test]
+    public void A_Weapon_Picked_Up_Mid_Attack_Carries_On_Where_The_Attack_Had_Got_To()
+    {
+        // Arrange: the pistol two frames into its attack, 4 tics left on the frame
+        var rig = new Rig("Pistol", "MachineGun") { InHand = "Pistol" };
+        var pistol = rig.Sprite;
+        WeaponInHand.JumpWeaponState(pistol, "Fire");
+        pistol.CurrentState = pistol.CurrentState!.Next;
+        pistol.TicCount = 4;
+
+        // Act
+        rig.InHand = "MachineGun";
+        var gun = rig.Sprite;
+
+        // Assert
+        Assert.That(gun.Name, Is.EqualTo("MachineGun"));
+        Assert.That(gun.CurrentState!.FrameLetter, Is.EqualTo("C"));
+        Assert.That(gun.TicCount, Is.EqualTo(4));
+    }
+
+    [Test]
+    public void A_Fresh_Press_Of_Fire_Starts_The_Attack_And_Holds_The_Button()
+    {
+        // Arrange
+        var rig = new Rig("Pistol") { InHand = "Pistol" };
+        rig.Inventory.Give("Clip", 8);
+        var sprite = rig.Sprite;
+        rig.Session.playerinput.SetPressed(buttontypes.bt_attack, true);
+
+        // Act
+        rig.Hand.A_WeaponReady(sprite);
+
+        // Assert
+        Assert.That(sprite.CurrentState!.StateName, Is.EqualTo("Fire"));
+        Assert.That(rig.Session.playerinput.IsFreshPress(buttontypes.bt_attack), Is.False);
+    }
+
+    [Test]
+    public void Without_A_Press_The_Weapon_Stays_Ready()
+    {
+        // Arrange
+        var rig = new Rig("Pistol") { InHand = "Pistol" };
+        rig.Inventory.Give("Clip", 8);
+        var sprite = rig.Sprite;
+
+        // Act
+        rig.Hand.A_WeaponReady(sprite);
+
+        // Assert
+        Assert.That(sprite.CurrentState!.StateName, Is.EqualTo(WeaponInHand.WeaponReadyState));
+    }
+
+    [Test]
+    public void Out_Of_Ammo_The_Knife_Comes_Out_And_The_Pick_Stands()
+    {
+        // Arrange
+        var rig = new Rig("Knife", "Pistol") { InHand = "Pistol" };
+
+        // Act
+        rig.Hand.A_WeaponReady(rig.Sprite);
+
+        // Assert
+        Assert.That(rig.InHand, Is.EqualTo("Knife"));
+        Assert.That(rig.Session.playerstate.chosenweapon, Is.EqualTo("Pistol"));
+        Assert.That(rig.Sprite.Name, Is.EqualTo("Knife"));
+
+        // and with ammo again the pistol is taken back up
+        rig.Inventory.Give("Clip", 8);
+        rig.Hand.A_WeaponReady(rig.Sprite);
+        Assert.That(rig.InHand, Is.EqualTo("Pistol"));
+    }
+
+    [Test]
+    public void Fire_Held_Goes_Back_To_Hold_Or_Fire()
+    {
+        // Arrange
+        var rig = new Rig("Pistol", "MachineGun") { InHand = "MachineGun" };
+        rig.Inventory.Give("Clip", 8);
+        var gun = rig.Sprite;
+        rig.Session.playerinput.SetPressed(buttontypes.bt_attack, true);
+
+        // Act / Assert: the machine gun has a Hold state
+        rig.Hand.A_ReFire(gun);
+        Assert.That(gun.CurrentState!.StateName, Is.EqualTo("Hold"));
+
+        rig.InHand = "Pistol";
+        var pistol = rig.Sprite;
+        rig.Hand.A_ReFire(pistol);
+        Assert.That(pistol.CurrentState!.StateName, Is.EqualTo("Fire"));
+    }
+
+    [Test]
+    public void Fire_Let_Go_Or_No_Ammo_Doesnt_Refire()
+    {
+        // Arrange
+        var rig = new Rig("MachineGun") { InHand = "MachineGun" };
+        var gun = rig.Sprite;
+        rig.Session.playerinput.SetPressed(buttontypes.bt_attack, true);
+
+        // Act: pressed, but no ammo
+        rig.Hand.A_ReFire(gun);
+
+        // Assert
+        Assert.That(gun.CurrentState!.StateName, Is.EqualTo(WeaponInHand.WeaponReadyState));
+    }
+}
