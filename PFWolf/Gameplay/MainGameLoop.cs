@@ -34,6 +34,7 @@ internal record PendingMapChange(string Map, bool KeepPosition, int X, int Y, sh
 /// <param name="ApplyPendingWarpStart">--start's tile, the first time (GameHost.cs)</param>
 /// <param name="AlignPlayerInElevator">Moves the player into the elevator by a panel wall (GameHost.Hubs.cs)</param>
 /// <param name="ShowLevelStartMessage">A game's level start message (Blake Stone)</param>
+/// <param name="ShowText">Shows a text as an article (a map's briefing or debriefing: Ui/ArticleReader.cs)</param>
 internal sealed record MainGameLoopHooks(
     Func<playstatetypes> PlayState,
     Action<playstatetypes> SetPlayState,
@@ -54,7 +55,8 @@ internal sealed record MainGameLoopHooks(
     Action MarkLevelStart,
     Action ApplyPendingWarpStart,
     Action<int, int, int> AlignPlayerInElevator,
-    Action<string> ShowLevelStartMessage);
+    Action<string> ShowLevelStartMessage,
+    Action<string> ShowText);
 
 /// <summary>
 /// The game from its first level to its end (GameLoop): each level entered, played and left,
@@ -121,6 +123,22 @@ internal sealed class MainGameLoop(
             hooks.AlignPlayerInElevator(session.player.TileX, session.player.TileY, change.ElevatorWall);
     }
 
+    /// <summary>
+    /// Whether a level coming up shows its briefing: one entered afresh (not loaded, returned to
+    /// or restarted after dying, nor switched to by A_ChangeMap), outside a demo or a game with others
+    /// </summary>
+    internal static bool ShowsBriefing(string levelStart, bool warped, bool demo, bool netGame) =>
+        levelStart == "new" && !warped && !demo && !netGame;
+
+    // A won level's debriefing (game-info debriefing), outside a demo or a game with others
+    void ShowDebriefing(MapInfo map)
+    {
+        if (map.Debriefing is not { Length: > 0 } debriefing || hooks.DemoActive() || hooks.NetGame())
+            return;
+        video.FadeOut();
+        hooks.ShowText(debriefing);
+    }
+
     internal void GameLoop()
     {
         var language = assets.GetText("en-us");
@@ -152,6 +170,15 @@ internal sealed class MainGameLoop(
 
             // A level being entered, not one loaded or restarted after dying, saves itself
             hooks.SetAutosavePending(!hooks.LoadedGame() && !died && !hooks.DemoActive() && !hooks.NetGame());
+
+            // Its briefing first (game-info briefing; Midnight Assault's missions)
+            if (ShowsBriefing(levelStart, warped, hooks.DemoActive(), hooks.NetGame())
+                && engine.GetGameInfo().Maps.TryGetValue(session.gamestate.mapon, out var enteredMap)
+                && enteredMap.Briefing is { Length: > 0 } briefing)
+            {
+                hooks.ShowText(briefing);
+                playScreen.DrawPlayScreen();        // the article covered the screen
+            }
             statusBar.DrawLevel();
 
             hooks.SetInGame(true);
@@ -269,6 +296,7 @@ internal sealed class MainGameLoop(
 
                     if (!hubs.IsHubMap(hubs.levelMap))
                         intermission.LevelCompleted();          // do the intermission; a hub's levels are just left
+                    ShowDebriefing(leftInfo);
                     if (hooks.ViewSize() == 21) playScreen.DrawPlayScreen();
                     foreach (var p in session.players) p.oldscore = p.score;
 
@@ -336,6 +364,9 @@ internal sealed class MainGameLoop(
                     }
 
                     if (hooks.ViewSize() == 21) playScreen.DrawPlayScreen();
+                    // The won level's debriefing first (a Midnight Assault mission's), then the tally
+                    if (engine.GetGameInfo().Maps.TryGetValue(session.gamestate.mapon, out var wonMap))
+                        ShowDebriefing(wonMap);
                     // A cluster with a victory-fade-color fades to it slowly, as Spear does when the Angel falls
                     var wonCluster = intermission.WonCluster();
                     if (string.IsNullOrEmpty(wonCluster.VictoryFadeColor))

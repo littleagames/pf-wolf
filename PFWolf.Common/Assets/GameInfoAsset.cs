@@ -883,6 +883,17 @@ public record MapInfo
     /// </summary>
     public string? EndMessage { get; init; } = null;
 
+    /// <summary>
+    /// An article (a text, in Wolf3D's help text format: ^P pages, ^C colors, ^G pictures) shown
+    /// before the level, as Midnight Assault's mission briefings were: when it's entered afresh,
+    /// not when it's loaded, returned to or restarted after dying, nor in a demo or a game with
+    /// others
+    /// </summary>
+    public string? Briefing { get; init; } = null;
+
+    /// <summary>An article shown once the level's won: after its level-end screen, or before the victory tally of a cluster it ends</summary>
+    public string? Debriefing { get; init; } = null;
+
     public int FloorNumber { get; init; }
     public int ParTime { get; init; } = 0;
     public string Music { get; init; } = null!;

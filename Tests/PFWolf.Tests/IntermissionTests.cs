@@ -116,6 +116,29 @@ public class IntermissionTests
         Assert.That(new MapInfo().Author, Is.Null);         // optional
     }
 
+    [TestCase("new", false, false, false, true)]
+    [TestCase("restarted", false, false, false, false)]     // after dying
+    [TestCase("loaded", false, false, false, false)]
+    [TestCase("returned", false, false, false, false)]      // a kept hub level
+    [TestCase("new", true, false, false, false)]            // switched to by A_ChangeMap
+    [TestCase("new", false, true, false, false)]            // a demo
+    [TestCase("new", false, false, true, false)]            // a game with others
+    public void A_Briefing_Shows_Only_For_A_Level_Entered_Afresh(string levelStart, bool warped, bool demo, bool net, bool shows)
+    {
+        Assert.That(MainGameLoop.ShowsBriefing(levelStart, warped, demo, net), Is.EqualTo(shows));
+    }
+
+    [Test]
+    public void A_Map_Can_Have_A_Briefing_And_A_Debriefing()
+    {
+        // Act: as game-info.yaml is read
+        var map = PFWolf.Loaders.YamlDataEntryLoader.Deserialize<MapInfo>("briefing: \"End Art-258\"\ndebriefing: \"End Art-259\"\n");
+
+        // Assert
+        Assert.That((map.Briefing, map.Debriefing), Is.EqualTo(("End Art-258", "End Art-259")));
+        Assert.That(new MapInfo().Briefing, Is.Null);
+    }
+
     [Test]
     public void A_Won_Clusters_Fade_Color_Is_Its_Own_Or_Black()
     {

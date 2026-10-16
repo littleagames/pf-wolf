@@ -96,20 +96,31 @@ internal sealed class ArticleReader(GameEngineManager engine, AssetManager asset
             return;
         }
 
-        var textAsset = assets.Find<TextAsset>(clusterInfo.EndText);
+        ShowText(clusterInfo.EndText);
+    }
+
+    /// <summary>
+    /// Shows a text asset as an article, then fades out (a won episode's end text, a map's
+    /// briefing); returns false if there's no such text, or it's empty
+    /// </summary>
+    internal bool ShowText(string name)
+    {
+        var textAsset = assets.Find<TextAsset>(name);
         if (textAsset == null)
-            return;
+        {
+            Console.WriteLine($"No text \"{name}\" to show.");
+            return false;
+        }
         var text = textAsset.ToText();
         if (string.IsNullOrEmpty(text))
-        {
-            return;
-        }
+            return false;
 
         ShowArticle(text);
 
         video.FadeOut();
         input.ClearKeysDown();
         input.CenterMouse();
+        return true;
     }
 
     internal void ShowArticle(string article)
