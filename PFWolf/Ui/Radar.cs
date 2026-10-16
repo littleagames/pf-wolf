@@ -154,7 +154,7 @@ internal sealed class Radar(
     {
         int tile = map.tilemap[x, y];
         string color;
-        if ((tile & GameConstants.BIT_DOOR) != 0 && (tile & GameConstants.BIT_WALL) == 0)
+        if ((tile & GameConstants.BIT_DOOR) != 0)
         {
             var d = doors.doorobjlist[tile & ~GameConstants.BIT_DOOR];
             // As bstone: a door with a lock (none once a key has unlocked it) is locked, open or shut

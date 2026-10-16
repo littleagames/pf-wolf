@@ -34,7 +34,11 @@ internal static class GameConstants
 
     internal const int MAXACTORS = 150;
     internal const int MAXSTATS = 400;
-    internal const int MAXDOORS = 64;
+    // A door tile in tilemap is BIT_DOOR | its number, so the number has the 7 bits below
+    // BIT_DOOR: 128 doors (Wolf3D allowed 64; Midnight Assault's Wolf4SDL raised it to 128).
+    // Doors 64 and up have BIT_WALL set in their number, so a door test must come before the
+    // door-side (BIT_WALL) test.
+    internal const int MAXDOORS = BIT_DOOR;
     internal const int MAXVISABLE = 250;
 
     internal const int NUMBERCHARS = 9;

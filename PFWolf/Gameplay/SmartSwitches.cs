@@ -60,7 +60,7 @@ internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession ses
         int tile = map.tilemap[x, y];
 
         // A door: unlocked and opened
-        if ((tile & GameConstants.BIT_DOOR) != 0 && (tile & GameConstants.BIT_WALL) == 0)
+        if ((tile & GameConstants.BIT_DOOR) != 0)
         {
             int door = tile & ~GameConstants.BIT_DOOR;
             if (door < doors.lastdoorobj)

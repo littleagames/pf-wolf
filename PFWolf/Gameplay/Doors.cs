@@ -72,7 +72,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
     internal void SpawnDoor(int tilex, int tiley, bool vertical, MapTextureTranslation doorXlat)
     {
         if (doornum == GameConstants.MAXDOORS)
-            engine.Quit("64+ doors on level!");
+            engine.Quit($"{GameConstants.MAXDOORS}+ doors on level!");
 
         var doorobj = new doorobj_t();
         doorobj.position = 0;              // doors start out fully closed
@@ -99,19 +99,32 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         {
             var map_areanum = map.MAPSPOT(tilex-1, tiley, 0);
             map.SetMapSpot(tilex, tiley, 0, (ushort)map_areanum); // set area number
-            map.tilemap[tilex, tiley - 1] |= GameConstants.BIT_WALL;
-            map.tilemap[tilex, tiley + 1] |= GameConstants.BIT_WALL;
+            MarkDoorSide(tilex, tiley - 1);
+            MarkDoorSide(tilex, tiley + 1);
         }
         else
         {
             var map_areanum = map.MAPSPOT(tilex, tiley-1, 0);
             map.SetMapSpot(tilex, tiley, 0, (ushort)map_areanum);
-            map.tilemap[tilex - 1, tiley] |= GameConstants.BIT_WALL;
-            map.tilemap[tilex + 1, tiley] |= GameConstants.BIT_WALL;
+            MarkDoorSide(tilex - 1, tiley);
+            MarkDoorSide(tilex + 1, tiley);
         }
 
         doornum++;
         lastdoorobj++;
+    }
+
+    /// <summary>
+    /// Marks a wall beside a door (BIT_WALL) so it's drawn with the door-side texture. Only a wall
+    /// is marked: on open floor the mark would read as a moving pushwall, and on a door spawned
+    /// before this one it would change that door's number.
+    /// </summary>
+    private void MarkDoorSide(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
+            return;
+        if (map.tilemap[x, y] is > 0 and < GameConstants.BIT_WALL)
+            map.tilemap[x, y] |= GameConstants.BIT_WALL;
     }
 
     //===========================================================================
