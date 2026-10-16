@@ -13,13 +13,13 @@ public class ConsoleTargetsTests
     [SetUp]
     public void Make()
     {
-        _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()))
+        _session = new GameSession();
+        _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session)
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
             mapwidth = MapManager.MAPSIZE, mapheight = MapManager.MAPSIZE,
         };
-        _session = new GameSession();
         _session.playerstate.Pawn = new Entities.Actors.PlayerPawn
         {
             State = _session.playerstate, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10,

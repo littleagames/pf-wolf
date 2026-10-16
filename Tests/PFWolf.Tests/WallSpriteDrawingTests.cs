@@ -15,7 +15,7 @@ public class WallSpriteDrawingTests
     [SetUp]
     public void MakeView()
     {
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
             spotvis = new bool[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };

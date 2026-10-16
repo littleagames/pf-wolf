@@ -45,13 +45,13 @@ public class PlayerBodiesTests
     [SetUp]
     public void Make()
     {
-        _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()))
+        _session = new GameSession { tics = 1 };
+        _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session)
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
-        _session = new GameSession { tics = 1 };
         _session.playerstate.playerclass = "Player";
         _session.playerstate.health = 100;
         _session.playerstate.Pawn = new Entities.Actors.PlayerPawn { State = _session.playerstate, X = 5 * Tile, Y = 5 * Tile };

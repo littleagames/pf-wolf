@@ -11,13 +11,13 @@ public class AutomapDrawingTests
     [SetUp]
     public void MakeLevel()
     {
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        _session = new GameSession();
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
             seen = new SeenFlags[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
-        _session = new GameSession();
         _automap = new AutomapDrawing(null!, null!, null!, null!, null!, _map, null!, null!, null!, null!, null!, _session,
             new AutomapHooks(() => (0, 0, 320, 160), () => false, map => map, tics => ""));
     }
@@ -109,7 +109,7 @@ public class RadarTests
     public void A_Seen_Tile_Shows_As_Floor_Or_Wall()
     {
         // Arrange
-        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
@@ -137,7 +137,7 @@ public class RadarTests
     public void A_Locked_Door_Shows_As_Locked_Open_Or_Shut_Until_A_Key_Unlocks_It()
     {
         // Arrange: a gold-key door, closed
-        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],

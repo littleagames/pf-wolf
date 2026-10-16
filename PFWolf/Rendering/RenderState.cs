@@ -49,9 +49,6 @@ internal sealed class RenderState
     internal TextureAsset? uppersource; // stories above the first, if not postsource (door lintels)
     internal int upperofs;
 
-    // tall walls: every wall is wallstories 64 unit stories tall, built up from the floor
-    internal int wallstories = 1;
-
     //
     // ray tracing variables
     //

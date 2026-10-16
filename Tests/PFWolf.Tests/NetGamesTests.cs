@@ -15,7 +15,7 @@ public class NetGamesTests
         _session = new GameSession();
         _netPlay = new NetPlay(null!, null!, null!, null!, null!, null!, _session, null!);
         _netgame = null;
-        _games = new NetGames(null!, null!, null!, new TranslationManager(new Lazy<AssetManager>(() => new AssetManager())), null!, null!,
+        _games = new NetGames(null!, null!, null!, new TranslationManager(new Lazy<AssetManager>(() => new AssetManager()), null!), null!, null!,
             new NetStartRequest(), null!, null!, null!, null!, null!, _netPlay, _session,
             new NetGamesHooks((_, _, _, _) => Assert.Fail("no game"), on => _netgame = on, _ => { }, () => { }, () => 0, _ => { },
                 () => false, () => "MENU"));

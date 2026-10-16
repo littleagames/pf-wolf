@@ -32,7 +32,8 @@ internal static partial class GameHost
 
     internal static int viewsize;
 
-    internal static bool demorecord, demoplayback;
+    internal static bool demorecord { get => session.demorecord; set => session.demorecord = value; }
+    internal static bool demoplayback { get => session.demoplayback; set => session.demoplayback = value; }
     // A demo's controls (Gameplay/DemoBuffer.cs)
     internal static readonly DemoBuffer demoBuffer = new();
 

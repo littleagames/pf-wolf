@@ -4,6 +4,7 @@ public class LevelEditCommandsTests
 {
     private ConsoleManager _console = null!;
     private RenderState _render = null!;
+    private MapManager _map = null!;
     private LevelEditCommands _commands = null!;
 
     [SetUp]
@@ -11,7 +12,8 @@ public class LevelEditCommandsTests
     {
         _console = new ConsoleManager { LevelLoaded = () => true, CheatsEnabled = () => true };
         _render = new RenderState(new Assets.TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade);
-        _commands = new LevelEditCommands(_console, null!, null!, null!, null!, null!, null!, _render, null!, new GameSession());
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession());
+        _commands = new LevelEditCommands(_console, null!, _map, null!, null!, null!, null!, _render, null!, new GameSession());
         _commands.Register();
     }
 
@@ -20,7 +22,7 @@ public class LevelEditCommandsTests
     {
         // Act / Assert
         _console.Execute("wallheight 3");
-        Assert.That((_render.wallstories, _console.Scrollback[^1]), Is.EqualTo((3, "Walls are 3 stories tall")));
+        Assert.That((_map.wallstories, _console.Scrollback[^1]), Is.EqualTo((3, "Walls are 3 stories tall")));
         _console.Execute("wallheight 1");
         Assert.That(_console.Scrollback[^1], Is.EqualTo("Walls are 1 story tall"));
     }

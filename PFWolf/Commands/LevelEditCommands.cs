@@ -64,7 +64,7 @@ internal sealed class LevelEditCommands(
 
         map.SetWallStories(x, y, stories);
         console.Print(stories == 0
-            ? $"Tile {x},{y} is back to the level's height ({render.wallstories})"
+            ? $"Tile {x},{y} is back to the level's height ({map.wallstories})"
             : $"Tile {x},{y} is now {stories} {(stories == 1 ? "story" : "stories")} tall");
     }
 
@@ -221,8 +221,8 @@ internal sealed class LevelEditCommands(
     internal void Cmd_WallHeight(string[] args)
     {
         if (args.Length > 0)
-            render.wallstories = ParseInt(args[0], 1, GameConstants.MAXWALLSTORIES);
-        console.Print($"Walls are {render.wallstories} {(render.wallstories == 1 ? "story" : "stories")} tall");
+            map.wallstories = ParseInt(args[0], 1, GameConstants.MAXWALLSTORIES);
+        console.Print($"Walls are {map.wallstories} {(map.wallstories == 1 ? "story" : "stories")} tall");
     }
 
     internal void Cmd_Sky(string[] args)

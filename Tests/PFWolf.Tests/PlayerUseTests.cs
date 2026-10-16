@@ -59,12 +59,12 @@ public class PlayerUseTests
         _realConsole = Console.Out;
         _console = new StringWriter();
         Console.SetOut(_console);
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        _session = new GameSession();
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
-        _session = new GameSession();
         var pawn = new PlayerPawn { State = _session.playerstate, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10, Angle = 0 };
         _session.playerstate.Pawn = pawn;
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));

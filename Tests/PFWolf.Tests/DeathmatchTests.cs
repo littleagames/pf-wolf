@@ -26,12 +26,13 @@ public class DeathmatchTests
     {
         public readonly GameSession Session = new();
         public readonly InventoryManager Inventory = new(ActorDefs.Metadata(Yaml));
-        public readonly MapManager Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")));
+        public readonly MapManager Map;
         public readonly Deathmatch Deathmatch;
         public readonly List<playstatetypes> Ends = [];
 
         public Rig()
         {
+            Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session);
             // Two players, acting as the second: the status bar is only the local player's
             Session.players.Add(new Entities.PlayerState { Number = 1 });
             foreach (var p in Session.players)

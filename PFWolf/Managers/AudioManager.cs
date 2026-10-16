@@ -137,6 +137,7 @@ internal class AudioManager
 
     private readonly int _musicSource;
     private readonly Lazy<AssetManager> _assetManager;
+    private readonly GameSession _session;
     private string _requestedMusicTrack = "";
 
     /// <summary>The track last started with <see cref="PlayMusic"/> (playing or paused), or "" if none.</summary>
@@ -155,9 +156,10 @@ internal class AudioManager
 
     private bool IsActive => _isAvailable && !_isDisposed;
 
-    public AudioManager(Lazy<AssetManager> assetManager)
+    public AudioManager(Lazy<AssetManager> assetManager, GameSession session)
     {
         _assetManager = assetManager;
+        _session = session;
         _sources = [];
 
         var failure = TryOpenDevice(out _device, out _context);
@@ -329,7 +331,7 @@ internal class AudioManager
 
             if (soundProfile.Random.Count > 0)
             {
-                name = soundProfile.Random[GameHost.SoundRandom() % soundProfile.Random.Count];
+                name = soundProfile.Random[_session.SoundRandom() % soundProfile.Random.Count];
                 continue;
             }
 

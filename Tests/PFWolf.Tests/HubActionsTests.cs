@@ -14,12 +14,12 @@ public class HubActionsTests
     [SetUp]
     public void Make()
     {
-        _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()))
+        _session = new GameSession { tics = 10 };
+        _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session)
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
-        _session = new GameSession { tics = 10 };
         _ended = null;
         _actions = new HubActions(null!, _map, null!, null!, null!, null!, null!, null!, null!, null!, null!, _session,
             new HubActionsHooks(_ => { }, s => _ended = s, (_, _) => { }));

@@ -14,7 +14,7 @@ public class WallPostsTests
     [SetUp]
     public void MakeView()
     {
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };

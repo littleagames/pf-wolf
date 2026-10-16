@@ -154,7 +154,7 @@ internal static partial class GameHost
     /// <summary>Builds the managers (Startup/GameServices.cs) and hooks them up</summary>
     private static void InitServices()
     {
-        var serviceProvider = GameServices.Build();
+        var serviceProvider = GameServices.Build(session);
 
         _gameEngineManager = serviceProvider.GetRequiredService<GameEngineManager>();
         _videoManager = serviceProvider.GetRequiredService<VideoManager>();
@@ -362,7 +362,7 @@ internal static partial class GameHost
     static int heightnumerator { get => render.heightnumerator; set => render.heightnumerator = value; }
 
     static bool startgame;
-    internal static bool loadedgame;
+    internal static bool loadedgame { get => session.loadedgame; set => session.loadedgame = value; }
     internal static int mouseadjustment { get => controlSettings.mouseadjustment; set => controlSettings.mouseadjustment = value; }
 
     //

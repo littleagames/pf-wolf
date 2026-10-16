@@ -20,12 +20,12 @@ public class ProjectilesTests
     public void MakeMap()
     {
         // An open map with nothing on it; the tests put walls where they need them
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        _session = new GameSession();
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
-        _session = new GameSession();
         _wallSpriteInTheWay = false;
         _projectiles = new Projectiles(_map, null!, _session, new ProjectileHooks(
             (_, _, _, _, _, _, _) => _wallSpriteInTheWay ? new WallSpriteSpan(0, 0, 1, 0) : null,

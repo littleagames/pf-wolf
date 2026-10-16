@@ -75,33 +75,40 @@ internal class MapManager
     public const int LEVELPLANES = MapConstants.LEVELPLANES;
 
     private readonly Lazy<AssetManager> assetManager;
+    private readonly Lazy<FactionManager> factionManager;
+    private readonly GameSession session;
+
+    /// <summary>How many 64 unit stories tall the level's walls are, where plane 3 doesn't say (tall walls; mapdefs wall-height)</summary>
+    internal int wallstories = 1;
 
     private UInt16[][] mapsegs = new ushort[LEVELPLANES][];
 
     private readonly LinkedList<Entities.Actors.Actor> _actors = new();
 
-    // The acting player's pawn (GameHost.ActAs), held in _actors with every other player's at
+    // The acting player's pawn (GameSession.ActAs), held in _actors with every other player's at
     // its head, in player order. Null until CreatePlayer runs for the current level -- LoadMap
     // clears _actors, which drops the previous level's pawns.
-    internal Entities.Actors.PlayerPawn? Player => GameHost.playerstate.Pawn;
+    internal Entities.Actors.PlayerPawn? Player => session.playerstate.Pawn;
 
     /// <summary>Every player's pawn on this level, in player order</summary>
     internal IEnumerable<Entities.Actors.PlayerPawn> Players =>
-        GameHost.players.Select(p => p.Pawn).OfType<Entities.Actors.PlayerPawn>();
+        session.players.Select(p => p.Pawn).OfType<Entities.Actors.PlayerPawn>();
 
     // Drops every player's pawn (the level's actors are going)
-    private static void ForgetPawns()
+    private void ForgetPawns()
     {
-        foreach (var p in GameHost.players)
+        foreach (var p in session.players)
             p.Pawn = null;
     }
 
     private int _difficulty;
     private string? _enemyHealthKey;
 
-    public MapManager(Lazy<AssetManager> assetManager)
+    public MapManager(Lazy<AssetManager> assetManager, Lazy<FactionManager> factionManager, GameSession session)
     {
         this.assetManager = assetManager;
+        this.factionManager = factionManager;
+        this.session = session;
         AI = new LevelAI(this);
     }
 
@@ -340,8 +347,8 @@ internal class MapManager
 
                 if (data.Triggers.TryGetValue(objtile, out var triggerXlat))
                 {
-                    if (triggerXlat.Secret && !GameHost.loadedgame)
-                        GameHost.gamestate.secrettotal++;
+                    if (triggerXlat.Secret && !session.loadedgame)
+                        session.gamestate.secrettotal++;
                     continue;
                 }
             }
@@ -587,10 +594,10 @@ internal class MapManager
     }
 
     /// <summary>How many stories tall the wall on this tile is.</summary>
-    internal int WallStories(int x, int y) => storymap[x, y] != 0 ? storymap[x, y] : GameHost.wallstories;
+    internal int WallStories(int x, int y) => storymap[x, y] != 0 ? storymap[x, y] : wallstories;
 
     /// <summary>The tallest wall anywhere on the level.</summary>
-    internal int MaxWallStories => Math.Max(maxtilestories, GameHost.wallstories);
+    internal int MaxWallStories => Math.Max(maxtilestories, wallstories);
 
     /// <summary>
     /// Sets a tile's height on the height plane, so it's saved with the level; 0 gives it back
@@ -1037,7 +1044,7 @@ internal class MapManager
         // (Blake Stone's bio-techs: half of them informants)
         if (builtActor.PropertyStrings("spawn.random") is { Count: > 0 } choices)
         {
-            var choice = choices[GameHost.US_RndT() % choices.Count];
+            var choice = choices[session.random.RndT() % choices.Count];
             if (!actorMetaData.Actors.TryGetValue(choice, out var chosen) || actorMetaData.CreateActor(choice, chosen) is not { } chosenActor)
             {
                 Console.WriteLine($"{thing.Class}'s spawn.random names \"{choice}\", which isn't an actor");
@@ -1050,7 +1057,7 @@ internal class MapManager
         if (NoMonsters && builtActor is Entities.Actors.Monster)
             return null;
 
-        builtActor.Faction = GameHost._factionManager.SpawnFaction(builtActor, thing.Faction);
+        builtActor.Faction = factionManager.Value.SpawnFaction(builtActor, thing.Faction);
         builtActor.Translation = TranslationManager.SpawnTranslation(builtActor, thing.Translation);
         builtActor.SetPosition(tilex, tiley);
 
@@ -1113,8 +1120,8 @@ internal class MapManager
             // Every killable enemy counts toward the level's kill ratio (the old SpawnStand/
             // SpawnPatrol/boss spawners each did this); ghosts take the branch above and don't,
             // and nor do those that aren't kills (Monster.IsKill: NOTCOUNTED ones, informants)
-            if (countKill && !GameHost.loadedgame && (builtActor is not Entities.Actors.Monster m || m.CountsAsKill))
-                GameHost.gamestate.killtotal++;
+            if (countKill && !session.loadedgame && (builtActor is not Entities.Actors.Monster m || m.CountsAsKill))
+                session.gamestate.killtotal++;
 
             // Points only for the first kill (Monster.Kill clears it)
             if (builtActor.Flags.Contains("POINTSONCE", StringComparer.OrdinalIgnoreCase))
@@ -1170,8 +1177,8 @@ internal class MapManager
 
         // Treasure (ScoreItem and the 1-up) counts toward the level's treasure ratio; GetBonus
         // (GameHost.WL_AGENT.cs) bumps treasurecount on pickup off the same flag.
-        if (!GameHost.loadedgame && builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
-            GameHost.gamestate.treasuretotal++;
+        if (!session.loadedgame && builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
+            session.gamestate.treasuretotal++;
 
         //if (builtActor.Properties.Keys.Any(x => x.StartsWith("inventory")))
         //{
@@ -1224,13 +1231,13 @@ internal class MapManager
     /// (none for a frame that holds). Demos keep v1.4's 0 to tics-1, which can end the frame on
     /// the first tic; otherwise 1 to tics, Wolf4SDL's fix for that (Chris' "moonwalk" fix).
     /// </summary>
-    internal static short SpawnTicCount(Entities.Actors.ActorStateFrame? frame)
+    internal short SpawnTicCount(Entities.Actors.ActorStateFrame? frame)
     {
         if (frame == null || frame.HoldsForever || frame.TicTime <= 0)
             return (short)Math.Max(frame?.TicTime ?? 0, (short)0);
 
-        var count = GameHost.US_RndT() % frame.TicTime;
-        return (short)(GameHost.demorecord || GameHost.demoplayback ? count : count + 1);
+        var count = session.random.RndT() % frame.TicTime;
+        return (short)(session.demorecord || session.demoplayback ? count : count + 1);
     }
 
     internal Entities.Actors.Actor? SpawnMorphedEnemy(string className, Entities.Actors.Actor source)
@@ -1253,7 +1260,7 @@ internal class MapManager
         // actor must remain markable even if the dying source had FL_NONMARK set.
         builtActor.RuntimeFlags = (source.RuntimeFlags & ~objflags.FL_NONMARK) | objflags.FL_SHOOTABLE;
         builtActor.Hitpoints = GetScaledHealth(builtActor);
-        builtActor.Faction = GameHost._factionManager.InheritedFaction(builtActor, source);
+        builtActor.Faction = factionManager.Value.InheritedFaction(builtActor, source);
         builtActor.Translation = TranslationManager.ClassTranslation(builtActor) ?? source.Translation;    // Hitler keeps Mecha Hitler's colors
 
         if (builtActor.ResolvedStates.TryGetValue("Chase", out var chaseState))
@@ -1290,7 +1297,7 @@ internal class MapManager
         builtActor.Dir = objdirtypes.nodir;
         builtActor.Active = activetypes.ac_yes;
         builtActor.RuntimeFlags = objflags.FL_NEVERMARK;
-        builtActor.Faction = GameHost._factionManager.InheritedFaction(builtActor, source);
+        builtActor.Faction = factionManager.Value.InheritedFaction(builtActor, source);
         builtActor.Translation = TranslationManager.ClassTranslation(builtActor);
 
         _actors.AddLast(builtActor);
@@ -1427,7 +1434,7 @@ internal class MapManager
             _actors.Remove(state.Pawn);
 
         var pawn = new Entities.Actors.PlayerPawn { State = state };
-        pawn.Faction = GameHost._factionManager.PlayerFaction(state.playerclass);
+        pawn.Faction = factionManager.Value.PlayerFaction(state.playerclass);
         state.Pawn = pawn;
         PlacePawn(pawn);
         return pawn;
@@ -1476,7 +1483,7 @@ internal class MapManager
             }
         }
 
-        var table = GameHost._factionManager.Table;
+        var table = factionManager.Value.Table;
         HasRivalries = sides.Count > 1 && sides.Any(side => sides.Any(other => table.IsHostile(side, other)));
     }
 
@@ -1490,7 +1497,7 @@ internal class MapManager
             // A player thinks as the acting player: the game's player code is then theirs
             if (node.Value is Entities.Actors.PlayerPawn pawn)
             {
-                using (GameHost.ActAs(pawn.State))
+                using (session.ActAs(pawn.State))
                     DoActor(pawn, tics);
             }
             else
@@ -1521,7 +1528,7 @@ internal class MapManager
         // As the original: an enemy that has never been on screen (nor patrols) does nothing
         // while its area isn't connected to the player's
         if (ob is Entities.Actors.Monster { SleepsOutOfReach: true } && ob.Active == activetypes.ac_no
-            && ob.AreaNumber < Floors.NumAreas && GameHost.areabyplayer[ob.AreaNumber] == 0)
+            && ob.AreaNumber < Floors.NumAreas && session.areas.areabyplayer[ob.AreaNumber] == 0)
             return;
 
         // It's lifted off its tile while it thinks, and put back on the one it ends up on
@@ -1758,7 +1765,7 @@ internal class MapManager
         ForgetPawns();
 
         // A save is a single player's game: its pawn is the local player's
-        var local = GameHost.localplayer;
+        var local = session.localplayer;
         var restored = new List<Entities.Actors.Actor>(level.Actors.Count);
         foreach (var saved in level.Actors)
         {

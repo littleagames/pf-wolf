@@ -17,12 +17,12 @@ public class ActorLightsTests
     public void MakeLevel()
     {
         // An open map with nothing on it; the tests put walls and doors where they need them
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        _session = new GameSession();
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
-        _session = new GameSession();
         _doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         ActorLights? lights = null;
         _lighting = new Lighting(null!, LightingTests.GreyVideo(), _map,

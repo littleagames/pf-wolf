@@ -15,7 +15,7 @@ public class PlayerDeathTests
     public void The_Death_Cams_Banner_Is_Made_Once_And_Animates_With_The_Tics()
     {
         // Arrange
-        var map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()))
+        var map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, new GameSession())
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],

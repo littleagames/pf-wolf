@@ -47,7 +47,7 @@ public class PickupsTests
     {
         public readonly GameSession Session = new();
         public readonly InventoryManager Inventory = new(ActorDefs.Metadata(Yaml));
-        public readonly MapManager Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")));
+        public readonly MapManager Map;
         public readonly Pickups Pickups;
         public bool Died, HasWeapon, ItemRespawn;
         public readonly List<string> Sounds = [];
@@ -55,6 +55,7 @@ public class PickupsTests
 
         public Rig()
         {
+            Map = new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, Session);
             // Acting as a second player: no pickup flash or message, which only the local player has
             Session.players.Add(new Entities.PlayerState());
             Session.ActingChanged = p => Inventory.SetHolder(p.Items);

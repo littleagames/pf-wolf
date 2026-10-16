@@ -19,13 +19,13 @@ public class PlayerViewTests
     public void MakeLevel()
     {
         // An open map with nothing on it; the tests put walls where they need them
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        _session = new GameSession();
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
             spotvis = new bool[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
-        _session = new GameSession();
         var doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         var lineOfSight = new LineOfSight(_map, doors, _session, (_, _, _, _) => false);
         _view = new PlayerView(_map, lineOfSight, _session,

@@ -101,7 +101,7 @@ internal sealed class BJVictory(MapManager map, GameSession session, Action<play
         bj.AreaNumber = (byte)(map.MAPSPOT(bj.TileX, bj.TileY, 0) - map.Floors.AreaTile);
 
         // SpawnNewObj started every actor a random number of tics into its first frame.
-        bj.TicCount = MapManager.SpawnTicCount(bj.CurrentState);
+        bj.TicCount = map.SpawnTicCount(bj.CurrentState);
 
         bj.Dir = objdirtypes.north;
         bj.Temp1 = 6;                      // tiles to run forward

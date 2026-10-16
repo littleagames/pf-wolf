@@ -274,7 +274,7 @@ internal sealed class SkyAndFlats(
     // ShadeOffset for screen row y of a floor or ceiling halves half stories from the eye (as DrawFlats)
     // How far the floor, and the ceiling at the top of the level's walls, are from the eye, in half stories
     internal double FloorHalves => EyeHalves(0);
-    internal double CeilingHalves => EyeHalves(render.wallstories * GameConstants.TEXTURESIZE);
+    internal double CeilingHalves => EyeHalves(map.wallstories * GameConstants.TEXTURESIZE);
 
     int FlatRowShadeOffset(int y, double halves) =>
         lighting.shading ? lighting.ShadeOffset((long)(render.heightnumerator * 32.0 * halves / Math.Abs(y + 0.5 - render.centery))) : 0;

@@ -35,11 +35,14 @@ public class SkyAndFlatsTests
         _lighting = new Lighting(null!, video, null!, new LightingHooks(() => 0, () => { }, _ => { }));
         _lighting.SetShading(null);
         var actorLights = new ActorLights(null!, null!, _lighting, new GameSession());
-        _sky = new SkyAndFlats(null!, null!, video, null!, _lighting, actorLights, _render, new GameSession(), _ => null);
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession());
+        _sky = new SkyAndFlats(null!, null!, video, _map, _lighting, actorLights, _render, new GameSession(), _ => null);
     }
 
     [TearDown]
     public void Unpin() => _pinned.Free();
+
+    private MapManager _map = null!;
 
     private byte At(int x, int y) => _screen[y * Width + x];
 
@@ -55,7 +58,7 @@ public class SkyAndFlatsTests
     public void The_Ceiling_Is_At_The_Top_Of_The_Levels_Walls()
     {
         Assert.That((_sky.FloorHalves, _sky.CeilingHalves), Is.EqualTo((1.0, 1.0)));
-        _render.wallstories = 2;
+        _map.wallstories = 2;
         Assert.That(_sky.CeilingHalves, Is.EqualTo(3.0));
     }
 

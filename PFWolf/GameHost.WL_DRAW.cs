@@ -48,7 +48,7 @@ internal static partial class GameHost
     // tall walls: every wall is wallstories 64 unit stories tall, built up from the floor
     //
     internal const int MAXWALLSTORIES = GameConstants.MAXWALLSTORIES;
-    internal static int wallstories { get => render.wallstories; set => render.wallstories = value; }
+    internal static int wallstories { get => _mapManager.wallstories; set => _mapManager.wallstories = value; }
 
     internal static double viewpitch { get => render.viewpitch; set => render.viewpitch = value; }   // degrees, up positive; this frame's, from the camera
 

@@ -13,12 +13,14 @@ internal class TranslationManager
 {
     private const string PropertyName = "translation";
 
-    public TranslationManager(Lazy<AssetManager> assetManager)
+    public TranslationManager(Lazy<AssetManager> assetManager, Lazy<FactionManager> factionManager)
     {
         this.assetManager = assetManager;
+        this.factionManager = factionManager;
     }
 
     private readonly Lazy<AssetManager> assetManager;
+    private readonly Lazy<FactionManager> factionManager;
     private TranslationsAsset? definitions;
     private IReadOnlyList<PaletteColor>? palette;
     private readonly Dictionary<string, SpriteTranslation?> tables = new(StringComparer.OrdinalIgnoreCase);
@@ -91,7 +93,7 @@ internal class TranslationManager
         if (actor is Entities.Actors.PlayerPawn pawn)
             return pawn.State.Color ?? (pawn.State.Body is { } body ? ClassTranslation(body) : null);
         if (actor is Entities.Actors.Monster && actor.Faction != null && HasHealth(actor))
-            return GameHost._factionManager.Table.Translation(actor.Faction, Ancestry(actor.Name));
+            return factionManager.Value.Table.Translation(actor.Faction, Ancestry(actor.Name));
         return null;
     }
 

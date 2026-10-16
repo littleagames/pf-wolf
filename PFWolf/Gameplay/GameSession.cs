@@ -115,4 +115,16 @@ internal sealed class GameSession
     internal readonly AreaConnections areas = new();
 
     internal readonly Camera camera;
+
+    /// <summary>Whether the level being set up came from a save (its totals are the save's, not counted afresh)</summary>
+    internal bool loadedgame;
+
+    /// <summary>Whether a demo's being recorded, or played back</summary>
+    internal bool demorecord, demoplayback;
+
+    /// <summary>
+    /// A random number for which of a sound's variants plays: the game's own alone, as it always
+    /// was, but not with others (one machine may have its sound off, and play none)
+    /// </summary>
+    internal int SoundRandom() => gamemode == GameMode.Single ? random.RndT() : Random.Shared.Next(256);
 }

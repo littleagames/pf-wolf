@@ -204,11 +204,28 @@ public class GameServicesTests
     public void Each_Manager_Is_One_Of_A_Kind(Type manager)
     {
         // Act
-        var services = GameServices.Register(new ServiceCollection());
+        var services = GameServices.Register(new ServiceCollection(), new GameSession());
 
         // Assert
         Assert.That(services.Where(s => s.ServiceType == manager).Select(s => s.Lifetime),
             Is.EqualTo(new[] { ServiceLifetime.Singleton }));
+    }
+
+    [Test]
+    public void The_Managers_Are_Given_The_Games_Own_Session()
+    {
+        // Arrange
+        var session = new GameSession();
+        using var provider = GameServices.Register(new ServiceCollection(), session).BuildServiceProvider();
+
+        // Act
+        var map = provider.GetRequiredService<MapManager>();
+        session.SetActing(session.localplayer);
+        session.localplayer.Pawn = new Entities.Actors.PlayerPawn();
+
+        // Assert: the map's player is the session's
+        Assert.That(provider.GetRequiredService<GameSession>(), Is.SameAs(session));
+        Assert.That(map.Player, Is.SameAs(session.localplayer.Pawn));
     }
 }
 

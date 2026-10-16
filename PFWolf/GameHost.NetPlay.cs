@@ -37,9 +37,6 @@ internal static partial class GameHost
     /// <summary>A random number for something only this machine shows (a quit message), not the game's own</summary>
     internal static int UiRandom() => netgame ? Random.Shared.Next(256) : US_RndT();
 
-    /// <summary>
-    /// A random number for which of a sound's variants plays: the game's own alone, as it always
-    /// was, but not with others (one machine may have its sound off, and play none)
-    /// </summary>
-    internal static int SoundRandom() => gamemode == GameMode.Single ? US_RndT() : Random.Shared.Next(256);
+    // Which of a sound's variants plays (Gameplay/GameSession.cs)
+    internal static int SoundRandom() => session.SoundRandom();
 }

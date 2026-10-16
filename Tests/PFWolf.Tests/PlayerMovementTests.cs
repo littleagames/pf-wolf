@@ -19,7 +19,8 @@ public class PlayerMovementTests
     public void MakeMap()
     {
         // An open map with nothing on it; the tests put walls and actors where they need them
-        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")))
+        _session = new GameSession();
+        _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
             tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
@@ -27,11 +28,10 @@ public class PlayerMovementTests
             mapheight = 64,
         };
         _pushWalls = new PushWalls(null!, null!, null!, () => false);
-        _session = new GameSession();
         _session.playerstate.Pawn = new PlayerPawn { State = _session.playerstate };
         _sounds = [];
         _noclip = false;
-        _movement = new PlayerMovement(_map, new AudioManager(new Lazy<AssetManager>(() => null!)), _pushWalls, _session,
+        _movement = new PlayerMovement(_map, new AudioManager(new Lazy<AssetManager>(() => null!), _session), _pushWalls, _session,
             new PlayerMovementHooks(_ => 1, () => 20, () => false, () => _noclip, _sounds.Add,
                 (_, _, _, _, _, _, _) => null, (_, _) => { }, (_, _, _, _) => { }));
     }

@@ -267,7 +267,7 @@ internal sealed class Weather(
 
         // Below the ceiling, if any tile has a ceiling flat it could show over; otherwise up past the tallest walls
         double top = map.hasceilingflats
-            ? render.wallstories * GameConstants.TEXTURESIZE
+            ? map.wallstories * GameConstants.TEXTURESIZE
             : (map.MaxWallStories + 1) * GameConstants.TEXTURESIZE;
         double fall = Math.Max(info.FallSpeed, 0.01);
         var (windx, windy) = WindDrift(info, time);
