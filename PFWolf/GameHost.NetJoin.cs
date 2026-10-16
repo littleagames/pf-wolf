@@ -20,7 +20,6 @@ internal static partial class GameHost
     =============================================================================
     */
 
-
     // Joining mid-game (Networking/MidGameJoin.cs)
     static MidGameJoin midGameJoin = null!;     // made in InitServices
 

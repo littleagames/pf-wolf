@@ -21,14 +21,8 @@ internal static partial class GameHost
     /// <summary>Tics a frame plays, with others: always the same, on every machine</summary>
     internal const uint NETTICS = NetPlay.NETTICS;
 
-    static int netlevel { get => netPlay.netlevel; set => netPlay.netlevel = value; }
-    static int netstep { get => netPlay.netstep; set => netPlay.netstep = value; }
     static bool netLeavePrompt => netPlay.netLeavePrompt;
-    static bool netLeft { get => netPlay.netLeft; set => netPlay.netLeft = value; }
     static (int Index, int Step)? pendingjoinstate { get => netPlay.pendingjoinstate; set => netPlay.pendingjoinstate = value; }
-    static bool netJoinResume { get => netPlay.netJoinResume; set => netPlay.netJoinResume = value; }
-
-    static uint GameChecksum() => netPlay.GameChecksum();
 
     /// <summary>Whether the game with others is over for this machine: it left, or lost the host</summary>
 

@@ -49,7 +49,6 @@ internal static partial class GameHost
     internal static void A_Remove(Entities.Actors.Actor ob) => projectiles.A_Remove(ob);
     internal static bool ProjectileTryMove(Entities.Actors.Actor ob) => projectiles.ProjectileTryMove(ob);
     internal static void A_Projectile(Entities.Actors.Actor ob, string[] args) => projectiles.A_Projectile(ob, args);
-    internal static bool CheckPosition(int obx, int oby) => projectiles.CheckPosition(obx, oby);
 
     internal static void A_DeathScream(Entities.Actors.Actor ob) => actorSounds.A_DeathScream(ob);
     internal static void PlayActorSound(Entities.Actors.Actor ob, string key) => actorSounds.PlayActorSound(ob, key);
@@ -61,5 +60,4 @@ internal static partial class GameHost
     internal static void T_BJRun(Entities.Actors.Monster ob) => bjVictory.T_BJRun(ob);
     internal static void T_BJJump(Entities.Actors.Monster ob) => bjVictory.T_BJJump(ob);
     internal static void T_BJDone(Entities.Actors.Actor ob) => bjVictory.T_BJDone(ob);
-    internal static void SpawnBJVictory() => bjVictory.SpawnBJVictory();
 }

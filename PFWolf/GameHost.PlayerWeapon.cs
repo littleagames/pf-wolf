@@ -19,14 +19,7 @@ internal static partial class GameHost
 
     static void RegisterWeaponActions() => (weaponInHand ??= MakeWeaponInHand()).Register();
 
-    static Entities.Actors.Actor? SyncWeaponSprite() => weaponInHand.SyncWeaponSprite();
-    static bool IsWeaponReady() => weaponInHand.IsWeaponReady();
-    static void TickWeapon() => weaponInHand.TickWeapon();
     static string? WeaponShapeName() => weaponInHand.WeaponShapeName();
 
     internal static bool PlayerWeaponIsSilent() => playerAttacks.PlayerWeaponIsSilent();
-    static void PlayAttackSound() => playerAttacks.PlayAttackSound();
-    static uint PlayerDamage(int damage) => playerAttacks.PlayerDamage(damage);
-    internal static void KnifeAttack(Entities.Actors.Actor ob) => playerAttacks.KnifeAttack(ob);
-    internal static void GunAttack(Entities.Actors.Actor ob, int near = 4, int mid = 6, int far = 6) => playerAttacks.GunAttack(ob, near, mid, far);
 }

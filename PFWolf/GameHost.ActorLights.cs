@@ -8,10 +8,7 @@ internal static partial class GameHost
     static ActorLights MakeActorLights() => new(_mapManager, doors, lighting ??= MakeLighting(), session);
 
     static Dictionary<string, byte[]> colortints => actorLights.colortints;
-    static bool haslights => actorLights.haslights;
 
     private static void RegisterActorLightActions() => (actorLights ??= MakeActorLights()).RegisterActorLightActions();
-    static IEnumerable<string> DescribeActorLights() => actorLights.DescribeActorLights();
     static void TickActorLights(uint tics) => actorLights.TickActorLights(tics);
-    static void CastActorLights() => actorLights.CastActorLights();
 }

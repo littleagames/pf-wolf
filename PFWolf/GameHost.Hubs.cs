@@ -27,10 +27,6 @@ internal static partial class GameHost
     // The level's overhead map, as the teleporter shows it
     internal static byte[] CaptureOverhead() => elevatorScreens.CaptureOverhead();
 
-    internal static void ResetHubs() => hubs.ResetHubs();
-    private static void WriteHubState(BinaryWriter bw) => hubs.WriteHubState(bw);
-    private static HubState ReadHubState(BinaryReader br) => Hubs.ReadHubState(br);
-    private static void RestoreHubState(HubState state) => hubs.RestoreHubState(state);
     static int FloorScore() => hubs.FloorScore();
 
     // Entering and leaving levels, and the level start death goes back to (Gameplay/LevelEntry.cs)

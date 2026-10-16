@@ -31,8 +31,6 @@ internal static partial class GameHost
 
     static PendingMapChange? pendingMapChange { get => mainGameLoop.pendingMapChange; set => mainGameLoop.pendingMapChange = value; }
 
-    internal static void GameLoop() => mainGameLoop.GameLoop();
-
     // Demos: played, recorded and asked for from the console (Gameplay/Demos.cs)
     static Demos demos = null!;     // made in InitServices
 
@@ -41,15 +39,9 @@ internal static partial class GameHost
             SetupGameLevel, RunLevelHooks, () => startgame = false, on => demoplayback = on, on => demorecord = on, () => demoTesting,
             DemoTestReport, () => fizzlein = true, () => INTROSONG));
 
-    internal static int? pendingDemo { get => demos.pendingDemo; set => demos.pendingDemo = value; }
-    internal static DemoRecordRequest? pendingRecord { get => demos.pendingRecord; set => demos.pendingRecord = value; }
-
     internal static void PlayDemo(int demonumber) => demos.PlayDemo(demonumber);
     internal static bool DemoExists(int demonumber) => demos.DemoExists(demonumber);
-    internal static void PlayPendingDemo() => demos.PlayPendingDemo();
     internal static void RecordDemo() => demos.RecordDemo();
-    internal static int DemoMapCount() => demos.DemoMapCount();
-    internal static bool RecordPendingDemo() => demos.RecordPendingDemo();
     internal static void RecordDemo(int level, int? demonumber = null) => demos.RecordDemo(level, demonumber);
 
     // playdemo, demotest and recorddemo (Commands/DemoCommands.cs)

@@ -31,14 +31,9 @@ internal static partial class GameHost
     // (Networking/NetStartRequest.cs), made in InitServices
     static MultiplayerMenu multiplayerMenu = null!;
     static readonly NetStartRequest netStart = new();
-    static MultiplayerConfig MpConfig => multiplayerMenu.MpConfig;
-    static string MpConfigPath => multiplayerMenu.MpConfigPath;
 
     internal static int CP_Multiplayer(int _) => multiplayerMenu.Run();
-    static void Cmd_NetPortCheck(string[] args) => multiplayerMenu.NetPortCheck(args);
-    static void Cmd_NetFind(string[] args) => multiplayerMenu.NetFind(args);
     static CP_itemtype[] BuildJoinRows() => multiplayerMenu.BuildJoinRows();
-    static void ShowNetMessage(string text) => multiplayerMenu.ShowNetMessage(text);
 
     // Starting and ending games with others (Networking/NetGames.cs)
     static NetGames netGames = null!;       // made in InitServices
@@ -51,12 +46,9 @@ internal static partial class GameHost
 
     /// <summary>The command line's --host, --join, --port and --name</summary>
     internal static void SetNetParams(GameParams gameParams) => netGames.SetNetParams(gameParams);
-    internal static bool HasPendingNetStart => netGames.HasPendingNetStart;
-    internal static bool RunPendingNetStart() => netGames.RunPendingNetStart();
     static NetIdentity LocalIdentity() => netGames.LocalIdentity();
     static void BeginNetGame(NetSession session, StartGameInfo start) => netGames.BeginNetGame(session, start);
     internal static string? PlayerColor(string color) => netGames.PlayerColor(color);
-    internal static void EndNetGame() => netGames.EndNetGame();
 
     /// <summary>What the multiplayer screens need from the game</summary>
     static MultiplayerHooks MakeMultiplayerHooks() => new(

@@ -18,7 +18,6 @@ internal static partial class GameHost
 
     internal const int MAXMOUSETURN   = 10;
 
-
     internal const long MOVESCALE = GameConstants.MOVESCALE;
     internal const long BACKMOVESCALE = GameConstants.BACKMOVESCALE;
     internal const int ANGLESCALE = GameConstants.ANGLESCALE;
@@ -54,8 +53,6 @@ internal static partial class GameHost
             (x, y) => (wallspritefromx, wallspritefromy) = (x, y),
             ActivateTrigger));
 
-    internal static void ControlMovement(Entities.Actors.Actor ob) => playerMovement.ControlMovement(ob);
-    internal static bool TryMove(Entities.Actors.Actor ob) => playerMovement.TryMove(ob);
     internal static void ClipMove(Entities.Actors.Actor ob, int xmove, int ymove) => playerMovement.ClipMove(ob, xmove, ymove);
     static controldirs FacingDir(int angle) => PlayerMovement.FacingDir(angle);
 
@@ -80,25 +77,13 @@ internal static partial class GameHost
 
     private const string BasePlayerClass = PlayerClassRules.BasePlayerClass;
     private static string PlayerClass => playerstate.playerclass;
-    internal static bool PlayerClassCanPickUp(string item) => playerClassRules.PlayerClassCanPickUp(item);
     internal static List<string> PlayerClasses() => playerClassRules.PlayerClasses();
     internal static string DefaultPlayerClass => playerClassRules.DefaultPlayerClass;
-    internal static string? FindPlayerClass(string name) => playerClassRules.FindPlayerClass(name);
     private static double PlayerFactor(string key) => playerClassRules.PlayerFactor(key);
     internal static double DamageDealt => playerClassRules.DamageDealt;
-    internal static short StartingHealth => playerClassRules.StartingHealth;
-    internal static short StartingLives => playerClassRules.StartingLives;
-    internal static short MaxHealth => playerClassRules.MaxHealth;
-    internal static int StandingEyeZ(Entities.PlayerState p) => playerClassRules.StandingEyeZ(p);
 
-    static void GrinAtPickup(Inventory item, string? pickupSound) => playerStats.GrinAtPickup(item, pickupSound);
-    internal static void UpdateFace() => playerStats.UpdateFace();
     internal static void TakeDamage(int points, Entities.Actors.Actor attacker) => playerStats.TakeDamage(points, attacker);
-    internal static bool TryGiveArmor(string armorClass) => playerStats.TryGiveArmor(armorClass);
-    internal static void HealSelf(int points, int? upTo = null) => playerStats.HealSelf(points, upTo);
-    internal static int ExtraLifeScore => playerStats.ExtraLifeScore;
     internal static void GivePoints(int points) => playerStats.GivePoints(points);
-    internal static void GiveStartingInventory() => playerStats.GiveStartingInventory();
     internal static bool CouldTakeInventory(Inventory item) => playerStats.CouldTakeInventory(item);
     internal static bool TryApplyInventory(Inventory item, int amount) => playerStats.TryApplyInventory(item, amount);
 
@@ -173,22 +158,10 @@ internal static partial class GameHost
     static PlayerWeapons MakePlayerWeapons() =>
         new(_inventoryManager, _graphicManager, statusBarDrawing, session, new PlayerWeaponsHooks(() => ammocheat != 0, UseSlotItem));
 
-    internal static void CheckWeaponChange() => playerWeapons.CheckWeaponChange();
     internal static int WeaponSelectionOrder(string weapon) => playerWeapons.WeaponSelectionOrder(weapon);
-    static bool CanFire(string? weapon) => playerWeapons.CanFire(weapon);
-    static void UseAmmo() => playerWeapons.UseAmmo();
     internal static string? BestWeapon(bool canFire = false) => playerWeapons.BestWeapon(canFire);
-    static void DrawAmmo() => playerWeapons.DrawAmmo();
-    internal static int GiveAllAmmo(int amount) => playerWeapons.GiveAllAmmo(amount);
-    internal static int GiveAmmo(string ammoType, int ammo) => playerWeapons.GiveAmmo(ammoType, ammo);
-    static void DrawWeapon() => playerWeapons.DrawWeapon();
-    internal static List<string> AllWeapons() => playerWeapons.AllWeapons();
-    internal static void GiveWeapon(string weapon) => playerWeapons.GiveWeapon(weapon);
     private static bool TryGiveWeapon(Entities.Actors.Weapon pickup) => playerWeapons.TryGiveWeapon(pickup);
     private static bool TryGiveWeapon(string weaponName, int ammoGive) => playerWeapons.TryGiveWeapon(weaponName, ammoGive);
-    static bool TakeCharge() => playerWeapons.TakeCharge();
-    static void TickWeaponCharge() => playerWeapons.TickWeaponCharge();
-    static void DrawCharge() => playerWeapons.DrawCharge();
 
     // The use key, switches, mapdefs triggers, the exits and held items' use (Gameplay/PlayerUse.cs)
     static PlayerUse playerUse = null!;     // made in InitServices
@@ -200,9 +173,7 @@ internal static partial class GameHost
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, controldirs dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, controldirs dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);
     private static bool ExitAction(bool secret) => playerUse.ExitAction(secret);
-    internal static void Cmd_Use() => playerUse.Cmd_Use();
     static void UseSlotItem(int slot) => playerUse.UseSlotItem(slot);
-    static void ResetUseHeld() => playerUse.ResetUseHeld();
 
     // The player's think each tic, and putting them at a start (Gameplay/PlayerThink.cs)
     static PlayerThink playerThink = null!;     // made in InitServices
@@ -212,5 +183,4 @@ internal static partial class GameHost
             new PlayerThinkHooks(UpdateRadar, () => victoryRunning, InitAreas));
 
     internal static void T_Player(Entities.Actors.Actor ob) => playerThink.T_Player(ob);
-    internal static void SpawnPlayer(int tilex, int tiley, int angle) => playerThink.SpawnPlayer(tilex, tiley, angle);
 }

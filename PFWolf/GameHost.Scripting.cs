@@ -17,7 +17,6 @@ internal static partial class GameHost
     static ScriptHost? _scripts => gameScripts?.Scripts;
     static void LoadScripts() => gameScripts.LoadScripts();
     static void RunLevelHooks(string reason) => gameScripts.RunLevelHooks(reason);
-    internal static Dictionary<string, string> OwnTileActions => GameScripts.OwnTileActions;
     static void Cmd_Scripts(string[] args) => gameScripts.Cmd_Scripts(args);
     static void Cmd_Lua(string[] args) => gameScripts.Cmd_Lua(args);
 }

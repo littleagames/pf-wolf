@@ -16,7 +16,6 @@ internal static partial class GameHost
 
     // The acting player's pawn and controls, and this frame's tics (Gameplay/GameSession.cs)
     internal static Entities.Actors.PlayerPawn player => session.player;
-    internal static PlayerInput playerinput => session.playerinput;
     internal static uint tics { get => session.tics; set => session.tics = value; }
 
     internal static byte singlestep, godmode, noclip, ammocheat, mapreveal;
@@ -36,9 +35,6 @@ internal static partial class GameHost
     internal static bool demorecord, demoplayback;
     // A demo's controls (Gameplay/DemoBuffer.cs)
     internal static readonly DemoBuffer demoBuffer = new();
-    static byte[] demoData { get => demoBuffer.demoData; set => demoBuffer.demoData = value; }
-    static int demoptr { get => demoBuffer.demoptr; set => demoBuffer.demoptr = value; }
-    static int lastdemoptr { get => demoBuffer.lastdemoptr; set => demoBuffer.lastdemoptr = value; }
 
     //
     // current user input: gathered each frame by PollControls into localcmd, which is all the
@@ -55,12 +51,6 @@ internal static partial class GameHost
 
     // The mouse look and controller settings (Configuration/ControlSettings.cs)
     internal static readonly ControlSettings controlSettings = new();
-    internal static bool mouselook { get => controlSettings.mouselook; set => controlSettings.mouselook = value; }
-    internal static bool mouseinvert { get => controlSettings.mouseinvert; set => controlSettings.mouseinvert = value; }
-
-    internal static int joydeadzone { get => controlSettings.joydeadzone; set => controlSettings.joydeadzone = value; }
-    internal static int joyturnspeed { get => controlSettings.joyturnspeed; set => controlSettings.joyturnspeed = value; }
-    internal static bool joyclassicsticks { get => controlSettings.joyclassicsticks; set => controlSettings.joyclassicsticks = value; }
 
     internal const int JOYTURNSPEEDS = ControlSettings.JOYTURNSPEEDS;
 
@@ -76,8 +66,6 @@ internal static partial class GameHost
 
     // The level's song (Gameplay/LevelMusic.cs)
     static LevelMusic levelMusic = null!;       // made in InitServices
-
-    internal static void ContinueMusic(int offs) => levelMusic.ContinueMusic(offs);
 
     // The keys during play (Ui/PlayKeys.cs)
     static PlayKeys playKeys = null!;       // made in InitServices
@@ -97,8 +85,6 @@ internal static partial class GameHost
         new LevelLoopHooks(() => playstate, s => playstate = s, () => startgame, () => netgame, () => demoplayback, () => demoTesting,
             () => madenoise = false, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => autosavePending, AutoSaveGame,
             () => singlestep, () => extravbls));
-
-    internal static void InitActorList() => levelLoop.InitActorList();
 
     internal const int MAXX = GameConstants.MAXX;
     internal const int MAXY = GameConstants.MAXY;

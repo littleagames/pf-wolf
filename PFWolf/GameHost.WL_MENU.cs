@@ -48,7 +48,6 @@ internal static partial class GameHost
     // Control panel song: the main menu's music in menudefs/main-menu
     internal static string MENUSONG => controlPanel.MENUSONG;
     internal static string INTROSONG => controlPanel.INTROSONG;
-    internal static string HIGHSCORESSONG => controlPanel.HIGHSCORESSONG;
 
     internal static CP_itemtype[] MainMenu { get => controlPanel.MainMenu; set => controlPanel.MainMenu = value; }
     internal static CP_iteminfo MainItems { get => controlPanel.MainItems; set => controlPanel.MainItems = value; }
@@ -62,10 +61,6 @@ internal static partial class GameHost
     internal static CP_iteminfo ClassItems { get => newGameMenu.ClassItems; set => newGameMenu.ClassItems = value; }
 
     internal static int StartGame { get => controlPanel.StartGame; set => controlPanel.StartGame = value; }
-
-    /// <summary>The game was ended with End Game in the menu, so the game over screen is skipped</summary>
-
-    internal static void DrawMainMenu() => controlPanel.DrawMainMenu();
 
     // The menu from play, and F7-F10 (Ui/QuickKeys.cs)
     static QuickKeys quickKeys = null!;     // made in InitServices
@@ -101,7 +96,6 @@ internal static partial class GameHost
         FindMenuItem(MainMenu, "readthis")?.active = 1;
     }
 
-
     // The jukebox (Ui/Jukebox.cs); its songs are loaded from menudefs/ in CheckForEpisodes
     static Jukebox jukebox = null!;     // made in InitServices
     internal static CP_itemtype[] MusicMenu { get => jukebox.MusicMenu; set => jukebox.MusicMenu = value; }
@@ -126,46 +120,15 @@ internal static partial class GameHost
     private const int MenuSliderOffset = MenuDrawing.MenuSliderOffset;
     private const int MenuChoiceWidth = MenuDrawing.MenuChoiceWidth;
 
-    internal static int SENSITIVE { get => menuInput.SENSITIVE; set => menuInput.SENSITIVE = value; }
-    internal static int SoundStatus { get => menuInput.SoundStatus; set => menuInput.SoundStatus = value; }
-    internal static void CheckPause() => menuInput.CheckPause();
-    internal static void TicDelay(int count) => menuInput.TicDelay(count);
-    internal static void ReadAnyControl(out ControlInfo ci) => menuInput.ReadAnyControl(out ci);
-    internal static void WaitKeyUp() => menuInput.WaitKeyUp();
-
-    internal static void ClearMScreen() => menuDrawing.ClearMScreen();
-    internal static void DrawStripes(int y) => menuDrawing.DrawStripes(y);
-    internal static void DrawWindow(int x, int y, int w, int h, string wcolor) => menuDrawing.DrawWindow(x, y, w, h, wcolor);
-    internal static void DrawOutline(int x, int y, int w, int h, string color1, string color2) => menuDrawing.DrawOutline(x, y, w, h, color1, color2);
     internal static void BevelBox(int x, int y, int width, int height, int hi, int med, int lo) => menuDrawing.BevelBox(x, y, width, height, hi, med, lo);
     internal static void BevelBox(int x, int y, int width, int height, string hi, string med, string lo) => menuDrawing.BevelBox(x, y, width, height, hi, med, lo);
-    internal static void MenuFadeOut() => menuDrawing.MenuFadeOut();
-    internal static void MenuFadeIn() => menuDrawing.MenuFadeIn();
-    internal static void DrawMenu(CP_iteminfo item_i, CP_itemtype[] items) => menuDrawing.DrawMenu(item_i, items);
-    internal static void PrintMenuItem(CP_iteminfo item_i, CP_itemtype[] items, int which, string color) => menuDrawing.PrintMenuItem(item_i, items, which, color);
-    internal static int MenuItemY(CP_iteminfo item_i, int which) => MenuDrawing.MenuItemY(item_i, which);
-    internal static TextStyle MenuItemStyle(CP_iteminfo item_i, string color) => menuDrawing.MenuItemStyle(item_i, color);
-    internal static void DrawMenuBar(CP_iteminfo item_i, CP_itemtype[] items, int which, bool on) => menuDrawing.DrawMenuBar(item_i, items, which, on);
-    internal static string MenuItemColor(CP_itemtype item, bool hlight) => MenuDrawing.MenuItemColor(item, hlight);
-    private static void DrawMenuSlider(CP_iteminfo iteminfo, CP_itemtype[] items, string id, int value, int max) => menuDrawing.DrawMenuSlider(iteminfo, items, id, value, max);
-    private static void DrawMenuChoice(CP_iteminfo iteminfo, CP_itemtype[] items, string id, string value) => menuDrawing.DrawMenuChoice(iteminfo, items, id, value);
-    private static int StepMenuChoice(int current, int count, int delta, bool wrap) => MenuDrawing.StepMenuChoice(current, count, delta, wrap);
     private static void DrawMenuCheckbox(CP_iteminfo iteminfo, CP_itemtype[] items, string id, bool on) => menuDrawing.DrawMenuCheckbox(iteminfo, items, id, on);
     private static void DrawMenuCheckbox(CP_iteminfo iteminfo, int index, bool on, bool highlighted = false) => menuDrawing.DrawMenuCheckbox(iteminfo, index, on, highlighted);
-    internal static void DrawMenuGun(CP_iteminfo iteminfo) => menuDrawing.DrawMenuGun(iteminfo);
-    internal static TextWindow Message(string text, int areaHeight = 200) => menuDrawing.Message(text, areaHeight);
-    private static void DrawCustomArrow(int x, int y, bool up) => menuDrawing.DrawCustomArrow(x, y, up);
 
-    internal static int redrawitem { get => menuLoop.redrawitem; set => menuLoop.redrawitem = value; }
-    internal static int lastitem { get => menuLoop.lastitem; set => menuLoop.lastitem = value; }
     internal static int HandleMenu(CP_iteminfo item_i, CP_itemtype[] items, Action<int>? routine, Action<int, int>? adjust = null, Func<bool>? idle = null)
         => menuLoop.HandleMenu(item_i, items, routine, adjust, idle);
-    internal static void EraseGun(CP_iteminfo item_i, CP_itemtype[] items, int x, int y, int which) => menuLoop.EraseGun(item_i, items, x, y, which);
-    internal static void DrawHalfStep(int x, int y) => menuLoop.DrawHalfStep(x, y);
     internal static void DrawGun(CP_iteminfo item_i, CP_itemtype[] items, int x, ref int y, int which, int basey, Action<int>? routine)
         => menuLoop.DrawGun(item_i, items, x, ref y, which, basey, routine);
-    internal static void ShootSnd() => menuLoop.ShootSnd();
-    internal static int Confirm(string text, int areaHeight = 200) => menuLoop.Confirm(text, areaHeight);
 
     internal static int StartCPMusic(string song) => quickKeys.StartCPMusic(song);
 
@@ -275,9 +238,6 @@ internal static partial class GameHost
 
     private static (CP_itemtype[] items, CP_iteminfo info) LoadMenu(string name, short curpos = 0) => menuDefs.LoadMenu(name, curpos);
     internal static CP_itemtype? FindMenuItem(CP_itemtype[] items, string id) => MenuDefs.FindMenuItem(items, id);
-    private static string? SelectedId(CP_itemtype[] items, int which) => MenuDefs.SelectedId(items, which);
-    internal static void DrawMenuComponents(string name) => menuDefs.DrawMenuComponents(name);
-    private static bool InCurrentGamePack(List<string>? gamePacks) => menuDefs.InCurrentGamePack(gamePacks);
 
     /// <summary>What menudefs' items can do, and the menus built from the game's data</summary>
     private static void RegisterMenuDefs()

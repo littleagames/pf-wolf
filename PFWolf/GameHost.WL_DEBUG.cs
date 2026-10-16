@@ -11,5 +11,4 @@ internal static partial class GameHost
     static bool screenshotPending { get => debugScreens.screenshotPending; set => debugScreens.screenshotPending = value; }
 
     internal static string TakeScreenshot() => debugScreens.TakeScreenshot();
-    internal static void BasicOverhead() => debugScreens.BasicOverhead();
 }

@@ -48,7 +48,6 @@ internal static partial class GameHost
     internal const string SMALL_FONT = UiFonts.SMALL_FONT;
     internal const string LARGE_FONT = UiFonts.LARGE_FONT;
     internal const string MENU_FONT = UiFonts.MENU_FONT;
-    internal static TextStyle MenuStyle(string color) => UiFonts.MenuStyle(color);
 
     internal const int MaxX = 320;
     internal const int MaxY = 200;
@@ -58,23 +57,14 @@ internal static partial class GameHost
     internal const int MaxGameName = GameConstants.MaxGameName;
     internal const int MaxString = LineInput.MaxString;
 
-    internal static TextWindow TextAt(int x, int y, TextStyle style) => ui.TextAt(x, y, style);
-    internal static TextWindow CenteredText(int x, int width, int y, TextStyle style) => ui.CenteredText(x, width, y, style);
-    internal static void MeasureText(string text, string font, out int width, out int height) => ui.MeasureText(text, font, out width, out height);
-    internal static int TextWidth(string text, string font) => ui.TextWidth(text, font);
-    internal static string FitText(string text, int width, string font) => ui.FitText(text, width, font);
     internal static TextWindow US_DrawWindow(int x, int y, int w, int h, TextStyle style) => ui.DrawWindow(x, y, w, h, style);
-    internal static void USL_XORICursor(int x, int y, string s, int cursor, TextStyle style) => ui.XORICursor(x, y, s, cursor, style);
     internal static bool US_LineInput(int x, int y, ref string buf, string def, bool escok, int maxchars, int maxwidth, TextStyle style)
         => lineInput.Run(x, y, ref buf, def, escok, maxchars, maxwidth, style);
-    internal static char USL_RotateChar(char ch, int dir) => LineInput.RotateChar(ch, dir);
 
     // The high score table: Wolf3D's, until InitHighScores puts in the game pack's
     internal static HighScore[] Scores = HighScore.WolfDefaults();
-    internal static int MaxScores => Scores.Length;
     internal static void InitHighScores() => Scores = HighScore.TableFor(_gameEngineManager.GetGameInfo().HighScores, Scores);
 
-    internal static int rndindex { get => session.random.rndindex; set => session.random.rndindex = value; }
     internal static void US_InitRndT(bool randomize) => session.random.InitRndT(randomize);
     internal static int US_RndT() => session.random.RndT();
 
@@ -83,8 +73,6 @@ internal static partial class GameHost
 
     // The signon screen's startup info (Ui/SignonPanel.cs)
     static SignonPanel signonPanel = null!;   // made in InitServices
-    private static void PrintSignonInfo() => signonPanel.PrintSignonInfo();
-    private static void FinishSignonInfo(List<string> startupLines) => signonPanel.FinishSignonInfo(startupLines);
 
     private static void CaptureStartupOutput() => startupOutput = StartupOutput.Capture();
 
@@ -104,13 +92,8 @@ internal static partial class GameHost
     // made in InitServices)
     static TextPresenter textPresenter = null!;
     static ArticleReader articleReader = null!;
-    internal static string? PresenterScript(string textName) => textPresenter.PresenterScript(textName);
-    internal static void TP_Presenter(PresenterInfo pi) => textPresenter.TP_Presenter(pi);
-    internal static Fonts.Font? PresenterFont(int number) => textPresenter.PresenterFont(number);
     internal static void PresenterMessageBox(string script) => textPresenter.PresenterMessageBox(script);
-    internal static void HelpScreens() => articleReader.HelpScreens();
     internal static void EndText() => articleReader.EndText();
-    internal static void ShowArticle(string article) => articleReader.ShowArticle(article);
 
     /// <summary>
     /// A menu item's pages of presenter text (Blake Stone's instructions, story and ordering
@@ -126,12 +109,8 @@ internal static partial class GameHost
     // Ui/IntermissionScreen.cs, made in InitServices)
     static HighScoresScreen highScoresScreen = null!;
     static IntermissionScreen intermissionScreen = null!;
-    internal static Dictionary<string, LRstruct> LevelRatios { get => session.LevelRatios; set => session.LevelRatios = value; }
     internal static void DrawHighScores() => highScoresScreen.DrawHighScores();
     static IntermissionAsset Intermission => intermissionScreen.Intermission;           // the death cam's text uses these too
-    static TextStyle IntermissionTextStyle => intermissionScreen.IntermissionTextStyle;
-    internal static void NonShareware() => titleScreens.NonShareware();
-    internal static void PG13() => titleScreens.PG13();
 
     static IntermissionHooks MakeIntermissionHooks() => new(
         ViewColorBorder: () =>
@@ -157,8 +136,6 @@ internal static partial class GameHost
     // Ui/MoviePlayer.cs)
     static MoviePlayer moviePlayer = null!;     // made in InitServices
     static TitleScreens titleScreens = null!;
-    internal static bool RunTitleScreens(List<TitleScreenInfo> screens, bool titleLoop) => titleScreens.RunTitleScreens(screens, titleLoop);
-    static int TakeNextTitleDemo() => titleScreens.TakeNextTitleDemo();
 
     static void DrawTitleText(TitleTextInfo text) => textPresenter.DrawTitleText(text);
 
@@ -368,13 +345,10 @@ internal static partial class GameHost
     =============================================================================
     */
 
-    internal static int[] dirangle => GameConstants.dirangle;
-
     //
     // proejection variables
     //
     static int focallength { get => render.focallength; set => render.focallength = value; }
-    static uint screenofs { get => render.screenofs; set => render.screenofs = value; }
     static int viewscreenx { get => render.viewscreenx; set => render.viewscreenx = value; }
     static int viewscreeny { get => render.viewscreeny; set => render.viewscreeny = value; }
     static int viewwidth { get => render.viewwidth; set => render.viewwidth = value; }
@@ -384,7 +358,6 @@ internal static partial class GameHost
     static short basecentery { get => render.basecentery; set => render.basecentery = value; }   // the horizon looking straight ahead, mid view
     static int shootdelta { get => render.shootdelta; set => render.shootdelta = value; }   // pixels away from centerx a target can be
     static int projectionwidth { get => render.projectionwidth; set => render.projectionwidth = value; }   // the view width the field of view is worked out for (see ProjectionWidth)
-    static int scale { get => render.scale; set => render.scale = value; }
     static int heightnumerator { get => render.heightnumerator; set => render.heightnumerator = value; }
 
     static bool startgame;
@@ -544,15 +517,9 @@ internal static partial class GameHost
     // Fade styles and lengths, the death screen and the weapon in hand, from game-info
     // (Gameplay/GameInfoSettings.cs); ordinary fades use _videoManager.FadeStyle and FadeTics
     static GameInfoSettings gameInfoSettings = new();
-    internal static FadeStyle menuFadeStyle => gameInfoSettings.menuFadeStyle;
-    internal static FadeStyle deathFadeStyle => gameInfoSettings.deathFadeStyle;
     internal static FadeStyle levelFadeStyle => gameInfoSettings.levelFadeStyle;
-    internal static int menuFadeTics => gameInfoSettings.menuFadeTics;
-    internal static int deathFadeTics => gameInfoSettings.deathFadeTics;
     internal static int levelFadeTics => gameInfoSettings.levelFadeTics;
-    internal static string deathFadeColor => gameInfoSettings.deathFadeColor;
     internal static int deathTurnSpeed => gameInfoSettings.deathTurnSpeed;
-    internal static int deathHoldTics => gameInfoSettings.deathHoldTics;
     internal static int? deathDropHeight => gameInfoSettings.deathDropHeight;
     internal static int deathDropSpeed => gameInfoSettings.deathDropSpeed;
     internal static double weaponScale => gameInfoSettings.weaponScale;
@@ -607,7 +574,6 @@ internal static partial class GameHost
      //   }
     }
 
-
     // The view's size and the projection (Rendering/ViewSetup.cs)
     static ViewSetup viewSetup = null!;     // made in InitServices
 
@@ -615,7 +581,6 @@ internal static partial class GameHost
     internal static int PlayAreaHeight => viewSetup.PlayAreaHeight;
     internal static int PlayAreaAndStatusLine => viewSetup.PlayAreaAndStatusLine;
     internal static int PlayAreaTop => viewSetup.PlayAreaTop;
-    internal static bool SetViewSize(uint width, uint height) => viewSetup.SetViewSize(width, height);
     internal static void ShowViewSize(int width) => viewSetup.ShowViewSize(width);
 
     internal static void DoJukebox() => jukebox.DoJukebox();

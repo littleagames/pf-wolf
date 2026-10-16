@@ -90,8 +90,6 @@ internal static partial class GameHost
     static SkyAndFlats MakeSkyAndFlats() =>
         new(_gameEngineManager, _assetManager, _videoManager, _mapManager, lighting, actorLights, render, session, WorldTexture);
 
-    internal static string? levelsky { get => skyAndFlats.levelsky; set => skyAndFlats.levelsky = value; }
-
     // The ray trace (Rendering/RayTrace.cs)
     static RayTrace rayTrace = null!;       // made in InitServices
 
@@ -107,7 +105,6 @@ internal static partial class GameHost
 
     static void TransformActorFrom(Entities.Actors.Actor ob, int fromx, int fromy, int fromsin, int fromcos) => spriteDrawing.TransformActorFrom(ob, fromx, fromy, fromsin, fromcos);
     internal static bool HasDirectionalSprites(string sprite, string frameLetter) => spriteDrawing.HasDirectionalSprites(sprite, frameLetter);
-    internal static string ActorShapeName(string sprite, string frameLetter, Entities.Actors.Actor actor) => spriteDrawing.ActorShapeName(sprite, frameLetter, actor);
     internal static string FrontShapeName(string sprite, string frameLetter) => spriteDrawing.FrontShapeName(sprite, frameLetter);
 
     // One frame: its tics, the view from the camera, and drawing it all (Rendering/FrameRefresh.cs)
@@ -120,7 +117,6 @@ internal static partial class GameHost
             () => screenshotPending, () => screenshotPending = false, TakeScreenshot));
 
     static int lasttimecount { get => frameRefresh.lasttimecount; set => frameRefresh.lasttimecount = value; }
-    static bool fpscounter { get => frameRefresh.fpscounter; set => frameRefresh.fpscounter = value; }
 
     internal static double MaxPitch() => frameRefresh.MaxPitch();
     internal static void ThreeDRefresh() => frameRefresh.ThreeDRefresh();

@@ -20,7 +20,6 @@ internal static partial class GameHost
     =============================================================================
     */
 
-
     // Saving and loading the game, the autosave and the quick keys (SaveGames/GameSaves.cs)
     static GameSaves gameSaves = null!;     // made in InitServices
 
@@ -37,17 +36,11 @@ internal static partial class GameHost
                 FindMenuItem(MainMenu, "readthis")?.active = 1;
             }));
 
-    internal static string QuickSavePath => gameSaves.QuickSavePath;
     internal static bool autosaveEnabled { get => gameSaves.autosaveEnabled; set => gameSaves.autosaveEnabled = value; }
     static bool autosavePending { get => gameSaves.autosavePending; set => gameSaves.autosavePending = value; }
 
     internal static void AutoSaveGame() => gameSaves.AutoSaveGame();
-    internal static string NewSaveGamePath() => gameSaves.NewSaveGamePath();
     internal static string FormatPlayTime(int tics) => SaveFile.FormatPlayTime(tics);
-    internal static List<SaveInfo> ListSaveGames() => gameSaves.ListSaveGames();
-    internal static List<SavedMod> CurrentSavedMods() => gameSaves.CurrentSavedMods();
-    internal static bool SaveTheGame(string path, string name, int x, int y) => gameSaves.SaveTheGame(path, name, x, y);
-    internal static bool LoadTheGame(string path, int x, int y) => gameSaves.LoadTheGame(path, x, y);
 
     // The menu's load and save actions: menudefs name them, so they keep their names
     internal static int CP_LoadGame(int quick) => gameSaves.CP_LoadGame(quick);
@@ -67,6 +60,4 @@ internal static partial class GameHost
 
     // saves, autosave, save and load (Commands/SaveCommands.cs)
     static SaveCommands saveCommands = null!;       // made in InitServices
-
-    private static string WrapForMessage(string text) => MenuDrawing.WrapForMessage(text);
 }

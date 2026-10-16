@@ -73,7 +73,6 @@ internal static partial class GameHost
     // The cheats (Commands/CheatCommands.cs)
     static CheatCommands cheatCommands = null!;     // made in InitServices
 
-    internal static bool TryTeleportPlayer(int x, int y, int? angle, out string problem) => cheatCommands.TryTeleportPlayer(x, y, angle, out problem);
     static void GiveAllKeys() => cheatCommands.GiveAllKeys();
 
     // What commands act on, and how they describe it (Commands/ConsoleTargets.cs)

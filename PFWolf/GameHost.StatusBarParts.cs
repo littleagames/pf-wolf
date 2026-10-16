@@ -22,24 +22,6 @@ internal static partial class GameHost
     /// <summary>The game pack's status bar layout (statusbar.yaml); empty if it has none</summary>
     internal static Assets.StatusBarAsset StatusBar => statusBarDrawing?.StatusBar ?? StatusBarDrawing.NoStatusBar;
 
-    static bool StatusBarHidden => statusBarDrawing.StatusBarHidden;
-    static void StatusDrawFace(string picName) => statusBarDrawing.StatusDrawFace(picName);
-    static int StatusBarTop(Assets.StatusBarElement element) => statusBarDrawing.StatusBarTop(element);
-    static Managers.VideoManager.UiOriginScope StatusBarOrigin(Assets.StatusBarElement element) => statusBarDrawing.StatusBarOrigin(element);
-    static bool Grinning => statusBarDrawing.Grinning;
-    static void DrawFace() => statusBarDrawing.DrawFace();
-    static void DrawHealth() => statusBarDrawing.DrawHealth();
-    static void DrawArmor() => statusBarDrawing.DrawArmor();
     static void DrawKeys() => statusBarDrawing.DrawKeys();
-    static void DrawLevel() => statusBarDrawing.DrawLevel();
-    static void DrawLives() => statusBarDrawing.DrawLives();
     static void DrawScore() => statusBarDrawing.DrawScore();
-    static void DrawTopBar() => statusBarDrawing.DrawTopBar();
-    static void FillBarSides(Assets.StatusBarElement bar, bool atTop, int height) => statusBarDrawing.FillBarSides(bar, atTop, height);
-    static void DrawLocation() => statusBarDrawing.DrawLocation();
-    static void DrawRadarGauge() => statusBarDrawing.DrawRadarGauge();
-    static bool HasInfoArea => statusBarDrawing.HasInfoArea;
-    internal static void DrawInfoArea(bool force) => statusBarDrawing.DrawInfoArea(force);
-    internal static void UpdateHeartMonitor() => statusBarDrawing.UpdateHeartMonitor();
-    internal static void DrawHeartMonitor(bool force) => statusBarDrawing.DrawHeartMonitor(force);
 }

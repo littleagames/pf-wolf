@@ -18,8 +18,4 @@ internal static partial class GameHost
 
     // The scripts' actor API uses these too (GameHost.Scripting.cs)
     static (int X, int Y) LookoutPoint(Entities.Actors.Actor ob) => projectileActions.LookoutPoint(ob);
-    static Entities.Actors.PlayerPawn? NearestPlayer(int x, int y) => projectileActions.NearestPlayer(x, y);
-    static int FacingAngle(Entities.Actors.Actor ob) => ProjectileActions.FacingAngle(ob);
-    static bool IsInWall(Entities.Actors.Actor ob) => projectileActions.IsInWall(ob);
-    static int AngleTo(int fromX, int fromY, int toX, int toY) => ProjectileActions.AngleTo(fromX, fromY, toX, toY);
 }
