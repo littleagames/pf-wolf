@@ -74,6 +74,22 @@ public class GameScriptsTests
     }
 
     [Test]
+    public void A_Script_Sets_And_Stops_The_Ambient_Loop()
+    {
+        // Arrange: paused, so no sound is looked up whether or not there's an audio device
+        var audio = new AudioManager(new Lazy<AssetManager>(() => null!), _session);
+        audio.SetPaused(true);
+        _scripts = new GameScripts(null!, null!, audio, null!, _console, null, null!, _session, (_, _) => { });
+        var host = Host();
+
+        // Act / Assert
+        host.Execute("game.ambient('ambient/rain_quiet')");
+        Assert.That(audio.Ambient, Is.EqualTo("ambient/rain_quiet"));
+        host.Execute("game.ambient(nil)");
+        Assert.That(audio.Ambient, Is.Null);
+    }
+
+    [Test]
     public void A_Tick_Hook_Is_Given_The_Tics()
     {
         // Arrange

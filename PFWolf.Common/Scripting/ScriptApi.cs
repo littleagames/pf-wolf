@@ -52,6 +52,7 @@ public static class ScriptApi
         Fn("map", "game.map()", "The level's map name (MAP01)"),
         Fn("skill", "game.skill()", "The skill being played, 0 for the easiest"),
         Fn("message", "game.message(text[, style])", "Shows a message (a $NAME language key or the text), in the style for locked doors unless one is named"),
+        Fn("ambient", "game.ambient(sound)", "Loops a sound at the listener as the ambience, in place of the one there was; nil stops it. Asking for the one playing changes nothing, so it can be asked every tick"),
     ];
 
     public static IReadOnlyList<ScriptApiEntry> ActorFields { get; } =

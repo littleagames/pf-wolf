@@ -95,6 +95,7 @@ internal class AudioManager
             var gain = VolumeGain(_soundVolume);
             foreach (var source in _sources)
                 AL.Source(source, ALSourcef.Gain, gain);
+            AL.Source(_ambientSource, ALSourcef.Gain, gain);
         }
     }
 
@@ -174,6 +175,9 @@ internal class AudioManager
         _sources = AL.GenSources(SourceCount);
         _musicSource = AL.GenSource();
         AL.Source(_musicSource, ALSourceb.SourceRelative, true);
+        _ambientSource = AL.GenSource();
+        AL.Source(_ambientSource, ALSourceb.SourceRelative, true);
+        AL.Source(_ambientSource, ALSourceb.Looping, true);
         foreach (var source in _sources)
         {
             AL.Source(source, ALSourceb.SourceRelative, true);
@@ -304,9 +308,64 @@ internal class AudioManager
 
     private void Play(string name, (float X, float Y)? position)
     {
-        if (!IsActive)
+        if (!IsActive || ResolveBuffer(name) is not int playBuffer)
             return;
-        var requestedName = name;
+
+        // Get next available sound channel
+        var source = _sources[_nextSource++ % _sources.Length];
+        _lastBufferForSound[name.ToLowerInvariant()] = playBuffer;
+        StartSource(source, playBuffer, position);
+    }
+
+    /*
+    The ambient loop: one sound at a time, looping at the listener on a source of its own (an
+    area's ambience, as Midnight Assault's DoAmbience played on its chan_ambient). It isn't one
+    of the effects channels, so a new sound never takes it, and WaitSoundDone and
+    IsAnySoundPlaying leave it out (a level's exit doesn't wait on it). StopAll stops it, and
+    pausing pauses it.
+    */
+
+    private int _ambientSource;
+    private string? _ambientName;
+
+    /// <summary>The ambient sound asked for, or null for none</summary>
+    public string? Ambient => _ambientName;
+
+    /// <summary>
+    /// Loops <paramref name="name"/> as the ambient sound in place of the one there was, or stops
+    /// it with null. Asking for the one that's playing changes nothing (it goes on where it is);
+    /// if it was stopped (StopAll), it starts again.
+    /// </summary>
+    public void SetAmbient(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _ambientName = null;
+            if (IsActive)
+                AL.SourceStop(_ambientSource);
+            return;
+        }
+
+        bool same = string.Equals(name, _ambientName, StringComparison.OrdinalIgnoreCase);
+        _ambientName = name;
+        if (!IsActive || _isPaused)
+            return;
+        AL.GetSource(_ambientSource, ALGetSourcei.SourceState, out int stateInt);
+        if (same && (ALSourceState)stateInt == ALSourceState.Playing)
+            return;
+
+        AL.SourceStop(_ambientSource);
+        if (ResolveBuffer(name) is not int buffer)
+            return;
+        AL.Source(_ambientSource, ALSourcei.Buffer, buffer);
+        AL.Source(_ambientSource, ALSourcef.Gain, VolumeGain(_soundVolume));
+        AL.SourcePlay(_ambientSource);
+    }
+
+    // The buffer a sound plays (its sound-seq entry's best variant on the devices switched on,
+    // through any random pick or alias), or null for one that's silent or unknown
+    private int? ResolveBuffer(string name)
+    {
         var soundSeq = _assetManager.Value.Find<SoundSequenceAsset>("sound-seq");
         // The running pack's own sounds (gamepacks/<pack>/sound-seq.yaml) win over the shared ones
         var packSeq = _packSoundSeq ??= _assetManager.Value.Exists<SoundSequenceAsset>($"{_assetManager.Value.GamePackId}/sound-seq")
@@ -314,7 +373,7 @@ internal class AudioManager
             : new SoundSequenceAsset();
         if (soundSeq == null && packSeq.SoundInfo.Count == 0)
             // not found
-            return;
+            return null;
 
         SoundProfile? soundProfile = null;
         for (var indirection = 0; indirection < 8; indirection++)
@@ -324,7 +383,7 @@ internal class AudioManager
             {
                 // A sound file or digitized sound of that name plays without a sound-seq entry
                 if (!_assetManager.Value.Exists<SoundFileAsset>(name) && !_assetManager.Value.Exists<Wolf3dDigitizedAudio>(name))
-                    return;
+                    return null;
                 soundProfile = new SoundProfile { Digitized = name };
                 break;
             }
@@ -345,19 +404,12 @@ internal class AudioManager
         }
 
         if (soundProfile == null)
-            return;
+            return null;
 
         // Best variant first, skipping devices that are switched off. With none left, it's silent.
-        var buffer = (_digitizedSoundEnabled ? FindDigitizedBuffer(soundProfile.Digitized) : null)
+        return (_digitizedSoundEnabled ? FindDigitizedBuffer(soundProfile.Digitized) : null)
             ?? (_adLibSoundEnabled ? FindBuffer<AdLibSound>("adlib", soundProfile.AdLib, CreateBuffer) : null)
             ?? (_pcSoundEnabled ? FindBuffer<PcSound>("pc", soundProfile.PC, CreateBuffer) : null);
-        if (buffer is not int playBuffer)
-            return;
-
-        // Get next available sound channel
-        var source = _sources[_nextSource++ % _sources.Length];
-        _lastBufferForSound[requestedName.ToLowerInvariant()] = playBuffer;
-        StartSource(source, playBuffer, position);
     }
 
     // A pk3's sound file (sounds/NAME.ogg) wins over the game's own digitized sound of that name
@@ -420,6 +472,7 @@ internal class AudioManager
             return;
         foreach (var source in _sources)
             AL.SourceStop(source);
+        AL.SourceStop(_ambientSource);      // asked for again, it starts afresh (SetAmbient)
     }
 
     public void WaitSoundDone()
@@ -653,9 +706,18 @@ internal class AudioManager
             return;
         _isPaused = isPaused;
         if (isPaused)
+        {
             AL.SourcePause(_musicSource);
-        else if (!string.IsNullOrEmpty(_requestedMusicTrack) && _musicStreamThread is { IsAlive: true })
-            AL.SourcePlay(_musicSource);
+            AL.SourcePause(_ambientSource);
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(_requestedMusicTrack) && _musicStreamThread is { IsAlive: true })
+                AL.SourcePlay(_musicSource);
+            AL.GetSource(_ambientSource, ALGetSourcei.SourceState, out int ambientState);
+            if (_ambientName != null && (ALSourceState)ambientState == ALSourceState.Paused)
+                AL.SourcePlay(_ambientSource);
+        }
     }
 
     public void Shutdown()
@@ -667,9 +729,11 @@ internal class AudioManager
             return;
         StopMusicStream();
         AL.SourceStop(_musicSource);
+        AL.SourceStop(_ambientSource);
         foreach (var source in _sources)
             AL.SourceStop(source);
         AL.DeleteSource(_musicSource);
+        AL.DeleteSource(_ambientSource);
         AL.DeleteSources(_sources);
         AL.DeleteBuffers(_buffers.Values.ToArray());
         ALC.MakeContextCurrent(ALContext.Null);

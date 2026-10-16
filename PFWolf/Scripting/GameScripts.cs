@@ -29,7 +29,8 @@ namespace PFWolf.Scripting;
 ///   game.random([m[, n]]), game.players(), game.actors([class]), game.tagged(tag[, class]),
 ///     game.taggedtiles(tag) (each {x, y}), game.tag(x, y), game.trigger(tag, action, ...) (a
 ///     switch action on a tag: game.trigger(3, "A_OpenDoor", "hold")), game.time(), game.tics(), game.map(), game.skill(),
-///     game.message(text[, style]), and the hooks game.onlevel(fn) and game.ontick(fn) (HOOKS below)
+///     game.message(text[, style]), game.ambient(sound) / game.ambient(nil) (a looping ambience
+///     at the listener, swapped or stopped), and the hooks game.onlevel(fn) and game.ontick(fn) (HOOKS below)
 /// and print, to the console.
 ///
 /// Scripts must leave the outcome to the game's own random numbers (game.random) and to what's
@@ -324,6 +325,14 @@ internal sealed class GameScripts(
         game["tics"] = new LuaFunction("game.tics", (c, _) => new(c.Return(session.tics)));
         game["map"] = new LuaFunction("game.map", (c, _) => new(c.Return(session.gamestate.mapon ?? "")));
         game["skill"] = new LuaFunction("game.skill", (c, _) => new(c.Return(session.gamestate.difficulty)));
+        // game.ambient(sound) loops a sound at the listener as the ambience, in place of the one
+        // there was; game.ambient(nil) stops it. Asking for the one playing changes nothing, so
+        // a script can ask every tick (Managers/AudioManager.cs SetAmbient).
+        game["ambient"] = new LuaFunction("game.ambient", (c, _) =>
+        {
+            audio.SetAmbient(OptionalString(c, 0));
+            return new(c.Return());
+        });
         game["message"] = new LuaFunction("game.message", (c, _) =>
         {
             hudMessages.Show(Managers.HudMessageKind.Lock, StringArg(c, 0), OptionalString(c, 1));
