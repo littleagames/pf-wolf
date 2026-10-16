@@ -701,6 +701,22 @@ public record ZoneInfo
 
     /// <summary>How long a strobe stays at the light each time (default 5)</summary>
     public int? BrightTics { get; init; }
+
+    /// <summary>
+    /// A sound (sound-seq name) looped, unplaced, while the player is in the zone: rain, crickets,
+    /// a train (Gameplay/ZoneAmbience.cs). "none" is silence; a zone without one leaves whatever's
+    /// playing as it is.
+    /// </summary>
+    public string? Ambient { get; init; }
+
+    /// <summary>Played in place of ambient while the player's in disguise (Midnight Assault's piano bar)</summary>
+    public string? AmbientDisguised { get; init; }
+
+    /// <summary>
+    /// Whether it says anything about light. A zone with only ambient sound isn't a light zone:
+    /// its tiles keep the level's light.
+    /// </summary>
+    public bool HasLight => Light != null || Color != null || Effect != null || Low != null || Tics != null || BrightTics != null;
 }
 
 /// <summary>

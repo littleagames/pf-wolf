@@ -169,6 +169,8 @@ public static class GameInfoFile
                         Field("low", Number(zone.Low));
                         Field("tics", Number(zone.Tics));
                         Field("bright-tics", Number(zone.BrightTics));
+                        Field("ambient", Quote(zone.Ambient));
+                        Field("ambient-disguised", Quote(zone.AmbientDisguised));
                         block.Append(childIndent).Append("  ").Append(zone.Id.ToString(CultureInfo.InvariantCulture))
                             .Append(": { ").Append(string.Join(", ", fields)).Append(fields.Count > 0 ? " }" : "}").Append(newline);
                     }

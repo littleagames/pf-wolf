@@ -85,7 +85,18 @@ internal static partial class GameHost
         frameRefresh, inputPolling, playKeys, doors, pushWalls, timedSwitches, floorDamage, playerView, lighting, gameScripts, deathmatch, netPlay, levelAI, session,
         new LevelLoopHooks(() => playstate, s => playstate = s, () => startgame, () => netgame, () => demoplayback, () => demoTesting,
             () => madenoise = false, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => autosavePending, AutoSaveGame,
-            () => singlestep, () => extravbls));
+            () => singlestep, () => extravbls, () => zoneAmbience.Tick()));
+
+    // Zones' ambient sounds (Gameplay/ZoneAmbience.cs)
+    static ZoneAmbience? _zoneAmbience;
+    static ZoneAmbience zoneAmbience => _zoneAmbience ??= new ZoneAmbience(new ZoneAmbienceHooks(
+        () => gamestate.mapon,
+        () => gamestate.mapon is { } map && _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info : null,
+        () => _gameEngineManager.GetGameInfo().DefaultMap,
+        () => session.player is { } pawn ? (pawn.TileX, pawn.TileY) : null,
+        (x, y) => _mapManager.GetZone(x, y),
+        () => stealth.WearingDisguise(session.playerstate),
+        _audioManager.SetAmbient));
 
     internal const int MAXX = GameConstants.MAXX;
     internal const int MAXY = GameConstants.MAXY;

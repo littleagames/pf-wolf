@@ -82,14 +82,20 @@ internal sealed class Lighting(
 
     /// <summary>
     /// The map's light zones and the default map's, a map's zone taking each value it leaves
-    /// out from the default map's zone of the same id, else the ZoneInfo defaults.
+    /// out from the default map's zone of the same id, else the ZoneInfo defaults. A zone that
+    /// only has ambient sound, in both, isn't one: its tiles keep the level's light.
     /// </summary>
     internal static Dictionary<int, ZoneState> ResolveZones(MapInfo? mapInfo, DefaultMapInfo defaultMap)
     {
         var zones = new Dictionary<int, ZoneState>();
         var mapZones = mapInfo?.Zones ?? [];
         foreach (var id in defaultMap.Zones.Keys.Union(mapZones.Keys))
-            zones[id] = ZoneState.FromInfo(mapZones.GetValueOrDefault(id), defaultMap.Zones.GetValueOrDefault(id));
+        {
+            ZoneInfo? map = mapZones.GetValueOrDefault(id), fallback = defaultMap.Zones.GetValueOrDefault(id);
+            if (map is { HasLight: false } && fallback is not { HasLight: true } || map == null && fallback is { HasLight: false })
+                continue;
+            zones[id] = ZoneState.FromInfo(map, fallback);
+        }
         return zones;
     }
 

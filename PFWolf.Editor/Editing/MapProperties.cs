@@ -2,12 +2,12 @@ using PFWolf.Assets;
 
 namespace PFWolf.Editor.Editing;
 
-/// <summary>A light zone of a level (game-info zones: the zone plane's value → how it's lit)</summary>
+/// <summary>A zone of a level (game-info zones: the zone plane's value → how it's lit, and its ambient sound)</summary>
 public sealed record ZoneProperties(int Id, int? Light = null, string? Color = null, string? Effect = null,
-    int? Low = null, int? Tics = null, int? BrightTics = null)
+    int? Low = null, int? Tics = null, int? BrightTics = null, string? Ambient = null, string? AmbientDisguised = null)
 {
     public static ZoneProperties From(int id, ZoneInfo zone)
-        => new(id, zone.Light, zone.Color, zone.Effect, zone.Low, zone.Tics, zone.BrightTics);
+        => new(id, zone.Light, zone.Color, zone.Effect, zone.Low, zone.Tics, zone.BrightTics, zone.Ambient, zone.AmbientDisguised);
 }
 
 /// <summary>
@@ -98,7 +98,8 @@ public sealed record MapProperties
         {
             zones[zone.Id] = zones.TryGetValue(zone.Id, out var under)
                 ? new ZoneProperties(zone.Id, zone.Light ?? under.Light, zone.Color ?? under.Color, zone.Effect ?? under.Effect,
-                    zone.Low ?? under.Low, zone.Tics ?? under.Tics, zone.BrightTics ?? under.BrightTics)
+                    zone.Low ?? under.Low, zone.Tics ?? under.Tics, zone.BrightTics ?? under.BrightTics,
+                    zone.Ambient ?? under.Ambient, zone.AmbientDisguised ?? under.AmbientDisguised)
                 : zone;
         }
         return zones;

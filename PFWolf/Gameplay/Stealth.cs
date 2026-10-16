@@ -218,6 +218,10 @@ internal sealed class Stealth(MapManager map, InventoryManager inventory, Player
         playerstate.SuspicionPending = 0;
     }
 
+    /// <summary>Whether the player's wearing a disguise (an item with inventory.disguise), papers in hand or not</summary>
+    internal bool WearingDisguise(Entities.PlayerState state) =>
+        state.Items.Any(item => item.Value > 0 && IsTrue(inventory.GetProperty(item.Key, "inventory.disguise")));
+
     /// <summary>Whether the player's unseen, in disguise and with papers in hand</summary>
     internal bool Disguised(Entities.PlayerState state)
     {

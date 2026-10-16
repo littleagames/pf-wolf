@@ -33,6 +33,10 @@ default-map:
   #   low: the effect's dark end, 0-255 (default half the light)
   #   tics: the effect's timing, 70 a second (default flicker 8, pulse 70, strobe 35)
   #   bright-tics: how long a strobe stays at the light (default 5)
+  #   ambient: a sound looped, unplaced, while the player is in the zone (none: silence); a zone
+  #            without one leaves what's playing (Gameplay/ZoneAmbience.cs). A zone with only
+  #            ambient keys isn't a light zone: its tiles keep the level's light.
+  #   ambient-disguised: played in place of ambient while the player wears a disguise
   # Switches and actor states change zones as the level is played (A_SetZoneLight,
   # A_ToggleZoneLight, A_SetZoneEffect: see mapdefs walls.yaml), and saves keep them.
   # zones:

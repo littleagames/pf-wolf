@@ -18,6 +18,7 @@ namespace PFWolf.Gameplay;
 /// <param name="AutoSaveGame">Makes it, now there's a picture of the level for it</param>
 /// <param name="SingleStep">Debug: VBLs to wait each frame, the clock held back meanwhile</param>
 /// <param name="ExtraVbls">Debug: extra VBLs to wait each frame</param>
+/// <param name="TickAmbience">The player's zone's ambient sound (Gameplay/ZoneAmbience.cs)</param>
 internal sealed record LevelLoopHooks(
     Func<playstatetypes> PlayState,
     Action<playstatetypes> SetPlayState,
@@ -32,7 +33,8 @@ internal sealed record LevelLoopHooks(
     Func<bool> AutosavePending,
     Action AutoSaveGame,
     Func<byte> SingleStep,
-    Func<int> ExtraVbls);
+    Func<int> ExtraVbls,
+    Action? TickAmbience = null);
 
 /// <summary>
 /// Playing a level, a frame at a time until it ends (PlayLoop): the controls, everyone's
@@ -143,6 +145,7 @@ internal sealed class LevelLoop(
                 session.camera.Tick(session.tics);          // a watched actor's view turning (Gameplay/Camera.cs)
                 levelAI.Tick();     // wall outlets and warp sites (Managers.LevelAI)
                 lighting.TickZoneLights(session.tics);       // light zones' fades and effects (Rendering/Lighting.cs)
+                hooks.TickAmbience?.Invoke();               // the player's zone's ambient sound (Gameplay/ZoneAmbience.cs)
                 scripts.RunTickHooks();             // the scripts' game.ontick hooks (Scripting/GameScripts.cs)
                 if (session.gamemode != GameMode.Single)
                     playerView.WakeSeenEnemies();      // what the renderer did alone (Rendering/PlayerView.cs)

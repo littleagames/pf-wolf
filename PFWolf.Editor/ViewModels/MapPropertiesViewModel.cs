@@ -18,6 +18,8 @@ public sealed partial class ZoneRow : ObservableObject
     [ObservableProperty] private string _low = "";
     [ObservableProperty] private string _tics = "";
     [ObservableProperty] private string _brightTics = "";
+    [ObservableProperty] private string _ambient = "";
+    [ObservableProperty] private string _ambientDisguised = "";
 
     public static IReadOnlyList<string> Effects { get; } = ["", "flicker", "pulse", "strobe"];
 }
@@ -60,6 +62,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
             {
                 Id = zone.Id.ToString(CultureInfo.InvariantCulture), Light = Text(zone.Light), Color = zone.Color ?? "", Effect = zone.Effect ?? "",
                 Low = Text(zone.Low), Tics = Text(zone.Tics), BrightTics = Text(zone.BrightTics),
+                Ambient = zone.Ambient ?? "", AmbientDisguised = zone.AmbientDisguised ?? "",
             });
         }
     }
@@ -113,7 +116,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
     private void AddZone()
     {
         int next = Zones.Select(zone => int.TryParse(zone.Id, out var id) ? id : 0).DefaultIfEmpty(0).Max() + 1;
-        Zones.Add(new ZoneRow { Id = next.ToString(CultureInfo.InvariantCulture), Light = "128" });
+        Zones.Add(new ZoneRow { Id = next.ToString(CultureInfo.InvariantCulture) });
     }
 
     [RelayCommand]
@@ -132,7 +135,7 @@ public sealed partial class MapPropertiesViewModel : ObservableObject
                     throw new FormatException($"there are two zone {id}s");
                 zones.Add(new ZoneProperties(id, Int(row.Light, $"zone {id}'s light", 0, 255), Color(row.Color, $"zone {id}'s color"),
                     Optional(row.Effect), Int(row.Low, $"zone {id}'s low", 0, 255), Int(row.Tics, $"zone {id}'s tics", 1, 100000),
-                    Int(row.BrightTics, $"zone {id}'s bright tics", 1, 100000)));
+                    Int(row.BrightTics, $"zone {id}'s bright tics", 1, 100000), Optional(row.Ambient), Optional(row.AmbientDisguised)));
             }
 
             Error = "";
