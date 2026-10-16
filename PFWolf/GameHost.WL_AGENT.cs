@@ -113,6 +113,8 @@ internal static partial class GameHost
         ActorActionRegistry.Register("A_ShakeOff", (Entities.Actors.Actor ob, string[] args) => latching.A_ShakeOff(ob, args));
         ActorActionRegistry.Register("A_JumpIfLatched", (Entities.Actors.Actor ob, string[] args) => latching.A_JumpIfLatched(ob, args));
         ActorActionRegistry.Register("A_LatchRelease", (Entities.Actors.Actor ob) => latching.A_LatchRelease(ob));
+        ActorActionRegistry.Register("A_ShowPapers", (Entities.Actors.Actor ob) => stealth.A_ShowPapers(ob));
+        ActorActionRegistry.Register("A_Disguise", (Entities.Actors.Actor ob, string[] args) => stealth.A_Disguise(ob, args));
 
         // Goldfire's warp sites (Managers.LevelAI)
         ActorActionRegistry.Register("A_WarpSiteGone", (Entities.Actors.Actor _) => levelAI.WarpSiteGone());
@@ -219,6 +221,7 @@ internal static partial class GameHost
                 weaponZoom.Tick(reloading);
                 mountedWeapons.Tick();          // let off a gun they're no longer manning (dying, a load, a new level)
                 latching.Tick();                // and out of a struggle that's over
+                stealth.Tick();                 // the suspicion meter
             }));
 
     internal static void T_Player(Entities.Actors.Actor ob) => playerThink.T_Player(ob);
@@ -237,4 +240,27 @@ internal static partial class GameHost
     static Latching latching => _latching ??= new Latching(_mapManager, _inventoryManager, playerWeapons, session,
         new LatchingHooks(playersManager.TakeDamage, playerAttacks.PlayAttackSound, weaponInHand.IsWeaponReady,
             (monster, damage, by) => monster.Damage((uint)damage, by)));
+
+    // Disguise and going unseen (Gameplay/Stealth.cs): enemies' suspicion, papers, the uniform
+    static Stealth? _stealth;
+    static Stealth stealth => _stealth ??= new Stealth(_mapManager, _inventoryManager, playerWeapons, session,
+        new StealthHooks(
+            () => _gameEngineManager.GetGameInfo().Stealth,
+            () => session.gamestate.mapon is { } map && _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) && info.StealthOnly,
+            message => _hudMessageManager.Show(HudMessageKind.Lock, message),
+            PlayPlayerSound,
+            playerAttacks.PlayAttackSound,
+            actor => (actor.AreaNumber >= _mapManager.Floors.NumAreas || session.areas.areabyplayer[actor.AreaNumber] != 0)
+                && lineOfSight.CheckLine(actor),
+            actor =>
+            {
+                // Caught on a stealth-only map: the mission's failed, as a death at their hands
+                session.playerstate.LastAttacker = actor;
+                session.playerstate.health = 0;
+                statusBarDrawing.DrawHealth();
+                if (session.gamemode == GameMode.Single)
+                    playstate = playstatetypes.ex_died;
+                else
+                    PlayerDies();
+            }));
 }

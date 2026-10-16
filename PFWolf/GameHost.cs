@@ -331,7 +331,10 @@ internal static partial class GameHost
         // as it joins the level. Given to the map here, as the world needs the map
         _mapManager.World = new Entities.Actors.ActorWorld(_gameEngineManager, _assetManager, _audioManager, _inventoryManager,
             _hudMessageManager, _mapManager, _factionManager, lineOfSight, doors, positionalSounds, actorSounds, hudMessageDrawing,
-            playerWeapons, playerAttacks, playerStats, playersManager, playerView, smartSwitches, levelAI, session);
+            playerWeapons, playerAttacks, playerStats, playersManager, playerView, smartSwitches, levelAI, session)
+        {
+            Stealth = stealth,
+        };
 
         // TODO: Remove circular dependencies here
     }

@@ -51,4 +51,7 @@ internal sealed class ActorWorld(
     internal SmartSwitches SmartSwitches => smartSwitches;
     internal LevelAI LevelAI => levelAI;
     internal GameSession Session => session;
+
+    /// <summary>Disguise and going unseen (Gameplay/Stealth.cs); none, enemies notice as Wolf3D's do</summary>
+    internal Gameplay.Stealth? Stealth { get; set; }
 }

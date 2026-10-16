@@ -190,6 +190,12 @@ public record GameInfoAsset : Asset
     public int ExtraLifeScore { get; init; }
 
     /// <summary>
+    /// Going unseen and in disguise (Gameplay/Stealth.cs): its messages, how long a suspicious
+    /// enemy waits for papers, and how far off it stops caring. Defaults are Midnight Assault's.
+    /// </summary>
+    public StealthInfo Stealth { get; init; } = new();
+
+    /// <summary>
     /// The skill (a key in skills) demos are recorded and played back on; the hardest (last)
     /// one when unset. A demo only replays right on the skill it was recorded on.
     /// </summary>
@@ -852,6 +858,31 @@ public record EndScreenInfo
     public int CaptionTics { get; init; } = 700;
 }
 
+/// <summary>Game-info `stealth:` (Gameplay/Stealth.cs). Messages are text or $language keys; none shows nothing.</summary>
+public record StealthInfo
+{
+    /// <summary>An enemy has started to suspect the disguised player</summary>
+    public string? Suspected { get; init; }
+
+    /// <summary>Noticed in disguise: the disguise is lost</summary>
+    public string? Blown { get; init; }
+
+    /// <summary>Noticed out of disguise after killing unseen</summary>
+    public string? Lost { get; init; }
+
+    /// <summary>Noticed on a stealth-only map: the mission's failed</summary>
+    public string? Caught { get; init; }
+
+    /// <summary>A disguise refused (A_Disguise) while enemies are after the player</summary>
+    public string? Alert { get; init; }
+
+    /// <summary>Tics a suspicious enemy gives the player to show papers (the original's 10 seconds)</summary>
+    public int SuspicionTics { get; init; } = 700;
+
+    /// <summary>Tiles away (either way) past which a disguised player is ignored</summary>
+    public int Range { get; init; } = 10;
+}
+
 public record MapInfo
 {
     /// <summary>
@@ -932,6 +963,12 @@ public record MapInfo
     /// this power (0-200; the original's was 10) every 20 to 140 tics. 0 (the default) for none.
     /// </summary>
     public int Shake { get; init; }
+
+    /// <summary>
+    /// The level has to be got through unseen (Midnight Assault's Stealth Challenge): the first
+    /// enemy to notice the player ends it, as a death, with game-info stealth's caught message
+    /// </summary>
+    public bool StealthOnly { get; init; }
 
     /// <summary>
     /// Distance shading; each value left out uses the default map's (see ShadingInfo)

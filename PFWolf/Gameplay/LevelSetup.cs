@@ -64,6 +64,7 @@ internal sealed class LevelSetup(
                 p.WeaponSprite = null;      // the weapon in hand starts on its Ready state
                 p.FaceTimes = 0;
                 p.LastAttacker = null;
+                (p.Undetected, p.StealthKills, p.SuspicionMeter, p.SuspicionPending) = (true, 0, 0, 0);   // Gameplay/Stealth.cs
             }
         }
 

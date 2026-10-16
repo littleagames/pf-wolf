@@ -332,12 +332,13 @@ internal sealed class StatusBarDrawing(
     /// The power meter (statusbar.yaml power-meter, Midnight Assault's HUD meter): while a throw
     /// cooks (A_HoldCharge), its pic at x, y and a bar in its box, as long as the box's width is
     /// of the power's 100, in the first of its levels whose below is more than the power (else
-    /// its color). Nothing while there's no power.
+    /// its color). Nothing while there's no power. With no throw cooking it's the suspicion meter:
+    /// how long the most suspicious enemy still waits for papers (Gameplay/Stealth.cs).
     /// </summary>
     internal void DrawPowerMeter()
     {
         if (StatusBarHidden) return;
-        int power = session.playerstate.WeaponPower;
+        int power = session.playerstate.WeaponPower > 0 ? session.playerstate.WeaponPower : session.playerstate.SuspicionMeter;
         if (power <= 0 || StatusBar.Get("power-meter") is not { } meter)
             return;
         using var _ = StatusBarOrigin(meter);

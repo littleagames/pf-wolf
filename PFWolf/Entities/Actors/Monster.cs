@@ -895,6 +895,12 @@ internal record Monster : Actor
         };
     }
 
+    /// <summary>
+    /// Its suspicion of a disguised player (Gameplay/Stealth.cs): tics it still waits for their
+    /// papers, -1 once it's satisfied, 0 when it hasn't any
+    /// </summary>
+    internal int Suspicion;
+
     internal virtual bool SightPlayer()
     {
         // A BLIND actor (Blake Stone's volatile material transports, which just go their way)
@@ -915,6 +921,10 @@ internal record Monster : Actor
         else
         {
             if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
+                return false;
+
+            // A disguised player it suspects, or has been shown papers by, it lets be (Gameplay/Stealth.cs)
+            if (World.Stealth?.Overlooks(this) == true)
                 return false;
 
             if (RuntimeFlags.HasFlag(objflags.FL_AMBUSH))
@@ -946,6 +956,10 @@ internal record Monster : Actor
 
     internal void FirstSighting()
     {
+        // The player's been noticed: not unseen any more (on a stealth-only map, caught)
+        if (World.Stealth?.Spotted(this) == true)
+            return;
+
         PlayActorSound(this, "seesound");
 
         SetState("Chase");
@@ -1243,7 +1257,11 @@ internal record Monster : Actor
         // NOTCOUNTED actors (crates, Goldfire, who keeps coming back) aren't enemies to count.
         // Whoever killed it, as the kill ratio counts the players' enemies however they die
         if (CountsAsKill && !Properties.ContainsKey("monster.becomes"))
+        {
             gamestate.killcount++;
+            if (killedBy is PlayerPawn unseen)
+                World.Stealth?.Killed(unseen);      // a knife or a scope's kill, unseen (Gameplay/Stealth.cs)
+        }
         RuntimeFlags &= ~(objflags.FL_SHOOTABLE | objflags.FL_FRIENDLY);
         RuntimeFlags |= objflags.FL_NONMARK;
     }

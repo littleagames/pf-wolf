@@ -73,6 +73,13 @@ internal sealed class PlayerState
     public string? LatchGun, LatchFrom, LatchMap;
     public int LatchStrikes;
     public int MoveSlowdown = 1;
+
+    // Going unseen (Gameplay/Stealth.cs): no enemy has noticed them yet this level, how many
+    // they've killed unseen, and the suspicion meter (0-100: how long the most suspicious enemy
+    // still waits for papers), with what the enemies tell it this tic
+    public bool Undetected = true;
+    public int StealthKills;
+    public int SuspicionMeter, SuspicionPending;
     public double Pitch;                    // looking up (positive) or down, in degrees
     public int EyeZ = GameConstants.EYEDEFAULT;   // eye height, in texels above the floor
 

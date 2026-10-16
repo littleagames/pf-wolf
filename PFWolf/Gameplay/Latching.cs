@@ -92,7 +92,7 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
         // Out of sight and out of the way
         biter.RuntimeFlags = (biter.RuntimeFlags & ~objflags.FL_SHOOTABLE) | objflags.FL_NONMARK;
         map.UnmarkActorTile(biter.TileX, biter.TileY);
-        biter.SetState(LatchedState);
+        GoTo(biter, LatchedState);
     }
 
     /// <summary>
@@ -133,7 +133,7 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
             playerstate.LatchStrikes = 0;
             hooks.HurtMonster(biter, Math.Max(Arg(2, 1), 0), player);
             if (biter.Hitpoints > 0 && !biter.IsRemoved && biter.CurrentState?.StateName != LatchedState)
-                biter.SetState(LatchedState);   // hurt, not off: it holds on
+                GoTo(biter, LatchedState);      // hurt, not off: it holds on
         }
     }
 
@@ -200,6 +200,13 @@ internal sealed class Latching(MapManager map, InventoryManager inventory, Playe
     static void LetGo(Entities.Actors.Monster biter)
     {
         biter.RuntimeFlags = (biter.RuntimeFlags & ~objflags.FL_NONMARK) | objflags.FL_SHOOTABLE;
-        biter.SetState(biter.ResolvedStates.ContainsKey("Chase") ? "Chase" : "Spawn");
+        GoTo(biter, biter.ResolvedStates.ContainsKey("Chase") ? "Chase" : "Spawn");
+    }
+
+    // To a state, from inside its own action too (where SetState would carry on past it)
+    static void GoTo(Entities.Actors.Actor actor, string state)
+    {
+        if (actor.ResolvedStates.TryGetValue(state, out var frame))
+            actor.JumpTo(frame);
     }
 }
