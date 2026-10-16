@@ -33,7 +33,7 @@ internal sealed class PlayerUse(
 
     /// <summary>
     /// Runs a mapdefs trigger's action. If it goes off, a secret trigger counts as found, and the
-    /// trigger's tile is cleared so it can't go off again.
+    /// trigger's tile is cleared so it can't go off again (unless it's a `repeat` one).
     /// </summary>
     internal void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, controldirs dir)
     {
@@ -43,7 +43,8 @@ internal sealed class PlayerUse(
 
         if (trigger.Secret)
             session.gamestate.secretcount++;
-        map.SetMapSpot(tilex, tiley, 1, 0);
+        if (!trigger.Repeat)
+            map.SetMapSpot(tilex, tiley, 1, 0);
     }
 
     /// <summary>
@@ -222,9 +223,16 @@ internal sealed class PlayerUse(
         if (map.GetTrigger(checkx, checky) is { IsWalkOver: false } trigger)
         {
             //
-            // mapdefs use trigger (a pushable wall)
+            // mapdefs use trigger (a pushable wall); one that stays (`repeat`: a ladder) goes
+            // off once a press, not every frame use is held
             //
             ResetUseHeld();
+            if (trigger.Repeat)
+            {
+                if (playerinput.IsHeld(buttontypes.bt_use))
+                    return;
+                playerinput.SetHeld(buttontypes.bt_use, true);
+            }
             ActivateTrigger(trigger, checkx, checky, dir);
             return;
         }

@@ -168,7 +168,7 @@ public static class ScriptApi
     ];
 
     /// <summary>The switch actions game.trigger can't run: they work on a switch's own tile</summary>
-    public static IReadOnlyList<string> OwnTileActions { get; } = ["A_PushWall", "A_Vend", "A_SmartSwitch", "A_FloorSelect", "A_Teleport"];
+    public static IReadOnlyList<string> OwnTileActions { get; } = ["A_PushWall", "A_Vend", "A_SmartSwitch", "A_FloorSelect", "A_Teleport", "A_TeleportTag"];
 
     private static ScriptApiEntry Fn(string name, string signature, string summary) => new(ScriptApiKind.GameFunction, name, signature, summary, "game");
 

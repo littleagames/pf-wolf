@@ -412,6 +412,7 @@ internal sealed class GameScripts(
         ["A_SmartSwitch"] = "",
         ["A_FloorSelect"] = "",
         ["A_Teleport"] = "",
+        ["A_TeleportTag"] = "",
     };
 
     // 0 to count - 1 from the game's random numbers: one draw for up to 256, more beyond

@@ -210,7 +210,7 @@ public record MapPlayerStartTranslation
 /// <summary>
 /// An object-plane tile the player sets off (e.g. a pushwall, the end-of-castle exit), running
 /// <see cref="Action"/> through Entities.MapTriggerRegistry. One-shot: once the action goes off,
-/// the tile is cleared.
+/// the tile is cleared, unless it's <see cref="Repeat"/>.
 /// </summary>
 public record MapTriggerTranslation
 {
@@ -227,6 +227,18 @@ public record MapTriggerTranslation
 
     /// <summary>Counts toward the level's secret ratio (the total on load, found when the action goes off).</summary>
     public bool Secret { get; set; }
+
+    /// <summary>
+    /// Goes off every time it's set off (a teleport, a ladder) instead of once: its tile isn't
+    /// cleared. A use trigger needs use let go of and pressed again.
+    /// </summary>
+    public bool Repeat { get; set; }
+
+    /// <summary>
+    /// An actordefs class put on its tile as the level loads, as a thing would be: what shows
+    /// there (a ladder, a teleport's marker), solid or not by its own flags.
+    /// </summary>
+    public string Class { get; set; } = "";
 }
 
 public record MapActorTranslation

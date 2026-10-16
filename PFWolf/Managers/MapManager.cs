@@ -345,6 +345,9 @@ internal class MapManager
                 {
                     if (triggerXlat.Secret && !session.loadedgame)
                         session.gamestate.secrettotal++;
+                    // what shows on its tile (mapdefs trigger `class`)
+                    if (!string.IsNullOrEmpty(triggerXlat.Class))
+                        SpawnThing(x, y, new MapActorTranslation { Class = triggerXlat.Class }, countKill: false);
                     continue;
                 }
             }

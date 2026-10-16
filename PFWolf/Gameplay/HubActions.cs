@@ -61,6 +61,7 @@ internal sealed class HubActions(
         // Hub clusters' ways between levels
         Entities.MapTriggerRegistry.Register("A_FloorSelect", FloorSelectAction);
         Entities.MapTriggerRegistry.Register("A_Teleport", TeleportAction);
+        Entities.MapTriggerRegistry.Register("A_TeleportTag", TeleportTagAction);
         Entities.MapTriggerRegistry.Register("A_VictoryRun", VictoryRunAction);
         Entities.Actors.ActorActionRegistry.Register("T_VictoryRun", T_VictoryRun);
 
@@ -147,6 +148,71 @@ internal sealed class HubActions(
         movement.Thrust(0, 0);
         return true;
     }
+
+    /// <summary>
+    /// A_TeleportTag(["beside"][, "sound"]): a pair of tiles that lead to each other by their
+    /// tag (Midnight Assault's teleports, stairs and ladders, source/ma_teleport.c). The player goes
+    /// to the other tile with this trigger's tag whose trigger runs A_TeleportTag too: onto it, or with "beside"
+    /// (a ladder's other end, which is solid) onto the first open tile next to it, tried from the
+    /// side they come out facing away from. The sound, if given, plays as they go. Give the
+    /// trigger `repeat: true` to use it again; arriving on a walk-over one doesn't set it off.
+    /// </summary>
+    bool TeleportTagAction(Entities.TriggerActivation trigger, string[] args)
+    {
+        if (trigger.Tag == 0)
+        {
+            Console.WriteLine($"A_TeleportTag at ({trigger.TileX},{trigger.TileY}): the tile has no tag to find its other end by.");
+            return false;
+        }
+
+        // Its other end runs A_TeleportTag too (a tag can also be a switch's, whose walls have triggers of their own)
+        var partner = mapManager.TaggedTiles(trigger.Tag)
+            .Where(t => (t.X, t.Y) != (trigger.TileX, trigger.TileY)
+                && mapManager.GetTrigger(t.X, t.Y) is { } other
+                && Entities.Actors.ActorActionRegistry.Parse(other.Action).Name == "A_TeleportTag")
+            .Select(t => ((int X, int Y)?)t)
+            .FirstOrDefault();
+        if (partner is not { } to)
+        {
+            Console.WriteLine($"A_TeleportTag at ({trigger.TileX},{trigger.TileY}): no other trigger has tag {trigger.Tag}.");
+            return false;
+        }
+
+        bool beside = args.Any(a => a.Trim().Equals("beside", StringComparison.OrdinalIgnoreCase));
+        var sound = args.Select(a => a.Trim()).FirstOrDefault(a => a.Length > 0 && !a.Equals("beside", StringComparison.OrdinalIgnoreCase));
+
+        if (beside)
+        {
+            // The original's CHECKEXITSPOT order: the side behind the player as they face, then
+            // either hand, then ahead
+            (int dx, int dy)[] order = trigger.Dir switch
+            {
+                controldirs.di_east => [(-1, 0), (0, -1), (0, 1), (1, 0)],
+                controldirs.di_north => [(0, 1), (1, 0), (-1, 0), (0, -1)],
+                controldirs.di_west => [(1, 0), (0, -1), (0, 1), (-1, 0)],
+                _ => [(0, -1), (1, 0), (-1, 0), (0, 1)],
+            };
+            var spot = order.Select(d => (X: to.X + d.dx, Y: to.Y + d.dy))
+                .Select(t => ((int X, int Y)?)t)
+                .FirstOrDefault(t => IsOpenForPlayer(t!.Value.X, t.Value.Y));
+            if (spot is not { } open)
+                return false;
+            to = open;
+        }
+
+        if (!string.IsNullOrEmpty(sound))
+            audio.Play(sound);
+        session.player.SetPosition(to.X, to.Y);
+        movement.Thrust(0, 0);
+        return true;
+    }
+
+    /// <summary>Whether the player can stand on a tile: on the map, no wall or door, nothing solid or alive on it</summary>
+    bool IsOpenForPlayer(int x, int y) =>
+        x > 0 && y > 0 && x < MapManager.MAPSIZE - 1 && y < MapManager.MAPSIZE - 1
+        && mapManager.tilemap[x, y] == 0
+        && mapManager.actorat[x, y] == null
+        && !mapManager.IsShootableActorAt(x, y);
 
     /*
     =============================================================================
