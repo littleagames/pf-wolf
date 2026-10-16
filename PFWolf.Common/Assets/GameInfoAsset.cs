@@ -233,6 +233,14 @@ public record GameInfoAsset : Asset
     public List<string> DeathKeeps { get; init; } = [];
 
     /// <summary>
+    /// Level objectives by name (Gameplay/Objectives.cs): things a level counts and the player
+    /// completes (switches with `objective`, actors with an `objective` property, A_CompleteObjective),
+    /// with their messages, and whether the exits wait for them (Midnight Assault's sabotage
+    /// targets and goal enemies)
+    /// </summary>
+    public Dictionary<string, ObjectiveInfo> Objectives { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// A presenter script (a VGAGRAPH text) F1 shows in presenter.yaml's briefing window, in
     /// place of Wolf3D's help article
     /// </summary>
@@ -892,6 +900,35 @@ public record MapLoadout
 
     /// <summary>The player's health brought down to this if it's more (Hidden Tunnels' 50); null for no cap</summary>
     public int? HealthCap { get; init; }
+}
+
+/// <summary>
+/// A level objective (game-info `objectives:`). Its messages are text or $language keys, each %d
+/// filled in turn: <see cref="Start"/> the total, <see cref="Progress"/> and <see cref="Stats"/>
+/// done and total, <see cref="Refused"/> those left. None shows nothing.
+/// </summary>
+public record ObjectiveInfo
+{
+    /// <summary>Whether the level's exits (A_Exit, A_SecretExit) are shut until it's all done</summary>
+    public bool BlocksExit { get; init; }
+
+    /// <summary>Shown as a level with any to do starts (not a saved game loaded)</summary>
+    public string? Start { get; init; }
+
+    /// <summary>The fewest there must be for <see cref="Start"/> to be shown (the original's goal enemies: 2)</summary>
+    public int StartFrom { get; init; } = 1;
+
+    /// <summary>Shown as one more is done</summary>
+    public string? Progress { get; init; }
+
+    /// <summary>Shown as the last is done, after <see cref="Progress"/></summary>
+    public string? Done { get; init; }
+
+    /// <summary>Shown when an exit's refused while some are left</summary>
+    public string? Refused { get; init; }
+
+    /// <summary>A line in the automap's stats, while the level has any</summary>
+    public string? Stats { get; init; }
 }
 
 /// <summary>Game-info `stealth:` (Gameplay/Stealth.cs). Messages are text or $language keys; none shows nothing.</summary>

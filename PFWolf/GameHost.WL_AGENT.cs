@@ -110,6 +110,15 @@ internal static partial class GameHost
         // A_MakeNoise: a noise, as a shot's: enemies in the areas joined to the player's come
         // (Midnight Assault's lights coming on: madenoise)
         ActorActionRegistry.Register("A_MakeNoise", (Entities.Actors.Actor _) => madenoise = true);
+
+        // Level objectives (Gameplay/Objectives.cs): A_CompleteObjective("name"[, n]) and
+        // A_AddObjective("name"[, n]), from an actor or a switch; A_JumpIfObjectiveDone("name", "State")
+        static int Amount(string[] args) => args.Length > 1 && int.TryParse(args[1], out var n) ? n : 1;
+        ActorActionRegistry.Register("A_CompleteObjective", (Entities.Actors.Actor _, string[] args) => { if (args.Length > 0) objectives.Complete(args[0], Amount(args)); });
+        ActorActionRegistry.Register("A_AddObjective", (Entities.Actors.Actor _, string[] args) => { if (args.Length > 0) objectives.Add(args[0], Amount(args)); });
+        ActorActionRegistry.Register("A_JumpIfObjectiveDone", (Entities.Actors.Actor ob, string[] args) => objectives.A_JumpIfObjectiveDone(ob, args));
+        Entities.MapTriggerRegistry.Register("A_CompleteObjective", (_, args) => { if (args.Length == 0) return false; objectives.Complete(args[0], Amount(args)); return true; });
+        Entities.MapTriggerRegistry.Register("A_AddObjective", (_, args) => { if (args.Length == 0) return false; objectives.Add(args[0], Amount(args)); return true; });
         ActorActionRegistry.Register("A_Mount", (Entities.Actors.Actor ob, string[] args) => mountedWeapons.A_Mount(ob, args));
         ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("A_LatchBite", (m, args) => latching.A_LatchBite(m, args));
         ActorActionRegistry.Register("A_LatchHurt", (Entities.Actors.Actor ob) => latching.A_LatchHurt(ob));
@@ -207,7 +216,8 @@ internal static partial class GameHost
 
     static PlayerUse MakePlayerUse() =>
         new(_mapManager, _audioManager, _inventoryManager, doors, levelAI, timedSwitches, session,
-            new PlayerUseHooks(PlayPlayerSound, state => playstate = state, () => mountedWeapons.TryDismount()));
+            new PlayerUseHooks(PlayPlayerSound, state => playstate = state, () => mountedWeapons.TryDismount(),
+                (objective, amount) => objectives.Complete(objective, amount), () => objectives.ExitAllowed()));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, controldirs dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, controldirs dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);

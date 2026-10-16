@@ -227,6 +227,19 @@ public class PlayerUseTests
     }
 
     [Test]
+    public void An_Exit_Waits_While_A_Level_Objective_Blocks_It()
+    {
+        // Arrange: the objectives say no
+        var states = new List<playstatetypes>();
+        var use = new PlayerUse(_map, null!, _inventory, null!, new LevelAI(_map, null!, null!, _session), new TimedSwitches(_map, _session), _session,
+            new PlayerUseHooks(_ => { }, states.Add, () => false, ExitAllowed: () => false));
+
+        // Act / Assert: refused, the level goes on
+        Assert.That(use.ExitAction(secret: false), Is.False);
+        Assert.That(states, Is.Empty);
+    }
+
+    [Test]
     public void A_Switch_Without_A_Lock_Or_With_Its_Item_Held_Isnt_Refused()
     {
         // Arrange

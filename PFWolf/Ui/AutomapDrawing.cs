@@ -10,11 +10,13 @@ namespace PFWolf.Ui;
 /// <param name="MapReveal">Whether the reveal cheat is on (everything shows, seen or not)</param>
 /// <param name="MapDisplayName">A map's name as the game shows it</param>
 /// <param name="FormatPlayTime">The time on the level, as the stats show it</param>
+/// <param name="ObjectiveStats">The level objectives' stats lines (Gameplay/Objectives.cs)</param>
 internal sealed record AutomapHooks(
     Func<(int X, int Y, int Width, int Height)> View,
     Func<bool> MapReveal,
     Func<string, string> MapDisplayName,
-    Func<int, string> FormatPlayTime);
+    Func<int, string> FormatPlayTime,
+    Func<IEnumerable<string>> ObjectiveStats);
 
 /// <summary>
 /// The automap drawn over the 3D view (AutomapManager has where it's centred, its zoom, style and
@@ -492,6 +494,7 @@ internal sealed class AutomapDrawing(
             (AutomapText("$STR_AM_KILLS", session.gamestate.killcount, session.gamestate.killtotal), AutomapColor("AutomapStats")),
             (AutomapText("$STR_AM_TREASURE", session.gamestate.treasurecount, session.gamestate.treasuretotal), AutomapColor("AutomapStats")),
             (AutomapText("$STR_AM_SECRETS", session.gamestate.secretcount, session.gamestate.secrettotal), AutomapColor("AutomapStats")),
+            .. (hooks.ObjectiveStats?.Invoke() ?? []).Select(line => (line, AutomapColor("AutomapStats"))),     // "Sabotages: 2 of 5"
             (AutomapText("$STR_AM_TIME", hooks.FormatPlayTime(session.gamestate.TimeCount)), AutomapColor("AutomapStats")),
         ];
 

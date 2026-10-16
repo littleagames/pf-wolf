@@ -117,12 +117,22 @@ walls:
     #   lock:                an inventory item (e.g. GoldKey) needed to use it; lock-message,
     #                        lock-message-style and locked-sound work as on doors.yaml doors,
     #                        falling back to the key's "key.switchlockedmessage"
+    #   reset-tics:          it turns back by itself this many tics after it's thrown (with the
+    #                        linked switches thrown with it), running its reset-actions (say,
+    #                        A_CloseDoor). Make its `to` a wall that isn't a switch, so it can't
+    #                        be used meanwhile.
+    #   objective:           a level objective (game-info objectives) it's one of: each wall with
+    #                        it counts toward the level's total, and throwing it does one
+    #                        (Midnight Assault's sabotage targets)
     #   actions:             action calls run in order, acting on whatever shares the switch
     #                        tile's tag (map plane 4). Write one with arguments as a block list
     #                        item ("- A_Foo(1, 2)"): a comma breaks up a [flow, list].
     #                        A_Exit ends the level (to the secret level when standing on the
     #                        floors' secret-exit code); A_SecretExit always goes to the secret
-    #                        level. Both wait for the switch's sound to finish.
+    #                        level. Both wait for the switch's sound to finish, and both refuse
+    #                        while a blocks-exit level objective has any left.
+    #                        A_CompleteObjective("name", [n]), A_AddObjective("name", [n]): one
+    #                        (or n) more of a level objective done, or to do.
     #                        A_OpenDoor("hold"), A_CloseDoor, A_ToggleDoor("hold"): the tagged
     #                        doors, whatever their lock; with hold, opened doors stay open
     #                        until something closes them.

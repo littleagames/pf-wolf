@@ -252,6 +252,7 @@ internal class MapManager
         animatedfloors.Clear();
         animatedceilings.Clear();
         ClearTextureChanges();
+        objectives = new(StringComparer.OrdinalIgnoreCase);     // counted afresh as the level's set up (Gameplay/Objectives.cs)
 
 #if USE_FEATUREFLAGS
     const int MXX = MAPSIZE - 1;
@@ -828,6 +829,9 @@ internal class MapManager
 
     // Per tile ((y << MAPSHIFT) + x): the textures changed on it, from -> to
     private Dictionary<int, Dictionary<string, string>> texturechanges = [];
+
+    /// <summary>The level's objectives (game-info objectives) by name: how many are done, of how many. Saved with the level.</summary>
+    internal Dictionary<string, ObjectiveCount> objectives = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Per tile ((y &lt;&lt; MAPSHIFT) + x): the level tic it last changed, 0 for never.</summary>
     internal int[] animstart = new int[MAPAREA];
@@ -1677,6 +1681,14 @@ internal class MapManager
         for (int x = 0; x < MAPSIZE; x++)
             for (int y = 0; y < MAPSIZE; y++)
                 bw.Write(patchmap[x, y]);
+
+        bw.Write(objectives.Count);
+        foreach (var (name, count) in objectives)
+        {
+            bw.Write(name);
+            bw.Write(count.Done);
+            bw.Write(count.Total);
+        }
     }
 
     /// <summary>Parses what <see cref="WriteLevelState"/> wrote, without touching the loaded level.</summary>
@@ -1721,7 +1733,11 @@ internal class MapManager
             for (int y = 0; y < MAPSIZE; y++)
                 patches[x, y] = br.ReadByte();
 
-        return new LevelSnapshot(planes, tiles, blocking, actors, links, starts, changes, patches);
+        var objectives = new Dictionary<string, ObjectiveCount>(StringComparer.OrdinalIgnoreCase);
+        for (int i = br.ReadCount(); i > 0; i--)
+            objectives[br.ReadString()] = new ObjectiveCount { Done = br.ReadInt32(), Total = br.ReadInt32() };
+
+        return new LevelSnapshot(planes, tiles, blocking, actors, links, starts, changes, patches, objectives);
     }
 
     /// <summary>
@@ -1764,6 +1780,8 @@ internal class MapManager
         animstart = (int[])level.AnimationStarts.Clone();
         texturechanges = level.TextureChanges.ToDictionary(c => c.Key,
             c => new Dictionary<string, string>(c.Value, StringComparer.OrdinalIgnoreCase));
+        objectives = level.Objectives.ToDictionary(o => o.Key, o => new ObjectiveCount { Done = o.Value.Done, Total = o.Value.Total },
+            StringComparer.OrdinalIgnoreCase);
         ReadMapInfo(fillFlats: false);      // the saved flat plane already has the map's flats
         BuildWallShapes();
         BuildWallHeights();
@@ -1822,4 +1840,12 @@ internal sealed record LevelSnapshot(
     List<(int Target, int Shooter)> Links,
     int[] AnimationStarts,
     Dictionary<int, Dictionary<string, string>> TextureChanges,
-    byte[,] Patches);
+    byte[,] Patches,
+    Dictionary<string, ObjectiveCount> Objectives);
+
+/// <summary>How many of a level objective are done, of how many (Gameplay/Objectives.cs)</summary>
+internal sealed class ObjectiveCount
+{
+    public int Done, Total;
+    public int Left => Math.Max(Total - Done, 0);
+}

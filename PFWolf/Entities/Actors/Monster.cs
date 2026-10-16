@@ -1233,6 +1233,7 @@ internal record Monster : Actor
             AwardKillPoints();
         if (killedBy is PlayerPawn killer)
             killer.State.Kills++;       // for the scoreboard, with others (a missile's: who fired it)
+        World.Objectives?.ActorDied(this);     // an `objective` enemy's death (Gameplay/Objectives.cs)
         SetState("Death");
         OnKilled(attacker);
 

@@ -9,7 +9,10 @@ namespace PFWolf.Gameplay;
 /// <param name="PlayPlayerSound">A sound the acting player makes (a switch's)</param>
 /// <param name="SetPlayState">Ends the level, the way A_Exit and A_SecretExit say</param>
 /// <param name="Dismount">Steps the player off a mounted gun they're manning: true if they were on one (Gameplay/MountedWeapons.cs)</param>
-internal sealed record PlayerUseHooks(Action<string> PlayPlayerSound, Action<playstatetypes> SetPlayState, Func<bool> Dismount);
+/// <param name="CompleteObjective">So many more of a level objective are done (a switch with `objective`: Gameplay/Objectives.cs)</param>
+/// <param name="ExitAllowed">Whether the level can be left (its blocks-exit objectives done); saying why not if not</param>
+internal sealed record PlayerUseHooks(Action<string> PlayPlayerSound, Action<playstatetypes> SetPlayState, Func<bool> Dismount,
+    Action<string, int>? CompleteObjective = null, Func<bool>? ExitAllowed = null);
 
 /// <summary>
 /// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
@@ -69,6 +72,7 @@ internal sealed class PlayerUse(
             int from = tile & ~BIT_WALL;
             map.tilemap[tilex, tiley] = (ushort)(wallSwitch.To | (tile & BIT_WALL));
             map.RestartAnimations(tilex, tiley, gamestate.TimeCount);   // a `to` wall's play-once animation starts now
+            int thrown = from != wallSwitch.To ? 1 : 0;
 
             // and the linked ones: set to the new way, not toggled, so any out of step come back
             foreach (var (x, y) in map.TaggedTiles(tag))
@@ -77,11 +81,15 @@ internal sealed class PlayerUse(
                 int id = other & ~BIT_WALL;
                 if ((other & BIT_DOOR) == 0 && (id == from || id == wallSwitch.To))
                 {
+                    if (id == from && id != wallSwitch.To && (x, y) != (tilex, tiley))
+                        thrown++;
                     map.tilemap[x, y] = (ushort)(wallSwitch.To | (other & BIT_WALL));
                     map.RestartAnimations(x, y, gamestate.TimeCount);
                 }
             }
             timedSwitches.Thrown(wallSwitch, tilex, tiley, patch: false, from, wallSwitch.To, tag, dir);     // reset-tics: it turns back
+            if (wallSwitch.Objective is { Length: > 0 } objective && thrown > 0)
+                hooks.CompleteObjective?.Invoke(objective, thrown);     // a sabotage target (Gameplay/Objectives.cs)
         }
 
         if (!string.IsNullOrEmpty(wallSwitch.Sound))
@@ -161,14 +169,21 @@ internal sealed class PlayerUse(
         }
 
         Flip(tilex, tiley);
+        int thrown = 1;
         foreach (var (x, y) in map.TaggedTiles(tag))
         {
             int other = map.GetPatch(x, y);
             if (other != 0 && (other == from || other == to))
+            {
+                if (other == from && (x, y) != (tilex, tiley))
+                    thrown++;
                 Flip(x, y);
+            }
         }
         if (to != 0)
             timedSwitches.Thrown(patchSwitch, tilex, tiley, patch: true, from, to, tag, dir);     // reset-tics: it turns back
+        if (patchSwitch.Objective is { Length: > 0 } objective)
+            hooks.CompleteObjective?.Invoke(objective, thrown);         // a sabotage target (Gameplay/Objectives.cs)
     }
 
     /// <summary>
@@ -178,6 +193,10 @@ internal sealed class PlayerUse(
     /// </summary>
     internal bool ExitAction(bool secret)
     {
+        // Not while a level objective the exits wait for has any left (Gameplay/Objectives.cs)
+        if (hooks.ExitAllowed?.Invoke() == false)
+            return false;
+
         var player = session.player;
         if (secret || map.MAPSPOT(player.TileX, player.TileY, 0) == map.Floors.SecretExitTile)
             hooks.SetPlayState(playstatetypes.ex_secretlevel);

@@ -71,7 +71,32 @@ internal static partial class GameHost
     static LevelSetup MakeLevelSetup() => new(_gameEngineManager, _mapManager, render, skyAndFlats, weather, lighting, doors, pushWalls,
         deathmatch, playersManager, playerClassRules, levelLoop, weaponBob, levelAI, session,
         new LevelSetupHooks(() => loadedgame, () => demoplayback || demorecord, () => netgame, () => netseed, () => CurrentSkill,
-            loadout => mapLoadouts.Apply(loadout)));
+            loadout => mapLoadouts.Apply(loadout), () => objectives.CountLevel(announce: !demoplayback && !demorecord)));
+
+    // Level objectives (Gameplay/Objectives.cs): sabotage targets, goal enemies
+    static Objectives? _objectives;
+    static Objectives objectives => _objectives ??= new Objectives(_mapManager, new ObjectiveHooks(
+        () => _gameEngineManager.GetGameInfo().Objectives,
+        text => _hudMessageManager.Localize(text),
+        message => _hudMessageManager.Show(HudMessageKind.Lock, message),
+        LevelSwitches));
+
+    // Every switch on the level: its switch walls' and its patches'
+    static IEnumerable<MapSwitchTranslation> LevelSwitches()
+    {
+        var data = _mapManager.GetMapData();
+        for (int y = 0; y < _mapManager.mapheight; y++)
+            for (int x = 0; x < _mapManager.mapwidth; x++)
+            {
+                int tile = _mapManager.tilemap[x, y];
+                if (tile != 0 && (tile & GameConstants.BIT_DOOR) == 0
+                    && data.Walls.TryGetValue(tile & ~GameConstants.BIT_WALL, out var wall) && wall.Switch is { } wallSwitch)
+                    yield return wallSwitch;
+                if (_mapManager.GetPatch(x, y) is var patch and > 0 && data.Patches.TryGetValue(patch, out var patchDef)
+                    && patchDef.Switch is { } patchSwitch)
+                    yield return patchSwitch;
+            }
+    }
 
     // A map's starting loadout (Gameplay/MapLoadouts.cs)
     static MapLoadouts? _mapLoadouts;

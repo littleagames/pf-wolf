@@ -516,6 +516,13 @@ public record MapSwitchTranslation
     public List<string> ResetActions { get; init; } = [];
 
     /// <summary>
+    /// A level objective (game-info objectives) this switch is one of: each wall or patch with it
+    /// counts toward the level's total as the level starts, and one is done as it's thrown
+    /// (Midnight Assault's sabotage targets). Empty: none.
+    /// </summary>
+    public string Objective { get; init; } = "";
+
+    /// <summary>
     /// How the switch finds what it works besides its tag. "object-plane": the switch tile's
     /// object-plane value is a tile's x (high byte) and y (low byte) on this floor, and the
     /// switch shares that tile's tag, as a map-info tag-link would give it (Planet Strike's

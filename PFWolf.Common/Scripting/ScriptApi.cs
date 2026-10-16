@@ -53,6 +53,7 @@ public static class ScriptApi
         Fn("skill", "game.skill()", "The skill being played, 0 for the easiest"),
         Fn("message", "game.message(text[, style])", "Shows a message (a $NAME language key or the text), in the style for locked doors unless one is named"),
         Fn("ambient", "game.ambient(sound)", "Loops a sound at the listener as the ambience, in place of the one there was; nil stops it. Asking for the one playing changes nothing, so it can be asked every tick"),
+        Fn("objective", "game.objective(name)", "How many of a level objective (game-info objectives) are done, and of how many: two numbers, 0 and 0 for one the level hasn't"),
     ];
 
     public static IReadOnlyList<ScriptApiEntry> ActorFields { get; } =
@@ -166,7 +167,7 @@ public static class ScriptApi
         "A_OpenDoor", "A_CloseDoor", "A_ToggleDoor", "A_MoveWall", "A_SetWall", "A_ChangeTexture",
         "A_Activate", "A_Deactivate", "A_ToggleActive", "A_Message", "A_GiveInventory", "A_SpawnItem", "A_SetLight", "A_LightOff",
         "A_SetZoneLight", "A_ToggleZoneLight", "A_SetZoneEffect", "A_UnlockFloor", "A_DropDetonator",
-        "A_VictoryTile", "A_Exit", "A_SecretExit", "A_VictoryRun",
+        "A_VictoryTile", "A_Exit", "A_SecretExit", "A_VictoryRun", "A_CompleteObjective", "A_AddObjective",
     ];
 
     /// <summary>The switch actions game.trigger can't run: they work on a switch's own tile</summary>

@@ -10,13 +10,15 @@ namespace PFWolf.Gameplay;
 /// <param name="NetSeed">Where the host said they start</param>
 /// <param name="CurrentSkill">The skill being played (its enemy-health)</param>
 /// <param name="ApplyLoadout">Gives the players the level's starting loadout (Gameplay/MapLoadouts.cs)</param>
+/// <param name="CountObjectives">Counts the level's objectives and announces them (Gameplay/Objectives.cs)</param>
 internal sealed record LevelSetupHooks(
     Func<bool> LoadedGame,
     Func<bool> DemoActive,
     Func<bool> NetGame,
     Func<int> NetSeed,
     Func<SkillInfo> CurrentSkill,
-    Action<MapLoadout?> ApplyLoadout);
+    Action<MapLoadout?> ApplyLoadout,
+    Action CountObjectives);
 
 /// <summary>
 /// Setting up a level to play (SetupGameLevel): the players' view and the level's counts reset,
@@ -160,7 +162,10 @@ internal sealed class LevelSetup(
 
         // the level's starting loadout, as it starts afresh (game-info map loadout)
         if (!hooks.LoadedGame())
+        {
             hooks.ApplyLoadout(mapInfo?.Loadout);
+            hooks.CountObjectives();        // its objectives, counted afresh (a loaded game has its own)
+        }
 
         //
         // load floor/ceiling textures

@@ -106,6 +106,23 @@ public class GameScriptsTests
     }
 
     [Test]
+    public void A_Script_Reads_A_Level_Objective()
+    {
+        // Arrange: a map with 2 of 5 sabotage targets done
+        var map = new MapManager(new Lazy<AssetManager>(() => null!), null!, _session);
+        map.objectives["sabotage"] = new ObjectiveCount { Done = 2, Total = 5 };
+        _scripts = new GameScripts(null!, map, null!, null!, _console, null, null!, _session, (_, _) => { });
+        var host = Host();
+
+        // Act
+        host.Execute("print(game.objective('Sabotage')) print(game.objective('intel'))");
+
+        // Assert
+        Assert.That(Printed(), Has.Some.EqualTo("2\t5"));
+        Assert.That(Printed(), Has.Some.EqualTo("0\t0"));
+    }
+
+    [Test]
     public void A_Tick_Hook_Is_Given_The_Tics()
     {
         // Arrange

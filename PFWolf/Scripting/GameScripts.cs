@@ -29,7 +29,8 @@ namespace PFWolf.Scripting;
 ///   game.random([m[, n]]), game.players(), game.actors([class]), game.tagged(tag[, class]),
 ///     game.taggedtiles(tag) (each {x, y}), game.tag(x, y), game.trigger(tag, action, ...) (a
 ///     switch action on a tag: game.trigger(3, "A_OpenDoor", "hold")), game.time(), game.tics(), game.map(), game.skill(),
-///     game.message(text[, style]), game.ambient(sound) / game.ambient(nil) (a looping ambience
+///     game.message(text[, style]), game.objective(name) (a level objective's done and total),
+///     game.ambient(sound) / game.ambient(nil) (a looping ambience
 ///     at the listener, swapped or stopped), and the hooks game.onlevel(fn) and game.ontick(fn) (HOOKS below)
 /// and print, to the console.
 ///
@@ -334,6 +335,13 @@ internal sealed class GameScripts(
         {
             audio.SetAmbient(OptionalString(c, 0));
             return new(c.Return());
+        });
+        // game.objective(name): how many of a level objective are done, and of how many
+        // (game-info objectives: Gameplay/Objectives.cs); 0, 0 for one the level hasn't
+        game["objective"] = new LuaFunction("game.objective", (c, _) =>
+        {
+            var name = StringArg(c, 0);
+            return map.objectives.TryGetValue(name, out var count) ? new(c.Return(count.Done, count.Total)) : new(c.Return(0, 0));
         });
         game["message"] = new LuaFunction("game.message", (c, _) =>
         {
