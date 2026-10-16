@@ -25,6 +25,14 @@ public record IntermissionAsset : Asset
     /// <summary>Where each number goes, by name: floor, time, par, bonus, kill, secret, treasure</summary>
     public Dictionary<string, IntermissionValue> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// A color each number's place is cleared to before it's drawn (the screen's own, e.g.
+    /// VIEWCOLOR), so a ratio counting up doesn't pile its numbers on each other: what a
+    /// see-through font needs. Left out, numbers are drawn over what's there, as Wolf3D's solid
+    /// number pictures can be.
+    /// </summary>
+    public string? ValueBackground { get; set; }
+
     public IntermissionSounds Sounds { get; set; } = new();
 
     public IntermissionScoring Scoring { get; set; } = new();

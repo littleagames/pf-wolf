@@ -62,6 +62,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         int bonus, timeleft = 0;
 
         ClearAboveStatusBar();
+        valueAreas.Clear();
 
         hooks.ViewColorBorder();
 
@@ -407,6 +408,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             audio.PlayMusic(screen.Music);
 
         ClearAboveStatusBar();
+        valueAreas.Clear();
         hooks.ViewColorBorder();
 
         // Laid out in the screen above the status bar, until the end text and screens take over
@@ -569,9 +571,22 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         if (!values.TryGetValue(name, out var value))
             return;
         var style = IntermissionTextStyle;
-        int x = value.Right is { } right ? right - ui.TextWidth(text, style.Font) : value.X;
+        ui.MeasureText(text, style.Font, out int width, out int height);
+        int x = value.Right is { } right ? right - width : value.X;
+
+        // intermission.yaml value-background: the number drawn before goes first
+        if (Intermission.ValueBackground is { Length: > 0 } background)
+        {
+            if (valueAreas.TryGetValue((values, name), out var last))
+                video.Bar(last.X, last.Y, last.Width, last.Height, background);
+            video.Bar(x, value.Y, width, height, background);
+            valueAreas[(values, name)] = (x, value.Y, width, height);
+        }
         ui.TextAt(x, value.Y, style).Print(text);
     }
+
+    // Where each number was last drawn, for value-background to clear (by layout and name)
+    private readonly Dictionary<(Dictionary<string, IntermissionValue>, string), (int X, int Y, int Width, int Height)> valueAreas = [];
 
     /// <summary>The intermission, victory and death cam text when intermission.yaml doesn't set a font or color</summary>
     internal static readonly TextStyle IntermissionStyle = new("IntermissionFont", "White");
