@@ -19,6 +19,7 @@ namespace PFWolf.Rendering;
 /// <param name="ScreenshotPending">Whether the screenshot command asked for a shot</param>
 /// <param name="ClearScreenshotPending">The shot's been taken</param>
 /// <param name="TakeScreenshot">Saves the screen and says where it went</param>
+/// <param name="UpdateViewQuake">Moves any quake on and sets the view's focal length for it (Rendering/ViewQuake.cs)</param>
 internal sealed record FrameRefreshHooks(
     Func<bool> FizzleIn,
     Action ClearFizzleIn,
@@ -33,7 +34,8 @@ internal sealed record FrameRefreshHooks(
     Func<string> BorderColor,
     Func<bool> ScreenshotPending,
     Action ClearScreenshotPending,
-    Func<string> TakeScreenshot);
+    Func<string> TakeScreenshot,
+    Action UpdateViewQuake);
 
 /// <summary>
 /// One frame of the 3D view: the tics since the last (CalcTics), the view from the camera
@@ -171,6 +173,7 @@ internal sealed class FrameRefresh(
 
         render.vbuf += (int)render.screenofs;
 
+        hooks.UpdateViewQuake();        // the focal length a quake pulses, before the view's set up from it
         Setup3DView();
         lighting.UpdateLightGrid();
         actorLights.CastActorLights();

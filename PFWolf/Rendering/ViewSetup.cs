@@ -75,9 +75,21 @@ internal sealed class ViewSetup(
         //
         // calculate trace angles and projection constants
         //
-        CalcProjection(GameConstants.FOCALLENGTH);
+        CalcProjection(GameConstants.FOCALLENGTH + focalExcursion);
 
         return true;
+    }
+
+    // How far the focal length is pushed from the usual now (a quake's pulse: Rendering/ViewQuake.cs)
+    long focalExcursion;
+
+    /// <summary>Pushes the focal length that far from the usual, working the projection out again if that's a change</summary>
+    internal void SetFocalExcursion(long excursion)
+    {
+        if (excursion == focalExcursion)
+            return;
+        focalExcursion = excursion;
+        CalcProjection(GameConstants.FOCALLENGTH + excursion);
     }
 
     /*

@@ -917,6 +917,12 @@ public record MapInfo
     public string? Weather { get; init; } = null;
 
     /// <summary>
+    /// The view rumbles through the level, as Midnight Assault's train chase did: a quake of up to
+    /// this power (0-200; the original's was 10) every 20 to 140 tics. 0 (the default) for none.
+    /// </summary>
+    public int Shake { get; init; }
+
+    /// <summary>
     /// Distance shading; each value left out uses the default map's (see ShadingInfo)
     /// </summary>
     public ShadingInfo? Shading { get; init; } = null;

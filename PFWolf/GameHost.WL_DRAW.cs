@@ -114,7 +114,31 @@ internal static partial class GameHost
         weather, skyAndFlats, rayTrace, spriteDrawing, playerView, render, session,
         new FrameRefreshHooks(() => fizzlein, () => fizzlein = false, () => levelFadeStyle, () => levelFadeTics,
             RestoreBorderAfterConsole, DrawAutomap, () => playScreen.DrawStatusOverlay(), DrawHudMessages, DrawNetOverlay, DrawConsole, () => bordercol,
-            () => screenshotPending, () => screenshotPending = false, TakeScreenshot));
+            () => screenshotPending, () => screenshotPending = false, TakeScreenshot, UpdateViewQuake));
+
+    // The view's quake (Rendering/ViewQuake.cs): blasts (A_Quake) and a level's own rumble (game-info shake)
+    static readonly ViewQuake viewQuake = new();
+    static string? quakeMap;
+
+    static void UpdateViewQuake()
+    {
+        var mapon = session.gamestate.mapon;
+        if (mapon != quakeMap)
+        {
+            viewQuake.Reset();          // a new level starts still
+            quakeMap = mapon;
+        }
+        int rumble = mapon != null && _gameEngineManager.GetGameInfo().Maps.TryGetValue(mapon, out var map) ? map.Shake : 0;
+        viewSetup.SetFocalExcursion(viewQuake.Update((int)session.tics, rumble));
+    }
+
+    /// <summary>A_Quake(min[, max]): shakes the view, at a power (0-200) rolled from min to max (Midnight Assault's blasts)</summary>
+    static void A_Quake(Entities.Actors.Actor ob, string[] args)
+    {
+        int min = args.Length > 0 && int.TryParse(args[0], out var a0) ? a0 : 0;
+        int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
+        viewQuake.Start(max > min ? Random.Shared.Next(min, max + 1) : min);
+    }
 
     static int lasttimecount { get => frameRefresh.lasttimecount; set => frameRefresh.lasttimecount = value; }
 

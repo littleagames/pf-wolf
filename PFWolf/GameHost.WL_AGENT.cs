@@ -106,6 +106,7 @@ internal static partial class GameHost
         ActorActionRegistry.Register("A_PlaySound", A_PlaySound);
         ActorActionRegistry.Register("A_Victory", A_Victory);
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
+        ActorActionRegistry.Register("A_Quake", A_Quake);       // the view shakes (GameHost.WL_DRAW.cs)
 
         // Goldfire's warp sites (Managers.LevelAI)
         ActorActionRegistry.Register("A_WarpSiteGone", (Entities.Actors.Actor _) => levelAI.WarpSiteGone());
