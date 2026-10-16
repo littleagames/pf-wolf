@@ -37,6 +37,10 @@ internal sealed class PlayerWeapons(
     // when ammo turns up -- unless they switch to another weapon that still has ammo.
     internal void CheckWeaponChange()
     {
+        // Not while reloading, as the original Midnight Assault's CheckWeaponChange
+        if (WeaponInHand.IsReloading(session.playerstate.WeaponSprite))
+            return;
+
         var usable = OwnedWeapons().Where(CanFire).ToList();
         if (!CanFire(session.playerstate.chosenweapon) && session.playerstate.weapon != null)
             usable.Remove(session.playerstate.weapon);
@@ -105,22 +109,64 @@ internal sealed class PlayerWeapons(
         return string.IsNullOrEmpty(type) || type.Equals("None", StringComparison.OrdinalIgnoreCase) ? null : type;
     }
 
-    /// <summary>Whether the player has the ammo for one shot of <paramref name="weapon"/>.</summary>
+    /// <summary>
+    /// The item a weapon's loaded rounds are held as (`weapon.magazine`), or null for one that
+    /// shoots straight from its ammo. The magazine's `inventory.maxamount` is the clip size; A_Reload
+    /// fills it from the weapon's ammo (`weapon.ammotype1`), and shots come out of it.
+    /// </summary>
+    internal string? WeaponMagazine(string? weapon) =>
+        WeaponAmmoType(weapon) != null && inventory.GetStringProperty(weapon!, "weapon.magazine") is { Length: > 0 } magazine
+            ? magazine
+            : null;
+
+    int ShotCost(string weapon) => inventory.GetIntProperty(weapon, "weapon.ammouse1", 0);
+
+    /// <summary>
+    /// Whether the player has the ammo for one shot of <paramref name="weapon"/>: for one with a
+    /// magazine, loaded or still to load (it can be taken up, and reloads before it shoots).
+    /// </summary>
     internal bool CanFire(string? weapon)
     {
         if (weapon == null)
             return false;
         var ammoType = WeaponAmmoType(weapon);
         return ammoType == null
-            || inventory.GetCount(ammoType) >= inventory.GetIntProperty(weapon, "weapon.ammouse1", 0);
+            || inventory.GetCount(ammoType) >= ShotCost(weapon)
+            || (WeaponMagazine(weapon) is { } magazine && inventory.GetCount(magazine) >= ShotCost(weapon));
     }
 
-    /// <summary>Takes one shot's ammo for the weapon in hand (unless the ammo cheat is on).</summary>
+    /// <summary>Whether a shot of <paramref name="weapon"/> is ready to go: loaded in its magazine, for one with a magazine</summary>
+    internal bool IsLoaded(string? weapon) =>
+        WeaponMagazine(weapon) is { } magazine ? inventory.GetCount(magazine) >= ShotCost(weapon!) : CanFire(weapon);
+
+    /// <summary>Whether <paramref name="weapon"/>'s magazine has room and there's ammo to put in it</summary>
+    internal bool CanReload(string? weapon) =>
+        WeaponMagazine(weapon) is { } magazine && !inventory.IsFull(magazine) && inventory.GetCount(WeaponAmmoType(weapon)!) > 0;
+
+    /// <summary>
+    /// Moves up to <paramref name="rounds"/> (all that fit when null) from the weapon in hand's
+    /// ammo into its magazine; returns how many went in.
+    /// </summary>
+    internal int Reload(int? rounds = null)
+    {
+        var weapon = session.playerstate.weapon;
+        if (WeaponMagazine(weapon) is not { } magazine)
+            return 0;
+        var ammoType = WeaponAmmoType(weapon)!;
+        int room = inventory.GetMaxAmount(magazine) - inventory.GetCount(magazine);
+        int moved = inventory.Give(magazine, Math.Min(Math.Min(rounds ?? room, room), inventory.GetCount(ammoType)));
+        inventory.Take(ammoType, moved);
+        DrawAmmo();
+        return moved;
+    }
+
+    /// <summary>Takes one shot's ammo for the weapon in hand, from its magazine if it has one (unless the ammo cheat is on).</summary>
     internal void UseAmmo()
     {
-        var ammoType = WeaponAmmoType(session.playerstate.weapon);
+        var weapon = session.playerstate.weapon;
+        var ammoType = WeaponAmmoType(weapon);
         if (ammoType != null && !hooks.AmmoCheat())
-            inventory.Take(ammoType, inventory.GetIntProperty(session.playerstate.weapon!, "weapon.ammouse1", 0));
+            inventory.Take(WeaponMagazine(weapon) ?? ammoType, ShotCost(weapon!));
         DrawAmmo();
     }
 
@@ -158,6 +204,9 @@ internal sealed class PlayerWeapons(
             ? inventory.GetCount(item)
             : GetAmmo();
         statusBar.LatchNumber("ammo", ammo, hide);
+        // clip: the rounds loaded in the weapon in hand's magazine; nothing for one without
+        statusBar.LatchNumber("clip", WeaponMagazine(session.playerstate.weapon) is { } magazine ? inventory.GetCount(magazine) : 0,
+            hide: WeaponMagazine(session.playerstate.weapon) == null);
         DrawAmmoGauge();
     }
 
@@ -194,7 +243,8 @@ internal sealed class PlayerWeapons(
         if (statusBar.StatusBarHidden) return;
         statusBar.DrawWeaponPic();
         if (statusBar.StatusBar.Get("ammo")?.Behind?.Equals("weapon", StringComparison.OrdinalIgnoreCase) == true
-            || statusBar.StatusBar.Get("ammo")?.OnlyWithAmmo == true || statusBar.StatusBar.Get("ammo-gauge") != null)
+            || statusBar.StatusBar.Get("ammo")?.OnlyWithAmmo == true || statusBar.StatusBar.Get("ammo-gauge") != null
+            || statusBar.StatusBar.Get("clip") != null)
             DrawAmmo();
         DrawCharge();
     }
@@ -231,13 +281,19 @@ internal sealed class PlayerWeapons(
 
     // Weapon pickups always come with ammo (vanilla GiveWeapon gave 6) of the weapon's own
     // type, and a weapon that's better than anything held becomes the selected one. Returns
-    // false only when the player already owned the weapon and had no room for its ammo.
+    // false only when the player already owned the weapon and had no room for its ammo. A
+    // weapon with a magazine comes loaded: an empty magazine takes what it gives first (the
+    // original Midnight Assault's GiveWeapon), the rest going to its ammo.
     internal bool TryGiveWeapon(string weaponName, int ammoGive)
     {
         var oldBest = BestWeapon();
 
         var ammoType = WeaponAmmoType(weaponName);
-        var gotAmmo = ammoGive > 0 && ammoType != null && GiveAmmo(ammoType, ammoGive) > 0;
+        int loaded = ammoGive > 0 && WeaponMagazine(weaponName) is { } magazine && !inventory.Has(magazine)
+            ? inventory.Give(magazine, ammoGive)
+            : 0;
+        int rest = ammoGive - loaded;
+        var gotAmmo = loaded > 0 | (rest > 0 && ammoType != null && GiveAmmo(ammoType, rest) > 0);
         var gotWeapon = inventory.Give(weaponName, 1) > 0;
 
         var newBest = BestWeapon();

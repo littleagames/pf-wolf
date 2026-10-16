@@ -101,8 +101,35 @@ internal sealed class WeaponInHand(
     internal void TickWeapon()
     {
         weapons.TickWeaponCharge();
-        if (SyncWeaponSprite() is { } sprite)
-            map.DoActor(sprite, session.tics);
+        if (SyncWeaponSprite() is not { } sprite)
+            return;
+
+        // Fire cuts a reload short once a round is in (the original Midnight Assault's T_Reload),
+        // so a shotgun loading shell by shell can shoot between them
+        if (IsReloading(sprite) && weapons.IsLoaded(session.playerstate.weapon)
+            && session.playerinput.IsFreshPress(buttontypes.bt_attack))
+            StartState(sprite, "Fire", buttontypes.bt_attack);
+
+        map.DoActor(sprite, session.tics);
+    }
+
+    /// <summary>
+    /// Whether the weapon is reloading: on its Reload state, or one whose name starts with it
+    /// (a ReloadLoop a shotgun goes round shell by shell)
+    /// </summary>
+    internal static bool IsReloading(Entities.Actors.Actor? weapon) =>
+        weapon?.CurrentState?.StateName?.StartsWith(ReloadState, StringComparison.OrdinalIgnoreCase) == true;
+
+    internal const string ReloadState = "Reload";
+
+    // As Cmd_Fire: the state starts from its first frame's full tics, counted down from the next
+    // tic on, not from what's left of this one (or a machine gun's check for fire still being held
+    // comes a tic early); the button that started it is held until it's let go
+    void StartState(Entities.Actors.Actor weapon, string state, buttontypes button)
+    {
+        session.playerinput.SetHeld(button, true);
+        weapon.TicCount = 0;
+        JumpWeaponState(weapon, state);
     }
 
     /// <summary>The shape to draw for the weapon in hand, or null for none.</summary>
@@ -124,13 +151,16 @@ internal sealed class WeaponInHand(
         Entities.Actors.ActorActionRegistry.Register("A_GunAttack", A_GunAttack);
         Entities.Actors.ActorActionRegistry.Register("A_CustomPunch", A_CustomPunch);
         Entities.Actors.ActorActionRegistry.Register("A_ReFire", A_ReFire);
+        Entities.Actors.ActorActionRegistry.Register("A_Reload", A_Reload);
         registerMissileActions();
     }
 
     /// <summary>
     /// Ready's every-tic action. Out of ammo for the picked weapon, it falls back to the best
     /// one that can still fire (the knife), and takes the picked one back up once there's ammo
-    /// again. Otherwise a fresh press of fire starts the Fire state.
+    /// again. A weapon with a magazine goes to its Reload state once the magazine is empty, or on
+    /// a press of reload while it isn't full, if there's ammo to load. Otherwise a fresh press of
+    /// fire starts the Fire state.
     /// </summary>
     internal void A_WeaponReady(Entities.Actors.Actor weapon)
     {
@@ -148,16 +178,28 @@ internal sealed class WeaponInHand(
             weapon = taken;
         }
 
-        if (session.playerinput.IsFreshPress(buttontypes.bt_attack))
+        if (weapons.CanReload(playerstate.weapon) && weapon.ResolvedStates.ContainsKey(ReloadState)
+            && (!weapons.IsLoaded(playerstate.weapon) || session.playerinput.IsFreshPress(buttontypes.bt_reload)))
         {
-            session.playerinput.SetHeld(buttontypes.bt_attack, true);
-
-            // As Cmd_Fire: the attack starts from its first frame's full tics, counted down from
-            // the next tic on, not from what's left of this one (or a machine gun's check for
-            // fire still being held comes a tic early)
-            weapon.TicCount = 0;
-            JumpWeaponState(weapon, "Fire");
+            StartState(weapon, ReloadState, buttontypes.bt_reload);
+            return;
         }
+
+        if (session.playerinput.IsFreshPress(buttontypes.bt_attack))
+            StartState(weapon, "Fire", buttontypes.bt_attack);
+    }
+
+    /// <summary>
+    /// A_Reload([rounds[, "state"]]): loads the weapon in hand's magazine from its ammo, all that
+    /// fits or that many rounds. Given a state, it goes there while the magazine still has room
+    /// and there's ammo left (a shotgun's shell-by-shell loop).
+    /// </summary>
+    internal void A_Reload(Entities.Actors.Actor weapon, string[] args)
+    {
+        int? rounds = args.Length > 0 && int.TryParse(args[0], out var n) && n > 0 ? n : null;
+        weapons.Reload(rounds);
+        if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) && weapons.CanReload(session.playerstate.weapon))
+            JumpWeaponState(weapon, args[1]);
     }
 
     /// <summary>
@@ -167,7 +209,7 @@ internal sealed class WeaponInHand(
     /// </summary>
     internal void A_GunAttack(Entities.Actors.Actor weapon, string[] args)
     {
-        if (!weapons.CanFire(session.playerstate.weapon) || !weapons.TakeCharge())
+        if (!weapons.IsLoaded(session.playerstate.weapon) || !weapons.TakeCharge())
             return;
         int Divisor(int i, int fallback) => args.Length > i && int.TryParse(args[i], out var d) && d > 0 ? d : fallback;
         attacks.GunAttack(session.player, Divisor(0, 4), Divisor(1, 6), Divisor(2, 6));
@@ -178,10 +220,10 @@ internal sealed class WeaponInHand(
     // US_RndT() >> 4 (0-15), which is what weapons.yaml asks for.
     internal void A_CustomPunch(Entities.Actors.Actor weapon) => attacks.KnifeAttack(session.player);
 
-    /// <summary>Fire still held and ammo left: back to Hold (or Fire, for a weapon without one).</summary>
+    /// <summary>Fire still held and a round ready: back to Hold (or Fire, for a weapon without one).</summary>
     internal void A_ReFire(Entities.Actors.Actor weapon)
     {
-        if (!session.playerinput.IsPressed(buttontypes.bt_attack) || !weapons.CanFire(session.playerstate.weapon))
+        if (!session.playerinput.IsPressed(buttontypes.bt_attack) || !weapons.IsLoaded(session.playerstate.weapon))
             return;
         if (!JumpWeaponState(weapon, "Hold"))
             JumpWeaponState(weapon, "Fire");

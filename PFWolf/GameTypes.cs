@@ -56,6 +56,8 @@ internal enum buttontypes
     // The status bar radar's zoom (statusbar.yaml radar, Planet Strike's): not in demos
     bt_radarzoomin,
     bt_radarzoomout,
+    // Reloads a weapon with a magazine (weapon.magazine; Midnight Assault's)
+    bt_reload,
 
     NUMBUTTONS
 };

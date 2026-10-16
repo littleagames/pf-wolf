@@ -62,6 +62,23 @@ public class PlayerWeaponsTests
           properties:
             "weapon.slot": 5
             "weapon.chargetics": 10
+        RifleMag:
+          parent: Ammo
+          properties:
+            "inventory.maxamount": 5
+        Rifle:
+          parent: Weapon
+          properties:
+            "weapon.slot": 6
+            "weapon.selectionorder": 1000
+            "weapon.ammotype1": Clip
+            "weapon.ammouse1": 1
+            "weapon.magazine": RifleMag
+          states:
+            Reload:
+              - sprite: RIFR
+                frames: [A]
+                tics-per-frame: 6
         GatlingUpgrade:
           parent: WeaponGiver
           properties:
@@ -269,9 +286,85 @@ public class PlayerWeaponsTests
         // Act
         int given = rig.Weapons.GiveAllAmmo(10);
 
-        // Assert: 10 clips, 5 shells
-        Assert.That(given, Is.EqualTo(15));
+        // Assert: 10 clips, 5 shells and the rifle's magazine's 5 (a magazine is ammo too)
+        Assert.That(given, Is.EqualTo(20));
         Assert.That((rig.Inventory.GetCount("Clip"), rig.Inventory.GetCount("Shells")), Is.EqualTo((10, 50)));
+    }
+
+    [Test]
+    public void A_Magazine_Weapons_Shots_Come_From_Its_Magazine()
+    {
+        // Arrange
+        var rig = new Rig("Rifle");
+        rig.Inventory.Give("Clip", 10);
+        rig.Inventory.Give("RifleMag", 1);
+        rig.InHand = "Rifle";
+
+        // Act / Assert
+        Assert.That(rig.Weapons.IsLoaded("Rifle"), Is.True);
+        rig.Weapons.UseAmmo();
+        Assert.That((rig.Inventory.GetCount("RifleMag"), rig.Inventory.GetCount("Clip")), Is.EqualTo((0, 10)));
+        Assert.That(rig.Weapons.IsLoaded("Rifle"), Is.False);
+        Assert.That(rig.Weapons.CanFire("Rifle"), Is.True);          // it can still be taken up, to reload
+        Assert.That(rig.Weapons.CanReload("Rifle"), Is.True);
+    }
+
+    [Test]
+    public void A_Magazine_Weapon_With_Rounds_Loaded_But_No_Ammo_Can_Still_Fire()
+    {
+        // Arrange
+        var rig = new Rig("Rifle");
+        rig.Inventory.Give("RifleMag", 2);
+
+        // Act / Assert
+        Assert.That(rig.Weapons.CanFire("Rifle"), Is.True);
+        Assert.That(rig.Weapons.CanReload("Rifle"), Is.False);
+    }
+
+    [Test]
+    public void Reloading_Fills_The_Magazine_Or_Loads_Some_Rounds()
+    {
+        // Arrange
+        var rig = new Rig("Rifle");
+        rig.Inventory.Give("Clip", 3);
+        rig.InHand = "Rifle";
+
+        // Act / Assert
+        Assert.That(rig.Weapons.Reload(1), Is.EqualTo(1));
+        Assert.That(rig.Weapons.Reload(), Is.EqualTo(2));            // all the ammo there was
+        Assert.That((rig.Inventory.GetCount("RifleMag"), rig.Inventory.GetCount("Clip")), Is.EqualTo((3, 0)));
+        Assert.That(rig.Weapons.Reload(), Is.Zero);
+    }
+
+    [Test]
+    public void A_Magazine_Weapon_Picked_Up_Comes_Loaded_The_Rest_Going_To_Its_Ammo()
+    {
+        // Arrange
+        var rig = new Rig("Knife");
+
+        // Act / Assert
+        Assert.That(rig.Weapons.TryGiveWeapon("Rifle", 8), Is.True);
+        Assert.That((rig.Inventory.GetCount("RifleMag"), rig.Inventory.GetCount("Clip")), Is.EqualTo((5, 3)));
+
+        // with one loaded already it's all ammo
+        Assert.That(rig.Weapons.TryGiveWeapon("Rifle", 5), Is.True);
+        Assert.That((rig.Inventory.GetCount("RifleMag"), rig.Inventory.GetCount("Clip")), Is.EqualTo((5, 8)));
+    }
+
+    [Test]
+    public void No_Weapon_Change_While_Reloading()
+    {
+        // Arrange
+        var rig = new Rig("Knife", "Rifle");
+        rig.Inventory.Give("Clip", 5);
+        rig.InHand = "Rifle";
+        var rifle = rig.Inventory.CreateActor("Rifle")!;
+        rifle.ArmState(rifle.ResolvedStates[WeaponInHand.ReloadState]);
+        rig.Session.playerstate.WeaponSprite = rifle;
+
+        // Act / Assert
+        rig.Press(buttontypes.bt_slot1);
+        Assert.That(rig.InHand, Is.EqualTo("Rifle"));
     }
 
     [Test]

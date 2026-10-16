@@ -75,6 +75,38 @@ public class WeaponInHandTests
                 frames: [D, E]
                 tics-per-frame: 6
                 next-state: Ready
+        RifleMag:
+          parent: Ammo
+          properties:
+            "inventory.maxamount": 5
+        Rifle:
+          parent: Weapon
+          properties:
+            "weapon.slot": 4
+            "weapon.selectionorder": 1400
+            "weapon.ammotype1": Clip
+            "weapon.ammouse1": 1
+            "weapon.magazine": RifleMag
+          states:
+            Ready:
+              - sprite: RIFG
+                frames: [A]
+                tics-per-frame: 1
+                next-state: Ready
+            Fire:
+              - sprite: RIFG
+                frames: [B, C]
+                tics-per-frame: 6
+                next-state: Ready
+            Reload:
+              - sprite: RIFR
+                frames: [A]
+                tics-per-frame: 6
+            ReloadLoop:
+              - sprite: RIFR
+                frames: [B, C]
+                tics-per-frame: 6
+                next-state: Ready
         """;
 
     private sealed class Rig
@@ -250,5 +282,94 @@ public class WeaponInHandTests
 
         // Assert
         Assert.That(gun.CurrentState!.StateName, Is.EqualTo(WeaponInHand.WeaponReadyState));
+    }
+
+    [Test]
+    public void An_Empty_Magazine_Reloads_On_Its_Own_When_There_Is_Ammo()
+    {
+        // Arrange
+        var rig = new Rig("Rifle") { InHand = "Rifle" };
+        rig.Inventory.Give("Clip", 3);
+        var rifle = rig.Sprite;
+
+        // Act
+        rig.Hand.A_WeaponReady(rifle);
+
+        // Assert
+        Assert.That(rifle.CurrentState!.StateName, Is.EqualTo(WeaponInHand.ReloadState));
+        Assert.That(WeaponInHand.IsReloading(rifle), Is.True);
+    }
+
+    [Test]
+    public void The_Reload_Key_Reloads_A_Magazine_With_Room_And_Fire_Shoots_A_Full_One()
+    {
+        // Arrange: 4 of 5 loaded
+        var rig = new Rig("Rifle") { InHand = "Rifle" };
+        rig.Inventory.Give("Clip", 3);
+        rig.Inventory.Give("RifleMag", 4);
+        var rifle = rig.Sprite;
+        rig.Session.playerinput.SetPressed(buttontypes.bt_reload, true);
+
+        // Act / Assert
+        rig.Hand.A_WeaponReady(rifle);
+        Assert.That(rifle.CurrentState!.StateName, Is.EqualTo(WeaponInHand.ReloadState));
+        Assert.That(rig.Session.playerinput.IsFreshPress(buttontypes.bt_reload), Is.False);
+
+        // full: reload does nothing, fire fires
+        rig.Inventory.Give("RifleMag", 1);
+        WeaponInHand.JumpWeaponState(rifle, WeaponInHand.WeaponReadyState);
+        rig.Session.playerinput.SetHeld(buttontypes.bt_reload, false);
+        rig.Session.playerinput.SetPressed(buttontypes.bt_attack, true);
+        rig.Hand.A_WeaponReady(rifle);
+        Assert.That(rifle.CurrentState!.StateName, Is.EqualTo("Fire"));
+    }
+
+    [Test]
+    public void Nothing_To_Load_Leaves_An_Empty_Magazine_Weapon_For_The_Knife()
+    {
+        // Arrange
+        var rig = new Rig("Knife", "Rifle") { InHand = "Rifle" };
+
+        // Act
+        rig.Hand.A_WeaponReady(rig.Sprite);
+
+        // Assert
+        Assert.That(rig.InHand, Is.EqualTo("Knife"));
+    }
+
+    [Test]
+    public void A_Reload_Fills_The_Magazine_From_The_Ammo()
+    {
+        // Arrange
+        var rig = new Rig("Rifle") { InHand = "Rifle" };
+        rig.Inventory.Give("Clip", 7);
+        rig.Inventory.Give("RifleMag", 1);
+
+        // Act
+        rig.Hand.A_Reload(rig.Sprite, []);
+
+        // Assert
+        Assert.That((rig.Inventory.GetCount("RifleMag"), rig.Inventory.GetCount("Clip")), Is.EqualTo((5, 3)));
+    }
+
+    [Test]
+    public void A_Reload_Of_One_Round_Goes_Round_Its_Loop_Until_Full_Or_Out()
+    {
+        // Arrange: room for 2, ammo for 1
+        var rig = new Rig("Rifle") { InHand = "Rifle" };
+        rig.Inventory.Give("Clip", 2);
+        rig.Inventory.Give("RifleMag", 3);
+        var rifle = rig.Sprite;
+        WeaponInHand.JumpWeaponState(rifle, WeaponInHand.ReloadState);
+
+        // Act / Assert
+        rig.Hand.A_Reload(rifle, ["1", "ReloadLoop"]);
+        Assert.That(rig.Inventory.GetCount("RifleMag"), Is.EqualTo(4));
+        Assert.That(rifle.CurrentState!.StateName, Is.EqualTo("ReloadLoop"));      // still room, and a round left
+
+        WeaponInHand.JumpWeaponState(rifle, WeaponInHand.ReloadState);
+        rig.Hand.A_Reload(rifle, ["1", "ReloadLoop"]);
+        Assert.That(rig.Inventory.GetCount("RifleMag"), Is.EqualTo(5));
+        Assert.That(rifle.CurrentState!.StateName, Is.EqualTo(WeaponInHand.ReloadState));     // full
     }
 }

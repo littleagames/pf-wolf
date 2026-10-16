@@ -243,6 +243,9 @@ internal sealed class ControlBindings
         Default(buttontypes.bt_radarzoomin, Key(ScanCodes.sc_Equal));
         Default(buttontypes.bt_radarzoomout, Key(ScanCodes.sc_Minus));
 
+        // Only does anything with a weapon that has a magazine (weapon.magazine)
+        Default(buttontypes.bt_reload, Key(ScanCodes.sc_R), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_Y));
+
         for (int i = 0; i < DefaultAutomapKeys.Length; i++)
             Add(ControlAction.Of((automapkeys)i), Key(DefaultAutomapKeys[i]));
 

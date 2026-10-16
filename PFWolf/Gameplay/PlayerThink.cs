@@ -53,7 +53,10 @@ internal sealed class PlayerThink(
         statusBar.UpdateHeartMonitor();
         hooks.UpdateRadar();
 
-        if (weaponInHand.IsWeaponReady())
+        // Reloading is like being ready, as the original Midnight Assault's T_Reload: use works,
+        // and fire is kept for cutting the reload short (WeaponInHand.TickWeapon); only the
+        // weapon can't be changed (PlayerWeapons.CheckWeaponChange)
+        if (weaponInHand.IsWeaponReady() || WeaponInHand.IsReloading(session.playerstate.WeaponSprite))
         {
             weapons.CheckWeaponChange();
 

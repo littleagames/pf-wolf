@@ -60,7 +60,7 @@ internal sealed class Missiles(
             Console.WriteLine("A_FireMissile: no missile given.");
             return;
         }
-        if (!weapons.CanFire(session.playerstate.weapon) || !weapons.TakeCharge())
+        if (!weapons.IsLoaded(session.playerstate.weapon) || !weapons.TakeCharge())
             return;
 
         var player = session.player;
