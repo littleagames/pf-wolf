@@ -250,25 +250,41 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
             && (map.tilemap[t.X, t.Y] & GameConstants.BIT_DOOR) == 0
             && (map.tilemap[t.X, t.Y] & ~GameConstants.BIT_WALL) != 0);
 
+    /// <summary>A direction's name (north, east, south, west, any case), or null</summary>
+    internal static controldirs? ParseDirection(string? name) => name?.Trim().ToLowerInvariant() switch
+    {
+        "north" => controldirs.di_north,
+        "east" => controldirs.di_east,
+        "south" => controldirs.di_south,
+        "west" => controldirs.di_west,
+        _ => null,
+    };
+
+    /// <summary>
+    /// A_MoveWall("direction", "moving sound", "blocked sound"[, object]): the walls with the
+    /// switch's tag pushed that way (the way the player faces when left out). With an object-plane
+    /// value, only the tagged walls with it on their tile move: a switch whose walls go different
+    /// ways runs one A_MoveWall for each (Midnight Assault's 656-659 walls).
+    /// </summary>
     private bool MoveWallAction(TriggerActivation trigger, string[] args)
     {
         var dirName = args.ElementAtOrDefault(0);
         controldirs dir;
-        switch (dirName?.ToLowerInvariant())
+        if (string.IsNullOrWhiteSpace(dirName))
+            dir = trigger.Dir;
+        else if (ParseDirection(dirName) is { } named)
+            dir = named;
+        else
         {
-            case null or "": dir = trigger.Dir; break;
-            case "north": dir = controldirs.di_north; break;
-            case "east": dir = controldirs.di_east; break;
-            case "south": dir = controldirs.di_south; break;
-            case "west": dir = controldirs.di_west; break;
-            default:
-                Console.WriteLine($"A_MoveWall: unknown direction '{dirName}' (north, east, south or west).");
-                return false;
+            Console.WriteLine($"A_MoveWall: unknown direction '{dirName}' (north, east, south or west).");
+            return false;
         }
+
+        int? onlyObject = int.TryParse(args.ElementAtOrDefault(3), out var objectValue) ? objectValue : null;
 
         // every tagged wall moves together; one sound for the lot
         bool moved = false, any = false;
-        foreach (var (x, y) in TaggedWalls(trigger).ToList())
+        foreach (var (x, y) in TaggedWalls(trigger).Where(t => onlyObject == null || map.MAPSPOT(t.X, t.Y, 1) == onlyObject).ToList())
         {
             any = true;
             moved |= pushWalls.PushWall(x, y, dir);
