@@ -51,6 +51,7 @@ public class AssetManager
             var info = PfWolfPk3Loader.ReadGamePackInfo(basePk3)
                 ?.WithModGames(mods.Where(mod => mod.HasGames).Select(mod => (mod.DisplayName, mod.Games!)));
             BasePackIds = info?.GamePacks.ContainsKey(gameReleaseId) == true ? info.GetBasePackChain(gameReleaseId) : [];
+            MenuPackIds = info?.GamePacks.ContainsKey(gameReleaseId) == true ? info.GetMenuPackChain(gameReleaseId) : [];
         });
 
         progress?.Invoke(LoadedMods.Count > 0 ? "Reading pfwolf.pk3 and the mods" : "Reading pfwolf.pk3");
@@ -525,6 +526,9 @@ public class AssetManager
 
     /// <summary>The packs the running one is built on, nearest first ([spear, wolf3d] for Spear's demo)</summary>
     public IReadOnlyList<string> BasePackIds { get; private set; } = [];
+
+    /// <summary>The packs the running one's menus answer to in menudefs game-packs lists: its base packs, then its menus-like pack</summary>
+    public IReadOnlyList<string> MenuPackIds { get; private set; } = [];
 
     /// <summary>
     /// Finds an asset belonging to the running game pack, e.g. "alias" -> "wolf3d/alias"

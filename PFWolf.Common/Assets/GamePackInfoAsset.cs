@@ -191,6 +191,20 @@ public record GamePackInfoAsset : Asset
         return chain;
     }
 
+    /// <summary>
+    /// The packs a release's menus answer to in menudefs game-packs lists, after its own: its base
+    /// packs, then the one it gives as menus-like
+    /// </summary>
+    public List<string> GetMenuPackChain(string releaseId)
+    {
+        var chain = GetBasePackChain(releaseId);
+        var like = GamePacks.TryGetValue(releaseId, out var gamePack) ? gamePack.MenusLike : null;
+        if (!string.IsNullOrWhiteSpace(like) && !like.Equals(releaseId, StringComparison.OrdinalIgnoreCase)
+            && !chain.Contains(like, StringComparer.OrdinalIgnoreCase))
+            chain.Add(like);
+        return chain;
+    }
+
     public GamePack GetGamePack(string releaseId)
         => GamePacks.TryGetValue(releaseId, out var gamePack)
             ? gamePack
@@ -238,6 +252,10 @@ public record GamePack
     // overriding them with its own; that pack's own base-pack comes before it, and so on.
     // (Every file in mapdefs/{pack}/ is loaded; there's no list.)
     public string? BasePack { get; init; }
+    // "menus-like": a pack whose menudefs game-packs entries this one's menus take as their own
+    // (that pack alone, not its base packs), without starting from its files: a standalone game
+    // that wants the Apogee release's "Read This!" names wolf3d-apogee
+    public string? MenusLike { get; init; }
     // "file-pack"
     public FilePack? FilePack { get; init; }
 }

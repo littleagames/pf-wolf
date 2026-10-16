@@ -166,9 +166,10 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
 
     /// <summary>
     /// Whether a menu item or component with this game-packs list belongs in the running game pack
+    /// (by its own, its base packs' and its menus-like pack's names)
     /// </summary>
     internal bool InCurrentGamePack(List<string>? gamePacks)
-        => GamePackList.Includes(gamePacks, engine.GamePackId, assets.BasePackIds);
+        => GamePackList.Includes(gamePacks, engine.GamePackId, assets.MenuPackIds);
 
     /// <summary>
     /// Plays a menu's music. A track that is already playing carries on rather than restarting,
