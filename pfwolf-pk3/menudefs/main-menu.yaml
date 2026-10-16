@@ -1,3 +1,13 @@
+# MENU HOOKS: a mod's menudefs/ (files directly in it) are laid over these menus, by name, where
+# the running game's own (menudefs/{pack}/) or the shared one is. Its keys replace a menu's, except
+# menu-items and components, merged entry by entry: an entry with the id (or a control row's
+# control) of one the menu has changes it key by key (a component's params as a whole); with
+# `remove: true` takes it out; a new one goes at the end, or `before:` / `after:` an id. A list
+# tagged !replace replaces the menu's whole. Components here have ids: background, legend (the key
+# legend), stripe and title. A mod's file with a new name is a menu of its own.
+# Besides the game's CP_ actions, an item can run CP_Menu (`menu:` a menudefs menu, as a submenu),
+# CP_Article (`article:` a text shown as an article, as a level's briefing is) or CP_Lua
+# (`function:` a script's global function).
 music: "WONDERIN"
 type: "wolf3d-menu"
 position:
@@ -6,16 +16,19 @@ position:
 indent: 24
 components:
   -
+    id: "background"
     type: "Background"
     params:
       - color: "BORDCOLOR"
   -
+    id: "legend"
     type: "Graphic"
     params:
       - name: "c_mouselback"
       - horizontal-orientation: "Center"
       - y: 184
   -
+    id: "stripe"
     type: "Stripe"
     params:
       - y: 10
@@ -39,6 +52,7 @@ components:
       - width: 178
       - height: 110
   -
+    id: "title"
     type: "Graphic"
     params:
       - name: "c_options"

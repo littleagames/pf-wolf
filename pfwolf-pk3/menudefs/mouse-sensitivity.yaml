@@ -3,10 +3,12 @@ type: "wolf3d-menu"
 # The slider itself is drawn in code
 components:
   -
+    id: "background"
     type: "Background"
     params:
       - color: "BORDCOLOR"
   -
+    id: "legend"
     type: "Graphic"
     params:
       - name: "c_mouselback"

@@ -293,7 +293,7 @@ public class PfWolfPk3LoaderTests
         {
             ["actordefs/sub/a.yaml"] = "A: {}\n",
             ["actordefs/sub/b.yaml"] = "B: {}\n",
-            ["menudefs/main-menu.yaml"] = "x: 1\n",
+            ["menudefs/sub/main-menu.yaml"] = "x: 1\n",     // a mod's menus go directly in menudefs/
             ["gamepacks/alpha/game-info.yaml"] = "x: 1\n",
             ["readme.txt"] = "not an asset",
         });
@@ -304,7 +304,7 @@ public class PfWolfPk3LoaderTests
         // Assert
         Assert.That(loader.Warnings, Has.Count.EqualTo(3));
         Assert.That(loader.Warnings, Has.Exactly(1).Contains("actordefs/sub/"));
-        Assert.That(loader.Warnings, Has.Exactly(1).Contains("menudefs/"));
+        Assert.That(loader.Warnings, Has.Exactly(1).Contains("menudefs/sub/"));
         Assert.That(loader.Warnings, Has.Exactly(1).Contains("gamepacks/"));
     }
 

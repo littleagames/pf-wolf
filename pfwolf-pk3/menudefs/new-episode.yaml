@@ -9,10 +9,12 @@ items-source: "episodes"
 default-selection: 0
 components:
   -
+    id: "background"
     type: "Background"
     params:
       - color: "BORDCOLOR"
   -
+    id: "legend"
     type: "Graphic"
     params:
       - name: "c_mouselback"
@@ -26,6 +28,7 @@ components:
       - width: 308
       - height: 162
   -
+    id: "title"
     type: "Label"
     params:
       - text: "$STR_WHICHEPISODE"

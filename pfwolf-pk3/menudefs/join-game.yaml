@@ -9,10 +9,12 @@ indent: 24
 items-source: "lan-games"
 components:
   -
+    id: "background"
     type: "Background"
     params:
       - color: "BORDCOLOR"
   -
+    id: "legend"
     type: "Graphic"
     params:
       - name: "c_mouselback"

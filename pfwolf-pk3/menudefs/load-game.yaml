@@ -6,14 +6,17 @@ type: "wolf3d-menu"
 # where it is, and the same as save-game's.
 components:
   -
+    id: "background"
     type: "Background"
     params:
       - color: "BORDCOLOR"
   -
+    id: "stripe"
     type: "Stripe"
     params:
       - y: 10
   -
+    id: "title"
     type: "Graphic"
     params:
       - name: "c_loadgame"

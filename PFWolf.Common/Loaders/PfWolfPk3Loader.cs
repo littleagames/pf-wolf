@@ -255,9 +255,13 @@ public class PfWolfPk3Loader
         if (fullName.StartsWith("menudefs/"))
         {
             // menudefs/main-menu.yaml -> "main-menu"; a pack's own, menudefs/blake/main-menu.yaml,
-            // -> "blake/main-menu", which that pack uses in its place (AssetManager.GetMenu)
-            var data = YamlDataEntryLoader.Read<MenuAsset>(entry.Open());
-            AddAsset(GetAssetReadyName(fullName, ignoreFirstDirectory: true), data);
+            // -> "blake/main-menu", which that pack uses in its place (AssetManager.GetMenu). A
+            // mod's menudefs/options.yaml merges over the menu the running pack uses: its own if
+            // it has one, else the shared one (MenuAsset.MergeYaml)
+            var menuName = GetAssetReadyName(fullName, ignoreFirstDirectory: true);
+            if (isMod && _yamlTrees.ContainsKey(GetKey($"{_gamePackId}/{menuName}", nameof(MenuAsset))))
+                menuName = $"{_gamePackId}/{menuName}";
+            LoadYaml(entry, menuName, isMod, mergeLevels: 0, YamlDataEntryLoader.Deserialize<MenuAsset>, MenuAsset.MergeYaml);
             return;
         }
 
@@ -552,8 +556,14 @@ public class PfWolfPk3Loader
                     : $"{folder}{_gamePackId}/{rest}";
 
             case "menudefs/":
-                WarnOnce(entry.Source, skippedFolders, folder, "mods can't change menus yet");
-                return null;
+                // A menu of the same name is merged over (MenuAsset.MergeYaml); a new name adds a menu
+                if (rest.Contains('/'))
+                {
+                    WarnOnce(entry.Source, skippedFolders, path.Substring(0, path.LastIndexOf('/') + 1),
+                        "mods keep their menus directly in menudefs/, without subfolders");
+                    return null;
+                }
+                return folder + rest;
 
             case "gamepacks/":
                 WarnOnce(entry.Source, skippedFolders, folder,

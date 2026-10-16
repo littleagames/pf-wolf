@@ -23,6 +23,20 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
 
     internal const string TextScreenAction = "CP_TextScreen";
 
+    // MENU HOOKS: what a mod's menu items can run besides the game's own CP_ actions --
+    // CP_Menu (`menu:` another menudefs menu, as a submenu), CP_Article (`article:` a text shown
+    // as an article, as a level's briefing is) and CP_Lua (`function:` a script's global function)
+    internal const string SubMenuAction = "CP_Menu", ArticleAction = "CP_Article", ScriptAction = "CP_Lua";
+
+    /// <summary>Runs a menudefs menu as a submenu (CP_Menu)</summary>
+    internal Func<string, int>? SubMenu { get; set; }
+
+    /// <summary>Shows a text as an article (CP_Article)</summary>
+    internal Func<string, int>? Article { get; set; }
+
+    /// <summary>Calls a script's global function (CP_Lua)</summary>
+    internal Func<string, int>? Script { get; set; }
+
     /// <summary>What a menu item with action: <paramref name="name"/> runs</summary>
     internal void RegisterAction(string name, Func<int, int> action) => actions[name] = action;
 
@@ -282,6 +296,24 @@ internal sealed class MenuDefs(AssetManager assets, GameEngineManager engine, Gr
                 return null;
             }
             return TextScreen(script);
+        }
+
+        // A mod's: another menu, a text or a script (MENU HOOKS)
+        var (hook, target, field) = mi.Action switch
+        {
+            SubMenuAction => (SubMenu, mi.Menu, "menu"),
+            ArticleAction => (Article, mi.Article, "article"),
+            ScriptAction => (Script, mi.Function, "function"),
+            _ => ((Func<string, int>?)null, (string?)null, (string?)null),
+        };
+        if (field != null)
+        {
+            if (string.IsNullOrWhiteSpace(target) || hook == null)
+            {
+                Console.WriteLine($"Menu '{menuName}': item '{mi.Id ?? mi.Text}' is a {mi.Action} without a {field}");
+                return null;
+            }
+            return _ => hook(target.Trim());
         }
 
         if (!actions.TryGetValue(mi.Action, out var func))

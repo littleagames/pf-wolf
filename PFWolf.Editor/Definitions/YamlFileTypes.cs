@@ -58,7 +58,7 @@ public static class YamlFileTypes
         var name = parts[^1].ToLowerInvariant();
 
         if (path.StartsWith("menudefs/", StringComparison.OrdinalIgnoreCase))
-            why = "Mods can't change menus yet";
+            return $"menudefs/{parts[^1]}";         // merged over the menu by its items' and components' ids (MenuAsset.MergeYaml)
         else if (path.Equals("gamepacks/gamepack-info.yaml", StringComparison.OrdinalIgnoreCase))
             why = "A mod can't change pfwolf.pk3's games; its own gamepack-info.yaml adds games of its own (the Game packs tab's New…)";
         else if (path.StartsWith("gamepacks/", StringComparison.OrdinalIgnoreCase))
@@ -146,7 +146,7 @@ public static class YamlFileTypes
         if (path.StartsWith("animdefs/", StringComparison.OrdinalIgnoreCase))
             return "animations";
         if (path.StartsWith("menudefs/", StringComparison.OrdinalIgnoreCase))
-            return isMod ? null : "menu";
+            return "menu";
         if (path.StartsWith("sounds/", StringComparison.OrdinalIgnoreCase) && name.Contains("sound-seq"))
             return "sounds";
         return null;

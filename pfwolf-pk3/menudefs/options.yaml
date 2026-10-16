@@ -7,16 +7,19 @@ position:
 indent: 48
 components:
   -
+    id: "background"
     type: "Background"
     params:
       - color: "BORDCOLOR"
   -
+    id: "legend"
     type: "Graphic"
     params:
       - name: "c_mouselback"
       - horizontal-orientation: "Center"
       - y: 184
   -
+    id: "stripe"
     type: "Stripe"
     params:
       - y: 10
@@ -29,6 +32,7 @@ components:
       - width: 202
       - height: 97
   -
+    id: "title"
     type: "Graphic"
     params:
       - name: "c_options"

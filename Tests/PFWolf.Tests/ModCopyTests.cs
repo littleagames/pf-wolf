@@ -15,6 +15,8 @@ public class ModCopyTests
     [TestCase("actordefs/native.yaml", "actordefs/native.yaml")]
     [TestCase("mapdefs/wolf3d/walls.yaml", "mapdefs/walls.yaml")]
     [TestCase("sounds/sound-seq.yaml", "sounds/sound-seq.yaml")]
+    [TestCase("menudefs/main-menu.yaml", "menudefs/main-menu.yaml")]       // merged by id (MENU HOOKS)
+    [TestCase("menudefs/blake/options.yaml", "menudefs/options.yaml")]
     public void A_Mod_Keeps_Its_Own_Where_The_Game_Lays_It_Over_Pfwolfs(string basePath, string modPath)
     {
         // Act
@@ -25,7 +27,6 @@ public class ModCopyTests
         Assert.That(YamlFileTypes.Describe(modPath, isMod: true), Is.EqualTo(YamlFileTypes.Describe(basePath, isMod: false)), "the game reads it as the same");
     }
 
-    [TestCase("menudefs/main-menu.yaml")]
     [TestCase("gamepacks/gamepack-info.yaml")]
     [TestCase("gamepacks/blake/presenter.yaml")]
     [TestCase("gamepacks/wolf3d-shareware/sound-seq.yaml")]

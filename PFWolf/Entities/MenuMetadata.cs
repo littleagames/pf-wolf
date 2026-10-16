@@ -744,6 +744,15 @@ internal record MenuSwitcher : MenuItem
 
     /// <summary>The presenter text a CP_TextScreen item shows</summary>
     public string? Script { get; init; } = null;
+
+    /// <summary>The menudefs menu a CP_Menu item opens</summary>
+    public string? Menu { get; init; } = null;
+
+    /// <summary>The text a CP_Article item shows</summary>
+    public string? Article { get; init; } = null;
+
+    /// <summary>The script function a CP_Lua item calls</summary>
+    public string? Function { get; init; } = null;
 }
 
 internal record ToggleMenuItem : MenuItem

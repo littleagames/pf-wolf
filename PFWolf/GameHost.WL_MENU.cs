@@ -41,6 +41,7 @@ internal static partial class GameHost
     */
 
     static ControlPanel controlPanel = null!;
+    static ModMenus? modMenus;      // a mod's own menus, run as submenus (CP_Menu)
     static NewGameMenu newGameMenu = null!;
     static OptionsMenu optionsMenu = null!;
     static ChangeViewScreen changeViewScreen = null!;
@@ -266,6 +267,23 @@ internal static partial class GameHost
         foreach (var action in actions)
             menuDefs.RegisterAction(action.Method.Name, action);
         menuDefs.TextScreen = script => _ => CP_TextScreen(script);
+
+        // MENU HOOKS: a mod's items opening a menu of theirs, showing a text, calling a script
+        menuDefs.SubMenu = name => (modMenus ??= new ModMenus(_videoManager, menuDrawing, menuLoop, menuInput, menuDefs)).Run(name);
+        menuDefs.Article = name =>
+        {
+            articleReader.ShowText(name);
+            StartCPMusic(MENUSONG);
+            return 0;
+        };
+        menuDefs.Script = function =>
+        {
+            if (gameScripts.Scripts is not { } scripts || scripts.Globals[function].Type != Lua.LuaValueType.Function)
+                Console.WriteLine($"CP_Lua: no script function {function}");
+            else
+                scripts.Call(function, []);
+            return 0;
+        };
 
         menuDefs.RegisterSource("player-classes", PlayerClassRows);
         menuDefs.RegisterSource("mods", BuildModsPage);

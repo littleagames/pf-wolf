@@ -6,10 +6,12 @@ position:
 indent: 56
 components:
   -
+    id: "background"
     type: "Background"
     params:
       - color: "BORDCOLOR"
   -
+    id: "legend"
     type: "Graphic"
     params:
       - name: "c_mouselback"
@@ -23,6 +25,7 @@ components:
       - width: 288
       - height: 99
   -
+    id: "title"
     type: "Graphic"
     params:
       - name: "c_fxtitle"

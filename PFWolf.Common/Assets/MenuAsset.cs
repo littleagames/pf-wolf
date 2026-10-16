@@ -1,9 +1,95 @@
 using System.Numerics;
+using PFWolf.Loaders;
+using YamlDotNet.RepresentationModel;
 
 namespace PFWolf.Assets;
 
 public record MenuAsset : Asset
 {
+    /// <summary>
+    /// Lays a mod's menudefs file over the menu of the same name (MENU HOOKS): its keys replace the
+    /// menu's, except `menu-items` and `components`, merged entry by entry. An entry with the `id`
+    /// (or, for a control row, the `control`) of one the menu has changes that one, key by key;
+    /// with `remove: true` takes it out; one the menu hasn't is added at the end, or with
+    /// `before:`/`after:` an entry's id, next to it (an existing one moves there too). A list
+    /// tagged !replace replaces the menu's whole.
+    /// </summary>
+    public static void MergeYaml(YamlMappingNode target, YamlMappingNode overlay, bool deep)
+    {
+        foreach (var (key, value) in overlay.Children)
+        {
+            var name = (key as YamlScalarNode)?.Value;
+            var existingKey = YamlTree.FindKey(target, key);
+            if (name is "menu-items" or "components" && value is YamlSequenceNode incoming && !YamlTree.IsReplace(value)
+                && existingKey != null && target.Children[existingKey] is YamlSequenceNode existing)
+            {
+                MergeEntries(existing, incoming);
+                continue;
+            }
+            YamlTree.MergeLevels(target, new YamlMappingNode { { key, value } }, 1);
+        }
+    }
+
+    // The keys an entry is matched by, and the merge's own keys (left out of what's kept)
+    static readonly string[] MergeKeys = ["before", "after", "remove"];
+
+    static string? Scalar(YamlMappingNode node, string key) =>
+        YamlTree.FindKey(node, new YamlScalarNode(key), StringComparison.OrdinalIgnoreCase) is { } found
+        && node.Children[found] is YamlScalarNode { Value: { Length: > 0 } value } ? value : null;
+
+    static string? EntryKey(YamlMappingNode entry) => Scalar(entry, "id") ?? Scalar(entry, "control");
+
+    static int IndexOf(YamlSequenceNode list, string? key)
+    {
+        if (key == null)
+            return -1;
+        for (int i = 0; i < list.Children.Count; i++)
+            if (list.Children[i] is YamlMappingNode entry && string.Equals(EntryKey(entry), key, StringComparison.OrdinalIgnoreCase))
+                return i;
+        return -1;
+    }
+
+    static void MergeEntries(YamlSequenceNode existing, YamlSequenceNode incoming)
+    {
+        foreach (var node in incoming.Children)
+        {
+            if (node is not YamlMappingNode entry)
+            {
+                existing.Children.Add(node);
+                continue;
+            }
+
+            int at = IndexOf(existing, EntryKey(entry));
+            if (bool.TryParse(Scalar(entry, "remove"), out var remove) && remove)
+            {
+                if (at >= 0)
+                    existing.Children.RemoveAt(at);
+                continue;
+            }
+
+            string? before = Scalar(entry, "before"), after = Scalar(entry, "after");
+            var clean = new YamlMappingNode(entry.Children.Where(c =>
+                !MergeKeys.Contains((c.Key as YamlScalarNode)?.Value ?? "", StringComparer.OrdinalIgnoreCase)));
+
+            YamlNode placed = clean;
+            if (at >= 0)
+            {
+                var merged = (YamlMappingNode)existing.Children[at];
+                YamlTree.MergeLevels(merged, clean, 1);
+                placed = merged;
+                if (before == null && after == null)
+                    continue;
+                existing.Children.RemoveAt(at);
+            }
+
+            int anchor = IndexOf(existing, before ?? after);
+            if (anchor < 0)
+                existing.Children.Add(placed);
+            else
+                existing.Children.Insert(before != null ? anchor : anchor + 1, placed);
+        }
+    }
+
     public string? Music { get; init; }
     public string? Type { get; init; }
     public Vector2? Position { get; init; }
@@ -62,6 +148,14 @@ public record ComponentEntry
     /// Only draw this in these game packs ("wolf3d", "spear"); unset means every pack
     /// </summary>
     public List<string>? GamePacks { get; init; }
+
+    /// <summary>A name a mod's menudefs can change or remove this by ("title", say: MergeYaml)</summary>
+    public string? Id { get; init; }
+
+    /// <summary>MergeYaml's own (a mod's menudefs placing or removing an entry); nothing at run time</summary>
+    public string? Before { get; init; }
+    public string? After { get; init; }
+    public bool Remove { get; init; }
 }
 
 public record MenuItemEntry
@@ -88,4 +182,18 @@ public record MenuItemEntry
     public string? Script { get; init; } = null;
     /// <summary>Drawn in the read-it colors (READCOLOR, READHCOLOR), like Wolf3D's "Read This!"</summary>
     public bool Highlighted { get; init; } = false;
+
+    /// <summary>The menudefs menu a CP_Menu item opens</summary>
+    public string? Menu { get; init; } = null;
+
+    /// <summary>The text (texts/) a CP_Article item shows, as an article (a level's briefing's reader)</summary>
+    public string? Article { get; init; } = null;
+
+    /// <summary>The script function (a Lua global) a CP_Lua item calls</summary>
+    public string? Function { get; init; } = null;
+
+    /// <summary>MergeYaml's own (a mod's menudefs placing or removing an entry); nothing at run time</summary>
+    public string? Before { get; init; }
+    public string? After { get; init; }
+    public bool Remove { get; init; }
 }
