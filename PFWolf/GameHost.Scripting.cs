@@ -13,6 +13,7 @@ internal static partial class GameHost
         {
             Unlock = Unlock,
             IsUnlocked = name => unlocks.IsUnlocked(name),
+            Record = map => levelRecords.Get(map),
         };
 
     // The script API's tests install it with no services: it's made then

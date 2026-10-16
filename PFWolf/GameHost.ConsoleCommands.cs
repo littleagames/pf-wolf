@@ -65,7 +65,7 @@ internal static partial class GameHost
         Register("scripts", "Lists the Lua scripts that loaded (scripts/*.lua), those left out and why, and the actions they give.", "scripts", Cmd_Scripts);
         Register("lua", "Runs Lua in the scripts' state (`me` is the player). Strings take 'single quotes'; separate statements with spaces, not ;.",
             "lua <code>", Cmd_Lua, Cheat);
-        new Commands.UnlockCommands(_consoleManager, unlocks).Register();     // unlock, lock (Commands/UnlockCommands.cs)
+        new Commands.UnlockCommands(_consoleManager, unlocks, levelRecords).Register();     // unlock, lock, records (Commands/UnlockCommands.cs)
         demoCommands.Register();        // playdemo, demotest, recorddemo (Commands/DemoCommands.cs)
         saveCommands.Register();        // saves, autosave, save, load (Commands/SaveCommands.cs)
         Register("quit", "Quits the game immediately.", "quit", _ => _gameEngineManager.Quit(""));

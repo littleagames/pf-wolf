@@ -35,6 +35,7 @@ internal record PendingMapChange(string Map, bool KeepPosition, int X, int Y, sh
 /// <param name="AlignPlayerInElevator">Moves the player into the elevator by a panel wall (GameHost.Hubs.cs)</param>
 /// <param name="ShowLevelStartMessage">A game's level start message (Blake Stone)</param>
 /// <param name="ShowText">Shows a text as an article (a map's briefing or debriefing: Ui/ArticleReader.cs)</param>
+/// <param name="LevelWon">A level's finished (its exit, a secret exit or the game won), before the tally: its record and the scripts' game.onlevelend hooks</param>
 internal sealed record MainGameLoopHooks(
     Func<playstatetypes> PlayState,
     Action<playstatetypes> SetPlayState,
@@ -56,7 +57,8 @@ internal sealed record MainGameLoopHooks(
     Action ApplyPendingWarpStart,
     Action<int, int, int> AlignPlayerInElevator,
     Action<string> ShowLevelStartMessage,
-    Action<string> ShowText);
+    Action<string> ShowText,
+    Action<playstatetypes>? LevelWon = null);
 
 /// <summary>
 /// The game from its first level to its end (GameLoop): each level entered, played and left,
@@ -268,6 +270,10 @@ internal sealed class MainGameLoop(
                 warped = false;
                 continue;
             }
+
+            // Its record and the scripts' level-end hooks, before the tally tells what they unlocked
+            if (hooks.PlayState() is playstatetypes.ex_completed or playstatetypes.ex_secretlevel or playstatetypes.ex_victorious)
+                hooks.LevelWon?.Invoke(hooks.PlayState());
 
             switch (hooks.PlayState())
             {

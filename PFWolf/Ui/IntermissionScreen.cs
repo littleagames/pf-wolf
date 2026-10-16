@@ -13,8 +13,9 @@ namespace PFWolf.Ui;
 /// <param name="GameWon">After the victory tally: the menu's Save Game goes grey</param>
 /// <param name="EndText">The won game's end text</param>
 /// <param name="MapDisplayName">A map's name as the game shows it (PlayScreen.GetMapDisplayName)</param>
+/// <param name="NewUnlocks">Whether anything's been unlocked since the last tally (Gameplay/Unlocks.cs TakeNews)</param>
 internal sealed record IntermissionHooks(Action ViewColorBorder, Action<int> GiveEveryone, Action DrawScore, Action DrawPlayBorder,
-    Action GameWon, Action EndText, Func<string, string> MapDisplayName);
+    Action GameWon, Action EndText, Func<string, string> MapDisplayName, Func<bool>? NewUnlocks = null);
 
 /// <summary>
 /// The level-end screen (intermission.yaml): the floor, time and par, the time bonus and the
@@ -281,6 +282,11 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
             tempstr = bonus.ToString();
             WriteValue("bonus", tempstr);
 
+            // Anything unlocked this level (intermission.yaml `unlocked`, its text the format:
+            // Midnight Assault's "New Levels Unlocked!")
+            if (hooks.NewUnlocks?.Invoke() == true)
+                WriteValue("unlocked", "");
+
             //
             // SAVE RATIO INFORMATION FOR ENDGAME
             //
@@ -431,6 +437,8 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         WriteValue(screen.Values, "kill", kr.ToString());
         WriteValue(screen.Values, "secret", sr.ToString());
         WriteValue(screen.Values, "treasure", tr.ToString());
+        if (hooks.NewUnlocks?.Invoke() == true)
+            WriteValue(screen.Values, "unlocked", "");
 
         //
         // TOTAL TIME VERIFICATION CODE

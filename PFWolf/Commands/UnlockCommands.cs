@@ -5,12 +5,16 @@ namespace PFWolf.Commands;
 
 /// <summary>
 /// unlock and lock: what the player has unlocked from game to game (progress.cfg: Gameplay/Unlocks.cs),
-/// game-info's starts-locked episodes and any name a script or A_Unlock gave
+/// game-info's starts-locked episodes and any name a script or A_Unlock gave; records: the best
+/// done on each map (records.cfg: Gameplay/LevelRecords.cs)
 /// </summary>
-internal sealed class UnlockCommands(ConsoleManager console, Unlocks unlocks)
+internal sealed class UnlockCommands(ConsoleManager console, Unlocks unlocks, LevelRecords? records = null)
 {
     internal void Register()
     {
+        if (records != null)
+            console.Register("records", "Shows the best done on each map finished (or one map's); records clear [map] forgets them.",
+                "records [map|clear [map]]", Cmd_Records, complete: (_, i) => i == 0 ? ["clear", .. records.Maps] : []);
         console.Register("unlock", "Unlocks a name for good: a starts-locked episode's key (EP02), or all of them; on its own, lists what's locked and unlocked.",
             "unlock [name|all]", Cmd_Unlock, Cheat, complete: (_, i) => i == 0 ? ["all", .. unlocks.Lockable()] : []);
         console.Register("lock", "Locks an unlocked name again, or all of them (everything back as a first game has it).",
@@ -43,6 +47,24 @@ internal sealed class UnlockCommands(ConsoleManager console, Unlocks unlocks)
         console.Print(unlocks.Unlock(args[0])
             ? $"Unlocked {args[0]}{(known ? "" : " (game-info locks nothing by that name)")}"
             : $"{args[0]} was already unlocked");
+    }
+
+    internal void Cmd_Records(string[] args)
+    {
+        if (records == null)
+            return;
+        if (args.Length > 0 && string.Equals(args[0], "clear", StringComparison.OrdinalIgnoreCase))
+        {
+            var map = args.Length > 1 ? args[1] : null;
+            console.Print(records.Clear(map) ? $"Forgot {(map == null ? "every map's record" : $"{map}'s record")}" : "Nothing to forget");
+            return;
+        }
+
+        var maps = args.Length > 0 ? [args[0]] : records.Maps.ToList();
+        if (maps.Count == 0)
+            console.Print("No map has been finished yet");
+        foreach (var map in maps)
+            console.Print(records.Get(map) is { } record ? $"{map}: {record.ToLine()}" : $"{map}: never finished");
     }
 
     internal void Cmd_Lock(string[] args)

@@ -59,6 +59,9 @@ internal sealed class GameScripts(
     /// <summary>game.unlocked: whether a name has been unlocked</summary>
     internal Func<string, bool> IsUnlocked { get; init; } = _ => false;
 
+    /// <summary>game.record: a map's best (Gameplay/LevelRecords.cs), null if never finished</summary>
+    internal Func<string, Gameplay.LevelResult?> Record { get; init; } = _ => null;
+
     /// <summary>The scripts' Lua state, once any have loaded (or the lua command has made one)</summary>
     internal ScriptHost? Scripts => _scripts;
 
@@ -330,6 +333,11 @@ internal sealed class GameScripts(
         });
         game["onlevel"] = new LuaFunction("game.onlevel", (c, _) => new(c.Return(AddHook(c, host, levelHooks, "game.onlevel"))));
         game["ontick"] = new LuaFunction("game.ontick", (c, _) => new(c.Return(AddHook(c, host, tickHooks, "game.ontick"))));
+        game["onlevelend"] = new LuaFunction("game.onlevelend", (c, _) => new(c.Return(AddHook(c, host, levelEndHooks, "game.onlevelend"))));
+        // game.record(map): the best done on a map, from game to game (records.cfg:
+        // Gameplay/LevelRecords.cs), as game.onlevelend's result; nil if it's never been finished
+        game["record"] = new LuaFunction("game.record", (c, _) =>
+            new(c.Return(Record(StringArg(c, 0)) is { } record ? ResultTable(record) : LuaValue.Nil)));
         game["time"] = new LuaFunction("game.time", (c, _) => new(c.Return(session.gamestate.TimeCount)));
         game["tics"] = new LuaFunction("game.tics", (c, _) => new(c.Return(session.tics)));
         game["map"] = new LuaFunction("game.map", (c, _) => new(c.Return(session.gamestate.mapon ?? "")));
@@ -376,6 +384,13 @@ internal sealed class GameScripts(
                      in Lua variables, which saves don't hold.
     game.ontick(function(tics) ... end): called each frame the world moves (not while it's
         paused), after the actors, with the tics that went by (70 a second; usually 1 or 2).
+    game.onlevelend(function(map, result) ... end): called as a level's finished (its exit, a
+        secret exit or the game won; not dying or leaving), before the tally, once its record is
+        kept (game.record). result has kills, killtotal, secrets, secrettotal, items, itemtotal,
+        time (tics), par (seconds, 0 for none), underpar, undetected, stealthkills, objectives
+        ({name = {done = n, total = n}}) and exit ("exit", "secret" or "victory"). It's the
+        place to game.unlock what the finish earned: anything unlocked is told on the tally.
+        Not called while a demo plays back.
 
     Hooks are added when a script loads (at its top level), never later, so that every machine
     and every demo run has the same ones; each mod's run, in load order. A hook that errors
@@ -393,6 +408,7 @@ internal sealed class GameScripts(
 
     readonly List<ScriptHook> levelHooks = [];
     readonly List<ScriptHook> tickHooks = [];
+    readonly List<ScriptHook> levelEndHooks = [];
 
     // Errors a hook may have before it's switched off
     const int HookErrorLimit = 3;
@@ -411,6 +427,46 @@ internal sealed class GameScripts(
     /// <summary>The scripts' level hooks, as a level starts (GameLoop, PlayDemo, RecordDemo)</summary>
     internal void RunLevelHooks(string reason) =>
         RunHooks(levelHooks, [reason, session.gamestate.mapon ?? ""]);
+
+    /// <summary>
+    /// The scripts' level-end hooks, as a level's finished (before the tally): the map, what this
+    /// finish came to, and how it was left ("exit", "secret" or "victory")
+    /// </summary>
+    internal void RunLevelEndHooks(string map, Gameplay.LevelResult result, string exit)
+    {
+        if (levelEndHooks.Count > 0)
+            RunHooks(levelEndHooks, [map, ResultTable(result, exit)]);
+    }
+
+    /// <summary>A level's result (or record) as Lua sees it, for game.onlevelend and game.record</summary>
+    static LuaTable ResultTable(Gameplay.LevelResult result, string? exit = null)
+    {
+        var objectives = new LuaTable();
+        foreach (var (name, count) in result.Objectives)
+        {
+            var entry = new LuaTable();
+            entry["done"] = count.Done;
+            entry["total"] = count.Total;
+            objectives[name] = entry;
+        }
+
+        var table = new LuaTable();
+        table["kills"] = result.Kills;
+        table["killtotal"] = result.KillTotal;
+        table["secrets"] = result.Secrets;
+        table["secrettotal"] = result.SecretTotal;
+        table["items"] = result.Items;
+        table["itemtotal"] = result.ItemTotal;
+        table["time"] = result.Time;
+        table["par"] = result.Par;
+        table["underpar"] = result.UnderPar;
+        table["undetected"] = result.Undetected;
+        table["stealthkills"] = result.StealthKills;
+        table["objectives"] = objectives;
+        if (exit != null)
+            table["exit"] = exit;
+        return table;
+    }
 
     /// <summary>The scripts' tick hooks, each frame the world moves (PlayLoop)</summary>
     internal void RunTickHooks()

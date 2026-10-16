@@ -94,6 +94,7 @@ internal static partial class GameHost
     {
         NewGame(difficulty, episode, mapInfo!, playerClass);
         StartGame = 1;
+        unlocks.ForgetNews();       // what was unlocked before isn't told on this game's first tally
         FindMenuItem(MainMenu, "readthis")?.active = 1;
     }
 

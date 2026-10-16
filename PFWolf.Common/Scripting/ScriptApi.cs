@@ -55,7 +55,9 @@ public static class ScriptApi
         Fn("ambient", "game.ambient(sound)", "Loops a sound at the listener as the ambience, in place of the one there was; nil stops it. Asking for the one playing changes nothing, so it can be asked every tick"),
         Fn("objective", "game.objective(name)", "How many of a level objective (game-info objectives) are done, and of how many: two numbers, 0 and 0 for one the level hasn't"),
         Fn("unlock", "game.unlock(name)", "Unlocks a name from game to game (progress.cfg): a starts-locked episode's key, or a script's own name. True if it wasn't already; a demo playing back unlocks nothing"),
-        Fn("unlocked", "game.unlocked(name)", "Whether a name has been unlocked (game.unlock, A_Unlock or the unlock command), in this game or an earlier one"),
+        Fn("record", "game.record(map)", "The best done on a map from game to game (records.cfg), as game.onlevelend's result: kills, killtotal, secrets, secrettotal, items, itemtotal, time, par, underpar, undetected, stealthkills, objectives. Nil if it's never been finished"),
+        Fn("onlevelend", "game.onlevelend(function(map, result) ... end)", "Adds a hook called as a level's finished (exit, secret exit or the game won), before the tally: result is what the finish came to (as game.record's, with exit: \"exit\", \"secret\" or \"victory\"). Anything it unlocks is told on the tally"),
+        Fn("unlocked", "game.unlocked(name)","Whether a name has been unlocked (game.unlock, A_Unlock or the unlock command), in this game or an earlier one"),
     ];
 
     public static IReadOnlyList<ScriptApiEntry> ActorFields { get; } =

@@ -27,7 +27,8 @@ internal static partial class GameHost
         new MainGameLoopHooks(() => playstate, s => playstate = s, () => startgame, on => startgame = on, () => loadedgame,
             on => loadedgame = on, on => ingame = on, () => fizzlein = true, on => autosavePending = on, () => viewsize,
             () => demoplayback || demorecord, () => demorecord, () => netgame, () => lastgamemusicoffset, EnterLevel, LeaveLevel,
-            MarkLevelStart, ApplyPendingWarpStart, AlignPlayerInElevator, ShowLevelStartMessage, name => articleReader.ShowText(name)));
+            MarkLevelStart, ApplyPendingWarpStart, AlignPlayerInElevator, ShowLevelStartMessage, name => articleReader.ShowText(name),
+            LevelWon));
 
     static PendingMapChange? pendingMapChange { get => mainGameLoop.pendingMapChange; set => mainGameLoop.pendingMapChange = value; }
 
@@ -88,6 +89,46 @@ internal static partial class GameHost
 
     /// <summary>A_Unlock, game.unlock: unlocks a name, but not while a demo plays back</summary>
     internal static bool Unlock(string name) => !demoplayback && unlocks.Unlock(name);
+
+    // The best done on each map, from game to game (Gameplay/LevelRecords.cs)
+    static LevelRecords? _levelRecords;
+    internal static LevelRecords levelRecords => _levelRecords ??= new LevelRecords(() => _gameEngineManager.GetConfigFilePath(LevelRecords.FileName));
+
+    /// <summary>
+    /// A level's finished, before its tally: its record is bettered and the scripts' level-end
+    /// hooks run (which may unlock what it earned). Not while a demo plays back.
+    /// </summary>
+    static void LevelWon(playstatetypes how)
+    {
+        if (demoplayback || gamestate.mapon is not { Length: > 0 } map)
+            return;
+        var result = CurrentLevelResult(map);
+        levelRecords.Record(map, result);
+        gameScripts.RunLevelEndHooks(map, result, how switch
+        {
+            playstatetypes.ex_secretlevel => "secret",
+            playstatetypes.ex_victorious => "victory",
+            _ => "exit",
+        });
+    }
+
+    /// <summary>What the level being played has come to so far</summary>
+    internal static LevelResult CurrentLevelResult(string map)
+    {
+        int par = _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info.ParTime : 0;
+        return new LevelResult
+        {
+            Kills = gamestate.killcount, KillTotal = gamestate.killtotal,
+            Secrets = gamestate.secretcount, SecretTotal = gamestate.secrettotal,
+            Items = gamestate.treasurecount, ItemTotal = gamestate.treasuretotal,
+            Time = gamestate.TimeCount,
+            Par = par,
+            UnderPar = par > 0 && gamestate.TimeCount < par * 70,
+            Undetected = session.playerstate.Undetected,
+            StealthKills = session.playerstate.StealthKills,
+            Objectives = _mapManager.objectives.ToDictionary(o => o.Key, o => (o.Value.Done, o.Value.Total), StringComparer.OrdinalIgnoreCase),
+        };
+    }
 
     // Every switch on the level: its switch walls' and its patches'
     static IEnumerable<MapSwitchTranslation> LevelSwitches()

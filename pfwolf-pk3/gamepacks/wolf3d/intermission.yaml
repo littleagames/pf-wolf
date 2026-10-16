@@ -28,7 +28,8 @@ labels:
 
 # values: where each number goes -- from x, or with its right edge at right (for the ones that
 # count up). One left out isn't shown. floor, time and par; the bonus; the kill, secret and
-# treasure ratios.
+# treasure ratios. A game can add `unlocked`, shown (as its format, e.g. "New Levels Unlocked!")
+# when something's been unlocked since the last tally (game.unlock, A_Unlock), here or in victory.
 values:
   floor: { x: 208, y: 16 }
   time: { x: 208, y: 80 }

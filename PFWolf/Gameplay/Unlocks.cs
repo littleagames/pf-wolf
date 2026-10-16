@@ -13,7 +13,9 @@ one name a line. An episode with `starts-locked: true` in game-info is shown gre
 
 Names are unlocked by A_Unlock("name"[, "message"]) (an actor's, such as an item's Pickup state,
 or a switch's), Lua game.unlock(name), or the unlock console command; any name can be unlocked,
-so a script can keep its own. A demo playing back unlocks nothing.
+so a script can keep its own. A demo playing back unlocks nothing. Anything unlocked during a
+game is told on the next level-end (or victory) screen, where its intermission.yaml has an
+`unlocked` value ("New Levels Unlocked!", as its format).
 
 =============================================================================
 */
@@ -59,8 +61,25 @@ internal sealed class Unlocks(Func<string> path, Func<GameInfoAsset> gameInfo)
             return false;
         order.Add(name);
         Save();
+        news = true;
         return true;
     }
+
+    bool news;
+
+    /// <summary>
+    /// Whether anything's been unlocked since last asked (or since ForgetNews), for the level-end
+    /// screen's intermission.yaml `unlocked` value ("New Levels Unlocked!"); asking clears it
+    /// </summary>
+    public bool TakeNews()
+    {
+        bool any = news;
+        news = false;
+        return any;
+    }
+
+    /// <summary>A new game starts: what was unlocked before it isn't news on its first tally</summary>
+    public void ForgetNews() => news = false;
 
     /// <returns>Whether it was unlocked</returns>
     public bool Lock(string name)
