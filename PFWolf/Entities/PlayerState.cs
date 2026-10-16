@@ -60,6 +60,11 @@ internal sealed class PlayerState
     public Gameplay.ZoomMode ZoomMode;      // zooming in, zoomed, zooming out or not
     public int TurnSlowdown = 1;            // turning is this many times slower (a zoomed scope's)
     public int WeaponPower;                 // 0 to 100: how long fire's been held to cook a throw (A_HoldCharge)
+
+    // Manning a mounted gun (Gameplay/MountedWeapons.cs): what they're on, the gun it gives them,
+    // the weapon they had picked before, and the map it's on
+    public Actors.Actor? Mount;
+    public string? MountGun, MountFrom, MountMap;
     public double Pitch;                    // looking up (positive) or down, in degrees
     public int EyeZ = GameConstants.EYEDEFAULT;   // eye height, in texels above the floor
 

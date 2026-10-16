@@ -107,6 +107,7 @@ internal static partial class GameHost
         ActorActionRegistry.Register("A_Victory", A_Victory);
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
         ActorActionRegistry.Register("A_Quake", A_Quake);       // the view shakes (GameHost.WL_DRAW.cs)
+        ActorActionRegistry.Register("A_Mount", (Entities.Actors.Actor ob, string[] args) => mountedWeapons.A_Mount(ob, args));
 
         // Goldfire's warp sites (Managers.LevelAI)
         ActorActionRegistry.Register("A_WarpSiteGone", (Entities.Actors.Actor _) => levelAI.WarpSiteGone());
@@ -196,7 +197,7 @@ internal static partial class GameHost
 
     static PlayerUse MakePlayerUse() =>
         new(_mapManager, _audioManager, _inventoryManager, doors, levelAI, session,
-            new PlayerUseHooks(PlayPlayerSound, state => playstate = state));
+            new PlayerUseHooks(PlayPlayerSound, state => playstate = state, () => mountedWeapons.TryDismount()));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, controldirs dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
     private static void UseSwitch(MapSwitchTranslation wallSwitch, int tilex, int tiley, controldirs dir) => playerUse.UseSwitch(wallSwitch, tilex, tiley, dir);
@@ -208,11 +209,20 @@ internal static partial class GameHost
 
     static PlayerThink MakePlayerThink() =>
         new(_mapManager, statusBarDrawing, playerStats, playerWeapons, weaponInHand, playerUse, playerMovement, weaponBob, levelAI, session,
-            new PlayerThinkHooks(UpdateRadar, () => victoryRunning, InitAreas, reloading => weaponZoom.Tick(reloading)));
+            new PlayerThinkHooks(UpdateRadar, () => victoryRunning, InitAreas, reloading =>
+            {
+                weaponZoom.Tick(reloading);
+                mountedWeapons.Tick();          // let off a gun they're no longer manning (dying, a load, a new level)
+            }));
 
     internal static void T_Player(Entities.Actors.Actor ob) => playerThink.T_Player(ob);
 
     // A weapon's scope (Gameplay/WeaponZoom.cs): the zoom key, the view's magnification and the scope's picture
     static WeaponZoom? _weaponZoom;
     static WeaponZoom weaponZoom => _weaponZoom ??= new WeaponZoom(_inventoryManager, _audioManager, session);
+
+    // Mounted guns the player mans (Gameplay/MountedWeapons.cs): A_Mount, and getting off with use
+    static MountedWeapons? _mountedWeapons;
+    static MountedWeapons mountedWeapons => _mountedWeapons ??= new MountedWeapons(_mapManager, _inventoryManager, playerWeapons, session,
+        new MountedWeaponsHooks(PlayPlayerSound, message => _hudMessageManager.Show(HudMessageKind.Lock, message), () => playerMovement.Thrust(0, 0)));
 }

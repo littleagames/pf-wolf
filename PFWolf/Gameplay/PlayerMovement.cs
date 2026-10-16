@@ -60,6 +60,14 @@ internal sealed class PlayerMovement(
 
         playerstate.ThrustSpeed = 0;
 
+        // Manning a mounted gun, they turn but don't move (Gameplay/MountedWeapons.cs)
+        bool mounted = playerstate.Mount != null;
+        void Move(int moveAngle, int speed)
+        {
+            if (!mounted)
+                Thrust(moveAngle, speed);
+        }
+
         // The player class's speeds: player.forwardmove forwards and back, player.sidemove strafing
         double forward = hooks.PlayerFactor("player.forwardmove"), side = hooks.PlayerFactor("player.sidemove");
 
@@ -77,9 +85,9 @@ internal sealed class PlayerMovement(
             if (angle >= ANGLES)
                 angle -= ANGLES;
             if (playerinput.IsPressed(buttontypes.bt_run))
-                Thrust(angle, (int)(GameConstants.RUNMOVE * GameConstants.MOVESCALE * tics * side));
+                Move(angle, (int)(GameConstants.RUNMOVE * GameConstants.MOVESCALE * tics * side));
             else
-                Thrust(angle, (int)(GameConstants.BASEMOVE * GameConstants.MOVESCALE * tics * side));
+                Move(angle, (int)(GameConstants.BASEMOVE * GameConstants.MOVESCALE * tics * side));
         }
 
         if (playerinput.IsPressed(buttontypes.bt_straferight))
@@ -88,9 +96,9 @@ internal sealed class PlayerMovement(
             if (angle < 0)
                 angle += ANGLES;
             if (playerinput.IsPressed(buttontypes.bt_run))
-                Thrust(angle, (int)(GameConstants.RUNMOVE * GameConstants.MOVESCALE * tics * side));
+                Move(angle, (int)(GameConstants.RUNMOVE * GameConstants.MOVESCALE * tics * side));
             else
-                Thrust(angle, (int)(GameConstants.BASEMOVE * GameConstants.MOVESCALE * tics * side));
+                Move(angle, (int)(GameConstants.BASEMOVE * GameConstants.MOVESCALE * tics * side));
         }
 
         //
@@ -103,7 +111,7 @@ internal sealed class PlayerMovement(
                 angle += ANGLES;
             else if (angle >= ANGLES)
                 angle -= ANGLES;
-            Thrust(angle, (int)(Math.Abs(playerinput.ControlStrafe) * GameConstants.MOVESCALE * side));
+            Move(angle, (int)(Math.Abs(playerinput.ControlStrafe) * GameConstants.MOVESCALE * side));
         }
 
         //
@@ -120,14 +128,14 @@ internal sealed class PlayerMovement(
                 angle = ob.Angle - ANGLES / 4;
                 if (angle < 0)
                     angle += ANGLES;
-                Thrust(angle, (int)(playerinput.ControlX * GameConstants.MOVESCALE * side));      // move to left
+                Move(angle, (int)(playerinput.ControlX * GameConstants.MOVESCALE * side));      // move to left
             }
             else if (playerinput.ControlX < 0)
             {
                 angle = ob.Angle + ANGLES / 4;
                 if (angle >= ANGLES)
                     angle -= ANGLES;
-                Thrust(angle, (int)(-playerinput.ControlX * GameConstants.MOVESCALE * side));     // move to right
+                Move(angle, (int)(-playerinput.ControlX * GameConstants.MOVESCALE * side));     // move to right
             }
         }
         else
@@ -153,14 +161,14 @@ internal sealed class PlayerMovement(
         //
         if (playerinput.ControlY < 0)
         {
-            Thrust(ob.Angle, (int)(-playerinput.ControlY * GameConstants.MOVESCALE * forward)); // move forwards
+            Move(ob.Angle, (int)(-playerinput.ControlY * GameConstants.MOVESCALE * forward)); // move forwards
         }
         else if (playerinput.ControlY > 0)
         {
             angle = ob.Angle + ANGLES / 2;
             if (angle >= ANGLES)
                 angle -= ANGLES;
-            Thrust(angle, (int)(playerinput.ControlY * GameConstants.BACKMOVESCALE * forward));          // move backwards
+            Move(angle, (int)(playerinput.ControlY * GameConstants.BACKMOVESCALE * forward));          // move backwards
         }
     }
 

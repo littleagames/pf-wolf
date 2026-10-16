@@ -79,7 +79,7 @@ public class PlayerUseTests
         _session.playerstate.Pawn = pawn;
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
         _inventory.SetHolder(_session.playerstate.Items);
-        _use = new PlayerUse(_map, null!, _inventory, null!, new LevelAI(_map, null!, null!, _session), _session, new PlayerUseHooks(_ => { }, _ => { }));
+        _use = new PlayerUse(_map, null!, _inventory, null!, new LevelAI(_map, null!, null!, _session), _session, new PlayerUseHooks(_ => { }, _ => { }, () => false));
     }
 
     // A prisoner dx, dy (in 1/65536 tiles) from the player, east being +x and south +y

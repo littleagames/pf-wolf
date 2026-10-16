@@ -37,8 +37,8 @@ internal sealed class PlayerWeapons(
     // when ammo turns up -- unless they switch to another weapon that still has ammo.
     internal void CheckWeaponChange()
     {
-        // Not while reloading, as the original Midnight Assault's CheckWeaponChange
-        if (WeaponInHand.IsReloading(session.playerstate.WeaponSprite))
+        // Not while reloading, nor manning a mounted gun, as the original Midnight Assault's CheckWeaponChange
+        if (WeaponInHand.IsReloading(session.playerstate.WeaponSprite) || session.playerstate.Mount != null)
             return;
 
         var usable = OwnedWeapons().Where(CanFire).ToList();

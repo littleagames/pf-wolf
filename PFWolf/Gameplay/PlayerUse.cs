@@ -8,7 +8,8 @@ namespace PFWolf.Gameplay;
 /// <summary>What the player's use key needs from the game</summary>
 /// <param name="PlayPlayerSound">A sound the acting player makes (a switch's)</param>
 /// <param name="SetPlayState">Ends the level, the way A_Exit and A_SecretExit say</param>
-internal sealed record PlayerUseHooks(Action<string> PlayPlayerSound, Action<playstatetypes> SetPlayState);
+/// <param name="Dismount">Steps the player off a mounted gun they're manning: true if they were on one (Gameplay/MountedWeapons.cs)</param>
+internal sealed record PlayerUseHooks(Action<string> PlayPlayerSound, Action<playstatetypes> SetPlayState, Func<bool> Dismount);
 
 /// <summary>
 /// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
@@ -217,6 +218,13 @@ internal sealed class PlayerUse(
             checkx = player.TileX;
             checky = player.TileY + 1;
             dir = controldirs.di_south;
+        }
+
+        // Manning a mounted gun, a fresh press (not while firing) steps them off it (Gameplay/MountedWeapons.cs)
+        if (!playerinput.IsHeld(buttontypes.bt_use) && !playerinput.IsPressed(buttontypes.bt_attack) && hooks.Dismount())
+        {
+            playerinput.SetHeld(buttontypes.bt_use, true);
+            return;
         }
 
         cmdtile = map.tilemap[checkx, checky];

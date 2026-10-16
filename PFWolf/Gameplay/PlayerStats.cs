@@ -118,8 +118,11 @@ internal sealed class PlayerStats(
         // With others playing, a dead player lies there until they come back (T_PlayerDead)
         if (session.gamemode != GameMode.Single && playerstate.health <= 0)
             return;
-        // The skill's damage-taken (the easiest skill's 0.25 is vanilla's points >> 2), then the class's
+        // The skill's damage-taken (the easiest skill's 0.25 is vanilla's points >> 2), then the class's,
+        // then a manned gun's cover (weapon.mountdamage: Gameplay/MountedWeapons.cs)
         points = (int)(points * Math.Max(hooks.SkillDamageTaken(), 0) * classes.DamageTakenFactor);
+        if (playerstate.Mount != null && playerstate.MountGun is { } gun)
+            points = points * Math.Max(inventory.GetIntProperty(gun, "weapon.mountdamage", 100), 0) / 100;
 
         int godmode = hooks.GodMode();
         if (godmode == 0)
