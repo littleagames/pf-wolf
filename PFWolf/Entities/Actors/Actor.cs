@@ -65,7 +65,7 @@ internal record Actor : Thinker
     // death by it is put down to the shooter (Died's obituary, kill credit, being turned on).
     public Actor? Shooter { get; internal set; }
 
-    // Its light (actordefs `light.*` properties and state `light:`, Program.ActorLights.cs):
+    // Its light (actordefs `light.*` properties and state `light:`, GameHost.ActorLights.cs):
     // set the first time it's looked at, and where its light's effect is. Not saved.
     internal ActorLightState? LightState { get; set; }
 
@@ -78,11 +78,11 @@ internal record Actor : Thinker
     public byte TileY { get; internal set; }
 
     // Runtime combat/AI bookkeeping (FL_SHOOTABLE, FL_AMBUSH, FL_ATTACKMODE, etc. --
-    // Program.WL_DEF.cs's objflags), distinct from the static, YAML-declared `Flags` above.
+    // GameHost.WL_DEF.cs's objflags), distinct from the static, YAML-declared `Flags` above.
     public objflags RuntimeFlags { get; internal set; }
 
-    // Screen-space hit-testing data, recomputed every frame in Program.WL_DRAW.cs's
-    // DrawScaleds (set there by TransformActor) so Program.WL_AGENT.cs's
+    // Screen-space hit-testing data, recomputed every frame in GameHost.WL_DRAW.cs's
+    // DrawScaleds (set there by TransformActor) so GameHost.WL_AGENT.cs's
     // GunAttack/KnifeAttack can find the closest shootable actor under the crosshair.
     public short ViewX { get; internal set; }
     public int TransX { get; internal set; } = int.MaxValue;

@@ -5,7 +5,7 @@ using PFWolf.Fonts;
 namespace PFWolf.Ui;
 
 /// <summary>The high scores: drawn (game-info high-scores lays them out), and a new one ranked and named</summary>
-/// <param name="scores">The table (Program.Scores, which InitHighScores can replace)</param>
+/// <param name="scores">The table (GameHost.Scores, which InitHighScores can replace)</param>
 /// <param name="floorScore">The last floor's rating, 0 to 300 (Blake Stone's mission ratio)</param>
 internal sealed class HighScoresScreen(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio,
     VideoManager video, GraphicManager graphics, MenuDrawing draw, MenuDefs defs, UiText ui, LineInput lineInput,

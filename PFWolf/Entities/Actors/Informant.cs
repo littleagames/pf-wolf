@@ -1,4 +1,4 @@
-using static PFWolf.Program;
+using static PFWolf.GameHost;
 
 namespace PFWolf.Entities.Actors;
 

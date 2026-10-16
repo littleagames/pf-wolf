@@ -12,7 +12,7 @@ internal enum AutomapStyle : byte
 /// <summary>
 /// State of the in-game automap: whether it's up, how far it's zoomed, which map position sits at
 /// the center of the view and which way the map is turned. The map is drawn over the 3D view by
-/// Program.DrawAutomap, and the world keeps running underneath it.
+/// GameHost.DrawAutomap, and the world keeps running underneath it.
 /// </summary>
 internal class AutomapManager
 {

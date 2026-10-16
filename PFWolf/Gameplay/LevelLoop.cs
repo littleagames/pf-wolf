@@ -11,9 +11,9 @@ namespace PFWolf.Gameplay;
 /// <param name="DemoPlayback">Whether a demo is playing (a key ends it)</param>
 /// <param name="DemoTesting">demotest: each demo plays to its end, keys or not</param>
 /// <param name="ClearNoise">Forgets last frame's noise (madenoise): shots and screams make it anew</param>
-/// <param name="TickPlayerBodies">What others see of the players (Program.Camera.cs)</param>
+/// <param name="TickPlayerBodies">What others see of the players (GameHost.Camera.cs)</param>
 /// <param name="UpdateSoundListener">Where the sounds are heard from</param>
-/// <param name="UpdateAutomap">The automap's movement and zoom (Program.Automap.cs)</param>
+/// <param name="UpdateAutomap">The automap's movement and zoom (GameHost.Automap.cs)</param>
 /// <param name="AutosavePending">Whether the level asked for an autosave</param>
 /// <param name="AutoSaveGame">Makes it, now there's a picture of the level for it</param>
 /// <param name="SingleStep">Debug: VBLs to wait each frame, the clock held back meanwhile</param>

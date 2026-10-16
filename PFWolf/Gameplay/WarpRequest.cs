@@ -13,7 +13,7 @@ namespace PFWolf.Gameplay;
     the title and menus: what the editor's Play does. --skill picks the skill
     and --start a tile to begin on in place of the level's player start.
 
-    This holds what was asked for until it's used; Program starts the game
+    This holds what was asked for until it's used; GameHost starts the game
     (RunPendingWarp) and puts the player on the tile (ApplyPendingWarpStart).
 
 =============================================================================

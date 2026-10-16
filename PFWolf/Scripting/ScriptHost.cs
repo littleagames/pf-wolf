@@ -9,7 +9,7 @@ namespace PFWolf.Scripting;
 /// (scripts/*.lua) all run in, in load order. Scripts get Lua's basic, string, table, math and
 /// bit32 libraries, less anything that reaches outside the game (no io, os, require, dofile,
 /// load) or outside the game's own random numbers (no math.random: they'd differ between
-/// machines and demo runs). What the game gives them is Program.Scripting.cs's.
+/// machines and demo runs). What the game gives them is GameHost.Scripting.cs's.
 ///
 /// Everything runs on the game's thread: the calls are awaited where they're made, and finish
 /// at once, since nothing the scripts are given waits on anything.

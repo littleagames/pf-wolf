@@ -36,13 +36,13 @@ internal sealed class ViewSetup(
     }
 
     /// <summary>The screen lines between the top status bar (if any) and the bottom one, in screen pixels</summary>
-    internal int PlayAreaHeight => video.ScreenYAboveBottom(Program.STATUSLINES) - PlayAreaTop;
+    internal int PlayAreaHeight => video.ScreenYAboveBottom(GameHost.STATUSLINES) - PlayAreaTop;
 
     /// <summary>The play area's height and the bottom status bar's first line, in screen pixels</summary>
-    internal int PlayAreaAndStatusLine => video.ScreenYAboveBottom(Program.STATUSLINES - 1) - PlayAreaTop;
+    internal int PlayAreaAndStatusLine => video.ScreenYAboveBottom(GameHost.STATUSLINES - 1) - PlayAreaTop;
 
     /// <summary>Where the play area (view and border) starts down the screen, in screen pixels: below any top status bar</summary>
-    internal int PlayAreaTop => video.ToScreenLength(Program.TOPLINES);
+    internal int PlayAreaTop => video.ToScreenLength(GameHost.TOPLINES);
 
     /// <summary>
     /// A bordered view's height at view size <paramref name="width"/>. The sizes are laid out for
@@ -149,7 +149,7 @@ internal sealed class ViewSetup(
     /// <summary>A view size's width over its height on a 320x200 screen, as NewViewSize lays it out there.</summary>
     internal double ClassicViewAspect(int size)
     {
-        int playArea = VideoSettings.BaseHeight - Program.STATUSLINES - Program.TOPLINES;
+        int playArea = VideoSettings.BaseHeight - GameHost.STATUSLINES - GameHost.TOPLINES;
         if (size >= 21)
             return (double)VideoSettings.BaseWidth / VideoSettings.BaseHeight;
         if (size == 20)

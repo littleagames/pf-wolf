@@ -87,7 +87,7 @@ internal sealed class Pickups(
         if (session.ActingIsLocal)
             video.StartBonusFlash();
 
-        // Deathmatch (Program.Deathmatch.cs): a weapon stays for everyone else, and anything
+        // Deathmatch (GameHost.Deathmatch.cs): a weapon stays for everyone else, and anything
         // else comes back a while after it's taken
         if (session.gamemode == GameMode.Deathmatch && builtActor is Weapon)
             return;

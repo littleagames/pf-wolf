@@ -2,7 +2,7 @@ namespace PFWolf.Assets;
 
 /// <summary>
 /// A game pack's text presenter settings (gamepacks/{pack}/presenter.yaml): what Blake Stone's
-/// ^ codes print with (Program.TextPresenter.cs), and the screens built on it -- the message box
+/// ^ codes print with (GameHost.TextPresenter.cs), and the screens built on it -- the message box
 /// over the status bar and the briefing window. A pack that builds on a base-pack starts from its
 /// settings; the pack's own replace them one by one.
 /// </summary>

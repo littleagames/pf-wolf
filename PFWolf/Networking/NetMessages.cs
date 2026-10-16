@@ -95,7 +95,7 @@ internal sealed record Hello(int Version, NetIdentity Identity, string Name, str
 
 /// <summary>
 /// The game the host has set up: how they'll play, the episode (its place in game-info's) and
-/// the skill, and a deathmatch's rules (Program.NetRules): its enemies, frag limit, time limit
+/// the skill, and a deathmatch's rules (GameHost.NetRules): its enemies, frag limit, time limit
 /// (minutes; 0 for none) and whether taken items come back, and the deathmatch arena played
 /// (a game-info map with `deathmatch: true`; empty when the game has none: the episode's start)
 /// </summary>
@@ -225,13 +225,13 @@ internal sealed record TicBundle(int Level, int Step, byte Left, NetJoin? Join, 
 /// <summary>
 /// What a player joining a game already being played gets from the host: the game (as
 /// StartGame had it, with everyone since), the frame it's at, and the game as it stands
-/// after that frame (Program.NetJoin.cs)
+/// after that frame (GameHost.NetJoin.cs)
 /// </summary>
 internal sealed record JoinStateInfo(StartGameInfo Start, int Level, int Step, byte[] State);
 
 /// <summary>
 /// The host starting the game: its settings, the random number table's starting place, and
-/// everyone in it, in slot order, which is the order they play in (Program.players).
+/// everyone in it, in slot order, which is the order they play in (GameHost.players).
 /// </summary>
 internal sealed record StartGameInfo(LobbySettings Settings, byte Seed, List<LobbyPlayer> Players)
 {

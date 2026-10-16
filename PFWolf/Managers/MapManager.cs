@@ -80,19 +80,19 @@ internal class MapManager
 
     private readonly LinkedList<Entities.Actors.Actor> _actors = new();
 
-    // The acting player's pawn (Program.ActAs), held in _actors with every other player's at
+    // The acting player's pawn (GameHost.ActAs), held in _actors with every other player's at
     // its head, in player order. Null until CreatePlayer runs for the current level -- LoadMap
     // clears _actors, which drops the previous level's pawns.
-    internal Entities.Actors.PlayerPawn? Player => Program.playerstate.Pawn;
+    internal Entities.Actors.PlayerPawn? Player => GameHost.playerstate.Pawn;
 
     /// <summary>Every player's pawn on this level, in player order</summary>
     internal IEnumerable<Entities.Actors.PlayerPawn> Players =>
-        Program.players.Select(p => p.Pawn).OfType<Entities.Actors.PlayerPawn>();
+        GameHost.players.Select(p => p.Pawn).OfType<Entities.Actors.PlayerPawn>();
 
     // Drops every player's pawn (the level's actors are going)
     private static void ForgetPawns()
     {
-        foreach (var p in Program.players)
+        foreach (var p in GameHost.players)
             p.Pawn = null;
     }
 
@@ -142,7 +142,7 @@ internal class MapManager
 
     /// <summary>
     /// Each tile's light zone, 0 for none (the map's light): the map's game-info zones say how
-    /// each is lit (Program.WL_SHADE.cs).
+    /// each is lit (GameHost.WL_SHADE.cs).
     /// </summary>
     internal const int ZONEPLANE = MapConstants.ZONEPLANE;
 
@@ -327,7 +327,7 @@ internal class MapManager
                     continue;
                 }
 
-                // The player pawn is created after the map loads (Program.InitActorList), so
+                // The player pawn is created after the map loads (GameHost.InitActorList), so
                 // only note where it starts; with several starts, the last one scanned wins.
                 if (data.PlayerStarts.TryGetValue(objtile, out var startXlat))
                 {
@@ -340,8 +340,8 @@ internal class MapManager
 
                 if (data.Triggers.TryGetValue(objtile, out var triggerXlat))
                 {
-                    if (triggerXlat.Secret && !Program.loadedgame)
-                        Program.gamestate.secrettotal++;
+                    if (triggerXlat.Secret && !GameHost.loadedgame)
+                        GameHost.gamestate.secrettotal++;
                     continue;
                 }
             }
@@ -587,10 +587,10 @@ internal class MapManager
     }
 
     /// <summary>How many stories tall the wall on this tile is.</summary>
-    internal int WallStories(int x, int y) => storymap[x, y] != 0 ? storymap[x, y] : Program.wallstories;
+    internal int WallStories(int x, int y) => storymap[x, y] != 0 ? storymap[x, y] : GameHost.wallstories;
 
     /// <summary>The tallest wall anywhere on the level.</summary>
-    internal int MaxWallStories => Math.Max(maxtilestories, Program.wallstories);
+    internal int MaxWallStories => Math.Max(maxtilestories, GameHost.wallstories);
 
     /// <summary>
     /// Sets a tile's height on the height plane, so it's saved with the level; 0 gives it back
@@ -1037,7 +1037,7 @@ internal class MapManager
         // (Blake Stone's bio-techs: half of them informants)
         if (builtActor.PropertyStrings("spawn.random") is { Count: > 0 } choices)
         {
-            var choice = choices[Program.US_RndT() % choices.Count];
+            var choice = choices[GameHost.US_RndT() % choices.Count];
             if (!actorMetaData.Actors.TryGetValue(choice, out var chosen) || actorMetaData.CreateActor(choice, chosen) is not { } chosenActor)
             {
                 Console.WriteLine($"{thing.Class}'s spawn.random names \"{choice}\", which isn't an actor");
@@ -1046,15 +1046,15 @@ internal class MapManager
             builtActor = chosenActor;
         }
 
-        // A deathmatch without monsters (Program.Deathmatch.cs) leaves the map's enemies out
+        // A deathmatch without monsters (GameHost.Deathmatch.cs) leaves the map's enemies out
         if (NoMonsters && builtActor is Entities.Actors.Monster)
             return null;
 
-        builtActor.Faction = Program._factionManager.SpawnFaction(builtActor, thing.Faction);
+        builtActor.Faction = GameHost._factionManager.SpawnFaction(builtActor, thing.Faction);
         builtActor.Translation = TranslationManager.SpawnTranslation(builtActor, thing.Translation);
         builtActor.SetPosition(tilex, tiley);
 
-        // SpawnNewObj (Program.WL_STATE.cs) always set areanumber from the spawn tile for
+        // SpawnNewObj (GameHost.WL_STATE.cs) always set areanumber from the spawn tile for
         // every actor, not just ones on an ambush tile -- without this, AreaNumber sits at
         // its byte default (0, a real area index, not an "unset" sentinel) until the actor
         // first moves through TryWalk, which recomputes it correctly. Until then, anything
@@ -1113,8 +1113,8 @@ internal class MapManager
             // Every killable enemy counts toward the level's kill ratio (the old SpawnStand/
             // SpawnPatrol/boss spawners each did this); ghosts take the branch above and don't,
             // and nor do those that aren't kills (Monster.IsKill: NOTCOUNTED ones, informants)
-            if (countKill && !Program.loadedgame && (builtActor is not Entities.Actors.Monster m || m.CountsAsKill))
-                Program.gamestate.killtotal++;
+            if (countKill && !GameHost.loadedgame && (builtActor is not Entities.Actors.Monster m || m.CountsAsKill))
+                GameHost.gamestate.killtotal++;
 
             // Points only for the first kill (Monster.Kill clears it)
             if (builtActor.Flags.Contains("POINTSONCE", StringComparer.OrdinalIgnoreCase))
@@ -1132,7 +1132,7 @@ internal class MapManager
             else
             {
                 // Grunts only ambush if placed directly on an ambush floor tile (SpawnStand
-                // in Program.WL_ACT2.cs), unlike AMBUSH actors, which always are.
+                // in GameHost.WL_ACT2.cs), unlike AMBUSH actors, which always are.
                 var floorTile = MAPSPOT(tilex, tiley, 0);
                 if (floorTile == Floors.AmbushTile)
                 {
@@ -1169,9 +1169,9 @@ internal class MapManager
         }
 
         // Treasure (ScoreItem and the 1-up) counts toward the level's treasure ratio; GetBonus
-        // (Program.WL_AGENT.cs) bumps treasurecount on pickup off the same flag.
-        if (!Program.loadedgame && builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
-            Program.gamestate.treasuretotal++;
+        // (GameHost.WL_AGENT.cs) bumps treasurecount on pickup off the same flag.
+        if (!GameHost.loadedgame && builtActor.Flags.Contains("COUNTITEM", StringComparer.OrdinalIgnoreCase))
+            GameHost.gamestate.treasuretotal++;
 
         //if (builtActor.Properties.Keys.Any(x => x.StartsWith("inventory")))
         //{
@@ -1229,8 +1229,8 @@ internal class MapManager
         if (frame == null || frame.HoldsForever || frame.TicTime <= 0)
             return (short)Math.Max(frame?.TicTime ?? 0, (short)0);
 
-        var count = Program.US_RndT() % frame.TicTime;
-        return (short)(Program.demorecord || Program.demoplayback ? count : count + 1);
+        var count = GameHost.US_RndT() % frame.TicTime;
+        return (short)(GameHost.demorecord || GameHost.demoplayback ? count : count + 1);
     }
 
     internal Entities.Actors.Actor? SpawnMorphedEnemy(string className, Entities.Actors.Actor source)
@@ -1249,11 +1249,11 @@ internal class MapManager
         builtActor.Distance = source.Distance;
         builtActor.Dir = source.Dir;
         builtActor.AreaNumber = source.AreaNumber;
-        // Hitler stuck-with-nodir fix (Program.WL_ACT2.cs's A_HitlerMorph): the morphed
+        // Hitler stuck-with-nodir fix (GameHost.WL_ACT2.cs's A_HitlerMorph): the morphed
         // actor must remain markable even if the dying source had FL_NONMARK set.
         builtActor.RuntimeFlags = (source.RuntimeFlags & ~objflags.FL_NONMARK) | objflags.FL_SHOOTABLE;
         builtActor.Hitpoints = GetScaledHealth(builtActor);
-        builtActor.Faction = Program._factionManager.InheritedFaction(builtActor, source);
+        builtActor.Faction = GameHost._factionManager.InheritedFaction(builtActor, source);
         builtActor.Translation = TranslationManager.ClassTranslation(builtActor) ?? source.Translation;    // Hitler keeps Mecha Hitler's colors
 
         if (builtActor.ResolvedStates.TryGetValue("Chase", out var chaseState))
@@ -1290,7 +1290,7 @@ internal class MapManager
         builtActor.Dir = objdirtypes.nodir;
         builtActor.Active = activetypes.ac_yes;
         builtActor.RuntimeFlags = objflags.FL_NEVERMARK;
-        builtActor.Faction = Program._factionManager.InheritedFaction(builtActor, source);
+        builtActor.Faction = GameHost._factionManager.InheritedFaction(builtActor, source);
         builtActor.Translation = TranslationManager.ClassTranslation(builtActor);
 
         _actors.AddLast(builtActor);
@@ -1427,7 +1427,7 @@ internal class MapManager
             _actors.Remove(state.Pawn);
 
         var pawn = new Entities.Actors.PlayerPawn { State = state };
-        pawn.Faction = Program._factionManager.PlayerFaction(state.playerclass);
+        pawn.Faction = GameHost._factionManager.PlayerFaction(state.playerclass);
         state.Pawn = pawn;
         PlacePawn(pawn);
         return pawn;
@@ -1476,7 +1476,7 @@ internal class MapManager
             }
         }
 
-        var table = Program._factionManager.Table;
+        var table = GameHost._factionManager.Table;
         HasRivalries = sides.Count > 1 && sides.Any(side => sides.Any(other => table.IsHostile(side, other)));
     }
 
@@ -1490,7 +1490,7 @@ internal class MapManager
             // A player thinks as the acting player: the game's player code is then theirs
             if (node.Value is Entities.Actors.PlayerPawn pawn)
             {
-                using (Program.ActAs(pawn.State))
+                using (GameHost.ActAs(pawn.State))
                     DoActor(pawn, tics);
             }
             else
@@ -1521,7 +1521,7 @@ internal class MapManager
         // As the original: an enemy that has never been on screen (nor patrols) does nothing
         // while its area isn't connected to the player's
         if (ob is Entities.Actors.Monster { SleepsOutOfReach: true } && ob.Active == activetypes.ac_no
-            && ob.AreaNumber < Floors.NumAreas && Program.areabyplayer[ob.AreaNumber] == 0)
+            && ob.AreaNumber < Floors.NumAreas && GameHost.areabyplayer[ob.AreaNumber] == 0)
             return;
 
         // It's lifted off its tile while it thinks, and put back on the one it ends up on
@@ -1529,7 +1529,7 @@ internal class MapManager
         if (marks)
             UnmarkActorTile(ob.TileX, ob.TileY);
 
-        // Mirrors Program.DoActor (Program.WL_PLAY.cs): a frame that holds forever (-1) only
+        // Mirrors GameHost.DoActor (GameHost.WL_PLAY.cs): a frame that holds forever (-1) only
         // runs its Think each tic; Next is never consulted again. So does one with no countdown
         // at all, as the original's ticcount 0: a demo's spawn can leave a patroller that way
         // (SpawnTicCount), walking on its first frame until it changes state.
@@ -1758,7 +1758,7 @@ internal class MapManager
         ForgetPawns();
 
         // A save is a single player's game: its pawn is the local player's
-        var local = Program.localplayer;
+        var local = GameHost.localplayer;
         var restored = new List<Entities.Actors.Actor>(level.Actors.Count);
         foreach (var saved in level.Actors)
         {

@@ -818,8 +818,8 @@ internal sealed class AutomapDrawing(
     bool DrawAutomapSprite(AutomapView view, Entities.Actors.Actor actor, float sx, float sy)
     {
         var state = actor.CurrentState!;
-        string shape = Program.HasDirectionalSprites(state.Sprite, state.FrameLetter)
-            ? Program.FrontShapeName(state.Sprite, state.FrameLetter)
+        string shape = GameHost.HasDirectionalSprites(state.Sprite, state.FrameLetter)
+            ? GameHost.FrontShapeName(state.Sprite, state.FrameLetter)
             : state.GetShapeName(objdirtypes.nodir);
 
         var sprite = FindAutomapSprite(shape);

@@ -15,8 +15,8 @@ public class LevelLoopTests
         var loop = new LevelLoop(null!, null!, null!, null!, null!, map, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, session, null!);
 
         // CreatePlayer gives each pawn its side from the game's FactionManager
-        var factions = Program._factionManager;
-        Program._factionManager = new FactionManager(new Lazy<AssetManager>(() => new AssetManager()), new Lazy<InventoryManager>(() => new InventoryManager(ActorDefs.Metadata("Player: {}"))));
+        var factions = GameHost._factionManager;
+        GameHost._factionManager = new FactionManager(new Lazy<AssetManager>(() => new AssetManager()), new Lazy<InventoryManager>(() => new InventoryManager(ActorDefs.Metadata("Player: {}"))));
         try
         {
             // Act
@@ -24,7 +24,7 @@ public class LevelLoopTests
         }
         finally
         {
-            Program._factionManager = factions;
+            GameHost._factionManager = factions;
         }
 
         // Assert: the players think first, in order; whoever has gone has no pawn

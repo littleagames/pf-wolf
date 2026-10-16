@@ -390,7 +390,7 @@ public record MapTextureTranslation
 }
 
 /// <summary>
-/// A wall that lets enemies out (Program.BlakeMachines.cs): every so often, while the room beside
+/// A wall that lets enemies out (GameHost.BlakeMachines.cs): every so often, while the room beside
 /// it joins the player's, one comes out onto open floor beside it.
 /// </summary>
 public record MapOutletTranslation

@@ -11,7 +11,7 @@ namespace PFWolf.Gameplay;
 /// <param name="DemoPlayback">Whether a demo is playing (its controls come from the demo)</param>
 /// <param name="DemoRecord">Whether a demo is recording (the controls go into it)</param>
 /// <param name="DemoTesting">demotest: playing the demos through as fast as they go</param>
-/// <param name="RouteMovementToAutomap">The automap's pan mode takes the movement (Program.Automap.cs)</param>
+/// <param name="RouteMovementToAutomap">The automap's pan mode takes the movement (GameHost.Automap.cs)</param>
 internal sealed record InputPollingHooks(
     Action<playstatetypes> SetPlayState,
     Func<bool> NetGame,
@@ -70,7 +70,7 @@ internal sealed class InputPolling(
         //
         if (hooks.DemoPlayback() || hooks.DemoRecord())   // demo recording and playback needs to be constant
             WaitFixedTics(GameConstants.DEMOTICS);
-        else if (hooks.NetGame())                 // and so does playing with others (Program.NetPlay.cs)
+        else if (hooks.NetGame())                 // and so does playing with others (GameHost.NetPlay.cs)
             WaitFixedTics(Networking.NetPlay.NETTICS);
         else
             frame.CalcTics();

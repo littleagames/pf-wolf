@@ -40,7 +40,7 @@ death unlocks the next floor.
 */
 
 /// <summary>What the elevator and teleporter screens need from the rest of the game</summary>
-/// <param name="TileColor">A seen tile's color on the radar (Program.RadarTileColor): its tile, then the unmapped, floor, door and locked colors</param>
+/// <param name="TileColor">A seen tile's color on the radar (GameHost.RadarTileColor): its tile, then the unmapped, floor, door and locked colors</param>
 /// <param name="MapDisplayName">A map's name as it's shown</param>
 internal sealed record ElevatorHooks(Func<int, int, string, string, string, string, string> TileColor, Func<string, string> MapDisplayName);
 

@@ -4,7 +4,7 @@ namespace PFWolf.Rendering;
 
 /// <summary>
 /// The fixed-point sine, cosine and fine tangent tables the renderer and movement use, filled
-/// once at startup (BuildTables). Program has same-named forwards.
+/// once at startup (BuildTables). GameHost has same-named forwards.
 /// </summary>
 internal static class TrigTables
 {

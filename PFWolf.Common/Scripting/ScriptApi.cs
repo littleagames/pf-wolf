@@ -28,7 +28,7 @@ public sealed record ScriptApiEntry(ScriptApiKind Kind, string Name, string Sign
 
 /// <summary>
 /// The scripting API as a list, for the editor's autocomplete and help: what PFWolf's
-/// Program.Scripting.cs gives scripts (the game table, an actor's fields and methods), the parts
+/// GameHost.Scripting.cs gives scripts (the game table, an actor's fields and methods), the parts
 /// of Lua's libraries the sandbox (Scripting/ScriptHost.cs) leaves in, and the switch actions
 /// game.trigger runs. ScriptApiTests checks it against what the engine really registers, so when
 /// the API changes, this changes with it.

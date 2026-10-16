@@ -317,7 +317,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
         gl.Uniform1(_texture, 0);
         gl.Uniform1(_mode, 0);
 
-        // The fade with distance along the view (Program.ShadeOffset)
+        // The fade with distance along the view (GameHost.ShadeOffset)
         var fog = _mesh.Fog;
         gl.Uniform3(_eye, camera.Position);
         gl.Uniform3(_forward, camera.FlatForward);
@@ -392,7 +392,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
     }
 
     /// <summary>
-    /// The sky over the whole view, unshaded, behind everything (Program.DrawSky): it goes round
+    /// The sky over the whole view, unshaded, behind everything (GameHost.DrawSky): it goes round
     /// once every 1024 of its pixels, and stretches from the top of a level view down to the horizon
     /// </summary>
     private void DrawSky(Gl gl, string sky, Matrix4x4 viewProjection, Camera3D camera)
@@ -831,7 +831,7 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
 
     // Mode 0: the texture (see-through texels cut out) times the color (its light), faded toward
     // the fade color with distance; 1: just the color, blended (the tints). uFog: fade start and
-    // end in tiles, max fade 0 to 1, 1 for the inverse curve (Program.ShadeOffset)
+    // end in tiles, max fade 0 to 1, 1 for the inverse curve (GameHost.ShadeOffset)
     private const string FragmentShader = """
         in vec2 vUv;
         in vec4 vColor;

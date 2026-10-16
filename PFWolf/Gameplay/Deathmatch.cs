@@ -94,7 +94,7 @@ internal sealed class Deathmatch(
     /// <summary>The acting player carries every key (in a deathmatch, no door is shut to anyone)</summary>
     internal void GiveDeathmatchKeys()
     {
-        hooks.GiveAllKeys();      // (Program.ConsoleCommands.cs)
+        hooks.GiveAllKeys();      // (GameHost.ConsoleCommands.cs)
         statusBar.DrawKeys();
     }
 

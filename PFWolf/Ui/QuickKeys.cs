@@ -11,7 +11,7 @@ namespace PFWolf.Ui;
 /// <param name="ViewSize">The view's size setting (21: the full screen, nothing to redraw around it)</param>
 /// <param name="StartGame">Whether a new game was started</param>
 /// <param name="LoadedGame">Whether a game was loaded</param>
-/// <param name="UiRandom">A random number for show (Program.NetPlay.cs)</param>
+/// <param name="UiRandom">A random number for show (GameHost.NetPlay.cs)</param>
 internal sealed record QuickKeysHooks(
     Func<bool> InGame,
     Action<int> SetLastMusicOffset,

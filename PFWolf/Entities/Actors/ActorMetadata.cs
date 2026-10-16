@@ -97,7 +97,7 @@ internal class ActorMetadata
         var resolvedStates = GetResolvedStates(name, actor);
         actorInstance.ResolvedStates = resolvedStates;
         resolvedStates.TryGetValue("Spawn", out var spawnState);
-        // Mirrors legacy NewState (Program.WL_STATE.cs): entering a state arms TicCount from
+        // Mirrors legacy NewState (GameHost.WL_STATE.cs): entering a state arms TicCount from
         // its TicTime, so DoActor's tic countdown starts correctly. Nothing runs yet: a 0-tic
         // Spawn frame ends on the actor's first tic.
         if (spawnState != null)

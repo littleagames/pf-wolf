@@ -19,7 +19,7 @@ Every *.dat in the save folder is a save; there are no slots. A save file is:
     int       checksum of the body
 
 This reads and writes the file around the body; the body itself (the game, the
-level as it stands, the weapon and the hubs) is Program.SaveGame.cs's.
+level as it stands, the weapon and the hubs) is GameHost.SaveGame.cs's.
 
 =============================================================================
 */

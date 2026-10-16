@@ -9,10 +9,10 @@ namespace PFWolf.Entities.Actors;
 /// <remarks>
 /// The states are built here rather than in actordefs YAML: they carry no sprites and exist only
 /// to pick which engine handler runs each tic (T_Player, registered in
-/// Program.RegisterActorActions): T_Player normally, T_DeathCam during the death cam, which
+/// GameHost.RegisterActorActions): T_Player normally, T_DeathCam during the death cam, which
 /// animates the banner DrawPlayerWeapon draws (the DeathCam class in actordefs/deathcam.yaml), and
-/// T_PlayerDead while dead in a game with others (Program.Players.cs), until they come back.
-/// Attacks are the weapon's own states (Program.PlayerWeapon.cs), not the player's.
+/// T_PlayerDead while dead in a game with others (GameHost.Players.cs), until they come back.
+/// Attacks are the weapon's own states (GameHost.PlayerWeapon.cs), not the player's.
 /// Each holds forever (TicTime -1), so the handler runs every tic and Next is never consulted.
 /// </remarks>
 internal record PlayerPawn : Actor

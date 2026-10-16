@@ -329,7 +329,7 @@ internal class AudioManager
 
             if (soundProfile.Random.Count > 0)
             {
-                name = soundProfile.Random[Program.SoundRandom() % soundProfile.Random.Count];
+                name = soundProfile.Random[GameHost.SoundRandom() % soundProfile.Random.Count];
                 continue;
             }
 

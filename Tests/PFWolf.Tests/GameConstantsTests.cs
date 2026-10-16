@@ -14,6 +14,6 @@ public class GameConstantsTests
     [Test]
     public void Programs_Names_Are_The_Same_Values()
     {
-        Assert.That((Program.ANGLES, Program.BIT_DOOR, Program.MAXTICS), Is.EqualTo((GameConstants.ANGLES, GameConstants.BIT_DOOR, GameConstants.MAXTICS)));
+        Assert.That((GameHost.ANGLES, GameHost.BIT_DOOR, GameHost.MAXTICS), Is.EqualTo((GameConstants.ANGLES, GameConstants.BIT_DOOR, GameConstants.MAXTICS)));
     }
 }

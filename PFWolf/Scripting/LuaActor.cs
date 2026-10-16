@@ -5,12 +5,12 @@ namespace PFWolf.Scripting;
 
 /// <summary>
 /// An actor as scripts see it: a Lua userdata whose fields and methods (`self.x`,
-/// `self:jump("Fire")`) are Program.Scripting.cs's metatable. Each actor has one, so the same
+/// `self:jump("Fire")`) are GameHost.Scripting.cs's metatable. Each actor has one, so the same
 /// actor is the same value in Lua (`a == b`).
 /// </summary>
 internal sealed class LuaActor : ILuaUserData
 {
-    /// <summary>Every actor's metatable, set up with the scripts (Program.InstallActorApi)</summary>
+    /// <summary>Every actor's metatable, set up with the scripts (GameHost.InstallActorApi)</summary>
     internal static LuaTable Meta { get; set; } = new();
 
     private static readonly ConditionalWeakTable<Entities.Actors.Actor, LuaActor> Wrappers = [];

@@ -25,7 +25,7 @@ internal enum GameMode { Single, Coop, Deathmatch }
     them, say), and the rest of the time it's the local player: the one
     whose view, status bar, flashes and sounds this machine shows.
 
-    Program forwards its old globals of the same names to one of these.
+    GameHost forwards its old globals of the same names to one of these.
 
 =============================================================================
 */

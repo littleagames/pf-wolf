@@ -86,7 +86,7 @@ internal sealed class ZoneState
     // jumps again, and how far toward Low it jumped (0 to 256)
     public int Phase, FlickerAmount;
 
-    // The light level and tint (an index in Program's tints) its tiles have in the light grid,
+    // The light level and tint (an index in GameHost's tints) its tiles have in the light grid,
     // and the color the tint is for; RowLevel -1 until they're set
     public int RowLevel = -1;
     public byte RowTint;

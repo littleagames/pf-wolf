@@ -2,7 +2,7 @@ namespace PFWolf.Gameplay;
 
 /// <summary>
 /// The game's constants from id's WL_DEF.H (and WL_PLAY's and WL_STATE's): tics, tile bits, sizes,
-/// angles, texture sizes, directions and speeds. Program has same-named forwards.
+/// angles, texture sizes, directions and speeds. GameHost has same-named forwards.
 /// </summary>
 internal static class GameConstants
 {
@@ -116,7 +116,7 @@ internal static class GameConstants
     // tall walls: every wall is wallstories 64 unit stories tall, built up from the floor
     internal const int MAXWALLSTORIES = 8;
 
-    // How high above the floor the view is, in texels (64 a story); see Program.WL_DRAW's Eye height
+    // How high above the floor the view is, in texels (64 a story); see GameHost.WL_DRAW's Eye height
     internal const int EYEDEFAULT = TEXTURESIZE / 2, MINEYE = 4, MAXEYE = TEXTURESIZE - 4;
 
     internal const long MOVESCALE = 150L;

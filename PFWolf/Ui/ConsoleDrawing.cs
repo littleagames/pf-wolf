@@ -42,7 +42,7 @@ internal sealed class ConsoleDrawing(
 
         consoleDrawn = false;
         playScreen.DrawPlayBorderSides();
-        if (Program.TOPLINES > 0)
+        if (GameHost.TOPLINES > 0)
         {
             // the console covered the top status bar too
             statusBar.DrawTopBar();

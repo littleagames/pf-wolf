@@ -208,7 +208,7 @@ internal sealed class PlayerDeath(
         }
 
         session.gamestate.victoryflag = true;
-        uint fadeheight = (uint)(hooks.ViewSize() != 21 ? video.ScreenYAboveBottom(Program.STATUSLINES) : video.screenHeight);
+        uint fadeheight = (uint)(hooks.ViewSize() != 21 ? video.ScreenYAboveBottom(GameHost.STATUSLINES) : video.screenHeight);
         video.BarScaledCoord(0, 0, video.screenWidth, (int)fadeheight, hooks.BorderColor());
         video.Transition(hooks.Settings().deathFadeStyle, 0, 0, video.screenWidth, (int)fadeheight, (uint)hooks.Settings().deathFadeTics);
 

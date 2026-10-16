@@ -45,7 +45,7 @@ internal sealed class HudMessage(string text, HudMessageStyle style)
 /// The messages shown over the 3D view (item pickups, locked doors, what killed the player),
 /// each in a style from the game pack's hud-messages.yaml. Messages whose styles share a
 /// position stack up there, oldest at the top, and each goes when its time runs out. They're
-/// drawn by Program.DrawHudMessages and aren't kept in saved games.
+/// drawn by GameHost.DrawHudMessages and aren't kept in saved games.
 /// </summary>
 internal class HudMessageManager
 {

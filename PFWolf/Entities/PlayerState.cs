@@ -5,17 +5,17 @@ namespace PFWolf.Entities;
 /// (the actor on the map) is made again each level; this lasts the whole game.
 /// </summary>
 /// <remarks>
-/// The game is written against "the player": Program's player, playerstate, playerinput and
+/// The game is written against "the player": GameHost's player, playerstate, playerinput and
 /// the player globals below them (anglefrac, playerpitch, LastAttacker...) are whichever
-/// player is acting right now (Program.ActAs). Outside a player's own think that's the local
+/// player is acting right now (GameHost.ActAs). Outside a player's own think that's the local
 /// player, the one this machine's screen, status bar and sounds belong to.
 /// </remarks>
 internal sealed class PlayerState
 {
-    /// <summary>Their place in Program.players, 0 for the first</summary>
+    /// <summary>Their place in GameHost.players, 0 for the first</summary>
     public int Number;
 
-    /// <summary>They've left a game played over the network: no pawn, no turn (Program.NetPlay.cs)</summary>
+    /// <summary>They've left a game played over the network: no pawn, no turn (GameHost.NetPlay.cs)</summary>
     public bool Gone;
 
     /// <summary>Their actor on the map; null between levels</summary>
@@ -30,7 +30,7 @@ internal sealed class PlayerState
     /// </summary>
     public TicCmd PendingCmd;
 
-    // What was gametype's (Program.WL_DEF.cs), and is still saved in its place
+    // What was gametype's (GameHost.WL_DEF.cs), and is still saved in its place
     public string playerclass = "Player";   // the actordefs class played as (game-info player-classes)
     public int oldscore, score, nextextra;
     public short lives;
@@ -59,7 +59,7 @@ internal sealed class PlayerState
     public double Pitch;                    // looking up (positive) or down, in degrees
     public int EyeZ = GameConstants.EYEDEFAULT;   // eye height, in texels above the floor
 
-    // What others see of them (Program.Camera.cs): their class's sprites, drawn where they are
+    // What others see of them (GameHost.Camera.cs): their class's sprites, drawn where they are
     public Actors.Actor? Body;
     public string? BodyClass;               // the class Body was made for
     public bool BodyHoldsWeapon;            // Body is drawn with Player's sprites, so the weapon's weapon.bodysprite stands in for them
@@ -68,7 +68,7 @@ internal sealed class PlayerState
     public int PainTics;                    // tics left showing them hurt
     public bool PainAlt;                    // Pain1 rather than Pain (even health left, as enemies)
 
-    // Dead in a game with others, until they come back (Program.Players.cs)
+    // Dead in a game with others, until they come back (GameHost.Players.cs)
     public int DeadTics;                    // how long they've been dead
     public short DeathAngle;                // the way they turn to face, toward whatever killed them
 

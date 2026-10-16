@@ -11,7 +11,7 @@ namespace PFWolf.Managers;
 internal class InventoryManager
 {
     private readonly Lazy<AssetManager> _assetManager;
-    // The acting player's items (Program.ActAs points this at theirs)
+    // The acting player's items (GameHost.ActAs points this at theirs)
     private Dictionary<string, int> _items = new(StringComparer.OrdinalIgnoreCase);
     // Items the whole team holds together (co-op keys): see ShareKeys
     private readonly Dictionary<string, int> _shared = new(StringComparer.OrdinalIgnoreCase);
@@ -34,7 +34,7 @@ internal class InventoryManager
     /// <summary>The acting player's own held item counts, keyed by item type (shared keys aren't in it).</summary>
     public IReadOnlyDictionary<string, int> Items => _items;
 
-    /// <summary>Makes the methods below read and change these items: the acting player's (Program.ActAs)</summary>
+    /// <summary>Makes the methods below read and change these items: the acting player's (GameHost.ActAs)</summary>
     public void SetHolder(Dictionary<string, int> items) => _items = items;
 
     /// <summary>
@@ -112,7 +112,7 @@ internal class InventoryManager
 
     public bool Has(string item) => GetCount(item) > 0;
 
-    /// <summary>The player's actordefs class (set by Program), whose `player.maxamount` overrides items' own caps</summary>
+    /// <summary>The player's actordefs class (set by GameHost), whose `player.maxamount` overrides items' own caps</summary>
     public Func<string?> PlayerClass { get; set; } = () => null;
 
     /// <summary>

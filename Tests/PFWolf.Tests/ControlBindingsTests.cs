@@ -6,7 +6,7 @@ public class ControlBindingsTests
 {
     private static readonly ControlAction Attack = ControlAction.Of(buttontypes.bt_attack);
     private static readonly ControlAction Use = ControlAction.Of(buttontypes.bt_use);
-    private static readonly ControlAction ZoomIn = ControlAction.Of(Program.automapkeys.am_zoomin);
+    private static readonly ControlAction ZoomIn = ControlAction.Of(GameHost.automapkeys.am_zoomin);
 
     private static ControlBindings Empty()
     {

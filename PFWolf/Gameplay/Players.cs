@@ -95,7 +95,7 @@ internal sealed class Players(
             using var _ = session.ActAs(p);
             if (session.gamemode == GameMode.Deathmatch)
             {
-                // somewhere random, carrying every key (Program.Deathmatch.cs)
+                // somewhere random, carrying every key (GameHost.Deathmatch.cs)
                 var (dx, dy, dangle) = hooks.DeathmatchSpot(p.Pawn!);
                 think.SpawnPlayer(dx, dy, dangle);
                 hooks.GiveDeathmatchKeys();
@@ -305,7 +305,7 @@ internal sealed class Players(
     }
 
     /// <summary>
-    /// A player joins a network game at this frame, on every machine alike (Program.NetJoin.cs):
+    /// A player joins a network game at this frame, on every machine alike (GameHost.NetJoin.cs):
     /// at the start, or the nearest free spot to it, or (deathmatch) somewhere random
     /// </summary>
     internal void AddNetPlayer(Networking.NetJoin join)

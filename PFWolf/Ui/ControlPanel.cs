@@ -70,7 +70,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
     /// The control panel, from the title or over the game being played: the screen an F-key
     /// names (F1 help, F2 save, F3 load, F4 sound, F5 view size, F6 controls), else the main
     /// menu until it starts a game or goes back. The in-play F7 to F10 and the menu music are
-    /// the caller's (Program.US_ControlPanel).
+    /// the caller's (GameHost.US_ControlPanel).
     /// </summary>
     internal void Run(ScanCodes scancode)
     {

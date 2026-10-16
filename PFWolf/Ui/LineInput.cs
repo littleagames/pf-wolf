@@ -2,7 +2,7 @@ using PFWolf.Fonts;
 
 namespace PFWolf.Ui;
 
-/// <summary>Reads the keyboard, mouse and controller as the menus do (Program.ReadAnyControl)</summary>
+/// <summary>Reads the keyboard, mouse and controller as the menus do (GameHost.ReadAnyControl)</summary>
 internal delegate void ReadControl(out ControlInfo ci);
 
 /// <summary>

@@ -10,7 +10,7 @@ namespace PFWolf.Rendering;
 /// <param name="VisiblePlayerBody">A player's body to draw this frame, if any (not the one the camera looks through)</param>
 /// <param name="DrawnSprite">The sprite to draw for an actor's frame (a body shows its weapon's bodysprite)</param>
 /// <param name="SpriteExists">Whether there's a sprite picture of that name</param>
-/// <param name="DeathCamSprite">The death cam's banner, while it shows (Program.WL_ACT2.cs)</param>
+/// <param name="DeathCamSprite">The death cam's banner, while it shows (GameHost.WL_ACT2.cs)</param>
 /// <param name="WeaponScale">How big the weapon in hand is drawn (game-info weapon-scale)</param>
 /// <param name="DemoActive">Whether a demo is playing or recording (it says DEMO on the view)</param>
 internal sealed record SpriteDrawingHooks(
@@ -252,7 +252,7 @@ internal sealed class SpriteDrawing(
             {
                 if (hooks.VisiblePlayerBody(pawn) is not { } body)
                     continue;                                           // looked through, or with no sprites
-                actor = body;                                           // what others see of them (Program.Camera.cs)
+                actor = body;                                           // what others see of them (GameHost.Camera.cs)
             }
             else if (actor == looker)
                 continue;                                               // the one looked through
@@ -333,7 +333,7 @@ internal sealed class SpriteDrawing(
 
             visptr_val.shapenum = actor.CurrentState.GetShapeName(objdirtypes.nodir);
 
-            // A panel (Program.cs) is drawn column by column, clipped per column,
+            // A panel (GameHost.cs) is drawn column by column, clipped per column,
             // so it's placed by its own geometry rather than as a billboard in its tile.
             if (WallSprites.IsWallSprite(actor))
             {
@@ -351,7 +351,7 @@ internal sealed class SpriteDrawing(
             if (!map.spotvis[(int)actor.Position.X, (int)actor.Position.Y])
                 continue;                                               // not visable
 
-            // Picking it up is TouchItems' job (Program.PlayerSight.cs), not the renderer's
+            // Picking it up is TouchItems' job (GameHost.PlayerSight.cs), not the renderer's
             TransformTile((int)actor.Position.X, (int)actor.Position.Y, ref visptr_val.viewx, ref visptr_val.viewheight);
 
             if (visptr_val.viewheight == 0)
@@ -373,7 +373,7 @@ internal sealed class SpriteDrawing(
         //
         numvisable = (int)(visptr);
 
-        // Rain and snow go in among the sprites by distance (Program.cs)
+        // Rain and snow go in among the sprites by distance (GameHost.cs)
         weather.ProjectWeather();
 
         for (i = 0; i < numvisable; i++)
@@ -423,7 +423,7 @@ internal sealed class SpriteDrawing(
         if (!session.camera.OnPlayer)
             return;
 
-        // The frame the weapon's states are on (Program.PlayerWeapon.cs), in the light of the
+        // The frame the weapon's states are on (GameHost.PlayerWeapon.cs), in the light of the
         // player's tile but not faded: it's at arm's length. Scaled by game-info weapon-scale, it
         // still stands on the view's bottom edge (less any weapon-bob)
         if (hooks.WeaponShapeName() is { } shape)

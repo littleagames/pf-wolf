@@ -1,6 +1,6 @@
 using PFWolf.Constants;
 using PFWolf.Entities.Actors;
-using static PFWolf.Program;
+using static PFWolf.GameHost;
 
 namespace PFWolf.Managers;
 

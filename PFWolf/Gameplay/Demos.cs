@@ -3,7 +3,7 @@ using PFWolf.Assets;
 namespace PFWolf.Gameplay;
 
 /// <summary>What playing and recording demos need from the game</summary>
-/// <param name="NewGame">Starts a game on a skill, from a map, as a player class (Program.NewGame)</param>
+/// <param name="NewGame">Starts a game on a skill, from a map, as a player class (GameHost.NewGame)</param>
 /// <param name="DemoSkill">The skill demos play on: game-info's demo-skill, else the hardest</param>
 /// <param name="DrawPlayScreen">Draws the status bar and view border</param>
 /// <param name="SetupGameLevel">Loads the level and spawns everything in it</param>
@@ -183,7 +183,7 @@ internal sealed class Demos(
         if (demonumber == null)
         {
             video.FadeIn();
-            var window = Program.CenterWindow(24, 3, Program.PromptStyle);
+            var window = GameHost.CenterWindow(24, 3, GameHost.PromptStyle);
             window.PrintY += 6;
             window.Print(" Demo number (0-9): ");
             video.Update();
@@ -236,7 +236,7 @@ internal sealed class Demos(
 
         // Clear what's behind: a title drawn in its own palette (Spear's) is noise in the game's
         video.ClearScreen(0);
-        var window = Program.CenterWindow(26, 3, Program.PromptStyle);
+        var window = GameHost.CenterWindow(26, 3, GameHost.PromptStyle);
         window.PrintY += 6;
         window.Print($"  Demo which level(1-{maps}): ");
         video.Update();

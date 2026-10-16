@@ -256,7 +256,7 @@ internal class GameEngineManager
         }
 
         var savedScores = config.ScoreTable ?? config.Scores;
-        Array.Copy(savedScores, Program.Scores, Math.Min(savedScores.Length, Program.Scores.Length));
+        Array.Copy(savedScores, GameHost.Scores, Math.Min(savedScores.Length, GameHost.Scores.Length));
 
         // The controls moved to controls.cfg, which the console runs at startup; config.cfg now
         // only has blanks where they were. A config from before that still has them: take them
@@ -264,16 +264,16 @@ internal class GameEngineManager
         bool hasLegacyControls = config.DirScan.Any(key => key != ScanCodes.sc_None);
         bool legacyConfig = hasLegacyControls && !File.Exists(GetConfigFilePath(ControlsFileName));
         if (legacyConfig)
-            Program.controls.ImportLegacy(config.DirScan, config.ButtonScan, config.ButtonMouse, config.ButtonJoy,
+            GameHost.controls.ImportLegacy(config.DirScan, config.ButtonScan, config.ButtonMouse, config.ButtonJoy,
                 config.AutomapKey, config.AutomapKeys);
 
         // Devices that were there last time may not be now. A controller can be plugged in
         // later, so its setting is kept as it was either way. Before that, the joystick was
         // saved as off whenever none was plugged in, so an old config's "off" doesn't count.
-        Program.mouseenabled = config.MouseEnabled && inputManager.IsMousePresent();
-        Program.joystickenabled = config.JoystickEnabled || legacyConfig;
-        Program.mouseadjustment = Math.Clamp(config.MouseAdjustment, 0, 9);
-        Program.viewsize = Math.Clamp(config.ViewSize, 4, 21);
+        GameHost.mouseenabled = config.MouseEnabled && inputManager.IsMousePresent();
+        GameHost.joystickenabled = config.JoystickEnabled || legacyConfig;
+        GameHost.mouseadjustment = Math.Clamp(config.MouseAdjustment, 0, 9);
+        GameHost.viewsize = Math.Clamp(config.ViewSize, 4, 21);
         if (config.PauseWhenOpen is bool pause)
             consoleManager.PauseWhenOpen = pause;
         if (config.AutomapStyle is AutomapStyle style && Enum.IsDefined(style))
@@ -294,15 +294,15 @@ internal class GameEngineManager
         if (config.MusicVolume is int musicVolume)
             audioManager.MusicVolume = musicVolume;
         if (config.AutoSave is bool autoSave)
-            Program.autosaveEnabled = autoSave;
+            GameHost.autosaveEnabled = autoSave;
         if (config.HudMessages is HudMessagesSetting.Off or HudMessagesSetting.On)
             hudMessageManager.EnabledSetting = config.HudMessages == HudMessagesSetting.On;
         if (config.AutomapStats is bool stats)
             automapManager.ShowStats = stats;
 
         // Set "Read This" back to standard active
-        Program.FindMenuItem(Program.MainMenu, "readthis")?.active = 1;
-        Program.MainItems.curpos = 0;
+        GameHost.FindMenuItem(GameHost.MainMenu, "readthis")?.active = 1;
+        GameHost.MainItems.curpos = 0;
     }
 
     private static ConfigData ParseConfig(BinaryReader br)
@@ -530,12 +530,12 @@ internal class GameEngineManager
     {
         // Every sound device and music start switched on (AudioManager's defaults).
         if (inputManager.IsMousePresent())
-            Program.mouseenabled = true;
+            GameHost.mouseenabled = true;
 
-        Program.joystickenabled = true;     // used as soon as one is plugged in
+        GameHost.joystickenabled = true;     // used as soon as one is plugged in
 
-        Program.viewsize = 19;
-        Program.mouseadjustment = 5;
+        GameHost.viewsize = 19;
+        GameHost.mouseadjustment = 5;
     }
 
     /// <summary>
@@ -559,7 +559,7 @@ internal class GameEngineManager
             {
                 using var writer = new StreamWriter(stream);
                 writer.WriteLine("// Written by the game; use autoexec.cfg for your own commands.");
-                foreach (var command in Program.controls.GetCommands().Concat(Program.GetControllerSettingCommands()))
+                foreach (var command in GameHost.controls.GetCommands().Concat(GameHost.GetControllerSettingCommands()))
                     writer.WriteLine(command);
             });
 
@@ -596,14 +596,14 @@ internal class GameEngineManager
     {
         bw.Write(ConfigSignature);
         for (int i = 0; i < HighScore.LegacyScoreCount; i++)
-            (i < Program.Scores.Length ? Program.Scores[i] : new HighScore()).Write(bw);
+            (i < GameHost.Scores.Length ? GameHost.Scores[i] : new HighScore()).Write(bw);
 
         bw.Write((byte)0); // sound mode placeholder
         bw.Write((byte)0); // music mode placeholder
         bw.Write((byte)0); // digitized mode placeholder
 
-        bw.Write(Program.mouseenabled);
-        bw.Write(Program.joystickenabled);
+        bw.Write(GameHost.mouseenabled);
+        bw.Write(GameHost.joystickenabled);
         bw.Write((byte)0); // joypad placeholder
         bw.Write((byte)0); // joystick-progressive placeholder
         bw.Write((int)0); // joystick port placeholder
@@ -612,8 +612,8 @@ internal class GameEngineManager
         for (int i = 0; i < LayoutDirCount + LayoutButtonCount + LayoutMouseCount + LayoutJoyCount; i++)
             bw.Write((int)0);
 
-        bw.Write(Program.viewsize);
-        bw.Write(Program.mouseadjustment);
+        bw.Write(GameHost.viewsize);
+        bw.Write(GameHost.mouseadjustment);
         bw.Write(consoleManager.PauseWhenOpen);
         bw.Write((int)ScanCodes.sc_None);   // automap key placeholder
         bw.Write((byte)automapManager.Style);
@@ -634,7 +634,7 @@ internal class GameEngineManager
         bw.Write((byte)audioManager.SoundVolume);
         bw.Write((byte)audioManager.MusicVolume);
         WriteVideoSettings(bw, videoManager.Settings);
-        bw.Write((byte)(Program.autosaveEnabled ? 1 : 0));
+        bw.Write((byte)(GameHost.autosaveEnabled ? 1 : 0));
         bw.Write((byte)(hudMessageManager.EnabledSetting switch
         {
             true => HudMessagesSetting.On,
@@ -643,8 +643,8 @@ internal class GameEngineManager
         }));
         bw.Write(automapManager.ShowStats);
 
-        bw.Write((byte)Program.Scores.Length);
-        foreach (var s in Program.Scores)
+        bw.Write((byte)GameHost.Scores.Length);
+        foreach (var s in GameHost.Scores)
         {
             s.Write(bw);
             bw.Write(s.ratio);

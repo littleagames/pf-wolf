@@ -19,7 +19,7 @@ public class ScriptApiTests
     private ScriptHost EngineHost()
     {
         var host = new ScriptHost(_printed.Add);
-        Program.InstallScriptApi(host);
+        GameHost.InstallScriptApi(host);
         return host;
     }
 
@@ -107,7 +107,7 @@ public class ScriptApiTests
     public void The_Trigger_Actions_Are_The_Engines_Switch_Actions()
     {
         // Arrange
-        Program.RegisterActorActions();
+        GameHost.RegisterActorActions();
 
         // Act: less the Test_ names other tests register (the registries are shared, ActionRegistryTests)
         var engine = Entities.MapTriggerRegistry.Names.Where(name => !name.StartsWith("Test_", StringComparison.Ordinal)).ToList();

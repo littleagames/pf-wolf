@@ -13,7 +13,7 @@ namespace PFWolf.Ui;
 /// <param name="LoadedGame">Whether the menu loaded a game</param>
 /// <param name="NetGame">Whether this is a game with others</param>
 /// <param name="PlayState">How the last level (or demo) ended</param>
-/// <param name="NewGame">Starts a game on a skill, from a map (Program.NewGame)</param>
+/// <param name="NewGame">Starts a game on a skill, from a map (GameHost.NewGame)</param>
 internal sealed record TitleLoopHooks(
     Func<bool> NoWait,
     Func<string> IntroSong,

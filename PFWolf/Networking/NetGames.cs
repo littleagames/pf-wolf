@@ -5,7 +5,7 @@ using PFWolf.SaveGames;
 namespace PFWolf.Networking;
 
 /// <summary>What starting and ending games with others needs from the game</summary>
-/// <param name="NewGame">Starts a game on a skill, from a map, as a player class (Program.NewGame)</param>
+/// <param name="NewGame">Starts a game on a skill, from a map, as a player class (GameHost.NewGame)</param>
 /// <param name="SetNetGame">This is (or stops being) a game with others</param>
 /// <param name="SetNetSeed">Where the levels' random numbers start, as the host said</param>
 /// <param name="ClearCheats">No cheats carried in from playing alone</param>

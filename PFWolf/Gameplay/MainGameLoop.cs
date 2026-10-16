@@ -28,11 +28,11 @@ internal record PendingMapChange(string Map, bool KeepPosition, int X, int Y, sh
 /// <param name="DemoRecord">Whether a demo is recording (it's saved when the level ends)</param>
 /// <param name="NetGame">Whether this is a game with others (no autosave)</param>
 /// <param name="LastMusicOffset">Where the menu left the level's song</param>
-/// <param name="EnterLevel">A kept hub level as it was left, or the map afresh: true if kept (Program.Hubs.cs)</param>
-/// <param name="LeaveLevel">Keeps a hub level as it's left (Program.Hubs.cs)</param>
-/// <param name="MarkLevelStart">What dying puts the player back to (Program.Hubs.cs)</param>
-/// <param name="ApplyPendingWarpStart">--start's tile, the first time (Program.cs)</param>
-/// <param name="AlignPlayerInElevator">Moves the player into the elevator by a panel wall (Program.Hubs.cs)</param>
+/// <param name="EnterLevel">A kept hub level as it was left, or the map afresh: true if kept (GameHost.Hubs.cs)</param>
+/// <param name="LeaveLevel">Keeps a hub level as it's left (GameHost.Hubs.cs)</param>
+/// <param name="MarkLevelStart">What dying puts the player back to (GameHost.Hubs.cs)</param>
+/// <param name="ApplyPendingWarpStart">--start's tile, the first time (GameHost.cs)</param>
+/// <param name="AlignPlayerInElevator">Moves the player into the elevator by a panel wall (GameHost.Hubs.cs)</param>
 /// <param name="ShowLevelStartMessage">A game's level start message (Blake Stone)</param>
 internal sealed record MainGameLoopHooks(
     Func<playstatetypes> PlayState,
@@ -141,9 +141,9 @@ internal sealed class MainGameLoop(
             string levelStart = "loaded";
             if (!hooks.LoadedGame())
             {
-                bool kept = hooks.EnterLevel();   // a kept hub level as it was left, or the map afresh (Program.Hubs.cs)
+                bool kept = hooks.EnterLevel();   // a kept hub level as it was left, or the map afresh (GameHost.Hubs.cs)
                 ApplyPendingMapChange();
-                hooks.ApplyPendingWarpStart();    // --start's tile, the first time (Program.cs)
+                hooks.ApplyPendingWarpStart();    // --start's tile, the first time (GameHost.cs)
                 if (!died)
                     hooks.MarkLevelStart();       // what dying puts the player back to, with death-restores-level-start
                 levelStart = died ? "restarted" : kept ? "returned" : "new";

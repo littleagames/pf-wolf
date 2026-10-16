@@ -91,7 +91,7 @@ internal class TranslationManager
         if (actor is Entities.Actors.PlayerPawn pawn)
             return pawn.State.Color ?? (pawn.State.Body is { } body ? ClassTranslation(body) : null);
         if (actor is Entities.Actors.Monster && actor.Faction != null && HasHealth(actor))
-            return Program._factionManager.Table.Translation(actor.Faction, Ancestry(actor.Name));
+            return GameHost._factionManager.Table.Translation(actor.Faction, Ancestry(actor.Name));
         return null;
     }
 

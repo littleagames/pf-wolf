@@ -1,7 +1,7 @@
 using PFWolf.Configuration;
 using PFWolf.Constants;
 using static PFWolf.Commands.ConsoleArgs;
-using automapkeys = PFWolf.Program.automapkeys;
+using automapkeys = PFWolf.GameHost.automapkeys;
 
 namespace PFWolf.Ui;
 

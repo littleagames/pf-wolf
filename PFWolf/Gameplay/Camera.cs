@@ -10,7 +10,7 @@ namespace PFWolf.Gameplay;
 = Where the view is drawn from. It follows an actor (the player, normally) or sits at a
 = fixed point (the death cam). The renderer reads only the camera, never the player, so it
 = can look through another actor (spectate) while the player plays on. What the player
-= touches and sees doesn't move with it (Program.PlayerSight.cs).
+= touches and sees doesn't move with it (GameHost.PlayerSight.cs).
 =
 = The player's own look up/down and eye height are playerpitch and playereyez; the
 = renderer's viewpitch and vieweyez are this frame's, taken from the camera.

@@ -2,13 +2,13 @@ using PFWolf.Constants;
 using PFWolf.Enums;
 using PFWolf.Extensions;
 using PFWolf.Managers;
-using static PFWolf.Program;
+using static PFWolf.GameHost;
 
 namespace PFWolf.Entities.Actors;
 
 /// <summary>
 /// An actor that moves, sees, fights and dies: Wolf3D's and Spear of Destiny's enemies, ported
-/// from WL_STATE.C / WL_ACT2.C (Program.WL_STATE.cs / Program.WL_ACT2.cs). An actordefs class
+/// from WL_STATE.C / WL_ACT2.C (GameHost.WL_STATE.cs / GameHost.WL_ACT2.cs). An actordefs class
 /// is one when it has Monster as an ancestor (`parent: Monster`), which anything with health
 /// or a think/action registered here needs. Its thinks and actions are registered below under
 /// the names the actordefs use (`think: T_Chase`), and run on the actor itself; subclasses
@@ -113,7 +113,7 @@ internal record Monster : Actor
 
     /*
     =============================================================================
-    MOVEMENT / COLLISION (ported from Program.WL_STATE.cs)
+    MOVEMENT / COLLISION (ported from GameHost.WL_STATE.cs)
     =============================================================================
     */
 
@@ -159,7 +159,7 @@ internal record Monster : Actor
                     {
                         // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
                         if (Flags.Contains("TOUCHDAMAGE", StringComparer.OrdinalIgnoreCase))
-                            Program.TakeDamage(pawn, (int)(tics * 2), this);
+                            GameHost.TakeDamage(pawn, (int)(tics * 2), this);
 
                         OnBumpedPlayer();
 
@@ -293,7 +293,7 @@ internal record Monster : Actor
         return true;
     }
 
-    // CHECKDIAG(int, int) lives in Program.WL_STATE.cs -- it isn't tied to the mover, so
+    // CHECKDIAG(int, int) lives in GameHost.WL_STATE.cs -- it isn't tied to the mover, so
     // there's no Entities.Actors.Actor-typed overload.
 
     internal int CheckSide(int x, int y, ref int doornumtile)
@@ -782,7 +782,7 @@ internal record Monster : Actor
         ? IsTargetable(pawn)
         : !actor.IsRemoved && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE);
 
-    /// <summary>Whether the player could see it (alone, whether it was drawn; with others, any of them: Program.InViewOf)</summary>
+    /// <summary>Whether the player could see it (alone, whether it was drawn; with others, any of them: GameHost.InViewOf)</summary>
     private bool SeenByThePlayers() =>
         gamemode == GameMode.Single ? RuntimeFlags.HasFlag(objflags.FL_VISABLE) : SeenByAPlayer(this);
 
@@ -792,7 +792,7 @@ internal record Monster : Actor
         switch (Target)
         {
             case PlayerPawn pawn:
-                Program.TakeDamage(pawn, points, this);
+                GameHost.TakeDamage(pawn, points, this);
                 break;
             case Monster monster when points > 0:
                 monster.Damage((uint)points, this);
@@ -802,7 +802,7 @@ internal record Monster : Actor
 
     /// <summary>
     /// Whether what it's after can see it coming (and so dodge its shots): alone, whether it was
-    /// drawn; another player, from where they stand (Program.InViewOf); an actor, whether it's
+    /// drawn; another player, from where they stand (GameHost.InViewOf); an actor, whether it's
     /// looking its way with nothing between
     /// </summary>
     private bool TargetSeesMe() => Target switch
@@ -1130,7 +1130,7 @@ internal record Monster : Actor
 
     /*
     =============================================================================
-    COMBAT (ported from Program.WL_STATE.cs)
+    COMBAT (ported from GameHost.WL_STATE.cs)
     =============================================================================
     */
 
@@ -1369,7 +1369,7 @@ internal record Monster : Actor
 
     /*
     =============================================================================
-    PER-ENEMY THINK/ACTION FUNCTIONS (ported from Program.WL_ACT2.cs)
+    PER-ENEMY THINK/ACTION FUNCTIONS (ported from GameHost.WL_ACT2.cs)
     =============================================================================
     */
 

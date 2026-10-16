@@ -78,7 +78,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
 
     /// <summary>
     /// The level's distance fade and light, each value from its game-info entry, else the default
-    /// map's, else the game's defaults (Program.ResolveShading); null when neither sets any
+    /// map's, else the game's defaults (GameHost.ResolveShading); null when neither sets any
     /// </summary>
     public ShadingValues? Shading
     {
@@ -110,7 +110,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
         return (levelLight, null);
     }
 
-    /// <summary>The wall closing off a run of arch tiles from (x, y) going (dx, dy): its texture on <paramref name="face"/> (Program.ArchEndTexture)</summary>
+    /// <summary>The wall closing off a run of arch tiles from (x, y) going (dx, dy): its texture on <paramref name="face"/> (GameHost.ArchEndTexture)</summary>
     public string? ArchEndTexture(int x, int y, int dx, int dy, string face)
     {
         do
@@ -127,7 +127,7 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
 
     /// <summary>
     /// An arch tile's underside: from a wall ending its run north or south first (the face
-    /// toward the arch), else west or east (Program.ArchUndersideTexture)
+    /// toward the arch), else west or east (GameHost.ArchUndersideTexture)
     /// </summary>
     public string? ArchUndersideTexture(int x, int y)
         => ArchEndTexture(x, y, 0, -1, "south") ?? ArchEndTexture(x, y, 0, 1, "north")
@@ -135,14 +135,14 @@ public sealed class MapTiles(GameContent content, MapAsset map, Func<MapProperti
 
     /// <summary>
     /// The ceiling flat an arch tile shows underneath in place of <see cref="ArchUndersideTexture"/>:
-    /// its <see cref="CeilingFlat"/> when the flat-plane ceiling index isn't 0, else null (Program.UseArchCeilingFlat)
+    /// its <see cref="CeilingFlat"/> when the flat-plane ceiling index isn't 0, else null (GameHost.UseArchCeilingFlat)
     /// </summary>
     public string? ArchCeilingFlat(int x, int y)
         => this[MapConstants.FLATPLANE, x, y] >> 8 == 0 ? null : CeilingFlat(x, y);
 
     /// <summary>
     /// An arch face's texture (its face "north", "south", "east" or "west"): that face of the wall
-    /// ending the run of arch tiles in line with the face, else across it (Program.OpenArch); null
+    /// ending the run of arch tiles in line with the face, else across it (GameHost.OpenArch); null
     /// leaves the arch open
     /// </summary>
     public string? ArchFaceTexture(int x, int y, string face)

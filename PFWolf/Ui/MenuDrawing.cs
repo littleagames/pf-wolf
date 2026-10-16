@@ -7,7 +7,7 @@ namespace PFWolf.Ui;
 /// Drawing the menus: the backdrop, stripes, windows and boxes, the fades, a menu's rows and
 /// highlight bar, its sliders, choices and checkboxes, the gun, and message boxes
 /// </summary>
-/// <param name="settings">game-info's menu fade, as read (Program's GameInfoSettings)</param>
+/// <param name="settings">game-info's menu fade, as read (GameHost's GameInfoSettings)</param>
 internal sealed class MenuDrawing(GraphicManager graphics, VideoManager video, AssetManager assets, FontManager fonts,
     GameEngineManager engine, UiText ui, Func<GameInfoSettings> settings)
 {

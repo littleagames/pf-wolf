@@ -33,7 +33,7 @@ internal record ConsoleCommand(
 /// <summary>
 /// The in-game command console: a registry of named commands, a scrollback buffer of output lines
 /// and the history of entered lines. Commands are registered at startup (see
-/// Program.RegisterConsoleCommands) and run through <see cref="Execute"/>, which accepts several
+/// GameHost.RegisterConsoleCommands) and run through <see cref="Execute"/>, which accepts several
 /// `;`-separated commands per line and double-quoted arguments containing spaces.
 /// </summary>
 internal class ConsoleManager
@@ -56,13 +56,13 @@ internal class ConsoleManager
     private int _historyIndex;
     private string _draft = "";
 
-    /// <summary>Whether cheat-flagged commands may run. Wired to Program.DebugOk at registration.</summary>
+    /// <summary>Whether cheat-flagged commands may run. Wired to GameHost.DebugOk at registration.</summary>
     internal Func<bool> CheatsEnabled { get; set; } = () => false;
 
     /// <summary>Whether a level is loaded. Wired to the player's existence at registration.</summary>
     internal Func<bool> LevelLoaded { get; set; } = () => false;
 
-    /// <summary>Whether this is a game with others, where SinglePlayer commands can't run. Wired to Program.netgame.</summary>
+    /// <summary>Whether this is a game with others, where SinglePlayer commands can't run. Wired to GameHost.netgame.</summary>
     internal Func<bool> PlayingWithOthers { get; set; } = () => false;
 
     internal bool IsOpen { get; private set; }
