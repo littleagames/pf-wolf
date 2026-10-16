@@ -248,7 +248,7 @@ internal sealed class CheatCommands(
 
         int x = ParseInt(args[0], 0, mapManager.mapwidth - 1);
         int y = ParseInt(args[1], 0, mapManager.mapheight - 1);
-        int? angle = args.Length > 2 ? ParseInt(args[2], 0, Program.ANGLES - 1) : null;
+        int? angle = args.Length > 2 ? ParseInt(args[2], 0, GameConstants.ANGLES - 1) : null;
 
         if (!TryTeleportPlayer(x, y, angle, out var problem))
             throw new ArgumentException(problem);
@@ -279,7 +279,7 @@ internal sealed class CheatCommands(
         session.player.SetPosition(x, y);
         session.player.AreaNumber = (byte)(mapManager.MAPSPOT(x, y, 0) - mapManager.Floors.AreaTile);
         if (angle is { } degrees)
-            session.player.Angle = (short)(((degrees % Program.ANGLES) + Program.ANGLES) % Program.ANGLES);
+            session.player.Angle = (short)(((degrees % GameConstants.ANGLES) + GameConstants.ANGLES) % GameConstants.ANGLES);
         doors.ConnectAreas();
         return true;
     }

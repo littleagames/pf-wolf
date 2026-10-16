@@ -4,7 +4,7 @@ namespace PFWolf.Gameplay;
 
 /// <summary>
 /// A pushwall on the move. Any number can move at once, each with its own progress; a
-/// moving wall's two tiles (the one it's leaving and the one ahead) are bare Program.BIT_WALL.
+/// moving wall's two tiles (the one it's leaving and the one ahead) are bare GameConstants.BIT_WALL.
 /// </summary>
 internal sealed class MovingPushWall
 {
@@ -95,8 +95,8 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
 
     // Whether a player's box (PLAYERSIZE each way) reaches into a tile
     internal static bool PlayerBoxCovers(Entities.Actors.PlayerPawn pawn, int tilex, int tiley) =>
-        (int)((pawn.X - Program.PLAYERSIZE) >> MapConstants.TILESHIFT) <= tilex && tilex <= (int)((pawn.X + Program.PLAYERSIZE) >> MapConstants.TILESHIFT)
-        && (int)((pawn.Y - Program.PLAYERSIZE) >> MapConstants.TILESHIFT) <= tiley && tiley <= (int)((pawn.Y + Program.PLAYERSIZE) >> MapConstants.TILESHIFT);
+        (int)((pawn.X - GameConstants.PLAYERSIZE) >> MapConstants.TILESHIFT) <= tilex && tilex <= (int)((pawn.X + GameConstants.PLAYERSIZE) >> MapConstants.TILESHIFT)
+        && (int)((pawn.Y - GameConstants.PLAYERSIZE) >> MapConstants.TILESHIFT) <= tiley && tiley <= (int)((pawn.Y + GameConstants.PLAYERSIZE) >> MapConstants.TILESHIFT);
 
     /*
     ===============
@@ -117,7 +117,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             return false;
 
         oldtile = map.tilemap[checkx, checky];
-        if (oldtile == 0 || oldtile == Program.BIT_WALL)    // nothing there, or a wall already on the move
+        if (oldtile == 0 || oldtile == GameConstants.BIT_WALL)    // nothing there, or a wall already on the move
             return false;
 
         dx = dirs[(int)dir][0];
@@ -144,8 +144,8 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             Tile = (byte)oldtile,
             Pusher = session.player,
         });
-        map.tilemap[checkx, checky] = Program.BIT_WALL;
-        map.tilemap[checkx + dx, checky + dy] = Program.BIT_WALL;
+        map.tilemap[checkx, checky] = GameConstants.BIT_WALL;
+        map.tilemap[checkx + dx, checky + dy] = GameConstants.BIT_WALL;
         map.SetMapSpot(checkx, checky, 1,  0);   // remove P tile info
         map.SetMapSpot(checkx, checky, 0, (ushort)map.MAPSPOT(session.player.TileX, session.player.TileY, 0)); // set correct floorcode (BrotherTank's fix) TODO: use a better method...
 
@@ -223,7 +223,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                 // stopped by anything in the way, a player included (any of them), or another
                 // moving wall's tile
                 if (map.actorat[aheadx, aheady] != null
-                    || map.tilemap[aheadx, aheady] == Program.BIT_WALL
+                    || map.tilemap[aheadx, aheady] == GameConstants.BIT_WALL
                     || map.EnemiesAt(aheadx, aheady).Any()
                     || map.Players.Any(pawn => PlayerBoxCovers(pawn, aheadx, aheady)))
                 {
@@ -232,7 +232,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                 }
 
                 map.actorat[aheadx, aheady] = new Wall(oldtile);
-                map.tilemap[aheadx, aheady] = Program.BIT_WALL;
+                map.tilemap[aheadx, aheady] = GameConstants.BIT_WALL;
             }
         }
 

@@ -30,46 +30,46 @@ internal sealed class RayTrace(
             angle = (short)(render.midangle + render.pixelangle[render.pixx]);
 
             if (angle < 0) // -90 - -1 degree arc
-                angle += Program.ANG360; // -90 is the same as 270
-            if (angle >= Program.ANG360) // 360-449 degree arc
-                angle -= Program.ANG360; // -449 is the same as 89
+                angle += GameConstants.ANG360; // -90 is the same as 270
+            if (angle >= GameConstants.ANG360) // 360-449 degree arc
+                angle -= GameConstants.ANG360; // -449 is the same as 89
 
             //
             // setup xstep/ystep based on angle
             //
-            if (angle < Program.ANG90) // 0-89 degree arc
+            if (angle < GameConstants.ANG90) // 0-89 degree arc
             {
                 render.xtilestep = 1;
                 render.ytilestep = -1;
-                xstep = Program.finetangent[Program.ANG90 - 1 - angle];
+                xstep = Program.finetangent[GameConstants.ANG90 - 1 - angle];
                 ystep = -Program.finetangent[angle];
                 xpartial = (uint)render.xpartialup;
                 ypartial = (uint)render.ypartialdown;
             }
-            else if (angle < Program.ANG180) // 90-179 degree arc
+            else if (angle < GameConstants.ANG180) // 90-179 degree arc
             {
                 render.xtilestep = -1;
                 render.ytilestep = -1;
-                xstep = -Program.finetangent[angle - Program.ANG90];
-                ystep = -Program.finetangent[Program.ANG180 - 1 - angle];
+                xstep = -Program.finetangent[angle - GameConstants.ANG90];
+                ystep = -Program.finetangent[GameConstants.ANG180 - 1 - angle];
                 xpartial = (uint)render.xpartialdown;
                 ypartial = (uint)render.ypartialdown;
             }
-            else if (angle < Program.ANG270) // 180-269 degree arc
+            else if (angle < GameConstants.ANG270) // 180-269 degree arc
             {
                 render.xtilestep = -1;
                 render.ytilestep = 1;
-                xstep = -Program.finetangent[Program.ANG270 - 1 - angle];
-                ystep = Program.finetangent[angle - Program.ANG180];
+                xstep = -Program.finetangent[GameConstants.ANG270 - 1 - angle];
+                ystep = Program.finetangent[angle - GameConstants.ANG180];
                 xpartial = (uint)render.xpartialdown;
                 ypartial = (uint)render.ypartialup;
             }
-            else if (angle < Program.ANG360) // 270-359 degree arc
+            else if (angle < GameConstants.ANG360) // 270-359 degree arc
             {
                 render.xtilestep = 1;
                 render.ytilestep = 1;
-                xstep = Program.finetangent[angle - Program.ANG270];
-                ystep = Program.finetangent[Program.ANG360 - 1 - angle];
+                xstep = Program.finetangent[angle - GameConstants.ANG270];
+                ystep = Program.finetangent[GameConstants.ANG360 - 1 - angle];
                 xpartial = (uint)render.xpartialup;
                 ypartial = (uint)render.ypartialup;
             }
@@ -95,7 +95,7 @@ internal sealed class RayTrace(
             //
             // special treatment when player is in back tile of pushwall
             //
-            render.hitpushwall = map.tilemap[render.focaltx, render.focalty] == Program.BIT_WALL;
+            render.hitpushwall = map.tilemap[render.focaltx, render.focalty] == GameConstants.BIT_WALL;
             if (render.hitpushwall)
             {
                 pushWalls.SelectPushWall(render.focaltx, render.focalty);
@@ -160,7 +160,7 @@ internal sealed class RayTrace(
                     focalhit = true;
                 }
             }
-            else if ((map.tilemap[render.focaltx, render.focalty] & Program.BIT_DOOR) != 0)
+            else if ((map.tilemap[render.focaltx, render.focalty] & GameConstants.BIT_DOOR) != 0)
             {
                 hits.NoteFocalLintel(xstep, ystep);
             }
@@ -226,20 +226,20 @@ internal sealed class RayTrace(
         posts.CloseArch(posts.VertEdge, render.yintercept);
         posts.EnterTileLight(render.xtile - render.xtilestep, render.yinttile);
         render.tilehit = map.tilemap[render.xtile, render.yinttile];
-        render.hitpushwall = render.tilehit == Program.BIT_WALL;
+        render.hitpushwall = render.tilehit == GameConstants.BIT_WALL;
         if (render.hitpushwall)
             pushWalls.SelectPushWall(hitx, hity);     // which of the moving pushwalls this is
-        render.hitstories =render.tilehit == Program.BIT_WALL ? map.WallStories(pushWalls.pwall.X, pushWalls.pwall.Y) : map.WallStories(hitx, hity);
+        render.hitstories =render.tilehit == GameConstants.BIT_WALL ? map.WallStories(pushWalls.pwall.X, pushWalls.pwall.Y) : map.WallStories(hitx, hity);
 
         if (render.tilehit != 0)
         {
-            if ((render.tilehit & Program.BIT_DOOR) != 0)
+            if ((render.tilehit & GameConstants.BIT_DOOR) != 0)
             {
                 //
                 // hit a vertical door, so find which coordinate the door would be
                 // intersected at, and check to see if the door is open past that point
                 //
-                var door = doors.doorobjlist[render.tilehit & ~Program.BIT_DOOR];
+                var door = doors.doorobjlist[render.tilehit & ~GameConstants.BIT_DOOR];
                 yinttemp = render.yintercept + (ystep >> 1);    // add halfstep to current intercept position
                 int planex = (int)((render.xtile << (int)MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2));
 
@@ -279,7 +279,7 @@ internal sealed class RayTrace(
 
                 hits.HitVertDoor();
             }
-            else if (render.tilehit == Program.BIT_WALL)
+            else if (render.tilehit == GameConstants.BIT_WALL)
             {
                 //
                 // hit a sliding vertical wall
@@ -471,20 +471,20 @@ internal sealed class RayTrace(
         posts.CloseArch(render.xintercept, posts.HorizEdge);
         posts.EnterTileLight(render.xinttile, render.ytile - render.ytilestep);
         render.tilehit = map.tilemap[render.xinttile, render.ytile];
-        render.hitpushwall = render.tilehit == Program.BIT_WALL;
+        render.hitpushwall = render.tilehit == GameConstants.BIT_WALL;
         if (render.hitpushwall)
             pushWalls.SelectPushWall(hitx, hity);     // which of the moving pushwalls this is
-        render.hitstories =render.tilehit == Program.BIT_WALL ? map.WallStories(pushWalls.pwall.X, pushWalls.pwall.Y) : map.WallStories(hitx, hity);
+        render.hitstories =render.tilehit == GameConstants.BIT_WALL ? map.WallStories(pushWalls.pwall.X, pushWalls.pwall.Y) : map.WallStories(hitx, hity);
 
         if (render.tilehit != 0)
         {
-            if ((render.tilehit & Program.BIT_DOOR) != 0)
+            if ((render.tilehit & GameConstants.BIT_DOOR) != 0)
             {
                 //
                 // hit a horizontal door, so find which coordinate the door would be
                 // intersected at, and check to see if the door is open past that point
                 //
-                var door = doors.doorobjlist[render.tilehit & ~Program.BIT_DOOR];
+                var door = doors.doorobjlist[render.tilehit & ~GameConstants.BIT_DOOR];
                 xinttemp = render.xintercept + (xstep >> 1);    // add half step to current intercept position
                 int planey = (int)((render.ytile << (int)MapConstants.TILESHIFT) + (MapConstants.TILEGLOBAL / 2));
 
@@ -524,7 +524,7 @@ internal sealed class RayTrace(
 
                 hits.HitHorizDoor();
             }
-            else if (render.tilehit == Program.BIT_WALL)
+            else if (render.tilehit == GameConstants.BIT_WALL)
             {
                 //
                 // hit a sliding horizontal wall

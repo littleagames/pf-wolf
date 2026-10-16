@@ -44,14 +44,14 @@ internal sealed class PlayerMovement(
 
     /// <summary>The cardinal direction the player faces, as Cmd_Use reckons it</summary>
     internal static controldirs FacingDir(int angle) =>
-        angle < Program.ANGLES / 8 || angle > 7 * Program.ANGLES / 8 ? controldirs.di_east
-        : angle < 3 * Program.ANGLES / 8 ? controldirs.di_north
-        : angle < 5 * Program.ANGLES / 8 ? controldirs.di_west
+        angle < GameConstants.ANGLES / 8 || angle > 7 * GameConstants.ANGLES / 8 ? controldirs.di_east
+        : angle < 3 * GameConstants.ANGLES / 8 ? controldirs.di_north
+        : angle < 5 * GameConstants.ANGLES / 8 ? controldirs.di_west
         : controldirs.di_south;
 
     internal void ControlMovement(Entities.Actors.Actor ob)
     {
-        const int ANGLES = Program.ANGLES;
+        const int ANGLES = GameConstants.ANGLES;
         var playerinput = session.playerinput;
         var playerstate = session.playerstate;
         var tics = session.tics;
@@ -77,9 +77,9 @@ internal sealed class PlayerMovement(
             if (angle >= ANGLES)
                 angle -= ANGLES;
             if (playerinput.IsPressed(buttontypes.bt_run))
-                Thrust(angle, (int)(Program.RUNMOVE * Program.MOVESCALE * tics * side));
+                Thrust(angle, (int)(GameConstants.RUNMOVE * Program.MOVESCALE * tics * side));
             else
-                Thrust(angle, (int)(Program.BASEMOVE * Program.MOVESCALE * tics * side));
+                Thrust(angle, (int)(GameConstants.BASEMOVE * Program.MOVESCALE * tics * side));
         }
 
         if (playerinput.IsPressed(buttontypes.bt_straferight))
@@ -88,9 +88,9 @@ internal sealed class PlayerMovement(
             if (angle < 0)
                 angle += ANGLES;
             if (playerinput.IsPressed(buttontypes.bt_run))
-                Thrust(angle, (int)(Program.RUNMOVE * Program.MOVESCALE * tics * side));
+                Thrust(angle, (int)(GameConstants.RUNMOVE * Program.MOVESCALE * tics * side));
             else
-                Thrust(angle, (int)(Program.BASEMOVE * Program.MOVESCALE * tics * side));
+                Thrust(angle, (int)(GameConstants.BASEMOVE * Program.MOVESCALE * tics * side));
         }
 
         //
@@ -173,8 +173,8 @@ internal sealed class PlayerMovement(
         //
         // moving bounds speed
         //
-        if (speed >= Program.MINDIST * 2)
-            speed = (int)(Program.MINDIST * 2 - 1);
+        if (speed >= GameConstants.MINDIST * 2)
+            speed = (int)(GameConstants.MINDIST * 2 - 1);
 
         // demos move the player exactly as v1.4 did, or they drift from what was recorded
         if (hooks.DemoActive())
@@ -218,7 +218,7 @@ internal sealed class PlayerMovement(
 
     internal bool TryMove(Entities.Actors.Actor ob)
     {
-        const long PLAYERSIZE = Program.PLAYERSIZE;
+        const long PLAYERSIZE = GameConstants.PLAYERSIZE;
         uint xl, yl, xh, yh, x, y;
         Actor? check;
 
@@ -243,7 +243,7 @@ internal sealed class PlayerMovement(
                 {
                     if (check is WallSpriteBlocker)
                         nearwallsprite = true;          // only its panel blocks: checked below
-                    else if (map.tilemap[x, y] == Program.BIT_WALL
+                    else if (map.tilemap[x, y] == GameConstants.BIT_WALL
                         && pushWalls.pushwalls.Find(p => p.X == x && p.Y == y) is { } pw)    // back of a moving pushwall?
                     {
                         switch (pw.Dir)
@@ -313,10 +313,10 @@ internal sealed class PlayerMovement(
                     continue;
 
                 var deltax = ob.X - actor.X;
-                if (deltax < -Program.MINACTORDIST || deltax > Program.MINACTORDIST)
+                if (deltax < -GameConstants.MINACTORDIST || deltax > GameConstants.MINACTORDIST)
                     continue;
                 var deltay = ob.Y - actor.Y;
-                if (deltay < -Program.MINACTORDIST || deltay > Program.MINACTORDIST)
+                if (deltay < -GameConstants.MINACTORDIST || deltay > GameConstants.MINACTORDIST)
                     continue;
 
                 // An ally following the player gets out of their way

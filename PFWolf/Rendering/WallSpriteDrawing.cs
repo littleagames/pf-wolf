@@ -35,7 +35,7 @@ internal sealed class WallSpriteDrawing(
             wallspriteraydy = new double[viewwidth];
         }
 
-        const double TORADIANS = 2 * Math.PI / Program.FINEANGLES;
+        const double TORADIANS = 2 * Math.PI / GameConstants.FINEANGLES;
         for (int x = 0; x < viewwidth; x++)
         {
             double angle = (render.midangle + render.pixelangle[x]) * TORADIANS;
@@ -51,7 +51,7 @@ internal sealed class WallSpriteDrawing(
 
     /// <summary>A post's height (as wallheight) at a view depth, kept short of DrawScaleds' 32000 "drawn" mark.</summary>
     internal short HeightAtDepth(double nx) =>
-        (short)Math.Min(render.heightnumerator * 256.0 / Math.Max(nx, Program.MINDIST), 31999);
+        (short)Math.Min(render.heightnumerator * 256.0 / Math.Max(nx, GameConstants.MINDIST), 31999);
 
     /// <summary>
     /// Fills in a wall sprite's vislist entry: its height is the panel's middle's, for sorting
@@ -62,7 +62,7 @@ internal sealed class WallSpriteDrawing(
         if (WallSprites.GetWallSpriteSpan(actor) is not { } span)
             return false;
 
-        if (ViewDepth(span.X1, span.Y1) < Program.MINDIST && ViewDepth(span.X2, span.Y2) < Program.MINDIST)
+        if (ViewDepth(span.X1, span.Y1) < GameConstants.MINDIST && ViewDepth(span.X2, span.Y2) < GameConstants.MINDIST)
             return false;
 
         vis.viewheight = HeightAtDepth(ViewDepth((span.X1 + span.X2) / 2, (span.Y1 + span.Y2) / 2));
@@ -127,7 +127,7 @@ internal sealed class WallSpriteDrawing(
             // Stretched across the panel, so only its offset's height counts: that row on the floor
             int column = Math.Min((int)(t * spriteAsset.Width), spriteAsset.Width - 1);
             int top = floorRow(half) - SpriteScaler.TexelsToPixels(spriteAsset.Origin.Y, half);
-            scaler.ScaleColumn((short)x, (short)top, MathUtils.FixedDiv(half, Program.TEXTURESIZE / 2), spriteAsset, column,
+            scaler.ScaleColumn((short)x, (short)top, MathUtils.FixedDiv(half, GameConstants.TEXTURESIZE / 2), spriteAsset, column,
                 vis.bright ? Lighting.noshade : lighting.LightAt(Lighting.TileIndex(vis.tilex, vis.tiley), vis.worldx, vis.worldy),
                 vis.bright ? 0 : lighting.ShadeOffsetForHeight(height), translation: vis.translation);
         }

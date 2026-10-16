@@ -61,7 +61,7 @@ public class WallPostsTests
     [Test]
     public void Too_Close_Is_As_Tall_As_At_The_Nearest_Distance()
     {
-        Assert.That(_posts.HeightAt(_render.viewx, _render.viewy), Is.EqualTo(_posts.HeightAt(_render.viewx + (int)Program.MINDIST, _render.viewy)));
+        Assert.That(_posts.HeightAt(_render.viewx, _render.viewy), Is.EqualTo(_posts.HeightAt(_render.viewx + (int)GameConstants.MINDIST, _render.viewy)));
     }
 
     [TestCase(32, 32, 80 + 32)]     // eyes half a story up: the floor half a story's pixels below the horizon

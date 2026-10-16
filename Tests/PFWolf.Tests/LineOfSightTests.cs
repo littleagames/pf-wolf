@@ -68,7 +68,7 @@ public class LineOfSightTests
     public void A_Door_Blocks_It_Until_It_Has_Slid_Past_The_Line(ushort position, bool clear)
     {
         // Arrange: door 0 across the row at x 8
-        _map.tilemap[8, 10] = Program.BIT_DOOR | 0;
+        _map.tilemap[8, 10] = GameConstants.BIT_DOOR | 0;
         _doors.doorobjlist[0] = new doorobj_t { tilex = 8, tiley = 10, vertical = true, position = position };
 
         // Act / Assert

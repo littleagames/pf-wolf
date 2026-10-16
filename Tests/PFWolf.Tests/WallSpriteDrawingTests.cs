@@ -43,9 +43,9 @@ public class WallSpriteDrawingTests
     public void Nearer_Is_Taller_But_Never_Up_To_The_Drawn_Mark()
     {
         Assert.That(_drawing.HeightAtDepth(4 * Tile), Is.LessThan(_drawing.HeightAtDepth(2 * Tile)));
-        Assert.That(_drawing.HeightAtDepth(1), Is.EqualTo(_drawing.HeightAtDepth(Program.MINDIST)));     // nearer than MINDIST is as at it
+        Assert.That(_drawing.HeightAtDepth(1), Is.EqualTo(_drawing.HeightAtDepth(GameConstants.MINDIST)));     // nearer than MINDIST is as at it
         _render.heightnumerator = 0x1000000;
-        Assert.That(_drawing.HeightAtDepth(Program.MINDIST), Is.EqualTo(31999));
+        Assert.That(_drawing.HeightAtDepth(GameConstants.MINDIST), Is.EqualTo(31999));
     }
 
     [Test]

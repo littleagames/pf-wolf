@@ -31,7 +31,7 @@ internal sealed class Weather(
     internal string? levelweathername;
 
     const int MAXWEATHER = 10000;
-    const int TEXELGLOBAL = (int)MapConstants.TILEGLOBAL / Program.TEXTURESIZE;    // global units a texel
+    const int TEXELGLOBAL = (int)MapConstants.TILEGLOBAL / GameConstants.TEXTURESIZE;    // global units a texel
     const long NEARWEATHER = MapConstants.TILEGLOBAL / 4;                  // nothing's drawn nearer the view than this
 
     //
@@ -174,13 +174,13 @@ internal sealed class Weather(
 
         int x = (int)tx, y = (int)ty;
         byte tile = map.tilemap[x, y];
-        if ((tile & Program.BIT_DOOR) != 0)
+        if ((tile & GameConstants.BIT_DOOR) != 0)
             return true;
         if (tile != 0)
-            return z < map.WallStories(x, y) * Program.TEXTURESIZE;
+            return z < map.WallStories(x, y) * GameConstants.TEXTURESIZE;
         if (map.ceilingflat[(y << MapManager.MAPSHIFT) + x] != null)
             return true;
-        return isArch(x, y) && z < map.storymap[x, y] * Program.TEXTURESIZE;
+        return isArch(x, y) && z < map.storymap[x, y] * GameConstants.TEXTURESIZE;
     }
 
     struct WeatherDrop
@@ -267,8 +267,8 @@ internal sealed class Weather(
 
         // Below the ceiling, if any tile has a ceiling flat it could show over; otherwise up past the tallest walls
         double top = map.hasceilingflats
-            ? render.wallstories * Program.TEXTURESIZE
-            : (map.MaxWallStories + 1) * Program.TEXTURESIZE;
+            ? render.wallstories * GameConstants.TEXTURESIZE
+            : (map.MaxWallStories + 1) * GameConstants.TEXTURESIZE;
         double fall = Math.Max(info.FallSpeed, 0.01);
         var (windx, windy) = WindDrift(info, time);
 
@@ -312,7 +312,7 @@ internal sealed class Weather(
 
             int x1 = x0, y1 = y0, size;
             if (snow)
-                size = Math.Clamp((int)(info.Size * half / (Program.TEXTURESIZE / 2) + 0.5), 1, 8);
+                size = Math.Clamp((int)(info.Size * half / (GameConstants.TEXTURESIZE / 2) + 0.5), 1, 8);
             else
             {
                 // It trails back along the way it's going (with the wind as it is now): faster
@@ -329,7 +329,7 @@ internal sealed class Weather(
                     x1 = x0 + (x1 - x0) * maxstreak / rows;
                     y1 = y0 + (y1 - y0) * maxstreak / rows;
                 }
-                size = Math.Clamp((int)(half / (Program.TEXTURESIZE * 2)), 1, 3);
+                size = Math.Clamp((int)(half / (GameConstants.TEXTURESIZE * 2)), 1, 3);
             }
 
             AddWeatherDrop(x0, y0, x1, y1, size, WeatherColor(basecolor, dim, gx, gy, nx, maxdist), nx, false);
@@ -355,7 +355,7 @@ internal sealed class Weather(
             return;
 
         // it spreads to about 3 texels across as it goes
-        int spread = Math.Clamp((int)(3 * half / (Program.TEXTURESIZE / 2) * (age + 1) / SPLASHTICS + 0.5), 1, 12);
+        int spread = Math.Clamp((int)(3 * half / (GameConstants.TEXTURESIZE / 2) * (age + 1) / SPLASHTICS + 0.5), 1, 12);
         AddWeatherDrop(sx, sy, sx, sy, spread, WeatherColor(basecolor, dim, gx, gy, nx, maxdist), nx, true);
     }
 
@@ -381,7 +381,7 @@ internal sealed class Weather(
         long dx = gx - render.viewx, dy = gy - render.viewy;
         nx = (dx * render.viewcos >> 16) - (dy * render.viewsin >> 16);
         long ny = (dx * render.viewsin >> 16) + (dy * render.viewcos >> 16);
-        if (nx < Program.MINDIST)
+        if (nx < GameConstants.MINDIST)
         {
             sx = sy = 0;
             half = 0;
@@ -390,7 +390,7 @@ internal sealed class Weather(
 
         sx = (int)Math.Clamp(render.centerx + ny * render.scale / nx, -100000, 100000);
         half = render.heightnumerator * 32.0 / nx;
-        sy = (int)Math.Clamp(render.centery + half * (render.vieweyez - z) / (Program.TEXTURESIZE / 2), -100000, 100000);
+        sy = (int)Math.Clamp(render.centery + half * (render.vieweyez - z) / (GameConstants.TEXTURESIZE / 2), -100000, 100000);
         return true;
     }
 

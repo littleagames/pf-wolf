@@ -54,7 +54,7 @@ internal sealed class Missiles(
     /// </summary>
     internal void A_FireMissile(Entities.Actors.Actor weapon, string[] args)
     {
-        const int ANGLES = Program.ANGLES;
+        const int ANGLES = GameConstants.ANGLES;
         if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
         {
             Console.WriteLine("A_FireMissile: no missile given.");
@@ -76,7 +76,7 @@ internal sealed class Missiles(
         missile.TicCount = 1;
 
         // Just in front of the player, so one fired point blank at a wall still shows its blast
-        const int ahead = (int)(9L * Program.MINDIST / 8);
+        const int ahead = (int)(9L * GameConstants.MINDIST / 8);
         missile.X += MathUtils.FixedMul(ahead, Program.costable[missile.Angle]);
         missile.Y -= MathUtils.FixedMul(ahead, Program.sintable[missile.Angle]);
         missile.TileX = (byte)(missile.X >> MapConstants.TILESHIFT);
@@ -239,7 +239,7 @@ internal sealed class Missiles(
     {
         Wall => true,
         Door door => door.door < 0 || doors.doorobjlist[door.door].action != dooractiontypes.dr_open,
-        _ => map.tilemap[x, y] != 0 && (map.tilemap[x, y] & Program.BIT_DOOR) == 0,
+        _ => map.tilemap[x, y] != 0 && (map.tilemap[x, y] & GameConstants.BIT_DOOR) == 0,
     };
 
     /// <summary>A_BlockTile: the actor's tile blocks movement, as a solid thing's does</summary>

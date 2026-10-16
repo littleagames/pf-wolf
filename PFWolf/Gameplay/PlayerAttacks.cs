@@ -95,11 +95,11 @@ internal sealed class PlayerAttacks(
             int gx = actor.X - fromx, gy = actor.Y - fromy;
             int nx = MathUtils.FixedMul(gx, fromcos) - MathUtils.FixedMul(gy, fromsin) - Program.ACTORSIZE;
             int ny = MathUtils.FixedMul(gy, fromcos) + MathUtils.FixedMul(gx, fromsin);
-            if (nx < Program.MINDIST)
+            if (nx < GameConstants.MINDIST)
                 continue;
 
             // |ny / nx| * scale < shootdelta, with the view's width taken out of both
-            if (Math.Abs((long)ny) * 5 * (Program.FOCALLENGTH + Program.MINDIST) >= (long)nx * (Program.VIEWGLOBAL / 2))
+            if (Math.Abs((long)ny) * 5 * (Program.FOCALLENGTH + GameConstants.MINDIST) >= (long)nx * (Program.VIEWGLOBAL / 2))
                 continue;
 
             if (!lineOfSight.CheckLine(actor, shooter))

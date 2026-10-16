@@ -102,7 +102,7 @@ internal sealed class LevelEditCommands(
         {
             var patch = (byte)ParseInt(args[0], 0, 255);
             int tile = map.tilemap[x, y];
-            if (patch != 0 && ((tile & Program.BIT_DOOR) != 0 || (tile & ~Program.BIT_WALL) == 0))
+            if (patch != 0 && ((tile & GameConstants.BIT_DOOR) != 0 || (tile & ~GameConstants.BIT_WALL) == 0))
                 throw new ArgumentException($"Tile {x},{y} isn't a wall: patches go on walls only");
             map.SetPatch(x, y, patch);
         }

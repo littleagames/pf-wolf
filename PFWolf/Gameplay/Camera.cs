@@ -68,10 +68,10 @@ internal sealed class Camera(GameSession session)
             return;
 
         double delta = ActorViewAngle(Target!) - smoothangle;
-        delta = ((delta % Program.ANGLES) + Program.ANGLES * 1.5) % Program.ANGLES - Program.ANGLES / 2.0;    // the shorter way round
+        delta = ((delta % GameConstants.ANGLES) + GameConstants.ANGLES * 1.5) % GameConstants.ANGLES - GameConstants.ANGLES / 2.0;    // the shorter way round
         double step = TURNSPEED * tics;
         smoothangle += Math.Clamp(delta, -step, step);
-        smoothangle = ((smoothangle % Program.ANGLES) + Program.ANGLES) % Program.ANGLES;
+        smoothangle = ((smoothangle % GameConstants.ANGLES) + GameConstants.ANGLES) % GameConstants.ANGLES;
     }
 
     internal int X => Target?.X ?? fixedx;
@@ -83,7 +83,7 @@ internal sealed class Camera(GameSession session)
     {
         null => fixedangle,
         PlayerPawn => Target.Angle,
-        _ => (short)((int)Math.Round(smoothangle) % Program.ANGLES),
+        _ => (short)((int)Math.Round(smoothangle) % GameConstants.ANGLES),
     };
 
     internal double Pitch => Target switch

@@ -44,8 +44,8 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
         if (wallSpriteBlocks(fromX, fromY, to.X, to.Y))
             return false;
 
-        x1 = fromX >> Program.UNSIGNEDSHIFT;
-        y1 = fromY >> Program.UNSIGNEDSHIFT;
+        x1 = fromX >> GameConstants.UNSIGNEDSHIFT;
+        y1 = fromY >> GameConstants.UNSIGNEDSHIFT;
         xt1 = x1 >> 8;
         yt1 = y1 >> 8;
 
@@ -60,8 +60,8 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
         {
             // An actor's TileX/TileY jump to the tile it's stepping onto as the step begins: the
             // line goes to the tile it's actually over
-            x2 = (ushort)(to.X >> Program.UNSIGNEDSHIFT);
-            y2 = (ushort)(to.Y >> Program.UNSIGNEDSHIFT);
+            x2 = (ushort)(to.X >> GameConstants.UNSIGNEDSHIFT);
+            y2 = (ushort)(to.Y >> GameConstants.UNSIGNEDSHIFT);
             xt2 = x2 >> 8;
             yt2 = y2 >> 8;
         }
@@ -108,10 +108,10 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
                 if (value == 0 || shape != WallShape.Square)
                     continue;
 
-                if (value < Program.BIT_DOOR || value > Program.BIT_ALLTILES)
+                if (value < GameConstants.BIT_DOOR || value > GameConstants.BIT_ALLTILES)
                     return false;
 
-                value &= ~(uint)Program.BIT_DOOR;
+                value &= ~(uint)GameConstants.BIT_DOOR;
                 intercept = (uint)(yfrac - ystep / 2);
 
                 if (intercept > doors.doorobjlist[value].position)
@@ -162,10 +162,10 @@ internal sealed class LineOfSight(MapManager map, Doors doors, GameSession sessi
                 if (value == 0 || shape != WallShape.Square)
                     continue;
 
-                if (value < Program.BIT_DOOR || value > Program.BIT_ALLTILES)
+                if (value < GameConstants.BIT_DOOR || value > GameConstants.BIT_ALLTILES)
                     return false;
 
-                value &= ~(uint)Program.BIT_DOOR;
+                value &= ~(uint)GameConstants.BIT_DOOR;
                 intercept = (uint)(xfrac - xstep / 2);
 
                 if (intercept > doors.doorobjlist[value].position)

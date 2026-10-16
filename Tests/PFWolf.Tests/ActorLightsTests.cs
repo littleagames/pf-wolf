@@ -87,7 +87,7 @@ public class ActorLightsTests
     {
         // Arrange: door 0 a tile east
         Dim();
-        _map.tilemap[11, 10] = (byte)(Program.BIT_DOOR | 0);
+        _map.tilemap[11, 10] = (byte)(GameConstants.BIT_DOOR | 0);
         _doors.doorobjlist[0] = new doorobj_t { tilex = 11, tiley = 10, action = dooractiontypes.dr_closed };
         Lamp(10, 10);
 

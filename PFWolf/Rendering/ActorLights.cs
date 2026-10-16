@@ -342,7 +342,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     internal bool LightEnters(int x, int y)
     {
         byte tile = map.tilemap[x, y];
-        return tile == 0 || (tile & Program.BIT_DOOR) != 0 || map.wallshape[x, y] != WallShape.Square;
+        return tile == 0 || (tile & GameConstants.BIT_DOOR) != 0 || map.wallshape[x, y] != WallShape.Square;
     }
 
     // Light carries on through a tile: open floor, or a door that isn't shut
@@ -351,7 +351,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         byte tile = map.tilemap[x, y];
         if (tile == 0)
             return true;
-        return (tile & Program.BIT_DOOR) != 0 && doors.doorobjlist[tile & ~Program.BIT_DOOR].action != dooractiontypes.dr_closed;
+        return (tile & GameConstants.BIT_DOOR) != 0 && doors.doorobjlist[tile & ~GameConstants.BIT_DOOR].action != dooractiontypes.dr_closed;
     }
 
     // Whether any of a tile is within r (global units) of (lx, ly)

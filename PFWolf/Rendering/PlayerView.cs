@@ -41,7 +41,7 @@ internal sealed class PlayerView(
     {
         var player = session.player;
         int focallength = hooks.FocalLength();
-        int sin = Program.sintable[player.Angle], cos = Program.sintable[player.Angle + Program.ANGLES / 4];
+        int sin = Program.sintable[player.Angle], cos = Program.sintable[player.Angle + GameConstants.ANGLES / 4];
         return (player.X - MathUtils.FixedMul(focallength, cos), player.Y + MathUtils.FixedMul(focallength, sin), sin, cos);
     }
 
@@ -124,7 +124,7 @@ internal sealed class PlayerView(
     internal bool PlayerTileInView(PlayerPawn pawn) =>
         session.camera.Target == pawn && session.gamemode == GameMode.Single
             ? map.spotvis[pawn.TileX, pawn.TileY]
-            : map.tilemap[pawn.TileX, pawn.TileY] == 0 || (map.tilemap[pawn.TileX, pawn.TileY] & Program.BIT_DOOR) != 0;
+            : map.tilemap[pawn.TileX, pawn.TileY] == 0 || (map.tilemap[pawn.TileX, pawn.TileY] & GameConstants.BIT_DOOR) != 0;
 
     /// <summary>
     /// Whether a player could see an actor: in front of them, within the view's width either
@@ -133,16 +133,16 @@ internal sealed class PlayerView(
     internal bool InViewOf(PlayerPawn pawn, Entities.Actors.Actor actor)
     {
         int focallength = hooks.FocalLength();
-        int sin = Program.sintable[pawn.Angle], cos = Program.sintable[pawn.Angle + Program.ANGLES / 4];
+        int sin = Program.sintable[pawn.Angle], cos = Program.sintable[pawn.Angle + GameConstants.ANGLES / 4];
         int fromx = pawn.X - MathUtils.FixedMul(focallength, cos), fromy = pawn.Y + MathUtils.FixedMul(focallength, sin);
         int gx = actor.X - fromx, gy = actor.Y - fromy;
         int nx = MathUtils.FixedMul(gx, cos) - MathUtils.FixedMul(gy, sin) - Program.ACTORSIZE;
         int ny = MathUtils.FixedMul(gy, cos) + MathUtils.FixedMul(gx, sin);
-        if (nx < Program.MINDIST)
+        if (nx < GameConstants.MINDIST)
             return false;
 
         // |ny / nx| * scale within half the view: the view's width taken out of both
-        return Math.Abs((long)ny) * (Program.FOCALLENGTH + Program.MINDIST) < (long)nx * (Program.VIEWGLOBAL / 2)
+        return Math.Abs((long)ny) * (Program.FOCALLENGTH + GameConstants.MINDIST) < (long)nx * (Program.VIEWGLOBAL / 2)
             && lineOfSight.CheckLine(actor, pawn);
     }
 

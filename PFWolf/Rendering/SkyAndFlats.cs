@@ -20,7 +20,7 @@ internal sealed class SkyAndFlats(
     GameSession session,
     Func<string, TextureAsset?> worldTexture)
 {
-    internal double EyeHalves(int z) => Math.Abs(z - render.vieweyez) / (double)(Program.TEXTURESIZE / 2);
+    internal double EyeHalves(int z) => Math.Abs(z - render.vieweyez) / (double)(GameConstants.TEXTURESIZE / 2);
 
     internal static byte[] vgaCeiling =
     {
@@ -104,12 +104,12 @@ internal sealed class SkyAndFlats(
             byte* dest = (byte*)render.vbufPtr + render.screenofs;
             for (int x = 0; x < render.viewwidth; x++)
             {
-                int angle = (render.midangle + render.pixelangle[x]) % Program.ANG360;
+                int angle = (render.midangle + render.pixelangle[x]) % GameConstants.ANG360;
                 if (angle < 0)
-                    angle += Program.ANG360;
+                    angle += GameConstants.ANG360;
 
                 // angles grow to the left, and the picture runs left to right
-                int u = (int)((long)(Program.ANG360 - 1 - angle) * SKYCIRCLE / Program.ANG360 % skywidth);
+                int u = (int)((long)(GameConstants.ANG360 - 1 - angle) * SKYCIRCLE / GameConstants.ANG360 % skywidth);
                 int column = u * skyheight;
 
                 for (int y = 0; y < render.centery; y++)
@@ -205,7 +205,7 @@ internal sealed class SkyAndFlats(
             flatdiry = new long[render.viewwidth];
         }
 
-        const double TORADIANS = 2 * Math.PI / Program.FINEANGLES;
+        const double TORADIANS = 2 * Math.PI / GameConstants.FINEANGLES;
         for (int x = 0; x < render.viewwidth; x++)
         {
             double angle = (render.midangle + render.pixelangle[x]) * TORADIANS;
@@ -250,10 +250,10 @@ internal sealed class SkyAndFlats(
                     byte pixel = color;
                     if (texture != null)
                     {
-                        int u = (int)(px >> (MapConstants.TILESHIFT - Program.TEXTURESHIFT)) & (Program.TEXTURESIZE - 1);
-                        int v = (int)(py >> (MapConstants.TILESHIFT - Program.TEXTURESHIFT)) & (Program.TEXTURESIZE - 1);
+                        int u = (int)(px >> (MapConstants.TILESHIFT - GameConstants.TEXTURESHIFT)) & (GameConstants.TEXTURESIZE - 1);
+                        int v = (int)(py >> (MapConstants.TILESHIFT - GameConstants.TEXTURESHIFT)) & (GameConstants.TEXTURESIZE - 1);
                         int height = texture.Height;
-                        pixel = texture.RawData[u * texture.Width / Program.TEXTURESIZE * height + v * height / Program.TEXTURESIZE];
+                        pixel = texture.RawData[u * texture.Width / GameConstants.TEXTURESIZE * height + v * height / GameConstants.TEXTURESIZE];
                     }
 
                     // No texture, or a see-through pixel (FLATMASK, as sprites have): the color, or
@@ -274,7 +274,7 @@ internal sealed class SkyAndFlats(
     // ShadeOffset for screen row y of a floor or ceiling halves half stories from the eye (as DrawFlats)
     // How far the floor, and the ceiling at the top of the level's walls, are from the eye, in half stories
     internal double FloorHalves => EyeHalves(0);
-    internal double CeilingHalves => EyeHalves(render.wallstories * Program.TEXTURESIZE);
+    internal double CeilingHalves => EyeHalves(render.wallstories * GameConstants.TEXTURESIZE);
 
     int FlatRowShadeOffset(int y, double halves) =>
         lighting.shading ? lighting.ShadeOffset((long)(render.heightnumerator * 32.0 * halves / Math.Abs(y + 0.5 - render.centery))) : 0;

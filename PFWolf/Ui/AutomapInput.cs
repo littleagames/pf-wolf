@@ -131,13 +131,13 @@ internal sealed class AutomapInput(
 
         // controlx/controly run BASEMOVE a tic at walking pace (RUNMOVE running)
         float dx = polling.controlx + polling.controlstrafe, dy = polling.controly;
-        int strafe = (input.IsButtonPressed(buttontypes.bt_run) ? Program.RUNMOVE : Program.BASEMOVE) * (int)session.tics;
+        int strafe = (input.IsButtonPressed(buttontypes.bt_run) ? GameConstants.RUNMOVE : GameConstants.BASEMOVE) * (int)session.tics;
         if (input.IsButtonPressed(buttontypes.bt_strafeleft))
             dx -= strafe;
         if (input.IsButtonPressed(buttontypes.bt_straferight))
             dx += strafe;
 
-        automap.Pan(dx * AUTOMAP_PANSPEED / Program.BASEMOVE, dy * AUTOMAP_PANSPEED / Program.BASEMOVE);
+        automap.Pan(dx * AUTOMAP_PANSPEED / GameConstants.BASEMOVE, dy * AUTOMAP_PANSPEED / GameConstants.BASEMOVE);
 
         polling.controlx = polling.controly = polling.controlstrafe = 0;
         input.SetButtonPressed(buttontypes.bt_strafeleft, false);

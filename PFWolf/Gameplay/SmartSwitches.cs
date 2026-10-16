@@ -60,9 +60,9 @@ internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession ses
         int tile = map.tilemap[x, y];
 
         // A door: unlocked and opened
-        if ((tile & Program.BIT_DOOR) != 0 && (tile & Program.BIT_WALL) == 0)
+        if ((tile & GameConstants.BIT_DOOR) != 0 && (tile & GameConstants.BIT_WALL) == 0)
         {
-            int door = tile & ~Program.BIT_DOOR;
+            int door = tile & ~GameConstants.BIT_DOOR;
             if (door < doors.lastdoorobj)
             {
                 doors.doorobjlist[door].unlocked = true;
@@ -104,7 +104,7 @@ internal sealed class SmartSwitches(MapManager map, Doors doors, GameSession ses
         // A wall switch: thrown, unless it's already the way it's told to turn
         if (tile != 0)
         {
-            int id = tile & ~Program.BIT_WALL;
+            int id = tile & ~GameConstants.BIT_WALL;
             if (map.GetMapData().Walls.TryGetValue(id, out var wall) && wall.Switch is { } wallSwitch)
             {
                 bool isOn = wallSwitch.State.Equals("on", StringComparison.OrdinalIgnoreCase);

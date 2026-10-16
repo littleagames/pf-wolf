@@ -178,7 +178,7 @@ internal sealed class HubActions(
                 var angle = Math.Atan2(dy, dx);
                 if (angle < 0)
                     angle += Math.PI * 2;
-                RotateView((int)(angle / (Math.PI * 2) * Program.ANGLES), 2);
+                RotateView((int)(angle / (Math.PI * 2) * GameConstants.ANGLES), 2);
                 y = mapManager.mapheight;
                 break;
             }
@@ -220,7 +220,7 @@ internal sealed class HubActions(
 
         // Starting behind the player can be inside a wall: it runs on out of it, and only a wall
         // it runs into stops it
-        bool IsWall(int x, int y) => mapManager.tilemap[x, y] != 0 && (mapManager.tilemap[x, y] & Program.BIT_DOOR) == 0;
+        bool IsWall(int x, int y) => mapManager.tilemap[x, y] != 0 && (mapManager.tilemap[x, y] & GameConstants.BIT_DOOR) == 0;
         bool blocked = tx < 0 || ty < 0 || tx >= MapManager.MAPSIZE || ty >= MapManager.MAPSIZE
             || (IsWall(tx, ty) && !IsWall(ob.TileX, ob.TileY));
         if (!blocked)
@@ -239,16 +239,16 @@ internal sealed class HubActions(
     /// <summary>Turns the view to <paramref name="destAngle"/> at <paramref name="speed"/> degrees a tic, drawing as it goes</summary>
     void RotateView(int destAngle, int speed)
     {
-        destAngle = ((destAngle % Program.ANGLES) + Program.ANGLES) % Program.ANGLES;
+        destAngle = ((destAngle % GameConstants.ANGLES) + GameConstants.ANGLES) % GameConstants.ANGLES;
         int diff = destAngle - session.player.Angle;
-        if (diff > Program.ANGLES / 2) diff -= Program.ANGLES;
-        if (diff < -Program.ANGLES / 2) diff += Program.ANGLES;
+        if (diff > GameConstants.ANGLES / 2) diff -= GameConstants.ANGLES;
+        if (diff < -GameConstants.ANGLES / 2) diff += GameConstants.ANGLES;
 
         while (diff != 0)
         {
             int step = Math.Min(Math.Abs(diff), Math.Max(1, (int)(speed * session.tics))) * Math.Sign(diff);
             diff -= step;
-            session.player.Angle = (short)(((session.player.Angle + step) % Program.ANGLES + Program.ANGLES) % Program.ANGLES);
+            session.player.Angle = (short)(((session.player.Angle + step) % GameConstants.ANGLES + GameConstants.ANGLES) % GameConstants.ANGLES);
             frame.ThreeDRefresh();
             frame.CalcTics();
         }

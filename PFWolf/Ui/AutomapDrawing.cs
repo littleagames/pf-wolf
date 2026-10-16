@@ -438,7 +438,7 @@ internal sealed class AutomapDrawing(
         if (font == null)
             return;
 
-        int heading = ((session.player.Angle % Program.ANGLES + Program.ANGLES) % Program.ANGLES + Program.ANGLES / 16) / (Program.ANGLES / 8) % 8;
+        int heading = ((session.player.Angle % GameConstants.ANGLES + GameConstants.ANGLES) % GameConstants.ANGLES + GameConstants.ANGLES / 16) / (GameConstants.ANGLES / 8) % 8;
         string text = AutomapText("$STR_AM_POSITION", session.player.TileX, session.player.TileY, AutomapText(AutomapHeadings[heading]));
         if (!automap.Follow)
             text += "  " + AutomapText("$STR_AM_PAN");
@@ -557,7 +557,7 @@ internal sealed class AutomapDrawing(
             return true;
 
         int tile = map.tilemap[x, y];
-        return tile != 0 && (tile & Program.BIT_DOOR) == 0 && tile != Program.BIT_WALL;
+        return tile != 0 && (tile & GameConstants.BIT_DOOR) == 0 && tile != GameConstants.BIT_WALL;
     }
 
     /// <summary>
@@ -626,7 +626,7 @@ internal sealed class AutomapDrawing(
     {
         // A wall beside a door carries the door-side mark (BIT_WALL), which isn't part of its id
         MapTextureTranslation? textures = null;
-        if (mapDefs == null || !mapDefs.Walls.TryGetValue(tile & ~Program.BIT_WALL, out textures))
+        if (mapDefs == null || !mapDefs.Walls.TryGetValue(tile & ~GameConstants.BIT_WALL, out textures))
             return default;
 
         return new AutomapFaces(AutomapTexture(textures.WallFace("north")), AutomapTexture(textures.WallFace("south")),

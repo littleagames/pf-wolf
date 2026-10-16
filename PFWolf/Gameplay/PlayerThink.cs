@@ -81,8 +81,8 @@ internal sealed class PlayerThink(
         if (gamestate.victoryflag)              // watching the BJ actor
             return;
 
-        session.playerstate.PlUX = (ushort)(player.X >> Program.UNSIGNEDSHIFT);    // scale to fit in unsigned
-        session.playerstate.PlUY = (ushort)(player.Y >> Program.UNSIGNEDSHIFT);
+        session.playerstate.PlUX = (ushort)(player.X >> GameConstants.UNSIGNEDSHIFT);    // scale to fit in unsigned
+        session.playerstate.PlUY = (ushort)(player.Y >> GameConstants.UNSIGNEDSHIFT);
         player.TileX = (byte)(player.X >> (int)MapConstants.TILESHIFT);                // scale to tile values
         player.TileY = (byte)(player.Y >> (int)MapConstants.TILESHIFT);
 
@@ -122,7 +122,7 @@ internal sealed class PlayerThink(
     // angle: the mapdefs player start's facing, 0=east, 90=north, 180=west, 270=south
     internal void SpawnPlayer(int tilex, int tiley, int angle)
     {
-        const int ANGLES = Program.ANGLES;
+        const int ANGLES = GameConstants.ANGLES;
         var player = session.player;
         player.Active = activetypes.ac_yes;
         player.SetPosition(tilex, tiley);       // tile, and the tile-centred world x/y

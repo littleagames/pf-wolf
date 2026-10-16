@@ -203,11 +203,11 @@ internal sealed class Projectiles(
         int x, y, xl, yl, xh, yh;
         Actor? check;
 
-        xl = (int)((obx - Program.PLAYERSIZE) >> MapConstants.TILESHIFT);
-        yl = (int)((oby - Program.PLAYERSIZE) >> MapConstants.TILESHIFT);
+        xl = (int)((obx - GameConstants.PLAYERSIZE) >> MapConstants.TILESHIFT);
+        yl = (int)((oby - GameConstants.PLAYERSIZE) >> MapConstants.TILESHIFT);
 
-        xh = (int)((obx + Program.PLAYERSIZE) >> MapConstants.TILESHIFT);
-        yh = (int)((oby + Program.PLAYERSIZE) >> MapConstants.TILESHIFT);
+        xh = (int)((obx + GameConstants.PLAYERSIZE) >> MapConstants.TILESHIFT);
+        yh = (int)((oby + GameConstants.PLAYERSIZE) >> MapConstants.TILESHIFT);
 
         //
         // check for solid walls

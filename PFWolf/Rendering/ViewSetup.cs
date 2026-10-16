@@ -22,7 +22,7 @@ internal sealed class ViewSetup(
     ViewSetupHooks hooks)
 {
     // Radians to fine angles (FINEANGLES a turn)
-    const float RadToInt = Program.FINEANGLES / 2 / Program.PI;
+    const float RadToInt = GameConstants.FINEANGLES / 2 / GameConstants.PI;
 
     internal void NewViewSize(int width)
     {
@@ -51,7 +51,7 @@ internal sealed class ViewSetup(
     /// </summary>
     internal int BorderedViewHeight(int width)
     {
-        int height = (int)(width * 16 * Program.HEIGHTRATIO * video.screenHeight / 200);
+        int height = (int)(width * 16 * GameConstants.HEIGHTRATIO * video.screenHeight / 200);
         int room = PlayAreaHeight - video.ToScreenLength(2);
         return Math.Min(height, room);
     }
@@ -101,7 +101,7 @@ internal sealed class ViewSetup(
         double facedist;
 
         render.focallength = (int)focal;
-        facedist = focal + Program.MINDIST;
+        facedist = focal + GameConstants.MINDIST;
         halfview = render.viewwidth / 2;                                 // half view in pixels
 
         //
@@ -155,7 +155,7 @@ internal sealed class ViewSetup(
         if (size == 20)
             return (double)VideoSettings.BaseWidth / Math.Max(playArea, 1);
 
-        double height = Math.Min(size * 16 * Program.HEIGHTRATIO, playArea - 2);
+        double height = Math.Min(size * 16 * GameConstants.HEIGHTRATIO, playArea - 2);
         return size * 16 / Math.Max(height, 1);
     }
 

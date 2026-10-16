@@ -128,8 +128,8 @@ public class PlayerMovementTests
     public void A_Pushwalls_Back_Blocks_Only_Where_It_Has_Got_To(byte pos, bool room)
     {
         // Arrange: a pushwall moving away east, the player close behind it
-        _map.tilemap[11, 10] = Program.BIT_WALL;
-        _map.actorat[11, 10] = new Wall(Program.BIT_WALL);
+        _map.tilemap[11, 10] = GameConstants.BIT_WALL;
+        _map.actorat[11, 10] = new Wall(GameConstants.BIT_WALL);
         _pushWalls.pushwalls.Add(new MovingPushWall { X = 11, Y = 10, Dir = controldirs.di_east, Pos = pos, Tile = 1 });
         var pawn = Player();
         pawn.X = 11 * Tile - 0x2000;

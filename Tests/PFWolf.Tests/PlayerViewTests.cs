@@ -38,7 +38,7 @@ public class PlayerViewTests
         var pawn = new PlayerPawn { State = _session.playerstate, X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10, Angle = 0 };
         _session.playerstate.Pawn = pawn;
         // where a line to them aims: where their last move left them (T_Player sets these)
-        (_session.playerstate.PlUX, _session.playerstate.PlUY) = ((ushort)(pawn.X >> Program.UNSIGNEDSHIFT), (ushort)(pawn.Y >> Program.UNSIGNEDSHIFT));
+        (_session.playerstate.PlUX, _session.playerstate.PlUY) = ((ushort)(pawn.X >> GameConstants.UNSIGNEDSHIFT), (ushort)(pawn.Y >> GameConstants.UNSIGNEDSHIFT));
         return pawn;
     }
 

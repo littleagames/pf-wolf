@@ -154,9 +154,9 @@ internal sealed class Radar(
     {
         int tile = map.tilemap[x, y];
         string color;
-        if ((tile & Program.BIT_DOOR) != 0 && (tile & Program.BIT_WALL) == 0)
+        if ((tile & GameConstants.BIT_DOOR) != 0 && (tile & GameConstants.BIT_WALL) == 0)
         {
-            var d = doors.doorobjlist[tile & ~Program.BIT_DOOR];
+            var d = doors.doorobjlist[tile & ~GameConstants.BIT_DOOR];
             // As bstone: a door with a lock (none once a key has unlocked it) is locked, open or shut
             color = !string.IsNullOrEmpty(d.Lock) ? locked
                 : d.action == dooractiontypes.dr_closed ? door

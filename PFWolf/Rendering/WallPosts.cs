@@ -135,7 +135,7 @@ internal sealed class WallPosts(
         unsafe
         {
             byte* dest = (byte*)render.vbufPtr + render.screenofs + x;
-            double numerator = render.heightnumerator * 32.0 * skyAndFlats.EyeHalves(Program.TEXTURESIZE);
+            double numerator = render.heightnumerator * 32.0 * skyAndFlats.EyeHalves(GameConstants.TEXTURESIZE);
 
             //
             // The underside, h half stories above the eye, shows on row y where its edge would at
@@ -143,7 +143,7 @@ internal sealed class WallPosts(
             // pixels high: nx = heightnumerator * 32 * h / (centery - y). Going that far along the
             // view means going nx / cos(offset) along the ray. That point's tile also gives its light.
             //
-            const double TORADIANS = 2 * Math.PI / Program.FINEANGLES;
+            const double TORADIANS = 2 * Math.PI / GameConstants.FINEANGLES;
             double angle = (render.midangle + render.pixelangle[x]) * TORADIANS;
             double perview = 1 / Math.Cos(render.pixelangle[x] * TORADIANS);
             double stepx = Math.Cos(angle) * perview, stepy = -Math.Sin(angle) * perview;
@@ -163,10 +163,10 @@ internal sealed class WallPosts(
                     continue;
                 }
 
-                int u = (int)(px >> (MapConstants.TILESHIFT - Program.TEXTURESHIFT)) & (Program.TEXTURESIZE - 1);
-                int v = (int)(py >> (MapConstants.TILESHIFT - Program.TEXTURESHIFT)) & (Program.TEXTURESIZE - 1);
-                int row = flat || height < Program.TEXTURESIZE ? v * height / Program.TEXTURESIZE : height - Program.TEXTURESIZE + v;
-                byte pixel = data[u * width / Program.TEXTURESIZE * height + row];
+                int u = (int)(px >> (MapConstants.TILESHIFT - GameConstants.TEXTURESHIFT)) & (GameConstants.TEXTURESIZE - 1);
+                int v = (int)(py >> (MapConstants.TILESHIFT - GameConstants.TEXTURESHIFT)) & (GameConstants.TEXTURESIZE - 1);
+                int row = flat || height < GameConstants.TEXTURESIZE ? v * height / GameConstants.TEXTURESIZE : height - GameConstants.TEXTURESIZE + v;
+                byte pixel = data[u * width / GameConstants.TEXTURESIZE * height + row];
                 if (flat && pixel == SkyAndFlats.FLATMASK)
                     pixel = skyAndFlats.ceilingcolor;
                 dest[y * pitch] = light[shadeofs + pixel];
@@ -359,8 +359,8 @@ internal sealed class WallPosts(
         if (top < 0) top = 0;
         if (y < top) return;
 
-        long num = (long)(bottom - y) * (Program.TEXTURESIZE / 2);
-        long t = num / half + firststory * Program.TEXTURESIZE;
+        long num = (long)(bottom - y) * (GameConstants.TEXTURESIZE / 2);
+        long t = num / half + firststory * GameConstants.TEXTURESIZE;
         long rem = num % half;
         int pitch = (int)video.bufferPitch;
 
@@ -377,14 +377,14 @@ internal sealed class WallPosts(
             {
                 if (t != colt)
                 {
-                    col = shade[shadeofs + (t < Program.TEXTURESIZE
+                    col = shade[shadeofs + (t < GameConstants.TEXTURESIZE
                         ? lowerdata[lowercolumn + lowerheight - 1 - (int)(t % lowerheight)]
                         : upperdata[uppercolumn + upperheight - 1 - (int)(t % upperheight)])];
                     colt = t;
                 }
                 dest[y * pitch] = col;
 
-                rem += Program.TEXTURESIZE / 2;
+                rem += GameConstants.TEXTURESIZE / 2;
                 while (rem >= half)
                 {
                     rem -= half;
@@ -408,7 +408,7 @@ internal sealed class WallPosts(
 
         int height = patch.Height;
         int first = story == 0 ? 0 : story - 1;
-        int last = story == 0 ? stories : Math.Min(stories, first + (height + Program.TEXTURESIZE - 1) / Program.TEXTURESIZE);
+        int last = story == 0 ? stories : Math.Min(stories, first + (height + GameConstants.TEXTURESIZE - 1) / GameConstants.TEXTURESIZE);
         if (first >= last)
             return;                     // on a story the wall doesn't reach
 
@@ -420,7 +420,7 @@ internal sealed class WallPosts(
         if (y < top) return;
 
         // texels up from the patch's bottom, stepped as DrawPost steps the wall's
-        long num = (long)(bottom - y) * (Program.TEXTURESIZE / 2);
+        long num = (long)(bottom - y) * (GameConstants.TEXTURESIZE / 2);
         long t = num / half;
         long rem = num % half;
         int pitch = (int)video.bufferPitch;
@@ -441,7 +441,7 @@ internal sealed class WallPosts(
                         dest[y * pitch] = shade[shadeofs + pixel];
                 }
 
-                rem += Program.TEXTURESIZE / 2;
+                rem += GameConstants.TEXTURESIZE / 2;
                 while (rem >= half)
                 {
                     rem -= half;
@@ -453,7 +453,7 @@ internal sealed class WallPosts(
 
     // Where the column the trace found (0 to 63, times 64) starts in the texture's pixels
     internal static int TextureColumn(TextureAsset texture, int ofs) =>
-        (ofs >> Program.TEXTURESHIFT) * texture.Width / Program.TEXTURESIZE * texture.Height;
+        (ofs >> GameConstants.TEXTURESHIFT) * texture.Width / GameConstants.TEXTURESIZE * texture.Height;
 
     /*
     ====================
@@ -488,15 +488,15 @@ internal sealed class WallPosts(
         //
         // calculate perspective ratio
         //
-        if (nx < Program.MINDIST)
-            nx = (int)Program.MINDIST;             // don't let divide overflow
+        if (nx < GameConstants.MINDIST)
+            nx = (int)GameConstants.MINDIST;             // don't let divide overflow
 
         height = (short)(render.heightnumerator / (nx >> 8));
         return height;
     }
 
     // The screen row the floor is on, for something half pixels to half a story
-    internal int FloorRow(int half) => render.centery + half * render.vieweyez / (Program.TEXTURESIZE / 2);
+    internal int FloorRow(int half) => render.centery + half * render.vieweyez / (GameConstants.TEXTURESIZE / 2);
 
     // The face of a wall the trace sees, going the way it is
     internal string SeenFace(bool vertical) => vertical
@@ -505,7 +505,7 @@ internal sealed class WallPosts(
 
     internal static int LintelColumn(int along, bool flip)
     {
-        int texture = (along >> Program.FIXED2TEXSHIFT) & Program.TEXTUREMASK;
-        return flip ? Program.TEXTUREMASK - texture : texture;
+        int texture = (along >> GameConstants.FIXED2TEXSHIFT) & GameConstants.TEXTUREMASK;
+        return flip ? GameConstants.TEXTUREMASK - texture : texture;
     }
 }

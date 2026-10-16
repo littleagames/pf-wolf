@@ -15,7 +15,7 @@ internal static class LanguageExtensions
             text = result;
 
         return text
-            .Replace("{YESBUTTONNAME}", Program.YESBUTTONNAME)
-            .Replace("{NOBUTTONNAME}", Program.NOBUTTONNAME);
+            .Replace("{YESBUTTONNAME}", GameConstants.YESBUTTONNAME)
+            .Replace("{NOBUTTONNAME}", GameConstants.NOBUTTONNAME);
     }
 }

@@ -41,7 +41,7 @@ internal sealed class SpriteDrawing(
     GameSession session,
     SpriteDrawingHooks hooks)
 {
-    internal visobj_t[] vislist = new visobj_t[Program.MAXVISABLE];
+    internal visobj_t[] vislist = new visobj_t[GameConstants.MAXVISABLE];
 
     /*
 ========================
@@ -92,7 +92,7 @@ internal sealed class SpriteDrawing(
         //
         // calculate height / perspective ratio
         //
-        if (nx < Program.MINDIST)                 // too close, don't overflow the divide
+        if (nx < GameConstants.MINDIST)                 // too close, don't overflow the divide
             dispheight = 0;
         else
         {
@@ -131,7 +131,7 @@ internal sealed class SpriteDrawing(
 
         ob.TransX = nx;
 
-        if (nx < Program.MINDIST)
+        if (nx < GameConstants.MINDIST)
         {
             ob.ViewHeight = 0;
             return;
@@ -195,11 +195,11 @@ internal sealed class SpriteDrawing(
         else
             angle = (viewangle - 180) - Program.dirangle[(byte)ob.Dir];
 
-        angle += Program.ANGLES / 16;
-        while (angle >= Program.ANGLES) angle -= Program.ANGLES;
-        while (angle < 0) angle += Program.ANGLES;
+        angle += GameConstants.ANGLES / 16;
+        while (angle >= GameConstants.ANGLES) angle -= GameConstants.ANGLES;
+        while (angle < 0) angle += GameConstants.ANGLES;
 
-        return (angle / (Program.ANGLES / 8)) + 1;
+        return (angle / (GameConstants.ANGLES / 8)) + 1;
     }
 
     /// <summary>
@@ -216,8 +216,8 @@ internal sealed class SpriteDrawing(
 
         var fangle = Math.Atan2(ob.Y - target.Y, target.X - ob.X);
         if (fangle < 0)
-            fangle += Program.M_PI * 2;
-        return (int)(fangle / (Program.M_PI * 2) * Program.ANGLES) % Program.ANGLES;
+            fangle += GameConstants.M_PI * 2;
+        return (int)(fangle / (GameConstants.M_PI * 2) * GameConstants.ANGLES) % GameConstants.ANGLES;
     }
 
     internal void DrawScaleds()
@@ -319,7 +319,7 @@ internal sealed class SpriteDrawing(
                 visptr_val.cloaked = actor.Cloaked && !actor.CloakHit && actor.Hitpoints > 0;
                 actor.CloakHit = false;
 
-                if (visptr < Program.MAXVISABLE - 1)
+                if (visptr < GameConstants.MAXVISABLE - 1)
                 {
                     visptr_val.tilex = atx;
                     visptr_val.tiley = aty;
@@ -337,7 +337,7 @@ internal sealed class SpriteDrawing(
             // so it's placed by its own geometry rather than as a billboard in its tile.
             if (WallSprites.IsWallSprite(actor))
             {
-                if (wallSprites.WallSpriteSeen(actor) && wallSprites.TransformWallSprite(actor, visptr_val) && visptr < Program.MAXVISABLE - 1)
+                if (wallSprites.WallSpriteSeen(actor) && wallSprites.TransformWallSprite(actor, visptr_val) && visptr < GameConstants.MAXVISABLE - 1)
                 {
                     visptr_val.tilex = actor.TileX;
                     visptr_val.tiley = actor.TileY;
@@ -357,7 +357,7 @@ internal sealed class SpriteDrawing(
             if (visptr_val.viewheight == 0)
                 continue;                                               // to close to the object
 
-            if (visptr < (Program.MAXVISABLE - 1))    // don't let it overflow
+            if (visptr < (GameConstants.MAXVISABLE - 1))    // don't let it overflow
             {
                 visptr_val.tilex = (byte)actor.Position.X;
                 visptr_val.tiley = (byte)actor.Position.Y;

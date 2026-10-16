@@ -247,8 +247,8 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
     private IEnumerable<(int X, int Y)> TaggedWalls(TriggerActivation trigger) =>
         map.TaggedTiles(trigger.Tag).Where(t =>
             (t.X, t.Y) != (trigger.TileX, trigger.TileY)
-            && (map.tilemap[t.X, t.Y] & Program.BIT_DOOR) == 0
-            && (map.tilemap[t.X, t.Y] & ~Program.BIT_WALL) != 0);
+            && (map.tilemap[t.X, t.Y] & GameConstants.BIT_DOOR) == 0
+            && (map.tilemap[t.X, t.Y] & ~GameConstants.BIT_WALL) != 0);
 
     private bool MoveWallAction(TriggerActivation trigger, string[] args)
     {
@@ -282,7 +282,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
 
     private bool SetWallAction(TriggerActivation trigger, string[] args)
     {
-        if (!int.TryParse(args.ElementAtOrDefault(0), out var id) || id is <= 0 or >= Program.BIT_WALL
+        if (!int.TryParse(args.ElementAtOrDefault(0), out var id) || id is <= 0 or >= GameConstants.BIT_WALL
             || !map.GetMapData().Walls.ContainsKey(id))
         {
             Console.WriteLine($"A_SetWall: '{args.ElementAtOrDefault(0)}' isn't a walls.yaml wall id.");
@@ -293,7 +293,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         foreach (var (x, y) in TaggedWalls(trigger))
         {
             // keeping the door-side mark on a wall beside a door
-            map.tilemap[x, y] = (byte)(id | (map.tilemap[x, y] & Program.BIT_WALL));
+            map.tilemap[x, y] = (byte)(id | (map.tilemap[x, y] & GameConstants.BIT_WALL));
             map.RestartAnimations(x, y, session.gamestate.TimeCount);
             any = true;
         }
@@ -347,14 +347,14 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         var tile = map.tilemap[x, y];
         MapTextureTranslation? faces = null;
         MapTextureTranslation? locked = null;
-        if ((tile & Program.BIT_DOOR) != 0)
+        if ((tile & GameConstants.BIT_DOOR) != 0)
         {
-            var door = doors.doorobjlist[tile & ~Program.BIT_DOOR];
+            var door = doors.doorobjlist[tile & ~GameConstants.BIT_DOOR];
             faces = door.xlat;
             locked = door.xlat?.Locked;
         }
-        else if ((tile & ~Program.BIT_WALL) != 0)
-            map.GetMapData().Walls.TryGetValue(tile & ~Program.BIT_WALL, out faces);
+        else if ((tile & ~GameConstants.BIT_WALL) != 0)
+            map.GetMapData().Walls.TryGetValue(tile & ~GameConstants.BIT_WALL, out faces);
 
         var names = new[] { faces, locked }
             .Where(f => f != null)

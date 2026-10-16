@@ -212,7 +212,7 @@ internal sealed class GameScripts(
                         follower.Follows = Arg(c, 2).ToBoolean();
                     break;
                 case "angle":
-                    self.Angle = (short)(((int)Math.Round(NumberArg(c, 2, 0)) % Program.ANGLES + Program.ANGLES) % Program.ANGLES);
+                    self.Angle = (short)(((int)Math.Round(NumberArg(c, 2, 0)) % GameConstants.ANGLES + GameConstants.ANGLES) % GameConstants.ANGLES);
                     if (self is not Entities.Actors.Monster and not Entities.Actors.PlayerPawn)
                         self.Dir = objdirtypes.nodir;       // its facing is its angle from now on
                     break;

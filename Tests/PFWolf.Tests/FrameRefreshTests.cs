@@ -76,7 +76,7 @@ public class FrameRefreshTests
         _frame.Setup3DView();
 
         // Assert: the view point is behind the camera (south of it, as north is up the map)
-        Assert.That((_render.viewangle, _render.midangle), Is.EqualTo(((short)90, (short)(90 * Program.FINEANGLES / Program.ANGLES))));
+        Assert.That((_render.viewangle, _render.midangle), Is.EqualTo(((short)90, (short)(90 * GameConstants.FINEANGLES / GameConstants.ANGLES))));
         Assert.That((_render.viewsin, _render.viewcos), Is.EqualTo((Program.sintable[90], Program.costable[90])));
         Assert.That(_render.viewx, Is.EqualTo(10 * Tile + Tile / 2).Within(1));
         Assert.That(_render.viewy, Is.EqualTo(20 * Tile + Tile / 2 + _render.focallength).Within(1));

@@ -210,7 +210,7 @@ internal class MapManager
     }
 
     // A wall's id is kept in tilemap below the BIT_WALL and BIT_DOOR flags
-    private static bool IsWallId(int tile) => tile is > 0 and < Program.BIT_WALL;
+    private static bool IsWallId(int tile) => tile is > 0 and < GameConstants.BIT_WALL;
 
     private readonly HashSet<int> badwallids = new(), badswitches = new();
 
@@ -278,7 +278,7 @@ internal class MapManager
         ReadMapInfo(fillFlats: true);
         foreach (var id in data.Walls.Keys.Where(id => !IsWallId(id)))
             if (badwallids.Add(id))
-                Console.WriteLine($"mapdefs wall {id} is ignored: wall ids are 1 to {Program.BIT_WALL - 1}");
+                Console.WriteLine($"mapdefs wall {id} is ignored: wall ids are 1 to {GameConstants.BIT_WALL - 1}");
         foreach (var (id, wall) in data.Walls)
             if (wall.Switch is { To: not 0 } wallSwitch && !(IsWallId(wallSwitch.To) && data.Walls.ContainsKey(wallSwitch.To))
                 && badswitches.Add(id))
@@ -360,7 +360,7 @@ internal class MapManager
     /// </summary>
     private void SealEdge(string mapName, MapObjectTranslationAsset data)
     {
-        int edgeWall = Enumerable.Range(1, Program.BIT_WALL - 1).Reverse().FirstOrDefault(id => !data.Walls.ContainsKey(id), 1);
+        int edgeWall = Enumerable.Range(1, GameConstants.BIT_WALL - 1).Reverse().FirstOrDefault(id => !data.Walls.ContainsKey(id), 1);
         int sealedTiles = 0;
         for (int y = 0; y < mapheight; y++)
         {
@@ -964,7 +964,7 @@ internal class MapManager
         var tile = tilemap[x, y];
         var spot = MAPSPOT(x, y, 0);
         return IsWallId(spot) && !GetMapData().Doors.ContainsKey(spot) && GetMapData().Walls.ContainsKey(spot)
-            && (tile & Program.BIT_DOOR) == 0 && (tile & ~Program.BIT_WALL) != 0;
+            && (tile & GameConstants.BIT_DOOR) == 0 && (tile & ~GameConstants.BIT_WALL) != 0;
     }
 
     /// <summary>The diagonal marker on this tile, if its shape came from one.</summary>
@@ -1099,7 +1099,7 @@ internal class MapManager
         {
             // A mover with no health (the Pac-Man ghosts, matching SpawnGhosts never assigning
             // hitpoints): never shootable, and not counted toward the kill ratio.
-            builtActor.Speed = ReadIntProperty(builtActor, "speed", Program.SPDDOG);
+            builtActor.Speed = ReadIntProperty(builtActor, "speed", GameConstants.SPDDOG);
             if (alwaysAmbush)
                 builtActor.RuntimeFlags |= objflags.FL_AMBUSH;
         }
@@ -1107,7 +1107,7 @@ internal class MapManager
         {
             // A grunt or boss enemy (has scaled health), as opposed to a plain decoration/pickup.
             builtActor.Hitpoints = GetScaledHealth(builtActor);
-            builtActor.Speed = ReadIntProperty(builtActor, "speed", Program.SPDPATROL);
+            builtActor.Speed = ReadIntProperty(builtActor, "speed", GameConstants.SPDPATROL);
             builtActor.RuntimeFlags |= objflags.FL_SHOOTABLE;
 
             // Every killable enemy counts toward the level's kill ratio (the old SpawnStand/

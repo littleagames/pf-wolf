@@ -42,8 +42,8 @@ public class AutomapDrawingTests
 
     [TestCase(0, false)]                                // open floor
     [TestCase(5, true)]                                 // a wall
-    [TestCase(Program.BIT_DOOR | 2, false)]             // a door shows as floor (drawn on its own)
-    [TestCase(Program.BIT_WALL, false)]                 // a moving pushwall's tile (drawn at its offset)
+    [TestCase(GameConstants.BIT_DOOR | 2, false)]             // a door shows as floor (drawn on its own)
+    [TestCase(GameConstants.BIT_WALL, false)]                 // a moving pushwall's tile (drawn at its offset)
     public void Walls_Are_What_Shows_As_Wall(int tile, bool wall)
     {
         _map.tilemap[3, 4] = (byte)tile;
@@ -118,9 +118,9 @@ public class RadarTests
         var doors = new Doors(null!, null!, map, null!, null!, session, null!);
         var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, () => false, () => 0);
         map.tilemap[1, 1] = 5;
-        map.tilemap[2, 1] = Program.BIT_DOOR | 0;
+        map.tilemap[2, 1] = GameConstants.BIT_DOOR | 0;
         doors.doorobjlist[0] = new doorobj_t { action = dooractiontypes.dr_closed };
-        map.tilemap[3, 1] = Program.BIT_DOOR | 1;
+        map.tilemap[3, 1] = GameConstants.BIT_DOOR | 1;
         doors.doorobjlist[1] = new doorobj_t { action = dooractiontypes.dr_open };
 
         // Act
@@ -145,7 +145,7 @@ public class RadarTests
         var session = new GameSession();
         var doors = new Doors(null!, null!, map, null!, null!, session, null!);
         var radar = new Radar(map, null!, null!, null!, null!, null!, null!, doors, session, () => false, () => 0);
-        map.tilemap[2, 1] = Program.BIT_DOOR | 0;
+        map.tilemap[2, 1] = GameConstants.BIT_DOOR | 0;
         doors.doorobjlist[0] = new doorobj_t { action = dooractiontypes.dr_closed, maplock = "GoldKey" };
         string Color() => radar.RadarTileColor(2, 1, "unmapped", "floor", "door", "locked");
 

@@ -88,8 +88,8 @@ internal sealed class FrameRefresh(
 
         lasttimecount += (int)session.tics;
 
-        if (session.tics > Program.MAXTICS)
-            session.tics = Program.MAXTICS;
+        if (session.tics > GameConstants.MAXTICS)
+            session.tics = GameConstants.MAXTICS;
     }
 
     /*
@@ -122,7 +122,7 @@ internal sealed class FrameRefresh(
     {
         var camera = session.camera;
         render.viewangle = camera.Angle;
-        render.midangle = (short)(render.viewangle * (Program.FINEANGLES / Program.ANGLES));
+        render.midangle = (short)(render.viewangle * (GameConstants.FINEANGLES / GameConstants.ANGLES));
 
         render.viewpitch = camera.Pitch;
         render.vieweyez = Math.Clamp(camera.EyeZ, Program.MINEYE, Program.MAXEYE);
@@ -159,7 +159,7 @@ internal sealed class FrameRefresh(
         // Detect all sprites over camera fix. Demos need it too: Wolf4SDL 1.7c, which plays
         // the games' own demos through, always had it (enemies beside the player stay seen)
         if (map.tilemap[camera.TileX, camera.TileY] == 0 ||
-         (map.tilemap[camera.TileX, camera.TileY] & Program.BIT_DOOR) != 0)
+         (map.tilemap[camera.TileX, camera.TileY] & GameConstants.BIT_DOOR) != 0)
             map.spotvis[camera.TileX, camera.TileY] = true;
 
 

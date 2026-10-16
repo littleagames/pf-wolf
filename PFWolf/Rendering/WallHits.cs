@@ -33,11 +33,11 @@ internal sealed class WallHits(
         string wallpic;
         int texture;
 
-        texture = ((render.yintercept - render.texdelta) >> Program.FIXED2TEXSHIFT) & Program.TEXTUREMASK;
+        texture = ((render.yintercept - render.texdelta) >> GameConstants.FIXED2TEXSHIFT) & GameConstants.TEXTUREMASK;
 
         if (render.xtilestep == -1)
         {
-            texture = Program.TEXTUREMASK - texture;
+            texture = GameConstants.TEXTUREMASK - texture;
             render.xintercept += (int)MapConstants.TILEGLOBAL;
         }
         render.postheight = posts.CalcHeight();
@@ -46,17 +46,17 @@ internal sealed class WallHits(
         var face = posts.SeenFace(vertical: true);
         bool jamb = false;
         MapTextureTranslation? mapTexture = MapTextureTranslation.None;
-        if ((render.tilehit & Program.BIT_WALL) != 0)
+        if ((render.tilehit & GameConstants.BIT_WALL) != 0)
         {
             //
             // check for adjacent doors
             //
             var doortile = map.tilemap[render.xtile - render.xtilestep, render.yinttile];
-            mapDefs?.Walls.TryGetValue((render.tilehit & ~Program.BIT_WALL), out mapTexture);
-            if ((doortile & Program.BIT_DOOR) != 0)
+            mapDefs?.Walls.TryGetValue((render.tilehit & ~GameConstants.BIT_WALL), out mapTexture);
+            if ((doortile & GameConstants.BIT_DOOR) != 0)
             {
                 // the door's jamb on the side the ray left it from
-                var door = doors.doorobjlist[doortile & ~Program.BIT_DOOR];
+                var door = doors.doorobjlist[doortile & ~GameConstants.BIT_DOOR];
                 wallpic = Doors.DoorFace(door, render.xtilestep == 1 ? "east" : "west");
                 SetUpperPost((mapTexture ?? MapTextureTranslation.None).WallFace(face),
                     FlipColumn(mapTexture, face, texture), render.xtile, render.yinttile);   // the wall above the door frame
@@ -109,7 +109,7 @@ internal sealed class WallHits(
 
     // A wall face's texture column, mirrored when the wall flips that face (mapdefs walls flip)
     internal int FlipColumn(MapTextureTranslation? mapTexture, string face, int texture) =>
-        mapTexture != null && mapTexture.IsFlipped(face) ? Program.TEXTUREMASK - texture : texture;
+        mapTexture != null && mapTexture.IsFlipped(face) ? GameConstants.TEXTUREMASK - texture : texture;
 
     /*
     ====================
@@ -127,12 +127,12 @@ internal sealed class WallHits(
         string wallpic;
         int texture;
 
-        texture = ((render.xintercept - render.texdelta) >> Program.FIXED2TEXSHIFT) & Program.TEXTUREMASK;
+        texture = ((render.xintercept - render.texdelta) >> GameConstants.FIXED2TEXSHIFT) & GameConstants.TEXTUREMASK;
 
         if (render.ytilestep == -1)
             render.yintercept += (int)MapConstants.TILEGLOBAL;
         else
-            texture = Program.TEXTUREMASK - texture;
+            texture = GameConstants.TEXTUREMASK - texture;
 
         render.postheight = posts.CalcHeight();
         render.postx = render.pixx;
@@ -142,16 +142,16 @@ internal sealed class WallHits(
         bool jamb = false;
         MapTextureTranslation? mapTexture = MapTextureTranslation.None;
 
-        if ((render.tilehit & Program.BIT_WALL) != 0)
+        if ((render.tilehit & GameConstants.BIT_WALL) != 0)
         {
             //
             // check for adjacent doors
             //
             var doortile = map.tilemap[render.xinttile, render.ytile - render.ytilestep];
-            mapDefs?.Walls.TryGetValue((render.tilehit & ~Program.BIT_WALL), out mapTexture);
-            if ((doortile & Program.BIT_DOOR) != 0)
+            mapDefs?.Walls.TryGetValue((render.tilehit & ~GameConstants.BIT_WALL), out mapTexture);
+            if ((doortile & GameConstants.BIT_DOOR) != 0)
             {
-                var door = doors.doorobjlist[doortile & ~Program.BIT_DOOR];
+                var door = doors.doorobjlist[doortile & ~GameConstants.BIT_DOOR];
                 wallpic = Doors.DoorFace(door, render.ytilestep == 1 ? "south" : "north");
                 SetUpperPost((mapTexture ?? MapTextureTranslation.None).WallFace(face),
                     FlipColumn(mapTexture, face, texture), render.xinttile, render.ytile);  // the wall above the door frame
@@ -190,8 +190,8 @@ internal sealed class WallHits(
         int doornumtile;
         int texture;
 
-        doornumtile = render.tilehit & ~Program.BIT_DOOR;
-        texture = (doors.doorobjlist[doornumtile].TextureAlong(render.yintercept) >> Program.FIXED2TEXSHIFT) & Program.TEXTUREMASK;
+        doornumtile = render.tilehit & ~GameConstants.BIT_DOOR;
+        texture = (doors.doorobjlist[doornumtile].TextureAlong(render.yintercept) >> GameConstants.FIXED2TEXSHIFT) & GameConstants.TEXTUREMASK;
 
         render.postheight = posts.CalcHeight();
         render.postx = render.pixx;
@@ -216,8 +216,8 @@ internal sealed class WallHits(
         int doornumtile;
         int texture;
 
-        doornumtile = render.tilehit & ~Program.BIT_DOOR;
-        texture = (doors.doorobjlist[doornumtile].TextureAlong(render.xintercept) >> Program.FIXED2TEXSHIFT) & Program.TEXTUREMASK;
+        doornumtile = render.tilehit & ~GameConstants.BIT_DOOR;
+        texture = (doors.doorobjlist[doornumtile].TextureAlong(render.xintercept) >> GameConstants.FIXED2TEXSHIFT) & GameConstants.TEXTUREMASK;
 
         render.postheight = posts.CalcHeight();
         render.postx = render.pixx;
@@ -315,11 +315,11 @@ internal sealed class WallHits(
     {
         mirrored = false;
         var tile = map.tilemap[tilex, tiley];
-        if ((tile & Program.BIT_DOOR) != 0 || (tile & ~Program.BIT_WALL) == 0)
+        if ((tile & GameConstants.BIT_DOOR) != 0 || (tile & ~GameConstants.BIT_WALL) == 0)
             return null;                // open floor, a door or a pushwall
 
         MapTextureTranslation? mapTexture = null;
-        if (map.GetMapData()?.Walls.TryGetValue(tile & ~Program.BIT_WALL, out mapTexture) != true || mapTexture == null)
+        if (map.GetMapData()?.Walls.TryGetValue(tile & ~GameConstants.BIT_WALL, out mapTexture) != true || mapTexture == null)
             return null;
         mirrored = mapTexture.IsFlipped(face);
         return WorldTexture(mapTexture.WallFace(face), tilex, tiley);
@@ -365,7 +365,7 @@ internal sealed class WallHits(
     /// </summary>
     internal void NoteFocalLintel(int xstep, int ystep)
     {
-        var door = doors.doorobjlist[map.tilemap[render.focaltx, render.focalty] & ~Program.BIT_DOOR];
+        var door = doors.doorobjlist[map.tilemap[render.focaltx, render.focalty] & ~GameConstants.BIT_DOOR];
         const int HALFTILE = (int)MapConstants.TILEGLOBAL / 2;
 
         if (door.vertical)
@@ -460,7 +460,7 @@ internal sealed class WallHits(
             ? (int)MapConstants.TILEGLOBAL - 1 - render.diaghitu
             : render.diaghitu;
         along = Math.Clamp(along, 0, (int)MapConstants.TILEGLOBAL - 1);
-        int texture = (along >> Program.FIXED2TEXSHIFT) & Program.TEXTUREMASK;
+        int texture = (along >> GameConstants.FIXED2TEXSHIFT) & GameConstants.TEXTUREMASK;
 
         render.postheight = posts.CalcHeight();
         render.postx = render.pixx;
@@ -469,7 +469,7 @@ internal sealed class WallHits(
         if (string.IsNullOrEmpty(wallpic))
         {
             MapTextureTranslation? mapTexture = MapTextureTranslation.None;
-            map.GetMapData()?.Walls.TryGetValue(render.tilehit & ~Program.BIT_WALL, out mapTexture);
+            map.GetMapData()?.Walls.TryGetValue(render.tilehit & ~GameConstants.BIT_WALL, out mapTexture);
             wallpic = (mapTexture ?? MapTextureTranslation.None).North;
         }
 

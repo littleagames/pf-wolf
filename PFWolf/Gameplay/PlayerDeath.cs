@@ -80,25 +80,25 @@ internal sealed class PlayerDeath(
 
             fangle = (float)Math.Atan2((float)dy, (float)dx);     // returns -pi to pi
             if (fangle < 0)
-                fangle = (float)(Program.M_PI * 2 + fangle);
+                fangle = (float)(GameConstants.M_PI * 2 + fangle);
 
-            iangle = (int)(fangle / (Program.M_PI * 2) * Program.ANGLES);
+            iangle = (int)(fangle / (GameConstants.M_PI * 2) * GameConstants.ANGLES);
         }
         else
         {
-            iangle = session.player.Angle + Program.ANGLES / 2;
-            if (iangle >= Program.ANGLES) iangle -= Program.ANGLES;
+            iangle = session.player.Angle + GameConstants.ANGLES / 2;
+            if (iangle >= GameConstants.ANGLES) iangle -= GameConstants.ANGLES;
         }
 
         if (session.player.Angle > iangle)
         {
             counter = session.player.Angle - iangle;
-            clockwise = Program.ANGLES - session.player.Angle + iangle;
+            clockwise = GameConstants.ANGLES - session.player.Angle + iangle;
         }
         else
         {
             clockwise = iangle - session.player.Angle;
-            counter = session.player.Angle + Program.ANGLES - iangle;
+            counter = session.player.Angle + GameConstants.ANGLES - iangle;
         }
 
         curangle = session.player.Angle;
@@ -108,9 +108,9 @@ internal sealed class PlayerDeath(
         //
         bool rotateclockwise = clockwise < counter;
         if (rotateclockwise && curangle > iangle)
-            curangle -= Program.ANGLES;
+            curangle -= GameConstants.ANGLES;
         else if (!rotateclockwise && curangle < iangle)
-            curangle += Program.ANGLES;
+            curangle += GameConstants.ANGLES;
 
         int dropto = hooks.Settings().deathDropHeight ?? session.playerstate.EyeZ;
         do
@@ -123,10 +123,10 @@ internal sealed class PlayerDeath(
 
                 curangle += change;
                 session.player.Angle += (short)change;
-                if (session.player.Angle >= Program.ANGLES)
-                    session.player.Angle -= Program.ANGLES;
+                if (session.player.Angle >= GameConstants.ANGLES)
+                    session.player.Angle -= GameConstants.ANGLES;
                 else if (session.player.Angle < 0)
-                    session.player.Angle += Program.ANGLES;
+                    session.player.Angle += GameConstants.ANGLES;
             }
 
             if (session.playerstate.EyeZ > dropto)
@@ -229,9 +229,9 @@ internal sealed class PlayerDeath(
 
         fangle = (float)Math.Atan2((float)dy, (float)dx);
         if (fangle < 0)
-            fangle = (float)(Program.M_PI * 2 + fangle);
+            fangle = (float)(GameConstants.M_PI * 2 + fangle);
 
-        var camangle = (short)(fangle / (Program.M_PI * 2) * Program.ANGLES);
+        var camangle = (short)(fangle / (GameConstants.M_PI * 2) * GameConstants.ANGLES);
         int camx, camy;
 
         dist = 0x14000;

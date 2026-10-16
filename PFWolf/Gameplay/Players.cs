@@ -48,7 +48,7 @@ internal sealed class Players(
     GameSession session,
     PlayersHooks hooks)
 {
-    const int ANGLES = Program.ANGLES;
+    const int ANGLES = GameConstants.ANGLES;
 
     /// <summary>Hurts a particular player (an enemy's shot, a projectile), as the acting player while it does</summary>
     internal void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker)
@@ -207,8 +207,8 @@ internal sealed class Players(
 
         var fangle = (float)Math.Atan2((float)(from.Y - to.Y), (float)(to.X - from.X));
         if (fangle < 0)
-            fangle = (float)(Program.M_PI * 2 + fangle);
-        return (short)((int)(fangle / (Program.M_PI * 2) * ANGLES) % ANGLES);
+            fangle = (float)(GameConstants.M_PI * 2 + fangle);
+        return (short)((int)(fangle / (GameConstants.M_PI * 2) * ANGLES) % ANGLES);
     }
 
     /// <summary>A dead player's think: turning to face their killer, sinking, and waiting to come back</summary>

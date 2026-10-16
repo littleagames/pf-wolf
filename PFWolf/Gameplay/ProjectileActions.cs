@@ -90,7 +90,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         missile.Y = y;
         missile.TileX = (byte)(x >> MapConstants.TILESHIFT);
         missile.TileY = (byte)(y >> MapConstants.TILESHIFT);
-        missile.Angle = (short)((angle % Program.ANGLES + Program.ANGLES) % Program.ANGLES);
+        missile.Angle = (short)((angle % GameConstants.ANGLES + GameConstants.ANGLES) % GameConstants.ANGLES);
         missile.Speed = speed;
         missile.Shooter = ob;
         missile.TicCount = 1;       // its first frame ends on the next tic, as a thrown one's (Monster.ThrowProjectile)
@@ -149,7 +149,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         if (IsInWall(ob))
         {
             int facing = FacingAngle(ob);
-            int cos = Program.sintable[facing + Program.ANGLES / 4], sin = Program.sintable[facing];
+            int cos = Program.sintable[facing + GameConstants.ANGLES / 4], sin = Program.sintable[facing];
             if ((long)(pawn.X - x) * cos - (long)(pawn.Y - y) * sin <= 0)
                 return false;
         }
@@ -160,7 +160,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
     internal bool IsInWall(Entities.Actors.Actor ob)
     {
         var tile = map.tilemap[ob.TileX, ob.TileY];
-        return tile != 0 && (tile & Program.BIT_DOOR) == 0;
+        return tile != 0 && (tile & GameConstants.BIT_DOOR) == 0;
     }
 
     /// <summary>Which way it faces, in degrees: its map facing, or its angle when it has none</summary>
@@ -177,7 +177,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
             return (ob.X, ob.Y);
 
         int facing = FacingAngle(ob);
-        int cos = Program.sintable[facing + Program.ANGLES / 4], sin = Program.sintable[facing];
+        int cos = Program.sintable[facing + GameConstants.ANGLES / 4], sin = Program.sintable[facing];
         const int Axis = 0x6000;    // about 22 degrees off an axis still counts as facing along it
         int centreX = (ob.TileX << MapConstants.TILESHIFT) + 0x8000, centreY = (ob.TileY << MapConstants.TILESHIFT) + 0x8000;
         int x = centreX + (cos > Axis ? WALLFACEOUT : cos < -Axis ? -WALLFACEOUT : 0);
@@ -197,7 +197,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         var angle = Math.Atan2(fromY - toY, toX - fromX);
         if (angle < 0)
             angle += Math.PI * 2;
-        return (int)(angle / (Math.PI * 2) * Program.ANGLES);
+        return (int)(angle / (Math.PI * 2) * GameConstants.ANGLES);
     }
 
     internal static bool TryParseTiles(string text, out long reach)

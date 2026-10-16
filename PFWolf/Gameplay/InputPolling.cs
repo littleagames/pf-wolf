@@ -69,7 +69,7 @@ internal sealed class InputPolling(
         // get timing info for last frame
         //
         if (hooks.DemoPlayback() || hooks.DemoRecord())   // demo recording and playback needs to be constant
-            WaitFixedTics(Program.DEMOTICS);
+            WaitFixedTics(GameConstants.DEMOTICS);
         else if (hooks.NetGame())                 // and so does playing with others (Program.NetPlay.cs)
             WaitFixedTics(Networking.NetPlay.NETTICS);
         else
@@ -301,7 +301,7 @@ internal sealed class InputPolling(
     /// <summary>Walking and turning from the movement buttons, whatever they're bound to.</summary>
     internal void PollButtonMove()
     {
-        int delta = (int)(inputManager.IsButtonPressed(buttontypes.bt_run) ? Program.RUNMOVE * session.tics : Program.BASEMOVE * session.tics);
+        int delta = (int)(inputManager.IsButtonPressed(buttontypes.bt_run) ? GameConstants.RUNMOVE * session.tics : GameConstants.BASEMOVE * session.tics);
 
         if (inputManager.IsButtonPressed(buttontypes.bt_moveforward))
             controly -= delta;
@@ -358,7 +358,7 @@ internal sealed class InputPolling(
     {
         int joyx, joyy;
 
-        int speed = inputManager.IsButtonPressed(buttontypes.bt_run) ? Program.RUNMOVE : Program.BASEMOVE;
+        int speed = inputManager.IsButtonPressed(buttontypes.bt_run) ? GameConstants.RUNMOVE : GameConstants.BASEMOVE;
 
         // A controller: the left stick walks and strafes and the right stick turns (classic: the
         // left stick walks and turns and the right strafes), as fast as they're pushed. Turning

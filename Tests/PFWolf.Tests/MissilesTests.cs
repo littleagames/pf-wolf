@@ -91,10 +91,10 @@ public class MissilesTests
         _map.actorat[1, 1] = new Wall(1);
         _map.tilemap[2, 1] = 5;                                  // a wall with nothing on actorat (a moving pushwall's)
         _map.actorat[3, 1] = new Door(0);
-        _map.tilemap[3, 1] = (byte)(Program.BIT_DOOR | 0);
+        _map.tilemap[3, 1] = (byte)(GameConstants.BIT_DOOR | 0);
         _doors.doorobjlist[0] = new doorobj_t { action = dooractiontypes.dr_closed };
         _map.actorat[4, 1] = new Door(1);
-        _map.tilemap[4, 1] = (byte)(Program.BIT_DOOR | 1);
+        _map.tilemap[4, 1] = (byte)(GameConstants.BIT_DOOR | 1);
         _doors.doorobjlist[1] = new doorobj_t { action = dooractiontypes.dr_open };
 
         // Act / Assert

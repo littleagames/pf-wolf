@@ -24,8 +24,8 @@ internal sealed class PlayerUse(
     GameSession session,
     PlayerUseHooks hooks)
 {
-    const int BIT_WALL = Program.BIT_WALL;
-    const int BIT_DOOR = Program.BIT_DOOR;
+    const int BIT_WALL = GameConstants.BIT_WALL;
+    const int BIT_DOOR = GameConstants.BIT_DOOR;
 
     // How long use has been held with nothing to use or talk to
     int useHeldTics;
@@ -183,7 +183,7 @@ internal sealed class PlayerUse(
 
     internal void Cmd_Use()
     {
-        const int ANGLES = Program.ANGLES;
+        const int ANGLES = GameConstants.ANGLES;
         var playerinput = session.playerinput;
         var player = session.player;
         int checkx, checky, cmdtile;
@@ -272,7 +272,7 @@ internal sealed class PlayerUse(
     /// </summary>
     internal bool TryUseActor()
     {
-        const int ANGLES = Program.ANGLES;
+        const int ANGLES = GameConstants.ANGLES;
         var playerinput = session.playerinput;
         var player = session.player;
         if (playerinput.IsHeld(buttontypes.bt_use))
