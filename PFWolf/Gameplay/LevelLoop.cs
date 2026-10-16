@@ -51,6 +51,7 @@ internal sealed class LevelLoop(
     Doors doors,
     PushWalls pushWalls,
     TimedSwitches timedSwitches,
+    FloorDamage floorDamage,
     PlayerView playerView,
     Lighting lighting,
     GameScripts scripts,
@@ -131,6 +132,7 @@ internal sealed class LevelLoop(
                 // Every actor lives in map._actors. The player is at its head, so it still
                 // thinks before every enemy, projectile and the BJ-victory actor.
                 map.DoActors(session.tics);
+                floorDamage.Tick();                     // floors that hurt (Gameplay/FloorDamage.cs)
                 foreach (var p in session.players)    // pickups each player walked onto (Rendering/PlayerView.cs)
                 {
                     if (p.Pawn is { } pawn && session.IsTargetable(pawn))

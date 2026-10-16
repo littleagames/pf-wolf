@@ -155,6 +155,31 @@ public record MapFlatsTranslation
 {
     public Dictionary<int, string> Floor { get; set; } = new();
     public Dictionary<int, string> Ceiling { get; set; } = new();
+
+    /// <summary>
+    /// Floors that hurt whoever stands on them (Midnight Assault's electrified water), by the
+    /// texture's name as the floor shows it (after any A_ChangeTexture; an animation by its own
+    /// name): a switch that changes the texture turns them on or off.
+    /// </summary>
+    public Dictionary<string, MapFloorDamage> Damage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The damage a floor texture does, if any</summary>
+    public MapFloorDamage? DamageFor(string? texture) =>
+        texture == null || Damage.Count == 0 ? null
+        : Damage.TryGetValue(texture, out var damage) ? damage
+        : Damage.FirstOrDefault(d => d.Key.Equals(texture, StringComparison.OrdinalIgnoreCase)).Value;
+}
+
+/// <summary>A damaging floor (flats damage): <see cref="Amount"/> every <see cref="Tics"/> tics to each player and enemy on it</summary>
+public record MapFloorDamage
+{
+    public int Amount { get; init; }
+
+    /// <summary>How often it hurts, in tics (the original's DAMAGE_INTERVAL, 20)</summary>
+    public int Tics { get; init; } = 20;
+
+    /// <summary>Whether enemies standing on it are hurt too (the original's CheckObjDamagingFloors)</summary>
+    public bool Enemies { get; init; } = true;
 }
 
 /// <summary>

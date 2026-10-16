@@ -248,6 +248,18 @@ internal static partial class GameHost
     static TimedSwitches? _timedSwitches;
     static TimedSwitches timedSwitches => _timedSwitches ??= new TimedSwitches(_mapManager, session);
 
+    // Floors that hurt (Gameplay/FloorDamage.cs), ticked by the level loop
+    static FloorDamage? _floorDamage;
+    static FloorDamage floorDamage => _floorDamage ??= new FloorDamage(_mapManager, session, new FloorDamageHooks(
+        (pawn, points) =>
+        {
+            using var _ = session.ActAs(pawn.State);
+            playerStats.ApplyDamageToPlayer(points);
+        },
+        (monster, points) => monster.Damage((uint)points),
+        () => _mapManager.GetMapData().Flats,
+        (x, y) => _mapManager.FlatTextureName(x, y, ceiling: false)));
+
     // Disguise and going unseen (Gameplay/Stealth.cs): enemies' suspicion, papers, the uniform
     static Stealth? _stealth;
     static Stealth stealth => _stealth ??= new Stealth(_mapManager, _inventoryManager, playerWeapons, session,
