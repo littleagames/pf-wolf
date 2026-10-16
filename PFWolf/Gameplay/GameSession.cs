@@ -123,6 +123,18 @@ internal sealed class GameSession
     internal bool demorecord, demoplayback;
 
     /// <summary>
+    /// Whether a player can be gone after: one alive. A lone player always can (dying ends the
+    /// level there, and the rest of that frame plays on as it always has).
+    /// </summary>
+    internal bool IsTargetable(PlayerPawn pawn) => gamemode == GameMode.Single || pawn.State.health > 0;
+
+    /// <summary>true when shooting or screaming: enemies in the player's areas hear it this tic</summary>
+    internal bool madenoise;
+
+    /// <summary>How the level's going: playing on, died, completed, warped...</summary>
+    internal playstatetypes playstate;
+
+    /// <summary>
     /// A random number for which of a sound's variants plays: the game's own alone, as it always
     /// was, but not with others (one machine may have its sound off, and play none)
     /// </summary>

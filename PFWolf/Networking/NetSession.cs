@@ -237,7 +237,7 @@ internal sealed class NetSession : IDisposable
     = Playing
 
     Once the game has started, each player is known by their place in Started.Players (their
-    index), as GameHost.players has them. Each frame, every machine sends its player's controls
+    index), as GameSession.players has them. Each frame, every machine sends its player's controls
     for a step a little ahead (SubmitLocal); the host gathers everyone's for a step and sends
     them all out together (a TicBundle), and every machine plays that step with them
     (TryTake). Someone who leaves has their bit cleared in the bundles from then on, so every

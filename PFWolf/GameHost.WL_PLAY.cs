@@ -8,9 +8,9 @@ namespace PFWolf;
 
 internal static partial class GameHost
 {
-    internal static bool madenoise; // true when shooting or screaming
+    internal static bool madenoise { get => session.madenoise; set => session.madenoise = value; }  // true when shooting or screaming
 
-    internal static playstatetypes playstate;
+    internal static playstatetypes playstate { get => session.playstate; set => session.playstate = value; }
 
     internal static int DebugOk;
 

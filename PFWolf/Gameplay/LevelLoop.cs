@@ -131,7 +131,7 @@ internal sealed class LevelLoop(
                 map.DoActors(session.tics);
                 foreach (var p in session.players)    // pickups each player walked onto (Rendering/PlayerView.cs)
                 {
-                    if (p.Pawn is { } pawn && Entities.Actors.Monster.IsTargetable(pawn))
+                    if (p.Pawn is { } pawn && session.IsTargetable(pawn))
                         using (session.ActAs(p))
                             playerView.TouchItems();
                 }

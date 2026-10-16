@@ -1,4 +1,6 @@
-using static PFWolf.GameHost;
+using static PFWolf.Gameplay.GameConstants;
+using static PFWolf.Gameplay.LineOfSight;
+using static PFWolf.Rendering.TrigTables;
 
 namespace PFWolf.Entities.Actors;
 

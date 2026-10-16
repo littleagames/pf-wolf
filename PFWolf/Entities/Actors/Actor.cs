@@ -15,6 +15,9 @@ internal record Actor : Thinker
     public string? Parent { get; internal set; } = null;
     public Dictionary<string, object> Properties { get; internal set; } = [];
     public required string Name { get; internal set; }
+
+    /// <summary>What the actor uses of the game, given as it joins the level (MapManager)</summary>
+    internal ActorWorld World { get; set; } = null!;
     public Vector2 Position { get; private set; } = Vector2.Zero;
 
     // Think/state-transition bookkeeping, driven by MapManager.DoActor.

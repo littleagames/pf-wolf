@@ -1,7 +1,9 @@
 using PFWolf.Constants;
 using PFWolf.Extensions;
 using PFWolf.Managers;
-using static PFWolf.GameHost;
+using static PFWolf.Gameplay.GameConstants;
+using static PFWolf.Gameplay.LineOfSight;
+using static PFWolf.Rendering.TrigTables;
 
 namespace PFWolf.Entities.Actors;
 
@@ -637,7 +639,7 @@ internal partial record BlakeMonster : Monster
     }
 
     /// <summary>Whether a door joins an area to another and opens without a key (an actor's way out)</summary>
-    private static bool DoorLeadsOutOf(int door, int area)
+    private bool DoorLeadsOutOf(int door, int area)
     {
         var d = doorobjlist[door];
         if (d.Lock.Length > 0)
@@ -920,7 +922,7 @@ internal partial record BlakeMonster : Monster
     }
 
     // One of the map's sayings from a text, or any from the text when the map places none
-    protected static string? RandomSaying(string listName)
+    protected string? RandomSaying(string listName)
     {
         if (string.IsNullOrEmpty(listName))
             return null;
@@ -934,7 +936,7 @@ internal partial record BlakeMonster : Monster
     private static readonly Dictionary<string, List<string>> hinttexts = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Message <paramref name="number"/> (from 1) of a hint text, or null</summary>
-    protected static string? HintText(string listName, int number)
+    protected string? HintText(string listName, int number)
     {
         var messages = HintMessages(listName);
         return number >= 1 && number <= messages.Count ? messages[number - 1] : null;
@@ -944,7 +946,7 @@ internal partial record BlakeMonster : Monster
     /// A VGAGRAPH text's messages, split at its "^XX"s, with line breaks kept and its formatting
     /// codes (^FC color and the like) left out
     /// </summary>
-    private static List<string> HintMessages(string listName)
+    private List<string> HintMessages(string listName)
     {
         if (hinttexts.TryGetValue(listName, out var cached))
             return cached;

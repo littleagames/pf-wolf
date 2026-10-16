@@ -326,6 +326,12 @@ internal static partial class GameHost
             new TitleLoopHooks(() => param_nowait, () => INTROSONG, () => startgame, () => loadedgame, () => netgame, () => playstate,
                 (skill, episode, map) => NewGame(skill, episode, map)));
 
+        // What the actors use of the game (Entities/Actors/ActorWorld.cs); the map hands it to each
+        // as it joins the level. Given to the map here, as the world needs the map
+        _mapManager.World = new Entities.Actors.ActorWorld(_gameEngineManager, _assetManager, _audioManager, _inventoryManager,
+            _hudMessageManager, _mapManager, _factionManager, lineOfSight, doors, positionalSounds, actorSounds, hudMessageDrawing,
+            playerWeapons, playerAttacks, playerStats, playersManager, playerView, smartSwitches, levelAI, session);
+
         // TODO: Remove circular dependencies here
     }
 

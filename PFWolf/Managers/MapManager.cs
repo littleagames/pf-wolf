@@ -1032,7 +1032,7 @@ internal class MapManager
 
         if (!actorMetaData.Actors.TryGetValue(thing.Class, out var actor))
             return null;
-        var builtActor = actorMetaData.CreateActor(thing.Class, actor); // TODO: Should this just create objects?
+        var builtActor = Joining(actorMetaData.CreateActor(thing.Class, actor)); // TODO: Should this just create objects?
         if (builtActor == null)
             return null;
 
@@ -1041,7 +1041,7 @@ internal class MapManager
         if (builtActor.PropertyStrings("spawn.random") is { Count: > 0 } choices)
         {
             var choice = choices[session.random.RndT() % choices.Count];
-            if (!actorMetaData.Actors.TryGetValue(choice, out var chosen) || actorMetaData.CreateActor(choice, chosen) is not { } chosenActor)
+            if (!actorMetaData.Actors.TryGetValue(choice, out var chosen) || Joining(actorMetaData.CreateActor(choice, chosen)) is not { } chosenActor)
             {
                 Console.WriteLine($"{thing.Class}'s spawn.random names \"{choice}\", which isn't an actor");
                 return null;
@@ -1242,7 +1242,7 @@ internal class MapManager
         if (!actorMetaData.Actors.TryGetValue(className, out var actor))
             return null;
 
-        var builtActor = actorMetaData.CreateActor(className, actor);
+        var builtActor = Joining(actorMetaData.CreateActor(className, actor));
         if (builtActor == null)
             return null;
 
@@ -1305,8 +1305,18 @@ internal class MapManager
     /// <summary>Builds an actordefs class in its Spawn state, without placing it or adding it to _actors.</summary>
     private Entities.Actors.Actor? CreateRuntimeActor(string className) =>
         RuntimeActorMetadata.Actors.TryGetValue(className, out var actor)
-            ? RuntimeActorMetadata.CreateActor(className, actor)
+            ? Joining(RuntimeActorMetadata.CreateActor(className, actor))
             : null;
+
+    // What the actors use of the game; GameHost gives it once it's built (ActorWorld needs this map)
+    internal Entities.Actors.ActorWorld World { get; set; } = null!;
+
+    // An actor made for this level: it uses the game through the world
+    private Entities.Actors.Actor Joining(Entities.Actors.Actor actor)
+    {
+        actor.World = World;
+        return actor;
+    }
 
     // Skill-scaled health: the property the skill's enemy-health names (e.g. "health.normal"),
     // for enemies whose hitpoints vary by skill (vanilla's starthitpoints table), or a flat
@@ -1429,7 +1439,7 @@ internal class MapManager
         if (state.Pawn != null)
             _actors.Remove(state.Pawn);
 
-        var pawn = new Entities.Actors.PlayerPawn { State = state };
+        var pawn = new Entities.Actors.PlayerPawn { State = state, World = World };
         pawn.Faction = factionManager.Value.PlayerFaction(state.playerclass);
         state.Pawn = pawn;
         PlacePawn(pawn);
@@ -1767,7 +1777,7 @@ internal class MapManager
         {
             Entities.Actors.Actor actor;
             if (saved.IsPlayer && (ownerOf?.Invoke(restored.Count) ?? local) is { } owner)
-                actor = owner.Pawn = new Entities.Actors.PlayerPawn { State = owner };
+                actor = owner.Pawn = new Entities.Actors.PlayerPawn { State = owner, World = World };
             else
                 actor = CreateRuntimeActor(saved.ClassName)!;
 

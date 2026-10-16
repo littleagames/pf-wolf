@@ -25,7 +25,7 @@ internal sealed record MultiplayerHooks(Func<string> PlayerClass, Action<string>
 
 The main menu's Multiplayer screen: host a game, join one (found on the local network,
 or at an address typed in), and wait in its lobby until the host starts it. Then every
-machine starts the same game, with everyone in it (GameHost.players, in slot order) and
+machine starts the same game, with everyone in it (GameSession.players, in slot order) and
 this machine's player as the local one (GameHost.BeginNetGame).
 
 =============================================================================

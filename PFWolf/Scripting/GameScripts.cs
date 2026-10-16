@@ -144,7 +144,7 @@ internal sealed class GameScripts(
             ["cansee"] = Method("cansee", (c, self) =>
             {
                 long reach = Arg(c, 2).Type == LuaValueType.Number ? (long)(NumberArg(c, 2, 0) * MapConstants.TILEGLOBAL) : long.MaxValue;
-                return c.Return(ActorArg(c, 1) is Entities.Actors.PlayerPawn pawn && Entities.Actors.Monster.IsTargetable(pawn) && projectileActions.CanSee(self, pawn, reach));
+                return c.Return(ActorArg(c, 1) is Entities.Actors.PlayerPawn pawn && session.IsTargetable(pawn) && projectileActions.CanSee(self, pawn, reach));
             }),
             ["nearestplayer"] = Method("nearestplayer", (c, self) =>
             {
@@ -243,7 +243,7 @@ internal sealed class GameScripts(
         {
             var list = new LuaTable();
             int i = 1;
-            foreach (var pawn in map.Players.Where(Entities.Actors.Monster.IsTargetable))
+            foreach (var pawn in map.Players.Where(session.IsTargetable))
                 list[i++] = LuaActor.Of(pawn);
             return new(c.Return(list));
         });

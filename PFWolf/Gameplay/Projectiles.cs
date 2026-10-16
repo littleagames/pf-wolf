@@ -135,7 +135,7 @@ internal sealed class Projectiles(
 
         // the first player (in player order) it's on, if any, unless they're on its side (it's
         // on its thrower's: Actor.Faction)
-        var hit = map.Players.FirstOrDefault(pawn => Entities.Actors.Monster.IsTargetable(pawn)
+        var hit = map.Players.FirstOrDefault(pawn => session.IsTargetable(pawn)
             && Math.Abs(ob.X - pawn.X) < PROJECTILESIZE && Math.Abs(ob.Y - pawn.Y) < PROJECTILESIZE
             && !factions.IsAlly(ob, pawn));
 

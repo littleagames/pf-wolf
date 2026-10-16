@@ -120,7 +120,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         if (args.Length < 2 || !TryParseTiles(args[0], out var reach))
             return;
         var (x, y) = LookoutPoint(ob);
-        if (map.Players.Any(pawn => Entities.Actors.Monster.IsTargetable(pawn) && Reach(pawn, x, y) <= reach))
+        if (map.Players.Any(pawn => session.IsTargetable(pawn) && Reach(pawn, x, y) <= reach))
             JumpToState(ob, args[1], "A_JumpIfPlayerWithin");
     }
 
@@ -133,7 +133,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         if (args.Length == 0)
             return;
         long reach = args.Length > 1 && TryParseTiles(args[1], out var r) ? r : long.MaxValue;
-        if (map.Players.Any(pawn => Entities.Actors.Monster.IsTargetable(pawn) && CanSee(ob, pawn, reach)))
+        if (map.Players.Any(pawn => session.IsTargetable(pawn) && CanSee(ob, pawn, reach)))
             JumpToState(ob, args[0], "A_JumpIfInSight");
     }
 
@@ -187,7 +187,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
 
     // The nearest player who can be aimed at, each way, from a point
     internal Entities.Actors.PlayerPawn? NearestPlayer(int x, int y) =>
-        map.Players.Where(Entities.Actors.Monster.IsTargetable).OrderBy(pawn => Reach(pawn, x, y)).FirstOrDefault();
+        map.Players.Where(session.IsTargetable).OrderBy(pawn => Reach(pawn, x, y)).FirstOrDefault();
 
     internal static long Reach(Entities.Actors.Actor pawn, int x, int y) => Math.Max(Math.Abs((long)pawn.X - x), Math.Abs((long)pawn.Y - y));
 

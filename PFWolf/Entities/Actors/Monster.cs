@@ -2,7 +2,9 @@ using PFWolf.Constants;
 using PFWolf.Enums;
 using PFWolf.Extensions;
 using PFWolf.Managers;
-using static PFWolf.GameHost;
+using static PFWolf.Gameplay.GameConstants;
+using static PFWolf.Gameplay.LineOfSight;
+using static PFWolf.Rendering.TrigTables;
 
 namespace PFWolf.Entities.Actors;
 
@@ -16,6 +18,54 @@ namespace PFWolf.Entities.Actors;
 /// </summary>
 internal record Monster : Actor
 {
+    // What a monster uses of the game, by the names GameHost had for them (Entities/Actors/ActorWorld.cs)
+    private protected GameEngineManager _gameEngineManager => World.Engine;
+    private protected AssetManager _assetManager => World.Assets;
+    private protected AudioManager _audioManager => World.Audio;
+    private protected InventoryManager _inventoryManager => World.Inventory;
+    private protected HudMessageManager _hudMessageManager => World.HudMessages;
+    private protected MapManager _mapManager => World.Map;
+    private protected FactionManager _factionManager => World.Factions;
+    private protected LevelAI levelAI => World.LevelAI;
+
+    private protected gametype gamestate => World.Session.gamestate;
+    private protected uint tics => World.Session.tics;
+    private protected int US_RndT() => World.Session.random.RndT();
+    private protected byte[] areabyplayer => World.Session.areas.areabyplayer;
+    private protected PlayerPawn player => World.Session.player;
+    private protected PlayerState playerstate => World.Session.playerstate;
+    private protected PlayerState localplayer => World.Session.localplayer;
+    private protected GameMode gamemode => World.Session.gamemode;
+    private protected bool demorecord => World.Session.demorecord;
+    private protected bool demoplayback => World.Session.demoplayback;
+    private protected bool loadedgame => World.Session.loadedgame;
+    private protected bool madenoise { get => World.Session.madenoise; set => World.Session.madenoise = value; }
+    private protected playstatetypes playstate { get => World.Session.playstate; set => World.Session.playstate = value; }
+
+    private protected bool CheckLine(Actor ob) => World.LineOfSight.CheckLine(ob);
+    private protected bool CheckLine(Actor ob, Actor to) => World.LineOfSight.CheckLine(ob, to);
+    private protected bool CheckLine(int fromX, int fromY, Actor to) => World.LineOfSight.CheckLine(fromX, fromY, to);
+    private protected bool CHECKDIAG(int x, int y) => World.LineOfSight.CHECKDIAG(x, y);
+    private protected doorobj_t[] doorobjlist => World.Doors.doorobjlist;
+    private protected int lastdoorobj => World.Doors.lastdoorobj;
+    private protected void OpenDoor(int door) => World.Doors.OpenDoor(door);
+    private protected void PlaceItemType(string item_class, int tilex, int tiley) => World.Map.SpawnThing(tilex, tiley, item_class);
+    private protected void PlayActorSound(Actor ob, string key) => World.ActorSounds.PlayActorSound(ob, key);
+    private protected void PlaySoundLocActor(string s, Actor ob) => World.PositionalSounds.PlaySoundLocActor(s, ob);
+    private protected string ActorTag(Actor actor) => World.HudMessageDrawing.ActorTag(actor);
+    private protected string? BestWeapon(bool canFire = false) => World.PlayerWeapons.BestWeapon(canFire);
+    private protected int WeaponSelectionOrder(string weapon) => World.PlayerWeapons.WeaponSelectionOrder(weapon);
+    private protected bool PlayerWeaponIsSilent() => World.PlayerAttacks.PlayerWeaponIsSilent();
+    private protected bool CouldTakeInventory(Inventory item) => World.PlayerStats.CouldTakeInventory(item);
+    private protected bool TryApplyInventory(Inventory item, int amount) => World.PlayerStats.TryApplyInventory(item, amount);
+    private protected void GivePoints(int points) => World.PlayerStats.GivePoints(points);
+    private protected void TakeDamage(int points, Actor attacker) => World.PlayerStats.TakeDamage(points, attacker);
+    private protected void TakeDamage(PlayerPawn victim, int points, Actor attacker) => World.Players.TakeDamage(victim, points, attacker);
+    private protected bool InViewOf(PlayerPawn pawn, Actor actor) => World.PlayerView.InViewOf(pawn, actor);
+    private protected bool PlayerTileInView(PlayerPawn pawn) => World.PlayerView.PlayerTileInView(pawn);
+    private protected bool SeenByAPlayer(Actor actor) => World.PlayerView.SeenByAPlayer(actor);
+    private protected void CarriedDeathWork(Actor ob, int tilex, int tiley) => World.SmartSwitches.CarriedDeathWork(ob, tilex, tiley);
+
     /// <summary>The thinks and actions only a Monster can run, by their actordefs names (and its subclasses').</summary>
     internal static void RegisterActions()
     {
@@ -159,7 +209,7 @@ internal record Monster : Actor
                     {
                         // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
                         if (Flags.Contains("TOUCHDAMAGE", StringComparer.OrdinalIgnoreCase))
-                            GameHost.TakeDamage(pawn, (int)(tics * 2), this);
+                            TakeDamage(pawn, (int)(tics * 2), this);
 
                         OnBumpedPlayer();
 
@@ -771,14 +821,13 @@ internal record Monster : Actor
     /// Whether a player can be gone after: one alive. A lone player always can (dying ends the
     /// level there, and the rest of that frame plays on as it always has).
     /// </summary>
-    internal static bool IsTargetable(PlayerPawn pawn) =>
-        gamemode == GameMode.Single || pawn.State.health > 0;
+    internal bool IsTargetable(PlayerPawn pawn) => World.Session.IsTargetable(pawn);
 
     /// <summary>
     /// Whether an actor can be gone after: a player as above, anything else while it's alive
     /// (shootable) and on the level
     /// </summary>
-    internal static bool IsTargetable(Actor actor) => actor is PlayerPawn pawn
+    internal bool IsTargetable(Actor actor) => actor is PlayerPawn pawn
         ? IsTargetable(pawn)
         : !actor.IsRemoved && actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE);
 
@@ -792,7 +841,7 @@ internal record Monster : Actor
         switch (Target)
         {
             case PlayerPawn pawn:
-                GameHost.TakeDamage(pawn, points, this);
+                TakeDamage(pawn, points, this);
                 break;
             case Monster monster when points > 0:
                 monster.Damage((uint)points, this);
@@ -1215,7 +1264,7 @@ internal record Monster : Actor
     internal bool CountsAsKill => IsKill && !_factionManager.Table.IsAlly(Faction, PlayersFaction);
 
     // The local player's side (their pawn's, or their class's before they have one)
-    private static string PlayersFaction =>
+    private string PlayersFaction =>
         localplayer.Pawn?.Faction ?? _factionManager.PlayerFaction(localplayer.playerclass);
 
     /// <summary>Whether dying, it leaves its `dropweapon`/`dropitem`</summary>
@@ -1828,7 +1877,7 @@ internal record Monster : Actor
     }
 
     // A whole-number property of an actordefs class, or null
-    static int? RuntimeActorProperty(string className, string key) =>
+    int? RuntimeActorProperty(string className, string key) =>
         _inventoryManager.GetProperty(className, key) is { } value && int.TryParse(value.ToString(), out var n) ? n : null;
 
     // The Angel's spark volley: A_StartAttack starts the count, A_Relaunch follows each spark and
