@@ -76,8 +76,8 @@ internal sealed class SaveCommands(
     internal void Cmd_Save(string[] args)
     {
         var name = args.Length > 0 ? string.Join(' ', args) : playScreen.GetMapDisplayName(session.gamestate.mapon);
-        if (name.Length > Program.MaxGameName - 1)
-            name = name[..(Program.MaxGameName - 1)];
+        if (name.Length > GameConstants.MaxGameName - 1)
+            name = name[..(GameConstants.MaxGameName - 1)];
 
         var path = args.Length > 0
             && gameSaves.ListSaveGames().FirstOrDefault(s => s.Kind == SaveKind.Normal

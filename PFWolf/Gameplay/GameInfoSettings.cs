@@ -36,7 +36,7 @@ internal sealed class GameInfoSettings
         settings.deathFadeColor = string.IsNullOrWhiteSpace(gameInfo.DeathFadeColor) ? "Maroon" : gameInfo.DeathFadeColor;
         settings.deathTurnSpeed = Math.Max(gameInfo.DeathTurnSpeed ?? 2, 1);    // 0 would never finish turning
         settings.deathHoldTics = Math.Max(gameInfo.DeathHoldTics ?? 100, 0);
-        settings.deathDropHeight = gameInfo.DeathDropHeight is { } drop ? Math.Clamp(drop, Program.MINEYE, Program.MAXEYE) : null;
+        settings.deathDropHeight = gameInfo.DeathDropHeight is { } drop ? Math.Clamp(drop, GameConstants.MINEYE, GameConstants.MAXEYE) : null;
         settings.deathDropSpeed = Math.Max(gameInfo.DeathDropSpeed ?? 1, 1);    // 0 would never finish dropping
         settings.weaponScale = Math.Clamp(gameInfo.WeaponScale ?? 1, 0.1, 2);
         settings.weaponBob = gameInfo.WeaponBob ?? false;

@@ -13,7 +13,7 @@ public class PlayerViewTests
     private PlayerView _view = null!;
 
     [OneTimeSetUp]
-    public void Tables() => Program.BuildTables();      // the sines the view turns by
+    public void Tables() => TrigTables.BuildTables();      // the sines the view turns by
 
     [SetUp]
     public void MakeLevel()

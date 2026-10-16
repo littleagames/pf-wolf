@@ -126,7 +126,7 @@ internal sealed class ZoneState
             BrightTics = Math.Max(map?.BrightTics ?? fallback?.BrightTics ?? 5, 0),
         };
         var effect = map?.Effect ?? fallback?.Effect;
-        if (effect != null && !Program.TryParseZoneEffect(effect, out zone.Effect))
+        if (effect != null && !Lighting.TryParseZoneEffect(effect, out zone.Effect))
             Console.WriteLine($"Unknown zone effect '{effect}' (none, flicker, pulse or strobe)");
         return zone;
     }

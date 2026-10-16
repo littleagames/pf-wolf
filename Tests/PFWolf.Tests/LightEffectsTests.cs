@@ -9,7 +9,7 @@ public class LightEffectsTests
     public void TryParseZoneEffect_Reads_Names(string name, object expected)
     {
         // Act
-        var parsed = Program.TryParseZoneEffect(name, out var effect);
+        var parsed = Lighting.TryParseZoneEffect(name, out var effect);
 
         // Assert
         Assert.That(parsed, Is.True);
@@ -20,7 +20,7 @@ public class LightEffectsTests
     [TestCase("9")]
     public void TryParseZoneEffect_Rejects_Others(string name)
     {
-        Assert.That(Program.TryParseZoneEffect(name, out _), Is.False);
+        Assert.That(Lighting.TryParseZoneEffect(name, out _), Is.False);
     }
 
     [Test]

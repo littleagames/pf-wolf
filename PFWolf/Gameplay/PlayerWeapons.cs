@@ -207,7 +207,7 @@ internal sealed class PlayerWeapons(
     internal List<string> AllWeapons() =>
         inventory.GetClassesDerivedFrom("Weapon")
             .Where(w => inventory.FindClass(w, "WeaponGiver") == null
-                && inventory.CreateActor(w)?.ResolvedStates.ContainsKey(Program.WeaponReadyState) == true)
+                && inventory.CreateActor(w)?.ResolvedStates.ContainsKey(WeaponInHand.WeaponReadyState) == true)
             .Select(inventory.GetItemType)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();

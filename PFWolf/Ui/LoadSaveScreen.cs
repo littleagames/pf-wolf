@@ -321,12 +321,12 @@ internal sealed class LoadSaveScreen(GameEngineManager engine, AssetManager asse
 
         // A new save starts out named for the level
         var name = existing?.Name ?? hooks.NewSaveName();
-        if (name.Length > Program.MaxGameName - 1)
-            name = name[..(Program.MaxGameName - 1)];
+        if (name.Length > GameConstants.MaxGameName - 1)
+            name = name[..(GameConstants.MaxGameName - 1)];
 
         DrawLoadSaveScreen(state, editing: true);
         int y = LoadSaveRowY(state.Row, state.Top);
-        if (!lineInput.Run(LS_LISTX, y, ref name, name, true, Program.MaxGameName - 1, LS_EDITW - 8, LoadSaveStyle("HIGHLIGHT")))
+        if (!lineInput.Run(LS_LISTX, y, ref name, name, true, GameConstants.MaxGameName - 1, LS_EDITW - 8, LoadSaveStyle("HIGHLIGHT")))
         {
             audio.Play("menu/escape");
             return false;

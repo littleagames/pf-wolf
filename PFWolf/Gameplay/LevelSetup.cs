@@ -87,7 +87,7 @@ internal sealed class LevelSetup(
             session.gamestate.cluster = mapInfo.Cluster;
 
         render.wallstories = Math.Clamp(mapInfo?.WallHeight ?? engine.GetGameInfo().DefaultMap.WallHeight,
-            1, Program.MAXWALLSTORIES);
+            1, GameConstants.MAXWALLSTORIES);
         skyAndFlats.levelsky = mapInfo?.Sky ?? engine.GetGameInfo().DefaultMap.Sky;
         weather.SetWeather(mapInfo?.Weather ?? engine.GetGameInfo().DefaultMap.Weather);
         map.BuildFlats(mapInfo?.DefaultFloor ?? engine.GetGameInfo().DefaultMap.DefaultFloor,

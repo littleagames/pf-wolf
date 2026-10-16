@@ -40,7 +40,7 @@ internal sealed class RenderState
     internal short viewangle;
     internal int viewsin, viewcos;
     internal double viewpitch;          // degrees, up positive; this frame's, from the camera
-    internal int vieweyez = Program.EYEDEFAULT;     // this frame's, from the camera
+    internal int vieweyez = GameConstants.EYEDEFAULT;     // this frame's, from the camera
     internal bool markseen;             // whether this frame's walls and floor go on the automap: only the player's view
 
     internal int postx;

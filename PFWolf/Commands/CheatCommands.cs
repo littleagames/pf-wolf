@@ -69,8 +69,8 @@ internal sealed class CheatCommands(
             complete: (_, i) => i == 0 ? assets.GetActorMetadata().Actors.Keys : i == 1 ? ["0", "45", "90", "135", "180", "225", "270", "315"] : []);
         console.Register("pitch", "Looks up (positive) or down (negative) by that many degrees, as far as the view allows; 0 looks straight ahead.",
             "pitch [degrees]", Cmd_Pitch, InLevel);
-        console.Register("eyeheight", $"Sets how high the view is above the floor, in texels (64 a story, {Program.EYEDEFAULT} standing), until the level is left or reloaded.",
-            $"eyeheight [{Program.MINEYE}-{Program.MAXEYE}]", Cmd_EyeHeight, InLevel);
+        console.Register("eyeheight", $"Sets how high the view is above the floor, in texels (64 a story, {GameConstants.EYEDEFAULT} standing), until the level is left or reloaded.",
+            $"eyeheight [{GameConstants.MINEYE}-{GameConstants.MAXEYE}]", Cmd_EyeHeight, InLevel);
         console.Register("hurt", "Damages the player.", "hurt [points]", Cmd_Hurt, InLevel | Solo);
         console.Register("playerclass", "Shows the class being played as and the classes there are; with a name, the class new games are played as.",
             "playerclass [class]", Cmd_PlayerClass, complete: (_, i) => i == 0 ? classRules.PlayerClasses() : []);
@@ -117,10 +117,10 @@ internal sealed class CheatCommands(
         if (args.Length > 0)
         {
             if (!int.TryParse(args[0], out int z))
-                throw new ArgumentException($"usage: eyeheight [{Program.MINEYE}-{Program.MAXEYE}]");
+                throw new ArgumentException($"usage: eyeheight [{GameConstants.MINEYE}-{GameConstants.MAXEYE}]");
             hooks.SetEyeHeight(z);
         }
-        console.Print($"Eye height is {session.playerstate.EyeZ} ({Program.MINEYE}-{Program.MAXEYE}, 64 a story, {Program.EYEDEFAULT} standing)");
+        console.Print($"Eye height is {session.playerstate.EyeZ} ({GameConstants.MINEYE}-{GameConstants.MAXEYE}, 64 a story, {GameConstants.EYEDEFAULT} standing)");
     }
 
     internal void Cmd_PlayerClass(string[] args)

@@ -283,7 +283,7 @@ public class GameInfoSettingsTests
         // Assert
         Assert.That(settings.deathTurnSpeed, Is.EqualTo(1));
         Assert.That(settings.deathHoldTics, Is.EqualTo(0));
-        Assert.That(settings.deathDropHeight, Is.EqualTo(Program.MAXEYE));
+        Assert.That(settings.deathDropHeight, Is.EqualTo(GameConstants.MAXEYE));
         Assert.That(settings.deathDropSpeed, Is.EqualTo(1));
         Assert.That(settings.weaponScale, Is.EqualTo(2));
     }

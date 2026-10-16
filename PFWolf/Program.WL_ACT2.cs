@@ -16,10 +16,10 @@ internal partial class Program
     =============================================================================
     */
 
-    internal const long PROJECTILESIZE = 0xc000L;
+    internal const long PROJECTILESIZE = GameConstants.PROJECTILESIZE;
 
-    internal const int BJRUNSPEED = 2048;
-    internal const int BJJUMPSPEED = 680;
+    internal const int BJRUNSPEED = GameConstants.BJRUNSPEED;
+    internal const int BJJUMPSPEED = GameConstants.BJJUMPSPEED;
 
     // Enemy state tables, spawn functions (SpawnStand/SpawnPatrol/SpawnBoss/etc.), and AI
     // think/action functions (T_Stand/T_Chase/T_Shoot/etc., along with starthitpoints and
@@ -32,7 +32,7 @@ internal partial class Program
     // spawned into MapManager._actors by MapManager.SpawnAtActor. CheckPosition's only caller
     // is A_StartDeathCam (Gameplay/PlayerDeath.cs), placing the camera.
 
-    internal const int PROJSIZE = 0x2000;        // a projectile's box, either way (ProjectileTryMove)
+    internal const int PROJSIZE = GameConstants.PROJSIZE;
 
     // Enemies' projectiles and their effects (Gameplay/Projectiles.cs), actors' sounds
     // (Gameplay/ActorSounds.cs) and BJ's victory run (Gameplay/BJVictory.cs)

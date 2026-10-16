@@ -28,7 +28,7 @@ internal sealed record ActorLightInfo(int Intensity, double Radius, string? Colo
 
         var effect = ZoneEffect.None;
         if (actor.Properties.TryGetValue("light.effect", out var name)
-            && !Program.TryParseZoneEffect(name?.ToString() ?? "", out effect))
+            && !Lighting.TryParseZoneEffect(name?.ToString() ?? "", out effect))
             Console.WriteLine($"{actor.Name}: unknown light.effect '{name}' (none, flicker, pulse or strobe)");
 
         double radius = actor.Properties.TryGetValue("light.radius", out var r)

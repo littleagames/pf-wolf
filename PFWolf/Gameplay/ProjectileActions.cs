@@ -31,7 +31,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
 
     // Just beyond a wall's face for a projectile's box (ProjectileTryMove: PROJSIZE either way)
     // to be clear of it: half a tile from the centre to the face, PROJSIZE, and a little more
-    const int WALLFACEOUT = 0x8000 + Program.PROJSIZE + 0x100;
+    const int WALLFACEOUT = 0x8000 + GameConstants.PROJSIZE + 0x100;
 
     /// <summary>
     /// A_SpawnProjectile("Fireball"[, angle[, "relative"|"absolute"|"aim"]]): fires a projectile
@@ -149,7 +149,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         if (IsInWall(ob))
         {
             int facing = FacingAngle(ob);
-            int cos = Program.sintable[facing + GameConstants.ANGLES / 4], sin = Program.sintable[facing];
+            int cos = TrigTables.sintable[facing + GameConstants.ANGLES / 4], sin = TrigTables.sintable[facing];
             if ((long)(pawn.X - x) * cos - (long)(pawn.Y - y) * sin <= 0)
                 return false;
         }
@@ -165,7 +165,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
 
     /// <summary>Which way it faces, in degrees: its map facing, or its angle when it has none</summary>
     internal static int FacingAngle(Entities.Actors.Actor ob) =>
-        ob.Dir == objdirtypes.nodir ? ob.Angle : Program.dirangle[(byte)ob.Dir];
+        ob.Dir == objdirtypes.nodir ? ob.Angle : GameConstants.dirangle[(byte)ob.Dir];
 
     /// <summary>
     /// Where it looks and fires from: where it is, or for one inside a wall, just beyond the face
@@ -177,7 +177,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
             return (ob.X, ob.Y);
 
         int facing = FacingAngle(ob);
-        int cos = Program.sintable[facing + GameConstants.ANGLES / 4], sin = Program.sintable[facing];
+        int cos = TrigTables.sintable[facing + GameConstants.ANGLES / 4], sin = TrigTables.sintable[facing];
         const int Axis = 0x6000;    // about 22 degrees off an axis still counts as facing along it
         int centreX = (ob.TileX << MapConstants.TILESHIFT) + 0x8000, centreY = (ob.TileY << MapConstants.TILESHIFT) + 0x8000;
         int x = centreX + (cos > Axis ? WALLFACEOUT : cos < -Axis ? -WALLFACEOUT : 0);

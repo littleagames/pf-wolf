@@ -178,7 +178,7 @@ public class CameraTests
         Assert.That(session.camera.OnPlayer, Is.False);
         Assert.That(session.camera.Angle, Is.EqualTo((short)90));
         Assert.That(session.camera.Pitch, Is.EqualTo(0));
-        Assert.That(session.camera.EyeZ, Is.EqualTo(Program.EYEDEFAULT));
+        Assert.That(session.camera.EyeZ, Is.EqualTo(GameConstants.EYEDEFAULT));
     }
 
     [TestCase(5u, 40)]          // 8 degrees a tic toward north

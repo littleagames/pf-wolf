@@ -237,8 +237,8 @@ internal sealed class PlayerDeath(
         dist = 0x14000;
         do
         {
-            xmove = MathUtils.FixedMul(dist, Program.costable[camangle]);
-            ymove = -MathUtils.FixedMul(dist, Program.sintable[camangle]);
+            xmove = MathUtils.FixedMul(dist, TrigTables.costable[camangle]);
+            ymove = -MathUtils.FixedMul(dist, TrigTables.sintable[camangle]);
 
             camx = ob.X - xmove;
             camy = ob.Y - ymove;

@@ -41,7 +41,7 @@ internal sealed class PlayerView(
     {
         var player = session.player;
         int focallength = hooks.FocalLength();
-        int sin = Program.sintable[player.Angle], cos = Program.sintable[player.Angle + GameConstants.ANGLES / 4];
+        int sin = TrigTables.sintable[player.Angle], cos = TrigTables.sintable[player.Angle + GameConstants.ANGLES / 4];
         return (player.X - MathUtils.FixedMul(focallength, cos), player.Y + MathUtils.FixedMul(focallength, sin), sin, cos);
     }
 
@@ -133,16 +133,16 @@ internal sealed class PlayerView(
     internal bool InViewOf(PlayerPawn pawn, Entities.Actors.Actor actor)
     {
         int focallength = hooks.FocalLength();
-        int sin = Program.sintable[pawn.Angle], cos = Program.sintable[pawn.Angle + GameConstants.ANGLES / 4];
+        int sin = TrigTables.sintable[pawn.Angle], cos = TrigTables.sintable[pawn.Angle + GameConstants.ANGLES / 4];
         int fromx = pawn.X - MathUtils.FixedMul(focallength, cos), fromy = pawn.Y + MathUtils.FixedMul(focallength, sin);
         int gx = actor.X - fromx, gy = actor.Y - fromy;
-        int nx = MathUtils.FixedMul(gx, cos) - MathUtils.FixedMul(gy, sin) - Program.ACTORSIZE;
+        int nx = MathUtils.FixedMul(gx, cos) - MathUtils.FixedMul(gy, sin) - GameConstants.ACTORSIZE;
         int ny = MathUtils.FixedMul(gy, cos) + MathUtils.FixedMul(gx, sin);
         if (nx < GameConstants.MINDIST)
             return false;
 
         // |ny / nx| * scale within half the view: the view's width taken out of both
-        return Math.Abs((long)ny) * (Program.FOCALLENGTH + GameConstants.MINDIST) < (long)nx * (Program.VIEWGLOBAL / 2)
+        return Math.Abs((long)ny) * (GameConstants.FOCALLENGTH + GameConstants.MINDIST) < (long)nx * (GameConstants.VIEWGLOBAL / 2)
             && lineOfSight.CheckLine(actor, pawn);
     }
 

@@ -72,7 +72,7 @@ internal sealed class PlayerClassRules(GameEngineManager engine, InventoryManage
 
     /// <summary>How high a player's eyes are standing, in texels: their class's `player.eyeheight` (EYEDEFAULT when left out)</summary>
     internal int StandingEyeZ(Entities.PlayerState p) =>
-        Math.Clamp(inventory.GetIntProperty(p.playerclass, "player.eyeheight", Program.EYEDEFAULT), Program.MINEYE, Program.MAXEYE);
+        Math.Clamp(inventory.GetIntProperty(p.playerclass, "player.eyeheight", GameConstants.EYEDEFAULT), GameConstants.MINEYE, GameConstants.MAXEYE);
 
     /// <summary>
     /// Whether the class may pick up a weapon or ammo: with a `player.weapons` list, only the

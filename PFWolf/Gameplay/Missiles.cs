@@ -77,8 +77,8 @@ internal sealed class Missiles(
 
         // Just in front of the player, so one fired point blank at a wall still shows its blast
         const int ahead = (int)(9L * GameConstants.MINDIST / 8);
-        missile.X += MathUtils.FixedMul(ahead, Program.costable[missile.Angle]);
-        missile.Y -= MathUtils.FixedMul(ahead, Program.sintable[missile.Angle]);
+        missile.X += MathUtils.FixedMul(ahead, TrigTables.costable[missile.Angle]);
+        missile.Y -= MathUtils.FixedMul(ahead, TrigTables.sintable[missile.Angle]);
         missile.TileX = (byte)(missile.X >> MapConstants.TILESHIFT);
         missile.TileY = (byte)(missile.Y >> MapConstants.TILESHIFT);
 
@@ -103,8 +103,8 @@ internal sealed class Missiles(
     internal void A_Missile(Entities.Actors.Actor ob, string[] args)
     {
         int speed = (int)(ob.Speed * session.tics);
-        ob.X += MathUtils.FixedMul(speed, Program.costable[ob.Angle]);
-        ob.Y -= MathUtils.FixedMul(speed, Program.sintable[ob.Angle]);
+        ob.X += MathUtils.FixedMul(speed, TrigTables.costable[ob.Angle]);
+        ob.Y -= MathUtils.FixedMul(speed, TrigTables.sintable[ob.Angle]);
         ob.TileX = (byte)(ob.X >> MapConstants.TILESHIFT);
         ob.TileY = (byte)(ob.Y >> MapConstants.TILESHIFT);
 
@@ -113,7 +113,7 @@ internal sealed class Missiles(
         if (!blocked)
         {
             // the player's side's (factions.yaml) it flies past: no friendly fire
-            victim = (Entities.Actors.Actor?)map.ShootableActorsNear(ob.X, ob.Y, Program.PROJECTILESIZE / 2)
+            victim = (Entities.Actors.Actor?)map.ShootableActorsNear(ob.X, ob.Y, GameConstants.PROJECTILESIZE / 2)
                 .FirstOrDefault(a => !ReferenceEquals(a, ob.Shooter) && !factions.IsAlly(ob, a))
                 ?? RivalHitBy(ob);
             if (victim == null)
@@ -140,7 +140,7 @@ internal sealed class Missiles(
     internal Entities.Actors.PlayerPawn? RivalHitBy(Entities.Actors.Actor ob) =>
         session.gamemode != GameMode.Deathmatch ? null
         : map.Players.FirstOrDefault(pawn => !ReferenceEquals(pawn, ob.Shooter) && pawn.State.health > 0
-            && Math.Abs((long)pawn.X - ob.X) < Program.PROJECTILESIZE && Math.Abs((long)pawn.Y - ob.Y) < Program.PROJECTILESIZE);
+            && Math.Abs((long)pawn.X - ob.X) < GameConstants.PROJECTILESIZE && Math.Abs((long)pawn.Y - ob.Y) < GameConstants.PROJECTILESIZE);
 
     /// <summary>
     /// Makes the player who fired a missile the acting player while it does its damage, so the

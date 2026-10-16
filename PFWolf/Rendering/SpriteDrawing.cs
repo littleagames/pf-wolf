@@ -123,7 +123,7 @@ internal sealed class SpriteDrawing(
 
         var gxt = MathUtils.FixedMul(gx, fromcos);
         var gyt = MathUtils.FixedMul(gy, fromsin);
-        var nx = gxt - gyt - Program.ACTORSIZE;
+        var nx = gxt - gyt - GameConstants.ACTORSIZE;
 
         gxt = MathUtils.FixedMul(gx, fromsin);
         gyt = MathUtils.FixedMul(gy, fromcos);
@@ -193,7 +193,7 @@ internal sealed class SpriteDrawing(
         else if (ob.Dir == objdirtypes.nodir)
             return 1;                                   // facing no way: toward whoever looks
         else
-            angle = (viewangle - 180) - Program.dirangle[(byte)ob.Dir];
+            angle = (viewangle - 180) - GameConstants.dirangle[(byte)ob.Dir];
 
         angle += GameConstants.ANGLES / 16;
         while (angle >= GameConstants.ANGLES) angle -= GameConstants.ANGLES;

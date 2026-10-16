@@ -77,9 +77,9 @@ internal sealed class PlayerMovement(
             if (angle >= ANGLES)
                 angle -= ANGLES;
             if (playerinput.IsPressed(buttontypes.bt_run))
-                Thrust(angle, (int)(GameConstants.RUNMOVE * Program.MOVESCALE * tics * side));
+                Thrust(angle, (int)(GameConstants.RUNMOVE * GameConstants.MOVESCALE * tics * side));
             else
-                Thrust(angle, (int)(GameConstants.BASEMOVE * Program.MOVESCALE * tics * side));
+                Thrust(angle, (int)(GameConstants.BASEMOVE * GameConstants.MOVESCALE * tics * side));
         }
 
         if (playerinput.IsPressed(buttontypes.bt_straferight))
@@ -88,9 +88,9 @@ internal sealed class PlayerMovement(
             if (angle < 0)
                 angle += ANGLES;
             if (playerinput.IsPressed(buttontypes.bt_run))
-                Thrust(angle, (int)(GameConstants.RUNMOVE * Program.MOVESCALE * tics * side));
+                Thrust(angle, (int)(GameConstants.RUNMOVE * GameConstants.MOVESCALE * tics * side));
             else
-                Thrust(angle, (int)(GameConstants.BASEMOVE * Program.MOVESCALE * tics * side));
+                Thrust(angle, (int)(GameConstants.BASEMOVE * GameConstants.MOVESCALE * tics * side));
         }
 
         //
@@ -103,7 +103,7 @@ internal sealed class PlayerMovement(
                 angle += ANGLES;
             else if (angle >= ANGLES)
                 angle -= ANGLES;
-            Thrust(angle, (int)(Math.Abs(playerinput.ControlStrafe) * Program.MOVESCALE * side));
+            Thrust(angle, (int)(Math.Abs(playerinput.ControlStrafe) * GameConstants.MOVESCALE * side));
         }
 
         //
@@ -120,14 +120,14 @@ internal sealed class PlayerMovement(
                 angle = ob.Angle - ANGLES / 4;
                 if (angle < 0)
                     angle += ANGLES;
-                Thrust(angle, (int)(playerinput.ControlX * Program.MOVESCALE * side));      // move to left
+                Thrust(angle, (int)(playerinput.ControlX * GameConstants.MOVESCALE * side));      // move to left
             }
             else if (playerinput.ControlX < 0)
             {
                 angle = ob.Angle + ANGLES / 4;
                 if (angle >= ANGLES)
                     angle -= ANGLES;
-                Thrust(angle, (int)(-playerinput.ControlX * Program.MOVESCALE * side));     // move to right
+                Thrust(angle, (int)(-playerinput.ControlX * GameConstants.MOVESCALE * side));     // move to right
             }
         }
         else
@@ -136,8 +136,8 @@ internal sealed class PlayerMovement(
             // not strafing
             //
             playerstate.AngleFrac += (short)playerinput.ControlX;
-            angleunits = playerstate.AngleFrac / Program.ANGLESCALE;
-            playerstate.AngleFrac -= (short)(angleunits * Program.ANGLESCALE);
+            angleunits = playerstate.AngleFrac / GameConstants.ANGLESCALE;
+            playerstate.AngleFrac -= (short)(angleunits * GameConstants.ANGLESCALE);
             ob.Angle -= (short)angleunits;
 
             if (ob.Angle >= ANGLES)
@@ -151,14 +151,14 @@ internal sealed class PlayerMovement(
         //
         if (playerinput.ControlY < 0)
         {
-            Thrust(ob.Angle, (int)(-playerinput.ControlY * Program.MOVESCALE * forward)); // move forwards
+            Thrust(ob.Angle, (int)(-playerinput.ControlY * GameConstants.MOVESCALE * forward)); // move forwards
         }
         else if (playerinput.ControlY > 0)
         {
             angle = ob.Angle + ANGLES / 2;
             if (angle >= ANGLES)
                 angle -= ANGLES;
-            Thrust(angle, (int)(playerinput.ControlY * Program.BACKMOVESCALE * forward));          // move backwards
+            Thrust(angle, (int)(playerinput.ControlY * GameConstants.BACKMOVESCALE * forward));          // move backwards
         }
     }
 
@@ -179,13 +179,13 @@ internal sealed class PlayerMovement(
         // demos move the player exactly as v1.4 did, or they drift from what was recorded
         if (hooks.DemoActive())
         {
-            xmove = MathUtils.FixedByFracOrig(speed, Program.costable[angle]);
-            ymove = -MathUtils.FixedByFracOrig(speed, Program.sintable[angle]);
+            xmove = MathUtils.FixedByFracOrig(speed, TrigTables.costable[angle]);
+            ymove = -MathUtils.FixedByFracOrig(speed, TrigTables.sintable[angle]);
         }
         else
         {
-            xmove = MathUtils.FixedMul(speed, Program.costable[angle]);
-            ymove = -MathUtils.FixedMul(speed, Program.sintable[angle]);
+            xmove = MathUtils.FixedMul(speed, TrigTables.costable[angle]);
+            ymove = -MathUtils.FixedMul(speed, TrigTables.sintable[angle]);
         }
 
         ClipMove(player, xmove, ymove);

@@ -27,7 +27,7 @@ internal sealed class Camera(GameSession session)
     int fixedx, fixedy;
     short fixedangle;
     double fixedpitch;
-    int fixedeyez = Program.EYEDEFAULT;
+    int fixedeyez = GameConstants.EYEDEFAULT;
     double smoothangle;             // a watched actor's view angle, turning after its 8-way walk
 
     /// <summary>
@@ -49,7 +49,7 @@ internal sealed class Camera(GameSession session)
     }
 
     /// <summary>Sits at a fixed point (global fixed-point x, y), facing angle</summary>
-    internal void SetFixed(int x, int y, short angle, double pitch = 0, int eyez = Program.EYEDEFAULT)
+    internal void SetFixed(int x, int y, short angle, double pitch = 0, int eyez = GameConstants.EYEDEFAULT)
     {
         (target, isfixed) = (null, true);
         (fixedx, fixedy, fixedangle, fixedpitch, fixedeyez) = (x, y, angle, pitch, eyez);
@@ -97,7 +97,7 @@ internal sealed class Camera(GameSession session)
     {
         null => fixedeyez,
         PlayerPawn pawn => pawn.State.EyeZ,
-        _ => Program.EYEDEFAULT,
+        _ => GameConstants.EYEDEFAULT,
     };
 
     /// <summary>
@@ -107,5 +107,5 @@ internal sealed class Camera(GameSession session)
     static short ActorViewAngle(Entities.Actors.Actor actor) =>
         actor.Dir == objdirtypes.nodir || actor.Flags.Contains("PROJECTILE", StringComparer.OrdinalIgnoreCase)
             ? actor.Angle
-            : (short)Program.dirangle[(byte)actor.Dir];
+            : (short)GameConstants.dirangle[(byte)actor.Dir];
 }

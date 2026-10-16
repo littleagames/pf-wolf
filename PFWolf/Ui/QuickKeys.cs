@@ -78,7 +78,7 @@ internal sealed class QuickKeys(
             // END GAME
             //
             case ScanCodes.sc_F7:
-                if (loop.Confirm("$ENDGAMESTR".ToLanguageText(language), Program.MAXY) != 0)
+                if (loop.Confirm("$ENDGAMESTR".ToLanguageText(language), GameConstants.MAXY) != 0)
                 {
                     hooks.SetPlayState(playstatetypes.ex_died);
                     session.playerstate.LastAttacker = null;
@@ -92,7 +92,7 @@ internal sealed class QuickKeys(
             //
             // Always the quicksave file, never a save picked in the menus
             case ScanCodes.sc_F8:
-                draw.Message("$STR_SAVING".ToLanguageText(language) + "...", Program.MAXY);
+                draw.Message("$STR_SAVING".ToLanguageText(language) + "...", GameConstants.MAXY);
                 gameSaves.CP_SaveGame(1);
                 return 1;
 
@@ -103,7 +103,7 @@ internal sealed class QuickKeys(
             case ScanCodes.sc_F9:
                 if (File.Exists(gameSaves.QuickSavePath))
                 {
-                    if (loop.Confirm("$STR_LS_QUICKLOAD".ToLanguageText(language), Program.MAXY) != 0)
+                    if (loop.Confirm("$STR_LS_QUICKLOAD".ToLanguageText(language), GameConstants.MAXY) != 0)
                         gameSaves.CP_LoadGame(1);
                 }
                 else
@@ -137,7 +137,7 @@ internal sealed class QuickKeys(
             //
             case ScanCodes.sc_F10:
                 string endStr = gameInfo.EndStrings[(hooks.UiRandom() & (gameInfo.EndStrings.Count - 2)) + (hooks.UiRandom() & 1)];
-                if (loop.Confirm(endStr, Program.MAXY) != 0)
+                if (loop.Confirm(endStr, GameConstants.MAXY) != 0)
                 {
                     video.Update();
                     audio.SetPaused(true);

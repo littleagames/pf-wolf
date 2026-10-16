@@ -12,7 +12,7 @@ internal partial class Program
     =============================================================================
     */
 
-    internal const int ACTORSIZE = 0x4000;
+    internal const int ACTORSIZE = GameConstants.ACTORSIZE;
 
     /*
     =============================================================================
@@ -47,7 +47,7 @@ internal partial class Program
     //
     // tall walls: every wall is wallstories 64 unit stories tall, built up from the floor
     //
-    internal const int MAXWALLSTORIES = 8;
+    internal const int MAXWALLSTORIES = GameConstants.MAXWALLSTORIES;
     internal static int wallstories { get => render.wallstories; set => render.wallstories = value; }
 
     internal static double viewpitch { get => render.viewpitch; set => render.viewpitch = value; }   // degrees, up positive; this frame's, from the camera
@@ -64,7 +64,7 @@ internal partial class Program
     ====================
     */
 
-    internal const int EYEDEFAULT = TEXTURESIZE / 2, MINEYE = 4, MAXEYE = TEXTURESIZE - 4;
+    internal const int EYEDEFAULT = GameConstants.EYEDEFAULT, MINEYE = GameConstants.MINEYE, MAXEYE = GameConstants.MAXEYE;
 
     // A column's posts and the arches the trace passes under (Rendering/WallPosts.cs)
     static WallPosts wallPosts = null!;     // made in InitServices

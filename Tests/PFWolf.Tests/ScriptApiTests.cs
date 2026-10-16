@@ -114,6 +114,6 @@ public class ScriptApiTests
 
         // Assert
         Assert.That(ScriptApi.TriggerActions.Concat(ScriptApi.OwnTileActions), Is.EquivalentTo(engine));
-        Assert.That(ScriptApi.OwnTileActions, Is.EquivalentTo(Program.OwnTileActions.Keys));
+        Assert.That(ScriptApi.OwnTileActions, Is.EquivalentTo(GameScripts.OwnTileActions.Keys));
     }
 }

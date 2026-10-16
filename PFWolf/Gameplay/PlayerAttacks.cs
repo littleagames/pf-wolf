@@ -93,13 +93,13 @@ internal sealed class PlayerAttacks(
 
             // As TransformActorFrom: how far in front (nx) and to the side (ny)
             int gx = actor.X - fromx, gy = actor.Y - fromy;
-            int nx = MathUtils.FixedMul(gx, fromcos) - MathUtils.FixedMul(gy, fromsin) - Program.ACTORSIZE;
+            int nx = MathUtils.FixedMul(gx, fromcos) - MathUtils.FixedMul(gy, fromsin) - GameConstants.ACTORSIZE;
             int ny = MathUtils.FixedMul(gy, fromcos) + MathUtils.FixedMul(gx, fromsin);
             if (nx < GameConstants.MINDIST)
                 continue;
 
             // |ny / nx| * scale < shootdelta, with the view's width taken out of both
-            if (Math.Abs((long)ny) * 5 * (Program.FOCALLENGTH + GameConstants.MINDIST) >= (long)nx * (Program.VIEWGLOBAL / 2))
+            if (Math.Abs((long)ny) * 5 * (GameConstants.FOCALLENGTH + GameConstants.MINDIST) >= (long)nx * (GameConstants.VIEWGLOBAL / 2))
                 continue;
 
             if (!lineOfSight.CheckLine(actor, shooter))

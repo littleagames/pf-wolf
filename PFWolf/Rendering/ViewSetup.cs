@@ -76,7 +76,7 @@ internal sealed class ViewSetup(
         //
         // calculate trace angles and projection constants
         //
-        CalcProjection(Program.FOCALLENGTH);
+        CalcProjection(GameConstants.FOCALLENGTH);
 
         return true;
     }
@@ -109,7 +109,7 @@ internal sealed class ViewSetup(
         // and sprite x calculations: from the projection width, so a view wider than the
         // classic shape sees further to the sides rather than having its walls made taller
         //
-        render.scale = (int) (render.projectionwidth / 2 * facedist / (Program.VIEWGLOBAL / 2));
+        render.scale = (int) (render.projectionwidth / 2 * facedist / (GameConstants.VIEWGLOBAL / 2));
 
         //
         // divide heightnumerator by a posts distance to get the posts height for
@@ -124,7 +124,7 @@ internal sealed class ViewSetup(
         for (i = 0; i < halfview; i++)
         {
             // start 1/2 pixel over, so viewangle bisects two middle pixels
-            tang = (int)i * Program.VIEWGLOBAL / render.projectionwidth / facedist;
+            tang = (int)i * GameConstants.VIEWGLOBAL / render.projectionwidth / facedist;
             angle = (float)Math.Atan(tang);
             intang = (int)(angle * RadToInt);
             render.pixelangle[halfview - 1 - i] = (short)intang;

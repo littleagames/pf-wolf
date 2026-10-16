@@ -216,7 +216,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
             Map: DeathmatchMaps().FirstOrDefault() ?? "");
 
         var session = NetSession.Host(netStart.HostPort, hooks.Identity(), MpConfig.Name, hooks.PlayerClass(),
-            LocalColor(), Program.MAXPLAYERS, settings, out var error);
+            LocalColor(), PlayerCommands.MAXPLAYERS, settings, out var error);
         if (session == null)
         {
             ShowNetMessage($"{"$STR_MP_HOSTFAILED".ToLanguageText(language)}\n\n{MenuDrawing.WrapForMessage(error ?? "")}");
@@ -477,7 +477,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     CP_itemtype[] LobbyMenu = [];
     CP_iteminfo LobbyItems = null!;
 
-    // The lobby panel's rows: up to Program.MAXPLAYERS players, then the last chat lines
+    // The lobby panel's rows: up to PlayerCommands.MAXPLAYERS players, then the last chat lines
     const int LobbyPanelX = 24, LobbyPanelY = 140, LobbyPanelRow = 9, LobbyChatLines = 1;
 
     /// <summary>
@@ -655,7 +655,7 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         // Who's in, and the last thing or two said
         var panel = new TextStyle(UiFonts.SMALL_FONT, "TEXTCOLOR");
         int y = LobbyPanelY;
-        for (int slot = 0; slot < Program.MAXPLAYERS; slot++)
+        for (int slot = 0; slot < PlayerCommands.MAXPLAYERS; slot++)
         {
             var p = session.Players.FirstOrDefault(pl => pl.Slot == slot);
             string text = p == null ? "-"

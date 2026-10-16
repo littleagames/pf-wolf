@@ -55,7 +55,7 @@ internal partial class Program
     internal const int MaxHelpLines = 500;
     internal const int MaxHighName = HighScore.MaxHighName;
     internal const int LegacyScoreCount = HighScore.LegacyScoreCount;
-    internal const int MaxGameName = 32;    // a save's name, as typed in the save menu, is one less
+    internal const int MaxGameName = GameConstants.MaxGameName;
     internal const int MaxString = LineInput.MaxString;
 
     internal static TextWindow TextAt(int x, int y, TextStyle style) => ui.TextAt(x, y, style);
@@ -354,8 +354,8 @@ internal partial class Program
 
     =============================================================================
     */
-    internal const long FOCALLENGTH = (0x5700L);               // in global coordinates
-    internal const int VIEWGLOBAL = 0x10000;               // globals visable flush to wall
+    internal const long FOCALLENGTH = GameConstants.FOCALLENGTH;
+    internal const int VIEWGLOBAL = GameConstants.VIEWGLOBAL;
 
     const int VIEWWIDTH = 256;                   // size of view window
     const int VIEWHEIGHT = 144;
@@ -368,8 +368,7 @@ internal partial class Program
     =============================================================================
     */
 
-    internal static readonly int[] dirangle ={0,ANGLES/8,2*ANGLES/8,3*ANGLES/8,4*ANGLES/8,
-                       5*ANGLES/8,6*ANGLES/8,7*ANGLES/8,ANGLES};
+    internal static int[] dirangle => GameConstants.dirangle;
 
     //
     // proejection variables

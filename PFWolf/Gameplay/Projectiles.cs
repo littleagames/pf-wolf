@@ -62,7 +62,7 @@ internal sealed class Projectiles(
 
     internal bool ProjectileTryMove(Entities.Actors.Actor ob)
     {
-        const int PROJSIZE = Program.PROJSIZE;
+        const int PROJSIZE = GameConstants.PROJSIZE;
         int xl, yl, xh, yh, x, y;
         Actor? check;
 
@@ -115,15 +115,15 @@ internal sealed class Projectiles(
     // the legacy (US_RndT()>>3) + base.
     internal void A_Projectile(Entities.Actors.Actor ob, string[] args)
     {
-        const long PROJECTILESIZE = Program.PROJECTILESIZE;
+        const long PROJECTILESIZE = GameConstants.PROJECTILESIZE;
         long deltax, deltay;
         int damage = 0;
         int speed;
 
         speed = (int)(ob.Speed * session.tics);
 
-        deltax = MathUtils.FixedMul(speed, Program.costable[ob.Angle]);
-        deltay = -MathUtils.FixedMul(speed, Program.sintable[ob.Angle]);
+        deltax = MathUtils.FixedMul(speed, TrigTables.costable[ob.Angle]);
+        deltay = -MathUtils.FixedMul(speed, TrigTables.sintable[ob.Angle]);
 
         if (deltax > 0x10000L)
             deltax = 0x10000L;

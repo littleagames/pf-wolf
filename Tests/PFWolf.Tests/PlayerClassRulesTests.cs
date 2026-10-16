@@ -115,9 +115,9 @@ public class PlayerClassRulesTests
         var (rules, session) = Playing("Soldier");
 
         // Act / Assert
-        Assert.That(rules.StandingEyeZ(session.playerstate), Is.EqualTo(Program.MAXEYE));
+        Assert.That(rules.StandingEyeZ(session.playerstate), Is.EqualTo(GameConstants.MAXEYE));
         session.playerstate.playerclass = "Player";
-        Assert.That(rules.StandingEyeZ(session.playerstate), Is.EqualTo(Program.EYEDEFAULT));
+        Assert.That(rules.StandingEyeZ(session.playerstate), Is.EqualTo(GameConstants.EYEDEFAULT));
     }
 
     [TestCase("Pistol", true)]

@@ -125,11 +125,11 @@ internal sealed class FrameRefresh(
         render.midangle = (short)(render.viewangle * (GameConstants.FINEANGLES / GameConstants.ANGLES));
 
         render.viewpitch = camera.Pitch;
-        render.vieweyez = Math.Clamp(camera.EyeZ, Program.MINEYE, Program.MAXEYE);
+        render.vieweyez = Math.Clamp(camera.EyeZ, GameConstants.MINEYE, GameConstants.MAXEYE);
         SetupPitch();
 
-        render.viewsin = Program.sintable[render.viewangle];
-        render.viewcos = Program.costable[render.viewangle];
+        render.viewsin = TrigTables.sintable[render.viewangle];
+        render.viewcos = TrigTables.costable[render.viewangle];
 
         render.viewx = camera.X - MathUtils.FixedMul(render.focallength, render.viewcos);
         render.viewy = camera.Y + MathUtils.FixedMul(render.focallength, render.viewsin);
@@ -223,7 +223,7 @@ internal sealed class FrameRefresh(
             if (fpscounter)
             {
                 video.Bar(0, 0, 40, 10, hooks.BorderColor());
-                graphics.DrawText(4, 1, $"{fps} fps", new Fonts.TextStyle(Program.SMALL_FONT, "Grey", "VIEWCOLOR"));
+                graphics.DrawText(4, 1, $"{fps} fps", new Fonts.TextStyle(UiFonts.SMALL_FONT, "Grey", "VIEWCOLOR"));
             }
 
             // Taken here, before the console is drawn, so it never shows in the shot.

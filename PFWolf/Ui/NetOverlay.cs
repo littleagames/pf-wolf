@@ -24,7 +24,7 @@ internal sealed class NetOverlay(
     Func<bool> netGame,
     Action<playstatetypes> setPlayState)
 {
-    const int MAXY = Program.MAXY;
+    const int MAXY = GameConstants.MAXY;
 
     // Typing a line to say to the others (T), and what's typed so far
     internal bool netChatting;

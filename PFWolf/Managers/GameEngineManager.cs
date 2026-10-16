@@ -307,7 +307,7 @@ internal class GameEngineManager
 
     private static ConfigData ParseConfig(BinaryReader br)
     {
-        var scores = new HighScore[Program.LegacyScoreCount];
+        var scores = new HighScore[HighScore.LegacyScoreCount];
         for (int i = 0; i < scores.Length; i++)
         {
             scores[i] = new HighScore();
@@ -595,7 +595,7 @@ internal class GameEngineManager
     private void WriteConfigData(BinaryWriter bw)
     {
         bw.Write(ConfigSignature);
-        for (int i = 0; i < Program.LegacyScoreCount; i++)
+        for (int i = 0; i < HighScore.LegacyScoreCount; i++)
             (i < Program.Scores.Length ? Program.Scores[i] : new HighScore()).Write(bw);
 
         bw.Write((byte)0); // sound mode placeholder

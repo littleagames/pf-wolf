@@ -100,8 +100,8 @@ internal partial class Program
 
     internal static void InitActorList() => levelLoop.InitActorList();
 
-    internal const int MAXX = 320;
-    internal const int MAXY = 160;
+    internal const int MAXX = GameConstants.MAXX;
+    internal const int MAXY = GameConstants.MAXY;
 
     /// <summary>Black text on the white of a <see cref="CenterWindow"/></summary>
     internal static readonly Fonts.TextStyle PromptStyle = new(SMALL_FONT, "Black", "White");

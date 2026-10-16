@@ -14,7 +14,7 @@ public class ProjectilesTests
     private bool _wallSpriteInTheWay;
 
     [OneTimeSetUp]
-    public void Tables() => Program.BuildTables();      // the sines a projectile flies by
+    public void Tables() => TrigTables.BuildTables();      // the sines a projectile flies by
 
     [SetUp]
     public void MakeMap()

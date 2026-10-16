@@ -340,7 +340,7 @@ internal sealed class InputPolling(
         // Looking goes as fast as turning: controlx turns a degree every ANGLESCALE. In the
         // automap's pan mode the mouse pans the map, so it walks (RouteMovementToAutomap takes it).
         if (controlSettings.mouselook && !(automap.IsOpen && !automap.Follow))
-            controlpitch += (controlSettings.mouseinvert ? mouseymove : -mouseymove) * 10.0 / (13 - controlSettings.mouseadjustment) / Program.ANGLESCALE;
+            controlpitch += (controlSettings.mouseinvert ? mouseymove : -mouseymove) * 10.0 / (13 - controlSettings.mouseadjustment) / GameConstants.ANGLESCALE;
         else
             controly += mouseymove * 20 / (13 - controlSettings.mouseadjustment);
     }

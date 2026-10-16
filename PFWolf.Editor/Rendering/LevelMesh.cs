@@ -467,7 +467,7 @@ public sealed class LevelMesh
     }
 
     /// <summary>
-    /// A door's face (Program.DoorFace): its locked face while it has a lock and one, else its own,
+    /// A door's face (Doors.DoorFace): its locked face while it has a lock and one, else its own,
     /// else the opposite side's
     /// </summary>
     private string DoorFace(MapTextureTranslation door, int x, int y, string face)

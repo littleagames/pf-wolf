@@ -32,7 +32,7 @@ internal sealed class BJVictory(MapManager map, GameSession session, Action<play
     {
         int move;
 
-        move = (int)(Program.BJRUNSPEED * session.tics);
+        move = (int)(GameConstants.BJRUNSPEED * session.tics);
 
         while (move != 0)
         {
@@ -67,7 +67,7 @@ internal sealed class BJVictory(MapManager map, GameSession session, Action<play
     {
         int move;
 
-        move = (int)(Program.BJJUMPSPEED * session.tics);
+        move = (int)(GameConstants.BJJUMPSPEED * session.tics);
         ob.MoveObj(move);
     }
 

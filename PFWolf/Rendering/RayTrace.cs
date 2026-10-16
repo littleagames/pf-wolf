@@ -41,8 +41,8 @@ internal sealed class RayTrace(
             {
                 render.xtilestep = 1;
                 render.ytilestep = -1;
-                xstep = Program.finetangent[GameConstants.ANG90 - 1 - angle];
-                ystep = -Program.finetangent[angle];
+                xstep = TrigTables.finetangent[GameConstants.ANG90 - 1 - angle];
+                ystep = -TrigTables.finetangent[angle];
                 xpartial = (uint)render.xpartialup;
                 ypartial = (uint)render.ypartialdown;
             }
@@ -50,8 +50,8 @@ internal sealed class RayTrace(
             {
                 render.xtilestep = -1;
                 render.ytilestep = -1;
-                xstep = -Program.finetangent[angle - GameConstants.ANG90];
-                ystep = -Program.finetangent[GameConstants.ANG180 - 1 - angle];
+                xstep = -TrigTables.finetangent[angle - GameConstants.ANG90];
+                ystep = -TrigTables.finetangent[GameConstants.ANG180 - 1 - angle];
                 xpartial = (uint)render.xpartialdown;
                 ypartial = (uint)render.ypartialdown;
             }
@@ -59,8 +59,8 @@ internal sealed class RayTrace(
             {
                 render.xtilestep = -1;
                 render.ytilestep = 1;
-                xstep = -Program.finetangent[GameConstants.ANG270 - 1 - angle];
-                ystep = Program.finetangent[angle - GameConstants.ANG180];
+                xstep = -TrigTables.finetangent[GameConstants.ANG270 - 1 - angle];
+                ystep = TrigTables.finetangent[angle - GameConstants.ANG180];
                 xpartial = (uint)render.xpartialdown;
                 ypartial = (uint)render.ypartialup;
             }
@@ -68,8 +68,8 @@ internal sealed class RayTrace(
             {
                 render.xtilestep = 1;
                 render.ytilestep = 1;
-                xstep = Program.finetangent[angle - GameConstants.ANG270];
-                ystep = Program.finetangent[GameConstants.ANG360 - 1 - angle];
+                xstep = TrigTables.finetangent[angle - GameConstants.ANG270];
+                ystep = TrigTables.finetangent[GameConstants.ANG360 - 1 - angle];
                 xpartial = (uint)render.xpartialup;
                 ypartial = (uint)render.ypartialup;
             }

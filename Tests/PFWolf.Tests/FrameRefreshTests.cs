@@ -12,7 +12,7 @@ public class FrameRefreshTests
     private FrameRefresh _frame = null!;
 
     [OneTimeSetUp]
-    public void Tables() => Program.BuildTables();
+    public void Tables() => TrigTables.BuildTables();
 
     [SetUp]
     public void Make()
@@ -77,7 +77,7 @@ public class FrameRefreshTests
 
         // Assert: the view point is behind the camera (south of it, as north is up the map)
         Assert.That((_render.viewangle, _render.midangle), Is.EqualTo(((short)90, (short)(90 * GameConstants.FINEANGLES / GameConstants.ANGLES))));
-        Assert.That((_render.viewsin, _render.viewcos), Is.EqualTo((Program.sintable[90], Program.costable[90])));
+        Assert.That((_render.viewsin, _render.viewcos), Is.EqualTo((TrigTables.sintable[90], TrigTables.costable[90])));
         Assert.That(_render.viewx, Is.EqualTo(10 * Tile + Tile / 2).Within(1));
         Assert.That(_render.viewy, Is.EqualTo(20 * Tile + Tile / 2 + _render.focallength).Within(1));
         Assert.That((_render.focaltx, _render.focalty), Is.EqualTo(((short)10, (short)20)));
@@ -95,9 +95,9 @@ public class FrameRefreshTests
         Assert.That((_render.ypartialdown, _render.ypartialup), Is.EqualTo(((uint)(Tile / 4), (uint)(Tile - 1 - Tile / 4))));
     }
 
-    [TestCase(Program.EYEDEFAULT, Program.EYEDEFAULT)]
-    [TestCase(0, Program.MINEYE)]
-    [TestCase(200, Program.MAXEYE)]
+    [TestCase(GameConstants.EYEDEFAULT, GameConstants.EYEDEFAULT)]
+    [TestCase(0, GameConstants.MINEYE)]
+    [TestCase(200, GameConstants.MAXEYE)]
     public void The_Eye_Stays_Within_A_Story(int eyez, int seen)
     {
         _session.camera.SetFixed(5 * Tile, 5 * Tile, 0, eyez: eyez);

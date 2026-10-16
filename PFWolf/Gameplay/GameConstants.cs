@@ -102,4 +102,41 @@ internal static class GameConstants
     internal const int TURNTICS = 10;
     internal const int SPDPATROL = 512;
     internal const int SPDDOG = 1500;
+
+    /*
+    =============================================================================
+
+                    FROM WL_DRAW, WL_AGENT, WL_ACT2, WL_PLAY AND WL_MAIN
+
+    =============================================================================
+    */
+
+    internal const int ACTORSIZE = 0x4000;
+
+    // tall walls: every wall is wallstories 64 unit stories tall, built up from the floor
+    internal const int MAXWALLSTORIES = 8;
+
+    // How high above the floor the view is, in texels (64 a story); see Program.WL_DRAW's Eye height
+    internal const int EYEDEFAULT = TEXTURESIZE / 2, MINEYE = 4, MAXEYE = TEXTURESIZE - 4;
+
+    internal const long MOVESCALE = 150L;
+    internal const long BACKMOVESCALE = 100L;
+    internal const int ANGLESCALE = 20;
+
+    internal const long PROJECTILESIZE = 0xc000L;
+    internal const int PROJSIZE = 0x2000;        // a projectile's box, either way (ProjectileTryMove)
+
+    internal const int BJRUNSPEED = 2048;
+    internal const int BJJUMPSPEED = 680;
+
+    internal const int MAXX = 320;
+    internal const int MAXY = 160;
+
+    internal const int MaxGameName = 32;    // a save's name, as typed in the save menu, is one less
+
+    internal const long FOCALLENGTH = (0x5700L);               // in global coordinates
+    internal const int VIEWGLOBAL = 0x10000;               // globals visable flush to wall
+
+    internal static readonly int[] dirangle ={0,ANGLES/8,2*ANGLES/8,3*ANGLES/8,4*ANGLES/8,
+                       5*ANGLES/8,6*ANGLES/8,7*ANGLES/8,ANGLES};
 }

@@ -57,7 +57,7 @@ internal sealed class PlayerState
     public Actors.Actor? WeaponSprite;      // the weapon in hand, run through its states
     public int WeaponCharge;                // tics until a weapon.chargetics weapon can fire again
     public double Pitch;                    // looking up (positive) or down, in degrees
-    public int EyeZ = Program.EYEDEFAULT;   // eye height, in texels above the floor
+    public int EyeZ = GameConstants.EYEDEFAULT;   // eye height, in texels above the floor
 
     // What others see of them (Program.Camera.cs): their class's sprites, drawn where they are
     public Actors.Actor? Body;

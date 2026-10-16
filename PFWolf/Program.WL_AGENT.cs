@@ -19,9 +19,9 @@ internal partial class Program
     internal const int MAXMOUSETURN   = 10;
 
 
-    internal const long MOVESCALE = 150L;
-    internal const long BACKMOVESCALE = 100L;
-    internal const int ANGLESCALE = 20;
+    internal const long MOVESCALE = GameConstants.MOVESCALE;
+    internal const long BACKMOVESCALE = GameConstants.BACKMOVESCALE;
+    internal const int ANGLESCALE = GameConstants.ANGLESCALE;
 
     /*
     =============================================================================
