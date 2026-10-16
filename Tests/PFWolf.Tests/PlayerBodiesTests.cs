@@ -48,7 +48,7 @@ public class PlayerBodiesTests
         _session = new GameSession { tics = 1 };
         _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session)
         {
-            tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));

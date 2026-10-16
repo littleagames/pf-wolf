@@ -12,7 +12,7 @@ internal sealed class MovingPushWall
     public ushort Pos;                  // amount it has moved into the tile ahead (0-63)
     public ushort X, Y;                 // the tile it's leaving
     public controldirs Dir;
-    public byte Tile;                   // its wall id
+    public ushort Tile;                 // its wall id
 
     // Who pushed it: the tiles it leaves take their area (not saved: a loaded game's
     // walls go by the first player, the only one a save has)
@@ -37,7 +37,7 @@ internal sealed class MovingPushWall
             X = br.ReadUInt16(),
             Y = br.ReadUInt16(),
             Dir = (controldirs)br.ReadByte(),
-            Tile = br.ReadByte(),
+            Tile = br.ReadUInt16(),
         };
         if (wall.X >= MapManager.MAPSIZE || wall.Y >= MapManager.MAPSIZE || (int)wall.Dir > (int)controldirs.di_west)
             throw new InvalidDataException($"Bad moving pushwall at {wall.X},{wall.Y}.");
@@ -131,7 +131,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             return false;
         }
 
-        map.tilemap[checkx + dx, checky + dy] = (byte)oldtile;
+        map.tilemap[checkx + dx, checky + dy] = (ushort)oldtile;
         map.actorat[checkx + dx, checky + dy] = new Wall(oldtile);
 
         pushwalls.Add(new MovingPushWall
@@ -141,7 +141,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             Dir = dir,
             State = 1,
             Pos = 0,
-            Tile = (byte)oldtile,
+            Tile = (ushort)oldtile,
             Pusher = session.player,
         });
         map.tilemap[checkx, checky] = GameConstants.BIT_WALL;
@@ -204,7 +204,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                 //
                 // the block has been pushed two tiles
                 //
-                map.tilemap[wall.X + dx, wall.Y + dy] = (byte)oldtile;
+                map.tilemap[wall.X + dx, wall.Y + dy] = (ushort)oldtile;
                 map.MoveWallStories(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 map.MoveTag(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
                 map.MovePatch(wall.X, wall.Y, wall.X + dx, wall.Y + dy);
@@ -227,7 +227,7 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
                     || map.EnemiesAt(aheadx, aheady).Any()
                     || map.Players.Any(pawn => PlayerBoxCovers(pawn, aheadx, aheady)))
                 {
-                    map.tilemap[wall.X, wall.Y] = (byte)oldtile;
+                    map.tilemap[wall.X, wall.Y] = (ushort)oldtile;
                     return false;
                 }
 

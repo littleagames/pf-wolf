@@ -73,7 +73,7 @@ public class PushWallsTests
     public void A_Moving_Wall_Reads_Back_What_It_Wrote()
     {
         // Arrange
-        var wall = new MovingPushWall { State = 130, Pos = 2, X = 30, Y = 40, Dir = controldirs.di_south, Tile = 9 };
+        var wall = new MovingPushWall { State = 130, Pos = 2, X = 30, Y = 40, Dir = controldirs.di_south, Tile = 200 };
         using var stream = new MemoryStream();
 
         // Act

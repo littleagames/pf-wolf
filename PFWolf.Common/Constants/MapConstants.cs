@@ -11,7 +11,7 @@ public static class MapConstants
     public const int MAPAREA = MAPSIZE * MAPSIZE;
 
     /// <summary>Wall ids on plane 0 are 1 to this; the game keeps its wall and door flags above them</summary>
-    public const int MAXWALLID = 63;
+    public const int MAXWALLID = 255;
 
     /// <summary>Planes in a GAMEMAPS level: walls, objects and ECWolf's flats</summary>
     public const int MAPPLANES = 3;

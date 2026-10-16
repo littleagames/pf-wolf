@@ -16,7 +16,7 @@ public class WallPostsTests
     {
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
         // Looking east from the middle of tile (10, 10), the horizon at row 80
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade)

@@ -17,7 +17,7 @@ public class PlayerDeathTests
         // Arrange
         var map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, new GameSession())
         {
-            tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
         var session = new GameSession { tics = 5 };

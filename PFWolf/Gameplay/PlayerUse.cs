@@ -66,7 +66,7 @@ internal sealed class PlayerUse(
             // flip the switch, keeping the door-side mark on a wall beside a door
             var tile = map.tilemap[tilex, tiley];
             int from = tile & ~BIT_WALL;
-            map.tilemap[tilex, tiley] = (byte)(wallSwitch.To | (tile & BIT_WALL));
+            map.tilemap[tilex, tiley] = (ushort)(wallSwitch.To | (tile & BIT_WALL));
             map.RestartAnimations(tilex, tiley, gamestate.TimeCount);   // a `to` wall's play-once animation starts now
 
             // and the linked ones: set to the new way, not toggled, so any out of step come back
@@ -76,7 +76,7 @@ internal sealed class PlayerUse(
                 int id = other & ~BIT_WALL;
                 if ((other & BIT_DOOR) == 0 && (id == from || id == wallSwitch.To))
                 {
-                    map.tilemap[x, y] = (byte)(wallSwitch.To | (other & BIT_WALL));
+                    map.tilemap[x, y] = (ushort)(wallSwitch.To | (other & BIT_WALL));
                     map.RestartAnimations(x, y, gamestate.TimeCount);
                 }
             }

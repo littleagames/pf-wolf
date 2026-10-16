@@ -444,7 +444,7 @@ public record MapOutletTranslation
 public record MapSwitchTranslation
 {
     /// <summary>
-    /// The wall id it turns into when used (1 to 63); 0 leaves the wall as it is. On a patch's
+    /// The wall id it turns into when used (1 to 255); 0 leaves the wall as it is. On a patch's
     /// switch, the patch id it turns into (1 to 255).
     /// </summary>
     public int To { get; init; }

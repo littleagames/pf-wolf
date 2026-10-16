@@ -686,7 +686,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
         _owner.Status = $"{YamlNodes.Describe(path)} is new: fill it in and save it";
     }
 
-    // The first number a table doesn't use: walls go from 1 to 63, the rest from the table's lowest up
+    // The first number a table doesn't use: walls go from 1 (to MapConstants.MAXWALLID), the rest from the table's lowest up
     private static int FreeId(string table, HashSet<int> used)
     {
         int start = table.Equals("walls", StringComparison.OrdinalIgnoreCase) ? 1 : used.Count > 0 ? used.Where(id => id >= 0).DefaultIfEmpty(1).Min() : 1;

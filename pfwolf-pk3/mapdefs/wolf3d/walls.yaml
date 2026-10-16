@@ -1,7 +1,7 @@
 # Walls by map tile number: every plane 0 tile listed here is a solid wall, with the texture on
 # each face. A face is named for the way it looks out: North is seen from the tile north of the
 # wall. A face left out shows the opposite one (South falls back on North, West on East, and the
-# other way round). Wall ids are 1 to 63; any plane 0 value not listed here or in doors.yaml is
+# other way round). Wall ids are 1 to 255; any plane 0 value not listed here or in doors.yaml is
 # open floor (see floors.yaml). `flip: [South, West]` draws those faces' textures mirrored left
 # to right (a truck's two sides from one texture, say); a wall patch on a flipped face isn't.
 walls:

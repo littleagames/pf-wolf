@@ -173,7 +173,7 @@ internal sealed class Weather(
             return false;                           // off the map, it falls on the world outside
 
         int x = (int)tx, y = (int)ty;
-        byte tile = map.tilemap[x, y];
+        int tile = map.tilemap[x, y];
         if ((tile & GameConstants.BIT_DOOR) != 0)
             return true;
         if (tile != 0)

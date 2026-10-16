@@ -30,7 +30,7 @@ public class MissilesTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
         _doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
@@ -94,10 +94,10 @@ public class MissilesTests
         _map.actorat[1, 1] = new Wall(1);
         _map.tilemap[2, 1] = 5;                                  // a wall with nothing on actorat (a moving pushwall's)
         _map.actorat[3, 1] = new Door(0);
-        _map.tilemap[3, 1] = (byte)(GameConstants.BIT_DOOR | 0);
+        _map.tilemap[3, 1] = (ushort)(GameConstants.BIT_DOOR | 0);
         _doors.doorobjlist[0] = new doorobj_t { action = dooractiontypes.dr_closed };
         _map.actorat[4, 1] = new Door(1);
-        _map.tilemap[4, 1] = (byte)(GameConstants.BIT_DOOR | 1);
+        _map.tilemap[4, 1] = (ushort)(GameConstants.BIT_DOOR | 1);
         _doors.doorobjlist[1] = new doorobj_t { action = dooractiontypes.dr_open };
 
         // Act / Assert

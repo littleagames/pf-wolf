@@ -16,7 +16,7 @@ public class ConsoleTargetsTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => new AssetManager()), null!, _session)
         {
-            tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
             mapwidth = MapManager.MAPSIZE, mapheight = MapManager.MAPSIZE,
         };

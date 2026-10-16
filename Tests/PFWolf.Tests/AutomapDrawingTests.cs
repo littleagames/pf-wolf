@@ -14,7 +14,7 @@ public class AutomapDrawingTests
         _session = new GameSession();
         _map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, _session)
         {
-            tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
             seen = new SeenFlags[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
@@ -42,11 +42,13 @@ public class AutomapDrawingTests
 
     [TestCase(0, false)]                                // open floor
     [TestCase(5, true)]                                 // a wall
+    [TestCase(200, true)]                               // a wall past Wolf3D's 63
+    [TestCase(GameConstants.BIT_WALL | 255, true)]      // the highest wall id, beside a door
     [TestCase(GameConstants.BIT_DOOR | 2, false)]             // a door shows as floor (drawn on its own)
     [TestCase(GameConstants.BIT_WALL, false)]                 // a moving pushwall's tile (drawn at its offset)
     public void Walls_Are_What_Shows_As_Wall(int tile, bool wall)
     {
-        _map.tilemap[3, 4] = (byte)tile;
+        _map.tilemap[3, 4] = (ushort)tile;
         Assert.That(_automap.IsAutomapWall(3, 4), Is.EqualTo(wall));
     }
 
@@ -111,7 +113,7 @@ public class RadarTests
         // Arrange
         var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
         var session = new GameSession();
@@ -139,7 +141,7 @@ public class RadarTests
         // Arrange: a gold-key door, closed
         var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, new GameSession())
         {
-            tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
         var session = new GameSession();

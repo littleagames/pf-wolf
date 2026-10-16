@@ -112,7 +112,7 @@ internal class MapManager
     }
 
     internal ushort mapwidth, mapheight;
-    internal byte[,] tilemap;
+    internal ushort[,] tilemap;
 
     /// <summary>
     /// Each wall tile's shape: Square, or a 45 degree diagonal from a mapdefs diagonal marker on
@@ -263,7 +263,7 @@ internal class MapManager
     ffDataBottomLeft  = MAPSPOT(0,   MXX, 0); MAPSPOT(0,   MXX, 0) = MAPSPOT(0,       MXX - 1, 0);
 #endif
 
-        tilemap = new byte[MAPSIZE, MAPSIZE]; // wall values only
+        tilemap = new ushort[MAPSIZE, MAPSIZE]; // wall values only
         spotvis = new bool[MAPSIZE, MAPSIZE];
         seen = new SeenFlags[MAPSIZE, MAPSIZE];
         actorat = new Actor?[MAPSIZE, MAPSIZE];
@@ -304,7 +304,7 @@ internal class MapManager
                 if (solid)
                 {
                     // solid wall (a door's tile is made a door by SpawnDoor)
-                    tilemap[x, y] = (byte)tile;
+                    tilemap[x, y] = (ushort)tile;
                     actorat[x, y] = new Wall(tile);// (uint)tile;
                 }
                 else
@@ -374,7 +374,7 @@ internal class MapManager
             {
                 if ((x != 0 && y != 0 && x != mapwidth - 1 && y != mapheight - 1) || tilemap[x, y] != 0)
                     continue;
-                tilemap[x, y] = (byte)edgeWall;
+                tilemap[x, y] = (ushort)edgeWall;
                 actorat[x, y] = new Wall(edgeWall);
                 sealedTiles++;
             }
@@ -1690,13 +1690,13 @@ internal class MapManager
                 planes[i][j] = br.ReadUInt16();
         }
 
-        var tiles = new byte[MAPSIZE, MAPSIZE];
+        var tiles = new ushort[MAPSIZE, MAPSIZE];
         var blocking = new Actor?[MAPSIZE, MAPSIZE];
         for (int x = 0; x < MAPSIZE; x++)
         {
             for (int y = 0; y < MAPSIZE; y++)
             {
-                tiles[x, y] = br.ReadByte();
+                tiles[x, y] = br.ReadUInt16();
                 blocking[x, y] = (SavedTile)br.ReadByte() switch
                 {
                     SavedTile.Empty => null,
@@ -1757,7 +1757,7 @@ internal class MapManager
     internal List<Entities.Actors.Actor> RestoreLevelState(LevelSnapshot level, Func<int, Entities.PlayerState?>? ownerOf = null)
     {
         mapsegs = level.Planes.Select(plane => (ushort[])plane.Clone()).ToArray();
-        tilemap = (byte[,])level.TileMap.Clone();
+        tilemap = (ushort[,])level.TileMap.Clone();
         patchmap = (byte[,])level.Patches.Clone();
         actorat = (Actor?[,])level.ActorAt.Clone();
         // copies, so a hub level's kept snapshot doesn't change with the live level
@@ -1816,7 +1816,7 @@ internal class MapManager
 
 internal sealed record LevelSnapshot(
     ushort[][] Planes,
-    byte[,] TileMap,
+    ushort[,] TileMap,
     Actor?[,] ActorAt,
     List<Entities.Actors.ActorSnapshot> Actors,
     List<(int Target, int Shooter)> Links,

@@ -309,7 +309,7 @@ internal sealed class SwitchActions(AudioManager audio, MapManager map, Inventor
         foreach (var (x, y) in TaggedWalls(trigger))
         {
             // keeping the door-side mark on a wall beside a door
-            map.tilemap[x, y] = (byte)(id | (map.tilemap[x, y] & GameConstants.BIT_WALL));
+            map.tilemap[x, y] = (ushort)(id | (map.tilemap[x, y] & GameConstants.BIT_WALL));
             map.RestartAnimations(x, y, session.gamestate.TimeCount);
             any = true;
         }

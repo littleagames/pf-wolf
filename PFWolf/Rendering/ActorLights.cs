@@ -341,14 +341,14 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     // Light can light a tile: open floor, a door or a diagonal wall (its open half), not a solid wall
     internal bool LightEnters(int x, int y)
     {
-        byte tile = map.tilemap[x, y];
+        int tile = map.tilemap[x, y];
         return tile == 0 || (tile & GameConstants.BIT_DOOR) != 0 || map.wallshape[x, y] != WallShape.Square;
     }
 
     // Light carries on through a tile: open floor, or a door that isn't shut
     internal bool LightPasses(int x, int y)
     {
-        byte tile = map.tilemap[x, y];
+        int tile = map.tilemap[x, y];
         if (tile == 0)
             return true;
         return (tile & GameConstants.BIT_DOOR) != 0 && doors.doorobjlist[tile & ~GameConstants.BIT_DOOR].action != dooractiontypes.dr_closed;

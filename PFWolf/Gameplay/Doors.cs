@@ -93,7 +93,7 @@ internal sealed class Doors(GameEngineManager engine, AudioManager audio, MapMan
         // make the door tile a special tile, and mark the adjacent tiles
         // for door sides
         //
-        map.tilemap[tilex, tiley] = (byte)(doornum | GameConstants.BIT_DOOR);
+        map.tilemap[tilex, tiley] = (ushort)(doornum | GameConstants.BIT_DOOR);
         //map = &MAPSPOT(tilex, tiley, 0);
         if (vertical)
         {

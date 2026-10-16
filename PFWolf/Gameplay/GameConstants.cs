@@ -27,18 +27,19 @@ internal static class GameConstants
     internal const int MAXTICS = 10;
     internal const int DEMOTICS = 4;
 
-    internal const int WALLSHIFT = 6;
+    // tilemap holds a wall's id below BIT_WALL: 1 to 255, all a plane-0 code can be (its high
+    // byte is the wall patch). Wolf3D's WALLSHIFT was 6, so 63 walls.
+    internal const int WALLSHIFT = 8;
     internal const int BIT_WALL = (1 << WALLSHIFT);
     internal const int BIT_DOOR = (1 << (WALLSHIFT + 1));
     internal const int BIT_ALLTILES = (1 << (WALLSHIFT + 2));
 
     internal const int MAXACTORS = 150;
     internal const int MAXSTATS = 400;
-    // A door tile in tilemap is BIT_DOOR | its number, so the number has the 7 bits below
-    // BIT_DOOR: 128 doors (Wolf3D allowed 64; Midnight Assault's Wolf4SDL raised it to 128).
-    // Doors 64 and up have BIT_WALL set in their number, so a door test must come before the
-    // door-side (BIT_WALL) test.
-    internal const int MAXDOORS = BIT_DOOR;
+    // A door tile in tilemap is BIT_DOOR | its number: 128 doors (Wolf3D allowed 64; Midnight
+    // Assault's Wolf4SDL raised it to 128). A door test must still come before the door-side
+    // (BIT_WALL) test, should MAXDOORS ever pass BIT_WALL.
+    internal const int MAXDOORS = 128;
     internal const int MAXVISABLE = 250;
 
     internal const int NUMBERCHARS = 9;
