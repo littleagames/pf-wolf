@@ -338,8 +338,15 @@ public class PfWolfPk3Loader
         if (fullName.StartsWith("sounds/"))
         {
             // sounds/NAME.wav (or .ogg, .mp3) is the digitized sound NAME, in place of the game's
-            // own of that name, or a new one for sound-seq to name
-            AddReference(assetName, () => new SoundFileAsset(entry.Open().ToArray()));
+            // own of that name, or a new one for sound-seq to name. sounds/NAME.pcs and .adl, PC
+            // speaker and AdLib sounds as AUDIOT keeps them, do the same for those: told by their
+            // names, since they have no signature
+            if (entry.Name.EndsWith(".pcs", StringComparison.OrdinalIgnoreCase))
+                AddReference(assetName, () => PcSound.FromFile(entry.Open().ToArray()));
+            else if (entry.Name.EndsWith(".adl", StringComparison.OrdinalIgnoreCase))
+                AddReference(assetName, () => AdLibSound.FromFile(entry.Open().ToArray()));
+            else
+                AddReference(assetName, () => new SoundFileAsset(entry.Open().ToArray()));
             return;
         }
 

@@ -13,6 +13,17 @@ public record PcSound : Asset
         RawData = data;
     }
 
+    /// <summary>
+    /// A pk3's sounds/NAME.pcs: a PC speaker sound as AUDIOT keeps it (a 32-bit length, a 16-bit
+    /// priority, then one PIT reload value a tick, 140 a second)
+    /// </summary>
+    public static PcSound FromFile(byte[] data)
+    {
+        if (data.Length < 6 || BitConverter.ToUInt32(data, 0) > (uint)(data.Length - 6))
+            throw new InvalidDataException("not a PC speaker sound: its length runs past the end of the file");
+        return new PcSound(data);
+    }
+
     public byte[] ToMono8()
     {
         using var dataReader = new BinaryReader(new MemoryStream(RawData));

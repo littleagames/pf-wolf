@@ -190,6 +190,44 @@ public class AudioFileDecoderTests
         Assert.That(decoder.SampleRate, Is.EqualTo(44100));
     }
 
+    // An AUDIOT sound chunk: the length, priority 0, any header bytes, then one value a tick
+    private static byte[] AudiotSound(byte[] header, params byte[] ticks)
+        => BitConverter.GetBytes((uint)ticks.Length).Concat(new byte[2]).Concat(header).Concat(ticks).ToArray();
+
+    [Test]
+    public void Pk3_Pc_Speaker_And_AdLib_Sounds_Load_By_Name()
+    {
+        // Arrange: PCDROPN replaces the game's; MYBEEP is new
+        var instrument = new byte[17];      // 16 instrument bytes, then the block
+        var source = new MemoryAssetSource("pfwolf.pk3",
+            new() { ["gamepacks/gamepack-info.yaml"] = "alpha:\n  title: Alpha\n  game-palette: pal\n" },
+            new()
+            {
+                ["sounds/PCDROPN.pcs"] = AudiotSound([], 40, 0, 40),
+                ["sounds/MYBEEP.adl"] = AudiotSound(instrument, 0x44, 0x44),
+            });
+
+        // Act
+        var loader = new PfWolfPk3Loader([source], "alpha", "alpha");
+
+        // Assert: 315 samples a tick at 44100 Hz
+        Assert.That(loader.Load<PcSound>("pcdropn").ToMono8(), Has.Length.EqualTo(3 * 315));
+        Assert.That(loader.Load<AdLibSound>("mybeep").ToMono8(), Has.Length.EqualTo(2 * 315 + 44100 / 5));
+        Assert.That(loader.GetAssets().Keys, Has.None.StartsWith("soundfileasset:"));
+    }
+
+    [Test]
+    public void Pc_Speaker_And_AdLib_Files_Too_Short_For_Their_Length_Are_Refused()
+    {
+        var pc = AudiotSound([], 1, 2, 3);
+        var adLib = AudiotSound(new byte[17], 1, 2, 3);
+
+        Assert.Throws<InvalidDataException>(() => PcSound.FromFile(pc[..^1]));
+        Assert.Throws<InvalidDataException>(() => AdLibSound.FromFile(adLib[..^1]));
+        Assert.Throws<InvalidDataException>(() => AdLibSound.FromFile(pc));
+        Assert.That(PcSound.FromFile(pc).RawData, Is.EqualTo(pc));
+    }
+
     // IMF commands: register, value, then a 16-bit delay in 700 Hz ticks
     private static byte[] ImfCommands(params (byte Register, byte Value, ushort Delay)[] commands)
         => commands.SelectMany(command => new[] { command.Register, command.Value }

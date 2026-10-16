@@ -381,10 +381,13 @@ internal class AudioManager
             if (!(packSeq.SoundInfo.TryGetValue(name, out soundProfile) || soundSeq?.SoundInfo.TryGetValue(name, out soundProfile) == true)
                 || soundProfile == null)
             {
-                // A sound file or digitized sound of that name plays without a sound-seq entry
-                if (!_assetManager.Value.Exists<SoundFileAsset>(name) && !_assetManager.Value.Exists<Wolf3dDigitizedAudio>(name))
+                // A sound file, or a digitized, AdLib or PC speaker sound, of that name plays
+                // without a sound-seq entry: each variant of the name there is
+                var assets = _assetManager.Value;
+                if (!assets.Exists<SoundFileAsset>(name) && !assets.Exists<Wolf3dDigitizedAudio>(name)
+                    && !assets.Exists<AdLibSound>(name) && !assets.Exists<PcSound>(name))
                     return null;
-                soundProfile = new SoundProfile { Digitized = name };
+                soundProfile = new SoundProfile { Digitized = name, AdLib = name, PC = name };
                 break;
             }
 

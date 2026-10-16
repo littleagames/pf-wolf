@@ -145,10 +145,8 @@ public static class SoundCatalog
     {
         var sequences = Sequences(content);
         var profile = Resolve(sequences, soundName, pickRandom: null);
-        if (profile == null)
-            return content.Assets.Exists<SoundFileAsset>(soundName) || content.Assets.Exists<Wolf3dDigitizedAudio>(soundName)
-                ? [new SoundVariant(SoundKind.Digitized, soundName.ToUpperInvariant())]
-                : [];
+        // Without an entry, each variant of the name there is plays, as in the engine
+        profile ??= new SoundProfile { Digitized = soundName, AdLib = soundName, PC = soundName };
 
         var variants = new List<SoundVariant>();
         if (HasAsset(content, SoundKind.Digitized, profile.Digitized))

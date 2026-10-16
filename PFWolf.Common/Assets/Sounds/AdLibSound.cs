@@ -9,6 +9,17 @@ public record AdLibSound : Asset
         RawData = data;
     }
 
+    /// <summary>
+    /// A pk3's sounds/NAME.adl: an AdLib sound as AUDIOT keeps it (a 32-bit length, a 16-bit
+    /// priority, the 16-byte instrument, the octave block, then one note value a tick, 140 a second)
+    /// </summary>
+    public static AdLibSound FromFile(byte[] data)
+    {
+        if (data.Length < 23 || BitConverter.ToUInt32(data, 0) > (uint)(data.Length - 23))
+            throw new InvalidDataException("not an AdLib sound: its length runs past the end of the file");
+        return new AdLibSound(data);
+    }
+
     private const int AdLibSampleRate = 44100;
     private const int SoundTicksPerSecond = 140;
 
