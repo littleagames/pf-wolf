@@ -22,7 +22,7 @@ public class PlayerDeathTests
         };
         var session = new GameSession { tics = 5 };
         var death = new PlayerDeath(null!, null!, null!, null!, null!, new InventoryManager(ActorDefs.Metadata(Yaml)), null!, map,
-            null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, session, null!);
+            null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, session, null!, null!);
         var player = new Entities.Actors.Monster { Name = "Player" };
 
         // Act / Assert: made, and moved on a frame by this frame's tics

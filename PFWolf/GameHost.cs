@@ -214,14 +214,15 @@ internal static partial class GameHost
         inputPolling = MakeInputPolling();
         automapInput = MakeAutomapInput();
         statusBarDrawing = MakeStatusBarDrawing();
+        playArea = new PlayArea(_videoManager, statusBarDrawing);
         deathmatch = MakeDeathmatch();
         radar = MakeRadar();
         automapDrawing = MakeAutomapDrawing();
         playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);
         playerWeapons = MakePlayerWeapons();
         playScreen = MakePlayScreen();
-        viewSetup = new ViewSetup(_videoManager, playScreen, render, new ViewSetupHooks(() => viewsize, size => viewsize = size));
-        consoleDrawing = new ConsoleDrawing(_videoManager, _graphicManager, _fontManager, _consoleManager, playScreen, statusBarDrawing);
+        viewSetup = new ViewSetup(_videoManager, playScreen, render, playArea, new ViewSetupHooks(() => viewsize, size => viewsize = size));
+        consoleDrawing = new ConsoleDrawing(_videoManager, _graphicManager, _fontManager, _consoleManager, playScreen, statusBarDrawing, playArea);
         debugCommands = new DebugCommands(_consoleManager, _gameEngineManager, _videoManager, _mapManager, doors, frameRefresh, debugScreens,
             playScreen, render, consoleTargets, session,
             new DebugCommandsHooks(() => viewsize, () => singlestep, step => singlestep = step, () => extravbls, vbls => extravbls = vbls));
@@ -281,7 +282,7 @@ internal static partial class GameHost
         highScoresScreen = new HighScoresScreen(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
             _graphicManager, menuDrawing, menuDefs, ui, lineInput, session, () => Scores, FloorScore);
         intermissionScreen = new IntermissionScreen(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
-            _graphicManager, menuDrawing, ui, session, MakeIntermissionHooks());
+            _graphicManager, menuDrawing, ui, session, playArea, MakeIntermissionHooks());
         loadSaveScreen = new LoadSaveScreen(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
             _graphicManager, menuDrawing, menuLoop, menuInput, menuDefs, ui, lineInput, MakeLoadSaveHooks());
         multiplayerMenu = new MultiplayerMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager,
@@ -578,9 +579,11 @@ internal static partial class GameHost
     static ViewSetup viewSetup = null!;     // made in InitServices
 
     internal static void NewViewSize(int width) => viewSetup.NewViewSize(width);
-    internal static int PlayAreaHeight => viewSetup.PlayAreaHeight;
-    internal static int PlayAreaAndStatusLine => viewSetup.PlayAreaAndStatusLine;
-    internal static int PlayAreaTop => viewSetup.PlayAreaTop;
+    // Where the play area is, between the status bars (Ui/PlayArea.cs)
+    static PlayArea playArea = null!;       // made in InitServices
+    internal static int PlayAreaHeight => playArea.PlayAreaHeight;
+    internal static int PlayAreaAndStatusLine => playArea.PlayAreaAndStatusLine;
+    internal static int PlayAreaTop => playArea.PlayAreaTop;
     internal static void ShowViewSize(int width) => viewSetup.ShowViewSize(width);
 
     internal static void DoJukebox() => jukebox.DoJukebox();

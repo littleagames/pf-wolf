@@ -50,7 +50,7 @@ public class ConsoleDrawingTests
     {
         // Arrange: no screen to draw on (drawing would throw)
         var console = new ConsoleManager();
-        var drawing = new ConsoleDrawing(null!, null!, null!, console, null!, null!);
+        var drawing = new ConsoleDrawing(null!, null!, null!, console, null!, null!, null!);
 
         // Act / Assert: never drawn
         Assert.DoesNotThrow(drawing.RestoreBorderAfterConsole);

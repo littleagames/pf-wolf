@@ -55,7 +55,7 @@ internal static partial class GameHost
     static PlayScreen playScreen = null!;       // made in InitServices
 
     static PlayScreen MakePlayScreen() => new(_assetManager, _gameEngineManager, _videoManager, _graphicManager, _inputManager,
-        statusBarDrawing, playerWeapons, radar, render,
+        statusBarDrawing, playerWeapons, radar, render, playArea,
         new PlayScreenHooks(() => viewsize, () => ingame, () => bordercol, PresenterMessageBox));
 
     internal static void DrawPlayScreen() => playScreen.DrawPlayScreen();
@@ -79,7 +79,7 @@ internal static partial class GameHost
 
     static PlayerDeath MakePlayerDeath() => new(_assetManager, _gameEngineManager, _videoManager, _inputManager, _audioManager,
         _inventoryManager, _hudMessageManager, _mapManager, ui, frameRefresh, render, playerClassRules, playerStats, playerWeapons,
-        statusBarDrawing, pushWalls, projectiles, playScreen, intermissionScreen, session,
+        statusBarDrawing, pushWalls, projectiles, playScreen, intermissionScreen, session, playArea,
         new PlayerDeathHooks(() => gameInfoSettings, ShowObituary, DrawHudMessages, RestoreLevelStart, s => playstate = s,
             () => viewsize, () => bordercol, () => fizzlein = true));
 

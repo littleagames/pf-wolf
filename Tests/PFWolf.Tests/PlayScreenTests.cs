@@ -6,7 +6,7 @@ public class PlayScreenTests
 {
     private static PlayScreen Make(VideoManager? video, int viewsize) =>
         new(null!, null!, video!, null!, null!, null!, null!, null!,
-            new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade),
+            new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade), null!,
             new PlayScreenHooks(() => viewsize, () => true, () => "VIEWCOLOR", _ => { }));
 
     private static VideoManager Video(double uiScale) =>

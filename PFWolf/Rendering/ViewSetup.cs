@@ -19,6 +19,7 @@ internal sealed class ViewSetup(
     VideoManager video,
     PlayScreen playScreen,
     RenderState render,
+    PlayArea screenArea,
     ViewSetupHooks hooks)
 {
     // Radians to fine angles (FINEANGLES a turn)
@@ -30,19 +31,10 @@ internal sealed class ViewSetup(
         if (hooks.ViewSize() == 21)
             SetViewSize((uint)video.screenWidth, (uint)video.screenHeight);
         else if (hooks.ViewSize() == 20)
-            SetViewSize((uint)video.screenWidth, (uint)PlayAreaHeight);
+            SetViewSize((uint)video.screenWidth, (uint)screenArea.PlayAreaHeight);
         else
             SetViewSize((uint)(width * 16 * video.screenWidth / 320), (uint)BorderedViewHeight(width));
     }
-
-    /// <summary>The screen lines between the top status bar (if any) and the bottom one, in screen pixels</summary>
-    internal int PlayAreaHeight => video.ScreenYAboveBottom(GameHost.STATUSLINES) - PlayAreaTop;
-
-    /// <summary>The play area's height and the bottom status bar's first line, in screen pixels</summary>
-    internal int PlayAreaAndStatusLine => video.ScreenYAboveBottom(GameHost.STATUSLINES - 1) - PlayAreaTop;
-
-    /// <summary>Where the play area (view and border) starts down the screen, in screen pixels: below any top status bar</summary>
-    internal int PlayAreaTop => video.ToScreenLength(GameHost.TOPLINES);
 
     /// <summary>
     /// A bordered view's height at view size <paramref name="width"/>. The sizes are laid out for
@@ -52,7 +44,7 @@ internal sealed class ViewSetup(
     internal int BorderedViewHeight(int width)
     {
         int height = (int)(width * 16 * GameConstants.HEIGHTRATIO * video.screenHeight / 200);
-        int room = PlayAreaHeight - video.ToScreenLength(2);
+        int room = screenArea.PlayAreaHeight - video.ToScreenLength(2);
         return Math.Min(height, room);
     }
 
@@ -69,7 +61,7 @@ internal sealed class ViewSetup(
         else
         {
             render.viewscreenx = (video.screenWidth - render.viewwidth) / 2;
-            render.viewscreeny = PlayAreaTop + (PlayAreaHeight - render.viewheight) / 2;
+            render.viewscreeny = screenArea.PlayAreaTop + (screenArea.PlayAreaHeight - render.viewheight) / 2;
             render.screenofs = (uint)(render.viewscreeny * video.screenWidth + render.viewscreenx);
         }
 
@@ -149,7 +141,7 @@ internal sealed class ViewSetup(
     /// <summary>A view size's width over its height on a 320x200 screen, as NewViewSize lays it out there.</summary>
     internal double ClassicViewAspect(int size)
     {
-        int playArea = VideoSettings.BaseHeight - GameHost.STATUSLINES - GameHost.TOPLINES;
+        int playArea = VideoSettings.BaseHeight - screenArea.StatusLines - screenArea.TopLines;
         if (size >= 21)
             return (double)VideoSettings.BaseWidth / VideoSettings.BaseHeight;
         if (size == 20)
@@ -175,7 +167,7 @@ internal sealed class ViewSetup(
         else if (width == 20)
         {
             render.viewwidth = video.screenWidth;
-            render.viewheight = PlayAreaHeight;
+            render.viewheight = screenArea.PlayAreaHeight;
             playScreen.DrawPlayBorder();
         }
         else

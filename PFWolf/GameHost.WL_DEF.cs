@@ -37,9 +37,9 @@ internal static partial class GameHost
     internal const int SPDDOG = GameConstants.SPDDOG;
 
     // The status bar's height in 320x200 lines (statusbar.yaml background), 0 with none
-    internal static int STATUSLINES => StatusBar.Get("background")?.Height ?? 0;
+    internal static int STATUSLINES => playArea?.StatusLines ?? 0;     // (Ui/PlayArea.cs; nothing before it's made)
     // Lines a status bar across the top of the screen takes (statusbar.yaml top; Blake Stone's)
-    internal static int TOPLINES => StatusBar.Get("top")?.Height ?? 0;
+    internal static int TOPLINES => playArea?.TopLines ?? 0;
 
     internal static void ClearMemory() => _audioManager.StopAll();
 

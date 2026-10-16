@@ -21,7 +21,8 @@ internal sealed record IntermissionHooks(Action ViewColorBorder, Action<int> Giv
 /// tally, victory frames and end screens
 /// </summary>
 internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio,
-    VideoManager video, GraphicManager graphics, MenuDrawing draw, UiText ui, GameSession session, IntermissionHooks hooks)
+    VideoManager video, GraphicManager graphics, MenuDrawing draw, UiText ui, GameSession session, PlayArea playArea,
+    IntermissionHooks hooks)
 {
     int lastBreathTime = 0;
 
@@ -31,7 +32,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
     /// </summary>
     private void ClearAboveStatusBar() =>
         video.BarScaledCoord(0, 0, video.screenWidth,
-            video.ScreenYAboveBottom(GameHost.STATUSLINES - 1), "VIEWCOLOR");
+            video.ScreenYAboveBottom(playArea.StatusLines - 1), "VIEWCOLOR");
 
     private IntermissionAsset? intermission;
     private static readonly IntermissionAsset NoIntermission = new();
@@ -65,7 +66,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         hooks.ViewColorBorder();
 
         // Laid out in the screen above the status bar, however tall
-        using var origin = video.UseUiOriginAboveBottom(GameHost.STATUSLINES);
+        using var origin = video.UseUiOriginAboveBottom(playArea.StatusLines);
 
         if (!string.IsNullOrEmpty(Intermission.Music))
             audio.PlayMusic(Intermission.Music);
@@ -409,7 +410,7 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         hooks.ViewColorBorder();
 
         // Laid out in the screen above the status bar, until the end text and screens take over
-        var origin = video.UseUiOriginAboveBottom(GameHost.STATUSLINES);
+        var origin = video.UseUiOriginAboveBottom(playArea.StatusLines);
 
         // intermission.yaml victory
         foreach (var label in screen.Labels)

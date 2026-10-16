@@ -30,15 +30,16 @@ internal sealed class PlayScreen(
     PlayerWeapons weapons,
     Radar radarDrawing,
     RenderState render,
+    PlayArea playArea,
     PlayScreenHooks hooks)
 {
     internal void DrawPlayScreen()
     {
         if (statusBar.StatusBar.Get("background") is { Pic: { Length: > 0 } statusbarpic } background)
         {
-            statusBar.FillBarSides(background, atTop: false, GameHost.STATUSLINES);
+            statusBar.FillBarSides(background, atTop: false, playArea.StatusLines);
             using var _ = video.UseUiOrigin(UiAnchor.Bottom);
-            graphics.DrawPic(statusbarpic, 0, 200 - GameHost.STATUSLINES);
+            graphics.DrawPic(statusbarpic, 0, 200 - playArea.StatusLines);
         }
         statusBar.DrawTopBar();
         DrawPlayBorder();
@@ -75,8 +76,8 @@ internal sealed class PlayScreen(
             // Beside the status bar: from each screen edge to the border's sides into the picture.
             // A bar with no border (Blake Stone's) keeps its side-color there instead.
             int sides = statusBar.StatusBar.Get("border") is { } border ? video.ScreenX(border.Sides) : 0;
-            int top = video.ScreenYAboveBottom(GameHost.STATUSLINES);
-            if (sides > 0 && GameHost.STATUSLINES > 0)
+            int top = video.ScreenYAboveBottom(playArea.StatusLines);
+            if (sides > 0 && playArea.StatusLines > 0)
             {
                 video.BarScaledCoord(0, top, sides, video.screenHeight - top, hooks.BorderColor());
                 video.BarScaledCoord(video.screenWidth - sides, top, sides, video.screenHeight - top, hooks.BorderColor());
@@ -85,10 +86,10 @@ internal sealed class PlayScreen(
 
         if (render.viewheight == video.screenHeight) return;
 
-        video.BarScaledCoord(0, GameHost.PlayAreaTop, video.screenWidth, GameHost.PlayAreaHeight, hooks.BorderColor());
+        video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaHeight, hooks.BorderColor());
 
         int xl = video.screenWidth / 2 - render.viewwidth / 2;
-        int yl = GameHost.PlayAreaTop + (GameHost.PlayAreaHeight - render.viewheight) / 2;
+        int yl = playArea.PlayAreaTop + (playArea.PlayAreaHeight - render.viewheight) / 2;
         video.BarScaledCoord(xl, yl, render.viewwidth, render.viewheight, "Black");
 
         if (xl != 0)
@@ -117,8 +118,8 @@ internal sealed class PlayScreen(
         int vh = render.viewheight;
         int px = BorderLinePixels;
 
-        int top = GameHost.PlayAreaTop;                  // below any top status bar
-        int h = GameHost.PlayAreaHeight;
+        int top = playArea.PlayAreaTop;                  // below any top status bar
+        int h = playArea.PlayAreaHeight;
         int xl = sw / 2 - vw / 2;
         int yl = top + (h - vh) / 2;
 
@@ -156,7 +157,7 @@ internal sealed class PlayScreen(
     /// </summary>
     internal void DrawStatusBorder(string color)
     {
-        video.BarScaledCoord(0, GameHost.PlayAreaTop, video.screenWidth, GameHost.PlayAreaHeight, color);
+        video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaHeight, color);
 
         foreach (var rect in statusBar.StatusBar.Get("border")?.Rects ?? [])
         {
@@ -171,8 +172,8 @@ internal sealed class PlayScreen(
             if (rect[0] + rect[2] >= 320)
                 width = video.screenWidth - x;  // out to the right edge
             // Down from the status bar's top, which sits on the screen's bottom
-            int y = video.ScreenYAboveBottom(GameHost.STATUSLINES - rect[1]);
-            video.BarScaledCoord(x, y, width, video.ScreenYAboveBottom(GameHost.STATUSLINES - rect[1] - rect[3]) - y, color);
+            int y = video.ScreenYAboveBottom(playArea.StatusLines - rect[1]);
+            video.BarScaledCoord(x, y, width, video.ScreenYAboveBottom(playArea.StatusLines - rect[1] - rect[3]) - y, color);
         }
     }
 
@@ -242,11 +243,11 @@ internal sealed class PlayScreen(
         statusBar.DrawLevel();
 
         // the play area, below any top status bar, down to the bottom one's first line
-        video.BarScaledCoord(0, GameHost.PlayAreaTop, video.screenWidth, GameHost.PlayAreaAndStatusLine, hooks.BorderColor());
+        video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaAndStatusLine, hooks.BorderColor());
 
         // Centered over the screen above the status bar
         int boxX = (video.screenWidth - video.ToScreenLength(224)) / 2;
-        int boxY = (video.ScreenYAboveBottom(GameHost.STATUSLINES) - video.ToScreenLength(48)) / 2;
+        int boxY = (video.ScreenYAboveBottom(playArea.StatusLines) - video.ToScreenLength(48)) / 2;
         if (assets.Exists<GraphicAsset>("getpsyched"))     // a standalone game may have none
             graphics.DrawPicScaledCoord("getpsyched", boxX, boxY);
 
@@ -269,8 +270,8 @@ internal sealed class PlayScreen(
     internal void ShowLevelStartMessage(string script)
     {
         DrawPlayScreen();       // the new level's bars, then the view blacked out under the message
-        video.BarScaledCoord(0, GameHost.PlayAreaTop, video.screenWidth, GameHost.PlayAreaAndStatusLine, "0");
-        using (video.UseUiOriginAboveBottom(GameHost.STATUSLINES))
+        video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaAndStatusLine, "0");
+        using (video.UseUiOriginAboveBottom(playArea.StatusLines))
             hooks.PresenterMessageBox(script.Replace("\\r", "\r").Replace("\n", "\r\n"));
         video.Update();
         if (video.screenfaded)

@@ -13,7 +13,8 @@ internal sealed class ConsoleDrawing(
     FontManager fonts,
     ConsoleManager console,
     PlayScreen playScreen,
-    StatusBarDrawing statusBar)
+    StatusBarDrawing statusBar,
+    PlayArea playArea)
 {
     // Drop-down console layout, in the 320x200 virtual screen coordinates Bar/DrawText use. It
     // hangs from the top of the screen and reaches across all of it, however wide.
@@ -42,7 +43,7 @@ internal sealed class ConsoleDrawing(
 
         consoleDrawn = false;
         playScreen.DrawPlayBorderSides();
-        if (GameHost.TOPLINES > 0)
+        if (playArea.TopLines > 0)
         {
             // the console covered the top status bar too
             statusBar.DrawTopBar();
