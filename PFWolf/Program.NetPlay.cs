@@ -37,31 +37,8 @@ internal partial class Program
     static void NetCheckKeys(ScanCodes scan) => netOverlay.NetCheckKeys(scan);
     static void DrawNetOverlay() => netOverlay.DrawNetOverlay();
 
-    /// <summary>`net_status`: the game with others as this machine has it</summary>
-    static void Cmd_NetStatus(string[] args)
-    {
-        if (!netgame || NetSession.Current is not { } session)
-        {
-            _consoleManager.Print("Not playing with others");
-            return;
-        }
-
-        var lines = new List<string> { $"{(session.IsHost ? "Hosting" : "Joined")}, level {netlevel}, frame {netstep}, game sum {GameChecksum():x8}" };
-        for (int i = 0; i < players.Count; i++)
-        {
-            var p = players[i];
-            lines.Add($"  {i + 1}. {p.Name}{(i == consoleplayer ? " (you)" : "")}: "
-                + (p.Pawn is { } pawn ? $"{pawn.X},{pawn.Y} facing {pawn.Angle}, health {p.health}" : p.Gone ? "left" : "-"));
-        }
-        if (session.IsHost)
-            lines.Add($"  {session.SumsMatched} of {session.SumsCompared} checks matched");
-
-        foreach (var line in lines)
-        {
-            _consoleManager.Print(line);
-            Console.WriteLine($"net_status: {line}");
-        }
-    }
+    // net_find, net_portcheck, net_status and scoreboard (Commands/NetCommands.cs)
+    static NetCommands netCommands = null!;     // made in InitServices
 
     /// <summary>A random number for something only this machine shows (a quit message), not the game's own</summary>
     internal static int UiRandom() => netgame ? Random.Shared.Next(256) : US_RndT();
