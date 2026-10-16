@@ -12,8 +12,9 @@ namespace PFWolf.Ui;
 /// <param name="DrawPlayBorder">Draws the border round the view again</param>
 /// <param name="GameWon">After the victory tally: the menu's Save Game goes grey</param>
 /// <param name="EndText">The won game's end text</param>
+/// <param name="MapDisplayName">A map's name as the game shows it (PlayScreen.GetMapDisplayName)</param>
 internal sealed record IntermissionHooks(Action ViewColorBorder, Action<int> GiveEveryone, Action DrawScore, Action DrawPlayBorder,
-    Action GameWon, Action EndText);
+    Action GameWon, Action EndText, Func<string, string> MapDisplayName);
 
 /// <summary>
 /// The level-end screen (intermission.yaml): the floor, time and par, the time bonus and the
@@ -88,6 +89,9 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
                 ui.TextAt(label.X, label.Y, IntermissionTextStyle).Print(label.Text.ToLanguageText(language));
             WriteValue("bonus", "0");
             WriteValue("floor", mapInfo.FloorNumber.ToString());
+            WriteValue("name", hooks.MapDisplayName(session.gamestate.mapon));
+            if (!string.IsNullOrWhiteSpace(mapInfo.Author))     // a map pack's credit; none, nothing drawn
+                WriteValue("author", mapInfo.Author.ToLanguageText(language));
             WriteValue("par", int.SecondsAsTime(mapInfo.ParTime));
             //
             // PRINT TIME
@@ -571,8 +575,9 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         if (!values.TryGetValue(name, out var value))
             return;
         var style = IntermissionTextStyle;
+        text = FormatValue(value, text, format => format.ToLanguageText(assets.GetText("en-us")));
         ui.MeasureText(text, style.Font, out int width, out int height);
-        int x = value.Right is { } right ? right - width : value.X;
+        int x = ValueX(value, width);
 
         // intermission.yaml value-background: the number drawn before goes first
         if (Intermission.ValueBackground is { Length: > 0 } background)
@@ -584,6 +589,21 @@ internal sealed class IntermissionScreen(GameEngineManager engine, AssetManager 
         }
         ui.TextAt(x, value.Y, style).Print(text);
     }
+
+    /// <summary>A value put in its format (a language key or text, {0} for the value); as it is with none</summary>
+    internal static string FormatValue(IntermissionValue value, string text, Func<string, string> localize)
+    {
+        if (string.IsNullOrEmpty(value.Format))
+            return text;
+        var format = localize(value.Format);
+        return format.Contains("{0}") ? format.Replace("{0}", text) : format + text;
+    }
+
+    /// <summary>Where a value that wide starts across: from x, back from right, or either side of center</summary>
+    internal static int ValueX(IntermissionValue value, int width) =>
+        value.Right is { } right ? right - width
+        : value.Center is { } center ? center - width / 2
+        : value.X;
 
     // Where each number was last drawn, for value-background to clear (by layout and name)
     private readonly Dictionary<(Dictionary<string, IntermissionValue>, string), (int X, int Y, int Width, int Height)> valueAreas = [];

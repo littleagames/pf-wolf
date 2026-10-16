@@ -861,6 +861,12 @@ public record MapInfo
     public string? Name { get; init; }
 
     /// <summary>
+    /// Who made the level (or a $language key), for crediting a map pack's authors: the
+    /// level-end screen shows it where intermission.yaml has an author value. Optional.
+    /// </summary>
+    public string? Author { get; init; }
+
+    /// <summary>
     /// A deathmatch arena: picked by name in the multiplayer lobby. It's in no episode, so it's
     /// only played alone by warping to it (the map command), to try it out
     /// </summary>

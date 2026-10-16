@@ -22,7 +22,10 @@ public record IntermissionAsset : Asset
     /// <summary>The text drawn as the screen opens</summary>
     public List<IntermissionLabel>? Labels { get; set; }
 
-    /// <summary>Where each number goes, by name: floor, time, par, bonus, kill, secret, treasure</summary>
+    /// <summary>
+    /// Where each value goes, by name: floor, time, par, bonus, kill, secret, treasure, and the
+    /// level's name and author (game-info's map name and author; no author, nothing drawn)
+    /// </summary>
     public Dictionary<string, IntermissionValue> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -114,14 +117,17 @@ public record IntermissionLabel
 }
 
 /// <summary>
-/// Where a number goes on the level-end screen: starting at x, or with its right edge at right
-/// (it counts up in place). y is its top.
+/// Where a value goes on the level-end screen: starting at x, with its right edge at right (a
+/// number counts up in place) or its middle at center. y is its top. format puts the value in
+/// a text: a $NAME language key or the text, with {0} where the value goes (e.g. "by {0}").
 /// </summary>
 public record IntermissionValue
 {
     public int X { get; set; }
     public int? Right { get; set; }
+    public int? Center { get; set; }
     public int Y { get; set; }
+    public string? Format { get; set; }
 }
 
 /// <summary>The sounds of the ratio and time bonus tally. Any left out are silent.</summary>

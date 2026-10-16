@@ -71,6 +71,52 @@ public class IntermissionTests
     }
 
     [Test]
+    public void A_Value_With_No_Format_Is_Drawn_As_It_Is()
+    {
+        Assert.That(IntermissionScreen.FormatValue(new IntermissionValue(), "Ann", _ => "unused"), Is.EqualTo("Ann"));
+    }
+
+    [Test]
+    public void A_Values_Format_Is_Looked_Up_And_Takes_The_Value_Where_Its_Placeholder_Is()
+    {
+        // Arrange
+        var value = new IntermissionValue { Format = "$STR_MAPBY" };
+        string Localize(string key) => key == "$STR_MAPBY" ? "Map by {0}." : key;
+
+        // Act / Assert
+        Assert.That(IntermissionScreen.FormatValue(value, "Ann", Localize), Is.EqualTo("Map by Ann."));
+    }
+
+    [Test]
+    public void A_Format_Without_A_Placeholder_Goes_Before_The_Value()
+    {
+        var value = new IntermissionValue { Format = "By " };
+        Assert.That(IntermissionScreen.FormatValue(value, "Ann", f => f), Is.EqualTo("By Ann"));
+    }
+
+    [TestCase(10, null, null, 10)]
+    [TestCase(10, 200, null, 160)]      // right edge at 200
+    [TestCase(10, null, 160, 140)]      // middle at 160
+    public void A_Value_Starts_From_X_Back_From_Right_Or_Either_Side_Of_Center(int x, int? right, int? center, int start)
+    {
+        Assert.That(IntermissionScreen.ValueX(new IntermissionValue { X = x, Right = right, Center = center }, 40), Is.EqualTo(start));
+    }
+
+    [Test]
+    public void A_Map_Can_Name_Its_Author()
+    {
+        // Arrange
+        var yaml = "name: \"The Bunker\"\nauthor: \"Ann Example\"\nnext: MAP02\n";
+
+        // Act: as game-info.yaml is read
+        var map = PFWolf.Loaders.YamlDataEntryLoader.Deserialize<MapInfo>(yaml);
+
+        // Assert
+        Assert.That((map.Name, map.Author), Is.EqualTo(("The Bunker", "Ann Example")));
+        Assert.That(new MapInfo().Author, Is.Null);         // optional
+    }
+
+    [Test]
     public void A_Won_Clusters_Fade_Color_Is_Its_Own_Or_Black()
     {
         Assert.That(IntermissionScreen.VictoryFadeColor(new ClusterInfo()).Alpha, Is.EqualTo(255));

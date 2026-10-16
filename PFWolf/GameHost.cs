@@ -133,7 +133,8 @@ internal static partial class GameHost
         DrawScore: DrawScore,
         DrawPlayBorder: DrawPlayBorder,
         GameWon: () => { FindMenuItem(MainMenu, "savegame")?.active = 0; },
-        EndText: EndText);
+        EndText: EndText,
+        MapDisplayName: GetMapDisplayName);
 
     // game-info's intro and title-loop screens, and Blake Stone's movies (Ui/TitleScreens.cs,
     // Ui/MoviePlayer.cs)
