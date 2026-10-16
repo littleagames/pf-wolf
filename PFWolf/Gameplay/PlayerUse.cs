@@ -192,6 +192,10 @@ internal sealed class PlayerUse(
         int checkx, checky, cmdtile;
         controldirs dir;
 
+        // Nothing's used with something latched on (Gameplay/Latching.cs)
+        if (session.playerstate.Latch != null)
+            return;
+
         //
         // find which cardinal direction the player is facing
         //

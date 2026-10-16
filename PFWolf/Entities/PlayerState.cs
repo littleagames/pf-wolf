@@ -65,6 +65,14 @@ internal sealed class PlayerState
     // the weapon they had picked before, and the map it's on
     public Actors.Actor? Mount;
     public string? MountGun, MountFrom, MountMap;
+
+    // Something latched on (Gameplay/Latching.cs): who, the struggle it puts in their hands, the
+    // weapon they had picked before, the map, how many times they've struck at it, and how many
+    // times slower they move
+    public Actors.Actor? Latch;
+    public string? LatchGun, LatchFrom, LatchMap;
+    public int LatchStrikes;
+    public int MoveSlowdown = 1;
     public double Pitch;                    // looking up (positive) or down, in degrees
     public int EyeZ = GameConstants.EYEDEFAULT;   // eye height, in texels above the floor
 

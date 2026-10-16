@@ -108,6 +108,11 @@ internal static partial class GameHost
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
         ActorActionRegistry.Register("A_Quake", A_Quake);       // the view shakes (GameHost.WL_DRAW.cs)
         ActorActionRegistry.Register("A_Mount", (Entities.Actors.Actor ob, string[] args) => mountedWeapons.A_Mount(ob, args));
+        ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("A_LatchBite", (m, args) => latching.A_LatchBite(m, args));
+        ActorActionRegistry.Register("A_LatchHurt", (Entities.Actors.Actor ob) => latching.A_LatchHurt(ob));
+        ActorActionRegistry.Register("A_ShakeOff", (Entities.Actors.Actor ob, string[] args) => latching.A_ShakeOff(ob, args));
+        ActorActionRegistry.Register("A_JumpIfLatched", (Entities.Actors.Actor ob, string[] args) => latching.A_JumpIfLatched(ob, args));
+        ActorActionRegistry.Register("A_LatchRelease", (Entities.Actors.Actor ob) => latching.A_LatchRelease(ob));
 
         // Goldfire's warp sites (Managers.LevelAI)
         ActorActionRegistry.Register("A_WarpSiteGone", (Entities.Actors.Actor _) => levelAI.WarpSiteGone());
@@ -213,6 +218,7 @@ internal static partial class GameHost
             {
                 weaponZoom.Tick(reloading);
                 mountedWeapons.Tick();          // let off a gun they're no longer manning (dying, a load, a new level)
+                latching.Tick();                // and out of a struggle that's over
             }));
 
     internal static void T_Player(Entities.Actors.Actor ob) => playerThink.T_Player(ob);
@@ -225,4 +231,10 @@ internal static partial class GameHost
     static MountedWeapons? _mountedWeapons;
     static MountedWeapons mountedWeapons => _mountedWeapons ??= new MountedWeapons(_mapManager, _inventoryManager, playerWeapons, session,
         new MountedWeaponsHooks(PlayPlayerSound, message => _hudMessageManager.Show(HudMessageKind.Lock, message), () => playerMovement.Thrust(0, 0)));
+
+    // Things that latch onto the player (Gameplay/Latching.cs): A_LatchBite, and striking them off
+    static Latching? _latching;
+    static Latching latching => _latching ??= new Latching(_mapManager, _inventoryManager, playerWeapons, session,
+        new LatchingHooks(playersManager.TakeDamage, playerAttacks.PlayAttackSound, weaponInHand.IsWeaponReady,
+            (monster, damage, by) => monster.Damage((uint)damage, by)));
 }

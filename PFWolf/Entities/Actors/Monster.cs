@@ -1605,6 +1605,16 @@ internal record Monster : Actor
 
     internal void Bite()
     {
+        if (BiteLands(180))
+            BiteTarget();
+    }
+
+    /// <summary>
+    /// A bite's snap (its attacksound), and whether it lands: its target within a tile each way
+    /// and a random 0-255 under <paramref name="chance"/>
+    /// </summary>
+    internal bool BiteLands(int chance)
+    {
         if (Properties.TryGetValue("attacksound", out var sound) && sound is string soundName)
             PlaySoundLocActor(soundName, this);
 
@@ -1617,12 +1627,13 @@ internal record Monster : Actor
             if (dy < 0) dy = -dy;
             dy -= (int)MapConstants.TILEGLOBAL;
             if (dy <= MINACTORDIST)
-            {
-                if (US_RndT() < 180)
-                    HurtTarget(US_RndT() >> 4);
-            }
+                return US_RndT() < chance;
         }
+        return false;
     }
+
+    /// <summary>A bite on its target: 0-15</summary>
+    internal void BiteTarget() => HurtTarget(US_RndT() >> 4);
 
     internal void GhostChase()
     {

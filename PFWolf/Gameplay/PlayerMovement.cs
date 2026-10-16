@@ -60,12 +60,14 @@ internal sealed class PlayerMovement(
 
         playerstate.ThrustSpeed = 0;
 
-        // Manning a mounted gun, they turn but don't move (Gameplay/MountedWeapons.cs)
+        // Manning a mounted gun, they turn but don't move (Gameplay/MountedWeapons.cs); with
+        // something latched on, they move that many times slower (Gameplay/Latching.cs)
         bool mounted = playerstate.Mount != null;
+        int slowdown = Math.Max(playerstate.MoveSlowdown, 1);
         void Move(int moveAngle, int speed)
         {
             if (!mounted)
-                Thrust(moveAngle, speed);
+                Thrust(moveAngle, speed / slowdown);
         }
 
         // The player class's speeds: player.forwardmove forwards and back, player.sidemove strafing
