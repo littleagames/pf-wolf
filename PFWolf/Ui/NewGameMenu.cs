@@ -14,7 +14,7 @@ internal sealed record PlayerClassChoice(string Class, string? PicName);
 /// <param name="startGame">Starts the new game: its skill, episode, first map and class</param>
 internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio, VideoManager video,
     GraphicManager graphics, MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs, TextPresenter presenter,
-    Func<bool> inGame, Action<short, EpisodeInfo, MapInfo?, string?> startGame)
+    InventoryManager inventory, Func<bool> inGame, Action<short, EpisodeInfo, MapInfo?, string?> startGame, Func<List<string>> playerClasses)
 {
     // Loaded from menudefs/ in CheckForEpisodes
     internal CP_itemtype[] NewEmenu = [];
@@ -227,5 +227,18 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         video.Bar(x, y, 96, 100, "BKGDCOLOR");
         if (w >= 0 && w < ClassMenu.Length && ClassMenu[w].data is PlayerClassChoice { PicName: { Length: > 0 } pic })
             graphics.DrawPic(pic, x, y);
+    }
+
+    /// <summary>The new-class menu's rows: named by game-info, else by the class's tag (the name obituaries use), else the class</summary>
+    internal CP_itemtype[] PlayerClassRows()
+    {
+        var gameInfo = engine.GetGameInfo();
+        var language = assets.GetText("en-us");
+        return playerClasses().Select(playerClass =>
+        {
+            var info = gameInfo.PlayerClasses.FirstOrDefault(c => string.Equals(c.Key, playerClass, StringComparison.OrdinalIgnoreCase)).Value;
+            var name = info?.Name ?? inventory.GetStringProperty(playerClass, "tag") ?? playerClass;
+            return new CP_itemtype(1, name.ToLanguageText(language), null, new PlayerClassChoice(playerClass, info?.PicName));
+        }).ToArray();
     }
 }

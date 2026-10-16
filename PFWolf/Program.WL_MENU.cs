@@ -322,16 +322,5 @@ internal partial class Program
     internal static int CP_Mods(int _) => modsMenu.Run();
     private static CP_itemtype[] BuildModsPage() => modsMenu.BuildModsPage();
 
-    /// <summary>The new-class menu's rows: named by game-info, else by the class's tag (the name obituaries use), else the class</summary>
-    private static CP_itemtype[] PlayerClassRows()
-    {
-        var gameInfo = _gameEngineManager.GetGameInfo();
-        var language = _assetManager.GetText("en-us");
-        return PlayerClasses().Select(playerClass =>
-        {
-            var info = gameInfo.PlayerClasses.FirstOrDefault(c => string.Equals(c.Key, playerClass, StringComparison.OrdinalIgnoreCase)).Value;
-            var name = info?.Name ?? _inventoryManager.GetStringProperty(playerClass, "tag") ?? playerClass;
-            return new CP_itemtype(1, name.ToLanguageText(language), null, new PlayerClassChoice(playerClass, info?.PicName));
-        }).ToArray();
-    }
+    private static CP_itemtype[] PlayerClassRows() => newGameMenu.PlayerClassRows();
 }
