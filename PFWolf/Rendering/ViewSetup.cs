@@ -25,8 +25,15 @@ internal sealed class ViewSetup(
     // Radians to fine angles (FINEANGLES a turn)
     const float RadToInt = GameConstants.FINEANGLES / 2 / GameConstants.PI;
 
+    /// <summary>
+    /// The view sizes there are: with a status bar drawn over the view (overlay), none smaller
+    /// than the play area (20), as Midnight Assault's view always filled the screen
+    /// </summary>
+    internal int AllowedViewSize(int width) => screenArea.OverlayBar ? Math.Max(width, 20) : width;
+
     internal void NewViewSize(int width)
     {
+        width = AllowedViewSize(width);
         hooks.SetViewSize(width);
         if (hooks.ViewSize() == 21)
             SetViewSize((uint)video.screenWidth, (uint)video.screenHeight);
@@ -157,6 +164,7 @@ internal sealed class ViewSetup(
 
         oldwidth = render.viewwidth;
         oldheight = render.viewheight;
+        width = AllowedViewSize(width);
 
         if (width == 21)
         {

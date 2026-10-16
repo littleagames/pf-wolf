@@ -207,6 +207,7 @@ internal sealed class PlayerWeapons(
         // clip: the rounds loaded in the weapon in hand's magazine; nothing for one without
         statusBar.LatchNumber("clip", WeaponMagazine(session.playerstate.weapon) is { } magazine ? inventory.GetCount(magazine) : 0,
             hide: WeaponMagazine(session.playerstate.weapon) == null);
+        statusBar.DrawCounts();         // a carried item's count (medkits) changes with ammo's
         DrawAmmoGauge();
     }
 
@@ -242,6 +243,8 @@ internal sealed class PlayerWeapons(
     {
         if (statusBar.StatusBarHidden) return;
         statusBar.DrawWeaponPic();
+        statusBar.DrawWeaponName();
+        DrawWeaponSlots();
         if (statusBar.StatusBar.Get("ammo")?.Behind?.Equals("weapon", StringComparison.OrdinalIgnoreCase) == true
             || statusBar.StatusBar.Get("ammo")?.OnlyWithAmmo == true || statusBar.StatusBar.Get("ammo-gauge") != null
             || statusBar.StatusBar.Get("clip") != null)
@@ -351,6 +354,36 @@ internal sealed class PlayerWeapons(
         using var _ = statusBar.StatusBarOrigin(element);
         if (!string.IsNullOrEmpty(pic))
             graphics.DrawPic(pic, element.X, statusBar.StatusBarTop(element) + element.Y);
+    }
+
+    /// <summary>
+    /// The weapon slot row (statusbar.yaml weapon-slots, Midnight Assault's): the slot numbers 1
+    /// up to its slots, each followed by a space, in its colors: current for the weapon in hand's
+    /// slot, held for a slot with a weapon held, else empty
+    /// </summary>
+    internal void DrawWeaponSlots()
+    {
+        if (statusBar.StatusBarHidden) return;
+        if (statusBar.StatusBar.Get("weapon-slots") is not { } element)
+            return;
+        var font = element.Font ?? statusBar.StatusBar.Get("numbers")?.Font;
+        if (string.IsNullOrEmpty(font))
+            return;
+
+        statusBar.ClearBox(element);
+        var held = OwnedWeapons().Select(WeaponSlot).ToHashSet();
+        int current = session.playerstate.weapon is { } weapon ? WeaponSlot(weapon) : -1;
+        var x = element.X;
+        for (int slot = 1; slot <= element.Slots; slot++)
+        {
+            string color = slot == current ? element.Colors.GetValueOrDefault("current", "White")
+                : held.Contains(slot) ? element.Colors.GetValueOrDefault("held", "Grey")
+                : element.Colors.GetValueOrDefault("empty", "DarkGrey");
+            string text = $"{slot} ";
+            using (statusBar.StatusBarOrigin(element))
+                graphics.DrawText(x, statusBar.StatusBarTop(element) + element.Y, text, new Fonts.TextStyle(font, color));
+            x += statusBar.TextWidth(text, font);
+        }
     }
 
     /// <summary>

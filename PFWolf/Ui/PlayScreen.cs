@@ -35,7 +35,7 @@ internal sealed class PlayScreen(
 {
     internal void DrawPlayScreen()
     {
-        if (statusBar.StatusBar.Get("background") is { Pic: { Length: > 0 } statusbarpic } background)
+        if (statusBar.StatusBar.Get("background") is { Pic: { Length: > 0 } statusbarpic, Overlay: false } background)
         {
             statusBar.FillBarSides(background, atTop: false, playArea.StatusLines);
             using var _ = video.UseUiOrigin(UiAnchor.Bottom);
@@ -43,7 +43,13 @@ internal sealed class PlayScreen(
         }
         statusBar.DrawTopBar();
         DrawPlayBorder();
+        DrawStatusParts();
+    }
 
+    // Everything on the status bar but its picture
+    void DrawStatusParts()
+    {
+        statusBar.DrawIcons();
         statusBar.DrawFace();
         statusBar.DrawHealth();
         statusBar.DrawArmor();
@@ -55,11 +61,41 @@ internal sealed class PlayScreen(
         statusBar.DrawKeys();
         statusBar.DrawScore();
         statusBar.DrawLocation();
+        statusBar.DrawCounts();
+        statusBar.DrawWeaponName();
+        weapons.DrawWeaponSlots();
         statusBar.DrawHeartMonitor(force: true);
         statusBar.DrawRadarGauge();
         if (statusBar.StatusBar.Get("radar") is { } radar && !(hooks.ViewSize() == 21 && hooks.InGame()))
             radarDrawing.DrawRadar(radar);
         statusBar.DrawInfoArea(force: true);
+    }
+
+    /// <summary>
+    /// A status bar drawn over the view (statusbar.yaml background overlay): its picture, if it
+    /// has one, and every part, over the frame just drawn. Nothing for a bar of its own, or with
+    /// the view full screen.
+    /// </summary>
+    internal void DrawStatusOverlay()
+    {
+        if (!statusBar.IsOverlay || !hooks.InGame() || hooks.ViewSize() == 21)
+            return;
+        statusBar.DrawingOverlay = true;
+        try
+        {
+            if (statusBar.StatusBarHidden)
+                return;
+            if (statusBar.StatusBar.Get("background") is { Pic: { Length: > 0 } pic, Height: { } height })
+            {
+                using var _ = video.UseUiOrigin(UiAnchor.Bottom);
+                graphics.DrawPic(pic, 0, 200 - height);
+            }
+            DrawStatusParts();
+        }
+        finally
+        {
+            statusBar.DrawingOverlay = false;
+        }
     }
 
     /// <summary>The thickness of the view border's lines: a layout pixel's worth of screen pixels, at least one</summary>

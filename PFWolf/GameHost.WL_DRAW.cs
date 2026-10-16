@@ -113,7 +113,7 @@ internal static partial class GameHost
     static FrameRefresh MakeFrameRefresh() => new(_videoManager, _graphicManager, _mapManager, _consoleManager, lighting, actorLights,
         weather, skyAndFlats, rayTrace, spriteDrawing, playerView, render, session,
         new FrameRefreshHooks(() => fizzlein, () => fizzlein = false, () => levelFadeStyle, () => levelFadeTics,
-            RestoreBorderAfterConsole, DrawAutomap, DrawHudMessages, DrawNetOverlay, DrawConsole, () => bordercol,
+            RestoreBorderAfterConsole, DrawAutomap, () => playScreen.DrawStatusOverlay(), DrawHudMessages, DrawNetOverlay, DrawConsole, () => bordercol,
             () => screenshotPending, () => screenshotPending = false, TakeScreenshot));
 
     static int lasttimecount { get => frameRefresh.lasttimecount; set => frameRefresh.lasttimecount = value; }

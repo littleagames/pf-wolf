@@ -11,6 +11,7 @@ namespace PFWolf.Rendering;
 /// <param name="LevelFadeTics">How long that takes</param>
 /// <param name="RestoreBorderAfterConsole">Redraws the border the console covered, once it's shut</param>
 /// <param name="DrawAutomap">The automap, when it's open</param>
+/// <param name="DrawStatusOverlay">A status bar drawn over the view (statusbar.yaml background overlay)</param>
 /// <param name="DrawHudMessages">The HUD messages and info area</param>
 /// <param name="DrawNetOverlay">Waiting for someone, or asking whether to leave</param>
 /// <param name="DrawConsole">The console, when it's open</param>
@@ -25,6 +26,7 @@ internal sealed record FrameRefreshHooks(
     Func<int> LevelFadeTics,
     Action RestoreBorderAfterConsole,
     Action DrawAutomap,
+    Action DrawStatusOverlay,
     Action DrawHudMessages,
     Action DrawNetOverlay,
     Action DrawConsole,
@@ -217,6 +219,7 @@ internal sealed class FrameRefresh(
 
             hooks.DrawAutomap();
 
+            hooks.DrawStatusOverlay();    // over the view and the automap, not in the save thumbnail
             hooks.DrawHudMessages();      // over the automap too, but not in the save thumbnail
             hooks.DrawNetOverlay();       // waiting for someone, or asking whether to leave (Ui/NetOverlay.cs)
 

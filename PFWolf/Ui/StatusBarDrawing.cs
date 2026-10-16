@@ -35,9 +35,16 @@ internal sealed class StatusBarDrawing(
 
     /// <summary>
     /// Whether the status bar's parts aren't drawn now: with the view full screen, or for a
-    /// player other than this machine's (the bar is the local player's)
+    /// player other than this machine's (the bar is the local player's). A bar drawn over the
+    /// view (overlay) is drawn only with the frame (DrawingOverlay), as the view under it is.
     /// </summary>
-    internal bool StatusBarHidden => hooks.FullScreenView() || !session.ActingIsLocal;
+    internal bool StatusBarHidden => hooks.FullScreenView() || !session.ActingIsLocal || (IsOverlay && !DrawingOverlay);
+
+    /// <summary>Whether the status bar is drawn over the view every frame (statusbar.yaml background overlay)</summary>
+    internal bool IsOverlay => StatusBar.Get("background")?.Overlay == true;
+
+    /// <summary>Set while a frame draws an overlay status bar's parts (PlayScreen.DrawStatusOverlay)</summary>
+    internal bool DrawingOverlay { get; set; }
 
     private StatusBarAsset? statusbar;
     internal static readonly StatusBarAsset NoStatusBar = new();
@@ -46,8 +53,11 @@ internal sealed class StatusBarDrawing(
     /// The game pack's status bar layout (statusbar.yaml); empty if it has none. Only a layout
     /// that was found is kept, so a look before the assets are loaded doesn't stick.
     /// </summary>
-    internal StatusBarAsset StatusBar =>
-        statusbar ?? (statusbar = assets?.FindInGamePackIfAny<StatusBarAsset>("statusbar")) ?? NoStatusBar;
+    internal StatusBarAsset StatusBar
+    {
+        get => statusbar ?? (statusbar = assets?.FindInGamePackIfAny<StatusBarAsset>("statusbar")) ?? NoStatusBar;
+        set => statusbar = value;       // a layout of a test's own
+    }
 
     /// <summary>Draws a picture at a status bar position (320x200 pixels from its top left corner).</summary>
     internal void StatusDrawPic(string picName, int x, int y)
@@ -81,12 +91,7 @@ internal sealed class StatusBarDrawing(
         // What the number is drawn over: a part under it, or a box to clear the old one
         if (element.Behind is { Length: > 0 } behind)
             DrawStatusPart(behind);
-        if (element.Box.Count == 4)
-        {
-            using var _ = StatusBarOrigin(element);
-            video.Bar(element.Box[0], StatusBarTop(element) + element.Box[1], element.Box[2], element.Box[3],
-                element.BoxColor ?? "Black");
-        }
+        ClearBox(element);
         if (hide)
             return;
 
@@ -111,6 +116,22 @@ internal sealed class StatusBarDrawing(
         using var _ = StatusBarOrigin(element);
         graphics.DrawText(x, StatusBarTop(element) + element.Y, text, new Fonts.TextStyle(font, color));
     }
+
+    /// <summary>
+    /// Fills a part's box (statusbar.yaml box, box-color) so what it showed before goes; not on a
+    /// bar drawn over the view (overlay), where the frame under it is drawn afresh
+    /// </summary>
+    internal void ClearBox(Assets.StatusBarElement element)
+    {
+        if (element.Box.Count != 4 || IsOverlay)
+            return;
+        using var _ = StatusBarOrigin(element);
+        video.Bar(element.Box[0], StatusBarTop(element) + element.Box[1], element.Box[2], element.Box[3],
+            element.BoxColor ?? "Black");
+    }
+
+    /// <summary>A text's width in a font, in 320x200 pixels</summary>
+    internal int TextWidth(string text, string font) => ui.TextWidth(text, font);
 
     /// <summary>Where a part's bar starts down the screen (320x200): the top bar's, or the bottom one's</summary>
     internal int StatusBarTop(Assets.StatusBarElement element) => element.Top ? 0 : 200 - STATUSLINES;
@@ -277,6 +298,46 @@ internal sealed class StatusBarDrawing(
         string color = bar.SideColor ?? "Black";
         video.BarScaledCoord(0, y0, left, y1 - y0, color);
         video.BarScaledCoord(right, y0, video.screenWidth - right, y1 - y0, color);
+    }
+
+    /// <summary>
+    /// Each icon part's picture (statusbar.yaml icon-*: pic at x, y), e.g. a heart by the health;
+    /// one only-with-magazine only while the weapon in hand has a magazine
+    /// </summary>
+    internal void DrawIcons()
+    {
+        if (StatusBarHidden) return;
+        bool magazine = session.playerstate.weapon is { } weapon
+            && inventory.GetStringProperty(weapon, "weapon.magazine") is { Length: > 0 };
+        foreach (var (name, element) in StatusBar.Elements)
+        {
+            if (!name.StartsWith("icon", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(element.Pic)
+                || (element.OnlyWithMagazine && !magazine))
+                continue;
+            using var _ = StatusBarOrigin(element);
+            graphics.DrawPic(element.Pic, element.X, StatusBarTop(element) + element.Y);
+        }
+    }
+
+    /// <summary>Each count part's number: how many of its item the player holds (statusbar.yaml count-*: item, e.g. medkits)</summary>
+    internal void DrawCounts()
+    {
+        if (StatusBarHidden) return;
+        foreach (var (name, element) in StatusBar.Elements)
+            if (name.StartsWith("count", StringComparison.OrdinalIgnoreCase) && element.Item is { Length: > 0 } item)
+                LatchNumber(name, inventory.GetCount(item));
+    }
+
+    /// <summary>The weapon in hand's name (statusbar.yaml weapon-name): its `tag` (a $NAME language key or the text)</summary>
+    internal void DrawWeaponName()
+    {
+        if (StatusBarHidden) return;
+        if (StatusBar.Get("weapon-name") is not { } element || session.playerstate.weapon is not { } weapon)
+            return;
+        ClearBox(element);
+        var font = element.Font ?? StatusBar.Get("numbers")?.Font;
+        if (!string.IsNullOrEmpty(font) && inventory.GetStringProperty(weapon, "tag") is { Length: > 0 } tag)
+            DrawStatusText(element, hudMessages.Localize(tag), font, element.Color ?? "White");
     }
 
     /// <summary>The level's name (statusbar.yaml location), as GetMapDisplayName gives it</summary>

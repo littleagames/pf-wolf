@@ -39,6 +39,16 @@ public class StatusBarElement
     public int? Height { get; set; }
 
     /// <summary>
+    /// background: the bar takes nothing from the view; its parts (and its picture, if it has one)
+    /// are drawn over the bottom height lines of the view every frame, as Midnight Assault's HUD
+    /// was. Numbers' boxes aren't filled then.
+    /// </summary>
+    public bool Overlay { get; set; }
+
+    /// <summary>weapon-slots: how many slot numbers across (1 up), each followed by a space</summary>
+    public int Slots { get; set; } = 8;
+
+    /// <summary>
     /// background, top: on a screen wider than the picture, the color its lines are filled with
     /// beside it (Black when left out). Wolf3D's bar is filled by its border's sides instead.
     /// </summary>
@@ -119,6 +129,9 @@ public class StatusBarElement
     /// <summary>ammo: shown only while the weapon in hand uses ammo</summary>
     public bool OnlyWithAmmo { get; set; }
 
+    /// <summary>icon-*: shown only while the weapon in hand has a magazine (weapon.magazine), e.g. a divider between the clip and the ammo</summary>
+    public bool OnlyWithMagazine { get; set; }
+
     /// <summary>keys: pixels between one key slot and the next, rightwards (spacing is downwards)</summary>
     public int SpacingX { get; set; }
 
@@ -179,7 +192,8 @@ public class StatusBarElement
 
     /// <summary>
     /// radar: its colors (palette indices, color names or #RRGGBB) by what's there: unmapped,
-    /// floor, door, locked, player, key, enemy
+    /// floor, door, locked, player, key, enemy. weapon-slots: current (the weapon in hand's
+    /// slot), held (a slot with a weapon held) and empty.
     /// </summary>
     public Dictionary<string, string> Colors { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 

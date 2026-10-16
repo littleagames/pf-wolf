@@ -6,8 +6,12 @@ namespace PFWolf.Ui;
 /// </summary>
 internal sealed class PlayArea(VideoManager video, StatusBarDrawing statusBar)
 {
-    // The status bar's height in 320x200 lines (statusbar.yaml background), 0 with none
-    internal int StatusLines => statusBar.StatusBar.Get("background")?.Height ?? 0;
+    // The lines the status bar takes from the play area, in 320x200 lines (statusbar.yaml
+    // background's height): 0 with none, or with one drawn over the view (overlay)
+    internal int StatusLines => statusBar.StatusBar.Get("background") is { Overlay: false } background ? background.Height ?? 0 : 0;
+
+    /// <summary>Whether the status bar is drawn over the view (statusbar.yaml background overlay)</summary>
+    internal bool OverlayBar => statusBar.IsOverlay;
     // Lines a status bar across the top of the screen takes (statusbar.yaml top; Blake Stone's)
     internal int TopLines => statusBar.StatusBar.Get("top")?.Height ?? 0;
 
