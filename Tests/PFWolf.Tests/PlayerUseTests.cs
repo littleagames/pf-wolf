@@ -36,6 +36,16 @@ public class PlayerUseTests
               - sprite: PRIS
                 frames: [B]
                 tics-per-frame: -1
+        LogBook:
+          states:
+            Spawn:
+              - sprite: LOGB
+                frames: [A]
+                tics-per-frame: -1
+            Use:
+              - sprite: LOGB
+                frames: [B]
+                tics-per-frame: -1
         """;
 
     // The item's action is left unregistered (the registry is shared, and other tests check every
@@ -138,6 +148,39 @@ public class PlayerUseTests
         prisoner.RuntimeFlags &= ~objflags.FL_ATTACKMODE;
         _session.playerinput.SetHeld(buttontypes.bt_use, true);
         Assert.That(_use.TryUseActor(), Is.False);
+    }
+
+    // Scenery with a Use state (a log book): never shootable, and not a Monster
+    private Entities.Actors.Actor LogBook(int dx, int dy)
+    {
+        var book = _inventory.CreateActor("LogBook")!;
+        (book.X, book.Y) = (_session.player.X + dx, _session.player.Y + dy);
+        (book.TileX, book.TileY) = ((byte)(book.X >> MapConstants.TILESHIFT), (byte)(book.Y >> MapConstants.TILESHIFT));
+        book.SetState(book.ResolvedStates["Spawn"]);
+        _map.GetActors().AddLast(book);
+        return book;
+    }
+
+    [Test]
+    public void Scenery_With_A_Use_State_Is_Used_Too()
+    {
+        // Arrange: a tile ahead
+        var book = LogBook(Tile, 0);
+
+        // Act / Assert
+        Assert.That(_use.TryUseActor(), Is.True);
+        Assert.That(book.CurrentState!.StateName, Is.EqualTo("Use"));
+    }
+
+    [Test]
+    public void Scenery_On_The_Players_Own_Tile_Is_Used_Whichever_Way_They_Face()
+    {
+        // Arrange: just behind the player, on their tile
+        var book = LogBook(-Tile / 4, 0);
+
+        // Act / Assert
+        Assert.That(_use.TryUseActor(), Is.True);
+        Assert.That(book.CurrentState!.StateName, Is.EqualTo("Use"));
     }
 
     [Test]

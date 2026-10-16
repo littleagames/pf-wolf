@@ -272,9 +272,10 @@ internal sealed class PlayerUse(
     }
 
     /// <summary>
-    /// The use key pressed facing a living actor with a Use state (actordefs), within a tile and
-    /// a half and half a right angle either side of straight ahead: it goes to that state (a
-    /// prisoner's could be A_SetFaction("allies", "follow")). Not one going after someone.
+    /// The use key pressed facing an actor with a Use state (actordefs), within a tile and a half
+    /// and half a right angle either side of straight ahead, or on the player's own tile: it goes
+    /// to that state (a prisoner's could be A_SetFaction("allies", "follow"); a log book opens).
+    /// An enemy only while it lives and isn't going after someone; scenery any time it has one.
     /// </summary>
     internal bool TryUseActor()
     {
@@ -285,12 +286,14 @@ internal sealed class PlayerUse(
             return false;
 
         const long Reach = MapConstants.TILEGLOBAL * 3 / 2;
-        Entities.Actors.Monster? chosen = null;
+        Entities.Actors.Actor? chosen = null;
         long best = Reach;
-        foreach (var actor in map.GetActors().OfType<Entities.Actors.Monster>())
+        foreach (var actor in map.GetActors())
         {
-            if (actor.IsRemoved || !actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)
-                || actor.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE) || !actor.ResolvedStates.ContainsKey("Use"))
+            if (actor.IsRemoved || actor is Entities.Actors.PlayerPawn || !actor.ResolvedStates.ContainsKey("Use"))
+                continue;
+            if (actor is Entities.Actors.Monster && (!actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)
+                || actor.RuntimeFlags.HasFlag(objflags.FL_ATTACKMODE)))
                 continue;
 
             long dx = actor.X - player.X, dy = player.Y - actor.Y;     // y grows southward
@@ -298,9 +301,10 @@ internal sealed class PlayerUse(
             if (dist >= best)
                 continue;
 
+            bool underfoot = actor.TileX == player.TileX && actor.TileY == player.TileY;
             int toward = (int)((Math.Atan2(dy, dx) + Math.PI * 2) % (Math.PI * 2) / (Math.PI * 2) * ANGLES);
             int off = Math.Abs(player.Angle - toward) % ANGLES;
-            if (Math.Min(off, ANGLES - off) > ANGLES / 8)
+            if (!underfoot && Math.Min(off, ANGLES - off) > ANGLES / 8)
                 continue;
 
             (chosen, best) = (actor, dist);
