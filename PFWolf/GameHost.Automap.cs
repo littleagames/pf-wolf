@@ -2,6 +2,26 @@ using PFWolf.Configuration;
 
 namespace PFWolf;
 
+/// <summary>The keys that work while the automap is open; bound in <see cref="GameHost.controls"/>.</summary>
+internal enum automapkeys
+{
+    am_zoomin,
+    am_zoomout,
+    am_panup,
+    am_pandown,
+    am_panleft,
+    am_panright,
+    am_center,
+    am_follow,
+    am_rotate,
+    am_style,
+    am_overlay,
+    am_grid,
+    am_stats,
+
+    NUMAUTOMAPKEYS
+}
+
 internal static partial class GameHost
 {
     // Drawing the automap (Ui/AutomapDrawing.cs)
@@ -13,25 +33,6 @@ internal static partial class GameHost
                 () => (viewscreenx, viewscreeny, viewwidth, viewheight), () => mapreveal != 0, GetMapDisplayName, FormatPlayTime));
 
     internal static void DrawAutomap() => automapDrawing.DrawAutomap();
-    /// <summary>The keys that work while the automap is open; bound in <see cref="controls"/>.</summary>
-    internal enum automapkeys
-    {
-        am_zoomin,
-        am_zoomout,
-        am_panup,
-        am_pandown,
-        am_panleft,
-        am_panright,
-        am_center,
-        am_follow,
-        am_rotate,
-        am_style,
-        am_overlay,
-        am_grid,
-        am_stats,
-
-        NUMAUTOMAPKEYS
-    }
 
     // The automap's keys and console commands (Ui/AutomapInput.cs)
     static AutomapInput automapInput = null!;       // made in InitServices

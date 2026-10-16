@@ -4,16 +4,16 @@ namespace PFWolf.Configuration;
 
 /// <summary>
 /// Something a control can be bound to: one of the play buttons (<see cref="buttontypes"/>),
-/// then the keys that work while the automap is open (<see cref="GameHost.automapkeys"/>).
+/// then the keys that work while the automap is open (<see cref="automapkeys"/>).
 /// </summary>
 internal readonly record struct ControlAction(int Index)
 {
     private const int ButtonCount = (int)buttontypes.NUMBUTTONS;
 
-    public const int Count = ButtonCount + (int)GameHost.automapkeys.NUMAUTOMAPKEYS;
+    public const int Count = ButtonCount + (int)automapkeys.NUMAUTOMAPKEYS;
 
     public static ControlAction Of(buttontypes button) => new((int)button);
-    public static ControlAction Of(GameHost.automapkeys key) => new(ButtonCount + (int)key);
+    public static ControlAction Of(automapkeys key) => new(ButtonCount + (int)key);
 
     public static IEnumerable<ControlAction> All => Enumerable.Range(0, Count).Select(i => new ControlAction(i));
 
@@ -27,7 +27,7 @@ internal readonly record struct ControlAction(int Index)
     /// </summary>
     public string Name => IsButton
         ? ((buttontypes)Index).ToString()["bt_".Length..]
-        : ((GameHost.automapkeys)(Index - ButtonCount)).ToString();
+        : ((automapkeys)(Index - ButtonCount)).ToString();
 
     // Names the weapon slot keys had before they were generic, still found in older
     // controls.cfg files and menus.
@@ -244,11 +244,11 @@ internal sealed class ControlBindings
         Default(buttontypes.bt_radarzoomout, Key(ScanCodes.sc_Minus));
 
         for (int i = 0; i < DefaultAutomapKeys.Length; i++)
-            Add(ControlAction.Of((GameHost.automapkeys)i), Key(DefaultAutomapKeys[i]));
+            Add(ControlAction.Of((automapkeys)i), Key(DefaultAutomapKeys[i]));
 
         // While the map is open the wheel zooms it rather than changing weapons (see InputPolling.IsControlDown)
-        Add(ControlAction.Of(GameHost.automapkeys.am_zoomin), InputCode.WheelUp);
-        Add(ControlAction.Of(GameHost.automapkeys.am_zoomout), InputCode.WheelDown);
+        Add(ControlAction.Of(automapkeys.am_zoomin), InputCode.WheelUp);
+        Add(ControlAction.Of(automapkeys.am_zoomout), InputCode.WheelDown);
     }
 
     private static readonly ScanCodes[] DefaultAutomapKeys =
@@ -313,7 +313,7 @@ internal sealed class ControlBindings
             SetKey(ControlAction.Of(buttontypes.bt_automap), key);
 
         for (int i = 0; i < Math.Min(automapKeys?.Length ?? 0, DefaultAutomapKeys.Length); i++)
-            SetKey(ControlAction.Of((GameHost.automapkeys)i), automapKeys![i]);
+            SetKey(ControlAction.Of((automapkeys)i), automapKeys![i]);
 
         foreach (var action in ControlAction.All)
             Clear(action, InputDevice.MouseButton);

@@ -1,6 +1,5 @@
 using PFWolf.Assets;
 using PFWolf.Configuration;
-using automapkeys = PFWolf.GameHost.automapkeys;
 
 namespace PFWolf.Tests;
 
