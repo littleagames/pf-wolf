@@ -131,9 +131,11 @@ internal static partial class GameHost
 
         // mapdefs trigger and switch actions, run when the player uses a trigger's tile or a
         // switch wall (Cmd_Use) or steps onto a walk-over trigger (Thrust)
-        // A_PushWall("moving sound", "blocked sound"): either left out is silent
-        Entities.MapTriggerRegistry.Register("A_PushWall", (trigger, args) => PushWall(trigger.TileX, trigger.TileY, trigger.Dir,
-            args.ElementAtOrDefault(0), args.ElementAtOrDefault(1)));
+        // A_PushWall("moving sound", "blocked sound"[, "direction", "message"]): either sound left
+        // out is silent. With a direction (north, east, south or west) it only moves that way:
+        // pushed from another side, it shows the message and plays the blocked sound instead
+        // (Midnight Assault's one-way pushwalls)
+        Entities.MapTriggerRegistry.Register("A_PushWall", PushWallAction);
         Entities.MapTriggerRegistry.Register("A_VictoryTile", (_, _) => { VictoryTile(); return true; });
         Entities.MapTriggerRegistry.Register("A_Exit", (_, _) => ExitAction(secret: false));
         Entities.MapTriggerRegistry.Register("A_SecretExit", (_, _) => ExitAction(secret: true));
@@ -144,6 +146,31 @@ internal static partial class GameHost
         RegisterZoneLightActions(); // light zone actions, for switches and actors (Rendering/Lighting.cs)
         RegisterActorLightActions(); // actors' own lights (Rendering/ActorLights.cs)
         RegisterProjectileActions(); // projectiles and jumps for any actor, traps (GameHost.ProjectileActions.cs)
+    }
+
+    /// <summary>A_PushWall: the trigger's wall pushed the way the player faces, unless it only goes another way (see RegisterActorActions)</summary>
+    static bool PushWallAction(Entities.TriggerActivation trigger, string[] args)
+    {
+        var moveSound = args.ElementAtOrDefault(0);
+        var blockedSound = args.ElementAtOrDefault(1);
+        var only = args.ElementAtOrDefault(2)?.Trim();
+        if (!string.IsNullOrEmpty(only))
+        {
+            if (Gameplay.SwitchActions.ParseDirection(only) is not { } onlyDir)
+            {
+                Console.WriteLine($"A_PushWall: unknown direction '{only}' (north, east, south or west).");
+                return false;
+            }
+            if (trigger.Dir != onlyDir)
+            {
+                if (args.ElementAtOrDefault(3) is { Length: > 0 } message)
+                    _hudMessageManager.Show(HudMessageKind.Lock, message);
+                if (!string.IsNullOrEmpty(blockedSound))
+                    _audioManager.Play(blockedSound);
+                return false;
+            }
+        }
+        return PushWall(trigger.TileX, trigger.TileY, trigger.Dir, moveSound, blockedSound);
     }
 
     // A_GiveExtraMan, A_GiveInventory and A_ChangeMap (Gameplay/PlayerActions.cs)

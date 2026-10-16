@@ -230,7 +230,7 @@ public record MapTriggerTranslation
 
     /// <summary>
     /// Goes off every time it's set off (a teleport, a ladder) instead of once: its tile isn't
-    /// cleared. A use trigger needs use let go of and pressed again.
+    /// cleared. (A use trigger goes off once a press of use.)
     /// </summary>
     public bool Repeat { get; set; }
 

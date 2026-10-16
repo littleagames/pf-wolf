@@ -223,16 +223,13 @@ internal sealed class PlayerUse(
         if (map.GetTrigger(checkx, checky) is { IsWalkOver: false } trigger)
         {
             //
-            // mapdefs use trigger (a pushable wall); one that stays (`repeat`: a ladder) goes
-            // off once a press, not every frame use is held
+            // mapdefs use trigger (a pushable wall): once a press, not every frame use is held,
+            // for one that stays (`repeat`: a ladder) or refuses (a one-way pushwall's message)
             //
             ResetUseHeld();
-            if (trigger.Repeat)
-            {
-                if (playerinput.IsHeld(buttontypes.bt_use))
-                    return;
-                playerinput.SetHeld(buttontypes.bt_use, true);
-            }
+            if (playerinput.IsHeld(buttontypes.bt_use))
+                return;
+            playerinput.SetHeld(buttontypes.bt_use, true);
             ActivateTrigger(trigger, checkx, checky, dir);
             return;
         }
