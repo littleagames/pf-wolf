@@ -50,6 +50,7 @@ internal sealed class LevelLoop(
     PlayKeys keys,
     Doors doors,
     PushWalls pushWalls,
+    TimedSwitches timedSwitches,
     PlayerView playerView,
     Lighting lighting,
     GameScripts scripts,
@@ -125,6 +126,7 @@ internal sealed class LevelLoop(
                 hooks.ClearNoise();
                 doors.MoveDoors();
                 pushWalls.MovePWalls();
+                timedSwitches.Tick(session.tics);       // switches turning back by themselves (Gameplay/TimedSwitches.cs)
 
                 // Every actor lives in map._actors. The player is at its head, so it still
                 // thinks before every enemy, projectile and the BJ-victory actor.

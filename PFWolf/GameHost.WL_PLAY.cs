@@ -82,7 +82,7 @@ internal static partial class GameHost
     static LevelLoop levelLoop = null!;     // made in InitServices
 
     static LevelLoop MakeLevelLoop() => new(_inputManager, _videoManager, _consoleManager, _automapManager, _hudMessageManager, _mapManager,
-        frameRefresh, inputPolling, playKeys, doors, pushWalls, playerView, lighting, gameScripts, deathmatch, netPlay, levelAI, session,
+        frameRefresh, inputPolling, playKeys, doors, pushWalls, timedSwitches, playerView, lighting, gameScripts, deathmatch, netPlay, levelAI, session,
         new LevelLoopHooks(() => playstate, s => playstate = s, () => startgame, () => netgame, () => demoplayback, () => demoTesting,
             () => madenoise = false, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => autosavePending, AutoSaveGame,
             () => singlestep, () => extravbls));

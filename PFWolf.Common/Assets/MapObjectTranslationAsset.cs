@@ -480,6 +480,17 @@ public record MapSwitchTranslation
     public List<string> Actions { get; init; } = [];
 
     /// <summary>
+    /// A switch that turns back by itself (Midnight Assault's timed switches): this many tics
+    /// after it's thrown, it and the linked ones thrown with it go back to what they were, and
+    /// <see cref="ResetActions"/> run. Make its `to` a wall or patch that isn't a switch, so it
+    /// can't be used meanwhile. 0: it stays thrown.
+    /// </summary>
+    public int ResetTics { get; init; }
+
+    /// <summary>The action calls run as a <see cref="ResetTics"/> switch turns back (A_CloseDoor, say)</summary>
+    public List<string> ResetActions { get; init; } = [];
+
+    /// <summary>
     /// How the switch finds what it works besides its tag. "object-plane": the switch tile's
     /// object-plane value is a tile's x (high byte) and y (low byte) on this floor, and the
     /// switch shares that tile's tag, as a map-info tag-link would give it (Planet Strike's

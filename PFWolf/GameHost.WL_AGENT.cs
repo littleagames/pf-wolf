@@ -203,7 +203,7 @@ internal static partial class GameHost
     static PlayerUse playerUse = null!;     // made in InitServices
 
     static PlayerUse MakePlayerUse() =>
-        new(_mapManager, _audioManager, _inventoryManager, doors, levelAI, session,
+        new(_mapManager, _audioManager, _inventoryManager, doors, levelAI, timedSwitches, session,
             new PlayerUseHooks(PlayPlayerSound, state => playstate = state, () => mountedWeapons.TryDismount()));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, controldirs dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
@@ -240,6 +240,10 @@ internal static partial class GameHost
     static Latching latching => _latching ??= new Latching(_mapManager, _inventoryManager, playerWeapons, session,
         new LatchingHooks(playersManager.TakeDamage, playerAttacks.PlayAttackSound, weaponInHand.IsWeaponReady,
             (monster, damage, by) => monster.Damage((uint)damage, by)));
+
+    // Switches that turn back by themselves (Gameplay/TimedSwitches.cs), ticked by the level loop
+    static TimedSwitches? _timedSwitches;
+    static TimedSwitches timedSwitches => _timedSwitches ??= new TimedSwitches(_mapManager, session);
 
     // Disguise and going unseen (Gameplay/Stealth.cs): enemies' suspicion, papers, the uniform
     static Stealth? _stealth;

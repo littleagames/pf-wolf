@@ -23,6 +23,7 @@ internal sealed class PlayerUse(
     InventoryManager inventory,
     Doors doors,
     LevelAI levelAI,
+    TimedSwitches timedSwitches,
     GameSession session,
     PlayerUseHooks hooks)
 {
@@ -80,6 +81,7 @@ internal sealed class PlayerUse(
                     map.RestartAnimations(x, y, gamestate.TimeCount);
                 }
             }
+            timedSwitches.Thrown(wallSwitch, tilex, tiley, patch: false, from, wallSwitch.To, tag, dir);     // reset-tics: it turns back
         }
 
         if (!string.IsNullOrEmpty(wallSwitch.Sound))
@@ -165,6 +167,8 @@ internal sealed class PlayerUse(
             if (other != 0 && (other == from || other == to))
                 Flip(x, y);
         }
+        if (to != 0)
+            timedSwitches.Thrown(patchSwitch, tilex, tiley, patch: true, from, to, tag, dir);     // reset-tics: it turns back
     }
 
     /// <summary>
