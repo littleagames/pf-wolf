@@ -1,7 +1,6 @@
 using System.Runtime.InteropServices;
 using PFWolf.Assets;
 using PFWolf.Constants;
-using static PFWolf.GameHost;
 
 namespace PFWolf;
 
@@ -94,7 +93,7 @@ internal class gametype
     public string mapon;
 
     // The player's own stats (score, lives, health, armor, weapons...) are on each player's
-    // Entities.PlayerState now: GameHost.playerstate for the acting player
+    // Entities.PlayerState now: GameSession.playerstate for the acting player
 
     public short cluster, secretcount, treasurecount, killcount,
                 secrettotal, treasuretotal, killtotal;
