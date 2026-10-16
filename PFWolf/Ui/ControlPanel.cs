@@ -244,10 +244,22 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
         return 1;
     }
 
+    /// <summary>
+    /// The quit question, picked as Wolf3D did ((random &amp; (count - 2)) + (random &amp; 1), made for
+    /// its nine), which stays in range for two or more; one is always that one, none is none.
+    /// </summary>
+    internal static string PickEndString(IReadOnlyList<string> endStrings, Func<int> random)
+    {
+        if (endStrings.Count <= 1)
+            return endStrings.Count == 1 ? endStrings[0] : "";
+        int first = random() & (endStrings.Count - 2);
+        return endStrings[first + (random() & 1)];
+    }
+
     internal int Quit()
     {
         var gameInfo = engine.GetGameInfo();
-        string endStr = gameInfo.EndStrings[(hooks.Random() & (gameInfo.EndStrings.Count - 2)) + (hooks.Random() & 1)];
+        string endStr = PickEndString(gameInfo.EndStrings, hooks.Random);
         if (loop.Confirm(endStr) != 0)
         {
             video.Update();

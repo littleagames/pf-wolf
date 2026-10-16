@@ -136,7 +136,7 @@ internal sealed class QuickKeys(
             // QUIT
             //
             case ScanCodes.sc_F10:
-                string endStr = gameInfo.EndStrings[(hooks.UiRandom() & (gameInfo.EndStrings.Count - 2)) + (hooks.UiRandom() & 1)];
+                string endStr = ControlPanel.PickEndString(gameInfo.EndStrings, hooks.UiRandom);
                 if (loop.Confirm(endStr, GameConstants.MAXY) != 0)
                 {
                     video.Update();
