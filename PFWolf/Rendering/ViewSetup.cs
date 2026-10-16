@@ -111,7 +111,10 @@ internal sealed class ViewSetup(
         int halfview;
         double facedist;
 
-        render.focallength = (int)focal;
+        // The view stays where it always is (the usual focal length behind the camera); a longer
+        // focal length (a scope's zoom, a quake's pulse) only narrows what it sees, magnifying it.
+        // Midnight Assault moved the view back with it, which put a zoomed view behind walls.
+        render.focallength = (int)GameConstants.FOCALLENGTH;
         facedist = focal + GameConstants.MINDIST;
         halfview = render.viewwidth / 2;                                 // half view in pixels
 

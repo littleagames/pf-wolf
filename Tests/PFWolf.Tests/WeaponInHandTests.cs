@@ -98,6 +98,11 @@ public class WeaponInHandTests
                 frames: [B, C]
                 tics-per-frame: 6
                 next-state: Ready
+            ZoomFire:
+              - sprite: RIFZ
+                frames: [A]
+                tics-per-frame: 6
+                next-state: Ready
             Reload:
               - sprite: RIFR
                 frames: [A]
@@ -282,6 +287,23 @@ public class WeaponInHandTests
 
         // Assert
         Assert.That(gun.CurrentState!.StateName, Is.EqualTo(WeaponInHand.WeaponReadyState));
+    }
+
+    [Test]
+    public void Zoomed_In_A_Weapon_Fires_Its_ZoomFire_State()
+    {
+        // Arrange: the rifle loaded, zoomed in
+        var rig = new Rig("Rifle") { InHand = "Rifle" };
+        rig.Inventory.Give("RifleMag", 5);
+        var rifle = rig.Sprite;
+        rig.Session.playerstate.ZoomMode = ZoomMode.Zoomed;
+        rig.Session.playerinput.SetPressed(buttontypes.bt_attack, true);
+
+        // Act
+        rig.Hand.A_WeaponReady(rifle);
+
+        // Assert
+        Assert.That(rifle.CurrentState!.StateName, Is.EqualTo("ZoomFire"));
     }
 
     [Test]

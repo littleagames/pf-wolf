@@ -149,6 +149,7 @@ internal sealed class WeaponInHand(
     {
         Entities.Actors.ActorActionRegistry.Register("A_WeaponReady", A_WeaponReady);
         Entities.Actors.ActorActionRegistry.Register("A_GunAttack", A_GunAttack);
+        Entities.Actors.ActorActionRegistry.Register("A_FireBullet", A_FireBullet);
         Entities.Actors.ActorActionRegistry.Register("A_CustomPunch", A_CustomPunch);
         Entities.Actors.ActorActionRegistry.Register("A_ReFire", A_ReFire);
         Entities.Actors.ActorActionRegistry.Register("A_Reload", A_Reload);
@@ -185,8 +186,10 @@ internal sealed class WeaponInHand(
             return;
         }
 
+        // Zoomed in through a scope, a weapon with a ZoomFire state fires that (Gameplay/WeaponZoom.cs)
         if (session.playerinput.IsFreshPress(buttontypes.bt_attack))
-            StartState(weapon, "Fire", buttontypes.bt_attack);
+            StartState(weapon, playerstate.ZoomMode == ZoomMode.Zoomed && weapon.ResolvedStates.ContainsKey("ZoomFire") ? "ZoomFire" : "Fire",
+                buttontypes.bt_attack);
     }
 
     /// <summary>
@@ -200,6 +203,22 @@ internal sealed class WeaponInHand(
         weapons.Reload(rounds);
         if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) && weapons.CanReload(session.playerstate.weapon))
             JumpWeaponState(weapon, args[1]);
+    }
+
+    /// <summary>
+    /// A_FireBullet(min[, max[, "silent"]]): one shot at the closest target in the weapon's
+    /// sights, for min..max whatever the distance (Midnight Assault's FireBullet; its zoomed sniper
+    /// shot); silent, it alerts no one. Ammo and charge as A_GunAttack.
+    /// </summary>
+    internal void A_FireBullet(Entities.Actors.Actor weapon, string[] args)
+    {
+        if (!weapons.IsLoaded(session.playerstate.weapon) || !weapons.TakeCharge())
+            return;
+        int min = args.Length > 0 && int.TryParse(args[0], out var a0) ? a0 : 0;
+        int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
+        bool silent = args.Skip(2).Any(a => a.Trim().Equals("silent", StringComparison.OrdinalIgnoreCase));
+        attacks.FireBullet(min, max, silent);
+        weapons.UseAmmo();
     }
 
     /// <summary>

@@ -19,7 +19,9 @@ namespace PFWolf.Rendering;
 /// <param name="ScreenshotPending">Whether the screenshot command asked for a shot</param>
 /// <param name="ClearScreenshotPending">The shot's been taken</param>
 /// <param name="TakeScreenshot">Saves the screen and says where it went</param>
-/// <param name="UpdateViewQuake">Moves any quake on and sets the view's focal length for it (Rendering/ViewQuake.cs)</param>
+/// <param name="UpdateViewQuake">Moves any quake on and sets the view's focal length for it and a scope's zoom (Rendering/ViewQuake.cs)</param>
+/// <param name="ScopePicture">The scope's picture while the player looks through one (Gameplay/WeaponZoom.cs), else null</param>
+/// <param name="DrawScope">Draws it over the screen, in place of the weapon in hand</param>
 internal sealed record FrameRefreshHooks(
     Func<bool> FizzleIn,
     Action ClearFizzleIn,
@@ -35,7 +37,9 @@ internal sealed record FrameRefreshHooks(
     Func<bool> ScreenshotPending,
     Action ClearScreenshotPending,
     Func<string> TakeScreenshot,
-    Action UpdateViewQuake);
+    Action UpdateViewQuake,
+    Func<string?> ScopePicture,
+    Action<string> DrawScope);
 
 /// <summary>
 /// One frame of the 3D view: the tics since the last (CalcTics), the view from the camera
@@ -197,10 +201,16 @@ internal sealed class FrameRefresh(
         spriteDrawing.DrawScaleds();                  // draw scaled stuff
         playerView.PlayerSight();                  // what the player sees, when the camera is elsewhere
 
-        spriteDrawing.DrawPlayerWeapon();    // draw player's hands
+        // Looking through a scope, its picture takes the weapon in hand's place
+        var scope = hooks.ScopePicture();
+        if (scope == null)
+            spriteDrawing.DrawPlayerWeapon();    // draw player's hands
 
         video.UnlockSurface();
         render.vbuf = 0;
+
+        if (scope != null)
+            hooks.DrawScope(scope);
 
         // For the next save's thumbnail, before the automap or console is drawn over the view
         video.KeepViewCopy(render.viewscreenx, render.viewscreeny, render.viewwidth, render.viewheight);

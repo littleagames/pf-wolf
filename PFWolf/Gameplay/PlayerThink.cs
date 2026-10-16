@@ -9,7 +9,8 @@ namespace PFWolf.Gameplay;
 /// <param name="UpdateRadar">Moves the status bar's radar on a tic (Planet Strike's)</param>
 /// <param name="VictoryRunning">Whether A_VictoryRun's runner is on its way (the player watches it rather than turning round)</param>
 /// <param name="InitAreas">Starts the level's area connections afresh, from where the players stand</param>
-internal sealed record PlayerThinkHooks(Action UpdateRadar, Func<bool> VictoryRunning, Action InitAreas);
+/// <param name="UpdateZoom">Moves a scope's zoom on (Gameplay/WeaponZoom.cs), given whether the weapon's reloading</param>
+internal sealed record PlayerThinkHooks(Action UpdateRadar, Func<bool> VictoryRunning, Action InitAreas, Action<bool> UpdateZoom);
 
 /// <summary>
 /// The acting player's think each tic (T_Player): the status bar's face and gauges, changing
@@ -59,6 +60,7 @@ internal sealed class PlayerThink(
         if (weaponInHand.IsWeaponReady() || WeaponInHand.IsReloading(session.playerstate.WeaponSprite))
         {
             weapons.CheckWeaponChange();
+            hooks.UpdateZoom(WeaponInHand.IsReloading(session.playerstate.WeaponSprite));
 
             if (playerinput.IsPressed(buttontypes.bt_use))
                 use.Cmd_Use();

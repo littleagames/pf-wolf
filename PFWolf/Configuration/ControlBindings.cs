@@ -245,6 +245,8 @@ internal sealed class ControlBindings
 
         // Only does anything with a weapon that has a magazine (weapon.magazine)
         Default(buttontypes.bt_reload, Key(ScanCodes.sc_R), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_Y));
+        // Only does anything with a weapon that has a scope (weapon.zoom)
+        Default(buttontypes.bt_zoom, Key(ScanCodes.sc_Z), Pad(SDL.SDL_GameControllerButton.SDL_CONTROLLER_BUTTON_LEFTSTICK));
 
         for (int i = 0; i < DefaultAutomapKeys.Length; i++)
             Add(ControlAction.Of((automapkeys)i), Key(DefaultAutomapKeys[i]));

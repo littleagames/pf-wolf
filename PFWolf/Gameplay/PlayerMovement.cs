@@ -135,9 +135,11 @@ internal sealed class PlayerMovement(
             //
             // not strafing
             //
+            // a zoomed scope turns slower (Gameplay/WeaponZoom.cs)
+            int angleScale = GameConstants.ANGLESCALE * Math.Max(playerstate.TurnSlowdown, 1);
             playerstate.AngleFrac += (short)playerinput.ControlX;
-            angleunits = playerstate.AngleFrac / GameConstants.ANGLESCALE;
-            playerstate.AngleFrac -= (short)(angleunits * GameConstants.ANGLESCALE);
+            angleunits = playerstate.AngleFrac / angleScale;
+            playerstate.AngleFrac -= (short)(angleunits * angleScale);
             ob.Angle -= (short)angleunits;
 
             if (ob.Angle >= ANGLES)

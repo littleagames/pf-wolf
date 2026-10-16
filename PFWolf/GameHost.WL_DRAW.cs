@@ -114,7 +114,21 @@ internal static partial class GameHost
         weather, skyAndFlats, rayTrace, spriteDrawing, playerView, render, session,
         new FrameRefreshHooks(() => fizzlein, () => fizzlein = false, () => levelFadeStyle, () => levelFadeTics,
             RestoreBorderAfterConsole, DrawAutomap, () => playScreen.DrawStatusOverlay(), DrawHudMessages, DrawNetOverlay, DrawConsole, () => bordercol,
-            () => screenshotPending, () => screenshotPending = false, TakeScreenshot, UpdateViewQuake));
+            () => screenshotPending, () => screenshotPending = false, TakeScreenshot, UpdateViewQuake,
+            () => weaponZoom.ScopePicture(), DrawScope));
+
+    // A scope's picture over the whole screen (the original's H_SNIPERSCOPE at 0, 0), with black
+    // past its edges on a screen wider or taller than it, so nothing outside the scope shows
+    static void DrawScope(string pic)
+    {
+        int left = _videoManager.ScreenX(0), right = _videoManager.ScreenX(320);
+        int top = _videoManager.ScreenY(0), bottom = _videoManager.ScreenY(200);
+        _videoManager.BarScaledCoord(0, 0, Math.Max(left, 0), _videoManager.screenHeight, "Black");
+        _videoManager.BarScaledCoord(right, 0, Math.Max(_videoManager.screenWidth - right, 0), _videoManager.screenHeight, "Black");
+        _videoManager.BarScaledCoord(0, 0, _videoManager.screenWidth, Math.Max(top, 0), "Black");
+        _videoManager.BarScaledCoord(0, bottom, _videoManager.screenWidth, Math.Max(_videoManager.screenHeight - bottom, 0), "Black");
+        _graphicManager.DrawPic(pic, 0, 0);
+    }
 
     // The view's quake (Rendering/ViewQuake.cs): blasts (A_Quake) and a level's own rumble (game-info shake)
     static readonly ViewQuake viewQuake = new();
@@ -129,7 +143,9 @@ internal static partial class GameHost
             quakeMap = mapon;
         }
         int rumble = mapon != null && _gameEngineManager.GetGameInfo().Maps.TryGetValue(mapon, out var map) ? map.Shake : 0;
-        viewSetup.SetFocalExcursion(viewQuake.Update((int)session.tics, rumble));
+        // a scope's zoom magnifies the view: its focal length that many times as long
+        long zoom = (long)(GameConstants.FOCALLENGTH * (weaponZoom.Magnification() - 1));
+        viewSetup.SetFocalExcursion(viewQuake.Update((int)session.tics, rumble) + zoom);
     }
 
     /// <summary>A_Quake(min[, max]): shakes the view, at a power (0-200) rolled from min to max (Midnight Assault's blasts)</summary>

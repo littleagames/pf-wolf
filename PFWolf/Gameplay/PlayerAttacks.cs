@@ -141,6 +141,25 @@ internal sealed class PlayerAttacks(
     // A player attack's damage, scaled by the class's player.damagedealt
     internal uint PlayerDamage(int damage) => (uint)Math.Round(damage * hooks.DamageDealt());
 
+    /// <summary>
+    /// One shot that hits the closest target in its sights, with a clear line to it, for min..max
+    /// whatever the distance, never missing (Midnight Assault's FireBullet, as its zoomed sniper
+    /// rifle's 400-499). Silent: no one hears it.
+    /// </summary>
+    internal void FireBullet(int min, int max, bool silent)
+    {
+        PlayAttackSound();
+        if (!silent && !PlayerWeaponIsSilent())
+            hooks.MadeNoise();
+
+        var closest = FindShootCandidates().FirstOrDefault().Actor;
+        if (closest == null || !lineOfSight.CheckLine(closest))
+            return;
+
+        int damage = max > min ? min + session.random.RndT() * (max - min + 1) / 256 : min;
+        HitShotTarget(closest, PlayerDamage(damage));
+    }
+
     // near, mid, far: what a random 0-255 is divided by for a hit within 2 tiles, within 4, and
     // beyond (where it can also miss); Wolf3D's are 4, 6, 6
     internal void GunAttack(Entities.Actors.Actor ob, int near = 4, int mid = 6, int far = 6)

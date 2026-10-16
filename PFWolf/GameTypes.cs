@@ -58,6 +58,8 @@ internal enum buttontypes
     bt_radarzoomout,
     // Reloads a weapon with a magazine (weapon.magazine; Midnight Assault's)
     bt_reload,
+    // A scope's zoom (weapon.zoom; Midnight Assault's sniper rifle): held to zoom in, again to zoom out
+    bt_zoom,
 
     NUMBUTTONS
 };

@@ -208,7 +208,11 @@ internal static partial class GameHost
 
     static PlayerThink MakePlayerThink() =>
         new(_mapManager, statusBarDrawing, playerStats, playerWeapons, weaponInHand, playerUse, playerMovement, weaponBob, levelAI, session,
-            new PlayerThinkHooks(UpdateRadar, () => victoryRunning, InitAreas));
+            new PlayerThinkHooks(UpdateRadar, () => victoryRunning, InitAreas, reloading => weaponZoom.Tick(reloading)));
 
     internal static void T_Player(Entities.Actors.Actor ob) => playerThink.T_Player(ob);
+
+    // A weapon's scope (Gameplay/WeaponZoom.cs): the zoom key, the view's magnification and the scope's picture
+    static WeaponZoom? _weaponZoom;
+    static WeaponZoom weaponZoom => _weaponZoom ??= new WeaponZoom(_inventoryManager, _audioManager, session);
 }

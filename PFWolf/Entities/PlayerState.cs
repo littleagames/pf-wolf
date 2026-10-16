@@ -56,6 +56,9 @@ internal sealed class PlayerState
     public int FaceCount, FaceTimes;
     public Actors.Actor? WeaponSprite;      // the weapon in hand, run through its states
     public int WeaponCharge;                // tics until a weapon.chargetics weapon can fire again
+    public int ZoomLevel;                   // a scope's zoom, 0 to 100 (Gameplay/WeaponZoom.cs)
+    public Gameplay.ZoomMode ZoomMode;      // zooming in, zoomed, zooming out or not
+    public int TurnSlowdown = 1;            // turning is this many times slower (a zoomed scope's)
     public double Pitch;                    // looking up (positive) or down, in degrees
     public int EyeZ = GameConstants.EYEDEFAULT;   // eye height, in texels above the floor
 
