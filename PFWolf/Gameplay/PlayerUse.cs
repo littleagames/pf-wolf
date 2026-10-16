@@ -21,6 +21,7 @@ internal sealed class PlayerUse(
     AudioManager audio,
     InventoryManager inventory,
     Doors doors,
+    LevelAI levelAI,
     GameSession session,
     PlayerUseHooks hooks)
 {
@@ -256,7 +257,7 @@ internal sealed class PlayerUse(
             // Nothing ahead to use: use an actor that's there to be used (its Use state), else
             // talk to whoever's there (BlakeMonster.TalkTo), else held long enough, use an item
             // that's used that way (Planet Strike's fission detonator)
-            if (TryUseActor() || map.AI.TryTalk())
+            if (TryUseActor() || levelAI.TryTalk())
                 ResetUseHeld();
             else
                 UseHeldItem();

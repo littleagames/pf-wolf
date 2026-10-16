@@ -69,7 +69,7 @@ internal static partial class GameHost
     static LevelSetup levelSetup = null!;       // made in InitServices
 
     static LevelSetup MakeLevelSetup() => new(_gameEngineManager, _mapManager, render, skyAndFlats, weather, lighting, doors, pushWalls,
-        deathmatch, playersManager, playerClassRules, levelLoop, weaponBob, session,
+        deathmatch, playersManager, playerClassRules, levelLoop, weaponBob, levelAI, session,
         new LevelSetupHooks(() => loadedgame, () => demoplayback || demorecord, () => netgame, () => netseed, () => CurrentSkill));
 
     internal static void SetupGameLevel() => levelSetup.SetupGameLevel();

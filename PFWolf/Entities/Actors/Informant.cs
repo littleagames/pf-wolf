@@ -27,7 +27,7 @@ internal record Informant : BlakeMonster
     // Worth nothing; shooting one warns the player, the first time and now and then after
     protected override void AwardKillPoints()
     {
-        if (!_mapManager.AI.ShouldWarnKilledInformant())
+        if (!levelAI.ShouldWarnKilledInformant())
             return;
         if (PropertyStrings("talk.killedmessage") is [var message, ..])
             _hudMessageManager.Show(Managers.HudMessageKind.Other, message, PropertyStrings("talk.style").FirstOrDefault());

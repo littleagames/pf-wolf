@@ -14,7 +14,7 @@ public class LevelLoopTests
         map.GetActors().AddLast(guard);
         session.players.Add(new Entities.PlayerState { Number = 2, Gone = true });
         session.players.Add(new Entities.PlayerState { Number = 3 });
-        var loop = new LevelLoop(null!, null!, null!, null!, null!, map, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, session, null!);
+        var loop = new LevelLoop(null!, null!, null!, null!, null!, map, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, session, null!);
 
 
         // Act

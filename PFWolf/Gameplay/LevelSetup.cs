@@ -35,6 +35,7 @@ internal sealed class LevelSetup(
     PlayerClassRules classes,
     LevelLoop loop,
     WeaponBob weaponBob,
+    LevelAI levelAI,
     GameSession session,
     LevelSetupHooks hooks)
 {
@@ -152,7 +153,7 @@ internal sealed class LevelSetup(
         }
 
         lighting.InitLevelShading(mapInfo);
-        map.AI.OnLevelStart();      // wall outlets, Goldfire's spawn sites, once-a-level drops (Managers.LevelAI)
+        levelAI.OnLevelStart();      // wall outlets, Goldfire's spawn sites, once-a-level drops (Managers.LevelAI)
 
         //
         // load floor/ceiling textures

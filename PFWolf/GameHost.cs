@@ -192,6 +192,7 @@ internal static partial class GameHost
         pushWalls = new PushWalls(_mapManager, _audioManager, session, () => demoplayback || demorecord);
         wallSpriteBlocking = new WallSpriteBlocking(_mapManager);
         lineOfSight = new LineOfSight(_mapManager, doors, session, WallSpriteBlocksLine);
+        levelAI = new LevelAI(_mapManager, lineOfSight, positionalSounds, session);
         switchActions = MakeSwitchActions();
         smartSwitches = MakeSmartSwitches();
         hubs = new Hubs(_gameEngineManager, _mapManager, session);

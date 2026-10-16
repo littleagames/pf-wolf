@@ -1,21 +1,18 @@
 using PFWolf.Constants;
 using PFWolf.Entities.Actors;
-using static PFWolf.GameHost;
 
 namespace PFWolf.Managers;
 
 /// <summary>
-/// What the level does on its own, rather than any one actor (<see cref="MapManager.AI"/>):
+/// What the level does on its own, rather than any one actor (GameHost builds it, for the level loop and setup, the player and the actors):
 /// enemies coming out of wall outlets (mapdefs walls `outlet:`), Goldfire warping in at his spawn
 /// sites (WARPSITE markers), the once-a-level `dropitem.onfloor` drop, and the player talking to
 /// Blake Stone's actors, as bstone has them (3d_act1.cpp, 3d_act2.cpp, 3d_agent.cpp). The
 /// actors themselves are <see cref="Monster"/>s and <see cref="BlakeMonster"/>s.
 /// </summary>
-internal sealed class LevelAI
+internal sealed class LevelAI(MapManager map, LineOfSight lineOfSight, PositionalSounds sounds, GameSession session)
 {
-    private readonly MapManager _map;
-
-    internal LevelAI(MapManager map) => _map = map;
+    private readonly MapManager _map = map;
 
     /// <summary>Sets up a fresh or loaded level's outlets and warp sites (SetupGameLevel)</summary>
     internal void OnLevelStart()
@@ -33,11 +30,11 @@ internal sealed class LevelAI
     }
 
     /// <summary>Whether the player has a clear line to a tile's centre</summary>
-    private static bool PlayerCanSee(int tilex, int tiley)
+    private bool PlayerCanSee(int tilex, int tiley)
     {
         var probe = new Entities.Actors.Actor { Name = "" };
         probe.SetPosition(tilex, tiley);
-        return CheckLine(probe);
+        return lineOfSight.CheckLine(probe);
     }
 
     /*
@@ -103,7 +100,7 @@ internal sealed class LevelAI
         if ((spot & 0xff00) == 0xfa00)
             return 60 * (spot & 0xff);
         int min = outlet.Spec.Delay.ElementAtOrDefault(0), max = Math.Max(outlet.Spec.Delay.ElementAtOrDefault(1), min);
-        return 60 * min + US_RndT() * 60 * (max - min) / 256;
+        return 60 * min + session.random.RndT() * 60 * (max - min) / 256;
     }
 
     // A BlakeMonster that came out of an outlet keeps its tile (SeekX/SeekY, plus one), so each
@@ -117,12 +114,12 @@ internal sealed class LevelAI
         foreach (var outlet in _outlets)
         {
             var max = outlet.Spec.Max;
-            if (max.Count == 0 || OutletCount(outlet) >= max[Math.Min(gamestate.difficulty, max.Count - 1)])
+            if (max.Count == 0 || OutletCount(outlet) >= max[Math.Min(session.gamestate.difficulty, max.Count - 1)])
                 continue;
 
-            if (outlet.Delay > tics)
+            if (outlet.Delay > session.tics)
             {
-                outlet.Delay -= (int)tics;
+                outlet.Delay -= (int)session.tics;
                 continue;
             }
             outlet.Delay = 1;       // try again next tic, unless one comes out
@@ -132,18 +129,18 @@ internal sealed class LevelAI
             foreach (var (dx, dy) in new[] { (0, -1), (1, 0), (0, 1), (-1, 0) })
             {
                 int area = _map.AreaAt(outlet.X + dx, outlet.Y + dy);
-                if (area >= 0 && area < _map.Floors.NumAreas && areabyplayer[area] != 0)
+                if (area >= 0 && area < _map.Floors.NumAreas && session.areas.areabyplayer[area] != 0)
                 {
                     spot = (outlet.X + dx, outlet.Y + dy);
                     break;
                 }
             }
             if (spot is not { } tile || _map.actorat[tile.X, tile.Y] != null || _map.IsShootableActorAt(tile.X, tile.Y)
-                || Math.Abs(player.TileX - tile.X) < 2 && Math.Abs(player.TileY - tile.Y) < 2)
+                || Math.Abs(session.player.TileX - tile.X) < 2 && Math.Abs(session.player.TileY - tile.Y) < 2)
                 continue;
 
             // Where the player can see it, or now and then anyway
-            if (!PlayerCanSee(tile.X, tile.Y) && US_RndT() < 200)
+            if (!PlayerCanSee(tile.X, tile.Y) && session.random.RndT() < 200)
                 continue;
 
             var spawned = _map.SpawnThing(tile.X, tile.Y, new Assets.MapActorTranslation { Class = outlet.Spec.Class, Angles = -1 }, countKill: false);
@@ -153,7 +150,7 @@ internal sealed class LevelAI
                 blake.SeekY = (byte)(outlet.Y + 1);
             }
             if (spawned != null && outlet.Spec.Sound.Length > 0)
-                PlaySoundLocActor(outlet.Spec.Sound, spawned);
+                sounds.PlaySoundLocActor(outlet.Spec.Sound, spawned);
             outlet.Delay = OutletDelay(outlet);
             break;
         }
@@ -194,7 +191,7 @@ internal sealed class LevelAI
             return 60;
         var range = site.PropertyInts(first ? "warpsite.firstwait" : "warpsite.wait");
         int min = range.ElementAtOrDefault(0), max = Math.Max(range.ElementAtOrDefault(1), min);
-        return 60 * min + US_RndT() * 60 * (max - min) / 256;
+        return 60 * min + session.random.RndT() * 60 * (max - min) / 256;
     }
 
     private void TickWarpSites()
@@ -204,9 +201,9 @@ internal sealed class LevelAI
         if (_map.GetActors().Any(a => !a.IsRemoved && a.Name == _warpClass))
             return;     // it's about (or still warping out)
 
-        if (_warpWait > tics)
+        if (_warpWait > session.tics)
         {
-            _warpWait -= (int)tics;
+            _warpWait -= (int)session.tics;
             return;
         }
 
@@ -229,7 +226,7 @@ internal sealed class LevelAI
 
         var site = _warpSites[_warpChosen];
         if (_map.IsShootableActorAt(site.TileX, site.TileY)
-            || Math.Abs(player.TileX - site.TileX) <= 1 || Math.Abs(player.TileY - site.TileY) <= 1)
+            || Math.Abs(session.player.TileX - site.TileX) <= 1 || Math.Abs(session.player.TileY - site.TileY) <= 1)
             return;
 
         _map.SpawnThing(site.TileX, site.TileY, new Assets.MapActorTranslation { Class = _warpClass }, countKill: false);
@@ -273,22 +270,22 @@ internal sealed class LevelAI
     {
         if (_talkDelay > 0)
         {
-            _talkDelay = Math.Max(_talkDelay - (int)tics, 0);
+            _talkDelay = Math.Max(_talkDelay - (int)session.tics, 0);
             return false;
         }
 
         const int MaxAngle = 45 / 2;
         BlakeMonster? chosen = null;
-        int chosenDist = (int)MINACTORDIST;
+        int chosenDist = (int)GameConstants.MINACTORDIST;
 
         foreach (var ob in _map.GetActors().OfType<BlakeMonster>())
         {
             if (ob.IsRemoved || !ob.HasFlag("TALKATIVE")
                 || (ob.RuntimeFlags & (objflags.FL_FRIENDLY | objflags.FL_VISABLE)) != (objflags.FL_FRIENDLY | objflags.FL_VISABLE)
-                || Math.Abs(ob.TileX - player.TileX) > 2 || Math.Abs(ob.TileY - player.TileY) > 2)
+                || Math.Abs(ob.TileX - session.player.TileX) > 2 || Math.Abs(ob.TileY - session.player.TileY) > 2)
                 continue;
 
-            int dist = Math.Min(Math.Abs(player.X - ob.X), Math.Abs(player.Y - ob.Y));
+            int dist = Math.Min(Math.Abs(session.player.X - ob.X), Math.Abs(session.player.Y - ob.Y));
             if (dist >= chosenDist)
                 continue;
 
@@ -298,11 +295,11 @@ internal sealed class LevelAI
                 continue;
             }
 
-            var angle = Math.Atan2(player.Y - ob.Y, ob.X - player.X);
+            var angle = Math.Atan2(session.player.Y - ob.Y, ob.X - session.player.X);
             if (angle < 0)
                 angle += Math.PI * 2;
-            int facing = Math.Abs(player.Angle - (int)(angle / (Math.PI * 2) * ANGLES));
-            if (Math.Min(facing, ANGLES - facing) > MaxAngle)
+            int facing = Math.Abs(session.player.Angle - (int)(angle / (Math.PI * 2) * GameConstants.ANGLES));
+            if (Math.Min(facing, GameConstants.ANGLES - facing) > MaxAngle)
                 continue;
 
             chosen = ob;
@@ -324,7 +321,7 @@ internal sealed class LevelAI
     /// </summary>
     internal bool ShouldWarnKilledInformant()
     {
-        if (_warnedKilledInformant && US_RndT() >= 25)
+        if (_warnedKilledInformant && session.random.RndT() >= 25)
             return false;
         _warnedKilledInformant = true;
         return true;

@@ -109,11 +109,7 @@ internal class MapManager
         this.assetManager = assetManager;
         this.factionManager = factionManager;
         this.session = session;
-        AI = new LevelAI(this);
     }
-
-    /// <summary>What the level does on its own: outlets, warp sites, once-a-level drops, talking (see <see cref="LevelAI"/>)</summary>
-    internal LevelAI AI { get; }
 
     internal ushort mapwidth, mapheight;
     internal byte[,] tilemap;

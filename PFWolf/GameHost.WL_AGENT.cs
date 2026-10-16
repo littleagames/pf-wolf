@@ -108,8 +108,8 @@ internal static partial class GameHost
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
 
         // Goldfire's warp sites (Managers.LevelAI)
-        ActorActionRegistry.Register("A_WarpSiteGone", (Entities.Actors.Actor _) => _mapManager.AI.WarpSiteGone());
-        ActorActionRegistry.Register("A_WarpSitesOff", (Entities.Actors.Actor _) => _mapManager.AI.WarpSitesOff());
+        ActorActionRegistry.Register("A_WarpSiteGone", (Entities.Actors.Actor _) => levelAI.WarpSiteGone());
+        ActorActionRegistry.Register("A_WarpSitesOff", (Entities.Actors.Actor _) => levelAI.WarpSitesOff());
 
         // Projectiles and effects (GameHost.WL_ACT2.cs).
         ActorActionRegistry.Register("A_Projectile", A_Projectile);
@@ -167,7 +167,7 @@ internal static partial class GameHost
     static PlayerUse playerUse = null!;     // made in InitServices
 
     static PlayerUse MakePlayerUse() =>
-        new(_mapManager, _audioManager, _inventoryManager, doors, session,
+        new(_mapManager, _audioManager, _inventoryManager, doors, levelAI, session,
             new PlayerUseHooks(PlayPlayerSound, state => playstate = state));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, controldirs dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);
@@ -179,7 +179,7 @@ internal static partial class GameHost
     static PlayerThink playerThink = null!;     // made in InitServices
 
     static PlayerThink MakePlayerThink() =>
-        new(_mapManager, statusBarDrawing, playerStats, playerWeapons, weaponInHand, playerUse, playerMovement, weaponBob, session,
+        new(_mapManager, statusBarDrawing, playerStats, playerWeapons, weaponInHand, playerUse, playerMovement, weaponBob, levelAI, session,
             new PlayerThinkHooks(UpdateRadar, () => victoryRunning, InitAreas));
 
     internal static void T_Player(Entities.Actors.Actor ob) => playerThink.T_Player(ob);

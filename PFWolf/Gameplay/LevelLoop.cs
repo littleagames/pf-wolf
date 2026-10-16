@@ -55,6 +55,7 @@ internal sealed class LevelLoop(
     GameScripts scripts,
     Deathmatch deathmatch,
     NetPlay netPlay,
+    LevelAI levelAI,
     GameSession session,
     LevelLoopHooks hooks)
 {
@@ -136,7 +137,7 @@ internal sealed class LevelLoop(
                 }
                 hooks.TickPlayerBodies(session.tics);     // what others see of the players, and
                 session.camera.Tick(session.tics);          // a watched actor's view turning (Gameplay/Camera.cs)
-                map.AI.Tick();     // wall outlets and warp sites (Managers.LevelAI)
+                levelAI.Tick();     // wall outlets and warp sites (Managers.LevelAI)
                 lighting.TickZoneLights(session.tics);       // light zones' fades and effects (Rendering/Lighting.cs)
                 scripts.RunTickHooks();             // the scripts' game.ontick hooks (Scripting/GameScripts.cs)
                 if (session.gamemode != GameMode.Single)

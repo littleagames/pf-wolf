@@ -15,7 +15,7 @@ public class PlayerThinkTests
         session.playerstate.Pawn = pawn;
         session.gamestate.victoryflag = true;
         session.tics = 1;
-        var think = new PlayerThink(null!, null!, null!, null!, null!, null!, null!, null!, session,
+        var think = new PlayerThink(null!, null!, null!, null!, null!, null!, null!, null!, null!, session,
             new PlayerThinkHooks(() => { }, () => runnerOnItsWay, () => { }));
         return (think, session, pawn);
     }

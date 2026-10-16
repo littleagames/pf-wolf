@@ -25,6 +25,7 @@ internal sealed class PlayerThink(
     PlayerUse use,
     PlayerMovement movement,
     WeaponBob weaponBob,
+    LevelAI levelAI,
     GameSession session,
     PlayerThinkHooks hooks)
 {
@@ -60,7 +61,7 @@ internal sealed class PlayerThink(
                 use.Cmd_Use();
             else
             {
-                map.AI.ResetTalkDelay();
+                levelAI.ResetTalkDelay();
                 use.ResetUseHeld();
             }
         }
