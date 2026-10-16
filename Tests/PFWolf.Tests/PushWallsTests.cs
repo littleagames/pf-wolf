@@ -98,6 +98,18 @@ public class PushWallsTests
         Assert.Throws<InvalidDataException>(() => MovingPushWall.Read(new BinaryReader(stream)));
     }
 
+    [TestCase(null, 2)]         // game-info leaves it out: Wolf3D's two tiles
+    [TestCase(3, 3)]            // End of Destiny's
+    [TestCase(0, 1)]            // a wall always moves a tile
+    public void A_Wall_Slides_As_Far_As_Game_Info_Says(int? setting, int tiles)
+    {
+        // Arrange
+        var pushWalls = new PushWalls(null!, null!, null!, () => false, () => setting);
+
+        // Act / Assert
+        Assert.That(pushWalls.Distance, Is.EqualTo(tiles));
+    }
+
     [Test]
     public void Directions_Are_North_East_South_West()
     {

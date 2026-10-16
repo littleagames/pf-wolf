@@ -190,7 +190,8 @@ internal static partial class GameHost
         lineInput = new LineInput(_graphicManager, _inputManager, _videoManager, ui, menuInput.ReadAnyControl);
         doors = new Doors(_gameEngineManager, _audioManager, _mapManager, _inventoryManager, _hudMessageManager, session,
             new DoorHooks(PlaySoundLocTile, DrawKeys));
-        pushWalls = new PushWalls(_mapManager, _audioManager, session, () => demoplayback || demorecord);
+        pushWalls = new PushWalls(_mapManager, _audioManager, session, () => demoplayback || demorecord,
+            () => _gameEngineManager.GetGameInfo().PushwallDistance);
         wallSpriteBlocking = new WallSpriteBlocking(_mapManager);
         lineOfSight = new LineOfSight(_mapManager, doors, session, WallSpriteBlocksLine);
         levelAI = new LevelAI(_mapManager, lineOfSight, positionalSounds, session);

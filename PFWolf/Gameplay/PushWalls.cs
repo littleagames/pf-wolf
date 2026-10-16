@@ -50,15 +50,20 @@ internal sealed class MovingPushWall
 
                                 PUSHABLE WALLS
 
-A pushwall slides two tiles (unless something stops it sooner), a tile per 128 session.tics. Any
-number can move at once; demos keep the original game's one at a time.
+A pushwall slides two tiles (game-info pushwall-distance; unless something stops it sooner), a
+tile per 128 session.tics. Any number can move at once; demos keep the original game's one at a
+time.
 
 =============================================================================
 */
 
 /// <param name="demoActive">Whether a demo is playing or recording</param>
-internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession session, Func<bool> demoActive)
+/// <param name="distance">How many tiles a pushwall slides (game-info pushwall-distance); 2 when left out</param>
+internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession session, Func<bool> demoActive, Func<int?>? distance = null)
 {
+    // Tiles a pushwall slides: read as it moves, so a loaded game's walls go as far as the game says
+    internal int Distance => Math.Clamp(distance?.Invoke() ?? 2, 1, 255);
+
     // The pushwalls on the move, in the order they were pushed
     internal readonly List<MovingPushWall> pushwalls = [];
 
@@ -199,10 +204,10 @@ internal sealed class PushWalls(MapManager map, AudioManager audio, GameSession 
             //
             // see if it should be pushed farther
             //
-            if (wall.State >= 256)            // only move two tiles fix
+            if (wall.State >= Distance * 128)    // only move two tiles fix (pushwall-distance)
             {
                 //
-                // the block has been pushed two tiles
+                // the block has been pushed as far as it goes
                 //
                 map.tilemap[wall.X + dx, wall.Y + dy] = (ushort)oldtile;
                 map.MoveWallStories(wall.X, wall.Y, wall.X + dx, wall.Y + dy);

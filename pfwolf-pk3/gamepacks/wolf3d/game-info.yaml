@@ -50,6 +50,8 @@ signon:
 
 non-shareware-notice: true
 
+# pushwall-distance: 2      # tiles a pushwall slides, unless something stops it sooner (2 when left out)
+
 # Drawn stacked top to bottom
 title-pics:
   - Title

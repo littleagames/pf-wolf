@@ -32,6 +32,12 @@ public record GameInfoAsset : Asset
     public SignonInfo Signon { get; init; } = new();
 
     /// <summary>
+    /// How many tiles a pushwall slides, unless something stops it sooner (default 2, Wolf3D's;
+    /// End of Destiny's go 3)
+    /// </summary>
+    public int? PushwallDistance { get; init; }
+
+    /// <summary>
     /// Show the "This game is NOT shareware" notice before the title (Wolf3D's registered versions)
     /// </summary>
     public bool NonSharewareNotice { get; init; }
