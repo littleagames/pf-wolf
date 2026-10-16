@@ -107,6 +107,9 @@ internal static partial class GameHost
         ActorActionRegistry.Register("A_Victory", A_Victory);
         ActorActionRegistry.Register("A_StartDeathCam", A_StartDeathCam);
         ActorActionRegistry.Register("A_Quake", A_Quake);       // the view shakes (GameHost.WL_DRAW.cs)
+        // A_MakeNoise: a noise, as a shot's: enemies in the areas joined to the player's come
+        // (Midnight Assault's lights coming on: madenoise)
+        ActorActionRegistry.Register("A_MakeNoise", (Entities.Actors.Actor _) => madenoise = true);
         ActorActionRegistry.Register("A_Mount", (Entities.Actors.Actor ob, string[] args) => mountedWeapons.A_Mount(ob, args));
         ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("A_LatchBite", (m, args) => latching.A_LatchBite(m, args));
         ActorActionRegistry.Register("A_LatchHurt", (Entities.Actors.Actor ob) => latching.A_LatchHurt(ob));
