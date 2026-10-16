@@ -84,6 +84,10 @@ internal record Monster : Actor
         ActorActionRegistry.RegisterFor<Monster>("T_FakeFire", m => m.ThrowFire());
         ActorActionRegistry.RegisterFor<Monster>("T_Shoot", m => m.Shoot());
         ActorActionRegistry.RegisterFor<Monster>("A_HitlerMorph", m => m.HitlerMorph());
+        // A_Morph("Class"[, "keep"]): becomes another enemy where it stands (a boss's next
+        // phase); the new one is shootable at its own health and speed and already chasing. This
+        // one leaves the level, or with "keep" stays as it is (a corpse, as Mecha Hitler's armor)
+        ActorActionRegistry.RegisterFor<Monster>("A_Morph", (m, args) => m.Morph(args));
 
         // Factions (factions.yaml): A_SetFaction("allies"[, "follow"]) puts it on a side (with
         // follow, going about with the players from now on); A_Follow / A_Follow("off") starts
@@ -1937,5 +1941,31 @@ internal record Monster : Actor
 
         if (!loadedgame && newActor is Monster { CountsAsKill: true })
             gamestate.killtotal++;
+    }
+
+    /// <summary>A_Morph: the enemy of class args[0] takes its place (see RegisterActions)</summary>
+    internal void Morph(string[] args)
+    {
+        var className = args.Length > 0 ? args[0].Trim() : "";
+        if (className.Length == 0)
+        {
+            Console.WriteLine($"A_Morph ({Name}): no class given.");
+            return;
+        }
+
+        var newActor = _mapManager.SpawnMorphedEnemy(className, this);
+        if (newActor == null)
+        {
+            Console.WriteLine($"A_Morph ({Name}): there's no actordefs class \"{className}\".");
+            return;
+        }
+
+        // As a map spawn of it would: its own speed, and a kill to count unless it's NOTCOUNTED
+        newActor.Speed = newActor.PropertyInt("speed", SPDPATROL);
+        if (!loadedgame && newActor is Monster { CountsAsKill: true })
+            gamestate.killtotal++;
+
+        if (!args.Skip(1).Any(a => a.Trim().Equals("keep", StringComparison.OrdinalIgnoreCase)))
+            _mapManager.MarkForRemoval(this);
     }
 }
