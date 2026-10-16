@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using PFWolf.Configuration;
 using PFWolf.DependencyInjection;
 
 namespace PFWolf.Startup;
@@ -6,10 +7,11 @@ namespace PFWolf.Startup;
 /// <summary>The managers the game is built from, one of each</summary>
 internal static class GameServices
 {
-    internal static IServiceCollection Register(IServiceCollection services, GameSession session)
+    internal static IServiceCollection Register(IServiceCollection services, GameSession session, GameSettings settings)
     {
         services.AddTransient(typeof(Lazy<>), typeof(Lazier<>));
         services.AddSingleton(session);
+        services.AddSingleton(settings);
         services.AddSingleton<GameEngineManager>();
         services.AddSingleton<VideoManager>();
         services.AddSingleton<AudioManager>();
@@ -27,5 +29,5 @@ internal static class GameServices
         return services;
     }
 
-    internal static ServiceProvider Build(GameSession session) => Register(new ServiceCollection(), session).BuildServiceProvider();
+    internal static ServiceProvider Build(GameSession session, GameSettings settings) => Register(new ServiceCollection(), session, settings).BuildServiceProvider();
 }

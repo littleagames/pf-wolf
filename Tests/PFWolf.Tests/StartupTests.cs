@@ -204,7 +204,7 @@ public class GameServicesTests
     public void Each_Manager_Is_One_Of_A_Kind(Type manager)
     {
         // Act
-        var services = GameServices.Register(new ServiceCollection(), new GameSession());
+        var services = GameServices.Register(new ServiceCollection(), new GameSession(), new Configuration.GameSettings());
 
         // Assert
         Assert.That(services.Where(s => s.ServiceType == manager).Select(s => s.Lifetime),
@@ -216,7 +216,7 @@ public class GameServicesTests
     {
         // Arrange
         var session = new GameSession();
-        using var provider = GameServices.Register(new ServiceCollection(), session).BuildServiceProvider();
+        using var provider = GameServices.Register(new ServiceCollection(), session, new Configuration.GameSettings()).BuildServiceProvider();
 
         // Act
         var map = provider.GetRequiredService<MapManager>();

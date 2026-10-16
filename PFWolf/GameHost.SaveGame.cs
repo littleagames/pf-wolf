@@ -25,7 +25,7 @@ internal static partial class GameHost
 
     static GameSaves MakeGameSaves() => new(_gameEngineManager, _assetManager, _videoManager, _inputManager, _graphicManager,
         _inventoryManager, _mapManager, menuDrawing, playScreen, levelBodies, levelSetup, levelMusic, playersManager, weaponInHand,
-        playerClassRules, playerStats, hubs, session,
+        playerClassRules, playerStats, hubs, settings, session,
         new GameSavesHooks(on => loadedgame = on, () => viewsize, () => lastgamemusicoffset, saving => loadSaveScreen.Run(saving),
             () =>
             {
@@ -36,7 +36,7 @@ internal static partial class GameHost
                 FindMenuItem(MainMenu, "readthis")?.active = 1;
             }));
 
-    internal static bool autosaveEnabled { get => gameSaves.autosaveEnabled; set => gameSaves.autosaveEnabled = value; }
+    internal static bool autosaveEnabled { get => settings.autosaveEnabled; set => settings.autosaveEnabled = value; }
     static bool autosavePending { get => gameSaves.autosavePending; set => gameSaves.autosavePending = value; }
 
     internal static void AutoSaveGame() => gameSaves.AutoSaveGame();

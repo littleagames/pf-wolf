@@ -1,4 +1,5 @@
 using System.Text;
+using PFWolf.Configuration;
 using PFWolf.Extensions;
 
 namespace PFWolf.SaveGames;
@@ -41,6 +42,7 @@ internal sealed class GameSaves(
     PlayerClassRules classes,
     PlayerStats stats,
     Hubs hubs,
+    GameSettings settings,
     GameSession session,
     GameSavesHooks hooks)
 {
@@ -55,7 +57,7 @@ internal sealed class GameSaves(
     internal string AutoSavePath => Path.Combine(SaveDirectory, SaveFile.AutoSaveFile);
 
     // Whether a new level saves itself as it starts (the `autosave` setting, saved in the config)
-    internal bool autosaveEnabled = true;
+    internal bool autosaveEnabled { get => settings.autosaveEnabled; set => settings.autosaveEnabled = value; }
 
     // Set as a new level begins; PlayLoop saves once the first frame is drawn, so the
     // autosave has a picture of it

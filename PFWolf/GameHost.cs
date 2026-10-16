@@ -62,7 +62,10 @@ internal static partial class GameHost
         => lineInput.Run(x, y, ref buf, def, escok, maxchars, maxwidth, style);
 
     // The high score table: Wolf3D's, until InitHighScores puts in the game pack's
-    internal static HighScore[] Scores = HighScore.WolfDefaults();
+    // The settings and high scores config.cfg and controls.cfg keep (Configuration/GameSettings.cs)
+    internal static readonly GameSettings settings = new();
+
+    internal static HighScore[] Scores { get => settings.Scores; set => settings.Scores = value; }
     internal static void InitHighScores() => Scores = HighScore.TableFor(_gameEngineManager.GetGameInfo().HighScores, Scores);
 
     internal static void US_InitRndT(bool randomize) => session.random.InitRndT(randomize);
@@ -154,7 +157,7 @@ internal static partial class GameHost
     /// <summary>Builds the managers (Startup/GameServices.cs) and hooks them up</summary>
     private static void InitServices()
     {
-        var serviceProvider = GameServices.Build(session);
+        var serviceProvider = GameServices.Build(session, settings);
 
         _gameEngineManager = serviceProvider.GetRequiredService<GameEngineManager>();
         _videoManager = serviceProvider.GetRequiredService<VideoManager>();
@@ -469,6 +472,10 @@ internal static partial class GameHost
 
         InitHighScores();
         _gameEngineManager.ReadConfig();
+
+        // Set "Read This" back to standard active
+        FindMenuItem(MainMenu, "readthis")?.active = 1;
+        MainItems.curpos = 0;
 
         //
         // HOLDING DOWN 'M' KEY?

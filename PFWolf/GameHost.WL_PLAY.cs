@@ -27,10 +27,10 @@ internal static partial class GameHost
     internal static bool mouseenabled { get => controlSettings.mouseenabled; set => controlSettings.mouseenabled = value; }
     internal static bool joystickenabled { get => controlSettings.joystickenabled; set => controlSettings.joystickenabled = value; }
 
-    /// <summary>The keys, mouse buttons and joystick buttons bound to each button and automap key (saved to controls.cfg).</summary>
-    internal static readonly ControlBindings controls = new();
+    // The keys, mouse buttons and joystick buttons bound to each button and automap key (Configuration/GameSettings.cs)
+    internal static ControlBindings controls => settings.controls;
 
-    internal static int viewsize;
+    internal static int viewsize { get => settings.viewsize; set => settings.viewsize = value; }
 
     internal static bool demorecord { get => session.demorecord; set => session.demorecord = value; }
     internal static bool demoplayback { get => session.demoplayback; set => session.demoplayback = value; }
@@ -51,7 +51,7 @@ internal static partial class GameHost
     static TicCmd localcmd => inputPolling.localcmd;
 
     // The mouse look and controller settings (Configuration/ControlSettings.cs)
-    internal static readonly ControlSettings controlSettings = new();
+    internal static ControlSettings controlSettings => settings.controlSettings;
 
     internal const int JOYTURNSPEEDS = ControlSettings.JOYTURNSPEEDS;
 
