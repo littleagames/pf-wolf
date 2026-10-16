@@ -11,7 +11,7 @@ public class DemosTests
     {
         _buffer = new DemoBuffer();
         _recording = null;
-        _demos = new Demos(null!, null!, null!, null!, null!, _buffer, null!, null!,
+        _demos = new Demos(null!, null!, null!, null!, null!, null!, _buffer, null!, null!,
             new DemosHooks((_, _, _, _) => Assert.Fail("no game"), () => 3, () => { }, () => { }, _ => { }, () => { },
                 _ => { }, on => _recording = on, () => false, _ => "", () => { }, () => "INTRO"));
     }

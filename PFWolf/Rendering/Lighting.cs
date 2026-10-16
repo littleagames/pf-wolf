@@ -42,7 +42,7 @@ internal sealed class Lighting(
     internal static readonly ShadingSettings NoFade = new("#000000", 0, 16, 0, 255);
 
     internal ShadingSettings? levelshading;  // null: the level isn't shaded
-    internal Dictionary<int, ZoneState> levelzones = [];     // GameHost.ZoneLights.cs
+    internal Dictionary<int, ZoneState> levelzones = [];     // RegisterZoneLightActions
     internal bool shading;                // anything to do: something is dimmed, tinted or faded
     internal byte[] lightrow = noshade;   // the level's light's row
     internal byte fader, fadeg, fadeb;

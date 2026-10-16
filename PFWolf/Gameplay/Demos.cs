@@ -44,6 +44,7 @@ internal sealed class Demos(
     GameEngineManager engine,
     VideoManager video,
     AudioManager audio,
+    UiText ui,
     LineInput lineInput,
     DemoBuffer demo,
     LevelMusic music,
@@ -183,7 +184,7 @@ internal sealed class Demos(
         if (demonumber == null)
         {
             video.FadeIn();
-            var window = GameHost.CenterWindow(24, 3, GameHost.PromptStyle);
+            var window = ui.CenterWindow(24, 3, UiText.PromptStyle);
             window.PrintY += 6;
             window.Print(" Demo number (0-9): ");
             video.Update();
@@ -236,7 +237,7 @@ internal sealed class Demos(
 
         // Clear what's behind: a title drawn in its own palette (Spear's) is noise in the game's
         video.ClearScreen(0);
-        var window = GameHost.CenterWindow(26, 3, GameHost.PromptStyle);
+        var window = ui.CenterWindow(26, 3, UiText.PromptStyle);
         window.PrintY += 6;
         window.Print($"  Demo which level(1-{maps}): ");
         video.Update();

@@ -66,7 +66,7 @@ internal sealed class PlayerWeapons(
                 var inSlot = usable.Where(w => WeaponSlot(w) == slot).ToList();
                 if (inSlot.Count == 0)
                 {
-                    hooks.UseSlotItem(slot);      // Planet Strike's fission detonator (GameHost.Teleporter.cs)
+                    hooks.UseSlotItem(slot);      // Planet Strike's fission detonator (Gameplay/PlayerUse.cs)
                     break;
                 }
                 var inHand = session.playerstate.weapon != null ? inSlot.IndexOf(session.playerstate.weapon) : -1;

@@ -89,10 +89,7 @@ internal static partial class GameHost
     internal const int MAXX = GameConstants.MAXX;
     internal const int MAXY = GameConstants.MAXY;
 
-    /// <summary>Black text on the white of a <see cref="CenterWindow"/></summary>
-    internal static readonly Fonts.TextStyle PromptStyle = new(SMALL_FONT, "Black", "White");
-
-    /// <summary>A framed window of w by h tiles, centered in the play view</summary>
-    internal static Fonts.TextWindow CenterWindow(int w, int h, Fonts.TextStyle style)
-        => US_DrawWindow(((MAXX / 8) - w) / 2, ((MAXY / 8) - h) / 2, w, h, style);
+    // The prompt window (Ui/UiText.cs)
+    internal static Fonts.TextStyle PromptStyle => UiText.PromptStyle;
+    internal static Fonts.TextWindow CenterWindow(int w, int h, Fonts.TextStyle style) => ui.CenterWindow(w, h, style);
 }

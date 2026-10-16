@@ -18,7 +18,7 @@ public class AutomapDrawingTests
             seen = new SeenFlags[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
         _session = new GameSession();
-        _automap = new AutomapDrawing(null!, null!, null!, null!, null!, _map, null!, null!, null!, null!, _session,
+        _automap = new AutomapDrawing(null!, null!, null!, null!, null!, _map, null!, null!, null!, null!, null!, _session,
             new AutomapHooks(() => (0, 0, 320, 160), () => false, map => map, tics => ""));
     }
 

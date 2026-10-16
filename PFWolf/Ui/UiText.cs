@@ -85,4 +85,11 @@ internal sealed class UiText(GraphicManager graphics, FontManager fonts)
         style = style with { Shadow = FontShadow.None, Outline = FontOutline.None, Glow = FontGlow.None };
         graphics.DrawText(x + w - 1, y, "\x80", (_xoricursor_status ^= true) ? style : style.Inverted);
     }
+
+    /// <summary>Black text on the white of a <see cref="CenterWindow"/></summary>
+    internal static readonly TextStyle PromptStyle = new(UiFonts.SMALL_FONT, "Black", "White");
+
+    /// <summary>A framed window of w by h tiles, centered in the play view</summary>
+    internal TextWindow CenterWindow(int w, int h, TextStyle style)
+        => DrawWindow(((GameConstants.MAXX / 8) - w) / 2, ((GameConstants.MAXY / 8) - h) / 2, w, h, style);
 }

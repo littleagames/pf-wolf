@@ -34,7 +34,7 @@ internal static partial class GameHost
     // Demos: played, recorded and asked for from the console (Gameplay/Demos.cs)
     static Demos demos = null!;     // made in InitServices
 
-    static Demos MakeDemos() => new(_assetManager, _gameEngineManager, _videoManager, _audioManager, lineInput, demoBuffer, levelMusic, levelLoop,
+    static Demos MakeDemos() => new(_assetManager, _gameEngineManager, _videoManager, _audioManager, ui, lineInput, demoBuffer, levelMusic, levelLoop,
         new DemosHooks((skill, episode, map, playerClass) => NewGame(skill, episode, map, playerClass), () => DemoSkill, DrawPlayScreen,
             SetupGameLevel, RunLevelHooks, () => startgame = false, on => demoplayback = on, on => demorecord = on, () => demoTesting,
             DemoTestReport, () => fizzlein = true, () => INTROSONG));

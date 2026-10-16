@@ -29,7 +29,7 @@ internal static partial class GameHost
 
     static AutomapDrawing MakeAutomapDrawing() =>
         new(_assetManager, _videoManager, _graphicManager, _fontManager, _automapManager, _mapManager, _factionManager,
-            _translationManager, doors, pushWalls, session, new AutomapHooks(
+            _translationManager, doors, pushWalls, spriteDrawing, session, new AutomapHooks(
                 () => (viewscreenx, viewscreeny, viewwidth, viewheight), () => mapreveal != 0, GetMapDisplayName, FormatPlayTime));
 
     internal static void DrawAutomap() => automapDrawing.DrawAutomap();

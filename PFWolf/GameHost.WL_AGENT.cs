@@ -139,10 +139,10 @@ internal static partial class GameHost
         Entities.MapTriggerRegistry.Register("A_SecretExit", (_, _) => ExitAction(secret: true));
         // Hub clusters' ways between levels, the teleporter's floors and the victory run (Gameplay/HubActions.cs)
         (hubActions ??= MakeHubActions()).Register();
-        RegisterSwitchActions();    // tag-targeted door and wall actions (GameHost.SwitchActions.cs)
-        RegisterSmartSwitchActions();   // A_SmartSwitch (GameHost.SmartSwitch.cs)
-        RegisterZoneLightActions(); // light zone actions, for switches and actors (GameHost.ZoneLights.cs)
-        RegisterActorLightActions(); // actors' own lights (GameHost.ActorLights.cs)
+        RegisterSwitchActions();    // tag-targeted door and wall actions (Gameplay/SwitchActions.cs)
+        RegisterSmartSwitchActions();   // A_SmartSwitch (Gameplay/SmartSwitches.cs)
+        RegisterZoneLightActions(); // light zone actions, for switches and actors (Rendering/Lighting.cs)
+        RegisterActorLightActions(); // actors' own lights (Rendering/ActorLights.cs)
         RegisterProjectileActions(); // projectiles and jumps for any actor, traps (GameHost.ProjectileActions.cs)
     }
 
