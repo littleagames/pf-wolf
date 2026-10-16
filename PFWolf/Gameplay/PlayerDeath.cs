@@ -9,6 +9,7 @@ namespace PFWolf.Gameplay;
 /// <param name="ShowObituary">Says who killed the player</param>
 /// <param name="DrawHudMessages">The obituary, kept up on the red</param>
 /// <param name="RestoreLevelStart">Puts the player back as they came into the level (death-restores-level-start); false if it can't</param>
+/// <param name="LevelStartItems">The items the player had coming into the level (for death-keeps), or null</param>
 /// <param name="SetPlayState">Ends the level (the death cam isn't shown)</param>
 /// <param name="ViewSize">The view's size setting (21: the full screen)</param>
 /// <param name="BorderColor">The view border's color</param>
@@ -18,6 +19,7 @@ internal sealed record PlayerDeathHooks(
     Action ShowObituary,
     Action DrawHudMessages,
     Func<bool> RestoreLevelStart,
+    Func<IReadOnlyDictionary<string, int>?> LevelStartItems,
     Action<playstatetypes> SetPlayState,
     Func<int> ViewSize,
     Func<string> BorderColor,
@@ -155,15 +157,21 @@ internal sealed class PlayerDeath(
         audio.StopAll();
         session.playerstate.EyeZ = classes.StandingEyeZ(session.playerstate);      // back on their feet for the restart
 
-        session.playerstate.lives--;
+        // A life less, unless the game has none to lose (game-info lives: false, Midnight Assault)
+        var gameInfo = engine.GetGameInfo();
+        if (gameInfo.Lives)
+            session.playerstate.lives--;
 
         if (session.playerstate.lives > -1)
         {
-            // Back as they came into the level (Blake Stone), or fresh with the starting items
-            if (!engine.GetGameInfo().DeathRestoresLevelStart || !hooks.RestoreLevelStart())
+            // Back as they came into the level (Blake Stone), or fresh with the starting items and
+            // the death-keeps items as they came in (Midnight Assault's medkits)
+            if (!gameInfo.DeathRestoresLevelStart || !hooks.RestoreLevelStart())
             {
                 session.playerstate.health = classes.StartingHealth;
                 stats.GiveStartingInventory();
+                if (gameInfo.DeathKeeps.Count > 0 && hooks.LevelStartItems() is { } cameWith)
+                    KeepItems(gameInfo.DeathKeeps, cameWith);
             }
             pushWalls.ClearPushWalls();
             session.playerstate.WeaponSprite = null;            // the weapon in hand starts on its Ready state
@@ -178,6 +186,19 @@ internal sealed class PlayerDeath(
                 statusBar.DrawFace();
                 statusBar.DrawLives();
             }
+        }
+    }
+
+    /// <summary>The items listed back at the counts the player came into the level with</summary>
+    internal void KeepItems(IEnumerable<string> items, IReadOnlyDictionary<string, int> cameWith)
+    {
+        foreach (var item in items)
+        {
+            int had = cameWith.TryGetValue(item, out var count) ? count : 0, now = inventory.GetCount(item);
+            if (had > now)
+                inventory.Give(item, had - now);
+            else if (now > had)
+                inventory.Take(item, now - had);
         }
     }
 

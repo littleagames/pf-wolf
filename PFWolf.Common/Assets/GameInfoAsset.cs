@@ -220,6 +220,19 @@ public record GameInfoAsset : Asset
     public bool DeathRestoresLevelStart { get; init; }
 
     /// <summary>
+    /// Whether the game counts lives. False (Midnight Assault): dying never costs one, so the
+    /// level just starts again as often as it takes and the game's never over.
+    /// </summary>
+    public bool Lives { get; init; } = true;
+
+    /// <summary>
+    /// Items a death gives back as the player had them coming into the level, after the
+    /// starting items (Midnight Assault's medkits: oldmedkits). Not with death-restores-level-start,
+    /// which puts everything back.
+    /// </summary>
+    public List<string> DeathKeeps { get; init; } = [];
+
+    /// <summary>
     /// A presenter script (a VGAGRAPH text) F1 shows in presenter.yaml's briefing window, in
     /// place of Wolf3D's help article
     /// </summary>
@@ -865,8 +878,9 @@ public record EndScreenInfo
 public record MapLoadout
 {
     /// <summary>
-    /// Every weapon taken, with the ammo (but not what's loaded in a weapon's magazine, which
-    /// waits for the weapon to be picked up again: the original's RemoveAllWeapons)
+    /// Every weapon taken, with the ammo the weapons fire (but not what's loaded in a weapon's
+    /// magazine, which waits for the weapon to be picked up again, nor an Ammo item no weapon
+    /// fires, as Midnight Assault's medkits: the original's RemoveAllWeapons)
     /// </summary>
     public bool TakeWeapons { get; init; }
 

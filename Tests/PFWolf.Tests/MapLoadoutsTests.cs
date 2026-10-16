@@ -40,8 +40,8 @@ public class MapLoadoutsTests
             "weapon.selectionorder": 1200
             "weapon.ammotype1": AmmoShells
             "weapon.ammouse1": 1
-        Medkit:
-          parent: Inventory
+        Medkit:                 # carried, an Ammo as Midnight Assault's is, but no weapon fires it
+          parent: Ammo
         """;
 
     private GameSession _session = null!;

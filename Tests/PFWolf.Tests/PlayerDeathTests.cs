@@ -34,4 +34,41 @@ public class PlayerDeathTests
         death.T_DeathCam(player);
         Assert.That(death.deathCamSprite, Is.SameAs(banner));
     }
+
+    [Test]
+    public void Death_Keeps_Puts_Items_Back_As_They_Came_Into_The_Level()
+    {
+        // Arrange: came in with 2 medkits and no grenades; now (the starting items given) 0 and 3
+        var inventory = new InventoryManager(ActorDefs.Metadata("""
+            Inventory:
+              properties:
+                "inventory.maxamount": 9
+            Medkit:
+              parent: Inventory
+            Grenade:
+              parent: Inventory
+            Knife:
+              parent: Inventory
+            """));
+        var items = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        inventory.SetHolder(items);
+        inventory.Give("Grenade", 3);
+        inventory.Give("Knife", 1);
+        var death = new PlayerDeath(null!, null!, null!, null!, null!, inventory, null!, null!,
+            null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, new GameSession(), null!, null!);
+
+        // Act
+        death.KeepItems(["Medkit", "Grenade"], new Dictionary<string, int> { ["Medkit"] = 2 });
+
+        // Assert: those two as they were, the rest left alone
+        Assert.That((inventory.GetCount("Medkit"), inventory.GetCount("Grenade"), inventory.GetCount("Knife")), Is.EqualTo((2, 0, 1)));
+    }
+
+    [Test]
+    public void Lives_Count_Unless_Game_Info_Says_Not()
+    {
+        Assert.That(new Assets.GameInfoAsset().Lives, Is.True);
+        var noLives = PFWolf.Loaders.YamlDataEntryLoader.Deserialize<Assets.GameInfoAsset>("lives: false\ndeath-keeps: [Medkit]\n");
+        Assert.That((noLives.Lives, noLives.DeathKeeps.Single()), Is.EqualTo((false, "Medkit")));
+    }
 }

@@ -85,7 +85,7 @@ internal static partial class GameHost
     static PlayerDeath MakePlayerDeath() => new(_assetManager, _gameEngineManager, _videoManager, _inputManager, _audioManager,
         _inventoryManager, _hudMessageManager, _mapManager, ui, frameRefresh, render, playerClassRules, playerStats, playerWeapons,
         statusBarDrawing, pushWalls, projectiles, playScreen, intermissionScreen, session, playArea,
-        new PlayerDeathHooks(() => gameInfoSettings, ShowObituary, DrawHudMessages, RestoreLevelStart, s => playstate = s,
+        new PlayerDeathHooks(() => gameInfoSettings, ShowObituary, DrawHudMessages, RestoreLevelStart, () => levelEntry.LevelStartItems(), s => playstate = s,
             () => viewsize, () => bordercol, () => fizzlein = true));
 
     internal static void A_StartDeathCam(Entities.Actors.Actor ob) => playerDeath.A_StartDeathCam(ob);

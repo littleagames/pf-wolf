@@ -152,6 +152,19 @@ internal sealed class LevelEntry(
         hubs.levelStart = ms.ToArray();
     }
 
+    /// <summary>The items the player had coming into the level (MarkLevelStart), or null if it wasn't marked</summary>
+    internal IReadOnlyDictionary<string, int>? LevelStartItems()
+    {
+        if (hubs.levelStart == null)
+            return null;
+        using var br = new BinaryReader(new MemoryStream(hubs.levelStart));
+        gametype.Read(br);
+        var inventory = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (int i = br.ReadCount(); i > 0; i--)
+            inventory[br.ReadString()] = br.ReadInt32();
+        return inventory;
+    }
+
     /// <summary>
     /// Puts the player back as they came into the level, but with the lives they have now
     /// (Died, with death-restores-level-start). False if there's nothing to go back to.

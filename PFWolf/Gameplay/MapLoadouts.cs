@@ -30,14 +30,21 @@ internal sealed class MapLoadouts(InventoryManager inventory, PlayerWeapons weap
 
         if (loadout.TakeWeapons)
         {
-            var magazines = inventory.GetClassesDerivedFrom("Weapon")
+            // The ammo some weapon fires (not a magazine, nor an Ammo item that's carried for
+            // something else: Midnight Assault's medkits)
+            var weaponClasses = inventory.GetClassesDerivedFrom("Weapon").ToList();
+            var magazines = weaponClasses
                 .Select(w => inventory.GetStringProperty(w, "weapon.magazine"))
                 .OfType<string>().Where(m => m.Length > 0)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var fired = weaponClasses
+                .SelectMany(w => new[] { inventory.GetStringProperty(w, "weapon.ammotype1"), inventory.GetStringProperty(w, "weapon.ammotype2") })
+                .OfType<string>().Where(a => a.Length > 0 && !magazines.Contains(a))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var (item, count) in playerstate.Items.ToList())
             {
                 bool weapon = inventory.FindClass(item, "Weapon") != null;
-                bool ammo = !weapon && inventory.FindClass(item, "Ammo") != null && !magazines.Contains(item);
+                bool ammo = !weapon && fired.Contains(item);
                 if ((weapon || ammo) && count > 0)
                     inventory.Take(item, count);
             }
