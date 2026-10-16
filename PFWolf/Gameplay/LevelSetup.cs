@@ -9,12 +9,14 @@ namespace PFWolf.Gameplay;
 /// <param name="NetGame">Whether this is a game with others (the random numbers start where the host said)</param>
 /// <param name="NetSeed">Where the host said they start</param>
 /// <param name="CurrentSkill">The skill being played (its enemy-health)</param>
+/// <param name="ApplyLoadout">Gives the players the level's starting loadout (Gameplay/MapLoadouts.cs)</param>
 internal sealed record LevelSetupHooks(
     Func<bool> LoadedGame,
     Func<bool> DemoActive,
     Func<bool> NetGame,
     Func<int> NetSeed,
-    Func<SkillInfo> CurrentSkill);
+    Func<SkillInfo> CurrentSkill,
+    Action<MapLoadout?> ApplyLoadout);
 
 /// <summary>
 /// Setting up a level to play (SetupGameLevel): the players' view and the level's counts reset,
@@ -155,6 +157,10 @@ internal sealed class LevelSetup(
 
         lighting.InitLevelShading(mapInfo);
         levelAI.OnLevelStart();      // wall outlets, Goldfire's spawn sites, once-a-level drops (Managers.LevelAI)
+
+        // the level's starting loadout, as it starts afresh (game-info map loadout)
+        if (!hooks.LoadedGame())
+            hooks.ApplyLoadout(mapInfo?.Loadout);
 
         //
         // load floor/ceiling textures

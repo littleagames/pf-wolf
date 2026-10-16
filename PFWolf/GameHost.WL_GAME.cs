@@ -70,7 +70,12 @@ internal static partial class GameHost
 
     static LevelSetup MakeLevelSetup() => new(_gameEngineManager, _mapManager, render, skyAndFlats, weather, lighting, doors, pushWalls,
         deathmatch, playersManager, playerClassRules, levelLoop, weaponBob, levelAI, session,
-        new LevelSetupHooks(() => loadedgame, () => demoplayback || demorecord, () => netgame, () => netseed, () => CurrentSkill));
+        new LevelSetupHooks(() => loadedgame, () => demoplayback || demorecord, () => netgame, () => netseed, () => CurrentSkill,
+            loadout => mapLoadouts.Apply(loadout)));
+
+    // A map's starting loadout (Gameplay/MapLoadouts.cs)
+    static MapLoadouts? _mapLoadouts;
+    static MapLoadouts mapLoadouts => _mapLoadouts ??= new MapLoadouts(_inventoryManager, playerWeapons, session);
 
     internal static void SetupGameLevel() => levelSetup.SetupGameLevel();
 

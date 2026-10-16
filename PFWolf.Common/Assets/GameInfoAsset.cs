@@ -858,6 +858,28 @@ public record EndScreenInfo
     public int CaptionTics { get; init; } = 700;
 }
 
+/// <summary>
+/// A map's `loadout:` (Gameplay/MapLoadouts.cs), applied in this order: the weapons taken, the
+/// items given, then the health set and capped
+/// </summary>
+public record MapLoadout
+{
+    /// <summary>
+    /// Every weapon taken, with the ammo (but not what's loaded in a weapon's magazine, which
+    /// waits for the weapon to be picked up again: the original's RemoveAllWeapons)
+    /// </summary>
+    public bool TakeWeapons { get; init; }
+
+    /// <summary>Items given (class: amount), weapons included</summary>
+    public Dictionary<string, int> Give { get; init; } = new();
+
+    /// <summary>The player's health set to this (P.O.W.'s 1); null leaves it</summary>
+    public int? Health { get; init; }
+
+    /// <summary>The player's health brought down to this if it's more (Hidden Tunnels' 50); null for no cap</summary>
+    public int? HealthCap { get; init; }
+}
+
 /// <summary>Game-info `stealth:` (Gameplay/Stealth.cs). Messages are text or $language keys; none shows nothing.</summary>
 public record StealthInfo
 {
@@ -969,6 +991,12 @@ public record MapInfo
     /// enemy to notice the player ends it, as a death, with game-info stealth's caught message
     /// </summary>
     public bool StealthOnly { get; init; }
+
+    /// <summary>
+    /// What the player has as the level starts afresh (a new game, the level before, a death),
+    /// not a saved game loaded: Midnight Assault's SetupMapSpecialFeatures. Null: what they had.
+    /// </summary>
+    public MapLoadout? Loadout { get; init; }
 
     /// <summary>
     /// Distance shading; each value left out uses the default map's (see ShadingInfo)
