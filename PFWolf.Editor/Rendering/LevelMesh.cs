@@ -289,7 +289,7 @@ public sealed class LevelMesh
             {
                 AddWall(faceRef, a, b, bottom, stories, texture, light, flipU0, flipU1);
                 if (patch != null && patch.IsOn(FaceName(face)))
-                    AddPatch(faceRef, a, b, new Vector2(nx - x, ny - y), bottom, stories, patch, light);
+                    AddPatch(faceRef, a, b, new Vector2(nx - x, ny - y), bottom, stories, patch, light, FaceName(face));
             }
         }
 
@@ -339,9 +339,10 @@ public sealed class LevelMesh
     /// see-through pixels are clear, so the wall shows. Lifted off the face toward <paramref name="outward"/>.
     /// </summary>
     private void AddPatch(SurfaceRef faceRef, Vector2 a, Vector2 b, Vector2 outward, float bottom, int stories,
-        MapPatchTranslation patch, Vector4 light)
+        MapPatchTranslation patch, Vector4 light, string faceName = "north")
     {
-        float patchStories = TextureStories(patch.Texture);
+        var texture = patch.TextureFor(faceName);      // texture-ew on an east or west face
+        float patchStories = TextureStories(texture);
         float first = patch.Story == 0 ? 0 : patch.Story - 1;
         float top = patch.Story == 0 ? stories : Math.Min(stories, first + patchStories);
         float from = Math.Max(first, bottom);
@@ -356,7 +357,7 @@ public sealed class LevelMesh
         {
             Points = [new(pa.X, from, pa.Y), new(pb.X, from, pb.Y), new(pb.X, top, pb.Y), new(pa.X, top, pa.Y)],
             Uvs = [new(0, v0), new(1, v0), new(1, v1), new(0, v1)],
-            Texture = Flat(patch.Texture, default),
+            Texture = Flat(texture, default),
             Color = light,
             Ref = faceRef,
         });

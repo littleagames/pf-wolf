@@ -226,6 +226,8 @@ public static class ArtCatalog
         {
             var target = new PaletteTarget(0, (ushort)(id << PFWolf.Constants.MapConstants.PATCHSHIFT), Patch: true);
             Add(patch.Texture, new ArtUse(patch.Switch != null ? $"Switch patch {id}" : $"Patch {id}", target));
+            if (patch.TextureEw.Length > 0)
+                Add(patch.TextureEw, new ArtUse($"Patch {id} east/west", target));
         }
 
         foreach (var (index, name) in defs.Flats.Floor.Where(flat => flat.Key is >= 0 and <= 255).OrderBy(flat => flat.Key))

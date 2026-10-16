@@ -181,6 +181,18 @@ public record MapPatchTranslation
     /// <summary>The picture: a texture as wide as a wall's (any height), or an animdefs animation</summary>
     public string Texture { get; init; } = "";
 
+    /// <summary>
+    /// The picture on east and west faces, where that's another (as Wolf3D's walls have a darker
+    /// east/west side; Midnight Assault's truck hood); empty: <see cref="Texture"/> on every face
+    /// </summary>
+    public string TextureEw { get; init; } = "";
+
+    /// <summary>The picture on a face ("north", "south", "east" or "west")</summary>
+    public string TextureFor(string face) =>
+        TextureEw.Length > 0 && (face.Equals("east", StringComparison.OrdinalIgnoreCase) || face.Equals("west", StringComparison.OrdinalIgnoreCase))
+            ? TextureEw
+            : Texture;
+
     /// <summary>The wall faces it's on (north, south, east, west: the way the face looks out). Empty means all four.</summary>
     public List<string> Sides { get; init; } = [];
 

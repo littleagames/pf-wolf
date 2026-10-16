@@ -279,7 +279,7 @@ internal sealed class WallHits(
         int id = map.GetPatch(tilex, tiley);
         if (id == 0 || map.GetMapData()?.Patches.TryGetValue(id, out var patch) != true || !patch!.IsOn(face))
             return;
-        render.patchsource = WorldTexture(patch.Texture, tilex, tiley);
+        render.patchsource = WorldTexture(patch.TextureFor(face), tilex, tiley);
         render.patchstory = patch.Story;
     }
 
