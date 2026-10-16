@@ -74,6 +74,22 @@ public class GameScriptsTests
     }
 
     [Test]
+    public void A_Script_Can_Raise_An_Actor()
+    {
+        // Arrange
+        var host = Host();
+        var lamp = new Entities.Actors.Monster { Name = "Lamp" };
+        host.Globals["lamp"] = LuaActor.Of(lamp);
+
+        // Act
+        host.Execute("lamp.z = 24.5 print(lamp.z)");
+
+        // Assert
+        Assert.That(lamp.Z, Is.EqualTo(24.5));
+        Assert.That(Printed(), Has.Some.EqualTo("24.5"));
+    }
+
+    [Test]
     public void A_Script_Sets_And_Stops_The_Ambient_Loop()
     {
         // Arrange: paused, so no sound is looked up whether or not there's an audio device

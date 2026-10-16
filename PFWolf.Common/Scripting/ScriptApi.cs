@@ -65,6 +65,7 @@ public static class ScriptApi
         Field("angle", "Degrees, 0 east, 90 north: the way it faces, or a projectile flies", settable: true),
         Field("health", "Its health (a player's too)"),
         Field("speed", "Its speed, 1/65536 tile a tic", settable: true),
+        Field("z", "How much higher than its art puts it it's drawn, in texels (64 a story; negative is lower): only how it looks", settable: true),
         Field("state", "The state it's on (Spawn, Fire...)"),
         Field("tag", "The tag on the tile it spawned on, 0 for none"),
         Field("inwall", "Whether it stands inside a wall (mapdefs in-wall: true)"),

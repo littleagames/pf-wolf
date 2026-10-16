@@ -16,6 +16,7 @@ internal class visobj_t
     public bool cloaked;                        // drawn as a dark shimmer of what's behind it (Actor.Cloaked)
     public int worldx, worldy;                  // where it stands (global units), for its light
     public Assets.SpriteTranslation? translation;   // its colors remapped (Managers/TranslationManager.cs), or null
+    public double z;                            // drawn this many texels higher than its art puts it (Actor.Z)
 }
 
 internal enum buttontypes

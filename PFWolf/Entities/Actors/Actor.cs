@@ -33,6 +33,16 @@ internal record Actor : Thinker
     public short Temp3 { get; internal set; }
     public bool Hidden { get; internal set; }
 
+    /// <summary>
+    /// How much higher than its art puts it the actor's drawn, in texels (64 a story; below it,
+    /// negative): a thrown grenade's arc (Gameplay/Missiles.cs). It's only how it looks: the
+    /// actor's still on the floor for everything else.
+    /// </summary>
+    public double Z { get; internal set; }
+
+    /// <summary>How fast Z is rising (falling, negative), in texels a tic</summary>
+    public double ZSpeed { get; internal set; }
+
     public byte AreaNumber { get; internal set; }
 
     // The tag on the tile it spawned on (MapManager.TAGPLANE), 0 for none; a switch with the

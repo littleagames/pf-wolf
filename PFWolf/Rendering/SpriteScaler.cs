@@ -114,10 +114,10 @@ internal sealed class SpriteScaler(
         frac = 0;
 
         // Its origin pixel on the actor's spot on the floor (a Wolf3D sprite: the middle of its
-        // bottom row, so a story tall)
+        // bottom row, so a story tall), raised by the actor's Z (a grenade in the air)
         var (originx, originy) = spriteAsset.Origin;
         xcenter = sprite.viewx - TexelsToPixels(originx, height);
-        toppix = floorRow(height) - TexelsToPixels(originy, height);
+        toppix = RaisedTop(floorRow(height), originy, sprite.z, height);
 
         byte[] shade = sprite.bright ? Lighting.noshade : lighting.LightAt(Lighting.TileIndex(sprite.tilex, sprite.tiley), sprite.worldx, sprite.worldy);
         int shadeofs = sprite.bright ? 0 : lighting.ShadeOffsetForHeight(sprite.viewheight);
@@ -225,4 +225,11 @@ internal sealed class SpriteScaler(
     /// pixels to 32 texels (half a story)
     /// </summary>
     internal static int TexelsToPixels(int texels, int half) => (int)Math.Floor(texels * (double)half / (GameConstants.TEXTURESIZE / 2));
+
+    /// <summary>
+    /// A sprite's top row on the screen: its origin (originy texels down from its top) on the
+    /// floor's row, z texels higher (lower, negative), at half pixels to 32 texels
+    /// </summary>
+    internal static int RaisedTop(int floorRow, int originy, double z, int half) =>
+        floorRow - (int)Math.Floor((originy + z) * half / (GameConstants.TEXTURESIZE / 2));
 }

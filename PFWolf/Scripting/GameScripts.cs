@@ -20,9 +20,9 @@ namespace PFWolf.Scripting;
 /// What the scripts get, besides Lua's basic, string, table, math and bit32 libraries:
 ///   an actor's fields: name, x, y (in tiles: a tile's middle is n + 0.5), tilex, tiley, angle
 ///     (degrees, 0 east, 90 north: the way it faces, or a projectile flies), health, speed,
-///     state, tag, inwall, removed, isplayer, shooter (who fired a projectile), temp1..temp3
-///     (whole numbers kept in saved games: a script's own state for the actor belongs there).
-///     temp1..temp3, angle and speed can be set.
+///     z (how much higher it's drawn, in texels), state, tag, inwall, removed, isplayer, shooter
+///     (who fired a projectile), temp1..temp3 (whole numbers kept in saved games: a script's own
+///     state for the actor belongs there). temp1..temp3, angle, speed and z can be set.
 ///   its methods: jump(state), spawnprojectile(class[, angle[, mode]]), spawn(class),
 ///     playsound(sound[, positional]), property(key), hasflag(flag), distanceto(other),
 ///     angleto(other), cansee(player[, tiles]), nearestplayer(), remove()
@@ -175,6 +175,7 @@ internal sealed class GameScripts(
                 "angle" => c.Return(ProjectileActions.FacingAngle(self)),
                 "health" => c.Return(self is Entities.Actors.PlayerPawn pawn ? pawn.State.health : self.Hitpoints),
                 "speed" => c.Return(self.Speed),
+                "z" => c.Return(self.Z),
                 "state" => c.Return(self.CurrentState?.StateName is { } state ? state : LuaValue.Nil),
                 "tag" => c.Return(self.Tag),
                 "inwall" => c.Return(projectileActions.IsInWall(self)),
@@ -200,6 +201,7 @@ internal sealed class GameScripts(
                 case "temp2": self.Temp2 = ShortArg(c, 2); break;
                 case "temp3": self.Temp3 = ShortArg(c, 2); break;
                 case "speed": self.Speed = (int)Math.Round(NumberArg(c, 2, 0)); break;
+                case "z": self.Z = NumberArg(c, 2, 0); break;
                 case "translation": self.Translation = OptionalString(c, 2) is { Length: > 0 } translation ? translation : null; break;
                 case "faction":
                     var faction = OptionalString(c, 2) is { Length: > 0 } side ? side : null;
@@ -218,7 +220,7 @@ internal sealed class GameScripts(
                         self.Dir = objdirtypes.nodir;       // its facing is its angle from now on
                     break;
                 default:
-                    throw new LuaRuntimeException(c.State, (LuaValue)$"an actor's {key} can't be set (temp1..temp3, angle, speed, translation, faction and follows can)", 1);
+                    throw new LuaRuntimeException(c.State, (LuaValue)$"an actor's {key} can't be set (temp1..temp3, angle, speed, z, translation, faction and follows can)", 1);
             }
             return new(c.Return());
         });

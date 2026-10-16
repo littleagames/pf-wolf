@@ -74,9 +74,13 @@ internal sealed class Missiles(
         int angle = player.Angle + (spread > 0 ? session.random.RndT() % (2 * spread + 1) - spread : 0);
         missile.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
         missile.Speed = ReadMissileSpeed(missile);
+        // Its height in the air, and how fast that rises (`z`, `zspeed`: Missiles.Fall)
+        missile.Z = PropertyDouble(missile, "z", 0);
+        missile.ZSpeed = PropertyDouble(missile, "zspeed", 0);
         if (args.Skip(2).Any(a => a.Trim().Equals("power", StringComparison.OrdinalIgnoreCase)))
         {
             missile.Speed = ThrowSpeed(missile.Speed, session.playerstate.WeaponPower);
+            missile.ZSpeed = missile.ZSpeed * Math.Clamp(session.playerstate.WeaponPower, 25, 100) / 100;
             session.playerstate.WeaponPower = 0;
         }
         missile.Shooter = player;
@@ -94,6 +98,25 @@ internal sealed class Missiles(
         weapons.UseAmmo();
     }
 
+    static double PropertyDouble(Entities.Actors.Actor actor, string key, double fallback) =>
+        actor.Properties.TryGetValue(key, out var value)
+            && double.TryParse(value?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d)
+            ? d : fallback;
+
+    /// <summary>
+    /// A missile's height for a tic's worth of flight: its `gravity` (texels a tic, each tic)
+    /// takes from how fast it's rising, and that moves it, down to its `zfloor` (where its art
+    /// meets the floor), where it stops falling and stays (Midnight Assault's grenade arc)
+    /// </summary>
+    internal static (double Z, double ZSpeed) Fall(double z, double zspeed, double gravity, double floor, int tics)
+    {
+        if (zspeed == 0 && (gravity <= 0 || z <= floor))
+            return (z, zspeed);
+        zspeed -= gravity * tics;
+        z += zspeed * tics;
+        return z <= floor ? (floor, 0) : (z, zspeed);
+    }
+
     /// <summary>A cooked throw's speed: power (0-100) per cent of the full speed, 25 at least</summary>
     internal static int ThrowSpeed(int fullSpeed, int power) => fullSpeed * Math.Clamp(power, 25, 100) / 100;
 
@@ -106,7 +129,8 @@ internal sealed class Missiles(
     }
 
     /// <summary>
-    /// A_Missile(min, max[, "bounce"]): a player's missile's think. It flies along its angle;
+    /// A_Missile(min, max[, "bounce"]): a player's missile's think. It flies along its angle, and
+    /// up and down too when it has a `gravity` (from its `z` and `zspeed` as it was fired);
     /// meeting a wall, a solid thing or something shootable (not the player), it hurts that
     /// min..max and goes to its Death state. With bounce, a wall turns it back off it at half the
     /// speed, with its `bouncesound`, as Midnight Assault's grenade (its Death then comes from its
@@ -114,6 +138,9 @@ internal sealed class Missiles(
     /// </summary>
     internal void A_Missile(Entities.Actors.Actor ob, string[] args)
     {
+        // up and down as it flies, with a gravity (Missiles.Fall)
+        (ob.Z, ob.ZSpeed) = Fall(ob.Z, ob.ZSpeed, PropertyDouble(ob, "gravity", 0), PropertyDouble(ob, "zfloor", 0), (int)session.tics);
+
         int speed = (int)(ob.Speed * session.tics);
         int dx = MathUtils.FixedMul(speed, TrigTables.costable[ob.Angle]);
         int dy = -MathUtils.FixedMul(speed, TrigTables.sintable[ob.Angle]);

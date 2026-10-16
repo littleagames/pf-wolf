@@ -239,6 +239,32 @@ public class MissilesTests
         Assert.That(_sounds, Is.EqualTo(new[] { ("grenade/bounce", (Entities.Actors.Actor)grenade) }));
     }
 
+    [Test]
+    public void A_Thrown_Missile_Rises_Slows_And_Falls_To_Its_Floor()
+    {
+        // Act / Assert: 2 texels a tic up, slowing by 0.5 a tic
+        var (z, speed) = Missiles.Fall(32, 2, 0.5, -32, 1);
+        Assert.That((z, speed), Is.EqualTo((33.5, 1.5)));
+        for (int tic = 0; tic < 30; tic++)
+            (z, speed) = Missiles.Fall(z, speed, 0.5, -32, 1);
+        Assert.That((z, speed), Is.EqualTo((-32.0, 0.0)));       // on its floor, and stays
+    }
+
+    [Test]
+    public void Without_Gravity_A_Missile_Keeps_Its_Height()
+    {
+        Assert.That(Missiles.Fall(10, 0, 0, 0, 5), Is.EqualTo((10.0, 0.0)));
+    }
+
+    [TestCase(0, 0)]        // as its art puts it
+    [TestCase(32, -64)]     // half a story up, at 64 pixels to half a story: 64 pixels higher
+    [TestCase(-16, 32)]
+    public void A_Raised_Sprite_Is_Drawn_That_Much_Higher(double z, int moved)
+    {
+        // a sprite whose origin is its bottom row (64 texels down), 64 pixels to 32 texels
+        Assert.That(Rendering.SpriteScaler.RaisedTop(200, 64, z, 64) - Rendering.SpriteScaler.RaisedTop(200, 64, 0, 64), Is.EqualTo(moved));
+    }
+
     [TestCase(0, 25)]       // not cooked: a quarter
     [TestCase(10, 25)]
     [TestCase(60, 60)]

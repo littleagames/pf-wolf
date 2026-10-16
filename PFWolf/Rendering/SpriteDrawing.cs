@@ -314,6 +314,7 @@ internal sealed class SpriteDrawing(
                 visptr_val.shapenum = ActorShapeName(sprite, actor.CurrentState.FrameLetter, actor);
                 visptr_val.viewx = actor.ViewX;
                 visptr_val.viewheight = (short)actor.ViewHeight;
+                visptr_val.z = actor.Z;
 
                 // A cloaked enemy shows for a frame when it's hit (bstone's FL2_DAMAGE_CLOAK)
                 visptr_val.cloaked = actor.Cloaked && !actor.CloakHit && actor.Hitpoints > 0;
@@ -356,6 +357,7 @@ internal sealed class SpriteDrawing(
 
             if (visptr_val.viewheight == 0)
                 continue;                                               // to close to the object
+            visptr_val.z = actor.Z;
 
             if (visptr < (GameConstants.MAXVISABLE - 1))    // don't let it overflow
             {
