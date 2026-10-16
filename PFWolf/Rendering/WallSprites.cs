@@ -28,16 +28,34 @@ internal readonly record struct WallSpriteSpan(double X1, double Y1, double X2, 
 /// WALLSPRITE.SHOOTTHROUGH flag (a grille or chain-link fence), and projectiles unless it has
 /// WALLSPRITE.PROJECTILETHROUGH. Enemies keep out of its whole tile (WallSpriteBlocker in
 /// actorat), as they do a diagonal wall's.
+///
+/// A WALLSPRITE.PASSABLE panel is only seen: the player, enemies and projectiles go through it
+/// (an arch, cobwebs, a beam overhead); it still blocks sight and hitscan unless it's
+/// SHOOTTHROUGH too. A panel that's an enemy (shootable: a window, a curtain) blocks as the
+/// enemy does while it lives, and once it's destroyed (dead) it blocks nothing.
 /// </summary>
 internal static class WallSprites
 {
     internal const string WallSpriteFlag = "WALLSPRITE";
     internal const string WallSpriteShootThroughFlag = "WALLSPRITE.SHOOTTHROUGH";
     internal const string WallSpriteProjectileThroughFlag = "WALLSPRITE.PROJECTILETHROUGH";
+    internal const string WallSpritePassableFlag = "WALLSPRITE.PASSABLE";
     internal const string WallSpriteOffsetProperty = "wallsprite.offset";
 
     internal static bool IsWallSprite(Entities.Actors.Actor actor) =>
         actor.Flags.Contains(WallSpriteFlag, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A WALLSPRITE.PASSABLE panel: nothing moving is stopped by it</summary>
+    internal static bool IsPassable(Entities.Actors.Actor actor) =>
+        actor.Flags.Contains(WallSpritePassableFlag, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// A panel with health (a window, a curtain) that's been destroyed, so it's no longer
+    /// shootable: it blocks nothing
+    /// </summary>
+    internal static bool IsBroken(Entities.Actors.Actor actor) =>
+        actor is Entities.Actors.Monster && !actor.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE)
+        && actor.Properties.Keys.Any(k => k == "health" || k.StartsWith("health.", StringComparison.Ordinal));
 
     /// <summary>Which way a facing's panel runs across the tile, for messages.</summary>
     internal static string WallSpriteAxis(objdirtypes dir) => dir switch
@@ -165,6 +183,8 @@ internal sealed class WallSpriteBlocking(MapManager map)
                 continue;
             if (!WallSprites.IsWallSprite(actor) || WallSprites.GetWallSpriteSpan(actor) is not { } span)
                 continue;
+            if (WallSprites.IsPassable(actor) || WallSprites.IsBroken(actor))
+                continue;
             if (!player && actor.Flags.Contains(WallSprites.WallSpriteProjectileThroughFlag, StringComparer.OrdinalIgnoreCase))
                 continue;
             if (!WallSprites.BoxHitsWallSprite(span, x, y, size))
@@ -186,7 +206,8 @@ internal sealed class WallSpriteBlocking(MapManager map)
         {
             if (actor.TileX < xl || actor.TileX > xh || actor.TileY < yl || actor.TileY > yh)
                 continue;
-            if (!WallSprites.IsWallSprite(actor) || actor.Flags.Contains(WallSprites.WallSpriteShootThroughFlag, StringComparer.OrdinalIgnoreCase))
+            if (!WallSprites.IsWallSprite(actor) || actor.Flags.Contains(WallSprites.WallSpriteShootThroughFlag, StringComparer.OrdinalIgnoreCase)
+                || WallSprites.IsBroken(actor))
                 continue;
             if (WallSprites.GetWallSpriteSpan(actor) is { } span && WallSprites.LineHitsWallSprite(span, x1, y1, x2, y2))
                 return true;

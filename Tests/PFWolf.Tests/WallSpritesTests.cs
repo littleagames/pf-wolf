@@ -158,4 +158,38 @@ public class WallSpriteBlockingTests
         fence.Flags = [WallSprites.WallSpriteFlag, WallSprites.WallSpriteShootThroughFlag];
         Assert.That(_blocking.WallSpriteBlocksLine(8 * Tile, y, 12 * Tile, y), Is.False);
     }
+
+    [Test]
+    public void A_Passable_Panel_Lets_The_Player_And_Projectiles_Through_But_Still_Blocks_Sight()
+    {
+        // Arrange
+        long y = (long)(10.5 * Tile);
+        Fence(WallSprites.WallSpritePassableFlag);
+        _blocking.wallspritefromx = (int)(10 * Tile);
+
+        // Act / Assert
+        Assert.That(Hit((long)(10.5 * Tile), player: true), Is.Null);
+        Assert.That(Hit((long)(10.5 * Tile), player: false), Is.Null);
+        Assert.That(_blocking.WallSpriteBlocksLine(8 * Tile, y, 12 * Tile, y), Is.True);
+    }
+
+    [Test]
+    public void A_Destroyed_Panel_Blocks_Nothing()
+    {
+        // Arrange: a window with health, shootable while it stands
+        long y = (long)(10.5 * Tile);
+        var window = Fence();
+        window.Properties["health"] = 1;
+        window.RuntimeFlags |= objflags.FL_SHOOTABLE;
+        _blocking.wallspritefromx = (int)(10 * Tile);
+        Assert.That(Hit((long)(10.5 * Tile), player: true), Is.Not.Null);
+
+        // Act: broken (Monster.Kill clears FL_SHOOTABLE)
+        window.RuntimeFlags &= ~objflags.FL_SHOOTABLE;
+
+        // Assert
+        Assert.That(Hit((long)(10.5 * Tile), player: true), Is.Null);
+        Assert.That(Hit((long)(10.5 * Tile), player: false), Is.Null);
+        Assert.That(_blocking.WallSpriteBlocksLine(8 * Tile, y, 12 * Tile, y), Is.False);
+    }
 }

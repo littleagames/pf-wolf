@@ -1190,7 +1190,7 @@ internal class MapManager
         // "something is here" entry walls and doors use, so every actorat[,] check sees it.
         if (builtActor.Flags.Any(f => f.Equals("SOLID", StringComparison.OrdinalIgnoreCase)))
             actorat[tilex, tiley] = new BlockingActor();
-        else if (WallSprites.IsWallSprite(builtActor) && actorat[tilex, tiley] == null)
+        else if (WallSprites.IsWallSprite(builtActor) && !WallSprites.IsPassable(builtActor) && actorat[tilex, tiley] == null)
             actorat[tilex, tiley] = new WallSpriteBlocker();
 
         _actors.AddLast(builtActor);
