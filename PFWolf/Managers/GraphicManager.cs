@@ -177,14 +177,15 @@ internal class GraphicManager
         videoManager.DrawImageRegion(asset.RawData, null, asset.Width, 0, 0, asset.Width, asset.Height, x, y, mask);
     }
 
+    // A picture's see-through pixels (a PNG's alpha) let what's behind show
     private void DrawPic(int x, int y, GraphicAsset gfxAsset)
     {
-        videoManager.MemToScreen(gfxAsset.RawData, gfxAsset.Width, gfxAsset.Height, x, y);
+        videoManager.MemToScreen(gfxAsset.RawData, gfxAsset.Width, gfxAsset.Height, x, y, gfxAsset.OpacityMask);
     }
 
     public void DrawPicScaledCoord(int scx, int scy, GraphicAsset gfxAsset)
     {
-        videoManager.MemToScreenScaledCoord(gfxAsset.RawData, gfxAsset.Width, gfxAsset.Height, scx, scy);
+        videoManager.MemToScreenScaledCoord(gfxAsset.RawData, gfxAsset.Width, gfxAsset.Height, scx, scy, gfxAsset.OpacityMask);
     }
 
     /// <summary>Draws a picture with its top left corner at a screen position (pixels), at the UI scale.</summary>

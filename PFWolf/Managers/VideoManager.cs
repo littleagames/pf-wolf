@@ -475,14 +475,17 @@ internal class VideoManager
     /// <summary>Fills the whole screen with a color: the 320x200 layout and any room round it.</summary>
     public void FillScreen(string color) => BarScaledCoord(0, 0, screenWidth, screenHeight, color);
 
-    /// <summary>Draws a paletted picture at (x, y) in the 320x200 layout.</summary>
-    public void MemToScreen(byte[] source, int width, int height, int x, int y)
-        => DrawScaledPixels(source, width, height, Edges(x, width, ScreenX), Edges(y, height, ScreenY));
+    /// <summary>
+    /// Draws a paletted picture at (x, y) in the 320x200 layout; with an opacity mask (a PNG's
+    /// see-through pixels, GraphicAsset.OpacityMask), what's behind shows where it's 0.
+    /// </summary>
+    public void MemToScreen(byte[] source, int width, int height, int x, int y, byte[]? opacityMask = null)
+        => DrawScaledPixels(source, width, height, Edges(x, width, ScreenX), Edges(y, height, ScreenY), opacityMask);
 
-    /// <summary>Draws a paletted picture at the UI scale with its top left corner at a screen position.</summary>
-    public void MemToScreenScaledCoord(byte[] source, int width, int height, int destx, int desty)
+    /// <summary>Draws a paletted picture at the UI scale with its top left corner at a screen position (see MemToScreen).</summary>
+    public void MemToScreenScaledCoord(byte[] source, int width, int height, int destx, int desty, byte[]? opacityMask = null)
         => DrawScaledPixels(source, width, height,
-            Edges(0, width, i => destx + ToScreenLength(i)), Edges(0, height, j => desty + ToScreenLength(j)));
+            Edges(0, width, i => destx + ToScreenLength(i)), Edges(0, height, j => desty + ToScreenLength(j)), opacityMask);
 
     // The screen edges of count layout pixels from start: count + 1 of them
     private static int[] Edges(int start, int count, Func<int, int> toScreen)
@@ -495,8 +498,8 @@ internal class VideoManager
 
     // Each pixel of a picture filled across the screen rectangle between its edges. A picture
     // reaching past the screen's edges (a game pack's bigger pictures in a menu laid out for
-    // smaller ones, say) is cut off there.
-    private void DrawScaledPixels(byte[] source, int width, int height, int[] xs, int[] ys)
+    // smaller ones, say) is cut off there. A pixel the opacity mask has as 0 isn't drawn.
+    private void DrawScaledPixels(byte[] source, int width, int height, int[] xs, int[] ys, byte[]? opacityMask = null)
     {
         IntPtr destPtr = LockSurface(screenBuffer);
         if (destPtr == IntPtr.Zero) return;
@@ -513,7 +516,7 @@ internal class VideoManager
                 for (int i = 0; i < width; i++)
                 {
                     int x0 = Math.Max(xs[i], 0), x1 = Math.Min(xs[i + 1], screenWidth);
-                    if (x0 >= x1)
+                    if (x0 >= x1 || opacityMask != null && opacityMask[j * width + i] == 0)
                         continue;
 
                     byte col = source[j * width + i];

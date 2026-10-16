@@ -14,7 +14,8 @@ public record GraphicAsset : Asset
 
     /// <summary>
     /// For a picture with see-through pixels (a PNG with alpha), 1 where a pixel shows and 0
-    /// where it doesn't; null when every pixel shows. Only fonts use it so far.
+    /// where it doesn't; null when every pixel shows. Pictures drawn on the screen (menus, the
+    /// level-end screens, help text, the status bar) and fonts leave those pixels out.
     /// </summary>
     public byte[]? OpacityMask { get; init; }
 }
