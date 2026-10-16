@@ -175,20 +175,31 @@ internal sealed class Missiles(
     }
 
     /// <summary>
-    /// A_Explode(min, max[, radius[, "hurtplayer"]]): a blast spreading from the actor's tile
-    /// through open floor (not walls or shut doors) up to radius tiles away (default 2): each
-    /// shootable thing in it takes min..max, rolled once. With hurtplayer the players take it
-    /// too, if standing in it: from a player's missile, the one who fired it (and in deathmatch
-    /// everyone else; co-op has no friendly fire). A thing whose `monster.blastedby` names the
-    /// actor's class breaks (goes to its Death state).
+    /// A_Explode(min, max[, radius[, "hurtplayer"][, "falloff"][, "playermax:N"]]): a blast
+    /// spreading from the actor's tile through open floor (not walls or shut doors) up to radius
+    /// tiles away (default 2): each shootable thing in it takes min..max, rolled once. With
+    /// hurtplayer the players take it too, if standing in it: from a player's missile, the one
+    /// who fired it (and in deathmatch everyone else; co-op has no friendly fire). A thing whose
+    /// `monster.blastedby` names the actor's class breaks (goes to its Death state).
+    /// With falloff it reaches radius tiles straight out from the actor rather than tile by tile,
+    /// and weakens with the distance as Midnight Assault's SplashDamage did: the roll within a
+    /// tile, a quarter of it two tiles out, a ninth at three. playermax:N caps what a player takes
+    /// of it (the original's quarter of the most).
     /// </summary>
     internal void A_Explode(Entities.Actors.Actor ob, string[] args)
     {
         int min = args.Length > 0 && int.TryParse(args[0], out var a0) ? a0 : 0;
         int max = args.Length > 1 && int.TryParse(args[1], out var a1) ? a1 : min;
         int radius = args.Length > 2 && int.TryParse(args[2], out var a2) ? Math.Max(a2, 0) : 2;
-        bool hurtPlayer = args.Skip(3).Any(a => a.Equals("hurtplayer", StringComparison.OrdinalIgnoreCase));
+        var options = args.Skip(3).Select(a => a.Trim()).ToList();
+        bool hurtPlayer = options.Any(a => a.Equals("hurtplayer", StringComparison.OrdinalIgnoreCase));
+        bool falloff = options.Any(a => a.Equals("falloff", StringComparison.OrdinalIgnoreCase));
+        int playerMax = options.Select(a => a.StartsWith("playermax:", StringComparison.OrdinalIgnoreCase)
+            && int.TryParse(a["playermax:".Length..], out var cap) ? cap : -1).FirstOrDefault(cap => cap >= 0, int.MaxValue);
         int damage = max > min ? min + session.random.RndT() * (max - min + 1) / 256 : min;
+
+        // What a thing standing where it does takes of the blast (0 for out of its reach)
+        int DamageTo(Entities.Actors.Actor target) => falloff ? BlastFalloff(damage, radius, ob, target) : damage;
 
         int cx = ob.TileX, cy = ob.TileY;
         if (IsSolidForBlast(cx, cy))
@@ -209,11 +220,13 @@ internal sealed class Missiles(
 
             // a player's blast leaves their side's be (no friendly fire)
             foreach (var target in map.ShootableActorsAt(x, y).ToList())
-                if (!ReferenceEquals(target, ob) && !(shooter != null && factions.IsAlly(shooter, target)))
-                    target.Damage(shooter != null ? attacks.PlayerDamage(damage) : (uint)damage, ob);
+                if (!ReferenceEquals(target, ob) && !(shooter != null && factions.IsAlly(shooter, target))
+                    && DamageTo(target) is > 0 and var hit)
+                    target.Damage(shooter != null ? attacks.PlayerDamage(hit) : (uint)hit, ob);
 
             foreach (var pawn in blasted.Where(p => p.TileX == x && p.TileY == y))
-                HurtByMissile(pawn, shooter != null ? attacks.PlayerDamage(damage) : (uint)damage, ob);
+                if (Math.Min(DamageTo(pawn), playerMax) is > 0 and var hit)
+                    HurtByMissile(pawn, shooter != null ? attacks.PlayerDamage(hit) : (uint)hit, ob);
 
             // `monster.blastedby: Class`: only a blast from that class breaks it (Planet Strike's
             // security cube, by the fission detonator): it goes to its Death state
@@ -232,6 +245,19 @@ internal sealed class Missiles(
                 open.Enqueue((nx, ny));
             }
         }
+    }
+
+    /// <summary>
+    /// A falloff blast's damage to a thing (Midnight Assault's SplashDamage): all of it within a
+    /// tile, then divided by the square of the distance in tiles; nothing radius tiles away or more
+    /// </summary>
+    internal static int BlastFalloff(int damage, int radius, Entities.Actors.Actor blast, Entities.Actors.Actor target)
+    {
+        double dx = (double)target.X - blast.X, dy = (double)target.Y - blast.Y;
+        double tiles = Math.Sqrt(dx * dx + dy * dy) / MapConstants.TILEGLOBAL;
+        if (tiles >= radius)
+            return 0;
+        return tiles <= 1 ? damage : (int)(damage / (tiles * tiles));
     }
 
     // A wall, a moving pushwall or a door that isn't open stops a blast

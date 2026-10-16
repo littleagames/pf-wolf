@@ -53,8 +53,11 @@ public class MissilesTests
         var stats = new PlayerStats(null!, null!, null!, inventory, bar, classes, weapons, _session,
             new PlayerStatsHooks(() => 0, () => false, () => false, () => 1, () => { }, () => { }, _ => { }));
         _missiles = new Missiles(_map, null!, _doors, weapons, null!, stats, _session,
-            new MissileHooks(_ => true, (sound, at) => _sounds.Add((sound, at)), (_, _, _) => { }, () => { }, () => _died));
+            new MissileHooks(_ => true, (sound, at) => _sounds.Add((sound, at)), (_, damage, _) => _playerHurts.Add(damage), () => { }, () => _died));
+        _playerHurts = [];
     }
+
+    private List<int> _playerHurts = null!;
 
     private static Monster Thing(params (string Key, object Value)[] properties)
     {
@@ -146,6 +149,68 @@ public class MissilesTests
     public void Out_Of_Deathmatch_Missiles_Fly_Through_Players()
     {
         Assert.That(_missiles.RivalHitBy(Thing()), Is.Null);
+    }
+
+    // A thing dx tiles east of a blast at the middle of tile (10, 10)
+    private static (Monster Blast, Monster Thing) BlastAndThing(double dx)
+    {
+        var blast = new Monster { Name = "Rocket", X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2 };
+        var thing = new Monster { Name = "Thing", X = blast.X + (int)(dx * Tile), Y = blast.Y };
+        return (blast, thing);
+    }
+
+    [TestCase(0.0, 600)]
+    [TestCase(1.0, 600)]        // all of it within a tile
+    [TestCase(2.0, 150)]        // a quarter at two
+    [TestCase(2.5, 96)]
+    [TestCase(3.0, 0)]          // nothing at the radius
+    public void A_Falloff_Blast_Weakens_With_The_Square_Of_The_Distance(double tiles, int damage)
+    {
+        var (blast, thing) = BlastAndThing(tiles);
+        Assert.That(Missiles.BlastFalloff(600, 3, blast, thing), Is.EqualTo(damage));
+    }
+
+    [Test]
+    public void A_Falloff_Blast_Reaches_Straight_Out_Not_Round_Corners_Of_Its_Square()
+    {
+        // Arrange: 2.5 tiles each way, inside the 3-tile square but 3.5 tiles off
+        var (blast, thing) = BlastAndThing(2.5);
+        thing.Y += (int)(2.5 * Tile);
+
+        // Act / Assert
+        Assert.That(Missiles.BlastFalloff(600, 3, blast, thing), Is.Zero);
+    }
+
+    [TestCase(10, 150)]         // on the blast: capped at playermax
+    [TestCase(12, 150)]         // two tiles off: a quarter, 150
+    [TestCase(13, 0)]           // out of reach
+    public void A_Players_Share_Of_A_Falloff_Blast_Is_Capped(int tileX, int hurt)
+    {
+        // Arrange
+        var pawn = _session.playerstate.Pawn!;
+        (pawn.X, pawn.TileX, pawn.TileY) = (tileX * Tile + Tile / 2, (byte)tileX, 10);
+        var blast = new Monster { Name = "Rocket", X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10 };
+
+        // Act
+        _missiles.A_Explode(blast, ["600", "600", "3", "hurtplayer", "falloff", "playermax:150"]);
+
+        // Assert
+        Assert.That(_playerHurts, Is.EqualTo(hurt > 0 ? new[] { hurt } : Array.Empty<int>()));
+    }
+
+    [Test]
+    public void Without_Falloff_A_Blast_Hurts_The_Same_All_Through()
+    {
+        // Arrange: two tiles off
+        var pawn = _session.playerstate.Pawn!;
+        (pawn.X, pawn.TileX, pawn.TileY) = (12 * Tile + Tile / 2, 12, 10);
+        var blast = new Monster { Name = "Rocket", X = 10 * Tile + Tile / 2, Y = 10 * Tile + Tile / 2, TileX = 10, TileY = 10 };
+
+        // Act
+        _missiles.A_Explode(blast, ["100", "100", "2", "hurtplayer"]);
+
+        // Assert
+        Assert.That(_playerHurts, Is.EqualTo(new[] { 100 }));
     }
 
     [Test]

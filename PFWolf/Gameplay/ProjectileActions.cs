@@ -26,6 +26,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         Entities.Actors.ActorActionRegistry.Register("A_SpawnProjectile", A_SpawnProjectile);
         Entities.Actors.ActorActionRegistry.Register("A_Jump", A_Jump);
         Entities.Actors.ActorActionRegistry.Register("A_JumpIfPlayerWithin", A_JumpIfPlayerWithin);
+        Entities.Actors.ActorActionRegistry.Register("A_JumpIfActorWithin", A_JumpIfActorWithin);
         Entities.Actors.ActorActionRegistry.Register("A_JumpIfInSight", A_JumpIfInSight);
     }
 
@@ -122,6 +123,28 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         var (x, y) = LookoutPoint(ob);
         if (map.Players.Any(pawn => session.IsTargetable(pawn) && Reach(pawn, x, y) <= reach))
             JumpToState(ob, args[1], "A_JumpIfPlayerWithin");
+    }
+
+    /// <summary>
+    /// A_JumpIfActorWithin(tiles, "State"): as A_JumpIfPlayerWithin, but anything shootable
+    /// counts too, other than another of its own class (Midnight Assault's landmine, set off by
+    /// whoever steps on it)
+    /// </summary>
+    void A_JumpIfActorWithin(Entities.Actors.Actor ob, string[] args)
+    {
+        if (args.Length < 2 || !TryParseTiles(args[0], out var reach))
+            return;
+        if (IsActorWithin(ob, reach))
+            JumpToState(ob, args[1], "A_JumpIfActorWithin");
+    }
+
+    internal bool IsActorWithin(Entities.Actors.Actor ob, long reach)
+    {
+        var (x, y) = LookoutPoint(ob);
+        return map.Players.Any(pawn => session.IsTargetable(pawn) && Reach(pawn, x, y) <= reach)
+            || map.GetActors().Any(a => !a.IsRemoved && a is not Entities.Actors.PlayerPawn && !ReferenceEquals(a, ob)
+                && !string.Equals(a.Name, ob.Name, StringComparison.OrdinalIgnoreCase)
+                && a.RuntimeFlags.HasFlag(objflags.FL_SHOOTABLE) && Reach(a, x, y) <= reach);
     }
 
     /// <summary>

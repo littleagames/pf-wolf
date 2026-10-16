@@ -45,6 +45,40 @@ public class ProjectileActionsTests
     }
 
     [Test]
+    public void Anything_Shootable_Near_Sets_Off_A_Mine_But_Not_Another_Mine_Or_Scenery()
+    {
+        // Arrange: a level with no players in it, the mine mid-tile
+        const int Tile = 1 << MapConstants.TILESHIFT;
+        var session = new GameSession();
+        var map = new MapManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test")), null!, session)
+        {
+            tilemap = new byte[MapManager.MAPSIZE, MapManager.MAPSIZE],
+            actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
+        };
+        var actions = new ProjectileActions(map, session, null!, (_, _) => { });
+        var mine = new Monster { Name = "Landmine", X = 5 * Tile + Tile / 2, Y = 5 * Tile + Tile / 2, TileX = 5, TileY = 5 };
+        var near = mine.X + Tile * 2 / 5;
+        Monster Add(string name, bool shootable)
+        {
+            var actor = new Monster { Name = name, X = near, Y = mine.Y };
+            if (shootable)
+                actor.RuntimeFlags |= objflags.FL_SHOOTABLE;
+            map.GetActors().AddLast(actor);
+            return actor;
+        }
+        map.GetActors().AddLast(mine);
+        Add("Landmine", shootable: true);
+        Add("Crate", shootable: false);
+
+        // Act / Assert
+        Assert.That(actions.IsActorWithin(mine, Tile / 2), Is.False);
+        var guard = Add("Guard", shootable: true);
+        Assert.That(actions.IsActorWithin(mine, Tile / 2), Is.True);
+        guard.X += Tile;
+        Assert.That(actions.IsActorWithin(mine, Tile / 2), Is.False);
+    }
+
+    [Test]
     public void A_Property_Is_Read_As_A_Whole_Number_Else_The_Fallback()
     {
         // Arrange
