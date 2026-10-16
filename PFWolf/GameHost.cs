@@ -302,7 +302,8 @@ internal static partial class GameHost
         optionsMenu = new OptionsMenu(_videoManager, _hudMessageManager, _automapManager, menuDrawing, menuLoop, menuInput, menuDefs);
         playerDeath = MakePlayerDeath();
         newGameMenu = new NewGameMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, _graphicManager,
-            menuDrawing, menuLoop, menuInput, menuDefs, textPresenter, _inventoryManager, () => ingame, StartNewGame, PlayerClasses);
+            menuDrawing, menuLoop, menuInput, menuDefs, textPresenter, _inventoryManager, () => ingame, StartNewGame, PlayerClasses,
+            episode => unlocks.IsOpen(episode));
         controlPanel = new ControlPanel(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop,
             menuDefs, articleReader, highScoresScreen, soundMenu, controlMenus, changeViewScreen, () => gameInfoSettings, MakeControlPanelHooks());
         moviePlayer = new MoviePlayer(_assetManager, _videoManager, _inputManager, _audioManager, menuInput);

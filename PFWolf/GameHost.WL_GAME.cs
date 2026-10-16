@@ -81,6 +81,14 @@ internal static partial class GameHost
         message => _hudMessageManager.Show(HudMessageKind.Lock, message),
         LevelSwitches));
 
+    // What the player has unlocked, from game to game (Gameplay/Unlocks.cs): starts-locked episodes
+    static Unlocks? _unlocks;
+    internal static Unlocks unlocks => _unlocks ??= new Unlocks(() => _gameEngineManager.GetConfigFilePath(Unlocks.FileName),
+        () => _gameEngineManager.GetGameInfo());
+
+    /// <summary>A_Unlock, game.unlock: unlocks a name, but not while a demo plays back</summary>
+    internal static bool Unlock(string name) => !demoplayback && unlocks.Unlock(name);
+
     // Every switch on the level: its switch walls' and its patches'
     static IEnumerable<MapSwitchTranslation> LevelSwitches()
     {

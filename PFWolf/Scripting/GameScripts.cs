@@ -53,6 +53,12 @@ internal sealed class GameScripts(
 {
     ScriptHost? _scripts;
 
+    /// <summary>game.unlock: unlocks a name for good, true if it wasn't already (Gameplay/Unlocks.cs)</summary>
+    internal Func<string, bool> Unlock { get; init; } = _ => false;
+
+    /// <summary>game.unlocked: whether a name has been unlocked</summary>
+    internal Func<string, bool> IsUnlocked { get; init; } = _ => false;
+
     /// <summary>The scripts' Lua state, once any have loaded (or the lua command has made one)</summary>
     internal ScriptHost? Scripts => _scripts;
 
@@ -343,6 +349,11 @@ internal sealed class GameScripts(
             var name = StringArg(c, 0);
             return map.objectives.TryGetValue(name, out var count) ? new(c.Return(count.Done, count.Total)) : new(c.Return(0, 0));
         });
+        // game.unlock(name): unlocks a name from game to game (a starts-locked episode's key, or a
+        // script's own), true if it wasn't already; game.unlocked(name): whether it is
+        // (progress.cfg: Gameplay/Unlocks.cs)
+        game["unlock"] = new LuaFunction("game.unlock", (c, _) => new(c.Return(Unlock(StringArg(c, 0)))));
+        game["unlocked"] = new LuaFunction("game.unlocked", (c, _) => new(c.Return(IsUnlocked(StringArg(c, 0)))));
         game["message"] = new LuaFunction("game.message", (c, _) =>
         {
             hudMessages.Show(Managers.HudMessageKind.Lock, StringArg(c, 0), OptionalString(c, 1));

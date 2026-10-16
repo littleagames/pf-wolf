@@ -130,6 +130,10 @@ player-colors: [green, red, blue, yellow, cyan, magenta, gray, brown]
 # right on the skill it was recorded on, and id's were recorded on HARD.
 demo-skill: HARD
 
+# The New Game menu's episodes. Besides these keys, an episode can have locked-message (listed,
+# but picking it shows that text: the shareware's), or starts-locked: true (greyed out, as its
+# locked-name if it has one, until its key is unlocked for good by A_Unlock("EP02"), Lua
+# game.unlock or the unlock command; kept in progress.cfg)
 episodes:
   EP01:
     name: "Episode 1\nEscape from Wolfenstein"

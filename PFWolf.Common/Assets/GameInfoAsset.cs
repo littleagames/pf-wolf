@@ -780,6 +780,16 @@ public record EpisodeInfo
     public bool Locked => !string.IsNullOrWhiteSpace(LockedMessage);
 
     /// <summary>
+    /// "starts-locked": the episode is greyed out, and can't be picked, until the player unlocks
+    /// it (its key, by A_Unlock, Lua game.unlock or the unlock command), from then on in every
+    /// game (progress.cfg: Gameplay/Unlocks.cs)
+    /// </summary>
+    public bool StartsLocked { get; init; }
+
+    /// <summary>"locked-name": shown in place of the name while it's locked (text or $LANGUAGE key)</summary>
+    public string? LockedName { get; init; }
+
+    /// <summary>
     /// Graphic asset that is used to display on the episode menu
     /// </summary>
     public string PicName { get; init; } = null!;

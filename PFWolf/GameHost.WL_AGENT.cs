@@ -119,7 +119,16 @@ internal static partial class GameHost
         ActorActionRegistry.Register("A_JumpIfObjectiveDone", (Entities.Actors.Actor ob, string[] args) => objectives.A_JumpIfObjectiveDone(ob, args));
         Entities.MapTriggerRegistry.Register("A_CompleteObjective", (_, args) => { if (args.Length == 0) return false; objectives.Complete(args[0], Amount(args)); return true; });
         Entities.MapTriggerRegistry.Register("A_AddObjective", (_, args) => { if (args.Length == 0) return false; objectives.Add(args[0], Amount(args)); return true; });
-        ActorActionRegistry.Register("A_Mount", (Entities.Actors.Actor ob, string[] args) => mountedWeapons.A_Mount(ob, args));
+        // A_Unlock("name"[, "message"]): unlocks a name for good (Gameplay/Unlocks.cs: a starts-locked
+        // episode's key), showing the message if it wasn't already
+        static void UnlockWithMessage(string[] args)
+        {
+            if (args.Length > 0 && Unlock(args[0]) && args.Length > 1 && args[1].Length > 0)
+                _hudMessageManager.Show(HudMessageKind.Lock, args[1]);
+        }
+        ActorActionRegistry.Register("A_Unlock", (Entities.Actors.Actor _, string[] args) => UnlockWithMessage(args));
+        Entities.MapTriggerRegistry.Register("A_Unlock", (_, args) => { if (args.Length == 0) return false; UnlockWithMessage(args); return true; });
+        ActorActionRegistry.Register("A_Mount",(Entities.Actors.Actor ob, string[] args) => mountedWeapons.A_Mount(ob, args));
         ActorActionRegistry.RegisterFor<Entities.Actors.Monster>("A_LatchBite", (m, args) => latching.A_LatchBite(m, args));
         ActorActionRegistry.Register("A_LatchHurt", (Entities.Actors.Actor ob) => latching.A_LatchHurt(ob));
         ActorActionRegistry.Register("A_ShakeOff", (Entities.Actors.Actor ob, string[] args) => latching.A_ShakeOff(ob, args));

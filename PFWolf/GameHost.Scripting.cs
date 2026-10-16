@@ -9,7 +9,11 @@ internal static partial class GameHost
 
     static GameScripts MakeGameScripts() =>
         new(_assetManager, _mapManager, _audioManager, _hudMessageManager, _consoleManager, _translationManager,
-            projectileActions ??= MakeProjectileActions(), session, PlaySoundLocActor);
+            projectileActions ??= MakeProjectileActions(), session, PlaySoundLocActor)
+        {
+            Unlock = Unlock,
+            IsUnlocked = name => unlocks.IsUnlocked(name),
+        };
 
     // The script API's tests install it with no services: it's made then
     internal static void InstallScriptApi(ScriptHost host) => (gameScripts ??= MakeGameScripts()).InstallScriptApi(host);

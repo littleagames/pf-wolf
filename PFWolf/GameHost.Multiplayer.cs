@@ -58,5 +58,6 @@ internal static partial class GameHost
         Identity: LocalIdentity,
         BeginNetGame: BeginNetGame,
         BeginJoinedGame: BeginJoinedGame,
-        Started: () => StartGame != 0);
+        Started: () => StartGame != 0,
+        EpisodeOpen: episode => unlocks.IsOpen(episode));
 }

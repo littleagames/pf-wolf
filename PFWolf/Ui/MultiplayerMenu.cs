@@ -14,9 +14,10 @@ namespace PFWolf.Ui;
 /// <param name="BeginNetGame">Starts the game the host started, here</param>
 /// <param name="BeginJoinedGame">Takes up a game being played, where the host has got to: null, or what went wrong</param>
 /// <param name="Started">Whether a game has started (StartGame), for the menus to leave to it</param>
+/// <param name="EpisodeOpen">Whether an episode can be played: not starts-locked, or unlocked here (null: all can)</param>
 internal sealed record MultiplayerHooks(Func<string> PlayerClass, Action<string> ClassChosen, Func<List<string>> PlayerClasses,
     Func<NetIdentity> Identity, Action<NetSession, StartGameInfo> BeginNetGame, Func<NetSession, JoinStateInfo, string?> BeginJoinedGame,
-    Func<bool> Started);
+    Func<bool> Started, Func<Assets.EpisodeInfo, bool>? EpisodeOpen = null);
 
 /*
 =============================================================================
@@ -826,11 +827,15 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         audio.Play("menu/move1");
     }
 
-    /// <summary>The episodes a game can start on: their places in game-info's, leaving out locked ones (the shareware's)</summary>
+    /// <summary>
+    /// The episodes a game can start on: their places in game-info's, leaving out locked ones (the
+    /// shareware's, and starts-locked ones the host hasn't unlocked)
+    /// </summary>
     List<int> PlayableEpisodes() =>
         engine.GetGameInfo().Episodes.Values
             .Select((episode, i) => (episode, i))
-            .Where(e => !e.episode.Locked && engine.GetGameInfo().Maps.ContainsKey(e.episode.StartMap))
+            .Where(e => !e.episode.Locked && hooks.EpisodeOpen?.Invoke(e.episode) != false
+                && engine.GetGameInfo().Maps.ContainsKey(e.episode.StartMap))
             .Select(e => e.i)
             .ToList();
 

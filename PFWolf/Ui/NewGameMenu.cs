@@ -12,10 +12,35 @@ internal sealed record PlayerClassChoice(string Class, string? PicName);
 /// </summary>
 /// <param name="inGame">Whether a game is being played (starting another asks first)</param>
 /// <param name="startGame">Starts the new game: its skill, episode, first map and class</param>
+/// <param name="episodeOpen">Whether an episode can be picked: not starts-locked, or unlocked since (Gameplay/Unlocks.cs)</param>
 internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets, InputManager input, AudioManager audio, VideoManager video,
     GraphicManager graphics, MenuDrawing draw, MenuLoop loop, MenuInput menuInput, MenuDefs defs, TextPresenter presenter,
-    InventoryManager inventory, Func<bool> inGame, Action<short, EpisodeInfo, MapInfo?, string?> startGame, Func<List<string>> playerClasses)
+    InventoryManager inventory, Func<bool> inGame, Action<short, EpisodeInfo, MapInfo?, string?> startGame, Func<List<string>> playerClasses,
+    Func<EpisodeInfo, bool> episodeOpen)
 {
+    /// <summary>
+    /// Greys out the episodes that aren't open yet (starts-locked and not unlocked), named by their
+    /// locked-name if they have one, and moves the cursor off one onto the first that's open
+    /// </summary>
+    /// <returns>Whether any episode is open</returns>
+    internal static bool ShowEpisodeLocks(CP_itemtype[] rows, CP_iteminfo info, Func<EpisodeInfo, bool> open, Func<string, string> text)
+    {
+        bool any = false;
+        foreach (var row in rows)
+        {
+            if (row.data is not EpisodeInfo episode)
+                continue;
+            bool isOpen = open(episode);
+            row.active = (short)(isOpen ? 1 : 0);
+            row.text = text(!isOpen && episode.LockedName is { Length: > 0 } lockedName ? lockedName : episode.Name);
+            any |= isOpen;
+        }
+
+        if (any && (info.curpos < 0 || info.curpos >= rows.Length || rows[info.curpos].active == 0))
+            info.curpos = (short)Array.FindIndex(rows, row => row.active != 0);
+        return any;
+    }
+
     // Loaded from menudefs/ in CheckForEpisodes
     internal CP_itemtype[] NewEmenu = [];
     internal CP_iteminfo NewEitems = null!;
@@ -52,6 +77,15 @@ internal sealed class NewGameMenu(GameEngineManager engine, AssetManager assets,
         }
 
     firstpart:
+        if (!ShowEpisodeLocks(NewEmenu, NewEitems, episodeOpen, name => name.ToLanguageText(language)))
+        {
+            audio.Play("player/usefail");
+            draw.Message("No episode is unlocked!");
+            input.ClearKeysDown();
+            input.Ack();
+            draw.MenuFadeOut();
+            return 0;
+        }
         DrawNewEpisode();
         do
         {
