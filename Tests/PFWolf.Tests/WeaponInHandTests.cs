@@ -290,6 +290,31 @@ public class WeaponInHandTests
     }
 
     [Test]
+    public void Holding_Fire_Cooks_A_Throw_Up_To_Its_Most_And_Letting_Go_Carries_On()
+    {
+        // Arrange: the rifle stands in for a grenade, cooking on its Fire state
+        var rig = new Rig("Rifle") { InHand = "Rifle" };
+        var weapon = rig.Sprite;
+        WeaponInHand.JumpWeaponState(weapon, "Reload");
+        rig.Session.tics = 3;
+        rig.Session.playerinput.SetPressed(buttontypes.bt_attack, true);
+
+        // Act / Assert: held, it goes up a tic's worth each time and back to Fire
+        rig.Hand.A_HoldCharge(weapon, ["Fire"]);
+        Assert.That(rig.Session.playerstate.WeaponPower, Is.EqualTo(3));
+        Assert.That(weapon.CurrentState!.StateName, Is.EqualTo("Fire"));
+        for (int i = 0; i < 50; i++)
+            rig.Hand.A_HoldCharge(weapon, ["Fire"]);
+        Assert.That(rig.Session.playerstate.WeaponPower, Is.EqualTo(100));
+
+        // let go: it stays where it is
+        WeaponInHand.JumpWeaponState(weapon, "Reload");
+        rig.Session.playerinput.SetPressed(buttontypes.bt_attack, false);
+        rig.Hand.A_HoldCharge(weapon, ["Fire"]);
+        Assert.That(weapon.CurrentState!.StateName, Is.EqualTo("Reload"));
+    }
+
+    [Test]
     public void Zoomed_In_A_Weapon_Fires_Its_ZoomFire_State()
     {
         // Arrange: the rifle loaded, zoomed in

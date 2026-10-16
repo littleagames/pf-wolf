@@ -47,10 +47,12 @@ internal sealed class Missiles(
     }
 
     /// <summary>
-    /// A_FireMissile("Grenade"[, spread]): the weapon in hand throws a missile the way the player
-    /// faces, turned up to spread degrees either way at random, from just in front of them, if
-    /// there's ammo (and charge) for it. The missile's `speed` is in 1/65536 tile a tic, and
-    /// `speed.random` adds up to that much more at random.
+    /// A_FireMissile("Grenade"[, spread[, "power"]]): the weapon in hand throws a missile the way
+    /// the player faces, turned up to spread degrees either way at random, from just in front of
+    /// them, if there's ammo (and charge) for it. The missile's `speed` is in 1/65536 tile a tic,
+    /// and `speed.random` adds up to that much more at random. With "power" it's thrown as hard
+    /// as the throw was cooked (A_HoldCharge): that share of its speed, a quarter at least
+    /// (Midnight Assault's GrenadeAttack), and the cooking starts again.
     /// </summary>
     internal void A_FireMissile(Entities.Actors.Actor weapon, string[] args)
     {
@@ -72,6 +74,11 @@ internal sealed class Missiles(
         int angle = player.Angle + (spread > 0 ? session.random.RndT() % (2 * spread + 1) - spread : 0);
         missile.Angle = (short)((angle % ANGLES + ANGLES) % ANGLES);
         missile.Speed = ReadMissileSpeed(missile);
+        if (args.Skip(2).Any(a => a.Trim().Equals("power", StringComparison.OrdinalIgnoreCase)))
+        {
+            missile.Speed = ThrowSpeed(missile.Speed, session.playerstate.WeaponPower);
+            session.playerstate.WeaponPower = 0;
+        }
         missile.Shooter = player;
         missile.TicCount = 1;
 
@@ -87,6 +94,9 @@ internal sealed class Missiles(
         weapons.UseAmmo();
     }
 
+    /// <summary>A cooked throw's speed: power (0-100) per cent of the full speed, 25 at least</summary>
+    internal static int ThrowSpeed(int fullSpeed, int power) => fullSpeed * Math.Clamp(power, 25, 100) / 100;
+
     internal int ReadMissileSpeed(Entities.Actors.Actor missile)
     {
         int speed = missile.Properties.TryGetValue("speed", out var v) && int.TryParse(v?.ToString(), out var n) ? n : 0x1c00;
@@ -96,20 +106,29 @@ internal sealed class Missiles(
     }
 
     /// <summary>
-    /// A_Missile(min, max): a player's missile's think. It flies along its angle; meeting a wall,
-    /// a solid thing or something shootable (not the player), it hurts that min..max and goes to
-    /// its Death state.
+    /// A_Missile(min, max[, "bounce"]): a player's missile's think. It flies along its angle;
+    /// meeting a wall, a solid thing or something shootable (not the player), it hurts that
+    /// min..max and goes to its Death state. With bounce, a wall turns it back off it at half the
+    /// speed, with its `bouncesound`, as Midnight Assault's grenade (its Death then comes from its
+    /// states running out: its fuse).
     /// </summary>
     internal void A_Missile(Entities.Actors.Actor ob, string[] args)
     {
         int speed = (int)(ob.Speed * session.tics);
-        ob.X += MathUtils.FixedMul(speed, TrigTables.costable[ob.Angle]);
-        ob.Y -= MathUtils.FixedMul(speed, TrigTables.sintable[ob.Angle]);
+        int dx = MathUtils.FixedMul(speed, TrigTables.costable[ob.Angle]);
+        int dy = -MathUtils.FixedMul(speed, TrigTables.sintable[ob.Angle]);
+        ob.X += dx;
+        ob.Y += dy;
         ob.TileX = (byte)(ob.X >> MapConstants.TILESHIFT);
         ob.TileY = (byte)(ob.Y >> MapConstants.TILESHIFT);
 
         Entities.Actors.Actor? victim = null;
         bool blocked = !hooks.ProjectileTryMove(ob);
+        if (blocked && args.Skip(2).Any(a => a.Trim().Equals("bounce", StringComparison.OrdinalIgnoreCase)))
+        {
+            Bounce(ob, dx, dy);
+            return;
+        }
         if (!blocked)
         {
             // the player's side's (factions.yaml) it flies past: no friendly fire
@@ -133,6 +152,48 @@ internal sealed class Missiles(
         }
 
         Detonate(ob);
+    }
+
+    /// <summary>
+    /// A missile that's just moved dx, dy into a wall goes back to where it was and turns off it:
+    /// its x reversed if only moving along x is blocked, its y if only y, both in a corner (as the
+    /// original's grenade did, trying each way on its own). It slows to half, with its bouncesound.
+    /// </summary>
+    internal void Bounce(Entities.Actors.Actor ob, int dx, int dy)
+    {
+        const int ANGLES = GameConstants.ANGLES;
+        ob.X -= dx;
+        ob.Y -= dy;
+
+        ob.X += dx;
+        bool xClear = hooks.ProjectileTryMove(ob);
+        ob.X -= dx;
+        ob.Y += dy;
+        bool yClear = hooks.ProjectileTryMove(ob);
+        ob.Y -= dy;
+        ob.TileX = (byte)(ob.X >> MapConstants.TILESHIFT);
+        ob.TileY = (byte)(ob.Y >> MapConstants.TILESHIFT);
+
+        ob.Angle = (short)(BounceAngle(ob.Angle, xClear, yClear) % ANGLES);
+        ob.Speed /= 2;
+        if (ob.Properties.TryGetValue("bouncesound", out var sound) && sound is string name && name.Length > 0)
+            hooks.PlaySoundAt(name, ob);
+    }
+
+    /// <summary>
+    /// The angle (degrees, 0 east, 90 north) a missile turns to off a wall: x reversed if moving
+    /// along y alone was clear, y reversed if along x alone was, straight back otherwise
+    /// </summary>
+    internal static int BounceAngle(int angle, bool xClear, bool yClear)
+    {
+        const int ANGLES = GameConstants.ANGLES;
+        int turned = (xClear, yClear) switch
+        {
+            (false, true) => 180 - angle,       // a wall across x: x reversed
+            (true, false) => -angle,            // a wall across y: y reversed
+            _ => angle + 180,                   // a corner, or nothing clear: straight back
+        };
+        return (turned % ANGLES + ANGLES) % ANGLES;
     }
 
     // In deathmatch, another living player a player's missile has flown into (as an enemy's

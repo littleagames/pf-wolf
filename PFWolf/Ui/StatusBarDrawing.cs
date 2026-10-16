@@ -328,6 +328,31 @@ internal sealed class StatusBarDrawing(
                 LatchNumber(name, inventory.GetCount(item));
     }
 
+    /// <summary>
+    /// The power meter (statusbar.yaml power-meter, Midnight Assault's HUD meter): while a throw
+    /// cooks (A_HoldCharge), its pic at x, y and a bar in its box, as long as the box's width is
+    /// of the power's 100, in the first of its levels whose below is more than the power (else
+    /// its color). Nothing while there's no power.
+    /// </summary>
+    internal void DrawPowerMeter()
+    {
+        if (StatusBarHidden) return;
+        int power = session.playerstate.WeaponPower;
+        if (power <= 0 || StatusBar.Get("power-meter") is not { } meter)
+            return;
+        using var _ = StatusBarOrigin(meter);
+        int top = StatusBarTop(meter);
+        if (!string.IsNullOrEmpty(meter.Pic))
+            graphics.DrawPic(meter.Pic, meter.X, top + meter.Y);
+        if (meter.Box.Count != 4)
+            return;
+        int width = meter.Box[2] * Math.Min(power, 100) / 100;
+        var color = meter.Levels.FirstOrDefault(level => power < level.Below)?.Lit.FirstOrDefault()
+            ?? meter.Color ?? "White";
+        if (width > 0)
+            video.Bar(meter.Box[0], top + meter.Box[1], width, meter.Box[3], color);
+    }
+
     /// <summary>The weapon in hand's name (statusbar.yaml weapon-name): its `tag` (a $NAME language key or the text)</summary>
     internal void DrawWeaponName()
     {

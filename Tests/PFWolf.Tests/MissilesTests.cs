@@ -213,6 +213,41 @@ public class MissilesTests
         Assert.That(_playerHurts, Is.EqualTo(new[] { 100 }));
     }
 
+    [TestCase(30, false, true, 150)]     // a wall across x: x turned back
+    [TestCase(30, true, false, 330)]     // a wall across y: y turned back
+    [TestCase(30, false, false, 210)]    // a corner: straight back
+    [TestCase(300, false, true, 240)]
+    public void A_Bounce_Turns_Off_The_Wall_It_Met(int angle, bool xClear, bool yClear, int turned)
+    {
+        Assert.That(Missiles.BounceAngle(angle, xClear, yClear), Is.EqualTo(turned));
+    }
+
+    [Test]
+    public void A_Bouncing_Missile_Goes_Back_Slows_To_Half_And_Sounds()
+    {
+        // Arrange: moved 0.25 tile east (as A_Missile does) into what the test's move check calls clear both ways
+        var grenade = Thing(("bouncesound", "grenade/bounce"));
+        (grenade.X, grenade.Y, grenade.Angle, grenade.Speed) = (5 * Tile + Tile / 4, 5 * Tile, 0, 12288);
+
+        // Act
+        _missiles.Bounce(grenade, Tile / 4, 0);
+
+        // Assert
+        Assert.That(grenade.X, Is.EqualTo(5 * Tile));
+        Assert.That(grenade.Angle, Is.EqualTo(180));
+        Assert.That(grenade.Speed, Is.EqualTo(6144));
+        Assert.That(_sounds, Is.EqualTo(new[] { ("grenade/bounce", (Entities.Actors.Actor)grenade) }));
+    }
+
+    [TestCase(0, 25)]       // not cooked: a quarter
+    [TestCase(10, 25)]
+    [TestCase(60, 60)]
+    [TestCase(100, 100)]
+    public void A_Cooked_Throw_Goes_As_Hard_As_It_Was_Cooked_A_Quarter_At_Least(int power, int percent)
+    {
+        Assert.That(Missiles.ThrowSpeed(10000, power), Is.EqualTo(100 * percent));
+    }
+
     [Test]
     public void A_Shock_Hurts_The_Player_Close_By_With_Its_Sound()
     {

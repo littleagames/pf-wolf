@@ -64,6 +64,7 @@ internal sealed class PlayScreen(
         statusBar.DrawCounts();
         statusBar.DrawWeaponName();
         weapons.DrawWeaponSlots();
+        statusBar.DrawPowerMeter();
         statusBar.DrawHeartMonitor(force: true);
         statusBar.DrawRadarGauge();
         if (statusBar.StatusBar.Get("radar") is { } radar && !(hooks.ViewSize() == 21 && hooks.InGame()))

@@ -150,6 +150,7 @@ internal sealed class WeaponInHand(
         Entities.Actors.ActorActionRegistry.Register("A_WeaponReady", A_WeaponReady);
         Entities.Actors.ActorActionRegistry.Register("A_GunAttack", A_GunAttack);
         Entities.Actors.ActorActionRegistry.Register("A_FireBullet", A_FireBullet);
+        Entities.Actors.ActorActionRegistry.Register("A_HoldCharge", A_HoldCharge);
         Entities.Actors.ActorActionRegistry.Register("A_CustomPunch", A_CustomPunch);
         Entities.Actors.ActorActionRegistry.Register("A_ReFire", A_ReFire);
         Entities.Actors.ActorActionRegistry.Register("A_Reload", A_Reload);
@@ -203,6 +204,22 @@ internal sealed class WeaponInHand(
         weapons.Reload(rounds);
         if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) && weapons.CanReload(session.playerstate.weapon))
             JumpWeaponState(weapon, args[1]);
+    }
+
+    /// <summary>
+    /// A_HoldCharge("State"[, max]): while fire is held, the throw cooks: the weapon's power
+    /// (PlayerState.WeaponPower) goes up a tic's worth, to max (100), and the weapon goes back to
+    /// the state, held there; let go, it carries on (Midnight Assault's grenade). A_FireMissile's
+    /// "power" throws with it.
+    /// </summary>
+    internal void A_HoldCharge(Entities.Actors.Actor weapon, string[] args)
+    {
+        if (!session.playerinput.IsPressed(buttontypes.bt_attack) || args.Length == 0)
+            return;
+        int max = args.Length > 1 && int.TryParse(args[1], out var m) ? Math.Clamp(m, 1, 100) : 100;
+        var playerstate = session.playerstate;
+        playerstate.WeaponPower = Math.Min(playerstate.WeaponPower + (int)session.tics, max);
+        JumpWeaponState(weapon, args[0]);
     }
 
     /// <summary>
