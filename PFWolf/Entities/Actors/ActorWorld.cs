@@ -29,6 +29,8 @@ internal sealed class ActorWorld(
     PlayerView playerView,
     SmartSwitches smartSwitches,
     LevelAI levelAI,
+    Gameplay.Stealth? stealth,
+    Gameplay.Objectives? objectives,
     GameSession session)
 {
     internal GameEngineManager Engine => engine;
@@ -53,8 +55,8 @@ internal sealed class ActorWorld(
     internal GameSession Session => session;
 
     /// <summary>Disguise and going unseen (Gameplay/Stealth.cs); none, enemies notice as Wolf3D's do</summary>
-    internal Gameplay.Stealth? Stealth { get; set; }
+    internal Gameplay.Stealth? Stealth => stealth;
 
     /// <summary>The level objectives (Gameplay/Objectives.cs): an `objective` actor's death completes one</summary>
-    internal Gameplay.Objectives? Objectives { get; set; }
+    internal Gameplay.Objectives? Objectives => objectives;
 }

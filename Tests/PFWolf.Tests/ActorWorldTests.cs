@@ -12,7 +12,7 @@ public class ActorWorldTests
     {
         _session = new GameSession();
         _world = new ActorWorld(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!,
-            null!, null!, null!, null!, null!, _session);
+            null!, null!, null!, null!, null!, null, null, _session);
     }
 
     private static PlayerPawn Pawn(short health) => new() { State = new Entities.PlayerState { Health = health } };
