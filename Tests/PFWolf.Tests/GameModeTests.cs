@@ -339,7 +339,7 @@ public class MatchScoringTests
         Assert.That(hunt.CurrentPhase, Is.EqualTo(PropHunt.Phase.Hide));
         Assert.That((objective.IsWaiting(rig.Red1), objective.IsWaiting(rig.Blue)), Is.EqualTo((true, false)));
 
-        clock.TimeCount += PropHunt.HideTics;
+        clock.TimeCount += hunt.HideTics;
         hunt.Tick();
         Assert.That(hunt.CurrentPhase, Is.EqualTo(PropHunt.Phase.Hunt));
         Assert.That(objective.IsWaiting(rig.Red1), Is.False);
@@ -367,10 +367,10 @@ public class MatchScoringTests
     {
         var rig = new Rig(GameMode.PropHunt);
         var hunt = PropHuntOf(rig, []);
-        rig.Session.GameState.TimeCount += PropHunt.HideTics;
+        rig.Session.GameState.TimeCount += hunt.HideTics;
         hunt.Tick();
 
-        rig.Session.GameState.TimeCount += PropHunt.HuntTics - 1;
+        rig.Session.GameState.TimeCount += hunt.HuntTics - 1;
         hunt.Tick();
         Assert.That(hunt.CurrentPhase, Is.EqualTo(PropHunt.Phase.Hunt), "a tic to go");
 
@@ -386,9 +386,9 @@ public class MatchScoringTests
         var rig = new Rig(GameMode.PropHunt);
         rig.Match.NetRules = rig.Match.NetRules with { ScoreLimit = 1 };
         var hunt = PropHuntOf(rig, []);
-        rig.Session.GameState.TimeCount += PropHunt.HideTics;
+        rig.Session.GameState.TimeCount += hunt.HideTics;
         hunt.Tick();    // the hunt starts
-        rig.Session.GameState.TimeCount += PropHunt.HuntTics;
+        rig.Session.GameState.TimeCount += hunt.HuntTics;
         hunt.Tick();    // and runs out
 
         Assert.That(rig.Match.MatchOver, Is.True);
@@ -447,7 +447,7 @@ public class MatchScoringTests
         rig.Session.SetActing(rig.Red1);
         Assert.That(objective.IsDecoy(lamp), Is.False, "not while the props hide");
 
-        rig.Session.GameState.TimeCount += PropHunt.HideTics;
+        rig.Session.GameState.TimeCount += hunt.HideTics;
         hunt.Tick();
         Assert.That(objective.IsDecoy(lamp), Is.True);
 

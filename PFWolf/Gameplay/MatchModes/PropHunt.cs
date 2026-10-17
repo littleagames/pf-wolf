@@ -20,9 +20,10 @@ namespace PFWolf.Gameplay.MatchModes;
     enemy, item or player) with something to see, but not projectiles, wall
     sprites or any class flagged NODISGUISE (puddles, the modes' flags).
 
-    A match is rounds. Each starts with the props hiding (HideTics) while
-    the hunters wait, kept still with their view blacked out; then the hunt
-    (HuntTics). The hunters win the round by killing every prop; the props
+    A match is rounds. Each starts with the props hiding (the rules' hide
+    time, 30 s unless the host says) while the hunters wait, kept still with
+    their view blacked out; then the hunt (the hunt time, 3 minutes). A prop
+    sees from behind itself (chasecam), to see what it looks like. The hunters win the round by killing every prop; the props
     win it if any is still alive when the time runs out. Each round won is a
     point for the team, and the score limit's rounds win the match. After a
     few seconds (RoundOverTics) the sides swap and everyone comes back
@@ -42,8 +43,12 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
 
     internal enum Phase { Hide, Hunt, RoundOver }
 
-    /// <summary>How long the props have to hide, the hunt lasts, and the end of a round shows who won (tics)</summary>
-    internal const int HideTics = 30 * 70, HuntTics = 3 * 60 * 70, RoundOverTics = 5 * 70;
+    /// <summary>How long the props have to hide and the hunt lasts (the rules: lobby Hide Time, Hunt Time), in tics</summary>
+    internal int HideTics => Math.Max(Match.NetRules.HideSeconds, 1) * 70;
+    internal int HuntTics => Math.Max(Match.NetRules.HuntMinutes, 1) * 60 * 70;
+
+    /// <summary>How long the end of a round shows who won (tics)</summary>
+    internal const int RoundOverTics = 5 * 70;
 
     /// <summary>The team hunting (0 red, 1 blue); the other hides</summary>
     internal int HuntingTeam;
@@ -236,6 +241,9 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
 
     /// <summary>A disguised prop's most health is its look's (the status bar's face goes by its share of it)</summary>
     public int? MostHealth(Entities.PlayerState p) => p.Disguise != null ? MostHealth(p.Disguise) : null;
+
+    /// <summary>A living, disguised prop sees from behind itself, to see what it looks like</summary>
+    public bool ChaseCam(Entities.PlayerState p) => p.Disguise != null && p.Health > 0 && IsProp(p);
 
     /// <summary>The hunters wait, still and seeing nothing, while the props hide</summary>
     public bool IsWaiting(Entities.PlayerState p) => CurrentPhase == Phase.Hide && p.Team == HuntingTeam;

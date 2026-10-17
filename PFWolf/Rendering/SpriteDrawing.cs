@@ -419,8 +419,8 @@ internal sealed class SpriteDrawing(
             return;
         }
 
-        // Only in the player's own view
-        if (!session.Camera.OnPlayer)
+        // Only in the player's own view, not from behind them
+        if (!session.Camera.OnPlayer || session.Camera.Chasing)
             return;
 
         // The frame the weapon's states are on (Gameplay/WeaponInHand.cs), in the light of the

@@ -97,10 +97,12 @@ internal sealed record Hello(int Version, NetIdentity Identity, string Name, str
 /// The game the host has set up: how they'll play, the episode (its place in game-info's) and
 /// the skill, and a match's rules (Gameplay.NetRules): its enemies, score limit (GameModes), time limit
 /// (minutes; 0 for none) and whether taken items come back, and the deathmatch arena played
-/// (a game-info map with `deathmatch: true`; empty when the game has none: the episode's start)
+/// (a game-info map with `deathmatch: true`; empty when the game has none: the episode's start),
+/// and Prop Hunt's hide time (seconds) and hunt time (minutes) each round
 /// </summary>
 internal sealed record LobbySettings(GameMode Mode, int Episode, int Skill,
-    bool Monsters = false, int ScoreLimit = 20, int TimeLimit = 0, bool ItemRespawn = true, string Map = "")
+    bool Monsters = false, int ScoreLimit = 20, int TimeLimit = 0, bool ItemRespawn = true, string Map = "",
+    int HideSeconds = 30, int HuntMinutes = 3)
 {
     public void Write(NetDataWriter w)
     {
@@ -112,10 +114,13 @@ internal sealed record LobbySettings(GameMode Mode, int Episode, int Skill,
         w.Put((byte)TimeLimit);
         w.Put(ItemRespawn);
         w.Put(Map);
+        w.Put((byte)HideSeconds);
+        w.Put((byte)HuntMinutes);
     }
 
     public static LobbySettings Read(NetDataReader r) =>
-        new((GameMode)r.GetByte(), r.GetByte(), r.GetByte(), r.GetBool(), r.GetShort(), r.GetByte(), r.GetBool(), r.GetString());
+        new((GameMode)r.GetByte(), r.GetByte(), r.GetByte(), r.GetBool(), r.GetShort(), r.GetByte(), r.GetBool(), r.GetString(),
+            r.GetByte(), r.GetByte());
 }
 
 /// <summary>A player waiting in the lobby, in their slot (the host's is 0), with their class, color (empty: their class's own) and team (0 red, 1 blue: team games)</summary>

@@ -644,6 +644,14 @@ maps:
     floor-number: 5
     music: SEARCHN
     cluster: 1
+  # Made for Prop Hunt: storerooms full of decorations to look like
+  PH01:
+    name: "The Storerooms"
+    deathmatch: true
+    modes: [prop-hunt, deathmatch, team-deathmatch]
+    floor-number: 6
+    music: CORNER
+    cluster: 1
 
 end-strings:
   - $ENDSTR1

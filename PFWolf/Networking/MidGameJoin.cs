@@ -37,7 +37,7 @@ internal sealed class MidGameJoin(
     ===============
     */
 
-    internal const int NetStateVersion = 6;     // 6: each player's Prop Hunt disguise and part; 5: team scores and the mode's objective; 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
+    internal const int NetStateVersion = 7;     // 7: Prop Hunt's hide and hunt times; 6: each player's Prop Hunt disguise and part; 5: team scores and the mode's objective; 2: a pusher per moving pushwall; 3: targets and shooters in the level body; 4: each player's color
 
     /// <summary>
     /// Everything a player joining needs to take the game up from here: the level as a save
@@ -59,6 +59,8 @@ internal sealed class MidGameJoin(
             bw.Write(deathmatch.NetRules.ScoreLimit);
             bw.Write(deathmatch.NetRules.TimeLimitMinutes);
             bw.Write(deathmatch.NetRules.ItemRespawn);
+            bw.Write(deathmatch.NetRules.HideSeconds);
+            bw.Write(deathmatch.NetRules.HuntMinutes);
             bw.Write(deathmatch.MatchOver);
             bw.Write(deathmatch.TeamScores[0]);
             bw.Write(deathmatch.TeamScores[1]);
@@ -127,7 +129,7 @@ internal sealed class MidGameJoin(
             gameSession.NetSeed = br.ReadByte();
             int rnd = br.ReadInt32();
             var mode = (GameMode)br.ReadByte();
-            deathmatch.NetRules = new NetRules(br.ReadBoolean(), br.ReadInt32(), br.ReadInt32(), br.ReadBoolean());
+            deathmatch.NetRules = new NetRules(br.ReadBoolean(), br.ReadInt32(), br.ReadInt32(), br.ReadBoolean(), br.ReadInt32(), br.ReadInt32());
             deathmatch.MatchOver = br.ReadBoolean();
             deathmatch.TeamScores[0] = br.ReadInt32();
             deathmatch.TeamScores[1] = br.ReadInt32();

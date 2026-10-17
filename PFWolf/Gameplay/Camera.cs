@@ -15,6 +15,11 @@ namespace PFWolf.Gameplay;
 = The player's own look up/down and eye height are playerpitch and PlayerEyeZ; the
 = renderer's ViewPitch and ViewEyeZ are this frame's, taken from the camera.
 =
+= Chasing: where the match mode allows it (a Prop Hunt prop, to see what it looks like) and
+= the chasecam setting is on, the view of the player is from ChaseDistance behind them and
+= ChaseRise higher, pulled in short of any wall or shut door behind, with their body in view
+= and no weapon in hand.
+=
 ====================
 */
 
@@ -58,6 +63,39 @@ internal sealed class Camera(GameSession session)
     /// <summary>Whether the view is the player's own, with their weapon and look</summary>
     internal bool OnPlayer => Target is { } t && t == session.LocalPlayer.Pawn;
 
+    /// <summary>Whether the view of the player should be from behind them now (the mode allows it and chasecam is on); unset, never</summary>
+    internal Func<bool>? WantsChase { get; set; }
+
+    /// <summary>Whether a tile is open for the chasing view to stand in (no wall or shut door); unset, none is</summary>
+    internal Func<int, int, bool>? IsOpenTile { get; set; }
+
+    /// <summary>How far behind and how much higher than the player's eyes the chasing view is (global units, texels)</summary>
+    internal const int ChaseDistance = (int)MapConstants.TileGlobal * 3 / 2, ChaseRise = 16;
+
+    /// <summary>Whether the view is of the player from behind (Chasing): their body shows, their weapon doesn't</summary>
+    internal bool Chasing => OnPlayer && WantsChase?.Invoke() == true;
+
+    // Where the chasing view stands: back along the player's facing from them, in steps, as far as
+    // ChaseDistance or until a step would come within a quarter tile of a closed tile
+    (int X, int Y) ChaseSpot(Entities.Actors.Actor pawn)
+    {
+        double radians = pawn.Angle * Math.PI / 180;
+        double backx = -Math.Cos(radians), backy = Math.Sin(radians);     // y grows southward
+        const int Step = (int)MapConstants.TileGlobal / 16, Clearance = (int)MapConstants.TileGlobal / 4;
+        int x = pawn.X, y = pawn.Y;
+        for (int along = Step; along <= ChaseDistance; along += Step)
+        {
+            int nx = pawn.X + (int)(backx * along), ny = pawn.Y + (int)(backy * along);
+            bool clear = true;
+            foreach (var (cx, cy) in new[] { (nx + Clearance, ny), (nx - Clearance, ny), (nx, ny + Clearance), (nx, ny - Clearance) })
+                clear &= IsOpenTile?.Invoke(cx >> (int)MapConstants.TileShift, cy >> (int)MapConstants.TileShift) == true;
+            if (!clear)
+                break;
+            (x, y) = (nx, ny);
+        }
+        return (x, y);
+    }
+
     /// <summary>Whether the view is through an actor other than the player</summary>
     internal bool Spectating => Target is { } t && t != session.LocalPlayer.Pawn;
 
@@ -74,8 +112,8 @@ internal sealed class Camera(GameSession session)
         smoothangle = ((smoothangle % GameConstants.Angles) + GameConstants.Angles) % GameConstants.Angles;
     }
 
-    internal int X => Target?.X ?? fixedx;
-    internal int Y => Target?.Y ?? fixedy;
+    internal int X => Chasing ? ChaseSpot(Target!).X : Target?.X ?? fixedx;
+    internal int Y => Chasing ? ChaseSpot(Target!).Y : Target?.Y ?? fixedy;
     internal int TileX => X >> (int)MapConstants.TileShift;
     internal int TileY => Y >> (int)MapConstants.TileShift;
 
@@ -96,7 +134,7 @@ internal sealed class Camera(GameSession session)
     internal int EyeZ => Target switch
     {
         null => fixedeyez,
-        PlayerPawn pawn => pawn.State.EyeZ,
+        PlayerPawn pawn => Chasing ? Math.Min(pawn.State.EyeZ + ChaseRise, GameConstants.MaxEye) : pawn.State.EyeZ,
         _ => GameConstants.EyeDefault,
     };
 

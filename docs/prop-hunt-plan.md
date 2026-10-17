@@ -147,7 +147,24 @@ own picture where the last weapon's was, a prop's face goes by its share of its 
 health (`IMatchObjective.MostHealth`, `StatusBarHooks.MostHealth`), and the automap's stats
 start under the match line (`AutomapDrawing.TopReserved`).
 
-### Phase 4: polish (optional)
+### Phase 4: polish (done 2026-10-17)
+
+As built: chase cam: `Camera.Chasing` (`WantsChase` = the `chasecam` setting in controls.cfg, on
+by default, and `IMatchObjective.ChaseCam`: a living disguised prop) puts the view
+`Camera.ChaseDistance` (1.5 tiles) behind and `ChaseRise` (16) above, stepped back short of
+walls and shut doors (`IsOpenTile`); the body draws and the weapon doesn't. Lobby: `NetRules`
+and `LobbySettings` carry `HideSeconds`/`HuntMinutes` (rules rows Hide Time 10-60 s, Hunt
+Time 1-10 min, Prop Hunt only; protocol 10, net state 7); `PropHunt.HideTics/HuntTics` read
+them. Map: PH01 "The Storerooms" (make-deathmatch-maps.ps1, 14 kinds of decoration;
+game-info `modes: [prop-hunt, deathmatch, team-deathmatch]`); every DM arena still plays.
+Editor: the actor schema's flags and properties descriptions name NODISGUISE and
+`prophunt.health` (the editor has no per-property fields; NODISGUISE shows in flag
+suggestions because the base pk3 uses it). Checked: unit tests (chase spot, lobby round-trip),
+headless chase-cam and PH01 screenshots, the rules rows in a real lobby. Not done: game-info
+`prop-hunt:` defaults, Spear/Blake decoration checks, varied `prophunt.health` on Wolf3D's
+decorations (nearly all are solid, so nearly all give 100).
+
+### Phase 4 plan, as written
 
 - **Chase cam for props** (decision 1): a camera behind and above the prop, pushed in where
   walls are in the way, with the prop's own body drawn. This is the deferred chase cam from

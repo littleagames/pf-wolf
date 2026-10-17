@@ -128,6 +128,32 @@ public class CameraTests
     }
 
     [Test]
+    public void Chasing_Looks_From_Behind_The_Player_And_Higher_Short_Of_A_Wall()
+    {
+        // Arrange: facing east from the middle of tile 5,5; a wall at x 3 unless opened up
+        var session = new GameSession();
+        var pawn = new PlayerPawn { State = session.Players[0], X = 0x58000, Y = 0x58000, Angle = 0 };
+        session.Players[0].Pawn = pawn;
+        var camera = session.Camera;
+        bool wall = false;
+        camera.IsOpenTile = (x, _) => !(wall && x <= 3);
+
+        // Act / Assert: off, the player's own view
+        Assert.That((camera.Chasing, camera.X), Is.EqualTo((false, 0x58000)));
+
+        camera.WantsChase = () => true;
+        Assert.That(camera.Chasing, Is.True);
+        Assert.That((camera.X, camera.Y), Is.EqualTo((0x58000 - Camera.ChaseDistance, 0x58000)), "a tile and a half behind");
+        Assert.That(camera.EyeZ, Is.EqualTo(session.Players[0].EyeZ + Camera.ChaseRise));
+
+        wall = true;
+        Assert.That(camera.X, Is.InRange(0x40000 + 0x4000, 0x58000 - 1), "pulled in a quarter tile short of the wall");
+
+        camera.WantsChase = () => false;
+        Assert.That(camera.X, Is.EqualTo(0x58000));
+    }
+
+    [Test]
     public void There_Is_No_Target_Before_The_Player_Has_A_Pawn()
     {
         Assert.That(new GameSession().Camera.Target, Is.Null);

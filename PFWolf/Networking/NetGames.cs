@@ -143,7 +143,8 @@ internal sealed class NetGames(
         game.NetGame = true;
         game.NetSeed = start.Seed;
         var rules = start.Settings;
-        deathmatch.NetRules = new NetRules(rules.Monsters || rules.Mode == GameMode.Coop, rules.ScoreLimit, rules.TimeLimit, rules.ItemRespawn);
+        deathmatch.NetRules = new NetRules(rules.Monsters || rules.Mode == GameMode.Coop, rules.ScoreLimit, rules.TimeLimit, rules.ItemRespawn,
+            rules.HideSeconds, rules.HuntMinutes);
         deathmatch.NewMatch();
         scoreboard.ShowScoreboard = false;
         netPlay.NetLevel = 0;

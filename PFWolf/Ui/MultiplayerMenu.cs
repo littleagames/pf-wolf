@@ -756,6 +756,8 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
                 ? settings.Mode == GameMode.Heist ? $"lead by {settings.ScoreLimit}" : $"{settings.ScoreLimit} {what}"
                 : settings.Mode == GameMode.Horde ? "endless" : $"no {what} limit",
         };
+        if (settings.Mode == GameMode.PropHunt)
+            parts.Add($"{settings.HideSeconds}s/{settings.HuntMinutes}m");     // hide, hunt: the lobby's row is short
         if (settings.TimeLimit > 0 && settings.Mode != GameMode.Horde)
             parts.Add($"{settings.TimeLimit} min");
         if (settings.Monsters)
@@ -776,6 +778,8 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
     };
 
     readonly int[] TimeLimits = [0, 5, 10, 15, 20, 30, 45, 60];
+    readonly int[] HideTimes = [10, 15, 20, 30, 45, 60];       // Prop Hunt, seconds
+    readonly int[] HuntTimes = [1, 2, 3, 4, 5, 7, 10];         // and minutes
     ControlPanelItem[] RulesMenu = [];
     ControlPanelMenuInfo RulesItems = null!;
 
@@ -815,6 +819,8 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
             "timelimit" => settings with { TimeLimit = TimeLimits[MenuDrawing.StepMenuChoice(Math.Max(0, Array.IndexOf(TimeLimits, settings.TimeLimit)), TimeLimits.Length, delta, wrap: true)] },
             "monsters" => settings with { Monsters = !settings.Monsters },
             "itemrespawn" => settings with { ItemRespawn = !settings.ItemRespawn },
+            "hidetime" => settings with { HideSeconds = StepLimit(HideTimes, settings.HideSeconds, delta) },
+            "hunttime" => settings with { HuntMinutes = StepLimit(HuntTimes, settings.HuntMinutes, delta) },
             _ => settings,
         };
         if (settings == session.Settings)
@@ -831,12 +837,19 @@ internal sealed class MultiplayerMenu(GameEngineManager engine, AssetManager ass
         defs.DrawMenuComponents("net-rules");
         MenuDefs.FindMenuItem(RulesMenu, "fraglimit")?.Text = ScoreLimitKey(settings.Mode).ToLanguageText(language);
         MenuDefs.FindMenuItem(RulesMenu, "timelimit")?.Active = (short)(settings.Mode == GameMode.Horde ? 0 : 1);
+        MenuDefs.FindMenuItem(RulesMenu, "hidetime")?.Active = (short)(settings.Mode == GameMode.PropHunt ? 1 : 0);
+        MenuDefs.FindMenuItem(RulesMenu, "hunttime")?.Active = (short)(settings.Mode == GameMode.PropHunt ? 1 : 0);
         draw.DrawMenu(RulesItems, RulesMenu);
         var none = "$STR_MP_NONE".ToLanguageText(language);
         draw.DrawMenuChoice(RulesItems, RulesMenu, "fraglimit", settings.ScoreLimit > 0 ? settings.ScoreLimit.ToString() : none);
         draw.DrawMenuChoice(RulesItems, RulesMenu, "timelimit", settings.TimeLimit > 0 ? $"{settings.TimeLimit} min" : none);
         draw.DrawMenuCheckbox(RulesItems, RulesMenu, "monsters", settings.Monsters);
         draw.DrawMenuCheckbox(RulesItems, RulesMenu, "itemrespawn", settings.ItemRespawn);
+        if (settings.Mode == GameMode.PropHunt)
+        {
+            draw.DrawMenuChoice(RulesItems, RulesMenu, "hidetime", $"{settings.HideSeconds} s");
+            draw.DrawMenuChoice(RulesItems, RulesMenu, "hunttime", $"{settings.HuntMinutes} min");
+        }
         draw.DrawMenuGun(RulesItems);
         video.Update();
     }

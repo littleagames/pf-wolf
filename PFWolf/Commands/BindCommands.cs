@@ -43,6 +43,8 @@ internal sealed class BindCommands(ConsoleManager console, ControlBindings contr
             "m_look [0|1]", args => ToggleOrShow("m_look", args, ref settings.MouseLook), complete: Values("0", "1"));
         console.Register("m_invert", "Whether mouse look is upside down: pushing the mouse away looks down.",
             "m_invert [0|1]", args => ToggleOrShow("m_invert", args, ref settings.MouseInvert), complete: Values("0", "1"));
+        console.Register("chasecam", "Whether the view is from behind you where the game mode allows it (a Prop Hunt prop, to see what it looks like).",
+            "chasecam [0|1]", args => ToggleOrShow("chasecam", args, ref settings.ChaseCam), complete: Values("0", "1"));
         console.Register("joy_sticks", "Which controller stick turns: the right (modern) or the left, with the right strafing (classic).",
             "joy_sticks [modern|classic]", JoySticksCommand, complete: Values("modern", "classic"));
     }

@@ -1,5 +1,5 @@
-# Builds Wolf3D's deathmatch arenas, pfwolf-pk3/maps/wolf3d/DM01.wad to DM04.wad, from the layouts
-# drawn below. Run it after changing a layout:
+# Builds Wolf3D's deathmatch arenas, pfwolf-pk3/maps/wolf3d/DM01.wad to DM04.wad (and HE01 for
+# Heist, PH01 for Prop Hunt), from the layouts drawn below. Run it after changing a layout:
 #
 #   powershell -ExecutionPolicy Bypass -File examples/tools/make-deathmatch-maps.ps1
 #
@@ -53,6 +53,19 @@ $Common['{'] = @(92, 0)             # gold-locked door, in a wall running north-
 $Common['}'] = @(93, 0)             # gold-locked door, in a wall running east-west
 $Common['['] = @(94, 0)             # silver-locked door, north-south
 $Common[']'] = @(95, 0)             # silver-locked door, east-west
+# Prop Hunt's clutter: decorations of every size for props to look like and hide among
+$Common['d'] = @(0, 24)             # oil drum
+$Common['t'] = @(0, 25)             # table with chairs
+$Common['f'] = @(0, 26)             # floor lamp
+$Common['S'] = @(0, 33)             # sink
+$Common['p'] = @(0, 34)             # brown plant
+$Common['V'] = @(0, 35)             # vase
+$Common['T'] = @(0, 36)             # table
+$Common['a'] = @(0, 39)             # suit of armor
+$Common['b'] = @(0, 58)             # barrel
+$Common['w'] = @(0, 60)             # well
+$Common['e'] = @(0, 68)             # stove
+$Common['r'] = @(0, 69)             # rack
 
 # Walls: '#' each arena's own wall, '%' and '&' its others
 $Arenas = @(
@@ -164,6 +177,29 @@ $Arenas = @(
             '#.h........%K..'
             '#.....g....%...'
             '#.m........{..P'
+        )
+    }
+    # Prop Hunt (game-info modes: [prop-hunt, deathmatch]): storerooms cluttered with every kind
+    # of decoration for props to look like, rooms joined by doors, a yard in the middle
+    @{
+        Name = 'PH01'; Title = 'The Storerooms'
+        Walls = @{ '#' = 12 }                           # wood
+        Quarter = @(
+            '###############'
+            '#v..b.d..f...T.'
+            '#.....>.......b'
+            '#.t..a..##-####'
+            '#.......#V....p'
+            '##-######..S...'
+            '#.......#....e.'
+            '#.d.b.d.|.r....'
+            '#.......#..a...'
+            '#.f.....###-###'
+            '#....^........o'
+            '#.T...p...w....'
+            '#.........L....'
+            '#.b..V..t...d..'
+            '#.....f.......P'
         )
     }
 )

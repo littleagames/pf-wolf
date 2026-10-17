@@ -250,6 +250,9 @@ internal static partial class GameHost
         netOverlay.ViewRect = () => (Render.ViewScreenX, Render.ViewScreenY, Render.ViewWidth, Render.ViewHeight);
         hudMessageDrawing.TopReserved = netOverlay.MatchLineHeight;     // messages go under a match's line
         automapDrawing.TopReserved = netOverlay.MatchLineHeight;        // and the automap's stats
+        Session.Camera.WantsChase = () => ControlSettings.ChaseCam && deathmatch.Objective?.ChaseCam(Session.LocalPlayer) == true;
+        Session.Camera.IsOpenTile = (x, y) => x > 0 && y > 0 && x < MapManager.MapWidth - 1 && y < MapManager.MapHeight - 1
+            && MapManager.TileMap[x, y] == 0;
         gameScripts = MakeGameScripts();
         levelMusic = new LevelMusic(GameEngineManager, AudioManager, Session);
         playKeys = MakePlayKeys();

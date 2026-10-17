@@ -99,9 +99,9 @@ internal sealed class PlayerBodies(
         map.DoActor(body, tics);
     }
 
-    /// <summary>A player's body to draw this frame: anyone's but the one the camera looks through</summary>
+    /// <summary>A player's body to draw this frame: anyone's but the one the camera looks through (unless it's behind them)</summary>
     internal Entities.Actors.Actor? VisiblePlayerBody(PlayerPawn pawn) =>
-        session.Camera.Target != pawn && pawn.State.Body is { CurrentState: { Sprite.Length: > 0 } state } body && state.Sprite != "TNT1"
+        (session.Camera.Target != pawn || session.Camera.Chasing) && pawn.State.Body is { CurrentState: { Sprite.Length: > 0 } state } body && state.Sprite != "TNT1"
             ? body : null;
 
     /// <summary>Whether an actor is one of the players' bodies (they turn by their Angle, like a projectile)</summary>

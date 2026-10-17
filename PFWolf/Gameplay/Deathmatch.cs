@@ -8,7 +8,10 @@ namespace PFWolf.Gameplay;
 /// How a match is played: the host's choices in the lobby. ScoreLimit is the mode's
 /// (GameModes.ScoreName: frags, captures, loot lead, points, waves); 0 for none.
 /// </summary>
-internal sealed record NetRules(bool Monsters, int ScoreLimit, int TimeLimitMinutes, bool ItemRespawn);
+/// <param name="HideSeconds">Prop Hunt: how long the props have to hide each round</param>
+/// <param name="HuntMinutes">Prop Hunt: how long the hunt lasts each round</param>
+internal sealed record NetRules(bool Monsters, int ScoreLimit, int TimeLimitMinutes, bool ItemRespawn,
+    int HideSeconds = 30, int HuntMinutes = 3);
 
 // An item taken, to come back: its class, where, and when (GameState.TimeCount)
 internal sealed record ItemRespawn(string ClassName, int TileX, int TileY, int At);
@@ -56,6 +59,9 @@ internal interface IMatchObjective
 
     /// <summary>The most health a player can have for now, where the mode caps it (a Prop Hunt prop's look); else null</summary>
     int? MostHealth(Entities.PlayerState p) => null;
+
+    /// <summary>Whether the mode lets a player see from behind themselves (Camera.Chasing: a Prop Hunt prop, to see its look)</summary>
+    bool ChaseCam(Entities.PlayerState p) => false;
 
     /// <summary>Whether the mode keeps a player still and shows them nothing for now (Prop Hunt's hunters while the props hide)</summary>
     bool IsWaiting(Entities.PlayerState p) => false;

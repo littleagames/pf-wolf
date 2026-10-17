@@ -121,7 +121,8 @@ public class NetMessagesTests
     public void LobbySettings_Round_Trip()
     {
         // Arrange
-        var settings = new LobbySettings(GameMode.Domination, 2, 3, Monsters: true, ScoreLimit: 500, TimeLimit: 15, ItemRespawn: false, Map: "DM03");
+        var settings = new LobbySettings(GameMode.Domination, 2, 3, Monsters: true, ScoreLimit: 500, TimeLimit: 15, ItemRespawn: false, Map: "DM03",
+            HideSeconds: 45, HuntMinutes: 7);
 
         // Act / Assert
         Assert.That(RoundTrip(settings.Write, LobbySettings.Read), Is.EqualTo(settings));

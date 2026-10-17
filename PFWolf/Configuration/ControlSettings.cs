@@ -26,9 +26,13 @@ internal sealed class ControlSettings
 
     internal string JoySticksName => JoyClassicSticks ? "classic" : "modern";
 
+    // A camera behind the player where the match mode allows one (a Prop Hunt prop, to see its look)
+    internal bool ChaseCam = true;
+
     /// <summary>The settings as console commands, for saving to controls.cfg.</summary>
     internal IEnumerable<string> SettingCommands() =>
     [
+        $"chasecam {(ChaseCam ? 1 : 0)}",
         $"m_look {(MouseLook ? 1 : 0)}",
         $"m_invert {(MouseInvert ? 1 : 0)}",
         $"joy_deadzone {JoyDeadzone}",
