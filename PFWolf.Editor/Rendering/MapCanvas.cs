@@ -632,6 +632,11 @@ public sealed class MapCanvas : Control
         base.OnKeyDown(e);
         bool ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
         e.Handled = true;
+        if (EditKeys.Transform(e.Key, e.KeyModifiers) is { } transform)
+        {
+            Controller?.Transform(transform);
+            return;
+        }
         switch (e.Key)
         {
             case Key.Home:

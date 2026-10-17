@@ -10,6 +10,9 @@ public enum EditTool
     Select,
 }
 
+/// <summary>A rotate or flip, and what became of the values on the tiles that point somewhere</summary>
+public sealed record TransformReport(TileTransform Transform, RemapCounts Counts);
+
 /// <summary>
 /// What the map canvas's mouse and keys do to the level: the tools, the selection and the
 /// clipboard. Lines, boxes, pastes and moves show in the level as they're dragged, as one
@@ -269,10 +272,55 @@ public sealed class ToolController
         ShowPaste(Math.Max(x, 0), Math.Max(y, 0));
     }
 
+    /// <summary>Makes what a transform searches the mapdefs with, so things turn with it; null turns the tiles only</summary>
+    public Func<TileTransform, TileRemap>? MakeRemap { get; set; }
+
+    /// <summary>A rotate or flip was done, with what became of the values pointing somewhere</summary>
+    public event EventHandler<TransformReport>? Transformed;
+
+    /// <summary>Whether there's something to rotate or flip: a paste being placed, or the selection</summary>
+    public bool CanTransform => _document != null && (_pasting != null || (Selection != null && !_pressed));
+
+    /// <summary>
+    /// Rotates or flips the paste being placed, or else the selection's tiles where they are
+    /// (turning around its middle), as one undo step. Things on them turn to face the new way.
+    /// </summary>
+    public void Transform(TileTransform transform)
+    {
+        if (_document is not { } document || !CanTransform)
+            return;
+
+        var remap = MakeRemap?.Invoke(transform);
+        RemapCounts counts;
+        if (_pasting != null)
+        {
+            _pasting = _pasting.Transform(transform, remap, out counts);
+            ShowPaste(_pasteAt.X, _pasteAt.Y);
+        }
+        else
+        {
+            var selection = Selection!.Value;
+            int? plane = CopyAllPlanes ? null : Plane;
+            var clip = TileClip.Copy(document, selection, plane).Transform(transform, remap, out counts);
+            var placed = TileTransforms.Place(transform, selection, document.Width, document.Height);
+            using (var edit = document.BeginEdit(TileTransforms.Describe(transform)))
+            {
+                Clear(edit, selection, plane);
+                clip.Paste(edit, placed.Left, placed.Top);
+            }
+            Selection = placed.Intersect(new TileRect(0, 0, document.Width - 1, document.Height - 1));
+        }
+        RaiseChanged();
+        Transformed?.Invoke(this, new TransformReport(transform, counts));
+    }
+
+    private (int X, int Y) _pasteAt;
+
     private void ShowPaste(int x, int y)
     {
         if (_edit == null || _pasting == null)
             return;
+        _pasteAt = (x, y);
         _edit.Revert();
         _pasting.Paste(_edit, x, y);
         Selection = new TileRect(x, y, x + _pasting.Width - 1, y + _pasting.Height - 1);

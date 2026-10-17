@@ -80,6 +80,21 @@
         <MenuItem Header="_Delete" Command="{Binding DeleteSelectionCommand}" InputGesture="Delete"
                   ToolTip.Tip="Clears the selection: open floor on plane 0, nothing on the others" />
         <Separator />
+        <MenuItem Header="Rotate c_lockwise" Command="{Binding RotateClockwiseCommand}" InputGesture="OemCloseBrackets"
+                  ToolTip.Tip="The selection turns around its middle (or the paste being placed turns); things on it turn to face the new way">
+          <MenuItem.Icon><PathIcon Data="{x:Static v:EditorIcons.RotateClockwise}" Width="16" Height="16" /></MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Header="Rotate counter-clock_wise" Command="{Binding RotateCounterClockwiseCommand}" InputGesture="OemOpenBrackets">
+          <MenuItem.Icon><PathIcon Data="{x:Static v:EditorIcons.RotateCounterClockwise}" Width="16" Height="16" /></MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Header="Rotate 1_80°" Command="{Binding Rotate180Command}" />
+        <MenuItem Header="Flip _horizontally" Command="{Binding FlipHorizontalCommand}" InputGesture="Shift+H">
+          <MenuItem.Icon><PathIcon Data="{x:Static v:EditorIcons.FlipHorizontal}" Width="16" Height="16" /></MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Header="Flip _vertically" Command="{Binding FlipVerticalCommand}" InputGesture="Shift+V">
+          <MenuItem.Icon><PathIcon Data="{x:Static v:EditorIcons.FlipVertical}" Width="16" Height="16" /></MenuItem.Icon>
+        </MenuItem>
+        <Separator />
         <MenuItem Header="Select _all" Command="{Binding SelectAllCommand}" InputGesture="Ctrl+A" />
         <MenuItem Header="Select _nothing" Command="{Binding SelectNoneCommand}" InputGesture="Escape" />
         <Separator />
@@ -202,6 +217,20 @@
           <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding ShowsSelectionOptions}">
             <CheckBox Content="Copy all planes" IsChecked="{Binding CopyAllPlanes}" VerticalAlignment="Center"
                       ToolTip.Tip="Copy, cut, move and delete take every plane, not just the one being edited" />
+            <Button Classes="icon" Command="{Binding RotateCounterClockwiseCommand}"
+                    ToolTip.Tip="Rotate counter-clockwise ([): things on it turn to face the new way">
+              <PathIcon Data="{x:Static v:EditorIcons.RotateCounterClockwise}" />
+            </Button>
+            <Button Classes="icon" Command="{Binding RotateClockwiseCommand}"
+                    ToolTip.Tip="Rotate clockwise (]): things on it turn to face the new way">
+              <PathIcon Data="{x:Static v:EditorIcons.RotateClockwise}" />
+            </Button>
+            <Button Classes="icon" Command="{Binding FlipHorizontalCommand}" ToolTip.Tip="Flip horizontally (Shift+H)">
+              <PathIcon Data="{x:Static v:EditorIcons.FlipHorizontal}" />
+            </Button>
+            <Button Classes="icon" Command="{Binding FlipVerticalCommand}" ToolTip.Tip="Flip vertically (Shift+V)">
+              <PathIcon Data="{x:Static v:EditorIcons.FlipVertical}" />
+            </Button>
           </StackPanel>
         </StackPanel>
       </WrapPanel>
@@ -211,9 +240,10 @@
     <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <StackPanel Spacing="2">
         <TextBlock Text="{Binding HoverInfo}" TextTrimming="CharacterEllipsis" MinHeight="18" />
-        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-          <TextBlock Text="{Binding Status}" Opacity="0.7" TextTrimming="CharacterEllipsis" />
-          <TextBlock Grid.Column="1" Text="{Binding ToolHint}" Opacity="0.55" TextTrimming="CharacterEllipsis" />
+        <Grid ColumnDefinitions="3*,2*" ColumnSpacing="16">
+          <TextBlock Text="{Binding Status}" Opacity="0.7" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Status}" />
+          <TextBlock Grid.Column="1" Text="{Binding ToolHint}" Opacity="0.55" TextTrimming="CharacterEllipsis"
+                     TextAlignment="Right" ToolTip.Tip="{Binding ToolHint}" />
         </Grid>
       </StackPanel>
     </Border>

@@ -46,6 +46,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         Controller.ValuePicked += (_, value) => SelectValue(value);
         Controller.Changed += (_, _) => OnToolStateChanged();
+        Controller.Transformed += (_, report) => OnTransformed(report);
 
         // The shared code's warnings (an asset that can't be read, say) go to the problems list
         WarningLog.Sink = message => Dispatcher.UIThread.Post(() => Problems.Add(message));
@@ -93,7 +94,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public IReadOnlyList<ToolOption> Tools { get; } =
     [
         new(EditTool.Select, "Select", "S",
-            "Drag to select a block of tiles; drag inside the selection to move it. Ctrl+C, Ctrl+X and Ctrl+V copy, cut and paste it; Delete clears it.",
+            "Drag to select a block of tiles; drag inside the selection to move it. Ctrl+C, Ctrl+X and Ctrl+V copy, cut and paste it; "
+            + "Delete clears it; ] and [ rotate it (or the paste being placed), Shift+H and Shift+V flip it.",
             EditorIcons.Select),
         new(EditTool.Paint, "Paint", "P", "Puts what's picked in the palette on every tile you drag over.", EditorIcons.Paint, GroupStart: true),
         new(EditTool.Line, "Line", "L", "Drag a straight line of what's picked.", EditorIcons.Line),
@@ -733,10 +735,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>What the mouse does with the tool picked (or the paste being placed), for the status bar</summary>
     public string ToolHint => Controller.IsPasting
-        ? "Pasting: click to put it down · Esc drops it"
+        ? "Pasting: click to put it down · ] [ rotate · Shift+H, Shift+V flip · Esc drops it"
         : SelectedTool.Tool switch
         {
-            EditTool.Select when Controller.Selection != null => "Drag inside the selection to move it · drag outside for a new one · Esc: select nothing",
+            EditTool.Select when Controller.Selection != null
+                => "Drag inside the selection to move it · drag outside for a new one · ] [ rotate · Shift+H, Shift+V flip · Esc: select nothing",
             EditTool.Select => "Drag to select a block of tiles",
             EditTool.Paint => "Drag to paint",
             EditTool.Line => "Drag from one end of the line to the other",
@@ -756,6 +759,49 @@ public sealed partial class MainWindowViewModel : ObservableObject
         CutCommand.NotifyCanExecuteChanged();
         DeleteSelectionCommand.NotifyCanExecuteChanged();
         PasteCommand.NotifyCanExecuteChanged();
+        RotateClockwiseCommand.NotifyCanExecuteChanged();
+        RotateCounterClockwiseCommand.NotifyCanExecuteChanged();
+        Rotate180Command.NotifyCanExecuteChanged();
+        FlipHorizontalCommand.NotifyCanExecuteChanged();
+        FlipVerticalCommand.NotifyCanExecuteChanged();
+    }
+
+    //
+    // Rotating and flipping the selection, or the paste being placed
+    //
+
+    private bool CanTransform => Controller.CanTransform;
+
+    [RelayCommand(CanExecute = nameof(CanTransform))]
+    private void RotateClockwise() => Controller.Transform(TileTransform.RotateClockwise);
+
+    [RelayCommand(CanExecute = nameof(CanTransform))]
+    private void RotateCounterClockwise() => Controller.Transform(TileTransform.RotateCounterClockwise);
+
+    [RelayCommand(CanExecute = nameof(CanTransform))]
+    private void Rotate180() => Controller.Transform(TileTransform.Rotate180);
+
+    [RelayCommand(CanExecute = nameof(CanTransform))]
+    private void FlipHorizontal() => Controller.Transform(TileTransform.FlipHorizontal);
+
+    [RelayCommand(CanExecute = nameof(CanTransform))]
+    private void FlipVertical() => Controller.Transform(TileTransform.FlipVertical);
+
+    /// <summary>Says what a rotate or flip did to what points somewhere, and what it couldn't turn</summary>
+    private void OnTransformed(TransformReport report)
+    {
+        var (turned, unmatched, paired) = report.Counts;
+        var parts = new List<string>();
+        if (turned > 0)
+            parts.Add($"{Tiles_(turned)} turned to face the new way");
+        if (unmatched > 0)
+            parts.Add($"{Tiles_(unmatched)} left as {(unmatched == 1 ? "it was" : "they were")}: the mapdefs have no value pointing the new way");
+        if (paired > 0)
+            parts.Add($"{Tiles_(paired)} read the tile east of {(paired == 1 ? "it" : "them")}, which moved: check {(paired == 1 ? "it" : "them")}");
+        Status = $"{TileTransforms.Describe(report.Transform)}{(Controller.IsPasting ? " (the paste)" : "")}"
+                 + (parts.Count > 0 ? ": " + string.Join("; ", parts) : "");
+
+        static string Tiles_(int count) => count == 1 ? "1 tile" : $"{count} tiles";
     }
 
     //
@@ -943,6 +989,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (Content is { } content)
         {
             Controller.EraseValue = p => PaletteEntries.EraseValue(content.MapDefs, p);
+            Controller.MakeRemap = transform => new TileRemap(content.MapDefs, transform, content.IsWallSprite);
             (Controller.Combine, Controller.Read) = plane != 0 ? (null, null)
                 : SelectedPlane.Patches ? PaletteEntries.PatchLayer(content.MapDefs) : PaletteEntries.TileLayer(content.MapDefs);
             _thingVariants = PaletteEntries.ThingVariants(content.MapDefs);

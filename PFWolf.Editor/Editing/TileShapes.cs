@@ -12,6 +12,13 @@ public readonly record struct TileRect(int Left, int Top, int Right, int Bottom)
     public bool Contains(int x, int y) => x >= Left && x <= Right && y >= Top && y <= Bottom;
 
     public TileRect Offset(int dx, int dy) => new(Left + dx, Top + dy, Right + dx, Bottom + dy);
+
+    /// <summary>The part of it inside another rectangle; null when none is</summary>
+    public TileRect? Intersect(TileRect other)
+    {
+        var rect = new TileRect(Math.Max(Left, other.Left), Math.Max(Top, other.Top), Math.Min(Right, other.Right), Math.Min(Bottom, other.Bottom));
+        return rect.Left <= rect.Right && rect.Top <= rect.Bottom ? rect : null;
+    }
 }
 
 /// <summary>The tiles the line, box and fill tools cover</summary>
@@ -96,11 +103,15 @@ public sealed class TileClip
 {
     private readonly ushort[]?[] _planes;
 
-    private TileClip(int width, int height, ushort[]?[] planes)
+    // The tiles it holds, when it isn't all of its rectangle (a selection of another shape)
+    private readonly bool[]? _mask;
+
+    private TileClip(int width, int height, ushort[]?[] planes, bool[]? mask = null)
     {
         Width = width;
         Height = height;
         _planes = planes;
+        _mask = mask;
     }
 
     public int Width { get; }
@@ -109,6 +120,52 @@ public sealed class TileClip
     public bool HasPlane(int plane) => plane < _planes.Length && _planes[plane] != null;
 
     public ushort this[int plane, int x, int y] => _planes[plane]![y * Width + x];
+
+    /// <summary>Whether it holds tile (x, y) of its rectangle</summary>
+    public bool Includes(int x, int y) => _mask == null || _mask[y * Width + x];
+
+    /// <summary>
+    /// The tiles rotated or flipped, each value through <paramref name="remap"/> so what's on
+    /// them points the new way; what that came to is counted
+    /// </summary>
+    public TileClip Transform(TileTransform transform, TileRemap? remap, out RemapCounts counts)
+    {
+        var (width, height) = TileTransforms.Size(transform, Width, Height);
+        var planes = new ushort[]?[_planes.Length];
+        var mask = _mask != null ? new bool[width * height] : null;
+        counts = default;
+        for (int p = 0; p < _planes.Length; p++)
+        {
+            if (_planes[p] is not { } values)
+                continue;
+            var turned = new ushort[width * height];
+            for (int y = 0; y < Height; y++)
+            {
+                for (int x = 0; x < Width; x++)
+                {
+                    var (tx, ty) = TileTransforms.Map(transform, x, y, Width, Height);
+                    var value = values[y * Width + x];
+                    if (remap != null && Includes(x, y))
+                    {
+                        value = remap.Remap(p, value, out var outcome);
+                        counts = counts.Add(outcome);
+                    }
+                    turned[ty * width + tx] = value;
+                }
+            }
+            planes[p] = turned;
+        }
+        if (_mask != null)
+        {
+            for (int y = 0; y < Height; y++)
+                for (int x = 0; x < Width; x++)
+                {
+                    var (tx, ty) = TileTransforms.Map(transform, x, y, Width, Height);
+                    mask![ty * width + tx] = _mask[y * Width + x];
+                }
+        }
+        return new TileClip(width, height, planes, mask);
+    }
 
     /// <param name="plane">The one plane to copy, or null for all of them</param>
     public static TileClip Copy(MapDocument document, TileRect rect, int? plane)
@@ -137,7 +194,8 @@ public sealed class TileClip
                 continue;
             for (int y = 0; y < Height; y++)
                 for (int x = 0; x < Width; x++)
-                    edit.Set(p, left + x, top + y, this[p, x, y]);
+                    if (Includes(x, y))
+                        edit.Set(p, left + x, top + y, this[p, x, y]);
         }
     }
 }

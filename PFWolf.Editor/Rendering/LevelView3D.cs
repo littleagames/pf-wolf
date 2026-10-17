@@ -618,6 +618,11 @@ public sealed class LevelView3D : OpenGlControlBase, Avalonia.Rendering.ICustomH
 
         // The map's keys, on the tile under the pointer
         e.Handled = true;
+        if (EditKeys.Transform(e.Key, e.KeyModifiers) is { } transform)
+        {
+            Controller?.Transform(transform);
+            return;
+        }
         switch (e.Key)
         {
             case Key.Delete when _target.X >= 0:
