@@ -12,7 +12,7 @@ namespace PFWolf.Entities;
 /// </remarks>
 internal sealed class PlayerState
 {
-    /// <summary>Their place in GameHost.players, 0 for the first</summary>
+    /// <summary>Their place in GameSession.Players, 0 for the first</summary>
     public int Number;
 
     /// <summary>They've left a game played over the network: no pawn, no turn (Networking/NetPlay.cs)</summary>

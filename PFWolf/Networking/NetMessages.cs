@@ -233,7 +233,7 @@ internal sealed record JoinStateInfo(StartGameInfo Start, int Level, int Step, b
 
 /// <summary>
 /// The host starting the game: its settings, the random number table's starting place, and
-/// everyone in it, in slot order, which is the order they play in (GameHost.players).
+/// everyone in it, in slot order, which is the order they play in (GameSession.Players).
 /// </summary>
 internal sealed record StartGameInfo(LobbySettings Settings, byte Seed, List<LobbyPlayer> Players)
 {

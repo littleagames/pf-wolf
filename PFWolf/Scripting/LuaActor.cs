@@ -10,7 +10,7 @@ namespace PFWolf.Scripting;
 /// </summary>
 internal sealed class LuaActor : ILuaUserData
 {
-    /// <summary>Every actor's metatable, set up with the scripts (GameHost.InstallActorApi)</summary>
+    /// <summary>Every actor's metatable, set up with the scripts (GameScripts.InstallScriptApi)</summary>
     internal static LuaTable Meta { get; set; } = new();
 
     private static readonly ConditionalWeakTable<Entities.Actors.Actor, LuaActor> Wrappers = [];

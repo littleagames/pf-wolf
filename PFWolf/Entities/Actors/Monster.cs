@@ -835,7 +835,7 @@ internal record Monster : Actor
         ? IsTargetable(pawn)
         : !actor.IsRemoved && actor.RuntimeFlags.HasFlag(ObjFlags.Shootable);
 
-    /// <summary>Whether the player could see it (alone, whether it was drawn; with others, any of them: GameHost.InViewOf)</summary>
+    /// <summary>Whether the player could see it (alone, whether it was drawn; with others, any of them: PlayerView.InViewOf)</summary>
     private bool SeenByThePlayers() =>
         GameMode == GameMode.Single ? RuntimeFlags.HasFlag(ObjFlags.Visible) : SeenByAPlayer(this);
 
@@ -855,7 +855,7 @@ internal record Monster : Actor
 
     /// <summary>
     /// Whether what it's after can see it coming (and so dodge its shots): alone, whether it was
-    /// drawn; another player, from where they stand (GameHost.InViewOf); an actor, whether it's
+    /// drawn; another player, from where they stand (PlayerView.InViewOf); an actor, whether it's
     /// looking its way with nothing between
     /// </summary>
     private bool TargetSeesMe() => Target switch

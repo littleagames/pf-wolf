@@ -333,7 +333,7 @@ internal class MapManager
                     continue;
                 }
 
-                // The player pawn is created after the map loads (GameHost.InitActorList), so
+                // The player pawn is created after the map loads (LevelLoop.InitActorList), so
                 // only note where it starts; with several starts, the last one scanned wins.
                 if (data.PlayerStarts.TryGetValue(objtile, out var startXlat))
                 {

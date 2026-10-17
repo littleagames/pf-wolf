@@ -105,7 +105,7 @@ public enum MarkerKind
 public readonly record struct SurfaceHit(SurfaceRef Ref, Vector3 Point, float Distance, TextureRef Texture);
 
 /// <summary>
-/// A level as 3D surfaces, built the way the game draws it (GameHost.WL_DRAW): walls show their
+/// A level as 3D surfaces, built the way the game draws it (Rendering/RayTrace.cs and WallPosts.cs): walls show their
 /// mapdefs texture for each face (a face left out, the opposite one's) with any patch over it,
 /// the faces beside a door show the door's side, tall walls repeat their texture story by story
 /// from the floor, and things stand as sprites turned to the view.
@@ -277,7 +277,7 @@ public sealed class LevelMesh
                 var jamb = DoorFace(door, nx, ny, TravelName(Opposite(face)));
                 if (_tiles.Content.Find<TextureAsset>(jamb) is { Masked: true } && texture.Length > 0)
                 {
-                    // a see-through jamb is over the wall's own face, as a patch is (GameHost.SeeThroughJamb)
+                    // a see-through jamb is over the wall's own face, as a patch is (WallHits.SeeThroughJamb)
                     AddWall(faceRef, a, b, 0, 1, texture, light, flipU0, flipU1);
                     AddPatch(faceRef, a, b, new Vector2(nx - x, ny - y), 0, stories, new MapPatchTranslation { Texture = jamb }, light);
                 }
@@ -334,7 +334,7 @@ public sealed class LevelMesh
     private const float PatchLift = 1 / 512f;
 
     /// <summary>
-    /// A wall patch over the face from a to b (GameHost.DrawPatch): from the floor of its story for
+    /// A wall patch over the face from a to b (WallPosts.DrawPatch): from the floor of its story for
     /// as many stories as the picture is tall, or on every story (story 0) repeating as the wall's
     /// texture does; the part below <paramref name="bottom"/> is behind the wall in front. Its
     /// see-through pixels are clear, so the wall shows. Lifted off the face toward <paramref name="outward"/>.
@@ -370,7 +370,7 @@ public sealed class LevelMesh
 
     /// <summary>
     /// An arch: a block over the walkway from story 2 up to the tile's height, its faces and
-    /// underside textured from the walls ending its run (GameHost.OpenArch), or from its ceiling
+    /// underside textured from the walls ending its run (WallPosts.OpenArch), or from its ceiling
     /// flat; false when there's no wall to take a texture from, which the game leaves open
     /// </summary>
     private bool AddArch(int x, int y, Vector4 ceilingColor)
@@ -483,7 +483,7 @@ public sealed class LevelMesh
 
     /// <summary>
     /// The wall a door is set into, on either side in line with it, as seen on the lintel's
-    /// <paramref name="face"/> (GameHost.LintelTexture)
+    /// <paramref name="face"/> (WallHits.LintelTexture)
     /// </summary>
     private string? LintelTexture(int x, int y, bool vertical, string face)
     {
@@ -602,7 +602,7 @@ public sealed class LevelMesh
 
     /// <summary>
     /// A flat panel across its tile at right angles to the way it faces, moved toward its front
-    /// by its offset (GameHost.WallSprites); its back shows the picture mirrored
+    /// by its offset (Rendering/WallSprites.cs); its back shows the picture mirrored
     /// </summary>
     private void AddWallSprite(int x, int y, int angles, int offset, float width, float height, float lift, TextureRef texture, SurfaceRef thingRef)
     {

@@ -18,7 +18,7 @@ internal record PendingMapChange(string Map, bool KeepPosition, int X, int Y, sh
 /// <param name="EnterLevel">A kept hub level as it was left, or the map afresh: true if kept (Gameplay/LevelEntry.cs)</param>
 /// <param name="LeaveLevel">Keeps a hub level as it's left (Gameplay/LevelEntry.cs)</param>
 /// <param name="MarkLevelStart">What dying puts the player back to (Gameplay/LevelEntry.cs)</param>
-/// <param name="ApplyPendingWarpStart">--start's tile, the first time (GameHost.cs)</param>
+/// <param name="ApplyPendingWarpStart">--start's tile, the first time (TitleLoop.ApplyPendingWarpStart)</param>
 /// <param name="AlignPlayerInElevator">Moves the player into the elevator by a panel wall (Gameplay/LevelEntry.cs)</param>
 /// <param name="ShowLevelStartMessage">A game's level start message (Blake Stone)</param>
 /// <param name="ShowText">Shows a text as an article (a map's briefing or debriefing: Ui/ArticleReader.cs)</param>
@@ -138,7 +138,7 @@ internal sealed class MainGameLoop(
             {
                 bool kept = hooks.EnterLevel();   // a kept hub level as it was left, or the map afresh (Gameplay/LevelEntry.cs)
                 ApplyPendingMapChange();
-                hooks.ApplyPendingWarpStart();    // --start's tile, the first time (GameHost.cs)
+                hooks.ApplyPendingWarpStart();    // --start's tile, the first time (TitleLoop.ApplyPendingWarpStart)
                 if (!died)
                     hooks.MarkLevelStart();       // what dying puts the player back to, with death-restores-level-start
                 levelStart = died ? "restarted" : kept ? "returned" : "new";

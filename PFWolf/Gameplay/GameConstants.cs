@@ -121,7 +121,7 @@ internal static class GameConstants
     // tall walls: every wall is wallstories 64 unit stories tall, built up from the floor
     internal const int MaxWallStories = 8;
 
-    // How high above the floor the view is, in texels (64 a story); see GameHost.WL_DRAW's Eye height
+    // How high above the floor the view is, in texels (64 a story); see RenderState.ViewEyeZ
     internal const int EyeDefault = TextureSize / 2, MinEye = 4, MaxEye = TextureSize - 4;
 
     internal const long MoveScale = 150L;
