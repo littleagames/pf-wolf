@@ -4,10 +4,8 @@ namespace PFWolf.Gameplay;
 
 /// <summary>What the actor actions that act on the player need from the game</summary>
 /// <param name="SetPendingMapChange">The map to switch to as the level ends (Gameplay/MainGameLoop.cs)</param>
-/// <param name="SetPlayState">Ends the level</param>
 internal sealed record PlayerActionsHooks(
-    Action<PendingMapChange> SetPendingMapChange,
-    Action<playstatetypes> SetPlayState);
+    Action<PendingMapChange> SetPendingMapChange);
 
 /// <summary>
 /// Actor actions that act on the player: an extra life (A_GiveExtraMan), an item
@@ -51,7 +49,7 @@ internal sealed class PlayerActions(
         var keepPosition = args.Skip(1).Any(a => a.Equals("keep-position", StringComparison.OrdinalIgnoreCase));
         hooks.SetPendingMapChange(new PendingMapChange(map, keepPosition, session.player.X, session.player.Y, session.player.Angle));
         session.gamestate.mapon = map;
-        hooks.SetPlayState(playstatetypes.ex_warped);
+        session.playstate = playstatetypes.ex_warped;
     }
 
     internal void GiveInventoryAction(Entities.Actors.Actor actor, string[] args)

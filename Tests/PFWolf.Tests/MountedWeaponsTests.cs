@@ -66,7 +66,7 @@ public class MountedWeaponsTests
 
         var bar = new StatusBarDrawing(null!, null, null!, null!, _inventory, null!, null!, null!, _session,
             new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
-        var weapons = new PlayerWeapons(_inventory, null!, bar, _session, new PlayerWeaponsHooks(() => false, _ => { }));
+        var weapons = new PlayerWeapons(_inventory, null!, bar, _session, new PlayerWeaponsHooks(_ => { }));
         _sounds = [];
         _messages = [];
         _mounted = new MountedWeapons(_map, _inventory, weapons, _session, new MountedWeaponsHooks(_sounds.Add, _messages.Add, () => { }));

@@ -48,7 +48,7 @@ internal static partial class GameHost
 
     static PlayerMovement MakePlayerMovement() =>
         new(_mapManager, _audioManager, pushWalls, session, new PlayerMovementHooks(
-            PlayerFactor, MaxPitch, () => demorecord || demoplayback, () => noclip != 0, PlayPlayerSound,
+            PlayerFactor, MaxPitch, PlayPlayerSound,
             (xl, yl, xh, yh, x, y, size) => WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player: true),
             (x, y) => (wallspritefromx, wallspritefromy) = (x, y),
             ActivateTrigger));
@@ -72,8 +72,7 @@ internal static partial class GameHost
 
     static PlayerStats MakePlayerStats() =>
         new(_gameEngineManager, _assetManager, _videoManager, _inventoryManager, statusBarDrawing, playerClassRules, playerWeapons, session,
-            new PlayerStatsHooks(() => godmode, () => demoplayback || demorecord, () => viewsize == 21,
-                () => CurrentSkill.DamageTaken, () => playstate = playstatetypes.ex_died, PlayerDies, PlayPlayerSound));
+            settings, new PlayerStatsHooks(() => CurrentSkill.DamageTaken, PlayerDies, PlayPlayerSound));
 
     private const string BasePlayerClass = PlayerClassRules.BasePlayerClass;
     private static string PlayerClass => playerstate.playerclass;
@@ -207,13 +206,13 @@ internal static partial class GameHost
     static PlayerActions playerActions = null!;     // made in InitServices (or by RegisterActorActions without it)
 
     static PlayerActions MakePlayerActions() => new(_gameEngineManager, _assetManager, playerStats, session,
-        new PlayerActionsHooks(change => pendingMapChange = change, s => playstate = s));
+        new PlayerActionsHooks(change => pendingMapChange = change));
 
     // The weapons as inventory: picking, ammo, giving, the charge (Gameplay/PlayerWeapons.cs)
     static PlayerWeapons playerWeapons = null!;     // made in InitServices
 
     static PlayerWeapons MakePlayerWeapons() =>
-        new(_inventoryManager, _graphicManager, statusBarDrawing, session, new PlayerWeaponsHooks(() => ammocheat != 0, UseSlotItem));
+        new(_inventoryManager, _graphicManager, statusBarDrawing, session, new PlayerWeaponsHooks(UseSlotItem));
 
     internal static int WeaponSelectionOrder(string weapon) => playerWeapons.WeaponSelectionOrder(weapon);
     internal static string? BestWeapon(bool canFire = false) => playerWeapons.BestWeapon(canFire);
@@ -225,7 +224,7 @@ internal static partial class GameHost
 
     static PlayerUse MakePlayerUse() =>
         new(_mapManager, _audioManager, _inventoryManager, doors, levelAI, timedSwitches, session,
-            new PlayerUseHooks(PlayPlayerSound, state => playstate = state, () => mountedWeapons.TryDismount(),
+            new PlayerUseHooks(PlayPlayerSound, () => mountedWeapons.TryDismount(),
                 (objective, amount) => objectives.Complete(objective, amount), () => objectives.ExitAllowed()));
 
     private static void ActivateTrigger(MapTriggerTranslation trigger, int tilex, int tiley, controldirs dir) => playerUse.ActivateTrigger(trigger, tilex, tiley, dir);

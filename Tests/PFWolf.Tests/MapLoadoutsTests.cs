@@ -62,7 +62,7 @@ public class MapLoadoutsTests
 
         var bar = new StatusBarDrawing(null!, null, null!, null!, _inventory, null!, null!, null!, _session,
             new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
-        var weapons = new PlayerWeapons(_inventory, null!, bar, _session, new PlayerWeaponsHooks(() => false, _ => { }));
+        var weapons = new PlayerWeapons(_inventory, null!, bar, _session, new PlayerWeaponsHooks(_ => { }));
         _loadouts = new MapLoadouts(_inventory, weapons, _session);
     }
 

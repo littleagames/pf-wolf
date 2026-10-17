@@ -8,14 +8,10 @@ namespace PFWolf.Gameplay;
 /// <param name="ProjectileTryMove">Whether a projectile can be where it is (not in a wall or a solid thing)</param>
 /// <param name="PlaySoundAt">A sound from where an actor is</param>
 /// <param name="HurtPlayer">Hurts a particular player, as the acting player while it does</param>
-/// <param name="MadeNoise">A shot was heard: enemies who hear it come</param>
-/// <param name="PlayerDied">Whether the player has just died this tic</param>
 internal sealed record MissileHooks(
     Func<Entities.Actors.Actor, bool> ProjectileTryMove,
     Action<string, Entities.Actors.Actor> PlaySoundAt,
-    Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer,
-    Action MadeNoise,
-    Func<bool> PlayerDied);
+    Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer);
 
 /// <summary>
 /// The player's weapons can throw missiles (A_FireMissile) that fly until they hit a wall, a
@@ -94,7 +90,7 @@ internal sealed class Missiles(
         missile.TileY = (byte)(missile.Y >> MapConstants.TILESHIFT);
 
         attacks.PlayAttackSound();
-        hooks.MadeNoise();
+        session.madenoise = true;
         weapons.UseAmmo();
     }
 
@@ -381,7 +377,7 @@ internal sealed class Missiles(
         double distance = args.Length > 1 && double.TryParse(args[1], System.Globalization.NumberStyles.Float,
             System.Globalization.CultureInfo.InvariantCulture, out var r) ? r : 1;
         int chance = args.Length > 2 && int.TryParse(args[2], out var c) ? c : 16;
-        if (damage <= 0 || hooks.PlayerDied() || session.random.RndT() >= chance)
+        if (damage <= 0 || (session.playstate == playstatetypes.ex_died) || session.random.RndT() >= chance)
             return;
 
         var player = session.player;

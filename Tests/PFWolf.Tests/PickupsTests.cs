@@ -66,9 +66,9 @@ public class PickupsTests
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
             var classes = new PlayerClassRules(null!, Inventory, Session);
-            var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(() => false, _ => { }));
+            var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(_ => { }));
             var stats = new PlayerStats(null!, null!, null!, Inventory, bar, classes, weapons, Session,
-                new PlayerStatsHooks(() => 0, () => false, () => false, () => 1, () => { }, () => { }, _ => { }));
+                new Configuration.GameSettings(), new PlayerStatsHooks(() => 1, () => { }, _ => { }));
             Pickups = new Pickups(Map, null!, null!, classes, stats, Session,
                 new PickupHooks(() => Died, Sounds.Add, _ => HasWeapon, () => ItemRespawn, Respawning.Add));
         }

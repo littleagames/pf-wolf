@@ -5,19 +5,11 @@ using PFWolf.Managers;
 namespace PFWolf.Gameplay;
 
 /// <summary>What the player's stats need from the game</summary>
-/// <param name="GodMode">The god mode cheat: 0 off, 1 no damage, 2 no damage and no red flash</param>
-/// <param name="DemoActive">Whether a demo is playing or recording: the face doesn't wait on sounds</param>
-/// <param name="FullView">Whether the view fills the screen (no status bar to wince on)</param>
 /// <param name="SkillDamageTaken">The skill's share of the damage the player takes (the easiest's 0.25)</param>
-/// <param name="Died">The player died alone: the level starts again</param>
 /// <param name="PlayerDies">The acting player died with others playing: the rest play on</param>
 /// <param name="PlayPlayerSound">A sound the acting player makes</param>
 internal sealed record PlayerStatsHooks(
-    Func<int> GodMode,
-    Func<bool> DemoActive,
-    Func<bool> FullView,
     Func<double> SkillDamageTaken,
-    Action Died,
     Action PlayerDies,
     Action<string> PlayPlayerSound);
 
@@ -35,6 +27,7 @@ internal sealed class PlayerStats(
     PlayerClassRules classes,
     PlayerWeapons weapons,
     GameSession session,
+    Configuration.GameSettings settings,
     PlayerStatsHooks hooks)
 {
     Entities.PlayerState playerstate => session.playerstate;
@@ -71,7 +64,7 @@ internal sealed class PlayerStats(
     internal void UpdateFace()
     {
         // don't make demo depend on sound playback, nor a game every player's machine plays alike
-        if (hooks.DemoActive() || session.gamemode != GameMode.Single)
+        if ((session.demoplayback || session.demorecord) || session.gamemode != GameMode.Single)
         {
             if (playerstate.FaceTimes > 0)
             {
@@ -124,7 +117,7 @@ internal sealed class PlayerStats(
         if (playerstate.Mount != null && playerstate.MountGun is { } gun)
             points = points * Math.Max(inventory.GetIntProperty(gun, "weapon.mountdamage", 100), 0) / 100;
 
-        int godmode = hooks.GodMode();
+        int godmode = session.godmode;
         if (godmode == 0)
         {
             // Armor takes its share of the hit off its points, as far as they go
@@ -148,7 +141,7 @@ internal sealed class PlayerStats(
         {
             playerstate.health = 0;
             if (session.gamemode == GameMode.Single)
-                hooks.Died();                   // Died(): the level starts again
+                session.playstate = playstatetypes.ex_died;                   // Died(): the level starts again
             else
                 hooks.PlayerDies();             // the rest play on (GameHost.Players.cs)
         }
@@ -166,7 +159,7 @@ internal sealed class PlayerStats(
         if (statusBar.StatusBar.Get("face") is { Ouch.Length: > 0 } face && points > face.OuchDamage
             && playerstate.health != 0 && godmode == 0 && assets.Exists<Assets.GraphicAsset>(face.Ouch))
         {
-            if (!hooks.FullView() && session.ActingIsLocal)
+            if (!(settings.viewsize == 21) && session.ActingIsLocal)
                 statusBar.StatusDrawFace(face.Ouch);
             playerstate.FaceCount = 0;
         }

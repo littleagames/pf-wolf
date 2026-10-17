@@ -7,22 +7,21 @@ public class PlayerActionsTests
     {
         // Arrange
         var session = new GameSession();
-        playstatetypes? ended = null;
         PendingMapChange? change = null;
-        var actions = new PlayerActions(null!, null!, null!, session, new PlayerActionsHooks(c => change = c, s => ended = s));
+        var actions = new PlayerActions(null!, null!, null!, session, new PlayerActionsHooks(c => change = c));
 
         // Act
         actions.ChangeMapAction(new Entities.Actors.Monster { Name = "Spear" }, []);
 
         // Assert
-        Assert.That((change, ended), Is.EqualTo(((PendingMapChange?)null, (playstatetypes?)null)));
+        Assert.That((change, session.playstate), Is.EqualTo(((PendingMapChange?)null, playstatetypes.ex_stillplaying)));
     }
 
     [Test]
     public void Giving_Nothing_Gives_Nothing()
     {
         // No assets or stats: giving anything would reach them
-        var actions = new PlayerActions(null!, null!, null!, new GameSession(), new PlayerActionsHooks(_ => { }, _ => { }));
+        var actions = new PlayerActions(null!, null!, null!, new GameSession(), new PlayerActionsHooks(_ => { }));
 
         Assert.DoesNotThrow(() => actions.GiveInventoryAction(new Entities.Actors.Monster { Name = "Guard" }, []));
     }

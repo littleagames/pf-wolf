@@ -16,8 +16,9 @@ internal sealed record ItemRespawn(string ClassName, int TileX, int TileY, int A
 /// <summary>What a deathmatch needs from the game</summary>
 /// <param name="IsFreeFloor">Open floor nobody stands on</param>
 /// <param name="GiveAllKeys">The acting player carries every key</param>
-/// <param name="SetPlayState">Ends the level the way it says</param>
-internal sealed record DeathmatchHooks(Func<int, int, bool> IsFreeFloor, Action GiveAllKeys, Action<playstatetypes> SetPlayState);
+internal sealed record DeathmatchHooks(
+    Func<int, int, bool> IsFreeFloor,
+    Action GiveAllKeys);
 
 /// <summary>
 /// What a mode with something to do besides fighting keeps (Gameplay/MatchModes): its things on
@@ -315,7 +316,7 @@ internal sealed class Deathmatch(
         if (matchover)
             return;
         matchover = true;
-        hooks.SetPlayState(playstatetypes.ex_abort);
+        session.playstate = playstatetypes.ex_abort;
     }
 
     /// <summary>The team with fewer players in it (red when even), for someone joining a team game</summary>

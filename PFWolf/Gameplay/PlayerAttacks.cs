@@ -11,15 +11,13 @@ namespace PFWolf.Gameplay;
 /// <param name="HurtPlayer">Hurts another player, as the acting player while it does (deathmatch)</param>
 /// <param name="PlayPlayerSound">A sound the acting player makes</param>
 /// <param name="DamageDealt">How much of their weapons' damage the player deals (player.damagedealt)</param>
-/// <param name="MadeNoise">A shot was heard: enemies who hear it come</param>
 internal sealed record PlayerAttackHooks(
     Func<(int x, int y, int sin, int cos)> ViewOrigin,
     Func<int> CenterX,
     Func<int> ShootDelta,
     Action<Entities.Actors.PlayerPawn, int, Entities.Actors.Actor> HurtPlayer,
     Action<string> PlayPlayerSound,
-    Func<double> DamageDealt,
-    Action MadeNoise);
+    Func<double> DamageDealt);
 
 /// <summary>Something a player's shot could hit, and how far in front of them it is (TransX)</summary>
 internal readonly record struct ShotTarget(Entities.Actors.Actor Actor, int Depth);
@@ -150,7 +148,7 @@ internal sealed class PlayerAttacks(
     {
         PlayAttackSound();
         if (!silent && !PlayerWeaponIsSilent())
-            hooks.MadeNoise();
+            session.madenoise = true;
 
         var closest = FindShootCandidates().FirstOrDefault().Actor;
         if (closest == null || !lineOfSight.CheckLine(closest))
@@ -171,7 +169,7 @@ internal sealed class PlayerAttacks(
 
         // A silent weapon (weapon.silent, Blake Stone's auto-charge pistol) alerts no one
         if (!PlayerWeaponIsSilent())
-            hooks.MadeNoise();
+            session.madenoise = true;
 
         //
         // find the closest potential target, and confirm a clear line to it

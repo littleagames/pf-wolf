@@ -4,9 +4,9 @@ using PFWolf.Managers;
 namespace PFWolf.Gameplay;
 
 /// <summary>What the player's weapons need from the game</summary>
-/// <param name="AmmoCheat">Whether shots cost no ammo (the ammo cheat)</param>
 /// <param name="UseSlotItem">An empty slot's key: uses an item held for that slot (Planet Strike's fission detonator)</param>
-internal sealed record PlayerWeaponsHooks(Func<bool> AmmoCheat, Action<int> UseSlotItem);
+internal sealed record PlayerWeaponsHooks(
+    Action<int> UseSlotItem);
 
 /// <summary>
 /// The acting player's weapons as inventory: picking one by slot or next/previous, what a shot
@@ -167,7 +167,7 @@ internal sealed class PlayerWeapons(
     {
         var weapon = session.playerstate.weapon;
         var ammoType = WeaponAmmoType(weapon);
-        if (ammoType != null && !hooks.AmmoCheat())
+        if (ammoType != null && !(session.ammocheat != 0))
             inventory.Take(WeaponMagazine(weapon) ?? ammoType, ShotCost(weapon!));
         DrawAmmo();
     }

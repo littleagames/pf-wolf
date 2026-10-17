@@ -12,7 +12,7 @@ internal static partial class GameHost
     static PlayerAttacks MakePlayerAttacks() =>
         new(_mapManager, _inventoryManager, _factionManager, lineOfSight, session,
             new PlayerAttackHooks(PlayerViewOrigin, () => centerx, () => shootdelta, TakeDamage, PlayPlayerSound,
-                () => DamageDealt, () => madenoise = true));
+                () => DamageDealt));
 
     static WeaponInHand MakeWeaponInHand() =>
         new(_inventoryManager, _mapManager, session, playerWeapons, playerAttacks, RegisterMissileActions);

@@ -100,7 +100,6 @@ public class MatchScoringTests
         public readonly MapManager Map;
         public readonly Deathmatch Match;
         public readonly HudMessageManager Hud;
-        public readonly List<playstatetypes> Ends = [];
 
         public Rig(GameMode mode)
         {
@@ -116,7 +115,7 @@ public class MatchScoringTests
 
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
-            Match = new Deathmatch(Map, Inventory, bar, Session, new DeathmatchHooks((_, _) => true, () => { }, Ends.Add));
+            Match = new Deathmatch(Map, Inventory, bar, Session, new DeathmatchHooks((_, _) => true, () => { }));
             Match.netrules = Match.netrules with { ScoreLimit = mode.DefaultScoreLimit() };
             var console = new ConsoleManager();
             Hud = new HudMessageManager(new Lazy<AssetManager>(() => new AssetManager()), new Lazy<ConsoleManager>(console));

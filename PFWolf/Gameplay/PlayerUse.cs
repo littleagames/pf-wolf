@@ -7,12 +7,14 @@ namespace PFWolf.Gameplay;
 
 /// <summary>What the player's use key needs from the game</summary>
 /// <param name="PlayPlayerSound">A sound the acting player makes (a switch's)</param>
-/// <param name="SetPlayState">Ends the level, the way A_Exit and A_SecretExit say</param>
 /// <param name="Dismount">Steps the player off a mounted gun they're manning: true if they were on one (Gameplay/MountedWeapons.cs)</param>
 /// <param name="CompleteObjective">So many more of a level objective are done (a switch with `objective`: Gameplay/Objectives.cs)</param>
 /// <param name="ExitAllowed">Whether the level can be left (its blocks-exit objectives done); saying why not if not</param>
-internal sealed record PlayerUseHooks(Action<string> PlayPlayerSound, Action<playstatetypes> SetPlayState, Func<bool> Dismount,
-    Action<string, int>? CompleteObjective = null, Func<bool>? ExitAllowed = null);
+internal sealed record PlayerUseHooks(
+    Action<string> PlayPlayerSound,
+    Func<bool> Dismount,
+    Action<string, int>? CompleteObjective = null,
+    Func<bool>? ExitAllowed = null);
 
 /// <summary>
 /// The acting player's use key: what's ahead of them -- a mapdefs use trigger, a patch's switch,
@@ -199,9 +201,9 @@ internal sealed class PlayerUse(
 
         var player = session.player;
         if (secret || map.MAPSPOT(player.TileX, player.TileY, 0) == map.Floors.SecretExitTile)
-            hooks.SetPlayState(playstatetypes.ex_secretlevel);
+            session.playstate = playstatetypes.ex_secretlevel;
         else
-            hooks.SetPlayState(playstatetypes.ex_completed);
+            session.playstate = playstatetypes.ex_completed;
 
         audio.WaitSoundDone();
         return true;

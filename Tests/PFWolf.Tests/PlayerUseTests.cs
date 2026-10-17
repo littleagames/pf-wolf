@@ -79,7 +79,7 @@ public class PlayerUseTests
         _session.playerstate.Pawn = pawn;
         _inventory = new InventoryManager(ActorDefs.Metadata(Yaml));
         _inventory.SetHolder(_session.playerstate.Items);
-        _use = new PlayerUse(_map, null!, _inventory, null!, new LevelAI(_map, null!, null!, _session), new TimedSwitches(_map, _session), _session, new PlayerUseHooks(_ => { }, _ => { }, () => false));
+        _use = new PlayerUse(_map, null!, _inventory, null!, new LevelAI(_map, null!, null!, _session), new TimedSwitches(_map, _session), _session, new PlayerUseHooks(_ => { }, () => false));
     }
 
     // A prisoner dx, dy (in 1/65536 tiles) from the player, east being +x and south +y
@@ -230,13 +230,12 @@ public class PlayerUseTests
     public void An_Exit_Waits_While_A_Level_Objective_Blocks_It()
     {
         // Arrange: the objectives say no
-        var states = new List<playstatetypes>();
         var use = new PlayerUse(_map, null!, _inventory, null!, new LevelAI(_map, null!, null!, _session), new TimedSwitches(_map, _session), _session,
-            new PlayerUseHooks(_ => { }, states.Add, () => false, ExitAllowed: () => false));
+            new PlayerUseHooks(_ => { }, () => false, ExitAllowed: () => false));
 
         // Act / Assert: refused, the level goes on
         Assert.That(use.ExitAction(secret: false), Is.False);
-        Assert.That(states, Is.Empty);
+        Assert.That(_session.playstate, Is.EqualTo(playstatetypes.ex_stillplaying));
     }
 
     [Test]

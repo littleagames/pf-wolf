@@ -8,8 +8,6 @@ namespace PFWolf.Gameplay;
 /// <summary>What the player's movement needs from the game</summary>
 /// <param name="PlayerFactor">A factor from the player class (player.forwardmove, player.sidemove), 1 when left out</param>
 /// <param name="MaxPitch">How far up or down the view can look, in degrees</param>
-/// <param name="DemoActive">Whether a demo is playing or recording: moves are worked out as v1.4 did</param>
-/// <param name="NoClip">Whether the player walks through walls (the noclip cheat)</param>
 /// <param name="PlayPlayerSound">A sound the acting player makes (bumping a wall)</param>
 /// <param name="WallSpriteHit">The wall sprite panel the player's box at x, y (size either way) runs into among the tiles xl-xh, yl-yh, if any</param>
 /// <param name="WallSpriteMoveFrom">Where a move starts, so a panel the player already overlaps there doesn't block it</param>
@@ -17,8 +15,6 @@ namespace PFWolf.Gameplay;
 internal sealed record PlayerMovementHooks(
     Func<string, double> PlayerFactor,
     Func<double> MaxPitch,
-    Func<bool> DemoActive,
-    Func<bool> NoClip,
     Action<string> PlayPlayerSound,
     Func<int, int, int, int, int, int, long, WallSpriteSpan?> WallSpriteHit,
     Action<int, int> WallSpriteMoveFrom,
@@ -189,7 +185,7 @@ internal sealed class PlayerMovement(
             speed = (int)(GameConstants.MINDIST * 2 - 1);
 
         // demos move the player exactly as v1.4 did, or they drift from what was recorded
-        if (hooks.DemoActive())
+        if ((session.demorecord || session.demoplayback))
         {
             xmove = MathUtils.FixedByFracOrig(speed, TrigTables.costable[angle]);
             ymove = -MathUtils.FixedByFracOrig(speed, TrigTables.sintable[angle]);
@@ -356,7 +352,7 @@ internal sealed class PlayerMovement(
         if (TryMove(ob))
             return;
 
-        if (hooks.NoClip() && ob.X > 2 * MapConstants.TILEGLOBAL && ob.Y > 2 * MapConstants.TILEGLOBAL
+        if ((session.noclip != 0) && ob.X > 2 * MapConstants.TILEGLOBAL && ob.Y > 2 * MapConstants.TILEGLOBAL
             && ob.X < (((int)(map.mapwidth - 1)) << (int)MapConstants.TILESHIFT)
             && ob.Y < (((int)(map.mapheight - 1)) << (int)MapConstants.TILESHIFT))
             return;         // walk through walls

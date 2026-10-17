@@ -90,7 +90,7 @@ public class PlayerWeaponsTests
         public readonly GameSession Session = new();
         public readonly InventoryManager Inventory = new(ActorDefs.Metadata(Yaml));
         public readonly List<int> SlotItemsUsed = [];
-        public bool AmmoCheat;
+        public bool AmmoCheat { get => Session.ammocheat != 0; set => Session.ammocheat = (byte)(value ? 1 : 0); }
         public readonly PlayerWeapons Weapons;
 
         public Rig(params string[] held)
@@ -102,7 +102,7 @@ public class PlayerWeaponsTests
             // picture is still looked up in the inventory)
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
-            Weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(() => AmmoCheat, SlotItemsUsed.Add));
+            Weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(SlotItemsUsed.Add));
         }
 
         public string? InHand

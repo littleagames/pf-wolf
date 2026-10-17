@@ -12,7 +12,7 @@ public class PlayerMovementTests
     private PushWalls _pushWalls = null!;
     private GameSession _session = null!;
     private List<string> _sounds = null!;
-    private bool _noclip;
+    private bool _noclip { get => _session.noclip != 0; set => _session.noclip = (byte)(value ? 1 : 0); }
     private PlayerMovement _movement = null!;
 
     [SetUp]
@@ -32,7 +32,7 @@ public class PlayerMovementTests
         _sounds = [];
         _noclip = false;
         _movement = new PlayerMovement(_map, new AudioManager(new Lazy<AssetManager>(() => null!), _session), _pushWalls, _session,
-            new PlayerMovementHooks(_ => 1, () => 20, () => false, () => _noclip, _sounds.Add,
+            new PlayerMovementHooks(_ => 1, () => 20, _sounds.Add,
                 (_, _, _, _, _, _, _) => null, (_, _) => { }, (_, _, _, _) => { }));
     }
 

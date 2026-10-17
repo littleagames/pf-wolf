@@ -24,12 +24,13 @@ public class PlayersTests
         public readonly List<string> SoundsAtPawns = [];
         public readonly List<(Entities.PlayerState Victim, Entities.Actors.Actor? Killer)> Frags = [];
         public int Obituaries;
-        public bool NetGameCleared;
+        public bool NetGameCleared => !Session.netgame;
         public int? DropTo;
 
         public Rig()
         {
-            // Two players, acting as the second: no flash or status bar, which only the local player has
+            // Two players in a network game, acting as the second: no flash or status bar, which only the local player has
+            Session.netgame = true;
             Session.players.Add(new Entities.PlayerState { Number = 1 });
             Session.ActingChanged = p => Inventory.SetHolder(p.Items);
             Session.SetGameMode(GameMode.Coop);
@@ -44,12 +45,12 @@ public class PlayersTests
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
             var classes = new PlayerClassRules(null!, Inventory, Session);
-            var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(() => false, _ => { }));
+            var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(_ => { }));
             var stats = new PlayerStats(null!, null!, null!, Inventory, bar, classes, weapons, Session,
-                new PlayerStatsHooks(() => 0, () => false, () => false, () => 1, () => { }, () => Players!.PlayerDies(), _ => { }));
+                new Configuration.GameSettings(), new PlayerStatsHooks(() => 1, () => Players!.PlayerDies(), _ => { }));
             Players = new Players(null!, null!, null!, Inventory, null!, bar, classes, stats, weapons, null!, null!, Session,
                 new PlayersHooks((sound, _) => SoundsAtPawns.Add(sound), _ => (0, 0, 0), () => { }, (victim, killer) => Frags.Add((victim, killer)), _ => true,
-                    () => Obituaries++, () => { }, () => 5, () => DropTo, () => 4, () => NetGameCleared = true, color => color));
+                    () => Obituaries++, () => { }, () => 5, () => DropTo, () => 4, color => color));
         }
 
         public Entities.PlayerState Second => Session.players[1];

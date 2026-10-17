@@ -29,7 +29,7 @@ internal static partial class GameHost
         new(_mapManager, _audioManager, _videoManager, _inventoryManager, _hudMessageManager, statusBarDrawing, playerClassRules, playerStats,
             playerWeapons, playerMovement, playerThink, session,
             new PlayersHooks(PlaySoundLocActor, DeathmatchSpot, GiveDeathmatchKeys, CountFrag, MayRespawn, ShowObituary, ConnectAreas,
-                () => deathTurnSpeed, () => deathDropHeight, () => deathDropSpeed, () => netgame = false, PlayerColor));
+                () => deathTurnSpeed, () => deathDropHeight, () => deathDropSpeed, PlayerColor));
 
     internal static void TakeDamage(Entities.Actors.PlayerPawn victim, int points, Entities.Actors.Actor attacker) => playersManager.TakeDamage(victim, points, attacker);
     internal static void PlayPlayerSound(string name) => playersManager.PlayPlayerSound(name);

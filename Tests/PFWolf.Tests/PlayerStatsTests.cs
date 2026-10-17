@@ -81,10 +81,11 @@ public class PlayerStatsTests
         public readonly GameSession Session = new();
         public readonly InventoryManager Inventory = new(ActorDefs.Metadata(Yaml));
         public readonly PlayerStats Stats;
-        public int GodMode;
-        public bool Demo;
+        public int GodMode { get => Session.godmode; set => Session.godmode = (byte)value; }
+        public bool Demo { get => Session.demoplayback; set => Session.demoplayback = value; }
         public double Skill = 1;
-        public int Deaths, NetDeaths;
+        public int NetDeaths;
+        public int Deaths => Session.playstate == playstatetypes.ex_died ? 1 : 0;
 
         public Rig(string playerClass = "Player")
         {
@@ -99,9 +100,9 @@ public class PlayerStatsTests
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
             var classes = new PlayerClassRules(null!, Inventory, Session);
-            var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(() => false, _ => { }));
+            var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(_ => { }));
             Stats = new PlayerStats(null!, null!, null!, Inventory, bar, classes, weapons, Session,
-                new PlayerStatsHooks(() => GodMode, () => Demo, () => false, () => Skill, () => Deaths++, () => NetDeaths++, _ => { }));
+                new Configuration.GameSettings(), new PlayerStatsHooks(() => Skill, () => NetDeaths++, _ => { }));
         }
 
         public Entities.PlayerState Player => Session.playerstate;

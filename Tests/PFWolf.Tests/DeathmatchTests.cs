@@ -28,7 +28,6 @@ public class DeathmatchTests
         public readonly InventoryManager Inventory = new(ActorDefs.Metadata(Yaml));
         public readonly MapManager Map;
         public readonly Deathmatch Deathmatch;
-        public readonly List<playstatetypes> Ends = [];
 
         public Rig()
         {
@@ -43,7 +42,7 @@ public class DeathmatchTests
 
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
-            Deathmatch = new Deathmatch(Map, Inventory, bar, Session, new DeathmatchHooks((_, _) => true, () => { }, Ends.Add));
+            Deathmatch = new Deathmatch(Map, Inventory, bar, Session, new DeathmatchHooks((_, _) => true, () => { }));
         }
 
         public Entities.PlayerState First => Session.players[0];
@@ -90,13 +89,16 @@ public class DeathmatchTests
         var rig = new Rig();
         rig.Deathmatch.netrules = rig.Deathmatch.netrules with { ScoreLimit = 2 };
 
-        // Act
-        for (int i = 0; i < 3; i++)
+        // Act / Assert: the second frag ends it
+        for (int i = 0; i < 2; i++)
             rig.Deathmatch.CountFrag(rig.Second, rig.First.Pawn);
-
-        // Assert
         Assert.That(rig.Deathmatch.matchover, Is.True);
-        Assert.That(rig.Ends, Is.EqualTo(new[] { playstatetypes.ex_abort }));
+        Assert.That(rig.Session.playstate, Is.EqualTo(playstatetypes.ex_abort));
+
+        // and another doesn't end it again
+        rig.Session.playstate = playstatetypes.ex_stillplaying;
+        rig.Deathmatch.CountFrag(rig.Second, rig.First.Pawn);
+        Assert.That(rig.Session.playstate, Is.EqualTo(playstatetypes.ex_stillplaying));
     }
 
     [Test]

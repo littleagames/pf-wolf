@@ -10,7 +10,7 @@ internal static partial class GameHost
 
     static Deathmatch MakeDeathmatch() =>
         new(_mapManager, _inventoryManager, statusBarDrawing, session,
-            new DeathmatchHooks(IsFreeFloor, GiveAllKeys, state => playstate = state));
+            new DeathmatchHooks(IsFreeFloor, GiveAllKeys));
 
     // Each mode's objective (Gameplay/MatchModes): the one for the mode played runs
     static void AddObjectives()

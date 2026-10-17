@@ -127,7 +127,7 @@ public class WeaponInHandTests
                 Inventory.Give(item, 1);
             var bar = new StatusBarDrawing(null!, null, null!, null!, Inventory, null!, null!, null!, Session,
                 new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
-            var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(() => false, _ => { }));
+            var weapons = new PlayerWeapons(Inventory, null!, bar, Session, new PlayerWeaponsHooks(_ => { }));
             Hand = new WeaponInHand(Inventory, null!, Session, weapons, null!, () => { });
         }
 

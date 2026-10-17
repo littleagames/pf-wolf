@@ -39,7 +39,7 @@ public class PlayerAttacksTests
             Session.playerstate.Pawn = new PlayerPawn { State = Session.playerstate };
             var hooks = new PlayerAttackHooks(() => (0, 0, 0, 0x10000), () => 160, () => 10,
                 (victim, points, attacker) => PlayersHurt.Add((victim, points, attacker)),
-                Sounds.Add, () => DamageDealt, () => { });
+                Sounds.Add, () => DamageDealt);
             Attacks = new PlayerAttacks(null!, new InventoryManager(ActorDefs.Metadata(Yaml)), null!, null!, Session, hooks);
         }
     }

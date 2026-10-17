@@ -14,7 +14,6 @@ namespace PFWolf.Gameplay;
 /// <param name="DeathTurnSpeed">How fast a dead player turns to face their killer (game-info death-turn-speed)</param>
 /// <param name="DeathDropHeight">How low a dead player's view sinks, or null for not at all (game-info death-drop-height)</param>
 /// <param name="DeathDropSpeed">How fast it sinks (game-info death-drop-speed)</param>
-/// <param name="ClearNetGame">A new game isn't a network one (until it says otherwise)</param>
 /// <param name="PlayerColor">A player's color as this machine has it: the translation, or null if there's no such one</param>
 internal sealed record PlayersHooks(
     Action<string, Entities.Actors.Actor> PlaySoundAt,
@@ -27,7 +26,6 @@ internal sealed record PlayersHooks(
     Func<int> DeathTurnSpeed,
     Func<int?> DeathDropHeight,
     Func<int> DeathDropSpeed,
-    Action ClearNetGame,
     Func<string, string?> PlayerColor);
 
 /// <summary>
@@ -82,7 +80,7 @@ internal sealed class Players(
         session.consoleplayer = 0;
         session.SetActing(players[0]);
         session.SetGameMode(GameMode.Single);
-        hooks.ClearNetGame();       // BeginNetGame says otherwise, after
+        session.netgame = false;       // BeginNetGame says otherwise, after
     }
 
     /// <summary>

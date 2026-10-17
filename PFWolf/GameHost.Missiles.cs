@@ -7,8 +7,7 @@ internal static partial class GameHost
 
     static Missiles MakeMissiles() =>
         new(_mapManager, _factionManager, doors, playerWeapons, playerAttacks, playerStats, session,
-            new MissileHooks(ProjectileTryMove, PlaySoundLocActor, TakeDamage, () => madenoise = true,
-                () => playstate == playstatetypes.ex_died));
+            new MissileHooks(ProjectileTryMove, PlaySoundLocActor, TakeDamage));
 
     static void RegisterMissileActions() => (missiles ??= MakeMissiles()).Register();
 }

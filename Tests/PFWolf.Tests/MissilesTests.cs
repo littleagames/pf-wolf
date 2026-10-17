@@ -22,7 +22,7 @@ public class MissilesTests
     private GameSession _session = null!;
     private Missiles _missiles = null!;
     private List<(string Sound, Entities.Actors.Actor At)> _sounds = null!;
-    private bool _died;
+    private bool _died { get => _session.playstate == playstatetypes.ex_died; set => _session.playstate = value ? playstatetypes.ex_died : playstatetypes.ex_stillplaying; }
 
     [SetUp]
     public void MakeLevel()
@@ -49,11 +49,11 @@ public class MissilesTests
         var bar = new StatusBarDrawing(null!, null, null!, null!, inventory, null!, null!, null!, _session,
             new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
         var classes = new PlayerClassRules(null!, inventory, _session);
-        var weapons = new PlayerWeapons(inventory, null!, bar, _session, new PlayerWeaponsHooks(() => false, _ => { }));
+        var weapons = new PlayerWeapons(inventory, null!, bar, _session, new PlayerWeaponsHooks(_ => { }));
         var stats = new PlayerStats(null!, null!, null!, inventory, bar, classes, weapons, _session,
-            new PlayerStatsHooks(() => 0, () => false, () => false, () => 1, () => { }, () => { }, _ => { }));
+            new Configuration.GameSettings(), new PlayerStatsHooks(() => 1, () => { }, _ => { }));
         _missiles = new Missiles(_map, null!, _doors, weapons, null!, stats, _session,
-            new MissileHooks(_ => true, (sound, at) => _sounds.Add((sound, at)), (_, damage, _) => _playerHurts.Add(damage), () => { }, () => _died));
+            new MissileHooks(_ => true, (sound, at) => _sounds.Add((sound, at)), (_, damage, _) => _playerHurts.Add(damage)));
         _playerHurts = [];
     }
 
