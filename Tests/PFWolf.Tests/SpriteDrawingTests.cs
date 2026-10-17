@@ -17,10 +17,10 @@ public class SpriteDrawingTests
     public void Make()
     {
         // Looking east from the middle of tile (10, 10), the view 320 wide
-        _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade)
+        _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade)
         {
-            viewx = 10 * Tile + Tile / 2, viewy = 10 * Tile + Tile / 2, viewcos = 0x10000, viewsin = 0, viewangle = 0,
-            centerx = 160, projectionwidth = 320, scale = 160, heightnumerator = 0x100000,
+            ViewX = 10 * Tile + Tile / 2, ViewY = 10 * Tile + Tile / 2, ViewCos = 0x10000, ViewSin = 0, ViewAngle = 0,
+            CenterX = 160, ProjectionWidth = 320, Scale = 160, HeightNumerator = 0x100000,
         };
         _sprites = [];
         _drawing = new SpriteDrawing(null!, null!, null!, null!, null!, null!, null!, _render, null!, new GameSession(),
@@ -31,8 +31,8 @@ public class SpriteDrawingTests
     private Monster At(double tilesAhead, double tilesRight) => new()
     {
         Name = "Guard",
-        X = _render.viewx + (int)(tilesAhead * Tile),
-        Y = _render.viewy + (int)(tilesRight * Tile),
+        X = _render.ViewX + (int)(tilesAhead * Tile),
+        Y = _render.ViewY + (int)(tilesRight * Tile),
     };
 
     [Test]
@@ -45,9 +45,9 @@ public class SpriteDrawingTests
         _drawing.TransformActor(guard);
 
         // Assert
-        Assert.That(guard.ViewX, Is.EqualTo(_render.centerx));
+        Assert.That(guard.ViewX, Is.EqualTo(_render.CenterX));
         Assert.That(guard.TransX, Is.EqualTo(3 * Tile - GameConstants.ActorSize));
-        Assert.That(guard.ViewHeight, Is.EqualTo(_render.heightnumerator / ((3 * Tile - GameConstants.ActorSize) >> 8)));
+        Assert.That(guard.ViewHeight, Is.EqualTo(_render.HeightNumerator / ((3 * Tile - GameConstants.ActorSize) >> 8)));
     }
 
     [Test]
@@ -59,7 +59,7 @@ public class SpriteDrawingTests
         _drawing.TransformActor(near);
         _drawing.TransformActor(far);
 
-        Assert.That(near.ViewX, Is.GreaterThan(_render.centerx));
+        Assert.That(near.ViewX, Is.GreaterThan(_render.CenterX));
         Assert.That(far.ViewHeight, Is.LessThan(near.ViewHeight));
     }
 
@@ -80,10 +80,10 @@ public class SpriteDrawingTests
         var guard = At(1, 0);
 
         // Act
-        _drawing.TransformActorFrom(guard, _render.viewx + 3 * Tile, _render.viewy, 0, -0x10000);
+        _drawing.TransformActorFrom(guard, _render.ViewX + 3 * Tile, _render.ViewY, 0, -0x10000);
 
         // Assert
-        Assert.That((guard.ViewX, guard.TransX), Is.EqualTo(((short)_render.centerx, 2 * Tile - GameConstants.ActorSize)));
+        Assert.That((guard.ViewX, guard.TransX), Is.EqualTo(((short)_render.CenterX, 2 * Tile - GameConstants.ActorSize)));
     }
 
     [TestCase(11, 10, true)]        // the next tile ahead: within grabbing distance
@@ -102,9 +102,9 @@ public class SpriteDrawingTests
     public void The_View_Shown_Goes_By_Which_Way_It_Faces(string dir, int view)
     {
         // Arrange: the viewer looks west at a guard in the middle of the view
-        _render.viewangle = 180;
+        _render.ViewAngle = 180;
         var guard = At(0, 0);
-        guard.ViewX = (short)_render.centerx;
+        guard.ViewX = (short)_render.CenterX;
         guard.Dir = Enum.Parse<ObjDir>(dir, ignoreCase: true);
 
         // Act / Assert: facing east it faces the viewer (view 1), west it shows its back (5)
@@ -123,9 +123,9 @@ public class SpriteDrawingTests
     public void Projectiles_And_Player_Bodies_Turn_By_Their_Angle()
     {
         // Arrange: the viewer looks west; both head west, away from it, with a Dir saying east
-        _render.viewangle = 180;
-        var rocket = new Monster { Name = "Rocket", Flags = ["PROJECTILE"], Angle = 180, Dir = ObjDir.East, ViewX = (short)_render.centerx };
-        var body = new Monster { Name = "Body", Angle = 180, Dir = ObjDir.East, ViewX = (short)_render.centerx };
+        _render.ViewAngle = 180;
+        var rocket = new Monster { Name = "Rocket", Flags = ["PROJECTILE"], Angle = 180, Dir = ObjDir.East, ViewX = (short)_render.CenterX };
+        var body = new Monster { Name = "Body", Angle = 180, Dir = ObjDir.East, ViewX = (short)_render.CenterX };
 
         // Act / Assert: their backs
         Assert.That((_drawing.CalcRotate(rocket), _drawing.CalcRotate(body)), Is.EqualTo((5, 5)));
@@ -136,9 +136,9 @@ public class SpriteDrawingTests
     {
         // Arrange
         _sprites.UnionWith(["GARDA1", "GARDA5", "GARDB0"]);
-        _render.viewangle = 180;
+        _render.ViewAngle = 180;
         var guard = At(0, 0);
-        (guard.ViewX, guard.Dir) = ((short)_render.centerx, ObjDir.West);
+        (guard.ViewX, guard.Dir) = ((short)_render.CenterX, ObjDir.West);
 
         // Act / Assert
         Assert.That(_drawing.HasDirectionalSprites("GARD", "A"), Is.True);
@@ -152,9 +152,9 @@ public class SpriteDrawingTests
     {
         // Arrange: a mod's views 2-8 beside the game's single front view
         _sprites.UnionWith(["GARDF0", "GARDF2"]);
-        _render.viewangle = 180;
+        _render.ViewAngle = 180;
         var guard = At(0, 0);
-        (guard.ViewX, guard.Dir) = ((short)_render.centerx, ObjDir.West);
+        (guard.ViewX, guard.Dir) = ((short)_render.CenterX, ObjDir.West);
 
         // Act / Assert: view 5 is missing
         Assert.That(_drawing.ActorShapeName("GARD", "F", guard), Is.EqualTo("GARDF0"));

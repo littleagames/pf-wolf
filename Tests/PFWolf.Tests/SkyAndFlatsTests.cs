@@ -25,12 +25,12 @@ public class SkyAndFlatsTests
             bufferPitch = Width,
             ylookup = Enumerable.Range(0, Height).Select(y => (uint)(y * Width)).ToArray(),
         };
-        _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade)
+        _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade)
         {
-            vbufPtr = _pinned.AddrOfPinnedObject(),
-            viewwidth = Width, viewheight = Height, centery = Height / 2, basecentery = Height / 2,
-            viewx = (int)(10.5 * MapConstants.TileGlobal), viewy = (int)(10.5 * MapConstants.TileGlobal),
-            heightnumerator = 0x10000, pixelangle = new short[Width], vieweyez = 32,
+            VbufPtr = _pinned.AddrOfPinnedObject(),
+            ViewWidth = Width, ViewHeight = Height, CenterY = Height / 2, BaseCenterY = Height / 2,
+            ViewX = (int)(10.5 * MapConstants.TileGlobal), ViewY = (int)(10.5 * MapConstants.TileGlobal),
+            HeightNumerator = 0x10000, PixelAngle = new short[Width], ViewEyeZ = 32,
         };
         _lighting = new Lighting(null!, video, null!, new LightingHooks(() => 0, () => { }, _ => { }));
         _lighting.SetShading(null);

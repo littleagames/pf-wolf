@@ -26,7 +26,7 @@ public class ActorLightsTests
         _doors = new Doors(null!, null!, _map, null!, null!, _session, null!);
         ActorLights? lights = null;
         _lighting = new Lighting(null!, LightingTests.GreyVideo(), _map,
-            new LightingHooks(() => 0, () => lights?.colortints.Clear(), tics => lights?.TickActorLights(tics)));
+            new LightingHooks(() => 0, () => lights?.ColorTintTables.Clear(), tics => lights?.TickActorLights(tics)));
         _lights = lights = new ActorLights(_map, _doors, _lighting, _session);
     }
 
@@ -44,7 +44,7 @@ public class ActorLightsTests
 
     // The light added to the cell in the middle of a tile
     private int AddedAt(int x, int y) =>
-        _lighting.celladd[(((y << Lighting.LightCellShift) + Lighting.LightCells / 2) << Lighting.GridShift) + (x << Lighting.LightCellShift) + Lighting.LightCells / 2];
+        _lighting.CellAdd[(((y << Lighting.LightCellShift) + Lighting.LightCells / 2) << Lighting.GridShift) + (x << Lighting.LightCellShift) + Lighting.LightCells / 2];
 
     private void Dim() => _lighting.SetShading(new ShadingSettings("#000000", 0, 16, 0, 64));
 
@@ -59,7 +59,7 @@ public class ActorLightsTests
         _lights.CastActorLights();
 
         // Assert
-        Assert.That(_lights.haslights, Is.True);
+        Assert.That(_lights.HasLights, Is.True);
         Assert.That(AddedAt(10, 10), Is.GreaterThan(AddedAt(11, 10)));
         Assert.That(AddedAt(11, 10), Is.GreaterThan(0));
         Assert.That(AddedAt(14, 10), Is.Zero);          // past its radius
@@ -115,7 +115,7 @@ public class ActorLightsTests
 
         // Assert
         Assert.That(AddedAt(10, 10), Is.Zero);
-        Assert.That(_lights.haslights, Is.False);
+        Assert.That(_lights.HasLights, Is.False);
     }
 
     [Test]
@@ -124,7 +124,7 @@ public class ActorLightsTests
         _lighting.SetShading(null);
         Lamp(10, 10);
         _lights.CastActorLights();
-        Assert.That(_lights.haslights, Is.False);
+        Assert.That(_lights.HasLights, Is.False);
     }
 
     [Test]
@@ -139,7 +139,7 @@ public class ActorLightsTests
 
         // Assert
         int middle = (((10 << Lighting.LightCellShift) + 4) << Lighting.GridShift) + (10 << Lighting.LightCellShift) + 4;
-        Assert.That(_lighting.celltint[middle], Is.Not.Zero);
+        Assert.That(_lighting.CellTint[middle], Is.Not.Zero);
     }
 
     [Test]

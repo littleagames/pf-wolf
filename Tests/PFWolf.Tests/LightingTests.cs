@@ -65,8 +65,8 @@ public class LightingTests
         lighting.SetShading(null);
 
         // Assert
-        Assert.That(lighting.shading, Is.False);
-        Assert.That(lighting.LightAt(Rendering.Lighting.TileIndex(5, 5), 5 * Tile, 5 * Tile), Is.SameAs(Rendering.Lighting.noshade));
+        Assert.That(lighting.Shading, Is.False);
+        Assert.That(lighting.LightAt(Rendering.Lighting.TileIndex(5, 5), 5 * Tile, 5 * Tile), Is.SameAs(Rendering.Lighting.NoShade));
         Assert.That(lighting.ShadeOffset(100 * Tile), Is.Zero);
     }
 
@@ -109,7 +109,7 @@ public class LightingTests
         lighting.SetShading(new ShadingSettings("#000000", 0, 16, 0, 128));
 
         // Act / Assert
-        Assert.That(lighting.LightAt(-1, 0, 0), Is.SameAs(lighting.lightrow));
+        Assert.That(lighting.LightAt(-1, 0, 0), Is.SameAs(lighting.LightRow));
         Assert.That(Rendering.Lighting.TileIndex(-1, 0), Is.EqualTo(-1));
         Assert.That(Rendering.Lighting.TileIndex(MapManager.MapSize, 0), Is.EqualTo(-1));
     }
@@ -124,13 +124,13 @@ public class LightingTests
         // Act
         lighting.FadeZoneLight(3, 0, 10);
         lighting.TickZoneLights(5);
-        int halfway = lighting.levelzones[3].Current;
+        int halfway = lighting.LevelZones[3].Current;
         lighting.TickZoneLights(5);
 
         // Assert: a zone turns shading on, and the actors' lights tick along with the zones
-        Assert.That(lighting.shading, Is.True);
+        Assert.That(lighting.Shading, Is.True);
         Assert.That(halfway, Is.InRange(100, 155));
-        Assert.That(lighting.levelzones[3].Current, Is.Zero);
+        Assert.That(lighting.LevelZones[3].Current, Is.Zero);
         Assert.That(_actorTicks, Is.EqualTo(new uint[] { 5, 5 }));
     }
 
@@ -146,8 +146,8 @@ public class LightingTests
         lighting.RemoveZone(3);
 
         // Assert
-        Assert.That(lighting.levelzones, Is.Empty);
-        Assert.That(lighting.shading, Is.False);
+        Assert.That(lighting.LevelZones, Is.Empty);
+        Assert.That(lighting.Shading, Is.False);
     }
 
     [TestCase(new[] { "0", "128" }, false)]          // zone 0 is no zone
@@ -173,9 +173,9 @@ public class LightingTests
 
         // Act / Assert
         lighting.ToggleZoneLightAction("A_ToggleZoneLight", ["2", "40", "200"]);
-        Assert.That(lighting.levelzones[2].Light, Is.EqualTo(200));
+        Assert.That(lighting.LevelZones[2].Light, Is.EqualTo(200));
         lighting.ToggleZoneLightAction("A_ToggleZoneLight", ["2", "40", "200"]);
-        Assert.That(lighting.levelzones[2].Light, Is.EqualTo(40));
+        Assert.That(lighting.LevelZones[2].Light, Is.EqualTo(40));
     }
 
     [Test]

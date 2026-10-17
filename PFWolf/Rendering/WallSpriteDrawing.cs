@@ -25,8 +25,8 @@ internal sealed class WallSpriteDrawing(
 
     void SetupWallSpriteRays()
     {
-        int viewwidth = render.viewwidth;
-        if (wallspriteraydx.Length == viewwidth && wallspriteraysangle == render.midangle)
+        int viewwidth = render.ViewWidth;
+        if (wallspriteraydx.Length == viewwidth && wallspriteraysangle == render.MidAngle)
             return;
 
         if (wallspriteraydx.Length != viewwidth)
@@ -38,23 +38,23 @@ internal sealed class WallSpriteDrawing(
         const double TORADIANS = 2 * Math.PI / GameConstants.FineAngles;
         for (int x = 0; x < viewwidth; x++)
         {
-            double angle = (render.midangle + render.pixelangle[x]) * TORADIANS;
+            double angle = (render.MidAngle + render.PixelAngle[x]) * TORADIANS;
             wallspriteraydx[x] = Math.Cos(angle);
             wallspriteraydy[x] = -Math.Sin(angle);
         }
-        wallspriteraysangle = render.midangle;
+        wallspriteraysangle = render.MidAngle;
     }
 
     /// <summary>How far (x, y) is from the view point along the view direction, as CalcHeight's nx.</summary>
     internal double ViewDepth(double x, double y) =>
-        ((x - render.viewx) * render.viewcos - (y - render.viewy) * render.viewsin) / 65536.0;
+        ((x - render.ViewX) * render.ViewCos - (y - render.ViewY) * render.ViewSin) / 65536.0;
 
-    /// <summary>A post's height (as wallheight) at a view depth, kept short of DrawScaleds' 32000 "drawn" mark.</summary>
+    /// <summary>A post's height (as WallHeight) at a view depth, kept short of DrawScaleds' 32000 "drawn" mark.</summary>
     internal short HeightAtDepth(double nx) =>
-        (short)Math.Min(render.heightnumerator * 256.0 / Math.Max(nx, GameConstants.MinDist), 31999);
+        (short)Math.Min(render.HeightNumerator * 256.0 / Math.Max(nx, GameConstants.MinDist), 31999);
 
     /// <summary>
-    /// Fills in a wall sprite's vislist entry: its height is the panel's middle's, for sorting
+    /// Fills in a wall sprite's VisList entry: its height is the panel's middle's, for sorting
     /// it among the other sprites. False if the panel is wholly behind the view.
     /// </summary>
     internal bool TransformWallSprite(Entities.Actors.Actor actor, VisibleObject vis)
@@ -93,11 +93,11 @@ internal sealed class WallSpriteDrawing(
         //
         // the panel from its left end, relative to the view point
         //
-        double ax = span.X1 - render.viewx, ay = span.Y1 - render.viewy;
+        double ax = span.X1 - render.ViewX, ay = span.Y1 - render.ViewY;
         double ex = span.X2 - span.X1, ey = span.Y2 - span.Y1;
-        double cos = render.viewcos / 65536.0, sin = render.viewsin / 65536.0;
+        double cos = render.ViewCos / 65536.0, sin = render.ViewSin / 65536.0;
 
-        for (int x = 0; x < render.viewwidth; x++)
+        for (int x = 0; x < render.ViewWidth; x++)
         {
             double dx = wallspriteraydx[x], dy = wallspriteraydy[x];
 
@@ -117,7 +117,7 @@ internal sealed class WallSpriteDrawing(
                 continue;                                   // behind the view
 
             short height = HeightAtDepth(s * (dx * cos - dy * sin));
-            if (render.wallheight[x] >= height)
+            if (render.WallHeight[x] >= height)
                 continue;                                   // a wall is in front
 
             int half = height >> 3;
@@ -128,7 +128,7 @@ internal sealed class WallSpriteDrawing(
             int column = Math.Min((int)(t * spriteAsset.Width), spriteAsset.Width - 1);
             int top = floorRow(half) - SpriteScaler.TexelsToPixels(spriteAsset.Origin.Y, half);
             scaler.ScaleColumn((short)x, (short)top, MathUtils.FixedDiv(half, GameConstants.TextureSize / 2), spriteAsset, column,
-                vis.bright ? Lighting.noshade : lighting.LightAt(Lighting.TileIndex(vis.tilex, vis.tiley), vis.worldx, vis.worldy),
+                vis.bright ? Lighting.NoShade : lighting.LightAt(Lighting.TileIndex(vis.tilex, vis.tiley), vis.worldx, vis.worldy),
                 vis.bright ? 0 : lighting.ShadeOffsetForHeight(height), translation: vis.translation);
         }
     }

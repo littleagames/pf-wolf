@@ -243,7 +243,7 @@ internal static partial class GameHost
         netPlay = MakeNetPlay();
         netOverlay = MakeNetOverlay();
         netOverlay.Match = deathmatch;
-        netOverlay.ViewTop = () => _videoManager.ToLayoutY(render.viewscreeny, roundUp: true);
+        netOverlay.ViewTop = () => _videoManager.ToLayoutY(render.ViewScreenY, roundUp: true);
         hudMessageDrawing.TopReserved = netOverlay.MatchLineHeight;     // messages go under a match's line
         gameScripts = MakeGameScripts();
         levelMusic = new LevelMusic(_gameEngineManager, _audioManager, session);
@@ -349,14 +349,14 @@ internal static partial class GameHost
     //
     // proejection variables
     //
-    static int focallength { get => render.focallength; set => render.focallength = value; }
-    static int viewscreenx { get => render.viewscreenx; set => render.viewscreenx = value; }
-    static int viewscreeny { get => render.viewscreeny; set => render.viewscreeny = value; }
-    static int viewwidth { get => render.viewwidth; set => render.viewwidth = value; }
-    static int viewheight { get => render.viewheight; set => render.viewheight = value; }
-    static short centerx { get => render.centerx; set => render.centerx = value; }
-    static int shootdelta { get => render.shootdelta; set => render.shootdelta = value; }   // pixels away from centerx a target can be
-    static int heightnumerator { get => render.heightnumerator; set => render.heightnumerator = value; }
+    static int focallength { get => render.FocalLength; set => render.FocalLength = value; }
+    static int viewscreenx { get => render.ViewScreenX; set => render.ViewScreenX = value; }
+    static int viewscreeny { get => render.ViewScreenY; set => render.ViewScreenY = value; }
+    static int viewwidth { get => render.ViewWidth; set => render.ViewWidth = value; }
+    static int viewheight { get => render.ViewHeight; set => render.ViewHeight = value; }
+    static short centerx { get => render.CenterX; set => render.CenterX = value; }
+    static int shootdelta { get => render.ShootDelta; set => render.ShootDelta = value; }   // pixels away from CenterX a target can be
+    static int heightnumerator { get => render.HeightNumerator; set => render.HeightNumerator = value; }
 
     static bool startgame { get => session.startgame; set => session.startgame = value; }
 

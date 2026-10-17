@@ -12,7 +12,7 @@ internal sealed class WeaponBob
     private const double BobMax = 10, BobMid = 6, BobMin = 2;
     private const double BobMaxOffset = BobMax + 2, BobMinOffset = BobMin - 2;
 
-    // sintable[90] at bstone's full view size: its spring's pull
+    // SinTable[90] at bstone's full view size: its spring's pull
     private const double BobPull = 1.0;
 
     private double bobOffset = BobMid, bobVel, bobDest = BobMax;

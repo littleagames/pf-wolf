@@ -39,7 +39,7 @@ internal sealed class SpriteDrawing(
     GameSession session,
     SpriteDrawingHooks hooks)
 {
-    internal VisibleObject[] vislist = new VisibleObject[GameConstants.MaxVisible];
+    internal VisibleObject[] VisList = new VisibleObject[GameConstants.MaxVisible];
 
     /*
 ========================
@@ -50,8 +50,8 @@ internal sealed class SpriteDrawing(
 =   tx,ty               : tile the object is centered in
 =
 = globals:
-=   viewx,viewy         : point of view
-=   viewcos,viewsin     : sin/cos of viewangle
+=   ViewX,ViewY         : point of view
+=   ViewCos,ViewSin     : sin/cos of ViewAngle
 =   scale               : conversion from global value to screen value
 =
 = sets:
@@ -69,21 +69,21 @@ internal sealed class SpriteDrawing(
         //
         // translate point to view centered coordinates
         //
-        gx = ((int)tx << MapConstants.TileShift) + 0x8000 - render.viewx;
-        gy = ((int)ty << MapConstants.TileShift) + 0x8000 - render.viewy;
+        gx = ((int)tx << MapConstants.TileShift) + 0x8000 - render.ViewX;
+        gy = ((int)ty << MapConstants.TileShift) + 0x8000 - render.ViewY;
 
         //
         // calculate newx
         //
-        gxt = MathUtils.FixedMul(gx, render.viewcos);
-        gyt = MathUtils.FixedMul(gy, render.viewsin);
+        gxt = MathUtils.FixedMul(gx, render.ViewCos);
+        gyt = MathUtils.FixedMul(gy, render.ViewSin);
         nx = gxt - gyt - 0x2000;            // 0x2000 is size of object
 
         //
         // calculate newy
         //
-        gxt = MathUtils.FixedMul(gx, render.viewsin);
-        gyt = MathUtils.FixedMul(gy, render.viewcos);
+        gxt = MathUtils.FixedMul(gx, render.ViewSin);
+        gyt = MathUtils.FixedMul(gy, render.ViewCos);
         ny = gyt + gxt;
 
 
@@ -94,8 +94,8 @@ internal sealed class SpriteDrawing(
             dispheight = 0;
         else
         {
-            dispx = (short)(render.centerx + ny * render.scale / nx);
-            dispheight = (short)(render.heightnumerator / (nx >> 8));
+            dispx = (short)(render.CenterX + ny * render.Scale / nx);
+            dispheight = (short)(render.HeightNumerator / (nx >> 8));
         }
 
         //
@@ -111,7 +111,7 @@ internal sealed class SpriteDrawing(
     // the fixed-point X/Y that Monster's movement code maintains, so enemies,
     // projectiles and the BJ-victory actor can be both rendered and (enemies) shot at.
     internal void TransformActor(Entities.Actors.Actor ob) =>
-        TransformActorFrom(ob, render.viewx, render.viewy, render.viewsin, render.viewcos);
+        TransformActorFrom(ob, render.ViewX, render.ViewY, render.ViewSin, render.ViewCos);
 
     /// <summary>TransformActor from a view other than this frame's (the player's, see PlayerSight)</summary>
     internal void TransformActorFrom(Entities.Actors.Actor ob, int fromx, int fromy, int fromsin, int fromcos)
@@ -135,11 +135,11 @@ internal sealed class SpriteDrawing(
             return;
         }
 
-        ob.ViewX = (short)(render.centerx + ny * render.scale / nx);
-        ob.ViewHeight = (ushort)(render.heightnumerator / (nx >> 8));
+        ob.ViewX = (short)(render.CenterX + ny * render.Scale / nx);
+        ob.ViewHeight = (ushort)(render.HeightNumerator / (nx >> 8));
     }
 
-    internal readonly Dictionary<string, bool> _directionalSpriteCache = [];
+    internal readonly Dictionary<string, bool> DirectionalSpriteCache = [];
 
     // There's no per-frame "rotate" flag in the actordefs schema -- the engine infers it
     // from how many sprite variants actually exist. Walk-cycle sprites (e.g. GARDB1..B8)
@@ -150,11 +150,11 @@ internal sealed class SpriteDrawing(
     internal bool HasDirectionalSprites(string sprite, string frameLetter)
     {
         var cacheKey = $"{sprite}{frameLetter}";
-        if (_directionalSpriteCache.TryGetValue(cacheKey, out var cached))
+        if (DirectionalSpriteCache.TryGetValue(cacheKey, out var cached))
             return cached;
 
         var hasRotations = Enumerable.Range(1, 8).Any(r => hooks.SpriteExists($"{sprite}{frameLetter}{r}"));
-        _directionalSpriteCache[cacheKey] = hasRotations;
+        DirectionalSpriteCache[cacheKey] = hasRotations;
         return hasRotations;
     }
 
@@ -179,7 +179,7 @@ internal sealed class SpriteDrawing(
 
     internal int CalcRotate(Entities.Actors.Actor ob)
     {
-        var viewangle = (int)(render.viewangle + (render.centerx - ob.ViewX) / (8 * render.projectionwidth / 320.0));
+        var viewangle = (int)(render.ViewAngle + (render.CenterX - ob.ViewX) / (8 * render.ProjectionWidth / 320.0));
 
         // A projectile (Rocket, the Death Knight's HeavyRocket) has no Dir -- it flies at an
         // arbitrary angle -- so it rotates by its heading. So does the player's body.
@@ -260,9 +260,9 @@ internal sealed class SpriteDrawing(
             //statobj_t statptr_val = statobjlist[statptr];
             if (actor.CurrentState == null)
                 continue;
-            visptr_val.bright = lighting.shading && Lighting.IsBright(actor);
+            visptr_val.bright = lighting.Shading && Lighting.IsBright(actor);
 
-            // A marker with no sprite (a patrol point) takes no vislist slot. Inventory still
+            // A marker with no sprite (a patrol point) takes no VisList slot. Inventory still
             // goes through below, where touching it is what picks it up.
             if (actor.CurrentState.Sprite == "TNT1" && actor is not Inventory)
                 continue;
@@ -324,7 +324,7 @@ internal sealed class SpriteDrawing(
                     visptr_val.tiley = aty;
                     visptr_val.worldx = actor.X;
                     visptr_val.worldy = actor.Y;
-                    vislist[visptr] = visptr_val;
+                    VisList[visptr] = visptr_val;
                     visptr++;
                 }
                 continue;
@@ -341,7 +341,7 @@ internal sealed class SpriteDrawing(
                     visptr_val.tilex = actor.TileX;
                     visptr_val.tiley = actor.TileY;
                     (visptr_val.worldx, visptr_val.worldy) = Lighting.TileCenter(actor.TileX, actor.TileY);
-                    vislist[visptr] = visptr_val;
+                    VisList[visptr] = visptr_val;
                     visptr++;
                 }
                 continue;
@@ -363,7 +363,7 @@ internal sealed class SpriteDrawing(
                 visptr_val.tiley = (byte)actor.Position.Y;
                 (visptr_val.worldx, visptr_val.worldy) = Lighting.TileCenter(visptr_val.tilex, visptr_val.tiley);
                 //visptr_val.flags = actor.Flags;
-                vislist[visptr] = visptr_val;
+                VisList[visptr] = visptr_val;
                 visptr++;
             }
         }
@@ -381,7 +381,7 @@ internal sealed class SpriteDrawing(
             least = 32000;
             for (visstep = 0; visstep < visptr; visstep++)
             {
-                VisibleObject visstep_val = vislist[visstep];
+                VisibleObject visstep_val = VisList[visstep];
                 height = visstep_val.viewheight;
                 if (height < least)
                 {
@@ -394,7 +394,7 @@ internal sealed class SpriteDrawing(
             //
             if (farthest != -1)
             {
-                VisibleObject farthest_obj = vislist[farthest];
+                VisibleObject farthest_obj = VisList[farthest];
                 weather.DrawWeatherBeyond(farthest_obj.viewheight);
                 if (farthest_obj.wallsprite != null)
                     wallSprites.ScaleWallSprite(farthest_obj);
@@ -415,7 +415,7 @@ internal sealed class SpriteDrawing(
             // The death cam's banner, on whichever frame T_DeathCam has it (TNT1 is the "off" half of its flash)
             if (session.player.CurrentState?.StateName == PlayerPawn.DeathCamState
                 && hooks.DeathCamSprite()?.CurrentState is { Sprite.Length: > 0 } state && state.Sprite != "TNT1")
-                scaler.SimpleScaleShape(render.viewwidth / 2, $"{state.Sprite}{state.FrameLetter}0", render.viewheight + 1);
+                scaler.SimpleScaleShape(render.ViewWidth / 2, $"{state.Sprite}{state.FrameLetter}0", render.ViewHeight + 1);
             return;
         }
 
@@ -428,13 +428,13 @@ internal sealed class SpriteDrawing(
         // still stands on the view's bottom edge (less any weapon-bob)
         if (hooks.WeaponShapeName() is { } shape)
         {
-            int height = (int)((render.viewheight + 1) * hooks.WeaponScale());
-            scaler.SimpleScaleShape(render.viewwidth / 2, shape, height,
-                session.playerstate.WeaponSprite != null && Lighting.IsBright(session.playerstate.WeaponSprite) ? Lighting.noshade : lighting.LightAt(Lighting.TileIndex(session.player.TileX, session.player.TileY), session.player.X, session.player.Y),
-                ((render.viewheight + 1) >> 1) - (height >> 1) + weaponBob.Drop(render.viewheight));
+            int height = (int)((render.ViewHeight + 1) * hooks.WeaponScale());
+            scaler.SimpleScaleShape(render.ViewWidth / 2, shape, height,
+                session.playerstate.WeaponSprite != null && Lighting.IsBright(session.playerstate.WeaponSprite) ? Lighting.NoShade : lighting.LightAt(Lighting.TileIndex(session.player.TileX, session.player.TileY), session.player.X, session.player.Y),
+                ((render.ViewHeight + 1) >> 1) - (height >> 1) + weaponBob.Drop(render.ViewHeight));
         }
 
         if ((session.demoplayback || session.demorecord))
-            scaler.SimpleScaleShape(render.viewwidth / 2, "DEMOA0", render.viewheight + 1);
+            scaler.SimpleScaleShape(render.ViewWidth / 2, "DEMOA0", render.ViewHeight + 1);
     }
 }

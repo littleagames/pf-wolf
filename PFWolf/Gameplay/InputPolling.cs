@@ -186,13 +186,13 @@ internal sealed class InputPolling(
     internal void WaitFixedTics(uint step)
     {
         uint curtime = SDL_GetTicks();
-        frame.lasttimecount += (int)step;
-        int timediff = (int)((frame.lasttimecount * 100) / 7 - curtime);
+        frame.LastTimeCount += (int)step;
+        int timediff = (int)((frame.LastTimeCount * 100) / 7 - curtime);
         if (timediff > 0 && !hooks.DemoTesting())      // demotest doesn't wait
             GameEngineManager.DelayMs((uint)timediff);
 
         if (timediff < -2 * step)       // more than 2-times the step behind?
-            frame.lasttimecount = (int)((curtime * 7) / 100);    // yes, set to current timecount
+            frame.LastTimeCount = (int)((curtime * 7) / 100);    // yes, set to current timecount
 
         session.tics = step;
     }

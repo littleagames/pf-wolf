@@ -28,7 +28,7 @@ public class HudMessageDrawingTests
         };
         var players = new Players(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, _session, null!);
         _drawing = new HudMessageDrawing(null!, null!, new InventoryManager(ActorDefs.Metadata(Yaml)), _messages, null!, null!, players,
-            new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade), _session);
+            new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade), _session);
     }
 
     private static Entities.Actors.Monster Guard(string? obituary = null)

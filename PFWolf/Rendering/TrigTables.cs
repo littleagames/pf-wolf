@@ -8,10 +8,10 @@ namespace PFWolf.Rendering;
 /// </summary>
 internal static class TrigTables
 {
-    internal static readonly int[] finetangent = new int[GameConstants.FineAngles / 4];
-    internal static readonly int[] sintable = new int[GameConstants.Angles + GameConstants.Angles / 4];
-    internal static readonly int[] costable = new int[GameConstants.Angles];   // sintable from Angles/4 on (filled with it in BuildTables)
-    internal const float radtoint = GameConstants.FineAngles / 2 / GameConstants.Pi;
+    internal static readonly int[] FineTangent = new int[GameConstants.FineAngles / 4];
+    internal static readonly int[] SinTable = new int[GameConstants.Angles + GameConstants.Angles / 4];
+    internal static readonly int[] CosTable = new int[GameConstants.Angles];   // SinTable from Angles/4 on (filled with it in BuildTables)
+    internal const float RadToInt = GameConstants.FineAngles / 2 / GameConstants.Pi;
 
     internal static void BuildTables()
     {
@@ -23,13 +23,13 @@ internal static class TrigTables
         int i;
         for (i = 0; i < GameConstants.FineAngles / 8; i++)
         {
-            double tang = Math.Tan((i + 0.5d) / radtoint);
-            finetangent[i] = (int)(tang * MapConstants.Global1);
-            finetangent[GameConstants.FineAngles / 4 - 1 - i] = (int)((1 / tang) * MapConstants.Global1);
+            double tang = Math.Tan((i + 0.5d) / RadToInt);
+            FineTangent[i] = (int)(tang * MapConstants.Global1);
+            FineTangent[GameConstants.FineAngles / 4 - 1 - i] = (int)((1 / tang) * MapConstants.Global1);
         }
 
         //
-        // costable overlays sintable with a quarter phase shift
+        // CosTable overlays SinTable with a quarter phase shift
         // Angles is assumed to be divisable by four
         //
 
@@ -38,13 +38,13 @@ internal static class TrigTables
         for (i = 0; i < GameConstants.AngleQuad; i++)
         {
             int value= (int)(MapConstants.Global1 * Math.Sin(angle));
-            sintable[i] = sintable[i + GameConstants.Angles] = sintable[GameConstants.Angles / 2 - i] = value;
-            sintable[GameConstants.Angles - i] = sintable[GameConstants.Angles / 2 + i] = -value;
+            SinTable[i] = SinTable[i + GameConstants.Angles] = SinTable[GameConstants.Angles / 2 - i] = value;
+            SinTable[GameConstants.Angles - i] = SinTable[GameConstants.Angles / 2 + i] = -value;
             angle += anglestep;
         }
-        sintable[GameConstants.AngleQuad] = 65536;
-        sintable[3 * GameConstants.AngleQuad] = -65536;
-        Array.Copy(sintable, GameConstants.Angles / 4, costable, 0, costable.Length);
+        SinTable[GameConstants.AngleQuad] = 65536;
+        SinTable[3 * GameConstants.AngleQuad] = -65536;
+        Array.Copy(SinTable, GameConstants.Angles / 4, CosTable, 0, CosTable.Length);
 
         //defined(USE_STARSKY) || defined(USE_RAIN) || defined(USE_SNOW)
         //Init3DPoints();

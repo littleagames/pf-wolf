@@ -119,7 +119,7 @@ public class WallSpriteBlockingTests
     public void A_Box_On_The_Panel_Is_Stopped_By_It()
     {
         Fence();
-        _blocking.wallspritefromx = (int)(10 * Tile);
+        _blocking.WallSpriteFromX = (int)(10 * Tile);
         Assert.That(Hit((long)(10.5 * Tile), player: true), Is.Not.Null);
         Assert.That(Hit((long)(10.5 * Tile), player: false), Is.Not.Null);
     }
@@ -129,7 +129,7 @@ public class WallSpriteBlockingTests
     {
         // Arrange: the move started on the panel (it was spawned on top of them)
         Fence();
-        (_blocking.wallspritefromx, _blocking.wallspritefromy) = ((int)(10.5 * Tile), (int)(10.5 * Tile));
+        (_blocking.WallSpriteFromX, _blocking.WallSpriteFromY) = ((int)(10.5 * Tile), (int)(10.5 * Tile));
 
         // Act / Assert
         Assert.That(Hit((long)(10.6 * Tile), player: true), Is.Null);
@@ -139,7 +139,7 @@ public class WallSpriteBlockingTests
     public void A_Projectile_Through_Panel_Lets_Projectiles_By_But_Not_The_Player()
     {
         Fence(WallSprites.WallSpriteProjectileThroughFlag);
-        _blocking.wallspritefromx = (int)(10 * Tile);
+        _blocking.WallSpriteFromX = (int)(10 * Tile);
         Assert.That(Hit((long)(10.5 * Tile), player: false), Is.Null);
         Assert.That(Hit((long)(10.5 * Tile), player: true), Is.Not.Null);
     }
@@ -165,7 +165,7 @@ public class WallSpriteBlockingTests
         // Arrange
         long y = (long)(10.5 * Tile);
         Fence(WallSprites.WallSpritePassableFlag);
-        _blocking.wallspritefromx = (int)(10 * Tile);
+        _blocking.WallSpriteFromX = (int)(10 * Tile);
 
         // Act / Assert
         Assert.That(Hit((long)(10.5 * Tile), player: true), Is.Null);
@@ -181,7 +181,7 @@ public class WallSpriteBlockingTests
         var window = Fence();
         window.Properties["health"] = 1;
         window.RuntimeFlags |= ObjFlags.Shootable;
-        _blocking.wallspritefromx = (int)(10 * Tile);
+        _blocking.WallSpriteFromX = (int)(10 * Tile);
         Assert.That(Hit((long)(10.5 * Tile), player: true), Is.Not.Null);
 
         // Act: broken (Monster.Kill clears Shootable)

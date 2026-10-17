@@ -4,7 +4,7 @@ using PFWolf.Entities.Actors;
 namespace PFWolf.Rendering;
 
 /// <summary>What working out the player's sight needs from the game</summary>
-/// <param name="FocalLength">How far behind the player the view point is (Setup3DView's focallength)</param>
+/// <param name="FocalLength">How far behind the player the view point is (Setup3DView's FocalLength)</param>
 /// <param name="ViewWidth">The view's width in pixels</param>
 /// <param name="TransformActorFrom">Works out where an actor would be on a view from a point (sets its ViewX, ViewHeight, TransX)</param>
 /// <param name="IsWallSprite">Whether an actor is a wall sprite (never picked up)</param>
@@ -36,12 +36,12 @@ internal sealed class PlayerView(
     GameSession session,
     PlayerViewHooks hooks)
 {
-    /// <summary>The player's view point and its sine and cosine: focallength behind them, as Setup3DView puts it</summary>
+    /// <summary>The player's view point and its sine and cosine: FocalLength behind them, as Setup3DView puts it</summary>
     internal (int x, int y, int sin, int cos) PlayerViewOrigin()
     {
         var player = session.player;
         int focallength = hooks.FocalLength();
-        int sin = TrigTables.sintable[player.Angle], cos = TrigTables.sintable[player.Angle + GameConstants.Angles / 4];
+        int sin = TrigTables.SinTable[player.Angle], cos = TrigTables.SinTable[player.Angle + GameConstants.Angles / 4];
         return (player.X - MathUtils.FixedMul(focallength, cos), player.Y + MathUtils.FixedMul(focallength, sin), sin, cos);
     }
 
@@ -133,7 +133,7 @@ internal sealed class PlayerView(
     internal bool InViewOf(PlayerPawn pawn, Entities.Actors.Actor actor)
     {
         int focallength = hooks.FocalLength();
-        int sin = TrigTables.sintable[pawn.Angle], cos = TrigTables.sintable[pawn.Angle + GameConstants.Angles / 4];
+        int sin = TrigTables.SinTable[pawn.Angle], cos = TrigTables.SinTable[pawn.Angle + GameConstants.Angles / 4];
         int fromx = pawn.X - MathUtils.FixedMul(focallength, cos), fromy = pawn.Y + MathUtils.FixedMul(focallength, sin);
         int gx = actor.X - fromx, gy = actor.Y - fromy;
         int nx = MathUtils.FixedMul(gx, cos) - MathUtils.FixedMul(gy, sin) - GameConstants.ActorSize;

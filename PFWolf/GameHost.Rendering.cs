@@ -29,20 +29,20 @@ internal static partial class GameHost
     short[] spanstart;
 #endif
 
-    internal static short[] wallheight { get => render.wallheight; set => render.wallheight = value; }
+    internal static short[] wallheight { get => render.WallHeight; set => render.WallHeight = value; }
 
     //
     // math tables
     //
-    internal static short[] pixelangle { get => render.pixelangle; set => render.pixelangle = value; }
+    internal static short[] pixelangle { get => render.PixelAngle; set => render.PixelAngle = value; }
 
     //
     // refresh variables
-    internal static int viewx { get => render.viewx; set => render.viewx = value; }
+    internal static int viewx { get => render.ViewX; set => render.ViewX = value; }
     static readonly TextureAsset notexture = new() { RawData = new byte[TextureSize * TextureSize] };
 
     // The renderer's shared per-frame state (Rendering/RenderState.cs): the fields below, under their old names, are its
-    internal static readonly RenderState render = new(notexture, Lighting.noshade);
+    internal static readonly RenderState render = new(notexture, Lighting.NoShade);
 
     /*
     ====================
@@ -146,7 +146,7 @@ internal static partial class GameHost
         viewQuake.Start(max > min ? Random.Shared.Next(min, max + 1) : min);
     }
 
-    static int lasttimecount { get => frameRefresh.lasttimecount; set => frameRefresh.lasttimecount = value; }
+    static int lasttimecount { get => frameRefresh.LastTimeCount; set => frameRefresh.LastTimeCount = value; }
 
     internal static double MaxPitch() => frameRefresh.MaxPitch();
     internal static void ThreeDRefresh() => frameRefresh.ThreeDRefresh();
@@ -184,7 +184,7 @@ internal static partial class GameHost
 
     static ActorLights MakeActorLights() => new(_mapManager, doors, lighting ??= MakeLighting(), session);
 
-    static Dictionary<string, byte[]> colortints => actorLights.colortints;
+    static Dictionary<string, byte[]> colortints => actorLights.ColorTintTables;
 
     private static void RegisterActorLightActions() => (actorLights ??= MakeActorLights()).RegisterActorLightActions();
     static void TickActorLights(uint tics) => actorLights.TickActorLights(tics);
@@ -204,8 +204,8 @@ internal static partial class GameHost
 
     internal static bool IsWallSprite(Entities.Actors.Actor actor) => WallSprites.IsWallSprite(actor);
 
-    static int wallspritefromx { get => wallSpriteBlocking.wallspritefromx; set => wallSpriteBlocking.wallspritefromx = value; }
-    static int wallspritefromy { get => wallSpriteBlocking.wallspritefromy; set => wallSpriteBlocking.wallspritefromy = value; }
+    static int wallspritefromx { get => wallSpriteBlocking.WallSpriteFromX; set => wallSpriteBlocking.WallSpriteFromX = value; }
+    static int wallspritefromy { get => wallSpriteBlocking.WallSpriteFromY; set => wallSpriteBlocking.WallSpriteFromY = value; }
     internal static WallSpriteSpan? WallSpriteHitByBox(int xl, int yl, int xh, int yh, long x, long y, long size, bool player) =>
         wallSpriteBlocking.WallSpriteHitByBox(xl, yl, xh, yh, x, y, size, player);
     internal static bool WallSpriteBlocksLine(long x1, long y1, long x2, long y2) => wallSpriteBlocking.WallSpriteBlocksLine(x1, y1, x2, y2);

@@ -837,8 +837,8 @@ internal partial record BlakeMonster : Monster
         if (Temp3 <= 0)
             RuntimeFlags &= ~ObjFlags.Sliding;
 
-        int dx = MathUtils.FixedMul(step, costable[Angle]);
-        int dy = -MathUtils.FixedMul(step, sintable[Angle]);
+        int dx = MathUtils.FixedMul(step, CosTable[Angle]);
+        int dy = -MathUtils.FixedMul(step, SinTable[Angle]);
         if (!ClipMove(dx, dy))
             RuntimeFlags &= ~ObjFlags.Sliding;
 

@@ -18,7 +18,7 @@ internal sealed record LightingHooks(Func<int> HeightNumerator, Action ClearColo
 ///
 /// THE LIGHT GRID: where the light falls. Each tile has a base light, a level and a tint: its
 /// zone's, else the level's. On top of that the level is split into light cells, LIGHTCELLS a
-/// tile each way, and each cell has light added to it (celladd, in light levels) by lights
+/// tile each way, and each cell has light added to it (CellAdd, in light levels) by lights
 /// moving about. Light is looked up at a point: the base light of a tile (the open tile a wall
 /// is seen from, the tile a floor pixel or a sprite is on) plus the cell the point is in.
 ///
@@ -36,19 +36,19 @@ internal sealed class Lighting(
     internal const int LightLevels = 32;    // light 0 (black) to LightLevels - 1 (full)
     internal const int FadeSteps = 32;      // step 0 (none) to FadeSteps - 1 (all the fade color)
 
-    internal static readonly byte[] noshade = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray();
+    internal static readonly byte[] NoShade = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray();
 
     // What the level fades with when it has zones but no shading of its own: nothing
     internal static readonly ShadingSettings NoFade = new("#000000", 0, 16, 0, 255);
 
-    internal ShadingSettings? levelshading;  // null: the level isn't shaded
-    internal Dictionary<int, ZoneState> levelzones = [];     // RegisterZoneLightActions
-    internal bool shading;                // anything to do: something is dimmed, tinted or faded
-    internal byte[] lightrow = noshade;   // the level's light's row
-    internal byte fader, fadeg, fadeb;
-    internal long fadestart, fadeend;     // along the view, in global units (TileGlobal a tile)
-    internal int maxfadestep;
-    internal bool inversefade;            // fade-curve inverse: maxfadestep × (1 − fadestart / nx)
+    internal ShadingSettings? LevelShading;  // null: the level isn't shaded
+    internal Dictionary<int, ZoneState> LevelZones = [];     // RegisterZoneLightActions
+    internal bool Shading;                // anything to do: something is dimmed, tinted or faded
+    internal byte[] LightRow = NoShade;   // the level's light's row
+    internal byte FadeR, FadeG, FadeB;
+    internal long FadeStart, FadeEnd;     // along the view, in global units (TileGlobal a tile)
+    internal int MaxFadeStep;
+    internal bool InverseFade;            // fade-curve inverse: MaxFadeStep × (1 − FadeStart / nx)
 
     /// <summary>
     /// The map's shading, each value it leaves out taken from the default map's, else the
@@ -75,7 +75,7 @@ internal sealed class Lighting(
             return false;
         if (curve.Equals("inverse", StringComparison.OrdinalIgnoreCase))
             return true;
-        if (badcolors.Add("fade-curve:" + curve))
+        if (BadColors.Add("fade-curve:" + curve))
             Console.WriteLine($"Unknown shading fade-curve '{curve}' (linear or inverse); using linear");
         return false;
     }
@@ -102,33 +102,33 @@ internal sealed class Lighting(
     /// <summary>Shades the level with settings (null for none) until it's left or reloaded.</summary>
     internal void SetShading(ShadingSettings? settings)
     {
-        levelshading = settings;
+        LevelShading = settings;
         RebuildShading();
     }
 
     // Everything shading draws from, again: after the settings change or zones come or go
     internal void RebuildShading()
     {
-        var s = levelshading ?? NoFade;
+        var s = LevelShading ?? NoFade;
         // any zone at all, since its light can change as the level is played
-        shading = s.MaxFade > 0 || s.Light < 255 || levelzones.Count > 0;
-        lightrow = noshade;
-        foreach (var zone in levelzones.Values)
+        Shading = s.MaxFade > 0 || s.Light < 255 || LevelZones.Count > 0;
+        LightRow = NoShade;
+        foreach (var zone in LevelZones.Values)
             zone.RowLevel = -1;
-        griddirty = true;
-        if (!shading)
+        GridDirty = true;
+        if (!Shading)
             return;
 
-        (fader, fadeg, fadeb) = ParseRgb(s.FadeColor, (0, 0, 0), "shading fade-color");
-        fadestart = (long)(Math.Max(s.FadeStart, 0) * MapConstants.TileGlobal);
-        fadeend = Math.Max((long)(s.FadeEnd * MapConstants.TileGlobal), fadestart + 1);
-        maxfadestep = (int)Math.Round(Math.Clamp(s.MaxFade, 0, 100) / 100.0 * (FadeSteps - 1));
-        inversefade = s.InverseFade;
+        (FadeR, FadeG, FadeB) = ParseRgb(s.FadeColor, (0, 0, 0), "shading fade-color");
+        FadeStart = (long)(Math.Max(s.FadeStart, 0) * MapConstants.TileGlobal);
+        FadeEnd = Math.Max((long)(s.FadeEnd * MapConstants.TileGlobal), FadeStart + 1);
+        MaxFadeStep = (int)Math.Round(Math.Clamp(s.MaxFade, 0, 100) / 100.0 * (FadeSteps - 1));
+        InverseFade = s.InverseFade;
 
         ResetLightRows();
-        ambientlevel = LightLevelOf(s.Light);
-        lightrow = RowOf(0, ambientlevel);
-        foreach (var zone in levelzones.Values)
+        AmbientLevel = LightLevelOf(s.Light);
+        LightRow = RowOf(0, AmbientLevel);
+        foreach (var zone in LevelZones.Values)
             if (zone.Effect != ZoneEffect.None)
                 PrewarmZoneRows(zone, zone.Low, zone.BaseLight);
         UpdateZoneLevels();
@@ -137,9 +137,9 @@ internal sealed class Lighting(
     /// <summary>Gives each zone the light level and tint for the light it shows now, where that's moved.</summary>
     internal void UpdateZoneLevels()
     {
-        if (!shading)
+        if (!Shading)
             return;
-        foreach (var zone in levelzones.Values)
+        foreach (var zone in LevelZones.Values)
         {
             int level = LightLevelOf(zone.Current);
             if (zone.RowLevel >= 0 && level == zone.RowLevel && zone.Color == zone.RowColor)
@@ -148,11 +148,11 @@ internal sealed class Lighting(
             zone.RowLevel = level;
             zone.RowColor = zone.Color;
             zone.RowTint = TintIndex(ParseRgb(zone.Color, NoTint, "zone color"));
-            griddirty = true;
+            GridDirty = true;
         }
     }
 
-    internal static readonly HashSet<string> badcolors = [];
+    internal static readonly HashSet<string> BadColors = [];
 
     // A #RRGGBB color, or fallback when there's none or it isn't one (warned about once)
     internal static (byte R, byte G, byte B) ParseRgb(string? color, (byte, byte, byte) fallback, string what)
@@ -166,7 +166,7 @@ internal sealed class Lighting(
         }
         catch (Exception e) when (e is ArgumentException or FormatException)
         {
-            if (badcolors.Add(color))
+            if (BadColors.Add(color))
                 Console.WriteLine($"The {what} '{color}' isn't #RRGGBB; using #{fallback.Item1:X2}{fallback.Item2:X2}{fallback.Item3:X2}");
             return fallback;
         }
@@ -177,23 +177,23 @@ internal sealed class Lighting(
 
     // The light row for a light level with a tint
     internal byte[] LevelRow(int level, (byte R, byte G, byte B) tint) =>
-        shading ? video.GetLightRow(level, LightLevels, FadeSteps, fader, fadeg, fadeb, tint.R, tint.G, tint.B) : noshade;
+        Shading ? video.GetLightRow(level, LightLevels, FadeSteps, FadeR, FadeG, FadeB, tint.R, tint.G, tint.B) : NoShade;
 
     /// <summary>Where the remap for something nx away along the view (global units) starts in a light row.</summary>
     internal int ShadeOffset(long nx)
     {
-        if (!shading || nx <= fadestart || maxfadestep == 0)
+        if (!Shading || nx <= FadeStart || MaxFadeStep == 0)
             return 0;
-        if (inversefade)
-            return (int)(maxfadestep - maxfadestep * fadestart / nx) * 256;
-        if (nx >= fadeend)
-            return maxfadestep * 256;
-        return (int)((nx - fadestart) * maxfadestep / (fadeend - fadestart)) * 256;
+        if (InverseFade)
+            return (int)(MaxFadeStep - MaxFadeStep * FadeStart / nx) * 256;
+        if (nx >= FadeEnd)
+            return MaxFadeStep * 256;
+        return (int)((nx - FadeStart) * MaxFadeStep / (FadeEnd - FadeStart)) * 256;
     }
 
-    /// <summary>ShadeOffset for something drawn height high (as wallheight: a story is height >> 2 pixels).</summary>
+    /// <summary>ShadeOffset for something drawn height high (as WallHeight: a story is height >> 2 pixels).</summary>
     internal int ShadeOffsetForHeight(int height) =>
-        !shading ? 0 : ShadeOffset(height > 0 ? (long)hooks.HeightNumerator() * 256 / height : long.MaxValue);
+        !Shading ? 0 : ShadeOffset(height > 0 ? (long)hooks.HeightNumerator() * 256 / height : long.MaxValue);
 
     /// <summary>Whether an actor's frame is drawn unshaded: its state has the bright modifier, or the actor the BRIGHT flag.</summary>
     internal static bool IsBright(Entities.Actors.Actor actor) =>
@@ -202,7 +202,7 @@ internal sealed class Lighting(
     internal void InitLevelShading(MapInfo? mapInfo)
     {
         var defaultMap = engine.GetGameInfo().DefaultMap;
-        levelzones = ResolveZones(mapInfo, defaultMap);
+        LevelZones = ResolveZones(mapInfo, defaultMap);
         SetShading(ResolveShading(mapInfo, defaultMap));
     }
 
@@ -215,52 +215,52 @@ internal sealed class Lighting(
 
     // Each tile's base light, indexed (y << MapShift) + x like the flats: a light level, and a
     // tint (an index in tints)
-    internal readonly byte[] tilelevel = new byte[MapManager.MapArea], tiletint = new byte[MapManager.MapArea];
+    internal readonly byte[] TileLevel = new byte[MapManager.MapArea], TileTint = new byte[MapManager.MapArea];
 
     // Light levels added to each cell, indexed (y << GridShift) + x in cells; the most of them any
     // one light added, and that light's tint (0: none, the tile's own)
-    internal readonly byte[] celladd = new byte[GridSize * GridSize];
-    internal readonly byte[] cellstrong = new byte[GridSize * GridSize], celltint = new byte[GridSize * GridSize];
+    internal readonly byte[] CellAdd = new byte[GridSize * GridSize];
+    internal readonly byte[] CellStrong = new byte[GridSize * GridSize], CellTint = new byte[GridSize * GridSize];
 
     // The tints in use (0 is none), and each one's light rows by level, made as they're needed
-    internal readonly List<(byte R, byte G, byte B)> tints = [];
-    internal readonly List<byte[]?[]> tintrows = [];
+    internal readonly List<(byte R, byte G, byte B)> Tints = [];
+    internal readonly List<byte[]?[]> TintRows = [];
 
-    internal int ambientlevel;            // the level's own light level (tint 0)
-    internal bool griddirty = true;       // the tiles' base lights need building again
-    internal int gridversion;             // the MapManager.ZonesVersion they were built for
-    internal bool haszones;               // some tile's base light isn't the level's
+    internal int AmbientLevel;            // the level's own light level (tint 0)
+    internal bool GridDirty = true;       // the tiles' base lights need building again
+    internal int GridVersion;             // the MapManager.ZonesVersion they were built for
+    internal bool HasZones;               // some tile's base light isn't the level's
 
     internal static readonly (byte, byte, byte) NoTint = (255, 255, 255);
 
     /// <summary>A tint's index in tints, added if it's new.</summary>
     internal byte TintIndex((byte R, byte G, byte B) tint)
     {
-        int index = tints.IndexOf(tint);
+        int index = Tints.IndexOf(tint);
         if (index >= 0)
             return (byte)index;
-        if (tints.Count > byte.MaxValue)
+        if (Tints.Count > byte.MaxValue)
             return 0;                   // more tints than a tile can name: untinted
-        tints.Add(tint);
-        tintrows.Add(new byte[LightLevels][]);
-        return (byte)(tints.Count - 1);
+        Tints.Add(tint);
+        TintRows.Add(new byte[LightLevels][]);
+        return (byte)(Tints.Count - 1);
     }
 
     /// <summary>Forgets the light rows (they're for the old fade), leaving the tints with only none.</summary>
     internal void ResetLightRows()
     {
-        tints.Clear();
-        tintrows.Clear();
+        Tints.Clear();
+        TintRows.Clear();
         hooks.ClearColorTints();
         // cells tinted from the old tints mustn't name new ones
-        Array.Clear(celltint);
+        Array.Clear(CellTint);
         TintIndex(NoTint);
     }
 
     // A tint's light row for a light level
-    internal byte[] RowOf(int tint, int level) => tintrows[tint][level] ??= LevelRow(level, tints[tint]);
+    internal byte[] RowOf(int tint, int level) => TintRows[tint][level] ??= LevelRow(level, Tints[tint]);
 
-    /// <summary>The index of a tile in tilelevel and tiletint, or -1 off the map.</summary>
+    /// <summary>The index of a tile in TileLevel and TileTint, or -1 off the map.</summary>
     internal static int TileIndex(int x, int y) =>
         (uint)x < MapManager.MapSize && (uint)y < MapManager.MapSize ? (y << MapManager.MapShift) + x : -1;
 
@@ -270,19 +270,19 @@ internal sealed class Lighting(
     /// </summary>
     internal byte[] LightAt(int tile, long gx, long gy)
     {
-        if (!shading)
-            return noshade;
+        if (!Shading)
+            return NoShade;
         if (tile < 0)
-            return lightrow;
+            return LightRow;
 
-        int level = tilelevel[tile], tint = tiletint[tile];
+        int level = TileLevel[tile], tint = TileTint[tile];
         long cx = gx >> CellGlobalShift, cy = gy >> CellGlobalShift;
         if ((ulong)cx < GridSize && (ulong)cy < GridSize)
         {
             long cell = (cy << GridShift) + cx;
-            level += celladd[cell];
-            if (celltint[cell] != 0)
-                tint = celltint[cell];
+            level += CellAdd[cell];
+            if (CellTint[cell] != 0)
+                tint = CellTint[cell];
         }
         return RowOf(tint, level > MaxLightLevel ? MaxLightLevel : level);
     }
@@ -294,31 +294,31 @@ internal sealed class Lighting(
     /// <summary>Brings the tiles' base lights up to date with the zone plane and the zones; called before each frame.</summary>
     internal void UpdateLightGrid()
     {
-        if (!griddirty && gridversion == map.ZonesVersion)
+        if (!GridDirty && GridVersion == map.ZonesVersion)
             return;
-        griddirty = false;
-        gridversion = map.ZonesVersion;
+        GridDirty = false;
+        GridVersion = map.ZonesVersion;
 
-        haszones = false;
+        HasZones = false;
         for (int y = 0; y < MapManager.MapSize; y++)
             for (int x = 0; x < MapManager.MapSize; x++)
             {
                 int i = (y << MapManager.MapShift) + x;
-                tilelevel[i] = (byte)ambientlevel;
-                tiletint[i] = 0;
+                TileLevel[i] = (byte)AmbientLevel;
+                TileTint[i] = 0;
                 if (x < map.mapwidth && y < map.mapheight
                     && map.GetZone(x, y) is var id and not 0
-                    && levelzones.TryGetValue(id, out var zone) && zone.RowLevel >= 0)
+                    && LevelZones.TryGetValue(id, out var zone) && zone.RowLevel >= 0)
                 {
-                    tilelevel[i] = (byte)zone.RowLevel;
-                    tiletint[i] = zone.RowTint;
-                    haszones |= zone.RowLevel != ambientlevel || zone.RowTint != 0;
+                    TileLevel[i] = (byte)zone.RowLevel;
+                    TileTint[i] = zone.RowTint;
+                    HasZones |= zone.RowLevel != AmbientLevel || zone.RowTint != 0;
                 }
             }
     }
 
     // Flickering is only for show, so it doesn't draw on the game's random numbers (demos)
-    internal static readonly Random zonerandom = new();
+    internal static readonly Random ZoneRandom = new();
 
     internal static bool TryParseZoneEffect(string name, out ZoneEffect effect) =>
         Enum.TryParse(name, ignoreCase: true, out effect) && Enum.IsDefined(effect);
@@ -326,8 +326,8 @@ internal sealed class Lighting(
     /// <summary>Runs the zones' fades and effects for this tic's worth of time.</summary>
     internal void TickZoneLights(uint tics)
     {
-        foreach (var zone in levelzones.Values)
-            zone.Tick((int)tics, zonerandom);
+        foreach (var zone in LevelZones.Values)
+            zone.Tick((int)tics, ZoneRandom);
         UpdateZoneLevels();
         hooks.TickActorLights(tics);      // and actors' (Rendering/ActorLights.cs)
     }
@@ -335,9 +335,9 @@ internal sealed class Lighting(
     /// <summary>The zone with this id, made (at full light) if the level has none yet.</summary>
     internal ZoneState ZoneFor(int id)
     {
-        if (!levelzones.TryGetValue(id, out var zone))
+        if (!LevelZones.TryGetValue(id, out var zone))
         {
-            levelzones[id] = zone = new ZoneState();
+            LevelZones[id] = zone = new ZoneState();
             RebuildShading();           // a new zone may turn shading on
         }
         return zone;
@@ -372,14 +372,14 @@ internal sealed class Lighting(
     /// <summary>Takes a zone out: its tiles get the level's light.</summary>
     internal void RemoveZone(int id)
     {
-        levelzones.Remove(id);
+        LevelZones.Remove(id);
         RebuildShading();
     }
 
     /// <summary>Builds the light rows a zone going between two lights will need, so it doesn't stall mid-level.</summary>
     internal void PrewarmZoneRows(ZoneState zone, int from, int to)
     {
-        if (!shading)
+        if (!Shading)
             return;
         var tint = ParseRgb(zone.Color, (255, 255, 255), "zone color");
         for (int level = LightLevelOf(Math.Min(from, to)); level <= LightLevelOf(Math.Max(from, to)); level++)
@@ -512,8 +512,8 @@ internal sealed class Lighting(
 
     internal void WriteZoneLights(BinaryWriter bw)
     {
-        bw.Write(levelzones.Count);
-        foreach (var (id, zone) in levelzones)
+        bw.Write(LevelZones.Count);
+        foreach (var (id, zone) in LevelZones)
         {
             bw.Write(id);
             zone.Write(bw);
@@ -534,7 +534,7 @@ internal sealed class Lighting(
     /// <summary>Puts the level's zones back as a save had them (after SetupGameLevel set them from game-info).</summary>
     internal void RestoreZoneLights(Dictionary<int, ZoneState> zones)
     {
-        levelzones = zones;
+        LevelZones = zones;
         RebuildShading();
     }
 }

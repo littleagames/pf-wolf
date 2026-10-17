@@ -687,7 +687,7 @@ internal record Monster : Actor
             return;
 
         // To one side of the way they face (two tiles if there's room), else straight away from them
-        bool facingAcross = Math.Abs(costable[pawn.Angle]) >= Math.Abs(sintable[pawn.Angle]);
+        bool facingAcross = Math.Abs(CosTable[pawn.Angle]) >= Math.Abs(SinTable[pawn.Angle]);
         (int X, int Y)[] ways = facingAcross ? [(0, 1), (0, -1)] : [(1, 0), (-1, 0)];
         ways = [.. ways, (Math.Sign(TileX - pawn.TileX), Math.Sign(TileY - pawn.TileY))];
         foreach (var (dx, dy) in ways)

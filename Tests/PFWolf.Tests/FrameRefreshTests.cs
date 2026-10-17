@@ -19,9 +19,9 @@ public class FrameRefreshTests
     {
         // A view 100 rows tall: the horizon looking straight ahead at row 50, 50 pixels to the
         // focal length
-        _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade)
+        _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade)
         {
-            basecentery = 50, centery = 50, scale = 50, focallength = 0x5700,
+            BaseCenterY = 50, CenterY = 50, Scale = 50, FocalLength = 0x5700,
         };
         _session = new GameSession();
         _frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, _render, _session, null!);
@@ -37,7 +37,7 @@ public class FrameRefreshTests
     [Test]
     public void With_No_Projection_Yet_It_Cant_Look_At_All()
     {
-        _render.scale = 0;
+        _render.Scale = 0;
         Assert.That(_frame.MaxPitch(), Is.EqualTo(0));
     }
 
@@ -47,23 +47,23 @@ public class FrameRefreshTests
     public void Looking_Up_Moves_The_Horizon_Down(double pitch, int centery)
     {
         // Arrange
-        _render.viewpitch = pitch;
+        _render.ViewPitch = pitch;
 
         // Act
         _frame.SetupPitch();
 
         // Assert
-        Assert.That(_render.centery, Is.EqualTo(centery));
+        Assert.That(_render.CenterY, Is.EqualTo(centery));
     }
 
     [Test]
     public void Too_Steep_A_Pitch_Is_Brought_Back_To_The_Most_It_Can_Be()
     {
-        _render.viewpitch = 80;
+        _render.ViewPitch = 80;
 
         _frame.SetupPitch();
 
-        Assert.That(_render.viewpitch, Is.EqualTo(_frame.MaxPitch()).Within(1e-9));
+        Assert.That(_render.ViewPitch, Is.EqualTo(_frame.MaxPitch()).Within(1e-9));
     }
 
     [Test]
@@ -76,23 +76,23 @@ public class FrameRefreshTests
         _frame.Setup3DView();
 
         // Assert: the view point is behind the camera (south of it, as north is up the map)
-        Assert.That((_render.viewangle, _render.midangle), Is.EqualTo(((short)90, (short)(90 * GameConstants.FineAngles / GameConstants.Angles))));
-        Assert.That((_render.viewsin, _render.viewcos), Is.EqualTo((TrigTables.sintable[90], TrigTables.costable[90])));
-        Assert.That(_render.viewx, Is.EqualTo(10 * Tile + Tile / 2).Within(1));
-        Assert.That(_render.viewy, Is.EqualTo(20 * Tile + Tile / 2 + _render.focallength).Within(1));
-        Assert.That((_render.focaltx, _render.focalty), Is.EqualTo(((short)10, (short)20)));
+        Assert.That((_render.ViewAngle, _render.MidAngle), Is.EqualTo(((short)90, (short)(90 * GameConstants.FineAngles / GameConstants.Angles))));
+        Assert.That((_render.ViewSin, _render.ViewCos), Is.EqualTo((TrigTables.SinTable[90], TrigTables.CosTable[90])));
+        Assert.That(_render.ViewX, Is.EqualTo(10 * Tile + Tile / 2).Within(1));
+        Assert.That(_render.ViewY, Is.EqualTo(20 * Tile + Tile / 2 + _render.FocalLength).Within(1));
+        Assert.That((_render.FocalTx, _render.FocalTy), Is.EqualTo(((short)10, (short)20)));
     }
 
     [Test]
     public void Where_The_View_Is_In_Its_Tile_Is_Kept_Both_Ways()
     {
         // A camera a quarter of the way into tile (3, 3) east and south, looking east
-        _session.camera.SetFixed(3 * Tile + Tile / 4 + _render.focallength, 3 * Tile + Tile / 4, 0);
+        _session.camera.SetFixed(3 * Tile + Tile / 4 + _render.FocalLength, 3 * Tile + Tile / 4, 0);
 
         _frame.Setup3DView();
 
-        Assert.That((_render.xpartialdown, _render.xpartialup), Is.EqualTo(((uint)(Tile / 4), (uint)(Tile - 1 - Tile / 4))));
-        Assert.That((_render.ypartialdown, _render.ypartialup), Is.EqualTo(((uint)(Tile / 4), (uint)(Tile - 1 - Tile / 4))));
+        Assert.That((_render.XPartialDown, _render.XPartialUp), Is.EqualTo(((uint)(Tile / 4), (uint)(Tile - 1 - Tile / 4))));
+        Assert.That((_render.YPartialDown, _render.YPartialUp), Is.EqualTo(((uint)(Tile / 4), (uint)(Tile - 1 - Tile / 4))));
     }
 
     [TestCase(GameConstants.EyeDefault, GameConstants.EyeDefault)]
@@ -104,7 +104,7 @@ public class FrameRefreshTests
 
         _frame.Setup3DView();
 
-        Assert.That(_render.vieweyez, Is.EqualTo(seen));
+        Assert.That(_render.ViewEyeZ, Is.EqualTo(seen));
     }
 
     [Test]
@@ -115,6 +115,6 @@ public class FrameRefreshTests
         _frame.Setup3DView();
 
         // tan 30 degrees x 50 = 28.9 rows down
-        Assert.That((_render.viewpitch, _render.centery), Is.EqualTo((30.0, (short)(50 + 29))));
+        Assert.That((_render.ViewPitch, _render.CenterY), Is.EqualTo((30.0, (short)(50 + 29))));
     }
 }

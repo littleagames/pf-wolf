@@ -47,7 +47,7 @@ internal sealed class SpriteScaler(
         {
             startpix = endpix;
 
-            if (startpix >= render.viewheight)
+            if (startpix >= render.ViewHeight)
                 break;                          // off the bottom of the view area
 
             frac += fracstep;
@@ -59,8 +59,8 @@ internal sealed class SpriteScaler(
             if (startpix < 0)
                 startpix = 0;                   // clip upper boundary
 
-            if (endpix > render.viewheight)
-                endpix = render.viewheight;            // clip lower boundary
+            if (endpix > render.ViewHeight)
+                endpix = render.ViewHeight;            // clip lower boundary
 
             int srcIndex = row * width + column;
             if (mask[srcIndex] == 0)
@@ -74,7 +74,7 @@ internal sealed class SpriteScaler(
             var destIndex = video.ylookup[startpix] + x;
             unsafe
             {
-                byte* dest = (byte*)render.vbufPtr + render.screenofs;
+                byte* dest = (byte*)render.VbufPtr + render.ScreenOfs;
                 while (startpix < endpix)
                 {
                     // cloaked: what's behind, darkened (shade is then the light table, shadeofs its level)
@@ -119,7 +119,7 @@ internal sealed class SpriteScaler(
         xcenter = sprite.viewx - TexelsToPixels(originx, height);
         toppix = RaisedTop(floorRow(height), originy, sprite.z, height);
 
-        byte[] shade = sprite.bright ? Lighting.noshade : lighting.LightAt(Lighting.TileIndex(sprite.tilex, sprite.tiley), sprite.worldx, sprite.worldy);
+        byte[] shade = sprite.bright ? Lighting.NoShade : lighting.LightAt(Lighting.TileIndex(sprite.tilex, sprite.tiley), sprite.worldx, sprite.worldy);
         int shadeofs = sprite.bright ? 0 : lighting.ShadeOffsetForHeight(sprite.viewheight);
 
         // A cloaked sprite (Planet Strike's) darkens what's behind it, through shade level 16 as
@@ -139,7 +139,7 @@ internal sealed class SpriteScaler(
             //
             x1 = x2;
 
-            if (x1 >= render.viewwidth)
+            if (x1 >= render.ViewWidth)
                 break;                // off the right side of the view area
 
             frac += fracstep;
@@ -151,12 +151,12 @@ internal sealed class SpriteScaler(
             if (x1 < 0)
                 x1 = 0;               // clip left boundary
 
-            if (x2 > render.viewwidth)
-                x2 = render.viewwidth;       // clip right boundary
+            if (x2 > render.ViewWidth)
+                x2 = render.ViewWidth;       // clip right boundary
 
             while (x1 < x2)
             {
-                if (render.wallheight[x1] < sprite.viewheight)
+                if (render.WallHeight[x1] < sprite.viewheight)
                 {
                     ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, shadeofs, sprite.cloaked, sprite.translation);
                 }
@@ -180,7 +180,7 @@ internal sealed class SpriteScaler(
     */
     internal void SimpleScaleShape (int dispx, string shapenum, int dispheight, byte[]? shade = null, int dropy = 0)
     {
-        shade ??= Lighting.noshade;
+        shade ??= Lighting.NoShade;
         int height, toppix;
         int x1, x2, xcenter;
         int frac, fracstep;
@@ -198,7 +198,7 @@ internal sealed class SpriteScaler(
         // its bottom row); the weapon in hand doesn't move with the view's pitch
         var (originx, originy) = spriteAsset.Origin;
         xcenter = dispx - TexelsToPixels(originx, height);
-        toppix = render.basecentery + height + dropy - TexelsToPixels(originy, height);
+        toppix = render.BaseCenterY + height + dropy - TexelsToPixels(originy, height);
 
         x2 = xcenter;
 
@@ -209,13 +209,13 @@ internal sealed class SpriteScaler(
             //
             x1 = x2;
 
-            if (x1 >= render.viewwidth)
+            if (x1 >= render.ViewWidth)
                 break;                // off the right side (an offset can put it there)
 
             frac += fracstep;
             x2 = (frac >> MathUtils.FracBits) + xcenter;
 
-            for (x1 = Math.Max(x1, 0); x1 < Math.Min(x2, render.viewwidth); x1++)
+            for (x1 = Math.Max(x1, 0); x1 < Math.Min(x2, render.ViewWidth); x1++)
                 ScaleColumn((short)x1, (short)toppix, fracstep, spriteAsset, i, shade, 0);
         }
     }

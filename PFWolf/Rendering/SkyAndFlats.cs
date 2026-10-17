@@ -20,9 +20,9 @@ internal sealed class SkyAndFlats(
     GameSession session,
     Func<string, TextureAsset?> worldTexture)
 {
-    internal double EyeHalves(int z) => Math.Abs(z - render.vieweyez) / (double)(GameConstants.TextureSize / 2);
+    internal double EyeHalves(int z) => Math.Abs(z - render.ViewEyeZ) / (double)(GameConstants.TextureSize / 2);
 
-    internal static byte[] vgaCeiling =
+    internal static byte[] VgaCeiling =
     {
         0x1d,0x1d,0x1d,0x1d,0x1d,0x1d,0x1d,0x1d,0x1d,0xbf,
         0x4e,0x4e,0x4e,0x1d,0x8d,0x4e,0x1d,0x2d,0x1d,0x8d,
@@ -33,7 +33,7 @@ internal sealed class SkyAndFlats(
         0x1d,0x1d,0x1d,0x1d,0xdd,0xdd,0x7d,0xdd,0xdd,0xdd
     };
 
-    internal byte ceilingcolor;           // this frame's ceiling color, for arch undersides too
+    internal byte CeilingColor;           // this frame's ceiling color, for arch undersides too
 
     /*
     ====================
@@ -51,7 +51,7 @@ internal sealed class SkyAndFlats(
 
     const int SkyCircle = 1024;         // sky pixels all the way round: a 256 wide picture shows 4 times
 
-    internal string? levelsky;   // the level's sky graphic (or wall texture), null for none
+    internal string? LevelSky;   // the level's sky graphic (or wall texture), null for none
     Asset? skysource;            // the picture or texture skycolumns holds (an animation's frame)
     byte[] skycolumns = [];      // its pixels, column by column
     int skywidth, skyheight;
@@ -62,12 +62,12 @@ internal sealed class SkyAndFlats(
     /// </summary>
     bool LoadSky()
     {
-        if (string.IsNullOrEmpty(levelsky))
+        if (string.IsNullOrEmpty(LevelSky))
             return false;
 
-        Asset? source = assets.Exists<GraphicAsset>(levelsky)
-            ? assets.Find<GraphicAsset>(levelsky, session.gamestate.TimeCount)
-            : worldTexture(levelsky);
+        Asset? source = assets.Exists<GraphicAsset>(LevelSky)
+            ? assets.Find<GraphicAsset>(LevelSky, session.gamestate.TimeCount)
+            : worldTexture(LevelSky);
         if (ReferenceEquals(source, skysource))
             return skycolumns.Length > 0;
 
@@ -101,10 +101,10 @@ internal sealed class SkyAndFlats(
 
         unsafe
         {
-            byte* dest = (byte*)render.vbufPtr + render.screenofs;
-            for (int x = 0; x < render.viewwidth; x++)
+            byte* dest = (byte*)render.VbufPtr + render.ScreenOfs;
+            for (int x = 0; x < render.ViewWidth; x++)
             {
-                int angle = (render.midangle + render.pixelangle[x]) % GameConstants.Ang360;
+                int angle = (render.MidAngle + render.PixelAngle[x]) % GameConstants.Ang360;
                 if (angle < 0)
                     angle += GameConstants.Ang360;
 
@@ -112,9 +112,9 @@ internal sealed class SkyAndFlats(
                 int u = (int)((long)(GameConstants.Ang360 - 1 - angle) * SkyCircle / GameConstants.Ang360 % skywidth);
                 int column = u * skyheight;
 
-                for (int y = 0; y < render.centery; y++)
+                for (int y = 0; y < render.CenterY; y++)
                 {
-                    int row = (y - render.centery + render.basecentery) * skyheight / render.basecentery;
+                    int row = (y - render.CenterY + render.BaseCenterY) * skyheight / render.BaseCenterY;
                     dest[y * pitch + x] = skycolumns[column + Math.Max(row, 0)];
                 }
             }
@@ -129,52 +129,52 @@ internal sealed class SkyAndFlats(
         // game-info's colors for the map, else the map's own (mapdefs map-info), else the default map's
         byte ceilingColor = mapInfo?.CeilingColor is { } ceiling ? video.ParseColorOr(ceiling, 0x1d)
             : map.MapCeilingColor ?? video.ParseColorOr(gameInfo.DefaultMap.CeilingColor, 0x1d);
-        ceilingcolor = ceilingColor;
+        CeilingColor = ceilingColor;
         byte floorColor = mapInfo?.FloorColor is { } floor ? video.ParseColorOr(floor, 0x19)
             : map.MapFloorColor ?? video.ParseColorOr(gameInfo.DefaultMap.FloorColor, 0x19);
 
-        var destIndex = render.vbuf;
+        var destIndex = render.Vbuf;
         int y;
         bool sky = LoadSky();
         unsafe
         {
-            byte* dest = (byte*)render.vbufPtr;// + destIndex;
+            byte* dest = (byte*)render.VbufPtr;// + destIndex;
             if (sky)
             {
                 DrawSky();
-                y = render.centery;
-                destIndex += render.centery * (int)video.bufferPitch;
+                y = render.CenterY;
+                destIndex += render.CenterY * (int)video.bufferPitch;
             }
             else
             {
                 // the ceiling is at the top of the walls
-                for (y = 0; y < render.centery; y++, destIndex += (int)video.bufferPitch)
+                for (y = 0; y < render.CenterY; y++, destIndex += (int)video.bufferPitch)
                 {
-                    byte color = lighting.lightrow[FlatRowShadeOffset(y, CeilingHalves) + ceilingColor];
-                    for (var v = 0; v < render.viewwidth; v++)
+                    byte color = lighting.LightRow[FlatRowShadeOffset(y, CeilingHalves) + ceilingColor];
+                    for (var v = 0; v < render.ViewWidth; v++)
                         dest[destIndex + v] = color;
                 }
             }
 
-            for (; y < render.viewheight; y++, destIndex += (int)video.bufferPitch)
+            for (; y < render.ViewHeight; y++, destIndex += (int)video.bufferPitch)
             {
-                byte color = lighting.lightrow[FlatRowShadeOffset(y, FloorHalves) + floorColor];
-                for (var v = 0; v < render.viewwidth; v++)
+                byte color = lighting.LightRow[FlatRowShadeOffset(y, FloorHalves) + floorColor];
+                for (var v = 0; v < render.ViewWidth; v++)
                     dest[destIndex + v] = color;
             }
         }
 
         // In light zones or actors' light, even the plain colors change from place to place, so
         // they're cast too. A sky stays behind the ceiling flats, showing where there are none.
-        bool floorflats = map.hasfloorflats || lighting.haszones || actorLights.haslights;
-        bool ceilingflats = map.hasceilingflats || (lighting.haszones || actorLights.haslights) && !sky;
+        bool floorflats = map.hasfloorflats || lighting.HasZones || actorLights.HasLights;
+        bool ceilingflats = map.hasceilingflats || (lighting.HasZones || actorLights.HasLights) && !sky;
         if (floorflats || ceilingflats)
         {
             SetupFlatColumns();
             if (floorflats)
-                DrawFlats(map.floorflat, floorColor, render.centery, render.viewheight - 1, FloorHalves, false);
+                DrawFlats(map.floorflat, floorColor, render.CenterY, render.ViewHeight - 1, FloorHalves, false);
             if (ceilingflats)
-                DrawFlats(map.ceilingflat, ceilingColor, 0, render.centery - 1, CeilingHalves, sky);
+                DrawFlats(map.ceilingflat, ceilingColor, 0, render.CenterY - 1, CeilingHalves, sky);
         }
     }
 
@@ -199,17 +199,17 @@ internal sealed class SkyAndFlats(
     // Each column's ray, per unit of distance along the view (as CalcHeight measures it), in 1/65536ths
     internal void SetupFlatColumns()
     {
-        if (flatdirx.Length != render.viewwidth)
+        if (flatdirx.Length != render.ViewWidth)
         {
-            flatdirx = new long[render.viewwidth];
-            flatdiry = new long[render.viewwidth];
+            flatdirx = new long[render.ViewWidth];
+            flatdiry = new long[render.ViewWidth];
         }
 
         const double TORADIANS = 2 * Math.PI / GameConstants.FineAngles;
-        for (int x = 0; x < render.viewwidth; x++)
+        for (int x = 0; x < render.ViewWidth; x++)
         {
-            double angle = (render.midangle + render.pixelangle[x]) * TORADIANS;
-            double perview = 65536 / Math.Cos(render.pixelangle[x] * TORADIANS);
+            double angle = (render.MidAngle + render.PixelAngle[x]) * TORADIANS;
+            double perview = 65536 / Math.Cos(render.PixelAngle[x] * TORADIANS);
             flatdirx[x] = (long)(Math.Cos(angle) * perview);
             flatdiry[x] = (long)(-Math.Sin(angle) * perview);
         }
@@ -224,23 +224,23 @@ internal sealed class SkyAndFlats(
     internal void DrawFlats(TextureAsset?[] flats, byte color, int from, int to, double halves, bool behind)
     {
         int pitch = (int)video.bufferPitch;
-        double numerator = render.heightnumerator * 32.0 * halves;
+        double numerator = render.HeightNumerator * 32.0 * halves;
 
         unsafe
         {
-            byte* dest = (byte*)render.vbufPtr + render.screenofs;
+            byte* dest = (byte*)render.VbufPtr + render.ScreenOfs;
             for (int y = from; y <= to; y++)
             {
                 // the row half a story (times halves) above or below the horizon at this distance
-                double rowsfromcenter = Math.Abs(y + 0.5 - render.centery);
+                double rowsfromcenter = Math.Abs(y + 0.5 - render.CenterY);
                 long nx = (long)(numerator / rowsfromcenter);
                 int shadeofs = lighting.ShadeOffset(nx);
                 byte* row = dest + y * pitch;
 
-                for (int x = 0; x < render.viewwidth; x++)
+                for (int x = 0; x < render.ViewWidth; x++)
                 {
-                    long px = render.viewx + (nx * flatdirx[x] >> 16);
-                    long py = render.viewy + (nx * flatdiry[x] >> 16);
+                    long px = render.ViewX + (nx * flatdirx[x] >> 16);
+                    long py = render.ViewY + (nx * flatdiry[x] >> 16);
                     long tilex = px >> MapConstants.TileShift, tiley = py >> MapConstants.TileShift;
                     if ((ulong)tilex >= MapManager.MapSize || (ulong)tiley >= MapManager.MapSize)
                         continue;
@@ -260,7 +260,7 @@ internal sealed class SkyAndFlats(
                     // the sky, shows
                     if (texture == null || pixel == FlatMask)
                     {
-                        if ((lighting.haszones || actorLights.haslights) && !behind)
+                        if ((lighting.HasZones || actorLights.HasLights) && !behind)
                             row[x] = lighting.LightAt((int)tile, px, py)[shadeofs + color];
                         continue;
                     }
@@ -277,5 +277,5 @@ internal sealed class SkyAndFlats(
     internal double CeilingHalves => EyeHalves(map.wallstories * GameConstants.TextureSize);
 
     int FlatRowShadeOffset(int y, double halves) =>
-        lighting.shading ? lighting.ShadeOffset((long)(render.heightnumerator * 32.0 * halves / Math.Abs(y + 0.5 - render.centery))) : 0;
+        lighting.Shading ? lighting.ShadeOffset((long)(render.HeightNumerator * 32.0 * halves / Math.Abs(y + 0.5 - render.CenterY))) : 0;
 }

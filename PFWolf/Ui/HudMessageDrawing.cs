@@ -35,9 +35,9 @@ internal sealed class HudMessageDrawing(
             return;
 
         // The view in the 320x200 virtual pixels text is drawn in: the ones wholly inside it
-        int viewX = video.ToLayoutX(render.viewscreenx, roundUp: true), viewY = video.ToLayoutY(render.viewscreeny, roundUp: true);
-        int viewW = video.ToLayoutX(render.viewscreenx + render.viewwidth) - viewX;
-        int viewH = video.ToLayoutY(render.viewscreeny + render.viewheight) - viewY;
+        int viewX = video.ToLayoutX(render.ViewScreenX, roundUp: true), viewY = video.ToLayoutY(render.ViewScreenY, roundUp: true);
+        int viewW = video.ToLayoutX(render.ViewScreenX + render.ViewWidth) - viewX;
+        int viewH = video.ToLayoutY(render.ViewScreenY + render.ViewHeight) - viewY;
 
         // Messages for the status bar's info area go there; with no status bar showing, over the view's top left
         foreach (var stack in hudMessages.Messages

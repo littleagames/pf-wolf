@@ -14,7 +14,7 @@ public class WallHitsTests
     [SetUp]
     public void Make()
     {
-        _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade);
+        _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade);
         _hits = new WallHits(null!, null!, null!, null!, null!, _render, new GameSession());
     }
 
@@ -42,7 +42,7 @@ public class WallHitsTests
 
         // Assert: it meets the face at its middle
         Assert.That(hit, Is.True);
-        Assert.That((_render.xintercept, _render.yintercept, _render.diaghitu), Is.EqualTo(((int)(3 * Tile + Tile / 2), (int)(4 * Tile + Tile / 2), (int)(Tile / 2))));
+        Assert.That((_render.XIntercept, _render.YIntercept, _render.DiagHitU), Is.EqualTo(((int)(3 * Tile + Tile / 2), (int)(4 * Tile + Tile / 2), (int)(Tile / 2))));
     }
 
     [Test]
@@ -52,7 +52,7 @@ public class WallHitsTests
         bool hit = _hits.TraceDiagonal(WallShape.SolidNW, 0, 0, 0, Tile / 4, Tile, 0);
 
         Assert.That(hit, Is.True);
-        Assert.That((_render.xintercept, _render.yintercept), Is.EqualTo(((int)(Tile * 3 / 4), (int)(Tile / 4))));
+        Assert.That((_render.XIntercept, _render.YIntercept), Is.EqualTo(((int)(Tile * 3 / 4), (int)(Tile / 4))));
     }
 
     [Test]

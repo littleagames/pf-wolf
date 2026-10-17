@@ -53,7 +53,7 @@ internal static partial class GameHost
         cheatCommands.Register();       // god, noclip, give, map, exitlevel, tp, killall, diag, summon, pitch, eyeheight, hurt, playerclass (Commands/CheatCommands.cs)
         debugCommands.Register();       // overhead, where, count, actors, maps, fps, slowmo, vbls, fade, screenshot (Commands/DebugCommands.cs)
         factionCommands.Register();     // factions, setfaction, settranslation, translations, playercolor (Commands/FactionCommands.cs)
-        levelEditCommands.Register();       // wallheight, sky, weather, fog, light(s), zone*, height, tag, patch, flat(s) (Commands/LevelEditCommands.cs)
+        levelEditCommands.Register();       // WallHeight, sky, weather, fog, light(s), zone*, height, tag, patch, flat(s) (Commands/LevelEditCommands.cs)
         Register("spectate", "Watches through another actor's eyes while you play on: the next or previous enemy (default next), the next of a class, or back to the player. Not saved; each level starts on the player.",
             "spectate [next|prev|player|<class>]", SpectateCommand, Cheat | InLevel,
             complete: (_, i) => i == 0 ? ["next", "prev", "player", .. SpectateCandidates().Select(a => a.Name).Distinct()] : []);

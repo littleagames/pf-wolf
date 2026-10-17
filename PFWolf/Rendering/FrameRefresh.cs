@@ -57,11 +57,11 @@ internal sealed class FrameRefresh(
     GameSession session,
     FrameRefreshHooks hooks)
 {
-    internal int lasttimecount;
-    internal int frameon;
-    internal bool fpscounter = false;
+    internal int LastTimeCount;
+    internal int FrameOn;
+    internal bool FpsCounter = false;
 
-    internal int fps_frames = 0, fps_time = 0, fps = 0;
+    internal int FpsFrames = 0, FpsTime = 0, Fps = 0;
 
     /*
 =====================
@@ -76,19 +76,19 @@ internal sealed class FrameRefresh(
         //
         // calculate tics since last refresh for adaptive timing
         //
-        if (lasttimecount > (int)GameEngineManager.GetTimeCount())
-            lasttimecount = (int)GameEngineManager.GetTimeCount();    // if the game was paused a LONG time
+        if (LastTimeCount > (int)GameEngineManager.GetTimeCount())
+            LastTimeCount = (int)GameEngineManager.GetTimeCount();    // if the game was paused a LONG time
 
         uint curtime = SDL.SDL_GetTicks();
-        session.tics = (uint)((curtime * 7) / 100 - lasttimecount); // TODO: Rounding?
+        session.tics = (uint)((curtime * 7) / 100 - LastTimeCount); // TODO: Rounding?
         if (session.tics == 0)
         {
             // wait until end of current tic
-            GameEngineManager.DelayMs((uint)(((lasttimecount + 1) * 100) / 7 - curtime)); // TODO: Rounding error?
+            GameEngineManager.DelayMs((uint)(((LastTimeCount + 1) * 100) / 7 - curtime)); // TODO: Rounding error?
             session.tics = 1;
         }
 
-        lasttimecount += (int)session.tics;
+        LastTimeCount += (int)session.tics;
 
         if (session.tics > GameConstants.MaxTics)
             session.tics = GameConstants.MaxTics;
@@ -99,7 +99,7 @@ internal sealed class FrameRefresh(
     =
     = Pitch (y-shearing)
     =
-    = Looking up or down doesn't tilt the view: it moves the horizon (centery) down or up the
+    = Looking up or down doesn't tilt the view: it moves the horizon (CenterY) down or up the
     = screen, by as many pixels as the pitch's tangent at the projection's focal length (scale,
     = in pixels). Walls stay upright, so everything draws as before, only measured from the
     = moved horizon. It's kept on the screen, which limits how far the view can look.
@@ -109,40 +109,40 @@ internal sealed class FrameRefresh(
 
     /// <summary>The steepest pitch, in degrees, that keeps the horizon a row inside the view</summary>
     internal double MaxPitch() =>
-        render.scale > 0 ? Math.Atan((render.basecentery - 1) / (double)render.scale) * 180 / Math.PI : 0;
+        render.Scale > 0 ? Math.Atan((render.BaseCenterY - 1) / (double)render.Scale) * 180 / Math.PI : 0;
 
     internal void SetupPitch()
     {
         double max = MaxPitch();
-        render.viewpitch = Math.Clamp(render.viewpitch, -max, max);
-        int offset = (int)Math.Round(render.scale * Math.Tan(render.viewpitch * Math.PI / 180));
-        offset = Math.Clamp(offset, 1 - render.basecentery, render.basecentery - 1);
-        render.centery = (short)(render.basecentery + offset);
+        render.ViewPitch = Math.Clamp(render.ViewPitch, -max, max);
+        int offset = (int)Math.Round(render.Scale * Math.Tan(render.ViewPitch * Math.PI / 180));
+        offset = Math.Clamp(offset, 1 - render.BaseCenterY, render.BaseCenterY - 1);
+        render.CenterY = (short)(render.BaseCenterY + offset);
     }
 
     internal void Setup3DView()
     {
         var camera = session.camera;
-        render.viewangle = camera.Angle;
-        render.midangle = (short)(render.viewangle * (GameConstants.FineAngles / GameConstants.Angles));
+        render.ViewAngle = camera.Angle;
+        render.MidAngle = (short)(render.ViewAngle * (GameConstants.FineAngles / GameConstants.Angles));
 
-        render.viewpitch = camera.Pitch;
-        render.vieweyez = Math.Clamp(camera.EyeZ, GameConstants.MinEye, GameConstants.MaxEye);
+        render.ViewPitch = camera.Pitch;
+        render.ViewEyeZ = Math.Clamp(camera.EyeZ, GameConstants.MinEye, GameConstants.MaxEye);
         SetupPitch();
 
-        render.viewsin = TrigTables.sintable[render.viewangle];
-        render.viewcos = TrigTables.costable[render.viewangle];
+        render.ViewSin = TrigTables.SinTable[render.ViewAngle];
+        render.ViewCos = TrigTables.CosTable[render.ViewAngle];
 
-        render.viewx = camera.X - MathUtils.FixedMul(render.focallength, render.viewcos);
-        render.viewy = camera.Y + MathUtils.FixedMul(render.focallength, render.viewsin);
+        render.ViewX = camera.X - MathUtils.FixedMul(render.FocalLength, render.ViewCos);
+        render.ViewY = camera.Y + MathUtils.FixedMul(render.FocalLength, render.ViewSin);
 
-        render.focaltx = (short)(render.viewx >> (int)MapConstants.TileShift);
-        render.focalty = (short)(render.viewy >> (int)MapConstants.TileShift);
+        render.FocalTx = (short)(render.ViewX >> (int)MapConstants.TileShift);
+        render.FocalTy = (short)(render.ViewY >> (int)MapConstants.TileShift);
 
-        render.xpartialdown = (uint)(render.viewx & (MapConstants.TileGlobal - 1));
-        render.xpartialup = (uint)(render.xpartialdown ^ (MapConstants.TileGlobal - 1));
-        render.ypartialdown = (uint)(render.viewy & (MapConstants.TileGlobal - 1));
-        render.ypartialup = (uint)(render.ypartialdown ^ (MapConstants.TileGlobal - 1));
+        render.XPartialDown = (uint)(render.ViewX & (MapConstants.TileGlobal - 1));
+        render.XPartialUp = (uint)(render.XPartialDown ^ (MapConstants.TileGlobal - 1));
+        render.YPartialDown = (uint)(render.ViewY & (MapConstants.TileGlobal - 1));
+        render.YPartialUp = (uint)(render.YPartialDown ^ (MapConstants.TileGlobal - 1));
     }
 
     internal void ThreeDRefresh()
@@ -165,11 +165,11 @@ internal sealed class FrameRefresh(
             map.spotvis[camera.TileX, camera.TileY] = true;
 
 
-        render.vbuf = 0;
-        render.vbufPtr = video.LockSurface();
-        if (render.vbufPtr == IntPtr.Zero) return;
+        render.Vbuf = 0;
+        render.VbufPtr = video.LockSurface();
+        if (render.VbufPtr == IntPtr.Zero) return;
 
-        render.vbuf += (int)render.screenofs;
+        render.Vbuf += (int)render.ScreenOfs;
 
         hooks.UpdateViewQuake();        // the focal length a quake pulses, before the view's set up from it
         Setup3DView();
@@ -182,11 +182,11 @@ internal sealed class FrameRefresh(
         //
         skyAndFlats.VGAClearScreen();
 
-        render.markseen = camera.OnPlayer;     // the automap only learns what the player sees
+        render.MarkSeen = camera.OnPlayer;     // the automap only learns what the player sees
         weather.SetupWeather();
         rayTrace.WallRefresh();
 
-        if (render.markseen)
+        if (render.MarkSeen)
             map.MarkSeenFromSpotvis();      // floor the rays crossed, for the automap
 
         //
@@ -201,13 +201,13 @@ internal sealed class FrameRefresh(
             spriteDrawing.DrawPlayerWeapon();    // draw player's hands
 
         video.UnlockSurface();
-        render.vbuf = 0;
+        render.Vbuf = 0;
 
         if (scope != null)
             hooks.DrawScope(scope);
 
         // For the next save's thumbnail, before the automap or console is drawn over the view
-        video.KeepViewCopy(render.viewscreenx, render.viewscreeny, render.viewwidth, render.viewheight);
+        video.KeepViewCopy(render.ViewScreenX, render.ViewScreenY, render.ViewWidth, render.ViewHeight);
 
         //
         // show screen and time last cycle
@@ -218,7 +218,7 @@ internal sealed class FrameRefresh(
             video.Transition(hooks.LevelFadeStyle(), 0, 0, video.screenWidth, video.screenHeight, (uint)hooks.LevelFadeTics());
             session.fizzlein = false;
 
-            lasttimecount = (int)GameEngineManager.GetTimeCount();          // don't make a big tic count
+            LastTimeCount = (int)GameEngineManager.GetTimeCount();          // don't make a big tic count
         }
         else
         {
@@ -230,10 +230,10 @@ internal sealed class FrameRefresh(
             hooks.DrawHudMessages();      // over the automap too, but not in the save thumbnail
             hooks.DrawNetOverlay();       // waiting for someone, or asking whether to leave (Ui/NetOverlay.cs)
 
-            if (fpscounter)
+            if (FpsCounter)
             {
                 video.Bar(0, 0, 40, 10, session.bordercol);
-                graphics.DrawText(4, 1, $"{fps} fps", new Fonts.TextStyle(UiFonts.SmallFont, "Grey", "VIEWCOLOR"));
+                graphics.DrawText(4, 1, $"{Fps} fps", new Fonts.TextStyle(UiFonts.SmallFont, "Grey", "VIEWCOLOR"));
             }
 
             // Taken here, before the console is drawn, so it never shows in the shot.
@@ -247,16 +247,16 @@ internal sealed class FrameRefresh(
             video.Update();
         }
 
-        if (fpscounter)
+        if (FpsCounter)
         {
-            fps_frames++;
-            fps_time += (int)session.tics;
+            FpsFrames++;
+            FpsTime += (int)session.tics;
 
-            if (fps_time > 35)
+            if (FpsTime > 35)
             {
-                fps_time -= 35;
-                fps = fps_frames << 1;
-                fps_frames = 0;
+                FpsTime -= 35;
+                Fps = FpsFrames << 1;
+                FpsFrames = 0;
             }
         }
     }

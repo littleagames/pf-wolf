@@ -27,10 +27,10 @@ public class SpriteScalerTests
         };
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Unshaded)
         {
-            vbufPtr = _pinned.AddrOfPinnedObject(),
-            screenofs = 0,
-            viewwidth = Width,
-            viewheight = Height,
+            VbufPtr = _pinned.AddrOfPinnedObject(),
+            ScreenOfs = 0,
+            ViewWidth = Width,
+            ViewHeight = Height,
         };
         _scaler = new SpriteScaler(null!, video, null!, _render, half => half);
     }
@@ -71,7 +71,7 @@ public class SpriteScalerTests
     public void It_Is_Clipped_To_The_View()
     {
         // Act: starting above the view, four pixels a texel, and a view only 3 high
-        _render.viewheight = 3;
+        _render.ViewHeight = 3;
         _scaler.ScaleColumn(3, -2, 4 << 16, Sprite(), 0, Unshaded, 0);
 
         // Assert: its top two rows are off the view, and nothing goes below it

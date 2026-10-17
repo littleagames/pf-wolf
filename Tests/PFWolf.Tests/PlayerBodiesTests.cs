@@ -124,7 +124,7 @@ public class PlayerBodiesTests
         var console = new ConsoleManager();
         var messages = new HudMessageManager(new Lazy<AssetManager>(() => new AssetManager()), new Lazy<ConsoleManager>(console));
         var drawing = new HudMessageDrawing(null!, null!, _inventory, messages, null!, null!, null!,
-            new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade), _session);
+            new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade), _session);
         var first = _inventory.CreateActor("Guard")!;
         var second = _inventory.CreateActor("Guard")!;
         var dead = _inventory.CreateActor("Guard")!;

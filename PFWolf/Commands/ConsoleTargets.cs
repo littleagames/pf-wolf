@@ -71,8 +71,8 @@ internal sealed class ConsoleTargets(
     internal string DescribeZone(int zone)
     {
         if (zone == 0)
-            return $"the level's light, {lighting.levelshading?.Light ?? 255}";
-        if (!lighting.levelzones.TryGetValue(zone, out var z))
+            return $"the level's light, {lighting.LevelShading?.Light ?? 255}";
+        if (!lighting.LevelZones.TryGetValue(zone, out var z))
             return "not in the map's zones: the level's light";
 
         var text = $"light {z.Light}";

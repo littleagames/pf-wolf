@@ -167,7 +167,7 @@ internal sealed class WallSpriteBlocking(MapManager map)
 {
     // Where ClipMove's move starts: a panel the player already overlaps there (one spawned on
     // top of them) doesn't block, so they can always step off it
-    internal int wallspritefromx, wallspritefromy;
+    internal int WallSpriteFromX, WallSpriteFromY;
 
     /// <summary>
     /// The first panel standing in tiles xl..xh, yl..yh that a box of half-width
@@ -189,7 +189,7 @@ internal sealed class WallSpriteBlocking(MapManager map)
                 continue;
             if (!WallSprites.BoxHitsWallSprite(span, x, y, size))
                 continue;
-            if (player && WallSprites.BoxHitsWallSprite(span, wallspritefromx, wallspritefromy, size))
+            if (player && WallSprites.BoxHitsWallSprite(span, WallSpriteFromX, WallSpriteFromY, size))
                 continue;
             return span;
         }

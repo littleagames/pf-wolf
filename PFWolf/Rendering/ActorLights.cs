@@ -6,7 +6,7 @@ namespace PFWolf.Rendering;
 /// <summary>
 /// Actors can give off light (ActorLightInfo: actordefs `light.*` properties, and a state's
 /// `light:` overriding them). Each frame every lit actor adds its light to the cells of the
-/// light grid around it (lighting.celladd), most at the actor and none at its radius. It spreads from
+/// light grid around it (lighting.CellAdd), most at the actor and none at its radius. It spreads from
 /// the actor's tile through open floor and open doors, and lights the tiles it reaches that
 /// a straight line from it can see, so it doesn't shine through walls or round corners: a
 /// closed door or a diagonal wall is lit, but the light goes no further. Light can't make
@@ -17,7 +17,7 @@ namespace PFWolf.Rendering;
 /// fraction into a pattern, so its falloff doesn't show as rings.
 ///
 /// A colored light tints what it lights. Where lights overlap, their light adds up, but a
-/// cell takes the tint of the strongest light there (lighting.celltint, by lighting.cellstrong). The tint
+/// cell takes the tint of the strongest light there (lighting.CellTint, by lighting.CellStrong). The tint
 /// fades toward white over TintSteps steps as the light falls off, so a colored pool doesn't
 /// end in a hard edge.
 ///
@@ -30,20 +30,20 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     const int HalfCell = 1 << (CellGlobalShift - 1);
 
     // The weapon in hand (the acting player's), and the player it's with
-    Entities.Actors.Actor? weaponSprite => session.playerstate.WeaponSprite;
+    Entities.Actors.Actor? WeaponSprite => session.playerstate.WeaponSprite;
     readonly Dictionary<string, ActorLightInfo?> lightclasses = new(StringComparer.OrdinalIgnoreCase);
 
     const int TintSteps = 4;
 
     // Each light color's tints (indexes in tints), from a quarter of the color to all of it;
     // forgotten with the light rows (ResetLightRows)
-    internal readonly Dictionary<string, byte[]> colortints = new(StringComparer.OrdinalIgnoreCase);
+    internal readonly Dictionary<string, byte[]> ColorTintTables = new(StringComparer.OrdinalIgnoreCase);
 
     readonly List<int> casttiles = [];           // the tiles whose cells have light added this frame
     readonly int[] caststamp = new int[MapManager.MapArea], visitstamp = new int[MapManager.MapArea];
     int castframe, castvisit;
     readonly Queue<(int X, int Y)> castqueue = new();
-    internal bool haslights;                              // some cell has light added this frame
+    internal bool HasLights;                              // some cell has light added this frame
 
     // A 4x4 Bayer matrix: each cell's threshold, in 16ths of a light level
     static readonly int[] bayer4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -90,7 +90,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
     {
         if (string.IsNullOrEmpty(color))
             return null;
-        if (colortints.TryGetValue(color, out var steps))
+        if (ColorTintTables.TryGetValue(color, out var steps))
             return steps.Length == 0 ? null : steps;
 
         var (r, g, b) = Lighting.ParseRgb(color, Lighting.NoTint, "light color");
@@ -101,7 +101,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
             static byte Mix(byte to, float amount) => (byte)Math.Round(255 + (to - 255) * amount);
             steps[i] = lighting.TintIndex((Mix(r, amount), Mix(g, amount), Mix(b, amount)));
         }
-        colortints[color] = steps;
+        ColorTintTables[color] = steps;
         return steps.Length == 0 ? null : steps;
     }
 
@@ -206,7 +206,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         {
             var (intensity, radius, color) = CurrentLight(actor);
             var state = LightStateOf(actor);
-            var where = ReferenceEquals(actor, weaponSprite) ? "in hand" : $"at {actor.TileX},{actor.TileY}";
+            var where = ReferenceEquals(actor, WeaponSprite) ? "in hand" : $"at {actor.TileX},{actor.TileY}";
             var text = intensity > 0 ? $"{intensity} over {radius:0.##} tiles{(color != null ? $", {color}" : "")}" : "off";
             if (state.Info is { Effect: not ZoneEffect.None } info)
                 text += $", {info.Effect.ToString().ToLowerInvariant()}";
@@ -223,7 +223,7 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         {
             var state = LightStateOf(actor);
             if (state.Info is { Effect: not ZoneEffect.None } info)
-                LightEffects.Tick(info.Effect, (int)tics, info.Tics, ref state.Phase, ref state.FlickerAmount, Lighting.zonerandom);
+                LightEffects.Tick(info.Effect, (int)tics, info.Tics, ref state.Phase, ref state.FlickerAmount, Lighting.ZoneRandom);
         }
     }
 
@@ -233,8 +233,8 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
         foreach (var actor in map.GetActors())
             if (!actor.IsRemoved && MightLight(actor))
                 yield return actor;
-        if (weaponSprite != null && MightLight(weaponSprite))
-            yield return weaponSprite;
+        if (WeaponSprite != null && MightLight(WeaponSprite))
+            yield return WeaponSprite;
     }
 
     bool MightLight(Entities.Actors.Actor actor) =>
@@ -249,25 +249,25 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
             for (int cy = 0; cy < LightCellCount; cy++)
             {
                 int start = (((y << LightCellShift) + cy) << GridShift) + (x << LightCellShift);
-                Array.Clear(lighting.celladd, start, LightCellCount);
-                Array.Clear(lighting.cellstrong, start, LightCellCount);
-                Array.Clear(lighting.celltint, start, LightCellCount);
+                Array.Clear(lighting.CellAdd, start, LightCellCount);
+                Array.Clear(lighting.CellStrong, start, LightCellCount);
+                Array.Clear(lighting.CellTint, start, LightCellCount);
             }
         }
         casttiles.Clear();
         castframe++;
-        haslights = false;
-        if (!lighting.shading)
+        HasLights = false;
+        if (!lighting.Shading)
             return;
 
         foreach (var actor in LitActors())
         {
             var (intensity, radius, color) = CurrentLight(actor);
             // the weapon in hand isn't placed in the world: it's where the player is
-            bool inhand = ReferenceEquals(actor, weaponSprite);
+            bool inhand = ReferenceEquals(actor, WeaponSprite);
             CastLight(inhand ? session.player.X : actor.X, inhand ? session.player.Y : actor.Y, intensity, radius, ColorTints(color));
         }
-        haslights = casttiles.Count > 0;
+        HasLights = casttiles.Count > 0;
     }
 
     /// <summary>Adds a light at (lx, ly) (global units) to the cells around it, as far as it spreads, tinted (null: white).</summary>
@@ -393,11 +393,11 @@ internal sealed class ActorLights(MapManager map, Doors doors, Lighting lighting
                     continue;
 
                 int i = (cy << GridShift) + cx;
-                lighting.celladd[i] = (byte)Math.Min(lighting.celladd[i] + add, MaxLightLevel);
-                if (add > lighting.cellstrong[i])
+                lighting.CellAdd[i] = (byte)Math.Min(lighting.CellAdd[i] + add, MaxLightLevel);
+                if (add > lighting.CellStrong[i])
                 {
-                    lighting.cellstrong[i] = (byte)Math.Min(add, byte.MaxValue);
-                    lighting.celltint[i] = tints == null ? (byte)0
+                    lighting.CellStrong[i] = (byte)Math.Min(add, byte.MaxValue);
+                    lighting.CellTint[i] = tints == null ? (byte)0
                         : tints[Math.Clamp((int)Math.Ceiling(falloff * TintSteps), 1, TintSteps) - 1];
                 }
             }

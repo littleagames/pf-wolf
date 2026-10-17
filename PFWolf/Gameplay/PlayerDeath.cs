@@ -138,12 +138,12 @@ internal sealed class PlayerDeath(
         //
         video.FinishPaletteShifts();
 
-        video.BarScaledCoord(render.viewscreenx, render.viewscreeny, render.viewwidth, render.viewheight, hooks.Settings().deathFadeColor);
+        video.BarScaledCoord(render.ViewScreenX, render.ViewScreenY, render.ViewWidth, render.ViewHeight, hooks.Settings().deathFadeColor);
         hooks.DrawHudMessages();      // the obituary stays up on the red, through the fade and the wait after it
 
         input.ClearKeysDown();
 
-        video.Transition(hooks.Settings().deathFadeStyle, render.viewscreenx, render.viewscreeny, render.viewwidth, render.viewheight, (uint)hooks.Settings().deathFadeTics);
+        video.Transition(hooks.Settings().deathFadeStyle, render.ViewScreenX, render.ViewScreenY, render.ViewWidth, render.ViewHeight, (uint)hooks.Settings().deathFadeTics);
 
         input.UserInput((uint)hooks.Settings().deathHoldTics);
         audio.WaitSoundDone();
@@ -252,8 +252,8 @@ internal sealed class PlayerDeath(
         dist = 0x14000;
         do
         {
-            xmove = MathUtils.FixedMul(dist, TrigTables.costable[camangle]);
-            ymove = -MathUtils.FixedMul(dist, TrigTables.sintable[camangle]);
+            xmove = MathUtils.FixedMul(dist, TrigTables.CosTable[camangle]);
+            ymove = -MathUtils.FixedMul(dist, TrigTables.SinTable[camangle]);
 
             camx = ob.X - xmove;
             camy = ob.Y - ymove;

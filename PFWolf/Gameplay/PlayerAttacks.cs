@@ -72,7 +72,7 @@ internal sealed class PlayerAttacks(
     /// any screen shows (another player's machine draws another view, and a game played on
     /// several machines has to come out the same on each): the living enemies -- and, in
     /// deathmatch, the other living players -- within the shot's angle either side of straight
-    /// ahead (the renderer's shootdelta, which comes to the same angle however wide the view),
+    /// ahead (the renderer's ShootDelta, which comes to the same angle however wide the view),
     /// with a clear line to them. Nearest first.
     /// </summary>
     internal List<ShotTarget> ShootCandidatesFrom(Entities.Actors.PlayerPawn shooter)
@@ -96,7 +96,7 @@ internal sealed class PlayerAttacks(
             if (nx < GameConstants.MinDist)
                 continue;
 
-            // |ny / nx| * scale < shootdelta, with the view's width taken out of both
+            // |ny / nx| * scale < ShootDelta, with the view's width taken out of both
             if (Math.Abs((long)ny) * 5 * (GameConstants.FocalLength + GameConstants.MinDist) >= (long)nx * (GameConstants.ViewGlobal / 2))
                 continue;
 

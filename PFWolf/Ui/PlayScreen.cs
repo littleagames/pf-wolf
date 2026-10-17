@@ -117,27 +117,27 @@ internal sealed class PlayScreen(
             }
         }
 
-        if (render.viewheight == video.screenHeight) return;
+        if (render.ViewHeight == video.screenHeight) return;
 
         video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaHeight, session.bordercol);
 
-        int xl = video.screenWidth / 2 - render.viewwidth / 2;
-        int yl = playArea.PlayAreaTop + (playArea.PlayAreaHeight - render.viewheight) / 2;
-        video.BarScaledCoord(xl, yl, render.viewwidth, render.viewheight, "Black");
+        int xl = video.screenWidth / 2 - render.ViewWidth / 2;
+        int yl = playArea.PlayAreaTop + (playArea.PlayAreaHeight - render.ViewHeight) / 2;
+        video.BarScaledCoord(xl, yl, render.ViewWidth, render.ViewHeight, "Black");
 
         if (xl != 0)
         {
             // Paint game view border lines
-            video.BarScaledCoord(xl - px, yl - px, render.viewwidth + px, px, "Black");                      // upper border
-            video.BarScaledCoord(xl, yl + render.viewheight, render.viewwidth + px, px, session.bordercol);// - 2);       // lower border
-            video.BarScaledCoord(xl - px, yl - px, px, render.viewheight + px, "Black");                     // left border
-            video.BarScaledCoord(xl + render.viewwidth, yl - px, px, render.viewheight + 2 * px, session.bordercol);// - 2);  // right border
-            video.BarScaledCoord(xl - px, yl + render.viewheight, px, px, session.bordercol);// - 3);              // lower left highlight
+            video.BarScaledCoord(xl - px, yl - px, render.ViewWidth + px, px, "Black");                      // upper border
+            video.BarScaledCoord(xl, yl + render.ViewHeight, render.ViewWidth + px, px, session.bordercol);// - 2);       // lower border
+            video.BarScaledCoord(xl - px, yl - px, px, render.ViewHeight + px, "Black");                     // left border
+            video.BarScaledCoord(xl + render.ViewWidth, yl - px, px, render.ViewHeight + 2 * px, session.bordercol);// - 2);  // right border
+            video.BarScaledCoord(xl - px, yl + render.ViewHeight, px, px, session.bordercol);// - 3);              // lower left highlight
         }
         else
         {
             // Just paint a lower border line
-            video.BarScaledCoord(0, yl + render.viewheight, render.viewwidth, px, session.bordercol);// - 2);       // lower border
+            video.BarScaledCoord(0, yl + render.ViewHeight, render.ViewWidth, px, session.bordercol);// - 2);       // lower border
         }
     }
 
@@ -147,8 +147,8 @@ internal sealed class PlayScreen(
 
         int sw = video.screenWidth;
         int sh = video.screenHeight;
-        int vw = render.viewwidth;
-        int vh = render.viewheight;
+        int vw = render.ViewWidth;
+        int vh = render.ViewHeight;
         int px = BorderLinePixels;
 
         int top = playArea.PlayAreaTop;                  // below any top status bar

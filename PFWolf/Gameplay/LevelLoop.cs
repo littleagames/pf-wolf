@@ -52,8 +52,8 @@ internal sealed class LevelLoop(
     internal void PlayLoop()
     {
         session.playstate = PlayState.StillPlaying;
-        frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
-        frame.frameon = 0;
+        frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
+        frame.FrameOn = 0;
         funnyticount = 0;
         input.InitButtonState();
         if (!netPlay.netJoinResume)             // (just joined mid-level: kept as the host had them)
@@ -83,7 +83,7 @@ internal sealed class LevelLoop(
             polling.PollControls();
 
             // With con_pause on, an open console freezes the world but keeps drawing it.
-            // CalcTics still advances lasttimecount each frame, so no time builds up to be
+            // CalcTics still advances LastTimeCount each frame, so no time builds up to be
             // spent all at once when the console closes.
             // Not with others, though: the game goes on for them
             bool worldPaused = console.IsPausingGame && !session.netgame;
@@ -170,7 +170,7 @@ internal sealed class LevelLoop(
             if (session.singlestep != 0)
             {
                 GameEngineManager.WaitVBL(session.singlestep);
-                frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
+                frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
             }
             if (session.extravbls != 0)
                 GameEngineManager.WaitVBL((uint)session.extravbls);

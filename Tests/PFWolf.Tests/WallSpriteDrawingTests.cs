@@ -22,7 +22,7 @@ public class WallSpriteDrawingTests
         // Looking east from the middle of tile (10, 10)
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, new byte[256])
         {
-            viewx = (int)(10.5 * Tile), viewy = (int)(10.5 * Tile), viewcos = 0x10000, viewsin = 0, heightnumerator = 0x10000,
+            ViewX = (int)(10.5 * Tile), ViewY = (int)(10.5 * Tile), ViewCos = 0x10000, ViewSin = 0, HeightNumerator = 0x10000,
         };
         _drawing = new WallSpriteDrawing(null!, _map, null!, _render, null!, half => half);
     }
@@ -44,7 +44,7 @@ public class WallSpriteDrawingTests
     {
         Assert.That(_drawing.HeightAtDepth(4 * Tile), Is.LessThan(_drawing.HeightAtDepth(2 * Tile)));
         Assert.That(_drawing.HeightAtDepth(1), Is.EqualTo(_drawing.HeightAtDepth(GameConstants.MinDist)));     // nearer than MinDist is as at it
-        _render.heightnumerator = 0x1000000;
+        _render.HeightNumerator = 0x1000000;
         Assert.That(_drawing.HeightAtDepth(GameConstants.MinDist), Is.EqualTo(31999));
     }
 

@@ -13,7 +13,7 @@ namespace PFWolf.Gameplay;
 = touches and sees doesn't move with it (Rendering/PlayerView.cs).
 =
 = The player's own look up/down and eye height are playerpitch and playereyez; the
-= renderer's viewpitch and vieweyez are this frame's, taken from the camera.
+= renderer's ViewPitch and ViewEyeZ are this frame's, taken from the camera.
 =
 ====================
 */

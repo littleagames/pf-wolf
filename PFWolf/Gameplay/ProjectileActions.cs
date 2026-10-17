@@ -172,7 +172,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
         if (IsInWall(ob))
         {
             int facing = FacingAngle(ob);
-            int cos = TrigTables.sintable[facing + GameConstants.Angles / 4], sin = TrigTables.sintable[facing];
+            int cos = TrigTables.SinTable[facing + GameConstants.Angles / 4], sin = TrigTables.SinTable[facing];
             if ((long)(pawn.X - x) * cos - (long)(pawn.Y - y) * sin <= 0)
                 return false;
         }
@@ -200,7 +200,7 @@ internal sealed class ProjectileActions(MapManager map, GameSession session, Lin
             return (ob.X, ob.Y);
 
         int facing = FacingAngle(ob);
-        int cos = TrigTables.sintable[facing + GameConstants.Angles / 4], sin = TrigTables.sintable[facing];
+        int cos = TrigTables.SinTable[facing + GameConstants.Angles / 4], sin = TrigTables.SinTable[facing];
         const int Axis = 0x6000;    // about 22 degrees off an axis still counts as facing along it
         int centreX = (ob.TileX << MapConstants.TileShift) + 0x8000, centreY = (ob.TileY << MapConstants.TileShift) + 0x8000;
         int x = centreX + (cos > Axis ? WallFaceOut : cos < -Axis ? -WallFaceOut : 0);

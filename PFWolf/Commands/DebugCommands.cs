@@ -48,7 +48,7 @@ internal sealed class DebugCommands(
             debugScreens.BasicOverhead();
             if (settings.viewsize < 20)
                 playScreen.DrawPlayBorder();
-            frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
+            frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
         });
     }
 
@@ -144,8 +144,8 @@ internal sealed class DebugCommands(
 
     internal void FpsCommand(string[] args)
     {
-        frame.fpscounter = Toggle(args, frame.fpscounter);
-        console.Print(frame.fpscounter ? "FPS counter ON" : "FPS counter OFF");
+        frame.FpsCounter = Toggle(args, frame.FpsCounter);
+        console.Print(frame.FpsCounter ? "FPS counter ON" : "FPS counter OFF");
     }
 
     internal void FadeCommand(string[] args)
@@ -163,7 +163,7 @@ internal sealed class DebugCommands(
             frame.ThreeDRefresh();
             video.FadeOut(style, new Color { Alpha = 255 }, 30, tics);
             video.FadeIn(style, 30, tics);
-            frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
+            frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
         });
     }
 

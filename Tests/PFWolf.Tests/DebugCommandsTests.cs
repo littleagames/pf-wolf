@@ -11,7 +11,7 @@ public class DebugCommandsTests
     {
         _console = new ConsoleManager { LevelLoaded = () => true, CheatsEnabled = () => true };
         var session = _session = new GameSession();
-        var render = new RenderState(new Assets.TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade);
+        var render = new RenderState(new Assets.TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade);
         _frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, session, null!);
         new DebugCommands(_console, null!, null!, null!, null!, _frame, null!, null!, render, null!, session,
             new Configuration.GameSettings { viewsize = 15 }).Register();
@@ -21,9 +21,9 @@ public class DebugCommandsTests
     public void Fps_Toggles_The_Counter()
     {
         _console.Execute("fps");
-        Assert.That((_frame.fpscounter, _console.Scrollback[^1]), Is.EqualTo((true, "FPS counter ON")));
+        Assert.That((_frame.FpsCounter, _console.Scrollback[^1]), Is.EqualTo((true, "FPS counter ON")));
         _console.Execute("fps 0");
-        Assert.That((_frame.fpscounter, _console.Scrollback[^1]), Is.EqualTo((false, "FPS counter OFF")));
+        Assert.That((_frame.FpsCounter, _console.Scrollback[^1]), Is.EqualTo((false, "FPS counter OFF")));
     }
 
     [Test]

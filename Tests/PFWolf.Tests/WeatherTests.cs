@@ -22,9 +22,9 @@ public class WeatherTests
 
         // Act / Assert
         weather.SetWeather(null);
-        Assert.That(weather.levelweather, Is.Null);
+        Assert.That(weather.LevelWeather, Is.Null);
         weather.SetWeather(WeatherInfo.None);
-        Assert.That((weather.levelweather, weather.levelweathername), Is.EqualTo(((WeatherInfo?)null, (string?)null)));
+        Assert.That((weather.LevelWeather, weather.LevelWeatherName), Is.EqualTo(((WeatherInfo?)null, (string?)null)));
     }
 
     [Test]
@@ -32,8 +32,8 @@ public class WeatherTests
     {
         // Arrange: looking east from (10, 10), the view 320x160
         var (weather, render) = Make();
-        (render.viewx, render.viewy, render.viewcos, render.viewsin) = ((int)(10 * Tile), (int)(10 * Tile), 0x10000, 0);
-        (render.centerx, render.centery, render.scale, render.heightnumerator, render.vieweyez) = (160, 80, 256, 0x10000, 32);
+        (render.ViewX, render.ViewY, render.ViewCos, render.ViewSin) = ((int)(10 * Tile), (int)(10 * Tile), 0x10000, 0);
+        (render.CenterX, render.CenterY, render.Scale, render.HeightNumerator, render.ViewEyeZ) = (160, 80, 256, 0x10000, 32);
 
         // Act
         bool seen = weather.ProjectPoint(14 * Tile, 10 * Tile, 32, out int sx, out int sy, out long nx, out _);
@@ -48,8 +48,8 @@ public class WeatherTests
     {
         // Arrange
         var (weather, render) = Make();
-        (render.viewx, render.viewy, render.viewcos, render.viewsin) = ((int)(10 * Tile), (int)(10 * Tile), 0x10000, 0);
-        (render.centerx, render.centery, render.scale, render.heightnumerator, render.vieweyez) = (160, 80, 256, 0x10000, 32);
+        (render.ViewX, render.ViewY, render.ViewCos, render.ViewSin) = ((int)(10 * Tile), (int)(10 * Tile), 0x10000, 0);
+        (render.CenterX, render.CenterY, render.Scale, render.HeightNumerator, render.ViewEyeZ) = (160, 80, 256, 0x10000, 32);
 
         // Act: south is to the right, looking east (y grows south)
         weather.ProjectPoint(14 * Tile, 11 * Tile, 64, out int sx, out int sy, out _, out _);
@@ -63,7 +63,7 @@ public class WeatherTests
     public void A_Point_Behind_Or_Too_Close_Isnt_Drawn()
     {
         var (weather, render) = Make();
-        (render.viewx, render.viewy, render.viewcos, render.viewsin) = ((int)(10 * Tile), (int)(10 * Tile), 0x10000, 0);
+        (render.ViewX, render.ViewY, render.ViewCos, render.ViewSin) = ((int)(10 * Tile), (int)(10 * Tile), 0x10000, 0);
         Assert.That(weather.ProjectPoint(8 * Tile, 10 * Tile, 32, out _, out _, out _, out _), Is.False);
         Assert.That(weather.ProjectPoint(10 * Tile + 0x100, 10 * Tile, 32, out _, out _, out _, out _), Is.False);
     }

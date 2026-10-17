@@ -187,13 +187,13 @@ internal sealed class PlayerMovement(
         // demos move the player exactly as v1.4 did, or they drift from what was recorded
         if ((session.demorecord || session.demoplayback))
         {
-            xmove = MathUtils.FixedByFracOrig(speed, TrigTables.costable[angle]);
-            ymove = -MathUtils.FixedByFracOrig(speed, TrigTables.sintable[angle]);
+            xmove = MathUtils.FixedByFracOrig(speed, TrigTables.CosTable[angle]);
+            ymove = -MathUtils.FixedByFracOrig(speed, TrigTables.SinTable[angle]);
         }
         else
         {
-            xmove = MathUtils.FixedMul(speed, TrigTables.costable[angle]);
-            ymove = -MathUtils.FixedMul(speed, TrigTables.sintable[angle]);
+            xmove = MathUtils.FixedMul(speed, TrigTables.CosTable[angle]);
+            ymove = -MathUtils.FixedMul(speed, TrigTables.SinTable[angle]);
         }
 
         ClipMove(player, xmove, ymove);

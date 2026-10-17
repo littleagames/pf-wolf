@@ -15,26 +15,26 @@ public class RenderStateTests
         var state = new RenderState(notexture, noshade);
 
         // Assert
-        Assert.That(state.postsource, Is.SameAs(notexture));
-        Assert.That(state.archlight, Is.SameAs(noshade));
-        Assert.That((state.vieweyez, state.hittile), Is.EqualTo((GameConstants.EyeDefault, -1)));
-        Assert.That(state.postheights, Has.Length.EqualTo(RenderState.MaxPosts));
-        Assert.That(state.postlight, Has.Length.EqualTo(RenderState.MaxPosts));
+        Assert.That(state.PostSource, Is.SameAs(notexture));
+        Assert.That(state.ArchLight, Is.SameAs(noshade));
+        Assert.That((state.ViewEyeZ, state.HitTile), Is.EqualTo((GameConstants.EyeDefault, -1)));
+        Assert.That(state.PostHeights, Has.Length.EqualTo(RenderState.MaxPosts));
+        Assert.That(state.PostLight, Has.Length.EqualTo(RenderState.MaxPosts));
     }
 
     [Test]
     public void Program_Reads_And_Writes_The_Same_State()
     {
         // The renderer's old names are GameHost's forwards onto its one RenderState
-        int before = GameHost.render.viewx;
+        int before = GameHost.render.ViewX;
         try
         {
-            GameHost.render.viewx = 123;
+            GameHost.render.ViewX = 123;
             Assert.That(GameHost.viewx, Is.EqualTo(123));
         }
         finally
         {
-            GameHost.render.viewx = before;
+            GameHost.render.ViewX = before;
         }
     }
 }

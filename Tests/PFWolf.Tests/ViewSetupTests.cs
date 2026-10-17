@@ -15,9 +15,9 @@ public class ViewSetupTests
         {
             screenWidth = 1920, screenHeight = 1080,
         };
-        _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade)
+        _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.NoShade)
         {
-            pixelangle = new short[1920],
+            PixelAngle = new short[1920],
         };
         _settings = new Configuration.GameSettings { viewsize = 21 };
         // No status bar here (no assets): the play area is the whole screen
@@ -49,10 +49,10 @@ public class ViewSetupTests
         _setup.NewViewSize(21);
 
         // Assert
-        Assert.That((_render.viewwidth, _render.viewheight), Is.EqualTo((1920, 1080)));
-        Assert.That((_render.viewscreenx, _render.viewscreeny, _render.screenofs), Is.EqualTo((0, 0, 0u)));
-        Assert.That((_render.centerx, _render.centery), Is.EqualTo(((short)959, (short)540)));
-        Assert.That(_render.shootdelta, Is.EqualTo(_render.projectionwidth / 10));
+        Assert.That((_render.ViewWidth, _render.ViewHeight), Is.EqualTo((1920, 1080)));
+        Assert.That((_render.ViewScreenX, _render.ViewScreenY, _render.ScreenOfs), Is.EqualTo((0, 0, 0u)));
+        Assert.That((_render.CenterX, _render.CenterY), Is.EqualTo(((short)959, (short)540)));
+        Assert.That(_render.ShootDelta, Is.EqualTo(_render.ProjectionWidth / 10));
     }
 
     [Test]
@@ -61,15 +61,15 @@ public class ViewSetupTests
         _setup.NewViewSize(21);
 
         // The middle two columns straddle the view angle; the edges are furthest out, the same either side
-        Assert.That(_render.pixelangle[959], Is.EqualTo(-_render.pixelangle[960]));
-        Assert.That(_render.pixelangle[0], Is.EqualTo(-_render.pixelangle[1919]));
-        Assert.That(_render.pixelangle[0], Is.GreaterThan(_render.pixelangle[959]));
+        Assert.That(_render.PixelAngle[959], Is.EqualTo(-_render.PixelAngle[960]));
+        Assert.That(_render.PixelAngle[0], Is.EqualTo(-_render.PixelAngle[1919]));
+        Assert.That(_render.PixelAngle[0], Is.GreaterThan(_render.PixelAngle[959]));
     }
 
     [Test]
     public void View_Widths_Are_Whole_Sixteens_And_Heights_Even()
     {
         _setup.SetViewSize(1000, 601);
-        Assert.That((_render.viewwidth, _render.viewheight), Is.EqualTo((992, 600)));
+        Assert.That((_render.ViewWidth, _render.ViewHeight), Is.EqualTo((992, 600)));
     }
 }

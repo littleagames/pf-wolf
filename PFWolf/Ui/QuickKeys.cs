@@ -113,7 +113,7 @@ internal sealed class QuickKeys(
                     if (session.loadedgame)
                         session.playstate = PlayState.Abort;
 
-                    frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
+                    frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
 
                     input.CenterMouse();
                 }

@@ -122,8 +122,8 @@ internal sealed class Projectiles(
 
         speed = (int)(ob.Speed * session.tics);
 
-        deltax = MathUtils.FixedMul(speed, TrigTables.costable[ob.Angle]);
-        deltay = -MathUtils.FixedMul(speed, TrigTables.sintable[ob.Angle]);
+        deltax = MathUtils.FixedMul(speed, TrigTables.CosTable[ob.Angle]);
+        deltay = -MathUtils.FixedMul(speed, TrigTables.SinTable[ob.Angle]);
 
         if (deltax > 0x10000L)
             deltax = 0x10000L;

@@ -50,19 +50,19 @@ internal sealed class ViewSetup(
 
     internal bool SetViewSize(uint width, uint height)
     {
-        render.viewwidth = (int)(width & ~15);                  // must be divisable by 16
-        render.viewheight = (int)(height & ~1);                 // must be even
-        render.centerx = (short)(render.viewwidth / 2 - 1);
-        render.centery = render.basecentery = (short)(render.viewheight / 2);
-        render.projectionwidth = ProjectionWidth(render.viewwidth, render.viewheight);
-        render.shootdelta = render.projectionwidth / 10;               // the same angle either side, however wide the view
-        if (render.viewheight == video.screenHeight)
-            render.viewscreenx = render.viewscreeny = (int)(render.screenofs = 0);
+        render.ViewWidth = (int)(width & ~15);                  // must be divisable by 16
+        render.ViewHeight = (int)(height & ~1);                 // must be even
+        render.CenterX = (short)(render.ViewWidth / 2 - 1);
+        render.CenterY = render.BaseCenterY = (short)(render.ViewHeight / 2);
+        render.ProjectionWidth = ProjectionWidth(render.ViewWidth, render.ViewHeight);
+        render.ShootDelta = render.ProjectionWidth / 10;               // the same angle either side, however wide the view
+        if (render.ViewHeight == video.screenHeight)
+            render.ViewScreenX = render.ViewScreenY = (int)(render.ScreenOfs = 0);
         else
         {
-            render.viewscreenx = (video.screenWidth - render.viewwidth) / 2;
-            render.viewscreeny = screenArea.PlayAreaTop + (screenArea.PlayAreaHeight - render.viewheight) / 2;
-            render.screenofs = (uint)(render.viewscreeny * video.screenWidth + render.viewscreenx);
+            render.ViewScreenX = (video.screenWidth - render.ViewWidth) / 2;
+            render.ViewScreenY = screenArea.PlayAreaTop + (screenArea.PlayAreaHeight - render.ViewHeight) / 2;
+            render.ScreenOfs = (uint)(render.ViewScreenY * video.screenWidth + render.ViewScreenX);
         }
 
         //
@@ -90,7 +90,7 @@ internal sealed class ViewSetup(
     =
     = CalcProjection
     =
-    = Uses focallength
+    = Uses FocalLength
     =
     ====================
     */
@@ -107,22 +107,22 @@ internal sealed class ViewSetup(
         // The view stays where it always is (the usual focal length behind the camera); a longer
         // focal length (a scope's zoom, a quake's pulse) only narrows what it sees, magnifying it.
         // Midnight Assault moved the view back with it, which put a zoomed view behind walls.
-        render.focallength = (int)GameConstants.FocalLength;
+        render.FocalLength = (int)GameConstants.FocalLength;
         facedist = focal + GameConstants.MinDist;
-        halfview = render.viewwidth / 2;                                 // half view in pixels
+        halfview = render.ViewWidth / 2;                                 // half view in pixels
 
         //
         // calculate scale value for vertical height calculations
         // and sprite x calculations: from the projection width, so a view wider than the
         // classic shape sees further to the sides rather than having its walls made taller
         //
-        render.scale = (int) (render.projectionwidth / 2 * facedist / (GameConstants.ViewGlobal / 2));
+        render.Scale = (int) (render.ProjectionWidth / 2 * facedist / (GameConstants.ViewGlobal / 2));
 
         //
-        // divide heightnumerator by a posts distance to get the posts height for
+        // divide HeightNumerator by a posts distance to get the posts height for
         // the heightbuffer.  The pixel height is height>>2
         //
-        render.heightnumerator = (int)((MapConstants.TileGlobal * render.scale) >> 6);
+        render.HeightNumerator = (int)((MapConstants.TileGlobal * render.Scale) >> 6);
 
         //
         // calculate the angle offset from view angle of each pixel's ray
@@ -130,12 +130,12 @@ internal sealed class ViewSetup(
 
         for (i = 0; i < halfview; i++)
         {
-            // start 1/2 pixel over, so viewangle bisects two middle pixels
-            tang = (int)i * GameConstants.ViewGlobal / render.projectionwidth / facedist;
+            // start 1/2 pixel over, so ViewAngle bisects two middle pixels
+            tang = (int)i * GameConstants.ViewGlobal / render.ProjectionWidth / facedist;
             angle = (float)Math.Atan(tang);
             intang = (int)(angle * RadToInt);
-            render.pixelangle[halfview - 1 - i] = (short)intang;
-            render.pixelangle[halfview + i] = (short)-intang;
+            render.PixelAngle[halfview - 1 - i] = (short)intang;
+            render.PixelAngle[halfview + i] = (short)-intang;
         }
     }
 
@@ -170,30 +170,30 @@ internal sealed class ViewSetup(
     {
         int oldwidth, oldheight;
 
-        oldwidth = render.viewwidth;
-        oldheight = render.viewheight;
+        oldwidth = render.ViewWidth;
+        oldheight = render.ViewHeight;
         width = AllowedViewSize(width);
 
         if (width == 21)
         {
-            render.viewwidth = video.screenWidth;
-            render.viewheight = video.screenHeight;
+            render.ViewWidth = video.screenWidth;
+            render.ViewHeight = video.screenHeight;
             video.BarScaledCoord(0, 0, video.screenWidth, video.screenHeight, "Black");
         }
         else if (width == 20)
         {
-            render.viewwidth = video.screenWidth;
-            render.viewheight = screenArea.PlayAreaHeight;
+            render.ViewWidth = video.screenWidth;
+            render.ViewHeight = screenArea.PlayAreaHeight;
             playScreen.DrawPlayBorder();
         }
         else
         {
-            render.viewwidth = width * 16 * video.screenWidth / 320;
-            render.viewheight = BorderedViewHeight(width);
+            render.ViewWidth = width * 16 * video.screenWidth / 320;
+            render.ViewHeight = BorderedViewHeight(width);
             playScreen.DrawPlayBorder();
         }
 
-        render.viewwidth = oldwidth;
-        render.viewheight = oldheight;
+        render.ViewWidth = oldwidth;
+        render.ViewHeight = oldheight;
     }
 }

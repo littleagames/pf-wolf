@@ -163,9 +163,9 @@ internal sealed class LevelEditCommands(
     {
         if (args.Length == 0)
         {
-            if (lighting.levelzones.Count == 0)
+            if (lighting.LevelZones.Count == 0)
                 console.Print("The level has no light zones");
-            foreach (var id in lighting.levelzones.Keys.Order())
+            foreach (var id in lighting.LevelZones.Keys.Order())
                 console.Print($"Zone {id}: {targets.DescribeZone(id)}");
             return;
         }
@@ -200,7 +200,7 @@ internal sealed class LevelEditCommands(
             console.Print("Nothing on the level gives off light");
         foreach (var line in lights)
             console.Print(line);
-        if (lights.Count > 0 && !lighting.shading)
+        if (lights.Count > 0 && !lighting.Shading)
             console.Print("(the level is at full light, so they don't show)");
     }
 
@@ -232,9 +232,9 @@ internal sealed class LevelEditCommands(
             var name = args[0].Equals("none", StringComparison.OrdinalIgnoreCase) ? null : args[0];
             if (name != null && assets.Find<GraphicAsset>(name) == null && assets.Find<TextureAsset>(name) == null)
                 throw new ArgumentException($"no graphic or texture named {name}");
-            skyAndFlats.levelsky = name;
+            skyAndFlats.LevelSky = name;
         }
-        console.Print(skyAndFlats.levelsky == null ? "No sky: the ceiling is a color" : $"Sky: {skyAndFlats.levelsky}");
+        console.Print(skyAndFlats.LevelSky == null ? "No sky: the ceiling is a color" : $"Sky: {skyAndFlats.LevelSky}");
     }
 
     internal void WeatherCommand(string[] args)
@@ -245,11 +245,11 @@ internal sealed class LevelEditCommands(
                 throw new ArgumentException($"no weather named {args[0]}");
             weather.SetWeather(args[0]);
         }
-        console.Print(weather.levelweather == null ? "No weather" : $"Weather: {weather.levelweathername}");
+        console.Print(weather.LevelWeather == null ? "No weather" : $"Weather: {weather.LevelWeatherName}");
     }
 
     // The level's shading, or what shading starts from when it has none
-    internal ShadingSettings CurrentShading => lighting.levelshading ?? new ShadingSettings("#000000", 0, 16, 0, 255);
+    internal ShadingSettings CurrentShading => lighting.LevelShading ?? new ShadingSettings("#000000", 0, 16, 0, 255);
 
     internal void FogCommand(string[] args)
     {
@@ -268,7 +268,7 @@ internal sealed class LevelEditCommands(
             lighting.SetShading(s);
         }
 
-        console.Print(lighting.levelshading is { MaxFade: > 0 } f
+        console.Print(lighting.LevelShading is { MaxFade: > 0 } f
             ? $"Fog: {f.FadeColor} from {f.FadeStart} to {f.FadeEnd} tiles, up to {f.MaxFade}%"
             : "No fog");
     }
@@ -277,6 +277,6 @@ internal sealed class LevelEditCommands(
     {
         if (args.Length > 0)
             lighting.SetShading(CurrentShading with { Light = ParseInt(args[0], 0, 255) });
-        console.Print($"Light: {lighting.levelshading?.Light ?? 255}");
+        console.Print($"Light: {lighting.LevelShading?.Light ?? 255}");
     }
 }

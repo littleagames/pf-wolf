@@ -84,8 +84,8 @@ internal sealed class Missiles(
 
         // Just in front of the player, so one fired point blank at a wall still shows its blast
         const int ahead = (int)(9L * GameConstants.MinDist / 8);
-        missile.X += MathUtils.FixedMul(ahead, TrigTables.costable[missile.Angle]);
-        missile.Y -= MathUtils.FixedMul(ahead, TrigTables.sintable[missile.Angle]);
+        missile.X += MathUtils.FixedMul(ahead, TrigTables.CosTable[missile.Angle]);
+        missile.Y -= MathUtils.FixedMul(ahead, TrigTables.SinTable[missile.Angle]);
         missile.TileX = (byte)(missile.X >> MapConstants.TileShift);
         missile.TileY = (byte)(missile.Y >> MapConstants.TileShift);
 
@@ -138,8 +138,8 @@ internal sealed class Missiles(
         (ob.Z, ob.ZSpeed) = Fall(ob.Z, ob.ZSpeed, PropertyDouble(ob, "gravity", 0), PropertyDouble(ob, "zfloor", 0), (int)session.tics);
 
         int speed = (int)(ob.Speed * session.tics);
-        int dx = MathUtils.FixedMul(speed, TrigTables.costable[ob.Angle]);
-        int dy = -MathUtils.FixedMul(speed, TrigTables.sintable[ob.Angle]);
+        int dx = MathUtils.FixedMul(speed, TrigTables.CosTable[ob.Angle]);
+        int dy = -MathUtils.FixedMul(speed, TrigTables.SinTable[ob.Angle]);
         ob.X += dx;
         ob.Y += dy;
         ob.TileX = (byte)(ob.X >> MapConstants.TileShift);

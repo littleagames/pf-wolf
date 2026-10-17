@@ -199,7 +199,7 @@ internal sealed class PlayKeys(
             engine.SetPaused(false);
             music.ContinueMusic(lastoffs);
             inputManager.CenterMouse();
-            frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
+            frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
             return;
         }
         if (scan == ScanCodes.F10 ||
@@ -232,7 +232,7 @@ internal sealed class PlayKeys(
                 music.ContinueMusic(lastoffs);
             if (session.loadedgame)
                 session.playstate = PlayState.Abort;
-            frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
+            frame.LastTimeCount = (int)GameEngineManager.GetTimeCount();
             inputManager.CenterMouse();
             return;
         }
