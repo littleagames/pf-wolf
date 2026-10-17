@@ -18,40 +18,40 @@ namespace PFWolf.Entities.Actors;
 /// </summary>
 internal record Monster : Actor
 {
-    // What a monster uses of the game, by the names GameHost had for them (Entities/Actors/ActorWorld.cs)
-    private protected GameEngineManager _gameEngineManager => World.Engine;
-    private protected AssetManager _assetManager => World.Assets;
-    private protected AudioManager _audioManager => World.Audio;
-    private protected InventoryManager _inventoryManager => World.Inventory;
-    private protected HudMessageManager _hudMessageManager => World.HudMessages;
-    private protected MapManager _mapManager => World.Map;
-    private protected FactionManager _factionManager => World.Factions;
-    private protected LevelAI levelAI => World.LevelAI;
+    // What a monster uses of the game, through its world (Entities/Actors/ActorWorld.cs)
+    private protected GameEngineManager GameEngineManager => World.Engine;
+    private protected AssetManager AssetManager => World.Assets;
+    private protected AudioManager AudioManager => World.Audio;
+    private protected InventoryManager InventoryManager => World.Inventory;
+    private protected HudMessageManager HudMessageManager => World.HudMessages;
+    private protected MapManager MapManager => World.Map;
+    private protected FactionManager FactionManager => World.Factions;
+    private protected LevelAI LevelAI => World.LevelAI;
 
-    private protected GameState gamestate => World.Session.gamestate;
-    private protected uint tics => World.Session.tics;
+    private protected GameState GameState => World.Session.gamestate;
+    private protected uint Tics => World.Session.tics;
     private protected int NextRandom() => World.Session.random.RndT();
-    private protected byte[] areabyplayer => World.Session.areas.areabyplayer;
-    private protected PlayerPawn player => World.Session.player;
-    private protected PlayerState playerstate => World.Session.playerstate;
-    private protected PlayerState localplayer => World.Session.localplayer;
-    private protected GameMode gamemode => World.Session.gamemode;
-    private protected bool demorecord => World.Session.demorecord;
-    private protected bool demoplayback => World.Session.demoplayback;
-    private protected bool loadedgame => World.Session.loadedgame;
-    private protected bool madenoise { get => World.Session.madenoise; set => World.Session.madenoise = value; }
-    private protected PlayState playstate { get => World.Session.playstate; set => World.Session.playstate = value; }
+    private protected byte[] AreaByPlayer => World.Session.areas.areabyplayer;
+    private protected PlayerPawn Player => World.Session.player;
+    private protected PlayerState PlayerState => World.Session.playerstate;
+    private protected PlayerState LocalPlayer => World.Session.localplayer;
+    private protected GameMode GameMode => World.Session.gamemode;
+    private protected bool DemoRecord => World.Session.demorecord;
+    private protected bool DemoPlayback => World.Session.demoplayback;
+    private protected bool LoadedGame => World.Session.loadedgame;
+    private protected bool MadeNoise { get => World.Session.madenoise; set => World.Session.madenoise = value; }
+    private protected PlayState PlayState { get => World.Session.playstate; set => World.Session.playstate = value; }
 
     private protected bool CheckLine(Actor ob) => World.LineOfSight.CheckLine(ob);
     private protected bool CheckLine(Actor ob, Actor to) => World.LineOfSight.CheckLine(ob, to);
     private protected bool CheckLine(int fromX, int fromY, Actor to) => World.LineOfSight.CheckLine(fromX, fromY, to);
-    private protected bool CHECKDIAG(int x, int y) => World.LineOfSight.CHECKDIAG(x, y);
-    private protected DoorObject[] doorobjlist => World.Doors.doorobjlist;
-    private protected int lastdoorobj => World.Doors.lastdoorobj;
+    private protected bool CheckDiag(int x, int y) => World.LineOfSight.CHECKDIAG(x, y);
+    private protected DoorObject[] DoorObjects => World.Doors.doorobjlist;
+    private protected int LastDoorObject => World.Doors.lastdoorobj;
     private protected void OpenDoor(int door) => World.Doors.OpenDoor(door);
-    private protected void PlaceItemType(string item_class, int tilex, int tiley) => World.Map.SpawnThing(tilex, tiley, item_class);
+    private protected void SpawnItemAt(string itemClass, int tilex, int tiley) => World.Map.SpawnThing(tilex, tiley, itemClass);
     private protected void PlayActorSound(Actor ob, string key) => World.ActorSounds.PlayActorSound(ob, key);
-    private protected void PlaySoundLocActor(string s, Actor ob) => World.PositionalSounds.PlaySoundLocActor(s, ob);
+    private protected void PlaySoundAtActor(string s, Actor ob) => World.PositionalSounds.PlaySoundLocActor(s, ob);
     private protected string ActorTag(Actor actor) => World.HudMessageDrawing.ActorTag(actor);
     private protected string? BestWeapon(bool canFire = false) => World.PlayerWeapons.BestWeapon(canFire);
     private protected int WeaponSelectionOrder(string weapon) => World.PlayerWeapons.WeaponSelectionOrder(weapon);
@@ -186,14 +186,14 @@ internal record Monster : Actor
             case ObjDir.west: newx -= move; break;
             case ObjDir.northwest: newx -= move; newy -= move; break;
             case ObjDir.nodir: return;
-            default: _gameEngineManager.Quit("MoveObj: bad dir!"); break;
+            default: GameEngineManager.Quit("MoveObj: bad dir!"); break;
         }
 
         // A NOTSOLID actor (Blake Stone's electro-spheres) goes right through the player
-        if ((AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[AreaNumber] != 0) && !HasFlag("NOTSOLID"))
+        if ((AreaNumber >= MapManager.Floors.NumAreas || AreaByPlayer[AreaNumber] != 0) && !HasFlag("NOTSOLID"))
         {
             // Any player in the way stops it, not just the one it's after
-            foreach (var pawn in _mapManager.Players)
+            foreach (var pawn in MapManager.Players)
             {
                 if (!IsTargetable(pawn))
                     continue;
@@ -213,7 +213,7 @@ internal record Monster : Actor
                     {
                         // TOUCHDAMAGE actors (ghosts, Spectres) hurt the player on contact
                         if (Flags.Contains("TOUCHDAMAGE", StringComparer.OrdinalIgnoreCase))
-                            TakeDamage(pawn, (int)(tics * 2), this);
+                            TakeDamage(pawn, (int)(Tics * 2), this);
 
                         OnBumpedPlayer();
 
@@ -241,7 +241,7 @@ internal record Monster : Actor
             case ObjDir.north:
                 if (cutsCorners)
                 {
-                    if (!CHECKDIAG(TileX, TileY - 1)) return false;
+                    if (!CheckDiag(TileX, TileY - 1)) return false;
                 }
                 else
                 {
@@ -253,16 +253,16 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.northeast:
-                if (!CHECKDIAG(TileX + 1, TileY - 1)) return false;
-                if (!CHECKDIAG(TileX + 1, TileY)) return false;
-                if (!CHECKDIAG(TileX, TileY - 1)) return false;
+                if (!CheckDiag(TileX + 1, TileY - 1)) return false;
+                if (!CheckDiag(TileX + 1, TileY)) return false;
+                if (!CheckDiag(TileX, TileY - 1)) return false;
                 TileX++; TileY--;
                 break;
 
             case ObjDir.east:
                 if (cutsCorners)
                 {
-                    if (!CHECKDIAG(TileX + 1, TileY)) return false;
+                    if (!CheckDiag(TileX + 1, TileY)) return false;
                 }
                 else
                 {
@@ -274,16 +274,16 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.southeast:
-                if (!CHECKDIAG(TileX + 1, TileY + 1)) return false;
-                if (!CHECKDIAG(TileX + 1, TileY)) return false;
-                if (!CHECKDIAG(TileX, TileY + 1)) return false;
+                if (!CheckDiag(TileX + 1, TileY + 1)) return false;
+                if (!CheckDiag(TileX + 1, TileY)) return false;
+                if (!CheckDiag(TileX, TileY + 1)) return false;
                 TileX++; TileY++;
                 break;
 
             case ObjDir.south:
                 if (cutsCorners)
                 {
-                    if (!CHECKDIAG(TileX, TileY + 1)) return false;
+                    if (!CheckDiag(TileX, TileY + 1)) return false;
                 }
                 else
                 {
@@ -295,16 +295,16 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.southwest:
-                if (!CHECKDIAG(TileX - 1, TileY + 1)) return false;
-                if (!CHECKDIAG(TileX - 1, TileY)) return false;
-                if (!CHECKDIAG(TileX, TileY + 1)) return false;
+                if (!CheckDiag(TileX - 1, TileY + 1)) return false;
+                if (!CheckDiag(TileX - 1, TileY)) return false;
+                if (!CheckDiag(TileX, TileY + 1)) return false;
                 TileX--; TileY++;
                 break;
 
             case ObjDir.west:
                 if (cutsCorners)
                 {
-                    if (!CHECKDIAG(TileX - 1, TileY)) return false;
+                    if (!CheckDiag(TileX - 1, TileY)) return false;
                 }
                 else
                 {
@@ -316,9 +316,9 @@ internal record Monster : Actor
                 break;
 
             case ObjDir.northwest:
-                if (!CHECKDIAG(TileX - 1, TileY - 1)) return false;
-                if (!CHECKDIAG(TileX - 1, TileY)) return false;
-                if (!CHECKDIAG(TileX, TileY - 1)) return false;
+                if (!CheckDiag(TileX - 1, TileY - 1)) return false;
+                if (!CheckDiag(TileX - 1, TileY)) return false;
+                if (!CheckDiag(TileX, TileY - 1)) return false;
                 TileX--; TileY--;
                 break;
 
@@ -326,7 +326,7 @@ internal record Monster : Actor
                 return false;
 
             default:
-                _gameEngineManager.Quit("Walk: Bad dir");
+                GameEngineManager.Quit("Walk: Bad dir");
                 break;
         }
 
@@ -340,8 +340,8 @@ internal record Monster : Actor
 
         // A door tile has no area of its own, so a PHASEDOORS actor passing through one
         // keeps the area it came from, and so does one crossing a floor code that isn't an area
-        if (_mapManager.actorat[TileX, TileY] is not Door && _mapManager.VALIDAREA(_mapManager.MAPSPOT(TileX, TileY, 0)))
-            AreaNumber = (byte)(_mapManager.MAPSPOT(TileX, TileY, 0) - _mapManager.Floors.AreaTile);
+        if (MapManager.actorat[TileX, TileY] is not Door && MapManager.VALIDAREA(MapManager.MAPSPOT(TileX, TileY, 0)))
+            AreaNumber = (byte)(MapManager.MAPSPOT(TileX, TileY, 0) - MapManager.Floors.AreaTile);
         Distance = (int)MapConstants.TILEGLOBAL;
         SyncPosition();
         return true;
@@ -352,7 +352,7 @@ internal record Monster : Actor
 
     internal int CheckSide(int x, int y, ref int doornumtile)
     {
-        var temp = _mapManager.actorat[x, y];
+        var temp = MapManager.actorat[x, y];
         if (temp is ActorMark mark)
             return MapManager.IsSolidActor(mark.Who) ? 0 : 2;     // another enemy's there (alive, it's in the way)
 
@@ -371,11 +371,11 @@ internal record Monster : Actor
 
                 // NOLOCKEDDOORS actors (Blake Stone's) don't open a door that needs a key, and
                 // NODOORS ones (its liquid alien and electro-spheres) none at all
-                if (HasFlag("NODOORS") || HasFlag("NOLOCKEDDOORS") && doorobjlist[door.door].Lock.Length > 0)
+                if (HasFlag("NODOORS") || HasFlag("NOLOCKEDDOORS") && DoorObjects[door.door].Lock.Length > 0)
                     return 0;
 
                 doornumtile = door.door;
-                if (!(demorecord || demoplayback))
+                if (!(DemoRecord || DemoPlayback))
                 {
                     OpenDoor(doornumtile);
                     Distance = -doornumtile - 1;
@@ -394,12 +394,12 @@ internal record Monster : Actor
     /// </summary>
     internal bool CheckSight()
     {
-        if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
+        if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] == 0)
             return false;
 
-        if (!_mapManager.HasRivalries)
+        if (!MapManager.HasRivalries)
         {
-            foreach (var pawn in _mapManager.Players)
+            foreach (var pawn in MapManager.Players)
             {
                 if (IsTargetable(pawn) && IsHostileTo(pawn) && CanSee(pawn))
                 {
@@ -417,19 +417,19 @@ internal record Monster : Actor
     }
 
     /// <summary>Whether its side goes after <paramref name="other"/>'s on sight</summary>
-    internal bool IsHostileTo(Actor other) => _factionManager.IsHostile(this, other);
+    internal bool IsHostileTo(Actor other) => FactionManager.IsHostile(this, other);
 
     /// <summary>Whether <paramref name="other"/> is on its side (or one it's allied to)</summary>
-    internal bool IsAllyOf(Actor other) => _factionManager.IsAlly(this, other);
+    internal bool IsAllyOf(Actor other) => FactionManager.IsAlly(this, other);
 
     // Everyone it could go after: the players, then (with rivals about) the other enemies
     private IEnumerable<Actor> FoeCandidates()
     {
-        foreach (var pawn in _mapManager.Players)
+        foreach (var pawn in MapManager.Players)
             yield return pawn;
-        if (!_mapManager.HasRivalries)
+        if (!MapManager.HasRivalries)
             yield break;
-        foreach (var other in _mapManager.Combatants)
+        foreach (var other in MapManager.Combatants)
         {
             if (!ReferenceEquals(other, this))
                 yield return other;
@@ -478,16 +478,16 @@ internal record Monster : Actor
                 if (deltax > 0) return false;
                 break;
             case ObjDir.northwest:
-                if (!(demorecord || demoplayback) && deltay > -deltax) return false;
+                if (!(DemoRecord || DemoPlayback) && deltay > -deltax) return false;
                 break;
             case ObjDir.northeast:
-                if (!(demorecord || demoplayback) && deltay > deltax) return false;
+                if (!(DemoRecord || DemoPlayback) && deltay > deltax) return false;
                 break;
             case ObjDir.southwest:
-                if (!(demorecord || demoplayback) && deltax > deltay) return false;
+                if (!(DemoRecord || DemoPlayback) && deltax > deltay) return false;
                 break;
             case ObjDir.southeast:
-                if (!(demorecord || demoplayback) && -deltax > deltay) return false;
+                if (!(DemoRecord || DemoPlayback) && -deltax > deltay) return false;
                 break;
         }
 
@@ -516,7 +516,7 @@ internal record Monster : Actor
         {
             if (_target is { } t && IsStillTarget(t))
                 return t;
-            return _target = NearestFoe() ?? FirstHostilePlayer() ?? _mapManager.Players.First();
+            return _target = NearestFoe() ?? FirstHostilePlayer() ?? MapManager.Players.First();
         }
         set => _target = value;
     }
@@ -538,7 +538,7 @@ internal record Monster : Actor
         actor is PlayerPawn pawn ? ReferenceEquals(pawn.State.Pawn, pawn) : !actor.IsRemoved;
 
     // The first player (in player order) it's hostile to, living or not, or null
-    private PlayerPawn? FirstHostilePlayer() => _mapManager.Players.FirstOrDefault(IsHostileTo);
+    private PlayerPawn? FirstHostilePlayer() => MapManager.Players.FirstOrDefault(IsHostileTo);
 
     /*
     With rivals about, an enemy after someone looks round now and then (RetargetTics) for
@@ -563,7 +563,7 @@ internal record Monster : Actor
             return true;
         }
 
-        if (_mapManager.HasRivalries && (_retargetIn -= (int)tics) <= 0)
+        if (MapManager.HasRivalries && (_retargetIn -= (int)tics) <= 0)
         {
             _retargetIn = RetargetTics;
             var current = Target;
@@ -632,7 +632,7 @@ internal record Monster : Actor
         {
             PlayerPawn? nearest = null;
             int best = int.MaxValue;
-            foreach (var pawn in _mapManager.Players)
+            foreach (var pawn in MapManager.Players)
             {
                 int dist = TileDistance(pawn);
                 if (pawn.State.health > 0 && dist < best && IsAllyOf(pawn))
@@ -702,7 +702,7 @@ internal record Monster : Actor
     // Open floor nothing stands on (nor the player shoving it)
     private bool OpenForStep(int x, int y, PlayerPawn shover) =>
         x is > 0 and < MapManager.MAPSIZE - 1 && y is > 0 and < MapManager.MAPSIZE - 1
-        && _mapManager.tilemap[x, y] == 0 && _mapManager.actorat[x, y] is null
+        && MapManager.tilemap[x, y] == 0 && MapManager.actorat[x, y] is null
         && !(shover.TileX == x && shover.TileY == y);
 
     private void StartWalking()
@@ -759,10 +759,10 @@ internal record Monster : Actor
             if (Distance < 0)
             {
                 OpenDoor(-Distance - 1);
-                if (doorobjlist[-Distance - 1].action != (byte)DoorAction.dr_open)
+                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.dr_open)
                     return;
                 Distance = (int)MapConstants.TILEGLOBAL;
-                if (!(demorecord || demoplayback))
+                if (!(DemoRecord || DemoPlayback))
                     TryWalk();
             }
 
@@ -813,11 +813,11 @@ internal record Monster : Actor
         bool counted = alive && CountsAsKill;
         Faction = faction;
         if (alive && counted != CountsAsKill)
-            gamestate.killtotal += (short)(CountsAsKill ? 1 : -1);
+            GameState.killtotal += (short)(CountsAsKill ? 1 : -1);
 
         if (follow)
             Follows = true;
-        else if (Follows && Leader == null && !_mapManager.Players.Any(IsAllyOf))
+        else if (Follows && Leader == null && !MapManager.Players.Any(IsAllyOf))
             Follows = false;            // not on the players' side any more
     }
 
@@ -837,7 +837,7 @@ internal record Monster : Actor
 
     /// <summary>Whether the player could see it (alone, whether it was drawn; with others, any of them: GameHost.InViewOf)</summary>
     private bool SeenByThePlayers() =>
-        gamemode == GameMode.Single ? RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE) : SeenByAPlayer(this);
+        GameMode == GameMode.Single ? RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE) : SeenByAPlayer(this);
 
     /// <summary>Hurts the actor it's after: a player as their enemies' shots do, anything else as the player's shots</summary>
     protected void HurtTarget(int points)
@@ -860,7 +860,7 @@ internal record Monster : Actor
     /// </summary>
     private bool TargetSeesMe() => Target switch
     {
-        PlayerPawn pawn => gamemode == GameMode.Single ? RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE) : InViewOf(pawn, this),
+        PlayerPawn pawn => GameMode == GameMode.Single ? RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE) : InViewOf(pawn, this),
         Monster monster => monster.CanSee(this),
         _ => false,
     };
@@ -909,18 +909,18 @@ internal record Monster : Actor
             return false;
 
         if (RuntimeFlags.HasFlag(ObjFlags.FL_ATTACKMODE))
-            _gameEngineManager.Quit("An actor in ATTACKMODE called SightPlayer!");
+            GameEngineManager.Quit("An actor in ATTACKMODE called SightPlayer!");
 
         if (Temp2 != 0)
         {
-            Temp2 -= (short)tics;
+            Temp2 -= (short)Tics;
             if (Temp2 > 0)
                 return false;
             Temp2 = 0;
         }
         else
         {
-            if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
+            if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] == 0)
                 return false;
 
             // A disguised player it suspects, or has been shown papers by, it lets be (Gameplay/Stealth.cs)
@@ -937,7 +937,7 @@ internal record Monster : Actor
             {
                 // A NOTICEWHENSEEN actor (Blake Stone's aliens) notices the player once the player can see it
                 bool seen = HasFlag("NOTICEWHENSEEN") && SeenByThePlayers();
-                if (!madenoise && !seen && !CheckSight())
+                if (!MadeNoise && !seen && !CheckSight())
                     return false;
 
                 // A noise (or being seen) only rouses it when there's someone for it to go after
@@ -1186,7 +1186,7 @@ internal record Monster : Actor
     // (actordefs PatrolPoint, placed on the legacy arrow tiles) turns it the way the point faces
     internal virtual void SelectPathDir()
     {
-        if (_mapManager.PatrolPointAt(TileX, TileY) is { } point)
+        if (MapManager.PatrolPointAt(TileX, TileY) is { } point)
             Dir = point.Dir;
 
         Distance = (int)MapConstants.TILEGLOBAL;
@@ -1229,7 +1229,7 @@ internal record Monster : Actor
     internal string? KillingDamageType(Entities.Actors.Actor? attacker)
     {
         if (attacker is PlayerPawn pawn)
-            return pawn.State.weapon is { Length: > 0 } weapon ? _inventoryManager.GetStringProperty(weapon, "weapon.damagetype") : null;
+            return pawn.State.weapon is { Length: > 0 } weapon ? InventoryManager.GetStringProperty(weapon, "weapon.damagetype") : null;
         return attacker?.Properties.TryGetValue("damagetype", out var type) == true && type?.ToString() is { Length: > 0 } name ? name : null;
     }
 
@@ -1265,7 +1265,7 @@ internal record Monster : Actor
 
         // `monster.floordeath`: on that floor (game-info floor-number) it isn't killed but goes
         // to its FloorDeath state, worth nothing yet (Goldfire morphing on Planet Strike's last)
-        if (PropertyInt("monster.floordeath", -1) is >= 0 and var deathFloor && deathFloor == _mapManager.CurrentFloorNumber
+        if (PropertyInt("monster.floordeath", -1) is >= 0 and var deathFloor && deathFloor == MapManager.CurrentFloorNumber
             && ResolvedStates.ContainsKey("FloorDeath"))
         {
             SetState("FloorDeath");
@@ -1282,7 +1282,7 @@ internal record Monster : Actor
             TileY = (byte)tiley;
             SyncPosition();
         }
-        _mapManager.UnmarkActorTile(TileX, TileY);
+        MapManager.UnmarkActorTile(TileX, TileY);
 
         // Points for the player's kills (and a trap's), not for one enemy killing another
         var killedBy = attacker?.Shooter ?? attacker;
@@ -1295,20 +1295,20 @@ internal record Monster : Actor
         OnKilled(attacker);
 
         // One of the player's own side down: they hear of it (as an obituary)
-        if (localplayer.Pawn is { } local && IsAllyOf(local))
+        if (LocalPlayer.Pawn is { } local && IsAllyOf(local))
         {
-            _hudMessageManager.Show(HudMessageKind.Obituary, killedBy == null ? "$OB_ALLYDIED" : "$OB_ALLYKILLED", null,
+            HudMessageManager.Show(HudMessageKind.Obituary, killedBy == null ? "$OB_ALLYDIED" : "$OB_ALLYKILLED", null,
                 new Dictionary<char, string> { ['o'] = ActorTag(this), ['k'] = killedBy == null ? "" : ActorTag(killedBy) });
         }
 
         if (LeavesDrops && DeathDrop() is { } drop)
-            PlaceItemType(drop, tilex, tiley);
+            SpawnItemAt(drop, tilex, tiley);
         CarriedDeathWork(this, tilex, tiley);
 
         if (Name is "Schabbs" or "Gift" or "Fat" or "RealHitler")
         {
-            playerstate.killx = player.X;       // the killer's spot, for the death cam
-            playerstate.killy = player.Y;
+            PlayerState.killx = Player.X;       // the killer's spot, for the death cam
+            PlayerState.killy = Player.Y;
         }
 
         // A sleeper that becomes an enemy (`monster.becomes`) isn't the kill; that enemy is.
@@ -1316,7 +1316,7 @@ internal record Monster : Actor
         // Whoever killed it, as the kill ratio counts the players' enemies however they die
         if (CountsAsKill && !Properties.ContainsKey("monster.becomes"))
         {
-            gamestate.killcount++;
+            GameState.killcount++;
             if (killedBy is PlayerPawn unseen)
                 World.Stealth?.Killed(unseen);      // a knife or a scope's kill, unseen (Gameplay/Stealth.cs)
         }
@@ -1341,11 +1341,11 @@ internal record Monster : Actor
     /// Whether it's in the level's kill total and counted as it dies: a kill (IsKill) that isn't
     /// on the players' side (factions.yaml: it doesn't count them its allies)
     /// </summary>
-    internal bool CountsAsKill => IsKill && !_factionManager.Table.IsAlly(Faction, PlayersFaction);
+    internal bool CountsAsKill => IsKill && !FactionManager.Table.IsAlly(Faction, PlayersFaction);
 
     // The local player's side (their pawn's, or their class's before they have one)
     private string PlayersFaction =>
-        localplayer.Pawn?.Faction ?? _factionManager.PlayerFaction(localplayer.playerclass);
+        LocalPlayer.Pawn?.Faction ?? FactionManager.PlayerFaction(LocalPlayer.playerclass);
 
     /// <summary>Whether dying, it leaves its `dropweapon`/`dropitem`</summary>
     protected virtual bool LeavesDrops => true;
@@ -1387,7 +1387,7 @@ internal record Monster : Actor
         {
             if (PropertyBool("dropweapon.ifmissing"))
             {
-                if (!_inventoryManager.Has(weaponName))
+                if (!InventoryManager.Has(weaponName))
                     return weaponName;
             }
             else
@@ -1402,7 +1402,7 @@ internal record Monster : Actor
         // (Goldfire's gold card, on floor 9)
         if (PropertyInt("dropitem.onfloor", -1) is >= 0 and var floor)
         {
-            if (floor != _mapManager.CurrentFloorNumber || !levelAI.TakeFloorDrop())
+            if (floor != MapManager.CurrentFloorNumber || !LevelAI.TakeFloorDrop())
                 return null;
         }
 
@@ -1425,7 +1425,7 @@ internal record Monster : Actor
         var source = attacker?.Shooter ?? attacker;
         bool byPlayer = source is null or PlayerPawn;
         if (byPlayer && Properties.TryGetValue("monster.minweapon", out var minWeapon) && minWeapon is string minWeaponName
-            && (playerstate.weapon == null || WeaponSelectionOrder(playerstate.weapon) > WeaponSelectionOrder(minWeaponName)))
+            && (PlayerState.weapon == null || WeaponSelectionOrder(PlayerState.weapon) > WeaponSelectionOrder(minWeaponName)))
             return;
 
         // It turns on whoever hurt it (or fired what did), unless they're on its side: a neutral
@@ -1435,7 +1435,7 @@ internal record Monster : Actor
 
         // A silent weapon (weapon.silent, Blake Stone's auto-charge pistol) doesn't alert anyone
         if (!(attacker is PlayerPawn && PlayerWeaponIsSilent()))
-            madenoise = true;
+            MadeNoise = true;
 
         if (!RuntimeFlags.HasFlag(ObjFlags.FL_ATTACKMODE))
             damage <<= 1;
@@ -1467,7 +1467,7 @@ internal record Monster : Actor
         // `monster.damagestates: [full, 3/4, 1/2, 1/4]` (the floating bomb, which looks more
         // battered as it's hurt): it goes to the one for the health it has left instead of Pain.
         // A `monster.painonce` actor (the projection generator) only flinches at its first hit.
-        int fullHealth = _mapManager.GetScaledHealth(this);
+        int fullHealth = MapManager.GetScaledHealth(this);
         var damageStates = PropertyStrings("monster.damagestates");
         if (damageStates.Count > 0)
         {
@@ -1519,7 +1519,7 @@ internal record Monster : Actor
             return;
 
         // A friendly patroller only looks for the player once there's been a noise
-        if ((!RuntimeFlags.HasFlag(ObjFlags.FL_FRIENDLY) || madenoise) && SightPlayer())
+        if ((!RuntimeFlags.HasFlag(ObjFlags.FL_FRIENDLY) || MadeNoise) && SightPlayer())
             return;
 
         if (Dir == ObjDir.nodir)
@@ -1529,17 +1529,17 @@ internal record Monster : Actor
                 return;
         }
 
-        var move = (int)(Speed * tics);
+        var move = (int)(Speed * Tics);
 
         while (move != 0)
         {
             if (Distance < 0)
             {
                 OpenDoor(-Distance - 1);
-                if (doorobjlist[-Distance - 1].action != (byte)DoorAction.dr_open)
+                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.dr_open)
                     return;
                 Distance = (int)MapConstants.TILEGLOBAL;
-                if (!(demorecord || demoplayback))
+                if (!(DemoRecord || DemoPlayback))
                     TryWalk();
             }
 
@@ -1550,7 +1550,7 @@ internal record Monster : Actor
             }
 
             if (TileX > MapManager.MAPSIZE || TileY > MapManager.MAPSIZE)
-                _gameEngineManager.Quit($"T_Path hit a wall at {TileX},{TileY}, dir {Dir}");
+                GameEngineManager.Quit($"T_Path hit a wall at {TileX},{TileY}, dir {Dir}");
 
             RecenterOnTile();
             move -= Distance;
@@ -1564,7 +1564,7 @@ internal record Monster : Actor
 
     internal virtual void Chase()
     {
-        if (gamestate.victoryflag)
+        if (GameState.victoryflag)
             return;
 
         var dodge = false;
@@ -1577,13 +1577,13 @@ internal record Monster : Actor
             var dist = dx > dy ? dx : dy;
             int chance;
 
-            if (demorecord || demoplayback)
+            if (DemoRecord || DemoPlayback)
             {
-                chance = (dist == 0 || (dist == 1 && Distance < 0x4000)) ? 300 : (int)((tics << 4) / dist);
+                chance = (dist == 0 || (dist == 1 && Distance < 0x4000)) ? 300 : (int)((Tics << 4) / dist);
             }
             else
             {
-                chance = dist != 0 ? (int)((tics << 4) / dist) : 300;
+                chance = dist != 0 ? (int)((Tics << 4) / dist) : 300;
 
                 if (dist == 1)
                 {
@@ -1614,17 +1614,17 @@ internal record Monster : Actor
                 return;
         }
 
-        var move = (int)(Speed * tics);
+        var move = (int)(Speed * Tics);
 
         while (move != 0)
         {
             if (Distance < 0)
             {
                 OpenDoor(-Distance - 1);
-                if (doorobjlist[-Distance - 1].action != (byte)DoorAction.dr_open)
+                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.dr_open)
                     return;
                 Distance = (int)MapConstants.TILEGLOBAL;
-                if (!(demorecord || demoplayback))
+                if (!(DemoRecord || DemoPlayback))
                     TryWalk();
             }
 
@@ -1653,7 +1653,7 @@ internal record Monster : Actor
                 return;
         }
 
-        var move = (int)(Speed * tics);
+        var move = (int)(Speed * Tics);
 
         while (move != 0)
         {
@@ -1700,7 +1700,7 @@ internal record Monster : Actor
     internal bool BiteLands(int chance)
     {
         if (Properties.TryGetValue("attacksound", out var sound) && sound is string soundName)
-            PlaySoundLocActor(soundName, this);
+            PlaySoundAtActor(soundName, this);
 
         var dx = Target.X - X;
         if (dx < 0) dx = -dx;
@@ -1728,7 +1728,7 @@ internal record Monster : Actor
                 return;
         }
 
-        var move = (int)(Speed * tics);
+        var move = (int)(Speed * Tics);
 
         while (move != 0)
         {
@@ -1759,7 +1759,7 @@ internal record Monster : Actor
         if (CheckLine(this, Target))
         {
             Hidden = false;
-            if (NextRandom() < (tics << 3))
+            if (NextRandom() < (Tics << 3))
             {
                 SetState(attackState);
                 return;
@@ -1776,14 +1776,14 @@ internal record Monster : Actor
                 return;
         }
 
-        var move = (int)(Speed * tics);
+        var move = (int)(Speed * Tics);
 
         while (move != 0)
         {
             if (Distance < 0)
             {
                 OpenDoor(-Distance - 1);
-                if (doorobjlist[-Distance - 1].action != (byte)DoorAction.dr_open)
+                if (DoorObjects[-Distance - 1].action != (byte)DoorAction.dr_open)
                     return;
                 Distance = (int)MapConstants.TILEGLOBAL;
                 TryWalk();
@@ -1812,7 +1812,7 @@ internal record Monster : Actor
         if (CheckLine(this, Target))
         {
             Hidden = false;
-            if (NextRandom() < (tics << 1))
+            if (NextRandom() < (Tics << 1))
             {
                 SetState("Attack");
                 return;
@@ -1828,7 +1828,7 @@ internal record Monster : Actor
                 return;
         }
 
-        var move = (int)(Speed * tics);
+        var move = (int)(Speed * Tics);
 
         while (move != 0)
         {
@@ -1849,7 +1849,7 @@ internal record Monster : Actor
 
     internal virtual void Shoot()
     {
-        if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
+        if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] == 0)
             return;
 
         if (CheckLine(this, Target))
@@ -1902,7 +1902,7 @@ internal record Monster : Actor
         var iangle = (int)(angle / (M_PI * 2) * ANGLES);
         iangle = ((iangle + angleOffset) % ANGLES + ANGLES) % ANGLES;
 
-        var newobj = _mapManager.SpawnAtActor(className, this);
+        var newobj = MapManager.SpawnAtActor(className, this);
         if (newobj == null)
             return;
 
@@ -1914,7 +1914,7 @@ internal record Monster : Actor
         if (sound == null && newobj.Properties.TryGetValue("attacksound", out var attackSound))
             sound = attackSound as string;
         if (!string.IsNullOrEmpty(sound))
-            PlaySoundLocActor(sound, newobj);
+            PlaySoundAtActor(sound, newobj);
     }
 
     // Each plays the thrown projectile's attacksound (projectiles.yaml)
@@ -1977,7 +1977,7 @@ internal record Monster : Actor
 
     // A whole-number property of an actordefs class, or null
     int? RuntimeActorProperty(string className, string key) =>
-        _inventoryManager.GetProperty(className, key) is { } value && int.TryParse(value.ToString(), out var n) ? n : null;
+        InventoryManager.GetProperty(className, key) is { } value && int.TryParse(value.ToString(), out var n) ? n : null;
 
     // The Angel's spark volley: A_StartAttack starts the count, A_Relaunch follows each spark and
     // either tires the Angel out after the third, breaks off at random, or goes again
@@ -2000,7 +2000,7 @@ internal record Monster : Actor
     // it, and the tiles it covers hold no wall, door, blocking object or live enemy
     internal void Dormant()
     {
-        foreach (var pawn in _mapManager.Players)
+        foreach (var pawn in MapManager.Players)
         {
             var deltax = X - pawn.X;
             var deltay = Y - pawn.Y;
@@ -2016,7 +2016,7 @@ internal record Monster : Actor
         for (var y = yl; y <= yh; y++)
             for (var x = xl; x <= xh; x++)
             {
-                if (_mapManager.actorat[x, y] != null || _mapManager.IsShootableActorAt(x, y))
+                if (MapManager.actorat[x, y] != null || MapManager.IsShootableActorAt(x, y))
                     return;
             }
 
@@ -2028,14 +2028,14 @@ internal record Monster : Actor
 
     internal void HitlerMorph()
     {
-        var newActor = _mapManager.SpawnMorphedEnemy("RealHitler", this);
+        var newActor = MapManager.SpawnMorphedEnemy("RealHitler", this);
         if (newActor == null)
             return;
 
         newActor.Speed = SPDPATROL * 5;
 
-        if (!loadedgame && newActor is Monster { CountsAsKill: true })
-            gamestate.killtotal++;
+        if (!LoadedGame && newActor is Monster { CountsAsKill: true })
+            GameState.killtotal++;
     }
 
     /// <summary>A_Morph: the enemy of class args[0] takes its place (see RegisterActions)</summary>
@@ -2048,7 +2048,7 @@ internal record Monster : Actor
             return;
         }
 
-        var newActor = _mapManager.SpawnMorphedEnemy(className, this);
+        var newActor = MapManager.SpawnMorphedEnemy(className, this);
         if (newActor == null)
         {
             Console.WriteLine($"A_Morph ({Name}): there's no actordefs class \"{className}\".");
@@ -2057,10 +2057,10 @@ internal record Monster : Actor
 
         // As a map spawn of it would: its own speed, and a kill to count unless it's NOTCOUNTED
         newActor.Speed = newActor.PropertyInt("speed", SPDPATROL);
-        if (!loadedgame && newActor is Monster { CountsAsKill: true })
-            gamestate.killtotal++;
+        if (!LoadedGame && newActor is Monster { CountsAsKill: true })
+            GameState.killtotal++;
 
         if (!args.Skip(1).Any(a => a.Trim().Equals("keep", StringComparison.OrdinalIgnoreCase)))
-            _mapManager.MarkForRemoval(this);
+            MapManager.MarkForRemoval(this);
     }
 }

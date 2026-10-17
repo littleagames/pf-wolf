@@ -47,7 +47,7 @@ internal partial record BlakeMonster
     /// </summary>
     internal void Bounce()
     {
-        if (Math.Max(Math.Abs(player.X - X), Math.Abs(player.Y - Y)) < MapConstants.TILEGLOBAL
+        if (Math.Max(Math.Abs(Player.X - X), Math.Abs(Player.Y - Y)) < MapConstants.TILEGLOBAL
             && PropertyInt("monster.touchdamage", 0) is > 0 and var zap)
         {
             PlayActorSound(this, "touchsound");
@@ -61,7 +61,7 @@ internal partial record BlakeMonster
                 return;
         }
 
-        var move = (int)(Speed * tics);
+        var move = (int)(Speed * Tics);
         while (move != 0)
         {
             if (move < Distance)
@@ -242,7 +242,7 @@ internal partial record BlakeMonster
         if (HasFlag("STATIONARY") || found)
             return;
 
-        Temp2 -= (short)tics;
+        Temp2 -= (short)Tics;
         if (Temp2 <= 0)
         {
             Temp2 = SEEK_TURN_DELAY;
@@ -253,7 +253,7 @@ internal partial record BlakeMonster
     /// <summary>Whether what it's after is in the actor's eighth of the circle (its facing, 22.5 degrees either side) in a clear line</summary>
     private bool CheckView()
     {
-        if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
+        if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] == 0)
             return false;
         var target = Target;
         if (Dir == ObjDir.nodir)
@@ -276,7 +276,7 @@ internal partial record BlakeMonster
     /// <summary>A security light's think: once there's been a noise where the player can hear it, it starts flashing (Alert)</summary>
     internal void SecurityLight()
     {
-        if (madenoise && (AreaNumber >= _mapManager.Floors.NumAreas || areabyplayer[AreaNumber] != 0))
+        if (MadeNoise && (AreaNumber >= MapManager.Floors.NumAreas || AreaByPlayer[AreaNumber] != 0))
             SetState("Alert");
     }
 
@@ -293,7 +293,7 @@ internal partial record BlakeMonster
             Temp3 = 1;
             Temp2 = 4 * 60;
         }
-        Temp2 -= (short)tics;
+        Temp2 -= (short)Tics;
         if (Temp2 <= 0)
         {
             Temp2 = (short)(NextRandom() << 3);
@@ -306,7 +306,7 @@ internal partial record BlakeMonster
     {
         int damage = args.Length > 0 && int.TryParse(args[0], out var d) ? d : 1;
         int chance = args.Length > 1 && int.TryParse(args[1], out var c) ? c : 256;
-        if (player.TileX == TileX && player.TileY == TileY && NextRandom() < chance)
+        if (Player.TileX == TileX && Player.TileY == TileY && NextRandom() < chance)
             TakeDamage(damage, this);
     }
 
@@ -319,12 +319,12 @@ internal partial record BlakeMonster
     internal void HoldNearPlayer(string[] args)
     {
         int damage = args.Length > 0 && int.TryParse(args[0], out var d) ? d : 0;
-        long dx = Math.Abs(player.X - X), dy = Math.Abs(player.Y - Y);
+        long dx = Math.Abs(Player.X - X), dy = Math.Abs(Player.Y - Y);
         if (dx > 0x18000 || dy > 0x18000)
             return;
         if (damage > 0 && dx <= 0x8000 && dy <= 0x8000)
             TakeDamage(damage, this);
-        TicCount += (short)tics;
+        TicCount += (short)Tics;
     }
 
     /// <summary>
@@ -367,16 +367,16 @@ internal partial record BlakeMonster
     {
         if (args.Length == 0)
             return;
-        int left = _mapManager.GetActors().Count(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE));
-        _hudMessageManager.Show(Managers.HudMessageKind.Other, args[0], args.ElementAtOrDefault(1),
+        int left = MapManager.GetActors().Count(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE));
+        HudMessageManager.Show(Managers.HudMessageKind.Other, args[0], args.ElementAtOrDefault(1),
             new Dictionary<char, string> { ['n'] = left.ToString() });
     }
 
     /// <summary>A_VictoryIfLast: the level is won once none of this actor's class still stands (the last projection generator)</summary>
     internal void VictoryIfLast()
     {
-        if (!_mapManager.GetActors().Any(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE)))
-            playstate = PlayState.ex_victorious;
+        if (!MapManager.GetActors().Any(a => !a.IsRemoved && a.Name == Name && a.RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTABLE)))
+            PlayState = PlayState.ex_victorious;
     }
 
     /// <summary>

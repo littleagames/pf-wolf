@@ -29,10 +29,10 @@ internal record Informant : BlakeMonster
     // Worth nothing; shooting one warns the player, the first time and now and then after
     protected override void AwardKillPoints()
     {
-        if (!levelAI.ShouldWarnKilledInformant())
+        if (!LevelAI.ShouldWarnKilledInformant())
             return;
         if (PropertyStrings("talk.killedmessage") is [var message, ..])
-            _hudMessageManager.Show(Managers.HudMessageKind.Other, message, PropertyStrings("talk.style").FirstOrDefault());
+            HudMessageManager.Show(Managers.HudMessageKind.Other, message, PropertyStrings("talk.style").FirstOrDefault());
     }
 
     internal override bool TalkTo()
@@ -47,13 +47,13 @@ internal record Informant : BlakeMonster
             foreach (var (flag, index) in new[] { (ObjFlags.FL_HASAMMO, 0), (ObjFlags.FL_HASTOKENS, 1) })
             {
                 if (!RuntimeFlags.HasFlag(flag) || index >= gifts.Count
-                    || _inventoryManager.CreateActor(gifts[index]) is not Inventory gift || !CouldTakeInventory(gift))
+                    || InventoryManager.CreateActor(gifts[index]) is not Inventory gift || !CouldTakeInventory(gift))
                     continue;
                 int amount = gift.Properties.TryGetValue("inventory.amount", out var a) ? Convert.ToInt32(a) : 1;
                 if (!TryApplyInventory(gift, amount))
                     continue;
                 RuntimeFlags &= ~flag;
-                said = _hudMessageManager.Localize(giftMessages.ElementAtOrDefault(index) ?? "");
+                said = HudMessageManager.Localize(giftMessages.ElementAtOrDefault(index) ?? "");
                 break;
             }
         }
@@ -79,7 +79,7 @@ internal record Informant : BlakeMonster
         if (string.IsNullOrEmpty(listName))
             return null;
 
-        var placed = _mapManager.Hints.GetValueOrDefault(listName) ?? [];
+        var placed = MapManager.Hints.GetValueOrDefault(listName) ?? [];
         var roomHints = placed.Where(h => h.Area == AreaNumber).ToList();
         if (roomHints.Count > 0)
         {

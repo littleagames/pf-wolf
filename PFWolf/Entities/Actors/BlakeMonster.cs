@@ -172,7 +172,7 @@ internal partial record BlakeMonster : Monster
             RuntimeFlags |= ObjFlags.FL_FRIENDLY;
 
         // The 0xFA value east of it on the object plane, if there is one
-        int east = tilex + 1 < MapManager.MAPSIZE ? _mapManager.MAPSPOT(tilex + 1, tiley, 1) : 0;
+        int east = tilex + 1 < MapManager.MAPSIZE ? MapManager.MAPSPOT(tilex + 1, tiley, 1) : 0;
         int? mapValue = (east & 0xff00) == 0xfa00 ? east & 0xff : null;
 
         // A sleeper's wake delay (T_WaitToWake), in tics: the map's value in seconds, else a
@@ -192,7 +192,7 @@ internal partial record BlakeMonster : Monster
 
         // `monster.floorhealth: [floor, times]`: that much tougher on that floor (game-info
         // floor-number; Goldfire on floor 9)
-        if (PropertyInts("monster.floorhealth") is [var floor, var times] && floor == _mapManager.CurrentFloorNumber)
+        if (PropertyInts("monster.floorhealth") is [var floor, var times] && floor == MapManager.CurrentFloorNumber)
             Hitpoints = (short)Math.Min(Hitpoints * times, short.MaxValue);
     }
 
@@ -220,7 +220,7 @@ internal partial record BlakeMonster : Monster
             return;
         }
 
-        var spawned = _mapManager.SpawnThing(TileX, TileY,
+        var spawned = MapManager.SpawnThing(TileX, TileY,
             new Assets.MapActorTranslation { Class = args[0], Angles = Dir == ObjDir.nodir ? -1 : (int)Dir * 45 }, countKill: false);
         if (spawned == null)
         {
@@ -231,7 +231,7 @@ internal partial record BlakeMonster : Monster
         spawned.X = X;
         spawned.Y = Y;
         spawned.AreaNumber = AreaNumber;
-        spawned.Faction = _factionManager.InheritedFaction(spawned, this);
+        spawned.Faction = FactionManager.InheritedFaction(spawned, this);
         if (args.Skip(1).Any(a => a.Equals("chase", StringComparison.OrdinalIgnoreCase)) && spawned.ResolvedStates.ContainsKey("Chase"))
         {
             spawned.SetState("Chase");
@@ -247,9 +247,9 @@ internal partial record BlakeMonster : Monster
     {
         if (!RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE) || Temp3 <= 0 || Temp3 == 255 * 60)
             return;
-        if (Temp2 > tics)
+        if (Temp2 > Tics)
         {
-            Temp2 -= (short)tics;
+            Temp2 -= (short)Tics;
             return;
         }
         Temp2 = 0;
@@ -268,7 +268,7 @@ internal partial record BlakeMonster : Monster
         int max = args.Length > 2 && int.TryParse(args[2], out var b) ? b : min;
 
         PlayActorSound(this, "meleesound");
-        madenoise = true;
+        MadeNoise = true;
 
         var target = Target;
         if (Math.Abs(target.X - X) - MapConstants.TILEGLOBAL <= MINACTORDIST
@@ -291,7 +291,7 @@ internal partial record BlakeMonster : Monster
     {
         RuntimeFlags &= ~ObjFlags.FL_LOCKEDSTATE;
 
-        if (gamestate.victoryflag || HasFlag("STATIONARY"))
+        if (GameState.victoryflag || HasFlag("STATIONARY"))
             return;
 
         if (Ammo != 0)
@@ -306,8 +306,8 @@ internal partial record BlakeMonster : Monster
                 bool shootMode = PropertyBool("monster.shootmode");
                 if (shootMode)
                 {
-                    if (Ammo > tics)
-                        Ammo -= (short)tics;
+                    if (Ammo > Tics)
+                        Ammo -= (short)Tics;
                     else
                     {
                         ChangeShootMode();
@@ -318,7 +318,7 @@ internal partial record BlakeMonster : Monster
 
                 int chance = nearAttack || shootMode
                     ? (RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTMODE) ? 300 : 0)
-                    : (int)((tics << 4) / dist);
+                    : (int)((Tics << 4) / dist);
 
                 if (NextRandom() < chance && Ammo != 0 && !RuntimeFlags.HasFlag(ObjFlags.FL_INTERROGATED))
                 {
@@ -340,14 +340,14 @@ internal partial record BlakeMonster : Monster
                 return;     // boxed in
         }
 
-        var move = (int)(Speed * tics);
+        var move = (int)(Speed * Tics);
         while (move != 0)
         {
             if (Distance < 0)
             {
                 // waiting for a door to open
                 OpenDoor(-Distance - 1);
-                if (doorobjlist[-Distance - 1].action != DoorAction.dr_open)
+                if (DoorObjects[-Distance - 1].action != DoorAction.dr_open)
                     return;
                 Distance = (int)MapConstants.TILEGLOBAL;
             }
@@ -427,7 +427,7 @@ internal partial record BlakeMonster : Monster
         if (smart && Ammo == 0)
             return;
 
-        if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] == 0)
+        if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] == 0)
             return;
         if (!CheckLine(this, Target))
             return;     // what it's after is behind a wall
@@ -441,7 +441,7 @@ internal partial record BlakeMonster : Monster
             CheckRunChase();
         }
 
-        madenoise = true;   // gunfire alerts the area
+        MadeNoise = true;   // gunfire alerts the area
     }
 
     /*
@@ -460,7 +460,7 @@ internal partial record BlakeMonster : Monster
         int reason = 0;
         if (Ammo == 0)
             reason |= RR_AMMO;
-        if (Hitpoints <= _mapManager.GetScaledHealth(this) >> 1)
+        if (Hitpoints <= MapManager.GetScaledHealth(this) >> 1)
             reason |= RR_HEALTH;
         if ((RuntimeFlags & (ObjFlags.FL_FRIENDLY | ObjFlags.FL_INTERROGATED)) == ObjFlags.FL_INTERROGATED)
             reason |= RR_INTERROGATED;
@@ -547,10 +547,10 @@ internal partial record BlakeMonster : Monster
                 RuntimeFlags &= ~ObjFlags.FL_INTERROGATED;
         }
 
-        int maxHealth = _mapManager.GetScaledHealth(this);
+        int maxHealth = MapManager.GetScaledHealth(this);
 
         // Out of the player's area and sight, it cheats
-        if (player.AreaNumber != AreaNumber && !RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE))
+        if (Player.AreaNumber != AreaNumber && !RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE))
         {
             if (Ammo == 0)
                 Ammo += 8;
@@ -561,7 +561,7 @@ internal partial record BlakeMonster : Monster
 
         if (!justFindDoor)
         {
-            foreach (var item in _mapManager.GetActors())
+            foreach (var item in MapManager.GetActors())
             {
                 if (item.IsRemoved || item.AreaNumber != AreaNumber)
                     continue;
@@ -588,7 +588,7 @@ internal partial record BlakeMonster : Monster
 
                     SeekX = 0;
                     item.RunState("Pickup");        // food leaves its wrapper
-                    _mapManager.MarkForRemoval(item);
+                    MapManager.MarkForRemoval(item);
                     return true;
                 }
 
@@ -605,13 +605,13 @@ internal partial record BlakeMonster : Monster
         }
 
         // Running for a door out of the room, when the room joins the player's
-        if (AreaNumber < _mapManager.Floors.NumAreas && areabyplayer[AreaNumber] != 0)
+        if (AreaNumber < MapManager.Floors.NumAreas && AreaByPlayer[AreaNumber] != 0)
         {
             if (RuntimeFlags.HasFlag(ObjFlags.FL_RUNTOSTATIC))
                 return false;   // already heading somewhere
 
             var doors = new List<int>();
-            for (int door = 0; door < lastdoorobj && doors.Count < 8; door++)
+            for (int door = 0; door < LastDoorObject && doors.Count < 8; door++)
                 if (DoorLeadsOutOf(door, AreaNumber))
                     doors.Add(door);
 
@@ -624,8 +624,8 @@ internal partial record BlakeMonster : Monster
 
                 int chosen = doors[index];
                 Temp3 = (short)(chosen + 1);
-                SeekX = (byte)doorobjlist[chosen].tilex;
-                SeekY = (byte)doorobjlist[chosen].tiley;
+                SeekX = (byte)DoorObjects[chosen].tilex;
+                SeekY = (byte)DoorObjects[chosen].tiley;
                 RuntimeFlags |= ObjFlags.FL_RUNTOSTATIC;
             }
         }
@@ -641,12 +641,12 @@ internal partial record BlakeMonster : Monster
     /// <summary>Whether a door joins an area to another and opens without a key (an actor's way out)</summary>
     private bool DoorLeadsOutOf(int door, int area)
     {
-        var d = doorobjlist[door];
+        var d = DoorObjects[door];
         if (d.Lock.Length > 0)
             return false;
 
         int x = d.tilex, y = d.tiley;
-        var (a, b) = d.vertical ? (_mapManager.AreaAt(x - 1, y), _mapManager.AreaAt(x + 1, y)) : (_mapManager.AreaAt(x, y - 1), _mapManager.AreaAt(x, y + 1));
+        var (a, b) = d.vertical ? (MapManager.AreaAt(x - 1, y), MapManager.AreaAt(x + 1, y)) : (MapManager.AreaAt(x, y - 1), MapManager.AreaAt(x, y + 1));
         return a == area || b == area;
     }
 
@@ -668,7 +668,7 @@ internal partial record BlakeMonster : Monster
     /// </summary>
     private void TurningPathDir()
     {
-        var point = _mapManager.PatrolPointAt(TileX, TileY);
+        var point = MapManager.PatrolPointAt(TileX, TileY);
         if (point != null)
             Dir = point.Dir;
 
@@ -742,17 +742,17 @@ internal partial record BlakeMonster : Monster
         if (x < 0 || y < 0 || x >= MapManager.MAPSIZE || y >= MapManager.MAPSIZE)
             return false;
         if (dx != 0 && dy != 0)
-            return CHECKDIAG(x, y) && CHECKDIAG(TileX + dx, TileY) && CHECKDIAG(TileX, TileY + dy);
+            return CheckDiag(x, y) && CheckDiag(TileX + dx, TileY) && CheckDiag(TileX, TileY + dy);
 
-        switch (_mapManager.actorat[x, y])
+        switch (MapManager.actorat[x, y])
         {
             case Wall or BlockingActor:
                 return false;
             case Door door:
                 return HasFlag("PHASEDOORS")
-                    || !HasFlag("NODOORS") && (!HasFlag("NOLOCKEDDOORS") || doorobjlist[door.door].Lock.Length == 0);
+                    || !HasFlag("NODOORS") && (!HasFlag("NOLOCKEDDOORS") || DoorObjects[door.door].Lock.Length == 0);
             default:
-                return !_mapManager.IsShootableActorAt(x, y);
+                return !MapManager.IsShootableActorAt(x, y);
         }
     }
 
@@ -774,7 +774,7 @@ internal partial record BlakeMonster : Monster
         if (!Properties.ContainsKey("monster.woundstages") || !ResolvedStates.ContainsKey("Wounded"))
             return false;
 
-        int boundary = _mapManager.GetScaledHealth(this) / (Temp1 + 1) + 1;
+        int boundary = MapManager.GetScaledHealth(this) / (Temp1 + 1) + 1;
         if (oldHitpoints / boundary == Hitpoints / boundary)
             return false;
 
@@ -788,14 +788,14 @@ internal partial record BlakeMonster : Monster
     /// <summary>The think on a wounded actor's last, held frame: when its time's up and the player isn't on top of it, it gets up (Recover)</summary>
     internal void Wounded()
     {
-        if (Temp2 > tics)
+        if (Temp2 > Tics)
         {
-            Temp2 -= (short)tics;
+            Temp2 -= (short)Tics;
             return;
         }
         Temp2 = 0;
 
-        if (Math.Abs(player.X - X) > MapConstants.TILEGLOBAL || Math.Abs(player.Y - Y) > MapConstants.TILEGLOBAL)
+        if (Math.Abs(Player.X - X) > MapConstants.TILEGLOBAL || Math.Abs(Player.Y - Y) > MapConstants.TILEGLOBAL)
         {
             RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
             SetState("Recover");
@@ -812,8 +812,8 @@ internal partial record BlakeMonster : Monster
         if (killer == null)
             return;
 
-        int distance = ReferenceEquals(killer, player)
-            ? (playerstate.weapon != null && int.TryParse(_inventoryManager.GetProperty(playerstate.weapon, "weapon.knockback")?.ToString(), out var k) ? k : 0)
+        int distance = ReferenceEquals(killer, Player)
+            ? (PlayerState.weapon != null && int.TryParse(InventoryManager.GetProperty(PlayerState.weapon, "weapon.knockback")?.ToString(), out var k) ? k : 0)
             : killer.PropertyInt("knockback", DEFAULT_KNOCKBACK);
         if (distance <= 0)
             return;
@@ -856,11 +856,11 @@ internal partial record BlakeMonster : Monster
             int tx = cx >> (int)MapConstants.TILESHIFT, ty = cy >> (int)MapConstants.TILESHIFT;
             if (tx < 0 || ty < 0 || tx >= MapManager.MAPSIZE || ty >= MapManager.MAPSIZE)
                 return false;
-            switch (_mapManager.actorat[tx, ty])
+            switch (MapManager.actorat[tx, ty])
             {
                 case Wall or BlockingActor:
                     return false;
-                case Door door when doorobjlist[door.door].action != DoorAction.dr_open:
+                case Door door when DoorObjects[door.door].action != DoorAction.dr_open:
                     return false;
             }
         }
@@ -915,10 +915,10 @@ internal partial record BlakeMonster : Monster
             return;
 
         var header = PropertyStrings("talk.header").FirstOrDefault();
-        var text = string.IsNullOrEmpty(header) ? said : $"{_hudMessageManager.Localize(header)}\n\n{said}";
-        _hudMessageManager.Show(Managers.HudMessageKind.Other, text, PropertyStrings("talk.style").FirstOrDefault());
+        var text = string.IsNullOrEmpty(header) ? said : $"{HudMessageManager.Localize(header)}\n\n{said}";
+        HudMessageManager.Show(Managers.HudMessageKind.Other, text, PropertyStrings("talk.style").FirstOrDefault());
         if (PropertyStrings("talk.sound").FirstOrDefault() is { Length: > 0 } sound)
-            _audioManager.Play(sound);
+            AudioManager.Play(sound);
     }
 
     // One of the map's sayings from a text, or any from the text when the map places none
@@ -926,7 +926,7 @@ internal partial record BlakeMonster : Monster
     {
         if (string.IsNullOrEmpty(listName))
             return null;
-        var placed = _mapManager.Hints.GetValueOrDefault(listName);
+        var placed = MapManager.Hints.GetValueOrDefault(listName);
         if (placed is { Count: > 0 })
             return HintText(listName, placed[NextRandom() % placed.Count].Message);
         int count = HintMessages(listName).Count;
@@ -952,7 +952,7 @@ internal partial record BlakeMonster : Monster
             return cached;
 
         var messages = new List<string>();
-        if (_assetManager.Find<Assets.TextAsset>(listName) is { } asset)
+        if (AssetManager.Find<Assets.TextAsset>(listName) is { } asset)
         {
             var parts = asset.ToText().Split("^XX");
             foreach (var part in parts.Take(parts.Length - 1))     // after the last ^XX is only the end
