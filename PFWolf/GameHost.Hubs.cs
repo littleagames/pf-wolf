@@ -33,7 +33,7 @@ internal static partial class GameHost
     static LevelEntry levelEntry = null!;       // made in InitServices
 
     static LevelEntry MakeLevelEntry() => new(_mapManager, _inventoryManager, hubs, levelSetup, playerMovement, session,
-        new LevelEntryHooks(() => loadedgame, on => loadedgame = on, () => victoryRunning = false, CaptureOverhead,
+        new LevelEntryHooks(() => victoryRunning = false, CaptureOverhead,
             WriteLevelBody, ReadLevelBody, body => ApplyLevelBody(body)));
 
     internal static bool EnterLevel() => levelEntry.EnterLevel();
@@ -48,7 +48,7 @@ internal static partial class GameHost
 
     static HubActions MakeHubActions() => new(_gameEngineManager, _mapManager, _audioManager, _inputManager, _inventoryManager,
         _hudMessageManager, hubs, elevatorScreens, playScreen, frameRefresh, playerMovement, session,
-        new HubActionsHooks(change => pendingMapChange = change, s => playstate = s, PlaySoundLocActor));
+        new HubActionsHooks(change => pendingMapChange = change, PlaySoundLocActor));
 
     internal static bool victoryRunning { get => hubActions.victoryRunning; set => hubActions.victoryRunning = value; }
 }

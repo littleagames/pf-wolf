@@ -5,11 +5,9 @@ namespace PFWolf.Gameplay;
 
 /// <summary>What the hub clusters' trigger actions need from the game</summary>
 /// <param name="SetPendingMapChange">The map to switch to as the level ends (Gameplay/MainGameLoop.cs)</param>
-/// <param name="SetPlayState">Ends the level: to another floor, or the cluster won</param>
 /// <param name="PlaySoundAt">Plays a sound from an actor</param>
 internal sealed record HubActionsHooks(
     Action<PendingMapChange> SetPendingMapChange,
-    Action<playstatetypes> SetPlayState,
     Action<string, Entities.Actors.Actor> PlaySoundAt);
 
 /// <summary>
@@ -97,7 +95,7 @@ internal sealed class HubActions(
             ? new PendingMapChange(map, false, 0, 0, 0, WaitTics: 0)
             : new PendingMapChange(map, true, session.player.X, session.player.Y, session.player.Angle, WaitTics: 0, ElevatorWall: panelWall));
         session.gamestate.mapon = map;
-        hooks.SetPlayState(playstatetypes.ex_warped);
+        session.playstate = playstatetypes.ex_warped;
         return true;
     }
 
@@ -133,7 +131,7 @@ internal sealed class HubActions(
 
             hooks.SetPendingMapChange(new PendingMapChange(map, true, session.player.X, session.player.Y, session.player.Angle, WaitTics: 0));
             session.gamestate.mapon = map;
-            hooks.SetPlayState(playstatetypes.ex_warped);
+            session.playstate = playstatetypes.ex_warped;
             return true;
         }
 
@@ -255,7 +253,7 @@ internal sealed class HubActions(
         var runner = mapManager.SpawnAtActor(args[0], session.player);
         if (runner == null)
         {
-            hooks.SetPlayState(playstatetypes.ex_victorious);
+            session.playstate = playstatetypes.ex_victorious;
             return true;
         }
 
@@ -299,7 +297,7 @@ internal sealed class HubActions(
         }
 
         if (blocked || Math.Abs(ob.TileX - ob.Temp1) >= 6 || Math.Abs(ob.TileY - ob.Temp3) >= 6)
-            hooks.SetPlayState(playstatetypes.ex_victorious);
+            session.playstate = playstatetypes.ex_victorious;
     }
 
     /// <summary>Turns the view to <paramref name="destAngle"/> at <paramref name="speed"/> degrees a tic, drawing as it goes</summary>

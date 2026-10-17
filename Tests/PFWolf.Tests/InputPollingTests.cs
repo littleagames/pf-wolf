@@ -12,7 +12,6 @@ public class InputPollingTests
     private FrameRefresh _frame = null!;
     private GameSession _session = null!;
     private InputPolling _polling = null!;
-    private playstatetypes? _ended;
 
     [SetUp]
     public void Make()
@@ -23,10 +22,9 @@ public class InputPollingTests
         _render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade);
         _session = new GameSession { tics = 2 };
         _frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, _render, _session, null!);
-        _ended = null;
         _polling = new InputPolling(_input, _console, new AutomapManager(), new ControlBindings(), _settings, _frame,
             new DemoBuffer(), _session,
-            new InputPollingHooks(s => _ended = s, () => false, () => false, () => false, () => false, () => false,
+            new InputPollingHooks(() => false, () => false,
                 DemoTesting: () => true, () => { }));
     }
 

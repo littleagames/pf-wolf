@@ -4,7 +4,7 @@ public class MainGameLoopTests
 {
     private static MainGameLoop Make() =>
         new(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!,
-            null!, null!, null!, null!, null!, null!, new GameSession(), null!);
+            null!, null!, null!, null!, null!, null!, new GameSession(), new Configuration.GameSettings(), null!);
 
     [Test]
     public void With_No_Map_Change_Pending_The_Player_Stays_Put()

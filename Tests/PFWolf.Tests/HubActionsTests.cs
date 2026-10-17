@@ -8,7 +8,6 @@ public class HubActionsTests
 
     private MapManager _map = null!;
     private GameSession _session = null!;
-    private playstatetypes? _ended;
     private HubActions _actions = null!;
 
     [SetUp]
@@ -20,9 +19,8 @@ public class HubActionsTests
             tilemap = new ushort[MapManager.MAPSIZE, MapManager.MAPSIZE],
             actorat = new Actor?[MapManager.MAPSIZE, MapManager.MAPSIZE],
         };
-        _ended = null;
         _actions = new HubActions(null!, _map, null!, null!, null!, null!, null!, null!, null!, null!, null!, _session,
-            new HubActionsHooks(_ => { }, s => _ended = s, (_, _) => { }));
+            new HubActionsHooks(_ => { }, (_, _) => { }));
     }
 
     // Blake, running east from the middle of tile (10, 10)
@@ -46,7 +44,7 @@ public class HubActionsTests
 
         // Assert
         Assert.That(blake.X, Is.EqualTo(x + 30000));
-        Assert.That(_ended, Is.Null);
+        Assert.That(_session.playstate, Is.EqualTo(playstatetypes.ex_stillplaying));
     }
 
     [Test]
@@ -58,7 +56,7 @@ public class HubActionsTests
         _actions.T_VictoryRun(blake);
 
         Assert.That(blake.TileX, Is.EqualTo(16));
-        Assert.That(_ended, Is.EqualTo(playstatetypes.ex_victorious));
+        Assert.That(_session.playstate, Is.EqualTo(playstatetypes.ex_victorious));
     }
 
     [Test]
@@ -75,7 +73,7 @@ public class HubActionsTests
 
         // Assert: it stays put, and the cluster is won
         Assert.That(blake.X, Is.EqualTo(x));
-        Assert.That(_ended, Is.EqualTo(playstatetypes.ex_victorious));
+        Assert.That(_session.playstate, Is.EqualTo(playstatetypes.ex_victorious));
     }
 
     [Test]
@@ -90,6 +88,6 @@ public class HubActionsTests
         _actions.T_VictoryRun(blake);
 
         Assert.That(blake.X, Is.GreaterThan(x));
-        Assert.That(_ended, Is.Null);
+        Assert.That(_session.playstate, Is.EqualTo(playstatetypes.ex_stillplaying));
     }
 }

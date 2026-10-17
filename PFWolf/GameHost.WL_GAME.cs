@@ -25,9 +25,7 @@ internal static partial class GameHost
     static MainGameLoop MakeMainGameLoop() => new(_gameEngineManager, _assetManager, _videoManager, _audioManager, _inputManager,
         _inventoryManager, statusBarDrawing, playScreen, levelMusic, levelLoop, playerMovement, playerDeath, demos, deathmatch, scoreboard,
         netPlay, gameScripts, hubs, controlPanel, intermissionScreen, highScoresScreen, textPresenter, moviePlayer, session,
-        new MainGameLoopHooks(() => playstate, s => playstate = s, () => startgame, on => startgame = on, () => loadedgame,
-            on => loadedgame = on, on => ingame = on, () => fizzlein = true, on => autosavePending = on, () => viewsize,
-            () => demoplayback || demorecord, () => demorecord, () => netgame, () => lastgamemusicoffset, EnterLevel, LeaveLevel,
+        settings, new MainGameLoopHooks(on => autosavePending = on, EnterLevel, LeaveLevel,
             MarkLevelStart, ApplyPendingWarpStart, AlignPlayerInElevator, ShowLevelStartMessage, name => articleReader.ShowText(name),
             LevelWon));
 
@@ -37,9 +35,9 @@ internal static partial class GameHost
     static Demos demos = null!;     // made in InitServices
 
     static Demos MakeDemos() => new(_assetManager, _gameEngineManager, _videoManager, _audioManager, ui, lineInput, demoBuffer, levelMusic, levelLoop,
-        new DemosHooks((skill, episode, map, playerClass) => NewGame(skill, episode, map, playerClass), () => DemoSkill, DrawPlayScreen,
-            SetupGameLevel, RunLevelHooks, () => startgame = false, on => demoplayback = on, on => demorecord = on, () => demoTesting,
-            DemoTestReport, () => fizzlein = true, () => INTROSONG));
+        session, new DemosHooks((skill, episode, map, playerClass) => NewGame(skill, episode, map, playerClass), () => DemoSkill, DrawPlayScreen,
+            SetupGameLevel, RunLevelHooks, () => demoTesting,
+            DemoTestReport, () => INTROSONG));
 
     internal static void PlayDemo(int demonumber) => demos.PlayDemo(demonumber);
     internal static bool DemoExists(int demonumber) => demos.DemoExists(demonumber);
@@ -72,7 +70,7 @@ internal static partial class GameHost
 
     static LevelSetup MakeLevelSetup() => new(_gameEngineManager, _mapManager, render, skyAndFlats, weather, lighting, doors, pushWalls,
         deathmatch, playersManager, playerClassRules, levelLoop, weaponBob, levelAI, session,
-        new LevelSetupHooks(() => loadedgame, () => demoplayback || demorecord, () => netgame, () => netseed, () => CurrentSkill,
+        new LevelSetupHooks(() => CurrentSkill,
             loadout => mapLoadouts.Apply(loadout), () => objectives.CountLevel(announce: !demoplayback && !demorecord)));
 
     // Level objectives (Gameplay/Objectives.cs): sabotage targets, goal enemies
@@ -160,8 +158,7 @@ internal static partial class GameHost
     static PlayerDeath MakePlayerDeath() => new(_assetManager, _gameEngineManager, _videoManager, _inputManager, _audioManager,
         _inventoryManager, _hudMessageManager, _mapManager, ui, frameRefresh, render, playerClassRules, playerStats, playerWeapons,
         statusBarDrawing, pushWalls, projectiles, playScreen, intermissionScreen, session, playArea,
-        new PlayerDeathHooks(() => gameInfoSettings, ShowObituary, DrawHudMessages, RestoreLevelStart, () => levelEntry.LevelStartItems(), s => playstate = s,
-            () => viewsize, () => bordercol, () => fizzlein = true));
+        settings, new PlayerDeathHooks(() => gameInfoSettings, ShowObituary, DrawHudMessages, RestoreLevelStart, () => levelEntry.LevelStartItems()));
 
     internal static void A_StartDeathCam(Entities.Actors.Actor ob) => playerDeath.A_StartDeathCam(ob);
     internal static void T_DeathCam(Entities.Actors.Actor ob) => playerDeath.T_DeathCam(ob);

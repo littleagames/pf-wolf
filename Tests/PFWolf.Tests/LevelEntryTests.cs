@@ -23,7 +23,7 @@ public class LevelEntryTests
         _inventory.SetHolder(_session.playerstate.Items);
         _hubs = new Hubs(null!, null!, _session);
         _entry = new LevelEntry(null!, _inventory, _hubs, null!, null!, _session,
-            new LevelEntryHooks(() => false, _ => { }, () => { }, () => [], _ => { }, _ => null!, _ => { }));
+            new LevelEntryHooks(() => { }, () => [], _ => { }, _ => null!, _ => { }));
     }
 
     [Test]

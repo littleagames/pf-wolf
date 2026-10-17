@@ -50,8 +50,7 @@ internal static partial class GameHost
 
     static InputPolling MakeInputPolling() => new(_inputManager, _consoleManager, _automapManager, controls, controlSettings,
         frameRefresh, demoBuffer, session,
-        new InputPollingHooks(s => playstate = s, () => netgame, () => netChatting, () => netLeavePrompt,
-            () => demoplayback, () => demorecord, () => demoTesting, RouteMovementToAutomap));
+        new InputPollingHooks(() => netChatting, () => netLeavePrompt, () => demoTesting, RouteMovementToAutomap));
 
     static TicCmd localcmd => inputPolling.localcmd;
 
@@ -88,9 +87,7 @@ internal static partial class GameHost
 
     static LevelLoop MakeLevelLoop() => new(_inputManager, _videoManager, _consoleManager, _automapManager, _hudMessageManager, _mapManager,
         frameRefresh, inputPolling, playKeys, doors, pushWalls, timedSwitches, floorDamage, playerView, lighting, gameScripts, deathmatch, netPlay, levelAI, session,
-        new LevelLoopHooks(() => playstate, s => playstate = s, () => startgame, () => netgame, () => demoplayback, () => demoTesting,
-            () => madenoise = false, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => autosavePending, AutoSaveGame,
-            () => singlestep, () => extravbls, () => zoneAmbience.Tick()));
+        new LevelLoopHooks(() => demoTesting, TickPlayerBodies, UpdateSoundListener, UpdateAutomap, () => autosavePending, AutoSaveGame, () => zoneAmbience.Tick()));
 
     // Zones' ambient sounds (Gameplay/ZoneAmbience.cs)
     static ZoneAmbience? _zoneAmbience;

@@ -3,17 +3,16 @@ namespace PFWolf.Tests;
 public class DemosTests
 {
     private DemoBuffer _buffer = null!;
-    private bool? _recording;
+    private GameSession _session = null!;
     private Demos _demos = null!;
 
     [SetUp]
     public void Make()
     {
         _buffer = new DemoBuffer();
-        _recording = null;
+        _session = new GameSession();
         _demos = new Demos(null!, null!, null!, null!, null!, null!, _buffer, null!, null!,
-            new DemosHooks((_, _, _, _) => Assert.Fail("no game"), () => 3, () => { }, () => { }, _ => { }, () => { },
-                _ => { }, on => _recording = on, () => false, _ => "", () => { }, () => "INTRO"));
+            _session, new DemosHooks((_, _, _, _) => Assert.Fail("no game"), () => 3, () => { }, () => { }, _ => { }, () => false, _ => "", () => "INTRO"));
     }
 
     [Test]
@@ -27,7 +26,7 @@ public class DemosTests
         Assert.That(_buffer.demoData, Has.Length.EqualTo(Demos.MAXDEMOSIZE));
         Assert.That(_buffer.demoData[0], Is.EqualTo(4));
         Assert.That((_buffer.demoptr, _buffer.lastdemoptr), Is.EqualTo((4, Demos.MAXDEMOSIZE)));
-        Assert.That(_recording, Is.True);
+        Assert.That(_session.demorecord, Is.True);
     }
 
     [Test]
@@ -36,6 +35,6 @@ public class DemosTests
         // Act / Assert: no game is started (NewGame fails the test)
         Assert.That(_demos.RecordPendingDemo(), Is.False);
         _demos.PlayPendingDemo();
-        Assert.That(_recording, Is.Null);
+        Assert.That(_session.demorecord, Is.False);
     }
 }

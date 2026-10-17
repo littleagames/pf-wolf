@@ -22,7 +22,7 @@ public class PlayerDeathTests
         };
         var session = new GameSession { tics = 5 };
         var death = new PlayerDeath(null!, null!, null!, null!, null!, new InventoryManager(ActorDefs.Metadata(Yaml)), null!, map,
-            null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, session, null!, null!);
+            null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, session, null!, new Configuration.GameSettings(), null!);
         var player = new Entities.Actors.Monster { Name = "Player" };
 
         // Act / Assert: made, and moved on a frame by this frame's tics
@@ -55,7 +55,7 @@ public class PlayerDeathTests
         inventory.Give("Grenade", 3);
         inventory.Give("Knife", 1);
         var death = new PlayerDeath(null!, null!, null!, null!, null!, inventory, null!, null!,
-            null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, new GameSession(), null!, null!);
+            null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, new GameSession(), null!, new Configuration.GameSettings(), null!);
 
         // Act
         death.KeepItems(["Medkit", "Grenade"], new Dictionary<string, int> { ["Medkit"] = 2 });

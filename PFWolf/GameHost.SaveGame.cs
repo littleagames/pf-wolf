@@ -26,7 +26,7 @@ internal static partial class GameHost
     static GameSaves MakeGameSaves() => new(_gameEngineManager, _assetManager, _videoManager, _inputManager, _graphicManager,
         _inventoryManager, _mapManager, menuDrawing, playScreen, levelBodies, levelSetup, levelMusic, playersManager, weaponInHand,
         playerClassRules, playerStats, hubs, settings, session,
-        new GameSavesHooks(on => loadedgame = on, () => viewsize, () => lastgamemusicoffset, saving => loadSaveScreen.Run(saving),
+        new GameSavesHooks(saving => loadSaveScreen.Run(saving),
             () =>
             {
                 StartGame = 1;

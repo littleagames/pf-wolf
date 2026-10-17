@@ -5,15 +5,9 @@ using PFWolf.Extensions;
 namespace PFWolf.SaveGames;
 
 /// <summary>What saving and loading the game needs from the game</summary>
-/// <param name="SetLoadedGame">A saved game is being loaded (the level rebuild doesn't count anything again)</param>
-/// <param name="ViewSize">The view's size setting (21: the full screen, nothing to redraw around it)</param>
-/// <param name="LastMusicOffset">Where the menu left the level's song</param>
 /// <param name="RunLoadSaveScreen">The load or save screen (Ui/LoadSaveScreen.cs), saving or not; its menu result</param>
 /// <param name="MenuLoaded">A game was loaded from the menu: start it, and "Read This!" back to its normal color</param>
 internal sealed record GameSavesHooks(
-    Action<bool> SetLoadedGame,
-    Func<int> ViewSize,
-    Func<int> LastMusicOffset,
     Func<bool, int> RunLoadSaveScreen,
     Action MenuLoaded);
 
@@ -358,15 +352,15 @@ internal sealed class GameSaves(
         //
         if (quick != 0)
         {
-            hooks.SetLoadedGame(true);
+            session.loadedgame = true;
             var loaded = LoadTheGame(QuickSavePath, 0, 0);
-            hooks.SetLoadedGame(false);
+            session.loadedgame = false;
             if (!loaded)
                 return 0;
 
-            if (hooks.ViewSize() != 21)
+            if (settings.viewsize != 21)
                 playScreen.DrawPlayScreen();
-            music.ContinueMusic(hooks.LastMusicOffset());
+            music.ContinueMusic(session.lastgamemusicoffset);
             return 1;
         }
 
@@ -398,10 +392,10 @@ internal sealed class GameSaves(
         HasOtherMods: HasOtherMods,
         Load: (path, x, y) =>
         {
-            hooks.SetLoadedGame(true);
+            session.loadedgame = true;
             if (LoadTheGame(path, x, y))
                 return true;
-            hooks.SetLoadedGame(false);
+            session.loadedgame = false;
             return false;
         },
         Save: SaveTheGame,

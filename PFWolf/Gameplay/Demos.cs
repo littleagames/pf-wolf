@@ -8,12 +8,8 @@ namespace PFWolf.Gameplay;
 /// <param name="DrawPlayScreen">Draws the status bar and view border</param>
 /// <param name="SetupGameLevel">Loads the level and spawns everything in it</param>
 /// <param name="RunLevelHooks">The scripts' game.onlevel hooks</param>
-/// <param name="ClearStartGame">The menu's "start a game" is seen to</param>
-/// <param name="SetDemoPlayback">A demo is (or stops) playing</param>
-/// <param name="SetDemoRecord">A demo is (or stops) recording</param>
 /// <param name="DemoTesting">demotest: report each demo when it's played through</param>
 /// <param name="DemoTestReport">How a demo ended: score, kills, the player and the actors' hash</param>
-/// <param name="FizzleIn">The level fades in on its first frame</param>
 /// <param name="IntroSong">The title's music, back on after a demo</param>
 internal sealed record DemosHooks(
     Action<short, EpisodeInfo, MapInfo, string> NewGame,
@@ -21,12 +17,8 @@ internal sealed record DemosHooks(
     Action DrawPlayScreen,
     Action SetupGameLevel,
     Action<string> RunLevelHooks,
-    Action ClearStartGame,
-    Action<bool> SetDemoPlayback,
-    Action<bool> SetDemoRecord,
     Func<bool> DemoTesting,
     Func<int, string> DemoTestReport,
-    Action FizzleIn,
     Func<string> IntroSong);
 
 /// <summary>
@@ -49,6 +41,7 @@ internal sealed class Demos(
     DemoBuffer demo,
     LevelMusic music,
     LevelLoop loop,
+    GameSession session,
     DemosHooks hooks)
 {
     internal void PlayDemo(int demonumber)
@@ -90,8 +83,8 @@ internal sealed class Demos(
 
         hooks.DrawPlayScreen();
 
-        hooks.ClearStartGame();
-        hooks.SetDemoPlayback(true);
+        session.startgame = false;
+        session.demoplayback = true;
 
         hooks.SetupGameLevel();
         hooks.RunLevelHooks("new");       // as when it was recorded (RecordDemo)
@@ -101,7 +94,7 @@ internal sealed class Demos(
         if (hooks.DemoTesting())
             Console.WriteLine(hooks.DemoTestReport(demonumber));
 
-        hooks.SetDemoPlayback(false);
+        session.demoplayback = false;
 
         music.StopMusic();
         audio.StopAll();
@@ -162,7 +155,7 @@ internal sealed class Demos(
         demo.demoData[0] = (byte)mapIndex;
         demo.demoptr = 4;                            // leave space for length
         demo.lastdemoptr = MAXDEMOSIZE;
-        hooks.SetDemoRecord(true);
+        session.demorecord = true;
     }
 
     /// <summary>
@@ -173,7 +166,7 @@ internal sealed class Demos(
     {
         int length;
 
-        hooks.SetDemoRecord(false);
+        session.demorecord = false;
 
         // The length counts the 4 header bytes; the byte after it is padding
         length = demo.demoptr;
@@ -293,18 +286,18 @@ internal sealed class Demos(
         hooks.DrawPlayScreen();
         video.FadeIn();
 
-        hooks.ClearStartGame();
-        hooks.SetDemoRecord(true);
+        session.startgame = false;
+        session.demorecord = true;
 
         hooks.SetupGameLevel();
         hooks.RunLevelHooks("new");       // as when it's played back (PlayDemo)
         music.StartMusic();
 
-        hooks.FizzleIn();
+        session.fizzlein = true;
 
         loop.PlayLoop();
 
-        hooks.SetDemoPlayback(false);
+        session.demoplayback = false;
 
         music.StopMusic();
         video.FadeOut();

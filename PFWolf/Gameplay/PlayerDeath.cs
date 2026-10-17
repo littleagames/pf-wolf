@@ -10,20 +10,12 @@ namespace PFWolf.Gameplay;
 /// <param name="DrawHudMessages">The obituary, kept up on the red</param>
 /// <param name="RestoreLevelStart">Puts the player back as they came into the level (death-restores-level-start); false if it can't</param>
 /// <param name="LevelStartItems">The items the player had coming into the level (for death-keeps), or null</param>
-/// <param name="SetPlayState">Ends the level (the death cam isn't shown)</param>
-/// <param name="ViewSize">The view's size setting (21: the full screen)</param>
-/// <param name="BorderColor">The view border's color</param>
-/// <param name="FizzleIn">The view fades in on the death cam's first frame</param>
 internal sealed record PlayerDeathHooks(
     Func<GameInfoSettings> Settings,
     Action ShowObituary,
     Action DrawHudMessages,
     Func<bool> RestoreLevelStart,
-    Func<IReadOnlyDictionary<string, int>?> LevelStartItems,
-    Action<playstatetypes> SetPlayState,
-    Func<int> ViewSize,
-    Func<string> BorderColor,
-    Action FizzleIn);
+    Func<IReadOnlyDictionary<string, int>?> LevelStartItems);
 
 /// <summary>
 /// A player's death: turning to face the killer as the view drops, the fade to red, and back
@@ -52,6 +44,7 @@ internal sealed class PlayerDeath(
     IntermissionScreen intermission,
     GameSession session,
     PlayArea playArea,
+    Configuration.GameSettings settings,
     PlayerDeathHooks hooks)
 {
     internal void Died()
@@ -176,7 +169,7 @@ internal sealed class PlayerDeath(
             pushWalls.ClearPushWalls();
             session.playerstate.WeaponSprite = null;            // the weapon in hand starts on its Ready state
 
-            if (hooks.ViewSize() != 21)
+            if (settings.viewsize != 21)
             {
                 statusBar.DrawKeys();
                 weapons.DrawWeapon();
@@ -218,20 +211,20 @@ internal sealed class PlayerDeath(
 
         if (session.gamestate.victoryflag)
         {
-            hooks.SetPlayState(playstatetypes.ex_victorious);
+            session.playstate = playstatetypes.ex_victorious;
             return;
         }
 
         // With others there's no replay: it would move one player's view, on one machine
         if (session.gamemode != GameMode.Single)
         {
-            hooks.SetPlayState(playstatetypes.ex_victorious);
+            session.playstate = playstatetypes.ex_victorious;
             return;
         }
 
         session.gamestate.victoryflag = true;
-        uint fadeheight = (uint)(hooks.ViewSize() != 21 ? video.ScreenYAboveBottom(playArea.StatusLines) : video.screenHeight);
-        video.BarScaledCoord(0, 0, video.screenWidth, (int)fadeheight, hooks.BorderColor());
+        uint fadeheight = (uint)(settings.viewsize != 21 ? video.ScreenYAboveBottom(playArea.StatusLines) : video.screenHeight);
+        video.BarScaledCoord(0, 0, video.screenWidth, (int)fadeheight, session.bordercol);
         video.Transition(hooks.Settings().deathFadeStyle, 0, 0, video.screenWidth, (int)fadeheight, (uint)hooks.Settings().deathFadeTics);
 
         foreach (var label in deathcam.Labels)
@@ -271,7 +264,7 @@ internal sealed class PlayerDeath(
 
         playScreen.DrawPlayBorder();
 
-        hooks.FizzleIn();
+        session.fizzlein = true;
 
         if (ob.ResolvedStates.ContainsKey("DeathCam"))
             ob.SetState("DeathCam");

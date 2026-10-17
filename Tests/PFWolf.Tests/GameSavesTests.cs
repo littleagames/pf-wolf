@@ -12,8 +12,8 @@ public class GameSavesTests
         _session = new GameSession();
         _screens.Clear();
         _saves = new GameSaves(null!, new AssetManager(), null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!,
-            null!, null!, null!, null!, new Configuration.GameSettings(), _session,
-            new GameSavesHooks(_ => { }, () => 15, () => 0, saving => { _screens.Add(saving); return 1; }, () => { }));
+            null!, null!, null!, null!, new Configuration.GameSettings { viewsize = 15 }, _session,
+            new GameSavesHooks(saving => { _screens.Add(saving); return 1; }, () => { }));
     }
 
     [Test]

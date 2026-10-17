@@ -4,21 +4,13 @@ using static SDL2.SDL;
 namespace PFWolf.Gameplay;
 
 /// <summary>What polling the controls needs from the game</summary>
-/// <param name="SetPlayState">Ends the level (a demo played or recorded to its end)</param>
-/// <param name="NetGame">Whether this is a game with others (a fixed step of tics a frame)</param>
 /// <param name="NetChatting">Typing something to say to the others: the controls are the line's</param>
 /// <param name="NetLeavePrompt">Asking whether to leave the game with others</param>
-/// <param name="DemoPlayback">Whether a demo is playing (its controls come from the demo)</param>
-/// <param name="DemoRecord">Whether a demo is recording (the controls go into it)</param>
 /// <param name="DemoTesting">demotest: playing the demos through as fast as they go</param>
 /// <param name="RouteMovementToAutomap">The automap's pan mode takes the movement (GameHost.Automap.cs)</param>
 internal sealed record InputPollingHooks(
-    Action<playstatetypes> SetPlayState,
-    Func<bool> NetGame,
     Func<bool> NetChatting,
     Func<bool> NetLeavePrompt,
-    Func<bool> DemoPlayback,
-    Func<bool> DemoRecord,
     Func<bool> DemoTesting,
     Action RouteMovementToAutomap);
 
@@ -68,9 +60,9 @@ internal sealed class InputPolling(
         //
         // get timing info for last frame
         //
-        if (hooks.DemoPlayback() || hooks.DemoRecord())   // demo recording and playback needs to be constant
+        if (session.demoplayback || session.demorecord)   // demo recording and playback needs to be constant
             WaitFixedTics(GameConstants.DEMOTICS);
-        else if (hooks.NetGame())                 // and so does playing with others (GameHost.NetPlay.cs)
+        else if (session.netgame)                 // and so does playing with others (GameHost.NetPlay.cs)
             WaitFixedTics(Networking.NetPlay.NETTICS);
         else
             frame.CalcTics();
@@ -84,7 +76,7 @@ internal sealed class InputPolling(
         wheelnotches = inputManager.TakeWheelDelta();    // taken every frame, so turns don't pile up
         inputManager.ProcessButtons();
 
-        if (hooks.DemoPlayback())
+        if (session.demoplayback)
         {
             //
             // read commands from demo buffer: a byte of buttons (the first eight buttontypes)
@@ -95,7 +87,7 @@ internal sealed class InputPolling(
             localcmd.ControlY = (sbyte)demo.demoData[demo.demoptr++] * (int)session.tics;
 
             if (demo.demoptr + 3 > demo.lastdemoptr)
-                hooks.SetPlayState(playstatetypes.ex_completed);   // demo is done: no whole frame left
+                session.playstate = playstatetypes.ex_completed;   // demo is done: no whole frame left
 
             return;
         }
@@ -140,7 +132,7 @@ internal sealed class InputPolling(
 
         hooks.RouteMovementToAutomap();       // pan mode: movement moves the map, not the player
 
-        if (hooks.DemoRecord())
+        if (session.demorecord)
         {
             //
             // save info out to demo buffer
@@ -155,7 +147,7 @@ internal sealed class InputPolling(
             demo.demoData[demo.demoptr++] = (byte)controly;// these might need 4 bytes
 
             if (demo.demoptr >= demo.lastdemoptr - 8)
-                hooks.SetPlayState(playstatetypes.ex_completed);
+                session.playstate = playstatetypes.ex_completed;
             else
             {
                 controlx *= (int)session.tics;

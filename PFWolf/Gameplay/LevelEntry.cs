@@ -4,16 +4,12 @@ using PFWolf.Extensions;
 namespace PFWolf.Gameplay;
 
 /// <summary>What entering and leaving levels needs from the game</summary>
-/// <param name="LoadedGame">Whether a saved game is being loaded</param>
-/// <param name="SetLoadedGame">Builds a kept level as a loaded one would be (nothing counted again)</param>
 /// <param name="ClearVictoryRun">A new level has no victory run going</param>
 /// <param name="CaptureOverhead">The level's overhead map, for the elevator's floor list (Ui/ElevatorScreens.cs)</param>
 /// <param name="WriteLevelBody">The level as it is: its tiles, doors, actors (SaveGames/LevelBodies.cs)</param>
 /// <param name="ReadLevelBody">Reads one back</param>
 /// <param name="ApplyLevelBody">Lays one over the level just built from its map</param>
 internal sealed record LevelEntryHooks(
-    Func<bool> LoadedGame,
-    Action<bool> SetLoadedGame,
     Action ClearVictoryRun,
     Func<byte[]> CaptureOverhead,
     Action<BinaryWriter> WriteLevelBody,
@@ -116,10 +112,10 @@ internal sealed class LevelEntry(
         }
 
         // Built from the map without counting anything again, then laid over as it was
-        var wasLoaded = hooks.LoadedGame();
-        hooks.SetLoadedGame(true);
+        var wasLoaded = session.loadedgame;
+        session.loadedgame = true;
         levelSetup.SetupGameLevel();
-        hooks.SetLoadedGame(wasLoaded);
+        session.loadedgame = wasLoaded;
         hooks.ApplyLevelBody(body);
 
         session.gamestate.TimeCount = timeCount;

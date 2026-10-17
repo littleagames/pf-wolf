@@ -4,18 +4,10 @@ using PFWolf.Rendering;
 namespace PFWolf.Gameplay;
 
 /// <summary>What setting up a level needs from the game</summary>
-/// <param name="LoadedGame">Whether a saved game is being loaded (its counts and pushwalls are kept)</param>
-/// <param name="DemoActive">Whether a demo is playing or recording (the random numbers start the same)</param>
-/// <param name="NetGame">Whether this is a game with others (the random numbers start where the host said)</param>
-/// <param name="NetSeed">Where the host said they start</param>
 /// <param name="CurrentSkill">The skill being played (its enemy-health)</param>
 /// <param name="ApplyLoadout">Gives the players the level's starting loadout (Gameplay/MapLoadouts.cs)</param>
 /// <param name="CountObjectives">Counts the level's objectives and announces them (Gameplay/Objectives.cs)</param>
 internal sealed record LevelSetupHooks(
-    Func<bool> LoadedGame,
-    Func<bool> DemoActive,
-    Func<bool> NetGame,
-    Func<int> NetSeed,
     Func<SkillInfo> CurrentSkill,
     Action<MapLoadout?> ApplyLoadout,
     Action CountObjectives);
@@ -53,7 +45,7 @@ internal sealed class LevelSetup(
         session.camera.FollowPlayer();              // through the player's eyes
         weaponBob.Init();
 
-        if (!hooks.LoadedGame())
+        if (!session.loadedgame)
         {
             session.gamestate.TimeCount =
             session.gamestate.secrettotal =
@@ -72,10 +64,10 @@ internal sealed class LevelSetup(
             }
         }
 
-        if (hooks.DemoActive())
+        if ((session.demoplayback || session.demorecord))
             session.random.InitRndT(false);
-        else if (hooks.NetGame())
-            session.random.rndindex = hooks.NetSeed();         // where the host said, the same on every machine
+        else if (session.netgame)
+            session.random.rndindex = session.netseed;         // where the host said, the same on every machine
         else
             session.random.InitRndT(true);
 
@@ -165,7 +157,7 @@ internal sealed class LevelSetup(
         levelAI.OnLevelStart();      // wall outlets, Goldfire's spawn sites, once-a-level drops (Managers.LevelAI)
 
         // the level's starting loadout, as it starts afresh (game-info map loadout)
-        if (!hooks.LoadedGame())
+        if (!session.loadedgame)
         {
             hooks.ApplyLoadout(mapInfo?.Loadout);
             hooks.CountObjectives();        // its objectives, counted afresh (a loaded game has its own)

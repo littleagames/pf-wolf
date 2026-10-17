@@ -24,7 +24,7 @@ public class PlayKeysTests
         var frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, session, null!);
         var polling = new InputPolling(_input, _console, new AutomapManager(), new ControlBindings(), new ControlSettings(), frame,
             new DemoBuffer(), session,
-            new InputPollingHooks(_ => { }, () => false, () => false, () => false, () => false, () => false, () => true, () => { }));
+            new InputPollingHooks(() => false, () => false, () => true, () => { }));
 
         (_chatting, _automapTakes) = (false, false);
         _calls.Clear();

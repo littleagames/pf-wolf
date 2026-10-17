@@ -4,36 +4,20 @@ using PFWolf.Scripting;
 namespace PFWolf.Gameplay;
 
 /// <summary>What playing a level needs from the game</summary>
-/// <param name="PlayState">How the level stands: still playing (0), or how it ended</param>
-/// <param name="SetPlayState">Ends the level (or starts it playing)</param>
-/// <param name="StartGame">Whether the menu started a new game (that ends the level too)</param>
-/// <param name="NetGame">Whether this is a game with others</param>
-/// <param name="DemoPlayback">Whether a demo is playing (a key ends it)</param>
 /// <param name="DemoTesting">demotest: each demo plays to its end, keys or not</param>
-/// <param name="ClearNoise">Forgets last frame's noise (madenoise): shots and screams make it anew</param>
 /// <param name="TickPlayerBodies">What others see of the players (GameHost.Camera.cs)</param>
 /// <param name="UpdateSoundListener">Where the sounds are heard from</param>
 /// <param name="UpdateAutomap">The automap's movement and zoom (GameHost.Automap.cs)</param>
 /// <param name="AutosavePending">Whether the level asked for an autosave</param>
 /// <param name="AutoSaveGame">Makes it, now there's a picture of the level for it</param>
-/// <param name="SingleStep">Debug: VBLs to wait each frame, the clock held back meanwhile</param>
-/// <param name="ExtraVbls">Debug: extra VBLs to wait each frame</param>
 /// <param name="TickAmbience">The player's zone's ambient sound (Gameplay/ZoneAmbience.cs)</param>
 internal sealed record LevelLoopHooks(
-    Func<playstatetypes> PlayState,
-    Action<playstatetypes> SetPlayState,
-    Func<bool> StartGame,
-    Func<bool> NetGame,
-    Func<bool> DemoPlayback,
     Func<bool> DemoTesting,
-    Action ClearNoise,
     Action<uint> TickPlayerBodies,
     Action UpdateSoundListener,
     Action UpdateAutomap,
     Func<bool> AutosavePending,
     Action AutoSaveGame,
-    Func<byte> SingleStep,
-    Func<int> ExtraVbls,
     Action? TickAmbience = null);
 
 /// <summary>
@@ -67,7 +51,7 @@ internal sealed class LevelLoop(
 
     internal void PlayLoop()
     {
-        hooks.SetPlayState(playstatetypes.ex_stillplaying);
+        session.playstate = playstatetypes.ex_stillplaying;
         frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
         frame.frameon = 0;
         funnyticount = 0;
@@ -82,14 +66,14 @@ internal sealed class LevelLoop(
             }
         }
         video.ClearPaletteShifts();
-        if (hooks.NetGame())
+        if (session.netgame)
             netPlay.NetLevelStart();            // counting frames from 0 (Networking/NetPlay.cs)
 
         input.CenterMouse();
 
         hudMessages.Clear();     // nothing left over from the last level, life or saved game
 
-        if (hooks.DemoPlayback())
+        if (session.demoplayback)
             input.StartAck();
 
         hooks.UpdateSoundListener();
@@ -102,18 +86,18 @@ internal sealed class LevelLoop(
             // CalcTics still advances lasttimecount each frame, so no time builds up to be
             // spent all at once when the console closes.
             // Not with others, though: the game goes on for them
-            bool worldPaused = console.IsPausingGame && !hooks.NetGame();
+            bool worldPaused = console.IsPausingGame && !session.netgame;
 
             if (!worldPaused)
             {
                 // this frame's controls, for each player to read as they think: with others,
                 // everyone's as the host sent them (Networking/NetPlay.cs); else this machine's for
                 // the local player, and whatever came for everyone else
-                if (hooks.NetGame())
+                if (session.netgame)
                 {
                     if (!netPlay.NetFrame())
                     {
-                        hooks.SetPlayState(playstatetypes.ex_abort);    // left the game, or the host is gone
+                        session.playstate = playstatetypes.ex_abort;    // left the game, or the host is gone
                         continue;
                     }
                 }
@@ -126,7 +110,7 @@ internal sealed class LevelLoop(
                 //
                 // actor thinking
                 //
-                hooks.ClearNoise();
+                session.madenoise = false;
                 doors.MoveDoors();
                 pushWalls.MovePWalls();
                 timedSwitches.Tick(session.tics);       // switches turning back by themselves (Gameplay/TimedSwitches.cs)
@@ -151,7 +135,7 @@ internal sealed class LevelLoop(
                     playerView.WakeSeenEnemies();      // what the renderer did alone (Rendering/PlayerView.cs)
                 if (session.gamemode is not (GameMode.Single or GameMode.Coop))
                     deathmatch.TickDeathmatch();       // items back, the objective and the time limit (Gameplay/Deathmatch.cs)
-                if (hooks.NetGame())
+                if (session.netgame)
                     netPlay.NetFrameDone();
                 console.TickWaiting((int)session.tics);      // commands put off by `wait`
 
@@ -183,31 +167,31 @@ internal sealed class LevelLoop(
             //
             // debug aids
             //
-            if (hooks.SingleStep() != 0)
+            if (session.singlestep != 0)
             {
-                GameEngineManager.WaitVBL(hooks.SingleStep());
+                GameEngineManager.WaitVBL(session.singlestep);
                 frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
             }
-            if (hooks.ExtraVbls() != 0)
-                GameEngineManager.WaitVBL((uint)hooks.ExtraVbls());
+            if (session.extravbls != 0)
+                GameEngineManager.WaitVBL((uint)session.extravbls);
 
-            if (hooks.DemoPlayback() && !hooks.DemoTesting())       // demotest plays each to its end
+            if (session.demoplayback && !hooks.DemoTesting())       // demotest plays each to its end
             {
                 if (input.CheckAck())
                 {
                     input.ClearKeysDown();
-                    hooks.SetPlayState(playstatetypes.ex_abort);
+                    session.playstate = playstatetypes.ex_abort;
                 }
             }
         }
-        while (hooks.PlayState() == 0 && !hooks.StartGame());
+        while (session.playstate == 0 && !session.startgame);
 
         // Intermission, death and menu screens don't draw the console, so don't leave it
         // capturing keys behind them (e.g. after a "map" command ends the level).
         console.Close();
         automap.Close();
 
-        if (hooks.PlayState() != playstatetypes.ex_died)
+        if (session.playstate != playstatetypes.ex_died)
             video.FinishPaletteShifts();
     }
 

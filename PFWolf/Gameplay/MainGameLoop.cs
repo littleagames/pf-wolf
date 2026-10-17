@@ -14,20 +14,7 @@ namespace PFWolf.Gameplay;
 internal record PendingMapChange(string Map, bool KeepPosition, int X, int Y, short Angle, int WaitTics = 150, int ElevatorWall = 0);
 
 /// <summary>What the game's main loop needs from the game</summary>
-/// <param name="PlayState">How the level ended</param>
-/// <param name="SetPlayState">Turns a level with no next level into a victory</param>
-/// <param name="StartGame">Whether the menu started a new game</param>
-/// <param name="SetStartGame">Starts (or clears) a new game</param>
-/// <param name="LoadedGame">Whether a saved game was loaded</param>
-/// <param name="SetLoadedGame">Clears it once its level is going</param>
-/// <param name="SetInGame">A level is (or stops) being played</param>
-/// <param name="FizzleIn">The view fades in on the next frame (after dying)</param>
 /// <param name="SetAutosavePending">The level saves itself once it's drawn</param>
-/// <param name="ViewSize">The view's size setting (21: the full screen)</param>
-/// <param name="DemoActive">Whether a demo is playing or recording (no autosave)</param>
-/// <param name="DemoRecord">Whether a demo is recording (it's saved when the level ends)</param>
-/// <param name="NetGame">Whether this is a game with others (no autosave)</param>
-/// <param name="LastMusicOffset">Where the menu left the level's song</param>
 /// <param name="EnterLevel">A kept hub level as it was left, or the map afresh: true if kept (GameHost.Hubs.cs)</param>
 /// <param name="LeaveLevel">Keeps a hub level as it's left (GameHost.Hubs.cs)</param>
 /// <param name="MarkLevelStart">What dying puts the player back to (GameHost.Hubs.cs)</param>
@@ -37,20 +24,7 @@ internal record PendingMapChange(string Map, bool KeepPosition, int X, int Y, sh
 /// <param name="ShowText">Shows a text as an article (a map's briefing or debriefing: Ui/ArticleReader.cs)</param>
 /// <param name="LevelWon">A level's finished (its exit, a secret exit or the game won), before the tally: its record and the scripts' game.onlevelend hooks</param>
 internal sealed record MainGameLoopHooks(
-    Func<playstatetypes> PlayState,
-    Action<playstatetypes> SetPlayState,
-    Func<bool> StartGame,
-    Action<bool> SetStartGame,
-    Func<bool> LoadedGame,
-    Action<bool> SetLoadedGame,
-    Action<bool> SetInGame,
-    Action FizzleIn,
     Action<bool> SetAutosavePending,
-    Func<int> ViewSize,
-    Func<bool> DemoActive,
-    Func<bool> DemoRecord,
-    Func<bool> NetGame,
-    Func<int> LastMusicOffset,
     Func<bool> EnterLevel,
     Action LeaveLevel,
     Action MarkLevelStart,
@@ -90,6 +64,7 @@ internal sealed class MainGameLoop(
     TextPresenter presenter,
     MoviePlayer movies,
     GameSession session,
+    Configuration.GameSettings settings,
     MainGameLoopHooks hooks)
 {
     internal PendingMapChange? pendingMapChange;
@@ -135,7 +110,7 @@ internal sealed class MainGameLoop(
     // A won level's debriefing (game-info debriefing), outside a demo or a game with others
     void ShowDebriefing(MapInfo map)
     {
-        if (map.Debriefing is not { Length: > 0 } debriefing || hooks.DemoActive() || hooks.NetGame())
+        if (map.Debriefing is not { Length: > 0 } debriefing || (session.demoplayback || session.demorecord) || session.netgame)
             return;
         video.FadeOut();
         hooks.ShowText(debriefing);
@@ -153,13 +128,13 @@ internal sealed class MainGameLoop(
         died = false;
         do
         {
-            if (!hooks.LoadedGame())
+            if (!session.loadedgame)
                 foreach (var p in session.players) p.score = p.oldscore;
-            if (!died || hooks.ViewSize() != 21) statusBar.DrawScore();
+            if (!died || settings.viewsize != 21) statusBar.DrawScore();
 
-            hooks.SetStartGame(false);
+            session.startgame = false;
             string levelStart = "loaded";
-            if (!hooks.LoadedGame())
+            if (!session.loadedgame)
             {
                 bool kept = hooks.EnterLevel();   // a kept hub level as it was left, or the map afresh (GameHost.Hubs.cs)
                 ApplyPendingMapChange();
@@ -171,10 +146,10 @@ internal sealed class MainGameLoop(
             scripts.RunLevelHooks(levelStart);      // the scripts' game.onlevel hooks (Scripting/GameScripts.cs)
 
             // A level being entered, not one loaded or restarted after dying, saves itself
-            hooks.SetAutosavePending(!hooks.LoadedGame() && !died && !hooks.DemoActive() && !hooks.NetGame());
+            hooks.SetAutosavePending(!session.loadedgame && !died && !(session.demoplayback || session.demorecord) && !session.netgame);
 
             // Its briefing first (game-info briefing; Midnight Assault's missions)
-            if (ShowsBriefing(levelStart, warped, hooks.DemoActive(), hooks.NetGame())
+            if (ShowsBriefing(levelStart, warped, (session.demoplayback || session.demorecord), session.netgame)
                 && engine.GetGameInfo().Maps.TryGetValue(session.gamestate.mapon, out var enteredMap)
                 && enteredMap.Briefing is { Length: > 0 } briefing)
             {
@@ -183,11 +158,11 @@ internal sealed class MainGameLoop(
             }
             statusBar.DrawLevel();
 
-            hooks.SetInGame(true);
-            if (hooks.LoadedGame())
+            session.ingame = true;
+            if (session.loadedgame)
             {
-                music.ContinueMusic(hooks.LastMusicOffset());
-                hooks.SetLoadedGame(false);
+                music.ContinueMusic(session.lastgamemusicoffset);
+                session.loadedgame = false;
             }
             else music.StartMusic();
 
@@ -203,7 +178,7 @@ internal sealed class MainGameLoop(
             else
             {
                 died = false;
-                hooks.FizzleIn();
+                session.fizzlein = true;
             }
 
             statusBar.DrawLevel ();
@@ -214,7 +189,7 @@ internal sealed class MainGameLoop(
             if (deathmatch.matchover)
             {
                 music.StopMusic();
-                hooks.SetInGame(false);
+                session.ingame = false;
                 scoreboard.ShowFinalScoreboard();
                 deathmatch.matchover = false;
                 return;
@@ -224,16 +199,16 @@ internal sealed class MainGameLoop(
             if (netPlay.NetGameOver)
             {
                 music.StopMusic();
-                hooks.SetInGame(false);
+                session.ingame = false;
                 audio.StopAll();
                 video.FadeOut();
                 return;
             }
 
-            if (hooks.PlayState() is playstatetypes.ex_completed or playstatetypes.ex_secretlevel or playstatetypes.ex_warped)
+            if (session.playstate is playstatetypes.ex_completed or playstatetypes.ex_secretlevel or playstatetypes.ex_warped)
                 hooks.LeaveLevel();               // a hub level is kept as it's left
 
-            if (hooks.PlayState() == playstatetypes.ex_warped && pendingMapChange != null)
+            if (session.playstate == playstatetypes.ex_warped && pendingMapChange != null)
             {
                 // Spear waits 150 tics for its pickup sound before the new map loads; the score
                 // carries over, as the level ends without an intermission to bank it
@@ -246,9 +221,9 @@ internal sealed class MainGameLoop(
                 pendingMapChange = null;
 
             music.StopMusic();
-            hooks.SetInGame(false);
+            session.ingame = false;
 
-            if (hooks.DemoRecord() && hooks.PlayState() != playstatetypes.ex_warped)
+            if (session.demorecord && session.playstate != playstatetypes.ex_warped)
                 demos.FinishDemoRecord();
 
             if (demos.pendingDemo != null || demos.pendingRecord != null)
@@ -261,7 +236,7 @@ internal sealed class MainGameLoop(
                 return;
             }
 
-            if (hooks.StartGame() || hooks.LoadedGame())
+            if (session.startgame || session.loadedgame)
             {
                 audio.StopAll();
                 video.FadeOut();
@@ -272,24 +247,24 @@ internal sealed class MainGameLoop(
             }
 
             // Its record and the scripts' level-end hooks, before the tally tells what they unlocked
-            if (hooks.PlayState() is playstatetypes.ex_completed or playstatetypes.ex_secretlevel or playstatetypes.ex_victorious)
-                hooks.LevelWon?.Invoke(hooks.PlayState());
+            if (session.playstate is playstatetypes.ex_completed or playstatetypes.ex_secretlevel or playstatetypes.ex_victorious)
+                hooks.LevelWon?.Invoke(session.playstate);
 
-            switch (hooks.PlayState())
+            switch (session.playstate)
             {
                 case playstatetypes.ex_completed:
                 case playstatetypes.ex_secretlevel:
                     // A level with no next level (a boss floor left by exitlevel, or by a map's own
                     // exit) ends its cluster, as the victory tile does
                     var leftInfo = engine.GetGameInfo().Maps[session.gamestate.mapon];
-                    var nextMap = hooks.PlayState() == playstatetypes.ex_secretlevel ? leftInfo.SecretNext ?? leftInfo.Next : leftInfo.Next;
+                    var nextMap = session.playstate == playstatetypes.ex_secretlevel ? leftInfo.SecretNext ?? leftInfo.Next : leftInfo.Next;
                     if (string.IsNullOrEmpty(nextMap) && string.IsNullOrEmpty(leftInfo.EndMessage))
                     {
-                        hooks.SetPlayState(playstatetypes.ex_victorious);
+                        session.playstate = playstatetypes.ex_victorious;
                         goto case playstatetypes.ex_victorious;
                     }
 
-                    if (hooks.ViewSize() == 21) playScreen.DrawPlayScreen();
+                    if (settings.viewsize == 21) playScreen.DrawPlayScreen();
                     foreach (var p in session.players)
                     {
                         using var _ = session.ActAs(p);
@@ -303,7 +278,7 @@ internal sealed class MainGameLoop(
                     if (!hubs.IsHubMap(hubs.levelMap))
                         intermission.LevelCompleted();          // do the intermission; a hub's levels are just left
                     ShowDebriefing(leftInfo);
-                    if (hooks.ViewSize() == 21) playScreen.DrawPlayScreen();
+                    if (settings.viewsize == 21) playScreen.DrawPlayScreen();
                     foreach (var p in session.players) p.oldscore = p.score;
 
                     // The Spear demo's last floor: its message ends the game (shown at the end of
@@ -369,7 +344,7 @@ internal sealed class MainGameLoop(
                         return;
                     }
 
-                    if (hooks.ViewSize() == 21) playScreen.DrawPlayScreen();
+                    if (settings.viewsize == 21) playScreen.DrawPlayScreen();
                     // The won level's debriefing first (a Midnight Assault mission's), then the tally
                     if (engine.GetGameInfo().Maps.TryGetValue(session.gamestate.mapon, out var wonMap))
                         ShowDebriefing(wonMap);
@@ -390,7 +365,7 @@ internal sealed class MainGameLoop(
                     return;
 
                 default:
-                    if (hooks.ViewSize() == 21) playScreen.DrawPlayScreen();
+                    if (settings.viewsize == 21) playScreen.DrawPlayScreen();
                     audio.StopAll();
                     break;
             }

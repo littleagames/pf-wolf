@@ -24,7 +24,7 @@ public class AutomapInputTests
         var render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade);
         var frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, _session, null!);
         _polling = new InputPolling(_input, _console, _automap, _controls, new ControlSettings(), frame, new DemoBuffer(), _session,
-            new InputPollingHooks(_ => { }, () => false, () => false, () => false, () => false, () => false, () => true, () => { }));
+            new InputPollingHooks(() => false, () => false, () => true, () => { }));
         _keys = new AutomapInput(_input, _console, _automap, null!, _controls, new ControlSettings(), _polling, _session);
     }
 
