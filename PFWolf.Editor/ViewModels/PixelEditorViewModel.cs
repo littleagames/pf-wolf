@@ -32,12 +32,14 @@ public sealed partial class PixelEditorViewModel : ObservableObject, IDisposable
     private int _strokeValue;
     private bool _stroking;
 
-    /// <param name="palette">The game palette as loaded: what the PNG's colors are matched to</param>
+    /// <param name="palettes">The palettes it can be drawn in, the game palette as loaded first: what the PNG's colors are matched to</param>
+    /// <param name="palette">The one it's drawn in to start with</param>
     /// <param name="save">Saves the document into its mod; false when it isn't saved</param>
-    public PixelEditorViewModel(PixelDocument document, PaletteColor[] palette, Func<PixelDocument, Task<bool>> save)
+    public PixelEditorViewModel(PixelDocument document, IReadOnlyList<ArtPaletteOption> palettes, ArtPaletteOption palette, Func<PixelDocument, Task<bool>> save)
     {
         Document = document;
-        Palette = palette;
+        Palettes = palettes;
+        _selectedPalette = palette;
         _save = save;
         document.Changed += (_, _) => Refresh();
 
@@ -54,7 +56,50 @@ public sealed partial class PixelEditorViewModel : ObservableObject, IDisposable
     }
 
     public PixelDocument Document { get; }
-    public PaletteColor[] Palette { get; }
+
+    /// <summary>The palettes it can be drawn in; the first is the game palette, which saving always writes it in</summary>
+    public IReadOnlyList<ArtPaletteOption> Palettes { get; }
+
+    /// <summary>
+    /// The palette it's drawn in. Only how it looks changes: its pixels stay the same color
+    /// numbers, saved in the game palette's colors (which the game matches them back by).
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Palette), nameof(PrimaryBrush), nameof(SecondaryBrush), nameof(PrimaryText), nameof(SecondaryText), nameof(PaletteNote))]
+    private ArtPaletteOption _selectedPalette;
+
+    public PaletteColor[] Palette => SelectedPalette.Colors ?? Palettes[0].Colors!;
+
+    private PaletteColor[] GamePalette => Palettes[0].Colors!;
+
+    /// <summary>What drawing in another palette means for saving</summary>
+    public string PaletteNote => SelectedPalette.IsGamePalette ? ""
+        : "Saved with the same color numbers, in the game palette's colors: the game shows it in this palette where it draws it in this one.";
+
+    partial void OnSelectedPaletteChanged(ArtPaletteOption value) => Refresh();
+
+    /// <summary>
+    /// Colors the picture uses whose game palette color an earlier one has too: the game matches
+    /// saved colors to the first, so in another palette these change. Each with the one it becomes.
+    /// </summary>
+    public List<(int Index, int LoadsAs)> MergedColors()
+    {
+        var merged = new List<(int, int)>();
+        if (UsedColors is not { } used)
+            return merged;
+        var game = GamePalette;
+        for (int i = 0; i < Math.Min(used.Length, game.Length); i++)
+        {
+            if (!used[i])
+                continue;
+            int first = Array.FindIndex(game, 0, i, color => Same(color, game[i]));
+            if (first >= 0 && SelectedPalette.Colors is { } shown && i < shown.Length && !Same(shown[first], shown[i]))
+                merged.Add((i, first));
+        }
+        return merged;
+
+        static bool Same(PaletteColor a, PaletteColor b) => a.Red == b.Red && a.Green == b.Green && a.Blue == b.Blue && a.Alpha == b.Alpha;
+    }
 
     /// <summary>Asks whether to save changes before closing; the editor answers with its dialog</summary>
     public Func<string, Task<UnsavedChoice>>? AskUnsaved { get; set; }
@@ -300,6 +345,11 @@ public sealed partial class PixelEditorViewModel : ObservableObject, IDisposable
         Document.MarkSaved();
         Refresh();
         Status = $"Saved {Document.Name}";
+        if (!SelectedPalette.IsGamePalette && MergedColors() is { Count: > 0 } merged)
+        {
+            Status += $"; but the game palette has colors {string.Join(", ", merged.Take(6).Select(color => color.Index))}{(merged.Count > 6 ? "…" : "")}"
+                      + $" as earlier ones too ({string.Join(", ", merged.Take(6).Select(color => color.LoadsAs))}), so they load as those and look different in {SelectedPalette.Name}";
+        }
         return true;
     }
 

@@ -85,6 +85,16 @@ public sealed record ArtBackgroundOption(string Label, IBrush Brush)
 }
 
 /// <summary>
+/// A palette to show pictures in: one of the game's palettes, or (Colors null) each picture's
+/// own, the one game-info draws it in (a title or end screen), else the game palette
+/// </summary>
+public sealed record ArtPaletteOption(string Label, string? Name, PaletteColor[]? Colors, bool IsGamePalette)
+{
+    public bool IsAutomatic => Colors == null;
+    public override string ToString() => Label;
+}
+
+/// <summary>
 /// The texture and sprite browser: every wall texture, flat, sprite and picture of the loaded
 /// game and mods, with where each came from and what uses it
 /// </summary>
@@ -153,6 +163,85 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     ];
 
     public IReadOnlyList<int> Zooms { get; } = [1, 2, 3, 4, 6, 8];
+
+    public static readonly ArtPaletteOption AutomaticPalette = new("Its own palette", null, null, false);
+
+    /// <summary>The palettes the preview can show a picture in: each picture's own, then every palette the game has</summary>
+    public ObservableCollection<ArtPaletteOption> Palettes { get; } = [AutomaticPalette];
+
+    /// <summary>The palette the preview shows pictures in (the thumbnails stay in the game palette)</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Preview), nameof(PaletteText))]
+    private ArtPaletteOption _selectedPalette = AutomaticPalette;
+
+    // Pictures drawn in a palette of their own (game-info's title and end screens), by picture name
+    private Dictionary<string, ArtPaletteOption> _ownPalettes = new(StringComparer.OrdinalIgnoreCase);
+
+    // The preview in a palette other than the game's, by palette and picture, each made once
+    private readonly Dictionary<(string Palette, ArtKind Kind, string Name), Bitmap?> _recolored = [];
+
+    /// <summary>The palette the picture shown is drawn in: the one picked, or its own (null: the game palette)</summary>
+    public ArtPaletteOption? ShownPalette => PaletteFor(CurrentAssetName);
+
+    private ArtPaletteOption? PaletteFor(string assetName)
+    {
+        if (!SelectedPalette.IsAutomatic)
+            return SelectedPalette.IsGamePalette ? null : SelectedPalette;
+        return _ownPalettes.GetValueOrDefault(assetName) ?? (SelectedItem != null ? _ownPalettes.GetValueOrDefault(SelectedItem.Entry.Name) : null);
+    }
+
+    /// <summary>Which palette the preview is in, under the palette picker</summary>
+    public string PaletteText
+    {
+        get
+        {
+            if (SelectedItem == null)
+                return "";
+            var shown = ShownPalette;
+            if (SelectedPalette.IsAutomatic)
+                return shown != null ? $"In {shown.Name}, the palette the game shows it in" : "In the game palette";
+            return shown != null ? $"Shown in {shown.Name}; saving keeps its colors' numbers (the game palette's)" : "In the game palette";
+        }
+    }
+
+    /// <summary>The palettes for the pixel editor: the game palette as loaded first, then the rest</summary>
+    private List<ArtPaletteOption> PixelPalettes()
+    {
+        var game = new ArtPaletteOption(Palettes.FirstOrDefault(option => option.IsGamePalette)?.Label ?? "Game palette",
+            Palettes.FirstOrDefault(option => option.IsGamePalette)?.Name, _content!.LoadedPalette, true);
+        return [game, .. Palettes.Where(option => !option.IsAutomatic && !option.IsGamePalette)];
+    }
+
+    private void ForgetRecolored()
+    {
+        foreach (var bitmap in _recolored.Values)
+            bitmap?.Dispose();
+        _recolored.Clear();
+    }
+
+    // The game's palettes, and which pictures game-info draws in one of their own
+    private void LoadPalettes(GameContent? content)
+    {
+        var picked = SelectedPalette;
+        ForgetRecolored();
+        Palettes.Clear();
+        Palettes.Add(AutomaticPalette);
+        _ownPalettes = new(StringComparer.OrdinalIgnoreCase);
+        if (content != null)
+        {
+            foreach (var palette in PaletteCatalog.Build(content))
+            {
+                var option = new ArtPaletteOption(palette.IsGamePalette ? $"{palette.Name} (game palette)" : palette.Name, palette.Name, palette.Colors, palette.IsGamePalette);
+                Palettes.Add(option);
+                if (palette.IsGamePalette)
+                    continue;
+                foreach (var use in palette.Uses)
+                    if (use.Picture != null)
+                        _ownPalettes.TryAdd(use.Picture, option);
+            }
+        }
+        SelectedPalette = Palettes.FirstOrDefault(option => option.Name != null && option.Name.Equals(picked.Name, StringComparison.OrdinalIgnoreCase)) ?? AutomaticPalette;
+    }
 
     public ObservableCollection<ArtItem> Items { get; } = [];
 
@@ -250,7 +339,26 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
     private Avalonia.Threading.DispatcherTimer? _playTimer;
 
     /// <summary>The picture shown: the entry's, the side of a rotating frame picked, or an animation's frame</summary>
-    public Bitmap? Preview => (IsPlaying ? _playingFrame : SelectedFrame)?.Thumbnail ?? SelectedRotation?.Thumbnail ?? SelectedItem?.Thumbnail;
+    public Bitmap? Preview
+    {
+        get
+        {
+            var frame = IsPlaying ? _playingFrame : SelectedFrame;
+            var bitmap = frame?.Thumbnail ?? SelectedRotation?.Thumbnail ?? SelectedItem?.Thumbnail;
+            if (bitmap == null || _content == null || SelectedItem?.Entry is not { } entry)
+                return bitmap;
+
+            // In another palette: drawn again from its indices (a frame by its own name, unless it's the animation's)
+            var name = frame != null && !frame.Name.Equals(entry.Name, StringComparison.OrdinalIgnoreCase) ? frame.Name
+                : SelectedRotation?.AssetName ?? entry.AssetName;
+            if (PaletteFor(name) is not { Colors: { } colors, Name: { } palette })
+                return bitmap;
+            var key = (palette, entry.Kind, name.ToLowerInvariant());
+            if (!_recolored.TryGetValue(key, out var recolored))
+                _recolored[key] = recolored = ArtCache.Indexed(_content, entry.Kind, name) is { } picture ? ArtCache.Render(picture, colors) : null;
+            return recolored ?? bitmap;
+        }
+    }
 
     /// <summary>The asset the preview shows ("GARDA3" for side 3 of GARDA, an animation's frame): what Copy name and Export PNG take</summary>
     public string CurrentAssetName => (IsPlaying ? null : SelectedFrame)?.Name ?? SelectedRotation?.AssetName ?? SelectedItem?.Entry.AssetName ?? "";
@@ -395,6 +503,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         _content = content;
         _art = art;
         var picked = SelectedItem?.Entry;
+        LoadPalettes(content);
 
         if (content == null || art == null)
         {
@@ -481,7 +590,10 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
             ShowOrigins(ArtCatalog.Origins(_content, value.AssetName, nameof(SpriteAsset)));
             RefreshFile();
         }
+        OnPropertyChanged(nameof(PaletteText));
     }
+
+    partial void OnSelectedPaletteChanged(ArtPaletteOption value) => OnPreviewChanged();
 
     // Where the picture shown comes from, and a sprite's offset
     private void RefreshFile()
@@ -584,6 +696,7 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
         int largest = Math.Max(value.Entry.Width, value.Entry.Height);
         Zoom = largest switch { > 256 => 1, > 128 => 2, _ => Zoom < 3 ? 4 : Zoom };
         RefreshFile();
+        OnPropertyChanged(nameof(PaletteText));
     }
 
     private bool CanUseInPalette => SelectedUse?.Target != null;
@@ -730,7 +843,11 @@ public sealed partial class ArtBrowserViewModel : ObservableObject
 
     private void OpenPixelEditor(PixelDocument document)
     {
-        var editor = new PixelEditorViewModel(document, _content!.LoadedPalette,
+        // In the palette the preview shows it in
+        var palettes = PixelPalettes();
+        var shown = PaletteFor(document.Name);
+        var start = palettes.FirstOrDefault(option => shown != null && option.Name == shown.Name) ?? palettes[0];
+        var editor = new PixelEditorViewModel(document, palettes, start,
             saving => SavePictureAsync(saving.Kind, saving.Name, saving.Picture, saving.Offset))
         {
             AskUnsaved = AskUnsaved,

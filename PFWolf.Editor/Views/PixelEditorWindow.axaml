@@ -49,6 +49,10 @@
         </ComboBox>
         <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" />
         <Border Width="12" />
+        <TextBlock Text="Palette" VerticalAlignment="Center" />
+        <ComboBox ItemsSource="{Binding Palettes}" SelectedItem="{Binding SelectedPalette}" MinWidth="150"
+                  ToolTip.Tip="The palette it's drawn in, for pictures the game shows in one of their own (title and end screens). Its color numbers stay the same; saving writes them in the game palette's colors." />
+        <Border Width="12" />
         <Button Content="Save" Command="{Binding SaveCommand}" Classes="accent"
                 ToolTip.Tip="Saves it as a PNG in its mod, or, for the game's own or a new picture, in a mod picked (Ctrl+S)" />
       </StackPanel>
@@ -76,6 +80,8 @@
                 ToolTip.Tip="Draws see-through with the left button (or use the eraser)" />
       </StackPanel>
       <TextBlock DockPanel.Dock="Bottom" Text="{Binding Help}" TextWrapping="Wrap" FontSize="12" Opacity="0.7" Margin="0,8,0,0" />
+      <TextBlock DockPanel.Dock="Bottom" Text="{Binding PaletteNote}" TextWrapping="Wrap" FontSize="12" Opacity="0.7" Margin="0,6,0,0"
+                 IsVisible="{Binding !SelectedPalette.IsGamePalette}" />
       <TextBlock DockPanel.Dock="Bottom" Text="Click a color for the left button, right-click for the right. Dots: colors in the picture."
                  TextWrapping="Wrap" FontSize="12" Opacity="0.7" Margin="0,6,0,0" />
       <r:PaletteGrid x:Name="Colors" Colors="{Binding Palette}" Anchor="{Binding GridCurrent}" Current="{Binding GridCurrent}"

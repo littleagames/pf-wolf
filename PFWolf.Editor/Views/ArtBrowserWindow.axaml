@@ -72,6 +72,8 @@
         </ComboBox>
         <ComboBox Grid.Column="2" ItemsSource="{Binding Backgrounds}" SelectedItem="{Binding SelectedBackground}" MinWidth="120"
                   ToolTip.Tip="The colour behind the picture, which shows through a sprite's see-through pixels" />
+        <ComboBox Grid.Column="3" ItemsSource="{Binding Palettes}" SelectedItem="{Binding SelectedPalette}" HorizontalAlignment="Stretch"
+                  ToolTip.Tip="{Binding PaletteText, StringFormat='{}The palette the picture is shown in: its own is the one the game shows it in (a title or end screen), else the game palette. {0}.'}" />
       </Grid>
 
       <!-- A rotating sprite's sides: pick one, or turn it with the arrows (comma and full stop) -->
@@ -138,6 +140,7 @@
       <SelectableTextBlock Grid.Row="3" Text="{Binding SelectedItem.Name, FallbackValue=''}" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
       <StackPanel Grid.Row="4" Spacing="4">
         <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Opacity="0.8" />
+        <TextBlock Text="{Binding PaletteText}" TextWrapping="Wrap" Opacity="0.6" FontSize="12" />
         <TextBlock Text="{Binding FileText}" TextWrapping="Wrap" Opacity="0.6" FontSize="12" />
         <!-- A sprite's offset: its PNG's grAb chunk -->
         <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsSprite}">
@@ -183,7 +186,7 @@
         <Button Content="Use in palette" Command="{Binding UseInPaletteCommand}" Classes="accent"
                 ToolTip.Tip="Picks the wall, door, flat or thing chosen under Used by to put down on the map (or double-click it)" />
         <Button Content="Copy name" Click="CopyName" />
-        <Button Content="Export PNG…" Click="ExportPng" ToolTip.Tip="Saves the picture in the game's palette as a PNG" />
+        <Button Content="Export PNG…" Click="ExportPng" ToolTip.Tip="Saves the picture as a PNG, in the palette it's shown in" />
         <Button Content="Replace…" Click="ReplacePicture" IsEnabled="{Binding CanReplace}"
                 ToolTip.Tip="Puts a PNG or BMP in its place: over its file in its mod, or, for the game's own, as a file of the same name in a mod" />
         <Button Content="Rename…" Command="{Binding RenameCommand}"
@@ -191,7 +194,7 @@
         <Button Content="Delete" Command="{Binding DeleteCommand}"
                 ToolTip.Tip="Takes its file out of its mod (only a mod's own pictures); the game's own of that name shows again" />
         <Button Content="Edit pixels" Command="{Binding EditPixelsCommand}"
-                ToolTip.Tip="Draws on it in the pixel editor, in the game palette; saving puts it in its mod (or, for the game's own, a mod picked)" />
+                ToolTip.Tip="Draws on it in the pixel editor, in the palette it's shown in; saving puts it in its mod (or, for the game's own, a mod picked)" />
         <Button Content="Edit outside" Command="{Binding EditOutsideCommand}"
                 ToolTip.Tip="{Binding ImageEditorText, StringFormat='{}Opens it as a PNG in a paint program and watches for it being saved there. {0}.'}" />
         <Button Content="Paint program ▾"
