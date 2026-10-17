@@ -12,14 +12,19 @@ internal static partial class GameHost
 
     internal static playstatetypes playstate { get => session.playstate; set => session.playstate = value; }
 
-    internal static int DebugOk;
+    internal static int DebugOk { get => session.DebugOk; set => session.DebugOk = value; }
 
     // The acting player's pawn and controls, and this frame's tics (Gameplay/GameSession.cs)
     internal static Entities.Actors.PlayerPawn player => session.player;
     internal static uint tics { get => session.tics; set => session.tics = value; }
 
-    internal static byte singlestep, godmode, noclip, ammocheat, mapreveal;
-    internal static int extravbls;
+    // Cheats and debug switches (Gameplay/GameSession.cs)
+    internal static byte singlestep { get => session.singlestep; set => session.singlestep = value; }
+    internal static byte godmode { get => session.godmode; set => session.godmode = value; }
+    internal static byte noclip { get => session.noclip; set => session.noclip = value; }
+    internal static byte ammocheat { get => session.ammocheat; set => session.ammocheat = value; }
+    internal static byte mapreveal { get => session.mapreveal; set => session.mapreveal = value; }
+    internal static int extravbls { get => session.extravbls; set => session.extravbls = value; }
 
     //
     // control info
@@ -55,7 +60,7 @@ internal static partial class GameHost
 
     internal const int JOYTURNSPEEDS = ControlSettings.JOYTURNSPEEDS;
 
-    static int lastgamemusicoffset = 0;
+    static int lastgamemusicoffset { get => session.lastgamemusicoffset; set => session.lastgamemusicoffset = value; }
 
     /*
     =============================================================================

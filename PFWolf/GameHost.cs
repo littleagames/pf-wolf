@@ -385,7 +385,7 @@ internal static partial class GameHost
     static int projectionwidth { get => render.projectionwidth; set => render.projectionwidth = value; }   // the view width the field of view is worked out for (see ProjectionWidth)
     static int heightnumerator { get => render.heightnumerator; set => render.heightnumerator = value; }
 
-    static bool startgame;
+    static bool startgame { get => session.startgame; set => session.startgame = value; }
     internal static bool loadedgame { get => session.loadedgame; set => session.loadedgame = value; }
     internal static int mouseadjustment { get => controlSettings.mouseadjustment; set => controlSettings.mouseadjustment = value; }
 

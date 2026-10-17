@@ -142,6 +142,35 @@ internal sealed class GameSession
     /// </summary>
     internal bool IsTargetable(PlayerPawn pawn) => gamemode == GameMode.Single || pawn.State.health > 0;
 
+    // ---- The game's flow, its network game, and the cheat and debug switches (GameHost had these as its own statics)
+
+    /// <summary>A game was chosen in the menu (new or loaded): the title loop starts it</summary>
+    internal bool startgame;
+
+    /// <summary>Whether a game is going (the menu was opened from it), and whether the next frame fades the level in</summary>
+    internal bool ingame, fizzlein;
+
+    /// <summary>The color of the border around the view (Change View, in game)</summary>
+    internal string bordercol = "VIEWCOLOR";
+
+    /// <summary>Where the menu left the level's song, to carry on from</summary>
+    internal int lastgamemusicoffset;
+
+    /// <summary>Whether the game running is one with others over the network</summary>
+    internal bool netgame;
+
+    /// <summary>The random number table's starting place for each level of a network game (the host's pick)</summary>
+    internal byte netseed;
+
+    /// <summary>The debug keys and cheat commands are on (Shift+Alt+Backspace, or --cheats)</summary>
+    internal int DebugOk;
+
+    /// <summary>Cheats and debug switches: frame stepping, god mode, walking through walls, endless ammo, the whole map shown</summary>
+    internal byte singlestep, godmode, noclip, ammocheat, mapreveal;
+
+    /// <summary>Extra frames waited each refresh (the bls debug command)</summary>
+    internal int extravbls;
+
     /// <summary>true when shooting or screaming: enemies in the player's areas hear it this tic</summary>
     internal bool madenoise;
 

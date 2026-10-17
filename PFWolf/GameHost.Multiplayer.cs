@@ -21,11 +21,9 @@ internal static partial class GameHost
     =============================================================================
     */
 
-    /// <summary>Whether the game running is one with others over the network</summary>
-    internal static bool netgame;
-
-    // The random number table's starting place for each level of a network game (the host's pick)
-    static byte netseed;
+    // Whether the game running is one with others over the network, and its levels' random seed (Gameplay/GameSession.cs)
+    internal static bool netgame { get => session.netgame; set => session.netgame = value; }
+    static byte netseed { get => session.netseed; set => session.netseed = value; }
 
     // The multiplayer screens (Ui/MultiplayerMenu.cs) and the command line's --host and --join
     // (Networking/NetStartRequest.cs), made in InitServices

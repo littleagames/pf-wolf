@@ -14,9 +14,10 @@ internal static partial class GameHost
 
 =============================================================================
 */
-    static bool ingame, fizzlein;
+    static bool ingame { get => session.ingame; set => session.ingame = value; }
+    static bool fizzlein { get => session.fizzlein; set => session.fizzlein = value; }
     internal static gametype gamestate { get => session.gamestate; set => session.gamestate = value; }
-    static string bordercol = "VIEWCOLOR"; // color of the Change View/Ingame border
+    static string bordercol { get => session.bordercol; set => session.bordercol = value; } // color of the Change View/Ingame border
 
     // The game from its first level to its end (Gameplay/MainGameLoop.cs)
     static MainGameLoop mainGameLoop = null!;       // made in InitServices
