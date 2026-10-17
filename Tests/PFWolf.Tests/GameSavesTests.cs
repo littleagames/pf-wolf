@@ -54,8 +54,8 @@ public class GameSavesTests
     public void The_Menus_Load_And_Save_Open_Their_Screens()
     {
         // Act
-        _saves.CP_LoadGame(0);
-        _saves.CP_SaveGame(0);
+        _saves.RunLoadGame(0);
+        _saves.RunSaveGame(0);
 
         // Assert
         Assert.That(_screens, Is.EqualTo(new[] { false, true }));

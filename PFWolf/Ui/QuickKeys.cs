@@ -9,8 +9,8 @@ internal sealed record QuickKeysHooks(
     Func<int> UiRandom);
 
 /// <summary>
-/// The menu from play (US_ControlPanel): F7 to F10 do their thing without the menu while a
-/// level is being played (CP_CheckQuick: end the game, quicksave, quickload, quit); otherwise
+/// The menu from play (OpenControlPanel): F7 to F10 do their thing without the menu while a
+/// level is being played (CheckQuickKeys: end the game, quicksave, quickload, quit); otherwise
 /// the menu's music comes on and the control panel opens (Ui/ControlPanel.cs).
 /// </summary>
 internal sealed class QuickKeys(
@@ -30,11 +30,11 @@ internal sealed class QuickKeys(
     Configuration.GameSettings settings,
     QuickKeysHooks hooks)
 {
-    internal void US_ControlPanel(ScanCodes scancode)
+    internal void OpenControlPanel(ScanCodes scancode)
     {
         if (session.ingame)
         {
-            if (CP_CheckQuick(scancode) != 0)
+            if (CheckQuickKeys(scancode) != 0)
                 return;
             session.lastgamemusicoffset = StartCPMusic(controlPanel.MENUSONG);
         }
@@ -55,7 +55,7 @@ internal sealed class QuickKeys(
         return 0;
     }
 
-    internal int CP_CheckQuick(ScanCodes scancode)
+    internal int CheckQuickKeys(ScanCodes scancode)
     {
         var gameInfo = engine.GetGameInfo();
         var language = assets.GetText("en-us");
@@ -80,7 +80,7 @@ internal sealed class QuickKeys(
             // Always the quicksave file, never a save picked in the menus
             case ScanCodes.sc_F8:
                 draw.Message("$STR_SAVING".ToLanguageText(language) + "...", GameConstants.MAXY);
-                gameSaves.CP_SaveGame(1);
+                gameSaves.RunSaveGame(1);
                 return 1;
 
             //
@@ -91,7 +91,7 @@ internal sealed class QuickKeys(
                 if (File.Exists(gameSaves.QuickSavePath))
                 {
                     if (loop.Confirm("$STR_LS_QUICKLOAD".ToLanguageText(language), GameConstants.MAXY) != 0)
-                        gameSaves.CP_LoadGame(1);
+                        gameSaves.RunLoadGame(1);
                 }
                 else
                 {
@@ -100,7 +100,7 @@ internal sealed class QuickKeys(
                         video.ClearScreen(0);
 
                     session.lastgamemusicoffset = StartCPMusic(controlPanel.MENUSONG);
-                    gameSaves.CP_LoadGame(0);    // loads lastgamemusicoffs
+                    gameSaves.RunLoadGame(0);    // loads lastgamemusicoffs
 
                     input.ClearKeysDown();
                     video.FadeOut();

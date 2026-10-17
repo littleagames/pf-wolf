@@ -118,7 +118,7 @@ public class Wolf3dVgaFileLoader
             var dest = CAL_HuffExpand(compseg, chunkexplen, grhuffman);
             pictable = StructHelpers.BytesToStructArray<PicTableEntry>(dest);
 
-            CA_CacheGrChunks(fs, br);
+            CacheGraphicChunks(fs, br);
         }
     }
     private void CAL_GetGrChunkLength(FileStream fs, BinaryReader br, int chunk)
@@ -134,7 +134,7 @@ public class Wolf3dVgaFileLoader
         return grstarts[idx];
     }
 
-    internal void CA_CacheGrChunks(FileStream fs, BinaryReader br)
+    internal void CacheGraphicChunks(FileStream fs, BinaryReader br)
     {
         int pos, compressed;
         byte[] bufferseg;
@@ -217,7 +217,7 @@ public class Wolf3dVgaFileLoader
             for (i = 0; i < numTile8; i++)
             {
                 var offset = i * (width * height);
-                var dest = VL_DePlaneVGA(grsegs[chunk].Skip(offset).ToArray(), width, height);
+                var dest = DeplaneVga(grsegs[chunk].Skip(offset).ToArray(), width, height);
                 Buffer.BlockCopy(dest, 0, grsegs[chunk], offset, width * height);
             }
         }
@@ -226,11 +226,11 @@ public class Wolf3dVgaFileLoader
             width = pictable[chunk - StartPics].width;
             height = pictable[chunk - StartPics].height;
 
-            grsegs[chunk] = VL_DePlaneVGA(grsegs[chunk], width, height);
+            grsegs[chunk] = DeplaneVga(grsegs[chunk], width, height);
         }
     }
 
-    private static byte[] VL_DePlaneVGA(byte[] source, int width, int height)
+    private static byte[] DeplaneVga(byte[] source, int width, int height)
     {
         int x, y, plane;
         ushort size, pwidth;

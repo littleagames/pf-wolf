@@ -87,7 +87,7 @@ internal record Informant : BlakeMonster
                 SeekX = 0xff;
             Ammo = AreaNumber;
             if (SeekX == 0xff || SeekX >= roomHints.Count)
-                SeekX = (byte)(US_RndT() % roomHints.Count);
+                SeekX = (byte)(NextRandom() % roomHints.Count);
             return HintText(listName, roomHints[SeekX].Message);
         }
 
@@ -95,7 +95,7 @@ internal record Informant : BlakeMonster
         if (general.Count == 0)
             return RandomSaying(listName);
         if (SeekY == 0xff || SeekY >= general.Count)
-            SeekY = (byte)(US_RndT() % general.Count);
+            SeekY = (byte)(NextRandom() % general.Count);
         return HintText(listName, general[SeekY].Message);
     }
 }

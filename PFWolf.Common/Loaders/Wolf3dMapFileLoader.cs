@@ -176,7 +176,7 @@ public class Wolf3dMapFileLoader
                     CAL_CarmackExpand(bufferseg.Skip(sizeof(ushort)).ToArray(), buffer2seg, expanded);
                     rlewseg = buffer2seg.Skip(1).ToArray();
                 }
-                CA_RLEWexpand(rlewseg, out ushort[] dest, size, _rlewTag);
+                RlewExpand(rlewseg, out ushort[] dest, size, _rlewTag);
                 mapsegs[plane] = dest;
             }
 
@@ -250,7 +250,7 @@ public class Wolf3dMapFileLoader
         }
     }
 
-    internal void CA_RLEWexpand(ushort[] source, out ushort[] dest, int length, ushort rlewtag)
+    internal void RlewExpand(ushort[] source, out ushort[] dest, int length, ushort rlewtag)
     {
         ushort value, count, i;
         dest = new ushort[length / 2];

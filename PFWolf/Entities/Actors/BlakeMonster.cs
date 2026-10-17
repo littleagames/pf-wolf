@@ -76,7 +76,7 @@ internal partial record BlakeMonster : Monster
     {
         if (!Properties.ContainsKey("monster.painattack"))
             return;
-        if (US_RndT() < PropertyInt("monster.painattack", 0) && !HasFlag("STATIONARY"))
+        if (NextRandom() < PropertyInt("monster.painattack", 0) && !HasFlag("STATIONARY"))
         {
             ChangeShootMode();
             DoAttack();
@@ -167,7 +167,7 @@ internal partial record BlakeMonster : Monster
     {
         // One number, or [min, max] for one at random
         var ammo = PropertyInts("monster.ammo");
-        Ammo = (short)(ammo.Count == 0 ? 1 : ammo.Count == 1 ? ammo[0] : ammo[0] + US_RndT() % (ammo[1] - ammo[0] + 1));
+        Ammo = (short)(ammo.Count == 0 ? 1 : ammo.Count == 1 ? ammo[0] : ammo[0] + NextRandom() % (ammo[1] - ammo[0] + 1));
         if (HasFlag("FRIENDLY"))
             RuntimeFlags |= ObjFlags.FL_FRIENDLY;
 
@@ -180,7 +180,7 @@ internal partial record BlakeMonster : Monster
         var wake = PropertyInts("monster.wakedelay");
         if (wake.Count > 0)
         {
-            int seconds = mapValue ?? (wake.Count == 1 ? wake[0] : wake[0] + US_RndT() % (wake[1] - wake[0] + 1));
+            int seconds = mapValue ?? (wake.Count == 1 ? wake[0] : wake[0] + NextRandom() % (wake[1] - wake[0] + 1));
             Temp2 = Temp3 = (short)(seconds * 60);
             if (seconds == 255)
                 RuntimeFlags &= ~ObjFlags.FL_SHOOTABLE;
@@ -188,7 +188,7 @@ internal partial record BlakeMonster : Monster
 
         var stages = PropertyInts("monster.woundstages");
         if (stages.Count > 0)
-            Temp1 = (short)(mapValue ?? stages[US_RndT() % stages.Count]);
+            Temp1 = (short)(mapValue ?? stages[NextRandom() % stages.Count]);
 
         // `monster.floorhealth: [floor, times]`: that much tougher on that floor (game-info
         // floor-number; Goldfire on floor 9)
@@ -273,9 +273,9 @@ internal partial record BlakeMonster : Monster
         var target = Target;
         if (Math.Abs(target.X - X) - MapConstants.TILEGLOBAL <= MINACTORDIST
             && Math.Abs(target.Y - Y) - MapConstants.TILEGLOBAL <= MINACTORDIST
-            && US_RndT() < chance)
+            && NextRandom() < chance)
         {
-            HurtTarget(max > min ? min + US_RndT() * (max - min + 1) / 256 : min);
+            HurtTarget(max > min ? min + NextRandom() * (max - min + 1) / 256 : min);
         }
     }
 
@@ -320,7 +320,7 @@ internal partial record BlakeMonster : Monster
                     ? (RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTMODE) ? 300 : 0)
                     : (int)((tics << 4) / dist);
 
-                if (US_RndT() < chance && Ammo != 0 && !RuntimeFlags.HasFlag(ObjFlags.FL_INTERROGATED))
+                if (NextRandom() < chance && Ammo != 0 && !RuntimeFlags.HasFlag(ObjFlags.FL_INTERROGATED))
                 {
                     DoAttack();
                     return;
@@ -385,12 +385,12 @@ internal partial record BlakeMonster : Monster
         if (RuntimeFlags.HasFlag(ObjFlags.FL_SHOOTMODE))
         {
             RuntimeFlags &= ~ObjFlags.FL_SHOOTMODE;
-            Ammo = (short)(60 + US_RndT() % 60);
+            Ammo = (short)(60 + NextRandom() % 60);
         }
         else
         {
             RuntimeFlags |= ObjFlags.FL_SHOOTMODE;
-            Ammo = (short)(1 + US_RndT() % 2);
+            Ammo = (short)(1 + NextRandom() % 2);
         }
     }
 
@@ -408,7 +408,7 @@ internal partial record BlakeMonster : Monster
             return;
         if (PropertyInt("monster.attackmindist", 0) is > 0 and var mindist && dist < mindist)
             return;
-        if (PropertyInt("monster.attackchance", 256) is var chance and < 256 && US_RndT() >= chance)
+        if (PropertyInt("monster.attackchance", 256) is var chance and < 256 && NextRandom() >= chance)
             return;
         SetState(dist <= 1 && ResolvedStates.ContainsKey("Melee") ? "Melee" : "Attack");
     }
@@ -525,7 +525,7 @@ internal partial record BlakeMonster : Monster
 
     private void GetCornerSeek()
     {
-        int point = US_RndT() & 3;
+        int point = NextRandom() & 3;
         RuntimeFlags &= ~ObjFlags.FL_RUNTOSTATIC;
         SeekX = SeekPointX[point];
         SeekY = SeekPointY[point];
@@ -543,7 +543,7 @@ internal partial record BlakeMonster : Monster
         if ((reason & RR_INTERROGATED) != 0)
         {
             justFindDoor = true;
-            if (US_RndT() < 128)
+            if (NextRandom() < 128)
                 RuntimeFlags &= ~ObjFlags.FL_INTERROGATED;
         }
 
@@ -618,7 +618,7 @@ internal partial record BlakeMonster : Monster
             if (doors.Count > 0)
             {
                 // Not the one it used last, unless it's the only one
-                int index = US_RndT() % doors.Count;
+                int index = NextRandom() % doors.Count;
                 if (doors[index] + 1 == Temp3 && doors.Count > 1)
                     index = (index + 1) % doors.Count;
 
@@ -673,14 +673,14 @@ internal partial record BlakeMonster : Monster
             Dir = point.Dir;
 
         Distance = (int)MapConstants.TILEGLOBAL;
-        bool randomTurn = HasFlag("RANDOMTURN") && US_RndT() > 180;
+        bool randomTurn = HasFlag("RANDOMTURN") && NextRandom() > 180;
         bool cantWalk = !CanWalk();
 
         // A patrol point wins over a random turn
         if (cantWalk || randomTurn && point == null)
         {
             if (TryDir == (byte)ObjDir.nodir)
-                TryDir |= (byte)(US_RndT() & 128);      // which way round
+                TryDir |= (byte)(NextRandom() & 128);      // which way round
             else
                 Dir = (ObjDir)(TryDir & 127);    // on from the last way tried
 
@@ -781,7 +781,7 @@ internal partial record BlakeMonster : Monster
         PlayActorSound(this, "woundsound");
         SetState("Wounded");
         RuntimeFlags &= ~ObjFlags.FL_SHOOTABLE;
-        Temp2 = (short)(5 * 60 + US_RndT() % 20 * 60);
+        Temp2 = (short)(5 * 60 + NextRandom() % 20 * 60);
         return true;
     }
 
@@ -893,7 +893,7 @@ internal partial record BlakeMonster : Monster
     {
         // Asked twice, or half the time anyway, it turns mean
         string list;
-        if (RuntimeFlags.HasFlag(ObjFlags.FL_MUSTATTACK) || (US_RndT() & 1) != 0)
+        if (RuntimeFlags.HasFlag(ObjFlags.FL_MUSTATTACK) || (NextRandom() & 1) != 0)
         {
             RuntimeFlags &= ~ObjFlags.FL_FRIENDLY;
             RuntimeFlags |= ObjFlags.FL_INTERROGATED;
@@ -928,9 +928,9 @@ internal partial record BlakeMonster : Monster
             return null;
         var placed = _mapManager.Hints.GetValueOrDefault(listName);
         if (placed is { Count: > 0 })
-            return HintText(listName, placed[US_RndT() % placed.Count].Message);
+            return HintText(listName, placed[NextRandom() % placed.Count].Message);
         int count = HintMessages(listName).Count;
-        return count == 0 ? null : HintText(listName, 1 + US_RndT() % count);
+        return count == 0 ? null : HintText(listName, 1 + NextRandom() % count);
     }
 
     private static readonly Dictionary<string, List<string>> hinttexts = new(StringComparer.OrdinalIgnoreCase);

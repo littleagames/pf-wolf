@@ -52,8 +52,8 @@ internal static partial class GameHost
     internal static HighScore[] Scores { get => settings.Scores; set => settings.Scores = value; }
     internal static void InitHighScores() => Scores = HighScore.TableFor(_gameEngineManager.GetGameInfo().HighScores, Scores);
 
-    internal static void US_InitRndT(bool randomize) => session.random.InitRndT(randomize);
-    internal static int US_RndT() => session.random.RndT();
+    internal static void InitRandom(bool randomize) => session.random.InitRndT(randomize);
+    internal static int NextRandom() => session.random.RndT();
 
     // Everything written to stdout from the start until the signon screen is done
     private static StartupOutput? startupOutput;
@@ -86,7 +86,7 @@ internal static partial class GameHost
     /// A menu item's pages of presenter text (Blake Stone's instructions, story and ordering
     /// info) in the briefing window, with its pages-info-line and pages-music, until Esc
     /// </summary>
-    internal static int CP_TextScreen(string textName)
+    internal static int ShowTextScreen(string textName)
     {
         textPresenter.ShowTextPages(textName, fromMenu: true);
         StartCPMusic(MENUSONG);
@@ -127,16 +127,16 @@ internal static partial class GameHost
 
     static void DrawTitleText(TitleTextInfo text) => textPresenter.DrawTitleText(text);
 
-    static bool US_Started;
+    static bool randomStarted;
 
-    internal static void US_Startup()
+    internal static void InitRandomOnce()
     {
-        if (US_Started)
+        if (randomStarted)
             return;
 
-        US_InitRndT(true);
+        InitRandom(true);
 
-        US_Started = true;
+        randomStarted = true;
     }
 
     /// <summary>Builds the managers (Startup/GameServices.cs) and hooks them up</summary>
@@ -453,7 +453,7 @@ internal static partial class GameHost
 
         _videoManager.Update();
 
-        US_Startup();
+        InitRandomOnce();
 
         //
         // build some tables

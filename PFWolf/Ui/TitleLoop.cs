@@ -223,7 +223,7 @@ internal sealed class TitleLoop(
             if (input.IsKeyDown(ScanCodes.sc_Tab))
                 demos.RecordDemo();
             else
-                quickKeys.US_ControlPanel(0);
+                quickKeys.OpenControlPanel(0);
 
             RunStartedGame();
         }

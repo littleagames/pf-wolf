@@ -30,7 +30,7 @@ internal record Monster : Actor
 
     private protected GameState gamestate => World.Session.gamestate;
     private protected uint tics => World.Session.tics;
-    private protected int US_RndT() => World.Session.random.RndT();
+    private protected int NextRandom() => World.Session.random.RndT();
     private protected byte[] areabyplayer => World.Session.areas.areabyplayer;
     private protected PlayerPawn player => World.Session.player;
     private protected PlayerState playerstate => World.Session.playerstate;
@@ -883,14 +883,14 @@ internal record Monster : Actor
     {
         var delay = PropertyInts("monster.reactiondelay");
         if (delay.Count > 0)
-            return (short)(delay[0] + (delay.Count > 1 && delay[1] > 0 ? US_RndT() / delay[1] : 0));
+            return (short)(delay[0] + (delay.Count > 1 && delay[1] > 0 ? NextRandom() / delay[1] : 0));
 
         return Name switch
         {
-            "Guard" => (short)(1 + US_RndT() / 4),
+            "Guard" => (short)(1 + NextRandom() / 4),
             "Officer" => 2,
-            "Mutant" or "SS" => (short)(1 + US_RndT() / 6),
-            "Dog" => (short)(1 + US_RndT() / 8),
+            "Mutant" or "SS" => (short)(1 + NextRandom() / 6),
+            "Dog" => (short)(1 + NextRandom() / 8),
             _ => 1, // bosses
         };
     }
@@ -1026,7 +1026,7 @@ internal record Monster : Actor
             tdir = dirtry[3]; dirtry[3] = dirtry[4]; dirtry[4] = tdir;
         }
 
-        if (US_RndT() < 128)
+        if (NextRandom() < 128)
         {
             tdir = dirtry[1]; dirtry[1] = dirtry[2]; dirtry[2] = tdir;
             tdir = dirtry[3]; dirtry[3] = dirtry[4]; dirtry[4] = tdir;
@@ -1104,7 +1104,7 @@ internal record Monster : Actor
             if (TryWalk()) return;
         }
 
-        if (US_RndT() > 128)
+        if (NextRandom() > 128)
         {
             for (tdir = ObjDir.north; tdir <= ObjDir.west; tdir++)
             {
@@ -1162,7 +1162,7 @@ internal record Monster : Actor
         Dir = d[2];
         if (TryWalk()) return;
 
-        if (US_RndT() > 128)
+        if (NextRandom() > 128)
         {
             for (tdir = ObjDir.north; tdir <= ObjDir.west; tdir++)
             {
@@ -1412,7 +1412,7 @@ internal record Monster : Actor
 
         var drop = Properties.TryGetValue("dropitem", out var dropitem) ? dropitem as string : null;
         if (Properties.TryGetValue("dropitem.alt", out var alt) && alt is string altName
-            && (outOfAmmo || US_RndT() < PropertyInt("dropitem.altchance", 128)))
+            && (outOfAmmo || NextRandom() < PropertyInt("dropitem.altchance", 128)))
             drop = altName;
         return drop;
     }
@@ -1597,7 +1597,7 @@ internal record Monster : Actor
                 }
             }
 
-            if (US_RndT() < chance)
+            if (NextRandom() < chance)
             {
                 SetState("Attack");
                 return;
@@ -1711,13 +1711,13 @@ internal record Monster : Actor
             if (dy < 0) dy = -dy;
             dy -= (int)MapConstants.TILEGLOBAL;
             if (dy <= MINACTORDIST)
-                return US_RndT() < chance;
+                return NextRandom() < chance;
         }
         return false;
     }
 
     /// <summary>A bite on its target: 0-15</summary>
-    internal void BiteTarget() => HurtTarget(US_RndT() >> 4);
+    internal void BiteTarget() => HurtTarget(NextRandom() >> 4);
 
     internal void GhostChase()
     {
@@ -1759,7 +1759,7 @@ internal record Monster : Actor
         if (CheckLine(this, Target))
         {
             Hidden = false;
-            if (US_RndT() < (tics << 3))
+            if (NextRandom() < (tics << 3))
             {
                 SetState(attackState);
                 return;
@@ -1812,7 +1812,7 @@ internal record Monster : Actor
         if (CheckLine(this, Target))
         {
             Hidden = false;
-            if (US_RndT() < (tics << 1))
+            if (NextRandom() < (tics << 1))
             {
                 SetState("Attack");
                 return;
@@ -1881,9 +1881,9 @@ internal record Monster : Actor
         else
             hitchance = visible ? 256 - dist * 16 : 256 - dist * 8;
 
-        if (US_RndT() < hitchance)
+        if (NextRandom() < hitchance)
         {
-            int damage = dist < 2 ? US_RndT() >> 2 : dist < 4 ? US_RndT() >> 3 : US_RndT() >> 4;
+            int damage = dist < 2 ? NextRandom() >> 2 : dist < 4 ? NextRandom() >> 3 : NextRandom() >> 4;
             HurtTarget(damage);
         }
     }
@@ -1968,9 +1968,9 @@ internal record Monster : Actor
         // that many degrees either side of the player, at random), else 0x2000 dead on
         int speed = 0x2000;
         if (RuntimeActorProperty(args[0], "speed") is { } baseSpeed)
-            speed = baseSpeed + (RuntimeActorProperty(args[0], "speed.random") is { } extra and > 0 ? US_RndT() * extra / 256 : 0);
+            speed = baseSpeed + (RuntimeActorProperty(args[0], "speed.random") is { } extra and > 0 ? NextRandom() * extra / 256 : 0);
         if (RuntimeActorProperty(args[0], "spread") is { } spread and > 0)
-            angleOffset += US_RndT() % (spread * 2 + 1) - spread;
+            angleOffset += NextRandom() % (spread * 2 + 1) - spread;
 
         ThrowProjectile(args[0], speed, angleOffset: angleOffset);
     }
@@ -1991,7 +1991,7 @@ internal record Monster : Actor
             return;
         }
 
-        if ((US_RndT() & 1) != 0)
+        if ((NextRandom() & 1) != 0)
             SetState("Chase");
     }
 

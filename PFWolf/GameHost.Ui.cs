@@ -23,7 +23,8 @@ internal static partial class GameHost
 
     The main menu loop and its screens are Ui/ControlPanel.cs, Ui/NewGameMenu.cs,
     Ui/OptionsMenu.cs and Ui/ChangeViewScreen.cs (made in InitServices); the in-play F7 to F10
-    (CP_CheckQuick) are here. The CP_ routines keep their names: menudefs name the actions.
+    are QuickKeys' (Ui/QuickKeys.cs). menudefs name the menu actions by the original's CP_ names
+    (RegisterMenuDefs).
 
     =============================================================================
     */
@@ -54,19 +55,19 @@ internal static partial class GameHost
     // The menu from play, and F7-F10 (Ui/QuickKeys.cs)
     static QuickKeys quickKeys = null!;     // made in InitServices
 
-    internal static void US_ControlPanel(ScanCodes scancode) => quickKeys.US_ControlPanel(scancode);
+    internal static void OpenControlPanel(ScanCodes scancode) => quickKeys.OpenControlPanel(scancode);
 
-    internal static int CP_NewGame(int _) => newGameMenu.Run();
-    internal static int CP_Options(int _) => optionsMenu.Run();
-    internal static int CP_ChangeView(int _) => changeViewScreen.Run();
-    internal static int CP_ReadThis(int _) => controlPanel.ReadThis();
-    internal static int CP_ViewScores(int _) => controlPanel.ViewScores();
-    internal static int CP_EndGame(int _) => controlPanel.EndGame();
-    internal static int CP_Quit(int _) => controlPanel.Quit();
+    internal static int RunNewGameMenu(int _) => newGameMenu.Run();
+    internal static int RunOptionsMenu(int _) => optionsMenu.Run();
+    internal static int RunChangeView(int _) => changeViewScreen.Run();
+    internal static int RunReadThis(int _) => controlPanel.ReadThis();
+    internal static int RunViewScores(int _) => controlPanel.ViewScores();
+    internal static int RunEndGame(int _) => controlPanel.EndGame();
+    internal static int RunQuit(int _) => controlPanel.Quit();
 
     static ControlPanelHooks MakeControlPanelHooks() => new(
-        SaveGame: CP_SaveGame,
-        LoadGame: CP_LoadGame,
+        SaveGame: RunSaveGame,
+        LoadGame: RunLoadGame,
         EndGame: () =>
         {
             playerstate.lives = 0;
@@ -130,10 +131,10 @@ internal static partial class GameHost
     internal static ControlPanelItem[] JoyMenu { get => controlMenus.JoyMenu; set => controlMenus.JoyMenu = value; }
     internal static ControlPanelMenuInfo JoyItems { get => controlMenus.JoyItems; set => controlMenus.JoyItems = value; }
 
-    internal static int CP_Video(int _) => videoMenu.Run();
-    internal static int CP_Sound(int _) => soundMenu.Run();
-    internal static int CP_Control(int _) => controlMenus.RunControl();
-    internal static int CP_ControllerSettings(int _) => controlMenus.RunControllerSettings();
+    internal static int RunVideoMenu(int _) => videoMenu.Run();
+    internal static int RunSoundMenu(int _) => soundMenu.Run();
+    internal static int RunControlMenu(int _) => controlMenus.RunControl();
+    internal static int RunControllerSettings(int _) => controlMenus.RunControllerSettings();
     internal static int MouseSensitivity(int _) => controlMenus.RunMouseSensitivity();
 
     internal static void FreeMusic()
@@ -216,30 +217,31 @@ internal static partial class GameHost
     /// <summary>What menudefs' items can do, and the menus built from the game's data</summary>
     private static void RegisterMenuDefs()
     {
-        // This list will be built with attributes or scripting on the pk3
-        Func<int, int>[] actions =
+        // By the names menudefs' ction: uses (the original's CP_ functions): they're a file
+        // format, kept whatever the methods are called
+        (string Name, Func<int, int> Action)[] actions =
         [
-            CP_NewGame,
-            CP_Multiplayer,
-            CP_Options,
-            CP_Video,
-            CP_Mods,
-            CP_Sound,
-            CP_Control,
-            CP_ControllerSettings,
-            CP_LoadGame,
-            CP_SaveGame,
-            CP_ChangeView,
-            CP_ReadThis,
-            CP_ViewScores,
-            CP_EndGame,
-            CP_Quit,
-            MouseSensitivity,
-            CustomControls
+            ("CP_NewGame", RunNewGameMenu),
+            ("CP_Multiplayer", RunMultiplayerMenu),
+            ("CP_Options", RunOptionsMenu),
+            ("CP_Video", RunVideoMenu),
+            ("CP_Mods", RunModsMenu),
+            ("CP_Sound", RunSoundMenu),
+            ("CP_Control", RunControlMenu),
+            ("CP_ControllerSettings", RunControllerSettings),
+            ("CP_LoadGame", RunLoadGame),
+            ("CP_SaveGame", RunSaveGame),
+            ("CP_ChangeView", RunChangeView),
+            ("CP_ReadThis", RunReadThis),
+            ("CP_ViewScores", RunViewScores),
+            ("CP_EndGame", RunEndGame),
+            ("CP_Quit", RunQuit),
+            ("MouseSensitivity", MouseSensitivity),
+            ("CustomControls", CustomControls),
         ];
-        foreach (var action in actions)
-            menuDefs.RegisterAction(action.Method.Name, action);
-        menuDefs.TextScreen = script => _ => CP_TextScreen(script);
+        foreach (var (name, action) in actions)
+            menuDefs.RegisterAction(name, action);
+        menuDefs.TextScreen = script => _ => ShowTextScreen(script);
 
         // MENU HOOKS: a mod's items opening a menu of theirs, showing a text, calling a script
         menuDefs.SubMenu = name => (modMenus ??= new ModMenus(_videoManager, menuDrawing, menuLoop, menuInput, menuDefs)).Run(name);
@@ -263,14 +265,13 @@ internal static partial class GameHost
         menuDefs.RegisterSource("lan-games", BuildJoinRows);
     }
 
-    // The Mods screen (Ui/ModsMenu.cs, made in InitServices). CP_Mods keeps its name: menudefs
-    // name the action
+    // The Mods screen (Ui/ModsMenu.cs, made in InitServices); menudefs' CP_Mods action
     static ModsMenu modsMenu = null!;
 
     // Customize controls (Ui/CustomizeControlsScreen.cs); CustomControls keeps its name for menudefs
     static CustomizeControlsScreen customizeScreen = null!;
     internal static int CustomControls(int _) => customizeScreen.Run();
-    internal static int CP_Mods(int _) => modsMenu.Run();
+    internal static int RunModsMenu(int _) => modsMenu.Run();
     private static ControlPanelItem[] BuildModsPage() => modsMenu.BuildModsPage();
 
     private static ControlPanelItem[] PlayerClassRows() => newGameMenu.PlayerClassRows();

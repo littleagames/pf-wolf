@@ -23,7 +23,7 @@ internal sealed record DeathmatchHooks(
 /// <summary>
 /// What a mode with something to do besides fighting keeps (Gameplay/MatchModes): its things on
 /// the level, its clock, and what a player joining mid-game must be sent of it. Every machine
-/// runs it alike, off the level's clock and US_RndT.
+/// runs it alike, off the level's clock and the session's random numbers.
 /// </summary>
 internal interface IMatchObjective
 {
@@ -74,7 +74,7 @@ internal interface IMatchObjective
 /// (team deathmatch: its frags; the other modes: what their objective gives it). The map's
 /// enemies are only there with monsters on.
 ///
-/// All of it runs the same on every machine (US_RndT, the level's clock): it's the game itself.
+/// All of it runs the same on every machine (the session's random numbers, the level's clock): it's the game itself.
 /// </summary>
 internal sealed class Deathmatch(
     MapManager map,

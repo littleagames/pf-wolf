@@ -75,7 +75,7 @@ public class Wolf3dMapFileLoaderTests
     public void RlewExpand_Repeats_Tagged_Runs()
     {
         // Act
-        EmptyLoader().CA_RLEWexpand([5, RlewTag, 3, 9, 7], out var dest, 10, RlewTag);
+        EmptyLoader().RlewExpand([5, RlewTag, 3, 9, 7], out var dest, 10, RlewTag);
 
         // Assert
         Assert.That(dest, Is.EqualTo(new ushort[] { 5, 9, 9, 9, 7 }));

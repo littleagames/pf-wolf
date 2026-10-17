@@ -11,7 +11,7 @@ namespace PFWolf.Ui;
 /// <param name="HandleAutomapKey">The automap's own keys while it's open: true if it took one</param>
 /// <param name="DrawPlayBorder">Redraws the border around the view</param>
 /// <param name="DrawPlayBorderSides">Redraws the border's sides</param>
-/// <param name="ControlPanel">The menu, opened on a key (GameHost.US_ControlPanel)</param>
+/// <param name="ControlPanel">The menu, opened on a key (GameHost.OpenControlPanel)</param>
 /// <param name="DrawPlayScreen">Redraws the play screen after the menu</param>
 internal sealed record PlayKeysHooks(
     Func<bool> NetChatting,

@@ -34,7 +34,7 @@ internal static partial class GameHost
     static MultiplayerMenu multiplayerMenu = null!;
     static readonly NetStartRequest netStart = new();
 
-    internal static int CP_Multiplayer(int _) => multiplayerMenu.Run();
+    internal static int RunMultiplayerMenu(int _) => multiplayerMenu.Run();
     static ControlPanelItem[] BuildJoinRows() => multiplayerMenu.BuildJoinRows();
 
     // Starting and ending games with others (Networking/NetGames.cs)
@@ -87,7 +87,7 @@ internal static partial class GameHost
     static NetCommands netCommands = null!;     // made in InitServices
 
     /// <summary>A random number for something only this machine shows (a quit message), not the game's own</summary>
-    internal static int UiRandom() => netgame ? Random.Shared.Next(256) : US_RndT();
+    internal static int UiRandom() => netgame ? Random.Shared.Next(256) : NextRandom();
 
     // ==== NetJoin ================================================================================
 

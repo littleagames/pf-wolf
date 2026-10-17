@@ -337,15 +337,15 @@ internal sealed class GameSaves(
                             LOAD AND SAVE FROM THE MENU
 
     The load and save screens are Ui/LoadSaveScreen.cs (made in InitServices); quickload
-    and quicksave (F9, F8) are here. CP_LoadGame and CP_SaveGame keep their names: menudefs
-    name the actions.
+    and quicksave (F9, F8) are here, and RunLoadGame and RunSaveGame, menudefs' CP_LoadGame and
+    CP_SaveGame actions.
 
     =============================================================================
     */
 
 
 
-    internal int CP_LoadGame(int quick)
+    internal int RunLoadGame(int quick)
     {
         //
         // QUICKLOAD: THE QUICKSAVE, IN PLACE, SO PLAY CARRIES STRAIGHT ON IN THE RESTORED LEVEL
@@ -367,7 +367,7 @@ internal sealed class GameSaves(
         return hooks.RunLoadSaveScreen(false);
     }
 
-    internal int CP_SaveGame(int quick)
+    internal int RunSaveGame(int quick)
     {
         //
         // QUICKSAVE: OVER THE QUICKSAVE, WITHOUT ASKING

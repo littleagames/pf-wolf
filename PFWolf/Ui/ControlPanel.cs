@@ -3,8 +3,8 @@ using PFWolf.Extensions;
 namespace PFWolf.Ui;
 
 /// <summary>What the control panel needs from the game</summary>
-/// <param name="SaveGame">The Save Game screen (CP_SaveGame), 0 for the screen</param>
-/// <param name="LoadGame">The Load Game screen (CP_LoadGame), 0 for the screen</param>
+/// <param name="SaveGame">The Save Game screen (RunSaveGame), 0 for the screen</param>
+/// <param name="LoadGame">The Load Game screen (RunLoadGame), 0 for the screen</param>
 /// <param name="EndGame">Ends the game being played: no lives left, died, nobody to turn to</param>
 /// <param name="Random">A random number, 0 to 255, for picking a quit message</param>
 internal sealed record ControlPanelHooks(Func<int, int> SaveGame, Func<int, int> LoadGame,
@@ -68,7 +68,7 @@ internal sealed class ControlPanel(GameEngineManager engine, AssetManager assets
     /// The control panel, from the title or over the game being played: the screen an F-key
     /// names (F1 help, F2 save, F3 load, F4 sound, F5 view size, F6 controls), else the main
     /// menu until it starts a game or goes back. The in-play F7 to F10 and the menu music are
-    /// the caller's (GameHost.US_ControlPanel).
+    /// the caller's (GameHost.OpenControlPanel).
     /// </summary>
     internal void Run(ScanCodes scancode)
     {

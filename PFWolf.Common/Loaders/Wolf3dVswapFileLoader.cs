@@ -169,7 +169,7 @@ public class Wolf3dVswapFileLoader
         // episodes' walls and sprites: it gets no asset
         for (int i = 0; i < PMSpriteStart; i++)
         {
-            byte[] textureData = PM_GetPage(i);
+            byte[] textureData = GetPage(i);
             if (textureData.Length == 0)
                 continue;
             assets[wallNames.NameAt(i).ToLowerInvariant()] = new TextureAsset { RawData = textureData };
@@ -178,7 +178,7 @@ public class Wolf3dVswapFileLoader
 
         for (int i = PMSpriteStart; i < PMSoundStart; i++)
         {
-            byte[] spriteData = PM_GetPage(i);
+            byte[] spriteData = GetPage(i);
             if (spriteData.Length == 0)
                 continue;
             assets[spriteNames.NameAt(i - PMSpriteStart).ToLowerInvariant()] = Wolf3dCompiledSpriteConverter.Convert(spriteData);
@@ -186,11 +186,11 @@ public class Wolf3dVswapFileLoader
         }
         // Use SDL_SetupDigi to get sound data
 
-        byte[] soundInfoData = PM_GetPage(ChunksInFile - 1);
+        byte[] soundInfoData = GetPage(ChunksInFile - 1);
         ushort[] soundInfoPage = new ushort[soundInfoData.Length / 2];
         Buffer.BlockCopy(soundInfoData, 0, soundInfoPage, 0, soundInfoData.Length);
 
-        var numDigi = (ushort)(PM_GetPageSize(ChunksInFile - 1) / 4);
+        var numDigi = (ushort)(GetPageSize(ChunksInFile - 1) / 4);
 
         var digiList = new DigiInfo[numDigi];
 
@@ -217,7 +217,7 @@ public class Wolf3dVswapFileLoader
 
             int size = 0;
             for (int page = (int)(PMSoundStart + digiList[i].startpage); page < lastPage; page++)
-                size += (int)PM_GetPageSize(page);
+                size += (int)GetPageSize(page);
 
             // Don't include padding of sound info page, if padding was added
             if (lastPage == ChunksInFile - 1 && PMSoundInfoPagePadded) size--;
@@ -241,13 +241,13 @@ public class Wolf3dVswapFileLoader
                 break;
 
             // Left out of the release (shareware's): its pages are sparse
-            if (PM_GetPage((int)(PMSoundStart + digiList[i].startpage)).Length == 0)
+            if (GetPage((int)(PMSoundStart + digiList[i].startpage)).Length == 0)
                 continue;
 
             byte[] soundData;
             try
             {
-                soundData = PM_GetSoundPage(digiList[i].startpage, digiList[i].length);
+                soundData = GetSoundPage(digiList[i].startpage, digiList[i].length);
             }
             catch (PfWolfFileLoaderException) when (i >= digitizedAudio.Count)
             {
@@ -262,35 +262,35 @@ public class Wolf3dVswapFileLoader
         return assets;
     }
 
-    private byte[] PM_GetPage(int page)
+    private byte[] GetPage(int page)
     {
         if (page < 0 || page >= ChunksInFile)
-            throw new PfWolfFileLoaderException($"PM_GetPage: Invalid page request: {page}");
+            throw new PfWolfFileLoaderException($"GetPage: Invalid page request: {page}");
 
         return PMPages[page];
     }
 
-    private byte[] PM_GetSoundPage(uint v, uint size)
+    private byte[] GetSoundPage(uint v, uint size)
     {
         List<byte> data = new List<byte>();
         var v1 = 0;
         while (data.Count < size)
         {
-            data.AddRange(PM_GetPage((int)(PMSoundStart + v + v1)));
+            data.AddRange(GetPage((int)(PMSoundStart + v + v1)));
             v1++;
         }
 
         return data.Take((int)size).ToArray();
     }
-    private uint PM_GetPageSize(int page)
+    private uint GetPageSize(int page)
     {
         if (page < 0 || page >= ChunksInFile)
-            throw new PfWolfFileLoaderException("PM_GetPageSize: Invalid page request: {page}", page);
+            throw new PfWolfFileLoaderException($"GetPageSize: Invalid page request: {page}", page);
 
         return (uint)(PMPages[page].Length); // (uint32_t)(PMPages[page + 1] - PMPages[page]); // pointer addresses
     }
 
-    private int PM_GetPageEnd()
+    private int GetPageEnd()
     {
         return PMPages.Sum(arr => arr.Length);
     }

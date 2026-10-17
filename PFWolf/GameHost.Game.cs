@@ -229,7 +229,7 @@ internal static partial class GameHost
         levelMusic, frameRefresh, session,
         settings, new PlayKeysHooks(() => netChatting, NetChatKeys, NetCheckKeys,
             ToggleAutomap, HandleAutomapKey, DrawPlayBorder, DrawPlayBorderSides,
-            US_ControlPanel, DrawPlayScreen));
+            OpenControlPanel, DrawPlayScreen));
 
     // Playing a level, a frame at a time (Gameplay/LevelLoop.cs)
     static LevelLoop levelLoop = null!;     // made in InitServices
@@ -303,8 +303,8 @@ internal static partial class GameHost
     internal static string FormatPlayTime(int tics) => SaveFile.FormatPlayTime(tics);
 
     // The menu's load and save actions: menudefs name them, so they keep their names
-    internal static int CP_LoadGame(int quick) => gameSaves.CP_LoadGame(quick);
-    internal static int CP_SaveGame(int quick) => gameSaves.CP_SaveGame(quick);
+    internal static int RunLoadGame(int quick) => gameSaves.RunLoadGame(quick);
+    internal static int RunSaveGame(int quick) => gameSaves.RunSaveGame(quick);
 
     // The load and save screens (Ui/LoadSaveScreen.cs, made in InitServices)
     static LoadSaveScreen loadSaveScreen = null!;

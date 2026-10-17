@@ -125,9 +125,9 @@ internal partial record BlakeMonster
         {
             var dir = BounceKinds[(first + i) % BounceKinds.Length] switch
             {
-                "vertical" => (US_RndT() & 1) != 0 ? ObjDir.north : ObjDir.south,
-                "horizontal" => (US_RndT() & 1) != 0 ? ObjDir.east : ObjDir.west,
-                _ => (ObjDir)((US_RndT() % 4) * 2 + 1),
+                "vertical" => (NextRandom() & 1) != 0 ? ObjDir.north : ObjDir.south,
+                "horizontal" => (NextRandom() & 1) != 0 ? ObjDir.east : ObjDir.west,
+                _ => (ObjDir)((NextRandom() % 4) * 2 + 1),
             };
             if (TryBounceDir(dir) || TryBounceDir(opposite[(byte)dir]))
                 return;
@@ -184,7 +184,7 @@ internal partial record BlakeMonster
     internal void LiquidStand()
     {
         RuntimeFlags |= ObjFlags.FL_SHOOTABLE;
-        if (US_RndT() < 80 && Temp2 < 5)
+        if (NextRandom() < 80 && Temp2 < 5)
         {
             Temp2++;
             SetState("Shoot");
@@ -193,7 +193,7 @@ internal partial record BlakeMonster
 
         if (Math.Abs(TileX - Target.TileX) > 1 || Math.Abs(TileY - Target.TileY) > 1)
         {
-            if (!RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE) || US_RndT() < 40 || Temp2 == 5)
+            if (!RuntimeFlags.HasFlag(ObjFlags.FL_VISABLE) || NextRandom() < 40 || Temp2 == 5)
             {
                 RuntimeFlags &= ~ObjFlags.FL_SHOOTABLE;
                 Temp2 = 0;
@@ -229,8 +229,8 @@ internal partial record BlakeMonster
             if (dx < 15 && dy < 15)
             {
                 int dist = Math.Max(dx, dy);
-                int chance = dist == 0 || dist == 1 && Distance < 0x4000 ? 300 : US_RndT() / dist;
-                if (US_RndT() < chance)
+                int chance = dist == 0 || dist == 1 && Distance < 0x4000 ? 300 : NextRandom() / dist;
+                if (NextRandom() < chance)
                 {
                     SetState("Attack");
                     return;
@@ -296,7 +296,7 @@ internal partial record BlakeMonster
         Temp2 -= (short)tics;
         if (Temp2 <= 0)
         {
-            Temp2 = (short)(US_RndT() << 3);
+            Temp2 = (short)(NextRandom() << 3);
             SetState("Release");
         }
     }
@@ -306,7 +306,7 @@ internal partial record BlakeMonster
     {
         int damage = args.Length > 0 && int.TryParse(args[0], out var d) ? d : 1;
         int chance = args.Length > 1 && int.TryParse(args[1], out var c) ? c : 256;
-        if (player.TileX == TileX && player.TileY == TileY && US_RndT() < chance)
+        if (player.TileX == TileX && player.TileY == TileY && NextRandom() < chance)
             TakeDamage(damage, this);
     }
 
@@ -396,7 +396,7 @@ internal partial record BlakeMonster
 
         int Arg(int i, int fallback) => args.Length > i && int.TryParse(args[i], out var n) ? n : fallback;
         int chance = Hitpoints < Arg(2, 0) ? Arg(3, 0) : Arg(1, 0);
-        if (US_RndT() >= chance)
+        if (NextRandom() >= chance)
             return;
         for (int i = 4; i < args.Length; i++)
         {
