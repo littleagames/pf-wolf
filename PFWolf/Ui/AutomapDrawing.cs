@@ -475,10 +475,13 @@ internal sealed class AutomapDrawing(
         video.ToLayoutX(view.ClipX + view.ClipWidth),
         video.ToLayoutY(view.ClipY + view.ClipHeight));
 
+    /// <summary>Lines kept clear at the top of the view (a match's line across it); unset, none</summary>
+    internal Func<int>? TopReserved { get; set; }
+
     /// <summary>
     /// The level's name, then the kills, treasure and secrets found so far out of the level's
-    /// totals and the time on the level, one to a line down the top-left corner of the view.
-    /// Lines that don't fit the view's width or height are left out.
+    /// totals and the time on the level, one to a line down the top-left corner of the view
+    /// (under a match's line). Lines that don't fit the view's width or height are left out.
     /// </summary>
     void DrawAutomapStats(AutomapView view)
     {
@@ -499,7 +502,7 @@ internal sealed class AutomapDrawing(
         // DrawText and Bar work in 320x200 virtual pixels; the bottom rows are the position line's
         var (left, top, right, viewBottom) = LayoutExtent(view);
         int x = left + 3;
-        int y = top + 2;
+        int y = top + 2 + (TopReserved?.Invoke() ?? 0);     // under a match's line across the top (Ui/NetOverlay.cs)
         int room = right - left - 6;
         int bottom = viewBottom - font.Height - 4;
 

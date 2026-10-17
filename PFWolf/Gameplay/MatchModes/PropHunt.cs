@@ -101,10 +101,8 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
         int from = MostHealth(p.Disguise), to = MostHealth(look);
         p.Disguise = look;
         if (p.Health > 0 && from != to)
-        {
             p.Health = (short)Math.Clamp(p.Health * to / from, 1, to);
-            Hooks.ShowHealth?.Invoke(p);
-        }
+        Hooks.ShowHealth?.Invoke(p);        // the number, and the face that goes by its share
     }
 
     public override void LevelSetup()
@@ -235,6 +233,9 @@ internal sealed class PropHunt(MapManager map, GameSession session, Deathmatch m
     public bool IsDecoy(Entities.Actors.Actor actor) =>
         CurrentPhase == Phase.Hunt && Session.PlayerState.Team == HuntingTeam
         && DisguiseHealth.ContainsKey(actor.Name) && CanDisguiseAs(actor);
+
+    /// <summary>A disguised prop's most health is its look's (the status bar's face goes by its share of it)</summary>
+    public int? MostHealth(Entities.PlayerState p) => p.Disguise != null ? MostHealth(p.Disguise) : null;
 
     /// <summary>The hunters wait, still and seeing nothing, while the props hide</summary>
     public bool IsWaiting(Entities.PlayerState p) => CurrentPhase == Phase.Hide && p.Team == HuntingTeam;

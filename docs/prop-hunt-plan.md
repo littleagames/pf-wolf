@@ -142,9 +142,10 @@ the hunter losing 8 health for three shots at a real column, taunts playing with
 sounds (not heard), finding the prop ending round 2 for the hunters, time-outs winning rounds
 1 and 3 for the props, sides swapping, the match ending at 3 rounds, 402/402 checksums.
 Fixed after: rounds won now count for each player (the scoreboard's Rounds column was 0).
-Seen, still open: a prop's status bar keeps the last weapon's picture (PropHands has no
-`inventory.icon`; DogBite too), a 50-health prop's face looks hurt, and the automap's
-title overlaps the match line.
+Also fixed after: a weapon with no `inventory.icon` (PropHands, DogBite) now shows the bar's
+own picture where the last weapon's was, a prop's face goes by its share of its look's most
+health (`IMatchObjective.MostHealth`, `StatusBarHooks.MostHealth`), and the automap's stats
+start under the match line (`AutomapDrawing.TopReserved`).
 
 ### Phase 4: polish (optional)
 

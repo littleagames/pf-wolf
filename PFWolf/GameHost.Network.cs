@@ -144,6 +144,7 @@ internal static partial class GameHost
             {
                 using var _ = Session.ActAs(p);
                 statusBarDrawing.DrawHealth();
+                statusBarDrawing.DrawFace();
             });
         deathmatch.MatchObjectives.AddRange(
         [

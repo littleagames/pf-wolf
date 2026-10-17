@@ -164,6 +164,23 @@ internal class GraphicManager
         DrawPic(x, y, asset);
     }
 
+    /// <summary>Draws part of a picture: width by height of it from (srcX, srcY), at (x, y)</summary>
+    public void DrawPicRegion(string graphicName, int srcX, int srcY, int width, int height, int x, int y)
+    {
+        if (string.IsNullOrEmpty(graphicName) || assetManager.Value.Find<GraphicAsset>(graphicName) is not { } asset)
+            return;
+        width = Math.Min(width, asset.Width - srcX);
+        height = Math.Min(height, asset.Height - srcY);
+        if (srcX < 0 || srcY < 0 || width <= 0 || height <= 0)
+            return;
+        videoManager.DrawImageRegion(asset.RawData, asset.OpacityMask, asset.Width, srcX, srcY, width, height, x, y);
+    }
+
+    /// <summary>A picture's size in 320x200 pixels, or null if there's no such picture</summary>
+    public (int Width, int Height)? PicSize(string graphicName) =>
+        !string.IsNullOrEmpty(graphicName) && assetManager.Value.Find<GraphicAsset>(graphicName) is { } asset
+            ? (asset.Width, asset.Height) : null;
+
     /// <summary>Draws a picture leaving out the pixels of a palette index (a masked pic), or all of it with no mask</summary>
     public void DrawPic(string graphicName, int x, int y, byte? mask)
     {

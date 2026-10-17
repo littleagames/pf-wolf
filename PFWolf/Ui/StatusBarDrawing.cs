@@ -6,9 +6,14 @@ namespace PFWolf.Ui;
 /// <summary>What the status bar drawing needs from the game</summary>
 /// <param name="MapDisplayName">A map's name as the game shows it</param>
 /// <param name="WrapText">Text split into lines no wider than a width in a font</param>
+/// <param name="MostHealth">
+/// The most health a player can have for now, where the match mode says (a Prop Hunt prop's
+/// look), else null: the face then goes by their share of it
+/// </param>
 internal sealed record StatusBarHooks(
     Func<string, string> MapDisplayName,
-    Func<string, string, int, List<string>> WrapText);
+    Func<string, string, int, List<string>> WrapText,
+    Func<Entities.PlayerState, int?>? MostHealth = null);
 
 /// <summary>
 /// The status bar (statusbar.yaml): its layout and the parts drawn from the player's state --
@@ -154,8 +159,9 @@ internal sealed class StatusBarDrawing(
     // The face grins while the pickup sound of the WEAPON.ALWAYSGRIN item that made the player grin plays
     internal bool Grinning => session.PlayerState.GrinSound != null && audio.IsPlaying(session.PlayerState.GrinSound);
 
-    // The face (statusbar.yaml face): the grin, else the one for the player's health, looking
-    // around through its pics, else once dead the one for what killed them
+    // The face (statusbar.yaml face): the grin, else the one for the player's health (as a share
+    // of 100, where the mode caps it lower: a Prop Hunt prop), looking around through its pics,
+    // else once dead the one for what killed them
     internal void DrawFace()
     {
         if (StatusBarHidden) return;
@@ -166,8 +172,11 @@ internal sealed class StatusBarDrawing(
             pic = face.Grin;
         else if (session.PlayerState.Health != 0)
         {
+            int health = session.PlayerState.Health;
+            if (hooks.MostHealth?.Invoke(session.PlayerState) is > 0 and var most)
+                health = Math.Max(1, health * 100 / most);
             var faces = face.Faces.OrderByDescending(f => f.Health).ToList();
-            var pics = (faces.FirstOrDefault(f => session.PlayerState.Health >= f.Health) ?? faces.LastOrDefault())?.Pics;
+            var pics = (faces.FirstOrDefault(f => health >= f.Health) ?? faces.LastOrDefault())?.Pics;
             pic = pics is { Count: > 0 } ? pics[session.PlayerState.FaceFrame % pics.Count] : null;
         }
         else
@@ -254,13 +263,27 @@ internal sealed class StatusBarDrawing(
         if (session.PlayerState.Weapon == null) return;
 
         var icon = inventory.GetStringProperty(session.PlayerState.Weapon, "inventory.icon");
-        if (!string.IsNullOrEmpty(icon) && StatusBar.Get("weapon") is { } element)
+        if (StatusBar.Get("weapon") is { } element)
         {
             using var _ = StatusBarOrigin(element);
-            graphics.DrawPic(icon, element.X, StatusBarTop(element) + element.Y);
+            if (!string.IsNullOrEmpty(icon))
+            {
+                graphics.DrawPic(icon, element.X, StatusBarTop(element) + element.Y);
+                shownWeaponIcon = icon;
+            }
+            else if (shownWeaponIcon != null && !IsOverlay && !element.Top && graphics.PicSize(shownWeaponIcon) is { } size
+                && StatusBar.Get("background") is { Pic: { Length: > 0 } bar })
+            {
+                // A weapon with no picture (a Prop Hunt prop's empty hands): the bar's own picture where the last one was
+                graphics.DrawPicRegion(bar, element.X, element.Y, size.Width, size.Height, element.X, StatusBarTop(element) + element.Y);
+                shownWeaponIcon = null;
+            }
         }
         DrawWeaponCorner();
     }
+
+    // The weapon picture last drawn, to take away for a weapon with none
+    string? shownWeaponIcon;
 
     // Planet Strike's corner under the weapon's picture, with the ammo on it (statusbar.yaml
     // weapon-corner): its picture for the weapon in hand

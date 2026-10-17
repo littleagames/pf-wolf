@@ -54,6 +54,9 @@ internal interface IMatchObjective
     /// </summary>
     bool IsDecoy(Entities.Actors.Actor actor) => false;
 
+    /// <summary>The most health a player can have for now, where the mode caps it (a Prop Hunt prop's look); else null</summary>
+    int? MostHealth(Entities.PlayerState p) => null;
+
     /// <summary>Whether the mode keeps a player still and shows them nothing for now (Prop Hunt's hunters while the props hide)</summary>
     bool IsWaiting(Entities.PlayerState p) => false;
 

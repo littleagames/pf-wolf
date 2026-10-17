@@ -249,6 +249,7 @@ internal static partial class GameHost
         netOverlay.ViewTop = () => _videoManager.ToLayoutY(Render.ViewScreenY, roundUp: true);
         netOverlay.ViewRect = () => (Render.ViewScreenX, Render.ViewScreenY, Render.ViewWidth, Render.ViewHeight);
         hudMessageDrawing.TopReserved = netOverlay.MatchLineHeight;     // messages go under a match's line
+        automapDrawing.TopReserved = netOverlay.MatchLineHeight;        // and the automap's stats
         gameScripts = MakeGameScripts();
         levelMusic = new LevelMusic(GameEngineManager, AudioManager, Session);
         playKeys = MakePlayKeys();
