@@ -230,7 +230,7 @@ internal static partial class GameHost
         playerClassRules = new PlayerClassRules(_gameEngineManager, _inventoryManager, session);
         playerWeapons = MakePlayerWeapons();
         playScreen = MakePlayScreen();
-        viewSetup = new ViewSetup(_videoManager, playScreen, render, playArea, new ViewSetupHooks(() => viewsize, size => viewsize = size));
+        viewSetup = new ViewSetup(_videoManager, playScreen, render, playArea, settings);
         consoleDrawing = new ConsoleDrawing(_videoManager, _graphicManager, _fontManager, _consoleManager, playScreen, statusBarDrawing, playArea);
         debugCommands = new DebugCommands(_consoleManager, _gameEngineManager, _videoManager, _mapManager, doors, frameRefresh, debugScreens,
             playScreen, render, consoleTargets, session,
@@ -305,7 +305,7 @@ internal static partial class GameHost
         elevatorScreens = new ElevatorScreens(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, _graphicManager,
             _inventoryManager, _mapManager, menuDrawing, textPresenter, hubs, session, new ElevatorHooks(RadarTileColor, GetMapDisplayName));
         changeViewScreen = new ChangeViewScreen(_assetManager, _inputManager, _audioManager, _videoManager, menuDrawing, menuLoop, menuInput, ui,
-            new ChangeViewHooks(() => viewsize, ShowViewSize, NewViewSize, () => bordercol));
+            settings, session, new ChangeViewHooks(ShowViewSize, NewViewSize));
         optionsMenu = new OptionsMenu(_videoManager, _hudMessageManager, _automapManager, menuDrawing, menuLoop, menuInput, menuDefs);
         playerDeath = MakePlayerDeath();
         newGameMenu = new NewGameMenu(_gameEngineManager, _assetManager, _inputManager, _audioManager, _videoManager, _graphicManager,
@@ -317,8 +317,7 @@ internal static partial class GameHost
         mainGameLoop = MakeMainGameLoop();
         quickKeys = new QuickKeys(_gameEngineManager, _assetManager, _videoManager, _audioManager, _inputManager, menuDrawing, menuLoop,
             controlPanel, gameSaves, levelMusic, frameRefresh, playScreen, session,
-            new QuickKeysHooks(() => ingame, offset => lastgamemusicoffset = offset, () => lastgamemusicoffset, s => playstate = s,
-                () => viewsize, () => startgame, () => loadedgame, UiRandom));
+            settings, new QuickKeysHooks(UiRandom));
         hubActions = MakeHubActions();
         titleScreens = new TitleScreens(_videoManager, _audioManager, _inputManager, _graphicManager, _assetManager, menuDrawing, ui, moviePlayer,
             new TitleScreenHooks(
@@ -333,7 +332,7 @@ internal static partial class GameHost
 
         titleLoop = new TitleLoop(_gameEngineManager, _assetManager, _videoManager, _graphicManager, _inputManager, _audioManager, ui,
             signonPanel, titleScreens, highScoresScreen, demos, netGames, quickKeys, mainGameLoop, cheatCommands, warpRequest, session,
-            new TitleLoopHooks(() => param_nowait, () => INTROSONG, () => startgame, () => loadedgame, () => netgame, () => playstate,
+            new TitleLoopHooks(() => param_nowait, () => INTROSONG,
                 (skill, episode, map) => NewGame(skill, episode, map)));
 
         // What the actors use of the game (Entities/Actors/ActorWorld.cs); the map hands it to each

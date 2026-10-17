@@ -9,18 +9,10 @@ namespace PFWolf.Ui;
 /// <summary>What the title loop needs from the game</summary>
 /// <param name="NoWait">--nowait: no signon key, intro screens or title loop</param>
 /// <param name="IntroSong">The title's music</param>
-/// <param name="StartGame">Whether the menu started a new game</param>
-/// <param name="LoadedGame">Whether the menu loaded a game</param>
-/// <param name="NetGame">Whether this is a game with others</param>
-/// <param name="PlayState">How the last level (or demo) ended</param>
 /// <param name="NewGame">Starts a game on a skill, from a map (GameHost.NewGame)</param>
 internal sealed record TitleLoopHooks(
     Func<bool> NoWait,
     Func<string> IntroSong,
-    Func<bool> StartGame,
-    Func<bool> LoadedGame,
-    Func<bool> NetGame,
-    Func<playstatetypes> PlayState,
     Action<short, EpisodeInfo, MapInfo> NewGame);
 
 /// <summary>
@@ -218,7 +210,7 @@ internal sealed class TitleLoop(
                 // demo
                 //
                 demos.PlayDemo(titleScreens.TakeNextTitleDemo());
-                if (hooks.PlayState() == playstatetypes.ex_abort)
+                if (session.playstate == playstatetypes.ex_abort)
                     break;
                 video.FadeOut();
                 if (video.HasMargins)
@@ -240,11 +232,11 @@ internal sealed class TitleLoop(
     /// <summary>Plays the game the menu started or loaded, if it did, then puts the title music back</summary>
     internal void RunStartedGame()
     {
-        if (!hooks.StartGame() && !hooks.LoadedGame())
+        if (!session.startgame && !session.loadedgame)
             return;
 
         mainGameLoop.GameLoop();
-        if (hooks.NetGame())
+        if (session.netgame)
             netGames.EndNetGame();       // a game with others is over: leave it (Networking/NetGames.cs)
         if (!hooks.NoWait())
         {

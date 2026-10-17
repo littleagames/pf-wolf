@@ -3,15 +3,15 @@ using PFWolf.Extensions;
 namespace PFWolf.Ui;
 
 /// <summary>What the view size screen needs from the renderer</summary>
-/// <param name="ViewSize">The view's size now (4 to 21)</param>
 /// <param name="ShowViewSize">Draws the view's outline at a size</param>
 /// <param name="NewViewSize">Sets the view to a size</param>
-/// <param name="BorderColor">The color round the view</param>
-internal sealed record ChangeViewHooks(Func<int> ViewSize, Action<int> ShowViewSize, Action<int> NewViewSize, Func<string> BorderColor);
+internal sealed record ChangeViewHooks(
+    Action<int> ShowViewSize,
+    Action<int> NewViewSize);
 
 /// <summary>The Change View screen (F5): the view made bigger or smaller, up to full screen</summary>
 internal sealed class ChangeViewScreen(AssetManager assets, InputManager input, AudioManager audio, VideoManager video,
-    MenuDrawing draw, MenuLoop loop, MenuInput menuInput, UiText ui, ChangeViewHooks hooks)
+    MenuDrawing draw, MenuLoop loop, MenuInput menuInput, UiText ui, Configuration.GameSettings settings, GameSession session, ChangeViewHooks hooks)
 {
     internal int Run()
     {
@@ -19,7 +19,7 @@ internal sealed class ChangeViewScreen(AssetManager assets, InputManager input, 
         int exit = 0, oldview, newview;
         ControlInfo ci;
 
-        newview = oldview = hooks.ViewSize();
+        newview = oldview = settings.viewsize;
         DrawChangeView(oldview);
         draw.MenuFadeIn();
 
@@ -91,7 +91,7 @@ internal sealed class ChangeViewScreen(AssetManager assets, InputManager input, 
         // The help goes in the bottom 40 lines of the screen, where the status bar is
         int top = video.ScreenYAboveBottom(40);
         if (view != 21)
-            video.BarScaledCoord(0, top, video.screenWidth, video.screenHeight - top, hooks.BorderColor());
+            video.BarScaledCoord(0, top, video.screenWidth, video.screenHeight - top, session.bordercol);
 
         hooks.ShowViewSize(view);
 

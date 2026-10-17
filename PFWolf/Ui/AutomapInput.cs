@@ -4,15 +4,6 @@ using static PFWolf.Commands.ConsoleArgs;
 
 namespace PFWolf.Ui;
 
-/// <summary>What the automap's keys need from the game</summary>
-/// <param name="DemoActive">Whether a demo is playing or recording (the map isn't part of one)</param>
-/// <param name="MapReveal">Whether the automap shows the whole level (am_reveal)</param>
-/// <param name="SetMapReveal">Turns that on or off</param>
-internal sealed record AutomapInputHooks(
-    Func<bool> DemoActive,
-    Func<bool> MapReveal,
-    Action<bool> SetMapReveal);
-
 /// <summary>
 /// The automap's keys: opening it (ToggleAutomap), zooming and panning while they're held
 /// (UpdateAutomap), its toggles (HandleAutomapKey), the movement controls moving the map in pan
@@ -26,8 +17,7 @@ internal sealed class AutomapInput(
     ControlBindings controls,
     ControlSettings controlSettings,
     InputPolling polling,
-    GameSession session,
-    AutomapInputHooks hooks)
+    GameSession session)
 {
     // Map panning speed at the default zoom: 8 tiles a second at walking pace, in virtual pixels a tic
     internal const float AUTOMAP_PANSPEED = 8 * AutomapManager.DefaultZoom / 70f;
@@ -48,7 +38,7 @@ internal sealed class AutomapInput(
     /// </summary>
     internal void ToggleAutomap()
     {
-        if (hooks.DemoActive())
+        if ((session.demoplayback || session.demorecord))
             return;
 
         automap.Toggle();       // the play loop's next UpdateAutomap centers it before it's drawn
@@ -186,7 +176,7 @@ internal sealed class AutomapInput(
 
     internal void Cmd_AmReveal(string[] args)
     {
-        hooks.SetMapReveal(Toggle(args, hooks.MapReveal()));
-        console.Print(hooks.MapReveal() ? "Automap reveal ON" : "Automap reveal OFF");
+        session.mapreveal = (byte)(Toggle(args, session.mapreveal != 0) ? 1 : 0);
+        console.Print(session.mapreveal != 0 ? "Automap reveal ON" : "Automap reveal OFF");
     }
 }

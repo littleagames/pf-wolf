@@ -7,7 +7,7 @@ public class PlayScreenTests
     private static PlayScreen Make(VideoManager? video, int viewsize) =>
         new(null!, null!, video!, null!, null!, null!, null!, null!,
             new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade), null!,
-            new PlayScreenHooks(() => viewsize, () => true, () => "VIEWCOLOR", _ => { }));
+            new Configuration.GameSettings { viewsize = viewsize }, new GameSession { ingame = true }, new PlayScreenHooks(_ => { }));
 
     private static VideoManager Video(double uiScale) =>
         new(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test"))) { uiScale = uiScale };

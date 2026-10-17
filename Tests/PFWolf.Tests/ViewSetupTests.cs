@@ -5,7 +5,7 @@ namespace PFWolf.Tests;
 public class ViewSetupTests
 {
     private RenderState _render = null!;
-    private int _viewsize;
+    private Configuration.GameSettings _settings = null!;
     private ViewSetup _setup = null!;
 
     [SetUp]
@@ -19,11 +19,11 @@ public class ViewSetupTests
         {
             pixelangle = new short[1920],
         };
-        _viewsize = 21;
+        _settings = new Configuration.GameSettings { viewsize = 21 };
         // No status bar here (no assets): the play area is the whole screen
         var bar = new StatusBarDrawing(null!, null, null!, null!, null!, null!, null!, null!, new GameSession(),
             new StatusBarHooks(() => false, map => map, (text, _, _) => [text]));
-        _setup = new ViewSetup(video, null!, _render, new PlayArea(video, bar), new ViewSetupHooks(() => _viewsize, size => _viewsize = size));
+        _setup = new ViewSetup(video, null!, _render, new PlayArea(video, bar), _settings);
     }
 
     [Test]

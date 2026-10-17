@@ -5,8 +5,6 @@ using PFWolf.Constants;
 namespace PFWolf.Rendering;
 
 /// <summary>What drawing a frame needs from the game</summary>
-/// <param name="FizzleIn">Whether this frame fades the level in (a new level, a restart)</param>
-/// <param name="ClearFizzleIn">The fade in is done</param>
 /// <param name="LevelFadeStyle">How a level fades in (game-info level-fade)</param>
 /// <param name="LevelFadeTics">How long that takes</param>
 /// <param name="RestoreBorderAfterConsole">Redraws the border the console covered, once it's shut</param>
@@ -15,7 +13,6 @@ namespace PFWolf.Rendering;
 /// <param name="DrawHudMessages">The HUD messages and info area</param>
 /// <param name="DrawNetOverlay">Waiting for someone, or asking whether to leave</param>
 /// <param name="DrawConsole">The console, when it's open</param>
-/// <param name="BorderColor">The view border's color (the fps counter sits on it)</param>
 /// <param name="ScreenshotPending">Whether the screenshot command asked for a shot</param>
 /// <param name="ClearScreenshotPending">The shot's been taken</param>
 /// <param name="TakeScreenshot">Saves the screen and says where it went</param>
@@ -23,8 +20,6 @@ namespace PFWolf.Rendering;
 /// <param name="ScopePicture">The scope's picture while the player looks through one (Gameplay/WeaponZoom.cs), else null</param>
 /// <param name="DrawScope">Draws it over the screen, in place of the weapon in hand</param>
 internal sealed record FrameRefreshHooks(
-    Func<bool> FizzleIn,
-    Action ClearFizzleIn,
     Func<FadeStyle> LevelFadeStyle,
     Func<int> LevelFadeTics,
     Action RestoreBorderAfterConsole,
@@ -33,7 +28,6 @@ internal sealed record FrameRefreshHooks(
     Action DrawHudMessages,
     Action DrawNetOverlay,
     Action DrawConsole,
-    Func<string> BorderColor,
     Func<bool> ScreenshotPending,
     Action ClearScreenshotPending,
     Func<string> TakeScreenshot,
@@ -219,10 +213,10 @@ internal sealed class FrameRefresh(
         // show screen and time last cycle
         //
 
-        if (hooks.FizzleIn())
+        if (session.fizzlein)
         {
             video.Transition(hooks.LevelFadeStyle(), 0, 0, video.screenWidth, video.screenHeight, (uint)hooks.LevelFadeTics());
-            hooks.ClearFizzleIn();
+            session.fizzlein = false;
 
             lasttimecount = (int)GameEngineManager.GetTimeCount();          // don't make a big tic count
         }
@@ -238,7 +232,7 @@ internal sealed class FrameRefresh(
 
             if (fpscounter)
             {
-                video.Bar(0, 0, 40, 10, hooks.BorderColor());
+                video.Bar(0, 0, 40, 10, session.bordercol);
                 graphics.DrawText(4, 1, $"{fps} fps", new Fonts.TextStyle(UiFonts.SMALL_FONT, "Grey", "VIEWCOLOR"));
             }
 

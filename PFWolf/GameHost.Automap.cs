@@ -30,7 +30,7 @@ internal static partial class GameHost
     static AutomapDrawing MakeAutomapDrawing() =>
         new(_assetManager, _videoManager, _graphicManager, _fontManager, _automapManager, _mapManager, _factionManager,
             _translationManager, doors, pushWalls, spriteDrawing, session, new AutomapHooks(
-                () => (viewscreenx, viewscreeny, viewwidth, viewheight), () => mapreveal != 0, GetMapDisplayName, FormatPlayTime,
+                () => (viewscreenx, viewscreeny, viewwidth, viewheight), GetMapDisplayName, FormatPlayTime,
                 () => objectives.StatsLines()));
 
     internal static void DrawAutomap() => automapDrawing.DrawAutomap();
@@ -39,7 +39,7 @@ internal static partial class GameHost
     static AutomapInput automapInput = null!;       // made in InitServices
 
     static AutomapInput MakeAutomapInput() => new(_inputManager, _consoleManager, _automapManager, _mapManager, controls, controlSettings,
-        inputPolling, session, new AutomapInputHooks(() => demoplayback || demorecord, () => mapreveal != 0, on => mapreveal = (byte)(on ? 1 : 0)));
+        inputPolling, session);
 
     internal static void ToggleAutomap() => automapInput.ToggleAutomap();
     internal static void UpdateAutomap() => automapInput.UpdateAutomap();

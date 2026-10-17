@@ -25,7 +25,7 @@ public class SpriteDrawingTests
         _sprites = [];
         _drawing = new SpriteDrawing(null!, null!, null!, null!, null!, null!, null!, _render, null!, new GameSession(),
             new SpriteDrawingHooks(() => null, ob => ob.Name == "Body", _ => null, ob => ob.Name, _sprites.Contains,
-                () => null, () => 1, () => false));
+                () => null, () => 1));
     }
 
     private Monster At(double tilesAhead, double tilesRight) => new()

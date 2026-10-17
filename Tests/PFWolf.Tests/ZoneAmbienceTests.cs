@@ -24,7 +24,10 @@ public class ZoneAmbienceTests
         """;
 
     private GameInfoAsset _info = null!;
-    private string? _map;
+    private GameSession _session = null!;
+
+    // The level being played (the session's map)
+    private string? _map { get => _session.gamestate.mapon; set => _session.gamestate.mapon = value!; }
     private (int X, int Y)? _tile;
     private int[,] _zones = null!;
     private bool _disguised;
@@ -35,6 +38,7 @@ public class ZoneAmbienceTests
     public void Make()
     {
         _info = YamlDataEntryLoader.Deserialize<GameInfoAsset>(GameInfo);
+        _session = new GameSession();
         _map = "MAP01";
         _tile = (0, 0);
         _zones = new int[8, 1];
@@ -42,8 +46,7 @@ public class ZoneAmbienceTests
             _zones[x, 0] = x;           // tile x is in zone x
         _disguised = false;
         _asked = [];
-        _ambience = new ZoneAmbience(new ZoneAmbienceHooks(() => _map,
-            () => _map != null && _info.Maps.TryGetValue(_map, out var map) ? map : null, () => _info.DefaultMap,
+        _ambience = new ZoneAmbience(_session, new ZoneAmbienceHooks(() => _map != null && _info.Maps.TryGetValue(_map, out var map) ? map : null, () => _info.DefaultMap,
             () => _tile, (x, y) => _zones[x, y], () => _disguised, _asked.Add));
     }
 

@@ -7,13 +7,11 @@ namespace PFWolf.Ui;
 
 /// <summary>What drawing the automap needs from the game</summary>
 /// <param name="View">The 3D view's rectangle on the screen (x, y, width, height): the map is drawn in it</param>
-/// <param name="MapReveal">Whether the reveal cheat is on (everything shows, seen or not)</param>
 /// <param name="MapDisplayName">A map's name as the game shows it</param>
 /// <param name="FormatPlayTime">The time on the level, as the stats show it</param>
 /// <param name="ObjectiveStats">The level objectives' stats lines (Gameplay/Objectives.cs)</param>
 internal sealed record AutomapHooks(
     Func<(int X, int Y, int Width, int Height)> View,
-    Func<bool> MapReveal,
     Func<string, string> MapDisplayName,
     Func<int, string> FormatPlayTime,
     Func<IEnumerable<string>> ObjectiveStats);
@@ -133,7 +131,7 @@ internal sealed class AutomapDrawing(
         else
             video.BarScaledCoord(view.ClipX, view.ClipY, view.ClipWidth, view.ClipHeight, AutomapColor("AutomapBackground"));
 
-        bool reveal = hooks.MapReveal();
+        bool reveal = (session.mapreveal != 0);
 
         if (automap.ShowGrid && automap.Zoom >= AUTOMAP_MINGRIDZOOM)
             DrawAutomapGrid(view);

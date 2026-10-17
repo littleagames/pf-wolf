@@ -3,13 +3,6 @@ using PFWolf.Constants;
 
 namespace PFWolf.Rendering;
 
-/// <summary>What sizing the view needs from the game</summary>
-/// <param name="ViewSize">The view's size setting: 4 to 19 bordered, 20 across the play area, 21 the whole screen</param>
-/// <param name="SetViewSize">Sets it</param>
-internal sealed record ViewSetupHooks(
-    Func<int> ViewSize,
-    Action<int> SetViewSize);
-
 /// <summary>
 /// The view's size and place on the screen for a view size setting (NewViewSize, SetViewSize),
 /// the play area round it, the projection that follows from it (CalcProjection: scale, height
@@ -20,7 +13,7 @@ internal sealed class ViewSetup(
     PlayScreen playScreen,
     RenderState render,
     PlayArea screenArea,
-    ViewSetupHooks hooks)
+    Configuration.GameSettings settings)
 {
     // Radians to fine angles (FINEANGLES a turn)
     const float RadToInt = GameConstants.FINEANGLES / 2 / GameConstants.PI;
@@ -34,10 +27,10 @@ internal sealed class ViewSetup(
     internal void NewViewSize(int width)
     {
         width = AllowedViewSize(width);
-        hooks.SetViewSize(width);
-        if (hooks.ViewSize() == 21)
+        settings.viewsize = width;
+        if (settings.viewsize == 21)
             SetViewSize((uint)video.screenWidth, (uint)video.screenHeight);
-        else if (hooks.ViewSize() == 20)
+        else if (settings.viewsize == 20)
             SetViewSize((uint)video.screenWidth, (uint)screenArea.PlayAreaHeight);
         else
             SetViewSize((uint)(width * 16 * video.screenWidth / 320), (uint)BorderedViewHeight(width));
@@ -156,7 +149,7 @@ internal sealed class ViewSetup(
     {
         // SetViewSize rounds the height down to even, so allow for the line that may lose:
         // otherwise a classic layout could come out a hair too wide and change
-        int classicWidth = (int)Math.Ceiling((height + 1) * ClassicViewAspect(hooks.ViewSize()) - 1e-9);
+        int classicWidth = (int)Math.Ceiling((height + 1) * ClassicViewAspect(settings.viewsize) - 1e-9);
         return Math.Max(1, Math.Min(width, classicWidth));
     }
 

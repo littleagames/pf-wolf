@@ -79,9 +79,9 @@ internal static partial class GameHost
     static PlayKeys MakePlayKeys() => new(_assetManager, _videoManager, _inputManager, _audioManager, _graphicManager, _gameEngineManager,
         _consoleManager, _automapManager, _inventoryManager, menuDrawing, inputPolling, statusBarDrawing, playerWeapons, playerClassRules,
         levelMusic, frameRefresh, session,
-        new PlayKeysHooks(() => demoplayback, () => demorecord, () => netgame, () => netChatting, NetChatKeys, NetCheckKeys,
-            ToggleAutomap, HandleAutomapKey, () => viewsize, DrawPlayBorder, DrawPlayBorderSides, () => DebugOk = 1,
-            US_ControlPanel, DrawPlayScreen, () => startgame, () => loadedgame, s => playstate = s));
+        settings, new PlayKeysHooks(() => netChatting, NetChatKeys, NetCheckKeys,
+            ToggleAutomap, HandleAutomapKey, DrawPlayBorder, DrawPlayBorderSides,
+            US_ControlPanel, DrawPlayScreen));
 
     // Playing a level, a frame at a time (Gameplay/LevelLoop.cs)
     static LevelLoop levelLoop = null!;     // made in InitServices
@@ -94,8 +94,7 @@ internal static partial class GameHost
 
     // Zones' ambient sounds (Gameplay/ZoneAmbience.cs)
     static ZoneAmbience? _zoneAmbience;
-    static ZoneAmbience zoneAmbience => _zoneAmbience ??= new ZoneAmbience(new ZoneAmbienceHooks(
-        () => gamestate.mapon,
+    static ZoneAmbience zoneAmbience => _zoneAmbience ??= new ZoneAmbience(session, new ZoneAmbienceHooks(
         () => gamestate.mapon is { } map && _gameEngineManager.GetGameInfo().Maps.TryGetValue(map, out var info) ? info : null,
         () => _gameEngineManager.GetGameInfo().DefaultMap,
         () => session.player is { } pawn ? (pawn.TileX, pawn.TileY) : null,

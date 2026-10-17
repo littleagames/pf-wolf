@@ -10,7 +10,8 @@ public class PlayKeysTests
     private InputManager _input = null!;
     private PlayKeys _keys = null!;
 
-    private bool _demoPlayback, _demoRecord, _chatting, _automapTakes;
+    private GameSession _session = null!;
+    private bool _chatting, _automapTakes;
     private readonly List<string> _calls = [];
 
     [SetUp]
@@ -18,23 +19,23 @@ public class PlayKeysTests
     {
         _console = new ConsoleManager();
         _input = new InputManager(new Lazy<ConsoleManager>(() => _console));
-        var session = new GameSession();
+        var session = _session = new GameSession { netgame = true };
         var render = new RenderState(new TextureAsset { RawData = new byte[64 * 64] }, Lighting.noshade);
         var frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, session, null!);
         var polling = new InputPolling(_input, _console, new AutomapManager(), new ControlBindings(), new ControlSettings(), frame,
             new DemoBuffer(), session,
             new InputPollingHooks(_ => { }, () => false, () => false, () => false, () => false, () => false, () => true, () => { }));
 
-        (_demoPlayback, _demoRecord, _chatting, _automapTakes) = (false, false, false, false);
+        (_chatting, _automapTakes) = (false, false);
         _calls.Clear();
 
         // With others, so CheckKeys hands the rest to NetCheckKeys after the binds (no menus,
         // pausing or cheat combos to reach)
         _keys = new PlayKeys(new AssetManager(), new VideoManager(new Lazy<AssetManager>(() => throw new InvalidOperationException("no assets in this test"))), _input, null!, null!, null!, _console, new AutomapManager(), null!, null!,
             polling, null!, null!, null!, null!, frame, session,
-            new PlayKeysHooks(() => _demoPlayback, () => _demoRecord, NetGame: () => true, () => _chatting,
+            new Configuration.GameSettings { viewsize = 21 }, new PlayKeysHooks(() => _chatting,
                 () => _calls.Add("chat"), scan => _calls.Add($"net {scan}"), () => _calls.Add("automap"),
-                _ => _automapTakes, () => 21, () => { }, () => { }, () => { }, _ => { }, () => { }, () => false, () => false, _ => { }));
+                _ => _automapTakes, () => { }, () => { }, _ => { }, () => { }));
     }
 
     private void Press(ScanCodes key)
@@ -64,7 +65,7 @@ public class PlayKeysTests
     [Test]
     public void Binds_Dont_Run_While_Recording_A_Demo()
     {
-        _demoRecord = true;
+        _session.demorecord = true;
         _console.Bind(InputCode.FromKey(ScanCodes.sc_K), "bound_k");
         Press(ScanCodes.sc_K);
 
@@ -79,11 +80,11 @@ public class PlayKeysTests
         // Arrange
         _console.Bind(InputCode.FromKey(ScanCodes.sc_K), "bound_k");
         Press(ScanCodes.sc_K);
-        _demoPlayback = true;
+        _session.demoplayback = true;
 
         // Act: the demo ends, and the next frame's keys are checked
         _keys.CheckKeys();
-        _demoPlayback = false;
+        _session.demoplayback = false;
         _keys.CheckKeys();
 
         // Assert
@@ -104,7 +105,7 @@ public class PlayKeysTests
     [Test]
     public void Not_While_Recording_A_Demo()
     {
-        _demoRecord = true;
+        _session.demorecord = true;
         Press(ScanCodes.sc_Grave);
 
         _keys.CheckKeys();

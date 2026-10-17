@@ -11,7 +11,6 @@ public class AutomapInputTests
     private ControlBindings _controls = null!;
     private InputPolling _polling = null!;
     private GameSession _session = null!;
-    private bool _demo, _reveal;
     private AutomapInput _keys = null!;
 
     [SetUp]
@@ -26,9 +25,7 @@ public class AutomapInputTests
         var frame = new FrameRefresh(null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, null!, render, _session, null!);
         _polling = new InputPolling(_input, _console, _automap, _controls, new ControlSettings(), frame, new DemoBuffer(), _session,
             new InputPollingHooks(_ => { }, () => false, () => false, () => false, () => false, () => false, () => true, () => { }));
-        (_demo, _reveal) = (false, false);
-        _keys = new AutomapInput(_input, _console, _automap, null!, _controls, new ControlSettings(), _polling, _session,
-            new AutomapInputHooks(() => _demo, () => _reveal, on => _reveal = on));
+        _keys = new AutomapInput(_input, _console, _automap, null!, _controls, new ControlSettings(), _polling, _session);
     }
 
     private static readonly InputCode KeyF = InputCode.FromKey(ScanCodes.sc_F);
@@ -41,7 +38,7 @@ public class AutomapInputTests
         _keys.ToggleAutomap();
         Assert.That(_automap.IsOpen, Is.False);
 
-        _demo = true;
+        _session.demoplayback = true;
         _keys.ToggleAutomap();
         Assert.That(_automap.IsOpen, Is.False);
     }
@@ -106,6 +103,6 @@ public class AutomapInputTests
         Assert.That(_console.Scrollback[^1], Is.EqualTo("am_style is color"));
 
         _keys.Cmd_AmReveal([]);
-        Assert.That((_reveal, _console.Scrollback[^1]), Is.EqualTo((true, "Automap reveal ON")));
+        Assert.That((_session.mapreveal != 0, _console.Scrollback[^1]), Is.EqualTo((true, "Automap reveal ON")));
     }
 }

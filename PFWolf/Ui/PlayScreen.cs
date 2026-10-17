@@ -4,14 +4,8 @@ using PFWolf.Extensions;
 namespace PFWolf.Ui;
 
 /// <summary>What drawing the play screen needs from the game</summary>
-/// <param name="ViewSize">The view's size setting (21: the full screen, no border)</param>
-/// <param name="InGame">Whether a level is being played (a full screen view hides the radar then)</param>
-/// <param name="BorderColor">The view border's color (Change View sets another)</param>
 /// <param name="PresenterMessageBox">Shows a presenter.yaml message box script (Ui/TextPresenter.cs)</param>
 internal sealed record PlayScreenHooks(
-    Func<int> ViewSize,
-    Func<bool> InGame,
-    Func<string> BorderColor,
     Action<string> PresenterMessageBox);
 
 /// <summary>
@@ -31,6 +25,8 @@ internal sealed class PlayScreen(
     Radar radarDrawing,
     RenderState render,
     PlayArea playArea,
+    Configuration.GameSettings settings,
+    GameSession session,
     PlayScreenHooks hooks)
 {
     internal void DrawPlayScreen()
@@ -67,7 +63,7 @@ internal sealed class PlayScreen(
         statusBar.DrawPowerMeter();
         statusBar.DrawHeartMonitor(force: true);
         statusBar.DrawRadarGauge();
-        if (statusBar.StatusBar.Get("radar") is { } radar && !(hooks.ViewSize() == 21 && hooks.InGame()))
+        if (statusBar.StatusBar.Get("radar") is { } radar && !(settings.viewsize == 21 && session.ingame))
             radarDrawing.DrawRadar(radar);
         statusBar.DrawInfoArea(force: true);
     }
@@ -79,7 +75,7 @@ internal sealed class PlayScreen(
     /// </summary>
     internal void DrawStatusOverlay()
     {
-        if (!statusBar.IsOverlay || !hooks.InGame() || hooks.ViewSize() == 21)
+        if (!statusBar.IsOverlay || !session.ingame || settings.viewsize == 21)
             return;
         statusBar.DrawingOverlay = true;
         try
@@ -106,8 +102,8 @@ internal sealed class PlayScreen(
     {
         int px = BorderLinePixels;
 
-        if (hooks.BorderColor() != "VIEWCOLOR")
-            DrawStatusBorder(hooks.BorderColor());
+        if (session.bordercol != "VIEWCOLOR")
+            DrawStatusBorder(session.bordercol);
         else
         {
             // Beside the status bar: from each screen edge to the border's sides into the picture.
@@ -116,14 +112,14 @@ internal sealed class PlayScreen(
             int top = video.ScreenYAboveBottom(playArea.StatusLines);
             if (sides > 0 && playArea.StatusLines > 0)
             {
-                video.BarScaledCoord(0, top, sides, video.screenHeight - top, hooks.BorderColor());
-                video.BarScaledCoord(video.screenWidth - sides, top, sides, video.screenHeight - top, hooks.BorderColor());
+                video.BarScaledCoord(0, top, sides, video.screenHeight - top, session.bordercol);
+                video.BarScaledCoord(video.screenWidth - sides, top, sides, video.screenHeight - top, session.bordercol);
             }
         }
 
         if (render.viewheight == video.screenHeight) return;
 
-        video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaHeight, hooks.BorderColor());
+        video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaHeight, session.bordercol);
 
         int xl = video.screenWidth / 2 - render.viewwidth / 2;
         int yl = playArea.PlayAreaTop + (playArea.PlayAreaHeight - render.viewheight) / 2;
@@ -133,21 +129,21 @@ internal sealed class PlayScreen(
         {
             // Paint game view border lines
             video.BarScaledCoord(xl - px, yl - px, render.viewwidth + px, px, "Black");                      // upper border
-            video.BarScaledCoord(xl, yl + render.viewheight, render.viewwidth + px, px, hooks.BorderColor());// - 2);       // lower border
+            video.BarScaledCoord(xl, yl + render.viewheight, render.viewwidth + px, px, session.bordercol);// - 2);       // lower border
             video.BarScaledCoord(xl - px, yl - px, px, render.viewheight + px, "Black");                     // left border
-            video.BarScaledCoord(xl + render.viewwidth, yl - px, px, render.viewheight + 2 * px, hooks.BorderColor());// - 2);  // right border
-            video.BarScaledCoord(xl - px, yl + render.viewheight, px, px, hooks.BorderColor());// - 3);              // lower left highlight
+            video.BarScaledCoord(xl + render.viewwidth, yl - px, px, render.viewheight + 2 * px, session.bordercol);// - 2);  // right border
+            video.BarScaledCoord(xl - px, yl + render.viewheight, px, px, session.bordercol);// - 3);              // lower left highlight
         }
         else
         {
             // Just paint a lower border line
-            video.BarScaledCoord(0, yl + render.viewheight, render.viewwidth, px, hooks.BorderColor());// - 2);       // lower border
+            video.BarScaledCoord(0, yl + render.viewheight, render.viewwidth, px, session.bordercol);// - 2);       // lower border
         }
     }
 
     internal void DrawPlayBorderSides()
     {
-        if (hooks.ViewSize() == 21) return;
+        if (settings.viewsize == 21) return;
 
         int sw = video.screenWidth;
         int sh = video.screenHeight;
@@ -162,29 +158,29 @@ internal sealed class PlayScreen(
 
         if (xl != 0)
         {
-            video.BarScaledCoord(0, top, xl - px, h, hooks.BorderColor());                 // left side
-            video.BarScaledCoord(xl + vw + px, top, sw - (xl + vw + px), h, hooks.BorderColor());          // right side, out to the screen edge
+            video.BarScaledCoord(0, top, xl - px, h, session.bordercol);                 // left side
+            video.BarScaledCoord(xl + vw + px, top, sw - (xl + vw + px), h, session.bordercol);          // right side, out to the screen edge
         }
 
         if (yl != top)
         {
-            video.BarScaledCoord(0, top, sw, yl - px - top, hooks.BorderColor());                    // upper side
-            video.BarScaledCoord(0, yl + vh + px, sw, top + h - (yl + vh + px), hooks.BorderColor());         // lower side, down to the status bar
+            video.BarScaledCoord(0, top, sw, yl - px - top, session.bordercol);                    // upper side
+            video.BarScaledCoord(0, yl + vh + px, sw, top + h - (yl + vh + px), session.bordercol);         // lower side, down to the status bar
         }
 
         if (xl != 0)
         {
             // Paint game view border lines
             video.BarScaledCoord(xl - px, yl - px, vw + px, px, "Black");                      // upper border
-            video.BarScaledCoord(xl, yl + vh, vw + px, px, hooks.BorderColor());// - 2);          // lower border
+            video.BarScaledCoord(xl, yl + vh, vw + px, px, session.bordercol);// - 2);          // lower border
             video.BarScaledCoord(xl - px, yl - px, px, vh + px, "Black");                      // left border
-            video.BarScaledCoord(xl + vw, yl - px, px, vh + px * 2, hooks.BorderColor());// - 2);          // right border
-            video.BarScaledCoord(xl - px, yl + vh, px, px, hooks.BorderColor());// - 3);          // lower left highlight
+            video.BarScaledCoord(xl + vw, yl - px, px, vh + px * 2, session.bordercol);// - 2);          // right border
+            video.BarScaledCoord(xl - px, yl + vh, px, px, session.bordercol);// - 3);          // lower left highlight
         }
         else
         {
             // Just paint a lower border line
-            video.BarScaledCoord(0, yl + vh, vw, px, hooks.BorderColor());// - 2);       // lower border
+            video.BarScaledCoord(0, yl + vh, vw, px, session.bordercol);// - 2);       // lower border
         }
     }
 
@@ -280,7 +276,7 @@ internal sealed class PlayScreen(
         statusBar.DrawLevel();
 
         // the play area, below any top status bar, down to the bottom one's first line
-        video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaAndStatusLine, hooks.BorderColor());
+        video.BarScaledCoord(0, playArea.PlayAreaTop, video.screenWidth, playArea.PlayAreaAndStatusLine, session.bordercol);
 
         // Centered over the screen above the status bar
         int boxX = (video.screenWidth - video.ToScreenLength(224)) / 2;

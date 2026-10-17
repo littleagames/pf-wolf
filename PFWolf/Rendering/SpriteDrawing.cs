@@ -12,7 +12,6 @@ namespace PFWolf.Rendering;
 /// <param name="SpriteExists">Whether there's a sprite picture of that name</param>
 /// <param name="DeathCamSprite">The death cam's banner, while it shows (GameHost.WL_ACT2.cs)</param>
 /// <param name="WeaponScale">How big the weapon in hand is drawn (game-info weapon-scale)</param>
-/// <param name="DemoActive">Whether a demo is playing or recording (it says DEMO on the view)</param>
 internal sealed record SpriteDrawingHooks(
     Func<string?> WeaponShapeName,
     Func<Entities.Actors.Actor, bool> IsPlayerBody,
@@ -20,8 +19,7 @@ internal sealed record SpriteDrawingHooks(
     Func<Entities.Actors.Actor, string> DrawnSprite,
     Func<string, bool> SpriteExists,
     Func<Entities.Actors.Actor?> DeathCamSprite,
-    Func<double> WeaponScale,
-    Func<bool> DemoActive);
+    Func<double> WeaponScale);
 /// <summary>
 /// The level's sprites: each actor and item worth drawing is placed on the view (TransformActor),
 /// given the sprite for its angle to the viewer (CalcRotate), and they're drawn farthest first
@@ -436,7 +434,7 @@ internal sealed class SpriteDrawing(
                 ((render.viewheight + 1) >> 1) - (height >> 1) + weaponBob.Drop(render.viewheight));
         }
 
-        if (hooks.DemoActive())
+        if ((session.demoplayback || session.demorecord))
             scaler.SimpleScaleShape(render.viewwidth / 2, "DEMOA0", render.viewheight + 1);
     }
 }

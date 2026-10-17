@@ -4,22 +4,8 @@ using PFWolf.SaveGames;
 namespace PFWolf.Ui;
 
 /// <summary>What the menu keys during play need from the game</summary>
-/// <param name="InGame">Whether a level is being played (the quick keys work then)</param>
-/// <param name="SetLastMusicOffset">Where the level's song was left, to pick it up after</param>
-/// <param name="LastMusicOffset">Where it was left</param>
-/// <param name="SetPlayState">Ends the level: the game ended, or a game loaded</param>
-/// <param name="ViewSize">The view's size setting (21: the full screen, nothing to redraw around it)</param>
-/// <param name="StartGame">Whether a new game was started</param>
-/// <param name="LoadedGame">Whether a game was loaded</param>
 /// <param name="UiRandom">A random number for show (GameHost.NetPlay.cs)</param>
 internal sealed record QuickKeysHooks(
-    Func<bool> InGame,
-    Action<int> SetLastMusicOffset,
-    Func<int> LastMusicOffset,
-    Action<playstatetypes> SetPlayState,
-    Func<int> ViewSize,
-    Func<bool> StartGame,
-    Func<bool> LoadedGame,
     Func<int> UiRandom);
 
 /// <summary>
@@ -41,15 +27,16 @@ internal sealed class QuickKeys(
     FrameRefresh frame,
     PlayScreen playScreen,
     GameSession session,
+    Configuration.GameSettings settings,
     QuickKeysHooks hooks)
 {
     internal void US_ControlPanel(ScanCodes scancode)
     {
-        if (hooks.InGame())
+        if (session.ingame)
         {
             if (CP_CheckQuick(scancode) != 0)
                 return;
-            hooks.SetLastMusicOffset(StartCPMusic(controlPanel.MENUSONG));
+            session.lastgamemusicoffset = StartCPMusic(controlPanel.MENUSONG);
         }
         else
             StartCPMusic(controlPanel.MENUSONG);
@@ -80,7 +67,7 @@ internal sealed class QuickKeys(
             case ScanCodes.sc_F7:
                 if (loop.Confirm("$ENDGAMESTR".ToLanguageText(language), GameConstants.MAXY) != 0)
                 {
-                    hooks.SetPlayState(playstatetypes.ex_died);
+                    session.playstate = playstatetypes.ex_died;
                     session.playerstate.LastAttacker = null;
                     session.playerstate.lives = 0;
                 }
@@ -112,19 +99,19 @@ internal sealed class QuickKeys(
                     if (video.HasMargins)
                         video.ClearScreen(0);
 
-                    hooks.SetLastMusicOffset(StartCPMusic(controlPanel.MENUSONG));
+                    session.lastgamemusicoffset = StartCPMusic(controlPanel.MENUSONG);
                     gameSaves.CP_LoadGame(0);    // loads lastgamemusicoffs
 
                     input.ClearKeysDown();
                     video.FadeOut();
-                    if (hooks.ViewSize() != 21)
+                    if (settings.viewsize != 21)
                         playScreen.DrawPlayScreen();
 
-                    if (!hooks.StartGame() && !hooks.LoadedGame())
-                        music.ContinueMusic(hooks.LastMusicOffset());
+                    if (!session.startgame && !session.loadedgame)
+                        music.ContinueMusic(session.lastgamemusicoffset);
 
-                    if (hooks.LoadedGame())
-                        hooks.SetPlayState(playstatetypes.ex_abort);
+                    if (session.loadedgame)
+                        session.playstate = playstatetypes.ex_abort;
 
                     frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
 

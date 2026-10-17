@@ -101,7 +101,7 @@ internal static partial class GameHost
     static SpriteDrawing MakeSpriteDrawing() => new(_assetManager, _mapManager, _translationManager, lighting, spriteScaler,
         wallSpriteDrawing, weather, render, weaponBob, session,
         new SpriteDrawingHooks(WeaponShapeName, IsPlayerBody, VisiblePlayerBody, DrawnSprite, SpriteExists,
-            () => deathCamSprite, () => weaponScale, () => demoplayback || demorecord));
+            () => deathCamSprite, () => weaponScale));
 
     static void TransformActorFrom(Entities.Actors.Actor ob, int fromx, int fromy, int fromsin, int fromcos) => spriteDrawing.TransformActorFrom(ob, fromx, fromy, fromsin, fromcos);
     internal static bool HasDirectionalSprites(string sprite, string frameLetter) => spriteDrawing.HasDirectionalSprites(sprite, frameLetter);
@@ -112,8 +112,8 @@ internal static partial class GameHost
 
     static FrameRefresh MakeFrameRefresh() => new(_videoManager, _graphicManager, _mapManager, _consoleManager, lighting, actorLights,
         weather, skyAndFlats, rayTrace, spriteDrawing, playerView, render, session,
-        new FrameRefreshHooks(() => fizzlein, () => fizzlein = false, () => levelFadeStyle, () => levelFadeTics,
-            RestoreBorderAfterConsole, DrawAutomap, () => playScreen.DrawStatusOverlay(), DrawHudMessages, DrawNetOverlay, DrawConsole, () => bordercol,
+        new FrameRefreshHooks(() => levelFadeStyle, () => levelFadeTics,
+            RestoreBorderAfterConsole, DrawAutomap, () => playScreen.DrawStatusOverlay(), DrawHudMessages, DrawNetOverlay, DrawConsole,
             () => screenshotPending, () => screenshotPending = false, TakeScreenshot, UpdateViewQuake,
             () => weaponZoom.ScopePicture(), DrawScope));
 

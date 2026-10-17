@@ -20,8 +20,6 @@ sound, the channel is left to scripts. Midnight Assault's area ambience (DoAmbie
 
 =============================================================================
 */
-
-/// <param name="MapName">The level being played</param>
 /// <param name="Map">Its game-info map (null for none)</param>
 /// <param name="DefaultMap">Game-info's default map</param>
 /// <param name="PlayerTile">The local player's tile, or null when there's none</param>
@@ -29,7 +27,6 @@ sound, the channel is left to scripts. Midnight Assault's area ambience (DoAmbie
 /// <param name="InDisguise">Whether the local player is wearing a disguise</param>
 /// <param name="SetAmbient">Loops a sound on the ambient channel, or stops it with null</param>
 internal sealed record ZoneAmbienceHooks(
-    Func<string?> MapName,
     Func<MapInfo?> Map,
     Func<DefaultMapInfo> DefaultMap,
     Func<(int X, int Y)?> PlayerTile,
@@ -37,7 +34,7 @@ internal sealed record ZoneAmbienceHooks(
     Func<bool> InDisguise,
     Action<string?> SetAmbient);
 
-internal sealed class ZoneAmbience(ZoneAmbienceHooks hooks)
+internal sealed class ZoneAmbience(GameSession session, ZoneAmbienceHooks hooks)
 {
     const string None = "none";
 
@@ -48,7 +45,7 @@ internal sealed class ZoneAmbience(ZoneAmbienceHooks hooks)
     /// <summary>Each tic of the level: the player's zone's sound on the ambient channel</summary>
     internal void Tick()
     {
-        var map = hooks.MapName();
+        var map = session.gamestate.mapon;
         if (!string.Equals(map, level, StringComparison.OrdinalIgnoreCase))
             Enter(map);
         if (zones.Count == 0)

@@ -4,41 +4,25 @@ using PFWolf.Extensions;
 namespace PFWolf.Ui;
 
 /// <summary>What the in-play keys need from the game</summary>
-/// <param name="DemoPlayback">Whether a demo is playing (any key ends it, elsewhere)</param>
-/// <param name="DemoRecord">Whether a demo is recording (no console, no binds)</param>
-/// <param name="NetGame">Whether this is a game with others (no cheats, pausing or menus)</param>
 /// <param name="NetChatting">Typing something to say to the others: the keys are the line's</param>
 /// <param name="NetChatKeys">The chat line's keys (Ui/NetOverlay.cs)</param>
 /// <param name="NetCheckKeys">The keys in a game with others: Esc asks to leave (Ui/NetOverlay.cs)</param>
 /// <param name="ToggleAutomap">Opens or shuts the automap (GameHost.Automap.cs)</param>
 /// <param name="HandleAutomapKey">The automap's own keys while it's open: true if it took one</param>
-/// <param name="ViewSize">The view's size setting (a full screen view has no border to redraw)</param>
 /// <param name="DrawPlayBorder">Redraws the border around the view</param>
 /// <param name="DrawPlayBorderSides">Redraws the border's sides</param>
-/// <param name="EnableDebug">Turns the cheat commands on (DebugOk)</param>
 /// <param name="ControlPanel">The menu, opened on a key (GameHost.US_ControlPanel)</param>
 /// <param name="DrawPlayScreen">Redraws the play screen after the menu</param>
-/// <param name="StartGame">Whether the menu started a new game</param>
-/// <param name="LoadedGame">Whether the menu loaded a game</param>
-/// <param name="SetPlayState">Ends the level (a game was loaded)</param>
 internal sealed record PlayKeysHooks(
-    Func<bool> DemoPlayback,
-    Func<bool> DemoRecord,
-    Func<bool> NetGame,
     Func<bool> NetChatting,
     Action NetChatKeys,
     Action<ScanCodes> NetCheckKeys,
     Action ToggleAutomap,
     Func<InputCode, bool> HandleAutomapKey,
-    Func<int> ViewSize,
     Action DrawPlayBorder,
     Action DrawPlayBorderSides,
-    Action EnableDebug,
     Action<ScanCodes> ControlPanel,
-    Action DrawPlayScreen,
-    Func<bool> StartGame,
-    Func<bool> LoadedGame,
-    Action<playstatetypes> SetPlayState);
+    Action DrawPlayScreen);
 
 /// <summary>
 /// The keys during play, once a frame (CheckKeys): the console, the automap, console binds, the
@@ -62,6 +46,7 @@ internal sealed class PlayKeys(
     LevelMusic music,
     FrameRefresh frame,
     GameSession session,
+    Configuration.GameSettings settings,
     PlayKeysHooks hooks)
 {
     internal void CheckKeys()
@@ -69,7 +54,7 @@ internal sealed class PlayKeys(
         var language = assets.GetText("en-us");
         ScanCodes scan;
 
-        if (video.screenfaded || hooks.DemoPlayback())    // don't do anything with a faded screen
+        if (video.screenfaded || session.demoplayback)    // don't do anything with a faded screen
         {
             while (inputManager.TryTakePressedKey(out _)) { }     // nor fire binds for these keys later
             return;
@@ -89,7 +74,7 @@ internal sealed class PlayKeys(
             return;
         }
 
-        if (inputManager.IsKeyDown(ScanCodes.sc_Grave) && !hooks.DemoRecord())
+        if (inputManager.IsKeyDown(ScanCodes.sc_Grave) && !session.demorecord)
         {
             inputManager.ClearKeysDown();
             inputManager.ClearTextInput();
@@ -118,14 +103,14 @@ internal sealed class PlayKeys(
             if (hooks.HandleAutomapKey(input))        // the automap's own keys, while it's open
                 continue;
 
-            if (!hooks.DemoRecord() && console.Binds.TryGetValue(input, out var boundCommand))
+            if (!session.demorecord && console.Binds.TryGetValue(input, out var boundCommand))
                 console.Execute(boundCommand);
         }
 
         scan = inputManager.GetLastKeyPressed();
 
         // With others: no cheat keys, no pausing and no menus over the game; Esc asks to leave
-        if (hooks.NetGame())
+        if (session.netgame)
         {
             hooks.NetCheckKeys(scan);
             return;
@@ -162,7 +147,7 @@ internal sealed class PlayKeys(
             inputManager.ClearKeysDown();
             inputManager.Ack();
 
-            if (hooks.ViewSize() < 17)
+            if (settings.viewsize < 17)
                 hooks.DrawPlayBorder();
         }
 
@@ -178,7 +163,7 @@ internal sealed class PlayKeys(
             inputManager.Ack();
 
             hooks.DrawPlayBorderSides();
-            hooks.EnableDebug();
+            session.DebugOk = 1;
         }
 
         //
@@ -196,7 +181,7 @@ internal sealed class PlayKeys(
             inputManager.ClearKeysDown();
             inputManager.Ack();
 
-            if (hooks.ViewSize() < 18)
+            if (settings.viewsize < 18)
                 hooks.DrawPlayBorder();
         }
 
@@ -241,12 +226,12 @@ internal sealed class PlayKeys(
 
             inputManager.ClearKeysDown();
             video.FadeOut();
-            if (hooks.ViewSize() != 21)
+            if (settings.viewsize != 21)
                 hooks.DrawPlayScreen();
-            if (!hooks.StartGame() && !hooks.LoadedGame())
+            if (!session.startgame && !session.loadedgame)
                 music.ContinueMusic(lastoffs);
-            if (hooks.LoadedGame())
-                hooks.SetPlayState(playstatetypes.ex_abort);
+            if (session.loadedgame)
+                session.playstate = playstatetypes.ex_abort;
             frame.lasttimecount = (int)GameEngineManager.GetTimeCount();
             inputManager.CenterMouse();
             return;

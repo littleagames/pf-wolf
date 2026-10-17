@@ -58,7 +58,7 @@ internal static partial class GameHost
 
     static PlayScreen MakePlayScreen() => new(_assetManager, _gameEngineManager, _videoManager, _graphicManager, _inputManager,
         statusBarDrawing, playerWeapons, radar, render, playArea,
-        new PlayScreenHooks(() => viewsize, () => ingame, () => bordercol, PresenterMessageBox));
+        settings, session, new PlayScreenHooks(PresenterMessageBox));
 
     internal static void DrawPlayScreen() => playScreen.DrawPlayScreen();
     internal static void DrawPlayBorder() => playScreen.DrawPlayBorder();

@@ -21,7 +21,7 @@ public class StatusBarOverlayTests
                 ["background"] = new() { Height = 40, Overlay = overlay },
             });
             Area = new PlayArea(null!, Bar);
-            View = new ViewSetup(null!, null!, null!, Area, new ViewSetupHooks(() => 19, _ => { }));
+            View = new ViewSetup(null!, null!, null!, Area, new Configuration.GameSettings { viewsize = 19 });
         }
     }
 
